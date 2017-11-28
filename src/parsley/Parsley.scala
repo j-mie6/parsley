@@ -81,7 +81,12 @@ class Parsley[+A](
         {
             // p <|> empty = p (alternative law)
             case Vector(Fail(_)) => this
-            case _ => new Parsley[A_](instrs, subs ++ q.subs)
+            // I imagine there is space for optimisation of common postfix and prefixes in choice
+            // this would allow for further optimisations with surrounding integration
+            // does it imply that there is a try scope wrapping p?
+            case _ =>
+                nextLabel += 1
+                new Parsley[A_]((instrs :+ JumpGood(nextLabel)) ++ q.instrs :+ Label(nextLabel), subs ++ q.subs)
         }
     }
     override def toString(): String = s"(${instrs.toString}, ${subs.toString})"
@@ -92,9 +97,15 @@ object Parsley
     def pure[A](a: A): Parsley[A] = new Parsley[A](Vector(Push(a)), Map.empty)
     def fail[A](msg: String): Parsley[A] = new Parsley[A](Vector(Fail(msg)), Map.empty)
     def empty[A](): Parsley[A] = fail("unknown error")
+    def tryParse[A](p: Parsley[A]): Parsley[A] = new Parsley(TryBegin +: p.instrs :+ TryEnd, p.subs)
 
     var knotScope: Set[String] = Set.empty
-    def reset() = knotScope = Set.empty
+    var nextLabel: Int = -1
+    def reset() =
+    {
+        knotScope = Set.empty
+        nextLabel = -1
+    }
     def knot[A](name: String, p_ : =>Parsley[A]): Parsley[A] =
     {
         lazy val p = p_

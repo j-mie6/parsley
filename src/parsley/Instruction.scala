@@ -61,12 +61,29 @@ case class Fail(msg: String) extends Instruction
         case _ => ???
     }
 }
+
+case object TryBegin extends Instruction
+{
+    override def apply(ctx: Context): Context = ???
+}
+
+case object TryEnd extends Instruction
+{
+    override def apply(ctx: Context): Context = ???
+}
+
 //case class Many(x: Int) extends Instruction
 
-// What even is this?
-// case class Choice
+case class JumpGood(label: Int) extends Instruction
+{
+    override def apply(ctx: Context): Context = ???
+}
 
-//case class Label(x: Int) extends Instruction
+// This should mostly not affect the state of the interpreter
+case class Label(x: Int) extends Instruction
+{
+    override def apply(ctx: Context): Context = ctx
+}
 
 object Instruction
 {
