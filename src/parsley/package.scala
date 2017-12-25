@@ -4,13 +4,22 @@ import parsley.Instruction
 package object parsley
 {
     type Stack = List[Any]
-    type InstructionBuffer = List[Vector[Instruction]]
+    type InstructionStack = List[Vector[Instruction]]
     type ProgramCounter = Int
-    type Context = (Stack, InstructionBuffer, ProgramCounter)
+    type Failed = Boolean
+    type InputStack = List[String]
 
-    def runParser[A, S, X](p: Parsley[A], input: Stream[S, X]) =
+    case class Context(stack: Stack,
+                       instrss: InstructionStack,
+                       inputs: InputStack,
+                       checkStack: InputStack,
+                       subs: Map[String, Vector[Instruction]],
+                       failed: Failed,
+                       pc: ProgramCounter)
+
+    def runParser[A](p: Parsley[A], input: String) =
     {
-        runParser_[A](p.instrs, (Nil, List(p.instrs), 0))
+        runParser_[A](p.instrs, Context(Nil, List(p.instrs), List(input), Nil, p.subs, false, 0))
     }
 
     def runParser_[A](instrs: Vector[Instruction], ctx: Context) =
