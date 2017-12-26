@@ -143,9 +143,11 @@ object Parsley
     }
 
     // Optimisation only possible here:
+    // Need to remove labels :D
     // f <$> p <*> pure x == (flip f) x <$> p
     def optimise[A](p: Parsley[A]): Parsley[A] =
     {
+        def flip[A, B, C](f: A => B => C): B => A => C = x => y => f(y)(x)
         val instrs = p.instrs
         val subs = p.subs
         @tailrec

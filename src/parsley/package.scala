@@ -5,8 +5,8 @@ package object parsley
 {
     type Stack = List[Any]
     type InstructionStack = List[Vector[Instruction]]
-    type ProgramCounter = Int
-    type Failed = Boolean
+    type ProgramCounters = Int
+    type Failed = Int
     type InputStack = List[String]
 
     case class Context(stack: Stack,
@@ -15,11 +15,11 @@ package object parsley
                        checkStack: InputStack,
                        subs: Map[String, Vector[Instruction]],
                        failed: Failed,
-                       pc: ProgramCounter)
+                       pc: ProgramCounters)
 
     def runParser[A](p: Parsley[A], input: String) =
     {
-        runParser_[A](p.instrs, Context(Nil, List(p.instrs), List(input), Nil, p.subs, false, 0))
+        runParser_[A](p.instrs, Context(Nil, List(p.instrs), List(input), Nil, p.subs, 0, 0))
     }
 
     def runParser_[A](instrs: Vector[Instruction], ctx: Context) =
