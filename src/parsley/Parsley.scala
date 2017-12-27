@@ -122,6 +122,8 @@ object Parsley
     }
     def knot[A](name: String, p_ : =>Parsley[A]): Parsley[A] =
     {
+        // TODO: We need to consider what happens with labels, really they need to be set to 0 for this
+        // I.e. This should behave more like a reader monad, not state... Difficult to achieve though
         lazy val p = p_
         if (knotScope.contains(name)) new Parsley(Vector(Call(name)), Map.empty)
         else
@@ -150,9 +152,35 @@ object Parsley
         def flip[A, B, C](f: A => B => C): B => A => C = x => y => f(y)(x)
         val instrs = p.instrs
         val subs = p.subs
+        /*
+        Removing Labels;
+            Ideally we want to remove labels in a single pass in O(n).
+            However, don't know the index because we don't know how many
+            further labels there are behind the invokation point.
+            Potentially we do however, it might be the label's number itself?
+            If we can make that so it is indeed the case then the rest of this
+            work becomes trivial...
+
+            I believe this to *currently* be the case;
+                <|> is the only combinator that injects labels, but consider
+                p <|> q, then p and q are compiled in that order then the label
+                is injected, hence P; Q; LABEL. Even if P and Q themselves
+                contained labels, they would claim a lower number, with p taking
+                precedences.
+         */
         @tailrec
-        def process(instrs: Vector[Instruction]): Vector[Instruction] = process(instrs)
-        new Parsley(process(instrs), subs)
+        def process(instrs: Vector[Instruction],
+                    labels: Map[Int, Int] = Map.empty,
+                    processed: Vector[Instruction] = Vector.empty): Vector[Instruction] = instrs match
+        {
+            case instrs :+ Label(x) =>
+                val idx = instrs.size - x
+                process(instrs, labels + (x -> idx), processed)
+            case instrs :+ JumpGood(x) => process(instrs, labels, JumpGood(labels(x)) +: processed)
+            case instrs :+ instr => process(instrs, labels, instr +: processed)
+            case Vector() => processed
+        }
+        new Parsley(process(instrs), subs.mapValues(process(_)))
     }
 
     def inf: Parsley[Int] = "inf" <%> inf.map[Int](_+1).map[Int](_+2)
@@ -171,12 +199,20 @@ object Parsley
     def main(args: Array[String]): Unit =
     {
         println(pure[Int=>Int=>Int](x => y => x + y) <*> pure(10) <*> pure(20))
+        reset()
         println(inf)
+        reset()
         println(expr)
+        reset()
         println(monad)
+        reset()
         println(foo)
-        println(many(pure[Int](10)))
-        println(sepEndBy(char('x'), char('a')))
+        reset()
+        println(optimise(many(pure[Int](10))))
+        reset()
+        println(optimise(sepEndBy(char('x'), char('a'))))
+        reset()
         println(repeat(10, pure[Unit](())))
+        reset()
     }
 }
