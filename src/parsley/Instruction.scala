@@ -89,7 +89,8 @@ case object InputCheck extends Instruction
 case class JumpGood(label: Int) extends Instruction
 {
     // We need to assume that the line number was resolved
-    override def apply(ctx: Context): Context = ctx.copy()
+    // TODO: Handle input checks on failure!!! Expand this out into a bigger function, don't ternary
+    override def apply(ctx: Context): Context = ctx.copy(pc = if (ctx.failed > 0) ctx.pc + 1 else label)
 }
 
 case class Return(ret: Int) extends Instruction
