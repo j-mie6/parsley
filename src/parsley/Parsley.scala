@@ -129,12 +129,18 @@ object Parsley
         else
         {
             knotScope += name
+            // FIXME: This doesn't work properly due to inlining... We need to work out a better way around this...
+            // This should be fine, p is a lazy value, so it would have been forced until next lines
+            val curLabel = nextLabel
+            nextLabel = -1
             // Perform inline expansion optimisation, reduce to minimum knot-tie
             val instrs = p.instrs.flatMap
             {
-                case Call(name_) if name != name_ && p.subs.contains(name_) => p.subs(name_)
+                // Inlining is disabled whilst current label management is in force
+                //case Call(name_) if name != name_ && p.subs.contains(name_) => p.subs(name_)
                 case instr => Vector(instr)
             }
+            nextLabel = curLabel
             new Parsley(Vector(Call(name)), p.subs + (name -> instrs))
         }
     }
