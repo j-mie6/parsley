@@ -93,12 +93,17 @@ class Parsley[+A](
             // NOTE: Postfix optimisation is also correct
             //      (y *> x) <|> (z *> x) == (y <|> z) *> x, noting that y and z are necessarily impure but this always holds
             case _ =>
-                nextLabel += 1
-                new Parsley[A_]((InputCheck +: instrs :+ JumpGood(nextLabel)) ++ q.instrs :+ Label(nextLabel), subs ++ q.subs)
+                val goodLabel = nextLabel+1
+                val handler = nextLabel+2
+                nextLabel += 2
+                new Parsley[A_]((InputCheck(handler) +: instrs :+ Label(handler) :+ JumpGood(goodLabel)) ++ q.instrs :+ Label(goodLabel), subs ++ q.subs)
         }
     }
     def </>[A_ >: A](x: A_): Parsley[A_] = this <|> pure(x)
     def <\>[A_ >: A](q: Parsley[A_]): Parsley[A_] = tryParse(this) <|> q
+    def <|?>[B](p: Parsley[B], q: Parsley[B])(implicit ev: Parsley[A] => Parsley[Boolean]): Parsley[B] = choose(this, p, q)
+    def >?>(pred: A => Boolean, msg: String): Parsley[A] = guard(this, pred, msg)
+    def >?>(pred: A => Boolean, msggen: A => String) = guard(this, pred, msggen)
     override def toString: String = s"(${instrs.toString}, ${subs.toString})"
 }
 
@@ -106,12 +111,29 @@ object Parsley
 {
     def pure[A](a: A): Parsley[A] = new Parsley[A](Vector(Push(a)), Map.empty)
     def fail[A](msg: String): Parsley[A] = new Parsley[A](Vector(Fail(msg)), Map.empty)
+    def fail[A](msggen: Parsley[A], finaliser: A => String): Parsley[A] =  new Parsley[A](msggen.instrs :+ FastFail(finaliser), msggen.subs)
     def empty[A]: Parsley[A] = fail("unknown error")
-    def tryParse[A](p: Parsley[A]): Parsley[A] = new Parsley(TryBegin +: p.instrs :+ TryEnd, p.subs)
+    def tryParse[A](p: Parsley[A]): Parsley[A] =
+    {
+        nextLabel += 1
+        new Parsley(TryBegin(nextLabel) +: p.instrs :+ Label(nextLabel) :+ TryEnd, p.subs)
+    }
     def lift2[A, B, C](f: A => B => C, p: Parsley[A], q: Parsley[B]): Parsley[C] = p.map(f) <*> q
     def char(c: Char): Parsley[String] = new Parsley(Vector(CharTok(c)), Map.empty)
     def satisfy(f: Char => Boolean): Parsley[String] = new Parsley(Vector(Satisfies(f)), Map.empty)
     def string(s: String): Parsley[String] = new Parsley(Vector(StringTok(s)), Map.empty)
+    def choose[A](b: Parsley[Boolean], p: Parsley[A], q: Parsley[A]): Parsley[A] =
+    {
+        b.flatMap(b => if (b) p else q)
+    }
+    def guard[A](p: Parsley[A], pred: A => Boolean, msg: String): Parsley[A] =
+    {
+        p.flatMap(x => if (pred(x)) pure(x) else fail(msg))
+    }
+    def guard[A](p: Parsley[A], pred: A => Boolean, msggen: A => String): Parsley[A] =
+    {
+        p.flatMap(x => if (pred(x)) pure(x) else fail(pure(x), msggen))
+    }
 
     var knotScope: Set[String] = Set.empty
     var nextLabel: Int = -1
@@ -183,6 +205,8 @@ object Parsley
                 val idx = instrs.size - x
                 process(instrs, labels + (x -> idx), processed)
             case instrs :+ JumpGood(x) => process(instrs, labels, JumpGood(labels(x)) +: processed)
+            case instrs :+ InputCheck(handler) => process(instrs, labels, InputCheck(labels(handler)) +: processed)
+            case instrs :+ TryBegin(handler) => process(instrs, labels, TryBegin(labels(handler)) +: processed)
             case instrs :+ instr => process(instrs, labels, instr +: processed)
             case Vector() => processed
         }
