@@ -180,7 +180,7 @@ object InstructionTests
         println(Apply(Push(20)(Apply(Push(10)(Push[Int=>Int=>Int](x => y => x + y)(Context(Nil, Nil, Nil, Nil, Map.empty, Good, Nil, 0)))))))
         import parsley.Parsley._
         //val p = lift2[Char, Char, String]((x, y) => x.toString + y.toString, 'a', 'b')
-        val p = 'a' <::> pure(Nil)
+        val p = 'a' <::> ('b' #> Nil)
         //val p = 'a' *> 'b' #> "ab"
         println(p)
         println(runParser(p, "ab"))

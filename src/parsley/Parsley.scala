@@ -47,7 +47,8 @@ class Parsley[+A](
     {
         // pure x #> y == pure y (consequence of applicative and functor laws)
         case Push(_) => new Parsley(instrs.init :+ Push(x), subs)
-        case _ => new Parsley(instrs :+ Exchange(x), subs)
+        // Note: Exchange should be a peephole optimisation, as otherwise we'd need to handle it in all optimisation cases!
+        case _ => new Parsley(instrs /*:+ Exchange(x)*/ :+ Pop :+ Push(x), subs)
     }
     def <*>:[B](p: Parsley[A => B]): Parsley[B] = p.instrs.last match
     {
@@ -216,7 +217,7 @@ object Parsley
 
     // Optimisation only possible here:
     // Need to remove labels :D
-    // f <$> p <*> pure x == (flip f) x <$> p
+    // TODO move Pop, Push(x) => Exchange(x) optimisation to here, it can hinder all sorts of optimisations! It should be peephole!
     def optimise[A](p: Parsley[A]): Parsley[A] =
     {
         def flip[A, B, C](f: A => B => C): B => A => C = x => y => f(y)(x)
