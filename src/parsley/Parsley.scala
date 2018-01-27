@@ -3,14 +3,16 @@ package parsley
 import parsley.Parsley._
 
 import scala.annotation.tailrec
+import scala.collection.mutable.Buffer
 import language.existentials
 
+// TODO Investigate effect of :+= instead of :+ for the buffers
 // TODO Perform final optimisation stage on end result, likely to perform some extra optimisation, but possibly less
 class Parsley[+A](
     // The instructions that shall be executed by this parser
-    val instrs: Vector[Instruction],
+    val instrs: Buffer[Instruction],
     // The subroutines currently collected by the compilation
-    val subs: Map[String, Vector[Instruction]])
+    val subs: Map[String, Buffer[Instruction]])
 {
     def flatMap[B](f: A => Parsley[B]): Parsley[B] = instrs.last match
     {
@@ -23,10 +25,12 @@ class Parsley[+A](
         // Pure application can be resolved at compile-time
         case Push(x: A @unchecked) => new Parsley(instrs.init :+ Push(f(x)), subs)
         // p.map(f).map(g) = p.map(g . f) (functor law)
-        case Perform(g) => new Parsley(instrs.init :+ Perform((x: C forSome {type C}) => f(g.asInstanceOf[Function[C forSome {type C}, A]](x))), subs)
+        case Perform(g) => new Parsley(instrs.init :+ Perform(g.asInstanceOf[Function[C forSome {type C}, A]].andThen(f)), subs)
         case _ => new Parsley(instrs :+ Perform(f), subs)
     }
-    def >>[B](p: Parsley[B]): Parsley[B] = this *> p
+    @inline def <#>[B](f: =>A => B): Parsley[B] = map(f)
+    @inline def <#>:[B](f: =>A => B): Parsley[B] = map(f)
+    @inline def >>[B](p: Parsley[B]): Parsley[B] = this *> p
     def *>[B](p: Parsley[B]): Parsley[B] = instrs.last match
     {
         // pure x *> p == p (consequence of applicative and functor laws)
@@ -39,21 +43,37 @@ class Parsley[+A](
         case Push(_) => new Parsley(instrs ++ p.instrs.init, subs ++ p.subs)
         case _ => new Parsley(instrs ++ p.instrs :+ Pop, subs ++ p.subs)
     }
-    def <*>:[B](p: Parsley[A => B]): Parsley[B] = instrs.last match
+    def #>[B](x: B): Parsley[B] = instrs.last match
+    {
+        // pure x #> y == pure y (consequence of applicative and functor laws)
+        case Push(_) => new Parsley(instrs.init :+ Push(x), subs)
+        case _ => new Parsley(instrs :+ Switch(x), subs)
+    }
+    def <*>:[B](p: Parsley[A => B]): Parsley[B] = p.instrs.last match
     {
         // pure(f) <*> p == f <#> p (consequence of applicative laws)
-        case Push(f) => p.instrs.last match
+        case Push(f) => instrs.last match
         {
             // f <#> pure x == pure (f x) (applicative law)
-            case Push(x: A @unchecked) => new Parsley(instrs.init ++ p.instrs.init :+ Push(f.asInstanceOf[Function[A, B]](x)), subs ++ p.subs)
-            // p.map(f).map(g) = p.map(g . f) (functor law)
+            case Push(x: A @unchecked) => new Parsley(p.instrs.init ++ instrs.init :+ Push(f.asInstanceOf[Function[A, B]](x)), p.subs ++ subs)
+            // p.map(f).map(g) == p.map(g . f) (functor law)
             case Perform(g) =>
-                new Parsley(instrs.init ++ p.instrs.init :+
-                            Perform((x: C forSome {type C}) =>
-                                f.asInstanceOf[Function[A, B]](g.asInstanceOf[Function[C forSome {type C}, A]](x))), subs ++ p.subs)
-            case _ => new Parsley(instrs.init ++ p.instrs :+ Perform[A, B](f.asInstanceOf[Function[A, B]]), subs ++ p.subs)
+                new Parsley(p.instrs.init ++ instrs.init :+
+                            Perform(f.asInstanceOf[Function[A, B]].compose(g.asInstanceOf[Function[C forSome {type C}, A]])), p.subs ++ subs)
+            case _ => new Parsley(p.instrs.init ++ instrs :+ Perform[A, B](f.asInstanceOf[Function[A, B]]), p.subs ++ subs)
         }
-        case _ => new Parsley(instrs ++ p.instrs :+ Apply, subs ++ p.subs)
+        case Perform(f: Function[A, Any=>Any] @unchecked) => instrs.last match
+        {
+            // fusion law: (f <$> x) <*> pure y == (($y) . f) <$> x
+            case Push(y) => new Parsley(p.instrs.init ++ instrs.init :+ Perform[A, Any](x => f(x)(y)), p.subs ++ subs)
+            case _ => new Parsley(p.instrs ++ instrs :+ Apply, p.subs ++ subs)
+        }
+        case _ => instrs.last match
+        {
+            // interchange law: u <*> pure y = ($y) <$> u
+            case Push(x: A @unchecked) => new Parsley(p.instrs ++ instrs.init :+ Perform[A => B, B](f => f(x)), p.subs ++ subs)
+            case _ => new Parsley(p.instrs ++ instrs :+ Apply, p.subs ++ subs)
+        }
     }
     def <*>[B, C](p: Parsley[B])(implicit ev: A => (B => C)): Parsley[C] = instrs.last match
     {
@@ -61,28 +81,38 @@ class Parsley[+A](
         case Push(f) => p.instrs.last match
         {
             // f <#> pure x == pure (f x) (applicative law)
-            case Push(x: A @unchecked) => new Parsley(instrs.init ++ p.instrs.init :+ Push(f.asInstanceOf[Function[A, B]](x)), subs ++ p.subs)
-            // p.map(f).map(g) = p.map(g . f) (functor law)
+            case Push(x: B @unchecked) => new Parsley(instrs.init ++ p.instrs.init :+ Push(f.asInstanceOf[Function[B, C]](x)), subs ++ p.subs)
+            // p.map(f).map(g) == p.map(g . f) (functor law)
             case Perform(g) =>
                 new Parsley(instrs.init ++ p.instrs.init :+
-                    Perform((x: C forSome {type C}) =>
-                        f.asInstanceOf[Function[A, B]](g.asInstanceOf[Function[C forSome {type C}, A]](x))), subs ++ p.subs)
-            case _ => new Parsley(instrs.init ++ p.instrs :+ Perform[A, B](f.asInstanceOf[Function[A, B]]), subs ++ p.subs)
+                    Perform(f.asInstanceOf[Function[B, C]].compose(g.asInstanceOf[Function[A forSome {type A}, B]])), subs ++ p.subs)
+            case _ => new Parsley(instrs.init ++ p.instrs :+ Perform[B, C](f.asInstanceOf[Function[B, C]]), subs ++ p.subs)
         }
-        case _ => new Parsley(instrs ++ p.instrs :+ Apply, subs ++ p.subs)
+        case Perform(f: Function[B, Any=>Any] @unchecked) => p.instrs.last match
+        {
+            // fusion law: (f <$> x) <*> pure y == (($y) . f) <$> x
+            case Push(y) => new Parsley(instrs.init ++ p.instrs.init :+ Perform[B, Any](x => f(x)(y)), subs ++ p.subs)
+            case _ => new Parsley(instrs ++ p.instrs :+ Apply, subs ++ p.subs)
+        }
+        case _ => p.instrs match
+        {
+            // interchange law: u <*> pure y == ($y) <$> u
+            case Buffer(Push(x: B @unchecked)) => new Parsley(instrs :+ Perform[B => C, C](f => f(x)), subs ++ p.subs)
+            case _ => new Parsley(instrs ++ p.instrs :+ Apply, subs ++ p.subs)
+        }
     }
-    def <**>[B](f: Parsley[A => B]): Parsley[B] = lift2[A, A=>B, B](x => f => f(x), this, f)
-    def <::>[A_ >: A](ps: Parsley[List[A_]]): Parsley[List[A_]] = lift2[A, List[A_], List[A_]](x => xs => x::xs, this, ps)
+    @inline def <**>[B](f: Parsley[A => B]): Parsley[B] = lift2[A, A=>B, B]((x, f) => f(x), this, f)
+    @inline def <::>[A_ >: A](ps: Parsley[List[A_]]): Parsley[List[A_]] = lift2[A, List[A_], List[A_]](_::_, this, ps)
     def <|>[A_ >: A](q: Parsley[A_]): Parsley[A_] = instrs match
     {
         // pure results always succeed
-        case Vector(Push(_)) => new Parsley[A_](instrs, subs ++ q.subs)
+        case Buffer(Push(_)) => new Parsley[A_](instrs, subs ++ q.subs)
         // empty <|> q == q (alternative law)
-        case Vector(Fail(_)) => q
+        case Buffer(Fail(_)) => q
         case _ => q.instrs match
         {
             // p <|> empty = p (alternative law)
-            case Vector(Fail(_)) => this
+            case Buffer(Fail(_)) => this
             // p <|> p == p (this needs refinement to be label invariant, we want structure
             case instrs_ if instrs == instrs_ => this
             // I imagine there is space for optimisation of common postfix and prefixes in choice
@@ -99,18 +129,18 @@ class Parsley[+A](
                 new Parsley[A_]((InputCheck(handler) +: instrs :+ Label(handler) :+ JumpGood(goodLabel)) ++ q.instrs :+ Label(goodLabel), subs ++ q.subs)
         }
     }
-    def </>[A_ >: A](x: A_): Parsley[A_] = this <|> pure(x)
-    def <\>[A_ >: A](q: Parsley[A_]): Parsley[A_] = tryParse(this) <|> q
-    def <|?>[B](p: Parsley[B], q: Parsley[B])(implicit ev: Parsley[A] => Parsley[Boolean]): Parsley[B] = choose(this, p, q)
-    def >?>(pred: A => Boolean, msg: String): Parsley[A] = guard(this, pred, msg)
-    def >?>(pred: A => Boolean, msggen: A => String) = guard(this, pred, msggen)
+    @inline def </>[A_ >: A](x: A_): Parsley[A_] = this <|> pure(x)
+    @inline def <\>[A_ >: A](q: Parsley[A_]): Parsley[A_] = tryParse(this) <|> q
+    @inline def <|?>[B](p: Parsley[B], q: Parsley[B])(implicit ev: Parsley[A] => Parsley[Boolean]): Parsley[B] = choose(this, p, q)
+    @inline def >?>(pred: A => Boolean, msg: String): Parsley[A] = guard(this, pred, msg)
+    @inline def >?>(pred: A => Boolean, msggen: A => String) = guard(this, pred, msggen)
     override def toString: String = s"(${instrs.toString}, ${subs.toString})"
 }
 
 object Parsley
 {
-    def pure[A](a: A): Parsley[A] = new Parsley[A](Vector(Push(a)), Map.empty)
-    def fail[A](msg: String): Parsley[A] = new Parsley[A](Vector(Fail(msg)), Map.empty)
+    def pure[A](a: A): Parsley[A] = new Parsley[A](Buffer(Push(a)), Map.empty)
+    def fail[A](msg: String): Parsley[A] = new Parsley[A](Buffer(Fail(msg)), Map.empty)
     def fail[A](msggen: Parsley[A], finaliser: A => String): Parsley[A] =  new Parsley[A](msggen.instrs :+ FastFail(finaliser), msggen.subs)
     def empty[A]: Parsley[A] = fail("unknown error")
     def tryParse[A](p: Parsley[A]): Parsley[A] =
@@ -118,18 +148,25 @@ object Parsley
         nextLabel += 1
         new Parsley(TryBegin(nextLabel) +: p.instrs :+ Label(nextLabel) :+ TryEnd, p.subs)
     }
-    def lift2[A, B, C](f: A => B => C, p: Parsley[A], q: Parsley[B]): Parsley[C] = p.map(f) <*> q
-    def char(c: Char): Parsley[String] = new Parsley(Vector(CharTok(c)), Map.empty)
-    def satisfy(f: Char => Boolean): Parsley[String] = new Parsley(Vector(Satisfies(f)), Map.empty)
-    def string(s: String): Parsley[String] = new Parsley(Vector(StringTok(s)), Map.empty)
+    @inline def lift2[A, B, C](f: (A, B) => C, p: Parsley[A], q: Parsley[B]): Parsley[C] = p.map(x => (y: B) => f(x, y)) <*> q
+    //def lift2[A, B, C](f: (A, B) => C, p: Parsley[A], q: Parsley[B]): Parsley[C] = 
+    //{
+    //    new Parsley(p.instrs ++ q.instrs :+ Lift(f), p.subs ++ q.subs)
+    //}
+    def char(c: Char): Parsley[Char] = new Parsley(Buffer(CharTok(c)), Map.empty)
+    def satisfy(f: Char => Boolean): Parsley[Char] = new Parsley(Buffer(Satisfies(f)), Map.empty)
+    def string(s: String): Parsley[String] = new Parsley(Buffer(StringTok(s)), Map.empty)
+    @inline
     def choose[A](b: Parsley[Boolean], p: Parsley[A], q: Parsley[A]): Parsley[A] =
     {
         b.flatMap(b => if (b) p else q)
     }
+    @inline
     def guard[A](p: Parsley[A], pred: A => Boolean, msg: String): Parsley[A] =
     {
         p.flatMap(x => if (pred(x)) pure(x) else fail(msg))
     }
+    @inline
     def guard[A](p: Parsley[A], pred: A => Boolean, msggen: A => String): Parsley[A] =
     {
         p.flatMap(x => if (pred(x)) pure(x) else fail(pure(x), msggen))
@@ -147,7 +184,7 @@ object Parsley
         // TODO: We need to consider what happens with labels, really they need to be set to 0 for this
         // I.e. This should behave more like a reader monad, not state... Difficult to achieve though
         lazy val p = p_
-        if (knotScope.contains(name)) new Parsley(Vector(Call(name)), Map.empty)
+        if (knotScope.contains(name)) new Parsley(Buffer(Call(name)), Map.empty)
         else
         {
             knotScope += name
@@ -163,13 +200,18 @@ object Parsley
                 case instr => Vector(instr)
             }
             nextLabel = curLabel
-            new Parsley(Vector(Call(name)), p.subs + (name -> instrs))
+            new Parsley(Buffer(Call(name)), p.subs + (name -> instrs))
         }
     }
 
     implicit class Knot[A](name: String)
     {
         def <%>(p: =>Parsley[A]): Parsley[A] = knot(name, p)
+    }
+    
+    implicit class Mapper[A, B](f: A => B)
+    {
+        def <#>(p: Parsley[A]): Parsley[B] = p.map(f)
     }
 
     // Optimisation only possible here:
@@ -197,9 +239,9 @@ object Parsley
                 precedences.
          */
         @tailrec
-        def process(instrs: Vector[Instruction],
+        def process(instrs: Buffer[Instruction],
                     labels: Map[Int, Int] = Map.empty,
-                    processed: Vector[Instruction] = Vector.empty): Vector[Instruction] = instrs match
+                    processed: Buffer[Instruction] = Buffer.empty): Buffer[Instruction] = instrs match
         {
             case instrs :+ Label(x) =>
                 val idx = instrs.size - x
@@ -208,7 +250,7 @@ object Parsley
             case instrs :+ InputCheck(handler) => process(instrs, labels, InputCheck(labels(handler)) +: processed)
             case instrs :+ TryBegin(handler) => process(instrs, labels, TryBegin(labels(handler)) +: processed)
             case instrs :+ instr => process(instrs, labels, instr +: processed)
-            case Vector() => processed
+            case Buffer() => processed
         }
         new Parsley(process(instrs), subs.mapValues(process(_)))
     }
@@ -240,9 +282,11 @@ object Parsley
         reset()
         println(optimise(many(pure[Int](10))))
         reset()
-        println(optimise(sepEndBy(char('x'), char('a'))))
+        println(optimise(sepEndBy('x', 'a')))
         reset()
         println(repeat(10, pure[Unit](())))
+        reset()
+        println(((x: Int) => x * 2) <#> (((x: Char) => x.toInt) <#> '0'))
         reset()
     }
 }
