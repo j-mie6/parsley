@@ -183,10 +183,13 @@ object InstructionTests
         val p = 'a' <::> ('b' #> Nil)
         //val p = 'a' *> 'b' #> "ab"
         println(p)
-        println(runParser(p, "ab"))
+        val q = optimise(p)
+        reset()
+        println(q)
+        println(runParser(q, "ab"))
         val start = System.currentTimeMillis()
         val input = "ab".toList
-        for (i <- 0 to 10000000) runParser(p, input)
+        for (i <- 0 to 10000000) runParser(q, input)
         println(System.currentTimeMillis() - start)
     }
 }

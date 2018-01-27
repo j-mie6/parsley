@@ -47,8 +47,7 @@ class Parsley[+A](
     {
         // pure x #> y == pure y (consequence of applicative and functor laws)
         case Push(_) => new Parsley(instrs.init :+ Push(x), subs)
-        // Note: Exchange should be a peephole optimisation, as otherwise we'd need to handle it in all optimisation cases!
-        case _ => new Parsley(instrs /*:+ Exchange(x)*/ :+ Pop :+ Push(x), subs)
+        case _ => new Parsley(instrs :+ Pop :+ Push(x), subs)
     }
     def <*>:[B](p: Parsley[A => B]): Parsley[B] = p.instrs.last match
     {
@@ -215,12 +214,8 @@ object Parsley
         def <#>(p: Parsley[A]): Parsley[B] = p.map(f)
     }
 
-    // Optimisation only possible here:
-    // Need to remove labels :D
-    // TODO move Pop, Push(x) => Exchange(x) optimisation to here, it can hinder all sorts of optimisations! It should be peephole!
     def optimise[A](p: Parsley[A]): Parsley[A] =
     {
-        def flip[A, B, C](f: A => B => C): B => A => C = x => y => f(y)(x)
         val instrs = p.instrs
         val subs = p.subs
         /*
@@ -240,6 +235,7 @@ object Parsley
                 precedences.
          */
         @tailrec
+        // This might be very slow, it might be best to convert to vectors before we remove each element?
         def process(instrs: Buffer[Instruction],
                     labels: Map[Int, Int] = Map.empty,
                     processed: Buffer[Instruction] = Buffer.empty): Buffer[Instruction] = instrs match
@@ -247,11 +243,12 @@ object Parsley
             case instrs :+ Label(x) =>
                 val idx = instrs.size - x
                 process(instrs, labels + (x -> idx), processed)
-            case instrs :+ JumpGood(x) => process(instrs, labels, JumpGood(labels(x)) +: processed)
-            case instrs :+ InputCheck(handler) => process(instrs, labels, InputCheck(labels(handler)) +: processed)
-            case instrs :+ TryBegin(handler) => process(instrs, labels, TryBegin(labels(handler)) +: processed)
-            case instrs :+ instr => process(instrs, labels, instr +: processed)
-            case Buffer() => processed
+            case instrs :+ JumpGood(x) => process(instrs, labels, processed :+ JumpGood(labels(x)))
+            case instrs :+ InputCheck(handler) => process(instrs, labels, processed :+ InputCheck(labels(handler)))
+            case instrs :+ TryBegin(handler) => process(instrs, labels, processed :+ TryBegin(labels(handler)))
+            case instrs :+ Pop :+ Push(x) => process(instrs, labels, processed :+ Exchange(x))
+            case instrs :+ instr => process(instrs, labels, processed :+ instr)
+            case Buffer() => processed.reverse
         }
         new Parsley(process(instrs), subs.mapValues(process(_)))
     }

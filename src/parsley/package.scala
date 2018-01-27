@@ -27,15 +27,8 @@ package object parsley
                        handlers: HandlerStack,
                        pc: ProgramCounters)
 
-    def runParser[A](p: Parsley[A], input: String) =
-    {
-        runParser_[A](Context(Nil, List(p.instrs), List(input.toList), Nil, p.subs, Good, Nil, 0))
-    }
-    
-    def runParser[A](p: Parsley[A], input: List[Char]) =
-    {
-        runParser_[A](Context(Nil, List(p.instrs), List(input), Nil, p.subs, Good, Nil, 0))
-    }
+    def runParser[A](p: Parsley[A], input: String): Result[A] = runParser[A](p, input.toList)
+    def runParser[A](p: Parsley[A], input: List[Char]): Result[A] = runParser_[A](Context(Nil, List(p.instrs), List(input), Nil, p.subs, Good, Nil, 0))
     
     sealed trait Result[A]
     case class Success[A](x: A) extends Result[A]
