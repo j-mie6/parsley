@@ -47,7 +47,7 @@ class Parsley[+A](
     {
         // pure x #> y == pure y (consequence of applicative and functor laws)
         case Push(_) => new Parsley(instrs.init :+ Push(x), subs)
-        case _ => new Parsley(instrs :+ Switch(x), subs)
+        case _ => new Parsley(instrs :+ Exchange(x), subs)
     }
     def <*>:[B](p: Parsley[A => B]): Parsley[B] = p.instrs.last match
     {

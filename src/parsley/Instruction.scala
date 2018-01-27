@@ -26,7 +26,7 @@ case object Pop extends Instruction
     override def apply(ctx: Context): Context = ctx.copy(stack = ctx.stack.tail, pc = ctx.pc + 1)
 }
 
-case class Switch[A](x: A) extends Instruction
+case class Exchange[A](x: A) extends Instruction
 {
     override def apply(ctx: Context): Context = ctx.copy(stack = x::ctx.stack.tail, pc = ctx.pc + 1)
 }
@@ -67,7 +67,8 @@ case class DynSub[-A](f: A => Buffer[Instruction]) extends Instruction
 
 case class FastFail[A](msggen: A=>String) extends Instruction
 {
-    override def apply(ctx: Context): Context = Fail(msggen(ctx.stack.head.asInstanceOf[A]))(ctx.copy(stack = ctx.stack.tail))
+    val msggen_ = msggen.asInstanceOf[Any => String]
+    override def apply(ctx: Context): Context = Fail(msggen_(ctx.stack.head))(ctx.copy(stack = ctx.stack.tail))
 }
 
 case class Fail(msg: String) extends Instruction
