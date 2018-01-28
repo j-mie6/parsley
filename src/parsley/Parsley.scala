@@ -18,7 +18,7 @@ class Parsley[+A](
     {
         // return x >>= f == f x
         case Push(x: A @unchecked) => new Parsley(instrs.init ++ f(x).instrs, subs)
-        case _ => new Parsley(instrs :+ DynSub[A](x => f(x).instrs), subs)
+        case _ => new Parsley(instrs :+ DynSub[A](x => f(x).instrs.toArray), subs)
     }
     def map[B](f: A => B): Parsley[B] = instrs.last match
     {
@@ -94,10 +94,10 @@ class Parsley[+A](
             case Push(y) => new Parsley(instrs.init ++ p.instrs.init :+ Perform[B, Any](x => f(x)(y)), subs ++ p.subs)
             case _ => new Parsley(instrs ++ p.instrs :+ Apply, subs ++ p.subs)
         }
-        case _ => p.instrs match
+        case _ => p.instrs.last match
         {
             // interchange law: u <*> pure y == ($y) <$> u
-            case Buffer(Push(x: B @unchecked)) => new Parsley(instrs :+ Perform[B => C, C](f => f(x)), subs ++ p.subs)
+            case Push(x: B @unchecked) => new Parsley(instrs ++ p.instrs.init :+ Perform[B => C, C](f => f(x)), subs ++ p.subs)
             case _ => new Parsley(instrs ++ p.instrs :+ Apply, subs ++ p.subs)
         }
     }
@@ -122,7 +122,7 @@ class Parsley[+A](
             //      (x *> y) <|> (x *> z) === x *> (y <|> z) without need of try
             // NOTE: Postfix optimisation is also correct
             //      (y *> x) <|> (z *> x) == (y <|> z) *> x, noting that y and z are necessarily impure but this always holds
-            case _ => new Parsley[A_]((InputCheck(instrs.size+1) +: instrs :+ JumpGood(q.instrs.size+1)) ++ q.instrs, subs ++ q.subs)
+            case _ => new Parsley[A_]((InputCheck(instrs.size+1) +: instrs :+ new JumpGood(q.instrs.size+1)) ++ q.instrs, subs ++ q.subs)
         }
     }
     @inline def </>[A_ >: A](x: A_): Parsley[A_] = this <|> pure(x)
@@ -145,7 +145,7 @@ object Parsley
     //{
     //    new Parsley(p.instrs ++ q.instrs :+ Lift(f), p.subs ++ q.subs)
     //}
-    def char(c: Char): Parsley[Char] = new Parsley(Buffer(CharTok(c)), Map.empty)
+    def char(c: Char): Parsley[Char] = new Parsley(Buffer(new CharTok(c)), Map.empty)
     def satisfy(f: Char => Boolean): Parsley[Char] = new Parsley(Buffer(Satisfies(f)), Map.empty)
     def string(s: String): Parsley[String] = new Parsley(Buffer(StringTok(s)), Map.empty)
     @inline

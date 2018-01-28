@@ -78,19 +78,19 @@ case class Call(x: String) extends Instruction
 {
     override def apply(ctx: Context): Context =
     {
-        ctx.instrss ::= (ctx.pc + 1, ctx.instrs)
+        ctx.calls ::= new Frame(ctx.pc + 1, ctx.instrs)
         ctx.instrs = ctx.subs(x)
         ctx.pc = 0
         ctx
     }
 }
 
-case class DynSub[-A](f: A => Buffer[Instruction]) extends Instruction
+case class DynSub[-A](f: A => InstructionBuffer) extends Instruction
 {
-    val g = f.asInstanceOf[Any => Buffer[Instruction]]
+    private[this] val g = f.asInstanceOf[Any => InstructionBuffer]
     override def apply(ctx: Context): Context = 
     {
-        ctx.instrss ::= (ctx.pc + 1, ctx.instrs)
+        ctx.calls ::= new Frame(ctx.pc + 1, ctx.instrs)
         ctx.instrs = g(ctx.stack.head)
         ctx.stack = ctx.stack.tail
         ctx.pc = 0
@@ -100,7 +100,7 @@ case class DynSub[-A](f: A => Buffer[Instruction]) extends Instruction
 
 case class FastFail[A](msggen: A=>String) extends Instruction
 {
-    val msggen_ = msggen.asInstanceOf[Any => String]
+    private[this] val msggen_ = msggen.asInstanceOf[Any => String]
     override def apply(ctx: Context): Context = 
     {
         val msg = msggen_(ctx.stack.head)
@@ -118,12 +118,12 @@ case class Fail(msg: String) extends Instruction
         {
             val (depth, handler) = ctx.handlers.head
             val diff = ctx.depth - depth - 1
-            val instrss = if (diff > 0) ctx.instrss.drop(diff) else ctx.instrss
+            val instrss = if (diff > 0) ctx.calls.drop(diff) else ctx.calls
             ctx.status = Recover
-            ctx.instrs = instrss.head._2
+            ctx.instrs = instrss.head.instrs
             ctx.pc = handler
             ctx.handlers = ctx.handlers.tail
-            ctx.instrss = instrss.tail
+            ctx.calls = instrss.tail
             ctx.depth = depth
             ctx
         }
@@ -203,12 +203,12 @@ case class JumpGood(label: Int) extends Instruction
             {
                 val (depth, handler) = ctx.handlers.head
                 val diff = ctx.depth - depth - 1
-                val instrss = if (diff > 0) ctx.instrss.drop(diff) else ctx.instrss
+                val instrss = if (diff > 0) ctx.calls.drop(diff) else ctx.calls
                 ctx.status = Recover
-                ctx.instrs = instrss.head._2
+                ctx.instrs = instrss.head.instrs
                 ctx.pc = handler
                 ctx.handlers = ctx.handlers.tail
-                ctx.instrss = instrss.tail
+                ctx.calls = instrss.tail
                 ctx.depth = depth
                 ctx
             }
@@ -223,9 +223,9 @@ case class JumpGood(label: Int) extends Instruction
     }
 }
 
-case class CharTok(c: Char) extends Instruction
+class CharTok(c: Char) extends Instruction
 {
-    val ac: Any = c
+    private[this] val ac: Any = c
     override def apply(ctx: Context): Context = ctx.input match
     {
         case `c`::input =>
@@ -240,12 +240,12 @@ case class CharTok(c: Char) extends Instruction
             {
                 val (depth, handler) = ctx.handlers.head
                 val diff = ctx.depth - depth - 1
-                val instrss = if (diff > 0) ctx.instrss.drop(diff) else ctx.instrss
+                val instrss = if (diff > 0) ctx.calls.drop(diff) else ctx.calls
                 ctx.status = Recover
-                ctx.instrs = instrss.head._2
+                ctx.instrs = instrss.head.instrs
                 ctx.pc = handler
                 ctx.handlers = ctx.handlers.tail
-                ctx.instrss = instrss.tail
+                ctx.calls = instrss.tail
                 ctx.depth = depth
                 ctx
             }
@@ -268,12 +268,12 @@ case class Satisfies(f: Char => Boolean) extends Instruction
             {
                 val (depth, handler) = ctx.handlers.head
                 val diff = ctx.depth - depth - 1
-                val instrss = if (diff > 0) ctx.instrss.drop(diff) else ctx.instrss
+                val instrss = if (diff > 0) ctx.calls.drop(diff) else ctx.calls
                 ctx.status = Recover
-                ctx.instrs = instrss.head._2
+                ctx.instrs = instrss.head.instrs
                 ctx.pc = handler
                 ctx.handlers = ctx.handlers.tail
-                ctx.instrss = instrss.tail
+                ctx.calls = instrss.tail
                 ctx.depth = depth
                 ctx
             }
@@ -282,8 +282,8 @@ case class Satisfies(f: Char => Boolean) extends Instruction
 
 case class StringTok(s: String) extends Instruction
 {
-    val ls = s.toList
-    val sz = s.size
+    private[this] val ls = s.toList
+    private[this] val sz = s.size
     override def apply(ctx: Context): Context = ctx.input match
     {
         case input if input.startsWith(ls) => 
@@ -298,12 +298,12 @@ case class StringTok(s: String) extends Instruction
             {
                 val (depth, handler) = ctx.handlers.head
                 val diff = ctx.depth - depth - 1
-                val instrss = if (diff > 0) ctx.instrss.drop(diff) else ctx.instrss
+                val instrss = if (diff > 0) ctx.calls.drop(diff) else ctx.calls
                 ctx.status = Recover
-                ctx.instrs = instrss.head._2
+                ctx.instrs = instrss.head.instrs
                 ctx.pc = handler
                 ctx.handlers = ctx.handlers.tail
-                ctx.instrss = instrss.tail
+                ctx.calls = instrss.tail
                 ctx.depth = depth
                 ctx
             }
@@ -325,10 +325,12 @@ object InstructionTests
         println(p)
         reset()
         println(runParser(p, "aaaab"))
+        val instrs = p.instrs.toArray
+        val subs = p.subs.map{case (k, v) => k -> v.toArray}
         val start = System.currentTimeMillis()
         val input = "aaaab".toList
         val sz = input.size
-        for (i <- 0 to 10000000) runParser(p, input, sz)
+        for (i <- 0 to 10000000) runParser(instrs, subs, input, sz)
         println(System.currentTimeMillis() - start)
     }
 }
