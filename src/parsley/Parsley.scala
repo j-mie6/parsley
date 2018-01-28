@@ -102,7 +102,7 @@ class Parsley[+A](
         }
     }
     @inline def <**>[B](f: Parsley[A => B]): Parsley[B] = lift2[A, A=>B, B]((x, f) => f(x), this, f)
-    @inline def <::>[A_ >: A](ps: Parsley[List[A_]]): Parsley[List[A_]] = lift2[A, List[A_], List[A_]](_::_, this, ps)
+    @inline def <::>[A_ >: A](ps: Parsley[List[A_]]): Parsley[List[A_]] = new Parsley(instrs ++ ps.instrs :+ Cons, subs ++ ps.subs)//lift2[A, List[A_], List[A_]](_::_, this, ps)
     def <|>[A_ >: A](q: Parsley[A_]): Parsley[A_] = instrs match
     {
         // pure results always succeed

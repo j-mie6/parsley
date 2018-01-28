@@ -76,10 +76,15 @@ case object Cons extends Instruction
 
 case class Call(x: String) extends Instruction
 {
+    var instrs: InstructionBuffer = null
     override def apply(ctx: Context): Context =
     {
         ctx.calls ::= new Frame(ctx.pc + 1, ctx.instrs)
-        ctx.instrs = ctx.subs(x)
+        ctx.instrs = if (instrs == null) 
+        {
+            instrs = ctx.subs(x)
+            instrs
+        } else instrs
         ctx.pc = 0
         ctx
     }
@@ -120,10 +125,13 @@ case class Fail(msg: String) extends Instruction
             val diff = ctx.depth - depth - 1
             val instrss = if (diff > 0) ctx.calls.drop(diff) else ctx.calls
             ctx.status = Recover
-            ctx.instrs = instrss.head.instrs
+            if (diff >= 0)
+            {
+                ctx.instrs = instrss.head.instrs
+                ctx.calls = instrss.tail
+            }
             ctx.pc = handler
             ctx.handlers = ctx.handlers.tail
-            ctx.calls = instrss.tail
             ctx.depth = depth
             ctx
         }
@@ -205,10 +213,13 @@ case class JumpGood(label: Int) extends Instruction
                 val diff = ctx.depth - depth - 1
                 val instrss = if (diff > 0) ctx.calls.drop(diff) else ctx.calls
                 ctx.status = Recover
-                ctx.instrs = instrss.head.instrs
+                if (diff >= 0)
+                {
+                    ctx.instrs = instrss.head.instrs
+                    ctx.calls = instrss.tail
+                }
                 ctx.pc = handler
                 ctx.handlers = ctx.handlers.tail
-                ctx.calls = instrss.tail
                 ctx.depth = depth
                 ctx
             }
@@ -242,10 +253,13 @@ class CharTok(c: Char) extends Instruction
                 val diff = ctx.depth - depth - 1
                 val instrss = if (diff > 0) ctx.calls.drop(diff) else ctx.calls
                 ctx.status = Recover
-                ctx.instrs = instrss.head.instrs
+                if (diff >= 0)
+                {
+                    ctx.instrs = instrss.head.instrs
+                    ctx.calls = instrss.tail
+                }
                 ctx.pc = handler
                 ctx.handlers = ctx.handlers.tail
-                ctx.calls = instrss.tail
                 ctx.depth = depth
                 ctx
             }
@@ -270,10 +284,13 @@ case class Satisfies(f: Char => Boolean) extends Instruction
                 val diff = ctx.depth - depth - 1
                 val instrss = if (diff > 0) ctx.calls.drop(diff) else ctx.calls
                 ctx.status = Recover
-                ctx.instrs = instrss.head.instrs
+                if (diff >= 0)
+                {
+                    ctx.instrs = instrss.head.instrs
+                    ctx.calls = instrss.tail
+                }
                 ctx.pc = handler
                 ctx.handlers = ctx.handlers.tail
-                ctx.calls = instrss.tail
                 ctx.depth = depth
                 ctx
             }
@@ -300,10 +317,13 @@ case class StringTok(s: String) extends Instruction
                 val diff = ctx.depth - depth - 1
                 val instrss = if (diff > 0) ctx.calls.drop(diff) else ctx.calls
                 ctx.status = Recover
-                ctx.instrs = instrss.head.instrs
+                if (diff >= 0)
+                {
+                    ctx.instrs = instrss.head.instrs
+                    ctx.calls = instrss.tail
+                }
                 ctx.pc = handler
                 ctx.handlers = ctx.handlers.tail
-                ctx.calls = instrss.tail
                 ctx.depth = depth
                 ctx
             }
