@@ -12,87 +12,158 @@ trait Instruction
 case class Perform[-A, +B](f: A => B) extends Instruction
 {
     val g = f.asInstanceOf[Function[Any, Any]] 
-    override def apply(ctx: Context): Context = ctx.copy(stack = g(ctx.stack.head)::ctx.stack.tail, pc = ctx.pc + 1)
+    override def apply(ctx: Context): Context =
+    {
+        ctx.stack = g(ctx.stack.head)::ctx.stack.tail 
+        ctx.pc += 1
+        ctx
+    }
     override def toString: String = "Perform(f)"
 }
 
 case class Push[A](x: A) extends Instruction
 {
-    override def apply(ctx: Context): Context = ctx.copy(stack = x::ctx.stack, pc = ctx.pc + 1)
+    override def apply(ctx: Context): Context =
+    {
+        ctx.stack ::= x
+        ctx.pc += 1
+        ctx
+    }
 }
 
 case object Pop extends Instruction
 {
-    override def apply(ctx: Context): Context = ctx.copy(stack = ctx.stack.tail, pc = ctx.pc + 1)
+    override def apply(ctx: Context): Context =
+    {
+        ctx.stack = ctx.stack.tail
+        ctx.pc += 1
+        ctx
+    }
 }
 
 case class Exchange[A](x: A) extends Instruction
 {
-    override def apply(ctx: Context): Context = ctx.copy(stack = x::ctx.stack.tail, pc = ctx.pc + 1)
+    override def apply(ctx: Context): Context =
+    {
+        ctx.stack = x::ctx.stack.tail
+        ctx.pc += 1
+        ctx
+    }
 }
 
 case object Apply extends Instruction
 {
     override def apply(ctx: Context): Context =
     {
-        val f = ctx.stack.tail.head.asInstanceOf[Function[A forSome {type A}, B forSome {type B}]]
-        ctx.copy(stack = f(ctx.stack.head)::ctx.stack.tail.tail, pc = ctx.pc + 1)
+        val stacktail = ctx.stack.tail
+        val f = stacktail.head.asInstanceOf[Function[A forSome {type A}, B forSome {type B}]]
+        ctx.stack = f(ctx.stack.head)::stacktail.tail
+        ctx.pc += 1
+        ctx
     }
 }
 
-// Unlike lift, this instruction is beneficial, but we'll wait to use it!
 case object Cons extends Instruction
 {
-    override def apply(ctx: Context): Context = ctx.copy(stack = (ctx.stack.tail.head::ctx.stack.head.asInstanceOf[List[_]])::ctx.stack.tail.tail, pc = ctx.pc + 1)
+    override def apply(ctx: Context): Context =
+    {
+        val stacktail = ctx.stack.tail
+        ctx.stack = (stacktail.head::ctx.stack.head.asInstanceOf[List[_]])::stacktail.tail
+        ctx.pc += 1
+        ctx
+    }
 }
-
-// This instruction seems to be slower than f <#> p <*> q, how strange!
-/*case class Lift[-A, -B, +C](f: (A, B) => C) extends Instruction
-{
-    val g = f.asInstanceOf[(Any, Any) => Any]
-    override def apply(ctx: Context): Context = ctx.copy(stack = g(ctx.stack.tail.head, ctx.stack.head)::ctx.stack.tail.tail, pc = ctx.pc + 1)
-    override def toString: String = "Lift(f)"
-}*/
 
 case class Call(x: String) extends Instruction
 {
-    override def apply(ctx: Context): Context = ctx.copy(instrss = (ctx.subs(x) :+ Return(ctx.pc))::ctx.instrss, pc = 0)
+    override def apply(ctx: Context): Context =
+    {
+        ctx.instrss ::= (ctx.pc + 1, ctx.instrs)
+        ctx.instrs = ctx.subs(x)
+        ctx.pc = 0
+        ctx
+    }
 }
 
 case class DynSub[-A](f: A => Buffer[Instruction]) extends Instruction
 {
     val g = f.asInstanceOf[Any => Buffer[Instruction]]
-    override def apply(ctx: Context): Context = ctx.copy(stack = ctx.stack.tail, instrss = (g(ctx.stack.head) :+ Return(ctx.pc))::ctx.instrss, pc = 0)
+    override def apply(ctx: Context): Context = 
+    {
+        ctx.instrss ::= (ctx.pc + 1, ctx.instrs)
+        ctx.instrs = g(ctx.stack.head)
+        ctx.stack = ctx.stack.tail
+        ctx.pc = 0
+        ctx
+    }
 }
 
 case class FastFail[A](msggen: A=>String) extends Instruction
 {
     val msggen_ = msggen.asInstanceOf[Any => String]
-    override def apply(ctx: Context): Context = Fail(msggen_(ctx.stack.head))(ctx.copy(stack = ctx.stack.tail))
+    override def apply(ctx: Context): Context = 
+    {
+        val msg = msggen_(ctx.stack.head)
+        ctx.stack = ctx.stack.tail
+        new Fail(msg)(ctx)
+    }
 }
 
 case class Fail(msg: String) extends Instruction
 {
     override def apply(ctx: Context): Context =
     {
-        if (ctx.handlers.isEmpty) return ctx.copy(status = Failed)
-        val (depth, handler) = ctx.handlers.head
-        val handlers = ctx.handlers.tail
-        val instrss = ctx.instrss
-        val diff = instrss.size - depth
-        ctx.copy(status = Recover, pc = handler, handlers = handlers, instrss = if (diff > 0) instrss.drop(diff) else instrss)
+        if (ctx.handlers.isEmpty) {ctx.status = Failed; ctx}
+        else
+        {
+            val (depth, handler) = ctx.handlers.head
+            val diff = ctx.depth - depth - 1
+            val instrss = if (diff > 0) ctx.instrss.drop(diff) else ctx.instrss
+            ctx.status = Recover
+            ctx.instrs = instrss.head._2
+            ctx.pc = handler
+            ctx.handlers = ctx.handlers.tail
+            ctx.instrss = instrss.tail
+            ctx.depth = depth
+            ctx
+        }
     }
 }
 
 case class TryBegin(handler: Int) extends Instruction
 {
-    override def apply(ctx: Context): Context = ctx.copy(pc = ctx.pc + 1, handlers = (ctx.instrss.size, handler)::ctx.handlers)
+    override def apply(ctx: Context): Context = 
+    {
+        ctx.handlers ::= (ctx.depth, handler + ctx.pc)
+        ctx.inputs ::= ctx.input
+        ctx.pc += 1
+        ctx
+    }
 }
 
 case object TryEnd extends Instruction
 {
-    //TODO: Need restorative properties in case of failure
-    override def apply(ctx: Context): Context = ctx.copy(pc = ctx.pc + 1, handlers = ctx.handlers.tail, status = Good)
+    override def apply(ctx: Context): Context = 
+    {
+        // Remove the recovery input from the stack, it isn't needed anymore
+        if (ctx.status == Good)
+        {
+            ctx.inputs = ctx.inputs.tail
+            ctx.handlers = ctx.handlers.tail
+            ctx.pc += 1
+            ctx
+        }
+        // Pop input off head to recover
+        else
+        {
+            ctx.input = ctx.inputs.head
+            ctx.inputs = ctx.inputs.tail
+            ctx.status = Good
+            ctx.inputsz = ctx.input.size
+            ctx.pc += 1
+            ctx
+        }
+    }
 }
 
 //NOTE: If we implement this instruction in the future, we cannot use labels with it
@@ -104,71 +175,138 @@ case object TryEnd extends Instruction
 
 case class InputCheck(handler: Int) extends Instruction
 {
-    override def apply(ctx: Context): Context = ctx.copy(pc = ctx.pc + 1, handlers = (ctx.instrss.size, handler)::ctx.handlers)
+    override def apply(ctx: Context): Context =
+    {
+        ctx.checkStack ::= ctx.inputsz
+        ctx.handlers ::= (ctx.depth, handler + ctx.pc)
+        ctx.pc += 1
+        ctx
+    }
 }
 
 case class JumpGood(label: Int) extends Instruction
 {
-    // We need to assume that the line number was resolved
-    // TODO: This must change, if input is not consumed, then jump, else fail to next handler
-    override def apply(ctx: Context): Context = ??? //ctx.copy(pc = if (ctx.status > 0) ctx.pc + 1 else label)
-}
-
-case class Return(ret: Int) extends Instruction
-{
-    override def apply(ctx: Context): Context = ctx.copy(pc = ret+1, instrss = ctx.instrss.tail)
-}
-
-// This should mostly not affect the state of the interpreter
-case class Label(x: Int) extends Instruction
-{
-    // Labels should not be executed, they SHOULD be removed from the bytecode
-    override def apply(ctx: Context): Context = ???
+    override def apply(ctx: Context): Context = 
+    {
+        if (ctx.status == Good)
+        {
+            ctx.handlers = ctx.handlers.tail
+            ctx.checkStack = ctx.checkStack.tail
+            ctx.pc += label
+            ctx
+        }
+        // If the head of input stack is not the same size as the head of check stack, we fail to next handler
+        else if (ctx.inputsz != ctx.checkStack.head)
+        {
+            if (ctx.handlers.isEmpty) { ctx.status = Failed; ctx }
+            else
+            {
+                val (depth, handler) = ctx.handlers.head
+                val diff = ctx.depth - depth - 1
+                val instrss = if (diff > 0) ctx.instrss.drop(diff) else ctx.instrss
+                ctx.status = Recover
+                ctx.instrs = instrss.head._2
+                ctx.pc = handler
+                ctx.handlers = ctx.handlers.tail
+                ctx.instrss = instrss.tail
+                ctx.depth = depth
+                ctx
+            }
+        }
+        else 
+        {
+            ctx.checkStack = ctx.checkStack.tail
+            ctx.status = Good
+            ctx.pc += 1
+            ctx
+        }
+    }
 }
 
 case class CharTok(c: Char) extends Instruction
 {
-    override def apply(ctx: Context): Context = ctx.inputs match
+    val ac: Any = c
+    override def apply(ctx: Context): Context = ctx.input match
     {
-        case (`c`::input)::inputs => ctx.copy(pc = ctx.pc + 1, stack = c::ctx.stack, inputs = input::inputs)
+        case `c`::input =>
+            ctx.stack ::= ac
+            ctx.inputsz -= 1
+            ctx.input = input
+            ctx.pc += 1
+            ctx
         case inputs =>
-            if (ctx.handlers.isEmpty) return ctx.copy(status = Failed)
-            val (depth, handler) = ctx.handlers.head
-            val handlers = ctx.handlers.tail
-            val instrss = ctx.instrss
-            val diff = instrss.size - depth
-            ctx.copy(status = Recover, pc = handler, handlers = handlers, instrss = if (diff > 0) instrss.drop(diff) else instrss)
+            if (ctx.handlers.isEmpty) { ctx.status = Failed; ctx }
+            else
+            {
+                val (depth, handler) = ctx.handlers.head
+                val diff = ctx.depth - depth - 1
+                val instrss = if (diff > 0) ctx.instrss.drop(diff) else ctx.instrss
+                ctx.status = Recover
+                ctx.instrs = instrss.head._2
+                ctx.pc = handler
+                ctx.handlers = ctx.handlers.tail
+                ctx.instrss = instrss.tail
+                ctx.depth = depth
+                ctx
+            }
     }
 }
 
 case class Satisfies(f: Char => Boolean) extends Instruction
 {
-    override def apply(ctx: Context): Context = ctx.inputs match
+    override def apply(ctx: Context): Context = ctx.input match
     {
-        case (c::input)::inputs if f(c) => ctx.copy(pc = ctx.pc + 1, stack = c::ctx.stack, inputs = input::inputs)
-        case inputs =>
-            if (ctx.handlers.isEmpty) return ctx.copy(status = Failed)
-            val (depth, handler) = ctx.handlers.head
-            val handlers = ctx.handlers.tail
-            val instrss = ctx.instrss
-            val diff = instrss.size - depth
-            ctx.copy(status = Recover, pc = handler, handlers = handlers, instrss = if (diff > 0) instrss.drop(diff) else instrss)
+        case c::input if f(c) => 
+            ctx.stack ::= c
+            ctx.inputsz -= 1
+            ctx.input = input
+            ctx.pc += 1
+            ctx
+        case input =>
+            if (ctx.handlers.isEmpty) { ctx.status = Failed; ctx }
+            else
+            {
+                val (depth, handler) = ctx.handlers.head
+                val diff = ctx.depth - depth - 1
+                val instrss = if (diff > 0) ctx.instrss.drop(diff) else ctx.instrss
+                ctx.status = Recover
+                ctx.instrs = instrss.head._2
+                ctx.pc = handler
+                ctx.handlers = ctx.handlers.tail
+                ctx.instrss = instrss.tail
+                ctx.depth = depth
+                ctx
+            }
     }
 }
 
 case class StringTok(s: String) extends Instruction
 {
     val ls = s.toList
-    override def apply(ctx: Context): Context = ctx.inputs match
+    val sz = s.size
+    override def apply(ctx: Context): Context = ctx.input match
     {
-        case input::inputs if input.startsWith(ls) => ctx.copy(pc = ctx.pc + 1, stack = s::ctx.stack, inputs = input.drop(s.size)::inputs)
+        case input if input.startsWith(ls) => 
+            ctx.stack ::= s
+            ctx.input = input.drop(sz)
+            ctx.inputsz -= sz
+            ctx.pc += 1
+            ctx
         case inputs =>
-            if (ctx.handlers.isEmpty) return ctx.copy(status = Failed)
-            val (depth, handler) = ctx.handlers.head
-            val handlers = ctx.handlers.tail
-            val instrss = ctx.instrss
-            val diff = instrss.size - depth
-            ctx.copy(status = Recover, pc = handler, handlers = handlers, instrss = if (diff > 0) instrss.drop(diff) else instrss)
+            if (ctx.handlers.isEmpty) { ctx.status = Failed; ctx }
+            else
+            {
+                val (depth, handler) = ctx.handlers.head
+                val diff = ctx.depth - depth - 1
+                val instrss = if (diff > 0) ctx.instrss.drop(diff) else ctx.instrss
+                ctx.status = Recover
+                ctx.instrs = instrss.head._2
+                ctx.pc = handler
+                ctx.handlers = ctx.handlers.tail
+                ctx.instrss = instrss.tail
+                ctx.depth = depth
+                ctx
+            }
     }
 }
 
@@ -176,20 +314,21 @@ object InstructionTests
 {
     def main(args: Array[String]): Unit =
     {
-        println(Apply(Push(20)(Perform[Int, Int=>Int](x => y => x + y)(Push(10)(Context(Nil, Nil, Nil, Nil, Map.empty, Good, Nil, 0))))))
-        println(Apply(Push(20)(Apply(Push(10)(Push[Int=>Int=>Int](x => y => x + y)(Context(Nil, Nil, Nil, Nil, Map.empty, Good, Nil, 0)))))))
+        //Console.in.read()
+        //println(Apply(Push(20)(Perform[Int, Int=>Int](x => y => x + y)(Push(10)(Context(Nil, Nil, Nil, Nil, Map.empty, Good, Nil, 0))))))
+        //println(Apply(Push(20)(Apply(Push(10)(Push[Int=>Int=>Int](x => y => x + y)(Context(Nil, Nil, Nil, Nil, Map.empty, Good, Nil, 0)))))))
         import parsley.Parsley._
         //val p = lift2[Char, Char, String]((x, y) => x.toString + y.toString, 'a', 'b')
-        val p = 'a' <::> ('b' #> Nil)
+        //val p = 'a' <::> ('b' #> Nil)
         //val p = 'a' *> 'b' #> "ab"
+        val p = many('a') <* 'b'
         println(p)
-        val q = optimise(p)
         reset()
-        println(q)
-        println(runParser(q, "ab"))
+        println(runParser(p, "aaaab"))
         val start = System.currentTimeMillis()
-        val input = "ab".toList
-        for (i <- 0 to 10000000) runParser(q, input)
+        val input = "aaaab".toList
+        val sz = input.size
+        for (i <- 0 to 10000000) runParser(p, input, sz)
         println(System.currentTimeMillis() - start)
     }
 }

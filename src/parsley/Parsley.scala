@@ -122,11 +122,7 @@ class Parsley[+A](
             //      (x *> y) <|> (x *> z) === x *> (y <|> z) without need of try
             // NOTE: Postfix optimisation is also correct
             //      (y *> x) <|> (z *> x) == (y <|> z) *> x, noting that y and z are necessarily impure but this always holds
-            case _ =>
-                val goodLabel = nextLabel+1
-                val handler = nextLabel+2
-                nextLabel += 2
-                new Parsley[A_]((InputCheck(handler) +: instrs :+ Label(handler) :+ JumpGood(goodLabel)) ++ q.instrs :+ Label(goodLabel), subs ++ q.subs)
+            case _ => new Parsley[A_]((InputCheck(instrs.size+1) +: instrs :+ JumpGood(q.instrs.size+1)) ++ q.instrs, subs ++ q.subs)
         }
     }
     @inline def </>[A_ >: A](x: A_): Parsley[A_] = this <|> pure(x)
@@ -143,11 +139,7 @@ object Parsley
     def fail[A](msg: String): Parsley[A] = new Parsley[A](Buffer(Fail(msg)), Map.empty)
     def fail[A](msggen: Parsley[A], finaliser: A => String): Parsley[A] =  new Parsley[A](msggen.instrs :+ FastFail(finaliser), msggen.subs)
     def empty[A]: Parsley[A] = fail("unknown error")
-    def tryParse[A](p: Parsley[A]): Parsley[A] =
-    {
-        nextLabel += 1
-        new Parsley(TryBegin(nextLabel) +: p.instrs :+ Label(nextLabel) :+ TryEnd, p.subs)
-    }
+    def tryParse[A](p: Parsley[A]): Parsley[A] = new Parsley(TryBegin(p.instrs.size+1) +: p.instrs :+ TryEnd, p.subs)
     @inline def lift2[A, B, C](f: (A, B) => C, p: Parsley[A], q: Parsley[B]): Parsley[C] = p.map(x => (y: B) => f(x, y)) <*> q
     //def lift2[A, B, C](f: (A, B) => C, p: Parsley[A], q: Parsley[B]): Parsley[C] = 
     //{
@@ -171,35 +163,29 @@ object Parsley
     {
         p.flatMap(x => if (pred(x)) pure(x) else fail(pure(x), msggen))
     }
+    
+    def many[A](p: Parsley[A]): Parsley[List[A]] = s"many(${p.instrs})" <%> (p <::> many(p) </> Nil)//(some(p) </> Nil)
+    def some[A](p: Parsley[A]): Parsley[List[A]] = s"some(${p.instrs})" <%> (p <::> many(p))
 
     var knotScope: Set[String] = Set.empty
-    var nextLabel: Int = -1
     def reset(): Unit =
     {
         knotScope = Set.empty
-        nextLabel = -1
     }
     def knot[A](name: String, p_ : =>Parsley[A]): Parsley[A] =
     {
-        // TODO: We need to consider what happens with labels, really they need to be set to 0 for this
-        // I.e. This should behave more like a reader monad, not state... Difficult to achieve though
         lazy val p = p_
         if (knotScope.contains(name)) new Parsley(Buffer(Call(name)), Map.empty)
         else
         {
             knotScope += name
-            // FIXME: This doesn't work properly due to inlining... We need to work out a better way around this...
-            // This should be fine, p is a lazy value, so it would have been forced until next lines
-            val curLabel = nextLabel
-            nextLabel = -1
             // Perform inline expansion optimisation, reduce to minimum knot-tie
+            // FIXME: This does not retrofix any labels!
             val instrs = p.instrs.flatMap
             {
-                // Inlining is disabled whilst current label management is in force
                 //case Call(name_) if name != name_ && p.subs.contains(name_) => p.subs(name_)
                 case instr => Vector(instr)
             }
-            nextLabel = curLabel
             new Parsley(Buffer(Call(name)), p.subs + (name -> instrs))
         }
     }
@@ -214,26 +200,11 @@ object Parsley
         def <#>(p: Parsley[A]): Parsley[B] = p.map(f)
     }
 
-    def optimise[A](p: Parsley[A]): Parsley[A] =
+    //FIXME DO NOT USE
+    /*def optimise[A](p: Parsley[A]): Parsley[A] =
     {
         val instrs = p.instrs
         val subs = p.subs
-        /*
-        Removing Labels;
-            Ideally we want to remove labels in a single pass in O(n).
-            However, don't know the index because we don't know how many
-            further labels there are behind the invokation point.
-            Potentially we do however, it might be the label's number itself?
-            If we can make that so it is indeed the case then the rest of this
-            work becomes trivial...
-
-            I believe this to *currently* be the case;
-                <|> is the only combinator that injects labels, but consider
-                p <|> q, then p and q are compiled in that order then the label
-                is injected, hence P; Q; LABEL. Even if P and Q themselves
-                contained labels, they would claim a lower number, with p taking
-                precedences.
-         */
         @tailrec
         // This might be very slow, it might be best to convert to vectors before we remove each element?
         def process(instrs: Buffer[Instruction],
@@ -246,22 +217,21 @@ object Parsley
             case instrs :+ JumpGood(x) => process(instrs, labels, processed :+ JumpGood(labels(x)))
             case instrs :+ InputCheck(handler) => process(instrs, labels, processed :+ InputCheck(labels(handler)))
             case instrs :+ TryBegin(handler) => process(instrs, labels, processed :+ TryBegin(labels(handler)))
+            // This peephole is currently disabled, until we can retroactively repair jumps from peephole
             case instrs :+ Pop :+ Push(x) => process(instrs, labels, processed :+ Exchange(x))
             case instrs :+ instr => process(instrs, labels, processed :+ instr)
             case Buffer() => processed.reverse
         }
         new Parsley(process(instrs), subs.mapValues(process(_)))
-    }
+    }*/
 
     def inf: Parsley[Int] = "inf" <%> inf.map[Int](_+1).map[Int](_+2)
     def expr: Parsley[Int] = "expr" <%> (pure[Int=>Int=>Int](x => y => x + y) <*> pure[Int](10) <*> expr)
     def monad: Parsley[Int] = for (x <- pure[Int](10); y <- pure[Int](20)) yield x + y
     def foo: Parsley[Int] = "foo" <%> (bar <* pure(20))
     def bar: Parsley[Int] = "bar" <%> (foo *> pure(10))
-    def many[A](p: Parsley[A]): Parsley[List[A]] = s"many(${p.instrs})" <%> (some(p) </> Nil)
     def sepEndBy1[A, B](p: Parsley[A], sep: Parsley[B]): Parsley[List[A]] = s"sepEndBy1" <%> (p <::> ((sep >> sepEndBy(p, sep)) </> Nil))
     def sepEndBy[A, B](p: Parsley[A], sep: Parsley[B]): Parsley[List[A]] = s"sepEndBy" <%> (sepEndBy1(p, sep) </> Nil)
-    def some[A](p: Parsley[A]): Parsley[List[A]] = s"some(${p.instrs})" <%> (p <::> many(p))
     def repeat[A](n: Int, p: Parsley[A]): Parsley[List[A]] =
         if (n > 0) p <::> repeat(n-1, p)
         else pure(Nil)
@@ -278,9 +248,9 @@ object Parsley
         reset()
         println(foo)
         reset()
-        println(optimise(many(pure[Int](10))))
+        println(many(pure[Int](10)))
         reset()
-        println(optimise(sepEndBy('x', 'a')))
+        println(sepEndBy('x', 'a'))
         reset()
         println(repeat(10, pure[Unit](())))
         reset()
