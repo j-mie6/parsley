@@ -14,6 +14,8 @@ class Parsley[+A](
     // The subroutines currently collected by the compilation
     val subs: Map[String, Buffer[Instruction]])
 {
+    lazy val instrs_ : Array[Instruction] = instrs.toArray
+    lazy val subs_ : Map[String, Array[Instruction]] = subs.map{ case (k, v) => k -> v.toArray}
     def flatMap[B](f: A => Parsley[B]): Parsley[B] = instrs.last match
     {
         // return x >>= f == f x
@@ -166,7 +168,7 @@ object Parsley
     
     def many[A](p: Parsley[A]): Parsley[List[A]] = //s"many(${p.instrs})" <%> (p <::> many(p) </> Nil)
     {
-        new Parsley(InputCheck(p.instrs.size+1) +: p.instrs :+ Many[A](-p.instrs.size), p.subs)
+        new Parsley(InputCheck(p.instrs.size+1) +: p.instrs :+ new Many[A](-p.instrs.size), p.subs)
     }
 
     def some[A](p: Parsley[A]): Parsley[List[A]] = p <::> many(p)

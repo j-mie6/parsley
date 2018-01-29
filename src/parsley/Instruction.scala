@@ -133,8 +133,8 @@ case class TryBegin(handler: Int) extends Instruction
 {
     override def apply(ctx: Context): Unit = 
     {
-        ctx.handlers ::= (ctx.depth, handler + ctx.pc, ctx.stacksz)
-        ctx.inputs ::= ctx.input
+        ctx.handlers ::= new Handler(ctx.depth, handler + ctx.pc, ctx.stacksz)
+        ctx.inputs ::= new InputCache(ctx.inputsz, ctx.input)
         ctx.pc += 1
     }
 }
@@ -151,14 +151,16 @@ case object TryEnd extends Instruction
             ctx.handlers = ctx.handlers.tail
             ctx.pc += 1
         }
-        // Pop input off head to recover
+        // Pop input off head then fail to next handler
         else
         {
-            ctx.input = ctx.inputs.head
+            //ctx.status = Good
+            val cache = ctx.inputs.head
+            ctx.input = cache.input
             ctx.inputs = ctx.inputs.tail
-            ctx.status = Good
-            ctx.inputsz = ctx.input.size
-            ctx.pc += 1
+            ctx.inputsz = cache.sz
+            ctx.fail()
+            //ctx.pc += 1
         }
     }
 }
@@ -168,7 +170,7 @@ case class InputCheck(handler: Int) extends Instruction
     override def apply(ctx: Context): Unit =
     {
         ctx.checkStack ::= ctx.inputsz
-        ctx.handlers ::= (ctx.depth, handler + ctx.pc, ctx.stacksz)
+        ctx.handlers ::= new Handler(ctx.depth, handler + ctx.pc, ctx.stacksz)
         ctx.pc += 1
     }
 }
@@ -194,7 +196,7 @@ case class JumpGood(label: Int) extends Instruction
     }
 }
 
-case class Many[A](label: Int) extends Instruction
+class Many[A](label: Int) extends Instruction
 {
     var acc: List[A] = Nil
     override def apply(ctx: Context): Unit = 
@@ -221,7 +223,7 @@ case class Many[A](label: Int) extends Instruction
     }
 }
 
-class CharTok(c: Char) extends Instruction
+case class CharTok(c: Char) extends Instruction
 {
     private[this] val ac: Any = c
     override def apply(ctx: Context): Unit = ctx.input match
@@ -277,16 +279,14 @@ object InstructionTests
         //val p = lift2[Char, Char, String]((x, y) => x.toString + y.toString, 'a', 'b')
         //val p = 'a' <::> ('b' #> Nil)
         //val p = 'a' *> 'b' #> "ab"
-        val p = many('a') <* 'b'
+        val p = many(tryParse('a')) <* 'b'
         println(p)
         reset()
         println(runParser(p, "aaaab"))
-        val instrs = p.instrs.toArray
-        val subs = p.subs.map{case (k, v) => k -> v.toArray}
         val start = System.currentTimeMillis()
         val input = "aaaab".toList
         val sz = input.size
-        for (i <- 0 to 10000000) runParser(instrs, subs, input, sz)
+        for (i <- 0 to 10000000) runParser(p, input, sz)
         println(System.currentTimeMillis() - start)
     }
 }
