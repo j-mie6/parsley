@@ -174,13 +174,6 @@ case object TryEnd extends Instruction
     }
 }
 
-//NOTE: If we implement this instruction in the future, we cannot use labels with it
-//      for optimisation purposes all labels are forward jumps this means we can
-//      resolve all label addresses in a single backwards pass during optimisation.
-//      Instead, we need to ensure that we calculate the backwards offset immediately
-//      at compile-time.
-//case class Many(x: Int) extends Instruction
-
 case class InputCheck(handler: Int) extends Instruction
 {
     override def apply(ctx: Context): Context =
@@ -231,6 +224,49 @@ case class JumpGood(label: Int) extends Instruction
             ctx.pc += 1
             ctx
         }
+    }
+}
+
+// TODO: Work out how this actually works!
+case class Many(label: Int) extends Instruction
+{
+    override def apply(ctx: Context): Context = 
+    {/*
+        if (ctx.status == Good)
+        {
+            ctx.handlers = ctx.handlers.tail
+            ctx.checkStack = ctx.checkStack.tail
+            ctx.pc += label
+            ctx
+        }
+        // If the head of input stack is not the same size as the head of check stack, we fail to next handler
+        else if (ctx.inputsz != ctx.checkStack.head)
+        {
+            if (ctx.handlers.isEmpty) { ctx.status = Failed; ctx }
+            else
+            {
+                val (depth, handler) = ctx.handlers.head
+                val diff = ctx.depth - depth - 1
+                val instrss = if (diff > 0) ctx.calls.drop(diff) else ctx.calls
+                ctx.status = Recover
+                if (diff >= 0)
+                {
+                    ctx.instrs = instrss.head.instrs
+                    ctx.calls = instrss.tail
+                }
+                ctx.pc = handler
+                ctx.handlers = ctx.handlers.tail
+                ctx.depth = depth
+                ctx
+            }
+        }
+        else 
+        {
+            ctx.checkStack = ctx.checkStack.tail
+            ctx.status = Good
+            ctx.pc += 1*/
+            ctx
+        //}
     }
 }
 
