@@ -12,7 +12,7 @@ package object parsley
     class Frame(val ret: ProgramCounter, val instrs: InstructionBuffer)
     type CallStack = List[Frame]
     type Depth = Int
-    type HandlerStack = List[(Depth, ProgramCounter)]
+    type HandlerStack = List[(Depth, ProgramCounter, Int)]
     type Input = List[Char]
     type InputStack = List[Input]
     
@@ -27,6 +27,7 @@ package object parsley
                   var input: Input,
                   var inputs: InputStack,
                   var inputsz: Int,
+                  var stacksz: Int,
                   var checkStack: List[Int],
                   val subs: Map[String, InstructionBuffer],
                   var status: Status,
@@ -36,13 +37,35 @@ package object parsley
    {
        override def toString(): String = 
        {
-           s"[\n  stack=[${stack.mkString(", ")}]\n  instrs=${instrs.mkString("; ")}\n  inputs=${inputs.map(_.mkString).mkString(", ")}\n  status=$status\n  pc=$pc\n  depth=$depth\n  rets=${calls.map(_.ret).mkString(", ")}\n  handlers=$handlers\n]"
+           s"[\n  stack=[${stack.mkString(", ")}]\n  instrs=${instrs.mkString("; ")}\n  inputs=${input.mkString(", ")}\n  status=$status\n  pc=$pc\n  depth=$depth\n  rets=${calls.map(_.ret).mkString(", ")}\n  handlers=$handlers\n]"
+       }
+
+       def fail() =
+       {
+           if (handlers.isEmpty) { status = Failed; this }
+           else
+           {
+               val (depth_, handler, stacksz_) = handlers.head
+               val diff = depth - depth_ - 1
+               val calls_ = if (diff > 0) calls.drop(diff) else calls
+               status = Recover
+               if (diff >= 0)
+               {
+                   instrs = calls_.head.instrs
+                   calls = calls_.tail
+               }
+               pc = handler
+               handlers = handlers.tail
+               stack = stack.drop(stacksz - stacksz_)
+               stacksz = stacksz_
+               depth = depth_
+           }
        }
    }
 
     def runParser[A](p: Parsley[A], input: String): Result[A] = runParser[A](p, input.toList, input.size)
-    def runParser[A](p: Parsley[A], input: List[Char], sz: Int): Result[A] = runParser_[A](new Context(Nil, p.instrs.toArray, Nil, input, Nil, sz, Nil, p.subs.map{ case (k, v) => k -> v.toArray}, Good, Nil, 0, 0))
-    def runParser[A](instrs: InstructionBuffer, subs: Map[String, InstructionBuffer], input: List[Char], sz: Int) = runParser_[A](new Context(Nil, instrs, Nil, input, Nil, sz, Nil, subs, Good, Nil, 0, 0))
+    def runParser[A](p: Parsley[A], input: List[Char], sz: Int): Result[A] = runParser_[A](new Context(Nil, p.instrs.toArray, Nil, input, Nil, sz, 0, Nil, p.subs.map{ case (k, v) => k -> v.toArray}, Good, Nil, 0, 0))
+    def runParser[A](instrs: InstructionBuffer, subs: Map[String, InstructionBuffer], input: List[Char], sz: Int) = runParser_[A](new Context(Nil, instrs, Nil, input, Nil, sz, 0, Nil, subs, Good, Nil, 0, 0))
     
     sealed trait Result[A]
     case class Success[A](x: A) extends Result[A]
@@ -51,13 +74,17 @@ package object parsley
     @tailrec
     def runParser_[A](ctx: Context): Result[A] =
     {
-        //println(ctx)
+        println(ctx)
         if (ctx.status == Failed) return Failure("Unknown error")
         val pc = ctx.pc
         val instrs = ctx.instrs
-        if (pc < instrs.length) runParser_[A](instrs(pc)(ctx))
+        if (pc < instrs.length)
+        {
+            instrs(pc)(ctx)
+            runParser_[A](ctx)
+        }
         else if (ctx.calls.isEmpty) Success(ctx.stack.head.asInstanceOf[A])
-        else 
+        else
         {
             val frame = ctx.calls.head
             ctx.instrs = frame.instrs

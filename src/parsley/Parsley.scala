@@ -164,7 +164,11 @@ object Parsley
         p.flatMap(x => if (pred(x)) pure(x) else fail(pure(x), msggen))
     }
     
-    def many[A](p: Parsley[A]): Parsley[List[A]] = s"many(${p.instrs})" <%> (p <::> many(p) </> Nil)
+    def many[A](p: Parsley[A]): Parsley[List[A]] = //s"many(${p.instrs})" <%> (p <::> many(p) </> Nil)
+    {
+        new Parsley(InputCheck(p.instrs.size+1) +: p.instrs :+ Many[A](-p.instrs.size), p.subs)
+    }
+
     def some[A](p: Parsley[A]): Parsley[List[A]] = p <::> many(p)
 
     var knotScope: Set[String] = Set.empty
