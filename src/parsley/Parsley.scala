@@ -166,9 +166,14 @@ object Parsley
         p.flatMap(x => if (pred(x)) pure(x) else fail(pure(x), msggen))
     }
     
-    def many[A](p: Parsley[A]): Parsley[List[A]] = //s"many(${p.instrs})" <%> (p <::> many(p) </> Nil)
+    def many[A](p: Parsley[A]): Parsley[List[A]] =
     {
         new Parsley(new InputCheck(p.instrs.size+1) +: p.instrs :+ new Many[A](-p.instrs.size), p.subs)
+    }
+
+    def skipMany[A](p: Parsley[A]): Parsley[Unit] =
+    {
+        new Parsley(new InputCheck(p.instrs.size+1) +: p.instrs :+ new SkipMany(-p.instrs.size) :+ Push(()), p.subs)
     }
 
     def some[A](p: Parsley[A]): Parsley[List[A]] = p <::> many(p)
