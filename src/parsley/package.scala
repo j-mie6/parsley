@@ -9,35 +9,35 @@ package object parsley
     type ProgramCounter = Int
     type InstructionBuffer = Array[Instruction]
     class Frame(val ret: ProgramCounter, val instrs: InstructionBuffer)
-    type CallStack = List[Frame]
+    type CallStack = Stack[Frame]
     type Depth = Int
     class Handler(val depth: Int, val pc: ProgramCounter, val stacksz: Int)
-    type HandlerStack = List[Handler]
+    type HandlerStack = Stack[Handler]
     type Input = List[Char]
     class State(val sz: Int, val input: Input)
-    type StateStack = List[State]
+    type StateStack = Stack[State]
     
     sealed trait Status
     case object Good extends Status
     case object Recover extends Status
     case object Failed extends Status
 
-    class Context(var instrs: InstructionBuffer,
-                  var input: Input,
-                  var inputsz: Int,
-                  val subs: Map[String, InstructionBuffer])
+    final class Context(final var instrs: InstructionBuffer,
+                        final var input: Input,
+                        final var inputsz: Int,
+                        final val subs: Map[String, InstructionBuffer])
     {
-        var stack: Stack[Any] = Empty
-        var calls: CallStack = Nil
-        var states: StateStack = Nil
-        var stacksz: Int = 0
-        var checkStack: Stack[Int] = IntEmpty
-        var status: Status = Good
-        var handlers: HandlerStack = Nil
-        var depth: Int = 0
-        var pc: ProgramCounter = 0
+        final var stack: Stack[Any] = Empty
+        final var calls: CallStack = Empty
+        final var states: StateStack = Empty
+        final var stacksz: Int = 0
+        final var checkStack: Stack[Int] = Empty
+        final var status: Status = Good
+        final var handlers: HandlerStack = Empty
+        final var depth: Int = 0
+        final var pc: ProgramCounter = 0
         
-        override def toString(): String = 
+        final override def toString(): String =
         {
             s"""|[  
                 |  stack=[${stack.mkString(", ")}]
@@ -51,9 +51,9 @@ package object parsley
                 |]""".stripMargin
         }
 
-        def fail() =
+        final def fail()
         {
-            if (handlers.isEmpty) { status = Failed; this }
+            if (handlers.isEmpty) status = Failed
             else
             {
                 status = Recover
@@ -110,36 +110,54 @@ package object parsley
     @inline implicit def stringLift(str: String): Parsley[String] = parsley.Parsley.string(str)
     @inline implicit def charLift(c: Char): Parsley[Char] = parsley.Parsley.char(c)
     
-    trait Stack[@specialized(Int) +T]
+    sealed abstract class Stack[+A]
     {
-        val head: T
-        val tail: Stack[T]
+        val head: A
+        val tail: Stack[A]
         val isEmpty: Boolean
-        def size: Int = 0
-        @tailrec
-        final def drop(n: Int): Stack[T] = if (n > 0 && !isEmpty) tail.drop(n-1) else this
+        val size: Int
+        @tailrec final def drop(n: Int): Stack[A] = if (n > 0 && !isEmpty) tail.drop(n-1) else this
+        final def map[B](f: A => B): Stack[B] = if (!isEmpty) f(head)::tail.map(f) else Empty
         def mkString(sep: String): String
+        final def ::[A_ >: A](x: A_): Stack[A_] = new Elem(x, this)
     }
-    object Empty extends Stack[Null]
+    object Empty extends Stack[Nothing]
     {
-        override val head = null
-        override val tail = null
-        override val size = 0
+        override lazy val head = ???
+        override lazy val tail = ???
+        override lazy val size = 0
         override val isEmpty = true
         override def mkString(sep: String) = ""
     }
-    object IntEmpty extends Stack[Int]
+    final class Elem[A](override val head: A, override val tail: Stack[A]) extends Stack[A]
     {
-        override val head = 0
-        override val tail = null
-        override val size = 0
-        override val isEmpty = true
-        override def mkString(sep: String) = ""
-    }
-    class Elem[@specialized(Int) T](override val head: T, override val tail: Stack[T]) extends Stack[T]
-    {
-        override def size = tail.size + 1
+        override lazy val size = tail.size + 1
         override val isEmpty = false
         override def mkString(sep: String) = head.toString + sep + tail.mkString(sep)
     }
+
+    /*sealed abstract class IntStack
+    {
+        val head: Int
+        val tail: IntStack
+        val isEmpty: Boolean
+        val size: Int
+        @tailrec final def drop(n: Int): IntStack = if (n > 0 && !isEmpty) tail.drop(n-1) else this
+        def mkString(sep: String): String
+        final def ::(x: Int): IntStack = new IntElem(x, this)
+    }
+    object IntEmpty extends IntStack
+    {
+        override lazy val head = ???
+        override lazy val tail = ???
+        override lazy val size = 0
+        override val isEmpty = true
+        override def mkString(sep: String) = ""
+    }
+    final class IntElem(override val head: Int, override val tail: IntStack) extends IntStack
+    {
+        override lazy val size = tail.size + 1
+        override val isEmpty = false
+        override def mkString(sep: String) = head.toString + sep + tail.mkString(sep)
+    }*/
 }
