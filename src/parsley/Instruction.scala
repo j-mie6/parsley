@@ -14,7 +14,8 @@ case class Perform[-A, +B](f: A => B) extends Instruction
     val g = f.asInstanceOf[Function[Any, Any]] 
     override def apply(ctx: Context): Unit =
     {
-        ctx.stack = g(ctx.stack.head)::ctx.stack.tail 
+        //ctx.stack = g(ctx.stack.head)::ctx.stack.tail
+        ctx.stack = new Elem(g(ctx.stack.head), ctx.stack.tail)
         ctx.pc += 1
     }
     override def toString: String = "Perform(f)"
@@ -24,7 +25,8 @@ case class Push[A](x: A) extends Instruction
 {
     override def apply(ctx: Context): Unit =
     {
-        ctx.stack ::= x
+        //ctx.stack ::= x
+        ctx.stack = new Elem(x, ctx.stack)
         ctx.stacksz += 1
         ctx.pc += 1
     }
@@ -46,7 +48,8 @@ case object Flip extends Instruction
     {
         val y = ctx.stack.head
         val x = ctx.stack.tail.head
-        ctx.stack = x::y::ctx.stack.tail.tail
+        //ctx.stack = x::y::ctx.stack.tail.tail
+        ctx.stack = new Elem(x, new Elem(y, ctx.stack.tail.tail))
         ctx.pc += 1
     }
 }
@@ -55,7 +58,8 @@ case class Exchange[A](x: A) extends Instruction
 {
     override def apply(ctx: Context): Unit =
     {
-        ctx.stack = x::ctx.stack.tail
+        //ctx.stack = x::ctx.stack.tail
+        ctx.stack = new Elem(x, ctx.stack.tail)
         ctx.pc += 1
     }
 }
@@ -66,7 +70,8 @@ case object Apply extends Instruction
     {
         val stacktail = ctx.stack.tail
         val f = stacktail.head.asInstanceOf[Function[A forSome {type A}, B forSome {type B}]]
-        ctx.stack = f(ctx.stack.head)::stacktail.tail
+        //ctx.stack = f(ctx.stack.head)::stacktail.tail
+        ctx.stack = new Elem(f(ctx.stack.head), stacktail.tail)
         ctx.pc += 1
         ctx.stacksz -= 1
     }
@@ -77,7 +82,8 @@ case object Cons extends Instruction
     override def apply(ctx: Context): Unit =
     {
         val stacktail = ctx.stack.tail
-        ctx.stack = (stacktail.head::ctx.stack.head.asInstanceOf[List[_]])::stacktail.tail
+        //ctx.stack = (stacktail.head::ctx.stack.head.asInstanceOf[List[_]])::stacktail.tail
+        ctx.stack = new Elem(stacktail.head::ctx.stack.head.asInstanceOf[List[_]], stacktail.tail)
         ctx.pc += 1
         ctx.stacksz -= 1
     }
@@ -134,7 +140,7 @@ case class TryBegin(handler: Int) extends Instruction
     override def apply(ctx: Context): Unit = 
     {
         ctx.handlers ::= new Handler(ctx.depth, handler + ctx.pc, ctx.stacksz)
-        ctx.inputs ::= new InputCache(ctx.inputsz, ctx.input)
+        ctx.states ::= new State(ctx.inputsz, ctx.input)
         ctx.pc += 1
     }
 }
@@ -147,7 +153,7 @@ case object TryEnd extends Instruction
         // Remove the recovery input from the stack, it isn't needed anymore
         if (ctx.status == Good)
         {
-            ctx.inputs = ctx.inputs.tail
+            ctx.states = ctx.states.tail
             ctx.handlers = ctx.handlers.tail
             ctx.pc += 1
         }
@@ -155,9 +161,9 @@ case object TryEnd extends Instruction
         else
         {
             //ctx.status = Good
-            val cache = ctx.inputs.head
+            val cache = ctx.states.head
             ctx.input = cache.input
-            ctx.inputs = ctx.inputs.tail
+            ctx.states = ctx.states.tail
             ctx.inputsz = cache.sz
             ctx.fail()
             //ctx.pc += 1
@@ -169,7 +175,8 @@ case class InputCheck(handler: Int) extends Instruction
 {
     override def apply(ctx: Context): Unit =
     {
-        ctx.checkStack ::= ctx.inputsz
+        //ctx.checkStack ::= ctx.inputsz
+        ctx.checkStack = new Elem[Int](ctx.inputsz, ctx.checkStack)
         ctx.handlers ::= new Handler(ctx.depth, handler + ctx.pc, ctx.stacksz)
         ctx.pc += 1
     }
@@ -206,14 +213,16 @@ class Many[A](label: Int) extends Instruction
             acc ::= ctx.stack.head.asInstanceOf[A]
             ctx.stack = ctx.stack.tail
             ctx.stacksz -= 1
-            ctx.checkStack = ctx.inputsz::ctx.checkStack.tail
+            //ctx.checkStack = ctx.inputsz::ctx.checkStack.tail
+            ctx.checkStack = new Elem[Int](ctx.inputsz, ctx.checkStack.tail)
             ctx.pc += label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
         else if (ctx.inputsz != ctx.checkStack.head) ctx.fail()
         else 
         {
-            ctx.stack ::= acc.reverse
+            //ctx.stack ::= acc.reverse
+            ctx.stack = new Elem(acc.reverse, ctx.stack)
             ctx.stacksz += 1
             acc = Nil
             ctx.checkStack = ctx.checkStack.tail
@@ -229,7 +238,8 @@ case class CharTok(c: Char) extends Instruction
     override def apply(ctx: Context): Unit = ctx.input match
     {
         case `c`::input =>
-            ctx.stack ::= ac
+            //ctx.stack ::= ac
+            ctx.stack = new Elem(ac, ctx.stack)
             ctx.stacksz += 1
             ctx.inputsz -= 1
             ctx.input = input
@@ -243,7 +253,8 @@ case class Satisfies(f: Char => Boolean) extends Instruction
     override def apply(ctx: Context): Unit = ctx.input match
     {
         case c::input if f(c) => 
-            ctx.stack ::= c
+            //ctx.stack ::= c
+            ctx.stack = new Elem(c, ctx.stack)
             ctx.stacksz += 1
             ctx.inputsz -= 1
             ctx.input = input
@@ -259,7 +270,8 @@ case class StringTok(s: String) extends Instruction
     override def apply(ctx: Context): Unit = ctx.input match
     {
         case input if input.startsWith(ls) => 
-            ctx.stack ::= s
+            //ctx.stack ::= s
+            ctx.stack = new Elem(s, ctx.stack)
             ctx.input = input.drop(sz)
             ctx.stacksz += 1
             ctx.inputsz -= sz
@@ -279,7 +291,7 @@ object InstructionTests
         //val p = lift2[Char, Char, String]((x, y) => x.toString + y.toString, 'a', 'b')
         //val p = 'a' <::> ('b' #> Nil)
         //val p = 'a' *> 'b' #> "ab"
-        val p = many(tryParse('a')) <* 'b'
+        val p = many('a') <* 'b'
         println(p)
         reset()
         println(runParser(p, "aaaab"))

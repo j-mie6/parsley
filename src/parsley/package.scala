@@ -6,7 +6,6 @@ import scala.collection.mutable.Buffer
 
 package object parsley
 {
-    type Stack = List[Any]
     type ProgramCounter = Int
     type InstructionBuffer = Array[Instruction]
     class Frame(val ret: ProgramCounter, val instrs: InstructionBuffer)
@@ -15,8 +14,8 @@ package object parsley
     class Handler(val depth: Int, val pc: ProgramCounter, val stacksz: Int)
     type HandlerStack = List[Handler]
     type Input = List[Char]
-    class InputCache(val sz: Int, val input: Input)
-    type InputStack = List[InputCache]
+    class State(val sz: Int, val input: Input)
+    type StateStack = List[State]
     
     sealed trait Status
     case object Good extends Status
@@ -28,11 +27,11 @@ package object parsley
                   var inputsz: Int,
                   val subs: Map[String, InstructionBuffer])
     {
-        var stack: Stack = Nil
+        var stack: Stack[Any] = Empty
         var calls: CallStack = Nil
-        var inputs: InputStack = Nil
+        var states: StateStack = Nil
         var stacksz: Int = 0
-        var checkStack: List[Int] = Nil
+        var checkStack: Stack[Int] = IntEmpty
         var status: Status = Good
         var handlers: HandlerStack = Nil
         var depth: Int = 0
@@ -110,4 +109,37 @@ package object parsley
     
     @inline implicit def stringLift(str: String): Parsley[String] = parsley.Parsley.string(str)
     @inline implicit def charLift(c: Char): Parsley[Char] = parsley.Parsley.char(c)
+    
+    trait Stack[@specialized(Int) +T]
+    {
+        val head: T
+        val tail: Stack[T]
+        val isEmpty: Boolean
+        def size: Int = 0
+        @tailrec
+        final def drop(n: Int): Stack[T] = if (n > 0 && !isEmpty) tail.drop(n-1) else this
+        def mkString(sep: String): String
+    }
+    object Empty extends Stack[Null]
+    {
+        override val head = null
+        override val tail = null
+        override val size = 0
+        override val isEmpty = true
+        override def mkString(sep: String) = ""
+    }
+    object IntEmpty extends Stack[Int]
+    {
+        override val head = 0
+        override val tail = null
+        override val size = 0
+        override val isEmpty = true
+        override def mkString(sep: String) = ""
+    }
+    class Elem[@specialized(Int) T](override val head: T, override val tail: Stack[T]) extends Stack[T]
+    {
+        override def size = tail.size + 1
+        override val isEmpty = false
+        override def mkString(sep: String) = head.toString + sep + tail.mkString(sep)
+    }
 }
