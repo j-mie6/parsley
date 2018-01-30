@@ -220,6 +220,28 @@ final class Many[A](label: Int) extends Instruction
     }
 }
 
+final class SkipMany(label: Int) extends Instruction
+{
+    final override def apply(ctx: Context) =
+    {
+        if (ctx.status == Good)
+        {
+            ctx.stack = ctx.stack.tail
+            ctx.stacksz -= 1
+            ctx.checkStack = ctx.inputsz::ctx.checkStack.tail
+            ctx.pc += label
+        }
+        // If the head of input stack is not the same size as the head of check stack, we fail to next handler
+        else if (ctx.inputsz != ctx.checkStack.head) ctx.fail()
+        else
+        {
+            ctx.checkStack = ctx.checkStack.tail
+            ctx.status = Good
+            ctx.pc += 1
+        }
+    }
+}
+
 final case class CharTok(c: Char) extends Instruction
 {
     final private[this] val ac: Any = c
