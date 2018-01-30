@@ -141,7 +141,8 @@ object Parsley
     def fail[A](msg: String): Parsley[A] = new Parsley[A](Buffer(new Fail(msg)), Map.empty)
     def fail[A](msggen: Parsley[A], finaliser: A => String): Parsley[A] =  new Parsley[A](msggen.instrs :+ new FastFail(finaliser), msggen.subs)
     def empty[A]: Parsley[A] = fail("unknown error")
-    def tryParse[A](p: Parsley[A]): Parsley[A] = new Parsley(new TryBegin(p.instrs.size+1) +: p.instrs :+ TryEnd, p.subs)
+    def tryParse[A](p: Parsley[A]): Parsley[A] = new Parsley(new PushHandler(p.instrs.size+1) +: p.instrs :+ Try, p.subs)
+    def lookAhead[A](p: Parsley[A]): Parsley[A] = new Parsley(new PushHandler(p.instrs.size+1) +: p.instrs :+ Look, p.subs)
     @inline def lift2[A, B, C](f: (A, B) => C, p: Parsley[A], q: Parsley[B]): Parsley[C] = p.map(x => (y: B) => f(x, y)) <*> q
     //def lift2[A, B, C](f: (A, B) => C, p: Parsley[A], q: Parsley[B]): Parsley[C] = 
     //{
