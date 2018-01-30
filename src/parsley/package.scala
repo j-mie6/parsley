@@ -135,29 +135,4 @@ package object parsley
         override val isEmpty = false
         override def mkString(sep: String) = head.toString + sep + tail.mkString(sep)
     }
-
-    /*sealed abstract class IntStack
-    {
-        val head: Int
-        val tail: IntStack
-        val isEmpty: Boolean
-        val size: Int
-        @tailrec final def drop(n: Int): IntStack = if (n > 0 && !isEmpty) tail.drop(n-1) else this
-        def mkString(sep: String): String
-        final def ::(x: Int): IntStack = new IntElem(x, this)
-    }
-    object IntEmpty extends IntStack
-    {
-        override lazy val head = ???
-        override lazy val tail = ???
-        override lazy val size = 0
-        override val isEmpty = true
-        override def mkString(sep: String) = ""
-    }
-    final class IntElem(override val head: Int, override val tail: IntStack) extends IntStack
-    {
-        override lazy val size = tail.size + 1
-        override val isEmpty = false
-        override def mkString(sep: String) = head.toString + sep + tail.mkString(sep)
-    }*/
 }
