@@ -95,7 +95,8 @@ class Parsley[+A](
         case Perform(f: Function[B, Any=>Any] @unchecked) => p.instrs.last match
         {
             // fusion law: (f <$> x) <*> pure y == (($y) . f) <$> x
-            case Push(y) => new Parsley(instrs.init ++ p.instrs.init :+ Perform[B, Any](x => f(x)(y)), subs ++ p.subs)
+            // FIXME: Broken in context of labelless or
+            //case Push(y) => new Parsley(instrs.init ++ p.instrs.init :+ Perform[B, Any](x => f(x)(y)), subs ++ p.subs)
             case _ => new Parsley(instrs ++ p.instrs :+ Apply, subs ++ p.subs)
         }
         case _ => p.instrs.last match
@@ -253,6 +254,18 @@ object Parsley
     def chainl1[A](p : Parsley[A], op: Parsley[A => A => A]): Parsley[A] =
     {
         lift2((x: A, xs: List[A=>A]) => xs.foldLeft(x)((y, f) => f(y)), p, many(op.map(flip[A, A, A]) <*> p))
+    }
+
+    def chainr1[A](p: Parsley[A], op: Parsley[A => A => A]): Parsley[A] =
+    {
+        //"chain" <%> (p <**> (op.map(flip[A, A, A]) <*> chainr1(p, op) </> identity))
+        lift2((xs: List[A=>A], x: A) => xs.foldRight(x)((f, y) => f(y)), many(tryParse(p <**> op)), p)
+    }
+
+    def chainPre[A](p: Parsley[A], op: Parsley[A => A]): Parsley[A] =
+    {
+        //"chain" <%> (p <|> (op <*> chainPre(p, op)))
+        lift2((xs: List[A=>A], x: A) => xs.foldRight(x)((f, y) => f(y)), many(op), p)
     }
 
     def main(args: Array[String]): Unit =
