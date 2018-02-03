@@ -330,13 +330,18 @@ object InstructionTests
         //val p = 'a' <::> ('b' #> Nil)
         //val p = 'a' *> 'b' #> "ab"
         val p = many('a') <* 'b'
+        val q = chainl1('1'.map(_.toInt), '+' #> ((x: Int) => (y: Int) => x + y))
         println(p)
+        println(q)
         reset()
         println(runParser(p, "aaaab"))
+        println(runParser(q, "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"))
         val start = System.currentTimeMillis()
         val input = "aaaab".toList
+        val input_ = "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1".toList
         val sz = input.size
-        for (i <- 0 to 10000000) runParser(p, input, sz)
+        val sz_ = input_.size
+        for (i <- 0 to 10000000) runParser(q, input_, sz_)
         println(System.currentTimeMillis() - start)
     }
 }

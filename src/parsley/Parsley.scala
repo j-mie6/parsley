@@ -1,8 +1,8 @@
 package parsley
 
+import parsec.flip
 import parsley.Parsley._
 
-import scala.annotation.tailrec
 import scala.collection.mutable.Buffer
 import language.existentials
 
@@ -49,6 +49,8 @@ class Parsley[+A](
     {
         // pure x #> y == pure y (consequence of applicative and functor laws)
         case Push(_) => new Parsley(instrs.init :+ new Push(x), subs)
+        // This is left for peephole, but every now and then we'll want to use it
+        //case _ => new Parsley(instrs :+ new Exchange(x), subs)
         case _ => new Parsley(instrs :+ Pop :+ new Push(x), subs)
     }
     def <*>:[B](p: Parsley[A => B]): Parsley[B] = p.instrs.last match
@@ -247,6 +249,11 @@ object Parsley
     def repeat[A](n: Int, p: Parsley[A]): Parsley[List[A]] =
         if (n > 0) p <::> repeat(n-1, p)
         else pure(Nil)
+
+    def chainl1[A](p : Parsley[A], op: Parsley[A => A => A]): Parsley[A] =
+    {
+        lift2((x: A, xs: List[A=>A]) => xs.foldLeft(x)((y, f) => f(y)), p, many(op.map(flip[A, A, A]) <*> p))
+    }
 
     def main(args: Array[String]): Unit =
     {
