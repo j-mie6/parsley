@@ -8,15 +8,25 @@ package object parsley
 {
     type ProgramCounter = Int
     type InstructionBuffer = Array[Instruction]
-    class Frame(val ret: ProgramCounter, val instrs: InstructionBuffer)
     type CallStack = Stack[Frame]
     type Depth = Int
-    class Handler(val depth: Int, val pc: ProgramCounter, val stacksz: Int)
     type HandlerStack = Stack[Handler]
     type Input = List[Char]
-    class State(val sz: Int, val input: Input)
     type StateStack = Stack[State]
-    
+
+    final class Frame(val ret: ProgramCounter, val instrs: InstructionBuffer)
+    {
+        override def toString(): String = s"[$instrs@$ret]"
+    }
+    final class Handler(val depth: Int, val pc: ProgramCounter, val stacksz: Int)
+    {
+        override def toString(): String = s"Handler@$depth:$pc(-$stacksz)"
+    }
+    final class State(val sz: Int, val input: Input)
+    {
+        override def toString(): String = input.mkString
+    }
+
     sealed trait Status
     case object Good extends Status
     case object Recover extends Status
@@ -42,12 +52,13 @@ package object parsley
             s"""|[  
                 |  stack=[${stack.mkString(", ")}]
                 |  instrs=${instrs.mkString("; ")}
-                |  inputs=${input.mkString(", ")}
+                |  input=${input.mkString(", ")}
                 |  status=$status
                 |  pc=$pc
                 |  depth=$depth
                 |  rets=${calls.map(_.ret).mkString(", ")}
                 |  handlers=$handlers
+                |  recstates=$states
                 |]""".stripMargin
         }
 

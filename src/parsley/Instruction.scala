@@ -230,7 +230,7 @@ final class Many[A](label: Int) extends Instruction
             ctx.pc += label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else if (ctx.inputsz != ctx.checkStack.head) ctx.fail()
+        else if (ctx.inputsz != ctx.checkStack.head) {acc.clear(); ctx.fail()}
         else 
         {
             ctx.stack ::= acc.toList
