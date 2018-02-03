@@ -107,8 +107,8 @@ package object parsley
         }
     }
     
-    @inline implicit def stringLift(str: String): Parsley[String] = parsley.Parsley.string(str)
-    @inline implicit def charLift(c: Char): Parsley[Char] = parsley.Parsley.char(c)
+    @inline final implicit def stringLift(str: String): Parsley[String] = parsley.Parsley.string(str)
+    @inline final implicit def charLift(c: Char): Parsley[Char] = parsley.Parsley.char(c)
     
     sealed abstract class Stack[+A]
     {
@@ -123,16 +123,18 @@ package object parsley
     }
     object Empty extends Stack[Nothing]
     {
-        override lazy val head = ???
-        override lazy val tail = ???
-        override lazy val size = 0
-        override val isEmpty = true
-        override def mkString(sep: String) = ""
+        final override lazy val head = ???
+        final override lazy val tail = ???
+        final override lazy val size = 0
+        final override val isEmpty = true
+        final override def mkString(sep: String) = ""
+        final override def toString(): String = "[]"
     }
     final class Elem[A](override val head: A, override val tail: Stack[A]) extends Stack[A]
     {
-        override lazy val size = tail.size + 1
-        override val isEmpty = false
-        override def mkString(sep: String) = head.toString + sep + tail.mkString(sep)
+        final override lazy val size = tail.size + 1
+        final override val isEmpty = false
+        final override def mkString(sep: String) = head.toString + sep + tail.mkString(sep)
+        final override def toString(): String = s"$head::$tail"
     }
 }
