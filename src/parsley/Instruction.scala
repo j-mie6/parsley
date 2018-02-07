@@ -306,17 +306,23 @@ final case class StringTok(s: String) extends Instruction
     final private[this] val sz = s.size
     final override def apply(ctx: Context)
     {
-        ctx.input match
+        val input = ctx.input
+        if (input.startsWith(ls))
         {
-            case input if input.startsWith(ls) =>
-                ctx.stack ::= s
-                ctx.input = input.drop(sz)
-                ctx.stacksz += 1
-                ctx.inputsz -= sz
-                ctx.pc += 1
-            case inputs => ctx.fail()
+            ctx.stack ::= s
+            ctx.input = input.drop(sz)
+            ctx.stacksz += 1
+            ctx.inputsz -= sz
+            ctx.pc += 1
         }
+        else ctx.fail()
     }
+}
+
+// It's 2018 and Labels are making a come-back, along with 2 pass assembly
+final case class Label(i: Int) extends Instruction
+{
+    def apply(ctx: Context) { ??? }
 }
 
 object InstructionTests
