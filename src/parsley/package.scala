@@ -11,7 +11,7 @@ package object parsley
     type CallStack = Stack[Frame]
     type Depth = Int
     type HandlerStack = Stack[Handler]
-    type Input = List[Char]
+    type Input = List[Char] //TODO: Let's go back to string, and optimise more thoroughly the primitive parsers
     type StateStack = Stack[State]
 
     final class Frame(val ret: ProgramCounter, val instrs: InstructionBuffer)
@@ -97,7 +97,7 @@ package object parsley
     @tailrec
     def runParser_[A](ctx: Context): Result[A] =
     {
-        println(ctx)
+        //println(ctx)
         if (ctx.status == Failed) return Failure("Unknown error")
         val pc = ctx.pc
         val instrs = ctx.instrs

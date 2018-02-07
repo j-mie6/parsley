@@ -163,7 +163,9 @@ case object Try extends Instruction
     }
 }
 
-// TODO: In future, we need to consider how this will act with regard to user state, it isn't clear what parsec does!
+// State is not preserved after lookahead, the position is reset etc
+// This should be the behaviour of the below when State is augmented
+// but ensure this is the case later!
 case object Look extends Instruction
 {
     final override def apply(ctx: Context)
@@ -337,7 +339,7 @@ object InstructionTests
         //val p = 'a' <::> ('b' #> Nil)
         //val p = 'a' *> 'b' #> "ab"
         val p = many('a') <* 'b'
-        val q = chainl1('1'.map(_.toInt), '+' #> ((x: Int) => (y: Int) => x + y))
+        val q = chainr1('1'.map(_.toInt), '+' #> ((x: Int) => (y: Int) => x + y))
         //val q = chainPre('1'.map(_.toInt), '+' #> ((x: Int) => x + 1))
         println(p)
         //println(q)

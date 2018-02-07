@@ -255,7 +255,9 @@ object Parsley
     def chainr1[A](p: Parsley[A], op: Parsley[A => A => A]): Parsley[A] =
     {
         //"chain" <%> (p <**> (op.map(flip[A, A, A]) <*> chainr1(p, op) </> identity))
+        // This method takes 16412 on the instr benchmark
         lift2((xs: List[A=>A]) => (x: A) => xs.foldRight(x)((f, y) => f(y)), many(tryParse(p <**> op)), p)
+        //p <**> (op.map(flip[A, A, A]) <*> lift2((xs: List[A=>A]) => (x: A) => xs.foldRight(x)((f, y) => f(y)), many(p <**> op), p) <|> pure(identity))
     }
 
     def chainPre[A](p: Parsley[A], op: Parsley[A => A]): Parsley[A] =
@@ -284,5 +286,10 @@ object Parsley
         reset()
         println(((x: Int) => x * 2) <#> (((x: Char) => x.toInt) <#> '0'))
         reset()
+        /*val atom = 'x' #> 1
+        val add = '+' #> ((x: Int) => (y: Int) => x + y)
+        val mul = '*' #> ((x: Int) => (y: Int) => x * y)
+        val pow = '^' #> ((x: Int) => (y: Int) => math.pow(x, y).toInt)
+        println(chainl1(chainl1(chainl1(atom, pow), mul), add))*/
     }
 }
