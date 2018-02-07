@@ -5,6 +5,7 @@ import parsley.Parsley._
 
 import scala.collection.mutable.Buffer
 import language.existentials
+import scala.annotation.tailrec
 
 // TODO Investigate effect of :+= instead of :+ for the buffers
 // TODO Perform final optimisation stage on end result, likely to perform some extra optimisation, but possibly less
