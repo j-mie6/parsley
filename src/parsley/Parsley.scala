@@ -29,6 +29,8 @@ class Parsley[+A](
         case Push(x: A @unchecked) => new Parsley(instrs.init :+ new Push(f(x)), subs)
         // p.map(f).map(g) = p.map(g . f) (functor law)
         case Perform(g) => new Parsley(instrs.init :+ new Perform(g.asInstanceOf[Function[C forSome {type C}, A]].andThen(f)), subs)
+        // TODO: This should be peephole, it allows other functor optimisations to be performed!
+        case CharTok(c) => new Parsley(instrs.init :+ new CharTokFastPerform(c, f.asInstanceOf[Function[Char, Any]]), subs)
         case _ => new Parsley(instrs :+ new Perform(f), subs)
     }
     @inline final def <#>[B](f: =>A => B): Parsley[B] = map(f)
@@ -89,6 +91,9 @@ class Parsley[+A](
             case Perform(g) =>
                 new Parsley(instrs.init ++ p.instrs.init :+
                     new Perform(f.asInstanceOf[Function[B, C]].compose(g.asInstanceOf[Function[A forSome {type A}, B]])), subs ++ p.subs)
+            case CharTokFastPerform(c, g) =>
+                new Parsley(instrs.init ++ p.instrs.init :+
+                    new CharTokFastPerform(c, f.asInstanceOf[Function[B, C]].compose(g.asInstanceOf[Function[A forSome {type A}, B]])), subs ++ p.subs)
             case _ => new Parsley(instrs.init ++ p.instrs :+ new Perform[B, C](f.asInstanceOf[Function[B, C]]), subs ++ p.subs)
         }
         case Perform(f: Function[B, Any=>Any] @unchecked) => p.instrs.last match
