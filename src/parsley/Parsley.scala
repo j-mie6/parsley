@@ -247,14 +247,12 @@ object Parsley
         if (n > 0) p <::> repeat(n-1, p)
         else pure(Nil)
 
-    def chainl1[A](p : Parsley[A], op: Parsley[A => A => A]): Parsley[A] =
+    @inline def chainl1[A](p: Parsley[A], op: Parsley[A => A => A]): Parsley[A] = chainl1_(p, op.map(flip[A, A, A]))
+    @inline def chainl1_[A](p : Parsley[A], op: Parsley[A => A => A]): Parsley[A] = chainPost(p, op <*> p)
+    def chainPost[A](p: Parsley[A], op: Parsley[A => A]): Parsley[A] =
     {
-        lift2((x: A) => (xs: List[A=>A]) => xs.foldLeft(x)((y, f) => f(y)), p, many(op.map(flip[A, A, A]) <*> p))
-    }
-
-    def chainl1_[A](p : Parsley[A], op: Parsley[A => A => A]): Parsley[A] =
-    {
-        lift2((x: A) => (xs: List[A=>A]) => xs.foldLeft(x)((y, f) => f(y)), p, many(op <*> p))
+        //lift2((x: A) => (xs: List[A=>A]) => xs.foldLeft(x)((y, f) => f(y)), p, many(op))
+        new Parsley((p.instrs :+ new InputCheck(op.instrs.size+1)) ++ op.instrs :+ new Chainl[A](-op.instrs.size), p.subs ++ op.subs)
     }
 
     def chainr1[A](p: Parsley[A], op: Parsley[A => A => A]): Parsley[A] =

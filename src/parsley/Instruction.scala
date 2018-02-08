@@ -245,6 +245,40 @@ final class Many[A](label: Int) extends Instruction
     }
 }
 
+final class Chainl[A](label: Int) extends Instruction
+{
+    final private[this] var acc: Any = null
+    final override def apply(ctx: Context)
+    {
+        // When acc is null, we are entering the instruction for the first time, a p will be on the stack
+        if (acc == null)
+        {
+            acc = ctx.stack.tail.head
+            ctx.stack = ctx.stack.head::ctx.stack.tail.tail
+            ctx.stacksz -= 1
+        }
+        if (ctx.status == Good)
+        {
+            acc = ctx.stack.head.asInstanceOf[Function[Any, Any]](acc)
+            ctx.stack = ctx.stack.tail
+            ctx.stacksz -= 1
+            ctx.checkStack = ctx.inputsz::ctx.checkStack.tail
+            ctx.pc += label
+        }
+        // If the head of input stack is not the same size as the head of check stack, we fail to next handler
+        else if (ctx.inputsz != ctx.checkStack.head) {acc = null; ctx.fail()}
+        else 
+        {
+            ctx.stack ::= acc
+            ctx.stacksz += 1
+            acc = null
+            ctx.checkStack = ctx.checkStack.tail
+            ctx.status = Good
+            ctx.pc += 1
+        }
+    }
+}
+
 final class SkipMany(label: Int) extends Instruction
 {
     final override def apply(ctx: Context)
@@ -339,10 +373,10 @@ object InstructionTests
         //val p = 'a' <::> ('b' #> Nil)
         //val p = 'a' *> 'b' #> "ab"
         val p = many('a') <* 'b'
-        val q = chainl1('1'.map(_.toInt), '+' #> ((x: Int) => (y: Int) => x + y))
+        val q = chainl1_('1'.map(_.toInt), '+' #> ((x: Int) => (y: Int) => x + y))
         //val q = chainPre('1'.map(_.toInt), '+' #> ((x: Int) => x + 1))
         println(p)
-        //println(q)
+        println(q)
         reset()
         println(runParser(p, "aaaab"))
         println(runParser(q, "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"))
