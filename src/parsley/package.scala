@@ -11,7 +11,8 @@ package object parsley
     type CallStack = Stack[Frame]
     type Depth = Int
     type HandlerStack = Stack[Handler]
-    type Input = List[Char] //TODO: Let's go back to string, and optimise more thoroughly the primitive parsers
+    // Yeah, turns out List[Char] is much faster than String... Not sure why?
+    type Input = List[Char]
     type StateStack = Stack[State]
 
     final class Frame(val ret: ProgramCounter, val instrs: InstructionBuffer)

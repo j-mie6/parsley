@@ -282,15 +282,6 @@ final case class CharTok(c: Char) extends Instruction
                 ctx.pc += 1
             case inputs => ctx.fail()
         }
-        /*if (!ctx.input.isEmpty && c == ctx.input.charAt(0))
-        {
-            ctx.stack ::= ac
-                ctx.stacksz += 1
-                ctx.inputsz -= 1
-                ctx.input = ctx.input.substring(1)
-                ctx.pc += 1
-        }
-        else ctx.fail()*/
     }
 }
 
@@ -340,7 +331,7 @@ object InstructionTests
 {
     def main(args: Array[String]): Unit =
     {
-        Console.in.read()
+        //Console.in.read()
         //println(Apply(Push(20)(Perform[Int, Int=>Int](x => y => x + y)(Push(10)(Context(Nil, Nil, Nil, Nil, Map.empty, Good, Nil, 0))))))
         //println(Apply(Push(20)(Apply(Push(10)(Push[Int=>Int=>Int](x => y => x + y)(Context(Nil, Nil, Nil, Nil, Map.empty, Good, Nil, 0)))))))
         import parsley.Parsley._
