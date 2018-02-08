@@ -323,8 +323,12 @@ final case class CharTok(c: Char) extends Instruction
     }
 }
 
+// This instruction has GREAT potential, it should be integrated into peephole :)
+// We should also make equivalents for Satisfy and String
+// Also experiment: is CharTok; Exchange better than CharTokFastPerform with const?
 final case class CharTokFastPerform(c: Char, f: Function[Char, Any]) extends Instruction
 {
+    // This optimisation is probably very unsafe?
     final private[this] val fc: Any = f(c)
     final override def apply(ctx: Context)
     {

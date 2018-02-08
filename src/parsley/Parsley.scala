@@ -29,8 +29,6 @@ class Parsley[+A](
         case Push(x: A @unchecked) => new Parsley(instrs.init :+ new Push(f(x)), subs)
         // p.map(f).map(g) = p.map(g . f) (functor law)
         case Perform(g) => new Parsley(instrs.init :+ new Perform(g.asInstanceOf[Function[C forSome {type C}, A]].andThen(f)), subs)
-        // TODO: This should be peephole, it allows other functor optimisations to be performed!
-        case CharTok(c) => new Parsley(instrs.init :+ new CharTokFastPerform(c, f.asInstanceOf[Function[Char, Any]]), subs)
         case _ => new Parsley(instrs :+ new Perform(f), subs)
     }
     @inline final def <#>[B](f: =>A => B): Parsley[B] = map(f)
@@ -91,9 +89,6 @@ class Parsley[+A](
             case Perform(g) =>
                 new Parsley(instrs.init ++ p.instrs.init :+
                     new Perform(f.asInstanceOf[Function[B, C]].compose(g.asInstanceOf[Function[A forSome {type A}, B]])), subs ++ p.subs)
-            case CharTokFastPerform(c, g) =>
-                new Parsley(instrs.init ++ p.instrs.init :+
-                    new CharTokFastPerform(c, f.asInstanceOf[Function[B, C]].compose(g.asInstanceOf[Function[A forSome {type A}, B]])), subs ++ p.subs)
             case _ => new Parsley(instrs.init ++ p.instrs :+ new Perform[B, C](f.asInstanceOf[Function[B, C]]), subs ++ p.subs)
         }
         case Perform(f: Function[B, Any=>Any] @unchecked) => p.instrs.last match
@@ -256,20 +251,18 @@ object Parsley
     @inline def chainl1_[A](p : Parsley[A], op: Parsley[A => A => A]): Parsley[A] = chainPost(p, op <*> p)
     def chainPost[A](p: Parsley[A], op: Parsley[A => A]): Parsley[A] =
     {
-        //lift2((x: A) => (xs: List[A=>A]) => xs.foldLeft(x)((y, f) => f(y)), p, many(op))
-        new Parsley((p.instrs :+ new InputCheck(op.instrs.size+1)) ++ op.instrs :+ new Chainl[A](-op.instrs.size), p.subs ++ op.subs)
+        lift2((x: A) => (xs: List[A=>A]) => xs.foldLeft(x)((y, f) => f(y)), p, many(op))
+        //new Parsley((p.instrs :+ new InputCheck(op.instrs.size+1)) ++ op.instrs :+ new Chainl[A](-op.instrs.size), p.subs ++ op.subs)
     }
 
-    def chainr1[A](p: Parsley[A], op: Parsley[A => A => A]): Parsley[A] =
+    @inline def chainr1[A](p: Parsley[A], op: Parsley[A => A => A]): Parsley[A] =
     {
         //"chain" <%> (p <**> (op.map(flip[A, A, A]) <*> chainr1(p, op) </> identity))
-        // This method takes 16412 on the instr benchmark
-        lift2((xs: List[A=>A]) => (x: A) => xs.foldRight(x)((f, y) => f(y)), many(tryParse(p <**> op)), p)
+        //lift2((xs: List[A=>A]) => (x: A) => xs.foldRight(x)((f, y) => f(y)), many(tryParse(p <**> op)), p)
+        chainPre(p, tryParse(p <**> op))
     }
-
     def chainPre[A](p: Parsley[A], op: Parsley[A => A]): Parsley[A] =
     {
-        //"chain" <%> (p <|> (op <*> chainPre(p, op)))
         lift2((xs: List[A=>A]) => (x: A) => xs.foldRight(x)((f, y) => f(y)), many(op), p)
     }
 
