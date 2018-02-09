@@ -170,13 +170,23 @@ object Parsley
     {
         new Parsley(new InputCheck(p.instrs.size+1) +: p.instrs :+ new Many[A](-p.instrs.size), p.subs)
     }
-    @inline final def some[A](p: Parsley[A]): Parsley[List[A]] = p <::> many(p)
+    @tailrec final def manyN[A](p: Parsley[A], n: Int)(acc: Parsley[List[A]] = many(p)): Parsley[List[A]] =
+    {
+        if (n > 0) manyN(p, n-1)(p <::> acc)
+        else acc
+    }
+    @inline final def some[A](p: Parsley[A]): Parsley[List[A]] = manyN(p, 1)()
 
     final def skipMany[A](p: Parsley[A]): Parsley[Unit] =
     {
         new Parsley(new InputCheck(p.instrs.size+1) +: p.instrs :+ new SkipMany(-p.instrs.size) :+ Push(()), p.subs)
     }
-    @inline final def skipSome[A](p: Parsley[A]): Parsley[Unit] = p *> skipMany(p)
+    @tailrec final def skipManyN[A](p: Parsley[A], n: Int)(acc: Parsley[Unit] = skipMany(p)): Parsley[Unit] =
+    {
+        if (n > 0) skipManyN(p, n-1)(p *> acc)
+        else acc
+    }
+    @inline final def skipSome[A](p: Parsley[A]): Parsley[Unit] = skipManyN(p, 1)()
 
     var knotScope: Set[String] = Set.empty
     def reset(): Unit =

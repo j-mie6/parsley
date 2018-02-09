@@ -87,6 +87,18 @@ package object parsley
         }
     }
 
+    abstract class Instruction
+    {
+        def apply(ctx: Context)
+    }
+
+    // It's 2018 and Labels are making a come-back, along with 2 pass assembly
+    final case class Label(i: Int) extends Instruction
+    {
+        def apply(ctx: Context) { ??? }
+    }
+
+
     def runParser[A](p: Parsley[A], input: String): Result[A] = runParser[A](p, input.toList, input.size)
     def runParser[A](p: Parsley[A], input: Input, sz: Int): Result[A] = runParser_[A](new Context(p.instrs_, input, sz, p.subs_))
     def runParser[A](instrs: InstructionBuffer, subs: Map[String, InstructionBuffer], input: Input, sz: Int) = runParser_[A](new Context(instrs, input, sz, subs))
