@@ -4,18 +4,18 @@ import language.existentials
 
 private [parsley] final case class Perform[-A, +B](f: A => B) extends Instr
 {
-    final private[this] val g = f.asInstanceOf[Function[Any, Any]]
-    final override def apply(ctx: Context)
+    private[this] val g = f.asInstanceOf[Function[Any, Any]]
+    override def apply(ctx: Context)
     {
         ctx.stack = g(ctx.stack.head)::ctx.stack.tail
         ctx.pc += 1
     }
-    final override def toString: String = "Perform(f)"
+    override def toString: String = "Perform(f)"
 }
 
 private [parsley] final case class Push[A](x: A) extends Instr
 {
-    final override def apply(ctx: Context)
+    override def apply(ctx: Context)
     {
         ctx.stack ::= x
         ctx.stacksz += 1
@@ -25,7 +25,7 @@ private [parsley] final case class Push[A](x: A) extends Instr
 
 private [parsley] case object Pop extends Instr
 {
-    final override def apply(ctx: Context)
+    override def apply(ctx: Context)
     {
         ctx.stack = ctx.stack.tail
         ctx.stacksz -= 1
@@ -35,7 +35,7 @@ private [parsley] case object Pop extends Instr
 
 private [parsley] case object Flip extends Instr
 {
-    final override def apply(ctx: Context)
+    override def apply(ctx: Context)
     {
         val y = ctx.stack.head
         val x = ctx.stack.tail.head
@@ -46,7 +46,7 @@ private [parsley] case object Flip extends Instr
 
 private [parsley] case object Apply extends Instr
 {
-    final override def apply(ctx: Context)
+    override def apply(ctx: Context)
     {
         val stacktail = ctx.stack.tail
         val f = stacktail.head.asInstanceOf[Function[A forSome {type A}, B forSome {type B}]]
@@ -58,8 +58,8 @@ private [parsley] case object Apply extends Instr
 
 private [parsley] final case class Call(x: String) extends Instr
 {
-    final private[this] var instrs: InstructionBuffer = null
-    final override def apply(ctx: Context)
+    private[this] var instrs: Array[Instr] = _
+    override def apply(ctx: Context)
     {
         ctx.calls ::= new Frame(ctx.pc + 1, ctx.instrs)
         ctx.instrs = if (instrs == null)
@@ -72,10 +72,10 @@ private [parsley] final case class Call(x: String) extends Instr
     }
 }
 
-private [parsley] final case class DynSub[-A](f: A => InstructionBuffer) extends Instr
+private [parsley] final case class DynSub[-A](f: A => Array[Instr]) extends Instr
 {
-    final private[this] val g = f.asInstanceOf[Any => InstructionBuffer]
-    final override def apply(ctx: Context)
+    private[this] val g = f.asInstanceOf[Any => Array[Instr]]
+    override def apply(ctx: Context)
     {
         ctx.calls ::= new Frame(ctx.pc + 1, ctx.instrs)
         ctx.instrs = g(ctx.stack.head)
@@ -88,12 +88,12 @@ private [parsley] final case class DynSub[-A](f: A => InstructionBuffer) extends
 private [parsley] final case class Fail(msg: String) extends Instr
 {
     // We need to do something with the message!
-    final override def apply(ctx: Context) = ctx.fail()
+    override def apply(ctx: Context) { ctx.fail() }
 }
 
 private [parsley] final case class PushHandler(handler: Int) extends Instr
 {
-    final override def apply(ctx: Context)
+    override def apply(ctx: Context)
     {
         ctx.handlers ::= new Handler(ctx.depth, handler + ctx.pc, ctx.stacksz)
         ctx.states ::= new State(ctx.inputsz, ctx.input)
@@ -103,7 +103,7 @@ private [parsley] final case class PushHandler(handler: Int) extends Instr
 
 private [parsley] case object Try extends Instr
 {
-    final override def apply(ctx: Context)
+    override def apply(ctx: Context)
     {
         // Remove the recovery input from the stack, it isn't needed anymore
         if (ctx.status == Good)
@@ -129,7 +129,7 @@ private [parsley] case object Try extends Instr
 // but ensure this is the case later!
 private [parsley] case object Look extends Instr
 {
-    final override def apply(ctx: Context)
+    override def apply(ctx: Context)
     {
         if (ctx.status == Good)
         {
@@ -150,7 +150,7 @@ private [parsley] case object Look extends Instr
 
 private [parsley] final case class InputCheck(handler: Int) extends Instr
 {
-    final override def apply(ctx: Context)
+    override def apply(ctx: Context)
     {
         ctx.checkStack ::= ctx.inputsz
         ctx.handlers ::= new Handler(ctx.depth, handler + ctx.pc, ctx.stacksz)
@@ -160,7 +160,7 @@ private [parsley] final case class InputCheck(handler: Int) extends Instr
 
 private [parsley] final case class JumpGood(label: Int) extends Instr
 {
-    final override def apply(ctx: Context)
+    override def apply(ctx: Context)
     {
         if (ctx.status == Good)
         {
@@ -181,8 +181,8 @@ private [parsley] final case class JumpGood(label: Int) extends Instr
 
 private [parsley] final case class CharTok(c: Char) extends Instr
 {
-    final private[this] val ac: Any = c
-    final override def apply(ctx: Context)
+    private[this] val ac: Any = c
+    override def apply(ctx: Context)
     {
         ctx.input match
         {
@@ -192,14 +192,14 @@ private [parsley] final case class CharTok(c: Char) extends Instr
                 ctx.inputsz -= 1
                 ctx.input = input
                 ctx.pc += 1
-            case inputs => ctx.fail()
+            case _ => ctx.fail()
         }
     }
 }
 
 private [parsley] final class Satisfies(f: Char => Boolean) extends Instr
 {
-    final override def apply(ctx: Context)
+    override def apply(ctx: Context)
     {
         ctx.input match
         {
@@ -209,16 +209,16 @@ private [parsley] final class Satisfies(f: Char => Boolean) extends Instr
                 ctx.inputsz -= 1
                 ctx.input = input
                 ctx.pc += 1
-            case input => ctx.fail()
+            case _ => ctx.fail()
         }
     }
 }
 
 private [parsley] final case class StringTok(s: String) extends Instr
 {
-    final private[this] val ls = s.toList
-    final private[this] val sz = s.size
-    final override def apply(ctx: Context)
+    private[this] val ls = s.toList
+    private[this] val sz = s.length
+    override def apply(ctx: Context)
     {
         val input = ctx.input
         if (input.startsWith(ls))

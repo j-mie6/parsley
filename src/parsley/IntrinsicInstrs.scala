@@ -15,8 +15,8 @@ private [parsley] case object Cons extends Instr
 
 private [parsley] final class Many[A](label: Int) extends Instr
 {
-    final private[this] val acc: ListBuffer[A] = ListBuffer.empty
-    final override def apply(ctx: Context)
+    private[this] val acc: ListBuffer[A] = ListBuffer.empty
+    override def apply(ctx: Context)
     {
         if (ctx.status == Good)
         {
@@ -42,7 +42,7 @@ private [parsley] final class Many[A](label: Int) extends Instr
 
 private [parsley] final class SkipMany(label: Int) extends Instr
 {
-    final override def apply(ctx: Context)
+    override def apply(ctx: Context)
     {
         if (ctx.status == Good)
         {
@@ -68,8 +68,8 @@ private [parsley] final class SkipMany(label: Int) extends Instr
    a Chainr instruction too! */
 private [parsley] final class Chainl[A](label: Int) extends Instr
 {
-    final private[this] var acc: Any = null
-    final override def apply(ctx: Context)
+    private[this] var acc: Any = _
+    override def apply(ctx: Context)
     {
         // When acc is null, we are entering the instruction for the first time, a p will be on the stack
         if (acc == null)
