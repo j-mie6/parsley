@@ -2,7 +2,7 @@ package parsley
 
 import language.existentials
 
-final case class Perform[-A, +B](f: A => B) extends Instruction
+private [parsley] final case class Perform[-A, +B](f: A => B) extends Instr
 {
     final private[this] val g = f.asInstanceOf[Function[Any, Any]]
     final override def apply(ctx: Context)
@@ -13,7 +13,7 @@ final case class Perform[-A, +B](f: A => B) extends Instruction
     final override def toString: String = "Perform(f)"
 }
 
-final case class Push[A](x: A) extends Instruction
+private [parsley] final case class Push[A](x: A) extends Instr
 {
     final override def apply(ctx: Context)
     {
@@ -23,7 +23,7 @@ final case class Push[A](x: A) extends Instruction
     }
 }
 
-case object Pop extends Instruction
+private [parsley] case object Pop extends Instr
 {
     final override def apply(ctx: Context)
     {
@@ -33,7 +33,7 @@ case object Pop extends Instruction
     }
 }
 
-case object Flip extends Instruction
+private [parsley] case object Flip extends Instr
 {
     final override def apply(ctx: Context)
     {
@@ -44,7 +44,7 @@ case object Flip extends Instruction
     }
 }
 
-case object Apply extends Instruction
+private [parsley] case object Apply extends Instr
 {
     final override def apply(ctx: Context)
     {
@@ -56,7 +56,7 @@ case object Apply extends Instruction
     }
 }
 
-final case class Call(x: String) extends Instruction
+private [parsley] final case class Call(x: String) extends Instr
 {
     final private[this] var instrs: InstructionBuffer = null
     final override def apply(ctx: Context)
@@ -72,7 +72,7 @@ final case class Call(x: String) extends Instruction
     }
 }
 
-final case class DynSub[-A](f: A => InstructionBuffer) extends Instruction
+private [parsley] final case class DynSub[-A](f: A => InstructionBuffer) extends Instr
 {
     final private[this] val g = f.asInstanceOf[Any => InstructionBuffer]
     final override def apply(ctx: Context)
@@ -85,13 +85,13 @@ final case class DynSub[-A](f: A => InstructionBuffer) extends Instruction
     }
 }
 
-final case class Fail(msg: String) extends Instruction
+private [parsley] final case class Fail(msg: String) extends Instr
 {
     // We need to do something with the message!
     final override def apply(ctx: Context) = ctx.fail()
 }
 
-final case class PushHandler(handler: Int) extends Instruction
+private [parsley] final case class PushHandler(handler: Int) extends Instr
 {
     final override def apply(ctx: Context)
     {
@@ -101,7 +101,7 @@ final case class PushHandler(handler: Int) extends Instruction
     }
 }
 
-case object Try extends Instruction
+private [parsley] case object Try extends Instr
 {
     final override def apply(ctx: Context)
     {
@@ -127,7 +127,7 @@ case object Try extends Instruction
 // State is not preserved after lookahead, the position is reset etc
 // This should be the behaviour of the below when State is augmented
 // but ensure this is the case later!
-case object Look extends Instruction
+private [parsley] case object Look extends Instr
 {
     final override def apply(ctx: Context)
     {
@@ -148,7 +148,7 @@ case object Look extends Instruction
     }
 }
 
-final case class InputCheck(handler: Int) extends Instruction
+private [parsley] final case class InputCheck(handler: Int) extends Instr
 {
     final override def apply(ctx: Context)
     {
@@ -158,7 +158,7 @@ final case class InputCheck(handler: Int) extends Instruction
     }
 }
 
-final case class JumpGood(label: Int) extends Instruction
+private [parsley] final case class JumpGood(label: Int) extends Instr
 {
     final override def apply(ctx: Context)
     {
@@ -179,7 +179,7 @@ final case class JumpGood(label: Int) extends Instruction
     }
 }
 
-final case class CharTok(c: Char) extends Instruction
+private [parsley] final case class CharTok(c: Char) extends Instr
 {
     final private[this] val ac: Any = c
     final override def apply(ctx: Context)
@@ -197,7 +197,7 @@ final case class CharTok(c: Char) extends Instruction
     }
 }
 
-final class Satisfies(f: Char => Boolean) extends Instruction
+private [parsley] final class Satisfies(f: Char => Boolean) extends Instr
 {
     final override def apply(ctx: Context)
     {
@@ -214,7 +214,7 @@ final class Satisfies(f: Char => Boolean) extends Instruction
     }
 }
 
-final case class StringTok(s: String) extends Instruction
+private [parsley] final case class StringTok(s: String) extends Instr
 {
     final private[this] val ls = s.toList
     final private[this] val sz = s.size

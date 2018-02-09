@@ -1,42 +1,48 @@
-import parsley.Parsley
-import parsley.Instruction
 import scala.annotation.tailrec
 import scala.language.implicitConversions
-import scala.collection.mutable.Buffer
 
 package object parsley
 {
-    type ProgramCounter = Int
-    type InstructionBuffer = Array[Instruction]
-    type CallStack = Stack[Frame]
-    type Depth = Int
-    type HandlerStack = Stack[Handler]
-    // Yeah, turns out List[Char] is much faster than String... Not sure why?
-    type Input = List[Char]
-    type StateStack = Stack[State]
+    // Public API
+    def runParser[A](p: Parsley[A], input: String): Result[A] = runParser[A](p, input.toList, input.size)
+    def runParser[A](p: Parsley[A], input: Input, sz: Int): Result[A] = runParser_[A](new Context(p.instrs_, input, sz, p.subs_))
 
-    final class Frame(val ret: ProgramCounter, val instrs: InstructionBuffer)
+    // Implicit Conversions
+    @inline final implicit def stringLift(str: String): Parsley[String] = parsley.Parsley.string(str)
+    @inline final implicit def charLift(c: Char): Parsley[Char] = parsley.Parsley.char(c)
+
+    // Private internals
+    private type ProgramCounter = Int
+    private [parsley] type InstructionBuffer = Array[Instr]
+    private type CallStack = Stack[Frame]
+    private type Depth = Int
+    private type HandlerStack = Stack[Handler]
+    // Yeah, turns out List[Char] is much faster than String... Not sure why?
+    private type Input = List[Char]
+    private type StateStack = Stack[State]
+
+    private [parsley] final class Frame(val ret: ProgramCounter, val instrs: InstructionBuffer)
     {
         override def toString(): String = s"[$instrs@$ret]"
     }
-    final class Handler(val depth: Int, val pc: ProgramCounter, val stacksz: Int)
+    private [parsley] final class Handler(val depth: Int, val pc: ProgramCounter, val stacksz: Int)
     {
         override def toString(): String = s"Handler@$depth:$pc(-$stacksz)"
     }
-    final class State(val sz: Int, val input: Input)
+    private [parsley] final class State(val sz: Int, val input: Input)
     {
         override def toString(): String = input.mkString
     }
 
-    sealed trait Status
-    case object Good extends Status
-    case object Recover extends Status
-    case object Failed extends Status
+    private [parsley] sealed trait Status
+    private [parsley] case object Good extends Status
+    private [parsley] case object Recover extends Status
+    private [parsley] case object Failed extends Status
 
-    final class Context(final var instrs: InstructionBuffer,
-                        final var input: Input,
-                        final var inputsz: Int,
-                        final val subs: Map[String, InstructionBuffer])
+    private [parsley] final class Context(final var instrs: InstructionBuffer,
+                                          final var input: Input,
+                                          final var inputsz: Int,
+                                          final val subs: Map[String, InstructionBuffer])
     {
         final var stack: Stack[Any] = Empty
         final var calls: CallStack = Empty
@@ -47,10 +53,10 @@ package object parsley
         final var handlers: HandlerStack = Empty
         final var depth: Int = 0
         final var pc: ProgramCounter = 0
-        
+
         final override def toString(): String =
         {
-            s"""|[  
+            s"""|[
                 |  stack=[${stack.mkString(", ")}]
                 |  instrs=${instrs.mkString("; ")}
                 |  input=${input.mkString(", ")}
@@ -87,28 +93,23 @@ package object parsley
         }
     }
 
-    abstract class Instruction
+    private [parsley] abstract class Instr
     {
         def apply(ctx: Context)
     }
 
     // It's 2018 and Labels are making a come-back, along with 2 pass assembly
-    final case class Label(i: Int) extends Instruction
+    private [parsley] final case class Label(i: Int) extends Instr
     {
         def apply(ctx: Context) { ??? }
     }
-
-
-    def runParser[A](p: Parsley[A], input: String): Result[A] = runParser[A](p, input.toList, input.size)
-    def runParser[A](p: Parsley[A], input: Input, sz: Int): Result[A] = runParser_[A](new Context(p.instrs_, input, sz, p.subs_))
-    def runParser[A](instrs: InstructionBuffer, subs: Map[String, InstructionBuffer], input: Input, sz: Int) = runParser_[A](new Context(instrs, input, sz, subs))
     
     sealed trait Result[A]
     case class Success[A](x: A) extends Result[A]
     case class Failure[A](msg: String) extends Result[A]
 
     @tailrec
-    def runParser_[A](ctx: Context): Result[A] =
+    private [this] def runParser_[A](ctx: Context): Result[A] =
     {
         //println(ctx)
         if (ctx.status == Failed) return Failure("Unknown error")
@@ -131,10 +132,7 @@ package object parsley
         }
     }
     
-    @inline final implicit def stringLift(str: String): Parsley[String] = parsley.Parsley.string(str)
-    @inline final implicit def charLift(c: Char): Parsley[Char] = parsley.Parsley.char(c)
-    
-    sealed abstract class Stack[+A]
+    private [parsley] sealed abstract class Stack[+A]
     {
         val head: A
         val tail: Stack[A]
@@ -145,7 +143,7 @@ package object parsley
         def mkString(sep: String): String
         final def ::[A_ >: A](x: A_): Stack[A_] = new Elem(x, this)
     }
-    object Empty extends Stack[Nothing]
+    private [parsley] object Empty extends Stack[Nothing]
     {
         final override lazy val head = ???
         final override lazy val tail = ???
@@ -154,7 +152,7 @@ package object parsley
         final override def mkString(sep: String) = ""
         final override def toString(): String = "[]"
     }
-    final class Elem[A](override val head: A, override val tail: Stack[A]) extends Stack[A]
+    private [parsley] final class Elem[A](override val head: A, override val tail: Stack[A]) extends Stack[A]
     {
         final override lazy val size = tail.size + 1
         final override val isEmpty = false

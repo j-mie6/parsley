@@ -1,6 +1,6 @@
 package parsley
 
-final case class Exchange[A](x: A) extends Instruction
+private [parsley] final case class Exchange[A](x: A) extends Instr
 {
     final override def apply(ctx: Context)
     {
@@ -9,7 +9,7 @@ final case class Exchange[A](x: A) extends Instruction
     }
 }
 
-final case class FastFail[A](msggen: A=>String) extends Instruction
+private [parsley] final case class FastFail[A](msggen: A=>String) extends Instr
 {
     final private[this] val msggen_ = msggen.asInstanceOf[Any => String]
     final override def apply(ctx: Context)
@@ -24,7 +24,7 @@ final case class FastFail[A](msggen: A=>String) extends Instruction
 // This instruction has GREAT potential, it should be integrated into peephole :)
 // We should also make equivalents for Satisfy and String
 // Also experiment: is CharTok; Exchange better than CharTokFastPerform with const?
-final case class CharTokFastPerform(c: Char, f: Function[Char, Any]) extends Instruction
+private [parsley] final case class CharTokFastPerform(c: Char, f: Function[Char, Any]) extends Instr
 {
     // This optimisation is probably very unsafe?
     final private[this] val fc: Any = f(c)

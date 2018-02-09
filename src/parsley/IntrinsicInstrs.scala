@@ -2,7 +2,7 @@ package parsley
 
 import scala.collection.mutable.ListBuffer
 
-case object Cons extends Instruction
+private [parsley] case object Cons extends Instr
 {
     final override def apply(ctx: Context)
     {
@@ -13,7 +13,7 @@ case object Cons extends Instruction
     }
 }
 
-final class Many[A](label: Int) extends Instruction
+private [parsley] final class Many[A](label: Int) extends Instr
 {
     final private[this] val acc: ListBuffer[A] = ListBuffer.empty
     final override def apply(ctx: Context)
@@ -40,7 +40,7 @@ final class Many[A](label: Int) extends Instruction
     }
 }
 
-final class SkipMany(label: Int) extends Instruction
+private [parsley] final class SkipMany(label: Int) extends Instr
 {
     final override def apply(ctx: Context)
     {
@@ -66,7 +66,7 @@ final class SkipMany(label: Int) extends Instruction
    We need to ensure it actually performs correctly in all
    different error cases. If it does then we need to create
    a Chainr instruction too! */
-final class Chainl[A](label: Int) extends Instruction
+private [parsley] final class Chainl[A](label: Int) extends Instr
 {
     final private[this] var acc: Any = null
     final override def apply(ctx: Context)

@@ -9,14 +9,15 @@ import scala.annotation.tailrec
 
 // TODO Investigate effect of :+= instead of :+ for the buffers
 // TODO Perform final optimisation stage on end result, likely to perform some extra optimisation, but possibly less
-class Parsley[+A](
-    // The instructions that shall be executed by this parser
-    val instrs: Buffer[Instruction],
-    // The subroutines currently collected by the compilation
-    val subs: Map[String, Buffer[Instruction]])
+class Parsley[+A] private (
+                              // The instructions that shall be executed by this parser
+                              private val instrs: Buffer[Instr],
+                              // The subroutines currently collected by the compilation
+                              private val subs: Map[String, Buffer[Instr]])
 {
-    lazy val instrs_ : Array[Instruction] = instrs.toArray
-    lazy val subs_ : Map[String, Array[Instruction]] = subs.map{ case (k, v) => k -> v.toArray}
+    @inline def unsafe { unsafe_ = true }
+
+    // External Core API
     final def flatMap[B](f: A => Parsley[B]): Parsley[B] = instrs.last match
     {
         // return x >>= f == f x
@@ -31,9 +32,6 @@ class Parsley[+A](
         case Perform(g) => new Parsley(instrs.init :+ new Perform(g.asInstanceOf[Function[C forSome {type C}, A]].andThen(f)), subs)
         case _ => new Parsley(instrs :+ new Perform(f), subs)
     }
-    @inline final def <#>[B](f: =>A => B): Parsley[B] = map(f)
-    @inline final def <#>:[B](f: =>A => B): Parsley[B] = map(f)
-    @inline final def >>[B](p: Parsley[B]): Parsley[B] = this *> p
     final def *>[B](p: Parsley[B]): Parsley[B] = instrs.last match
     {
         // pure x *> p == p (consequence of applicative and functor laws)
@@ -105,8 +103,6 @@ class Parsley[+A](
             case _ => new Parsley(instrs ++ p.instrs :+ Apply, subs ++ p.subs)
         }
     }
-    @inline final def <**>[B](f: Parsley[A => B]): Parsley[B] = lift2[A, A=>B, B](x => f => f(x), this, f)
-    @inline final def <::>[A_ >: A](ps: Parsley[List[A_]]): Parsley[List[A_]] = new Parsley(instrs ++ ps.instrs :+ Cons, subs ++ ps.subs)//lift2[A, List[A_], List[A_]](x => xs => x::xs, this, ps)
     final def <|>[A_ >: A](q: Parsley[A_]): Parsley[A_] = instrs match
     {
         // pure results always succeed
@@ -129,11 +125,26 @@ class Parsley[+A](
             case _ => new Parsley[A_]((new InputCheck(instrs.size+1) +: instrs :+ new JumpGood(q.instrs.size+1)) ++ q.instrs, subs ++ q.subs)
         }
     }
+
+    // Composite/Alias Combinators
+    @inline final def <**>[B](f: Parsley[A => B]): Parsley[B] = lift2[A, A=>B, B](x => f => f(x), this, f)
+    @inline final def <#>[B](f: A => B): Parsley[B] = map(f)
+    @inline final def <#>:[B](f: A => B): Parsley[B] = map(f)
+    @inline final def >>=[B](f: A => Parsley[B]): Parsley[B] = flatMap(f)
+    @inline final def >>[B](p: Parsley[B]): Parsley[B] = this *> p
     @inline final def </>[A_ >: A](x: A_): Parsley[A_] = this <|> pure(x)
     @inline final def <\>[A_ >: A](q: Parsley[A_]): Parsley[A_] = tryParse(this) <|> q
+
+    // Intrinsics
+    @inline final def <::>[A_ >: A](ps: Parsley[List[A_]]): Parsley[List[A_]] = new Parsley(instrs ++ ps.instrs :+ Cons, subs ++ ps.subs)//lift2[A, List[A_], List[A_]](x => xs => x::xs, this, ps)
     @inline final def <|?>[B](p: Parsley[B], q: Parsley[B])(implicit ev: Parsley[A] => Parsley[Boolean]): Parsley[B] = choose(this, p, q)
     @inline final def >?>(pred: A => Boolean, msg: String): Parsley[A] = guard(this, pred, msg)
     @inline final def >?>(pred: A => Boolean, msggen: A => String) = guard(this, pred, msggen)
+
+    // Internals
+    private [this] var unsafe_ = false
+    private [parsley] lazy val instrs_ : Array[Instr] = instrs.toArray
+    private [parsley] lazy val subs_ : Map[String, Array[Instr]] = subs.map{ case (k, v) => k -> v.toArray}
     final override def toString: String = s"(${instrs.toString}, ${subs.toString})"
 }
 
