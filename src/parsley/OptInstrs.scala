@@ -5,7 +5,7 @@ private [parsley] final class Exchange[A](private [Exchange] val x: A) extends I
     override def apply(ctx: Context)
     {
         ctx.stack = x::ctx.stack.tail
-        ctx.pc += 1
+        ctx.inc()
     }
     override def toString: String = s"Ex($x)"
 }
@@ -17,7 +17,7 @@ private [parsley] final class FastFail[A](private [FastFail] val msggen: A=>Stri
     {
         val msg = msggen_(ctx.stack.head)
         ctx.stack = ctx.stack.tail
-        ctx.stacksz -= 1
+        ctx.decStack()
         new Fail(msg)(ctx)
     }
     override def toString: String = "FastFail(?)"
@@ -35,10 +35,10 @@ private [parsley] final class CharTokFastPerform(c: Char, f: Function[Char, Any]
         {
             case `c`::input =>
                 ctx.stack ::= fc
-                ctx.stacksz += 1
+                ctx.incStack()
                 ctx.inputsz -= 1
                 ctx.input = input
-                ctx.pc += 1
+                ctx.inc()
             case _ => ctx.fail()
         }
     }

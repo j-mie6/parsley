@@ -8,8 +8,8 @@ private [parsley] final class Push[A](private [Push] val x: A) extends Instr
     override def apply(ctx: Context)
     {
         ctx.stack ::= x
-        ctx.stacksz += 1
-        ctx.pc += 1
+        ctx.incStack()
+        ctx.inc()
     }
     override def toString: String = s"Push($x)"
 }
@@ -19,8 +19,8 @@ private [parsley] object Pop extends Instr
     override def apply(ctx: Context)
     {
         ctx.stack = ctx.stack.tail
-        ctx.stacksz -= 1
-        ctx.pc += 1
+        ctx.decStack()
+        ctx.inc()
     }
     override def toString: String = "Pop"
 }
@@ -32,7 +32,7 @@ private [parsley] object Flip extends Instr
         val y = ctx.stack.head
         val x = ctx.stack.tail.head
         ctx.stack = x::y::ctx.stack.tail.tail
-        ctx.pc += 1
+        ctx.inc()
     }
     override def toString: String = "Flip"
 }
@@ -47,10 +47,10 @@ private [parsley] final class CharTok(c: Char) extends Instr
         {
             case `c`::input =>
                 ctx.stack ::= ac
-                ctx.stacksz += 1
+                ctx.incStack()
                 ctx.inputsz -= 1
                 ctx.input = input
-                ctx.pc += 1
+                ctx.inc()
             case _ => ctx.fail()
         }
     }
@@ -65,10 +65,10 @@ private [parsley] final class Satisfies(f: Char => Boolean) extends Instr
         {
             case c::input if f(c) =>
                 ctx.stack ::= c
-                ctx.stacksz += 1
+                ctx.incStack()
                 ctx.inputsz -= 1
                 ctx.input = input
-                ctx.pc += 1
+                ctx.inc()
             case _ => ctx.fail()
         }
     }
@@ -86,9 +86,9 @@ private [parsley] final class StringTok(private [StringTok] val s: String) exten
         {
             ctx.stack ::= s
             ctx.input = input.drop(sz)
-            ctx.stacksz += 1
+            ctx.incStack()
             ctx.inputsz -= sz
-            ctx.pc += 1
+            ctx.inc()
         }
         else ctx.fail()
     }
@@ -102,7 +102,7 @@ private [parsley] final class Perform[-A, +B](f: A => B) extends Instr
     override def apply(ctx: Context)
     {
         ctx.stack = g(ctx.stack.head)::ctx.stack.tail
-        ctx.pc += 1
+        ctx.inc()
     }
     override def toString: String = "Perform(?)"
 }
@@ -114,8 +114,8 @@ private [parsley] object Apply extends Instr
         val stacktail = ctx.stack.tail
         val f = stacktail.head.asInstanceOf[Function[A forSome {type A}, B forSome {type B}]]
         ctx.stack = f(ctx.stack.head)::stacktail.tail
-        ctx.pc += 1
-        ctx.stacksz -= 1
+        ctx.inc()
+        ctx.decStack()
     }
     override def toString: String = "Apply"
 }
@@ -130,7 +130,7 @@ private [parsley] final class DynSub[-A](f: A => Array[Instr]) extends Instr
         ctx.instrs = g(ctx.stack.head)
         ctx.stack = ctx.stack.tail
         ctx.pc = 0
-        ctx.stacksz -= 1
+        ctx.decStack()
     }
     override def toString: String = "DynSub(?)"
 }
@@ -166,7 +166,7 @@ private [parsley] final class PushHandler(private [PushHandler] val handler: Int
     {
         ctx.handlers ::= new Handler(ctx.depth, handler, ctx.stacksz)
         ctx.states ::= new State(ctx.inputsz, ctx.input)
-        ctx.pc += 1
+        ctx.inc()
     }
     override def toString: String = s"PushHandler($handler)"
 }
@@ -180,7 +180,7 @@ private [parsley] object Try extends Instr
         {
             ctx.states = ctx.states.tail
             ctx.handlers = ctx.handlers.tail
-            ctx.pc += 1
+            ctx.inc()
         }
         // Pop input off head then fail to next handler
         else
@@ -209,7 +209,7 @@ private [parsley] object Look extends Instr
             ctx.input = state.input
             ctx.inputsz = state.sz
             ctx.handlers = ctx.handlers.tail
-            ctx.pc += 1
+            ctx.inc()
         }
         else
         {
@@ -226,7 +226,7 @@ private [parsley] final class InputCheck(private [InputCheck] val handler: Int) 
     {
         ctx.checkStack ::= ctx.inputsz
         ctx.handlers ::= new Handler(ctx.depth, handler, ctx.stacksz)
-        ctx.pc += 1
+        ctx.inc()
     }
     override def toString: String = s"InputCheck($handler)"
 }
@@ -247,7 +247,7 @@ private [parsley] final class JumpGood(private [JumpGood] val label: Int) extend
         {
             ctx.checkStack = ctx.checkStack.tail
             ctx.status = Good
-            ctx.pc += 1
+            ctx.inc()
         }
     }
     override def toString: String = s"JumpGood($label)"

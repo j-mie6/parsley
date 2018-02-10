@@ -8,8 +8,8 @@ private [parsley] object Cons extends Instr
     {
         val stacktail = ctx.stack.tail
         ctx.stack = (stacktail.head::ctx.stack.head.asInstanceOf[List[_]])::stacktail.tail
-        ctx.pc += 1
-        ctx.stacksz -= 1
+        ctx.inc()
+        ctx.decStack()
     }
     override def toString: String = "Cons"
 }
@@ -23,7 +23,7 @@ private [parsley] final class Many[A](private [Many] val label: Int) extends Ins
         {
             acc += ctx.stack.head.asInstanceOf[A]
             ctx.stack = ctx.stack.tail
-            ctx.stacksz -= 1
+            ctx.decStack()
             ctx.checkStack = ctx.inputsz::ctx.checkStack.tail
             ctx.pc = label
         }
@@ -32,11 +32,11 @@ private [parsley] final class Many[A](private [Many] val label: Int) extends Ins
         else
         {
             ctx.stack ::= acc.toList
-            ctx.stacksz += 1
+            ctx.incStack()
             acc.clear()
             ctx.checkStack = ctx.checkStack.tail
             ctx.status = Good
-            ctx.pc += 1
+            ctx.inc()
         }
     }
     override def toString: String = s"Many($label)"
@@ -49,7 +49,7 @@ private [parsley] final class SkipMany(private [SkipMany] val label: Int) extend
         if (ctx.status == Good)
         {
             ctx.stack = ctx.stack.tail
-            ctx.stacksz -= 1
+            ctx.decStack()
             ctx.checkStack = ctx.inputsz::ctx.checkStack.tail
             ctx.pc = label
         }
@@ -59,7 +59,7 @@ private [parsley] final class SkipMany(private [SkipMany] val label: Int) extend
         {
             ctx.checkStack = ctx.checkStack.tail
             ctx.status = Good
-            ctx.pc += 1
+            ctx.inc()
         }
     }
     override def toString: String = s"SkipMany($label)"
@@ -79,13 +79,13 @@ private [parsley] final class Chainl[A](private [Chainl] val label: Int) extends
         {
             acc = ctx.stack.tail.head
             ctx.stack = ctx.stack.head::ctx.stack.tail.tail
-            ctx.stacksz -= 1
+            ctx.decStack()
         }
         if (ctx.status == Good)
         {
             acc = ctx.stack.head.asInstanceOf[Function[Any, Any]](acc)
             ctx.stack = ctx.stack.tail
-            ctx.stacksz -= 1
+            ctx.decStack()
             ctx.checkStack = ctx.inputsz::ctx.checkStack.tail
             ctx.pc = label
         }
@@ -94,11 +94,11 @@ private [parsley] final class Chainl[A](private [Chainl] val label: Int) extends
         else
         {
             ctx.stack ::= acc
-            ctx.stacksz += 1
+            ctx.incStack()
             acc = null
             ctx.checkStack = ctx.checkStack.tail
             ctx.status = Good
-            ctx.pc += 1
+            ctx.inc()
         }
     }
     override def toString: String = s"Chainl($label)"

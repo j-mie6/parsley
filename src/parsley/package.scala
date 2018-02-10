@@ -90,6 +90,10 @@ package object parsley
                 depth = handler.depth
             }
         }
+
+        def inc() { pc += 1 }
+        def incStack() { stacksz += 1 }
+        def decStack() { stacksz -= 1 }
     }
 
     private [parsley] abstract class Instr
