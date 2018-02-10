@@ -1,6 +1,5 @@
 package parsley
 
-import parsec.flip
 import parsley.Parsley._
 
 import scala.collection.mutable
@@ -257,17 +256,6 @@ object Parsley
         new Parsley(process(instrs), subs.mapValues(process(_)))
     }*/
 
-    def inf: Parsley[Int] = "inf" <%> inf.map[Int](_+1).map[Int](_+2)
-    def expr: Parsley[Int] = "expr" <%> (pure[Int=>Int=>Int](x => y => x + y) <*> pure[Int](10) <*> expr)
-    def monad: Parsley[Int] = for (x <- pure[Int](10); y <- pure[Int](20)) yield x + y
-    def foo: Parsley[Int] = "foo" <%> (bar <* pure(20))
-    def bar: Parsley[Int] = "bar" <%> (foo *> pure(10))
-    def sepEndBy1[A, B](p: Parsley[A], sep: Parsley[B]): Parsley[List[A]] = s"sepEndBy1" <%> (p <::> ((sep >> sepEndBy(p, sep)) </> Nil))
-    def sepEndBy[A, B](p: Parsley[A], sep: Parsley[B]): Parsley[List[A]] = s"sepEndBy" <%> (sepEndBy1(p, sep) </> Nil)
-    def repeat[A](n: Int, p: Parsley[A]): Parsley[List[A]] =
-        if (n > 0) p <::> repeat(n-1, p)
-        else pure(Nil)
-
     @inline def chainl1[A](p: Parsley[A], op: Parsley[A => A => A]): Parsley[A] = chainl1_(p, op.map(flip[A, A, A]))
     @inline def chainl1_[A](p : Parsley[A], op: Parsley[A => A => A]): Parsley[A] = chainPost(p, op <*> p)
     def chainPost[A](p: Parsley[A], op: Parsley[A => A]): Parsley[A] =
@@ -275,6 +263,7 @@ object Parsley
         lift2((x: A) => (xs: List[A=>A]) => xs.foldLeft(x)((y, f) => f(y)), p, many(op))
         //new Parsley((p.instrs :+ new InputCheck(op.instrs.size+1)) ++ op.instrs :+ new Chainl[A](-op.instrs.size), p.subs ++ op.subs)
     }
+    @inline def flip[A, B, C](f: A => B => C)(x: B)(y: A) = f(y)(x)
 
     @inline def chainr1[A](p: Parsley[A], op: Parsley[A => A => A]): Parsley[A] =
     {
@@ -290,20 +279,6 @@ object Parsley
     def main(args: Array[String]): Unit =
     {
         println(pure[Int=>Int=>Int](x => y => x + y) <*> pure(10) <*> pure(20))
-        reset()
-        println(inf)
-        reset()
-        println(expr)
-        reset()
-        println(monad)
-        reset()
-        println(foo)
-        reset()
-        println(many(pure[Int](10)))
-        reset()
-        println(sepEndBy('x', 'a'))
-        reset()
-        println(repeat(10, pure[Unit](())))
         reset()
         println(((x: Int) => x * 2) <#> (((x: Char) => x.toInt) <#> '0'))
         reset()
