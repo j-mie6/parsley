@@ -15,9 +15,7 @@ private [parsley] final class FastFail[A](private [FastFail] val msggen: A=>Stri
     private[this] val msggen_ = msggen.asInstanceOf[Any => String]
     override def apply(ctx: Context)
     {
-        val msg = msggen_(ctx.stack.head)
-        ctx.stack = ctx.stack.tail
-        ctx.decStack()
+        val msg = msggen_(ctx.popStack())
         new Fail(msg)(ctx)
     }
     override def toString: String = "FastFail(?)"
@@ -34,8 +32,7 @@ private [parsley] final class CharTokFastPerform(c: Char, f: Function[Char, Any]
         ctx.input match
         {
             case `c`::input =>
-                ctx.stack ::= fc
-                ctx.incStack()
+                ctx.pushStack(fc)
                 ctx.inputsz -= 1
                 ctx.input = input
                 ctx.inc()

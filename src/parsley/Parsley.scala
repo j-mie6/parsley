@@ -202,7 +202,7 @@ object Parsley
     {
         val handler = fresh()
         val back = fresh()
-        new Parsley(new InputCheck(handler) +: Label(back) +: p.instrs :+ Label(handler) :+ new Many[A](back), p.subs)
+        new Parsley(new InputCheck(handler) +: Label(back) +: p.instrs :+ Label(handler) :+ new Many(back), p.subs)
     }
     @tailrec def manyN[A](p: Parsley[A], n: Int)(acc: Parsley[List[A]] = many(p)): Parsley[List[A]] =
     {

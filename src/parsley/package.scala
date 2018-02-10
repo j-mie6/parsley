@@ -92,15 +92,12 @@ package object parsley
         }
 
         def inc() { pc += 1 }
-        def incStack() { stacksz += 1 }
-        def decStack() { stacksz -= 1 }
-        //TODO: Consider using pushStack and popStack - Could improve performance?
-        def pushStack(x: Any) { stack ::= x; incStack() }
+        def pushStack(x: Any) { stack ::= x; stacksz += 1 }
         def popStack(): Any =
         {
             val ret = stack.head
             stack = stack.tail
-            decStack()
+            stacksz -= 1
             ret
         }
     }

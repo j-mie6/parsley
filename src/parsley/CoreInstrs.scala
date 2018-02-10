@@ -7,8 +7,7 @@ private [parsley] final class Push[A](private [Push] val x: A) extends Instr
 {
     override def apply(ctx: Context)
     {
-        ctx.stack ::= x
-        ctx.incStack()
+        ctx.pushStack(x)
         ctx.inc()
     }
     override def toString: String = s"Push($x)"
@@ -18,8 +17,7 @@ private [parsley] object Pop extends Instr
 {
     override def apply(ctx: Context)
     {
-        ctx.stack = ctx.stack.tail
-        ctx.decStack()
+        ctx.popStack()
         ctx.inc()
     }
     override def toString: String = "Pop"
@@ -46,8 +44,7 @@ private [parsley] final class CharTok(c: Char) extends Instr
         ctx.input match
         {
             case `c`::input =>
-                ctx.stack ::= ac
-                ctx.incStack()
+                ctx.pushStack(ac)
                 ctx.inputsz -= 1
                 ctx.input = input
                 ctx.inc()
@@ -64,8 +61,7 @@ private [parsley] final class Satisfies(f: Char => Boolean) extends Instr
         ctx.input match
         {
             case c::input if f(c) =>
-                ctx.stack ::= c
-                ctx.incStack()
+                ctx.pushStack(c)
                 ctx.inputsz -= 1
                 ctx.input = input
                 ctx.inc()
@@ -84,9 +80,8 @@ private [parsley] final class StringTok(private [StringTok] val s: String) exten
         val input = ctx.input
         if (input.startsWith(ls))
         {
-            ctx.stack ::= s
+            ctx.pushStack(s)
             ctx.input = input.drop(sz)
-            ctx.incStack()
             ctx.inputsz -= sz
             ctx.inc()
         }
@@ -111,11 +106,10 @@ private [parsley] object Apply extends Instr
 {
     override def apply(ctx: Context)
     {
-        val stacktail = ctx.stack.tail
-        val f = stacktail.head.asInstanceOf[Function[A forSome {type A}, B forSome {type B}]]
-        ctx.stack = f(ctx.stack.head)::stacktail.tail
+        val x = ctx.popStack()
+        val f = ctx.stack.head.asInstanceOf[Function[Any, Any]]
+        ctx.stack = f(x)::ctx.stack.tail
         ctx.inc()
-        ctx.decStack()
     }
     override def toString: String = "Apply"
 }
@@ -127,10 +121,8 @@ private [parsley] final class DynSub[-A](f: A => Array[Instr]) extends Instr
     override def apply(ctx: Context)
     {
         ctx.calls ::= new Frame(ctx.pc + 1, ctx.instrs)
-        ctx.instrs = g(ctx.stack.head)
-        ctx.stack = ctx.stack.tail
+        ctx.instrs = g(ctx.popStack())
         ctx.pc = 0
-        ctx.decStack()
     }
     override def toString: String = "DynSub(?)"
 }
