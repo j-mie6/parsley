@@ -26,7 +26,6 @@ private [parsley] final class FastFail[A](msggen: A=>String) extends Instr
 // Also experiment: is CharTok; Exchange better than CharTokFastPerform with const?
 private [parsley] final case class CharTokFastPerform(c: Char, f: Function[Char, Any]) extends Instr
 {
-    // This optimisation is probably very unsafe?
     private[this] val fc: Any = f(c)
     override def apply(ctx: Context)
     {

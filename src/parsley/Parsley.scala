@@ -14,19 +14,19 @@ final class Parsley[+A] private [Parsley] (
     // The subroutines currently collected by the compilation
     private [Parsley] val subs: Map[String, mutable.Buffer[Instr]])
 {
-    @inline def unsafe() { unsafe_ = true }
+    @inline def unsafe() { safe = false }
 
     // External Core API
     def flatMap[B](f: A => Parsley[B]): Parsley[B] = instrs.last match
     {
         // return x >>= f == f x
-        case Push(x: A @unchecked) => new Parsley(instrs.init ++ f(x).instrs, subs)
+        case Push(x: A @unchecked) if safe => new Parsley(instrs.init ++ f(x).instrs, subs)
         case _ => new Parsley(instrs :+ new DynSub[A](x => f(x).instrs.toArray), subs)
     }
     def map[B](f: A => B): Parsley[B] = instrs.last match
     {
         // Pure application can be resolved at compile-time
-        case Push(x: A @unchecked) => new Parsley(instrs.init :+ new Push(f(x)), subs)
+        case Push(x: A @unchecked) if safe => new Parsley(instrs.init :+ new Push(f(x)), subs)
         // p.map(f).map(g) = p.map(g . f) (functor law)
         case Perform(g) => new Parsley(instrs.init :+ new Perform(g.asInstanceOf[Function[C forSome {type C}, A]].andThen(f)), subs)
         case _ => new Parsley(instrs :+ new Perform(f), subs)
@@ -34,19 +34,19 @@ final class Parsley[+A] private [Parsley] (
     def *>[B](p: Parsley[B]): Parsley[B] = instrs.last match
     {
         // pure x *> p == p (consequence of applicative and functor laws)
-        case Push(_) => new Parsley(instrs.init ++ p.instrs, subs ++ p.subs)
+        case _: Push[_] => new Parsley(instrs.init ++ p.instrs, subs ++ p.subs)
         case _ => new Parsley((instrs :+ Pop) ++ p.instrs, subs ++ p.subs)
     }
     def <*[B](p: Parsley[B]): Parsley[A] = p.instrs.last match
     {
         // p <* pure x == p (consequence of applicative and functor laws)
-        case Push(_) => new Parsley(instrs ++ p.instrs.init, subs ++ p.subs)
+        case _: Push[_] => new Parsley(instrs ++ p.instrs.init, subs ++ p.subs)
         case _ => new Parsley(instrs ++ p.instrs :+ Pop, subs ++ p.subs)
     }
     def #>[B](x: B): Parsley[B] = instrs.last match
     {
         // pure x #> y == pure y (consequence of applicative and functor laws)
-        case Push(_) => new Parsley(instrs.init :+ new Push(x), subs)
+        case _: Push[_] => new Parsley(instrs.init :+ new Push(x), subs)
         case _ => new Parsley(instrs :+ Pop :+ new Push(x), subs)
     }
     def <*>:[B](p: Parsley[A => B]): Parsley[B] = p.instrs.last match
@@ -55,7 +55,7 @@ final class Parsley[+A] private [Parsley] (
         case Push(f) => instrs.last match
         {
             // f <#> pure x == pure (f x) (applicative law)
-            case Push(x: A @unchecked) => new Parsley(p.instrs.init ++ instrs.init :+ new Push(f.asInstanceOf[Function[A, B]](x)), p.subs ++ subs)
+            case Push(x: A @unchecked) if safe => new Parsley(p.instrs.init ++ instrs.init :+ new Push(f.asInstanceOf[Function[A, B]](x)), p.subs ++ subs)
             // p.map(f).map(g) == p.map(g . f) (functor law)
             case Perform(g) =>
                 new Parsley(p.instrs.init ++ instrs.init :+
@@ -65,7 +65,8 @@ final class Parsley[+A] private [Parsley] (
         case Perform(f: Function[A, Any=>Any] @unchecked) => instrs.last match
         {
             // fusion law: (f <$> x) <*> pure y == (($y) . f) <$> x
-            case Push(y) => new Parsley(p.instrs.init ++ instrs.init :+ new Perform[A, Any](x => f(x)(y)), p.subs ++ subs)
+            // FIXME: Broken in context of labelless or
+            case Push(y) if false => new Parsley(p.instrs.init ++ instrs.init :+ new Perform[A, Any](x => f(x)(y)), p.subs ++ subs)
             case _ => new Parsley(p.instrs ++ instrs :+ Apply, p.subs ++ subs)
         }
         case _ => instrs.last match
@@ -81,7 +82,7 @@ final class Parsley[+A] private [Parsley] (
         case Push(f) => p.instrs.last match
         {
             // f <#> pure x == pure (f x) (applicative law)
-            case Push(x: B @unchecked) => new Parsley(instrs.init ++ p.instrs.init :+ new Push(f.asInstanceOf[Function[B, C]](x)), subs ++ p.subs)
+            case Push(x: B @unchecked) if safe => new Parsley(instrs.init ++ p.instrs.init :+ new Push(f.asInstanceOf[Function[B, C]](x)), subs ++ p.subs)
             // p.map(f).map(g) == p.map(g . f) (functor law)
             case Perform(g) =>
                 new Parsley(instrs.init ++ p.instrs.init :+
@@ -141,7 +142,7 @@ final class Parsley[+A] private [Parsley] (
     @inline def >?>(pred: A => Boolean, msggen: A => String): Parsley[A] = guard(this, pred, msggen)
 
     // Internals
-    private [this] var unsafe_ = false
+    private [this] var safe = true
     private [parsley] lazy val instrArray : Array[Instr] = instrs.toArray
     private [parsley] lazy val subsMap : Map[String, Array[Instr]] = subs.map{ case (k, v) => k -> v.toArray}
     override def toString: String = s"(${instrs.toString}, ${subs.toString})"
