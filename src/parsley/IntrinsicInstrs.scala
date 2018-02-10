@@ -38,6 +38,7 @@ private [parsley] final class Many[A](label: Int) extends Instr
             ctx.pc += 1
         }
     }
+    override def toString: String = "Many"
 }
 
 private [parsley] final class SkipMany(label: Int) extends Instr
@@ -60,6 +61,7 @@ private [parsley] final class SkipMany(label: Int) extends Instr
             ctx.pc += 1
         }
     }
+    override def toString: String = "SkipMany"
 }
 
 /* TODO: Chainl instruction has promising performance boost
@@ -98,4 +100,5 @@ private [parsley] final class Chainl[A](label: Int) extends Instr
             ctx.pc += 1
         }
     }
+    override def toString: String = "Chainl"
 }

@@ -93,7 +93,7 @@ class Parsley[+A] private (
         {
             // fusion law: (f <$> x) <*> pure y == (($y) . f) <$> x
             // FIXME: Broken in context of labelless or
-            //case Push(y) => new Parsley(instrs.init ++ p.instrs.init :+ Perform[B, Any](x => f(x)(y)), subs ++ p.subs)
+            case Push(y) if false => new Parsley(instrs.init ++ p.instrs.init :+ Perform[B, Any](x => f(x)(y)), subs ++ p.subs)
             case _ => new Parsley(instrs ++ p.instrs :+ Apply, subs ++ p.subs)
         }
         case _ => p.instrs.last match
@@ -108,11 +108,11 @@ class Parsley[+A] private (
         // pure results always succeed
         case mutable.Buffer(Push(_)) => new Parsley[A_](instrs, subs ++ q.subs)
         // empty <|> q == q (alternative law)
-        case mutable.Buffer(Fail(_)) => q
+        case mutable.Buffer(_: Fail) => q
         case _ => q.instrs match
         {
             // p <|> empty = p (alternative law)
-            case mutable.Buffer(Fail(_)) => this
+            case mutable.Buffer(_: Fail) => this
             // p <|> p == p (this needs refinement to be label invariant, we want structure
             case instrs_ if instrs == instrs_ => this
             // I imagine there is space for optimisation of common postfix and prefixes in choice

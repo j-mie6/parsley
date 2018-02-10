@@ -9,7 +9,7 @@ private [parsley] final case class Exchange[A](x: A) extends Instr
     }
 }
 
-private [parsley] final case class FastFail[A](msggen: A=>String) extends Instr
+private [parsley] final class FastFail[A](msggen: A=>String) extends Instr
 {
     private[this] val msggen_ = msggen.asInstanceOf[Any => String]
     override def apply(ctx: Context)
@@ -38,7 +38,7 @@ private [parsley] final case class CharTokFastPerform(c: Char, f: Function[Char,
                 ctx.inputsz -= 1
                 ctx.input = input
                 ctx.pc += 1
-            case inputs => ctx.fail()
+            case _ => ctx.fail()
         }
     }
     override def toString: String = s"CharTokFastPerform($c)"

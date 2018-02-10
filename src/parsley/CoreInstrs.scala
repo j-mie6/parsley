@@ -10,7 +10,7 @@ private [parsley] final case class Perform[-A, +B](f: A => B) extends Instr
         ctx.stack = g(ctx.stack.head)::ctx.stack.tail
         ctx.pc += 1
     }
-    override def toString: String = "Perform(f)"
+    override def toString: String = "Perform(?)"
 }
 
 private [parsley] final case class Push[A](x: A) extends Instr
@@ -85,10 +85,11 @@ private [parsley] final case class DynSub[-A](f: A => Array[Instr]) extends Inst
     }
 }
 
-private [parsley] final case class Fail(msg: String) extends Instr
+private [parsley] final class Fail(msg: String) extends Instr
 {
     // We need to do something with the message!
     override def apply(ctx: Context) { ctx.fail() }
+    override def toString: String = s"Fail($msg)"
 }
 
 private [parsley] final case class PushHandler(handler: Int) extends Instr
@@ -212,6 +213,7 @@ private [parsley] final class Satisfies(f: Char => Boolean) extends Instr
             case _ => ctx.fail()
         }
     }
+    override def toString: String = "Satisfies(?)"
 }
 
 private [parsley] final case class StringTok(s: String) extends Instr
