@@ -8,11 +8,11 @@ import scala.annotation.tailrec
 
 // TODO Investigate effect of :+= instead of :+ for the buffers
 // TODO Perform final optimisation stage on end result, likely to perform some extra optimisation, but possibly less
-final class Parsley[+A] private (
+final class Parsley[+A] private [Parsley] (
     // The instructions that shall be executed by this parser
-    private val instrs: mutable.Buffer[Instr],
+    private [Parsley] val instrs: mutable.Buffer[Instr],
     // The subroutines currently collected by the compilation
-    private val subs: Map[String, mutable.Buffer[Instr]])
+    private [Parsley] val subs: Map[String, mutable.Buffer[Instr]])
 {
     @inline def unsafe() { unsafe_ = true }
 
