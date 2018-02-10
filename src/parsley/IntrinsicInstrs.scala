@@ -72,9 +72,9 @@ private [parsley] final class Chainl[A](private [Chainl] val label: Int) extends
         // When acc is null, we are entering the instruction for the first time, a p will be on the stack
         if (acc == null)
         {
-            acc = ctx.stack.tail.head
-            ctx.stack = ctx.stack.head::ctx.stack.tail.tail
-            ctx.stacksz -= 1
+            val op = ctx.popStack()
+            acc = ctx.stack.head
+            ctx.stack = op::ctx.stack.tail
         }
         if (ctx.status == Good)
         {
