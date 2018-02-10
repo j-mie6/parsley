@@ -2,7 +2,7 @@ package parsley
 
 import scala.collection.mutable.ListBuffer
 
-private [parsley] case object Cons extends Instr
+private [parsley] object Cons extends Instr
 {
     final override def apply(ctx: Context)
     {
@@ -11,9 +11,10 @@ private [parsley] case object Cons extends Instr
         ctx.pc += 1
         ctx.stacksz -= 1
     }
+    override def toString: String = "Cons"
 }
 
-private [parsley] final class Many[A](label: Int) extends Instr
+private [parsley] final class Many[A](private [Many] val label: Int) extends Instr
 {
     private[this] val acc: ListBuffer[A] = ListBuffer.empty
     override def apply(ctx: Context)
@@ -24,7 +25,7 @@ private [parsley] final class Many[A](label: Int) extends Instr
             ctx.stack = ctx.stack.tail
             ctx.stacksz -= 1
             ctx.checkStack = ctx.inputsz::ctx.checkStack.tail
-            ctx.pc += label
+            ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
         else if (ctx.inputsz != ctx.checkStack.head) {acc.clear(); ctx.fail()}
@@ -38,10 +39,10 @@ private [parsley] final class Many[A](label: Int) extends Instr
             ctx.pc += 1
         }
     }
-    override def toString: String = "Many"
+    override def toString: String = s"Many($label)"
 }
 
-private [parsley] final class SkipMany(label: Int) extends Instr
+private [parsley] final class SkipMany(private [SkipMany] val label: Int) extends Instr
 {
     override def apply(ctx: Context)
     {
@@ -50,7 +51,7 @@ private [parsley] final class SkipMany(label: Int) extends Instr
             ctx.stack = ctx.stack.tail
             ctx.stacksz -= 1
             ctx.checkStack = ctx.inputsz::ctx.checkStack.tail
-            ctx.pc += label
+            ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
         else if (ctx.inputsz != ctx.checkStack.head) ctx.fail()
@@ -61,14 +62,14 @@ private [parsley] final class SkipMany(label: Int) extends Instr
             ctx.pc += 1
         }
     }
-    override def toString: String = "SkipMany"
+    override def toString: String = s"SkipMany($label)"
 }
 
 /* TODO: Chainl instruction has promising performance boost
    We need to ensure it actually performs correctly in all
    different error cases. If it does then we need to create
    a Chainr instruction too! */
-private [parsley] final class Chainl[A](label: Int) extends Instr
+private [parsley] final class Chainl[A](private [Chainl] val label: Int) extends Instr
 {
     private[this] var acc: Any = _
     override def apply(ctx: Context)
@@ -86,7 +87,7 @@ private [parsley] final class Chainl[A](label: Int) extends Instr
             ctx.stack = ctx.stack.tail
             ctx.stacksz -= 1
             ctx.checkStack = ctx.inputsz::ctx.checkStack.tail
-            ctx.pc += label
+            ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
         else if (ctx.inputsz != ctx.checkStack.head) {acc = null; ctx.fail()}
@@ -100,5 +101,21 @@ private [parsley] final class Chainl[A](label: Int) extends Instr
             ctx.pc += 1
         }
     }
-    override def toString: String = "Chainl"
+    override def toString: String = s"Chainl($label)"
+}
+
+// Extractor Objects
+private [parsley] object Many
+{
+    def unapply(self: Many[_]): Option[Int] = Some(self.label)
+}
+
+private [parsley] object SkipMany
+{
+    def unapply(self: SkipMany): Option[Int] = Some(self.label)
+}
+
+private [parsley] object Chainl
+{
+    def unapply(self: Chainl[_]): Option[Int] = Some(self.label)
 }
