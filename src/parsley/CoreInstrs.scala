@@ -96,7 +96,7 @@ private [parsley] final class Perform[-A, +B](f: A => B) extends Instr
     private [Perform] val g = f.asInstanceOf[Function[Any, Any]]
     override def apply(ctx: Context)
     {
-        ctx.stack = g(ctx.stack.head)::ctx.stack.tail
+        ctx.exchangeStack(g(ctx.stack.head))
         ctx.inc()
     }
     override def toString: String = "Perform(?)"
@@ -108,7 +108,7 @@ private [parsley] object Apply extends Instr
     {
         val x = ctx.popStack()
         val f = ctx.stack.head.asInstanceOf[Function[Any, Any]]
-        ctx.stack = f(x)::ctx.stack.tail
+        ctx.exchangeStack(f(x))
         ctx.inc()
     }
     override def toString: String = "Apply"

@@ -7,7 +7,7 @@ private [parsley] object Cons extends Instr
     final override def apply(ctx: Context)
     {
         val xs = ctx.popStack().asInstanceOf[List[_]]
-        ctx.stack = (ctx.stack.head::xs)::ctx.stack.tail
+        ctx.exchangeStack(ctx.stack.head::xs)
         ctx.inc()
     }
     override def toString: String = "Cons"
@@ -74,7 +74,7 @@ private [parsley] final class Chainl[A](private [Chainl] val label: Int) extends
         {
             val op = ctx.popStack()
             acc = ctx.stack.head
-            ctx.stack = op::ctx.stack.tail
+            ctx.exchangeStack(op)
         }
         if (ctx.status eq Good)
         {

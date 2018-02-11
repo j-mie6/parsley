@@ -3,6 +3,7 @@ import scala.language.implicitConversions
 
 package object parsley
 {
+    import parsley.Stack._
     // Public API
     def runParser[A](p: Parsley[A], input: String): Result[A] = runParser[A](p, input.toList, input.length)
     def runParser[A](p: Parsley[A], input: Input, sz: Int): Result[A] = runParser_[A](new Context(p.instrArray, input, sz, p.subsMap))
@@ -56,13 +57,13 @@ package object parsley
         override def toString: String =
         {
             s"""|[
-                |  stack=[${stack.mkString(", ")}]
+                |  stack=[${mkString(stack, ", ")}]
                 |  instrs=${instrs.mkString("; ")}
                 |  input=${input.mkString(", ")}
                 |  status=$status
                 |  pc=$pc
                 |  depth=$depth
-                |  rets=${calls.map(_.ret).mkString(", ")}
+                |  rets=${mkString(map[Frame, Int](calls, _.ret), ", ")}
                 |  handlers=$handlers
                 |  recstates=$states
                 |]""".stripMargin
@@ -70,7 +71,7 @@ package object parsley
 
         def fail()
         {
-            if (handlers.isEmpty) status = Failed
+            if (isEmpty(handlers)) status = Failed
             else
             {
                 status = Recover
@@ -78,21 +79,21 @@ package object parsley
                 val diffdepth = depth - handler.depth - 1
                 if (diffdepth >= 0)
                 {
-                    val calls_ = if (diffdepth != 0) calls.drop(diffdepth) else calls
+                    val calls_ = if (diffdepth != 0) drop(calls, diffdepth) else calls
                     instrs = calls_.head.instrs
                     calls = calls_.tail
                 }
                 pc = handler.pc
                 handlers = handlers.tail
                 val diffstack = stacksz - handler.stacksz
-                if (diffstack > 0) stack = stack.drop(diffstack)
+                if (diffstack > 0) stack = drop(stack, diffstack)
                 stacksz = handler.stacksz
                 depth = handler.depth
             }
         }
 
         def inc() { pc += 1 }
-        def pushStack(x: Any) { stack ::= x; stacksz += 1 }
+        def pushStack(x: Any) { stack = new Stack(x, stack); stacksz += 1 }
         def popStack(): Any =
         {
             val ret = stack.head
@@ -100,6 +101,7 @@ package object parsley
             stacksz -= 1
             ret
         }
+        def exchangeStack(x: Any) { stack.head = x }
     }
 
     private [parsley] abstract class Instr
@@ -128,7 +130,7 @@ package object parsley
             instrs(pc)(ctx)
             runParser_[A](ctx)
         }
-        else if (ctx.calls.isEmpty) Success(ctx.stack.head.asInstanceOf[A])
+        else if (isEmpty(ctx.calls)) Success(ctx.stack.head.asInstanceOf[A])
         else
         {
             val frame = ctx.calls.head
@@ -139,54 +141,27 @@ package object parsley
             runParser_[A](ctx)
         }
     }
-    
-    /*private [parsley] sealed abstract class Stack[+A]
-    {
-        val head: A
-        val tail: Stack[A]
-        val isEmpty: Boolean
-        val size: Int
-        @tailrec final def drop(n: Int): Stack[A] = if (n > 0 && !isEmpty) tail.drop(n-1) else this
-        final def map[B](f: A => B): Stack[B] = if (!isEmpty) f(head)::tail.map(f) else Empty
-        def mkString(sep: String): String
-        //final def ::[A_ >: A](x: A_): Stack[A_] = new Elem(x, this)
-    }*/
-    private [parsley] final class Stack[+A](val head: A, val tail: Stack[A])
-    {
+
+    // This stack class is designed to be ultra-fast: no virtual function calls
+    // It will crash with NullPointerException if you try and use head or tail of empty stack
+    // But that is illegal anyway
+    private [parsley] final class Stack[A](var head: A, val tail: Stack[A])
+    /*{
         import Stack._
-        lazy val size_ : Int = size(tail) + 1 
-    }
+        lazy val size_ : Int = size(tail) + 1
+    }*/
     private [parsley] object Stack
     {
-        def empty[A]: Stack[A] = null//Empty
+        def empty[A]: Stack[A] = null
+        @inline def isEmpty(s: Stack[_]): Boolean = s == null
+        //def size(s: Stack[_]): Int = if (isEmpty(s)) 0 else s.size_
+        @tailrec def drop[A](s: Stack[A], n: Int): Stack[A] = if (n > 0 && !isEmpty(s)) drop(s.tail, n - 1) else s
+        def map[A, B](s: Stack[A], f: A => B): Stack[B] = if (!isEmpty(s)) new Stack(f(s.head), map(s.tail, f)) else empty
+        def mkString(s: Stack[_], sep: String): String = if (isEmpty(s)) "" else s.head.toString + sep + mkString(s.tail, sep)
+        // This class is left in for niceness sake, but we shouldn't be using it if we can avoid it!
         final implicit class Cons[A](s: Stack[A])
         {
-            def ::[A_ >: A](x: A_): Stack[A_] = new Stack(x, s)//new Elem(x, s)
-            def size() = Stack.size(s)
-            def isEmpty() = Stack.isEmpty(s)
-            def mkString(sep: String): String = if (s == null) "" else s.head.toString + sep + s.tail.mkString(sep)
-            def drop(n: Int) = Stack.drop(s, n)
-            def map[B](f: A => B): Stack[B] = Stack.map(s, f)
+            def ::(x: A): Stack[A] = new Stack(x, s)
         }
-        def size(s: Stack[_]): Int = if (s == null) 0 else s.size_
-        def isEmpty(s: Stack[_]): Boolean = s == null
-        @tailrec def drop[A](s: Stack[A], n: Int): Stack[A] = if (n > 0 && !isEmpty(s)) drop(s.tail, n-1) else s
-        def map[A, B](s: Stack[A], f: A => B): Stack[B] = if (!isEmpty(s)) f(s.head)::s.tail.map(f) else null
     }
-    /*private [parsley] object Empty extends Stack[Nothing]
-    {
-        override lazy val head: Nothing = throw new Exception("Cannot take head of empty list")
-        override lazy val tail: Nothing = throw new Exception("Cannot take tail of empty list")
-        override lazy val size: Int = 0
-        override val isEmpty: Boolean = true
-        override def mkString(sep: String): String = ""
-        override def toString: String = "[]"
-    }
-    private [parsley] final class Elem[A](override val head: A, override val tail: Stack[A]) extends Stack[A]
-    {
-        override lazy val size: Int = tail.size + 1
-        override val isEmpty: Boolean = false
-        override def mkString(sep: String): String = head.toString + sep + tail.mkString(sep)
-        override def toString: String = s"$head::$tail"
-    }*/
 }

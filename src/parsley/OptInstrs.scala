@@ -4,7 +4,7 @@ private [parsley] final class Exchange[A](private [Exchange] val x: A) extends I
 {
     override def apply(ctx: Context)
     {
-        ctx.stack = x::ctx.stack.tail
+        ctx.exchangeStack(x)
         ctx.inc()
     }
     override def toString: String = s"Ex($x)"
