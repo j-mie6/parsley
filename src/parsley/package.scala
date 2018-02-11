@@ -140,7 +140,7 @@ package object parsley
         }
     }
     
-    private [parsley] sealed abstract class Stack[+A]
+    /*private [parsley] sealed abstract class Stack[+A]
     {
         val head: A
         val tail: Stack[A]
@@ -149,13 +149,31 @@ package object parsley
         @tailrec final def drop(n: Int): Stack[A] = if (n > 0 && !isEmpty) tail.drop(n-1) else this
         final def map[B](f: A => B): Stack[B] = if (!isEmpty) f(head)::tail.map(f) else Empty
         def mkString(sep: String): String
-        final def ::[A_ >: A](x: A_): Stack[A_] = new Elem(x, this)
+        //final def ::[A_ >: A](x: A_): Stack[A_] = new Elem(x, this)
+    }*/
+    private [parsley] final class Stack[+A](val head: A, val tail: Stack[A])
+    {
+        import Stack._
+        lazy val size_ : Int = size(tail) + 1 
     }
     private [parsley] object Stack
     {
-        def empty[A]: Stack[A] = Empty
+        def empty[A]: Stack[A] = null//Empty
+        final implicit class Cons[A](s: Stack[A])
+        {
+            def ::[A_ >: A](x: A_): Stack[A_] = new Stack(x, s)//new Elem(x, s)
+            def size() = Stack.size(s)
+            def isEmpty() = Stack.isEmpty(s)
+            def mkString(sep: String): String = if (s == null) "" else s.head.toString + sep + s.tail.mkString(sep)
+            def drop(n: Int) = Stack.drop(s, n)
+            def map[B](f: A => B): Stack[B] = Stack.map(s, f)
+        }
+        def size(s: Stack[_]): Int = if (s == null) 0 else s.size_
+        def isEmpty(s: Stack[_]): Boolean = s == null
+        @tailrec def drop[A](s: Stack[A], n: Int): Stack[A] = if (n > 0 && !isEmpty(s)) drop(s.tail, n-1) else s
+        def map[A, B](s: Stack[A], f: A => B): Stack[B] = if (!isEmpty(s)) f(s.head)::s.tail.map(f) else null
     }
-    private [parsley] object Empty extends Stack[Nothing]
+    /*private [parsley] object Empty extends Stack[Nothing]
     {
         override lazy val head: Nothing = throw new Exception("Cannot take head of empty list")
         override lazy val tail: Nothing = throw new Exception("Cannot take tail of empty list")
@@ -170,5 +188,5 @@ package object parsley
         override val isEmpty: Boolean = false
         override def mkString(sep: String): String = head.toString + sep + tail.mkString(sep)
         override def toString: String = s"$head::$tail"
-    }
+    }*/
 }
