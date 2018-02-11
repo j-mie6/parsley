@@ -3,19 +3,19 @@ package parsley
 object ParsleyBench
 {
     import parsley.Parsley._
-    val liftab = lift2_[Char, Char, String]((x, y) => x.toString + y.toString, 'a', 'b')
+    val liftab: Parsley[String] = lift2_[Char, Char, String]((x, y) => x.toString + y.toString, 'a', 'b')
     println(liftab)
     reset()
-    val aconsb = 'a' <::> ('b' #> Nil)
+    val aconsb: Parsley[List[Char]] = 'a' <::> ('b' #> Nil)
     println(aconsb)
     reset()
-    val athenb = 'a' *> 'b' #> "ab"
+    val athenb: Parsley[String] = 'a' *> 'b' #> "ab"
     println(athenb)
     reset()
-    val manya = many('a') <* 'b'
+    val manya: Parsley[List[Char]] = many('a') <* 'b'
     println(manya)
     reset()
-    val chain = chainl1('1'.map(_.toInt), '+' #> ((x: Int) => (y: Int) => x + y))
+    val chain: Parsley[Int] = chainl1('1'.map(_.toInt), '+' #> ((x: Int) => (y: Int) => x + y))
     println(chain)
     reset()
 }
@@ -68,8 +68,8 @@ object Benchmark
         println(runParser(p, "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"))
         val start = System.currentTimeMillis()
         val input_ = input.toList
-        val sz = input.size
-        for (i <- 0 to 10000000)
+        val sz = input.length
+        for (_ <- 0 to 10000000)
             runParser(p, input_, sz)
             //p(input_)
             //p.parse(input)
