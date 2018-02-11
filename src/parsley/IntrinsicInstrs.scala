@@ -21,7 +21,7 @@ private [parsley] final class Many(private [Many] val label: Int) extends Instr
         if (ctx.status eq Good)
         {
             acc += ctx.popStack()
-            ctx.checkStack = ctx.inputsz::ctx.checkStack.tail
+            ctx.checkStack.head = ctx.inputsz
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
@@ -45,7 +45,7 @@ private [parsley] final class SkipMany(private [SkipMany] val label: Int) extend
         if (ctx.status eq Good)
         {
             ctx.popStack()
-            ctx.checkStack = ctx.inputsz::ctx.checkStack.tail
+            ctx.checkStack.head = ctx.inputsz
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
@@ -79,7 +79,7 @@ private [parsley] final class Chainl[A](private [Chainl] val label: Int) extends
         if (ctx.status eq Good)
         {
             acc = ctx.popStack().asInstanceOf[Function[Any, Any]](acc)
-            ctx.checkStack = ctx.inputsz::ctx.checkStack.tail
+            ctx.checkStack.head = ctx.inputsz
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler

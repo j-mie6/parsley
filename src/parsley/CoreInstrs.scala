@@ -28,8 +28,8 @@ private [parsley] object Flip extends Instr
     override def apply(ctx: Context)
     {
         val y = ctx.stack.head
-        val x = ctx.stack.tail.head
-        ctx.stack = x::y::ctx.stack.tail.tail
+        ctx.exchangeStack(ctx.stack.tail.head)
+        ctx.stack.tail.head = y
         ctx.inc()
     }
     override def toString: String = "Flip"

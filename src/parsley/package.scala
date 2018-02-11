@@ -13,13 +13,13 @@ package object parsley
     @inline final implicit def charLift(c: Char): Parsley[Char] = parsley.Parsley.char(c)
 
     // Private internals
-    private type ProgramCounter = Int
-    private type CallStack = Stack[Frame]
-    private type Depth = Int
-    private type HandlerStack = Stack[Handler]
+    private [parsley] type ProgramCounter = Int
+    private [parsley] type CallStack = Stack[Frame]
+    private [parsley] type Depth = Int
+    private [parsley] type HandlerStack = Stack[Handler]
     // Yeah, turns out List[Char] is much faster than String... Not sure why?
-    private type Input = List[Char]
-    private type StateStack = Stack[State]
+    private [parsley] type Input = List[Char]
+    private [parsley] type StateStack = Stack[State]
 
     private [parsley] final class Frame(val ret: ProgramCounter, val instrs: Array[Instr])
     {
@@ -34,75 +34,10 @@ package object parsley
         override def toString: String = input.mkString
     }
 
-    private [parsley] sealed trait Status
+    private [parsley] sealed abstract class Status
     private [parsley] case object Good extends Status
     private [parsley] case object Recover extends Status
     private [parsley] case object Failed extends Status
-
-    private [parsley] final class Context(var instrs: Array[Instr],
-                                          var input: Input,
-                                          var inputsz: Int,
-                                          val subs: Map[String, Array[Instr]])
-    {
-        var stack: Stack[Any] = Stack.empty
-        var calls: CallStack = Stack.empty
-        var states: StateStack = Stack.empty
-        var stacksz: Int = 0
-        var checkStack: Stack[Int] = Stack.empty
-        var status: Status = Good
-        var handlers: HandlerStack = Stack.empty
-        var depth: Int = 0
-        var pc: ProgramCounter = 0
-
-        override def toString: String =
-        {
-            s"""|[
-                |  stack=[${mkString(stack, ", ")}]
-                |  instrs=${instrs.mkString("; ")}
-                |  input=${input.mkString(", ")}
-                |  status=$status
-                |  pc=$pc
-                |  depth=$depth
-                |  rets=${mkString(map[Frame, Int](calls, _.ret), ", ")}
-                |  handlers=$handlers
-                |  recstates=$states
-                |]""".stripMargin
-        }
-
-        def fail()
-        {
-            if (isEmpty(handlers)) status = Failed
-            else
-            {
-                status = Recover
-                val handler = handlers.head
-                val diffdepth = depth - handler.depth - 1
-                if (diffdepth >= 0)
-                {
-                    val calls_ = if (diffdepth != 0) drop(calls, diffdepth) else calls
-                    instrs = calls_.head.instrs
-                    calls = calls_.tail
-                }
-                pc = handler.pc
-                handlers = handlers.tail
-                val diffstack = stacksz - handler.stacksz
-                if (diffstack > 0) stack = drop(stack, diffstack)
-                stacksz = handler.stacksz
-                depth = handler.depth
-            }
-        }
-
-        def inc() { pc += 1 }
-        def pushStack(x: Any) { stack = new Stack(x, stack); stacksz += 1 }
-        def popStack(): Any =
-        {
-            val ret = stack.head
-            stack = stack.tail
-            stacksz -= 1
-            ret
-        }
-        def exchangeStack(x: Any) { stack.head = x }
-    }
 
     private [parsley] abstract class Instr
     {
@@ -115,7 +50,7 @@ package object parsley
         def apply(ctx: Context) { throw new Exception("Cannot execute label") }
     }
     
-    sealed trait Result[A]
+    sealed abstract class Result[A]
     case class Success[A](x: A) extends Result[A]
     case class Failure[A](msg: String) extends Result[A]
 
