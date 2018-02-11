@@ -24,9 +24,9 @@ private [parsley] final class FastFail[A](private [FastFail] val msggen: A=>Stri
 // This instruction has GREAT potential, it should be integrated into peephole :)
 // We should also make equivalents for Satisfy and String
 // Also experiment: is CharTok; Exchange better than CharTokFastPerform with const?
-private [parsley] final class CharTokFastPerform(c: Char, f: Function[Char, Any]) extends Instr
+private [parsley] final class CharTokFastPerform(private [CharTokFastPerform] val c: Char, private [CharTokFastPerform] val f: Any => Any) extends Instr
 {
-    private [CharTokFastPerform] val fc: Any = f(c)
+    private [this] val fc: Any = f(c)
     override def apply(ctx: Context)
     {
         ctx.input match
@@ -55,5 +55,5 @@ private [parsley] object FastFail
 
 private [parsley] object CharTokFastPerform
 {
-    def unapply(self: CharTokFastPerform): Option[Any] = Some(self.fc)
+    def unapply(self: CharTokFastPerform): Option[(Char, Any=>Any)] = Some(self.c, self.f)
 }

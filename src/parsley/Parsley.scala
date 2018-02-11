@@ -26,6 +26,8 @@ final class Parsley[+A] private [Parsley] (
     {
         // Pure application can be resolved at compile-time
         case Push(x: A @unchecked) if safe => new Parsley(instrs.init :+ new Push(f(x)), subs)
+        //case CharTok(c) if safe => new Parsley(instrs.init :+ new CharTokFastPerform(c, f.asInstanceOf[Function[Any, Any]]), subs)
+        //case CharTokFastPerform(c, g) if safe => new Parsley(instrs.init :+ new CharTokFastPerform(c, g.andThen(f.asInstanceOf[Function[Any, Any]])), subs)
         // p.map(f).map(g) = p.map(g . f) (functor law)
         case Perform(g) => new Parsley(instrs.init :+ new Perform(g.asInstanceOf[Function[Any, A]].andThen(f)), subs)
         case _ => new Parsley(instrs :+ new Perform(f), subs)
@@ -85,6 +87,7 @@ final class Parsley[+A] private [Parsley] (
             case Perform(g) =>
                 new Parsley(instrs.init ++ p.instrs.init :+
                     new Perform(g.andThen(f.asInstanceOf[Function[Any, C]])), subs ++ p.subs)
+            //case CharTokFastPerform(c, g) if safe => new Parsley(instrs.init ++ p.instrs.init :+ new CharTokFastPerform(c, g.andThen(f.asInstanceOf[Function[Any, Any]])), subs)
             case _ => new Parsley(instrs.init ++ p.instrs :+ new Perform[B, C](f.asInstanceOf[Function[B, C]]), subs ++ p.subs)
         }
         case Perform(f: Function[Any, Any=>Any] @unchecked) => p.instrs.last match
@@ -329,7 +332,7 @@ object Parsley
         lift2((x: A) => (xs: List[A=>A]) => xs.foldLeft(x)((y, f) => f(y)), p, many(op))
         /*val handler = fresh()
         val back = fresh()
-        new Parsley((p.instrs :+ InputCheck(handler) :+ Label(back)) ++ op.instrs :+ Label(handler) :+ new Chainl[A](back), p.subs ++ op.subs)*/
+        new Parsley((p.instrs :+ new InputCheck(handler) :+ Label(back)) ++ op.instrs :+ Label(handler) :+ new Chainl[A](back), p.subs ++ op.subs)*/
     }
     @inline private [parsley] def flip[A, B, C](f: A => B => C)(x: B)(y: A): C = f(y)(x)
 

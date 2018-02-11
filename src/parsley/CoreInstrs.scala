@@ -36,9 +36,9 @@ private [parsley] object Flip extends Instr
 }
 
 // Primitives
-private [parsley] final class CharTok(c: Char) extends Instr
+private [parsley] final class CharTok(private [CharTok] val c: Char) extends Instr
 {
-    private [CharTok] val ac: Any = c
+    private [this] val ac: Any = c
     override def apply(ctx: Context)
     {
         ctx.input match
@@ -251,7 +251,10 @@ private [parsley] object Push
     def unapply(self: Push[_]): Option[Any] = Some(self.x)
 }
 
-//private [parsley] object CharTok
+private [parsley] object CharTok
+{
+    def unapply(self: CharTok): Option[Char] = Some(self.c)
+}
 
 //private [parsley] object Satisfies
 
