@@ -90,7 +90,7 @@ package object parsley
         def mkString(s: Stack[_], sep: String): String = if (isEmpty(s)) "" else s.head.toString + sep + mkString(s.tail, sep)
     }
     // This class is left in for niceness sake :)
-    private [parsley] final implicit class Cons[A](s: Stack[A])
+    private [parsley] final implicit class StackCons[A](s: Stack[A])
     {
         def ::(x: A): Stack[A] = new Stack(x, s)
     }
