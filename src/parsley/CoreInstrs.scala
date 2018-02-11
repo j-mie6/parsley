@@ -168,7 +168,7 @@ private [parsley] object Try extends Instr
     override def apply(ctx: Context)
     {
         // Remove the recovery input from the stack, it isn't needed anymore
-        if (ctx.status == Good)
+        if (ctx.status eq Good)
         {
             ctx.states = ctx.states.tail
             ctx.handlers = ctx.handlers.tail
@@ -194,7 +194,7 @@ private [parsley] object Look extends Instr
 {
     override def apply(ctx: Context)
     {
-        if (ctx.status == Good)
+        if (ctx.status eq Good)
         {
             val state = ctx.states.head
             ctx.states = ctx.states.tail
@@ -227,7 +227,7 @@ private [parsley] final class JumpGood(private [JumpGood] val label: Int) extend
 {
     override def apply(ctx: Context)
     {
-        if (ctx.status == Good)
+        if (ctx.status eq Good)
         {
             ctx.handlers = ctx.handlers.tail
             ctx.checkStack = ctx.checkStack.tail

@@ -18,7 +18,7 @@ private [parsley] final class Many(private [Many] val label: Int) extends Instr
     private[this] val acc: ListBuffer[Any] = ListBuffer.empty
     override def apply(ctx: Context)
     {
-        if (ctx.status == Good)
+        if (ctx.status eq Good)
         {
             acc += ctx.popStack()
             ctx.checkStack = ctx.inputsz::ctx.checkStack.tail
@@ -42,7 +42,7 @@ private [parsley] final class SkipMany(private [SkipMany] val label: Int) extend
 {
     override def apply(ctx: Context)
     {
-        if (ctx.status == Good)
+        if (ctx.status eq Good)
         {
             ctx.popStack()
             ctx.checkStack = ctx.inputsz::ctx.checkStack.tail
@@ -76,7 +76,7 @@ private [parsley] final class Chainl[A](private [Chainl] val label: Int) extends
             acc = ctx.stack.head
             ctx.stack = op::ctx.stack.tail
         }
-        if (ctx.status == Good)
+        if (ctx.status eq Good)
         {
             acc = ctx.popStack().asInstanceOf[Function[Any, Any]](acc)
             ctx.checkStack = ctx.inputsz::ctx.checkStack.tail

@@ -43,13 +43,13 @@ package object parsley
                                           var inputsz: Int,
                                           val subs: Map[String, Array[Instr]])
     {
-        var stack: Stack[Any] = Empty
-        var calls: CallStack = Empty
-        var states: StateStack = Empty
+        var stack: Stack[Any] = Stack.empty
+        var calls: CallStack = Stack.empty
+        var states: StateStack = Stack.empty
         var stacksz: Int = 0
-        var checkStack: Stack[Int] = Empty
+        var checkStack: Stack[Int] = Stack.empty
         var status: Status = Good
-        var handlers: HandlerStack = Empty
+        var handlers: HandlerStack = Stack.empty
         var depth: Int = 0
         var pc: ProgramCounter = 0
 
@@ -117,11 +117,10 @@ package object parsley
     case class Success[A](x: A) extends Result[A]
     case class Failure[A](msg: String) extends Result[A]
 
-    @tailrec
-    private [this] def runParser_[A](ctx: Context): Result[A] =
+    @tailrec @inline private [this] def runParser_[A](ctx: Context): Result[A] =
     {
         //println(ctx)
-        if (ctx.status == Failed) return Failure("Unknown error")
+        if (ctx.status eq Failed) return Failure("Unknown error")
         val pc = ctx.pc
         val instrs = ctx.instrs
         if (pc < instrs.length)
@@ -151,6 +150,10 @@ package object parsley
         final def map[B](f: A => B): Stack[B] = if (!isEmpty) f(head)::tail.map(f) else Empty
         def mkString(sep: String): String
         final def ::[A_ >: A](x: A_): Stack[A_] = new Elem(x, this)
+    }
+    private [parsley] object Stack
+    {
+        def empty[A]: Stack[A] = Empty
     }
     private [parsley] object Empty extends Stack[Nothing]
     {
