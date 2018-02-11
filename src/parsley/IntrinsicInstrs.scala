@@ -60,24 +60,20 @@ private [parsley] final class SkipMany(private [SkipMany] val label: Int) extend
     override def toString: String = s"SkipMany($label)"
 }
 
-/* TODO: Chainl instruction has promising performance boost
-   We need to ensure it actually performs correctly in all
-   different error cases. If it does then we need to create
-   a Chainr instruction too! */
-private [parsley] final class Chainl[A](private [Chainl] val label: Int) extends Instr
+private [parsley] final class Chainl(private [Chainl] val label: Int) extends Instr
 {
     private[this] var acc: Any = _
     override def apply(ctx: Context)
     {
-        // When acc is null, we are entering the instruction for the first time, a p will be on the stack
-        if (acc == null)
-        {
-            val op = ctx.popStack()
-            acc = ctx.stack.head
-            ctx.exchangeStack(op)
-        }
         if (ctx.status eq Good)
         {
+            // When acc is null, we are entering the instruction for the first time, a p will be on the stack
+            if (acc == null)
+            {
+                val op = ctx.popStack()
+                acc = ctx.stack.head
+                ctx.exchangeStack(op)
+            }
             acc = ctx.popStack().asInstanceOf[Function[Any, Any]](acc)
             ctx.checkStack.head = ctx.inputsz
             ctx.pc = label
@@ -86,14 +82,24 @@ private [parsley] final class Chainl[A](private [Chainl] val label: Int) extends
         else if (ctx.inputsz != ctx.checkStack.head) {acc = null; ctx.fail()}
         else
         {
-            ctx.pushStack(acc)
-            acc = null
+            // When acc is null, we have entered for first time but the op failed, so the result is already on the stack
+            if (acc != null)
+            {
+                ctx.pushStack(acc)
+                acc = null
+            }
             ctx.checkStack = ctx.checkStack.tail
             ctx.status = Good
             ctx.inc()
         }
     }
     override def toString: String = s"Chainl($label)"
+}
+
+// TODO: What is the best way to implement this instrinsic?
+private [parsley] final class Chainr(private [Chainr] val label: Int) extends Instr
+{
+    override def apply(ctx: Context) {}
 }
 
 // Extractor Objects
@@ -109,5 +115,10 @@ private [parsley] object SkipMany
 
 private [parsley] object Chainl
 {
-    def unapply(self: Chainl[_]): Option[Int] = Some(self.label)
+    def unapply(self: Chainl): Option[Int] = Some(self.label)
+}
+
+private [parsley] object Chainr
+{
+    def unapply(self: Chainr): Option[Int] = Some(self.label)
 }

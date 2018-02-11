@@ -329,10 +329,9 @@ object Parsley
     @inline def chainl1_[A](p : Parsley[A], op: Parsley[A => A => A]): Parsley[A] = chainPost(p, op <*> p)
     def chainPost[A](p: Parsley[A], op: Parsley[A => A]): Parsley[A] =
     {
-        lift2((x: A) => (xs: List[A=>A]) => xs.foldLeft(x)((y, f) => f(y)), p, many(op))
-        /*val handler = fresh()
+        val handler = fresh()
         val back = fresh()
-        new Parsley((p.instrs :+ new InputCheck(handler) :+ Label(back)) ++ op.instrs :+ Label(handler) :+ new Chainl[A](back), p.subs ++ op.subs)*/
+        new Parsley((p.instrs :+ new InputCheck(handler) :+ Label(back)) ++ op.instrs :+ Label(handler) :+ new Chainl(back), p.subs ++ op.subs)
     }
     @inline private [parsley] def flip[A, B, C](f: A => B => C)(x: B)(y: A): C = f(y)(x)
 

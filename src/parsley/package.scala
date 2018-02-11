@@ -13,19 +13,14 @@ package object parsley
     @inline final implicit def charLift(c: Char): Parsley[Char] = parsley.Parsley.char(c)
 
     // Private internals
-    private [parsley] type ProgramCounter = Int
-    private [parsley] type CallStack = Stack[Frame]
-    private [parsley] type Depth = Int
-    private [parsley] type HandlerStack = Stack[Handler]
-    // Yeah, turns out List[Char] is much faster than String... Not sure why?
+    // TODO: We should consider switching to Array[Char], probably faster than String and easier for me to control
     private [parsley] type Input = List[Char]
-    private [parsley] type StateStack = Stack[State]
 
-    private [parsley] final class Frame(val ret: ProgramCounter, val instrs: Array[Instr])
+    private [parsley] final class Frame(val ret: Int, val instrs: Array[Instr])
     {
         override def toString: String = s"[$instrs@$ret]"
     }
-    private [parsley] final class Handler(val depth: Int, val pc: ProgramCounter, val stacksz: Int)
+    private [parsley] final class Handler(val depth: Int, val pc: Int, val stacksz: Int)
     {
         override def toString: String = s"Handler@$depth:$pc(-$stacksz)"
     }
@@ -93,10 +88,10 @@ package object parsley
         @tailrec def drop[A](s: Stack[A], n: Int): Stack[A] = if (n > 0 && !isEmpty(s)) drop(s.tail, n - 1) else s
         def map[A, B](s: Stack[A], f: A => B): Stack[B] = if (!isEmpty(s)) new Stack(f(s.head), map(s.tail, f)) else empty
         def mkString(s: Stack[_], sep: String): String = if (isEmpty(s)) "" else s.head.toString + sep + mkString(s.tail, sep)
-        // This class is left in for niceness sake, but we shouldn't be using it if we can avoid it!
-        final implicit class Cons[A](s: Stack[A])
-        {
-            def ::(x: A): Stack[A] = new Stack(x, s)
-        }
+    }
+    // This class is left in for niceness sake :)
+    private [parsley] final implicit class Cons[A](s: Stack[A])
+    {
+        def ::(x: A): Stack[A] = new Stack(x, s)
     }
 }

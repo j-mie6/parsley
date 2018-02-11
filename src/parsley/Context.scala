@@ -8,14 +8,14 @@ private [parsley] final class Context(var instrs: Array[Instr],
                                       val subs: Map[String, Array[Instr]])
 {
     var stack: Stack[Any] = Stack.empty
-    var calls: CallStack = Stack.empty
-    var states: StateStack = Stack.empty
+    var calls: Stack[Frame] = Stack.empty
+    var states: Stack[State] = Stack.empty
     var stacksz: Int = 0
     var checkStack: Stack[Int] = Stack.empty
     var status: Status = Good
-    var handlers: HandlerStack = Stack.empty // Doesn't favour indirect operations
+    var handlers: Stack[Handler] = Stack.empty
     var depth: Int = 0
-    var pc: ProgramCounter = 0
+    var pc: Int = 0
 
     override def toString: String =
     {
