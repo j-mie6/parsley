@@ -8,8 +8,8 @@ import scala.annotation.tailrec
 
 // TODO Investigate effect of :+= instead of :+ for the buffers
 /**
-  * This is the class that encapsulates the act of parsing and running an object of this class with `runParser` will parse
-  * the string given as input to `runParser`.
+  * This is the class that encapsulates the act of parsing and running an object of this class with `runParser` will
+  * parse the string given as input to `runParser`.
   *
   * Note: In order to construct an object of this class you must use the combinators; the constructor itself is private.
   *
@@ -200,17 +200,24 @@ final class Parsley[+A] private [Parsley] (
     }
 
     // Composite/Alias Combinators
-    /***/
+    /**This combinator is defined as `lift2(x => f => f(x), this, f)`. It is pure syntactic sugar.*/
     @inline def <**>[B](f: Parsley[A => B]): Parsley[B] = lift2[A, A=>B, B](x => f => f(x), this, f)
+    /**This combinator is an alias for `map`*/
     @inline def <#>[B](f: A => B): Parsley[B] = map(f)
+    /**This combinator is an alias for `map`, but the function lives on the lhs*/
     @inline def <#>:[B](f: A => B): Parsley[B] = map(f)
+    /**This combinator is an alias for `flatMap`*/
     @inline def >>=[B](f: A => Parsley[B]): Parsley[B] = flatMap(f)
+    /**This combinator is an alias for `*>`*/
     @inline def >>[B](p: Parsley[B]): Parsley[B] = this *> p
+    /**This combinator is defined as `this <|> pure(x)`. It is pure syntactic sugar.*/
     @inline def </>[A_ >: A](x: A_): Parsley[A_] = this <|> pure(x)
+    /**This combinator is defined as `tryParse(this) <|> q`. It is pure syntactic sugar.*/
     @inline def <\>[A_ >: A](q: Parsley[A_]): Parsley[A_] = tryParse(this) <|> q
 
     // Intrinsics
     // A note about intrinsics - by their very definition we can't optimise *to* them, so we need to optimise *around* them
+    /**This parser corresponds to lift2_(_::_, this ps) but is far more optimal. It should be preferred to the equivalent*/
     @inline def <::>[A_ >: A](ps: Parsley[List[A_]]): Parsley[List[A_]] = new Parsley(instrs ++ ps.instrs :+ Cons, subs ++ ps.subs)
     @inline def <|?>[B](p: Parsley[B], q: Parsley[B])(implicit ev: Parsley[A] => Parsley[Boolean]): Parsley[B] = choose(this, p, q)
     @inline def >?>(pred: A => Boolean, msg: String): Parsley[A] = guard(this, pred, msg)
