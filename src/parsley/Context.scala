@@ -2,12 +2,26 @@ package parsley
 
 import parsley.Stack._
 
+// Private internals
+private [parsley] final class Frame(val ret: Int, val instrs: Array[Instr])
+{
+    override def toString: String = s"[$instrs@$ret]"
+}
+private [parsley] final class Handler(val depth: Int, val pc: Int, val stacksz: Int)
+{
+    override def toString: String = s"Handler@$depth:$pc(-$stacksz)"
+}
+private [parsley] final class State(val offset: Int)
+{
+    override def toString: String = offset.toString
+}
+
 private [parsley] final class Context(var instrs: Array[Instr],
-                                      var input: Input,
-                                      var inputsz: Int,
+                                      val input: Array[Char],
                                       val subs: Map[String, Array[Instr]])
 {
     var stack: Stack[Any] = Stack.empty
+    var offset: Int = 0
     var calls: Stack[Frame] = Stack.empty
     var states: Stack[State] = Stack.empty
     var stacksz: Int = 0
@@ -22,7 +36,7 @@ private [parsley] final class Context(var instrs: Array[Instr],
         s"""|[
             |  stack=[${mkString(stack, ", ")}]
             |  instrs=${instrs.mkString("; ")}
-            |  input=${input.mkString(", ")}
+            |  input=${input.drop(offset).mkString(", ")}
             |  status=$status
             |  pc=$pc
             |  depth=$depth

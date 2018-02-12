@@ -21,11 +21,11 @@ private [parsley] final class Many(private [Many] val label: Int) extends Instr
         if (ctx.status eq Good)
         {
             acc += ctx.popStack()
-            ctx.checkStack.head = ctx.inputsz
+            ctx.checkStack.head = ctx.offset
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else if (ctx.inputsz != ctx.checkStack.head) {acc.clear(); ctx.fail()}
+        else if (ctx.offset != ctx.checkStack.head) {acc.clear(); ctx.fail()}
         else
         {
             ctx.pushStack(acc.toList)
@@ -45,11 +45,11 @@ private [parsley] final class SkipMany(private [SkipMany] val label: Int) extend
         if (ctx.status eq Good)
         {
             ctx.popStack()
-            ctx.checkStack.head = ctx.inputsz
+            ctx.checkStack.head = ctx.offset
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else if (ctx.inputsz != ctx.checkStack.head) ctx.fail()
+        else if (ctx.offset != ctx.checkStack.head) ctx.fail()
         else
         {
             ctx.checkStack = ctx.checkStack.tail
@@ -75,11 +75,11 @@ private [parsley] final class Chainl(private [Chainl] val label: Int) extends In
                 ctx.exchangeStack(op)
             }
             acc = ctx.popStack().asInstanceOf[Function[Any, Any]](acc)
-            ctx.checkStack.head = ctx.inputsz
+            ctx.checkStack.head = ctx.offset
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else if (ctx.inputsz != ctx.checkStack.head) {acc = null; ctx.fail()}
+        else if (ctx.offset != ctx.checkStack.head) {acc = null; ctx.fail()}
         else
         {
             // When acc is null, we have entered for first time but the op failed, so the result is already on the stack
