@@ -15,7 +15,7 @@ object ParsleyBench
     val manya: Parsley[List[Char]] = many('a') <* 'b'
     println(manya)
     reset()
-    val chain: Parsley[Int] = chainl1('1'.map(_.toInt), '+' #> ((x: Int) => (y: Int) => x + y))
+    val chain: Parsley[Int] = chainl1('1' <#> (_.toInt), '+' #> ((x: Int) => (y: Int) => x + y))
     println(chain)
     reset()
 }

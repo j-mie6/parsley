@@ -51,7 +51,7 @@ final class Parsley[+A] private [Parsley] (
       *
       * WARNING: This is subject to aggressive optimisations assuming purity; the compiler is permitted to optimise such
       * that the application of `f` actually only happens once at compile time. In order to preserve the behaviour of
-      * impure functions, consider using the `unsafe` method before map; p.unsafe.map(f).
+      * impure functions, consider using the `unsafe` method before map; `p.unsafe.map(f)`.
       * @param f The mutator to apply to the result of previous parse
       * @return A new parser which parses the same input as the invokee but mutated by function `f`
       */
@@ -92,7 +92,12 @@ final class Parsley[+A] private [Parsley] (
         case _ => new Parsley(instrs ++ p.instrs :+ Pop, subs ++ p.subs)
     }
 
-
+    /**
+      * This is the parser that corresponds to a more optimal version of either `this *> pure(x)` or `this.map(_ => x)`.
+      * It performs the parse action of the invokee but discards its result and then results the value `x` instead
+      * @param x The value to be returned after the execution of the invokee
+      * @return A new parser which first parses the invokee, then results `x`
+      */
     def #>[B](x: B): Parsley[B] = instrs.last match
     {
         // pure x #> y == pure y (consequence of applicative and functor laws)
@@ -100,6 +105,19 @@ final class Parsley[+A] private [Parsley] (
         case _ => new Parsley(instrs :+ Pop :+ new Push(x), subs)
     }
 
+    /**
+      * This is the Applicative application parser. The type of the invokee is `Parsley[A]` which is equivalent to some
+      * `Parsley[B => C]`. Assuming this is true then, given a `Parsley[B]`, we can produce a `Parsley[C]` by parsing
+      * the invokee to retrieve `f: B => C`, then parse `p` to recieve `x: B` then return `f(x): C`.
+      *
+      * WARNING: `pure(f) <*> p` is subject to the same aggressive optimisations as `map`. When using impure functions
+      * the optimiser may decide to cache the result of the function execution, be sure to use `unsafe` in order to
+      * prevent these optimisations.
+      * @param p A parser of type B, where the invokee is B => C
+      * @param ev There must exist some evidence to prove that A == (B => C), this is implicit and can be ignored
+      * @return A new parser which parses the invokee, then `p` then applies the value returned by `p` to the function
+      *         returned by the invokee
+      */
     def <*>[B, C](p: Parsley[B])(implicit ev: A => (B => C)): Parsley[C] = instrs.last match
     {
         // pure(f) <*> p == f <#> p (consequence of applicative laws)
@@ -182,6 +200,7 @@ final class Parsley[+A] private [Parsley] (
     }
 
     // Composite/Alias Combinators
+    /***/
     @inline def <**>[B](f: Parsley[A => B]): Parsley[B] = lift2[A, A=>B, B](x => f => f(x), this, f)
     @inline def <#>[B](f: A => B): Parsley[B] = map(f)
     @inline def <#>:[B](f: A => B): Parsley[B] = map(f)
