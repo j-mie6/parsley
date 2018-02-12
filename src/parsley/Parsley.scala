@@ -324,6 +324,8 @@ object Parsley
         // We want an Array[Vector[Int]] - the size of the array is the current label counter (must check in practice)
         //                               - the vector is a sorted account of all the definitions of the label
         //                               - when resolving a label, we perform a binary search and pick either +1 or -1
+        // NO BINARY SEARCH: Back jumps can be removed during label collection, else forward labels can always compute
+        // the next index to target for replace and remove pass 2 :) Thanks Yung Mike
         type LabelMap = Map[Int, Int]//Array[Vector[Int]]
         val n = instrs.size
         @tailrec def find(i: Int = 0, offset: Int = 0, labels: LabelMap = Map.empty): LabelMap =
