@@ -41,15 +41,13 @@ private [parsley] final class CharTok(private [CharTok] val c: Char) extends Ins
     private [this] val ac: Any = c
     override def apply(ctx: Context)
     {
-        ctx.input match
+        if (ctx.offset < ctx.input.length && ctx.input(ctx.offset) == c)
         {
-            case `c`::input =>
                 ctx.pushStack(ac)
-                ctx.inputsz -= 1
-                ctx.input = input
+                ctx.offset += 1
                 ctx.inc()
-            case _ => ctx.fail()
         }
+        else ctx.fail()
     }
     override def toString: String = s"Chr($c)"
 }
@@ -58,7 +56,7 @@ private [parsley] final class Satisfies(f: Char => Boolean) extends Instr
 {
     override def apply(ctx: Context)
     {
-        ctx.input match
+        /*ctx.input match
         {
             case c::input if f(c) =>
                 ctx.pushStack(c)
@@ -66,7 +64,7 @@ private [parsley] final class Satisfies(f: Char => Boolean) extends Instr
                 ctx.input = input
                 ctx.inc()
             case _ => ctx.fail()
-        }
+        }*/
     }
     override def toString: String = "Sat(?)"
 }
@@ -78,11 +76,11 @@ private [parsley] final class StringTok(private [StringTok] val s: String) exten
     override def apply(ctx: Context)
     {
         val input = ctx.input
+        //FIXME no longer true!
         if (input.startsWith(ls))
         {
             ctx.pushStack(s)
-            ctx.input = input.drop(sz)
-            ctx.inputsz -= sz
+            ctx.offset += sz
             ctx.inc()
         }
         else ctx.fail()
@@ -157,7 +155,7 @@ private [parsley] final class PushHandler(private [PushHandler] val handler: Int
     override def apply(ctx: Context)
     {
         ctx.handlers ::= new Handler(ctx.depth, handler, ctx.stacksz)
-        ctx.states ::= new State(ctx.inputsz, ctx.input)
+        ctx.states ::= new State(ctx.offset)
         ctx.inc()
     }
     override def toString: String = s"PushHandler($handler)"
@@ -178,9 +176,8 @@ private [parsley] object Try extends Instr
         else
         {
             val state = ctx.states.head
-            ctx.input = state.input
             ctx.states = ctx.states.tail
-            ctx.inputsz = state.sz
+            ctx.offset = state.offset
             ctx.fail()
         }
     }
@@ -198,8 +195,7 @@ private [parsley] object Look extends Instr
         {
             val state = ctx.states.head
             ctx.states = ctx.states.tail
-            ctx.input = state.input
-            ctx.inputsz = state.sz
+            ctx.offset = state.offset
             ctx.handlers = ctx.handlers.tail
             ctx.inc()
         }
@@ -216,7 +212,7 @@ private [parsley] final class InputCheck(private [InputCheck] val handler: Int) 
 {
     override def apply(ctx: Context)
     {
-        ctx.checkStack ::= ctx.inputsz
+        ctx.checkStack ::= ctx.offset
         ctx.handlers ::= new Handler(ctx.depth, handler, ctx.stacksz)
         ctx.inc()
     }
@@ -234,7 +230,7 @@ private [parsley] final class JumpGood(private [JumpGood] val label: Int) extend
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else if (ctx.inputsz != ctx.checkStack.head) ctx.fail()
+        else if (ctx.offset != ctx.checkStack.head) ctx.fail()
         else
         {
             ctx.checkStack = ctx.checkStack.tail

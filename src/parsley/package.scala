@@ -5,8 +5,9 @@ package object parsley
 {
     import parsley.Stack._
     // Public API
-    def runParser[A](p: Parsley[A], input: String): Result[A] = runParser[A](p, input.toList, input.length)
-    def runParser[A](p: Parsley[A], input: Input, sz: Int): Result[A] = runParser_[A](new Context(p.instrArray, input, sz, p.subsMap))
+    // TODO: This could be sped up with Java methods
+    def runParser[A](p: Parsley[A], input: String): Result[A] = runParser[A](p, input.toCharArray, input.length)
+    def runParser[A](p: Parsley[A], input: Input, sz: Int): Result[A] = runParser_[A](new Context(p.instrArray, input, p.subsMap))
 
     // Implicit Conversions
     @inline final implicit def stringLift(str: String): Parsley[String] = parsley.Parsley.string(str)
@@ -14,7 +15,7 @@ package object parsley
 
     // Private internals
     // TODO: We should consider switching to Array[Char], probably faster than String and easier for me to control
-    private [parsley] type Input = List[Char]
+    private [parsley] type Input = Array[Char]
 
     private [parsley] final class Frame(val ret: Int, val instrs: Array[Instr])
     {
@@ -24,9 +25,9 @@ package object parsley
     {
         override def toString: String = s"Handler@$depth:$pc(-$stacksz)"
     }
-    private [parsley] final class State(val sz: Int, val input: Input)
+    private [parsley] final class State(val offset: Int)
     {
-        override def toString: String = input.mkString
+        override def toString: String = offset.toString
     }
 
     private [parsley] sealed abstract class Status

@@ -3,10 +3,10 @@ package parsley
 import parsley.Stack._
 
 private [parsley] final class Context(var instrs: Array[Instr],
-                                      var input: Input,
-                                      var inputsz: Int,
+                                      val input: Input,
                                       val subs: Map[String, Array[Instr]])
 {
+    var offset: Int = 0
     var stack: Stack[Any] = Stack.empty
     var calls: Stack[Frame] = Stack.empty
     var states: Stack[State] = Stack.empty
@@ -22,7 +22,7 @@ private [parsley] final class Context(var instrs: Array[Instr],
         s"""|[
             |  stack=[${mkString(stack, ", ")}]
             |  instrs=${instrs.mkString("; ")}
-            |  input=${input.mkString(", ")}
+            |  input=${input.drop(offset).mkString(", ")}
             |  status=$status
             |  pc=$pc
             |  depth=$depth

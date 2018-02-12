@@ -29,15 +29,13 @@ private [parsley] final class CharTokFastPerform(private [CharTokFastPerform] va
     private [this] val fc: Any = f(c)
     override def apply(ctx: Context)
     {
-        ctx.input match
+        if (ctx.offset < ctx.input.length && ctx.input(ctx.offset) == c)
         {
-            case `c`::input =>
                 ctx.pushStack(fc)
-                ctx.inputsz -= 1
-                ctx.input = input
+                ctx.offset += 1
                 ctx.inc()
-            case _ => ctx.fail()
         }
+        else ctx.fail()
     }
     override def toString: String = s"ChrPerform($c, ?)"
 }
