@@ -39,6 +39,11 @@ package object parsley
         def apply(ctx: Context)
     }
 
+    private [parsley] abstract class FwdJumpInstr extends Instr
+    {
+        var lidx: Int = -1
+    }
+
     // It's 2018 and Labels are making a come-back, along with 2 pass assembly
     private [parsley] final case class Label(i: Int) extends Instr
     {

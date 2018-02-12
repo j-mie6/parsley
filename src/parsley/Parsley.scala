@@ -59,8 +59,8 @@ final class Parsley[+A] private [Parsley] (
     {
         // Pure application can be resolved at compile-time
         case Push(x: A @unchecked) if safe => new Parsley(instrs.init :+ new Push(f(x)), subs)
-        //case CharTok(c) if safe => new Parsley(instrs.init :+ new CharTokFastPerform(c, f.asInstanceOf[Function[Any, Any]]), subs)
-        //case CharTokFastPerform(c, g) if safe => new Parsley(instrs.init :+ new CharTokFastPerform(c, g.andThen(f.asInstanceOf[Function[Any, Any]])), subs)
+        /*FIXME: MOVE*/case CharTok(c) if safe => new Parsley(instrs.init :+ new CharTokFastPerform(c, f.asInstanceOf[Function[Any, Any]]), subs)
+        /*FIXME: MOVE*/case CharTokFastPerform(c, g) if safe => new Parsley(instrs.init :+ new CharTokFastPerform(c, g.andThen(f.asInstanceOf[Function[Any, Any]])), subs)
         // p.map(f).map(g) = p.map(g . f) (functor law)
         case Perform(g) => new Parsley(instrs.init :+ new Perform(g.asInstanceOf[Function[Any, A]].andThen(f)), subs)
         case _ => new Parsley(instrs :+ new Perform(f), subs)
@@ -111,7 +111,7 @@ final class Parsley[+A] private [Parsley] (
             case Perform(g) =>
                 new Parsley(instrs.init ++ p.instrs.init :+
                     new Perform(g.andThen(f.asInstanceOf[Function[Any, C]])), subs ++ p.subs)
-            //case CharTokFastPerform(c, g) if safe => new Parsley(instrs.init ++ p.instrs.init :+ new CharTokFastPerform(c, g.andThen(f.asInstanceOf[Function[Any, Any]])), subs)
+            /*FIXME: MOVE*/case CharTokFastPerform(c, g) if safe => new Parsley(instrs.init ++ p.instrs.init :+ new CharTokFastPerform(c, g.andThen(f.asInstanceOf[Function[Any, Any]])), subs)
             case _ => new Parsley(instrs.init ++ p.instrs :+ new Perform[B, C](f.asInstanceOf[Function[B, C]]), subs ++ p.subs)
         }
         case Perform(f: Function[Any, Any=>Any] @unchecked) => p.instrs.last match
@@ -320,43 +320,65 @@ object Parsley
 
     private [Parsley] def delabel(instrs: mutable.Buffer[Instr])
     {
-        // FIXME: This type needs to change
-        // We want an Array[Vector[Int]] - the size of the array is the current label counter (must check in practice)
-        //                               - the vector is a sorted account of all the definitions of the label
-        //                               - when resolving a label, we perform a binary search and pick either +1 or -1
-        // NO BINARY SEARCH: Back jumps can be removed during label collection, else forward labels can always compute
-        // the next index to target for replace and remove pass 2 :) Thanks Yung Mike
-        type LabelMap = Map[Int, Int]//Array[Vector[Int]]
+        type LabelMap = Array[Vector[Int]]
         val n = instrs.size
-        @tailrec def find(i: Int = 0, offset: Int = 0, labels: LabelMap = Map.empty): LabelMap =
+        val labels: LabelMap = Array.fill(curLabel)(Vector.empty)
+        def adjustFwdJump(instr: FwdJumpInstr, instrs: mutable.Buffer[Instr], i: Int, j: Int, clone: =>FwdJumpInstr)
+        {
+            val instr_ = if (instr.lidx != -1)
+            {
+                val instr_ = clone
+                instrs.update(i, instr_)
+                instr_
+            }
+            else instr
+            instr_.lidx = j
+        }
+        @tailrec def forwardPass(i: Int = 0, offset: Int = 0)
         {
             if (i < n) instrs(i) match
             {
-                case Label(l) => find(i+1, offset-1, labels + (l -> (i+offset)))
-                case _        => find(i+1, offset, labels)
+                case Label(l) =>
+                    labels.update(l, labels(l) :+ (i+offset))
+                    forwardPass(i+1, offset-1)
+                case instr@PushHandler(l) =>
+                    adjustFwdJump(instr, instrs, i, labels(l).size, new PushHandler(l))
+                    forwardPass(i+1, offset)
+                case instr@InputCheck(l) =>
+                    adjustFwdJump(instr, instrs, i, labels(l).size, new InputCheck(l))
+                    forwardPass(i+1, offset)
+                case instr@JumpGood(l) =>
+                    adjustFwdJump(instr, instrs, i, labels(l).size, new JumpGood(l))
+                    forwardPass(i+1, offset)
+                case Many(l) =>
+                    instrs.update(i, new Many(labels(l).last))
+                    forwardPass(i+1, offset)
+                case SkipMany(l) =>
+                    instrs.update(i, new SkipMany(labels(l).last))
+                    forwardPass(i+1, offset)
+                case Chainl(l) =>
+                    instrs.update(i, new Chainl(labels(l).last))
+                    forwardPass(i+1, offset)
+                case _ => forwardPass(i+1, offset)
             }
-            else labels
         }
-        val labels = find()
-        @tailrec def replaceAndRemove(i: Int = n-1)
+        @tailrec def backwardPass(i: Int = n-1)
         {
             if (i >= 0)
             {
                 instrs(i) match
                 {
                     case _: Label => instrs.remove(i)
-                    case PushHandler(l) => instrs.update(i, new PushHandler(labels(l)))
-                    case InputCheck(l) => instrs.update(i, new InputCheck(labels(l)))
-                    case JumpGood(l) => instrs.update(i, new JumpGood(labels(l)))
-                    case Many(l) => instrs.update(i, new Many(labels(l)))
-                    case SkipMany(l) => instrs.update(i, new SkipMany(labels(l)))
-                    case Chainl(l) => instrs.update(i, new Chainl(labels(l)))
+                    case instr@PushHandler(l) => instrs.update(i, new PushHandler(labels(l)(instr.lidx)))
+                    case instr@InputCheck(l) => instrs.update(i, new InputCheck(labels(l)(instr.lidx)))
+                    case instr@JumpGood(l) => instrs.update(i, new JumpGood(labels(l)(instr.lidx)))
                     case _ =>
                 }
-                replaceAndRemove(i-1)
+                backwardPass(i-1)
             }
         }
-        replaceAndRemove()
+        forwardPass()
+        backwardPass()
     }
 
     //TODO This needs to be reinstated
@@ -414,6 +436,8 @@ object Parsley
         val add = '+' #> ((x: Int) => (y: Int) => x + y)
         val mul = '*' #> ((x: Int) => (y: Int) => x * y)
         val pow = '^' #> ((x: Int) => (y: Int) => math.pow(x, y).toInt)
+        println(chainl1(atom, pow))
+        println(chainl1(chainl1(atom, pow), mul))
         println(chainl1(chainl1(chainl1(atom, pow), mul), add))
     }
 }

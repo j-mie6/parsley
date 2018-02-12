@@ -152,7 +152,7 @@ private [parsley] final class Fail(private [Fail] val msg: String) extends Instr
     override def toString: String = s"Fail($msg)"
 }
 
-private [parsley] final class PushHandler(private [PushHandler] val handler: Int) extends Instr
+private [parsley] final class PushHandler(private [PushHandler] val handler: Int) extends FwdJumpInstr
 {
     override def apply(ctx: Context)
     {
@@ -212,7 +212,7 @@ private [parsley] object Look extends Instr
     override def toString: String = "Look"
 }
 
-private [parsley] final class InputCheck(private [InputCheck] val handler: Int) extends Instr
+private [parsley] final class InputCheck(private [InputCheck] val handler: Int) extends FwdJumpInstr
 {
     override def apply(ctx: Context)
     {
@@ -223,7 +223,7 @@ private [parsley] final class InputCheck(private [InputCheck] val handler: Int) 
     override def toString: String = s"InputCheck($handler)"
 }
 
-private [parsley] final class JumpGood(private [JumpGood] val label: Int) extends Instr
+private [parsley] final class JumpGood(private [JumpGood] val label: Int) extends FwdJumpInstr
 {
     override def apply(ctx: Context)
     {
