@@ -6,29 +6,12 @@ package object parsley
     import parsley.Stack._
     // Public API
     // TODO: This could be sped up with Java methods
-    def runParser[A](p: Parsley[A], input: String): Result[A] = runParser[A](p, input.toCharArray, input.length)
-    def runParser[A](p: Parsley[A], input: Input, sz: Int): Result[A] = runParser_[A](new Context(p.instrArray, input, p.subsMap))
+    def runParser[A](p: Parsley[A], input: String): Result[A] = runParser[A](p, input.toCharArray)
+    def runParser[A](p: Parsley[A], input: Array[Char]): Result[A] = runParser_[A](new Context(p.instrArray, input, p.subsMap))
 
     // Implicit Conversions
     @inline final implicit def stringLift(str: String): Parsley[String] = parsley.Parsley.string(str)
     @inline final implicit def charLift(c: Char): Parsley[Char] = parsley.Parsley.char(c)
-
-    // Private internals
-    // TODO: We should consider switching to Array[Char], probably faster than String and easier for me to control
-    private [parsley] type Input = Array[Char]
-
-    private [parsley] final class Frame(val ret: Int, val instrs: Array[Instr])
-    {
-        override def toString: String = s"[$instrs@$ret]"
-    }
-    private [parsley] final class Handler(val depth: Int, val pc: Int, val stacksz: Int)
-    {
-        override def toString: String = s"Handler@$depth:$pc(-$stacksz)"
-    }
-    private [parsley] final class State(val offset: Int)
-    {
-        override def toString: String = offset.toString
-    }
 
     private [parsley] sealed abstract class Status
     private [parsley] case object Good extends Status
@@ -50,7 +33,7 @@ package object parsley
     {
         def apply(ctx: Context) { throw new Exception("Cannot execute label") }
     }
-    
+
     sealed abstract class Result[A]
     case class Success[A](x: A) extends Result[A]
     case class Failure[A](msg: String) extends Result[A]

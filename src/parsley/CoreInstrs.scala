@@ -56,28 +56,43 @@ private [parsley] final class Satisfies(f: Char => Boolean) extends Instr
 {
     override def apply(ctx: Context)
     {
-        /*ctx.input match
+        if (ctx.offset < ctx.input.length && f(ctx.input(ctx.offset)))
         {
-            case c::input if f(c) =>
-                ctx.pushStack(c)
-                ctx.inputsz -= 1
-                ctx.input = input
-                ctx.inc()
-            case _ => ctx.fail()
-        }*/
+            ctx.pushStack(ctx.input(ctx.offset))
+            ctx.offset += 1
+            ctx.inc()
+        }
+        else ctx.fail()
     }
     override def toString: String = "Sat(?)"
 }
 
 private [parsley] final class StringTok(private [StringTok] val s: String) extends Instr
 {
-    private [this] val ls = s.toList
-    private [this] val sz = s.length
+    private [this] val cs = s.toCharArray
+    private [this] val sz = cs.length
+    private def matches(input: Array[Char], offset: Int): Boolean =
+    {
+        val sz = this.sz
+        if (input.length - offset < sz) false
+        else
+        {
+            var i = offset
+            var j = 0
+            val cs = this.cs
+            while (j < sz)
+            {
+                if (input(i) != cs(j)) return false
+                i += 1
+                j += 1
+            }
+            true
+        }
+    }
     override def apply(ctx: Context)
     {
         val input = ctx.input
-        //FIXME no longer true!
-        if (input.startsWith(ls))
+        if (matches(input, ctx.offset))
         {
             ctx.pushStack(s)
             ctx.offset += sz

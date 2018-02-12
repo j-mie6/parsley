@@ -67,10 +67,8 @@ object Benchmark
         println(runParser(p, "aaaab"))
         println(runParser(p, "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"))
         val start = System.currentTimeMillis()
-        val input_ = input.toCharArray
-        val sz = input.length
         for (_ <- 0 to 10000000)
-            runParser(p, input_, sz)
+            runParser(p, input)
             //p(input_)
             //p.parse(input)
         println(System.currentTimeMillis() - start)
