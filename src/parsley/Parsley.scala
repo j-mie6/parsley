@@ -346,9 +346,9 @@ object Parsley
 
     private [Parsley] def delabel(instrs: mutable.Buffer[Instr])
     {
-        type LabelMap = Array[Vector[Int]]
+        type LabelMap = mutable.Map[Int, Vector[Int]]
         val n = instrs.size
-        val labels: LabelMap = Array.fill(curLabel)(Vector.empty)
+        val labels: LabelMap = mutable.Map.empty.withDefaultValue(Vector.empty)
         def adjustFwdJump(instr: FwdJumpInstr, instrs: mutable.Buffer[Instr], i: Int, j: Int, clone: =>FwdJumpInstr)
         {
             val instr_ = if (instr.lidx != -1)
