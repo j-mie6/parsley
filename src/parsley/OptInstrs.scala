@@ -29,7 +29,7 @@ private [parsley] final class CharTokFastPerform(private [CharTokFastPerform] va
     private [this] val fc: Any = f(c)
     override def apply(ctx: Context)
     {
-        if (ctx.offset < ctx.input.length && ctx.input(ctx.offset) == c)
+        if (ctx.offset < ctx.inputsz && ctx.input(ctx.offset) == c)
         {
                 ctx.pushStack(fc)
                 ctx.offset += 1

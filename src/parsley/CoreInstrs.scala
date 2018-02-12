@@ -41,7 +41,7 @@ private [parsley] final class CharTok(private [CharTok] val c: Char) extends Ins
     private [this] val ac: Any = c
     override def apply(ctx: Context)
     {
-        if (ctx.offset < ctx.input.length && ctx.input(ctx.offset) == c)
+        if (ctx.offset < ctx.inputsz && ctx.input(ctx.offset) == c)
         {
                 ctx.pushStack(ac)
                 ctx.offset += 1
@@ -56,7 +56,7 @@ private [parsley] final class Satisfies(f: Char => Boolean) extends Instr
 {
     override def apply(ctx: Context)
     {
-        if (ctx.offset < ctx.input.length && f(ctx.input(ctx.offset)))
+        if (ctx.offset < ctx.inputsz && f(ctx.input(ctx.offset)))
         {
             ctx.pushStack(ctx.input(ctx.offset))
             ctx.offset += 1
@@ -71,10 +71,10 @@ private [parsley] final class StringTok(private [StringTok] val s: String) exten
 {
     private [this] val cs = s.toCharArray
     private [this] val sz = cs.length
-    private def matches(input: Array[Char], offset: Int): Boolean =
+    private def matches(input: Array[Char], unread: Int, offset: Int): Boolean =
     {
         val sz = this.sz
-        if (input.length - offset < sz) false
+        if (unread < sz) false
         else
         {
             var i = offset
@@ -91,8 +91,7 @@ private [parsley] final class StringTok(private [StringTok] val s: String) exten
     }
     override def apply(ctx: Context)
     {
-        val input = ctx.input
-        if (matches(input, ctx.offset))
+        if (matches(ctx.input, ctx.inputsz - ctx.offset, ctx.offset))
         {
             ctx.pushStack(s)
             ctx.offset += sz

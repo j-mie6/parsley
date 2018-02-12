@@ -5,7 +5,6 @@ package object parsley
 {
     import parsley.Stack._
     // Public API
-    // TODO: This could be sped up with Java methods
     def runParser[A](p: Parsley[A], input: String): Result[A] = runParser[A](p, input.toCharArray)
     def runParser[A](p: Parsley[A], input: Array[Char]): Result[A] = runParser_[A](new Context(p.instrArray, input, p.subsMap))
 
