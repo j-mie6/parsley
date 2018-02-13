@@ -34,7 +34,7 @@ final class Parsley[+A] private [Parsley] (
       * `f` is used to produce a new parser that continued the computation.
       *
       * WARNING: There is significant overhead for using flatMap; if possible try to write parsers in an applicative
-      * style otherwise try and use the instrinsic parsers provided to replace the flatMap.
+      * style otherwise try and use the intrinsic parsers provided to replace the flatMap.
       * @param f A function that produces the next parser
       * @return The parser produces from the application of `f` on the result of the last parser
       */
@@ -46,7 +46,7 @@ final class Parsley[+A] private [Parsley] (
     }
 
     /**
-      * This is the functorial fmap operation for parsers. When the invokee produces a value, this value is fed through
+      * This is the functorial map operation for parsers. When the invokee produces a value, this value is fed through
       * the function `f`.
       *
       * WARNING: This is subject to aggressive optimisations assuming purity; the compiler is permitted to optimise such
@@ -108,7 +108,7 @@ final class Parsley[+A] private [Parsley] (
     /**
       * This is the Applicative application parser. The type of the invokee is `Parsley[A]` which is equivalent to some
       * `Parsley[B => C]`. Assuming this is true then, given a `Parsley[B]`, we can produce a `Parsley[C]` by parsing
-      * the invokee to retrieve `f: B => C`, then parse `p` to recieve `x: B` then return `f(x): C`.
+      * the invokee to retrieve `f: B => C`, then parse `p` to receive `x: B` then return `f(x): C`.
       *
       * WARNING: `pure(f) <*> p` is subject to the same aggressive optimisations as `map`. When using impure functions
       * the optimiser may decide to cache the result of the function execution, be sure to use `unsafe` in order to

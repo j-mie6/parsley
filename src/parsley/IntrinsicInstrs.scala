@@ -96,7 +96,7 @@ private [parsley] final class Chainl(private [Chainl] val label: Int) extends In
     override def toString: String = s"Chainl($label)"
 }
 
-// TODO: What is the best way to implement this instrinsic?
+// TODO: What is the best way to implement this intrinsic?
 private [parsley] final class Chainr(private [Chainr] val label: Int) extends Instr
 {
     override def apply(ctx: Context) {}

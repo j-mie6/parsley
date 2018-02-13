@@ -62,7 +62,7 @@ object Benchmark
         //Console.in.read()
         val p = ParsleyBench.chain
         val input1 = "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"
-        val input2 = "aaaab"
+        //val input2 = "aaaab"
         val input = input1
         println(runParser(p, "aaaab"))
         println(runParser(p, "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"))

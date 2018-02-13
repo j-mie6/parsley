@@ -53,5 +53,5 @@ private [parsley] object FastFail
 
 private [parsley] object CharTokFastPerform
 {
-    def unapply(self: CharTokFastPerform): Option[(Char, Any=>Any)] = Some(self.c, self.f)
+    def unapply(self: CharTokFastPerform): Option[(Char, Any=>Any)] = Some((self.c, self.f))
 }
