@@ -193,6 +193,8 @@ private [parsley] object Try extends Instr
             val state = ctx.states.head
             ctx.states = ctx.states.tail
             ctx.offset = state.offset
+            ctx.line = state.line
+            ctx.col = state.col
             ctx.fail()
         }
     }
@@ -211,6 +213,8 @@ private [parsley] object Look extends Instr
             val state = ctx.states.head
             ctx.states = ctx.states.tail
             ctx.offset = state.offset
+            ctx.line = state.line
+            ctx.col = state.col
             ctx.handlers = ctx.handlers.tail
             ctx.inc()
         }
