@@ -11,9 +11,9 @@ private [parsley] final class Handler(val depth: Int, val pc: Int, val stacksz: 
 {
     override def toString: String = s"Handler@$depth:$pc(-$stacksz)"
 }
-private [parsley] final class State(val offset: Int)
+private [parsley] final class State(val offset: Int, val line: Int, val col: Int)
 {
-    override def toString: String = offset.toString
+    override def toString: String = s"$offset ($line, $col)"
 }
 
 private [parsley] final class Context(var instrs: Array[Instr],

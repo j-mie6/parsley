@@ -170,7 +170,7 @@ private [parsley] final class PushHandler(private [PushHandler] val handler: Int
     override def apply(ctx: Context)
     {
         ctx.handlers ::= new Handler(ctx.depth, handler, ctx.stacksz)
-        ctx.states ::= new State(ctx.offset)
+        ctx.states ::= new State(ctx.offset, ctx.line, ctx.col)
         ctx.inc()
     }
     override def toString: String = s"PushHandler($handler)"
