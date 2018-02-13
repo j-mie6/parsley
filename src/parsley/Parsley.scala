@@ -59,8 +59,8 @@ final class Parsley[+A] private [Parsley] (
     {
         // Pure application can be resolved at compile-time
         case Push(x: A @unchecked) if safe => new Parsley(instrs.init :+ new Push(f(x)), subs)
-        /*FIXME: MOVE*/case CharTok(c) if safe => new Parsley(instrs.init :+ new CharTokFastPerform(c, f.asInstanceOf[Function[Any, Any]]), subs)
-        /*FIXME: MOVE*/case CharTokFastPerform(c, g) if safe => new Parsley(instrs.init :+ new CharTokFastPerform(c, g.andThen(f.asInstanceOf[Function[Any, Any]])), subs)
+        /*FIXME: MOVE*/case CharTok(c) if safe => new Parsley(instrs.init :+ CharTokFastPerform(c, f.asInstanceOf[Function[Any, Any]]), subs)
+        /*FIXME: MOVE*/case CharTokFastPerform(c, g) if safe => new Parsley(instrs.init :+ CharTokFastPerform(c, g.andThen(f.asInstanceOf[Function[Any, Any]])), subs)
         // p.map(f).map(g) = p.map(g . f) (functor law)
         case Perform(g) => new Parsley(instrs.init :+ new Perform(g.asInstanceOf[Function[Any, A]].andThen(f)), subs)
         case _ => new Parsley(instrs :+ new Perform(f), subs)
@@ -129,7 +129,7 @@ final class Parsley[+A] private [Parsley] (
             case Perform(g) =>
                 new Parsley(instrs.init ++ p.instrs.init :+
                     new Perform(g.andThen(f.asInstanceOf[Function[Any, C]])), subs ++ p.subs)
-            /*FIXME: MOVE*/case CharTokFastPerform(c, g) if safe => new Parsley(instrs.init ++ p.instrs.init :+ new CharTokFastPerform(c, g.andThen(f.asInstanceOf[Function[Any, Any]])), subs)
+            /*FIXME: MOVE*/case CharTokFastPerform(c, g) if safe => new Parsley(instrs.init ++ p.instrs.init :+ CharTokFastPerform(c, g.andThen(f.asInstanceOf[Function[Any, Any]])), subs)
             case _ => new Parsley(instrs.init ++ p.instrs :+ new Perform[B, C](f.asInstanceOf[Function[B, C]]), subs ++ p.subs)
         }
         case Perform(f: Function[Any, Any=>Any] @unchecked) => p.instrs.last match
@@ -260,7 +260,7 @@ object Parsley
     }
     @inline def lift2[A, B, C](f: A => B => C, p: Parsley[A], q: Parsley[B]): Parsley[C] = p.map(f) <*> q
     @inline def lift2_[A, B, C](f: (A, B) => C, p: Parsley[A], q: Parsley[B]): Parsley[C] = lift2((x: A) => (y: B) => f(x, y), p, q)
-    def char(c: Char): Parsley[Char] = new Parsley(mutable.Buffer(new CharTok(c)), Map.empty)
+    def char(c: Char): Parsley[Char] = new Parsley(mutable.Buffer(CharTok(c)), Map.empty)
     def satisfy(f: Char => Boolean): Parsley[Char] = new Parsley(mutable.Buffer(new Satisfies(f)), Map.empty)
     def string(s: String): Parsley[String] = new Parsley(mutable.Buffer(new StringTok(s)), Map.empty)
     @inline

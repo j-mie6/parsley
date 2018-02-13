@@ -31,6 +31,8 @@ private [parsley] final class Context(var instrs: Array[Instr],
     var handlers: Stack[Handler] = Stack.empty
     var depth: Int = 0
     var pc: Int = 0
+    var line: Int = 1
+    var col: Int = 1
 
     override def toString: String =
     {

@@ -36,20 +36,21 @@ private [parsley] object Flip extends Instr
 }
 
 // Primitives
-private [parsley] final class CharTok(private [CharTok] val c: Char) extends Instr
+private [parsley] class CharTok(protected final val c: Char) extends Instr
 {
-    private [this] val ac: Any = c
+    protected final val ac: Any = c
     override def apply(ctx: Context)
     {
         if (ctx.offset < ctx.inputsz && ctx.input(ctx.offset) == c)
         {
                 ctx.pushStack(ac)
                 ctx.offset += 1
+                ctx.col += 1
                 ctx.inc()
         }
         else ctx.fail()
     }
-    override def toString: String = s"Chr($c)"
+    override final def toString: String = s"Chr($c)"
 }
 
 private [parsley] final class Satisfies(f: Char => Boolean) extends Instr
@@ -263,6 +264,13 @@ private [parsley] object Push
 
 private [parsley] object CharTok
 {
+    import scala.annotation.switch
+    def apply(c: Char): CharTok = (c: @switch) match
+    {
+        case '\n' => Newline
+        case '\t' => Tab
+        case _ => new CharTok(c)
+    }
     def unapply(self: CharTok): Option[Char] = Some(self.c)
 }
 
