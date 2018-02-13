@@ -33,6 +33,9 @@ private [parsley] final class Context(var instrs: Array[Instr],
     var pc: Int = 0
     var line: Int = 1
     var col: Int = 1
+    var erroffset: Int = -1
+    var errcol: Int = -1
+    var errline: Int = -1
 
     override def toString: String =
     {
@@ -51,7 +54,15 @@ private [parsley] final class Context(var instrs: Array[Instr],
 
     def fail()
     {
-        if (isEmpty(handlers)) status = Failed
+        if (isEmpty(handlers))
+        {
+            status = Failed
+            if (erroffset == -1)
+            {
+                errcol = col
+                errline = line
+            }
+        }
         else
         {
             status = Recover
@@ -69,6 +80,15 @@ private [parsley] final class Context(var instrs: Array[Instr],
             if (diffstack > 0) stack = drop(stack, diffstack)
             stacksz = handler.stacksz
             depth = handler.depth
+            // TODO: This is where we choose to update errors
+            if (offset > erroffset)
+            {
+                erroffset = offset
+                errcol = col
+                errline = line
+            }
+            // TODO: Add to the errors
+            else if (offset == erroffset) {}
         }
     }
 

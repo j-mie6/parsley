@@ -208,6 +208,7 @@ final class Parsley[+A] private [Parsley] (
     @inline def <#>:[B](f: A => B): Parsley[B] = map(f)
     /**This combinator is an alias for `flatMap`*/
     @inline def >>=[B](f: A => Parsley[B]): Parsley[B] = flatMap(f)
+    @inline def ?(msg: String): Parsley[A] = label(this, msg)
     /**This combinator is an alias for `*>`*/
     @inline def >>[B](p: Parsley[B]): Parsley[B] = this *> p
     /**This combinator is defined as `this <|> pure(x)`. It is pure syntactic sugar.*/
@@ -248,6 +249,9 @@ object Parsley
     def fail[A](msg: String): Parsley[A] = new Parsley[A](mutable.Buffer(new Fail(msg)), Map.empty)
     def fail[A](msggen: Parsley[A], finaliser: A => String): Parsley[A] =  new Parsley[A](msggen.instrs :+ new FastFail(finaliser), msggen.subs)
     def empty[A]: Parsley[A] = fail("unknown error")
+    def unexpected[A]: Parsley[A] = fail("unexpected ?")
+    // TODO: Work out logic!
+    def label[A](p: Parsley[A], msg: String): Parsley[A] = p
     def tryParse[A](p: Parsley[A]): Parsley[A] =
     {
         val handler = fresh()
