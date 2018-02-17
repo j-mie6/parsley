@@ -40,7 +40,7 @@ package object parsley
     @tailrec @inline private [this] def runParser_[A](ctx: Context): Result[A] =
     {
         //println(ctx)
-        if (ctx.status eq Failed) return Failure("Unknown error")
+        if (ctx.status eq Failed) return Failure(ctx.errorMessage)
         val pc = ctx.pc
         val instrs = ctx.instrs
         if (pc < instrs.length)

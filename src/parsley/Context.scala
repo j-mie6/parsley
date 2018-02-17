@@ -36,6 +36,9 @@ private [parsley] final class Context(var instrs: Array[Instr],
     var erroffset: Int = -1
     var errcol: Int = -1
     var errline: Int = -1
+    var raw: Option[String] = None
+    var unexpected: Option[String] = None
+    var expected: List[Option[String]] = Nil
 
     override def toString: String =
     {
@@ -80,16 +83,24 @@ private [parsley] final class Context(var instrs: Array[Instr],
             if (diffstack > 0) stack = drop(stack, diffstack)
             stacksz = handler.stacksz
             depth = handler.depth
-            // TODO: This is where we choose to update errors
-            if (offset > erroffset)
-            {
-                erroffset = offset
-                errcol = col
-                errline = line
-            }
-            // TODO: Add to the errors
-            else if (offset == erroffset) {}
         }
+        // TODO: This is where we choose to update errors
+        if (offset > erroffset)
+        {
+            erroffset = offset
+            errcol = col
+            errline = line
+            unexpected = if (offset < inputsz) Some(s"'${input(offset)}'") else Some("end of file")
+            expected = Nil
+            raw = None
+        }
+        // TODO: Add to the errors
+        else if (offset == erroffset) {}
+    }
+
+    def errorMessage(): String =
+    {
+        s"($errline, $errcol): unexpected ${unexpected.get}"
     }
 
     def inc() { pc += 1 }
