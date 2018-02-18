@@ -36,7 +36,7 @@ private [parsley] object Flip extends Instr
 }
 
 // Primitives
-private [parsley] class CharTok(protected final val c: Char) extends Instr
+private [parsley] class CharTok(protected final val c: Char) extends ExpectingInstr(Some(c.toString))
 {
     protected final val ac: Any = c
     override def apply(ctx: Context)
@@ -48,12 +48,13 @@ private [parsley] class CharTok(protected final val c: Char) extends Instr
                 ctx.col += 1
                 ctx.inc()
         }
-        else ctx.fail()
+        else ctx.fail(expected)
     }
+    override def copy_(): ExpectingInstr = new CharTok(c)
     override final def toString: String = s"Chr($c)"
 }
 
-private [parsley] final class Satisfies(f: Char => Boolean) extends Instr
+private [parsley] final class Satisfies(f: Char => Boolean) extends ExpectingInstr(None)
 {
     override def apply(ctx: Context)
     {
@@ -63,12 +64,13 @@ private [parsley] final class Satisfies(f: Char => Boolean) extends Instr
             ctx.offset += 1
             ctx.inc()
         }
-        else ctx.fail()
+        else ctx.fail(expected)
     }
+    override def copy_(): ExpectingInstr = new Satisfies(f)
     override def toString: String = "Sat(?)"
 }
 
-private [parsley] final class StringTok(private [StringTok] val s: String) extends Instr
+private [parsley] final class StringTok(private [StringTok] val s: String) extends ExpectingInstr(Some(s))
 {
     private [this] val cs = s.toCharArray
     private [this] val sz = cs.length
@@ -98,8 +100,9 @@ private [parsley] final class StringTok(private [StringTok] val s: String) exten
             ctx.offset += sz
             ctx.inc()
         }
-        else ctx.fail()
+        else ctx.fail(expected)
     }
+    override def copy_(): ExpectingInstr = new StringTok(s)
     override def toString: String = s"Str($s)"
 }
 
@@ -158,10 +161,22 @@ private [parsley] final class Call(private [Call] val x: String) extends Instr
     override def toString: String = "Call($x)"
 }
 
-private [parsley] final class Fail(private [Fail] val msg: String) extends Instr
+private [parsley] final class Fail(private [Fail] val msg: String = null) extends ExpectingInstr(None)
 {
+    private [this] val msg_ = Option(msg)
     // We need to do something with the message!
-    override def apply(ctx: Context) { ctx.fail() }
+    override def apply(ctx: Context) 
+    {
+        if (expected.isDefined) ctx.expected = Nil
+        ctx.fail(expected)
+        if (expected.isEmpty)
+        {
+            ctx.expected = Nil
+            ctx.unexpected = None
+            ctx.raw = msg_
+        }
+    }
+    override def copy_(): ExpectingInstr = new Fail(msg)
     override def toString: String = s"Fail($msg)"
 }
 
@@ -271,8 +286,8 @@ private [parsley] object CharTok
     import scala.annotation.switch
     def apply(c: Char): CharTok = (c: @switch) match
     {
-        case '\n' => Newline
-        case '\t' => Tab
+        case '\n' => new Newline()
+        case '\t' => new Tab()
         case _ => new CharTok(c)
     }
     def unapply(self: CharTok): Option[Char] = Some(self.c)

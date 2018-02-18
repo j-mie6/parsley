@@ -55,7 +55,7 @@ private [parsley] final class Context(var instrs: Array[Instr],
             |]""".stripMargin
     }
 
-    def fail()
+    def fail(e: =>Option[String] = None)
     {
         if (isEmpty(handlers))
         {
@@ -84,23 +84,21 @@ private [parsley] final class Context(var instrs: Array[Instr],
             stacksz = handler.stacksz
             depth = handler.depth
         }
-        // TODO: This is where we choose to update errors
         if (offset > erroffset)
         {
             erroffset = offset
             errcol = col
             errline = line
             unexpected = if (offset < inputsz) Some(s"'${input(offset)}'") else Some("end of file")
-            expected = Nil
-            raw = None
+            expected ::= e
         }
-        // TODO: Add to the errors
-        else if (offset == erroffset) {}
+        else if (offset == erroffset) expected ::= e
     }
 
     def errorMessage(): String =
     {
-        s"($errline, $errcol): unexpected ${unexpected.get}"
+        if (unexpected.isDefined) s"($errline, $errcol): unexpected ${unexpected.get}, expected ${expected.flatten.distinct.reverse.mkString(" or ")}"
+        else s"($errline, $errcol): ${raw.getOrElse("unknown error")}"
     }
 
     def inc() { pc += 1 }

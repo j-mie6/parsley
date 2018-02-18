@@ -249,9 +249,20 @@ object Parsley
     def fail[A](msg: String): Parsley[A] = new Parsley[A](mutable.Buffer(new Fail(msg)), Map.empty)
     def fail[A](msggen: Parsley[A], finaliser: A => String): Parsley[A] =  new Parsley[A](msggen.instrs :+ new FastFail(finaliser), msggen.subs)
     def empty[A]: Parsley[A] = fail("unknown error")
-    def unexpected[A]: Parsley[A] = fail("unexpected ?")
-    // TODO: Work out logic!
-    def label[A](p: Parsley[A], msg: String): Parsley[A] = p
+    def unexpected[A](msg: String): Parsley[A] =
+    {
+        val f = new Fail()
+        f.expected = Some(msg)
+        new Parsley[A](mutable.Buffer(f), Map.empty)
+    }
+    def label[A](p: Parsley[A], msg: String): Parsley[A] = new Parsley[A](p.instrs.map
+    {
+        case e: ExpectingInstr =>
+            val e_ = e.copy()
+            e.expected = Some(msg)
+            e
+        case i => i
+    }, p.subs)
     def tryParse[A](p: Parsley[A]): Parsley[A] =
     {
         val handler = fresh()

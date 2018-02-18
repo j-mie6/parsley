@@ -26,6 +26,17 @@ package object parsley
     {
         var lidx: Int = -1
     }
+    
+    private [parsley] abstract class ExpectingInstr(private [parsley] var expected: Option[String]) extends Instr
+    {
+        def copy(): ExpectingInstr =
+        {
+            val e = copy_()
+            e.expected = expected
+            e
+        }
+        protected def copy_(): ExpectingInstr
+    }
 
     // It's 2018 and Labels are making a come-back, along with 2 pass assembly
     private [parsley] final case class Label(i: Int) extends Instr
