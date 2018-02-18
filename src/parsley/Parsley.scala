@@ -372,7 +372,7 @@ object Parsley
                     labels.update(l, labels(l) :+ (i+offset))
                     forwardPass(i+1, offset-1)
                 case instr: FwdJumpInstr =>
-                    if (instr.lidx != -1) instrs.update(i, instr.copy(labels(instr.label).size))
+                    if (instr.lidx != -1) instrs.update(i, instr.copy(lidx = labels(instr.label).size))
                     else instr.lidx = labels(instr.label).size
                     forwardPass(i+1, offset)
                 case Many(l) =>
