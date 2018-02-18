@@ -364,17 +364,6 @@ object Parsley
         type LabelMap = mutable.Map[Int, Vector[Int]]
         val n = instrs.size
         val labels: LabelMap = mutable.Map.empty.withDefaultValue(Vector.empty)
-        def adjustFwdJump(instr: FwdJumpInstr, instrs: mutable.Buffer[Instr], i: Int, j: Int, clone: =>FwdJumpInstr)
-        {
-            val instr_ = if (instr.lidx != -1)
-            {
-                val instr_ = clone
-                instrs.update(i, instr_)
-                instr_
-            }
-            else instr
-            instr_.lidx = j
-        }
         @tailrec def forwardPass(i: Int = 0, offset: Int = 0)
         {
             if (i < n) instrs(i) match
@@ -382,14 +371,9 @@ object Parsley
                 case Label(l) =>
                     labels.update(l, labels(l) :+ (i+offset))
                     forwardPass(i+1, offset-1)
-                case instr@PushHandler(l) =>
-                    adjustFwdJump(instr, instrs, i, labels(l).size, new PushHandler(l))
-                    forwardPass(i+1, offset)
-                case instr@InputCheck(l) =>
-                    adjustFwdJump(instr, instrs, i, labels(l).size, new InputCheck(l))
-                    forwardPass(i+1, offset)
-                case instr@JumpGood(l) =>
-                    adjustFwdJump(instr, instrs, i, labels(l).size, new JumpGood(l))
+                case instr: FwdJumpInstr =>
+                    if (instr.lidx != -1) instrs.update(i, instr.copy(labels(instr.label).size))
+                    else instr.lidx = labels(instr.label).size
                     forwardPass(i+1, offset)
                 case Many(l) =>
                     instrs.update(i, new Many(labels(l).last))

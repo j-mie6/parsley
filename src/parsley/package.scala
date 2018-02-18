@@ -24,7 +24,15 @@ package object parsley
 
     private [parsley] abstract class FwdJumpInstr extends Instr
     {
+        val label: Int
         var lidx: Int = -1
+        def copy(lidx: Int = this.lidx): FwdJumpInstr =
+        {
+            val j = copy_()
+            j.lidx = lidx
+            j
+        }
+        protected def copy_(): FwdJumpInstr
     }
     
     private [parsley] abstract class ExpectingInstr(private [parsley] var expected: Option[String]) extends Instr

@@ -180,15 +180,16 @@ private [parsley] final class Fail(private [Fail] val msg: String = null) extend
     override def toString: String = s"Fail($msg)"
 }
 
-private [parsley] final class PushHandler(private [PushHandler] val handler: Int) extends FwdJumpInstr
+private [parsley] final class PushHandler(override val label: Int) extends FwdJumpInstr
 {
     override def apply(ctx: Context)
     {
-        ctx.handlers ::= new Handler(ctx.depth, handler, ctx.stacksz)
+        ctx.handlers ::= new Handler(ctx.depth, label, ctx.stacksz)
         ctx.states ::= new State(ctx.offset, ctx.line, ctx.col)
         ctx.inc()
     }
-    override def toString: String = s"PushHandler($handler)"
+    override def toString: String = s"PushHandler($label)"
+    override def copy_(): FwdJumpInstr = new PushHandler(label)
 }
 
 private [parsley] object Try extends Instr
@@ -242,18 +243,19 @@ private [parsley] object Look extends Instr
     override def toString: String = "Look"
 }
 
-private [parsley] final class InputCheck(private [InputCheck] val handler: Int) extends FwdJumpInstr
+private [parsley] final class InputCheck(override val label: Int) extends FwdJumpInstr
 {
     override def apply(ctx: Context)
     {
         ctx.checkStack ::= ctx.offset
-        ctx.handlers ::= new Handler(ctx.depth, handler, ctx.stacksz)
+        ctx.handlers ::= new Handler(ctx.depth, label, ctx.stacksz)
         ctx.inc()
     }
-    override def toString: String = s"InputCheck($handler)"
+    override def toString: String = s"InputCheck($label)"
+    override def copy_(): FwdJumpInstr = new InputCheck(label)
 }
 
-private [parsley] final class JumpGood(private [JumpGood] val label: Int) extends FwdJumpInstr
+private [parsley] final class JumpGood(override val label: Int) extends FwdJumpInstr
 {
     override def apply(ctx: Context)
     {
@@ -273,6 +275,7 @@ private [parsley] final class JumpGood(private [JumpGood] val label: Int) extend
         }
     }
     override def toString: String = s"JumpGood($label)"
+    override def copy_(): FwdJumpInstr = new JumpGood(label)
 }
 
 // Extractor Objects
@@ -313,12 +316,12 @@ private [parsley] object Call
 
 private [parsley] object PushHandler
 {
-    def unapply(self: PushHandler): Option[Int] = Some(self.handler)
+    def unapply(self: PushHandler): Option[Int] = Some(self.label)
 }
 
 private [parsley] object InputCheck
 {
-    def unapply(self: InputCheck): Option[Int] = Some(self.handler)
+    def unapply(self: InputCheck): Option[Int] = Some(self.label)
 }
 
 private [parsley] object JumpGood
