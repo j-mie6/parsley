@@ -36,7 +36,7 @@ private [parsley] final class Context(var instrs: Array[Instr],
     var erroffset: Int = -1
     var errcol: Int = -1
     var errline: Int = -1
-    var raw: Option[String] = None
+    var raw: List[String] = Nil
     var unexpected: Option[String] = None
     var expected: List[Option[String]] = Nil
 
@@ -55,7 +55,7 @@ private [parsley] final class Context(var instrs: Array[Instr],
             |]""".stripMargin
     }
 
-    def fail(e: =>Option[String] = None)
+    def fail(e: Option[String] = None)
     {
         if (isEmpty(handlers))
         {
@@ -89,7 +89,7 @@ private [parsley] final class Context(var instrs: Array[Instr],
             erroffset = offset
             errcol = col
             errline = line
-            unexpected = if (offset < inputsz) Some(s"'${input(offset)}'") else Some("end of file")
+            unexpected = if (offset < inputsz) Some("\"" + input(offset).toString + "\"") else Some("end of input")
             expected ::= e
         }
         else if (offset == erroffset) expected ::= e
@@ -97,8 +97,12 @@ private [parsley] final class Context(var instrs: Array[Instr],
 
     def errorMessage(): String =
     {
-        if (unexpected.isDefined) s"($errline, $errcol): unexpected ${unexpected.get}, expected ${expected.flatten.distinct.reverse.mkString(" or ")}"
-        else s"($errline, $errcol): ${raw.getOrElse("unknown error")}"
+        if (unexpected.isDefined)
+            s"""(line $errline, column $errcol):
+               |  unexpected ${unexpected.get}
+               |  expected ${expected.flatten.distinct.map("\"" + _ + "\"").reverse.mkString(" or ")}
+               |  ${raw.distinct.reverse.mkString(" or ")}""".stripMargin.trim
+        else s"(line $errline, column $errcol):\n  ${if (raw.isEmpty) "unknown error" else raw.distinct.reverse.mkString(" or ")})}"
     }
 
     def inc() { pc += 1 }

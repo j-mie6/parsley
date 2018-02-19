@@ -226,8 +226,8 @@ final class Parsley[+A] private [Parsley] (
 
     // Internals
     private [this] var safe = true
-    private [parsley] lazy val instrArray: Array[Instr] = {delabel(instrs); instrs.toArray}
-    private [parsley] lazy val subsMap: Map[String, Array[Instr]] = subs.map{ case (k, v) => k -> {delabel(v); v.toArray} }
+    private [parsley] lazy val instrArray: Array[Instr] = delabel(instrs)
+    private [parsley] lazy val subsMap: Map[String, Array[Instr]] = subs.map{ case (k, v) => k -> delabel(v) }
     private [this] lazy val prettyInstrs: String = instrArray.mkString("; ")
     private [this] lazy val prettySubs: String =
     {
@@ -278,6 +278,7 @@ object Parsley
     def char(c: Char): Parsley[Char] = new Parsley(mutable.Buffer(CharTok(c)), Map.empty)
     def satisfy(f: Char => Boolean): Parsley[Char] = new Parsley(mutable.Buffer(new Satisfies(f)), Map.empty)
     def string(s: String): Parsley[String] = new Parsley(mutable.Buffer(new StringTok(s)), Map.empty)
+    def anyChar: Parsley[Char] = satisfy(_ => true)
     @inline
     def choose[A](b: Parsley[Boolean], p: Parsley[A], q: Parsley[A]): Parsley[A] =
     {
@@ -359,8 +360,9 @@ object Parsley
         @inline def <#>(p: Parsley[A]): Parsley[B] = p.map(f)
     }
 
-    private [Parsley] def delabel(instrs: mutable.Buffer[Instr])
+    private [Parsley] def delabel(instrs_ : mutable.Buffer[Instr]): Array[Instr] =
     {
+        val instrs = instrs_.clone()
         type LabelMap = mutable.Map[Int, Vector[Int]]
         val n = instrs.size
         val labels: LabelMap = mutable.Map.empty.withDefaultValue(Vector.empty)
@@ -404,6 +406,7 @@ object Parsley
         }
         forwardPass()
         backwardPass()
+        instrs.toArray
     }
 
     //TODO This needs to be reinstated
@@ -464,5 +467,7 @@ object Parsley
         println(chainl1(atom, pow))
         println(chainl1(chainl1(atom, pow), mul))
         println(chainl1(chainl1(chainl1(atom, pow), mul), add))
+        lazy val p: Parsley[List[String]] = "p" <%> ("correct error message" <::> (p </> Nil))
+        println(runParser(p ? "nothing but this :)", ""))
     }
 }

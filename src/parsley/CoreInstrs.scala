@@ -158,7 +158,7 @@ private [parsley] final class Call(private [Call] val x: String) extends Instr
         ctx.depth += 1
         ctx.pc = 0
     }
-    override def toString: String = "Call($x)"
+    override def toString: String = s"Call($x)"
 }
 
 private [parsley] final class Fail(private [Fail] val msg: String = null) extends ExpectingInstr(None)
@@ -169,12 +169,7 @@ private [parsley] final class Fail(private [Fail] val msg: String = null) extend
     {
         if (expected.isDefined) ctx.expected = Nil
         ctx.fail(expected)
-        if (expected.isEmpty)
-        {
-            ctx.expected = Nil
-            ctx.unexpected = None
-            ctx.raw = msg_
-        }
+        if (expected.isEmpty) ctx.raw ::= msg
     }
     override def copy_(): ExpectingInstr = new Fail(msg)
     override def toString: String = s"Fail($msg)"
