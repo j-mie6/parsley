@@ -2,7 +2,7 @@ package parsley
 
 private [parsley] final class Exchange[A](private [Exchange] val x: A) extends Instr
 {
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         ctx.exchangeStack(x)
         ctx.inc()
@@ -13,7 +13,7 @@ private [parsley] final class Exchange[A](private [Exchange] val x: A) extends I
 private [parsley] final class FastFail[A](private [FastFail] val msggen: A=>String) extends Instr
 {
     private[this] val msggen_ = msggen.asInstanceOf[Any => String]
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         val msg = msggen_(ctx.popStack())
         new Fail(msg)(ctx)
@@ -23,7 +23,7 @@ private [parsley] final class FastFail[A](private [FastFail] val msggen: A=>Stri
 
 private [parsley] class Newline() extends CharTok('\n')
 {
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         if (ctx.offset < ctx.inputsz && ctx.input(ctx.offset) == '\n')
         {
@@ -40,7 +40,7 @@ private [parsley] class Newline() extends CharTok('\n')
 
 private [parsley] class Tab() extends CharTok('\t')
 {
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         if (ctx.offset < ctx.inputsz && ctx.input(ctx.offset) == '\t')
         {
@@ -60,7 +60,7 @@ private [parsley] class Tab() extends CharTok('\t')
 private [parsley] class CharTokFastPerform(protected final val c: Char, protected final val f: Any => Any) extends ExpectingInstr(Some(c.toString))
 {
     protected final val fc: Any = f(c)
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         if (ctx.offset < ctx.inputsz && ctx.input(ctx.offset) == c)
         {
@@ -77,7 +77,7 @@ private [parsley] class CharTokFastPerform(protected final val c: Char, protecte
 
 private [parsley] final class NewlineFastPerform(private [this] val g: Any => Any) extends CharTokFastPerform('\n', g)
 {
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         if (ctx.offset < ctx.inputsz && ctx.input(ctx.offset) == '\n')
         {
@@ -94,7 +94,7 @@ private [parsley] final class NewlineFastPerform(private [this] val g: Any => An
 
 private [parsley] final class TabFastPerform(private [this] val g: Any => Any) extends CharTokFastPerform('\t', g)
 {
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         if (ctx.offset < ctx.inputsz && ctx.input(ctx.offset) == '\t')
         {

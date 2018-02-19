@@ -5,7 +5,7 @@ import language.existentials
 // Stack Manipulators
 private [parsley] final class Push[A](private [Push] val x: A) extends Instr
 {
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         ctx.pushStack(x)
         ctx.inc()
@@ -15,7 +15,7 @@ private [parsley] final class Push[A](private [Push] val x: A) extends Instr
 
 private [parsley] object Pop extends Instr
 {
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         ctx.popStack()
         ctx.inc()
@@ -25,7 +25,7 @@ private [parsley] object Pop extends Instr
 
 private [parsley] object Flip extends Instr
 {
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         val y = ctx.stack.head
         ctx.exchangeStack(ctx.stack.tail.head)
@@ -39,7 +39,7 @@ private [parsley] object Flip extends Instr
 private [parsley] class CharTok(protected final val c: Char) extends ExpectingInstr(Some(c.toString))
 {
     protected final val ac: Any = c
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         if (ctx.offset < ctx.inputsz && ctx.input(ctx.offset) == c)
         {
@@ -56,7 +56,7 @@ private [parsley] class CharTok(protected final val c: Char) extends ExpectingIn
 
 private [parsley] final class Satisfies(f: Char => Boolean) extends ExpectingInstr(None)
 {
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         if (ctx.offset < ctx.inputsz && f(ctx.input(ctx.offset)))
         {
@@ -92,7 +92,7 @@ private [parsley] final class StringTok(private [StringTok] val s: String) exten
             true
         }
     }
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         if (matches(ctx.input, ctx.inputsz - ctx.offset, ctx.offset))
         {
@@ -110,7 +110,7 @@ private [parsley] final class StringTok(private [StringTok] val s: String) exten
 private [parsley] final class Perform[-A, +B](f: A => B) extends Instr
 {
     private [Perform] val g = f.asInstanceOf[Function[Any, Any]]
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         ctx.exchangeStack(g(ctx.stack.head))
         ctx.inc()
@@ -120,7 +120,7 @@ private [parsley] final class Perform[-A, +B](f: A => B) extends Instr
 
 private [parsley] object Apply extends Instr
 {
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         val x = ctx.popStack()
         val f = ctx.stack.head.asInstanceOf[Function[Any, Any]]
@@ -134,7 +134,7 @@ private [parsley] object Apply extends Instr
 private [parsley] final class DynSub[-A](f: A => Array[Instr]) extends Instr
 {
     private [DynSub] val g = f.asInstanceOf[Any => Array[Instr]]
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         ctx.calls ::= new Frame(ctx.pc + 1, ctx.instrs)
         ctx.instrs = g(ctx.popStack())
@@ -147,7 +147,7 @@ private [parsley] final class DynSub[-A](f: A => Array[Instr]) extends Instr
 private [parsley] final class Call(private [Call] val x: String) extends Instr
 {
     private [this] var instrs: Array[Instr] = _
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         ctx.calls ::= new Frame(ctx.pc + 1, ctx.instrs)
         ctx.instrs = if (instrs == null)
@@ -165,7 +165,7 @@ private [parsley] final class Fail(private [Fail] val msg: String = null) extend
 {
     private [this] val msg_ = Option(msg)
     // We need to do something with the message!
-    override def apply(ctx: Context) 
+    override def apply(ctx: Context): Unit =
     {
         if (expected.isDefined) ctx.expected = Nil
         ctx.fail(expected)
@@ -177,7 +177,7 @@ private [parsley] final class Fail(private [Fail] val msg: String = null) extend
 
 private [parsley] final class PushHandler(override val label: Int) extends FwdJumpInstr
 {
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         ctx.handlers ::= new Handler(ctx.depth, label, ctx.stacksz)
         ctx.states ::= new State(ctx.offset, ctx.line, ctx.col)
@@ -189,7 +189,7 @@ private [parsley] final class PushHandler(override val label: Int) extends FwdJu
 
 private [parsley] object Try extends Instr
 {
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         // Remove the recovery input from the stack, it isn't needed anymore
         if (ctx.status eq Good)
@@ -217,7 +217,7 @@ private [parsley] object Try extends Instr
 // but ensure this is the case later!
 private [parsley] object Look extends Instr
 {
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         if (ctx.status eq Good)
         {
@@ -240,7 +240,7 @@ private [parsley] object Look extends Instr
 
 private [parsley] final class InputCheck(override val label: Int) extends FwdJumpInstr
 {
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         ctx.checkStack ::= ctx.offset
         ctx.handlers ::= new Handler(ctx.depth, label, ctx.stacksz)
@@ -252,7 +252,7 @@ private [parsley] final class InputCheck(override val label: Int) extends FwdJum
 
 private [parsley] final class JumpGood(override val label: Int) extends FwdJumpInstr
 {
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         if (ctx.status eq Good)
         {

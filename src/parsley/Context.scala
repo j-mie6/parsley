@@ -55,7 +55,7 @@ private [parsley] final class Context(var instrs: Array[Instr],
             |]""".stripMargin
     }
 
-    def fail(e: Option[String] = None)
+    def fail(e: Option[String] = None): Unit =
     {
         if (isEmpty(handlers))
         {
@@ -105,10 +105,10 @@ private [parsley] final class Context(var instrs: Array[Instr],
         else s"(line $errline, column $errcol):\n  ${if (raw.isEmpty) "unknown error" else raw.distinct.reverse.mkString(" or ")})}"
     }
 
-    def inc() { pc += 1 }
+    def inc(): Unit = pc += 1
 
     // Stack Manipulation Methods
-    def pushStack(x: Any) { stack = new Stack(x, stack); stacksz += 1 }
+    def pushStack(x: Any): Unit = { stack = new Stack(x, stack); stacksz += 1 }
     def popStack(): Any =
     {
         val ret = stack.head
@@ -116,5 +116,5 @@ private [parsley] final class Context(var instrs: Array[Instr],
         stacksz -= 1
         ret
     }
-    def exchangeStack(x: Any) { stack.head = x }
+    def exchangeStack(x: Any): Unit = stack.head = x
 }

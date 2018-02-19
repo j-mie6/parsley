@@ -26,7 +26,7 @@ final class Parsley[+A] private [Parsley] (
       * Using this method signifies that the parser it is invoked on is impure and any optimisations which assume purity
       * are disabled.
       */
-    @inline def unsafe() { safe = false }
+    @inline def unsafe(): Unit = safe = false
 
     // Core API
     /**
@@ -247,7 +247,7 @@ object Parsley
 {
     def pure[A](a: A): Parsley[A] = new Parsley[A](mutable.Buffer(new Push(a)), Map.empty)
     def fail[A](msg: String): Parsley[A] = new Parsley[A](mutable.Buffer(new Fail(msg)), Map.empty)
-    def fail[A](msggen: Parsley[A], finaliser: A => String): Parsley[A] =  new Parsley[A](msggen.instrs :+ new FastFail(finaliser), msggen.subs)
+    def fail[A](msggen: Parsley[A], finaliser: A => String): Parsley[A] = new Parsley[A](msggen.instrs :+ new FastFail(finaliser), msggen.subs)
     def empty[A]: Parsley[A] = fail("unknown error")
     def unexpected[A](msg: String): Parsley[A] =
     {
@@ -329,10 +329,7 @@ object Parsley
         curLabel += 1
         label
     }
-    def reset()
-    {
-        knotScope = Set.empty
-    }
+    def reset(): Unit = knotScope = Set.empty
     def knot[A](name: String, p_ : =>Parsley[A]): Parsley[A] =
     {
         lazy val p = p_
@@ -366,7 +363,7 @@ object Parsley
         type LabelMap = mutable.Map[Int, Vector[Int]]
         val n = instrs.size
         val labels: LabelMap = mutable.Map.empty.withDefaultValue(Vector.empty)
-        @tailrec def forwardPass(i: Int = 0, offset: Int = 0)
+        @tailrec def forwardPass(i: Int = 0, offset: Int = 0): Unit =
         {
             if (i < n) instrs(i) match
             {
@@ -389,7 +386,7 @@ object Parsley
                 case _ => forwardPass(i+1, offset)
             }
         }
-        @tailrec def backwardPass(i: Int = n-1)
+        @tailrec def backwardPass(i: Int = n-1): Unit =
         {
             if (i >= 0)
             {

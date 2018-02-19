@@ -19,7 +19,7 @@ package object parsley
 
     private [parsley] abstract class Instr
     {
-        def apply(ctx: Context)
+        def apply(ctx: Context): Unit
     }
 
     private [parsley] abstract class FwdJumpInstr extends Instr
@@ -49,7 +49,7 @@ package object parsley
     // It's 2018 and Labels are making a come-back, along with 2 pass assembly
     private [parsley] final case class Label(i: Int) extends Instr
     {
-        def apply(ctx: Context) { throw new Exception("Cannot execute label") }
+        def apply(ctx: Context): Unit = throw new Exception("Cannot execute label")
     }
 
     sealed abstract class Result[A]
