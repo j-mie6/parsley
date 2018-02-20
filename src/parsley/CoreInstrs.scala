@@ -36,7 +36,7 @@ private [parsley] object Flip extends Instr
 }
 
 // Primitives
-private [parsley] class CharTok(protected final val c: Char) extends ExpectingInstr(Some("\"" + c.toString + "\""))
+private [parsley] class CharTok(protected final val c: Char) extends ExpectingInstr("\"" + c.toString + "\"")
 {
     protected final val ac: Any = c
     override def apply(ctx: Context): Unit =
@@ -54,7 +54,7 @@ private [parsley] class CharTok(protected final val c: Char) extends ExpectingIn
     override final def toString: String = s"Chr($c)"
 }
 
-private [parsley] final class Satisfies(f: Char => Boolean) extends ExpectingInstr(None)
+private [parsley] final class Satisfies(f: Char => Boolean) extends ExpectingInstr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -70,7 +70,7 @@ private [parsley] final class Satisfies(f: Char => Boolean) extends ExpectingIns
     override def toString: String = "Sat(?)"
 }
 
-private [parsley] final class StringTok(private [StringTok] val s: String) extends ExpectingInstr(Some("\"" + s + "\""))
+private [parsley] final class StringTok(private [StringTok] val s: String) extends ExpectingInstr("\"" + s + "\"")
 {
     private [this] val cs = s.toCharArray
     private [this] val sz = cs.length
@@ -131,7 +131,7 @@ private [parsley] object Apply extends Instr
 }
 
 // Monadic
-private [parsley] final class DynSub[-A](f: A => Array[Instr]) extends ExpectingInstr(None)
+private [parsley] final class DynSub[-A](f: A => Array[Instr]) extends ExpectingInstr
 {
     private [DynSub] val g = f.asInstanceOf[Any => Array[Instr]]
     override def apply(ctx: Context): Unit =
@@ -139,7 +139,7 @@ private [parsley] final class DynSub[-A](f: A => Array[Instr]) extends Expecting
         ctx.calls ::= new Frame(ctx.pc + 1, ctx.instrs)
         ctx.instrs = g(ctx.popStack())
         ctx.pc = 0
-        if (expected.isDefined)
+        if (expected != null)
         {
             ctx.overrideDepth = ctx.depth
             ctx.errorOverride = expected
@@ -150,9 +150,9 @@ private [parsley] final class DynSub[-A](f: A => Array[Instr]) extends Expecting
 }
 
 // Control Flow
-private [parsley] final class Call(private [Call] val x: String) extends ExpectingInstr(None)
+private [parsley] final class Call(private [Call] val x: String) extends ExpectingInstr
 {
-    private [this] var instrs: Array[Instr] = _
+    private [this] var instrs: UnsafeOption[Array[Instr]] = _
     override def apply(ctx: Context): Unit =
     {
         ctx.calls ::= new Frame(ctx.pc + 1, ctx.instrs)
@@ -162,7 +162,7 @@ private [parsley] final class Call(private [Call] val x: String) extends Expecti
             instrs
         } else instrs
         ctx.depth += 1
-        if (expected.isDefined)
+        if (expected != null)
         {
             ctx.overrideDepth = ctx.depth
             ctx.errorOverride = expected
@@ -173,7 +173,7 @@ private [parsley] final class Call(private [Call] val x: String) extends Expecti
     override def toString: String = s"Call($x)"
 }
 
-private [parsley] final class Fail(private [Fail] val msg: String) extends ExpectingInstr(None)
+private [parsley] final class Fail(private [Fail] val msg: String) extends ExpectingInstr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -184,26 +184,25 @@ private [parsley] final class Fail(private [Fail] val msg: String) extends Expec
     override def toString: String = s"Fail($msg)"
 }
 
-private [parsley] final class Unexpected(private [Unexpected] val msg: String) extends ExpectingInstr(None)
+private [parsley] final class Unexpected(private [Unexpected] val msg: String) extends ExpectingInstr
 {
-    private [this] val msg_ = Option(msg)
     override def apply(ctx: Context): Unit =
     {
         ctx.fail(expected)
-        ctx.unexpected = msg_
+        ctx.unexpected = msg
         ctx.unexpectAnyway = true
     }
     override def copy_(): ExpectingInstr = new Unexpected(msg)
     override def toString: String = s"Unexpected($msg)"
 }
 
-private [parsley] final class Empty extends ExpectingInstr(None)
+private [parsley] final class Empty extends ExpectingInstr(null)
 {
     override def apply(ctx: Context): Unit = 
     {
         val strip = ctx.expected.isEmpty
         ctx.fail(expected)
-        if (strip) ctx.unexpected = None
+        if (strip) ctx.unexpected = null
     }
     override def copy_(): ExpectingInstr = new Empty
     override def toString: String = "Empty"

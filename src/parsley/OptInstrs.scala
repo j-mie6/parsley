@@ -57,7 +57,7 @@ private [parsley] class Tab extends CharTok('\t')
 // This instruction has GREAT potential, it should be integrated into peephole :)
 // We should also make equivalents for Satisfy and String
 // Also experiment: is CharTok; Exchange better than CharTokFastPerform with const?
-private [parsley] class CharTokFastPerform(protected final val c: Char, protected final val f: Any => Any) extends ExpectingInstr(Some("\"" + c.toString + "\""))
+private [parsley] class CharTokFastPerform(protected final val c: Char, protected final val f: Any => Any) extends ExpectingInstr("\"" + c.toString + "\"")
 {
     protected final val fc: Any = f(c)
     override def apply(ctx: Context): Unit =

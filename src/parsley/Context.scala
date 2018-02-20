@@ -37,10 +37,10 @@ private [parsley] final class Context(var instrs: Array[Instr],
     var errcol: Int = -1
     var errline: Int = -1
     var raw: List[String] = Nil
-    var unexpected: Option[String] = None
-    var expected: List[Option[String]] = Nil
+    var unexpected: UnsafeOption[String] = _
+    var expected: List[UnsafeOption[String]] = Nil
     var unexpectAnyway: Boolean = false
-    var errorOverride: Option[String] = None
+    var errorOverride: UnsafeOption[String] = _
     var overrideDepth: Int = 0
 
     override def toString: String =
@@ -58,7 +58,7 @@ private [parsley] final class Context(var instrs: Array[Instr],
             |]""".stripMargin
     }
 
-    def fail(e: Option[String] = None): Unit =
+    def fail(e: UnsafeOption[String] = null): Unit =
     {
         if (isEmpty(handlers))
         {
@@ -89,7 +89,7 @@ private [parsley] final class Context(var instrs: Array[Instr],
             if (depth < overrideDepth)
             {
                 overrideDepth = 0
-                errorOverride = None
+                errorOverride = null
             }
         }
         if (offset > erroffset)
@@ -97,19 +97,19 @@ private [parsley] final class Context(var instrs: Array[Instr],
             erroffset = offset
             errcol = col
             errline = line
-            unexpected = if (offset < inputsz) Some("\"" + input(offset).toString + "\"") else Some("end of input")
-            expected = errorOverride.orElse(e)::Nil
+            unexpected = if (offset < inputsz) "\"" + input(offset).toString + "\"" else "end of input"
+            expected = (if (errorOverride == null) e else errorOverride)::Nil
             raw = Nil
             unexpectAnyway = false
         }
-        else if (offset == erroffset) expected ::= errorOverride.orElse(e)
+        else if (offset == erroffset) expected ::= (if (errorOverride == null) e else errorOverride)
     }
 
     def errorMessage(): String =
     {
         val posStr = Some(s"(line $errline, column $errcol):")
-        val unexpectedStr = unexpected.map(s => s"unexpected $s")
-        val expectedStr = if (expected.flatten.isEmpty) None else Some(s"expected ${expected.flatten.distinct.reverse.mkString(" or ")}")
+        val unexpectedStr = Option(unexpected).map(s => s"unexpected $s")
+        val expectedStr = if (expected.flatten.isEmpty) None else Some(s"expected ${expected.map(Option(_)).flatten.distinct.reverse.mkString(" or ")}")
         val rawStr = if (raw.isEmpty) None else Some(raw.distinct.reverse.mkString(" or "))
         if (rawStr.isEmpty && expectedStr.isEmpty && unexpectAnyway) 
         {

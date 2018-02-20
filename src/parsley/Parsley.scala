@@ -254,7 +254,7 @@ object Parsley
     {
         case e: ExpectingInstr =>
             val e_ = e.copy()
-            e.expected = Some(msg)
+            e.expected = msg
             e
         case i => i
     }, p.subs)

@@ -12,6 +12,8 @@ package object parsley
     @inline final implicit def stringLift(str: String): Parsley[String] = parsley.Parsley.string(str)
     @inline final implicit def charLift(c: Char): Parsley[Char] = parsley.Parsley.char(c)
 
+    // Internals
+    private [parsley] type UnsafeOption[A] = A
     private [parsley] sealed abstract class Status
     private [parsley] case object Good extends Status
     private [parsley] case object Recover extends Status
@@ -35,7 +37,7 @@ package object parsley
         protected def copy_(): FwdJumpInstr
     }
     
-    private [parsley] abstract class ExpectingInstr(private [parsley] var expected: Option[String]) extends Instr
+    private [parsley] abstract class ExpectingInstr(private [parsley] var expected: UnsafeOption[String] = null) extends Instr
     {
         def copy(): ExpectingInstr =
         {
@@ -78,7 +80,7 @@ package object parsley
             if (ctx.depth < ctx.overrideDepth)
             {
                 ctx.overrideDepth = 0
-                ctx.errorOverride = None
+                ctx.errorOverride = null
             }
             runParser_[A](ctx)
         }
