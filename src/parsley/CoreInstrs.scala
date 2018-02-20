@@ -36,7 +36,7 @@ private [parsley] object Flip extends Instr
 }
 
 // Primitives
-private [parsley] class CharTok(protected final val c: Char) extends ExpectingInstr(Some(c.toString))
+private [parsley] class CharTok(protected final val c: Char) extends ExpectingInstr(Some("\"" + c.toString + "\""))
 {
     protected final val ac: Any = c
     override def apply(ctx: Context): Unit =
@@ -70,7 +70,7 @@ private [parsley] final class Satisfies(f: Char => Boolean) extends ExpectingIns
     override def toString: String = "Sat(?)"
 }
 
-private [parsley] final class StringTok(private [StringTok] val s: String) extends ExpectingInstr(Some(s))
+private [parsley] final class StringTok(private [StringTok] val s: String) extends ExpectingInstr(Some("\"" + s + "\""))
 {
     private [this] val cs = s.toCharArray
     private [this] val sz = cs.length
@@ -144,7 +144,7 @@ private [parsley] final class DynSub[-A](f: A => Array[Instr]) extends Instr
 }
 
 // Control Flow
-private [parsley] final class Call(private [Call] val x: String) extends Instr
+private [parsley] final class Call(private [Call] val x: String) extends ExpectingInstr(None)
 {
     private [this] var instrs: Array[Instr] = _
     override def apply(ctx: Context): Unit =
@@ -156,8 +156,14 @@ private [parsley] final class Call(private [Call] val x: String) extends Instr
             instrs
         } else instrs
         ctx.depth += 1
+        if (expected.isDefined)
+        {
+            ctx.overrideDepth = ctx.depth
+            ctx.errorOverride = expected
+        }
         ctx.pc = 0
     }
+    override def copy_(): ExpectingInstr = new Call(x)
     override def toString: String = s"Call($x)"
 }
 
@@ -167,9 +173,15 @@ private [parsley] final class Fail(private [Fail] val msg: String = null) extend
     // We need to do something with the message!
     override def apply(ctx: Context): Unit =
     {
-        if (expected.isDefined) ctx.expected = Nil
-        ctx.fail(expected)
-        if (expected.isEmpty) ctx.raw ::= msg
+        if (expected.isDefined && msg != null)
+        {
+            ctx.expected = Nil
+            ctx.fail(expected)
+        }
+        else ctx.fail()
+        if (msg != null) ctx.raw ::= msg
+        // expected is defined but message isn't, it must be unexpected! 
+        else if (expected.isDefined) ctx.unexpected = expected
     }
     override def copy_(): ExpectingInstr = new Fail(msg)
     override def toString: String = s"Fail($msg)"

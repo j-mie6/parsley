@@ -39,6 +39,8 @@ private [parsley] final class Context(var instrs: Array[Instr],
     var raw: List[String] = Nil
     var unexpected: Option[String] = None
     var expected: List[Option[String]] = Nil
+    var errorOverride: Option[String] = None
+    var overrideDepth: Int = 0
 
     override def toString: String =
     {
@@ -83,6 +85,11 @@ private [parsley] final class Context(var instrs: Array[Instr],
             if (diffstack > 0) stack = drop(stack, diffstack)
             stacksz = handler.stacksz
             depth = handler.depth
+            if (depth < overrideDepth)
+            {
+                overrideDepth = 0
+                errorOverride = None
+            }
         }
         if (offset > erroffset)
         {
@@ -90,9 +97,9 @@ private [parsley] final class Context(var instrs: Array[Instr],
             errcol = col
             errline = line
             unexpected = if (offset < inputsz) Some("\"" + input(offset).toString + "\"") else Some("end of input")
-            expected ::= e
+            expected ::= errorOverride.orElse(e)
         }
-        else if (offset == erroffset) expected ::= e
+        else if (offset == erroffset) expected ::= errorOverride.orElse(e)
     }
 
     def errorMessage(): String =
@@ -100,7 +107,7 @@ private [parsley] final class Context(var instrs: Array[Instr],
         if (unexpected.isDefined)
             s"""(line $errline, column $errcol):
                |  unexpected ${unexpected.get}
-               |  expected ${expected.flatten.distinct.map("\"" + _ + "\"").reverse.mkString(" or ")}
+               |  expected ${expected.flatten.distinct.reverse.mkString(" or ")}
                |  ${raw.distinct.reverse.mkString(" or ")}""".stripMargin.trim
         else s"(line $errline, column $errcol):\n  ${if (raw.isEmpty) "unknown error" else raw.distinct.reverse.mkString(" or ")})}"
     }

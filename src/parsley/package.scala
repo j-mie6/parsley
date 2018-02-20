@@ -75,6 +75,11 @@ package object parsley
             ctx.calls = ctx.calls.tail
             ctx.pc = frame.ret
             ctx.depth -= 1
+            if (ctx.depth < ctx.overrideDepth)
+            {
+                ctx.overrideDepth = 0
+                ctx.errorOverride = None
+            }
             runParser_[A](ctx)
         }
     }

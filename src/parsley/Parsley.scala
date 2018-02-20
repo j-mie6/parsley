@@ -466,5 +466,7 @@ object Parsley
         println(chainl1(chainl1(chainl1(atom, pow), mul), add))
         lazy val p: Parsley[List[String]] = "p" <%> ("correct error message" <::> (p </> Nil))
         println(runParser(p ? "nothing but this :)", ""))
+        println(runParser('a' <|> (fail("oops") ? "hi"), "b"))
+        println(runParser(unexpected("bee"), "b"))
     }
 }
