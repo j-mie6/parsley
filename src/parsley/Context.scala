@@ -39,6 +39,7 @@ private [parsley] final class Context(var instrs: Array[Instr],
     var raw: List[String] = Nil
     var unexpected: Option[String] = None
     var expected: List[Option[String]] = Nil
+    var unexpectAnyway: Boolean = false
     var errorOverride: Option[String] = None
     var overrideDepth: Int = 0
 
@@ -97,19 +98,35 @@ private [parsley] final class Context(var instrs: Array[Instr],
             errcol = col
             errline = line
             unexpected = if (offset < inputsz) Some("\"" + input(offset).toString + "\"") else Some("end of input")
-            expected ::= errorOverride.orElse(e)
+            expected = errorOverride.orElse(e)::Nil
+            raw = Nil
+            unexpectAnyway = false
         }
         else if (offset == erroffset) expected ::= errorOverride.orElse(e)
     }
 
     def errorMessage(): String =
     {
-        if (unexpected.isDefined)
-            s"""(line $errline, column $errcol):
-               |  unexpected ${unexpected.get}
-               |  expected ${expected.flatten.distinct.reverse.mkString(" or ")}
-               |  ${raw.distinct.reverse.mkString(" or ")}""".stripMargin.trim
-        else s"(line $errline, column $errcol):\n  ${if (raw.isEmpty) "unknown error" else raw.distinct.reverse.mkString(" or ")})}"
+        val posStr = Some(s"(line $errline, column $errcol):")
+        val unexpectedStr = unexpected.map(s => s"unexpected $s")
+        val expectedStr = if (expected.flatten.isEmpty) None else Some(s"expected ${expected.flatten.distinct.reverse.mkString(" or ")}")
+        val rawStr = if (raw.isEmpty) None else Some(raw.distinct.reverse.mkString(" or "))
+        if (rawStr.isEmpty && expectedStr.isEmpty && unexpectAnyway) 
+        {
+            s"$posStr\n  ${unexpectedStr.getOrElse("unknown parse error")}"
+        }
+        else if (rawStr.isEmpty && expectedStr.isEmpty) 
+        {
+            s"$posStr\n  unknown parse error"
+        }
+        else if (expectedStr.isEmpty)
+        {
+            s"$posStr\n  ${rawStr.get}"
+        }
+        else
+        {
+            s"$posStr${unexpectedStr.fold("")("\n  " + _)}\n  ${expectedStr.get}${rawStr.fold("")("\n  " + _)}"
+        }
     }
 
     def inc(): Unit = pc += 1

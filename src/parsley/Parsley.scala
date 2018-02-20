@@ -178,11 +178,11 @@ final class Parsley[+A] private [Parsley] (
         // pure results always succeed
         case mutable.Buffer(Push(_)) => new Parsley[A_](instrs, subs ++ q.subs)
         // empty <|> q == q (alternative law)
-        case mutable.Buffer(_: Fail) => q
+        case mutable.Buffer(e: Empty) if e.expected.isEmpty => q
         case _ => q.instrs match
         {
             // p <|> empty = p (alternative law)
-            case mutable.Buffer(_: Fail) => this
+            case mutable.Buffer(e: Empty) if e.expected.isEmpty => this
             // p <|> p == p (this needs refinement to be label invariant, we want structure
             case instrs_ if instrs == instrs_ => this
             // I imagine there is space for optimisation of common postfix and prefixes in choice
@@ -248,13 +248,8 @@ object Parsley
     def pure[A](a: A): Parsley[A] = new Parsley[A](mutable.Buffer(new Push(a)), Map.empty)
     def fail[A](msg: String): Parsley[A] = new Parsley[A](mutable.Buffer(new Fail(msg)), Map.empty)
     def fail[A](msggen: Parsley[A], finaliser: A => String): Parsley[A] = new Parsley[A](msggen.instrs :+ new FastFail(finaliser), msggen.subs)
-    def empty[A]: Parsley[A] = fail("unknown error")
-    def unexpected[A](msg: String): Parsley[A] =
-    {
-        val f = new Fail()
-        f.expected = Some(msg)
-        new Parsley[A](mutable.Buffer(f), Map.empty)
-    }
+    def empty[A]: Parsley[A] = new Parsley[A](mutable.Buffer(new Empty), Map.empty)
+    def unexpected[A](msg: String): Parsley[A] = new Parsley[A](mutable.Buffer(new Unexpected(msg)), Map.empty)
     def label[A](p: Parsley[A], msg: String): Parsley[A] = new Parsley[A](p.instrs.map
     {
         case e: ExpectingInstr =>
@@ -273,12 +268,14 @@ object Parsley
         val handler = fresh()
         new Parsley(new PushHandler(handler) +: p.instrs :+ Label(handler) :+ Look, p.subs)
     }
+    def notFollowedBy[A](p: Parsley[A]): Parsley[Unit] = (tryParse(p) >>= (c => unexpected("\"" + c.toString + "\""))) </> Unit
     @inline def lift2[A, B, C](f: A => B => C, p: Parsley[A], q: Parsley[B]): Parsley[C] = p.map(f) <*> q
     @inline def lift2_[A, B, C](f: (A, B) => C, p: Parsley[A], q: Parsley[B]): Parsley[C] = lift2((x: A) => (y: B) => f(x, y), p, q)
     def char(c: Char): Parsley[Char] = new Parsley(mutable.Buffer(CharTok(c)), Map.empty)
     def satisfy(f: Char => Boolean): Parsley[Char] = new Parsley(mutable.Buffer(new Satisfies(f)), Map.empty)
     def string(s: String): Parsley[String] = new Parsley(mutable.Buffer(new StringTok(s)), Map.empty)
     def anyChar: Parsley[Char] = satisfy(_ => true)
+    def eof: Parsley[Unit] = notFollowedBy(anyChar) ? "end of input"
     @inline
     def choose[A](b: Parsley[Boolean], p: Parsley[A], q: Parsley[A]): Parsley[A] =
     {
@@ -466,7 +463,13 @@ object Parsley
         println(chainl1(chainl1(chainl1(atom, pow), mul), add))
         lazy val p: Parsley[List[String]] = "p" <%> ("correct error message" <::> (p </> Nil))
         println(runParser(p ? "nothing but this :)", ""))
+        println(runParser(fail("hi"), "b"))
         println(runParser('a' <|> (fail("oops") ? "hi"), "b"))
         println(runParser(unexpected("bee"), "b"))
+        println(runParser('a' <|> unexpected("bee") ? "something less cute", "b"))
+        println(runParser(empty, "b"))
+        println(runParser(empty ? "something, at least", "b"))
+        println(runParser('a' <|> empty ? "something, at least", "b"))
+        println(runParser(eof, "a"))
     }
 }

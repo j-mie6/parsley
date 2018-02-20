@@ -21,7 +21,7 @@ private [parsley] final class FastFail[A](private [FastFail] val msggen: A=>Stri
     override def toString: String = "FastFail(?)"
 }
 
-private [parsley] class Newline() extends CharTok('\n')
+private [parsley] class Newline extends CharTok('\n')
 {
     override def apply(ctx: Context): Unit =
     {
@@ -35,10 +35,10 @@ private [parsley] class Newline() extends CharTok('\n')
         }
         else ctx.fail(expected)
     }
-    override def copy_(): ExpectingInstr = new Newline()
+    override def copy_(): ExpectingInstr = new Newline
 }
 
-private [parsley] class Tab() extends CharTok('\t')
+private [parsley] class Tab extends CharTok('\t')
 {
     override def apply(ctx: Context): Unit =
     {
@@ -51,7 +51,7 @@ private [parsley] class Tab() extends CharTok('\t')
         }
         else ctx.fail(expected)
     }
-    override def copy_(): ExpectingInstr = new Newline()
+    override def copy_(): ExpectingInstr = new Tab
 }
 
 // This instruction has GREAT potential, it should be integrated into peephole :)

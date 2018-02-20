@@ -131,7 +131,7 @@ private [parsley] object Apply extends Instr
 }
 
 // Monadic
-private [parsley] final class DynSub[-A](f: A => Array[Instr]) extends Instr
+private [parsley] final class DynSub[-A](f: A => Array[Instr]) extends ExpectingInstr(None)
 {
     private [DynSub] val g = f.asInstanceOf[Any => Array[Instr]]
     override def apply(ctx: Context): Unit =
@@ -139,8 +139,14 @@ private [parsley] final class DynSub[-A](f: A => Array[Instr]) extends Instr
         ctx.calls ::= new Frame(ctx.pc + 1, ctx.instrs)
         ctx.instrs = g(ctx.popStack())
         ctx.pc = 0
+        if (expected.isDefined)
+        {
+            ctx.overrideDepth = ctx.depth
+            ctx.errorOverride = expected
+        }
     }
     override def toString: String = "DynSub(?)"
+    override def copy_(): ExpectingInstr = new DynSub(f)
 }
 
 // Control Flow
@@ -167,24 +173,40 @@ private [parsley] final class Call(private [Call] val x: String) extends Expecti
     override def toString: String = s"Call($x)"
 }
 
-private [parsley] final class Fail(private [Fail] val msg: String = null) extends ExpectingInstr(None)
+private [parsley] final class Fail(private [Fail] val msg: String) extends ExpectingInstr(None)
 {
-    private [this] val msg_ = Option(msg)
-    // We need to do something with the message!
     override def apply(ctx: Context): Unit =
     {
-        if (expected.isDefined && msg != null)
-        {
-            ctx.expected = Nil
-            ctx.fail(expected)
-        }
-        else ctx.fail()
-        if (msg != null) ctx.raw ::= msg
-        // expected is defined but message isn't, it must be unexpected! 
-        else if (expected.isDefined) ctx.unexpected = expected
+        ctx.fail(expected)
+        ctx.raw ::= msg
     }
     override def copy_(): ExpectingInstr = new Fail(msg)
     override def toString: String = s"Fail($msg)"
+}
+
+private [parsley] final class Unexpected(private [Unexpected] val msg: String) extends ExpectingInstr(None)
+{
+    private [this] val msg_ = Option(msg)
+    override def apply(ctx: Context): Unit =
+    {
+        ctx.fail(expected)
+        ctx.unexpected = msg_
+        ctx.unexpectAnyway = true
+    }
+    override def copy_(): ExpectingInstr = new Unexpected(msg)
+    override def toString: String = s"Unexpected($msg)"
+}
+
+private [parsley] final class Empty extends ExpectingInstr(None)
+{
+    override def apply(ctx: Context): Unit = 
+    {
+        val strip = ctx.expected.isEmpty
+        ctx.fail(expected)
+        if (strip) ctx.unexpected = None
+    }
+    override def copy_(): ExpectingInstr = new Empty
+    override def toString: String = "Empty"
 }
 
 private [parsley] final class PushHandler(override val label: Int) extends FwdJumpInstr
@@ -296,8 +318,8 @@ private [parsley] object CharTok
     import scala.annotation.switch
     def apply(c: Char): CharTok = (c: @switch) match
     {
-        case '\n' => new Newline()
-        case '\t' => new Tab()
+        case '\n' => new Newline
+        case '\t' => new Tab
         case _ => new CharTok(c)
     }
     def unapply(self: CharTok): Option[Char] = Some(self.c)
@@ -320,6 +342,10 @@ private [parsley] object Call
 }
 
 //private [parsley] object Fail
+
+//private [parsley] object Unexpected
+
+//private [parsley] object Empty
 
 private [parsley] object PushHandler
 {
