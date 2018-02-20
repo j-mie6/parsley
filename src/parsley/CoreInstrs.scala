@@ -5,7 +5,7 @@ import language.existentials
 // Stack Manipulators
 private [parsley] final class Push[A](private [Push] val x: A) extends Instr
 {
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         ctx.pushStack(x)
         ctx.inc()
@@ -15,7 +15,7 @@ private [parsley] final class Push[A](private [Push] val x: A) extends Instr
 
 private [parsley] object Pop extends Instr
 {
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         ctx.popStack()
         ctx.inc()
@@ -25,7 +25,7 @@ private [parsley] object Pop extends Instr
 
 private [parsley] object Flip extends Instr
 {
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         val y = ctx.stack.head
         ctx.exchangeStack(ctx.stack.tail.head)
@@ -36,10 +36,10 @@ private [parsley] object Flip extends Instr
 }
 
 // Primitives
-private [parsley] class CharTok(protected final val c: Char) extends Instr
+private [parsley] class CharTok(protected final val c: Char) extends ExpectingInstr("\"" + c.toString + "\"")
 {
     protected final val ac: Any = c
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         if (ctx.offset < ctx.inputsz && ctx.input(ctx.offset) == c)
         {
@@ -48,14 +48,15 @@ private [parsley] class CharTok(protected final val c: Char) extends Instr
                 ctx.col += 1
                 ctx.inc()
         }
-        else ctx.fail()
+        else ctx.fail(expected)
     }
+    override def copy_(): ExpectingInstr = new CharTok(c)
     override final def toString: String = s"Chr($c)"
 }
 
-private [parsley] final class Satisfies(f: Char => Boolean) extends Instr
+private [parsley] final class Satisfies(f: Char => Boolean) extends ExpectingInstr
 {
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         if (ctx.offset < ctx.inputsz && f(ctx.input(ctx.offset)))
         {
@@ -63,12 +64,13 @@ private [parsley] final class Satisfies(f: Char => Boolean) extends Instr
             ctx.offset += 1
             ctx.inc()
         }
-        else ctx.fail()
+        else ctx.fail(expected)
     }
+    override def copy_(): ExpectingInstr = new Satisfies(f)
     override def toString: String = "Sat(?)"
 }
 
-private [parsley] final class StringTok(private [StringTok] val s: String) extends Instr
+private [parsley] final class StringTok(private [StringTok] val s: String) extends ExpectingInstr("\"" + s + "\"")
 {
     private [this] val cs = s.toCharArray
     private [this] val sz = cs.length
@@ -90,7 +92,7 @@ private [parsley] final class StringTok(private [StringTok] val s: String) exten
             true
         }
     }
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         if (matches(ctx.input, ctx.inputsz - ctx.offset, ctx.offset))
         {
@@ -98,8 +100,9 @@ private [parsley] final class StringTok(private [StringTok] val s: String) exten
             ctx.offset += sz
             ctx.inc()
         }
-        else ctx.fail()
+        else ctx.fail(expected)
     }
+    override def copy_(): ExpectingInstr = new StringTok(s)
     override def toString: String = s"Str($s)"
 }
 
@@ -107,7 +110,7 @@ private [parsley] final class StringTok(private [StringTok] val s: String) exten
 private [parsley] final class Perform[-A, +B](f: A => B) extends Instr
 {
     private [Perform] val g = f.asInstanceOf[Function[Any, Any]]
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         ctx.exchangeStack(g(ctx.stack.head))
         ctx.inc()
@@ -117,7 +120,7 @@ private [parsley] final class Perform[-A, +B](f: A => B) extends Instr
 
 private [parsley] object Apply extends Instr
 {
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         val x = ctx.popStack()
         val f = ctx.stack.head.asInstanceOf[Function[Any, Any]]
@@ -128,23 +131,29 @@ private [parsley] object Apply extends Instr
 }
 
 // Monadic
-private [parsley] final class DynSub[-A](f: A => Array[Instr]) extends Instr
+private [parsley] final class DynSub[-A](f: A => Array[Instr]) extends ExpectingInstr
 {
     private [DynSub] val g = f.asInstanceOf[Any => Array[Instr]]
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         ctx.calls ::= new Frame(ctx.pc + 1, ctx.instrs)
         ctx.instrs = g(ctx.popStack())
         ctx.pc = 0
+        if (expected != null)
+        {
+            ctx.overrideDepth = ctx.depth
+            ctx.errorOverride = expected
+        }
     }
     override def toString: String = "DynSub(?)"
+    override def copy_(): ExpectingInstr = new DynSub(f)
 }
 
 // Control Flow
-private [parsley] final class Call(private [Call] val x: String) extends Instr
+private [parsley] final class Call(private [Call] val x: String) extends ExpectingInstr
 {
-    private [this] var instrs: Array[Instr] = _
-    override def apply(ctx: Context)
+    private [this] var instrs: UnsafeOption[Array[Instr]] = _
+    override def apply(ctx: Context): Unit =
     {
         ctx.calls ::= new Frame(ctx.pc + 1, ctx.instrs)
         ctx.instrs = if (instrs == null)
@@ -153,32 +162,67 @@ private [parsley] final class Call(private [Call] val x: String) extends Instr
             instrs
         } else instrs
         ctx.depth += 1
+        if (expected != null)
+        {
+            ctx.overrideDepth = ctx.depth
+            ctx.errorOverride = expected
+        }
         ctx.pc = 0
     }
-    override def toString: String = "Call($x)"
+    override def copy_(): ExpectingInstr = new Call(x)
+    override def toString: String = s"Call($x)"
 }
 
-private [parsley] final class Fail(private [Fail] val msg: String) extends Instr
+private [parsley] final class Fail(private [Fail] val msg: String) extends ExpectingInstr
 {
-    // We need to do something with the message!
-    override def apply(ctx: Context) { ctx.fail() }
+    override def apply(ctx: Context): Unit =
+    {
+        ctx.fail(expected)
+        ctx.raw ::= msg
+    }
+    override def copy_(): ExpectingInstr = new Fail(msg)
     override def toString: String = s"Fail($msg)"
 }
 
-private [parsley] final class PushHandler(private [PushHandler] val handler: Int) extends FwdJumpInstr
+private [parsley] final class Unexpected(private [Unexpected] val msg: String) extends ExpectingInstr
 {
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
-        ctx.handlers ::= new Handler(ctx.depth, handler, ctx.stacksz)
+        ctx.fail(expected)
+        ctx.unexpected = msg
+        ctx.unexpectAnyway = true
+    }
+    override def copy_(): ExpectingInstr = new Unexpected(msg)
+    override def toString: String = s"Unexpected($msg)"
+}
+
+private [parsley] final class Empty extends ExpectingInstr(null)
+{
+    override def apply(ctx: Context): Unit = 
+    {
+        val strip = ctx.expected.isEmpty
+        ctx.fail(expected)
+        if (strip) ctx.unexpected = null
+    }
+    override def copy_(): ExpectingInstr = new Empty
+    override def toString: String = "Empty"
+}
+
+private [parsley] final class PushHandler(override val label: Int) extends FwdJumpInstr
+{
+    override def apply(ctx: Context): Unit =
+    {
+        ctx.handlers ::= new Handler(ctx.depth, label, ctx.stacksz)
         ctx.states ::= new State(ctx.offset, ctx.line, ctx.col)
         ctx.inc()
     }
-    override def toString: String = s"PushHandler($handler)"
+    override def toString: String = s"PushHandler($label)"
+    override def copy_(): FwdJumpInstr = new PushHandler(label)
 }
 
 private [parsley] object Try extends Instr
 {
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         // Remove the recovery input from the stack, it isn't needed anymore
         if (ctx.status eq Good)
@@ -206,7 +250,7 @@ private [parsley] object Try extends Instr
 // but ensure this is the case later!
 private [parsley] object Look extends Instr
 {
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         if (ctx.status eq Good)
         {
@@ -227,20 +271,21 @@ private [parsley] object Look extends Instr
     override def toString: String = "Look"
 }
 
-private [parsley] final class InputCheck(private [InputCheck] val handler: Int) extends FwdJumpInstr
+private [parsley] final class InputCheck(override val label: Int) extends FwdJumpInstr
 {
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         ctx.checkStack ::= ctx.offset
-        ctx.handlers ::= new Handler(ctx.depth, handler, ctx.stacksz)
+        ctx.handlers ::= new Handler(ctx.depth, label, ctx.stacksz)
         ctx.inc()
     }
-    override def toString: String = s"InputCheck($handler)"
+    override def toString: String = s"InputCheck($label)"
+    override def copy_(): FwdJumpInstr = new InputCheck(label)
 }
 
-private [parsley] final class JumpGood(private [JumpGood] val label: Int) extends FwdJumpInstr
+private [parsley] final class JumpGood(override val label: Int) extends FwdJumpInstr
 {
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         if (ctx.status eq Good)
         {
@@ -258,6 +303,7 @@ private [parsley] final class JumpGood(private [JumpGood] val label: Int) extend
         }
     }
     override def toString: String = s"JumpGood($label)"
+    override def copy_(): FwdJumpInstr = new JumpGood(label)
 }
 
 // Extractor Objects
@@ -271,8 +317,8 @@ private [parsley] object CharTok
     import scala.annotation.switch
     def apply(c: Char): CharTok = (c: @switch) match
     {
-        case '\n' => Newline
-        case '\t' => Tab
+        case '\n' => new Newline
+        case '\t' => new Tab
         case _ => new CharTok(c)
     }
     def unapply(self: CharTok): Option[Char] = Some(self.c)
@@ -296,14 +342,18 @@ private [parsley] object Call
 
 //private [parsley] object Fail
 
+//private [parsley] object Unexpected
+
+//private [parsley] object Empty
+
 private [parsley] object PushHandler
 {
-    def unapply(self: PushHandler): Option[Int] = Some(self.handler)
+    def unapply(self: PushHandler): Option[Int] = Some(self.label)
 }
 
 private [parsley] object InputCheck
 {
-    def unapply(self: InputCheck): Option[Int] = Some(self.handler)
+    def unapply(self: InputCheck): Option[Int] = Some(self.label)
 }
 
 private [parsley] object JumpGood

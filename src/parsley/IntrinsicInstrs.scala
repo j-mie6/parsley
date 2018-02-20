@@ -4,7 +4,7 @@ import scala.collection.mutable.ListBuffer
 
 private [parsley] object Cons extends Instr
 {
-    final override def apply(ctx: Context)
+    final override def apply(ctx: Context): Unit =
     {
         val xs = ctx.popStack().asInstanceOf[List[_]]
         ctx.exchangeStack(ctx.stack.head::xs)
@@ -16,7 +16,7 @@ private [parsley] object Cons extends Instr
 private [parsley] final class Many(private [Many] val label: Int) extends Instr
 {
     private[this] val acc: ListBuffer[Any] = ListBuffer.empty
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         if (ctx.status eq Good)
         {
@@ -40,7 +40,7 @@ private [parsley] final class Many(private [Many] val label: Int) extends Instr
 
 private [parsley] final class SkipMany(private [SkipMany] val label: Int) extends Instr
 {
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         if (ctx.status eq Good)
         {
@@ -63,7 +63,7 @@ private [parsley] final class SkipMany(private [SkipMany] val label: Int) extend
 private [parsley] final class Chainl(private [Chainl] val label: Int) extends Instr
 {
     private[this] var acc: Any = _
-    override def apply(ctx: Context)
+    override def apply(ctx: Context): Unit =
     {
         if (ctx.status eq Good)
         {
@@ -99,7 +99,7 @@ private [parsley] final class Chainl(private [Chainl] val label: Int) extends In
 // TODO: What is the best way to implement this intrinsic?
 private [parsley] final class Chainr(private [Chainr] val label: Int) extends Instr
 {
-    override def apply(ctx: Context) {}
+    override def apply(ctx: Context): Unit = ???
 }
 
 // Extractor Objects

@@ -36,6 +36,12 @@ private [parsley] final class Context(var instrs: Array[Instr],
     var erroffset: Int = -1
     var errcol: Int = -1
     var errline: Int = -1
+    var raw: List[String] = Nil
+    var unexpected: UnsafeOption[String] = _
+    var expected: List[UnsafeOption[String]] = Nil
+    var unexpectAnyway: Boolean = false
+    var errorOverride: UnsafeOption[String] = _
+    var overrideDepth: Int = 0
 
     override def toString: String =
     {
@@ -52,7 +58,7 @@ private [parsley] final class Context(var instrs: Array[Instr],
             |]""".stripMargin
     }
 
-    def fail()
+    def fail(e: UnsafeOption[String] = null): Unit =
     {
         if (isEmpty(handlers))
         {
@@ -80,22 +86,53 @@ private [parsley] final class Context(var instrs: Array[Instr],
             if (diffstack > 0) stack = drop(stack, diffstack)
             stacksz = handler.stacksz
             depth = handler.depth
-            // TODO: This is where we choose to update errors
-            if (offset > erroffset)
+            if (depth < overrideDepth)
             {
-                erroffset = offset
-                errcol = col
-                errline = line
+                overrideDepth = 0
+                errorOverride = null
             }
-            // TODO: Add to the errors
-            else if (offset == erroffset) {}
+        }
+        if (offset > erroffset)
+        {
+            erroffset = offset
+            errcol = col
+            errline = line
+            unexpected = if (offset < inputsz) "\"" + input(offset).toString + "\"" else "end of input"
+            expected = (if (errorOverride == null) e else errorOverride)::Nil
+            raw = Nil
+            unexpectAnyway = false
+        }
+        else if (offset == erroffset) expected ::= (if (errorOverride == null) e else errorOverride)
+    }
+
+    def errorMessage(): String =
+    {
+        val posStr = Some(s"(line $errline, column $errcol):")
+        val unexpectedStr = Option(unexpected).map(s => s"unexpected $s")
+        val expectedStr = if (expected.flatten.isEmpty) None else Some(s"expected ${expected.map(Option(_)).flatten.distinct.reverse.mkString(" or ")}")
+        val rawStr = if (raw.isEmpty) None else Some(raw.distinct.reverse.mkString(" or "))
+        if (rawStr.isEmpty && expectedStr.isEmpty && unexpectAnyway) 
+        {
+            s"$posStr\n  ${unexpectedStr.getOrElse("unknown parse error")}"
+        }
+        else if (rawStr.isEmpty && expectedStr.isEmpty) 
+        {
+            s"$posStr\n  unknown parse error"
+        }
+        else if (expectedStr.isEmpty)
+        {
+            s"$posStr\n  ${rawStr.get}"
+        }
+        else
+        {
+            s"$posStr${unexpectedStr.fold("")("\n  " + _)}\n  ${expectedStr.get}${rawStr.fold("")("\n  " + _)}"
         }
     }
 
-    def inc() { pc += 1 }
+    def inc(): Unit = pc += 1
 
     // Stack Manipulation Methods
-    def pushStack(x: Any) { stack = new Stack(x, stack); stacksz += 1 }
+    def pushStack(x: Any): Unit = { stack = new Stack(x, stack); stacksz += 1 }
     def popStack(): Any =
     {
         val ret = stack.head
@@ -103,5 +140,5 @@ private [parsley] final class Context(var instrs: Array[Instr],
         stacksz -= 1
         ret
     }
-    def exchangeStack(x: Any) { stack.head = x }
+    def exchangeStack(x: Any): Unit = stack.head = x
 }

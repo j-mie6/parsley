@@ -26,7 +26,7 @@ final class Parsley[+A] private [Parsley] (
       * Using this method signifies that the parser it is invoked on is impure and any optimisations which assume purity
       * are disabled.
       */
-    @inline def unsafe() { safe = false }
+    @inline def unsafe(): Unit = safe = false
 
     // Core API
     /**
@@ -178,11 +178,11 @@ final class Parsley[+A] private [Parsley] (
         // pure results always succeed
         case mutable.Buffer(Push(_)) => new Parsley[A_](instrs, subs ++ q.subs)
         // empty <|> q == q (alternative law)
-        case mutable.Buffer(_: Fail) => q
+        case mutable.Buffer(e: Empty) if e.expected.isEmpty => q
         case _ => q.instrs match
         {
             // p <|> empty = p (alternative law)
-            case mutable.Buffer(_: Fail) => this
+            case mutable.Buffer(e: Empty) if e.expected.isEmpty => this
             // p <|> p == p (this needs refinement to be label invariant, we want structure
             case instrs_ if instrs == instrs_ => this
             // I imagine there is space for optimisation of common postfix and prefixes in choice
@@ -226,8 +226,8 @@ final class Parsley[+A] private [Parsley] (
 
     // Internals
     private [this] var safe = true
-    private [parsley] lazy val instrArray: Array[Instr] = {delabel(instrs); instrs.toArray}
-    private [parsley] lazy val subsMap: Map[String, Array[Instr]] = subs.map{ case (k, v) => k -> {delabel(v); v.toArray} }
+    private [parsley] lazy val instrArray: Array[Instr] = delabel(instrs)
+    private [parsley] lazy val subsMap: Map[String, Array[Instr]] = subs.map{ case (k, v) => k -> delabel(v) }
     private [this] lazy val prettyInstrs: String = instrArray.mkString("; ")
     private [this] lazy val prettySubs: String =
     {
@@ -247,11 +247,17 @@ object Parsley
 {
     def pure[A](a: A): Parsley[A] = new Parsley[A](mutable.Buffer(new Push(a)), Map.empty)
     def fail[A](msg: String): Parsley[A] = new Parsley[A](mutable.Buffer(new Fail(msg)), Map.empty)
-    def fail[A](msggen: Parsley[A], finaliser: A => String): Parsley[A] =  new Parsley[A](msggen.instrs :+ new FastFail(finaliser), msggen.subs)
-    def empty[A]: Parsley[A] = fail("unknown error")
-    def unexpected[A]: Parsley[A] = fail("unexpected ?")
-    // TODO: Work out logic!
-    def label[A](p: Parsley[A], msg: String): Parsley[A] = p
+    def fail[A](msggen: Parsley[A], finaliser: A => String): Parsley[A] = new Parsley[A](msggen.instrs :+ new FastFail(finaliser), msggen.subs)
+    def empty[A]: Parsley[A] = new Parsley[A](mutable.Buffer(new Empty), Map.empty)
+    def unexpected[A](msg: String): Parsley[A] = new Parsley[A](mutable.Buffer(new Unexpected(msg)), Map.empty)
+    def label[A](p: Parsley[A], msg: String): Parsley[A] = new Parsley[A](p.instrs.map
+    {
+        case e: ExpectingInstr =>
+            val e_ = e.copy()
+            e.expected = msg
+            e
+        case i => i
+    }, p.subs)
     def tryParse[A](p: Parsley[A]): Parsley[A] =
     {
         val handler = fresh()
@@ -262,11 +268,14 @@ object Parsley
         val handler = fresh()
         new Parsley(new PushHandler(handler) +: p.instrs :+ Label(handler) :+ Look, p.subs)
     }
+    def notFollowedBy[A](p: Parsley[A]): Parsley[Unit] = (tryParse(p) >>= (c => unexpected("\"" + c.toString + "\""))) </> Unit
     @inline def lift2[A, B, C](f: A => B => C, p: Parsley[A], q: Parsley[B]): Parsley[C] = p.map(f) <*> q
     @inline def lift2_[A, B, C](f: (A, B) => C, p: Parsley[A], q: Parsley[B]): Parsley[C] = lift2((x: A) => (y: B) => f(x, y), p, q)
     def char(c: Char): Parsley[Char] = new Parsley(mutable.Buffer(CharTok(c)), Map.empty)
     def satisfy(f: Char => Boolean): Parsley[Char] = new Parsley(mutable.Buffer(new Satisfies(f)), Map.empty)
     def string(s: String): Parsley[String] = new Parsley(mutable.Buffer(new StringTok(s)), Map.empty)
+    def anyChar: Parsley[Char] = satisfy(_ => true)
+    def eof: Parsley[Unit] = notFollowedBy(anyChar) ? "end of input"
     @inline
     def choose[A](b: Parsley[Boolean], p: Parsley[A], q: Parsley[A]): Parsley[A] =
     {
@@ -317,10 +326,7 @@ object Parsley
         curLabel += 1
         label
     }
-    def reset()
-    {
-        knotScope = Set.empty
-    }
+    def reset(): Unit = knotScope = Set.empty
     def knot[A](name: String, p_ : =>Parsley[A]): Parsley[A] =
     {
         lazy val p = p_
@@ -348,37 +354,22 @@ object Parsley
         @inline def <#>(p: Parsley[A]): Parsley[B] = p.map(f)
     }
 
-    private [Parsley] def delabel(instrs: mutable.Buffer[Instr])
+    private [Parsley] def delabel(instrs_ : mutable.Buffer[Instr]): Array[Instr] =
     {
+        val instrs = instrs_.clone()
         type LabelMap = mutable.Map[Int, Vector[Int]]
         val n = instrs.size
         val labels: LabelMap = mutable.Map.empty.withDefaultValue(Vector.empty)
-        def adjustFwdJump(instr: FwdJumpInstr, instrs: mutable.Buffer[Instr], i: Int, j: Int, clone: =>FwdJumpInstr)
-        {
-            val instr_ = if (instr.lidx != -1)
-            {
-                val instr_ = clone
-                instrs.update(i, instr_)
-                instr_
-            }
-            else instr
-            instr_.lidx = j
-        }
-        @tailrec def forwardPass(i: Int = 0, offset: Int = 0)
+        @tailrec def forwardPass(i: Int = 0, offset: Int = 0): Unit =
         {
             if (i < n) instrs(i) match
             {
                 case Label(l) =>
                     labels.update(l, labels(l) :+ (i+offset))
                     forwardPass(i+1, offset-1)
-                case instr@PushHandler(l) =>
-                    adjustFwdJump(instr, instrs, i, labels(l).size, new PushHandler(l))
-                    forwardPass(i+1, offset)
-                case instr@InputCheck(l) =>
-                    adjustFwdJump(instr, instrs, i, labels(l).size, new InputCheck(l))
-                    forwardPass(i+1, offset)
-                case instr@JumpGood(l) =>
-                    adjustFwdJump(instr, instrs, i, labels(l).size, new JumpGood(l))
+                case instr: FwdJumpInstr =>
+                    if (instr.lidx != -1) instrs.update(i, instr.copy(lidx = labels(instr.label).size))
+                    else instr.lidx = labels(instr.label).size
                     forwardPass(i+1, offset)
                 case Many(l) =>
                     instrs.update(i, new Many(labels(l).last))
@@ -392,7 +383,7 @@ object Parsley
                 case _ => forwardPass(i+1, offset)
             }
         }
-        @tailrec def backwardPass(i: Int = n-1)
+        @tailrec def backwardPass(i: Int = n-1): Unit =
         {
             if (i >= 0)
             {
@@ -409,6 +400,7 @@ object Parsley
         }
         forwardPass()
         backwardPass()
+        instrs.toArray
     }
 
     //TODO This needs to be reinstated
@@ -469,5 +461,15 @@ object Parsley
         println(chainl1(atom, pow))
         println(chainl1(chainl1(atom, pow), mul))
         println(chainl1(chainl1(chainl1(atom, pow), mul), add))
+        lazy val p: Parsley[List[String]] = "p" <%> ("correct error message" <::> (p </> Nil))
+        println(runParser(p ? "nothing but this :)", ""))
+        println(runParser(fail("hi"), "b"))
+        println(runParser('a' <|> (fail("oops") ? "hi"), "b"))
+        println(runParser(unexpected("bee"), "b"))
+        println(runParser('a' <|> unexpected("bee") ? "something less cute", "b"))
+        println(runParser(empty, "b"))
+        println(runParser(empty ? "something, at least", "b"))
+        println(runParser('a' <|> empty ? "something, at least", "b"))
+        println(runParser(eof, "a"))
     }
 }

@@ -12,6 +12,8 @@ package object parsley
     @inline final implicit def stringLift(str: String): Parsley[String] = parsley.Parsley.string(str)
     @inline final implicit def charLift(c: Char): Parsley[Char] = parsley.Parsley.char(c)
 
+    // Internals
+    private [parsley] type UnsafeOption[A] = A
     private [parsley] sealed abstract class Status
     private [parsley] case object Good extends Status
     private [parsley] case object Recover extends Status
@@ -19,18 +21,37 @@ package object parsley
 
     private [parsley] abstract class Instr
     {
-        def apply(ctx: Context)
+        def apply(ctx: Context): Unit
     }
 
     private [parsley] abstract class FwdJumpInstr extends Instr
     {
+        val label: Int
         var lidx: Int = -1
+        def copy(lidx: Int = this.lidx): FwdJumpInstr =
+        {
+            val j = copy_()
+            j.lidx = lidx
+            j
+        }
+        protected def copy_(): FwdJumpInstr
+    }
+    
+    private [parsley] abstract class ExpectingInstr(private [parsley] var expected: UnsafeOption[String] = null) extends Instr
+    {
+        def copy(): ExpectingInstr =
+        {
+            val e = copy_()
+            e.expected = expected
+            e
+        }
+        protected def copy_(): ExpectingInstr
     }
 
     // It's 2018 and Labels are making a come-back, along with 2 pass assembly
     private [parsley] final case class Label(i: Int) extends Instr
     {
-        def apply(ctx: Context) { throw new Exception("Cannot execute label") }
+        def apply(ctx: Context): Unit = throw new Exception("Cannot execute label")
     }
 
     sealed abstract class Result[A]
@@ -40,7 +61,7 @@ package object parsley
     @tailrec @inline private [this] def runParser_[A](ctx: Context): Result[A] =
     {
         //println(ctx)
-        if (ctx.status eq Failed) return Failure("Unknown error")
+        if (ctx.status eq Failed) return Failure(ctx.errorMessage)
         val pc = ctx.pc
         val instrs = ctx.instrs
         if (pc < instrs.length)
@@ -56,6 +77,11 @@ package object parsley
             ctx.calls = ctx.calls.tail
             ctx.pc = frame.ret
             ctx.depth -= 1
+            if (ctx.depth < ctx.overrideDepth)
+            {
+                ctx.overrideDepth = 0
+                ctx.errorOverride = null
+            }
             runParser_[A](ctx)
         }
     }
