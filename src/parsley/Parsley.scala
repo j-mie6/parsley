@@ -220,6 +220,7 @@ final class Parsley[+A] private [Parsley] (
     // A note about intrinsics - by their very definition we can't optimise *to* them, so we need to optimise *around* them
     /**This parser corresponds to lift2_(_::_, this ps) but is far more optimal. It should be preferred to the equivalent*/
     @inline def <::>[A_ >: A](ps: Parsley[List[A_]]): Parsley[List[A_]] = new Parsley(instrs ++ ps.instrs :+ Cons, subs ++ ps.subs)
+    @inline def <~>[A_ >: A, B](p: Parsley[B]): Parsley[(A_, B)] = lift2((x: A_) => (y: B) => (x, y), this, p)
     @inline def <|?>[B](p: Parsley[B], q: Parsley[B])(implicit ev: Parsley[A] => Parsley[Boolean]): Parsley[B] = choose(this, p, q)
     @inline def >?>(pred: A => Boolean, msg: String): Parsley[A] = guard(this, pred, msg)
     @inline def >?>(pred: A => Boolean, msggen: A => String): Parsley[A] = guard(this, pred, msggen)
