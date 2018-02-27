@@ -361,9 +361,13 @@ object Parsley
     case class Prev[B, +A](p: Parsley[A], q: Parsley[B]) extends Parsley[A](mutable.Buffer.empty, Map.empty)
     case class Bind[A, +B](p: Parsley[A], f: A => Parsley[B]) extends Parsley[B](mutable.Buffer.empty, Map.empty)
     case class Pure[+A](x: A) extends Parsley[A](mutable.Buffer.empty, Map.empty)
+    case class CharTok(c: Char) extends Parsley[Char](mutable.Buffer.empty, Map.empty)
+    case class Satisfies(f: Char => Boolean) extends Parsley[Char](mutable.Buffer.empty, Map.empty)
+    case class StringTok(c: String) extends Parsley[String](mutable.Buffer.empty, Map.empty)
 
     // Intrinsics
     case class Cons[+A](p: Parsley[A], ps: Parsley[List[A]]) extends Parsley[List[A]](mutable.Buffer.empty, Map.empty)
+    case class CharPerform[+A](c: Char, f: Char => A) extends Parsley[A](mutable.Buffer.empty, Map.empty)
 
     private [Parsley] def delabel(instrs_ : mutable.Buffer[Instr]): Array[Instr] =
     {
