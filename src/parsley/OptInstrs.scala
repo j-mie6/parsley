@@ -8,6 +8,7 @@ private [parsley] final class Exchange[A](private [Exchange] val x: A) extends I
         ctx.inc()
     }
     override def toString: String = s"Ex($x)"
+    override def copy: Exchange[A] = new Exchange(x)
 }
 
 private [parsley] final class FastFail[A](private [FastFail] val msggen: A=>String) extends Instr
@@ -19,6 +20,7 @@ private [parsley] final class FastFail[A](private [FastFail] val msggen: A=>Stri
         new Fail(msg)(ctx)
     }
     override def toString: String = "FastFail(?)"
+    override def copy: FastFail[A] = new FastFail(msggen)
 }
 
 private [parsley] class Newline extends CharTok('\n')
@@ -35,7 +37,7 @@ private [parsley] class Newline extends CharTok('\n')
         }
         else ctx.fail(expected)
     }
-    override def copy_(): ExpectingInstr = new Newline
+    override def copy_ : ExpectingInstr = new Newline
 }
 
 private [parsley] class Tab extends CharTok('\t')
@@ -51,7 +53,7 @@ private [parsley] class Tab extends CharTok('\t')
         }
         else ctx.fail(expected)
     }
-    override def copy_(): ExpectingInstr = new Tab
+    override def copy_ : ExpectingInstr = new Tab
 }
 
 // This instruction has GREAT potential, it should be integrated into peephole :)
@@ -71,8 +73,8 @@ private [parsley] class CharTokFastPerform(protected final val c: Char, protecte
         }
         else ctx.fail(expected)
     }
-    override def copy_(): ExpectingInstr = new CharTokFastPerform(c, f)
     override final def toString: String = s"ChrPerform($c, ?)"
+    override def copy_ : ExpectingInstr = new CharTokFastPerform(c, f)
 }
 
 private [parsley] final class NewlineFastPerform(private [this] val g: Any => Any) extends CharTokFastPerform('\n', g)
@@ -89,7 +91,7 @@ private [parsley] final class NewlineFastPerform(private [this] val g: Any => An
         }
         else ctx.fail(expected)
     }
-    override def copy_(): ExpectingInstr = new NewlineFastPerform(f)
+    override def copy_ : ExpectingInstr = new NewlineFastPerform(f)
 }
 
 private [parsley] final class TabFastPerform(private [this] val g: Any => Any) extends CharTokFastPerform('\t', g)
@@ -105,7 +107,7 @@ private [parsley] final class TabFastPerform(private [this] val g: Any => Any) e
         }
         else ctx.fail(expected)
     }
-    override def copy_(): ExpectingInstr = new TabFastPerform(f)
+    override def copy_ : ExpectingInstr = new TabFastPerform(f)
 }
 
 // Extractor Objects

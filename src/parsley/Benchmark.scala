@@ -53,7 +53,14 @@ object FastParser
             yield fs.foldLeft(x)((y, f) => f(y))
     }
     val z = chainlf(x, y)
-}*/
+}
+
+// TODO: Test out https://github.com/djspiewak/parseback
+object Parseback
+{
+    ??? 
+}
+*/
 
 object Benchmark
 {

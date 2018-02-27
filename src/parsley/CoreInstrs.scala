@@ -11,6 +11,7 @@ private [parsley] final class Push[A](private [Push] val x: A) extends Instr
         ctx.inc()
     }
     override def toString: String = s"Push($x)"
+    override def copy: Push[A] = new Push(x)
 }
 
 private [parsley] object Pop extends Instr
@@ -21,6 +22,7 @@ private [parsley] object Pop extends Instr
         ctx.inc()
     }
     override def toString: String = "Pop"
+    override def copy: Pop.type = Pop
 }
 
 private [parsley] object Flip extends Instr
@@ -33,6 +35,7 @@ private [parsley] object Flip extends Instr
         ctx.inc()
     }
     override def toString: String = "Flip"
+    override def copy: Flip.type = Flip
 }
 
 // Primitives
@@ -50,8 +53,8 @@ private [parsley] class CharTok(protected final val c: Char) extends ExpectingIn
         }
         else ctx.fail(expected)
     }
-    override def copy_(): ExpectingInstr = new CharTok(c)
     override final def toString: String = s"Chr($c)"
+    override def copy_ : ExpectingInstr = new CharTok(c)
 }
 
 private [parsley] final class Satisfies(f: Char => Boolean) extends ExpectingInstr
@@ -66,8 +69,8 @@ private [parsley] final class Satisfies(f: Char => Boolean) extends ExpectingIns
         }
         else ctx.fail(expected)
     }
-    override def copy_(): ExpectingInstr = new Satisfies(f)
     override def toString: String = "Sat(?)"
+    override def copy_ : ExpectingInstr = new Satisfies(f)
 }
 
 private [parsley] final class StringTok(private [StringTok] val s: String) extends ExpectingInstr("\"" + s + "\"")
@@ -102,8 +105,8 @@ private [parsley] final class StringTok(private [StringTok] val s: String) exten
         }
         else ctx.fail(expected)
     }
-    override def copy_(): ExpectingInstr = new StringTok(s)
     override def toString: String = s"Str($s)"
+    override def copy_ : ExpectingInstr = new StringTok(s)
 }
 
 // Applicative Functors
@@ -116,6 +119,7 @@ private [parsley] final class Perform[-A, +B](f: A => B) extends Instr
         ctx.inc()
     }
     override def toString: String = "Perform(?)"
+    override def copy: Perform[A, B] = new Perform(f)
 }
 
 private [parsley] object Apply extends Instr
@@ -128,6 +132,7 @@ private [parsley] object Apply extends Instr
         ctx.inc()
     }
     override def toString: String = "Apply"
+    override def copy: Apply.type = Apply
 }
 
 // Monadic
@@ -146,21 +151,24 @@ private [parsley] final class DynSub[-A](f: A => Array[Instr]) extends Expecting
         }
     }
     override def toString: String = "DynSub(?)"
-    override def copy_(): ExpectingInstr = new DynSub(f)
+    override def copy_ : ExpectingInstr = new DynSub(f)
 }
 
 // Control Flow
 private [parsley] final class Call(private [Call] val x: String) extends ExpectingInstr
 {
+    // TEMPORARY FIXME
+    // It has been determined that single use arrays are, in fact, not compatible with
+    // mutable intrinsics. Any instruction streams containing stateful instructions must
+    // be deep-copied and have those instructions deep-copied also. For now, we will just
+    // deep copy all streams, but that's very inefficient.
+    // CODO: Use lazy val?
     private [this] var instrs: UnsafeOption[Array[Instr]] = _
     override def apply(ctx: Context): Unit =
     {
         ctx.calls ::= new Frame(ctx.pc + 1, ctx.instrs)
-        ctx.instrs = if (instrs == null)
-        {
-            instrs = ctx.subs(x)
-            instrs
-        } else instrs
+        if (instrs == null) instrs = ctx.subs(x)
+        ctx.instrs = instrs.map(_.copy)
         ctx.depth += 1
         if (expected != null)
         {
@@ -169,8 +177,8 @@ private [parsley] final class Call(private [Call] val x: String) extends Expecti
         }
         ctx.pc = 0
     }
-    override def copy_(): ExpectingInstr = new Call(x)
     override def toString: String = s"Call($x)"
+    override def copy_ : ExpectingInstr = new Call(x)
 }
 
 private [parsley] final class Fail(private [Fail] val msg: String) extends ExpectingInstr
@@ -180,8 +188,8 @@ private [parsley] final class Fail(private [Fail] val msg: String) extends Expec
         ctx.fail(expected)
         ctx.raw ::= msg
     }
-    override def copy_(): ExpectingInstr = new Fail(msg)
     override def toString: String = s"Fail($msg)"
+    override def copy_ : ExpectingInstr = new Fail(msg)
 }
 
 private [parsley] final class Unexpected(private [Unexpected] val msg: String) extends ExpectingInstr
@@ -192,8 +200,8 @@ private [parsley] final class Unexpected(private [Unexpected] val msg: String) e
         ctx.unexpected = msg
         ctx.unexpectAnyway = true
     }
-    override def copy_(): ExpectingInstr = new Unexpected(msg)
     override def toString: String = s"Unexpected($msg)"
+    override def copy_ : ExpectingInstr = new Unexpected(msg)
 }
 
 private [parsley] final class Empty extends ExpectingInstr(null)
@@ -204,8 +212,8 @@ private [parsley] final class Empty extends ExpectingInstr(null)
         ctx.fail(expected)
         if (strip) ctx.unexpected = null
     }
-    override def copy_(): ExpectingInstr = new Empty
     override def toString: String = "Empty"
+    override def copy_ : ExpectingInstr = new Empty
 }
 
 private [parsley] final class PushHandler(override val label: Int) extends FwdJumpInstr
@@ -217,7 +225,7 @@ private [parsley] final class PushHandler(override val label: Int) extends FwdJu
         ctx.inc()
     }
     override def toString: String = s"PushHandler($label)"
-    override def copy_(): FwdJumpInstr = new PushHandler(label)
+    override def copy_ : FwdJumpInstr = new PushHandler(label)
 }
 
 private [parsley] object Try extends Instr
@@ -243,6 +251,7 @@ private [parsley] object Try extends Instr
         }
     }
     override def toString: String = "Try"
+    override def copy: Try.type = Try
 }
 
 // State is not preserved after lookahead, the position is reset etc
@@ -269,6 +278,7 @@ private [parsley] object Look extends Instr
         }
     }
     override def toString: String = "Look"
+    override def copy: Look.type = Look
 }
 
 private [parsley] final class InputCheck(override val label: Int) extends FwdJumpInstr
@@ -280,7 +290,7 @@ private [parsley] final class InputCheck(override val label: Int) extends FwdJum
         ctx.inc()
     }
     override def toString: String = s"InputCheck($label)"
-    override def copy_(): FwdJumpInstr = new InputCheck(label)
+    override def copy_ : FwdJumpInstr = new InputCheck(label)
 }
 
 private [parsley] final class JumpGood(override val label: Int) extends FwdJumpInstr
@@ -303,7 +313,7 @@ private [parsley] final class JumpGood(override val label: Int) extends FwdJumpI
         }
     }
     override def toString: String = s"JumpGood($label)"
-    override def copy_(): FwdJumpInstr = new JumpGood(label)
+    override def copy_ : FwdJumpInstr = new JumpGood(label)
 }
 
 // Extractor Objects
