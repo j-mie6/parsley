@@ -254,7 +254,7 @@ object Parsley
     def label[A](p: Parsley[A], msg: String): Parsley[A] = new Parsley[A](p.instrs.map
     {
         case e: ExpectingInstr =>
-            val e_ = e.copy()
+            val e_ = e.copy
             e.expected = msg
             e
         case i => i

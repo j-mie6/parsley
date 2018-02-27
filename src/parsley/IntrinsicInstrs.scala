@@ -11,6 +11,7 @@ private [parsley] object Cons extends Instr
         ctx.inc()
     }
     override def toString: String = "Cons"
+    override def copy: Cons.type = Cons
 }
 
 private [parsley] final class Many(private [Many] val label: Int) extends Instr
@@ -36,6 +37,7 @@ private [parsley] final class Many(private [Many] val label: Int) extends Instr
         }
     }
     override def toString: String = s"Many($label)"
+    override def copy: Many = new Many(label)
 }
 
 private [parsley] final class SkipMany(private [SkipMany] val label: Int) extends Instr
@@ -58,6 +60,7 @@ private [parsley] final class SkipMany(private [SkipMany] val label: Int) extend
         }
     }
     override def toString: String = s"SkipMany($label)"
+    override def copy: SkipMany = new SkipMany(label)
 }
 
 private [parsley] final class Chainl(private [Chainl] val label: Int) extends Instr
@@ -94,12 +97,14 @@ private [parsley] final class Chainl(private [Chainl] val label: Int) extends In
         }
     }
     override def toString: String = s"Chainl($label)"
+    override def copy: Chainl = new Chainl(label)
 }
 
 // TODO: What is the best way to implement this intrinsic?
 private [parsley] final class Chainr(private [Chainr] val label: Int) extends Instr
 {
     override def apply(ctx: Context): Unit = ???
+    override def copy: Chainr = new Chainr(label)
 }
 
 // Extractor Objects

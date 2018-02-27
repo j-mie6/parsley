@@ -22,6 +22,7 @@ package object parsley
     private [parsley] abstract class Instr
     {
         def apply(ctx: Context): Unit
+        def copy: Instr
     }
 
     private [parsley] abstract class FwdJumpInstr extends Instr
@@ -34,24 +35,26 @@ package object parsley
             j.lidx = lidx
             j
         }
+        final override def copy: FwdJumpInstr = copy()
         protected def copy_(): FwdJumpInstr
     }
     
     private [parsley] abstract class ExpectingInstr(private [parsley] var expected: UnsafeOption[String] = null) extends Instr
     {
-        def copy(): ExpectingInstr =
+        final override def copy: ExpectingInstr =
         {
-            val e = copy_()
+            val e = copy_
             e.expected = expected
             e
         }
-        protected def copy_(): ExpectingInstr
+        protected def copy_ : ExpectingInstr
     }
 
     // It's 2018 and Labels are making a come-back, along with 2 pass assembly
     private [parsley] final case class Label(i: Int) extends Instr
     {
         def apply(ctx: Context): Unit = throw new Exception("Cannot execute label")
+        def copy: Label = Label(i)
     }
 
     sealed abstract class Result[A]
