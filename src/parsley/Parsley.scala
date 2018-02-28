@@ -255,8 +255,8 @@ object Parsley
     {
         case e: ExpectingInstr =>
             val e_ = e.copy
-            e.expected = msg
-            e
+            e_.expected = msg
+            e_
         case i => i
     }, p.subs)
     def tryParse[A](p: Parsley[A]): Parsley[A] =
