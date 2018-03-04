@@ -111,4 +111,28 @@ package object parsley
     {
         def ::(x: A): Stack[A] = new Stack(x, s)
     }
+    
+    // This is designed to be a lighter weight wrapper around Array to make it resizeable
+    import scala.reflect.ClassTag
+    private [parsley] final class ResizableArray[A: ClassTag](initialSize: Int = 16)
+    {
+        private [this] var array: Array[A] = new Array(initialSize)
+        private [this] var size = 0
+        
+        def +=(x: A): Unit =
+        {
+            val arrayLength: Long = array.length
+            if (array.length == size)
+            {
+                val newSize: Long = Math.min(arrayLength * 2, Int.MaxValue)
+                val newArray: Array[A] = new Array(newSize.toInt)
+                java.lang.System.arraycopy(array, 0, newArray, 0, size)
+                array = newArray
+            }
+            array(size) = x
+            size += 1
+        }
+        
+        def toArray(): Array[A] = array
+    }
 }

@@ -184,7 +184,7 @@ class Parsley[+A] private [Parsley] (
             // p <|> empty = p (alternative law)
             case mutable.Buffer(e: Empty) if e.expected.isEmpty => this
             // p <|> p == p (this needs refinement to be label invariant, we want structure
-            case instrs_ if instrs == instrs_ => this
+            //case instrs_ if instrs == instrs_ => this
             // I imagine there is space for optimisation of common postfix and prefixes in choice
             // this would allow for further optimisations with surrounding integration
             // does it imply that there is a try scope wrapping p?
@@ -536,7 +536,7 @@ object DeepEmbedding
     }
     abstract class Parsley[+A]
     {
-        final protected type InstrBuffer = mutable.ListBuffer[Instr]
+        final protected type InstrBuffer = ResizableArray[Instr]
         final def unsafe(): Unit = safe = false
         
         // Internals
@@ -544,7 +544,7 @@ object DeepEmbedding
         // TODO: Implement optimisation caching, with fixpoint safety!
         //private [this] var _optimised: UnsafeOption[Parsley[A]] = null
         //private [this] var _seenLastOptimised: UnsafeOption[Set[Parsley[_]]] = null
-        final private [DeepEmbedding] def optimised(implicit seen: Set[Parsley[_]], label: Option[String]): Parsley[A] = optimise(seen + this, label)
+        final private [DeepEmbedding] def optimised(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = optimise(seen + this, label)
         /*{
             val seen_ = if (_optimised != null) seen ++ _seenLastOptimised
             else
@@ -558,8 +558,8 @@ object DeepEmbedding
         final private [parsley] def instrs(implicit ev: ExecutionTime.type): Array[Instr] = _instrs
         final private [Parsley] def instrsSafe: InstrBuffer = 
         {
-            val instrs: InstrBuffer = mutable.ListBuffer.empty
-            optimised(Set.empty, None).codeGen(instrs, new LabelCounter)
+            val instrs: InstrBuffer = new ResizableArray()
+            optimised(Set.empty, null).codeGen(instrs, new LabelCounter)
             instrs
         }
         final private [DeepEmbedding] def fix(implicit seen: Set[Parsley[_]]): Parsley[A] = if (seen.contains(this)) new Fixpoint(this) else this
@@ -572,21 +572,21 @@ object DeepEmbedding
         
         // Abstracts
         // Optimisation and fixpoint calculation - Bottom-up
-        protected def optimise(implicit seen: Set[Parsley[_]], label: Option[String]): Parsley[A]
+        protected def optimise(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A]
         // Peephole optimisation and code generation - Top-down
         private [DeepEmbedding] def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit
     }
     // Core Embedding
     private [DeepEmbedding] final class Pure[+A](private [Pure] val x: A) extends Parsley[A]
     {
-        override def optimise(implicit seen: Set[Parsley[_]], label: Option[String]): Parsley[A] = this
+        override def optimise(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = this
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = instrs += generate(new parsley.Push(x))
     }
     private [DeepEmbedding] final class App[A, +B](_pf: =>Parsley[A => B], _px: =>Parsley[A]) extends Parsley[B]
     {
         private [App] lazy val pf = _pf
         private [App] lazy val px = _px 
-        override def optimise(implicit seen: Set[Parsley[_]], label: Option[String]): Parsley[B] = 
+        override def optimise(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[B] = 
         {
             val pf_ = pf.fix.optimised
             val px_ = px.fix.optimised
@@ -603,7 +603,7 @@ object DeepEmbedding
     {
         private [Or] lazy val p = _p
         private [Or] lazy val q = _q
-        override def optimise(implicit seen: Set[Parsley[_]], label: Option[String]): Parsley[B] = 
+        override def optimise(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[B] = 
         {
             val p_ = p.fix.optimised
             val q_ = q.fix.optimised
@@ -621,11 +621,11 @@ object DeepEmbedding
             instrs += new Label(skip)
         }
     }
-    private [DeepEmbedding] final class Bind[A, +B](_p: =>Parsley[A], private [Bind] val f: A => Parsley[B])(implicit label: Option[String] = None) extends Parsley[B]
+    private [DeepEmbedding] final class Bind[A, +B](_p: =>Parsley[A], private [Bind] val f: A => Parsley[B])(implicit label: UnsafeOption[String] = null) extends Parsley[B]
     {
-        expected = label.orNull
+        expected = label
         private [Bind] lazy val p = _p
-        override def optimise(implicit seen: Set[Parsley[_]], label: Option[String]): Parsley[B] = 
+        override def optimise(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[B] = 
         {
             val p_ = p.fix.optimised
             new Bind(p_, f)
@@ -638,9 +638,9 @@ object DeepEmbedding
     }
     private [DeepEmbedding] final class Satisfies(private [Satisfies] val f: Char => Boolean) extends Parsley[Char]
     {
-        override def optimise(implicit seen: Set[Parsley[_]], label: Option[String]): Parsley[Char] =  
+        override def optimise(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[Char] =  
         {
-            expected = label.orNull
+            expected = label
             this
         }
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = instrs += generate(new parsley.Satisfies(f))
@@ -649,7 +649,7 @@ object DeepEmbedding
     {
         private [Then] lazy val p = _p
         private [Then] lazy val q = _q
-        override def optimise(implicit seen: Set[Parsley[_]], label: Option[String]): Parsley[B] =
+        override def optimise(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[B] =
         {
             val p_ = p.fix.optimised
             val q_ = q.fix.optimised
@@ -666,7 +666,7 @@ object DeepEmbedding
     {
         private [Prev] lazy val p = _p
         private [Prev] lazy val q = _q
-        override def optimise(implicit seen: Set[Parsley[_]], label: Option[String]): Parsley[A] = 
+        override def optimise(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = 
         {
             val p_ = p.fix.optimised
             val q_ = q.fix.optimised
@@ -682,7 +682,7 @@ object DeepEmbedding
     private [DeepEmbedding] final class Attempt[A](_p: =>Parsley[A]) extends Parsley[A]
     {
         private [Attempt] lazy val p = _p
-        override def optimise(implicit seen: Set[Parsley[_]], label: Option[String]): Parsley[A] = new Attempt(p.fix.optimised)
+        override def optimise(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = new Attempt(p.fix.optimised)
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit =
         {
             val handler = labels.fresh()
@@ -695,7 +695,7 @@ object DeepEmbedding
     private [DeepEmbedding] final class Look[A](_p: =>Parsley[A]) extends Parsley[A]
     {
         private [Look] lazy val p = _p
-        override def optimise(implicit seen: Set[Parsley[_]], label: Option[String]): Parsley[A] = new Look(p.fix.optimised)
+        override def optimise(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = new Look(p.fix.optimised)
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = 
         {
             val handler = labels.fresh()
@@ -708,9 +708,9 @@ object DeepEmbedding
     private [DeepEmbedding] final class Fixpoint[A](_p: =>Parsley[A]) extends Parsley[A]
     {
         private [Fixpoint] lazy val p = _p
-        override def optimise(implicit seen: Set[Parsley[_]], label: Option[String]): Parsley[A] = 
+        override def optimise(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = 
         {
-            expected = label.orNull
+            expected = label
             this
         }
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = instrs += generate(new parsley.Call_(p))
@@ -718,18 +718,18 @@ object DeepEmbedding
     // Intrinsic Embedding
     private [DeepEmbedding] final class CharTok(private [CharTok] val c: Char) extends Parsley[Char]
     {
-        override def optimise(implicit seen: Set[Parsley[_]], label: Option[String]): Parsley[Char] = 
+        override def optimise(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[Char] = 
         {
-            expected = label.orNull
+            expected = label
             this
         }
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = instrs += generate(parsley.CharTok(c))
     }
     private [DeepEmbedding] final class StringTok(private [StringTok] val s: String) extends Parsley[String]
     {
-        override def optimise(implicit seen: Set[Parsley[_]], label: Option[String]): Parsley[String] =  
+        override def optimise(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[String] =  
         {
-            expected = label.orNull
+            expected = label
             this
         }
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = instrs += generate(new parsley.StringTok(s))
@@ -738,7 +738,7 @@ object DeepEmbedding
     {
         private [Cons] lazy val p = _p
         private [Cons] lazy val ps = _ps
-        override def optimise(implicit seen: Set[Parsley[_]], label: Option[String]): Parsley[List[B]] = 
+        override def optimise(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[List[B]] = 
         {
             val p_ = p.fix.optimised
             val ps_ = ps.fix.optimised
@@ -754,10 +754,10 @@ object DeepEmbedding
     private [DeepEmbedding] final class ErrorRelabel[A](_p: =>Parsley[A], msg: String) extends Parsley[A]
     {
         private [ErrorRelabel] lazy val p = _p
-        override def optimise(implicit seen: Set[Parsley[_]], label: Option[String]): Parsley[A] = label match
+        override def optimise(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] =
         {
-            case None => p.fix.optimised(seen, Some(msg))
-            case _ => p.fix.optimised
+            if (label == null) p.fix.optimised(seen, msg)
+            else p.fix.optimised
         }
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = throw new Exception("Error relabelling should not be in code gen!")
     }
@@ -787,5 +787,11 @@ object DeepEmbedding
         println(many(p).instrs(ExecutionTime).mkString("; "))
         val q: Parsley[Char] = char('a') <|> char('b')
         println((q <|> q <|> q <|> q).instrs(ExecutionTime).mkString("; "))
+        val start = System.currentTimeMillis()
+        for (i <- 0 to 1000000)
+        {
+            (q <|> q <|> q <|> q).instrs(ExecutionTime)
+        }
+        println(System.currentTimeMillis() - start)
     }
 }
