@@ -57,6 +57,7 @@ private [parsley] class CharTok(protected final val c: Char) extends ExpectingIn
     override def copy_ : ExpectingInstr = new CharTok(c)
 }
 
+// FIXME: Doesn't adjust the position!
 private [parsley] final class Satisfies(f: Char => Boolean) extends ExpectingInstr
 {
     override def apply(ctx: Context): Unit =
@@ -73,6 +74,7 @@ private [parsley] final class Satisfies(f: Char => Boolean) extends ExpectingIns
     override def copy_ : ExpectingInstr = new Satisfies(f)
 }
 
+// FIXME: Doesn't adjust the position!
 private [parsley] final class StringTok(private [StringTok] val s: String) extends ExpectingInstr("\"" + s + "\"")
 {
     private [this] val cs = s.toCharArray
@@ -179,6 +181,33 @@ private [parsley] final class Call(private [Call] val x: String) extends Expecti
     }
     override def toString: String = s"Call($x)"
     override def copy_ : ExpectingInstr = new Call(x)
+}
+
+private [parsley] final class Call_(_p: =>DeepEmbedding.Parsley[_]) extends ExpectingInstr
+{
+    private [Call_] lazy val p = _p
+    // TEMPORARY FIXME
+    // It has been determined that single use arrays are, in fact, not compatible with
+    // mutable intrinsics. Any instruction streams containing stateful instructions must
+    // be deep-copied and have those instructions deep-copied also. For now, we will just
+    // deep copy all streams, but that's very inefficient.
+    // CODO: Use lazy val?
+    private [this] var instrs: UnsafeOption[Array[Instr]] = _
+    override def apply(ctx: Context): Unit =
+    {
+        ctx.calls ::= new Frame(ctx.pc + 1, ctx.instrs)
+        if (instrs == null) instrs = p.instrs(DeepEmbedding.ExecutionTime)
+        ctx.instrs = instrs.map(_.copy)
+        ctx.depth += 1
+        if (expected != null)
+        {
+            ctx.overrideDepth = ctx.depth
+            ctx.errorOverride = expected
+        }
+        ctx.pc = 0
+    }
+    override def toString: String = s"Call($p)"
+    override def copy_ : ExpectingInstr = new Call_(p)
 }
 
 private [parsley] final class Fail(private [Fail] val msg: String) extends ExpectingInstr
