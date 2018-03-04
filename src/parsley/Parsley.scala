@@ -509,7 +509,7 @@ object DeepEmbedding
         
         // Internals
         private [this] lazy val _instrs: Array[Instr] = instrsSafe.toArray
-        private [this] var _optimised: UnsafeOption[Parsley[A]] = null//optimise(mutable.Set.empty)
+        private [this] var _optimised: UnsafeOption[Parsley[A]] = null
         private [this] var _seenLastOptimised: UnsafeOption[Set[Parsley[_]]] = null
         private def optimised(implicit seen: mutable.Set[Parsley[_]]): Parsley[A] = 
         {
@@ -521,7 +521,7 @@ object DeepEmbedding
             }
             _optimised
         }
-        private [this] var _unsafe = false
+        protected var _unsafe = false
         private [parsley] def instrs(implicit ev: ExecutionTime.type): Array[Instr] = _instrs
         private [Parsley] def instrsSafe: mutable.ListBuffer[Instr] = optimised(mutable.Set.empty).codeGen(new LabelCounter)
         protected def fix(implicit seen: mutable.Set[Parsley[_]]): Parsley[A] = if (seen.contains(this)) new Fixpoint(this) else { seen += this; this }
