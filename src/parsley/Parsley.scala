@@ -535,7 +535,7 @@ object DeepEmbedding
     abstract class Parsley[+A]
     {
         protected type InstrBuffer = mutable.ListBuffer[Instr]
-        def unsafe(): Unit = _unsafe = true
+        def unsafe(): Unit = safe = false
         
         // Internals
         private [this] lazy val _instrs: Array[Instr] = instrsSafe.toArray
@@ -551,7 +551,7 @@ object DeepEmbedding
             }
             _optimised
         }*/
-        protected var _unsafe = false
+        protected var safe = true
         private [parsley] def instrs(implicit ev: ExecutionTime.type): Array[Instr] = _instrs
         private [Parsley] def instrsSafe: InstrBuffer = 
         {
@@ -749,5 +749,7 @@ object DeepEmbedding
         lazy val p: Parsley[Int] = p.map((x: Int) => x+1)
         println(p.instrs(ExecutionTime).mkString("; "))
         println(many(p).instrs(ExecutionTime).mkString("; "))
+        val q: Parsley[Char] = char('a') <|> char('b')
+        println((q <|> q).instrs(ExecutionTime).mkString("; "))
     }
 }
