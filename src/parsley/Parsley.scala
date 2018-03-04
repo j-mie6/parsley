@@ -489,6 +489,8 @@ object DeepEmbedding
     }
     abstract class Parsley[+A] // This needs to change at the end
     {
+        def unsafe(): Unit = _unsafe = true
+        
         final def map[B](f: A => B): Parsley[B] = pure(f) <*> this
         final def flatMap[B](f: A => Parsley[B]): Parsley[B] = new Bind(this, f)
         final def >>=[B](f: A => Parsley[B]): Parsley[B] = flatMap(f)
@@ -507,9 +509,22 @@ object DeepEmbedding
         
         // Internals
         private [this] lazy val _instrs: Array[Instr] = instrsSafe.toArray
-        private [this] lazy val optimised: Parsley[A] = optimise(mutable.Set.empty)
+        private [this] var _optimised: UnsafeOption[Parsley[A]] = null//optimise(mutable.Set.empty)
+        private [this] var _seenLastOptimised: UnsafeOption[Set[Parsley[_]]] = null
+        private def optimised(implicit seen: mutable.Set[Parsley[_]]): Parsley[A] = 
+        {
+            if (_optimised != null) seen ++= _seenLastOptimised
+            else
+            {
+                _optimised = optimise
+                _seenLastOptimised = seen.toSet
+            }
+            _optimised
+        }
+        private [this] var _unsafe = false
         private [parsley] def instrs(implicit ev: ExecutionTime.type): Array[Instr] = _instrs
-        private [Parsley] def instrsSafe: mutable.ListBuffer[Instr] = optimised.codeGen(new LabelCounter)
+        private [Parsley] def instrsSafe: mutable.ListBuffer[Instr] = optimised(mutable.Set.empty).codeGen(new LabelCounter)
+        protected def fix(implicit seen: mutable.Set[Parsley[_]]): Parsley[A] = if (seen.contains(this)) new Fixpoint(this) else { seen += this; this }
         
         // Abstracts
         protected def optimise(implicit seen: mutable.Set[Parsley[_]]): Parsley[A]
@@ -528,97 +543,114 @@ object DeepEmbedding
         def lookAhead[A](p: Parsley[A]): Parsley[A] = new Look(p)
     }
     // Core Embedding
-    private [DeepEmbedding] final class Pure[+A](x: A) extends Parsley[A]
+    private [DeepEmbedding] final class Pure[+A](private [Pure] val x: A) extends Parsley[A]
     {
         override def optimise(implicit seen: mutable.Set[Parsley[_]]): Parsley[A] = this
         override def codeGen(implicit labels: LabelCounter): mutable.ListBuffer[Instr] = ???
     }
     private [DeepEmbedding] final class App[A, +B](_pf: =>Parsley[A => B], _px: =>Parsley[A]) extends Parsley[B]
     {
-        lazy val pf = _pf
-        lazy val px = _px 
+        private [App] lazy val pf = _pf
+        private [App] lazy val px = _px 
         override def optimise(implicit seen: mutable.Set[Parsley[_]]): Parsley[B] = this
         override def codeGen(implicit labels: LabelCounter): mutable.ListBuffer[Instr] = ???
     }
     private [DeepEmbedding] final class Or[A, B >: A](_p: =>Parsley[A], _q: =>Parsley[B]) extends Parsley[B]
     {
-        lazy val p = _p
-        lazy val q = _q
+        private [Or] lazy val p = _p
+        private [Or] lazy val q = _q
         override def optimise(implicit seen: mutable.Set[Parsley[_]]): Parsley[B] = this
         override def codeGen(implicit labels: LabelCounter): mutable.ListBuffer[Instr] = ???
     }
-    private [DeepEmbedding] final class Bind[A, +B](_p: =>Parsley[A], f: A => Parsley[B]) extends Parsley[B]
+    private [DeepEmbedding] final class Bind[A, +B](_p: =>Parsley[A], private [Bind] val f: A => Parsley[B]) extends Parsley[B]
     {
-        lazy val p = _p
+        private [Bind] lazy val p = _p
         override def optimise(implicit seen: mutable.Set[Parsley[_]]): Parsley[B] = this
         override def codeGen(implicit labels: LabelCounter): mutable.ListBuffer[Instr] = ???
     }
-    private [DeepEmbedding] final class Satisfies(f: Char => Boolean) extends Parsley[Char]
+    private [DeepEmbedding] final class Satisfies(private [Satisfies] val f: Char => Boolean) extends Parsley[Char]
     {
         override def optimise(implicit seen: mutable.Set[Parsley[_]]): Parsley[Char] = this
         override def codeGen(implicit labels: LabelCounter): mutable.ListBuffer[Instr] = ???
     }
     private [DeepEmbedding] final class Then[A, +B](_p: =>Parsley[A], _q: =>Parsley[B]) extends Parsley[B]
     {
-        lazy val p = _p
-        lazy val q = _q
+        private [Then] lazy val p = _p
+        private [Then] lazy val q = _q
         override def optimise(implicit seen: mutable.Set[Parsley[_]]): Parsley[B] = this
         override def codeGen(implicit labels: LabelCounter): mutable.ListBuffer[Instr] = ???
     }
     private [DeepEmbedding] final class Prev[B, +A](_p: =>Parsley[A], _q: =>Parsley[B]) extends Parsley[A]
     {
-        lazy val p = _p
-        lazy val q = _q
+        private [Prev] lazy val p = _p
+        private [Prev] lazy val q = _q
         override def optimise(implicit seen: mutable.Set[Parsley[_]]): Parsley[A] = this
         override def codeGen(implicit labels: LabelCounter): mutable.ListBuffer[Instr] = ???
     }
     private [DeepEmbedding] final class Attempt[A](_p: =>Parsley[A]) extends Parsley[A]
     {
-        lazy val p = _p
+        private [Attempt] lazy val p = _p
         override def optimise(implicit seen: mutable.Set[Parsley[_]]): Parsley[A] = this
         override def codeGen(implicit labels: LabelCounter): mutable.ListBuffer[Instr] = ???
     }
     private [DeepEmbedding] final class Look[A](_p: =>Parsley[A]) extends Parsley[A]
     {
-        lazy val p = _p
+        private [Look] lazy val p = _p
         override def optimise(implicit seen: mutable.Set[Parsley[_]]): Parsley[A] = this
         override def codeGen(implicit labels: LabelCounter): mutable.ListBuffer[Instr] = ???
     }
     private [DeepEmbedding] final class Fixpoint[A](_p: =>Parsley[A]) extends Parsley[A]
     {
-        lazy val p = _p
+        private [Fixpoint] lazy val p = _p
         override def optimise(implicit seen: mutable.Set[Parsley[_]]): Parsley[A] = this
         override def codeGen(implicit labels: LabelCounter): mutable.ListBuffer[Instr] = ???
     }
     // Optimised Embedding
-    private [DeepEmbedding] final class Fmap[A, +B](f: A => B, _p: =>Parsley[A]) extends Parsley[B]
+    private [DeepEmbedding] final class Fmap[A, +B](private [Fmap] val f: A => B, _p: =>Parsley[A]) extends Parsley[B]
     {
-        lazy val p = _p
+        private [Fmap] lazy val p = _p
         override def optimise(implicit seen: mutable.Set[Parsley[_]]): Parsley[B] = this
         override def codeGen(implicit labels: LabelCounter): mutable.ListBuffer[Instr] = ???
     }
-    private [DeepEmbedding] final class Instead[A](_p: =>Parsley[A], x: A) extends Parsley[A]
+    private [DeepEmbedding] final class Instead[A](_p: =>Parsley[A], private [Instead] val x: A) extends Parsley[A]
     {
-        lazy val p = _p
+        private [Instead] lazy val p = _p
         override def optimise(implicit seen: mutable.Set[Parsley[_]]): Parsley[A] = this
         override def codeGen(implicit labels: LabelCounter): mutable.ListBuffer[Instr] = ???
     }
     // Intrinsic Embedding
-    private [DeepEmbedding] final class CharTok(c: Char) extends Parsley[Char]
+    private [DeepEmbedding] final class CharTok(private [CharTok] val c: Char) extends Parsley[Char]
     {
         override def optimise(implicit seen: mutable.Set[Parsley[_]]): Parsley[Char] = this
         override def codeGen(implicit labels: LabelCounter): mutable.ListBuffer[Instr] = ???
     }
-    private [DeepEmbedding] final class StringTok(c: String) extends Parsley[String]
+    private [DeepEmbedding] final class StringTok(private [StringTok] val s: String) extends Parsley[String]
     {
         override def optimise(implicit seen: mutable.Set[Parsley[_]]): Parsley[String] = this
         override def codeGen(implicit labels: LabelCounter): mutable.ListBuffer[Instr] = ???
     }
-    private [DeepEmbedding] final class Cons[A, +B >: A](p: Parsley[A], ps: Parsley[List[B]]) extends Parsley[List[B]]
+    private [DeepEmbedding] final class Cons[A, +B >: A](_p: =>Parsley[A], _ps: =>Parsley[List[B]]) extends Parsley[List[B]]
     {
+        private [Cons] lazy val p = _p
+        private [Cons] lazy val ps = _ps
         override def optimise(implicit seen: mutable.Set[Parsley[_]]): Parsley[List[B]] = this
         override def codeGen(implicit labels: LabelCounter): mutable.ListBuffer[Instr] = ???
     }
+    
+    private [DeepEmbedding] object Pure      { def unapply[A](self: Pure[A]): Option[A] = Some(self.x) }
+    private [DeepEmbedding] object App       { def unapply[A, B](self: App[A, B]): Option[(Parsley[A=>B], Parsley[A])] = Some((self.pf, self.px)) }
+    private [DeepEmbedding] object Or        { def unapply[A, B >: A](self: Or[A, B]): Option[(Parsley[A], Parsley[B])] = Some((self.p, self.q)) }
+    private [DeepEmbedding] object Bind      { def unapply[A, B](self: Bind[A, B]): Option[(Parsley[A], A => Parsley[B])] = Some((self.p, self.f)) }
+    private [DeepEmbedding] object Satisfies { def unapply(self: Satisfies): Option[Char => Boolean] = Some(self.f) }
+    private [DeepEmbedding] object Then      { def unapply[A, B](self: Then[A, B]): Option[(Parsley[A], Parsley[B])] = Some((self.p, self.q)) }
+    private [DeepEmbedding] object Prev      { def unapply[A, B](self: Prev[B, A]): Option[(Parsley[A], Parsley[B])] = Some((self.p, self.q)) }
+    private [DeepEmbedding] object Attempt   { def unapply[A](self: Attempt[A]): Option[Parsley[A]] = Some(self.p) }
+    private [DeepEmbedding] object Look      { def unapply[A](self: Look[A]): Option[Parsley[A]] = Some(self.p) }
+    private [DeepEmbedding] object Fmap      { def unapply[A, B](self: Fmap[A, B]): Option[(A => B, Parsley[A])] = Some((self.f, self.p)) }
+    private [DeepEmbedding] object Instead   { def unapply[A](self: Instead[A]): Option[(Parsley[A], A)] = Some((self.p, self.x)) }
+    private [DeepEmbedding] object CharTok   { def unapply(self: CharTok): Option[Char] = Some(self.c) }
+    private [DeepEmbedding] object StringTok { def unapply(self: StringTok): Option[String] = Some(self.s) }
+    private [DeepEmbedding] object Cons      { def unapply[A, B >: A](self: Cons[A, B]): Option[(Parsley[A], Parsley[List[B]])] = Some((self.p, self.ps)) }
     
     def main(args: Array[String]): Unit =
     {
