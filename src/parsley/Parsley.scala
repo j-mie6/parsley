@@ -712,9 +712,11 @@ object DeepEmbedding
         private [Then] lazy val p = _p
         private [Then] lazy val q = _q
         override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[B] = new Then(p.optimised, q.optimised)
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[B] = p match
+        override def optimise(implicit label: UnsafeOption[String]): Parsley[B] = (p, q) match
         {
-            case _: Pure[_] => q
+            case (_: Pure[_], q) => q
+            // re-association - normal form of Then chain is to have result at the top of tree
+            case (p, Then(q, r)) => new Then(new Then(p, q), r)
             case _ => this
         }
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = 
