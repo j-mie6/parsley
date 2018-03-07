@@ -611,13 +611,12 @@ object DeepEmbedding
             case (Pure(f), App(Pure(g: (T => A) @unchecked), p: Parsley[T])) => new App(new Pure(f.compose(g)), p)
             /* RE-ASSOCIATION LAWS */
             // re-association law 1: (q *> pf) <*> px = q *> (pf <*> px)
+            case (Then(q, pf), px) => new Then(q, new App(pf, px).optimise)
             // re-association law 2: pf <*> (px <* q) = (pf <*> px) <* q
             case (pf, Prev(px, q)) => new Prev(new App(pf, px).optimise, q)
             // re-association law 3: p *> pure x = pure x <* p
             // consequence of re-association law 3: pf <*> (q *> pure x) = (pf <*> pure x) <* q
             case (pf, Then(q, px: Pure[_])) => new Prev(new App(pf, px).optimise, q)
-            // by re-association law 1
-            case (Then(q, pf), px) => new Then(q, new App(pf, px).optimise)
             // consequence of re-association law 3: (pure f <* q) <*> px = p *> (pure f <*> px)
             case (Prev(pf: Pure[_], q), px) => new Then(q, new App(pf, px).optimise)
             // interchange law: u <*> pure y == pure ($y) <*> u == ($y) <$> u (single instruction, so we benefit at code-gen)
