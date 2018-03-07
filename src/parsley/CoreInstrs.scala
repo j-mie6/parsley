@@ -114,7 +114,7 @@ private [parsley] final class StringTok(private [StringTok] val s: String) exten
 // Applicative Functors
 private [parsley] final class Perform[-A, +B](f: A => B) extends Instr
 {
-    private [Perform] val g = f.asInstanceOf[Function[Any, Any]]
+    private [Perform] val g = f.asInstanceOf[Any => B]
     override def apply(ctx: Context): Unit =
     {
         ctx.exchangeStack(g(ctx.stack.head))
@@ -129,7 +129,7 @@ private [parsley] object Apply extends Instr
     override def apply(ctx: Context): Unit =
     {
         val x = ctx.popStack()
-        val f = ctx.stack.head.asInstanceOf[Function[Any, Any]]
+        val f = ctx.stack.head.asInstanceOf[Any => Any]
         ctx.exchangeStack(f(x))
         ctx.inc()
     }

@@ -59,7 +59,7 @@ private [parsley] class Tab extends CharTok('\t')
 // This instruction has GREAT potential, it should be integrated into peephole :)
 // We should also make equivalents for Satisfy and String
 // Also experiment: is CharTok; Exchange better than CharTokFastPerform with const?
-private [parsley] class CharTokFastPerform(protected final val c: Char, protected final val f: Any => Any) extends ExpectingInstr("\"" + c.toString + "\"")
+private [parsley] class CharTokFastPerform(protected final val c: Char, protected final val f: Char => Any) extends ExpectingInstr("\"" + c.toString + "\"")
 {
     protected final val fc: Any = f(c)
     override def apply(ctx: Context): Unit =
@@ -77,7 +77,7 @@ private [parsley] class CharTokFastPerform(protected final val c: Char, protecte
     override def copy_ : ExpectingInstr = new CharTokFastPerform(c, f)
 }
 
-private [parsley] final class NewlineFastPerform(private [this] val g: Any => Any) extends CharTokFastPerform('\n', g)
+private [parsley] final class NewlineFastPerform(private [this] val g: Char => Any) extends CharTokFastPerform('\n', g)
 {
     override def apply(ctx: Context): Unit =
     {
@@ -94,7 +94,7 @@ private [parsley] final class NewlineFastPerform(private [this] val g: Any => An
     override def copy_ : ExpectingInstr = new NewlineFastPerform(f)
 }
 
-private [parsley] final class TabFastPerform(private [this] val g: Any => Any) extends CharTokFastPerform('\t', g)
+private [parsley] final class TabFastPerform(private [this] val g: Char => Any) extends CharTokFastPerform('\t', g)
 {
     override def apply(ctx: Context): Unit =
     {
@@ -124,11 +124,11 @@ private [parsley] object FastFail
 private [parsley] object CharTokFastPerform
 {
     import scala.annotation.switch
-    def apply(c: Char, f: Any => Any): CharTokFastPerform = (c: @switch) match
+    def apply[A >: Char, B](c: Char, f: A => B): CharTokFastPerform = (c: @switch) match
     {
         case '\n' => new NewlineFastPerform(f)
         case '\t' => new TabFastPerform(f)
         case _ => new CharTokFastPerform(c, f)
     }
-    def unapply(self: CharTokFastPerform): Option[(Char, Any=>Any)] = Some((self.c, self.f))
+    def unapply(self: CharTokFastPerform): Option[(Char, Char=>Any)] = Some((self.c, self.f))
 }
