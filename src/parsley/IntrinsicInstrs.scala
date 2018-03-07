@@ -77,7 +77,7 @@ private [parsley] final class Chainl(private [Chainl] val label: Int) extends In
                 acc = ctx.stack.head
                 ctx.exchangeStack(op)
             }
-            acc = ctx.popStack().asInstanceOf[Function[Any, Any]](acc)
+            acc = ctx.popStack().asInstanceOf[Any => Any](acc)
             ctx.checkStack.head = ctx.offset
             ctx.pc = label
         }

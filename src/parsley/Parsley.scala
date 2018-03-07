@@ -751,6 +751,16 @@ object DeepEmbedding
             instrs += parsley.Cons
         }
     }
+    /*private [DeepEmbedding] final class Chainl[+A](_p: =>Parsley[A], _op: =>Parsley[A => A]) extends Parsley[A]
+    {
+        private [Chainl] lazy val p = _p
+        private [Chainl] lazy val op = _op
+        override def optimise(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] =
+        {
+
+        }
+    }*/
+
     private [DeepEmbedding] final class ErrorRelabel[A](_p: =>Parsley[A], msg: String) extends Parsley[A]
     {
         private [ErrorRelabel] lazy val p = _p
