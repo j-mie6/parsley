@@ -516,7 +516,7 @@ object DeepEmbedding
         def satisfies(f: Char => Boolean): Parsley[Char] = new Satisfies(f)
         def string(s: String): Parsley[String] = new StringTok(s)
         def lift2[A, B, C](f: A => B => C, p: =>Parsley[A], q: =>Parsley[B]): Parsley[C] = p.map(f) <*> q
-        def join[A](p: =>Parsley[Parsley[A]]) = p.flatten
+        def join[A](p: =>Parsley[Parsley[A]]): Parsley[A] = p.flatten
         def attempt[A](p: =>Parsley[A]): Parsley[A] = new Attempt(p)
         def tryParse[A](p: =>Parsley[A]): Parsley[A] = attempt(p)
         def lookAhead[A](p: =>Parsley[A]): Parsley[A] = new Look(p)
@@ -540,7 +540,7 @@ object DeepEmbedding
         final def unsafe(): Unit = safe = false
         
         // Internals
-        final private [this] lazy val _instrs: Array[Instr] = instrsSafe.toArray
+        final private [this] lazy val _instrs: Array[Instr] = instrsSafe.toArray()
         // TODO: Implement optimisation caching, with fixpoint safety!
         //private [this] var _optimised: UnsafeOption[Parsley[A]] = null
         //private [this] var _seenLastOptimised: UnsafeOption[Set[Parsley[_]]] = null
@@ -554,7 +554,7 @@ object DeepEmbedding
             _optimised
         }*/
         final private [DeepEmbedding] var safe = true
-        final private [DeepEmbedding] var expected: UnsafeOption[String] = null
+        final private [DeepEmbedding] var expected: UnsafeOption[String] = _
         final private [parsley] def instrs(implicit ev: ExecutionTime.type): Array[Instr] = _instrs
         final private [Parsley] def instrsSafe: InstrBuffer = 
         {
@@ -615,10 +615,10 @@ object DeepEmbedding
             val skip = labels.fresh()
             instrs += generate(new InputCheck(handler))
             p.codeGen
-            instrs += new Label(handler)
+            instrs += Label(handler)
             instrs += generate(new JumpGood(skip))
             q.codeGen
-            instrs += new Label(skip)
+            instrs += Label(skip)
         }
     }
     private [DeepEmbedding] final class Bind[A, +B](_p: =>Parsley[A], private [Bind] val f: A => Parsley[B])(implicit label: UnsafeOption[String] = null) extends Parsley[B]
@@ -688,7 +688,7 @@ object DeepEmbedding
             val handler = labels.fresh()
             instrs += generate(new parsley.PushHandler(handler))
             p.codeGen
-            instrs += new parsley.Label(handler)
+            instrs += parsley.Label(handler)
             instrs += parsley.Try
         }
     }
@@ -701,7 +701,7 @@ object DeepEmbedding
             val handler = labels.fresh()
             instrs += generate(new parsley.PushHandler(handler))
             p.codeGen
-            instrs += new parsley.Label(handler)
+            instrs += parsley.Label(handler)
             instrs += parsley.Look
         }
     }
@@ -788,7 +788,7 @@ object DeepEmbedding
         val q: Parsley[Char] = char('a') <|> char('b')
         println((q <|> q <|> q <|> q).instrs(ExecutionTime).mkString("; "))
         val start = System.currentTimeMillis()
-        for (i <- 0 to 1000000)
+        for (_ <- 0 to 1000000)
         {
             (q <|> q <|> q <|> q).instrs(ExecutionTime)
         }
