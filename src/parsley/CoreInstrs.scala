@@ -114,7 +114,7 @@ private [parsley] final class StringTok(private [StringTok] val s: String) exten
 // Applicative Functors
 private [parsley] final class Perform[-A, +B](f: A => B) extends Instr
 {
-    private [Perform] val g = f.asInstanceOf[Any => Any]
+    private [Perform] val g = f.asInstanceOf[Any => B]
     override def apply(ctx: Context): Unit =
     {
         ctx.exchangeStack(g(ctx.stack.head))
@@ -254,7 +254,7 @@ private [parsley] final class PushHandler(override val label: Int) extends FwdJu
         ctx.inc()
     }
     override def toString: String = s"PushHandler($label)"
-    override def copy_ : FwdJumpInstr = new PushHandler(label)
+    override def copy_(): FwdJumpInstr = new PushHandler(label)
 }
 
 private [parsley] object Try extends Instr
@@ -319,7 +319,7 @@ private [parsley] final class InputCheck(override val label: Int) extends FwdJum
         ctx.inc()
     }
     override def toString: String = s"InputCheck($label)"
-    override def copy_ : FwdJumpInstr = new InputCheck(label)
+    override def copy_(): FwdJumpInstr = new InputCheck(label)
 }
 
 private [parsley] final class JumpGood(override val label: Int) extends FwdJumpInstr
@@ -342,7 +342,7 @@ private [parsley] final class JumpGood(override val label: Int) extends FwdJumpI
         }
     }
     override def toString: String = s"JumpGood($label)"
-    override def copy_ : FwdJumpInstr = new JumpGood(label)
+    override def copy_(): FwdJumpInstr = new JumpGood(label)
 }
 
 // Extractor Objects
