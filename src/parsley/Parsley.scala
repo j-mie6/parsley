@@ -146,33 +146,6 @@ class Parsley[+A] private [Parsley] (
         }
     }
 
-    /*final def <*>:[B](p: Parsley[A => B]): Parsley[B] = p.instrs.last match
-    {
-        // pure(f) <*> p == f <#> p (consequence of applicative laws)
-        case Push(f) => instrs.last match
-        {
-            // f <#> pure x == pure (f x) (applicative law)
-            case Push(x) if safe => new Parsley(p.instrs.init ++ instrs.init :+ new Push(f.asInstanceOf[Function[Any, B]](x)), p.subs ++ subs)
-            // p.map(g).map(f) == p.map(f . g) (functor law)
-            case Perform(g) =>
-                new Parsley(p.instrs.init ++ instrs.init :+
-                            new Perform(g.andThen(f.asInstanceOf[Function[Any, B]])), p.subs ++ subs)
-            case _ => new Parsley(p.instrs.init ++ instrs :+ new Perform(f.asInstanceOf[Function[A, B]]), p.subs ++ subs)
-        }
-        case Perform(f: Function[Any, Any=>Any] @unchecked) => instrs.last match
-        {
-            // fusion law: (f <$> x) <*> pure y == (($y) . f) <$> x
-            case Push(y) => new Parsley(p.instrs.init ++ instrs.init :+ new Perform[Any, Any](x => f(x)(y)), p.subs ++ subs)
-            case _ => new Parsley(p.instrs ++ instrs :+ Apply, p.subs ++ subs)
-        }
-        case _ => instrs.last match
-        {
-            // interchange law: u <*> pure y = ($y) <$> u
-            case Push(x) => new Parsley(p.instrs ++ instrs.init :+ new Perform[Any => B, B](f => f(x)), p.subs ++ subs)
-            case _ => new Parsley(p.instrs ++ instrs :+ Apply, p.subs ++ subs)
-        }
-    }*/
-
     final def <|>[A_ >: A](q: Parsley[A_]): Parsley[A_] = instrs match
     {
         // pure results always succeed
@@ -472,7 +445,6 @@ object Parsley
 object DeepEmbedding
 {
     import DeepEmbedding.Parsley._
-    object ExecutionTime
     
     // User API
     implicit final class LazyParsley[A](p: =>Parsley[A])
@@ -533,6 +505,7 @@ object DeepEmbedding
             current += 1
             next
         }
+        def size: Int = current
     }
     abstract class Parsley[+A]
     {
@@ -541,9 +514,9 @@ object DeepEmbedding
         final protected type U = Any
         final protected type V = Any
         final def unsafe(): Unit = safe = false
+        final def pretty: String = instrs.mkString("; ")
         
         // Internals
-        final private [this] lazy val _instrs: Array[Instr] = instrsSafe.toArray()
         // TODO: Implement optimisation caching, with fixpoint safety!
         //private [this] var _optimised: UnsafeOption[Parsley[A]] = null
         //private [this] var _seenLastOptimised: UnsafeOption[Set[Parsley[_]]] = null
@@ -559,12 +532,35 @@ object DeepEmbedding
         }
         final private [DeepEmbedding] var safe = true
         final private [DeepEmbedding] var expected: UnsafeOption[String] = _
-        final private [parsley] def instrs(implicit ev: ExecutionTime.type): Array[Instr] = _instrs
-        final private [Parsley] def instrsSafe: InstrBuffer = 
+        final private [parsley] lazy val instrs: Array[Instr] =
         {
             val instrs: InstrBuffer = new ResizableArray()
-            optimised(Set.empty, null).codeGen(instrs, new LabelCounter)
-            instrs
+            val labels = new LabelCounter
+            optimised(Set.empty, null).codeGen(instrs, labels)
+            val size = instrs.length - labels.size
+            val instrs_ = new Array[Instr](size)
+            val instrsOversize = instrs.toArray()
+            val labelMapping = new Array[Int](labels.size)
+            @tailrec def findLabels(instrs: Array[Instr], labels: Array[Int], n: Int, i: Int = 0, off: Int = 0): Unit = if (i + off < n) instrs(i + off) match
+            {
+                case parsley.Label(label) => labels.update(label, i); findLabels(instrs, labels, n, i, off+1)
+                case _ => findLabels(instrs, labels, n, i+1, off)
+            }
+            // TODO: This can now use mutable state :)
+            @tailrec def applyLabels(srcs: Array[Instr], labels: Array[Int], dests: Array[Instr], n: Int, i: Int = 0, off: Int = 0): Unit = if (i < n) srcs(i + off) match
+            {
+                case _: parsley.Label => applyLabels(srcs, labels, dests, n, i, off + 1)
+                case instr@parsley.PushHandler(l) => dests.update(i, new parsley.PushHandler(labels(l))); applyLabels(srcs, labels, dests, n, i + 1, off)
+                case instr@parsley.InputCheck(l)  => dests.update(i, new parsley.InputCheck(labels(l)));  applyLabels(srcs, labels, dests, n, i + 1, off)
+                case instr@parsley.JumpGood(l)    => dests.update(i, new parsley.JumpGood(labels(l)));    applyLabels(srcs, labels, dests, n, i + 1, off)
+                case instr@parsley.Many(l)        => dests.update(i, new parsley.Many(labels(l)));        applyLabels(srcs, labels, dests, n, i + 1, off)
+                case instr@parsley.SkipMany(l)    => dests.update(i, new parsley.SkipMany(labels(l)));    applyLabels(srcs, labels, dests, n, i + 1, off)
+                case instr@parsley.Chainl(l)      => dests.update(i, new parsley.Chainl(labels(l)));      applyLabels(srcs, labels, dests, n, i + 1, off)
+                case instr                        => dests.update(i, instr);                              applyLabels(srcs, labels, dests, n, i + 1, off)
+            }
+            findLabels(instrsOversize, labelMapping, instrs.length)
+            applyLabels(instrsOversize, labelMapping, instrs_, instrs_.length)
+            instrs_
         }
         final private [DeepEmbedding] def fix(implicit seen: Set[Parsley[_]]): Parsley[A] = if (seen.contains(this)) new Fixpoint(this) else this
         final private [DeepEmbedding] def generate(e: ExpectingInstr): ExpectingInstr =
@@ -572,11 +568,11 @@ object DeepEmbedding
             e.expected = expected
             e
         }
-        final private [DeepEmbedding] def generate(i: Instr): Instr = i
         
         // Abstracts
-        // Optimisation and fixpoint calculation - Bottom-up
+        // Sub-tree optimisation and fixpoint calculation - Bottom-up
         protected def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A]
+        // Optimisation - Bottom-up
         private [DeepEmbedding] def optimise(implicit label: UnsafeOption[String]): Parsley[A]
         // Peephole optimisation and code generation - Top-down
         private [DeepEmbedding] def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit
@@ -587,7 +583,7 @@ object DeepEmbedding
     {
         override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = this
         override def optimise(implicit label: UnsafeOption[String]): Parsley[A] = this
-        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = instrs += generate(new parsley.Push(x))
+        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = instrs += new parsley.Push(x)
         override def ===[B >: A](other: Parsley[B]): Boolean = other.isInstanceOf[Pure[B]] && other.asInstanceOf[Pure[B]].x == x
     }
     private [DeepEmbedding] final class App[A, B](_pf: =>Parsley[A => B], _px: =>Parsley[A]) extends Parsley[B]
@@ -648,10 +644,10 @@ object DeepEmbedding
         {
             val handler = labels.fresh()
             val skip = labels.fresh()
-            instrs += generate(new InputCheck(handler))
+            instrs += new InputCheck(handler)
             p.codeGen
             instrs += Label(handler)
-            instrs += generate(new JumpGood(skip))
+            instrs += new JumpGood(skip)
             q.codeGen
             instrs += Label(skip)
         }
@@ -677,7 +673,7 @@ object DeepEmbedding
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = 
         {
             p.codeGen
-            instrs += generate(new parsley.DynSub[A](x => f(x).instrs(ExecutionTime)))
+            instrs += generate(new parsley.DynSub[A](x => f(x).instrs))
         }
     }
     private [DeepEmbedding] final class Satisfies(private [Satisfies] val f: Char => Boolean) extends Parsley[Char]
@@ -749,7 +745,7 @@ object DeepEmbedding
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit =
         {
             val handler = labels.fresh()
-            instrs += generate(new parsley.PushHandler(handler))
+            instrs += new parsley.PushHandler(handler)
             p.codeGen
             instrs += parsley.Label(handler)
             instrs += parsley.Try
@@ -763,7 +759,7 @@ object DeepEmbedding
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = 
         {
             val handler = labels.fresh()
-            instrs += generate(new parsley.PushHandler(handler))
+            instrs += new parsley.PushHandler(handler)
             p.codeGen
             instrs += parsley.Label(handler)
             instrs += parsley.Look
@@ -867,17 +863,18 @@ object DeepEmbedding
             manyp
         }
         lazy val p: Parsley[Int] = p.map((x: Int) => x+1)
-        println(p.instrs(ExecutionTime).mkString("; "))
-        println(many(p).instrs(ExecutionTime).mkString("; "))
+        println(p.pretty)
+        println(many(p).pretty)
         val q: Parsley[Char] = char('a') <|> char('b')
-        println((q <|> q <|> q <|> q).instrs(ExecutionTime).mkString("; "))
-        println(((char('a') >>= ((c: Char) => pure((x: Int) => x + 1))) <*> pure(7)).instrs(ExecutionTime).mkString(";"))
+        println((q <|> q <|> q <|> q).pretty)
+        println(((char('a') >>= ((c: Char) => pure((x: Int) => x + 1))) <*> pure(7)).pretty)
         val start = System.currentTimeMillis()
         for (_ <- 0 to 1000000)
         {
-            (q <|> q <|> q <|> q).instrs(ExecutionTime)
+            //(q <|> q <|> q <|> q).instrs
         }
         println(System.currentTimeMillis() - start)
-        println(chainl1(char('1') <#> (_.toInt), char('+') #> ((x: Int) => (y: Int) => x + y)).instrs(ExecutionTime).mkString(";"))
+        println(chainl1(char('1') <#> (_.toInt), char('+') #> ((x: Int) => (y: Int) => x + y)).pretty)
+        println(runParser(many(char('a')), "aaaa"))
     }
 }

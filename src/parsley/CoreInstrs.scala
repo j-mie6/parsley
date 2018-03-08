@@ -164,7 +164,6 @@ private [parsley] final class Call(private [Call] val x: String) extends Expecti
     // mutable intrinsics. Any instruction streams containing stateful instructions must
     // be deep-copied and have those instructions deep-copied also. For now, we will just
     // deep copy all streams, but that's very inefficient.
-    // CODO: Use lazy val?
     private [this] var instrs: UnsafeOption[Array[Instr]] = _
     override def apply(ctx: Context): Unit =
     {
@@ -183,20 +182,18 @@ private [parsley] final class Call(private [Call] val x: String) extends Expecti
     override def copy_ : ExpectingInstr = new Call(x)
 }
 
-private [parsley] final class Call_(_p: =>DeepEmbedding.Parsley[_]) extends ExpectingInstr
+private [parsley] final class Call_(p: DeepEmbedding.Parsley[_]) extends ExpectingInstr
 {
-    private [Call_] lazy val p = _p
     // TEMPORARY FIXME
     // It has been determined that single use arrays are, in fact, not compatible with
     // mutable intrinsics. Any instruction streams containing stateful instructions must
     // be deep-copied and have those instructions deep-copied also. For now, we will just
     // deep copy all streams, but that's very inefficient.
-    // CODO: Use lazy val?
     private [this] var instrs: UnsafeOption[Array[Instr]] = _
     override def apply(ctx: Context): Unit =
     {
         ctx.calls ::= new Frame(ctx.pc + 1, ctx.instrs)
-        if (instrs == null) instrs = p.instrs(DeepEmbedding.ExecutionTime)
+        if (instrs == null) instrs = p.instrs //NOTE: This line cannot be hoisted, otherwise it will infinite loop during codeGen!
         ctx.instrs = instrs.map(_.copy)
         ctx.depth += 1
         if (expected != null)
