@@ -142,17 +142,17 @@ object Benchmark
     def main(args: Array[String]): Unit =
     {
         //Console.in.read()
-        val p = Native.recursiveDescent
+        val p = ParsleyBench.chain
         val input1 = "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"
         //val input2 = "aaaab"
         val input = input1
         //println(runParser(p, "aaaab"))
         //println(runParser(p, "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"))
         val start = System.currentTimeMillis()
-        println(p(input))
+        println(runParser(p, input))
         for (_ <- 0 to 10000000)
-            //runParser(p, input)
-            p(input)
+            runParser(p, input)
+            //p(input)
             //p.parse(input)
         println(System.currentTimeMillis() - start)
     }

@@ -335,7 +335,7 @@ object Parsley
                 case Call(name_) if name != name_ && p.subs.contains(name_) => p.subs(name_)
                 case instr => List(instr)
             }
-            new Parsley(mutable.Buffer(new Call(name)), p.subs + (name -> instrs))
+            new Parsley(mutable.ArrayBuffer(new Call(name)), p.subs + (name -> instrs))
         }
     }
 
@@ -348,10 +348,6 @@ object Parsley
     {
         @inline def <#>(p: Parsley[A]): Parsley[B] = p.map(f)
     }
-
-    // Intrinsics
-    case class Cons[+A](p: Parsley[A], ps: Parsley[List[A]]) extends Parsley[List[A]](mutable.Buffer.empty, Map.empty)
-    case class CharPerform[+A](c: Char, f: Char => A) extends Parsley[A](mutable.Buffer.empty, Map.empty)
 
     private [Parsley] def delabel(instrs_ : mutable.Buffer[Instr]): Array[Instr] =
     {
