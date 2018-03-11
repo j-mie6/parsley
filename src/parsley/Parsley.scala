@@ -973,17 +973,17 @@ object DeepEmbedding
     
     def main(args: Array[String]): Unit =
     {
-        def many[A](p: Parsley[A]): Parsley[List[A]] =
+        def many_[A](p: Parsley[A]): Parsley[List[A]] =
         {
             lazy val manyp: Parsley[List[A]] = (p <::> manyp) </> Nil
             manyp
         }
         lazy val p: Parsley[Int] = p.map((x: Int) => x+1)
         println(p.pretty)
-        println(many(p).pretty)
+        println(many_(p).pretty)
         val q: Parsley[Char] = char('a') <|> char('b')
         println((q <|> q <|> q <|> q).pretty)
-        println(((char('a') >>= ((c: Char) => pure((x: Int) => x + 1))) <*> pure(7)).pretty)
+        println(((char('a') >>= (_ => pure((x: Int) => x + 1))) <*> pure(7)).pretty)
         val start = System.currentTimeMillis()
         for (_ <- 0 to 1000000)
         {
@@ -994,5 +994,11 @@ object DeepEmbedding
         println(runParser(many(char('a')), "aaaa"))
         lazy val uhoh: Parsley[Unit] = char('a') >>= (_ => uhoh)
         println(uhoh.pretty)
+        try
+        {
+            many(pure(5)).pretty
+            println("MANY ALLOWED NO-INPUT PARSER")
+        }
+        catch { case _: Throwable => }
     }
 }
