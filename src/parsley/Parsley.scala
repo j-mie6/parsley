@@ -84,7 +84,9 @@ class Parsley[+A] private [Parsley] (
     // A note about intrinsics - by their very definition we can't optimise *to* them, so we need to optimise *around* them
     @inline final def <::>[A_ >: A](ps: Parsley[List[A_]]): Parsley[List[A_]] = new Parsley(instrs ++ ps.instrs :+ Cons, subs ++ ps.subs)
     @inline final def <~>[A_ >: A, B](p: Parsley[B]): Parsley[(A_, B)] = lift2((x: A_, y: B) => (x, y), this, p)
-    @inline final def <|?>[B](p: Parsley[B], q: Parsley[B])(implicit ev: Parsley[A] => Parsley[Boolean]): Parsley[B] = choose(this, p, q)
+    @deprecated("Renamed to `?:>` to appear similar to the common ternary operator in C-like languages, as that is what it does", "")
+    @inline final def <|?>[B](p: Parsley[B], q: Parsley[B])(implicit ev: Parsley[A] => Parsley[Boolean]): Parsley[B] = this ?:> (p, q)
+    @inline final def ?:>[B](p: Parsley[B], q: Parsley[B])(implicit ev: Parsley[A] => Parsley[Boolean]): Parsley[B] = ev(this) >>= ((b: Boolean) => if (b) p else q)
     @inline final def withFilter(p: A => Boolean): Parsley[A] = this >>= (x => if (p(x)) pure(x) else empty)
     @inline final def filter(p: A => Boolean): Parsley[A] = withFilter(p)
     @inline final def guard(pred: A => Boolean, msg: String): Parsley[A] = flatMap(x => if (pred(x)) pure(x) else fail(msg))
@@ -138,7 +140,7 @@ object Parsley
         new Parsley(new PushHandler(handler) +: p.instrs :+ Label(handler) :+ Look, p.subs)
     }
     def notFollowedBy[A](p: Parsley[A]): Parsley[Unit] = (attempt(p) >>= (c => unexpected("\"" + c.toString + "\""))) </> Unit
-    @deprecated("To avoid clashes with uncurried lift2, this is deprecated, will be removed on branch merge", "")
+    @deprecated("To avoid clashes with uncurried `lift2`, this is deprecated, will be removed on branch merge", "")
     @inline def lift2_[A, B, C](f: A => B => C, p: Parsley[A], q: Parsley[B]): Parsley[C] = p.map(f) <*> q
     @inline def lift2[A, B, C](f: (A, B) => C, p: Parsley[A], q: Parsley[B]): Parsley[C] = p.map((x: A) => (y: B) => f(x, y)) <*> q
     def char(c: Char): Parsley[Char] = new Parsley(mutable.Buffer(CharTok(c)), Map.empty)
@@ -146,12 +148,9 @@ object Parsley
     def string(s: String): Parsley[String] = new Parsley(mutable.Buffer(new StringTok(s)), Map.empty)
     def anyChar: Parsley[Char] = satisfy(_ => true)
     def eof: Parsley[Unit] = notFollowedBy(anyChar) ? "end of input"
-    @inline
-    def choose[A](b: Parsley[Boolean], p: Parsley[A], q: Parsley[A]): Parsley[A] =
-    {
-        b.flatMap(b => if (b) p else q)
-    }
-    
+    @deprecated("Deprecated in favour of `?:>`, no wording required, may be confused with `p <|> q`", "")
+    @inline def choose[A](b: Parsley[Boolean], p: Parsley[A], q: Parsley[A]): Parsley[A] = b ?:> (p, q)
+
     def many[A](p: Parsley[A]): Parsley[List[A]] =
     {
         val handler = fresh()
@@ -432,7 +431,7 @@ object DeepEmbedding
     }
     implicit final class LazyChooseParsley(b: =>Parsley[Boolean])
     {
-        def <|?>[A](p: =>Parsley[A], q: =>Parsley[A]): Parsley[A] = b >>= (b => if (b) p else q)
+        def ?:>[A](p: =>Parsley[A], q: =>Parsley[A]): Parsley[A] = b >>= (b => if (b) p else q)
     }
     object Parsley
     {
