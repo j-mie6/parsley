@@ -924,7 +924,7 @@ object DeepEmbedding
         override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = new Chainl(p.optimised, op.optimised)
         override def optimise(implicit label: UnsafeOption[String]): Parsley[A] =  op match
         {
-            case _: Pure[A] => throw new Exception("left chain given parser which consumes no input")
+            case _: Pure[A => A] => throw new Exception("left chain given parser which consumes no input")
             case _ => this
         }
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = 
