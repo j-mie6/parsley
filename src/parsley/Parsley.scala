@@ -713,7 +713,6 @@ object DeepEmbedding
             case Pure(x) =>
                 p.codeGen
                 instrs += new parsley.Exchange(x)
-            // Might be able to do the same with a then/cont? (how many ways can a valid Pop; Push occur?)
             case q => 
                 p.codeGen
                 instrs += parsley.Pop
@@ -741,7 +740,6 @@ object DeepEmbedding
             case Pure(x) =>
                 q.codeGen
                 instrs += new parsley.Exchange(x)
-            // Might be able to do the same with a prev/cont? (how many ways can a valid Pop; Push occur?)
             case p =>
                 p.codeGen
                 q.codeGen
