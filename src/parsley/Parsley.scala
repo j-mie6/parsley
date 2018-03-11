@@ -660,11 +660,15 @@ object DeepEmbedding
         override def optimise(implicit label: UnsafeOption[String]): Parsley[B] = p match
         {
             // monad law 1: pure x >>= f = f x
-            case Pure(x) => f(x)
+            case Pure(x) => f(x) // XXX: Warning: Do NOT optimise rhs, presence of unchecked fixpoints!
+            // char/string x = char/string x *> pure x and monad law 1
+            case p@CharTok(c) => new Then(p, f(c.asInstanceOf[A])) // XXX: Warning: Do NOT optimise rhs, presence of unchecked fixpoints!
+            case p@StringTok(s) => new Then(p, f(s.asInstanceOf[A])) // XXX: Warning: Do NOT optimise rhs, presence of unchecked fixpoints!
             // consequence of monad laws 1, 3 and p *> q = p >>= \_ -> q
             // possible consequence of re-association law 3: pure x <* p = p *> pure x
+            // possible consequence of char/string unpack: char/string x = char/string x *> pure x
             // (q *> pure x) >>= f = f x = (pure x <* q) >>= f
-            case Cont(q, Pure(x)) => new Then(q, f(x))
+            case Cont(q, p) => new Then(q, new Bind(p, f).optimise)
             // monad law 3: (m >>= g) >>= f = m >>= (\x -> g x >>= f) NOTE: this *could* help if g x ended with a pure, since this would be optimised out!
             case Bind(m: Parsley[T] @unchecked, g: (T => A) @unchecked) => new Bind(m, ((x: T) => new Bind(g(x), f)))
             // TODO: Consider pushing bind into or tree? may find optimisation opportunities
@@ -704,11 +708,16 @@ object DeepEmbedding
             case (p, Then(q, r)) => new Then(new Then(p, q), r)
             case _ => this
         }
-        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = 
+        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = q match
         {
-            p.codeGen
-            instrs += parsley.Pop
-            q.codeGen
+            case Pure(x) =>
+                p.codeGen
+                instrs += new parsley.Exchange(x)
+            // Might be able to do the same with a then/cont? (how many ways can a valid Pop; Push occur?)
+            case q => 
+                p.codeGen
+                instrs += parsley.Pop
+                q.codeGen
         }
         override def discard: Parsley[A] = p
         override def result: Parsley[B] = q
@@ -727,11 +736,16 @@ object DeepEmbedding
             case (Prev(r, q), p) => new Prev(r, new Prev(q, p))
             case _ => this
         }
-        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = 
+        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = p match
         {
-            p.codeGen
-            q.codeGen
-            instrs += parsley.Pop
+            case Pure(x) =>
+                q.codeGen
+                instrs += new parsley.Exchange(x)
+            // Might be able to do the same with a prev/cont? (how many ways can a valid Pop; Push occur?)
+            case p =>
+                p.codeGen
+                q.codeGen
+                instrs += parsley.Pop
         }
         override def discard: Parsley[B] = q
         override def result: Parsley[A] = p
@@ -876,5 +890,7 @@ object DeepEmbedding
         println(System.currentTimeMillis() - start)
         println(chainl1(char('1') <#> (_.toInt), char('+') #> ((x: Int) => (y: Int) => x + y)).pretty)
         println(runParser(many(char('a')), "aaaa"))
+        lazy val uhoh: Parsley[Unit] = char('a') >>= (_ => uhoh)
+        println(uhoh.pretty)
     }
 }
