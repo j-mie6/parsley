@@ -651,10 +651,15 @@ object DeepEmbedding
         private [Or] lazy val p = _p
         private [Or] lazy val q = _q
         override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[B] = new Or(p.optimised, q.optimised)
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[B] = p match
+        override def optimise(implicit label: UnsafeOption[String]): Parsley[B] = (p, q) match
         {
-            case p: Pure[_] => p
-            case p => if (p === q) p else this
+            // parsec semantics: pure x <|> p = pure x
+            case (p: Pure[_], _) => p
+            // alternative law: empty <|> p = p
+            case (_: Empty[_], q) => q
+            // alternative law: p <|> empty = p
+            case (p, _: Empty[_]) => p
+            case (p, q) => if (p === q) p else this
         }
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = 
         {
@@ -858,10 +863,13 @@ object DeepEmbedding
     }
     private [DeepEmbedding] final class FastFail[A](_p: =>Parsley[A], private [FastFail] val msggen: A => String) extends Parsley[A]
     {
-        private [FailFail] lazy val p = _p
+        private [FastFail] lazy val p = _p
         override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = new FastFail(p.optimised, msggen)
-        // TODO: pure optimisations to Fail can happen in here!
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[A] = this
+        override def optimise(implicit label: UnsafeOption[String]): Parsley[A] = p match
+        {
+            case Pure(x) => new Fail(msggen(x))
+            case _ => this
+        }
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit =
         {
             p.codeGen
@@ -872,8 +880,11 @@ object DeepEmbedding
     {
         private [Many] lazy val p = _p
         override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[List[A]] = new Many(p.optimised)
-        // TODO: Put checks in here to ensure no pure p which would REALLY cause problems
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[List[A]] = this
+        override def optimise(implicit label: UnsafeOption[String]): Parsley[List[A]] = p match
+        {
+            case _: Pure[A] => throw new Exception("many given parser which consumes no input")
+            case _ => this
+        }
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit =
         {
             val body = labels.fresh()
@@ -889,8 +900,11 @@ object DeepEmbedding
     {
         private [SkipMany] lazy val p = _p
         override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[Unit] = new SkipMany(p.optimised)
-        // TODO: Put checks in here to ensure no pure p which would REALLY cause problems
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[Unit] = this
+        override def optimise(implicit label: UnsafeOption[String]): Parsley[Unit] = p match
+        {
+            case _: Pure[A] => throw new Exception("skipMany given parser which consumes no input")
+            case _ => this
+        }
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit =
         {
             val body = labels.fresh()
@@ -908,8 +922,11 @@ object DeepEmbedding
         private [Chainl] lazy val p = _p
         private [Chainl] lazy val op = _op
         override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = new Chainl(p.optimised, op.optimised)
-        // TODO: Put checks in here to ensure no pure p which would REALLY cause problems
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[A] = this
+        override def optimise(implicit label: UnsafeOption[String]): Parsley[A] =  op match
+        {
+            case _: Pure[A] => throw new Exception("left chain given parser which consumes no input")
+            case _ => this
+        }
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = 
         {
             val body = labels.fresh()
