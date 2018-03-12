@@ -397,10 +397,30 @@ object DeepEmbedding
           * @return The result of the invokee if it passes the predicate
           */
         def filter(pred: A => Boolean): Parsley[A] = flatMap(x => if (pred(x)) pure(x) else empty)
+        /** Similar to `filter`, except the error message desired is also provided. This allows you to name the message
+          * itself.
+          * @param pred The predicate that is tested against the parser result
+          * @param msg The message used for the error if the input failed the check
+          * @return The result of the invokee if it passes the predicate
+          */
         def guard(pred: A => Boolean, msg: String): Parsley[A] = flatMap(x => if (pred(x)) pure(x) else fail(msg))
+        /** Similar to `filter`, except the error message desired is also provided. This allows you to name the message
+          * itself. The message is provided as a generator, which allows the user to avoid otherwise expensive
+          * computation.
+          * @param pred The predicate that is tested against the parser result
+          * @param msggen Generator function for error message, generating a message based on the result of the parser
+          * @return The result of the invokee if it passes the predicate
+          */
         def guard(pred: A => Boolean, msggen: A => String): Parsley[A] = flatMap(x => if (pred(x)) pure(x) else fail(msggen(x)))
+        /**Alias for guard combinator, taking a fixed message.*/
         def >?>(pred: A => Boolean, msg: String): Parsley[A] = guard(pred, msg)
+        /**Alias for guard combinator, taking a dynamic message generator.*/
         def >?>(pred: A => Boolean, msggen: A => String): Parsley[A] = guard(pred, msggen)
+        /** Same as `fail`, except allows for a message generated from the result of the failed parser. In essence, this
+          * is equivalent to `p >>= (x => fail(msggen(x))` but requires no expensive computations from the use of `>>=`.
+          * @param msggen The generator function for error message, creating a message based on the result of invokee
+          * @return A parser that fails if it succeeds, with the given generator used to produce the error message
+          */
         def !(msggen: A => String): Parsley[A] = new FastFail(p, msggen)
     }
     implicit final class LazyAppParsley[A, B](pf: =>Parsley[A => B])
