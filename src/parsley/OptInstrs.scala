@@ -1,6 +1,18 @@
 package parsley
 import scala.annotation.switch
 
+private [parsley] final class Perform[-A, +B](f: A => B) extends Instr
+{
+    private [Perform] val g = f.asInstanceOf[Any => B]
+    override def apply(ctx: Context): Unit =
+    {
+        ctx.exchangeStack(g(ctx.stack.head))
+        ctx.inc()
+    }
+    override def toString: String = "Perform(?)"
+    override def copy: Perform[A, B] = new Perform(f)
+}
+
 private [parsley] final class Exchange[A](private [Exchange] val x: A) extends Instr
 {
     override def apply(ctx: Context): Unit =
@@ -111,6 +123,12 @@ private [parsley] final class TabFastPerform(private [this] val g: Char => Any) 
 }
 
 // Extractor Objects
+private [parsley] object Perform
+{
+    @deprecated("Will be removed upon branch merge", "")
+    def unapply(self: Perform[_, _]): Option[Any => Any] = Some(self.g)
+}
+
 private [parsley] object Exchange
 {
     @deprecated("Will be removed upon branch merge", "")

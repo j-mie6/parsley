@@ -131,18 +131,6 @@ private [parsley] final class StringTok(private [StringTok] val s: String) exten
 }
 
 // Applicative Functors
-private [parsley] final class Perform[-A, +B](f: A => B) extends Instr
-{
-    private [Perform] val g = f.asInstanceOf[Any => B]
-    override def apply(ctx: Context): Unit =
-    {
-        ctx.exchangeStack(g(ctx.stack.head))
-        ctx.inc()
-    }
-    override def toString: String = "Perform(?)"
-    override def copy: Perform[A, B] = new Perform(f)
-}
-
 private [parsley] object Apply extends Instr
 {
     override def apply(ctx: Context): Unit =
@@ -164,6 +152,7 @@ private [parsley] final class DynSub[-A](f: A => Array[Instr]) extends Expecting
     {
         ctx.calls ::= new Frame(ctx.pc + 1, ctx.instrs)
         ctx.instrs = g(ctx.popStack())
+        ctx.depth += 1
         ctx.pc = 0
         if (expected != null)
         {
@@ -378,12 +367,6 @@ private [parsley] object CharTok
     }
     @deprecated("Will be removed upon branch merge", "")
     def unapply(self: CharTok): Option[Char] = Some(self.c)
-}
-
-private [parsley] object Perform
-{
-    @deprecated("Will be removed upon branch merge", "")
-    def unapply(self: Perform[_, _]): Option[Any => Any] = Some(self.g)
 }
 
 private [parsley] object Call
