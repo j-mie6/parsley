@@ -892,5 +892,8 @@ object DeepEmbedding
         println(runParser(many(char('a')), "aaaa"))
         lazy val uhoh: Parsley[Unit] = char('a') >>= (_ => uhoh)
         println(uhoh.pretty)
+        println((for (a <- char('a');
+                      b <- char('b'))
+                 yield (a, b)).pretty)
     }
 }
