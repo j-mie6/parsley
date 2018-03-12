@@ -184,7 +184,9 @@ object Parsley
         curLabel += 1
         label
     }
+    @deprecated("Will be removed on branch merge", "")
     def reset(): Unit = knotScope = Set.empty
+    @deprecated("Will be removed on branch merge", "")
     def knot[A](name: String, p_ : =>Parsley[A]): Parsley[A] =
     {
         lazy val p = p_

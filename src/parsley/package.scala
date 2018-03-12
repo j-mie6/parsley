@@ -26,18 +26,19 @@ package object parsley
         def copy: Instr
     }
 
+    @deprecated("Will be removed on branch merge", "")
     private [parsley] abstract class FwdJumpInstr extends Instr
     {
         val label: Int
         var lidx: Int = -1
-        def copy(lidx: Int = this.lidx): FwdJumpInstr =
+        @deprecated("Will be removed on branch merge", "") def copy(lidx: Int = this.lidx): FwdJumpInstr =
         {
             val j = copy_()
             j.lidx = lidx
             j
         }
         final override def copy: FwdJumpInstr = copy()
-        protected def copy_(): FwdJumpInstr
+        @deprecated("No longer used", "") protected def copy_(): FwdJumpInstr
     }
     
     private [parsley] abstract class ExpectingInstr(private [parsley] var expected: UnsafeOption[String] = null) extends Instr
