@@ -5,7 +5,7 @@ import scala.annotation.tailrec
 object ParsleyBench
 {
     import parsley.Parsley._
-    val liftab: Parsley[String] = lift2_[Char, Char, String]((x, y) => x.toString + y.toString, 'a', 'b')
+    val liftab: Parsley[String] = lift2[Char, Char, String]((x, y) => x.toString + y.toString, 'a', 'b')
     println(liftab)
     reset()
     val aconsb: Parsley[List[Char]] = 'a' <::> ('b' #> Nil)

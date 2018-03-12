@@ -6,141 +6,51 @@ import scala.collection.mutable
 import language.existentials
 import scala.annotation.tailrec
 
-// TODO Investigate effect of :+= instead of :+ for the buffers
-/**
-  * This is the class that encapsulates the act of parsing and running an object of this class with `runParser` will
-  * parse the string given as input to `runParser`.
-  *
-  * Note: In order to construct an object of this class you must use the combinators; the constructor itself is private.
-  *
-  * @author Jamie Willis
-  * @version 1
-  */
 class Parsley[+A] private [Parsley] (
-    // The instructions that shall be executed by this parser
     private [Parsley] final val instrs: mutable.Buffer[Instr],
-    // The subroutines currently collected by the compilation
     private [Parsley] final val subs: Map[String, mutable.Buffer[Instr]])
 {
-    /**
-      * Using this method signifies that the parser it is invoked on is impure and any optimisations which assume purity
-      * are disabled.
-      */
     @inline final def unsafe(): Unit = safe = false
-
-    // Core API
-    /**
-      * This is the traditional Monadic binding operator for parsers. When the invokee produces a value, the function
-      * `f` is used to produce a new parser that continued the computation.
-      *
-      * WARNING: There is significant overhead for using flatMap; if possible try to write parsers in an applicative
-      * style otherwise try and use the intrinsic parsers provided to replace the flatMap.
-      * @param f A function that produces the next parser
-      * @return The parser produces from the application of `f` on the result of the last parser
-      */
     final def flatMap[B](f: A => Parsley[B]): Parsley[B] = instrs.last match
     {
-        // return x >>= f == f x
         case Push(x: A @unchecked) if safe => new Parsley(instrs.init ++ f(x).instrs, subs)
         case _ => new Parsley(instrs :+ new DynSub[A](x => f(x).instrs.toArray), subs)
     }
-
-    /**
-      * This is the functorial map operation for parsers. When the invokee produces a value, this value is fed through
-      * the function `f`.
-      *
-      * WARNING: This is subject to aggressive optimisations assuming purity; the compiler is permitted to optimise such
-      * that the application of `f` actually only happens once at compile time. In order to preserve the behaviour of
-      * impure functions, consider using the `unsafe` method before map; `p.unsafe.map(f)`.
-      * @param f The mutator to apply to the result of previous parse
-      * @return A new parser which parses the same input as the invokee but mutated by function `f`
-      */
     final def map[B](f: A => B): Parsley[B] = instrs.last match
     {
-        // Pure application can be resolved at compile-time
         case Push(x: A @unchecked) if safe => new Parsley(instrs.init :+ new Push(f(x)), subs)
-        /*FIXME: MOVE*/case CharTok(c) if safe => new Parsley(instrs.init :+ CharTokFastPerform(c, f.asInstanceOf[Char => B]), subs)
-        /*FIXME: MOVE*/case CharTokFastPerform(c, g: (Char => A) @unchecked) if safe => new Parsley(instrs.init :+ CharTokFastPerform(c, g.andThen(f)), subs)
-        // p.map(f).map(g) = p.map(g . f) (functor law)
+        case CharTok(c) if safe => new Parsley(instrs.init :+ CharTokFastPerform(c, f.asInstanceOf[Char => B]), subs)
+        case CharTokFastPerform(c, g: (Char => A) @unchecked) if safe => new Parsley(instrs.init :+ CharTokFastPerform(c, g.andThen(f)), subs)
         case Perform(g: (Any => A) @unchecked) => new Parsley(instrs.init :+ new Perform(g.andThen(f)), subs)
         case _ => new Parsley(instrs :+ new Perform(f), subs)
     }
-
-    /**
-      * This is the parser that corresponds to a more optimal version of `this.map(_ => x => x) <*> p`. It performs
-      * the parse action of both parsers, in order, but discards the result of the invokee.
-      * @param p The parser whose result should be returned
-      * @return A new parser which first parses the invokee, then `p` and returns the result of `p`
-      */
     final def *>[B](p: Parsley[B]): Parsley[B] = instrs.last match
     {
-        // pure x *> p == p (consequence of applicative and functor laws)
         case _: Push[_] => new Parsley(instrs.init ++ p.instrs, subs ++ p.subs)
         case _ => new Parsley((instrs :+ Pop) ++ p.instrs, subs ++ p.subs)
     }
-
-    /**
-      * This is the parser that corresponds to a more optimal version of `this.map(x => _ => x) <*> p`. It performs
-      * the parse action of both parsers, in order, but discards the result of the second parser.
-      * @param p The parser who should be executed but then discarded
-      * @return A new parser which first parses the invokee, then `p` and returns the result of the invokee
-      */
     final def <*[B](p: Parsley[B]): Parsley[A] = p.instrs.last match
     {
-        // p <* pure x == p (consequence of applicative and functor laws)
         case _: Push[_] => new Parsley(instrs ++ p.instrs.init, subs ++ p.subs)
         case _ => new Parsley(instrs ++ p.instrs :+ Pop, subs ++ p.subs)
     }
-
-    /**
-      * This is the parser that corresponds to a more optimal version of either `this *> pure(x)` or `this.map(_ => x)`.
-      * It performs the parse action of the invokee but discards its result and then results the value `x` instead
-      * @param x The value to be returned after the execution of the invokee
-      * @return A new parser which first parses the invokee, then results `x`
-      */
-    final def #>[B](x: B): Parsley[B] = instrs.last match
-    {
-        // pure x #> y == pure y (consequence of applicative and functor laws)
-        case _: Push[_] => new Parsley(instrs.init :+ new Push(x), subs)
-        case _ => new Parsley(instrs :+ Pop :+ new Push(x), subs)
-    }
-
-    /**
-      * This is the Applicative application parser. The type of the invokee is `Parsley[A]` which is equivalent to some
-      * `Parsley[B => C]`. Assuming this is true then, given a `Parsley[B]`, we can produce a `Parsley[C]` by parsing
-      * the invokee to retrieve `f: B => C`, then parse `p` to receive `x: B` then return `f(x): C`.
-      *
-      * WARNING: `pure(f) <*> p` is subject to the same aggressive optimisations as `map`. When using impure functions
-      * the optimiser may decide to cache the result of the function execution, be sure to use `unsafe` in order to
-      * prevent these optimisations.
-      * @param p A parser of type B, where the invokee is B => C
-      * @param ev There must exist some evidence to prove that A == (B => C), this is implicit and can be ignored
-      * @return A new parser which parses the invokee, then `p` then applies the value returned by `p` to the function
-      *         returned by the invokee
-      */
+    final def #>[B](x: B): Parsley[B] = this *> pure(x)
     final def <*>[B, C](p: Parsley[B])(implicit ev: A => (B => C)): Parsley[C] = instrs.last match
     {
-        // pure(f) <*> p == f <#> p (consequence of applicative laws)
         case Push(f: (B => C) @unchecked) => p.instrs.last match
         {
-            // f <#> pure x == pure (f x) (applicative law)
             case Push(x: B @unchecked) if safe => new Parsley(instrs.init ++ p.instrs.init :+ new Push(f(x)), subs ++ p.subs)
-            // p.map(g).map(f) == p.map(f . g) (functor law)
-            case Perform(g: (Any => B) @unchecked) =>
-                new Parsley(instrs.init ++ p.instrs.init :+ new Perform(g.andThen(f)), subs ++ p.subs)
-            /*FIXME: MOVE*/case CharTokFastPerform(c, g: (Char => B) @unchecked) if safe => 
-                new Parsley(instrs.init ++ p.instrs.init :+ CharTokFastPerform(c, g.andThen(f)), subs)
+            case Perform(g: (Any => B) @unchecked) => new Parsley(instrs.init ++ p.instrs.init :+ new Perform(g.andThen(f)), subs ++ p.subs)
+            case CharTokFastPerform(c, g: (Char => B) @unchecked) if safe => new Parsley(instrs.init ++ p.instrs.init :+ CharTokFastPerform(c, g.andThen(f)), subs)
             case _ => new Parsley(instrs.init ++ p.instrs :+ new Perform(f), subs ++ p.subs)
         }
         case Perform(f: (Any => Any => Any) @unchecked) => p.instrs.last match
         {
-            // fusion law: (f <$> x) <*> pure y == (($y) . f) <$> x
             case Push(y) => new Parsley(instrs.init ++ p.instrs.init :+ new Perform((x: Any) => f(x)(y)), subs ++ p.subs)
             case _ => new Parsley(instrs ++ p.instrs :+ Apply, subs ++ p.subs)
         }
         case _ => p.instrs.last match
         {
-            // interchange law: u <*> pure y == ($y) <$> u
             case Push(x: B @unchecked) => new Parsley(instrs ++ p.instrs.init :+ new Perform((f: B => C) => f(x)), subs ++ p.subs)
             case _ => new Parsley(instrs ++ p.instrs :+ Apply, subs ++ p.subs)
         }
@@ -148,23 +58,12 @@ class Parsley[+A] private [Parsley] (
 
     final def <|>[A_ >: A](q: Parsley[A_]): Parsley[A_] = instrs match
     {
-        // pure results always succeed
         case mutable.Buffer(Push(_)) => new Parsley[A_](instrs, subs ++ q.subs)
-        // empty <|> q == q (alternative law)
         case mutable.Buffer(e: Empty) if e.expected.isEmpty => q
         case _ => q.instrs match
         {
-            // p <|> empty = p (alternative law)
             case mutable.Buffer(e: Empty) if e.expected.isEmpty => this
-            // p <|> p == p (this needs refinement to be label invariant, we want structure
             case instrs_ if instrs == instrs_ => this
-            // I imagine there is space for optimisation of common postfix and prefixes in choice
-            // this would allow for further optimisations with surrounding integration
-            // does it imply that there is a try scope wrapping p?
-            // NOTE: Prefix optimisation appears to be correct i.e.
-            //      (x *> y) <|> (x *> z) === x *> (y <|> z) without need of try
-            // NOTE: Postfix optimisation is also correct
-            //      (y *> x) <|> (z *> x) == (y <|> z) *> x, noting that y and z are necessarily impure but this always holds
             case _ =>
                 val handler = fresh()
                 val skip = fresh()
@@ -173,32 +72,24 @@ class Parsley[+A] private [Parsley] (
     }
 
     // Composite/Alias Combinators
-    /**This combinator is defined as `lift2(x => f => f(x), this, f)`. It is pure syntactic sugar.*/
-    @inline final def <**>[B](f: Parsley[A => B]): Parsley[B] = lift2[A, A=>B, B](x => f => f(x), this, f)
-    /**This combinator is an alias for `map`*/
+    @inline final def <**>[B](f: Parsley[A => B]): Parsley[B] = lift2[A, A=>B, B]((x, f) => f(x), this, f)
     @inline final def <#>[B](f: A => B): Parsley[B] = map(f)
-    /**This combinator is an alias for `map`, but the function lives on the lhs*/
-    @inline final def <#>:[B](f: A => B): Parsley[B] = map(f)
-    /**This combinator is an alias for `flatMap`*/
     @inline final def >>=[B](f: A => Parsley[B]): Parsley[B] = flatMap(f)
     @inline final def ?(msg: String): Parsley[A] = label(this, msg)
-    /**This combinator is an alias for `*>`*/
-    @inline final def >>[B](p: Parsley[B]): Parsley[B] = this *> p
-    /**This combinator is defined as `this <|> pure(x)`. It is pure syntactic sugar.*/
+    @inline final def !(msggen: A => String): Parsley[A] = new Parsley[A](instrs :+ new FastFail(msggen), subs)
     @inline final def </>[A_ >: A](x: A_): Parsley[A_] = this <|> pure(x)
-    /**This combinator is defined as `tryParse(this) <|> q`. It is pure syntactic sugar.*/
-    @inline final def <\>[A_ >: A](q: Parsley[A_]): Parsley[A_] = tryParse(this) <|> q
+    @inline final def <\>[A_ >: A](q: Parsley[A_]): Parsley[A_] = attempt(this) <|> q
 
     // Intrinsics
     // A note about intrinsics - by their very definition we can't optimise *to* them, so we need to optimise *around* them
-    /**This parser corresponds to lift2_(_::_, this ps) but is far more optimal. It should be preferred to the equivalent*/
     @inline final def <::>[A_ >: A](ps: Parsley[List[A_]]): Parsley[List[A_]] = new Parsley(instrs ++ ps.instrs :+ Cons, subs ++ ps.subs)
-    @inline final def <~>[A_ >: A, B](p: Parsley[B]): Parsley[(A_, B)] = lift2((x: A_) => (y: B) => (x, y), this, p)
-    @inline final def <|?>[B](p: Parsley[B], q: Parsley[B])(implicit ev: Parsley[A] => Parsley[Boolean]): Parsley[B] = choose(this, p, q)
+    @inline final def <~>[A_ >: A, B](p: Parsley[B]): Parsley[(A_, B)] = lift2((x: A_, y: B) => (x, y), this, p)
+    @deprecated("Renamed to `?:` to appear similar to the common ternary operator in C-like languages, as that is what it does", "")
+    @inline final def <|?>[B](p: Parsley[B], q: Parsley[B])(implicit ev: Parsley[A] => Parsley[Boolean]): Parsley[B] = this ?: (p, q)
     @inline final def withFilter(p: A => Boolean): Parsley[A] = this >>= (x => if (p(x)) pure(x) else empty)
     @inline final def filter(p: A => Boolean): Parsley[A] = withFilter(p)
     @inline final def guard(pred: A => Boolean, msg: String): Parsley[A] = flatMap(x => if (pred(x)) pure(x) else fail(msg))
-    @inline final def guard(pred: A => Boolean, msggen: A => String): Parsley[A] = flatMap(x => if (pred(x)) pure(x) else fail(pure(x), msggen))
+    @inline final def guard(pred: A => Boolean, msggen: A => String): Parsley[A] = flatMap(x => if (pred(x)) pure(x) else fail(msggen(x)))
     @inline final def >?>(pred: A => Boolean, msg: String): Parsley[A] = guard(pred, msg)
     @inline final def >?>(pred: A => Boolean, msggen: A => String): Parsley[A] = guard(pred, msggen)
 
@@ -225,7 +116,7 @@ object Parsley
 {
     def pure[A](a: A): Parsley[A] = new Parsley[A](mutable.Buffer(new Push(a)), Map.empty)
     def fail[A](msg: String): Parsley[A] = new Parsley[A](mutable.Buffer(new Fail(msg)), Map.empty)
-    def fail[A](msggen: Parsley[A], finaliser: A => String): Parsley[A] = new Parsley[A](msggen.instrs :+ new FastFail(finaliser), msggen.subs)
+    @deprecated("Deprecated in favour of `!`", "") def fail[A](msggen: Parsley[A], finaliser: A => String): Parsley[A] = new Parsley[A](msggen.instrs :+ new FastFail(finaliser), msggen.subs)
     def empty[A]: Parsley[A] = new Parsley[A](mutable.Buffer(new Empty), Map.empty)
     def unexpected[A](msg: String): Parsley[A] = new Parsley[A](mutable.Buffer(new Unexpected(msg)), Map.empty)
     def label[A](p: Parsley[A], msg: String): Parsley[A] = new Parsley[A](p.instrs.map
@@ -236,7 +127,8 @@ object Parsley
             e_
         case i => i
     }, p.subs)
-    def tryParse[A](p: Parsley[A]): Parsley[A] =
+    @deprecated("Deprecated in favour of `attempt`", "") def tryParse[A](p: Parsley[A]): Parsley[A] = attempt(p)
+    def attempt[A](p: Parsley[A]): Parsley[A] =
     {
         val handler = fresh()
         new Parsley(new PushHandler(handler) +: p.instrs :+ Label(handler) :+ Try, p.subs)
@@ -246,20 +138,18 @@ object Parsley
         val handler = fresh()
         new Parsley(new PushHandler(handler) +: p.instrs :+ Label(handler) :+ Look, p.subs)
     }
-    def notFollowedBy[A](p: Parsley[A]): Parsley[Unit] = (tryParse(p) >>= (c => unexpected("\"" + c.toString + "\""))) </> Unit
-    @inline def lift2[A, B, C](f: A => B => C, p: Parsley[A], q: Parsley[B]): Parsley[C] = p.map(f) <*> q
-    @inline def lift2_[A, B, C](f: (A, B) => C, p: Parsley[A], q: Parsley[B]): Parsley[C] = lift2((x: A) => (y: B) => f(x, y), p, q)
+    def notFollowedBy[A](p: Parsley[A]): Parsley[Unit] = (attempt(p) >>= (c => unexpected("\"" + c.toString + "\""))) </> Unit
+    @deprecated("To avoid clashes with uncurried `lift2`, this is deprecated, will be removed on branch merge", "")
+    @inline def lift2_[A, B, C](f: A => B => C, p: Parsley[A], q: Parsley[B]): Parsley[C] = p.map(f) <*> q
+    @inline def lift2[A, B, C](f: (A, B) => C, p: Parsley[A], q: Parsley[B]): Parsley[C] = p.map(f.curried) <*> q
     def char(c: Char): Parsley[Char] = new Parsley(mutable.Buffer(CharTok(c)), Map.empty)
     def satisfy(f: Char => Boolean): Parsley[Char] = new Parsley(mutable.Buffer(new Satisfies(f)), Map.empty)
     def string(s: String): Parsley[String] = new Parsley(mutable.Buffer(new StringTok(s)), Map.empty)
     def anyChar: Parsley[Char] = satisfy(_ => true)
     def eof: Parsley[Unit] = notFollowedBy(anyChar) ? "end of input"
-    @inline
-    def choose[A](b: Parsley[Boolean], p: Parsley[A], q: Parsley[A]): Parsley[A] =
-    {
-        b.flatMap(b => if (b) p else q)
-    }
-    
+    @deprecated("Deprecated in favour of `?:`, no wording required, may be confused with `p <|> q`", "")
+    @inline def choose[A](b: Parsley[Boolean], p: Parsley[A], q: Parsley[A]): Parsley[A] = b ?: (p, q)
+
     def many[A](p: Parsley[A]): Parsley[List[A]] =
     {
         val handler = fresh()
@@ -312,14 +202,20 @@ object Parsley
         }
     }
 
-    implicit class Knot[A](name: String)
+    @deprecated("Will be removed upon branch merge", "") implicit class Knot[A](name: String)
     {
-        @inline def <%>(p: =>Parsley[A]): Parsley[A] = knot(name, p)
+        @deprecated("Will be removed upon branch merge", "") @inline def <%>(p: =>Parsley[A]): Parsley[A] = knot(name, p)
     }
     
     implicit class Mapper[A, B](f: A => B)
     {
         @inline def <#>(p: Parsley[A]): Parsley[B] = p.map(f)
+    }
+
+    implicit class TernaryParser[A](pq: (Parsley[A], Parsley[A]))
+    {
+        val (p, q) = pq
+        @inline final def ?:(b: Parsley[Boolean]): Parsley[A] = b >>= ((b: Boolean) => if (b) p else q)
     }
 
     private [Parsley] def delabel(instrs_ : mutable.Buffer[Instr]): Array[Instr] =
@@ -371,31 +267,6 @@ object Parsley
         instrs.toArray
     }
 
-    //TODO This needs to be reinstated
-    /*def optimise[A](p: Parsley[A]): Parsley[A] =
-    {
-        val instrs = p.instrs
-        val subs = p.subs
-        @tailrec
-        // This might be very slow, it might be best to convert to vectors before we remove each element?
-        def process(instrs: Buffer[Instruction],
-                    labels: Map[Int, Int] = Map.empty,
-                    processed: Buffer[Instruction] = Buffer.empty): Buffer[Instruction] = instrs match
-        {
-            case instrs :+ Label(x) =>
-                val idx = instrs.size - x
-                process(instrs, labels + (x -> idx), processed)
-            case instrs :+ JumpGood(x) => process(instrs, labels, processed :+ JumpGood(labels(x)))
-            case instrs :+ InputCheck(handler) => process(instrs, labels, processed :+ InputCheck(labels(handler)))
-            case instrs :+ TryBegin(handler) => process(instrs, labels, processed :+ TryBegin(labels(handler)))
-            // This peephole is currently disabled, until we can retroactively repair jumps from peephole
-            case instrs :+ Pop :+ Push(x) => process(instrs, labels, processed :+ Exchange(x))
-            case instrs :+ instr => process(instrs, labels, processed :+ instr)
-            case Buffer() => processed.reverse
-        }
-        new Parsley(process(instrs), subs.mapValues(process(_)))
-    }*/
-
     @inline def chainl1[A](p: Parsley[A], op: Parsley[A => A => A]): Parsley[A] = chainl1_(p, op.map(flip[A, A, A]))
     @inline def chainl1_[A](p : Parsley[A], op: Parsley[A => A => A]): Parsley[A] = chainPost(p, op <*> p)
     def chainPost[A](p: Parsley[A], op: Parsley[A => A]): Parsley[A] =
@@ -409,11 +280,11 @@ object Parsley
     @inline def chainr1[A](p: Parsley[A], op: Parsley[A => A => A]): Parsley[A] =
     {
         //"chain" <%> (p <**> (op.map(flip[A, A, A]) <*> chainr1(p, op) </> identity))
-        chainPre(p, tryParse(p <**> op))
+        chainPre(p, attempt(p <**> op))
     }
     def chainPre[A](p: Parsley[A], op: Parsley[A => A]): Parsley[A] =
     {
-        lift2((xs: List[A=>A]) => (x: A) => xs.foldRight(x)((f, y) => f(y)), many(op), p)
+        lift2((xs: List[A=>A], x: A) => xs.foldRight(x)((f, y) => f(y)), many(op), p)
     }
 
     def main(args: Array[String]): Unit =
@@ -449,47 +320,211 @@ object DeepEmbedding
     // User API
     implicit final class LazyParsley[A](p: =>Parsley[A])
     {
+        /**
+          * This is the functorial map operation for parsers. When the invokee produces a value, this value is fed through
+          * the function `f`.
+          *
+          * WARNING: This is subject to aggressive optimisations assuming purity; the compiler is permitted to optimise such
+          * that the application of `f` actually only happens once at compile time. In order to preserve the behaviour of
+          * impure functions, consider using the `unsafe` method before map; `p.unsafe.map(f)`.
+          * @param f The mutator to apply to the result of previous parse
+          * @return A new parser which parses the same input as the invokee but mutated by function `f`
+          */
         def map[B](f: A => B): Parsley[B] = pure(f) <*> p
+        /**This combinator is an alias for `map`*/
         def <#>[B](f: A => B): Parsley[B] = map(f)
+        /**
+          * This is the traditional Monadic binding operator for parsers. When the invokee produces a value, the function
+          * `f` is used to produce a new parser that continued the computation.
+          *
+          * WARNING: There is significant overhead for using flatMap; if possible try to write parsers in an applicative
+          * style otherwise try and use the intrinsic parsers provided to replace the flatMap.
+          * @param f A function that produces the next parser
+          * @return The parser produces from the application of `f` on the result of the last parser
+          */
         def flatMap[B](f: A => Parsley[B]): Parsley[B] = new Bind(p, f)
+        /**This combinator is an alias for `flatMap`*/
         def >>=[B](f: A => Parsley[B]): Parsley[B] = flatMap(f)
-        def <*>[B, C](q: =>Parsley[B])(implicit ev: Parsley[A] => Parsley[B => C]): Parsley[C] = new App(p, q)
-        def <**>[B](pf: =>Parsley[A => B]): Parsley[B] = lift2[A, A=>B, B](x => f => f(x), p, pf)
+        /**This combinator is defined as `lift2((x, f) => f(x), this, f)`. It is pure syntactic sugar.*/
+        def <**>[B](pf: =>Parsley[A => B]): Parsley[B] = lift2[A, A=>B, B]((x, f) => f(x), p, pf)
+        /**
+          * This is the traditional Alternative choice operator for parsers. Following the parsec semantics precisely,
+          * this combinator first tries to parse the invokee. If this is successful, no further action is taken. If the
+          * invokee failed *without* consuming input, then `q` is parsed instead. If the invokee did parse input then the
+          * whole parser fails. This is done to prevent space leaks and to give good error messages. If this behaviour
+          * is not desired, use the `<\>` combinator (or `attempt(this) <|> q`) to parse `q` regardless of how the
+          * invokee failed.
+          * @param q The parser to run if the invokee failed without consuming input
+          * @return The value produced by the invokee if it was successful, or if it failed without consuming input, the
+          *         possible result of parsing q.
+          */
         def <|>[B >: A](q: =>Parsley[B]): Parsley[B] = new Or(p, q)
+        /**This combinator is defined as `this <|> pure(x)`. It is pure syntactic sugar.*/
         def </>[B >: A](x: B): Parsley[B] = this <|> pure(x)
+        /**This combinator is an alias for <|>.*/
         def orElse[B >: A](q: =>Parsley[B]): Parsley[B] = this <|> q
+        /**This combinator is an alias for </>.*/
         def getOrElse[B >: A](x: B): Parsley[B] = p </> x
+        /**
+          * This is the parser that corresponds to a more optimal version of `this.map(_ => x => x) <*> p`. It performs
+          * the parse action of both parsers, in order, but discards the result of the invokee.
+          * @param q The parser whose result should be returned
+          * @return A new parser which first parses the invokee, then `p` and returns the result of `p`
+          */
         def *>[A_ >: A, B](q: =>Parsley[B]) = new Then[A_, B](p, q)
+        /**
+          * This is the parser that corresponds to a more optimal version of `this.map(x => _ => x) <*> p`. It performs
+          * the parse action of both parsers, in order, but discards the result of the second parser.
+          * @param q The parser who should be executed but then discarded
+          * @return A new parser which first parses the invokee, then `p` and returns the result of the invokee
+          */
         def <*[B](q: =>Parsley[B]) = new Prev(p, q)
+        /**
+          * This is the parser that corresponds to `this *> pure(x)` or a more optimal version of `this.map(_ => x)`.
+          * It performs the parse action of the invokee but discards its result and then results the value `x` instead
+          * @param x The value to be returned after the execution of the invokee
+          * @return A new parser which first parses the invokee, then results `x`
+          */
         def #>[B](x: B): Parsley[B] = this *> pure(x)
+        /**This combinator is an alias for `*>`*/
+        def >>[B](q: Parsley[B]): Parsley[B] = *>(q)
+        /**This combinator is defined as `attempt(this) <|> q`. It is pure syntactic sugar.*/
+        def <\>[B >: A](q: Parsley[B]): Parsley[B] = attempt(p) <|> q
+        /**This parser corresponds to `lift2(_::_, this, ps)` but is far more optimal. It should be preferred to the equivalent*/
         def <::>[B >: A](ps: =>Parsley[List[B]]): Parsley[List[B]] = new Cons(p, ps)
-        def <~>[A_ >: A, B](q: =>Parsley[B]): Parsley[(A_, B)] = lift2((x: A_) => (y: B) => (x, y), p, q)
+        /**This parser corresponds to `lift2((_, _), this, q)`. For now it is sugar, but in future may be more optimal*/
+        def <~>[A_ >: A, B](q: =>Parsley[B]): Parsley[(A_, B)] = lift2[A_, B, (A_, B)]((_, _), p, q)
+        /**Sets the expected message for a parser. If the parser fails then `expected msg` will added to the error*/
         def ?(msg: String): Parsley[A] = new ErrorRelabel(p, msg)
+        /** Filter the value of a parser; if the value returned by the parser matches the predicate `pred` then the
+          * filter succeeded, otherwise the parser fails with an empty error
+          * @param pred The predicate that is tested against the parser result
+          * @return The result of the invokee if it passes the predicate
+          */
+        def filter(pred: A => Boolean): Parsley[A] = flatMap(x => if (pred(x)) pure(x) else empty)
+        /** Similar to `filter`, except the error message desired is also provided. This allows you to name the message
+          * itself.
+          * @param pred The predicate that is tested against the parser result
+          * @param msg The message used for the error if the input failed the check
+          * @return The result of the invokee if it passes the predicate
+          */
+        def guard(pred: A => Boolean, msg: String): Parsley[A] = flatMap(x => if (pred(x)) pure(x) else fail(msg))
+        /** Similar to `filter`, except the error message desired is also provided. This allows you to name the message
+          * itself. The message is provided as a generator, which allows the user to avoid otherwise expensive
+          * computation.
+          * @param pred The predicate that is tested against the parser result
+          * @param msggen Generator function for error message, generating a message based on the result of the parser
+          * @return The result of the invokee if it passes the predicate
+          */
+        def guard(pred: A => Boolean, msggen: A => String): Parsley[A] = flatMap(x => if (pred(x)) pure(x) else fail(msggen(x)))
+        /**Alias for guard combinator, taking a fixed message.*/
+        def >?>(pred: A => Boolean, msg: String): Parsley[A] = guard(pred, msg)
+        /**Alias for guard combinator, taking a dynamic message generator.*/
+        def >?>(pred: A => Boolean, msggen: A => String): Parsley[A] = guard(pred, msggen)
+        /** Same as `fail`, except allows for a message generated from the result of the failed parser. In essence, this
+          * is equivalent to `p >>= (x => fail(msggen(x))` but requires no expensive computations from the use of `>>=`.
+          * @param msggen The generator function for error message, creating a message based on the result of invokee
+          * @return A parser that fails if it succeeds, with the given generator used to produce the error message
+          */
+        def !(msggen: A => String): Parsley[A] = new FastFail(p, msggen)
     }
     implicit final class LazyAppParsley[A, B](pf: =>Parsley[A => B])
     {
+        /**
+          * This is the Applicative application parser. The type of the invokee is `Parsley[A => B]`. Then, given a
+          * `Parsley[A]`, we can produce a `Parsley[B]` by parsing the invokee to retrieve `f: A => B`, then parse `px`
+          * to receive `x: A` then return `f(x): B`.
+          *
+          * WARNING: `pure(f) <*> p` is subject to the same aggressive optimisations as `map`. When using impure functions
+          * the optimiser may decide to cache the result of the function execution, be sure to use `unsafe` in order to
+          * prevent these optimisations.
+          * @param px A parser of type A, where the invokee is A => B
+          * @return A new parser which parses the invokee, then `p` then applies the value returned by `p` to the function
+          *         returned by the invokee
+          */
         def <*>(px: =>Parsley[A]): Parsley[B] = new App(pf, px)
     }
     implicit final class LazyFlattenParsley[A](p: =>Parsley[Parsley[A]])
     {
-        def flatten: Parsley[A] = p.flatMap(identity[Parsley[A]])
+        /**This combinator is an alias for `flatMap(identity)`.*/
+        def flatten: Parsley[A] = p >>= identity[Parsley[A]]
     }
     implicit final class LazyMapParsley[A, B](f: A => B)
     {
+        /**This combinator is an alias for `map`*/
         def <#>(p: =>Parsley[A]): Parsley[B] = p.map(f)
+    }
+    implicit final class LazyChooseParsley[A](pq: =>(Parsley[A], Parsley[A]))
+    {
+        lazy val (p, q) = pq
+        /**
+          * This serves as a lifted if statement (hence its similar look to a C-style ternary expression).
+          * If the parser on the lhs of the operator it is true then execution continues with parser `p`, else
+          * control passes to parser `q`. `b ?: (p, q)` is equivalent to `b >>= (b => if (b) p else q)` but does not
+          * involve any expensive monadic operations. NOTE: due to Scala operator associativity laws, this is a
+          * right-associative operator, and must be properly bracketed, technically the invokee is the rhs...
+          * @param b The parser that yields the condition value
+          * @return The result of either `p` or `q` depending on the return value of the invokee
+          */
+        def ?:(b: =>Parsley[Boolean]): Parsley[A] = b >>= (b => if (b) p else q)
     }
     object Parsley
     {
+        /** This is the traditional applicative pure function (or monadic return) for parsers. It consumes no input and
+          * does not influence the state of the parser, but does return the value provided. Useful to inject pure values
+          * into the parsing process.
+          * @param x The value to be returned from the parser
+          * @return A parser which consumes nothing and returns `x`
+          */
         def pure[A](x: A): Parsley[A] = new Pure(x)
+        /** Reads a character from the input stream and returns it, else fails if the character is not found at the head
+          * of the stream.
+          * @param c The character to search for
+          * @return `c` if it can be found at the head of the input
+          */
         def char(c: Char): Parsley[Char] = new CharTok(c)
+        /** Reads a character from the head of the input stream if and only if it satisfies the given predicate. Else it
+          * fails without consuming the character.
+          * @param f The function to test the character on
+          * @return `c` if `f(c)` is true.
+          */
         def satisfies(f: Char => Boolean): Parsley[Char] = new Satisfies(f)
+        /** Reads a string from the input stream and returns it, else fails if the string is not found at the head
+          * of the stream.
+          * @param s The string to match against
+          * @return `s` if it can be found at the head of the input
+          */
         def string(s: String): Parsley[String] = new StringTok(s)
-        def lift2[A, B, C](f: A => B => C, p: =>Parsley[A], q: =>Parsley[B]): Parsley[C] = p.map(f) <*> q
+
+        /** Traditionally, `lift2` is defined as `lift2(f, p, q) = p.map(f) <*> q`. However, `f` is actually uncurried,
+          * so it's actually more exactly defined as; read `p` and then read `q` then provide their results to function
+          * `f`. This is designed to bring higher performance to any curried operations that are not themselves
+          * intrinsic.
+          * @param f The function to apply to the results of `p` and `q`
+          * @param p The first parser to parse
+          * @param q The second parser to parser
+          * @return `f(x, y)` where `x` is the result of `p` and `y` is the result of `q`.
+          */
+        def lift2[A, B, C](f: (A, B) => C, p: =>Parsley[A], q: =>Parsley[B]): Parsley[C] = p.map(f.curried) <*> q
+        /**This function is an alias for `_.flatten`. Provides namesake to Haskell.*/
         def join[A](p: =>Parsley[Parsley[A]]): Parsley[A] = p.flatten
+        /** Given a parser `p`, attempts to parse `p`. If the parser fails, then `attempt` ensures that no input was
+          * consumed. This allows for backtracking capabilities, disabling the implicit cut semantics offered by `<|>`.
+          * @param p The parser to run
+          * @return The result of `p`, or if `p` failed ensures the parser state was as it was on entry.
+          */
         def attempt[A](p: =>Parsley[A]): Parsley[A] = new Attempt(p)
+        @deprecated("Deprecated in favour of `attempt` as it is a clearer name", "")
         def tryParse[A](p: =>Parsley[A]): Parsley[A] = attempt(p)
         def lookAhead[A](p: =>Parsley[A]): Parsley[A] = new Look(p)
+        /**Alias for `p ? msg`.**/
         def label[A](p: Parsley[A], msg: String): Parsley[A] = p ? msg
+        def fail[A](msg: String): Parsley[A] = new Fail(msg)
+        def empty[A]: Parsley[A] = new Empty
+        // TODO We need to add a form with a msggen like fail, which can be used for notFollowedBy before intrinsic! (method?)
+        def unexpected[A](msg: String): Parsley[A] = new Unexpected(msg)
+        def many[A](p: =>Parsley[A]): Parsley[List[A]] = new Many(p)
+        def skipMany[A](p: =>Parsley[A]): Parsley[Unit] = new SkipMany(p)
         @inline def chainl1[A](p: =>Parsley[A], op: =>Parsley[A => A => A]): Parsley[A] = chainl1_(p, op.map(flip[A, A, A]))
         @inline def chainl1_[A](p: =>Parsley[A], op: =>Parsley[A => A => A]): Parsley[A] = chainPost(p, op <*> p)
         def chainPost[A](p: =>Parsley[A], op: =>Parsley[A => A]) = new Chainl(p, op)
@@ -507,12 +542,25 @@ object DeepEmbedding
         }
         def size: Int = current
     }
+    /**
+      * This is the class that encapsulates the act of parsing and running an object of this class with `runParser` will
+      * parse the string given as input to `runParser`.
+      *
+      * Note: In order to construct an object of this class you must use the combinators; the class itself is abstract
+      *
+      * @author Jamie Willis
+      * @version 1
+      */
     abstract class Parsley[+A]
     {
         final protected type InstrBuffer = ResizableArray[Instr]
         final protected type T = Any
         final protected type U = Any
         final protected type V = Any
+        /**
+          * Using this method signifies that the parser it is invoked on is impure and any optimisations which assume purity
+          * are disabled.
+          */
         final def unsafe(): Unit = safe = false
         final def pretty: String = instrs.mkString("; ")
         
@@ -549,14 +597,14 @@ object DeepEmbedding
             // TODO: This can now use mutable state :)
             @tailrec def applyLabels(srcs: Array[Instr], labels: Array[Int], dests: Array[Instr], n: Int, i: Int = 0, off: Int = 0): Unit = if (i < n) srcs(i + off) match
             {
-                case _: parsley.Label => applyLabels(srcs, labels, dests, n, i, off + 1)
-                case instr@parsley.PushHandler(l) => dests.update(i, new parsley.PushHandler(labels(l))); applyLabels(srcs, labels, dests, n, i + 1, off)
-                case instr@parsley.InputCheck(l)  => dests.update(i, new parsley.InputCheck(labels(l)));  applyLabels(srcs, labels, dests, n, i + 1, off)
-                case instr@parsley.JumpGood(l)    => dests.update(i, new parsley.JumpGood(labels(l)));    applyLabels(srcs, labels, dests, n, i + 1, off)
-                case instr@parsley.Many(l)        => dests.update(i, new parsley.Many(labels(l)));        applyLabels(srcs, labels, dests, n, i + 1, off)
-                case instr@parsley.SkipMany(l)    => dests.update(i, new parsley.SkipMany(labels(l)));    applyLabels(srcs, labels, dests, n, i + 1, off)
-                case instr@parsley.Chainl(l)      => dests.update(i, new parsley.Chainl(labels(l)));      applyLabels(srcs, labels, dests, n, i + 1, off)
-                case instr                        => dests.update(i, instr);                              applyLabels(srcs, labels, dests, n, i + 1, off)
+                case _: parsley.Label       => applyLabels(srcs, labels, dests, n, i, off + 1)
+                case parsley.PushHandler(l) => dests.update(i, new parsley.PushHandler(labels(l))); applyLabels(srcs, labels, dests, n, i + 1, off)
+                case parsley.InputCheck(l)  => dests.update(i, new parsley.InputCheck(labels(l)));  applyLabels(srcs, labels, dests, n, i + 1, off)
+                case parsley.JumpGood(l)    => dests.update(i, new parsley.JumpGood(labels(l)));    applyLabels(srcs, labels, dests, n, i + 1, off)
+                case parsley.Many(l)        => dests.update(i, new parsley.Many(labels(l)));        applyLabels(srcs, labels, dests, n, i + 1, off)
+                case parsley.SkipMany(l)    => dests.update(i, new parsley.SkipMany(labels(l)));    applyLabels(srcs, labels, dests, n, i + 1, off)
+                case parsley.Chainl(l)      => dests.update(i, new parsley.Chainl(labels(l)));      applyLabels(srcs, labels, dests, n, i + 1, off)
+                case instr                  => dests.update(i, instr);                              applyLabels(srcs, labels, dests, n, i + 1, off)
             }
             findLabels(instrsOversize, labelMapping, instrs.length)
             applyLabels(instrsOversize, labelMapping, instrs_, instrs_.length)
@@ -635,10 +683,15 @@ object DeepEmbedding
         private [Or] lazy val p = _p
         private [Or] lazy val q = _q
         override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[B] = new Or(p.optimised, q.optimised)
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[B] = p match
+        override def optimise(implicit label: UnsafeOption[String]): Parsley[B] = (p, q) match
         {
-            case p: Pure[_] => p
-            case p => if (p === q) p else this
+            // parsec semantics: pure x <|> p = pure x
+            case (p: Pure[_], _) => p
+            // alternative law: empty <|> p = p
+            case (_: Empty[_], q) => q
+            // alternative law: p <|> empty = p
+            case (p, _: Empty[_]) => p
+            case (p, q) => if (p === q) p else this
         }
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = 
         {
@@ -670,7 +723,7 @@ object DeepEmbedding
             // (q *> pure x) >>= f = f x = (pure x <* q) >>= f
             case Cont(q, p) => new Then(q, new Bind(p, f).optimise)
             // monad law 3: (m >>= g) >>= f = m >>= (\x -> g x >>= f) NOTE: this *could* help if g x ended with a pure, since this would be optimised out!
-            case Bind(m: Parsley[T] @unchecked, g: (T => A) @unchecked) => new Bind(m, ((x: T) => new Bind(g(x), f)))
+            case Bind(m: Parsley[T] @unchecked, g: (T => A) @unchecked) => new Bind(m, (x: T) => new Bind(g(x), f))
             // TODO: Consider pushing bind into or tree? may find optimisation opportunities
             case _ => this
         }
@@ -713,7 +766,6 @@ object DeepEmbedding
             case Pure(x) =>
                 p.codeGen
                 instrs += new parsley.Exchange(x)
-            // Might be able to do the same with a then/cont? (how many ways can a valid Pop; Push occur?)
             case q => 
                 p.codeGen
                 instrs += parsley.Pop
@@ -728,7 +780,7 @@ object DeepEmbedding
         private [Prev] lazy val p = _p
         private [Prev] lazy val q = _q
         override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = new Prev(p.optimised, q.optimised)
-        override def optimise(implicit label: UnsafeOption[String]) = (p, q) match
+        override def optimise(implicit label: UnsafeOption[String]): Parsley[A] = (p, q) match
         {
             // p <* pure _ == p
             case (p, _: Pure[_]) => p
@@ -741,7 +793,6 @@ object DeepEmbedding
             case Pure(x) =>
                 q.codeGen
                 instrs += new parsley.Exchange(x)
-            // Might be able to do the same with a prev/cont? (how many ways can a valid Pop; Push occur?)
             case p =>
                 p.codeGen
                 q.codeGen
@@ -778,6 +829,24 @@ object DeepEmbedding
             instrs += parsley.Label(handler)
             instrs += parsley.Look
         }
+    }
+    private [DeepEmbedding] final class Empty[A] extends Parsley[A]
+    {
+        override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = this
+        override def optimise(implicit label: UnsafeOption[String]): Parsley[A] = this
+        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = instrs += new parsley.Empty
+    }
+    private [DeepEmbedding] final class Fail[A](private [Fail] val msg: String) extends Parsley[A]
+    {
+        override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = this
+        override def optimise(implicit label: UnsafeOption[String]): Parsley[A] = this
+        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = instrs += new parsley.Fail(msg)
+    }
+    private [DeepEmbedding] final class Unexpected[A](private [Unexpected] val msg: String) extends Parsley[A]
+    {
+        override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = this
+        override def optimise(implicit label: UnsafeOption[String]): Parsley[A] = this
+        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = instrs += new parsley.Unexpected(msg)
     }
     private [DeepEmbedding] final class Fixpoint[A](_p: =>Parsley[A]) extends Parsley[A]
     {
@@ -824,16 +893,76 @@ object DeepEmbedding
             instrs += parsley.Cons
         }
     }
+    private [DeepEmbedding] final class FastFail[A](_p: =>Parsley[A], private [FastFail] val msggen: A => String) extends Parsley[A]
+    {
+        private [FastFail] lazy val p = _p
+        override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = new FastFail(p.optimised, msggen)
+        override def optimise(implicit label: UnsafeOption[String]): Parsley[A] = p match
+        {
+            case Pure(x) => new Fail(msggen(x))
+            case _ => this
+        }
+        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit =
+        {
+            p.codeGen
+            instrs += new parsley.FastFail(msggen)
+        }
+    }
+    private [DeepEmbedding] final class Many[A](_p: =>Parsley[A]) extends Parsley[List[A]]
+    {
+        private [Many] lazy val p = _p
+        override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[List[A]] = new Many(p.optimised)
+        override def optimise(implicit label: UnsafeOption[String]): Parsley[List[A]] = p match
+        {
+            case _: Pure[A] => throw new Exception("many given parser which consumes no input")
+            case _ => this
+        }
+        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit =
+        {
+            val body = labels.fresh()
+            val handler = labels.fresh()
+            instrs += new parsley.InputCheck(handler)
+            instrs += parsley.Label(body)
+            p.codeGen
+            instrs += parsley.Label(handler)
+            instrs += new parsley.Many(body)
+        }
+    }
+    private [DeepEmbedding] final class SkipMany[A](_p: =>Parsley[A]) extends Parsley[Unit]
+    {
+        private [SkipMany] lazy val p = _p
+        override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[Unit] = new SkipMany(p.optimised)
+        override def optimise(implicit label: UnsafeOption[String]): Parsley[Unit] = p match
+        {
+            case _: Pure[A] => throw new Exception("skipMany given parser which consumes no input")
+            case _ => this
+        }
+        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit =
+        {
+            val body = labels.fresh()
+            val handler = labels.fresh()
+            instrs += new parsley.InputCheck(handler)
+            instrs += parsley.Label(body)
+            p.codeGen
+            instrs += parsley.Label(handler)
+            instrs += new parsley.SkipMany(body)
+            instrs += new parsley.Push(())
+        }
+    }
     private [DeepEmbedding] final class Chainl[A](_p: =>Parsley[A], _op: =>Parsley[A => A]) extends Parsley[A]
     {
         private [Chainl] lazy val p = _p
         private [Chainl] lazy val op = _op
         override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = new Chainl(p.optimised, op.optimised)
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[A] = this
+        override def optimise(implicit label: UnsafeOption[String]): Parsley[A] =  op match
+        {
+            case _: Pure[A => A] => throw new Exception("left chain given parser which consumes no input")
+            case _ => this
+        }
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = 
         {
-            val body = labels.fresh
-            val handler = labels.fresh
+            val body = labels.fresh()
+            val handler = labels.fresh()
             p.codeGen
             instrs += new parsley.InputCheck(handler)
             instrs += parsley.Label(body)
@@ -854,34 +983,39 @@ object DeepEmbedding
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = throw new Exception("Error relabelling should not be in code gen!")
     }
     
-    private [DeepEmbedding] object Pure      { def unapply[A](self: Pure[A]): Option[A] = Some(self.x) }
-    private [DeepEmbedding] object App       { def unapply[A, B](self: App[A, B]): Option[(Parsley[A=>B], Parsley[A])] = Some((self.pf, self.px)) }
-    private [DeepEmbedding] object Or        { def unapply[A, B >: A](self: Or[A, B]): Option[(Parsley[A], Parsley[B])] = Some((self.p, self.q)) }
-    private [DeepEmbedding] object Bind      { def unapply[A, B](self: Bind[A, B]): Option[(Parsley[A], A => Parsley[B])] = Some((self.p, self.f)) }
-    private [DeepEmbedding] object Satisfies { def unapply(self: Satisfies): Option[Char => Boolean] = Some(self.f) }
-    private [DeepEmbedding] object Cont      { def unapply[A, B](self: Cont[A, B]): Option[(Parsley[A], Parsley[B])] = Some((self.discard, self.result)) }
-    private [DeepEmbedding] object Then      { def unapply[A, B](self: Then[A, B]): Option[(Parsley[A], Parsley[B])] = Some((self.p, self.q)) }
-    private [DeepEmbedding] object Prev      { def unapply[A, B](self: Prev[B, A]): Option[(Parsley[A], Parsley[B])] = Some((self.p, self.q)) }
-    private [DeepEmbedding] object Attempt   { def unapply[A](self: Attempt[A]): Option[Parsley[A]] = Some(self.p) }
-    private [DeepEmbedding] object Look      { def unapply[A](self: Look[A]): Option[Parsley[A]] = Some(self.p) }
-    private [DeepEmbedding] object CharTok   { def unapply(self: CharTok): Option[Char] = Some(self.c) }
-    private [DeepEmbedding] object StringTok { def unapply(self: StringTok): Option[String] = Some(self.s) }
-    private [DeepEmbedding] object Cons      { def unapply[A, B >: A](self: Cons[A, B]): Option[(Parsley[A], Parsley[List[B]])] = Some((self.p, self.ps)) }
-    private [DeepEmbedding] object Chainl    { def unapply[A](self: Chainl[A]): Option[(Parsley[A], Parsley[A => A])] = Some((self.p, self.op)) }
+    private [DeepEmbedding] object Pure       { def unapply[A](self: Pure[A]): Option[A] = Some(self.x) }
+    private [DeepEmbedding] object App        { def unapply[A, B](self: App[A, B]): Option[(Parsley[A=>B], Parsley[A])] = Some((self.pf, self.px)) }
+    private [DeepEmbedding] object Or         { def unapply[A, B >: A](self: Or[A, B]): Option[(Parsley[A], Parsley[B])] = Some((self.p, self.q)) }
+    private [DeepEmbedding] object Bind       { def unapply[A, B](self: Bind[A, B]): Option[(Parsley[A], A => Parsley[B])] = Some((self.p, self.f)) }
+    private [DeepEmbedding] object Satisfies  { def unapply(self: Satisfies): Option[Char => Boolean] = Some(self.f) }
+    private [DeepEmbedding] object Cont       { def unapply[A, B](self: Cont[A, B]): Option[(Parsley[A], Parsley[B])] = Some((self.discard, self.result)) }
+    private [DeepEmbedding] object Then       { def unapply[A, B](self: Then[A, B]): Option[(Parsley[A], Parsley[B])] = Some((self.p, self.q)) }
+    private [DeepEmbedding] object Prev       { def unapply[A, B](self: Prev[B, A]): Option[(Parsley[A], Parsley[B])] = Some((self.p, self.q)) }
+    private [DeepEmbedding] object Attempt    { def unapply[A](self: Attempt[A]): Option[Parsley[A]] = Some(self.p) }
+    private [DeepEmbedding] object Look       { def unapply[A](self: Look[A]): Option[Parsley[A]] = Some(self.p) }
+    private [DeepEmbedding] object Fail       { def unapply[A](self: Fail[A]): Option[String] = Some(self.msg) }
+    private [DeepEmbedding] object Unexpected { def unapply[A](self: Unexpected[A]): Option[String] = Some(self.msg) }
+    private [DeepEmbedding] object CharTok    { def unapply(self: CharTok): Option[Char] = Some(self.c) }
+    private [DeepEmbedding] object StringTok  { def unapply(self: StringTok): Option[String] = Some(self.s) }
+    private [DeepEmbedding] object Cons       { def unapply[A, B >: A](self: Cons[A, B]): Option[(Parsley[A], Parsley[List[B]])] = Some((self.p, self.ps)) }
+    private [DeepEmbedding] object FastFail   { def unapply[A](self: FastFail[A]): Option[(Parsley[A], A=>String)] = Some((self.p, self.msggen)) }
+    private [DeepEmbedding] object Many       { def unapply[A](self: Many[A]): Option[Parsley[A]] = Some(self.p) }
+    private [DeepEmbedding] object SkipMany   { def unapply[A](self: SkipMany[A]): Option[Parsley[A]] = Some(self.p) }
+    private [DeepEmbedding] object Chainl     { def unapply[A](self: Chainl[A]): Option[(Parsley[A], Parsley[A => A])] = Some((self.p, self.op)) }
     
     def main(args: Array[String]): Unit =
     {
-        def many[A](p: Parsley[A]): Parsley[List[A]] =
+        def many_[A](p: Parsley[A]): Parsley[List[A]] =
         {
             lazy val manyp: Parsley[List[A]] = (p <::> manyp) </> Nil
             manyp
         }
         lazy val p: Parsley[Int] = p.map((x: Int) => x+1)
         println(p.pretty)
-        println(many(p).pretty)
+        println(many_(p).pretty)
         val q: Parsley[Char] = char('a') <|> char('b')
         println((q <|> q <|> q <|> q).pretty)
-        println(((char('a') >>= ((c: Char) => pure((x: Int) => x + 1))) <*> pure(7)).pretty)
+        println(((char('a') >>= (_ => pure((x: Int) => x + 1))) <*> pure(7)).pretty)
         val start = System.currentTimeMillis()
         for (_ <- 0 to 1000000)
         {
@@ -895,5 +1029,11 @@ object DeepEmbedding
         println((for (a <- char('a');
                       b <- char('b'))
                  yield (a, b)).pretty)
+        try
+        {
+            many(pure(5)).pretty
+            println("MANY ALLOWED NO-INPUT PARSER")
+        }
+        catch { case _: Throwable => }
     }
 }
