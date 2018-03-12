@@ -505,7 +505,7 @@ object DeepEmbedding
           * @param q The second parser to parser
           * @return `f(x, y)` where `x` is the result of `p` and `y` is the result of `q`.
           */
-        def lift2[A, B, C](f: (A, B) => C, p: =>Parsley[A], q: =>Parsley[B]): Parsley[C] = p.map(f.curried) <*> q
+        def lift2[A, B, C](f: (A, B) => C, p: =>Parsley[A], q: =>Parsley[B]): Parsley[C] = new Lift(f, p, q)
         /**This function is an alias for `_.flatten`. Provides namesake to Haskell.*/
         def join[A](p: =>Parsley[Parsley[A]]): Parsley[A] = p.flatten
         /** Given a parser `p`, attempts to parse `p`. If the parser fails, then `attempt` ensures that no input was
@@ -649,6 +649,7 @@ object DeepEmbedding
             case (App(App(Pure(f: (T => U => A => B) @unchecked), py: Parsley[T]), pz: Parsley[U]), Pure(x)) => new App (new App(new Pure((y: T) => (z: U) => f(y)(z)(x)), py), pz)
             // functor law: fmap f (fmap g p) == fmap (f . g) p where fmap f p = pure f <*> p from applicative
             case (Pure(f), App(Pure(g: (T => A) @unchecked), p: Parsley[T])) => new App(new Pure(f.compose(g)), p)
+            // TODO: functor law with lift2!
             /* RE-ASSOCIATION LAWS */
             // re-association law 1: (q *> pf) <*> px = q *> (pf <*> px)
             case (Then(q, pf), px) => new Then(q, new App(pf, px).optimise)
@@ -712,18 +713,19 @@ object DeepEmbedding
         override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[B] = new Bind(p.optimised, f)
         override def optimise(implicit label: UnsafeOption[String]): Parsley[B] = p match
         {
+            // TODO: We need to try and identify the fixpoints in the optimised binds, so we can remove the call instructions
             // monad law 1: pure x >>= f = f x
-            case Pure(x) => f(x) // XXX: Warning: Do NOT optimise rhs, presence of unchecked fixpoints!
+            case Pure(x) => new Fixpoint(f(x).optimise)
             // char/string x = char/string x *> pure x and monad law 1
-            case p@CharTok(c) => new Then(p, f(c.asInstanceOf[A])) // XXX: Warning: Do NOT optimise rhs, presence of unchecked fixpoints!
-            case p@StringTok(s) => new Then(p, f(s.asInstanceOf[A])) // XXX: Warning: Do NOT optimise rhs, presence of unchecked fixpoints!
+            case p@CharTok(c) => new Then(p, new Fixpoint(f(c.asInstanceOf[A]).optimise))
+            case p@StringTok(s) => new Then(p, new Fixpoint(f(s.asInstanceOf[A]).optimise))
             // consequence of monad laws 1, 3 and p *> q = p >>= \_ -> q
             // possible consequence of re-association law 3: pure x <* p = p *> pure x
             // possible consequence of char/string unpack: char/string x = char/string x *> pure x
             // (q *> pure x) >>= f = f x = (pure x <* q) >>= f
             case Cont(q, p) => new Then(q, new Bind(p, f).optimise)
             // monad law 3: (m >>= g) >>= f = m >>= (\x -> g x >>= f) NOTE: this *could* help if g x ended with a pure, since this would be optimised out!
-            case Bind(m: Parsley[T] @unchecked, g: (T => A) @unchecked) => new Bind(m, (x: T) => new Bind(g(x), f))
+            case Bind(m: Parsley[T] @unchecked, g: (T => A) @unchecked) => new Bind(m, (x: T) => new Bind(g(x), f).optimise)
             // TODO: Consider pushing bind into or tree? may find optimisation opportunities
             case _ => this
         }
@@ -756,17 +758,20 @@ object DeepEmbedding
         override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[B] = new Then(p.optimised, q.optimised)
         override def optimise(implicit label: UnsafeOption[String]): Parsley[B] = (p, q) match
         {
+            // TODO: Consider char(c) *> char(d) => string(cd) *> pure(d) in some form!
+            // pure _ *> p = p
             case (_: Pure[_], q) => q
             // re-association - normal form of Then chain is to have result at the top of tree
-            case (p, Then(q, r)) => new Then(new Then(p, q), r)
+            case (p, Then(q, r)) => new Then(new Then(p, q).optimise, r)
             case _ => this
         }
-        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = q match
+        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = (p, q) match
         {
-            case Pure(x) =>
+            case (CharTok(c), Pure(x)) => instrs += new parsley.CharTokFastPerform(c, _ => x)
+            case (p, Pure(x)) =>
                 p.codeGen
                 instrs += new parsley.Exchange(x)
-            case q => 
+            case (p, q) =>
                 p.codeGen
                 instrs += parsley.Pop
                 q.codeGen
@@ -782,18 +787,20 @@ object DeepEmbedding
         override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = new Prev(p.optimised, q.optimised)
         override def optimise(implicit label: UnsafeOption[String]): Parsley[A] = (p, q) match
         {
+            // TODO: Consider char(c) <* char(d) => string(cd) *> pure(c) in some form!
             // p <* pure _ == p
             case (p, _: Pure[_]) => p
             // re-association - normal form of Prev chain is to have result at the top of tree
-            case (Prev(r, q), p) => new Prev(r, new Prev(q, p))
+            case (Prev(r, q), p) => new Prev(r, new Prev(q, p).optimise)
             case _ => this
         }
-        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = p match
+        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = (p, q) match
         {
-            case Pure(x) =>
+            case (Pure(x), CharTok(c)) => instrs += new parsley.CharTokFastPerform(c, _ => x)
+            case (Pure(x), q) =>
                 q.codeGen
                 instrs += new parsley.Exchange(x)
-            case p =>
+            case (p, q) =>
                 p.codeGen
                 q.codeGen
                 instrs += parsley.Pop
@@ -880,11 +887,29 @@ object DeepEmbedding
         override def optimise(implicit label: UnsafeOption[String]): Parsley[String] = this
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = instrs += generate(new parsley.StringTok(s))
     }
+    private [DeepEmbedding] final class Lift[A, B, C](private [Lift] val f: (A, B) => C,
+                                                      _p: =>Parsley[A], _q: =>Parsley[B]) extends Parsley[C]
+    {
+        private [Lift] lazy val p = _p
+        private [Lift] lazy val q = _q
+        override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[C] = new Lift(f, p.optimised, q.optimised)
+        // TODO: Perform applicative fusion optimisations
+        override def optimise(implicit label: UnsafeOption[String]): Parsley[C] = this
+        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit =
+        {
+            p.codeGen
+            q.codeGen
+            instrs += new parsley.Lift(f)
+        }
+    }
     private [DeepEmbedding] final class Cons[A, +B >: A](_p: =>Parsley[A], _ps: =>Parsley[List[B]]) extends Parsley[List[B]]
     {
         private [Cons] lazy val p = _p
         private [Cons] lazy val ps = _ps
         override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[List[B]] = new Cons(p.optimised, ps.optimised)
+        // TODO: Right associative normal form
+        // TODO: Consider merging char ::s into strings?
+        // TODO: Perform applicative fusion
         override def optimise(implicit label: UnsafeOption[String]): Parsley[List[B]] = this
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit =
         {
@@ -997,6 +1022,7 @@ object DeepEmbedding
     private [DeepEmbedding] object Unexpected { def unapply[A](self: Unexpected[A]): Option[String] = Some(self.msg) }
     private [DeepEmbedding] object CharTok    { def unapply(self: CharTok): Option[Char] = Some(self.c) }
     private [DeepEmbedding] object StringTok  { def unapply(self: StringTok): Option[String] = Some(self.s) }
+    private [DeepEmbedding] object Lift       { def unapply[A, B, C](self: Lift[A, B, C]): Option[((A, B) => C, Parsley[A], Parsley[B])] = Some((self.f, self.p, self.q))}
     private [DeepEmbedding] object Cons       { def unapply[A, B >: A](self: Cons[A, B]): Option[(Parsley[A], Parsley[List[B]])] = Some((self.p, self.ps)) }
     private [DeepEmbedding] object FastFail   { def unapply[A](self: FastFail[A]): Option[(Parsley[A], A=>String)] = Some((self.p, self.msggen)) }
     private [DeepEmbedding] object Many       { def unapply[A](self: Many[A]): Option[Parsley[A]] = Some(self.p) }

@@ -2,6 +2,19 @@ package parsley
 
 import scala.collection.mutable.ListBuffer
 
+private [parsley] final class Lift[A, B, C](private [Lift] val f: (A, B) => C) extends Instr
+{
+    private [this] val g = f.asInstanceOf[(Any, Any) => C]
+    final override def apply(ctx: Context): Unit =
+    {
+        val y = ctx.popStack()
+        ctx.exchangeStack(g(ctx.stack.head, y))
+        ctx.inc()
+    }
+    override def toString: String = "Lift2(f)"
+    override def copy: Lift[A, B, C] = new Lift(f)
+}
+
 private [parsley] object Cons extends Instr
 {
     final override def apply(ctx: Context): Unit =
@@ -110,20 +123,24 @@ private [parsley] final class Chainr(private [Chainr] val label: Int) extends In
 // Extractor Objects
 private [parsley] object Many
 {
+    @deprecated("Will be removed upon branch merge", "")
     def unapply(self: Many): Option[Int] = Some(self.label)
 }
 
 private [parsley] object SkipMany
 {
+    @deprecated("Will be removed upon branch merge", "")
     def unapply(self: SkipMany): Option[Int] = Some(self.label)
 }
 
 private [parsley] object Chainl
 {
+    @deprecated("Will be removed upon branch merge", "")
     def unapply(self: Chainl): Option[Int] = Some(self.label)
 }
 
 private [parsley] object Chainr
 {
+    @deprecated("Will be removed upon branch merge", "")
     def unapply(self: Chainr): Option[Int] = Some(self.label)
 }

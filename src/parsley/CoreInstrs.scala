@@ -1,6 +1,7 @@
 package parsley
 
 import language.existentials
+import scala.annotation.switch
 
 // Stack Manipulators
 private [parsley] final class Push[A](private [Push] val x: A) extends Instr
@@ -57,15 +58,21 @@ private [parsley] class CharTok(protected final val c: Char) extends ExpectingIn
     override def copy_ : ExpectingInstr = new CharTok(c)
 }
 
-// FIXME: Doesn't adjust the position!
 private [parsley] final class Satisfies(f: Char => Boolean) extends ExpectingInstr
 {
     override def apply(ctx: Context): Unit =
     {
         if (ctx.offset < ctx.inputsz && f(ctx.input(ctx.offset)))
         {
-            ctx.pushStack(ctx.input(ctx.offset))
+            val c = ctx.input(ctx.offset)
+            ctx.pushStack(c)
             ctx.offset += 1
+            (c: @switch) match
+            {
+                case '\n' => ctx.line += 1; ctx.col = 0
+                case '\t' => ctx.col += 4 - ((ctx.col - 1) & 3)
+                case _ => ctx.col += 1
+            }
             ctx.inc()
         }
         else ctx.fail(expected)
@@ -74,35 +81,47 @@ private [parsley] final class Satisfies(f: Char => Boolean) extends ExpectingIns
     override def copy_ : ExpectingInstr = new Satisfies(f)
 }
 
-// FIXME: Doesn't adjust the position!
 private [parsley] final class StringTok(private [StringTok] val s: String) extends ExpectingInstr("\"" + s + "\"")
 {
     private [this] val cs = s.toCharArray
     private [this] val sz = cs.length
-    private def matches(input: Array[Char], unread: Int, offset: Int): Boolean =
+    private def matches(input: Array[Char], unread: Int, offset: Int, line: Int, col: Int): (Boolean, UnsafeOption[(Int, Int)]) =
     {
         val sz = this.sz
-        if (unread < sz) false
+        if (unread < sz) (false, null)
         else
         {
             var i = offset
             var j = 0
+            var line_ = line
+            var col_ = col
             val cs = this.cs
             while (j < sz)
             {
-                if (input(i) != cs(j)) return false
+                val c = cs(j)
+                if (input(i) != c) return (false, null)
+                (c: @switch) match
+                {
+                    case '\n' => line_ += 1; col_ = 0
+                    case '\t' => col_ += 4 - ((col_ - 1) & 3)
+                    case _ => col_ += 1
+                }
                 i += 1
                 j += 1
             }
-            true
+            (true, (line_, col_))
         }
     }
     override def apply(ctx: Context): Unit =
     {
-        if (matches(ctx.input, ctx.inputsz - ctx.offset, ctx.offset))
+        val m = matches(ctx.input, ctx.inputsz - ctx.offset, ctx.offset, ctx.line, ctx.col)
+        if (m._1)
         {
+            val (line, col) = m._2
             ctx.pushStack(s)
             ctx.offset += sz
+            ctx.col = col
+            ctx.line = line
             ctx.inc()
         }
         else ctx.fail(expected)
@@ -345,54 +364,48 @@ private [parsley] final class JumpGood(override val label: Int) extends FwdJumpI
 // Extractor Objects
 private [parsley] object Push
 {
+    @deprecated("Will be removed upon branch merge", "")
     def unapply(self: Push[_]): Option[Any] = Some(self.x)
 }
 
 private [parsley] object CharTok
 {
-    import scala.annotation.switch
     def apply(c: Char): CharTok = (c: @switch) match
     {
         case '\n' => new Newline
         case '\t' => new Tab
         case _ => new CharTok(c)
     }
+    @deprecated("Will be removed upon branch merge", "")
     def unapply(self: CharTok): Option[Char] = Some(self.c)
 }
 
-//private [parsley] object Satisfies
-
-//private [parsley] object StringTok
-
 private [parsley] object Perform
 {
+    @deprecated("Will be removed upon branch merge", "")
     def unapply(self: Perform[_, _]): Option[Any => Any] = Some(self.g)
 }
 
-//private [parsley] object DynSub
-
 private [parsley] object Call
 {
+    @deprecated("Will be removed upon branch merge", "")
     def unapply(self: Call): Option[String] = Some(self.x)
 }
 
-//private [parsley] object Fail
-
-//private [parsley] object Unexpected
-
-//private [parsley] object Empty
-
 private [parsley] object PushHandler
 {
+    @deprecated("Will be removed upon branch merge", "")
     def unapply(self: PushHandler): Option[Int] = Some(self.label)
 }
 
 private [parsley] object InputCheck
 {
+    @deprecated("Removed after deep merge", "")
     def unapply(self: InputCheck): Option[Int] = Some(self.label)
 }
 
 private [parsley] object JumpGood
 {
+    @deprecated("Removed after deep merge", "")
     def unapply(self: JumpGood): Option[Int] = Some(self.label)
 }

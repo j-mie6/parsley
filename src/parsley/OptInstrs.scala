@@ -1,4 +1,5 @@
 package parsley
+import scala.annotation.switch
 
 private [parsley] final class Exchange[A](private [Exchange] val x: A) extends Instr
 {
@@ -113,22 +114,24 @@ private [parsley] final class TabFastPerform(private [this] val g: Char => Any) 
 // Extractor Objects
 private [parsley] object Exchange
 {
+    @deprecated("Will be removed upon branch merge", "")
     def unapply[A](self: Exchange[A]): Option[A] = Some(self.x)
 }
 
 private [parsley] object FastFail
 {
+    @deprecated("Will be removed upon branch merge", "")
     def unapply[A](self: FastFail[A]): Option[A => String] = Some(self.msggen)
 }
 
 private [parsley] object CharTokFastPerform
 {
-    import scala.annotation.switch
     def apply[A >: Char, B](c: Char, f: A => B): CharTokFastPerform = (c: @switch) match
     {
         case '\n' => new NewlineFastPerform(f)
         case '\t' => new TabFastPerform(f)
         case _ => new CharTokFastPerform(c, f)
     }
+    @deprecated("Will be removed upon branch merge", "")
     def unapply(self: CharTokFastPerform): Option[(Char, Char=>Any)] = Some((self.c, self.f))
 }
