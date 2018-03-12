@@ -84,9 +84,8 @@ class Parsley[+A] private [Parsley] (
     // A note about intrinsics - by their very definition we can't optimise *to* them, so we need to optimise *around* them
     @inline final def <::>[A_ >: A](ps: Parsley[List[A_]]): Parsley[List[A_]] = new Parsley(instrs ++ ps.instrs :+ Cons, subs ++ ps.subs)
     @inline final def <~>[A_ >: A, B](p: Parsley[B]): Parsley[(A_, B)] = lift2((x: A_, y: B) => (x, y), this, p)
-    @deprecated("Renamed to `?:>` to appear similar to the common ternary operator in C-like languages, as that is what it does", "")
-    @inline final def <|?>[B](p: Parsley[B], q: Parsley[B])(implicit ev: Parsley[A] => Parsley[Boolean]): Parsley[B] = this ?:> (p, q)
-    @inline final def ?:>[B](p: Parsley[B], q: Parsley[B])(implicit ev: Parsley[A] => Parsley[Boolean]): Parsley[B] = ev(this) >>= ((b: Boolean) => if (b) p else q)
+    @deprecated("Renamed to `?:` to appear similar to the common ternary operator in C-like languages, as that is what it does", "")
+    @inline final def <|?>[B](p: Parsley[B], q: Parsley[B])(implicit ev: Parsley[A] => Parsley[Boolean]): Parsley[B] = this ?: (p, q)
     @inline final def withFilter(p: A => Boolean): Parsley[A] = this >>= (x => if (p(x)) pure(x) else empty)
     @inline final def filter(p: A => Boolean): Parsley[A] = withFilter(p)
     @inline final def guard(pred: A => Boolean, msg: String): Parsley[A] = flatMap(x => if (pred(x)) pure(x) else fail(msg))
@@ -142,14 +141,14 @@ object Parsley
     def notFollowedBy[A](p: Parsley[A]): Parsley[Unit] = (attempt(p) >>= (c => unexpected("\"" + c.toString + "\""))) </> Unit
     @deprecated("To avoid clashes with uncurried `lift2`, this is deprecated, will be removed on branch merge", "")
     @inline def lift2_[A, B, C](f: A => B => C, p: Parsley[A], q: Parsley[B]): Parsley[C] = p.map(f) <*> q
-    @inline def lift2[A, B, C](f: (A, B) => C, p: Parsley[A], q: Parsley[B]): Parsley[C] = p.map((x: A) => (y: B) => f(x, y)) <*> q
+    @inline def lift2[A, B, C](f: (A, B) => C, p: Parsley[A], q: Parsley[B]): Parsley[C] = p.map(f.curried) <*> q
     def char(c: Char): Parsley[Char] = new Parsley(mutable.Buffer(CharTok(c)), Map.empty)
     def satisfy(f: Char => Boolean): Parsley[Char] = new Parsley(mutable.Buffer(new Satisfies(f)), Map.empty)
     def string(s: String): Parsley[String] = new Parsley(mutable.Buffer(new StringTok(s)), Map.empty)
     def anyChar: Parsley[Char] = satisfy(_ => true)
     def eof: Parsley[Unit] = notFollowedBy(anyChar) ? "end of input"
-    @deprecated("Deprecated in favour of `?:>`, no wording required, may be confused with `p <|> q`", "")
-    @inline def choose[A](b: Parsley[Boolean], p: Parsley[A], q: Parsley[A]): Parsley[A] = b ?:> (p, q)
+    @deprecated("Deprecated in favour of `?:`, no wording required, may be confused with `p <|> q`", "")
+    @inline def choose[A](b: Parsley[Boolean], p: Parsley[A], q: Parsley[A]): Parsley[A] = b ?: (p, q)
 
     def many[A](p: Parsley[A]): Parsley[List[A]] =
     {
@@ -211,6 +210,12 @@ object Parsley
     implicit class Mapper[A, B](f: A => B)
     {
         @inline def <#>(p: Parsley[A]): Parsley[B] = p.map(f)
+    }
+
+    implicit class TernaryParser[A](pq: (Parsley[A], Parsley[A]))
+    {
+        val (p, q) = pq
+        @inline final def ?:(b: Parsley[Boolean]): Parsley[A] = b >>= ((b: Boolean) => if (b) p else q)
     }
 
     private [Parsley] def delabel(instrs_ : mutable.Buffer[Instr]): Array[Instr] =
@@ -449,26 +454,74 @@ object DeepEmbedding
         /**This combinator is an alias for `map`*/
         def <#>(p: =>Parsley[A]): Parsley[B] = p.map(f)
     }
-    implicit final class LazyChooseParsley(b: =>Parsley[Boolean])
+    implicit final class LazyChooseParsley[A](pq: =>(Parsley[A], Parsley[A]))
     {
-        def ?:>[A](p: =>Parsley[A], q: =>Parsley[A]): Parsley[A] = b >>= (b => if (b) p else q)
+        lazy val (p, q) = pq
+        /**
+          * This serves as a lifted if statement (hence its similar look to a C-style ternary expression).
+          * If the parser on the lhs of the operator it is true then execution continues with parser `p`, else
+          * control passes to parser `q`. `b ?: (p, q)` is equivalent to `b >>= (b => if (b) p else q)` but does not
+          * involve any expensive monadic operations. NOTE: due to Scala operator associativity laws, this is a
+          * right-associative operator, and must be properly bracketed, technically the invokee is the rhs...
+          * @param b The parser that yields the condition value
+          * @return The result of either `p` or `q` depending on the return value of the invokee
+          */
+        def ?:(b: =>Parsley[Boolean]): Parsley[A] = b >>= (b => if (b) p else q)
     }
     object Parsley
     {
+        /** This is the traditional applicative pure function (or monadic return) for parsers. It consumes no input and
+          * does not influence the state of the parser, but does return the value provided. Useful to inject pure values
+          * into the parsing process.
+          * @param x The value to be returned from the parser
+          * @return A parser which consumes nothing and returns `x`
+          */
         def pure[A](x: A): Parsley[A] = new Pure(x)
+        /** Reads a character from the input stream and returns it, else fails if the character is not found at the head
+          * of the stream.
+          * @param c The character to search for
+          * @return `c` if it can be found at the head of the input
+          */
         def char(c: Char): Parsley[Char] = new CharTok(c)
+        /** Reads a character from the head of the input stream if and only if it satisfies the given predicate. Else it
+          * fails without consuming the character.
+          * @param f The function to test the character on
+          * @return `c` if `f(c)` is true.
+          */
         def satisfies(f: Char => Boolean): Parsley[Char] = new Satisfies(f)
+        /** Reads a string from the input stream and returns it, else fails if the string is not found at the head
+          * of the stream.
+          * @param s The string to match against
+          * @return `s` if it can be found at the head of the input
+          */
         def string(s: String): Parsley[String] = new StringTok(s)
-        def lift2[A, B, C](f: (A, B) => C, p: =>Parsley[A], q: =>Parsley[B]): Parsley[C] = p.map((x: A) => (y: B) => f(x, y)) <*> q
-        /**This function is an alias for _.flatten. Provides namesake to Haskell.*/
+
+        /** Traditionally, `lift2` is defined as `lift2(f, p, q) = p.map(f) <*> q`. However, `f` is actually uncurried,
+          * so it's actually more exactly defined as; read `p` and then read `q` then provide their results to function
+          * `f`. This is designed to bring higher performance to any curried operations that are not themselves
+          * intrinsic.
+          * @param f The function to apply to the results of `p` and `q`
+          * @param p The first parser to parse
+          * @param q The second parser to parser
+          * @return `f(x, y)` where `x` is the result of `p` and `y` is the result of `q`.
+          */
+        def lift2[A, B, C](f: (A, B) => C, p: =>Parsley[A], q: =>Parsley[B]): Parsley[C] = p.map(f.curried) <*> q
+        /**This function is an alias for `_.flatten`. Provides namesake to Haskell.*/
         def join[A](p: =>Parsley[Parsley[A]]): Parsley[A] = p.flatten
+        /** Given a parser `p`, attempts to parse `p`. If the parser fails, then `attempt` ensures that no input was
+          * consumed. This allows for backtracking capabilities, disabling the implicit cut semantics offered by `<|>`.
+          * @param p The parser to run
+          * @return The result of `p`, or if `p` failed ensures the parser state was as it was on entry.
+          */
         def attempt[A](p: =>Parsley[A]): Parsley[A] = new Attempt(p)
         @deprecated("Deprecated in favour of `attempt` as it is a clearer name", "")
         def tryParse[A](p: =>Parsley[A]): Parsley[A] = attempt(p)
         def lookAhead[A](p: =>Parsley[A]): Parsley[A] = new Look(p)
+        /**Alias for `p ? msg`.**/
         def label[A](p: Parsley[A], msg: String): Parsley[A] = p ? msg
         def fail[A](msg: String): Parsley[A] = new Fail(msg)
         def empty[A]: Parsley[A] = new Empty
+        // TODO We need to add a form with a msggen like fail, which can be used for notFollowedBy before intrinsic! (method?)
         def unexpected[A](msg: String): Parsley[A] = new Unexpected(msg)
         def many[A](p: =>Parsley[A]): Parsley[List[A]] = new Many(p)
         def skipMany[A](p: =>Parsley[A]): Parsley[Unit] = new SkipMany(p)
