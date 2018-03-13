@@ -1,0 +1,423 @@
+Theorem 1; All combinators either fail or result in exactly one item pushed onto the stack after complete execution
+
+Assumption: Assume that the functions used are pure functions. Impure functions may violate these laws. This is fine
+            since the user's responsibility is to mark the parser as unsafe which disables optimisations based on
+            laws that will become violated.
+
+notation (_) = input
+notation {_} = operational stack
+notation <_> = handler stack
+notation [_] = check stack
+notation #_# = status
+notation -- Instr = instruction not executed (via jump to handler)
+notation i: Instr = label i mapping to the instruction
+
+left neutrality: empty <|> u = u
+(in), {xs}, <hs>, [chks], #Good#
+InputCheck(1)
+(in), {xs}, <(1, length xs):hs>, [length in:chks], #Good#
+Empty - Action taken is fail to handle 1 (JumpGood(2))
+(in), {drop (length xs - length xs) xs}, <hs>, [length in:chks], #Recover#
+      {drop 0 xs}
+      {xs}
+1: JumpGood(2) - Action taken is Recovery, since length in = length in from check stack
+(in), {xs}, <hs>, [chcks], #Good#
+U
+2:
+(in), {x:xs}, <hs>, [chks], #Good#
+=
+(in), {xs}, <hs>, [chks], #Good#
+U
+(in), {x:xs}, <hs>, [chks], #Good#
+
+right neutrality: u <|> empty = u
+CASE 1 - u SUCCEEDS, u CONSUMES INPUT
+(u_in ++ in), {xs}, <hs>, [chks], #Good#
+InputCheck(1)
+(u_in ++ in), {xs}, <(1, length xs):hs>, [length (u_in ++ in):chks], #Good#
+U
+(in), {x:xs}, <(1, length xs):hs>, [length (u_in ++ in):chks], #Good#
+1: JumpGood(2) - Action taken is Jump, since status on entry is Good
+--Empty
+2:
+(in), {x:xs}, <hs>, [chks], #Good#
+=
+(u_in ++ in), {xs}, <hs>, [chks], #Good#
+U
+(in), {x:xs}, <hs>, [chks], #Good#
+
+CASE 2 - u FAILS, u CONSUMES NO INPUT
+(in), {xs}, <h:hs>, [chks], #Good#
+InputCheck(1)
+(in), {xs}, <(1, length xs):hs>, [length in:chks], #Good#
+U - Action taken is fail to handler 1 (JumpGood(2))
+(in), {drop (length xs - length xs) xs}, <h:hs>, [length in:chks], #Recover#
+      {drop 0 xs}
+      {xs}
+1: JumpGood(2) - Action taken is to handle and fallthrough: length in = length in
+(in), {xs}, <h:hs>, [chks], #Good#
+Empty - Action taken to fail to handler h
+2:
+(in), {drop (length xs - n) xs}, <h:hs>, [chks], #Recover# - Final state is pc = h
+=
+(in), {xs}, <h:hs>, [chks], #Good#
+U - Action taken is fail to handler h (?)
+(in), {drop (length xs - n) xs}, <h:hs>, [chks], #Recover# - Final state is pc = h
+
+CASE 3 - u FAILS, u CONSUMES INPUT
+(u_in ++ in), {xs}, <(h, n):hs>, [chks], #Good#
+InputCheck(1)
+(u_in ++ in), {xs' = xs}, <(1, length xs):(h, n):hs>, [length (u_in ++ in):chks], #Good#
+U - Action taken is fail to handler 1 (JumpGood(2))
+(in), {drop (length xs - length xs) xs}, <(h, n):hs>, [length (u_in ++ in):chks], #Recover#
+      {drop 0 xs}
+      {xs}
+1: JumpGood(2) - Action taken is failure: length in != length (u_in ++ in) and u_in was assumed non-empty jump to handler h
+--Empty
+2:
+(in), {drop (length xs - n) xs}, <hs>, [chks], #Recover# - Final state is pc = h
+=
+(u_in ++ in), {xs}, <(h, n):hs>, [chks], #Good#
+U - Action taken is fail to handler h (?)
+(in), {drop (length xs - n) xs}, <hs>, [chks], #Recover# - Final state is pc = h
+
+CASE 4 - u FAILS, u CONSUMES INPUT, NO HANDLERS
+(u_in ++ in), {xs}, <>, [chks], #Good#
+InputCheck(1)
+(u_in ++ in), {xs' = xs}, <(1, length xs)>, [length (u_in ++ in):chks], #Good#
+U - Action taken is fail to handler 1 (JumpGood(2))
+(in), {drop (length xs - length xs) xs}, <>, [length (u_in ++ in):chks], #Recover#
+      {drop 0 xs}
+      {xs}
+1: JumpGood(2) - Action taken is failure: length in != length (u_in ++ in) and u_in was assumed non-empty no handlers hence fail
+-- Empty
+2:
+(in), {xs}, <>, [chks], #Failed#
+=
+(u_in ++ in), {xs}, <>, [chks], #Good#
+U - Action taken is fail, no handlers
+(in), {xs}, <>, [chks], #Failed#
+
+associativity: u <|> (v <|> w) = (u <|> v) <|> w
+FOR BREVITY, ASSUME EXISTENCE OF HANDLER h WHICH HANDLES FAILURE, THIS CAN BE NULL WHICH RESULTS IN TOTAL FAILURE AND HENCE IS A TOP-LEVEL HANDLER
+ADDITIONALLY ASSUME THAT IF w IS REACHED IN BOTH SIDES THAT EXECUTION WILL BE EQUIVALENT; THE STATES ARE IDENTICAL SO w WILL BEHAVE EQUIVALENTLY
+CASE 1 - u SUCCEEDS
+(u_in ++ in), {xs}, <hs>, [chks], #Good#
+InputCheck(1)
+(u_in ++ in), {xs}, <(1, length xs):hs>, [length (u_in ++ in):chks], #Good#
+U
+(in), {x:xs}, <(1, length xs):hs>, [length (u_in ++ in):chks], #Good#
+1: JumpGood(2) - Action taken is jump, status on entry is Good
+--InputCheck(3)
+--V
+--3: JumpGood(4)
+--W
+2: 4:
+(in), {x:xs}, <hs>, [chks], #Good#
+=
+(u_in ++ in), {xs}, <(h, n):hs>, [chks], #Good#
+InputCheck(1)
+(u_in ++ in), {xs}, <(1, length xs):hs>, [length (u_in ++ in):chks], #Good#
+InputCheck(2)
+(u_in ++ in), {xs}, <(2, length xs):(1, length xs):hs>, [length (u_in ++ in):length (u_in ++ in):chks], #Good#
+U
+(in), {x:xs}, <(2, length xs):(1, length xs):hs>, [length (u_in ++ in):length (u_in ++ in):chks], #Good#
+2: JumpGood(4) - Action taken is jump, status on entry is Good
+--V
+(in), {x:xs}, <(1, length xs):hs>, [length (u_in ++ in):chks], #Good#
+1: 4: JumpGood(3) - Action taken is jump, status on entry is Good
+--W
+3:
+(in), {x:xs}, <hs>, [chks], #Good#
+
+CASE 2 - u FAILS, CONSUMES INPUT
+(u_in ++ in), {xs}, <(h, n):hs>, [chks], #Good#
+InputCheck(1)
+(u_in ++ in), {xs}, <(1, length xs):(h, n):hs>, [length (u_in ++ in):chks], #Good#
+U - Fail to handler 1
+(in), {drop (length xs - length xs) xs}, <(h, n):hs>, [length (u_in ++ in):chks], #Recover#
+      {drop 0 xs}
+      {xs}
+1: JumpGood(2) - Action taken is fail, length in != length (u_in ++ in), failing to handler h
+--InputCheck(3)
+--V
+--3: JumpGood(4)
+--W
+--2: 4:
+(in), {drop (length xs - n) xs}, <hs>, [chks], #Recover# - End state is pc = h
+=
+(u_in ++ in), {xs}, <(h, n):hs>, [chks], #Good#
+InputCheck(1)
+(u_in ++ in), {xs}, <(1, length xs):(h, n):hs>, [length (u_in ++ in):chks], #Good#
+InputCheck(2)
+(u_in ++ in), {xs}, <(2, length xs):(1, length xs):(h, n):hs>, [length (u_in ++ in):length (u_in ++ in):chks], #Good#
+U - Fail to handler 2
+(in), {drop (length xs - length xs) xs}, <(1, length xs):(h, n):hs>, [length (u_in ++ in):length (u_in ++ in):chks], #Recover#
+      {drop 0 xs}
+      {xs}
+2: JumpGood(4) - Action taken is fail, length in != length (u_in ++ in), failing to handler 1
+--V
+(in), {drop (length xs - length xs) xs}, <(h, n):hs>, [length (u_in ++ in):chks], #Recover#
+      {drop 0 xs}
+      {xs}
+1: 4: JumpGood(3) - Action taken is fail, length in != length (u_in ++ in), failing to handler h
+--W
+3:
+(in), {drop (length xs - n) xs}, <hs>, [chks], #Recover# - End state is pc = h
+
+CASE 3 - u FAILS, NO INPUT CONSUMED, v SUCCEEDS
+(v_in ++ in), {xs}, <hs>, [chks], #Good#
+InputCheck(1)
+(v_in ++ in), {xs}, <(1, length xs):hs>, [length (v_in ++ in):chks], #Good#
+U - Fail to handler 1
+(v_in ++ in), {drop (length xs - length xs) xs}, <hs>, [length (v_in ++ in):chks], #Recover#
+              {drop 0 xs}
+              {xs}
+1: JumpGood(2) - Action taken is fall-through: length (v_in ++ in) == length (v_in ++ in)
+(v_in ++ in), {xs}, <hs>, [chks], #Good#
+InputCheck(3)
+(v_in ++ in), {xs}, <(3, length xs):hs>, [length (v_in ++ in):chks], #Good#
+V
+(in), {x:xs}, <(3, length xs):hs>, [length (v_in ++ in):chks], #Good#
+3: JumpGood(4) - Action taken is jump: status on entry is Good
+--W
+2: 4:
+(in), {x:xs}, <hs>, [chks], #Good#
+=
+(v_in ++ in), {xs}, <hs>, [chks], #Good#
+InputCheck(1)
+(v_in ++ in), {xs}, <(1, length xs):hs>, [length (v_in ++ in):chks], #Good#
+InputCheck(2)
+(v_in ++ in), {xs}, <(2, length xs):(1, length xs):hs>, [length (v_in ++ in):length (v_in ++ in):chks], #Good#
+U - Fail to handler 2
+(v_in ++ in), {drop (length xs - length xs) xs}, <(1, length xs):hs>, [length (v_in ++ in):length (v_in ++ in):chks], #Recover#
+              {drop 0 xs}
+              {xs}
+2: JumpGood(4) - Action taken is fall-through: length (v_in ++ in) == length (v_in ++ in)
+(v_in ++ in), {xs}, <(1, length xs):hs>, [length (v_in ++ in):chks], #Good#
+V
+(in), {x:xs}, <(1, length xs):hs>, [length (v_in ++ in):chks], #Good#
+1: 4: JumpGood(3) - Action taken is jump: status on entry is Good
+--W
+3:
+(in), {x:xs}, <hs>, [chks], #Good#
+
+CASE 4 - u FAILS, NO INPUT CONSUMED, v FAILS, CONSUMES INPUT
+(v_in ++ in), {xs}, <(h, n):hs>, [chks], #Good#
+InputCheck(1)
+(v_in ++ in), {xs}, <(1, length xs):(h, n):hs>, [length (v_in ++ in):chks], #Good#
+U - Fail to handler 1 
+(v_in ++ in), {drop (length xs - length xs) xs}, <(h, n):hs>, [length (v_in ++ in):chks], #Recover#
+              {drop 0 xs}
+              {xs}
+1: JumpGood(2) - Action taken is fall-through: length (v_in ++ in) == length (v_in ++ in)
+(v_in ++ in), {xs}, <(h, n):hs>, [chks], #Good#
+InputCheck(3)
+(v_in ++ in), {xs}, <(3, length xs):(h, n):hs>, [length (v_in ++ in):chks], #Good#
+V - Fail to handler 3
+(in), {drop (length xs - length xs) xs}, <(h, n):hs>, [length (v_in ++ in):chks], #Recover#
+      {drop 0 xs}
+      {xs}
+3: JumpGood(4) - Action taken is fail, input size doesn't match check and assumed consumption, fail to handler h 
+--W
+2: 4:
+(in), {drop (length xs - n) xs}, <hs>, [chks], #Recover#
+=
+(v_in ++ in), {xs}, <(h, n):hs>, [chks], #Good#
+InputCheck(1)
+(v_in ++ in), {xs}, <(1, length xs):(h, n):hs>, [length (v_in ++ in):chks], #Good#
+InputCheck(2)
+(v_in ++ in), {xs}, <(2, length xs):(1, length xs):(h, n):hs>, [length (v_in ++ in):length (v_in ++ in):chks], #Good#
+U - Fail to handler 2
+(v_in ++ in), {drop (length xs - length xs) xs}, <(1, length xs):(h, n):hs>, [length (v_in ++ in):length (v_in ++ in):chks], #Recover#
+              {drop 0 xs}
+              {xs}
+2: JumpGood(4) - Action taken is fall-through: length (v_in ++ in) == length (v_in ++ in)
+(v_in ++ in), {xs}, <(1, length xs):(h, n):hs>, [length (v_in ++ in):length (v_in ++ in):chks], #Good#
+V - Fail to handler 1
+(in), {drop (length xs - length xs) xs}, <(h, n):hs>, [length (v_in ++ in):length (v_in ++ in):chks], #Recover#
+      {drop 0 xs}
+      {xs}
+1: 4: JumpGood(3) - Action taken is fail, input size doesn't match check and assumed consumption, fail to handler h
+--W
+3:
+(in), {drop (length xs - n) xs}, <hs>, [chks], #Recover#
+
+CASE 5 - u FAILS, NO INPUT CONSUMED, v FAILS, NO INPUT CONSUMED
+(in), {xs}, <hs>, [chks], #Good#
+InputCheck(1)
+(in), {xs}, <(1, length xs):hs>, [length in:chks], #Good#
+U - Fail to hander 1
+(in), {drop (length xs - length xs) xs}, <hs>, [length in:chks], #Recover#
+      {drop 0 xs}
+      {xs}
+1: JumpGood(2) - Action taken is fall-through: length in == length in
+(in), {xs}, <hs>, [chks], #Good#
+InputCheck(3)
+(in), {xs}, <(3, length xs):hs>, [(length in):chks], #Good#
+V - Fail to handler 3
+(in), {drop (length xs - length xs) xs}, <hs>, [(length in):chks], #Recover#
+      {drop 0 xs}
+      {xs}
+3: JumpGood(4) - Action is taken is fall-through: length in == length in
+(in), {xs}, <hs>, [chks], #Good#
+W
+2: 4:
+=
+(in), {xs}, <hs>, [chks], #Good#
+InputCheck(1)
+(in), {xs}, <(1, length xs):hs>, [length in:chks], #Good#
+InputCheck(2)
+(in), {xs}, <(2, length xs):(1, length xs):hs>, [length in:length in:chks], #Good#
+U - Fail to handler 2
+(in), {drop (length xs - length xs) xs}, <(1, length xs):hs>, [length in:length in:chks], #Recover#
+      {drop 0 xs}
+      {xs}
+2: JumpGood(4) - Action taken is fall-through: length in == length in
+(in), {xs}, <(1, length xs):hs>, [length in:chks], #Good#
+V - Fail to handler 1
+(in), {drop (length xs - length xs) xs}, <hs>, [(length in):chks], #Recover#
+      {drop 0 xs}
+      {xs}
+1: 4: JumpGood(3) - Action taken is fall-through: length in == length in
+(in), {xs}, <hs>, [chks], #Good#
+W
+3:
+
+left zero: mzero >>= f = mzero
+NOTE: mzero ACTUALLY CORRESPONDS TO A FAMILY OF INSTRUCTIONS WITH STRONGER NOTIONS OF ERROR MESSAGES, THE MZero INSTRUCTION DOES NOT EXIST IN THIS FORM
+(in), {xs}, <(h, n):hs>, [chks], #Good#
+MZero - Fail to handler h
+-- DynSub(f)
+(in), {drop (length xs - n) xs}, <hs>, [chks], #Recover# - End state is pc = h
+=
+(in), {xs}, <(h, n):hs>, [chks], #Good#
+MZero - Fail to handler h
+(in), {drop (length xs - n) xs}, <hs>, [chks], #Recover# - End state is pc = h
+
+right zero (m *> mzero = mzero) does not hold; m might fail with a different error message to the mzero instance, and this must be preserved (https://winterkoninkje.dreamwidth.org/90905.html)
+
+bonus laws:
+right distributivity: (f <|> g) <*> p = (f <*> p) <|> (g <*> p)
+CASE 1 - f SUCCEEDED
+(in_f ++ in_p ++ in), {xs}, <hs>, [chks], #Good#
+InputCheck(1)
+(in_f ++ in), {xs}, <(1, length xs):hs>, [length (in_f ++ in_p ++ in):chks], #Good#
+F
+(in_p ++ in), {x:xs}, <(1, length xs):hs>, [length (in_f ++ in_p ++ in):chks], #Good#
+1: JumpGood(2) - Action taken is jump, status on entry is Good
+-- G
+(in_p ++ in), {x:xs}, <hs>, [chks], #Good#
+2: P
+(in), {y:x:xs}, <hs>, [chks], #Good#
+Apply
+(in), {x(y):xs}, <hs>, [chks], #Good#
+=
+(in_f ++ in_p ++ in), {xs}, <hs>, [chks], #Good#
+InputCheck(1)
+(in_f ++ in_p ++ in), {xs}, <(1, length xs):hs>, [length (in_f ++ in_p ++ in):chks], #Good#
+F
+(in_p ++ in), {x:xs}, <(1, length xs):hs>, [length (in_f ++ in_p ++ in):chks], #Good#
+P
+(in_p ++ in), {y:x:xs}, <(1, length xs):hs>, [length (in_f ++ in_p ++ in):chks], #Good#
+Apply
+(in), {x(y):xs}, <(1, length xs):hs>, [length (in_f ++ in_p ++ in):chks], #Good#
+1: JumpGood(2) - Action taken is jump, status on entry was Good
+--G
+--P
+--Apply
+2:
+(in), {x(y):xs}, <hs>, [chks], #Good#
+
+CASE 2 - f FAILED, CONSUMED NO INPUT
+(in_g ++ in_p ++ in), {xs}, <hs>, [chks], #Good#
+InputCheck(1)
+(in_g ++ in_p ++ in), {xs}, <(1, length xs):hs>, [length (in_g ++ in_p ++ in):chks], #Good#
+F - Fail to handler 1
+(in_g ++ in_p ++ in), {drop (length xs - length xs) xs}, <hs>, [length (in_g ++ in_p ++ in):chks], #Recover#
+                      {drop 0 xs}
+                      {xs}
+1: JumpGood(2) - Action taken is fall-through: length (in_g ++ in_p ++ in) == length (in_g ++ in_p ++ in)
+(in_g ++ in_p ++ in), {xs}, <hs>, [chks], #Good#
+G
+(in_p ++ in), {x:xs}, <hs>, [chks], #Good#
+2: P
+(in), {y:x:xs}, <hs>, [chks], #Good#
+Apply
+(in), {x(y):xs}, <hs>, [chks], #Good#
+=
+(in_g ++ in_p ++ in), {xs}, <hs>, [chks], #Good#
+InputCheck(1)
+(in_g ++ in_p ++ in), {xs}, <(1, length xs):hs>, [length (in_g ++ in_p ++ in):chks], #Good#
+F - Fail to handler 1
+--P
+--Apply
+(in_g ++ in_p ++ in), {drop (length xs - length xs) xs}, <hs>, [length (in_g ++ in_p ++ in):chks], #Recover#
+                      {drop 0 xs}
+                      {xs}
+1: JumpGood(2) - Action taken is fall-through: length (in_g ++ in_p ++ in) == length (in_g ++ in_p ++ in)
+(in_g ++ in_p ++ in), {xs}, <hs>, [chks], #Good#
+G
+(in), {y:x:xs}, <hs>, [chks], #Good#
+P
+(in), {y:x:xs}, <hs>, [chks], #Good#
+Apply
+(in), {x(y):xs}, <hs>, [chks], #Good#
+
+CASE 3 - f FAILED, CONSUMED INPUT
+(in_f ++ in), {xs}, <(h, n):hs>, [chks], #Good#
+InputCheck(1)
+(in_f ++ in), {xs}, <(1, length xs):(h, n):hs>, [length (in_f ++ in):chks], #Good#
+F - Fail to handler 1
+(in), {drop (length xs - length xs) xs}, <(h, n):hs>, [length (in_f ++ in):chks], #Recover#
+      {drop 0 xs}
+      {xs}
+1: JumpGood(2) - Action taken is fail: length in != length (in_f ++ in) and in_f assumed non-empty, fail to handler h
+--G
+--2: P
+--Apply
+(in), {drop (length xs - n) xs}, <hs>, [chks], #Recover# - End state is pc = h
+=
+(in_f ++ in), {xs}, <(h, n):hs>, [chks], #Good#
+InputCheck(1)
+(in_f ++ in), {xs}, <(1, length xs):(h, n):hs>, [length (in_f ++ in):chks], #Good#
+F - Fail to handler 1
+--P
+--Apply
+(in), {drop (length xs - length xs) xs}, <(h, n):hs>, [length (in_f ++ in):chks], #Recover#
+      {drop 0 xs}
+      {xs}
+1: JumpGood(2) - Action taken is fail: length in != length (in_f ++ in) and in_f assumed non-empty, fail to handler h
+--G
+--P
+--Apply
+2:
+(in), {drop (length xs - n) xs}, <hs>, [chks], #Recover# - End state is pc = h
+
+right absorption: mzero <*> p = mzero
+(in), {xs}, <(h, n):hs>, [chks], #Good#
+MZero - Fail to handler h
+--P
+--Apply
+(in), {drop (length xs - n) xs}, <hs>, [chks], #Recover# - End state is pc = h
+=
+(in), {xs}, <(h, n):hs>, [chks], #Good#
+MZero - Fail to handler h
+(in), {drop (length xs - n) xs}, <hs>, [chks], #Recover# - End state is pc = h
+
+left distribution: (m <|> n) >>= k = (m >>= k) <|> (n >>= k)
+
+left catch: pure x <|> q = pure x
+(in), {xs}, <hs>, [chks], #Good#
+InputCheck(1)
+(in), {xs}, <(1, length xs):hs>, [length in:chks], #Good#
+Push x
+(in), {x:xs}, <(1, length xs):hs>, [length in:chks], #Good#
+1: JumpGood(2) - Action is jump, status on entry is Good
+--Q
+2:
+(in), {x:xs}, <hs>, [chks], #Good#
+=
+(in), {xs}, <hs>, [chks], #Good#
+Push x
+(in), {x:xs}, <hs>, [chks], #Good#
