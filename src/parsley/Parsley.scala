@@ -320,7 +320,7 @@ object DeepEmbedding
     import DeepEmbedding.Parsley._
     
     // User API
-    implicit final class LazyParsley[+A](p: =>Parsley[A])
+    implicit final class LazyParsley[+A](p: =>Parsley[A])(implicit ev: A =!= Nothing)
     {
         /**
           * This is the functorial map operation for parsers. When the invokee produces a value, this value is fed through
@@ -367,37 +367,12 @@ object DeepEmbedding
         def orElse[B >: A](q: =>Parsley[B]): Parsley[B] = this <|> q
         /**This combinator is an alias for </>.*/
         def getOrElse[B >: A](x: B): Parsley[B] = p </> x
-        /**
-          * This is the parser that corresponds to a more optimal version of `this.map(_ => x => x) <*> p`. It performs
-          * the parse action of both parsers, in order, but discards the result of the invokee.
-          * @param q The parser whose result should be returned
-          * @return A new parser which first parses the invokee, then `p` and returns the result of `p`
-          */
-        def *>[A_ >: A, B](q: =>Parsley[B]) = new Then[A_, B](p, q)
-        /**
-          * This is the parser that corresponds to a more optimal version of `this.map(x => _ => x) <*> p`. It performs
-          * the parse action of both parsers, in order, but discards the result of the second parser.
-          * @param q The parser who should be executed but then discarded
-          * @return A new parser which first parses the invokee, then `p` and returns the result of the invokee
-          */
-        def <*[B](q: =>Parsley[B]) = new Prev(p, q)
-        /**
-          * This is the parser that corresponds to `this *> pure(x)` or a more optimal version of `this.map(_ => x)`.
-          * It performs the parse action of the invokee but discards its result and then results the value `x` instead
-          * @param x The value to be returned after the execution of the invokee
-          * @return A new parser which first parses the invokee, then results `x`
-          */
-        def #>[B](x: B): Parsley[B] = this *> pure(x)
-        /**This combinator is an alias for `*>`*/
-        def >>[B](q: Parsley[B]): Parsley[B] = *>(q)
         /**This combinator is defined as `attempt(this) <|> q`. It is pure syntactic sugar.*/
         def <\>[B >: A](q: Parsley[B]): Parsley[B] = attempt(p) <|> q
         /**This parser corresponds to `lift2(_::_, this, ps)` but is far more optimal. It should be preferred to the equivalent*/
         def <::>[B >: A](ps: =>Parsley[List[B]]): Parsley[List[B]] = new Cons(p, ps)
         /**This parser corresponds to `lift2((_, _), this, q)`. For now it is sugar, but in future may be more optimal*/
-        def <~>[A_ >: A, B](q: =>Parsley[B]): Parsley[(A_, B)] = lift2[A_, B, (A_, B)]((_, _), p, q)
-        /**Sets the expected message for a parser. If the parser fails then `expected msg` will added to the error*/
-        def ?(msg: String): Parsley[A] = new ErrorRelabel(p, msg)
+        def <~>[A_ >: A, B](q: =>Parsley[B])(implicit ev: B =!= Nothing): Parsley[(A_, B)] = lift2[A_, B, (A_, B)]((_, _), p, q)
         /** Filter the value of a parser; if the value returned by the parser matches the predicate `pred` then the
           * filter succeeded, otherwise the parser fails with an empty error
           * @param pred The predicate that is tested against the parser result
@@ -438,7 +413,35 @@ object DeepEmbedding
           */
         def unexpected(msggen: A => String): Parsley[Nothing] = flatMap((x: A) => Parsley.unexpected(msggen(x)))
     }
-    implicit final class LazyAppParsley[A, +B](pf: =>Parsley[A => B])
+    implicit final class LazyParsleyNothingCompatible[+A](p: =>Parsley[A])
+    {
+        /**
+          * This is the parser that corresponds to a more optimal version of `this.map(_ => x => x) <*> p`. It performs
+          * the parse action of both parsers, in order, but discards the result of the invokee.
+          * @param q The parser whose result should be returned
+          * @return A new parser which first parses the invokee, then `p` and returns the result of `p`
+          */
+        def *>[A_ >: A, B](q: =>Parsley[B]) = new Then[A_, B](p, q)
+        /**
+          * This is the parser that corresponds to a more optimal version of `this.map(x => _ => x) <*> p`. It performs
+          * the parse action of both parsers, in order, but discards the result of the second parser.
+          * @param q The parser who should be executed but then discarded
+          * @return A new parser which first parses the invokee, then `p` and returns the result of the invokee
+          */
+        def <*[B](q: =>Parsley[B]) = new Prev(p, q)
+        /**
+          * This is the parser that corresponds to `this *> pure(x)` or a more optimal version of `this.map(_ => x)`.
+          * It performs the parse action of the invokee but discards its result and then results the value `x` instead
+          * @param x The value to be returned after the execution of the invokee
+          * @return A new parser which first parses the invokee, then results `x`
+          */
+        def #>[B](x: B): Parsley[B] = this *> pure(x)
+        /**This combinator is an alias for `*>`*/
+        def >>[B](q: Parsley[B]): Parsley[B] = *>(q)
+        /**Sets the expected message for a parser. If the parser fails then `expected msg` will added to the error*/
+        def ?(msg: String): Parsley[A] = new ErrorRelabel(p, msg)
+    }
+    implicit final class LazyAppParsley[A, +B](pf: =>Parsley[A => B])(implicit ev: A =!= Nothing)
     {
         /**
           * This is the Applicative application parser. The type of the invokee is `Parsley[A => B]`. Then, given a
@@ -459,7 +462,7 @@ object DeepEmbedding
         /**This combinator is an alias for `flatMap(identity)`.*/
         def flatten: Parsley[A] = p >>= identity[Parsley[A]]
     }
-    implicit final class LazyMapParsley[A, +B](f: A => B)
+    implicit final class LazyMapParsley[A, +B](f: A => B)(implicit ev: A =!= Nothing)
     {
         /**This combinator is an alias for `map`*/
         def <#>(p: =>Parsley[A]): Parsley[B] = p.map(f)
@@ -515,7 +518,7 @@ object DeepEmbedding
           * @param q The second parser to parser
           * @return `f(x, y)` where `x` is the result of `p` and `y` is the result of `q`.
           */
-        def lift2[A, B, C](f: (A, B) => C, p: =>Parsley[A], q: =>Parsley[B]): Parsley[C] = new Lift(f, p, q)
+        def lift2[A, B, C](f: (A, B) => C, p: =>Parsley[A], q: =>Parsley[B])(implicit ev1: A =!= Nothing, ev2: B =!= Nothing): Parsley[C] = new Lift(f, p, q)
         /**This function is an alias for `_.flatten`. Provides namesake to Haskell.*/
         def join[A](p: =>Parsley[Parsley[A]]): Parsley[A] = p.flatten
         /** Given a parser `p`, attempts to parse `p`. If the parser fails, then `attempt` ensures that no input was
@@ -532,15 +535,15 @@ object DeepEmbedding
         def fail(msg: String): Parsley[Nothing] = new Fail(msg)
         val empty: Parsley[Nothing] = Empty
         def unexpected(msg: String): Parsley[Nothing] = new Unexpected(msg)
-        def notFollowedBy(p: Parsley[_]): Parsley[Unit] = attempt(p).unexpected("\"" + _.toString + "\"").orElse[Unit](unit)
+        def notFollowedBy(p: Parsley[_]): Parsley[Unit] = (attempt(p).unexpected("\"" + _.toString + "\"") *> unit) <|> unit
         val unit: Parsley[Unit] = pure(())
         val anyChar: Parsley[Char] = satisfy(_ => true)
         val eof: Parsley[Unit] = notFollowedBy(anyChar) ? "end of input"
-        def many[A](p: =>Parsley[A]): Parsley[List[A]] = new Many(p)
+        def many[A](p: =>Parsley[A])(implicit ev: A =!= Nothing): Parsley[List[A]] = new Many(p)
         def skipMany[A](p: =>Parsley[A]): Parsley[Unit] = new SkipMany(p)
-        @inline def chainl1[A](p: =>Parsley[A], op: =>Parsley[A => A => A]): Parsley[A] = chainl1_(p, op.map(flip[A, A, A]))
-        @inline def chainl1_[A](p: =>Parsley[A], op: =>Parsley[A => A => A]): Parsley[A] = chainPost(p, op <*> p)
-        def chainPost[A](p: =>Parsley[A], op: =>Parsley[A => A]) = new Chainl(p, op)
+        @inline def chainl1[A](p: =>Parsley[A], op: =>Parsley[A => A => A])(implicit ev: A =!= Nothing): Parsley[A] = chainl1_(p, op.map(flip[A, A, A]))
+        @inline def chainl1_[A](p: =>Parsley[A], op: =>Parsley[A => A => A])(implicit ev: A =!= Nothing): Parsley[A] = chainPost(p, op <*> p)
+        def chainPost[A](p: =>Parsley[A], op: =>Parsley[A => A])(implicit ev: A =!= Nothing) = new Chainl(p, op)
     }
     
     // Internals
@@ -1058,7 +1061,7 @@ object DeepEmbedding
         val start = System.currentTimeMillis()
         for (_ <- 0 to 1000000)
         {
-            //(q <|> q <|> q <|> q).instrs
+            (q <|> q <|> q <|> q).instrs
         }
         println(System.currentTimeMillis() - start)
         println(chainl1(char('1') <#> (_.toInt), char('+') #> ((x: Int) => (y: Int) => x + y)).pretty)
@@ -1074,7 +1077,7 @@ object DeepEmbedding
             println("MANY ALLOWED NO-INPUT PARSER")
         }
         catch { case _: Throwable => }
-
+        
         // Error message testing
         lazy val r: Parsley[List[String]] = string("correct error message") <::> (r </> Nil)
         println(runParser(r ? "nothing but this :)", ""))
