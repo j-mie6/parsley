@@ -138,10 +138,4 @@ package object parsley
         def length: Int = size
         def toArray(): Array[A] = array
     }
-    
-    trait =!=[A, B] 
-    implicit def neq[A, B] : A =!= B = null
-    @implicitAmbiguous("Could not prove ${A} =!= ${A}, note that only *> and <* and derivatives can operate on Parsley[Nothing]")
-    implicit def neqAmbig1[A] : A =!= A = ???
-    implicit def neqAmbig2[A] : A =!= A = ???
 }

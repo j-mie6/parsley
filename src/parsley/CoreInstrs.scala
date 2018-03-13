@@ -334,17 +334,16 @@ private [parsley] final class JumpGood(override val label: Int) extends FwdJumpI
         if (ctx.status eq Good)
         {
             ctx.handlers = ctx.handlers.tail
-            ctx.checkStack = ctx.checkStack.tail
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
         else if (ctx.offset != ctx.checkStack.head) ctx.fail()
         else
         {
-            ctx.checkStack = ctx.checkStack.tail
             ctx.status = Good
             ctx.inc()
         }
+        ctx.checkStack = ctx.checkStack.tail
     }
     override def toString: String = s"JumpGood($label)"
     override def copy_(): FwdJumpInstr = new JumpGood(label)
@@ -377,18 +376,15 @@ private [parsley] object Call
 
 private [parsley] object PushHandler
 {
-    @deprecated("Will be removed upon branch merge", "")
     def unapply(self: PushHandler): Option[Int] = Some(self.label)
 }
 
 private [parsley] object InputCheck
 {
-    @deprecated("Removed after deep merge", "")
     def unapply(self: InputCheck): Option[Int] = Some(self.label)
 }
 
 private [parsley] object JumpGood
 {
-    @deprecated("Removed after deep merge", "")
     def unapply(self: JumpGood): Option[Int] = Some(self.label)
 }

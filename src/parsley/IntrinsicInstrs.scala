@@ -123,24 +123,20 @@ private [parsley] final class Chainr(private [Chainr] val label: Int) extends In
 // Extractor Objects
 private [parsley] object Many
 {
-    @deprecated("Will be removed upon branch merge", "")
     def unapply(self: Many): Option[Int] = Some(self.label)
 }
 
 private [parsley] object SkipMany
 {
-    @deprecated("Will be removed upon branch merge", "")
     def unapply(self: SkipMany): Option[Int] = Some(self.label)
 }
 
 private [parsley] object Chainl
 {
-    @deprecated("Will be removed upon branch merge", "")
     def unapply(self: Chainl): Option[Int] = Some(self.label)
 }
 
 private [parsley] object Chainr
 {
-    @deprecated("Will be removed upon branch merge", "")
     def unapply(self: Chainr): Option[Int] = Some(self.label)
 }
