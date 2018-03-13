@@ -369,6 +369,29 @@ object DeepEmbedding
         def getOrElse[B >: A](x: B): Parsley[B] = p </> x
         /**This combinator is defined as `attempt(this) <|> q`. It is pure syntactic sugar.*/
         def <\>[B >: A](q: Parsley[B]): Parsley[B] = attempt(p) <|> q
+        /**
+          * This is the parser that corresponds to a more optimal version of `this.map(_ => x => x) <*> p`. It performs
+          * the parse action of both parsers, in order, but discards the result of the invokee.
+          * @param q The parser whose result should be returned
+          * @return A new parser which first parses the invokee, then `p` and returns the result of `p`
+          */
+        def *>[A_ >: A, B](q: =>Parsley[B]) = new Then[A_, B](p, q)
+        /**
+          * This is the parser that corresponds to a more optimal version of `this.map(x => _ => x) <*> p`. It performs
+          * the parse action of both parsers, in order, but discards the result of the second parser.
+          * @param q The parser who should be executed but then discarded
+          * @return A new parser which first parses the invokee, then `p` and returns the result of the invokee
+          */
+        def <*[B](q: =>Parsley[B]) = new Prev(p, q)
+        /**
+          * This is the parser that corresponds to `this *> pure(x)` or a more optimal version of `this.map(_ => x)`.
+          * It performs the parse action of the invokee but discards its result and then results the value `x` instead
+          * @param x The value to be returned after the execution of the invokee
+          * @return A new parser which first parses the invokee, then results `x`
+          */
+        def #>[B](x: B): Parsley[B] = this *> pure(x)
+        /**This combinator is an alias for `*>`*/
+        def >>[B](q: Parsley[B]): Parsley[B] = *>(q)
         /**This parser corresponds to `lift2(_::_, this, ps)` but is far more optimal. It should be preferred to the equivalent*/
         def <::>[B >: A](ps: =>Parsley[List[B]]): Parsley[List[B]] = new Cons(p, ps)
         /**This parser corresponds to `lift2((_, _), this, q)`. For now it is sugar, but in future may be more optimal*/
@@ -398,13 +421,14 @@ object DeepEmbedding
         def >?>(pred: A => Boolean, msg: String): Parsley[A] = guard(pred, msg)
         /**Alias for guard combinator, taking a dynamic message generator.*/
         def >?>(pred: A => Boolean, msggen: A => String): Parsley[A] = guard(pred, msggen)
+        /**Sets the expected message for a parser. If the parser fails then `expected msg` will added to the error*/
+        def ?(msg: String): Parsley[A] = new ErrorRelabel(p, msg)
         /** Same as `fail`, except allows for a message generated from the result of the failed parser. In essence, this
           * is equivalent to `p >>= (x => fail(msggen(x))` but requires no expensive computations from the use of `>>=`.
           * @param msggen The generator function for error message, creating a message based on the result of invokee
           * @return A parser that fails if it succeeds, with the given generator used to produce the error message
           */
         def !(msggen: A => String): Parsley[Nothing] = new FastFail(p, msggen)
-
         /** Same as `unexpected`, except allows for a message generated from the result of the failed parser. In essence,
           * this is equivalent to `p >>= (x => unexpected(x))` but requires no expensive computations from the use of
           * `>>=`
@@ -412,34 +436,6 @@ object DeepEmbedding
           * @return A parser that fails if it succeeds, with the givne generator used to produce an unexpected message
           */
         def unexpected(msggen: A => String): Parsley[Nothing] = flatMap((x: A) => Parsley.unexpected(msggen(x)))
-    }
-    implicit final class LazyParsleyVoidCompatible[+A](p: =>Parsley[A])
-    {
-        /**
-          * This is the parser that corresponds to a more optimal version of `this.map(_ => x => x) <*> p`. It performs
-          * the parse action of both parsers, in order, but discards the result of the invokee.
-          * @param q The parser whose result should be returned
-          * @return A new parser which first parses the invokee, then `p` and returns the result of `p`
-          */
-        def *>[A_ >: A, B](q: =>Parsley[B]) = new Then[A_, B](p, q)
-        /**
-          * This is the parser that corresponds to a more optimal version of `this.map(x => _ => x) <*> p`. It performs
-          * the parse action of both parsers, in order, but discards the result of the second parser.
-          * @param q The parser who should be executed but then discarded
-          * @return A new parser which first parses the invokee, then `p` and returns the result of the invokee
-          */
-        def <*[B](q: =>Parsley[B]) = new Prev(p, q)
-        /**
-          * This is the parser that corresponds to `this *> pure(x)` or a more optimal version of `this.map(_ => x)`.
-          * It performs the parse action of the invokee but discards its result and then results the value `x` instead
-          * @param x The value to be returned after the execution of the invokee
-          * @return A new parser which first parses the invokee, then results `x`
-          */
-        def #>[B](x: B): Parsley[B] = this *> pure(x)
-        /**This combinator is an alias for `*>`*/
-        def >>[B](q: Parsley[B]): Parsley[B] = *>(q)
-        /**Sets the expected message for a parser. If the parser fails then `expected msg` will added to the error*/
-        def ?(msg: String): Parsley[A] = new ErrorRelabel(p, msg)
     }
     implicit final class LazyAppParsley[A, +B](pf: =>Parsley[A => B])
     {
