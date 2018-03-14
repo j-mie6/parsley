@@ -685,6 +685,7 @@ object DeepEmbedding
             // TODO: We are missing out on optimisation opportunities... push fmaps down into or tree branches?
             // pure f <*> p = f <$> p
             case (Pure(f: (Char => B) @unchecked), CharTok(c)) => instrs += parsley.CharTokFastPerform[Char, B](c, f)
+            case (Pure(f: (String => B) @unchecked), StringTok(s)) => instrs += new parsley.StringTokFastPerform(s, f)
             case (Pure(f: (A => B)), _) =>
                 px.codeGen
                 instrs += new parsley.Perform(f)
@@ -789,7 +790,8 @@ object DeepEmbedding
         }
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = (p, q) match
         {
-            case (CharTok(c), Pure(x)) => instrs += new parsley.CharTokFastPerform(c, _ => x)
+            case (CharTok(c), Pure(x)) => instrs += parsley.CharTokFastPerform[Char, B](c, _ => x)
+            case (StringTok(s), Pure(x)) => instrs += new parsley.StringTokFastPerform(s, _ => x)
             case (p, Pure(x)) =>
                 p.codeGen
                 instrs += new parsley.Exchange(x)
@@ -1074,15 +1076,15 @@ object DeepEmbedding
         val q: Parsley[Char] = char('a') <|> char('b')
         println((q <|> q <|> q <|> q).pretty)
         println(((char('a') >>= (_ => pure((x: Int) => x + 1))) <*> pure(7)).pretty)
+        val chain = //chainl1(char('1') <#> (_.toInt), char('+') #> ((x: Int) => (y: Int) => x + y))
+           chainPost(char('1') <#> (_.toInt), string("+1") #> ((x: Int) => x+49))
         val start = System.currentTimeMillis()
-        val s = string("hello world")
         for (_ <- 0 to 100000000)
         {
             //(q <|> q <|> q <|> q).instrs
-            runParser(s, "hello world")
         }
         println(System.currentTimeMillis() - start)
-        println(chainl1(char('1') <#> (_.toInt), char('+') #> ((x: Int) => (y: Int) => x + y)).pretty)
+        println(chain.pretty)
         println(runParser(many(char('a')), "aaaa"))
         lazy val uhoh: Parsley[Unit] = char('a') >>= (_ => uhoh)
         println(uhoh.pretty)

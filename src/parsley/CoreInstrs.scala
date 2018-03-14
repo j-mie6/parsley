@@ -1,8 +1,7 @@
 package parsley
 
 import language.existentials
-import scala.annotation.switch
-import scala.annotation.tailrec
+import scala.annotation.{switch, tailrec}
 
 // Stack Manipulators
 private [parsley] final class Push[A](private [Push] val x: A) extends Instr

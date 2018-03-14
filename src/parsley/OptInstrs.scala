@@ -1,5 +1,5 @@
 package parsley
-import scala.annotation.switch
+import scala.annotation.{switch, tailrec}
 
 private [parsley] final class Perform[-A, +B](f: A => B) extends Instr
 {
@@ -69,8 +69,6 @@ private [parsley] class Tab extends CharTok('\t')
     override def copy_ : ExpectingInstr = new Tab
 }
 
-// This instruction has GREAT potential, it should be integrated into peephole :)
-// We should also make equivalents for Satisfy and String
 private [parsley] class CharTokFastPerform(protected final val c: Char, protected final val f: Char => Any) extends ExpectingInstr("\"" + c.toString + "\"")
 {
     protected final val fc: Any = f(c)
@@ -120,6 +118,68 @@ private [parsley] final class TabFastPerform(private [this] val g: Char => Any) 
         else ctx.fail(expected)
     }
     override def copy_ : ExpectingInstr = new TabFastPerform(f)
+}
+
+private [parsley] final class StringTokFastPerform(private [this] val s: String, private [this] val f: String => Any) extends ExpectingInstr("\"" + s + "\"")
+{
+    private [this] val cs = s.toCharArray
+    private [this] val sz = cs.length
+    private [this] val fs: Any = f(s)
+    private [this] val (colAdjust, lineAdjust) =
+    {
+        @tailrec def compute(cs: Array[Char], i: Int = 0, col: Int = 0, line: Int = 0)(implicit tabprefix: Option[Int] = None): (Int, Int, Option[Int]) =
+        {
+            if (i < cs.length) (cs(i): @switch) match
+            {
+                case '\n' => compute(cs, i+1, 1, line + 1)(Some(0))
+                case '\t' if tabprefix.isEmpty => compute(cs, i+1, 0, line)(Some(col))
+                case '\t' => compute(cs, i+1, col + 4 - ((col-1) & 3), line)
+                case _ => compute(cs, i+1, col + 1, line)
+            }
+            else (col, line, tabprefix)
+        }
+        val (col, line, tabprefix) = compute(cs)
+        if (line > 0) ((x: Int) => col, (x: Int) => x + line)
+        else (tabprefix match
+        {
+            case Some(prefix) => 
+                val outer = 4 + col + prefix
+                val inner = prefix - 1
+                (x: Int) => outer + x - ((x + inner) & 3)
+            case None => (x: Int) => x + col
+        }, (x: Int) => x)
+    }
+    override def apply(ctx: Context): Unit =
+    {
+        val strsz = this.sz
+        val inputsz = ctx.inputsz
+        val input = ctx.input
+        var i = ctx.offset
+        var j = 0
+        val cs = this.cs
+        if (inputsz - i > 0)
+        { 
+            while (j < strsz && i < inputsz)
+            {
+                val c = cs(j)
+                if (input(i) != c)
+                {
+                    ctx.offset = i
+                    return ctx.fail(expected)
+                }
+                i += 1
+                j += 1
+            }
+            ctx.col = colAdjust(ctx.col)
+            ctx.line = lineAdjust(ctx.line)
+            ctx.offset = i
+            ctx.pushStack(fs)
+            ctx.inc()
+        }
+        else ctx.fail(expected)
+    }
+    override def toString: String = s"StrPerform($s, ?)"
+    override def copy_ : ExpectingInstr = new StringTokFastPerform(s, f)
 }
 
 // Extractor Objects
