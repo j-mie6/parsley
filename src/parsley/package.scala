@@ -6,7 +6,8 @@ package object parsley
 {
     import parsley.Stack._
     // Public API
-    def runParser[A](p: DeepEmbedding.Parsley[A], input: String): Result[A] = runParser_[A](new Context(p.instrs, input.toCharArray(), Map.empty))
+    def runParser[A](p: DeepEmbedding.Parsley[A], input: String): Result[A] = runParser[A](p, input.toCharArray)
+    def runParser[A](p: DeepEmbedding.Parsley[A], input: Array[Char]): Result[A] = runParser_[A](new Context(p.instrs, input, p.subsMap))
     def runParser[A](p: Parsley[A], input: String): Result[A] = runParser[A](p, input.toCharArray)
     def runParser[A](p: Parsley[A], input: Array[Char]): Result[A] = runParser_[A](new Context(p.instrArray, input, p.subsMap))
 

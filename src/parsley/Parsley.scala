@@ -592,6 +592,8 @@ object DeepEmbedding
         }
         final private [DeepEmbedding] var safe = true
         final private [DeepEmbedding] var expected: UnsafeOption[String] = _
+        // TODO: Remove on branch merge, for now it helps form correct comparison with shallow runParser
+        final private [parsley] lazy val subsMap: Map[String, Array[Instr]] = Map.empty
         final private [parsley] lazy val instrs: Array[Instr] =
         {
             val instrs: InstrBuffer = new ResizableArray()
@@ -1083,9 +1085,10 @@ object DeepEmbedding
         val chain = //chainl1(char('1') <#> (_.toInt), char('+') #> ((x: Int) => (y: Int) => x + y))
            chainPost(char('1') <#> (_.toInt), string("+1") #> ((x: Int) => x+49))
         val start = System.currentTimeMillis()
-        for (_ <- 0 to 100000000)
+        for (_ <- 0 to 10000000)
         {
             //(q <|> q <|> q <|> q).instrs
+            runParser(chain, "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1")
         }
         println(System.currentTimeMillis() - start)
         println(chain.pretty)
