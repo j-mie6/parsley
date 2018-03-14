@@ -824,7 +824,8 @@ object DeepEmbedding
         }
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = (p, q) match
         {
-            case (Pure(x), CharTok(c)) => instrs += new parsley.CharTokFastPerform(c, _ => x)
+            case (Pure(x), CharTok(c)) => instrs += parsley.CharTokFastPerform[Char, A](c, _ => x)
+            case (Pure(x), StringTok(s)) => instrs += new parsley.StringTokFastPerform(s, _ => x)
             case (Pure(x), q) =>
                 q.codeGen
                 instrs += new parsley.Exchange(x)
@@ -914,8 +915,11 @@ object DeepEmbedding
             expected = label
             this
         }
-        // FIXME: Optimise string("") to pure(""), this is actually quite important to preserve semantics at the edge case!
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[String] = this
+        override def optimise(implicit label: UnsafeOption[String]): Parsley[String] = s match
+        {
+            case "" => new Pure("")
+            case _ => this
+        }
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = instrs += generate(new parsley.StringTok(s))
     }
     private [DeepEmbedding] final class Lift[A, B, +C](private [Lift] val f: (A, B) => C,
