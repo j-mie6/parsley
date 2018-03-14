@@ -2,6 +2,7 @@ package parsley
 
 import language.existentials
 import scala.annotation.switch
+import scala.annotation.tailrec
 
 // Stack Manipulators
 private [parsley] final class Push[A](private [Push] val x: A) extends Instr
@@ -69,7 +70,7 @@ private [parsley] final class Satisfies(f: Char => Boolean) extends ExpectingIns
             ctx.offset += 1
             (c: @switch) match
             {
-                case '\n' => ctx.line += 1; ctx.col = 0
+                case '\n' => ctx.line += 1; ctx.col = 1
                 case '\t' => ctx.col += 4 - ((ctx.col - 1) & 3)
                 case _ => ctx.col += 1
             }
@@ -81,47 +82,61 @@ private [parsley] final class Satisfies(f: Char => Boolean) extends ExpectingIns
     override def copy_ : ExpectingInstr = new Satisfies(f)
 }
 
+// The original semantics for this instruction were that of attempt(string(s)) 
+// TODO: The optimisation was probably good enough to create a new instruction group
 private [parsley] final class StringTok(private [StringTok] val s: String) extends ExpectingInstr("\"" + s + "\"")
 {
     private [this] val cs = s.toCharArray
     private [this] val sz = cs.length
-    private def matches(input: Array[Char], unread: Int, offset: Int, line: Int, col: Int): (Boolean, UnsafeOption[(Int, Int)]) =
+    private [this] val (colAdjust, lineAdjust) =
     {
-        val sz = this.sz
-        if (unread < sz) (false, null)
-        else
+        @tailrec def compute(cs: Array[Char], i: Int = 0, col: Int = 0, line: Int = 0)(implicit tabprefix: Option[Int] = None): (Int, Int, Option[Int]) =
         {
-            var i = offset
-            var j = 0
-            var line_ = line
-            var col_ = col
-            val cs = this.cs
-            while (j < sz)
+            if (i < cs.length) (cs(i): @switch) match
+            {
+                case '\n' => compute(cs, i+1, 1, line + 1)(Some(0))
+                case '\t' if tabprefix.isEmpty => compute(cs, i+1, 0, line)(Some(col))
+                case '\t' => compute(cs, i+1, col + 4 - ((col-1) & 3), line)
+                case _ => compute(cs, i+1, col + 1, line)
+            }
+            else (col, line, tabprefix)
+        }
+        val (col, line, tabprefix) = compute(cs)
+        if (line > 0) ((x: Int) => col, (x: Int) => x + line)
+        else (tabprefix match
+        {
+            case Some(prefix) => 
+                val outer = 4 + col + prefix
+                val inner = prefix - 1
+                (x: Int) => outer + x - ((x + inner) & 3)
+            case None => (x: Int) => x + col
+        }, (x: Int) => x)
+    }
+    override def apply(ctx: Context): Unit =
+    {
+        val strsz = this.sz
+        val inputsz = ctx.inputsz
+        val input = ctx.input
+        var i = ctx.offset
+        var j = 0
+        val cs = this.cs
+        if (inputsz - i > 0) //there must be some input to read
+        { 
+            while (j < strsz && i < inputsz)
             {
                 val c = cs(j)
-                if (input(i) != c) return (false, null)
-                (c: @switch) match
+                if (input(i) != c)
                 {
-                    case '\n' => line_ += 1; col_ = 0
-                    case '\t' => col_ += 4 - ((col_ - 1) & 3)
-                    case _ => col_ += 1
+                    ctx.offset = i
+                    return ctx.fail(expected)
                 }
                 i += 1
                 j += 1
             }
-            (true, (line_, col_))
-        }
-    }
-    override def apply(ctx: Context): Unit =
-    {
-        val m = matches(ctx.input, ctx.inputsz - ctx.offset, ctx.offset, ctx.line, ctx.col)
-        if (m._1)
-        {
-            val (line, col) = m._2
+            ctx.col = colAdjust(ctx.col)
+            ctx.line = lineAdjust(ctx.line)
+            ctx.offset = i
             ctx.pushStack(s)
-            ctx.offset += sz
-            ctx.col = col
-            ctx.line = line
             ctx.inc()
         }
         else ctx.fail(expected)

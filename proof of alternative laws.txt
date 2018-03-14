@@ -405,8 +405,6 @@ MZero - Fail to handler h
 MZero - Fail to handler h
 (in), {drop (length xs - n) xs}, <hs>, [chks], #Recover# - End state is pc = h
 
-left distribution: (m <|> n) >>= k = (m >>= k) <|> (n >>= k)
-
 left catch: pure x <|> q = pure x
 (in), {xs}, <hs>, [chks], #Good#
 InputCheck(1)
@@ -421,3 +419,5 @@ Push x
 (in), {xs}, <hs>, [chks], #Good#
 Push x
 (in), {x:xs}, <hs>, [chks], #Good#
+
+left distribution: (m <|> n) >>= k = (m >>= k) <|> (n >>= k)

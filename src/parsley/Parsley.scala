@@ -912,6 +912,7 @@ object DeepEmbedding
             expected = label
             this
         }
+        // FIXME: Optimise string("") to pure(""), this is actually quite important to preserve semantics at the edge case!
         override def optimise(implicit label: UnsafeOption[String]): Parsley[String] = this
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = instrs += generate(new parsley.StringTok(s))
     }
@@ -1074,9 +1075,11 @@ object DeepEmbedding
         println((q <|> q <|> q <|> q).pretty)
         println(((char('a') >>= (_ => pure((x: Int) => x + 1))) <*> pure(7)).pretty)
         val start = System.currentTimeMillis()
-        for (_ <- 0 to 1000000)
+        val s = string("hello world")
+        for (_ <- 0 to 100000000)
         {
-            (q <|> q <|> q <|> q).instrs
+            //(q <|> q <|> q <|> q).instrs
+            runParser(s, "hello world")
         }
         println(System.currentTimeMillis() - start)
         println(chainl1(char('1') <#> (_.toInt), char('+') #> ((x: Int) => (y: Int) => x + y)).pretty)
@@ -1092,8 +1095,6 @@ object DeepEmbedding
             println("MANY ALLOWED NO-INPUT PARSER")
         }
         catch { case _: Throwable => }
-        
-        many(empty)
         
         // Error message testing
         lazy val r: Parsley[List[String]] = string("correct error message") <::> (r </> Nil)
