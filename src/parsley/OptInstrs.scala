@@ -157,12 +157,12 @@ private [parsley] final class StringTokFastPerform(private [this] val s: String,
         var i = ctx.offset
         var j = 0
         val cs = this.cs
-        if (inputsz - i > 0)
+        if (inputsz != i)
         { 
-            while (j < strsz && i < inputsz)
+            while (j < strsz)
             {
                 val c = cs(j)
-                if (input(i) != c)
+                if (i == inputsz || input(i) != c)
                 {
                     ctx.offset = i
                     return ctx.fail(expected)
