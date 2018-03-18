@@ -2,7 +2,7 @@ package parsley
 
 import scala.collection.mutable.ListBuffer
 
-private [parsley] final class Lift[A, B, C](private [Lift] val f: (A, B) => C) extends Instr
+private [parsley] final class Lift[A, B, C](f: (A, B) => C) extends Instr
 {
     private [this] val g = f.asInstanceOf[(Any, Any) => C]
     override def apply(ctx: Context): Unit =
@@ -12,7 +12,6 @@ private [parsley] final class Lift[A, B, C](private [Lift] val f: (A, B) => C) e
         ctx.inc()
     }
     override def toString: String = "Lift2(f)"
-    override def copy: Lift[A, B, C] = new Lift(f)
 }
 
 private [parsley] object Cons extends Instr
@@ -24,10 +23,9 @@ private [parsley] object Cons extends Instr
         ctx.inc()
     }
     override def toString: String = "Cons"
-    override def copy: Cons.type = Cons
 }
 
-private [parsley] final class Many(private [Many] val label: Int) extends Instr
+private [parsley] final class Many(val label: Int) extends Instr
 {
     private[this] val acc: ListBuffer[Any] = ListBuffer.empty
     override def apply(ctx: Context): Unit =
@@ -53,7 +51,7 @@ private [parsley] final class Many(private [Many] val label: Int) extends Instr
     override def copy: Many = new Many(label)
 }
 
-private [parsley] final class SkipMany(private [SkipMany] val label: Int) extends Instr
+private [parsley] final class SkipMany(val label: Int) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -76,7 +74,7 @@ private [parsley] final class SkipMany(private [SkipMany] val label: Int) extend
     override def copy: SkipMany = new SkipMany(label)
 }
 
-private [parsley] final class Chainl(private [Chainl] val label: Int) extends Instr
+private [parsley] final class Chainl(val label: Int) extends Instr
 {
     private[this] var acc: Any = _
     override def apply(ctx: Context): Unit =
@@ -114,7 +112,7 @@ private [parsley] final class Chainl(private [Chainl] val label: Int) extends In
 }
 
 // TODO: What is the best way to implement this intrinsic?
-private [parsley] final class Chainr(private [Chainr] val label: Int) extends Instr
+private [parsley] final class Chainr(val label: Int) extends Instr
 {
     override def apply(ctx: Context): Unit = ???
     override def copy: Chainr = new Chainr(label)

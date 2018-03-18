@@ -4,7 +4,7 @@ import language.existentials
 import scala.annotation.{switch, tailrec}
 
 // Stack Manipulators
-private [parsley] final class Push[A](private [Push] val x: A) extends Instr
+private [parsley] final class Push[A](x: A) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -12,7 +12,6 @@ private [parsley] final class Push[A](private [Push] val x: A) extends Instr
         ctx.inc()
     }
     override def toString: String = s"Push($x)"
-    override def copy: Push[A] = new Push(x)
 }
 
 private [parsley] object Pop extends Instr
@@ -23,7 +22,6 @@ private [parsley] object Pop extends Instr
         ctx.inc()
     }
     override def toString: String = "Pop"
-    override def copy: Pop.type = Pop
 }
 
 private [parsley] object Flip extends Instr
@@ -36,12 +34,12 @@ private [parsley] object Flip extends Instr
         ctx.inc()
     }
     override def toString: String = "Flip"
-    override def copy: Flip.type = Flip
 }
 
 // Primitives
-private [parsley] class CharTok protected (protected final val c: Char) extends ExpectingInstr("\"" + c.toString + "\"")
+private [parsley] class CharTok protected (protected final val c: Char, _expected: UnsafeOption[String]) extends Instr
 {
+    protected val expected = if (_expected == null) "\"" + c.toString + "\"" else _expected
     protected final val ac: Any = c
     override def apply(ctx: Context): Unit =
     {
@@ -55,10 +53,9 @@ private [parsley] class CharTok protected (protected final val c: Char) extends 
         else ctx.fail(expected)
     }
     override final def toString: String = s"Chr($c)"
-    override def copy_ : ExpectingInstr = new CharTok(c)
 }
 
-private [parsley] final class Satisfies(f: Char => Boolean, expected: UnsafeOption[String]) extends ExpectingInstr(expected)
+private [parsley] final class Satisfies(f: Char => Boolean, expected: UnsafeOption[String]) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -78,13 +75,13 @@ private [parsley] final class Satisfies(f: Char => Boolean, expected: UnsafeOpti
         else ctx.fail(expected)
     }
     override def toString: String = "Sat(?)"
-    override def copy_ : ExpectingInstr = new Satisfies(f, expected)
 }
 
 // The original semantics for this instruction were that of attempt(string(s)) 
 // TODO: The optimisation was probably good enough to create a new instruction group
-private [parsley] final class StringTok protected (private [StringTok] val s: String) extends ExpectingInstr("\"" + s + "\"")
+private [parsley] final class StringTok(s: String, _expected: UnsafeOption[String]) extends Instr
 {
+    private [this] val expected = if (_expected == null) "\"" + s + "\"" else _expected
     private [this] val cs = s.toCharArray
     private [this] val sz = cs.length
     private [this] val (colAdjust, lineAdjust) =
@@ -142,7 +139,6 @@ private [parsley] final class StringTok protected (private [StringTok] val s: St
         else ctx.fail(expected)
     }
     override def toString: String = s"Str($s)"
-    override def copy_ : ExpectingInstr = new StringTok(s)
 }
 
 // Applicative Functors
@@ -156,11 +152,10 @@ private [parsley] object Apply extends Instr
         ctx.inc()
     }
     override def toString: String = "Apply"
-    override def copy: Apply.type = Apply
 }
 
 // Monadic
-private [parsley] final class DynSub[-A](f: A => Array[Instr], expected: UnsafeOption[String]) extends ExpectingInstr(expected)
+private [parsley] final class DynSub[-A](f: A => Array[Instr], expected: UnsafeOption[String]) extends Instr
 {
     private [DynSub] val g = f.asInstanceOf[Any => Array[Instr]]
     override def apply(ctx: Context): Unit =
@@ -176,11 +171,10 @@ private [parsley] final class DynSub[-A](f: A => Array[Instr], expected: UnsafeO
         }
     }
     override def toString: String = "DynSub(?)"
-    override def copy_ : ExpectingInstr = new DynSub(f, expected)
 }
 
 // Control Flow
-private [parsley] final class Call(p: Parsley[_], expected: UnsafeOption[String]) extends ExpectingInstr(expected)
+private [parsley] final class Call(p: Parsley[_], expected: UnsafeOption[String]) extends Instr
 {
     // TEMPORARY FIXME
     // It has been determined that single use arrays are, in fact, not compatible with
@@ -207,10 +201,10 @@ private [parsley] final class Call(p: Parsley[_], expected: UnsafeOption[String]
         ctx.pc = 0
     }
     override def toString: String = s"Call($p)"
-    override def copy_ : ExpectingInstr = new Call(p, expected)
+    override def copy: Call = new Call(p, expected)
 }
 
-private [parsley] final class Fail(private [Fail] val msg: String, expected: UnsafeOption[String]) extends ExpectingInstr(expected)
+private [parsley] final class Fail(msg: String, expected: UnsafeOption[String]) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -218,10 +212,9 @@ private [parsley] final class Fail(private [Fail] val msg: String, expected: Uns
         ctx.raw ::= msg
     }
     override def toString: String = s"Fail($msg)"
-    override def copy_ : ExpectingInstr = new Fail(msg, expected)
 }
 
-private [parsley] final class Unexpected(private [Unexpected] val msg: String, expected: UnsafeOption[String]) extends ExpectingInstr(expected)
+private [parsley] final class Unexpected(msg: String, expected: UnsafeOption[String]) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -230,10 +223,9 @@ private [parsley] final class Unexpected(private [Unexpected] val msg: String, e
         ctx.unexpectAnyway = true
     }
     override def toString: String = s"Unexpected($msg)"
-    override def copy_ : ExpectingInstr = new Unexpected(msg, expected)
 }
 
-private [parsley] final class Empty(expected: UnsafeOption[String]) extends ExpectingInstr(expected)
+private [parsley] final class Empty(expected: UnsafeOption[String]) extends Instr
 {
     override def apply(ctx: Context): Unit = 
     {
@@ -242,7 +234,6 @@ private [parsley] final class Empty(expected: UnsafeOption[String]) extends Expe
         if (strip) ctx.unexpected = null
     }
     override def toString: String = "Empty"
-    override def copy_ : ExpectingInstr = new Empty(expected)
 }
 
 private [parsley] final class PushHandler(val label: Int) extends Instr
@@ -254,7 +245,6 @@ private [parsley] final class PushHandler(val label: Int) extends Instr
         ctx.inc()
     }
     override def toString: String = s"PushHandler($label)"
-    override def copy: PushHandler = new PushHandler(label)
 }
 
 private [parsley] object Try extends Instr
@@ -280,7 +270,6 @@ private [parsley] object Try extends Instr
         }
     }
     override def toString: String = "Try"
-    override def copy: Try.type = Try
 }
 
 // State is not preserved after lookahead, the position is reset etc
@@ -307,7 +296,6 @@ private [parsley] object Look extends Instr
         }
     }
     override def toString: String = "Look"
-    override def copy: Look.type = Look
 }
 
 private [parsley] final class InputCheck(val label: Int) extends Instr
@@ -319,7 +307,6 @@ private [parsley] final class InputCheck(val label: Int) extends Instr
         ctx.inc()
     }
     override def toString: String = s"InputCheck($label)"
-    override def copy: InputCheck = new InputCheck(label)
 }
 
 private [parsley] final class JumpGood(val label: Int) extends Instr
@@ -341,7 +328,6 @@ private [parsley] final class JumpGood(val label: Int) extends Instr
         ctx.checkStack = ctx.checkStack.tail
     }
     override def toString: String = s"JumpGood($label)"
-    override def copy: JumpGood = new JumpGood(label)
 }
 
 // Extractor Objects
@@ -349,28 +335,9 @@ private [parsley] object CharTok
 {
     def apply(c: Char, expected: UnsafeOption[String] = null): CharTok = (c: @switch) match
     {
-        case '\n' => 
-            val ct = new Newline
-            if (expected != null) ct.expected = expected
-            ct
-        case '\t' => 
-            val ct = new Tab
-            if (expected != null) ct.expected = expected
-            ct
-        case _ =>
-            val ct = new CharTok(c)
-            if (expected != null) ct.expected = expected
-            ct
-    }
-}
-
-private [parsley] object StringTok
-{
-    def apply(s: String, expected: UnsafeOption[String] = null): StringTok =
-    {
-        val st = new StringTok(s)
-        if (expected != null) st.expected = expected
-        st
+        case '\n' => new Newline(expected)
+        case '\t' => new Tab(expected)
+        case _ => new CharTok(c, expected)
     }
 }
 

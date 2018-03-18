@@ -13,7 +13,7 @@ object ParsleyBench
     println(athenb.pretty)
     val manya: Parsley[List[Char]] = many('a') <* 'b'
     println(manya.pretty)
-    val chain: Parsley[Int] = chainl1('1' <#> (_.toInt), '+' #> ((x: Int) => (y: Int) => x + y))
+    def chain: Parsley[Int] = chainl1('1' <#> (_.toInt), '+' #> ((x: Int) => (y: Int) => x + y))
     println(chain.pretty)
 }
 
@@ -137,7 +137,7 @@ object Benchmark
     def main(args: Array[String]): Unit =
     {
         //Console.in.read()
-        val p = ParsleyBench.chain
+        def p = ParsleyBench.chain
         val input1 = "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"
         //val input2 = "aaaab"
         val input = input1

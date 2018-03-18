@@ -10,10 +10,9 @@ private [parsley] final class Perform[-A, +B](f: A => B) extends Instr
         ctx.inc()
     }
     override def toString: String = "Perform(?)"
-    override def copy: Perform[A, B] = new Perform(f)
 }
 
-private [parsley] final class Exchange[A](private [Exchange] val x: A) extends Instr
+private [parsley] final class Exchange[A](x: A) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -21,10 +20,9 @@ private [parsley] final class Exchange[A](private [Exchange] val x: A) extends I
         ctx.inc()
     }
     override def toString: String = s"Ex($x)"
-    override def copy: Exchange[A] = new Exchange(x)
 }
 
-private [parsley] final class FastFail[A](private [FastFail] val msggen: A=>String, expected: UnsafeOption[String]) extends ExpectingInstr(expected)
+private [parsley] final class FastFail[A](msggen: A=>String, expected: UnsafeOption[String]) extends Instr
 {
     private[this] val msggen_ = msggen.asInstanceOf[Any => String]
     override def apply(ctx: Context): Unit =
@@ -33,10 +31,9 @@ private [parsley] final class FastFail[A](private [FastFail] val msggen: A=>Stri
         new Fail(msg, expected)(ctx)
     }
     override def toString: String = "FastFail(?)"
-    override def copy_ : ExpectingInstr = new FastFail(msggen, expected)
 }
 
-private [parsley] class Newline extends CharTok('\n')
+private [parsley] class Newline(_expected: UnsafeOption[String]) extends CharTok('\n', _expected)
 {
     override def apply(ctx: Context): Unit =
     {
@@ -50,10 +47,9 @@ private [parsley] class Newline extends CharTok('\n')
         }
         else ctx.fail(expected)
     }
-    override def copy_ : ExpectingInstr = new Newline
 }
 
-private [parsley] class Tab extends CharTok('\t')
+private [parsley] class Tab(_expected: UnsafeOption[String]) extends CharTok('\t', _expected)
 {
     override def apply(ctx: Context): Unit =
     {
@@ -66,11 +62,11 @@ private [parsley] class Tab extends CharTok('\t')
         }
         else ctx.fail(expected)
     }
-    override def copy_ : ExpectingInstr = new Tab
 }
 
-private [parsley] class CharTokFastPerform protected (protected final val c: Char, protected final val f: Char => Any) extends ExpectingInstr("\"" + c.toString + "\"")
+private [parsley] class CharTokFastPerform protected (protected final val c: Char, protected final val f: Char => Any, _expected: UnsafeOption[String]) extends Instr
 {
+    protected val expected = if (_expected == null) "\"" + c.toString + "\"" else _expected
     protected final val fc: Any = f(c)
     override def apply(ctx: Context): Unit =
     {
@@ -84,10 +80,9 @@ private [parsley] class CharTokFastPerform protected (protected final val c: Cha
         else ctx.fail(expected)
     }
     override final def toString: String = s"ChrPerform($c, ?)"
-    override def copy_ : ExpectingInstr = new CharTokFastPerform(c, f)
 }
 
-private [parsley] final class NewlineFastPerform(private [this] val g: Char => Any) extends CharTokFastPerform('\n', g)
+private [parsley] final class NewlineFastPerform(g: Char => Any, _expected: UnsafeOption[String]) extends CharTokFastPerform('\n', g, _expected)
 {
     override def apply(ctx: Context): Unit =
     {
@@ -101,10 +96,9 @@ private [parsley] final class NewlineFastPerform(private [this] val g: Char => A
         }
         else ctx.fail(expected)
     }
-    override def copy_ : ExpectingInstr = new NewlineFastPerform(f)
 }
 
-private [parsley] final class TabFastPerform(private [this] val g: Char => Any) extends CharTokFastPerform('\t', g)
+private [parsley] final class TabFastPerform(g: Char => Any, _expected: UnsafeOption[String]) extends CharTokFastPerform('\t', g, _expected)
 {
     override def apply(ctx: Context): Unit =
     {
@@ -117,11 +111,11 @@ private [parsley] final class TabFastPerform(private [this] val g: Char => Any) 
         }
         else ctx.fail(expected)
     }
-    override def copy_ : ExpectingInstr = new TabFastPerform(f)
 }
 
-private [parsley] final class StringTokFastPerform protected (private [this] val s: String, private [this] val f: String => Any) extends ExpectingInstr("\"" + s + "\"")
+private [parsley] final class StringTokFastPerform(s: String, f: String => Any, _expected: UnsafeOption[String]) extends Instr
 {
+    protected val expected = if (_expected == null) "\"" + s + "\"" else _expected
     private [this] val cs = s.toCharArray
     private [this] val sz = cs.length
     private [this] val fs: Any = f(s)
@@ -180,34 +174,14 @@ private [parsley] final class StringTokFastPerform protected (private [this] val
         else ctx.fail(expected)
     }
     override def toString: String = s"StrPerform($s, ?)"
-    override def copy_ : ExpectingInstr = new StringTokFastPerform(s, f)
 }
 
 private [parsley] object CharTokFastPerform
 {
     def apply[A >: Char, B](c: Char, f: A => B, expected: UnsafeOption[String]): CharTokFastPerform = (c: @switch) match
     {
-        case '\n' => 
-            val ct = new NewlineFastPerform(f)
-            if (expected != null) ct.expected = expected
-            ct
-        case '\t' => 
-            val ct = new TabFastPerform(f)
-            if (expected != null) ct.expected = expected
-            ct
-        case _ => 
-            val ct = new CharTokFastPerform(c, f)
-            if (expected != null) ct.expected = expected
-            ct
-    }
-}
-
-private [parsley] object StringTokFastPerform
-{
-    def apply[A >: String, B](s: String, f: A => B, expected: UnsafeOption[String] = null): StringTokFastPerform =
-    {
-        val st = new StringTokFastPerform(s, f)
-        if (expected != null) st.expected = expected
-        st
+        case '\n' => new NewlineFastPerform(f, expected)
+        case '\t' => new TabFastPerform(f, expected)
+        case _ => new CharTokFastPerform(c, f, expected)
     }
 }
