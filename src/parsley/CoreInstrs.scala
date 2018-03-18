@@ -247,7 +247,7 @@ private [parsley] final class PushHandler(var label: Int) extends JumpInstr
     override def toString: String = s"PushHandler($label)"
 }
 
-private [parsley] object Try extends Instr
+private [parsley] object Attempt extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -269,7 +269,7 @@ private [parsley] object Try extends Instr
             ctx.fail()
         }
     }
-    override def toString: String = "Try"
+    override def toString: String = "Attempt"
 }
 
 // State is not preserved after lookahead, the position is reset etc

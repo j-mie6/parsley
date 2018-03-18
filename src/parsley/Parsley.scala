@@ -212,8 +212,6 @@ object Parsley
       * @return The result of `p`, or if `p` failed ensures the parser state was as it was on entry.
       */
     def attempt[A](p: =>Parsley[A]): Parsley[A] = new DeepEmbedding.Attempt(p)
-    @deprecated("Deprecated in favour of `attempt` as it is a clearer name", "")
-    def tryParse[A](p: =>Parsley[A]): Parsley[A] = attempt(p)
     def lookAhead[A](p: =>Parsley[A]): Parsley[A] = new DeepEmbedding.Look(p)
     /**Alias for `p ? msg`.**/
     def label[A](p: Parsley[A], msg: String): Parsley[A] = p ? msg
@@ -559,7 +557,7 @@ object DeepEmbedding
             instrs += new parsley.PushHandler(handler)
             p.codeGen
             instrs += new parsley.Label(handler)
-            instrs += parsley.Try
+            instrs += parsley.Attempt
         }
     }
     private [parsley] final class Look[+A](_p: =>Parsley[A]) extends Parsley[A]
