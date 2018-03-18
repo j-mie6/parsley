@@ -43,7 +43,7 @@ package object parsley
         @deprecated("No longer used", "") protected def copy_(): FwdJumpInstr
     }
     
-    private [parsley] abstract class ExpectingInstr(private [parsley] var expected: UnsafeOption[String] = null) extends Instr
+    private [parsley] abstract class ExpectingInstr(private [parsley] var expected: UnsafeOption[String]) extends Instr
     {
         final override def copy: ExpectingInstr =
         {

@@ -14,13 +14,13 @@ class Parsley[+A] private [Parsley] (
     final def flatMap[B](f: A => Parsley[B]): Parsley[B] = instrs.last match
     {
         case Push(x: A @unchecked) if safe => new Parsley(instrs.init ++ f(x).instrs, subs)
-        case _ => new Parsley(instrs :+ new DynSub[A](x => f(x).instrs.toArray), subs)
+        case _ => new Parsley(instrs :+ new DynSub[A](x => f(x).instrs.toArray, null), subs)
     }
     final def map[B](f: A => B): Parsley[B] = instrs.last match
     {
         case Push(x: A @unchecked) if safe => new Parsley(instrs.init :+ new Push(f(x)), subs)
-        case CharTok(c) if safe => new Parsley(instrs.init :+ CharTokFastPerform(c, f.asInstanceOf[Char => B]), subs)
-        case CharTokFastPerform(c, g: (Char => A) @unchecked) if safe => new Parsley(instrs.init :+ CharTokFastPerform(c, g.andThen(f)), subs)
+        case CharTok(c) if safe => new Parsley(instrs.init :+ CharTokFastPerform(c, f.asInstanceOf[Char => B], null), subs)
+        case CharTokFastPerform(c, g: (Char => A) @unchecked) if safe => new Parsley(instrs.init :+ CharTokFastPerform(c, g.andThen(f), null), subs)
         case Perform(g: (Any => A) @unchecked) => new Parsley(instrs.init :+ new Perform(g.andThen(f)), subs)
         case _ => new Parsley(instrs :+ new Perform(f), subs)
     }
@@ -41,7 +41,7 @@ class Parsley[+A] private [Parsley] (
         {
             case Push(x: B @unchecked) if safe => new Parsley(instrs.init ++ p.instrs.init :+ new Push(f(x)), subs ++ p.subs)
             case Perform(g: (Any => B) @unchecked) => new Parsley(instrs.init ++ p.instrs.init :+ new Perform(g.andThen(f)), subs ++ p.subs)
-            case CharTokFastPerform(c, g: (Char => B) @unchecked) if safe => new Parsley(instrs.init ++ p.instrs.init :+ CharTokFastPerform(c, g.andThen(f)), subs)
+            case CharTokFastPerform(c, g: (Char => B) @unchecked) if safe => new Parsley(instrs.init ++ p.instrs.init :+ CharTokFastPerform(c, g.andThen(f), null), subs)
             case _ => new Parsley(instrs.init ++ p.instrs :+ new Perform(f), subs ++ p.subs)
         }
         case Perform(f: (Any => Any => Any) @unchecked) => p.instrs.last match
@@ -76,7 +76,7 @@ class Parsley[+A] private [Parsley] (
     @inline final def <#>[B](f: A => B): Parsley[B] = map(f)
     @inline final def >>=[B](f: A => Parsley[B]): Parsley[B] = flatMap(f)
     @inline final def ?(msg: String): Parsley[A] = label(this, msg)
-    @inline final def !(msggen: A => String): Parsley[A] = new Parsley[A](instrs :+ new FastFail(msggen), subs)
+    @inline final def !(msggen: A => String): Parsley[A] = new Parsley[A](instrs :+ new FastFail(msggen, null), subs)
     @inline final def </>[A_ >: A](x: A_): Parsley[A_] = this <|> pure(x)
     @inline final def <\>[A_ >: A](q: Parsley[A_]): Parsley[A_] = attempt(this) <|> q
 
@@ -115,10 +115,10 @@ class Parsley[+A] private [Parsley] (
 object Parsley
 {
     def pure[A](a: A): Parsley[A] = new Parsley[A](mutable.Buffer(new Push(a)), Map.empty)
-    def fail[A](msg: String): Parsley[A] = new Parsley[A](mutable.Buffer(new Fail(msg)), Map.empty)
-    @deprecated("Deprecated in favour of `!`", "") def fail[A](msggen: Parsley[A], finaliser: A => String): Parsley[A] = new Parsley[A](msggen.instrs :+ new FastFail(finaliser), msggen.subs)
-    def empty[A]: Parsley[A] = new Parsley[A](mutable.Buffer(new Empty), Map.empty)
-    def unexpected[A](msg: String): Parsley[A] = new Parsley[A](mutable.Buffer(new Unexpected(msg)), Map.empty)
+    def fail[A](msg: String): Parsley[A] = new Parsley[A](mutable.Buffer(new Fail(msg, null)), Map.empty)
+    @deprecated("Deprecated in favour of `!`", "") def fail[A](msggen: Parsley[A], finaliser: A => String): Parsley[A] = new Parsley[A](msggen.instrs :+ new FastFail(finaliser, null), msggen.subs)
+    def empty[A]: Parsley[A] = new Parsley[A](mutable.Buffer(new Empty(null)), Map.empty)
+    def unexpected[A](msg: String): Parsley[A] = new Parsley[A](mutable.Buffer(new Unexpected(msg, null)), Map.empty)
     def label[A](p: Parsley[A], msg: String): Parsley[A] = new Parsley[A](p.instrs.map
     {
         case e: ExpectingInstr =>
@@ -143,8 +143,8 @@ object Parsley
     @inline def lift2_[A, B, C](f: A => B => C, p: Parsley[A], q: Parsley[B]): Parsley[C] = p.map(f) <*> q
     @inline def lift2[A, B, C](f: (A, B) => C, p: Parsley[A], q: Parsley[B]): Parsley[C] = p.map(f.curried) <*> q
     def char(c: Char): Parsley[Char] = new Parsley(mutable.Buffer(CharTok(c)), Map.empty)
-    def satisfy(f: Char => Boolean): Parsley[Char] = new Parsley(mutable.Buffer(new Satisfies(f)), Map.empty)
-    def string(s: String): Parsley[String] = new Parsley(mutable.Buffer(new StringTok(s)), Map.empty)
+    def satisfy(f: Char => Boolean): Parsley[Char] = new Parsley(mutable.Buffer(new Satisfies(f, null)), Map.empty)
+    def string(s: String): Parsley[String] = new Parsley(mutable.Buffer(StringTok(s)), Map.empty)
     def anyChar: Parsley[Char] = satisfy(_ => true)
     def eof: Parsley[Unit] = notFollowedBy(anyChar) ? "end of input"
     @deprecated("Deprecated in favour of `?:`, no wording required, may be confused with `p <|> q`", "")
@@ -529,7 +529,7 @@ object DeepEmbedding
         /**Alias for `p ? msg`.**/
         def label[A](p: Parsley[A], msg: String): Parsley[A] = p ? msg
         def fail(msg: String): Parsley[Nothing] = new Fail(msg)
-        val empty: Parsley[Nothing] = Empty
+        def empty: Parsley[Nothing] = new Empty
         def unexpected(msg: String): Parsley[Nothing] = new Unexpected(msg)
         def notFollowedBy(p: Parsley[_]): Parsley[Unit] = attempt(p).unexpected("\"" + _.toString + "\"").orElse[Unit](unit)
         val unit: Parsley[Unit] = pure(())
@@ -625,17 +625,12 @@ object DeepEmbedding
             instrs_
         }
         final private [DeepEmbedding] def fix(implicit seen: Set[Parsley[_]]): Parsley[A] = if (seen.contains(this)) new Fixpoint(this) else this
-        final private [DeepEmbedding] def generate(e: ExpectingInstr): ExpectingInstr =
-        {
-            e.expected = expected
-            e
-        }
         
         // Abstracts
         // Sub-tree optimisation and fixpoint calculation - Bottom-up
         protected def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A]
         // Optimisation - Bottom-up
-        private [DeepEmbedding] def optimise(implicit label: UnsafeOption[String]): Parsley[A]
+        private [DeepEmbedding] def optimise: Parsley[A]
         // Peephole optimisation and code generation - Top-down
         private [DeepEmbedding] def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit
         private [DeepEmbedding] def ===[B >: A](other: Parsley[B]): Boolean = false
@@ -644,7 +639,7 @@ object DeepEmbedding
     private [DeepEmbedding] final class Pure[A](private [Pure] val x: A) extends Parsley[A]
     {
         override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = this
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[A] = this
+        override def optimise: Parsley[A] = this
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = instrs += new parsley.Push(x)
         override def ===[B >: A](other: Parsley[B]): Boolean = other.isInstanceOf[Pure[B]] && other.asInstanceOf[Pure[B]].x == x
     }
@@ -653,7 +648,7 @@ object DeepEmbedding
         private [App] lazy val pf = _pf
         private [App] lazy val px = _px 
         override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[B] = new App(pf.optimised, px.optimised)
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[B] = (pf, px) match
+        override def optimise: Parsley[B] = (pf, px) match
         {
             // right absorption law: mzero <*> p = mzero 
             case (z: MZero, _) => z
@@ -686,8 +681,8 @@ object DeepEmbedding
         {
             // TODO: We are missing out on optimisation opportunities... push fmaps down into or tree branches?
             // pure f <*> p = f <$> p
-            case (Pure(f: (Char => B) @unchecked), CharTok(c)) => instrs += parsley.CharTokFastPerform[Char, B](c, f)
-            case (Pure(f: (String => B) @unchecked), StringTok(s)) => instrs += new parsley.StringTokFastPerform(s, f)
+            case (Pure(f: (Char => B) @unchecked), ct@CharTok(c)) => instrs += parsley.CharTokFastPerform[Char, B](c, f, ct.expected)
+            case (Pure(f: (String => B) @unchecked), st@StringTok(s)) => instrs += parsley.StringTokFastPerform[String, B](s, f, st.expected)
             case (Pure(f: (A => B)), _) =>
                 px.codeGen
                 instrs += new parsley.Perform(f)
@@ -703,14 +698,14 @@ object DeepEmbedding
         private [Or] lazy val p = _p
         private [Or] lazy val q = _q
         override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[B] = new Or(p.optimised, q.optimised)
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[B] = (p, q) match
+        override def optimise: Parsley[B] = (p, q) match
         {
             // left catch law: pure x <|> p = pure x
             case (p: Pure[_], _) => p
             // alternative law: empty <|> p = p
-            case (Empty, q) => q
+            case (e: Empty, q) if e.expected == null => q
             // alternative law: p <|> empty = p
-            case (p, Empty) => p
+            case (p, e: Empty) if e.expected == null => p
             // associative law: (u <|> v) <|> w = u <|> (v <|> w)
             case (Or(u: Parsley[T], v: Parsley[A]), w) => new Or(u, new Or[A, B](v, w)).asInstanceOf[Or[_, B]]
             case (p, q) => if (p === q) p else this
@@ -727,26 +722,39 @@ object DeepEmbedding
             instrs += Label(skip)
         }
     }
-    private [DeepEmbedding] final class Bind[A, +B](_p: =>Parsley[A], private [Bind] val f: A => Parsley[B])(implicit label: UnsafeOption[String] = null) extends Parsley[B]
+    private [DeepEmbedding] final class Bind[A, +B](_p: =>Parsley[A], private [Bind] val f: A => Parsley[B]) extends Parsley[B]
     {
-        expected = label
         private [Bind] lazy val p = _p
-        override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[B] = new Bind(p.optimised, f)
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[B] = p match
+        override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[B] = 
+        {
+            val b = new Bind(p.optimised, f)
+            b.expected = label
+            b
+        }
+        override def optimise: Parsley[B] = p match
         {
             // TODO: We need to try and identify the fixpoints in the optimised binds, so we can remove the call instructions
             // monad law 1: pure x >>= f = f x
-            case Pure(x) => new Fixpoint(f(x).optimise)
+            case Pure(x) => val fp = new Fixpoint(f(x).optimise); fp.expected = expected; fp
             // char/string x = char/string x *> pure x and monad law 1
-            case p@CharTok(c) => new Then(p, new Fixpoint(f(c.asInstanceOf[A]).optimise))
-            case p@StringTok(s) => new Then(p, new Fixpoint(f(s.asInstanceOf[A]).optimise))
-            // consequence of monad laws 1, 3 and p *> q = p >>= \_ -> q
-            // possible consequence of re-association law 3: pure x <* p = p *> pure x
-            // possible consequence of char/string unpack: char/string x = char/string x *> pure x
-            // (q *> pure x) >>= f = f x = (pure x <* q) >>= f
-            case Cont(q, p) => new Then(q, new Bind(p, f).optimise)
+            case p@CharTok(c) => 
+                val fp = new Fixpoint(f(c.asInstanceOf[A]).optimise)
+                fp.expected = expected
+                new Then(p, fp)
+            case p@StringTok(s) => 
+                val fp = new Fixpoint(f(s.asInstanceOf[A]).optimise)
+                fp.expected = expected
+                new Then(p, fp)
+            // (q *> p) >>= f = q *> (p >>= f) / (p <* q) >>= f = (p >>= f) <* q
+            case Cont(q, p) => 
+                val b = new Bind(p, f).optimise
+                b.expected = expected
+                new Then(q, b)
             // monad law 3: (m >>= g) >>= f = m >>= (\x -> g x >>= f) NOTE: this *could* help if g x ended with a pure, since this would be optimised out!
-            case Bind(m: Parsley[T] @unchecked, g: (T => A) @unchecked) => new Bind(m, (x: T) => new Bind(g(x), f).optimise)
+            case Bind(m: Parsley[T] @unchecked, g: (T => A) @unchecked) => 
+                val b = new Bind(m, (x: T) => new Bind(g(x), f).optimise)
+                b.expected = expected
+                b
             // monadplus law (left zero)
             case z: MZero => z
             // TODO: Consider pushing bind into or tree? may find optimisation opportunities
@@ -755,7 +763,7 @@ object DeepEmbedding
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = 
         {
             p.codeGen
-            instrs += generate(new parsley.DynSub[A](x => f(x).instrs))
+            instrs += new parsley.DynSub[A](x => f(x).instrs, expected)
         }
     }
     private [DeepEmbedding] final class Satisfy(private [Satisfy] val f: Char => Boolean) extends Parsley[Char]
@@ -765,8 +773,8 @@ object DeepEmbedding
             expected = label
             this
         }
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[Char] = this
-        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = instrs += generate(new parsley.Satisfies(f))
+        override def optimise: Parsley[Char] = this
+        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = instrs += new parsley.Satisfies(f, expected)
     }
     private [DeepEmbedding] abstract class Cont[A, +B] extends Parsley[B]
     {
@@ -779,7 +787,7 @@ object DeepEmbedding
         private [Then] lazy val p = _p
         private [Then] lazy val q = _q
         override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[B] = new Then(p.optimised, q.optimised)
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[B] = (p, q) match
+        override def optimise: Parsley[B] = (p, q) match
         {
             // TODO: Consider char(c) *> char(d) => string(cd) *> pure(d) in some form!
             // pure _ *> p = p
@@ -792,8 +800,8 @@ object DeepEmbedding
         }
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = (p, q) match
         {
-            case (CharTok(c), Pure(x)) => instrs += parsley.CharTokFastPerform[Char, B](c, _ => x)
-            case (StringTok(s), Pure(x)) => instrs += new parsley.StringTokFastPerform(s, _ => x)
+            case (CharTok(c), ct@Pure(x)) => instrs += parsley.CharTokFastPerform[Char, B](c, _ => x, ct.expected)
+            case (StringTok(s), st@Pure(x)) => instrs += parsley.StringTokFastPerform[String, B](s, _ => x, st.expected)
             case (p, Pure(x)) =>
                 p.codeGen
                 instrs += new parsley.Exchange(x)
@@ -811,7 +819,7 @@ object DeepEmbedding
         private [Prev] lazy val p = _p
         private [Prev] lazy val q = _q
         override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = new Prev(p.optimised, q.optimised)
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[A] = (p, q) match
+        override def optimise: Parsley[A] = (p, q) match
         {
             // TODO: Consider char(c) <* char(d) => string(cd) *> pure(c) in some form!
             // p <* pure _ == p
@@ -826,8 +834,8 @@ object DeepEmbedding
         }
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = (p, q) match
         {
-            case (Pure(x), CharTok(c)) => instrs += parsley.CharTokFastPerform[Char, A](c, _ => x)
-            case (Pure(x), StringTok(s)) => instrs += new parsley.StringTokFastPerform(s, _ => x)
+            case (Pure(x), ct@CharTok(c)) => instrs += parsley.CharTokFastPerform[Char, A](c, _ => x, ct.expected)
+            case (Pure(x), st@StringTok(s)) => instrs += parsley.StringTokFastPerform[String, A](s, _ => x, st.expected)
             case (Pure(x), q) =>
                 q.codeGen
                 instrs += new parsley.Exchange(x)
@@ -845,7 +853,7 @@ object DeepEmbedding
         private [Attempt] lazy val p = _p
         override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = new Attempt(p.optimised)
         // TODO: Pure and mzeros can be lifted out
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[A] = this
+        override def optimise: Parsley[A] = this
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit =
         {
             val handler = labels.fresh()
@@ -859,7 +867,7 @@ object DeepEmbedding
     {
         private [Look] lazy val p = _p
         override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = new Look(p.optimised)
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[A] = this
+        override def optimise: Parsley[A] = this
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = 
         {
             val handler = labels.fresh()
@@ -870,23 +878,35 @@ object DeepEmbedding
         }
     }
     private [DeepEmbedding] sealed trait MZero extends Parsley[Nothing]
-    private [DeepEmbedding] object Empty extends MZero
+    private [DeepEmbedding] class Empty extends MZero
     {
-        override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[Nothing] = this
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[Nothing] = this
-        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = instrs += new parsley.Empty
+        override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[Nothing] = 
+        {
+            expected = label
+            this
+        }
+        override def optimise: Parsley[Nothing] = this
+        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = instrs += new parsley.Empty(expected)
     }
     private [DeepEmbedding] final class Fail(private [Fail] val msg: String) extends MZero
     {
-        override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[Nothing] = this
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[Nothing] = this
-        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = instrs += new parsley.Fail(msg)
+        override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[Nothing] = 
+        {
+            expected = label
+            this
+        }
+        override def optimise: Parsley[Nothing] = this
+        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = instrs += new parsley.Fail(msg, expected)
     }
     private [DeepEmbedding] final class Unexpected(private [Unexpected] val msg: String) extends MZero
     {
-        override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[Nothing] = this
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[Nothing] = this
-        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = instrs += new parsley.Unexpected(msg)
+        override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[Nothing] = 
+        {
+            expected = label
+            this
+        }
+        override def optimise: Parsley[Nothing] = this
+        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = instrs += new parsley.Unexpected(msg, expected)
     }
     private [DeepEmbedding] final class Fixpoint[+A](_p: =>Parsley[A]) extends Parsley[A]
     {
@@ -896,8 +916,8 @@ object DeepEmbedding
             expected = label
             this
         }
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[A] = this
-        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = instrs += generate(new parsley.Call_(p))
+        override def optimise: Parsley[A] = this
+        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = instrs += new parsley.Call_(p, expected)
     }
     // Intrinsic Embedding
     private [DeepEmbedding] final class CharTok(private [CharTok] val c: Char) extends Parsley[Char]
@@ -907,8 +927,8 @@ object DeepEmbedding
             expected = label
             this
         }
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[Char] = this
-        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = instrs += generate(parsley.CharTok(c))
+        override def optimise: Parsley[Char] = this
+        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = instrs += parsley.CharTok(c, expected)
     }
     private [DeepEmbedding] final class StringTok(private [StringTok] val s: String) extends Parsley[String]
     {
@@ -917,12 +937,12 @@ object DeepEmbedding
             expected = label
             this
         }
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[String] = s match
+        override def optimise: Parsley[String] = s match
         {
             case "" => new Pure("")
             case _ => this
         }
-        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = instrs += generate(new parsley.StringTok(s))
+        override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = instrs += parsley.StringTok(s, expected)
     }
     private [DeepEmbedding] final class Lift[A, B, +C](private [Lift] val f: (A, B) => C,
                                                       _p: =>Parsley[A], _q: =>Parsley[B]) extends Parsley[C]
@@ -931,7 +951,7 @@ object DeepEmbedding
         private [Lift] lazy val q = _q
         override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[C] = new Lift(f, p.optimised, q.optimised)
         // TODO: Perform applicative fusion optimisations
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[C] = this
+        override def optimise: Parsley[C] = this
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit =
         {
             p.codeGen
@@ -947,7 +967,7 @@ object DeepEmbedding
         // TODO: Right associative normal form
         // TODO: Consider merging char ::s into strings?
         // TODO: Perform applicative fusion
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[List[B]] = this
+        override def optimise: Parsley[List[B]] = this
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit =
         {
             p.codeGen
@@ -958,8 +978,13 @@ object DeepEmbedding
     private [DeepEmbedding] final class FastFail[A](_p: =>Parsley[A], private [FastFail] val msggen: A => String) extends MZero
     {
         private [FastFail] lazy val p = _p
-        override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[Nothing] = new FastFail(p.optimised, msggen)
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[Nothing] = p match
+        override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[Nothing] = 
+        {
+            val ff = new FastFail(p.optimised, msggen)
+            ff.expected = label
+            ff
+        }
+        override def optimise: Parsley[Nothing] = p match
         {
             case Pure(x) => new Fail(msggen(x))
             case z: MZero => z
@@ -968,14 +993,14 @@ object DeepEmbedding
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit =
         {
             p.codeGen
-            instrs += new parsley.FastFail(msggen)
+            instrs += new parsley.FastFail(msggen, expected)
         }
     }
     private [DeepEmbedding] final class Many[+A](_p: =>Parsley[A]) extends Parsley[List[A]]
     {
         private [Many] lazy val p = _p
         override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[List[A]] = new Many(p.optimised)
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[List[A]] = p match
+        override def optimise: Parsley[List[A]] = p match
         {
             case _: Pure[A] => throw new Exception("many given parser which consumes no input")
             case _: MZero => new Pure(Nil)
@@ -996,7 +1021,7 @@ object DeepEmbedding
     {
         private [SkipMany] lazy val p = _p
         override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[Unit] = new SkipMany(p.optimised)
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[Unit] = p match
+        override def optimise: Parsley[Unit] = p match
         {
             case _: Pure[A] => throw new Exception("skipMany given parser which consumes no input")
             case _: MZero => new Pure(())
@@ -1018,7 +1043,7 @@ object DeepEmbedding
         private [Chainl] lazy val p = _p
         private [Chainl] lazy val op = _op
         override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = new Chainl(p.optimised, op.optimised)
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[A] = op match
+        override def optimise: Parsley[A] = op match
         {
             case _: Pure[A => A] => throw new Exception("left chain given parser which consumes no input")
             case _: MZero => p
@@ -1044,7 +1069,7 @@ object DeepEmbedding
             if (label == null) p.optimised(seen, msg)
             else p.optimised
         }
-        override def optimise(implicit label: UnsafeOption[String]): Parsley[A] = throw new Exception("Error relabelling should not be in optimisation!")
+        override def optimise: Parsley[A] = throw new Exception("Error relabelling should not be in optimisation!")
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = throw new Exception("Error relabelling should not be in code gen!")
     }
     
@@ -1106,6 +1131,7 @@ object DeepEmbedding
         catch { case _: Throwable => }
         
         // Error message testing
+        println(runParser(char('a') ? "ay!", "b"))
         lazy val r: Parsley[List[String]] = string("correct error message") <::> (r </> Nil)
         println(runParser(r ? "nothing but this :)", ""))
         println(runParser(fail("hi"), "b"))
@@ -1116,7 +1142,7 @@ object DeepEmbedding
         println(runParser(empty ? "something, at least", "b"))
         println(runParser(char('a') <|> empty ? "something, at least", "b"))
         println(eof.pretty)
-        println(runParser(eof, "ab"))
+        println(runParser(eof, "a"))
         println("hi")
         println(runParser((char('a') *> char('b')) <|> char('a'), "a"))
     }

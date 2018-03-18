@@ -86,11 +86,6 @@ private [parsley] final class Context(var instrs: Array[Instr],
             if (diffstack > 0) stack = drop(stack, diffstack)
             stacksz = handler.stacksz
             depth = handler.depth
-            if (depth < overrideDepth)
-            {
-                overrideDepth = 0
-                errorOverride = null
-            }
         }
         if (offset > erroffset)
         {
@@ -103,6 +98,11 @@ private [parsley] final class Context(var instrs: Array[Instr],
             unexpectAnyway = false
         }
         else if (offset == erroffset) expected ::= (if (errorOverride == null) e else errorOverride)
+        if (depth < overrideDepth)
+        {
+            overrideDepth = 0
+            errorOverride = null
+        }
     }
 
     def errorMessage(): String =
