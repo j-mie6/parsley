@@ -22,6 +22,7 @@ package object parsley
     private [parsley] abstract class Instr
     {
         def apply(ctx: Context): Unit
+        // Instructions should override this if they have mutable state inside!
         def copy: Instr = this
     }
     
@@ -31,7 +32,7 @@ package object parsley
     }
 
     // It's 2018 and Labels are making a come-back, along with 2 pass assembly
-    private [parsley] final case class Label(i: Int) extends Instr
+    private [parsley] final class Label(val i: Int) extends Instr
     {
         def apply(ctx: Context): Unit = throw new Exception("Cannot execute label")
     }

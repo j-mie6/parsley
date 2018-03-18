@@ -39,7 +39,7 @@ private [parsley] object Flip extends Instr
 // Primitives
 private [parsley] class CharTok protected (protected final val c: Char, _expected: UnsafeOption[String]) extends Instr
 {
-    protected val expected = if (_expected == null) "\"" + c.toString + "\"" else _expected
+    protected val expected: String = if (_expected == null) "\"" + c.toString + "\"" else _expected
     protected final val ac: Any = c
     override def apply(ctx: Context): Unit =
     {

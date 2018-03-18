@@ -66,7 +66,7 @@ private [parsley] class Tab(_expected: UnsafeOption[String]) extends CharTok('\t
 
 private [parsley] class CharTokFastPerform protected (protected final val c: Char, protected final val f: Char => Any, _expected: UnsafeOption[String]) extends Instr
 {
-    protected val expected = if (_expected == null) "\"" + c.toString + "\"" else _expected
+    protected val expected: String = if (_expected == null) "\"" + c.toString + "\"" else _expected
     protected final val fc: Any = f(c)
     override def apply(ctx: Context): Unit =
     {
@@ -115,7 +115,7 @@ private [parsley] final class TabFastPerform(g: Char => Any, _expected: UnsafeOp
 
 private [parsley] final class StringTokFastPerform(s: String, f: String => Any, _expected: UnsafeOption[String]) extends Instr
 {
-    protected val expected = if (_expected == null) "\"" + s + "\"" else _expected
+    protected val expected: String = if (_expected == null) "\"" + s + "\"" else _expected
     private [this] val cs = s.toCharArray
     private [this] val sz = cs.length
     private [this] val fs: Any = f(s)

@@ -292,18 +292,18 @@ abstract class Parsley[+A]
         val labelMapping = new Array[Int](labels.size)
         @tailrec def findLabels(instrs: Array[Instr], labels: Array[Int], n: Int, i: Int = 0, off: Int = 0): Unit = if (i + off < n) instrs(i + off) match
         {
-            case parsley.Label(label) => labels.update(label, i); findLabels(instrs, labels, n, i, off+1)
+            case label: Label => labels.update(label.i, i); findLabels(instrs, labels, n, i, off+1)
             case _ => findLabels(instrs, labels, n, i+1, off)
         }
         @tailrec def applyLabels(srcs: Array[Instr], labels: Array[Int], dests: Array[Instr], n: Int, i: Int = 0, off: Int = 0): Unit = if (i < n) srcs(i + off) match
         {
-            case _: parsley.Label => applyLabels(srcs, labels, dests, n, i, off + 1)
+            case _: Label => applyLabels(srcs, labels, dests, n, i, off + 1)
             case jump: JumpInstr => 
                 jump.label = labels(jump.label)
                 dests.update(i, jump)
                 applyLabels(srcs, labels, dests, n, i + 1, off)
             case instr => 
-                dests.update(i, instr); 
+                dests.update(i, instr)
                 applyLabels(srcs, labels, dests, n, i + 1, off)
         }
         findLabels(instrsOversize, labelMapping, instrs.length)
@@ -418,10 +418,10 @@ object DeepEmbedding
             val skip = labels.fresh()
             instrs += new InputCheck(handler)
             p.codeGen
-            instrs += Label(handler)
+            instrs += new Label(handler)
             instrs += new JumpGood(skip)
             q.codeGen
-            instrs += Label(skip)
+            instrs += new Label(skip)
         }
     }
     private [parsley] final class Bind[A, +B](_p: =>Parsley[A], private [Bind] val f: A => Parsley[B]) extends Parsley[B]
@@ -561,7 +561,7 @@ object DeepEmbedding
             val handler = labels.fresh()
             instrs += new parsley.PushHandler(handler)
             p.codeGen
-            instrs += parsley.Label(handler)
+            instrs += new parsley.Label(handler)
             instrs += parsley.Try
         }
     }
@@ -575,7 +575,7 @@ object DeepEmbedding
             val handler = labels.fresh()
             instrs += new parsley.PushHandler(handler)
             p.codeGen
-            instrs += parsley.Label(handler)
+            instrs += new parsley.Label(handler)
             instrs += parsley.Look
         }
     }
@@ -713,9 +713,9 @@ object DeepEmbedding
             val body = labels.fresh()
             val handler = labels.fresh()
             instrs += new parsley.InputCheck(handler)
-            instrs += parsley.Label(body)
+            instrs += new parsley.Label(body)
             p.codeGen
-            instrs += parsley.Label(handler)
+            instrs += new parsley.Label(handler)
             instrs += new parsley.Many(body)
         }
     }
@@ -734,9 +734,9 @@ object DeepEmbedding
             val body = labels.fresh()
             val handler = labels.fresh()
             instrs += new parsley.InputCheck(handler)
-            instrs += parsley.Label(body)
+            instrs += new parsley.Label(body)
             p.codeGen
-            instrs += parsley.Label(handler)
+            instrs += new parsley.Label(handler)
             instrs += new parsley.SkipMany(body)
         }
     }
@@ -757,9 +757,9 @@ object DeepEmbedding
             val handler = labels.fresh()
             p.codeGen
             instrs += new parsley.InputCheck(handler)
-            instrs += parsley.Label(body)
+            instrs += new parsley.Label(body)
             op.codeGen
-            instrs += parsley.Label(handler)
+            instrs += new parsley.Label(handler)
             instrs += new parsley.Chainl(body)
         }
     }
