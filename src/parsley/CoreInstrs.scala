@@ -236,7 +236,7 @@ private [parsley] final class Empty(expected: UnsafeOption[String]) extends Inst
     override def toString: String = "Empty"
 }
 
-private [parsley] final class PushHandler(val label: Int) extends Instr
+private [parsley] final class PushHandler(var label: Int) extends JumpInstr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -298,7 +298,7 @@ private [parsley] object Look extends Instr
     override def toString: String = "Look"
 }
 
-private [parsley] final class InputCheck(val label: Int) extends Instr
+private [parsley] final class InputCheck(var label: Int) extends JumpInstr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -309,7 +309,7 @@ private [parsley] final class InputCheck(val label: Int) extends Instr
     override def toString: String = s"InputCheck($label)"
 }
 
-private [parsley] final class JumpGood(val label: Int) extends Instr
+private [parsley] final class JumpGood(var label: Int) extends JumpInstr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -339,19 +339,4 @@ private [parsley] object CharTok
         case '\t' => new Tab(expected)
         case _ => new CharTok(c, expected)
     }
-}
-
-private [parsley] object PushHandler
-{
-    def unapply(self: PushHandler): Option[Int] = Some(self.label)
-}
-
-private [parsley] object InputCheck
-{
-    def unapply(self: InputCheck): Option[Int] = Some(self.label)
-}
-
-private [parsley] object JumpGood
-{
-    def unapply(self: JumpGood): Option[Int] = Some(self.label)
 }

@@ -295,17 +295,16 @@ abstract class Parsley[+A]
             case parsley.Label(label) => labels.update(label, i); findLabels(instrs, labels, n, i, off+1)
             case _ => findLabels(instrs, labels, n, i+1, off)
         }
-        // TODO: This can now use mutable state :)
         @tailrec def applyLabels(srcs: Array[Instr], labels: Array[Int], dests: Array[Instr], n: Int, i: Int = 0, off: Int = 0): Unit = if (i < n) srcs(i + off) match
         {
-            case _: parsley.Label       => applyLabels(srcs, labels, dests, n, i, off + 1)
-            case parsley.PushHandler(l) => dests.update(i, new parsley.PushHandler(labels(l))); applyLabels(srcs, labels, dests, n, i + 1, off)
-            case parsley.InputCheck(l)  => dests.update(i, new parsley.InputCheck(labels(l)));  applyLabels(srcs, labels, dests, n, i + 1, off)
-            case parsley.JumpGood(l)    => dests.update(i, new parsley.JumpGood(labels(l)));    applyLabels(srcs, labels, dests, n, i + 1, off)
-            case parsley.Many(l)        => dests.update(i, new parsley.Many(labels(l)));        applyLabels(srcs, labels, dests, n, i + 1, off)
-            case parsley.SkipMany(l)    => dests.update(i, new parsley.SkipMany(labels(l)));    applyLabels(srcs, labels, dests, n, i + 1, off)
-            case parsley.Chainl(l)      => dests.update(i, new parsley.Chainl(labels(l)));      applyLabels(srcs, labels, dests, n, i + 1, off)
-            case instr                  => dests.update(i, instr);                              applyLabels(srcs, labels, dests, n, i + 1, off)
+            case _: parsley.Label => applyLabels(srcs, labels, dests, n, i, off + 1)
+            case jump: JumpInstr => 
+                jump.label = labels(jump.label)
+                dests.update(i, jump)
+                applyLabels(srcs, labels, dests, n, i + 1, off)
+            case instr => 
+                dests.update(i, instr); 
+                applyLabels(srcs, labels, dests, n, i + 1, off)
         }
         findLabels(instrsOversize, labelMapping, instrs.length)
         applyLabels(instrsOversize, labelMapping, instrs_, instrs_.length)

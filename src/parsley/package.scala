@@ -24,6 +24,11 @@ package object parsley
         def apply(ctx: Context): Unit
         def copy: Instr = this
     }
+    
+    private [parsley] abstract class JumpInstr extends Instr
+    {
+        var label: Int
+    }
 
     // It's 2018 and Labels are making a come-back, along with 2 pass assembly
     private [parsley] final case class Label(i: Int) extends Instr

@@ -25,7 +25,7 @@ private [parsley] object Cons extends Instr
     override def toString: String = "Cons"
 }
 
-private [parsley] final class Many(val label: Int) extends Instr
+private [parsley] final class Many(var label: Int) extends JumpInstr
 {
     private[this] val acc: ListBuffer[Any] = ListBuffer.empty
     override def apply(ctx: Context): Unit =
@@ -51,7 +51,7 @@ private [parsley] final class Many(val label: Int) extends Instr
     override def copy: Many = new Many(label)
 }
 
-private [parsley] final class SkipMany(val label: Int) extends Instr
+private [parsley] final class SkipMany(var label: Int) extends JumpInstr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -74,7 +74,7 @@ private [parsley] final class SkipMany(val label: Int) extends Instr
     override def copy: SkipMany = new SkipMany(label)
 }
 
-private [parsley] final class Chainl(val label: Int) extends Instr
+private [parsley] final class Chainl(var label: Int) extends JumpInstr
 {
     private[this] var acc: Any = _
     override def apply(ctx: Context): Unit =
@@ -112,29 +112,8 @@ private [parsley] final class Chainl(val label: Int) extends Instr
 }
 
 // TODO: What is the best way to implement this intrinsic?
-private [parsley] final class Chainr(val label: Int) extends Instr
+private [parsley] final class Chainr(var label: Int) extends JumpInstr
 {
     override def apply(ctx: Context): Unit = ???
     override def copy: Chainr = new Chainr(label)
-}
-
-// Extractor Objects
-private [parsley] object Many
-{
-    def unapply(self: Many): Option[Int] = Some(self.label)
-}
-
-private [parsley] object SkipMany
-{
-    def unapply(self: SkipMany): Option[Int] = Some(self.label)
-}
-
-private [parsley] object Chainl
-{
-    def unapply(self: Chainl): Option[Int] = Some(self.label)
-}
-
-private [parsley] object Chainr
-{
-    def unapply(self: Chainr): Option[Int] = Some(self.label)
 }
