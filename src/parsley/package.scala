@@ -6,10 +6,8 @@ package object parsley
 {
     import parsley.Stack._
     // Public API
-    def runParser[A](p: DeepEmbedding.Parsley[A], input: String): Result[A] = runParser[A](p, input.toCharArray)
-    def runParser[A](p: DeepEmbedding.Parsley[A], input: Array[Char]): Result[A] = runParser_[A](new Context(p.instrs, input, p.subsMap))
     def runParser[A](p: Parsley[A], input: String): Result[A] = runParser[A](p, input.toCharArray)
-    def runParser[A](p: Parsley[A], input: Array[Char]): Result[A] = runParser_[A](new Context(p.instrArray, input, p.subsMap))
+    def runParser[A](p: Parsley[A], input: Array[Char]): Result[A] = runParser_[A](new Context(p.instrs, input))
 
     // Implicit Conversions
     @inline final implicit def stringLift(str: String): Parsley[String] = parsley.Parsley.string(str)
@@ -28,21 +26,6 @@ package object parsley
         def copy: Instr
     }
 
-    @deprecated("Will be removed on branch merge", "")
-    private [parsley] abstract class FwdJumpInstr extends Instr
-    {
-        val label: Int
-        var lidx: Int = -1
-        @deprecated("Will be removed on branch merge", "") def copy(lidx: Int = this.lidx): FwdJumpInstr =
-        {
-            val j = copy_()
-            j.lidx = lidx
-            j
-        }
-        final override def copy: FwdJumpInstr = copy()
-        @deprecated("No longer used", "") protected def copy_(): FwdJumpInstr
-    }
-    
     private [parsley] abstract class ExpectingInstr(private [parsley] var expected: UnsafeOption[String]) extends Instr
     {
         final override def copy: ExpectingInstr =

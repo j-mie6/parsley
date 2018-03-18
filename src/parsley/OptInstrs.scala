@@ -182,25 +182,6 @@ private [parsley] final class StringTokFastPerform protected (private [this] val
     override def copy_ : ExpectingInstr = new StringTokFastPerform(s, f)
 }
 
-// Extractor Objects
-private [parsley] object Perform
-{
-    @deprecated("Will be removed upon branch merge", "")
-    def unapply(self: Perform[_, _]): Option[Any => Any] = Some(self.g)
-}
-
-private [parsley] object Exchange
-{
-    @deprecated("Will be removed upon branch merge", "")
-    def unapply[A](self: Exchange[A]): Option[A] = Some(self.x)
-}
-
-private [parsley] object FastFail
-{
-    @deprecated("Will be removed upon branch merge", "")
-    def unapply[A](self: FastFail[A]): Option[A => String] = Some(self.msggen)
-}
-
 private [parsley] object CharTokFastPerform
 {
     def apply[A >: Char, B](c: Char, f: A => B, expected: UnsafeOption[String]): CharTokFastPerform = (c: @switch) match
@@ -218,8 +199,6 @@ private [parsley] object CharTokFastPerform
             if (expected != null) ct.expected = expected
             ct
     }
-    @deprecated("Will be removed upon branch merge", "")
-    def unapply(self: CharTokFastPerform): Option[(Char, Char=>Any)] = Some((self.c, self.f))
 }
 
 private [parsley] object StringTokFastPerform

@@ -6,20 +6,15 @@ object ParsleyBench
 {
     import parsley.Parsley._
     val liftab: Parsley[String] = lift2[Char, Char, String]((x, y) => x.toString + y.toString, 'a', 'b')
-    println(liftab)
-    reset()
+    println(liftab.pretty)
     val aconsb: Parsley[List[Char]] = 'a' <::> ('b' #> Nil)
-    println(aconsb)
-    reset()
+    println(aconsb.pretty)
     val athenb: Parsley[String] = 'a' *> 'b' #> "ab"
-    println(athenb)
-    reset()
+    println(athenb.pretty)
     val manya: Parsley[List[Char]] = many('a') <* 'b'
-    println(manya)
-    reset()
+    println(manya.pretty)
     val chain: Parsley[Int] = chainl1('1' <#> (_.toInt), '+' #> ((x: Int) => (y: Int) => x + y))
-    println(chain)
-    reset()
+    println(chain.pretty)
 }
 
 /*object BenchParser extends scala.util.parsing.combinator.Parsers

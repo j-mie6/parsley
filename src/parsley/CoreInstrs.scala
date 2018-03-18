@@ -179,32 +179,7 @@ private [parsley] final class DynSub[-A](f: A => Array[Instr], expected: UnsafeO
 }
 
 // Control Flow
-private [parsley] final class Call(private [Call] val x: String) extends ExpectingInstr(null)
-{
-    // TEMPORARY FIXME
-    // It has been determined that single use arrays are, in fact, not compatible with
-    // mutable intrinsics. Any instruction streams containing stateful instructions must
-    // be deep-copied and have those instructions deep-copied also. For now, we will just
-    // deep copy all streams, but that's very inefficient.
-    private [this] var instrs: UnsafeOption[Array[Instr]] = _
-    override def apply(ctx: Context): Unit =
-    {
-        ctx.calls ::= new Frame(ctx.pc + 1, ctx.instrs)
-        if (instrs == null) instrs = ctx.subs(x)
-        ctx.instrs = instrs.map(_.copy)
-        ctx.depth += 1
-        if (expected != null)
-        {
-            ctx.overrideDepth = ctx.depth
-            ctx.errorOverride = expected
-        }
-        ctx.pc = 0
-    }
-    override def toString: String = s"Call($x)"
-    override def copy_ : ExpectingInstr = new Call(x)
-}
-
-private [parsley] final class Call_(p: DeepEmbedding.Parsley[_], expected: UnsafeOption[String]) extends ExpectingInstr(expected)
+private [parsley] final class Call(p: Parsley[_], expected: UnsafeOption[String]) extends ExpectingInstr(expected)
 {
     // TEMPORARY FIXME
     // It has been determined that single use arrays are, in fact, not compatible with
@@ -231,7 +206,7 @@ private [parsley] final class Call_(p: DeepEmbedding.Parsley[_], expected: Unsaf
         ctx.pc = 0
     }
     override def toString: String = s"Call($p)"
-    override def copy_ : ExpectingInstr = new Call_(p, expected)
+    override def copy_ : ExpectingInstr = new Call(p, expected)
 }
 
 private [parsley] final class Fail(private [Fail] val msg: String, expected: UnsafeOption[String]) extends ExpectingInstr(expected)
@@ -269,7 +244,7 @@ private [parsley] final class Empty(expected: UnsafeOption[String]) extends Expe
     override def copy_ : ExpectingInstr = new Empty(expected)
 }
 
-private [parsley] final class PushHandler(override val label: Int) extends FwdJumpInstr
+private [parsley] final class PushHandler(val label: Int) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -278,7 +253,7 @@ private [parsley] final class PushHandler(override val label: Int) extends FwdJu
         ctx.inc()
     }
     override def toString: String = s"PushHandler($label)"
-    override def copy_(): FwdJumpInstr = new PushHandler(label)
+    override def copy: PushHandler = new PushHandler(label)
 }
 
 private [parsley] object Try extends Instr
@@ -334,7 +309,7 @@ private [parsley] object Look extends Instr
     override def copy: Look.type = Look
 }
 
-private [parsley] final class InputCheck(override val label: Int) extends FwdJumpInstr
+private [parsley] final class InputCheck(val label: Int) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -343,10 +318,10 @@ private [parsley] final class InputCheck(override val label: Int) extends FwdJum
         ctx.inc()
     }
     override def toString: String = s"InputCheck($label)"
-    override def copy_(): FwdJumpInstr = new InputCheck(label)
+    override def copy(): InputCheck = new InputCheck(label)
 }
 
-private [parsley] final class JumpGood(override val label: Int) extends FwdJumpInstr
+private [parsley] final class JumpGood(val label: Int) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -365,16 +340,10 @@ private [parsley] final class JumpGood(override val label: Int) extends FwdJumpI
         ctx.checkStack = ctx.checkStack.tail
     }
     override def toString: String = s"JumpGood($label)"
-    override def copy_(): FwdJumpInstr = new JumpGood(label)
+    override def copy(): JumpGood = new JumpGood(label)
 }
 
 // Extractor Objects
-private [parsley] object Push
-{
-    @deprecated("Will be removed upon branch merge", "")
-    def unapply(self: Push[_]): Option[Any] = Some(self.x)
-}
-
 private [parsley] object CharTok
 {
     def apply(c: Char, expected: UnsafeOption[String] = null): CharTok = (c: @switch) match
@@ -392,8 +361,6 @@ private [parsley] object CharTok
             if (expected != null) ct.expected = expected
             ct
     }
-    @deprecated("Will be removed upon branch merge", "")
-    def unapply(self: CharTok): Option[Char] = Some(self.c)
 }
 
 private [parsley] object StringTok
@@ -404,12 +371,6 @@ private [parsley] object StringTok
         if (expected != null) st.expected = expected
         st
     }
-}
-
-private [parsley] object Call
-{
-    @deprecated("Will be removed upon branch merge", "")
-    def unapply(self: Call): Option[String] = Some(self.x)
 }
 
 private [parsley] object PushHandler
