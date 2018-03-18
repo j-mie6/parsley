@@ -333,7 +333,7 @@ private [parsley] final class JumpGood(var label: Int) extends JumpInstr
 // Extractor Objects
 private [parsley] object CharTok
 {
-    def apply(c: Char, expected: UnsafeOption[String] = null): CharTok = (c: @switch) match
+    def apply(c: Char, expected: UnsafeOption[String]): CharTok = (c: @switch) match
     {
         case '\n' => new Newline(expected)
         case '\t' => new Tab(expected)

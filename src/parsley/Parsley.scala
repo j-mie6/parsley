@@ -319,7 +319,6 @@ abstract class Parsley[+A]
     private [parsley] def optimise: Parsley[A]
     // Peephole optimisation and code generation - Top-down
     private [parsley] def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit
-    private [parsley] def ===[B >: A](other: Parsley[B]): Boolean = false
 }
     
 object DeepEmbedding
@@ -330,7 +329,6 @@ object DeepEmbedding
         override def preprocess(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = this
         override def optimise: Parsley[A] = this
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = instrs += new parsley.Push(x)
-        override def ===[B >: A](other: Parsley[B]): Boolean = other.isInstanceOf[Pure[B]] && other.asInstanceOf[Pure[B]].x == x
     }
     private [parsley] final class App[A, B](_pf: =>Parsley[A => B], _px: =>Parsley[A]) extends Parsley[B]
     {
@@ -393,7 +391,6 @@ object DeepEmbedding
                 px.codeGen
                 instrs += parsley.Apply
         }
-        override def ===[C >: B](other: Parsley[C]): Boolean = other.isInstanceOf[App[A, B]] && other.asInstanceOf[App[A, B]].pf === pf && other.asInstanceOf[App[A, B]].px === px
     }
     private [parsley] final class Or[A, +B >: A](_p: =>Parsley[A], _q: =>Parsley[B]) extends Parsley[B]
     {
@@ -410,7 +407,7 @@ object DeepEmbedding
             case (p, e: Empty) if e.expected == null => p
             // associative law: (u <|> v) <|> w = u <|> (v <|> w)
             case (Or(u: Parsley[T], v: Parsley[A]), w) => new Or(u, new Or[A, B](v, w)).asInstanceOf[Or[_, B]]
-            case (p, q) => if (p === q) p else this
+            case _ => this
         }
         override def codeGen(implicit instrs: InstrBuffer, labels: LabelCounter): Unit = 
         {
