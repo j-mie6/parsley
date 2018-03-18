@@ -139,7 +139,7 @@ private [parsley] final class StringTokFastPerform protected (private [this] val
             else (col, line, tabprefix)
         }
         val (col, line, tabprefix) = compute(cs)
-        if (line > 0) ((x: Int) => col, (x: Int) => x + line)
+        if (line > 0) ((_: Int) => col, (x: Int) => x + line)
         else (tabprefix match
         {
             case Some(prefix) => 
@@ -165,7 +165,8 @@ private [parsley] final class StringTokFastPerform protected (private [this] val
                 if (i == inputsz || input(i) != c)
                 {
                     ctx.offset = i
-                    return ctx.fail(expected)
+                    ctx.fail(expected)
+                    return
                 }
                 i += 1
                 j += 1

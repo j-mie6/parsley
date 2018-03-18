@@ -5,7 +5,7 @@ import scala.collection.mutable.ListBuffer
 private [parsley] final class Lift[A, B, C](private [Lift] val f: (A, B) => C) extends Instr
 {
     private [this] val g = f.asInstanceOf[(Any, Any) => C]
-    final override def apply(ctx: Context): Unit =
+    override def apply(ctx: Context): Unit =
     {
         val y = ctx.popStack()
         ctx.exchangeStack(g(ctx.stack.head, y))

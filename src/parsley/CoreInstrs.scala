@@ -101,7 +101,7 @@ private [parsley] final class StringTok protected (private [StringTok] val s: St
             else (col, line, tabprefix)
         }
         val (col, line, tabprefix) = compute(cs)
-        if (line > 0) ((x: Int) => col, (x: Int) => x + line)
+        if (line > 0) ((_: Int) => col, (x: Int) => x + line)
         else (tabprefix match
         {
             case Some(prefix) => 
@@ -127,7 +127,8 @@ private [parsley] final class StringTok protected (private [StringTok] val s: St
                 if (i == inputsz || input(i) != c)
                 {
                     ctx.offset = i
-                    return ctx.fail(expected)
+                    ctx.fail(expected)
+                    return
                 }
                 i += 1
                 j += 1
@@ -318,7 +319,7 @@ private [parsley] final class InputCheck(val label: Int) extends Instr
         ctx.inc()
     }
     override def toString: String = s"InputCheck($label)"
-    override def copy(): InputCheck = new InputCheck(label)
+    override def copy: InputCheck = new InputCheck(label)
 }
 
 private [parsley] final class JumpGood(val label: Int) extends Instr
@@ -340,7 +341,7 @@ private [parsley] final class JumpGood(val label: Int) extends Instr
         ctx.checkStack = ctx.checkStack.tail
     }
     override def toString: String = s"JumpGood($label)"
-    override def copy(): JumpGood = new JumpGood(label)
+    override def copy: JumpGood = new JumpGood(label)
 }
 
 // Extractor Objects

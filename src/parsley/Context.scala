@@ -104,11 +104,11 @@ private [parsley] final class Context(var instrs: Array[Instr],
         }
     }
 
-    def errorMessage(): String =
+    def errorMessage: String =
     {
         val posStr = s"(line $errline, column $errcol):"
         val unexpectedStr = Option(unexpected).map(s => s"unexpected $s")
-        val expectedFlat = expected.map(Option(_)).flatten
+        val expectedFlat = expected.flatMap(Option(_))
         val expectedStr = if (expectedFlat.isEmpty) None else Some(s"expected ${expectedFlat.distinct.reverse.mkString(" or ")}")
         val rawStr = if (raw.isEmpty) None else Some(raw.distinct.reverse.mkString(" or "))
         if (rawStr.isEmpty && expectedStr.isEmpty && unexpectAnyway) 

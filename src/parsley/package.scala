@@ -1,5 +1,4 @@
 import scala.annotation.tailrec
-import scala.annotation.implicitAmbiguous
 import scala.language.implicitConversions
 
 package object parsley
@@ -120,6 +119,6 @@ package object parsley
             size += 1
         }
         def length: Int = size
-        def toArray(): Array[A] = array
+        def toArray: Array[A] = array
     }
 }

@@ -2,7 +2,6 @@ package parsley
 
 import parsley.Parsley._
 
-import scala.collection.mutable
 import language.existentials
 import scala.annotation.tailrec
     
@@ -289,7 +288,7 @@ abstract class Parsley[+A]
         optimised(Set.empty, null).codeGen(instrs, labels)
         val size = instrs.length - labels.size
         val instrs_ = new Array[Instr](size)
-        val instrsOversize = instrs.toArray()
+        val instrsOversize = instrs.toArray
         val labelMapping = new Array[Int](labels.size)
         @tailrec def findLabels(instrs: Array[Instr], labels: Array[Int], n: Int, i: Int = 0, off: Int = 0): Unit = if (i + off < n) instrs(i + off) match
         {
