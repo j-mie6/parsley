@@ -17,8 +17,7 @@ private [parsley] final class State(val offset: Int, val line: Int, val col: Int
 }
 
 private [parsley] final class Context(var instrs: Array[Instr],
-                                      val input: Array[Char],
-                                      val subs: Map[String, Array[Instr]])
+                                      val input: Array[Char])
 {
     var stack: Stack[Any] = Stack.empty
     var offset: Int = 0
@@ -86,11 +85,6 @@ private [parsley] final class Context(var instrs: Array[Instr],
             if (diffstack > 0) stack = drop(stack, diffstack)
             stacksz = handler.stacksz
             depth = handler.depth
-            if (depth < overrideDepth)
-            {
-                overrideDepth = 0
-                errorOverride = null
-            }
         }
         if (offset > erroffset)
         {
@@ -103,6 +97,11 @@ private [parsley] final class Context(var instrs: Array[Instr],
             unexpectAnyway = false
         }
         else if (offset == erroffset) expected ::= (if (errorOverride == null) e else errorOverride)
+        if (depth < overrideDepth)
+        {
+            overrideDepth = 0
+            errorOverride = null
+        }
     }
 
     def errorMessage(): String =

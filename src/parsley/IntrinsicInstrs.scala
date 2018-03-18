@@ -2,6 +2,19 @@ package parsley
 
 import scala.collection.mutable.ListBuffer
 
+private [parsley] final class Lift[A, B, C](private [Lift] val f: (A, B) => C) extends Instr
+{
+    private [this] val g = f.asInstanceOf[(Any, Any) => C]
+    final override def apply(ctx: Context): Unit =
+    {
+        val y = ctx.popStack()
+        ctx.exchangeStack(g(ctx.stack.head, y))
+        ctx.inc()
+    }
+    override def toString: String = "Lift2(f)"
+    override def copy: Lift[A, B, C] = new Lift(f)
+}
+
 private [parsley] object Cons extends Instr
 {
     final override def apply(ctx: Context): Unit =
@@ -77,7 +90,7 @@ private [parsley] final class Chainl(private [Chainl] val label: Int) extends In
                 acc = ctx.stack.head
                 ctx.exchangeStack(op)
             }
-            acc = ctx.popStack().asInstanceOf[Function[Any, Any]](acc)
+            acc = ctx.popStack().asInstanceOf[Any => Any](acc)
             ctx.checkStack.head = ctx.offset
             ctx.pc = label
         }
