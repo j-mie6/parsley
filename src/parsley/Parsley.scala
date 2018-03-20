@@ -269,7 +269,7 @@ sealed abstract class Parsley[+A]
     //private [this] var _seenLastOptimised: UnsafeOption[Set[Parsley[_]]] = null
     final private [parsley] def optimised(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]] =
     {
-        // This number should be as high as possible before very deep parsers start to stack overflow
+        // 2 is a magic magic number. It yields the fastest speeds possible for the compilation time?!
         if (depth >= 2) new Thunk(() => (if (seen.isEmpty) this else this.fix).preprocess(p => cont(p.optimise))(seen + this, label, 0))
         else (if (seen.isEmpty) this else this.fix).preprocess(p => cont(p.optimise))(seen + this, label, depth+1)
         /*val seen_ = if (_optimised != null) seen ++ _seenLastOptimised
