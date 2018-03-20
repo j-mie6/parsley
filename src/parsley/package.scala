@@ -69,6 +69,18 @@ package object parsley
         }
     }
 
+    // Trampoline for CPS
+    sealed abstract class Bounce[A]
+    {
+        @tailrec final def run: A = this match
+        {
+            case thunk: Thunk[A] => thunk.cont().run
+            case chunk: Chunk[A] => chunk.x
+        }
+    }
+    final class Chunk[A](val x: A) extends Bounce[A]
+    final class Thunk[A](val cont: () => Bounce[A]) extends Bounce[A]
+
     // This stack class is designed to be ultra-fast: no virtual function calls
     // It will crash with NullPointerException if you try and use head or tail of empty stack
     // But that is illegal anyway
