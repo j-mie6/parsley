@@ -270,7 +270,7 @@ sealed abstract class Parsley[+A]
     final private [parsley] def optimised(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]] =
     {
         // 2 is a magic magic number. It yields the fastest speeds possible for the compilation time?!
-        if (depth >= 2) new Thunk(() => (if (seen.isEmpty) this else this.fix).preprocess(p => cont(p.optimise))(seen + this, label, 0))
+        if (depth == 2) (if (seen.isEmpty) this else this.fix).preprocess(p => new Thunk(() => cont(p.optimise)))(seen + this, label, 0)
         else (if (seen.isEmpty) this else this.fix).preprocess(p => cont(p.optimise))(seen + this, label, depth+1)
         /*val seen_ = if (_optimised != null) seen ++ _seenLastOptimised
         else
@@ -854,5 +854,12 @@ object DeepEmbedding
         println(runParser(eof, "a"))
         println("hi")
         println(runParser(('a' *> 'b') <|> 'a', "a"))
+        // This is a stack overflow test
+        def repeat(n: Int, p: Parsley[Char]): Parsley[Char] =
+        {
+            if (n > 0) p *> repeat(n-1, p)
+            else p
+        }
+        //println(repeat(10000, 'a').pretty)
     }
 }
