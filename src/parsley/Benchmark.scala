@@ -130,6 +130,12 @@ object Native
         //(p ~ ops.rep).map{case (x, (xs: Seq[A=>A])) => xs.foldLeft(x)((y, f) => f(y))}
     }
     val z = chainlf(x, y)
+    def repeat[A](p: Parser[A], n: Int): Parser[A] =
+    {
+        if (n > 0) for (_ <- p; x <- repeat(p, n-1)) yield x
+        else p
+    }
+    val big = repeat(P("1"), 5000)
 }*/
 
 object Benchmark
@@ -144,7 +150,7 @@ object Benchmark
         //println(runParser(p, "aaaab"))
         //println(runParser(p, "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"))
         val start = System.currentTimeMillis()
-        println(runParser(p, input))
+        //println(runParser(p, input))
         for (_ <- 0 to 10000000)
             runParser(p, input)
             //p(input)
