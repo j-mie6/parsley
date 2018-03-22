@@ -9,7 +9,6 @@ import scala.annotation.tailrec
 
 object Parsley
 {
-    @inline private def flip[A, B, C](f: A => B => C)(x: B)(y: A): C = f(y)(x)
     implicit final class LazyParsley[P, +A](p: =>P)(implicit con: P => Parsley[A])
     {
         /**
@@ -224,7 +223,7 @@ object Parsley
     val eof: Parsley[Unit] = notFollowedBy(anyChar) ? "end of input"
     def many[A](p: =>Parsley[A]): Parsley[List[A]] = new DeepEmbedding.Many(p)
     def skipMany[A](p: =>Parsley[A]): Parsley[Unit] = new DeepEmbedding.Then(new DeepEmbedding.SkipMany(p), new DeepEmbedding.Pure(()))
-    @inline def chainl1[A](p: =>Parsley[A], op: =>Parsley[A => A => A]): Parsley[A] = chainl1_(p, op.map(flip[A, A, A]))
+    @inline def chainl1[A](p: =>Parsley[A], op: =>Parsley[A => A => A]): Parsley[A] = chainl1_(p, op.map(f => (y: A) => (x: A) => f(x)(y)))
     @inline def chainl1_[A](p: =>Parsley[A], op: =>Parsley[A => A => A]): Parsley[A] = chainPost(p, op <*> p)
     def chainPost[A](p: =>Parsley[A], op: =>Parsley[A => A]) = new DeepEmbedding.Chainl(p, op)
 }
@@ -913,7 +912,7 @@ object DeepEmbedding
         println((q <|> q <|> q <|> q).pretty)
         println((('a' >>= (_ => pure((x: Int) => x + 1))) <*> pure(7)).pretty)
         val chain = //chainl1(char('1') <#> (_.toInt), char('+') #> ((x: Int) => (y: Int) => x + y))
-           chainPost('1' <#> (_.toInt), "+1" #> ((x: Int) => x+49))
+           chainPost('1' <#> (_.toInt), "+1" #> (((f: Int => Int => Int) => (y_ : Int) => (x_ : Int) => f(x_)(y_))((x: Int) => (y: Int) => x + y)).compose((c: Char) => c.toInt)('1'))
         val start = System.currentTimeMillis()
         for (_ <- 0 to 10000000)
         {
