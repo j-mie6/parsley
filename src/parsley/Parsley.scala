@@ -525,9 +525,14 @@ object DeepEmbedding
             p.optimised(p => q.optimised(q => cont(new Then(p, q))))
         override def optimise: Parsley[B] = (p, q) match
         {
-            // TODO: Consider char(c) *> char(d) => string(cd) *> pure(d) in some form!
             // pure _ *> p = p
             case (_: Pure[_], q) => q
+            /*case (ct@CharTok(c), CharTok(d)) => 
+                val st = new StringTok(c.toString + d)
+                st.expected = ct.expected
+                new Then(st, new Pure(d.asInstanceOf[B]))*/
+            // p *> pure _ *> q = p *> q = pure _ <* p *> q
+            case (Cont(p, _: Pure[_]), q) => new Then(p, q).optimise
             // mzero *> p = mzero (left zero and definition of *> in terms of >>=)
             case (z: MZero, _) => z
             // re-association - normal form of Then chain is to have result at the top of tree
@@ -536,8 +541,8 @@ object DeepEmbedding
         }
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation = (p, q) match
         {
-            case (CharTok(c), ct@Pure(x)) => instrs += parsley.CharTokFastPerform[Char, B](c, _ => x, ct.expected); cont
-            case (StringTok(s), st@Pure(x)) => instrs += new parsley.StringTokFastPerform(s, _ => x, st.expected); cont
+            case (ct@CharTok(c), Pure(x)) => instrs += parsley.CharTokFastPerform[Char, B](c, _ => x, ct.expected); cont
+            case (st@StringTok(s), Pure(x)) => instrs += new parsley.StringTokFastPerform(s, _ => x, st.expected); cont
             case (p, Pure(x)) =>
                 new Suspended(p.codeGen
                 {
