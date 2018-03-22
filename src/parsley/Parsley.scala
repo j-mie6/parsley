@@ -425,15 +425,6 @@ object DeepEmbedding
         }
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation =
         {
-            /*val handler = labels.fresh()
-            val skip = labels.fresh()
-            instrs += new InputCheck(handler)
-            p.codeGen
-            instrs += new Label(handler)
-            instrs += new JumpGood(skip)
-            q.codeGen
-            instrs += new Label(skip)*/
-            ///*
             val handler = labels.fresh()
             val skip = labels.fresh()
             instrs += new InputCheck(handler)
@@ -447,7 +438,6 @@ object DeepEmbedding
                     cont
                 }
             })
-            //*/
         }
     }
     private [parsley] final class Bind[A, +B](_p: =>Parsley[A], private [Bind] val f: A => Parsley[B]) extends Parsley[B]
@@ -608,18 +598,18 @@ object DeepEmbedding
         private [Attempt] lazy val p = _p
         override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]] =
             p.optimised(p => cont(new Attempt(p)))
-        // TODO: Pure and mzeros can be lifted out
+        // TODO: Pure and mzeros can be lifted out, attempts can be flattened
         override def optimise: Parsley[A] = this
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation =
         {
             val handler = labels.fresh()
             instrs += new parsley.PushHandler(handler)
-            new Suspended(p.codeGen
+            p.codeGen
             {
                 instrs += new parsley.Label(handler)
                 instrs += parsley.Attempt
                 cont
-            })
+            }
         }
     }
     private [parsley] final class Look[+A](_p: =>Parsley[A]) extends Parsley[A]
@@ -632,12 +622,12 @@ object DeepEmbedding
         {
             val handler = labels.fresh()
             instrs += new parsley.PushHandler(handler)
-            new Suspended(p.codeGen
+            p.codeGen
             {
                 instrs += new parsley.Label(handler)
                 instrs += parsley.Look
                 cont
-            })
+            }
         }
     }
     private [parsley] sealed trait MZero extends Parsley[Nothing]
@@ -776,12 +766,12 @@ object DeepEmbedding
     private [parsley] final class FastFail[A](_p: =>Parsley[A], private [FastFail] val msggen: A => String) extends MZero
     {
         private [FastFail] lazy val p = _p
-        override def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]] = /*new Thunk(() => */p.optimised(p =>
+        override def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]] = p.optimised(p =>
         {
             val ff = new FastFail(p, msggen)
             ff.expected = label
             cont(ff)
-        })//)
+        })
         override def optimise: Parsley[Nothing] = p match
         {
             case Pure(x) => new Fail(msggen(x))
@@ -790,11 +780,11 @@ object DeepEmbedding
         }
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation =
         {
-            new Suspended(p.codeGen
+            p.codeGen
             {
                 instrs += new parsley.FastFail(msggen, expected)
                 cont
-            })
+            }
         }
     }
     private [parsley] final class Many[+A](_p: =>Parsley[A]) extends Parsley[List[A]]

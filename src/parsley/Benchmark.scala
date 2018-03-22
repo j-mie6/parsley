@@ -114,7 +114,7 @@ object Native
     }
 }
 
-object FastParser
+/*object FastParser
 {
     import fastparse.all._
     val x = P("1").!.map(_(0).toInt)
@@ -136,7 +136,7 @@ object FastParser
         else p
     }
     val big = repeat(P("1"), 5000)
-}
+}*/
 
 object Benchmark
 {
