@@ -1057,7 +1057,7 @@ object DeepEmbedding
         println((q <|> q <|> q <|> q).pretty)
         println((('a' >>= (_ => pure((x: Int) => x + 1))) <*> pure(7)).pretty)
         val chain = //chainl1(char('1') <#> (_.toInt), char('+') #> ((x: Int) => (y: Int) => x + y))
-           chainPost('1' <#> (_.toInt), "+1" #> (((f: Int => Int => Int) => (y_ : Int) => (x_ : Int) => f(x_)(y_))((x: Int) => (y: Int) => x + y)).compose((c: Char) => c.toInt)('1'))
+           chainPost('1' <#> (_.toInt), "+1" #> ((f: Int => Int => Int) => (y_ : Int) => (x_ : Int) => f(x_)(y_))((x: Int) => (y: Int) => x + y).compose((c: Char) => c.toInt)('1'))
         val start = System.currentTimeMillis()
         for (_ <- 0 to 10000000)
         {
