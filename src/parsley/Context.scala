@@ -128,9 +128,4 @@ private [parsley] final class Context(var instrs: Array[Instr],
     }
 
     def inc(): Unit = pc += 1
-
-    // Stack Manipulation Methods
-    def pushStack(x: Any): Unit = stack.push(x)
-    def popStack(): Any = stack.pop()
-    def exchangeStack(x: Any): Unit = stack.exchange(x)
 }
