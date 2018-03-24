@@ -111,7 +111,10 @@ package object parsley
         def ::(x: A): Stack[A] = new Stack(x, s)
     }
 
-    private [parsley] final class ArrayStack(initialSize: Int = 16)
+    // Designed to replace the operational stack
+    // Since elements are of type Any, this serves as a optimised implementation
+    // Its success may result in the deprecation of the Stack class in favour of a generic version of this!
+    private [parsley] final class ArrayStack(initialSize: Int = 8)
     {
         private [this] var array: Array[Any] = new Array(initialSize)
         private [this] var sp = -1
