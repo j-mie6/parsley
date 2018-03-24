@@ -52,7 +52,7 @@ package object parsley
             instrs(pc)(ctx)
             runParser_[A](ctx)
         }
-        else if (isEmpty(ctx.calls)) Success(ctx.stack.head.asInstanceOf[A])
+        else if (isEmpty(ctx.calls)) Success(ctx.stack./*head*/peek.asInstanceOf[A])
         else
         {
             val frame = ctx.calls.head
@@ -110,6 +110,47 @@ package object parsley
     {
         def ::(x: A): Stack[A] = new Stack(x, s)
     }
+
+    // Designed to replace the operational stack
+    // Since elements are of type Any, this serves as a optimised implementation
+    // Its success may result in the deprecation of the Stack class in favour of a generic version of this!
+    private [parsley] final class ArrayStack(initialSize: Int = 8)
+    {
+        private [this] var array: Array[Any] = new Array(initialSize)
+        private [this] var sp = -1
+
+        def push(x: Any): Unit =
+        {
+            sp += 1
+            val arrayLength: Int = array.length
+            if (arrayLength == sp)
+            {
+                val newSize: Int = arrayLength * 2
+                val newArray: Array[Any] = new Array(newSize)
+                java.lang.System.arraycopy(array, 0, newArray, 0, sp)
+                array = newArray
+            }
+            array(sp) = x
+        }
+
+        def exchange(x: Any): Unit = array(sp) = x
+        def pop_(): Unit = sp -= 1
+        def pop(): Any =
+        {
+            val x = array(sp)
+            sp -= 1
+            x
+        }
+        def peek: Any = array(sp)
+
+        def update(off: Int, x: Any): Unit = array(sp - off) = x
+        def apply(off: Int): Any = array(sp - off)
+
+        def drop(x: Int): Unit = sp -= x
+
+        def size: Int = sp
+        def mkString(sep: String): String = array.take(sp+1).reverse.mkString(sep)
+    }
     
     // This is designed to be a lighter weight wrapper around Array to make it resizeable
     import scala.reflect.ClassTag
@@ -121,7 +162,7 @@ package object parsley
         def +=(x: A): Unit =
         {
             val arrayLength: Long = array.length
-            if (array.length == size)
+            if (arrayLength == size)
             {
                 val newSize: Long = Math.min(arrayLength * 2, Int.MaxValue)
                 val newArray: Array[A] = new Array(newSize.toInt)

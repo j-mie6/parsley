@@ -292,7 +292,7 @@ sealed abstract class Parsley[+A]
         val labelMapping = new Array[Int](labels.size)
         @tailrec def findLabels(instrs: Array[Instr], labels: Array[Int], n: Int, i: Int = 0, off: Int = 0): Unit = if (i + off < n) instrs(i + off) match
         {
-            case label: Label => labels.update(label.i, i); findLabels(instrs, labels, n, i, off+1)
+            case label: Label => labels(label.i) = i; findLabels(instrs, labels, n, i, off+1)
             case _ => findLabels(instrs, labels, n, i+1, off)
         }
         @tailrec def applyLabels(srcs: Array[Instr], labels: Array[Int], dests: Array[Instr], n: Int, i: Int = 0, off: Int = 0): Unit = if (i < n) srcs(i + off) match
@@ -300,10 +300,10 @@ sealed abstract class Parsley[+A]
             case _: Label => applyLabels(srcs, labels, dests, n, i, off + 1)
             case jump: JumpInstr => 
                 jump.label = labels(jump.label)
-                dests.update(i, jump)
+                dests(i) = jump
                 applyLabels(srcs, labels, dests, n, i + 1, off)
             case instr => 
-                dests.update(i, instr)
+                dests(i) = instr
                 applyLabels(srcs, labels, dests, n, i + 1, off)
         }
         findLabels(instrsOversize, labelMapping, instrs.length)

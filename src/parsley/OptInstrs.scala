@@ -6,7 +6,7 @@ private [parsley] final class Perform[-A, +B](f: A => B) extends Instr
     private [Perform] val g = f.asInstanceOf[Any => B]
     override def apply(ctx: Context): Unit =
     {
-        ctx.exchangeStack(g(ctx.stack.head))
+        ctx.stack.exchange(g(ctx.stack.peek))
         ctx.inc()
     }
     override def toString: String = "Perform(?)"
@@ -16,7 +16,7 @@ private [parsley] final class Exchange[A](x: A) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
-        ctx.exchangeStack(x)
+        ctx.stack.exchange(x)
         ctx.inc()
     }
     override def toString: String = s"Ex($x)"
@@ -27,7 +27,7 @@ private [parsley] final class FastFail[A](msggen: A=>String, expected: UnsafeOpt
     private[this] val msggen_ = msggen.asInstanceOf[Any => String]
     override def apply(ctx: Context): Unit =
     {
-        val msg = msggen_(ctx.popStack())
+        val msg = msggen_(ctx.stack.pop())
         new Fail(msg, expected)(ctx)
     }
     override def toString: String = "FastFail(?)"
@@ -39,7 +39,7 @@ private [parsley] class Newline(_expected: UnsafeOption[String]) extends CharTok
     {
         if (ctx.offset < ctx.inputsz && ctx.input(ctx.offset) == '\n')
         {
-            ctx.pushStack(ac)
+            ctx.stack.push(ac)
             ctx.offset += 1
             ctx.col = 1
             ctx.line += 1
@@ -55,7 +55,7 @@ private [parsley] class Tab(_expected: UnsafeOption[String]) extends CharTok('\t
     {
         if (ctx.offset < ctx.inputsz && ctx.input(ctx.offset) == '\t')
         {
-            ctx.pushStack(ac)
+            ctx.stack.push(ac)
             ctx.offset += 1
             ctx.col += 4 - ((ctx.col - 1) & 3)
             ctx.inc()
@@ -72,7 +72,7 @@ private [parsley] class CharTokFastPerform protected (protected final val c: Cha
     {
         if (ctx.offset < ctx.inputsz && ctx.input(ctx.offset) == c)
         {
-                ctx.pushStack(fc)
+                ctx.stack.push(fc)
                 ctx.offset += 1
                 ctx.col += 1
                 ctx.inc()
@@ -88,7 +88,7 @@ private [parsley] final class NewlineFastPerform(g: Char => Any, _expected: Unsa
     {
         if (ctx.offset < ctx.inputsz && ctx.input(ctx.offset) == '\n')
         {
-            ctx.pushStack(fc)
+            ctx.stack.push(fc)
             ctx.offset += 1
             ctx.col = 1
             ctx.line += 1
@@ -104,7 +104,7 @@ private [parsley] final class TabFastPerform(g: Char => Any, _expected: UnsafeOp
     {
         if (ctx.offset < ctx.inputsz && ctx.input(ctx.offset) == '\t')
         {
-            ctx.pushStack(fc)
+            ctx.stack.push(fc)
             ctx.offset += 1
             ctx.col += 4 - ((ctx.col - 1) & 3)
             ctx.inc()
@@ -168,7 +168,7 @@ private [parsley] final class StringTokFastPerform(s: String, f: String => Any, 
             ctx.col = colAdjust(ctx.col)
             ctx.line = lineAdjust(ctx.line)
             ctx.offset = i
-            ctx.pushStack(fs)
+            ctx.stack.push(fs)
             ctx.inc()
         }
         else ctx.fail(expected)

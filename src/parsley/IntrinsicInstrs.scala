@@ -7,8 +7,8 @@ private [parsley] final class Lift[A, B, C](f: (A, B) => C) extends Instr
     private [this] val g = f.asInstanceOf[(Any, Any) => C]
     override def apply(ctx: Context): Unit =
     {
-        val y = ctx.popStack()
-        ctx.exchangeStack(g(ctx.stack.head, y))
+        val y = ctx.stack.pop()
+        ctx.stack.exchange(g(ctx.stack.peek, y))
         ctx.inc()
     }
     override def toString: String = "Lift2(f)"
@@ -18,8 +18,8 @@ private [parsley] object Cons extends Instr
 {
     final override def apply(ctx: Context): Unit =
     {
-        val xs = ctx.popStack().asInstanceOf[List[_]]
-        ctx.exchangeStack(ctx.stack.head::xs)
+        val xs = ctx.stack.pop().asInstanceOf[List[_]]
+        ctx.stack.exchange(ctx.stack.peek::xs)
         ctx.inc()
     }
     override def toString: String = "Cons"
@@ -32,7 +32,7 @@ private [parsley] final class Many(var label: Int) extends JumpInstr
     {
         if (ctx.status eq Good)
         {
-            acc += ctx.popStack()
+            acc += ctx.stack.pop()
             ctx.checkStack.head = ctx.offset
             ctx.pc = label
         }
@@ -40,7 +40,7 @@ private [parsley] final class Many(var label: Int) extends JumpInstr
         else if (ctx.offset != ctx.checkStack.head) {acc.clear(); ctx.fail()}
         else
         {
-            ctx.pushStack(acc.toList)
+            ctx.stack.push(acc.toList)
             acc.clear()
             ctx.checkStack = ctx.checkStack.tail
             ctx.status = Good
@@ -57,7 +57,7 @@ private [parsley] final class SkipMany(var label: Int) extends JumpInstr
     {
         if (ctx.status eq Good)
         {
-            ctx.popStack()
+            ctx.stack.pop()
             ctx.checkStack.head = ctx.offset
             ctx.pc = label
         }
@@ -84,11 +84,11 @@ private [parsley] final class Chainl(var label: Int) extends JumpInstr
             // When acc is null, we are entering the instruction for the first time, a p will be on the stack
             if (acc == null)
             {
-                val op = ctx.popStack()
-                acc = ctx.stack.head
-                ctx.exchangeStack(op)
+                val op = ctx.stack.pop()
+                acc = ctx.stack.peek
+                ctx.stack.exchange(op)
             }
-            acc = ctx.popStack().asInstanceOf[Any => Any](acc)
+            acc = ctx.stack.pop().asInstanceOf[Any => Any](acc)
             ctx.checkStack.head = ctx.offset
             ctx.pc = label
         }
@@ -99,7 +99,7 @@ private [parsley] final class Chainl(var label: Int) extends JumpInstr
             // When acc is null, we have entered for first time but the op failed, so the result is already on the stack
             if (acc != null)
             {
-                ctx.pushStack(acc)
+                ctx.stack.push(acc)
                 acc = null
             }
             ctx.checkStack = ctx.checkStack.tail
