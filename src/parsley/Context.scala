@@ -19,12 +19,11 @@ private [parsley] final class State(val offset: Int, val line: Int, val col: Int
 private [parsley] final class Context(var instrs: Array[Instr],
                                       val input: Array[Char])
 {
-    var stack: Stack[Any] = Stack.empty
+    val stack: ArrayStack = new ArrayStack()
     var offset: Int = 0
     val inputsz: Int = input.length
     var calls: Stack[Frame] = Stack.empty
     var states: Stack[State] = Stack.empty
-    var stacksz: Int = 0
     var checkStack: Stack[Int] = Stack.empty
     var status: Status = Good
     var handlers: Stack[Handler] = Stack.empty
@@ -45,7 +44,7 @@ private [parsley] final class Context(var instrs: Array[Instr],
     override def toString: String =
     {
         s"""|[
-            |  stack=[${mkString(stack, ", ")}]
+            |  stack=[${stack.mkString(", ")}]
             |  instrs=${instrs.mkString("; ")}
             |  input=${input.drop(offset).mkString}
             |  status=$status
@@ -81,9 +80,8 @@ private [parsley] final class Context(var instrs: Array[Instr],
                 calls = calls_.tail
             }
             pc = handler.pc
-            val diffstack = stacksz - handler.stacksz
-            if (diffstack > 0) stack = drop(stack, diffstack)
-            stacksz = handler.stacksz
+            val diffstack = stack.size - handler.stacksz
+            if (diffstack > 0) stack.drop(diffstack)
             depth = handler.depth
         }
         if (offset > erroffset)
@@ -132,13 +130,7 @@ private [parsley] final class Context(var instrs: Array[Instr],
     def inc(): Unit = pc += 1
 
     // Stack Manipulation Methods
-    def pushStack(x: Any): Unit = { stack = new Stack(x, stack); stacksz += 1 }
-    def popStack(): Any =
-    {
-        val ret = stack.head
-        stack = stack.tail
-        stacksz -= 1
-        ret
-    }
-    def exchangeStack(x: Any): Unit = stack.head = x
+    def pushStack(x: Any): Unit = stack.push(x)
+    def popStack(): Any = stack.pop()
+    def exchangeStack(x: Any): Unit = stack.exchange(x)
 }

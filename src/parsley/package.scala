@@ -52,7 +52,7 @@ package object parsley
             instrs(pc)(ctx)
             runParser_[A](ctx)
         }
-        else if (isEmpty(ctx.calls)) Success(ctx.stack.head.asInstanceOf[A])
+        else if (isEmpty(ctx.calls)) Success(ctx.stack./*head*/peek.asInstanceOf[A])
         else
         {
             val frame = ctx.calls.head
@@ -114,45 +114,39 @@ package object parsley
     private [parsley] final class ArrayStack(initialSize: Int = 16)
     {
         private [this] var array: Array[Any] = new Array(initialSize)
-        private [this] var sp = 0
+        private [this] var sp = -1
 
-        def ::=(x: Any): Unit =
+        def push(x: Any): Unit =
         {
-            insert(x, sp)
             sp += 1
+            val arrayLength: Int = array.length
+            if (arrayLength == sp)
+            {
+                val newSize: Int = arrayLength * 2
+                val newArray: Array[Any] = new Array(newSize)
+                java.lang.System.arraycopy(array, 0, newArray, 0, sp)
+                array = newArray
+            }
+            array(sp) = x
         }
 
         def exchange(x: Any): Unit = array(sp) = x
+        def pop_(): Unit = sp -= 1
         def pop(): Any =
         {
             val x = array(sp)
             sp -= 1
             x
         }
-        def peek(): Any = array(sp)
+        def peek: Any = array(sp)
 
-        def apply(off: Int, x: Any): Unit =
-        {
-            array.update(sp - off, x)
-        }
+        def update(off: Int, x: Any): Unit = array(sp - off) = x
+        def apply(off: Int): Any = array(sp - off)
 
         def drop(x: Int): Unit = sp -= x
 
-        def insert(x: Any, idx: Int): Unit =
-        {
-            val arrayLength: Int = array.length
-            if (arrayLength >= idx)
-            {
-                val newSize: Int = arrayLength * 2
-                val newArray: Array[Any] = new Array(newSize)
-                java.lang.System.arraycopy(array, 0, newArray, 0, idx)
-                array = newArray
-            }
-            array(idx) = x
-        }
-
         def size: Int = sp
-        def mkString(sep: String): String = array.mkString(sep)
+        def mkString(sep: String): String = array.take(sp+1).reverse.mkString(sep)
     }
     
     // This is designed to be a lighter weight wrapper around Array to make it resizeable
