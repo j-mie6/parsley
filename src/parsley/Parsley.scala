@@ -279,7 +279,6 @@ sealed abstract class Parsley[+A]
         _optimised*/
     }
     final private [parsley] var safe = true
-    //final private [parsley] var expected: UnsafeOption[String] = _
     final private [parsley] lazy val instrs: Array[Instr] =
     {
         val instrs: InstrBuffer = new ResizableArray()
@@ -867,14 +866,34 @@ object DeepEmbedding
     }
     private [DeepEmbedding] object App
     {
+        def apply[A, B](pf: Parsley[A=>B], px: Parsley[A]): App[A, B] =
+        {
+            val res: App[A, B] = new App(null, null)
+            res.pf// = pf
+            res.px// = px
+            res
+        }
         def unapply[A, B](self: App[A, B]): Option[(Parsley[A=>B], Parsley[A])] = Some((self.pf, self.px))
     }
     private [DeepEmbedding] object Or
     {
+        def apply[A, B >: A](p: Parsley[A], q: Parsley[B]): Or[A, B] =
+        {
+            val res: Or[A, B] = new Or(null, null)
+            res.p// = p
+            res.q// = q
+            res
+        }
         def unapply[A, B >: A](self: Or[A, B]): Option[(Parsley[A], Parsley[B])] = Some((self.p, self.q))
     }
     private [DeepEmbedding] object Bind
     {
+        def apply[A, B](p: Parsley[A], f: A => Parsley[B], expected: UnsafeOption[String]): Bind[A, B] =
+        {
+            val res: Bind[A, B] = new Bind(null, f, expected)
+            res.p// = p
+            res
+        }
         def unapply[A, B](self: Bind[A, B]): Option[(Parsley[A], A => Parsley[B])] = Some((self.p, self.f))
     }
     private [DeepEmbedding] object Satisfy
@@ -887,18 +906,44 @@ object DeepEmbedding
     }
     private [DeepEmbedding] object Then
     {
+        def apply[A, B >: A](p: Parsley[A], q: Parsley[B]): Then[A, B] =
+        {
+            val res: Then[A, B] = new Then(null, null)
+            res.p// = p
+            res.q// = q
+            res
+        }
         def unapply[A, B](self: Then[A, B]): Option[(Parsley[A], Parsley[B])] = Some((self.p, self.q))
     }
     private [DeepEmbedding] object Prev
     {
+        def apply[A, B >: A](p: Parsley[A], q: Parsley[B]): Prev[B, A] =
+        {
+            val res: Prev[B, A] = new Prev(null, null)
+            res.p// = p
+            res.q// = q
+            res
+        }
         def unapply[A, B](self: Prev[B, A]): Option[(Parsley[A], Parsley[B])] = Some((self.p, self.q))
     }
     private [DeepEmbedding] object Attempt
     {
+        def apply[A](p: Parsley[A]): Attempt[A] =
+        {
+            val res: Attempt[A] = new Attempt(null)
+            res.p// = p
+            res
+        }
         def unapply[A](self: Attempt[A]): Option[Parsley[A]] = Some(self.p)
     }
     private [DeepEmbedding] object Look
     {
+        def apply[A](p: Parsley[A]): Look[A] =
+        {
+            val res: Look[A] = new Look(null)
+            res.p// = p
+            res
+        }
         def unapply[A](self: Look[A]): Option[Parsley[A]] = Some(self.p)
     }
     private [DeepEmbedding] object Fail
@@ -919,26 +964,65 @@ object DeepEmbedding
     }
     private [DeepEmbedding] object Lift
     {
+        def apply[A, B, C](f: (A, B) => C, p: Parsley[A], q: Parsley[B]): Lift[A, B, C] =
+        {
+            val res: Lift[A, B, C] = new Lift(f, null, null)
+            res.p// = p
+            res.q// = q
+            res
+        }
         def unapply[A, B, C](self: Lift[A, B, C]): Option[((A, B) => C, Parsley[A], Parsley[B])] = Some((self.f, self.p, self.q))
     }
     private [DeepEmbedding] object Cons
     {
+        def apply[A, B >: A](p: Parsley[A], ps: Parsley[List[B]]): Cons[A, B] =
+        {
+            val res: Cons[A, B] = new Cons(null, null)
+            res.p// = p
+            res.ps// = q
+            res
+        }
         def unapply[A, B >: A](self: Cons[A, B]): Option[(Parsley[A], Parsley[List[B]])] = Some((self.p, self.ps))
     }
     private [DeepEmbedding] object FastFail
     {
+        def apply[A](p: Parsley[A], msggen: A => String): FastFail[A] =
+        {
+            val res: FastFail[A] = new FastFail(null, msggen)
+            res.p// = p
+            res
+        }
         def unapply[A](self: FastFail[A]): Option[(Parsley[A], A=>String)] = Some((self.p, self.msggen))
     }
     private [DeepEmbedding] object Many
     {
+        def apply[A](p: Parsley[A]): Many[A] =
+        {
+            val res: Many[A] = new Many(null)
+            res.p// = p
+            res
+        }
         def unapply[A](self: Many[A]): Option[Parsley[A]] = Some(self.p)
     }
     private [DeepEmbedding] object SkipMany
     {
+        def apply[A](p: Parsley[A]): SkipMany[A] =
+        {
+            val res: SkipMany[A] = new SkipMany(null)
+            res.p// = p
+            res
+        }
         def unapply[A](self: SkipMany[A]): Option[Parsley[A]] = Some(self.p)
     }
     private [DeepEmbedding] object Chainl
     {
+        def apply[A](p: Parsley[A], op: Parsley[A => A => A]): Chainl[A] =
+        {
+            val res: Chainl[A] = new Chainl(null, null)
+            res.p// = p
+            res.op// = op
+            res
+        }
         def unapply[A](self: Chainl[A]): Option[(Parsley[A], Parsley[A => A])] = Some((self.p, self.op))
     }
     
