@@ -110,6 +110,50 @@ package object parsley
     {
         def ::(x: A): Stack[A] = new Stack(x, s)
     }
+
+    private [parsley] final class ArrayStack(initialSize: Int = 16)
+    {
+        private [this] var array: Array[Any] = new Array(initialSize)
+        private [this] var sp = 0
+
+        def ::=(x: Any): Unit =
+        {
+            insert(x, sp)
+            sp += 1
+        }
+
+        def exchange(x: Any): Unit = array(sp) = x
+        def pop(): Any =
+        {
+            val x = array(sp)
+            sp -= 1
+            x
+        }
+        def peek(): Any = array(sp)
+
+        def apply(off: Int, x: Any): Unit =
+        {
+            array.update(sp - off, x)
+        }
+
+        def drop(x: Int): Unit = sp -= x
+
+        def insert(x: Any, idx: Int): Unit =
+        {
+            val arrayLength: Int = array.length
+            if (arrayLength >= idx)
+            {
+                val newSize: Int = arrayLength * 2
+                val newArray: Array[Any] = new Array(newSize)
+                java.lang.System.arraycopy(array, 0, newArray, 0, idx)
+                array = newArray
+            }
+            array(idx) = x
+        }
+
+        def size: Int = sp
+        def mkString(sep: String): String = array.mkString(sep)
+    }
     
     // This is designed to be a lighter weight wrapper around Array to make it resizeable
     import scala.reflect.ClassTag
@@ -121,7 +165,7 @@ package object parsley
         def +=(x: A): Unit =
         {
             val arrayLength: Long = array.length
-            if (array.length == size)
+            if (arrayLength == size)
             {
                 val newSize: Long = Math.min(arrayLength * 2, Int.MaxValue)
                 val newArray: Array[A] = new Array(newSize.toInt)
