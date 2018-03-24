@@ -143,7 +143,7 @@ object Benchmark
     def main(args: Array[String]): Unit =
     {
         //Console.in.read()
-        def p = ParsleyBench.chain
+        val p = ParsleyBench.chain
         val input1 = "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"
         //val input2 = "aaaab"
         val input = input1
