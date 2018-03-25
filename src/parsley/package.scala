@@ -63,7 +63,7 @@ package object parsley
             instrs(pc)(ctx)
             runParser_[A](ctx)
         }
-        else if (isEmpty(ctx.calls)) Success(ctx.stack./*head*/peek.asInstanceOf[A])
+        else if (isEmpty(ctx.calls)) Success(ctx.stack.peek.asInstanceOf[A])
         else
         {
             val frame = ctx.calls.head
@@ -161,7 +161,16 @@ package object parsley
 
         def size: Int = sp
         def mkString(sep: String): String = array.take(sp+1).reverse.mkString(sep)
-        def clear(): Unit = sp = -1
+        def clear(): Unit = 
+        {
+            sp = -1
+            var i = array.length-1
+            while (i >= 0)
+            {
+                array(i) = null
+                i -= 1
+            }
+        }
     }
     
     // This is designed to be a lighter weight wrapper around Array to make it resizeable
