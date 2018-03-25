@@ -918,7 +918,7 @@ object DeepEmbedding
         for (_ <- 0 to 10000000)
         {
             //(q <|> q <|> q <|> q).instrs
-            runParser(chain, "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1")
+            runParserFastUnsafe(chain, "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1")
         }
         println(System.currentTimeMillis() - start)
         println(chain.pretty)

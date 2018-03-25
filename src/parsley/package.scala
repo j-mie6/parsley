@@ -7,12 +7,23 @@ package object parsley
     // Public API
     def runParser[A](p: Parsley[A], input: String): Result[A] = runParser[A](p, input.toCharArray)
     def runParser[A](p: Parsley[A], input: Array[Char]): Result[A] = runParser_[A](new Context(p.instrs, input))
+    
+    // Public API - With context reuse
+    /** This method allows you to run a parser with a cached context, which improves performance. 
+     *  If no implicit context can be found, the parsley default context is used. This will
+     *  cause issues with multi-threaded execution of parsers. In order to mitigate these issues,
+     *  each thread should request its own context with `parsley.giveContext`. This value may be
+     *  implicit for convenience.*/
+    def runParserFastUnsafe[A](p: Parsley[A], input: String)(implicit ctx: Context = internalCtx): Result[A] = runParser[A](p, input.toCharArray, ctx)
+    def runParser[A](p: Parsley[A], input: Array[Char], ctx: Context): Result[A] = runParser_[A](ctx(p.instrs, input))
+    def giveContext: Context = new Context(null, Array.emptyCharArray)
 
     // Implicit Conversions
     @inline final implicit def stringLift(str: String): Parsley[String] = parsley.Parsley.string(str)
     @inline final implicit def charLift(c: Char): Parsley[Char] = parsley.Parsley.char(c)
 
     // Internals
+    private [parsley] val internalCtx = giveContext
     private [parsley] type UnsafeOption[A] = A
     private [parsley] sealed abstract class Status
     private [parsley] case object Good extends Status
@@ -150,6 +161,7 @@ package object parsley
 
         def size: Int = sp
         def mkString(sep: String): String = array.take(sp+1).reverse.mkString(sep)
+        def clear(): Unit = sp = -1
     }
     
     // This is designed to be a lighter weight wrapper around Array to make it resizeable

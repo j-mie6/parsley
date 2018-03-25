@@ -16,30 +16,30 @@ private [parsley] final class State(val offset: Int, val line: Int, val col: Int
     override def toString: String = s"$offset ($line, $col)"
 }
 
-private [parsley] final class Context(var instrs: Array[Instr],
-                                      val input: Array[Char])
+private [parsley] final class Context(private [parsley] var instrs: Array[Instr],
+                                      private [parsley] var input: Array[Char])
 {
-    val stack: ArrayStack = new ArrayStack()
-    var offset: Int = 0
-    val inputsz: Int = input.length
-    var calls: Stack[Frame] = Stack.empty
-    var states: Stack[State] = Stack.empty
-    var checkStack: Stack[Int] = Stack.empty
-    var status: Status = Good
-    var handlers: Stack[Handler] = Stack.empty
-    var depth: Int = 0
-    var pc: Int = 0
-    var line: Int = 1
-    var col: Int = 1
-    var erroffset: Int = -1
-    var errcol: Int = -1
-    var errline: Int = -1
-    var raw: List[String] = Nil
-    var unexpected: UnsafeOption[String] = _
-    var expected: List[UnsafeOption[String]] = Nil
-    var unexpectAnyway: Boolean = false
-    var errorOverride: UnsafeOption[String] = _
-    var overrideDepth: Int = 0
+    private [parsley] val stack: ArrayStack = new ArrayStack()
+    private [parsley] var offset: Int = 0
+    private [parsley] var inputsz: Int = input.length
+    private [parsley] var calls: Stack[Frame] = Stack.empty
+    private [parsley] var states: Stack[State] = Stack.empty
+    private [parsley] var checkStack: Stack[Int] = Stack.empty
+    private [parsley] var status: Status = Good
+    private [parsley] var handlers: Stack[Handler] = Stack.empty
+    private [parsley] var depth: Int = 0
+    private [parsley] var pc: Int = 0
+    private [parsley] var line: Int = 1
+    private [parsley] var col: Int = 1
+    private [parsley] var erroffset: Int = -1
+    private [parsley] var errcol: Int = -1
+    private [parsley] var errline: Int = -1
+    private [parsley] var raw: List[String] = Nil
+    private [parsley] var unexpected: UnsafeOption[String] = _
+    private [parsley] var expected: List[UnsafeOption[String]] = Nil
+    private [parsley] var unexpectAnyway: Boolean = false
+    private [parsley] var errorOverride: UnsafeOption[String] = _
+    private [parsley] var overrideDepth: Int = 0
 
     override def toString: String =
     {
@@ -56,7 +56,7 @@ private [parsley] final class Context(var instrs: Array[Instr],
             |]""".stripMargin
     }
 
-    def fail(e: UnsafeOption[String] = null): Unit =
+    private [parsley] def fail(e: UnsafeOption[String] = null): Unit =
     {
         if (isEmpty(handlers))
         {
@@ -102,7 +102,7 @@ private [parsley] final class Context(var instrs: Array[Instr],
         }
     }
 
-    def errorMessage: String =
+    private [parsley] def errorMessage: String =
     {
         val posStr = s"(line $errline, column $errcol):"
         val unexpectedStr = Option(unexpected).map(s => s"unexpected $s")
@@ -127,5 +127,34 @@ private [parsley] final class Context(var instrs: Array[Instr],
         }
     }
 
-    def inc(): Unit = pc += 1
+    private [parsley] def inc(): Unit = pc += 1
+    
+    // Allows us to reuse a context, helpful for benchmarking and potentially user applications
+    private [parsley] def apply(_instrs: Array[Instr], _input: Array[Char]): Context = 
+    {
+        instrs = _instrs
+        input = _input
+        stack.clear()
+        offset = 0
+        inputsz = input.length
+        calls = Stack.empty
+        states = Stack.empty
+        checkStack = Stack.empty
+        status = Good
+        handlers = Stack.empty
+        depth = 0
+        pc = 0
+        line = 1
+        col = 1
+        erroffset = -1
+        errcol = -1
+        errline = -1
+        raw = Nil
+        unexpected = null
+        expected = Nil
+        unexpectAnyway = false
+        errorOverride = null
+        overrideDepth = 0
+        this
+    }
 }

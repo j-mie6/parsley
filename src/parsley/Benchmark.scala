@@ -152,7 +152,7 @@ object Benchmark
         val start = System.currentTimeMillis()
         //println(runParser(p, input))
         for (_ <- 0 to 10000000)
-            runParser(p, input)
+            runParserFastUnsafe(p, input)
             //p(input)
             //p.parse(input)
         println(System.currentTimeMillis() - start)
