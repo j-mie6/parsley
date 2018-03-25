@@ -6,7 +6,7 @@ private [parsley] final class Perform[-A, +B](f: A => B) extends Instr
     private [Perform] val g = f.asInstanceOf[Any => B]
     override def apply(ctx: Context): Unit =
     {
-        ctx.stack.exchange(g(ctx.stack.peek))
+        ctx.stack.exchange(g(ctx.stack.upeek))
         ctx.inc()
     }
     override def toString: String = "Perform(?)"
@@ -27,7 +27,7 @@ private [parsley] final class FastFail[A](msggen: A=>String, expected: UnsafeOpt
     private[this] val msggen_ = msggen.asInstanceOf[Any => String]
     override def apply(ctx: Context): Unit =
     {
-        val msg = msggen_(ctx.stack.pop())
+        val msg = msggen_(ctx.stack.upop())
         new Fail(msg, expected)(ctx)
     }
     override def toString: String = "FastFail(?)"

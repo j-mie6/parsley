@@ -28,7 +28,7 @@ private [parsley] object Flip extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
-        val y = ctx.stack.peek
+        val y = ctx.stack.upeek
         ctx.stack.exchange(ctx.stack(1))
         ctx.stack(1) = y
         ctx.inc()
@@ -146,8 +146,8 @@ private [parsley] object Apply extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
-        val x = ctx.stack.pop()
-        val f = /*ctx.stack.head*/ctx.stack.peek.asInstanceOf[Any => Any]
+        val x = ctx.stack.upop()
+        val f = ctx.stack.peek[Any => Any]
         ctx.stack.exchange(f(x))
         ctx.inc()
     }

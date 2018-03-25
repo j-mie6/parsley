@@ -19,7 +19,7 @@ private [parsley] final class State(val offset: Int, val line: Int, val col: Int
 private [parsley] final class Context(private [parsley] var instrs: Array[Instr],
                                       private [parsley] var input: Array[Char])
 {
-    private [parsley] val stack: ArrayStack = new ArrayStack()
+    private [parsley] val stack: ArrayStack[Any] = new ArrayStack()
     private [parsley] var offset: Int = 0
     private [parsley] var inputsz: Int = input.length
     private [parsley] var calls: Stack[Frame] = Stack.empty

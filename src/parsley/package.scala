@@ -125,7 +125,7 @@ package object parsley
     // Designed to replace the operational stack
     // Since elements are of type Any, this serves as a optimised implementation
     // Its success may result in the deprecation of the Stack class in favour of a generic version of this!
-    private [parsley] final class ArrayStack(initialSize: Int = 8)
+    private [parsley] final class ArrayStack[A](initialSize: Int = 8)
     {
         private [this] var array: Array[Any] = new Array(initialSize)
         private [this] var sp = -1
@@ -144,17 +144,19 @@ package object parsley
             array(sp) = x
         }
 
-        def exchange(x: Any): Unit = array(sp) = x
+        def exchange(x: A): Unit = array(sp) = x
         def pop_(): Unit = sp -= 1
-        def pop(): Any =
+        def upop(): Any =
         {
             val x = array(sp)
             sp -= 1
             x
         }
-        def peek: Any = array(sp)
+        def pop[B <: A](): B = upop().asInstanceOf[B]
+        def upeek: Any = array(sp)
+        def peek[B <: A]: B = upeek.asInstanceOf[B]
 
-        def update(off: Int, x: Any): Unit = array(sp - off) = x
+        def update(off: Int, x: A): Unit = array(sp - off) = x
         def apply(off: Int): Any = array(sp - off)
 
         def drop(x: Int): Unit = sp -= x

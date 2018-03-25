@@ -7,7 +7,7 @@ private [parsley] final class Lift[A, B, C](f: (A, B) => C) extends Instr
     private [this] val g = f.asInstanceOf[(Any, Any) => C]
     override def apply(ctx: Context): Unit =
     {
-        val y = ctx.stack.pop()
+        val y = ctx.stack.upop()
         ctx.stack.exchange(g(ctx.stack.peek, y))
         ctx.inc()
     }
@@ -18,7 +18,7 @@ private [parsley] object Cons extends Instr
 {
     final override def apply(ctx: Context): Unit =
     {
-        val xs = ctx.stack.pop().asInstanceOf[List[_]]
+        val xs = ctx.stack.pop[List[_]]()
         ctx.stack.exchange(ctx.stack.peek::xs)
         ctx.inc()
     }
@@ -32,7 +32,7 @@ private [parsley] final class Many(var label: Int) extends JumpInstr
     {
         if (ctx.status eq Good)
         {
-            acc += ctx.stack.pop()
+            acc += ctx.stack.upop()
             ctx.checkStack.head = ctx.offset
             ctx.pc = label
         }
@@ -57,7 +57,7 @@ private [parsley] final class SkipMany(var label: Int) extends JumpInstr
     {
         if (ctx.status eq Good)
         {
-            ctx.stack.pop()
+            ctx.stack.pop_()
             ctx.checkStack.head = ctx.offset
             ctx.pc = label
         }
@@ -84,11 +84,11 @@ private [parsley] final class Chainl(var label: Int) extends JumpInstr
             // When acc is null, we are entering the instruction for the first time, a p will be on the stack
             if (acc == null)
             {
-                val op = ctx.stack.pop()
-                acc = ctx.stack.peek
+                val op = ctx.stack.upop()
+                acc = ctx.stack.upeek
                 ctx.stack.exchange(op)
             }
-            acc = ctx.stack.pop().asInstanceOf[Any => Any](acc)
+            acc = ctx.stack.pop[Any => Any]()(acc)
             ctx.checkStack.head = ctx.offset
             ctx.pc = label
         }
