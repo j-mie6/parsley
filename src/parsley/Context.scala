@@ -52,7 +52,7 @@ private [parsley] final class Context(private [parsley] var instrs: Array[Instr]
             |  depth=$depth
             |  rets=${mkString(map[Frame, Int](calls, _.ret), ", ")}
             |  handlers=${mkString(handlers, ":") + "[]"}
-            |  recstates=${mkString(handlers, ":") + "[]"}
+            |  recstates=${mkString(states, ":") + "[]"}
             |]""".stripMargin
     }
 
@@ -80,7 +80,7 @@ private [parsley] final class Context(private [parsley] var instrs: Array[Instr]
                 calls = calls_.tail
             }
             pc = handler.pc
-            val diffstack = stack.size - handler.stacksz
+            val diffstack = stack.usize - handler.stacksz
             if (diffstack > 0) stack.drop(diffstack)
             depth = handler.depth
         }

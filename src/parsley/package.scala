@@ -103,23 +103,14 @@ package object parsley
     // It will crash with NullPointerException if you try and use head or tail of empty stack
     // But that is illegal anyway
     private [parsley] final class Stack[A](var head: A, val tail: Stack[A])
-    /*{
-        import Stack._
-        lazy val size_ : Int = size(tail) + 1
-    }*/
     private [parsley] object Stack
     {
         def empty[A]: Stack[A] = null
         @inline def isEmpty(s: Stack[_]): Boolean = s == null
-        //def size(s: Stack[_]): Int = if (isEmpty(s)) 0 else s.size_
         @tailrec def drop[A](s: Stack[A], n: Int): Stack[A] = if (n > 0 && !isEmpty(s)) drop(s.tail, n - 1) else s
         def map[A, B](s: Stack[A], f: A => B): Stack[B] = if (!isEmpty(s)) new Stack(f(s.head), map(s.tail, f)) else empty
         def mkString(s: Stack[_], sep: String): String = if (isEmpty(s)) "" else s.head.toString + sep + mkString(s.tail, sep)
-    }
-    // This class is left in for niceness sake :)
-    private [parsley] final implicit class StackCons[A](s: Stack[A])
-    {
-        def ::(x: A): Stack[A] = new Stack(x, s)
+        def push[A](s: Stack[A], x: A) = new Stack(x, s)
     }
 
     // Designed to replace the operational stack
@@ -161,7 +152,10 @@ package object parsley
 
         def drop(x: Int): Unit = sp -= x
 
-        def size: Int = sp
+        // This is off by one, but that's fine, if everything is also off by one :P
+        def usize: Int = sp
+        def size: Int = usize + 1
+        def isEmpty: Boolean = sp == -1
         def mkString(sep: String): String = array.take(sp+1).reverse.mkString(sep)
         def clear(): Unit = 
         {

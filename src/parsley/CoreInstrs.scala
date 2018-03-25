@@ -1,5 +1,6 @@
 package parsley
 
+import Stack.push
 import language.existentials
 import scala.annotation.{switch, tailrec}
 
@@ -160,7 +161,7 @@ private [parsley] final class DynSub[-A](f: A => Array[Instr], expected: UnsafeO
     private [DynSub] val g = f.asInstanceOf[Any => Array[Instr]]
     override def apply(ctx: Context): Unit =
     {
-        ctx.calls ::= new Frame(ctx.pc + 1, ctx.instrs)
+        ctx.calls = push(ctx.calls, new Frame(ctx.pc + 1, ctx.instrs))
         ctx.instrs = g(ctx.stack.pop())
         ctx.depth += 1
         ctx.pc = 0
@@ -189,7 +190,7 @@ private [parsley] final class Call(p: Parsley[_], expected: UnsafeOption[String]
     private [this] var instrs: UnsafeOption[Array[Instr]] = _
     override def apply(ctx: Context): Unit =
     {
-        ctx.calls ::= new Frame(ctx.pc + 1, ctx.instrs)
+        ctx.calls = push(ctx.calls, new Frame(ctx.pc + 1, ctx.instrs))
         if (instrs == null) instrs = p.instrs //NOTE: This line cannot be hoisted, otherwise it will infinite loop during codeGen!
         ctx.instrs = instrs.map(_.copy)
         ctx.depth += 1
@@ -240,8 +241,8 @@ private [parsley] final class PushHandler(var label: Int) extends JumpInstr
 {
     override def apply(ctx: Context): Unit =
     {
-        ctx.handlers ::= new Handler(ctx.depth, label, ctx.stack.size)
-        ctx.states ::= new State(ctx.offset, ctx.line, ctx.col)
+        ctx.handlers = push(ctx.handlers, new Handler(ctx.depth, label, ctx.stack.usize))
+        ctx.states = push(ctx.states, new State(ctx.offset, ctx.line, ctx.col))
         ctx.inc()
     }
     override def toString: String = s"PushHandler($label)"
@@ -302,8 +303,8 @@ private [parsley] final class InputCheck(var label: Int) extends JumpInstr
 {
     override def apply(ctx: Context): Unit =
     {
-        ctx.checkStack ::= ctx.offset
-        ctx.handlers ::= new Handler(ctx.depth, label, ctx.stack.size)
+        ctx.checkStack = push(ctx.checkStack, ctx.offset)
+        ctx.handlers = push(ctx.handlers, new Handler(ctx.depth, label, ctx.stack.usize))
         ctx.inc()
     }
     override def toString: String = s"InputCheck($label)"
