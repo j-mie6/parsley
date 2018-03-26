@@ -121,14 +121,12 @@ package object parsley
         private [this] var array: Array[Any] = new Array(initialSize)
         private [this] var sp = -1
 
-        def push(x: Any): Unit =
+        def push(x: A): Unit =
         {
             sp += 1
-            val arrayLength: Int = array.length
-            if (arrayLength == sp)
+            if (array.length == sp)
             {
-                val newSize: Int = arrayLength * 2
-                val newArray: Array[Any] = new Array(newSize)
+                val newArray: Array[Any] = new Array(sp * 2)
                 java.lang.System.arraycopy(array, 0, newArray, 0, sp)
                 array = newArray
             }
