@@ -15,6 +15,38 @@ object ParsleyBench
     println(manya.pretty)
     def chain: Parsley[Int] = chainl1('1' <#> (_.toInt), '+' #> ((x: Int) => (y: Int) => x + y))
     println(chain.pretty)
+    
+    trait BrainFuckOp
+    case object RightPointer extends BrainFuckOp
+    case object LeftPointer extends BrainFuckOp
+    case object Increment extends BrainFuckOp
+    case object Decrement extends BrainFuckOp
+    case object Output extends BrainFuckOp
+    case object Input extends BrainFuckOp
+    case class Loop(p: List[BrainFuckOp]) extends BrainFuckOp
+    
+    // This is an optimisation for the logic inside. Since this is the last in a chain of ors
+    // it doesn't need to account for the other symbols (just needs to not accidentally consume ])
+    val whitespaceBF = satisfy(_ != ']')
+    
+    def between[O, C, A](open: =>Parsley[O],
+                         close: =>Parsley[C],
+                         p: =>Parsley[A]): Parsley[A] = open *> p <* close
+    
+    def brainfuck: Parsley[List[BrainFuckOp]] = 
+    {
+        lazy val bf: Parsley[List[BrainFuckOp]] = 
+            many('>' #> Some(RightPointer)
+             <|> '<' #> Some(LeftPointer)
+             <|> '+' #> Some(Increment)
+             <|> '-' #> Some(Decrement)
+             <|> '.' #> Some(Output)
+             <|> ',' #> Some(Input)
+             <|> between('[', ']' <|> fail("unclosed loop"), bf.map(p => Some(Loop(p))))
+             <|> (whitespaceBF #> None)).map(_.flatten)
+        attempt(bf <* eof) <|> fail("\"]\" closes a loop, but there isn't one open")
+    }
+    println(brainfuck.pretty)
 }
 
 /*object BenchParser extends scala.util.parsing.combinator.Parsers
