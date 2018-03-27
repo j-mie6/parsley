@@ -420,7 +420,8 @@ object DeepEmbedding
             // alternative law: p <|> empty = p
             case (p, e: Empty) if e.expected == null => p
             // associative law: (u <|> v) <|> w = u <|> (v <|> w)
-            case (Or(u: Parsley[T], v: Parsley[A]), w) => new Or(u, new Or[A, B](v, w)).asInstanceOf[Or[_, B]]
+            // TODO add this in when brainfuck benchmark is ready, I want to see how this affects it!
+            //case (Or(u: Parsley[T], v: Parsley[A]), w) => new Or(u, new Or[A, B](v, w).optimise).asInstanceOf[Or[_, B]]
             case _ => this
         }
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation =
