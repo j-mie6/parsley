@@ -360,10 +360,10 @@ object DeepEmbedding
             case (pf, cont: Cont[_, _]) => cont match
             {
                 // re-association law 2: pf <*> (px <* q) = (pf <*> px) <* q
-                case Prev(px, q) => new Prev(new App(pf, px).optimise, q)
+                case Prev(px, q) => new Prev(new App(pf, px).optimise, q).optimise
                 // re-association law 3: p *> pure x = pure x <* p
                 // consequence of re-association law 3: pf <*> (q *> pure x) = (pf <*> pure x) <* q
-                case Then(q, px: Pure[_]) => new Prev(new App(pf, px).optimise, q)
+                case Then(q, px: Pure[_]) => new Prev(new App(pf, px).optimise, q).optimise
             }
             // consequence of left zero law and monadic definition of <*>, preserving error properties of pf
             case (p, z: MZero) => new Then(p, z)
@@ -582,7 +582,6 @@ object DeepEmbedding
                     cont
                 })
             case (p, q) =>
-                println(p, q)
                 new Suspended(p.codeGen
                 {
                     q.codeGen
