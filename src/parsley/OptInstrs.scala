@@ -22,17 +22,6 @@ private [parsley] final class Exchange[A](x: A) extends Instr
     override def toString: String = s"Ex($x)"
 }
 
-private [parsley] final class FastFail[A](msggen: A=>String, expected: UnsafeOption[String]) extends Instr
-{
-    private[this] val msggen_ = msggen.asInstanceOf[Any => String]
-    override def apply(ctx: Context): Unit =
-    {
-        val msg = msggen_(ctx.stack.upop())
-        new Fail(msg, expected)(ctx)
-    }
-    override def toString: String = "FastFail(?)"
-}
-
 private [parsley] class Newline(_expected: UnsafeOption[String]) extends CharTok('\n', _expected)
 {
     override def apply(ctx: Context): Unit =

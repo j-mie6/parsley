@@ -144,39 +144,17 @@ object Combinator
 
     /**The parser `anyChar()` accepts any kind of character. It is for example used to implement `eof`.
       * Returns the accepted character.*/
-    // TODO: intrinsic
     val anyChar: Parsley[Char] = satisfy(_ => true)
 
-    /**This parser only succeeds at the end of the input. This is not a primitive parser but it is
-      * defined using `notFollowedBy`.*/
-    // TODO: intrinsic
-    val eof: Parsley[Unit] = notFollowedBy(anyChar) ? "end of input"
+    /**This parser only succeeds at the end of the input. This is a primitive parser.*/
+    val eof: Parsley[Unit] = new DeepEmbedding.Then(new DeepEmbedding.Eof, new DeepEmbedding.Pure(()))
 
     /**`notFollowedBy(p)` only succeeds when parser `p` fails. This parser does not consume any input.
       * This parser can be used to implement the 'longest match' rule. For example, when recognising
       * keywords, we want to make sure that a keyword is not followed by a legal identifier character,
       * in which case the keyword is actually an identifier. We can program this behaviour as follows:
       * {{{attempt(kw *> notFollowedBy(alphaNum))}}}*/
-    // TODO: intrinsic
-    def notFollowedBy(p: Parsley[_]): Parsley[Unit] = attempt(p).unexpected("\"" + _.toString + "\"").orElse[Unit](unit)
-
-    def main(args: Array[String]): Unit =
-    {
-        // satisfy && >>=:            2s success, 17.8s failure
-        // satisfy && FastUnexpected: 2s success, ?s failure
-        // satisfy && NotFollowedBy:  ?s success, ?s failure
-        // AnyChar && NotFollowedBy:  ?s success, ?s failure
-        // Eof:                       ?s success, ?s failure
-        val p = eof
-        println(p.pretty)
-        println(runParser(p, "a"))
-        val start = System.currentTimeMillis
-        for (_ <- 1 to 20000000)
-        {
-            runParserFastUnsafe(p, "a")
-        }
-        println(System.currentTimeMillis - start)
-    }
+    def notFollowedBy(p: Parsley[_]): Parsley[Unit] = new DeepEmbedding.Then(new DeepEmbedding.NotFollowedBy(p), new DeepEmbedding.Pure(()))
 
     /**`manyTill(p, end)` applies parser `p` zero or more times until the parser `end` succeeds.
       * Returns a list of values returned by `p`. This parser can be used to scan comments.*/

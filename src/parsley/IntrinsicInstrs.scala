@@ -166,3 +166,68 @@ private [parsley] final class ManyTill(var label: Int) extends JumpInstr
     override def toString: String = s"ManyTill($label)"
     override def copy: Many = new Many(label)
 }
+
+private [parsley] final class FastFail[A](msggen: A=>String, expected: UnsafeOption[String]) extends Instr
+{
+    private[this] val msggen_ = msggen.asInstanceOf[Any => String]
+    override def apply(ctx: Context): Unit =
+    {
+        val msg = msggen_(ctx.stack.upop())
+        ctx.fail(expected)
+        ctx.raw ::= msg
+    }
+    override def toString: String = "FastFail(?)"
+}
+
+private [parsley] final class FastUnexpected[A](msggen: A=>String, expected: UnsafeOption[String]) extends Instr
+{
+    private[this] val msggen_ = msggen.asInstanceOf[Any => String]
+    override def apply(ctx: Context): Unit =
+    {
+        val msg = msggen_(ctx.stack.upop())
+        ctx.fail(expected)
+        ctx.unexpected = msg
+        ctx.unexpectAnyway = true
+    }
+    override def toString: String = "FastUnexpected(?)"
+}
+
+private [parsley] final class NotFollowedBy(expected: UnsafeOption[String]) extends Instr
+{
+    override def apply(ctx: Context): Unit =
+    {
+        // Recover the previous state; notFollowedBy NEVER consumes input
+        val state = ctx.states.head
+        ctx.states = ctx.states.tail
+        ctx.offset = state.offset
+        ctx.line = state.line
+        ctx.col = state.col
+        // A previous success is a failure
+        if (ctx.status eq Good)
+        {
+            ctx.handlers = ctx.handlers.tail
+            val x = ctx.stack.upop()
+            ctx.fail(expected)
+            ctx.unexpected = "\"" + x.toString + "\""
+            ctx.unexpectAnyway = true
+        }
+        // A failure is what we wanted
+        else
+        {
+            ctx.status = Good
+            ctx.inc()
+        }
+    }
+    override def toString: String = "NotFollowedBy"
+}
+
+private [parsley] class Eof(_expected: UnsafeOption[String]) extends Instr
+{
+    val expected: String = if (_expected == null) "end of input" else _expected
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.offset == ctx.inputsz) ctx.inc()
+        else ctx.fail(expected)
+    }
+    override final def toString: String = "Eof"
+}
