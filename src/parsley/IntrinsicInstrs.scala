@@ -113,21 +113,24 @@ private [parsley] final class Chainl(var label: Int) extends JumpInstr
 
 private [parsley] final class Chainr(var label: Int) extends JumpInstr
 {
-    private var acc: Any => Any = identity[Any]
+    private var acc: Any => Any = _
     override def apply(ctx: Context): Unit =
     {
         if (ctx.status eq Good)
         {
-            acc = ctx.stack.pop[Any => Any]().compose(acc)
+            // If acc is null we are entering the instruction, so nothing to compose, this saves on an identity call
+            if (acc == null) acc = ctx.stack.pop[Any => Any]()
+            // We perform the acc after the tos function; the tos function is "closer" to the final p
+            else acc = ctx.stack.pop[Any => Any]().andThen(acc)
             ctx.checkStack.head = ctx.offset
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else if (ctx.offset != ctx.checkStack.head) {acc = identity[Any]; ctx.fail()}
+        else if (ctx.offset != ctx.checkStack.head) {acc = null; ctx.fail()}
         else
         {
             ctx.stack.push(acc)
-            acc = identity[Any]
+            acc = null
             ctx.checkStack = ctx.checkStack.tail
             ctx.status = Good
             ctx.inc()
