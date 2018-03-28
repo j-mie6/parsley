@@ -129,7 +129,7 @@ private [parsley] final class Chainr(var label: Int) extends JumpInstr
         else if (ctx.offset != ctx.checkStack.head) {acc = null; ctx.fail()}
         else
         {
-            ctx.stack.push(acc)
+            ctx.stack.push(if (acc == null) identity[Any](_) else acc)
             acc = null
             ctx.checkStack = ctx.checkStack.tail
             ctx.status = Good
