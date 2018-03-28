@@ -5,6 +5,7 @@ import scala.annotation.tailrec
 object ParsleyBench
 {
     import parsley.Parsley._
+    import parsley.Combinator._
     val liftab: Parsley[String] = lift2[Char, Char, String]((x, y) => x.toString + y.toString, 'a', 'b')
     println(liftab.pretty)
     val aconsb: Parsley[List[Char]] = 'a' <::> ('b' #> Nil)
@@ -28,10 +29,6 @@ object ParsleyBench
     // This is an optimisation for the logic inside. Since this is the last in a chain of ors
     // it doesn't need to account for the other symbols (just needs to not accidentally consume ])
     val whitespaceBF = satisfy(_ != ']')
-    
-    def between[O, C, A](open: =>Parsley[O],
-                         close: =>Parsley[C],
-                         p: =>Parsley[A]): Parsley[A] = open *> p <* close
     
     def brainfuck: Parsley[List[BrainFuckOp]] = 
     {

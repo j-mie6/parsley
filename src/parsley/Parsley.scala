@@ -92,6 +92,7 @@ object Parsley
           * @return The result of the invokee if it passes the predicate
           */
         def filter(pred: A => Boolean): Parsley[A] = flatMap(x => if (pred(x)) pure(x) else empty)
+        def withFilter(pred: A => Boolean): Parsley[A] = filter(pred)
         /** Similar to `filter`, except the error message desired is also provided. This allows you to name the message
           * itself.
           * @param pred The predicate that is tested against the parser result
@@ -216,17 +217,13 @@ object Parsley
     /**Alias for `p ? msg`.**/
     def label[A](p: Parsley[A], msg: String): Parsley[A] = p ? msg
     def fail(msg: String): Parsley[Nothing] = new DeepEmbedding.Fail(msg)
-    def empty: Parsley[Nothing] = new DeepEmbedding.Empty
+    val empty: Parsley[Nothing] = new DeepEmbedding.Empty
     def unexpected(msg: String): Parsley[Nothing] = new DeepEmbedding.Unexpected(msg)
-    def notFollowedBy(p: Parsley[_]): Parsley[Unit] = attempt(p).unexpected("\"" + _.toString + "\"").orElse[Unit](unit)
     val unit: Parsley[Unit] = pure(())
-    val anyChar: Parsley[Char] = satisfy(_ => true)
-    val eof: Parsley[Unit] = notFollowedBy(anyChar) ? "end of input"
     def many[A](p: =>Parsley[A]): Parsley[List[A]] = new DeepEmbedding.Many(p)
     def skipMany[A](p: =>Parsley[A]): Parsley[Unit] = new DeepEmbedding.Then(new DeepEmbedding.SkipMany(p), new DeepEmbedding.Pure(()))
-    @inline def chainl1[A](p: =>Parsley[A], op: =>Parsley[A => A => A]): Parsley[A] = chainl1_(p, op.map(flip[A, A, A]))
-    @inline def chainl1_[A](p: =>Parsley[A], op: =>Parsley[A => A => A]): Parsley[A] = chainPost(p, op <*> p)
-    def chainPost[A](p: =>Parsley[A], op: =>Parsley[A => A]) = new DeepEmbedding.Chainl(p, op)
+    def sequence[A](ps: Seq[Parsley[A]]): Parsley[List[A]] = ps.foldRight(pure[List[A]](Nil))(_ <::> _)
+    def traverse[A, B](f: A => Parsley[B], xs: Seq[A]): Parsley[List[B]] = sequence(xs.map(f))
 }
 
 // Internals
@@ -902,6 +899,7 @@ object DeepEmbedding
     
     def main(args: Array[String]): Unit =
     {
+        import parsley.Combinator._
         def many_[A](p: Parsley[A]): Parsley[List[A]] =
         {
             lazy val manyp: Parsley[List[A]] = (p <::> manyp) </> Nil
