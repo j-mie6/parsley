@@ -158,14 +158,14 @@ object Combinator
 
     /**`manyTill(p, end)` applies parser `p` zero or more times until the parser `end` succeeds.
       * Returns a list of values returned by `p`. This parser can be used to scan comments.*/
-    def manyTill[A, B](p: =>Parsley[A], end: Parsley[B]): Parsley[List[A]] =
+    def manyTill[A, B](p: =>Parsley[A], end: =>Parsley[B]): Parsley[List[A]] =
     {
         new DeepEmbedding.ManyTill(end #> DeepEmbedding.ManyTill.Stop <|> p)
     }
 
     /**`many1Till(p, end)` applies parser `p` one or more times until the parser `end` succeeds.
       * Returns a list of values returned by `p`.*/
-    def many1Till[A, B](_p: =>Parsley[A], _end: Parsley[B]): Parsley[List[A]] =
+    def many1Till[A, B](_p: =>Parsley[A], _end: =>Parsley[B]): Parsley[List[A]] =
     {
         lazy val p = _p
         lazy val end = _end
