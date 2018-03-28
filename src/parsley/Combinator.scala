@@ -160,6 +160,24 @@ object Combinator
     // TODO: intrinsic
     def notFollowedBy(p: Parsley[_]): Parsley[Unit] = attempt(p).unexpected("\"" + _.toString + "\"").orElse[Unit](unit)
 
+    def main(args: Array[String]): Unit =
+    {
+        // satisfy && >>=:            2s success, 17.8s failure
+        // satisfy && FastUnexpected: 2s success, ?s failure
+        // satisfy && NotFollowedBy:  ?s success, ?s failure
+        // AnyChar && NotFollowedBy:  ?s success, ?s failure
+        // Eof:                       ?s success, ?s failure
+        val p = eof
+        println(p.pretty)
+        println(runParser(p, "a"))
+        val start = System.currentTimeMillis
+        for (_ <- 1 to 20000000)
+        {
+            runParserFastUnsafe(p, "a")
+        }
+        println(System.currentTimeMillis - start)
+    }
+
     /**`manyTill(p, end)` applies parser `p` zero or more times until the parser `end` succeeds.
       * Returns a list of values returned by `p`. This parser can be used to scan comments.*/
     def manyTill[A, B](p: =>Parsley[A], end: Parsley[B]): Parsley[List[A]] =
