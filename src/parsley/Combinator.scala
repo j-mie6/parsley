@@ -142,10 +142,6 @@ object Combinator
       * that associate to the left.*/
     def chainPost[A](p: =>Parsley[A], op: =>Parsley[A => A]) = new DeepEmbedding.Chainl(p, op)
 
-    /**The parser `anyChar()` accepts any kind of character. It is for example used to implement `eof`.
-      * Returns the accepted character.*/
-    val anyChar: Parsley[Char] = satisfy(_ => true)
-
     /**This parser only succeeds at the end of the input. This is a primitive parser.*/
     val eof: Parsley[Unit] = new DeepEmbedding.Then(new DeepEmbedding.Eof, new DeepEmbedding.Pure(()))
 

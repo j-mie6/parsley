@@ -176,24 +176,6 @@ object Parsley
       * @return A parser which consumes nothing and returns `x`
       */
     def pure[A](x: A): Parsley[A] = new DeepEmbedding.Pure(x)
-    /** Reads a character from the input stream and returns it, else fails if the character is not found at the head
-      * of the stream.
-      * @param c The character to search for
-      * @return `c` if it can be found at the head of the input
-      */
-    def char(c: Char): Parsley[Char] = new DeepEmbedding.CharTok(c)
-    /** Reads a character from the head of the input stream if and only if it satisfies the given predicate. Else it
-      * fails without consuming the character.
-      * @param f The function to test the character on
-      * @return `c` if `f(c)` is true.
-      */
-    def satisfy(f: Char => Boolean): Parsley[Char] = new DeepEmbedding.Satisfy(f)
-    /** Reads a string from the input stream and returns it, else fails if the string is not found at the head
-      * of the stream.
-      * @param s The string to match against
-      * @return `s` if it can be found at the head of the input
-      */
-    def string(s: String): Parsley[String] = new DeepEmbedding.StringTok(s)
 
     /** Traditionally, `lift2` is defined as `lift2(f, p, q) = p.map(f) <*> q`. However, `f` is actually uncurried,
       * so it's actually more exactly defined as; read `p` and then read `q` then provide their results to function
@@ -1019,6 +1001,7 @@ object DeepEmbedding
     def main(args: Array[String]): Unit =
     {
         import parsley.Combinator._
+        import parsley.Char._
         def many_[A](p: Parsley[A]): Parsley[List[A]] =
         {
             lazy val manyp: Parsley[List[A]] = (p <::> manyp) </> Nil

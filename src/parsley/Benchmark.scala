@@ -6,6 +6,7 @@ object ParsleyBench
 {
     import parsley.Parsley._
     import parsley.Combinator._
+    import parsley.Char._
     val liftab: Parsley[String] = lift2[Char, Char, String]((x, y) => x.toString + y.toString, 'a', 'b')
     println(liftab.pretty)
     val aconsb: Parsley[List[Char]] = 'a' <::> ('b' #> Nil)

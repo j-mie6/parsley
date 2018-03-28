@@ -1,5 +1,4 @@
 import scala.annotation.tailrec
-import scala.language.implicitConversions
 
 package object parsley
 {
@@ -17,10 +16,6 @@ package object parsley
     def runParserFastUnsafe[A](p: Parsley[A], input: String)(implicit ctx: Context = internalCtx): Result[A] = runParser[A](p, input.toCharArray, ctx)
     def runParser[A](p: Parsley[A], input: Array[Char], ctx: Context): Result[A] = runParser_[A](ctx(p.instrs, input))
     def giveContext: Context = new Context(null, Array.emptyCharArray)
-
-    // Implicit Conversions
-    @inline final implicit def stringLift(str: String): Parsley[String] = parsley.Parsley.string(str)
-    @inline final implicit def charLift(c: Char): Parsley[Char] = parsley.Parsley.char(c)
 
     // Internals
     private [parsley] val internalCtx = giveContext
