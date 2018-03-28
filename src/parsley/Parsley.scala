@@ -525,9 +525,7 @@ object DeepEmbedding
         {
             case (ct@CharTok(c), Pure(x)) => instrs += parsley.CharTokFastPerform[Char, B](c, _ => x, ct.expected); cont
             case (st@StringTok(s), Pure(x)) => instrs += new parsley.StringTokFastPerform(s, _ => x, st.expected); cont
-            case (p: SkipMany[_], q) => new Suspended(p.codeGen(q.codeGen(cont)))
-            case (p: NotFollowedBy[_], q) => new Suspended(p.codeGen(q.codeGen(cont)))
-            case (p: Eof, q) => new Suspended(p.codeGen(q.codeGen(cont)))
+            case (p: Resultless, q) => new Suspended(p.codeGen(q.codeGen(cont)))
             case (p, Pure(x)) =>
                 new Suspended(p.codeGen
                 {
@@ -572,9 +570,7 @@ object DeepEmbedding
         {
             case (Pure(x), ct@CharTok(c)) => instrs += parsley.CharTokFastPerform[Char, A](c, _ => x, ct.expected); cont
             case (Pure(x), st@StringTok(s)) => instrs += new parsley.StringTokFastPerform(s, _ => x, st.expected); cont
-            case (p, q: SkipMany[_]) => new Suspended(p.codeGen(q.codeGen(cont)))
-            case (p, q: NotFollowedBy[_]) => new Suspended(p.codeGen(q.codeGen(cont)))
-            case (p, q: Eof) => new Suspended(p.codeGen(q.codeGen(cont)))
+            case (p, q: Resultless) => new Suspended(p.codeGen(q.codeGen(cont)))
             case (Pure(x), q) =>
                 new Suspended(q.codeGen
                 {
@@ -838,15 +834,16 @@ object DeepEmbedding
             })
         }
     }
-    private [parsley] final class SkipMany[+A](_p: =>Parsley[A]) extends Parsley[Unit]
+    private [DeepEmbedding] abstract class Resultless extends Parsley[Nothing]
+    private [parsley] final class SkipMany[+A](_p: =>Parsley[A]) extends Resultless
     {
         private [SkipMany] lazy val p = _p
-        override def preprocess(cont: Parsley[Unit] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]] =
+        override def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]] =
             p.optimised(p => cont(new SkipMany(p)))
-        override def optimise: Parsley[Unit] = p match
+        override def optimise: Parsley[Nothing] = p match
         {
             case _: Pure[A] => throw new Exception("skipMany given parser which consumes no input")
-            case _: MZero => new Pure(())
+            case _: MZero => new Pure(()).asInstanceOf[Parsley[Nothing]]
             case _ => this
         }
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation =
@@ -942,7 +939,7 @@ object DeepEmbedding
             })
         }
     }
-    private [parsley] final class NotFollowedBy[+A](_p: =>Parsley[A]) extends Parsley[Nothing]
+    private [parsley] final class NotFollowedBy[+A](_p: =>Parsley[A]) extends Resultless
     {
         private [NotFollowedBy] lazy val p = _p
         override def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]] = p.optimised(p =>
@@ -964,7 +961,7 @@ object DeepEmbedding
             }
         }
     }
-    private [parsley] final class Eof extends Parsley[Nothing]
+    private [parsley] final class Eof extends Resultless
     {
         override def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]] =
         {
