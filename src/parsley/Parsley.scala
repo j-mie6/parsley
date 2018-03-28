@@ -864,6 +864,36 @@ object DeepEmbedding
             })
         }
     }
+    private [parsley] final class Chainr[A](_p: =>Parsley[A], _op: =>Parsley[A => A]) extends Parsley[A]
+    {
+        private [Chainr] lazy val p = _p
+        private [Chainr] lazy val op = _op
+        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]] =
+            p.optimised(p => op.optimised(op => cont(new Chainr(p, op))))
+        override def optimise: Parsley[A] = op match
+        {
+            case _: Pure[A => A] => throw new Exception("right chain given parser which consumes no input")
+            case _: MZero => p
+            case _ => this
+        }
+        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation =
+        {
+            val body = labels.fresh()
+            val handler = labels.fresh()
+            instrs += new parsley.InputCheck(handler)
+            instrs += new parsley.Label(body)
+            new Suspended(op.codeGen
+            {
+                instrs += new parsley.Label(handler)
+                instrs += new parsley.Chainr(body)
+                p.codeGen
+                {
+                    instrs += parsley.Apply
+                    cont
+                }
+            })
+        }
+    }
     private [parsley] final class ErrorRelabel[+A](_p: =>Parsley[A], msg: String) extends Parsley[A]
     {
         private [ErrorRelabel] lazy val p = _p
@@ -896,6 +926,7 @@ object DeepEmbedding
     private [DeepEmbedding] object Many       { def unapply[A](self: Many[A]): Option[Parsley[A]] = Some(self.p) }
     private [DeepEmbedding] object SkipMany   { def unapply[A](self: SkipMany[A]): Option[Parsley[A]] = Some(self.p) }
     private [DeepEmbedding] object Chainl     { def unapply[A](self: Chainl[A]): Option[(Parsley[A], Parsley[A => A])] = Some((self.p, self.op)) }
+    private [DeepEmbedding] object Chainr     { def unapply[A](self: Chainr[A]): Option[(Parsley[A], Parsley[A => A])] = Some((self.p, self.op)) }
     
     def main(args: Array[String]): Unit =
     {

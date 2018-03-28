@@ -111,9 +111,28 @@ private [parsley] final class Chainl(var label: Int) extends JumpInstr
     override def copy: Chainl = new Chainl(label)
 }
 
-// TODO: What is the best way to implement this intrinsic?
 private [parsley] final class Chainr(var label: Int) extends JumpInstr
 {
-    override def apply(ctx: Context): Unit = ???
+    private var acc: Any => Any = identity[Any]
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.status eq Good)
+        {
+            acc = ctx.stack.pop[Any => Any]().compose(acc)
+            ctx.checkStack.head = ctx.offset
+            ctx.pc = label
+        }
+        // If the head of input stack is not the same size as the head of check stack, we fail to next handler
+        else if (ctx.offset != ctx.checkStack.head) {acc = identity[Any]; ctx.fail()}
+        else
+        {
+            ctx.stack.push(acc)
+            acc = identity[Any]
+            ctx.checkStack = ctx.checkStack.tail
+            ctx.status = Good
+            ctx.inc()
+        }
+    }
+    override def toString: String = s"Chainr($label)"
     override def copy: Chainr = new Chainr(label)
 }

@@ -1,7 +1,6 @@
 package parsley
 
 import parsley.Parsley._
-
 import scala.annotation.tailrec
 
 object Combinator
@@ -14,9 +13,9 @@ object Combinator
       *  Returns the value of the succeeding parser. Utilises <\> vs choice's <|>.*/
     def attemptChoice[A](ps: List[Parsley[A]]): Parsley[A] = ps.reduceLeftOption(_<\>_).getOrElse(empty)
 
-    /** `count(n, p)` parses `n` occurrences of `p`. If `n` is smaller or equal to zero, the parser is
-      *  `pure(List())`. Returns a list of `n` values returned by `p`.*/
-    def count[A](n: Int, p: Parsley[A]): Parsley[List[A]] = sequence(for (_ <- 1 to n) yield p)
+    /** `repeat(n, p)` parses `n` occurrences of `p`. If `n` is smaller or equal to zero, the parser is
+      *  `pure(Nil)`. Returns a list of `n` values returned by `p`.*/
+    def repeat[A](n: Int, p: =>Parsley[A]): Parsley[List[A]] = sequence(for (_ <- 1 to n) yield p)
 
     /**`option(p)` tries to apply parser `p`. If `p` fails without consuming input, it returns
       * `None`, otherwise it returns `Some` of the value returned by `p`.*/
@@ -120,11 +119,7 @@ object Combinator
     }
 
     /**`chainPre(p, op)` parses many prefixed applications of `op` onto a single final result of `p`*/
-    // TODO: Intrinsic
-    def chainPre[A](p: =>Parsley[A], op: =>Parsley[A => A]): Parsley[A] =
-    {
-        lift2[List[A => A], A, A](_.foldRight(_)(_(_)), many(op), p)
-    }
+    def chainPre[A](p: =>Parsley[A], op: =>Parsley[A => A]): Parsley[A] = new DeepEmbedding.Chainr(p, op)
 
     /**chainl1(p, op) parses *one* or more occurrences of `p`, separated by `op`. Returns a value
       * obtained by a left associative application of all functions return by `op` to the values
@@ -149,10 +144,12 @@ object Combinator
 
     /**The parser `anyChar()` accepts any kind of character. It is for example used to implement `eof`.
       * Returns the accepted character.*/
+    // TODO: intrinsic
     val anyChar: Parsley[Char] = satisfy(_ => true)
 
     /**This parser only succeeds at the end of the input. This is not a primitive parser but it is
       * defined using `notFollowedBy`.*/
+    // TODO: intrinsic
     val eof: Parsley[Unit] = notFollowedBy(anyChar) ? "end of input"
 
     /**`notFollowedBy(p)` only succeeds when parser `p` fails. This parser does not consume any input.
@@ -160,6 +157,7 @@ object Combinator
       * keywords, we want to make sure that a keyword is not followed by a legal identifier character,
       * in which case the keyword is actually an identifier. We can program this behaviour as follows:
       * {{{attempt(kw *> notFollowedBy(alphaNum))}}}*/
+    // TODO: intrinsic
     def notFollowedBy(p: Parsley[_]): Parsley[Unit] = attempt(p).unexpected("\"" + _.toString + "\"").orElse[Unit](unit)
 
     /**`manyTill(p, end)` applies parser `p` zero or more times until the parser `end` succeeds.
