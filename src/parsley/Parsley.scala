@@ -894,6 +894,26 @@ object DeepEmbedding
             })
         }
     }
+    private [parsley] final class ManyTill[+A](_body: Parsley[Any]) extends Parsley[List[A]]
+    {
+        private [ManyTill] lazy val body = _body
+        override def preprocess(cont: Parsley[List[A]] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]] =
+            body.optimised(body => cont(new ManyTill(body)))
+        override def optimise: Parsley[List[A]] = this
+        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation =
+        {
+            val start = labels.fresh()
+            val loop = labels.fresh()
+            instrs += new parsley.PushFallthrough(loop)
+            instrs += new parsley.Label(start)
+            new Suspended(body.codeGen
+            {
+                instrs += new parsley.Label(loop)
+                instrs += new parsley.ManyTill(start)
+                cont
+            })
+        }
+    }
     private [parsley] final class ErrorRelabel[+A](_p: =>Parsley[A], msg: String) extends Parsley[A]
     {
         private [ErrorRelabel] lazy val p = _p
@@ -927,6 +947,11 @@ object DeepEmbedding
     private [DeepEmbedding] object SkipMany   { def unapply[A](self: SkipMany[A]): Option[Parsley[A]] = Some(self.p) }
     private [DeepEmbedding] object Chainl     { def unapply[A](self: Chainl[A]): Option[(Parsley[A], Parsley[A => A])] = Some((self.p, self.op)) }
     private [DeepEmbedding] object Chainr     { def unapply[A](self: Chainr[A]): Option[(Parsley[A], Parsley[A => A])] = Some((self.p, self.op)) }
+    private [parsley] object ManyTill
+    {
+        object Stop
+        private [DeepEmbedding] def unapply[A](self: ManyTill[A]): Option[Parsley[Any]] = Some(self.body)
+    }
     
     def main(args: Array[String]): Unit =
     {

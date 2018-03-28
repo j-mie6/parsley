@@ -162,13 +162,9 @@ object Combinator
 
     /**`manyTill(p, end)` applies parser `p` zero or more times until the parser `end` succeeds.
       * Returns a list of values returned by `p`. This parser can be used to scan comments.*/
-    // TODO Candidate for intrinsic; manyTill(p, term@(end #> End)) => Label(0); InputCheck(1); end; Label(1); JumpGood(2); p; Label(2); ManyTill(0) { tos == End }
-    def manyTill[A, B](_p: =>Parsley[A], _end: Parsley[B]): Parsley[List[A]] =
+    def manyTill[A, B](p: =>Parsley[A], end: Parsley[B]): Parsley[List[A]] =
     {
-        lazy val p = _p
-        lazy val end = _end
-        lazy val scan: Parsley[List[A]] = (end #> Nil) <|> (p <::> scan)
-        scan
+        new DeepEmbedding.ManyTill(end #> DeepEmbedding.ManyTill.Stop <|> p)
     }
 
     /**`many1Till(p, end)` applies parser `p` one or more times until the parser `end` succeeds.

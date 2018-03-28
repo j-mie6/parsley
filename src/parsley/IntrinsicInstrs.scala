@@ -19,7 +19,7 @@ private [parsley] object Cons extends Instr
     final override def apply(ctx: Context): Unit =
     {
         val xs = ctx.stack.pop[List[_]]()
-        ctx.stack.exchange(ctx.stack.peek::xs)
+        ctx.stack.exchange(ctx.stack.upeek::xs)
         ctx.inc()
     }
     override def toString: String = "Cons"
@@ -138,4 +138,31 @@ private [parsley] final class Chainr(var label: Int) extends JumpInstr
     }
     override def toString: String = s"Chainr($label)"
     override def copy: Chainr = new Chainr(label)
+}
+
+private [parsley] final class ManyTill(var label: Int) extends JumpInstr
+{
+    private[this] val acc: ListBuffer[Any] = ListBuffer.empty
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.status eq Good)
+        {
+            val x = ctx.stack.upop()
+            if (x == DeepEmbedding.ManyTill.Stop)
+            {
+                ctx.stack.push(acc.toList)
+                acc.clear()
+                ctx.inc()
+            }
+            else
+            {
+                acc += x
+                ctx.pc = label
+            }
+        }
+        // ManyTill is a fallthrough handler, it must be visited during failure, but does nothing to the external state
+        else { acc.clear(); ctx.fail() }
+    }
+    override def toString: String = s"ManyTill($label)"
+    override def copy: Many = new Many(label)
 }

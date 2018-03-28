@@ -248,6 +248,16 @@ private [parsley] final class PushHandler(var label: Int) extends JumpInstr
     override def toString: String = s"PushHandler($label)"
 }
 
+private [parsley] final class PushFallthrough(var label: Int) extends JumpInstr
+{
+    override def apply(ctx: Context): Unit =
+    {
+        ctx.handlers = push(ctx.handlers, new Handler(ctx.depth, label, ctx.stack.usize))
+        ctx.inc()
+    }
+    override def toString: String = s"PushFallthrough($label)"
+}
+
 private [parsley] object Attempt extends Instr
 {
     override def apply(ctx: Context): Unit =
