@@ -65,14 +65,14 @@ object Parsley
           * @param q The parser whose result should be returned
           * @return A new parser which first parses the invokee, then `p` and returns the result of `p`
           */
-        def *>[A_ >: A, B](q: =>Parsley[B]) = new DeepEmbedding.Then[A_, B](p, q)
+        def *>[A_ >: A, B](q: =>Parsley[B]): Parsley[B] = new DeepEmbedding.Then[A_, B](p, q)
         /**
           * This is the parser that corresponds to a more optimal version of `this.map(x => _ => x) <*> p`. It performs
           * the parse action of both parsers, in order, but discards the result of the second parser.
           * @param q The parser who should be executed but then discarded
           * @return A new parser which first parses the invokee, then `p` and returns the result of the invokee
           */
-        def <*[B](q: =>Parsley[B]) = new DeepEmbedding.Prev(p, q)
+        def <*[B](q: =>Parsley[B]): Parsley[A] = new DeepEmbedding.Prev(p, q)
         /**
           * This is the parser that corresponds to `this *> pure(x)` or a more optimal version of `this.map(_ => x)`.
           * It performs the parse action of the invokee but discards its result and then results the value `x` instead
