@@ -320,6 +320,12 @@ private [parsley] final class InputCheck(var label: Int) extends JumpInstr
     override def toString: String = s"InputCheck($label)"
 }
 
+private [parsley] final class Jump(var label: Int) extends JumpInstr
+{
+    override def apply(ctx: Context): Unit = ctx.pc = label
+    override def toString: String = s"Jump($label)"
+}
+
 private [parsley] final class JumpGood(var label: Int) extends JumpInstr
 {
     override def apply(ctx: Context): Unit =

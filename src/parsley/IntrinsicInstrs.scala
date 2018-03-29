@@ -167,9 +167,69 @@ private [parsley] final class ManyTill(var label: Int) extends JumpInstr
     override def copy: Many = new Many(label)
 }
 
+private [parsley] final class If(var label: Int) extends JumpInstr
+{
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.stack.pop()) ctx.pc = label
+        else ctx.inc()
+    }
+    override def toString: String = s"If(true: $label)"
+}
+
+private [parsley] final class Ensure[A](pred: A=>Boolean, expected: UnsafeOption[String]) extends Instr
+{
+    private [this] val pred_ = pred.asInstanceOf[Any=>Boolean]
+    override def apply(ctx: Context): Unit =
+    {
+        if (pred_(ctx.stack.upeek)) ctx.inc()
+        else
+        {
+            ctx.stack.pop_() //this might not be needed? drop handles in fail
+            val strip = ctx.expected.isEmpty
+            ctx.fail(expected)
+            if (strip) ctx.unexpected = null
+        }
+    }
+    override def toString: String = "Ensure(?)"
+}
+
+private [parsley] final class Guard[A](pred: A=>Boolean, msg: String, expected: UnsafeOption[String]) extends Instr
+{
+    private [this] val pred_ = pred.asInstanceOf[Any=>Boolean]
+    override def apply(ctx: Context): Unit =
+    {
+        if (pred_(ctx.stack.upeek)) ctx.inc()
+        else
+        {
+            ctx.stack.pop_() //this might not be needed? drop handles in fail
+            ctx.fail(expected)
+            ctx.raw ::= msg
+        }
+    }
+    override def toString: String = s"Guard(?, $msg)"
+}
+
+private [parsley] final class FastGuard[A](pred: A=>Boolean, msggen: A=>String, expected: UnsafeOption[String]) extends Instr
+{
+    private [this] val pred_ = pred.asInstanceOf[Any=>Boolean]
+    private [this] val msggen_ = msggen.asInstanceOf[Any=>String]
+    override def apply(ctx: Context): Unit =
+    {
+        if (pred_(ctx.stack.upeek)) ctx.inc()
+        else
+        {
+            val msg = msggen_(ctx.stack.upop())
+            ctx.fail(expected)
+            ctx.raw ::= msg
+        }
+    }
+    override def toString: String = "FastGuard(?, ?)"
+}
+
 private [parsley] final class FastFail[A](msggen: A=>String, expected: UnsafeOption[String]) extends Instr
 {
-    private[this] val msggen_ = msggen.asInstanceOf[Any => String]
+    private [this] val msggen_ = msggen.asInstanceOf[Any => String]
     override def apply(ctx: Context): Unit =
     {
         val msg = msggen_(ctx.stack.upop())
@@ -181,7 +241,7 @@ private [parsley] final class FastFail[A](msggen: A=>String, expected: UnsafeOpt
 
 private [parsley] final class FastUnexpected[A](msggen: A=>String, expected: UnsafeOption[String]) extends Instr
 {
-    private[this] val msggen_ = msggen.asInstanceOf[Any => String]
+    private [this] val msggen_ = msggen.asInstanceOf[Any => String]
     override def apply(ctx: Context): Unit =
     {
         val msg = msggen_(ctx.stack.upop())

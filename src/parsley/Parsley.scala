@@ -6,10 +6,8 @@ import language.existentials
 import scala.annotation.tailrec
     
 // User API
-
 object Parsley
 {
-    @inline private def flip[A, B, C](f: A => B => C)(x: B)(y: A): C = f(y)(x)
     implicit final class LazyParsley[P, +A](p: =>P)(implicit con: P => Parsley[A])
     {
         /**
@@ -91,7 +89,7 @@ object Parsley
           * @param pred The predicate that is tested against the parser result
           * @return The result of the invokee if it passes the predicate
           */
-        def filter(pred: A => Boolean): Parsley[A] = flatMap(x => if (pred(x)) pure(x) else empty)
+        def filter(pred: A => Boolean): Parsley[A] = new DeepEmbedding.Ensure(p, pred)
         def withFilter(pred: A => Boolean): Parsley[A] = filter(pred)
         /** Similar to `filter`, except the error message desired is also provided. This allows you to name the message
           * itself.
@@ -99,7 +97,7 @@ object Parsley
           * @param msg The message used for the error if the input failed the check
           * @return The result of the invokee if it passes the predicate
           */
-        def guard(pred: A => Boolean, msg: String): Parsley[A] = flatMap(x => if (pred(x)) pure(x) else fail(msg))
+        def guard(pred: A => Boolean, msg: String): Parsley[A] = new DeepEmbedding.Guard(p, pred, msg)
         /** Similar to `filter`, except the error message desired is also provided. This allows you to name the message
           * itself. The message is provided as a generator, which allows the user to avoid otherwise expensive
           * computation.
@@ -107,7 +105,7 @@ object Parsley
           * @param msggen Generator function for error message, generating a message based on the result of the parser
           * @return The result of the invokee if it passes the predicate
           */
-        def guard(pred: A => Boolean, msggen: A => String): Parsley[A] = flatMap(x => if (pred(x)) pure(x) else fail(msggen(x)))
+        def guard(pred: A => Boolean, msggen: A => String): Parsley[A] = new DeepEmbedding.FastGuard(p, pred, msggen)
         /**Alias for guard combinator, taking a fixed message.*/
         def >?>(pred: A => Boolean, msg: String): Parsley[A] = guard(pred, msg)
         /**Alias for guard combinator, taking a dynamic message generator.*/
@@ -166,7 +164,7 @@ object Parsley
           * @param b The parser that yields the condition value
           * @return The result of either `p` or `q` depending on the return value of the invokee
           */
-        def ?:(b: =>Parsley[Boolean]): Parsley[A] = b >>= (b => if (b) p else q)
+        def ?:(b: =>Parsley[Boolean]): Parsley[A] = new DeepEmbedding.Ternary(b, p, q)
     }
     
     /** This is the traditional applicative pure function (or monadic return) for parsers. It consumes no input and
@@ -791,6 +789,75 @@ object DeepEmbedding
             }
         }
     }
+    private [parsley] final class Ensure[A](_p: =>Parsley[A], private [Ensure] val pred: A => Boolean) extends Parsley[A]
+    {
+        private [Ensure] lazy val p = _p
+        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]] = p.optimised(p =>
+        {
+            val en = new Ensure(p, pred)
+            en.expected = label
+            cont(en)
+        })
+        override def optimise: Parsley[A] = p match
+        {
+            case px@Pure(x) => if (pred(x)) px else new Empty
+            case _ => this
+        }
+        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation =
+        {
+            p.codeGen
+            {
+                instrs += new parsley.Ensure(pred, expected)
+                cont
+            }
+        }
+    }
+    private [parsley] final class Guard[A](_p: =>Parsley[A], private [Guard] val pred: A => Boolean, private [Guard] val msg: String) extends Parsley[A]
+    {
+        private [Guard] lazy val p = _p
+        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]] = p.optimised(p =>
+        {
+            val g = new Guard(p, pred, msg)
+            g.expected = label
+            cont(g)
+        })
+        override def optimise: Parsley[A] = p match
+        {
+            case px@Pure(x) => if (pred(x)) px else new Fail(msg)
+            case _ => this
+        }
+        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation =
+        {
+            p.codeGen
+            {
+                instrs += new parsley.Guard(pred, msg, expected)
+                cont
+            }
+        }
+    }
+    private [parsley] final class FastGuard[A](_p: =>Parsley[A], private [FastGuard] val pred: A => Boolean, private [FastGuard] val msggen: A => String) extends Parsley[A]
+    {
+        private [FastGuard] lazy val p = _p
+        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]] = p.optimised(p =>
+        {
+            val fg = new FastGuard(p, pred, msggen)
+            fg.expected = label
+            cont(fg)
+        })
+        override def optimise: Parsley[A] = p match
+        {
+            case px@Pure(x) => if (pred(x)) px else new Fail(msggen(x))
+            case _ => this
+        }
+        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation =
+        {
+            p.codeGen
+            {
+                instrs += new parsley.FastGuard(pred, msggen, expected)
+                cont
+            }
+        }
+    }
     private [parsley] final class Many[+A](_p: =>Parsley[A]) extends Parsley[List[A]]
     {
         private [Many] lazy val p = _p
@@ -921,6 +988,39 @@ object DeepEmbedding
             })
         }
     }
+    private [parsley] final class Ternary[A](_b: =>Parsley[Boolean], _p: =>Parsley[A], _q: =>Parsley[A]) extends Parsley[A]
+    {
+        private [Ternary] lazy val b = _b
+        private [Ternary] lazy val p = _p
+        private [Ternary] lazy val q = _q
+        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]] =
+            b.optimised(b => p.optimised(p => q.optimised(q => cont(new Ternary(b, p, q)))))
+        override def optimise: Parsley[A] = b match
+        {
+            case Pure(true) => p
+            case Pure(false) => q
+            case _ => this
+        }
+        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation =
+        {
+            val success = labels.fresh()
+            val end = labels.fresh()
+            new Suspended(b.codeGen
+            {
+                instrs += new parsley.If(success)
+                q.codeGen
+                {
+                    instrs += new parsley.Jump(end)
+                    instrs += new parsley.Label(success)
+                    p.codeGen
+                    {
+                        instrs += new parsley.Label(end)
+                        cont
+                    }
+                }
+            })
+        }
+    }
     private [parsley] final class NotFollowedBy[+A](_p: =>Parsley[A]) extends Resultless
     {
         private [NotFollowedBy] lazy val p = _p
@@ -987,10 +1087,14 @@ object DeepEmbedding
     private [DeepEmbedding] object Cons           { def unapply[A, B >: A](self: Cons[A, B]): Option[(Parsley[A], Parsley[List[B]])] = Some((self.p, self.ps)) }
     private [DeepEmbedding] object FastFail       { def unapply[A](self: FastFail[A]): Option[(Parsley[A], A=>String)] = Some((self.p, self.msggen)) }
     private [DeepEmbedding] object FastUnexpected { def unapply[A](self: FastUnexpected[A]): Option[(Parsley[A], A=>String)] = Some((self.p, self.msggen)) }
+    private [DeepEmbedding] object Ensure         { def unapply[A](self: Ensure[A]): Option[(Parsley[A], A=>Boolean)] = Some((self.p, self.pred)) }
+    private [DeepEmbedding] object Guard          { def unapply[A](self: Guard[A]): Option[(Parsley[A], A=>Boolean, String)] = Some((self.p, self.pred, self.msg)) }
+    private [DeepEmbedding] object FastGuard      { def unapply[A](self: FastGuard[A]): Option[(Parsley[A], A=>Boolean, A=>String)] = Some((self.p, self.pred, self.msggen)) }
     private [DeepEmbedding] object Many           { def unapply[A](self: Many[A]): Option[Parsley[A]] = Some(self.p) }
     private [DeepEmbedding] object SkipMany       { def unapply[A](self: SkipMany[A]): Option[Parsley[A]] = Some(self.p) }
     private [DeepEmbedding] object Chainl         { def unapply[A](self: Chainl[A]): Option[(Parsley[A], Parsley[A => A])] = Some((self.p, self.op)) }
     private [DeepEmbedding] object Chainr         { def unapply[A](self: Chainr[A]): Option[(Parsley[A], Parsley[A => A])] = Some((self.p, self.op)) }
+    private [DeepEmbedding] object Ternary        { def unapply[A](self: Ternary[A]): Option[(Parsley[Boolean], Parsley[A], Parsley[A])] = Some((self.b, self.p, self.q)) }
     private [DeepEmbedding] object NotFollowedBy  { def unapply[A](self: NotFollowedBy[A]): Option[Parsley[A]] = Some(self.p) }
     private [parsley] object ManyTill
     {
