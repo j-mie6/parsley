@@ -214,8 +214,11 @@ final class TokenParser(languageDef: LanguageDef)
     // White space & symbols
     /**Lexeme parser `symbol(s)` parses `string(s)` and skips trailing white space.*/
     def symbol(name: String): Parsley[String] = lexeme[String](name)
+    /**Lexeme parser `symbol(c)` parses `char(c)` and skips trailing white space.*/
+    def symbol(name: Char): Parsley[Char] = lexeme[Char](name)
     
-    /**Like `symbol`, but treats it as a single token using `attempt`*/
+    /**Like `symbol`, but treats it as a single token using `attempt`. Only useful for
+     * strings, since characters are already single token.*/
     def symbol_(name: String): Parsley[String] = attempt(symbol(name))
     
     /**`lexeme(p)` first applies parser `p` and then the `whiteSpace` parser, returning the value of
@@ -280,30 +283,30 @@ final class TokenParser(languageDef: LanguageDef)
     
     // Bracketing
     /**Lexeme parser `parens(p)` parses `p` enclosed in parenthesis, returning the value of `p`.*/
-    def parens[A](p: =>Parsley[A]): Parsley[A] = between(symbol("(") ? "open parenthesis", symbol(")") ? "closing parenthesis" <|> fail("unclosed parentheses"), p)
+    def parens[A](p: =>Parsley[A]): Parsley[A] = between(symbol('(') ? "open parenthesis", symbol(')') ? "closing parenthesis" <|> fail("unclosed parentheses"), p)
     
     /**Lexeme parser `braces(p)` parses `p` enclosed in braces ('{', '}'), returning the value of 'p'*/
-    def braces[A](p: =>Parsley[A]): Parsley[A] = between(symbol("{") ? "open brace", symbol("}") ? "matching closing brace" <|> fail("unclosed braces"), p)
+    def braces[A](p: =>Parsley[A]): Parsley[A] = between(symbol('{') ? "open brace", symbol('}') ? "matching closing brace" <|> fail("unclosed braces"), p)
     
     /**Lexeme parser `angles(p)` parses `p` enclosed in angle brackets ('<', '>'), returning the
      * value of `p`.*/
-    def angles[A](p: =>Parsley[A]): Parsley[A] = between(symbol("<") ? "open angle bracket", symbol(">") ? "matching closing angle bracket" <|> fail("unclosed angle brackets"), p)
+    def angles[A](p: =>Parsley[A]): Parsley[A] = between(symbol('<') ? "open angle bracket", symbol('>') ? "matching closing angle bracket" <|> fail("unclosed angle brackets"), p)
     
     /**Lexeme parser `brackets(p)` parses `p` enclosed in brackets ('[', ']'), returning the value
      * of `p`.*/
-    def brackets[A](p: =>Parsley[A]): Parsley[A] = between(symbol("[") ? "open square bracket", symbol("]") ? "matching closing square bracket" <|> fail("unclosed square brackets"), p)
+    def brackets[A](p: =>Parsley[A]): Parsley[A] = between(symbol('[') ? "open square bracket", symbol(']') ? "matching closing square bracket" <|> fail("unclosed square brackets"), p)
     
     /**Lexeme parser `semi` parses the character ';' and skips any trailing white space. Returns ";"*/
-    lazy val semi: Parsley[String] = symbol(";") ? "semicolon"
+    lazy val semi: Parsley[Char] = symbol(';') ? "semicolon"
     
     /**Lexeme parser `comma` parses the character ',' and skips any trailing white space. Returns ","*/
-    lazy val comma: Parsley[String] = symbol(",") ? "comma"
+    lazy val comma: Parsley[Char] = symbol(',') ? "comma"
     
     /**Lexeme parser `colon` parses the character ':' and skips any trailing white space. Returns ":"*/
-    lazy val colon: Parsley[String] = symbol(":") ? "colon"
+    lazy val colon: Parsley[Char] = symbol(':') ? "colon"
     
     /**Lexeme parser `dot` parses the character '.' and skips any trailing white space. Returns "."*/
-    lazy val dot: Parsley[String] = symbol(".") ? "dot"
+    lazy val dot: Parsley[Char] = symbol('.') ? "dot"
     
     /**Lexeme parser `semiSep(p)` parses zero or more occurrences of `p` separated by `semi`. Returns
      * a list of values returned by `p`.*/
