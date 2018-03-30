@@ -153,7 +153,7 @@ object Parsley
         /**This combinator is an alias for `map`*/
         def <#>(p: =>Parsley[A]): Parsley[B] = p.map(f)
     }
-    implicit final class LazyChooseParsley[+A](pq: =>(Parsley[A], Parsley[A]))
+    implicit final class LazyChooseParsley[P, +A](pq: =>(P, P))(implicit con: P => Parsley[A])
     {
         lazy val (p, q) = pq
         /**
@@ -228,7 +228,7 @@ private class LabelCounter
   * @author Jamie Willis
   * @version 1
   */
-sealed abstract class Parsley[+A]
+abstract class Parsley[+A]
 {
     final protected type InstrBuffer = ResizableArray[Instr]
     final protected type T = Any
@@ -909,7 +909,7 @@ object DeepEmbedding
             })
         }
     }
-    private [DeepEmbedding] abstract class Resultless extends Parsley[Nothing]
+    private [parsley] abstract class Resultless extends Parsley[Nothing]
     private [parsley] final class SkipMany[+A](_p: =>Parsley[A]) extends Resultless
     {
         private [SkipMany] lazy val p = _p

@@ -157,6 +157,8 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     }
 
     private [instructions] def inc(): Unit = pc += 1
+    private [instructions] def nextChar: Char = input(offset)
+    private [instructions] def moreInput: Boolean = offset < inputsz
     
     // Allows us to reuse a context, helpful for benchmarking and potentially user applications
     private [parsley] def apply(_instrs: Array[Instr], _input: Array[Char]): Context = 

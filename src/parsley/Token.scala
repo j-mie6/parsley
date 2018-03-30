@@ -1,8 +1,9 @@
 package parsley
 
 import Parsley._
-import Combinator.{between, choice, notFollowedBy, sepBy, sepBy1, skipSome, some, decide}
-import Char.{charLift, digit, hexDigit, noneOf, octDigit, oneOf, satisfy, stringLift, upper}
+import Combinator.{between, choice, decide, notFollowedBy, sepBy, sepBy1, skipSome, some}
+import Char.{charLift, digit, hexDigit, /*noneOf,*/ octDigit, oneOf, satisfy, stringLift, upper}
+import parsley.DeepToken.{SkipComments, WhiteSpace}
 
 import scala.util.Try
 
@@ -10,16 +11,16 @@ final case class LanguageDef(commentStart: String,
                              commentEnd: String,
                              commentLine: String,
                              nestedComments: Boolean,
-                             identStart: Parsley[Char],
-                             identLetter: Parsley[Char],
-                             opStart: Parsley[Char],
-                             opLetter: Parsley[Char],
+                             identStart: Either[Set[Char], Parsley[Char]],
+                             identLetter: Either[Set[Char], Parsley[Char]],
+                             opStart: Either[Set[Char], Parsley[Char]],
+                             opLetter: Either[Set[Char], Parsley[Char]],
                              keywords: Set[String],
                              operators: Set[String],
                              caseSensitive: Boolean,
-                             space: Parsley[_])
+                             space: Either[Set[Char], Parsley[_]])
                                         
-final class TokenParser(languageDef: LanguageDef)
+final class TokenParser(lang: LanguageDef)
 {
     // Identifiers & Reserved words
     /**This lexeme parser parses a legal identifier. Returns the identifier string. This parser will
@@ -27,20 +28,22 @@ final class TokenParser(languageDef: LanguageDef)
      * keywords are defined in the `LanguageDef` provided to the token parser. An identifier is treated
      * as a single token using `attempt`.*/
     lazy val identifier: Parsley[String] = lexeme(attempt(ident >?> (!isReservedName(_), "keyword " + _)))
-    
+
     /**The lexeme parser `keyword(name)` parses the symbol `name`, but it also checks that the `name`
      * is not a prefix of a valid identifier. A `keyword` is treated as a single token using `attempt`.*/
-    def keyword(name: String): Parsley[Unit] = lexeme(attempt(caseString(name) *> notFollowedBy(languageDef.identLetter) ? ("end of " + name)))
-    
+    def keyword(name: String): Parsley[Unit] = lexeme(attempt(caseString(name) *> notFollowedBy(identLetter) ? ("end of " + name)))
+
     private def caseString(name: String): Parsley[String] =
     {
         def caseChar(c: Char): Parsley[Char] = if (c.isLetter) c.toLower <|> c.toUpper else c
-        if (languageDef.caseSensitive) name
+        if (lang.caseSensitive) name
         else name.foldRight(pure(name))((c, p) => caseChar(c) *> p) ? name
     }
-    private def isReservedName(name: String): Boolean = theReservedNames.contains(if (languageDef.caseSensitive) name else name.toLowerCase)
-    private lazy val theReservedNames =  if (languageDef.caseSensitive) languageDef.keywords else languageDef.keywords.map(_.toLowerCase)
-    private lazy val ident = lift2((c: Char, cs: List[Char]) => (c::cs).mkString, languageDef.identStart, many(languageDef.identLetter)) ? "identifier"
+    private def isReservedName(name: String): Boolean = theReservedNames.contains(if (lang.caseSensitive) name else name.toLowerCase)
+    private lazy val theReservedNames =  if (lang.caseSensitive) lang.keywords else lang.keywords.map(_.toLowerCase)
+    private lazy val identStart = toParser(lang.identStart)
+    private lazy val identLetter = toParser(lang.identLetter)
+    private lazy val ident = lift2((c: Char, cs: List[Char]) => (c::cs).mkString, identStart, many(identLetter)) ? "identifier"
 
     // Operators & Reserved ops
     /**This lexeme parser parses a legal operator. Returns the name of the operator. This parser
@@ -62,37 +65,39 @@ final class TokenParser(languageDef: LanguageDef)
     lazy val reservedOp: Parsley[String] = lexeme(reservedOp_)
 
     /**The lexeme parser `operator(name)` parses the symbol `name`, but also checks that the `name`
-     * is not the prefix of a valid operator. An `operator` is treated as a single token using 
+     * is not the prefix of a valid operator. An `operator` is treated as a single token using
      * `attempt`.*/
     def operator(name: String): Parsley[Unit] = lexeme(operator_(name))
-    
-    /**The lexeme parser `operator_(name)` parses the symbol `name`, but also checks that the `name`
-     * is not the prefix of a valid operator. An `operator` is treated as a single token using 
-     * `attempt`.*/
-    def operator_(name: String): Parsley[Unit] = attempt(name *> notFollowedBy(languageDef.opLetter) ? ("end of " + name))
 
-    private def isReservedOp(op: String): Boolean = languageDef.operators.contains(op)
-    private lazy val oper = lift2((c: Char, cs: List[Char]) => (c::cs).mkString, languageDef.opStart, many(languageDef.opLetter)) ? "operator"
-    
+    /**The lexeme parser `operator_(name)` parses the symbol `name`, but also checks that the `name`
+     * is not the prefix of a valid operator. An `operator` is treated as a single token using
+     * `attempt`.*/
+    def operator_(name: String): Parsley[Unit] = attempt(name *> notFollowedBy(opLetter) ? ("end of " + name))
+
+    private def isReservedOp(op: String): Boolean = lang.operators.contains(op)
+    private lazy val opStart = toParser(lang.opStart)
+    private lazy val opLetter = toParser(lang.opLetter)
+    private lazy val oper = lift2((c: Char, cs: List[Char]) => (c::cs).mkString, opStart, many(opLetter)) ? "operator"
+
     // Chars & Strings
     /**This lexeme parser parses a single literal character. Returns the literal character value.
      * This parser deals correctly with escape sequences. The literal character is parsed according
      * to the grammar rules defined in the Haskell report (which matches most programming languages
      * quite closely).*/
     lazy val charLiteral: Parsley[Char] = lexeme(between('\'', '\'' ? "end of character", characterChar)) ? "character"
-    
+
     /**This lexeme parser parses a literal string. Returns the literal string value. This parser
      * deals correctly with escape sequences and gaps. The literal string is parsed according to
      * the grammar rules defined in the Haskell report (which matches most programming languages
      * quite closely).*/
     lazy val stringLiteral: Parsley[String] = lexeme(stringLiteral_)
-    
+
     /**This non-lexeme parser parses a literal string. Returns the literal string value. This parser
      * deals correctly with escape sequences and gaps. The literal string is parsed according to
      * the grammar rules defined in the Haskell report (which matches most programming languages
      * quite closely).*/
     lazy val stringLiteral_ : Parsley[String] = between('"' ? "string", '"' ? "end of string", many(stringChar)) <#> (_.flatten.mkString)
-    
+
     /**This non-lexeme parser parses a literal string. Returns the literal string value. This parser
      * deals correctly with escape sequences and gaps. The literal string is parsed according to
      * the grammar rules defined in the Haskell report (which matches most programming languages
@@ -102,7 +107,7 @@ final class TokenParser(languageDef: LanguageDef)
     private lazy val decimal_ = number(10, digit)
     private lazy val charControl = '^' *> upper.map(c => (c - 'A' + 1).toChar)
     private lazy val charNum =
-    { 
+    {
         (decimal_
      <|> 'o' *> number(8, octDigit)
      <|> 'x' *> number(16, hexDigit)) >?> (_ <= 0x10FFFF, _ => "invalid escape sequence") <#> (_.toChar)
@@ -125,9 +130,9 @@ final class TokenParser(languageDef: LanguageDef)
     private lazy val charEscape = '\\' *> escapeCode
     private lazy val charLetter = satisfy(c => (c != '\'') && (c != '\\') && (c > '\u0016'))
     private lazy val characterChar = (charLetter <|> charEscape) ? "literal character"
-    
+
     private val escapeEmpty = '&'
-    private lazy val escapeGap = skipSome(languageDef.space) *> '\\' ? "end of string gap"
+    private lazy val escapeGap = skipSome(space) *> '\\' ? "end of string gap"
     private lazy val stringLetter = satisfy(c => (c != '"') && (c != '\\') && (c > '\u0016'))
     private lazy val stringLetter_ = satisfy(c => (c != '"') && (c > '\u0016'))
     private lazy val stringEscape: Parsley[Option[Char]] =
@@ -137,28 +142,28 @@ final class TokenParser(languageDef: LanguageDef)
              <|> (escapeCode <#> (Some(_))))
     }
     private lazy val stringChar: Parsley[Option[Char]] = ((stringLetter <#> (Some(_))) <|> stringEscape) ? "string character"
-    
+
     // Numbers
     /**This lexeme parser parses a natural number (a positive whole number). Returns the value of
      * the number. The number can specified in `decimal`, `hexadecimal` or `octal`. The number is
      * parsed according to the grammar rules in the Haskell report.*/
     lazy val natural: Parsley[Int] = lexeme(nat) ? "natural"
-    
+
     /**This lexeme parser parses an integer (a whole number). This parser is like `natural` except
      * that it can be prefixed with a sign (i.e '-' or '+'). Returns the value of the number. The
      * number can be specified in `decimal`, `hexadecimal` or `octal`. The number is parsed
      * according to the grammar rules in the haskell report.*/
     lazy val integer: Parsley[Int] = lexeme(int) ? "integer"
-    
+
     /**This lexeme parser parses a floating point value. Returns the value of the number. The number
      * is parsed according to the grammar rules defined in the Haskell report.*/
     lazy val float: Parsley[Double] = lexeme(floating) ? "float"
-    
+
     /**This lexeme parser parses either `natural` or `float`. Returns the value of the number. This
-     * parser deals with any overlap in the grammar rules for naturals and floats. The number is 
+     * parser deals with any overlap in the grammar rules for naturals and floats. The number is
      * parsed according to the grammar rules defined in the Haskell report.*/
     lazy val naturalOrFloat: Parsley[Either[Int, Double]] = lexeme(natFloat) ? "number"
-    
+
     private lazy val hexadecimal_ = oneOf(Set('x', 'X')) *> number(16, hexDigit)
     private lazy val octal_ = oneOf(Set('o', 'O')) *> number(8, octDigit)
 
@@ -185,7 +190,7 @@ final class TokenParser(languageDef: LanguageDef)
         ((hexadecimal_ <|> octal_) <#> (Left(_))) <|> decimalFloat <|> fractFloat(0) </> Left(0)
     }
     private lazy val natFloat = '0' *> zeroNumFloat <|> decimalFloat
-    
+
     // Integers and Naturals
     // Original Parsec defines sign as a lexeme here, this is considered by many as a bug
     private lazy val zeroNumber = ('0' *> (hexadecimal_ <|> octal_ <|> decimal_ </> 0)) ? ""
@@ -194,92 +199,95 @@ final class TokenParser(languageDef: LanguageDef)
                          <|> '+' #> ((x: Int) => x)
                          </> identity[Int] _)
     private lazy val int = sign <*> nat
-    
+
     /**Parses a positive whole number in the decimal system. Returns the value of the number.*/
     lazy val decimal: Parsley[Int] = lexeme(decimal_)
-    
-    /**Parses a positive whole number in the hexadecimal system. The number should be prefixed with 
+
+    /**Parses a positive whole number in the hexadecimal system. The number should be prefixed with
      * "0x" or "0X". Returns the value of the number.*/
     lazy val hexadecimal: Parsley[Int] = lexeme('0' *> hexadecimal_)
-    
+
     /**Parses a positive whole number in the octal system. The number should be prefixed with "0o"
      * or "0O". Returns the value of the number.*/
     lazy val octal: Parsley[Int] = lexeme('0' *> octal_)
-    
+
     private def number(base: Int, baseDigit: Parsley[Char]): Parsley[Int] =
     {
         for (digits <- some(baseDigit)) yield digits.foldLeft(0)((x, d) => base*x + d.asDigit)
     }
-    
+
     // White space & symbols
     /**Lexeme parser `symbol(s)` parses `string(s)` and skips trailing white space.*/
     def symbol(name: String): Parsley[String] = lexeme[String](name)
     /**Lexeme parser `symbol(c)` parses `char(c)` and skips trailing white space.*/
     def symbol(name: Char): Parsley[Char] = lexeme[Char](name)
-    
+
     /**Like `symbol`, but treats it as a single token using `attempt`. Only useful for
      * strings, since characters are already single token.*/
     def symbol_(name: String): Parsley[String] = attempt(symbol(name))
-    
+
     /**`lexeme(p)` first applies parser `p` and then the `whiteSpace` parser, returning the value of
      * `p`. Every lexical token (lexeme) is defined using `lexeme`, this way every parse starts at a
      * point without white space. The only point where the `whiteSpace` parser should be called
      * explicitly is the start of the main parser in order to skip any leading white space.*/
     def lexeme[A](p: =>Parsley[A]): Parsley[A] = p <* whiteSpace
-    
-    private lazy val inCommentMulti: Parsley[Unit] =
-            (languageDef.commentEnd *> unit
+
+    private lazy val space = lang.space match
+    {
+        case Left(cs) => oneOf(cs)
+        case Right(p) => p
+    }
+    /*private lazy val inCommentMulti: Parsley[Unit] =
+        (lang.commentEnd *> unit
          <\> multiLineComment *> inCommentMulti
          <|> skipSome(noneOf(startEnd)) *> inCommentMulti
          <|> oneOf(startEnd) *> inCommentMulti ? "end of comment")
-    private val startEnd: Set[Char] = (languageDef.commentEnd + languageDef.commentStart).toSet
+    private val startEnd: Set[Char] = (lang.commentEnd + lang.commentStart).toSet
     private lazy val inCommentSingle: Parsley[Unit] =
-            (languageDef.commentEnd *> unit
+        (lang.commentEnd *> unit
          <\> skipSome(noneOf(startEnd)) *> inCommentSingle
          <|> oneOf(startEnd) *> inCommentSingle ? "end of comment")
-    private lazy val inComment = if (languageDef.nestedComments) inCommentMulti else inCommentSingle
-    private lazy val oneLineComment = attempt(languageDef.commentLine) *> skipMany(satisfy(_!='\n'))
-    private lazy val multiLineComment: Parsley[Unit] = attempt(languageDef.commentStart) *> inComment
-    
+    private lazy val inComment = if (lang.nestedComments) inCommentMulti else inCommentSingle
+    private lazy val oneLineComment = attempt(lang.commentLine) *> skipMany(satisfy(_ != '\n'))
+    private lazy val multiLineComment: Parsley[Unit] = attempt(lang.commentStart) *> inComment*/
+
     /**Parses any white space. White space consists of zero or more occurrences of a `space` (as
      * provided by the `LanguageDef`), a line comment or a block (multi-line) comment. Block
      * comments may be nested. How comments are started and ended is defined in the `LanguageDef`
      * that is provided to the token parser.*/
-    lazy val whiteSpace: Parsley[Unit] =
+    lazy val whiteSpace: Parsley[Unit] = lang.space match
     {
-        val space = languageDef.space
+        case Left(ws) =>
+            new WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
+        case Right(p) => skipMany(p <|> skipComment)
+    }
+    /*{
         val noLine = languageDef.commentLine.isEmpty
         val noMulti = languageDef.commentStart.isEmpty
         if (noLine && noMulti) skipMany(space ? "")
         else if (noLine)       skipMany((space <|> multiLineComment) ? "")
         else if (noMulti)      skipMany((space <|> oneLineComment) ? "")
         else                   skipMany((space <|> multiLineComment <|> oneLineComment) ? "")
-    }
-    
+    }*/
+
     /**Parses any white space. White space consists of zero or more occurrences of a `space` (as
      * provided by the parameter), a line comment or a block (multi-line) comment. Block
      * comments may be nested. How comments are started and ended is defined in the `LanguageDef`
      * that is provided to the token parser.*/
-    val whiteSpace_ : Parsley[_] => Parsley[Unit] =
-    {
-        val noLine = languageDef.commentLine.isEmpty
-        val noMulti = languageDef.commentStart.isEmpty
+    // TODO - making this an intrinsic will take extra work!
+    val whiteSpace_ : Parsley[_] => Parsley[Unit] = space => skipMany((space ? "") <|> skipComment)
+    /*{
+        val noLine = lang.commentLine.isEmpty
+        val noMulti = lang.commentStart.isEmpty
         if (noLine && noMulti) space => skipMany(space ? "")
         else if (noLine)       space => skipMany((space <|> multiLineComment) ? "")
         else if (noMulti)      space => skipMany((space <|> oneLineComment) ? "")
         else                   space => skipMany((space <|> multiLineComment <|> oneLineComment) ? "")
-    }
-    
+    }*/
+
     /**Parses any comments and skips them, this includes both line comments and block comments.*/
     lazy val skipComment: Parsley[Unit] =
-    {
-        val noLine = languageDef.commentLine.isEmpty
-        val noMulti = languageDef.commentStart.isEmpty
-        if (noLine && noMulti) unit
-        else if (noLine)       skipMany(multiLineComment ? "")
-        else if (noMulti)      skipMany(oneLineComment ? "")
-        else                   skipMany(multiLineComment <|> oneLineComment ? "")
-    }
+        new SkipComments(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
     
     // Bracketing
     /**Lexeme parser `parens(p)` parses `p` enclosed in parenthesis, returning the value of `p`.*/
@@ -323,19 +331,65 @@ final class TokenParser(languageDef: LanguageDef)
     /**Lexeme parser `commaSep1(p)` parses one or more occurrences of `p` separated by `comma`. 
      * Returns a list of values returned by `p`.*/
     def commaSep1[A](p: =>Parsley[A]): Parsley[List[A]] = sepBy1(p, comma)
+
+    private def toParser(e: Either[Set[Char], Parsley[Char]]) = e match
+    {
+        case Left(cs) => oneOf(cs)
+        case Right(p) => p
+    }
 }
 
 private [parsley] object DeepToken
 {
+    sealed private [parsley] abstract class DeepTokenBase[+A] extends Parsley[A]
+    {
+        final override private [parsley] def optimise: Parsley[A] = this
+    }
 
+    sealed private [parsley] abstract class Resultless extends DeepEmbedding.Resultless
+    {
+        final override private [parsley] def optimise: Parsley[Nothing] = this
+    }
+
+    private [parsley] class WhiteSpace(ws: Set[Char], start: String, end: String, line: String, nested: Boolean) extends Resultless
+    {
+        override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        {
+            val w = new WhiteSpace(ws, start, end, line, nested)
+            w.expected = label
+            cont(w)
+        }
+        override private [parsley] def codeGen(cont: => Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
+        {
+            instrs += new instructions.TokenWhiteSpace(ws, start, end, line, nested)
+            cont
+        }
+    }
+
+    private [parsley] class SkipComments(start: String, end: String, line: String, nested: Boolean) extends Resultless
+    {
+        override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        {
+            val w = new SkipComments(start, end, line, nested)
+            w.expected = label
+            cont(w)
+        }
+        override private [parsley] def codeGen(cont: => Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
+        {
+            instrs += new instructions.TokenSkipComments(start, end, line, nested)
+            cont
+        }
+    }
 }
 
 object TokenTest
 {
     def main(args: Array[String]): Unit =
     {
-        val lang = LanguageDef("##", "##", "#", false, Char.letter, Char.alphaNum <|> '_', oneOf(Set('+', '-', '*', '/')), oneOf(Set('+', '-', '*', '/', '=')), Set("var"), Set("+", "-", "*", "/", "="), true, Char.whitespace)
+        val ws = Left(Set(' ', '\n'))//Right(Char.whitespace)
+        val lang = LanguageDef("##", "##", "#", false, Right(Char.letter), Right(Char.alphaNum <|> '_'), Left(Set('+', '-', '*', '/')), Left(Set('+', '-', '*', '/', '=')), Set("var"), Set("+", "-", "*", "/", "="), true, ws)
         val tokeniser = new TokenParser(lang)
+        println(tokeniser.whiteSpace.pretty)
         println(runParser(tokeniser.whiteSpace, "                             ##hello world##\n#hello\n"))
         val start = System.currentTimeMillis
         for (_ <- 1 to 10000000)
