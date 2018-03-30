@@ -334,6 +334,8 @@ object DeepEmbedding
             // functor law: fmap f (fmap g p) == fmap (f . g) p where fmap f p = pure f <*> p from applicative
             case (Pure(f), App(Pure(g: (T => A) @unchecked), p: Parsley[T])) => new App(new Pure(f.compose(g)), p)
             // TODO: functor law with lift2!
+            // right absorption law: mzero <*> p = mzero
+            case (z: MZero, _) => z
             /* RE-ASSOCIATION LAWS */
             // re-association law 1: (q *> pf) <*> px = q *> (pf <*> px)
             case (Then(q, pf), px) => new Then(q, new App(pf, px).optimise)
@@ -344,11 +346,10 @@ object DeepEmbedding
                 // re-association law 3: p *> pure x = pure x <* p
                 // consequence of re-association law 3: pf <*> (q *> pure x) = (pf <*> pure x) <* q
                 case Then(q, px: Pure[_]) => new Prev(new App(pf, px).optimise, q).optimise
+                case _ => this
             }
             // consequence of left zero law and monadic definition of <*>, preserving error properties of pf
             case (p, z: MZero) => new Then(p, z)
-            // right absorption law: mzero <*> p = mzero 
-            case (z: MZero, _) => z
             // interchange law: u <*> pure y == pure ($y) <*> u == ($y) <$> u (single instruction, so we benefit at code-gen)
             case (pf, Pure(x)) => new App(new Pure((f: A => B) => f(x)), pf)
             case _ => this
@@ -506,6 +507,18 @@ object DeepEmbedding
             case (ct@CharTok(c), Pure(x)) => instrs += parsley.CharTokFastPerform[Char, B](c, _ => x, ct.expected); cont
             case (st@StringTok(s), Pure(x)) => instrs += new parsley.StringTokFastPerform(s, _ => x, st.expected); cont
             case (p: Resultless, q) => new Suspended(p.codeGen(q.codeGen(cont)))
+            case (Then(p, q: Resultless), r) =>
+                new Suspended(p.codeGen
+                {
+                    instrs += parsley.Pop
+                    q.codeGen(r.codeGen(cont))
+                })
+            case (Prev(p: Resultless, q), r) =>
+                new Suspended(p.codeGen(q.codeGen
+                {
+                    instrs += parsley.Pop
+                    r.codeGen(cont)
+                }))
             case (p, Pure(x)) =>
                 new Suspended(p.codeGen
                 {
@@ -551,6 +564,18 @@ object DeepEmbedding
             case (Pure(x), ct@CharTok(c)) => instrs += parsley.CharTokFastPerform[Char, A](c, _ => x, ct.expected); cont
             case (Pure(x), st@StringTok(s)) => instrs += new parsley.StringTokFastPerform(s, _ => x, st.expected); cont
             case (p, q: Resultless) => new Suspended(p.codeGen(q.codeGen(cont)))
+            case (p, Then(q, r: Resultless)) =>
+                new Suspended(p.codeGen(q.codeGen
+                {
+                    instrs += parsley.Pop
+                    r.codeGen(cont)
+                }))
+            case (p, Prev(q: Resultless, r)) =>
+                new Suspended(p.codeGen(q.codeGen(r.codeGen
+                {
+                    instrs += parsley.Pop
+                    cont
+                })))
             case (Pure(x), q) =>
                 new Suspended(q.codeGen
                 {

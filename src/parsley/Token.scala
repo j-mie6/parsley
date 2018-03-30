@@ -324,3 +324,19 @@ final class TokenParser(languageDef: LanguageDef)
      * Returns a list of values returned by `p`.*/
     def commaSep1[A](p: =>Parsley[A]): Parsley[List[A]] = sepBy1(p, comma)
 }
+
+object TokenTest
+{
+    def main(args: Array[String]): Unit =
+    {
+        val lang = LanguageDef("##", "##", "#", false, Char.letter, Char.alphaNum <|> '_', oneOf(Set('+', '-', '*', '/')), oneOf(Set('+', '-', '*', '/', '=')), Set("var"), Set("+", "-", "*", "/", "="), true, Char.whitespace)
+        val tokeniser = new TokenParser(lang)
+        println(runParser(tokeniser.whiteSpace, "                             ##hello world##\n#hello\n"))
+        val start = System.currentTimeMillis
+        for (_ <- 1 to 10000000)
+        {
+            runParserFastUnsafe(tokeniser.whiteSpace, "                  ##hello world##\n#hello\n")
+        }
+        println(System.currentTimeMillis - start)
+    }
+}
