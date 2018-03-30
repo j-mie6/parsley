@@ -46,7 +46,7 @@ private [parsley] class CharTok protected (protected final val c: Char, _expecte
     protected final val ac: Any = c
     override def apply(ctx: Context): Unit =
     {
-        if (ctx.offset < ctx.inputsz && ctx.input(ctx.offset) == c)
+        if (ctx.moreInput && ctx.nextChar == c)
         {
                 ctx.stack.push(ac)
                 ctx.offset += 1
@@ -62,9 +62,9 @@ private [parsley] final class Satisfies(f: Char => Boolean, expected: UnsafeOpti
 {
     override def apply(ctx: Context): Unit =
     {
-        if (ctx.offset < ctx.inputsz && f(ctx.input(ctx.offset)))
+        if (ctx.moreInput && f(ctx.nextChar))
         {
-            val c = ctx.input(ctx.offset)
+            val c = ctx.nextChar
             ctx.stack.push(c)
             ctx.offset += 1
             (c: @switch) match

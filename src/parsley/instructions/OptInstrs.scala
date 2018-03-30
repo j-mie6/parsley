@@ -29,7 +29,7 @@ private [parsley] class Newline(_expected: UnsafeOption[String]) extends CharTok
 {
     override def apply(ctx: Context): Unit =
     {
-        if (ctx.offset < ctx.inputsz && ctx.input(ctx.offset) == '\n')
+        if (ctx.moreInput && ctx.nextChar == '\n')
         {
             ctx.stack.push(ac)
             ctx.offset += 1
@@ -45,7 +45,7 @@ private [parsley] class Tab(_expected: UnsafeOption[String]) extends CharTok('\t
 {
     override def apply(ctx: Context): Unit =
     {
-        if (ctx.offset < ctx.inputsz && ctx.input(ctx.offset) == '\t')
+        if (ctx.moreInput && ctx.nextChar == '\t')
         {
             ctx.stack.push(ac)
             ctx.offset += 1
@@ -62,7 +62,7 @@ private [parsley] class CharTokFastPerform protected (protected final val c: Cha
     protected final val fc: Any = f(c)
     override def apply(ctx: Context): Unit =
     {
-        if (ctx.offset < ctx.inputsz && ctx.input(ctx.offset) == c)
+        if (ctx.moreInput && ctx.nextChar == c)
         {
                 ctx.stack.push(fc)
                 ctx.offset += 1
@@ -78,7 +78,7 @@ private [parsley] final class NewlineFastPerform(g: Char => Any, _expected: Unsa
 {
     override def apply(ctx: Context): Unit =
     {
-        if (ctx.offset < ctx.inputsz && ctx.input(ctx.offset) == '\n')
+        if (ctx.moreInput && ctx.nextChar == '\n')
         {
             ctx.stack.push(fc)
             ctx.offset += 1
@@ -94,7 +94,7 @@ private [parsley] final class TabFastPerform(g: Char => Any, _expected: UnsafeOp
 {
     override def apply(ctx: Context): Unit =
     {
-        if (ctx.offset < ctx.inputsz && ctx.input(ctx.offset) == '\t')
+        if (ctx.moreInput && ctx.nextChar == '\t')
         {
             ctx.stack.push(fc)
             ctx.offset += 1

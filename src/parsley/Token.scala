@@ -237,19 +237,6 @@ final class TokenParser(lang: LanguageDef)
         case Left(cs) => oneOf(cs)
         case Right(p) => p
     }
-    /*private lazy val inCommentMulti: Parsley[Unit] =
-        (lang.commentEnd *> unit
-         <\> multiLineComment *> inCommentMulti
-         <|> skipSome(noneOf(startEnd)) *> inCommentMulti
-         <|> oneOf(startEnd) *> inCommentMulti ? "end of comment")
-    private val startEnd: Set[Char] = (lang.commentEnd + lang.commentStart).toSet
-    private lazy val inCommentSingle: Parsley[Unit] =
-        (lang.commentEnd *> unit
-         <\> skipSome(noneOf(startEnd)) *> inCommentSingle
-         <|> oneOf(startEnd) *> inCommentSingle ? "end of comment")
-    private lazy val inComment = if (lang.nestedComments) inCommentMulti else inCommentSingle
-    private lazy val oneLineComment = attempt(lang.commentLine) *> skipMany(satisfy(_ != '\n'))
-    private lazy val multiLineComment: Parsley[Unit] = attempt(lang.commentStart) *> inComment*/
 
     /**Parses any white space. White space consists of zero or more occurrences of a `space` (as
      * provided by the `LanguageDef`), a line comment or a block (multi-line) comment. Block
@@ -257,18 +244,9 @@ final class TokenParser(lang: LanguageDef)
      * that is provided to the token parser.*/
     lazy val whiteSpace: Parsley[Unit] = lang.space match
     {
-        case Left(ws) =>
-            new WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
-        case Right(p) => skipMany(p <|> skipComment)
+        case Left(ws) => new WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
+        case Right(p) => skipMany(p ? "" <|> skipComment)
     }
-    /*{
-        val noLine = languageDef.commentLine.isEmpty
-        val noMulti = languageDef.commentStart.isEmpty
-        if (noLine && noMulti) skipMany(space ? "")
-        else if (noLine)       skipMany((space <|> multiLineComment) ? "")
-        else if (noMulti)      skipMany((space <|> oneLineComment) ? "")
-        else                   skipMany((space <|> multiLineComment <|> oneLineComment) ? "")
-    }*/
 
     /**Parses any white space. White space consists of zero or more occurrences of a `space` (as
      * provided by the parameter), a line comment or a block (multi-line) comment. Block
@@ -276,18 +254,9 @@ final class TokenParser(lang: LanguageDef)
      * that is provided to the token parser.*/
     // TODO - making this an intrinsic will take extra work!
     val whiteSpace_ : Parsley[_] => Parsley[Unit] = space => skipMany((space ? "") <|> skipComment)
-    /*{
-        val noLine = lang.commentLine.isEmpty
-        val noMulti = lang.commentStart.isEmpty
-        if (noLine && noMulti) space => skipMany(space ? "")
-        else if (noLine)       space => skipMany((space <|> multiLineComment) ? "")
-        else if (noMulti)      space => skipMany((space <|> oneLineComment) ? "")
-        else                   space => skipMany((space <|> multiLineComment <|> oneLineComment) ? "")
-    }*/
 
     /**Parses any comments and skips them, this includes both line comments and block comments.*/
-    lazy val skipComment: Parsley[Unit] =
-        new SkipComments(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
+    lazy val skipComment: Parsley[Unit] = new SkipComments(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
     
     // Bracketing
     /**Lexeme parser `parens(p)` parses `p` enclosed in parenthesis, returning the value of `p`.*/
@@ -343,12 +312,12 @@ private [parsley] object DeepToken
 {
     sealed private [parsley] abstract class DeepTokenBase[+A] extends Parsley[A]
     {
-        final override private [parsley] def optimise: Parsley[A] = this
+        final override private [parsley] def optimise = this
     }
 
     sealed private [parsley] abstract class Resultless extends DeepEmbedding.Resultless
     {
-        final override private [parsley] def optimise: Parsley[Nothing] = this
+        final override private [parsley] def optimise = this
     }
 
     private [parsley] class WhiteSpace(ws: Set[Char], start: String, end: String, line: String, nested: Boolean) extends Resultless
@@ -386,7 +355,7 @@ object TokenTest
 {
     def main(args: Array[String]): Unit =
     {
-        val ws = Left(Set(' ', '\n'))//Right(Char.whitespace)
+        val ws = Right(Char.whitespace)
         val lang = LanguageDef("##", "##", "#", false, Right(Char.letter), Right(Char.alphaNum <|> '_'), Left(Set('+', '-', '*', '/')), Left(Set('+', '-', '*', '/', '=')), Set("var"), Set("+", "-", "*", "/", "="), true, ws)
         val tokeniser = new TokenParser(lang)
         println(tokeniser.whiteSpace.pretty)
