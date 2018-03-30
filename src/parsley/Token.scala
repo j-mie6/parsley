@@ -325,6 +325,11 @@ final class TokenParser(languageDef: LanguageDef)
     def commaSep1[A](p: =>Parsley[A]): Parsley[List[A]] = sepBy1(p, comma)
 }
 
+private [parsley] object DeepToken
+{
+
+}
+
 object TokenTest
 {
     def main(args: Array[String]): Unit =

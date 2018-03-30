@@ -1,8 +1,10 @@
-package parsley
+package parsley.instructions
 
 import Stack.push
-import language.existentials
+import parsley.{Parsley, UnsafeOption}
+
 import scala.annotation.{switch, tailrec}
+import scala.language.existentials
 
 // Stack Manipulators
 private [parsley] final class Push[A](x: A) extends Instr

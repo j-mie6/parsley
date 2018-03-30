@@ -1,6 +1,7 @@
 package parsley
 
 import parsley.Parsley._
+import parsley.instructions.{Eof, _}
 
 import language.existentials
 import scala.annotation.tailrec
@@ -307,7 +308,7 @@ object DeepEmbedding
         override def optimise: Parsley[A] = this
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation =
         {
-            instrs += new parsley.Push(x)
+            instrs += new instructions.Push(x)
             cont
         }
     }
@@ -358,12 +359,12 @@ object DeepEmbedding
         {
             // TODO: We are missing out on optimisation opportunities... push fmaps down into or tree branches?
             // pure f <*> p = f <$> p
-            case (Pure(f: (Char => B) @unchecked), ct@CharTok(c)) => instrs += parsley.CharTokFastPerform[Char, B](c, f, ct.expected); cont
-            case (Pure(f: (String => B) @unchecked), st@StringTok(s)) => instrs += new parsley.StringTokFastPerform(s, f, st.expected); cont
+            case (Pure(f: (Char => B) @unchecked), ct@CharTok(c)) => instrs += CharTokFastPerform[Char, B](c, f, ct.expected); cont
+            case (Pure(f: (String => B) @unchecked), st@StringTok(s)) => instrs += new StringTokFastPerform(s, f, st.expected); cont
             case (Pure(f: (A => B)), _) =>
                 new Suspended(px.codeGen
                 {
-                    instrs += new parsley.Perform(f)
+                    instrs += new Perform(f)
                     cont
                 })
             case _ =>
@@ -371,7 +372,7 @@ object DeepEmbedding
                 {
                     px.codeGen
                     {
-                        instrs += parsley.Apply
+                        instrs += instructions.Apply
                         cont
                     }
                 })
@@ -400,11 +401,11 @@ object DeepEmbedding
         {
             val handler = labels.fresh()
             val skip = labels.fresh()
-            instrs += new InputCheck(handler)
+            instrs += new instructions.InputCheck(handler)
             new Suspended(p.codeGen
             {
                 instrs += new Label(handler)
-                instrs += new JumpGood(skip)
+                instrs += new instructions.JumpGood(skip)
                 q.codeGen
                 {
                     instrs += new Label(skip)
@@ -455,7 +456,7 @@ object DeepEmbedding
         {
             new Suspended(p.codeGen
             {
-                instrs += new parsley.DynSub[A](x => f(x).instrs, expected)
+                instrs += new instructions.DynSub[A](x => f(x).instrs, expected)
                 cont
             })
         }
@@ -470,7 +471,7 @@ object DeepEmbedding
         override def optimise: Parsley[Char] = this
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation =
         {
-            instrs += new parsley.Satisfies(f, expected)
+            instrs += new instructions.Satisfies(f, expected)
             cont
         }
     }
@@ -504,31 +505,31 @@ object DeepEmbedding
         }
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation = (p, q) match
         {
-            case (ct@CharTok(c), Pure(x)) => instrs += parsley.CharTokFastPerform[Char, B](c, _ => x, ct.expected); cont
-            case (st@StringTok(s), Pure(x)) => instrs += new parsley.StringTokFastPerform(s, _ => x, st.expected); cont
+            case (ct@CharTok(c), Pure(x)) => instrs += instructions.CharTokFastPerform[Char, B](c, _ => x, ct.expected); cont
+            case (st@StringTok(s), Pure(x)) => instrs += new StringTokFastPerform(s, _ => x, st.expected); cont
             case (p: Resultless, q) => new Suspended(p.codeGen(q.codeGen(cont)))
             case (Then(p, q: Resultless), r) =>
                 new Suspended(p.codeGen
                 {
-                    instrs += parsley.Pop
+                    instrs += instructions.Pop
                     q.codeGen(r.codeGen(cont))
                 })
             case (Prev(p: Resultless, q), r) =>
                 new Suspended(p.codeGen(q.codeGen
                 {
-                    instrs += parsley.Pop
+                    instrs += instructions.Pop
                     r.codeGen(cont)
                 }))
             case (p, Pure(x)) =>
                 new Suspended(p.codeGen
                 {
-                    instrs += new parsley.Exchange(x)
+                    instrs += new Exchange(x)
                     cont
                 })
             case (p, q) =>
                 new Suspended(p.codeGen
                 {
-                    instrs += parsley.Pop
+                    instrs += instructions.Pop
                     q.codeGen(cont)
                 })
         }
@@ -561,25 +562,25 @@ object DeepEmbedding
         }
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation = (p, q) match
         {
-            case (Pure(x), ct@CharTok(c)) => instrs += parsley.CharTokFastPerform[Char, A](c, _ => x, ct.expected); cont
-            case (Pure(x), st@StringTok(s)) => instrs += new parsley.StringTokFastPerform(s, _ => x, st.expected); cont
+            case (Pure(x), ct@CharTok(c)) => instrs += instructions.CharTokFastPerform[Char, A](c, _ => x, ct.expected); cont
+            case (Pure(x), st@StringTok(s)) => instrs += new StringTokFastPerform(s, _ => x, st.expected); cont
             case (p, q: Resultless) => new Suspended(p.codeGen(q.codeGen(cont)))
             case (p, Then(q, r: Resultless)) =>
                 new Suspended(p.codeGen(q.codeGen
                 {
-                    instrs += parsley.Pop
+                    instrs += instructions.Pop
                     r.codeGen(cont)
                 }))
             case (p, Prev(q: Resultless, r)) =>
                 new Suspended(p.codeGen(q.codeGen(r.codeGen
                 {
-                    instrs += parsley.Pop
+                    instrs += instructions.Pop
                     cont
                 })))
             case (Pure(x), q) =>
                 new Suspended(q.codeGen
                 {
-                    instrs += new parsley.Exchange(x)
+                    instrs += new Exchange(x)
                     cont
                 })
             case (p, q) =>
@@ -587,7 +588,7 @@ object DeepEmbedding
                 {
                     q.codeGen
                     {
-                        instrs += parsley.Pop
+                        instrs += instructions.Pop
                         cont
                     }
                 })
@@ -606,11 +607,11 @@ object DeepEmbedding
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation =
         {
             val handler = labels.fresh()
-            instrs += new parsley.PushHandler(handler)
+            instrs += new instructions.PushHandler(handler)
             p.codeGen
             {
-                instrs += new parsley.Label(handler)
-                instrs += parsley.Attempt
+                instrs += new instructions.Label(handler)
+                instrs += instructions.Attempt
                 cont
             }
         }
@@ -624,11 +625,11 @@ object DeepEmbedding
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation =
         {
             val handler = labels.fresh()
-            instrs += new parsley.PushHandler(handler)
+            instrs += new instructions.PushHandler(handler)
             p.codeGen
             {
-                instrs += new parsley.Label(handler)
-                instrs += parsley.Look
+                instrs += new instructions.Label(handler)
+                instrs += instructions.Look
                 cont
             }
         }
@@ -644,7 +645,7 @@ object DeepEmbedding
         override def optimise: Parsley[Nothing] = this
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation =
         {
-            instrs += new parsley.Empty(expected)
+            instrs += new instructions.Empty(expected)
             cont
         }
     }
@@ -658,7 +659,7 @@ object DeepEmbedding
         override def optimise: Parsley[Nothing] = this
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation =
         {
-            instrs += new parsley.Fail(msg, expected)
+            instrs += new instructions.Fail(msg, expected)
             cont
         }
     }
@@ -672,7 +673,7 @@ object DeepEmbedding
         override def optimise: Parsley[Nothing] = this
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation =
         {
-            instrs += new parsley.Unexpected(msg, expected)
+            instrs += new instructions.Unexpected(msg, expected)
             cont
         }
     }
@@ -687,7 +688,7 @@ object DeepEmbedding
         override def optimise: Parsley[A] = this
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation =
         {
-            instrs += new parsley.Call(p, expected)
+            instrs += new instructions.Call(p, expected)
             cont
         }
     }
@@ -702,7 +703,7 @@ object DeepEmbedding
         override def optimise: Parsley[Char] = this
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation =
         {
-            instrs += parsley.CharTok(c, expected)
+            instrs += instructions.CharTok(c, expected)
             cont
         }
     }
@@ -720,7 +721,7 @@ object DeepEmbedding
         }
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation =
         {
-            instrs += new parsley.StringTok(s, expected)
+            instrs += new instructions.StringTok(s, expected)
             cont
         }
     }
@@ -738,7 +739,7 @@ object DeepEmbedding
             {
                 q.codeGen
                 {
-                    instrs += new parsley.Lift(f)
+                    instrs += new instructions.Lift(f)
                     cont
                 }
             })
@@ -760,7 +761,7 @@ object DeepEmbedding
             {
                 ps.codeGen
                 {
-                    instrs += parsley.Cons
+                    instrs += instructions.Cons
                     cont
                 }
             })
@@ -785,7 +786,7 @@ object DeepEmbedding
         {
             p.codeGen
             {
-                instrs += new parsley.FastFail(msggen, expected)
+                instrs += new instructions.FastFail(msggen, expected)
                 cont
             }
         }
@@ -809,7 +810,7 @@ object DeepEmbedding
         {
             p.codeGen
             {
-                instrs += new parsley.FastUnexpected(msggen, expected)
+                instrs += new instructions.FastUnexpected(msggen, expected)
                 cont
             }
         }
@@ -832,7 +833,7 @@ object DeepEmbedding
         {
             p.codeGen
             {
-                instrs += new parsley.Ensure(pred, expected)
+                instrs += new instructions.Ensure(pred, expected)
                 cont
             }
         }
@@ -855,7 +856,7 @@ object DeepEmbedding
         {
             p.codeGen
             {
-                instrs += new parsley.Guard(pred, msg, expected)
+                instrs += new instructions.Guard(pred, msg, expected)
                 cont
             }
         }
@@ -878,7 +879,7 @@ object DeepEmbedding
         {
             p.codeGen
             {
-                instrs += new parsley.FastGuard(pred, msggen, expected)
+                instrs += new instructions.FastGuard(pred, msggen, expected)
                 cont
             }
         }
@@ -898,12 +899,12 @@ object DeepEmbedding
         {
             val body = labels.fresh()
             val handler = labels.fresh()
-            instrs += new parsley.InputCheck(handler)
-            instrs += new parsley.Label(body)
+            instrs += new instructions.InputCheck(handler)
+            instrs += new instructions.Label(body)
             new Suspended(p.codeGen
             {
-                instrs += new parsley.Label(handler)
-                instrs += new parsley.Many(body)
+                instrs += new instructions.Label(handler)
+                instrs += new instructions.Many(body)
                 cont
             })
         }
@@ -924,12 +925,12 @@ object DeepEmbedding
         {
             val body = labels.fresh()
             val handler = labels.fresh()
-            instrs += new parsley.InputCheck(handler)
-            instrs += new parsley.Label(body)
+            instrs += new instructions.InputCheck(handler)
+            instrs += new instructions.Label(body)
             new Suspended(p.codeGen
             {
-                instrs += new parsley.Label(handler)
-                instrs += new parsley.SkipMany(body)
+                instrs += new instructions.Label(handler)
+                instrs += new instructions.SkipMany(body)
                 cont
             })
         }
@@ -952,12 +953,12 @@ object DeepEmbedding
             val handler = labels.fresh()
             new Suspended(p.codeGen
             {
-                instrs += new parsley.InputCheck(handler)
-                instrs += new parsley.Label(body)
+                instrs += new instructions.InputCheck(handler)
+                instrs += new instructions.Label(body)
                 op.codeGen
                 {
-                    instrs += new parsley.Label(handler)
-                    instrs += new parsley.Chainl(body)
+                    instrs += new instructions.Label(handler)
+                    instrs += new instructions.Chainl(body)
                     cont
                 }
             })
@@ -979,15 +980,15 @@ object DeepEmbedding
         {
             val body = labels.fresh()
             val handler = labels.fresh()
-            instrs += new parsley.InputCheck(handler)
-            instrs += new parsley.Label(body)
+            instrs += new instructions.InputCheck(handler)
+            instrs += new instructions.Label(body)
             new Suspended(op.codeGen
             {
-                instrs += new parsley.Label(handler)
-                instrs += new parsley.Chainr(body)
+                instrs += new instructions.Label(handler)
+                instrs += new instructions.Chainr(body)
                 p.codeGen
                 {
-                    instrs += parsley.Apply
+                    instrs += instructions.Apply
                     cont
                 }
             })
@@ -1003,12 +1004,12 @@ object DeepEmbedding
         {
             val start = labels.fresh()
             val loop = labels.fresh()
-            instrs += new parsley.PushFallthrough(loop)
-            instrs += new parsley.Label(start)
+            instrs += new instructions.PushFallthrough(loop)
+            instrs += new instructions.Label(start)
             new Suspended(body.codeGen
             {
-                instrs += new parsley.Label(loop)
-                instrs += new parsley.ManyTill(start)
+                instrs += new instructions.Label(loop)
+                instrs += new instructions.ManyTill(start)
                 cont
             })
         }
@@ -1032,14 +1033,14 @@ object DeepEmbedding
             val end = labels.fresh()
             new Suspended(b.codeGen
             {
-                instrs += new parsley.If(success)
+                instrs += new If(success)
                 q.codeGen
                 {
-                    instrs += new parsley.Jump(end)
-                    instrs += new parsley.Label(success)
+                    instrs += new instructions.Jump(end)
+                    instrs += new instructions.Label(success)
                     p.codeGen
                     {
-                        instrs += new parsley.Label(end)
+                        instrs += new instructions.Label(end)
                         cont
                     }
                 }
@@ -1059,11 +1060,11 @@ object DeepEmbedding
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation =
         {
             val handler = labels.fresh()
-            instrs += new parsley.PushHandler(handler)
+            instrs += new instructions.PushHandler(handler)
             p.codeGen
             {
-                instrs += new parsley.Label(handler)
-                instrs += new parsley.NotFollowedBy(expected)
+                instrs += new instructions.Label(handler)
+                instrs += new instructions.NotFollowedBy(expected)
                 cont
             }
         }
@@ -1078,7 +1079,7 @@ object DeepEmbedding
         override def optimise: Parsley[Nothing] = this
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation =
         {
-            instrs += new parsley.Eof(expected)
+            instrs += new instructions.Eof(expected)
             cont
         }
     }

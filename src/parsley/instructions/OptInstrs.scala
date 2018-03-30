@@ -1,4 +1,7 @@
-package parsley
+package parsley.instructions
+
+import parsley.UnsafeOption
+
 import scala.annotation.{switch, tailrec}
 
 private [parsley] final class Perform[-A, +B](f: A => B) extends Instr
