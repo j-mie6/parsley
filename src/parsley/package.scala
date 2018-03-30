@@ -89,10 +89,11 @@ package object parsley
 
     sealed abstract class Continuation
     {
+        //noinspection TypeCheckCanBeMatch
         @tailrec final def run(): Unit = if (this.isInstanceOf[Suspended]) this.asInstanceOf[Suspended]().run()
     }
     final object Terminate extends Continuation
-    final class Suspended(cont: =>Continuation) extends Continuation { def apply() = cont }
+    final class Suspended(cont: =>Continuation) extends Continuation { def apply(): Continuation = cont }
 
     // This stack class is designed to be ultra-fast: no virtual function calls
     // It will crash with NullPointerException if you try and use head or tail of empty stack

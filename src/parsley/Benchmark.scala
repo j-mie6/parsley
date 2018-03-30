@@ -29,7 +29,7 @@ object ParsleyBench
     
     // This is an optimisation for the logic inside. Since this is the last in a chain of ors
     // it doesn't need to account for the other symbols (just needs to not accidentally consume ])
-    val whitespaceBF = satisfy(_ != ']')
+    private val whitespaceBF = satisfy(_ != ']')
     
     def brainfuck: Parsley[List[BrainFuckOp]] = 
     {
