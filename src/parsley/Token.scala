@@ -27,10 +27,12 @@ final class TokenParser(lang: LanguageDef)
      * fail on identifiers that are reserved words (i.e. keywords). Legal identifier characters and
      * keywords are defined in the `LanguageDef` provided to the token parser. An identifier is treated
      * as a single token using `attempt`.*/
+    // TODO intrinsic
     lazy val identifier: Parsley[String] = lexeme(attempt(ident >?> (!isReservedName(_), "keyword " + _)))
 
     /**The lexeme parser `keyword(name)` parses the symbol `name`, but it also checks that the `name`
      * is not a prefix of a valid identifier. A `keyword` is treated as a single token using `attempt`.*/
+    // TODO intrinsic
     def keyword(name: String): Parsley[Unit] = lexeme(attempt(caseString(name) *> notFollowedBy(identLetter) ? ("end of " + name)))
 
     private def caseString(name: String): Parsley[String] =
@@ -50,18 +52,18 @@ final class TokenParser(lang: LanguageDef)
      * will fail on any operators that are reserved operators. Legal operator characters and
      * reserved operators are defined in the `LanguageDef` provided to the token parser. A
      * `userOp` is treated as a single token using `attempt`.*/
+    // TODO intrinsic
     lazy val userOp: Parsley[String] = lexeme(attempt(oper >?> (!isReservedOp(_), "reserved operator " + _)))
 
-    /**This non-lexeme parser parses a reserved operator. Returns the name of the operator. This parser
-      * will fail on any operators that are reserved operators. Legal operator characters and
-      * reserved operators are defined in the `LanguageDef` provided to the token parser. A
-      * `reservedOp_` is treated as a single token using `attempt`.*/
+    /**This non-lexeme parser parses a reserved operator. Returns the name of the operator.
+     * Legal operator characters and reserved operators are defined in the `LanguageDef`
+     * provided to the token parser. A `reservedOp_` is treated as a single token using `attempt`.*/
+    // TODO intrinsic
     lazy val reservedOp_ : Parsley[String] = attempt(oper >?> (isReservedOp, "non-reserved operator " + _))
 
-    /**This lexeme parser parses a reserved operator. Returns the name of the operator. This parser
-     * will fail on any operators that are reserved operators. Legal operator characters and
-     * reserved operators are defined in the `LanguageDef` provided to the token parser. A
-     * `reservedOp` is treated as a single token using `attempt`.*/
+    /**This lexeme parser parses a reserved operator. Returns the name of the operator. Legal
+     * operator characters and reserved operators are defined in the `LanguageDef` provided
+     * to the token parser. A `reservedOp` is treated as a single token using `attempt`.*/
     lazy val reservedOp: Parsley[String] = lexeme(reservedOp_)
 
     /**The lexeme parser `operator(name)` parses the symbol `name`, but also checks that the `name`
@@ -69,9 +71,10 @@ final class TokenParser(lang: LanguageDef)
      * `attempt`.*/
     def operator(name: String): Parsley[Unit] = lexeme(operator_(name))
 
-    /**The lexeme parser `operator_(name)` parses the symbol `name`, but also checks that the `name`
+    /**The non-lexeme parser `operator_(name)` parses the symbol `name`, but also checks that the `name`
      * is not the prefix of a valid operator. An `operator` is treated as a single token using
      * `attempt`.*/
+    // TODO intrinsic
     def operator_(name: String): Parsley[Unit] = attempt(name *> notFollowedBy(opLetter) ? ("end of " + name))
 
     private def isReservedOp(op: String): Boolean = lang.operators.contains(op)
@@ -96,12 +99,11 @@ final class TokenParser(lang: LanguageDef)
      * deals correctly with escape sequences and gaps. The literal string is parsed according to
      * the grammar rules defined in the Haskell report (which matches most programming languages
      * quite closely).*/
+    // TODO intrinsic
     lazy val stringLiteral_ : Parsley[String] = between('"' ? "string", '"' ? "end of string", many(stringChar)) <#> (_.flatten.mkString)
 
-    /**This non-lexeme parser parses a literal string. Returns the literal string value. This parser
-     * deals correctly with escape sequences and gaps. The literal string is parsed according to
-     * the grammar rules defined in the Haskell report (which matches most programming languages
-     * quite closely).*/
+    /**TODO*/
+    // We need to actually ensure this works? I can't remember what the original intention was...
     lazy val rawStringLiteral: Parsley[String] = between('"' ? "string", '"' ? "end of string", many(stringLetter_)) <#> (_.mkString)
 
     private lazy val decimal_ = number(10, digit)
@@ -182,6 +184,7 @@ final class TokenParser(lang: LanguageDef)
          <|> exponent_.map(expo => readDouble(n + expo)))
         decide(fractExp)
     }
+    // TODO intrinsic
     private lazy val floating = decimal_ >>= (n => fractExponent(n))
     private def fractFloat(n: Int) = fractExponent(n) <#> (Right(_))
     private lazy val decimalFloat = decimal_ >>= (n => fractFloat(n).getOrElse(Left(n)))
@@ -189,11 +192,13 @@ final class TokenParser(lang: LanguageDef)
     {
         ((hexadecimal_ <|> octal_) <#> (Left(_))) <|> decimalFloat <|> fractFloat(0) </> Left(0)
     }
+    // TODO intrinsic
     private lazy val natFloat = '0' *> zeroNumFloat <|> decimalFloat
 
     // Integers and Naturals
     // Original Parsec defines sign as a lexeme here, this is considered by many as a bug
     private lazy val zeroNumber = ('0' *> (hexadecimal_ <|> octal_ <|> decimal_ </> 0)) ? ""
+    // TODO intrinsic
     private lazy val nat = zeroNumber <|> decimal_
     private lazy val sign = ('-' #> ((x: Int) => -x)
                          <|> '+' #> ((x: Int) => x)
@@ -355,15 +360,15 @@ object TokenTest
 {
     def main(args: Array[String]): Unit =
     {
-        val ws = Right(Char.whitespace)
+        val ws = Left(Set(' ', '\n'))
         val lang = LanguageDef("##", "##", "#", false, Right(Char.letter), Right(Char.alphaNum <|> '_'), Left(Set('+', '-', '*', '/')), Left(Set('+', '-', '*', '/', '=')), Set("var"), Set("+", "-", "*", "/", "="), true, ws)
         val tokeniser = new TokenParser(lang)
-        println(tokeniser.whiteSpace.pretty)
-        println(runParser(tokeniser.whiteSpace, "                             ##hello world##\n#hello\n"))
+        println(tokeniser.identifier.pretty)
+        println(runParser(tokeniser.natural, "1002345"))
         val start = System.currentTimeMillis
         for (_ <- 1 to 10000000)
         {
-            runParserFastUnsafe(tokeniser.whiteSpace, "                  ##hello world##\n#hello\n")
+            runParserFastUnsafe(tokeniser.natural, "1002345")
         }
         println(System.currentTimeMillis - start)
     }
