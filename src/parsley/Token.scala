@@ -1,11 +1,9 @@
 package parsley
 
 import Parsley._
-import Combinator.{between, choice, decide, notFollowedBy, sepBy, sepBy1, skipSome, some}
-import Char.{charLift, digit, hexDigit, /*noneOf,*/ octDigit, oneOf, satisfy, stringLift, upper}
+import Combinator.{between, choice, notFollowedBy, sepBy, sepBy1, skipSome, some}
+import Char.{charLift, digit, hexDigit, octDigit, oneOf, satisfy, stringLift, upper}
 import parsley.DeepToken.{SkipComments, WhiteSpace}
-
-import scala.util.Try
 
 final case class LanguageDef(commentStart: String,
                              commentEnd: String,
@@ -161,7 +159,9 @@ final class TokenParser(lang: LanguageDef)
      * is parsed according to the grammar rules defined in the Haskell report.*/
     lazy val float: Parsley[Double] = lexeme(floating) ? "float"
 
-    /** TODO */
+    /**This lexeme parser parses a floating point value. Returns the value of the number. The number
+     * is parsed according to the grammar rules defined in the Haskell report. Accepts an optional
+     * '+' or '-' sign.*/
     lazy val signedFloat: Parsley[Double] = lexeme(signedFloating) ? "float"
 
     /**This lexeme parser parses either `natural` or `float`. Returns the value of the number. This
@@ -173,20 +173,6 @@ final class TokenParser(lang: LanguageDef)
     private lazy val octal_ = oneOf(Set('o', 'O')) *> number(8, octDigit)
 
     // Floats
-    private lazy val fraction = ('.' <::> some(digit)).map(_.mkString) ? "fraction"
-    private lazy val exponent_ =
-    {
-        val sign = '+' #> "+" <|> '-' #> "-" </> ""
-        oneOf(Set('e', 'E')) *> lift2((sign: String, exp: Int) => 'e' + sign + exp, sign, decimal_) ? "exponent"
-    }
-    private def fractExponent(n: Int) =
-    {
-        def readDouble(s: String) = Try(s.toDouble).toOption
-        val fractExp: Parsley[Option[Double]] =
-            (lift2((fract: String, expo: String) => readDouble(n + fract + expo), fraction, exponent_.getOrElse(""))
-         <|> exponent_.map(expo => readDouble(n + expo)))
-        decide(fractExp)
-    }
     // TODO instrinsic
     private def sign[A: Numeric] =
         ('-' #> implicitly[Numeric[A]].negate _
@@ -194,14 +180,7 @@ final class TokenParser(lang: LanguageDef)
      </> identity[A] _)
     private lazy val floating = new DeepToken.Float
     private lazy val signedFloating = sign[Double] <*> floating
-    private def fractFloat(n: Int) = fractExponent(n) <#> (Right(_))
-    private lazy val decimalFloat = decimal_ >>= (n => fractFloat(n).getOrElse(Left(n)))
-    private lazy val zeroNumFloat =
-    {
-        ((hexadecimal_ <|> octal_) <#> (Left(_))) <|> decimalFloat <|> fractFloat(0) </> Left(0)
-    }
-    // TODO intrinsic
-    private lazy val natFloat = '0' *> zeroNumFloat <|> decimalFloat
+    private lazy val natFloat = attempt(float.map(Right(_))) <|> nat.map(Left(_))
 
     // Integers and Naturals
     private lazy val nat = new DeepToken.Natural
@@ -395,12 +374,12 @@ object TokenTest
         val ws = Left(Set(' ', '\n'))
         val lang = LanguageDef("##", "##", "#", false, Right(Char.letter), Right(Char.alphaNum <|> '_'), Left(Set('+', '-', '*', '/')), Left(Set('+', '-', '*', '/', '=')), Set("var"), Set("+", "-", "*", "/", "="), true, ws)
         val tokeniser = new TokenParser(lang)
-        println(tokeniser.float.pretty)
-        println(runParser(tokeniser.float, "1.489e-4"))
+        println(tokeniser.naturalOrFloat.pretty)
+        println(runParser(tokeniser.naturalOrFloat, "0x479"))
         val start = System.currentTimeMillis
         for (_ <- 1 to 10000000)
         {
-            runParserFastUnsafe(tokeniser.float, "1.489e-4")
+            runParserFastUnsafe(tokeniser.naturalOrFloat, "0x479")
         }
         println(System.currentTimeMillis - start)
     }
