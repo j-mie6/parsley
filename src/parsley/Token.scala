@@ -105,9 +105,10 @@ final class TokenParser(lang: LanguageDef)
         case _ => between('"' ? "string", '"' ? "end of string", many(stringChar)) <#> (_.flatten.mkString)
     }
 
-    /**TODO*/
-    // We need to actually ensure this works? I can't remember what the original intention was...
-    lazy val rawStringLiteral: Parsley[String] = between('"' ? "string", '"' ? "end of string", many(stringLetter_)) <#> (_.mkString)
+    /**This non-lexeme parser parses a string in a raw fashion. The escape characters in the string
+     * remain untouched. While escaped quotes do not end the string, they remain as \" in the result
+     * instead of becoming a quote character. Does not support string gaps. */
+    lazy val rawStringLiteral: Parsley[String] = new DeepToken.RawStringLiteral
 
     private lazy val escapeCode = new DeepToken.Escape
     private lazy val charEscape = '\\' *> escapeCode
@@ -117,7 +118,6 @@ final class TokenParser(lang: LanguageDef)
     private val escapeEmpty = '&'
     private lazy val escapeGap = skipSome(space) *> '\\' ? "end of string gap"
     private lazy val stringLetter = satisfy(c => (c != '"') && (c != '\\') && (c > '\u0016'))
-    private lazy val stringLetter_ = satisfy(c => (c != '"') && (c > '\u0016'))
     private lazy val stringEscape: Parsley[Option[Char]] =
     {
         '\\' *> (escapeGap #> None
@@ -162,11 +162,6 @@ final class TokenParser(lang: LanguageDef)
     private lazy val octal_ = oneOf(Set('o', 'O')) *> number(8, octDigit)
 
     // Floats
-    // TODO instrinsic
-    /*private def sign[A: Numeric] =
-        ('-' #> implicitly[Numeric[A]].negate _
-     <|> '+' #> identity[A] _
-     </> identity[A] _)*/
     private def sign[A: TypeTag] = new DeepToken.Sign[A]
     private lazy val floating = new DeepToken.Float
     private lazy val signedFloating = sign[Double] <*> floating
@@ -404,6 +399,21 @@ private [parsley] object DeepToken
             cont
         }
     }
+
+    private [parsley] class RawStringLiteral extends DeepTokenBase[String]
+    {
+        override protected def preprocess(cont: Parsley[String] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        {
+            val w = new RawStringLiteral
+            w.expected = label
+            cont(w)
+        }
+        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
+        {
+            instrs += new instructions.TokenRawString(expected)
+            cont
+        }
+    }
 }
 
 object TokenTest
@@ -413,12 +423,14 @@ object TokenTest
         val ws = Left(Set(' ', '\n'))
         val lang = LanguageDef("##", "##", "#", false, Right(Char.letter), Right(Char.alphaNum <|> '_'), Left(Set('+', '-', '*', '/')), Left(Set('+', '-', '*', '/', '=')), Set("var"), Set("+", "-", "*", "/", "="), true, ws)
         val tokeniser = new TokenParser(lang)
-        println((tokeniser.natural).pretty)
-        println(runParser(tokeniser.natural, "1239"))
+        val parser = tokeniser.rawStringLiteral <* Combinator.eof
+        val input = "\"hello, \\t\\xa \\\"world\\\"\""
+        println(parser.pretty)
+        println(runParser(parser, input))
         val start = System.currentTimeMillis
         for (_ <- 1 to 10000000)
         {
-            runParserFastUnsafe(tokeniser.natural, "1239")
+            runParserFastUnsafe(parser, input)
         }
         println(System.currentTimeMillis - start)
     }

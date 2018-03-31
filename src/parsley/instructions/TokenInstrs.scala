@@ -490,8 +490,10 @@ private [parsley] class TokenEscape(_expected: UnsafeOption[String]) extends Ins
                         (ctx.nextChar: @switch) match
                         {
                             case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
-                                    | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
-                                    | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
+                                  | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
+                                  | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
+                                ctx.offset += 1
+                                ctx.col += 1
                                 val escapeCode = hexadecimal(ctx, d.asDigit)
                                 if (escapeCode <= 0x10FFFF) escapeChar = escapeCode.toChar
                                 else
@@ -757,8 +759,8 @@ private [parsley] class TokenEscape(_expected: UnsafeOption[String]) extends Ins
             (ctx.nextChar: @switch) match
             {
                 case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
-                        | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
-                        | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
+                      | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
+                      | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
                     ctx.offset += 1
                     ctx.col += 1
                     hexadecimal(ctx, x * 16 + d.asDigit)
@@ -871,4 +873,57 @@ private [parsley] final class TokenString(ws: Set[Char], _expected: UnsafeOption
     }
 
     override def toString: String = "TokenString"
+}
+
+private [parsley] final class TokenRawString(_expected: UnsafeOption[String]) extends Instr
+{
+    val expectedString = if (_expected == null) "string" else _expected
+    val expectedEos = if (_expected == null) "end of string" else _expected
+    val expectedChar = if (_expected == null) "string character" else _expected
+
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.moreInput && ctx.nextChar == '"')
+        {
+            ctx.offset += 1
+            ctx.col += 1
+            restOfString(ctx, new StringBuilder())
+        }
+        else ctx.fail(expectedString)
+    }
+
+    @tailrec def restOfString(ctx: Context, builder: StringBuilder): Unit =
+    {
+        if (ctx.moreInput) (ctx.nextChar: @switch) match
+        {
+            case '"' =>
+                ctx.offset += 1
+                ctx.col += 1
+                ctx.stack.push(builder.toString)
+                ctx.inc()
+            case '\\' =>
+                ctx.offset += 1
+                ctx.col += 1
+                builder += '\\'
+                if (ctx.moreInput && ctx.nextChar > '\u0016')
+                {
+                    builder += ctx.nextChar
+                    ctx.offset += 1
+                    ctx.col += 1
+                    restOfString(ctx, builder)
+                }
+                else ctx.fail(expectedChar)
+            case c =>
+                if (c > '\u0016')
+                {
+                    ctx.offset += 1
+                    ctx.col += 1
+                    restOfString(ctx, builder += c)
+                }
+                else ctx.fail(expectedChar)
+        }
+        else ctx.fail(expectedEos)
+    }
+
+    override def toString: String = "TokenRawString"
 }
