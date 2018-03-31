@@ -273,3 +273,89 @@ private [parsley] final class TokenNatural(_expected: UnsafeOption[String]) exte
 
     override def toString: String = "TokenNatural"
 }
+
+private [parsley] final class TokenFloat(_expected: UnsafeOption[String]) extends Instr
+{
+    val expected = if (_expected == null) "float" else _expected
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.moreInput) (ctx.nextChar: @switch) match
+        {
+            case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9') =>
+                ctx.offset += 1
+                ctx.col += 1
+                val builder = new StringBuilder()
+                decimal(ctx, builder += d)
+                if (ctx.moreInput) (ctx.nextChar: @switch) match
+                {
+                    case '.' => // fraction
+                        ctx.offset += 1
+                        ctx.col += 1
+                        decimal(ctx, builder += '.')
+                        if (ctx.moreInput && (ctx.nextChar == 'e' || ctx.nextChar == 'E'))
+                        {
+                            ctx.offset += 1
+                            ctx.col += 1
+                            exponent(ctx, builder += 'e')
+                        }
+                        try
+                        {
+                            ctx.stack.push(builder.toString.toDouble)
+                            ctx.inc()
+                        }
+                        catch { case _: NumberFormatException => ctx.fail(expected) }
+                    case 'e' | 'E' => // exponent
+                        ctx.offset += 1
+                        ctx.col += 1
+                        exponent(ctx, builder += 'e')
+                        try
+                        {
+                            ctx.stack.push(builder.toString.toDouble)
+                            ctx.inc()
+                        }
+                        catch { case _: NumberFormatException => ctx.fail(expected) }
+                    case _ => ctx.fail(expected)
+                }
+            case _ => ctx.fail(expected)
+        }
+        else ctx.fail(expected)
+    }
+
+    @tailrec private def decimal(ctx: Context, x: StringBuilder): StringBuilder =
+    {
+        if (ctx.moreInput)
+        {
+            val d = ctx.nextChar
+            if (d >= '0' && d <= '9')
+            {
+                ctx.offset += 1
+                ctx.col += 1
+                decimal(ctx, x += d)
+            }
+            else x
+        }
+        else x
+    }
+
+    private def exponent(ctx: Context, x: StringBuilder): StringBuilder =
+    {
+        if (ctx.moreInput)
+        {
+            (ctx.nextChar: @switch) match
+            {
+                case '+' =>
+                    ctx.offset += 1
+                    ctx.col += 1
+                    decimal(ctx, x)
+                case '-' =>
+                    ctx.offset += 1
+                    ctx.col += 1
+                    decimal(ctx, x += '-')
+                case _ => decimal(ctx, x)
+            }
+        }
+        else x
+    }
+
+    override def toString: String = "TokenFloat"
+}

@@ -149,7 +149,7 @@ final class TokenParser(lang: LanguageDef)
     /**This lexeme parser parses a natural number (a positive whole number). Returns the value of
      * the number. The number can specified in `decimal`, `hexadecimal` or `octal`. The number is
      * parsed according to the grammar rules in the Haskell report.*/
-    lazy val natural: Parsley[Int] = lexeme(nat) ? "natural"
+    lazy val natural: Parsley[Int] = lexeme(nat)// ? "natural"
 
     /**This lexeme parser parses an integer (a whole number). This parser is like `natural` except
      * that it can be prefixed with a sign (i.e '-' or '+'). Returns the value of the number. The
@@ -160,6 +160,9 @@ final class TokenParser(lang: LanguageDef)
     /**This lexeme parser parses a floating point value. Returns the value of the number. The number
      * is parsed according to the grammar rules defined in the Haskell report.*/
     lazy val float: Parsley[Double] = lexeme(floating) ? "float"
+
+    /** TODO */
+    lazy val signedFloat: Parsley[Double] = lexeme(signedFloating) ? "float"
 
     /**This lexeme parser parses either `natural` or `float`. Returns the value of the number. This
      * parser deals with any overlap in the grammar rules for naturals and floats. The number is
@@ -184,8 +187,13 @@ final class TokenParser(lang: LanguageDef)
          <|> exponent_.map(expo => readDouble(n + expo)))
         decide(fractExp)
     }
-    // TODO intrinsic
-    private lazy val floating = decimal_ >>= (n => fractExponent(n))
+    // TODO instrinsic
+    private def sign[A: Numeric] =
+        ('-' #> implicitly[Numeric[A]].negate _
+     <|> '+' #> identity[A] _
+     </> identity[A] _)
+    private lazy val floating = new DeepToken.Float
+    private lazy val signedFloating = sign[Double] <*> floating
     private def fractFloat(n: Int) = fractExponent(n) <#> (Right(_))
     private lazy val decimalFloat = decimal_ >>= (n => fractFloat(n).getOrElse(Left(n)))
     private lazy val zeroNumFloat =
@@ -197,10 +205,7 @@ final class TokenParser(lang: LanguageDef)
 
     // Integers and Naturals
     private lazy val nat = new DeepToken.Natural
-    private lazy val sign = ('-' #> ((x: Int) => -x)
-                         <|> '+' #> ((x: Int) => x)
-                         </> identity[Int] _)
-    private lazy val int = sign <*> nat
+    private lazy val int = sign[Int] <*> nat
 
     /**Parses a positive whole number in the decimal system. Returns the value of the number.*/
     lazy val decimal: Parsley[Int] = lexeme(decimal_)
@@ -366,6 +371,21 @@ private [parsley] object DeepToken
             cont
         }
     }
+
+    private [parsley] class Float extends DeepTokenBase[Double]
+    {
+        override protected def preprocess(cont: Parsley[Double] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        {
+            val w = new Float
+            w.expected = label
+            cont(w)
+        }
+        override private [parsley] def codeGen(cont: => Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
+        {
+            instrs += new instructions.TokenFloat(expected)
+            cont
+        }
+    }
 }
 
 object TokenTest
@@ -375,12 +395,12 @@ object TokenTest
         val ws = Left(Set(' ', '\n'))
         val lang = LanguageDef("##", "##", "#", false, Right(Char.letter), Right(Char.alphaNum <|> '_'), Left(Set('+', '-', '*', '/')), Left(Set('+', '-', '*', '/', '=')), Set("var"), Set("+", "-", "*", "/", "="), true, ws)
         val tokeniser = new TokenParser(lang)
-        println(tokeniser.integer.pretty)
-        println(runParser(tokeniser.integer, "0xFE3"))
+        println(tokeniser.float.pretty)
+        println(runParser(tokeniser.float, "1.489e-4"))
         val start = System.currentTimeMillis
         for (_ <- 1 to 10000000)
         {
-            runParserFastUnsafe(tokeniser.integer, "1002345")
+            runParserFastUnsafe(tokeniser.float, "1.489e-4")
         }
         println(System.currentTimeMillis - start)
     }
