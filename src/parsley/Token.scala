@@ -5,6 +5,8 @@ import Combinator.{between, notFollowedBy, sepBy, sepBy1, skipSome, some}
 import Char.{charLift, digit, hexDigit, octDigit, oneOf, satisfy, stringLift}
 import parsley.DeepToken.{SkipComments, WhiteSpace}
 
+import scala.reflect.runtime.universe._
+
 final case class LanguageDef(commentStart: String,
                              commentEnd: String,
                              commentLine: String,
@@ -161,10 +163,11 @@ final class TokenParser(lang: LanguageDef)
 
     // Floats
     // TODO instrinsic
-    private def sign[A: Numeric] =
+    /*private def sign[A: Numeric] =
         ('-' #> implicitly[Numeric[A]].negate _
      <|> '+' #> identity[A] _
-     </> identity[A] _)
+     </> identity[A] _)*/
+    private def sign[A: TypeTag] = new DeepToken.Sign[A]
     private lazy val floating = new DeepToken.Float
     private lazy val signedFloating = sign[Double] <*> floating
     private lazy val natFloat = attempt(floating.map(Right(_))) <|> nat.map(Left(_))
@@ -305,7 +308,7 @@ private [parsley] object DeepToken
             w.expected = label
             cont(w)
         }
-        override private [parsley] def codeGen(cont: => Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
+        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
         {
             instrs += new instructions.TokenWhiteSpace(ws, start, end, line, nested)
             cont
@@ -320,9 +323,24 @@ private [parsley] object DeepToken
             w.expected = label
             cont(w)
         }
-        override private [parsley] def codeGen(cont: => Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
+        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
         {
             instrs += new instructions.TokenSkipComments(start, end, line, nested)
+            cont
+        }
+    }
+
+    private [parsley] class Sign[A: TypeTag] extends DeepTokenBase[A => A]
+    {
+        override protected def preprocess(cont: Parsley[A => A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        {
+            val w = new Sign[A]
+            w.expected = label
+            cont(w)
+        }
+        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
+        {
+            instrs += new instructions.TokenSign[A](expected)
             cont
         }
     }
@@ -335,7 +353,7 @@ private [parsley] object DeepToken
             w.expected = label
             cont(w)
         }
-        override private [parsley] def codeGen(cont: => Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
+        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
         {
             instrs += new instructions.TokenNatural(expected)
             cont
@@ -350,7 +368,7 @@ private [parsley] object DeepToken
             w.expected = label
             cont(w)
         }
-        override private [parsley] def codeGen(cont: => Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
+        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
         {
             instrs += new instructions.TokenFloat(expected)
             cont
@@ -365,7 +383,7 @@ private [parsley] object DeepToken
             w.expected = label
             cont(w)
         }
-        override private [parsley] def codeGen(cont: => Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
+        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
         {
             instrs += new instructions.TokenEscape(expected)
             cont
@@ -380,7 +398,7 @@ private [parsley] object DeepToken
             w.expected = label
             cont(w)
         }
-        override private [parsley] def codeGen(cont: => Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
+        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
         {
             instrs += new instructions.TokenString(ws, expected)
             cont
@@ -395,12 +413,12 @@ object TokenTest
         val ws = Left(Set(' ', '\n'))
         val lang = LanguageDef("##", "##", "#", false, Right(Char.letter), Right(Char.alphaNum <|> '_'), Left(Set('+', '-', '*', '/')), Left(Set('+', '-', '*', '/', '=')), Set("var"), Set("+", "-", "*", "/", "="), true, ws)
         val tokeniser = new TokenParser(lang)
-        println((tokeniser.stringLiteral <* Combinator.eof).pretty)
-        println(runParser(tokeniser.stringLiteral, "\"hello \\\n\n\n    \\\\\"world\\\"\\n\\ACK\""))
+        println((tokeniser.natural).pretty)
+        println(runParser(tokeniser.natural, "1239"))
         val start = System.currentTimeMillis
         for (_ <- 1 to 10000000)
         {
-            runParserFastUnsafe(tokeniser.stringLiteral, "\"hello \\\n\n\n    \\\\\"world\\\"\\n\\ACK\"")
+            runParserFastUnsafe(tokeniser.natural, "1239")
         }
         println(System.currentTimeMillis - start)
     }

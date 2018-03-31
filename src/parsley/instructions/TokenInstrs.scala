@@ -3,6 +3,7 @@ package parsley.instructions
 import parsley.UnsafeOption
 
 import scala.annotation.{switch, tailrec}
+import scala.reflect.runtime.universe._
 
 // This is considered as a VERY rough implementation of the intrinsic, just to get it working, it will be optimised later
 private [parsley] class TokenSkipComments(start: String, end: String, line: String, nested: Boolean) extends Instr
@@ -178,6 +179,41 @@ private [parsley] final class TokenWhiteSpace(ws: Set[Char], start: String, end:
     }
 
     override def toString: String = "TokenWhiteSpace"
+}
+
+private [parsley] final class TokenSign[A: TypeTag](_expected: UnsafeOption[String]) extends Instr
+{
+    val expected = if (_expected == null) "sign" else _expected
+    val neg: Any => Any = typeOf[A] match
+    {
+        case t if t =:= typeOf[Int] => ((x: Int) => -x).asInstanceOf[Any => Any]
+        case t if t =:= typeOf[Double] => ((x: Double) => -x).asInstanceOf[Any => Any]
+        case _ => throw new Exception("Unsupported sign type, requires Int or Double")
+    }
+    val pos: Any => Any = x => x
+
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.moreInput)
+        {
+            if (ctx.nextChar == '-')
+            {
+                ctx.offset += 1
+                ctx.col += 1
+                ctx.stack.push(neg)
+            }
+            else if (ctx.nextChar == '+')
+            {
+                ctx.offset += 1
+                ctx.col += 1
+                ctx.stack.push(pos)
+            }
+            else ctx.stack.push(pos)
+        }
+        ctx.inc()
+    }
+
+    override def toString: String = "TokenSign"
 }
 
 private [parsley] final class TokenNatural(_expected: UnsafeOption[String]) extends Instr
