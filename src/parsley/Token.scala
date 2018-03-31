@@ -1,8 +1,8 @@
 package parsley
 
 import Parsley._
-import Combinator.{between, choice, notFollowedBy, sepBy, sepBy1, skipSome, some}
-import Char.{charLift, digit, hexDigit, octDigit, oneOf, satisfy, stringLift, upper}
+import Combinator.{between, notFollowedBy, sepBy, sepBy1, skipSome, some}
+import Char.{charLift, digit, hexDigit, octDigit, oneOf, satisfy, stringLift}
 import parsley.DeepToken.{SkipComments, WhiteSpace}
 
 final case class LanguageDef(commentStart: String,
@@ -97,36 +97,17 @@ final class TokenParser(lang: LanguageDef)
      * deals correctly with escape sequences and gaps. The literal string is parsed according to
      * the grammar rules defined in the Haskell report (which matches most programming languages
      * quite closely).*/
-    // TODO intrinsic
-    lazy val stringLiteral_ : Parsley[String] = between('"' ? "string", '"' ? "end of string", many(stringChar)) <#> (_.flatten.mkString)
+    lazy val stringLiteral_ : Parsley[String] = lang.space match
+    {
+        case Left(ws) => new DeepToken.StringLiteral(ws)
+        case _ => between('"' ? "string", '"' ? "end of string", many(stringChar)) <#> (_.flatten.mkString)
+    }
 
     /**TODO*/
     // We need to actually ensure this works? I can't remember what the original intention was...
     lazy val rawStringLiteral: Parsley[String] = between('"' ? "string", '"' ? "end of string", many(stringLetter_)) <#> (_.mkString)
 
-    private lazy val decimal_ = number(10, digit)
-    private lazy val charControl = '^' *> upper.map(c => (c - 'A' + 1).toChar)
-    private lazy val charNum =
-    {
-        (decimal_
-     <|> 'o' *> number(8, octDigit)
-     <|> 'x' *> number(16, hexDigit)) >?> (_ <= 0x10FFFF, _ => "invalid escape sequence") <#> (_.toChar)
-    }
-
-    private val ascii2codes = List("BS", "HT", "LF", "VT", "FF", "CR", "SO", "SI", "EM", "FS", "GS", "RS", "US", "SP")
-    private val ascii3codes = List("NUL", "SOH", "STX", "ETX", "EOT", "ENQ", "ACK", "BEL",
-                                   "DLE", "DC1", "DC2", "DC3", "DC4", "NAK", "SYN", "ETB",
-                                   "CAN", "SUB", "ESC", "DEL")
-    private val ascii2 = List('\u0008', '\u0009', '\n', '\u000b', '\u000c', '\u000d', '\u000e', '\u000f',
-                              '\u0019', '\u001c', '\u001d', '\u001e', '\u001f', '\u0020')
-    private val ascii3 = List('\u0000', '\u0001', '\u0002', '\u0003', '\u0004', '\u0005', '\u0006',
-                              '\u0007', '\u0010', '\u0011', '\u0012', '\u0013', '\u0014', '\u0015',
-                              '\u0016', '\u0017', '\u0018', '\u001a', '\u001b', '\u001f')
-    private val escMap = "abfnrtv\\\"\'".toList zip "\u0007\b\u000c\n\r\t\u000b\\\"\'".toList
-    private val asciiMap = ascii3codes ++ ascii2codes zip ascii3 ++ ascii2
-    private lazy val charEsc = choice(escMap.map{case (c, code) => c #> code})
-    private lazy val charAscii = choice(asciiMap.map{case (asc, code) => attempt(asc #> code)})
-    private lazy val escapeCode = (charEsc <|> charNum <|> charAscii <\> charControl) ? "escape code"
+    private lazy val escapeCode = new DeepToken.Escape
     private lazy val charEscape = '\\' *> escapeCode
     private lazy val charLetter = satisfy(c => (c != '\'') && (c != '\\') && (c > '\u0016'))
     private lazy val characterChar = (charLetter <|> charEscape) ? "literal character"
@@ -174,6 +155,7 @@ final class TokenParser(lang: LanguageDef)
       * parsed according to the grammar rules defined in the Haskell report.*/
     lazy val naturalOrFloat: Parsley[Either[Int, Double]] = lexeme(natFloat) ? "unsigned number"
 
+    private lazy val decimal_ = number(10, digit)
     private lazy val hexadecimal_ = oneOf(Set('x', 'X')) *> number(16, hexDigit)
     private lazy val octal_ = oneOf(Set('o', 'O')) *> number(8, octDigit)
 
@@ -185,7 +167,7 @@ final class TokenParser(lang: LanguageDef)
      </> identity[A] _)
     private lazy val floating = new DeepToken.Float
     private lazy val signedFloating = sign[Double] <*> floating
-    private lazy val natFloat = attempt(float.map(Right(_))) <|> nat.map(Left(_))
+    private lazy val natFloat = attempt(floating.map(Right(_))) <|> nat.map(Left(_))
     private lazy val number_ =
         ('+' *> natFloat
      <|> '-' *> natFloat.map{ case Left(n) => Left(-n); case Right(f) => Right(-f) }
@@ -374,6 +356,36 @@ private [parsley] object DeepToken
             cont
         }
     }
+
+    private [parsley] class Escape extends DeepTokenBase[Char]
+    {
+        override protected def preprocess(cont: Parsley[Char] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        {
+            val w = new Escape
+            w.expected = label
+            cont(w)
+        }
+        override private [parsley] def codeGen(cont: => Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
+        {
+            instrs += new instructions.TokenEscape(expected)
+            cont
+        }
+    }
+
+    private [parsley] class StringLiteral(ws: Set[Char]) extends DeepTokenBase[String]
+    {
+        override protected def preprocess(cont: Parsley[String] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        {
+            val w = new StringLiteral(ws)
+            w.expected = label
+            cont(w)
+        }
+        override private [parsley] def codeGen(cont: => Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
+        {
+            instrs += new instructions.TokenString(ws, expected)
+            cont
+        }
+    }
 }
 
 object TokenTest
@@ -383,12 +395,12 @@ object TokenTest
         val ws = Left(Set(' ', '\n'))
         val lang = LanguageDef("##", "##", "#", false, Right(Char.letter), Right(Char.alphaNum <|> '_'), Left(Set('+', '-', '*', '/')), Left(Set('+', '-', '*', '/', '=')), Set("var"), Set("+", "-", "*", "/", "="), true, ws)
         val tokeniser = new TokenParser(lang)
-        println(tokeniser.naturalOrFloat.pretty)
-        println(runParser(tokeniser.naturalOrFloat, "0x479"))
+        println((tokeniser.stringLiteral <* Combinator.eof).pretty)
+        println(runParser(tokeniser.stringLiteral, "\"hello \\\n\n\n    \\\\\"world\\\"\\n\\ACK\""))
         val start = System.currentTimeMillis
         for (_ <- 1 to 10000000)
         {
-            runParserFastUnsafe(tokeniser.naturalOrFloat, "0x479")
+            runParserFastUnsafe(tokeniser.stringLiteral, "\"hello \\\n\n\n    \\\\\"world\\\"\\n\\ACK\"")
         }
         println(System.currentTimeMillis - start)
     }

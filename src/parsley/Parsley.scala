@@ -508,12 +508,14 @@ object DeepEmbedding
             case (ct@CharTok(c), Pure(x)) => instrs += instructions.CharTokFastPerform[Char, B](c, _ => x, ct.expected); cont
             case (st@StringTok(s), Pure(x)) => instrs += new StringTokFastPerform(s, _ => x, st.expected); cont
             case (p: Resultless, q) => new Suspended(p.codeGen(q.codeGen(cont)))
+            case (Then(p: Resultless, q: Resultless), r) => new Suspended(p.codeGen(q.codeGen(r.codeGen(cont))))
             case (Then(p, q: Resultless), r) =>
                 new Suspended(p.codeGen
                 {
                     instrs += instructions.Pop
                     q.codeGen(r.codeGen(cont))
                 })
+            case (Prev(p: Resultless, q: Resultless), r) => new Suspended(p.codeGen(q.codeGen(r.codeGen(cont))))
             case (Prev(p: Resultless, q), r) =>
                 new Suspended(p.codeGen(q.codeGen
                 {
@@ -565,12 +567,14 @@ object DeepEmbedding
             case (Pure(x), ct@CharTok(c)) => instrs += instructions.CharTokFastPerform[Char, A](c, _ => x, ct.expected); cont
             case (Pure(x), st@StringTok(s)) => instrs += new StringTokFastPerform(s, _ => x, st.expected); cont
             case (p, q: Resultless) => new Suspended(p.codeGen(q.codeGen(cont)))
+            case (p, Then(q: Resultless, r: Resultless)) => new Suspended(p.codeGen(q.codeGen(r.codeGen(cont))))
             case (p, Then(q, r: Resultless)) =>
                 new Suspended(p.codeGen(q.codeGen
                 {
                     instrs += instructions.Pop
                     r.codeGen(cont)
                 }))
+            case (p, Prev(q: Resultless, r: Resultless)) => new Suspended(p.codeGen(q.codeGen(r.codeGen(cont))))
             case (p, Prev(q: Resultless, r)) =>
                 new Suspended(p.codeGen(q.codeGen(r.codeGen
                 {
