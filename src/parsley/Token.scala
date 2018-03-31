@@ -196,10 +196,7 @@ final class TokenParser(lang: LanguageDef)
     private lazy val natFloat = '0' *> zeroNumFloat <|> decimalFloat
 
     // Integers and Naturals
-    // Original Parsec defines sign as a lexeme here, this is considered by many as a bug
-    private lazy val zeroNumber = ('0' *> (hexadecimal_ <|> octal_ <|> decimal_ </> 0)) ? ""
-    // TODO intrinsic
-    private lazy val nat = zeroNumber <|> decimal_
+    private lazy val nat = new DeepToken.Natural
     private lazy val sign = ('-' #> ((x: Int) => -x)
                          <|> '+' #> ((x: Int) => x)
                          </> identity[Int] _)
@@ -354,6 +351,21 @@ private [parsley] object DeepToken
             cont
         }
     }
+
+    private [parsley] class Natural extends DeepTokenBase[Int]
+    {
+        override protected def preprocess(cont: Parsley[Int] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        {
+            val w = new Natural
+            w.expected = label
+            cont(w)
+        }
+        override private [parsley] def codeGen(cont: => Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
+        {
+            instrs += new instructions.TokenNatural(expected)
+            cont
+        }
+    }
 }
 
 object TokenTest
@@ -363,12 +375,12 @@ object TokenTest
         val ws = Left(Set(' ', '\n'))
         val lang = LanguageDef("##", "##", "#", false, Right(Char.letter), Right(Char.alphaNum <|> '_'), Left(Set('+', '-', '*', '/')), Left(Set('+', '-', '*', '/', '=')), Set("var"), Set("+", "-", "*", "/", "="), true, ws)
         val tokeniser = new TokenParser(lang)
-        println(tokeniser.identifier.pretty)
-        println(runParser(tokeniser.natural, "1002345"))
+        println(tokeniser.integer.pretty)
+        println(runParser(tokeniser.integer, "0xFE3"))
         val start = System.currentTimeMillis
         for (_ <- 1 to 10000000)
         {
-            runParserFastUnsafe(tokeniser.natural, "1002345")
+            runParserFastUnsafe(tokeniser.integer, "1002345")
         }
         println(System.currentTimeMillis - start)
     }

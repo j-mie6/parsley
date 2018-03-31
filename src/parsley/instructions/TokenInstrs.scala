@@ -226,7 +226,7 @@ private [parsley] final class TokenNatural(_expected: UnsafeOption[String]) exte
         if (ctx.moreInput)
         {
             val d = ctx.nextChar
-            if (d.isDigit)
+            if (d >= '0' && d <= '9')
             {
                 ctx.offset += 1
                 ctx.col += 1
@@ -260,7 +260,7 @@ private [parsley] final class TokenNatural(_expected: UnsafeOption[String]) exte
         if (ctx.moreInput)
         {
             val d = ctx.nextChar
-            if (d >= '0' && d <= '8')
+            if (d >= '0' && d <= '7')
             {
                 ctx.offset += 1
                 ctx.col += 1
