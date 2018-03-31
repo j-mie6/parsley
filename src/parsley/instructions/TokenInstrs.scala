@@ -276,7 +276,7 @@ private [parsley] final class TokenNatural(_expected: UnsafeOption[String]) exte
 
 private [parsley] final class TokenFloat(_expected: UnsafeOption[String]) extends Instr
 {
-    val expected = if (_expected == null) "float" else _expected
+    val expected = if (_expected == null) "unsigned float" else _expected
     override def apply(ctx: Context): Unit =
     {
         if (ctx.moreInput) (ctx.nextChar: @switch) match

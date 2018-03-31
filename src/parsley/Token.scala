@@ -147,7 +147,7 @@ final class TokenParser(lang: LanguageDef)
     /**This lexeme parser parses a natural number (a positive whole number). Returns the value of
      * the number. The number can specified in `decimal`, `hexadecimal` or `octal`. The number is
      * parsed according to the grammar rules in the Haskell report.*/
-    lazy val natural: Parsley[Int] = lexeme(nat)// ? "natural"
+    lazy val natural: Parsley[Int] = lexeme(nat)
 
     /**This lexeme parser parses an integer (a whole number). This parser is like `natural` except
      * that it can be prefixed with a sign (i.e '-' or '+'). Returns the value of the number. The
@@ -157,17 +157,22 @@ final class TokenParser(lang: LanguageDef)
 
     /**This lexeme parser parses a floating point value. Returns the value of the number. The number
      * is parsed according to the grammar rules defined in the Haskell report.*/
-    lazy val float: Parsley[Double] = lexeme(floating) ? "float"
+    lazy val unsignedFloat: Parsley[Double] = lexeme(floating)
 
     /**This lexeme parser parses a floating point value. Returns the value of the number. The number
      * is parsed according to the grammar rules defined in the Haskell report. Accepts an optional
      * '+' or '-' sign.*/
-    lazy val signedFloat: Parsley[Double] = lexeme(signedFloating) ? "float"
+    lazy val float: Parsley[Double] = lexeme(signedFloating) ? "float"
 
-    /**This lexeme parser parses either `natural` or `float`. Returns the value of the number. This
+    /**This lexeme parser parses either `integer` or `float`. Returns the value of the number. This
      * parser deals with any overlap in the grammar rules for naturals and floats. The number is
      * parsed according to the grammar rules defined in the Haskell report.*/
-    lazy val naturalOrFloat: Parsley[Either[Int, Double]] = lexeme(natFloat) ? "number"
+    lazy val number: Parsley[Either[Int, Double]] = lexeme(number_) ? "number"
+
+    /**This lexeme parser parses either `natural` or `unsigned float`. Returns the value of the number. This
+      * parser deals with any overlap in the grammar rules for naturals and floats. The number is
+      * parsed according to the grammar rules defined in the Haskell report.*/
+    lazy val naturalOrFloat: Parsley[Either[Int, Double]] = lexeme(natFloat) ? "unsigned number"
 
     private lazy val hexadecimal_ = oneOf(Set('x', 'X')) *> number(16, hexDigit)
     private lazy val octal_ = oneOf(Set('o', 'O')) *> number(8, octDigit)
@@ -181,6 +186,10 @@ final class TokenParser(lang: LanguageDef)
     private lazy val floating = new DeepToken.Float
     private lazy val signedFloating = sign[Double] <*> floating
     private lazy val natFloat = attempt(float.map(Right(_))) <|> nat.map(Left(_))
+    private lazy val number_ =
+        ('+' *> natFloat
+     <|> '-' *> natFloat.map{ case Left(n) => Left(-n); case Right(f) => Right(-f) }
+     <|> natFloat)
 
     // Integers and Naturals
     private lazy val nat = new DeepToken.Natural
