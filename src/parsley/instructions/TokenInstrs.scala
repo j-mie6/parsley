@@ -1,6 +1,8 @@
 package parsley.instructions
 
-import scala.annotation.switch
+import parsley.UnsafeOption
+
+import scala.annotation.{switch, tailrec}
 
 // This is considered as a VERY rough implementation of the intrinsic, just to get it working, it will be optimised later
 private [parsley] class TokenSkipComments(start: String, end: String, line: String, nested: Boolean) extends Instr
@@ -146,7 +148,6 @@ private [parsley] final class TokenWhiteSpace(ws: Set[Char], start: String, end:
             spaces(ctx)
             var startsSingle = ctx.input.startsWith(line, ctx.offset)
             var startsMulti = ctx.input.startsWith(start, ctx.offset)
-            // No whitespace to read, parser technically fails
             while (ctx.moreInput && (startsSingle || startsMulti))
             {
                 if (startsMulti)
@@ -177,4 +178,98 @@ private [parsley] final class TokenWhiteSpace(ws: Set[Char], start: String, end:
     }
 
     override def toString: String = "TokenWhiteSpace"
+}
+
+private [parsley] final class TokenNatural(_expected: UnsafeOption[String]) extends Instr
+{
+    val expected = if (_expected == null) "natural" else _expected
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.moreInput) (ctx.nextChar: @switch) match
+        {
+            case '0' =>
+                ctx.offset += 1
+                ctx.col += 1
+                if (!ctx.moreInput) ctx.stack.push(0)
+                else
+                {
+                    (ctx.nextChar: @switch) match
+                    {
+                        case 'x' | 'X' =>
+                            ctx.offset += 1
+                            ctx.col += 1
+                            ctx.stack.push(hexadecimal(ctx))
+                        case 'o' | 'O' =>
+                            ctx.offset += 1
+                            ctx.col += 1
+                            ctx.stack.push(octal(ctx))
+                        case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9') =>
+                            ctx.offset += 1
+                            ctx.col += 1
+                            ctx.stack.push(decimal(ctx, d.asDigit))
+                        case _ => ctx.stack.push(0)
+                    }
+                }
+                ctx.inc()
+            case d@('1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9') =>
+                ctx.offset += 1
+                ctx.col += 1
+                ctx.stack.push(decimal(ctx, d.asDigit))
+                ctx.inc()
+            case _ => ctx.fail(expected)
+        }
+        else ctx.fail(expected)
+    }
+
+    @tailrec private def decimal(ctx: Context, x: Int = 0): Int =
+    {
+        if (ctx.moreInput)
+        {
+            val d = ctx.nextChar
+            if (d.isDigit)
+            {
+                ctx.offset += 1
+                ctx.col += 1
+                decimal(ctx, x * 10 + d.asDigit)
+            }
+            else x
+        }
+        else x
+    }
+
+    @tailrec private def hexadecimal(ctx: Context, x: Int = 0): Int =
+    {
+        if (ctx.moreInput)
+        {
+            (ctx.nextChar: @switch) match
+            {
+                case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
+                      | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
+                      | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
+                    ctx.offset += 1
+                    ctx.col += 1
+                    hexadecimal(ctx, x * 16 + d.asDigit)
+                case _ => x
+            }
+        }
+        else x
+    }
+
+    @tailrec private def octal(ctx: Context, x: Int = 0): Int =
+    {
+        if (ctx.moreInput)
+        {
+            val d = ctx.nextChar
+            if (d >= '0' && d <= '8')
+            {
+                ctx.offset += 1
+                ctx.col += 1
+                octal(ctx, x * 8 + d.asDigit)
+            }
+            else x
+        }
+        else x
+    }
+
+    override def toString: String = "TokenNatural"
 }
