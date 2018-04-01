@@ -408,7 +408,8 @@ object DeepEmbedding
                     instrs += new instructions.AlwaysRecover[B](x)
                     cont
                 })
-            case (Attempt(p), _) =>
+            // TODO Uncomment when brainfuck is in :)
+            /*case (Attempt(p), _) =>
                 val handler = labels.fresh()
                 val skip = labels.fresh()
                 instrs += new instructions.PushHandler(handler)
@@ -421,7 +422,7 @@ object DeepEmbedding
                         instrs += new instructions.Label(skip)
                         cont
                     }
-                })
+                })*/
             case (_, Pure(x)) =>
                 val handler = labels.fresh()
                 instrs += new instructions.InputCheck(handler)

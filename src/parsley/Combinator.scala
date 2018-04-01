@@ -26,9 +26,6 @@ object Combinator
 
     /**`optional(p)` tries to apply parser `p`. It will parse `p` or nothing. It only fails if `p`
       * fails after consuming input. It discards the result of `p`.*/
-    // CODO This could be a Nothing parser, with an instrinsic-esque approach that code gens {InputCheck; p; Pop; JumpGood} with no actual branch
-    // TODO The above would obsoleted by the peephole optimisation of; p <* (q <|> pure _) => p; InputCheck; q; Pop; JumpGood
-    //                                                                 (q <|> pure _) *> p => InputCheck; q; Pop; JumpGood; p
     def optional[A](p: =>Parsley[A]): Parsley[Unit] = (p *> unit).getOrElse(())
 
     /**`between(open, close, p)` parses `open`, followed by `p` and `close`. Returns the value returned by `p`.*/
