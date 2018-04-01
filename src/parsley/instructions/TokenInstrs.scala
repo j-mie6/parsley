@@ -1066,3 +1066,84 @@ private [parsley] final class TokenOperator(start: Set[Char], letter: Set[Char],
 
     override def toString: String = "TokenUserOperator"
 }
+
+private [parsley] class TokenKeyword(_keyword: String, letter: Set[Char], caseSensitive: Boolean, _expected: UnsafeOption[String]) extends Instr
+{
+    val expected = if (_expected == null) _keyword else _expected
+    val expectedEnd = if (_expected == null) "end of " + _keyword else _expected
+    val keyword = (if (caseSensitive) _keyword else _keyword.toLowerCase).toCharArray
+
+    override def apply(ctx: Context): Unit =
+    {
+        val strsz = this.keyword.length
+        val inputsz = ctx.inputsz
+        val input = ctx.input
+        var i = ctx.offset
+        var j = 0
+        val keyword = this.keyword
+        if (inputsz >= i + strsz)
+        {
+            while (j < strsz)
+            {
+                val c = if (caseSensitive) input(i) else input(i).toLower
+                if (c != keyword(j))
+                {
+                    ctx.fail(expected)
+                    return
+                }
+                i += 1
+                j += 1
+            }
+            if (i < inputsz && letter.contains(input(i))) ctx.fail(expectedEnd)
+            else
+            {
+                ctx.col += strsz
+                ctx.offset = i
+                ctx.inc()
+            }
+        }
+        else ctx.fail(expected)
+    }
+
+    override def toString: String = s"TokenKeyword(${_keyword})"
+}
+
+private [parsley] class TokenOperator_(_operator: String, letter: Set[Char], _expected: UnsafeOption[String]) extends Instr
+{
+    val expected = if (_expected == null) _operator else _expected
+    val expectedEnd = if (_expected == null) "end of " + _operator else _expected
+    val operator = _operator.toCharArray
+
+    override def apply(ctx: Context): Unit =
+    {
+        val strsz = this.operator.length
+        val inputsz = ctx.inputsz
+        val input = ctx.input
+        var i = ctx.offset
+        var j = 0
+        val operator = this.operator
+        if (inputsz >= i + strsz)
+        {
+            while (j < strsz)
+            {
+                if (input(i) != operator(j))
+                {
+                    ctx.fail(expected)
+                    return
+                }
+                i += 1
+                j += 1
+            }
+            if (i < inputsz && letter.contains(input(i))) ctx.fail(expectedEnd)
+            else
+            {
+                ctx.col += strsz
+                ctx.offset = i
+                ctx.inc()
+            }
+        }
+        else ctx.fail(expected)
+    }
+
+    override def toString: String = s"TokenOperator(${_operator})"
+}

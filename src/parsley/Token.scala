@@ -35,8 +35,11 @@ final class TokenParser(lang: LanguageDef)
 
     /**The lexeme parser `keyword(name)` parses the symbol `name`, but it also checks that the `name`
      * is not a prefix of a valid identifier. A `keyword` is treated as a single token using `attempt`.*/
-    // TODO intrinsic
-    def keyword(name: String): Parsley[Unit] = lexeme(attempt(caseString(name) *> notFollowedBy(identLetter) ? ("end of " + name)))
+    def keyword(name: String): Parsley[Unit] = lang.identLetter match
+    {
+        case Left(letter) => new DeepToken.Keyword(name, letter, lang.caseSensitive) *> unit
+        case _ => lexeme(attempt(caseString(name) *> notFollowedBy(identLetter) ? ("end of " + name)))
+    }
 
     private def caseString(name: String): Parsley[String] =
     {
@@ -83,8 +86,11 @@ final class TokenParser(lang: LanguageDef)
     /**The non-lexeme parser `operator_(name)` parses the symbol `name`, but also checks that the `name`
      * is not the prefix of a valid operator. An `operator` is treated as a single token using
      * `attempt`.*/
-    // TODO intrinsic
-    def operator_(name: String): Parsley[Unit] = attempt(name *> notFollowedBy(opLetter) ? ("end of " + name))
+    def operator_(name: String): Parsley[Unit] = lang.opLetter match
+    {
+        case Left(letter) => new DeepToken.Operator(name, letter) *> unit
+        case _ => attempt(name *> notFollowedBy(opLetter) ? ("end of " + name))
+    }
 
     private def isReservedOp(op: String): Boolean = lang.operators.contains(op)
     private lazy val opStart = toParser(lang.opStart)
@@ -229,15 +235,18 @@ final class TokenParser(lang: LanguageDef)
     lazy val whiteSpace: Parsley[Unit] = lang.space match
     {
         case Left(ws) => new WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
-        case Right(p) => skipMany(p ? "" <|> skipComment)
+        case Right(_) => skipMany(space ? "" <|> skipComment)
     }
 
     /**Parses any white space. White space consists of zero or more occurrences of a `space` (as
      * provided by the parameter), a line comment or a block (multi-line) comment. Block
      * comments may be nested. How comments are started and ended is defined in the `LanguageDef`
      * that is provided to the token parser.*/
-    // TODO - making this an intrinsic will take extra work!
-    val whiteSpace_ : Parsley[_] => Parsley[Unit] = space => skipMany((space ? "") <|> skipComment)
+    val whiteSpace_ : Either[Set[Char], Parsley[_]] => Parsley[Unit] =
+    {
+        case Left(ws) => new WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
+        case Right(space_) => skipMany((space_ ? "") <|> skipComment)
+    }
 
     /**Parses any comments and skips them, this includes both line comments and block comments.*/
     lazy val skipComment: Parsley[Unit] = new SkipComments(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
@@ -468,27 +477,34 @@ private [parsley] object DeepToken
             cont
         }
     }
-}
 
-object TokenTest
-{
-    def main(args: Array[String]): Unit =
+    private [parsley] class Keyword(keyword: String, letter: Set[Char], caseSensitive: Boolean) extends Resultless
     {
-        val ws = Left(Set(' ', '\n'))
-        val istart = Left(('a' to 'z').toSet ++ ('A' to 'Z').toSet + '_')
-        val iletter = Left(('0' to '9').toSet ++ ('a' to 'z').toSet ++ ('A' to 'Z').toSet + '_')
-        val lang = LanguageDef("##", "##", "#", false, istart, iletter, Left(Set('+', '-', '*', '/', '=')), Left(Set('+', '-', '*', '/', '=')), Set("var"), Set("+", "-", "*", "/", "="), true, ws)
-        val tokeniser = new TokenParser(lang)
-        val parser = tokeniser.identifier <* Combinator.eof
-        val input = "a_really_really_really_long_name_2"
-        println(parser.pretty)
-        println(runParser(parser, input))
-        val start = System.currentTimeMillis
-        for (_ <- 1 to 10000000)
+        override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
-            // 23.4 seconds
-            runParserFastUnsafe(parser, input)
+            val w = new Keyword(keyword, letter, caseSensitive)
+            w.expected = label
+            cont(w)
         }
-        println(System.currentTimeMillis - start)
+        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
+        {
+            instrs += new instructions.TokenKeyword(keyword, letter, caseSensitive, expected)
+            cont
+        }
+    }
+
+    private [parsley] class Operator(operator: String, letter: Set[Char]) extends Resultless
+    {
+        override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        {
+            val w = new Operator(operator, letter)
+            w.expected = label
+            cont(w)
+        }
+        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
+        {
+            instrs += new instructions.TokenOperator_(operator, letter, expected)
+            cont
+        }
     }
 }
