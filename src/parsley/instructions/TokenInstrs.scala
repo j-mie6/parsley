@@ -927,3 +927,142 @@ private [parsley] final class TokenRawString(_expected: UnsafeOption[String]) ex
 
     override def toString: String = "TokenRawString"
 }
+
+private [parsley] final class TokenIdentifier(start: Set[Char], letter: Set[Char], keywords: Set[String], _unexpected: UnsafeOption[String]) extends Instr
+{
+    val expected = if (_unexpected == null) "identifier"
+    else _unexpected
+
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.moreInput && start.contains(ctx.nextChar))
+        {
+            val name = new StringBuilder()
+            name += ctx.nextChar
+            ctx.offset += 1
+            ctx.col += 1
+            restOfIdentifier(ctx, name)
+        }
+        else ctx.fail(expected)
+    }
+
+    @tailrec def restOfIdentifier(ctx: Context, name: StringBuilder): Unit =
+    {
+        if (ctx.moreInput && letter.contains(ctx.nextChar))
+        {
+            name += ctx.nextChar
+            ctx.offset += 1
+            ctx.col += 1
+            restOfIdentifier(ctx, name)
+        }
+        else
+        {
+            val nameStr = name.toString
+            if (keywords.contains(nameStr))
+            {
+                ctx.fail(expected)
+                ctx.unexpected = "keyword " + nameStr
+                ctx.unexpectAnyway = true
+            }
+            else
+            {
+                ctx.stack.push(nameStr)
+                ctx.inc()
+            }
+        }
+    }
+
+    override def toString: String = "TokenIdentifier"
+}
+
+private [parsley] final class TokenUserOperator(start: Set[Char], letter: Set[Char], reservedOps: Set[String], _unexpected: UnsafeOption[String]) extends Instr
+{
+    val expected = if (_unexpected == null) "operator" else _unexpected
+
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.moreInput && start.contains(ctx.nextChar))
+        {
+            val name = new StringBuilder()
+            name += ctx.nextChar
+            ctx.offset += 1
+            ctx.col += 1
+            restOfIdentifier(ctx, name)
+        }
+        else ctx.fail(expected)
+    }
+
+    @tailrec def restOfIdentifier(ctx: Context, name: StringBuilder): Unit =
+    {
+        if (ctx.moreInput && letter.contains(ctx.nextChar))
+        {
+            name += ctx.nextChar
+            ctx.offset += 1
+            ctx.col += 1
+            restOfIdentifier(ctx, name)
+        }
+        else
+        {
+            val nameStr = name.toString
+            if (reservedOps.contains(nameStr))
+            {
+                ctx.fail(expected)
+                ctx.unexpected = "reserved operator " + nameStr
+                ctx.unexpectAnyway = true
+            }
+            else
+            {
+                ctx.stack.push(nameStr)
+                ctx.inc()
+            }
+        }
+    }
+
+    override def toString: String = "TokenUserOperator"
+}
+
+private [parsley] final class TokenOperator(start: Set[Char], letter: Set[Char], reservedOps: Set[String], _unexpected: UnsafeOption[String]) extends Instr
+{
+    val expected = if (_unexpected == null) "operator" else _unexpected
+
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.moreInput && start.contains(ctx.nextChar))
+        {
+            val name = new StringBuilder()
+            name += ctx.nextChar
+            ctx.offset += 1
+            ctx.col += 1
+            restOfIdentifier(ctx, name)
+        }
+        else ctx.fail(expected)
+    }
+
+    @tailrec def restOfIdentifier(ctx: Context, name: StringBuilder): Unit =
+    {
+        if (ctx.moreInput && letter.contains(ctx.nextChar))
+        {
+            name += ctx.nextChar
+            ctx.offset += 1
+            ctx.col += 1
+            restOfIdentifier(ctx, name)
+        }
+        else
+        {
+            val nameStr = name.toString
+            if (!reservedOps.contains(nameStr))
+            {
+                ctx.fail(expected)
+                ctx.unexpected = "non-reserved operator " + nameStr
+                ctx.unexpectAnyway = true
+            }
+            else
+            {
+                ctx.stack.push(nameStr)
+                ctx.inc()
+            }
+        }
+    }
+
+    override def toString: String = "TokenUserOperator"
+}

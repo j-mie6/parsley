@@ -28,7 +28,8 @@ final class TokenParser(lang: LanguageDef)
      * keywords are defined in the `LanguageDef` provided to the token parser. An identifier is treated
      * as a single token using `attempt`.*/
     // TODO intrinsic
-    lazy val identifier: Parsley[String] = lexeme(attempt(ident >?> (!isReservedName(_), "keyword " + _)))
+    // NOTE: Fails as UNEXPECTED when a keyword was parsed. Implementation is misleading and technically wrong
+    lazy val identifier: Parsley[String] = lexeme(attempt(ident >?> (!isReservedName(_), "unexpected keyword " + _)))
 
     /**The lexeme parser `keyword(name)` parses the symbol `name`, but it also checks that the `name`
      * is not a prefix of a valid identifier. A `keyword` is treated as a single token using `attempt`.*/
@@ -42,7 +43,7 @@ final class TokenParser(lang: LanguageDef)
         else name.foldRight(pure(name))((c, p) => caseChar(c) *> p) ? name
     }
     private def isReservedName(name: String): Boolean = theReservedNames.contains(if (lang.caseSensitive) name else name.toLowerCase)
-    private lazy val theReservedNames =  if (lang.caseSensitive) lang.keywords else lang.keywords.map(_.toLowerCase)
+    private val theReservedNames =  if (lang.caseSensitive) lang.keywords else lang.keywords.map(_.toLowerCase)
     private lazy val identStart = toParser(lang.identStart)
     private lazy val identLetter = toParser(lang.identLetter)
     private lazy val ident = lift2((c: Char, cs: List[Char]) => (c::cs).mkString, identStart, many(identLetter)) ? "identifier"
@@ -53,13 +54,15 @@ final class TokenParser(lang: LanguageDef)
      * reserved operators are defined in the `LanguageDef` provided to the token parser. A
      * `userOp` is treated as a single token using `attempt`.*/
     // TODO intrinsic
-    lazy val userOp: Parsley[String] = lexeme(attempt(oper >?> (!isReservedOp(_), "reserved operator " + _)))
+    // NOTE: Fails as UNEXPECTED when a keyword was parsed. Implementation is misleading and technically wrong
+    lazy val userOp: Parsley[String] = lexeme(attempt(oper >?> (!isReservedOp(_), "unexpected reserved operator " + _)))
 
     /**This non-lexeme parser parses a reserved operator. Returns the name of the operator.
      * Legal operator characters and reserved operators are defined in the `LanguageDef`
      * provided to the token parser. A `reservedOp_` is treated as a single token using `attempt`.*/
     // TODO intrinsic
-    lazy val reservedOp_ : Parsley[String] = attempt(oper >?> (isReservedOp, "non-reserved operator " + _))
+    // NOTE: Fails as UNEXPECTED when a keyword was parsed. Implementation is misleading and technically wrong
+    lazy val reservedOp_ : Parsley[String] = attempt(oper >?> (isReservedOp, "unexpected non-reserved operator " + _))
 
     /**This lexeme parser parses a reserved operator. Returns the name of the operator. Legal
      * operator characters and reserved operators are defined in the `LanguageDef` provided
@@ -423,13 +426,14 @@ object TokenTest
         val ws = Left(Set(' ', '\n'))
         val lang = LanguageDef("##", "##", "#", false, Right(Char.letter), Right(Char.alphaNum <|> '_'), Left(Set('+', '-', '*', '/')), Left(Set('+', '-', '*', '/', '=')), Set("var"), Set("+", "-", "*", "/", "="), true, ws)
         val tokeniser = new TokenParser(lang)
-        val parser = tokeniser.rawStringLiteral <* Combinator.eof
-        val input = "\"hello, \\t\\xa \\\"world\\\"\""
+        val parser = tokeniser.identifier <* Combinator.eof
+        val input = "a_really_really_really_long_name_2"
         println(parser.pretty)
         println(runParser(parser, input))
         val start = System.currentTimeMillis
         for (_ <- 1 to 10000000)
         {
+            // 23.4 seconds
             runParserFastUnsafe(parser, input)
         }
         println(System.currentTimeMillis - start)
