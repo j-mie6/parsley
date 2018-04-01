@@ -1,7 +1,7 @@
 package parsley
 
 import parsley.Parsley._
-import parsley.instructions.{Eof, _}
+import parsley.instructions._
 
 import language.existentials
 import scala.annotation.tailrec
