@@ -168,6 +168,77 @@ private [parsley] final class StringTokFastPerform(s: String, f: String => Any, 
     override def toString: String = s"StrPerform($s, ?)"
 }
 
+private [parsley] class JumpGoodAttempt(var label: Int) extends JumpInstr
+{
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.status eq Good)
+        {
+            ctx.states = ctx.states.tail
+            ctx.handlers = ctx.handlers.tail
+            ctx.pc = label
+        }
+        else
+        {
+            val state = ctx.states.head
+            ctx.states = ctx.states.tail
+            ctx.offset = state.offset
+            ctx.line = state.line
+            ctx.col = state.col
+            ctx.status = Good
+            ctx.inc()
+        }
+    }
+    override def toString: String = s"JumpGood'($label)"
+}
+
+private [parsley] class Recover[A](x: A) extends Instr
+{
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.status eq Good)
+        {
+            ctx.handlers = ctx.handlers.tail
+            ctx.inc()
+        }
+        // If the head of input stack is not the same size as the head of check stack, we fail to next handler
+        else if (ctx.offset != ctx.checkStack.head) ctx.fail()
+        else
+        {
+            ctx.status = Good
+            ctx.stack.push(x)
+            ctx.inc()
+        }
+        ctx.checkStack = ctx.checkStack.tail
+    }
+    override def toString: String = s"Recover($x)"
+}
+
+private [parsley] class AlwaysRecover[A](x: A) extends Instr
+{
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.status eq Good)
+        {
+            ctx.states = ctx.states.tail
+            ctx.handlers = ctx.handlers.tail
+            ctx.inc()
+        }
+        else
+        {
+            val state = ctx.states.head
+            ctx.states = ctx.states.tail
+            ctx.offset = state.offset
+            ctx.line = state.line
+            ctx.col = state.col
+            ctx.status = Good
+            ctx.stack.push(x)
+            ctx.inc()
+        }
+    }
+    override def toString: String = s"Recover'($x)"
+}
+
 private [parsley] object CharTokFastPerform
 {
     def apply[A >: Char, B](c: Char, f: A => B, expected: UnsafeOption[String]): CharTokFastPerform = (c: @switch) match

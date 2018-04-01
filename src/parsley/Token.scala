@@ -3,7 +3,6 @@ package parsley
 import Parsley._
 import Combinator.{between, notFollowedBy, sepBy, sepBy1, skipSome, some}
 import Char.{charLift, digit, hexDigit, octDigit, oneOf, satisfy, stringLift}
-import parsley.DeepToken.{SkipComments, WhiteSpace}
 
 import scala.reflect.runtime.universe._
 
@@ -234,7 +233,7 @@ final class TokenParser(lang: LanguageDef)
      * that is provided to the token parser.*/
     lazy val whiteSpace: Parsley[Unit] = lang.space match
     {
-        case Left(ws) => new WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
+        case Left(ws) => new DeepToken.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
         case Right(_) => skipMany(space ? "" <|> skipComment)
     }
 
@@ -244,12 +243,12 @@ final class TokenParser(lang: LanguageDef)
      * that is provided to the token parser.*/
     val whiteSpace_ : Either[Set[Char], Parsley[_]] => Parsley[Unit] =
     {
-        case Left(ws) => new WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
+        case Left(ws) => new DeepToken.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
         case Right(space_) => skipMany((space_ ? "") <|> skipComment)
     }
 
     /**Parses any comments and skips them, this includes both line comments and block comments.*/
-    lazy val skipComment: Parsley[Unit] = new SkipComments(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
+    lazy val skipComment: Parsley[Unit] = new DeepToken.SkipComments(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
     
     // Bracketing
     /**Lexeme parser `parens(p)` parses `p` enclosed in parenthesis, returning the value of `p`.*/

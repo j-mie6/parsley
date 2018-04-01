@@ -397,21 +397,54 @@ object DeepEmbedding
             //case (Or(u: Parsley[T], v: Parsley[A]), w) => new Or(u, new Or[A, B](v, w).optimise).asInstanceOf[Or[_, B]]
             case _ => this
         }
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
+        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) = (p, q) match
         {
-            val handler = labels.fresh()
-            val skip = labels.fresh()
-            instrs += new instructions.InputCheck(handler)
-            new Suspended(p.codeGen
-            {
-                instrs += new Label(handler)
-                instrs += new instructions.JumpGood(skip)
-                q.codeGen
+            case (Attempt(p), Pure(x)) =>
+                val handler = labels.fresh()
+                instrs += new instructions.PushHandler(handler)
+                new Suspended(p.codeGen
                 {
-                    instrs += new Label(skip)
+                    instrs += new instructions.Label(handler)
+                    instrs += new instructions.AlwaysRecover[B](x)
                     cont
-                }
-            })
+                })
+            case (Attempt(p), _) =>
+                val handler = labels.fresh()
+                val skip = labels.fresh()
+                instrs += new instructions.PushHandler(handler)
+                new Suspended(p.codeGen
+                {
+                    instrs += new instructions.Label(handler)
+                    instrs += new instructions.JumpGoodAttempt(skip)
+                    q.codeGen
+                    {
+                        instrs += new instructions.Label(skip)
+                        cont
+                    }
+                })
+            case (_, Pure(x)) =>
+                val handler = labels.fresh()
+                instrs += new instructions.InputCheck(handler)
+                new Suspended(p.codeGen
+                {
+                    instrs += new instructions.Label(handler)
+                    instrs += new instructions.Recover[B](x)
+                    cont
+                })
+            case _ =>
+                val handler = labels.fresh()
+                val skip = labels.fresh()
+                instrs += new instructions.InputCheck(handler)
+                new Suspended(p.codeGen
+                {
+                    instrs += new Label(handler)
+                    instrs += new instructions.JumpGood(skip)
+                    q.codeGen
+                    {
+                        instrs += new Label(skip)
+                        cont
+                    }
+                })
         }
     }
     private [parsley] final class Bind[A, +B](_p: =>Parsley[A], private [Bind] val f: A => Parsley[B]) extends Parsley[B]
