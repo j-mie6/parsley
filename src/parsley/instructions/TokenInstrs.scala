@@ -940,7 +940,6 @@ private [parsley] final class TokenIdentifier(start: Set[Char], letter: Set[Char
             val name = new StringBuilder()
             name += ctx.nextChar
             ctx.offset += 1
-            ctx.col += 1
             restOfIdentifier(ctx, name)
         }
         else ctx.fail(expected)
@@ -952,7 +951,6 @@ private [parsley] final class TokenIdentifier(start: Set[Char], letter: Set[Char
         {
             name += ctx.nextChar
             ctx.offset += 1
-            ctx.col += 1
             restOfIdentifier(ctx, name)
         }
         else
@@ -960,12 +958,14 @@ private [parsley] final class TokenIdentifier(start: Set[Char], letter: Set[Char
             val nameStr = name.toString
             if (keywords.contains(nameStr))
             {
+                ctx.offset -= nameStr.length
                 ctx.fail(expected)
                 ctx.unexpected = "keyword " + nameStr
                 ctx.unexpectAnyway = true
             }
             else
             {
+                ctx.col += nameStr.length
                 ctx.stack.push(nameStr)
                 ctx.inc()
             }
@@ -986,7 +986,6 @@ private [parsley] final class TokenUserOperator(start: Set[Char], letter: Set[Ch
             val name = new StringBuilder()
             name += ctx.nextChar
             ctx.offset += 1
-            ctx.col += 1
             restOfIdentifier(ctx, name)
         }
         else ctx.fail(expected)
@@ -998,7 +997,6 @@ private [parsley] final class TokenUserOperator(start: Set[Char], letter: Set[Ch
         {
             name += ctx.nextChar
             ctx.offset += 1
-            ctx.col += 1
             restOfIdentifier(ctx, name)
         }
         else
@@ -1006,12 +1004,14 @@ private [parsley] final class TokenUserOperator(start: Set[Char], letter: Set[Ch
             val nameStr = name.toString
             if (reservedOps.contains(nameStr))
             {
+                ctx.offset -= nameStr.length
                 ctx.fail(expected)
                 ctx.unexpected = "reserved operator " + nameStr
                 ctx.unexpectAnyway = true
             }
             else
             {
+                ctx.col += nameStr.length
                 ctx.stack.push(nameStr)
                 ctx.inc()
             }
@@ -1032,7 +1032,6 @@ private [parsley] final class TokenOperator(start: Set[Char], letter: Set[Char],
             val name = new StringBuilder()
             name += ctx.nextChar
             ctx.offset += 1
-            ctx.col += 1
             restOfIdentifier(ctx, name)
         }
         else ctx.fail(expected)
@@ -1044,7 +1043,6 @@ private [parsley] final class TokenOperator(start: Set[Char], letter: Set[Char],
         {
             name += ctx.nextChar
             ctx.offset += 1
-            ctx.col += 1
             restOfIdentifier(ctx, name)
         }
         else
@@ -1052,12 +1050,14 @@ private [parsley] final class TokenOperator(start: Set[Char], letter: Set[Char],
             val nameStr = name.toString
             if (!reservedOps.contains(nameStr))
             {
+                ctx.offset -= nameStr.length
                 ctx.fail(expected)
                 ctx.unexpected = "non-reserved operator " + nameStr
                 ctx.unexpectAnyway = true
             }
             else
             {
+                ctx.col += nameStr.length
                 ctx.stack.push(nameStr)
                 ctx.inc()
             }

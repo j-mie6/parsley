@@ -27,9 +27,11 @@ final class TokenParser(lang: LanguageDef)
      * fail on identifiers that are reserved words (i.e. keywords). Legal identifier characters and
      * keywords are defined in the `LanguageDef` provided to the token parser. An identifier is treated
      * as a single token using `attempt`.*/
-    // TODO intrinsic
-    // NOTE: Fails as UNEXPECTED when a keyword was parsed. Implementation is misleading and technically wrong
-    lazy val identifier: Parsley[String] = lexeme(attempt(ident >?> (!isReservedName(_), "unexpected keyword " + _)))
+    lazy val identifier: Parsley[String] = (lang.identStart, lang.identLetter) match
+    {
+        case (Left(start), Left(letter)) => lexeme(new DeepToken.Identifier(start, letter, theReservedNames))
+        case _ => lexeme (attempt (ident >?> (! isReservedName (_), "unexpected keyword " + _) ) )
+    }
 
     /**The lexeme parser `keyword(name)` parses the symbol `name`, but it also checks that the `name`
      * is not a prefix of a valid identifier. A `keyword` is treated as a single token using `attempt`.*/
@@ -53,16 +55,20 @@ final class TokenParser(lang: LanguageDef)
      * will fail on any operators that are reserved operators. Legal operator characters and
      * reserved operators are defined in the `LanguageDef` provided to the token parser. A
      * `userOp` is treated as a single token using `attempt`.*/
-    // TODO intrinsic
-    // NOTE: Fails as UNEXPECTED when a keyword was parsed. Implementation is misleading and technically wrong
-    lazy val userOp: Parsley[String] = lexeme(attempt(oper >?> (!isReservedOp(_), "unexpected reserved operator " + _)))
+    lazy val userOp: Parsley[String] = (lang.opStart, lang.opLetter) match
+    {
+        case (Left(start), Left(letter)) => lexeme(new DeepToken.UserOp(start, letter, lang.operators))
+        case _ => lexeme(attempt(oper >?> (!isReservedOp(_), "unexpected reserved operator " + _)))
+    }
 
     /**This non-lexeme parser parses a reserved operator. Returns the name of the operator.
      * Legal operator characters and reserved operators are defined in the `LanguageDef`
      * provided to the token parser. A `reservedOp_` is treated as a single token using `attempt`.*/
-    // TODO intrinsic
-    // NOTE: Fails as UNEXPECTED when a keyword was parsed. Implementation is misleading and technically wrong
-    lazy val reservedOp_ : Parsley[String] = attempt(oper >?> (isReservedOp, "unexpected non-reserved operator " + _))
+    lazy val reservedOp_ : Parsley[String] = (lang.opStart, lang.opLetter) match
+    {
+        case (Left(start), Left(letter)) => lexeme(new DeepToken.ReservedOp(start, letter, lang.operators))
+        case _ => attempt(oper >?> (isReservedOp, "unexpected non-reserved operator " + _))
+    }
 
     /**This lexeme parser parses a reserved operator. Returns the name of the operator. Legal
      * operator characters and reserved operators are defined in the `LanguageDef` provided
@@ -417,6 +423,51 @@ private [parsley] object DeepToken
             cont
         }
     }
+
+    private [parsley] class Identifier(start: Set[Char], letter: Set[Char], keywords: Set[String]) extends DeepTokenBase[String]
+    {
+        override protected def preprocess(cont: Parsley[String] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        {
+            val w = new Identifier(start, letter, keywords)
+            w.expected = label
+            cont(w)
+        }
+        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
+        {
+            instrs += new instructions.TokenIdentifier(start, letter, keywords, expected)
+            cont
+        }
+    }
+
+    private [parsley] class UserOp(start: Set[Char], letter: Set[Char], operators: Set[String]) extends DeepTokenBase[String]
+    {
+        override protected def preprocess(cont: Parsley[String] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        {
+            val w = new UserOp(start, letter, operators)
+            w.expected = label
+            cont(w)
+        }
+        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
+        {
+            instrs += new instructions.TokenUserOperator(start, letter, operators, expected)
+            cont
+        }
+    }
+
+    private [parsley] class ReservedOp(start: Set[Char], letter: Set[Char], operators: Set[String]) extends DeepTokenBase[String]
+    {
+        override protected def preprocess(cont: Parsley[String] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        {
+            val w = new Identifier(start, letter, operators)
+            w.expected = label
+            cont(w)
+        }
+        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
+        {
+            instrs += new instructions.TokenOperator(start, letter, operators, expected)
+            cont
+        }
+    }
 }
 
 object TokenTest
@@ -424,7 +475,9 @@ object TokenTest
     def main(args: Array[String]): Unit =
     {
         val ws = Left(Set(' ', '\n'))
-        val lang = LanguageDef("##", "##", "#", false, Right(Char.letter), Right(Char.alphaNum <|> '_'), Left(Set('+', '-', '*', '/')), Left(Set('+', '-', '*', '/', '=')), Set("var"), Set("+", "-", "*", "/", "="), true, ws)
+        val istart = Left(('a' to 'z').toSet ++ ('A' to 'Z').toSet + '_')
+        val iletter = Left(('0' to '9').toSet ++ ('a' to 'z').toSet ++ ('A' to 'Z').toSet + '_')
+        val lang = LanguageDef("##", "##", "#", false, istart, iletter, Left(Set('+', '-', '*', '/', '=')), Left(Set('+', '-', '*', '/', '=')), Set("var"), Set("+", "-", "*", "/", "="), true, ws)
         val tokeniser = new TokenParser(lang)
         val parser = tokeniser.identifier <* Combinator.eof
         val input = "a_really_really_really_long_name_2"
