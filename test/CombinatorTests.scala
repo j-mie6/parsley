@@ -1,0 +1,4 @@
+class CombinatorTests extends ParsleyTest
+{
+
+}
