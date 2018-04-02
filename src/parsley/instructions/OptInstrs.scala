@@ -192,7 +192,7 @@ private [parsley] class JumpGoodAttempt(var label: Int) extends JumpInstr
     override def toString: String = s"JumpGood'($label)"
 }
 
-private [parsley] class Recover[A](x: A) extends Instr
+private [parsley] class RecoverWith[A](x: A) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -214,7 +214,7 @@ private [parsley] class Recover[A](x: A) extends Instr
     override def toString: String = s"Recover($x)"
 }
 
-private [parsley] class AlwaysRecover[A](x: A) extends Instr
+private [parsley] class AlwaysRecoverWith[A](x: A) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {

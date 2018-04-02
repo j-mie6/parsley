@@ -21,7 +21,7 @@ object Combinator
       * `None`, otherwise it returns `Some` of the value returned by `p`.*/
     def option[A](p: =>Parsley[A]): Parsley[Option[A]] = p.map(Some(_)).getOrElse(None)
 
-    /**`decide(p)` removes the option from inside parser `p`, and if it returned `None` will fail.**/
+    /**`decide(p)` removes the option from inside parser `p`, and if it returned `None` will fail.*/
     def decide[A](p: =>Parsley[Option[A]]): Parsley[A] = for (opt <- p; if opt.isDefined) yield opt.get
 
     /**`optional(p)` tries to apply parser `p`. It will parse `p` or nothing. It only fails if `p`

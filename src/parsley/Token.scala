@@ -6,6 +6,30 @@ import Char.{charLift, digit, hexDigit, octDigit, oneOf, satisfy, stringLift}
 
 import scala.reflect.runtime.universe._
 
+/**
+  * This class is required to construct a TokenParser. It defines the various characteristics of the language to be
+  * tokenised. Where a parameter can be either a `Set[Char]` or a `Parsley` object, prefer the `Set` where possible.
+  * It will unlock a variety of faster intrinsic versions of the parsers, which will greatly improve tokenisation
+  * performance!
+  *
+  * @param commentStart For multi-line comments; how does the comment start? (If this or `commentEnd` is the empty
+  *                     string, multi-line comments are disabled)
+  * @param commentEnd For multi-line comments; how does the comment end? (If this or `commentEnd` is the empty
+  *                   string, multi-line comments are disabled)
+  * @param commentLine For single-line comments; how does the comment start? (This this is the empty string, single-line
+  *                    comments are disabled)
+  * @param nestedComments Are multi-line comments allowed to be nested inside eachother? E.g. If `{-` and `-}` are
+  *                       opening and closing comments, is the following valid syntax: `{-{-hello -}-}`? Note in C this
+  *                       is not the case.
+  * @param identStart What characters can an identifier in the language start with?
+  * @param identLetter What characters can an identifier in the language consist of after the starting character?
+  * @param opStart What characters can an operator in the language start with?
+  * @param opLetter What characters can an operator in the language consist of after the starting character?
+  * @param keywords What keywords does the language contain?
+  * @param operators What operators does the language contain?
+  * @param caseSensitive Is the language case-sensitive. I.e. is IF equivalent to if?
+  * @param space What characters count as whitespace in the language?
+  */
 final case class LanguageDef(commentStart: String,
                              commentEnd: String,
                              commentLine: String,
@@ -18,7 +42,14 @@ final case class LanguageDef(commentStart: String,
                              operators: Set[String],
                              caseSensitive: Boolean,
                              space: Either[Set[Char], Parsley[_]])
-                                        
+
+/**
+  * When provided with a `LanguageDef`, this class will produce a large variety of parsers that can be used for
+  * tokenisation of a language. This includes parsing numbers and strings in their various formats and ensuring that
+  * all operations consume whitespace after them (so-called lexeme parsers). These are very useful in parsing
+  * programming languages. This class also has a large number of hand-optimised intrinsic parsers to improve performance!
+  * @param lang The rules that govern the language we are tokenising
+  */
 final class TokenParser(lang: LanguageDef)
 {
     // Identifiers & Reserved words

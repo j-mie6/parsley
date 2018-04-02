@@ -2,7 +2,7 @@ package parsley
 
 import scala.annotation.tailrec
 
-object ParsleyBench
+private [parsley] object ParsleyBench
 {
     import parsley.Parsley._
     import parsley.Combinator._
@@ -47,7 +47,7 @@ object ParsleyBench
     println(brainfuck.pretty)
 }
 
-/*object BenchParser extends scala.util.parsing.combinator.Parsers
+/*private [parsley] object BenchParser extends scala.util.parsing.combinator.Parsers
 {
     import scala.util.parsing.input.{NoPosition, Reader}
     override type Elem = Char
@@ -74,7 +74,7 @@ object Parseback
 }
 */
 
-object Native
+private [parsley] object Native
 {
     val recursiveDescent: String => Either[String, Int] = (input: String) => expr(input, 0)._1
     def expr(input: String, index: Int): (Either[String, Int], Int) =
@@ -144,7 +144,7 @@ object Native
     }
 }
 
-/*object FastParser
+/*private [parsley] object FastParser
 {
     import fastparse.all._
     val x = P("1").!.map(_(0).toInt)
@@ -168,7 +168,7 @@ object Native
     val big = repeat(P("1"), 5000)
 }*/
 
-object Benchmark
+private [parsley] object Benchmark
 {
     def main(args: Array[String]): Unit =
     {

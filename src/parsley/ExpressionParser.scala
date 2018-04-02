@@ -29,10 +29,18 @@ class ExpressionParser[A](table: List[OpList[A]], atom: =>Parsley[A])
 
 object ExpressionParser
 {
+
+    /** Denotes the associativity of an operator, either `AssocLeft` or `AssocRight`. */
     sealed trait Assoc
     case object AssocLeft extends Assoc
     case object AssocRight extends Assoc
 
+    /** A list of operators on the same precedence level. Note operators of different fixities cannot
+      * mix on the same level of indentation. Either `Infixes` which is a list of infix binary operators,
+      * `Prefixes` which is a list of prefixing unary operators or `Postfixes` a list of postfixing unary
+      * operators.
+      * @tparam A The result type of the operation
+      */
     sealed trait OpList[A]
     case class Infixes[A](op: List[Parsley[A => A => A]], assoc: Assoc) extends OpList[A]
     case class Prefixes[A](op: List[Parsley[A => A]]) extends OpList[A]
