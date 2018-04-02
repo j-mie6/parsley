@@ -1,6 +1,6 @@
 import parsley.{Failure, Parsley, Success, runParser}
 import parsley.Parsley._
-import parsley.Char.charLift
+import parsley.Char.{charLift, char, stringLift}
 
 class CoreTests extends ParsleyTest
 {
@@ -89,17 +89,57 @@ class CoreTests extends ParsleyTest
     }
 
     // MONAD LAWS
-    they must "obey the left identity law: pure x >>= f = f x" in pending
-    "Parsers" must "obey the right identity law: m >>= pure = m" in pending
-    they must "obey the associativity law: (m >>= f) >>= g = m >>= (x => f x >>= g)" in pending
+    they must "obey the left identity law: pure x >>= f = f x" in
+    {
+        runParser(pure('a') >>= char, "a") should equal (runParser('a', "a"))
+    }
+    "Parsers" must "obey the right identity law: m >>= pure = m" in
+    {
+        runParser('a' >>= pure, "a") should equal (runParser('a', "a"))
+    }
+    they must "obey the associativity law: (m >>= f) >>= g = m >>= (x => f x >>= g)" in
+    {
+        val f: Int => Parsley[Int] = x => pure(x + 1)
+        val g: Int => Parsley[Int] = x => pure(x/3)
+        val m = '1' #> 4
+        runParser((m >>= f) >>= g, "1") should equal (runParser(m >>= (x => f(x) >>= g), "1"))
+    }
 
-    "mzero parsers" should "always fail" in pending
+    "mzero parsers" should "always fail" in
+    {
+        runParser(Parsley.empty *> 'a', "a") shouldBe a [Failure]
+        runParser(Parsley.fail("") *> 'a', "a") shouldBe a [Failure]
+        runParser(Parsley.unexpected("") *> 'a', "a") shouldBe a [Failure]
+        runParser(('a' ! (_ => "")) *> 'b', "ab") shouldBe a [Failure]
+        runParser('a'.unexpected(_ => "") *> 'b', "ab") shouldBe a [Failure]
+    }
 
-    "<|>" should "not try the second alternative if the first succeeded" in pending
-    it should "only try second alternative if the first failed without consuming input" in pending
-    it should "not try the second alternative if the first failed after consuming input" in pending
+    "<|>" should "not try the second alternative if the first succeeded" in
+    {
+        runParser('a' <|> Parsley.fail("wrong!"), "a") should not be a [Failure]
+    }
+    it should "only try second alternative if the first failed without consuming input" in
+    {
+        runParser('a' <|> 'b', "b") should not be a [Failure]
+    }
+    it should "not try the second alternative if the first failed after consuming input" in
+    {
+        runParser("ab" <|> "ac", "ac") shouldBe a [Failure]
+    }
 
-    "attempt" should "cause <|> to try second alternative even if input consumed" in pending
-    "lookAhead" should "consume no input on success" in pending
-    it must "fail when input is consumed, and input is consumed" in pending
+    "attempt" should "cause <|> to try second alternative even if input consumed" in
+    {
+        runParser(attempt("ab") <|> "ac", "ac") should not be a [Failure]
+    }
+
+    "lookAhead" should "consume no input on success" in
+    {
+        runParser(lookAhead('a'), "a") should not be a [Failure]
+        runParser(lookAhead('a') *> 'b', "ab") should be (Failure("(line 1, column 1):\n  unexpected \"a\"\n  expected \"b\""))
+    }
+    it must "fail when input is consumed, and input is consumed" in
+    {
+        runParser(lookAhead("ab"), "ac") shouldBe a [Failure]
+    }
+
 }

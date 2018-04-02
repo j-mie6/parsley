@@ -5,6 +5,7 @@ import parsley.Char.{charLift, stringLift}
 
 class ErrorMessageTests extends ParsleyTest
 {
+    //TODO Bind tests
     lazy val r: Parsley[List[String]] = "correct error message" <::> (r </> Nil)
     "?" should "affect base error messages" in
     {
