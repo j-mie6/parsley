@@ -77,7 +77,7 @@ private [parsley] final class SkipMany(var label: Int) extends JumpInstr
     override def copy: SkipMany = new SkipMany(label)
 }
 
-private [parsley] final class Chainl(var label: Int) extends JumpInstr
+private [parsley] final class ChainPost(var label: Int) extends JumpInstr
 {
     private[this] var acc: Any = _
     override def apply(ctx: Context): Unit =
@@ -110,11 +110,11 @@ private [parsley] final class Chainl(var label: Int) extends JumpInstr
             ctx.inc()
         }
     }
-    override def toString: String = s"Chainl($label)"
-    override def copy: Chainl = new Chainl(label)
+    override def toString: String = s"ChainPost($label)"
+    override def copy: ChainPost = new ChainPost(label)
 }
 
-private [parsley] final class Chainr(var label: Int) extends JumpInstr
+private [parsley] final class ChainPre(var label: Int) extends JumpInstr
 {
     private var acc: Any => Any = _
     override def apply(ctx: Context): Unit =
@@ -137,6 +137,100 @@ private [parsley] final class Chainr(var label: Int) extends JumpInstr
             ctx.checkStack = ctx.checkStack.tail
             ctx.status = Good
             ctx.inc()
+        }
+    }
+    override def toString: String = s"ChainPre($label)"
+    override def copy: ChainPre = new ChainPre(label)
+}
+private [parsley] final class Chainl(var label: Int) extends JumpInstr
+{
+    private[this] var acc: Any = _
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.status eq Good)
+        {
+            val y = ctx.stack.upop()
+            val op = ctx.stack.pop[(Any, Any) => Any]()
+            // When acc is null, we are entering the instruction for the first time, a p will be on the stack
+            if (acc == null) acc = op(ctx.stack.upop(), y)
+            else acc = op(acc, y)
+            ctx.checkStack.head = ctx.offset
+            ctx.pc = label
+        }
+        // If the head of input stack is not the same size as the head of check stack, we fail to next handler
+        else if (ctx.offset != ctx.checkStack.head)
+        {
+            ctx.checkStack = ctx.checkStack.tail
+            acc = null
+            ctx.fail()
+        }
+        else
+        {
+            ctx.checkStack = ctx.checkStack.tail
+            // if acc is null this is first entry, p already on the stack!
+            if (acc != null) ctx.stack.push(acc)
+            acc = null
+            ctx.status = Good
+            ctx.inc()
+        }
+    }
+    override def toString: String = s"Chainl($label)"
+    override def copy: Chainl = new Chainl(label)
+}
+private [parsley] final class Chainr(var label: Int) extends JumpInstr
+{
+    private var acc: Any => Any = _
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.status eq Good)
+        {
+            // If acc is null we are entering the instruction, so nothing to compose, this saves on an identity call
+            val f = ctx.stack.pop[(Any, Any) => Any]()
+            val x = ctx.stack.upop()
+            if (acc == null) acc = (y: Any) => f(x, y)
+            // We perform the acc after the tos function; the tos function is "closer" to the final p
+            else
+            {
+                val acc_ = acc
+                acc = (y: Any) => acc_(f(x, y))
+            }
+            // Pop H2 off the stack
+            ctx.handlers = ctx.handlers.tail
+            ctx.checkStack = ctx.checkStack.tail
+            ctx.checkStack.head = ctx.offset
+            ctx.pc = label
+        }
+        // If the head of input stack is not the same size as the head of check stack, we fail to next handler
+        else if (ctx.offset != ctx.checkStack.head)
+        {
+            // H1 might still be on the stack
+            if (!isEmpty(ctx.handlers) && ctx.handlers.head.pc == ctx.pc)
+            {
+                ctx.handlers = ctx.handlers.tail
+                ctx.checkStack = ctx.checkStack.tail.tail
+            }
+            else ctx.checkStack = ctx.checkStack.tail
+            acc = null
+            ctx.fail()
+        }
+        else
+        {
+            // H1 is on the stack, so p succeeded, just not op
+            if (!isEmpty(ctx.handlers) && ctx.handlers.head.pc == ctx.pc)
+            {
+                if (acc != null) ctx.stack.exchange(acc(ctx.stack.upeek))
+                ctx.checkStack = ctx.checkStack.tail.tail
+                ctx.handlers = ctx.handlers.tail
+                ctx.inc()
+            }
+            // p did not succeed and hence neither did op
+            else
+            {
+                ctx.checkStack = ctx.checkStack.tail
+                ctx.fail()
+            }
+            acc = null
+            ctx.status = Good
         }
     }
     override def toString: String = s"Chainr($label)"

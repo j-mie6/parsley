@@ -15,7 +15,7 @@ private [parsley] object ParsleyBench
     println(athenb.pretty)
     val manya: Parsley[List[Char]] = many('a') <* 'b'
     println(manya.pretty)
-    def chain: Parsley[Int] = chainl1('1' <#> (_.toInt), '+' #> ((x: Int) => (y: Int) => x + y))
+    def chain: Parsley[Int] = chainl1('1' <#> (_.toInt), '+' #> ((x: Int, y: Int) => x + y))
     println(chain.pretty)
     
     trait BrainFuckOp

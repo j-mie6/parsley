@@ -304,9 +304,9 @@
       
       <p class="shortcomment cmt"><code>between(open, close, p)</code> parses <code>open</code>, followed by <code>p</code> and <code>close</code>.</p><div class="fullcomment"><div class="comment cmt"><p><code>between(open, close, p)</code> parses <code>open</code>, followed by <code>p</code> and <code>close</code>. Returns the value returned by <code>p</code>.</p></div></div>
     </li><li name="parsley.Combinator#chainPost" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="chainPost[A](p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[A=&gt;A]):parsley.DeepEmbedding.Chainl[A]"></a><a id="chainPost[A](⇒Parsley[A],⇒Parsley[(A)⇒A]):Chainl[A]"></a>
+      <a id="chainPost[A](p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[A=&gt;A]):parsley.DeepEmbedding.ChainPost[A]"></a><a id="chainPost[A](⇒Parsley[A],⇒Parsley[(A)⇒A]):ChainPost[A]"></a>
       <span class="permalink">
-      <a href="../parsley/Combinator$.html#chainPost[A](p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[A=&gt;A]):parsley.DeepEmbedding.Chainl[A]" title="Permalink">
+      <a href="../parsley/Combinator$.html#chainPost[A](p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[A=&gt;A]):parsley.DeepEmbedding.ChainPost[A]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -315,7 +315,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">chainPost</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="p">p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.chainPost.A">A</span>]</span>, <span name="op">op: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.Combinator.chainPost.A">A</span>) ⇒ <span class="extype" name="parsley.Combinator.chainPost.A">A</span>]</span>)</span><span class="result">: <span class="extype" name="parsley.DeepEmbedding.Chainl">Chainl</span>[<span class="extype" name="parsley.Combinator.chainPost.A">A</span>]</span>
+        <span class="name">chainPost</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="p">p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.chainPost.A">A</span>]</span>, <span name="op">op: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.Combinator.chainPost.A">A</span>) ⇒ <span class="extype" name="parsley.Combinator.chainPost.A">A</span>]</span>)</span><span class="result">: <span class="extype" name="parsley.DeepEmbedding.ChainPost">ChainPost</span>[<span class="extype" name="parsley.Combinator.chainPost.A">A</span>]</span>
       </span>
       
       <p class="shortcomment cmt"><code>chainPost(p, op)</code> parses one occurrence of <code>p</code>, followed by many postfix applications of <code>op</code>
@@ -337,9 +337,9 @@ that associate to the left.</p>
       
       <p class="shortcomment cmt"><code>chainPre(p, op)</code> parses many prefixed applications of <code>op</code> onto a single final result of <code>p</code></p>
     </li><li name="parsley.Combinator#chainl" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="chainl[A](p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[A=&gt;(A=&gt;A)],x:A):parsley.Parsley[A]"></a><a id="chainl[A](⇒Parsley[A],⇒Parsley[(A)⇒(A)⇒A],A):Parsley[A]"></a>
+      <a id="chainl[A](p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[(A,A)=&gt;A],x:A):parsley.Parsley[A]"></a><a id="chainl[A](⇒Parsley[A],⇒Parsley[(A,A)⇒A],A):Parsley[A]"></a>
       <span class="permalink">
-      <a href="../parsley/Combinator$.html#chainl[A](p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[A=&gt;(A=&gt;A)],x:A):parsley.Parsley[A]" title="Permalink">
+      <a href="../parsley/Combinator$.html#chainl[A](p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[(A,A)=&gt;A],x:A):parsley.Parsley[A]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -348,16 +348,16 @@ that associate to the left.</p>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">chainl</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="p">p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.chainl.A">A</span>]</span>, <span name="op">op: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.Combinator.chainl.A">A</span>) ⇒ (<span class="extype" name="parsley.Combinator.chainl.A">A</span>) ⇒ <span class="extype" name="parsley.Combinator.chainl.A">A</span>]</span>, <span name="x">x: <span class="extype" name="parsley.Combinator.chainl.A">A</span></span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.chainl.A">A</span>]</span>
+        <span class="name">chainl</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="p">p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.chainl.A">A</span>]</span>, <span name="op">op: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.Combinator.chainl.A">A</span>, <span class="extype" name="parsley.Combinator.chainl.A">A</span>) ⇒ <span class="extype" name="parsley.Combinator.chainl.A">A</span>]</span>, <span name="x">x: <span class="extype" name="parsley.Combinator.chainl.A">A</span></span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.chainl.A">A</span>]</span>
       </span>
       
       <p class="shortcomment cmt"><code>chainl(p, op, x)</code> parses *zero* or more occurrences of <code>p</code>, separated by <code>op</code>.</p><div class="fullcomment"><div class="comment cmt"><p><code>chainl(p, op, x)</code> parses *zero* or more occurrences of <code>p</code>, separated by <code>op</code>. Returns a value
 obtained by a left associative application of all functions returned by <code>op</code> to the values
 returned by <code>p</code>. If there are no occurrences of <code>p</code>, the value <code>x</code> is returned.</p></div></div>
     </li><li name="parsley.Combinator#chainl1" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="chainl1[A](p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[A=&gt;(A=&gt;A)]):parsley.Parsley[A]"></a><a id="chainl1[A](⇒Parsley[A],⇒Parsley[(A)⇒(A)⇒A]):Parsley[A]"></a>
+      <a id="chainl1[A](p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[(A,A)=&gt;A]):parsley.Parsley[A]"></a><a id="chainl1[A](⇒Parsley[A],⇒Parsley[(A,A)⇒A]):Parsley[A]"></a>
       <span class="permalink">
-      <a href="../parsley/Combinator$.html#chainl1[A](p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[A=&gt;(A=&gt;A)]):parsley.Parsley[A]" title="Permalink">
+      <a href="../parsley/Combinator$.html#chainl1[A](p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[(A,A)=&gt;A]):parsley.Parsley[A]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -366,37 +366,17 @@ returned by <code>p</code>. If there are no occurrences of <code>p</code>, the v
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">chainl1</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="p">p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.chainl1.A">A</span>]</span>, <span name="op">op: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.Combinator.chainl1.A">A</span>) ⇒ (<span class="extype" name="parsley.Combinator.chainl1.A">A</span>) ⇒ <span class="extype" name="parsley.Combinator.chainl1.A">A</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.chainl1.A">A</span>]</span>
+        <span class="name">chainl1</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="p">p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.chainl1.A">A</span>]</span>, <span name="op">op: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.Combinator.chainl1.A">A</span>, <span class="extype" name="parsley.Combinator.chainl1.A">A</span>) ⇒ <span class="extype" name="parsley.Combinator.chainl1.A">A</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.chainl1.A">A</span>]</span>
       </span>
       
       <p class="shortcomment cmt">chainl1(p, op) parses *one* or more occurrences of <code>p</code>, separated by <code>op</code>.</p><div class="fullcomment"><div class="comment cmt"><p>chainl1(p, op) parses *one* or more occurrences of <code>p</code>, separated by <code>op</code>. Returns a value
 obtained by a left associative application of all functions return by <code>op</code> to the values
 returned by <code>p</code>. This parser can for example be used to eliminate left recursion which
 typically occurs in expression grammars.</p></div></div>
-    </li><li name="parsley.Combinator#chainl1_" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="chainl1_[A](p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[A=&gt;(A=&gt;A)]):parsley.Parsley[A]"></a><a id="chainl1_[A](⇒Parsley[A],⇒Parsley[(A)⇒(A)⇒A]):Parsley[A]"></a>
-      <span class="permalink">
-      <a href="../parsley/Combinator$.html#chainl1_[A](p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[A=&gt;(A=&gt;A)]):parsley.Parsley[A]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">chainl1_</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="p">p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.chainl1_.A">A</span>]</span>, <span name="op">op: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.Combinator.chainl1_.A">A</span>) ⇒ (<span class="extype" name="parsley.Combinator.chainl1_.A">A</span>) ⇒ <span class="extype" name="parsley.Combinator.chainl1_.A">A</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.chainl1_.A">A</span>]</span>
-      </span>
-      
-      <p class="shortcomment cmt"><code>chainl1_(p, op)</code> parses *one* or more occurrences of <code>p</code>, separated by <code>op</code>.</p><div class="fullcomment"><div class="comment cmt"><p><code>chainl1_(p, op)</code> parses *one* or more occurrences of <code>p</code>, separated by <code>op</code>. Returns a value
-obtained by a left associative application of all functions return by <code>op</code> to the values
-returned by <code>p</code>. This parser can for example be used to eliminate left recursion which
-typically occurs in expression grammars. NOTE: the op should either be commutative or should
-be flipped. This is more efficient than the manual flip performed by <code>chainl1</code>.</p></div></div>
     </li><li name="parsley.Combinator#chainr" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="chainr[A](p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[A=&gt;(A=&gt;A)],x:A):parsley.Parsley[A]"></a><a id="chainr[A](⇒Parsley[A],⇒Parsley[(A)⇒(A)⇒A],A):Parsley[A]"></a>
+      <a id="chainr[A](p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[(A,A)=&gt;A],x:A):parsley.Parsley[A]"></a><a id="chainr[A](⇒Parsley[A],⇒Parsley[(A,A)⇒A],A):Parsley[A]"></a>
       <span class="permalink">
-      <a href="../parsley/Combinator$.html#chainr[A](p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[A=&gt;(A=&gt;A)],x:A):parsley.Parsley[A]" title="Permalink">
+      <a href="../parsley/Combinator$.html#chainr[A](p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[(A,A)=&gt;A],x:A):parsley.Parsley[A]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -405,16 +385,16 @@ be flipped. This is more efficient than the manual flip performed by <code>chain
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">chainr</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="p">p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.chainr.A">A</span>]</span>, <span name="op">op: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.Combinator.chainr.A">A</span>) ⇒ (<span class="extype" name="parsley.Combinator.chainr.A">A</span>) ⇒ <span class="extype" name="parsley.Combinator.chainr.A">A</span>]</span>, <span name="x">x: <span class="extype" name="parsley.Combinator.chainr.A">A</span></span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.chainr.A">A</span>]</span>
+        <span class="name">chainr</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="p">p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.chainr.A">A</span>]</span>, <span name="op">op: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.Combinator.chainr.A">A</span>, <span class="extype" name="parsley.Combinator.chainr.A">A</span>) ⇒ <span class="extype" name="parsley.Combinator.chainr.A">A</span>]</span>, <span name="x">x: <span class="extype" name="parsley.Combinator.chainr.A">A</span></span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.chainr.A">A</span>]</span>
       </span>
       
       <p class="shortcomment cmt"><code>chainr(p, op, x)</code> parses *zero* or more occurrences of <code>p</code>, separated by <code>op</code>.</p><div class="fullcomment"><div class="comment cmt"><p><code>chainr(p, op, x)</code> parses *zero* or more occurrences of <code>p</code>, separated by <code>op</code>. Returns a value
 obtained by a right associative application of all functions return by <code>op</code> to the values
 returned by <code>p</code>. If there are no occurrences of <code>p</code>, the value <code>x</code> is returned.</p></div></div>
     </li><li name="parsley.Combinator#chainr1" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="chainr1[A](p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[A=&gt;(A=&gt;A)]):parsley.Parsley[A]"></a><a id="chainr1[A](⇒Parsley[A],⇒Parsley[(A)⇒(A)⇒A]):Parsley[A]"></a>
+      <a id="chainr1[A](p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[(A,A)=&gt;A]):parsley.Parsley[A]"></a><a id="chainr1[A](⇒Parsley[A],⇒Parsley[(A,A)⇒A]):Parsley[A]"></a>
       <span class="permalink">
-      <a href="../parsley/Combinator$.html#chainr1[A](p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[A=&gt;(A=&gt;A)]):parsley.Parsley[A]" title="Permalink">
+      <a href="../parsley/Combinator$.html#chainr1[A](p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[(A,A)=&gt;A]):parsley.Parsley[A]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -423,7 +403,7 @@ returned by <code>p</code>. If there are no occurrences of <code>p</code>, the v
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">chainr1</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="p">p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.chainr1.A">A</span>]</span>, <span name="op">op: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.Combinator.chainr1.A">A</span>) ⇒ (<span class="extype" name="parsley.Combinator.chainr1.A">A</span>) ⇒ <span class="extype" name="parsley.Combinator.chainr1.A">A</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.chainr1.A">A</span>]</span>
+        <span class="name">chainr1</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="p">p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.chainr1.A">A</span>]</span>, <span name="op">op: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.Combinator.chainr1.A">A</span>, <span class="extype" name="parsley.Combinator.chainr1.A">A</span>) ⇒ <span class="extype" name="parsley.Combinator.chainr1.A">A</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.chainr1.A">A</span>]</span>
       </span>
       
       <p class="shortcomment cmt"><code>chainr1(p, op)</code> parses *one* or more occurrences of <code>p</code>, separated by <code>op</code>.</p><div class="fullcomment"><div class="comment cmt"><p><code>chainr1(p, op)</code> parses *one* or more occurrences of <code>p</code>, separated by <code>op</code>. Returns a value

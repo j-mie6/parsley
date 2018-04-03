@@ -99,45 +99,30 @@ object Combinator
     /**`chainr(p, op, x)` parses *zero* or more occurrences of `p`, separated by `op`. Returns a value
       * obtained by a right associative application of all functions return by `op` to the values
       * returned by `p`. If there are no occurrences of `p`, the value `x` is returned.*/
-    def chainr[A](p: =>Parsley[A], op: =>Parsley[A => A => A], x: A): Parsley[A] = chainr1(p, op).getOrElse(x)
+    def chainr[A](p: =>Parsley[A], op: =>Parsley[(A, A) => A], x: A): Parsley[A] = chainr1(p, op).getOrElse(x)
 
     /**`chainl(p, op, x)` parses *zero* or more occurrences of `p`, separated by `op`. Returns a value
       * obtained by a left associative application of all functions returned by `op` to the values
       * returned by `p`. If there are no occurrences of `p`, the value `x` is returned.*/
-    def chainl[A](p: =>Parsley[A], op: =>Parsley[A => A => A], x: A): Parsley[A] = chainl1(p, op).getOrElse(x)
+    def chainl[A](p: =>Parsley[A], op: =>Parsley[(A, A) => A], x: A): Parsley[A] = chainl1(p, op).getOrElse(x)
 
     /**`chainr1(p, op)` parses *one* or more occurrences of `p`, separated by `op`. Returns a value
       * obtained by a right associative application of all functions return by `op` to the values
       * returned by `p`.*/
-    def chainr1[A](p: =>Parsley[A], op: =>Parsley[A => A => A]): Parsley[A] =
-    {
-        lazy val _p = p
-        chainPre(_p, attempt(_p <**> op))
-    }
+    def chainr1[A](p: =>Parsley[A], op: =>Parsley[(A, A) => A]): Parsley[A] = new DeepEmbedding.Chainr(p, op)
 
     /**`chainPre(p, op)` parses many prefixed applications of `op` onto a single final result of `p`*/
-    def chainPre[A](p: =>Parsley[A], op: =>Parsley[A => A]): Parsley[A] = new DeepEmbedding.Chainr(p, op)
+    def chainPre[A](p: =>Parsley[A], op: =>Parsley[A => A]): Parsley[A] = new DeepEmbedding.ChainPre(p, op)
 
     /**chainl1(p, op) parses *one* or more occurrences of `p`, separated by `op`. Returns a value
       * obtained by a left associative application of all functions return by `op` to the values
       * returned by `p`. This parser can for example be used to eliminate left recursion which
       * typically occurs in expression grammars.*/
-    def chainl1[A](p: =>Parsley[A], op: =>Parsley[A => A => A]): Parsley[A] = chainl1_(p, op.map(f => (x: A) => (y: A) => f(y)(x)))
-
-    /**`chainl1_(p, op)` parses *one* or more occurrences of `p`, separated by `op`. Returns a value
-      * obtained by a left associative application of all functions return by `op` to the values
-      * returned by `p`. This parser can for example be used to eliminate left recursion which
-      * typically occurs in expression grammars. NOTE: the op should either be commutative or should
-      * be flipped. This is more efficient than the manual flip performed by `chainl1`.*/
-    def chainl1_[A](p: =>Parsley[A], op: =>Parsley[A => A => A]): Parsley[A] =
-    {
-        lazy val _p = p
-        chainPost(_p, op <*> _p)
-    }
+    def chainl1[A](p: =>Parsley[A], op: =>Parsley[(A, A) => A]): Parsley[A] = new DeepEmbedding.Chainl(p, op)
 
     /**`chainPost(p, op)` parses one occurrence of `p`, followed by many postfix applications of `op`
       * that associate to the left.*/
-    def chainPost[A](p: =>Parsley[A], op: =>Parsley[A => A]) = new DeepEmbedding.Chainl(p, op)
+    def chainPost[A](p: =>Parsley[A], op: =>Parsley[A => A]) = new DeepEmbedding.ChainPost(p, op)
 
     /**This parser only succeeds at the end of the input. This is a primitive parser.*/
     val eof: Parsley[Unit] = new DeepEmbedding.Then(new DeepEmbedding.Eof, new DeepEmbedding.Pure(()))
