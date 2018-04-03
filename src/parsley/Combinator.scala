@@ -84,6 +84,7 @@ object Combinator
       * by `sep`. Returns a list of values returned by `p`.*/
     def sepEndBy1[A, B](p: => Parsley[A], _sep: =>Parsley[B]): Parsley[List[A]] =
     {
+        // FIXME: since sepBy1 reads a sep then fails, the many will not succeed and the optional is not triggered
         lazy val sep = _sep
         sepBy1(p, sep) <* optional(sep)
     }
