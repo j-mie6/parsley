@@ -142,4 +142,33 @@ class CoreTests extends ParsleyTest
         runParser(lookAhead("ab"), "ac") shouldBe a [Failure]
     }
 
+    "many" should "crash when given a parser that does not consume input" in
+    {
+       an [Exception] should be thrownBy runParser(many(pure(5)), "")
+    }
+
+    "stack overflows" should "not occur" in pendingUntilFixed
+    {
+        def repeat(n: Int, p: Parsley[Char]): Parsley[Char] =
+        {
+            if (n > 0) p *> repeat(n-1, p)
+            else p
+        }
+        noException should be thrownBy runParser(repeat(4000, 'a'), "a")
+    }
+    they should "not be thrown by recursive parsers" in
+    {
+        lazy val p: Parsley[Int] = p.map((x: Int) => x+1)
+        def many_[A](p: Parsley[A]): Parsley[List[A]] =
+        {
+            lazy val manyp: Parsley[List[A]] = (p <::> manyp) </> Nil
+            manyp
+        }
+        noException should be thrownBy runParser(many_('a' *> p), "")
+    }
+    they should "not be caused by bind optimisation" in
+    {
+        lazy val uhoh: Parsley[Unit] = 'a' >>= (_ => uhoh)
+        noException should be thrownBy runParser(uhoh, "a")
+    }
 }

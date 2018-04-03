@@ -1193,17 +1193,8 @@ private [parsley] object DeepEmbedding
     {
         import parsley.Combinator._
         import parsley.Char._
-        def many_[A](p: Parsley[A]): Parsley[List[A]] =
-        {
-            lazy val manyp: Parsley[List[A]] = (p <::> manyp) </> Nil
-            manyp
-        }
-        lazy val p: Parsley[Int] = p.map((x: Int) => x+1)
-        println(p.pretty)
-        println(many_(p).pretty)
         val q: Parsley[Char] = 'a' <|> 'b'
         println((q <|> q <|> q <|> q).pretty)
-        println((('a' >>= (_ => pure((x: Int) => x + 1))) <*> pure(7)).pretty)
         val chain = //chainl1(char('1') <#> (_.toInt), char('+') #> ((x: Int) => (y: Int) => x + y))
            chainPost('1' <#> (_.toInt), "+1" #> ((x: Int) => x+49))
         val start = System.currentTimeMillis()
@@ -1214,40 +1205,5 @@ private [parsley] object DeepEmbedding
         }
         println(System.currentTimeMillis() - start)
         println(chain.pretty)
-        println(runParser(many('a'), "aaaa"))
-        lazy val uhoh: Parsley[Unit] = 'a' >>= (_ => uhoh)
-        println(uhoh.pretty)
-        println((for (a <- 'a';
-                      b <- 'b')
-                 yield (a, b)).pretty)
-        try
-        {
-            many(pure(5)).pretty
-            println("MANY ALLOWED NO-INPUT PARSER")
-        }
-        catch { case _: Throwable => }
-        
-        // Error message testing
-        println(runParser('a' ? "ay!", "b"))
-        lazy val r: Parsley[List[String]] = "correct error message" <::> (r </> Nil)
-        println(runParser(r ? "nothing but this :)", ""))
-        println(runParser(fail("hi"), "b"))
-        println(runParser('a' <|> (fail("oops") ? "hi"), "b"))
-        println(runParser(unexpected("bee"), "b"))
-        println(runParser('a' <|> unexpected("bee") ? "something less cute", "b"))
-        println(runParser(empty, "b"))
-        println(runParser(empty ? "something, at least", "b"))
-        println(runParser('a' <|> empty ? "something, at least", "b"))
-        println(eof.pretty)
-        println(runParser(eof, "a"))
-        println("hi")
-        println(runParser(('a' *> 'b') <|> 'a', "a"))
-        // This is a stack overflow test
-        def repeat(n: Int, p: Parsley[Char]): Parsley[Char] =
-        {
-            if (n > 0) p *> repeat(n-1, p)
-            else p
-        }
-        //println(repeat(100000, 'a').pretty)
     }
 }
