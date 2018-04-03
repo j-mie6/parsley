@@ -86,15 +86,7 @@ object Combinator
 
     /**`sepEndBy1(p, sep)` parses *one* or more occurrences of `p`, separated and optionally ended
       * by `sep`. Returns a list of values returned by `p`.*/
-    def sepEndBy1[A, B](p: =>Parsley[A], sep: =>Parsley[B]): Parsley[List[A]] =
-    {
-        // FIXME: since sepBy1 reads a sep then fails, the many will not succeed and the optional is not triggered
-        lazy val _p = p
-        lazy val _sep = sep
-        //sepBy1(p, _sep) <* optional(_sep)
-        lazy val sepEndBy1_ : Parsley[List[A]] = _p <::> ((_sep *> sepEndBy1_.getOrElse(Nil)) </> Nil)
-        sepEndBy1_
-    }
+    def sepEndBy1[A, B](p: =>Parsley[A], sep: =>Parsley[B]): Parsley[List[A]] = new DeepEmbedding.SepEndBy1(p, sep)
 
     /**`endBy(p, sep)` parses *zero* or more occurrences of `p`, separated and ended by `sep`. Returns a list
       * of values returned by `p`.*/

@@ -1055,6 +1055,31 @@ private [parsley] object DeepEmbedding
             })
         }
     }
+    private [parsley] final class SepEndBy1[B, +A](_p: =>Parsley[A], _sep: =>Parsley[B]) extends Parsley[List[A]]
+    {
+        private [SepEndBy1] lazy val p = _p
+        private [SepEndBy1] lazy val sep = _sep
+        override def preprocess(cont: Parsley[List[A]] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+            p.optimised(p => sep.optimised(sep => cont(new SepEndBy1(p, sep))))
+        override def optimise = this
+        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
+        {
+            val body = labels.fresh()
+            val handler = labels.fresh()
+            instrs += new instructions.InputCheck(handler)
+            instrs += new instructions.Label(body)
+            new Suspended(p.codeGen
+            {
+                instrs += new instructions.InputCheck(handler)
+                sep.codeGen
+                {
+                    instrs += new instructions.Label(handler)
+                    instrs += new instructions.SepEndBy1(body)
+                    cont
+                }
+            })
+        }
+    }
     private [parsley] final class ManyTill[+A](_body: Parsley[Any]) extends Parsley[List[A]]
     {
         private [ManyTill] lazy val body = _body

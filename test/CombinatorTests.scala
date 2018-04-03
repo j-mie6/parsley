@@ -138,6 +138,18 @@ class CombinatorTests extends ParsleyTest
         runParser(sepEndBy('a', 'b'), "abab") should be (Success(List('a', 'a')))
         runParser(sepEndBy('a', 'b'), "ababab") should be (Success(List('a', 'a', 'a')))
     }
+    it should "fail if p fails after consuming input" in
+    {
+        runParser(sepEndBy("aa", 'b'), "ab") shouldBe a [Failure]
+    }
+    it should "fail if sep fails after consuming input" in
+    {
+        runParser(sepEndBy('a', "bb"), "ab") shouldBe a [Failure]
+    }
+    it must "not corrupt the stack on sep hard-fail" in
+    {
+        runParser('c' <::> attempt(sepEndBy('a', "bb")).getOrElse(List('d')), "cab") should be (Success(List('c', 'd')))
+    }
 
     "sepEndBy1" must "require a p" in
     {

@@ -1,6 +1,7 @@
 package parsley.instructions
 
 import parsley.{DeepEmbedding, UnsafeOption}
+import Stack.isEmpty
 
 import scala.collection.mutable.ListBuffer
 
@@ -39,7 +40,7 @@ private [parsley] final class Many(var label: Int) extends JumpInstr
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else if (ctx.offset != ctx.checkStack.head) {acc.clear(); ctx.fail()}
+        else if (ctx.offset != ctx.checkStack.head) { ctx.checkStack = ctx.checkStack.tail; acc.clear(); ctx.fail() }
         else
         {
             ctx.stack.push(acc.toList)
@@ -64,7 +65,7 @@ private [parsley] final class SkipMany(var label: Int) extends JumpInstr
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else if (ctx.offset != ctx.checkStack.head) ctx.fail()
+        else if (ctx.offset != ctx.checkStack.head) { ctx.checkStack = ctx.checkStack.tail; ctx.fail() }
         else
         {
             ctx.checkStack = ctx.checkStack.tail
@@ -95,7 +96,7 @@ private [parsley] final class Chainl(var label: Int) extends JumpInstr
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else if (ctx.offset != ctx.checkStack.head) {acc = null; ctx.fail()}
+        else if (ctx.offset != ctx.checkStack.head) { ctx.checkStack = ctx.checkStack.tail; acc = null; ctx.fail() }
         else
         {
             // When acc is null, we have entered for first time but the op failed, so the result is already on the stack
@@ -128,7 +129,7 @@ private [parsley] final class Chainr(var label: Int) extends JumpInstr
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else if (ctx.offset != ctx.checkStack.head) {acc = null; ctx.fail()}
+        else if (ctx.offset != ctx.checkStack.head) { ctx.checkStack = ctx.checkStack.tail; acc = null; ctx.fail() }
         else
         {
             ctx.stack.push(if (acc == null) identity[Any](_) else acc)
@@ -140,6 +141,59 @@ private [parsley] final class Chainr(var label: Int) extends JumpInstr
     }
     override def toString: String = s"Chainr($label)"
     override def copy: Chainr = new Chainr(label)
+}
+
+private [parsley] final class SepEndBy1(var label: Int) extends JumpInstr
+{
+    private[this] val acc: ListBuffer[Any] = ListBuffer.empty
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.status eq Good)
+        {
+            ctx.stack.pop_()
+            acc += ctx.stack.upop()
+            // Pop H2 off the stack
+            ctx.handlers = ctx.handlers.tail
+            // Pop a check off the stack and edit the other
+            ctx.checkStack = ctx.checkStack.tail
+            ctx.checkStack.head = ctx.offset
+            ctx.pc = label
+        }
+        // If the head of input stack is not the same size as the head of check stack, we fail to next handler
+        else if (ctx.offset != ctx.checkStack.head)
+        {
+            // H1 might still be on the stack
+            if (!isEmpty(ctx.handlers) && ctx.handlers.head.pc == ctx.pc)
+            {
+                ctx.handlers = ctx.handlers.tail
+                ctx.checkStack = ctx.checkStack.tail.tail
+            }
+            else ctx.checkStack = ctx.checkStack.tail
+            acc.clear()
+            ctx.fail()
+        }
+        else
+        {
+            // H1 is on the stack, so p succeeded, just not sep
+            if (!isEmpty(ctx.handlers) && ctx.handlers.head.pc == ctx.pc)
+            {
+                acc += ctx.stack.upop()
+                ctx.checkStack = ctx.checkStack.tail.tail
+                ctx.handlers = ctx.handlers.tail
+            }
+            else ctx.checkStack = ctx.checkStack.tail
+            if (acc.isEmpty) ctx.fail()
+            else
+            {
+                ctx.stack.push(acc.toList)
+                acc.clear()
+                ctx.status = Good
+                ctx.inc()
+            }
+        }
+    }
+    override def toString: String = s"SepEndBy1($label)"
+    override def copy: SepEndBy1 = new SepEndBy1(label)
 }
 
 private [parsley] final class ManyTill(var label: Int) extends JumpInstr

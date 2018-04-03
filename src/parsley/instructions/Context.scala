@@ -56,6 +56,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
             |  rets=${mkString(map[Frame, Int](calls, _.ret), ", ")}
             |  handlers=${mkString(handlers, ":") + "[]"}
             |  recstates=${mkString(states, ":") + "[]"}
+            |  checks=${mkString(checkStack, ":") + "[]"}
             |]""".stripMargin
     }
 
