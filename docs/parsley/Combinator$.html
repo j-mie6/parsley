@@ -374,9 +374,9 @@ obtained by a left associative application of all functions return by <code>op</
 returned by <code>p</code>. This parser can for example be used to eliminate left recursion which
 typically occurs in expression grammars.</p></div></div>
     </li><li name="parsley.Combinator#chainl1_" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="chainl1_[A](_p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[A=&gt;(A=&gt;A)]):parsley.Parsley[A]"></a><a id="chainl1_[A](⇒Parsley[A],⇒Parsley[(A)⇒(A)⇒A]):Parsley[A]"></a>
+      <a id="chainl1_[A](p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[A=&gt;(A=&gt;A)]):parsley.Parsley[A]"></a><a id="chainl1_[A](⇒Parsley[A],⇒Parsley[(A)⇒(A)⇒A]):Parsley[A]"></a>
       <span class="permalink">
-      <a href="../parsley/Combinator$.html#chainl1_[A](_p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[A=&gt;(A=&gt;A)]):parsley.Parsley[A]" title="Permalink">
+      <a href="../parsley/Combinator$.html#chainl1_[A](p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[A=&gt;(A=&gt;A)]):parsley.Parsley[A]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -385,7 +385,7 @@ typically occurs in expression grammars.</p></div></div>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">chainl1_</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="_p">_p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.chainl1_.A">A</span>]</span>, <span name="op">op: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.Combinator.chainl1_.A">A</span>) ⇒ (<span class="extype" name="parsley.Combinator.chainl1_.A">A</span>) ⇒ <span class="extype" name="parsley.Combinator.chainl1_.A">A</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.chainl1_.A">A</span>]</span>
+        <span class="name">chainl1_</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="p">p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.chainl1_.A">A</span>]</span>, <span name="op">op: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.Combinator.chainl1_.A">A</span>) ⇒ (<span class="extype" name="parsley.Combinator.chainl1_.A">A</span>) ⇒ <span class="extype" name="parsley.Combinator.chainl1_.A">A</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.chainl1_.A">A</span>]</span>
       </span>
       
       <p class="shortcomment cmt"><code>chainl1_(p, op)</code> parses *one* or more occurrences of <code>p</code>, separated by <code>op</code>.</p><div class="fullcomment"><div class="comment cmt"><p><code>chainl1_(p, op)</code> parses *one* or more occurrences of <code>p</code>, separated by <code>op</code>. Returns a value
@@ -412,9 +412,9 @@ be flipped. This is more efficient than the manual flip performed by <code>chain
 obtained by a right associative application of all functions return by <code>op</code> to the values
 returned by <code>p</code>. If there are no occurrences of <code>p</code>, the value <code>x</code> is returned.</p></div></div>
     </li><li name="parsley.Combinator#chainr1" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="chainr1[A](_p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[A=&gt;(A=&gt;A)]):parsley.Parsley[A]"></a><a id="chainr1[A](⇒Parsley[A],⇒Parsley[(A)⇒(A)⇒A]):Parsley[A]"></a>
+      <a id="chainr1[A](p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[A=&gt;(A=&gt;A)]):parsley.Parsley[A]"></a><a id="chainr1[A](⇒Parsley[A],⇒Parsley[(A)⇒(A)⇒A]):Parsley[A]"></a>
       <span class="permalink">
-      <a href="../parsley/Combinator$.html#chainr1[A](_p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[A=&gt;(A=&gt;A)]):parsley.Parsley[A]" title="Permalink">
+      <a href="../parsley/Combinator$.html#chainr1[A](p:=&gt;parsley.Parsley[A],op:=&gt;parsley.Parsley[A=&gt;(A=&gt;A)]):parsley.Parsley[A]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -423,7 +423,7 @@ returned by <code>p</code>. If there are no occurrences of <code>p</code>, the v
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">chainr1</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="_p">_p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.chainr1.A">A</span>]</span>, <span name="op">op: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.Combinator.chainr1.A">A</span>) ⇒ (<span class="extype" name="parsley.Combinator.chainr1.A">A</span>) ⇒ <span class="extype" name="parsley.Combinator.chainr1.A">A</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.chainr1.A">A</span>]</span>
+        <span class="name">chainr1</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="p">p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.chainr1.A">A</span>]</span>, <span name="op">op: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.Combinator.chainr1.A">A</span>) ⇒ (<span class="extype" name="parsley.Combinator.chainr1.A">A</span>) ⇒ <span class="extype" name="parsley.Combinator.chainr1.A">A</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.chainr1.A">A</span>]</span>
       </span>
       
       <p class="shortcomment cmt"><code>chainr1(p, op)</code> parses *one* or more occurrences of <code>p</code>, separated by <code>op</code>.</p><div class="fullcomment"><div class="comment cmt"><p><code>chainr1(p, op)</code> parses *one* or more occurrences of <code>p</code>, separated by <code>op</code>. Returns a value
@@ -645,9 +645,9 @@ of values returned by <code>p</code>.</p></div></div>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
     </li><li name="parsley.Combinator#many1Till" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="many1Till[A,B](_p:=&gt;parsley.Parsley[A],_end:=&gt;parsley.Parsley[B]):parsley.Parsley[List[A]]"></a><a id="many1Till[A,B](⇒Parsley[A],⇒Parsley[B]):Parsley[List[A]]"></a>
+      <a id="many1Till[A,B](p:=&gt;parsley.Parsley[A],end:=&gt;parsley.Parsley[B]):parsley.Parsley[List[A]]"></a><a id="many1Till[A,B](⇒Parsley[A],⇒Parsley[B]):Parsley[List[A]]"></a>
       <span class="permalink">
-      <a href="../parsley/Combinator$.html#many1Till[A,B](_p:=&gt;parsley.Parsley[A],_end:=&gt;parsley.Parsley[B]):parsley.Parsley[List[A]]" title="Permalink">
+      <a href="../parsley/Combinator$.html#many1Till[A,B](p:=&gt;parsley.Parsley[A],end:=&gt;parsley.Parsley[B]):parsley.Parsley[List[A]]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -656,15 +656,15 @@ of values returned by <code>p</code>.</p></div></div>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">many1Till</span><span class="tparams">[<span name="A">A</span>, <span name="B">B</span>]</span><span class="params">(<span name="_p">_p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.many1Till.A">A</span>]</span>, <span name="_end">_end: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.many1Till.B">B</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.List">List</span>[<span class="extype" name="parsley.Combinator.many1Till.A">A</span>]]</span>
+        <span class="name">many1Till</span><span class="tparams">[<span name="A">A</span>, <span name="B">B</span>]</span><span class="params">(<span name="p">p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.many1Till.A">A</span>]</span>, <span name="end">end: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.many1Till.B">B</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.List">List</span>[<span class="extype" name="parsley.Combinator.many1Till.A">A</span>]]</span>
       </span>
       
       <p class="shortcomment cmt"><code>many1Till(p, end)</code> applies parser <code>p</code> one or more times until the parser <code>end</code> succeeds.</p><div class="fullcomment"><div class="comment cmt"><p><code>many1Till(p, end)</code> applies parser <code>p</code> one or more times until the parser <code>end</code> succeeds.
 Returns a list of values returned by <code>p</code>.</p></div></div>
     </li><li name="parsley.Combinator#manyN" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="manyN[A](n:Int,_p:=&gt;parsley.Parsley[A]):parsley.Parsley[List[A]]"></a><a id="manyN[A](Int,⇒Parsley[A]):Parsley[List[A]]"></a>
+      <a id="manyN[A](n:Int,p:=&gt;parsley.Parsley[A]):parsley.Parsley[List[A]]"></a><a id="manyN[A](Int,⇒Parsley[A]):Parsley[List[A]]"></a>
       <span class="permalink">
-      <a href="../parsley/Combinator$.html#manyN[A](n:Int,_p:=&gt;parsley.Parsley[A]):parsley.Parsley[List[A]]" title="Permalink">
+      <a href="../parsley/Combinator$.html#manyN[A](n:Int,p:=&gt;parsley.Parsley[A]):parsley.Parsley[List[A]]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -673,7 +673,7 @@ Returns a list of values returned by <code>p</code>.</p></div></div>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">manyN</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="n">n: <span class="extype" name="scala.Int">Int</span></span>, <span name="_p">_p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.manyN.A">A</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.List">List</span>[<span class="extype" name="parsley.Combinator.manyN.A">A</span>]]</span>
+        <span class="name">manyN</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="n">n: <span class="extype" name="scala.Int">Int</span></span>, <span name="p">p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.manyN.A">A</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.List">List</span>[<span class="extype" name="parsley.Combinator.manyN.A">A</span>]]</span>
       </span>
       
       <p class="shortcomment cmt"><code>manyN(n, p)</code> applies the parser <code>p</code> *n* or more times.</p><div class="fullcomment"><div class="comment cmt"><p><code>manyN(n, p)</code> applies the parser <code>p</code> *n* or more times. Returns a list of the returned values of <code>p</code>.</p></div></div>
@@ -836,9 +836,9 @@ fails after consuming input. It discards the result of <code>p</code>.</p></div>
       <p class="shortcomment cmt"><code>sepBy(p, sep)</code> parses *zero* or more occurrences of <code>p</code>, separated by <code>sep</code>.</p><div class="fullcomment"><div class="comment cmt"><p><code>sepBy(p, sep)</code> parses *zero* or more occurrences of <code>p</code>, separated by <code>sep</code>. Returns a list
 of values returned by <code>p</code>.</p></div></div>
     </li><li name="parsley.Combinator#sepBy1" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="sepBy1[A,B](_p:=&gt;parsley.Parsley[A],_sep:=&gt;parsley.Parsley[B]):parsley.Parsley[List[A]]"></a><a id="sepBy1[A,B](⇒Parsley[A],⇒Parsley[B]):Parsley[List[A]]"></a>
+      <a id="sepBy1[A,B](p:=&gt;parsley.Parsley[A],sep:=&gt;parsley.Parsley[B]):parsley.Parsley[List[A]]"></a><a id="sepBy1[A,B](⇒Parsley[A],⇒Parsley[B]):Parsley[List[A]]"></a>
       <span class="permalink">
-      <a href="../parsley/Combinator$.html#sepBy1[A,B](_p:=&gt;parsley.Parsley[A],_sep:=&gt;parsley.Parsley[B]):parsley.Parsley[List[A]]" title="Permalink">
+      <a href="../parsley/Combinator$.html#sepBy1[A,B](p:=&gt;parsley.Parsley[A],sep:=&gt;parsley.Parsley[B]):parsley.Parsley[List[A]]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -847,7 +847,7 @@ of values returned by <code>p</code>.</p></div></div>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">sepBy1</span><span class="tparams">[<span name="A">A</span>, <span name="B">B</span>]</span><span class="params">(<span name="_p">_p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.sepBy1.A">A</span>]</span>, <span name="_sep">_sep: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.sepBy1.B">B</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.List">List</span>[<span class="extype" name="parsley.Combinator.sepBy1.A">A</span>]]</span>
+        <span class="name">sepBy1</span><span class="tparams">[<span name="A">A</span>, <span name="B">B</span>]</span><span class="params">(<span name="p">p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.sepBy1.A">A</span>]</span>, <span name="sep">sep: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.sepBy1.B">B</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.List">List</span>[<span class="extype" name="parsley.Combinator.sepBy1.A">A</span>]]</span>
       </span>
       
       <p class="shortcomment cmt"><code>sepBy1(p, sep)</code> parses *one* or more occurrences of <code>p</code>, separated by <code>sep</code>.</p><div class="fullcomment"><div class="comment cmt"><p><code>sepBy1(p, sep)</code> parses *one* or more occurrences of <code>p</code>, separated by <code>sep</code>. Returns a list
@@ -871,9 +871,9 @@ of values returned by <code>p</code>.</p></div></div>
 by <code>sep</code>.</p><div class="fullcomment"><div class="comment cmt"><p><code>sepEndBy(p, sep)</code> parses *zero* or more occurrences of <code>p</code>, separated and optionally ended
 by <code>sep</code>. Returns a list of values returned by <code>p</code>.</p></div></div>
     </li><li name="parsley.Combinator#sepEndBy1" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="sepEndBy1[A,B](p:=&gt;parsley.Parsley[A],_sep:=&gt;parsley.Parsley[B]):parsley.Parsley[List[A]]"></a><a id="sepEndBy1[A,B](⇒Parsley[A],⇒Parsley[B]):Parsley[List[A]]"></a>
+      <a id="sepEndBy1[A,B](p:=&gt;parsley.Parsley[A],sep:=&gt;parsley.Parsley[B]):parsley.Parsley[List[A]]"></a><a id="sepEndBy1[A,B](⇒Parsley[A],⇒Parsley[B]):Parsley[List[A]]"></a>
       <span class="permalink">
-      <a href="../parsley/Combinator$.html#sepEndBy1[A,B](p:=&gt;parsley.Parsley[A],_sep:=&gt;parsley.Parsley[B]):parsley.Parsley[List[A]]" title="Permalink">
+      <a href="../parsley/Combinator$.html#sepEndBy1[A,B](p:=&gt;parsley.Parsley[A],sep:=&gt;parsley.Parsley[B]):parsley.Parsley[List[A]]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -882,16 +882,16 @@ by <code>sep</code>. Returns a list of values returned by <code>p</code>.</p></d
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">sepEndBy1</span><span class="tparams">[<span name="A">A</span>, <span name="B">B</span>]</span><span class="params">(<span name="p">p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.sepEndBy1.A">A</span>]</span>, <span name="_sep">_sep: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.sepEndBy1.B">B</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.List">List</span>[<span class="extype" name="parsley.Combinator.sepEndBy1.A">A</span>]]</span>
+        <span class="name">sepEndBy1</span><span class="tparams">[<span name="A">A</span>, <span name="B">B</span>]</span><span class="params">(<span name="p">p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.sepEndBy1.A">A</span>]</span>, <span name="sep">sep: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.sepEndBy1.B">B</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.List">List</span>[<span class="extype" name="parsley.Combinator.sepEndBy1.A">A</span>]]</span>
       </span>
       
       <p class="shortcomment cmt"><code>sepEndBy1(p, sep)</code> parses *one* or more occurrences of <code>p</code>, separated and optionally ended
 by <code>sep</code>.</p><div class="fullcomment"><div class="comment cmt"><p><code>sepEndBy1(p, sep)</code> parses *one* or more occurrences of <code>p</code>, separated and optionally ended
 by <code>sep</code>. Returns a list of values returned by <code>p</code>.</p></div></div>
     </li><li name="parsley.Combinator#skipManyN" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="skipManyN[A](n:Int,_p:=&gt;parsley.Parsley[A]):parsley.Parsley[Unit]"></a><a id="skipManyN[A](Int,⇒Parsley[A]):Parsley[Unit]"></a>
+      <a id="skipManyN[A](n:Int,p:=&gt;parsley.Parsley[A]):parsley.Parsley[Unit]"></a><a id="skipManyN[A](Int,⇒Parsley[A]):Parsley[Unit]"></a>
       <span class="permalink">
-      <a href="../parsley/Combinator$.html#skipManyN[A](n:Int,_p:=&gt;parsley.Parsley[A]):parsley.Parsley[Unit]" title="Permalink">
+      <a href="../parsley/Combinator$.html#skipManyN[A](n:Int,p:=&gt;parsley.Parsley[A]):parsley.Parsley[Unit]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -900,7 +900,7 @@ by <code>sep</code>. Returns a list of values returned by <code>p</code>.</p></d
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">skipManyN</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="n">n: <span class="extype" name="scala.Int">Int</span></span>, <span name="_p">_p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.skipManyN.A">A</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Unit">Unit</span>]</span>
+        <span class="name">skipManyN</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="n">n: <span class="extype" name="scala.Int">Int</span></span>, <span name="p">p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.skipManyN.A">A</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Unit">Unit</span>]</span>
       </span>
       
       <p class="shortcomment cmt"><code>skipManyN(n, p)</code> applies the parser <code>p</code> *n* or more times, skipping its result.</p>

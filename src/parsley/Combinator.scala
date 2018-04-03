@@ -15,7 +15,11 @@ object Combinator
 
     /** `repeat(n, p)` parses `n` occurrences of `p`. If `n` is smaller or equal to zero, the parser is
       *  `pure(Nil)`. Returns a list of `n` values returned by `p`.*/
-    def repeat[A](n: Int, p: =>Parsley[A]): Parsley[List[A]] = sequence(for (_ <- 1 to n) yield p)
+    def repeat[A](n: Int, p: =>Parsley[A]): Parsley[List[A]] =
+    {
+        lazy val _p = p
+        sequence(for (_ <- 1 to n) yield _p)
+    }
 
     /**`option(p)` tries to apply parser `p`. If `p` fails without consuming input, it returns
       * `None`, otherwise it returns `Some` of the value returned by `p`.*/
@@ -37,13 +41,13 @@ object Combinator
     def some[A](p: =>Parsley[A]): Parsley[List[A]] = manyN(1, p)
 
     /**`manyN(n, p)` applies the parser `p` *n* or more times. Returns a list of the returned values of `p`.*/
-    def manyN[A](n: Int, _p: =>Parsley[A]): Parsley[List[A]] =
+    def manyN[A](n: Int, p: =>Parsley[A]): Parsley[List[A]] =
     {
-        lazy val p = _p
-        @tailrec def go(n: Int, acc: Parsley[List[A]] = many(p)): Parsley[List[A]] =
+        lazy val _p = p
+        @tailrec def go(n: Int, acc: Parsley[List[A]] = many(_p)): Parsley[List[A]] =
         {
             if (n == 0) acc
-            else go(n-1, p <::> acc)
+            else go(n-1, _p <::> acc)
         }
         go(n)
     }
@@ -52,13 +56,13 @@ object Combinator
     def skipSome[A](p: => Parsley[A]): Parsley[Unit] = skipManyN(1, p)
 
     /**`skipManyN(n, p)` applies the parser `p` *n* or more times, skipping its result.*/
-    def skipManyN[A](n: Int, _p: =>Parsley[A]): Parsley[Unit] =
+    def skipManyN[A](n: Int, p: =>Parsley[A]): Parsley[Unit] =
     {
-        lazy val p = _p
-        @tailrec def go(n: Int, acc: Parsley[Unit] = skipMany(p)): Parsley[Unit] =
+        lazy val _p = p
+        @tailrec def go(n: Int, acc: Parsley[Unit] = skipMany(_p)): Parsley[Unit] =
         {
             if (n == 0) acc
-            else go(n-1, p *> acc)
+            else go(n-1, _p *> acc)
         }
         go(n)
     }
@@ -69,24 +73,27 @@ object Combinator
 
     /**`sepBy1(p, sep)` parses *one* or more occurrences of `p`, separated by `sep`. Returns a list
       *  of values returned by `p`.*/
-    def sepBy1[A, B](_p: =>Parsley[A], _sep: =>Parsley[B]): Parsley[List[A]] =
+    def sepBy1[A, B](p: =>Parsley[A], sep: =>Parsley[B]): Parsley[List[A]] =
     {
-        lazy val p = _p
-        lazy val sep = _sep
-        p <::> many(sep *> p)
+        lazy val _p = p
+        lazy val _sep = sep
+        _p <::> many(_sep *> _p)
     }
 
     /**`sepEndBy(p, sep)` parses *zero* or more occurrences of `p`, separated and optionally ended
       * by `sep`. Returns a list of values returned by `p`.*/
-    def sepEndBy[A, B](p: => Parsley[A], sep: =>Parsley[B]): Parsley[List[A]] = sepEndBy1(p, sep).getOrElse(Nil)
+    def sepEndBy[A, B](p: =>Parsley[A], sep: =>Parsley[B]): Parsley[List[A]] = sepEndBy1(p, sep).getOrElse(Nil)
 
     /**`sepEndBy1(p, sep)` parses *one* or more occurrences of `p`, separated and optionally ended
       * by `sep`. Returns a list of values returned by `p`.*/
-    def sepEndBy1[A, B](p: => Parsley[A], _sep: =>Parsley[B]): Parsley[List[A]] =
+    def sepEndBy1[A, B](p: =>Parsley[A], sep: =>Parsley[B]): Parsley[List[A]] =
     {
         // FIXME: since sepBy1 reads a sep then fails, the many will not succeed and the optional is not triggered
-        lazy val sep = _sep
-        sepBy1(p, sep) <* optional(sep)
+        lazy val _p = p
+        lazy val _sep = sep
+        //sepBy1(p, _sep) <* optional(_sep)
+        lazy val sepEndBy1_ : Parsley[List[A]] = _p <::> ((_sep *> sepEndBy1_.getOrElse(Nil)) </> Nil)
+        sepEndBy1_
     }
 
     /**`endBy(p, sep)` parses *zero* or more occurrences of `p`, separated and ended by `sep`. Returns a list
@@ -110,10 +117,10 @@ object Combinator
     /**`chainr1(p, op)` parses *one* or more occurrences of `p`, separated by `op`. Returns a value
       * obtained by a right associative application of all functions return by `op` to the values
       * returned by `p`.*/
-    def chainr1[A](_p: =>Parsley[A], op: =>Parsley[A => A => A]): Parsley[A] =
+    def chainr1[A](p: =>Parsley[A], op: =>Parsley[A => A => A]): Parsley[A] =
     {
-        lazy val p = _p
-        chainPre(p, attempt(p <**> op))
+        lazy val _p = p
+        chainPre(_p, attempt(_p <**> op))
     }
 
     /**`chainPre(p, op)` parses many prefixed applications of `op` onto a single final result of `p`*/
@@ -130,10 +137,10 @@ object Combinator
       * returned by `p`. This parser can for example be used to eliminate left recursion which
       * typically occurs in expression grammars. NOTE: the op should either be commutative or should
       * be flipped. This is more efficient than the manual flip performed by `chainl1`.*/
-    def chainl1_[A](_p: =>Parsley[A], op: =>Parsley[A => A => A]): Parsley[A] =
+    def chainl1_[A](p: =>Parsley[A], op: =>Parsley[A => A => A]): Parsley[A] =
     {
-        lazy val p = _p
-        chainPost(p, op <*> p)
+        lazy val _p = p
+        chainPost(_p, op <*> _p)
     }
 
     /**`chainPost(p, op)` parses one occurrence of `p`, followed by many postfix applications of `op`
@@ -159,10 +166,10 @@ object Combinator
 
     /**`many1Till(p, end)` applies parser `p` one or more times until the parser `end` succeeds.
       * Returns a list of values returned by `p`.*/
-    def many1Till[A, B](_p: =>Parsley[A], _end: =>Parsley[B]): Parsley[List[A]] =
+    def many1Till[A, B](p: =>Parsley[A], end: =>Parsley[B]): Parsley[List[A]] =
     {
-        lazy val p = _p
-        lazy val end = _end
-        notFollowedBy(end) *> (p <::> manyTill(p, end))
+        lazy val _p = p
+        lazy val _end = end
+        notFollowedBy(_end) *> (_p <::> manyTill(_p, _end))
     }
 }
