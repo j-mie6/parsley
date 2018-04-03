@@ -1,5 +1,6 @@
-import parsley.{LanguageDef, TokenParser}
+import parsley._
 import parsley.Char.{alphaNum, charLift, letter, whitespace, oneOf => inSet}
+import parsley.Combinator.eof
 
 class TokeniserTests extends ParsleyTest
 {
@@ -67,25 +68,102 @@ class TokeniserTests extends ParsleyTest
 
     "rawStringLiteral" should "parse valid strings, without processing them" in pending
 
-    "natural" should "parse unsigned decimal numbers" in pending
-    it should "parse unsigned hexadecimal numbers" in pending
-    it should "parse unsigned octal numbers" in pending
+    "natural" should "parse unsigned decimal numbers" in
+    {
+        runParser(tokeniser.natural, "1024") should be (Success(1024))
+        runParser(tokeniser.natural, "1024  ") should be (Success(1024))
+    }
+    it should "parse unsigned hexadecimal numbers" in
+    {
+        runParser(tokeniser.natural, "0x340") should be (Success(0x340))
+        runParser(tokeniser.natural, "0xFF") should be (Success(0xFF))
+    }
+    it should "parse unsigned octal numbers" in
+    {
+        runParser(tokeniser.natural, "0o201") should be (Success(129))
+    }
 
-    "integer" should "parse signed naturals" in pending
+    "integer" should "parse signed naturals" in
+    {
+        runParser(tokeniser.integer, "10") should be (Success(10))
+        runParser(tokeniser.integer, "+10") should be (Success(10))
+        runParser(tokeniser.integer, "-0xb") should be (Success(-0xb))
+    }
 
-    "unsignedFloat" should "parse unsigned fractional floats" in pending
-    it should "parse unsigned exponential floats" in pending
-    it should "parse unsigned fractional exponential floats" in pending
-    it should "not parse integers" in pending
-    it should "not allow .1 or 1." in pending
+    "unsignedFloat" should "parse unsigned fractional floats" in
+    {
+        runParser(tokeniser.unsignedFloat, "3.142") should be (Success(3.142))
+        runParser(tokeniser.unsignedFloat, "0.23") should be (Success(0.23))
+        runParser(tokeniser.unsignedFloat, "10.0") should be (Success(10.0))
+    }
+    it should "parse unsigned exponential floats" in
+    {
+        runParser(tokeniser.unsignedFloat, "3e10") should be (Success(3e10))
+        runParser(tokeniser.unsignedFloat, "5E-4") should be (Success(5e-4))
+    }
+    it should "parse unsigned fractional exponential floats" in
+    {
+        runParser(tokeniser.unsignedFloat, "3.142e2") should be (Success(3.142e2))
+        runParser(tokeniser.unsignedFloat, "0.23e1") should be (Success(0.23e1))
+        runParser(tokeniser.unsignedFloat, "10.0e-5") should be (Success(10.0e-5))
+    }
+    it should "not parse integers" in
+    {
+        runParser(tokeniser.unsignedFloat, "3") shouldBe a [Failure]
+    }
+    it should "not allow .1 or 1." in
+    {
+        runParser(tokeniser.unsignedFloat, ".0") shouldBe a [Failure]
+        runParser(tokeniser.unsignedFloat, "0.") shouldBe a [Failure]
+    }
 
-    "float" should "parse signed floats" in pending
+    "float" should "parse signed floats" in
+    {
+        runParser(tokeniser.float, "-3.142") should be (Success(-3.142))
+        runParser(tokeniser.float, "-3e-4") should be (Success(-3e-4))
+        runParser(tokeniser.float, "+1.2e2") should be (Success(1.2e2))
+        runParser(tokeniser.float, "1.2") should be (Success(1.2))
+    }
 
-    "naturalOrFloat" should "parse either naturals or unsigned floats" in pending
-    it should "not allow hexadecimal floats" in pending
-    it should "not allow octal floats" in pending
+    "naturalOrFloat" should "parse either naturals or unsigned floats" in
+    {
+        runParser(tokeniser.naturalOrFloat, "3.142  /*what a sick number am I right*/") should be (Success(Right(3.142)))
+        runParser(tokeniser.naturalOrFloat, "0.23") should be (Success(Right(0.23)))
+        runParser(tokeniser.naturalOrFloat, "10.0\n") should be (Success(Right(10.0)))
+        runParser(tokeniser.naturalOrFloat, "3e10") should be (Success(Right(3e10)))
+        runParser(tokeniser.naturalOrFloat, "5E-4") should be (Success(Right(5e-4)))
+        runParser(tokeniser.naturalOrFloat, "3.142e2\t ") should be (Success(Right(3.142e2)))
+        runParser(tokeniser.naturalOrFloat, "0.23e1") should be (Success(Right(0.23e1)))
+        runParser(tokeniser.naturalOrFloat, "10.0e-5") should be (Success(Right(10.0e-5)))
+        runParser(tokeniser.naturalOrFloat, "1024") should be (Success(Left(1024)))
+        runParser(tokeniser.naturalOrFloat, "0x340") should be (Success(Left(0x340)))
+        runParser(tokeniser.naturalOrFloat, "0xFF") should be (Success(Left(0xFF)))
+        runParser(tokeniser.naturalOrFloat, "0o201 //ooh, octal") should be (Success(Left(129)))
+    }
+    it should "not allow hexadecimal floats" in
+    {
+        runParser(tokeniser.naturalOrFloat <* eof, "0x340.0") shouldBe a [Failure]
+    }
+    it should "not allow octal floats" in
+    {
+        runParser(tokeniser.naturalOrFloat <* eof, "0o201.0") shouldBe a [Failure]
+    }
 
-    "number" should "parse integers or floats" in pending
+    "number" should "parse integers or floats" in
+    {
+        runParser(tokeniser.number, "3.142  /*what a sick number am I right*/") should be (Success(Right(3.142)))
+        runParser(tokeniser.number, "-0.23") should be (Success(Right(-0.23)))
+        runParser(tokeniser.number, "10.0\n") should be (Success(Right(10.0)))
+        runParser(tokeniser.number, "+3e10") should be (Success(Right(3e10)))
+        runParser(tokeniser.number, "5E-4") should be (Success(Right(5e-4)))
+        runParser(tokeniser.number, "3.142e2\t ") should be (Success(Right(3.142e2)))
+        runParser(tokeniser.number, "+0.23e1") should be (Success(Right(0.23e1)))
+        runParser(tokeniser.number, "10.0e-5") should be (Success(Right(10.0e-5)))
+        runParser(tokeniser.number, "-1024") should be (Success(Left(-1024)))
+        runParser(tokeniser.number, "0x340") should be (Success(Left(0x340)))
+        runParser(tokeniser.number, "0xFF") should be (Success(Left(0xFF)))
+        runParser(tokeniser.number, "0o201 //ooh, octal") should be (Success(Left(129)))
+    }
 
     "skipComment" should "parse single-line comments" in pending
     it should "parse multi-line comments" in pending

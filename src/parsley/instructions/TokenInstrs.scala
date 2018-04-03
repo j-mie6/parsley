@@ -351,7 +351,7 @@ private [parsley] final class TokenFloat(_expected: UnsafeOption[String]) extend
                 ctx.offset += 1
                 ctx.col += 1
                 val builder = new StringBuilder()
-                decimal(ctx, builder += d)
+                decimal(ctx, builder += d, false)
                 if (ctx.moreInput) (ctx.nextChar: @switch) match
                 {
                     case '.' => // fraction
@@ -377,6 +377,7 @@ private [parsley] final class TokenFloat(_expected: UnsafeOption[String]) extend
                                      catch { case _: NumberFormatException => ctx.fail(expected) }
                     case _ => failed = true
                 }
+                else failed = true
             case _ => failed = true
         }
         if (failed) ctx.fail(expected)
