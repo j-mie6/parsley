@@ -335,7 +335,6 @@ private [parsley] final class Ensure[A](pred: A=>Boolean, expected: UnsafeOption
         if (pred_(ctx.stack.upeek)) ctx.inc()
         else
         {
-            ctx.stack.pop_() //this might not be needed? drop handles in fail
             val strip = ctx.expected.isEmpty
             ctx.fail(expected)
             if (strip) ctx.unexpected = null

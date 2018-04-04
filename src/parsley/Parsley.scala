@@ -1244,11 +1244,9 @@ private [parsley] object DeepEmbedding
         for (_ <- 0 to 10000000)
         {
             //(q <|> q <|> q <|> q).instrs
-            //runParserFastUnsafe(chain, "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1")
+            runParserFastUnsafe(chain, "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1")
         }
         println(System.currentTimeMillis - start)
         println(chain.pretty)
-        val bug = 'a' <* eof <* eof
-        println(bug.pretty)
     }
 }

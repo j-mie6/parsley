@@ -64,10 +64,10 @@ private [parsley] class CharTokFastPerform protected (protected final val c: Cha
     {
         if (ctx.moreInput && ctx.nextChar == c)
         {
-                ctx.stack.push(fc)
-                ctx.offset += 1
-                ctx.col += 1
-                ctx.inc()
+            ctx.stack.push(fc)
+            ctx.offset += 1
+            ctx.col += 1
+            ctx.inc()
         }
         else ctx.fail(expected)
     }

@@ -40,7 +40,7 @@ package object parsley
 
     // Internals
     private [parsley] val internalCtx = giveContext
-    private [parsley] type UnsafeOption[A] = A
+    private [parsley] type UnsafeOption[A >: Null] = A
 
     /**
       * Result of a parser. Either a `Success[A]` or a `Failure`
