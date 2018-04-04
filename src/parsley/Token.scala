@@ -333,12 +333,7 @@ final class TokenParser(lang: LanguageDef)
 
 private [parsley] object DeepToken
 {
-    sealed private [parsley] abstract class DeepTokenBase[+A] extends Parsley[A]
-    {
-        final override private [parsley] def optimise = this
-    }
-
-    private [parsley] class WhiteSpace(ws: Set[Char], start: String, end: String, line: String, nested: Boolean) extends DeepTokenBase[Nothing]
+    private [parsley] class WhiteSpace(ws: Set[Char], start: String, end: String, line: String, nested: Boolean) extends Parsley[Nothing]
     {
         override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
@@ -353,7 +348,7 @@ private [parsley] object DeepToken
         }
     }
 
-    private [parsley] class SkipComments(start: String, end: String, line: String, nested: Boolean) extends DeepTokenBase[Nothing]
+    private [parsley] class SkipComments(start: String, end: String, line: String, nested: Boolean) extends Parsley[Nothing]
     {
         override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
@@ -368,7 +363,7 @@ private [parsley] object DeepToken
         }
     }
 
-    private [parsley] class Sign[A: TypeTag] extends DeepTokenBase[A => A]
+    private [parsley] class Sign[A: TypeTag] extends Parsley[A => A]
     {
         override protected def preprocess(cont: Parsley[A => A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
@@ -383,7 +378,7 @@ private [parsley] object DeepToken
         }
     }
 
-    private [parsley] class Natural extends DeepTokenBase[Int]
+    private [parsley] class Natural extends Parsley[Int]
     {
         override protected def preprocess(cont: Parsley[Int] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
@@ -398,7 +393,7 @@ private [parsley] object DeepToken
         }
     }
 
-    private [parsley] class Float extends DeepTokenBase[Double]
+    private [parsley] class Float extends Parsley[Double]
     {
         override protected def preprocess(cont: Parsley[Double] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
@@ -413,7 +408,7 @@ private [parsley] object DeepToken
         }
     }
 
-    private [parsley] class Escape extends DeepTokenBase[Char]
+    private [parsley] class Escape extends Parsley[Char]
     {
         override protected def preprocess(cont: Parsley[Char] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
@@ -428,7 +423,7 @@ private [parsley] object DeepToken
         }
     }
 
-    private [parsley] class StringLiteral(ws: Set[Char]) extends DeepTokenBase[String]
+    private [parsley] class StringLiteral(ws: Set[Char]) extends Parsley[String]
     {
         override protected def preprocess(cont: Parsley[String] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
@@ -443,7 +438,7 @@ private [parsley] object DeepToken
         }
     }
 
-    private [parsley] class RawStringLiteral extends DeepTokenBase[String]
+    private [parsley] class RawStringLiteral extends Parsley[String]
     {
         override protected def preprocess(cont: Parsley[String] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
@@ -458,7 +453,7 @@ private [parsley] object DeepToken
         }
     }
 
-    private [parsley] class Identifier(start: Set[Char], letter: Set[Char], keywords: Set[String]) extends DeepTokenBase[String]
+    private [parsley] class Identifier(start: Set[Char], letter: Set[Char], keywords: Set[String]) extends Parsley[String]
     {
         override protected def preprocess(cont: Parsley[String] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
@@ -473,7 +468,7 @@ private [parsley] object DeepToken
         }
     }
 
-    private [parsley] class UserOp(start: Set[Char], letter: Set[Char], operators: Set[String]) extends DeepTokenBase[String]
+    private [parsley] class UserOp(start: Set[Char], letter: Set[Char], operators: Set[String]) extends Parsley[String]
     {
         override protected def preprocess(cont: Parsley[String] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
@@ -488,7 +483,7 @@ private [parsley] object DeepToken
         }
     }
 
-    private [parsley] class ReservedOp(start: Set[Char], letter: Set[Char], operators: Set[String]) extends DeepTokenBase[String]
+    private [parsley] class ReservedOp(start: Set[Char], letter: Set[Char], operators: Set[String]) extends Parsley[String]
     {
         override protected def preprocess(cont: Parsley[String] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
@@ -503,7 +498,7 @@ private [parsley] object DeepToken
         }
     }
 
-    private [parsley] class Keyword(keyword: String, letter: Set[Char], caseSensitive: Boolean) extends DeepTokenBase[Nothing]
+    private [parsley] class Keyword(keyword: String, letter: Set[Char], caseSensitive: Boolean) extends Parsley[Nothing]
     {
         override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
@@ -518,7 +513,7 @@ private [parsley] object DeepToken
         }
     }
 
-    private [parsley] class Operator(operator: String, letter: Set[Char]) extends DeepTokenBase[Nothing]
+    private [parsley] class Operator(operator: String, letter: Set[Char]) extends Parsley[Nothing]
     {
         override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {

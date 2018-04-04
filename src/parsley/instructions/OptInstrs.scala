@@ -3,6 +3,7 @@ package parsley.instructions
 import parsley.UnsafeOption
 
 import scala.annotation.{switch, tailrec}
+import scala.collection.mutable
 
 private [parsley] final class Perform[-A, +B](f: A => B) extends Instr
 {
@@ -168,7 +169,7 @@ private [parsley] final class StringTokFastPerform(s: String, f: String => Any, 
     override def toString: String = s"StrPerform($s, ?)"
 }
 
-private [parsley] class JumpGoodAttempt(var label: Int) extends JumpInstr
+private [parsley] final class JumpGoodAttempt(var label: Int) extends JumpInstr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -192,7 +193,7 @@ private [parsley] class JumpGoodAttempt(var label: Int) extends JumpInstr
     override def toString: String = s"JumpGood'($label)"
 }
 
-private [parsley] class RecoverWith[A](x: A) extends Instr
+private [parsley] final class RecoverWith[A](x: A) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -214,7 +215,7 @@ private [parsley] class RecoverWith[A](x: A) extends Instr
     override def toString: String = s"Recover($x)"
 }
 
-private [parsley] class AlwaysRecoverWith[A](x: A) extends Instr
+private [parsley] final class AlwaysRecoverWith[A](x: A) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -237,6 +238,40 @@ private [parsley] class AlwaysRecoverWith[A](x: A) extends Instr
         }
     }
     override def toString: String = s"Recover'($x)"
+}
+
+private [parsley] final class JumpTable(prefixes: List[Char], labels: List[Int], private [this] var default: Int) extends Instr
+{
+    private [this] val jumpTable: mutable.Map[Char, Int] = mutable.Map(prefixes.zip(labels): _*)
+
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.moreInput)
+        {
+            val c = ctx.nextChar
+            // This implementation runs slower, but it *does* have more predictable memory and time requirements
+            /*val dest = jumpTable.get(c)
+            if (dest.isEmpty) ctx.pc = default
+            else ctx.pc = dest.get*/
+            // This version is faster, but might have to resize the HashTable if it sees the default case too many times
+            ctx.pc = jumpTable.getOrElseUpdate(c, default)
+            ctx.offset += 1
+            (c: @switch) match
+            {
+                case '\n' => ctx.line += 1; ctx.col = 1
+                case '\t' => ctx.col += 4 - ((ctx.col - 1) & 3)
+                case _ => ctx.col += 1
+            }
+        }
+        else ctx.pc = default
+    }
+
+    private [parsley] def relabel(labels: Array[Int]): Unit =
+    {
+        jumpTable.transform((k, v) => labels(v))
+        default = labels(default)
+    }
+    override def toString: String = s"JumpTable(${jumpTable.mkString(", ")}, _ -> $default)"
 }
 
 private [parsley] object CharTokFastPerform
