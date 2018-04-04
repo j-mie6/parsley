@@ -265,7 +265,7 @@ final class TokenParser(lang: LanguageDef)
     lazy val whiteSpace: Parsley[Unit] = lang.space match
     {
         case Left(ws) => new DeepToken.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
-        case Right(_) => skipMany(space ? "" <|> skipComment)
+        case Right(_) => skipMany(space ? "" <|> skipComments)
     }
 
     /**Parses any white space. White space consists of zero or more occurrences of a `space` (as
@@ -275,11 +275,11 @@ final class TokenParser(lang: LanguageDef)
     val whiteSpace_ : Either[Set[Char], Parsley[_]] => Parsley[Unit] =
     {
         case Left(ws) => new DeepToken.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
-        case Right(space_) => skipMany((space_ ? "") <|> skipComment)
+        case Right(space_) => skipMany((space_ ? "") <|> skipComments)
     }
 
     /**Parses any comments and skips them, this includes both line comments and block comments.*/
-    lazy val skipComment: Parsley[Unit] = new DeepToken.SkipComments(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
+    lazy val skipComments: Parsley[Unit] = new DeepToken.SkipComments(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
     
     // Bracketing
     /**Lexeme parser `parens(p)` parses `p` enclosed in parenthesis, returning the value of `p`.*/

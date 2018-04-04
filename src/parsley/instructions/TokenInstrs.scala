@@ -533,7 +533,12 @@ private [parsley] class TokenEscape(_expected: UnsafeOption[String]) extends Ins
                     if (ctx.moreInput)
                     {
                         val c = ctx.nextChar
-                        if (c >= 'A' && c <= 'Z') escapeChar = (c - 'A' + 1).toChar
+                        if (c >= 'A' && c <= 'Z')
+                        {
+                            ctx.offset += 1
+                            ctx.col += 1
+                            escapeChar = (c - 'A' + 1).toChar
+                        }
                         else return false
                     }
                     else return false
@@ -836,7 +841,7 @@ private [parsley] final class TokenString(ws: Set[Char], _expected: UnsafeOption
                 {
                     ctx.offset += 1
                     ctx.col += 1
-
+                    restOfString(ctx, builder)
                 }
                 else if (escape(ctx)) restOfString(ctx, builder += escapeChar)
                 else

@@ -63,10 +63,60 @@ class TokeniserTests extends ParsleyTest
     "charLiteral" should "parse valid haskell characters" in pending
     it must "be the same regardless of the intrinsic" in pending
 
-    "stringLiteral" should "parse valid haskell strings" in pending
-    it must "be the same regardless of the intrinsic" in pending
+    "stringLiteral" should "parse valid haskell strings" in
+    {
+        runParser(tokeniser.stringLiteral, """"This string should have correct\t\xa whitespace properties!\8."""") should be
+        {
+            Success("This string should have correct\t\n whitespace properties!\b.")
+        }
+        runParser(tokeniser.stringLiteral, """"\73\32\99\97\x6e\x20\x77\x72\o151\o164\o145\o40\116\104\101\109\x20\x6c\x69\x6b\o145\o40\o164\o150is!\^J\LF\49\&0"""") should be
+        {
+            Success("I can write them like this!\n\n10")
+        }
+        runParser(tokeniser.stringLiteral, """"Here we test a string with a break in it \                  \which shouldn't show up in the end!"""") should be
+        {
+            Success("Here we test a string with a break in it which shouldn't show up in the end!")
+        }
+        runParser(tokeniser.stringLiteral, "\"Breaks can also contain newline\\   \n \\s, but we still don't notice them\"") should be
+        {
+            Success("Breaks can also contain newlines, but we still don't notice them")
+        }
+    }
+    it must "be the same regardless of the intrinsic" in
+    {
+        runParser(tokeniser_.stringLiteral, """"This string should have correct\t\xa whitespace properties!\8."""") should be
+        {
+            Success("This string should have correct\t\n whitespace properties!\b.")
+        }
+        runParser(tokeniser_.stringLiteral, """"\73\32\99\97\x6e\x20\x77\x72\o151\o164\o145\o40\116\104\101\109\x20\x6c\x69\x6b\o145\o40\o164\o150is!\^J\LF\49\&0"""") should be
+        {
+            Success("I can write them like this!\n\n10")
+        }
+        runParser(tokeniser_.stringLiteral, """"Here we test a string with a break in it \                  \which shouldn't show up in the end!"""") should be
+        {
+            Success("Here we test a string with a break in it which shouldn't show up in the end!")
+        }
+        runParser(tokeniser_.stringLiteral, "\"Breaks can also contain newline\\   \n \\s, but we still don't notice them\"") should be
+        {
+            Success("Breaks can also contain newlines, but we still don't notice them")
+        }
+    }
 
-    "rawStringLiteral" should "parse valid strings, without processing them" in pending
+    "rawStringLiteral" should "parse valid strings, without processing them" in
+    {
+        runParser(tokeniser.rawStringLiteral, """"this string is completely raw\n, nothing should be \xa changed!"""") should be
+        {
+            Success("""this string is completely raw\n, nothing should be \xa changed!""")
+        }
+        runParser(tokeniser.rawStringLiteral, """"Not even \\\n\\n\n\n\n\n\\\j\joijs\\jsj this"""") should be
+        {
+            Success("""Not even \\\n\\n\n\n\n\n\\\j\joijs\\jsj this""")
+        }
+        runParser(tokeniser.rawStringLiteral, """"But we should be able to escape \", but it should remain like that!"""") should be
+        {
+            Success("""But we should be able to escape \", but it should remain like that!""")
+        }
+    }
 
     "natural" should "parse unsigned decimal numbers" in
     {
@@ -165,12 +215,46 @@ class TokeniserTests extends ParsleyTest
         runParser(tokeniser.number, "0o201 //ooh, octal") should be (Success(Left(129)))
     }
 
-    "skipComment" should "parse single-line comments" in pending
-    it should "parse multi-line comments" in pending
-    it should "parse nested comments when applicable" in pending
-    it should "not parse nested comments when applicable" in pending
+    "skipComments" should "parse single-line comments" in
+    {
+        runParser(tokeniser.skipComments <* eof, "// hello world!") should be (Success(()))
+        runParser(tokeniser.skipComments *> 'a', "// hello world!\na") should be (Success('a'))
+        runParser(tokeniser.skipComments *> 'a', "// hello world!\n//another comment\na") should be (Success('a'))
+    }
+    it should "parse multi-line comments" in
+    {
+        runParser(tokeniser.skipComments <* eof, "/* hello *w/orld!*/") should be (Success(()))
+        runParser(tokeniser.skipComments *> 'a', "/* hello *w/orld!*/a") should be (Success('a'))
+        runParser(tokeniser.skipComments *> 'a', "/* hello world!*///another comment\na") should be (Success('a'))
+    }
+    it should "parse nested comments when applicable" in
+    {
+        runParser(tokeniser.skipComments <* eof, "/*/*hello world*/ this /*comment*/ is nested*/") should be (Success(()))
+        runParser(tokeniser.skipComments <* eof, "/*/*hello world*/ this /*comment is nested*/") shouldBe a [Failure]
+    }
+    it should "not parse nested comments when applicable" in
+    {
+        runParser(tokeniser_.skipComments <* eof, "/*/*hello world*/ this /*comment*/ is nested*/") shouldBe a [Failure]
+        runParser(tokeniser_.skipComments <* eof, "/*/*hello world this /*comment is nested*/") should be (Success(()))
+    }
 
-    "whiteSpace" should "parse all whitespace" in pending
-    it should "parse comments interleaved with spaces" in pending
-    it must "be the same regardless of the intrinsic" in pending
+    "whiteSpace" should "parse all whitespace" in
+    {
+        runParser(tokeniser.whiteSpace <* eof, " \n\t \r\n ") should not be a [Failure]
+    }
+    it should "parse comments interleaved with spaces" in
+    {
+        runParser(tokeniser.whiteSpace <* eof, "/*this comment*/ /*is spaced out*/\n//by whitespace!\n ") should not be a [Failure]
+    }
+    it must "be the same regardless of the intrinsic" in
+    {
+        runParser(tokeniser.whiteSpace <* eof, " \n\t \r\n ") should equal
+        {
+            runParser(tokeniser_.whiteSpace <* eof, " \n\t \r\n ")
+        }
+        runParser(tokeniser.whiteSpace <* eof, "/*this comment*/ /*is spaced out*/\n//by whitespace!\n ") should equal
+        {
+            runParser(tokeniser_.whiteSpace <* eof, "/*this comment*/ /*is spaced out*/\n//by whitespace!\n ")
+        }
+    }
 }
