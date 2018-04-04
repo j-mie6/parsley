@@ -1100,18 +1100,10 @@ private [parsley] class TokenKeyword(_keyword: String, letter: Set[Char], caseSe
                 i += 1
                 j += 1
             }
-            if (i < inputsz && letter.contains(input(i)))
-            {
-                ctx.col += strsz
-                ctx.offset = i
-                ctx.fail(expectedEnd)
-            }
-            else
-            {
-                ctx.col += strsz
-                ctx.offset = i
-                ctx.inc()
-            }
+            ctx.col += strsz
+            ctx.offset = i
+            if (i < inputsz && letter.contains(input(i))) ctx.fail(expectedEnd)
+            else ctx.inc()
         }
         else ctx.fail(expected)
     }
@@ -1145,13 +1137,10 @@ private [parsley] class TokenOperator_(_operator: String, letter: Set[Char], _ex
                 i += 1
                 j += 1
             }
+            ctx.col += strsz
+            ctx.offset = i
             if (i < inputsz && letter.contains(input(i))) ctx.fail(expectedEnd)
-            else
-            {
-                ctx.col += strsz
-                ctx.offset = i
-                ctx.inc()
-            }
+            else ctx.inc()
         }
         else ctx.fail(expected)
     }

@@ -118,13 +118,48 @@ class TokeniserTests extends ParsleyTest
         runParser(tokeniser_.reservedOp <* eof, "=") should be (Success("="))
         runParser(tokeniser_.reservedOp <* eof, ":") should be (Success(":"))
         runParser(tokeniser_.reservedOp <* eof, "+") shouldBe a [Failure]
-        runParser(tokeniser_.lexeme(tokeniser_.reservedOp) <* eof, "::") shouldBe a [Failure]
+        runParser(tokeniser_.reservedOp <* eof, "::") shouldBe a [Failure]
     }
 
-
-    "operator" should "match valid operators" in pending
-    it should "fail if the input has more operator letters" in pending
-    it must "be the same regardless of the intrinsic" in pending
+    "operator" should "match valid operators" in
+    {
+        runParser(tokeniser.operator("=") <* eof, "=") should be (Success(()))
+        runParser(tokeniser.operator(":") <* eof, ":") should be (Success(()))
+        runParser(tokeniser.operator("++") <* eof, "++") should be (Success(()))
+    }
+    it should "fail if the input has more operator letters" in
+    {
+        runParser(tokeniser.operator("=") <* eof, "=+") shouldBe a [Failure]
+        runParser(tokeniser.operator(":") <* eof, "::") shouldBe a [Failure]
+        runParser(tokeniser.operator("++") <* eof, "++=") shouldBe a [Failure]
+    }
+    it must "be the same regardless of the intrinsic" in
+    {
+        runParser(tokeniser_.operator("=") <* eof, "=") should equal
+        {
+            runParser(tokeniser.operator("=") <* eof, "=")
+        }
+        runParser(tokeniser_.operator(":") <* eof, ":") should equal
+        {
+            runParser(tokeniser.operator(":") <* eof, ":")
+        }
+        runParser(tokeniser_.operator("++") <* eof, "++") should equal
+        {
+            runParser(tokeniser.operator("++") <* eof, "++")
+        }
+        runParser(tokeniser_.operator("=") <* eof, "=+") should equal
+        {
+            runParser(tokeniser.operator("=") <* eof, "=+")
+        }
+        runParser(tokeniser_.operator(":") <* eof, "::") should equal
+        {
+            runParser(tokeniser.operator(":") <* eof, "::")
+        }
+        runParser(tokeniser_.operator("++") <* eof, "++=") should equal
+        {
+            runParser(tokeniser.operator("++") <* eof, "++=")
+        }
+    }
 
     "charLiteral" should "parse valid haskell characters" in
     {
