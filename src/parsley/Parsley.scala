@@ -287,27 +287,29 @@ abstract class Parsley[+A] protected
         val instrs: InstrBuffer = new ResizableArray()
         val labels = new LabelCounter
         optimised((p: Parsley[A]) => new Chunk(p))(Set.empty, null, 0).run.codeGen(Terminate)(instrs, labels).run()
-        val size = instrs.length - labels.size
-        val instrs_ = new Array[Instr](size)
         val instrsOversize = instrs.toArray
         val labelMapping = new Array[Int](labels.size)
-        @tailrec def findLabels(instrs: Array[Instr], labels: Array[Int], n: Int, i: Int = 0, off: Int = 0): Unit = if (i + off < n) instrs(i + off) match
+        @tailrec def findLabels(instrs: Array[Instr], labels: Array[Int], n: Int, i: Int = 0, off: Int = 0, nopop: Int = 0): Int = if (i + off < n) instrs(i + off) match
         {
-            case label: Label => labels(label.i) = i; findLabels(instrs, labels, n, i, off+1)
+            case label: Label => instrs(i+off) = null; labels(label.i) = i; findLabels(instrs, labels, n, i, off+1)
+            case _: NoPush => findLabels(instrs, labels, n, i+1, off, nopop + 1)
+            case instructions.Pop if nopop != 0 => instrs(i+off) = null; findLabels(instrs, labels, n, i, off+1, nopop - 1)
+            case instructions.Exchange(x) if nopop != 0 => instrs(i+off) = new instructions.Push(x); findLabels(instrs, labels, n, i+1, off, nopop - 1)
             case _ => findLabels(instrs, labels, n, i+1, off)
-        }
+        } else i
         @tailrec def applyLabels(srcs: Array[Instr], labels: Array[Int], dests: Array[Instr], n: Int, i: Int = 0, off: Int = 0): Unit = if (i < n) srcs(i + off) match
         {
-            case _: Label => applyLabels(srcs, labels, dests, n, i, off + 1)
+            case null => applyLabels(srcs, labels, dests, n, i, off + 1)
             case jump: JumpInstr => 
                 jump.label = labels(jump.label)
                 dests(i) = jump
                 applyLabels(srcs, labels, dests, n, i + 1, off)
-            case instr => 
+            case instr =>
                 dests(i) = instr
                 applyLabels(srcs, labels, dests, n, i + 1, off)
         }
-        findLabels(instrsOversize, labelMapping, instrs.length)
+        val size = findLabels(instrsOversize, labelMapping, instrs.length)
+        val instrs_ = new Array[Instr](size)
         applyLabels(instrsOversize, labelMapping, instrs_, instrs_.length)
         instrs_
     }
@@ -564,21 +566,6 @@ private [parsley] object DeepEmbedding
         {
             case (ct@CharTok(c), Pure(x)) => instrs += instructions.CharTokFastPerform[Char, B](c, _ => x, ct.expected); cont
             case (st@StringTok(s), Pure(x)) => instrs += new StringTokFastPerform(s, _ => x, st.expected); cont
-            case (p: Resultless, q) => new Suspended(p.codeGen(q.codeGen(cont)))
-            case (Then(p: Resultless, q: Resultless), r) => new Suspended(p.codeGen(q.codeGen(r.codeGen(cont))))
-            case (Then(p, q: Resultless), r) =>
-                new Suspended(p.codeGen
-                {
-                    instrs += instructions.Pop
-                    q.codeGen(r.codeGen(cont))
-                })
-            case (Prev(p: Resultless, q: Resultless), r) => new Suspended(p.codeGen(q.codeGen(r.codeGen(cont))))
-            case (Prev(p: Resultless, q), r) =>
-                new Suspended(p.codeGen(q.codeGen
-                {
-                    instrs += instructions.Pop
-                    r.codeGen(cont)
-                }))
             case (p, Pure(x)) =>
                 new Suspended(p.codeGen
                 {
@@ -623,21 +610,6 @@ private [parsley] object DeepEmbedding
         {
             case (Pure(x), ct@CharTok(c)) => instrs += instructions.CharTokFastPerform[Char, A](c, _ => x, ct.expected); cont
             case (Pure(x), st@StringTok(s)) => instrs += new StringTokFastPerform(s, _ => x, st.expected); cont
-            case (p, q: Resultless) => new Suspended(p.codeGen(q.codeGen(cont)))
-            case (p, Then(q: Resultless, r: Resultless)) => new Suspended(p.codeGen(q.codeGen(r.codeGen(cont))))
-            case (p, Then(q, r: Resultless)) =>
-                new Suspended(p.codeGen(q.codeGen
-                {
-                    instrs += instructions.Pop
-                    r.codeGen(cont)
-                }))
-            case (p, Prev(q: Resultless, r: Resultless)) => new Suspended(p.codeGen(q.codeGen(r.codeGen(cont))))
-            case (p, Prev(q: Resultless, r)) =>
-                new Suspended(p.codeGen(q.codeGen(r.codeGen
-                {
-                    instrs += instructions.Pop
-                    cont
-                })))
             case (Pure(x), q) =>
                 new Suspended(q.codeGen
                 {
@@ -970,8 +942,7 @@ private [parsley] object DeepEmbedding
             })
         }
     }
-    private [parsley] abstract class Resultless extends Parsley[Nothing]
-    private [parsley] final class SkipMany[+A](_p: =>Parsley[A]) extends Resultless
+    private [parsley] final class SkipMany[+A](_p: =>Parsley[A]) extends Parsley[Nothing]
     {
         private [SkipMany] lazy val p = _p
         override def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
@@ -1182,7 +1153,7 @@ private [parsley] object DeepEmbedding
             })
         }
     }
-    private [parsley] final class NotFollowedBy[+A](_p: =>Parsley[A]) extends Resultless
+    private [parsley] final class NotFollowedBy[+A](_p: =>Parsley[A]) extends Parsley[Nothing]
     {
         private [NotFollowedBy] lazy val p = _p
         override def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) = p.optimised(p =>
@@ -1204,7 +1175,7 @@ private [parsley] object DeepEmbedding
             }
         }
     }
-    private [parsley] final class Eof extends Resultless
+    private [parsley] final class Eof extends Parsley[Nothing]
     {
         override def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
@@ -1273,9 +1244,11 @@ private [parsley] object DeepEmbedding
         for (_ <- 0 to 10000000)
         {
             //(q <|> q <|> q <|> q).instrs
-            runParserFastUnsafe(chain, "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1")
+            //runParserFastUnsafe(chain, "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1")
         }
         println(System.currentTimeMillis - start)
         println(chain.pretty)
+        val bug = 'a' <* eof <* eof
+        println(bug.pretty)
     }
 }

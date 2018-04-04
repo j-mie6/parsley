@@ -16,7 +16,7 @@ class TokeniserTests extends ParsleyTest
             Right(inSet(Set('+', '-', ':', '/', '*', '='))),
             Set("if", "else", "for", "yield", "while", "def", "class",
                 "trait", "abstract", "override"),
-            Set.empty[String],
+            Set(":", "="),
             true,
             Right(whitespace))
     val scala_ =
@@ -34,34 +34,112 @@ class TokeniserTests extends ParsleyTest
             Left(Set('+', '-', ':', '/', '*', '=')),
             Set("if", "else", "for", "yield", "while", "def", "class",
                 "trait", "abstract", "override"),
-            Set.empty[String],
+            Set(":", "="),
             true,
             Left(Set(' ', '\t', '\n', '\r', '\f', '\u000b')))
     val tokeniser = new TokenParser(scala)
     val tokeniser_ = new TokenParser(scala_)
 
-    "identifier" should "read valid identifiers" in pending
-    it should "fail if the result is a keyword" in pending
-    it must "be the same regardless of the intrinsic" in pending
+    "identifier" should "read valid identifiers" in
+    {
+        runParser(tokeniser.identifier <* eof, "foo123 ") should be (Success("foo123"))
+        runParser(tokeniser.identifier <* eof, "_bar") should be (Success("_bar"))
+        runParser(tokeniser.identifier <* eof, "iffy") should be (Success("iffy"))
+        runParser(tokeniser.identifier <* eof, "1_bar") shouldBe a [Failure]
+    }
+    it should "fail if the result is a keyword" in
+    {
+        runParser(tokeniser.identifier <* eof, "class") shouldBe a [Failure]
+    }
+    it must "be the same regardless of the intrinsic" in
+    {
+        runParser(tokeniser_.identifier <* eof, "foo123 ") should be (Success("foo123"))
+        runParser(tokeniser_.identifier <* eof, "_bar") should be (Success("_bar"))
+        runParser(tokeniser_.identifier <* eof, "iffy") should be (Success("iffy"))
+        runParser(tokeniser_.identifier <* eof, "1_bar") should equal
+        {
+            runParser(tokeniser.identifier <* eof, "1_bar")
+        }
+        runParser(tokeniser_.identifier <* eof, "class") shouldBe a [Failure]
+    }
 
-    "keyword" should "match valid keywords" in pending
-    it should "fail if the input has more identifier letters" in pending
-    it must "be the same regardless of the intrinsic" in pending
+    "keyword" should "match valid keywords" in
+    {
+        runParser(tokeniser.keyword("if"), "if then") should be (Success(()))
+        runParser(tokeniser.keyword("volatile"), "volatile") should be (Success(()))
+    }
+    it should "fail if the input has more identifier letters" in
+    {
+        runParser(tokeniser.keyword("if"), "ifthen") shouldBe a [Failure]
+        runParser(tokeniser.keyword("volatile"), "volatilev") shouldBe a [Failure]
+    }
+    it must "be the same regardless of the intrinsic" in
+    {
+        runParser(tokeniser_.keyword("if"), "if then") should be (Success(()))
+        runParser(tokeniser_.keyword("volatile"), "volatile") should be (Success(()))
+        runParser(tokeniser_.keyword("if"), "ifthen") should equal
+        {
+            runParser(tokeniser.keyword("if"), "ifthen")
+        }
+        runParser(tokeniser_.keyword("volatile"), "volatilev") should equal
+        {
+            runParser(tokeniser.keyword("volatile"), "volatilev")
+        }
+    }
 
-    "userOp" should "read valid operator" in pending
-    it should "fail if the result is reserved" in pending
-    it must "be the same regardless of the intrinsic" in pending
+    "userOp" should "read valid operator" in
+    {
+        runParser(tokeniser.userOp <* eof, ":+:") should be (Success(":+:"))
+        runParser(tokeniser.userOp <* eof, ":+:h") shouldBe a [Failure]
+    }
+    it should "fail if the result is reserved" in
+    {
+        runParser(tokeniser.userOp <* eof, ":") shouldBe a [Failure]
+    }
+    it must "be the same regardless of the intrinsic" in
+    {
+        runParser(tokeniser_.userOp <* eof, ":+:") should be (Success(":+:"))
+        runParser(tokeniser_.userOp <* eof, ":+:h") shouldBe a [Failure]
+        runParser(tokeniser_.userOp <* eof, ":") shouldBe a [Failure]
+    }
 
-    "reservedOp" should "match valid reserved operators" in pending
-    it should "fail if the result isn't reserved" in pending
-    it must "be the same regardless of the intrinsic" in pending
+    "reservedOp" should "match valid reserved operators" in
+    {
+        runParser(tokeniser.reservedOp <* eof, "=") should be (Success("="))
+        runParser(tokeniser.reservedOp <* eof, ":") should be (Success(":"))
+    }
+    it should "fail if the result isn't reserved" in
+    {
+        runParser(tokeniser.reservedOp <* eof, "+") shouldBe a [Failure]
+        runParser(tokeniser.reservedOp <* eof, "::") shouldBe a [Failure]
+    }
+    it must "be the same regardless of the intrinsic" in
+    {
+        runParser(tokeniser_.reservedOp <* eof, "=") should be (Success("="))
+        runParser(tokeniser_.reservedOp <* eof, ":") should be (Success(":"))
+        runParser(tokeniser_.reservedOp <* eof, "+") shouldBe a [Failure]
+        runParser(tokeniser_.lexeme(tokeniser_.reservedOp) <* eof, "::") shouldBe a [Failure]
+    }
+
 
     "operator" should "match valid operators" in pending
     it should "fail if the input has more operator letters" in pending
     it must "be the same regardless of the intrinsic" in pending
 
-    "charLiteral" should "parse valid haskell characters" in pending
-    it must "be the same regardless of the intrinsic" in pending
+    "charLiteral" should "parse valid haskell characters" in
+    {
+        runParser(tokeniser.charLiteral, "'a'") should be (Success('a'))
+        runParser(tokeniser.charLiteral, "'\\n'") should be (Success('\n'))
+        runParser(tokeniser.charLiteral, "'\\xa'") should be (Success('\n'))
+        runParser(tokeniser.charLiteral, "'\\^J'") should be (Success('\n'))
+    }
+    it must "be the same regardless of the intrinsic" in
+    {
+        runParser(tokeniser_.charLiteral, "'a'") should be (Success('a'))
+        runParser(tokeniser_.charLiteral, "'\\n'") should be (Success('\n'))
+        runParser(tokeniser_.charLiteral, "'\\xa'") should be (Success('\n'))
+        runParser(tokeniser_.charLiteral, "'\\^J'") should be (Success('\n'))
+    }
 
     "stringLiteral" should "parse valid haskell strings" in
     {

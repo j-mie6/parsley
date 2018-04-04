@@ -16,6 +16,8 @@ package object instructions
         def copy: Instr = this
     }
 
+    private [parsley] trait NoPush
+
     private [parsley] abstract class JumpInstr extends Instr
     {
         var label: Int

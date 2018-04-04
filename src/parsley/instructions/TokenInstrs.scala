@@ -6,7 +6,7 @@ import scala.annotation.{switch, tailrec}
 import scala.reflect.runtime.universe._
 
 // This is considered as a VERY rough implementation of the intrinsic, just to get it working, it will be optimised later
-private [parsley] class TokenSkipComments(start: String, end: String, line: String, nested: Boolean) extends Instr
+private [parsley] class TokenSkipComments(start: String, end: String, line: String, nested: Boolean) extends Instr with NoPush
 {
     protected final val noLine = line.isEmpty
     protected final val noMulti = start.isEmpty
@@ -119,7 +119,7 @@ private [parsley] class TokenSkipComments(start: String, end: String, line: Stri
     override def toString: String = "TokenSkipComments"
 }
 
-private [parsley] final class TokenWhiteSpace(ws: Set[Char], start: String, end: String, line: String, nested: Boolean) extends TokenSkipComments(start, end, line, nested)
+private [parsley] final class TokenWhiteSpace(ws: Set[Char], start: String, end: String, line: String, nested: Boolean) extends TokenSkipComments(start, end, line, nested) with NoPush
 {
     override def apply(ctx: Context): Unit =
     {
@@ -1027,7 +1027,7 @@ private [parsley] final class TokenUserOperator(start: Set[Char], letter: Set[Ch
     override def toString: String = "TokenUserOperator"
 }
 
-private [parsley] final class TokenOperator(start: Set[Char], letter: Set[Char], reservedOps: Set[String], _unexpected: UnsafeOption[String]) extends Instr
+private [parsley] final class TokenOperator(start: Set[Char], letter: Set[Char], reservedOps: Set[String], _unexpected: UnsafeOption[String]) extends Instr with NoPush
 {
     val expected = if (_unexpected == null) "operator" else _unexpected
 
@@ -1070,10 +1070,10 @@ private [parsley] final class TokenOperator(start: Set[Char], letter: Set[Char],
         }
     }
 
-    override def toString: String = "TokenUserOperator"
+    override def toString: String = "TokenReservedOperator"
 }
 
-private [parsley] class TokenKeyword(_keyword: String, letter: Set[Char], caseSensitive: Boolean, _expected: UnsafeOption[String]) extends Instr
+private [parsley] class TokenKeyword(_keyword: String, letter: Set[Char], caseSensitive: Boolean, _expected: UnsafeOption[String]) extends Instr with NoPush
 {
     val expected = if (_expected == null) _keyword else _expected
     val expectedEnd = if (_expected == null) "end of " + _keyword else _expected
@@ -1100,7 +1100,12 @@ private [parsley] class TokenKeyword(_keyword: String, letter: Set[Char], caseSe
                 i += 1
                 j += 1
             }
-            if (i < inputsz && letter.contains(input(i))) ctx.fail(expectedEnd)
+            if (i < inputsz && letter.contains(input(i)))
+            {
+                ctx.col += strsz
+                ctx.offset = i
+                ctx.fail(expectedEnd)
+            }
             else
             {
                 ctx.col += strsz
@@ -1114,7 +1119,7 @@ private [parsley] class TokenKeyword(_keyword: String, letter: Set[Char], caseSe
     override def toString: String = s"TokenKeyword(${_keyword})"
 }
 
-private [parsley] class TokenOperator_(_operator: String, letter: Set[Char], _expected: UnsafeOption[String]) extends Instr
+private [parsley] class TokenOperator_(_operator: String, letter: Set[Char], _expected: UnsafeOption[String]) extends Instr with NoPush
 {
     val expected = if (_expected == null) _operator else _expected
     val expectedEnd = if (_expected == null) "end of " + _operator else _expected

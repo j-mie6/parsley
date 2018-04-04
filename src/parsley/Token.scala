@@ -60,7 +60,7 @@ final class TokenParser(lang: LanguageDef)
     lazy val identifier: Parsley[String] = (lang.identStart, lang.identLetter) match
     {
         case (Left(start), Left(letter)) => lexeme(new DeepToken.Identifier(start, letter, theReservedNames))
-        case _ => lexeme (attempt (ident >?> (! isReservedName (_), "unexpected keyword " + _) ) )
+        case _ => lexeme(attempt(ident >?> (! isReservedName (_), "unexpected keyword " + _)))
     }
 
     /**The lexeme parser `keyword(name)` parses the symbol `name`, but it also checks that the `name`
@@ -99,7 +99,7 @@ final class TokenParser(lang: LanguageDef)
      * provided to the token parser. A `reservedOp_` is treated as a single token using `attempt`.*/
     lazy val reservedOp_ : Parsley[String] = (lang.opStart, lang.opLetter) match
     {
-        case (Left(start), Left(letter)) => lexeme(new DeepToken.ReservedOp(start, letter, lang.operators))
+        case (Left(start), Left(letter)) => new DeepToken.ReservedOp(start, letter, lang.operators)
         case _ => attempt(oper >?> (isReservedOp, "unexpected non-reserved operator " + _))
     }
 
@@ -338,12 +338,7 @@ private [parsley] object DeepToken
         final override private [parsley] def optimise = this
     }
 
-    sealed private [parsley] abstract class Resultless extends DeepEmbedding.Resultless
-    {
-        final override private [parsley] def optimise = this
-    }
-
-    private [parsley] class WhiteSpace(ws: Set[Char], start: String, end: String, line: String, nested: Boolean) extends Resultless
+    private [parsley] class WhiteSpace(ws: Set[Char], start: String, end: String, line: String, nested: Boolean) extends DeepTokenBase[Nothing]
     {
         override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
@@ -358,7 +353,7 @@ private [parsley] object DeepToken
         }
     }
 
-    private [parsley] class SkipComments(start: String, end: String, line: String, nested: Boolean) extends Resultless
+    private [parsley] class SkipComments(start: String, end: String, line: String, nested: Boolean) extends DeepTokenBase[Nothing]
     {
         override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
@@ -497,7 +492,7 @@ private [parsley] object DeepToken
     {
         override protected def preprocess(cont: Parsley[String] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
-            val w = new Identifier(start, letter, operators)
+            val w = new ReservedOp(start, letter, operators)
             w.expected = label
             cont(w)
         }
@@ -508,7 +503,7 @@ private [parsley] object DeepToken
         }
     }
 
-    private [parsley] class Keyword(keyword: String, letter: Set[Char], caseSensitive: Boolean) extends Resultless
+    private [parsley] class Keyword(keyword: String, letter: Set[Char], caseSensitive: Boolean) extends DeepTokenBase[Nothing]
     {
         override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
@@ -523,7 +518,7 @@ private [parsley] object DeepToken
         }
     }
 
-    private [parsley] class Operator(operator: String, letter: Set[Char]) extends Resultless
+    private [parsley] class Operator(operator: String, letter: Set[Char]) extends DeepTokenBase[Nothing]
     {
         override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {

@@ -15,7 +15,7 @@ private [parsley] final class Perform[-A, +B](f: A => B) extends Instr
     override def toString: String = "Perform(?)"
 }
 
-private [parsley] final class Exchange[A](x: A) extends Instr
+private [parsley] final class Exchange[A](private [Exchange] val x: A) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -247,4 +247,9 @@ private [parsley] object CharTokFastPerform
         case '\t' => new TabFastPerform(f, expected)
         case _ => new CharTokFastPerform(c, f, expected)
     }
+}
+
+private [parsley] object Exchange
+{
+    def unapply[A](ex: Exchange[A]): Option[A] = Some(ex.x)
 }
