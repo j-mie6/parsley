@@ -240,9 +240,10 @@ private [parsley] final class AlwaysRecoverWith[A](x: A) extends Instr
     override def toString: String = s"Recover'($x)"
 }
 
+// FIXME: Technically, this is wrong, we've lost the expectation information! We should add it in the default case
 private [parsley] final class JumpTable(prefixes: List[Char], labels: List[Int], private [this] var default: Int) extends Instr
 {
-    private [this] val jumpTable: mutable.Map[Char, Int] = mutable.Map(prefixes.zip(labels): _*)
+    private [this] val jumpTable = mutable.Map(prefixes.zip(labels): _*)
 
     override def apply(ctx: Context): Unit =
     {
@@ -268,7 +269,7 @@ private [parsley] final class JumpTable(prefixes: List[Char], labels: List[Int],
 
     private [parsley] def relabel(labels: Array[Int]): Unit =
     {
-        jumpTable.transform((k, v) => labels(v))
+        jumpTable.transform((_, v) => labels(v))
         default = labels(default)
     }
     override def toString: String = s"JumpTable(${jumpTable.mkString(", ")}, _ -> $default)"

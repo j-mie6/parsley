@@ -34,7 +34,7 @@ object Parsley
           * @param f A function that produces the next parser
           * @return The parser produces from the application of `f` on the result of the last parser
           */
-        def flatMap[B](f: A => Parsley[B]): Parsley[B] = new DeepEmbedding.Bind(p, f)
+        def flatMap[B](f: A => Parsley[B]): Parsley[B] = new DeepEmbedding.>>=(p, f)
         /**This combinator is an alias for `flatMap`*/
         def >>=[B](f: A => Parsley[B]): Parsley[B] = flatMap(f)
         /**This combinator is defined as `lift2((x, f) => f(x), p, f)`. It is pure syntactic sugar.*/
@@ -50,7 +50,7 @@ object Parsley
           * @return The value produced by the invokee if it was successful, or if it failed without consuming input, the
           *         possible result of parsing q.
           */
-        def <|>[B >: A](q: =>Parsley[B]): Parsley[B] = new DeepEmbedding.Or(p, q)
+        def <|>[B >: A](q: =>Parsley[B]): Parsley[B] = new DeepEmbedding.<|>(p, q)
         /**This combinator is defined as `p <|> pure(x)`. It is pure syntactic sugar.*/
         def </>[B >: A](x: B): Parsley[B] = this <|> pure(x)
         /**This combinator is an alias for <|>.*/
@@ -65,14 +65,14 @@ object Parsley
           * @param q The parser whose result should be returned
           * @return A new parser which first parses `p`, then `q` and returns the result of `q`
           */
-        def *>[A_ >: A, B](q: =>Parsley[B]): Parsley[B] = new DeepEmbedding.Then[A_, B](p, q)
+        def *>[A_ >: A, B](q: =>Parsley[B]): Parsley[B] = new DeepEmbedding.*>[A_, B](p, q)
         /**
           * This is the parser that corresponds to a more optimal version of `p.map(x => _ => x) <*> q`. It performs
           * the parse action of both parsers, in order, but discards the result of the second parser.
           * @param q The parser who should be executed but then discarded
           * @return A new parser which first parses `p`, then `q` and returns the result of the `p`
           */
-        def <*[B](q: =>Parsley[B]): Parsley[A] = new DeepEmbedding.Prev(p, q)
+        def <*[B](q: =>Parsley[B]): Parsley[A] = new DeepEmbedding.<*(p, q)
         /**
           * This is the parser that corresponds to `p *> pure(x)` or a more optimal version of `p.map(_ => x)`.
           * It performs the parse action of the invokee but discards its result and then results the value `x` instead
@@ -83,7 +83,7 @@ object Parsley
         /**This combinator is an alias for `*>`*/
         def >>[B](q: Parsley[B]): Parsley[B] = *>(q)
         /**This parser corresponds to `lift2(_::_, p, ps)` but is far more optimal. It should be preferred to the equivalent*/
-        def <::>[B >: A](ps: =>Parsley[List[B]]): Parsley[List[B]] = new DeepEmbedding.Cons(p, ps)
+        def <::>[B >: A](ps: =>Parsley[List[B]]): Parsley[List[B]] = new DeepEmbedding.<::>(p, ps)
         /**This parser corresponds to `lift2((_, _), p, q)`. For now it is sugar, but in future may be more optimal*/
         def <~>[A_ >: A, B](q: =>Parsley[B]): Parsley[(A_, B)] = lift2[A_, B, (A_, B)]((_, _), p, q)
         /** Filter the value of a parser; if the value returned by the parser matches the predicate `pred` then the
@@ -142,7 +142,7 @@ object Parsley
           * @return A new parser which parses `pf`, then `px` then applies the value returned by `px` to the function
           *         returned by `pf`
           */
-        def <*>(px: =>Parsley[A]): Parsley[B] = new DeepEmbedding.App(pf, px)
+        def <*>(px: =>Parsley[A]): Parsley[B] = new DeepEmbedding.<*>(pf, px)
     }
     implicit final class LazyFlattenParsley[+A](p: =>Parsley[Parsley[A]])
     {
@@ -214,7 +214,7 @@ object Parsley
     /** `many(p)` executes the parser `p` zero or more times. Returns a list of the returned values of `p`. */
     def many[A](p: =>Parsley[A]): Parsley[List[A]] = new DeepEmbedding.Many(p)
     /** `skipMany(p)` executes the parser `p` zero or more times and ignores the results. Returns `()` */
-    def skipMany[A](p: =>Parsley[A]): Parsley[Unit] = new DeepEmbedding.Then(new DeepEmbedding.SkipMany(p), new DeepEmbedding.Pure(()))
+    def skipMany[A](p: =>Parsley[A]): Parsley[Unit] = new DeepEmbedding.*>(new DeepEmbedding.SkipMany(p), new DeepEmbedding.Pure(()))
     /**
       * Evaluate each of the parsers in `ps` sequentially from left to right, collecting the results.
       * @param ps A list of parsers to be sequenced
@@ -342,47 +342,47 @@ private [parsley] object DeepEmbedding
             cont
         }
     }
-    private [parsley] final class App[A, B](_pf: =>Parsley[A => B], _px: =>Parsley[A]) extends Parsley[B]
+    private [parsley] final class <*>[A, B](_pf: =>Parsley[A => B], _px: =>Parsley[A]) extends Parsley[B]
     {
-        private [App] lazy val pf = _pf
-        private [App] lazy val px = _px 
+        private [<*>] lazy val pf = _pf
+        private [<*>] lazy val px = _px
         override def preprocess(cont: Parsley[B] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            pf.optimised(pf => px.optimised(px => cont(new App(pf, px))))
+            pf.optimised(pf => px.optimised(px => cont(new <*>(pf, px))))
         override def optimise: Parsley[B] = (pf, px) match
         {
             // Fusion laws
-            case (pf, Pure(x)) if pf.isInstanceOf[Pure[_]] || pf.isInstanceOf[App[_, _]] => pf match
+            case (pf, Pure(x)) if pf.isInstanceOf[Pure[_]] || pf.isInstanceOf[_ <*> _] => pf match
             {
                 // first position fusion
                 case Pure(f) => new Pure(f(x))
                 // second position fusion
-                case App(Pure(f: (T => A => B) @unchecked), py: Parsley[T]) => new App(new Pure((y: T) => f(y)(x)), py)
+                case Pure(f: (T => A => B) @unchecked) <*> (py: Parsley[T]) => new <*>(new Pure((y: T) => f(y)(x)), py)
                 // third position fusion
-                case App(App(Pure(f: (T => U => A => B) @unchecked), py: Parsley[T]), pz: Parsley[U]) => new App (new App(new Pure((y: T) => (z: U) => f(y)(z)(x)), py), pz)
+                case Pure(f: (T => U => A => B) @unchecked) <*> (py: Parsley[T]) <*> (pz: Parsley[U]) => new <*>(new <*>(new Pure((y: T) => (z: U) => f(y)(z)(x)), py), pz)
                 // interchange law: u <*> pure y == pure ($y) <*> u == ($y) <$> u (single instruction, so we benefit at code-gen)
-                case _ => new App(new Pure((f: A => B) => f(x)), pf)
+                case _ => new <*>(new Pure((f: A => B) => f(x)), pf)
             }
             // functor law: fmap f (fmap g p) == fmap (f . g) p where fmap f p = pure f <*> p from applicative
-            case (Pure(f), App(Pure(g: (T => A) @unchecked), p: Parsley[T])) => new App(new Pure(f.compose(g)), p)
+            case (Pure(f), Pure(g: (T => A) @unchecked) <*> (p: Parsley[T])) => new <*>(new Pure(f.compose(g)), p)
             // TODO: functor law with lift2!
             // right absorption law: mzero <*> p = mzero
             case (z: MZero, _) => z
             /* RE-ASSOCIATION LAWS */
             // re-association law 1: (q *> pf) <*> px = q *> (pf <*> px)
-            case (Then(q, pf), px) => new Then(q, new App(pf, px).optimise)
+            case (q *> pf, px) => new *>(q, new <*>(pf, px).optimise)
             case (pf, cont: Cont[_, _]) => cont match
             {
                 // re-association law 2: pf <*> (px <* q) = (pf <*> px) <* q
-                case Prev(px, q) => new Prev(new App(pf, px).optimise, q).optimise
+                case px <* q => new <*(new <*>(pf, px).optimise, q).optimise
                 // re-association law 3: p *> pure x = pure x <* p
                 // consequence of re-association law 3: pf <*> (q *> pure x) = (pf <*> pure x) <* q
-                case Then(q, px: Pure[_]) => new Prev(new App(pf, px).optimise, q).optimise
+                case q *> (px: Pure[_]) => new <*(new <*>(pf, px).optimise, q).optimise
                 case _ => this
             }
             // consequence of left zero law and monadic definition of <*>, preserving error properties of pf
-            case (p, z: MZero) => new Then(p, z)
+            case (p, z: MZero) => new *>(p, z)
             // interchange law: u <*> pure y == pure ($y) <*> u == ($y) <$> u (single instruction, so we benefit at code-gen)
-            case (pf, Pure(x)) => new App(new Pure((f: A => B) => f(x)), pf)
+            case (pf, Pure(x)) => new <*>(new Pure((f: A => B) => f(x)), pf)
             case _ => this
         }
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) = (pf, px) match
@@ -408,12 +408,12 @@ private [parsley] object DeepEmbedding
                 })
         }
     }
-    private [parsley] final class Or[A, +B >: A](_p: =>Parsley[A], _q: =>Parsley[B]) extends Parsley[B]
+    private [parsley] final class <|>[A, +B >: A](_p: =>Parsley[A], _q: =>Parsley[B]) extends Parsley[B]
     {
-        private [Or] lazy val p = _p
-        private [Or] lazy val q = _q
+        private [<|>] lazy val p = _p
+        private [<|>] lazy val q = _q
         override def preprocess(cont: Parsley[B] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            p.optimised(p => q.optimised(q => cont(new Or(p, q))))
+            p.optimised(p => q.optimised(q => cont(new <|>(p, q))))
         override def optimise = (p, q) match
         {
             // left catch law: pure x <|> p = pure x
@@ -424,7 +424,7 @@ private [parsley] object DeepEmbedding
             case (p, e: Empty) if e.expected == null => p
             // associative law: (u <|> v) <|> w = u <|> (v <|> w)
             // TODO add this in when brainfuck benchmark is ready, I want to see how this affects it!
-            //case (Or(u: Parsley[T], v: Parsley[A]), w) => new Or(u, new Or[A, B](v, w).optimise).asInstanceOf[Or[_, B]]
+            //case ((u: Parsley[T]) <|> (v: Parsley[A]), w) => new <|>(u, new <|>[A, B](v, w).optimise).asInstanceOf[_ <|> B]
             case _ => this
         }
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) = (p, q) match
@@ -478,12 +478,12 @@ private [parsley] object DeepEmbedding
                 })
         }
     }
-    private [parsley] final class Bind[A, +B](_p: =>Parsley[A], private [Bind] val f: A => Parsley[B]) extends Parsley[B]
+    private [parsley] final class >>=[A, +B](_p: =>Parsley[A], private [>>=] val f: A => Parsley[B]) extends Parsley[B]
     {
-        private [Bind] lazy val p = _p
+        private [>>=] lazy val p = _p
         override def preprocess(cont: Parsley[B] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) = p.optimised(p =>
         {
-            val b = new Bind(p, f)
+            val b = new >>=(p, f)
             b.expected = label
             cont(b)
         })
@@ -496,19 +496,19 @@ private [parsley] object DeepEmbedding
             case p@CharTok(c) => 
                 val fp = new Fixpoint(f(c.asInstanceOf[A]).optimise)
                 fp.expected = expected
-                new Then(p, fp)
+                new *>(p, fp)
             case p@StringTok(s) => 
                 val fp = new Fixpoint(f(s.asInstanceOf[A]).optimise)
                 fp.expected = expected
-                new Then(p, fp)
+                new *>(p, fp)
             // (q *> p) >>= f = q *> (p >>= f) / (p <* q) >>= f = (p >>= f) <* q
             case Cont(q, p) => 
-                val b = new Bind(p, f).optimise
+                val b = new >>=(p, f).optimise
                 b.expected = expected
-                new Then(q, b)
+                new *>(q, b)
             // monad law 3: (m >>= g) >>= f = m >>= (\x -> g x >>= f) NOTE: this *could* help if g x ended with a pure, since this would be optimised out!
-            case Bind(m: Parsley[T] @unchecked, g: (T => A) @unchecked) => 
-                val b = new Bind(m, (x: T) => new Bind(g(x), f).optimise)
+            case (m: Parsley[T] @unchecked) >>= (g: (T => A) @unchecked) =>
+                val b = new >>=(m, (x: T) => new >>=(g(x), f).optimise)
                 b.expected = expected
                 b
             // monadplus law (left zero)
@@ -545,12 +545,12 @@ private [parsley] object DeepEmbedding
         def discard: Parsley[A]
         def copy[B_ >: B](prev: Parsley[A], next: Parsley[B_]): Cont[A, B_]
     }
-    private [parsley] final class Then[A, +B](_p: =>Parsley[A], _q: =>Parsley[B]) extends Cont[A, B]
+    private [parsley] final class *>[A, +B](_p: =>Parsley[A], _q: =>Parsley[B]) extends Cont[A, B]
     {
-        private [Then] lazy val p = _p
-        private [Then] lazy val q = _q
+        private [*>] lazy val p = _p
+        private [*>] lazy val q = _q
         override def preprocess(cont: Parsley[B] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            p.optimised(p => q.optimised(q => cont(new Then(p, q))))
+            p.optimised(p => q.optimised(q => cont(new *>(p, q))))
         override def optimise: Parsley[B] = (p, q) match
         {
             // pure _ *> p = p
@@ -560,11 +560,11 @@ private [parsley] object DeepEmbedding
                 st.expected = ct.expected
                 new Then(st, new Pure(d.asInstanceOf[B]))*/
             // p *> pure _ *> q = p *> q
-            case (Then(p, _: Pure[_]), q) => new Then(p, q).optimise
+            case (p *> (_: Pure[_]), q) => new *>(p, q).optimise
             // mzero *> p = mzero (left zero and definition of *> in terms of >>=)
             case (z: MZero, _) => z
             // re-association - normal form of Then chain is to have result at the top of tree
-            case (p, Then(q, r)) => new Then(new Then(p, q).optimise, r)
+            case (p, q *> r) => new *>(new *>(p, q).optimise, r)
             case _ => this
         }
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) = (p, q) match
@@ -586,29 +586,29 @@ private [parsley] object DeepEmbedding
         }
         override def discard: Parsley[A] = p
         override def result: Parsley[B] = q
-        override def copy[B_ >: B](prev: Parsley[A], next: Parsley[B_]): Then[A, B_] = new Then(prev, next)
+        override def copy[B_ >: B](prev: Parsley[A], next: Parsley[B_]): A *> B_ = new *>(prev, next)
     }
-    private [parsley] final class Prev[B, +A](_p: =>Parsley[A], _q: =>Parsley[B]) extends Cont[B, A]
+    private [parsley] final class <*[+A, B](_p: =>Parsley[A], _q: =>Parsley[B]) extends Cont[B, A]
     {
-        private [Prev] lazy val p = _p
-        private [Prev] lazy val q = _q
+        private [<*] lazy val p = _p
+        private [<*] lazy val q = _q
         override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            p.optimised(p => q.optimised(q => cont(new Prev(p, q))))
+            p.optimised(p => q.optimised(q => cont(new <*(p, q))))
         override def optimise: Parsley[A] = (p, q) match
         {
             // TODO: Consider char(c) <* char(d) => string(cd) *> pure(c) in some form!
             // p <* pure _ = p
             case (p, _: Pure[_]) => p
             // re-association law 3: pure x <* p = p *> pure x
-            case (px: Pure[_], p) => new Then(p, px).optimise
+            case (px: Pure[_], p) => new *>(p, px).optimise
             // p <* (q *> pure _) = p <* q
-            case (p, Then(q, _: Pure[_])) => new Prev(p, q).optimise
+            case (p, q *> (_: Pure[_])) => new <*(p, q).optimise
             // p <* mzero = p *> mzero (by preservation of error messages and failure properties) - This moves the pop instruction after the failure
-            case (p, z: MZero) => new Then(p, z)
+            case (p, z: MZero) => new *>(p, z)
             // mzero <* p = mzero (left zero law and definition of <* in terms of >>=)
             case (z: MZero, _) => z
             // re-association - normal form of Prev chain is to have result at the top of tree
-            case (Prev(r, q), p) => new Prev(r, new Prev(q, p).optimise)
+            case (r <* q, p) => new <*(r, new <*(q, p).optimise)
             case _ => this
         }
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) = (p, q) match
@@ -633,7 +633,7 @@ private [parsley] object DeepEmbedding
         }
         override def discard: Parsley[B] = q
         override def result: Parsley[A] = p
-        override def copy[A_ >: A](prev: Parsley[B], next: Parsley[A_]): Prev[B, A_] = new Prev(next, prev)
+        override def copy[A_ >: A](prev: Parsley[B], next: Parsley[A_]): <*[A_, B] = new <*(next, prev)
     }
     private [parsley] final class Attempt[+A](_p: =>Parsley[A]) extends Parsley[A]
     {
@@ -777,12 +777,12 @@ private [parsley] object DeepEmbedding
     // TODO: Right associative normal form
     // TODO: Consider merging char ::s into strings?
     // TODO: Perform applicative fusion
-    private [parsley] final class Cons[A, +B >: A](_p: =>Parsley[A], _ps: =>Parsley[List[B]]) extends Parsley[List[B]]
+    private [parsley] final class <::>[A, +B >: A](_p: =>Parsley[A], _ps: =>Parsley[List[B]]) extends Parsley[List[B]]
     {
-        private [Cons] lazy val p = _p
-        private [Cons] lazy val ps = _ps
+        private [<::>] lazy val p = _p
+        private [<::>] lazy val ps = _ps
         override def preprocess(cont: Parsley[List[B]] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            p.optimised(p => ps.optimised(ps => cont(new Cons(p, ps))))
+            p.optimised(p => ps.optimised(ps => cont(new <::>(p, ps))))
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
         {
             new Suspended(p.codeGen
@@ -1191,13 +1191,13 @@ private [parsley] object DeepEmbedding
     }
 
     private [DeepEmbedding] object Pure           { def unapply[A](self: Pure[A]): Option[A] = Some(self.x) }
-    private [DeepEmbedding] object App            { def unapply[A, B](self: App[A, B]): Option[(Parsley[A=>B], Parsley[A])] = Some((self.pf, self.px)) }
-    private [DeepEmbedding] object Or             { def unapply[A, B >: A](self: Or[A, B]): Option[(Parsley[A], Parsley[B])] = Some((self.p, self.q)) }
-    private [DeepEmbedding] object Bind           { def unapply[A, B](self: Bind[A, B]): Option[(Parsley[A], A => Parsley[B])] = Some((self.p, self.f)) }
+    private [DeepEmbedding] object <*>            { def unapply[A, B](self: <*>[A, B]): Option[(Parsley[A=>B], Parsley[A])] = Some((self.pf, self.px)) }
+    private [DeepEmbedding] object <|>            { def unapply[A, B >: A](self: A <|> B): Option[(Parsley[A], Parsley[B])] = Some((self.p, self.q)) }
+    private [DeepEmbedding] object >>=            { def unapply[A, B](self: A >>= B): Option[(Parsley[A], A => Parsley[B])] = Some((self.p, self.f)) }
     private [DeepEmbedding] object Satisfy        { def unapply(self: Satisfy): Option[Char => Boolean] = Some(self.f) }
     private [DeepEmbedding] object Cont           { def unapply[A, B](self: Cont[A, B]): Option[(Parsley[A], Parsley[B])] = Some((self.discard, self.result)) }
-    private [DeepEmbedding] object Then           { def unapply[A, B](self: Then[A, B]): Option[(Parsley[A], Parsley[B])] = Some((self.p, self.q)) }
-    private [DeepEmbedding] object Prev           { def unapply[A, B](self: Prev[B, A]): Option[(Parsley[A], Parsley[B])] = Some((self.p, self.q)) }
+    private [DeepEmbedding] object *>             { def unapply[A, B](self: A *> B): Option[(Parsley[A], Parsley[B])] = Some((self.p, self.q)) }
+    private [DeepEmbedding] object <*             { def unapply[A, B](self: A <* B): Option[(Parsley[A], Parsley[B])] = Some((self.p, self.q)) }
     private [DeepEmbedding] object Attempt        { def unapply[A](self: Attempt[A]): Option[Parsley[A]] = Some(self.p) }
     private [DeepEmbedding] object Look           { def unapply[A](self: Look[A]): Option[Parsley[A]] = Some(self.p) }
     private [DeepEmbedding] object Fail           { def unapply(self: Fail): Option[String] = Some(self.msg) }
@@ -1205,7 +1205,7 @@ private [parsley] object DeepEmbedding
     private [DeepEmbedding] object CharTok        { def unapply(self: CharTok): Option[Char] = Some(self.c) }
     private [DeepEmbedding] object StringTok      { def unapply(self: StringTok): Option[String] = Some(self.s) }
     //private [DeepEmbedding] object Lift           { def unapply[A, B, C](self: Lift[A, B, C]): Option[((A, B) => C, Parsley[A], Parsley[B])] = Some((self.f, self.p, self.q))}
-    //private [DeepEmbedding] object Cons           { def unapply[A, B >: A](self: Cons[A, B]): Option[(Parsley[A], Parsley[List[B]])] = Some((self.p, self.ps)) }
+    //private [DeepEmbedding] object <::>           { def unapply[A, B >: A](self: <::>[A, B]): Option[(Parsley[A], Parsley[List[B]])] = Some((self.p, self.ps)) }
     //private [DeepEmbedding] object FastFail       { def unapply[A](self: FastFail[A]): Option[(Parsley[A], A=>String)] = Some((self.p, self.msggen)) }
     //private [DeepEmbedding] object FastUnexpected { def unapply[A](self: FastUnexpected[A]): Option[(Parsley[A], A=>String)] = Some((self.p, self.msggen)) }
     //private [DeepEmbedding] object Ensure         { def unapply[A](self: Ensure[A]): Option[(Parsley[A], A=>Boolean)] = Some((self.p, self.pred)) }
@@ -1232,6 +1232,7 @@ private [parsley] object DeepEmbedding
 
         // The jumptable is impressively fast, beating the or chain effortlessly!
         // Now let's work out how to actually integrate it!
+        // NOTE: Bear in mind that the default must be an Empty instruction if there is no further chain!
         val test = new Parsley //#bespoke parsley solutions :p
         {
             override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]] = cont(this)

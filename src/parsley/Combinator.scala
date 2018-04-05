@@ -125,14 +125,14 @@ object Combinator
     def chainPost[A](p: =>Parsley[A], op: =>Parsley[A => A]) = new DeepEmbedding.ChainPost(p, op)
 
     /**This parser only succeeds at the end of the input. This is a primitive parser.*/
-    val eof: Parsley[Unit] = new DeepEmbedding.Then(new DeepEmbedding.Eof, new DeepEmbedding.Pure(()))
+    val eof: Parsley[Unit] = new DeepEmbedding.*>(new DeepEmbedding.Eof, new DeepEmbedding.Pure(()))
 
     /**`notFollowedBy(p)` only succeeds when parser `p` fails. This parser does not consume any input.
       * This parser can be used to implement the 'longest match' rule. For example, when recognising
       * keywords, we want to make sure that a keyword is not followed by a legal identifier character,
       * in which case the keyword is actually an identifier. We can program this behaviour as follows:
       * {{{attempt(kw *> notFollowedBy(alphaNum))}}}*/
-    def notFollowedBy(p: Parsley[_]): Parsley[Unit] = new DeepEmbedding.Then(new DeepEmbedding.NotFollowedBy(p), new DeepEmbedding.Pure(()))
+    def notFollowedBy(p: Parsley[_]): Parsley[Unit] = new DeepEmbedding.*>(new DeepEmbedding.NotFollowedBy(p), new DeepEmbedding.Pure(()))
 
     /**`manyTill(p, end)` applies parser `p` zero or more times until the parser `end` succeeds.
       * Returns a list of values returned by `p`. This parser can be used to scan comments.*/
