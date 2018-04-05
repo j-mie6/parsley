@@ -1245,13 +1245,13 @@ private [parsley] object DeepEmbedding
                 val end = labels.fresh()
                 instrs += new instructions.JumpTable(List('a', 'c', 'f'), List(l1, l2, l3), d)
                 instrs += new instructions.Label(l1)
-                instrs += new instructions.Push(10)
+                instrs += instructions.CharTokFastPerform('a', (_: Char) => 10, null)
                 instrs += new instructions.Jump(end)
                 instrs += new instructions.Label(l2)
-                instrs += new instructions.Push(20)
+                instrs += instructions.CharTokFastPerform('c', (_: Char) => 20, null)
                 instrs += new instructions.Jump(end)
                 instrs += new instructions.Label(l3)
-                instrs += new instructions.Push(30)
+                instrs += instructions.CharTokFastPerform('f', (_: Char) => 30, null)
                 instrs += new instructions.Jump(end)
                 instrs += new instructions.Label(d)
                 instrs += new instructions.Push(40)
@@ -1259,14 +1259,16 @@ private [parsley] object DeepEmbedding
                 cont
             }
         }
+        val test_ = 'a' #> 10 <|> pure(40)
         println(test.pretty)
+        println(test_.pretty)
         println(runParserFastUnsafe(test, "e"))
         val start = System.currentTimeMillis
         for (_ <- 0 to 10000000)
         {
             //(q <|> q <|> q <|> q).instrs
             //runParserFastUnsafe(chain, "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1")
-            runParserFastUnsafe(test, "6")
+            runParserFastUnsafe(test, "a")
         }
         println(System.currentTimeMillis - start)
         println(chain.pretty)

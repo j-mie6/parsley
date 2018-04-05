@@ -249,20 +249,12 @@ private [parsley] final class JumpTable(prefixes: List[Char], labels: List[Int],
     {
         if (ctx.moreInput)
         {
-            val c = ctx.nextChar
             // This implementation runs slower, but it *does* have more predictable memory and time requirements
-            /*val dest = jumpTable.get(c)
+            /*val dest = jumpTable.get(ctx.nextChar)
             if (dest.isEmpty) ctx.pc = default
             else ctx.pc = dest.get*/
             // This version is faster, but might have to resize the HashTable if it sees the default case too many times
-            ctx.pc = jumpTable.getOrElseUpdate(c, default)
-            ctx.offset += 1
-            (c: @switch) match
-            {
-                case '\n' => ctx.line += 1; ctx.col = 1
-                case '\t' => ctx.col += 4 - ((ctx.col - 1) & 3)
-                case _ => ctx.col += 1
-            }
+            ctx.pc = jumpTable.getOrElseUpdate(ctx.nextChar, default)
         }
         else ctx.pc = default
     }
