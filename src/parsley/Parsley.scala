@@ -5,7 +5,7 @@ import parsley.instructions._
 
 import language.existentials
 import scala.annotation.tailrec
-import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
     
 // User API
 object Parsley
@@ -318,6 +318,7 @@ abstract class Parsley[+A] private [parsley]
         applyLabels(instrsOversize, labelMapping, instrs_, instrs_.length)
         instrs_
     }
+    final private [parsley] var leading: UnsafeOption[Option[Parsley[_]]] = _
     final private [parsley] def fix(implicit seen: Set[Parsley[_]]): Parsley[A] = if (seen.contains(this)) new DeepEmbedding.Fixpoint(this) else this
     
     // Abstracts
@@ -331,6 +332,23 @@ abstract class Parsley[+A] private [parsley]
     
 private [parsley] object DeepEmbedding
 {
+    // Parsley objects to store an UnsafeOption of an Option of a leading pointer null is uncomputed
+    // When tablable is first called it will compute the leading, which serves as a memoisation (None = untablable)
+    // tablable is tail-recursive in the same was tablify is, char and strings are trivially tablable
+    // attempt of a tablable thing is tablable
+    // a cont chain that starts with a tablable is tablable
+    // an app chain that starts with a tablable as the first non-pure node is tablable
+    final private def tablable(_p: Parsley[_]): Boolean = false
+    // If the end of a tablified list is None then that implies that it is the default case
+    // If the end of a tablified list is Some then that implies an empty default must be constructed
+    // In case of None'd list, the codeGen cont continues by codeGenning that p, else we are done for this tree, call cont!
+    @tailrec final private [DeepEmbedding] def tablify(_p: Parsley[_], acc: ListBuffer[(Parsley[_], Option[Parsley[_]])]): List[(Parsley[_], Option[Parsley[_]])] = _p match
+    {
+        case p <|> q if tablable(p) => tablify(q, acc += ((p, p.leading)))
+        case p if tablable(p) => (acc += ((p, p.leading))).toList
+        case p => (acc += ((p, None))).toList
+    }
+
     // Core Embedding
     private [parsley] final class Pure[A](private [Pure] val x: A) extends Parsley[A]
     {
