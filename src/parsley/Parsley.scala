@@ -677,16 +677,16 @@ private [parsley] object DeepEmbedding
         {
             // pure _ *> p = p
             case (_: Pure[_], v) => v
-            /*case (ct@CharTok(c), CharTok(d)) => 
-                val st = new StringTok(c.toString + d)
-                st.expected = ct.expected
-                new Then(st, new Pure(d.asInstanceOf[B]))*/
+            // char(c) *> char(d) = string(cd) *> pure(d)
+            case (CharTok(c), CharTok(d)) => new *>(new StringTok(c.toString + d), new Pure(d)).optimise.asInstanceOf[Parsley[B]]
             // p *> pure _ *> q = p *> q
             case (u *> (_: Pure[_]), v) => new *>(u, v).optimise
+            // string(s) *> char(c) = string(sc) *> pure(c)
+            case (StringTok(s), CharTok(c)) => new *>(new StringTok(s + c), new Pure(c)).optimise.asInstanceOf[Parsley[B]]
             // mzero *> p = mzero (left zero and definition of *> in terms of >>=)
             case (z: MZero, _) => z
             // re-association - normal form of Then chain is to have result at the top of tree
-            case (u, v *> w) => new *>(new *>(u, v).optimise, w)
+            case (u, v *> w) => new *>(new *>(u, v).optimise, w).optimise
             case _ => this
         }
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) = (p, q) match
@@ -722,14 +722,18 @@ private [parsley] object DeepEmbedding
             case (u, _: Pure[_]) => u
             // re-association law 3: pure x <* p = p *> pure x
             case (u: Pure[_], v) => new *>(v, u).optimise
+            // char(c) <* char(d) = string(cd) *> pure(c)
+            case (CharTok(c), CharTok(d)) => new *>(new StringTok(c.toString + d), new Pure(c)).asInstanceOf[Parsley[A]]
             // p <* (q *> pure _) = p <* q
             case (u, v *> (_: Pure[_])) => new <*(u, v).optimise
+            // char(c) <* string(s) = string(cs) *> pure(c)
+            case (CharTok(c), StringTok(s)) => new *>(new StringTok(c.toString + s), new Pure(c)).asInstanceOf[Parsley[A]]
             // p <* mzero = p *> mzero (by preservation of error messages and failure properties) - This moves the pop instruction after the failure
             case (u, z: MZero) => new *>(u, z)
             // mzero <* p = mzero (left zero law and definition of <* in terms of >>=)
             case (z: MZero, _) => z
             // re-association - normal form of Prev chain is to have result at the top of tree
-            case (u <* v, w) => new <*(u, new <*(v, w).optimise)
+            case (u <* v, w) => new <*(u, new <*(v, w).optimise).optimise
             case _ => this
         }
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) = (p, q) match

@@ -1,6 +1,6 @@
 import parsley.{Failure, Parsley, Success, runParser}
 import parsley.Parsley._
-import parsley.Char.{charLift, char, stringLift}
+import parsley.Char.{charLift, char, stringLift, satisfy}
 
 class CoreTests extends ParsleyTest
 {
@@ -26,7 +26,7 @@ class CoreTests extends ParsleyTest
 
     they must "only consume a single character of input at most" in
     {
-        var res = runParser('a' *> 'b', "aaaaaa")
+        var res = runParser(satisfy(_ == 'a') *> 'b', "aaaaaa")
         res shouldBe a [Failure]
         res match
         {
@@ -147,7 +147,7 @@ class CoreTests extends ParsleyTest
        an [Exception] should be thrownBy runParser(many(pure(5)), "")
     }
 
-    "stack overflows" should "not occur" in pendingUntilFixed
+    "stack overflows" should "not occur" in
     {
         def repeat(n: Int, p: Parsley[Char]): Parsley[Char] =
         {
