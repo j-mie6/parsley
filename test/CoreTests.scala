@@ -169,6 +169,6 @@ class CoreTests extends ParsleyTest
     they should "not be caused by bind optimisation" in
     {
         lazy val uhoh: Parsley[Unit] = 'a' >>= (_ => uhoh)
-        /*noException should be thrownBy */runParser(uhoh, "a")
+        noException should be thrownBy runParser(uhoh, "a")
     }
 }

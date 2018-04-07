@@ -758,7 +758,7 @@ private [parsley] object DeepEmbedding
         }
         override def discard: Parsley[B] = q
         override def result: Parsley[A] = p
-        override def copy[A_ >: A](prev: Parsley[B], next: Parsley[A_]): <*[A_, B] = new <*(next, prev)
+        override def copy[A_ >: A](prev: Parsley[B], next: Parsley[A_]): <*[A_, B] = <*(next, prev)
     }
     private [parsley] final class Attempt[+A](_p: =>Parsley[A]) extends Parsley[A]
     {
@@ -907,7 +907,7 @@ private [parsley] object DeepEmbedding
         private [<::>] lazy val p = _p
         private [<::>] lazy val ps = _ps
         override def preprocess(cont: Parsley[List[B]] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            p.optimised(p => ps.optimised(ps => cont(new <::>(p, ps))))
+            p.optimised(p => ps.optimised(ps => cont(<::>(p, ps))))
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
         {
             new Suspended(p.codeGen
@@ -1036,7 +1036,7 @@ private [parsley] object DeepEmbedding
     {
         private [Many] lazy val p = _p
         override def preprocess(cont: Parsley[List[A]] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            p.optimised(p => cont(new Many(p)))
+            p.optimised(p => cont(Many(p)))
         override def optimise = p match
         {
             case _: Pure[A] => throw new Exception("many given parser which consumes no input")
@@ -1061,7 +1061,7 @@ private [parsley] object DeepEmbedding
     {
         private [SkipMany] lazy val p = _p
         override def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            p.optimised(p => cont(new SkipMany(p)))
+            p.optimised(p => cont(SkipMany(p)))
         override def optimise = p match
         {
             case _: Pure[A] => throw new Exception("skipMany given parser which consumes no input")
@@ -1087,7 +1087,7 @@ private [parsley] object DeepEmbedding
         private [ChainPost] lazy val p = _p
         private [ChainPost] lazy val op = _op
         override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            p.optimised(p => op.optimised(op => cont(new ChainPost(p, op))))
+            p.optimised(p => op.optimised(op => cont(ChainPost(p, op))))
         override def optimise = op match
         {
             case _: Pure[A => A] => throw new Exception("left chain given parser which consumes no input")
@@ -1116,7 +1116,7 @@ private [parsley] object DeepEmbedding
         private [ChainPre] lazy val p = _p
         private [ChainPre] lazy val op = _op
         override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            p.optimised(p => op.optimised(op => cont(new ChainPre(p, op))))
+            p.optimised(p => op.optimised(op => cont(ChainPre(p, op))))
         override def optimise = op match
         {
             case _: Pure[A => A] => throw new Exception("right chain given parser which consumes no input")
@@ -1146,7 +1146,7 @@ private [parsley] object DeepEmbedding
         private [Chainl] lazy val p = _p
         private [Chainl] lazy val op = _op
         override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            p.optimised(p => op.optimised(op => cont(new Chainl(p, op))))
+            p.optimised(p => op.optimised(op => cont(Chainl(p, op))))
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
         {
             val body = labels.fresh()
@@ -1169,7 +1169,7 @@ private [parsley] object DeepEmbedding
         private [Chainr] lazy val p = _p
         private [Chainr] lazy val op = _op
         override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            p.optimised(p => op.optimised(op => cont(new Chainr(p, op))))
+            p.optimised(p => op.optimised(op => cont(Chainr(p, op))))
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
         {
             val body = labels.fresh()
@@ -1188,12 +1188,12 @@ private [parsley] object DeepEmbedding
             })
         }
     }
-    private [parsley] final class SepEndBy1[B, +A](_p: =>Parsley[A], _sep: =>Parsley[B]) extends Parsley[List[A]]
+    private [parsley] final class SepEndBy1[+A, B](_p: =>Parsley[A], _sep: =>Parsley[B]) extends Parsley[List[A]]
     {
         private [SepEndBy1] lazy val p = _p
         private [SepEndBy1] lazy val sep = _sep
         override def preprocess(cont: Parsley[List[A]] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            p.optimised(p => sep.optimised(sep => cont(new SepEndBy1(p, sep))))
+            p.optimised(p => sep.optimised(sep => cont(SepEndBy1(p, sep))))
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
         {
             val body = labels.fresh()
@@ -1216,7 +1216,7 @@ private [parsley] object DeepEmbedding
     {
         private [ManyTill] lazy val body = _body
         override def preprocess(cont: Parsley[List[A]] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            body.optimised(body => cont(new ManyTill(body)))
+            body.optimised(body => cont(ManyTill(body)))
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
         {
             val start = labels.fresh()
@@ -1237,7 +1237,7 @@ private [parsley] object DeepEmbedding
         private [Ternary] lazy val p = _p
         private [Ternary] lazy val q = _q
         override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            b.optimised(b => p.optimised(p => q.optimised(q => cont(new Ternary(b, p, q)))))
+            b.optimised(b => p.optimised(p => q.optimised(q => cont(Ternary(b, p, q)))))
         override def optimise = b match
         {
             case Pure(true) => p
@@ -1302,8 +1302,8 @@ private [parsley] object DeepEmbedding
         private [ErrorRelabel] lazy val p = _p
         override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
-            if (label == null) p.optimised(p => cont(p))(seen, msg, depth)
-            else p.optimised(p => cont(p))
+            if (label == null) p.optimised(cont)(seen, msg, depth)
+            else p.optimised(cont)
         }
         override def optimise = throw new Exception("Error relabelling should not be in optimisation!")
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) = throw new Exception("Error relabelling should not be in code gen!")
@@ -1347,7 +1347,7 @@ private [parsley] object DeepEmbedding
     }
     private [DeepEmbedding] object Satisfy
     {
-        def unapply(self: Satisfy): Option[Char => Boolean] = Some(self.f)
+        //def unapply(self: Satisfy): Option[Char => Boolean] = Some(self.f)
     }
     private [DeepEmbedding] object Cont
     {
@@ -1357,7 +1357,7 @@ private [parsley] object DeepEmbedding
     {
         def apply[A, B](p: Parsley[A], q: Parsley[B]): A *> B =
         {
-            val res: A *> B = new *>(null, null)
+            val res: A *> B = new *>(p, q)
             res.p = p
             res.q = q
             res
@@ -1366,7 +1366,7 @@ private [parsley] object DeepEmbedding
     }
     private [DeepEmbedding] object <*
     {
-        def apply[A, B >: A](p: Parsley[A], q: Parsley[B]): A <* B =
+        def apply[A, B](p: Parsley[A], q: Parsley[B]): A <* B =
         {
             val res: A <* B = new <*(p, q)
             res.p// = p
@@ -1393,15 +1393,15 @@ private [parsley] object DeepEmbedding
             res.p// = p
             res
         }
-        def unapply[A](self: Look[A]): Option[Parsley[A]] = Some(self.p)
+        //def unapply[A](self: Look[A]): Option[Parsley[A]] = Some(self.p)
     }
     private [DeepEmbedding] object Fail
     {
-        def unapply(self: Fail): Option[String] = Some(self.msg)
+        //def unapply(self: Fail): Option[String] = Some(self.msg)
     }
     private [DeepEmbedding] object Unexpected
     {
-        def unapply(self: Unexpected): Option[String] = Some(self.msg)
+        //def unapply(self: Unexpected): Option[String] = Some(self.msg)
     }
     private [DeepEmbedding] object CharTok
     {
@@ -1420,7 +1420,6 @@ private [parsley] object DeepEmbedding
             res.q// = q
             res
         }
-        def unapply[A, B, C](self: Lift[A, B, C]): Option[((A, B) => C, Parsley[A], Parsley[B])] = Some((self.f, self.p, self.q))
     }
     private [DeepEmbedding] object <::>
     {
@@ -1431,7 +1430,6 @@ private [parsley] object DeepEmbedding
             res.ps// = q
             res
         }
-        def unapply[A, B >: A](self: <::>[A, B]): Option[(Parsley[A], Parsley[List[B]])] = Some((self.p, self.ps))
     }
     private [DeepEmbedding] object FastFail
     {
@@ -1441,7 +1439,6 @@ private [parsley] object DeepEmbedding
             res.p// = p
             res
         }
-        def unapply[A](self: FastFail[A]): Option[(Parsley[A], A=>String)] = Some((self.p, self.msggen))
     }
     private [DeepEmbedding] object FastUnexpected
     {
@@ -1487,7 +1484,6 @@ private [parsley] object DeepEmbedding
             res.p// = p
             res
         }
-        def unapply[A](self: Many[A]): Option[Parsley[A]] = Some(self.p)
     }
     private [DeepEmbedding] object SkipMany
     {
@@ -1497,7 +1493,6 @@ private [parsley] object DeepEmbedding
             res.p// = p
             res
         }
-        def unapply[A](self: SkipMany[A]): Option[Parsley[A]] = Some(self.p)
     }
     private [DeepEmbedding] object ChainPost
     {
@@ -1509,9 +1504,66 @@ private [parsley] object DeepEmbedding
             res
         }
     }
+    private [DeepEmbedding] object ChainPre
+    {
+        def apply[A](p: Parsley[A], op: Parsley[A => A]): ChainPre[A] =
+        {
+            val res: ChainPre[A] = new ChainPre(p, op)
+            res.p// = p
+            res.op// = op
+            res
+        }
+    }
+    private [DeepEmbedding] object Chainl
+    {
+        def apply[A](p: Parsley[A], op: Parsley[(A, A) => A]): Chainl[A] =
+        {
+            val res: Chainl[A] = new Chainl(p, op)
+            res.p// = p
+            res.op// = op
+            res
+        }
+    }
+    private [DeepEmbedding] object Chainr
+    {
+        def apply[A](p: Parsley[A], op: Parsley[(A, A) => A]): Chainr[A] =
+        {
+            val res: Chainr[A] = new Chainr(p, op)
+            res.p// = p
+            res.op// = op
+            res
+        }
+    }
+    private [DeepEmbedding] object SepEndBy1
+    {
+        def apply[A, B](p: Parsley[A], sep: Parsley[B]): SepEndBy1[A, B] =
+        {
+            val res: SepEndBy1[A, B] = new SepEndBy1(p, sep)
+            res.p// = p
+            res.sep// = sep
+            res
+        }
+    }
     private [parsley] object ManyTill
     {
         object Stop
+        def apply[A](body: Parsley[Any]): ManyTill[A] =
+        {
+            val res: ManyTill[A] = new ManyTill(body)
+            res.body// = body
+            res
+        }
+    }
+    private [DeepEmbedding] object Ternary
+    {
+        def apply[A](b: Parsley[Boolean], p: Parsley[A], q: Parsley[A]): Ternary[A] =
+        {
+            val res: Ternary[A] = new Ternary(b, p, q)
+            res.b// = b
+            res.p// = p
+            res.q// = q
+            res
+        }
     }
     private [DeepEmbedding] object NotFollowedBy
     {
