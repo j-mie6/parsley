@@ -1,0 +1,442 @@
+package parsley.instructions
+
+import parsley.{DeepEmbedding, UnsafeOption}
+import Stack.isEmpty
+
+import scala.collection.mutable.ListBuffer
+
+private [parsley] final class Lift[A, B, C](f: (A, B) => C) extends Instr
+{
+    private [this] val g = f.asInstanceOf[(Any, Any) => C]
+    override def apply(ctx: Context): Unit =
+    {
+        val y = ctx.stack.upop()
+        ctx.stack.exchange(g(ctx.stack.peek, y))
+        ctx.inc()
+    }
+    override def toString: String = "Lift2(f)"
+}
+
+private [parsley] object Cons extends Instr
+{
+    final override def apply(ctx: Context): Unit =
+    {
+        val xs = ctx.stack.pop[List[_]]()
+        ctx.stack.exchange(ctx.stack.upeek::xs)
+        ctx.inc()
+    }
+    override def toString: String = "Cons"
+}
+
+private [parsley] final class Many(var label: Int) extends JumpInstr
+{
+    private[this] val acc: ListBuffer[Any] = ListBuffer.empty
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.status eq Good)
+        {
+            acc += ctx.stack.upop()
+            ctx.checkStack.head = ctx.offset
+            ctx.pc = label
+        }
+        // If the head of input stack is not the same size as the head of check stack, we fail to next handler
+        else if (ctx.offset != ctx.checkStack.head) { ctx.checkStack = ctx.checkStack.tail; acc.clear(); ctx.fail() }
+        else
+        {
+            ctx.stack.push(acc.toList)
+            acc.clear()
+            ctx.checkStack = ctx.checkStack.tail
+            ctx.status = Good
+            ctx.inc()
+        }
+    }
+    override def toString: String = s"Many($label)"
+    override def copy: Many = new Many(label)
+}
+
+private [parsley] final class SkipMany(var label: Int) extends JumpInstr with NoPush
+{
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.status eq Good)
+        {
+            ctx.stack.pop_()
+            ctx.checkStack.head = ctx.offset
+            ctx.pc = label
+        }
+        // If the head of input stack is not the same size as the head of check stack, we fail to next handler
+        else if (ctx.offset != ctx.checkStack.head) { ctx.checkStack = ctx.checkStack.tail; ctx.fail() }
+        else
+        {
+            ctx.checkStack = ctx.checkStack.tail
+            ctx.status = Good
+            ctx.inc()
+        }
+    }
+    override def toString: String = s"SkipMany($label)"
+    override def copy: SkipMany = new SkipMany(label)
+}
+
+private [parsley] final class ChainPost(var label: Int) extends JumpInstr
+{
+    private[this] var acc: Any = _
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.status eq Good)
+        {
+            // When acc is null, we are entering the instruction for the first time, a p will be on the stack
+            if (acc == null)
+            {
+                val op = ctx.stack.upop()
+                acc = ctx.stack.upeek
+                ctx.stack.exchange(op)
+            }
+            acc = ctx.stack.pop[Any => Any]()(acc)
+            ctx.checkStack.head = ctx.offset
+            ctx.pc = label
+        }
+        // If the head of input stack is not the same size as the head of check stack, we fail to next handler
+        else if (ctx.offset != ctx.checkStack.head) { ctx.checkStack = ctx.checkStack.tail; acc = null; ctx.fail() }
+        else
+        {
+            // When acc is null, we have entered for first time but the op failed, so the result is already on the stack
+            if (acc != null)
+            {
+                ctx.stack.push(acc)
+                acc = null
+            }
+            ctx.checkStack = ctx.checkStack.tail
+            ctx.status = Good
+            ctx.inc()
+        }
+    }
+    override def toString: String = s"ChainPost($label)"
+    override def copy: ChainPost = new ChainPost(label)
+}
+
+private [parsley] final class ChainPre(var label: Int) extends JumpInstr
+{
+    private var acc: Any => Any = _
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.status eq Good)
+        {
+            // If acc is null we are entering the instruction, so nothing to compose, this saves on an identity call
+            if (acc == null) acc = ctx.stack.pop[Any => Any]()
+            // We perform the acc after the tos function; the tos function is "closer" to the final p
+            else acc = ctx.stack.pop[Any => Any]().andThen(acc)
+            ctx.checkStack.head = ctx.offset
+            ctx.pc = label
+        }
+        // If the head of input stack is not the same size as the head of check stack, we fail to next handler
+        else if (ctx.offset != ctx.checkStack.head) { ctx.checkStack = ctx.checkStack.tail; acc = null; ctx.fail() }
+        else
+        {
+            ctx.stack.push(if (acc == null) identity[Any](_) else acc)
+            acc = null
+            ctx.checkStack = ctx.checkStack.tail
+            ctx.status = Good
+            ctx.inc()
+        }
+    }
+    override def toString: String = s"ChainPre($label)"
+    override def copy: ChainPre = new ChainPre(label)
+}
+private [parsley] final class Chainl(var label: Int) extends JumpInstr
+{
+    private[this] var acc: Any = _
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.status eq Good)
+        {
+            val y = ctx.stack.upop()
+            val op = ctx.stack.pop[(Any, Any) => Any]()
+            // When acc is null, we are entering the instruction for the first time, a p will be on the stack
+            if (acc == null) acc = op(ctx.stack.upop(), y)
+            else acc = op(acc, y)
+            ctx.checkStack.head = ctx.offset
+            ctx.pc = label
+        }
+        // If the head of input stack is not the same size as the head of check stack, we fail to next handler
+        else if (ctx.offset != ctx.checkStack.head)
+        {
+            ctx.checkStack = ctx.checkStack.tail
+            acc = null
+            ctx.fail()
+        }
+        else
+        {
+            ctx.checkStack = ctx.checkStack.tail
+            // if acc is null this is first entry, p already on the stack!
+            if (acc != null) ctx.stack.push(acc)
+            acc = null
+            ctx.status = Good
+            ctx.inc()
+        }
+    }
+    override def toString: String = s"Chainl($label)"
+    override def copy: Chainl = new Chainl(label)
+}
+private [parsley] final class Chainr(var label: Int) extends JumpInstr
+{
+    private var acc: Any => Any = _
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.status eq Good)
+        {
+            // If acc is null we are entering the instruction, so nothing to compose, this saves on an identity call
+            val f = ctx.stack.pop[(Any, Any) => Any]()
+            val x = ctx.stack.upop()
+            if (acc == null) acc = (y: Any) => f(x, y)
+            // We perform the acc after the tos function; the tos function is "closer" to the final p
+            else
+            {
+                val acc_ = acc
+                acc = (y: Any) => acc_(f(x, y))
+            }
+            // Pop H2 off the stack
+            ctx.handlers = ctx.handlers.tail
+            ctx.checkStack = ctx.checkStack.tail
+            ctx.checkStack.head = ctx.offset
+            ctx.pc = label
+        }
+        // If the head of input stack is not the same size as the head of check stack, we fail to next handler
+        else if (ctx.offset != ctx.checkStack.head)
+        {
+            // H1 might still be on the stack
+            if (!isEmpty(ctx.handlers) && ctx.handlers.head.pc == ctx.pc)
+            {
+                ctx.handlers = ctx.handlers.tail
+                ctx.checkStack = ctx.checkStack.tail.tail
+            }
+            else ctx.checkStack = ctx.checkStack.tail
+            acc = null
+            ctx.fail()
+        }
+        else
+        {
+            // H1 is on the stack, so p succeeded, just not op
+            if (!isEmpty(ctx.handlers) && ctx.handlers.head.pc == ctx.pc)
+            {
+                if (acc != null) ctx.stack.exchange(acc(ctx.stack.upeek))
+                ctx.checkStack = ctx.checkStack.tail.tail
+                ctx.handlers = ctx.handlers.tail
+                ctx.inc()
+            }
+            // p did not succeed and hence neither did op
+            else
+            {
+                ctx.checkStack = ctx.checkStack.tail
+                ctx.fail()
+            }
+            acc = null
+            ctx.status = Good
+        }
+    }
+    override def toString: String = s"Chainr($label)"
+    override def copy: Chainr = new Chainr(label)
+}
+
+private [parsley] final class SepEndBy1(var label: Int) extends JumpInstr
+{
+    private[this] val acc: ListBuffer[Any] = ListBuffer.empty
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.status eq Good)
+        {
+            ctx.stack.pop_()
+            acc += ctx.stack.upop()
+            // Pop H2 off the stack
+            ctx.handlers = ctx.handlers.tail
+            // Pop a check off the stack and edit the other
+            ctx.checkStack = ctx.checkStack.tail
+            ctx.checkStack.head = ctx.offset
+            ctx.pc = label
+        }
+        // If the head of input stack is not the same size as the head of check stack, we fail to next handler
+        else if (ctx.offset != ctx.checkStack.head)
+        {
+            // H1 might still be on the stack
+            if (!isEmpty(ctx.handlers) && ctx.handlers.head.pc == ctx.pc)
+            {
+                ctx.handlers = ctx.handlers.tail
+                ctx.checkStack = ctx.checkStack.tail.tail
+            }
+            else ctx.checkStack = ctx.checkStack.tail
+            acc.clear()
+            ctx.fail()
+        }
+        else
+        {
+            // H1 is on the stack, so p succeeded, just not sep
+            if (!isEmpty(ctx.handlers) && ctx.handlers.head.pc == ctx.pc)
+            {
+                acc += ctx.stack.upop()
+                ctx.checkStack = ctx.checkStack.tail.tail
+                ctx.handlers = ctx.handlers.tail
+            }
+            else ctx.checkStack = ctx.checkStack.tail
+            if (acc.isEmpty) ctx.fail()
+            else
+            {
+                ctx.stack.push(acc.toList)
+                acc.clear()
+                ctx.status = Good
+                ctx.inc()
+            }
+        }
+    }
+    override def toString: String = s"SepEndBy1($label)"
+    override def copy: SepEndBy1 = new SepEndBy1(label)
+}
+
+private [parsley] final class ManyTill(var label: Int) extends JumpInstr
+{
+    private[this] val acc: ListBuffer[Any] = ListBuffer.empty
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.status eq Good)
+        {
+            val x = ctx.stack.upop()
+            if (x == DeepEmbedding.ManyTill.Stop)
+            {
+                ctx.stack.push(acc.toList)
+                acc.clear()
+                ctx.inc()
+            }
+            else
+            {
+                acc += x
+                ctx.pc = label
+            }
+        }
+        // ManyTill is a fallthrough handler, it must be visited during failure, but does nothing to the external state
+        else { acc.clear(); ctx.fail() }
+    }
+    override def toString: String = s"ManyTill($label)"
+    override def copy: Many = new Many(label)
+}
+
+private [parsley] final class If(var label: Int) extends JumpInstr
+{
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.stack.pop()) ctx.pc = label
+        else ctx.inc()
+    }
+    override def toString: String = s"If(true: $label)"
+}
+
+private [parsley] final class Ensure[A](pred: A=>Boolean, expected: UnsafeOption[String]) extends Instr
+{
+    private [this] val pred_ = pred.asInstanceOf[Any=>Boolean]
+    override def apply(ctx: Context): Unit =
+    {
+        if (pred_(ctx.stack.upeek)) ctx.inc()
+        else
+        {
+            val strip = ctx.expected.isEmpty
+            ctx.fail(expected)
+            if (strip) ctx.unexpected = null
+        }
+    }
+    override def toString: String = "Ensure(?)"
+}
+
+private [parsley] final class Guard[A](pred: A=>Boolean, msg: String, expected: UnsafeOption[String]) extends Instr
+{
+    private [this] val pred_ = pred.asInstanceOf[Any=>Boolean]
+    override def apply(ctx: Context): Unit =
+    {
+        if (pred_(ctx.stack.upeek)) ctx.inc()
+        else
+        {
+            ctx.stack.pop_() //this might not be needed? drop handles in fail
+            ctx.fail(expected)
+            ctx.raw ::= msg
+        }
+    }
+    override def toString: String = s"Guard(?, $msg)"
+}
+
+private [parsley] final class FastGuard[A](pred: A=>Boolean, msggen: A=>String, expected: UnsafeOption[String]) extends Instr
+{
+    private [this] val pred_ = pred.asInstanceOf[Any=>Boolean]
+    private [this] val msggen_ = msggen.asInstanceOf[Any=>String]
+    override def apply(ctx: Context): Unit =
+    {
+        if (pred_(ctx.stack.upeek)) ctx.inc()
+        else
+        {
+            val msg = msggen_(ctx.stack.upop())
+            ctx.fail(expected)
+            ctx.raw ::= msg
+        }
+    }
+    override def toString: String = "FastGuard(?, ?)"
+}
+
+private [parsley] final class FastFail[A](msggen: A=>String, expected: UnsafeOption[String]) extends Instr
+{
+    private [this] val msggen_ = msggen.asInstanceOf[Any => String]
+    override def apply(ctx: Context): Unit =
+    {
+        val msg = msggen_(ctx.stack.upop())
+        ctx.fail(expected)
+        ctx.raw ::= msg
+    }
+    override def toString: String = "FastFail(?)"
+}
+
+private [parsley] final class FastUnexpected[A](msggen: A=>String, expected: UnsafeOption[String]) extends Instr
+{
+    private [this] val msggen_ = msggen.asInstanceOf[Any => String]
+    override def apply(ctx: Context): Unit =
+    {
+        val msg = msggen_(ctx.stack.upop())
+        ctx.fail(expected)
+        ctx.unexpected = msg
+        ctx.unexpectAnyway = true
+    }
+    override def toString: String = "FastUnexpected(?)"
+}
+
+private [parsley] final class NotFollowedBy(expected: UnsafeOption[String]) extends Instr with NoPush
+{
+    override def apply(ctx: Context): Unit =
+    {
+        // Recover the previous state; notFollowedBy NEVER consumes input
+        val state = ctx.states.head
+        ctx.states = ctx.states.tail
+        ctx.offset = state.offset
+        ctx.line = state.line
+        ctx.col = state.col
+        // A previous success is a failure
+        if (ctx.status eq Good)
+        {
+            ctx.handlers = ctx.handlers.tail
+            val x = ctx.stack.upop()
+            ctx.fail(expected)
+            ctx.unexpected = "\"" + x.toString + "\""
+            ctx.unexpectAnyway = true
+        }
+        // A failure is what we wanted
+        else
+        {
+            ctx.status = Good
+            ctx.inc()
+        }
+    }
+    override def toString: String = "NotFollowedBy"
+}
+
+private [parsley] class Eof(_expected: UnsafeOption[String]) extends Instr with NoPush
+{
+    val expected: String = if (_expected == null) "end of input" else _expected
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.offset == ctx.inputsz) ctx.inc()
+        else ctx.fail(expected)
+    }
+    override final def toString: String = "Eof"
+}

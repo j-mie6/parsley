@@ -2,9 +2,11 @@ package parsley
 
 import scala.annotation.tailrec
 
-object ParsleyBench
+private [parsley] object ParsleyBench
 {
     import parsley.Parsley._
+    import parsley.Combinator._
+    import parsley.Char._
     val liftab: Parsley[String] = lift2[Char, Char, String]((x, y) => x.toString + y.toString, 'a', 'b')
     println(liftab.pretty)
     val aconsb: Parsley[List[Char]] = 'a' <::> ('b' #> Nil)
@@ -13,11 +15,39 @@ object ParsleyBench
     println(athenb.pretty)
     val manya: Parsley[List[Char]] = many('a') <* 'b'
     println(manya.pretty)
-    def chain: Parsley[Int] = chainl1('1' <#> (_.toInt), '+' #> ((x: Int) => (y: Int) => x + y))
+    def chain: Parsley[Int] = chainl1('1' <#> (_.toInt), '+' #> ((x: Int, y: Int) => x + y))
     println(chain.pretty)
+    
+    trait BrainFuckOp
+    case object RightPointer extends BrainFuckOp
+    case object LeftPointer extends BrainFuckOp
+    case object Increment extends BrainFuckOp
+    case object Decrement extends BrainFuckOp
+    case object Output extends BrainFuckOp
+    case object Input extends BrainFuckOp
+    case class Loop(p: List[BrainFuckOp]) extends BrainFuckOp
+    
+    // This is an optimisation for the logic inside. Since this is the last in a chain of ors
+    // it doesn't need to account for the other symbols (just needs to not accidentally consume ])
+    private val whitespaceBF = satisfy(_ != ']')
+    
+    def brainfuck: Parsley[List[BrainFuckOp]] = 
+    {
+        lazy val bf: Parsley[List[BrainFuckOp]] = 
+            many('>' #> Some(RightPointer)
+             <|> '<' #> Some(LeftPointer)
+             <|> '+' #> Some(Increment)
+             <|> '-' #> Some(Decrement)
+             <|> '.' #> Some(Output)
+             <|> ',' #> Some(Input)
+             <|> between('[', ']' <|> fail("unclosed loop"), bf.map(p => Some(Loop(p))))
+             <|> (whitespaceBF #> None)).map(_.flatten)
+        attempt(bf <* eof) <|> fail("\"]\" closes a loop, but there isn't one open")
+    }
+    println(brainfuck.pretty)
 }
 
-/*object BenchParser extends scala.util.parsing.combinator.Parsers
+/*private [parsley] object BenchParser extends scala.util.parsing.combinator.Parsers
 {
     import scala.util.parsing.input.{NoPosition, Reader}
     override type Elem = Char
@@ -44,7 +74,7 @@ object Parseback
 }
 */
 
-object Native
+private [parsley] object Native
 {
     val recursiveDescent: String => Either[String, Int] = (input: String) => expr(input, 0)._1
     def expr(input: String, index: Int): (Either[String, Int], Int) =
@@ -114,7 +144,7 @@ object Native
     }
 }
 
-/*object FastParser
+/*private [parsley] object FastParser
 {
     import fastparse.all._
     val x = P("1").!.map(_(0).toInt)
@@ -138,23 +168,23 @@ object Native
     val big = repeat(P("1"), 5000)
 }*/
 
-object Benchmark
+private [parsley] object Benchmark
 {
     def main(args: Array[String]): Unit =
     {
         //Console.in.read()
-        def p = ParsleyBench.chain
+        val p = ParsleyBench.chain
         val input1 = "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"
-        //val input2 = "aaaab"
+        //val input2 = "[+++++++<[<<>>>>]..hahah this is brainfuck.,,,,,-[---]-++]"
         val input = input1
         //println(runParser(p, "aaaab"))
         //println(runParser(p, "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"))
         val start = System.currentTimeMillis()
         //println(runParser(p, input))
         for (_ <- 0 to 10000000)
-            runParser(p, input)
-            //p(input)
-            //p.parse(input)
+            runParserFastUnsafe(p, input)
+        //p(input)
+        //p.parse(input)
         println(System.currentTimeMillis() - start)
     }
 }

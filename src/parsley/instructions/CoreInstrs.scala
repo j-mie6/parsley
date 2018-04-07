@@ -1,14 +1,17 @@
-package parsley
+package parsley.instructions
 
-import language.existentials
+import Stack.push
+import parsley.{Parsley, UnsafeOption}
+
 import scala.annotation.{switch, tailrec}
+import scala.language.existentials
 
 // Stack Manipulators
 private [parsley] final class Push[A](x: A) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
-        ctx.pushStack(x)
+        ctx.stack.push(x)
         ctx.inc()
     }
     override def toString: String = s"Push($x)"
@@ -18,7 +21,7 @@ private [parsley] object Pop extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
-        ctx.popStack()
+        ctx.stack.pop_()
         ctx.inc()
     }
     override def toString: String = "Pop"
@@ -28,9 +31,9 @@ private [parsley] object Flip extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
-        val y = ctx.stack.head
-        ctx.exchangeStack(ctx.stack.tail.head)
-        ctx.stack.tail.head = y
+        val y = ctx.stack.upeek
+        ctx.stack.exchange(ctx.stack(1))
+        ctx.stack(1) = y
         ctx.inc()
     }
     override def toString: String = "Flip"
@@ -39,13 +42,13 @@ private [parsley] object Flip extends Instr
 // Primitives
 private [parsley] class CharTok protected (protected final val c: Char, _expected: UnsafeOption[String]) extends Instr
 {
-    protected val expected: String = if (_expected == null) "\"" + c.toString + "\"" else _expected
+    protected val expected: String = if (_expected == null) "\"" + c + "\"" else _expected
     protected final val ac: Any = c
     override def apply(ctx: Context): Unit =
     {
-        if (ctx.offset < ctx.inputsz && ctx.input(ctx.offset) == c)
+        if (ctx.moreInput && ctx.nextChar == c)
         {
-                ctx.pushStack(ac)
+                ctx.stack.push(ac)
                 ctx.offset += 1
                 ctx.col += 1
                 ctx.inc()
@@ -59,10 +62,10 @@ private [parsley] final class Satisfies(f: Char => Boolean, expected: UnsafeOpti
 {
     override def apply(ctx: Context): Unit =
     {
-        if (ctx.offset < ctx.inputsz && f(ctx.input(ctx.offset)))
+        if (ctx.moreInput && f(ctx.nextChar))
         {
-            val c = ctx.input(ctx.offset)
-            ctx.pushStack(c)
+            val c = ctx.nextChar
+            ctx.stack.push(c)
             ctx.offset += 1
             (c: @switch) match
             {
@@ -133,7 +136,7 @@ private [parsley] final class StringTok(s: String, _expected: UnsafeOption[Strin
             ctx.col = colAdjust(ctx.col)
             ctx.line = lineAdjust(ctx.line)
             ctx.offset = i
-            ctx.pushStack(s)
+            ctx.stack.push(s)
             ctx.inc()
         }
         else ctx.fail(expected)
@@ -146,9 +149,9 @@ private [parsley] object Apply extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
-        val x = ctx.popStack()
-        val f = ctx.stack.head.asInstanceOf[Any => Any]
-        ctx.exchangeStack(f(x))
+        val x = ctx.stack.upop()
+        val f = ctx.stack.peek[Any => Any]
+        ctx.stack.exchange(f(x))
         ctx.inc()
     }
     override def toString: String = "Apply"
@@ -160,8 +163,8 @@ private [parsley] final class DynSub[-A](f: A => Array[Instr], expected: UnsafeO
     private [DynSub] val g = f.asInstanceOf[Any => Array[Instr]]
     override def apply(ctx: Context): Unit =
     {
-        ctx.calls ::= new Frame(ctx.pc + 1, ctx.instrs)
-        ctx.instrs = g(ctx.popStack())
+        ctx.calls = push(ctx.calls, new Frame(ctx.pc + 1, ctx.instrs))
+        ctx.instrs = g(ctx.stack.pop())
         ctx.depth += 1
         ctx.pc = 0
         if (expected != null)
@@ -189,7 +192,7 @@ private [parsley] final class Call(p: Parsley[_], expected: UnsafeOption[String]
     private [this] var instrs: UnsafeOption[Array[Instr]] = _
     override def apply(ctx: Context): Unit =
     {
-        ctx.calls ::= new Frame(ctx.pc + 1, ctx.instrs)
+        ctx.calls = push(ctx.calls, new Frame(ctx.pc + 1, ctx.instrs))
         if (instrs == null) instrs = p.instrs //NOTE: This line cannot be hoisted, otherwise it will infinite loop during codeGen!
         ctx.instrs = instrs.map(_.copy)
         ctx.depth += 1
@@ -240,11 +243,21 @@ private [parsley] final class PushHandler(var label: Int) extends JumpInstr
 {
     override def apply(ctx: Context): Unit =
     {
-        ctx.handlers ::= new Handler(ctx.depth, label, ctx.stacksz)
-        ctx.states ::= new State(ctx.offset, ctx.line, ctx.col)
+        ctx.handlers = push(ctx.handlers, new Handler(ctx.depth, label, ctx.stack.usize))
+        ctx.states = push(ctx.states, new State(ctx.offset, ctx.line, ctx.col))
         ctx.inc()
     }
     override def toString: String = s"PushHandler($label)"
+}
+
+private [parsley] final class PushFallthrough(var label: Int) extends JumpInstr
+{
+    override def apply(ctx: Context): Unit =
+    {
+        ctx.handlers = push(ctx.handlers, new Handler(ctx.depth, label, ctx.stack.usize))
+        ctx.inc()
+    }
+    override def toString: String = s"PushFallthrough($label)"
 }
 
 private [parsley] object Attempt extends Instr
@@ -302,11 +315,17 @@ private [parsley] final class InputCheck(var label: Int) extends JumpInstr
 {
     override def apply(ctx: Context): Unit =
     {
-        ctx.checkStack ::= ctx.offset
-        ctx.handlers ::= new Handler(ctx.depth, label, ctx.stacksz)
+        ctx.checkStack = push(ctx.checkStack, ctx.offset)
+        ctx.handlers = push(ctx.handlers, new Handler(ctx.depth, label, ctx.stack.usize))
         ctx.inc()
     }
     override def toString: String = s"InputCheck($label)"
+}
+
+private [parsley] final class Jump(var label: Int) extends JumpInstr
+{
+    override def apply(ctx: Context): Unit = ctx.pc = label
+    override def toString: String = s"Jump($label)"
 }
 
 private [parsley] final class JumpGood(var label: Int) extends JumpInstr
