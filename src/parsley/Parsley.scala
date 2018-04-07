@@ -351,38 +351,38 @@ private [parsley] object DeepEmbedding
         override def optimise: Parsley[B] = (pf, px) match
         {
             // Fusion laws
-            case (pf, Pure(x)) if pf.isInstanceOf[Pure[_]] || pf.isInstanceOf[_ <*> _] => pf match
+            case (uf, Pure(x)) if uf.isInstanceOf[Pure[_]] || uf.isInstanceOf[_ <*> _] => uf match
             {
                 // first position fusion
                 case Pure(f) => new Pure(f(x))
                 // second position fusion
-                case Pure(f: (T => A => B) @unchecked) <*> (py: Parsley[T]) => new <*>(new Pure((y: T) => f(y)(x)), py)
+                case Pure(f: (T => A => B) @unchecked) <*> (uy: Parsley[T]) => new <*>(new Pure((y: T) => f(y)(x)), uy)
                 // third position fusion
-                case Pure(f: (T => U => A => B) @unchecked) <*> (py: Parsley[T]) <*> (pz: Parsley[U]) => new <*>(new <*>(new Pure((y: T) => (z: U) => f(y)(z)(x)), py), pz)
+                case Pure(f: (T => U => A => B) @unchecked) <*> (uy: Parsley[T]) <*> (uz: Parsley[U]) => new <*>(new <*>(new Pure((y: T) => (z: U) => f(y)(z)(x)), uy), uz)
                 // interchange law: u <*> pure y == pure ($y) <*> u == ($y) <$> u (single instruction, so we benefit at code-gen)
-                case _ => new <*>(new Pure((f: A => B) => f(x)), pf)
+                case _ => new <*>(new Pure((f: A => B) => f(x)), uf)
             }
             // functor law: fmap f (fmap g p) == fmap (f . g) p where fmap f p = pure f <*> p from applicative
-            case (Pure(f), Pure(g: (T => A) @unchecked) <*> (p: Parsley[T])) => new <*>(new Pure(f.compose(g)), p)
+            case (Pure(f), Pure(g: (T => A) @unchecked) <*> (u: Parsley[T])) => new <*>(new Pure(f.compose(g)), u)
             // TODO: functor law with lift2!
             // right absorption law: mzero <*> p = mzero
             case (z: MZero, _) => z
             /* RE-ASSOCIATION LAWS */
             // re-association law 1: (q *> pf) <*> px = q *> (pf <*> px)
-            case (q *> pf, px) => new *>(q, new <*>(pf, px).optimise)
-            case (pf, cont: Cont[_, _]) => cont match
+            case (q *> uf, ux) => new *>(q, new <*>(uf, ux).optimise)
+            case (uf, cont: Cont[_, _]) => cont match
             {
                 // re-association law 2: pf <*> (px <* q) = (pf <*> px) <* q
-                case px <* q => new <*(new <*>(pf, px).optimise, q).optimise
+                case ux <* v => new <*(new <*>(uf, ux).optimise, v).optimise
                 // re-association law 3: p *> pure x = pure x <* p
                 // consequence of re-association law 3: pf <*> (q *> pure x) = (pf <*> pure x) <* q
-                case q *> (px: Pure[_]) => new <*(new <*>(pf, px).optimise, q).optimise
+                case v *> (ux: Pure[_]) => new <*(new <*>(uf, ux).optimise, v).optimise
                 case _ => this
             }
             // consequence of left zero law and monadic definition of <*>, preserving error properties of pf
-            case (p, z: MZero) => new *>(p, z)
+            case (u, z: MZero) => new *>(u, z)
             // interchange law: u <*> pure y == pure ($y) <*> u == ($y) <$> u (single instruction, so we benefit at code-gen)
-            case (pf, Pure(x)) => new <*>(new Pure((f: A => B) => f(x)), pf)
+            case (uf, Pure(x)) => new <*>(new Pure((f: A => B) => f(x)), uf)
             case _ => this
         }
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) = (pf, px) match
@@ -417,11 +417,11 @@ private [parsley] object DeepEmbedding
         override def optimise: Parsley[B] = (p, q) match
         {
             // left catch law: pure x <|> p = pure x
-            case (p: Pure[_], _) => p
+            case (u: Pure[_], _) => u
             // alternative law: empty <|> p = p
-            case (e: Empty, q) if e.expected == null => q
+            case (e: Empty, v) if e.expected == null => v
             // alternative law: p <|> empty = p
-            case (p, e: Empty) if e.expected == null => p
+            case (u, e: Empty) if e.expected == null => u
             // associative law: (u <|> v) <|> w = u <|> (v <|> w)
             case ((u: Parsley[T]) <|> (v: Parsley[A]), w) => new <|>(u, new <|>[A, B](v, w).optimise).asInstanceOf[Parsley[B]]
             case _ => this
@@ -431,33 +431,33 @@ private [parsley] object DeepEmbedding
             // If the tablified list is single element with None, that implies that this should be generated as normal!
             case (_, None)::Nil => (p, q) match
             {
-                case (Attempt(p), Pure(x)) =>
+                case (Attempt(u), Pure(x)) =>
                     val handler = labels.fresh()
                     instrs += new instructions.PushHandler(handler)
-                    new Suspended(p.codeGen
+                    new Suspended(u.codeGen
                     {
                         instrs += new instructions.Label(handler)
                         instrs += new instructions.AlwaysRecoverWith[B](x)
                         cont
                     })
-                case (Attempt(p), _) =>
+                case (Attempt(u), v) =>
                     val handler = labels.fresh()
                     val skip = labels.fresh()
                     instrs += new instructions.PushHandler(handler)
-                    new Suspended(p.codeGen
+                    new Suspended(u.codeGen
                     {
                         instrs += new instructions.Label(handler)
                         instrs += new instructions.JumpGoodAttempt(skip)
-                        q.codeGen
+                        v.codeGen
                         {
                             instrs += new instructions.Label(skip)
                             cont
                         }
                     })
-                case (_, Pure(x)) =>
+                case (u, Pure(x)) =>
                     val handler = labels.fresh()
                     instrs += new instructions.InputCheck(handler)
-                    new Suspended(p.codeGen
+                    new Suspended(u.codeGen
                     {
                         instrs += new instructions.Label(handler)
                         instrs += new instructions.RecoverWith[B](x)
@@ -625,10 +625,10 @@ private [parsley] object DeepEmbedding
                 fp.expected = expected
                 new *>(p, fp)
             // (q *> p) >>= f = q *> (p >>= f) / (p <* q) >>= f = (p >>= f) <* q
-            case Cont(q, p) => 
-                val b = new >>=(p, f).optimise
+            case Cont(v, u) =>
+                val b = new >>=(u, f).optimise
                 b.expected = expected
-                new *>(q, b)
+                new *>(v, b)
             // monad law 3: (m >>= g) >>= f = m >>= (\x -> g x >>= f) Note: this *could* help if g x ended with a pure, since this would be optimised out!
             case (m: Parsley[T] @unchecked) >>= (g: (T => A) @unchecked) =>
                 val b = new >>=(m, (x: T) => new >>=(g(x), f).optimise)
@@ -676,30 +676,30 @@ private [parsley] object DeepEmbedding
         override def optimise: Parsley[B] = (p, q) match
         {
             // pure _ *> p = p
-            case (_: Pure[_], q) => q
+            case (_: Pure[_], v) => v
             /*case (ct@CharTok(c), CharTok(d)) => 
                 val st = new StringTok(c.toString + d)
                 st.expected = ct.expected
                 new Then(st, new Pure(d.asInstanceOf[B]))*/
             // p *> pure _ *> q = p *> q
-            case (p *> (_: Pure[_]), q) => new *>(p, q).optimise
+            case (u *> (_: Pure[_]), v) => new *>(u, v).optimise
             // mzero *> p = mzero (left zero and definition of *> in terms of >>=)
             case (z: MZero, _) => z
             // re-association - normal form of Then chain is to have result at the top of tree
-            case (p, q *> r) => new *>(new *>(p, q).optimise, r)
+            case (u, v *> w) => new *>(new *>(u, v).optimise, w)
             case _ => this
         }
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) = (p, q) match
         {
             case (ct@CharTok(c), Pure(x)) => instrs += instructions.CharTokFastPerform[Char, B](c, _ => x, ct.expected); cont
             case (st@StringTok(s), Pure(x)) => instrs += new instructions.StringTokFastPerform(s, _ => x, st.expected); cont
-            case (p, Pure(x)) =>
-                new Suspended(p.codeGen
+            case (u, Pure(x)) =>
+                new Suspended(u.codeGen
                 {
                     instrs += new instructions.Exchange(x)
                     cont
                 })
-            case (p, q) =>
+            case _ =>
                 new Suspended(p.codeGen
                 {
                     instrs += instructions.Pop
@@ -719,30 +719,30 @@ private [parsley] object DeepEmbedding
         override def optimise: Parsley[A] = (p, q) match
         {
             // p <* pure _ = p
-            case (p, _: Pure[_]) => p
+            case (u, _: Pure[_]) => u
             // re-association law 3: pure x <* p = p *> pure x
-            case (px: Pure[_], p) => new *>(p, px).optimise
+            case (u: Pure[_], v) => new *>(v, u).optimise
             // p <* (q *> pure _) = p <* q
-            case (p, q *> (_: Pure[_])) => new <*(p, q).optimise
+            case (u, v *> (_: Pure[_])) => new <*(u, v).optimise
             // p <* mzero = p *> mzero (by preservation of error messages and failure properties) - This moves the pop instruction after the failure
-            case (p, z: MZero) => new *>(p, z)
+            case (u, z: MZero) => new *>(u, z)
             // mzero <* p = mzero (left zero law and definition of <* in terms of >>=)
             case (z: MZero, _) => z
             // re-association - normal form of Prev chain is to have result at the top of tree
-            case (r <* q, p) => new <*(r, new <*(q, p).optimise)
+            case (u <* v, w) => new <*(u, new <*(v, w).optimise)
             case _ => this
         }
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) = (p, q) match
         {
             case (Pure(x), ct@CharTok(c)) => instrs += instructions.CharTokFastPerform[Char, A](c, _ => x, ct.expected); cont
             case (Pure(x), st@StringTok(s)) => instrs += new instructions.StringTokFastPerform(s, _ => x, st.expected); cont
-            case (Pure(x), q) =>
-                new Suspended(q.codeGen
+            case (Pure(x), v) =>
+                new Suspended(v.codeGen
                 {
                     instrs += new instructions.Exchange(x)
                     cont
                 })
-            case (p, q) =>
+            case _ =>
                 new Suspended(p.codeGen
                 {
                     q.codeGen
