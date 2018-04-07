@@ -587,7 +587,8 @@ private [parsley] object DeepEmbedding
             case Attempt(t) => tablable(t)
             case Pure(_) <*> t => tablable(t)
             case t <*> _ => tablable(t)
-            case Cont(t, _) => tablable(t)
+            case t *> _ => tablable(t)
+            case t <* _ => tablable(t)
             case _ => None
         }
         @tailrec private [DeepEmbedding] def tablify(p: Parsley[_], acc: List[(Parsley[_], Option[Parsley[_]])]): List[(Parsley[_], Option[Parsley[_]])] = p match
