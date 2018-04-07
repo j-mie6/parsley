@@ -923,11 +923,8 @@ private [parsley] object DeepEmbedding
     private [parsley] final class FastFail[A](_p: =>Parsley[A], private [FastFail] val msggen: A => String, val expected: UnsafeOption[String] = null) extends MZero
     {
         private [FastFail] lazy val p = _p
-        override def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) = p.optimised(p =>
-        {
-            if (label == null) cont(this)
-            else cont(FastFail(p, msggen, expected))
-        })
+        override def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+            p.optimised(p => cont(FastFail(p, msggen, expected)))
         override def optimise = p match
         {
             case Pure(x) => new Fail(msggen(x))
@@ -946,11 +943,8 @@ private [parsley] object DeepEmbedding
     private [parsley] final class FastUnexpected[A](_p: =>Parsley[A], private [FastUnexpected] val msggen: A => String, val expected: UnsafeOption[String] = null) extends MZero
     {
         private [FastUnexpected] lazy val p = _p
-        override def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) = p.optimised(p =>
-        {
-            if (label == null) cont(this)
-            else cont(FastUnexpected(p, msggen, label))
-        })
+        override def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+            p.optimised(p => cont(FastUnexpected(p, msggen, label)))
         override def optimise = p match
         {
             case Pure(x) => new Unexpected(msggen(x))
@@ -969,11 +963,8 @@ private [parsley] object DeepEmbedding
     private [parsley] final class Ensure[A](_p: =>Parsley[A], private [Ensure] val pred: A => Boolean, val expected: UnsafeOption[String] = null) extends Parsley[A]
     {
         private [Ensure] lazy val p = _p
-        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) = p.optimised(p =>
-        {
-            if (label == null) cont(this)
-            else cont(Ensure(p, pred, label))
-        })
+        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+            p.optimised(p => cont(Ensure(p, pred, label)))
         override def optimise = p match
         {
             case px@Pure(x) => if (pred(x)) px else new Empty
@@ -991,11 +982,8 @@ private [parsley] object DeepEmbedding
     private [parsley] final class Guard[A](_p: =>Parsley[A], private [Guard] val pred: A => Boolean, private [Guard] val msg: String, val expected: UnsafeOption[String] = null) extends Parsley[A]
     {
         private [Guard] lazy val p = _p
-        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) = p.optimised(p =>
-        {
-            if (label == null) cont(this)
-            else cont(Guard(p, pred, msg, label))
-        })
+        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+            p.optimised(p => cont(Guard(p, pred, msg, label)))
         override def optimise = p match
         {
             case px@Pure(x) => if (pred(x)) px else new Fail(msg)
@@ -1013,11 +1001,8 @@ private [parsley] object DeepEmbedding
     private [parsley] final class FastGuard[A](_p: =>Parsley[A], private [FastGuard] val pred: A => Boolean, private [FastGuard] val msggen: A => String, val expected: UnsafeOption[String] = null) extends Parsley[A]
     {
         private [FastGuard] lazy val p = _p
-        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) = p.optimised(p =>
-        {
-            if (label == null) cont(this)
-            else cont(FastGuard(p, pred, msggen, label))
-        })
+        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+            p.optimised(p => cont(FastGuard(p, pred, msggen, label)))
         override def optimise = p match
         {
             case px@Pure(x) => if (pred(x)) px else new Fail(msggen(x))
@@ -1267,11 +1252,8 @@ private [parsley] object DeepEmbedding
     private [parsley] final class NotFollowedBy[+A](_p: =>Parsley[A], val expected: UnsafeOption[String] = null) extends Parsley[Nothing]
     {
         private [NotFollowedBy] lazy val p = _p
-        override def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) = p.optimised(p =>
-        {
-            if (label == null) cont(this)
-            else cont(NotFollowedBy(p, label))
-        })
+        override def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+            p.optimised(p => cont(NotFollowedBy(p, label)))
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
         {
             val handler = labels.fresh()
@@ -1317,7 +1299,7 @@ private [parsley] object DeepEmbedding
     {
         def apply[A, B](pf: Parsley[A=>B], px: Parsley[A]): <*>[A, B] =
         {
-            val res: <*>[A, B] = new <*>(null, null)
+            val res: <*>[A, B] = new <*>(pf, px)
             res.pf = pf
             res.px = px
             res
@@ -1344,10 +1326,6 @@ private [parsley] object DeepEmbedding
             res
         }
         def unapply[A, B](self: >>=[A, B]): Option[(Parsley[A], A => Parsley[B])] = Some((self.p, self.f))
-    }
-    private [DeepEmbedding] object Satisfy
-    {
-        //def unapply(self: Satisfy): Option[Char => Boolean] = Some(self.f)
     }
     private [DeepEmbedding] object Cont
     {
@@ -1393,15 +1371,6 @@ private [parsley] object DeepEmbedding
             res.p// = p
             res
         }
-        //def unapply[A](self: Look[A]): Option[Parsley[A]] = Some(self.p)
-    }
-    private [DeepEmbedding] object Fail
-    {
-        //def unapply(self: Fail): Option[String] = Some(self.msg)
-    }
-    private [DeepEmbedding] object Unexpected
-    {
-        //def unapply(self: Unexpected): Option[String] = Some(self.msg)
     }
     private [DeepEmbedding] object CharTok
     {
