@@ -3,8 +3,7 @@ package parsley
 import Parsley._
 import Combinator.{between, notFollowedBy, sepBy, sepBy1, skipSome, some}
 import Char.{charLift, digit, hexDigit, octDigit, oneOf, satisfy, stringLift}
-
-import scala.reflect.runtime.universe._
+import parsley.DeepToken.Sign._
 
 /**
   * This class is required to construct a TokenParser. It defines the various characteristics of the language to be
@@ -207,9 +206,9 @@ final class TokenParser(lang: LanguageDef)
     private lazy val octal_ = oneOf(Set('o', 'O')) *> number(8, octDigit)
 
     // Floats
-    private def sign[A: TypeTag] = new DeepToken.Sign[A]
+    private def sign(ty: SignType) = new DeepToken.Sign[ty.resultType](ty)
     private lazy val floating = new DeepToken.Float
-    private lazy val signedFloating = sign[Double] <*> floating
+    private lazy val signedFloating = sign(DoubleType) <*> floating
     private lazy val natFloat = attempt(floating.map(Right(_))) <|> nat.map(Left(_))
     private lazy val number_ =
         ('+' *> natFloat
@@ -218,7 +217,7 @@ final class TokenParser(lang: LanguageDef)
 
     // Integers and Naturals
     private lazy val nat = new DeepToken.Natural
-    private lazy val int = sign[Int] <*> nat
+    private lazy val int = sign(IntType) <*> nat
 
     /**Parses a positive whole number in the decimal system. Returns the value of the number.*/
     lazy val decimal: Parsley[Int] = lexeme(decimal_)
@@ -353,16 +352,16 @@ private [parsley] object DeepToken
         }
     }
 
-    private [parsley] class Sign[A: TypeTag](val expected: UnsafeOption[String] = null) extends Parsley[A => A]
+    private [parsley] class Sign[A](ty: SignType, val expected: UnsafeOption[String] = null) extends Parsley[A => A]
     {
         override protected def preprocess(cont: Parsley[A => A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
             if (label == null) cont(this)
-            else cont(new Sign[A](label))
+            else cont(new Sign(ty, label))
         }
         override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
         {
-            instrs += new instructions.TokenSign[A](expected)
+            instrs += new instructions.TokenSign(ty, expected)
             cont
         }
     }
@@ -504,6 +503,22 @@ private [parsley] object DeepToken
         {
             instrs += new instructions.TokenOperator_(operator, letter, expected)
             cont
+        }
+    }
+
+    object Sign
+    {
+        sealed trait SignType
+        {
+            type resultType
+        }
+        case object DoubleType extends SignType
+        {
+            override type resultType = Double
+        }
+        case object IntType extends SignType
+        {
+            override type resultType = Int
         }
     }
 }

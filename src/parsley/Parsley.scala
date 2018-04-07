@@ -617,10 +617,10 @@ private [parsley] object DeepEmbedding
         {
             // CODO: We need to try and identify the fixpoints in the optimised binds, so we can remove the call instructions
             // monad law 1: pure x >>= f = f x
-            case Pure(x) => new Fixpoint(f(x).optimise, expected)
+            case Pure(x) => new Fixpoint(f(x), expected)
             // char/string x = char/string x *> pure x and monad law 1
-            case p@CharTok(c) => *>(p, new Fixpoint(f(c.asInstanceOf[A]).optimise, expected))
-            case p@StringTok(s) => *>(p, new Fixpoint(f(s.asInstanceOf[A]).optimise, expected))
+            case p@CharTok(c) => *>(p, new Fixpoint(f(c.asInstanceOf[A]), expected))
+            case p@StringTok(s) => *>(p, new Fixpoint(f(s.asInstanceOf[A]), expected))
             // (q *> p) >>= f = q *> (p >>= f) / (p <* q) >>= f = (p >>= f) <* q
             case Cont(u, v) => *>(u, >>=(v, f, expected).optimise)
             // monad law 3: (m >>= g) >>= f = m >>= (\x -> g x >>= f) Note: this *could* help if g x ended with a pure, since this would be optimised out!
