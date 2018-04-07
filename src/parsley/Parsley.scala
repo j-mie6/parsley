@@ -637,8 +637,8 @@ private [parsley] object DeepEmbedding
             // char/string x = char/string x *> pure x and monad law 1
             case p@CharTok(c) => *>(p, new Fixpoint(f(c.asInstanceOf[A]), expected))
             case p@StringTok(s) => *>(p, new Fixpoint(f(s.asInstanceOf[A]), expected))
-            // (q *> p) >>= f = q *> (p >>= f) / (p <* q) >>= f = (p >>= f) <* q
-            case Cont(u, v) => *>(u, >>=(v, f, expected).optimise)
+            // (q *> p) >>= f = q *> (p >>= f)
+            case u *> v => *>(u, >>=(v, f, expected).optimise)
             // monad law 3: (m >>= g) >>= f = m >>= (\x -> g x >>= f) Note: this *could* help if g x ended with a pure, since this would be optimised out!
             case (m: Parsley[T] @unchecked) >>= (g: (T => A) @unchecked) => >>=(m, (x: T) => >>=(g(x), f, expected).optimise, expected)
             // monadplus law (left zero)
@@ -1465,9 +1465,8 @@ private [parsley] object DeepEmbedding
             cont
         }
     }
-    private [parsley] final class ErrorRelabel[+A](_p: =>Parsley[A], msg: String) extends Parsley[A]
+    private [parsley] final class ErrorRelabel[+A](p: =>Parsley[A], msg: String) extends Parsley[A]
     {
-        private [ErrorRelabel] lazy val p = _p
         override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
             if (label == null) p.optimised(cont)(seen, msg, depth)
