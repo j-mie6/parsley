@@ -509,17 +509,30 @@ private [parsley] object DeepEmbedding
         {
             case root::roots_ =>
                 instrs += new instructions.Label(ls.head)
-                codeGenAlternatives(
+                codeGenAlternatives(root)
                 {
                     instrs += new instructions.Jump(end)
                     codeGenRoots(cont, roots_, ls.tail, end)
-                }, root)
+                }
             case Nil => cont
         }
-        def codeGenAlternatives(cont: =>Continuation, alts: List[Parsley[_]])(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation = (alts: @unchecked) match
+        def codeGenAlternatives(alts: List[Parsley[_]])(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation = (alts: @unchecked) match
         {
             case alt::Nil => alt.codeGen(cont)
-            // TODO, perform refactoring to allow for all optimised forms
+            case Attempt(alt)::alts_ =>
+                val handler = labels.fresh()
+                val skip = labels.fresh()
+                instrs += new instructions.PushHandler(handler)
+                alt.codeGen
+                {
+                    instrs += new instructions.Label(handler)
+                    instrs += new instructions.JumpGoodAttempt(skip)
+                    codeGenAlternatives(alts_)
+                    {
+                        instrs += new instructions.Label(skip)
+                        cont
+                    }
+                }
             case alt::alts_ =>
                 val handler = labels.fresh()
                 val skip = labels.fresh()
@@ -528,11 +541,11 @@ private [parsley] object DeepEmbedding
                 {
                     instrs += new instructions.Label(handler)
                     instrs += new instructions.JumpGood(skip)
-                    codeGenAlternatives(
+                    codeGenAlternatives(alts_)
                     {
                         instrs += new instructions.Label(skip)
                         cont
-                    }, alts_)
+                    }
                 }
         }
         @tailrec def foldTablified(tablified: List[(Parsley[_], Option[Parsley[_]])], labelGen: LabelCounter,
