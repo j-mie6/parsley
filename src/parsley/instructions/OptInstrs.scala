@@ -241,9 +241,10 @@ private [parsley] final class AlwaysRecoverWith[A](x: A) extends Instr
 }
 
 // FIXME: Technically, this is wrong, we've lost the expectation information! We should add it in the default case
-private [parsley] final class JumpTable(prefixes: List[Char], labels: List[Int], private [this] var default: Int) extends Instr
+private [parsley] final class JumpTable(prefixes: List[Char], labels: List[Int], private [this] var default: Int, _expecteds: List[UnsafeOption[String]]) extends Instr
 {
     private [this] val jumpTable = mutable.Map(prefixes.zip(labels): _*)
+    val expecteds = prefixes.zip(_expecteds).map{case (c, expected) => if (expected == null) "\"" + c + "\"" else expected}.reverse
 
     override def apply(ctx: Context): Unit =
     {
@@ -251,12 +252,41 @@ private [parsley] final class JumpTable(prefixes: List[Char], labels: List[Int],
         {
             // This implementation runs slower, but it *does* have more predictable memory and time requirements
             /*val dest = jumpTable.get(ctx.nextChar)
-            if (dest.isEmpty) ctx.pc = default
+            if (dest.isEmpty)
+            {
+                ctx.pc = default
+                addErrors(ctx)
+            }
             else ctx.pc = dest.get*/
             // This version is faster, but might have to resize the HashTable if it sees the default case too many times
-            ctx.pc = jumpTable.getOrElseUpdate(ctx.nextChar, default)
+            val dest = jumpTable.getOrElseUpdate(ctx.nextChar, default)
+            ctx.pc = dest
+            if (dest == default) addErrors(ctx)
         }
-        else ctx.pc = default
+        else
+        {
+            addErrors(ctx)
+            ctx.pc = default
+        }
+    }
+
+    private def addErrors(ctx: Context) =
+    {
+        if (ctx.offset > ctx.erroffset)
+        {
+            ctx.erroffset = ctx.offset
+            ctx.errcol = ctx.col
+            ctx.errline = ctx.line
+            ctx.unexpected = if (ctx.offset < ctx.inputsz) "\"" + ctx.nextChar + "\"" else "end of input"
+            ctx.expected = if (ctx.errorOverride == null) expecteds else ctx.errorOverride::Nil
+            ctx.raw = Nil
+            ctx.unexpectAnyway = false
+        }
+        else if (ctx.offset == ctx.erroffset)
+        {
+            if (ctx.errorOverride == null) ctx.expected :::= expecteds
+            else ctx.expected ::= ctx.errorOverride
+        }
     }
 
     private [parsley] def relabel(labels: Array[Int]): Unit =

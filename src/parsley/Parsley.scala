@@ -5,7 +5,7 @@ import parsley.instructions._
 
 import language.existentials
 import scala.annotation.tailrec
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable
     
 // User API
 object Parsley
@@ -161,7 +161,7 @@ object Parsley
           * This serves as a lifted if statement (hence its similar look to a C-style ternary expression).
           * If the parser on the lhs of the operator it is true then execution continues with parser `p`, else
           * control passes to parser `q`. `b ?: (p, q)` is equivalent to `b >>= (b => if (b) p else q)` but does not
-          * involve any expensive monadic operations. NOTE: due to Scala operator associativity laws, this is a
+          * involve any expensive monadic operations. Note: due to Scala operator associativity laws, this is a
           * right-associative operator, and must be properly bracketed, technically the invokee is the rhs...
           * @param b The parser that yields the condition value
           * @return The result of either `p` or `q` depending on the return value of the invokee
@@ -318,7 +318,6 @@ abstract class Parsley[+A] private [parsley]
         applyLabels(instrsOversize, labelMapping, instrs_, instrs_.length)
         instrs_
     }
-    final private [parsley] var leading: UnsafeOption[Option[Parsley[_]]] = _
     final private [parsley] def fix(implicit seen: Set[Parsley[_]]): Parsley[A] = if (seen.contains(this)) new DeepEmbedding.Fixpoint(this) else this
     
     // Abstracts
@@ -332,23 +331,6 @@ abstract class Parsley[+A] private [parsley]
     
 private [parsley] object DeepEmbedding
 {
-    // Parsley objects to store an UnsafeOption of an Option of a leading pointer null is uncomputed
-    // When tablable is first called it will compute the leading, which serves as a memoisation (None = untablable)
-    // tablable is tail-recursive in the same was tablify is, char and strings are trivially tablable
-    // attempt of a tablable thing is tablable
-    // a cont chain that starts with a tablable is tablable
-    // an app chain that starts with a tablable as the first non-pure node is tablable
-    final private def tablable(_p: Parsley[_]): Boolean = false
-    // If the end of a tablified list is None then that implies that it is the default case
-    // If the end of a tablified list is Some then that implies an empty default must be constructed
-    // In case of None'd list, the codeGen cont continues by codeGenning that p, else we are done for this tree, call cont!
-    @tailrec final private [DeepEmbedding] def tablify(_p: Parsley[_], acc: ListBuffer[(Parsley[_], Option[Parsley[_]])]): List[(Parsley[_], Option[Parsley[_]])] = _p match
-    {
-        case p <|> q if tablable(p) => tablify(q, acc += ((p, p.leading)))
-        case p if tablable(p) => (acc += ((p, p.leading))).toList
-        case p => (acc += ((p, None))).toList
-    }
-
     // Core Embedding
     private [parsley] final class Pure[A](private [Pure] val x: A) extends Parsley[A]
     {
@@ -407,12 +389,12 @@ private [parsley] object DeepEmbedding
         {
             // TODO: We are missing out on optimisation opportunities... push fmaps down into or tree branches?
             // pure f <*> p = f <$> p
-            case (Pure(f: (Char => B) @unchecked), ct@CharTok(c)) => instrs += CharTokFastPerform[Char, B](c, f, ct.expected); cont
-            case (Pure(f: (String => B) @unchecked), st@StringTok(s)) => instrs += new StringTokFastPerform(s, f, st.expected); cont
+            case (Pure(f: (Char => B) @unchecked), ct@CharTok(c)) => instrs += instructions.CharTokFastPerform[Char, B](c, f, ct.expected); cont
+            case (Pure(f: (String => B) @unchecked), st@StringTok(s)) => instrs += new instructions.StringTokFastPerform(s, f, st.expected); cont
             case (Pure(f: (A => B)), _) =>
                 new Suspended(px.codeGen
                 {
-                    instrs += new Perform(f)
+                    instrs += new instructions.Perform(f)
                     cont
                 })
             case _ =>
@@ -432,7 +414,7 @@ private [parsley] object DeepEmbedding
         private [<|>] lazy val q = _q
         override def preprocess(cont: Parsley[B] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
             p.optimised(p => q.optimised(q => cont(new <|>(p, q))))
-        override def optimise = (p, q) match
+        override def optimise: Parsley[B] = (p, q) match
         {
             // left catch law: pure x <|> p = pure x
             case (p: Pure[_], _) => p
@@ -441,61 +423,170 @@ private [parsley] object DeepEmbedding
             // alternative law: p <|> empty = p
             case (p, e: Empty) if e.expected == null => p
             // associative law: (u <|> v) <|> w = u <|> (v <|> w)
-            // TODO add this in when brainfuck benchmark is ready, I want to see how this affects it!
-            //case ((u: Parsley[T]) <|> (v: Parsley[A]), w) => new <|>(u, new <|>[A, B](v, w).optimise).asInstanceOf[_ <|> B]
+            case ((u: Parsley[T]) <|> (v: Parsley[A]), w) => new <|>(u, new <|>[A, B](v, w).optimise).asInstanceOf[Parsley[B]]
             case _ => this
         }
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) = (p, q) match
+        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) = tablify(this, Nil) match
         {
-            case (Attempt(p), Pure(x)) =>
-                val handler = labels.fresh()
-                instrs += new instructions.PushHandler(handler)
-                new Suspended(p.codeGen
+            // If the tablified list is single element with None, that implies that this should be generated as normal!
+            case (_, None)::Nil => (p, q) match
+            {
+                case (Attempt(p), Pure(x)) =>
+                    val handler = labels.fresh()
+                    instrs += new instructions.PushHandler(handler)
+                    new Suspended(p.codeGen
+                    {
+                        instrs += new instructions.Label(handler)
+                        instrs += new instructions.AlwaysRecoverWith[B](x)
+                        cont
+                    })
+                case (Attempt(p), _) =>
+                    val handler = labels.fresh()
+                    val skip = labels.fresh()
+                    instrs += new instructions.PushHandler(handler)
+                    new Suspended(p.codeGen
+                    {
+                        instrs += new instructions.Label(handler)
+                        instrs += new instructions.JumpGoodAttempt(skip)
+                        q.codeGen
+                        {
+                            instrs += new instructions.Label(skip)
+                            cont
+                        }
+                    })
+                case (_, Pure(x)) =>
+                    val handler = labels.fresh()
+                    instrs += new instructions.InputCheck(handler)
+                    new Suspended(p.codeGen
+                    {
+                        instrs += new instructions.Label(handler)
+                        instrs += new instructions.RecoverWith[B](x)
+                        cont
+                    })
+                case _ =>
+                    val handler = labels.fresh()
+                    val skip = labels.fresh()
+                    instrs += new instructions.InputCheck(handler)
+                    new Suspended(p.codeGen
+                    {
+                        instrs += new instructions.Label(handler)
+                        instrs += new instructions.JumpGood(skip)
+                        q.codeGen
+                        {
+                            instrs += new instructions.Label(skip)
+                            cont
+                        }
+                    })
+            }
+            // In case of None'd list, the codeGen cont continues by codeGenning that p, else we are done for this tree, call cont!
+            case tablified =>
+                // This list is backwards :)
+                val needsDefault = tablified.head._2.isDefined
+                val end = labels.fresh()
+                val default = labels.fresh()
+                val (roots, leads, ls, expecteds) = foldTablified(tablified, labels, mutable.Map.empty, Nil, Nil, Nil)
+                instrs += new instructions.JumpTable(leads, ls, default, expecteds)
+                new Suspended(codeGenRoots(
                 {
-                    instrs += new instructions.Label(handler)
-                    instrs += new instructions.AlwaysRecoverWith[B](x)
-                    cont
-                })
-            // TODO Uncomment when brainfuck is in :)
-            /*case (Attempt(p), _) =>
+                    instrs += new instructions.Label(default)
+                    if (needsDefault)
+                    {
+                        instrs += new instructions.Empty(null)
+                        instrs += new instructions.Label(end)
+                        cont
+                    }
+                    else
+                    {
+                        tablified.head._1.codeGen
+                        {
+                            instrs += new instructions.Label(end)
+                            cont
+                        }
+                    }
+                }, roots, ls, end))
+        }
+        def codeGenRoots(cont: =>Continuation, roots: List[List[Parsley[_]]], ls: List[Int], end: Int)(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation = roots match
+        {
+            case root::roots_ =>
+                instrs += new instructions.Label(ls.head)
+                codeGenAlternatives(
+                {
+                    instrs += new instructions.Jump(end)
+                    codeGenRoots(cont, roots_, ls.tail, end)
+                }, root)
+            case Nil => cont
+        }
+        def codeGenAlternatives(cont: =>Continuation, alts: List[Parsley[_]])(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation = (alts: @unchecked) match
+        {
+            case alt::Nil => alt.codeGen(cont)
+            // TODO, perform refactoring to allow for all optimised forms
+            case alt::alts_ =>
                 val handler = labels.fresh()
                 val skip = labels.fresh()
-                instrs += new instructions.PushHandler(handler)
-                new Suspended(p.codeGen
+                instrs += new instructions.InputCheck(handler)
+                alt.codeGen
                 {
                     instrs += new instructions.Label(handler)
-                    instrs += new instructions.JumpGoodAttempt(skip)
-                    q.codeGen
+                    instrs += new instructions.JumpGood(skip)
+                    codeGenAlternatives(
                     {
                         instrs += new instructions.Label(skip)
                         cont
-                    }
-                })*/
-            case (_, Pure(x)) =>
-                val handler = labels.fresh()
-                instrs += new instructions.InputCheck(handler)
-                new Suspended(p.codeGen
+                    }, alts_)
+                }
+        }
+        @tailrec def foldTablified(tablified: List[(Parsley[_], Option[Parsley[_]])], labelGen: LabelCounter,
+                                   roots: mutable.Map[Char, List[Parsley[_]]],
+                                   leads: List[Char],
+                                   labels: List[Int],
+                                   expecteds: List[UnsafeOption[String]]):
+            (List[List[Parsley[_]]], List[Char], List[Int], List[UnsafeOption[String]]) = tablified match
+        {
+            case (_, None)::tablified_ => foldTablified(tablified_, labelGen, roots, leads, labels, expecteds)
+            case (root, Some(lead@CharTok(c)))::tablified_ =>
+                if (roots.contains(c))
                 {
-                    instrs += new instructions.Label(handler)
-                    instrs += new instructions.RecoverWith[B](x)
-                    cont
-                })
-            case _ =>
-                val handler = labels.fresh()
-                val skip = labels.fresh()
-                instrs += new instructions.InputCheck(handler)
-                new Suspended(p.codeGen
+                    roots.update(c, root::roots(c))
+                    foldTablified(tablified_, labelGen, roots, leads, labelGen.fresh()::labels, lead.expected::expecteds)
+                }
+                else
                 {
-                    instrs += new Label(handler)
-                    instrs += new instructions.JumpGood(skip)
-                    q.codeGen
-                    {
-                        instrs += new Label(skip)
-                        cont
-                    }
-                })
+                    roots.update(c, root::Nil)
+                    foldTablified(tablified_, labelGen, roots, c::leads, labelGen.fresh()::labels, lead.expected::expecteds)
+                }
+            case (root, Some(lead@StringTok(s)))::tablified_ =>
+                val c = s.head
+                if (roots.contains(c))
+                {
+                    roots.update(c, root::roots(c))
+                    foldTablified(tablified_, labelGen, roots, leads, labelGen.fresh()::labels, lead.expected::expecteds)
+                }
+                else
+                {
+                    roots.update(c, root::Nil)
+                    foldTablified(tablified_, labelGen, roots, c::leads, labelGen.fresh()::labels, lead.expected::expecteds)
+                }
+            case Nil => (leads.map(roots(_)), leads, labels, expecteds)
+        }
+        @tailrec private def tablable(p: Parsley[_]): Option[Parsley[_]] = p match
+        {
+            case t@(CharTok(_) | StringTok(_)) => Some(t)
+            case Attempt(t) => tablable(t)
+            case Pure(_) <*> t => tablable(t)
+            case t <*> _ => tablable(t)
+            case Cont(t, _) => tablable(t)
+            case _ => None
+        }
+        @tailrec private [DeepEmbedding] def tablify(p: Parsley[_], acc: List[(Parsley[_], Option[Parsley[_]])]): List[(Parsley[_], Option[Parsley[_]])] = p match
+        {
+            case u <|> v =>
+                val leading = tablable(u)
+                if (leading.isDefined) tablify(v, (u, leading)::acc)
+                else (p, None)::acc
+            case _ => (p, tablable(p))::acc
         }
     }
+
     private [parsley] final class >>=[A, +B](_p: =>Parsley[A], private [>>=] val f: A => Parsley[B]) extends Parsley[B]
     {
         private [>>=] lazy val p = _p
@@ -507,7 +598,7 @@ private [parsley] object DeepEmbedding
         })
         override def optimise: Parsley[B] = p match
         {
-            // TODO: We need to try and identify the fixpoints in the optimised binds, so we can remove the call instructions
+            // CODO: We need to try and identify the fixpoints in the optimised binds, so we can remove the call instructions
             // monad law 1: pure x >>= f = f x
             case Pure(x) => val fp = new Fixpoint(f(x).optimise); fp.expected = expected; fp
             // char/string x = char/string x *> pure x and monad law 1
@@ -524,14 +615,13 @@ private [parsley] object DeepEmbedding
                 val b = new >>=(p, f).optimise
                 b.expected = expected
                 new *>(q, b)
-            // monad law 3: (m >>= g) >>= f = m >>= (\x -> g x >>= f) NOTE: this *could* help if g x ended with a pure, since this would be optimised out!
+            // monad law 3: (m >>= g) >>= f = m >>= (\x -> g x >>= f) Note: this *could* help if g x ended with a pure, since this would be optimised out!
             case (m: Parsley[T] @unchecked) >>= (g: (T => A) @unchecked) =>
                 val b = new >>=(m, (x: T) => new >>=(g(x), f).optimise)
                 b.expected = expected
                 b
             // monadplus law (left zero)
             case z: MZero => z
-            // TODO: Consider pushing bind into or tree? may find optimisation opportunities
             case _ => this
         }
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
@@ -588,11 +678,11 @@ private [parsley] object DeepEmbedding
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) = (p, q) match
         {
             case (ct@CharTok(c), Pure(x)) => instrs += instructions.CharTokFastPerform[Char, B](c, _ => x, ct.expected); cont
-            case (st@StringTok(s), Pure(x)) => instrs += new StringTokFastPerform(s, _ => x, st.expected); cont
+            case (st@StringTok(s), Pure(x)) => instrs += new instructions.StringTokFastPerform(s, _ => x, st.expected); cont
             case (p, Pure(x)) =>
                 new Suspended(p.codeGen
                 {
-                    instrs += new Exchange(x)
+                    instrs += new instructions.Exchange(x)
                     cont
                 })
             case (p, q) =>
@@ -614,7 +704,6 @@ private [parsley] object DeepEmbedding
             p.optimised(p => q.optimised(q => cont(new <*(p, q))))
         override def optimise: Parsley[A] = (p, q) match
         {
-            // TODO: Consider char(c) <* char(d) => string(cd) *> pure(c) in some form!
             // p <* pure _ = p
             case (p, _: Pure[_]) => p
             // re-association law 3: pure x <* p = p *> pure x
@@ -632,11 +721,11 @@ private [parsley] object DeepEmbedding
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) = (p, q) match
         {
             case (Pure(x), ct@CharTok(c)) => instrs += instructions.CharTokFastPerform[Char, A](c, _ => x, ct.expected); cont
-            case (Pure(x), st@StringTok(s)) => instrs += new StringTokFastPerform(s, _ => x, st.expected); cont
+            case (Pure(x), st@StringTok(s)) => instrs += new instructions.StringTokFastPerform(s, _ => x, st.expected); cont
             case (Pure(x), q) =>
                 new Suspended(q.codeGen
                 {
-                    instrs += new Exchange(x)
+                    instrs += new instructions.Exchange(x)
                     cont
                 })
             case (p, q) =>
@@ -1148,7 +1237,7 @@ private [parsley] object DeepEmbedding
             val end = labels.fresh()
             new Suspended(b.codeGen
             {
-                instrs += new If(success)
+                instrs += new instructions.If(success)
                 q.codeGen
                 {
                     instrs += new instructions.Jump(end)
@@ -1247,46 +1336,11 @@ private [parsley] object DeepEmbedding
         println((q <|> q <|> q <|> q).pretty)
         val chain = //chainl1('1' <#> (_.toInt), '+' #> ((x: Int) => (y: Int) => x + y))
            chainPost('1' <#> (_.toInt), "+1" #> ((x: Int) => x+49))
-
-        // The jumptable is impressively fast, beating the or chain effortlessly!
-        // Now let's work out how to actually integrate it!
-        // NOTE: Bear in mind that the default must be an Empty instruction if there is no further chain!
-        val test = new Parsley //#bespoke parsley solutions :p
-        {
-            override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]] = cont(this)
-            override private [parsley] def codeGen(cont: => Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
-            {
-                val l1 = labels.fresh()
-                val l2 = labels.fresh()
-                val l3 = labels.fresh()
-                val d = labels.fresh()
-                val end = labels.fresh()
-                instrs += new instructions.JumpTable(List('a', 'c', 'f'), List(l1, l2, l3), d)
-                instrs += new instructions.Label(l1)
-                instrs += instructions.CharTokFastPerform('a', (_: Char) => 10, null)
-                instrs += new instructions.Jump(end)
-                instrs += new instructions.Label(l2)
-                instrs += instructions.CharTokFastPerform('c', (_: Char) => 20, null)
-                instrs += new instructions.Jump(end)
-                instrs += new instructions.Label(l3)
-                instrs += instructions.CharTokFastPerform('f', (_: Char) => 30, null)
-                instrs += new instructions.Jump(end)
-                instrs += new instructions.Label(d)
-                instrs += new instructions.Push(40)
-                instrs += new instructions.Label(end)
-                cont
-            }
-        }
-        val test_ = 'a' #> 10 <|> pure(40)
-        println(test.pretty)
-        println(test_.pretty)
-        println(runParserFastUnsafe(test, "e"))
         val start = System.currentTimeMillis
         for (_ <- 0 to 10000000)
         {
             //(q <|> q <|> q <|> q).instrs
-            //runParserFastUnsafe(chain, "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1")
-            runParserFastUnsafe(test, "a")
+            runParserFastUnsafe(chain, "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1")
         }
         println(System.currentTimeMillis - start)
         println(chain.pretty)
