@@ -354,11 +354,20 @@ private [parsley] object DeepEmbedding
                 // first position fusion
                 case Pure(f) => new Pure(f(x))
                 // second position fusion
-                case Pure(f: (T => A => B) @unchecked) <*> (uy: Parsley[T]) => <*>(new Pure((y: T) => f(y)(x)), uy)
+                case Pure(f: (T => A => B) @unchecked) <*> (uy: Parsley[T]) =>
+                    pf = new Pure((y: T) => f(y)(x))
+                    px = uy.asInstanceOf[Parsley[A]]
+                    this
                 // third position fusion
-                case Pure(f: (T => U => A => B) @unchecked) <*> (uy: Parsley[T]) <*> (uz: Parsley[U]) => <*>(<*>(new Pure((y: T) => (z: U) => f(y)(z)(x)), uy), uz)
+                case Pure(f: (T => U => A => B) @unchecked) <*> (uy: Parsley[T]) <*> (uz: Parsley[U]) =>
+                    pf = <*>(new Pure((y: T) => (z: U) => f(y)(z)(x)), uy)
+                    px = uz.asInstanceOf[Parsley[A]]
+                    this
                 // interchange law: u <*> pure y == pure ($y) <*> u == ($y) <$> u (single instruction, so we benefit at code-gen)
-                case _ => <*>(new Pure((f: A => B) => f(x)), uf)
+                case _ =>
+                    pf = new Pure((f: A => B) => f(x)).asInstanceOf[Parsley[A => B]]
+                    px = uf.asInstanceOf[Parsley[A]]
+                    this
             }
             // functor law: fmap f (fmap g p) == fmap (f . g) p where fmap f p = pure f <*> p from applicative
             case (Pure(f), Pure(g: (T => A) @unchecked) <*> (u: Parsley[T])) => <*>(new Pure(f.compose(g)), u)
@@ -380,21 +389,26 @@ private [parsley] object DeepEmbedding
             // consequence of left zero law and monadic definition of <*>, preserving error properties of pf
             case (u, z: MZero) => *>(u, z)
             // interchange law: u <*> pure y == pure ($y) <*> u == ($y) <$> u (single instruction, so we benefit at code-gen)
-            case (uf, Pure(x)) => <*>(new Pure((f: A => B) => f(x)), uf)
+            case (uf, Pure(x)) =>
+                pf = new Pure((f: A => B) => f(x)).asInstanceOf[Parsley[A => B]]
+                px = uf.asInstanceOf[Parsley[A]]
+                this
             case _ => this
         }
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) = (pf, px) match
+        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) = pf match
         {
-            // TODO: We are missing out on optimisation opportunities... push fmaps down into or tree branches?
             // pure f <*> p = f <$> p
-            case (Pure(f: (Char => B) @unchecked), ct@CharTok(c)) => instrs += instructions.CharTokFastPerform[Char, B](c, f, ct.expected); cont
-            case (Pure(f: (String => B) @unchecked), st@StringTok(s)) => instrs += new instructions.StringTokFastPerform(s, f, st.expected); cont
-            case (Pure(f: (A => B)), _) =>
-                new Suspended(px.codeGen
-                {
-                    instrs += new instructions.Perform(f)
-                    cont
-                })
+            case Pure(f) => px match
+            {
+                case ct@CharTok(c) => instrs += instructions.CharTokFastPerform[Char, B](c, f.asInstanceOf[Char => B], ct.expected); cont
+                case st@StringTok(s) => instrs += new instructions.StringTokFastPerform(s, f.asInstanceOf[String => B], st.expected); cont
+                case _ =>
+                    new Suspended(px.codeGen
+                    {
+                        instrs += new instructions.Perform(f)
+                        cont
+                    })
+            }
             case _ =>
                 new Suspended(pf.codeGen
                 {
@@ -430,60 +444,70 @@ private [parsley] object DeepEmbedding
             // alternative law: p <|> empty = p
             case (u: Parsley[B], e: Empty) if e.expected == null => u
             // associative law: (u <|> v) <|> w = u <|> (v <|> w)
-            case ((u: Parsley[T]) <|> (v: Parsley[A]), w) => <|>(u, <|>[A, B](v, w).optimise).asInstanceOf[Parsley[B]]
+            case ((u: Parsley[T]) <|> (v: Parsley[A]), w) =>
+                p = u.asInstanceOf[Parsley[A]]
+                q = <|>[A, B](v, w).optimise
+                this
             case _ => this
         }
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) = tablify(this, Nil) match
         {
             // If the tablified list is single element with None, that implies that this should be generated as normal!
-            case (_, None)::Nil => (p, q) match
+            case (_, None)::Nil => p match
             {
-                case (Attempt(u), Pure(x)) =>
-                    val handler = labels.fresh()
-                    instrs += new instructions.PushHandler(handler)
-                    new Suspended(u.codeGen
-                    {
-                        instrs += new instructions.Label(handler)
-                        instrs += new instructions.AlwaysRecoverWith[B](x)
-                        cont
-                    })
-                case (Attempt(u), v) =>
-                    val handler = labels.fresh()
-                    val skip = labels.fresh()
-                    instrs += new instructions.PushHandler(handler)
-                    new Suspended(u.codeGen
-                    {
-                        instrs += new instructions.Label(handler)
-                        instrs += new instructions.JumpGoodAttempt(skip)
-                        v.codeGen
+                case Attempt(u) => q match
+                {
+                    case Pure(x) =>
+                        val handler = labels.fresh()
+                        instrs += new instructions.PushHandler(handler)
+                        new Suspended(u.codeGen
                         {
-                            instrs += new instructions.Label(skip)
+                            instrs += new instructions.Label(handler)
+                            instrs += new instructions.AlwaysRecoverWith[B](x)
                             cont
-                        }
-                    })
-                case (u, Pure(x)) =>
-                    val handler = labels.fresh()
-                    instrs += new instructions.InputCheck(handler)
-                    new Suspended(u.codeGen
-                    {
-                        instrs += new instructions.Label(handler)
-                        instrs += new instructions.RecoverWith[B](x)
-                        cont
-                    })
-                case _ =>
-                    val handler = labels.fresh()
-                    val skip = labels.fresh()
-                    instrs += new instructions.InputCheck(handler)
-                    new Suspended(p.codeGen
-                    {
-                        instrs += new instructions.Label(handler)
-                        instrs += new instructions.JumpGood(skip)
-                        q.codeGen
+                        })
+                    case v =>
+                        val handler = labels.fresh()
+                        val skip = labels.fresh()
+                        instrs += new instructions.PushHandler(handler)
+                        new Suspended(u.codeGen
                         {
-                            instrs += new instructions.Label(skip)
+                            instrs += new instructions.Label(handler)
+                            instrs += new instructions.JumpGoodAttempt(skip)
+                            v.codeGen
+                            {
+                                instrs += new instructions.Label(skip)
+                                cont
+                            }
+                        })
+                }
+                case u => q match
+                {
+                    case Pure(x) =>
+                        val handler = labels.fresh()
+                        instrs += new instructions.InputCheck(handler)
+                        new Suspended(u.codeGen
+                        {
+                            instrs += new instructions.Label(handler)
+                            instrs += new instructions.RecoverWith[B](x)
                             cont
-                        }
-                    })
+                        })
+                    case v =>
+                        val handler = labels.fresh()
+                        val skip = labels.fresh()
+                        instrs += new instructions.InputCheck(handler)
+                        new Suspended(u.codeGen
+                        {
+                            instrs += new instructions.Label(handler)
+                            instrs += new instructions.JumpGood(skip)
+                            v.codeGen
+                            {
+                                instrs += new instructions.Label(skip)
+                                cont
+                            }
+                        })
+                }
+
             }
             // In case of None'd list, the codeGen cont continues by codeGenning that p, else we are done for this tree, call cont!
             case tablified =>
@@ -563,36 +587,29 @@ private [parsley] object DeepEmbedding
             (List[List[Parsley[_]]], List[Char], List[Int], List[UnsafeOption[String]]) = tablified match
         {
             case (_, None)::tablified_ => foldTablified(tablified_, labelGen, roots, leads, labels, expecteds)
-            case (root, Some(lead@CharTok(c)))::tablified_ =>
+            case (root, Some(lead))::tablified_ =>
+                val (c, expected) = lead match
+                {
+                    case ct@CharTok(d) => (d, ct.expected)
+                    case st@StringTok(s) => (s.head, st.expected)
+                }
                 if (roots.contains(c))
                 {
                     roots.update(c, root::roots(c))
-                    foldTablified(tablified_, labelGen, roots, leads, labelGen.fresh()::labels, lead.expected::expecteds)
+                    foldTablified(tablified_, labelGen, roots, leads, labelGen.fresh()::labels, expected::expecteds)
                 }
                 else
                 {
                     roots.update(c, root::Nil)
-                    foldTablified(tablified_, labelGen, roots, c::leads, labelGen.fresh()::labels, lead.expected::expecteds)
-                }
-            case (root, Some(lead@StringTok(s)))::tablified_ =>
-                val c = s.head
-                if (roots.contains(c))
-                {
-                    roots.update(c, root::roots(c))
-                    foldTablified(tablified_, labelGen, roots, leads, labelGen.fresh()::labels, lead.expected::expecteds)
-                }
-                else
-                {
-                    roots.update(c, root::Nil)
-                    foldTablified(tablified_, labelGen, roots, c::leads, labelGen.fresh()::labels, lead.expected::expecteds)
+                    foldTablified(tablified_, labelGen, roots, c::leads, labelGen.fresh()::labels, expected::expecteds)
                 }
             case Nil => (leads.map(roots(_)), leads, labels, expecteds)
         }
         @tailrec private def tablable(p: Parsley[_]): Option[Parsley[_]] = p match
         {
-            case t@(CharTok(_) | StringTok(_)) => Some(t)
+            case t@(_: CharTok | _: StringTok) => Some(t)
             case Attempt(t) => tablable(t)
-            case Pure(_) <*> t => tablable(t)
+            case (_: Pure[_]) <*> t => tablable(t)
             case t <*> _ => tablable(t)
             case t *> _ => tablable(t)
             case t <* _ => tablable(t)
@@ -607,7 +624,7 @@ private [parsley] object DeepEmbedding
             case _ => (p, tablable(p))::acc
         }
     }
-    private [parsley] final class >>=[A, +B](_p: =>Parsley[A], private [>>=] val f: A => Parsley[B], val expected: UnsafeOption[String] = null) extends Parsley[B]
+    private [parsley] final class >>=[A, B](_p: =>Parsley[A], private [>>=] var f: A => Parsley[B], val expected: UnsafeOption[String] = null) extends Parsley[B]
     {
         private [>>=] var p: Parsley[A] = _
         override def preprocess(cont: Parsley[B] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
@@ -631,7 +648,10 @@ private [parsley] object DeepEmbedding
             // (q *> p) >>= f = q *> (p >>= f)
             case u *> v => *>(u, >>=(v, f, expected).optimise)
             // monad law 3: (m >>= g) >>= f = m >>= (\x -> g x >>= f) Note: this *could* help if g x ended with a pure, since this would be optimised out!
-            case (m: Parsley[T] @unchecked) >>= (g: (T => A) @unchecked) => >>=(m, (x: T) => >>=(g(x), f, expected).optimise, expected)
+            case (m: Parsley[T] @unchecked) >>= (g: (T => A) @unchecked) =>
+                p = m.asInstanceOf[Parsley[A]]
+                f = (x: T) => >>=(g(x), f, expected).optimise
+                this
             // monadplus law (left zero)
             case z: MZero => z
             case _ => this
@@ -680,37 +700,70 @@ private [parsley] object DeepEmbedding
                 }
                 else cont(*>(p, q))
             }))
-        override def optimise: Parsley[B] = (p, q) match
+        @tailrec override def optimise: Parsley[B] = p match
         {
             // pure _ *> p = p
-            case (_: Pure[_], v) => v
-            // char(c) *> char(d) = string(cd) *> pure(d)
-            case (CharTok(c), CharTok(d)) => *>(new StringTok(c.toString + d), new Pure(d)).optimise.asInstanceOf[Parsley[B]]
+            case _: Pure[_] => q
             // p *> pure _ *> q = p *> q
-            case (u *> (_: Pure[_]), v) => *>(u, v).optimise
-            // string(s) *> char(c) = string(sc) *> pure(c)
-            case (StringTok(s), CharTok(c)) => *>(new StringTok(s + c), new Pure(c)).optimise.asInstanceOf[Parsley[B]]
+            case u *> (_: Pure[_]) =>
+                p = u.asInstanceOf[Parsley[A]]
+                optimise
+            case CharTok(c) if q.isInstanceOf[CharTok] || q.isInstanceOf[StringTok] => q match
+            {
+                // char(c) *> char(d) = string(cd) *> pure(d)
+                case CharTok(d) =>
+                    p = new StringTok(c.toString + d).asInstanceOf[Parsley[A]]
+                    q = new Pure(d).asInstanceOf[Parsley[B]]
+                    optimise
+                // char(c) *> string(s) = string(cs) *> pure(s)
+                case StringTok(s) =>
+                    p = new StringTok(c.toString + s).asInstanceOf[Parsley[A]]
+                    q = new Pure(s).asInstanceOf[Parsley[B]]
+                    optimise
+            }
+            case StringTok(s) if q.isInstanceOf[CharTok] || q.isInstanceOf[StringTok] => q match
+            {
+                // string(s) *> char(c) = string(sc) *> pure(c)
+                case CharTok(c) =>
+                    p = new StringTok(s + c).asInstanceOf[Parsley[A]]
+                    q = new Pure(c).asInstanceOf[Parsley[B]]
+                    optimise
+                // string(s) *> string(t) = string(st) *> pure(t)
+                case StringTok(t) =>
+                    p = new StringTok(s + t).asInstanceOf[Parsley[A]]
+                    q = new Pure(t).asInstanceOf[Parsley[B]]
+                    optimise
+            }
             // mzero *> p = mzero (left zero and definition of *> in terms of >>=)
-            case (z: MZero, _) => z
-            // re-association - normal form of Then chain is to have result at the top of tree
-            case (u, v *> w) => *>(*>(u, v).optimise, w).optimise
-            case _ => this
+            case z: MZero => z
+            case u => q match
+            {
+                // re-association - normal form of Then chain is to have result at the top of tree
+                case v *> w =>
+                    p = *>(u, v).asInstanceOf[Parsley[A]].optimise
+                    q = w
+                    optimise
+                case _ => this
+            }
         }
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) = (p, q) match
+        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) = q match
         {
-            case (ct@CharTok(c), Pure(x)) => instrs += instructions.CharTokFastPerform[Char, B](c, _ => x, ct.expected); cont
-            case (st@StringTok(s), Pure(x)) => instrs += new instructions.StringTokFastPerform(s, _ => x, st.expected); cont
-            case (u, Pure(x)) =>
-                new Suspended(u.codeGen
-                {
-                    instrs += new instructions.Exchange(x)
-                    cont
-                })
-            case _ =>
+            case Pure(x) => p match
+            {
+                case (ct@CharTok(c)) => instrs += instructions.CharTokFastPerform[Char, B](c, _ => x, ct.expected); cont
+                case (st@StringTok(s)) => instrs += new instructions.StringTokFastPerform(s, _ => x, st.expected); cont
+                case u =>
+                    new Suspended(u.codeGen
+                    {
+                        instrs += new instructions.Exchange(x)
+                        cont
+                    })
+            }
+            case v =>
                 new Suspended(p.codeGen
                 {
                     instrs += instructions.Pop
-                    q.codeGen(cont)
+                    v.codeGen(cont)
                 })
         }
         override def discard: Parsley[A] = p
@@ -732,25 +785,43 @@ private [parsley] object DeepEmbedding
                 }
                 else cont(<*(p, q))
             }))
-        override def optimise: Parsley[A] = (p, q) match
+        @tailrec override def optimise: Parsley[A] = q match
         {
             // p <* pure _ = p
-            case (u, _: Pure[_]) => u
-            // re-association law 3: pure x <* p = p *> pure x
-            case (u: Pure[_], v) => *>(v, u).optimise
-            // char(c) <* char(d) = string(cd) *> pure(c)
-            case (CharTok(c), CharTok(d)) => *>(new StringTok(c.toString + d), new Pure(c)).asInstanceOf[Parsley[A]]
+            case _: Pure[_] => p
             // p <* (q *> pure _) = p <* q
-            case (u, v *> (_: Pure[_])) => <*(u, v).optimise
-            // char(c) <* string(s) = string(cs) *> pure(c)
-            case (CharTok(c), StringTok(s)) => *>(new StringTok(c.toString + s), new Pure(c)).asInstanceOf[Parsley[A]]
+            case v *> (_: Pure[_]) =>
+                q = v.asInstanceOf[Parsley[B]]
+                optimise
+            case CharTok(d) if p.isInstanceOf[CharTok] || p.isInstanceOf[StringTok] => p match
+            {
+                // char(c) <* char(d) = string(cd) *> pure(c)
+                case CharTok(c) => *>(new StringTok(c.toString + d), new Pure(c)).asInstanceOf[Parsley[A]]
+                // string(s) <* char(d) = string(sd) *> pure(s)
+                case StringTok(s) => *>(new StringTok(s + d), new Pure(s)).asInstanceOf[Parsley[A]]
+            }
+            case StringTok(t) if p.isInstanceOf[CharTok] || p.isInstanceOf[StringTok]  => p match
+            {
+                // char(c) <* string(t) = string(ct) *> pure(c)
+                case CharTok(c) => *>(new StringTok(c.toString + t), new Pure(c)).asInstanceOf[Parsley[A]]
+                // string(s) <* string(t) = string(st) *> pure(s)
+                case StringTok(s) => *>(new StringTok(s + t), new Pure(s)).asInstanceOf[Parsley[A]]
+            }
             // p <* mzero = p *> mzero (by preservation of error messages and failure properties) - This moves the pop instruction after the failure
-            case (u, z: MZero) => *>(u, z)
-            // mzero <* p = mzero (left zero law and definition of <* in terms of >>=)
-            case (z: MZero, _) => z
-            // re-association - normal form of Prev chain is to have result at the top of tree
-            case (u <* v, w) => <*(u, <*(v, w).optimise).optimise
-            case _ => this
+            case z: MZero => *>(p, z)
+            case w => p match
+            {
+                // re-association law 3: pure x <* p = p *> pure x
+                case u: Pure[_] => *>(w, u).optimise
+                // mzero <* p = mzero (left zero law and definition of <* in terms of >>=)
+                case z: MZero => z
+                // re-association - normal form of Prev chain is to have result at the top of tree
+                case u <* v =>
+                    p = u
+                    q = <*(v, w).asInstanceOf[Parsley[B]].optimise
+                    optimise
+                case _ => this
+            }
         }
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) = (p, q) match
         {
