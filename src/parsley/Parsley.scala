@@ -266,20 +266,11 @@ abstract class Parsley[+A] private [parsley]
     private [parsley] final def pretty: String = instrs.mkString("; ")
     
     // Internals
-    // TODO: Implement optimisation caching, with fixpoint safety!
-    //private [this] var _optimised: UnsafeOption[Parsley[A]] = null
-    //private [this] var _seenLastOptimised: UnsafeOption[Set[Parsley[_]]] = null
     final private [parsley] def optimised(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]] =
     {
         // 2 is a magic magic number. It yields the fastest speeds possible for the compilation time?!
         if (depth == 2) (if (seen.isEmpty) this else this.fix).preprocess(p => new Thunk(() => cont(p.optimise)))(seen + this, label, 0)
         else (if (seen.isEmpty) this else this.fix).preprocess(p => cont(p.optimise))(seen + this, label, depth+1)
-        /*val seen_ = if (_optimised != null) seen ++ _seenLastOptimised
-        else
-        {
-            (_optimised, _seenLastOptimised) = optimise(seen)
-        }
-        _optimised*/
     }
     final private [parsley] var safe = true
     final private [parsley] lazy val instrs: Array[Instr] =
@@ -345,7 +336,7 @@ private [parsley] object DeepEmbedding
         private [<*>] var pf: Parsley[A => B] = _
         private [<*>] var px: Parsley[A] = _
         override def preprocess(cont: Parsley[B] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]] =
-            _pf.optimised(pf => _px.optimised(px => 
+            if (label == null && pf != null) cont(this) else _pf.optimised(pf => _px.optimised(px =>
             {
                 if (label == null)
                 {
@@ -420,7 +411,7 @@ private [parsley] object DeepEmbedding
         private [<|>] var p: Parsley[A] = _
         private [<|>] var q: Parsley[B] = _
         override def preprocess(cont: Parsley[B] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]] =
-            _p.optimised(p => _q.optimised(q =>
+            if (label == null && p != null) cont(this) else _p.optimised(p => _q.optimised(q =>
             {
                 if (label == null)
                 {
@@ -618,9 +609,9 @@ private [parsley] object DeepEmbedding
     }
     private [parsley] final class >>=[A, +B](_p: =>Parsley[A], private [>>=] val f: A => Parsley[B], val expected: UnsafeOption[String] = null) extends Parsley[B]
     {
-        private [>>=] var p = _p
+        private [>>=] var p: Parsley[A] = _
         override def preprocess(cont: Parsley[B] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            _p.optimised(p =>
+            if (label == null && p != null) cont(this) else _p.optimised(p =>
             {
                 if (label == null)
                 {
@@ -679,7 +670,7 @@ private [parsley] object DeepEmbedding
         private [*>] var p: Parsley[A] = _
         private [*>] var q: Parsley[B] = _
         override def preprocess(cont: Parsley[B] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]] =
-            _p.optimised(p => _q.optimised(q => 
+            if (label == null && p != null) cont(this) else _p.optimised(p => _q.optimised(q =>
             {
                 if (label == null) 
                 {
@@ -731,7 +722,7 @@ private [parsley] object DeepEmbedding
         private [<*] var p: Parsley[A] = _
         private [<*] var q: Parsley[B] = _
         override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            _p.optimised(p => _q.optimised(q =>
+            if (label == null && p != null) cont(this) else _p.optimised(p => _q.optimised(q =>
             {
                 if (label == null)
                 {
@@ -789,7 +780,7 @@ private [parsley] object DeepEmbedding
     {
         private [Attempt] var p: Parsley[A] = _
         override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            _p.optimised(p =>
+            if (label == null && p != null) cont(this) else _p.optimised(p =>
             {
                 if (label == null)
                 {
@@ -814,7 +805,7 @@ private [parsley] object DeepEmbedding
     {
         private [Look] var p: Parsley[A] = _
         override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            _p.optimised(p =>
+            if (label == null && p != null) cont(this) else _p.optimised(p =>
             {
                 if (label == null)
                 {
@@ -927,7 +918,7 @@ private [parsley] object DeepEmbedding
         private [Lift] var p: Parsley[A] = _
         private [Lift] var q: Parsley[B] = _
         override def preprocess(cont: Parsley[C] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            _p.optimised(p => _q.optimised(q =>
+            if (label == null && p != null) cont(this) else _p.optimised(p => _q.optimised(q =>
             {
                 if (label == null)
                 {
@@ -957,7 +948,7 @@ private [parsley] object DeepEmbedding
         private [<::>] var p: Parsley[A] = _
         private [<::>] var ps: Parsley[List[B]] = _
         override def preprocess(cont: Parsley[List[B]] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            _p.optimised(p => _ps.optimised(ps =>
+            if (label == null && p != null) cont(this) else _p.optimised(p => _ps.optimised(ps =>
             {
                 if (label == null)
                 {
@@ -983,7 +974,7 @@ private [parsley] object DeepEmbedding
     {
         private [FastFail] var p: Parsley[A] = _
         override def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            _p.optimised(p =>
+            if (label == null && p != null) cont(this) else _p.optimised(p =>
             {
                 if (label == null)
                 {
@@ -1011,7 +1002,7 @@ private [parsley] object DeepEmbedding
     {
         private [FastUnexpected] var p: Parsley[A] = _
         override def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            _p.optimised(p =>
+            if (label == null && p != null) cont(this) else _p.optimised(p =>
             {
                 if (label == null)
                 {
@@ -1039,7 +1030,7 @@ private [parsley] object DeepEmbedding
     {
         private [Ensure] var p: Parsley[A] = _
         override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            _p.optimised(p =>
+            if (label == null && p != null) cont(this) else _p.optimised(p =>
             {
                 if (label == null)
                 {
@@ -1066,7 +1057,7 @@ private [parsley] object DeepEmbedding
     {
         private [Guard] var p: Parsley[A] = _
         override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            _p.optimised(p =>
+            if (label == null && p != null) cont(this) else _p.optimised(p =>
             {
                 if (label == null)
                 {
@@ -1093,7 +1084,7 @@ private [parsley] object DeepEmbedding
     {
         private [FastGuard] var p: Parsley[A] = _
         override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            _p.optimised(p =>
+            if (label == null && p != null) cont(this) else _p.optimised(p =>
             {
                 if (label == null)
                 {
@@ -1120,7 +1111,7 @@ private [parsley] object DeepEmbedding
     {
         private [Many] var p: Parsley[A] = _
         override def preprocess(cont: Parsley[List[A]] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            _p.optimised(p =>
+            if (label == null && p != null) cont(this) else _p.optimised(p =>
             {
                 if (label == null)
                 {
@@ -1153,7 +1144,7 @@ private [parsley] object DeepEmbedding
     {
         private [SkipMany] var p: Parsley[A] = _
         override def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            _p.optimised(p =>
+            if (label == null && p != null) cont(this) else _p.optimised(p =>
             {
                 if (label == null)
                 {
@@ -1187,7 +1178,7 @@ private [parsley] object DeepEmbedding
         private [ChainPost] var p: Parsley[A] = _
         private [ChainPost] var op: Parsley[A => A] = _
         override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            _p.optimised(p => _op.optimised(op =>
+            if (label == null && p != null) cont(this) else _p.optimised(p => _op.optimised(op =>
             {
                 if (label == null)
                 {
@@ -1225,7 +1216,7 @@ private [parsley] object DeepEmbedding
         private [ChainPre] var p: Parsley[A] = _
         private [ChainPre] var op: Parsley[A => A] = _
         override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            _p.optimised(p => _op.optimised(op =>
+            if (label == null && p != null) cont(this) else _p.optimised(p => _op.optimised(op =>
             {
                 if (label == null)
                 {
@@ -1264,7 +1255,7 @@ private [parsley] object DeepEmbedding
         private [Chainl] var p: Parsley[A] = _
         private [Chainl] var op: Parsley[(A, A) => A] = _
         override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            _p.optimised(p => _op.optimised(op =>
+            if (label == null && p != null) cont(this) else _p.optimised(p => _op.optimised(op =>
             {
                 if (label == null)
                 {
@@ -1296,7 +1287,7 @@ private [parsley] object DeepEmbedding
         private [Chainr] var p: Parsley[A] = _
         private [Chainr] var op: Parsley[(A, A) => A] = _
         override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            _p.optimised(p => _op.optimised(op =>
+            if (label == null && p != null) cont(this) else _p.optimised(p => _op.optimised(op =>
             {
                 if (label == null)
                 {
@@ -1329,7 +1320,7 @@ private [parsley] object DeepEmbedding
         private [SepEndBy1] var p: Parsley[A] = _
         private [SepEndBy1] var sep: Parsley[B] = _
         override def preprocess(cont: Parsley[List[A]] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            _p.optimised(p => _sep.optimised(sep =>
+            if (label == null && p != null) cont(this) else _p.optimised(p => _sep.optimised(sep =>
             {
                 if (label == null)
                 {
@@ -1361,7 +1352,7 @@ private [parsley] object DeepEmbedding
     {
         private [ManyTill] var body: Parsley[Any] = _
         override def preprocess(cont: Parsley[List[A]] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            _body.optimised(body =>
+            if (label == null && body != null) cont(this) else _body.optimised(body =>
             {
                 if (label == null)
                 {
@@ -1390,7 +1381,7 @@ private [parsley] object DeepEmbedding
         private [Ternary] var p: Parsley[A] = _
         private [Ternary] var q: Parsley[A] = _
         override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            _b.optimised(b => _p.optimised(p => _q.optimised(q =>
+            if (label == null && b != null) cont(this) else _b.optimised(b => _p.optimised(p => _q.optimised(q =>
             {
                 if (label == null)
                 {
@@ -1431,7 +1422,7 @@ private [parsley] object DeepEmbedding
     {
         private [NotFollowedBy] var p: Parsley[A] = _
         override def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            _p.optimised(p =>
+            if (label == null && p != null) cont(this) else _p.optimised(p =>
             {
                 if (label == null)
                 {
