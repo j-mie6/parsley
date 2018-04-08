@@ -62,26 +62,28 @@ private [parsley] final class Satisfies(f: Char => Boolean, expected: UnsafeOpti
 {
     override def apply(ctx: Context): Unit =
     {
-        if (ctx.moreInput && f(ctx.nextChar))
+        if (ctx.moreInput)
         {
             val c = ctx.nextChar
-            ctx.stack.push(c)
-            ctx.offset += 1
-            (c: @switch) match
+            if (f(ctx.nextChar))
             {
-                case '\n' => ctx.line += 1; ctx.col = 1
-                case '\t' => ctx.col += 4 - ((ctx.col - 1) & 3)
-                case _ => ctx.col += 1
+                ctx.stack.push(c)
+                ctx.offset += 1
+                (c: @switch) match
+                {
+                    case '\n' => ctx.line += 1; ctx.col = 1
+                    case '\t' => ctx.col += 4 - ((ctx.col - 1) & 3)
+                    case _ => ctx.col += 1
+                }
+                ctx.inc()
             }
-            ctx.inc()
+            else ctx.fail(expected)
         }
         else ctx.fail(expected)
     }
     override def toString: String = "Sat(?)"
 }
 
-// The original semantics for this instruction were that of attempt(string(s)) 
-// TODO: The optimisation was probably good enough to create a new instruction group
 private [parsley] final class StringTok(s: String, _expected: UnsafeOption[String]) extends Instr
 {
     private [this] val expected = if (_expected == null) "\"" + s + "\"" else _expected
