@@ -166,6 +166,33 @@ private [parsley] object Native
         else p
     }
     val big = repeat(P("1"), 5000)
+
+    trait BrainFuckOp
+    case object RightPointer extends BrainFuckOp
+    case object LeftPointer extends BrainFuckOp
+    case object Increment extends BrainFuckOp
+    case object Decrement extends BrainFuckOp
+    case object Output extends BrainFuckOp
+    case object Input extends BrainFuckOp
+    case class Loop(p: List[BrainFuckOp]) extends BrainFuckOp
+
+    // This is an optimisation for the logic inside. Since this is the last in a chain of ors
+    // it doesn't need to account for the other symbols (just needs to not accidentally consume ])
+    private val whitespaceBF = P(CharPred(_ != ']'))
+
+    def brainfuck: Parser[List[BrainFuckOp]] =
+    {
+        lazy val bf: Parser[List[BrainFuckOp]] =
+            (P(">").map(_ => Some(RightPointer))
+           | P("<").map(_ => Some(LeftPointer))
+           | P("+").map(_ => Some(Increment))
+           | P("-").map(_ => Some(Decrement))
+           | P(".").map(_ => Some(Output))
+           | P(",").map(_ => Some(Input))
+           | P("[" ~ bf ~ "]").map(p => Some(Loop(p)))
+           | whitespaceBF.map(_ => None)).rep.map(_.flatten.toList)
+        bf ~ End
+    }
 }*/
 
 private [parsley] object Benchmark
@@ -173,7 +200,7 @@ private [parsley] object Benchmark
     def main(args: Array[String]): Unit =
     {
         //Console.in.read()
-        def p = ParsleyBench.chain
+        val p = ParsleyBench.chain
         val input1 = "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"
         //val input2 = "[+++++++<[<<>>>>]..hahah this is brainfuck.,,,,,-[---]-++]"
         val input = input1
@@ -183,8 +210,8 @@ private [parsley] object Benchmark
         //println(runParser(p, input))
         for (_ <- 0 to 10000000)
             runParserFastUnsafe(p, input)
-        //p(input)
-        //p.parse(input)
+            //p(input)
+            //p.parse(input)
         println(System.currentTimeMillis() - start)
     }
 }
