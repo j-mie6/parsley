@@ -119,7 +119,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
             erroffset = offset
             errcol = col
             errline = line
-            unexpected = if (offset < inputsz) "\"" + nextChar.toString + "\"" else "end of input"
+            unexpected = if (offset < inputsz) "\"" + nextChar + "\"" else "end of input"
             expected = (if (errorOverride == null) e else errorOverride)::Nil
             raw = Nil
             unexpectAnyway = false

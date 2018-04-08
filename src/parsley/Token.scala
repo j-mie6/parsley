@@ -3,8 +3,7 @@ package parsley
 import Parsley._
 import Combinator.{between, notFollowedBy, sepBy, sepBy1, skipSome, some}
 import Char.{charLift, digit, hexDigit, octDigit, oneOf, satisfy, stringLift}
-
-import scala.reflect.runtime.universe._
+import parsley.DeepToken.Sign._
 
 /**
   * This class is required to construct a TokenParser. It defines the various characteristics of the language to be
@@ -60,7 +59,7 @@ final class TokenParser(lang: LanguageDef)
     lazy val identifier: Parsley[String] = (lang.identStart, lang.identLetter) match
     {
         case (Left(start), Left(letter)) => lexeme(new DeepToken.Identifier(start, letter, theReservedNames))
-        case _ => lexeme(attempt(ident >?> (! isReservedName (_), "unexpected keyword " + _)))
+        case _ => lexeme(attempt(ident >?> (!isReservedName (_), "unexpected keyword " + _)))
     }
 
     /**The lexeme parser `keyword(name)` parses the symbol `name`, but it also checks that the `name`
@@ -203,13 +202,13 @@ final class TokenParser(lang: LanguageDef)
     lazy val naturalOrFloat: Parsley[Either[Int, Double]] = lexeme(natFloat) ? "unsigned number"
 
     private lazy val decimal_ = number(10, digit)
-    private lazy val hexadecimal_ = oneOf(Set('x', 'X')) *> number(16, hexDigit)
-    private lazy val octal_ = oneOf(Set('o', 'O')) *> number(8, octDigit)
+    private lazy val hexadecimal_ = satisfy(c => c == 'x' || c == 'X') *> number(16, hexDigit)
+    private lazy val octal_ = satisfy(c => c == 'o' || c == 'O') *> number(8, octDigit)
 
     // Floats
-    private def sign[A: TypeTag] = new DeepToken.Sign[A]
+    private def sign(ty: SignType) = new DeepToken.Sign[ty.resultType](ty)
     private lazy val floating = new DeepToken.Float
-    private lazy val signedFloating = sign[Double] <*> floating
+    private lazy val signedFloating = sign(DoubleType) <*> floating
     private lazy val natFloat = attempt(floating.map(Right(_))) <|> nat.map(Left(_))
     private lazy val number_ =
         ('+' *> natFloat
@@ -218,7 +217,7 @@ final class TokenParser(lang: LanguageDef)
 
     // Integers and Naturals
     private lazy val nat = new DeepToken.Natural
-    private lazy val int = sign[Int] <*> nat
+    private lazy val int = sign(IntType) <*> nat
 
     /**Parses a positive whole number in the decimal system. Returns the value of the number.*/
     lazy val decimal: Parsley[Int] = lexeme(decimal_)
@@ -335,12 +334,7 @@ private [parsley] object DeepToken
 {
     private [parsley] class WhiteSpace(ws: Set[Char], start: String, end: String, line: String, nested: Boolean) extends Parsley[Nothing]
     {
-        override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-        {
-            val w = new WhiteSpace(ws, start, end, line, nested)
-            w.expected = label
-            cont(w)
-        }
+        override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) = cont(this)
         override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
         {
             instrs += new instructions.TokenWhiteSpace(ws, start, end, line, nested)
@@ -350,12 +344,7 @@ private [parsley] object DeepToken
 
     private [parsley] class SkipComments(start: String, end: String, line: String, nested: Boolean) extends Parsley[Nothing]
     {
-        override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-        {
-            val w = new SkipComments(start, end, line, nested)
-            w.expected = label
-            cont(w)
-        }
+        override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) = cont(this)
         override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
         {
             instrs += new instructions.TokenSkipComments(start, end, line, nested)
@@ -363,28 +352,26 @@ private [parsley] object DeepToken
         }
     }
 
-    private [parsley] class Sign[A: TypeTag] extends Parsley[A => A]
+    private [parsley] class Sign[A](ty: SignType, val expected: UnsafeOption[String] = null) extends Parsley[A => A]
     {
         override protected def preprocess(cont: Parsley[A => A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
-            val w = new Sign[A]
-            w.expected = label
-            cont(w)
+            if (label == null) cont(this)
+            else cont(new Sign(ty, label))
         }
         override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
         {
-            instrs += new instructions.TokenSign[A](expected)
+            instrs += new instructions.TokenSign(ty, expected)
             cont
         }
     }
 
-    private [parsley] class Natural extends Parsley[Int]
+    private [parsley] class Natural(val expected: UnsafeOption[String] = null) extends Parsley[Int]
     {
         override protected def preprocess(cont: Parsley[Int] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
-            val w = new Natural
-            w.expected = label
-            cont(w)
+            if (label == null) cont(this)
+            else cont(new Natural(label))
         }
         override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
         {
@@ -393,13 +380,12 @@ private [parsley] object DeepToken
         }
     }
 
-    private [parsley] class Float extends Parsley[Double]
+    private [parsley] class Float(val expected: UnsafeOption[String] = null) extends Parsley[Double]
     {
         override protected def preprocess(cont: Parsley[Double] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
-            val w = new Float
-            w.expected = label
-            cont(w)
+            if (label == null) cont(this)
+            else cont(new Float(label))
         }
         override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
         {
@@ -408,13 +394,12 @@ private [parsley] object DeepToken
         }
     }
 
-    private [parsley] class Escape extends Parsley[Char]
+    private [parsley] class Escape(val expected: UnsafeOption[String] = null) extends Parsley[Char]
     {
         override protected def preprocess(cont: Parsley[Char] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
-            val w = new Escape
-            w.expected = label
-            cont(w)
+            if (label == null) cont(this)
+            else cont(new Escape(label))
         }
         override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
         {
@@ -423,13 +408,12 @@ private [parsley] object DeepToken
         }
     }
 
-    private [parsley] class StringLiteral(ws: Set[Char]) extends Parsley[String]
+    private [parsley] class StringLiteral(ws: Set[Char], val expected: UnsafeOption[String] = null) extends Parsley[String]
     {
         override protected def preprocess(cont: Parsley[String] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
-            val w = new StringLiteral(ws)
-            w.expected = label
-            cont(w)
+            if (label == null) cont(this)
+            else cont(new StringLiteral(ws, label))
         }
         override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
         {
@@ -438,13 +422,12 @@ private [parsley] object DeepToken
         }
     }
 
-    private [parsley] class RawStringLiteral extends Parsley[String]
+    private [parsley] class RawStringLiteral(val expected: UnsafeOption[String] = null) extends Parsley[String]
     {
         override protected def preprocess(cont: Parsley[String] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
-            val w = new RawStringLiteral
-            w.expected = label
-            cont(w)
+            if (label == null) cont(this)
+            else cont(new RawStringLiteral(label))
         }
         override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
         {
@@ -453,13 +436,12 @@ private [parsley] object DeepToken
         }
     }
 
-    private [parsley] class Identifier(start: Set[Char], letter: Set[Char], keywords: Set[String]) extends Parsley[String]
+    private [parsley] class Identifier(start: Set[Char], letter: Set[Char], keywords: Set[String], val expected: UnsafeOption[String] = null) extends Parsley[String]
     {
         override protected def preprocess(cont: Parsley[String] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
-            val w = new Identifier(start, letter, keywords)
-            w.expected = label
-            cont(w)
+            if (label == null) cont(this)
+            else cont(new Identifier(start, letter, keywords, label))
         }
         override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
         {
@@ -468,13 +450,12 @@ private [parsley] object DeepToken
         }
     }
 
-    private [parsley] class UserOp(start: Set[Char], letter: Set[Char], operators: Set[String]) extends Parsley[String]
+    private [parsley] class UserOp(start: Set[Char], letter: Set[Char], operators: Set[String], val expected: UnsafeOption[String] = null) extends Parsley[String]
     {
         override protected def preprocess(cont: Parsley[String] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
-            val w = new UserOp(start, letter, operators)
-            w.expected = label
-            cont(w)
+            if (label == null) cont(this)
+            else cont(new UserOp(start, letter, operators, label))
         }
         override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
         {
@@ -483,13 +464,12 @@ private [parsley] object DeepToken
         }
     }
 
-    private [parsley] class ReservedOp(start: Set[Char], letter: Set[Char], operators: Set[String]) extends Parsley[String]
+    private [parsley] class ReservedOp(start: Set[Char], letter: Set[Char], operators: Set[String], val expected: UnsafeOption[String] = null) extends Parsley[String]
     {
         override protected def preprocess(cont: Parsley[String] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
-            val w = new ReservedOp(start, letter, operators)
-            w.expected = label
-            cont(w)
+            if (label == null) cont(this)
+            else cont(new ReservedOp(start, letter, operators, label))
         }
         override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
         {
@@ -498,13 +478,12 @@ private [parsley] object DeepToken
         }
     }
 
-    private [parsley] class Keyword(keyword: String, letter: Set[Char], caseSensitive: Boolean) extends Parsley[Nothing]
+    private [parsley] class Keyword(keyword: String, letter: Set[Char], caseSensitive: Boolean, val expected: UnsafeOption[String] = null) extends Parsley[Nothing]
     {
         override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
-            val w = new Keyword(keyword, letter, caseSensitive)
-            w.expected = label
-            cont(w)
+            if (label == null) cont(this)
+            else cont(new Keyword(keyword, letter, caseSensitive, label))
         }
         override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
         {
@@ -513,18 +492,33 @@ private [parsley] object DeepToken
         }
     }
 
-    private [parsley] class Operator(operator: String, letter: Set[Char]) extends Parsley[Nothing]
+    private [parsley] class Operator(operator: String, letter: Set[Char], val expected: UnsafeOption[String] = null) extends Parsley[Nothing]
     {
         override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
-            val w = new Operator(operator, letter)
-            w.expected = label
-            cont(w)
+            if (label == null) cont(this)
+            else cont(new Operator(operator, letter, label))
         }
         override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
         {
             instrs += new instructions.TokenOperator_(operator, letter, expected)
             cont
+        }
+    }
+
+    object Sign
+    {
+        sealed trait SignType
+        {
+            type resultType
+        }
+        case object DoubleType extends SignType
+        {
+            override type resultType = Double
+        }
+        case object IntType extends SignType
+        {
+            override type resultType = Int
         }
     }
 }

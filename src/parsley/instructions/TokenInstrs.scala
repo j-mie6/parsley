@@ -1,9 +1,9 @@
 package parsley.instructions
 
+import parsley.DeepToken.Sign._
 import parsley.UnsafeOption
 
 import scala.annotation.{switch, tailrec}
-import scala.reflect.runtime.universe._
 
 // This is considered as a VERY rough implementation of the intrinsic, just to get it working, it will be optimised later
 private [parsley] class TokenSkipComments(start: String, end: String, line: String, nested: Boolean) extends Instr with NoPush
@@ -181,14 +181,13 @@ private [parsley] final class TokenWhiteSpace(ws: Set[Char], start: String, end:
     override def toString: String = "TokenWhiteSpace"
 }
 
-private [parsley] final class TokenSign[A: TypeTag](_expected: UnsafeOption[String]) extends Instr
+private [parsley] final class TokenSign(ty: SignType, _expected: UnsafeOption[String]) extends Instr
 {
     val expected = if (_expected == null) "sign" else _expected
-    val neg: Any => Any = typeOf[A] match
+    val neg: Any => Any = ty match
     {
-        case t if t =:= typeOf[Int] => ((x: Int) => -x).asInstanceOf[Any => Any]
-        case t if t =:= typeOf[Double] => ((x: Double) => -x).asInstanceOf[Any => Any]
-        case _ => throw new Exception("Unsupported sign type, requires Int or Double")
+        case IntType => ((x: Int) => -x).asInstanceOf[Any => Any]
+        case DoubleType => ((x: Double) => -x).asInstanceOf[Any => Any]
     }
     val pos: Any => Any = x => x
 

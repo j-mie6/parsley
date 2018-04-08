@@ -1,6 +1,9 @@
 package parsley
 
 import parsley.Parsley._
+
+import scala.annotation.switch
+import scala.collection.immutable.BitSet
 import scala.language.implicitConversions
 
 object Char
@@ -42,13 +45,20 @@ object Char
     val anyChar: Parsley[Char] = satisfy(_ => true) ? "any character"
 
     /**Parses a whitespace character (either ' ' or '\t'). Returns the parsed character.*/
-    val space: Parsley[Char] = oneOf(Set(' ', '\t')) ? "space/tab"
+    val space: Parsley[Char] = satisfy(c => c == ' ' || c == '\t') ? "space/tab"
 
     /**Skips zero or more whitespace characters. See also `skipMany`. Uses space.*/
     val spaces: Parsley[Unit] = skipMany(space)
 
     /**Parses a whitespace character (' ', '\t', '\n', '\r', '\f', '\v'). Returns the parsed character.*/
-    val whitespace: Parsley[Char] = oneOf(Set(' ', '\t', '\n', '\r', '\f', '\u000b')) ? "whitespace"
+    val whitespace: Parsley[Char] =
+    {
+        satisfy(c => (c: @switch) match
+        {
+            case ' ' | '\t' | '\n' | '\r' | '\f' | '\u000b' => true
+            case _ => false
+        }) ? "whitespace"
+    }
 
     /**Skips zero or more whitespace characters. See also `skipMany`. Uses whitespace.*/
     val whitespaces: Parsley[Unit] = skipMany(whitespace)
@@ -81,8 +91,17 @@ object Char
     val digit: Parsley[Char] = satisfy(_.isDigit) ? "digit"
 
     /**Parses a hexadecimal digit. Returns the parsed character.*/
-    val hexDigit: Parsley[Char] = (oneOf(('a' to 'f').toSet ++ ('A' to 'F').toSet) <|> digit) ? "hexadecimal digit"
+    val hexDigit: Parsley[Char] =
+    {
+        satisfy(c => (c: @switch) match
+        {
+            case '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
+               | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
+               | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' => true
+            case _ => false
+        }) ? "hexadecimal digit"
+    }
 
     /**Parses an octal digit. Returns the parsed character.*/
-    val octDigit: Parsley[Char] = oneOf(('0' to '7').toSet) ? "octal digit"
+    val octDigit: Parsley[Char] = satisfy(c => c <= '7' && c >= '0') ? "octal digit"
 }
