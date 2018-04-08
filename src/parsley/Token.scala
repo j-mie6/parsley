@@ -202,8 +202,8 @@ final class TokenParser(lang: LanguageDef)
     lazy val naturalOrFloat: Parsley[Either[Int, Double]] = lexeme(natFloat) ? "unsigned number"
 
     private lazy val decimal_ = number(10, digit)
-    private lazy val hexadecimal_ = oneOf(Set('x', 'X')) *> number(16, hexDigit)
-    private lazy val octal_ = oneOf(Set('o', 'O')) *> number(8, octDigit)
+    private lazy val hexadecimal_ = satisfy(c => c == 'x' || c == 'X') *> number(16, hexDigit)
+    private lazy val octal_ = satisfy(c => c == 'o' || c == 'O') *> number(8, octDigit)
 
     // Floats
     private def sign(ty: SignType) = new DeepToken.Sign[ty.resultType](ty)
