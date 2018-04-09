@@ -200,15 +200,16 @@ private [parsley] object Benchmark
     def main(args: Array[String]): Unit =
     {
         //Console.in.read()
-        def p = ParsleyBench.chain
+        val p = ParsleyBench.brainfuck
         val input1 = "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"
-        //val input2 = "[+++++++<[<<>>>>]..hahah this is brainfuck.,,,,,-[---]-++]"
-        val input = input1
+        val input2 = "[+++++++<[<<>>>>]..hahah this is brainfuck.,,,,,-[---]-++]"
+        val input = input2
         //println(runParser(p, "aaaab"))
         //println(runParser(p, "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"))
+        println(runParserFastUnsafe(p, input))
         val start = System.currentTimeMillis()
         //println(runParser(p, input))
-        for (_ <- 0 to 10000000)
+        for (_ <- 0 to 1000000)
             runParserFastUnsafe(p, input)
             //p(input)
             //p.parse(input)

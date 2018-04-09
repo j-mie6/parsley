@@ -17,6 +17,7 @@ package object instructions
     }
 
     private [parsley] trait NoPush
+    private [instructions] trait Stateful
 
     private [parsley] abstract class JumpInstr extends Instr
     {

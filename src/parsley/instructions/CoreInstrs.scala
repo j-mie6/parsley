@@ -1,7 +1,7 @@
 package parsley.instructions
 
 import Stack.push
-import parsley.{Parsley, UnsafeOption}
+import parsley.{Parsley, ResizableArray, UnsafeOption}
 
 import scala.annotation.{switch, tailrec}
 import scala.language.existentials
@@ -181,22 +181,37 @@ private [parsley] final class DynSub[-A](f: A => Array[Instr], expected: UnsafeO
 // Control Flow
 private [parsley] final class Call(p: Parsley[_], expected: UnsafeOption[String]) extends Instr
 {
-    // TEMPORARY FIXME
-    // It has been determined that single use arrays are, in fact, not compatible with
-    // mutable intrinsics. Any instruction streams containing stateful instructions must
-    // be deep-copied and have those instructions deep-copied also. For now, we will just
-    // deep copy all streams, but that's very inefficient.
-    // NOTE:
-    // A better solution is the following; the first the call is performed, we compile
-    // the parser and iterate through to find to problematic instructions. Store their
-    // indices in a list. Next time we do a call, clone the instr array and then iterate
-    // through the list and copy every corresponding instruction.
     private [this] var instrs: UnsafeOption[Array[Instr]] = _
+    private [this] var pindices: Array[Int] = _
+    private [this] var nstateful: Int = _
     override def apply(ctx: Context): Unit =
     {
         ctx.calls = push(ctx.calls, new Frame(ctx.pc + 1, ctx.instrs))
-        if (instrs == null) instrs = p.instrs //NOTE: This line cannot be hoisted, otherwise it will infinite loop during codeGen!
-        ctx.instrs = instrs.map(_.copy)
+        if (instrs == null)
+        {
+            instrs = p.instrs //Note: This line cannot be hoisted, otherwise it will infinite loop during codeGen!
+            var i: Int = 0
+            val buff: ResizableArray[Int] = new ResizableArray[Int]()
+            while (i < instrs.length)
+            {
+                if (instrs(i).isInstanceOf[Stateful]) buff += i
+                i += 1
+            }
+            pindices = buff.toArray
+            nstateful = pindices.length
+        }
+        // If there are any stateful instructions they MUST be deep-copied along with this instructions array!
+        if (nstateful != 0)
+        {
+            var i: Int = 0
+            while (i < nstateful)
+            {
+                val j = pindices(i)
+                instrs.update(j, instrs(j).copy)
+                i += 1
+            }
+            ctx.instrs = instrs.clone
+        }
         ctx.depth += 1
         if (expected != null)
         {
@@ -206,7 +221,6 @@ private [parsley] final class Call(p: Parsley[_], expected: UnsafeOption[String]
         ctx.pc = 0
     }
     override def toString: String = s"Call($p)"
-    override def copy: Call = new Call(p, expected)
 }
 
 private [parsley] final class Fail(msg: String, expected: UnsafeOption[String]) extends Instr

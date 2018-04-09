@@ -28,7 +28,7 @@ private [parsley] object Cons extends Instr
     override def toString: String = "Cons"
 }
 
-private [parsley] final class Many(var label: Int) extends JumpInstr
+private [parsley] final class Many(var label: Int) extends JumpInstr with Stateful
 {
     private[this] val acc: ListBuffer[Any] = ListBuffer.empty
     override def apply(ctx: Context): Unit =
@@ -74,10 +74,9 @@ private [parsley] final class SkipMany(var label: Int) extends JumpInstr with No
         }
     }
     override def toString: String = s"SkipMany($label)"
-    override def copy: SkipMany = new SkipMany(label)
 }
 
-private [parsley] final class ChainPost(var label: Int) extends JumpInstr
+private [parsley] final class ChainPost(var label: Int) extends JumpInstr with Stateful
 {
     private[this] var acc: Any = _
     override def apply(ctx: Context): Unit =
@@ -114,7 +113,7 @@ private [parsley] final class ChainPost(var label: Int) extends JumpInstr
     override def copy: ChainPost = new ChainPost(label)
 }
 
-private [parsley] final class ChainPre(var label: Int) extends JumpInstr
+private [parsley] final class ChainPre(var label: Int) extends JumpInstr with Stateful
 {
     private var acc: Any => Any = _
     override def apply(ctx: Context): Unit =
@@ -132,7 +131,7 @@ private [parsley] final class ChainPre(var label: Int) extends JumpInstr
         else if (ctx.offset != ctx.checkStack.head) { ctx.checkStack = ctx.checkStack.tail; acc = null; ctx.fail() }
         else
         {
-            ctx.stack.push(if (acc == null) identity[Any](_) else acc)
+            ctx.stack.push(if (acc == null) identity[Any] _ else acc)
             acc = null
             ctx.checkStack = ctx.checkStack.tail
             ctx.status = Good
@@ -142,7 +141,7 @@ private [parsley] final class ChainPre(var label: Int) extends JumpInstr
     override def toString: String = s"ChainPre($label)"
     override def copy: ChainPre = new ChainPre(label)
 }
-private [parsley] final class Chainl(var label: Int) extends JumpInstr
+private [parsley] final class Chainl(var label: Int) extends JumpInstr with Stateful
 {
     private[this] var acc: Any = _
     override def apply(ctx: Context): Unit =
@@ -177,7 +176,7 @@ private [parsley] final class Chainl(var label: Int) extends JumpInstr
     override def toString: String = s"Chainl($label)"
     override def copy: Chainl = new Chainl(label)
 }
-private [parsley] final class Chainr(var label: Int) extends JumpInstr
+private [parsley] final class Chainr(var label: Int) extends JumpInstr with Stateful
 {
     private var acc: Any => Any = _
     override def apply(ctx: Context): Unit =
@@ -237,7 +236,7 @@ private [parsley] final class Chainr(var label: Int) extends JumpInstr
     override def copy: Chainr = new Chainr(label)
 }
 
-private [parsley] final class SepEndBy1(var label: Int) extends JumpInstr
+private [parsley] final class SepEndBy1(var label: Int) extends JumpInstr with Stateful
 {
     private[this] val acc: ListBuffer[Any] = ListBuffer.empty
     override def apply(ctx: Context): Unit =
@@ -290,7 +289,7 @@ private [parsley] final class SepEndBy1(var label: Int) extends JumpInstr
     override def copy: SepEndBy1 = new SepEndBy1(label)
 }
 
-private [parsley] final class ManyTill(var label: Int) extends JumpInstr
+private [parsley] final class ManyTill(var label: Int) extends JumpInstr with Stateful
 {
     private[this] val acc: ListBuffer[Any] = ListBuffer.empty
     override def apply(ctx: Context): Unit =
@@ -314,7 +313,7 @@ private [parsley] final class ManyTill(var label: Int) extends JumpInstr
         else { acc.clear(); ctx.fail() }
     }
     override def toString: String = s"ManyTill($label)"
-    override def copy: Many = new Many(label)
+    override def copy: ManyTill = new ManyTill(label)
 }
 
 private [parsley] final class If(var label: Int) extends JumpInstr
