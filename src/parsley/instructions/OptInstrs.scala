@@ -242,7 +242,7 @@ private [parsley] final class AlwaysRecoverWith[A](x: A) extends Instr
 
 private [parsley] final class JumpTable(prefixes: List[Char], labels: List[Int], private [this] var default: Int, _expecteds: List[UnsafeOption[String]]) extends Instr
 {
-    private [this] val jumpTable = mutable.Map(prefixes.zip(labels): _*)
+    private [this] val jumpTable = mutable.LongMap(prefixes.map(_.toLong).zip(labels): _*)
     val expecteds = prefixes.zip(_expecteds).map{case (c, expected) => if (expected == null) "\"" + c + "\"" else expected}.reverse
 
     override def apply(ctx: Context): Unit =
@@ -293,7 +293,7 @@ private [parsley] final class JumpTable(prefixes: List[Char], labels: List[Int],
         jumpTable.transform((_, v) => labels(v))
         default = labels(default)
     }
-    override def toString: String = s"JumpTable(${jumpTable.mkString(", ")}, _ -> $default)"
+    override def toString: String = s"JumpTable(${jumpTable.map{case (k, v) => k.toChar -> v}.mkString(", ")}, _ -> $default)"
 }
 
 private [parsley] object CharTokFastPerform
