@@ -3,7 +3,6 @@ package parsley
 import parsley.Parsley._
 
 import scala.annotation.switch
-import scala.collection.immutable.BitSet
 import scala.language.implicitConversions
 
 object Char
@@ -104,4 +103,14 @@ object Char
 
     /**Parses an octal digit. Returns the parsed character.*/
     val octDigit: Parsley[Char] = satisfy(c => c <= '7' && c >= '0') ? "octal digit"
+
+    // Sets
+    def upperSet: Set[Char] = (for (i <- 0 to 65535; c = i.toChar; if c.isUpper) yield c).toSet
+    def lowerSet: Set[Char] = (for (i <- 0 to 65535; c = i.toChar; if c.isLower) yield c).toSet
+    def letterSet: Set[Char] = (for (i <- 0 to 65535; c = i.toChar; if c.isLetter) yield c).toSet
+    def digitSet: Set[Char] = (for (i <- 0 to 65535; c = i.toChar; if c.isDigit) yield c).toSet
+    def alphaNumSet: Set[Char] = letterSet ++ digitSet
+    lazy val hexDigitSet: Set[Char] = ('0' to '9').toSet ++ ('a' to 'f').toSet ++ ('A' to 'F').toSet
+    lazy val octDigitSet: Set[Char] = ('0' to '7').toSet
+    lazy val whiteSpaceSet: Set[Char] = Set(' ', '\t', '\n', '\r', '\f', '\u000b')
 }

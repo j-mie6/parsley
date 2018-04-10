@@ -1,4 +1,5 @@
 import parsley.instructions.Context
+
 import scala.annotation.tailrec
 
 package object parsley
@@ -42,6 +43,8 @@ package object parsley
     private [parsley] val internalCtx = giveContext
     private [parsley] type UnsafeOption[A >: Null] = A
 
+    case class Var(v: Int) extends AnyVal
+
     /**
       * Result of a parser. Either a `Success[A]` or a `Failure`
       * @tparam A The type of expected success result
@@ -81,7 +84,7 @@ package object parsley
     private [parsley] final object Terminate extends Continuation
     private [parsley] final class Suspended(cont: =>Continuation) extends Continuation { def apply(): Continuation = cont }
     
-    // This is designed to be a lighter weight wrapper around Array to make it resizeable
+    // This is designed to be a lighter-weight wrapper around Array to make it resizeable
     import scala.reflect.ClassTag
     private [parsley] final class ResizableArray[A: ClassTag](initialSize: Int = 16)
     {
@@ -103,5 +106,22 @@ package object parsley
         }
         def length: Int = size
         def toArray: Array[A] = array
+    }
+
+    // This is designed to be a very optimised and light-weight implementation of a BitSet for characters
+    private [parsley] final class BitSet(set: Set[Char])
+    {
+        val max = if (set.isEmpty) -1 else set.max
+        val arr = new Array[Int]((max >> 5) + 1)
+
+        for (c <- set)
+        {
+            // c / 32 finds the index int, c % 32 finds the index bit
+            val index = c >> 5
+            arr(index) = arr(index) ^ (1 << (c & 31))
+        }
+
+        def contains(c: Char): Boolean = c <= max && ((arr(c >> 5) >> (c & 31)) & 1) == 1
+        def apply(c: Char): Boolean = c <= max && ((arr(c >> 5) >> (c & 31)) & 1) == 1
     }
 }

@@ -1,6 +1,7 @@
 package parsley.instructions
 
 import parsley.DeepToken.Sign._
+import parsley.TokenParser.TokenSet
 import parsley.UnsafeOption
 
 import scala.annotation.{switch, tailrec}
@@ -119,7 +120,7 @@ private [parsley] class TokenSkipComments(start: String, end: String, line: Stri
     override def toString: String = "TokenSkipComments"
 }
 
-private [parsley] final class TokenWhiteSpace(ws: Set[Char], start: String, end: String, line: String, nested: Boolean) extends TokenSkipComments(start, end, line, nested) with NoPush
+private [parsley] final class TokenWhiteSpace(ws: TokenSet, start: String, end: String, line: String, nested: Boolean) extends TokenSkipComments(start, end, line, nested) with NoPush
 {
     override def apply(ctx: Context): Unit =
     {
@@ -794,7 +795,7 @@ private [parsley] class TokenEscape(_expected: UnsafeOption[String]) extends Ins
     override def toString: String = "TokenEscape"
 }
 
-private [parsley] final class TokenString(ws: Set[Char], _expected: UnsafeOption[String]) extends TokenEscape(_expected)
+private [parsley] final class TokenString(ws: TokenSet, _expected: UnsafeOption[String]) extends TokenEscape(_expected)
 {
     val expectedString = if (_expected == null) "string" else _expected
     val expectedEos = if (_expected == null) "end of string" else _expected
@@ -933,7 +934,7 @@ private [parsley] final class TokenRawString(_expected: UnsafeOption[String]) ex
     override def toString: String = "TokenRawString"
 }
 
-private [parsley] final class TokenIdentifier(start: Set[Char], letter: Set[Char], keywords: Set[String], _unexpected: UnsafeOption[String]) extends Instr
+private [parsley] final class TokenIdentifier(start: TokenSet, letter: TokenSet, keywords: Set[String], _unexpected: UnsafeOption[String]) extends Instr
 {
     val expected = if (_unexpected == null) "identifier"
     else _unexpected
@@ -980,7 +981,7 @@ private [parsley] final class TokenIdentifier(start: Set[Char], letter: Set[Char
     override def toString: String = "TokenIdentifier"
 }
 
-private [parsley] final class TokenUserOperator(start: Set[Char], letter: Set[Char], reservedOps: Set[String], _unexpected: UnsafeOption[String]) extends Instr
+private [parsley] final class TokenUserOperator(start: TokenSet, letter: TokenSet, reservedOps: Set[String], _unexpected: UnsafeOption[String]) extends Instr
 {
     val expected = if (_unexpected == null) "operator" else _unexpected
 
@@ -1026,7 +1027,7 @@ private [parsley] final class TokenUserOperator(start: Set[Char], letter: Set[Ch
     override def toString: String = "TokenUserOperator"
 }
 
-private [parsley] final class TokenOperator(start: Set[Char], letter: Set[Char], reservedOps: Set[String], _unexpected: UnsafeOption[String]) extends Instr with NoPush
+private [parsley] final class TokenOperator(start: TokenSet, letter: TokenSet, reservedOps: Set[String], _unexpected: UnsafeOption[String]) extends Instr with NoPush
 {
     val expected = if (_unexpected == null) "operator" else _unexpected
 
@@ -1072,7 +1073,7 @@ private [parsley] final class TokenOperator(start: Set[Char], letter: Set[Char],
     override def toString: String = "TokenReservedOperator"
 }
 
-private [parsley] class TokenKeyword(_keyword: String, letter: Set[Char], caseSensitive: Boolean, _expected: UnsafeOption[String]) extends Instr with NoPush
+private [parsley] class TokenKeyword(_keyword: String, letter: TokenSet, caseSensitive: Boolean, _expected: UnsafeOption[String]) extends Instr with NoPush
 {
     val expected = if (_expected == null) _keyword else _expected
     val expectedEnd = if (_expected == null) "end of " + _keyword else _expected
@@ -1110,7 +1111,7 @@ private [parsley] class TokenKeyword(_keyword: String, letter: Set[Char], caseSe
     override def toString: String = s"TokenKeyword(${_keyword})"
 }
 
-private [parsley] class TokenOperator_(_operator: String, letter: Set[Char], _expected: UnsafeOption[String]) extends Instr with NoPush
+private [parsley] class TokenOperator_(_operator: String, letter: TokenSet, _expected: UnsafeOption[String]) extends Instr with NoPush
 {
     val expected = if (_expected == null) _operator else _expected
     val expectedEnd = if (_expected == null) "end of " + _operator else _expected

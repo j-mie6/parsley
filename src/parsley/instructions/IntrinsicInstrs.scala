@@ -5,13 +5,26 @@ import Stack.isEmpty
 
 import scala.collection.mutable.ListBuffer
 
-private [parsley] final class Lift[A, B, C](f: (A, B) => C) extends Instr
+private [parsley] final class Lift2[A, B, C](f: (A, B) => C) extends Instr
 {
     private [this] val g = f.asInstanceOf[(Any, Any) => C]
     override def apply(ctx: Context): Unit =
     {
         val y = ctx.stack.upop()
         ctx.stack.exchange(g(ctx.stack.peek, y))
+        ctx.inc()
+    }
+    override def toString: String = "Lift2(f)"
+}
+
+private [parsley] final class Lift3[A, B, C, D](f: (A, B, C) => D) extends Instr
+{
+    private [this] val g = f.asInstanceOf[(Any, Any, Any) => D]
+    override def apply(ctx: Context): Unit =
+    {
+        val z = ctx.stack.upop()
+        val y = ctx.stack.upop()
+        ctx.stack.exchange(g(ctx.stack.peek, y, z))
         ctx.inc()
     }
     override def toString: String = "Lift2(f)"

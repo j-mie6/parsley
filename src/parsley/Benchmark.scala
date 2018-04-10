@@ -45,6 +45,60 @@ private [parsley] object ParsleyBench
         attempt(bf <* eof) <|> fail("\"]\" closes a loop, but there isn't one open")
     }
     println(brainfuck.pretty)
+
+    // https://github.com/Jellonator/Nandlang
+    sealed trait NandExpr
+    case class NandNand(l: NandExpr, r: NandExpr) extends NandExpr
+    case class NandCall(f: NandId, args: List[NandExpr]) extends NandExpr
+    case class NandLit(c: Char) extends NandExpr
+    case class NandId(v: String, idx: Option[Int]) extends NandExpr
+    sealed trait NandStmt
+    case class NandFunc(name: String, args: (List[NandId], List[NandId]), block: NandBlock) extends NandStmt
+    case class NandIf(cond: NandExpr, block: NandBlock, elseBlock: Option[NandBlock]) extends NandStmt
+    case class NandWhile(cond: NandExpr, block: NandBlock) extends NandStmt
+    case class NandVar(idlist: List[NandId], exprlist: List[NandExpr]) extends NandStmt
+    case class NandNaked(expr: NandExpr) extends NandStmt
+    case class NandBlock(stmts: List[NandStmt])
+
+    def nand =
+    {
+        val nandlang =
+            LanguageDef(
+                "",
+                "",
+                "//",
+                false,
+                Right(Char.letterSet + '_'),
+                Right(Char.alphaNumSet + '_'),
+                Right(Set.empty),
+                Right(Set.empty),
+                Set("if", "else", "function", "while", "var"),
+                Set("!"),
+                true,
+                Right(Char.whiteSpaceSet))
+        val tok = new TokenParser(nandlang)
+        val index = tok.brackets(tok.natural)
+        val identifier = lift2(NandId, tok.identifier, option(index))
+        val literal = tok.lexeme('0'.map(NandLit)) <|> tok.lexeme('1'.map(NandLit)) <|> tok.charLiteral.map(NandLit)
+        lazy val expr: Parsley[NandExpr] = chainl1(nandexpr, tok.lexeme('!' #> (NandNand(_, _))))
+        lazy val nandexpr = literal <|> attempt(funccall) <|> identifier
+        lazy val funccall = lift2(NandCall(_, _), identifier, tok.parens(exprlist))
+        lazy val exprlist = tok.commaSep(expr)
+        lazy val exprlist1 = tok.commaSep1(expr)
+        val idlist = tok.commaSep(identifier)
+        val idlist1 = tok.commaSep1(identifier)
+        val funcparam = idlist <~> (tok.symbol(':') *> idlist).getOrElse(Nil)
+        val varstmt = lift2(NandVar, optional(tok.keyword("var")) *> idlist1, tok.symbol('=') *> exprlist1 <* tok.semi)
+        lazy val ifstmt = lift3(NandIf, tok.keyword("if") *> expr, block, option(block))
+        lazy val whilestmt = tok.keyword("while") *> lift2(NandWhile, expr, block)
+        lazy val statement = ifstmt <|> whilestmt <|> attempt(varstmt) <|> (expr.map(NandNaked) <* tok.semi)
+        lazy val block: Parsley[NandBlock] = tok.braces(many(statement)).map(NandBlock)
+        val funcdef = lift3(NandFunc, tok.keyword("function") *> tok.identifier, tok.parens(funcparam), block)
+        tok.whiteSpace *> many(funcdef) <* eof
+    }
+    val start = System.currentTimeMillis
+    println(nand.pretty)
+    println(System.currentTimeMillis() - start)
 }
 
 /*private [parsley] object BenchParser extends scala.util.parsing.combinator.Parsers
@@ -200,16 +254,120 @@ private [parsley] object Benchmark
     def main(args: Array[String]): Unit =
     {
         //Console.in.read()
-        val p = ParsleyBench.brainfuck
+        val p = ParsleyBench.nand
         val input1 = "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"
         val input2 = "[+++++++<[<<>>>>]..hahah this is brainfuck.,,,,,-[---]-++]"
-        val input = input2
+        val input3 =
+            """// not logic gate
+              |function not(in : out) {
+              |    out = in ! in;
+              |}
+              |
+              |// and logic gate
+              |function and(a, b : out) {
+              |    out = not(a ! b);
+              |}
+              |
+              |// or logic gate
+              |function or(a, b : out) {
+              |    out = not(a) ! not(b);
+              |}
+              |
+              |// xor logic gate
+              |function xor(a, b : out) {
+              |    out = or(and(a, not(b)), and(not(a), b));
+              |}
+              |
+              |// returns true if a and b are equal
+              |function eq(a, b : out) {
+              |    out = not(xor(a, b));
+              |}
+              |
+              |// full adder
+              |function add(a, b, cin : v, cout) {
+              |    v = xor(cin, xor(a, b));
+              |    cout = or(and(a, b), and(xor(a, b), cin));
+              |}
+              |
+              |// 8 bit adder
+              |function add8(a[8], b[8] : o[8]) {
+              |    var c = 0;
+              |    o[7], c = add(a[7], b[7], c);
+              |    o[6], c = add(a[6], b[6], c);
+              |    o[5], c = add(a[5], b[5], c);
+              |    o[4], c = add(a[4], b[4], c);
+              |    o[3], c = add(a[3], b[3], c);
+              |    o[2], c = add(a[2], b[2], c);
+              |    o[1], c = add(a[1], b[1], c);
+              |    o[0], c = add(a[0], b[0], c);
+              |}
+              |
+              |// returns the two's complement of the given integer
+              |function complement8(i[8] : o[8]) {
+              |    o = add8(
+              |        not(i[0]), not(i[1]), not(i[2]), not(i[3]),
+              |        not(i[4]), not(i[5]), not(i[6]), not(i[7]),
+              |        0, 0, 0, 0, 0, 0, 0, 1);
+              |}
+              |
+              |// 8 bit subtraction
+              |function sub8(a[8], b[8] : o[8]) {
+              |    o = add8(a, complement8(b));
+              |}
+              |
+              |// 8 bit equality
+              |function equal8(a[8], b[8] : out) {
+              |    out = and(
+              |        and(and(eq(a[1], b[1]), eq(a[2], b[2])),
+              |            and(eq(a[3], b[3]), eq(a[4], b[4]))),
+              |        and(and(eq(a[5], b[5]), eq(a[6], b[6])),
+              |            and(eq(a[7], b[7]), eq(a[0], b[0]))));
+              |}
+              |
+              |// returns the Fibonacci number for the given input
+              |function fibonacci(i[8] : o[8]) {
+              |    var check[7], _ = i;
+              |    var is_equal = equal8(check,0, 0,0,0,0,0,0,0,0);
+              |    if is_equal {
+              |        // return input if equal to 1 or 0
+              |        o = i;
+              |    }
+              |    if not(is_equal) {
+              |        // o = fibonacci(i - 1) + fibonacci(i - 2);
+              |        o = add8(
+              |            fibonacci(sub8(i, 0,0,0,0,0,0,0,1)),
+              |            fibonacci(sub8(i, 0,0,0,0,0,0,1,0))
+              |        );
+              |    }
+              |}
+              |
+              |function main()
+              |{
+              |    var value[8] = 0,0,0,0,0,0,0,0;
+              |    while not(equal8(value, 0,0,0,0,1,1,1,0)) {
+              |        // to output strings multiple individual putc calls are needed
+              |        putc('F');
+              |        putc('i');
+              |        putc('b');
+              |        putc(' ');
+              |        puti8(value);
+              |        putc(' ');
+              |        putc('=');
+              |        putc(' ');
+              |        puti8(fibonacci(value));
+              |        endl();
+              |        // increment
+              |        value = add8(value, 0,0,0,0,0,0,0,1);
+              |    }
+              |}
+            """.stripMargin
+        val input = input3
         //println(runParser(p, "aaaab"))
         //println(runParser(p, "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"))
         println(runParserFastUnsafe(p, input))
         val start = System.currentTimeMillis()
         //println(runParser(p, input))
-        for (_ <- 0 to 1000000)
+        for (_ <- 0 to 100000)
             runParserFastUnsafe(p, input)
             //p(input)
             //p.parse(input)

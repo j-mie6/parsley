@@ -10,33 +10,33 @@ class TokeniserTests extends ParsleyTest
             "*/",
             "//",
             true,
-            Right(letter <|> '_'),
-            Right(alphaNum <|> '_'),
-            Right(inSet(Set('+', '-', ':', '/', '*', '='))),
-            Right(inSet(Set('+', '-', ':', '/', '*', '='))),
+            Left(letter <|> '_'),
+            Left(alphaNum <|> '_'),
+            Left(inSet(Set('+', '-', ':', '/', '*', '='))),
+            Left(inSet(Set('+', '-', ':', '/', '*', '='))),
             Set("if", "else", "for", "yield", "while", "def", "class",
                 "trait", "abstract", "override"),
             Set(":", "="),
             true,
-            Right(whitespace))
+            Left(whitespace))
     val scala_ =
         LanguageDef(
             "/*",
             "*/",
             "//",
             false,
-            Left(('a' to 'z').toSet
-              ++ ('A' to 'Z').toSet + '_'),
-            Left(('a' to 'z').toSet
-              ++ ('A' to 'Z').toSet
-              ++ ('0' to '9').toSet + '_'),
-            Left(Set('+', '-', ':', '/', '*', '=')),
-            Left(Set('+', '-', ':', '/', '*', '=')),
+            Right(('a' to 'z').toSet
+               ++ ('A' to 'Z').toSet + '_'),
+            Right(('a' to 'z').toSet
+               ++ ('A' to 'Z').toSet
+               ++ ('0' to '9').toSet + '_'),
+            Right(Set('+', '-', ':', '/', '*', '=')),
+            Right(Set('+', '-', ':', '/', '*', '=')),
             Set("if", "else", "for", "yield", "while", "def", "class",
                 "trait", "abstract", "override"),
             Set(":", "="),
             true,
-            Left(Set(' ', '\t', '\n', '\r', '\f', '\u000b')))
+            Right(Set(' ', '\t', '\n', '\r', '\f', '\u000b')))
     val tokeniser = new TokenParser(scala)
     val tokeniser_ = new TokenParser(scala_)
 

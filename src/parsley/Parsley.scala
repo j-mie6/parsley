@@ -183,10 +183,21 @@ object Parsley
       * intrinsic.
       * @param f The function to apply to the results of `p` and `q`
       * @param p The first parser to parse
-      * @param q The second parser to parser
+      * @param q The second parser to parse
       * @return `f(x, y)` where `x` is the result of `p` and `y` is the result of `q`.
       */
-    def lift2[A, B, C](f: (A, B) => C, p: =>Parsley[A], q: =>Parsley[B]): Parsley[C] = new DeepEmbedding.Lift(f, p, q)
+    def lift2[A, B, C](f: (A, B) => C, p: =>Parsley[A], q: =>Parsley[B]): Parsley[C] = new DeepEmbedding.Lift2(f, p, q)
+    /** Traditionally, `lift2` is defined as `lift3(f, p, q, r) = p.map(f) <*> q <*> r`. However, `f` is actually uncurried,
+      * so it's actually more exactly defined as; read `p` and then read `q` and then read 'r' then provide their results
+      * to function `f`. This is designed to bring higher performance to any curried operations that are not themselves
+      * intrinsic.
+      * @param f The function to apply to the results of `p` and `q`
+      * @param p The first parser to parse
+      * @param q The second parser to parse
+      * @param r The third parser to parse
+      * @return `f(x, y, z)` where `x` is the result of `p`, `y` is the result of `q` and `z` is the result of `r`.
+      */
+    def lift3[A, B, C, D](f: (A, B, C) => D, p: =>Parsley[A], q: =>Parsley[B], r: =>Parsley[C]): Parsley[D] = new DeepEmbedding.Lift3(f, p, q, r)
     /**This function is an alias for `_.flatten`. Provides namesake to Haskell.*/
     def join[A](p: =>Parsley[Parsley[A]]): Parsley[A] = p.flatten
     /** Given a parser `p`, attempts to parse `p`. If the parser fails, then `attempt` ensures that no input was
@@ -229,6 +240,16 @@ object Parsley
       * @return The list of results formed by executing each parser generated from `xs` and `f` in sequence
       */
     def traverse[A, B](f: A => Parsley[B], xs: Seq[A]): Parsley[List[B]] = sequence(xs.map(f))
+    def line: Parsley[Int] = ???
+    def col: Parsley[Int] = ???
+    def pos: Parsley[(Int, Int)] = line <~> col
+    def get[S](v: Var): Parsley[S] = ???
+    def put[S](v: Var, x: S): Parsley[Unit] = ??? //*> unit
+    def put[S](v: Var, p: =>Parsley[S]): Parsley[Unit] = ??? //*> unit
+    def modify[S](v: Var, f: S => S): Parsley[Unit] = ??? //*> unit
+    def local[R, A](v: Var, x: R, p: =>Parsley[A]): Parsley[A] = ???
+    def local[R, A](v: Var, p: =>Parsley[R], q: =>Parsley[A]): Parsley[A] = ???
+    def local[R, A](v: Var, f: R => R, p: =>Parsley[A]): Parsley[A] = ???
 }
 
 // Internals
@@ -264,7 +285,7 @@ abstract class Parsley[+A] private [parsley]
       */
     final def unsafe(): Unit = safe = false
     private [parsley] final def pretty: String = instrs.mkString("; ")
-    
+
     // Internals
     final private [parsley] def optimised(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]] =
     {
@@ -291,7 +312,7 @@ abstract class Parsley[+A] private [parsley]
         @tailrec def applyLabels(srcs: Array[Instr], labels: Array[Int], dests: Array[Instr], n: Int, i: Int = 0, off: Int = 0): Unit = if (i < n) srcs(i + off) match
         {
             case null => applyLabels(srcs, labels, dests, n, i, off + 1)
-            case jump: JumpInstr => 
+            case jump: JumpInstr =>
                 jump.label = labels(jump.label)
                 dests(i) = jump
                 applyLabels(srcs, labels, dests, n, i + 1, off)
@@ -309,7 +330,7 @@ abstract class Parsley[+A] private [parsley]
         instrs_
     }
     final private [parsley] def fix(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = if (seen.contains(this)) new DeepEmbedding.Fixpoint(this, label) else this
-    
+
     // Abstracts
     // Sub-tree optimisation and fixpoint calculation - Bottom-up
     protected def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]]
@@ -318,7 +339,7 @@ abstract class Parsley[+A] private [parsley]
     // Peephole optimisation and code generation - Top-down
     private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter): Continuation
 }
-    
+
 private [parsley] object DeepEmbedding
 {
     // Core Embedding
@@ -692,7 +713,7 @@ private [parsley] object DeepEmbedding
         override def preprocess(cont: Parsley[B] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]] =
             if (label == null && p != null) cont(this) else _p.optimised(p => _q.optimised(q =>
             {
-                if (label == null) 
+                if (label == null)
                 {
                     this.p = p
                     this.q = q
@@ -984,10 +1005,10 @@ private [parsley] object DeepEmbedding
         }
     }
     // TODO: Perform applicative fusion optimisations
-    private [parsley] final class Lift[A, B, +C](private [Lift] val f: (A, B) => C, _p: =>Parsley[A], _q: =>Parsley[B]) extends Parsley[C]
+    private [parsley] final class Lift2[A, B, +C](private [Lift2] val f: (A, B) => C, _p: =>Parsley[A], _q: =>Parsley[B]) extends Parsley[C]
     {
-        private [Lift] var p: Parsley[A] = _
-        private [Lift] var q: Parsley[B] = _
+        private [Lift2] var p: Parsley[A] = _
+        private [Lift2] var q: Parsley[B] = _
         override def preprocess(cont: Parsley[C] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
             if (label == null && p != null) cont(this) else _p.optimised(p => _q.optimised(q =>
             {
@@ -997,7 +1018,7 @@ private [parsley] object DeepEmbedding
                     this.q = q
                     cont(this)
                 }
-                else cont(Lift(f, p, q))
+                else cont(Lift2(f, p, q))
             }))
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
         {
@@ -1005,8 +1026,40 @@ private [parsley] object DeepEmbedding
             {
                 q.codeGen
                 {
-                    instrs += new instructions.Lift(f)
+                    instrs += new instructions.Lift2(f)
                     cont
+                }
+            })
+        }
+    }
+    private [parsley] final class Lift3[A, B, C, +D](private [Lift3] val f: (A, B, C) => D, _p: =>Parsley[A], _q: =>Parsley[B], _r: =>Parsley[C]) extends Parsley[D]
+    {
+        private [Lift3] var p: Parsley[A] = _
+        private [Lift3] var q: Parsley[B] = _
+        private [Lift3] var r: Parsley[C] = _
+        override def preprocess(cont: Parsley[D] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+            if (label == null && p != null) cont(this) else _p.optimised(p => _q.optimised(q => _r.optimised(r =>
+            {
+                if (label == null)
+                {
+                    this.p = p
+                    this.q = q
+                    this.r = r
+                    cont(this)
+                }
+                else cont(Lift3(f, p, q, r))
+            })))
+        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
+        {
+            new Suspended(p.codeGen
+            {
+                q.codeGen
+                {
+                    r.codeGen
+                    {
+                        instrs += new instructions.Lift3(f)
+                        cont
+                    }
                 }
             })
         }
@@ -1537,7 +1590,7 @@ private [parsley] object DeepEmbedding
         override def optimise = throw new Exception("Error relabelling should not be in optimisation!")
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) = throw new Exception("Error relabelling should not be in code gen!")
     }
-    
+
     private [DeepEmbedding] object Pure
     {
         def unapply[A](self: Pure[A]): Option[A] = Some(self.x)
@@ -1627,13 +1680,24 @@ private [parsley] object DeepEmbedding
     {
        def unapply(self: StringTok): Option[String] = Some(self.s)
     }
-    private [DeepEmbedding] object Lift
+    private [DeepEmbedding] object Lift2
     {
-        def apply[A, B, C](f: (A, B) => C, p: Parsley[A], q: Parsley[B]): Lift[A, B, C] =
+        def apply[A, B, C](f: (A, B) => C, p: Parsley[A], q: Parsley[B]): Lift2[A, B, C] =
         {
-            val res: Lift[A, B, C] = new Lift(f, p, q)
+            val res: Lift2[A, B, C] = new Lift2(f, p, q)
             res.p = p
             res.q = q
+            res
+        }
+    }
+    private [DeepEmbedding] object Lift3
+    {
+        def apply[A, B, C, D](f: (A, B, C) => D, p: Parsley[A], q: Parsley[B], r: Parsley[C]): Lift3[A, B, C, D] =
+        {
+            val res: Lift3[A, B, C, D] = new Lift3(f, p, q, r)
+            res.p = p
+            res.q = q
+            res.r = r
             res
         }
     }

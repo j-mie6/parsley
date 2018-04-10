@@ -207,7 +207,7 @@ private [parsley] final class Call(p: Parsley[_], expected: UnsafeOption[String]
             while (i < nstateful)
             {
                 val j = pindices(i)
-                instrs.update(j, instrs(j).copy)
+                instrs(j) = instrs(j).copy
                 i += 1
             }
             ctx.instrs = instrs.clone
@@ -363,6 +363,19 @@ private [parsley] final class JumpGood(var label: Int) extends JumpInstr
         ctx.checkStack = ctx.checkStack.tail
     }
     override def toString: String = s"JumpGood($label)"
+}
+
+// Register-Manipulators
+private [parsley] final class Get(v: Int) extends Instr
+{
+    override def apply(ctx: Context): Unit = ???
+    override def toString: String = s"Get($v)"
+}
+
+private [parsley] final class Put(v: Int) extends Instr with NoPush
+{
+    override def apply(ctx: Context): Unit = ???
+    override def toString: String = s"Put($v)"
 }
 
 // Extractor Objects
