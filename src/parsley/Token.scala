@@ -1,8 +1,10 @@
 package parsley
 
+import scala.language.implicitConversions
+
 import Parsley._
 import Combinator.{between, notFollowedBy, sepBy, sepBy1, skipSome, some}
-import Char.{charLift, digit, hexDigit, octDigit, oneOf, satisfy, stringLift}
+import Char.{charLift, digit, hexDigit, octDigit, satisfy, stringLift}
 import parsley.DeepToken.Sign._
 import parsley.TokenParser.TokenSet
 
@@ -35,21 +37,29 @@ final case class LanguageDef(commentStart: String,
                              commentEnd: String,
                              commentLine: String,
                              nestedComments: Boolean,
-                             identStart: Either[Parsley[Char], Set[Char]],
-                             identLetter: Either[Parsley[Char], Set[Char]],
-                             opStart: Either[Parsley[Char], Set[Char]],
-                             opLetter: Either[Parsley[Char], Set[Char]],
+                             identStart: Impl,
+                             identLetter: Impl,
+                             opStart: Impl,
+                             opLetter: Impl,
                              keywords: Set[String],
                              operators: Set[String],
                              caseSensitive: Boolean,
-                             space: Either[Parsley[_], Set[Char]])
+                             space: Impl)
+
+sealed trait Impl
+final case class Parser(p: Parsley[_]) extends Impl
+final case class Predicate(f: Char => Boolean) extends Impl
+case object Empty extends Impl
+private [parsley] final case class BitSetImpl(cs: TokenSet) extends Impl
+object CharSet
 {
-    private [parsley] val identStartOpt = identStart.map(new BitSet(_))
-    private [parsley] val identLetterOpt = identLetter.map(new BitSet(_))
-    private [parsley] val opStartOpt = opStart.map(new BitSet(_))
-    private [parsley] val opLetterOpt = opLetter.map(new BitSet(_))
-    private [parsley] val spaceOpt = space.map(new BitSet(_))
+    def apply(cs: Set[Char]) = BitSetImpl(new BitSet(Left(cs)))
 }
+object BitGen
+{
+    def apply(f: Char => Boolean) = BitSetImpl(new BitSet(Right(f)))
+}
+
 
 /**
   * When provided with a `LanguageDef`, this class will produce a large variety of parsers that can be used for
@@ -65,17 +75,21 @@ final class TokenParser(lang: LanguageDef)
      * fail on identifiers that are reserved words (i.e. keywords). Legal identifier characters and
      * keywords are defined in the `LanguageDef` provided to the token parser. An identifier is treated
      * as a single token using `attempt`.*/
-    lazy val identifier: Parsley[String] = (lang.identStartOpt, lang.identLetterOpt) match
+    lazy val identifier: Parsley[String] = (lang.identStart, lang.identLetter) match
     {
-        case (Right(start), Right(letter)) => lexeme(new DeepToken.Identifier(start, letter, theReservedNames))
+        case (BitSetImpl(start), BitSetImpl(letter)) => lexeme(new DeepToken.Identifier(start, letter, theReservedNames))
+        case (BitSetImpl(start), Predicate(letter)) => lexeme(new DeepToken.Identifier(start, letter, theReservedNames))
+        case (Predicate(start), BitSetImpl(letter)) => lexeme(new DeepToken.Identifier(start, letter, theReservedNames))
+        case (Predicate(start), Predicate(letter)) => lexeme(new DeepToken.Identifier(start, letter, theReservedNames))
         case _ => lexeme(attempt(ident >?> (!isReservedName (_), "unexpected keyword " + _)))
     }
 
     /**The lexeme parser `keyword(name)` parses the symbol `name`, but it also checks that the `name`
      * is not a prefix of a valid identifier. A `keyword` is treated as a single token using `attempt`.*/
-    def keyword(name: String): Parsley[Unit] = lang.identLetterOpt match
+    def keyword(name: String): Parsley[Unit] = lang.identLetter match
     {
-        case Right(letter) => lexeme(new DeepToken.Keyword(name, letter, lang.caseSensitive) *> unit)
+        case BitSetImpl(letter) => lexeme(new DeepToken.Keyword(name, letter, lang.caseSensitive) *> unit)
+        case Predicate(letter) => lexeme(new DeepToken.Keyword(name, letter, lang.caseSensitive) *> unit)
         case _ => lexeme(attempt(caseString(name) *> notFollowedBy(identLetter) ? ("end of " + name)))
     }
 
@@ -96,18 +110,24 @@ final class TokenParser(lang: LanguageDef)
      * will fail on any operators that are reserved operators. Legal operator characters and
      * reserved operators are defined in the `LanguageDef` provided to the token parser. A
      * `userOp` is treated as a single token using `attempt`.*/
-    lazy val userOp: Parsley[String] = (lang.opStartOpt, lang.opLetterOpt) match
+    lazy val userOp: Parsley[String] = (lang.opStart, lang.opLetter) match
     {
-        case (Right(start), Right(letter)) => lexeme(new DeepToken.UserOp(start, letter, lang.operators))
+        case (BitSetImpl(start), BitSetImpl(letter)) => lexeme(new DeepToken.UserOp(start, letter, lang.operators))
+        case (BitSetImpl(start), Predicate(letter)) => lexeme(new DeepToken.UserOp(start, letter, lang.operators))
+        case (Predicate(start), BitSetImpl(letter)) => lexeme(new DeepToken.UserOp(start, letter, lang.operators))
+        case (Predicate(start), Predicate(letter)) => lexeme(new DeepToken.UserOp(start, letter, lang.operators))
         case _ => lexeme(attempt(oper >?> (!isReservedOp(_), "unexpected reserved operator " + _)))
     }
 
     /**This non-lexeme parser parses a reserved operator. Returns the name of the operator.
      * Legal operator characters and reserved operators are defined in the `LanguageDef`
      * provided to the token parser. A `reservedOp_` is treated as a single token using `attempt`.*/
-    lazy val reservedOp_ : Parsley[String] = (lang.opStartOpt, lang.opLetterOpt) match
+    lazy val reservedOp_ : Parsley[String] = (lang.opStart, lang.opLetter) match
     {
-        case (Right(start), Right(letter)) => new DeepToken.ReservedOp(start, letter, lang.operators)
+        case (BitSetImpl(start), BitSetImpl(letter)) => new DeepToken.ReservedOp(start, letter, lang.operators)
+        case (BitSetImpl(start), Predicate(letter)) => new DeepToken.ReservedOp(start, letter, lang.operators)
+        case (Predicate(start), BitSetImpl(letter)) => new DeepToken.ReservedOp(start, letter, lang.operators)
+        case (Predicate(start), Predicate(letter)) => new DeepToken.ReservedOp(start, letter, lang.operators)
         case _ => attempt(oper >?> (isReservedOp, "unexpected non-reserved operator " + _))
     }
 
@@ -124,9 +144,10 @@ final class TokenParser(lang: LanguageDef)
     /**The non-lexeme parser `operator_(name)` parses the symbol `name`, but also checks that the `name`
      * is not the prefix of a valid operator. An `operator` is treated as a single token using
      * `attempt`.*/
-    def operator_(name: String): Parsley[Unit] = lang.opLetterOpt match
+    def operator_(name: String): Parsley[Unit] = lang.opLetter match
     {
-        case Right(letter) => new DeepToken.Operator(name, letter) *> unit
+        case BitSetImpl(letter) => new DeepToken.Operator(name, letter) *> unit
+        case Predicate(letter) => new DeepToken.Operator(name, letter) *> unit
         case _ => attempt(name *> notFollowedBy(opLetter) ? ("end of " + name))
     }
 
@@ -152,9 +173,10 @@ final class TokenParser(lang: LanguageDef)
      * deals correctly with escape sequences and gaps. The literal string is parsed according to
      * the grammar rules defined in the Haskell report (which matches most programming languages
      * quite closely).*/
-    lazy val stringLiteral_ : Parsley[String] = lang.spaceOpt match
+    lazy val stringLiteral_ : Parsley[String] = lang.space match
     {
-        case Right(ws) => new DeepToken.StringLiteral(ws)
+        case BitSetImpl(ws) => new DeepToken.StringLiteral(ws)
+        case Predicate(ws) => new DeepToken.StringLiteral(ws)
         case _ => between('"' ? "string", '"' ? "end of string", many(stringChar)) <#> (_.flatten.mkString)
     }
 
@@ -260,30 +282,24 @@ final class TokenParser(lang: LanguageDef)
      * explicitly is the start of the main parser in order to skip any leading white space.*/
     def lexeme[A](p: =>Parsley[A]): Parsley[A] = p <* whiteSpace
 
-    private lazy val space = lang.space match
-    {
-        case Right(cs) => oneOf(cs)
-        case Left(p) => p
-    }
+    private lazy val space = toParser(lang.space)
 
     /**Parses any white space. White space consists of zero or more occurrences of a `space` (as
      * provided by the `LanguageDef`), a line comment or a block (multi-line) comment. Block
      * comments may be nested. How comments are started and ended is defined in the `LanguageDef`
      * that is provided to the token parser.*/
-    lazy val whiteSpace: Parsley[Unit] = lang.space match
-    {
-        case Right(ws) => new DeepToken.WhiteSpace(new BitSet(ws), lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
-        case Left(_) => skipMany(space ? "" <|> skipComments)
-    }
+    lazy val whiteSpace: Parsley[Unit] = whiteSpace_(lang.space)
 
     /**Parses any white space. White space consists of zero or more occurrences of a `space` (as
      * provided by the parameter), a line comment or a block (multi-line) comment. Block
      * comments may be nested. How comments are started and ended is defined in the `LanguageDef`
      * that is provided to the token parser.*/
-    val whiteSpace_ : Either[Parsley[_], Set[Char]] => Parsley[Unit] =
+    val whiteSpace_ : Impl => Parsley[Unit] =
     {
-        case Right(ws) => new DeepToken.WhiteSpace(new BitSet(ws), lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
-        case Left(space_) => skipMany((space_ ? "") <|> skipComments)
+        case BitSetImpl(ws) => new DeepToken.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
+        case Predicate(ws) => new DeepToken.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
+        case Parser(space_) => skipMany((space_ ? "") <|> skipComments)
+        case Empty => skipComments
     }
 
     /**Parses any comments and skips them, this includes both line comments and block comments.*/
@@ -332,16 +348,18 @@ final class TokenParser(lang: LanguageDef)
      * Returns a list of values returned by `p`.*/
     def commaSep1[A](p: =>Parsley[A]): Parsley[List[A]] = sepBy1(p, comma)
 
-    private def toParser(e: Either[Parsley[Char], Set[Char]]) = e match
+    private def toParser(e: Impl) = e match
     {
-        case Right(cs) => oneOf(cs)
-        case Left(p) => p
+        case BitSetImpl(cs) => satisfy(cs(_))
+        case Parser(p) => p.asInstanceOf[Parsley[Char]]
+        case Predicate(f) => satisfy(f)
+        case Empty => empty
     }
 }
 
 private [parsley] object TokenParser
 {
-    type TokenSet = BitSet
+    type TokenSet = Char => Boolean
 }
 
 private [parsley] object DeepToken

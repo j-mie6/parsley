@@ -167,7 +167,7 @@ private [parsley] final class TokenWhiteSpace(ws: TokenSet, start: String, end: 
 
     private def spaces(ctx: Context): Unit =
     {
-        while (ctx.moreInput && ws.contains(ctx.nextChar))
+        while (ctx.moreInput && ws(ctx.nextChar))
         {
             (ctx.nextChar: @switch) match
             {
@@ -864,7 +864,7 @@ private [parsley] final class TokenString(ws: TokenSet, _expected: UnsafeOption[
     private def spaces(ctx: Context): Int =
     {
         var n = 0
-        while (ctx.moreInput && ws.contains(ctx.nextChar))
+        while (ctx.moreInput && ws(ctx.nextChar))
         {
             (ctx.nextChar: @switch) match
             {
@@ -941,7 +941,7 @@ private [parsley] final class TokenIdentifier(start: TokenSet, letter: TokenSet,
 
     override def apply(ctx: Context): Unit =
     {
-        if (ctx.moreInput && start.contains(ctx.nextChar))
+        if (ctx.moreInput && start(ctx.nextChar))
         {
             val name = new StringBuilder()
             name += ctx.nextChar
@@ -953,7 +953,7 @@ private [parsley] final class TokenIdentifier(start: TokenSet, letter: TokenSet,
 
     @tailrec def restOfIdentifier(ctx: Context, name: StringBuilder): Unit =
     {
-        if (ctx.moreInput && letter.contains(ctx.nextChar))
+        if (ctx.moreInput && letter(ctx.nextChar))
         {
             name += ctx.nextChar
             ctx.offset += 1
@@ -987,7 +987,7 @@ private [parsley] final class TokenUserOperator(start: TokenSet, letter: TokenSe
 
     override def apply(ctx: Context): Unit =
     {
-        if (ctx.moreInput && start.contains(ctx.nextChar))
+        if (ctx.moreInput && start(ctx.nextChar))
         {
             val name = new StringBuilder()
             name += ctx.nextChar
@@ -999,7 +999,7 @@ private [parsley] final class TokenUserOperator(start: TokenSet, letter: TokenSe
 
     @tailrec def restOfIdentifier(ctx: Context, name: StringBuilder): Unit =
     {
-        if (ctx.moreInput && letter.contains(ctx.nextChar))
+        if (ctx.moreInput && letter(ctx.nextChar))
         {
             name += ctx.nextChar
             ctx.offset += 1
@@ -1033,7 +1033,7 @@ private [parsley] final class TokenOperator(start: TokenSet, letter: TokenSet, r
 
     override def apply(ctx: Context): Unit =
     {
-        if (ctx.moreInput && start.contains(ctx.nextChar))
+        if (ctx.moreInput && start(ctx.nextChar))
         {
             val name = new StringBuilder()
             name += ctx.nextChar
@@ -1045,7 +1045,7 @@ private [parsley] final class TokenOperator(start: TokenSet, letter: TokenSet, r
 
     @tailrec def restOfIdentifier(ctx: Context, name: StringBuilder): Unit =
     {
-        if (ctx.moreInput && letter.contains(ctx.nextChar))
+        if (ctx.moreInput && letter(ctx.nextChar))
         {
             name += ctx.nextChar
             ctx.offset += 1
@@ -1102,7 +1102,7 @@ private [parsley] class TokenKeyword(_keyword: String, letter: TokenSet, caseSen
             }
             ctx.col += strsz
             ctx.offset = i
-            if (i < inputsz && letter.contains(input(i))) ctx.fail(expectedEnd)
+            if (i < inputsz && letter(input(i))) ctx.fail(expectedEnd)
             else ctx.inc()
         }
         else ctx.fail(expected)
@@ -1139,7 +1139,7 @@ private [parsley] class TokenOperator_(_operator: String, letter: TokenSet, _exp
             }
             ctx.col += strsz
             ctx.offset = i
-            if (i < inputsz && letter.contains(input(i))) ctx.fail(expectedEnd)
+            if (i < inputsz && letter(input(i))) ctx.fail(expectedEnd)
             else ctx.inc()
         }
         else ctx.fail(expected)

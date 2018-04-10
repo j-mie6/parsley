@@ -4,6 +4,7 @@ import parsley.Parsley._
 
 import scala.annotation.switch
 import scala.language.implicitConversions
+import scala.collection.breakOut
 
 object Char
 {
@@ -50,14 +51,7 @@ object Char
     val spaces: Parsley[Unit] = skipMany(space)
 
     /**Parses a whitespace character (' ', '\t', '\n', '\r', '\f', '\v'). Returns the parsed character.*/
-    val whitespace: Parsley[Char] =
-    {
-        satisfy(c => (c: @switch) match
-        {
-            case ' ' | '\t' | '\n' | '\r' | '\f' | '\u000b' => true
-            case _ => false
-        }) ? "whitespace"
-    }
+    val whitespace: Parsley[Char] = satisfy(isWhitespace) ? "whitespace"
 
     /**Skips zero or more whitespace characters. See also `skipMany`. Uses whitespace.*/
     val whitespaces: Parsley[Unit] = skipMany(whitespace)
@@ -104,12 +98,19 @@ object Char
     /**Parses an octal digit. Returns the parsed character.*/
     val octDigit: Parsley[Char] = satisfy(c => c <= '7' && c >= '0') ? "octal digit"
 
+    // Functions
+    def isWhitespace(c: Char): Boolean = (c: @switch) match
+    {
+        case ' ' | '\t' | '\n' | '\r' | '\f' | '\u000b' => true
+        case _ => false
+    }
+
     // Sets
-    def upperSet: Set[Char] = (for (i <- 0 to 65535; c = i.toChar; if c.isUpper) yield c).toSet
-    def lowerSet: Set[Char] = (for (i <- 0 to 65535; c = i.toChar; if c.isLower) yield c).toSet
-    def letterSet: Set[Char] = (for (i <- 0 to 65535; c = i.toChar; if c.isLetter) yield c).toSet
-    def digitSet: Set[Char] = (for (i <- 0 to 65535; c = i.toChar; if c.isDigit) yield c).toSet
-    def alphaNumSet: Set[Char] = letterSet ++ digitSet
+    def upperSet: Set[Char] = (for (i <- 0 to 65535; c = i.toChar; if c.isUpper) yield c)(breakOut)
+    def lowerSet: Set[Char] = (for (i <- 0 to 65535; c = i.toChar; if c.isLower) yield c)(breakOut)
+    def letterSet: Set[Char] = (for (i <- 0 to 65535; c = i.toChar; if c.isLetter) yield c)(breakOut)
+    def digitSet: Set[Char] = (for (i <- 0 to 65535; c = i.toChar; if c.isDigit) yield c)(breakOut)
+    def alphaNumSet: Set[Char] = (for (i <- 0 to 65535; c = i.toChar; if c.isLetterOrDigit) yield c)(breakOut)
     lazy val hexDigitSet: Set[Char] = ('0' to '9').toSet ++ ('a' to 'f').toSet ++ ('A' to 'F').toSet
     lazy val octDigitSet: Set[Char] = ('0' to '7').toSet
     lazy val whitespaceSet: Set[Char] = Set(' ', '\t', '\n', '\r', '\f', '\u000b')

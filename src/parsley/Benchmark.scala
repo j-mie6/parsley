@@ -68,14 +68,14 @@ private [parsley] object ParsleyBench
                 "",
                 "//",
                 false,
-                /**/Left(letter <|> '_'), //Right(Char.letterSet + '_'),
-                /**/Left(alphaNum <|> '_'), //Right(Char.alphaNumSet + '_'),
-                Right(Set.empty),
-                Right(Set.empty),
+                Predicate(c => c.isLetter || c == '_'),
+                Predicate(c => c.isLetterOrDigit || c == '_'),
+                Empty,
+                Empty,
                 Set("if", "else", "function", "while", "var"),
                 Set("!"),
                 true,
-                Right(Char.whitespaceSet))
+                Predicate(Char.isWhitespace))
         val tok = new TokenParser(nandlang)
         val index = tok.brackets(tok.natural)
         val identifier = lift2(NandId, tok.identifier, option(index))
