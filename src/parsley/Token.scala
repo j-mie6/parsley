@@ -13,7 +13,7 @@ import parsley.TokenParser.TokenSet
   * tokenised. Where a parameter can be either a `Set[Char]` or a `Parsley` object, prefer the `Set` where possible.
   * It will unlock a variety of faster intrinsic versions of the parsers, which will greatly improve tokenisation
   * performance! In addition, the Sets are one time converted to heavily optimised BitSets, though that has up to 8KB
-  * memory usage associated but at least doubles the execution speed for that instruction.
+  * memory usage associated but at least doubles the execution speed for that instruction. See `parsley.Impl`.
   *
   * @param commentStart For multi-line comments; how does the comment start? (If this or `commentEnd` is the empty
   *                     string, multi-line comments are disabled)
@@ -46,15 +46,42 @@ final case class LanguageDef(commentStart: String,
                              caseSensitive: Boolean,
                              space: Impl)
 
+/**
+  * The Impl trait is used to provide implementation of the parser requirements from `LanguageDef`
+  */
 sealed trait Impl
+/**
+  * The implementation provided is a parser which parses the required token.
+  * @param p The parser which will parse the token
+  */
 final case class Parser(p: Parsley[_]) extends Impl
+/**
+  * The implementation provided is a function which matches on the input streams characters
+  * @param f The predicate that input tokens are tested against
+  */
 final case class Predicate(f: Char => Boolean) extends Impl
-case object Empty extends Impl
+/**
+  * This implementation states that the required functionality is not required. If it is used it will raise an error
+  * at parse-time
+  */
+case object NotRequired extends Impl
 private [parsley] final case class BitSetImpl(cs: TokenSet) extends Impl
+/**
+  * This implementation uses a set of valid tokens. It is converted to a high-performance BitSet.
+  */
 object CharSet
 {
+    /**
+      * @param cs The set to convert
+      */
     def apply(cs: Set[Char]) = BitSetImpl(new BitSet(Left(cs)))
 }
+/**
+  * This implementation uses a predicate to generate a BitSet. This should be preferred over `Predicate` when the
+  * function in question is expensive to execute and the parser itself is expected to be used many times. If the
+  * predicate is cheap, this is unlikely to provide any performance improvements, but will instead incur heavy space
+  * costs
+  */
 object BitGen
 {
     def apply(f: Char => Boolean) = BitSetImpl(new BitSet(Right(f)))
@@ -299,52 +326,52 @@ final class TokenParser(lang: LanguageDef)
         case BitSetImpl(ws) => new DeepToken.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
         case Predicate(ws) => new DeepToken.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
         case Parser(space_) => skipMany((space_ ? "") <|> skipComments)
-        case Empty => skipComments
+        case NotRequired => skipComments
     }
 
     /**Parses any comments and skips them, this includes both line comments and block comments.*/
     lazy val skipComments: Parsley[Unit] = new DeepToken.SkipComments(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
-    
+
     // Bracketing
     /**Lexeme parser `parens(p)` parses `p` enclosed in parenthesis, returning the value of `p`.*/
     def parens[A](p: =>Parsley[A]): Parsley[A] = between(symbol('(') ? "open parenthesis", symbol(')') ? "closing parenthesis" <|> fail("unclosed parentheses"), p)
-    
+
     /**Lexeme parser `braces(p)` parses `p` enclosed in braces ('{', '}'), returning the value of 'p'*/
     def braces[A](p: =>Parsley[A]): Parsley[A] = between(symbol('{') ? "open brace", symbol('}') ? "matching closing brace" <|> fail("unclosed braces"), p)
-    
+
     /**Lexeme parser `angles(p)` parses `p` enclosed in angle brackets ('<', '>'), returning the
      * value of `p`.*/
     def angles[A](p: =>Parsley[A]): Parsley[A] = between(symbol('<') ? "open angle bracket", symbol('>') ? "matching closing angle bracket" <|> fail("unclosed angle brackets"), p)
-    
+
     /**Lexeme parser `brackets(p)` parses `p` enclosed in brackets ('[', ']'), returning the value
      * of `p`.*/
     def brackets[A](p: =>Parsley[A]): Parsley[A] = between(symbol('[') ? "open square bracket", symbol(']') ? "matching closing square bracket" <|> fail("unclosed square brackets"), p)
-    
+
     /**Lexeme parser `semi` parses the character ';' and skips any trailing white space. Returns ";"*/
     lazy val semi: Parsley[Char] = symbol(';') ? "semicolon"
-    
+
     /**Lexeme parser `comma` parses the character ',' and skips any trailing white space. Returns ","*/
     lazy val comma: Parsley[Char] = symbol(',') ? "comma"
-    
+
     /**Lexeme parser `colon` parses the character ':' and skips any trailing white space. Returns ":"*/
     lazy val colon: Parsley[Char] = symbol(':') ? "colon"
-    
+
     /**Lexeme parser `dot` parses the character '.' and skips any trailing white space. Returns "."*/
     lazy val dot: Parsley[Char] = symbol('.') ? "dot"
-    
+
     /**Lexeme parser `semiSep(p)` parses zero or more occurrences of `p` separated by `semi`. Returns
      * a list of values returned by `p`.*/
     def semiSep[A](p: =>Parsley[A]): Parsley[List[A]] = sepBy(p, semi)
-    
+
     /**Lexeme parser `semiSep1(p)` parses one or more occurrences of `p` separated by `semi`. Returns
      * a list of values returned by `p`.*/
     def semiSep1[A](p: =>Parsley[A]): Parsley[List[A]] = sepBy1(p, semi)
-    
-    /**Lexeme parser `commaSep(p)` parses zero or more occurrences of `p` separated by `comma`. 
+
+    /**Lexeme parser `commaSep(p)` parses zero or more occurrences of `p` separated by `comma`.
      * Returns a list of values returned by `p`.*/
     def commaSep[A](p: =>Parsley[A]): Parsley[List[A]] = sepBy(p, comma)
-    
-    /**Lexeme parser `commaSep1(p)` parses one or more occurrences of `p` separated by `comma`. 
+
+    /**Lexeme parser `commaSep1(p)` parses one or more occurrences of `p` separated by `comma`.
      * Returns a list of values returned by `p`.*/
     def commaSep1[A](p: =>Parsley[A]): Parsley[List[A]] = sepBy1(p, comma)
 
@@ -353,7 +380,7 @@ final class TokenParser(lang: LanguageDef)
         case BitSetImpl(cs) => satisfy(cs(_))
         case Parser(p) => p.asInstanceOf[Parsley[Char]]
         case Predicate(f) => satisfy(f)
-        case Empty => empty
+        case NotRequired => empty
     }
 }
 

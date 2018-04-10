@@ -70,8 +70,8 @@ private [parsley] object ParsleyBench
                 false,
                 Predicate(c => c.isLetter || c == '_'),
                 Predicate(c => c.isLetterOrDigit || c == '_'),
-                Empty,
-                Empty,
+                NotRequired,
+                NotRequired,
                 Set("if", "else", "function", "while", "var"),
                 Set("!"),
                 true,
@@ -96,11 +96,7 @@ private [parsley] object ParsleyBench
         val funcdef = lift3(NandFunc, tok.keyword("function") *> tok.identifier, tok.parens(funcparam), block)
         tok.whiteSpace *> many(funcdef) <* eof
     }
-    val start = System.currentTimeMillis
-    //Console.in.read()
-    nand.instrs
-    //System.exit(1)
-    println(System.currentTimeMillis() - start)
+    println(nand.pretty)
 }
 
 /*private [parsley] object BenchParser extends scala.util.parsing.combinator.Parsers

@@ -87,8 +87,16 @@
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../index.html" class="extype" name="_root_">root</a></dd></dl></div>
     </li><li class="current-entities indented1">
                         <span class="separator"></span>
+                        <a class="object" href="BitGen$.html" title="This implementation uses a predicate to generate a BitSet."></a>
+                        <a href="BitGen$.html" title="This implementation uses a predicate to generate a BitSet.">BitGen</a>
+                      </li><li class="current-entities indented1">
+                        <span class="separator"></span>
                         <a class="object" href="Char$.html" title=""></a>
                         <a href="Char$.html" title="">Char</a>
+                      </li><li class="current-entities indented1">
+                        <span class="separator"></span>
+                        <a class="object" href="CharSet$.html" title="This implementation uses a set of valid tokens."></a>
+                        <a href="CharSet$.html" title="This implementation uses a set of valid tokens.">CharSet</a>
                       </li><li class="current-entities indented1">
                         <span class="separator"></span>
                         <a class="object" href="Combinator$.html" title=""></a>
@@ -103,12 +111,28 @@
                         <a href="package$$Failure.html" title="Returned on parsing failure">Failure</a>
                       </li><li class="current-entities indented1">
                         <span class="separator"></span>
+                        <a class="trait" href="Impl.html" title="The Impl trait is used to provide implementation of the parser requirements from LanguageDef"></a>
+                        <a href="Impl.html" title="The Impl trait is used to provide implementation of the parser requirements from LanguageDef">Impl</a>
+                      </li><li class="current-entities indented1">
+                        <span class="separator"></span>
                         <a class="class" href="LanguageDef.html" title="This class is required to construct a TokenParser."></a>
                         <a href="LanguageDef.html" title="This class is required to construct a TokenParser.">LanguageDef</a>
+                      </li><li class="current-entities indented1">
+                        <span class="separator"></span>
+                        <a class="object" href="NotRequired$.html" title="This implementation states that the required functionality is not required."></a>
+                        <a href="NotRequired$.html" title="This implementation states that the required functionality is not required.">NotRequired</a>
+                      </li><li class="current-entities indented1">
+                        <span class="separator"></span>
+                        <a class="class" href="Parser.html" title="The implementation provided is a parser which parses the required token."></a>
+                        <a href="Parser.html" title="The implementation provided is a parser which parses the required token.">Parser</a>
                       </li><li class="current-entities indented1">
                         <a class="object" href="Parsley$.html" title=""></a>
                         <a class="class" href="Parsley.html" title="This is the class that encapsulates the act of parsing and running an object of this class with runParser will parse the string given as input to runParser."></a>
                         <a href="Parsley.html" title="This is the class that encapsulates the act of parsing and running an object of this class with runParser will parse the string given as input to runParser.">Parsley</a>
+                      </li><li class="current-entities indented1">
+                        <span class="separator"></span>
+                        <a class="class" href="Predicate.html" title="The implementation provided is a function which matches on the input streams characters"></a>
+                        <a href="Predicate.html" title="The implementation provided is a function which matches on the input streams characters">Predicate</a>
                       </li><li class="current-entities indented1">
                         <span class="separator"></span>
                         <a class="class" href="package$$Result.html" title="Result of a parser."></a>
@@ -121,6 +145,10 @@
                         <span class="separator"></span>
                         <a class="class" href="TokenParser.html" title="When provided with a LanguageDef, this class will produce a large variety of parsers that can be used for tokenisation of a language."></a>
                         <a href="TokenParser.html" title="When provided with a LanguageDef, this class will produce a large variety of parsers that can be used for tokenisation of a language.">TokenParser</a>
+                      </li><li class="current-entities indented1">
+                        <span class="separator"></span>
+                        <a class="class" href="package$$Var.html" title="This class is used to index registers within the mutable state."></a>
+                        <a href="package$$Var.html" title="This class is used to index registers within the mutable state.">Var</a>
                       </li>
               </ul>
             </div>
@@ -237,6 +265,23 @@ part of the expression. Caters to unary and binary operators of different associ
       </span>
       
       <p class="shortcomment cmt">Returned on parsing failure</p><div class="fullcomment"><div class="comment cmt"><p>Returned on parsing failure</p></div><dl class="paramcmts block"><dt class="param">msg</dt><dd class="cmt"><p>The error message reported by the parser</p></dd></dl></div>
+    </li><li name="parsley.Impl" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ImplextendsAnyRef"></a><a id="Impl:Impl"></a>
+      <span class="permalink">
+      <a href="../parsley/index.html#ImplextendsAnyRef" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier">sealed </span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a title="The Impl trait is used to provide implementation of the parser requirements from LanguageDef" href="Impl.html"><span class="name">Impl</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      
+      <p class="shortcomment cmt">The Impl trait is used to provide implementation of the parser requirements from <code>LanguageDef</code>
+</p>
     </li><li name="parsley.LanguageDef" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="LanguageDefextendsProductwithSerializable"></a><a id="LanguageDef:LanguageDef"></a>
       <span class="permalink">
@@ -249,19 +294,36 @@ part of the expression. Caters to unary and binary operators of different associ
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a title="This class is required to construct a TokenParser." href="LanguageDef.html"><span class="name">LanguageDef</span></a><span class="params">(<span name="commentStart">commentStart: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="commentEnd">commentEnd: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="commentLine">commentLine: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="nestedComments">nestedComments: <span class="extype" name="scala.Boolean">Boolean</span></span>, <span name="identStart">identStart: <span class="extype" name="scala.Either">Either</span>[<span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="scala.Char">scala.Char</span>], <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Char">scala.Char</span>]]</span>, <span name="identLetter">identLetter: <span class="extype" name="scala.Either">Either</span>[<span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="scala.Char">scala.Char</span>], <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Char">scala.Char</span>]]</span>, <span name="opStart">opStart: <span class="extype" name="scala.Either">Either</span>[<span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="scala.Char">scala.Char</span>], <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Char">scala.Char</span>]]</span>, <span name="opLetter">opLetter: <span class="extype" name="scala.Either">Either</span>[<span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="scala.Char">scala.Char</span>], <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Char">scala.Char</span>]]</span>, <span name="keywords">keywords: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="operators">operators: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="caseSensitive">caseSensitive: <span class="extype" name="scala.Boolean">Boolean</span></span>, <span name="space">space: <span class="extype" name="scala.Either">Either</span>[<span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="scala.Char">scala.Char</span>], <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[_]]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a title="This class is required to construct a TokenParser." href="LanguageDef.html"><span class="name">LanguageDef</span></a><span class="params">(<span name="commentStart">commentStart: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="commentEnd">commentEnd: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="commentLine">commentLine: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="nestedComments">nestedComments: <span class="extype" name="scala.Boolean">Boolean</span></span>, <span name="identStart">identStart: <a href="Impl.html" class="extype" name="parsley.Impl">Impl</a></span>, <span name="identLetter">identLetter: <a href="Impl.html" class="extype" name="parsley.Impl">Impl</a></span>, <span name="opStart">opStart: <a href="Impl.html" class="extype" name="parsley.Impl">Impl</a></span>, <span name="opLetter">opLetter: <a href="Impl.html" class="extype" name="parsley.Impl">Impl</a></span>, <span name="keywords">keywords: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="operators">operators: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="caseSensitive">caseSensitive: <span class="extype" name="scala.Boolean">Boolean</span></span>, <span name="space">space: <a href="Impl.html" class="extype" name="parsley.Impl">Impl</a></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       
       <p class="shortcomment cmt">This class is required to construct a TokenParser.</p><div class="fullcomment"><div class="comment cmt"><p>This class is required to construct a TokenParser. It defines the various characteristics of the language to be
 tokenised. Where a parameter can be either a <code>Set[Char]</code> or a <code>Parsley</code> object, prefer the <code>Set</code> where possible.
 It will unlock a variety of faster intrinsic versions of the parsers, which will greatly improve tokenisation
-performance!
+performance! In addition, the Sets are one time converted to heavily optimised BitSets, though that has up to 8KB
+memory usage associated but at least doubles the execution speed for that instruction. See <code>parsley.Impl</code>.
 </p></div><dl class="paramcmts block"><dt class="param">commentStart</dt><dd class="cmt"><p>For multi-line comments; how does the comment start? (If this or <code>commentEnd</code> is the empty
                     string, multi-line comments are disabled)</p></dd><dt class="param">commentEnd</dt><dd class="cmt"><p>For multi-line comments; how does the comment end? (If this or <code>commentEnd</code> is the empty
                   string, multi-line comments are disabled)</p></dd><dt class="param">commentLine</dt><dd class="cmt"><p>For single-line comments; how does the comment start? (This this is the empty string, single-line
                    comments are disabled)</p></dd><dt class="param">nestedComments</dt><dd class="cmt"><p>Are multi-line comments allowed to be nested inside eachother? E.g. If <code>{-</code> and <code>-}</code> are
                       opening and closing comments, is the following valid syntax: <code>{-{-hello -}-}</code>? Note in C this
                       is not the case.</p></dd><dt class="param">identStart</dt><dd class="cmt"><p>What characters can an identifier in the language start with?</p></dd><dt class="param">identLetter</dt><dd class="cmt"><p>What characters can an identifier in the language consist of after the starting character?</p></dd><dt class="param">opStart</dt><dd class="cmt"><p>What characters can an operator in the language start with?</p></dd><dt class="param">opLetter</dt><dd class="cmt"><p>What characters can an operator in the language consist of after the starting character?</p></dd><dt class="param">keywords</dt><dd class="cmt"><p>What keywords does the language contain?</p></dd><dt class="param">operators</dt><dd class="cmt"><p>What operators does the language contain?</p></dd><dt class="param">caseSensitive</dt><dd class="cmt"><p>Is the language case-sensitive. I.e. is IF equivalent to if?</p></dd><dt class="param">space</dt><dd class="cmt"><p>What characters count as whitespace in the language?</p></dd></dl></div>
+    </li><li name="parsley.Parser" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="ParserextendsImplwithProductwithSerializable"></a><a id="Parser:Parser"></a>
+      <span class="permalink">
+      <a href="../parsley/index.html#ParserextendsImplwithProductwithSerializable" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a title="The implementation provided is a parser which parses the required token." href="Parser.html"><span class="name">Parser</span></a><span class="params">(<span name="p">p: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[_]</span>)</span><span class="result"> extends <a href="Impl.html" class="extype" name="parsley.Impl">Impl</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      
+      <p class="shortcomment cmt">The implementation provided is a parser which parses the required token.</p><div class="fullcomment"><div class="comment cmt"><p>The implementation provided is a parser which parses the required token.</p></div><dl class="paramcmts block"><dt class="param">p</dt><dd class="cmt"><p>The parser which will parse the token</p></dd></dl></div>
     </li><li name="parsley.Parsley" visbl="pub" class="indented0 " data-isabs="true" fullComment="yes" group="Ungrouped">
       <a id="Parsley[+A]extendsAnyRef"></a><a id="Parsley[+A]:Parsley[A]"></a>
       <span class="permalink">
@@ -281,6 +343,22 @@ performance!
 parse the string given as input to <code>runParser</code>.</p><div class="fullcomment"><div class="comment cmt"><p>This is the class that encapsulates the act of parsing and running an object of this class with <code>runParser</code> will
 parse the string given as input to <code>runParser</code>.</p><p>Note: In order to construct an object of this class you must use the combinators; the class itself is abstract
 </p></div><dl class="attributes block"> <dt>Version</dt><dd><p>1</p></dd></dl></div>
+    </li><li name="parsley.Predicate" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="PredicateextendsImplwithProductwithSerializable"></a><a id="Predicate:Predicate"></a>
+      <span class="permalink">
+      <a href="../parsley/index.html#PredicateextendsImplwithProductwithSerializable" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a title="The implementation provided is a function which matches on the input streams characters" href="Predicate.html"><span class="name">Predicate</span></a><span class="params">(<span name="f">f: (<span class="extype" name="scala.Char">scala.Char</span>) ⇒ <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result"> extends <a href="Impl.html" class="extype" name="parsley.Impl">Impl</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      
+      <p class="shortcomment cmt">The implementation provided is a function which matches on the input streams characters</p><div class="fullcomment"><div class="comment cmt"><p>The implementation provided is a function which matches on the input streams characters</p></div><dl class="paramcmts block"><dt class="param">f</dt><dd class="cmt"><p>The predicate that input tokens are tested against</p></dd></dl></div>
     </li><li name="parsley.Result" visbl="pub" class="indented0 " data-isabs="true" fullComment="yes" group="Ungrouped">
       <a id="Result[+A]extendsAnyRef"></a><a id="Result[+A]:Result[A]"></a>
       <span class="permalink">
@@ -333,6 +411,23 @@ tokenisation of a language.</p><div class="fullcomment"><div class="comment cmt"
 tokenisation of a language. This includes parsing numbers and strings in their various formats and ensuring that
 all operations consume whitespace after them (so-called lexeme parsers). These are very useful in parsing
 programming languages. This class also has a large number of hand-optimised intrinsic parsers to improve performance!</p></div></div>
+    </li><li name="parsley.Var" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="VarextendsAnyValwithProductwithSerializable"></a><a id="Var:Var"></a>
+      <span class="permalink">
+      <a href="../parsley/index.html#VarextendsAnyValwithProductwithSerializable" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a title="This class is used to index registers within the mutable state." href="package$$Var.html"><span class="name">Var</span></a><span class="params">(<span name="v">v: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result"> extends <span class="extype" name="scala.AnyVal">AnyVal</span> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      
+      <p class="shortcomment cmt">This class is used to index registers within the mutable state.</p><div class="fullcomment"><div class="comment cmt"><p>This class is used to index registers within the mutable state.
+Currently, there are only 4 available registers, so use them wisely!</p></div><dl class="paramcmts block"><dt class="param">v</dt><dd class="cmt"><p>The index of the register to interact with</p></dd></dl></div>
     </li></ol>
             </div>
 
@@ -413,6 +508,26 @@ string, will parse the string with the parser. The result is either a <code>Succ
  cause issues with multi-threaded execution of parsers. In order to mitigate these issues,
  each thread should request its own context with <code>parsley.giveContext</code>. This value may be
  implicit for convenience.</p></div></div>
+    </li><li name="parsley.BitGen" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="BitGen"></a><a id="BitGen:BitGen"></a>
+      <span class="permalink">
+      <a href="../parsley/index.html#BitGen" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a title="This implementation uses a predicate to generate a BitSet." href="BitGen$.html"><span class="name">BitGen</span></a>
+      </span>
+      
+      <p class="shortcomment cmt">This implementation uses a predicate to generate a BitSet.</p><div class="fullcomment"><div class="comment cmt"><p>This implementation uses a predicate to generate a BitSet. This should be preferred over <code>Predicate</code> when the
+function in question is expensive to execute and the parser itself is expected to be used many times. If the
+predicate is cheap, this is unlikely to provide any performance improvements, but will instead incur heavy space
+costs
+</p></div></div>
     </li><li name="parsley.Char" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="Char"></a><a id="Char:Char"></a>
       <span class="permalink">
@@ -429,6 +544,23 @@ string, will parse the string with the parser. The result is either a <code>Succ
       </span>
       
       
+    </li><li name="parsley.CharSet" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="CharSet"></a><a id="CharSet:CharSet"></a>
+      <span class="permalink">
+      <a href="../parsley/index.html#CharSet" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a title="This implementation uses a set of valid tokens." href="CharSet$.html"><span class="name">CharSet</span></a>
+      </span>
+      
+      <p class="shortcomment cmt">This implementation uses a set of valid tokens.</p><div class="fullcomment"><div class="comment cmt"><p>This implementation uses a set of valid tokens. It is converted to a high-performance BitSet.
+</p></div></div>
     </li><li name="parsley.Combinator" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="Combinator"></a><a id="Combinator:Combinator"></a>
       <span class="permalink">
@@ -461,6 +593,24 @@ string, will parse the string with the parser. The result is either a <code>Succ
       </span>
       
       
+    </li><li name="parsley.NotRequired" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="NotRequired"></a><a id="NotRequired:NotRequired"></a>
+      <span class="permalink">
+      <a href="../parsley/index.html#NotRequired" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a title="This implementation states that the required functionality is not required." href="NotRequired$.html"><span class="name">NotRequired</span></a><span class="result"> extends <a href="Impl.html" class="extype" name="parsley.Impl">Impl</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      
+      <p class="shortcomment cmt">This implementation states that the required functionality is not required.</p><div class="fullcomment"><div class="comment cmt"><p>This implementation states that the required functionality is not required. If it is used it will raise an error
+at parse-time
+</p></div></div>
     </li><li name="parsley.Parsley" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="Parsley"></a><a id="Parsley:Parsley"></a>
       <span class="permalink">

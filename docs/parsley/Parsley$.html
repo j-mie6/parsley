@@ -87,8 +87,16 @@
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../index.html" class="extype" name="_root_">root</a></dd></dl></div>
     </li><li class="current-entities indented1">
                         <span class="separator"></span>
+                        <a class="object" href="BitGen$.html" title="This implementation uses a predicate to generate a BitSet."></a>
+                        <a href="BitGen$.html" title="This implementation uses a predicate to generate a BitSet.">BitGen</a>
+                      </li><li class="current-entities indented1">
+                        <span class="separator"></span>
                         <a class="object" href="Char$.html" title=""></a>
                         <a href="Char$.html" title="">Char</a>
+                      </li><li class="current-entities indented1">
+                        <span class="separator"></span>
+                        <a class="object" href="CharSet$.html" title="This implementation uses a set of valid tokens."></a>
+                        <a href="CharSet$.html" title="This implementation uses a set of valid tokens.">CharSet</a>
                       </li><li class="current-entities indented1">
                         <span class="separator"></span>
                         <a class="object" href="Combinator$.html" title=""></a>
@@ -103,12 +111,28 @@
                         <a href="package$$Failure.html" title="Returned on parsing failure">Failure</a>
                       </li><li class="current-entities indented1">
                         <span class="separator"></span>
+                        <a class="trait" href="Impl.html" title="The Impl trait is used to provide implementation of the parser requirements from LanguageDef"></a>
+                        <a href="Impl.html" title="The Impl trait is used to provide implementation of the parser requirements from LanguageDef">Impl</a>
+                      </li><li class="current-entities indented1">
+                        <span class="separator"></span>
                         <a class="class" href="LanguageDef.html" title="This class is required to construct a TokenParser."></a>
                         <a href="LanguageDef.html" title="This class is required to construct a TokenParser.">LanguageDef</a>
+                      </li><li class="current-entities indented1">
+                        <span class="separator"></span>
+                        <a class="object" href="NotRequired$.html" title="This implementation states that the required functionality is not required."></a>
+                        <a href="NotRequired$.html" title="This implementation states that the required functionality is not required.">NotRequired</a>
+                      </li><li class="current-entities indented1">
+                        <span class="separator"></span>
+                        <a class="class" href="Parser.html" title="The implementation provided is a parser which parses the required token."></a>
+                        <a href="Parser.html" title="The implementation provided is a parser which parses the required token.">Parser</a>
                       </li><li class="current-entities indented1">
                         <a class="object" href="" title=""></a>
                         <a class="class" href="Parsley.html" title="This is the class that encapsulates the act of parsing and running an object of this class with runParser will parse the string given as input to runParser."></a>
                         <a href="Parsley.html" title="This is the class that encapsulates the act of parsing and running an object of this class with runParser will parse the string given as input to runParser.">Parsley</a>
+                      </li><li class="current-entities indented1">
+                        <span class="separator"></span>
+                        <a class="class" href="Predicate.html" title="The implementation provided is a function which matches on the input streams characters"></a>
+                        <a href="Predicate.html" title="The implementation provided is a function which matches on the input streams characters">Predicate</a>
                       </li><li class="current-entities indented1">
                         <span class="separator"></span>
                         <a class="class" href="package$$Result.html" title="Result of a parser."></a>
@@ -121,6 +145,10 @@
                         <span class="separator"></span>
                         <a class="class" href="TokenParser.html" title="When provided with a LanguageDef, this class will produce a large variety of parsers that can be used for tokenisation of a language."></a>
                         <a href="TokenParser.html" title="When provided with a LanguageDef, this class will produce a large variety of parsers that can be used for tokenisation of a language.">TokenParser</a>
+                      </li><li class="current-entities indented1">
+                        <span class="separator"></span>
+                        <a class="class" href="package$$Var.html" title="This class is used to index registers within the mutable state."></a>
+                        <a href="package$$Var.html" title="This class is used to index registers within the mutable state.">Var</a>
                       </li>
               </ul>
             </div>
@@ -396,6 +424,22 @@ consumed. This allows for backtracking capabilities, disabling the implicit cut 
     </span>)</span>
               
         </dd></dl></div>
+    </li><li name="parsley.Parsley#col" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="col:parsley.Parsley[Int]"></a><a id="col:Parsley[Int]"></a>
+      <span class="permalink">
+      <a href="../parsley/Parsley$.html#col:parsley.Parsley[Int]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">col</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Int">Int</span>]</span>
+      </span>
+      
+      <p class="shortcomment cmt">This parser consumes no input and returns the current column number reached in the input stream</p><div class="fullcomment"><div class="comment cmt"><p>This parser consumes no input and returns the current column number reached in the input stream</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>The column number the parser is currently at</p></dd></dl></div>
     </li><li name="parsley.Parsley#empty" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="empty:parsley.Parsley[Nothing]"></a><a id="empty:Parsley[Nothing]"></a>
       <span class="permalink">
@@ -482,6 +526,23 @@ consumed. This allows for backtracking capabilities, disabling the implicit cut 
     </span>)</span>
               
         </dd></dl></div>
+    </li><li name="parsley.Parsley#get" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="get[S](v:parsley.Var):parsley.Parsley[S]"></a><a id="get[S](Var):Parsley[S]"></a>
+      <span class="permalink">
+      <a href="../parsley/Parsley$.html#get[S](v:parsley.Var):parsley.Parsley[S]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">get</span><span class="tparams">[<span name="S">S</span>]</span><span class="params">(<span name="v">v: <a href="package$$Var.html" class="extype" name="parsley.Var">Var</a></span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Parsley.get.S">S</span>]</span>
+      </span>
+      
+      <p class="shortcomment cmt">Consumes no input and returns the value stored in one of the parser registers.</p><div class="fullcomment"><div class="comment cmt"><p>Consumes no input and returns the value stored in one of the parser registers.
+Note that there are only 4 registers at present.</p></div><dl class="paramcmts block"><dt class="tparam">S</dt><dd class="cmt"><p>The type of the value in register <code>v</code> (this will result in a runtime type-check)</p></dd><dt class="param">v</dt><dd class="cmt"><p>The index of the register to collect from</p></dd><dt>returns</dt><dd class="cmt"><p>The value stored in register <code>v</code> of type <code>S</code></p></dd></dl></div>
     </li><li name="scala.AnyRef#getClass" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getClass():Class[_]"></a>
       <span class="permalink">
@@ -586,7 +647,96 @@ consumed. This allows for backtracking capabilities, disabling the implicit cut 
       <p class="shortcomment cmt">Traditionally, <code>lift2</code> is defined as <code>lift2(f, p, q) = p.map(f) &lt;*&gt; q</code>.</p><div class="fullcomment"><div class="comment cmt"><p>Traditionally, <code>lift2</code> is defined as <code>lift2(f, p, q) = p.map(f) &lt;*&gt; q</code>. However, <code>f</code> is actually uncurried,
 so it's actually more exactly defined as; read <code>p</code> and then read <code>q</code> then provide their results to function
 <code>f</code>. This is designed to bring higher performance to any curried operations that are not themselves
-intrinsic.</p></div><dl class="paramcmts block"><dt class="param">f</dt><dd class="cmt"><p>The function to apply to the results of <code>p</code> and <code>q</code></p></dd><dt class="param">p</dt><dd class="cmt"><p>The first parser to parse</p></dd><dt class="param">q</dt><dd class="cmt"><p>The second parser to parser</p></dd><dt>returns</dt><dd class="cmt"><p><code>f(x, y)</code> where <code>x</code> is the result of <code>p</code> and <code>y</code> is the result of <code>q</code>.</p></dd></dl></div>
+intrinsic.</p></div><dl class="paramcmts block"><dt class="param">f</dt><dd class="cmt"><p>The function to apply to the results of <code>p</code> and <code>q</code></p></dd><dt class="param">p</dt><dd class="cmt"><p>The first parser to parse</p></dd><dt class="param">q</dt><dd class="cmt"><p>The second parser to parse</p></dd><dt>returns</dt><dd class="cmt"><p><code>f(x, y)</code> where <code>x</code> is the result of <code>p</code> and <code>y</code> is the result of <code>q</code>.</p></dd></dl></div>
+    </li><li name="parsley.Parsley#lift3" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="lift3[A,B,C,D](f:(A,B,C)=&gt;D,p:=&gt;parsley.Parsley[A],q:=&gt;parsley.Parsley[B],r:=&gt;parsley.Parsley[C]):parsley.Parsley[D]"></a><a id="lift3[A,B,C,D]((A,B,C)⇒D,⇒Parsley[A],⇒Parsley[B],⇒Parsley[C]):Parsley[D]"></a>
+      <span class="permalink">
+      <a href="../parsley/Parsley$.html#lift3[A,B,C,D](f:(A,B,C)=&gt;D,p:=&gt;parsley.Parsley[A],q:=&gt;parsley.Parsley[B],r:=&gt;parsley.Parsley[C]):parsley.Parsley[D]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">lift3</span><span class="tparams">[<span name="A">A</span>, <span name="B">B</span>, <span name="C">C</span>, <span name="D">D</span>]</span><span class="params">(<span name="f">f: (<span class="extype" name="parsley.Parsley.lift3.A">A</span>, <span class="extype" name="parsley.Parsley.lift3.B">B</span>, <span class="extype" name="parsley.Parsley.lift3.C">C</span>) ⇒ <span class="extype" name="parsley.Parsley.lift3.D">D</span></span>, <span name="p">p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Parsley.lift3.A">A</span>]</span>, <span name="q">q: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Parsley.lift3.B">B</span>]</span>, <span name="r">r: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Parsley.lift3.C">C</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Parsley.lift3.D">D</span>]</span>
+      </span>
+      
+      <p class="shortcomment cmt">Traditionally, <code>lift2</code> is defined as <code>lift3(f, p, q, r) = p.map(f) &lt;*&gt; q &lt;*&gt; r</code>.</p><div class="fullcomment"><div class="comment cmt"><p>Traditionally, <code>lift2</code> is defined as <code>lift3(f, p, q, r) = p.map(f) &lt;*&gt; q &lt;*&gt; r</code>. However, <code>f</code> is actually uncurried,
+so it's actually more exactly defined as; read <code>p</code> and then read <code>q</code> and then read 'r' then provide their results
+to function <code>f</code>. This is designed to bring higher performance to any curried operations that are not themselves
+intrinsic.</p></div><dl class="paramcmts block"><dt class="param">f</dt><dd class="cmt"><p>The function to apply to the results of <code>p</code> and <code>q</code></p></dd><dt class="param">p</dt><dd class="cmt"><p>The first parser to parse</p></dd><dt class="param">q</dt><dd class="cmt"><p>The second parser to parse</p></dd><dt class="param">r</dt><dd class="cmt"><p>The third parser to parse</p></dd><dt>returns</dt><dd class="cmt"><p><code>f(x, y, z)</code> where <code>x</code> is the result of <code>p</code>, <code>y</code> is the result of <code>q</code> and <code>z</code> is the result of <code>r</code>.</p></dd></dl></div>
+    </li><li name="parsley.Parsley#line" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="line:parsley.Parsley[Int]"></a><a id="line:Parsley[Int]"></a>
+      <span class="permalink">
+      <a href="../parsley/Parsley$.html#line:parsley.Parsley[Int]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">line</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Int">Int</span>]</span>
+      </span>
+      
+      <p class="shortcomment cmt">This parser consumes no input and returns the current line number reached in the input stream</p><div class="fullcomment"><div class="comment cmt"><p>This parser consumes no input and returns the current line number reached in the input stream</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>The line number the parser is currently at</p></dd></dl></div>
+    </li><li name="parsley.Parsley#local" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="local[R,A](v:parsley.Var,f:R=&gt;R,p:=&gt;parsley.Parsley[A]):parsley.Parsley[A]"></a><a id="local[R,A](Var,(R)⇒R,⇒Parsley[A]):Parsley[A]"></a>
+      <span class="permalink">
+      <a href="../parsley/Parsley$.html#local[R,A](v:parsley.Var,f:R=&gt;R,p:=&gt;parsley.Parsley[A]):parsley.Parsley[A]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">local</span><span class="tparams">[<span name="R">R</span>, <span name="A">A</span>]</span><span class="params">(<span name="v">v: <a href="package$$Var.html" class="extype" name="parsley.Var">Var</a></span>, <span name="f">f: (<span class="extype" name="parsley.Parsley.local.R">R</span>) ⇒ <span class="extype" name="parsley.Parsley.local.R">R</span></span>, <span name="p">p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Parsley.local.A">A</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Parsley.local.A">A</span>]</span>
+      </span>
+      
+      <p class="shortcomment cmt">For the duration of parser <code>p</code> the state stored in register <code>v</code> is instead modified with <code>f</code>.</p><div class="fullcomment"><div class="comment cmt"><p>For the duration of parser <code>p</code> the state stored in register <code>v</code> is instead modified with <code>f</code>. The change is undone
+after <code>p</code> has finished.
+Note that there are only 4 registers at present.</p></div><dl class="paramcmts block"><dt class="param">v</dt><dd class="cmt"><p>The index of the register to modify</p></dd><dt class="param">f</dt><dd class="cmt"><p>The function used to modify the value in register <code>v</code></p></dd><dt class="param">p</dt><dd class="cmt"><p>The parser to execute with the adjusted state</p></dd><dt>returns</dt><dd class="cmt"><p>The parser that performs <code>p</code> with the modified state</p></dd></dl></div>
+    </li><li name="parsley.Parsley#local" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="local[R,A](v:parsley.Var,p:=&gt;parsley.Parsley[R],q:=&gt;parsley.Parsley[A]):parsley.Parsley[A]"></a><a id="local[R,A](Var,⇒Parsley[R],⇒Parsley[A]):Parsley[A]"></a>
+      <span class="permalink">
+      <a href="../parsley/Parsley$.html#local[R,A](v:parsley.Var,p:=&gt;parsley.Parsley[R],q:=&gt;parsley.Parsley[A]):parsley.Parsley[A]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">local</span><span class="tparams">[<span name="R">R</span>, <span name="A">A</span>]</span><span class="params">(<span name="v">v: <a href="package$$Var.html" class="extype" name="parsley.Var">Var</a></span>, <span name="p">p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Parsley.local.R">R</span>]</span>, <span name="q">q: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Parsley.local.A">A</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Parsley.local.A">A</span>]</span>
+      </span>
+      
+      <p class="shortcomment cmt">For the duration of parser <code>q</code> the state stored in register <code>v</code> is instead set to the return value of <code>p</code>.</p><div class="fullcomment"><div class="comment cmt"><p>For the duration of parser <code>q</code> the state stored in register <code>v</code> is instead set to the return value of <code>p</code>. The
+change is undone after <code>q</code> has finished.
+Note that there are only 4 registers at present.</p></div><dl class="paramcmts block"><dt class="param">v</dt><dd class="cmt"><p>The index of the register to modify</p></dd><dt class="param">p</dt><dd class="cmt"><p>The parser whose return value is placed in register <code>v</code></p></dd><dt class="param">q</dt><dd class="cmt"><p>The parser to execute with the adjusted state</p></dd><dt>returns</dt><dd class="cmt"><p>The parser that performs <code>q</code> with the modified state</p></dd></dl></div>
+    </li><li name="parsley.Parsley#local" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="local[R,A](v:parsley.Var,x:R,p:=&gt;parsley.Parsley[A]):parsley.Parsley[A]"></a><a id="local[R,A](Var,R,⇒Parsley[A]):Parsley[A]"></a>
+      <span class="permalink">
+      <a href="../parsley/Parsley$.html#local[R,A](v:parsley.Var,x:R,p:=&gt;parsley.Parsley[A]):parsley.Parsley[A]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">local</span><span class="tparams">[<span name="R">R</span>, <span name="A">A</span>]</span><span class="params">(<span name="v">v: <a href="package$$Var.html" class="extype" name="parsley.Var">Var</a></span>, <span name="x">x: <span class="extype" name="parsley.Parsley.local.R">R</span></span>, <span name="p">p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Parsley.local.A">A</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Parsley.local.A">A</span>]</span>
+      </span>
+      
+      <p class="shortcomment cmt">For the duration of parser <code>p</code> the state stored in register <code>v</code> is instead set to <code>x</code>.</p><div class="fullcomment"><div class="comment cmt"><p>For the duration of parser <code>p</code> the state stored in register <code>v</code> is instead set to <code>x</code>. The change is undone
+after <code>p</code> has finished.
+Note that there are only 4 registers at present.</p></div><dl class="paramcmts block"><dt class="param">v</dt><dd class="cmt"><p>The index of the register to modify</p></dd><dt class="param">x</dt><dd class="cmt"><p>The value to place in the register <code>v</code></p></dd><dt class="param">p</dt><dd class="cmt"><p>The parser to execute with the adjusted state</p></dd><dt>returns</dt><dd class="cmt"><p>The parser that performs <code>p</code> with the modified state</p></dd></dl></div>
     </li><li name="parsley.Parsley#lookAhead" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="lookAhead[A](p:=&gt;parsley.Parsley[A]):parsley.Parsley[A]"></a><a id="lookAhead[A](⇒Parsley[A]):Parsley[A]"></a>
       <span class="permalink">
@@ -620,6 +770,24 @@ intrinsic.</p></div><dl class="paramcmts block"><dt class="param">f</dt><dd clas
       </span>
       
       <p class="shortcomment cmt"><code>many(p)</code> executes the parser <code>p</code> zero or more times.</p><div class="fullcomment"><div class="comment cmt"><p><code>many(p)</code> executes the parser <code>p</code> zero or more times. Returns a list of the returned values of <code>p</code>.</p></div></div>
+    </li><li name="parsley.Parsley#modify" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="modify[S](v:parsley.Var,f:S=&gt;S):parsley.Parsley[Unit]"></a><a id="modify[S](Var,(S)⇒S):Parsley[Unit]"></a>
+      <span class="permalink">
+      <a href="../parsley/Parsley$.html#modify[S](v:parsley.Var,f:S=&gt;S):parsley.Parsley[Unit]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">modify</span><span class="tparams">[<span name="S">S</span>]</span><span class="params">(<span name="v">v: <a href="package$$Var.html" class="extype" name="parsley.Var">Var</a></span>, <span name="f">f: (<span class="extype" name="parsley.Parsley.modify.S">S</span>) ⇒ <span class="extype" name="parsley.Parsley.modify.S">S</span></span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Unit">Unit</span>]</span>
+      </span>
+      
+      <p class="shortcomment cmt">Modifies the value contained in register <code>v</code> using function <code>f</code>.</p><div class="fullcomment"><div class="comment cmt"><p>Modifies the value contained in register <code>v</code> using function <code>f</code>. It is left to the users responsibility to
+ensure the types line up. There is no compile-time type checking enforced!
+Note that there are only 4 registers at present.</p></div><dl class="paramcmts block"><dt class="tparam">S</dt><dd class="cmt"><p>The type of value currently assumed to be in the register</p></dd><dt class="param">v</dt><dd class="cmt"><p>The index of the register to modify</p></dd><dt class="param">f</dt><dd class="cmt"><p>The function used to modify the register</p></dd></dl></div>
     </li><li name="scala.AnyRef#ne" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a><a id="ne(AnyRef):Boolean"></a>
       <span class="permalink">
@@ -674,6 +842,22 @@ intrinsic.</p></div><dl class="paramcmts block"><dt class="param">f</dt><dd clas
                 <span class="name">@native</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li name="parsley.Parsley#pos" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="pos:parsley.Parsley[(Int,Int)]"></a><a id="pos:Parsley[(Int,Int)]"></a>
+      <span class="permalink">
+      <a href="../parsley/Parsley$.html#pos:parsley.Parsley[(Int,Int)]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">pos</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Int">Int</span>)]</span>
+      </span>
+      
+      <p class="shortcomment cmt">This parser consumes no input and returns the current position reached in the input stream</p><div class="fullcomment"><div class="comment cmt"><p>This parser consumes no input and returns the current position reached in the input stream</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>Tuple of line and column number that the parser has reached</p></dd></dl></div>
     </li><li name="parsley.Parsley#pure" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="pure[A](x:A):parsley.Parsley[A]"></a><a id="pure[A](A):Parsley[A]"></a>
       <span class="permalink">
@@ -692,6 +876,40 @@ intrinsic.</p></div><dl class="paramcmts block"><dt class="param">f</dt><dd clas
       <p class="shortcomment cmt">This is the traditional applicative pure function (or monadic return) for parsers.</p><div class="fullcomment"><div class="comment cmt"><p>This is the traditional applicative pure function (or monadic return) for parsers. It consumes no input and
 does not influence the state of the parser, but does return the value provided. Useful to inject pure values
 into the parsing process.</p></div><dl class="paramcmts block"><dt class="param">x</dt><dd class="cmt"><p>The value to be returned from the parser</p></dd><dt>returns</dt><dd class="cmt"><p>A parser which consumes nothing and returns <code>x</code></p></dd></dl></div>
+    </li><li name="parsley.Parsley#put" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="put[S](v:parsley.Var,p:=&gt;parsley.Parsley[S]):parsley.Parsley[Unit]"></a><a id="put[S](Var,⇒Parsley[S]):Parsley[Unit]"></a>
+      <span class="permalink">
+      <a href="../parsley/Parsley$.html#put[S](v:parsley.Var,p:=&gt;parsley.Parsley[S]):parsley.Parsley[Unit]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">put</span><span class="tparams">[<span name="S">S</span>]</span><span class="params">(<span name="v">v: <a href="package$$Var.html" class="extype" name="parsley.Var">Var</a></span>, <span name="p">p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Parsley.put.S">S</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Unit">Unit</span>]</span>
+      </span>
+      
+      <p class="shortcomment cmt">Places the result of running <code>p</code> into register <code>v</code>.</p><div class="fullcomment"><div class="comment cmt"><p>Places the result of running <code>p</code> into register <code>v</code>.
+Note that there are only 4 registers at present.</p></div><dl class="paramcmts block"><dt class="param">v</dt><dd class="cmt"><p>The index of the register to place the value in</p></dd><dt class="param">p</dt><dd class="cmt"><p>The parser to derive the value from</p></dd></dl></div>
+    </li><li name="parsley.Parsley#put" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="put[S](v:parsley.Var,x:S):parsley.Parsley[Unit]"></a><a id="put[S](Var,S):Parsley[Unit]"></a>
+      <span class="permalink">
+      <a href="../parsley/Parsley$.html#put[S](v:parsley.Var,x:S):parsley.Parsley[Unit]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">put</span><span class="tparams">[<span name="S">S</span>]</span><span class="params">(<span name="v">v: <a href="package$$Var.html" class="extype" name="parsley.Var">Var</a></span>, <span name="x">x: <span class="extype" name="parsley.Parsley.put.S">S</span></span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Unit">Unit</span>]</span>
+      </span>
+      
+      <p class="shortcomment cmt">Consumes no input and places the value <code>x</code> into register <code>v</code>.</p><div class="fullcomment"><div class="comment cmt"><p>Consumes no input and places the value <code>x</code> into register <code>v</code>.
+Note that there are only 4 registers at present.</p></div><dl class="paramcmts block"><dt class="param">v</dt><dd class="cmt"><p>The index of the register to place the value in</p></dd><dt class="param">x</dt><dd class="cmt"><p>The value to place in the register</p></dd></dl></div>
     </li><li name="parsley.Parsley#sequence" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="sequence[A](ps:Seq[parsley.Parsley[A]]):parsley.Parsley[List[A]]"></a><a id="sequence[A](Seq[Parsley[A]]):Parsley[List[A]]"></a>
       <span class="permalink">

@@ -240,16 +240,82 @@ object Parsley
       * @return The list of results formed by executing each parser generated from `xs` and `f` in sequence
       */
     def traverse[A, B](f: A => Parsley[B], xs: Seq[A]): Parsley[List[B]] = sequence(xs.map(f))
-    def line: Parsley[Int] = ???
-    def col: Parsley[Int] = ???
-    def pos: Parsley[(Int, Int)] = line <~> col
-    def get[S](v: Var): Parsley[S] = ???
-    def put[S](v: Var, x: S): Parsley[Unit] = ??? //*> unit
-    def put[S](v: Var, p: =>Parsley[S]): Parsley[Unit] = ??? //*> unit
-    def modify[S](v: Var, f: S => S): Parsley[Unit] = ??? //*> unit
-    def local[R, A](v: Var, x: R, p: =>Parsley[A]): Parsley[A] = ???
-    def local[R, A](v: Var, p: =>Parsley[R], q: =>Parsley[A]): Parsley[A] = ???
-    def local[R, A](v: Var, f: R => R, p: =>Parsley[A]): Parsley[A] = ???
+    /**
+      * This parser consumes no input and returns the current line number reached in the input stream
+      * @return The line number the parser is currently at
+      */
+    val line: Parsley[Int] = empty
+    /**
+      * This parser consumes no input and returns the current column number reached in the input stream
+      * @return The column number the parser is currently at
+      */
+    val col: Parsley[Int] = empty
+    /**
+      * This parser consumes no input and returns the current position reached in the input stream
+      * @return Tuple of line and column number that the parser has reached
+      */
+    val pos: Parsley[(Int, Int)] = line <~> col
+    /**
+      * Consumes no input and returns the value stored in one of the parser registers.
+      * Note that there are only 4 registers at present.
+      * @param v The index of the register to collect from
+      * @tparam S The type of the value in register `v` (this will result in a runtime type-check)
+      * @return The value stored in register `v` of type `S`
+      */
+    def get[S](v: Var): Parsley[S] = empty
+    /**
+      * Consumes no input and places the value `x` into register `v`.
+      * Note that there are only 4 registers at present.
+      * @param v The index of the register to place the value in
+      * @param x The value to place in the register
+      */
+    def put[S](v: Var, x: S): Parsley[Unit] = empty //*> unit
+    /**
+      * Places the result of running `p` into register `v`.
+      * Note that there are only 4 registers at present.
+      * @param v The index of the register to place the value in
+      * @param p The parser to derive the value from
+      */
+    def put[S](v: Var, p: =>Parsley[S]): Parsley[Unit] = empty //*> unit
+    /**
+      * Modifies the value contained in register `v` using function `f`. It is left to the users responsibility to
+      * ensure the types line up. There is no compile-time type checking enforced!
+      * Note that there are only 4 registers at present.
+      * @param v The index of the register to modify
+      * @param f The function used to modify the register
+      * @tparam S The type of value currently assumed to be in the register
+      */
+    def modify[S](v: Var, f: S => S): Parsley[Unit] = empty //*> unit
+    /**
+      * For the duration of parser `p` the state stored in register `v` is instead set to `x`. The change is undone
+      * after `p` has finished.
+      * Note that there are only 4 registers at present.
+      * @param v The index of the register to modify
+      * @param x The value to place in the register `v`
+      * @param p The parser to execute with the adjusted state
+      * @return The parser that performs `p` with the modified state
+      */
+    def local[R, A](v: Var, x: R, p: =>Parsley[A]): Parsley[A] = empty
+    /**
+      * For the duration of parser `q` the state stored in register `v` is instead set to the return value of `p`. The
+      * change is undone after `q` has finished.
+      * Note that there are only 4 registers at present.
+      * @param v The index of the register to modify
+      * @param p The parser whose return value is placed in register `v`
+      * @param q The parser to execute with the adjusted state
+      * @return The parser that performs `q` with the modified state
+      */
+    def local[R, A](v: Var, p: =>Parsley[R], q: =>Parsley[A]): Parsley[A] = empty
+    /**
+      * For the duration of parser `p` the state stored in register `v` is instead modified with `f`. The change is undone
+      * after `p` has finished.
+      * Note that there are only 4 registers at present.
+      * @param v The index of the register to modify
+      * @param f The function used to modify the value in register `v`
+      * @param p The parser to execute with the adjusted state
+      * @return The parser that performs `p` with the modified state
+      */
+    def local[R, A](v: Var, f: R => R, p: =>Parsley[A]): Parsley[A] = empty
 }
 
 // Internals

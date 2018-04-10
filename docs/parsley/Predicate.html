@@ -3,9 +3,9 @@
         <head>
           <meta http-equiv="X-UA-Compatible" content="IE=edge" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-          <title>Parsec documentation  - parsley.Failure</title>
-          <meta name="description" content="Parsec documentation - parsley.Failure" />
-          <meta name="keywords" content="Parsec documentation parsley.Failure" />
+          <title>Parsec documentation  - parsley.Predicate</title>
+          <meta name="description" content="Parsec documentation - parsley.Predicate" />
+          <meta name="keywords" content="Parsec documentation parsley.Predicate" />
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
       <link href="../lib/index.css" media="screen" type="text/css" rel="stylesheet" />
@@ -107,8 +107,8 @@
                         <a href="ExpressionParser.html" title="This class is used to generate efficient expression parsers given a table of operators in operator of operator precedence and an atomic value that represents the smallest part of the expression.">ExpressionParser</a>
                       </li><li class="current-entities indented1">
                         <span class="separator"></span>
-                        <a class="class" href="" title="Returned on parsing failure"></a>
-                        <a href="" title="Returned on parsing failure">Failure</a>
+                        <a class="class" href="package$$Failure.html" title="Returned on parsing failure"></a>
+                        <a href="package$$Failure.html" title="Returned on parsing failure">Failure</a>
                       </li><li class="current-entities indented1">
                         <span class="separator"></span>
                         <a class="trait" href="Impl.html" title="The Impl trait is used to provide implementation of the parser requirements from LanguageDef"></a>
@@ -131,8 +131,8 @@
                         <a href="Parsley.html" title="This is the class that encapsulates the act of parsing and running an object of this class with runParser will parse the string given as input to runParser.">Parsley</a>
                       </li><li class="current-entities indented1">
                         <span class="separator"></span>
-                        <a class="class" href="Predicate.html" title="The implementation provided is a function which matches on the input streams characters"></a>
-                        <a href="Predicate.html" title="The implementation provided is a function which matches on the input streams characters">Predicate</a>
+                        <a class="class" href="" title="The implementation provided is a function which matches on the input streams characters"></a>
+                        <a href="" title="The implementation provided is a function which matches on the input streams characters">Predicate</a>
                       </li><li class="current-entities indented1">
                         <span class="separator"></span>
                         <a class="class" href="package$$Result.html" title="Result of a parser."></a>
@@ -158,8 +158,8 @@
       <div id="definition">
         <div class="big-circle class">c</div>
         <p id="owner"><a href="index.html" class="extype" name="parsley">parsley</a></p>
-        <h1>Failure<span class="permalink">
-      <a href="../parsley/package$$Failure.html" title="Permalink">
+        <h1>Predicate<span class="permalink">
+      <a href="../parsley/Predicate.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span></h1>
@@ -168,20 +168,20 @@
 
       <h4 id="signature" class="signature">
       <span class="modifier_kind">
-        <span class="modifier"></span>
+        <span class="modifier">final </span>
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <span class="name">Failure</span><span class="params">(<span name="msg">msg: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <a href="package$$Result.html" class="extype" name="parsley.Result">Result</a>[<span class="extype" name="scala.Nothing">Nothing</span>] with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <span class="name">Predicate</span><span class="params">(<span name="f">f: (<span class="extype" name="scala.Char">scala.Char</span>) ⇒ <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result"> extends <a href="Impl.html" class="extype" name="parsley.Impl">Impl</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
 
       
-          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>Returned on parsing failure</p></div><dl class="paramcmts block"><dt class="param">msg</dt><dd class="cmt"><p>The error message reported by the parser</p></dd></dl><div class="toggleContainer block">
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>The implementation provided is a function which matches on the input streams characters</p></div><dl class="paramcmts block"><dt class="param">f</dt><dd class="cmt"><p>The predicate that input tokens are tested against</p></dd></dl><div class="toggleContainer block">
           <span class="toggle">
             Linear Supertypes
           </span>
-          <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.Product">Product</span>, <span class="extype" name="scala.Equals">Equals</span>, <a href="package$$Result.html" class="extype" name="parsley.Result">Result</a>[<span class="extype" name="scala.Nothing">Nothing</span>], <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.Product">Product</span>, <span class="extype" name="scala.Equals">Equals</span>, <a href="Impl.html" class="extype" name="parsley.Impl">Impl</a>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -207,7 +207,7 @@
                   <span class="filtertype">Inherited<br />
                   </span>
                   <ol id="linearization">
-                    <li class="in" name="parsley.Failure"><span>Failure</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.Product"><span>Product</span></li><li class="in" name="scala.Equals"><span>Equals</span></li><li class="in" name="parsley.Result"><span>Result</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                    <li class="in" name="parsley.Predicate"><span>Predicate</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.Product"><span>Product</span></li><li class="in" name="scala.Equals"><span>Equals</span></li><li class="in" name="parsley.Impl"><span>Impl</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                   </ol>
                 </div><div class="ancestors">
               <span class="filtertype"></span>
@@ -227,10 +227,10 @@
         <div id="allMembers">
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
-              <ol><li name="parsley.Failure#&lt;init&gt;" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="&lt;init&gt;(msg:String):parsley.package.Failure"></a><a id="&lt;init&gt;:Failure"></a>
+              <ol><li name="parsley.Predicate#&lt;init&gt;" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="&lt;init&gt;(f:Char=&gt;Boolean):parsley.Predicate"></a><a id="&lt;init&gt;:Predicate"></a>
       <span class="permalink">
-      <a href="../parsley/package$$Failure.html#&lt;init&gt;(msg:String):parsley.package.Failure" title="Permalink">
+      <a href="../parsley/Predicate.html#&lt;init&gt;(f:Char=&gt;Boolean):parsley.Predicate" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -239,10 +239,10 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">Failure</span><span class="params">(<span name="msg">msg: <span class="extype" name="scala.Predef.String">String</span></span>)</span>
+        <span class="name">Predicate</span><span class="params">(<span name="f">f: (<span class="extype" name="scala.Char">scala.Char</span>) ⇒ <span class="extype" name="scala.Boolean">Boolean</span></span>)</span>
       </span>
       
-      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">msg</dt><dd class="cmt"><p>The error message reported by the parser</p></dd></dl></div>
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">f</dt><dd class="cmt"><p>The predicate that input tokens are tested against</p></dd></dl></div>
     </li></ol>
             </div>
 
@@ -256,7 +256,7 @@
                 <li name="scala.AnyRef#!=" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="!=(x$1:Any):Boolean"></a><a id="!=(Any):Boolean"></a>
       <span class="permalink">
-      <a href="../parsley/package$$Failure.html#!=(x$1:Any):Boolean" title="Permalink">
+      <a href="../parsley/Predicate.html#!=(x$1:Any):Boolean" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -272,7 +272,7 @@
     </li><li name="scala.AnyRef###" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="##():Int"></a>
       <span class="permalink">
-      <a href="../parsley/package$$Failure.html###():Int" title="Permalink">
+      <a href="../parsley/Predicate.html###():Int" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -288,7 +288,7 @@
     </li><li name="scala.AnyRef#==" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="==(x$1:Any):Boolean"></a><a id="==(Any):Boolean"></a>
       <span class="permalink">
-      <a href="../parsley/package$$Failure.html#==(x$1:Any):Boolean" title="Permalink">
+      <a href="../parsley/Predicate.html#==(x$1:Any):Boolean" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -304,7 +304,7 @@
     </li><li name="scala.Any#asInstanceOf" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <span class="permalink">
-      <a href="../parsley/package$$Failure.html#asInstanceOf[T0]:T0" title="Permalink">
+      <a href="../parsley/Predicate.html#asInstanceOf[T0]:T0" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -320,7 +320,7 @@
     </li><li name="scala.AnyRef#clone" visbl="prt" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="clone():Object"></a><a id="clone():AnyRef"></a>
       <span class="permalink">
-      <a href="../parsley/package$$Failure.html#clone():Object" title="Permalink">
+      <a href="../parsley/Predicate.html#clone():Object" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -344,7 +344,7 @@
     </li><li name="scala.AnyRef#eq" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="eq(x$1:AnyRef):Boolean"></a><a id="eq(AnyRef):Boolean"></a>
       <span class="permalink">
-      <a href="../parsley/package$$Failure.html#eq(x$1:AnyRef):Boolean" title="Permalink">
+      <a href="../parsley/Predicate.html#eq(x$1:AnyRef):Boolean" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -357,10 +357,26 @@
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="parsley.Predicate#f" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="f:Char=&gt;Boolean"></a><a id="f:(scala.Char)⇒Boolean"></a>
+      <span class="permalink">
+      <a href="../parsley/Predicate.html#f:Char=&gt;Boolean" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">f</span><span class="result">: (<span class="extype" name="scala.Char">scala.Char</span>) ⇒ <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      
+      
     </li><li name="scala.AnyRef#finalize" visbl="prt" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="finalize():Unit"></a>
       <span class="permalink">
-      <a href="../parsley/package$$Failure.html#finalize():Unit" title="Permalink">
+      <a href="../parsley/Predicate.html#finalize():Unit" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -382,7 +398,7 @@
     </li><li name="scala.AnyRef#getClass" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getClass():Class[_]"></a>
       <span class="permalink">
-      <a href="../parsley/package$$Failure.html#getClass():Class[_]" title="Permalink">
+      <a href="../parsley/Predicate.html#getClass():Class[_]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -401,7 +417,7 @@
     </li><li name="scala.Any#isInstanceOf" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <span class="permalink">
-      <a href="../parsley/package$$Failure.html#isInstanceOf[T0]:Boolean" title="Permalink">
+      <a href="../parsley/Predicate.html#isInstanceOf[T0]:Boolean" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -414,26 +430,10 @@
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="parsley.Failure#msg" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="msg:String"></a>
-      <span class="permalink">
-      <a href="../parsley/package$$Failure.html#msg:String" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">msg</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
-      </span>
-      
-      
     </li><li name="scala.AnyRef#ne" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a><a id="ne(AnyRef):Boolean"></a>
       <span class="permalink">
-      <a href="../parsley/package$$Failure.html#ne(x$1:AnyRef):Boolean" title="Permalink">
+      <a href="../parsley/Predicate.html#ne(x$1:AnyRef):Boolean" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -449,7 +449,7 @@
     </li><li name="scala.AnyRef#notify" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="notify():Unit"></a>
       <span class="permalink">
-      <a href="../parsley/package$$Failure.html#notify():Unit" title="Permalink">
+      <a href="../parsley/Predicate.html#notify():Unit" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -468,7 +468,7 @@
     </li><li name="scala.AnyRef#notifyAll" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="notifyAll():Unit"></a>
       <span class="permalink">
-      <a href="../parsley/package$$Failure.html#notifyAll():Unit" title="Permalink">
+      <a href="../parsley/Predicate.html#notifyAll():Unit" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -487,7 +487,7 @@
     </li><li name="scala.AnyRef#synchronized" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a><a id="synchronized[T0](⇒T0):T0"></a>
       <span class="permalink">
-      <a href="../parsley/package$$Failure.html#synchronized[T0](x$1:=&gt;T0):T0" title="Permalink">
+      <a href="../parsley/Predicate.html#synchronized[T0](x$1:=&gt;T0):T0" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -503,7 +503,7 @@
     </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <span class="permalink">
-      <a href="../parsley/package$$Failure.html#wait():Unit" title="Permalink">
+      <a href="../parsley/Predicate.html#wait():Unit" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -525,7 +525,7 @@
     </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait(x$1:Long,x$2:Int):Unit"></a><a id="wait(Long,Int):Unit"></a>
       <span class="permalink">
-      <a href="../parsley/package$$Failure.html#wait(x$1:Long,x$2:Int):Unit" title="Permalink">
+      <a href="../parsley/Predicate.html#wait(x$1:Long,x$2:Int):Unit" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -547,7 +547,7 @@
     </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait(x$1:Long):Unit"></a><a id="wait(Long):Unit"></a>
       <span class="permalink">
-      <a href="../parsley/package$$Failure.html#wait(x$1:Long):Unit" title="Permalink">
+      <a href="../parsley/Predicate.html#wait(x$1:Long):Unit" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -586,8 +586,8 @@
               <h3>Inherited from <span class="extype" name="scala.Product">Product</span></h3>
             </div><div class="parent" name="scala.Equals">
               <h3>Inherited from <span class="extype" name="scala.Equals">Equals</span></h3>
-            </div><div class="parent" name="parsley.Result">
-              <h3>Inherited from <a href="package$$Result.html" class="extype" name="parsley.Result">Result</a>[<span class="extype" name="scala.Nothing">Nothing</span>]</h3>
+            </div><div class="parent" name="parsley.Impl">
+              <h3>Inherited from <a href="Impl.html" class="extype" name="parsley.Impl">Impl</a></h3>
             </div><div class="parent" name="scala.AnyRef">
               <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
             </div><div class="parent" name="scala.Any">

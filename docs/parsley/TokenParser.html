@@ -87,8 +87,16 @@
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../index.html" class="extype" name="_root_">root</a></dd></dl></div>
     </li><li class="current-entities indented1">
                         <span class="separator"></span>
+                        <a class="object" href="BitGen$.html" title="This implementation uses a predicate to generate a BitSet."></a>
+                        <a href="BitGen$.html" title="This implementation uses a predicate to generate a BitSet.">BitGen</a>
+                      </li><li class="current-entities indented1">
+                        <span class="separator"></span>
                         <a class="object" href="Char$.html" title=""></a>
                         <a href="Char$.html" title="">Char</a>
+                      </li><li class="current-entities indented1">
+                        <span class="separator"></span>
+                        <a class="object" href="CharSet$.html" title="This implementation uses a set of valid tokens."></a>
+                        <a href="CharSet$.html" title="This implementation uses a set of valid tokens.">CharSet</a>
                       </li><li class="current-entities indented1">
                         <span class="separator"></span>
                         <a class="object" href="Combinator$.html" title=""></a>
@@ -103,12 +111,28 @@
                         <a href="package$$Failure.html" title="Returned on parsing failure">Failure</a>
                       </li><li class="current-entities indented1">
                         <span class="separator"></span>
+                        <a class="trait" href="Impl.html" title="The Impl trait is used to provide implementation of the parser requirements from LanguageDef"></a>
+                        <a href="Impl.html" title="The Impl trait is used to provide implementation of the parser requirements from LanguageDef">Impl</a>
+                      </li><li class="current-entities indented1">
+                        <span class="separator"></span>
                         <a class="class" href="LanguageDef.html" title="This class is required to construct a TokenParser."></a>
                         <a href="LanguageDef.html" title="This class is required to construct a TokenParser.">LanguageDef</a>
+                      </li><li class="current-entities indented1">
+                        <span class="separator"></span>
+                        <a class="object" href="NotRequired$.html" title="This implementation states that the required functionality is not required."></a>
+                        <a href="NotRequired$.html" title="This implementation states that the required functionality is not required.">NotRequired</a>
+                      </li><li class="current-entities indented1">
+                        <span class="separator"></span>
+                        <a class="class" href="Parser.html" title="The implementation provided is a parser which parses the required token."></a>
+                        <a href="Parser.html" title="The implementation provided is a parser which parses the required token.">Parser</a>
                       </li><li class="current-entities indented1">
                         <a class="object" href="Parsley$.html" title=""></a>
                         <a class="class" href="Parsley.html" title="This is the class that encapsulates the act of parsing and running an object of this class with runParser will parse the string given as input to runParser."></a>
                         <a href="Parsley.html" title="This is the class that encapsulates the act of parsing and running an object of this class with runParser will parse the string given as input to runParser.">Parsley</a>
+                      </li><li class="current-entities indented1">
+                        <span class="separator"></span>
+                        <a class="class" href="Predicate.html" title="The implementation provided is a function which matches on the input streams characters"></a>
+                        <a href="Predicate.html" title="The implementation provided is a function which matches on the input streams characters">Predicate</a>
                       </li><li class="current-entities indented1">
                         <span class="separator"></span>
                         <a class="class" href="package$$Result.html" title="Result of a parser."></a>
@@ -121,6 +145,10 @@
                         <span class="separator"></span>
                         <a class="class" href="" title="When provided with a LanguageDef, this class will produce a large variety of parsers that can be used for tokenisation of a language."></a>
                         <a href="" title="When provided with a LanguageDef, this class will produce a large variety of parsers that can be used for tokenisation of a language.">TokenParser</a>
+                      </li><li class="current-entities indented1">
+                        <span class="separator"></span>
+                        <a class="class" href="package$$Var.html" title="This class is used to index registers within the mutable state."></a>
+                        <a href="package$$Var.html" title="This class is used to index registers within the mutable state.">Var</a>
                       </li>
               </ul>
             </div>
@@ -1244,9 +1272,9 @@ provided by the <code>LanguageDef</code>), a line comment or a block (multi-line
 comments may be nested. How comments are started and ended is defined in the <code>LanguageDef</code>
 that is provided to the token parser.</p></div></div>
     </li><li name="parsley.TokenParser#whiteSpace_" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="whiteSpace_:Either[Set[Char],parsley.Parsley[_]]=&gt;parsley.Parsley[Unit]"></a><a id="whiteSpace_:(Either[Set[scala.Char],Parsley[_]])⇒Parsley[Unit]"></a>
+      <a id="whiteSpace_:parsley.Impl=&gt;parsley.Parsley[Unit]"></a><a id="whiteSpace_:(Impl)⇒Parsley[Unit]"></a>
       <span class="permalink">
-      <a href="../parsley/TokenParser.html#whiteSpace_:Either[Set[Char],parsley.Parsley[_]]=&gt;parsley.Parsley[Unit]" title="Permalink">
+      <a href="../parsley/TokenParser.html#whiteSpace_:parsley.Impl=&gt;parsley.Parsley[Unit]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -1255,7 +1283,7 @@ that is provided to the token parser.</p></div></div>
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">whiteSpace_</span><span class="result">: (<span class="extype" name="scala.Either">Either</span>[<span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="scala.Char">scala.Char</span>], <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[_]]) ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Unit">Unit</span>]</span>
+        <span class="name">whiteSpace_</span><span class="result">: (<a href="Impl.html" class="extype" name="parsley.Impl">Impl</a>) ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Unit">Unit</span>]</span>
       </span>
       
       <p class="shortcomment cmt">Parses any white space.</p><div class="fullcomment"><div class="comment cmt"><p>Parses any white space. White space consists of zero or more occurrences of a <code>space</code> (as
