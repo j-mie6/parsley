@@ -348,16 +348,16 @@ final class TokenParser(lang: LanguageDef)
     def brackets[A](p: =>Parsley[A]): Parsley[A] = between(symbol('[') ? "open square bracket", symbol(']') ? "matching closing square bracket" <|> fail("unclosed square brackets"), p)
 
     /**Lexeme parser `semi` parses the character ';' and skips any trailing white space. Returns ";"*/
-    lazy val semi: Parsley[Char] = symbol(';') ? "semicolon"
+    val semi: Parsley[Char] = symbol(';') ? "semicolon"
 
     /**Lexeme parser `comma` parses the character ',' and skips any trailing white space. Returns ","*/
-    lazy val comma: Parsley[Char] = symbol(',') ? "comma"
+    val comma: Parsley[Char] = symbol(',') ? "comma"
 
     /**Lexeme parser `colon` parses the character ':' and skips any trailing white space. Returns ":"*/
-    lazy val colon: Parsley[Char] = symbol(':') ? "colon"
+    val colon: Parsley[Char] = symbol(':') ? "colon"
 
     /**Lexeme parser `dot` parses the character '.' and skips any trailing white space. Returns "."*/
-    lazy val dot: Parsley[Char] = symbol('.') ? "dot"
+    val dot: Parsley[Char] = symbol('.') ? "dot"
 
     /**Lexeme parser `semiSep(p)` parses zero or more occurrences of `p` separated by `semi`. Returns
      * a list of values returned by `p`.*/

@@ -49,7 +49,7 @@ private [parsley] object ParsleyBench
     // https://github.com/Jellonator/Nandlang
     sealed trait NandExpr
     case class NandNand(l: NandExpr, r: NandExpr) extends NandExpr
-    case class NandCall(f: NandId, args: List[NandExpr]) extends NandExpr
+    case class NandCall(f: String, args: List[NandExpr]) extends NandExpr
     case class NandLit(c: Char) extends NandExpr
     case class NandId(v: String, idx: Option[Int]) extends NandExpr
     sealed trait NandStmt
@@ -64,39 +64,42 @@ private [parsley] object ParsleyBench
     {
         val nandlang =
             LanguageDef(
-                "",
-                "",
-                "//",
-                false,
-                Predicate(c => c.isLetter || c == '_'),
-                Predicate(c => c.isLetterOrDigit || c == '_'),
-                NotRequired,
-                NotRequired,
-                Set("if", "else", "function", "while", "var"),
-                Set("!"),
-                true,
-                Predicate(Char.isWhitespace))
+                /*Comment start*/     "",
+                /*Comment end*/       "",
+                /*Line comment*/      "//",
+                /*Nested comments?*/  false,
+                /*Identifier start*/  Predicate(c => c.isLetter || c == '_'),
+                /*Identifier letter*/ Predicate(c => c.isLetterOrDigit || c == '_'),
+                /*Operator start*/    NotRequired,
+                /*Operator letter*/   NotRequired,
+                /*Keywords*/          Set("if", "else", "function", "while", "var"),
+                /*Operators*/         Set("!"),
+                /*Case sensitive*/    true,
+                /*Whitespace*/        Predicate(Char.isWhitespace))
         val tok = new TokenParser(nandlang)
+        val identifier = tok.identifier
         val index = tok.brackets(tok.natural)
-        val identifier = lift2(NandId, tok.identifier, option(index))
+        val variable = lift2(NandId, identifier, option(index))
         val literal = tok.lexeme('0'.map(NandLit)) <|> tok.lexeme('1'.map(NandLit)) <|> tok.charLiteral.map(NandLit)
         lazy val expr: Parsley[NandExpr] = chainl1(nandexpr, tok.lexeme('!' #> (NandNand(_, _))))
-        lazy val nandexpr = literal <|> attempt(funccall) <|> identifier
-        lazy val funccall = lift2(NandCall(_, _), identifier, tok.parens(exprlist))
+        lazy val nandexpr = literal <|> attempt(funccall) <|> variable
+        lazy val funccall = lift2(NandCall, identifier, tok.parens(exprlist))
         lazy val exprlist = tok.commaSep(expr)
         lazy val exprlist1 = tok.commaSep1(expr)
-        val idlist = tok.commaSep(identifier)
-        val idlist1 = tok.commaSep1(identifier)
-        val funcparam = idlist <~> (tok.symbol(':') *> idlist).getOrElse(Nil)
-        val varstmt = lift2(NandVar, optional(tok.keyword("var")) *> idlist1, tok.symbol('=') *> exprlist1 <* tok.semi)
+        val varlist = tok.commaSep(variable)
+        val varlist1 = tok.commaSep1(variable)
+        val funcparam = varlist <~> (tok.symbol(':') *> varlist).getOrElse(Nil)
+        val varstmt = lift2(NandVar, optional(tok.keyword("var")) *> varlist1, tok.symbol('=') *> exprlist1 <* tok.semi)
         lazy val ifstmt = lift3(NandIf, tok.keyword("if") *> expr, block, option(block))
         lazy val whilestmt = tok.keyword("while") *> lift2(NandWhile, expr, block)
         lazy val statement = ifstmt <|> whilestmt <|> attempt(varstmt) <|> (expr.map(NandNaked) <* tok.semi)
         lazy val block: Parsley[NandBlock] = tok.braces(many(statement)).map(NandBlock)
-        val funcdef = lift3(NandFunc, tok.keyword("function") *> tok.identifier, tok.parens(funcparam), block)
+        val funcdef = lift3(NandFunc, tok.keyword("function") *> identifier, tok.parens(funcparam), block)
         tok.whiteSpace *> many(funcdef) <* eof
     }
+    val start = System.currentTimeMillis()
     println(nand.pretty)
+    println(System.currentTimeMillis() - start)
 }
 
 /*private [parsley] object BenchParser extends scala.util.parsing.combinator.Parsers

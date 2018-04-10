@@ -6,7 +6,7 @@ import parsley.UnsafeOption
 
 import scala.annotation.{switch, tailrec}
 
-// This is considered as a VERY rough implementation of the intrinsic, just to get it working, it will be optimised later
+// TODO This is considered as a VERY rough implementation of the intrinsic, just to get it working, it will be optimised later
 private [parsley] class TokenSkipComments(start: String, end: String, line: String, nested: Boolean) extends Instr with NoPush
 {
     protected final val noLine = line.isEmpty
@@ -148,6 +148,7 @@ private [parsley] final class TokenWhiteSpace(ws: TokenSet, start: String, end: 
         else
         {
             spaces(ctx)
+            // TODO This is considered as a VERY rough implementation of the intrinsic, just to get it working, it will be optimised later
             var startsSingle = ctx.input.startsWith(line, ctx.offset)
             var startsMulti = ctx.input.startsWith(start, ctx.offset)
             while (ctx.moreInput && (startsSingle || startsMulti))
