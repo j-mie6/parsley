@@ -1,6 +1,7 @@
 package parsley.instructions
 
 import parsley.UnsafeOption
+import parsley.instructions.Stack.push
 
 import scala.annotation.{switch, tailrec}
 import scala.collection.mutable
@@ -242,6 +243,7 @@ private [parsley] final class AlwaysRecoverWith[A](x: A) extends Instr
 
 private [parsley] final class JumpTable(prefixes: List[Char], labels: List[Int], private [this] var default: Int, _expecteds: List[UnsafeOption[String]]) extends Instr
 {
+    private [this] var defaultPreamble: Int = _
     private [this] val jumpTable = mutable.LongMap(prefixes.map(_.toLong).zip(labels): _*)
     val expecteds = prefixes.zip(_expecteds).map{case (c, expected) => if (expected == null) "\"" + c + "\"" else expected}.reverse
 
@@ -261,6 +263,11 @@ private [parsley] final class JumpTable(prefixes: List[Char], labels: List[Int],
             val dest = jumpTable.getOrElseUpdate(ctx.nextChar, default)
             ctx.pc = dest
             if (dest == default) addErrors(ctx)
+            else
+            {
+                ctx.checkStack = push(ctx.checkStack, ctx.offset)
+                ctx.handlers = push(ctx.handlers, new Handler(ctx.depth, defaultPreamble, ctx.stack.usize))
+            }
         }
         else
         {
@@ -292,9 +299,37 @@ private [parsley] final class JumpTable(prefixes: List[Char], labels: List[Int],
     {
         jumpTable.transform((_, v) => labels(v))
         default = labels(default)
+        defaultPreamble = default - 1
     }
     override def toString: String = s"JumpTable(${jumpTable.map{case (k, v) => k.toChar -> v}.mkString(", ")}, _ -> $default)"
 }
+
+private [parsley] final class JumpClear(var label: Int) extends JumpInstr
+{
+    override def apply(ctx: Context): Unit =
+    {
+        ctx.handlers = ctx.handlers.tail
+        ctx.checkStack = ctx.checkStack.tail
+        ctx.pc = label
+    }
+    override def toString: String = s"JumpClr($label)"
+}
+
+private [parsley] object Catch extends Instr
+{
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.offset != ctx.checkStack.head) ctx.fail()
+        else
+        {
+            ctx.status = Good
+            ctx.inc()
+        }
+        ctx.checkStack = ctx.checkStack.tail
+    }
+    override def toString: String = s"Catch"
+}
+
 
 private [parsley] object CharTokFastPerform
 {

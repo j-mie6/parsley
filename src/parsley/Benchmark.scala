@@ -68,14 +68,14 @@ private [parsley] object ParsleyBench
                 "",
                 "//",
                 false,
-                Right(Char.letterSet + '_'),
-                Right(Char.alphaNumSet + '_'),
+                /**/Left(letter <|> '_'), //Right(Char.letterSet + '_'),
+                /**/Left(alphaNum <|> '_'), //Right(Char.alphaNumSet + '_'),
                 Right(Set.empty),
                 Right(Set.empty),
                 Set("if", "else", "function", "while", "var"),
                 Set("!"),
                 true,
-                Right(Char.whiteSpaceSet))
+                Right(Char.whitespaceSet))
         val tok = new TokenParser(nandlang)
         val index = tok.brackets(tok.natural)
         val identifier = lift2(NandId, tok.identifier, option(index))
@@ -97,7 +97,9 @@ private [parsley] object ParsleyBench
         tok.whiteSpace *> many(funcdef) <* eof
     }
     val start = System.currentTimeMillis
-    println(nand.pretty)
+    //Console.in.read()
+    nand.instrs
+    //System.exit(1)
     println(System.currentTimeMillis() - start)
 }
 

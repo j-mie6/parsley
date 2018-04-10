@@ -112,5 +112,5 @@ object Char
     def alphaNumSet: Set[Char] = letterSet ++ digitSet
     lazy val hexDigitSet: Set[Char] = ('0' to '9').toSet ++ ('a' to 'f').toSet ++ ('A' to 'F').toSet
     lazy val octDigitSet: Set[Char] = ('0' to '7').toSet
-    lazy val whiteSpaceSet: Set[Char] = Set(' ', '\t', '\n', '\r', '\f', '\u000b')
+    lazy val whitespaceSet: Set[Char] = Set(' ', '\t', '\n', '\r', '\f', '\u000b')
 }

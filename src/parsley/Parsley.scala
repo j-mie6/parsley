@@ -540,6 +540,7 @@ private [parsley] object DeepEmbedding
                 instrs += new instructions.JumpTable(leads, ls, default, expecteds)
                 new Suspended(codeGenRoots(
                 {
+                    instrs += instructions.Catch
                     instrs += new instructions.Label(default)
                     if (needsDefault)
                     {
@@ -563,7 +564,7 @@ private [parsley] object DeepEmbedding
                 instrs += new instructions.Label(ls.head)
                 codeGenAlternatives(root)
                 {
-                    instrs += new instructions.Jump(end)
+                    instrs += new instructions.JumpClear(end)
                     codeGenRoots(cont, roots_, ls.tail, end)
                 }
             case Nil => cont

@@ -86,6 +86,10 @@ class TokeniserTests extends ParsleyTest
             runParser(tokeniser.keyword("volatile"), "volatilev")
         }
     }
+    it must "not consume input on failure" in
+    {
+        runParser(tokeniser.keyword("if") <|> tokeniser.identifier, "id") should be (Success("id"))
+    }
 
     "userOp" should "read valid operator" in
     {
