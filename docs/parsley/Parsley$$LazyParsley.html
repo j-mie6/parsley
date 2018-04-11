@@ -895,6 +895,27 @@ impure functions, consider using the <code>unsafe</code> method before map; <cod
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="parsley.Parsley.LazyParsley#unary_+" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="unary_+:parsley.Parsley[A]"></a><a id="unary_+:Parsley[A]"></a>
+      <span class="permalink">
+      <a href="../parsley/Parsley$$LazyParsley.html#unary_+:parsley.Parsley[A]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: unary_$plus" class="name">unary_+</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Parsley.LazyParsley.A">A</span>]</span>
+      </span>
+      
+      <p class="shortcomment cmt">Transforms this parser into a subroutine; instead of inlining this parser into every use-site (performing
+optimisations and repeatedly generating code), produces a subroutine-like parser which is jumped to when
+required.</p><div class="fullcomment"><div class="comment cmt"><p>Transforms this parser into a subroutine; instead of inlining this parser into every use-site (performing
+optimisations and repeatedly generating code), produces a subroutine-like parser which is jumped to when
+required. This will introduce runtime overhead, but it is fairly cheap and may speed up the compilation
+of parsers that are very big and used many times.</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>The same parser, but wrapped in a subroutine call</p></dd></dl></div>
     </li><li name="parsley.Parsley.LazyParsley#unexpected" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="unexpected(msggen:A=&gt;String):parsley.Parsley[Nothing]"></a><a id="unexpected((A)⇒String):Parsley[Nothing]"></a>
       <span class="permalink">

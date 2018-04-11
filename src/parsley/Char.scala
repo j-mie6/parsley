@@ -45,7 +45,7 @@ object Char
     val anyChar: Parsley[Char] = satisfy(_ => true) ? "any character"
 
     /**Parses a whitespace character (either ' ' or '\t'). Returns the parsed character.*/
-    val space: Parsley[Char] = satisfy(c => c == ' ' || c == '\t') ? "space/tab"
+    val space: Parsley[Char] = satisfy(isSpace) ? "space/tab"
 
     /**Skips zero or more whitespace characters. See also `skipMany`. Uses space.*/
     val spaces: Parsley[Unit] = skipMany(space)
@@ -84,34 +84,31 @@ object Char
     val digit: Parsley[Char] = satisfy(_.isDigit) ? "digit"
 
     /**Parses a hexadecimal digit. Returns the parsed character.*/
-    val hexDigit: Parsley[Char] =
-    {
-        satisfy(c => (c: @switch) match
-        {
-            case '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
-               | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
-               | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' => true
-            case _ => false
-        }) ? "hexadecimal digit"
-    }
+    val hexDigit: Parsley[Char] = satisfy(isHexDigit)
 
     /**Parses an octal digit. Returns the parsed character.*/
-    val octDigit: Parsley[Char] = satisfy(c => c <= '7' && c >= '0') ? "octal digit"
+    val octDigit: Parsley[Char] = satisfy(isOctDigit) ? "octal digit"
 
     // Functions
+    /** Helper function, equivalent to the predicate used by whitespace. Useful for providing to LanguageDef */
     def isWhitespace(c: Char): Boolean = (c: @switch) match
     {
         case ' ' | '\t' | '\n' | '\r' | '\f' | '\u000b' => true
         case _ => false
     }
 
-    // Sets
-    def upperSet: Set[Char] = (for (i <- 0 to 65535; c = i.toChar; if c.isUpper) yield c)(breakOut)
-    def lowerSet: Set[Char] = (for (i <- 0 to 65535; c = i.toChar; if c.isLower) yield c)(breakOut)
-    def letterSet: Set[Char] = (for (i <- 0 to 65535; c = i.toChar; if c.isLetter) yield c)(breakOut)
-    def digitSet: Set[Char] = (for (i <- 0 to 65535; c = i.toChar; if c.isDigit) yield c)(breakOut)
-    def alphaNumSet: Set[Char] = (for (i <- 0 to 65535; c = i.toChar; if c.isLetterOrDigit) yield c)(breakOut)
-    lazy val hexDigitSet: Set[Char] = ('0' to '9').toSet ++ ('a' to 'f').toSet ++ ('A' to 'F').toSet
-    lazy val octDigitSet: Set[Char] = ('0' to '7').toSet
-    lazy val whitespaceSet: Set[Char] = Set(' ', '\t', '\n', '\r', '\f', '\u000b')
+    /** Helper function, equivalent to the predicate used by hexDigit. Useful for providing to LanguageDef */
+    def isHexDigit(c: Char): Boolean = (c: @switch) match
+    {
+        case '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
+             | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
+             | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' => true
+        case _ => false
+    }
+
+    /** Helper function, equivalent to the predicate used by octDigit. Useful for providing to LanguageDef */
+    def isOctDigit(c: Char): Boolean = c <= '7' && c >= '0'
+
+    /** Helper function, equivalent to the predicate used by space. Useful for providing to LanguageDef */
+    def isSpace(c: Char): Boolean = c == ' ' || c == '\t'
 }

@@ -298,22 +298,6 @@
       </span>
       
       <p class="shortcomment cmt">Parses a letter or digit.</p><div class="fullcomment"><div class="comment cmt"><p>Parses a letter or digit. Returns the parsed character.</p></div></div>
-    </li><li name="parsley.Char#alphaNumSet" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="alphaNumSet:Set[Char]"></a><a id="alphaNumSet:Set[scala.Char]"></a>
-      <span class="permalink">
-      <a href="../parsley/Char$.html#alphaNumSet:Set[Char]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">alphaNumSet</span><span class="result">: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="scala.Char">scala.Char</span>]</span>
-      </span>
-      
-      
     </li><li name="parsley.Char#anyChar" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="anyChar:parsley.Parsley[Char]"></a><a id="anyChar:Parsley[scala.Char]"></a>
       <span class="permalink">
@@ -439,22 +423,6 @@ of the stream.</p></div><dl class="paramcmts block"><dt class="param">c</dt><dd 
       </span>
       
       <p class="shortcomment cmt">Parses a digit.</p><div class="fullcomment"><div class="comment cmt"><p>Parses a digit. Returns the parsed character.</p></div></div>
-    </li><li name="parsley.Char#digitSet" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="digitSet:Set[Char]"></a><a id="digitSet:Set[scala.Char]"></a>
-      <span class="permalink">
-      <a href="../parsley/Char$.html#digitSet:Set[Char]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">digitSet</span><span class="result">: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="scala.Char">scala.Char</span>]</span>
-      </span>
-      
-      
     </li><li name="parsley.Char#endOfLine" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="endOfLine:parsley.Parsley[Char]"></a><a id="endOfLine:Parsley[scala.Char]"></a>
       <span class="permalink">
@@ -579,22 +547,22 @@ of the stream.</p></div><dl class="paramcmts block"><dt class="param">c</dt><dd 
       </span>
       
       <p class="shortcomment cmt">Parses a hexadecimal digit.</p><div class="fullcomment"><div class="comment cmt"><p>Parses a hexadecimal digit. Returns the parsed character.</p></div></div>
-    </li><li name="parsley.Char#hexDigitSet" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="hexDigitSet:Set[Char]"></a><a id="hexDigitSet:Set[scala.Char]"></a>
+    </li><li name="parsley.Char#isHexDigit" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isHexDigit(c:Char):Boolean"></a><a id="isHexDigit(scala.Char):Boolean"></a>
       <span class="permalink">
-      <a href="../parsley/Char$.html#hexDigitSet:Set[Char]" title="Permalink">
+      <a href="../parsley/Char$.html#isHexDigit(c:Char):Boolean" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">lazy val</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">hexDigitSet</span><span class="result">: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="scala.Char">scala.Char</span>]</span>
+        <span class="name">isHexDigit</span><span class="params">(<span name="c">c: <span class="extype" name="scala.Char">scala.Char</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       
-      
+      <p class="shortcomment cmt">Helper function, equivalent to the predicate used by hexDigit.</p><div class="fullcomment"><div class="comment cmt"><p>Helper function, equivalent to the predicate used by hexDigit. Useful for providing to LanguageDef</p></div></div>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <span class="permalink">
@@ -611,7 +579,39 @@ of the stream.</p></div><dl class="paramcmts block"><dt class="param">c</dt><dd 
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="parsley.Char#isWhitespace" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+    </li><li name="parsley.Char#isOctDigit" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isOctDigit(c:Char):Boolean"></a><a id="isOctDigit(scala.Char):Boolean"></a>
+      <span class="permalink">
+      <a href="../parsley/Char$.html#isOctDigit(c:Char):Boolean" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isOctDigit</span><span class="params">(<span name="c">c: <span class="extype" name="scala.Char">scala.Char</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      
+      <p class="shortcomment cmt">Helper function, equivalent to the predicate used by octDigit.</p><div class="fullcomment"><div class="comment cmt"><p>Helper function, equivalent to the predicate used by octDigit. Useful for providing to LanguageDef</p></div></div>
+    </li><li name="parsley.Char#isSpace" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isSpace(c:Char):Boolean"></a><a id="isSpace(scala.Char):Boolean"></a>
+      <span class="permalink">
+      <a href="../parsley/Char$.html#isSpace(c:Char):Boolean" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isSpace</span><span class="params">(<span name="c">c: <span class="extype" name="scala.Char">scala.Char</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      
+      <p class="shortcomment cmt">Helper function, equivalent to the predicate used by space.</p><div class="fullcomment"><div class="comment cmt"><p>Helper function, equivalent to the predicate used by space. Useful for providing to LanguageDef</p></div></div>
+    </li><li name="parsley.Char#isWhitespace" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isWhitespace(c:Char):Boolean"></a><a id="isWhitespace(scala.Char):Boolean"></a>
       <span class="permalink">
       <a href="../parsley/Char$.html#isWhitespace(c:Char):Boolean" title="Permalink">
@@ -626,7 +626,7 @@ of the stream.</p></div><dl class="paramcmts block"><dt class="param">c</dt><dd 
         <span class="name">isWhitespace</span><span class="params">(<span name="c">c: <span class="extype" name="scala.Char">scala.Char</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       
-      
+      <p class="shortcomment cmt">Helper function, equivalent to the predicate used by whitespace.</p><div class="fullcomment"><div class="comment cmt"><p>Helper function, equivalent to the predicate used by whitespace. Useful for providing to LanguageDef</p></div></div>
     </li><li name="parsley.Char#letter" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="letter:parsley.Parsley[Char]"></a><a id="letter:Parsley[scala.Char]"></a>
       <span class="permalink">
@@ -643,22 +643,6 @@ of the stream.</p></div><dl class="paramcmts block"><dt class="param">c</dt><dd 
       </span>
       
       <p class="shortcomment cmt">Parses a letter.</p><div class="fullcomment"><div class="comment cmt"><p>Parses a letter. Returns the parsed character.</p></div></div>
-    </li><li name="parsley.Char#letterSet" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="letterSet:Set[Char]"></a><a id="letterSet:Set[scala.Char]"></a>
-      <span class="permalink">
-      <a href="../parsley/Char$.html#letterSet:Set[Char]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">letterSet</span><span class="result">: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="scala.Char">scala.Char</span>]</span>
-      </span>
-      
-      
     </li><li name="parsley.Char#lower" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="lower:parsley.Parsley[Char]"></a><a id="lower:Parsley[scala.Char]"></a>
       <span class="permalink">
@@ -675,22 +659,6 @@ of the stream.</p></div><dl class="paramcmts block"><dt class="param">c</dt><dd 
       </span>
       
       <p class="shortcomment cmt">Parses a lower case letter.</p><div class="fullcomment"><div class="comment cmt"><p>Parses a lower case letter. Returns the parsed character.</p></div></div>
-    </li><li name="parsley.Char#lowerSet" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="lowerSet:Set[Char]"></a><a id="lowerSet:Set[scala.Char]"></a>
-      <span class="permalink">
-      <a href="../parsley/Char$.html#lowerSet:Set[Char]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">lowerSet</span><span class="result">: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="scala.Char">scala.Char</span>]</span>
-      </span>
-      
-      
     </li><li name="scala.AnyRef#ne" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a><a id="ne(AnyRef):Boolean"></a>
       <span class="permalink">
@@ -795,22 +763,6 @@ set of characters <code>cs</code>. Returns the parsed character.</p></div></div>
       </span>
       
       <p class="shortcomment cmt">Parses an octal digit.</p><div class="fullcomment"><div class="comment cmt"><p>Parses an octal digit. Returns the parsed character.</p></div></div>
-    </li><li name="parsley.Char#octDigitSet" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="octDigitSet:Set[Char]"></a><a id="octDigitSet:Set[scala.Char]"></a>
-      <span class="permalink">
-      <a href="../parsley/Char$.html#octDigitSet:Set[Char]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">lazy val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">octDigitSet</span><span class="result">: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="scala.Char">scala.Char</span>]</span>
-      </span>
-      
-      
     </li><li name="parsley.Char#oneOf" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="oneOf(cs:Set[Char]):parsley.Parsley[Char]"></a><a id="oneOf(Set[scala.Char]):Parsley[scala.Char]"></a>
       <span class="permalink">
@@ -978,22 +930,6 @@ of the stream.</p></div><dl class="paramcmts block"><dt class="param">s</dt><dd 
       </span>
       
       <p class="shortcomment cmt">Parses an upper case letter.</p><div class="fullcomment"><div class="comment cmt"><p>Parses an upper case letter. Returns the parsed character.</p></div></div>
-    </li><li name="parsley.Char#upperSet" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="upperSet:Set[Char]"></a><a id="upperSet:Set[scala.Char]"></a>
-      <span class="permalink">
-      <a href="../parsley/Char$.html#upperSet:Set[Char]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">upperSet</span><span class="result">: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="scala.Char">scala.Char</span>]</span>
-      </span>
-      
-      
     </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <span class="permalink">
@@ -1078,22 +1014,6 @@ of the stream.</p></div><dl class="paramcmts block"><dt class="param">s</dt><dd 
       </span>
       
       <p class="shortcomment cmt">Parses a whitespace character (' ', '\t', '\n', '\r', '\f', '\v').</p><div class="fullcomment"><div class="comment cmt"><p>Parses a whitespace character (' ', '\t', '\n', '\r', '\f', '\v'). Returns the parsed character.</p></div></div>
-    </li><li name="parsley.Char#whitespaceSet" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="whitespaceSet:Set[Char]"></a><a id="whitespaceSet:Set[scala.Char]"></a>
-      <span class="permalink">
-      <a href="../parsley/Char$.html#whitespaceSet:Set[Char]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">lazy val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">whitespaceSet</span><span class="result">: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="scala.Char">scala.Char</span>]</span>
-      </span>
-      
-      
     </li><li name="parsley.Char#whitespaces" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="whitespaces:parsley.Parsley[Unit]"></a><a id="whitespaces:Parsley[Unit]"></a>
       <span class="permalink">
