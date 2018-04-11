@@ -1,6 +1,6 @@
 import parsley.instructions.Context
 
-import scala.annotation.tailrec
+import scala.annotation.{implicitAmbiguous, tailrec}
 
 package object parsley
 {
@@ -88,6 +88,13 @@ package object parsley
     }
     private [parsley] final object Terminate extends Continuation
     private [parsley] final class Suspended(cont: =>Continuation) extends Continuation { def apply(): Continuation = cont }
+
+    // From shapeless library :)
+    private [parsley] trait =!=[A, B]
+    implicit def neq[A, B] : A =!= B = null
+    @implicitAmbiguous("Must specify the type for get operation; S cannot be Nothing")
+    implicit def neqAmbig1[A] : A =!= A = null
+    implicit def neqAmbig2[A] : A =!= A = null
     
     // This is designed to be a lighter-weight wrapper around Array to make it resizeable
     import scala.reflect.ClassTag

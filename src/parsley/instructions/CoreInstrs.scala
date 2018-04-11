@@ -166,7 +166,7 @@ private [parsley] final class DynCall[-A](f: A => Array[Instr], expected: Unsafe
     override def apply(ctx: Context): Unit =
     {
         ctx.calls = push(ctx.calls, new Frame(ctx.pc + 1, ctx.instrs))
-        ctx.instrs = g(ctx.stack.pop())
+        ctx.instrs = g(ctx.stack.upop())
         ctx.depth += 1
         ctx.pc = 0
         if (expected != null)

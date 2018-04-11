@@ -1,6 +1,6 @@
-import parsley.{Failure, Parsley, Success, runParser}
+import parsley.{Failure, Parsley, Success, Var, runParser}
 import parsley.Parsley._
-import parsley.Char.{charLift, char, stringLift, satisfy}
+import parsley.Char.{char, charLift, satisfy, stringLift}
 
 class CoreTests extends ParsleyTest
 {
@@ -141,13 +141,44 @@ class CoreTests extends ParsleyTest
     {
         runParser(lookAhead("ab"), "ac") shouldBe a [Failure]
     }
-    // TODO State is not preserved after lookahead, the position is reset etc
-    // This should be the behaviour of the below when State is augmented
-    // but ensure this is the case later!
+    "lookAhead" should "not affect the state of the registers on success" in
+    {
+        runParser(put(Var(0), 5) *> lookAhead(put(Var(0), 7) *> 'a') *> get[Int](Var(0)), "a") should be
+        {
+            Success(5)
+        }
+        runParser(put(Var(0), 5) *> (lookAhead(put(Var(0), 7) *> 'a') <|> 'b') *> get[Int](Var(0)), "b") should be
+        {
+            Success(7)
+        }
+    }
 
     "many" should "crash when given a parser that does not consume input" in
     {
        an [Exception] should be thrownBy runParser(many(pure(5)), "")
+    }
+
+    "stateful parsers" should "allow for persistent state" in
+    {
+        val r1 = Var(0)
+        val r2 = Var(1)
+        val p = (put(r1, 5)
+              *> put(r2, 7)
+              *> put(r1, lift2[Int, Int, Int](_+_, get[Int](r1), get[Int](r2)))
+              *> (get[Int](r1) <~> get[Int](r2)))
+        runParser(p, "") should be (Success((12, 7)))
+    }
+    they should "be modifiable" in
+    {
+        val r1 = Var(0)
+        val p = put(r1, 5) *> modify[Int](r1, _+1) *> get[Int](r1)
+        runParser(p, "") should be (Success(6))
+    }
+    they should "provide localised context" in
+    {
+        val r1 = Var(0)
+        val p = put(r1, 5) *> (local(r1, (x: Int) => x+1, get[Int](r1)) <~> get[Int](r1))
+        runParser(p, "") should be (Success(6, 5))
     }
 
     "stack overflows" should "not occur" in
