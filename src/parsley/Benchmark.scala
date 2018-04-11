@@ -85,14 +85,14 @@ private [parsley] object ParsleyBench
         lazy val nandexpr = literal <|> attempt(funccall) <|> variable
         lazy val funccall = lift2(NandCall, identifier, tok.parens(exprlist))
         lazy val exprlist = tok.commaSep(expr)
-        lazy val exprlist1 = tok.commaSep1(expr)
+        val exprlist1 = tok.commaSep1(+expr)
         val varlist = tok.commaSep(variable)
         val varlist1 = tok.commaSep1(variable)
         val funcparam = varlist <~> (tok.symbol(':') *> varlist).getOrElse(Nil)
         val varstmt = lift2(NandVar, optional(tok.keyword("var")) *> varlist1, tok.symbol('=') *> exprlist1 <* tok.semi)
-        lazy val ifstmt = tok.keyword("if") *> lift3(NandIf, expr, block, option(block))
-        lazy val whilestmt = tok.keyword("while") *> lift2(NandWhile, expr, block)
-        lazy val statement = ifstmt <|> whilestmt <|> attempt(varstmt) <|> (expr.map(NandNaked) <* tok.semi)
+        lazy val ifstmt = tok.keyword("if") *> lift3(NandIf, +expr, block, option(block))
+        lazy val whilestmt = tok.keyword("while") *> lift2(NandWhile, +expr, block)
+        lazy val statement = ifstmt <|> whilestmt <|> attempt(varstmt) <|> (+expr.map(NandNaked) <* tok.semi)
         lazy val block: Parsley[NandBlock] = tok.braces(many(statement)).map(NandBlock)
         val funcdef = tok.keyword("function") *> lift3(NandFunc, identifier, tok.parens(funcparam), block)
         tok.whiteSpace *> many(funcdef) <* eof
