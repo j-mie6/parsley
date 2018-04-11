@@ -423,6 +423,7 @@ private [parsley] final class NotFollowedBy(expected: UnsafeOption[String]) exte
         ctx.offset = state.offset
         ctx.line = state.line
         ctx.col = state.col
+        ctx.regs = state.regs
         // A previous success is a failure
         if (ctx.status eq Good)
         {

@@ -1,6 +1,6 @@
 package parsley.instructions
 
-import Stack.push
+import Stack.{push, isEmpty}
 import parsley.{Parsley, ResizableArray, UnsafeOption}
 
 import scala.annotation.{switch, tailrec}
@@ -260,7 +260,7 @@ private [parsley] final class PushHandler(var label: Int) extends JumpInstr
     override def apply(ctx: Context): Unit =
     {
         ctx.handlers = push(ctx.handlers, new Handler(ctx.depth, label, ctx.stack.usize))
-        ctx.states = push(ctx.states, new State(ctx.offset, ctx.line, ctx.col))
+        ctx.states = push(ctx.states, new State(ctx.offset, ctx.line, ctx.col, ctx.regs))
         ctx.inc()
     }
     override def toString: String = s"PushHandler($label)"
@@ -295,15 +295,13 @@ private [parsley] object Attempt extends Instr
             ctx.offset = state.offset
             ctx.line = state.line
             ctx.col = state.col
+            ctx.regs = state.regs
             ctx.fail()
         }
     }
     override def toString: String = "Attempt"
 }
 
-// State is not preserved after lookahead, the position is reset etc
-// This should be the behaviour of the below when State is augmented
-// but ensure this is the case later!
 private [parsley] object Look extends Instr
 {
     override def apply(ctx: Context): Unit =
@@ -315,6 +313,7 @@ private [parsley] object Look extends Instr
             ctx.offset = state.offset
             ctx.line = state.line
             ctx.col = state.col
+            ctx.regs = state.regs
             ctx.handlers = ctx.handlers.tail
             ctx.inc()
         }
@@ -370,17 +369,47 @@ private [parsley] object Catch extends Instr
     override def toString: String = s"Catch"
 }
 
+// Position Extractors
+private [parsley] object Line extends Instr
+{
+    override def apply(ctx: Context): Unit =
+    {
+        ctx.stack.push(ctx.line)
+        ctx.inc()
+    }
+    override def toString: String = "Line"
+}
+
+private [parsley] object Col extends Instr
+{
+    override def apply(ctx: Context): Unit =
+    {
+        ctx.stack.push(ctx.col)
+        ctx.inc()
+    }
+    override def toString: String = "Col"
+}
+
 // Register-Manipulators
 private [parsley] final class Get(v: Int) extends Instr
 {
-    override def apply(ctx: Context): Unit = ???
+    override def apply(ctx: Context): Unit =
+    {
+        ctx.stack.push(ctx.regs(v))
+        ctx.inc()
+    }
     override def toString: String = s"Get($v)"
 }
 
-private [parsley] final class Put(v: Int) extends Instr with NoPush
+private [parsley] final class Put[S](v: Int, x: S) extends Instr with NoPush
 {
-    override def apply(ctx: Context): Unit = ???
-    override def toString: String = s"Put($v)"
+    override def apply(ctx: Context): Unit =
+    {
+        if (!isEmpty(ctx.states) && (ctx.states.head.regs eq ctx.regs)) ctx.regs = ctx.regs.clone
+        ctx.regs(v) = x
+        ctx.inc()
+    }
+    override def toString: String = s"Put($v, $x)"
 }
 
 // Extractor Objects

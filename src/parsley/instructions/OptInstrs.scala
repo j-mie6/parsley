@@ -187,6 +187,7 @@ private [parsley] final class JumpGoodAttempt(var label: Int) extends JumpInstr
             ctx.offset = state.offset
             ctx.line = state.line
             ctx.col = state.col
+            ctx.regs = state.regs
             ctx.status = Good
             ctx.inc()
         }
@@ -227,6 +228,7 @@ private [parsley] final class AlwaysRecoverWith[A](x: A) extends Instr
             ctx.offset = state.offset
             ctx.line = state.line
             ctx.col = state.col
+            ctx.regs = state.regs
             ctx.status = Good
             ctx.stack.push(x)
             ctx.inc()

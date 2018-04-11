@@ -141,6 +141,9 @@ class CoreTests extends ParsleyTest
     {
         runParser(lookAhead("ab"), "ac") shouldBe a [Failure]
     }
+    // TODO State is not preserved after lookahead, the position is reset etc
+    // This should be the behaviour of the below when State is augmented
+    // but ensure this is the case later!
 
     "many" should "crash when given a parser that does not consume input" in
     {

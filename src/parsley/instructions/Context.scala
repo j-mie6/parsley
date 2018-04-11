@@ -14,7 +14,7 @@ private [instructions] final class Handler(val depth: Int, val pc: Int, val stac
 {
     override def toString: String = s"Handler@$depth:$pc(-$stacksz)"
 }
-private [instructions] final class State(val offset: Int, val line: Int, val col: Int)
+private [instructions] final class State(val offset: Int, val line: Int, val col: Int, val regs: Array[Any])
 {
     override def toString: String = s"$offset ($line, $col)"
 }
@@ -43,21 +43,24 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     private [instructions] var unexpectAnyway: Boolean = false
     private [instructions] var errorOverride: UnsafeOption[String] = _
     private [instructions] var overrideDepth: Int = 0
+    private [instructions] var regs: Array[Any] = new Array[Any](4)
 
     override def toString: String =
     {
-        s"""|[
-            |  stack=[${stack.mkString(", ")}]
-            |  instrs=${instrs.mkString("; ")}
-            |  input=${input.drop(offset).mkString}
-            |  status=$status
-            |  pc=$pc
-            |  depth=$depth
-            |  rets=${mkString(map[Frame, Int](calls, _.ret), ", ")}
-            |  handlers=${mkString(handlers, ":") + "[]"}
-            |  recstates=${mkString(states, ":") + "[]"}
-            |  checks=${mkString(checkStack, ":") + "[]"}
-            |]""".stripMargin
+        s"""[
+           |  stack     = [${stack.mkString(", ")}]
+           |  instrs    = ${instrs.mkString("; ")}
+           |  input     = ${input.drop(offset).mkString}
+           |  pos       = ($line, $col)
+           |  status    = $status
+           |  pc        = $pc
+           |  depth     = $depth
+           |  rets      = ${mkString(map[Frame, Int](calls, _.ret), ", ")}
+           |  handlers  = ${mkString(handlers, ":") + "[]"}
+           |  recstates = ${mkString(states, ":") + "[]"}
+           |  checks    = ${mkString(checkStack, ":") + "[]"}
+           |  registers = ${regs.zipWithIndex.map{case (r, i) => s"r$i = $r"}.mkString("\n              ")}
+           |]""".stripMargin
     }
 
     @tailrec @inline private [parsley] def runParser[A](): Result[A] =

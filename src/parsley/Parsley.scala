@@ -233,7 +233,7 @@ object Parsley
     /** `many(p)` executes the parser `p` zero or more times. Returns a list of the returned values of `p`. */
     def many[A](p: =>Parsley[A]): Parsley[List[A]] = new DeepEmbedding.Many(p)
     /** `skipMany(p)` executes the parser `p` zero or more times and ignores the results. Returns `()` */
-    def skipMany[A](p: =>Parsley[A]): Parsley[Unit] = new DeepEmbedding.*>(new DeepEmbedding.SkipMany(p), new DeepEmbedding.Pure(()))
+    def skipMany[A](p: =>Parsley[A]): Parsley[Unit] = new DeepEmbedding.*>(new DeepEmbedding.SkipMany(p), unit)
     /**
       * Evaluate each of the parsers in `ps` sequentially from left to right, collecting the results.
       * @param ps A list of parsers to be sequenced
@@ -252,12 +252,12 @@ object Parsley
       * This parser consumes no input and returns the current line number reached in the input stream
       * @return The line number the parser is currently at
       */
-    val line: Parsley[Int] = empty
+    val line: Parsley[Int] = DeepEmbedding.Line
     /**
       * This parser consumes no input and returns the current column number reached in the input stream
       * @return The column number the parser is currently at
       */
-    val col: Parsley[Int] = empty
+    val col: Parsley[Int] = DeepEmbedding.Col
     /**
       * This parser consumes no input and returns the current position reached in the input stream
       * @return Tuple of line and column number that the parser has reached
@@ -270,14 +270,14 @@ object Parsley
       * @tparam S The type of the value in register `v` (this will result in a runtime type-check)
       * @return The value stored in register `v` of type `S`
       */
-    def get[S](v: Var): Parsley[S] = empty
+    def get[S](v: Var): Parsley[S] = new DeepEmbedding.Get(v)
     /**
       * Consumes no input and places the value `x` into register `v`.
       * Note that there are only 4 registers at present.
       * @param v The index of the register to place the value in
       * @param x The value to place in the register
       */
-    def put[S](v: Var, x: S): Parsley[Unit] = empty *> unit
+    def put[S](v: Var, x: S): Parsley[Unit] = new DeepEmbedding.*>(new DeepEmbedding.Put(v, x), unit)
     /**
       * Places the result of running `p` into register `v`.
       * Note that there are only 4 registers at present.
@@ -1664,6 +1664,42 @@ private [parsley] object DeepEmbedding
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
         {
             instrs += new instructions.Eof(expected)
+            cont
+        }
+    }
+    private [parsley] object Line extends Parsley[Int]
+    {
+        override def preprocess(cont: Parsley[Int] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) = cont(this)
+        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
+        {
+            instrs += instructions.Line
+            cont
+        }
+    }
+    private [parsley] object Col extends Parsley[Int]
+    {
+        override def preprocess(cont: Parsley[Int] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) = cont(this)
+        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
+        {
+            instrs += instructions.Col
+            cont
+        }
+    }
+    private [parsley] final class Get[S](private [Get] val v: Var) extends Parsley[S]
+    {
+        override def preprocess(cont: Parsley[S] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) = cont(this)
+        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
+        {
+            instrs += new instructions.Get(v.v)
+            cont
+        }
+    }
+    private [parsley] final class Put[S](private [Put] val v: Var, private [Put] val x: S) extends Parsley[S]
+    {
+        override def preprocess(cont: Parsley[S] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) = cont(this)
+        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter) =
+        {
+            instrs += new instructions.Put(v.v, x)
             cont
         }
     }
