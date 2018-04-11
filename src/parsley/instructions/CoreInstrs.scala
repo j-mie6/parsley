@@ -160,9 +160,9 @@ private [parsley] object Apply extends Instr
 }
 
 // Monadic
-private [parsley] final class DynSub[-A](f: A => Array[Instr], expected: UnsafeOption[String]) extends Instr
+private [parsley] final class DynCall[-A](f: A => Array[Instr], expected: UnsafeOption[String]) extends Instr
 {
-    private [DynSub] val g = f.asInstanceOf[Any => Array[Instr]]
+    private [DynCall] val g = f.asInstanceOf[Any => Array[Instr]]
     override def apply(ctx: Context): Unit =
     {
         ctx.calls = push(ctx.calls, new Frame(ctx.pc + 1, ctx.instrs))
@@ -175,7 +175,7 @@ private [parsley] final class DynSub[-A](f: A => Array[Instr], expected: UnsafeO
             ctx.errorOverride = expected
         }
     }
-    override def toString: String = "DynSub(?)"
+    override def toString: String = "DynCall(?)"
 }
 
 // Control Flow
@@ -348,13 +348,18 @@ private [parsley] final class JumpGood(var label: Int) extends JumpInstr
 {
     override def apply(ctx: Context): Unit =
     {
-        if (ctx.status eq Good)
-        {
-            ctx.handlers = ctx.handlers.tail
-            ctx.pc = label
-        }
-        // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else if (ctx.offset != ctx.checkStack.head) ctx.fail()
+        ctx.handlers = ctx.handlers.tail
+        ctx.checkStack = ctx.checkStack.tail
+        ctx.pc = label
+    }
+    override def toString: String = s"JumpGood($label)"
+}
+
+private [parsley] object Catch extends Instr
+{
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.offset != ctx.checkStack.head) ctx.fail()
         else
         {
             ctx.status = Good
@@ -362,7 +367,7 @@ private [parsley] final class JumpGood(var label: Int) extends JumpInstr
         }
         ctx.checkStack = ctx.checkStack.tail
     }
-    override def toString: String = s"JumpGood($label)"
+    override def toString: String = s"Catch"
 }
 
 // Register-Manipulators

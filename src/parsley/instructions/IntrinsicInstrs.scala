@@ -27,7 +27,7 @@ private [parsley] final class Lift3[A, B, C, D](f: (A, B, C) => D) extends Instr
         ctx.stack.exchange(g(ctx.stack.peek, y, z))
         ctx.inc()
     }
-    override def toString: String = "Lift2(f)"
+    override def toString: String = "Lift3(f)"
 }
 
 private [parsley] object Cons extends Instr

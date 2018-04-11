@@ -198,13 +198,7 @@ private [parsley] final class RecoverWith[A](x: A) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
-        if (ctx.status eq Good)
-        {
-            ctx.handlers = ctx.handlers.tail
-            ctx.inc()
-        }
-        // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else if (ctx.offset != ctx.checkStack.head) ctx.fail()
+        if (ctx.offset != ctx.checkStack.head) ctx.fail()
         else
         {
             ctx.status = Good
@@ -251,15 +245,6 @@ private [parsley] final class JumpTable(prefixes: List[Char], labels: List[Int],
     {
         if (ctx.moreInput)
         {
-            // This implementation runs slower, but it *does* have more predictable memory and time requirements
-            /*val dest = jumpTable.get(ctx.nextChar)
-            if (dest.isEmpty)
-            {
-                ctx.pc = default
-                addErrors(ctx)
-            }
-            else ctx.pc = dest.get*/
-            // This version is faster, but might have to resize the HashTable if it sees the default case too many times
             val dest = jumpTable.getOrElseUpdate(ctx.nextChar, default)
             ctx.pc = dest
             if (dest == default) addErrors(ctx)
@@ -303,33 +288,6 @@ private [parsley] final class JumpTable(prefixes: List[Char], labels: List[Int],
     }
     override def toString: String = s"JumpTable(${jumpTable.map{case (k, v) => k.toChar -> v}.mkString(", ")}, _ -> $default)"
 }
-
-private [parsley] final class JumpClear(var label: Int) extends JumpInstr
-{
-    override def apply(ctx: Context): Unit =
-    {
-        ctx.handlers = ctx.handlers.tail
-        ctx.checkStack = ctx.checkStack.tail
-        ctx.pc = label
-    }
-    override def toString: String = s"JumpClr($label)"
-}
-
-private [parsley] object Catch extends Instr
-{
-    override def apply(ctx: Context): Unit =
-    {
-        if (ctx.offset != ctx.checkStack.head) ctx.fail()
-        else
-        {
-            ctx.status = Good
-            ctx.inc()
-        }
-        ctx.checkStack = ctx.checkStack.tail
-    }
-    override def toString: String = s"Catch"
-}
-
 
 private [parsley] object CharTokFastPerform
 {

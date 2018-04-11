@@ -537,7 +537,7 @@ private [parsley] object DeepToken
         }
     }
 
-    private [parsley] class Keyword(keyword: String, letter: TokenSet, caseSensitive: Boolean, val expected: UnsafeOption[String] = null) extends Parsley[Nothing]
+    private [parsley] class Keyword(private [Keyword] val keyword: String, letter: TokenSet, caseSensitive: Boolean, val expected: UnsafeOption[String] = null) extends Parsley[Nothing]
     {
         override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
@@ -551,7 +551,7 @@ private [parsley] object DeepToken
         }
     }
 
-    private [parsley] class Operator(operator: String, letter: TokenSet, val expected: UnsafeOption[String] = null) extends Parsley[Nothing]
+    private [parsley] class Operator(private [Operator] val operator: String, letter: TokenSet, val expected: UnsafeOption[String] = null) extends Parsley[Nothing]
     {
         override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
         {
@@ -579,5 +579,14 @@ private [parsley] object DeepToken
         {
             override type resultType = Int
         }
+    }
+
+    object Keyword
+    {
+        def unapply(self: Keyword): Option[String] = Some(self.keyword)
+    }
+    object Operator
+    {
+        def unapply(self: Operator): Option[String] = Some(self.operator)
     }
 }
