@@ -26,6 +26,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     private [instructions] var offset: Int = 0
     private [instructions] var inputsz: Int = input.length
     private [instructions] var calls: Stack[Frame] = Stack.empty
+    //private [instructions] var subs: Stack[Int] = Stack.empty
     private [instructions] var states: Stack[State] = Stack.empty
     private [instructions] var checkStack: Stack[Int] = Stack.empty
     private [instructions] var status: Status = Good
@@ -75,17 +76,22 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         else if (isEmpty(calls)) Success(stack.peek[A])
         else
         {
-            val frame = calls.head
-            instrs = frame.instrs
-            calls = calls.tail
-            pc = frame.ret
-            depth -= 1
-            if (depth < overrideDepth)
-            {
-                overrideDepth = 0
-                errorOverride = null
-            }
+            ret()
             runParser[A]()
+        }
+    }
+
+    private [instructions] def ret(): Unit =
+    {
+        val frame = calls.head
+        instrs = frame.instrs
+        calls = calls.tail
+        pc = frame.ret
+        depth -= 1
+        if (depth < overrideDepth)
+        {
+            overrideDepth = 0
+            errorOverride = null
         }
     }
 
@@ -173,6 +179,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         offset = 0
         inputsz = input.length
         calls = Stack.empty
+        //subs = Stack.empty
         states = Stack.empty
         checkStack = Stack.empty
         status = Good

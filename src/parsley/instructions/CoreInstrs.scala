@@ -169,7 +169,7 @@ private [parsley] final class DynCall[-A](f: A => Array[Instr], expected: Unsafe
         ctx.instrs = g(ctx.stack.upop())
         ctx.depth += 1
         ctx.pc = 0
-        if (expected != null)
+        if (expected != null && ctx.errorOverride == null)
         {
             ctx.overrideDepth = ctx.depth
             ctx.errorOverride = expected
@@ -213,7 +213,7 @@ private [parsley] final class Call(p: Parsley[_], expected: UnsafeOption[String]
             ctx.instrs = instrs.clone
         }
         ctx.depth += 1
-        if (expected != null)
+        if (expected != null && ctx.errorOverride == null)
         {
             ctx.overrideDepth = ctx.depth
             ctx.errorOverride = expected
@@ -221,6 +221,27 @@ private [parsley] final class Call(p: Parsley[_], expected: UnsafeOption[String]
         ctx.pc = 0
     }
     override def toString: String = s"Call($p)"
+}
+
+private [parsley] final class GoSub(var label: Int, expected: UnsafeOption[String]) extends JumpInstr
+{
+    override def apply(ctx: Context): Unit =
+    {
+        ctx.calls = push(ctx.calls, new Frame(ctx.pc + 1, ctx.instrs))
+        ctx.pc = label
+        if (expected != null && ctx.errorOverride == null)
+        {
+            ctx.overrideDepth = ctx.depth
+            ctx.errorOverride = expected
+        }
+    }
+    override def toString: String = s"GoSub($label)"
+}
+
+private [parsley] object Return extends Instr
+{
+    override def apply(ctx: Context): Unit = ctx.ret()
+    override def toString: String = "Return"
 }
 
 private [parsley] final class Fail(msg: String, expected: UnsafeOption[String]) extends Instr
