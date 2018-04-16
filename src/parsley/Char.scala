@@ -4,7 +4,6 @@ import parsley.Parsley._
 
 import scala.annotation.switch
 import scala.language.implicitConversions
-import scala.collection.breakOut
 
 object Char
 {

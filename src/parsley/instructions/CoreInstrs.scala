@@ -229,6 +229,7 @@ private [parsley] final class GoSub(var label: Int, expected: UnsafeOption[Strin
     {
         ctx.calls = push(ctx.calls, new Frame(ctx.pc + 1, ctx.instrs))
         ctx.pc = label
+        ctx.depth += 1
         if (expected != null && ctx.errorOverride == null)
         {
             ctx.overrideDepth = ctx.depth

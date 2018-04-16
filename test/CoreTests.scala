@@ -178,7 +178,7 @@ class CoreTests extends ParsleyTest
     {
         val r1 = Var(0)
         val p = put(r1, 5) *> (local(r1, (x: Int) => x+1, get[Int](r1)) <~> get[Int](r1))
-        runParser(p, "") should be (Success(6, 5))
+        runParser(p, "") should be (Success((6, 5)))
     }
 
     "stack overflows" should "not occur" in

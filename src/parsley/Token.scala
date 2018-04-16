@@ -21,7 +21,7 @@ import parsley.TokenParser.TokenSet
   *                   string, multi-line comments are disabled)
   * @param commentLine For single-line comments; how does the comment start? (This this is the empty string, single-line
   *                    comments are disabled)
-  * @param nestedComments Are multi-line comments allowed to be nested inside eachother? E.g. If `{-` and `-}` are
+  * @param nestedComments Are multi-line comments allowed to be nested inside each other? E.g. If `{-` and `-}` are
   *                       opening and closing comments, is the following valid syntax: `{-{-hello -}-}`? Note in C this
   *                       is not the case.
   * @param identStart What characters can an identifier in the language start with?
