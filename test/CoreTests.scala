@@ -205,4 +205,10 @@ class CoreTests extends ParsleyTest
         lazy val uhoh: Parsley[Unit] = 'a' >>= (_ => uhoh)
         noException should be thrownBy runParser(uhoh, "a")
     }
+
+    "subroutines" should "function correctly" in
+    {
+        val p = satisfy(_ => true) *> satisfy(_ => true) *> satisfy(_ => true)
+        runParser('a' *> +p <* 'b' <* +p <* 'c', "a123b123c") should be (Success('3'))
+    }
 }
