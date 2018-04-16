@@ -1,5 +1,7 @@
 package parsley
 
+import parsley.ExpressionParser._
+
 import scala.annotation.tailrec
 
 private [parsley] object ParsleyBench
@@ -97,9 +99,62 @@ private [parsley] object ParsleyBench
         val funcdef = tok.keyword("function") *> lift3(NandFunc, identifier, tok.parens(funcparam), block)
         tok.whiteSpace *> many(funcdef) <* eof
     }
-    val start = System.currentTimeMillis()
-    println(nand.pretty)
-    println(System.currentTimeMillis() - start)
+
+    def c =
+    {
+        def void(x: Any): Any = ()
+        def void2(x: Any, y: Any): Any = ()
+        val clang =
+            LanguageDef(
+                /*Comment start*/     "/*",
+                /*Comment end*/       "*/",
+                /*Line comment*/      "//",
+                /*Nested comments?*/  false,
+                /*Identifier start*/  Predicate(c => c.isLetter || c == '_'),
+                /*Identifier letter*/ Predicate(c => c.isLetterOrDigit || c == '_'),
+                /*Operator start*/    NotRequired,
+                /*Operator letter*/   CharSet(Set('+', '.', '>', '<', '=', '-', '*', '/', '^', '&', '|', '~', '?', ':', '!')),
+                /*Keywords*/          Set("auto", "break", "case", "char", "const", "continue",
+                                          "default", "do", "double", "else", "enum", "extern",
+                                          "float", "for", "goto", "if", "int", "long", "register",
+                                          "return", "short", "signed", "sizeof", "static", "struct",
+                                          "switch", "typedef", "union", "unsigned", "void",
+                                          "volatile", "while"),
+                /*Operators*/         Set("...", ">>=", "<<=", "+=", "-=", "*=", "/=", "%=", "&=",
+                                          "^=", "|=", ">>", "<<", "++", "--", "->", "&&", "||", "<=",
+                                          ">=", "==", "!=", "=", ".", "&", "!", "~", "-", "+", "*",
+                                          "/", "%", "<", ">", "^", "|", "?", ":"),
+                /*Case sensitive*/    true,
+                /*Whitespace*/        Predicate(Char.isWhitespace))
+        lazy val tok = new TokenParser(clang)
+        lazy val primary_expression: Parsley[Any] =
+            (tok.identifier
+         <|> tok.number
+         <|> tok.charLiteral
+         <|> tok.stringLiteral
+         <|> tok.parens(expression))
+        lazy val expression: Parsley[Any] =
+            new ExpressionParser[Any](List(
+                Prefixes(List(tok.operator("-") #> void, tok.operator("*") #> void, tok.operator("&") #> void,
+                              tok.operator("+") #> void, tok.operator("~") #> void, tok.operator("!") #> void,
+                              tok.operator("++") #> void, tok.operator("--") #> void)),
+                Infixes(List(tok.operator("*") #> void2, tok.operator("/") #> void2, tok.operator("%") #> void2), AssocLeft),
+                Infixes(List(tok.operator("+") #> void2, tok.operator("-") #> void2), AssocLeft),
+                Infixes(List(tok.operator(">>") #> void2, tok.operator("<<") #> void2), AssocLeft),
+                Infixes(List(tok.operator(">=") #> void2, tok.operator("<=") #> void2, tok.operator("<") #> void2, tok.operator(">") #> void2), AssocLeft),
+                Infixes(List(tok.operator("!=") #> void2, tok.operator("==") #> void2), AssocLeft),
+                Infixes(List(tok.operator("&") #> void2), AssocLeft),
+                Infixes(List(tok.operator("^") #> void2), AssocLeft),
+                Infixes(List(tok.operator("|") #> void2), AssocLeft),
+                Infixes(List(tok.keyword("and") #> void2), AssocLeft),
+                Infixes(List(tok.keyword("or") #> void2), AssocLeft),
+                Infixes(List(tok.operator("?") *> expression *> tok.operator(":") #> void2), AssocRight),
+                Infixes(List(tok.operator("=") #> void2), AssocRight)), atom).expr
+        lazy val atom = primary_expression
+        expression
+    }
+
+    println(c.pretty)
 }
 
 /*private [parsley] object BenchParser extends scala.util.parsing.combinator.Parsers
@@ -255,7 +310,7 @@ private [parsley] object Benchmark
     def main(args: Array[String]): Unit =
     {
         //Console.in.read()
-        val p = ParsleyBench.nand
+        val p = ParsleyBench.chain
         val input1 = "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"
         val input2 = "[+++++++<[<<>>>>]..hahah this is brainfuck.,,,,,-[---]-++]"
         val input3 =
@@ -362,13 +417,13 @@ private [parsley] object Benchmark
               |    }
               |}
             """.stripMargin
-        val input = input3
+        val input = input1
         //println(runParser(p, "aaaab"))
         //println(runParser(p, "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"))
         println(runParserFastUnsafe(p, input))
         val start = System.currentTimeMillis()
         //println(runParser(p, input))
-        for (_ <- 0 to 100000)
+        for (_ <- 0 to 10000000)
             runParserFastUnsafe(p, input)
             //p(input)
             //p.parse(input)
