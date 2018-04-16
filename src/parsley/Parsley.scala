@@ -371,18 +371,20 @@ abstract class Parsley[+A] private [parsley]
     final private [parsley] lazy val instrs: Array[Instr] =
     {
         val instrs: InstrBuffer = new ResizableArray()
-        val subs: mutable.Map[Parsley[_], Int] = mutable.Map()
+        val subs: mutable.Map[Parsley[_], Int] = mutable.Map.empty
         val labels = new LabelCounter
         optimised((p: Parsley[A]) => new Chunk(p))(Set.empty, null, 0).run.codeGen(Terminate)(instrs, labels, subs).run()
         if (subs.nonEmpty)
         {
             val end = labels.fresh()
             instrs += new instructions.Jump(end)
-            for ((p, label) <- subs)
+            val seen: mutable.Set[Int] = mutable.Set.empty
+            while (seen.size < subs.size) for ((p, label) <- subs; if !seen.contains(label))
             {
                 instrs += new instructions.Label(label)
                 p.codeGen(Terminate)(instrs, labels, subs).run()
                 instrs += instructions.Return
+                seen += label
             }
             instrs += new instructions.Label(end)
         }
