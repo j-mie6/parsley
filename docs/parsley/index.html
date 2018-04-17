@@ -305,7 +305,7 @@ memory usage associated but at least doubles the execution speed for that instru
 </p></div><dl class="paramcmts block"><dt class="param">commentStart</dt><dd class="cmt"><p>For multi-line comments; how does the comment start? (If this or <code>commentEnd</code> is the empty
                     string, multi-line comments are disabled)</p></dd><dt class="param">commentEnd</dt><dd class="cmt"><p>For multi-line comments; how does the comment end? (If this or <code>commentEnd</code> is the empty
                   string, multi-line comments are disabled)</p></dd><dt class="param">commentLine</dt><dd class="cmt"><p>For single-line comments; how does the comment start? (This this is the empty string, single-line
-                   comments are disabled)</p></dd><dt class="param">nestedComments</dt><dd class="cmt"><p>Are multi-line comments allowed to be nested inside eachother? E.g. If <code>{-</code> and <code>-}</code> are
+                   comments are disabled)</p></dd><dt class="param">nestedComments</dt><dd class="cmt"><p>Are multi-line comments allowed to be nested inside each other? E.g. If <code>{-</code> and <code>-}</code> are
                       opening and closing comments, is the following valid syntax: <code>{-{-hello -}-}</code>? Note in C this
                       is not the case.</p></dd><dt class="param">identStart</dt><dd class="cmt"><p>What characters can an identifier in the language start with?</p></dd><dt class="param">identLetter</dt><dd class="cmt"><p>What characters can an identifier in the language consist of after the starting character?</p></dd><dt class="param">opStart</dt><dd class="cmt"><p>What characters can an operator in the language start with?</p></dd><dt class="param">opLetter</dt><dd class="cmt"><p>What characters can an operator in the language consist of after the starting character?</p></dd><dt class="param">keywords</dt><dd class="cmt"><p>What keywords does the language contain?</p></dd><dt class="param">operators</dt><dd class="cmt"><p>What operators does the language contain?</p></dd><dt class="param">caseSensitive</dt><dd class="cmt"><p>Is the language case-sensitive. I.e. is IF equivalent to if?</p></dd><dt class="param">space</dt><dd class="cmt"><p>What characters count as whitespace in the language?</p></dd></dl></div>
     </li><li name="parsley.Parser" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -454,6 +454,60 @@ Currently, there are only 4 available registers, so use them wisely!</p></div><d
       <p class="shortcomment cmt">This function returns a fresh Context.</p><div class="fullcomment"><div class="comment cmt"><p>This function returns a fresh Context. Contexts are used by the parsers to store their state.
 You should only need to use this if you are using <code>runParserFastUnsafe</code> and you need separate
 execution contexts due to multi-threaded parsing.</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>A fresh execution context for parsers</p></dd></dl></div>
+    </li><li name="parsley#neq" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="neq[A,B]:A=!=B"></a><a id="neq[A,B]:=!=[A,B]"></a>
+      <span class="permalink">
+      <a href="../parsley/index.html#neq[A,B]:A=!=B" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier">implicit </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">neq</span><span class="tparams">[<span name="A">A</span>, <span name="B">B</span>]</span><span class="result">: <span class="extype" name="parsley.=!=">=!=</span>[<span class="extype" name="parsley.neq.A">A</span>, <span class="extype" name="parsley.neq.B">B</span>]</span>
+      </span>
+      
+      
+    </li><li name="parsley#neqAmbig1" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="neqAmbig1[A]:A=!=A"></a><a id="neqAmbig1[A]:=!=[A,A]"></a>
+      <span class="permalink">
+      <a href="../parsley/index.html#neqAmbig1[A]:A=!=A" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier">implicit </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">neqAmbig1</span><span class="tparams">[<span name="A">A</span>]</span><span class="result">: <span class="extype" name="parsley.=!=">=!=</span>[<span class="extype" name="parsley.neqAmbig1.A">A</span>, <span class="extype" name="parsley.neqAmbig1.A">A</span>]</span>
+      </span>
+      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Annotations</dt><dd>
+                <span class="name">@implicitAmbiguous</span><span class="args">(<span>
+      
+      <span class="defval" name="&quot;Must specify the type for get operation; S cannot be Nothing&quot;">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="parsley#neqAmbig2" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="neqAmbig2[A]:A=!=A"></a><a id="neqAmbig2[A]:=!=[A,A]"></a>
+      <span class="permalink">
+      <a href="../parsley/index.html#neqAmbig2[A]:A=!=A" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier">implicit </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">neqAmbig2</span><span class="tparams">[<span name="A">A</span>]</span><span class="result">: <span class="extype" name="parsley.=!=">=!=</span>[<span class="extype" name="parsley.neqAmbig2.A">A</span>, <span class="extype" name="parsley.neqAmbig2.A">A</span>]</span>
+      </span>
+      
+      
     </li><li name="parsley#runParser" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="runParser[A](p:parsley.Parsley[A],input:Array[Char]):parsley.package.Result[A]"></a><a id="runParser[A](Parsley[A],Array[scala.Char]):Result[A]"></a>
       <span class="permalink">

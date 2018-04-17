@@ -130,8 +130,8 @@ object Parsley
         def unexpected(msggen: A => String): Parsley[Nothing] = new DeepEmbedding.FastUnexpected(p, msggen)
         /** Transforms this parser into a subroutine; instead of inlining this parser into every use-site (performing
           * optimisations and repeatedly generating code), produces a subroutine-like parser which is jumped to when
-          * required. This will introduce runtime overhead, but it is fairly cheap and may speed up the compilation
-          * of parsers that are very big and used many times.
+          * required. This will introduce runtime overhead, but it is fairly cheap and speeds up the compilation
+          * of parsers that are very big and used many times considerably.
           * @return The same parser, but wrapped in a subroutine call
           */
         def unary_+ : Parsley[A] = new DeepEmbedding.Subroutine(p)
