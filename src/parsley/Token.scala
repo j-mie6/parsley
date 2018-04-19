@@ -75,7 +75,8 @@ object CharSet
     /**
       * @param cs The set to convert
       */
-    def apply(cs: Set[Char]) = BitSetImpl(new BitSet(Left(cs)))
+    def apply(cs: Set[Char]): Impl = BitSetImpl(new BitSet(Left(cs)))
+    def apply(cs: Char*): Impl = apply(Set(cs: _*))
 }
 /**
   * This implementation uses a predicate to generate a BitSet. This should be preferred over `Predicate` when the

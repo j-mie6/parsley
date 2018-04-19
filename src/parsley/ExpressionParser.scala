@@ -41,7 +41,7 @@ object ExpressionParser
       * operators.
       * @tparam A The result type of the operation
       */
-    sealed trait OpList[A]
+    sealed trait OpList[+A]
     case class Infixes[A](op: List[Parsley[(A, A) => A]], assoc: Assoc) extends OpList[A]
     case class Prefixes[A](op: List[Parsley[A => A]]) extends OpList[A]
     case class Postfixes[A](op: List[Parsley[A => A]]) extends OpList[A]
