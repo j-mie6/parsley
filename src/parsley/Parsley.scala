@@ -378,6 +378,7 @@ abstract class Parsley[+A] private [parsley]
         {
             val end = labels.fresh()
             instrs += new instructions.Jump(end)
+            // FIXME: This has serious performance implications, we need to improve on this!
             val seen: mutable.Set[Int] = mutable.Set.empty
             while (seen.size < subs.size) for ((p, label) <- subs; if !seen.contains(label))
             {

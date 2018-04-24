@@ -1,7 +1,5 @@
 package parsley
 
-import java.io.IOException
-
 import parsley.ExpressionParser._
 
 import scala.annotation.tailrec
@@ -14,15 +12,10 @@ private [parsley] object ParsleyBench
     import parsley.Combinator._
     import parsley.Char._
     val liftab: Parsley[String] = lift2[Char, Char, String]((x, y) => x.toString + y.toString, 'a', 'b')
-    println(liftab.pretty)
     val aconsb: Parsley[List[Char]] = 'a' <::> ('b' #> Nil)
-    println(aconsb.pretty)
     val athenb: Parsley[String] = 'a' *> 'b' #> "ab"
-    println(athenb.pretty)
     val manya: Parsley[List[Char]] = many('a') <* 'b'
-    println(manya.pretty)
     def chain: Parsley[Int] = chainl1('1' <#> (_.toInt), '+' #> ((x: Int, y: Int) => x + y))
-    println(chain.pretty)
     
     trait BrainFuckOp
     case object RightPointer extends BrainFuckOp
@@ -50,7 +43,6 @@ private [parsley] object ParsleyBench
              <|> (whitespaceBF #> None)).map(_.flatten)
         attempt(bf <* eof) <|> fail("\"]\" closes a loop, but there isn't one open")
     }
-    println(brainfuck.pretty)
 
     // https://github.com/Jellonator/Nandlang
     sealed trait NandExpr
@@ -326,7 +318,23 @@ private [parsley] object ParsleyBench
         val element = tok.keyword("function") *> lift3(JSFunction, tok.identifier, tok.parens(tok.commaSep(tok.identifier)), compound) <|> stmt
         tok.whiteSpace *> many(element) <* eof
     }
-    println(whileLang.pretty)
+
+    def json: Parsley[Any] =
+    {
+        val jsontoks = LanguageDef("", "", "", false, NotRequired, NotRequired, NotRequired, NotRequired, Set.empty, Set.empty, true, Predicate(Char.isWhitespace))
+        val tok = new TokenParser(jsontoks)
+        lazy val obj: Parsley[Map[String, Any]] = tok.braces(tok.commaSep(+(tok.stringLiteral <~> tok.colon *> value)).map(_.toMap))
+        lazy val array = tok.brackets(tok.commaSep(value))
+        lazy val value: Parsley[Any] =
+            (tok.stringLiteral
+         <|> tok.symbol("true")
+         <|> tok.symbol("false")
+         <|> array
+         <|> attempt(tok.float)
+         <|> tok.integer
+         <|> obj)
+        tok.whiteSpace *> (obj <|> array) <* eof
+    }
 }
 
 /*private [parsley] object BenchParser extends scala.util.parsing.combinator.Parsers
@@ -507,6 +515,31 @@ private [parsley] object FastParser
     lazy val parser: Parser[List[BrainFuckOp]] = Start ~ expr ~ End*/
 }
 
+object FastParseJson
+{
+    import fastparse.all._
+    private val space         = P( CharsWhileIn(" \r\n").? )
+    private val digits        = P( CharsWhileIn("0123456789"))
+    private val exponent      = P( CharIn("eE") ~ CharIn("+-").? ~ digits )
+    private val fractional    = P( "." ~ digits )
+    private val integral      = P( "0" | CharIn('1' to '9') ~ digits.? )
+
+    private val number = P( CharIn("+-").? ~ integral ~ fractional.? ~ exponent.? ).!.map(_.toDouble)
+    private val `null`        = P( "null" ).!
+    private val `false`       = P( "false" ).!
+    private val `true`        = P( "true" ).!
+    private val hexDigit      = P( CharIn('0'to'9', 'a'to'f', 'A'to'F') )
+    private val unicodeEscape = P( "u" ~ hexDigit ~ hexDigit ~ hexDigit ~ hexDigit )
+    private val escape        = P( "\\" ~ (CharIn("\"/\\bfnrt") | unicodeEscape) )
+    private val strChars = P( CharsWhile(!"\"\\".contains(_: Char)) )
+    private val string = P( space ~ "\"" ~/ (strChars | escape).rep.! ~ "\"")
+    private val array = P( "[" ~/ jsonExpr.rep(sep=",".~/) ~ space ~ "]").map(_.toList)
+    private val pair = P( string ~/ ":" ~/ jsonExpr )
+    private val obj = P( "{" ~/ pair.rep(sep=",".~/) ~ space ~ "}").map(_.toMap)
+
+    lazy val jsonExpr: P[Any] = P(space ~ (obj | array | string | `true` | `false` | `null` | number) ~ space)
+}
+
 private [parsley] object Benchmark
 {
     def read(filename: String) = Try(Source.fromFile(filename).getLines().mkString("\n") + "\n").getOrElse("")
@@ -520,7 +553,9 @@ private [parsley] object Benchmark
               ("inputs/helloworld.bf", FastParser.brainfuck, parseFastParse, 100000),
               ("inputs/arrays.nand", ParsleyBench.nand, parseParsley, 100000),
               ("inputs/test.while", ParsleyBench.whileLang, parseParsley, 100000),
-              ("inputs/fibonacci.js", ParsleyBench.javascript, parseParsley, 100000))
+              ("inputs/fibonacci.js", ParsleyBench.javascript, parseParsley, 100000),
+              ("inputs/data.json", ParsleyBench.json, parseParsley, 50000),
+              ("inputs/data.json", FastParseJson.jsonExpr, parseFastParse, 50000))
 
     def main(args: Array[String]): Unit =
     {
@@ -528,11 +563,11 @@ private [parsley] object Benchmark
         //val p = ParsleyBench.chain
         //val input = "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"
         //val exec = runParserFastUnsafe _
-        val (filename, p, exec, iters) = benchmarks(6)
+        val (filename, p, exec, iters) = benchmarks(8)
         val input = read(filename)
         val start = System.currentTimeMillis()
         println(exec(p, input))
-        for (_ <- 0 to iters) exec(p, input)
+        for (_ <- 0 to iters) runParserFastUnsafe(ParsleyBench.json, input)//exec(p, input)
         println(System.currentTimeMillis() - start)
     }
 }
