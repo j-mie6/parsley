@@ -323,10 +323,10 @@ private [parsley] object ParsleyBench
     {
         val jsontoks = LanguageDef("", "", "", false, NotRequired, NotRequired, NotRequired, NotRequired, Set.empty, Set.empty, true, Predicate(Char.isWhitespace))
         val tok = new TokenParser(jsontoks)
-        lazy val obj: Parsley[Map[String, Any]] = tok.braces(tok.commaSep(+(tok.stringLiteral <~> tok.colon *> value)).map(_.toMap))
+        lazy val obj: Parsley[Map[String, Any]] = tok.braces(tok.commaSep(+(tok.lexeme(tok.rawStringLiteral) <~> tok.colon *> value)).map(_.toMap))
         lazy val array = tok.brackets(tok.commaSep(value))
         lazy val value: Parsley[Any] =
-            (tok.stringLiteral
+            (tok.lexeme(tok.rawStringLiteral)
          <|> tok.symbol("true")
          <|> tok.symbol("false")
          <|> array
@@ -547,15 +547,23 @@ private [parsley] object Benchmark
     def parseFastParse(p: Any, s: String): Any = p.asInstanceOf[fastparse.all.Parser[_]].parse(s)
 
     val benchmarks: Array[(String, Any, (Any, String) => Any, Int)] =
-        Array(("inputs/helloworld_golfed.bf", ParsleyBench.brainfuck, parseParsley, 1000000),
-              ("inputs/helloworld_golfed.bf", FastParser.brainfuck, parseFastParse, 1000000),
-              ("inputs/helloworld.bf", ParsleyBench.brainfuck, parseParsley, 100000),
-              ("inputs/helloworld.bf", FastParser.brainfuck, parseFastParse, 100000),
-              ("inputs/arrays.nand", ParsleyBench.nand, parseParsley, 100000),
-              ("inputs/test.while", ParsleyBench.whileLang, parseParsley, 100000),
-              ("inputs/fibonacci.js", ParsleyBench.javascript, parseParsley, 100000),
-              ("inputs/data.json", ParsleyBench.json, parseParsley, 50000),
-              ("inputs/data.json", FastParseJson.jsonExpr, parseFastParse, 50000))
+        Array(
+            /*0*/  ("inputs/helloworld_golfed.bf", ParsleyBench.brainfuck, parseParsley, 1000000),
+            /*1*/  ("inputs/helloworld_golfed.bf", FastParser.brainfuck, parseFastParse, 1000000),
+            /*2*/  ("inputs/helloworld.bf", ParsleyBench.brainfuck, parseParsley, 100000),
+            /*3*/  ("inputs/helloworld.bf", FastParser.brainfuck, parseFastParse, 100000),
+            /*4*/  ("inputs/arrays.nand", ParsleyBench.nand, parseParsley, 100000),
+            /*5*/  ("inputs/test.while", ParsleyBench.whileLang, parseParsley, 100000),
+            /*6*/  ("inputs/fibonacci.js", ParsleyBench.javascript, parseParsley, 100000),
+            /*7*/  ("inputs/mediumdata.json", ParsleyBench.json, parseParsley, 50000),
+            /*8*/  ("inputs/mediumdata.json", FastParseJson.jsonExpr, parseFastParse, 50000),
+            /*9*/  ("inputs/bigdata.json", ParsleyBench.json, parseParsley, 50000),
+            /*10*/ ("inputs/bigdata.json", FastParseJson.jsonExpr, parseFastParse, 50000),
+            /*11*/ ("inputs/hugedata.json", ParsleyBench.json, parseParsley, 2000),
+            /*12*/ ("inputs/hugedata.json", FastParseJson.jsonExpr, parseFastParse, 2000),
+            /*13*/ ("inputs/smalldata.json", ParsleyBench.json, parseParsley, 1000000),
+            /*14*/ ("inputs/smalldata.json", FastParseJson.jsonExpr, parseFastParse, 1000000)
+        )
 
     def main(args: Array[String]): Unit =
     {
@@ -563,11 +571,11 @@ private [parsley] object Benchmark
         //val p = ParsleyBench.chain
         //val input = "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"
         //val exec = runParserFastUnsafe _
-        val (filename, p, exec, iters) = benchmarks(8)
+        val (filename, p, exec, iters) = benchmarks(13)
         val input = read(filename)
         val start = System.currentTimeMillis()
         println(exec(p, input))
-        for (_ <- 0 to iters) runParserFastUnsafe(ParsleyBench.json, input)//exec(p, input)
+        for (_ <- 0 to iters) exec(p, input)
         println(System.currentTimeMillis() - start)
     }
 }
