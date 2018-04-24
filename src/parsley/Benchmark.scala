@@ -337,13 +337,38 @@ private [parsley] object ParsleyBench
     }
 }
 
-/*private [parsley] object BenchParser extends scala.util.parsing.combinator.Parsers
+private [parsley] object PfS
+{
+    import parsec.Parser
+    import parsec._
+    import parsec.ParsecE._
+    def json: Parser[Any] =
+    {
+        val jsontoks = LanguageDef[String, Unit, Default]("", "", "", false, empty, empty, empty, empty, Nil, Nil, true, parsec.Char.whitespace)
+        val tok = new parsec.TokenParser[String, Unit, Default](jsontoks)
+        lazy val obj: Parser[Map[String, Any]] = tok.braces(tok.commaSep(lift2((x: String) => (y: Any) => (x, y), tok.lexeme(tok.stringLiteral), tok.colon *> value)).map(_.toMap))
+        lazy val array: Parser[Any] = tok.brackets(tok.commaSep(value))
+        lazy val value: Parser[Any] =
+            (tok.lexeme(tok.stringLiteral)
+             <|> tok.symbol("true")
+             <|> tok.symbol("false")
+             <|> array
+             <|> tryParse(tok.float)
+             <|> tok.integer
+             <|> obj)
+        tok.whiteSpace *> (obj <|> array) <* parsec.Combinator.eof
+    }
+    def parseJson(s: String) = parsec.runParser(json, (), "", StringStream(s), 1, 1)
+}
+
+private [parsley] object BenchParser extends scala.util.parsing.combinator.Parsers
 {
     import scala.util.parsing.input.{NoPosition, Reader}
     override type Elem = Char
     private val elem: Parser[Int] = accept("1", {case '1' => '1'.toInt})
     private val op: Parser[(Int, Int) => Int] = accept("+", {case '+' => _ + _})
     val bench = chainl1(elem, op)
+    val json = scala.util.parsing.json.JSON
 
     private class BenchReader(tokens: String) extends Reader[Elem]
     {
@@ -354,7 +379,7 @@ private [parsley] object ParsleyBench
     }
 
     def apply(input: String) = bench(new BenchReader(input))
-}*/
+}
 
 /*
 // TODO: Test out https://github.com/djspiewak/parseback
@@ -437,19 +462,13 @@ private [parsley] object Native
 private [parsley] object FastParser
 {
     import fastparse.all._
-    //import fastparse.WhitespaceApi
     type Parser[A] = fastparse.all.Parser[A]
-    /*val x = P("1").!.map(_(0).toInt)
+    val x = P("1").!.map(_(0).toInt)
     val y = P("+").!.map(_ => (x: Int) => (y: Int) => x + y)
     def chainlf[A](p: Parser[A], op: Parser[A => A => A]): Parser[A] =
     {
-        for (x <- p;
-             fs <- (for (f <- op;
-                         y <- p)
-                 yield ((x: A) => f(x)(y))).rep)
-            yield fs.foldLeft(x)((y, f) => f(y))
-        //val ops = (op ~ p).map{case (f, x) => (y: A) => f(y)(x)}
-        //(p ~ ops.rep).map{case (x, (xs: Seq[A=>A])) => xs.foldLeft(x)((y, f) => f(y))}
+        val ops = (op ~ p).map{case (f, x) => (y: A) => f(y)(x)}
+        (p ~ ops.rep).map{case (x, (xs: Seq[A=>A])) => xs.foldLeft(x)((y, f) => f(y))}
     }
     val z = chainlf(x, y)
     def repeat[A](p: Parser[A], n: Int): Parser[A] =
@@ -457,7 +476,7 @@ private [parsley] object FastParser
         if (n > 0) for (_ <- p; x <- repeat(p, n-1)) yield x
         else p
     }
-    val big = repeat(P("1"), 5000)*/
+    val big = repeat(P("1"), 5000)
 
     trait BrainFuckOp
     case object RightPointer extends BrainFuckOp
@@ -485,36 +504,9 @@ private [parsley] object FastParser
            | whitespaceBF.map(_ => None)).rep.map(_.flatten.toList)
         bf ~ End
     }
-
-    /*val White = WhitespaceApi.Wrapper {
-        import fastparse.all._
-        NoTrace(" ".rep)
-    }
-
-    import White._
-    import fastparse.noApi._
-
-    lazy val ops: Parser[BrainFuckOp] =
-        CharIn("<>+-.,").!.map {
-            case "<" => LeftPointer
-            case ">" => RightPointer
-            case "+" => Increment
-            case "-" => Decrement
-            case "." => Output
-            case "," => Input
-        }.opaque("operators(<>+-.,)")
-
-    lazy val loop: Parser[List[BrainFuckOp]] =
-        P("[".opaque("Opening bracket '['") ~/
-            (expr | PassWith(Nil)).opaque("expression") ~ // [] is ok
-            "]".opaque("']' Closing bracket"))
-            .map { l => Loop(l.toList) :: Nil }
-
-    lazy val expr = (loop | ops.rep(1)).rep.map(_.flatten.toList) // empty should fail
-
-    lazy val parser: Parser[List[BrainFuckOp]] = Start ~ expr ~ End*/
 }
 
+// From the fastparse blog - straight from the horses mouth
 object FastParseJson
 {
     import fastparse.all._
@@ -524,20 +516,42 @@ object FastParseJson
     private val fractional    = P( "." ~ digits )
     private val integral      = P( "0" | CharIn('1' to '9') ~ digits.? )
 
-    private val number = P( CharIn("+-").? ~ integral ~ fractional.? ~ exponent.? ).!.map(_.toDouble)
+    private val number        = P( CharIn("+-").? ~ integral ~ fractional.? ~ exponent.? ).!.map(_.toDouble)
     private val `null`        = P( "null" ).!
     private val `false`       = P( "false" ).!
     private val `true`        = P( "true" ).!
     private val hexDigit      = P( CharIn('0'to'9', 'a'to'f', 'A'to'F') )
     private val unicodeEscape = P( "u" ~ hexDigit ~ hexDigit ~ hexDigit ~ hexDigit )
     private val escape        = P( "\\" ~ (CharIn("\"/\\bfnrt") | unicodeEscape) )
-    private val strChars = P( CharsWhile(!"\"\\".contains(_: Char)) )
-    private val string = P( space ~ "\"" ~/ (strChars | escape).rep.! ~ "\"")
-    private val array = P( "[" ~/ jsonExpr.rep(sep=",".~/) ~ space ~ "]").map(_.toList)
-    private val pair = P( string ~/ ":" ~/ jsonExpr )
-    private val obj = P( "{" ~/ pair.rep(sep=",".~/) ~ space ~ "}").map(_.toMap)
+    private val strChars      = P( CharsWhile(!"\"\\".contains(_: Char)) )
+    private val string        = P( space ~ "\"" ~/ (strChars | escape).rep.! ~ "\"")
+    private val array         = P( "[" ~/ jsonExpr.rep(sep=",".~/) ~ space ~ "]").map(_.toList)
+    private val pair          = P( string ~/ ":" ~/ jsonExpr )
+    private val obj           = P( "{" ~/ pair.rep(sep=",".~/) ~ space ~ "}").map(_.toMap)
 
     lazy val jsonExpr: P[Any] = P(space ~ (obj | array | string | `true` | `false` | `null` | number) ~ space)
+}
+
+object Atto
+{
+    import atto.parser._
+    import atto.parser.combinator._
+    import atto.parser.text._
+    import atto.parser.character._
+    import atto.syntax.parser._
+    type Parser[A] = atto.Parser[A]
+    private lazy val num = token(choice(attempt(numeric.float).map(x => x: Any), numeric.int.map(x => x: Any)))
+    private lazy val `null` = token(string("null")).asInstanceOf[Parser[Any]]
+    private lazy val `true` = token(string("true")).asInstanceOf[Parser[Any]]
+    private lazy val `false` = token(string("false")).asInstanceOf[Parser[Any]]
+    private lazy val value: Parser[Any] = choice(`null`, `true`, `false`, num, token(stringLiteral).asInstanceOf[Parser[Any]], array, obj)
+    private lazy val obj = token(char('{')) ~> sepBy(token(stringLiteral) ~ value, token(char(','))).map(_.toMap.asInstanceOf[Any]) <~ token(char('}'))
+    private lazy val array = token(char('[')) ~> sepBy(value, token(char(','))).asInstanceOf[Parser[Any]] <~ token(char(']'))
+    lazy val json: Parser[Any] = choice(obj, array) <~ endOfInput
+    def parseJson(input: String): Any =
+    {
+        json.parseOnly(input)
+    }
 }
 
 private [parsley] object Benchmark
@@ -575,7 +589,9 @@ private [parsley] object Benchmark
         val input = read(filename)
         val start = System.currentTimeMillis()
         println(exec(p, input))
-        for (_ <- 0 to iters) exec(p, input)
+        //println(BenchParser.json.parseFull(input))
+        println(PfS.parseJson(input))
+        for (_ <- 0 to iters) /*PfS.parseJson(input)*/ exec(p, input)
         println(System.currentTimeMillis() - start)
     }
 }
