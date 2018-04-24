@@ -78,31 +78,31 @@ class ExpressionParserTests extends ParsleyTest
 
     "expression parsers" should "result in correct precedence" in
     {
-        val expr = new ExpressionParser[Int](List(Infixes(List('*' #> (_*_)), AssocLeft),
-                                                  Infixes(List('+' #> (_+_)), AssocLeft)), digit.map(_.asDigit))
+        val expr = new ExpressionParser[Int](List(Infixes[Int](List('*' #> (_*_)), AssocLeft),
+                                                  Infixes[Int](List('+' #> (_+_)), AssocLeft)), digit.map(_.asDigit))
         runParser(expr.expr, "1+2*3+4") should be (Success(11))
         runParser(expr.expr, "1*2+3*4") should be (Success(14))
     }
     they should "work for multiple operators at the same level" in
     {
-        val expr = new ExpressionParser[Int](List(Infixes(List('+' #> (_+_), '-' #> (_-_)), AssocLeft)), digit.map(_.asDigit))
+        val expr = new ExpressionParser[Int](List(Infixes[Int](List('+' #> (_+_), '-' #> (_-_)), AssocLeft)), digit.map(_.asDigit))
         runParser(expr.expr, "1+2-3+4") should be (Success(4))
         runParser(expr.expr, "1-2+3-4") should be (Success(-2))
     }
     they should "work for mixed associativity operators" in
     {
-        val expr = new ExpressionParser[Int](List(Infixes(List('*' #> (_*_)), AssocLeft),
-                                                  Infixes(List('+' #> (_+_)), AssocRight)), digit.map(_.asDigit))
+        val expr = new ExpressionParser[Int](List(Infixes[Int](List('*' #> (_*_)), AssocLeft),
+                                                  Infixes[Int](List('+' #> (_+_)), AssocRight)), digit.map(_.asDigit))
         runParser(expr.expr, "1+2*3+4") should be (Success(11))
         runParser(expr.expr, "1*2+3*4") should be (Success(14))
     }
     they should "parse mathematical expressions" in
     {
         lazy val expr = new ExpressionParser[Int](
-            List(Prefixes(List('-' #> (x => -x))),
-                 Infixes(List('/' #> (_/_)), AssocLeft),
-                 Infixes(List('*' #> (_*_)), AssocLeft),
-                 Infixes(List('+' #> (_+_), '-' #> (_-_)), AssocLeft)), atom)
+            List(Prefixes[Int](List('-' #> (x => -x))),
+                 Infixes[Int](List('/' #> (_/_)), AssocLeft),
+                 Infixes[Int](List('*' #> (_*_)), AssocLeft),
+                 Infixes[Int](List('+' #> (_+_), '-' #> (_-_)), AssocLeft)), atom)
         lazy val atom: Parsley[Int] = digit.map(_.asDigit) <|> ('(' *> expr.expr <* ')')
         runParser(expr.expr, "(2+3)*8") should be (Success(40))
         runParser(expr.expr, "-3+4") should be (Success(1))
