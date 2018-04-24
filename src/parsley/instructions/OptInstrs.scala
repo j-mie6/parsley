@@ -234,7 +234,7 @@ private [parsley] final class AlwaysRecoverWith[A](x: A) extends Instr
             ctx.inc()
         }
     }
-    override def toString: String = s"Recover'($x)"
+    override def toString: String = s"AlwaysRecover($x)"
 }
 
 private [parsley] final class JumpTable(prefixes: List[Char], labels: List[Int], private [this] var default: Int, _expecteds: List[UnsafeOption[String]]) extends Instr
