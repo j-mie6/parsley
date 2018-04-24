@@ -299,7 +299,6 @@ private [parsley] object ParsleyBench
                 Prefixes(List(tok.operator("--") #> JSDec, tok.operator("++") #> JSInc,
                               tok.operator("-") #> JSNeg, tok.operator("+") #> JSPlus,
                               tok.operator("~") #> JSBitNeg, tok.operator("!") #> JSNot))), memOrCon).expr
-        // TODO: There must be a better way to do this...
         lazy val condExpr = lift2((c: JSExpr_, o: Option[(JSExpr_, JSExpr_)]) => o match
         {
             case Some((t, e)) => JSCond(c, t, e)
@@ -307,25 +306,26 @@ private [parsley] object ParsleyBench
         }, _expr, option(tok.symbol('?') *> asgn <~> (tok.symbol(':') *> asgn)))
         lazy val asgn: Parsley[JSExpr_] = chainl1(condExpr, tok.symbol('=') #> JSAsgn)
         lazy val expr: Parsley[JSExpr] = tok.commaSep1(+asgn)
-        val variable = lift2(JSVar, tok.identifier, option(tok.symbol('=') *> asgn))
-        val varsOrExprs = tok.keyword("var") *> tok.commaSep1(variable).map(Left(_)) <|> expr.map(Right(_))
+        val optExpr = +option(expr)
+        val parensExpr = +tok.parens(expr)
+        val variable = lift2(JSVar, tok.identifier, option(tok.symbol('=') *> +asgn))
+        val varsOrExprs = +(tok.keyword("var") *> tok.commaSep1(variable).map(Left(_)) <|> expr.map(Right(_)))
         lazy val stmt: Parsley[JSStm] =
             (tok.semi #> JSSemi
-         <|> tok.keyword("if") *> lift3(JSIf, tok.parens(expr), stmt, option(tok.keyword("else") *> stmt))
-         <|> tok.keyword("while") *> lift2(JSWhile, tok.parens(expr), stmt)
+         <|> tok.keyword("if") *> lift3(JSIf, parensExpr, stmt, option(tok.keyword("else") *> stmt))
+         <|> tok.keyword("while") *> lift2(JSWhile, parensExpr, stmt)
          <|> (tok.keyword("for") *> tok.parens(lift2(JSForIn(_, _), varsOrExprs, tok.keyword("in") *> expr)
-                                           <\> lift3(JSFor(_, _, _), option(varsOrExprs), option(expr), option(expr))) <*> stmt)
+                                           <\> lift3(JSFor(_, _, _), option(varsOrExprs), optExpr, optExpr)) <*> stmt)
          <|> tok.keyword("break") #> JSBreak
          <|> tok.keyword("continue") #> JSContinue
-         <|> tok.keyword("with") *> lift2(JSWith, tok.parens(expr), stmt)
-         <|> tok.keyword("return") *> option(expr).map(JSReturn)
+         <|> tok.keyword("with") *> lift2(JSWith, parensExpr, stmt)
+         <|> tok.keyword("return") *> optExpr.map(JSReturn)
          <|> compound.map(JSBlock)
          <|> varsOrExprs.map(JSNaked))
         lazy val compound = tok.braces(many(stmt))
         val element = tok.keyword("function") *> lift3(JSFunction, tok.identifier, tok.parens(tok.commaSep(tok.identifier)), compound) <|> stmt
         tok.whiteSpace *> many(element) <* eof
     }
-
     println(whileLang.pretty)
 }
 
