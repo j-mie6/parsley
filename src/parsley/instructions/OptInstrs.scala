@@ -170,6 +170,32 @@ private [parsley] final class StringTokFastPerform(s: String, f: String => Any, 
     override def toString: String = s"StrPerform($s, ?)"
 }
 
+private [parsley] final class SatisfyExchange[A](f: Char => Boolean, x: A, expected: UnsafeOption[String]) extends Instr
+{
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.moreInput)
+        {
+            val c = ctx.nextChar
+            if (f(ctx.nextChar))
+            {
+                ctx.stack.push(x)
+                ctx.offset += 1
+                (c: @switch) match
+                {
+                    case '\n' => ctx.line += 1; ctx.col = 1
+                    case '\t' => ctx.col += 4 - ((ctx.col - 1) & 3)
+                    case _ => ctx.col += 1
+                }
+                ctx.inc()
+            }
+            else ctx.fail(expected)
+        }
+        else ctx.fail(expected)
+    }
+    override def toString: String = "SatEx(?)"
+}
+
 private [parsley] final class JumpGoodAttempt(var label: Int) extends JumpInstr
 {
     override def apply(ctx: Context): Unit =

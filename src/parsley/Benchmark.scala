@@ -442,10 +442,12 @@ private [parsley] object Native
     }
 }
 
-/*private [parsley] object FastParser
+private [parsley] object FastParser
 {
-    import fastparse.all._
-    val x = P("1").!.map(_(0).toInt)
+    //import fastparse.all._
+    import fastparse.WhitespaceApi
+    type Parser[A] = fastparse.all.Parser[A]
+    /*val x = P("1").!.map(_(0).toInt)
     val y = P("+").!.map(_ => (x: Int) => (y: Int) => x + y)
     def chainlf[A](p: Parser[A], op: Parser[A => A => A]): Parser[A] =
     {
@@ -463,7 +465,7 @@ private [parsley] object Native
         if (n > 0) for (_ <- p; x <- repeat(p, n-1)) yield x
         else p
     }
-    val big = repeat(P("1"), 5000)
+    val big = repeat(P("1"), 5000)*/
 
     trait BrainFuckOp
     case object RightPointer extends BrainFuckOp
@@ -476,7 +478,7 @@ private [parsley] object Native
 
     // This is an optimisation for the logic inside. Since this is the last in a chain of ors
     // it doesn't need to account for the other symbols (just needs to not accidentally consume ])
-    private val whitespaceBF = P(CharPred(_ != ']'))
+    /*private val whitespaceBF = P(CharPred(_ != ']'))
 
     def brainfuck: Parser[List[BrainFuckOp]] =
     {
@@ -490,17 +492,46 @@ private [parsley] object Native
            | P("[" ~ bf ~ "]").map(p => Some(Loop(p)))
            | whitespaceBF.map(_ => None)).rep.map(_.flatten.toList)
         bf ~ End
+    }*/
+
+    val White = WhitespaceApi.Wrapper {
+        import fastparse.all._
+        NoTrace(" ".rep)
     }
-}*/
+
+    import White._
+    import fastparse.noApi._
+
+    lazy val ops: Parser[BrainFuckOp] =
+        CharIn("<>+-.,").!.map {
+            case "<" => LeftPointer
+            case ">" => RightPointer
+            case "+" => Increment
+            case "-" => Decrement
+            case "." => Output
+            case "," => Input
+        }.opaque("operators(<>+-.,)")
+
+    lazy val loop: Parser[List[BrainFuckOp]] =
+        P("[".opaque("Opening bracket '['") ~/
+            (expr | PassWith(Nil)).opaque("expression") ~ // [] is ok
+            "]".opaque("']' Closing bracket"))
+            .map { l => Loop(l.toList) :: Nil }
+
+    lazy val expr = (loop | ops.rep(1)).rep.map(_.flatten.toList) // empty should fail
+
+    lazy val parser: Parser[List[BrainFuckOp]] = Start ~ expr ~ End
+}
 
 private [parsley] object Benchmark
 {
     def main(args: Array[String]): Unit =
     {
         //Console.in.read()
-        def p = ParsleyBench.nand
+        val p = ParsleyBench.nand//brainfuck
         val input1 = "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"
         val input2 = "[+++++++<[<<>>>>]..hahah this is brainfuck.,,,,,-[---]-++]"
+        //val input2 = "++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++."
         val input3 =
             """function index1(v1[8], v2[8], i : ret[8]) {
               |    if i {
@@ -715,12 +746,13 @@ private [parsley] object Benchmark
         val input = input3
         //println(runParser(p, "aaaab"))
         //println(runParser(p, "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"))
-        println(runParserFastUnsafe(p, input))
+        //println(runParserFastUnsafe(p, input))
         val start = System.currentTimeMillis()
-        //println(runParser(p, input))
+        println(runParser(p, input))
+        //println(p.parse(input))
         for (_ <- 0 to 100000)
             runParserFastUnsafe(p, input)
-            //p(input)
+            // p(input)
             //p.parse(input)
         println(System.currentTimeMillis() - start)
     }

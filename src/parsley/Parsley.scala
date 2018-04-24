@@ -875,6 +875,7 @@ private [parsley] object DeepEmbedding
             {
                 case (ct@CharTok(c)) => instrs += instructions.CharTokFastPerform[Char, B](c, _ => x, ct.expected); cont
                 case (st@StringTok(s)) => instrs += new instructions.StringTokFastPerform(s, _ => x, st.expected); cont
+                case (st@Satisfy(f)) => instrs += new instructions.SatisfyExchange(f, x, st.expected); cont
                 case u =>
                     new Suspended(u.codeGen
                     {
@@ -950,6 +951,7 @@ private [parsley] object DeepEmbedding
         {
             case (Pure(x), ct@CharTok(c)) => instrs += instructions.CharTokFastPerform[Char, A](c, _ => x, ct.expected); cont
             case (Pure(x), st@StringTok(s)) => instrs += new instructions.StringTokFastPerform(s, _ => x, st.expected); cont
+            case (Pure(x), st@Satisfy(f)) => instrs += new instructions.SatisfyExchange(f, x, st.expected); cont
             case (Pure(x), v) =>
                 new Suspended(v.codeGen
                 {
@@ -1850,7 +1852,11 @@ private [parsley] object DeepEmbedding
     }
     private [DeepEmbedding] object StringTok
     {
-       def unapply(self: StringTok): Option[String] = Some(self.s)
+        def unapply(self: StringTok): Option[String] = Some(self.s)
+    }
+    private [DeepEmbedding] object Satisfy
+    {
+        def unapply(self: Satisfy): Option[Char => Boolean] = Some(self.f)
     }
     private [DeepEmbedding] object Lift2
     {
@@ -2035,16 +2041,36 @@ private [parsley] object DeepEmbedding
         import parsley.Char._
         val q: Parsley[Char] = +('a' <|> 'b')
         println((q <|> q <|> q <|> q).pretty)
-        val chain = //chainl1('1' <#> (_.toInt), '+' #> ((x: Int, y: Int) => x + y))
-           chainPost('1' <#> (_.toInt), "+1" #> ((f: Int => Int => Int) => (y_ : Int) => (x_ : Int) => f(x_)(y_))((x: Int) => (y: Int) => x + y).compose((c: Char) => c.toInt)('1'))
+        def chainl1[A](p: Parsley[A], op: Parsley[A => A => A]) =
+        {
+            //lazy val rest: Parsley[A => A] = lift2((f: A => A, g: A => A) => f.andThen(g), lift2((f: A => A => A, x: A) => (y: A) => f(y)(x), op, p), rest) </> identity[A]
+            //p <**> rest
+            def rest(x: A): Parsley[A] = join(for (f <- op; y <- p) yield rest(f(x)(y))) </> x
+            p.flatMap(rest)
+        }
+        def chainr1[A](p: Parsley[A], op: Parsley[A => A => A]): Parsley[A] =
+        {
+            //lazy val rest: Parsley[A] = p <**> (lift2((f: A => A => A, x: A) => (y: A) => f(y)(x), op, rest) </> identity[A])
+            //rest
+            def rest(x: A): Parsley[A] = (for (f <- op; y <- chainr1(p, op)) yield f(x)(y)) </> x
+            p.flatMap(rest)
+        }
+        def chainPost[A](p: Parsley[A], op: Parsley[A => A]) = lift2((x: A, xs: List[A => A]) => xs.foldLeft(x)((x, f) => f(x)), p, many(op))
+        def chainPre[A](p: Parsley[A], op: Parsley[A => A]) = lift2((xs: List[A => A], x: A) => xs.foldRight(x)((f, x) => f(x)), many(op), p)
+        val chain =
+            //chainl1[Int]('1' <#> (_.toInt), '+' #> (_ + _))
+            //chainr1[Int]('1' <#> (_.toInt), '+' #> (_ + _))
+            //chainPost[Int]('1' <#> (_.toInt), ((f: Int => Int => Int) => (x: Int) => (y: Int) => f(y)(x)) <#> ('+' #> ((x: Int) => (y: Int) => x + y)) <*> ('1' <#> (_.toInt)))
+            //chainPre[Int]('1' <#> (_.toInt), attempt('1' <#> (_.toInt) <**> ('+' #> ((x: Int) => (y: Int) => x + y))))
+            chainl1[Int]('1' <#> (_.toInt), '+' #> (x => y => x + y))
         val p: Parsley[Char] = satisfy(_ == 'a') <|> satisfy(_ == 'b')
         println(p.pretty)
         val start = System.currentTimeMillis
-        for (_ <- 0 to 10000000)
+        for (_ <- 0 to 1000000)
         {
             //(q <|> q <|> q <|> q).instrs
-            //runParserFastUnsafe(chain, "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1")
-            runParserFastUnsafe(p, "b")
+            runParserFastUnsafe(chain, "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1")
+            //runParserFastUnsafe(p, "b")
         }
         println(System.currentTimeMillis - start)
         println(chain.pretty)
