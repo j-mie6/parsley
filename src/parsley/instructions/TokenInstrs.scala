@@ -124,7 +124,11 @@ private [parsley] final class TokenWhiteSpace(ws: TokenSet, start: String, end: 
 {
     override def apply(ctx: Context): Unit =
     {
-        if (noLine && noMulti) ctx.inc()
+        if (noLine && noMulti)
+        {
+            spaces(ctx)
+            ctx.inc()
+        }
         else if (noLine)
         {
             spaces(ctx)
@@ -381,6 +385,7 @@ private [parsley] final class TokenFloat(_expected: UnsafeOption[String]) extend
                 else failed = true
             case _ => failed = true
         }
+        else failed = true
         if (failed) ctx.fail(expected)
         else ctx.inc()
     }

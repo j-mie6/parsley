@@ -1,8 +1,12 @@
 package parsley
 
+import java.io.IOException
+
 import parsley.ExpressionParser._
 
 import scala.annotation.tailrec
+import scala.io.Source
+import scala.util.Try
 
 private [parsley] object ParsleyBench
 {
@@ -260,44 +264,26 @@ private [parsley] object ParsleyBench
                 /*Case sensitive*/    true,
                 /*Whitespace*/        Predicate(Char.isWhitespace))
         val tok = new TokenParser(jslang)
-        /*new Constructor
-          delete MemberExpression
-
-Constructor:
-          this . ConstructorCall
-          ConstructorCall
-
-ConstructorCall:
-          Identifier
-          Identifier ( ArgumentListOpt )
-          Identifier . ConstructorCall
-
-MemberExpression:
-          PrimaryExpression
-          PrimaryExpression . MemberExpression
-          PrimaryExpression [ Expression ]
-          PrimaryExpression ( ArgumentListOpt )
-
-ArgumentListOpt:
-          empty
-          ArgumentList
-
-ArgumentList:
-          AssignmentExpression
-          AssignmentExpression , ArgumentList
-
-PrimaryExpression:
-          ( Expression )
-          Identifier
-          IntegerLiteral
-          FloatingPointLiteral
-          StringLiteral
-          false
-          true
-          null
-          this*/
-        lazy val member: Parsley[JSExpr_] = ???
-        val _expr = new ExpressionParser(
+        lazy val primaryExpr: Parsley[JSAtom] = tok.parens(expr).map(JSParens) <|> tok.identifier.map(JSId) <|> tok.naturalOrFloat.map
+        {
+            case Left(x) => JSInt(x)
+            case Right(f) => JSFloat(f)
+        } <|> tok.stringLiteral.map(JSString) <|> tok.keyword("true") #> JSTrue <|> tok.keyword("false") #> JSFalse <|> tok.keyword("null") #> JSNull <|> tok.keyword("this") #> JSThis
+        lazy val member: Parsley[JSMember] = primaryExpr <**> (
+            tok.parens(tok.commaSep(asgn)).map(args => (fn: JSAtom) => JSCall(fn, args))
+        <|> tok.brackets(expr).map(idx => (obj: JSAtom) => JSIndex(obj, idx))
+        <|> tok.dot *> member.map(attr => (obj: JSAtom) => JSAccess(obj, attr))
+        </> JSPrimExp)
+        lazy val conCall: Parsley[JSCons] = tok.identifier <**>
+            (tok.dot *> conCall.map(con => (id: String) => JSQual(id, con))
+         <|> tok.parens(tok.commaSep(asgn)).map(args => (id: String) => JSConCall(id, args))
+         </> (JSConCall(_, Nil)))
+        lazy val con = lift2(JSQual, tok.keyword("this") #> "this", tok.dot *> conCall) <|> conCall
+        lazy val memOrCon =
+            (tok.keyword("delete") *> member.map(JSDel)
+         <|> tok.keyword("new") *> con
+         <|> member)
+        lazy val _expr = new ExpressionParser(
             List(Infixes(List(tok.operator("||") #> JSOr), AssocLeft),
                  Infixes(List(tok.operator("&&") #> JSAnd), AssocLeft),
                  Infixes(List(tok.operator("|") #> JSBitOr), AssocLeft),
@@ -310,11 +296,9 @@ PrimaryExpression:
                  Infixes(List(tok.operator("+") #> JSAdd, tok.operator("-") #> JSSub), AssocLeft),
                  Infixes(List(tok.operator("*") #> JSMul, tok.operator("/") #> JSDiv,
                               tok.operator("%") #> JSMod), AssocLeft),
-               Postfixes(List(tok.operator("++") #> JSInc, tok.operator("--") #> JSDec)),
                 Prefixes(List(tok.operator("--") #> JSDec, tok.operator("++") #> JSInc,
                               tok.operator("-") #> JSNeg, tok.operator("+") #> JSPlus,
-                              tok.operator("~") #> JSBitNeg, tok.operator("!") #> JSNot))), member
-        ).expr
+                              tok.operator("~") #> JSBitNeg, tok.operator("!") #> JSNot))), memOrCon).expr
         // TODO: There must be a better way to do this...
         lazy val condExpr = lift2((c: JSExpr_, o: Option[(JSExpr_, JSExpr_)]) => o match
         {
@@ -322,8 +306,8 @@ PrimaryExpression:
             case None => c
         }, _expr, option(tok.symbol('?') *> asgn <~> (tok.symbol(':') *> asgn)))
         lazy val asgn: Parsley[JSExpr_] = chainl1(condExpr, tok.symbol('=') #> JSAsgn)
+        lazy val expr: Parsley[JSExpr] = tok.commaSep1(+asgn)
         val variable = lift2(JSVar, tok.identifier, option(tok.symbol('=') *> asgn))
-        val expr: Parsley[JSExpr] = tok.commaSep1(+asgn)
         val varsOrExprs = tok.keyword("var") *> tok.commaSep1(variable).map(Left(_)) <|> expr.map(Right(_))
         lazy val stmt: Parsley[JSStm] =
             (tok.semi #> JSSemi
@@ -444,8 +428,8 @@ private [parsley] object Native
 
 private [parsley] object FastParser
 {
-    //import fastparse.all._
-    import fastparse.WhitespaceApi
+    import fastparse.all._
+    //import fastparse.WhitespaceApi
     type Parser[A] = fastparse.all.Parser[A]
     /*val x = P("1").!.map(_(0).toInt)
     val y = P("+").!.map(_ => (x: Int) => (y: Int) => x + y)
@@ -478,7 +462,7 @@ private [parsley] object FastParser
 
     // This is an optimisation for the logic inside. Since this is the last in a chain of ors
     // it doesn't need to account for the other symbols (just needs to not accidentally consume ])
-    /*private val whitespaceBF = P(CharPred(_ != ']'))
+    private val whitespaceBF = P(CharPred(_ != ']'))
 
     def brainfuck: Parser[List[BrainFuckOp]] =
     {
@@ -492,9 +476,9 @@ private [parsley] object FastParser
            | P("[" ~ bf ~ "]").map(p => Some(Loop(p)))
            | whitespaceBF.map(_ => None)).rep.map(_.flatten.toList)
         bf ~ End
-    }*/
+    }
 
-    val White = WhitespaceApi.Wrapper {
+    /*val White = WhitespaceApi.Wrapper {
         import fastparse.all._
         NoTrace(" ".rep)
     }
@@ -520,240 +504,35 @@ private [parsley] object FastParser
 
     lazy val expr = (loop | ops.rep(1)).rep.map(_.flatten.toList) // empty should fail
 
-    lazy val parser: Parser[List[BrainFuckOp]] = Start ~ expr ~ End
+    lazy val parser: Parser[List[BrainFuckOp]] = Start ~ expr ~ End*/
 }
 
 private [parsley] object Benchmark
 {
+    def read(filename: String) = Try(Source.fromFile(filename).getLines().mkString("\n") + "\n").getOrElse("")
+    def parseParsley(p: Any, s: String): Any = runParserFastUnsafe(p.asInstanceOf[Parsley[_]], s)
+    def parseFastParse(p: Any, s: String): Any = p.asInstanceOf[fastparse.all.Parser[_]].parse(s)
+
+    val benchmarks: Array[(String, Any, (Any, String) => Any, Int)] =
+        Array(("inputs/helloworld_golfed.bf", ParsleyBench.brainfuck, parseParsley, 1000000),
+              ("inputs/helloworld_golfed.bf", FastParser.brainfuck, parseFastParse, 1000000),
+              ("inputs/helloworld.bf", ParsleyBench.brainfuck, parseParsley, 100000),
+              ("inputs/helloworld.bf", FastParser.brainfuck, parseFastParse, 100000),
+              ("inputs/arrays.nand", ParsleyBench.nand, parseParsley, 100000),
+              ("inputs/test.while", ParsleyBench.whileLang, parseParsley, 100000),
+              ("inputs/fibonacci.js", ParsleyBench.javascript, parseParsley, 100000))
+
     def main(args: Array[String]): Unit =
     {
         //Console.in.read()
-        val p = ParsleyBench.nand//brainfuck
-        val input1 = "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"
-        val input2 = "[+++++++<[<<>>>>]..hahah this is brainfuck.,,,,,-[---]-++]"
-        //val input2 = "++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++."
-        val input3 =
-            """function index1(v1[8], v2[8], i : ret[8]) {
-              |    if i {
-              |        ret = v2;
-              |    } else {
-              |        ret = v1;
-              |    }
-              |}
-              |
-              |function index2(v1[16], v2[16], i1, i2 : ret[8]) {
-              |    if i1 {
-              |        ret = index1(v2, i2);
-              |    } else {
-              |        ret = index1(v1, i2);
-              |    }
-              |}
-              |
-              |function index3(v1[32], v2[32], i1, i2[2] : ret[8]) {
-              |    if i1 {
-              |        ret = index2(v2, i2);
-              |    } else {
-              |        ret = index2(v1, i2);
-              |    }
-              |}
-              |
-              |function index4(v1[64], v2[64], i1, i2[3] : ret[8]) {
-              |    if i1 {
-              |        ret = index3(v2, i2);
-              |    } else {
-              |        ret = index3(v1, i2);
-              |    }
-              |}
-              |
-              |function index5(v1[128], v2[128], i1, i2[4] : ret[8]) {
-              |    if i1 {
-              |        ret = index4(v2, i2);
-              |    } else {
-              |        ret = index4(v1, i2);
-              |    }
-              |}
-              |
-              |function index6(v1[256], v2[256], i1, i2[5] : ret[8]) {
-              |    if i1 {
-              |        ret = index5(v2, i2);
-              |    } else {
-              |        ret = index5(v1, i2);
-              |    }
-              |}
-              |
-              |function index7(v1[512], v2[512], i1, i2[6] : ret[8]) {
-              |    if i1 {
-              |        ret = index6(v2, i2);
-              |    } else {
-              |        ret = index6(v1, i2);
-              |    }
-              |}
-              |
-              |function index8(v1[1024], v2[1024], i1, i2[7] : ret[8]) {
-              |    if i1 {
-              |        ret = index7(v2, i2);
-              |    } else {
-              |        ret = index7(v1, i2);
-              |    }
-              |}
-              |
-              |function setindex1(v1[8], v2[8], i, value[8] : ret[16]) {
-              |    if i {
-              |        ret = v1, value;
-              |    } else {
-              |        ret = value, v2;
-              |    }
-              |}
-              |
-              |function setindex2(v1[16], v2[16], i1, i2, value[8] : ret[32]) {
-              |    if i1 {
-              |        ret = v1, setindex1(v2, i2, value);
-              |    } else {
-              |        ret = setindex1(v1, i2, value), v2;
-              |    }
-              |}
-              |
-              |function setindex3(v1[32], v2[32], i1, i2[2], value[8] : ret[64]) {
-              |    if i1 {
-              |        ret = v1, setindex2(v2, i2, value);
-              |    } else {
-              |        ret = setindex2(v1, i2, value), v2;
-              |    }
-              |}
-              |
-              |function setindex4(v1[64], v2[64], i1, i2[3], value[8] : ret[128]) {
-              |    if i1 {
-              |        ret = v1, setindex3(v2, i2, value);
-              |    } else {
-              |        ret = setindex3(v1, i2, value), v2;
-              |    }
-              |}
-              |
-              |function setindex5(v1[128], v2[128], i1, i2[4], value[8] : ret[256]) {
-              |    if i1 {
-              |        ret = v1, setindex4(v2, i2, value);
-              |    } else {
-              |        ret = setindex4(v1, i2, value), v2;
-              |    }
-              |}
-              |
-              |function setindex6(v1[256], v2[256], i1, i2[5], value[8] : ret[512]) {
-              |    if i1 {
-              |        ret = v1, setindex5(v2, i2, value);
-              |    } else {
-              |        ret = setindex5(v1, i2, value), v2;
-              |    }
-              |}
-              |
-              |function setindex7(v1[512], v2[512], i1, i2[6], value[8] : ret[1024]) {
-              |    if i1 {
-              |        ret = v1, setindex6(v2, i2, value);
-              |    } else {
-              |        ret = setindex6(v1, i2, value), v2;
-              |    }
-              |}
-              |
-              |function setindex8(v1[1024], v2[1024], i1, i2[7], value[8] : ret[2048]) {
-              |    if i1 {
-              |        ret = v1, setindex7(v2, i2, value);
-              |    } else {
-              |        ret = setindex7(v1, i2, value), v2;
-              |    }
-              |}
-              |
-              |function not(in : out) {
-              |	out = in ! in;
-              |}
-              |
-              |function and(a, b : out) {
-              |	out = not(a ! b);
-              |}
-              |
-              |function or(a, b : out) {
-              |	out = not(a) ! not(b);
-              |}
-              |
-              |function xor(a, b : out) {
-              |    out = or(and(a, not(b)), and(not(a), b));
-              |}
-              |
-              |function eq(a, b : out) {
-              |	out = not(xor(a, b));
-              |}
-              |
-              |function add(a, b, cin : v, cout) {
-              |	v = xor(cin, xor(a, b));
-              |	cout = or(and(a, b), and(xor(a, b), cin));
-              |}
-              |
-              |function add8(a[8], b[8] : o[8]) {
-              |    var c = 0;
-              |    o[7], c = add(a[7], b[7], c);
-              |    o[6], c = add(a[6], b[6], c);
-              |    o[5], c = add(a[5], b[5], c);
-              |    o[4], c = add(a[4], b[4], c);
-              |    o[3], c = add(a[3], b[3], c);
-              |    o[2], c = add(a[2], b[2], c);
-              |    o[1], c = add(a[1], b[1], c);
-              |    o[0], c = add(a[0], b[0], c);
-              |}
-              |
-              |function sub8(a[8], b[8] : o[8]) {
-              |    o = add8(a, complement8(b));
-              |}
-              |
-              |function complement8(i[8] : o[8]) {
-              |    o = add8(
-              |        not(i[0]), not(i[1]), not(i[2]), not(i[3]),
-              |        not(i[4]), not(i[5]), not(i[6]), not(i[7]),
-              |        0, 0, 0, 0, 0, 0, 0, 1);
-              |}
-              |
-              |function equal8(a[8], b[8] : out) {
-              |    out = and(
-              |        and(and(eq(a[1], b[1]), eq(a[2], b[2])),
-              |            and(eq(a[3], b[3]), eq(a[4], b[4]))),
-              |        and(and(eq(a[5], b[5]), eq(a[6], b[6])),
-              |            and(eq(a[7], b[7]), eq(a[0], b[0]))));
-              |}
-              |
-              |function zero(: ret[2048]) {}
-              |
-              |function main()
-              |{
-              |    var index[8] = 0, 0, 0, 0, 0, 0, 0, 0;
-              |    var memory[2048] = zero();
-              |    while iogood() {
-              |        var v[8] = getc();
-              |        if not(equal8(v, 0, 0, 0, 0, 1, 0, 1, 0)) {
-              |            memory = setindex8(memory, index, v);
-              |            index = add8(index, 0, 0, 0, 0, 0, 0, 0, 1);
-              |        }
-              |    }
-              |    while not(equal8(index, 0, 0, 0, 0, 0, 0, 0, 0)) {
-              |        index = sub8(index, 0, 0, 0, 0, 0, 0, 0, 1);
-              |        putc(index8(memory, index));
-              |    }
-              |    endl();
-              |}""".stripMargin
-        val input4 =
-            """ifx := 10;
-              |while x <= 10 & true do
-              |  if y < 15 then skip; skip else y := 5;
-              |skip;
-              |while true do skip
-            """.stripMargin
-        val input = input3
-        //println(runParser(p, "aaaab"))
-        //println(runParser(p, "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"))
-        //println(runParserFastUnsafe(p, input))
+        //val p = ParsleyBench.chain
+        //val input = "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"
+        //val exec = runParserFastUnsafe _
+        val (filename, p, exec, iters) = benchmarks(6)
+        val input = read(filename)
         val start = System.currentTimeMillis()
-        println(runParser(p, input))
-        //println(p.parse(input))
-        for (_ <- 0 to 100000)
-            runParserFastUnsafe(p, input)
-            // p(input)
-            //p.parse(input)
+        println(exec(p, input))
+        for (_ <- 0 to iters) exec(p, input)
         println(System.currentTimeMillis() - start)
     }
 }

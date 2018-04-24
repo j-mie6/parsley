@@ -20,6 +20,7 @@ class ExpressionParser[A](table: List[OpList[A]], atom: =>Parsley[A])
             case AssocRight => chainr1(_, choice(ops))
         }
         case Prefixes(ops) => chainPre(_, choice(ops))
+        // FIXME: Postfix operators which are similar to binary ops may fail, how can we work around this?
         case Postfixes(ops) => chainPost(_, choice(ops))
     }
 

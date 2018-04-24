@@ -1,0 +1,5 @@
+ifx := 10;
+while x <= 10 & true do
+  if y < 15 then skip; skip else y := 5;
+skip;
+while true do skip
