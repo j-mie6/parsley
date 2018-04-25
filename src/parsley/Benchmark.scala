@@ -1,5 +1,6 @@
 package parsley
 
+import fastparse.WhitespaceApi
 import parsley.ExpressionParser._
 
 import scala.annotation.tailrec
@@ -224,6 +225,7 @@ private [parsley] object ParsleyBench
     case class JSConCall(v: String, args: List[JSExpr_]) extends JSCons
     trait JSAtom
     case class JSParens(expr: JSExpr) extends JSAtom
+    case class JSArray(expr: JSExpr) extends JSAtom
     case class JSId(v: String) extends JSAtom
     case class JSInt(n: Int) extends JSAtom
     case class JSFloat(f: Double) extends JSAtom
@@ -239,7 +241,7 @@ private [parsley] object ParsleyBench
             LanguageDef(
                 /*Comment start*/     "",
                 /*Comment end*/       "",
-                /*Line comment*/      "",
+                /*Line comment*/      "//",
                 /*Nested comments?*/  false,
                 /*Identifier start*/  Predicate(c => c.isLetter || c == '_'),
                 /*Identifier letter*/ Predicate(c => c.isLetterOrDigit || c == '_'),
@@ -256,7 +258,7 @@ private [parsley] object ParsleyBench
                 /*Case sensitive*/    true,
                 /*Whitespace*/        Predicate(Char.isWhitespace))
         val tok = new TokenParser(jslang)
-        lazy val primaryExpr: Parsley[JSAtom] = tok.parens(expr).map(JSParens) <|> tok.identifier.map(JSId) <|> tok.naturalOrFloat.map
+        lazy val primaryExpr: Parsley[JSAtom] = tok.parens(expr).map(JSParens) <|> tok.brackets(tok.commaSep(+asgn)).map(JSArray) <|> tok.identifier.map(JSId) <|> tok.naturalOrFloat.map
         {
             case Left(x) => JSInt(x)
             case Right(f) => JSFloat(f)
@@ -307,7 +309,7 @@ private [parsley] object ParsleyBench
          <|> tok.keyword("if") *> lift3(JSIf, parensExpr, stmt, option(tok.keyword("else") *> stmt))
          <|> tok.keyword("while") *> lift2(JSWhile, parensExpr, stmt)
          <|> (tok.keyword("for") *> tok.parens(lift2(JSForIn(_, _), varsOrExprs, tok.keyword("in") *> expr)
-                                           <\> lift3(JSFor(_, _, _), option(varsOrExprs), optExpr, optExpr)) <*> stmt)
+                                           <\> lift3(JSFor(_, _, _), option(varsOrExprs) <* tok.semi, optExpr <* tok.semi, optExpr)) <*> stmt)
          <|> tok.keyword("break") #> JSBreak
          <|> tok.keyword("continue") #> JSContinue
          <|> tok.keyword("with") *> lift2(JSWith, parensExpr, stmt)
@@ -506,8 +508,54 @@ private [parsley] object FastParser
     }
 }
 
+private [parsley] object FastParserWhite
+{
+    sealed trait NandExpr
+    case class NandNand(l: NandExpr, r: NandExpr) extends NandExpr
+    case class NandCall(f: String, args: List[NandExpr]) extends NandExpr
+    case class NandLit(c: Char) extends NandExpr
+    case class NandId(v: String, idx: Option[Int]) extends NandExpr
+    sealed trait NandStmt
+    case class NandFunc(name: String, args: (List[NandId], List[NandId]), block: NandBlock) extends NandStmt
+    case class NandIf(cond: NandExpr, block: NandBlock, elseBlock: Option[NandBlock]) extends NandStmt
+    case class NandWhile(cond: NandExpr, block: NandBlock) extends NandStmt
+    case class NandVar(idlist: List[NandId], exprlist: List[NandExpr]) extends NandStmt
+    case class NandNaked(expr: NandExpr) extends NandStmt
+    case class NandBlock(stmts: List[NandStmt])
+    val White = WhitespaceApi.Wrapper{
+        import fastparse.all._
+        val spaces = (CharsWhileIn(" \n\t\r") | ("//" ~ CharsWhile(_ != '\n'))).rep
+        NoTrace(spaces)
+    }
+    import fastparse.noApi._
+    import White._
+    type Parser[A] = fastparse.noApi.Parser[A]
+    val spaces = (CharsWhileIn(" \n\t\r") | ("//" ~ CharsWhile(_ != '\n'))).rep
+    val identifier = (CharPred(c => c.isLetter || c == '_') ~ CharsWhile(c => c.isLetterOrDigit || c == '_').?).!
+    def key(s: String) = s ~~ !CharPred(c => c.isLetterOrDigit || c == '_')
+
+    val index = P("[" ~ CharIn('0'to'9').rep(1).!.map(_.toInt) ~/ "]")
+    val variable = P((identifier ~ index.?).map(NandId.tupled))
+    val literal = P("0").map(_ => NandLit('0')) | P("1").map(_ => NandLit('1')) | ("'" ~/ CharPred(_.isValidChar).! ~/ "'").map(s => NandLit(s(0)))
+    val expr: Parser[NandExpr] = P(nandexpr.rep(sep="!".~/, min=1).map(_.reduce(NandNand)))
+    lazy val nandexpr = P(literal | funccall | variable)
+    lazy val funccall = P((identifier ~ "(" ~/ exprlist ~/ ")").map(NandCall.tupled))
+    lazy val exprlist = P(expr.rep(sep=",".~/).map(_.toList))
+    val exprlist1 = P(expr.rep(sep=",".~/, min=1).map(_.toList))
+    val varlist = P(variable.rep(sep=",".~/).map(_.toList))
+    val varlist1 = P(variable.rep(sep=",".~/, min=1).map(_.toList))
+    val funcparam = P(varlist ~ (":" ~/ varlist | Pass.map(_ => Nil)))
+    val varstmt = P((key("var").? ~ varlist1 ~ "=" ~/ exprlist1 ~/ ";").map(NandVar.tupled))
+    val ifstmt = P(key("if") ~/ (expr ~/ block ~/ (key("else") ~/ block).?).map(NandIf.tupled))
+    val whilestmt = P(key("while") ~/ (expr ~/ block).map(NandWhile.tupled))
+    val statement = P(ifstmt| whilestmt | varstmt | (expr.map(NandNaked) ~/ ";"))
+    lazy val block: Parser[NandBlock] = P("{" ~ statement.rep.map(stmts => NandBlock(stmts.toList)) ~ "}")
+    val funcdef = P(key("function") ~/ (identifier.! ~/ "(" ~/ funcparam ~/ ")" ~/ block).map(NandFunc.tupled))
+    val nand = spaces ~ funcdef.rep.map(_.toList) ~ spaces ~ End
+}
+
 // From the fastparse blog - straight from the horses mouth
-object FastParseJson
+private [parsley] object FastParseJson
 {
     import fastparse.all._
     private val space         = P( CharsWhileIn(" \r\n").? )
@@ -532,7 +580,7 @@ object FastParseJson
     lazy val jsonExpr: P[Any] = P(space ~ (obj | array | string | `true` | `false` | `null` | number) ~ space)
 }
 
-object Atto
+private [parsley] object Atto
 {
     import atto.parser._
     import atto.parser.combinator._
@@ -567,16 +615,19 @@ private [parsley] object Benchmark
             /*2*/  ("inputs/helloworld.bf", ParsleyBench.brainfuck, parseParsley, 100000),
             /*3*/  ("inputs/helloworld.bf", FastParser.brainfuck, parseFastParse, 100000),
             /*4*/  ("inputs/arrays.nand", ParsleyBench.nand, parseParsley, 100000),
-            /*5*/  ("inputs/test.while", ParsleyBench.whileLang, parseParsley, 100000),
-            /*6*/  ("inputs/fibonacci.js", ParsleyBench.javascript, parseParsley, 100000),
-            /*7*/  ("inputs/mediumdata.json", ParsleyBench.json, parseParsley, 50000),
-            /*8*/  ("inputs/mediumdata.json", FastParseJson.jsonExpr, parseFastParse, 50000),
-            /*9*/  ("inputs/bigdata.json", ParsleyBench.json, parseParsley, 50000),
-            /*10*/ ("inputs/bigdata.json", FastParseJson.jsonExpr, parseFastParse, 50000),
-            /*11*/ ("inputs/hugedata.json", ParsleyBench.json, parseParsley, 2000),
-            /*12*/ ("inputs/hugedata.json", FastParseJson.jsonExpr, parseFastParse, 2000),
-            /*13*/ ("inputs/smalldata.json", ParsleyBench.json, parseParsley, 1000000),
-            /*14*/ ("inputs/smalldata.json", FastParseJson.jsonExpr, parseFastParse, 1000000)
+            /*5*/  ("inputs/arrays.nand", FastParserWhite.nand, parseFastParse, 100000),
+            /*6*/  ("inputs/test.while", ParsleyBench.whileLang, parseParsley, 100000),
+            /*7*/  ("inputs/fibonacci.js", ParsleyBench.javascript, parseParsley, 100000),
+            /*8*/  ("inputs/mediumdata.json", ParsleyBench.json, parseParsley, 50000),
+            /*9*/  ("inputs/mediumdata.json", FastParseJson.jsonExpr, parseFastParse, 50000),
+            /*10*/  ("inputs/bigdata.json", ParsleyBench.json, parseParsley, 50000),
+            /*11*/ ("inputs/bigdata.json", FastParseJson.jsonExpr, parseFastParse, 50000),
+            /*12*/ ("inputs/hugedata.json", ParsleyBench.json, parseParsley, 2000),
+            /*13*/ ("inputs/hugedata.json", FastParseJson.jsonExpr, parseFastParse, 2000),
+            /*14*/ ("inputs/smalldata.json", ParsleyBench.json, parseParsley, 1000000),
+            /*15*/ ("inputs/smalldata.json", FastParseJson.jsonExpr, parseFastParse, 1000000),
+            /*16*/ ("inputs/heapsort.js", ParsleyBench.javascript, parseParsley, 100000),
+            /*17*/ ("inputs/game.js", ParsleyBench.javascript, parseParsley, 100000),
         )
 
     def main(args: Array[String]): Unit =
@@ -585,12 +636,12 @@ private [parsley] object Benchmark
         //val p = ParsleyBench.chain
         //val input = "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"
         //val exec = runParserFastUnsafe _
-        val (filename, p, exec, iters) = benchmarks(13)
+        val (filename, p, exec, iters) = benchmarks(17)
         val input = read(filename)
         val start = System.currentTimeMillis()
         println(exec(p, input))
         //println(BenchParser.json.parseFull(input))
-        println(PfS.parseJson(input))
+        //println(PfS.parseJson(input))
         for (_ <- 0 to iters) /*PfS.parseJson(input)*/ exec(p, input)
         println(System.currentTimeMillis() - start)
     }
