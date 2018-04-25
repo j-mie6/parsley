@@ -239,8 +239,8 @@ private [parsley] object ParsleyBench
     {
         val jslang =
             LanguageDef(
-                /*Comment start*/     "",
-                /*Comment end*/       "",
+                /*Comment start*/     "/*",
+                /*Comment end*/       "*/",
                 /*Line comment*/      "//",
                 /*Nested comments?*/  false,
                 /*Identifier start*/  Predicate(c => c.isLetter || c == '_'),
@@ -284,8 +284,8 @@ private [parsley] object ParsleyBench
                  Infixes(List(tok.operator("^") #> JSBitXor), AssocLeft),
                  Infixes(List(tok.operator("&") #> JSBitAnd), AssocLeft),
                  Infixes(List(tok.operator("==") #> JSEq, tok.operator("!=") #> JSNe), AssocLeft),
-                 Infixes(List(tok.operator("<=") #> JSLe, tok.operator("<") #> JSLt,
-                              tok.operator(">=") #> JSGe, tok.operator(">") #> JSGt), AssocLeft),
+                 Infixes(List(tok.operator("<=") #> JSLe, attempt(tok.operator("<")) #> JSLt,
+                              tok.operator(">=") #> JSGe, attempt(tok.operator(">")) #> JSGt), AssocLeft),
                  Infixes(List(tok.operator("<<") #> JSShl, tok.operator(">>") #> JSShr), AssocLeft),
                  Infixes(List(tok.operator("+") #> JSAdd, tok.operator("-") #> JSSub), AssocLeft),
                  Infixes(List(tok.operator("*") #> JSMul, tok.operator("/") #> JSDiv,
@@ -337,6 +337,7 @@ private [parsley] object ParsleyBench
          <|> obj)
         tok.whiteSpace *> (obj <|> array) <* eof
     }
+    println(javascript.pretty.replace("; ", ";\n"))
 }
 
 private [parsley] object PfS
@@ -628,6 +629,7 @@ private [parsley] object Benchmark
             /*15*/ ("inputs/smalldata.json", FastParseJson.jsonExpr, parseFastParse, 1000000),
             /*16*/ ("inputs/heapsort.js", ParsleyBench.javascript, parseParsley, 100000),
             /*17*/ ("inputs/game.js", ParsleyBench.javascript, parseParsley, 100000),
+            /*18*/ ("inputs/big.js", ParsleyBench.javascript, parseParsley, 1000),
         )
 
     def main(args: Array[String]): Unit =

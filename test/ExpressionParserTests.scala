@@ -109,4 +109,5 @@ class ExpressionParserTests extends ParsleyTest
         runParser(expr.expr, "-(3+4)") should be (Success(-7))
         runParser(expr.expr, "(3+-7)*(-2--4)/2") should be (Success(-4))
     }
+    // TODO More tests, stuff like ri && !r[--ri] from js parser is not working, ++x < 10 will crash the intrinsic too!
 }
