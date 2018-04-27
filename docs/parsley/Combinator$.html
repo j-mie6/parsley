@@ -114,7 +114,7 @@
                         <a class="trait" href="Impl.html" title="The Impl trait is used to provide implementation of the parser requirements from LanguageDef"></a>
                         <a href="Impl.html" title="The Impl trait is used to provide implementation of the parser requirements from LanguageDef">Impl</a>
                       </li><li class="current-entities indented1">
-                        <span class="separator"></span>
+                        <a class="object" href="LanguageDef$.html" title=""></a>
                         <a class="class" href="LanguageDef.html" title="This class is required to construct a TokenParser."></a>
                         <a href="LanguageDef.html" title="This class is required to construct a TokenParser.">LanguageDef</a>
                       </li><li class="current-entities indented1">
@@ -299,9 +299,9 @@
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
     </li><li name="parsley.Combinator#attemptChoice" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="attemptChoice[A](ps:List[parsley.Parsley[A]]):parsley.Parsley[A]"></a><a id="attemptChoice[A](List[Parsley[A]]):Parsley[A]"></a>
+      <a id="attemptChoice[A](ps:parsley.Parsley[A]*):parsley.Parsley[A]"></a><a id="attemptChoice[A](Parsley[A]*):Parsley[A]"></a>
       <span class="permalink">
-      <a href="../parsley/Combinator$.html#attemptChoice[A](ps:List[parsley.Parsley[A]]):parsley.Parsley[A]" title="Permalink">
+      <a href="../parsley/Combinator$.html#attemptChoice[A](ps:parsley.Parsley[A]*):parsley.Parsley[A]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -310,7 +310,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">attemptChoice</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="ps">ps: <span class="extype" name="scala.List">List</span>[<a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.attemptChoice.A">A</span>]]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.attemptChoice.A">A</span>]</span>
+        <span class="name">attemptChoice</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="ps">ps: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.attemptChoice.A">A</span>]*</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.attemptChoice.A">A</span>]</span>
       </span>
       
       <p class="shortcomment cmt"><code>attemptChoice(ps)</code> tries to apply the parsers in the list <code>ps</code> in order, until one of them succeeds.</p><div class="fullcomment"><div class="comment cmt"><p><code>attemptChoice(ps)</code> tries to apply the parsers in the list <code>ps</code> in order, until one of them succeeds.
@@ -438,9 +438,9 @@ returned by <code>p</code>. If there are no occurrences of <code>p</code>, the v
 obtained by a right associative application of all functions return by <code>op</code> to the values
 returned by <code>p</code>.</p></div></div>
     </li><li name="parsley.Combinator#choice" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="choice[A](ps:List[parsley.Parsley[A]]):parsley.Parsley[A]"></a><a id="choice[A](List[Parsley[A]]):Parsley[A]"></a>
+      <a id="choice[A](ps:parsley.Parsley[A]*):parsley.Parsley[A]"></a><a id="choice[A](Parsley[A]*):Parsley[A]"></a>
       <span class="permalink">
-      <a href="../parsley/Combinator$.html#choice[A](ps:List[parsley.Parsley[A]]):parsley.Parsley[A]" title="Permalink">
+      <a href="../parsley/Combinator$.html#choice[A](ps:parsley.Parsley[A]*):parsley.Parsley[A]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -449,7 +449,7 @@ returned by <code>p</code>.</p></div></div>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">choice</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="ps">ps: <span class="extype" name="scala.List">List</span>[<a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.choice.A">A</span>]]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.choice.A">A</span>]</span>
+        <span class="name">choice</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="ps">ps: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.choice.A">A</span>]*</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Combinator.choice.A">A</span>]</span>
       </span>
       
       <p class="shortcomment cmt"><code>choice(ps)</code> tries to apply the parsers in the list <code>ps</code> in order, until one of them succeeds.</p><div class="fullcomment"><div class="comment cmt"><p><code>choice(ps)</code> tries to apply the parsers in the list <code>ps</code> in order, until one of them succeeds.

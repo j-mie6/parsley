@@ -114,7 +114,7 @@
                         <a class="trait" href="Impl.html" title="The Impl trait is used to provide implementation of the parser requirements from LanguageDef"></a>
                         <a href="Impl.html" title="The Impl trait is used to provide implementation of the parser requirements from LanguageDef">Impl</a>
                       </li><li class="current-entities indented1">
-                        <span class="separator"></span>
+                        <a class="object" href="LanguageDef$.html" title=""></a>
                         <a class="class" href="LanguageDef.html" title="This class is required to construct a TokenParser."></a>
                         <a href="LanguageDef.html" title="This class is required to construct a TokenParser.">LanguageDef</a>
                       </li><li class="current-entities indented1">
@@ -692,6 +692,24 @@ of the stream.</p></div><dl class="paramcmts block"><dt class="param">c</dt><dd 
       
       <p class="shortcomment cmt">Parses a newline character ('\n').</p><div class="fullcomment"><div class="comment cmt"><p>Parses a newline character ('\n'). Returns a newline character.</p></div></div>
     </li><li name="parsley.Char#noneOf" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="noneOf(cs:Char*):parsley.Parsley[Char]"></a><a id="noneOf(scala.Char*):Parsley[scala.Char]"></a>
+      <span class="permalink">
+      <a href="../parsley/Char$.html#noneOf(cs:Char*):parsley.Parsley[Char]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">noneOf</span><span class="params">(<span name="cs">cs: <span class="extype" name="scala.Char">scala.Char</span>*</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Char">scala.Char</span>]</span>
+      </span>
+      
+      <p class="shortcomment cmt">As the dual of <code>oneOf</code>, <code>noneOf(cs)</code> succeeds if the current character is not in the supplied
+sequence of characters <code>cs</code>.</p><div class="fullcomment"><div class="comment cmt"><p>As the dual of <code>oneOf</code>, <code>noneOf(cs)</code> succeeds if the current character is not in the supplied
+sequence of characters <code>cs</code>. Returns the parsed character.</p></div></div>
+    </li><li name="parsley.Char#noneOf" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="noneOf(cs:Set[Char]):parsley.Parsley[Char]"></a><a id="noneOf(Set[scala.Char]):Parsley[scala.Char]"></a>
       <span class="permalink">
       <a href="../parsley/Char$.html#noneOf(cs:Set[Char]):parsley.Parsley[Char]" title="Permalink">
@@ -763,6 +781,23 @@ set of characters <code>cs</code>. Returns the parsed character.</p></div></div>
       </span>
       
       <p class="shortcomment cmt">Parses an octal digit.</p><div class="fullcomment"><div class="comment cmt"><p>Parses an octal digit. Returns the parsed character.</p></div></div>
+    </li><li name="parsley.Char#oneOf" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="oneOf(cs:Char*):parsley.Parsley[Char]"></a><a id="oneOf(scala.Char*):Parsley[scala.Char]"></a>
+      <span class="permalink">
+      <a href="../parsley/Char$.html#oneOf(cs:Char*):parsley.Parsley[Char]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">oneOf</span><span class="params">(<span name="cs">cs: <span class="extype" name="scala.Char">scala.Char</span>*</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Char">scala.Char</span>]</span>
+      </span>
+      
+      <p class="shortcomment cmt"><code>oneOf(cs)</code> succeeds if the current character is in the supplied sequence of characters <code>cs</code>.</p><div class="fullcomment"><div class="comment cmt"><p><code>oneOf(cs)</code> succeeds if the current character is in the supplied sequence of characters <code>cs</code>.
+Returns the parsed character. See also <code>satisfy</code>.</p></div></div>
     </li><li name="parsley.Char#oneOf" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="oneOf(cs:Set[Char]):parsley.Parsley[Char]"></a><a id="oneOf(Set[scala.Char]):Parsley[scala.Char]"></a>
       <span class="permalink">

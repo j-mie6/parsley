@@ -114,7 +114,7 @@
                         <a class="trait" href="Impl.html" title="The Impl trait is used to provide implementation of the parser requirements from LanguageDef"></a>
                         <a href="Impl.html" title="The Impl trait is used to provide implementation of the parser requirements from LanguageDef">Impl</a>
                       </li><li class="current-entities indented1">
-                        <span class="separator"></span>
+                        <a class="object" href="LanguageDef$.html" title=""></a>
                         <a class="class" href="LanguageDef.html" title="This class is required to construct a TokenParser."></a>
                         <a href="LanguageDef.html" title="This class is required to construct a TokenParser.">LanguageDef</a>
                       </li><li class="current-entities indented1">
@@ -232,9 +232,9 @@ part of the expression. Caters to unary and binary operators of different associ
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="parsley.ExpressionParser#&lt;init&gt;" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="&lt;init&gt;(table:List[parsley.ExpressionParser.OpList[A]],atom:=&gt;parsley.Parsley[A]):parsley.ExpressionParser[A]"></a><a id="&lt;init&gt;:ExpressionParser[A]"></a>
+      <a id="&lt;init&gt;(atom:=&gt;parsley.Parsley[A],table:parsley.ExpressionParser.OpList[A]*):parsley.ExpressionParser[A]"></a><a id="&lt;init&gt;:ExpressionParser[A]"></a>
       <span class="permalink">
-      <a href="../parsley/ExpressionParser.html#&lt;init&gt;(table:List[parsley.ExpressionParser.OpList[A]],atom:=&gt;parsley.Parsley[A]):parsley.ExpressionParser[A]" title="Permalink">
+      <a href="../parsley/ExpressionParser.html#&lt;init&gt;(atom:=&gt;parsley.Parsley[A],table:parsley.ExpressionParser.OpList[A]*):parsley.ExpressionParser[A]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -243,11 +243,11 @@ part of the expression. Caters to unary and binary operators of different associ
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">ExpressionParser</span><span class="params">(<span name="table">table: <span class="extype" name="scala.List">List</span>[<a href="ExpressionParser$$OpList.html" class="extype" name="parsley.ExpressionParser.OpList">OpList</a>[<span class="extype" name="parsley.ExpressionParser.A">A</span>]]</span>, <span name="atom">atom: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.ExpressionParser.A">A</span>]</span>)</span>
+        <span class="name">ExpressionParser</span><span class="params">(<span name="atom">atom: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.ExpressionParser.A">A</span>]</span>, <span name="table">table: <a href="ExpressionParser$$OpList.html" class="extype" name="parsley.ExpressionParser.OpList">OpList</a>[<span class="extype" name="parsley.ExpressionParser.A">A</span>]*</span>)</span>
       </span>
       
-      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">table</dt><dd class="cmt"><p>A table of operators. Table is ordered highest precedence to lowest precedence.
-             Each list in the table corresponds to operators of the same precedence level.</p></dd><dt class="param">atom</dt><dd class="cmt"><p>The smallest unchainable unit of the expression, for instance numbers/variables</p></dd></dl></div>
+      <p class="shortcomment cmt"></p><div class="fullcomment"><div class="comment cmt"></div><dl class="paramcmts block"><dt class="param">atom</dt><dd class="cmt"><p>The smallest unchainable unit of the expression, for instance numbers/variables</p></dd><dt class="param">table</dt><dd class="cmt"><p>A table of operators. Table is ordered highest precedence to lowest precedence.
+             Each list in the table corresponds to operators of the same precedence level.</p></dd></dl></div>
     </li></ol>
             </div>
 

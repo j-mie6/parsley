@@ -114,7 +114,7 @@
                         <a class="trait" href="Impl.html" title="The Impl trait is used to provide implementation of the parser requirements from LanguageDef"></a>
                         <a href="Impl.html" title="The Impl trait is used to provide implementation of the parser requirements from LanguageDef">Impl</a>
                       </li><li class="current-entities indented1">
-                        <span class="separator"></span>
+                        <a class="object" href="LanguageDef$.html" title=""></a>
                         <a class="class" href="LanguageDef.html" title="This class is required to construct a TokenParser."></a>
                         <a href="LanguageDef.html" title="This class is required to construct a TokenParser.">LanguageDef</a>
                       </li><li class="current-entities indented1">
@@ -911,9 +911,9 @@ Note that there are only 4 registers at present.</p></div><dl class="paramcmts b
       <p class="shortcomment cmt">Consumes no input and places the value <code>x</code> into register <code>v</code>.</p><div class="fullcomment"><div class="comment cmt"><p>Consumes no input and places the value <code>x</code> into register <code>v</code>.
 Note that there are only 4 registers at present.</p></div><dl class="paramcmts block"><dt class="param">v</dt><dd class="cmt"><p>The index of the register to place the value in</p></dd><dt class="param">x</dt><dd class="cmt"><p>The value to place in the register</p></dd></dl></div>
     </li><li name="parsley.Parsley#sequence" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="sequence[A](ps:Seq[parsley.Parsley[A]]):parsley.Parsley[List[A]]"></a><a id="sequence[A](Seq[Parsley[A]]):Parsley[List[A]]"></a>
+      <a id="sequence[A](ps:parsley.Parsley[A]*):parsley.Parsley[List[A]]"></a><a id="sequence[A](Parsley[A]*):Parsley[List[A]]"></a>
       <span class="permalink">
-      <a href="../parsley/Parsley$.html#sequence[A](ps:Seq[parsley.Parsley[A]]):parsley.Parsley[List[A]]" title="Permalink">
+      <a href="../parsley/Parsley$.html#sequence[A](ps:parsley.Parsley[A]*):parsley.Parsley[List[A]]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -922,10 +922,26 @@ Note that there are only 4 registers at present.</p></div><dl class="paramcmts b
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">sequence</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="ps">ps: <span class="extype" name="scala.Seq">Seq</span>[<a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Parsley.sequence.A">A</span>]]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.List">List</span>[<span class="extype" name="parsley.Parsley.sequence.A">A</span>]]</span>
+        <span class="name">sequence</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="ps">ps: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Parsley.sequence.A">A</span>]*</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.List">List</span>[<span class="extype" name="parsley.Parsley.sequence.A">A</span>]]</span>
       </span>
       
-      <p class="shortcomment cmt">Evaluate each of the parsers in <code>ps</code> sequentially from left to right, collecting the results.</p><div class="fullcomment"><div class="comment cmt"><p>Evaluate each of the parsers in <code>ps</code> sequentially from left to right, collecting the results.</p></div><dl class="paramcmts block"><dt class="param">ps</dt><dd class="cmt"><p>A list of parsers to be sequenced</p></dd><dt>returns</dt><dd class="cmt"><p>The list of results, one from each parser, in order</p></dd></dl></div>
+      <p class="shortcomment cmt">Evaluate each of the parsers in <code>ps</code> sequentially from left to right, collecting the results.</p><div class="fullcomment"><div class="comment cmt"><p>Evaluate each of the parsers in <code>ps</code> sequentially from left to right, collecting the results.</p></div><dl class="paramcmts block"><dt class="param">ps</dt><dd class="cmt"><p>Parsers to be sequenced</p></dd><dt>returns</dt><dd class="cmt"><p>The list containing results, one from each parser, in order</p></dd></dl></div>
+    </li><li name="parsley.Parsley#skip" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="skip(ps:parsley.Parsley[_]*):parsley.Parsley[Unit]"></a><a id="skip(Parsley[_]*):Parsley[Unit]"></a>
+      <span class="permalink">
+      <a href="../parsley/Parsley$.html#skip(ps:parsley.Parsley[_]*):parsley.Parsley[Unit]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">skip</span><span class="params">(<span name="ps">ps: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[_]*</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Unit">Unit</span>]</span>
+      </span>
+      
+      <p class="shortcomment cmt">Evaluate each of the parsers in <code>ps</code> sequentially from left to right, ignoring the results.</p><div class="fullcomment"><div class="comment cmt"><p>Evaluate each of the parsers in <code>ps</code> sequentially from left to right, ignoring the results.</p></div><dl class="paramcmts block"><dt class="param">ps</dt><dd class="cmt"><p>Parsers to be performed</p></dd></dl></div>
     </li><li name="parsley.Parsley#skipMany" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="skipMany[A](p:=&gt;parsley.Parsley[A]):parsley.Parsley[Unit]"></a><a id="skipMany[A](⇒Parsley[A]):Parsley[Unit]"></a>
       <span class="permalink">
@@ -975,9 +991,9 @@ Note that there are only 4 registers at present.</p></div><dl class="paramcmts b
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="parsley.Parsley#traverse" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="traverse[A,B](f:A=&gt;parsley.Parsley[B],xs:Seq[A]):parsley.Parsley[List[B]]"></a><a id="traverse[A,B]((A)⇒Parsley[B],Seq[A]):Parsley[List[B]]"></a>
+      <a id="traverse[A,B](f:A=&gt;parsley.Parsley[B],xs:A*):parsley.Parsley[List[B]]"></a><a id="traverse[A,B]((A)⇒Parsley[B],A*):Parsley[List[B]]"></a>
       <span class="permalink">
-      <a href="../parsley/Parsley$.html#traverse[A,B](f:A=&gt;parsley.Parsley[B],xs:Seq[A]):parsley.Parsley[List[B]]" title="Permalink">
+      <a href="../parsley/Parsley$.html#traverse[A,B](f:A=&gt;parsley.Parsley[B],xs:A*):parsley.Parsley[List[B]]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -986,12 +1002,12 @@ Note that there are only 4 registers at present.</p></div><dl class="paramcmts b
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">traverse</span><span class="tparams">[<span name="A">A</span>, <span name="B">B</span>]</span><span class="params">(<span name="f">f: (<span class="extype" name="parsley.Parsley.traverse.A">A</span>) ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Parsley.traverse.B">B</span>]</span>, <span name="xs">xs: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="parsley.Parsley.traverse.A">A</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.List">List</span>[<span class="extype" name="parsley.Parsley.traverse.B">B</span>]]</span>
+        <span class="name">traverse</span><span class="tparams">[<span name="A">A</span>, <span name="B">B</span>]</span><span class="params">(<span name="f">f: (<span class="extype" name="parsley.Parsley.traverse.A">A</span>) ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Parsley.traverse.B">B</span>]</span>, <span name="xs">xs: <span class="extype" name="parsley.Parsley.traverse.A">A</span>*</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.List">List</span>[<span class="extype" name="parsley.Parsley.traverse.B">B</span>]]</span>
       </span>
       
       <p class="shortcomment cmt">Like <code>sequence</code> but produces a list of parsers to sequence by applying the function <code>f</code> to each
 element in <code>xs</code>.</p><div class="fullcomment"><div class="comment cmt"><p>Like <code>sequence</code> but produces a list of parsers to sequence by applying the function <code>f</code> to each
-element in <code>xs</code>.</p></div><dl class="paramcmts block"><dt class="param">f</dt><dd class="cmt"><p>The function to map on each element of <code>xs</code> to produce parsers</p></dd><dt class="param">xs</dt><dd class="cmt"><p>A list of values to generate parsers from</p></dd><dt>returns</dt><dd class="cmt"><p>The list of results formed by executing each parser generated from <code>xs</code> and <code>f</code> in sequence</p></dd></dl></div>
+element in <code>xs</code>.</p></div><dl class="paramcmts block"><dt class="param">f</dt><dd class="cmt"><p>The function to map on each element of <code>xs</code> to produce parsers</p></dd><dt class="param">xs</dt><dd class="cmt"><p>Values to generate parsers from</p></dd><dt>returns</dt><dd class="cmt"><p>The list containing results formed by executing each parser generated from <code>xs</code> and <code>f</code> in sequence</p></dd></dl></div>
     </li><li name="parsley.Parsley#unexpected" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="unexpected(msg:String):parsley.Parsley[Nothing]"></a><a id="unexpected(String):Parsley[Nothing]"></a>
       <span class="permalink">

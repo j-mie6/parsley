@@ -114,7 +114,7 @@
                         <a class="trait" href="Impl.html" title="The Impl trait is used to provide implementation of the parser requirements from LanguageDef"></a>
                         <a href="Impl.html" title="The Impl trait is used to provide implementation of the parser requirements from LanguageDef">Impl</a>
                       </li><li class="current-entities indented1">
-                        <span class="separator"></span>
+                        <a class="object" href="LanguageDef$.html" title=""></a>
                         <a class="class" href="LanguageDef.html" title="This class is required to construct a TokenParser."></a>
                         <a href="LanguageDef.html" title="This class is required to construct a TokenParser.">LanguageDef</a>
                       </li><li class="current-entities indented1">
@@ -259,14 +259,14 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a title="" href="ExpressionParser$$Infixes.html"><span class="name">Infixes</span></a><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="op">op: <span class="extype" name="scala.List">List</span>[<a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.ExpressionParser.Infixes.A">A</span>, <span class="extype" name="parsley.ExpressionParser.Infixes.A">A</span>) ⇒ <span class="extype" name="parsley.ExpressionParser.Infixes.A">A</span>]]</span>, <span name="assoc">assoc: <a href="ExpressionParser$$Assoc.html" class="extype" name="parsley.ExpressionParser.Assoc">Assoc</a></span>)</span><span class="result"> extends <a href="ExpressionParser$$OpList.html" class="extype" name="parsley.ExpressionParser.OpList">OpList</a>[<span class="extype" name="parsley.ExpressionParser.Infixes.A">A</span>] with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a title="" href="ExpressionParser$$Infixes.html"><span class="name">Infixes</span></a><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="assoc">assoc: <a href="ExpressionParser$$Assoc.html" class="extype" name="parsley.ExpressionParser.Assoc">Assoc</a></span>, <span name="op">op: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.ExpressionParser.Infixes.A">A</span>, <span class="extype" name="parsley.ExpressionParser.Infixes.A">A</span>) ⇒ <span class="extype" name="parsley.ExpressionParser.Infixes.A">A</span>]*</span>)</span><span class="result"> extends <a href="ExpressionParser$$OpList.html" class="extype" name="parsley.ExpressionParser.OpList">OpList</a>[<span class="extype" name="parsley.ExpressionParser.Infixes.A">A</span>] with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       
       
     </li><li name="parsley.ExpressionParser.OpList" visbl="pub" class="indented0 " data-isabs="true" fullComment="yes" group="Ungrouped">
-      <a id="OpList[A]extendsAnyRef"></a><a id="OpList[A]:OpList[A]"></a>
+      <a id="OpList[+A]extendsAnyRef"></a><a id="OpList[+A]:OpList[A]"></a>
       <span class="permalink">
-      <a href="../parsley/ExpressionParser$.html#OpList[A]extendsAnyRef" title="Permalink">
+      <a href="../parsley/ExpressionParser$.html#OpList[+A]extendsAnyRef" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -275,7 +275,7 @@
         <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <a title="A list of operators on the same precedence level." href="ExpressionParser$$OpList.html"><span class="name">OpList</span></a><span class="tparams">[<span name="A">A</span>]</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a title="A list of operators on the same precedence level." href="ExpressionParser$$OpList.html"><span class="name">OpList</span></a><span class="tparams">[<span name="A">+A</span>]</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       
       <p class="shortcomment cmt">A list of operators on the same precedence level.</p><div class="fullcomment"><div class="comment cmt"><p>A list of operators on the same precedence level. Note operators of different fixities cannot
@@ -294,7 +294,7 @@ operators.</p></div><dl class="paramcmts block"><dt class="tparam">A</dt><dd cla
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a title="" href="ExpressionParser$$Postfixes.html"><span class="name">Postfixes</span></a><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="op">op: <span class="extype" name="scala.List">List</span>[<a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.ExpressionParser.Postfixes.A">A</span>) ⇒ <span class="extype" name="parsley.ExpressionParser.Postfixes.A">A</span>]]</span>)</span><span class="result"> extends <a href="ExpressionParser$$OpList.html" class="extype" name="parsley.ExpressionParser.OpList">OpList</a>[<span class="extype" name="parsley.ExpressionParser.Postfixes.A">A</span>] with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a title="" href="ExpressionParser$$Postfixes.html"><span class="name">Postfixes</span></a><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="op">op: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.ExpressionParser.Postfixes.A">A</span>) ⇒ <span class="extype" name="parsley.ExpressionParser.Postfixes.A">A</span>]*</span>)</span><span class="result"> extends <a href="ExpressionParser$$OpList.html" class="extype" name="parsley.ExpressionParser.OpList">OpList</a>[<span class="extype" name="parsley.ExpressionParser.Postfixes.A">A</span>] with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       
       
@@ -310,7 +310,7 @@ operators.</p></div><dl class="paramcmts block"><dt class="tparam">A</dt><dd cla
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a title="" href="ExpressionParser$$Prefixes.html"><span class="name">Prefixes</span></a><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="op">op: <span class="extype" name="scala.List">List</span>[<a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.ExpressionParser.Prefixes.A">A</span>) ⇒ <span class="extype" name="parsley.ExpressionParser.Prefixes.A">A</span>]]</span>)</span><span class="result"> extends <a href="ExpressionParser$$OpList.html" class="extype" name="parsley.ExpressionParser.OpList">OpList</a>[<span class="extype" name="parsley.ExpressionParser.Prefixes.A">A</span>] with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a title="" href="ExpressionParser$$Prefixes.html"><span class="name">Prefixes</span></a><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="op">op: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.ExpressionParser.Prefixes.A">A</span>) ⇒ <span class="extype" name="parsley.ExpressionParser.Prefixes.A">A</span>]*</span>)</span><span class="result"> extends <a href="ExpressionParser$$OpList.html" class="extype" name="parsley.ExpressionParser.OpList">OpList</a>[<span class="extype" name="parsley.ExpressionParser.Prefixes.A">A</span>] with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       
       

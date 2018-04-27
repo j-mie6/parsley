@@ -357,6 +357,22 @@ the parse action of both parsers, in order, but discards the result of the secon
       </span>
       
       <p class="shortcomment cmt">This combinator is defined as <code>lift2((x, f) =&gt; f(x), p, f)</code>.</p><div class="fullcomment"><div class="comment cmt"><p>This combinator is defined as <code>lift2((x, f) =&gt; f(x), p, f)</code>. It is pure syntactic sugar.</p></div></div>
+    </li><li name="parsley.Parsley.LazyParsley#&lt;+:&gt;" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="&lt;+:&gt;[B&gt;:A](ps:=&gt;parsley.Parsley[Seq[B]]):parsley.Parsley[Seq[B]]"></a><a id="&lt;+:&gt;[B&gt;:A](⇒Parsley[Seq[B]]):Parsley[Seq[B]]"></a>
+      <span class="permalink">
+      <a href="../parsley/Parsley$$LazyParsley.html#&lt;+:&gt;[B&gt;:A](ps:=&gt;parsley.Parsley[Seq[B]]):parsley.Parsley[Seq[B]]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $less$plus$colon$greater" class="name">&lt;+:&gt;</span><span class="tparams">[<span name="B">B &gt;: <span class="extype" name="parsley.Parsley.LazyParsley.A">A</span></span>]</span><span class="params">(<span name="ps">ps: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="parsley.Parsley.LazyParsley.&lt;+:&gt;.B">B</span>]]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="parsley.Parsley.LazyParsley.&lt;+:&gt;.B">B</span>]]</span>
+      </span>
+      
+      <p class="shortcomment cmt">This parser corresponds to <code>lift2(_+:_, p, ps)</code>.</p>
     </li><li name="parsley.Parsley.LazyParsley#&lt;/&gt;" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="&lt;/&gt;[B&gt;:A](x:B):parsley.Parsley[B]"></a><a id="&lt;/&gt;[B&gt;:A](B):Parsley[B]"></a>
       <span class="permalink">
@@ -373,7 +389,7 @@ the parse action of both parsers, in order, but discards the result of the secon
       </span>
       
       <p class="shortcomment cmt">This combinator is defined as <code>p &lt;|&gt; pure(x)</code>.</p><div class="fullcomment"><div class="comment cmt"><p>This combinator is defined as <code>p &lt;|&gt; pure(x)</code>. It is pure syntactic sugar.</p></div></div>
-    </li><li name="parsley.Parsley.LazyParsley#&lt;::&gt;" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="parsley.Parsley.LazyParsley#&lt;::&gt;" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="&lt;::&gt;[B&gt;:A](ps:=&gt;parsley.Parsley[List[B]]):parsley.Parsley[List[B]]"></a><a id="&lt;::&gt;[B&gt;:A](⇒Parsley[List[B]]):Parsley[List[B]]"></a>
       <span class="permalink">
       <a href="../parsley/Parsley$$LazyParsley.html#&lt;::&gt;[B&gt;:A](ps:=&gt;parsley.Parsley[List[B]]):parsley.Parsley[List[B]]" title="Permalink">
@@ -388,7 +404,7 @@ the parse action of both parsers, in order, but discards the result of the secon
         <span title="gt4s: $less$colon$colon$greater" class="name">&lt;::&gt;</span><span class="tparams">[<span name="B">B &gt;: <span class="extype" name="parsley.Parsley.LazyParsley.A">A</span></span>]</span><span class="params">(<span name="ps">ps: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.List">List</span>[<span class="extype" name="parsley.Parsley.LazyParsley.&lt;::&gt;.B">B</span>]]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.List">List</span>[<span class="extype" name="parsley.Parsley.LazyParsley.&lt;::&gt;.B">B</span>]]</span>
       </span>
       
-      <p class="shortcomment cmt">This parser corresponds to <code>lift2(_::_, p, ps)</code> but is far more optimal.</p><div class="fullcomment"><div class="comment cmt"><p>This parser corresponds to <code>lift2(_::_, p, ps)</code> but is far more optimal. It should be preferred to the equivalent</p></div></div>
+      <p class="shortcomment cmt">This parser corresponds to <code>lift2(_::_, p, ps)</code>.</p>
     </li><li name="parsley.Parsley.LazyParsley#&lt;\&gt;" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="&lt;\&gt;[B&gt;:A](q:parsley.Parsley[B]):parsley.Parsley[B]"></a><a id="&lt;\&gt;[B&gt;:A](Parsley[B]):Parsley[B]"></a>
       <span class="permalink">

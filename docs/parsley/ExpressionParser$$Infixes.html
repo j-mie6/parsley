@@ -152,7 +152,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <span class="name">Infixes</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="op">op: <span class="extype" name="scala.List">List</span>[<a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.ExpressionParser.Infixes.A">A</span>, <span class="extype" name="parsley.ExpressionParser.Infixes.A">A</span>) ⇒ <span class="extype" name="parsley.ExpressionParser.Infixes.A">A</span>]]</span>, <span name="assoc">assoc: <a href="ExpressionParser$$Assoc.html" class="extype" name="parsley.ExpressionParser.Assoc">Assoc</a></span>)</span><span class="result"> extends <a href="ExpressionParser$$OpList.html" class="extype" name="parsley.ExpressionParser.OpList">OpList</a>[<span class="extype" name="parsley.ExpressionParser.Infixes.A">A</span>] with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <span class="name">Infixes</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="assoc">assoc: <a href="ExpressionParser$$Assoc.html" class="extype" name="parsley.ExpressionParser.Assoc">Assoc</a></span>, <span name="op">op: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.ExpressionParser.Infixes.A">A</span>, <span class="extype" name="parsley.ExpressionParser.Infixes.A">A</span>) ⇒ <span class="extype" name="parsley.ExpressionParser.Infixes.A">A</span>]*</span>)</span><span class="result"> extends <a href="ExpressionParser$$OpList.html" class="extype" name="parsley.ExpressionParser.OpList">OpList</a>[<span class="extype" name="parsley.ExpressionParser.Infixes.A">A</span>] with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
 
@@ -208,9 +208,9 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="parsley.ExpressionParser.Infixes#&lt;init&gt;" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="&lt;init&gt;(op:List[parsley.Parsley[(A,A)=&gt;A]],assoc:parsley.ExpressionParser.Assoc):parsley.ExpressionParser.Infixes[A]"></a><a id="&lt;init&gt;:Infixes[A]"></a>
+      <a id="&lt;init&gt;(assoc:parsley.ExpressionParser.Assoc,op:parsley.Parsley[(A,A)=&gt;A]*):parsley.ExpressionParser.Infixes[A]"></a><a id="&lt;init&gt;:Infixes[A]"></a>
       <span class="permalink">
-      <a href="../parsley/ExpressionParser$$Infixes.html#&lt;init&gt;(op:List[parsley.Parsley[(A,A)=&gt;A]],assoc:parsley.ExpressionParser.Assoc):parsley.ExpressionParser.Infixes[A]" title="Permalink">
+      <a href="../parsley/ExpressionParser$$Infixes.html#&lt;init&gt;(assoc:parsley.ExpressionParser.Assoc,op:parsley.Parsley[(A,A)=&gt;A]*):parsley.ExpressionParser.Infixes[A]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -219,7 +219,7 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">Infixes</span><span class="params">(<span name="op">op: <span class="extype" name="scala.List">List</span>[<a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.ExpressionParser.Infixes.A">A</span>, <span class="extype" name="parsley.ExpressionParser.Infixes.A">A</span>) ⇒ <span class="extype" name="parsley.ExpressionParser.Infixes.A">A</span>]]</span>, <span name="assoc">assoc: <a href="ExpressionParser$$Assoc.html" class="extype" name="parsley.ExpressionParser.Assoc">Assoc</a></span>)</span>
+        <span class="name">Infixes</span><span class="params">(<span name="assoc">assoc: <a href="ExpressionParser$$Assoc.html" class="extype" name="parsley.ExpressionParser.Assoc">Assoc</a></span>, <span name="op">op: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.ExpressionParser.Infixes.A">A</span>, <span class="extype" name="parsley.ExpressionParser.Infixes.A">A</span>) ⇒ <span class="extype" name="parsley.ExpressionParser.Infixes.A">A</span>]*</span>)</span>
       </span>
       
       
@@ -465,9 +465,9 @@
               
         </dd></dl></div>
     </li><li name="parsley.ExpressionParser.Infixes#op" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="op:List[parsley.Parsley[(A,A)=&gt;A]]"></a><a id="op:List[Parsley[(A,A)⇒A]]"></a>
+      <a id="op:parsley.Parsley[(A,A)=&gt;A]*"></a><a id="op:Parsley[(A,A)⇒A]*"></a>
       <span class="permalink">
-      <a href="../parsley/ExpressionParser$$Infixes.html#op:List[parsley.Parsley[(A,A)=&gt;A]]" title="Permalink">
+      <a href="../parsley/ExpressionParser$$Infixes.html#op:parsley.Parsley[(A,A)=&gt;A]*" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -476,7 +476,7 @@
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">op</span><span class="result">: <span class="extype" name="scala.List">List</span>[<a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.ExpressionParser.Infixes.A">A</span>, <span class="extype" name="parsley.ExpressionParser.Infixes.A">A</span>) ⇒ <span class="extype" name="parsley.ExpressionParser.Infixes.A">A</span>]]</span>
+        <span class="name">op</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.ExpressionParser.Infixes.A">A</span>, <span class="extype" name="parsley.ExpressionParser.Infixes.A">A</span>) ⇒ <span class="extype" name="parsley.ExpressionParser.Infixes.A">A</span>]*</span>
       </span>
       
       

@@ -251,6 +251,11 @@ object Parsley
       */
     def traverse[A, B](f: A => Parsley[B], xs: A*): Parsley[List[B]] = sequence(xs.map(f): _*)
     /**
+      * Evaluate each of the parsers in `ps` sequentially from left to right, ignoring the results.
+      * @param ps Parsers to be performed
+      */
+    def skip(ps: Parsley[_]*): Parsley[Unit] = ps.foldRight(unit)(_ *> _)
+    /**
       * This parser consumes no input and returns the current line number reached in the input stream
       * @return The line number the parser is currently at
       */
