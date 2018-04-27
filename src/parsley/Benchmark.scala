@@ -682,6 +682,18 @@ private [parsley] object FastParseWhite
     lazy val block: Parser[NandBlock] = P("{" ~ statement.rep.map(stmts => NandBlock(stmts.toList)) ~ "}")
     val funcdef = P(key("function") ~/ (identifier.! ~/ "(" ~/ funcparam ~/ ")" ~/ block).map(NandFunc.tupled))
     val nand = spaces ~ funcdef.rep.map(_.toList) ~ spaces ~ End
+
+    def chainPre[A](p: Parser[A], op: Parser[A => A]): Parser[A] = for (fs <- op.rep; x <- p.~/) yield fs.foldRight(x)((f, y) => f(y))
+    def chainPost[A](p: Parser[A], op: Parser[A => A]): Parser[A] = for (x <- p; fs <- op.rep) yield fs.foldLeft(x)((y, f) => f(y))
+    def chainl1[A](p: Parser[A], op: Parser[(A, A) => A]): Parser[A] = chainPost(p, for (f <- op; y <- p) yield (x: A) => f(x, y))
+    val mexpr: Parser[Int] = chainl1(mmul, (spaces ~~ "+").map[(Int, Int) => Int](_ => _+_) | (spaces ~~ "-").map[(Int, Int) => Int](_ => _-_))
+    lazy val mmul = P(mdiv.rep(sep=spaces ~~ "*", min=1).map(_.product))
+    lazy val mdiv = chainl1(mpow, (spaces ~~ "/").map[(Int, Int) => Int](_ => _/_) | P(spaces ~~ "%").map[(Int, Int) => Int](_ => _/_))
+    lazy val mpow = P(msigns.rep(sep=spaces ~~ "^", min=1).map(_.reduceLeft((x, y) => scala.math.pow(x.toDouble, y.toDouble).toInt)))
+    lazy val msigns = chainPre(matom, (spaces ~~ "+").map[Int => Int](_ => x => +x) | (spaces ~~ "-").map[Int => Int](_ => x => -x))
+    lazy val matom = spaces ~~ (CharIn('0'to'9').rep(1).!.map(_.toInt) | "(" ~~ mexpr ~/ ")")
+    val math = mexpr ~~ spaces ~~ End
+
 }
 
 // From the fastparse blog - straight from the horses mouth
@@ -765,8 +777,9 @@ private [parsley] object Benchmark
             /*22*/ ("inputs/fizzbuzz.nand", FastParseWhite.nand, parseFastParse, 50000),
             /*23*/ ("inputs/compiler.bf", ParsleyBench.brainfuck, parseParsley, 10000),
             /*24*/ ("inputs/compiler.bf", FastParseBrainfuck.parser, parseFastParse, 10000),
-            /*25*/ ("inputs/bigequation.txt", ParsleyBench.maths, parseParsley, 100000),
-            /*27*/ ("inputs/bigequation.txt", ParsleyBench.maths_unsub, parseParsley, 2000000),
+            /*25*/ ("inputs/bigequation.txt", ParsleyBench.maths, parseParsley, 2000000),
+            /*26*/ ("inputs/bigequation.txt", ParsleyBench.maths_unsub, parseParsley, 2000000),
+            /*27*/ ("inputs/bigequation.txt", FastParseWhite.math, parseFastParse, 2000000),
         )
 
     def main(args: Array[String]): Unit =
@@ -777,13 +790,13 @@ private [parsley] object Benchmark
         //val exec = runParserFastUnsafe _
         //new nandlang.NandLang().run(read("inputs/arrays.nand"))
         val nand = new nandlang.NandLang
-        val (filename, p, exec, iters) = benchmarks(25)
+        val (filename, p, exec, iters) = benchmarks(27)
         val input = read(filename)
         val start = System.currentTimeMillis()
         println(exec(p, input))
         //println(BenchParser.json.parseFull(input))
         //println(PfS.parseJson(input))
-        for (_ <- 0 to iters) runParserFastUnsafe(ParsleyBench.maths, input)//exec(p, input)
+        for (_ <- 0 to iters) exec(p, input)
         println(System.currentTimeMillis() - start)
     }
 }
