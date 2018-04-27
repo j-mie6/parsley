@@ -46,6 +46,10 @@ final case class LanguageDef(commentStart: String,
                              operators: Set[String],
                              caseSensitive: Boolean,
                              space: Impl)
+object LanguageDef
+{
+    val plain = LanguageDef("", "", "", false, NotRequired, NotRequired, NotRequired, NotRequired, Set.empty, Set.empty, true, NotRequired)
+}
 
 /**
   * The Impl trait is used to provide implementation of the parser requirements from `LanguageDef`

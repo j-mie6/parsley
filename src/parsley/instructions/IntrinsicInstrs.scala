@@ -30,17 +30,6 @@ private [parsley] final class Lift3[A, B, C, D](f: (A, B, C) => D) extends Instr
     override def toString: String = "Lift3(f)"
 }
 
-private [parsley] object Cons extends Instr
-{
-    final override def apply(ctx: Context): Unit =
-    {
-        val xs = ctx.stack.pop[List[_]]()
-        ctx.stack.exchange(ctx.stack.upeek::xs)
-        ctx.inc()
-    }
-    override def toString: String = "Cons"
-}
-
 private [parsley] final class Many(var label: Int) extends JumpInstr with Stateful
 {
     private[this] val acc: ListBuffer[Any] = ListBuffer.empty

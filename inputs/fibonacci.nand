@@ -1,0 +1,102 @@
+// not logic gate
+function not(in : out) {
+    out = in ! in;
+}
+
+// and logic gate
+function and(a, b : out) {
+    out = not(a ! b);
+}
+
+// or logic gate
+function or(a, b : out) {
+    out = not(a) ! not(b);
+}
+
+// xor logic gate
+function xor(a, b : out) {
+    out = or(and(a, not(b)), and(not(a), b));
+}
+
+// returns true if a and b are equal
+function eq(a, b : out) {
+    out = not(xor(a, b));
+}
+
+// full adder
+function add(a, b, cin : v, cout) {
+    v = xor(cin, xor(a, b));
+    cout = or(and(a, b), and(xor(a, b), cin));
+}
+
+// 8 bit adder
+function add8(a[8], b[8] : o[8]) {
+    var c = 0;
+    o[7], c = add(a[7], b[7], c);
+    o[6], c = add(a[6], b[6], c);
+    o[5], c = add(a[5], b[5], c);
+    o[4], c = add(a[4], b[4], c);
+    o[3], c = add(a[3], b[3], c);
+    o[2], c = add(a[2], b[2], c);
+    o[1], c = add(a[1], b[1], c);
+    o[0], c = add(a[0], b[0], c);
+}
+
+// returns the two's complement of the given integer
+function complement8(i[8] : o[8]) {
+    o = add8(
+        not(i[0]), not(i[1]), not(i[2]), not(i[3]),
+        not(i[4]), not(i[5]), not(i[6]), not(i[7]),
+        0, 0, 0, 0, 0, 0, 0, 1);
+}
+
+// 8 bit subtraction
+function sub8(a[8], b[8] : o[8]) {
+    o = add8(a, complement8(b));
+}
+
+// 8 bit equality
+function equal8(a[8], b[8] : out) {
+    out = and(
+        and(and(eq(a[1], b[1]), eq(a[2], b[2])),
+            and(eq(a[3], b[3]), eq(a[4], b[4]))),
+        and(and(eq(a[5], b[5]), eq(a[6], b[6])),
+            and(eq(a[7], b[7]), eq(a[0], b[0]))));
+}
+
+// returns the Fibonacci number for the given input
+function fibonacci(i[8] : o[8]) {
+    var check[7], _ = i;
+    var is_equal = equal8(check,0, 0,0,0,0,0,0,0,0);
+    if is_equal {
+        // return input if equal to 1 or 0
+        o = i;
+    }
+    if not(is_equal) {
+        // o = fibonacci(i - 1) + fibonacci(i - 2);
+        o = add8(
+            fibonacci(sub8(i, 0,0,0,0,0,0,0,1)),
+            fibonacci(sub8(i, 0,0,0,0,0,0,1,0))
+        );
+    }
+}
+
+function main()
+{
+    var value[8] = 0,0,0,0,0,0,0,0;
+    while not(equal8(value, 0,0,0,0,1,1,1,0)) {
+        // to output strings multiple individual putc calls are needed
+        putc('F');
+        putc('i');
+        putc('b');
+        putc(' ');
+        puti8(value);
+        putc(' ');
+        putc('=');
+        putc(' ');
+        puti8(fibonacci(value));
+        endl();
+        // increment
+        value = add8(value, 0,0,0,0,0,0,0,1);
+    }
+}

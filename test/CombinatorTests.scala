@@ -7,20 +7,20 @@ class CombinatorTests extends ParsleyTest
 {
     "choice" should "fail if given the empty list" in
     {
-        runParser(choice(Nil), "") shouldBe a [Failure]
+        runParser(choice(), "") shouldBe a [Failure]
     }
     it should "behave like p for List(p)" in
     {
-        runParser(choice(List(char('a'))), "") should equal (runParser('a', ""))
-        runParser(choice(List(char('a'))), "a") should equal (runParser('a', "a"))
+        runParser(choice(char('a')), "") should equal (runParser('a', ""))
+        runParser(choice(char('a')), "a") should equal (runParser('a', "a"))
     }
     it should "parse in order" in
     {
-        runParser(choice(List(string("a"), string("b"), string("bc"), string("bcd"))), "bcd") should be (Success("b"))
+        runParser(choice(string("a"), string("b"), string("bc"), string("bcd")), "bcd") should be (Success("b"))
     }
     it should "fail if none of the parsers succeed" in
     {
-        runParser(choice(List(string("a"), string("b"), string("bc"), string("bcd"))), "c") shouldBe a [Failure]
+        runParser(choice(string("a"), string("b"), string("bc"), string("bcd")), "c") shouldBe a [Failure]
     }
 
     "repeat" should "be pure(Nil) for n <= 0" in

@@ -83,8 +83,10 @@ object Parsley
         def #>[B](x: B): Parsley[B] = this *> pure(x)
         /**This combinator is an alias for `*>`*/
         def >>[B](q: Parsley[B]): Parsley[B] = *>(q)
-        /**This parser corresponds to `lift2(_::_, p, ps)` but is far more optimal. It should be preferred to the equivalent*/
-        def <::>[B >: A](ps: =>Parsley[List[B]]): Parsley[List[B]] = new DeepEmbedding.<::>(p, ps)
+        /**This parser corresponds to `lift2(_+:_, p, ps)`.*/
+        def <+:>[B >: A](ps: =>Parsley[Seq[B]]): Parsley[Seq[B]] = lift2[A, Seq[B], Seq[B]](_ +: _, p, ps)
+        /**This parser corresponds to `lift2(_::_, p, ps)`.*/
+        def <::>[B >: A](ps: =>Parsley[List[B]]): Parsley[List[B]] = lift2[A, List[B], List[B]](_ :: _, p, ps)
         /**This parser corresponds to `lift2((_, _), p, q)`. For now it is sugar, but in future may be more optimal*/
         def <~>[A_ >: A, B](q: =>Parsley[B]): Parsley[(A_, B)] = lift2[A_, B, (A_, B)]((_, _), p, q)
         /** Filter the value of a parser; if the value returned by the parser matches the predicate `pred` then the
@@ -236,18 +238,18 @@ object Parsley
     def skipMany[A](p: =>Parsley[A]): Parsley[Unit] = new DeepEmbedding.*>(new DeepEmbedding.SkipMany(p), unit)
     /**
       * Evaluate each of the parsers in `ps` sequentially from left to right, collecting the results.
-      * @param ps A list of parsers to be sequenced
-      * @return The list of results, one from each parser, in order
+      * @param ps Parsers to be sequenced
+      * @return The list containing results, one from each parser, in order
       */
-    def sequence[A](ps: Seq[Parsley[A]]): Parsley[List[A]] = ps.foldRight(pure[List[A]](Nil))(_ <::> _)
+    def sequence[A](ps: Parsley[A]*): Parsley[List[A]] = ps.foldRight(pure[List[A]](Nil))(_ <::> _)
     /**
       * Like `sequence` but produces a list of parsers to sequence by applying the function `f` to each
       * element in `xs`.
       * @param f The function to map on each element of `xs` to produce parsers
-      * @param xs A list of values to generate parsers from
-      * @return The list of results formed by executing each parser generated from `xs` and `f` in sequence
+      * @param xs Values to generate parsers from
+      * @return The list containing results formed by executing each parser generated from `xs` and `f` in sequence
       */
-    def traverse[A, B](f: A => Parsley[B], xs: Seq[A]): Parsley[List[B]] = sequence(xs.map(f))
+    def traverse[A, B](f: A => Parsley[B], xs: A*): Parsley[List[B]] = sequence(xs.map(f): _*)
     /**
       * This parser consumes no input and returns the current line number reached in the input stream
       * @return The line number the parser is currently at
@@ -1194,36 +1196,6 @@ private [parsley] object DeepEmbedding
             })
         }
     }
-    // TODO: Right associative normal form
-    // TODO: Consider merging char ::s into strings?
-    // TODO: Perform applicative fusion
-    private [parsley] final class <::>[A, B](_p: =>Parsley[A], _ps: =>Parsley[List[B]]) extends Parsley[List[B]]
-    {
-        private [<::>] var p: Parsley[A] = _
-        private [<::>] var ps: Parsley[List[B]] = _
-        override def preprocess(cont: Parsley[List[B]] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            if (label == null && p != null) cont(this) else _p.optimised(p => _ps.optimised(ps =>
-            {
-                if (label == null)
-                {
-                    this.p = p
-                    this.ps = ps
-                    cont(this)
-                }
-                else cont(<::>(p, ps))
-            }))
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter, subs: mutable.Map[Parsley[_], Int]) =
-        {
-            new Suspended(p.codeGen
-            {
-                ps.codeGen
-                {
-                    instrs += instructions.Cons
-                    cont
-                }
-            })
-        }
-    }
     private [parsley] final class FastFail[A](_p: =>Parsley[A], private [FastFail] val msggen: A => String, val expected: UnsafeOption[String] = null) extends MZero
     {
         private [FastFail] var p: Parsley[A] = _
@@ -1882,16 +1854,6 @@ private [parsley] object DeepEmbedding
         }
         def unapply[A, B, C, D](self: Lift3[A, B, C, D]): Option[((A, B, C) => D, Parsley[A], Parsley[B], Parsley[C])] = Some((self.f, self.p, self.q, self.r))
     }
-    private [DeepEmbedding] object <::>
-    {
-        def apply[A, B](p: Parsley[A], ps: Parsley[List[B]]): <::>[A, B] =
-        {
-            val res: <::>[A, B] = new <::>(p, ps)
-            res.p = p
-            res.ps = ps
-            res
-        }
-    }
     private [DeepEmbedding] object FastFail
     {
         def apply[A](p: Parsley[A], msggen: A => String, expected: UnsafeOption[String]): FastFail[A] =
@@ -2066,12 +2028,14 @@ private [parsley] object DeepEmbedding
             chainl1[Int]('1' <#> (_.toInt), '+' #> (x => y => x + y))
         val p: Parsley[Char] = satisfy(_ == 'a') <|> satisfy(_ == 'b')
         println(p.pretty)
+        val consTest = repeat(500, pure(10))
         val start = System.currentTimeMillis
         for (_ <- 0 to 1000000)
         {
             //(q <|> q <|> q <|> q).instrs
-            runParserFastUnsafe(chain, "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1")
+            //runParserFastUnsafe(chain, "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1")
             //runParserFastUnsafe(p, "b")
+            runParserFastUnsafe(consTest, "")
         }
         println(System.currentTimeMillis - start)
         println(chain.pretty)

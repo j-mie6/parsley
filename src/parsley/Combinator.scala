@@ -7,18 +7,18 @@ object Combinator
 {
     /**`choice(ps)` tries to apply the parsers in the list `ps` in order, until one of them succeeds.
       *  Returns the value of the succeeding parser.*/
-    def choice[A](ps: List[Parsley[A]]): Parsley[A] = ps.reduceLeftOption(_<|>_).getOrElse(empty)
+    def choice[A](ps: Parsley[A]*): Parsley[A] = ps.reduceLeftOption(_<|>_).getOrElse(empty)
 
     /**`attemptChoice(ps)` tries to apply the parsers in the list `ps` in order, until one of them succeeds.
       *  Returns the value of the succeeding parser. Utilises <\> vs choice's <|>.*/
-    def attemptChoice[A](ps: List[Parsley[A]]): Parsley[A] = ps.reduceLeftOption(_<\>_).getOrElse(empty)
+    def attemptChoice[A](ps: Parsley[A]*): Parsley[A] = ps.reduceLeftOption(_<\>_).getOrElse(empty)
 
     /** `repeat(n, p)` parses `n` occurrences of `p`. If `n` is smaller or equal to zero, the parser is
       *  `pure(Nil)`. Returns a list of `n` values returned by `p`.*/
     def repeat[A](n: Int, p: =>Parsley[A]): Parsley[List[A]] =
     {
         lazy val _p = p
-        sequence(for (_ <- 1 to n) yield _p)
+        sequence((for (_ <- 1 to n) yield _p): _*)
     }
 
     /**`option(p)` tries to apply parser `p`. If `p` fails without consuming input, it returns

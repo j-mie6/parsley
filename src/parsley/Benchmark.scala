@@ -3,7 +3,7 @@ package parsley
 import fastparse.WhitespaceApi
 import parsley.ExpressionParser._
 
-import scala.annotation.tailrec
+import scala.annotation.{switch, tailrec}
 import scala.io.Source
 import scala.util.Try
 
@@ -26,23 +26,24 @@ private [parsley] object ParsleyBench
     case object Output extends BrainFuckOp
     case object Input extends BrainFuckOp
     case class Loop(p: List[BrainFuckOp]) extends BrainFuckOp
-    
-    // This is an optimisation for the logic inside. Since this is the last in a chain of ors
-    // it doesn't need to account for the other symbols (just needs to not accidentally consume ])
-    private val whitespaceBF = satisfy(_ != ']')
-    
-    def brainfuck: Parsley[List[BrainFuckOp]] = 
+
+    def brainfuck: Parsley[List[BrainFuckOp]] =
     {
-        lazy val bf: Parsley[List[BrainFuckOp]] = 
-            many('>' #> Some(RightPointer)
-             <|> '<' #> Some(LeftPointer)
-             <|> '+' #> Some(Increment)
-             <|> '-' #> Some(Decrement)
-             <|> '.' #> Some(Output)
-             <|> ',' #> Some(Input)
-             <|> between('[', ']' <|> fail("unclosed loop"), bf.map(p => Some(Loop(p))))
-             <|> (whitespaceBF #> None)).map(_.flatten)
-        attempt(bf <* eof) <|> fail("\"]\" closes a loop, but there isn't one open")
+        val bflang = LanguageDef.plain.copy(space = Predicate(c => (c: @switch) match
+        {
+            case '>' | '<' | '+' | '-' | '.' | ',' | '[' | ']' => false
+            case _ => true
+        }))
+        val tok = new TokenParser(bflang)
+        lazy val bf: Parsley[List[BrainFuckOp]] =
+            many(tok.lexeme('>' #> RightPointer)
+             <|> tok.lexeme('<' #> LeftPointer)
+             <|> tok.lexeme('+' #> Increment)
+             <|> tok.lexeme('-' #> Decrement)
+             <|> tok.lexeme('.' #> Output)
+             <|> tok.lexeme(',' #> Input)
+             <|> tok.brackets(bf.map(Loop)))
+        tok.whiteSpace *> attempt(bf <* eof) <|> fail("\"]\" closes a loop, but there isn't one open")
     }
 
     // https://github.com/Jellonator/Nandlang
@@ -144,16 +145,16 @@ private [parsley] object ParsleyBench
                 /*Case sensitive*/    true,
                 /*Whitespace*/        Predicate(Char.isWhitespace))
         val tok = new TokenParser(whilelang)
-        lazy val aexp: Parsley[WhileAexp] = new ExpressionParser(
-            List(Infixes(List(tok.operator("+") #> WhileOp(WhileAdd) _,
-                              tok.operator("-") #> WhileOp(WhileSub) _), AssocLeft),
-                 Infixes(List(tok.operator("*") #> WhileOp(WhileMul) _), AssocLeft)), aexp_atom).expr
+        lazy val aexp: Parsley[WhileAexp] = new ExpressionParser(aexp_atom,
+            Infixes(AssocLeft, tok.operator("+") #> WhileOp(WhileAdd) _,
+                               tok.operator("-") #> WhileOp(WhileSub) _),
+            Infixes(AssocLeft, tok.operator("*") #> WhileOp(WhileMul) _)).expr
         lazy val aexp_atom = tok.integer.map(WhileNat) <|> tok.identifier.map(WhileAVar) <|> tok.parens(aexp)
         val compop = tok.operator("<=") #> WhileLt <|> tok.operator("<") #> WhileLt <|> tok.operator("=") #> WhileEq
-        lazy val bexp: Parsley[WhileBexp] = new ExpressionParser(
-            List(Infixes(List(tok.operator("|") #> WhileOr), AssocLeft),
-                 Infixes(List(tok.operator("&") #> WhileAnd), AssocLeft),
-                 Prefixes(List(tok.operator("¬") #> WhileNot))), bexp_atom).expr
+        lazy val bexp: Parsley[WhileBexp] = new ExpressionParser(bexp_atom,
+            Infixes(AssocLeft, tok.operator("|") #> WhileOr),
+            Infixes(AssocLeft, tok.operator("&") #> WhileAnd),
+            Prefixes(tok.operator("¬") #> WhileNot)).expr
         lazy val bexp_atom = (tok.keyword("true") #> WhileTrue
                           <|> tok.keyword("false") #> WhileFalse
                           <|> lift3(WhileComp, attempt(aexp), compop, aexp)
@@ -277,22 +278,22 @@ private [parsley] object ParsleyBench
             (tok.keyword("delete") *> member.map(JSDel)
          <|> tok.keyword("new") *> con
          <|> member)
-        lazy val _expr = new ExpressionParser(
-            List(Infixes(List(tok.operator("||") #> JSOr), AssocLeft),
-                 Infixes(List(tok.operator("&&") #> JSAnd), AssocLeft),
-                 Infixes(List(tok.operator("|") #> JSBitOr), AssocLeft),
-                 Infixes(List(tok.operator("^") #> JSBitXor), AssocLeft),
-                 Infixes(List(tok.operator("&") #> JSBitAnd), AssocLeft),
-                 Infixes(List(tok.operator("==") #> JSEq, tok.operator("!=") #> JSNe), AssocLeft),
-                 Infixes(List(tok.operator("<=") #> JSLe, attempt(tok.operator("<")) #> JSLt,
-                              tok.operator(">=") #> JSGe, attempt(tok.operator(">")) #> JSGt), AssocLeft),
-                 Infixes(List(tok.operator("<<") #> JSShl, tok.operator(">>") #> JSShr), AssocLeft),
-                 Infixes(List(tok.operator("+") #> JSAdd, tok.operator("-") #> JSSub), AssocLeft),
-                 Infixes(List(tok.operator("*") #> JSMul, tok.operator("/") #> JSDiv,
-                              tok.operator("%") #> JSMod), AssocLeft),
-                Prefixes(List(tok.operator("--") #> JSDec, tok.operator("++") #> JSInc,
-                              tok.operator("-") #> JSNeg, tok.operator("+") #> JSPlus,
-                              tok.operator("~") #> JSBitNeg, tok.operator("!") #> JSNot))), memOrCon).expr
+        lazy val _expr = new ExpressionParser(memOrCon,
+            Prefixes(tok.operator("--") #> JSDec, tok.operator("++") #> JSInc,
+                     tok.operator("-") #> JSNeg, tok.operator("+") #> JSPlus,
+                     tok.operator("~") #> JSBitNeg, tok.operator("!") #> JSNot),
+            Infixes(AssocLeft, tok.operator("*") #> JSMul, tok.operator("/") #> JSDiv,
+                               tok.operator("%") #> JSMod),
+            Infixes(AssocLeft, tok.operator("+") #> JSAdd, tok.operator("-") #> JSSub),
+            Infixes(AssocLeft, tok.operator("<<") #> JSShl, tok.operator(">>") #> JSShr),
+            Infixes(AssocLeft, tok.operator("<=") #> JSLe, attempt(tok.operator("<")) #> JSLt,
+                               tok.operator(">=") #> JSGe, attempt(tok.operator(">")) #> JSGt),
+            Infixes(AssocLeft, tok.operator("==") #> JSEq, tok.operator("!=") #> JSNe),
+            Infixes(AssocLeft, tok.operator("&") #> JSBitAnd),
+            Infixes(AssocLeft, tok.operator("^") #> JSBitXor),
+            Infixes(AssocLeft, tok.operator("|") #> JSBitOr),
+            Infixes(AssocLeft, tok.operator("&&") #> JSAnd),
+            Infixes(AssocLeft, tok.operator("||") #> JSOr)).expr
         lazy val condExpr = lift2((c: JSExpr_, o: Option[(JSExpr_, JSExpr_)]) => o match
         {
             case Some((t, e)) => JSCond(c, t, e)
@@ -323,7 +324,7 @@ private [parsley] object ParsleyBench
 
     def json: Parsley[Any] =
     {
-        val jsontoks = LanguageDef("", "", "", false, NotRequired, NotRequired, NotRequired, NotRequired, Set.empty, Set.empty, true, Predicate(Char.isWhitespace))
+        val jsontoks = LanguageDef.plain.copy(space = Predicate(Char.isWhitespace))
         val tok = new TokenParser(jsontoks)
         lazy val obj: Parsley[Map[String, Any]] = tok.braces(tok.commaSep(+(tok.lexeme(tok.rawStringLiteral) <~> tok.colon *> value)).map(_.toMap))
         lazy val array = tok.brackets(tok.commaSep(value))
@@ -337,10 +338,35 @@ private [parsley] object ParsleyBench
          <|> obj)
         tok.whiteSpace *> (obj <|> array) <* eof
     }
-    println(javascript.pretty.replace("; ", ";\n"))
+    //println(javascript.pretty.replace("; ", ";\n"))
+    def maths: Parsley[Int] =
+    {
+        val tok = new TokenParser(LanguageDef.plain.copy(space = Predicate(Char.isWhitespace)))
+        lazy val expr = new ExpressionParser[Int](atom,
+            Prefixes[Int](tok.lexeme('-' #> (x => -x)), tok.lexeme('+' #> (x => +x))),
+            Infixes[Int](AssocLeft, tok.lexeme('^' #> ((x, y) => math.pow(x.toDouble, y.toDouble).toInt))),
+            Infixes[Int](AssocLeft, tok.lexeme('/' #> (_ / _)), tok.lexeme('%' #> (_ % _))),
+            Infixes[Int](AssocLeft, tok.lexeme('*' #> (_ * _))),
+            Infixes[Int](AssocLeft, tok.lexeme('+' #> (_ + _)), tok.lexeme('-' #> (_ - _)))).expr
+        lazy val atom: Parsley[Int] = tok.natural <|> tok.parens(expr)
+        tok.whiteSpace *> expr <* eof
+    }
+    println(maths.pretty)
+    def maths_unsub: Parsley[Int] =
+    {
+        val tok = new TokenParser(LanguageDef.plain.copy(space = Predicate(Char.isWhitespace)))
+        lazy val expr: Parsley[Int] = chainl1[Int](mul, choice(tok.lexeme('+' #> (_ + _)), tok.lexeme('-' #> (_ - _))))
+        lazy val mul = chainl1[Int](div, tok.lexeme('*' #> (_ * _)))
+        lazy val div = chainl1[Int](pow, choice(tok.lexeme('/' #> (_ / _)), tok.lexeme('%' #> (_ % _))))
+        lazy val pow = chainl1[Int](signs, tok.lexeme('^' #> ((x, y) => math.pow(x.toDouble, y.toDouble).toInt)))
+        lazy val signs = chainPre[Int](atom, choice(tok.lexeme('-' #> (x => -x)), tok.lexeme('+' #> (x => +x))))
+        lazy val atom = tok.natural <|> tok.parens(expr)
+        tok.whiteSpace *> expr <* eof
+    }
+    println(maths_unsub.pretty)
 }
 
-private [parsley] object PfS
+/*private [parsley] object PfS
 {
     import parsec.Parser
     import parsec._
@@ -362,7 +388,7 @@ private [parsley] object PfS
         tok.whiteSpace *> (obj <|> array) <* parsec.Combinator.eof
     }
     def parseJson(s: String) = parsec.runParser(json, (), "", StringStream(s), 1, 1)
-}
+}*/
 
 private [parsley] object BenchParser extends scala.util.parsing.combinator.Parsers
 {
@@ -371,7 +397,7 @@ private [parsley] object BenchParser extends scala.util.parsing.combinator.Parse
     private val elem: Parser[Int] = accept("1", {case '1' => '1'.toInt})
     private val op: Parser[(Int, Int) => Int] = accept("+", {case '+' => _ + _})
     val bench = chainl1(elem, op)
-    val json = scala.util.parsing.json.JSON
+    //val json = scala.util.parsing.json.JSON
 
     private class BenchReader(tokens: String) extends Reader[Elem]
     {
@@ -382,6 +408,49 @@ private [parsley] object BenchParser extends scala.util.parsing.combinator.Parse
     }
 
     def apply(input: String) = bench(new BenchReader(input))
+}
+
+private [parsley] object ScalaParserCombinatorsBrainFuck extends scala.util.parsing.combinator.Parsers
+{
+    import scala.util.parsing.input.{NoPosition, Reader}
+    override type Elem = Char
+    private val elem: Parser[Int] = accept("1", {case '1' => '1'.toInt})
+    private val op: Parser[(Int, Int) => Int] = accept("+", {case '+' => _ + _})
+    val bench = chainl1(elem, op)
+
+    trait BrainFuckOp
+    case object RightPointer extends BrainFuckOp
+    case object LeftPointer extends BrainFuckOp
+    case object Increment extends BrainFuckOp
+    case object Decrement extends BrainFuckOp
+    case object Output extends BrainFuckOp
+    case object Input extends BrainFuckOp
+    case class Loop(p: List[BrainFuckOp]) extends BrainFuckOp
+
+    val ws = rep(acceptIf(c => (c: @switch) match
+    {
+        case '>' | '<' | '+' | '-' | '.' | ',' | '[' | ']' => false
+        case _ => true
+    })(_ => ""))
+    val bf: Parser[List[BrainFuckOp]] = rep((accept("operator",
+    {
+        case '>' => RightPointer
+        case '<' => LeftPointer
+        case '+' => Increment
+        case '-' => Decrement
+        case '.' => Output
+        case ',' => Input
+    }) | (accept('[') ~> ws ~> (bf ^^ Loop) <~ accept(']'))) <~ ws)
+
+    private class BenchReader(tokens: String) extends Reader[Elem]
+    {
+        override def first = tokens.head
+        override def atEnd = tokens.isEmpty
+        override def pos = NoPosition
+        override def rest = new BenchReader(tokens.tail)
+    }
+
+    def apply(input: String) = (ws ~> bf)(new BenchReader(input))
 }
 
 /*
@@ -460,9 +529,53 @@ private [parsley] object Native
             case '+' => parseTail_(input, index + 1, sum)
         }
     }
+
+    trait BrainFuckOp
+    case object RightPointer extends BrainFuckOp
+    case object LeftPointer extends BrainFuckOp
+    case object Increment extends BrainFuckOp
+    case object Decrement extends BrainFuckOp
+    case object Output extends BrainFuckOp
+    case object Input extends BrainFuckOp
+    case class Loop(p: List[BrainFuckOp]) extends BrainFuckOp
+
+    def brainfuck(in: String): List[BrainFuckOp] =
+    {
+        @tailrec def walk(in: List[Char], acc: List[BrainFuckOp] = Nil): (List[BrainFuckOp], List[Char]) = in match
+        {
+            case (']'::_) | Nil => (acc.reverse, in)
+            case c::rest => (c: @switch) match
+            {
+                case '>' => walk(rest, RightPointer::acc)
+                case '<' => walk(rest, LeftPointer::acc)
+                case '+' => walk(rest, Increment::acc)
+                case '-' => walk(rest, Decrement::acc)
+                case '.' => walk(rest, Output::acc)
+                case ',' => walk(rest, Input::acc)
+                case '[' =>
+                    val (body, rest_) = loop(rest)
+                    walk(rest_, Loop(body)::acc)
+                case _ => walk(rest, acc)
+            }
+        }
+        def loop(in: List[Char]): (List[BrainFuckOp], List[Char]) =
+        {
+            val (body, rest) = walk(in)
+            rest match
+            {
+                case ']'::rest_ => (body, rest_)
+                case _ => throw new Exception("Unclosed loop :(")
+            }
+        }
+        walk(in.toList) match
+        {
+            case (res, Nil) => res
+            case _ => throw new Exception("] closes a loop, but no loop was opened...")
+        }
+    }
 }
 
-private [parsley] object FastParser
+private [parsley] object FastParse
 {
     import fastparse.all._
     type Parser[A] = fastparse.all.Parser[A]
@@ -480,7 +593,10 @@ private [parsley] object FastParser
         else p
     }
     val big = repeat(P("1"), 5000)
+}
 
+private [parsley] object FastParseBrainfuck
+{
     trait BrainFuckOp
     case object RightPointer extends BrainFuckOp
     case object LeftPointer extends BrainFuckOp
@@ -490,26 +606,39 @@ private [parsley] object FastParser
     case object Input extends BrainFuckOp
     case class Loop(p: List[BrainFuckOp]) extends BrainFuckOp
 
-    // This is an optimisation for the logic inside. Since this is the last in a chain of ors
-    // it doesn't need to account for the other symbols (just needs to not accidentally consume ])
-    private val whitespaceBF = P(CharPred(_ != ']'))
-
-    def brainfuck: Parser[List[BrainFuckOp]] =
-    {
-        lazy val bf: Parser[List[BrainFuckOp]] =
-            (P(">").map(_ => Some(RightPointer))
-           | P("<").map(_ => Some(LeftPointer))
-           | P("+").map(_ => Some(Increment))
-           | P("-").map(_ => Some(Decrement))
-           | P(".").map(_ => Some(Output))
-           | P(",").map(_ => Some(Input))
-           | P("[" ~ bf ~ "]").map(p => Some(Loop(p)))
-           | whitespaceBF.map(_ => None)).rep.map(_.flatten.toList)
-        bf ~ End
+    val White = WhitespaceApi.Wrapper {
+        import fastparse.all._
+        val Reserved = "<>+-.,[]".toSet
+        NoTrace(ElemsWhile(!Reserved.contains(_)).rep)
     }
+
+    import White._
+    import fastparse.noApi._
+    type Parser[A] = fastparse.noApi.Parser[A]
+
+    lazy val ops: Parser[BrainFuckOp] =
+        CharIn("<>+-.,").!.map {
+            case "<" => LeftPointer
+            case ">" => RightPointer
+            case "+" => Increment
+            case "-" => Decrement
+            case "." => Output
+            case "," => Input
+        }.opaque(s"keywords(<>+-.,)")
+
+    lazy val loop: Parser[List[BrainFuckOp]] =
+        P("[".opaque("Opening bracket '['") ~/
+          (expr | PassWith(Nil)).opaque("expression") ~ // [] is ok
+          "]".opaque("']' Closing bracket"))
+            .map {Loop(_) :: Nil}
+
+    lazy val expr: Parser[List[BrainFuckOp]] = (loop | ops.rep(1)).rep
+        .map {_.flatten.toList} // empty should fail
+
+    lazy val parser: Parser[List[BrainFuckOp]] = Start ~ expr ~ End
 }
 
-private [parsley] object FastParserWhite
+private [parsley] object FastParseWhite
 {
     sealed trait NandExpr
     case class NandNand(l: NandExpr, r: NandExpr) extends NandExpr
@@ -537,7 +666,7 @@ private [parsley] object FastParserWhite
 
     val index = P("[" ~ CharIn('0'to'9').rep(1).!.map(_.toInt) ~/ "]")
     val variable = P((identifier ~ index.?).map(NandId.tupled))
-    val literal = P("0").map(_ => NandLit('0')) | P("1").map(_ => NandLit('1')) | ("'" ~/ CharPred(_.isValidChar).! ~/ "'").map(s => NandLit(s(0)))
+    val literal = P("0").map(_ => NandLit('0')) | P("1").map(_ => NandLit('1')) | ("'" ~~ CharPred(_.isValidChar).! ~~ "'").map(s => NandLit(s(0)))
     val expr: Parser[NandExpr] = P(nandexpr.rep(sep="!".~/, min=1).map(_.reduce(NandNand)))
     lazy val nandexpr = P(literal | funccall | variable)
     lazy val funccall = P((identifier ~ "(" ~/ exprlist ~/ ")").map(NandCall.tupled))
@@ -612,16 +741,16 @@ private [parsley] object Benchmark
     val benchmarks: Array[(String, Any, (Any, String) => Any, Int)] =
         Array(
             /*0*/  ("inputs/helloworld_golfed.bf", ParsleyBench.brainfuck, parseParsley, 1000000),
-            /*1*/  ("inputs/helloworld_golfed.bf", FastParser.brainfuck, parseFastParse, 1000000),
-            /*2*/  ("inputs/helloworld.bf", ParsleyBench.brainfuck, parseParsley, 100000),
-            /*3*/  ("inputs/helloworld.bf", FastParser.brainfuck, parseFastParse, 100000),
-            /*4*/  ("inputs/arrays.nand", ParsleyBench.nand, parseParsley, 100000),
-            /*5*/  ("inputs/arrays.nand", FastParserWhite.nand, parseFastParse, 100000),
+            /*1*/  ("inputs/helloworld_golfed.bf", FastParseBrainfuck.parser, parseFastParse, 1000000),
+            /*2*/  ("inputs/helloworld.bf", ParsleyBench.brainfuck, parseParsley, 1000000),
+            /*3*/  ("inputs/helloworld.bf", FastParseBrainfuck.parser, parseFastParse, 1000000),
+            /*4*/  ("inputs/arrays.nand", ParsleyBench.nand, parseParsley, 50000),
+            /*5*/  ("inputs/arrays.nand", FastParseWhite.nand, parseFastParse, 50000),
             /*6*/  ("inputs/test.while", ParsleyBench.whileLang, parseParsley, 100000),
             /*7*/  ("inputs/fibonacci.js", ParsleyBench.javascript, parseParsley, 100000),
             /*8*/  ("inputs/mediumdata.json", ParsleyBench.json, parseParsley, 50000),
             /*9*/  ("inputs/mediumdata.json", FastParseJson.jsonExpr, parseFastParse, 50000),
-            /*10*/  ("inputs/bigdata.json", ParsleyBench.json, parseParsley, 50000),
+            /*10*/ ("inputs/bigdata.json", ParsleyBench.json, parseParsley, 50000),
             /*11*/ ("inputs/bigdata.json", FastParseJson.jsonExpr, parseFastParse, 50000),
             /*12*/ ("inputs/hugedata.json", ParsleyBench.json, parseParsley, 2000),
             /*13*/ ("inputs/hugedata.json", FastParseJson.jsonExpr, parseFastParse, 2000),
@@ -630,6 +759,14 @@ private [parsley] object Benchmark
             /*16*/ ("inputs/heapsort.js", ParsleyBench.javascript, parseParsley, 100000),
             /*17*/ ("inputs/game.js", ParsleyBench.javascript, parseParsley, 100000),
             /*18*/ ("inputs/big.js", ParsleyBench.javascript, parseParsley, 1000),
+            /*19*/ ("inputs/fibonacci.nand", ParsleyBench.nand, parseParsley, 100000),
+            /*20*/ ("inputs/fibonacci.nand", FastParseWhite.nand, parseFastParse, 100000),
+            /*21*/ ("inputs/fizzbuzz.nand", ParsleyBench.nand, parseParsley, 50000),
+            /*22*/ ("inputs/fizzbuzz.nand", FastParseWhite.nand, parseFastParse, 50000),
+            /*23*/ ("inputs/compiler.bf", ParsleyBench.brainfuck, parseParsley, 10000),
+            /*24*/ ("inputs/compiler.bf", FastParseBrainfuck.parser, parseFastParse, 10000),
+            /*25*/ ("inputs/bigequation.txt", ParsleyBench.maths, parseParsley, 100000),
+            /*27*/ ("inputs/bigequation.txt", ParsleyBench.maths_unsub, parseParsley, 2000000),
         )
 
     def main(args: Array[String]): Unit =
@@ -638,13 +775,15 @@ private [parsley] object Benchmark
         //val p = ParsleyBench.chain
         //val input = "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"
         //val exec = runParserFastUnsafe _
-        val (filename, p, exec, iters) = benchmarks(17)
+        //new nandlang.NandLang().run(read("inputs/arrays.nand"))
+        val nand = new nandlang.NandLang
+        val (filename, p, exec, iters) = benchmarks(25)
         val input = read(filename)
         val start = System.currentTimeMillis()
         println(exec(p, input))
         //println(BenchParser.json.parseFull(input))
         //println(PfS.parseJson(input))
-        for (_ <- 0 to iters) /*PfS.parseJson(input)*/ exec(p, input)
+        for (_ <- 0 to iters) runParserFastUnsafe(ParsleyBench.maths, input)//exec(p, input)
         println(System.currentTimeMillis() - start)
     }
 }
