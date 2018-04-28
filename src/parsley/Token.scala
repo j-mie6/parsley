@@ -400,7 +400,7 @@ private [parsley] object DeepToken
     private [parsley] class WhiteSpace(ws: TokenSet, start: String, end: String, line: String, nested: Boolean) extends Parsley[Nothing]
     {
         override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) = cont(this)
-        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter, subs: mutable.Map[Parsley[_], Int]) =
+        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
         {
             instrs += new instructions.TokenWhiteSpace(ws, start, end, line, nested)
             cont
@@ -410,7 +410,7 @@ private [parsley] object DeepToken
     private [parsley] class SkipComments(start: String, end: String, line: String, nested: Boolean) extends Parsley[Nothing]
     {
         override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) = cont(this)
-        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter, subs: mutable.Map[Parsley[_], Int]) =
+        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
         {
             instrs += new instructions.TokenSkipComments(start, end, line, nested)
             cont
@@ -424,7 +424,7 @@ private [parsley] object DeepToken
             if (label == null) cont(this)
             else cont(new Sign(ty, label))
         }
-        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter, subs: mutable.Map[Parsley[_], Int]) =
+        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
         {
             instrs += new instructions.TokenSign(ty, expected)
             cont
@@ -438,7 +438,7 @@ private [parsley] object DeepToken
             if (label == null) cont(this)
             else cont(new Natural(label))
         }
-        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter, subs: mutable.Map[Parsley[_], Int]) =
+        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
         {
             instrs += new instructions.TokenNatural(expected)
             cont
@@ -452,7 +452,7 @@ private [parsley] object DeepToken
             if (label == null) cont(this)
             else cont(new Float(label))
         }
-        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter, subs: mutable.Map[Parsley[_], Int]) =
+        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
         {
             instrs += new instructions.TokenFloat(expected)
             cont
@@ -466,7 +466,7 @@ private [parsley] object DeepToken
             if (label == null) cont(this)
             else cont(new Escape(label))
         }
-        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter, subs: mutable.Map[Parsley[_], Int]) =
+        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
         {
             instrs += new instructions.TokenEscape(expected)
             cont
@@ -480,7 +480,7 @@ private [parsley] object DeepToken
             if (label == null) cont(this)
             else cont(new StringLiteral(ws, label))
         }
-        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter, subs: mutable.Map[Parsley[_], Int]) =
+        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
         {
             instrs += new instructions.TokenString(ws, expected)
             cont
@@ -494,7 +494,7 @@ private [parsley] object DeepToken
             if (label == null) cont(this)
             else cont(new RawStringLiteral(label))
         }
-        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter, subs: mutable.Map[Parsley[_], Int]) =
+        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
         {
             instrs += new instructions.TokenRawString(expected)
             cont
@@ -508,7 +508,7 @@ private [parsley] object DeepToken
             if (label == null) cont(this)
             else cont(new Identifier(start, letter, keywords, label))
         }
-        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter, subs: mutable.Map[Parsley[_], Int]) =
+        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
         {
             instrs += new instructions.TokenIdentifier(start, letter, keywords, expected)
             cont
@@ -522,7 +522,7 @@ private [parsley] object DeepToken
             if (label == null) cont(this)
             else cont(new UserOp(start, letter, operators, label))
         }
-        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter, subs: mutable.Map[Parsley[_], Int]) =
+        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
         {
             instrs += new instructions.TokenUserOperator(start, letter, operators, expected)
             cont
@@ -536,7 +536,7 @@ private [parsley] object DeepToken
             if (label == null) cont(this)
             else cont(new ReservedOp(start, letter, operators, label))
         }
-        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter, subs: mutable.Map[Parsley[_], Int]) =
+        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
         {
             instrs += new instructions.TokenOperator(start, letter, operators, expected)
             cont
@@ -550,7 +550,7 @@ private [parsley] object DeepToken
             if (label == null) cont(this)
             else cont(new Keyword(keyword, letter, caseSensitive, label))
         }
-        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter, subs: mutable.Map[Parsley[_], Int]) =
+        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
         {
             instrs += new instructions.TokenKeyword(keyword, letter, caseSensitive, expected)
             cont
@@ -564,7 +564,7 @@ private [parsley] object DeepToken
             if (label == null) cont(this)
             else cont(new Operator(operator, letter, label))
         }
-        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, labels: LabelCounter, subs: mutable.Map[Parsley[_], Int]) =
+        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
         {
             instrs += new instructions.TokenOperator_(operator, letter, expected)
             cont

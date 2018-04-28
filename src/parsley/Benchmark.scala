@@ -414,9 +414,6 @@ private [parsley] object ScalaParserCombinatorsBrainFuck extends scala.util.pars
 {
     import scala.util.parsing.input.{NoPosition, Reader}
     override type Elem = Char
-    private val elem: Parser[Int] = accept("1", {case '1' => '1'.toInt})
-    private val op: Parser[(Int, Int) => Int] = accept("+", {case '+' => _ + _})
-    val bench = chainl1(elem, op)
 
     trait BrainFuckOp
     case object RightPointer extends BrainFuckOp
@@ -451,6 +448,34 @@ private [parsley] object ScalaParserCombinatorsBrainFuck extends scala.util.pars
     }
 
     def apply(input: String) = (ws ~> bf)(new BenchReader(input))
+}
+
+private [parsley] object ScalaParserCombinatorsMath extends scala.util.parsing.combinator.Parsers
+{
+    import scala.util.parsing.input.{NoPosition, Reader}
+    override type Elem = Char
+
+    val ws = rep(acceptIf(c => c == ' ' || c == '\n' || c == '\t')(_ => ""))
+    val digit = acceptIf(_.isDigit)(_ => "")
+    def tok[A](p: Parser[A]): Parser[A] = p <~ ws
+    def chainPre[A](p: =>Parser[A], op: Parser[A => A]): Parser[A] = for (fs <- rep(op); x <- p) yield fs.foldRight(x)((f, y) => f(y))
+
+    lazy val expr: Parser[Int] = chainl1[Int](mul, tok(accept('+') ^^^ ((x: Int, y: Int) => x + y)) | tok(accept('+') ^^^ ((x: Int, y: Int) => x - y)))
+    lazy val mul = chainl1[Int](div, tok(accept('*') ^^^ ((x: Int, y: Int) => x * y)))
+    lazy val div = chainl1[Int](pow, tok(accept('/') ^^^ ((x: Int, y: Int) => x / y)) | tok(accept('%') ^^^ ((x: Int, y: Int) => x % y)))
+    lazy val pow = chainl1[Int](signs, tok(accept('^') ^^^ ((x, y) => math.pow(x.toDouble, y.toDouble).toInt)))
+    lazy val signs = chainPre[Int](atom, tok(accept('+') ^^^ ((x: Int) => x)) | tok(accept('+') ^^^ ((x: Int) => -x)))
+    lazy val atom = tok(rep1(digit).map(_.mkString.toInt)) | tok(accept('(')) ~> expr <~ tok(accept(')'))
+
+    private class BenchReader(tokens: String) extends Reader[Elem]
+    {
+        override def first = tokens.head
+        override def atEnd = tokens.isEmpty
+        override def pos = NoPosition
+        override def rest = new BenchReader(tokens.tail)
+    }
+
+    def apply(input: String) = (ws ~> expr)(new BenchReader(input))
 }
 
 /*
@@ -724,24 +749,52 @@ private [parsley] object FastParseJson
 
 private [parsley] object Atto
 {
+    import parsley.Native._
     import atto.parser._
     import atto.parser.combinator._
     import atto.parser.text._
     import atto.parser.character._
     import atto.syntax.parser._
     type Parser[A] = atto.Parser[A]
-    private lazy val num = token(choice(attempt(numeric.float).map(x => x: Any), numeric.int.map(x => x: Any)))
+    private lazy val num = token(attempt(numeric.float).map(x => x: Any) | numeric.int.map(x => x: Any))
     private lazy val `null` = token(string("null")).asInstanceOf[Parser[Any]]
     private lazy val `true` = token(string("true")).asInstanceOf[Parser[Any]]
     private lazy val `false` = token(string("false")).asInstanceOf[Parser[Any]]
-    private lazy val value: Parser[Any] = choice(`null`, `true`, `false`, num, token(stringLiteral).asInstanceOf[Parser[Any]], array, obj)
-    private lazy val obj = token(char('{')) ~> sepBy(token(stringLiteral) ~ value, token(char(','))).map(_.toMap.asInstanceOf[Any]) <~ token(char('}'))
+    private lazy val value: Parser[Any] = `null` | `true` | `false` | num | token(stringLiteral).asInstanceOf[Parser[Any]] | array | obj
+    private lazy val obj = token(char('{')) ~> sepBy(pairBy(token(stringLiteral), token(char(':')), value), token(char(','))).map(_.toMap.asInstanceOf[Any]) <~ token(char('}'))
     private lazy val array = token(char('[')) ~> sepBy(value, token(char(','))).asInstanceOf[Parser[Any]] <~ token(char(']'))
-    lazy val json: Parser[Any] = choice(obj, array) <~ endOfInput
-    def parseJson(input: String): Any =
+    lazy val json: Parser[Any] = skipWhitespace ~> orElse(obj, array) <~ endOfInput
+    def parseJson(input: String): Any = json.parseOnly(input)
+
+    def chainPre[A](p: =>Parser[A], op: Parser[A => A]): Parser[A] = for (fs <- many(op); x <- p) yield fs.foldRight(x)((f, y) => f(y))
+    def chainl1[A](p: =>Parser[A], op: Parser[(A, A) => A]): Parser[A] = for (x <- p; fs <- many(for (f <- op; y <- p) yield (x: A) => f(x, y))) yield fs.foldLeft(x)((y, f) => f(y))
+
+    lazy val mexpr: Parser[Int] = chainl1(mmul, token(char('+')) >| ((x: Int, y: Int) => x + y) | token(char('-') >| ((x: Int, y: Int) => x - y)))
+    lazy val mmul = chainl1(mdiv, token(char('*')) >| ((x: Int, y: Int) => x * y))
+    lazy val mdiv = chainl1(mpow, token(char('/')) >| ((x: Int, y: Int) => x / y) | token(char('%') >| ((x: Int, y: Int) => x % y)))
+    lazy val mpow = chainl1(msigns, token(char('^')) >| ((x: Int, y: Int) => scala.math.pow(x.toDouble, y.toDouble).toInt))
+    lazy val msigns = chainPre(matom, token(char('+')) >| ((x: Int) => x) | token(char('-')) >| ((x: Int) => -x))
+    lazy val matom = token(numeric.int) | (token(char('(')) ~> mexpr <~ token(char(')')))
+    val math = skipWhitespace ~> mexpr <~ endOfInput
+    def parseMath(input: String): Any = math.parseOnly(input)
+
+    def brainfuck: Parser[List[BrainFuckOp]] =
     {
-        json.parseOnly(input)
+        val ws = skipMany(noneOf("<>+-.,[]"))
+        def tok[A](p: Parser[A]): Parser[A] = p <~ ws
+        lazy val bf: Parser[List[BrainFuckOp]] =
+            many(choice[BrainFuckOp](
+                tok(char('>')) >| RightPointer,
+                tok(char('<')) >| LeftPointer,
+                tok(char('+')) >| Increment,
+                tok(char('-')) >| Decrement,
+                tok(char('.')) >| Output,
+                tok(char(',')) >| Input
+              | (tok(char('[')) ~> (bf -| (xs => Loop(xs): BrainFuckOp))) <~ tok(char(']'))))
+        (ws ~> bf <~ endOfInput) | err("] closes a loop but there isn't one open")
     }
+    val bf = brainfuck
+    def parseBrainfuck(input: String) = bf.parseOnly(input)
 }
 
 private [parsley] object Benchmark
@@ -749,6 +802,7 @@ private [parsley] object Benchmark
     def read(filename: String) = Try(Source.fromFile(filename).getLines().mkString("\n") + "\n").getOrElse("")
     def parseParsley(p: Any, s: String): Any = runParserFastUnsafe(p.asInstanceOf[Parsley[_]], s)
     def parseFastParse(p: Any, s: String): Any = p.asInstanceOf[fastparse.all.Parser[_]].parse(s)
+    def parseFunction(f: Any, s: String): Any = f.asInstanceOf[String => Any](s)
 
     val benchmarks: Array[(String, Any, (Any, String) => Any, Int)] =
         Array(
@@ -778,8 +832,12 @@ private [parsley] object Benchmark
             /*23*/ ("inputs/compiler.bf", ParsleyBench.brainfuck, parseParsley, 10000),
             /*24*/ ("inputs/compiler.bf", FastParseBrainfuck.parser, parseFastParse, 10000),
             /*25*/ ("inputs/bigequation.txt", ParsleyBench.maths, parseParsley, 2000000),
-            /*26*/ ("inputs/bigequation.txt", ParsleyBench.maths_unsub, parseParsley, 2000000),
+            /*26*/ ("inputs/bigequation.txt", ParsleyBench.maths_unsub, parseParsley, 200000),
             /*27*/ ("inputs/bigequation.txt", FastParseWhite.math, parseFastParse, 2000000),
+            /*28*/ ("inputs/bigequation.txt", Atto.parseMath _, parseFunction, 2000000),
+            /*29*/ ("inputs/bigequation.txt", ScalaParserCombinatorsMath.apply _, parseFunction, 2000000),
+            /*30*/ ("inputs/helloworld.bf", Atto.parseBrainfuck _, parseFunction, 20000),
+            /*31*/ ("inputs/helloworld.bf", ScalaParserCombinatorsBrainFuck.apply _, parseFunction, 20000),
         )
 
     def main(args: Array[String]): Unit =
@@ -790,13 +848,13 @@ private [parsley] object Benchmark
         //val exec = runParserFastUnsafe _
         //new nandlang.NandLang().run(read("inputs/arrays.nand"))
         val nand = new nandlang.NandLang
-        val (filename, p, exec, iters) = benchmarks(27)
+        val (filename, p, exec, iters) = benchmarks(26)
         val input = read(filename)
         val start = System.currentTimeMillis()
         println(exec(p, input))
         //println(BenchParser.json.parseFull(input))
         //println(PfS.parseJson(input))
-        for (_ <- 0 to iters) exec(p, input)
+        for (_ <- 0 to iters) runParserFastUnsafe(ParsleyBench.maths, input)//exec(p, input)
         println(System.currentTimeMillis() - start)
     }
 }

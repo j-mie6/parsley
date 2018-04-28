@@ -42,11 +42,11 @@ object Char
 
     /**`oneOf(cs)` succeeds if the current character is in the supplied sequence of characters `cs`.
       * Returns the parsed character. See also `satisfy`.*/
-    def oneOf(cs: Char*): Parsley[Char] = satisfy(cs.contains)
+    def oneOf(cs: Char*): Parsley[Char] = oneOf(cs.toSet)
 
     /**As the dual of `oneOf`, `noneOf(cs)` succeeds if the current character is not in the supplied
       * sequence of characters `cs`. Returns the parsed character.*/
-    def noneOf(cs: Char*): Parsley[Char] = satisfy(!cs.contains(_))
+    def noneOf(cs: Char*): Parsley[Char] = noneOf(cs.toSet)
 
     /**The parser `anyChar` accepts any kind of character. Returns the accepted character.*/
     val anyChar: Parsley[Char] = satisfy(_ => true) ? "any character"

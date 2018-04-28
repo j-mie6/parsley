@@ -267,7 +267,7 @@ private [parsley] final class JumpTable(prefixes: List[Char], labels: List[Int],
 {
     private [this] var defaultPreamble: Int = _
     private [this] val jumpTable = mutable.LongMap(prefixes.map(_.toLong).zip(labels): _*)
-    val expecteds = prefixes.zip(_expecteds).map{case (c, expected) => if (expected == null) "\"" + c + "\"" else expected}.reverse
+    val expecteds = prefixes.zip(_expecteds).map{case (c, expected) => if (expected == null) "\"" + c + "\"" else expected}
 
     override def apply(ctx: Context): Unit =
     {
@@ -303,7 +303,7 @@ private [parsley] final class JumpTable(prefixes: List[Char], labels: List[Int],
         }
         else if (ctx.offset == ctx.erroffset)
         {
-            if (ctx.errorOverride == null) ctx.expected :::= expecteds
+            if (ctx.errorOverride == null) ctx.expected = ctx.expected reverse_::: expecteds
             else ctx.expected ::= ctx.errorOverride
         }
     }
