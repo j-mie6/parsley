@@ -7,8 +7,6 @@ import Char.{charLift, digit, hexDigit, octDigit, satisfy, stringLift}
 import parsley.DeepToken.Sign._
 import parsley.TokenParser.TokenSet
 
-import scala.collection.mutable
-
 /**
   * This class is required to construct a TokenParser. It defines the various characteristics of the language to be
   * tokenised. Where a parameter can be either a `Set[Char]` or a `Parsley` object, prefer the `Set` where possible.

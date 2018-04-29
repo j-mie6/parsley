@@ -596,8 +596,8 @@ private [parsley] object DeepEmbedding
         }
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) = tablify(this, Nil) match
         {
-            // If the tablified list is single element with None, that implies that this should be generated as normal!
-            case (_, None)::Nil => p match
+            // If the tablified list is single element, that implies that this should be generated as normal!
+            case _::Nil => p match
             {
                 case Attempt(u) => q match
                 {

@@ -160,7 +160,7 @@ function GLOBAL() {
       x.c = [];
 
       // Convert string to array of digits without leading/trailing zeros.
-      for (e = 0; i <= nl;) x.c[++e] = +n.charAt(++i);
+      for (e = 0; i <= nl;) x.c[e++] = +n.charAt(++i);
     }
 
     return x;
@@ -266,7 +266,7 @@ function GLOBAL() {
       n = k - x.e;
 
       // Round?
-      if (x.c.length > (++k)) {round(x, n, Big.RM);}
+      if (x.c.length > ++k) {round(x, n, Big.RM);}
 
       // toFixed: recalculate k as x.e may have changed if value rounded up.
       if (id == 2) {k = x.e + n + 1;}
@@ -288,7 +288,7 @@ function GLOBAL() {
       for (; ++e;) s = "0" + s;
       s = "0." + s;
     } else if (e > 0) {
-      if ((++e) > n) {for (e = e - n; --e;) {s = s + "0";}}
+      if (++e > n) {for (e = e - n; --e;) {s = s + "0";}}
       else if (e < n) {s = s.slice(0, e) + "." + s.slice(e);}
     } else if (n > 1) {
       s = s.charAt(0) + "." + s.slice(1);
@@ -327,7 +327,7 @@ function GLOBAL() {
       l = y.e;
 
     // Either zero?
-    if ((!xc[0]) || (!yc[0])) return !xc[0] ? !yc[0] ? 0 : -j : i;
+    if (!xc[0] || !yc[0]) return !xc[0] ? !yc[0] ? 0 : -j : i;
 
     // Signs differ?
     if (i != j) return i;
@@ -340,7 +340,7 @@ function GLOBAL() {
     j = (k = xc.length) < (l = yc.length) ? k : l;
 
     // Compare digit by digit.
-    for (i = -1; (++i) < j;) {
+    for (i = -1; i++ < j;) {
       if (xc[i] != yc[i]) return xc[i] > yc[i] ^ isneg ? 1 : -1;
     }
 
@@ -387,7 +387,7 @@ function GLOBAL() {
     bz.unshift(0);
 
     // Add zeros to make remainder as long as divisor.
-    for (; (++rl) < bl;) r.push(0);
+    for (; ++rl < bl;) r.push(0);
 
     do {
 
@@ -414,7 +414,7 @@ function GLOBAL() {
           for (bt = rl == bl ? b : bz; rl;) {
             if (r[--rl] < bt[rl]) {
               ri = rl;
-              for (; ri && (!r[--ri]);) r[ri] = 9;
+              for (; ri && !r[--ri];) r[ri] = 9;
               --r[ri];
               r[rl] = r[rl] + 10;
             }
@@ -434,10 +434,10 @@ function GLOBAL() {
       if (r[0] && cmp) {r[rl] = a[ai] || 0;}
       else r = [a[ai]];
 
-  } while (((++ai) < al || r[0] != UNDEFINED) && (--k));
+  } while ((++ai < al || r[0] != UNDEFINED) && (--k));
 
     // Leading zero? Do not remove if result is simply zero (qi == 1).
-    if ((!qc[0]) && qi != 1) {
+    if (!qc[0] && qi != 1) {
 
       // There can"t be more than one zero.
       qc.shift();
@@ -516,7 +516,7 @@ function GLOBAL() {
       ye = y.e;
 
     // Either zero?
-    if ((!xc[0]) || (!yc[0])) {
+    if (!xc[0] || !yc[0]) {
 
       // y is non-zero? x is non-zero? Or both are zero.
       return yc[0] ? (y.s = -b, y) : new Big(xc[0] ? x : 0);
@@ -566,7 +566,7 @@ function GLOBAL() {
     // Subtract yc from xc.
     for (b = i; j > a;) {
       if (xc[--j] < yc[j]) {
-        for (i = j; i && (!xc[--i]);) xc[i] = 9;
+        for (i = j; i && !xc[--i];) xc[i] = 9;
         --xc[i];
         xc[j] = xc[j] + 10;
       }
@@ -651,7 +651,7 @@ function GLOBAL() {
       yc = y.c;
 
     // Either zero? y is non-zero? x is non-zero? Or both are zero.
-    if ((!xc[0]) || (!yc[0])) return yc[0] ? y : new Big(xc[0] ? x : a * 0);
+    if (!xc[0] || !yc[0]) return yc[0] ? y : new Big(xc[0] ? x : a * 0);
 
     xc = xc.slice();
 
@@ -807,7 +807,7 @@ function GLOBAL() {
     y.s = x.s == y.s ? 1 : -1;
 
     // Return signed 0 if either 0.
-    if ((!xc[0]) || (!yc[0])) return new Big(y.s * 0);
+    if (!xc[0] || !yc[0]) return new Big(y.s * 0);
 
     // Initialise exponent of result as x.e + y.e.
     y.e = i + j;

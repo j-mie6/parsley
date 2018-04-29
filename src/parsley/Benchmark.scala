@@ -168,73 +168,7 @@ private [parsley] object ParsleyBench
         tok.whiteSpace *> stm <* eof
     }
 
-    type JSProgram = List[JSElement]
-    trait JSElement
-    case class JSFunction(fn: String, args: List[String], stm: JSCompoundStm) extends JSElement
-    type JSCompoundStm = List[JSStm]
-    trait JSStm extends JSElement
-    case object JSSemi extends JSStm
-    case class JSIf(cond: JSExpr, t: JSStm, e: Option[JSStm]) extends JSStm
-    case class JSWhile(cond: JSExpr, body: JSStm) extends JSStm
-    case class JSFor(init: Option[Either[List[JSVar], JSExpr]], cond: Option[JSExpr], step: Option[JSExpr])(body: JSStm) extends JSStm
-    case class JSForIn(init: Either[List[JSVar], JSExpr], expr: JSExpr)(body: JSStm) extends JSStm
-    case object JSBreak extends JSStm
-    case object JSContinue extends JSStm
-    case class JSWith(expr: JSExpr, body: JSStm) extends JSStm
-    case class JSReturn(e: Option[JSExpr]) extends JSStm
-    case class JSBlock(stms: JSCompoundStm) extends JSStm
-    case class JSNaked(n: Either[List[JSVar], JSExpr]) extends JSStm
-    case class JSVar(v: String, asgn: Option[JSExpr_])
-    type JSExpr = List[JSExpr_]
-    trait JSExpr_
-    case class JSAsgn(l: JSExpr_, r: JSExpr_) extends JSExpr_
-    case class JSCond(c: JSExpr_, t: JSExpr_, e: JSExpr_) extends JSExpr_
-    case class JSOr(l: JSExpr_, r: JSExpr_) extends JSExpr_
-    case class JSAnd(l: JSExpr_, r: JSExpr_) extends JSExpr_
-    case class JSBitOr(l: JSExpr_, r: JSExpr_) extends JSExpr_
-    case class JSBitXor(l: JSExpr_, r: JSExpr_) extends JSExpr_
-    case class JSBitAnd(l: JSExpr_, r: JSExpr_) extends JSExpr_
-    case class JSEq(l: JSExpr_, r: JSExpr_) extends JSExpr_
-    case class JSNe(l: JSExpr_, r: JSExpr_) extends JSExpr_
-    case class JSLt(l: JSExpr_, r: JSExpr_) extends JSExpr_
-    case class JSGt(l: JSExpr_, r: JSExpr_) extends JSExpr_
-    case class JSLe(l: JSExpr_, r: JSExpr_) extends JSExpr_
-    case class JSGe(l: JSExpr_, r: JSExpr_) extends JSExpr_
-    case class JSShl(l: JSExpr_, r: JSExpr_) extends JSExpr_
-    case class JSShr(l: JSExpr_, r: JSExpr_) extends JSExpr_
-    case class JSAdd(l: JSExpr_, r: JSExpr_) extends JSExpr_
-    case class JSSub(l: JSExpr_, r: JSExpr_) extends JSExpr_
-    case class JSMul(l: JSExpr_, r: JSExpr_) extends JSExpr_
-    case class JSDiv(l: JSExpr_, r: JSExpr_) extends JSExpr_
-    case class JSMod(l: JSExpr_, r: JSExpr_) extends JSExpr_
-    trait JSUnary extends JSExpr_
-    case class JSPlus(l: JSUnary) extends JSUnary
-    case class JSNeg(l: JSUnary) extends JSUnary
-    case class JSBitNeg(l: JSUnary) extends JSUnary
-    case class JSNot(l: JSUnary) extends JSUnary
-    case class JSInc(l: JSUnary) extends JSUnary
-    case class JSDec(l: JSUnary) extends JSUnary
-    case class JSNew(c: JSCons) extends JSUnary
-    case class JSDel(m: JSMember) extends JSUnary
-    trait JSMember extends JSUnary
-    case class JSPrimExp(a: JSAtom) extends JSMember
-    case class JSAccess(a: JSAtom, m: JSMember) extends JSMember
-    case class JSIndex(a: JSAtom, e: JSExpr) extends JSMember
-    case class JSCall(a: JSAtom, args: List[JSExpr_]) extends JSMember
-    trait JSCons extends JSUnary
-    case class JSQual(v: String, con: JSCons) extends JSCons
-    case class JSConCall(v: String, args: List[JSExpr_]) extends JSCons
-    trait JSAtom
-    case class JSParens(expr: JSExpr) extends JSAtom
-    case class JSArray(expr: JSExpr) extends JSAtom
-    case class JSId(v: String) extends JSAtom
-    case class JSInt(n: Int) extends JSAtom
-    case class JSFloat(f: Double) extends JSAtom
-    case class JSString(s: String) extends JSAtom
-    case object JSTrue extends JSAtom
-    case object JSFalse extends JSAtom
-    case object JSNull extends JSAtom
-    case object JSThis extends JSAtom
+    import JavascriptAST._
 
     def javascript: Parsley[JSProgram] =
     {
@@ -282,16 +216,17 @@ private [parsley] object ParsleyBench
             Prefixes(tok.operator("--") #> JSDec, tok.operator("++") #> JSInc,
                      tok.operator("-") #> JSNeg, tok.operator("+") #> JSPlus,
                      tok.operator("~") #> JSBitNeg, tok.operator("!") #> JSNot),
+            Postfixes(tok.operator("++") #> JSDec, tok.operator("++") #> JSInc),
             Infixes(AssocLeft, tok.operator("*") #> JSMul, tok.operator("/") #> JSDiv,
                                tok.operator("%") #> JSMod),
             Infixes(AssocLeft, tok.operator("+") #> JSAdd, tok.operator("-") #> JSSub),
             Infixes(AssocLeft, tok.operator("<<") #> JSShl, tok.operator(">>") #> JSShr),
-            Infixes(AssocLeft, tok.operator("<=") #> JSLe, attempt(tok.operator("<")) #> JSLt,
-                               tok.operator(">=") #> JSGe, attempt(tok.operator(">")) #> JSGt),
+            Infixes(AssocLeft, tok.operator("<=") #> JSLe, tok.operator("<") #> JSLt,
+                               tok.operator(">=") #> JSGe, tok.operator(">") #> JSGt),
             Infixes(AssocLeft, tok.operator("==") #> JSEq, tok.operator("!=") #> JSNe),
-            Infixes(AssocLeft, tok.operator("&") #> JSBitAnd),
+            Infixes(AssocLeft, attempt(tok.operator("&")) #> JSBitAnd),
             Infixes(AssocLeft, tok.operator("^") #> JSBitXor),
-            Infixes(AssocLeft, tok.operator("|") #> JSBitOr),
+            Infixes(AssocLeft, attempt(tok.operator("|")) #> JSBitOr),
             Infixes(AssocLeft, tok.operator("&&") #> JSAnd),
             Infixes(AssocLeft, tok.operator("||") #> JSOr)).expr
         lazy val condExpr = lift2((c: JSExpr_, o: Option[(JSExpr_, JSExpr_)]) => o match
@@ -364,6 +299,77 @@ private [parsley] object ParsleyBench
         tok.whiteSpace *> expr <* eof
     }
     println(maths_unsub.pretty)
+}
+
+object JavascriptAST
+{
+    type JSProgram = List[JSElement]
+    trait JSElement
+    case class JSFunction(fn: String, args: List[String], stm: JSCompoundStm) extends JSElement
+    type JSCompoundStm = List[JSStm]
+    trait JSStm extends JSElement
+    case object JSSemi extends JSStm
+    case class JSIf(cond: JSExpr, t: JSStm, e: Option[JSStm]) extends JSStm
+    case class JSWhile(cond: JSExpr, body: JSStm) extends JSStm
+    case class JSFor(init: Option[Either[List[JSVar], JSExpr]], cond: Option[JSExpr], step: Option[JSExpr])(body: JSStm) extends JSStm
+    case class JSForIn(init: Either[List[JSVar], JSExpr], expr: JSExpr)(body: JSStm) extends JSStm
+    case object JSBreak extends JSStm
+    case object JSContinue extends JSStm
+    case class JSWith(expr: JSExpr, body: JSStm) extends JSStm
+    case class JSReturn(e: Option[JSExpr]) extends JSStm
+    case class JSBlock(stms: JSCompoundStm) extends JSStm
+    case class JSNaked(n: Either[List[JSVar], JSExpr]) extends JSStm
+    case class JSVar(v: String, asgn: Option[JSExpr_])
+    type JSExpr = List[JSExpr_]
+    trait JSExpr_
+    case class JSAsgn(l: JSExpr_, r: JSExpr_) extends JSExpr_
+    case class JSCond(c: JSExpr_, t: JSExpr_, e: JSExpr_) extends JSExpr_
+    case class JSOr(l: JSExpr_, r: JSExpr_) extends JSExpr_
+    case class JSAnd(l: JSExpr_, r: JSExpr_) extends JSExpr_
+    case class JSBitOr(l: JSExpr_, r: JSExpr_) extends JSExpr_
+    case class JSBitXor(l: JSExpr_, r: JSExpr_) extends JSExpr_
+    case class JSBitAnd(l: JSExpr_, r: JSExpr_) extends JSExpr_
+    case class JSEq(l: JSExpr_, r: JSExpr_) extends JSExpr_
+    case class JSNe(l: JSExpr_, r: JSExpr_) extends JSExpr_
+    case class JSLt(l: JSExpr_, r: JSExpr_) extends JSExpr_
+    case class JSGt(l: JSExpr_, r: JSExpr_) extends JSExpr_
+    case class JSLe(l: JSExpr_, r: JSExpr_) extends JSExpr_
+    case class JSGe(l: JSExpr_, r: JSExpr_) extends JSExpr_
+    case class JSShl(l: JSExpr_, r: JSExpr_) extends JSExpr_
+    case class JSShr(l: JSExpr_, r: JSExpr_) extends JSExpr_
+    case class JSAdd(l: JSExpr_, r: JSExpr_) extends JSExpr_
+    case class JSSub(l: JSExpr_, r: JSExpr_) extends JSExpr_
+    case class JSMul(l: JSExpr_, r: JSExpr_) extends JSExpr_
+    case class JSDiv(l: JSExpr_, r: JSExpr_) extends JSExpr_
+    case class JSMod(l: JSExpr_, r: JSExpr_) extends JSExpr_
+    trait JSUnary extends JSExpr_
+    case class JSPlus(l: JSUnary) extends JSUnary
+    case class JSNeg(l: JSUnary) extends JSUnary
+    case class JSBitNeg(l: JSUnary) extends JSUnary
+    case class JSNot(l: JSUnary) extends JSUnary
+    case class JSInc(l: JSUnary) extends JSUnary
+    case class JSDec(l: JSUnary) extends JSUnary
+    case class JSNew(c: JSCons) extends JSUnary
+    case class JSDel(m: JSMember) extends JSUnary
+    trait JSMember extends JSUnary
+    case class JSPrimExp(a: JSAtom) extends JSMember
+    case class JSAccess(a: JSAtom, m: JSMember) extends JSMember
+    case class JSIndex(a: JSAtom, e: JSExpr) extends JSMember
+    case class JSCall(a: JSAtom, args: List[JSExpr_]) extends JSMember
+    trait JSCons extends JSUnary
+    case class JSQual(v: String, con: JSCons) extends JSCons
+    case class JSConCall(v: String, args: List[JSExpr_]) extends JSCons
+    trait JSAtom
+    case class JSParens(expr: JSExpr) extends JSAtom
+    case class JSArray(expr: JSExpr) extends JSAtom
+    case class JSId(v: String) extends JSAtom
+    case class JSInt(n: Int) extends JSAtom
+    case class JSFloat(f: Double) extends JSAtom
+    case class JSString(s: String) extends JSAtom
+    case object JSTrue extends JSAtom
+    case object JSFalse extends JSAtom
+    case object JSNull extends JSAtom
+    case object JSThis extends JSAtom
 }
 
 /*private [parsley] object PfS
@@ -679,46 +685,140 @@ private [parsley] object FastParseWhite
     case class NandBlock(stmts: List[NandStmt])
     val White = WhitespaceApi.Wrapper{
         import fastparse.all._
-        val spaces = (CharsWhileIn(" \n\t\r") | ("//" ~ CharsWhile(_ != '\n'))).rep
+        lazy val inCommentSingle: fastparse.all.Parser[Unit] =
+            P("*/"
+            | CharsWhile(c => c != '/' && c != '*') ~ inCommentSingle
+            | CharPred(c => c == '/' || c == '*') ~ inCommentSingle)
+        val multiline = "/*" ~ inCommentSingle
+        val comment = ("//" ~ CharsWhile(_ != '\n')) | multiline
+        val spaces = (CharsWhileIn(" \n\t\r") | comment).rep
         NoTrace(spaces)
     }
     import fastparse.noApi._
     import White._
-    type Parser[A] = fastparse.noApi.Parser[A]
-    val spaces = (CharsWhileIn(" \n\t\r") | ("//" ~ CharsWhile(_ != '\n'))).rep
-    val identifier = (CharPred(c => c.isLetter || c == '_') ~ CharsWhile(c => c.isLetterOrDigit || c == '_').?).!
-    def key(s: String) = s ~~ !CharPred(c => c.isLetterOrDigit || c == '_')
+    import JavascriptAST._
+    private type Parser[A] = fastparse.noApi.Parser[A]
+    private lazy val inCommentSingle: Parser[Unit] =
+        P("*/"
+          | CharsWhile(c => c != '/' && c != '*') ~ inCommentSingle
+          | CharPred(c => c == '/' || c == '*') ~ inCommentSingle)
+    private val multiline = "/*" ~ inCommentSingle
+    private val comment = ("//" ~ CharsWhile(_ != '\n')) | multiline
+    private val spaces = (CharsWhileIn(" \n\t\r") | comment).rep
+    private val identifier = (CharPred(c => c.isLetter || c == '_') ~ CharsWhile(c => c.isLetterOrDigit || c == '_').?).!
+    private def key(s: String) = s ~~ !CharPred(c => c.isLetterOrDigit || c == '_')
+    private def op(s: String) = spaces ~~ s ~~ !CharIn("+-*/=<>!~&|.%^")
 
-    val index = P("[" ~ CharIn('0'to'9').rep(1).!.map(_.toInt) ~/ "]")
-    val variable = P((identifier ~ index.?).map(NandId.tupled))
-    val literal = P("0").map(_ => NandLit('0')) | P("1").map(_ => NandLit('1')) | ("'" ~~ CharPred(_.isValidChar).! ~~ "'").map(s => NandLit(s(0)))
-    val expr: Parser[NandExpr] = P(nandexpr.rep(sep="!".~/, min=1).map(_.reduce(NandNand)))
-    lazy val nandexpr = P(literal | funccall | variable)
-    lazy val funccall = P((identifier ~ "(" ~/ exprlist ~/ ")").map(NandCall.tupled))
-    lazy val exprlist = P(expr.rep(sep=",".~/).map(_.toList))
-    val exprlist1 = P(expr.rep(sep=",".~/, min=1).map(_.toList))
-    val varlist = P(variable.rep(sep=",".~/).map(_.toList))
-    val varlist1 = P(variable.rep(sep=",".~/, min=1).map(_.toList))
-    val funcparam = P(varlist ~ (":" ~/ varlist | Pass.map(_ => Nil)))
-    val varstmt = P((key("var").? ~ varlist1 ~ "=" ~/ exprlist1 ~/ ";").map(NandVar.tupled))
-    val ifstmt = P(key("if") ~/ (expr ~/ block ~/ (key("else") ~/ block).?).map(NandIf.tupled))
-    val whilestmt = P(key("while") ~/ (expr ~/ block).map(NandWhile.tupled))
-    val statement = P(ifstmt| whilestmt | varstmt | (expr.map(NandNaked) ~/ ";"))
-    lazy val block: Parser[NandBlock] = P("{" ~ statement.rep.map(stmts => NandBlock(stmts.toList)) ~ "}")
-    val funcdef = P(key("function") ~/ (identifier.! ~/ "(" ~/ funcparam ~/ ")" ~/ block).map(NandFunc.tupled))
+    private val index = P("[" ~ CharIn('0'to'9').rep(1).!.map(_.toInt) ~/ "]")
+    private val nvariable = P((identifier ~ index.?).map(NandId.tupled))
+    private val literal = P("0").map(_ => NandLit('0')) | P("1").map(_ => NandLit('1')) | ("'" ~~ CharPred(_.isValidChar).! ~~ "'").map(s => NandLit(s(0)))
+    private val nexpr: Parser[NandExpr] = P(nandexpr.rep(sep="!".~/, min=1).map(_.reduce(NandNand)))
+    private lazy val nandexpr = P(literal | funccall | nvariable)
+    private lazy val funccall = P((identifier ~ "(" ~/ exprlist ~/ ")").map(NandCall.tupled))
+    private lazy val exprlist = P(nexpr.rep(sep=",".~/).map(_.toList))
+    private val exprlist1 = P(nexpr.rep(sep=",".~/, min=1).map(_.toList))
+    private val varlist = P(nvariable.rep(sep=",".~/).map(_.toList))
+    private val varlist1 = P(nvariable.rep(sep=",".~/, min=1).map(_.toList))
+    private val funcparam = P(varlist ~ (":" ~/ varlist | Pass.map(_ => Nil)))
+    private val varstmt = P((key("var").? ~ varlist1 ~ "=" ~/ exprlist1 ~/ ";").map(NandVar.tupled))
+    private val ifstmt = P(key("if") ~/ (nexpr ~/ block ~/ (key("else") ~/ block).?).map(NandIf.tupled))
+    private val whilestmt = P(key("while") ~/ (nexpr ~/ block).map(NandWhile.tupled))
+    private val statement = P(ifstmt| whilestmt | varstmt | (nexpr.map(NandNaked) ~/ ";"))
+    private lazy val block: Parser[NandBlock] = P("{" ~ statement.rep.map(stmts => NandBlock(stmts.toList)) ~ "}")
+    private val funcdef = P(key("function") ~/ (identifier.! ~/ "(" ~/ funcparam ~/ ")" ~/ block).map(NandFunc.tupled))
     val nand = spaces ~ funcdef.rep.map(_.toList) ~ spaces ~ End
 
     def chainPre[A](p: Parser[A], op: Parser[A => A]): Parser[A] = for (fs <- op.rep; x <- p.~/) yield fs.foldRight(x)((f, y) => f(y))
     def chainPost[A](p: Parser[A], op: Parser[A => A]): Parser[A] = for (x <- p; fs <- op.rep) yield fs.foldLeft(x)((y, f) => f(y))
     def chainl1[A](p: Parser[A], op: Parser[(A, A) => A]): Parser[A] = chainPost(p, for (f <- op; y <- p) yield (x: A) => f(x, y))
-    val mexpr: Parser[Int] = chainl1(mmul, (spaces ~~ "+").map[(Int, Int) => Int](_ => _+_) | (spaces ~~ "-").map[(Int, Int) => Int](_ => _-_))
-    lazy val mmul = P(mdiv.rep(sep=spaces ~~ "*", min=1).map(_.product))
-    lazy val mdiv = chainl1(mpow, (spaces ~~ "/").map[(Int, Int) => Int](_ => _/_) | P(spaces ~~ "%").map[(Int, Int) => Int](_ => _/_))
-    lazy val mpow = P(msigns.rep(sep=spaces ~~ "^", min=1).map(_.reduceLeft((x, y) => scala.math.pow(x.toDouble, y.toDouble).toInt)))
-    lazy val msigns = chainPre(matom, (spaces ~~ "+").map[Int => Int](_ => x => +x) | (spaces ~~ "-").map[Int => Int](_ => x => -x))
-    lazy val matom = spaces ~~ (CharIn('0'to'9').rep(1).!.map(_.toInt) | "(" ~~ mexpr ~/ ")")
+    private val mexpr: Parser[Int] = chainl1(mmul, (spaces ~~ "+").map[(Int, Int) => Int](_ => _+_) | (spaces ~~ "-").map[(Int, Int) => Int](_ => _-_))
+    private lazy val mmul = P(mdiv.rep(sep=spaces ~~ "*", min=1).map(_.product))
+    private lazy val mdiv = chainl1(mpow, (spaces ~~ "/").map[(Int, Int) => Int](_ => _/_) | P(spaces ~~ "%").map[(Int, Int) => Int](_ => _/_))
+    private lazy val mpow = P(msigns.rep(sep=spaces ~~ "^", min=1).map(_.reduceLeft((x, y) => scala.math.pow(x.toDouble, y.toDouble).toInt)))
+    private lazy val msigns = chainPre(matom, (spaces ~~ "+").map[Int => Int](_ => x => +x) | (spaces ~~ "-").map[Int => Int](_ => x => -x))
+    private lazy val matom = spaces ~~ (CharIn('0'to'9').rep(1).!.map(_.toInt) | "(" ~~ mexpr ~/ ")")
     val math = mexpr ~~ spaces ~~ End
 
+    /* JAVASCRIPT */
+    private val hexDigit      = P( CharIn('0'to'9', 'a'to'f', 'A'to'F') )
+    private val unicodeEscape = P( "u" ~ hexDigit ~ hexDigit ~ hexDigit ~ hexDigit )
+    private val escape        = P( "\\" ~ (CharIn("\"/\\bfnrt") | unicodeEscape) )
+    private val strChars      = P( CharsWhile(!"\"\\".contains(_: Char)) )
+    private val string        = P( "\"" ~/ (strChars | escape).rep.! ~ "\"")
+    private val digits        = P( CharsWhileIn("0123456789"))
+    private val exponent      = P( CharIn("eE") ~ CharIn("+-").? ~ digits )
+    private val fractional    = P( "." ~ digits )
+    private val integral      = P( "0" | CharIn('1' to '9') ~ digits.? )
+    private val number        = P( integral ~ fractional.? ~ exponent.? ).!.map(_.toDouble)
+    private lazy val primaryExpr: Parser[JSAtom] = P(
+          parensExpr.map(JSParens)
+        | ("[" ~ asgn.rep(sep=",") ~ "]").map(asgns => JSArray(asgns.toList))
+        | identifier.map(JSId)
+        | number.map(JSFloat)
+        | string.map(JSString)
+        | key("true").map(_ => JSTrue)
+        | key("false").map(_ => JSFalse)
+        | key("null").map(_ => JSNull)
+        | key("this").map(_ => JSThis)
+    )
+    private lazy val member: Parser[JSMember] = P(primaryExpr ~
+         (("(" ~ asgn.rep(sep=",") ~ ")").map(args => (fn: JSAtom) => JSCall(fn, args.toList))
+        | ("[" ~/ expr ~ "]").map(idx => (obj: JSAtom) => JSIndex(obj, idx))
+        | ("." ~ member.map(attr => (obj: JSAtom) => JSAccess(obj, attr)))
+        | Pass.map(_ => JSPrimExp))
+    ).map{case (x, f) => f(x)}
+    private lazy val conCall: Parser[JSCons] = P(identifier ~
+         (("." ~ conCall.map(con => (id: String) => JSQual(id, con)))
+        | ("(" ~ asgn.rep(sep=",") ~ ")").map(args => (id: String) => JSConCall(id, args.toList))
+        | Pass.map(_ => (id: String) => JSConCall(id, Nil)))
+    ).map{case (x, f) => f(x)}
+    private lazy val con = P((key("this").! ~ "." ~/ conCall).map(JSQual.tupled) | conCall)
+    private lazy val memOrCon = P(key("delete") ~/ member.map(JSDel) | key("new") ~/ con | member)
+    private lazy val _expr: Parser[JSExpr_] = P(
+        chainl1(chainl1(chainl1(chainl1(chainl1(chainPost(chainPre(spaces ~~ memOrCon,
+            op("++").map(_ => JSInc) | op("--").map(_ => JSDec)
+          | op("-").map(_ => JSNeg) | op("+").map(_ => JSPlus)
+          | op("~").map(_ => JSBitNeg) | op("!").map(_ => JSNot)),
+            op("++").map(_ => JSInc) | op("--").map(_ => JSDec)),
+            op("*").map(_ => JSMul) | op("/").map(_ => JSDiv) | op("%").map(_ => JSMod)),
+            op("+").map(_ => JSAdd) | op("-").map(_ => JSSub)),
+            op("<<").map(_ => JSShl) | op(">>").map(_ => JSShr)),
+            op("<=").map(_ => JSLe) | op("<").map(_ => JSLt)
+          | op(">=").map(_ => JSGe) | op(">").map(_ => JSGt)),
+            op("==").map(_ => JSEq) | op("!=").map(_ => JSNe))
+       .rep(sep=op("&"), min=1).map(_.reduceLeft(JSBitAnd))
+       .rep(sep=op("^"), min=1).map(_.reduceLeft(JSBitXor))
+       .rep(sep=op("|"), min=1).map(_.reduceLeft(JSBitOr))
+       .rep(sep=op("&&"), min=1).map(_.reduceLeft(JSAnd))
+       .rep(sep=op("||"), min=1).map(_.reduceLeft(JSOr))
+    )
+    private lazy val condExpr = P(
+        (_expr ~ ("?" ~/ asgn ~ ":" ~/ asgn).?).map
+        {
+            case (c, Some((t, e))) => JSCond(c, t, e)
+            case (c, None) => c
+        })
+    private lazy val asgn: Parser[JSExpr_] = P(chainl1(spaces ~~ condExpr, op("=").map(_ => JSAsgn)))
+    private lazy val expr: Parser[JSExpr] = P(asgn.rep(sep=",", min=1).map(_.toList))
+    private val optExpr = expr.?
+    private val parensExpr = "(" ~ expr ~ ")"
+    private val variable = (identifier ~ ("=" ~/ asgn).?).map(JSVar.tupled)
+    private val varsOrExprs = key("var") ~ variable.rep(sep=",", min=1).map(xs => Left(xs.toList)) | expr.map(Right(_))
+    private lazy val stmt: Parser[JSStm] = P(
+          P(";").map(_ => JSSemi)
+        | key("if") ~/ (parensExpr ~ stmt ~ (key("else") ~/ stmt).?).map(JSIf.tupled)
+        | key("while") ~/ (parensExpr ~ stmt).map(JSWhile.tupled)
+        | key("for") ~/ "(" ~ (((varsOrExprs ~ key("in") ~/ expr).map{case (x, y) => JSForIn(x, y)(_)}
+                            | (varsOrExprs.? ~ ";" ~/ optExpr ~/ ";" ~/ optExpr).map{case (x, y, z) => JSFor(x, y, z)(_)}) ~/ ")" ~/ stmt).map{case (f, x) => f(x)}
+        | key("break").map(_ => JSBreak)
+        | key("continue").map(_ => JSContinue)
+        | key("with") ~/ (parensExpr ~ stmt).map(JSWith.tupled)
+        | key("return") ~/ optExpr.map(JSReturn)
+        | compound.map(JSBlock)
+        | varsOrExprs.map(JSNaked))
+    private lazy val compound = P("{" ~/ stmt.rep.map(_.toList) ~ "}")
+    private val element = P(key("function") ~/ identifier ~/ "(" ~/ identifier.rep(sep=",".~/).map(_.toList) ~/ ")" ~/ compound).map(JSFunction.tupled) | stmt
+    val javascript = spaces ~/ element.rep ~ spaces ~ End
 }
 
 // From the fastparse blog - straight from the horses mouth
@@ -832,12 +932,15 @@ private [parsley] object Benchmark
             /*23*/ ("inputs/compiler.bf", ParsleyBench.brainfuck, parseParsley, 10000),
             /*24*/ ("inputs/compiler.bf", FastParseBrainfuck.parser, parseFastParse, 10000),
             /*25*/ ("inputs/bigequation.txt", ParsleyBench.maths, parseParsley, 2000000),
-            /*26*/ ("inputs/bigequation.txt", ParsleyBench.maths_unsub, parseParsley, 200000),
+            /*26*/ ("inputs/bigequation.txt", ParsleyBench.maths_unsub, parseParsley, 2000000),
             /*27*/ ("inputs/bigequation.txt", FastParseWhite.math, parseFastParse, 2000000),
             /*28*/ ("inputs/bigequation.txt", Atto.parseMath _, parseFunction, 2000000),
             /*29*/ ("inputs/bigequation.txt", ScalaParserCombinatorsMath.apply _, parseFunction, 2000000),
             /*30*/ ("inputs/helloworld.bf", Atto.parseBrainfuck _, parseFunction, 20000),
             /*31*/ ("inputs/helloworld.bf", ScalaParserCombinatorsBrainFuck.apply _, parseFunction, 20000),
+            /*32*/ ("inputs/heapsort.js", FastParseWhite.javascript, parseFastParse, 100000),
+            /*33*/ ("inputs/game.js", FastParseWhite.javascript, parseFastParse, 100000),
+            /*34*/ ("inputs/big.js", FastParseWhite.javascript, parseFastParse, 1000),
         )
 
     def main(args: Array[String]): Unit =
@@ -848,13 +951,13 @@ private [parsley] object Benchmark
         //val exec = runParserFastUnsafe _
         //new nandlang.NandLang().run(read("inputs/arrays.nand"))
         val nand = new nandlang.NandLang
-        val (filename, p, exec, iters) = benchmarks(26)
+        val (filename, p, exec, iters) = benchmarks(34)
         val input = read(filename)
         val start = System.currentTimeMillis()
         println(exec(p, input))
         //println(BenchParser.json.parseFull(input))
         //println(PfS.parseJson(input))
-        for (_ <- 0 to iters) runParserFastUnsafe(ParsleyBench.maths, input)//exec(p, input)
+        for (_ <- 0 to iters) exec(p, input)
         println(System.currentTimeMillis() - start)
     }
 }
