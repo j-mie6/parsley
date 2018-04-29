@@ -931,16 +931,26 @@ private [parsley] object Benchmark
             /*22*/ ("inputs/fizzbuzz.nand", FastParseWhite.nand, parseFastParse, 50000),
             /*23*/ ("inputs/compiler.bf", ParsleyBench.brainfuck, parseParsley, 10000),
             /*24*/ ("inputs/compiler.bf", FastParseBrainfuck.parser, parseFastParse, 10000),
-            /*25*/ ("inputs/bigequation.txt", ParsleyBench.maths, parseParsley, 2000000),
-            /*26*/ ("inputs/bigequation.txt", ParsleyBench.maths_unsub, parseParsley, 2000000),
-            /*27*/ ("inputs/bigequation.txt", FastParseWhite.math, parseFastParse, 2000000),
-            /*28*/ ("inputs/bigequation.txt", Atto.parseMath _, parseFunction, 2000000),
-            /*29*/ ("inputs/bigequation.txt", ScalaParserCombinatorsMath.apply _, parseFunction, 2000000),
+            /*25*/ ("inputs/bigequation.txt", ParsleyBench.maths, parseParsley, 20000),
+            /*26*/ ("inputs/bigequation.txt", ParsleyBench.maths_unsub, parseParsley, 20000),
+            /*27*/ ("inputs/bigequation.txt", FastParseWhite.math, parseFastParse, 20000),
+            /*28*/ ("inputs/bigequation.txt", Atto.parseMath _, parseFunction, 20000),
+            /*29*/ ("inputs/bigequation.txt", ScalaParserCombinatorsMath.apply _, parseFunction, 20000),
             /*30*/ ("inputs/helloworld.bf", Atto.parseBrainfuck _, parseFunction, 20000),
             /*31*/ ("inputs/helloworld.bf", ScalaParserCombinatorsBrainFuck.apply _, parseFunction, 20000),
             /*32*/ ("inputs/heapsort.js", FastParseWhite.javascript, parseFastParse, 100000),
             /*33*/ ("inputs/game.js", FastParseWhite.javascript, parseFastParse, 100000),
             /*34*/ ("inputs/big.js", FastParseWhite.javascript, parseFastParse, 1000),
+            /*35*/ ("inputs/mediumequation.txt", ParsleyBench.maths, parseParsley, 100000),
+            /*36*/ ("inputs/mediumequation.txt", ParsleyBench.maths_unsub, parseParsley, 100000),
+            /*37*/ ("inputs/mediumequation.txt", FastParseWhite.math, parseFastParse, 100000),
+            /*38*/ ("inputs/mediumequation.txt", Atto.parseMath _, parseFunction, 100000),
+            /*39*/ ("inputs/mediumequation.txt", ScalaParserCombinatorsMath.apply _, parseFunction, 100000),
+            /*40*/ ("inputs/smallequation.txt", ParsleyBench.maths, parseParsley, 1000000),
+            /*41*/ ("inputs/smallequation.txt", ParsleyBench.maths_unsub, parseParsley, 1000000),
+            /*42*/ ("inputs/smallequation.txt", FastParseWhite.math, parseFastParse, 1000000),
+            /*43*/ ("inputs/smallequation.txt", Atto.parseMath _, parseFunction, 1000000),
+            /*44*/ ("inputs/smallequation.txt", ScalaParserCombinatorsMath.apply _, parseFunction, 1000000),
         )
 
     def main(args: Array[String]): Unit =
@@ -951,7 +961,7 @@ private [parsley] object Benchmark
         //val exec = runParserFastUnsafe _
         //new nandlang.NandLang().run(read("inputs/arrays.nand"))
         val nand = new nandlang.NandLang
-        val (filename, p, exec, iters) = benchmarks(34)
+        val (filename, p, exec, iters) = benchmarks(40)
         val input = read(filename)
         val start = System.currentTimeMillis()
         println(exec(p, input))
