@@ -466,11 +466,11 @@ private [parsley] object ScalaParserCombinatorsMath extends scala.util.parsing.c
     def tok[A](p: Parser[A]): Parser[A] = p <~ ws
     def chainPre[A](p: =>Parser[A], op: Parser[A => A]): Parser[A] = for (fs <- rep(op); x <- p) yield fs.foldRight(x)((f, y) => f(y))
 
-    lazy val expr: Parser[Int] = chainl1[Int](mul, tok(accept('+') ^^^ ((x: Int, y: Int) => x + y)) | tok(accept('+') ^^^ ((x: Int, y: Int) => x - y)))
+    lazy val expr: Parser[Int] = chainl1[Int](mul, tok(accept('+') ^^^ ((x: Int, y: Int) => x + y)) | tok(accept('-') ^^^ ((x: Int, y: Int) => x - y)))
     lazy val mul = chainl1[Int](div, tok(accept('*') ^^^ ((x: Int, y: Int) => x * y)))
     lazy val div = chainl1[Int](pow, tok(accept('/') ^^^ ((x: Int, y: Int) => x / y)) | tok(accept('%') ^^^ ((x: Int, y: Int) => x % y)))
     lazy val pow = chainl1[Int](signs, tok(accept('^') ^^^ ((x, y) => math.pow(x.toDouble, y.toDouble).toInt)))
-    lazy val signs = chainPre[Int](atom, tok(accept('+') ^^^ ((x: Int) => x)) | tok(accept('+') ^^^ ((x: Int) => -x)))
+    lazy val signs = chainPre[Int](atom, tok(accept('+') ^^^ ((x: Int) => x)) | tok(accept('-') ^^^ ((x: Int) => -x)))
     lazy val atom = tok(rep1(digit).map(_.mkString.toInt)) | tok(accept('(')) ~> expr <~ tok(accept(')'))
 
     private class BenchReader(tokens: String) extends Reader[Elem]
@@ -733,7 +733,7 @@ private [parsley] object FastParseWhite
     def chainl1[A](p: Parser[A], op: Parser[(A, A) => A]): Parser[A] = chainPost(p, for (f <- op; y <- p) yield (x: A) => f(x, y))
     private val mexpr: Parser[Int] = chainl1(mmul, (spaces ~~ "+").map[(Int, Int) => Int](_ => _+_) | (spaces ~~ "-").map[(Int, Int) => Int](_ => _-_))
     private lazy val mmul = P(mdiv.rep(sep=spaces ~~ "*", min=1).map(_.product))
-    private lazy val mdiv = chainl1(mpow, (spaces ~~ "/").map[(Int, Int) => Int](_ => _/_) | P(spaces ~~ "%").map[(Int, Int) => Int](_ => _/_))
+    private lazy val mdiv = chainl1(mpow, (spaces ~~ "/").map[(Int, Int) => Int](_ => _/_) | P(spaces ~~ "%").map[(Int, Int) => Int](_ => _%_))
     private lazy val mpow = P(msigns.rep(sep=spaces ~~ "^", min=1).map(_.reduceLeft((x, y) => scala.math.pow(x.toDouble, y.toDouble).toInt)))
     private lazy val msigns = chainPre(matom, (spaces ~~ "+").map[Int => Int](_ => x => +x) | (spaces ~~ "-").map[Int => Int](_ => x => -x))
     private lazy val matom = spaces ~~ (CharIn('0'to'9').rep(1).!.map(_.toInt) | "(" ~~ mexpr ~/ ")")
@@ -923,7 +923,7 @@ private [parsley] object Benchmark
             /*14*/ ("inputs/smalldata.json", ParsleyBench.json, parseParsley, 1000000),
             /*15*/ ("inputs/smalldata.json", FastParseJson.jsonExpr, parseFastParse, 1000000),
             /*16*/ ("inputs/heapsort.js", ParsleyBench.javascript, parseParsley, 100000),
-            /*17*/ ("inputs/game.js", ParsleyBench.javascript, parseParsley, 100000),
+            /*17*/ ("inputs/game.js", ParsleyBench.javascript, parseParsley, 10000),
             /*18*/ ("inputs/big.js", ParsleyBench.javascript, parseParsley, 1000),
             /*19*/ ("inputs/fibonacci.nand", ParsleyBench.nand, parseParsley, 100000),
             /*20*/ ("inputs/fibonacci.nand", FastParseWhite.nand, parseFastParse, 100000),
@@ -939,7 +939,7 @@ private [parsley] object Benchmark
             /*30*/ ("inputs/helloworld.bf", Atto.parseBrainfuck _, parseFunction, 20000),
             /*31*/ ("inputs/helloworld.bf", ScalaParserCombinatorsBrainFuck.apply _, parseFunction, 20000),
             /*32*/ ("inputs/heapsort.js", FastParseWhite.javascript, parseFastParse, 100000),
-            /*33*/ ("inputs/game.js", FastParseWhite.javascript, parseFastParse, 100000),
+            /*33*/ ("inputs/game.js", FastParseWhite.javascript, parseFastParse, 10000),
             /*34*/ ("inputs/big.js", FastParseWhite.javascript, parseFastParse, 1000),
             /*35*/ ("inputs/mediumequation.txt", ParsleyBench.maths, parseParsley, 100000),
             /*36*/ ("inputs/mediumequation.txt", ParsleyBench.maths_unsub, parseParsley, 100000),
@@ -961,7 +961,7 @@ private [parsley] object Benchmark
         //val exec = runParserFastUnsafe _
         //new nandlang.NandLang().run(read("inputs/arrays.nand"))
         val nand = new nandlang.NandLang
-        val (filename, p, exec, iters) = benchmarks(40)
+        val (filename, p, exec, iters) = benchmarks(34)
         val input = read(filename)
         val start = System.currentTimeMillis()
         println(exec(p, input))
