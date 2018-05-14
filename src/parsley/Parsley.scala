@@ -137,6 +137,14 @@ object Parsley
           * @return The same parser, but wrapped in a subroutine call
           */
         def unary_+ : Parsley[A] = new DeepEmbedding.Subroutine(p)
+        /**
+          * Using this method enables debugging functionality for this parser. When it is entered a snapshot is taken and
+          * presented on exit. It will signify when a parser is entered and exited as well. Use the break parameter to halt
+          * execution on either entry, exit, both or neither.
+          * @param name The name to be assigned to this parser
+          * @param break The breakpoint properties of this parser, defaults to NoBreak
+          */
+        def debug[A_ >: A](name: String, break: Breakpoint = NoBreak) = new DeepEmbedding.Debug[A_](p, name, break)
     }
     implicit final class LazyAppParsley[A, +B](pf: =>Parsley[A => B])
     {
@@ -371,6 +379,11 @@ object CodeGenState
     private [CodeGenState] class CodeGenSubQueueNode(val p: Parsley[_], val tail: CodeGenSubQueueNode)
 }
 
+trait Breakpoint
+case object NoBreak extends Breakpoint
+case object EntryBreak extends Breakpoint
+case object ExitBreak extends Breakpoint
+case object FullBreak extends Breakpoint
 
 /**
   * This is the class that encapsulates the act of parsing and running an object of this class with `runParser` will
@@ -1759,6 +1772,31 @@ private [parsley] object DeepEmbedding
         override def optimise = throw new Exception("Error relabelling should not be in optimisation!")
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) = throw new Exception("Error relabelling should not be in code gen!")
     }
+    private [parsley] final class Debug[A](_p: =>Parsley[A], name: String, break: Breakpoint) extends Parsley[A]
+    {
+        private [Debug] var p: Parsley[A] = _
+        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+            if (label == null && p != null) cont(this) else _p.optimised(p =>
+            {
+                if (label == null)
+                {
+                    this.p = p
+                    cont(this)
+                }
+                else cont(Debug(p, name, break))
+            })
+        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        {
+            val handler = state.freshLabel()
+            instrs += new instructions.LogBegin(handler, name, (break eq EntryBreak) || (break eq FullBreak))
+            p.codeGen
+            {
+                instrs += new instructions.Label(handler)
+                instrs += new instructions.LogEnd(name, (break eq ExitBreak) || (break eq FullBreak))
+                cont
+            }
+        }
+    }
 
     private [DeepEmbedding] object Pure
     {
@@ -2028,6 +2066,15 @@ private [parsley] object DeepEmbedding
             res
         }
     }
+    private [DeepEmbedding] object Debug
+    {
+        def apply[A](p: Parsley[A], name: String, break: Breakpoint): Debug[A] =
+        {
+            val res: Debug[A] = new Debug(p, name, break)
+            res.p = p
+            res
+        }
+    }
 
     def main(args: Array[String]): Unit =
     {
@@ -2059,7 +2106,7 @@ private [parsley] object DeepEmbedding
             chainl1[Int]('1' <#> (_.toInt), '+' #> (x => y => x + y))
         val p: Parsley[Char] = satisfy(_ == 'a') <|> satisfy(_ == 'b')
         println(p.pretty)
-        val consTest = repeat(500, pure(10))
+        val consTest = repeat(5, pure(10))
         val start = System.currentTimeMillis
         for (_ <- 0 to 1000000)
         {
@@ -2070,5 +2117,9 @@ private [parsley] object DeepEmbedding
         }
         println(System.currentTimeMillis - start)
         println(chain.pretty)
+
+        val debugTest = 'c'.debug("c", FullBreak)
+        println(debugTest.pretty)
+        runParserFastUnsafe(debugTest, "c")
     }
 }

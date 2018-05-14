@@ -1,9 +1,8 @@
 package parsley
 
-import fastparse.WhitespaceApi
 import parsley.ExpressionParser._
 
-import scala.annotation.{switch, tailrec}
+import scala.annotation.switch
 import scala.io.Source
 import scala.util.Try
 
@@ -148,23 +147,23 @@ private [parsley] object ParsleyBench
         lazy val aexp: Parsley[WhileAexp] = new ExpressionParser(aexp_atom,
             Infixes(AssocLeft, tok.operator("+") #> WhileOp(WhileAdd) _,
                                tok.operator("-") #> WhileOp(WhileSub) _),
-            Infixes(AssocLeft, tok.operator("*") #> WhileOp(WhileMul) _)).expr
-        lazy val aexp_atom = tok.integer.map(WhileNat) <|> tok.identifier.map(WhileAVar) <|> tok.parens(aexp)
+            Infixes(AssocLeft, tok.operator("*") #> WhileOp(WhileMul) _)).expr.debug("aexp")
+        lazy val aexp_atom = (tok.integer.map(WhileNat) <|> tok.identifier.map(WhileAVar) <|> tok.parens(aexp)).debug("aexp_atom")
         val compop = tok.operator("<=") #> WhileLt <|> tok.operator("<") #> WhileLt <|> tok.operator("=") #> WhileEq
         lazy val bexp: Parsley[WhileBexp] = new ExpressionParser(bexp_atom,
             Infixes(AssocLeft, tok.operator("|") #> WhileOr),
             Infixes(AssocLeft, tok.operator("&") #> WhileAnd),
-            Prefixes(tok.operator("¬") #> WhileNot)).expr
+            Prefixes(tok.operator("¬") #> WhileNot)).expr.debug("bexp")
         lazy val bexp_atom = (tok.keyword("true") #> WhileTrue
                           <|> tok.keyword("false") #> WhileFalse
                           <|> lift3(WhileComp, attempt(aexp), compop, aexp)
                           <|> tok.parens(bexp)
-                          <|> tok.identifier.map(WhileBVar))
-        lazy val stm: Parsley[WhileStm] = chainl1(stm_, tok.operator(";") #> WhileSeq)
+                          <|> tok.identifier.map(WhileBVar)).debug("bexp_atom")
+        lazy val stm: Parsley[WhileStm] = chainl1(stm_, tok.operator(";") #> WhileSeq).debug("stm")
         lazy val stm_ = +(lift2(WhileAss, tok.identifier <* tok.operator(":="), attempt(aexp.map(Left(_))) <|> bexp.map(Right(_)))
-                      <|> lift3(WhileIf, tok.keyword("if") *> bexp, tok.keyword("then") *> stm, tok.keyword("else") *> stm)
-                      <|> lift2(WhileWhile, tok.keyword("while") *> bexp, tok.keyword("do") *> stm)
-                      <|> tok.keyword("skip") #> WhileSkip)
+                      <|> lift3(WhileIf, tok.keyword("if").debug("if") *> bexp, tok.keyword("then") *> stm, tok.keyword("else") *> stm)
+                      <|> lift2(WhileWhile, tok.keyword("while").debug("while") *> bexp, tok.keyword("do") *> stm)
+                      <|> tok.keyword("skip").debug("skip") #> WhileSkip).debug("stm_")
         tok.whiteSpace *> stm <* eof
     }
 
@@ -372,31 +371,7 @@ object JavascriptAST
     case object JSThis extends JSAtom
 }
 
-/*private [parsley] object PfS
-{
-    import parsec.Parser
-    import parsec._
-    import parsec.ParsecE._
-    def json: Parser[Any] =
-    {
-        val jsontoks = LanguageDef[String, Unit, Default]("", "", "", false, empty, empty, empty, empty, Nil, Nil, true, parsec.Char.whitespace)
-        val tok = new parsec.TokenParser[String, Unit, Default](jsontoks)
-        lazy val obj: Parser[Map[String, Any]] = tok.braces(tok.commaSep(lift2((x: String) => (y: Any) => (x, y), tok.lexeme(tok.stringLiteral), tok.colon *> value)).map(_.toMap))
-        lazy val array: Parser[Any] = tok.brackets(tok.commaSep(value))
-        lazy val value: Parser[Any] =
-            (tok.lexeme(tok.stringLiteral)
-             <|> tok.symbol("true")
-             <|> tok.symbol("false")
-             <|> array
-             <|> tryParse(tok.float)
-             <|> tok.integer
-             <|> obj)
-        tok.whiteSpace *> (obj <|> array) <* parsec.Combinator.eof
-    }
-    def parseJson(s: String) = parsec.runParser(json, (), "", StringStream(s), 1, 1)
-}*/
-
-private [parsley] object BenchParser extends scala.util.parsing.combinator.Parsers
+/*private [parsley] object BenchParser extends scala.util.parsing.combinator.Parsers
 {
     import scala.util.parsing.input.{NoPosition, Reader}
     override type Elem = Char
@@ -482,7 +457,7 @@ private [parsley] object ScalaParserCombinatorsMath extends scala.util.parsing.c
     }
 
     def apply(input: String) = (ws ~> expr)(new BenchReader(input))
-}
+}*/
 
 /*
 // TODO: Test out https://github.com/djspiewak/parseback
@@ -492,7 +467,7 @@ object Parseback
 }
 */
 
-private [parsley] object Native
+/*private [parsley] object Native
 {
     val recursiveDescent: String => Either[String, Int] = (input: String) => expr(input, 0)._1
     def expr(input: String, index: Int): (Either[String, Int], Int) =
@@ -618,12 +593,12 @@ private [parsley] object FastParse
         (p ~ ops.rep).map{case (x, (xs: Seq[A=>A])) => xs.foldLeft(x)((y, f) => f(y))}
     }
     val z = chainlf(x, y)
-    def repeat[A](p: Parser[A], n: Int): Parser[A] =
+    def repeat[A](p: Parser[A], n: Int): Parser[_] =
     {
-        if (n > 0) for (_ <- p; x <- repeat(p, n-1)) yield x
+        if (n > 0) p ~ P(repeat(p, n-1))
         else p
     }
-    val big = repeat(P("1"), 5000)
+    val big = repeat(P("1"), 50000)
 }
 
 private [parsley] object FastParseBrainfuck
@@ -668,161 +643,161 @@ private [parsley] object FastParseBrainfuck
 
     lazy val parser: Parser[List[BrainFuckOp]] = Start ~ expr ~ End
 }
-
-private [parsley] object FastParseWhite
-{
-    sealed trait NandExpr
-    case class NandNand(l: NandExpr, r: NandExpr) extends NandExpr
-    case class NandCall(f: String, args: List[NandExpr]) extends NandExpr
-    case class NandLit(c: Char) extends NandExpr
-    case class NandId(v: String, idx: Option[Int]) extends NandExpr
-    sealed trait NandStmt
-    case class NandFunc(name: String, args: (List[NandId], List[NandId]), block: NandBlock) extends NandStmt
-    case class NandIf(cond: NandExpr, block: NandBlock, elseBlock: Option[NandBlock]) extends NandStmt
-    case class NandWhile(cond: NandExpr, block: NandBlock) extends NandStmt
-    case class NandVar(idlist: List[NandId], exprlist: List[NandExpr]) extends NandStmt
-    case class NandNaked(expr: NandExpr) extends NandStmt
-    case class NandBlock(stmts: List[NandStmt])
-    val White = WhitespaceApi.Wrapper{
-        import fastparse.all._
-        lazy val inCommentSingle: fastparse.all.Parser[Unit] =
-            P("*/"
-            | CharsWhile(c => c != '/' && c != '*') ~ inCommentSingle
-            | CharPred(c => c == '/' || c == '*') ~ inCommentSingle)
-        val multiline = "/*" ~ inCommentSingle
-        val comment = ("//" ~ CharsWhile(_ != '\n')) | multiline
-        val spaces = (CharsWhileIn(" \n\t\r") | comment).rep
-        NoTrace(spaces)
-    }
-    import fastparse.noApi._
-    import White._
-    import JavascriptAST._
-    private type Parser[A] = fastparse.noApi.Parser[A]
-    private lazy val inCommentSingle: Parser[Unit] =
-        P("*/"
-          | CharsWhile(c => c != '/' && c != '*') ~ inCommentSingle
-          | CharPred(c => c == '/' || c == '*') ~ inCommentSingle)
-    private val multiline = "/*" ~ inCommentSingle
-    private val comment = ("//" ~ CharsWhile(_ != '\n')) | multiline
-    private val spaces = (CharsWhileIn(" \n\t\r") | comment).rep
-    private val identifier = (CharPred(c => c.isLetter || c == '_') ~ CharsWhile(c => c.isLetterOrDigit || c == '_').?).!
-    private def key(s: String) = s ~~ !CharPred(c => c.isLetterOrDigit || c == '_')
-    private def op(s: String) = spaces ~~ s ~~ !CharIn("+-*/=<>!~&|.%^")
-
-    private val index = P("[" ~ CharIn('0'to'9').rep(1).!.map(_.toInt) ~/ "]")
-    private val nvariable = P((identifier ~ index.?).map(NandId.tupled))
-    private val literal = P("0").map(_ => NandLit('0')) | P("1").map(_ => NandLit('1')) | ("'" ~~ CharPred(_.isValidChar).! ~~ "'").map(s => NandLit(s(0)))
-    private val nexpr: Parser[NandExpr] = P(nandexpr.rep(sep="!".~/, min=1).map(_.reduce(NandNand)))
-    private lazy val nandexpr = P(literal | funccall | nvariable)
-    private lazy val funccall = P((identifier ~ "(" ~/ exprlist ~/ ")").map(NandCall.tupled))
-    private lazy val exprlist = P(nexpr.rep(sep=",".~/).map(_.toList))
-    private val exprlist1 = P(nexpr.rep(sep=",".~/, min=1).map(_.toList))
-    private val varlist = P(nvariable.rep(sep=",".~/).map(_.toList))
-    private val varlist1 = P(nvariable.rep(sep=",".~/, min=1).map(_.toList))
-    private val funcparam = P(varlist ~ (":" ~/ varlist | Pass.map(_ => Nil)))
-    private val varstmt = P((key("var").? ~ varlist1 ~ "=" ~/ exprlist1 ~/ ";").map(NandVar.tupled))
-    private val ifstmt = P(key("if") ~/ (nexpr ~/ block ~/ (key("else") ~/ block).?).map(NandIf.tupled))
-    private val whilestmt = P(key("while") ~/ (nexpr ~/ block).map(NandWhile.tupled))
-    private val statement = P(ifstmt| whilestmt | varstmt | (nexpr.map(NandNaked) ~/ ";"))
-    private lazy val block: Parser[NandBlock] = P("{" ~ statement.rep.map(stmts => NandBlock(stmts.toList)) ~ "}")
-    private val funcdef = P(key("function") ~/ (identifier.! ~/ "(" ~/ funcparam ~/ ")" ~/ block).map(NandFunc.tupled))
-    val nand = spaces ~ funcdef.rep.map(_.toList) ~ spaces ~ End
-
-    def chainPre[A](p: Parser[A], op: Parser[A => A]): Parser[A] = for (fs <- op.rep; x <- p.~/) yield fs.foldRight(x)((f, y) => f(y))
-    def chainPost[A](p: Parser[A], op: Parser[A => A]): Parser[A] = for (x <- p; fs <- op.rep) yield fs.foldLeft(x)((y, f) => f(y))
-    def chainl1[A](p: Parser[A], op: Parser[(A, A) => A]): Parser[A] = chainPost(p, for (f <- op; y <- p) yield (x: A) => f(x, y))
-    private val mexpr: Parser[Int] = chainl1(mmul, (spaces ~~ "+").map[(Int, Int) => Int](_ => _+_) | (spaces ~~ "-").map[(Int, Int) => Int](_ => _-_))
-    private lazy val mmul = P(mdiv.rep(sep=spaces ~~ "*", min=1).map(_.product))
-    private lazy val mdiv = chainl1(mpow, (spaces ~~ "/").map[(Int, Int) => Int](_ => _/_) | P(spaces ~~ "%").map[(Int, Int) => Int](_ => _%_))
-    private lazy val mpow = P(msigns.rep(sep=spaces ~~ "^", min=1).map(_.reduceLeft((x, y) => scala.math.pow(x.toDouble, y.toDouble).toInt)))
-    private lazy val msigns = chainPre(matom, (spaces ~~ "+").map[Int => Int](_ => x => +x) | (spaces ~~ "-").map[Int => Int](_ => x => -x))
-    private lazy val matom = spaces ~~ (CharIn('0'to'9').rep(1).!.map(_.toInt) | "(" ~~ mexpr ~/ ")")
-    val math = mexpr ~~ spaces ~~ End
-
-    /* JAVASCRIPT */
-    private val hexDigit      = P( CharIn('0'to'9', 'a'to'f', 'A'to'F') )
-    private val unicodeEscape = P( "u" ~ hexDigit ~ hexDigit ~ hexDigit ~ hexDigit )
-    private val escape        = P( "\\" ~ (CharIn("\"/\\bfnrt") | unicodeEscape) )
-    private val strChars      = P( CharsWhile(!"\"\\".contains(_: Char)) )
-    private val string        = P( "\"" ~/ (strChars | escape).rep.! ~ "\"")
-    private val digits        = P( CharsWhileIn("0123456789"))
-    private val exponent      = P( CharIn("eE") ~ CharIn("+-").? ~ digits )
-    private val fractional    = P( "." ~ digits )
-    private val integral      = P( "0" | CharIn('1' to '9') ~ digits.? )
-    private val number        = P( integral ~ fractional.? ~ exponent.? ).!.map(_.toDouble)
-    private lazy val primaryExpr: Parser[JSAtom] = P(
-          parensExpr.map(JSParens)
-        | ("[" ~ asgn.rep(sep=",") ~ "]").map(asgns => JSArray(asgns.toList))
-        | identifier.map(JSId)
-        | number.map(JSFloat)
-        | string.map(JSString)
-        | key("true").map(_ => JSTrue)
-        | key("false").map(_ => JSFalse)
-        | key("null").map(_ => JSNull)
-        | key("this").map(_ => JSThis)
-    )
-    private lazy val member: Parser[JSMember] = P(primaryExpr ~
-         (("(" ~ asgn.rep(sep=",") ~ ")").map(args => (fn: JSAtom) => JSCall(fn, args.toList))
-        | ("[" ~/ expr ~ "]").map(idx => (obj: JSAtom) => JSIndex(obj, idx))
-        | ("." ~ member.map(attr => (obj: JSAtom) => JSAccess(obj, attr)))
-        | Pass.map(_ => JSPrimExp))
-    ).map{case (x, f) => f(x)}
-    private lazy val conCall: Parser[JSCons] = P(identifier ~
-         (("." ~ conCall.map(con => (id: String) => JSQual(id, con)))
-        | ("(" ~ asgn.rep(sep=",") ~ ")").map(args => (id: String) => JSConCall(id, args.toList))
-        | Pass.map(_ => (id: String) => JSConCall(id, Nil)))
-    ).map{case (x, f) => f(x)}
-    private lazy val con = P((key("this").! ~ "." ~/ conCall).map(JSQual.tupled) | conCall)
-    private lazy val memOrCon = P(key("delete") ~/ member.map(JSDel) | key("new") ~/ con | member)
-    private lazy val _expr: Parser[JSExpr_] = P(
-        chainl1(chainl1(chainl1(chainl1(chainl1(chainPost(chainPre(spaces ~~ memOrCon,
-            op("++").map(_ => JSInc) | op("--").map(_ => JSDec)
-          | op("-").map(_ => JSNeg) | op("+").map(_ => JSPlus)
-          | op("~").map(_ => JSBitNeg) | op("!").map(_ => JSNot)),
-            op("++").map(_ => JSInc) | op("--").map(_ => JSDec)),
-            op("*").map(_ => JSMul) | op("/").map(_ => JSDiv) | op("%").map(_ => JSMod)),
-            op("+").map(_ => JSAdd) | op("-").map(_ => JSSub)),
-            op("<<").map(_ => JSShl) | op(">>").map(_ => JSShr)),
-            op("<=").map(_ => JSLe) | op("<").map(_ => JSLt)
-          | op(">=").map(_ => JSGe) | op(">").map(_ => JSGt)),
-            op("==").map(_ => JSEq) | op("!=").map(_ => JSNe))
-       .rep(sep=op("&"), min=1).map(_.reduceLeft(JSBitAnd))
-       .rep(sep=op("^"), min=1).map(_.reduceLeft(JSBitXor))
-       .rep(sep=op("|"), min=1).map(_.reduceLeft(JSBitOr))
-       .rep(sep=op("&&"), min=1).map(_.reduceLeft(JSAnd))
-       .rep(sep=op("||"), min=1).map(_.reduceLeft(JSOr))
-    )
-    private lazy val condExpr = P(
-        (_expr ~ ("?" ~/ asgn ~ ":" ~/ asgn).?).map
-        {
-            case (c, Some((t, e))) => JSCond(c, t, e)
-            case (c, None) => c
-        })
-    private lazy val asgn: Parser[JSExpr_] = P(chainl1(spaces ~~ condExpr, op("=").map(_ => JSAsgn)))
-    private lazy val expr: Parser[JSExpr] = P(asgn.rep(sep=",", min=1).map(_.toList))
-    private val optExpr = expr.?
-    private val parensExpr = "(" ~ expr ~ ")"
-    private val variable = (identifier ~ ("=" ~/ asgn).?).map(JSVar.tupled)
-    private val varsOrExprs = key("var") ~ variable.rep(sep=",", min=1).map(xs => Left(xs.toList)) | expr.map(Right(_))
-    private lazy val stmt: Parser[JSStm] = P(
-          P(";").map(_ => JSSemi)
-        | key("if") ~/ (parensExpr ~ stmt ~ (key("else") ~/ stmt).?).map(JSIf.tupled)
-        | key("while") ~/ (parensExpr ~ stmt).map(JSWhile.tupled)
-        | key("for") ~/ "(" ~ (((varsOrExprs ~ key("in") ~/ expr).map{case (x, y) => JSForIn(x, y)(_)}
-                            | (varsOrExprs.? ~ ";" ~/ optExpr ~/ ";" ~/ optExpr).map{case (x, y, z) => JSFor(x, y, z)(_)}) ~/ ")" ~/ stmt).map{case (f, x) => f(x)}
-        | key("break").map(_ => JSBreak)
-        | key("continue").map(_ => JSContinue)
-        | key("with") ~/ (parensExpr ~ stmt).map(JSWith.tupled)
-        | key("return") ~/ optExpr.map(JSReturn)
-        | compound.map(JSBlock)
-        | varsOrExprs.map(JSNaked))
-    private lazy val compound = P("{" ~/ stmt.rep.map(_.toList) ~ "}")
-    private val element = P(key("function") ~/ identifier ~/ "(" ~/ identifier.rep(sep=",".~/).map(_.toList) ~/ ")" ~/ compound).map(JSFunction.tupled) | stmt
-    val javascript = spaces ~/ element.rep ~ spaces ~ End
-}
+*/
+//private [parsley] object FastParseWhite
+//{
+//    sealed trait NandExpr
+//    case class NandNand(l: NandExpr, r: NandExpr) extends NandExpr
+//    case class NandCall(f: String, args: List[NandExpr]) extends NandExpr
+//    case class NandLit(c: Char) extends NandExpr
+//    case class NandId(v: String, idx: Option[Int]) extends NandExpr
+//    sealed trait NandStmt
+//    case class NandFunc(name: String, args: (List[NandId], List[NandId]), block: NandBlock) extends NandStmt
+//    case class NandIf(cond: NandExpr, block: NandBlock, elseBlock: Option[NandBlock]) extends NandStmt
+//    case class NandWhile(cond: NandExpr, block: NandBlock) extends NandStmt
+//    case class NandVar(idlist: List[NandId], exprlist: List[NandExpr]) extends NandStmt
+//    case class NandNaked(expr: NandExpr) extends NandStmt
+//    case class NandBlock(stmts: List[NandStmt])
+//    val White = WhitespaceApi.Wrapper{
+//        import fastparse.all._
+//        lazy val inCommentSingle: fastparse.all.Parser[Unit] =
+//            P("*/"
+//            | CharsWhile(c => c != '/' && c != '*') ~ inCommentSingle
+//            | CharPred(c => c == '/' || c == '*') ~ inCommentSingle)
+//        val multiline = "/*" ~ inCommentSingle
+//        val comment = ("//" ~ CharsWhile(_ != '\n')) | multiline
+//        val spaces = (CharsWhileIn(" \n\t\r") | comment).rep
+//        NoTrace(spaces)
+//    }
+//    import fastparse.noApi._
+//    import White._
+//    import JavascriptAST._
+//    private type Parser[A] = fastparse.noApi.Parser[A]
+//    private lazy val inCommentSingle: Parser[Unit] =
+//        P("*/"
+//          | CharsWhile(c => c != '/' && c != '*') ~ inCommentSingle
+//          | CharPred(c => c == '/' || c == '*') ~ inCommentSingle)
+//    private val multiline = "/*" ~ inCommentSingle
+//    private val comment = ("//" ~ CharsWhile(_ != '\n')) | multiline
+//    private val spaces = (CharsWhileIn(" \n\t\r") | comment).rep
+//    private val identifier = (CharPred(c => c.isLetter || c == '_') ~ CharsWhile(c => c.isLetterOrDigit || c == '_').?).!
+//    private def key(s: String) = s ~~ !CharPred(c => c.isLetterOrDigit || c == '_')
+//    private def op(s: String) = spaces ~~ s ~~ !CharIn("+-*/=<>!~&|.%^")
+//
+//    private val index = P("[" ~ CharIn('0'to'9').rep(1).!.map(_.toInt) ~/ "]")
+//    private val nvariable = P((identifier ~ index.?).map(NandId.tupled))
+//    private val literal = P("0").map(_ => NandLit('0')) | P("1").map(_ => NandLit('1')) | ("'" ~~ CharPred(_.isValidChar).! ~~ "'").map(s => NandLit(s(0)))
+//    private val nexpr: Parser[NandExpr] = P(nandexpr.rep(sep="!".~/, min=1).map(_.reduce(NandNand)))
+//    private lazy val nandexpr = P(literal | funccall | nvariable)
+//    private lazy val funccall = P((identifier ~ "(" ~/ exprlist ~/ ")").map(NandCall.tupled))
+//    private lazy val exprlist = P(nexpr.rep(sep=",".~/).map(_.toList))
+//    private val exprlist1 = P(nexpr.rep(sep=",".~/, min=1).map(_.toList))
+//    private val varlist = P(nvariable.rep(sep=",".~/).map(_.toList))
+//    private val varlist1 = P(nvariable.rep(sep=",".~/, min=1).map(_.toList))
+//    private val funcparam = P(varlist ~ (":" ~/ varlist | Pass.map(_ => Nil)))
+//    private val varstmt = P((key("var").? ~ varlist1 ~ "=" ~/ exprlist1 ~/ ";").map(NandVar.tupled))
+//    private val ifstmt = P(key("if") ~/ (nexpr ~/ block ~/ (key("else") ~/ block).?).map(NandIf.tupled))
+//    private val whilestmt = P(key("while") ~/ (nexpr ~/ block).map(NandWhile.tupled))
+//    private val statement = P(ifstmt| whilestmt | varstmt | (nexpr.map(NandNaked) ~/ ";"))
+//    private lazy val block: Parser[NandBlock] = P("{" ~ statement.rep.map(stmts => NandBlock(stmts.toList)) ~ "}")
+//    private val funcdef = P(key("function") ~/ (identifier.! ~/ "(" ~/ funcparam ~/ ")" ~/ block).map(NandFunc.tupled))
+//    val nand = spaces ~ funcdef.rep.map(_.toList) ~ spaces ~ End
+//
+//    def chainPre[A](p: Parser[A], op: Parser[A => A]): Parser[A] = for (fs <- op.rep; x <- p.~/) yield fs.foldRight(x)((f, y) => f(y))
+//    def chainPost[A](p: Parser[A], op: Parser[A => A]): Parser[A] = for (x <- p; fs <- op.rep) yield fs.foldLeft(x)((y, f) => f(y))
+//    def chainl1[A](p: Parser[A], op: Parser[(A, A) => A]): Parser[A] = chainPost(p, for (f <- op; y <- p) yield (x: A) => f(x, y))
+//    private val mexpr: Parser[Int] = chainl1(mmul, (spaces ~~ "+").map[(Int, Int) => Int](_ => _+_) | (spaces ~~ "-").map[(Int, Int) => Int](_ => _-_))
+//    private lazy val mmul = P(mdiv.rep(sep=spaces ~~ "*", min=1).map(_.product))
+//    private lazy val mdiv = chainl1(mpow, (spaces ~~ "/").map[(Int, Int) => Int](_ => _/_) | P(spaces ~~ "%").map[(Int, Int) => Int](_ => _%_))
+//    private lazy val mpow = P(msigns.rep(sep=spaces ~~ "^", min=1).map(_.reduceLeft((x, y) => scala.math.pow(x.toDouble, y.toDouble).toInt)))
+//    private lazy val msigns = chainPre(matom, (spaces ~~ "+").map[Int => Int](_ => x => +x) | (spaces ~~ "-").map[Int => Int](_ => x => -x))
+//    private lazy val matom = spaces ~~ (CharIn('0'to'9').rep(1).!.map(_.toInt) | "(" ~~ mexpr ~/ ")")
+//    val math = mexpr ~~ spaces ~~ End
+//
+//    /* JAVASCRIPT */
+//    private val hexDigit      = P( CharIn('0'to'9', 'a'to'f', 'A'to'F') )
+//    private val unicodeEscape = P( "u" ~ hexDigit ~ hexDigit ~ hexDigit ~ hexDigit )
+//    private val escape        = P( "\\" ~ (CharIn("\"/\\bfnrt") | unicodeEscape) )
+//    private val strChars      = P( CharsWhile(!"\"\\".contains(_: Char)) )
+//    private val string        = P( "\"" ~/ (strChars | escape).rep.! ~ "\"")
+//    private val digits        = P( CharsWhileIn("0123456789"))
+//    private val exponent      = P( CharIn("eE") ~ CharIn("+-").? ~ digits )
+//    private val fractional    = P( "." ~ digits )
+//    private val integral      = P( "0" | CharIn('1' to '9') ~ digits.? )
+//    private val number        = P( integral ~ fractional.? ~ exponent.? ).!.map(_.toDouble)
+//    private lazy val primaryExpr: Parser[JSAtom] = P(
+//          parensExpr.map(JSParens)
+//        | ("[" ~ asgn.rep(sep=",") ~ "]").map(asgns => JSArray(asgns.toList))
+//        | identifier.map(JSId)
+//        | number.map(JSFloat)
+//        | string.map(JSString)
+//        | key("true").map(_ => JSTrue)
+//        | key("false").map(_ => JSFalse)
+//        | key("null").map(_ => JSNull)
+//        | key("this").map(_ => JSThis)
+//    )
+//    private lazy val member: Parser[JSMember] = P(primaryExpr ~
+//         (("(" ~ asgn.rep(sep=",") ~ ")").map(args => (fn: JSAtom) => JSCall(fn, args.toList))
+//        | ("[" ~/ expr ~ "]").map(idx => (obj: JSAtom) => JSIndex(obj, idx))
+//        | ("." ~ member.map(attr => (obj: JSAtom) => JSAccess(obj, attr)))
+//        | Pass.map(_ => JSPrimExp))
+//    ).map{case (x, f) => f(x)}
+//    private lazy val conCall: Parser[JSCons] = P(identifier ~
+//         (("." ~ conCall.map(con => (id: String) => JSQual(id, con)))
+//        | ("(" ~ asgn.rep(sep=",") ~ ")").map(args => (id: String) => JSConCall(id, args.toList))
+//        | Pass.map(_ => (id: String) => JSConCall(id, Nil)))
+//    ).map{case (x, f) => f(x)}
+//    private lazy val con = P((key("this").! ~ "." ~/ conCall).map(JSQual.tupled) | conCall)
+//    private lazy val memOrCon = P(key("delete") ~/ member.map(JSDel) | key("new") ~/ con | member)
+//    private lazy val _expr: Parser[JSExpr_] = P(
+//        chainl1(chainl1(chainl1(chainl1(chainl1(chainPost(chainPre(spaces ~~ memOrCon,
+//            op("++").map(_ => JSInc) | op("--").map(_ => JSDec)
+//          | op("-").map(_ => JSNeg) | op("+").map(_ => JSPlus)
+//          | op("~").map(_ => JSBitNeg) | op("!").map(_ => JSNot)),
+//            op("++").map(_ => JSInc) | op("--").map(_ => JSDec)),
+//            op("*").map(_ => JSMul) | op("/").map(_ => JSDiv) | op("%").map(_ => JSMod)),
+//            op("+").map(_ => JSAdd) | op("-").map(_ => JSSub)),
+//            op("<<").map(_ => JSShl) | op(">>").map(_ => JSShr)),
+//            op("<=").map(_ => JSLe) | op("<").map(_ => JSLt)
+//          | op(">=").map(_ => JSGe) | op(">").map(_ => JSGt)),
+//            op("==").map(_ => JSEq) | op("!=").map(_ => JSNe))
+//       .rep(sep=op("&"), min=1).map(_.reduceLeft(JSBitAnd))
+//       .rep(sep=op("^"), min=1).map(_.reduceLeft(JSBitXor))
+//       .rep(sep=op("|"), min=1).map(_.reduceLeft(JSBitOr))
+//       .rep(sep=op("&&"), min=1).map(_.reduceLeft(JSAnd))
+//       .rep(sep=op("||"), min=1).map(_.reduceLeft(JSOr))
+//    )
+//    private lazy val condExpr = P(
+//        (_expr ~ ("?" ~/ asgn ~ ":" ~/ asgn).?).map
+//        {
+//            case (c, Some((t, e))) => JSCond(c, t, e)
+//            case (c, None) => c
+//        })
+//    private lazy val asgn: Parser[JSExpr_] = P(chainl1(spaces ~~ condExpr, op("=").map(_ => JSAsgn)))
+//    private lazy val expr: Parser[JSExpr] = P(asgn.rep(sep=",", min=1).map(_.toList))
+//    private val optExpr = expr.?
+//    private val parensExpr = "(" ~ expr ~ ")"
+//    private val variable = (identifier ~ ("=" ~/ asgn).?).map(JSVar.tupled)
+//    private val varsOrExprs = key("var") ~ variable.rep(sep=",", min=1).map(xs => Left(xs.toList)) | expr.map(Right(_))
+//    private lazy val stmt: Parser[JSStm] = P(
+//          P(";").map(_ => JSSemi)
+//        | key("if") ~/ (parensExpr ~ stmt ~ (key("else") ~/ stmt).?).map(JSIf.tupled)
+//        | key("while") ~/ (parensExpr ~ stmt).map(JSWhile.tupled)
+//        | key("for") ~/ "(" ~ (((varsOrExprs ~ key("in") ~/ expr).map{case (x, y) => JSForIn(x, y)(_)}
+//                            | (varsOrExprs.? ~ ";" ~/ optExpr ~/ ";" ~/ optExpr).map{case (x, y, z) => JSFor(x, y, z)(_)}) ~/ ")" ~/ stmt).map{case (f, x) => f(x)}
+//        | key("break").map(_ => JSBreak)
+//        | key("continue").map(_ => JSContinue)
+//        | key("with") ~/ (parensExpr ~ stmt).map(JSWith.tupled)
+//        | key("return") ~/ optExpr.map(JSReturn)
+//        | compound.map(JSBlock)
+//        | varsOrExprs.map(JSNaked))
+//    private lazy val compound = P("{" ~/ stmt.rep.map(_.toList) ~ "}")
+//    private val element = P(key("function") ~/ identifier ~/ "(" ~/ identifier.rep(sep=",".~/).map(_.toList) ~/ ")" ~/ compound).map(JSFunction.tupled) | stmt
+//    val javascript = spaces ~/ element.rep ~ spaces ~ End
+//}
 
 // From the fastparse blog - straight from the horses mouth
-private [parsley] object FastParseJson
+/*private [parsley] object FastParseJson
 {
     import fastparse.all._
     private val space         = P( CharsWhileIn(" \r\n").? )
@@ -895,7 +870,7 @@ private [parsley] object Atto
     }
     val bf = brainfuck
     def parseBrainfuck(input: String) = bf.parseOnly(input)
-}
+}*/
 
 private [parsley] object Benchmark
 {
@@ -907,50 +882,50 @@ private [parsley] object Benchmark
     val benchmarks: Array[(String, Any, (Any, String) => Any, Int)] =
         Array(
             /*0*/  ("inputs/helloworld_golfed.bf", ParsleyBench.brainfuck, parseParsley, 1000000),
-            /*1*/  ("inputs/helloworld_golfed.bf", FastParseBrainfuck.parser, parseFastParse, 1000000),
+            //*1*/  ("inputs/helloworld_golfed.bf", FastParseBrainfuck.parser, parseFastParse, 1000000),
             /*2*/  ("inputs/helloworld.bf", ParsleyBench.brainfuck, parseParsley, 1000000),
-            /*3*/  ("inputs/helloworld.bf", FastParseBrainfuck.parser, parseFastParse, 1000000),
+            //*3*/  ("inputs/helloworld.bf", FastParseBrainfuck.parser, parseFastParse, 1000000),
             /*4*/  ("inputs/arrays.nand", ParsleyBench.nand, parseParsley, 50000),
-            /*5*/  ("inputs/arrays.nand", FastParseWhite.nand, parseFastParse, 50000),
+            //*5*/  ("inputs/arrays.nand", FastParseWhite.nand, parseFastParse, 50000),
             /*6*/  ("inputs/test.while", ParsleyBench.whileLang, parseParsley, 100000),
             /*7*/  ("inputs/fibonacci.js", ParsleyBench.javascript, parseParsley, 100000),
             /*8*/  ("inputs/mediumdata.json", ParsleyBench.json, parseParsley, 50000),
-            /*9*/  ("inputs/mediumdata.json", FastParseJson.jsonExpr, parseFastParse, 50000),
+            //*9*/  ("inputs/mediumdata.json", FastParseJson.jsonExpr, parseFastParse, 50000),
             /*10*/ ("inputs/bigdata.json", ParsleyBench.json, parseParsley, 50000),
-            /*11*/ ("inputs/bigdata.json", FastParseJson.jsonExpr, parseFastParse, 50000),
+            //*11*/ ("inputs/bigdata.json", FastParseJson.jsonExpr, parseFastParse, 50000),
             /*12*/ ("inputs/hugedata.json", ParsleyBench.json, parseParsley, 2000),
-            /*13*/ ("inputs/hugedata.json", FastParseJson.jsonExpr, parseFastParse, 2000),
+            //*13*/ ("inputs/hugedata.json", FastParseJson.jsonExpr, parseFastParse, 2000),
             /*14*/ ("inputs/smalldata.json", ParsleyBench.json, parseParsley, 1000000),
-            /*15*/ ("inputs/smalldata.json", FastParseJson.jsonExpr, parseFastParse, 1000000),
+            //*15*/ ("inputs/smalldata.json", FastParseJson.jsonExpr, parseFastParse, 1000000),
             /*16*/ ("inputs/heapsort.js", ParsleyBench.javascript, parseParsley, 100000),
             /*17*/ ("inputs/game.js", ParsleyBench.javascript, parseParsley, 10000),
             /*18*/ ("inputs/big.js", ParsleyBench.javascript, parseParsley, 1000),
             /*19*/ ("inputs/fibonacci.nand", ParsleyBench.nand, parseParsley, 100000),
-            /*20*/ ("inputs/fibonacci.nand", FastParseWhite.nand, parseFastParse, 100000),
+            //*20*/ ("inputs/fibonacci.nand", FastParseWhite.nand, parseFastParse, 100000),
             /*21*/ ("inputs/fizzbuzz.nand", ParsleyBench.nand, parseParsley, 50000),
-            /*22*/ ("inputs/fizzbuzz.nand", FastParseWhite.nand, parseFastParse, 50000),
+            //*22*/ ("inputs/fizzbuzz.nand", FastParseWhite.nand, parseFastParse, 50000),
             /*23*/ ("inputs/compiler.bf", ParsleyBench.brainfuck, parseParsley, 10000),
-            /*24*/ ("inputs/compiler.bf", FastParseBrainfuck.parser, parseFastParse, 10000),
+            //*24*/ ("inputs/compiler.bf", FastParseBrainfuck.parser, parseFastParse, 10000),
             /*25*/ ("inputs/bigequation.txt", ParsleyBench.maths, parseParsley, 20000),
             /*26*/ ("inputs/bigequation.txt", ParsleyBench.maths_unsub, parseParsley, 20000),
-            /*27*/ ("inputs/bigequation.txt", FastParseWhite.math, parseFastParse, 20000),
-            /*28*/ ("inputs/bigequation.txt", Atto.parseMath _, parseFunction, 20000),
-            /*29*/ ("inputs/bigequation.txt", ScalaParserCombinatorsMath.apply _, parseFunction, 20000),
-            /*30*/ ("inputs/helloworld.bf", Atto.parseBrainfuck _, parseFunction, 20000),
-            /*31*/ ("inputs/helloworld.bf", ScalaParserCombinatorsBrainFuck.apply _, parseFunction, 20000),
-            /*32*/ ("inputs/heapsort.js", FastParseWhite.javascript, parseFastParse, 100000),
-            /*33*/ ("inputs/game.js", FastParseWhite.javascript, parseFastParse, 10000),
-            /*34*/ ("inputs/big.js", FastParseWhite.javascript, parseFastParse, 1000),
+            //*27*/ ("inputs/bigequation.txt", FastParseWhite.math, parseFastParse, 20000),
+            //*28*/ ("inputs/bigequation.txt", Atto.parseMath _, parseFunction, 20000),
+            //*29*/ ("inputs/bigequation.txt", ScalaParserCombinatorsMath.apply _, parseFunction, 20000),
+            //*30*/ ("inputs/helloworld.bf", Atto.parseBrainfuck _, parseFunction, 20000),
+            //*31*/ ("inputs/helloworld.bf", ScalaParserCombinatorsBrainFuck.apply _, parseFunction, 20000),
+            //*32*/ ("inputs/heapsort.js", FastParseWhite.javascript, parseFastParse, 100000),
+            //*33*/ ("inputs/game.js", FastParseWhite.javascript, parseFastParse, 10000),
+            //*34*/ ("inputs/big.js", FastParseWhite.javascript, parseFastParse, 1000),
             /*35*/ ("inputs/mediumequation.txt", ParsleyBench.maths, parseParsley, 100000),
             /*36*/ ("inputs/mediumequation.txt", ParsleyBench.maths_unsub, parseParsley, 100000),
-            /*37*/ ("inputs/mediumequation.txt", FastParseWhite.math, parseFastParse, 100000),
-            /*38*/ ("inputs/mediumequation.txt", Atto.parseMath _, parseFunction, 100000),
-            /*39*/ ("inputs/mediumequation.txt", ScalaParserCombinatorsMath.apply _, parseFunction, 100000),
+            //*37*/ ("inputs/mediumequation.txt", FastParseWhite.math, parseFastParse, 100000),
+            //*38*/ ("inputs/mediumequation.txt", Atto.parseMath _, parseFunction, 100000),
+            //*39*/ ("inputs/mediumequation.txt", ScalaParserCombinatorsMath.apply _, parseFunction, 100000),
             /*40*/ ("inputs/smallequation.txt", ParsleyBench.maths, parseParsley, 1000000),
             /*41*/ ("inputs/smallequation.txt", ParsleyBench.maths_unsub, parseParsley, 1000000),
-            /*42*/ ("inputs/smallequation.txt", FastParseWhite.math, parseFastParse, 1000000),
-            /*43*/ ("inputs/smallequation.txt", Atto.parseMath _, parseFunction, 1000000),
-            /*44*/ ("inputs/smallequation.txt", ScalaParserCombinatorsMath.apply _, parseFunction, 1000000),
+            //*42*/ ("inputs/smallequation.txt", FastParseWhite.math, parseFastParse, 1000000),
+            //*43*/ ("inputs/smallequation.txt", Atto.parseMath _, parseFunction, 1000000),
+            //*44*/ ("inputs/smallequation.txt", ScalaParserCombinatorsMath.apply _, parseFunction, 1000000),
         )
 
     def main(args: Array[String]): Unit =
@@ -961,13 +936,13 @@ private [parsley] object Benchmark
         //val exec = runParserFastUnsafe _
         //new nandlang.NandLang().run(read("inputs/arrays.nand"))
         val nand = new nandlang.NandLang
-        val (filename, p, exec, iters) = benchmarks(34)
+        val (filename, p, exec, iters) = benchmarks(3)
         val input = read(filename)
         val start = System.currentTimeMillis()
         println(exec(p, input))
         //println(BenchParser.json.parseFull(input))
         //println(PfS.parseJson(input))
-        for (_ <- 0 to iters) exec(p, input)
+        //for (_ <- 0 to iters) exec(p, input)
         println(System.currentTimeMillis() - start)
     }
 }

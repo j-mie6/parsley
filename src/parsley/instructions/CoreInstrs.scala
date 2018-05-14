@@ -434,6 +434,72 @@ private [parsley] final class Put[S](v: Int, x: S) extends Instr with NoPush
     override def toString: String = s"Put($v, $x)"
 }
 
+// Debugging Instructions
+private [instructions] trait Logger
+{
+    val name: String
+    final def preludeString(dir: Char, ctx: Context, ends: String = "") =
+    {
+        val indent = this.indent(ctx)
+        val start = Math.max(ctx.offset - 5, 0)
+        val end = Math.min(ctx.offset + 6, ctx.inputsz)
+        val input = ctx.input.subSequence(start, end).toString.replace("\n", Console.GREEN + "↙" + Console.RESET)
+                                                              .replace(" ", Console.WHITE + "·" + Console.RESET)
+        val inputAndEof = if (end == ctx.inputsz) input + Console.RED + "•" + Console.RESET else input
+        val prelude = s"$indent$dir$name$dir (${ctx.line}, ${ctx.col}): "
+        val caret = " " * (prelude.length + ctx.offset - start) + Console.BLUE + "^" + Console.RESET
+        s"$prelude$inputAndEof$ends\n$caret"
+    }
+    final def indent(ctx: Context) = " " * (ctx.debuglvl * 2)
+}
+
+private [parsley] final class LogBegin(var label: Int, val name: String, break: Boolean) extends JumpInstr with Logger
+{
+    override def apply(ctx: Context): Unit =
+    {
+        println(preludeString('>', ctx))
+        if (break)
+        {
+            print(s"${indent(ctx)}{stack: ${ctx.stack.mkString(", ")}})\n" +
+                  s"${indent(ctx)}{registers: ${ctx.regs.zipWithIndex.map{case (x, i) => s"r$i: $x"}.mkString("[", ", ", "])}")}}\n" +
+                  s"${indent(ctx)}...")
+            Console.in.read()
+        }
+        ctx.debuglvl += 1
+        ctx.handlers = push(ctx.handlers, new Handler(ctx.depth, label, ctx.stack.usize))
+        ctx.inc()
+    }
+    override def toString: String = s"LogBegin($label, $name)"
+}
+
+private [parsley] final class LogEnd(val name: String, break: Boolean) extends Instr with Logger
+{
+    override def apply(ctx: Context): Unit =
+    {
+        ctx.debuglvl -= 1
+        val end = " " + (ctx.status match
+        {
+            case Good =>
+                ctx.handlers = ctx.handlers.tail
+                ctx.inc()
+                Console.GREEN + "Good" + Console.RESET
+            case Recover | Failed =>
+                ctx.fail()
+                Console.RED + "Fail" + Console.RESET
+        })
+        println(preludeString('<', ctx, end))
+        if (break)
+        {
+            print(s"${indent(ctx)}{stack: ${ctx.stack.mkString(", ")}})\n" +
+                  s"${indent(ctx)}{registers: ${ctx.regs.zipWithIndex.map{case (x, i) => s"r$i: $x"}.mkString("[", ", ", "])}")}}\n" +
+                  s"${indent(ctx)}...")
+            Console.in.read()
+        }
+
+    }
+    override def toString: String = s"LogEnd($name)"
+}
+
 // Extractor Objects
 private [parsley] object CharTok
 {

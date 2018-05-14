@@ -96,5 +96,11 @@ package object instructions
                 i -= 1
             }
         }
+        override def clone: ArrayStack[A] =
+        {
+            val me = new ArrayStack[A](array.length)
+            for (i <- 0 to sp) me.push(array(i).asInstanceOf[A])
+            me
+        }
     }
 }

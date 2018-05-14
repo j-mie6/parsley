@@ -26,7 +26,6 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     private [instructions] var offset: Int = 0
     private [instructions] var inputsz: Int = input.length
     private [instructions] var calls: Stack[Frame] = Stack.empty
-    //private [instructions] var subs: Stack[Int] = Stack.empty
     private [instructions] var states: Stack[State] = Stack.empty
     private [instructions] var checkStack: Stack[Int] = Stack.empty
     private [instructions] var status: Status = Good
@@ -45,6 +44,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     private [instructions] var errorOverride: UnsafeOption[String] = _
     private [instructions] var overrideDepth: Int = 0
     private [instructions] var regs: Array[Any] = new Array[Any](4)
+    private [instructions] var debuglvl: Int = 0
 
     override def toString: String =
     {
@@ -179,7 +179,6 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         offset = 0
         inputsz = input.length
         calls = Stack.empty
-        //subs = Stack.empty
         states = Stack.empty
         checkStack = Stack.empty
         status = Good
@@ -197,6 +196,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         unexpectAnyway = false
         errorOverride = null
         overrideDepth = 0
+        debuglvl = 0
         this
     }
 }
