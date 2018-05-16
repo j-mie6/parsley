@@ -1,7 +1,6 @@
 package parsley
 
 import parsley.DeepToken.{Keyword, Operator, RawStringLiteral, StringLiteral}
-import parsley.Parsley._
 import parsley.instructions._
 
 import language.existentials
@@ -82,7 +81,7 @@ object Parsley
           */
         def #>[B](x: B): Parsley[B] = this *> pure(x)
         /**This combinator is an alias for `*>`*/
-        def >>[B](q: Parsley[B]): Parsley[B] = *>(q)
+        def >>[B](q: Parsley[B]): Parsley[B] = this *> q
         /**This parser corresponds to `lift2(_+:_, p, ps)`.*/
         def <+:>[B >: A](ps: =>Parsley[Seq[B]]): Parsley[Seq[B]] = lift2[A, Seq[B], Seq[B]](_ +: _, p, ps)
         /**This parser corresponds to `lift2(_::_, p, ps)`.*/
@@ -127,7 +126,7 @@ object Parsley
           * this is equivalent to `p >>= (x => unexpected(x))` but requires no expensive computations from the use of
           * `>>=`
           * @param msggen The generator function for error message, creating a message based on the result of invokee
-          * @return A parser that fails if it succeeds, with the givne generator used to produce an unexpected message
+          * @return A parser that fails if it succeeds, with the given generator used to produce an unexpected message
           */
         def unexpected(msggen: A => String): Parsley[Nothing] = new DeepEmbedding.FastUnexpected(p, msggen)
         /** Transforms this parser into a subroutine; instead of inlining this parser into every use-site (performing
@@ -144,7 +143,7 @@ object Parsley
           * @param name The name to be assigned to this parser
           * @param break The breakpoint properties of this parser, defaults to NoBreak
           */
-        def debug[A_ >: A](name: String, break: Breakpoint = NoBreak) = new DeepEmbedding.Debug[A_](p, name, break)
+        def debug[A_ >: A](name: String, break: Breakpoint = NoBreak): Parsley[A_] = new DeepEmbedding.Debug[A_](p, name, break)
     }
     implicit final class LazyAppParsley[A, +B](pf: =>Parsley[A => B])
     {
@@ -292,14 +291,14 @@ object Parsley
       * @param v The index of the register to place the value in
       * @param x The value to place in the register
       */
-    def put[S](v: Var, x: S): Parsley[Unit] = new DeepEmbedding.*>(new DeepEmbedding.Put(v, x), unit)
+    def put[S](v: Var, x: S): Parsley[Unit] = put(v, pure(x))
     /**
       * Places the result of running `p` into register `v`.
       * Note that there are only 4 registers at present.
       * @param v The index of the register to place the value in
       * @param p The parser to derive the value from
       */
-    def put[S](v: Var, p: =>Parsley[S]): Parsley[Unit] = p >>= (x => put(v, x))
+    def put[S](v: Var, p: =>Parsley[S]): Parsley[Unit] = new DeepEmbedding.*>(new DeepEmbedding.Put(v, p), unit)
     /**
       * Modifies the value contained in register `v` using function `f`. It is left to the users responsibility to
       * ensure the types line up. There is no compile-time type checking enforced!
@@ -308,7 +307,7 @@ object Parsley
       * @param f The function used to modify the register
       * @tparam S The type of value currently assumed to be in the register
       */
-    def modify[S](v: Var, f: S => S): Parsley[Unit] = get[S](v) >>= (x => put(v, f(x)))
+    def modify[S](v: Var, f: S => S): Parsley[Unit] = new DeepEmbedding.*>(new DeepEmbedding.Modify(v, f), unit)
     /**
       * For the duration of parser `p` the state stored in register `v` is instead set to `x`. The change is undone
       * after `p` has finished.
@@ -318,7 +317,7 @@ object Parsley
       * @param p The parser to execute with the adjusted state
       * @return The parser that performs `p` with the modified state
       */
-    def local[R, A](v: Var, x: R, p: =>Parsley[A]): Parsley[A] = get[R](v) >>= (y => put(v, x) *> p <* put(v, y))
+    def local[R, A](v: Var, x: R, p: =>Parsley[A]): Parsley[A] = local(v, pure(x), p)
     /**
       * For the duration of parser `q` the state stored in register `v` is instead set to the return value of `p`. The
       * change is undone after `q` has finished.
@@ -328,7 +327,7 @@ object Parsley
       * @param q The parser to execute with the adjusted state
       * @return The parser that performs `q` with the modified state
       */
-    def local[R, A](v: Var, p: =>Parsley[R], q: =>Parsley[A]): Parsley[A] = get[R](v) >>= (y => p >>= (x => put(v, x) *> q <* put(v, y)))
+    def local[R, A](v: Var, p: =>Parsley[R], q: =>Parsley[A]): Parsley[A] = new DeepEmbedding.Local(v, p, q)
     /**
       * For the duration of parser `p` the state stored in register `v` is instead modified with `f`. The change is undone
       * after `p` has finished.
@@ -338,7 +337,7 @@ object Parsley
       * @param p The parser to execute with the adjusted state
       * @return The parser that performs `p` with the modified state
       */
-    def local[R, A](v: Var, f: R => R, p: =>Parsley[A]): Parsley[A] = get[R](v) >>= (x => put(v, f(x)) *> p <* put(v, x))
+    def local[R, A](v: Var, f: R => R, p: =>Parsley[A]): Parsley[A] = local(v, get[R](v).map(f), p)
 }
 
 // Internals
@@ -374,16 +373,10 @@ private [parsley] class CodeGenState
 
     def more: Boolean = queue != null
 }
-object CodeGenState
+private [parsley] object CodeGenState
 {
     private [CodeGenState] class CodeGenSubQueueNode(val p: Parsley[_], val tail: CodeGenSubQueueNode)
 }
-
-trait Breakpoint
-case object NoBreak extends Breakpoint
-case object EntryBreak extends Breakpoint
-case object ExitBreak extends Breakpoint
-case object FullBreak extends Breakpoint
 
 /**
   * This is the class that encapsulates the act of parsing and running an object of this class with `runParser` will
@@ -405,7 +398,13 @@ abstract class Parsley[+A] private [parsley]
       * are disabled.
       */
     final def unsafe(): Unit = safe = false
-    private [parsley] final def pretty: String = instrs.mkString("; ")
+
+    /**
+      * Forces the compilation of a parser as opposed to the regular lazy evaluation.
+      */
+    final def force(): Unit = instrs
+
+    final private [parsley] def pretty: String = instrs.mkString("; ")
 
     // Internals
     final private [parsley] def optimised(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]] =
@@ -464,6 +463,38 @@ abstract class Parsley[+A] private [parsley]
         val instrs_ = new Array[Instr](size)
         applyLabels(instrsOversize, labelMapping, instrs_, instrs_.length)
         instrs_
+    }
+    final private [this] lazy val pindices: Array[Int] =
+    {
+        val linstrs = instrs
+        val sz = linstrs.length
+        var i: Int = 0
+        val buff: ResizableArray[Int] = new ResizableArray[Int]()
+        while (i < sz)
+        {
+            // We need to check for calls here too, unlike a call copy.
+            if (linstrs(i).isInstanceOf[Stateful] || linstrs(i).isInstanceOf[Call]) buff += i
+            i += 1
+        }
+        buff.toArray
+    }
+    final private [parsley] def threadSafeInstrs: Array[Instr] =
+    {
+        val nstateful = pindices.length
+        if (nstateful != 0)
+        {
+            var linstrs = instrs
+            val lpindices = pindices
+            var i: Int = 0
+            while (i < nstateful)
+            {
+                val j = lpindices(i)
+                linstrs(j) = linstrs(j).copy
+                i += 1
+            }
+            linstrs.clone
+        }
+        instrs
     }
     final private [parsley] def fix(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = if (seen.contains(this)) new DeepEmbedding.Fixpoint(this, label) else this
 
@@ -1618,9 +1649,9 @@ private [parsley] object DeepEmbedding
             })
         }
     }
-    private [parsley] final class ManyTill[A](_body: Parsley[Any]) extends Parsley[List[A]]
+    private [parsley] final class ManyUntil[A](_body: Parsley[Any]) extends Parsley[List[A]]
     {
-        private [ManyTill] var body: Parsley[Any] = _
+        private [ManyUntil] var body: Parsley[Any] = _
         override def preprocess(cont: Parsley[List[A]] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
             if (label == null && body != null) cont(this) else _body.optimised(body =>
             {
@@ -1629,7 +1660,7 @@ private [parsley] object DeepEmbedding
                     this.body = body
                     cont(this)
                 }
-                else cont(ManyTill(body))
+                else cont(ManyUntil(body))
             })
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
         {
@@ -1640,7 +1671,7 @@ private [parsley] object DeepEmbedding
             new Suspended(body.codeGen
             {
                 instrs += new instructions.Label(loop)
-                instrs += new instructions.ManyTill(start)
+                instrs += new instructions.ManyUntil(start)
                 cont
             })
         }
@@ -1744,7 +1775,7 @@ private [parsley] object DeepEmbedding
             cont
         }
     }
-    private [parsley] final class Get[S](private [Get] val v: Var) extends Parsley[S]
+    private [parsley] final class Get[S](v: Var) extends Parsley[S]
     {
         override def preprocess(cont: Parsley[S] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) = cont(this)
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
@@ -1753,13 +1784,63 @@ private [parsley] object DeepEmbedding
             cont
         }
     }
-    private [parsley] final class Put[S](private [Put] val v: Var, private [Put] val x: S) extends Parsley[S]
+    private [parsley] final class Put[S](private [Put] val v: Var, _p: =>Parsley[S]) extends Parsley[Unit]
+    {
+        private [Put] var p: Parsley[S] = _
+        override def preprocess(cont: Parsley[Unit] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+            if (label == null && p != null) cont(this) else _p.optimised(p =>
+            {
+                if (label == null)
+                {
+                    this.p = p
+                    cont(this)
+                }
+                else cont(Put(v, p))
+            })
+        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        {
+            p.codeGen
+            {
+                instrs += new instructions.Put(v.v)
+                cont
+            }
+        }
+    }
+    private [parsley] final class Modify[S](v: Var, f: S => S) extends Parsley[S]
     {
         override def preprocess(cont: Parsley[S] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) = cont(this)
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
         {
-            instrs += new instructions.Put(v.v, x)
+            instrs += new instructions.Modify(v.v, f)
             cont
+        }
+    }
+    private [parsley] final class Local[S, A](private [Local] val v: Var, _p: =>Parsley[S], _q: =>Parsley[A]) extends Parsley[A]
+    {
+        private [Local] var p: Parsley[S] = _
+        private [Local] var q: Parsley[A] = _
+        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+            if (label == null && p != null) cont(this) else _p.optimised(p => _q.optimised(q =>
+            {
+                if (label == null)
+                {
+                    this.p = p
+                    this.q = q
+                    cont(this)
+                }
+                else cont(Local(v, p, q))
+            }))
+        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        {
+            p.codeGen
+            {
+                instrs += new instructions.LocalEntry(v.v)
+                q.codeGen
+                {
+                    instrs += new instructions.LocalExit(v.v)
+                    cont
+                }
+            }
         }
     }
     private [parsley] final class ErrorRelabel[+A](p: =>Parsley[A], msg: String) extends Parsley[A]
@@ -2036,12 +2117,12 @@ private [parsley] object DeepEmbedding
             res
         }
     }
-    private [parsley] object ManyTill
+    private [parsley] object ManyUntil
     {
         object Stop
-        def apply[A](body: Parsley[Any]): ManyTill[A] =
+        def apply[A](body: Parsley[Any]): ManyUntil[A] =
         {
-            val res: ManyTill[A] = new ManyTill(body)
+            val res: ManyUntil[A] = new ManyUntil(body)
             res.body = body
             res
         }
@@ -2066,6 +2147,25 @@ private [parsley] object DeepEmbedding
             res
         }
     }
+    private [DeepEmbedding] object Put
+    {
+        def apply[S](v: Var, p: Parsley[S]): Put[S] =
+        {
+            val res: Put[S] = new Put(v, p)
+            res.p = p
+            res
+        }
+    }
+    private [DeepEmbedding] object Local
+    {
+        def apply[S, A](v: Var, p: Parsley[S], q: Parsley[A]): Local[S, A] =
+        {
+            val res: Local[S, A] = new Local[S, A](v, p, q)
+            res.p = p
+            res.q = q
+            res
+        }
+    }
     private [DeepEmbedding] object Debug
     {
         def apply[A](p: Parsley[A], name: String, break: Breakpoint): Debug[A] =
@@ -2074,52 +2174,5 @@ private [parsley] object DeepEmbedding
             res.p = p
             res
         }
-    }
-
-    def main(args: Array[String]): Unit =
-    {
-        import parsley.Combinator._
-        import parsley.Char._
-        val q: Parsley[Char] = +('a' <|> 'b')
-        println((q <|> q <|> q <|> q).pretty)
-        def chainl1[A](p: Parsley[A], op: Parsley[A => A => A]) =
-        {
-            //lazy val rest: Parsley[A => A] = lift2((f: A => A, g: A => A) => f.andThen(g), lift2((f: A => A => A, x: A) => (y: A) => f(y)(x), op, p), rest) </> identity[A]
-            //p <**> rest
-            def rest(x: A): Parsley[A] = join(for (f <- op; y <- p) yield rest(f(x)(y))) </> x
-            p.flatMap(rest)
-        }
-        def chainr1[A](p: Parsley[A], op: Parsley[A => A => A]): Parsley[A] =
-        {
-            //lazy val rest: Parsley[A] = p <**> (lift2((f: A => A => A, x: A) => (y: A) => f(y)(x), op, rest) </> identity[A])
-            //rest
-            def rest(x: A): Parsley[A] = (for (f <- op; y <- chainr1(p, op)) yield f(x)(y)) </> x
-            p.flatMap(rest)
-        }
-        def chainPost[A](p: Parsley[A], op: Parsley[A => A]) = lift2((x: A, xs: List[A => A]) => xs.foldLeft(x)((x, f) => f(x)), p, many(op))
-        def chainPre[A](p: Parsley[A], op: Parsley[A => A]) = lift2((xs: List[A => A], x: A) => xs.foldRight(x)((f, x) => f(x)), many(op), p)
-        val chain =
-            //chainl1[Int]('1' <#> (_.toInt), '+' #> (_ + _))
-            //chainr1[Int]('1' <#> (_.toInt), '+' #> (_ + _))
-            //chainPost[Int]('1' <#> (_.toInt), ((f: Int => Int => Int) => (x: Int) => (y: Int) => f(y)(x)) <#> ('+' #> ((x: Int) => (y: Int) => x + y)) <*> ('1' <#> (_.toInt)))
-            //chainPre[Int]('1' <#> (_.toInt), attempt('1' <#> (_.toInt) <**> ('+' #> ((x: Int) => (y: Int) => x + y))))
-            chainl1[Int]('1' <#> (_.toInt), '+' #> (x => y => x + y))
-        val p: Parsley[Char] = satisfy(_ == 'a') <|> satisfy(_ == 'b')
-        println(p.pretty)
-        val consTest = repeat(5, pure(10))
-        val start = System.currentTimeMillis
-        for (_ <- 0 to 1000000)
-        {
-            //(q <|> q <|> q <|> q).instrs
-            //runParserFastUnsafe(chain, "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1")
-            //runParserFastUnsafe(p, "b")
-            runParserFastUnsafe(consTest, "")
-        }
-        println(System.currentTimeMillis - start)
-        println(chain.pretty)
-
-        val debugTest = 'c'.debug("c", FullBreak)
-        println(debugTest.pretty)
-        runParserFastUnsafe(debugTest, "c")
     }
 }

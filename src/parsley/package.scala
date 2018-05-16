@@ -1,4 +1,4 @@
-import parsley.instructions.Context
+import parsley.instructions.{Context, Stateful}
 
 import scala.annotation.{implicitAmbiguous, tailrec}
 
@@ -32,6 +32,13 @@ package object parsley
     private [parsley] def runParser[A](p: Parsley[A], input: Array[Char], ctx: Context): Result[A] = ctx(p.instrs, input).runParser()
 
     /**
+      * This method allows you to run parsers in parallel in a thread-safe fashion. This is safer
+      * than runParser in the case where the parser maintains internal states, but is otherwise
+      * likely slower for serial executions of the same parser.
+      */
+    def runParserThreadSafe[A](p: Parsley[A], input: String, ctx: Context = giveContext): Result[A] = ctx(p.threadSafeInstrs, input.toCharArray).runParser()
+
+    /**
       * This function returns a fresh Context. Contexts are used by the parsers to store their state.
       * You should only need to use this if you are using `runParserFastUnsafe` and you need separate
       * execution contexts due to multi-threaded parsing.
@@ -61,13 +68,19 @@ package object parsley
       * @param x The result value of the successful parse
       * @tparam A The type of expected success result
       */
-    case class Success[A](x: A) extends Result[A]
+    case class Success[A] private [parsley] (x: A) extends Result[A]
 
     /**
       * Returned on parsing failure
       * @param msg The error message reported by the parser
       */
-    case class Failure(msg: String) extends Result[Nothing]
+    case class Failure private [parsley] (msg: String) extends Result[Nothing]
+
+    trait Breakpoint
+    case object NoBreak extends Breakpoint
+    case object EntryBreak extends Breakpoint
+    case object ExitBreak extends Breakpoint
+    case object FullBreak extends Breakpoint
 
     // Trampoline for CPS
     private [parsley] sealed abstract class Bounce[A]

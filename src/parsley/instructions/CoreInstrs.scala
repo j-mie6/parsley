@@ -221,6 +221,8 @@ private [parsley] final class Call(p: Parsley[_], expected: UnsafeOption[String]
         ctx.pc = 0
     }
     override def toString: String = s"Call($p)"
+    // TODO Potential optimisation; copy over pindices and nstateful and ensure instrs calculated differently?
+    override def copy: Call = new Call(p, expected)
 }
 
 private [parsley] final class GoSub(var label: Int, expected: UnsafeOption[String]) extends JumpInstr
@@ -423,15 +425,59 @@ private [parsley] final class Get(v: Int) extends Instr
     override def toString: String = s"Get($v)"
 }
 
-private [parsley] final class Put[S](v: Int, x: S) extends Instr with NoPush
+private [parsley] final class Put(v: Int) extends Instr with NoPush
 {
     override def apply(ctx: Context): Unit =
     {
         if (!isEmpty(ctx.states) && (ctx.states.head.regs eq ctx.regs)) ctx.regs = ctx.regs.clone
-        ctx.regs(v) = x
+        ctx.regs(v) = ctx.stack.upop()
         ctx.inc()
     }
-    override def toString: String = s"Put($v, $x)"
+    override def toString: String = s"Put($v)"
+}
+
+private [parsley] final class Modify[S](v: Int, f: S => S) extends Instr with NoPush
+{
+    private [this] val g = f.asInstanceOf[Any => Any]
+    override def apply(ctx: Context): Unit =
+    {
+        if (!isEmpty(ctx.states) && (ctx.states.head.regs eq ctx.regs)) ctx.regs = ctx.regs.clone
+        ctx.regs(v) = g(ctx.regs(v))
+        ctx.inc()
+    }
+    override def toString: String = s"Modify($v, f)"
+}
+
+private [parsley] final class LocalEntry(v: Int) extends Instr with NoPush
+{
+    override def apply(ctx: Context): Unit =
+    {
+        ctx.states = push(ctx.states, new State(0, 0, 0, ctx.regs))
+        ctx.regs = ctx.regs.clone
+        ctx.regs(v) = ctx.stack.upop()
+        ctx.inc()
+    }
+    override def toString: String = s"LocalEntry($v)"
+}
+
+private [parsley] final class LocalExit[S](v: Int) extends Instr with NoPush
+{
+    override def apply(ctx: Context): Unit =
+    {
+        if (ctx.status eq Good)
+        {
+            val x = ctx.states.head.regs(v)
+            ctx.states = ctx.states.tail
+            ctx.regs(v) = x
+            ctx.inc()
+        }
+        else
+        {
+            ctx.states = ctx.states.tail
+            ctx.fail()
+        }
+    }
+    override def toString: String = s"LocalExit($v)"
 }
 
 // Debugging Instructions

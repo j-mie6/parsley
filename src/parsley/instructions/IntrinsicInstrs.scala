@@ -32,7 +32,7 @@ private [parsley] final class Lift3[A, B, C, D](f: (A, B, C) => D) extends Instr
 
 private [parsley] final class Many(var label: Int) extends JumpInstr with Stateful
 {
-    private[this] val acc: ListBuffer[Any] = ListBuffer.empty
+    private [this] val acc: ListBuffer[Any] = ListBuffer.empty
     override def apply(ctx: Context): Unit =
     {
         if (ctx.status eq Good)
@@ -80,7 +80,7 @@ private [parsley] final class SkipMany(var label: Int) extends JumpInstr with No
 
 private [parsley] final class ChainPost(var label: Int) extends JumpInstr with Stateful
 {
-    private[this] var acc: Any = _
+    private [this] var acc: Any = _
     override def apply(ctx: Context): Unit =
     {
         if (ctx.status eq Good)
@@ -145,7 +145,7 @@ private [parsley] final class ChainPre(var label: Int) extends JumpInstr with St
 }
 private [parsley] final class Chainl(var label: Int) extends JumpInstr with Stateful
 {
-    private[this] var acc: Any = _
+    private [this] var acc: Any = _
     override def apply(ctx: Context): Unit =
     {
         if (ctx.status eq Good)
@@ -240,7 +240,7 @@ private [parsley] final class Chainr(var label: Int) extends JumpInstr with Stat
 
 private [parsley] final class SepEndBy1(var label: Int) extends JumpInstr with Stateful
 {
-    private[this] val acc: ListBuffer[Any] = ListBuffer.empty
+    private [this] val acc: ListBuffer[Any] = ListBuffer.empty
     override def apply(ctx: Context): Unit =
     {
         if (ctx.status eq Good)
@@ -291,18 +291,19 @@ private [parsley] final class SepEndBy1(var label: Int) extends JumpInstr with S
     override def copy: SepEndBy1 = new SepEndBy1(label)
 }
 
-private [parsley] final class ManyTill(var label: Int) extends JumpInstr with Stateful
+private [parsley] final class ManyUntil(var label: Int) extends JumpInstr with Stateful
 {
-    private[this] val acc: ListBuffer[Any] = ListBuffer.empty
+    private [this] val acc: ListBuffer[Any] = ListBuffer.empty
     override def apply(ctx: Context): Unit =
     {
         if (ctx.status eq Good)
         {
             val x = ctx.stack.upop()
-            if (x == DeepEmbedding.ManyTill.Stop)
+            if (x == DeepEmbedding.ManyUntil.Stop)
             {
                 ctx.stack.push(acc.toList)
                 acc.clear()
+                ctx.handlers = ctx.handlers.tail
                 ctx.inc()
             }
             else
@@ -311,11 +312,11 @@ private [parsley] final class ManyTill(var label: Int) extends JumpInstr with St
                 ctx.pc = label
             }
         }
-        // ManyTill is a fallthrough handler, it must be visited during failure, but does nothing to the external state
+        // ManyUntil is a fallthrough handler, it must be visited during failure, but does nothing to the external state
         else { acc.clear(); ctx.fail() }
     }
-    override def toString: String = s"ManyTill($label)"
-    override def copy: ManyTill = new ManyTill(label)
+    override def toString: String = s"ManyUntil($label)"
+    override def copy: ManyUntil = new ManyUntil(label)
 }
 
 private [parsley] final class If(var label: Int) extends JumpInstr

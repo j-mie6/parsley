@@ -935,7 +935,7 @@ private [parsley] object Benchmark
         //val input = "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1"
         //val exec = runParserFastUnsafe _
         //new nandlang.NandLang().run(read("inputs/arrays.nand"))
-        val nand = new nandlang.NandLang
+        //val nand = new nandlang.NandLang
         val (filename, p, exec, iters) = benchmarks(3)
         val input = read(filename)
         val start = System.currentTimeMillis()

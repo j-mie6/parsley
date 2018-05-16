@@ -237,6 +237,7 @@ class TokeniserTests extends ParsleyTest
 
     "natural" should "parse unsigned decimal numbers" in
     {
+        runParser(tokeniser.natural, "0") should be (Success(0))
         runParser(tokeniser.natural, "1024") should be (Success(1024))
         runParser(tokeniser.natural, "1024  ") should be (Success(1024))
     }
@@ -335,14 +336,13 @@ class TokeniserTests extends ParsleyTest
     "skipComments" should "parse single-line comments" in
     {
         runParser(tokeniser.skipComments <* eof, "// hello world!") should be (Success(()))
-        runParser(tokeniser.skipComments *> 'a', "// hello world!\na") should be (Success('a'))
-        runParser(tokeniser.skipComments *> 'a', "// hello world!\n//another comment\na") should be (Success('a'))
+        runParser(tokeniser.skipComments *> '\n' *> 'a', "// hello world!\na") should be (Success('a'))
     }
     it should "parse multi-line comments" in
     {
         runParser(tokeniser.skipComments <* eof, "/* hello *w/orld!*/") should be (Success(()))
         runParser(tokeniser.skipComments *> 'a', "/* hello *w/orld!*/a") should be (Success('a'))
-        runParser(tokeniser.skipComments *> 'a', "/* hello world!*///another comment\na") should be (Success('a'))
+        runParser(tokeniser.skipComments *> '\n' *> 'a', "/* hello world!*///another comment\na") should be (Success('a'))
     }
     it should "parse nested comments when applicable" in
     {

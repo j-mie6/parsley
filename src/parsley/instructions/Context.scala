@@ -19,8 +19,8 @@ private [instructions] final class State(val offset: Int, val line: Int, val col
     override def toString: String = s"$offset ($line, $col)"
 }
 
-private [parsley] final class Context(private [instructions] var instrs: Array[Instr],
-                                      private [instructions] var input: Array[Char])
+final class Context private [parsley] (private [instructions] var instrs: Array[Instr],
+                                       private [instructions] var input: Array[Char])
 {
     private [instructions] val stack: ArrayStack[Any] = new ArrayStack()
     private [instructions] var offset: Int = 0
@@ -45,6 +45,9 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     private [instructions] var overrideDepth: Int = 0
     private [instructions] var regs: Array[Any] = new Array[Any](4)
     private [instructions] var debuglvl: Int = 0
+    private [instructions] var startline: Int = 1
+    private [instructions] var startcol: Int = 1
+    var sourceName: String = "input"
 
     override def toString: String =
     {
@@ -62,6 +65,14 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
            |  checks    = ${mkString(checkStack, ":") + "[]"}
            |  registers = ${regs.zipWithIndex.map{case (r, i) => s"r$i = $r"}.mkString("\n              ")}
            |]""".stripMargin
+    }
+
+    def pos: (Int, Int) = (startline, startcol)
+    def pos_=(pos: (Int, Int)): Unit =
+    {
+        val (line, col) = pos
+        startline = line
+        startcol = col
     }
 
     @tailrec @inline private [parsley] def runParser[A](): Result[A] =
@@ -128,7 +139,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
             erroffset = offset
             errcol = col
             errline = line
-            unexpected = if (offset < inputsz) "\"" + nextChar + "\"" else "end of input"
+            unexpected = if (offset < inputsz) "\"" + nextChar + "\"" else "end of " + sourceName
             expected = (if (errorOverride == null) e else errorOverride)::Nil
             raw = Nil
             unexpectAnyway = false
@@ -185,8 +196,8 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         handlers = Stack.empty
         depth = 0
         pc = 0
-        line = 1
-        col = 1
+        line = startline
+        col = startcol
         erroffset = -1
         errcol = -1
         errline = -1

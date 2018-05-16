@@ -200,24 +200,24 @@ class CombinatorTests extends ParsleyTest
         runParser(notFollowedBy('a'), "a") shouldBe a [Failure]
     }
 
-    "manyTill" must "require an end" in
+    "manyUntil" must "require an end" in
     {
-        runParser(manyTill('a', 'b'), "aa") shouldBe a [Failure]
-        runParser(manyTill('a', 'b'), "ab") should be (Success(List('a')))
+        runParser(manyUntil('a', 'b'), "aa") shouldBe a [Failure]
+        runParser(manyUntil('a', 'b'), "ab") should be (Success(List('a')))
     }
     it should "parse the end without result" in
     {
-        runParser(manyTill('a', 'b'), "b") should be (Success(Nil))
+        runParser(manyUntil('a', 'b'), "b") should be (Success(Nil))
     }
     it should "parse p until that end is found" in
     {
-        runParser(manyTill('a', 'b'), "aaaaaaaaaaaab") should not be a [Failure]
-        runParser(manyTill("aa", 'b'), "ab") shouldBe a [Failure]
+        runParser(manyUntil('a', 'b'), "aaaaaaaaaaaab") should not be a [Failure]
+        runParser(manyUntil("aa", 'b'), "ab") shouldBe a [Failure]
     }
 
-    "many1Till" must "parse at least 1 p" in
+    "someUntil" must "parse at least 1 p" in
     {
-        runParser(many1Till('a', 'b'), "ab") should be (Success(List('a')))
-        runParser(many1Till('a', 'b'), "b") shouldBe a [Failure]
+        runParser(someUntil('a', 'b'), "ab") should be (Success(List('a')))
+        runParser(someUntil('a', 'b'), "b") shouldBe a [Failure]
     }
 }

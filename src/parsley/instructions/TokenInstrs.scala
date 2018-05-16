@@ -16,46 +16,29 @@ private [parsley] class TokenSkipComments(start: String, end: String, line: Stri
         if (noLine && noMulti) ctx.inc()
         else if (noLine)
         {
-            // No comments to read, parser technically fails
-            if (!ctx.input.startsWith(start, ctx.offset)) ctx.fail()
-            else
-            {
-                do if (!multiLineComment(ctx)) return
-                while (ctx.moreInput && ctx.input.startsWith(start, ctx.offset))
-                ctx.inc()
-            }
+            while (ctx.moreInput && ctx.input.startsWith(start, ctx.offset)) if (!multiLineComment(ctx)) return
+            ctx.inc()
         }
         else if (noMulti)
         {
-            // No comments to read, parser technically fails
-            if (!ctx.input.startsWith(line, ctx.offset)) ctx.fail()
-            else
-            {
-                do singleLineComment(ctx)
-                while (ctx.moreInput && ctx.input.startsWith(line, ctx.offset))
-                ctx.inc()
-            }
+            while (ctx.moreInput && ctx.input.startsWith(line, ctx.offset)) singleLineComment(ctx)
+            ctx.inc()
         }
         else
         {
             var startsSingle = ctx.input.startsWith(line, ctx.offset)
             var startsMulti = ctx.input.startsWith(start, ctx.offset)
-            // No comments to read, parser technically fails
-            if (!startsSingle && !startsMulti) ctx.fail()
-            else
+            while (ctx.moreInput && (startsSingle || startsMulti))
             {
-                while (ctx.moreInput && (startsSingle || startsMulti))
+                if (startsMulti)
                 {
-                    if (startsMulti)
-                    {
-                        if (!multiLineComment(ctx)) return
-                    }
-                    else singleLineComment(ctx)
-                    startsSingle = ctx.input.startsWith(line, ctx.offset)
-                    startsMulti = ctx.input.startsWith(start, ctx.offset)
+                    if (!multiLineComment(ctx)) return
                 }
-                ctx.inc()
+                else singleLineComment(ctx)
+                startsSingle = ctx.input.startsWith(line, ctx.offset)
+                startsMulti = ctx.input.startsWith(start, ctx.offset)
             }
+            ctx.inc()
         }
     }
 
@@ -72,12 +55,12 @@ private [parsley] class TokenSkipComments(start: String, end: String, line: Stri
             }
             ctx.offset += 1
         }
-        if (ctx.moreInput)
+        /*if (ctx.moreInput)
         {
             ctx.col = 1
             ctx.line += 1
             ctx.offset += 1
-        }
+        }*/
     }
 
     protected final def multiLineComment(ctx: Context): Boolean =
@@ -231,7 +214,11 @@ private [parsley] final class TokenNatural(_expected: UnsafeOption[String]) exte
             case '0' =>
                 ctx.offset += 1
                 ctx.col += 1
-                if (!ctx.moreInput) ctx.stack.push(0)
+                if (!ctx.moreInput)
+                {
+                    ctx.stack.push(0)
+                    ctx.inc()
+                }
                 else
                 {
                     (ctx.nextChar: @switch) match
@@ -343,7 +330,7 @@ private [parsley] final class TokenNatural(_expected: UnsafeOption[String]) exte
     override def toString: String = "TokenNatural"
 }
 
-private [parsley] final class TokenFloat(_expected: UnsafeOption[String]) extends Instr
+private [parsley] final class TokenFloat(_expected: UnsafeOption[String]) extends Instr with Stateful
 {
     val expected = if (_expected == null) "unsigned float" else _expected
     var failed: Boolean = _
@@ -441,9 +428,10 @@ private [parsley] final class TokenFloat(_expected: UnsafeOption[String]) extend
     }
 
     override def toString: String = "TokenFloat"
+    override def copy: TokenFloat = new TokenFloat(expected)
 }
 
-private [parsley] class TokenEscape(_expected: UnsafeOption[String]) extends Instr
+private [parsley] class TokenEscape(_expected: UnsafeOption[String]) extends Instr with Stateful
 {
     private [this] final val expected = if (_expected == null) "escape code" else _expected
     protected var escapeChar: Char = _
@@ -799,6 +787,7 @@ private [parsley] class TokenEscape(_expected: UnsafeOption[String]) extends Ins
     }
 
     override def toString: String = "TokenEscape"
+    override def copy: TokenEscape = new TokenEscape(expected)
 }
 
 private [parsley] final class TokenString(ws: TokenSet, _expected: UnsafeOption[String]) extends TokenEscape(_expected)
@@ -885,6 +874,7 @@ private [parsley] final class TokenString(ws: TokenSet, _expected: UnsafeOption[
     }
 
     override def toString: String = "TokenString"
+    override def copy: TokenString = new TokenString(ws, _expected)
 }
 
 private [parsley] final class TokenRawString(_expected: UnsafeOption[String]) extends Instr
@@ -942,8 +932,7 @@ private [parsley] final class TokenRawString(_expected: UnsafeOption[String]) ex
 
 private [parsley] final class TokenIdentifier(start: TokenSet, letter: TokenSet, keywords: Set[String], _unexpected: UnsafeOption[String]) extends Instr
 {
-    val expected = if (_unexpected == null) "identifier"
-    else _unexpected
+    val expected = if (_unexpected == null) "identifier" else _unexpected
 
     override def apply(ctx: Context): Unit =
     {
