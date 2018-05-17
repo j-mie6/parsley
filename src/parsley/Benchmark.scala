@@ -300,7 +300,7 @@ private [parsley] object ParsleyBench
     println(maths_unsub.pretty)
 }
 
-object JavascriptAST
+private [parsley] object JavascriptAST
 {
     type JSProgram = List[JSElement]
     trait JSElement
