@@ -8,9 +8,9 @@ import scala.util.Try
 
 private [parsley] object ParsleyBench
 {
-    import parsley.Parsley._
-    import parsley.Combinator._
     import parsley.Char._
+    import parsley.Combinator._
+    import parsley.Parsley._
     val liftab: Parsley[String] = lift2[Char, Char, String]((x, y) => x.toString + y.toString, 'a', 'b')
     val aconsb: Parsley[List[Char]] = 'a' <::> ('b' #> Nil)
     val athenb: Parsley[String] = 'a' *> 'b' #> "ab"
@@ -876,7 +876,7 @@ private [parsley] object Benchmark
 {
     def read(filename: String) = Try(Source.fromFile(filename).getLines().mkString("\n") + "\n").getOrElse("")
     def parseParsley(p: Any, s: String): Any = runParserFastUnsafe(p.asInstanceOf[Parsley[_]], s)
-    def parseFastParse(p: Any, s: String): Any = p.asInstanceOf[fastparse.all.Parser[_]].parse(s)
+    //def parseFastParse(p: Any, s: String): Any = p.asInstanceOf[fastparse.all.Parser[_]].parse(s)
     def parseFunction(f: Any, s: String): Any = f.asInstanceOf[String => Any](s)
 
     val benchmarks: Array[(String, Any, (Any, String) => Any, Int)] =
