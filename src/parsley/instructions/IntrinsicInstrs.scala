@@ -185,9 +185,9 @@ private [parsley] final class Chainr(var label: Int) extends JumpInstr with Stat
     {
         if (ctx.status eq Good)
         {
-            // If acc is null we are entering the instruction, so nothing to compose, this saves on an identity call
             val f = ctx.stack.pop[(Any, Any) => Any]()
             val x = ctx.stack.upop()
+            // If acc is null we are entering the instruction, so nothing to compose, this saves on an identity call
             if (acc == null) acc = (y: Any) => f(x, y)
             // We perform the acc after the tos function; the tos function is "closer" to the final p
             else
@@ -223,6 +223,7 @@ private [parsley] final class Chainr(var label: Int) extends JumpInstr with Stat
                 ctx.checkStack = ctx.checkStack.tail.tail
                 ctx.handlers = ctx.handlers.tail
                 ctx.inc()
+                ctx.status = Good
             }
             // p did not succeed and hence neither did op
             else
@@ -231,7 +232,6 @@ private [parsley] final class Chainr(var label: Int) extends JumpInstr with Stat
                 ctx.fail()
             }
             acc = null
-            ctx.status = Good
         }
     }
     override def toString: String = s"Chainr($label)"

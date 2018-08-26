@@ -2,7 +2,7 @@ import parsley.Combinator.{chainPost, chainPre, chainl1, chainr1}
 import parsley.Parsley._
 import parsley._
 import parsley.Char.{charLift, digit, stringLift}
-import parsley.ExpressionParser.{AssocLeft, AssocRight, Infixes, Prefixes}
+import parsley.ExpressionParser._
 
 class ExpressionParserTests extends ParsleyTest
 {
@@ -110,4 +110,32 @@ class ExpressionParserTests extends ParsleyTest
         runParser(expr.expr, "(3+-7)*(-2--4)/2") should be (Success(-4))
     }
     // TODO More tests, ++x < 10 will crash the intrinsic if x < 10 is tighter?
+
+    "mixed expressions" should "also be parsable" in
+    {
+        val lang = LanguageDef.plain.copy(
+            identStart     = Predicate(_.isLetter),
+            identLetter    = Predicate(_.isLetter)
+        )
+
+        trait Expr
+        case class Binary(l: Expr, r: Expr) extends Expr
+        case class Unary(c: Expr) extends Expr
+        case class Constant(x: String) extends Expr
+
+        val tok = new TokenParser(lang)
+
+        lazy val ops: List[OpList[Expr]] = List(
+            Postfixes(tok.parens(expr </> Constant("")) <#> (e1 => (e2: Expr) => Binary(e2, e1))),
+            Infixes(AssocLeft, '.' #> Binary),
+            Infixes(AssocRight, ".=" #> Binary),
+            Infixes(AssocRight, ',' #> Binary)
+        )
+
+        lazy val atom: Parsley[Expr] = tok.identifier.map(Constant)
+        lazy val expr: Parsley[Expr] = new ExpressionParser(atom, ops: _*).expr
+
+        runParser(expr, "o.f()") shouldBe a [Success[_]]
+        runParser(expr, "o.f(x,y)") shouldBe a [Success[_]]
+    }
 }

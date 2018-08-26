@@ -12,7 +12,7 @@ private [instructions] final class Frame(val ret: Int, val instrs: Array[Instr])
 }
 private [instructions] final class Handler(val depth: Int, val pc: Int, val stacksz: Int)
 {
-    override def toString: String = s"Handler@$depth:$pc(-$stacksz)"
+    override def toString: String = s"Handler@$depth:$pc(-${stacksz+1})"
 }
 private [instructions] final class State(val offset: Int, val line: Int, val col: Int, val regs: Array[Any])
 {

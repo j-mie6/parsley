@@ -329,7 +329,7 @@ final class TokenParser(lang: LanguageDef)
     {
         case BitSetImpl(ws) => new DeepToken.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
         case Predicate(ws) => new DeepToken.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
-        case Parser(space_) => skipMany(skipComments *> some(space_))
+        case Parser(space_) => skipMany(skipComments *> skipSome(space_))
         case NotRequired => skipComments
     }
 
