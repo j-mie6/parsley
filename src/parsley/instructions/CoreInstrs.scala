@@ -448,7 +448,7 @@ private [parsley] final class Modify[S](v: Int, f: S => S) extends Instr with No
     override def toString: String = s"Modify($v, f)"
 }
 
-private [parsley] final class LocalEntry(v: Int) extends Instr with NoPush
+private [parsley] final class LocalEntry(v: Int) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -460,7 +460,7 @@ private [parsley] final class LocalEntry(v: Int) extends Instr with NoPush
     override def toString: String = s"LocalEntry($v)"
 }
 
-private [parsley] final class LocalExit[S](v: Int) extends Instr with NoPush
+private [parsley] final class LocalExit[S](v: Int) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
