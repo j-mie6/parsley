@@ -5,6 +5,7 @@ import parsley.TokenParser.TokenSet
 import parsley.UnsafeOption
 
 import scala.annotation.{switch, tailrec}
+import scala.collection.breakOut
 
 // TODO This is considered as a VERY rough implementation of the intrinsic, just to get it working, it will be optimised later
 private [parsley] class TokenSkipComments(start: String, end: String, line: String, nested: Boolean) extends Instr with NoPush
@@ -231,8 +232,8 @@ private [parsley] final class TokenNatural(_expected: UnsafeOption[String]) exte
                                 (ctx.nextChar: @switch) match
                                 {
                                     case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
-                                          | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
-                                          | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
+                                            | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
+                                            | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
                                         ctx.offset += 1
                                         ctx.col += 1
                                         ctx.stack.push(hexadecimal(ctx, d.asDigit))
@@ -300,8 +301,8 @@ private [parsley] final class TokenNatural(_expected: UnsafeOption[String]) exte
             (ctx.nextChar: @switch) match
             {
                 case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
-                      | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
-                      | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
+                        | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
+                        | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
                     ctx.offset += 1
                     ctx.col += 1
                     hexadecimal(ctx, x * 16 + d.asDigit)
@@ -359,14 +360,14 @@ private [parsley] final class TokenFloat(_expected: UnsafeOption[String]) extend
                                 exponent(ctx, builder += 'e')
                             }
                             if (!failed) try ctx.stack.push(builder.toString.toDouble)
-                                         catch { case _: NumberFormatException => failed = true }
+                            catch { case _: NumberFormatException => failed = true }
                         }
                     case 'e' | 'E' => // exponent
                         ctx.offset += 1
                         ctx.col += 1
                         exponent(ctx, builder += 'e')
                         if (!failed) try ctx.stack.push(builder.toString.toDouble)
-                                     catch { case _: NumberFormatException => ctx.fail(expected) }
+                        catch { case _: NumberFormatException => ctx.fail(expected) }
                     case _ => failed = true
                 }
                 else failed = true
@@ -485,8 +486,8 @@ private [parsley] class TokenEscape(_expected: UnsafeOption[String]) extends Ins
                         (ctx.nextChar: @switch) match
                         {
                             case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
-                                  | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
-                                  | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
+                                    | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
+                                    | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
                                 ctx.offset += 1
                                 ctx.col += 1
                                 val escapeCode = hexadecimal(ctx, d.asDigit)
@@ -759,8 +760,8 @@ private [parsley] class TokenEscape(_expected: UnsafeOption[String]) extends Ins
             (ctx.nextChar: @switch) match
             {
                 case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
-                      | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
-                      | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
+                        | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
+                        | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
                     ctx.offset += 1
                     ctx.col += 1
                     hexadecimal(ctx, x * 16 + d.asDigit)
@@ -1141,4 +1142,60 @@ private [parsley] class TokenOperator_(_operator: String, letter: TokenSet, _exp
     }
 
     override def toString: String = s"TokenOperator(${_operator})"
+}
+
+private [parsley] class TokenMaxOp(_operator: String, _ops: Set[String], _expected: UnsafeOption[String]) extends Instr with NoPush
+{
+    val expected: UnsafeOption[String] = if (_expected == null) _operator else _expected
+    val expectedEnd: UnsafeOption[String] = if (_expected == null) "end of " + _operator else _expected
+    val operator = _operator.toCharArray
+
+    override def apply(ctx: Context): Unit =
+    {
+        val inputsz: Int = ctx.inputsz
+        val input = ctx.input
+        var i = ctx.offset
+        var j = 0
+        val operator = this.operator
+        val strsz: Int = operator.length
+        if (inputsz >= i + strsz)
+        {
+            while (j < strsz)
+            {
+                if (input(i) != operator(j))
+                {
+                    ctx.fail(expected)
+                    return
+                }
+                i += 1
+                j += 1
+            }
+            ctx.col = ctx.col + strsz
+            ctx.offset = i
+            if (i < inputsz)
+            {
+                var ops: List[String] = (for (op <- _ops if op.length > _operator.length && op.startsWith(_operator)) yield op.substring(_operator.length))(breakOut)
+                while (ops.nonEmpty && i < inputsz)
+                {
+                    val c = input(i)
+                    ops = for (op <- ops if op.charAt(0) == c) yield
+                    {
+                        val op_ = op.substring(1)
+                        if (op_.isEmpty)
+                        {
+                            ctx.fail(expectedEnd)
+                            return
+                        }
+                        op_
+                    }
+                    i += 1
+                }
+                ctx.inc()
+            }
+            else ctx.inc()
+        }
+        else ctx.fail(expected)
+    }
+
+    override def toString: String = s"TokenMaxOp(${_operator})"
 }

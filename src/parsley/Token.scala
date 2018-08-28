@@ -182,6 +182,16 @@ final class TokenParser(lang: LanguageDef)
         case _ => attempt(name *> notFollowedBy(opLetter) ? ("end of " + name))
     }
 
+    /**The lexeme parser `maxOp(name)` parses the symbol `name`, but also checks that the `name`
+      * is not part of a larger reserved operator. An `operator` is treated as a single token using
+      * `attempt`.*/
+    def maxOp(name: String): Parsley[Unit] = lexeme(maxOp_(name))
+
+    /**The non-lexeme parser `maxOp_(name)` parses the symbol `name`, but also checks that the `name`
+      * is not part of a larger reserved operator. An `operator` is treated as a single token using
+      * `attempt`.*/
+    def maxOp_(name: String): Parsley[Unit] = new DeepToken.MaxOp(name, lang.operators) *> unit
+
     private def isReservedOp(op: String): Boolean = lang.operators.contains(op)
     private lazy val opStart = toParser(lang.opStart)
     private lazy val opLetter = toParser(lang.opLetter)
@@ -565,6 +575,20 @@ private [parsley] object DeepToken
         override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
         {
             instrs += new instructions.TokenOperator_(operator, letter, expected)
+            cont
+        }
+    }
+
+    private [parsley] class MaxOp(private [MaxOp] val operator: String, ops: Set[String], val expected: UnsafeOption[String] = null) extends Parsley[Nothing]
+    {
+        override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        {
+            if (label == null) cont(this)
+            else cont(new MaxOp(operator, ops, label))
+        }
+        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        {
+            instrs += new instructions.TokenMaxOp(operator, ops, expected)
             cont
         }
     }

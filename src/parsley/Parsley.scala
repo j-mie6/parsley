@@ -436,15 +436,15 @@ abstract class Parsley[+A] private [parsley]
         }
         val instrsOversize = instrs.toArray
         val labelMapping = new Array[Int](state.nlabels)
-        @tailrec def findLabels(instrs: Array[Instr], labels: Array[Int], n: Int, i: Int = 0, off: Int = 0, nopop: Int = 0): Int = if (i + off < n) instrs(i + off) match
+        @tailrec def findLabels(instrs: Array[Instr], labels: Array[Int], n: Int, i: Int, off: Int, nopop: Int): Int = if (i + off < n) instrs(i + off) match
         {
-            case label: Label => instrs(i+off) = null; labels(label.i) = i; findLabels(instrs, labels, n, i, off+1)
+            case label: Label => instrs(i+off) = null; labels(label.i) = i; findLabels(instrs, labels, n, i, off+1, nopop)
             case _: NoPush => findLabels(instrs, labels, n, i+1, off, nopop + 1)
             case instructions.Pop if nopop != 0 => instrs(i+off) = null; findLabels(instrs, labels, n, i, off+1, nopop - 1)
             case instructions.Exchange(x) if nopop != 0 => instrs(i+off) = new instructions.Push(x); findLabels(instrs, labels, n, i+1, off, nopop - 1)
-            case _ => findLabels(instrs, labels, n, i+1, off)
+            case _ => findLabels(instrs, labels, n, i+1, off, nopop)
         } else i
-        @tailrec def applyLabels(srcs: Array[Instr], labels: Array[Int], dests: Array[Instr], n: Int, i: Int = 0, off: Int = 0): Unit = if (i < n) srcs(i + off) match
+        @tailrec def applyLabels(srcs: Array[Instr], labels: Array[Int], dests: Array[Instr], n: Int, i: Int, off: Int): Unit = if (i < n) srcs(i + off) match
         {
             case null => applyLabels(srcs, labels, dests, n, i, off + 1)
             case jump: JumpInstr =>
@@ -459,9 +459,9 @@ abstract class Parsley[+A] private [parsley]
                 dests(i) = instr
                 applyLabels(srcs, labels, dests, n, i + 1, off)
         }
-        val size = findLabels(instrsOversize, labelMapping, instrs.length)
+        val size = findLabels(instrsOversize, labelMapping, instrs.length, 0, 0, 0)
         val instrs_ = new Array[Instr](size)
-        applyLabels(instrsOversize, labelMapping, instrs_, instrs_.length)
+        applyLabels(instrsOversize, labelMapping, instrs_, instrs_.length, 0, 0)
         instrs_
     }
     final private [this] lazy val pindices: Array[Int] =

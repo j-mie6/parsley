@@ -16,7 +16,7 @@ class TokeniserTests extends ParsleyTest
             Parser(inSet(Set('+', '-', ':', '/', '*', '='))),
             Set("if", "else", "for", "yield", "while", "def", "class",
                 "trait", "abstract", "override"),
-            Set(":", "="),
+            Set(":", "=", "::", ":="),
             true,
             Parser(whitespace))
     val scala_ =
@@ -34,7 +34,7 @@ class TokeniserTests extends ParsleyTest
             CharSet(Set('+', '-', ':', '/', '*', '=')),
             Set("if", "else", "for", "yield", "while", "def", "class",
                 "trait", "abstract", "override"),
-            Set(":", "="),
+            Set(":", "=", "::", ":="),
             true,
             Predicate(Char.isWhitespace))
     val tokeniser = new TokenParser(scala)
@@ -115,14 +115,14 @@ class TokeniserTests extends ParsleyTest
     it should "fail if the result isn't reserved" in
     {
         runParser(tokeniser.reservedOp <* eof, "+") shouldBe a [Failure]
-        runParser(tokeniser.reservedOp <* eof, "::") shouldBe a [Failure]
+        runParser(tokeniser.reservedOp <* eof, "::=") shouldBe a [Failure]
     }
     it must "be the same regardless of the intrinsic" in
     {
         runParser(tokeniser_.reservedOp <* eof, "=") should be (Success("="))
         runParser(tokeniser_.reservedOp <* eof, ":") should be (Success(":"))
         runParser(tokeniser_.reservedOp <* eof, "+") shouldBe a [Failure]
-        runParser(tokeniser_.reservedOp <* eof, "::") shouldBe a [Failure]
+        runParser(tokeniser_.reservedOp <* eof, "::=") shouldBe a [Failure]
     }
 
     "operator" should "match valid operators" in
@@ -163,6 +163,20 @@ class TokeniserTests extends ParsleyTest
         {
             runParser(tokeniser.operator("++") <* eof, "++=")
         }
+    }
+
+    "maxOp" should "match valid operators" in
+    {
+        runParser(tokeniser_.maxOp("=") <* eof, "=") should be (Success(()))
+        runParser(tokeniser_.maxOp(":") <* eof, ":") should be (Success(()))
+        runParser(tokeniser_.maxOp("++") <* eof, "++") should be (Success(()))
+        runParser(tokeniser_.maxOp("+:") <* ':' <* eof, "+::") should be (Success(()))
+        runParser(tokeniser_.maxOp("=") <* '=' <* eof, "==") should be (Success(()))
+    }
+    it must "fail if the operator is a valid prefix of another operator and that operator is parsable" in
+    {
+        runParser(tokeniser_.maxOp(":") <* '=' <* eof, ":=") shouldBe a [Failure]
+        runParser(tokeniser_.maxOp(":") <* ':' <* eof, "::") shouldBe a [Failure]
     }
 
     "charLiteral" should "parse valid haskell characters" in
