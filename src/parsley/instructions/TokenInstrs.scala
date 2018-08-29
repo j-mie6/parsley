@@ -1023,7 +1023,7 @@ private [parsley] final class TokenUserOperator(start: TokenSet, letter: TokenSe
     override def toString: String = "TokenUserOperator"
 }
 
-private [parsley] final class TokenOperator(start: TokenSet, letter: TokenSet, reservedOps: Set[String], _unexpected: UnsafeOption[String]) extends Instr with NoPush
+private [parsley] final class TokenOperator(start: TokenSet, letter: TokenSet, reservedOps: Set[String], _unexpected: UnsafeOption[String]) extends Instr
 {
     val expected = if (_unexpected == null) "operator" else _unexpected
 
@@ -1170,8 +1170,7 @@ private [parsley] class TokenMaxOp(_operator: String, _ops: Set[String], _expect
                 i += 1
                 j += 1
             }
-            ctx.col = ctx.col + strsz
-            ctx.offset = i
+            j = i
             if (i < inputsz)
             {
                 var ops: List[String] = (for (op <- _ops if op.length > _operator.length && op.startsWith(_operator)) yield op.substring(_operator.length))(breakOut)
@@ -1190,9 +1189,16 @@ private [parsley] class TokenMaxOp(_operator: String, _ops: Set[String], _expect
                     }
                     i += 1
                 }
+                ctx.col = ctx.col + strsz
+                ctx.offset = j
                 ctx.inc()
             }
-            else ctx.inc()
+            else
+            {
+                ctx.col = ctx.col + strsz
+                ctx.offset = j
+                ctx.inc()
+            }
         }
         else ctx.fail(expected)
     }
