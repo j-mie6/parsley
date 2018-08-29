@@ -189,7 +189,7 @@ private [parsley] final class Call(p: Parsley[_], expected: UnsafeOption[String]
         ctx.calls = push(ctx.calls, new Frame(ctx.pc + 1, ctx.instrs))
         if (instrs == null)
         {
-            instrs = p.instrs //Note: This line cannot be hoisted, otherwise it will infinite loop during codeGen!
+            instrs = p.instrs.clone //Note: This line cannot be hoisted, otherwise it will infinite loop during codeGen!
             var i: Int = 0
             val buff: ResizableArray[Int] = new ResizableArray[Int]()
             while (i < instrs.length)
