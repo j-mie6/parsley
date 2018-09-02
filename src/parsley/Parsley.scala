@@ -483,7 +483,7 @@ abstract class Parsley[+A] private [parsley]
         val nstateful = pindices.length
         if (nstateful != 0)
         {
-            var linstrs = instrs
+            val linstrs = instrs.clone
             val lpindices = pindices
             var i: Int = 0
             while (i < nstateful)
@@ -492,9 +492,9 @@ abstract class Parsley[+A] private [parsley]
                 linstrs(j) = linstrs(j).copy
                 i += 1
             }
-            linstrs.clone
+            linstrs
         }
-        instrs
+        else instrs
     }
     final private [parsley] def fix(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = if (seen.contains(this)) new DeepEmbedding.Fixpoint(this, label) else this
 
