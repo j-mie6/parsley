@@ -56,12 +56,6 @@ private [parsley] class TokenSkipComments(start: String, end: String, line: Stri
             }
             ctx.offset += 1
         }
-        /*if (ctx.moreInput)
-        {
-            ctx.col = 1
-            ctx.line += 1
-            ctx.offset += 1
-        }*/
     }
 
     protected final def multiLineComment(ctx: Context): Boolean =
@@ -102,6 +96,108 @@ private [parsley] class TokenSkipComments(start: String, end: String, line: Stri
         true
     }
     override def toString: String = "TokenSkipComments"
+}
+
+// TODO This is considered as a VERY rough implementation of the intrinsic, just to get it working, it will be optimised later
+private [parsley] final class TokenComment(start: String, end: String, line: String, nested: Boolean) extends Instr
+{
+    protected final val noLine = line.isEmpty
+    protected final val noMulti = start.isEmpty
+    override def apply(ctx: Context): Unit =
+    {
+        if (!ctx.moreInput) ctx.fail("comment")
+        else if (noLine && noMulti) ctx.fail("comment")
+        else if (noLine)
+        {
+            if (!ctx.input.startsWith(start, ctx.offset)) ctx.fail("comment")
+            else
+            {
+                if (!multiLineComment(ctx)) return
+                ctx.stack.push(())
+                ctx.inc()
+            }
+        }
+        else if (noMulti)
+        {
+            if (!ctx.input.startsWith(line, ctx.offset)) ctx.fail("comment")
+            else
+            {
+                singleLineComment(ctx)
+                ctx.stack.push(())
+                ctx.inc()
+            }
+        }
+        else
+        {
+            val startsSingle = ctx.input.startsWith(line, ctx.offset)
+            val startsMulti = ctx.input.startsWith(start, ctx.offset)
+            if (!startsSingle && !startsMulti) ctx.fail("comment")
+            else
+            {
+                if (startsMulti)
+                {
+                    if (!multiLineComment(ctx)) return
+                }
+                else singleLineComment(ctx)
+                ctx.stack.push(())
+                ctx.inc()
+            }
+        }
+    }
+
+    private def singleLineComment(ctx: Context): Unit =
+    {
+        ctx.offset += line.length
+        ctx.col += line.length
+        while (ctx.moreInput && ctx.nextChar != '\n')
+        {
+            (ctx.nextChar: @switch) match
+            {
+                case '\t' => ctx.col += 4 - ((ctx.col - 1) & 3)
+                case _ => ctx.col += 1
+            }
+            ctx.offset += 1
+        }
+    }
+
+    private def multiLineComment(ctx: Context): Boolean =
+    {
+        ctx.offset += start.length
+        ctx.col += start.length
+        var n = 1
+        while (n != 0)
+        {
+            if (ctx.input.startsWith(end, ctx.offset))
+            {
+                ctx.offset += end.length
+                ctx.col += end.length
+                n -= 1
+            }
+            else if (nested && ctx.input.startsWith(start, ctx.offset))
+            {
+                ctx.offset += start.length
+                ctx.col += start.length
+                n += 1
+            }
+            else if (ctx.moreInput)
+            {
+                (ctx.nextChar: @switch) match
+                {
+                    case '\n' => ctx.line += 1; ctx.col = 1
+                    case '\t' => ctx.col += 4 - ((ctx.col - 1) & 3)
+                    case _ => ctx.col += 1
+                }
+                ctx.offset += 1
+            }
+            else
+            {
+                ctx.fail("end of comment")
+                return false
+            }
+        }
+        true
+    }
+    override def toString: String = "TokenComment"
 }
 
 private [parsley] final class TokenWhiteSpace(ws: TokenSet, start: String, end: String, line: String, nested: Boolean) extends TokenSkipComments(start, end, line, nested) with NoPush

@@ -1,11 +1,12 @@
 package parsley
 
-import scala.language.implicitConversions
-import Parsley._
-import Combinator.{between, notFollowedBy, sepBy, sepBy1, skipSome, some}
-import Char.{charLift, digit, hexDigit, octDigit, satisfy, stringLift}
+import parsley.Char.{charLift, digit, hexDigit, octDigit, satisfy, stringLift}
+import parsley.Combinator._
 import parsley.DeepToken.Sign._
+import parsley.Parsley._
 import parsley.TokenParser.TokenSet
+
+import scala.language.implicitConversions
 
 /**
   * This class is required to construct a TokenParser. It defines the various characteristics of the language to be
@@ -339,7 +340,7 @@ final class TokenParser(lang: LanguageDef)
     {
         case BitSetImpl(ws) => new DeepToken.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
         case Predicate(ws) => new DeepToken.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
-        case Parser(space_) => skipMany(skipComments *> skipSome(space_))
+        case Parser(space_) => skipMany(new DeepToken.Comment(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) <\> space_)
         case NotRequired => skipComments
     }
 
@@ -421,6 +422,16 @@ private [parsley] object DeepToken
         override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
         {
             instrs += new instructions.TokenSkipComments(start, end, line, nested)
+            cont
+        }
+    }
+
+    private [parsley] class Comment(start: String, end: String, line: String, nested: Boolean) extends Parsley[Unit]
+    {
+        override protected def preprocess(cont: Parsley[Unit] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) = cont(this)
+        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        {
+            instrs += new instructions.TokenComment(start, end, line, nested)
             cont
         }
     }
