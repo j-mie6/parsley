@@ -3,9 +3,9 @@ package parsley
 import parsley.DeepToken.{Keyword, Operator, RawStringLiteral, StringLiteral}
 import parsley.instructions._
 
-import language.existentials
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.language.existentials
     
 // User API
 object Parsley
@@ -537,7 +537,7 @@ private [parsley] object DeepEmbedding
         override def optimise: Parsley[B] = (pf, px) match
         {
             // Fusion laws
-            case (uf, Pure(x)) if uf.isInstanceOf[Pure[_]] || uf.isInstanceOf[_ <*> _] => uf match
+            case (uf, Pure(x)) if uf.isInstanceOf[Pure[_]] || uf.isInstanceOf[_ <*> _] && uf.safe => uf match
             {
                 // first position fusion
                 case Pure(f) => new Pure(f(x))
@@ -842,7 +842,7 @@ private [parsley] object DeepEmbedding
         {
             // CODO: We need to try and identify the fixpoints in the optimised binds, so we can remove the call instructions
             // monad law 1: pure x >>= f = f x
-            case Pure(x) => new Fixpoint(f(x), expected)
+            case Pure(x) if safe => new Fixpoint(f(x), expected)
             // char/string x = char/string x *> pure x and monad law 1
             case p@CharTok(c) => *>(p, new Fixpoint(f(c.asInstanceOf[A]), expected))
             case p@StringTok(s) => *>(p, new Fixpoint(f(s.asInstanceOf[A]), expected))
@@ -873,7 +873,6 @@ private [parsley] object DeepEmbedding
             if (label == null) cont(this)
             else cont(new Satisfy(f, label))
         }
-        override def optimise = this
         override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
         {
             instrs += new instructions.Satisfies(f, expected)
