@@ -1,8 +1,8 @@
+import parsley.Char.{charLift, digit, stringLift}
 import parsley.Combinator.{chainPost, chainPre, chainl1, chainr1}
+import parsley.ExpressionParser._
 import parsley.Parsley._
 import parsley._
-import parsley.Char.{charLift, digit, stringLift}
-import parsley.ExpressionParser._
 
 class ExpressionParserTests extends ParsleyTest
 {
@@ -109,7 +109,27 @@ class ExpressionParserTests extends ParsleyTest
         runParser(expr.expr, "-(3+4)") should be (Success(-7))
         runParser(expr.expr, "(3+-7)*(-2--4)/2") should be (Success(-4))
     }
-    // TODO More tests, ++x < 10 will crash the intrinsic if x < 10 is tighter?
+    they should "parse prefix operators mixed with infix operators" in
+    {
+        lazy val expr = new ExpressionParser[Int](atom, Prefixes[Int]('-' #> (x => -x)),
+                                                        Infixes[Int](AssocLeft, '-' #> (_-_)))
+        lazy val atom: Parsley[Int] = digit.map(_.asDigit) <|> ('(' *> expr.expr <* ')')
+        runParser(expr.expr, "-1") should be (Success(-1))
+        runParser(expr.expr, "2-1") should be (Success(1))
+        runParser(expr.expr, "-2-1") should be (Success(-3))
+        runParser(expr.expr, "-(2-1)") should be (Success(-1))
+        runParser(expr.expr, "(-0)-1") should be (Success(-1))
+    }
+    they should "be able to parse prefix operators weaker than an infix" in
+    {
+        sealed trait Expr
+        case class Lt(x: Expr, y: Expr) extends Expr
+        case class Inc(x: Expr) extends Expr
+        case class Num(x: Int) extends Expr
+        val expr = new ExpressionParser[Expr](digit.map(_.asDigit).map(Num), Infixes[Expr](AssocLeft, '<' #> Lt),
+                                                                             Prefixes("++" #> Inc))
+        runParser(expr.expr, "++1<2") should be (Success(Inc(Lt(Num(1), Num(2)))))
+    }
 
     "mixed expressions" should "also be parsable" in
     {
@@ -118,7 +138,7 @@ class ExpressionParserTests extends ParsleyTest
             identLetter    = Predicate(_.isLetter)
         )
 
-        trait Expr
+        sealed trait Expr
         case class Binary(l: Expr, r: Expr) extends Expr
         case class Unary(c: Expr) extends Expr
         case class Constant(x: String) extends Expr
