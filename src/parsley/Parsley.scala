@@ -1,6 +1,6 @@
 package parsley
 
-import parsley.DeepToken.{Keyword, Operator, RawStringLiteral, StringLiteral}
+import parsley.DeepToken._
 import parsley.instructions._
 
 import scala.annotation.tailrec
@@ -788,6 +788,7 @@ private [parsley] object DeepEmbedding
                     case st@StringTok(s) => (s.head, if (st.expected == null) "\"" + s + "\"" else st.expected)
                     case kw@Keyword(k) => (k.head, if (kw.expected == null) k else kw.expected)
                     case op@Operator(o) => (o.head, if (op.expected == null) o else op.expected)
+                    case op@MaxOp(o) => (o.head, if (op.expected == null) o else op.expected)
                     case sl: StringLiteral => ('"', if (sl.expected == null) "string" else sl.expected)
                     case rs: RawStringLiteral => ('"', if (rs.expected == null) "string" else rs.expected)
                 }
@@ -806,7 +807,7 @@ private [parsley] object DeepEmbedding
         @tailrec private def tablable(p: Parsley[_]): Option[Parsley[_]] = p match
         {
             // CODO: Numeric parsers by leading digit (This one would require changing the foldTablified function a bit)
-            case t@(_: CharTok | _: StringTok | _: Keyword | _: StringLiteral | _: RawStringLiteral | _: Operator) => Some(t)
+            case t@(_: CharTok | _: StringTok | _: Keyword | _: StringLiteral | _: RawStringLiteral | _: Operator | _: MaxOp) => Some(t)
             case Attempt(t) => tablable(t)
             case (_: Pure[_]) <*> t => tablable(t)
             case Lift2(_, t, _) => tablable(t)

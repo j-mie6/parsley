@@ -628,4 +628,8 @@ private [parsley] object DeepToken
     {
         def unapply(self: Operator): Option[String] = Some(self.operator)
     }
+    object MaxOp
+    {
+        def unapply(self: MaxOp): Option[String] = Some(self.operator)
+    }
 }
