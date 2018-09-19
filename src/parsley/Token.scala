@@ -5,6 +5,7 @@ import parsley.Combinator._
 import parsley.DeepToken.Sign._
 import parsley.Parsley._
 import parsley.TokenParser.TokenSet
+import parsley.ContOps._
 
 import scala.language.implicitConversions
 
@@ -408,199 +409,184 @@ private [parsley] object DeepToken
 {
     private [parsley] class WhiteSpace(ws: TokenSet, start: String, end: String, line: String, nested: Boolean) extends Parsley[Nothing]
     {
-        override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) = cont(this)
-        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override protected def preprocess[Cont[_, _], N >: Nothing](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[N]] = result(this)
+        override private [parsley] def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            instrs += new instructions.TokenWhiteSpace(ws, start, end, line, nested)
-            cont
+            result(instrs += new instructions.TokenWhiteSpace(ws, start, end, line, nested))
         }
     }
 
     private [parsley] class SkipComments(start: String, end: String, line: String, nested: Boolean) extends Parsley[Nothing]
     {
-        override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) = cont(this)
-        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override protected def preprocess[Cont[_, _], N >: Nothing](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[N]] = result(this)
+        override private [parsley] def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            instrs += new instructions.TokenSkipComments(start, end, line, nested)
-            cont
+            result(instrs += new instructions.TokenSkipComments(start, end, line, nested))
         }
     }
 
     private [parsley] class Comment(start: String, end: String, line: String, nested: Boolean) extends Parsley[Unit]
     {
-        override protected def preprocess(cont: Parsley[Unit] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) = cont(this)
-        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override protected def preprocess[Cont[_, _], U >: Unit](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[U]] = result(this)
+        override private [parsley] def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            instrs += new instructions.TokenComment(start, end, line, nested)
-            cont
+            result(instrs += new instructions.TokenComment(start, end, line, nested))
         }
     }
 
     private [parsley] class Sign[A](ty: SignType, val expected: UnsafeOption[String] = null) extends Parsley[A => A]
     {
-        override protected def preprocess(cont: Parsley[A => A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        override protected def preprocess[Cont[_, _], F >: A => A](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[F]] =
         {
-            if (label == null) cont(this)
-            else cont(new Sign(ty, label))
+            if (label == null) result(this)
+            else result(new Sign(ty, label))
         }
-        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override private [parsley] def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            instrs += new instructions.TokenSign(ty, expected)
-            cont
+            result(instrs += new instructions.TokenSign(ty, expected))
         }
     }
 
     private [parsley] class Natural(val expected: UnsafeOption[String] = null) extends Parsley[Int]
     {
-        override protected def preprocess(cont: Parsley[Int] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        override protected def preprocess[Cont[_, _], I >: Int](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[I]] =
         {
-            if (label == null) cont(this)
-            else cont(new Natural(label))
+            if (label == null) result(this)
+            else result(new Natural(label))
         }
-        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override private [parsley] def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            instrs += new instructions.TokenNatural(expected)
-            cont
+            result(instrs += new instructions.TokenNatural(expected))
         }
     }
 
     private [parsley] class Float(val expected: UnsafeOption[String] = null) extends Parsley[Double]
     {
-        override protected def preprocess(cont: Parsley[Double] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        override protected def preprocess[Cont[_, _], D >: Double](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[D]] =
         {
-            if (label == null) cont(this)
-            else cont(new Float(label))
+            if (label == null) result(this)
+            else result(new Float(label))
         }
-        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override private [parsley] def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            instrs += new instructions.TokenFloat(expected)
-            cont
+            result(instrs += new instructions.TokenFloat(expected))
         }
     }
 
     private [parsley] class Escape(val expected: UnsafeOption[String] = null) extends Parsley[Char]
     {
-        override protected def preprocess(cont: Parsley[Char] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        override protected def preprocess[Cont[_, _], C >: Char](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[C]] =
         {
-            if (label == null) cont(this)
-            else cont(new Escape(label))
+            if (label == null) result(this)
+            else result(new Escape(label))
         }
-        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override private [parsley] def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            instrs += new instructions.TokenEscape(expected)
-            cont
+            result(instrs += new instructions.TokenEscape(expected))
         }
     }
 
     private [parsley] class StringLiteral(ws: TokenSet, val expected: UnsafeOption[String] = null) extends Parsley[String]
     {
-        override protected def preprocess(cont: Parsley[String] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        override protected def preprocess[Cont[_, _], S >: String](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[S]] =
         {
-            if (label == null) cont(this)
-            else cont(new StringLiteral(ws, label))
+            if (label == null) result(this)
+            else result(new StringLiteral(ws, label))
         }
-        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override private [parsley] def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            instrs += new instructions.TokenString(ws, expected)
-            cont
+            result(instrs += new instructions.TokenString(ws, expected))
         }
     }
 
     private [parsley] class RawStringLiteral(val expected: UnsafeOption[String] = null) extends Parsley[String]
     {
-        override protected def preprocess(cont: Parsley[String] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        override protected def preprocess[Cont[_, _], S >: String](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[S]] =
         {
-            if (label == null) cont(this)
-            else cont(new RawStringLiteral(label))
+            if (label == null) result(this)
+            else result(new RawStringLiteral(label))
         }
-        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override private [parsley] def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            instrs += new instructions.TokenRawString(expected)
-            cont
+            result(instrs += new instructions.TokenRawString(expected))
         }
     }
 
     private [parsley] class Identifier(start: TokenSet, letter: TokenSet, keywords: Set[String], val expected: UnsafeOption[String] = null) extends Parsley[String]
     {
-        override protected def preprocess(cont: Parsley[String] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        override protected def preprocess[Cont[_, _], S >: String](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[S]] =
         {
-            if (label == null) cont(this)
-            else cont(new Identifier(start, letter, keywords, label))
+            if (label == null) result(this)
+            else result(new Identifier(start, letter, keywords, label))
         }
-        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override private [parsley] def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            instrs += new instructions.TokenIdentifier(start, letter, keywords, expected)
-            cont
+            result(instrs += new instructions.TokenIdentifier(start, letter, keywords, expected))
         }
     }
 
     private [parsley] class UserOp(start: TokenSet, letter: TokenSet, operators: Set[String], val expected: UnsafeOption[String] = null) extends Parsley[String]
     {
-        override protected def preprocess(cont: Parsley[String] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        override protected def preprocess[Cont[_, _], S >: String](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[S]] =
         {
-            if (label == null) cont(this)
-            else cont(new UserOp(start, letter, operators, label))
+            if (label == null) result(this)
+            else result(new UserOp(start, letter, operators, label))
         }
-        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override private [parsley] def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            instrs += new instructions.TokenUserOperator(start, letter, operators, expected)
-            cont
+            result(instrs += new instructions.TokenUserOperator(start, letter, operators, expected))
         }
     }
 
     private [parsley] class ReservedOp(start: TokenSet, letter: TokenSet, operators: Set[String], val expected: UnsafeOption[String] = null) extends Parsley[String]
     {
-        override protected def preprocess(cont: Parsley[String] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        override protected def preprocess[Cont[_, _], S >: String](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[S]] =
         {
-            if (label == null) cont(this)
-            else cont(new ReservedOp(start, letter, operators, label))
+            if (label == null) result(this)
+            else result(new ReservedOp(start, letter, operators, label))
         }
-        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override private [parsley] def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            instrs += new instructions.TokenOperator(start, letter, operators, expected)
-            cont
+            result(instrs += new instructions.TokenOperator(start, letter, operators, expected))
         }
     }
 
     private [parsley] class Keyword(private [Keyword] val keyword: String, letter: TokenSet, caseSensitive: Boolean, val expected: UnsafeOption[String] = null) extends Parsley[Nothing]
     {
-        override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        override protected def preprocess[Cont[_, _], N >: Nothing](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[N]] =
         {
-            if (label == null) cont(this)
-            else cont(new Keyword(keyword, letter, caseSensitive, label))
+            if (label == null) result(this)
+            else result(new Keyword(keyword, letter, caseSensitive, label))
         }
-        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override private [parsley] def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            instrs += new instructions.TokenKeyword(keyword, letter, caseSensitive, expected)
-            cont
+            result(instrs += new instructions.TokenKeyword(keyword, letter, caseSensitive, expected))
         }
     }
 
     private [parsley] class Operator(private [Operator] val operator: String, letter: TokenSet, val expected: UnsafeOption[String] = null) extends Parsley[Nothing]
     {
-        override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        override protected def preprocess[Cont[_, _], N >: Nothing](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[N]] =
         {
-            if (label == null) cont(this)
-            else cont(new Operator(operator, letter, label))
+            if (label == null) result(this)
+            else result(new Operator(operator, letter, label))
         }
-        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override private [parsley] def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            instrs += new instructions.TokenOperator_(operator, letter, expected)
-            cont
+            result(instrs += new instructions.TokenOperator_(operator, letter, expected))
         }
     }
 
     private [parsley] class MaxOp(private [MaxOp] val operator: String, ops: Set[String], val expected: UnsafeOption[String] = null) extends Parsley[Nothing]
     {
-        override protected def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        override protected def preprocess[Cont[_, _], N >: Nothing](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops_ : ContOps[Cont]): Cont[Parsley[_], Parsley[N]] =
         {
-            if (label == null) cont(this)
-            else cont(new MaxOp(operator, ops, label))
+            if (label == null) result(this)
+            else result(new MaxOp(operator, ops, label))
         }
-        override private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override private [parsley] def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops_ : ContOps[Cont]): Cont[Unit, Unit] =
         {
-            instrs += new instructions.TokenMaxOp(operator, ops, expected)
-            cont
+            result(instrs += new instructions.TokenMaxOp(operator, ops, expected))
         }
     }
 
