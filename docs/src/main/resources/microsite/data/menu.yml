@@ -1,0 +1,10 @@
+options:
+
+  - title: Basic Parsers
+    url: docs/intro.html
+
+  - title: Parsing Brainfuck
+    url: docs/parsing-bf.html
+
+  - title: Parsing JS
+    url: docs/parsing-js.html
