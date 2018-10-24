@@ -2,12 +2,12 @@ package parsley
 
 import parsley.Char.{charLift, digit, hexDigit, octDigit, satisfy, stringLift}
 import parsley.Combinator._
+import parsley.ContOps._
 import parsley.DeepToken.Sign._
 import parsley.Parsley._
 import parsley.TokenParser.TokenSet
-import parsley.ContOps._
 
-import scala.language.implicitConversions
+import scala.language.{higherKinds, implicitConversions}
 
 /**
   * This class is required to construct a TokenParser. It defines the various characteristics of the language to be

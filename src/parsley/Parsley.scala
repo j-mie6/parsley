@@ -1,8 +1,8 @@
 package parsley
 
+import parsley.ContOps._
 import parsley.DeepToken._
 import parsley.instructions._
-import parsley.ContOps._
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -27,6 +27,19 @@ object Parsley
         /**This combinator is an alias for `map`*/
         def <#>[B](f: A => B): Parsley[B] = map(f)
         /**
+          * This is the Applicative application parser. The type of `pf` is `Parsley[A => B]`. Then, given a
+          * `Parsley[A]`, we can produce a `Parsley[B]` by parsing `pf` to retrieve `f: A => B`, then parse `px`
+          * to receive `x: A` then return `f(x): B`.
+          *
+          * WARNING: `pure(f) <*> p` is subject to the same aggressive optimisations as `map`. When using impure functions
+          * the optimiser may decide to cache the result of the function execution, be sure to use `unsafe` in order to
+          * prevent these optimisations.
+          * @param px A parser of type A, where the invokee is A => B
+          * @return A new parser which parses `pf`, then `px` then applies the value returned by `px` to the function
+          *         returned by `pf`
+          */
+        def <*>[B, C](px: =>Parsley[B])(implicit ev: P <:< Parsley[B=>C]) = new DeepEmbedding.<*>[B, C](p, px)
+        /**
           * This is the traditional Monadic binding operator for parsers. When the invokee produces a value, the function
           * `f` is used to produce a new parser that continued the computation.
           *
@@ -36,6 +49,9 @@ object Parsley
           * @return The parser produces from the application of `f` on the result of the last parser
           */
         def flatMap[B](f: A => Parsley[B]): Parsley[B] = new DeepEmbedding.>>=(p, f)
+        /**This combinator is an alias for `flatMap(identity)`.*/
+        def flatten[B](implicit ev: A <:< Parsley[B]): Parsley[B] = flatMap[B](ev)
+
         /**This combinator is an alias for `flatMap`*/
         def >>=[B](f: A => Parsley[B]): Parsley[B] = flatMap(f)
         /**This combinator is defined as `lift2((x, f) => f(x), p, f)`. It is pure syntactic sugar.*/
@@ -145,27 +161,6 @@ object Parsley
           * @param break The breakpoint properties of this parser, defaults to NoBreak
           */
         def debug[A_ >: A](name: String, break: Breakpoint = NoBreak): Parsley[A_] = new DeepEmbedding.Debug[A_](p, name, break)
-    }
-    implicit final class LazyAppParsley[A, +B](pf: =>Parsley[A => B])
-    {
-        /**
-          * This is the Applicative application parser. The type of `pf` is `Parsley[A => B]`. Then, given a
-          * `Parsley[A]`, we can produce a `Parsley[B]` by parsing `pf` to retrieve `f: A => B`, then parse `px`
-          * to receive `x: A` then return `f(x): B`.
-          *
-          * WARNING: `pure(f) <*> p` is subject to the same aggressive optimisations as `map`. When using impure functions
-          * the optimiser may decide to cache the result of the function execution, be sure to use `unsafe` in order to
-          * prevent these optimisations.
-          * @param px A parser of type A, where the invokee is A => B
-          * @return A new parser which parses `pf`, then `px` then applies the value returned by `px` to the function
-          *         returned by `pf`
-          */
-        def <*>(px: =>Parsley[A]): Parsley[B] = new DeepEmbedding.<*>(pf, px)
-    }
-    implicit final class LazyFlattenParsley[+A](p: =>Parsley[Parsley[A]])
-    {
-        /**This combinator is an alias for `flatMap(identity)`.*/
-        def flatten: Parsley[A] = p >>= identity[Parsley[A]]
     }
     implicit final class LazyMapParsley[A, +B](f: A => B)
     {
