@@ -501,7 +501,7 @@ abstract class Parsley[+A] private [parsley]
         }
         else instrs
     }
-    final private [parsley] def fix(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = if (seen.contains(this)) new DeepEmbedding.Fixpoint(this, label) else this
+    final private [parsley] def fix(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = if (seen.contains(this)) new DeepEmbedding.Fixpoint(() => this, label) else this
 
     // Abstracts
     // Sub-tree optimisation and fixpoint calculation - Bottom-up
@@ -819,10 +819,10 @@ private [parsley] object DeepEmbedding
         {
             // CODO: We need to try and identify the fixpoints in the optimised binds, so we can remove the call instructions
             // monad law 1: pure x >>= f = f x
-            case Pure(x) if safe => new Fixpoint(f(x), expected)
+            case Pure(x) if safe => new Fixpoint(() => f(x), expected)
             // char/string x = char/string x *> pure x and monad law 1
-            case p@CharTok(c) => *>(p, new Fixpoint(f(c.asInstanceOf[A]), expected))
-            case p@StringTok(s) => *>(p, new Fixpoint(f(s.asInstanceOf[A]), expected))
+            case p@CharTok(c) => *>(p, new Fixpoint(() => f(c.asInstanceOf[A]), expected))
+            case p@StringTok(s) => *>(p, new Fixpoint(() => f(s.asInstanceOf[A]), expected))
             // (q *> p) >>= f = q *> (p >>= f)
             case u *> v => *>(u, >>=(v, f, expected).optimise)
             // monad law 3: (m >>= g) >>= f = m >>= (\x -> g x >>= f) Note: this *could* help if g x ended with a pure, since this would be optimised out!
@@ -1096,9 +1096,9 @@ private [parsley] object DeepEmbedding
             result(instrs += new instructions.Unexpected(msg, expected))
         }
     }
-    private [parsley] final class Fixpoint[+A](_p: =>Parsley[A], val expected: UnsafeOption[String] = null) extends Parsley[A]
+    private [parsley] final class Fixpoint[A](var _p: ()=>Parsley[A], val expected: UnsafeOption[String] = null) extends Parsley[A]
     {
-        private [Fixpoint] lazy val p = _p
+        private [Fixpoint] lazy val p = _p()
         override def preprocess[Cont[_, _], A_ >: A](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]] =
         {
             if (label == null) result(this)
