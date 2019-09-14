@@ -84,7 +84,7 @@ class CoreTests extends ParsleyTest
         val u: Parsley[Int => Int] = 'a' #> add1
         val v: Parsley[Int => Int] = 'b' #> mult5
         val w: Parsley[Int] = 'c' #> 7
-        val compose: (Int => Int) => (Int => Int) => (Int => Int) = f => g => f.compose(g)
+        val compose: (Int => Int) => (Int => Int) => Int => Int = f => g => f.compose(g)
         runParser(pure(compose) <*> u <*> v <*> w, "abc") should equal (runParser(u <*> (v <*> w), "abc"))
     }
 
@@ -179,6 +179,12 @@ class CoreTests extends ParsleyTest
         val r1 = Var(0)
         val p = put(r1, 5) *> (local(r1, (x: Int) => x+1, get[Int](r1)) <~> get[Int](r1))
         runParser(p, "") should be (Success((6, 5)))
+    }
+
+    "ternary parsers" should "function correctly" in
+    {
+        val p = pure(true)
+        runParser(p ?: ('a', 'b'), "a") should be (Success('a'))
     }
 
     "stack overflows" should "not occur" in

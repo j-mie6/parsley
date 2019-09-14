@@ -923,9 +923,9 @@ private [parsley] object DeepEmbedding
         {
             case Pure(x) => p match
             {
-                case (ct@CharTok(c)) => ops.wrap(instrs += instructions.CharTokFastPerform[Char, B](c, _ => x, ct.expected))
-                case (st@StringTok(s)) => ops.wrap(instrs += new instructions.StringTokFastPerform(s, _ => x, st.expected))
-                case (st@Satisfy(f)) => ops.wrap(instrs += new instructions.SatisfyExchange(f, x, st.expected))
+                case ct@CharTok(c) => ops.wrap(instrs += instructions.CharTokFastPerform[Char, B](c, _ => x, ct.expected))
+                case st@StringTok(s) => ops.wrap(instrs += new instructions.StringTokFastPerform(s, _ => x, st.expected))
+                case st@Satisfy(f) => ops.wrap(instrs += new instructions.SatisfyExchange(f, x, st.expected))
                 case u =>
                     u.codeGen |>
                     (instrs += new instructions.Exchange(x))
@@ -1598,7 +1598,7 @@ private [parsley] object DeepEmbedding
         private [Ternary] var p: Parsley[A] = _
         private [Ternary] var q: Parsley[A] = _
         override def preprocess[Cont[_, _], A_ >: A](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]] =
-            if (label == null && b != null) result(this) else for (b <- _b.optimised; p <- _p.optimised; q <- q.optimised) yield
+            if (label == null && b != null) result(this) else for (b <- _b.optimised; p <- _p.optimised; q <- _q.optimised) yield
             {
                 if (label == null)
                 {

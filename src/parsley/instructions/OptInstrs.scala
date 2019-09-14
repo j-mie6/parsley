@@ -310,7 +310,7 @@ private [parsley] final class JumpTable(prefixes: List[Char], labels: List[Int],
 
     private [parsley] def relabel(labels: Array[Int]): Unit =
     {
-        jumpTable.transform((_, v) => labels(v))
+        jumpTable.mapValuesInPlace((_, v) => labels(v))
         default = labels(default)
         defaultPreamble = default - 1
     }
