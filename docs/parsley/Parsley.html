@@ -3,9 +3,9 @@
         <head>
           <meta http-equiv="X-UA-Compatible" content="IE=edge" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-          <title></title>
-          <meta name="description" content="" />
-          <meta name="keywords" content="" />
+          <title>Parsley documentation  - parsley.Parsley</title>
+          <meta name="description" content="Parsley documentation - parsley.Parsley" />
+          <meta name="keywords" content="Parsley documentation parsley.Parsley" />
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
       <link href="../lib/index.css" media="screen" type="text/css" rel="stylesheet" />
@@ -28,7 +28,7 @@
         </head>
         <body>
       <div id="search">
-        <span id="doc-title"><span id="doc-version"></span></span>
+        <span id="doc-title">Parsley documentation<span id="doc-version"></span></span>
         <span class="close-results"><span class="left">&lt;</span> Back</span>
         <div id="textfilter">
           <span class="input">
@@ -85,6 +85,22 @@
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../index.html" class="extype" name="_root_">root</a></dd></dl></div>
+    </li><li name="parsley.instructions" visbl="pub" class="indented2 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="instructions"></a><a id="instructions:instructions"></a>
+      <span class="permalink">
+      <a href="../parsley/index.html#instructions" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a title="" href="instructions/index.html"><span class="name">instructions</span></a>
+      </span>
+      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="index.html" class="extype" name="parsley">parsley</a></dd></dl></div>
     </li><li class="current-entities indented1">
                         <span class="separator"></span>
                         <a class="object" href="BitGen$.html" title="This implementation uses a predicate to generate a BitSet."></a>
@@ -254,9 +270,9 @@ parse the string given as input to <code>runParser</code>.</p><p>Note: In order 
         <div id="types" class="types members">
               <h3>Type Members</h3>
               <ol><li name="parsley.Parsley.InstrBuffer" visbl="prt" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="InstrBuffer=parsley.ResizableArray[&lt;error&gt;]"></a><a id="InstrBuffer:InstrBuffer"></a>
+      <a id="InstrBuffer=parsley.ResizableArray[parsley.instructions.Instr]"></a><a id="InstrBuffer:InstrBuffer"></a>
       <span class="permalink">
-      <a href="../parsley/Parsley.html#InstrBuffer=parsley.ResizableArray[&lt;error&gt;]" title="Permalink">
+      <a href="../parsley/Parsley.html#InstrBuffer=parsley.ResizableArray[parsley.instructions.Instr]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -265,7 +281,7 @@ parse the string given as input to <code>runParser</code>.</p><p>Note: In order 
         <span class="kind">type</span>
       </span>
       <span class="symbol">
-        <span class="name">InstrBuffer</span><span class="result alias"> = <span class="extype" name="parsley.ResizableArray">ResizableArray</span>[&lt;error&gt;]</span>
+        <span class="name">InstrBuffer</span><span class="result alias"> = <span class="extype" name="parsley.ResizableArray">ResizableArray</span>[<span class="extype" name="parsley.instructions.Instr">Instr</span>]</span>
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
@@ -323,9 +339,9 @@ parse the string given as input to <code>runParser</code>.</p><p>Note: In order 
         <div class="values members">
               <h3>Abstract Value Members</h3>
               <ol><li name="parsley.Parsley#preprocess" visbl="prt" class="indented0 " data-isabs="true" fullComment="yes" group="Ungrouped">
-      <a id="preprocess(cont:parsley.Parsley[A]=&gt;parsley.Bounce[parsley.Parsley[_]])(implicitseen:Set[parsley.Parsley[_]],implicitlabel:parsley.UnsafeOption[String],implicitdepth:Int):parsley.Bounce[parsley.Parsley[_]]"></a><a id="preprocess((Parsley[A])⇒Bounce[Parsley[_]])(Set[Parsley[_]],UnsafeOption[String],Int):Bounce[Parsley[_]]"></a>
+      <a id="preprocess[Cont[_,_],A_&gt;:A](implicitseen:Set[parsley.Parsley[_]],implicitlabel:parsley.UnsafeOption[String],implicitops:parsley.ContOps[Cont]):Cont[parsley.Parsley[_],parsley.Parsley[A_]]"></a><a id="preprocess[Cont[_,_],A_&gt;:A](Set[Parsley[_]],UnsafeOption[String],ContOps[Cont]):Cont[Parsley[_],Parsley[A_]]"></a>
       <span class="permalink">
-      <a href="../parsley/Parsley.html#preprocess(cont:parsley.Parsley[A]=&gt;parsley.Bounce[parsley.Parsley[_]])(implicitseen:Set[parsley.Parsley[_]],implicitlabel:parsley.UnsafeOption[String],implicitdepth:Int):parsley.Bounce[parsley.Parsley[_]]" title="Permalink">
+      <a href="../parsley/Parsley.html#preprocess[Cont[_,_],A_&gt;:A](implicitseen:Set[parsley.Parsley[_]],implicitlabel:parsley.UnsafeOption[String],implicitops:parsley.ContOps[Cont]):Cont[parsley.Parsley[_],parsley.Parsley[A_]]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -334,7 +350,7 @@ parse the string given as input to <code>runParser</code>.</p><p>Note: In order 
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">preprocess</span><span class="params">(<span name="cont">cont: (<a href="" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Parsley.A">A</span>]) ⇒ <span class="extype" name="parsley.Bounce">Bounce</span>[<a href="" class="extype" name="parsley.Parsley">Parsley</a>[_]]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="seen">seen: <span class="extype" name="scala.Predef.Set">Set</span>[<a href="" class="extype" name="parsley.Parsley">Parsley</a>[_]]</span>, <span name="label">label: <span class="extype" name="parsley.UnsafeOption">UnsafeOption</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="depth">depth: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="parsley.Bounce">Bounce</span>[<a href="" class="extype" name="parsley.Parsley">Parsley</a>[_]]</span>
+        <span class="name">preprocess</span><span class="tparams">[<span name="Cont">Cont<span class="tparams">[<span name="_">_</span>, <span name="_">_</span>]</span></span>, <span name="A_">A_ &gt;: <span class="extype" name="parsley.Parsley.A">A</span></span>]</span><span class="params">(<span class="implicit">implicit </span><span name="seen">seen: <span class="extype" name="scala.Predef.Set">Set</span>[<a href="" class="extype" name="parsley.Parsley">Parsley</a>[_]]</span>, <span name="label">label: <span class="extype" name="parsley.UnsafeOption">UnsafeOption</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="ops">ops: <span class="extype" name="parsley.ContOps">ContOps</span>[<span class="extype" name="parsley.Parsley.preprocess.Cont">Cont</span>]</span>)</span><span class="result">: <span class="extype" name="parsley.Parsley.preprocess.Cont">Cont</span>[<a href="" class="extype" name="parsley.Parsley">Parsley</a>[_], <a href="" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Parsley.preprocess.A_">A_</span>]]</span>
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
@@ -426,14 +442,28 @@ parse the string given as input to <code>runParser</code>.</p><p>Note: In order 
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../java/lang/index.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@native</span><span class="args">()</span>
               
-                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
-              
                 <span class="name">@throws</span><span class="args">(<span>
       
       <span class="defval" name="classOf[java.lang.CloneNotSupportedException]">...</span>
     </span>)</span>
               
         </dd></dl></div>
+    </li><li name="parsley.Parsley#computeInstrs" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="computeInstrs(implicitops:parsley.ContOps.GenOps):Array[parsley.instructions.Instr]"></a><a id="computeInstrs(GenOps):Array[Instr]"></a>
+      <span class="permalink">
+      <a href="../parsley/Parsley.html#computeInstrs(implicitops:parsley.ContOps.GenOps):Array[parsley.instructions.Instr]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">computeInstrs</span><span class="params">(<span class="implicit">implicit </span><span name="ops">ops: <span class="extype" name="parsley.ContOps.GenOps">GenOps</span></span>)</span><span class="result">: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="parsley.instructions.Instr">Instr</span>]</span>
+      </span>
+      
+      
     </li><li name="scala.AnyRef#eq" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="eq(x$1:AnyRef):Boolean"></a><a id="eq(AnyRef):Boolean"></a>
       <span class="permalink">
@@ -466,6 +496,28 @@ parse the string given as input to <code>runParser</code>.</p><p>Note: In order 
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#finalize" visbl="prt" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="finalize():Unit"></a>
+      <span class="permalink">
+      <a href="../parsley/Parsley.html#finalize():Unit" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../java/lang/index.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="symbol">classOf[java.lang.Throwable]</span>
+    </span>)</span>
+              
+        </dd></dl></div>
     </li><li name="parsley.Parsley#force" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="force():Unit"></a>
       <span class="permalink">
@@ -500,8 +552,6 @@ parse the string given as input to <code>runParser</code>.</p><p>Note: In order 
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd><dt>Annotations</dt><dd>
                 <span class="name">@native</span><span class="args">()</span>
               
-                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
-              
         </dd></dl></div>
     </li><li name="scala.AnyRef#hashCode" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="hashCode():Int"></a>
@@ -520,8 +570,6 @@ parse the string given as input to <code>runParser</code>.</p><p>Note: In order 
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd><dt>Annotations</dt><dd>
                 <span class="name">@native</span><span class="args">()</span>
-              
-                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
               
         </dd></dl></div>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -574,8 +622,6 @@ parse the string given as input to <code>runParser</code>.</p><p>Note: In order 
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@native</span><span class="args">()</span>
               
-                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
-              
         </dd></dl></div>
     </li><li name="scala.AnyRef#notifyAll" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="notifyAll():Unit"></a>
@@ -595,9 +641,24 @@ parse the string given as input to <code>runParser</code>.</p><p>Note: In order 
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@native</span><span class="args">()</span>
               
-                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
-              
         </dd></dl></div>
+    </li><li name="parsley.Parsley#overflows" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="overflows():Unit"></a>
+      <span class="permalink">
+      <a href="../parsley/Parsley.html#overflows():Unit" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">overflows</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      
+      <p class="shortcomment cmt">Provides an indicator that this parser is likely to stack-overflow
+</p>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a><a id="synchronized[T0](⇒T0):T0"></a>
       <span class="permalink">
@@ -648,6 +709,28 @@ parse the string given as input to <code>runParser</code>.</p><p>Note: In order 
       <p class="shortcomment cmt">Using this method signifies that the parser it is invoked on is impure and any optimisations which assume purity
 are disabled.</p>
     </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait():Unit"></a>
+      <span class="permalink">
+      <a href="../parsley/Parsley.html#wait():Unit" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait(x$1:Long,x$2:Int):Unit"></a><a id="wait(Long,Int):Unit"></a>
       <span class="permalink">
       <a href="../parsley/Parsley.html#wait(x$1:Long,x$2:Int):Unit" title="Permalink">
@@ -693,64 +776,13 @@ are disabled.</p>
     </span>)</span>
               
         </dd></dl></div>
-    </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="wait():Unit"></a>
-      <span class="permalink">
-      <a href="../parsley/Parsley.html#wait():Unit" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier">final </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">wait</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">(<span>
-      
-      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
-    </span>)</span>
-              
-        </dd></dl></div>
     </li>
               </ol>
             </div>
 
         
 
-        <div class="values members">
-              <h3>Deprecated Value Members</h3>
-              <ol><li name="scala.AnyRef#finalize" visbl="prt" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="finalize():Unit"></a>
-      <span class="permalink">
-      <a href="../parsley/Parsley.html#finalize():Unit" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name deprecated" title="Deprecated: (Since version ) see corresponding Javadoc for more information.">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../java/lang/index.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@Deprecated</span>
-              
-                <span class="name">@deprecated</span>
-              
-                <span class="name">@throws</span><span class="args">(<span>
-      
-      <span class="symbol">classOf[java.lang.Throwable]</span>
-    </span>)</span>
-              
-        </dd><dt>Deprecated</dt><dd class="cmt"><p><i>(Since version )</i> see corresponding Javadoc for more information.</p></dd></dl></div>
-    </li></ol>
-            </div>
+        
         </div>
 
         <div id="inheritedMembers">

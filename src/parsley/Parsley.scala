@@ -1,11 +1,12 @@
 package parsley
 
+import parsley.ContOps._
 import parsley.DeepToken._
 import parsley.instructions._
 
 import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.language.existentials
+import scala.language.{existentials, higherKinds, reflectiveCalls}
     
 // User API
 object Parsley
@@ -26,6 +27,19 @@ object Parsley
         /**This combinator is an alias for `map`*/
         def <#>[B](f: A => B): Parsley[B] = map(f)
         /**
+          * This is the Applicative application parser. The type of `pf` is `Parsley[A => B]`. Then, given a
+          * `Parsley[A]`, we can produce a `Parsley[B]` by parsing `pf` to retrieve `f: A => B`, then parse `px`
+          * to receive `x: A` then return `f(x): B`.
+          *
+          * WARNING: `pure(f) <*> p` is subject to the same aggressive optimisations as `map`. When using impure functions
+          * the optimiser may decide to cache the result of the function execution, be sure to use `unsafe` in order to
+          * prevent these optimisations.
+          * @param px A parser of type A, where the invokee is A => B
+          * @return A new parser which parses `pf`, then `px` then applies the value returned by `px` to the function
+          *         returned by `pf`
+          */
+        def <*>[B, C](px: =>Parsley[B])(implicit ev: P <:< Parsley[B=>C]) = new DeepEmbedding.<*>[B, C](p, px)
+        /**
           * This is the traditional Monadic binding operator for parsers. When the invokee produces a value, the function
           * `f` is used to produce a new parser that continued the computation.
           *
@@ -35,6 +49,9 @@ object Parsley
           * @return The parser produces from the application of `f` on the result of the last parser
           */
         def flatMap[B](f: A => Parsley[B]): Parsley[B] = new DeepEmbedding.>>=(p, f)
+        /**This combinator is an alias for `flatMap(identity)`.*/
+        def flatten[B](implicit ev: A <:< Parsley[B]): Parsley[B] = flatMap[B](ev)
+
         /**This combinator is an alias for `flatMap`*/
         def >>=[B](f: A => Parsley[B]): Parsley[B] = flatMap(f)
         /**This combinator is defined as `lift2((x, f) => f(x), p, f)`. It is pure syntactic sugar.*/
@@ -144,27 +161,6 @@ object Parsley
           * @param break The breakpoint properties of this parser, defaults to NoBreak
           */
         def debug[A_ >: A](name: String, break: Breakpoint = NoBreak): Parsley[A_] = new DeepEmbedding.Debug[A_](p, name, break)
-    }
-    implicit final class LazyAppParsley[A, +B](pf: =>Parsley[A => B])
-    {
-        /**
-          * This is the Applicative application parser. The type of `pf` is `Parsley[A => B]`. Then, given a
-          * `Parsley[A]`, we can produce a `Parsley[B]` by parsing `pf` to retrieve `f: A => B`, then parse `px`
-          * to receive `x: A` then return `f(x): B`.
-          *
-          * WARNING: `pure(f) <*> p` is subject to the same aggressive optimisations as `map`. When using impure functions
-          * the optimiser may decide to cache the result of the function execution, be sure to use `unsafe` in order to
-          * prevent these optimisations.
-          * @param px A parser of type A, where the invokee is A => B
-          * @return A new parser which parses `pf`, then `px` then applies the value returned by `px` to the function
-          *         returned by `pf`
-          */
-        def <*>(px: =>Parsley[A]): Parsley[B] = new DeepEmbedding.<*>(pf, px)
-    }
-    implicit final class LazyFlattenParsley[+A](p: =>Parsley[Parsley[A]])
-    {
-        /**This combinator is an alias for `flatMap(identity)`.*/
-        def flatten: Parsley[A] = p >>= identity[Parsley[A]]
     }
     implicit final class LazyMapParsley[A, +B](f: A => B)
     {
@@ -404,21 +400,27 @@ abstract class Parsley[+A] private [parsley]
       */
     final def force(): Unit = instrs
 
+    /**
+      *
+      * Provides an indicator that this parser is likely to stack-overflow
+      */
+    final def overflows(): Unit = cps = true
+
     final private [parsley] def pretty: String = instrs.mkString("; ")
 
     // Internals
-    final private [parsley] def optimised(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]] =
+    final private [parsley] def optimised[Cont[_, _], A_ >: A](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]] =
     {
-        // 2 is a magic magic number. It yields the fastest speeds possible for the compilation time?!
-        if (depth == 2) (if (seen.isEmpty) this else this.fix).preprocess(p => new Thunk(() => cont(p.optimise)))(seen + this, label, 0)
-        else (if (seen.isEmpty) this else this.fix).preprocess(p => cont(p.optimise))(seen + this, label, depth+1)
+        for (p <- (if (seen.isEmpty) this else this.fix).preprocess(seen + this, label, ops)) yield p.optimise
     }
     final private [parsley] var safe = true
-    final private [parsley] lazy val instrs: Array[Instr] =
+    final private [parsley] var cps = false
+
+    def computeInstrs(implicit ops: GenOps): Array[Instr] =
     {
         val instrs: InstrBuffer = new ResizableArray()
         val state = new CodeGenState
-        optimised((p: Parsley[A]) => new Chunk(p))(Set.empty, null, 0).run.codeGen(Terminate)(instrs, state).run()
+        perform(perform(optimised(Set.empty, null, ops).asInstanceOf[({type C[_, _]})#C[Parsley[_], Parsley[_]]]).codeGen(instrs, state, ops))
         if (state.map.nonEmpty)
         {
             val end = state.freshLabel()
@@ -429,7 +431,7 @@ abstract class Parsley[+A] private [parsley]
                 val p = state.nextSub()
                 val label = map(p)
                 instrs += new instructions.Label(label)
-                p.codeGen(Terminate)(instrs, state).run()
+                perform(p.codeGen(instrs, state, ops))
                 instrs += instructions.Return
             }
             instrs += new instructions.Label(end)
@@ -438,12 +440,13 @@ abstract class Parsley[+A] private [parsley]
         val labelMapping = new Array[Int](state.nlabels)
         @tailrec def findLabels(instrs: Array[Instr], labels: Array[Int], n: Int, i: Int, off: Int, nopop: Int): Int = if (i + off < n) instrs(i + off) match
         {
-            case label: Label => instrs(i+off) = null; labels(label.i) = i; findLabels(instrs, labels, n, i, off+1, nopop)
-            case _: NoPush => findLabels(instrs, labels, n, i+1, off, nopop + 1)
-            case instructions.Pop if nopop != 0 => instrs(i+off) = null; findLabels(instrs, labels, n, i, off+1, nopop - 1)
-            case instructions.Exchange(x) if nopop != 0 => instrs(i+off) = new instructions.Push(x); findLabels(instrs, labels, n, i+1, off, nopop - 1)
-            case _ => findLabels(instrs, labels, n, i+1, off, nopop)
-        } else i
+            case label: Label => instrs(i + off) = null; labels(label.i) = i; findLabels(instrs, labels, n, i, off + 1, nopop)
+            case _: NoPush => findLabels(instrs, labels, n, i + 1, off, nopop + 1)
+            case instructions.Pop if nopop != 0 => instrs(i + off) = null; findLabels(instrs, labels, n, i, off + 1, nopop - 1)
+            case instructions.Exchange(x) if nopop != 0 => instrs(i + off) = new instructions.Push(x); findLabels(instrs, labels, n, i + 1, off, nopop - 1)
+            case _ => findLabels(instrs, labels, n, i + 1, off, nopop)
+        }
+        else i
         @tailrec def applyLabels(srcs: Array[Instr], labels: Array[Int], dests: Array[Instr], n: Int, i: Int, off: Int): Unit = if (i < n) srcs(i + off) match
         {
             case null => applyLabels(srcs, labels, dests, n, i, off + 1)
@@ -464,6 +467,8 @@ abstract class Parsley[+A] private [parsley]
         applyLabels(instrsOversize, labelMapping, instrs_, instrs_.length, 0, 0)
         instrs_
     }
+
+    final private [parsley] lazy val instrs: Array[Instr] = if (cps) computeInstrs(Cont.ops.asInstanceOf[GenOps]) else safeCall(computeInstrs(_))
     final private [this] lazy val pindices: Array[Int] =
     {
         val linstrs = instrs
@@ -496,15 +501,15 @@ abstract class Parsley[+A] private [parsley]
         }
         else instrs
     }
-    final private [parsley] def fix(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = if (seen.contains(this)) new DeepEmbedding.Fixpoint(this, label) else this
+    final private [parsley] def fix(implicit seen: Set[Parsley[_]], label: UnsafeOption[String]): Parsley[A] = if (seen.contains(this)) new DeepEmbedding.Fixpoint(() => this, label) else this
 
     // Abstracts
     // Sub-tree optimisation and fixpoint calculation - Bottom-up
-    protected def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]]
+    protected def preprocess[Cont[_, _], A_ >: A](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]]
     // Optimisation - Bottom-up
     private [parsley] def optimise: Parsley[A] = this
     // Peephole optimisation and code generation - Top-down
-    private [parsley] def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState): Continuation
+    private [parsley] def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit]
 }
 
 private [parsley] object DeepEmbedding
@@ -512,28 +517,27 @@ private [parsley] object DeepEmbedding
     // Core Embedding
     private [parsley] final class Pure[A](private [Pure] val x: A) extends Parsley[A]
     {
-        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) = cont(this)
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override def preprocess[Cont[_, _], A_ >: A](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]] = result(this)
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            instrs += new instructions.Push(x)
-            cont
+            result(instrs += new instructions.Push(x))
         }
     }
     private [parsley] final class <*>[A, B](_pf: =>Parsley[A => B], _px: =>Parsley[A]) extends Parsley[B]
     {
         private [<*>] var pf: Parsley[A => B] = _
         private [<*>] var px: Parsley[A] = _
-        override def preprocess(cont: Parsley[B] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]] =
-            if (label == null && pf != null) cont(this) else _pf.optimised(pf => _px.optimised(px =>
+        override def preprocess[Cont[_, _], B_ >: B](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[B_]] =
+            if (label == null && pf != null) result(this) else for (pf <- _pf.optimised; px <- _px.optimised) yield
             {
                 if (label == null)
                 {
                     this.pf = pf
                     this.px = px
-                    cont(this)
+                    this
                 }
-                else cont(<*>(pf, px))
-            }))
+                else <*>(pf, px)
+            }
         override def optimise: Parsley[B] = (pf, px) match
         {
             // Fusion laws
@@ -583,46 +587,38 @@ private [parsley] object DeepEmbedding
                 this
             case _ => this
         }
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) = pf match
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = pf match
         {
             // pure f <*> p = f <$> p
             case Pure(f) => px match
             {
-                case ct@CharTok(c) => instrs += instructions.CharTokFastPerform[Char, B](c, f.asInstanceOf[Char => B], ct.expected); cont
-                case st@StringTok(s) => instrs += new instructions.StringTokFastPerform(s, f.asInstanceOf[String => B], st.expected); cont
+                case ct@CharTok(c) => result(instrs += instructions.CharTokFastPerform[Char, B](c, f.asInstanceOf[Char => B], ct.expected))
+                case st@StringTok(s) => result(instrs += new instructions.StringTokFastPerform(s, f.asInstanceOf[String => B], st.expected))
                 case _ =>
-                    new Suspended(px.codeGen
-                    {
-                        instrs += new instructions.Perform(f)
-                        cont
-                    })
+                    px.codeGen |>
+                    (instrs += new instructions.Perform(f))
             }
             case _ =>
-                new Suspended(pf.codeGen
-                {
-                    px.codeGen
-                    {
-                        instrs += instructions.Apply
-                        cont
-                    }
-                })
+                pf.codeGen >>
+                px.codeGen |>
+                (instrs += instructions.Apply)
         }
     }
     private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) extends Parsley[B]
     {
         private [<|>] var p: Parsley[A] = _
         private [<|>] var q: Parsley[B] = _
-        override def preprocess(cont: Parsley[B] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]] =
-            if (label == null && p != null) cont(this) else _p.optimised(p => _q.optimised(q =>
+        override def preprocess[Cont[_, _], B_ >: B](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[B_]] =
+            if (label == null && p != null) result(this) else for (p <- _p.optimised; q <- _q.optimised) yield
             {
                 if (label == null)
                 {
                     this.p = p
                     this.q = q
-                    cont(this)
+                    this
                 }
-                else cont(<|>(p, q))
-            }))
+                else <|>(p, q)
+            }
         override def optimise: Parsley[B] = (p, q) match
         {
             // left catch law: pure x <|> p = pure x
@@ -638,7 +634,7 @@ private [parsley] object DeepEmbedding
                 this
             case _ => this
         }
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) = tablify(this, Nil) match
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = tablify(this, Nil) match
         {
             // If the tablified list is single element, that implies that this should be generated as normal!
             case _::Nil => p match
@@ -648,26 +644,22 @@ private [parsley] object DeepEmbedding
                     case Pure(x) =>
                         val handler = state.freshLabel()
                         instrs += new instructions.PushHandler(handler)
-                        new Suspended(u.codeGen
+                        u.codeGen |>
                         {
                             instrs += new instructions.Label(handler)
                             instrs += new instructions.AlwaysRecoverWith[B](x)
-                            cont
-                        })
+                        }
                     case v =>
                         val handler = state.freshLabel()
                         val skip = state.freshLabel()
                         instrs += new instructions.PushHandler(handler)
-                        new Suspended(u.codeGen
+                        u.codeGen >>
                         {
                             instrs += new instructions.Label(handler)
                             instrs += new instructions.JumpGoodAttempt(skip)
-                            v.codeGen
-                            {
-                                instrs += new instructions.Label(skip)
-                                cont
-                            }
-                        })
+                            v.codeGen |>
+                            (instrs += new instructions.Label(skip))
+                        }
                 }
                 case u => q match
                 {
@@ -675,29 +667,25 @@ private [parsley] object DeepEmbedding
                         val handler = state.freshLabel()
                         val skip = state.freshLabel()
                         instrs += new instructions.InputCheck(handler)
-                        new Suspended(u.codeGen
+                        u.codeGen |>
                         {
                             instrs += new instructions.JumpGood(skip)
                             instrs += new instructions.Label(handler)
                             instrs += new instructions.RecoverWith[B](x)
                             instrs += new instructions.Label(skip)
-                            cont
-                        })
+                        }
                     case v =>
                         val handler = state.freshLabel()
                         val skip = state.freshLabel()
                         instrs += new instructions.InputCheck(handler)
-                        new Suspended(u.codeGen
+                        u.codeGen >>
                         {
                             instrs += new instructions.JumpGood(skip)
                             instrs += new instructions.Label(handler)
                             instrs += instructions.Catch
-                            v.codeGen
-                            {
-                                instrs += new instructions.Label(skip)
-                                cont
-                            }
-                        })
+                            v.codeGen |>
+                            (instrs += new instructions.Label(skip))
+                        }
                 }
 
             }
@@ -709,68 +697,56 @@ private [parsley] object DeepEmbedding
                 val default = state.freshLabel()
                 val (roots, leads, ls, expecteds) = foldTablified(tablified, state, mutable.Map.empty, Nil, Nil, Nil)
                 instrs += new instructions.JumpTable(leads, ls, default, expecteds)
-                new Suspended(codeGenRoots(
+                codeGenRoots(roots, ls, end) >>
                 {
                     instrs += instructions.Catch
                     instrs += new instructions.Label(default)
                     if (needsDefault)
                     {
                         instrs += new instructions.Empty(null)
-                        instrs += new instructions.Label(end)
-                        cont
+                        result(instrs += new instructions.Label(end))
                     }
                     else
                     {
-                        tablified.head._1.codeGen
-                        {
-                            instrs += new instructions.Label(end)
-                            cont
-                        }
+                        tablified.head._1.codeGen |>
+                        (instrs += new instructions.Label(end))
                     }
-                }, roots, ls, end))
+                }
         }
-        def codeGenRoots(cont: =>Continuation, roots: List[List[Parsley[_]]], ls: List[Int], end: Int)(implicit instrs: InstrBuffer, state: CodeGenState): Continuation = roots match
+        def codeGenRoots[Cont[_, _]](roots: List[List[Parsley[_]]], ls: List[Int], end: Int)(implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = roots match
         {
             case root::roots_ =>
                 instrs += new instructions.Label(ls.head)
-                codeGenAlternatives(root)
+                codeGenAlternatives(root) >>
                 {
                     instrs += new instructions.JumpGood(end)
-                    codeGenRoots(cont, roots_, ls.tail, end)
+                    codeGenRoots(roots_, ls.tail, end)
                 }
-            case Nil => cont
+            case Nil => result(())
         }
-        def codeGenAlternatives(alts: List[Parsley[_]])(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState): Continuation = (alts: @unchecked) match
+        def codeGenAlternatives[Cont[_, _]](alts: List[Parsley[_]])(implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = (alts: @unchecked) match
         {
-            case alt::Nil => alt.codeGen(cont)
+            case alt::Nil => alt.codeGen
             case Attempt(alt)::alts_ =>
                 val handler = state.freshLabel()
                 val skip = state.freshLabel()
                 instrs += new instructions.PushHandler(handler)
-                alt.codeGen
+                alt.codeGen >>
                 {
                     instrs += new instructions.Label(handler)
                     instrs += new instructions.JumpGoodAttempt(skip)
-                    codeGenAlternatives(alts_)
-                    {
-                        instrs += new instructions.Label(skip)
-                        cont
-                    }
+                    ops.|>(codeGenAlternatives(alts_), instrs += new instructions.Label(skip))
                 }
             case alt::alts_ =>
                 val handler = state.freshLabel()
                 val skip = state.freshLabel()
                 instrs += new instructions.InputCheck(handler)
-                alt.codeGen
+                alt.codeGen >>
                 {
                     instrs += new instructions.JumpGood(skip)
                     instrs += new instructions.Label(handler)
                     instrs += instructions.Catch
-                    codeGenAlternatives(alts_)
-                    {
-                        instrs += new instructions.Label(skip)
-                        cont
-                    }
+                    ops.|>(codeGenAlternatives(alts_), instrs += new instructions.Label(skip))
                 }
         }
         @tailrec def foldTablified(tablified: List[(Parsley[_], Option[Parsley[_]])], labelGen: CodeGenState,
@@ -829,24 +805,24 @@ private [parsley] object DeepEmbedding
     private [parsley] final class >>=[A, B](_p: =>Parsley[A], private [>>=] var f: A => Parsley[B], val expected: UnsafeOption[String] = null) extends Parsley[B]
     {
         private [>>=] var p: Parsley[A] = _
-        override def preprocess(cont: Parsley[B] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            if (label == null && p != null) cont(this) else _p.optimised(p =>
+        override def preprocess[Cont[_, _], B_ >: B](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[B_]] =
+            if (label == null && p != null) result(this) else for (p <- _p.optimised) yield
             {
                 if (label == null)
                 {
                     this.p = p
-                    cont(this)
+                    this
                 }
-                else cont(>>=(p, f, label))
-            })
+                else >>=(p, f, label)
+            }
         override def optimise: Parsley[B] = p match
         {
             // CODO: We need to try and identify the fixpoints in the optimised binds, so we can remove the call instructions
             // monad law 1: pure x >>= f = f x
-            case Pure(x) if safe => new Fixpoint(f(x), expected)
+            case Pure(x) if safe => new Fixpoint(() => f(x), expected)
             // char/string x = char/string x *> pure x and monad law 1
-            case p@CharTok(c) => *>(p, new Fixpoint(f(c.asInstanceOf[A]), expected))
-            case p@StringTok(s) => *>(p, new Fixpoint(f(s.asInstanceOf[A]), expected))
+            case p@CharTok(c) => *>(p, new Fixpoint(() => f(c.asInstanceOf[A]), expected))
+            case p@StringTok(s) => *>(p, new Fixpoint(() => f(s.asInstanceOf[A]), expected))
             // (q *> p) >>= f = q *> (p >>= f)
             case u *> v => *>(u, >>=(v, f, expected).optimise)
             // monad law 3: (m >>= g) >>= f = m >>= (\x -> g x >>= f) Note: this *could* help if g x ended with a pure, since this would be optimised out!
@@ -858,26 +834,22 @@ private [parsley] object DeepEmbedding
             case z: MZero => z
             case _ => this
         }
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            new Suspended(p.codeGen
-            {
-                instrs += new instructions.DynCall[A](x => f(x).instrs, expected)
-                cont
-            })
+            p.codeGen |>
+            (instrs += new instructions.DynCall[A](x => f(x).instrs, expected))
         }
     }
     private [parsley] final class Satisfy(private [Satisfy] val f: Char => Boolean, val expected: UnsafeOption[String] = null) extends Parsley[Char]
     {
-        override def preprocess(cont: Parsley[Char] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        override def preprocess[Cont[_, _], C >: Char](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[C]] =
         {
-            if (label == null) cont(this)
-            else cont(new Satisfy(f, label))
+            if (label == null) result(this)
+            else result(new Satisfy(f, label))
         }
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            instrs += new instructions.Satisfies(f, expected)
-            cont
+            result(instrs += new instructions.Satisfies(f, expected))
         }
     }
     private [parsley] abstract class Cont[A, +B] extends Parsley[B]
@@ -890,17 +862,17 @@ private [parsley] object DeepEmbedding
     {
         private [*>] var p: Parsley[A] = _
         private [*>] var q: Parsley[B] = _
-        override def preprocess(cont: Parsley[B] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int): Bounce[Parsley[_]] =
-            if (label == null && p != null) cont(this) else _p.optimised(p => _q.optimised(q =>
+        override def preprocess[Cont[_, _], B_ >: B](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[B_]] =
+            if (label == null && p != null) ops.wrap(this) else for (p <- _p.optimised; q <- _q.optimised) yield
             {
                 if (label == null)
                 {
                     this.p = p
                     this.q = q
-                    cont(this)
+                    this
                 }
-                else cont(*>(p, q))
-            }))
+                else *>(p, q)
+            }
         @tailrec override def optimise: Parsley[B] = p match
         {
             // pure _ *> p = p
@@ -947,26 +919,23 @@ private [parsley] object DeepEmbedding
                 case _ => this
             }
         }
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) = q match
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = q match
         {
             case Pure(x) => p match
             {
-                case (ct@CharTok(c)) => instrs += instructions.CharTokFastPerform[Char, B](c, _ => x, ct.expected); cont
-                case (st@StringTok(s)) => instrs += new instructions.StringTokFastPerform(s, _ => x, st.expected); cont
-                case (st@Satisfy(f)) => instrs += new instructions.SatisfyExchange(f, x, st.expected); cont
+                case (ct@CharTok(c)) => ops.wrap(instrs += instructions.CharTokFastPerform[Char, B](c, _ => x, ct.expected))
+                case (st@StringTok(s)) => ops.wrap(instrs += new instructions.StringTokFastPerform(s, _ => x, st.expected))
+                case (st@Satisfy(f)) => ops.wrap(instrs += new instructions.SatisfyExchange(f, x, st.expected))
                 case u =>
-                    new Suspended(u.codeGen
-                    {
-                        instrs += new instructions.Exchange(x)
-                        cont
-                    })
+                    u.codeGen |>
+                    (instrs += new instructions.Exchange(x))
             }
             case v =>
-                new Suspended(p.codeGen
+                p.codeGen >>
                 {
                     instrs += instructions.Pop
-                    v.codeGen(cont)
-                })
+                    v.codeGen
+                }
         }
         override def discard: Parsley[A] = p
         override def result: Parsley[B] = q
@@ -976,17 +945,17 @@ private [parsley] object DeepEmbedding
     {
         private [<*] var p: Parsley[A] = _
         private [<*] var q: Parsley[B] = _
-        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            if (label == null && p != null) cont(this) else _p.optimised(p => _q.optimised(q =>
+        override def preprocess[Cont[_, _], A_ >: A](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]] =
+            if (label == null && p != null) ops.wrap(this) else for (p <- _p.optimised; q <- _q.optimised) yield
             {
                 if (label == null)
                 {
                     this.p = p
                     this.q = q
-                    cont(this)
+                    this
                 }
-                else cont(<*(p, q))
-            }))
+                else <*(p, q)
+            }
         @tailrec override def optimise: Parsley[A] = q match
         {
             // p <* pure _ = p
@@ -1025,26 +994,18 @@ private [parsley] object DeepEmbedding
                 case _ => this
             }
         }
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) = (p, q) match
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = (p, q) match
         {
-            case (Pure(x), ct@CharTok(c)) => instrs += instructions.CharTokFastPerform[Char, A](c, _ => x, ct.expected); cont
-            case (Pure(x), st@StringTok(s)) => instrs += new instructions.StringTokFastPerform(s, _ => x, st.expected); cont
-            case (Pure(x), st@Satisfy(f)) => instrs += new instructions.SatisfyExchange(f, x, st.expected); cont
+            case (Pure(x), ct@CharTok(c)) => ops.wrap(instrs += instructions.CharTokFastPerform[Char, A](c, _ => x, ct.expected))
+            case (Pure(x), st@StringTok(s)) => ops.wrap(instrs += new instructions.StringTokFastPerform(s, _ => x, st.expected))
+            case (Pure(x), st@Satisfy(f)) => ops.wrap(instrs += new instructions.SatisfyExchange(f, x, st.expected))
             case (Pure(x), v) =>
-                new Suspended(v.codeGen
-                {
-                    instrs += new instructions.Exchange(x)
-                    cont
-                })
+                v.codeGen |>
+                (instrs += new instructions.Exchange(x))
             case _ =>
-                new Suspended(p.codeGen
-                {
-                    q.codeGen
-                    {
-                        instrs += instructions.Pop
-                        cont
-                    }
-                })
+                p.codeGen >>
+                q.codeGen |>
+                (instrs += instructions.Pop)
         }
         override def discard: Parsley[B] = q
         override def result: Parsley[A] = p
@@ -1053,162 +1014,153 @@ private [parsley] object DeepEmbedding
     private [parsley] final class Attempt[A](_p: =>Parsley[A]) extends Parsley[A]
     {
         private [Attempt] var p: Parsley[A] = _
-        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            if (label == null && p != null) cont(this) else _p.optimised(p =>
+        override def preprocess[Cont[_, _], A_ >: A](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]] =
+            if (label == null && p != null) result(this) else for (p <- _p.optimised) yield
             {
                 if (label == null)
                 {
                     this.p = p
-                    cont(this)
+                    this
                 }
-                else cont(Attempt(p))
-            })
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+                else Attempt(p)
+            }
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
             val handler = state.freshLabel()
             instrs += new instructions.PushHandler(handler)
-            p.codeGen
+            p.codeGen |>
             {
                 instrs += new instructions.Label(handler)
                 instrs += instructions.Attempt
-                cont
             }
         }
     }
     private [parsley] final class Look[A](_p: =>Parsley[A]) extends Parsley[A]
     {
         private [Look] var p: Parsley[A] = _
-        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            if (label == null && p != null) cont(this) else _p.optimised(p =>
+        override def preprocess[Cont[_, _], A_ >: A](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]] =
+            if (label == null && p != null) result(this) else for (p <- _p.optimised) yield
             {
                 if (label == null)
                 {
                     this.p = p
-                    cont(this)
+                    this
                 }
-                else cont(Look(p))
-            })
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+                else Look(p)
+            }
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
             val handler = state.freshLabel()
             instrs += new instructions.PushHandler(handler)
-            p.codeGen
+            p.codeGen |>
             {
                 instrs += new instructions.Label(handler)
                 instrs += instructions.Look
-                cont
             }
         }
     }
     private [parsley] sealed trait MZero extends Parsley[Nothing]
     private [parsley] class Empty(val expected: UnsafeOption[String] = null) extends MZero
     {
-        override def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        override def preprocess[Cont[_, _], N >: Nothing](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[N]] =
         {
-            if (label == null) cont(this)
-            else cont(new Empty(label))
+            if (label == null) result(this)
+            else result(new Empty(label))
         }
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            instrs += new instructions.Empty(expected)
-            cont
+            result(instrs += new instructions.Empty(expected))
         }
     }
     private [parsley] final class Fail(private [Fail] val msg: String, val expected: UnsafeOption[String] = null) extends MZero
     {
-        override def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        override def preprocess[Cont[_, _], N >: Nothing](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[N]] =
         {
-            if (label == null) cont(this)
-            else cont(new Fail(msg, label))
+            if (label == null) result(this)
+            else result(new Fail(msg, label))
         }
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            instrs += new instructions.Fail(msg, expected)
-            cont
+            result(instrs += new instructions.Fail(msg, expected))
         }
     }
     private [parsley] final class Unexpected(private [Unexpected] val msg: String, val expected: UnsafeOption[String] = null) extends MZero
     {
-        override def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        override def preprocess[Cont[_, _], N >: Nothing](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[N]] =
         {
-            if (label == null) cont(this)
-            else cont(new Unexpected(msg, label))
+            if (label == null) result(this)
+            else result(new Unexpected(msg, label))
         }
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            instrs += new instructions.Unexpected(msg, expected)
-            cont
+            result(instrs += new instructions.Unexpected(msg, expected))
         }
     }
-    private [parsley] final class Fixpoint[+A](_p: =>Parsley[A], val expected: UnsafeOption[String] = null) extends Parsley[A]
+    private [parsley] final class Fixpoint[A](var _p: ()=>Parsley[A], val expected: UnsafeOption[String] = null) extends Parsley[A]
     {
-        private [Fixpoint] lazy val p = _p
-        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        private [Fixpoint] lazy val p = _p()
+        override def preprocess[Cont[_, _], A_ >: A](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]] =
         {
-            if (label == null) cont(this)
-            else cont(new Fixpoint(_p, label))
+            if (label == null) result(this)
+            else result(new Fixpoint(_p, label))
         }
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            instrs += new instructions.Call(p, expected)
-            cont
+            result(instrs += new instructions.Call(p, expected))
         }
     }
     private [parsley] final class Subroutine[A](_p: =>Parsley[A], val expected: UnsafeOption[String] = null) extends Parsley[A]
     {
         private [Subroutine] var p: Parsley[A] = _
 
-        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        override def preprocess[Cont[_, _], A_ >: A](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]] =
         {
-            if (p == null) _p.optimised(p =>
+            if (p == null) for (p <- _p.optimised(seen, null, ops)) yield
             {
                 if (label == null)
                 {
                     this.p = p
-                    cont(this)
+                    this
                 }
-                else cont(Subroutine(p, label))
-            })(seen, null, depth)
-            else if (label == null) cont(this)
-            else cont(Subroutine(p, label))
+                else Subroutine(p, label)
+            }
+            else if (label == null) result(this)
+            else result(Subroutine(p, label))
         }
-        override def codeGen(cont: => Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
             val label = state.getSubLabel(p)
-            instrs += new instructions.GoSub(label, expected)
-            cont
+            result(instrs += new instructions.GoSub(label, expected))
         }
     }
     // Intrinsic Embedding
     private [parsley] final class CharTok(private [CharTok] val c: Char, val expected: UnsafeOption[String] = null) extends Parsley[Char]
     {
-        override def preprocess(cont: Parsley[Char] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        override def preprocess[Cont[_, _], C >: Char](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[C]] =
         {
-            if (label == null) cont(this)
-            else cont(new CharTok(c, label))
+            if (label == null) result(this)
+            else result(new CharTok(c, label))
         }
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            instrs += instructions.CharTok(c, expected)
-            cont
+            result(instrs += instructions.CharTok(c, expected))
         }
     }
     private [parsley] final class StringTok(private [StringTok] val s: String, val expected: UnsafeOption[String] = null) extends Parsley[String]
     {
-        override def preprocess(cont: Parsley[String] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        override def preprocess[Cont[_, _], S >: String](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[S]] =
         {
-            if (label == null) cont(this)
-            else cont(new StringTok(s, label))
+            if (label == null) result(this)
+            else result(new StringTok(s, label))
         }
         override def optimise = s match
         {
             case "" => new Pure("")
             case _ => this
         }
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            instrs += new instructions.StringTok(s, expected)
-            cont
+            result(instrs += new instructions.StringTok(s, expected))
         }
     }
     // TODO: Perform applicative fusion optimisations
@@ -1216,27 +1168,22 @@ private [parsley] object DeepEmbedding
     {
         private [Lift2] var p: Parsley[A] = _
         private [Lift2] var q: Parsley[B] = _
-        override def preprocess(cont: Parsley[C] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            if (label == null && p != null) cont(this) else _p.optimised(p => _q.optimised(q =>
+        override def preprocess[Cont[_, _], C_ >: C](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[C_]] =
+            if (label == null && p != null) result(this) else for (p <- _p.optimised; q <- _q.optimised) yield
             {
                 if (label == null)
                 {
                     this.p = p
                     this.q = q
-                    cont(this)
+                    this
                 }
-                else cont(Lift2(f, p, q))
-            }))
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+                else Lift2(f, p, q)
+            }
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            new Suspended(p.codeGen
-            {
-                q.codeGen
-                {
-                    instrs += new instructions.Lift2(f)
-                    cont
-                }
-            })
+            p.codeGen >>
+            q.codeGen |>
+            (instrs += new instructions.Lift2(f))
         }
     }
     private [parsley] final class Lift3[A, B, C, +D](private [Lift3] val f: (A, B, C) => D, _p: =>Parsley[A], _q: =>Parsley[B], _r: =>Parsley[C]) extends Parsley[D]
@@ -1244,436 +1191,405 @@ private [parsley] object DeepEmbedding
         private [Lift3] var p: Parsley[A] = _
         private [Lift3] var q: Parsley[B] = _
         private [Lift3] var r: Parsley[C] = _
-        override def preprocess(cont: Parsley[D] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            if (label == null && p != null) cont(this) else _p.optimised(p => _q.optimised(q => _r.optimised(r =>
+        override def preprocess[Cont[_, _], D_ >: D](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[D_]] =
+            if (label == null && p != null) result(this) else for (p <- _p.optimised; q <- _q.optimised; r <- _r.optimised) yield
             {
                 if (label == null)
                 {
                     this.p = p
                     this.q = q
                     this.r = r
-                    cont(this)
+                    this
                 }
-                else cont(Lift3(f, p, q, r))
-            })))
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+                else Lift3(f, p, q, r)
+            }
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            new Suspended(p.codeGen
-            {
-                q.codeGen
-                {
-                    r.codeGen
-                    {
-                        instrs += new instructions.Lift3(f)
-                        cont
-                    }
-                }
-            })
+            p.codeGen >>
+            q.codeGen >>
+            r.codeGen |>
+            (instrs += new instructions.Lift3(f))
         }
     }
     private [parsley] final class FastFail[A](_p: =>Parsley[A], private [FastFail] val msggen: A => String, val expected: UnsafeOption[String] = null) extends MZero
     {
         private [FastFail] var p: Parsley[A] = _
-        override def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            if (label == null && p != null) cont(this) else _p.optimised(p =>
+        override def preprocess[Cont[_, _], N >: Nothing](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[N]] =
+            if (label == null && p != null) result(this) else for (p <- _p.optimised) yield
             {
                 if (label == null)
                 {
                     this.p = p
-                    cont(this)
+                    this
                 }
-                else cont(FastFail(p, msggen, label))
-            })
+                else FastFail(p, msggen, label)
+            }
         override def optimise = p match
         {
             case Pure(x) => new Fail(msggen(x))
             case z: MZero => z
             case _ => this
         }
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            p.codeGen
-            {
-                instrs += new instructions.FastFail(msggen, expected)
-                cont
-            }
+            p.codeGen |>
+            (instrs += new instructions.FastFail(msggen, expected))
         }
     }
     private [parsley] final class FastUnexpected[A](_p: =>Parsley[A], private [FastUnexpected] val msggen: A => String, val expected: UnsafeOption[String] = null) extends MZero
     {
         private [FastUnexpected] var p: Parsley[A] = _
-        override def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            if (label == null && p != null) cont(this) else _p.optimised(p =>
+        override def preprocess[Cont[_, _], N >: Nothing](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[N]] =
+            if (label == null && p != null) result(this) else for (p <- _p.optimised) yield
             {
                 if (label == null)
                 {
                     this.p = p
-                    cont(this)
+                    this
                 }
-                else cont(FastUnexpected(p, msggen, label))
-            })
+                else FastUnexpected(p, msggen, label)
+            }
         override def optimise = p match
         {
             case Pure(x) => new Unexpected(msggen(x))
             case z: MZero => z
             case _ => this
         }
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            p.codeGen
-            {
-                instrs += new instructions.FastUnexpected(msggen, expected)
-                cont
-            }
+            p.codeGen |>
+            (instrs += new instructions.FastUnexpected(msggen, expected))
         }
     }
     private [parsley] final class Ensure[A](_p: =>Parsley[A], private [Ensure] val pred: A => Boolean, val expected: UnsafeOption[String] = null) extends Parsley[A]
     {
         private [Ensure] var p: Parsley[A] = _
-        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            if (label == null && p != null) cont(this) else _p.optimised(p =>
+        override def preprocess[Cont[_, _], A_ >: A](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]] =
+            if (label == null && p != null) result(this) else for (p <- _p.optimised) yield
             {
                 if (label == null)
                 {
                     this.p = p
-                    cont(this)
+                    this
                 }
-                else cont(Ensure(p, pred, label))
-            })
+                else Ensure(p, pred, label)
+            }
         override def optimise = p match
         {
             case px@Pure(x) => if (pred(x)) px else new Empty
             case _ => this
         }
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            p.codeGen
-            {
-                instrs += new instructions.Ensure(pred, expected)
-                cont
-            }
+            p.codeGen |>
+            (instrs += new instructions.Ensure(pred, expected))
         }
     }
     private [parsley] final class Guard[A](_p: =>Parsley[A], private [Guard] val pred: A => Boolean, private [Guard] val msg: String, val expected: UnsafeOption[String] = null) extends Parsley[A]
     {
         private [Guard] var p: Parsley[A] = _
-        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            if (label == null && p != null) cont(this) else _p.optimised(p =>
+        override def preprocess[Cont[_, _], A_ >: A](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]] =
+            if (label == null && p != null) result(this) else for (p <- _p.optimised) yield
             {
                 if (label == null)
                 {
                     this.p = p
-                    cont(this)
+                    this
                 }
-                else cont(Guard(p, pred, msg, label))
-            })
+                else Guard(p, pred, msg, label)
+            }
         override def optimise = p match
         {
             case px@Pure(x) => if (pred(x)) px else new Fail(msg)
             case _ => this
         }
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            p.codeGen
-            {
-                instrs += new instructions.Guard(pred, msg, expected)
-                cont
-            }
+            p.codeGen |>
+            (instrs += new instructions.Guard(pred, msg, expected))
         }
     }
     private [parsley] final class FastGuard[A](_p: =>Parsley[A], private [FastGuard] val pred: A => Boolean, private [FastGuard] val msggen: A => String, val expected: UnsafeOption[String] = null) extends Parsley[A]
     {
         private [FastGuard] var p: Parsley[A] = _
-        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            if (label == null && p != null) cont(this) else _p.optimised(p =>
+        override def preprocess[Cont[_, _], A_ >: A](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]] =
+            if (label == null && p != null) result(this) else for (p <- _p.optimised) yield
             {
                 if (label == null)
                 {
                     this.p = p
-                    cont(this)
+                    this
                 }
-                else cont(FastGuard(p, pred, msggen, label))
-            })
+                else FastGuard(p, pred, msggen, label)
+            }
         override def optimise = p match
         {
             case px@Pure(x) => if (pred(x)) px else new Fail(msggen(x))
             case _ => this
         }
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            p.codeGen
-            {
-                instrs += new instructions.FastGuard(pred, msggen, expected)
-                cont
-            }
+            p.codeGen |>
+            (instrs += new instructions.FastGuard(pred, msggen, expected))
         }
     }
     private [parsley] final class Many[A](_p: =>Parsley[A]) extends Parsley[List[A]]
     {
         private [Many] var p: Parsley[A] = _
-        override def preprocess(cont: Parsley[List[A]] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            if (label == null && p != null) cont(this) else _p.optimised(p =>
+        override def preprocess[Cont[_, _], L >: List[A]](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[L]] =
+            if (label == null && p != null) result(this) else for (p <- _p.optimised) yield
             {
                 if (label == null)
                 {
                     this.p = p
-                    cont(this)
+                    this
                 }
-                else cont(Many(p))
-            })
+                else Many(p)
+            }
         override def optimise = p match
         {
             case _: Pure[A] => throw new Exception("many given parser which consumes no input")
             case _: MZero => new Pure(Nil)
             case _ => this
         }
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
             val body = state.freshLabel()
             val handler = state.freshLabel()
             instrs += new instructions.InputCheck(handler)
             instrs += new instructions.Label(body)
-            new Suspended(p.codeGen
+            p.codeGen |>
             {
                 instrs += new instructions.Label(handler)
                 instrs += new instructions.Many(body)
-                cont
-            })
+            }
         }
     }
     private [parsley] final class SkipMany[A](_p: =>Parsley[A]) extends Parsley[Nothing]
     {
         private [SkipMany] var p: Parsley[A] = _
-        override def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            if (label == null && p != null) cont(this) else _p.optimised(p =>
+        override def preprocess[Cont[_, _], N >: Nothing](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[N]] =
+            if (label == null && p != null) result(this) else for (p <- _p.optimised) yield
             {
                 if (label == null)
                 {
                     this.p = p
-                    cont(this)
+                    this
                 }
-                else cont(SkipMany(p))
-            })
+                else SkipMany(p)
+            }
         override def optimise = p match
         {
             case _: Pure[A] => throw new Exception("skipMany given parser which consumes no input")
             case _: MZero => new Pure(()).asInstanceOf[Parsley[Nothing]]
             case _ => this
         }
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
             val body = state.freshLabel()
             val handler = state.freshLabel()
             instrs += new instructions.InputCheck(handler)
             instrs += new instructions.Label(body)
-            new Suspended(p.codeGen
+            p.codeGen |>
             {
                 instrs += new instructions.Label(handler)
                 instrs += new instructions.SkipMany(body)
-                cont
-            })
+            }
         }
     }
     private [parsley] final class ChainPost[A](_p: =>Parsley[A], _op: =>Parsley[A => A]) extends Parsley[A]
     {
         private [ChainPost] var p: Parsley[A] = _
         private [ChainPost] var op: Parsley[A => A] = _
-        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            if (label == null && p != null) cont(this) else _p.optimised(p => _op.optimised(op =>
+        override def preprocess[Cont[_, _], A_ >: A](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]] =
+            if (label == null && p != null) result(this) else for (p <- _p.optimised; op <- _op.optimised) yield
             {
                 if (label == null)
                 {
                     this.p = p
                     this.op = op
-                    cont(this)
+                    this
                 }
-                else cont(ChainPost(p, op))
-            }))
+                else ChainPost(p, op)
+            }
         override def optimise = op match
         {
             case _: Pure[A => A] => throw new Exception("left chain given parser which consumes no input")
             case _: MZero => p
             case _ => this
         }
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
             val body = state.freshLabel()
             val handler = state.freshLabel()
-            new Suspended(p.codeGen
+            p.codeGen >>
             {
                 instrs += new instructions.InputCheck(handler)
                 instrs += new instructions.Label(body)
-                op.codeGen
+                op.codeGen |>
                 {
                     instrs += new instructions.Label(handler)
                     instrs += new instructions.ChainPost(body)
-                    cont
                 }
-            })
+            }
         }
     }
     private [parsley] final class ChainPre[A](_p: =>Parsley[A], _op: =>Parsley[A => A]) extends Parsley[A]
     {
         private [ChainPre] var p: Parsley[A] = _
         private [ChainPre] var op: Parsley[A => A] = _
-        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            if (label == null && p != null) cont(this) else _p.optimised(p => _op.optimised(op =>
+        override def preprocess[Cont[_, _], A_ >: A](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]] =
+            if (label == null && p != null) result(this) else for (p <- _p.optimised; op <- _op.optimised) yield
             {
                 if (label == null)
                 {
                     this.p = p
                     this.op = op
-                    cont(this)
+                    this
                 }
-                else cont(ChainPre(p, op))
-            }))
+                else ChainPre(p, op)
+            }
         override def optimise = op match
         {
             case _: Pure[A => A] => throw new Exception("right chain given parser which consumes no input")
             case _: MZero => p
             case _ => this
         }
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
             val body = state.freshLabel()
             val handler = state.freshLabel()
             instrs += new instructions.InputCheck(handler)
             instrs += new instructions.Label(body)
-            new Suspended(op.codeGen
+            op.codeGen >>
             {
                 instrs += new instructions.Label(handler)
                 instrs += new instructions.ChainPre(body)
-                p.codeGen
-                {
-                    instrs += instructions.Apply
-                    cont
-                }
-            })
+                p.codeGen |>
+                (instrs += instructions.Apply)
+            }
         }
     }
     private [parsley] final class Chainl[A](_p: =>Parsley[A], _op: =>Parsley[(A, A) => A]) extends Parsley[A]
     {
         private [Chainl] var p: Parsley[A] = _
         private [Chainl] var op: Parsley[(A, A) => A] = _
-        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            if (label == null && p != null) cont(this) else _p.optimised(p => _op.optimised(op =>
+        override def preprocess[Cont[_, _], A_ >: A](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]] =
+            if (label == null && p != null) result(this) else for (p <- _p.optimised; op <- _op.optimised) yield
             {
                 if (label == null)
                 {
                     this.p = p
                     this.op = op
-                    cont(this)
+                    this
                 }
-                else cont(Chainl(p, op))
-            }))
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+                else Chainl(p, op)
+            }
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
             val body = state.freshLabel()
             val handler = state.freshLabel()
-            new Suspended(p.codeGen
+            p.codeGen >>
             {
                 instrs += new instructions.InputCheck(handler)
                 instrs += new instructions.Label(body)
-                op.codeGen(p.codeGen
+                op.codeGen >>
+                p.codeGen |>
                 {
                     instrs += new instructions.Label(handler)
                     instrs += new instructions.Chainl(body)
-                    cont
-                })
-            })
+                }
+            }
         }
     }
     private [parsley] final class Chainr[A](_p: =>Parsley[A], _op: =>Parsley[(A, A) => A]) extends Parsley[A]
     {
         private [Chainr] var p: Parsley[A] = _
         private [Chainr] var op: Parsley[(A, A) => A] = _
-        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            if (label == null && p != null) cont(this) else _p.optimised(p => _op.optimised(op =>
+        override def preprocess[Cont[_, _], A_ >: A](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]] =
+            if (label == null && p != null) result(this) else for (p <- _p.optimised; op <- _op.optimised) yield
             {
                 if (label == null)
                 {
                     this.p = p
                     this.op = op
-                    cont(this)
+                    this
                 }
-                else cont(Chainr(p, op))
-            }))
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+                else Chainr(p, op)
+            }
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit]=
         {
             val body = state.freshLabel()
             val handler = state.freshLabel()
             instrs += new instructions.InputCheck(handler)
             instrs += new instructions.Label(body)
-            new Suspended(p.codeGen
+            p.codeGen >>
             {
                 instrs += new instructions.InputCheck(handler)
-                op.codeGen
+                op.codeGen |>
                 {
                     instrs += new instructions.Label(handler)
                     instrs += new instructions.Chainr(body)
-                    cont
                 }
-            })
+            }
         }
     }
     private [parsley] final class SepEndBy1[A, B](_p: =>Parsley[A], _sep: =>Parsley[B]) extends Parsley[List[A]]
     {
         private [SepEndBy1] var p: Parsley[A] = _
         private [SepEndBy1] var sep: Parsley[B] = _
-        override def preprocess(cont: Parsley[List[A]] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            if (label == null && p != null) cont(this) else _p.optimised(p => _sep.optimised(sep =>
+        override def preprocess[Cont[_, _], L >: List[A]](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[L]] =
+            if (label == null && p != null) result(this) else for (p <- _p.optimised; sep <- _sep.optimised) yield
             {
                 if (label == null)
                 {
                     this.p = p
                     this.sep = sep
-                    cont(this)
+                    this
                 }
-                else cont(SepEndBy1(p, sep))
-            }))
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+                else SepEndBy1(p, sep)
+            }
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
             val body = state.freshLabel()
             val handler = state.freshLabel()
             instrs += new instructions.InputCheck(handler)
             instrs += new instructions.Label(body)
-            new Suspended(p.codeGen
+            p.codeGen >>
             {
                 instrs += new instructions.InputCheck(handler)
-                sep.codeGen
+                sep.codeGen |>
                 {
                     instrs += new instructions.Label(handler)
                     instrs += new instructions.SepEndBy1(body)
-                    cont
                 }
-            })
+            }
         }
     }
     private [parsley] final class ManyUntil[A](_body: Parsley[Any]) extends Parsley[List[A]]
     {
         private [ManyUntil] var body: Parsley[Any] = _
-        override def preprocess(cont: Parsley[List[A]] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            if (label == null && body != null) cont(this) else _body.optimised(body =>
+        override def preprocess[Cont[_, _], L >: List[A]](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[L]] =
+            if (label == null && body != null) result(this) else for (body <- _body.optimised) yield
             {
                 if (label == null)
                 {
                     this.body = body
-                    cont(this)
+                    this
                 }
-                else cont(ManyUntil(body))
-            })
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+                else ManyUntil(body)
+            }
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
             val start = state.freshLabel()
             val loop = state.freshLabel()
             instrs += new instructions.PushFallthrough(loop)
             instrs += new instructions.Label(start)
-            new Suspended(body.codeGen
+            body.codeGen |>
             {
                 instrs += new instructions.Label(loop)
                 instrs += new instructions.ManyUntil(start)
-                cont
-            })
+            }
         }
     }
     private [parsley] final class Ternary[A](_b: =>Parsley[Boolean], _p: =>Parsley[A], _q: =>Parsley[A]) extends Parsley[A]
@@ -1681,200 +1597,184 @@ private [parsley] object DeepEmbedding
         private [Ternary] var b: Parsley[Boolean] = _
         private [Ternary] var p: Parsley[A] = _
         private [Ternary] var q: Parsley[A] = _
-        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            if (label == null && b != null) cont(this) else _b.optimised(b => _p.optimised(p => _q.optimised(q =>
+        override def preprocess[Cont[_, _], A_ >: A](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]] =
+            if (label == null && b != null) result(this) else for (b <- _b.optimised; p <- _p.optimised; q <- q.optimised) yield
             {
                 if (label == null)
                 {
                     this.b = b
                     this.p = p
                     this.q = q
-                    cont(this)
+                    this
                 }
-                else cont(Ternary(b, p, q))
-            })))
+                else Ternary(b, p, q)
+            }
         override def optimise = b match
         {
             case Pure(true) => p
             case Pure(false) => q
             case _ => this
         }
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
             val success = state.freshLabel()
             val end = state.freshLabel()
-            new Suspended(b.codeGen
+            b.codeGen >>
             {
                 instrs += new instructions.If(success)
-                q.codeGen
+                q.codeGen >>
                 {
                     instrs += new instructions.Jump(end)
                     instrs += new instructions.Label(success)
-                    p.codeGen
-                    {
-                        instrs += new instructions.Label(end)
-                        cont
-                    }
+                    p.codeGen |>
+                    (instrs += new instructions.Label(end))
                 }
-            })
+            }
         }
     }
     private [parsley] final class NotFollowedBy[A](_p: =>Parsley[A], val expected: UnsafeOption[String] = null) extends Parsley[Nothing]
     {
         private [NotFollowedBy] var p: Parsley[A] = _
-        override def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            if (label == null && p != null) cont(this) else _p.optimised(p =>
+        override def preprocess[Cont[_, _], N >: Nothing](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[N]] =
+            if (label == null && p != null) result(this) else for (p <- _p.optimised) yield
             {
                 if (label == null)
                 {
                     this.p = p
-                    cont(this)
+                    this
                 }
-                else cont(NotFollowedBy(p, label))
-            })
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+                else NotFollowedBy(p, label)
+            }
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
             val handler = state.freshLabel()
             instrs += new instructions.PushHandler(handler)
-            p.codeGen
+            p.codeGen |>
             {
                 instrs += new instructions.Label(handler)
                 instrs += new instructions.NotFollowedBy(expected)
-                cont
             }
         }
     }
     private [parsley] final class Eof(val expected: UnsafeOption[String] = null) extends Parsley[Nothing]
     {
-        override def preprocess(cont: Parsley[Nothing] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        override def preprocess[Cont[_, _], N >: Nothing](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[N]] =
         {
-            if (label == null) cont(this)
-            else cont(new Eof(label))
+            if (label == null) result(this)
+            else result(new Eof(label))
         }
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            instrs += new instructions.Eof(expected)
-            cont
+            result(instrs += new instructions.Eof(expected))
         }
     }
     private [parsley] object Line extends Parsley[Int]
     {
-        override def preprocess(cont: Parsley[Int] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) = cont(this)
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override def preprocess[Cont[_, _], I >: Int](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[I]] = result(this)
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            instrs += instructions.Line
-            cont
+            result(instrs += instructions.Line)
         }
     }
     private [parsley] object Col extends Parsley[Int]
     {
-        override def preprocess(cont: Parsley[Int] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) = cont(this)
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override def preprocess[Cont[_, _], I >: Int](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[I]] = result(this)
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            instrs += instructions.Col
-            cont
+            result(instrs += instructions.Col)
         }
     }
     private [parsley] final class Get[S](v: Var) extends Parsley[S]
     {
-        override def preprocess(cont: Parsley[S] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) = cont(this)
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override def preprocess[Cont[_, _], S_ >: S](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[S_]] = result(this)
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            instrs += new instructions.Get(v.v)
-            cont
+            result(instrs += new instructions.Get(v.v))
         }
     }
     private [parsley] final class Put[S](private [Put] val v: Var, _p: =>Parsley[S]) extends Parsley[Unit]
     {
         private [Put] var p: Parsley[S] = _
-        override def preprocess(cont: Parsley[Unit] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            if (label == null && p != null) cont(this) else _p.optimised(p =>
+        override def preprocess[Cont[_, _], U >: Unit](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[U]] =
+            if (label == null && p != null) result(this) else for (p <- _p.optimised) yield
             {
                 if (label == null)
                 {
                     this.p = p
-                    cont(this)
+                    this
                 }
-                else cont(Put(v, p))
-            })
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
-        {
-            p.codeGen
-            {
-                instrs += new instructions.Put(v.v)
-                cont
+                else Put(v, p)
             }
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
+        {
+            p.codeGen |>
+            (instrs += new instructions.Put(v.v))
         }
     }
     private [parsley] final class Modify[S](v: Var, f: S => S) extends Parsley[S]
     {
-        override def preprocess(cont: Parsley[S] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) = cont(this)
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+        override def preprocess[Cont[_, _], S_ >: S](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[S_]] = result(this)
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            instrs += new instructions.Modify(v.v, f)
-            cont
+            result(instrs += new instructions.Modify(v.v, f))
         }
     }
     private [parsley] final class Local[S, A](private [Local] val v: Var, _p: =>Parsley[S], _q: =>Parsley[A]) extends Parsley[A]
     {
         private [Local] var p: Parsley[S] = _
         private [Local] var q: Parsley[A] = _
-        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            if (label == null && p != null) cont(this) else _p.optimised(p => _q.optimised(q =>
+        override def preprocess[Cont[_, _], A_ >: A](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]] =
+            if (label == null && p != null) result(this) else for (p <- _p.optimised; q <- _q.optimised) yield
             {
                 if (label == null)
                 {
                     this.p = p
                     this.q = q
-                    cont(this)
+                    this
                 }
-                else cont(Local(v, p, q))
-            }))
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+                else Local(v, p, q)
+            }
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            p.codeGen
+            p.codeGen >>
             {
                 instrs += new instructions.LocalEntry(v.v)
-                q.codeGen
-                {
-                    instrs += new instructions.LocalExit(v.v)
-                    cont
-                }
+                q.codeGen |>
+                (instrs += new instructions.LocalExit(v.v))
             }
         }
     }
     private [parsley] final class ErrorRelabel[+A](p: =>Parsley[A], msg: String) extends Parsley[A]
     {
-        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
+        override def preprocess[Cont[_, _], A_ >: A](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]] =
         {
-            if (label == null) p.optimised(cont)(seen, msg, depth)
-            else p.optimised(cont)
+            if (label == null) p.optimised(seen, msg, ops)
+            else p.optimised
         }
         override def optimise = throw new Exception("Error relabelling should not be in optimisation!")
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) = throw new Exception("Error relabelling should not be in code gen!")
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = throw new Exception("Error relabelling should not be in code gen!")
     }
     private [parsley] final class Debug[A](_p: =>Parsley[A], name: String, break: Breakpoint) extends Parsley[A]
     {
         private [Debug] var p: Parsley[A] = _
-        override def preprocess(cont: Parsley[A] => Bounce[Parsley[_]])(implicit seen: Set[Parsley[_]], label: UnsafeOption[String], depth: Int) =
-            if (label == null && p != null) cont(this) else _p.optimised(p =>
+        override def preprocess[Cont[_, _], A_ >: A](implicit seen: Set[Parsley[_]], label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]] =
+            if (label == null && p != null) result(this) else for (p <- _p.optimised) yield
             {
                 if (label == null)
                 {
                     this.p = p
-                    cont(this)
+                    this
                 }
-                else cont(Debug(p, name, break))
-            })
-        override def codeGen(cont: =>Continuation)(implicit instrs: InstrBuffer, state: CodeGenState) =
+                else Debug(p, name, break)
+            }
+        override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
             val handler = state.freshLabel()
             instrs += new instructions.LogBegin(handler, name, (break eq EntryBreak) || (break eq FullBreak))
-            p.codeGen
+            p.codeGen |>
             {
                 instrs += new instructions.Label(handler)
                 instrs += new instructions.LogEnd(name, (break eq ExitBreak) || (break eq FullBreak))
-                cont
             }
         }
     }

@@ -124,14 +124,6 @@ package object parsley
     private [parsley] final class Chunk[A](val x: A) extends Bounce[A]
     private [parsley] final class Thunk[A](val cont: () => Bounce[A]) extends Bounce[A]
 
-    private [parsley] sealed abstract class Continuation
-    {
-        //noinspection TypeCheckCanBeMatch
-        @tailrec final def run(): Unit = if (this.isInstanceOf[Suspended]) this.asInstanceOf[Suspended]().run()
-    }
-    private [parsley] final object Terminate extends Continuation
-    private [parsley] final class Suspended(cont: =>Continuation) extends Continuation { def apply(): Continuation = cont }
-
     // From shapeless library :)
     private [parsley] trait =!=[A, B]
     implicit def neq[A, B] : A =!= B = null
