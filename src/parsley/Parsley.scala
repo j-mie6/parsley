@@ -1199,7 +1199,7 @@ private [parsley] object DeepEmbedding
             else result(Subroutine(p, label))
         }
         override def findLetsAux[Cont[_, _]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] = result(())
-        override def optimise = if (p.size == 1) p else this
+        //override def optimise = if (p.size == 1) p else this
         override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
             val label = state.getSubLabel(p)
