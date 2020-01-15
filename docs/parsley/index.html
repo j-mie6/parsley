@@ -3,9 +3,9 @@
         <head>
           <meta http-equiv="X-UA-Compatible" content="IE=edge" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-          <title></title>
-          <meta name="description" content="" />
-          <meta name="keywords" content="" />
+          <title>Parsley documentation  - parsley</title>
+          <meta name="description" content="Parsley documentation - parsley" />
+          <meta name="keywords" content="Parsley documentation parsley" />
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
       <link href="../lib/index.css" media="screen" type="text/css" rel="stylesheet" />
@@ -28,7 +28,7 @@
         </head>
         <body>
       <div id="search">
-        <span id="doc-title"><span id="doc-version"></span></span>
+        <span id="doc-title">Parsley documentation<span id="doc-version"></span></span>
         <span class="close-results"><span class="left">&lt;</span> Back</span>
         <div id="textfilter">
           <span class="input">
@@ -85,6 +85,22 @@
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../index.html" class="extype" name="_root_">root</a></dd></dl></div>
+    </li><li name="parsley.instructions" visbl="pub" class="indented2 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="instructions"></a><a id="instructions:instructions"></a>
+      <span class="permalink">
+      <a href="../parsley/index.html#instructions" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a title="" href="instructions/index.html"><span class="name">instructions</span></a>
+      </span>
+      
+      
     </li><li class="current-entities indented1">
                         <span class="separator"></span>
                         <a class="object" href="BitGen$.html" title="This implementation uses a predicate to generate a BitSet."></a>
@@ -391,7 +407,7 @@ parse the string given as input to <code>runParser</code>.</p><p>Note: In order 
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a title="The implementation provided is a function which matches on the input streams characters" href="Predicate.html"><span class="name">Predicate</span></a><span class="params">(<span name="f">f: (<span class="extype" name="scala.Char">Char</span>) ⇒ <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result"> extends <a href="Impl.html" class="extype" name="parsley.Impl">Impl</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a title="The implementation provided is a function which matches on the input streams characters" href="Predicate.html"><span class="name">Predicate</span></a><span class="params">(<span name="f">f: (<span class="extype" name="scala.Char">scala.Char</span>) ⇒ <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result"> extends <a href="Impl.html" class="extype" name="parsley.Impl">Impl</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       
       <p class="shortcomment cmt">The implementation provided is a function which matches on the input streams characters</p><div class="fullcomment"><div class="comment cmt"><p>The implementation provided is a function which matches on the input streams characters</p></div><dl class="paramcmts block"><dt class="param">f</dt><dd class="cmt"><p>The predicate that input tokens are tested against</p></dd></dl></div>
@@ -473,9 +489,9 @@ Currently, there are only 4 available registers, so use them wisely!</p></div><d
               <h3>Value Members</h3>
               <ol>
                 <li name="parsley#giveContext" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="giveContext:&lt;error&gt;"></a>
+      <a id="giveContext:parsley.instructions.Context"></a><a id="giveContext:Context"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#giveContext:&lt;error&gt;" title="Permalink">
+      <a href="../parsley/index.html#giveContext:parsley.instructions.Context" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -484,7 +500,7 @@ Currently, there are only 4 available registers, so use them wisely!</p></div><d
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">giveContext</span><span class="result">: &lt;error&gt;</span>
+        <span class="name">giveContext</span><span class="result">: <a href="instructions/Context.html" class="extype" name="parsley.instructions.Context">Context</a></span>
       </span>
       
       <p class="shortcomment cmt">This function returns a fresh Context.</p><div class="fullcomment"><div class="comment cmt"><p>This function returns a fresh Context. Contexts are used by the parsers to store their state.
@@ -545,9 +561,9 @@ execution contexts due to multi-threaded parsing.</p></div><dl class="paramcmts 
       
       
     </li><li name="parsley#runParser" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="runParser[A](p:parsley.Parsley[A],input:Array[Char],ctx:&lt;error&gt;):parsley.package.Result[A]"></a><a id="runParser[A](Parsley[A],Array[Char],&lt;error&gt;):Result[A]"></a>
+      <a id="runParser[A](p:parsley.Parsley[A],input:Array[Char],ctx:parsley.instructions.Context):parsley.package.Result[A]"></a><a id="runParser[A](Parsley[A],Array[scala.Char],Context):Result[A]"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#runParser[A](p:parsley.Parsley[A],input:Array[Char],ctx:&lt;error&gt;):parsley.package.Result[A]" title="Permalink">
+      <a href="../parsley/index.html#runParser[A](p:parsley.Parsley[A],input:Array[Char],ctx:parsley.instructions.Context):parsley.package.Result[A]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -556,15 +572,15 @@ execution contexts due to multi-threaded parsing.</p></div><dl class="paramcmts 
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">runParser</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="p">p: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.runParser.A">A</span>]</span>, <span name="input">input: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Char">Char</span>]</span>, <span name="ctx">ctx: &lt;error&gt;</span>)</span><span class="result">: <a href="package$$Result.html" class="extype" name="parsley.Result">Result</a>[<span class="extype" name="parsley.runParser.A">A</span>]</span>
+        <span class="name">runParser</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="p">p: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.runParser.A">A</span>]</span>, <span name="input">input: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Char">scala.Char</span>]</span>, <span name="ctx">ctx: <a href="instructions/Context.html" class="extype" name="parsley.instructions.Context">Context</a></span>)</span><span class="result">: <a href="package$$Result.html" class="extype" name="parsley.Result">Result</a>[<span class="extype" name="parsley.runParser.A">A</span>]</span>
       </span>
       
       <p class="shortcomment cmt">This method is responsible for actually executing parsers.</p><div class="fullcomment"><div class="comment cmt"><p>This method is responsible for actually executing parsers. Given a <code>Parsley[A]</code> and an input
 array, will parse the string with the parser. The result is either a <code>Success</code> or a <code>Failure</code>.</p></div><dl class="paramcmts block"><dt class="tparam">A</dt><dd class="cmt"><p>The type of the result of parsing</p></dd><dt class="param">p</dt><dd class="cmt"><p>The parser to run</p></dd><dt class="param">input</dt><dd class="cmt"><p>The input to run against</p></dd><dt class="param">ctx</dt><dd class="cmt"><p>The provided context from the user</p></dd><dt>returns</dt><dd class="cmt"><p>Either a success with a value of type <code>A</code> or a failure with error message</p></dd></dl></div>
     </li><li name="parsley#runParser" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="runParser[A](p:parsley.Parsley[A],input:String,ctx:&lt;error&gt;):parsley.package.Result[A]"></a><a id="runParser[A](Parsley[A],String,&lt;error&gt;):Result[A]"></a>
+      <a id="runParser[A](p:parsley.Parsley[A],input:String,ctx:parsley.instructions.Context):parsley.package.Result[A]"></a><a id="runParser[A](Parsley[A],String,Context):Result[A]"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#runParser[A](p:parsley.Parsley[A],input:String,ctx:&lt;error&gt;):parsley.package.Result[A]" title="Permalink">
+      <a href="../parsley/index.html#runParser[A](p:parsley.Parsley[A],input:String,ctx:parsley.instructions.Context):parsley.package.Result[A]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -573,13 +589,13 @@ array, will parse the string with the parser. The result is either a <code>Succe
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">runParser</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="p">p: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.runParser.A">A</span>]</span>, <span name="input">input: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="ctx">ctx: &lt;error&gt;</span>)</span><span class="result">: <a href="package$$Result.html" class="extype" name="parsley.Result">Result</a>[<span class="extype" name="parsley.runParser.A">A</span>]</span>
+        <span class="name">runParser</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="p">p: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.runParser.A">A</span>]</span>, <span name="input">input: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="ctx">ctx: <a href="instructions/Context.html" class="extype" name="parsley.instructions.Context">Context</a></span>)</span><span class="result">: <a href="package$$Result.html" class="extype" name="parsley.Result">Result</a>[<span class="extype" name="parsley.runParser.A">A</span>]</span>
       </span>
       
       <p class="shortcomment cmt">This method is responsible for actually executing parsers.</p><div class="fullcomment"><div class="comment cmt"><p>This method is responsible for actually executing parsers. Given a <code>Parsley[A]</code> and an input
 string, will parse the string with the parser. The result is either a <code>Success</code> or a <code>Failure</code>.</p></div><dl class="paramcmts block"><dt class="tparam">A</dt><dd class="cmt"><p>The type of the result of parsing</p></dd><dt class="param">p</dt><dd class="cmt"><p>The parser to run</p></dd><dt class="param">input</dt><dd class="cmt"><p>The input to run against</p></dd><dt class="param">ctx</dt><dd class="cmt"><p>The provided context from the user</p></dd><dt>returns</dt><dd class="cmt"><p>Either a success with a value of type <code>A</code> or a failure with error message</p></dd></dl></div>
     </li><li name="parsley#runParser" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="runParser[A](p:parsley.Parsley[A],input:Array[Char]):parsley.package.Result[A]"></a><a id="runParser[A](Parsley[A],Array[Char]):Result[A]"></a>
+      <a id="runParser[A](p:parsley.Parsley[A],input:Array[Char]):parsley.package.Result[A]"></a><a id="runParser[A](Parsley[A],Array[scala.Char]):Result[A]"></a>
       <span class="permalink">
       <a href="../parsley/index.html#runParser[A](p:parsley.Parsley[A],input:Array[Char]):parsley.package.Result[A]" title="Permalink">
         <i class="material-icons"></i>
@@ -590,7 +606,7 @@ string, will parse the string with the parser. The result is either a <code>Succ
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">runParser</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="p">p: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.runParser.A">A</span>]</span>, <span name="input">input: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Char">Char</span>]</span>)</span><span class="result">: <a href="package$$Result.html" class="extype" name="parsley.Result">Result</a>[<span class="extype" name="parsley.runParser.A">A</span>]</span>
+        <span class="name">runParser</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="p">p: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.runParser.A">A</span>]</span>, <span name="input">input: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Char">scala.Char</span>]</span>)</span><span class="result">: <a href="package$$Result.html" class="extype" name="parsley.Result">Result</a>[<span class="extype" name="parsley.runParser.A">A</span>]</span>
       </span>
       
       <p class="shortcomment cmt">This method is responsible for actually executing parsers.</p><div class="fullcomment"><div class="comment cmt"><p>This method is responsible for actually executing parsers. Given a <code>Parsley[A]</code> and an input
@@ -613,9 +629,9 @@ array, will parse the string with the parser. The result is either a <code>Succe
       <p class="shortcomment cmt">This method is responsible for actually executing parsers.</p><div class="fullcomment"><div class="comment cmt"><p>This method is responsible for actually executing parsers. Given a <code>Parsley[A]</code> and an input
 string, will parse the string with the parser. The result is either a <code>Success</code> or a <code>Failure</code>.</p></div><dl class="paramcmts block"><dt class="tparam">A</dt><dd class="cmt"><p>The type of the result of parsing</p></dd><dt class="param">p</dt><dd class="cmt"><p>The parser to run</p></dd><dt class="param">input</dt><dd class="cmt"><p>The input to run against</p></dd><dt>returns</dt><dd class="cmt"><p>Either a success with a value of type <code>A</code> or a failure with error message</p></dd></dl></div>
     </li><li name="parsley#runParserFastUnsafe" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="runParserFastUnsafe[A](p:parsley.Parsley[A],input:String)(implicitctx:&lt;error&gt;):parsley.package.Result[A]"></a><a id="runParserFastUnsafe[A](Parsley[A],String)(&lt;error&gt;):Result[A]"></a>
+      <a id="runParserFastUnsafe[A](p:parsley.Parsley[A],input:String)(implicitctx:parsley.instructions.Context):parsley.package.Result[A]"></a><a id="runParserFastUnsafe[A](Parsley[A],String)(Context):Result[A]"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#runParserFastUnsafe[A](p:parsley.Parsley[A],input:String)(implicitctx:&lt;error&gt;):parsley.package.Result[A]" title="Permalink">
+      <a href="../parsley/index.html#runParserFastUnsafe[A](p:parsley.Parsley[A],input:String)(implicitctx:parsley.instructions.Context):parsley.package.Result[A]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -624,7 +640,7 @@ string, will parse the string with the parser. The result is either a <code>Succ
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">runParserFastUnsafe</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="p">p: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.runParserFastUnsafe.A">A</span>]</span>, <span name="input">input: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ctx">ctx: &lt;error&gt; = <span class="symbol">internalCtx</span></span>)</span><span class="result">: <a href="package$$Result.html" class="extype" name="parsley.Result">Result</a>[<span class="extype" name="parsley.runParserFastUnsafe.A">A</span>]</span>
+        <span class="name">runParserFastUnsafe</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="p">p: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.runParserFastUnsafe.A">A</span>]</span>, <span name="input">input: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="ctx">ctx: <a href="instructions/Context.html" class="extype" name="parsley.instructions.Context">Context</a> = <span class="symbol">internalCtx</span></span>)</span><span class="result">: <a href="package$$Result.html" class="extype" name="parsley.Result">Result</a>[<span class="extype" name="parsley.runParserFastUnsafe.A">A</span>]</span>
       </span>
       
       <p class="shortcomment cmt">This method allows you to run a parser with a cached context, which improves performance.</p><div class="fullcomment"><div class="comment cmt"><p>This method allows you to run a parser with a cached context, which improves performance.
@@ -633,9 +649,9 @@ string, will parse the string with the parser. The result is either a <code>Succ
  each thread should request its own context with <code>parsley.giveContext</code>. This value may be
  implicit for convenience.</p></div></div>
     </li><li name="parsley#runParserThreadSafe" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="runParserThreadSafe[A](p:parsley.Parsley[A],input:String,ctx:&lt;error&gt;):parsley.package.Result[A]"></a><a id="runParserThreadSafe[A](Parsley[A],String,&lt;error&gt;):Result[A]"></a>
+      <a id="runParserThreadSafe[A](p:parsley.Parsley[A],input:String,ctx:parsley.instructions.Context):parsley.package.Result[A]"></a><a id="runParserThreadSafe[A](Parsley[A],String,Context):Result[A]"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#runParserThreadSafe[A](p:parsley.Parsley[A],input:String,ctx:&lt;error&gt;):parsley.package.Result[A]" title="Permalink">
+      <a href="../parsley/index.html#runParserThreadSafe[A](p:parsley.Parsley[A],input:String,ctx:parsley.instructions.Context):parsley.package.Result[A]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -644,7 +660,7 @@ string, will parse the string with the parser. The result is either a <code>Succ
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">runParserThreadSafe</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="p">p: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.runParserThreadSafe.A">A</span>]</span>, <span name="input">input: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="ctx">ctx: &lt;error&gt; = <span class="symbol"><span class="name"><a href="#giveContext:&lt;error&gt;">giveContext</a></span></span></span>)</span><span class="result">: <a href="package$$Result.html" class="extype" name="parsley.Result">Result</a>[<span class="extype" name="parsley.runParserThreadSafe.A">A</span>]</span>
+        <span class="name">runParserThreadSafe</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="p">p: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.runParserThreadSafe.A">A</span>]</span>, <span name="input">input: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="ctx">ctx: <a href="instructions/Context.html" class="extype" name="parsley.instructions.Context">Context</a> = <span class="symbol"><span class="name"><a href="#giveContext:parsley.instructions.Context">giveContext</a></span></span></span>)</span><span class="result">: <a href="package$$Result.html" class="extype" name="parsley.Result">Result</a>[<span class="extype" name="parsley.runParserThreadSafe.A">A</span>]</span>
       </span>
       
       <p class="shortcomment cmt">This method allows you to run parsers in parallel in a thread-safe fashion.</p><div class="fullcomment"><div class="comment cmt"><p>This method allows you to run parsers in parallel in a thread-safe fashion. This is safer
