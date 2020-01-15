@@ -388,7 +388,7 @@ private [parsley] class LetFinderState
     def lets: Map[Parsley[_], Parsley[_]] =
     {
         (for ((k, v) <- _preds;
-              if v >= 2 && !_recs.contains(k) && !k.isInstanceOf[DeepEmbedding.Subroutine[_]])
+              if v >= 2 && !_recs.contains(k))
          yield k -> new DeepEmbedding.Subroutine(k)).toMap
     }
     def recs: Set[Parsley[_]] = _recs.toSet
@@ -1594,7 +1594,6 @@ private [parsley] object DeepEmbedding
         {
             val body = state.freshLabel()
             val handler = state.freshLabel()
-            // TODO This could be made better with automatic sub-routining (if p isn't already a subroutine, this could be done at the combinator level...)
             p.codeGen >>
             {
                 instrs += new instructions.InputCheck(handler)
@@ -2007,6 +2006,7 @@ private [parsley] object DeepEmbedding
             res.p = p
             res
         }
+        def unapply[A](self: Subroutine[A]): Option[Parsley[A]] = Some(self.p)
     }
     private [DeepEmbedding] object CharTok
     {
