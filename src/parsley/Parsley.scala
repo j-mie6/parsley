@@ -545,7 +545,7 @@ abstract class Parsley[+A] private [parsley]
             if (self == this) new DeepEmbedding.Fixpoint(() => this, label)
             else this
         }
-        else this//self
+        else self
     }
 
     // Abstracts
