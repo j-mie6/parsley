@@ -1100,7 +1100,6 @@ private [parsley] object DeepEmbedding
             }
         }
     }
-    // TODO Use Seek and Tell instructions here instead, we know they are more efficient
     private [parsley] final class Look[A](_p: =>Parsley[A]) extends Parsley[A]
     {
         private [Look] var p: Parsley[A] = _
@@ -1110,7 +1109,7 @@ private [parsley] object DeepEmbedding
                 if (label == null)
                 {
                     this.p = p
-                    this.size = p.size + 2
+                    this.size = p.size + 3
                     this
                 }
                 else Look(p)
@@ -1994,7 +1993,7 @@ private [parsley] object DeepEmbedding
         {
             val res: Look[A] = new Look(p)
             res.p = p
-            res.size = p.size + 2
+            res.size = p.size + 3
             res
         }
     }
@@ -2233,17 +2232,5 @@ private [parsley] object DeepEmbedding
             res.size = p.size + 2
             res
         }
-    }
-}
-
-object SubroutineTest
-{
-    import Parsley._
-    import Char._
-    def main(args: Array[String]): Unit =
-    {
-        val p = ('a' *> 'b')
-        val q = p <* p
-        println(q.pretty)
     }
 }
