@@ -33,7 +33,7 @@ object Combinator
         select(p <#>
         {
             case Some(x) => Right(x)
-            case None => Left()
+            case None => Left(())
         }, q.map[Unit => A](x => _ => x))
 
     /**optional(p) tries to apply parser `p`. It will parse `p` or nothing. It only fails if `p`
