@@ -1269,7 +1269,7 @@ private [parsley] class TokenMaxOp(_operator: String, _ops: Set[String], _expect
             j = i
             if (i < inputsz)
             {
-                var ops: List[String] = this.ops
+                var ops = this.ops
                 while (ops.nonEmpty && i < inputsz)
                 {
                     val c = input(i)

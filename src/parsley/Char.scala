@@ -1,16 +1,12 @@
 package parsley
 
 import parsley.Parsley._
+import parsley.Implicits.charLift
 
 import scala.annotation.switch
-import scala.language.implicitConversions
 
 object Char
 {
-    // Implicit Conversions
-    @inline implicit def stringLift(str: String): Parsley[String] = string(str)
-    @inline implicit def charLift(c: Char): Parsley[Char] = char(c)
-
     /** Reads a character from the input stream and returns it, else fails if the character is not found at the head
       * of the stream.
       * @param c The character to search for

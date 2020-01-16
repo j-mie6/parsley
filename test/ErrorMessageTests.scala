@@ -1,7 +1,7 @@
 import parsley.Combinator.eof
 import parsley.Parsley._
 import parsley.{Failure, Parsley, runParser}
-import parsley.Char.{charLift, stringLift}
+import parsley.Implicits.{charLift, stringLift}
 
 class ErrorMessageTests extends ParsleyTest
 {

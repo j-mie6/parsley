@@ -1,6 +1,7 @@
 import parsley.{Failure, Parsley, Success, Var, runParser}
 import parsley.Parsley._
-import parsley.Char.{char, charLift, satisfy, stringLift}
+import parsley.Char.{char, satisfy}
+import parsley.Implicits.{charLift, stringLift}
 
 class CoreTests extends ParsleyTest
 {
