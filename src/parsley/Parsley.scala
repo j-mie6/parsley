@@ -70,9 +70,9 @@ object Parsley
         def <|>[B >: A](q: =>Parsley[B]): Parsley[B] = new DeepEmbedding.<|>(p, q)
         /**This combinator is defined as `p <|> pure(x)`. It is pure syntactic sugar.*/
         def </>[B >: A](x: B): Parsley[B] = this <|> pure(x)
-        /**This combinator is an alias for <|>.*/
+        /**This combinator is an alias for `<|>`.*/
         def orElse[B >: A](q: =>Parsley[B]): Parsley[B] = this <|> q
-        /**This combinator is an alias for </>.*/
+        /**This combinator is an alias for `</>`.*/
         def getOrElse[B >: A](x: B): Parsley[B] = p </> x
         /**This combinator is defined as `attempt(p) <|> q`. It is pure syntactic sugar.*/
         def <\>[B >: A](q: Parsley[B]): Parsley[B] = attempt(p) <|> q
@@ -258,6 +258,8 @@ object Parsley
     def unexpected(msg: String): Parsley[Nothing] = new DeepEmbedding.Unexpected(msg)
     /** Returns `()`. Defined as `pure(())` but aliased for sugar*/
     val unit: Parsley[Unit] = pure(())
+    /** converts a parser's result to () */
+    implicit def `void`[P](p: P)(implicit ev: P => Parsley[_]): Parsley[Unit] = p #> ()
     /** `many(p)` executes the parser `p` zero or more times. Returns a list of the returned values of `p`. */
     def many[A](p: =>Parsley[A]): Parsley[List[A]] = new DeepEmbedding.Many(p)
     /** `skipMany(p)` executes the parser `p` zero or more times and ignores the results. Returns `()` */
@@ -298,22 +300,42 @@ object Parsley
     val pos: Parsley[(Int, Int)] = line <~> col
     /**
       * Consumes no input and returns the value stored in one of the parser registers.
-      * Note that there are only 4 registers at present.
+      * @note There are only 4 registers at present.
       * @param v The index of the register to collect from
       * @tparam S The type of the value in register `v` (this will result in a runtime type-check)
       * @return The value stored in register `v` of type `S`
       */
     def get[S](v: Var)(implicit ev: S =!= Nothing): Parsley[S] = new DeepEmbedding.Get(v)
     /**
+      * Consumes no input and returns the value stored in one of the parser registers after applying a function.
+      * @note There are only 4 registers at present.
+      * @param v The index of the register to collect from
+      * @param f The function used to transform the value in the register
+      * @tparam S The type of the value in register `v` (this will result in a runtime type-check)
+      * @tparam A The desired result type
+      * @return The value stored in register `v` applied to `f`
+      */
+    def gets[S, A](v: Var, f: S => A): Parsley[A] = gets(v, pure(f))
+    /**
+      * Returns the value stored in one of the parser registers after applying a function obtained from given parser.
+      * @note There are only 4 registers at present. The value is fetched before `pf` is executed
+      * @param v The index of the register to collect from
+      * @param pf The parser which provides the function to transform values
+      * @tparam S The type of the value in register `v` (this will result in a runtime type-check)
+      * @tparam A The desired result type
+      * @return The value stored in register `v` applied to `f` from `pf`
+      */
+    def gets[S, A](v: Var, pf: Parsley[S => A]): Parsley[A] = get[S](v) <**> pf
+    /**
       * Consumes no input and places the value `x` into register `v`.
-      * Note that there are only 4 registers at present.
+      * @note There are only 4 registers at present.
       * @param v The index of the register to place the value in
       * @param x The value to place in the register
       */
     def put[S](v: Var, x: S): Parsley[Unit] = put(v, pure(x))
     /**
       * Places the result of running `p` into register `v`.
-      * Note that there are only 4 registers at present.
+      * @note There are only 4 registers at present.
       * @param v The index of the register to place the value in
       * @param p The parser to derive the value from
       */
@@ -321,7 +343,7 @@ object Parsley
     /**
       * Modifies the value contained in register `v` using function `f`. It is left to the users responsibility to
       * ensure the types line up. There is no compile-time type checking enforced!
-      * Note that there are only 4 registers at present.
+      * @note There are only 4 registers at present.
       * @param v The index of the register to modify
       * @param f The function used to modify the register
       * @tparam S The type of value currently assumed to be in the register
@@ -330,7 +352,7 @@ object Parsley
     /**
       * For the duration of parser `p` the state stored in register `v` is instead set to `x`. The change is undone
       * after `p` has finished.
-      * Note that there are only 4 registers at present.
+      * @note There are only 4 registers at present.
       * @param v The index of the register to modify
       * @param x The value to place in the register `v`
       * @param p The parser to execute with the adjusted state
@@ -340,7 +362,7 @@ object Parsley
     /**
       * For the duration of parser `q` the state stored in register `v` is instead set to the return value of `p`. The
       * change is undone after `q` has finished.
-      * Note that there are only 4 registers at present.
+      * @note There are only 4 registers at present.
       * @param v The index of the register to modify
       * @param p The parser whose return value is placed in register `v`
       * @param q The parser to execute with the adjusted state
@@ -350,7 +372,7 @@ object Parsley
     /**
       * For the duration of parser `p` the state stored in register `v` is instead modified with `f`. The change is undone
       * after `p` has finished.
-      * Note that there are only 4 registers at present.
+      * @note There are only 4 registers at present.
       * @param v The index of the register to modify
       * @param f The function used to modify the value in register `v`
       * @param p The parser to execute with the adjusted state
@@ -472,7 +494,7 @@ abstract class Parsley[+A] private [parsley]
     final private [parsley] var cps = false
     final private [parsley] var size: Int = 1
 
-    def computeInstrs(implicit ops: GenOps): Array[Instr] =
+    final private def computeInstrs(implicit ops: GenOps): Array[Instr] =
     {
         val instrs: InstrBuffer = new ResizableArray()
         val state = new CodeGenState

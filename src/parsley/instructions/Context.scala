@@ -49,7 +49,7 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
     private [instructions] var startcol: Int = 1
     var sourceName: String = "input"
 
-    override def toString: String =
+    private [instructions] def pretty: String =
     {
         s"""[
            |  stack     = [${stack.mkString(", ")}]

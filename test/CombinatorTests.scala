@@ -1,6 +1,6 @@
-import parsley.{Failure, Success, runParser}
+import parsley.{Failure, Success, Var, runParser}
 import parsley.Combinator._
-import parsley.Char.{charLift, char, string, stringLift}
+import parsley.Char.{char, charLift, string, stringLift}
 import parsley.Parsley._
 
 class CombinatorTests extends ParsleyTest
@@ -219,5 +219,17 @@ class CombinatorTests extends ParsleyTest
     {
         runParser(someUntil('a', 'b'), "ab") should be (Success(List('a')))
         runParser(someUntil('a', 'b'), "b") shouldBe a [Failure]
+    }
+
+    "forP" should "be able to parse context-sensitive grammars" in
+    {
+        val v1 = Var(0)
+        val v2 = Var(1)
+        val abc = put(v1, 0) *>
+                  many('a' *> modify[Int](v1, _ + 1)) *>
+                  forP[Int](v2, get[Int](v1), pure(_ != 0), pure(_ - 1), 'b') *>
+                  forP[Int](v2, get[Int](v1), pure(_ != 0), pure(_ - 1), 'c')
+        runParser(abc, "aaabbbccc") should be (Success(()))
+        runParser(abc, "aaaabc") shouldBe a [Failure]
     }
 }
