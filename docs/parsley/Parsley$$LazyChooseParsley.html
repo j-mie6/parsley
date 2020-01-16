@@ -280,11 +280,10 @@
         <span title="gt4s: $qmark$colon" class="name">?:</span><span class="params">(<span name="b">b: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Parsley.LazyChooseParsley.A">A</span>]</span>
       </span>
       
-      <p class="shortcomment cmt">This serves as a lifted if statement (hence its similar look to a C-style ternary expression).</p><div class="fullcomment"><div class="comment cmt"><p>This serves as a lifted if statement (hence its similar look to a C-style ternary expression).
-If the parser on the lhs of the operator it is true then execution continues with parser <code>p</code>, else
-control passes to parser <code>q</code>. <code>b ?: (p, q)</code> is equivalent to <code>b &gt;&gt;= (b =&gt; if (b) p else q)</code> but does not
-involve any expensive monadic operations. Note: due to Scala operator associativity laws, this is a
-right-associative operator, and must be properly bracketed, technically the invokee is the rhs...</p></div><dl class="paramcmts block"><dt class="param">b</dt><dd class="cmt"><p>The parser that yields the condition value</p></dd><dt>returns</dt><dd class="cmt"><p>The result of either <code>p</code> or <code>q</code> depending on the return value of the invokee</p></dd></dl></div>
+      <p class="shortcomment cmt">This is an if statement lifted to the parser level.</p><div class="fullcomment"><div class="comment cmt"><p>This is an if statement lifted to the parser level. Formally, this is a selective functor operation,
+equivalent to (branch b.map(boolToEither) (p.map(const)) (q.map(const))).
+Note: due to Scala operator associativity laws, this is a right-associative operator, and must be properly
+bracketed, technically the invokee is the rhs...</p></div><dl class="paramcmts block"><dt class="param">b</dt><dd class="cmt"><p>The parser that yields the condition value</p></dd><dt>returns</dt><dd class="cmt"><p>The result of either <code>p</code> or <code>q</code> depending on the return value of the invokee</p></dd></dl></div>
     </li><li name="scala.Any#asInstanceOf" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <span class="permalink">

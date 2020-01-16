@@ -1080,6 +1080,39 @@ Returns a list of values returned by <code>p</code>.</p></div></div>
     </span>)</span>
               
         </dd></dl></div>
+    </li><li name="parsley.Combinator#when" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="when(p:=&gt;parsley.Parsley[Boolean],q:=&gt;parsley.Parsley[Unit]):parsley.Parsley[Unit]"></a><a id="when(⇒Parsley[Boolean],⇒Parsley[Unit]):Parsley[Unit]"></a>
+      <span class="permalink">
+      <a href="../parsley/Combinator$.html#when(p:=&gt;parsley.Parsley[Boolean],q:=&gt;parsley.Parsley[Unit]):parsley.Parsley[Unit]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">when</span><span class="params">(<span name="p">p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>, <span name="q">q: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Unit">Unit</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Unit">Unit</span>]</span>
+      </span>
+      
+      <p class="shortcomment cmt"><code>when p q</code> will first perform <code>p</code>, and if the result is <code>true</code> will then execute <code>q</code> or else return unit.</p><div class="fullcomment"><div class="comment cmt"><p><code>when p q</code> will first perform <code>p</code>, and if the result is <code>true</code> will then execute <code>q</code> or else return unit.</p></div><dl class="paramcmts block"><dt class="param">p</dt><dd class="cmt"><p>The first parser to parse</p></dd><dt class="param">q</dt><dd class="cmt"><p>If <code>p</code> returns <code>true</code> then this parser is executed</p></dd><dt>returns</dt><dd class="cmt"><p>()</p></dd></dl></div>
+    </li><li name="parsley.Combinator#whileP" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="whileP(p:=&gt;parsley.Parsley[Boolean]):parsley.Parsley[Unit]"></a><a id="whileP(⇒Parsley[Boolean]):Parsley[Unit]"></a>
+      <span class="permalink">
+      <a href="../parsley/Combinator$.html#whileP(p:=&gt;parsley.Parsley[Boolean]):parsley.Parsley[Unit]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">whileP</span><span class="params">(<span name="p">p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Boolean">Boolean</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Unit">Unit</span>]</span>
+      </span>
+      
+      <p class="shortcomment cmt"><code>whileP p</code> will continue to run <code>p</code> until it returns <code>false</code>.</p><div class="fullcomment"><div class="comment cmt"><p><code>whileP p</code> will continue to run <code>p</code> until it returns <code>false</code>. This is often useful in conjunction with stateful
+parsers.</p></div><dl class="paramcmts block"><dt class="param">p</dt><dd class="cmt"><p>The parser to continuously execute</p></dd><dt>returns</dt><dd class="cmt"><p>()</p></dd></dl></div>
     </li>
               </ol>
             </div>

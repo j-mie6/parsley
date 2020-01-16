@@ -171,11 +171,10 @@ object Parsley
     {
         private lazy val (p, q) = pq
         /**
-          * This serves as a lifted if statement (hence its similar look to a C-style ternary expression).
-          * If the parser on the lhs of the operator it is true then execution continues with parser `p`, else
-          * control passes to parser `q`. `b ?: (p, q)` is equivalent to `b >>= (b => if (b) p else q)` but does not
-          * involve any expensive monadic operations. Note: due to Scala operator associativity laws, this is a
-          * right-associative operator, and must be properly bracketed, technically the invokee is the rhs...
+          * This is an if statement lifted to the parser level. Formally, this is a selective functor operation,
+          * equivalent to (branch b.map(boolToEither) (p.map(const)) (q.map(const))).
+          * Note: due to Scala operator associativity laws, this is a right-associative operator, and must be properly
+          * bracketed, technically the invokee is the rhs...
           * @param b The parser that yields the condition value
           * @return The result of either `p` or `q` depending on the return value of the invokee
           */
@@ -211,6 +210,30 @@ object Parsley
       * @return `f(x, y, z)` where `x` is the result of `p`, `y` is the result of `q` and `z` is the result of `r`.
       */
     def lift3[A, B, C, D](f: (A, B, C) => D, p: =>Parsley[A], q: =>Parsley[B], r: =>Parsley[C]): Parsley[D] = new DeepEmbedding.Lift3(f, p, q, r)
+
+    /** This is one of the core operations of a selective functor. It will conditionally execute one of `p` and `q`
+      * depending on the result from `b`. This can be used to implement conditional choice within a parser without
+      * relying on expensive monadic operations.
+      * @param b The first parser to parse
+      * @param p If `b` returns `Left` then this parser is executed with the result
+      * @param q If `b` returns `Right` then this parser is executed with the result
+      * @return Either the result from `p` or `q` depending on `b`.
+      */
+    def branch[A, B, C](b: =>Parsley[Either[A, B]], p: =>Parsley[A => C], q: =>Parsley[B => C]): Parsley[C] =
+        // TODO This should be converted to use Case instruction from Haskell Parsley, this is too inefficient right now
+        // We can then apply some laws and optimisations to it...
+        b >>= {
+            case Left(x) => p <*> pure(x)
+            case Right(y) => q <*> pure(y)
+        }
+    /** This is one of the core operations of a selective functor. It will conditionally execute one of `q` depending on
+      * whether or not `p` returns a `Left`. It can be used to implement `branch` and other selective operations, however
+      * it is more efficiently implemented with `branch` itself.
+      * @param p The first parser to parse
+      * @param q If `p` returns `Left` then this parser is executed with the result
+      * @return Either the result from `p` if it returned `Left` or the result of `q` applied to the `Right` from `p`
+      */
+    def select[A, B](p: =>Parsley[Either[A, B]], q: =>Parsley[A => B]): Parsley[B] = branch(p, q, pure(identity[B](_)))
     /**This function is an alias for `_.flatten`. Provides namesake to Haskell.*/
     def join[A](p: =>Parsley[Parsley[A]]): Parsley[A] = p.flatten
     /** Given a parser `p`, attempts to parse `p`. If the parser fails, then `attempt` ensures that no input was

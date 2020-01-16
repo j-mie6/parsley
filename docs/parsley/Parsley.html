@@ -338,10 +338,10 @@ parse the string given as input to <code>runParser</code>.</p><p>Note: In order 
 
         <div class="values members">
               <h3>Abstract Value Members</h3>
-              <ol><li name="parsley.Parsley#preprocess" visbl="prt" class="indented0 " data-isabs="true" fullComment="yes" group="Ungrouped">
-      <a id="preprocess[Cont[_,_],A_&gt;:A](implicitseen:Set[parsley.Parsley[_]],implicitlabel:parsley.UnsafeOption[String],implicitops:parsley.ContOps[Cont]):Cont[parsley.Parsley[_],parsley.Parsley[A_]]"></a><a id="preprocess[Cont[_,_],A_&gt;:A](Set[Parsley[_]],UnsafeOption[String],ContOps[Cont]):Cont[Parsley[_],Parsley[A_]]"></a>
+              <ol><li name="parsley.Parsley#findLetsAux" visbl="prt" class="indented0 " data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="findLetsAux[Cont[_,_]](implicitseen:Set[parsley.Parsley[_]],implicitstate:parsley.LetFinderState,implicitops:parsley.ContOps[Cont]):Cont[Unit,Unit]"></a><a id="findLetsAux[Cont[_,_]](Set[Parsley[_]],LetFinderState,ContOps[Cont]):Cont[Unit,Unit]"></a>
       <span class="permalink">
-      <a href="../parsley/Parsley.html#preprocess[Cont[_,_],A_&gt;:A](implicitseen:Set[parsley.Parsley[_]],implicitlabel:parsley.UnsafeOption[String],implicitops:parsley.ContOps[Cont]):Cont[parsley.Parsley[_],parsley.Parsley[A_]]" title="Permalink">
+      <a href="../parsley/Parsley.html#findLetsAux[Cont[_,_]](implicitseen:Set[parsley.Parsley[_]],implicitstate:parsley.LetFinderState,implicitops:parsley.ContOps[Cont]):Cont[Unit,Unit]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -350,7 +350,23 @@ parse the string given as input to <code>runParser</code>.</p><p>Note: In order 
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">preprocess</span><span class="tparams">[<span name="Cont">Cont<span class="tparams">[<span name="_">_</span>, <span name="_">_</span>]</span></span>, <span name="A_">A_ &gt;: <span class="extype" name="parsley.Parsley.A">A</span></span>]</span><span class="params">(<span class="implicit">implicit </span><span name="seen">seen: <span class="extype" name="scala.Predef.Set">Set</span>[<a href="" class="extype" name="parsley.Parsley">Parsley</a>[_]]</span>, <span name="label">label: <span class="extype" name="parsley.UnsafeOption">UnsafeOption</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="ops">ops: <span class="extype" name="parsley.ContOps">ContOps</span>[<span class="extype" name="parsley.Parsley.preprocess.Cont">Cont</span>]</span>)</span><span class="result">: <span class="extype" name="parsley.Parsley.preprocess.Cont">Cont</span>[<a href="" class="extype" name="parsley.Parsley">Parsley</a>[_], <a href="" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Parsley.preprocess.A_">A_</span>]]</span>
+        <span class="name">findLetsAux</span><span class="tparams">[<span name="Cont">Cont<span class="tparams">[<span name="_">_</span>, <span name="_">_</span>]</span></span>]</span><span class="params">(<span class="implicit">implicit </span><span name="seen">seen: <span class="extype" name="scala.Predef.Set">Set</span>[<a href="" class="extype" name="parsley.Parsley">Parsley</a>[_]]</span>, <span name="state">state: <span class="extype" name="parsley.LetFinderState">LetFinderState</span></span>, <span name="ops">ops: <span class="extype" name="parsley.ContOps">ContOps</span>[<span class="extype" name="parsley.Parsley.findLetsAux.Cont">Cont</span>]</span>)</span><span class="result">: <span class="extype" name="parsley.Parsley.findLetsAux.Cont">Cont</span>[<span class="extype" name="scala.Unit">Unit</span>, <span class="extype" name="scala.Unit">Unit</span>]</span>
+      </span>
+      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>
+    </li><li name="parsley.Parsley#preprocess" visbl="prt" class="indented0 " data-isabs="true" fullComment="yes" group="Ungrouped">
+      <a id="preprocess[Cont[_,_],A_&gt;:A](implicitseen:Set[parsley.Parsley[_]],implicitsub:parsley.SubMap,implicitlabel:parsley.UnsafeOption[String],implicitops:parsley.ContOps[Cont]):Cont[parsley.Parsley[_],parsley.Parsley[A_]]"></a><a id="preprocess[Cont[_,_],A_&gt;:A](Set[Parsley[_]],SubMap,UnsafeOption[String],ContOps[Cont]):Cont[Parsley[_],Parsley[A_]]"></a>
+      <span class="permalink">
+      <a href="../parsley/Parsley.html#preprocess[Cont[_,_],A_&gt;:A](implicitseen:Set[parsley.Parsley[_]],implicitsub:parsley.SubMap,implicitlabel:parsley.UnsafeOption[String],implicitops:parsley.ContOps[Cont]):Cont[parsley.Parsley[_],parsley.Parsley[A_]]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">preprocess</span><span class="tparams">[<span name="Cont">Cont<span class="tparams">[<span name="_">_</span>, <span name="_">_</span>]</span></span>, <span name="A_">A_ &gt;: <span class="extype" name="parsley.Parsley.A">A</span></span>]</span><span class="params">(<span class="implicit">implicit </span><span name="seen">seen: <span class="extype" name="scala.Predef.Set">Set</span>[<a href="" class="extype" name="parsley.Parsley">Parsley</a>[_]]</span>, <span name="sub">sub: <span class="extype" name="parsley.SubMap">SubMap</span></span>, <span name="label">label: <span class="extype" name="parsley.UnsafeOption">UnsafeOption</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="ops">ops: <span class="extype" name="parsley.ContOps">ContOps</span>[<span class="extype" name="parsley.Parsley.preprocess.Cont">Cont</span>]</span>)</span><span class="result">: <span class="extype" name="parsley.Parsley.preprocess.Cont">Cont</span>[<a href="" class="extype" name="parsley.Parsley">Parsley</a>[_], <a href="" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Parsley.preprocess.A_">A_</span>]]</span>
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected </dd></dl></div>

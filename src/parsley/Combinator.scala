@@ -149,4 +149,22 @@ object Combinator
         lazy val _end = end
         notFollowedBy(_end) *> (_p <::> manyUntil(_p, _end))
     }
+
+    /** `when p q` will first perform `p`, and if the result is `true` will then execute `q` or else return unit.
+      * @param p The first parser to parse
+      * @param q If `p` returns `true` then this parser is executed
+      * @return ()
+      */
+    def when(p: =>Parsley[Boolean], q: =>Parsley[Unit]): Parsley[Unit] = p ?: (q, unit)
+
+    /** `whileP p` will continue to run `p` until it returns `false`. This is often useful in conjunction with stateful
+      * parsers.
+      * @param p The parser to continuously execute
+      * @return ()
+      */
+    def whileP(p: =>Parsley[Boolean]): Parsley[Unit] =
+    {
+        lazy val whilePP: Parsley[Unit] = when(p, whilePP)
+        whilePP
+    }
 }

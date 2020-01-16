@@ -404,6 +404,24 @@
       
       <p class="shortcomment cmt">Given a parser <code>p</code>, attempts to parse <code>p</code>.</p><div class="fullcomment"><div class="comment cmt"><p>Given a parser <code>p</code>, attempts to parse <code>p</code>. If the parser fails, then <code>attempt</code> ensures that no input was
 consumed. This allows for backtracking capabilities, disabling the implicit cut semantics offered by <code>&lt;|&gt;</code>.</p></div><dl class="paramcmts block"><dt class="param">p</dt><dd class="cmt"><p>The parser to run</p></dd><dt>returns</dt><dd class="cmt"><p>The result of <code>p</code>, or if <code>p</code> failed ensures the parser state was as it was on entry.</p></dd></dl></div>
+    </li><li name="parsley.Parsley#branch" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="branch[A,B,C](b:=&gt;parsley.Parsley[Either[A,B]],p:=&gt;parsley.Parsley[A=&gt;C],q:=&gt;parsley.Parsley[B=&gt;C]):parsley.Parsley[C]"></a><a id="branch[A,B,C](⇒Parsley[Either[A,B]],⇒Parsley[(A)⇒C],⇒Parsley[(B)⇒C]):Parsley[C]"></a>
+      <span class="permalink">
+      <a href="../parsley/Parsley$.html#branch[A,B,C](b:=&gt;parsley.Parsley[Either[A,B]],p:=&gt;parsley.Parsley[A=&gt;C],q:=&gt;parsley.Parsley[B=&gt;C]):parsley.Parsley[C]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">branch</span><span class="tparams">[<span name="A">A</span>, <span name="B">B</span>, <span name="C">C</span>]</span><span class="params">(<span name="b">b: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Either">Either</span>[<span class="extype" name="parsley.Parsley.branch.A">A</span>, <span class="extype" name="parsley.Parsley.branch.B">B</span>]]</span>, <span name="p">p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.Parsley.branch.A">A</span>) ⇒ <span class="extype" name="parsley.Parsley.branch.C">C</span>]</span>, <span name="q">q: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.Parsley.branch.B">B</span>) ⇒ <span class="extype" name="parsley.Parsley.branch.C">C</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Parsley.branch.C">C</span>]</span>
+      </span>
+      
+      <p class="shortcomment cmt">This is one of the core operations of a selective functor.</p><div class="fullcomment"><div class="comment cmt"><p>This is one of the core operations of a selective functor. It will conditionally execute one of <code>p</code> and <code>q</code>
+depending on the result from <code>b</code>. This can be used to implement conditional choice within a parser without
+relying on expensive monadic operations.</p></div><dl class="paramcmts block"><dt class="param">b</dt><dd class="cmt"><p>The first parser to parse</p></dd><dt class="param">p</dt><dd class="cmt"><p>If <code>b</code> returns <code>Left</code> then this parser is executed with the result</p></dd><dt class="param">q</dt><dd class="cmt"><p>If <code>b</code> returns <code>Right</code> then this parser is executed with the result</p></dd><dt>returns</dt><dd class="cmt"><p>Either the result from <code>p</code> or <code>q</code> depending on <code>b</code>.</p></dd></dl></div>
     </li><li name="scala.AnyRef#clone" visbl="prt" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="clone():Object"></a><a id="clone():AnyRef"></a>
       <span class="permalink">
@@ -914,6 +932,24 @@ Note that there are only 4 registers at present.</p></div><dl class="paramcmts b
       
       <p class="shortcomment cmt">Consumes no input and places the value <code>x</code> into register <code>v</code>.</p><div class="fullcomment"><div class="comment cmt"><p>Consumes no input and places the value <code>x</code> into register <code>v</code>.
 Note that there are only 4 registers at present.</p></div><dl class="paramcmts block"><dt class="param">v</dt><dd class="cmt"><p>The index of the register to place the value in</p></dd><dt class="param">x</dt><dd class="cmt"><p>The value to place in the register</p></dd></dl></div>
+    </li><li name="parsley.Parsley#select" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="select[A,B](p:=&gt;parsley.Parsley[Either[A,B]],q:=&gt;parsley.Parsley[A=&gt;B]):parsley.Parsley[B]"></a><a id="select[A,B](⇒Parsley[Either[A,B]],⇒Parsley[(A)⇒B]):Parsley[B]"></a>
+      <span class="permalink">
+      <a href="../parsley/Parsley$.html#select[A,B](p:=&gt;parsley.Parsley[Either[A,B]],q:=&gt;parsley.Parsley[A=&gt;B]):parsley.Parsley[B]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">select</span><span class="tparams">[<span name="A">A</span>, <span name="B">B</span>]</span><span class="params">(<span name="p">p: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Either">Either</span>[<span class="extype" name="parsley.Parsley.select.A">A</span>, <span class="extype" name="parsley.Parsley.select.B">B</span>]]</span>, <span name="q">q: ⇒ <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[(<span class="extype" name="parsley.Parsley.select.A">A</span>) ⇒ <span class="extype" name="parsley.Parsley.select.B">B</span>]</span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.Parsley.select.B">B</span>]</span>
+      </span>
+      
+      <p class="shortcomment cmt">This is one of the core operations of a selective functor.</p><div class="fullcomment"><div class="comment cmt"><p>This is one of the core operations of a selective functor. It will conditionally execute one of <code>q</code> depending on
+whether or not <code>p</code> returns a <code>Left</code>. It can be used to implement <code>branch</code> and other selective operations, however
+it is more efficiently implemented with <code>branch</code> itself.</p></div><dl class="paramcmts block"><dt class="param">p</dt><dd class="cmt"><p>The first parser to parse</p></dd><dt class="param">q</dt><dd class="cmt"><p>If <code>p</code> returns <code>Left</code> then this parser is executed with the result</p></dd><dt>returns</dt><dd class="cmt"><p>Either the result from <code>p</code> if it returned <code>Left</code> or the result of <code>q</code> applied to the <code>Right</code> from <code>p</code></p></dd></dl></div>
     </li><li name="parsley.Parsley#sequence" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="sequence[A](ps:parsley.Parsley[A]*):parsley.Parsley[List[A]]"></a><a id="sequence[A](Parsley[A]*):Parsley[List[A]]"></a>
       <span class="permalink">
