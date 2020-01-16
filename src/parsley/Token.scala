@@ -409,7 +409,7 @@ private [parsley] object DeepToken
 {
     private [parsley] class WhiteSpace(ws: TokenSet, start: String, end: String, line: String, nested: Boolean) extends Parsley[Nothing]
     {
-        override protected def preprocess[Cont[_, _], N >: Nothing](implicit seen:Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[N]] = result(this)
+        override protected def preprocess[Cont[_, _], N >: Nothing](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[N]] = result(this)
         override def findLetsAux[Cont[_, _]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] = result(())
         override private [parsley] def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
@@ -419,7 +419,7 @@ private [parsley] object DeepToken
 
     private [parsley] class SkipComments(start: String, end: String, line: String, nested: Boolean) extends Parsley[Nothing]
     {
-        override protected def preprocess[Cont[_, _], N >: Nothing](implicit seen:Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[N]] = result(this)
+        override protected def preprocess[Cont[_, _], N >: Nothing](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[N]] = result(this)
         override def findLetsAux[Cont[_, _]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] = result(())
         override private [parsley] def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
@@ -429,7 +429,7 @@ private [parsley] object DeepToken
 
     private [parsley] class Comment(start: String, end: String, line: String, nested: Boolean) extends Parsley[Unit]
     {
-        override protected def preprocess[Cont[_, _], U >: Unit](implicit seen:Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[U]] = result(this)
+        override protected def preprocess[Cont[_, _], U >: Unit](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[U]] = result(this)
         override def findLetsAux[Cont[_, _]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] = result(())
         override private [parsley] def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
@@ -439,7 +439,7 @@ private [parsley] object DeepToken
 
     private [parsley] class Sign[A](ty: SignType, val expected: UnsafeOption[String] = null) extends Parsley[A => A]
     {
-        override protected def preprocess[Cont[_, _], F >: A => A](implicit seen:Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[F]] =
+        override protected def preprocess[Cont[_, _], F >: A => A](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[F]] =
         {
             if (label == null) result(this)
             else result(new Sign(ty, label))
@@ -453,7 +453,7 @@ private [parsley] object DeepToken
 
     private [parsley] class Natural(val expected: UnsafeOption[String] = null) extends Parsley[Int]
     {
-        override protected def preprocess[Cont[_, _], I >: Int](implicit seen:Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[I]] =
+        override protected def preprocess[Cont[_, _], I >: Int](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[I]] =
         {
             if (label == null) result(this)
             else result(new Natural(label))
@@ -467,7 +467,7 @@ private [parsley] object DeepToken
 
     private [parsley] class Float(val expected: UnsafeOption[String] = null) extends Parsley[Double]
     {
-        override protected def preprocess[Cont[_, _], D >: Double](implicit seen:Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[D]] =
+        override protected def preprocess[Cont[_, _], D >: Double](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[D]] =
         {
             if (label == null) result(this)
             else result(new Float(label))
@@ -481,7 +481,7 @@ private [parsley] object DeepToken
 
     private [parsley] class Escape(val expected: UnsafeOption[String] = null) extends Parsley[Char]
     {
-        override protected def preprocess[Cont[_, _], C >: Char](implicit seen:Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[C]] =
+        override protected def preprocess[Cont[_, _], C >: Char](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[C]] =
         {
             if (label == null) result(this)
             else result(new Escape(label))
@@ -495,7 +495,7 @@ private [parsley] object DeepToken
 
     private [parsley] class StringLiteral(ws: TokenSet, val expected: UnsafeOption[String] = null) extends Parsley[String]
     {
-        override protected def preprocess[Cont[_, _], S >: String](implicit seen:Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[S]] =
+        override protected def preprocess[Cont[_, _], S >: String](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[S]] =
         {
             if (label == null) result(this)
             else result(new StringLiteral(ws, label))
@@ -509,7 +509,7 @@ private [parsley] object DeepToken
 
     private [parsley] class RawStringLiteral(val expected: UnsafeOption[String] = null) extends Parsley[String]
     {
-        override protected def preprocess[Cont[_, _], S >: String](implicit seen:Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[S]] =
+        override protected def preprocess[Cont[_, _], S >: String](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[S]] =
         {
             if (label == null) result(this)
             else result(new RawStringLiteral(label))
@@ -523,7 +523,7 @@ private [parsley] object DeepToken
 
     private [parsley] class Identifier(start: TokenSet, letter: TokenSet, keywords: Set[String], val expected: UnsafeOption[String] = null) extends Parsley[String]
     {
-        override protected def preprocess[Cont[_, _], S >: String](implicit seen:Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[S]] =
+        override protected def preprocess[Cont[_, _], S >: String](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[S]] =
         {
             if (label == null) result(this)
             else result(new Identifier(start, letter, keywords, label))
@@ -537,7 +537,7 @@ private [parsley] object DeepToken
 
     private [parsley] class UserOp(start: TokenSet, letter: TokenSet, operators: Set[String], val expected: UnsafeOption[String] = null) extends Parsley[String]
     {
-        override protected def preprocess[Cont[_, _], S >: String](implicit seen:Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[S]] =
+        override protected def preprocess[Cont[_, _], S >: String](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[S]] =
         {
             if (label == null) result(this)
             else result(new UserOp(start, letter, operators, label))
@@ -551,7 +551,7 @@ private [parsley] object DeepToken
 
     private [parsley] class ReservedOp(start: TokenSet, letter: TokenSet, operators: Set[String], val expected: UnsafeOption[String] = null) extends Parsley[String]
     {
-        override protected def preprocess[Cont[_, _], S >: String](implicit seen:Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[S]] =
+        override protected def preprocess[Cont[_, _], S >: String](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[S]] =
         {
             if (label == null) result(this)
             else result(new ReservedOp(start, letter, operators, label))
@@ -565,7 +565,7 @@ private [parsley] object DeepToken
 
     private [parsley] class Keyword(private [Keyword] val keyword: String, letter: TokenSet, caseSensitive: Boolean, val expected: UnsafeOption[String] = null) extends Parsley[Nothing]
     {
-        override protected def preprocess[Cont[_, _], N >: Nothing](implicit seen:Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[N]] =
+        override protected def preprocess[Cont[_, _], N >: Nothing](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[N]] =
         {
             if (label == null) result(this)
             else result(new Keyword(keyword, letter, caseSensitive, label))
@@ -579,7 +579,7 @@ private [parsley] object DeepToken
 
     private [parsley] class Operator(private [Operator] val operator: String, letter: TokenSet, val expected: UnsafeOption[String] = null) extends Parsley[Nothing]
     {
-        override protected def preprocess[Cont[_, _], N >: Nothing](implicit seen:Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[N]] =
+        override protected def preprocess[Cont[_, _], N >: Nothing](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[N]] =
         {
             if (label == null) result(this)
             else result(new Operator(operator, letter, label))
@@ -593,7 +593,7 @@ private [parsley] object DeepToken
 
     private [parsley] class MaxOp(private [MaxOp] val operator: String, ops: Set[String], val expected: UnsafeOption[String] = null) extends Parsley[Nothing]
     {
-        override protected def preprocess[Cont[_, _], N >: Nothing](implicit seen:Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops_ : ContOps[Cont]): Cont[Parsley[_], Parsley[N]] =
+        override protected def preprocess[Cont[_, _], N >: Nothing](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops_ : ContOps[Cont]): Cont[Parsley[_], Parsley[N]] =
         {
             if (label == null) result(this)
             else result(new MaxOp(operator, ops, label))

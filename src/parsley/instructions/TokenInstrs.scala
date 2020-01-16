@@ -5,7 +5,6 @@ import parsley.TokenParser.TokenSet
 import parsley.UnsafeOption
 
 import scala.annotation.{switch, tailrec}
-import scala.collection.breakOut
 
 // TODO This is considered as a VERY rough implementation of the intrinsic, just to get it working, it will be optimised later
 private [parsley] class TokenSkipComments(start: String, end: String, line: String, nested: Boolean) extends Instr with NoPush
@@ -1245,6 +1244,7 @@ private [parsley] class TokenMaxOp(_operator: String, _ops: Set[String], _expect
     val expected: UnsafeOption[String] = if (_expected == null) _operator else _expected
     val expectedEnd: UnsafeOption[String] = if (_expected == null) "end of " + _operator else _expected
     val operator = _operator.toCharArray
+    val ops = for (op <- _ops.toList if op.length > _operator.length && op.startsWith(_operator)) yield op.substring(_operator.length)
 
     override def apply(ctx: Context): Unit =
     {
@@ -1269,7 +1269,7 @@ private [parsley] class TokenMaxOp(_operator: String, _ops: Set[String], _expect
             j = i
             if (i < inputsz)
             {
-                var ops: List[String] = (for (op <- _ops if op.length > _operator.length && op.startsWith(_operator)) yield op.substring(_operator.length))(breakOut)
+                var ops = this.ops
                 while (ops.nonEmpty && i < inputsz)
                 {
                     val c = input(i)

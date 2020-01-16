@@ -181,6 +181,12 @@ class CoreTests extends ParsleyTest
         runParser(p, "") should be (Success((6, 5)))
     }
 
+    "ternary parsers" should "function correctly" in
+    {
+        val p = pure(true)
+        runParser(p ?: ('a', 'b'), "a") should be (Success('a'))
+    }
+
     "stack overflows" should "not occur" in
     {
         def repeat(n: Int, p: Parsley[Char]): Parsley[Char] =
