@@ -19,7 +19,7 @@ class ExpressionParser[A](atom: =>Parsley[A], table: OpList[A]*)
             case AssocLeft => chainl1(_, choice(ops: _*))
             case AssocRight => chainr1(_, choice(ops: _*))
         }
-        case Prefixes(ops @ _*) => chainPre(_, choice(ops: _*))
+        case Prefixes(ops @ _*) => chainPre(choice(ops: _*), _)
         // FIXME: Postfix operators which are similar to binary ops may fail, how can we work around this?
         case Postfixes(ops @ _*) => chainPost(_, choice(ops: _*))
     }

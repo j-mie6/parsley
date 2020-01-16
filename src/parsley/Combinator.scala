@@ -10,7 +10,7 @@ object Combinator
     def choice[A](ps: Parsley[A]*): Parsley[A] = ps.reduceLeftOption(_<|>_).getOrElse(empty)
 
     /**`attemptChoice(ps)` tries to apply the parsers in the list `ps` in order, until one of them succeeds.
-      *  Returns the value of the succeeding parser. Utilises <\> vs choice's <|>.*/
+      *  Returns the value of the succeeding parser. Utilises `<\>` vs choice's `<|>`.*/
     def attemptChoice[A](ps: Parsley[A]*): Parsley[A] = ps.reduceLeftOption(_<\>_).getOrElse(empty)
 
     /** `repeat(n, p)` parses `n` occurrences of `p`. If `n` is smaller or equal to zero, the parser is
@@ -119,8 +119,8 @@ object Combinator
       * returned by `p`.*/
     def chainr1[A](p: =>Parsley[A], op: =>Parsley[(A, A) => A]): Parsley[A] = new DeepEmbedding.Chainr(p, op)
 
-    /**`chainPre(p, op)` parses many prefixed applications of `op` onto a single final result of `p`*/
-    def chainPre[A](p: =>Parsley[A], op: =>Parsley[A => A]): Parsley[A] = new DeepEmbedding.ChainPre(p, op)
+    /**`chainPre(op, p)` parses many prefixed applications of `op` onto a single final result of `p`*/
+    def chainPre[A](op: =>Parsley[A => A], p: =>Parsley[A]): Parsley[A] = new DeepEmbedding.ChainPre(p, op)
 
     /**chainl1(p, op) parses *one* or more occurrences of `p`, separated by `op`. Returns a value
       * obtained by a left associative application of all functions return by `op` to the values

@@ -26,19 +26,19 @@ class ExpressionParserTests extends ParsleyTest
 
     "chainPre" must "parse an operatorless value" in
     {
-        runParser(chainPre('1' #> 1, '+' #> ((x: Int) => x + 1)), "1") should be (Success(1))
+        runParser(chainPre('+' #> ((x: Int) => x + 1), '1' #> 1), "1") should be (Success(1))
     }
     it must "parse all operators that precede a value" in
     {
-        runParser(chainPre('1' #> 1, '+' #> ((x: Int) => x + 1)), "+++++++++++1") should not be a [Failure]
+        runParser(chainPre('+' #> ((x: Int) => x + 1), '1' #> 1), "+++++++++++1") should not be a [Failure]
     }
     it must "fail if the final value is absent" in
     {
-        runParser(chainPre('1' #> 1, '+' #> ((x: Int) => x + 1)), "+++++++++++") shouldBe a [Failure]
+        runParser(chainPre('+' #> ((x: Int) => x + 1), '1' #> 1), "+++++++++++") shouldBe a [Failure]
     }
     it must "apply the functions" in
     {
-        runParser(chainPre('1' #> 1, '+' #> ((x: Int) => x + 1)), "+++++++++++1") should be (Success(12))
+        runParser(chainPre('+' #> ((x: Int) => x + 1), '1' #> 1), "+++++++++++1") should be (Success(12))
     }
 
     "chainr1" must "require an initial value" in
