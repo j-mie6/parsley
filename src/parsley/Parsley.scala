@@ -17,7 +17,7 @@ object Parsley
           * This is the functorial map operation for parsers. When the invokee produces a value, this value is fed through
           * the function `f`.
           *
-          * WARNING: This is subject to aggressive optimisations assuming purity; the compiler is permitted to optimise such
+          * @note This is subject to aggressive optimisations assuming purity; the compiler is permitted to optimise such
           * that the application of `f` actually only happens once at compile time. In order to preserve the behaviour of
           * impure functions, consider using the `unsafe` method before map; `p.unsafe.map(f)`.
           * @param f The mutator to apply to the result of previous parse
@@ -31,19 +31,19 @@ object Parsley
           * `Parsley[A]`, we can produce a `Parsley[B]` by parsing `pf` to retrieve `f: A => B`, then parse `px`
           * to receive `x: A` then return `f(x): B`.
           *
-          * WARNING: `pure(f) <*> p` is subject to the same aggressive optimisations as `map`. When using impure functions
+          * @note `pure(f) <*> p` is subject to the same aggressive optimisations as `map`. When using impure functions
           * the optimiser may decide to cache the result of the function execution, be sure to use `unsafe` in order to
           * prevent these optimisations.
           * @param px A parser of type A, where the invokee is A => B
           * @return A new parser which parses `pf`, then `px` then applies the value returned by `px` to the function
           *         returned by `pf`
           */
-        def <*>[B, C](px: =>Parsley[B])(implicit ev: P <:< Parsley[B=>C]) = new DeepEmbedding.<*>[B, C](p, px)
+        def <*>[B, C](px: =>Parsley[B])(implicit ev: P <:< Parsley[B=>C]): Parsley[C] = new DeepEmbedding.<*>[B, C](p, px)
         /**
           * This is the traditional Monadic binding operator for parsers. When the invokee produces a value, the function
           * `f` is used to produce a new parser that continued the computation.
           *
-          * WARNING: There is significant overhead for using flatMap; if possible try to write parsers in an applicative
+          * @note There is significant overhead for using flatMap; if possible try to write parsers in an applicative
           * style otherwise try and use the intrinsic parsers provided to replace the flatMap.
           * @param f A function that produces the next parser
           * @return The parser produces from the application of `f` on the result of the last parser
@@ -161,6 +161,28 @@ object Parsley
           * @param break The breakpoint properties of this parser, defaults to NoBreak
           */
         def debug[A_ >: A](name: String, break: Breakpoint = NoBreak): Parsley[A_] = new DeepEmbedding.Debug[A_](p, name, break)
+        /**
+          * A fold for a parser: `p.foldRight(k)(f)` will try executing `p` many times until it fails, combining the
+          * results with right-associative application of `f` with a `k` at the right-most position
+          *
+          * @example {{{p.foldRight(Nil)(_::_) == many(p) //many is more efficient, however}}}
+          *
+          * @param k base case for iteration
+          * @param f combining function
+          * @return the result of folding the results of `p` with `f` and `k`
+          */
+        def foldRight[B](k: B)(f: (A, B) => B): Parsley[B] = Combinator.chainPre(map(f.curried), pure(k))
+        /**
+          * A fold for a parser: `p.foldLeft(k)(f)` will try executing `p` many times until it fails, combining the
+          * results with left-associative application of `f` with a `k` on the left-most position
+          *
+          * @example {{{val natural: Parsley[Int] = digit.foldLeft(0)((x, d) => x * 10 + d.toInt)}}}
+          *
+          * @param k base case for iteration
+          * @param f combining function
+          * @return the result of folding the results of `p` with `f` and `k`
+          */
+        def foldLeft[B](k: B)(f: (B, A) => B): Parsley[B] = Combinator.chainPost(pure(k), map(x => y => f(y, x)))
     }
     implicit final class LazyMapParsley[A, +B](f: A => B)
     {
@@ -259,7 +281,7 @@ object Parsley
     /** Returns `()`. Defined as `pure(())` but aliased for sugar*/
     val unit: Parsley[Unit] = pure(())
     /** converts a parser's result to () */
-    def void(p: Parsley[_]): Parsley[Unit] = p #> ()
+    def void(p: Parsley[_]): Parsley[Unit] = p *> unit
     /** `many(p)` executes the parser `p` zero or more times. Returns a list of the returned values of `p`. */
     def many[A](p: =>Parsley[A]): Parsley[List[A]] = new DeepEmbedding.Many(p)
     /** `skipMany(p)` executes the parser `p` zero or more times and ignores the results. Returns `()` */
