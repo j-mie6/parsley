@@ -259,7 +259,7 @@ object Parsley
     /** Returns `()`. Defined as `pure(())` but aliased for sugar*/
     val unit: Parsley[Unit] = pure(())
     /** converts a parser's result to () */
-    implicit def `void`[P](p: P)(implicit ev: P => Parsley[_]): Parsley[Unit] = p #> ()
+    def void(p: Parsley[_]): Parsley[Unit] = p #> ()
     /** `many(p)` executes the parser `p` zero or more times. Returns a list of the returned values of `p`. */
     def many[A](p: =>Parsley[A]): Parsley[List[A]] = new DeepEmbedding.Many(p)
     /** `skipMany(p)` executes the parser `p` zero or more times and ignores the results. Returns `()` */

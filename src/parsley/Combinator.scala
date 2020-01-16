@@ -38,7 +38,7 @@ object Combinator
 
     /**optional(p) tries to apply parser `p`. It will parse `p` or nothing. It only fails if `p`
       * fails after consuming input. It discards the result of `p`.*/
-    def optional[A](p: =>Parsley[A]): Parsley[Unit] = p.getOrElse(())
+    def optional(p: =>Parsley[_]): Parsley[Unit] = void(p).getOrElse(())
 
     /**`between(open, close, p)` parses `open`, followed by `p` and `close`. Returns the value returned by `p`.*/
     def between[A](open: =>Parsley[_],

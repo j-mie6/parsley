@@ -1,5 +1,6 @@
 import parsley._
-import parsley.Char.{alphaNum, charLift, letter, whitespace, oneOf => inSet}
+import parsley.Char.{alphaNum, letter, whitespace, oneOf => inSet}
+import parsley.Implicits.charLift
 import parsley.Combinator.eof
 
 class TokeniserTests extends ParsleyTest

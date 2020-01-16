@@ -1,6 +1,7 @@
 import parsley.Char._
 import parsley.{Failure, runParser}
 import parsley.Parsley._
+import parsley.Implicits.{charLift, stringLift}
 
 class CharTests extends ParsleyTest
 {

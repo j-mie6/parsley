@@ -1,4 +1,5 @@
-import parsley.Char.{charLift, digit, stringLift}
+import parsley.Char.digit
+import parsley.Implicits.{charLift, stringLift}
 import parsley.Combinator.{chainPost, chainPre, chainl1, chainr1}
 import parsley.ExpressionParser._
 import parsley.Parsley._

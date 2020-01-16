@@ -1,7 +1,7 @@
 import parsley.{Failure, Success, Var, runParser}
 import parsley.Combinator._
-import parsley.Char.{char, charLift, string, stringLift}
 import parsley.Parsley._
+import parsley.Implicits.{charLift, stringLift}
 
 class CombinatorTests extends ParsleyTest
 {
@@ -11,16 +11,16 @@ class CombinatorTests extends ParsleyTest
     }
     it should "behave like p for List(p)" in
     {
-        runParser(choice(char('a')), "") should equal (runParser('a', ""))
-        runParser(choice(char('a')), "a") should equal (runParser('a', "a"))
+        runParser(choice('a'), "") should equal (runParser('a', ""))
+        runParser(choice('a'), "a") should equal (runParser('a', "a"))
     }
     it should "parse in order" in
     {
-        runParser(choice(string("a"), string("b"), string("bc"), string("bcd")), "bcd") should be (Success("b"))
+        runParser(choice("a", "b", "bc", "bcd"), "bcd") should be (Success("b"))
     }
     it should "fail if none of the parsers succeed" in
     {
-        runParser(choice(string("a"), string("b"), string("bc"), string("bcd")), "c") shouldBe a [Failure]
+        runParser(choice("a", "b", "bc", "bcd"), "c") shouldBe a [Failure]
     }
 
     "repeat" should "be pure(Nil) for n <= 0" in
