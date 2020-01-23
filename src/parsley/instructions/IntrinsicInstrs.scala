@@ -148,6 +148,8 @@ private [parsley] final class Chainl(var label: Int) extends JumpInstr with Stat
     private [this] var acc: Any = _
     override def apply(ctx: Context): Unit =
     {
+        println(ctx.pretty)
+        println(acc)
         if (ctx.status eq Good)
         {
             val y = ctx.stack.upop()

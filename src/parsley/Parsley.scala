@@ -2301,3 +2301,24 @@ private [parsley] object DeepEmbedding
         }
     }
 }
+
+object Test {
+    import parsley.runParser
+    import Char._
+    import Combinator._
+    import Parsley._
+    def main(args: Array[String]): Unit =
+    {
+        trait Base
+        case class Foo(x: Base, y: Base)(z: (Int, Int)) extends Base {
+            override def toString: String = (x, y, z).toString
+        }
+        case class Num(x: Int) extends Base
+        def fooMaker(c: Char) = char(c) #> ((x: Base, y: Base) => Foo(x, y)((0, 0)))
+        def barMaker(c: Char, d: Char) = col #> ((x: Base, y: Base) => Foo(x, y)((1, 1))) <* (char(c) <|> char(d))
+        val p = chainl1(anyChar #> Num(9), barMaker('+', '-'))
+        val q = chainl1 (p, fooMaker('*'))
+        println(q.pretty)
+        println(runParser(q, "x+y*z-b"))
+    }
+}
