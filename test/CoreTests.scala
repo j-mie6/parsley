@@ -85,7 +85,7 @@ class CoreTests extends ParsleyTest
         val u: Parsley[Int => Int] = 'a' #> add1
         val v: Parsley[Int => Int] = 'b' #> mult5
         val w: Parsley[Int] = 'c' #> 7
-        val compose: (Int => Int) => (Int => Int) => (Int => Int) = f => g => f.compose(g)
+        val compose: (Int => Int) => (Int => Int) => Int => Int = f => g => f.compose(g)
         runParser(pure(compose) <*> u <*> v <*> w, "abc") should equal (runParser(u <*> (v <*> w), "abc"))
     }
 

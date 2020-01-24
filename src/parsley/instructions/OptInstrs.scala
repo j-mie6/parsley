@@ -193,7 +193,7 @@ private [parsley] final class SatisfyExchange[A](f: Char => Boolean, x: A, expec
         }
         else ctx.fail(expected)
     }
-    override def toString: String = "SatEx(?)"
+    override def toString: String = s"SatEx(?, $x)"
 }
 
 private [parsley] final class JumpGoodAttempt(var label: Int) extends JumpInstr
