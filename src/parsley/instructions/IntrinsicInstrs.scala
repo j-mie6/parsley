@@ -88,9 +88,12 @@ private [parsley] final class ChainPost(var label: Int) extends JumpInstr with S
             // When acc is null, we are entering the instruction for the first time, a p will be on the stack
             if (acc == null)
             {
+                // after this point, the inputCheck will roll back one too many items on the stack, because this item
+                // was consumed. It should be adjusted
                 val op = ctx.stack.upop()
                 acc = ctx.stack.upeek
                 ctx.stack.exchange(op)
+                ctx.handlers.head.stacksz -= 1
             }
             acc = ctx.stack.pop[Any => Any]()(acc)
             ctx.checkStack.head = ctx.offset
@@ -148,14 +151,18 @@ private [parsley] final class Chainl(var label: Int) extends JumpInstr with Stat
     private [this] var acc: Any = _
     override def apply(ctx: Context): Unit =
     {
-        println(ctx.pretty)
-        println(acc)
         if (ctx.status eq Good)
         {
             val y = ctx.stack.upop()
             val op = ctx.stack.pop[(Any, Any) => Any]()
             // When acc is null, we are entering the instruction for the first time, a p will be on the stack
-            if (acc == null) acc = op(ctx.stack.upop(), y)
+            if (acc == null)
+            {
+                // after this point, the inputCheck will roll back one too many items on the stack, because this item
+                // was consumed. It should be adjusted
+                acc = op(ctx.stack.upop(), y)
+                ctx.handlers.head.stacksz -= 1
+            }
             else acc = op(acc, y)
             ctx.checkStack.head = ctx.offset
             ctx.pc = label

@@ -23,6 +23,12 @@ class ExpressionParserTests extends ParsleyTest
     {
         runParser(chainPost('1' #> 1, "++" #> ((x: Int) => x + 1)), "1+++++++++++++") shouldBe a [Failure]
     }
+    it must "not leave the stack in an inconsistent state on failure" in
+    {
+        val p = chainPost[Int]('1' #> 1, (col #>[Int => Int] (_ + 1)) <* '+')
+        val q = chainl1[Int](p, '*' #> (_ * _))
+        noException should be thrownBy println(runParser(q, "1+*1+"))
+    }
 
     "chainPre" must "parse an operatorless value" in
     {
@@ -75,6 +81,12 @@ class ExpressionParserTests extends ParsleyTest
     {
         runParser(chainl1("11" #> 1, "++" #> ((x: Int, y: Int) => x + y)), "11+11+11+11+11") shouldBe a [Failure]
         runParser(chainl1("11" #> 1, "++" #> ((x: Int, y: Int) => x + y)), "11++11++11++1++11") shouldBe a [Failure]
+    }
+    it must "not leave the stack in an inconsistent state on failure" in
+    {
+        val p = chainl1[Int]('1' #> 1, (col #>[(Int, Int) => Int] (_ + _)) <* '+')
+        val q = chainl1[Int](p, '*' #> (_ * _))
+        noException should be thrownBy println(runParser(q, "1+1*1+1"))
     }
 
     "expression parsers" should "result in correct precedence" in

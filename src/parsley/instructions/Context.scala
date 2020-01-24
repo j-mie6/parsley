@@ -10,7 +10,7 @@ private [instructions] final class Frame(val ret: Int, val instrs: Array[Instr])
 {
     override def toString: String = s"[$instrs@$ret]"
 }
-private [instructions] final class Handler(val depth: Int, val pc: Int, val stacksz: Int)
+private [instructions] final class Handler(val depth: Int, val pc: Int, var stacksz: Int)
 {
     override def toString: String = s"Handler@$depth:$pc(-${stacksz+1})"
 }
@@ -49,7 +49,7 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
     private [instructions] var startcol: Int = 1
     var sourceName: String = "input"
 
-    override def toString: String = pretty
+    //override def toString: String = pretty
     private [instructions] def pretty: String =
     {
         s"""[
