@@ -182,7 +182,7 @@ object Parsley
           * @param f combining function
           * @return the result of folding the results of `p` with `f` and `k`
           */
-        def foldLeft[B](k: B)(f: (B, A) => B): Parsley[B] = Combinator.chainPost(pure(k), map(x => y => f(y, x)))
+        def foldLeft[B](k: B)(f: (B, A) => B): Parsley[B] = Combinator.chainPost(pure(k), map(x => (y: B) => f(y, x)))
     }
     implicit final class LazyMapParsley[A, +B](f: A => B)
     {
