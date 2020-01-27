@@ -19,7 +19,7 @@ class ErrorMessageTests extends ParsleyTest
         }
         runParser(r ? "nothing but this :)", "correct error messagec") should be
         {
-            Failure("(line 1, column 22):\n  unexpected end of input\n  expected nothing but this :)")
+            Failure("(line 1, column 23):\n  unexpected end of input\n  expected nothing but this :)")
         }
     }
 
