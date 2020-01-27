@@ -332,7 +332,7 @@ final class TokenParser(lang: LanguageDef)
      * provided by the `LanguageDef`), a line comment or a block (multi-line) comment. Block
      * comments may be nested. How comments are started and ended is defined in the `LanguageDef`
      * that is provided to the token parser.*/
-    lazy val whiteSpace: Parsley[Unit] = whiteSpace_(lang.space)
+    lazy val whiteSpace: Parsley[Unit] = whiteSpace_(lang.space).hide
 
     /**Parses any white space. White space consists of zero or more occurrences of a `space` (as
      * provided by the parameter), a line comment or a block (multi-line) comment. Block
