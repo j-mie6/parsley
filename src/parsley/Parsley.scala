@@ -6,7 +6,7 @@ import parsley.instructions._
 
 import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.language.{existentials, higherKinds, reflectiveCalls}
+import scala.language.{existentials, reflectiveCalls}
     
 // User API
 object Parsley
@@ -111,6 +111,12 @@ object Parsley
           * @return The result of the invokee if it passes the predicate
           */
         def filter(pred: A => Boolean): Parsley[A] = new DeepEmbedding.Ensure(p, pred)
+        /** Filter the value of a parser; if the value returned by the parser does not match the predicate `pred` then the
+         * filter succeeded, otherwise the parser fails with an empty error
+         * @param pred The predicate that is tested against the parser result
+         * @return The result of the invokee if it passes the predicate
+         */
+        def filterNot(pred: A => Boolean): Parsley[A] = filter(!pred(_))
         def withFilter(pred: A => Boolean): Parsley[A] = filter(pred)
         /** Similar to `filter`, except the error message desired is also provided. This allows you to name the message
           * itself.
@@ -127,12 +133,29 @@ object Parsley
           * @return The result of the invokee if it passes the predicate
           */
         def guard(pred: A => Boolean, msggen: A => String): Parsley[A] = new DeepEmbedding.FastGuard(p, pred, msggen)
+        /** Similar to `filterNot`, except the error message desired is also provided. This allows you to name the message
+         * itself.
+         * @param pred The predicate that is tested against the parser result
+         * @param msg The message used for the error if the input failed the check
+         * @return The result of the invokee if it passes the predicate
+         */
+        def guardNot(pred: A => Boolean, msg: String): Parsley[A] = guard(!pred(_), msg)
+        /** Similar to `filterNot`, except the error message desired is also provided. This allows you to name the message
+         * itself. The message is provided as a generator, which allows the user to avoid otherwise expensive
+         * computation.
+         * @param pred The predicate that is tested against the parser result
+         * @param msggen Generator function for error message, generating a message based on the result of the parser
+         * @return The result of the invokee if it passes the predicate
+         */
+        def guardNot(pred: A => Boolean, msggen: A => String): Parsley[A] = guard(!pred(_), msggen)
         /**Alias for guard combinator, taking a fixed message.*/
         def >?>(pred: A => Boolean, msg: String): Parsley[A] = guard(pred, msg)
         /**Alias for guard combinator, taking a dynamic message generator.*/
         def >?>(pred: A => Boolean, msggen: A => String): Parsley[A] = guard(pred, msggen)
         /**Sets the expected message for a parser. If the parser fails then `expected msg` will added to the error*/
         def ?(msg: String): Parsley[A] = new DeepEmbedding.ErrorRelabel(p, msg)
+        /**Hides the "expected" error message for a parser.*/
+        def hide: Parsley[A] = ?("")
         /** Same as `fail`, except allows for a message generated from the result of the failed parser. In essence, this
           * is equivalent to `p >>= (x => fail(msggen(x))` but requires no expensive computations from the use of `>>=`.
           * @param msggen The generator function for error message, creating a message based on the result of invokee
@@ -1008,29 +1031,29 @@ private [parsley] object DeepEmbedding
             case u *> (_: Pure[_]) =>
                 p = u.asInstanceOf[Parsley[A]]
                 optimise
-            case CharTok(c) if q.isInstanceOf[CharTok] || q.isInstanceOf[StringTok] => q match
+            case ct1@CharTok(c) if q.isInstanceOf[CharTok] || q.isInstanceOf[StringTok] => q match
             {
                 // char(c) *> char(d) = string(cd) *> pure(d)
-                case CharTok(d) =>
-                    p = new StringTok(c.toString + d).asInstanceOf[Parsley[A]]
+                case ct2@CharTok(d) =>
+                    p = new StringTok(c.toString + d, if (ct1.expected != null) ct1.expected else if (ct2.expected != null) ct2.expected else null).asInstanceOf[Parsley[A]]
                     q = new Pure(d).asInstanceOf[Parsley[B]]
                     optimise
                 // char(c) *> string(s) = string(cs) *> pure(s)
-                case StringTok(s) =>
-                    p = new StringTok(c.toString + s).asInstanceOf[Parsley[A]]
+                case st1@StringTok(s) =>
+                    p = new StringTok(c.toString + s, if (ct1.expected != null) ct1.expected else if (st1.expected != null) st1.expected else null).asInstanceOf[Parsley[A]]
                     q = new Pure(s).asInstanceOf[Parsley[B]]
                     optimise
             }
-            case StringTok(s) if q.isInstanceOf[CharTok] || q.isInstanceOf[StringTok] => q match
+            case st1@StringTok(s) if q.isInstanceOf[CharTok] || q.isInstanceOf[StringTok] => q match
             {
                 // string(s) *> char(c) = string(sc) *> pure(c)
-                case CharTok(c) =>
-                    p = new StringTok(s + c).asInstanceOf[Parsley[A]]
+                case ct2@CharTok(c) =>
+                    p = new StringTok(s + c, if (st1.expected != null) st1.expected else if (ct2.expected != null) ct2.expected else null).asInstanceOf[Parsley[A]]
                     q = new Pure(c).asInstanceOf[Parsley[B]]
                     optimise
                 // string(s) *> string(t) = string(st) *> pure(t)
-                case StringTok(t) =>
-                    p = new StringTok(s + t).asInstanceOf[Parsley[A]]
+                case st2@StringTok(t) =>
+                    p = new StringTok(s + t, if (st1.expected != null) st1.expected else if (st1.expected != null) st1.expected else null).asInstanceOf[Parsley[A]]
                     q = new Pure(t).asInstanceOf[Parsley[B]]
                     optimise
             }
@@ -1094,19 +1117,19 @@ private [parsley] object DeepEmbedding
             case v *> (_: Pure[_]) =>
                 q = v.asInstanceOf[Parsley[B]]
                 optimise
-            case CharTok(d) if p.isInstanceOf[CharTok] || p.isInstanceOf[StringTok] => p match
+            case ct1@CharTok(d) if p.isInstanceOf[CharTok] || p.isInstanceOf[StringTok] => p match
             {
                 // char(c) <* char(d) = string(cd) *> pure(c)
-                case CharTok(c) => *>(new StringTok(c.toString + d), new Pure(c)).asInstanceOf[Parsley[A]]
+                case ct2@CharTok(c) => *>(new StringTok(c.toString + d, if (ct1.expected != null) ct1.expected else if (ct2.expected != null) ct2.expected else null), new Pure(c)).asInstanceOf[Parsley[A]]
                 // string(s) <* char(d) = string(sd) *> pure(s)
-                case StringTok(s) => *>(new StringTok(s + d), new Pure(s)).asInstanceOf[Parsley[A]]
+                case st1@StringTok(s) => *>(new StringTok(s + d, if (ct1.expected != null) ct1.expected else if (st1.expected != null) st1.expected else null), new Pure(s)).asInstanceOf[Parsley[A]]
             }
-            case StringTok(t) if p.isInstanceOf[CharTok] || p.isInstanceOf[StringTok]  => p match
+            case st1@StringTok(t) if p.isInstanceOf[CharTok] || p.isInstanceOf[StringTok]  => p match
             {
                 // char(c) <* string(t) = string(ct) *> pure(c)
-                case CharTok(c) => *>(new StringTok(c.toString + t), new Pure(c)).asInstanceOf[Parsley[A]]
+                case ct1@CharTok(c) => *>(new StringTok(c.toString + t, if (st1.expected != null) st1.expected else if (ct1.expected != null) ct1.expected else null), new Pure(c)).asInstanceOf[Parsley[A]]
                 // string(s) <* string(t) = string(st) *> pure(s)
-                case StringTok(s) => *>(new StringTok(s + t), new Pure(s)).asInstanceOf[Parsley[A]]
+                case st2@StringTok(s) => *>(new StringTok(s + t, if (st1.expected != null) st1.expected else if (st2.expected != null) st2.expected else null), new Pure(s)).asInstanceOf[Parsley[A]]
             }
             // p <* mzero = p *> mzero (by preservation of error messages and failure properties) - This moves the pop instruction after the failure
             case z: MZero => *>(p, z)
@@ -1265,7 +1288,7 @@ private [parsley] object DeepEmbedding
             else if (label == null) result(this)
             else result(Subroutine(p, label))
         }
-        override def findLetsAux[Cont[_, _]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] = result(())
+        override def findLetsAux[Cont[_, _]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] = _p.findLets
         override def optimise = if (p.size == 1) p else this
         override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
