@@ -2379,3 +2379,12 @@ private [parsley] object DeepEmbedding
         }
     }
 }
+
+object Test
+{
+    import Char._
+    def main(args: Array[String]): Unit =
+    {
+        println(runParser(char('a').hide, "b"))
+    }
+}

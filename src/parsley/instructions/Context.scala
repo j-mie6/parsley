@@ -158,8 +158,11 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
         val posStr = s"(line $errline, column $errcol):"
         val unexpectedStr = Option(unexpected).map(s => s"unexpected $s")
         val expectedFlat = expected.flatMap(Option(_))
-        val expectedStr = if (expectedFlat.isEmpty) None else Some(s"expected ${expectedFlat.distinct.filterNot(_.isEmpty).reverse.mkString(" or ")}")
-        val rawStr = if (raw.isEmpty) None else Some(raw.distinct.filterNot(_.isEmpty).reverse.mkString(" or "))
+        val expectedFiltered = expectedFlat.filterNot(_.isEmpty)
+        val rawFiltered = raw.filterNot(_.isEmpty)
+        val expectedStr = if (expectedFiltered.isEmpty) None else Some(s"expected ${expectedFiltered.distinct.reverse.mkString(" or ")}")
+        val rawStr = if (rawFiltered.isEmpty) None else Some(rawFiltered.distinct.reverse.mkString(" or "))
+        unexpectAnyway = unexpectAnyway || expectedFlat.nonEmpty || raw.nonEmpty
         if (rawStr.isEmpty && expectedStr.isEmpty && unexpectAnyway) 
         {
             s"$posStr\n  ${unexpectedStr.getOrElse("unknown parse error")}"
