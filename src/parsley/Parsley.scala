@@ -234,6 +234,8 @@ object Parsley
       */
     def pure[A](x: A): Parsley[A] = new DeepEmbedding.Pure(x)
 
+    /** `lift(f, p)` is an alias for `p.map(f)`. It is provided for symmetry with lift2 and lift3 */
+    def lift1[A, B](f: A => B, p: =>Parsley[A]): Parsley[B] = p.map(f)
     /** Traditionally, `lift2` is defined as `lift2(f, p, q) = p.map(f) <*> q`. However, `f` is actually uncurried,
       * so it's actually more exactly defined as; read `p` and then read `q` then provide their results to function
       * `f`. This is designed to bring higher performance to any curried operations that are not themselves
@@ -1060,7 +1062,7 @@ private [parsley] object DeepEmbedding
                     optimise
                 // string(s) *> string(t) = string(st) *> pure(t)
                 case st2@StringTok(t) =>
-                    p = new StringTok(s + t, if (st1.expected != null) st1.expected else if (st1.expected != null) st1.expected else null).asInstanceOf[Parsley[A]]
+                    p = new StringTok(s + t, if (st1.expected != null) st1.expected else if (st2.expected != null) st2.expected else null).asInstanceOf[Parsley[A]]
                     q = new Pure(t).asInstanceOf[Parsley[B]]
                     optimise
             }
