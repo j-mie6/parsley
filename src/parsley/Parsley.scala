@@ -308,7 +308,7 @@ object Parsley
     /** `many(p)` executes the parser `p` zero or more times. Returns a list of the returned values of `p`. */
     def many[A](p: =>Parsley[A]): Parsley[List[A]] = new DeepEmbedding.Many(p)
     /** `skipMany(p)` executes the parser `p` zero or more times and ignores the results. Returns `()` */
-    def skipMany[A](p: =>Parsley[A]): Parsley[Unit] = new DeepEmbedding.*>(new DeepEmbedding.SkipMany(p), unit)
+    def skipMany[A](p: =>Parsley[A]): Parsley[Unit] = new DeepEmbedding.SkipMany(p)
     /**
       * Evaluate each of the parsers in `ps` sequentially from left to right, collecting the results.
       * @param ps Parsers to be sequenced
@@ -384,7 +384,7 @@ object Parsley
       * @param v The index of the register to place the value in
       * @param p The parser to derive the value from
       */
-    def put[S](v: Var, p: =>Parsley[S]): Parsley[Unit] = new DeepEmbedding.*>(new DeepEmbedding.Put(v, p), unit)
+    def put[S](v: Var, p: =>Parsley[S]): Parsley[Unit] = new DeepEmbedding.Put(v, p)
     /**
       * Modifies the value contained in register `v` using function `f`. It is left to the users responsibility to
       * ensure the types line up. There is no compile-time type checking enforced!
@@ -393,7 +393,7 @@ object Parsley
       * @param f The function used to modify the register
       * @tparam S The type of value currently assumed to be in the register
       */
-    def modify[S](v: Var, f: S => S): Parsley[Unit] = new DeepEmbedding.*>(new DeepEmbedding.Modify(v, f), unit)
+    def modify[S](v: Var, f: S => S): Parsley[Unit] = new DeepEmbedding.Modify(v, f)
     /**
       * For the duration of parser `p` the state stored in register `v` is instead set to `x`. The change is undone
       * after `p` has finished.
@@ -522,6 +522,7 @@ abstract class Parsley[+A] private [parsley]
     final def overflows(): Unit = cps = true
 
     final private [parsley] def pretty: String = instrs.mkString("; ")
+    final private [parsley] def prettyAST: String = {force(); safeCall((g: GenOps) => perform(prettyASTAux(g))(g))}
 
     // Internals
     final private [parsley] def findLets[Cont[_, _]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] =
@@ -563,13 +564,10 @@ abstract class Parsley[+A] private [parsley]
         }
         val instrsOversize = instrs.toArray
         val labelMapping = new Array[Int](state.nlabels)
-        @tailrec def findLabels(instrs: Array[Instr], labels: Array[Int], n: Int, i: Int, off: Int, nopop: Int): Int = if (i + off < n) instrs(i + off) match
+        @tailrec def findLabels(instrs: Array[Instr], labels: Array[Int], n: Int, i: Int, off: Int): Int = if (i + off < n) instrs(i + off) match
         {
-            case label: Label => instrs(i + off) = null; labels(label.i) = i; findLabels(instrs, labels, n, i, off + 1, nopop)
-            case _: NoPush => findLabels(instrs, labels, n, i + 1, off, nopop + 1)
-            case instructions.Pop if nopop != 0 => instrs(i + off) = null; findLabels(instrs, labels, n, i, off + 1, nopop - 1)
-            case instructions.Exchange(x) if nopop != 0 => instrs(i + off) = new instructions.Push(x); findLabels(instrs, labels, n, i + 1, off, nopop - 1)
-            case _ => findLabels(instrs, labels, n, i + 1, off, nopop)
+            case label: Label => instrs(i + off) = null; labels(label.i) = i; findLabels(instrs, labels, n, i, off + 1)
+            case _ => findLabels(instrs, labels, n, i + 1, off)
         }
         else i
         @tailrec def applyLabels(srcs: Array[Instr], labels: Array[Int], dests: Array[Instr], n: Int, i: Int, off: Int): Unit = if (i < n) srcs(i + off) match
@@ -587,7 +585,7 @@ abstract class Parsley[+A] private [parsley]
                 dests(i) = instr
                 applyLabels(srcs, labels, dests, n, i + 1, off)
         }
-        val size = findLabels(instrsOversize, labelMapping, instrs.length, 0, 0, 0)
+        val size = findLabels(instrsOversize, labelMapping, instrs.length, 0, 0)
         val instrs_ = new Array[Instr](size)
         applyLabels(instrsOversize, labelMapping, instrs_, instrs_.length, 0, 0)
         instrs_
@@ -647,6 +645,7 @@ abstract class Parsley[+A] private [parsley]
     private [parsley] def optimise: Parsley[A] = this
     // Peephole optimisation and code generation - Top-down
     private [parsley] def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit]
+    private [parsley] def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String]
 }
 
 private [parsley] object DeepEmbedding
@@ -660,6 +659,7 @@ private [parsley] object DeepEmbedding
         {
             result(instrs += new instructions.Push(x))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = result(s"pure($x)")
     }
     private [parsley] final class <*>[A, B](_pf: =>Parsley[A => B], _px: =>Parsley[A]) extends Parsley[B]
     {
@@ -744,6 +744,8 @@ private [parsley] object DeepEmbedding
                 px.codeGen |>
                 (instrs += instructions.Apply)
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] =
+            for (l <- pf.prettyASTAux; r <- px.prettyASTAux) yield s"($l <*> $r)"
     }
     private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) extends Parsley[B]
     {
@@ -945,6 +947,8 @@ private [parsley] object DeepEmbedding
                 else (p, None)::acc
             case _ => (p, tablable(p))::acc
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] =
+            for (l <- p.prettyASTAux; r <- q.prettyASTAux) yield s"($l <|> $r)"
     }
     private [parsley] final class >>=[A, B](_p: =>Parsley[A], private [>>=] var f: A => Parsley[B], val expected: UnsafeOption[String] = null) extends Parsley[B]
     {
@@ -985,6 +989,8 @@ private [parsley] object DeepEmbedding
             p.codeGen |>
             (instrs += new instructions.DynCall[A](x => f(x).instrs, expected))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] =
+            for (l <- p.prettyASTAux) yield s"($l >>= ?)"
     }
     private [parsley] final class Satisfy(private [Satisfy] val f: Char => Boolean, val expected: UnsafeOption[String] = null) extends Parsley[Char]
     {
@@ -998,6 +1004,7 @@ private [parsley] object DeepEmbedding
         {
             result(instrs += new instructions.Satisfies(f, expected))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = result(s"satisfy(?)")
     }
     private [parsley] abstract class Cont[A, +B] extends Parsley[B]
     {
@@ -1090,6 +1097,8 @@ private [parsley] object DeepEmbedding
         override def discard: Parsley[A] = p
         override def result: Parsley[B] = q
         override def copy[B_ >: B](prev: Parsley[A], next: Parsley[B_]): A *> B_ = *>(prev, next)
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] =
+            for (l <- p.prettyASTAux; r <- q.prettyASTAux) yield s"($l *> $r)"
     }
     private [parsley] final class <*[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) extends Cont[B, A]
     {
@@ -1155,7 +1164,7 @@ private [parsley] object DeepEmbedding
             case (Pure(x), v) =>
                 v.codeGen |>
                 (instrs += new instructions.Exchange(x))
-            case _ =>
+            case _=>
                 p.codeGen >>
                 q.codeGen |>
                 (instrs += instructions.Pop)
@@ -1163,6 +1172,8 @@ private [parsley] object DeepEmbedding
         override def discard: Parsley[B] = q
         override def result: Parsley[A] = p
         override def copy[A_ >: A](prev: Parsley[B], next: Parsley[A_]): <*[A_, B] = <*(next, prev)
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] =
+            for (l <- p.prettyASTAux; r <- q.prettyASTAux) yield s"($l <* $r)"
     }
     private [parsley] final class Attempt[A](_p: =>Parsley[A]) extends Parsley[A]
     {
@@ -1189,6 +1200,7 @@ private [parsley] object DeepEmbedding
                 instrs += instructions.Attempt
             }
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = for (c <- p.prettyASTAux) yield s"attempt($c)"
     }
     private [parsley] final class Look[A](_p: =>Parsley[A]) extends Parsley[A]
     {
@@ -1215,6 +1227,7 @@ private [parsley] object DeepEmbedding
                 instrs += instructions.Look
             }
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = for (c <- p.prettyASTAux) yield s"lookAhead($c)"
     }
     private [parsley] sealed trait MZero extends Parsley[Nothing]
     private [parsley] class Empty(val expected: UnsafeOption[String] = null) extends MZero
@@ -1229,6 +1242,7 @@ private [parsley] object DeepEmbedding
         {
             result(instrs += new instructions.Empty(expected))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = result("empty")
     }
     private [parsley] final class Fail(private [Fail] val msg: String, val expected: UnsafeOption[String] = null) extends MZero
     {
@@ -1242,6 +1256,7 @@ private [parsley] object DeepEmbedding
         {
             result(instrs += new instructions.Fail(msg, expected))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = result(s"fail($msg)")
     }
     private [parsley] final class Unexpected(private [Unexpected] val msg: String, val expected: UnsafeOption[String] = null) extends MZero
     {
@@ -1255,6 +1270,7 @@ private [parsley] object DeepEmbedding
         {
             result(instrs += new instructions.Unexpected(msg, expected))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = result(s"unexpected($msg)")
     }
     private [parsley] final class Fixpoint[A](var _p: ()=>Parsley[A], val expected: UnsafeOption[String] = null) extends Parsley[A]
     {
@@ -1269,6 +1285,7 @@ private [parsley] object DeepEmbedding
         {
             result(instrs += new instructions.Call(p, expected))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = for (c <- p.prettyASTAux) yield s"fix!"
     }
     private [parsley] final class Subroutine[A](_p: =>Parsley[A], val expected: UnsafeOption[String] = null) extends Parsley[A]
     {
@@ -1295,6 +1312,7 @@ private [parsley] object DeepEmbedding
             val label = state.getSubLabel(p)
             result(instrs += new instructions.GoSub(label, expected))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = for (c <- p.prettyASTAux) yield s"+$c"
     }
     // Intrinsic Embedding
     private [parsley] final class CharTok(private [CharTok] val c: Char, val expected: UnsafeOption[String] = null) extends Parsley[Char]
@@ -1309,6 +1327,7 @@ private [parsley] object DeepEmbedding
         {
             result(instrs += instructions.CharTok(c, expected))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = result(s"char($c)")
     }
     private [parsley] final class StringTok(private [StringTok] val s: String, val expected: UnsafeOption[String] = null) extends Parsley[String]
     {
@@ -1327,6 +1346,7 @@ private [parsley] object DeepEmbedding
         {
             result(instrs += new instructions.StringTok(s, expected))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = result(s"string($s)")
     }
     // TODO: Perform applicative fusion optimisations
     private [parsley] final class Lift2[A, B, +C](private [Lift2] val f: (A, B) => C, _p: =>Parsley[A], _q: =>Parsley[B]) extends Parsley[C]
@@ -1353,6 +1373,8 @@ private [parsley] object DeepEmbedding
             q.codeGen |>
             (instrs += new instructions.Lift2(f))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] =
+            for (l <- p.prettyASTAux; r <- q.prettyASTAux) yield s"lift2(f, $l, $r)"
     }
     private [parsley] final class Lift3[A, B, C, +D](private [Lift3] val f: (A, B, C) => D, _p: =>Parsley[A], _q: =>Parsley[B], _r: =>Parsley[C]) extends Parsley[D]
     {
@@ -1381,6 +1403,8 @@ private [parsley] object DeepEmbedding
             r.codeGen |>
             (instrs += new instructions.Lift3(f))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] =
+            for (f <- p.prettyASTAux; s <- q.prettyASTAux; t <- r.prettyASTAux) yield s"lift3(f, $f, $s, $t)"
     }
     private [parsley] final class FastFail[A](_p: =>Parsley[A], private [FastFail] val msggen: A => String, val expected: UnsafeOption[String] = null) extends MZero
     {
@@ -1408,6 +1432,7 @@ private [parsley] object DeepEmbedding
             p.codeGen |>
             (instrs += new instructions.FastFail(msggen, expected))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = for (c <- p.prettyASTAux) yield s"fastfail($c)"
     }
     private [parsley] final class FastUnexpected[A](_p: =>Parsley[A], private [FastUnexpected] val msggen: A => String, val expected: UnsafeOption[String] = null) extends MZero
     {
@@ -1435,6 +1460,7 @@ private [parsley] object DeepEmbedding
             p.codeGen |>
             (instrs += new instructions.FastUnexpected(msggen, expected))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = for (c <- p.prettyASTAux) yield s"fastunexpected($c)"
     }
     private [parsley] final class Ensure[A](_p: =>Parsley[A], private [Ensure] val pred: A => Boolean, val expected: UnsafeOption[String] = null) extends Parsley[A]
     {
@@ -1461,6 +1487,7 @@ private [parsley] object DeepEmbedding
             p.codeGen |>
             (instrs += new instructions.Ensure(pred, expected))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = for (c <- p.prettyASTAux) yield s"ensure($c, ?)"
     }
     private [parsley] final class Guard[A](_p: =>Parsley[A], private [Guard] val pred: A => Boolean, private [Guard] val msg: String, val expected: UnsafeOption[String] = null) extends Parsley[A]
     {
@@ -1487,6 +1514,7 @@ private [parsley] object DeepEmbedding
             p.codeGen |>
             (instrs += new instructions.Guard(pred, msg, expected))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = for (c <- p.prettyASTAux) yield s"guard($c)"
     }
     private [parsley] final class FastGuard[A](_p: =>Parsley[A], private [FastGuard] val pred: A => Boolean, private [FastGuard] val msggen: A => String, val expected: UnsafeOption[String] = null) extends Parsley[A]
     {
@@ -1513,6 +1541,7 @@ private [parsley] object DeepEmbedding
             p.codeGen |>
             (instrs += new instructions.FastGuard(pred, msggen, expected))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = for (c <- p.prettyASTAux) yield s"guard($c)"
     }
     private [parsley] final class Many[A](_p: =>Parsley[A]) extends Parsley[List[A]]
     {
@@ -1547,11 +1576,12 @@ private [parsley] object DeepEmbedding
                 instrs += new instructions.Many(body)
             }
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = for (c <- p.prettyASTAux) yield s"many($c)"
     }
-    private [parsley] final class SkipMany[A](_p: =>Parsley[A]) extends Parsley[Nothing]
+    private [parsley] final class SkipMany[A](_p: =>Parsley[A]) extends Parsley[Unit]
     {
         private [SkipMany] var p: Parsley[A] = _
-        override def preprocess[Cont[_, _], N >: Nothing](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[N]] =
+        override def preprocess[Cont[_, _], U >: Unit](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[U]] =
             if (label == null && p != null) result(this) else for (p <- _p.optimised) yield
             {
                 if (label == null)
@@ -1581,6 +1611,7 @@ private [parsley] object DeepEmbedding
                 instrs += new instructions.SkipMany(body)
             }
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = for (c <- p.prettyASTAux) yield s"skipMany($c)"
     }
     private [parsley] final class ChainPost[A](_p: =>Parsley[A], _op: =>Parsley[A => A]) extends Parsley[A]
     {
@@ -1621,6 +1652,8 @@ private [parsley] object DeepEmbedding
                 }
             }
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] =
+            for (l <- p.prettyASTAux; r <- op.prettyASTAux) yield s"chainPost($l, $r)"
     }
     private [parsley] final class ChainPre[A](_p: =>Parsley[A], _op: =>Parsley[A => A]) extends Parsley[A]
     {
@@ -1660,6 +1693,8 @@ private [parsley] object DeepEmbedding
                 (instrs += instructions.Apply)
             }
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] =
+            for (l <- op.prettyASTAux; r <- p.prettyASTAux) yield s"chainPre($l, $r)"
     }
     private [parsley] final class Chainl[A](_p: =>Parsley[A], _op: =>Parsley[(A, A) => A]) extends Parsley[A]
     {
@@ -1695,6 +1730,8 @@ private [parsley] object DeepEmbedding
                 }
             }
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] =
+            for (l <- p.prettyASTAux; r <- op.prettyASTAux) yield s"chainl1($l, $r)"
     }
     private [parsley] final class Chainr[A](_p: =>Parsley[A], _op: =>Parsley[(A, A) => A]) extends Parsley[A]
     {
@@ -1730,6 +1767,8 @@ private [parsley] object DeepEmbedding
                 }
             }
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] =
+            for (l <- p.prettyASTAux; r <- op.prettyASTAux) yield s"chainr1($l, $r)"
     }
     private [parsley] final class SepEndBy1[A, B](_p: =>Parsley[A], _sep: =>Parsley[B]) extends Parsley[List[A]]
     {
@@ -1765,6 +1804,8 @@ private [parsley] object DeepEmbedding
                 }
             }
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] =
+            for (l <- p.prettyASTAux; r <- sep.prettyASTAux) yield s"sepEndBy1($l, $r)"
     }
     private [parsley] final class ManyUntil[A](_body: Parsley[Any]) extends Parsley[List[A]]
     {
@@ -1793,6 +1834,7 @@ private [parsley] object DeepEmbedding
                 instrs += new instructions.ManyUntil(start)
             }
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = for (c <- body.prettyASTAux) yield s"manyUntil($c)"
     }
     private [parsley] final class Ternary[A](_b: =>Parsley[Boolean], _p: =>Parsley[A], _q: =>Parsley[A]) extends Parsley[A]
     {
@@ -1836,11 +1878,13 @@ private [parsley] object DeepEmbedding
                 }
             }
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] =
+            for (f <- b.prettyASTAux; s <- p.prettyASTAux; t <- q.prettyASTAux) yield s"($f ? $s : $t)"
     }
-    private [parsley] final class NotFollowedBy[A](_p: =>Parsley[A], val expected: UnsafeOption[String] = null) extends Parsley[Nothing]
+    private [parsley] final class NotFollowedBy[A](_p: =>Parsley[A], val expected: UnsafeOption[String] = null) extends Parsley[Unit]
     {
         private [NotFollowedBy] var p: Parsley[A] = _
-        override def preprocess[Cont[_, _], N >: Nothing](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[N]] =
+        override def preprocess[Cont[_, _], U >: Unit](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[U]] =
             if (label == null && p != null) result(this) else for (p <- _p.optimised) yield
             {
                 if (label == null)
@@ -1862,10 +1906,11 @@ private [parsley] object DeepEmbedding
                 instrs += new instructions.NotFollowedBy(expected)
             }
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = for (c <- p.prettyASTAux) yield s"notFollowedBy($c)"
     }
-    private [parsley] final class Eof(val expected: UnsafeOption[String] = null) extends Parsley[Nothing]
+    private [parsley] final class Eof(val expected: UnsafeOption[String] = null) extends Parsley[Unit]
     {
-        override def preprocess[Cont[_, _], N >: Nothing](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[N]] =
+        override def preprocess[Cont[_, _], U >: Unit](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[U]] =
         {
             if (label == null) result(this)
             else result(new Eof(label))
@@ -1875,6 +1920,7 @@ private [parsley] object DeepEmbedding
         {
             result(instrs += new instructions.Eof(expected))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = result("eof")
     }
     private [parsley] object Line extends Parsley[Int]
     {
@@ -1884,6 +1930,7 @@ private [parsley] object DeepEmbedding
         {
             result(instrs += instructions.Line)
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = result("line")
     }
     private [parsley] object Col extends Parsley[Int]
     {
@@ -1893,6 +1940,7 @@ private [parsley] object DeepEmbedding
         {
             result(instrs += instructions.Col)
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = result("col")
     }
     private [parsley] final class Get[S](v: Var) extends Parsley[S]
     {
@@ -1902,6 +1950,7 @@ private [parsley] object DeepEmbedding
         {
             result(instrs += new instructions.Get(v.v))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = result(s"get($v)")
     }
     private [parsley] final class Put[S](private [Put] val v: Var, _p: =>Parsley[S]) extends Parsley[Unit]
     {
@@ -1923,15 +1972,17 @@ private [parsley] object DeepEmbedding
             p.codeGen |>
             (instrs += new instructions.Put(v.v))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = for (c <- p.prettyASTAux) yield s"put($v, $c)"
     }
-    private [parsley] final class Modify[S](v: Var, f: S => S) extends Parsley[S]
+    private [parsley] final class Modify[S](v: Var, f: S => S) extends Parsley[Unit]
     {
-        override def preprocess[Cont[_, _], S_ >: S](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[S_]] = result(this)
+        override def preprocess[Cont[_, _], U >: Unit](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[U]] = result(this)
         override def findLetsAux[Cont[_, _]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] = result(())
         override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
             result(instrs += new instructions.Modify(v.v, f))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = result(s"modify($v, ?)")
     }
     private [parsley] final class Local[S, A](private [Local] val v: Var, _p: =>Parsley[S], _q: =>Parsley[A]) extends Parsley[A]
     {
@@ -1960,6 +2011,8 @@ private [parsley] object DeepEmbedding
                 (instrs += new instructions.LocalExit(v.v))
             }
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] =
+            for (l <- p.prettyASTAux; r <- q.prettyASTAux) yield s"local($v, $l, $r)"
     }
     private [parsley] final class ErrorRelabel[+A](p: =>Parsley[A], msg: String) extends Parsley[A]
     {
@@ -1971,6 +2024,7 @@ private [parsley] object DeepEmbedding
         override def findLetsAux[Cont[_, _]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] = p.findLets
         override def optimise = throw new Exception("Error relabelling should not be in optimisation!")
         override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = throw new Exception("Error relabelling should not be in code gen!")
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = for (c <- p.prettyASTAux) yield s"($c ? $msg)"
     }
     private [parsley] final class Debug[A](_p: =>Parsley[A], name: String, break: Breakpoint) extends Parsley[A]
     {
@@ -1997,6 +2051,7 @@ private [parsley] object DeepEmbedding
                 instrs += new instructions.LogEnd(name, (break eq ExitBreak) || (break eq FullBreak))
             }
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = p.prettyASTAux
     }
 
     private [DeepEmbedding] object Pure

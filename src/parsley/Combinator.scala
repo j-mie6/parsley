@@ -133,7 +133,7 @@ object Combinator
     def chainPost[A](p: =>Parsley[A], op: =>Parsley[A => A]) = new DeepEmbedding.ChainPost(p, op)
 
     /**This parser only succeeds at the end of the input. This is a primitive parser.*/
-    val eof: Parsley[Unit] = new DeepEmbedding.*>(new DeepEmbedding.Eof, unit)
+    val eof: Parsley[Unit] = new DeepEmbedding.Eof
 
     /**This parser only succeeds if there is still more input.*/
     val more: Parsley[Unit] = notFollowedBy(eof)
@@ -143,7 +143,7 @@ object Combinator
       * keywords, we want to make sure that a keyword is not followed by a legal identifier character,
       * in which case the keyword is actually an identifier. We can program this behaviour as follows:
       * {{{attempt(kw *> notFollowedBy(alphaNum))}}}*/
-    def notFollowedBy(p: Parsley[_]): Parsley[Unit] = new DeepEmbedding.*>(new DeepEmbedding.NotFollowedBy(p), unit)
+    def notFollowedBy(p: Parsley[_]): Parsley[Unit] = new DeepEmbedding.NotFollowedBy(p)
 
     /**`manyUntil(p, end)` applies parser `p` zero or more times until the parser `end` succeeds.
       * Returns a list of values returned by `p`. This parser can be used to scan comments.*/

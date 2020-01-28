@@ -56,7 +56,7 @@ private [parsley] final class Many(var label: Int) extends JumpInstr with Statef
     override def copy: Many = new Many(label)
 }
 
-private [parsley] final class SkipMany(var label: Int) extends JumpInstr with NoPush
+private [parsley] final class SkipMany(var label: Int) extends JumpInstr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -72,6 +72,7 @@ private [parsley] final class SkipMany(var label: Int) extends JumpInstr with No
         {
             ctx.checkStack = ctx.checkStack.tail
             ctx.status = Good
+            ctx.stack.push(())
             ctx.inc()
         }
     }
@@ -412,7 +413,7 @@ private [parsley] final class FastUnexpected[A](msggen: A=>String, expected: Uns
     override def toString: String = "FastUnexpected(?)"
 }
 
-private [parsley] final class NotFollowedBy(expected: UnsafeOption[String]) extends Instr with NoPush
+private [parsley] final class NotFollowedBy(expected: UnsafeOption[String]) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -436,18 +437,23 @@ private [parsley] final class NotFollowedBy(expected: UnsafeOption[String]) exte
         else
         {
             ctx.status = Good
+            ctx.stack.push(())
             ctx.inc()
         }
     }
     override def toString: String = "NotFollowedBy"
 }
 
-private [parsley] class Eof(_expected: UnsafeOption[String]) extends Instr with NoPush
+private [parsley] class Eof(_expected: UnsafeOption[String]) extends Instr
 {
     val expected: String = if (_expected == null) "end of input" else _expected
     override def apply(ctx: Context): Unit =
     {
-        if (ctx.offset == ctx.inputsz) ctx.inc()
+        if (ctx.offset == ctx.inputsz)
+        {
+            ctx.stack.push(())
+            ctx.inc()
+        }
         else ctx.fail(expected)
     }
     override final def toString: String = "Eof"

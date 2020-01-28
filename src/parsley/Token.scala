@@ -122,8 +122,8 @@ final class TokenParser(lang: LanguageDef)
      * is not a prefix of a valid identifier. A `keyword` is treated as a single token using `attempt`.*/
     def keyword(name: String): Parsley[Unit] = lang.identLetter match
     {
-        case BitSetImpl(letter) => lexeme(new DeepToken.Keyword(name, letter, lang.caseSensitive) *> unit)
-        case Predicate(letter) => lexeme(new DeepToken.Keyword(name, letter, lang.caseSensitive) *> unit)
+        case BitSetImpl(letter) => lexeme(new DeepToken.Keyword(name, letter, lang.caseSensitive))
+        case Predicate(letter) => lexeme(new DeepToken.Keyword(name, letter, lang.caseSensitive))
         case _ => lexeme(attempt(caseString(name) *> notFollowedBy(identLetter) ? ("end of " + name)))
     }
 
@@ -180,8 +180,8 @@ final class TokenParser(lang: LanguageDef)
      * `attempt`.*/
     def operator_(name: String): Parsley[Unit] = lang.opLetter match
     {
-        case BitSetImpl(letter) => new DeepToken.Operator(name, letter) *> unit
-        case Predicate(letter) => new DeepToken.Operator(name, letter) *> unit
+        case BitSetImpl(letter) => new DeepToken.Operator(name, letter)
+        case Predicate(letter) => new DeepToken.Operator(name, letter)
         case _ => attempt(name *> notFollowedBy(opLetter) ? ("end of " + name))
     }
 
@@ -340,14 +340,14 @@ final class TokenParser(lang: LanguageDef)
      * that is provided to the token parser.*/
     val whiteSpace_ : Impl => Parsley[Unit] =
     {
-        case BitSetImpl(ws) => new DeepToken.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
-        case Predicate(ws) => new DeepToken.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
+        case BitSetImpl(ws) => new DeepToken.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments)
+        case Predicate(ws) => new DeepToken.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments)
         case Parser(space_) => skipMany(new DeepToken.Comment(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) <\> space_)
         case NotRequired => skipComments
     }
 
     /**Parses any comments and skips them, this includes both line comments and block comments.*/
-    lazy val skipComments: Parsley[Unit] = new DeepToken.SkipComments(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments) *> unit
+    lazy val skipComments: Parsley[Unit] = new DeepToken.SkipComments(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments)
 
     // Bracketing
     /**Lexeme parser `parens(p)` parses `p` enclosed in parenthesis, returning the value of `p`.*/
@@ -408,24 +408,26 @@ private [parsley] object TokenParser
 
 private [parsley] object DeepToken
 {
-    private [parsley] class WhiteSpace(ws: TokenSet, start: String, end: String, line: String, nested: Boolean) extends Parsley[Nothing]
+    private [parsley] class WhiteSpace(ws: TokenSet, start: String, end: String, line: String, nested: Boolean) extends Parsley[Unit]
     {
-        override protected def preprocess[Cont[_, _], N >: Nothing](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[N]] = result(this)
+        override protected def preprocess[Cont[_, _], U >: Unit](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[U]] = result(this)
         override def findLetsAux[Cont[_, _]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] = result(())
         override private [parsley] def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
             result(instrs += new instructions.TokenWhiteSpace(ws, start, end, line, nested))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = result("whiteSpace")
     }
 
-    private [parsley] class SkipComments(start: String, end: String, line: String, nested: Boolean) extends Parsley[Nothing]
+    private [parsley] class SkipComments(start: String, end: String, line: String, nested: Boolean) extends Parsley[Unit]
     {
-        override protected def preprocess[Cont[_, _], N >: Nothing](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[N]] = result(this)
+        override protected def preprocess[Cont[_, _], U >: Unit](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[U]] = result(this)
         override def findLetsAux[Cont[_, _]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] = result(())
         override private [parsley] def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
             result(instrs += new instructions.TokenSkipComments(start, end, line, nested))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = result("skipComments")
     }
 
     private [parsley] class Comment(start: String, end: String, line: String, nested: Boolean) extends Parsley[Unit]
@@ -436,6 +438,7 @@ private [parsley] object DeepToken
         {
             result(instrs += new instructions.TokenComment(start, end, line, nested))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = result("comment")
     }
 
     private [parsley] class Sign[A](ty: SignType, val expected: UnsafeOption[String] = null) extends Parsley[A => A]
@@ -450,6 +453,7 @@ private [parsley] object DeepToken
         {
             result(instrs += new instructions.TokenSign(ty, expected))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = result("sign")
     }
 
     private [parsley] class Natural(val expected: UnsafeOption[String] = null) extends Parsley[Int]
@@ -464,6 +468,7 @@ private [parsley] object DeepToken
         {
             result(instrs += new instructions.TokenNatural(expected))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = result("natural")
     }
 
     private [parsley] class Float(val expected: UnsafeOption[String] = null) extends Parsley[Double]
@@ -478,6 +483,7 @@ private [parsley] object DeepToken
         {
             result(instrs += new instructions.TokenFloat(expected))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = result("float")
     }
 
     private [parsley] class Escape(val expected: UnsafeOption[String] = null) extends Parsley[Char]
@@ -492,6 +498,7 @@ private [parsley] object DeepToken
         {
             result(instrs += new instructions.TokenEscape(expected))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = result("escape")
     }
 
     private [parsley] class StringLiteral(ws: TokenSet, val expected: UnsafeOption[String] = null) extends Parsley[String]
@@ -506,6 +513,7 @@ private [parsley] object DeepToken
         {
             result(instrs += new instructions.TokenString(ws, expected))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = result("stringLiteral")
     }
 
     private [parsley] class RawStringLiteral(val expected: UnsafeOption[String] = null) extends Parsley[String]
@@ -520,6 +528,7 @@ private [parsley] object DeepToken
         {
             result(instrs += new instructions.TokenRawString(expected))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = result("rawStringLiteral")
     }
 
     private [parsley] class Identifier(start: TokenSet, letter: TokenSet, keywords: Set[String], val expected: UnsafeOption[String] = null) extends Parsley[String]
@@ -534,6 +543,7 @@ private [parsley] object DeepToken
         {
             result(instrs += new instructions.TokenIdentifier(start, letter, keywords, expected))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = result("identifier")
     }
 
     private [parsley] class UserOp(start: TokenSet, letter: TokenSet, operators: Set[String], val expected: UnsafeOption[String] = null) extends Parsley[String]
@@ -548,6 +558,7 @@ private [parsley] object DeepToken
         {
             result(instrs += new instructions.TokenUserOperator(start, letter, operators, expected))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = result("userOp")
     }
 
     private [parsley] class ReservedOp(start: TokenSet, letter: TokenSet, operators: Set[String], val expected: UnsafeOption[String] = null) extends Parsley[String]
@@ -562,11 +573,12 @@ private [parsley] object DeepToken
         {
             result(instrs += new instructions.TokenOperator(start, letter, operators, expected))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = result("reservedOp")
     }
 
-    private [parsley] class Keyword(private [Keyword] val keyword: String, letter: TokenSet, caseSensitive: Boolean, val expected: UnsafeOption[String] = null) extends Parsley[Nothing]
+    private [parsley] class Keyword(private [Keyword] val keyword: String, letter: TokenSet, caseSensitive: Boolean, val expected: UnsafeOption[String] = null) extends Parsley[Unit]
     {
-        override protected def preprocess[Cont[_, _], N >: Nothing](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[N]] =
+        override protected def preprocess[Cont[_, _], U >: Unit](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[U]] =
         {
             if (label == null) result(this)
             else result(new Keyword(keyword, letter, caseSensitive, label))
@@ -576,11 +588,12 @@ private [parsley] object DeepToken
         {
             result(instrs += new instructions.TokenKeyword(keyword, letter, caseSensitive, expected))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = result(s"keyword($keyword)")
     }
 
-    private [parsley] class Operator(private [Operator] val operator: String, letter: TokenSet, val expected: UnsafeOption[String] = null) extends Parsley[Nothing]
+    private [parsley] class Operator(private [Operator] val operator: String, letter: TokenSet, val expected: UnsafeOption[String] = null) extends Parsley[Unit]
     {
-        override protected def preprocess[Cont[_, _], N >: Nothing](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[N]] =
+        override protected def preprocess[Cont[_, _], U >: Unit](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[U]] =
         {
             if (label == null) result(this)
             else result(new Operator(operator, letter, label))
@@ -590,11 +603,12 @@ private [parsley] object DeepToken
         {
             result(instrs += new instructions.TokenOperator_(operator, letter, expected))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = result(s"operator($operator)")
     }
 
-    private [parsley] class MaxOp(private [MaxOp] val operator: String, ops: Set[String], val expected: UnsafeOption[String] = null) extends Parsley[Nothing]
+    private [parsley] class MaxOp(private [MaxOp] val operator: String, ops: Set[String], val expected: UnsafeOption[String] = null) extends Parsley[Unit]
     {
-        override protected def preprocess[Cont[_, _], N >: Nothing](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops_ : ContOps[Cont]): Cont[Parsley[_], Parsley[N]] =
+        override protected def preprocess[Cont[_, _], U >: Unit](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops_ : ContOps[Cont]): Cont[Parsley[_], Parsley[U]] =
         {
             if (label == null) result(this)
             else result(new MaxOp(operator, ops, label))
@@ -604,6 +618,7 @@ private [parsley] object DeepToken
         {
             result(instrs += new instructions.TokenMaxOp(operator, ops, expected))
         }
+        override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = result(s"maxOp($operator)")
     }
 
     object Sign

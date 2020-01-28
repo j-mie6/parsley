@@ -16,7 +16,6 @@ package object instructions
         def copy: Instr = this
     }
 
-    private [parsley] trait NoPush
     private [parsley] trait Stateful
 
     private [parsley] abstract class JumpInstr extends Instr
@@ -65,6 +64,12 @@ package object instructions
         }
 
         def exchange(x: A): Unit = array(sp) = x
+        def peekAndExchange(x: A): Any =
+        {
+            val y = array(sp)
+            array(sp) = x
+            y
+        }
         def pop_(): Unit = sp -= 1
         def upop(): Any =
         {

@@ -429,24 +429,25 @@ private [parsley] final class Get(v: Int) extends Instr
     override def toString: String = s"Get($v)"
 }
 
-private [parsley] final class Put(v: Int) extends Instr with NoPush
+private [parsley] final class Put(v: Int) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
         if (!isEmpty(ctx.states) && (ctx.states.head.regs eq ctx.regs)) ctx.regs = ctx.regs.clone
-        ctx.regs(v) = ctx.stack.upop()
+        ctx.regs(v) = ctx.stack.peekAndExchange(())
         ctx.inc()
     }
     override def toString: String = s"Put($v)"
 }
 
-private [parsley] final class Modify[S](v: Int, f: S => S) extends Instr with NoPush
+private [parsley] final class Modify[S](v: Int, f: S => S) extends Instr
 {
     private [this] val g = f.asInstanceOf[Any => Any]
     override def apply(ctx: Context): Unit =
     {
         if (!isEmpty(ctx.states) && (ctx.states.head.regs eq ctx.regs)) ctx.regs = ctx.regs.clone
         ctx.regs(v) = g(ctx.regs(v))
+        ctx.stack.push(())
         ctx.inc()
     }
     override def toString: String = s"Modify($v, f)"

@@ -7,24 +7,21 @@ import parsley.UnsafeOption
 import scala.annotation.{switch, tailrec}
 
 // TODO This is considered as a VERY rough implementation of the intrinsic, just to get it working, it will be optimised later
-private [parsley] class TokenSkipComments(start: String, end: String, line: String, nested: Boolean) extends Instr with NoPush
+private [parsley] class TokenSkipComments(start: String, end: String, line: String, nested: Boolean) extends Instr
 {
     protected final val noLine = line.isEmpty
     protected final val noMulti = start.isEmpty
     override def apply(ctx: Context): Unit =
     {
-        if (noLine && noMulti) ctx.inc()
-        else if (noLine)
+        if (noLine && !noMulti)
         {
             while (ctx.moreInput && ctx.input.startsWith(start, ctx.offset)) if (!multiLineComment(ctx)) return
-            ctx.inc()
         }
-        else if (noMulti)
+        else if (noMulti && !noLine)
         {
             while (ctx.moreInput && ctx.input.startsWith(line, ctx.offset)) singleLineComment(ctx)
-            ctx.inc()
         }
-        else
+        else if (!noLine && !noMulti)
         {
             var startsSingle = ctx.input.startsWith(line, ctx.offset)
             var startsMulti = ctx.input.startsWith(start, ctx.offset)
@@ -38,8 +35,9 @@ private [parsley] class TokenSkipComments(start: String, end: String, line: Stri
                 startsSingle = ctx.input.startsWith(line, ctx.offset)
                 startsMulti = ctx.input.startsWith(start, ctx.offset)
             }
-            ctx.inc()
         }
+        ctx.stack.push(())
+        ctx.inc()
     }
 
     protected final def singleLineComment(ctx: Context): Unit =
@@ -199,15 +197,11 @@ private [parsley] final class TokenComment(start: String, end: String, line: Str
     override def toString: String = "TokenComment"
 }
 
-private [parsley] final class TokenWhiteSpace(ws: TokenSet, start: String, end: String, line: String, nested: Boolean) extends TokenSkipComments(start, end, line, nested) with NoPush
+private [parsley] final class TokenWhiteSpace(ws: TokenSet, start: String, end: String, line: String, nested: Boolean) extends TokenSkipComments(start, end, line, nested)
 {
     override def apply(ctx: Context): Unit =
     {
-        if (noLine && noMulti)
-        {
-            spaces(ctx)
-            ctx.inc()
-        }
+        if (noLine && noMulti) spaces(ctx)
         else if (noLine)
         {
             spaces(ctx)
@@ -216,7 +210,6 @@ private [parsley] final class TokenWhiteSpace(ws: TokenSet, start: String, end: 
                 if (!multiLineComment(ctx)) return
                 spaces(ctx)
             }
-            ctx.inc()
         }
         else if (noMulti)
         {
@@ -226,7 +219,6 @@ private [parsley] final class TokenWhiteSpace(ws: TokenSet, start: String, end: 
                 singleLineComment(ctx)
                 spaces(ctx)
             }
-            ctx.inc()
         }
         else
         {
@@ -245,8 +237,9 @@ private [parsley] final class TokenWhiteSpace(ws: TokenSet, start: String, end: 
                 startsSingle = ctx.input.startsWith(line, ctx.offset)
                 startsMulti = ctx.input.startsWith(start, ctx.offset)
             }
-            ctx.inc()
         }
+        ctx.inc()
+        ctx.stack.push(())
     }
 
     private def spaces(ctx: Context): Unit =
@@ -1164,7 +1157,7 @@ private [parsley] final class TokenOperator(start: TokenSet, letter: TokenSet, r
     override def toString: String = "TokenReservedOperator"
 }
 
-private [parsley] class TokenKeyword(_keyword: String, letter: TokenSet, caseSensitive: Boolean, _expected: UnsafeOption[String]) extends Instr with NoPush
+private [parsley] class TokenKeyword(_keyword: String, letter: TokenSet, caseSensitive: Boolean, _expected: UnsafeOption[String]) extends Instr
 {
     val expected = if (_expected == null) _keyword else _expected
     val expectedEnd = if (_expected == null) "end of " + _keyword else _expected
@@ -1194,7 +1187,11 @@ private [parsley] class TokenKeyword(_keyword: String, letter: TokenSet, caseSen
             ctx.col += strsz
             ctx.offset = i
             if (i < inputsz && letter(input(i))) ctx.fail(expectedEnd)
-            else ctx.inc()
+            else
+            {
+                ctx.stack.push(())
+                ctx.inc()
+            }
         }
         else ctx.fail(expected)
     }
@@ -1202,7 +1199,7 @@ private [parsley] class TokenKeyword(_keyword: String, letter: TokenSet, caseSen
     override def toString: String = s"TokenKeyword(${_keyword})"
 }
 
-private [parsley] class TokenOperator_(_operator: String, letter: TokenSet, _expected: UnsafeOption[String]) extends Instr with NoPush
+private [parsley] class TokenOperator_(_operator: String, letter: TokenSet, _expected: UnsafeOption[String]) extends Instr
 {
     val expected = if (_expected == null) _operator else _expected
     val expectedEnd = if (_expected == null) "end of " + _operator else _expected
@@ -1231,7 +1228,11 @@ private [parsley] class TokenOperator_(_operator: String, letter: TokenSet, _exp
             ctx.col += strsz
             ctx.offset = i
             if (i < inputsz && letter(input(i))) ctx.fail(expectedEnd)
-            else ctx.inc()
+            else
+            {
+                ctx.stack.push(())
+                ctx.inc()
+            }
         }
         else ctx.fail(expected)
     }
@@ -1239,7 +1240,7 @@ private [parsley] class TokenOperator_(_operator: String, letter: TokenSet, _exp
     override def toString: String = s"TokenOperator(${_operator})"
 }
 
-private [parsley] class TokenMaxOp(_operator: String, _ops: Set[String], _expected: UnsafeOption[String]) extends Instr with NoPush
+private [parsley] class TokenMaxOp(_operator: String, _ops: Set[String], _expected: UnsafeOption[String]) extends Instr
 {
     val expected: UnsafeOption[String] = if (_expected == null) _operator else _expected
     val expectedEnd: UnsafeOption[String] = if (_expected == null) "end of " + _operator else _expected
@@ -1285,16 +1286,11 @@ private [parsley] class TokenMaxOp(_operator: String, _ops: Set[String], _expect
                     }
                     i += 1
                 }
-                ctx.col = ctx.col + strsz
-                ctx.offset = j
-                ctx.inc()
             }
-            else
-            {
-                ctx.col = ctx.col + strsz
-                ctx.offset = j
-                ctx.inc()
-            }
+            ctx.col = ctx.col + strsz
+            ctx.offset = j
+            ctx.stack.push(())
+            ctx.inc()
         }
         else ctx.fail(expected)
     }
