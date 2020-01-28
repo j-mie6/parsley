@@ -130,7 +130,7 @@ object Combinator
 
     /**`chainPost(p, op)` parses one occurrence of `p`, followed by many postfix applications of `op`
       * that associate to the left.*/
-    def chainPost[A](p: =>Parsley[A], op: =>Parsley[A => A]) = new DeepEmbedding.ChainPost(p, op)
+    def chainPost[A](p: =>Parsley[A], op: =>Parsley[A => A]): Parsley[A] = new DeepEmbedding.ChainPost(p, op)
 
     /**This parser only succeeds at the end of the input. This is a primitive parser.*/
     val eof: Parsley[Unit] = new DeepEmbedding.Eof
