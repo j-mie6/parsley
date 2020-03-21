@@ -2,8 +2,12 @@
 /wiki
 /inputs
 /.settings
+/.idea
+/project/
+/target/
 .cache-main
 .classpath
 .project
 *.class
 *.log
+parsley*.jar
