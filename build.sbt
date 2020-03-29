@@ -10,7 +10,7 @@ lazy val root = project.in(file("."))
     scalaSource in Test := baseDirectory.value / "test",
 
     libraryDependencies ++= Seq("org.scala-lang.modules" %% "scala-xml" % "1.2.0",
-                                "org.scalactic" %% "scalactic" % "3.0.8",
+                                "org.scalactic" %% "scalactic" % "3.0.8" % "test",
                                 "org.scalatest" %% "scalatest" % "3.0.8" % "test"),
     scalaVersion := scala2Version,
 
