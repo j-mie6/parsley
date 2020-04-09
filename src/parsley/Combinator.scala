@@ -38,7 +38,15 @@ object Combinator
 
     /**optional(p) tries to apply parser `p`. It will parse `p` or nothing. It only fails if `p`
       * fails after consuming input. It discards the result of `p`.*/
-    def optional(p: =>Parsley[_]): Parsley[Unit] = void(p).getOrElse(())
+    def optional(p: =>Parsley[_]): Parsley[Unit] = optionally(p, ())
+
+    /**optionally(p, x) tries to apply parser `p`. It will always result in `x` regardless of
+      * whether or not `p` succeeded or `p` failed without consuming input.*/
+    def optionally[A](p: =>Parsley[_], x: =>A): Parsley[A] =
+    {
+        lazy val _x = x
+        (p #> x).getOrElse(x)
+    }
 
     /**`between(open, close, p)` parses `open`, followed by `p` and `close`. Returns the value returned by `p`.*/
     def between[A](open: =>Parsley[_],
@@ -107,17 +115,17 @@ object Combinator
     /**`chainr(p, op, x)` parses *zero* or more occurrences of `p`, separated by `op`. Returns a value
       * obtained by a right associative application of all functions return by `op` to the values
       * returned by `p`. If there are no occurrences of `p`, the value `x` is returned.*/
-    def chainr[A](p: =>Parsley[A], op: =>Parsley[(A, A) => A], x: A): Parsley[A] = chainr1(p, op).getOrElse(x)
+    def chainr[A, B](p: =>Parsley[A], op: =>Parsley[(A, B) => B], x: B)(implicit wrap: A => B): Parsley[B] = chainr1(p, op).getOrElse(x)
 
     /**`chainl(p, op, x)` parses *zero* or more occurrences of `p`, separated by `op`. Returns a value
       * obtained by a left associative application of all functions returned by `op` to the values
       * returned by `p`. If there are no occurrences of `p`, the value `x` is returned.*/
-    def chainl[A](p: =>Parsley[A], op: =>Parsley[(A, A) => A], x: A): Parsley[A] = chainl1(p, op).getOrElse(x)
+    def chainl[A, B](p: =>Parsley[A], op: =>Parsley[(B, A) => B], x: B)(implicit wrap: A => B): Parsley[B] = chainl1(p, op).getOrElse(x)
 
     /**`chainr1(p, op)` parses *one* or more occurrences of `p`, separated by `op`. Returns a value
       * obtained by a right associative application of all functions return by `op` to the values
       * returned by `p`.*/
-    def chainr1[A](p: =>Parsley[A], op: =>Parsley[(A, A) => A]): Parsley[A] = new DeepEmbedding.Chainr(p, op)
+    def chainr1[A, B](p: =>Parsley[A], op: =>Parsley[(A, B) => B])(implicit wrap: A => B): Parsley[B] = new DeepEmbedding.Chainr(p, op, wrap)
 
     /**`chainPre(op, p)` parses many prefixed applications of `op` onto a single final result of `p`*/
     def chainPre[A](op: =>Parsley[A => A], p: =>Parsley[A]): Parsley[A] = new DeepEmbedding.ChainPre(p, op)
@@ -126,7 +134,7 @@ object Combinator
       * obtained by a left associative application of all functions return by `op` to the values
       * returned by `p`. This parser can for example be used to eliminate left recursion which
       * typically occurs in expression grammars.*/
-    def chainl1[A](p: =>Parsley[A], op: =>Parsley[(A, A) => A]): Parsley[A] = new DeepEmbedding.Chainl(+p, op)
+    def chainl1[A, B](p: =>Parsley[A], op: =>Parsley[(B, A) => B])(implicit wrap: A => B): Parsley[B] = new DeepEmbedding.Chainl(+p, op, wrap)
 
     /**`chainPost(p, op)` parses one occurrence of `p`, followed by many postfix applications of `op`
       * that associate to the left.*/

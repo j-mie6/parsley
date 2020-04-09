@@ -3,22 +3,22 @@
         <head>
           <meta http-equiv="X-UA-Compatible" content="IE=edge" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-          <title>Parsley documentation  - parsley.TokenParser</title>
-          <meta name="description" content="Parsley documentation - parsley.TokenParser" />
-          <meta name="keywords" content="Parsley documentation parsley.TokenParser" />
+          <title></title>
+          <meta name="description" content="" />
+          <meta name="keywords" content="" />
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
+      
       <link href="../lib/index.css" media="screen" type="text/css" rel="stylesheet" />
       <link href="../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
       <link href="../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
-      <script type="text/javascript" src="../lib/jquery.js"></script>
+      <script type="text/javascript" src="../lib/jquery.min.js"></script>
       <script type="text/javascript" src="../lib/jquery.panzoom.min.js"></script>
       <script type="text/javascript" src="../lib/jquery.mousewheel.min.js"></script>
       <script type="text/javascript" src="../lib/index.js"></script>
       <script type="text/javascript" src="../index.js"></script>
       <script type="text/javascript" src="../lib/scheduler.js"></script>
       <script type="text/javascript" src="../lib/template.js"></script>
-      <script type="text/javascript" src="../lib/tools.tooltip.js"></script>
       
       <script type="text/javascript">
         /* this variable can be used by the JS to determine the path to the root document */
@@ -28,7 +28,7 @@
         </head>
         <body>
       <div id="search">
-        <span id="doc-title">Parsley documentation<span id="doc-version"></span></span>
+        <span id="doc-title"><span id="doc-version"></span></span>
         <span class="close-results"><span class="left">&lt;</span> Back</span>
         <div id="textfilter">
           <span class="input">
@@ -56,7 +56,7 @@
                 <li name="_root_.root" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="_root_"></a><a id="root:_root_"></a>
       <span class="permalink">
-      <a href="index.html#_root_" title="Permalink">
+      <a href="../index.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -72,7 +72,7 @@
     </li><li name="_root_.parsley" visbl="pub" class="indented1 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="parsley"></a><a id="parsley:parsley"></a>
       <span class="permalink">
-      <a href="index.html#parsley" title="Permalink">
+      <a href="../parsley/index.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -88,7 +88,7 @@
     </li><li name="parsley.instructions" visbl="pub" class="indented2 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="instructions"></a><a id="instructions:instructions"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#instructions" title="Permalink">
+      <a href="../parsley/instructions/index.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -411,7 +411,7 @@ value of <code>p</code>.</p>
       <p class="shortcomment cmt">Lexeme parser <code>brackets(p)</code> parses <code>p</code> enclosed in brackets ('[', ']'), returning the value
 of <code>p</code>.</p>
     </li><li name="parsley.TokenParser#charLiteral" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="charLiteral:parsley.Parsley[Char]"></a><a id="charLiteral:Parsley[scala.Char]"></a>
+      <a id="charLiteral:parsley.Parsley[Char]"></a><a id="charLiteral:Parsley[Char]"></a>
       <span class="permalink">
       <a href="../parsley/TokenParser.html#charLiteral:parsley.Parsley[Char]" title="Permalink">
         <i class="material-icons"></i>
@@ -422,7 +422,7 @@ of <code>p</code>.</p>
         <span class="kind">lazy val</span>
       </span>
       <span class="symbol">
-        <span class="name">charLiteral</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Char">scala.Char</span>]</span>
+        <span class="name">charLiteral</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Char">Char</span>]</span>
       </span>
       
       <p class="shortcomment cmt">This lexeme parser parses a single literal character.</p><div class="fullcomment"><div class="comment cmt"><p>This lexeme parser parses a single literal character. Returns the literal character value.
@@ -444,17 +444,19 @@ quite closely).</p></div></div>
         <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../java/lang/index.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@native</span><span class="args">()</span>
-              
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">(<span>
       
       <span class="defval" name="classOf[java.lang.CloneNotSupportedException]">...</span>
     </span>)</span>
               
+                <span class="name">@native</span><span class="args">()</span>
+              
+                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
+              
         </dd></dl></div>
     </li><li name="parsley.TokenParser#colon" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="colon:parsley.Parsley[Char]"></a><a id="colon:Parsley[scala.Char]"></a>
+      <a id="colon:parsley.Parsley[Char]"></a><a id="colon:Parsley[Char]"></a>
       <span class="permalink">
       <a href="../parsley/TokenParser.html#colon:parsley.Parsley[Char]" title="Permalink">
         <i class="material-icons"></i>
@@ -465,12 +467,12 @@ quite closely).</p></div></div>
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">colon</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Char">scala.Char</span>]</span>
+        <span class="name">colon</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Char">Char</span>]</span>
       </span>
       
       <p class="shortcomment cmt">Lexeme parser <code>colon</code> parses the character ':' and skips any trailing white space.</p><div class="fullcomment"><div class="comment cmt"><p>Lexeme parser <code>colon</code> parses the character ':' and skips any trailing white space. Returns &quot;:&quot;</p></div></div>
     </li><li name="parsley.TokenParser#comma" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="comma:parsley.Parsley[Char]"></a><a id="comma:Parsley[scala.Char]"></a>
+      <a id="comma:parsley.Parsley[Char]"></a><a id="comma:Parsley[Char]"></a>
       <span class="permalink">
       <a href="../parsley/TokenParser.html#comma:parsley.Parsley[Char]" title="Permalink">
         <i class="material-icons"></i>
@@ -481,7 +483,7 @@ quite closely).</p></div></div>
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">comma</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Char">scala.Char</span>]</span>
+        <span class="name">comma</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Char">Char</span>]</span>
       </span>
       
       <p class="shortcomment cmt">Lexeme parser <code>comma</code> parses the character ',' and skips any trailing white space.</p><div class="fullcomment"><div class="comment cmt"><p>Lexeme parser <code>comma</code> parses the character ',' and skips any trailing white space. Returns &quot;,&quot;</p></div></div>
@@ -536,7 +538,7 @@ Returns a list of values returned by <code>p</code>.</p></div></div>
       
       <p class="shortcomment cmt">Parses a positive whole number in the decimal system.</p><div class="fullcomment"><div class="comment cmt"><p>Parses a positive whole number in the decimal system. Returns the value of the number.</p></div></div>
     </li><li name="parsley.TokenParser#dot" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="dot:parsley.Parsley[Char]"></a><a id="dot:Parsley[scala.Char]"></a>
+      <a id="dot:parsley.Parsley[Char]"></a><a id="dot:Parsley[Char]"></a>
       <span class="permalink">
       <a href="../parsley/TokenParser.html#dot:parsley.Parsley[Char]" title="Permalink">
         <i class="material-icons"></i>
@@ -547,7 +549,7 @@ Returns a list of values returned by <code>p</code>.</p></div></div>
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">dot</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Char">scala.Char</span>]</span>
+        <span class="name">dot</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Char">Char</span>]</span>
       </span>
       
       <p class="shortcomment cmt">Lexeme parser <code>dot</code> parses the character '.' and skips any trailing white space.</p><div class="fullcomment"><div class="comment cmt"><p>Lexeme parser <code>dot</code> parses the character '.' and skips any trailing white space. Returns &quot;.&quot;</p></div></div>
@@ -583,28 +585,6 @@ Returns a list of values returned by <code>p</code>.</p></div></div>
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="scala.AnyRef#finalize" visbl="prt" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="finalize():Unit"></a>
-      <span class="permalink">
-      <a href="../parsley/TokenParser.html#finalize():Unit" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../java/lang/index.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">(<span>
-      
-      <span class="symbol">classOf[java.lang.Throwable]</span>
-    </span>)</span>
-              
-        </dd></dl></div>
     </li><li name="parsley.TokenParser#float" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="float:parsley.Parsley[Double]"></a><a id="float:Parsley[Double]"></a>
       <span class="permalink">
@@ -641,6 +621,8 @@ is parsed according to the grammar rules defined in the Haskell report. Accepts 
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd><dt>Annotations</dt><dd>
                 <span class="name">@native</span><span class="args">()</span>
               
+                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
+              
         </dd></dl></div>
     </li><li name="scala.AnyRef#hashCode" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="hashCode():Int"></a>
@@ -659,6 +641,8 @@ is parsed according to the grammar rules defined in the Haskell report. Accepts 
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd><dt>Annotations</dt><dd>
                 <span class="name">@native</span><span class="args">()</span>
+              
+                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
               
         </dd></dl></div>
     </li><li name="parsley.TokenParser#hexadecimal" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -878,6 +862,8 @@ parsed according to the grammar rules defined in the Haskell report.</p></div></
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@native</span><span class="args">()</span>
               
+                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
+              
         </dd></dl></div>
     </li><li name="scala.AnyRef#notifyAll" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="notifyAll():Unit"></a>
@@ -896,6 +882,8 @@ parsed according to the grammar rules defined in the Haskell report.</p></div></
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@native</span><span class="args">()</span>
+              
+                <span class="name">@HotSpotIntrinsicCandidate</span><span class="args">()</span>
               
         </dd></dl></div>
     </li><li name="parsley.TokenParser#number" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
@@ -1042,7 +1030,7 @@ to the token parser. A <code>reservedOp</code> is treated as a single token usin
 Legal operator characters and reserved operators are defined in the <code>LanguageDef</code>
 provided to the token parser. A <code>reservedOp_</code> is treated as a single token using <code>attempt</code>.</p></div></div>
     </li><li name="parsley.TokenParser#semi" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="semi:parsley.Parsley[Char]"></a><a id="semi:Parsley[scala.Char]"></a>
+      <a id="semi:parsley.Parsley[Char]"></a><a id="semi:Parsley[Char]"></a>
       <span class="permalink">
       <a href="../parsley/TokenParser.html#semi:parsley.Parsley[Char]" title="Permalink">
         <i class="material-icons"></i>
@@ -1053,7 +1041,7 @@ provided to the token parser. A <code>reservedOp_</code> is treated as a single 
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">semi</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Char">scala.Char</span>]</span>
+        <span class="name">semi</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Char">Char</span>]</span>
       </span>
       
       <p class="shortcomment cmt">Lexeme parser <code>semi</code> parses the character ';' and skips any trailing white space.</p><div class="fullcomment"><div class="comment cmt"><p>Lexeme parser <code>semi</code> parses the character ';' and skips any trailing white space. Returns &quot;;&quot;</p></div></div>
@@ -1146,7 +1134,7 @@ deals correctly with escape sequences and gaps. The literal string is parsed acc
 the grammar rules defined in the Haskell report (which matches most programming languages
 quite closely).</p></div></div>
     </li><li name="parsley.TokenParser#symbol" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="symbol(name:Char):parsley.Parsley[Char]"></a><a id="symbol(scala.Char):Parsley[scala.Char]"></a>
+      <a id="symbol(name:Char):parsley.Parsley[Char]"></a><a id="symbol(Char):Parsley[Char]"></a>
       <span class="permalink">
       <a href="../parsley/TokenParser.html#symbol(name:Char):parsley.Parsley[Char]" title="Permalink">
         <i class="material-icons"></i>
@@ -1157,7 +1145,7 @@ quite closely).</p></div></div>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">symbol</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Char">scala.Char</span></span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Char">scala.Char</span>]</span>
+        <span class="name">symbol</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Char">Char</span></span>)</span><span class="result">: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="scala.Char">Char</span>]</span>
       </span>
       
       <p class="shortcomment cmt">Lexeme parser <code>symbol(c)</code> parses <code>char(c)</code> and skips trailing white space.</p>
@@ -1263,28 +1251,6 @@ will fail on any operators that are reserved operators. Legal operator character
 reserved operators are defined in the <code>LanguageDef</code> provided to the token parser. A
 <code>userOp</code> is treated as a single token using <code>attempt</code>.</p></div></div>
     </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="wait():Unit"></a>
-      <span class="permalink">
-      <a href="../parsley/TokenParser.html#wait():Unit" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier">final </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">wait</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
-                <span class="name">@throws</span><span class="args">(<span>
-      
-      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
-    </span>)</span>
-              
-        </dd></dl></div>
-    </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait(x$1:Long,x$2:Int):Unit"></a><a id="wait(Long,Int):Unit"></a>
       <span class="permalink">
       <a href="../parsley/TokenParser.html#wait(x$1:Long,x$2:Int):Unit" title="Permalink">
@@ -1322,8 +1288,30 @@ reserved operators are defined in the <code>LanguageDef</code> provided to the t
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
                 <span class="name">@native</span><span class="args">()</span>
               
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait():Unit"></a>
+      <span class="permalink">
+      <a href="../parsley/TokenParser.html#wait():Unit" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">(<span>
       
       <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
@@ -1374,7 +1362,36 @@ that is provided to the token parser.</p></div></div>
 
         
 
-        
+        <div class="values members">
+              <h3>Deprecated Value Members</h3>
+              <ol><li name="scala.AnyRef#finalize" visbl="prt" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="finalize():Unit"></a>
+      <span class="permalink">
+      <a href="../parsley/TokenParser.html#finalize():Unit" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name deprecated" title="Deprecated: (Since version ) see corresponding Javadoc for more information.">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<span class="extype" name="java.lang">java.lang</span>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="symbol">classOf[java.lang.Throwable]</span>
+    </span>)</span>
+              
+                <span class="name">@Deprecated</span>
+              
+                <span class="name">@deprecated</span>
+              
+        </dd><dt>Deprecated</dt><dd class="cmt"><p><i>(Since version )</i> see corresponding Javadoc for more information.</p></dd></dl></div>
+    </li></ol>
+            </div>
         </div>
 
         <div id="inheritedMembers">

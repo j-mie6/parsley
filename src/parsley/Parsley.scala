@@ -1661,11 +1661,11 @@ private [parsley] object DeepEmbedding
             }
         }
     }
-    private [parsley] final class Chainl[A](_p: =>Parsley[A], _op: =>Parsley[(A, A) => A]) extends Parsley[A]
+    private [parsley] final class Chainl[A, B](_p: =>Parsley[A], _op: =>Parsley[(B, A) => B], private [Chainl] val wrap: A => B) extends Parsley[B]
     {
         private [Chainl] var p: Parsley[A] = _
-        private [Chainl] var op: Parsley[(A, A) => A] = _
-        override def preprocess[Cont[_, _], A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]] =
+        private [Chainl] var op: Parsley[(B, A) => B] = _
+        override def preprocess[Cont[_, _], B_ >: B](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[B_]] =
             if (label == null && p != null) result(this) else for (p <- _p.optimised; op <- _op.optimised) yield
             {
                 if (label == null)
@@ -1675,7 +1675,7 @@ private [parsley] object DeepEmbedding
                     this.size = p.size*2 + op.size + 2
                     this
                 }
-                else Chainl(p, op)
+                else Chainl(p, op, wrap)
             }
         override def findLetsAux[Cont[_, _]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] =
             for (_ <- _p.findLets; _ <- _op.findLets) yield ()
@@ -1691,16 +1691,16 @@ private [parsley] object DeepEmbedding
                 p.codeGen |>
                 {
                     instrs += new instructions.Label(handler)
-                    instrs += new instructions.Chainl(body)
+                    instrs += new instructions.Chainl(body, wrap)
                 }
             }
         }
     }
-    private [parsley] final class Chainr[A](_p: =>Parsley[A], _op: =>Parsley[(A, A) => A]) extends Parsley[A]
+    private [parsley] final class Chainr[A, B](_p: =>Parsley[A], _op: =>Parsley[(A, B) => B], private [Chainr] val wrap: A => B) extends Parsley[B]
     {
         private [Chainr] var p: Parsley[A] = _
-        private [Chainr] var op: Parsley[(A, A) => A] = _
-        override def preprocess[Cont[_, _], A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]] =
+        private [Chainr] var op: Parsley[(A, B) => B] = _
+        override def preprocess[Cont[_, _], B_ >: B](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[B_]] =
             if (label == null && p != null) result(this) else for (p <- _p.optimised; op <- _op.optimised) yield
             {
                 if (label == null)
@@ -1710,7 +1710,7 @@ private [parsley] object DeepEmbedding
                     this.size = p.size + op.size + 3
                     this
                 }
-                else Chainr(p, op)
+                else Chainr(p, op, wrap)
             }
         override def findLetsAux[Cont[_, _]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] =
             for (_ <- _p.findLets; _ <- _op.findLets) yield ()
@@ -1726,7 +1726,7 @@ private [parsley] object DeepEmbedding
                 op.codeGen |>
                 {
                     instrs += new instructions.Label(handler)
-                    instrs += new instructions.Chainr(body)
+                    instrs += new instructions.Chainr(body, wrap)
                 }
             }
         }
@@ -2228,9 +2228,9 @@ private [parsley] object DeepEmbedding
     }
     private [DeepEmbedding] object Chainl
     {
-        def apply[A](p: Parsley[A], op: Parsley[(A, A) => A]): Chainl[A] =
+        def apply[A, B](p: Parsley[A], op: Parsley[(B, A) => B], wrap: A => B): Chainl[A, B] =
         {
-            val res: Chainl[A] = new Chainl(p, op)
+            val res: Chainl[A, B] = new Chainl(p, op, wrap)
             res.p = p
             res.op = op
             res.size = p.size*2 + op.size + 2
@@ -2239,9 +2239,9 @@ private [parsley] object DeepEmbedding
     }
     private [DeepEmbedding] object Chainr
     {
-        def apply[A](p: Parsley[A], op: Parsley[(A, A) => A]): Chainr[A] =
+        def apply[A, B](p: Parsley[A], op: Parsley[(A, B) => B], wrap: A => B): Chainr[A, B] =
         {
-            val res: Chainr[A] = new Chainr(p, op)
+            val res: Chainr[A, B] = new Chainr(p, op, wrap)
             res.p = p
             res.op = op
             res.size = p.size + op.size + 3

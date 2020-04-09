@@ -146,8 +146,9 @@ private [parsley] final class ChainPre(var label: Int) extends JumpInstr with St
     override def toString: String = s"ChainPre($label)"
     override def copy: ChainPre = new ChainPre(label)
 }
-private [parsley] final class Chainl(var label: Int) extends JumpInstr with Stateful
+private [parsley] final class Chainl[A, B](var label: Int, _wrap: A => B) extends JumpInstr with Stateful
 {
+    private [this] val wrap: Any => B = _wrap.asInstanceOf[Any => B]
     private [this] var acc: Any = _
     override def apply(ctx: Context): Unit =
     {
@@ -160,7 +161,7 @@ private [parsley] final class Chainl(var label: Int) extends JumpInstr with Stat
             {
                 // after this point, the inputCheck will roll back one too many items on the stack, because this item
                 // was consumed. It should be adjusted
-                acc = op(ctx.stack.upop(), y)
+                acc = op(wrap(ctx.stack.upop()), y)
                 ctx.handlers.head.stacksz -= 1
             }
             else acc = op(acc, y)
@@ -185,11 +186,12 @@ private [parsley] final class Chainl(var label: Int) extends JumpInstr with Stat
         }
     }
     override def toString: String = s"Chainl($label)"
-    override def copy: Chainl = new Chainl(label)
+    override def copy: Chainl[A, B] = new Chainl(label, wrap)
 }
-private [parsley] final class Chainr(var label: Int) extends JumpInstr with Stateful
+private [parsley] final class Chainr[A, B](var label: Int, _wrap: A => B) extends JumpInstr with Stateful
 {
-    private var acc: Any => Any = _
+    private [this] val wrap: Any => B = _wrap.asInstanceOf[Any => B]
+    private [this] var acc: Any => Any = _
     override def apply(ctx: Context): Unit =
     {
         if (ctx.status eq Good)
@@ -228,7 +230,8 @@ private [parsley] final class Chainr(var label: Int) extends JumpInstr with Stat
             // H1 is on the stack, so p succeeded, just not op
             if (!isEmpty(ctx.handlers) && ctx.handlers.head.pc == ctx.pc)
             {
-                if (acc != null) ctx.stack.exchange(acc(ctx.stack.upeek))
+                if (acc != null) ctx.stack.exchange(acc(wrap(ctx.stack.upeek)))
+                else ctx.stack.exchange(wrap(ctx.stack.upeek))
                 ctx.checkStack = ctx.checkStack.tail.tail
                 ctx.handlers = ctx.handlers.tail
                 ctx.inc()
@@ -244,7 +247,7 @@ private [parsley] final class Chainr(var label: Int) extends JumpInstr with Stat
         }
     }
     override def toString: String = s"Chainr($label)"
-    override def copy: Chainr = new Chainr(label)
+    override def copy: Chainr[A, B] = new Chainr(label, wrap)
 }
 
 private [parsley] final class SepEndBy1(var label: Int) extends JumpInstr with Stateful

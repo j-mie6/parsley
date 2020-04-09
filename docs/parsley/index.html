@@ -3,22 +3,22 @@
         <head>
           <meta http-equiv="X-UA-Compatible" content="IE=edge" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-          <title>Parsley documentation  - parsley</title>
-          <meta name="description" content="Parsley documentation - parsley" />
-          <meta name="keywords" content="Parsley documentation parsley" />
+          <title></title>
+          <meta name="description" content="" />
+          <meta name="keywords" content="" />
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
+      
       <link href="../lib/index.css" media="screen" type="text/css" rel="stylesheet" />
       <link href="../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
       <link href="../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
-      <script type="text/javascript" src="../lib/jquery.js"></script>
+      <script type="text/javascript" src="../lib/jquery.min.js"></script>
       <script type="text/javascript" src="../lib/jquery.panzoom.min.js"></script>
       <script type="text/javascript" src="../lib/jquery.mousewheel.min.js"></script>
       <script type="text/javascript" src="../lib/index.js"></script>
       <script type="text/javascript" src="../index.js"></script>
       <script type="text/javascript" src="../lib/scheduler.js"></script>
       <script type="text/javascript" src="../lib/template.js"></script>
-      <script type="text/javascript" src="../lib/tools.tooltip.js"></script>
       
       <script type="text/javascript">
         /* this variable can be used by the JS to determine the path to the root document */
@@ -28,7 +28,7 @@
         </head>
         <body>
       <div id="search">
-        <span id="doc-title">Parsley documentation<span id="doc-version"></span></span>
+        <span id="doc-title"><span id="doc-version"></span></span>
         <span class="close-results"><span class="left">&lt;</span> Back</span>
         <div id="textfilter">
           <span class="input">
@@ -56,7 +56,7 @@
                 <li name="_root_.root" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="_root_"></a><a id="root:_root_"></a>
       <span class="permalink">
-      <a href="index.html#_root_" title="Permalink">
+      <a href="../index.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -72,7 +72,7 @@
     </li><li name="_root_.parsley" visbl="pub" class="indented1 current" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="parsley"></a><a id="parsley:parsley"></a>
       <span class="permalink">
-      <a href="index.html#parsley" title="Permalink">
+      <a href="../parsley/index.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -88,7 +88,7 @@
     </li><li name="parsley.instructions" visbl="pub" class="indented2 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="instructions"></a><a id="instructions:instructions"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#instructions" title="Permalink">
+      <a href="../parsley/instructions/index.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -272,7 +272,7 @@
               <ol><li name="parsley.Breakpoint" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
       <a id="BreakpointextendsAnyRef"></a><a id="Breakpoint:Breakpoint"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#BreakpointextendsAnyRef" title="Permalink">
+      <a href="../parsley/package$$Breakpoint.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -286,29 +286,30 @@
       
       
     </li><li name="parsley.ExpressionParser" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="ExpressionParser[A]extendsAnyRef"></a><a id="ExpressionParser[A]:ExpressionParser[A]"></a>
+      <a id="ExpressionParser[-A,+B]extendsAnyRef"></a><a id="ExpressionParser[-A,+B]:ExpressionParser[A,B]"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#ExpressionParser[A]extendsAnyRef" title="Permalink">
+      <a href="../parsley/ExpressionParser.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
       <span class="modifier_kind">
-        <span class="modifier"></span>
+        <span class="modifier">final </span>
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a title="This class is used to generate efficient expression parsers given a table of operators in operator of operator precedence and an atomic value that represents the smallest part of the expression." href="ExpressionParser.html"><span class="name">ExpressionParser</span></a><span class="tparams">[<span name="A">A</span>]</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a title="This class is used to generate efficient expression parsers given a table of operators in operator of operator precedence and an atomic value that represents the smallest part of the expression." href="ExpressionParser.html"><span class="name">ExpressionParser</span></a><span class="tparams">[<span name="A">-A</span>, <span name="B">+B</span>]</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       
       <p class="shortcomment cmt">This class is used to generate efficient expression parsers given a table of operators
 in operator of operator precedence and an atomic value that represents the smallest
 part of the expression.</p><div class="fullcomment"><div class="comment cmt"><p>This class is used to generate efficient expression parsers given a table of operators
 in operator of operator precedence and an atomic value that represents the smallest
-part of the expression. Caters to unary and binary operators of different associativities.</p></div></div>
+part of the expression. Caters to unary and binary operators of different associativities.
+</p></div></div>
     </li><li name="parsley.Failure" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="Failureextendspackage.Result[Nothing]withProductwithSerializable"></a><a id="Failure:Failure"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#Failureextendspackage.Result[Nothing]withProductwithSerializable" title="Permalink">
+      <a href="../parsley/package$$Failure.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -324,7 +325,7 @@ part of the expression. Caters to unary and binary operators of different associ
     </li><li name="parsley.Impl" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
       <a id="ImplextendsAnyRef"></a><a id="Impl:Impl"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#ImplextendsAnyRef" title="Permalink">
+      <a href="../parsley/Impl.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -341,7 +342,7 @@ part of the expression. Caters to unary and binary operators of different associ
     </li><li name="parsley.LanguageDef" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="LanguageDefextendsProductwithSerializable"></a><a id="LanguageDef:LanguageDef"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#LanguageDefextendsProductwithSerializable" title="Permalink">
+      <a href="../parsley/LanguageDef.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -367,7 +368,7 @@ memory usage associated but at least doubles the execution speed for that instru
     </li><li name="parsley.Parser" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ParserextendsImplwithProductwithSerializable"></a><a id="Parser:Parser"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#ParserextendsImplwithProductwithSerializable" title="Permalink">
+      <a href="../parsley/Parser.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -383,7 +384,7 @@ memory usage associated but at least doubles the execution speed for that instru
     </li><li name="parsley.Parsley" visbl="pub" class="indented0 " data-isabs="true" fullComment="yes" group="Ungrouped">
       <a id="Parsley[+A]extendsAnyRef"></a><a id="Parsley[+A]:Parsley[A]"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#Parsley[+A]extendsAnyRef" title="Permalink">
+      <a href="../parsley/Parsley.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -402,7 +403,7 @@ parse the string given as input to <code>runParser</code>.</p><p>Note: In order 
     </li><li name="parsley.Predicate" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="PredicateextendsImplwithProductwithSerializable"></a><a id="Predicate:Predicate"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#PredicateextendsImplwithProductwithSerializable" title="Permalink">
+      <a href="../parsley/Predicate.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -411,14 +412,14 @@ parse the string given as input to <code>runParser</code>.</p><p>Note: In order 
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a title="The implementation provided is a function which matches on the input streams characters" href="Predicate.html"><span class="name">Predicate</span></a><span class="params">(<span name="f">f: (<span class="extype" name="scala.Char">scala.Char</span>) ⇒ <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result"> extends <a href="Impl.html" class="extype" name="parsley.Impl">Impl</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a title="The implementation provided is a function which matches on the input streams characters" href="Predicate.html"><span class="name">Predicate</span></a><span class="params">(<span name="f">f: (<span class="extype" name="scala.Char">Char</span>) ⇒ <span class="extype" name="scala.Boolean">Boolean</span></span>)</span><span class="result"> extends <a href="Impl.html" class="extype" name="parsley.Impl">Impl</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       
       <p class="shortcomment cmt">The implementation provided is a function which matches on the input streams characters</p><div class="fullcomment"><div class="comment cmt"><p>The implementation provided is a function which matches on the input streams characters</p></div><dl class="paramcmts block"><dt class="param">f</dt><dd class="cmt"><p>The predicate that input tokens are tested against</p></dd></dl></div>
     </li><li name="parsley.Result" visbl="pub" class="indented0 " data-isabs="true" fullComment="yes" group="Ungrouped">
       <a id="Result[+A]extendsAnyRef"></a><a id="Result[+A]:Result[A]"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#Result[+A]extendsAnyRef" title="Permalink">
+      <a href="../parsley/package$$Result.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -434,7 +435,7 @@ parse the string given as input to <code>runParser</code>.</p><p>Note: In order 
     </li><li name="parsley.Success" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="Success[A]extendspackage.Result[A]withProductwithSerializable"></a><a id="Success[A]:Success[A]"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#Success[A]extendspackage.Result[A]withProductwithSerializable" title="Permalink">
+      <a href="../parsley/package$$Success.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -450,7 +451,7 @@ parse the string given as input to <code>runParser</code>.</p><p>Note: In order 
     </li><li name="parsley.TokenParser" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="TokenParserextendsAnyRef"></a><a id="TokenParser:TokenParser"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#TokenParserextendsAnyRef" title="Permalink">
+      <a href="../parsley/TokenParser.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -470,7 +471,7 @@ programming languages. This class also has a large number of hand-optimised intr
     </li><li name="parsley.Var" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="VarextendsAnyValwithProductwithSerializable"></a><a id="Var:Var"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#VarextendsAnyValwithProductwithSerializable" title="Permalink">
+      <a href="../parsley/package$$Var.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -565,7 +566,7 @@ execution contexts due to multi-threaded parsing.</p></div><dl class="paramcmts 
       
       
     </li><li name="parsley#runParser" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="runParser[A](p:parsley.Parsley[A],input:Array[Char],ctx:parsley.instructions.Context):parsley.package.Result[A]"></a><a id="runParser[A](Parsley[A],Array[scala.Char],Context):Result[A]"></a>
+      <a id="runParser[A](p:parsley.Parsley[A],input:Array[Char],ctx:parsley.instructions.Context):parsley.package.Result[A]"></a><a id="runParser[A](Parsley[A],Array[Char],Context):Result[A]"></a>
       <span class="permalink">
       <a href="../parsley/index.html#runParser[A](p:parsley.Parsley[A],input:Array[Char],ctx:parsley.instructions.Context):parsley.package.Result[A]" title="Permalink">
         <i class="material-icons"></i>
@@ -576,7 +577,7 @@ execution contexts due to multi-threaded parsing.</p></div><dl class="paramcmts 
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">runParser</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="p">p: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.runParser.A">A</span>]</span>, <span name="input">input: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Char">scala.Char</span>]</span>, <span name="ctx">ctx: <a href="instructions/Context.html" class="extype" name="parsley.instructions.Context">Context</a></span>)</span><span class="result">: <a href="package$$Result.html" class="extype" name="parsley.Result">Result</a>[<span class="extype" name="parsley.runParser.A">A</span>]</span>
+        <span class="name">runParser</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="p">p: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.runParser.A">A</span>]</span>, <span name="input">input: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Char">Char</span>]</span>, <span name="ctx">ctx: <a href="instructions/Context.html" class="extype" name="parsley.instructions.Context">Context</a></span>)</span><span class="result">: <a href="package$$Result.html" class="extype" name="parsley.Result">Result</a>[<span class="extype" name="parsley.runParser.A">A</span>]</span>
       </span>
       
       <p class="shortcomment cmt">This method is responsible for actually executing parsers.</p><div class="fullcomment"><div class="comment cmt"><p>This method is responsible for actually executing parsers. Given a <code>Parsley[A]</code> and an input
@@ -599,7 +600,7 @@ array, will parse the string with the parser. The result is either a <code>Succe
       <p class="shortcomment cmt">This method is responsible for actually executing parsers.</p><div class="fullcomment"><div class="comment cmt"><p>This method is responsible for actually executing parsers. Given a <code>Parsley[A]</code> and an input
 string, will parse the string with the parser. The result is either a <code>Success</code> or a <code>Failure</code>.</p></div><dl class="paramcmts block"><dt class="tparam">A</dt><dd class="cmt"><p>The type of the result of parsing</p></dd><dt class="param">p</dt><dd class="cmt"><p>The parser to run</p></dd><dt class="param">input</dt><dd class="cmt"><p>The input to run against</p></dd><dt class="param">ctx</dt><dd class="cmt"><p>The provided context from the user</p></dd><dt>returns</dt><dd class="cmt"><p>Either a success with a value of type <code>A</code> or a failure with error message</p></dd></dl></div>
     </li><li name="parsley#runParser" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="runParser[A](p:parsley.Parsley[A],input:Array[Char]):parsley.package.Result[A]"></a><a id="runParser[A](Parsley[A],Array[scala.Char]):Result[A]"></a>
+      <a id="runParser[A](p:parsley.Parsley[A],input:Array[Char]):parsley.package.Result[A]"></a><a id="runParser[A](Parsley[A],Array[Char]):Result[A]"></a>
       <span class="permalink">
       <a href="../parsley/index.html#runParser[A](p:parsley.Parsley[A],input:Array[Char]):parsley.package.Result[A]" title="Permalink">
         <i class="material-icons"></i>
@@ -610,7 +611,7 @@ string, will parse the string with the parser. The result is either a <code>Succ
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">runParser</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="p">p: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.runParser.A">A</span>]</span>, <span name="input">input: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Char">scala.Char</span>]</span>)</span><span class="result">: <a href="package$$Result.html" class="extype" name="parsley.Result">Result</a>[<span class="extype" name="parsley.runParser.A">A</span>]</span>
+        <span class="name">runParser</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="p">p: <a href="Parsley.html" class="extype" name="parsley.Parsley">Parsley</a>[<span class="extype" name="parsley.runParser.A">A</span>]</span>, <span name="input">input: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Char">Char</span>]</span>)</span><span class="result">: <a href="package$$Result.html" class="extype" name="parsley.Result">Result</a>[<span class="extype" name="parsley.runParser.A">A</span>]</span>
       </span>
       
       <p class="shortcomment cmt">This method is responsible for actually executing parsers.</p><div class="fullcomment"><div class="comment cmt"><p>This method is responsible for actually executing parsers. Given a <code>Parsley[A]</code> and an input
@@ -674,7 +675,7 @@ likely slower for serial executions of the same parser.
     </li><li name="parsley.BitGen" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="BitGen"></a><a id="BitGen:BitGen"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#BitGen" title="Permalink">
+      <a href="../parsley/BitGen$.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -694,7 +695,7 @@ costs
     </li><li name="parsley.Char" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="Char"></a><a id="Char:Char"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#Char" title="Permalink">
+      <a href="../parsley/Char$.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -710,7 +711,7 @@ costs
     </li><li name="parsley.CharSet" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="CharSet"></a><a id="CharSet:CharSet"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#CharSet" title="Permalink">
+      <a href="../parsley/CharSet$.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -727,7 +728,7 @@ costs
     </li><li name="parsley.Combinator" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="Combinator"></a><a id="Combinator:Combinator"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#Combinator" title="Permalink">
+      <a href="../parsley/Combinator$.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -743,7 +744,7 @@ costs
     </li><li name="parsley.EntryBreak" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="EntryBreak"></a><a id="EntryBreak:EntryBreak"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#EntryBreak" title="Permalink">
+      <a href="../parsley/package$$EntryBreak$.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -759,7 +760,7 @@ costs
     </li><li name="parsley.ExitBreak" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="ExitBreak"></a><a id="ExitBreak:ExitBreak"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#ExitBreak" title="Permalink">
+      <a href="../parsley/package$$ExitBreak$.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -775,7 +776,7 @@ costs
     </li><li name="parsley.ExpressionParser" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="ExpressionParser"></a><a id="ExpressionParser:ExpressionParser"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#ExpressionParser" title="Permalink">
+      <a href="../parsley/ExpressionParser$.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -791,7 +792,7 @@ costs
     </li><li name="parsley.FullBreak" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="FullBreak"></a><a id="FullBreak:FullBreak"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#FullBreak" title="Permalink">
+      <a href="../parsley/package$$FullBreak$.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -807,7 +808,7 @@ costs
     </li><li name="parsley.Implicits" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="Implicits"></a><a id="Implicits:Implicits"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#Implicits" title="Permalink">
+      <a href="../parsley/Implicits$.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -823,7 +824,7 @@ costs
     </li><li name="parsley.LanguageDef" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="LanguageDef"></a><a id="LanguageDef:LanguageDef"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#LanguageDef" title="Permalink">
+      <a href="../parsley/LanguageDef$.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -839,7 +840,7 @@ costs
     </li><li name="parsley.NoBreak" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="NoBreak"></a><a id="NoBreak:NoBreak"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#NoBreak" title="Permalink">
+      <a href="../parsley/package$$NoBreak$.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -855,7 +856,7 @@ costs
     </li><li name="parsley.NotRequired" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="NotRequired"></a><a id="NotRequired:NotRequired"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#NotRequired" title="Permalink">
+      <a href="../parsley/NotRequired$.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -873,7 +874,7 @@ at parse-time
     </li><li name="parsley.Parsley" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="Parsley"></a><a id="Parsley:Parsley"></a>
       <span class="permalink">
-      <a href="../parsley/index.html#Parsley" title="Permalink">
+      <a href="../parsley/Parsley$.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
