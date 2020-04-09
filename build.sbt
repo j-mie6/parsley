@@ -1,6 +1,8 @@
 val scala2Version = "2.13.1"
 val projectName = "parsley"
-val parsleyVersion = "1.3.0"
+val parsleyVersion = "1.5.0"
+
+Global / onChangedBuildSource := ReloadOnSourceChanges
 
 lazy val root = project.in(file("."))
   .settings(
@@ -8,9 +10,9 @@ lazy val root = project.in(file("."))
     version := parsleyVersion,
     scalaSource in Compile := baseDirectory.value / "src",
     scalaSource in Test := baseDirectory.value / "test",
+    target in Compile in doc := baseDirectory.value / "docs",
 
-    libraryDependencies ++= Seq("org.scala-lang.modules" %% "scala-xml" % "1.2.0",
-                                "org.scalactic" %% "scalactic" % "3.0.8" % "test",
+    libraryDependencies ++= Seq("org.scalactic" %% "scalactic" % "3.0.8" % "test",
                                 "org.scalatest" %% "scalatest" % "3.0.8" % "test"),
     scalaVersion := scala2Version,
 
