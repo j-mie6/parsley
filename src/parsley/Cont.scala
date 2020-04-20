@@ -37,7 +37,7 @@ private [parsley] object Cont
         override def unwrap[R](wrapped: Cont[R, R]): R = wrapped.cont(x => new Chunk(x)).run
         override def map[R, A, B](c: =>Cont[R, A], f: A => B): Cont[R, B] =
         {
-            new Cont(g => new Thunk(() => c.cont(x => new Thunk(() => g(f(x))))))
+            new Cont(g => new Thunk(() => c.cont(x => g(f(x)))))
         }
         override def flatMap[R, A, B](c: =>Cont[R, A], f: A => Cont[R, B]): Cont[R, B] =
         {
