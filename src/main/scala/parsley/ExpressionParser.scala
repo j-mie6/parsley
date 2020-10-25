@@ -1,7 +1,6 @@
 package parsley
 
 import scala.annotation.tailrec
-import scala.<:<.refl
 import parsley.ExpressionParser._
 import parsley.Combinator._
 
@@ -22,7 +21,7 @@ final class ExpressionParser[-A, +B] private (atom: =>Parsley[A], table: Levels[
 
     @tailrec private def crushLevels[A, B](atom: Parsley[A], lvls: Levels[A, B]): Parsley[B] = lvls match
     {
-        case NoLevel(ev) => ev.substituteCo[Parsley](atom)
+        case noLevel: NoLevel[A, B] => XCompat.substituteCo(atom)(noLevel.ev)
         case Level(ops, lvls) => crushLevels(convertOperators(atom, ops)(ops.wrap), lvls)
     }
 
@@ -140,7 +139,7 @@ object ExpressionParser
          * touch the structure in any way.
          * @tparam A The type of the structure to be produced by the table.
          */
-        def empty[A]: Levels[A, A] = NoLevel(refl[A])
+        def empty[A]: Levels[A, A] = NoLevel(XCompat.refl[A])
     }
 
     implicit class LevelBuilder[B, +C](lvls: Levels[B, C])
