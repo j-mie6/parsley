@@ -1,0 +1,36 @@
+name: CI
+on: [push, pull_request]
+env:
+  CI: true
+  CI_SNAPSHOT_RELEASE: +publishSigned
+  SCALA_VERSION: 2.12.12
+jobs:
+  validate:
+    name: Scala ${{ matrix.scala }}, Java ${{ matrix.java }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java: [adopt@1.8, adopt@1.11, adopt@1.15]
+        scala: [2.12.12, 2.13.3]
+    env:
+      SCALA_VERSION: ${{ matrix.scala }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: olafurpg/setup-scala@v7
+        with:
+          java-version: ${{ matrix.java }}
+      - name: Cache Coursier
+        uses: actions/cache@v1
+        with:
+          path: ~/.cache/coursier
+          key: sbt-coursier-cache
+      - name: Cache SBT
+        uses: actions/cache@v1
+        with:
+          path: ~/.sbt
+          key: sbt-${{ hashFiles('**/build.sbt') }}
+      - name: Test
+        run: sbt ++$SCALA_VERSION test
+      - name: Scaladoc
+        run: sbt ++$SCALA_VERSION doc
