@@ -139,7 +139,7 @@ object Parsley
          * @param msg The message used for the error if the input failed the check
          * @return The result of the invokee if it passes the predicate
          */
-        def guardNot(pred: A => Boolean, msg: String): Parsley[A] = guard(!pred(_), msg)
+        def guardNot(pred: A => Boolean, msg: String): Parsley[A] = guard((a: A) => !pred(a), msg)
         /** Similar to `filterNot`, except the error message desired is also provided. This allows you to name the message
          * itself. The message is provided as a generator, which allows the user to avoid otherwise expensive
          * computation.
@@ -147,7 +147,7 @@ object Parsley
          * @param msggen Generator function for error message, generating a message based on the result of the parser
          * @return The result of the invokee if it passes the predicate
          */
-        def guardNot(pred: A => Boolean, msggen: A => String): Parsley[A] = guard(!pred(_), msggen)
+        def guardNot(pred: A => Boolean, msggen: A => String): Parsley[A] = guard((a: A) => !pred(a), msggen)
         /**Alias for guard combinator, taking a fixed message.*/
         def >?>(pred: A => Boolean, msg: String): Parsley[A] = guard(pred, msg)
         /**Alias for guard combinator, taking a dynamic message generator.*/
