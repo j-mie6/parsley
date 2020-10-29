@@ -1,3 +1,5 @@
+package parsley
+
 import parsley._
 import parsley.Char.{alphaNum, letter, whitespace, oneOf => inSet}
 import parsley.Implicits.charLift

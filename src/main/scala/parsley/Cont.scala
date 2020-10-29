@@ -59,7 +59,7 @@ private [parsley] object Cont
     }
 }
 
-private [parsley] class Id[_, A](var x: A)
+private [parsley] class Id[R, A](var x: A)
 private [parsley] object Id
 {
     implicit val ops: ContOps[Id] = new ContOps[Id]

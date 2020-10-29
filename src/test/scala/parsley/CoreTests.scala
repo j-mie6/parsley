@@ -1,3 +1,5 @@
+package parsley
+
 import parsley.{Failure, Parsley, Success, Var, runParser}
 import parsley.Parsley._
 import parsley.Char.{char, satisfy}
