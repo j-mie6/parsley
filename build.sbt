@@ -1,4 +1,5 @@
-val scala2Version = "2.13.3"
+val scala212Version = "2.12.12"
+val scala213Version = "2.13.3"
 val projectName = "parsley"
 val parsleyVersion = "1.5.0"
 
@@ -12,8 +13,8 @@ lazy val root = project.in(file("."))
 
     libraryDependencies ++= Seq("org.scalactic" %% "scalactic" % "3.0.8" % "test",
                                 "org.scalatest" %% "scalatest" % "3.0.8" % "test"),
-    scalaVersion := scala2Version,
-    crossScalaVersions := List(scala2Version, "2.12.12"),
+    scalaVersion := scala213Version,
+    crossScalaVersions := List(scala213Version, scala212Version),
 
     scalacOptions ++= Seq("-deprecation", "-unchecked"),
   )
