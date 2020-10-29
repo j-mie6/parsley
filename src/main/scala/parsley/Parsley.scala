@@ -6,8 +6,8 @@ import parsley.instructions._
 
 import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.language.{existentials, reflectiveCalls}
-    
+import scala.language.{higherKinds, implicitConversions}
+
 // User API
 object Parsley
 {
@@ -770,11 +770,11 @@ private [parsley] object DeepEmbedding
         override def optimise: Parsley[B] = (p, q) match
         {
             // left catch law: pure x <|> p = pure x
-            case (u: Pure[B], _) => u
+            case (u: Pure[B @unchecked], _) => u
             // alternative law: empty <|> p = p
             case (e: Empty, v) if e.expected == null => v
             // alternative law: p <|> empty = p
-            case (u: Parsley[B], e: Empty) if e.expected == null => u
+            case (u: Parsley[B @unchecked], e: Empty) if e.expected == null => u
             // associative law: (u <|> v) <|> w = u <|> (v <|> w)
             case ((u: Parsley[T]) <|> (v: Parsley[A]), w) =>
                 p = u.asInstanceOf[Parsley[A]]
@@ -1562,7 +1562,7 @@ private [parsley] object DeepEmbedding
         override def findLetsAux[Cont[_, _]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] = _p.findLets
         override def optimise = p match
         {
-            case _: Pure[A] => throw new Exception("many given parser which consumes no input")
+            case _: Pure[A @unchecked] => throw new Exception("many given parser which consumes no input")
             case _: MZero => new Pure(Nil)
             case _ => this
         }
@@ -1597,7 +1597,7 @@ private [parsley] object DeepEmbedding
         override def findLetsAux[Cont[_, _]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] = _p.findLets
         override def optimise = p match
         {
-            case _: Pure[A] => throw new Exception("skipMany given parser which consumes no input")
+            case _: Pure[A @unchecked] => throw new Exception("skipMany given parser which consumes no input")
             case _: MZero => new Pure(()).asInstanceOf[Parsley[Nothing]]
             case _ => this
         }
@@ -1635,7 +1635,7 @@ private [parsley] object DeepEmbedding
             for (_ <- _p.findLets; _ <- _op.findLets) yield ()
         override def optimise = op match
         {
-            case _: Pure[A => A] => throw new Exception("left chain given parser which consumes no input")
+            case _: Pure[(A => A) @unchecked] => throw new Exception("left chain given parser which consumes no input")
             case _: MZero => p
             case _ => this
         }
@@ -1677,7 +1677,7 @@ private [parsley] object DeepEmbedding
             for (_ <- _p.findLets; _ <- _op.findLets) yield ()
         override def optimise = op match
         {
-            case _: Pure[A => A] => throw new Exception("right chain given parser which consumes no input")
+            case _: Pure[(A => A) @unchecked] => throw new Exception("right chain given parser which consumes no input")
             case _: MZero => p
             case _ => this
         }

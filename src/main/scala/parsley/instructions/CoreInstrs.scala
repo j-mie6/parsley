@@ -3,7 +3,7 @@ package parsley.instructions
 import Stack.{isEmpty, push}
 import parsley.{Parsley, ResizableArray, UnsafeOption}
 
-import scala.annotation.{switch, tailrec}
+import scala.annotation.tailrec
 import scala.language.existentials
 
 // Stack Manipulators
@@ -69,7 +69,7 @@ private [parsley] final class Satisfies(f: Char => Boolean, expected: UnsafeOpti
             {
                 ctx.stack.push(c)
                 ctx.offset += 1
-                (c: @switch) match
+                c match
                 {
                     case '\n' => ctx.line += 1; ctx.col = 1
                     case '\t' => ctx.col += 4 - ((ctx.col - 1) & 3)
@@ -103,7 +103,7 @@ private [parsley] final class StringTok(s: String, _expected: UnsafeOption[Strin
     @tailrec def compute(cs: Array[Char], i: Int = 0, col: Int = 0, line: Int = 0)(implicit tabprefix: Option[Int] = None): Unit =
     {
         adjustAtIndex(i) = makeAdjusters(col, line, tabprefix)
-        if (i < cs.length) (cs(i): @switch) match
+        if (i < cs.length) cs(i) match
         {
             case '\n' => compute(cs, i+1, 1, line + 1)(Some(0))
             case '\t' if tabprefix.isEmpty => compute(cs, i+1, 0, line)(Some(col))
@@ -122,7 +122,7 @@ private [parsley] final class StringTok(s: String, _expected: UnsafeOption[Strin
         var j = 0
         val cs = this.cs
         if (inputsz != i)
-        { 
+        {
             while (j < strsz)
             {
                 val c = cs(j)
@@ -274,7 +274,7 @@ private [parsley] final class Unexpected(msg: String, expected: UnsafeOption[Str
 
 private [parsley] final class Empty(expected: UnsafeOption[String]) extends Instr
 {
-    override def apply(ctx: Context): Unit = 
+    override def apply(ctx: Context): Unit =
     {
         val strip = ctx.expected.isEmpty
         ctx.fail(expected)
@@ -554,7 +554,7 @@ private [parsley] final class LogEnd(val name: String, break: Boolean) extends I
 // Extractor Objects
 private [parsley] object CharTok
 {
-    def apply(c: Char, expected: UnsafeOption[String]): CharTok = (c: @switch) match
+    def apply(c: Char, expected: UnsafeOption[String]): CharTok = c match
     {
         case '\n' => new Newline(expected)
         case '\t' => new Tab(expected)
