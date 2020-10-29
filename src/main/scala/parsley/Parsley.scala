@@ -638,6 +638,9 @@ abstract class Parsley[+A] private [parsley]
         else self
     }
 
+    // This is a trick to get tail-calls to fire even in the presence of a legimate recursion
+    final private [parsley] def optimiseDefinitelyNotTailRec: Parsley[A] = optimise
+
     // Abstracts
     // Sub-tree optimisation and fixpoint calculation - Bottom-up
     protected def preprocess[Cont[_, _], A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]]
@@ -1032,7 +1035,7 @@ private [parsley] object DeepEmbedding
             }
         override def findLetsAux[Cont[_, _]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] =
             for (_ <- _p.findLets; _ <- _q.findLets) yield ()
-        /* @tailrec */ override def optimise: Parsley[B] = p match
+        @tailrec override def optimise: Parsley[B] = p match
         {
             // pure _ *> p = p
             case _: Pure[_] => q
@@ -1072,7 +1075,7 @@ private [parsley] object DeepEmbedding
             {
                 // re-association - normal form of Then chain is to have result at the top of tree
                 case v *> w =>
-                    p = *>(u, v).asInstanceOf[Parsley[A]].optimise
+                    p = *>(u, v).asInstanceOf[Parsley[A]].optimiseDefinitelyNotTailRec
                     q = w
                     optimise
                 case _ => this
@@ -1120,7 +1123,7 @@ private [parsley] object DeepEmbedding
             }
         override def findLetsAux[Cont[_, _]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] =
             for (_ <- _p.findLets; _ <- _q.findLets) yield ()
-        /* @tailrec */ override def optimise: Parsley[A] = q match
+        @tailrec override def optimise: Parsley[A] = q match
         {
             // p <* pure _ = p
             case _: Pure[_] => p
@@ -1153,7 +1156,7 @@ private [parsley] object DeepEmbedding
                 // re-association - normal form of Prev chain is to have result at the top of tree
                 case u <* v =>
                     p = u
-                    q = <*(v, w).asInstanceOf[Parsley[B]].optimise
+                    q = <*(v, w).asInstanceOf[Parsley[B]].optimiseDefinitelyNotTailRec
                     optimise
                 case _ => this
             }
