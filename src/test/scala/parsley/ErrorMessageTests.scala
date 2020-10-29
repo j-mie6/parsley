@@ -1,3 +1,5 @@
+package parsley
+
 import parsley.Combinator.eof
 import parsley.Parsley._
 import parsley.{Failure, Parsley, runParser}

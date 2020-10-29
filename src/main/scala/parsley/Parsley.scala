@@ -1032,7 +1032,7 @@ private [parsley] object DeepEmbedding
             }
         override def findLetsAux[Cont[_, _]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] =
             for (_ <- _p.findLets; _ <- _q.findLets) yield ()
-        @tailrec override def optimise: Parsley[B] = p match
+        /* @tailrec */ override def optimise: Parsley[B] = p match
         {
             // pure _ *> p = p
             case _: Pure[_] => q
@@ -1120,7 +1120,7 @@ private [parsley] object DeepEmbedding
             }
         override def findLetsAux[Cont[_, _]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] =
             for (_ <- _p.findLets; _ <- _q.findLets) yield ()
-        @tailrec override def optimise: Parsley[A] = q match
+        /* @tailrec */ override def optimise: Parsley[A] = q match
         {
             // p <* pure _ = p
             case _: Pure[_] => p

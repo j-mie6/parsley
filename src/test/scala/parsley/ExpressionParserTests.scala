@@ -1,3 +1,5 @@
+package parsley
+
 import parsley.Char.digit
 import parsley.Implicits.{charLift, stringLift}
 import parsley.Combinator.{chainPost, chainPre, chainl1, chainr1}
@@ -25,7 +27,7 @@ class ExpressionParserTests extends ParsleyTest
     }
     it must "not leave the stack in an inconsistent state on failure" in
     {
-        val p = chainPost[Int]('1' #> 1, (col #>[Int => Int] (_ + 1)) <* '+')
+        val p = chainPost[Int]('1' #> 1, (col.#>[Int => Int](_ + 1)) <* '+')
         val q = chainl1[Int, Int](p, '*' #> (_ * _))
         noException should be thrownBy runParser(q, "1+*1+")
     }
@@ -93,7 +95,7 @@ class ExpressionParserTests extends ParsleyTest
     }
     it must "not leave the stack in an inconsistent state on failure" in
     {
-        val p = chainl1[Int, Int]('1' #> 1, (col #>[(Int, Int) => Int] (_ + _)) <* '+')
+        val p = chainl1[Int, Int]('1' #> 1, (col.#>[(Int, Int) => Int](_ + _)) <* '+')
         val q = chainl1[Int, Int](p, '*' #> (_ * _))
         noException should be thrownBy runParser(q, "1+1*1+1")
     }
