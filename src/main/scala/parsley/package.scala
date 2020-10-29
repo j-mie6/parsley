@@ -166,7 +166,7 @@ package object parsley
 
         def setup(set: Set[Char]): (Int, Array[Int]) =
         {
-            val max = if (set.isEmpty) -1 else set.max
+            val max = if (set.isEmpty) -1 else set.max.toInt
             val arr = new Array[Int]((max >> 5) + 1)
 
             for (c <- set)
