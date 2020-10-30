@@ -38,5 +38,15 @@ lazy val root = project.in(file("."))
           "-source:3.0-migration"
         )
       else Seq.empty
+    },
+
+    // Trick from sbt-spiewak: disable dottydoc, which is struggling
+    // with our package object.
+    Compile / doc / sources := {
+      val old = (Compile / doc / sources).value
+      if (isDotty.value)
+        Seq()
+      else
+        old
     }
   )
