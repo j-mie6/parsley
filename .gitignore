@@ -4,6 +4,7 @@
 /.settings
 /.idea
 target/
+.bsp
 .cache-main
 .classpath
 .project

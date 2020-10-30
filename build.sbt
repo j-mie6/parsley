@@ -29,13 +29,12 @@ lazy val root = project.in(file("."))
       "org.scalatest" %% "scalatest" % "3.2.2" % Test
     ),
     scalaVersion := scala213Version,
-    crossScalaVersions := (scalaVersion.value :: List(scala212Version, scala3Version)),
+    crossScalaVersions := List(scala212Version, scala213Version, scala3Version),
 
-    scalacOptions ++= Seq("-deprecation", "-unchecked"),
+    scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature"),
     scalacOptions ++= {
       if (isDotty.value)
         Seq(
-          "-language:implicitConversions",
           "-source:3.0-migration"
         )
       else Seq.empty

@@ -3,6 +3,7 @@ package parsley
 import scala.annotation.tailrec
 import parsley.ExpressionParser._
 import parsley.Combinator._
+import parsley.XCompat._
 
 /** This class is used to generate efficient expression parsers given a table of operators
   * in operator of operator precedence and an atomic value that represents the smallest
@@ -21,7 +22,7 @@ final class ExpressionParser[-A, +B] private (atom: =>Parsley[A], table: Levels[
 
     @tailrec private def crushLevels[A, B](atom: Parsley[A], lvls: Levels[A, B]): Parsley[B] = lvls match
     {
-        case noLevel: NoLevel[A, B] => XCompat.substituteCo(atom)(noLevel.ev)
+        case NoLevel(ev) => ev.substituteCo[Parsley](atom)
         case Level(ops, lvls) => crushLevels(convertOperators(atom, ops)(ops.wrap), lvls)
     }
 
@@ -40,7 +41,7 @@ object ExpressionParser
      * @return A parser for the described expression language
      */
     def apply[A](atom: =>Parsley[A], table: MonoOps[A]*) = new ExpressionParser(atom, table.foldRight(Levels.empty[A])(Level.apply[A, A, A]))
-    /** This is used to build an expression parser for a multi-layered expression tree type. Levels are specified 
+    /** This is used to build an expression parser for a multi-layered expression tree type. Levels are specified
      * from strongest to weakest.
      * @tparam A The type of the atomic unit of the expression
      * @tparam B The type of the resulting parse tree (outermost operations)
@@ -61,7 +62,7 @@ object ExpressionParser
 
     type MonoOps[A] = Ops[A, A]
     /** A list of operators on the same precedence level. Note operators of different fixities cannot
-      * mix on the same level of indentation. Either `Lefts` which is a list of infix left-assocative 
+      * mix on the same level of indentation. Either `Lefts` which is a list of infix left-assocative
       * operators, `Rights` which is a list of infix right-associative operators, `Prefixes` which is
       * a list of prefixing unary operators or `Postfixes` a list of postfixing unary operators.
       *
@@ -139,7 +140,7 @@ object ExpressionParser
          * touch the structure in any way.
          * @tparam A The type of the structure to be produced by the table.
          */
-        def empty[A]: Levels[A, A] = NoLevel(XCompat.refl[A])
+        def empty[A]: Levels[A, A] = NoLevel(refl[A])
     }
 
     implicit class LevelBuilder[B, +C](lvls: Levels[B, C])

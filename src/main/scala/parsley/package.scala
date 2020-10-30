@@ -1,6 +1,7 @@
 import parsley.instructions.Context
 
 import scala.annotation.{implicitAmbiguous, tailrec}
+import scala.language.implicitConversions
 
 package object parsley
 {
@@ -39,9 +40,9 @@ package object parsley
       * @return Either a success with a value of type `A` or a failure with error message
       */
     def runParser[A](p: Parsley[A], input: Array[Char], ctx: Context): Result[A] = ctx(p.threadSafeInstrs, input).runParser()
-    
+
     // Public API - With context reuse
-    /** This method allows you to run a parser with a cached context, which improves performance. 
+    /** This method allows you to run a parser with a cached context, which improves performance.
      *  If no implicit context can be found, the parsley default context is used. This will
      *  cause issues with multi-threaded execution of parsers. In order to mitigate these issues,
      *  each thread should request its own context with `parsley.giveContext`. This value may be
@@ -130,14 +131,14 @@ package object parsley
     @implicitAmbiguous("Must specify the type for get operation; S cannot be Nothing")
     implicit def neqAmbig1[A] : A =!= A = null
     implicit def neqAmbig2[A] : A =!= A = null
-    
+
     // This is designed to be a lighter-weight wrapper around Array to make it resizeable
     import scala.reflect.ClassTag
     private [parsley] final class ResizableArray[A: ClassTag](initialSize: Int = 16)
     {
         private [this] var array: Array[A] = new Array(initialSize)
         private [this] var size = 0
-        
+
         def +=(x: A): Unit =
         {
             val arrayLength: Long = array.length

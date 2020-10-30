@@ -4,6 +4,7 @@ import parsley.Parsley._
 import parsley.Implicits.charLift
 
 import scala.annotation.switch
+import scala.language.implicitConversions
 
 object Char
 {

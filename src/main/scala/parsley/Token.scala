@@ -115,7 +115,7 @@ final class TokenParser(lang: LanguageDef)
         case (BitSetImpl(start), Predicate(letter)) => lexeme(new DeepToken.Identifier(start, letter, theReservedNames))
         case (Predicate(start), BitSetImpl(letter)) => lexeme(new DeepToken.Identifier(start, letter, theReservedNames))
         case (Predicate(start), Predicate(letter)) => lexeme(new DeepToken.Identifier(start, letter, theReservedNames))
-        case _ => lexeme(attempt(ident >?> (!isReservedName (_), "unexpected keyword " + _)))
+        case _ => lexeme(attempt(ident.guard(!isReservedName (_), "unexpected keyword " + _)))
     }
 
     /**The lexeme parser `keyword(name)` parses the symbol `name`, but it also checks that the `name`
@@ -150,7 +150,7 @@ final class TokenParser(lang: LanguageDef)
         case (BitSetImpl(start), Predicate(letter)) => lexeme(new DeepToken.UserOp(start, letter, lang.operators))
         case (Predicate(start), BitSetImpl(letter)) => lexeme(new DeepToken.UserOp(start, letter, lang.operators))
         case (Predicate(start), Predicate(letter)) => lexeme(new DeepToken.UserOp(start, letter, lang.operators))
-        case _ => lexeme(attempt(oper >?> (!isReservedOp(_), "unexpected reserved operator " + _)))
+        case _ => lexeme(attempt(oper.guard(!isReservedOp(_), "unexpected reserved operator " + _)))
     }
 
     /**This non-lexeme parser parses a reserved operator. Returns the name of the operator.
@@ -162,7 +162,7 @@ final class TokenParser(lang: LanguageDef)
         case (BitSetImpl(start), Predicate(letter)) => new DeepToken.ReservedOp(start, letter, lang.operators)
         case (Predicate(start), BitSetImpl(letter)) => new DeepToken.ReservedOp(start, letter, lang.operators)
         case (Predicate(start), Predicate(letter)) => new DeepToken.ReservedOp(start, letter, lang.operators)
-        case _ => attempt(oper >?> (isReservedOp, "unexpected non-reserved operator " + _))
+        case _ => attempt(oper.guard(isReservedOp, "unexpected non-reserved operator " + _))
     }
 
     /**This lexeme parser parses a reserved operator. Returns the name of the operator. Legal

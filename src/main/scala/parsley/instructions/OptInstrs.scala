@@ -3,7 +3,8 @@ package parsley.instructions
 import parsley.{UnsafeOption, XCompat}
 import parsley.instructions.Stack.push
 
-import scala.annotation.{switch, tailrec}
+import scala.annotation.tailrec
+import scala.language.implicitConversions
 import scala.collection.mutable
 
 private [parsley] final class Perform[-A, +B](f: A => B) extends Instr
@@ -127,7 +128,7 @@ private [parsley] final class StringTokFastPerform(s: String, f: String => Any, 
     @tailrec def compute(cs: Array[Char], i: Int = 0, col: Int = 0, line: Int = 0)(implicit tabprefix: Option[Int] = None): Unit =
     {
         adjustAtIndex(i) = makeAdjusters(col, line, tabprefix)
-        if (i < cs.length) (cs(i): @switch) match
+        if (i < cs.length) cs(i) match
         {
             case '\n' => compute(cs, i+1, 1, line + 1)(Some(0))
             case '\t' if tabprefix.isEmpty => compute(cs, i+1, 0, line)(Some(col))
@@ -145,7 +146,7 @@ private [parsley] final class StringTokFastPerform(s: String, f: String => Any, 
         var j = 0
         val cs = this.cs
         if (inputsz != i)
-        { 
+        {
             while (j < strsz)
             {
                 val c = cs(j)
@@ -184,7 +185,7 @@ private [parsley] final class SatisfyExchange[A](f: Char => Boolean, x: A, expec
             {
                 ctx.stack.push(x)
                 ctx.offset += 1
-                (c: @switch) match
+                c match
                 {
                     case '\n' => ctx.line += 1; ctx.col = 1
                     case '\t' => ctx.col += 4 - ((ctx.col - 1) & 3)
@@ -322,7 +323,7 @@ private [parsley] final class JumpTable(prefixes: List[Char], labels: List[Int],
 
 private [parsley] object CharTokFastPerform
 {
-    def apply[A >: Char, B](c: Char, f: A => B, expected: UnsafeOption[String]): CharTokFastPerform = (c: @switch) match
+    def apply[A >: Char, B](c: Char, f: A => B, expected: UnsafeOption[String]): CharTokFastPerform = c match
     {
         case '\n' => new NewlineFastPerform(f, expected)
         case '\t' => new TabFastPerform(f, expected)
