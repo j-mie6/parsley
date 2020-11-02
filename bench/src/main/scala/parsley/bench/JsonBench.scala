@@ -14,7 +14,20 @@ abstract class JmhBenchmarks(name: String) {
   val text: String =
     Source.fromResource(name, getClass.getClassLoader).getLines().mkString("\n")
 
-  def json: Parsley[JValue] = {
+  @Benchmark
+  def parsleyParseCold(): JValue =
+    runParserThreadSafe(JsonBench.coldJson, text).toOption.get
+
+  @Benchmark
+  def parsleyParseHot(): JValue =
+    parsley.runParser(JsonBench.hotJson, text) match {
+      case Success(x) => x
+      case Failure(e) => sys.error(e.toString)
+    }
+}
+
+object JsonBench {
+  def coldJson: Parsley[JValue] = {
     val jsontoks = LanguageDef.plain.copy(space = Predicate(Char.isWhitespace))
     val tok = new TokenParser(jsontoks)
     lazy val obj: Parsley[JValue] = tok.braces(tok.commaSep(tok.stringLiteral <~> tok.colon *> value).map(pairs => JObject.fromSeq(pairs)))
@@ -32,23 +45,12 @@ abstract class JmhBenchmarks(name: String) {
     tok.whiteSpace *> (obj <|> array) <* eof
   }
 
-  @Benchmark
-  def parsleyParseCold(): JValue =
-    runParserThreadSafe(json, text).toOption.get
-
   // Stable instance to warm up
   val hotJson: Parsley[JValue] = {
-    val p = json
-    json.force()
+    val p = coldJson
+    coldJson.force()
     p
   }
-
-  @Benchmark
-  def parsleyParseHot(): JValue =
-    parsley.runParser(hotJson, text) match {
-      case Success(x) => x
-      case Failure(e) => sys.error(e.toString)
-    }
 }
 
 class BarBench extends JmhBenchmarks("bar.json")
