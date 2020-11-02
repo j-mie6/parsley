@@ -15,15 +15,15 @@ abstract class JmhBenchmarks(name: String) {
     Source.fromResource(name, getClass.getClassLoader).getLines().mkString("\n")
 
   def json: Parsley[JValue] = {
-    val jsontoks = LanguageDef("", "", "", false, NotRequired, NotRequired, NotRequired, NotRequired, Set.empty, Set.empty, true, Predicate(Char.isWhitespace))
+    val jsontoks = LanguageDef.plain.copy(space = Predicate(Char.isWhitespace))
     val tok = new TokenParser(jsontoks)
-    lazy val obj: Parsley[JValue] = tok.braces(tok.commaSep(+(tok.stringLiteral <~> tok.colon *> value)).map(pairs => JObject.fromSeq(pairs)))
+    lazy val obj: Parsley[JValue] = tok.braces(tok.commaSep(tok.stringLiteral <~> tok.colon *> value).map(pairs => JObject.fromSeq(pairs)))
     lazy val array: Parsley[JValue] = tok.brackets(tok.commaSep(value)).map(list => JArray.fromSeq(list))
     lazy val value: Parsley[JValue] =
       (tok.stringLiteral.map(JString.apply)
-        <|> tok.symbol("true") *> Parsley.pure(JTrue)
-        <|> tok.symbol("false") *> Parsley.pure(JFalse)
-        <|> tok.symbol("null") *> Parsley.pure(JNull)
+        <|> tok.symbol("true") #> JTrue
+        <|> tok.symbol("false") #> JFalse
+        <|> tok.symbol("null") #> JNull
         <|> array
         <|> attempt(tok.float).map(JNum.apply)
         <|> tok.integer.map(i => JNum.apply(i.toLong))
