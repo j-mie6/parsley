@@ -470,12 +470,10 @@ private [parsley] class LetFinderState
 {
     private val _recs = mutable.Set.empty[Parsley[_]]
     private val _preds = mutable.Map.empty[Parsley[_], Int]
-    private val before = mutable.Set.empty[Parsley[_]]
 
     def addPred(p: Parsley[_]): Unit = _preds += p -> (_preds.getOrElseUpdate(p, 0) + 1)
     def addRec(p: Parsley[_]): Unit = _recs += p
-    def doNotProcessAgain(p: Parsley[_]): Unit = before += p
-    def notProcessedBefore(p: Parsley[_]): Boolean = !before.contains(p)
+    def notProcessedBefore(p: Parsley[_]): Boolean = _preds(p) == 1
 
     def lets: Map[Parsley[_], Parsley[_]] =
     {
@@ -531,7 +529,7 @@ abstract class Parsley[+A] private [parsley]
     {
         state.addPred(this)
         if (seen(this)) result(state.addRec(this))
-        else if (state.notProcessedBefore(this)) for (_ <- findLetsAux(seen + this, state, ops)) yield state.doNotProcessAgain(this)
+        else if (state.notProcessedBefore(this)) findLetsAux(seen + this, state, ops)
         else result(())
     }
     final private [parsley] def optimised[Cont[_, _], A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]] =
