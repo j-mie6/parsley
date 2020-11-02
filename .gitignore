@@ -3,8 +3,7 @@
 /inputs
 /.settings
 /.idea
-/project/
-/target/
+target/
 .bsp
 .cache-main
 .classpath
