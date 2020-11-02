@@ -37,7 +37,11 @@ abstract class JmhBenchmarks(name: String) {
     runParserThreadSafe(json, text).toOption.get
 
   // Stable instance to warm up
-  val hotJson: Parsley[JValue] = json
+  val hotJson: Parsley[JValue] = {
+    val p = json
+    json.force()
+    p
+  }
 
   @Benchmark
   def parsleyParseHot(): JValue =
