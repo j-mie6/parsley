@@ -521,7 +521,22 @@ abstract class Parsley[+A] private [parsley]
       */
     final def overflows(): Unit = cps = true
 
-    final private [parsley] def pretty: String = instrs.mkString("; ")
+    final private [parsley] def pretty: String = {
+        val n = instrs.length
+        val digits = if (n != 0) Math.log10(n).toInt + 1 else 0
+        instrs.zipWithIndex.map {
+            case (instr, idx) =>
+                val paddedIdx = {
+                    val str = idx.toString
+                    " " * (digits - str.length) + str
+                }
+                val paddedHex = {
+                    val str = instr.##.toHexString
+                    "0" * (8 - str.length) + str
+                }
+                s"$paddedIdx [$paddedHex]: $instr"
+        }.mkString(";\n")
+    }
     final private [parsley] def prettyAST: String = {force(); safeCall((g: GenOps) => perform(prettyASTAux(g))(g))}
 
     // Internals
@@ -597,7 +612,7 @@ abstract class Parsley[+A] private [parsley]
         val linstrs = instrs
         val sz = linstrs.length
         var i: Int = 0
-        val buff: ResizableArray[Int] = new ResizableArray[Int]()
+        val buff = new ResizableArray[Int]()
         while (i < sz)
         {
             // We need to check for calls here too, unlike a call copy.
