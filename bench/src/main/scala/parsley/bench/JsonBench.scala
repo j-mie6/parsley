@@ -41,7 +41,10 @@ abstract class JmhBenchmarks(name: String) {
 
   @Benchmark
   def parsleyParseHot(): JValue =
-    parsley.runParserThreadSafe(hotJson, text).toOption.get
+    parsley.runParser(hotJson, text) match {
+      case Success(x) => x
+      case Failure(e) => sys.error(e.toString)
+    }
 }
 
 class BarBench extends JmhBenchmarks("bar.json")
