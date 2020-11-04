@@ -183,6 +183,7 @@ private [parsley] final class DynCall[-A](f: A => Array[Instr], expected: Unsafe
 }
 
 // Control Flow
+// TODO: Optimise this a little!
 private [parsley] final class Call(p: Parsley[_], expected: UnsafeOption[String]) extends Instr
 {
     private [this] var instrs: UnsafeOption[Array[Instr]] = _
@@ -195,7 +196,7 @@ private [parsley] final class Call(p: Parsley[_], expected: UnsafeOption[String]
         {
             instrs = p.instrs.clone //Note: This line cannot be hoisted, otherwise it will infinite loop during codeGen!
             var i: Int = 0
-            val buff: ResizableArray[Int] = new ResizableArray[Int]()
+            val buff = new ResizableArray[Int]()
             while (i < instrs.length)
             {
                 if (instrs(i).isInstanceOf[Stateful]) buff += i

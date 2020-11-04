@@ -163,11 +163,11 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
         val expectedStr = if (expectedFiltered.isEmpty) None else Some(s"expected ${expectedFiltered.distinct.reverse.mkString(" or ")}")
         val rawStr = if (rawFiltered.isEmpty) None else Some(rawFiltered.distinct.reverse.mkString(" or "))
         unexpectAnyway = unexpectAnyway || expectedFlat.nonEmpty || raw.nonEmpty
-        if (rawStr.isEmpty && expectedStr.isEmpty && unexpectAnyway) 
+        if (rawStr.isEmpty && expectedStr.isEmpty && unexpectAnyway)
         {
             s"$posStr\n  ${unexpectedStr.getOrElse("unknown parse error")}"
         }
-        else if (rawStr.isEmpty && expectedStr.isEmpty) 
+        else if (rawStr.isEmpty && expectedStr.isEmpty)
         {
             s"$posStr\n  unknown parse error"
         }
@@ -184,9 +184,9 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
     private [instructions] def inc(): Unit = pc += 1
     private [instructions] def nextChar: Char = input(offset)
     private [instructions] def moreInput: Boolean = offset < inputsz
-    
+
     // Allows us to reuse a context, helpful for benchmarking and potentially user applications
-    private [parsley] def apply(_instrs: Array[Instr], _input: Array[Char]): Context = 
+    private [parsley] def apply(_instrs: Array[Instr], _input: Array[Char]): Context =
     {
         instrs = _instrs
         input = _input

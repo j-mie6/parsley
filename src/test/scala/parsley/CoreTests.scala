@@ -183,4 +183,19 @@ class CoreTests extends ParsleyTest {
         val p = satisfy(_ => true) *> satisfy(_ => true) *> satisfy(_ => true)
         runParser('a' *> +p <* 'b' <* +p <* 'c', "a123b123c") should be (Success('3'))
     }
+
+    /*"parsers" should "be thread safe when ran correctly" ignore {
+        import scala.concurrent.{Future, ExecutionContext, Await, duration}, ExecutionContext.global, duration._
+        implicit val ec = global
+        val p = many('a' *> many('b' *> 'b' *> 'b'))
+        val as = 1000
+        val bs = 2000
+        val input = ("a" + "b" * (bs * 3)) * as
+        val output = Success(List.fill[Char](as, bs)('b'))
+
+        val futs = Future.traverse(1 to 16)(_ => Future(runParser(p, input)))
+        for (out <- Await.result(futs, 10.second)) {
+            out should be (output)
+        }
+    }*/
 }
