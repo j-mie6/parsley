@@ -459,6 +459,15 @@ object Parsley
         }
         else instrs
     }
+
+    final private [parsley] def statefulIndices(instrs: Array[Instr]): Array[Int] = {
+        val buff = new ResizableArray[Int]()
+        for (i <- 0 until instrs.length)
+        {
+            if (instrs(i).isInstanceOf[Stateful]) buff += i
+        }
+        buff.toArray
+    }
 }
 
 // Internals
@@ -643,17 +652,7 @@ abstract class Parsley[+A] private [parsley]
     }
 
     final private [parsley] lazy val instrs: Array[Instr] = if (cps) computeInstrs(Cont.ops.asInstanceOf[GenOps]) else safeCall(computeInstrs(_))
-    final private [this] lazy val pindices: Array[Int] =
-    {
-        val linstrs = instrs
-        val buff = new ResizableArray[Int]()
-        for (i <- 0 until linstrs.length)
-        {
-            // We need to check for calls here too, unlike a call copy.
-            if (linstrs(i).isInstanceOf[Stateful] || linstrs(i).isInstanceOf[Call]) buff += i
-        }
-        buff.toArray
-    }
+    final private [this] lazy val pindices: Array[Int] = Parsley.statefulIndices(instrs)
     final private [parsley] def threadSafeInstrs: Array[Instr] = Parsley.stateSafeCopy(instrs, pindices)
 
     // This is a trick to get tail-calls to fire even in the presence of a legimate recursion

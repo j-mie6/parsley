@@ -185,12 +185,14 @@ private [parsley] final class DynCall[-A](f: A => Array[Instr], expected: Unsafe
 // Control Flow
 private [parsley] final class Call(_instrs: =>Array[Instr], expected: UnsafeOption[String]) extends Instr
 {
-    private [Call] var instrs: Array[Instr] = _
-    private [Call] var pindices: Array[Int] = _
+    private [Call] lazy val (instrs, pindices) = {
+        val is = _instrs
+        (is, Parsley.statefulIndices(is))
+    }
+
     override def apply(ctx: Context): Unit =
     {
         ctx.calls = push(ctx.calls, new Frame(ctx.pc + 1, ctx.instrs))
-        if (instrs == null) initialise()
         ctx.instrs = Parsley.stateSafeCopy(instrs, pindices)
         ctx.depth += 1
         if (expected != null && ctx.errorOverride == null)
@@ -201,24 +203,6 @@ private [parsley] final class Call(_instrs: =>Array[Instr], expected: UnsafeOpti
         ctx.pc = 0
     }
     override def toString: String = "Call"
-    override def copy: Call = {
-        // Call copy happens potentially before runtime but after code gen, so we must initialise if required
-        if (this.instrs == null) this.initialise()
-        val call = new Call(null, expected)
-        call.instrs = this.instrs
-        call.pindices = this.pindices
-        call
-    }
-    private [Call] def initialise() = {
-        // This method MUST be called after code gen (otherwise it will loop)
-        instrs = _instrs
-        val buff = new ResizableArray[Int]()
-        for (i <- 0 until instrs.length)
-        {
-            if (instrs(i).isInstanceOf[Stateful]) buff += i
-        }
-        pindices = buff.toArray
-    }
 }
 
 private [parsley] final class GoSub(var label: Int, expected: UnsafeOption[String]) extends JumpInstr
