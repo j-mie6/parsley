@@ -183,40 +183,15 @@ private [parsley] final class DynCall[-A](f: A => Array[Instr], expected: Unsafe
 }
 
 // Control Flow
-// TODO: Optimise this a little!
-private [parsley] final class Call(p: Parsley[_], expected: UnsafeOption[String]) extends Instr
+private [parsley] final class Call(_instrs: =>Array[Instr], expected: UnsafeOption[String]) extends Instr
 {
-    private [this] var instrs: UnsafeOption[Array[Instr]] = _
-    private [this] var pindices: Array[Int] = _
-    private [this] var nstateful: Int = _
+    private [Call] var instrs: Array[Instr] = _
+    private [Call] var pindices: Array[Int] = _
     override def apply(ctx: Context): Unit =
     {
         ctx.calls = push(ctx.calls, new Frame(ctx.pc + 1, ctx.instrs))
-        if (instrs == null)
-        {
-            instrs = p.instrs.clone //Note: This line cannot be hoisted, otherwise it will infinite loop during codeGen!
-            var i: Int = 0
-            val buff = new ResizableArray[Int]()
-            while (i < instrs.length)
-            {
-                if (instrs(i).isInstanceOf[Stateful]) buff += i
-                i += 1
-            }
-            pindices = buff.toArray
-            nstateful = pindices.length
-        }
-        // If there are any stateful instructions they MUST be deep-copied along with this instructions array!
-        if (nstateful != 0)
-        {
-            var i: Int = 0
-            while (i < nstateful)
-            {
-                val j = pindices(i)
-                instrs(j) = instrs(j).copy
-                i += 1
-            }
-            ctx.instrs = instrs.clone
-        }
+        if (instrs == null) initialise()
+        ctx.instrs = Parsley.stateSafeCopy(instrs, pindices)
         ctx.depth += 1
         if (expected != null && ctx.errorOverride == null)
         {
@@ -225,9 +200,25 @@ private [parsley] final class Call(p: Parsley[_], expected: UnsafeOption[String]
         }
         ctx.pc = 0
     }
-    override def toString: String = s"Call($p)"
-    // TODO Potential optimisation; copy over pindices and nstateful and ensure instrs calculated differently?
-    override def copy: Call = new Call(p, expected)
+    override def toString: String = "Call"
+    override def copy: Call = {
+        // Call copy happens potentially before runtime but after code gen, so we must initialise if required
+        if (this.instrs == null) this.initialise()
+        val call = new Call(null, expected)
+        call.instrs = this.instrs
+        call.pindices = this.pindices
+        call
+    }
+    private [Call] def initialise() = {
+        // This method MUST be called after code gen (otherwise it will loop)
+        instrs = _instrs
+        val buff = new ResizableArray[Int]()
+        for (i <- 0 until instrs.length)
+        {
+            if (instrs(i).isInstanceOf[Stateful]) buff += i
+        }
+        pindices = buff.toArray
+    }
 }
 
 private [parsley] final class GoSub(var label: Int, expected: UnsafeOption[String]) extends JumpInstr

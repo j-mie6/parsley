@@ -443,6 +443,22 @@ object Parsley
                 s"$paddedIdx [$paddedHex]: $instr"
         }.mkString(";\n")
     }
+
+    final private [parsley] def stateSafeCopy(instrs: Array[Instr], pindices: Array[Int]): Array[Instr] =
+    {
+        val nstateful = pindices.length
+        if (nstateful != 0)
+        {
+            val instrs_ = instrs.clone
+            for (i <- 0 until nstateful)
+            {
+                val j = pindices(i)
+                instrs_(j) = instrs(j).copy
+            }
+            instrs_
+        }
+        else instrs
+    }
 }
 
 // Internals
@@ -630,35 +646,15 @@ abstract class Parsley[+A] private [parsley]
     final private [this] lazy val pindices: Array[Int] =
     {
         val linstrs = instrs
-        val sz = linstrs.length
-        var i: Int = 0
         val buff = new ResizableArray[Int]()
-        while (i < sz)
+        for (i <- 0 until linstrs.length)
         {
             // We need to check for calls here too, unlike a call copy.
             if (linstrs(i).isInstanceOf[Stateful] || linstrs(i).isInstanceOf[Call]) buff += i
-            i += 1
         }
         buff.toArray
     }
-    final private [parsley] def threadSafeInstrs: Array[Instr] =
-    {
-        val nstateful = pindices.length
-        if (nstateful != 0)
-        {
-            val linstrs = instrs.clone
-            val lpindices = pindices
-            var i: Int = 0
-            while (i < nstateful)
-            {
-                val j = lpindices(i)
-                linstrs(j) = linstrs(j).copy
-                i += 1
-            }
-            linstrs
-        }
-        else instrs
-    }
+    final private [parsley] def threadSafeInstrs: Array[Instr] = Parsley.stateSafeCopy(instrs, pindices)
 
     // This is a trick to get tail-calls to fire even in the presence of a legimate recursion
     final private [parsley] def optimiseDefinitelyNotTailRec: Parsley[A] = optimise
@@ -1352,7 +1348,7 @@ private [parsley] object DeepEmbedding
         override def findLetsAux[Cont[_, _]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] = result(())
         override def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] =
         {
-            result(instrs += new instructions.Call(p, expected))
+            result(instrs += new instructions.Call(p.instrs, expected))
         }
         override def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String] = result(s"rec $p")
     }
