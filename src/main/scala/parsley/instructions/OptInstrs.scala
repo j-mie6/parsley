@@ -277,7 +277,7 @@ private [parsley] final class JumpTable(prefixes: List[Char], labels: List[Int],
     {
         if (ctx.moreInput)
         {
-            val dest = jumpTable.getOrElseUpdate(ctx.nextChar, default)
+            val dest = jumpTable.getOrElse(ctx.nextChar, default)
             ctx.pc = dest
             if (dest == default) addErrors(ctx)
             else
