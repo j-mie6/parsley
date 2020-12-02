@@ -1,5 +1,18 @@
 val projectName = "parsley"
-val parsleyVersion = "1.5.0"
+
+inThisBuild(List(
+  organization := "parsley",
+  homepage := Some(url("https://github.com/J-mie6/parsley")),
+  licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+  developers := List(
+    Developer(
+      "J-mie6",
+      "Jamie Willis",
+      "j.willis19@imperial.ac.uk",
+      url("https://github.com/J-mie6")
+    )
+  )
+))
 
 val scala212Version = "2.12.12"
 val scala213Version = "2.13.3"
@@ -10,8 +23,6 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 lazy val root = project.in(file("."))
   .settings(
     name := projectName,
-    version := parsleyVersion,
-    target in Compile in doc := baseDirectory.value / "docs",
 
     libraryDependencies ++= Seq(
       "org.scalactic" %% "scalactic" % "3.2.2" % Test,
@@ -27,5 +38,15 @@ lazy val root = project.in(file("."))
           "-source:3.0-migration"
         )
       else Seq.empty
+    },
+
+    // Trick from sbt-spiewak: disable dottydoc, which is struggling
+    // with our package object.
+    Compile / doc / sources := {
+      val old = (Compile / doc / sources).value
+      if (isDotty.value)
+        Seq()
+      else
+        old
     }
   )
