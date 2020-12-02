@@ -1,6 +1,7 @@
 package parsley.instructions
 
-import parsley.{UnsafeOption, XCompat}
+import parsley.UnsafeOption
+import parsley.XCompat._
 import parsley.instructions.Stack.push
 
 import scala.annotation.tailrec
@@ -314,7 +315,7 @@ private [parsley] final class JumpTable(prefixes: List[Char], labels: List[Int],
 
     private [parsley] def relabel(labels: Array[Int]): Unit =
     {
-        XCompat.mapValuesInPlace(jumpTable)((_, v) => labels(v))
+        jumpTable.mapValuesInPlace((_, v) => labels(v))
         default = labels(default)
         defaultPreamble = default - 1
     }

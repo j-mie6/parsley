@@ -15,8 +15,9 @@ inThisBuild(List(
 ))
 
 val scala212Version = "2.12.12"
-val scala213Version = "2.13.3"
-val scala3Version = "0.27.0-RC1"
+val scala213Version = "2.13.4"
+val dottyVersion = "0.27.0-RC1"
+val scala3Version = "3.0.0-M1" // This doesn't appear to be picking up yet
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
@@ -25,11 +26,10 @@ lazy val root = project.in(file("."))
     name := projectName,
 
     libraryDependencies ++= Seq(
-      "org.scalactic" %% "scalactic" % "3.2.2" % Test,
-      "org.scalatest" %% "scalatest" % "3.2.2" % Test
+      "org.scalatest" %% "scalatest" % "3.2.3" % Test
     ),
     scalaVersion := scala213Version,
-    crossScalaVersions := List(scala212Version, scala213Version, scala3Version),
+    crossScalaVersions := List(scala212Version, scala213Version, dottyVersion/*, scala3Version*/),
 
     scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature"),
     scalacOptions ++= {

@@ -10,6 +10,7 @@ private[parsley] object XCompat {
     def substituteCo[F[_]](fa: F[A]) = fa.asInstanceOf[F[B]]
   }
 
-  def mapValuesInPlace[A, B](m: mutable.Map[A, B])(f: (A, B) => B): m.type =
-    m.transform(f)
+  implicit class MapValuesInPlace[K, V](m: mutable.Map[K, V]) {
+    def mapValuesInPlace(f: (K, V) => V): mutable.Map[K, V] = m.transform(f)
+  }
 }
