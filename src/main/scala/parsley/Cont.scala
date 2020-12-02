@@ -33,23 +33,23 @@ private [parsley] object Cont
 {
     implicit val ops: ContOps[Cont] = new ContOps[Cont]
     {
-        override def wrap[R, A](x: A): Cont[R, A] = new Cont(f => f(x))
+        override def wrap[R, A](x: A): Cont[R, A] = new Cont(k => new Thunk(() => k(x)))
         override def unwrap[R](wrapped: Cont[R, R]): R = wrapped.cont(x => new Chunk(x)).run
-        override def map[R, A, B](c: =>Cont[R, A], f: A => B): Cont[R, B] =
+        override def map[R, A, B](mx: =>Cont[R, A], f: A => B): Cont[R, B] =
         {
-            new Cont(g => new Thunk(() => c.cont(x => g(f(x)))))
+            new Cont(k => new Thunk(() => mx.cont(x => new Thunk(() => k(f(x))))))
         }
-        override def flatMap[R, A, B](c: =>Cont[R, A], f: A => Cont[R, B]): Cont[R, B] =
+        override def flatMap[R, A, B](mx: =>Cont[R, A], f: A => Cont[R, B]): Cont[R, B] =
         {
-            new Cont(g => new Thunk(() => c.cont(x => f(x).cont(g))))
+            new Cont(k => new Thunk(() => mx.cont(x => f(x).cont(k))))
         }
-        override def >>[R, A, B](c: => Cont[R, A], k: => Cont[R, B]): Cont[R, B] =
+        override def >>[R, A, B](mx: => Cont[R, A], my: => Cont[R, B]): Cont[R, B] =
         {
-            new Cont(g => new Thunk(() => c.cont(_ => k.cont(g))))
+            new Cont(k => new Thunk(() => mx.cont(_ => my.cont(k))))
         }
-        override def |>[R, A, B](c: => Cont[R, A], x: => B): Cont[R, B] =
+        override def |>[R, A, B](mx: => Cont[R, A], y: => B): Cont[R, B] =
         {
-            new Cont(g => new Thunk(() => c.cont(_ => g(x))))
+            new Cont(k => new Thunk(() => mx.cont(_ => k(y))))
         }
     }
 
