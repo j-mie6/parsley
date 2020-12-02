@@ -1,4 +1,4 @@
-# Parsley
+# Parsley [![CI Actions Status](https://github.com/J-mie6/Parsley/workflows/CI/badge.svg)](https://github.com/Parsley/workflows/actions)
 An exceptionally fast parser combinator library for Scala
 
 Documentation can be found here: https://j-mie6.github.io/Parsley/
