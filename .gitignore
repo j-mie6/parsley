@@ -5,6 +5,7 @@
 /.idea
 /project/
 /target/
+.bsp
 .cache-main
 .classpath
 .project

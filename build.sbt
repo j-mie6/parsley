@@ -1,6 +1,9 @@
-val scala2Version = "2.12.11"
 val projectName = "parsley"
-val parsleyVersion = "1.4.0"
+val parsleyVersion = "1.5.0"
+
+val scala212Version = "2.12.12"
+val scala213Version = "2.13.3"
+val scala3Version = "0.27.0-RC1"
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
@@ -8,18 +11,21 @@ lazy val root = project.in(file("."))
   .settings(
     name := projectName,
     version := parsleyVersion,
-    scalaSource in Compile := baseDirectory.value / "src",
-    scalaSource in Test := baseDirectory.value / "test",
     target in Compile in doc := baseDirectory.value / "docs",
 
-    libraryDependencies ++= Seq("org.scalatest" %% "scalatest-app" % "3.0.5" % "test"),
-    scalaVersion := scala2Version,
+    libraryDependencies ++= Seq(
+      "org.scalactic" %% "scalactic" % "3.2.2" % Test,
+      "org.scalatest" %% "scalatest" % "3.2.2" % Test
+    ),
+    scalaVersion := scala213Version,
+    crossScalaVersions := List(scala212Version, scala213Version, scala3Version),
 
-    scalacOptions ++= Seq("-deprecation", "-unchecked"),
-
-    crossPaths := false, // We can't cross compile this, because of binary differences?
-
-    artifactPath in packageBin in Compile := baseDirectory.value / "%s_%s-%s.jar".format(projectName, scala2Version, parsleyVersion)
+    scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature"),
+    scalacOptions ++= {
+      if (isDotty.value)
+        Seq(
+          "-source:3.0-migration"
+        )
+      else Seq.empty
+    }
   )
-
-
