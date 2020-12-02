@@ -11,11 +11,11 @@ env:
 jobs:
   release:
     name: Release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v1
-      - uses: olafurpg/setup-scala@v5
-      - uses: olafurpg/setup-gpg@v2
+      - uses: olafurpg/setup-scala@v10
+      - uses: olafurpg/setup-gpg@v3
       - name: Cache Coursier
         uses: actions/cache@v1
         with:

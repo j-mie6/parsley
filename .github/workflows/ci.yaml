@@ -7,7 +7,7 @@ env:
 jobs:
   validate:
     name: Scala ${{ matrix.scala }}, Java ${{ matrix.java }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
@@ -17,7 +17,7 @@ jobs:
       SCALA_VERSION: ${{ matrix.scala }}
     steps:
       - uses: actions/checkout@v2
-      - uses: olafurpg/setup-scala@v7
+      - uses: olafurpg/setup-scala@v10
         with:
           java-version: ${{ matrix.java }}
       - name: Cache Coursier
