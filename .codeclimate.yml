@@ -1,0 +1,21 @@
+version: "2"
+plugins:
+  scalastyle:
+    enabled: true
+    checks:
+      org.scalastyle.scalariform.NoWhitespaceBeforeLeftBracketChecker:
+        enabled: false
+      org.scalastyle.scalariform.NullChecker:
+        enabled: false
+      org.scalastyle.file.NewLineAtEofChecker:
+        enabled: false
+      org.scalastyle.scalariform.IfBraceChecker:
+        enabled: false
+      org.scalastyle.scalariform.MethodNamesChecker:
+        enabled: false
+      org.scalastyle.scalariform.ObjectNamesChecker:
+        enabled: false
+      org.scalastyle.scalariform.ClassNamesChecker:
+        enabled: false
+      org.scalastyle.scalariform.LowercasePatternMatchChecker:
+        enabled: false
