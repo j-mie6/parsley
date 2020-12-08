@@ -135,7 +135,7 @@ object Combinator
       * obtained by a left associative application of all functions return by `op` to the values
       * returned by `p`. This parser can for example be used to eliminate left recursion which
       * typically occurs in expression grammars.*/
-    def chainl1[A, B](p: =>Parsley[A], op: =>Parsley[(B, A) => B])(implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${B}") wrap: A => B): Parsley[B] = new Parsley(new DeepEmbedding.Chainl((+p).internal, op.internal, wrap))
+    def chainl1[A, B](p: =>Parsley[A], op: =>Parsley[(B, A) => B])(implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${B}") wrap: A => B): Parsley[B] = new Parsley(new DeepEmbedding.Chainl(new DeepEmbedding.Subroutine(p.internal), op.internal, wrap))
 
     /**`chainPost(p, op)` parses one occurrence of `p`, followed by many postfix applications of `op`
       * that associate to the left.*/

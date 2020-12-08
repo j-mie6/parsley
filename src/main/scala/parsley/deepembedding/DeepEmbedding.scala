@@ -4,11 +4,10 @@ import parsley.deepembedding.ContOps._
 import parsley.deepembedding.DeepToken._
 import parsley.instructions
 import parsley.{UnsafeOption, Var, Breakpoint, EntryBreak, FullBreak, ExitBreak}
-import parsley.deepembedding.{Parsley, SubMap, CodeGenState, LetFinderState}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.language.{higherKinds, implicitConversions}
+import scala.language.higherKinds
 
 private [parsley] object DeepEmbedding
 {

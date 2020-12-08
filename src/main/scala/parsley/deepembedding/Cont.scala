@@ -1,7 +1,19 @@
 package parsley.deepembedding
 
-import parsley.{Bounce, Thunk, Chunk}
 import scala.language.{higherKinds, reflectiveCalls}
+import scala.annotation.tailrec
+
+// Trampoline for CPS
+private [parsley] sealed abstract class Bounce[A]
+{
+    @tailrec final def run: A = this match
+    {
+        case thunk: Thunk[A] => thunk.cont().run
+        case chunk: Chunk[A] => chunk.x
+    }
+}
+private [parsley] final class Chunk[A](val x: A) extends Bounce[A]
+private [parsley] final class Thunk[A](val cont: () => Bounce[A]) extends Bounce[A]
 
 private [parsley] abstract class ContOps[Cont[_, _]]
 {

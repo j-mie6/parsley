@@ -25,9 +25,11 @@ lazy val root = project.in(file("."))
   .settings(
     name := projectName,
 
-    libraryDependencies ++= Seq(
-      "org.scalatest" %% "scalatest" % "3.2.2" % Test
-    ),
+    libraryDependencies ++=
+      Seq(
+        "org.scalatest" %% "scalatest" % (if (isDotty.value) "3.2.2" else "3.2.3") % Test
+      ),
+
     scalaVersion := scala213Version,
     crossScalaVersions := List(scala212Version, scala213Version, dottyVersion/*, scala3Version*/),
 

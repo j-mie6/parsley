@@ -1,11 +1,11 @@
 package parsley.deepembedding
 
 import parsley.TokenParser.TokenSet
-import parsley.{UnsafeOption}
-import parsley.deepembedding.{Parsley, SubMap, CodeGenState, LetFinderState}
+import parsley.UnsafeOption
 import parsley.deepembedding.DeepToken.Sign._
 import parsley.deepembedding.ContOps._
 import parsley.instructions
+import scala.language.higherKinds
 
 private [parsley] object DeepToken
 {

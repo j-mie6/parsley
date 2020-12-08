@@ -38,8 +38,23 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: deepe
       */
     def overflows(): Unit = internal.overflows()
 
-    private [parsley] def instrs = internal.instrs
-    private [parsley] def threadSafeInstrs = internal.threadSafeInstrs
+    /** This method is responsible for actually executing parsers. Given a `Parsley[A]` and an input
+      * string, will parse the string with the parser. The result is either a `Success` or a `Failure`.
+      * @param p The parser to run
+      * @param input The input to run against
+      * @tparam A The type of the result of parsing
+      * @return Either a success with a value of type `A` or a failure with error message
+      */
+    def runParser(input: String): Result[A] = runParser(input.toCharArray)
+    /** This method is responsible for actually executing parsers. Given a `Parsley[A]` and an input
+      * array, will parse the string with the parser. The result is either a `Success` or a `Failure`.
+      * @param p The parser to run
+      * @param input The input to run against
+      * @tparam A The type of the result of parsing
+      * @return Either a success with a value of type `A` or a failure with error message
+      */
+    def runParser(input: Array[Char]): Result[A] = new Context(internal.threadSafeInstrs, input).runParser()
+
 }
 object Parsley
 {
@@ -207,7 +222,8 @@ object Parsley
           * of parsers that are very big and used many times considerably.
           * @return The same parser, but wrapped in a subroutine call
           */
-        @deprecated def unary_+ : Parsley[A] = new Parsley(new DeepEmbedding.Subroutine(p.internal))
+        @deprecated("This functionality is now automatically provided by default")
+        def unary_+ : Parsley[A] = new Parsley(new DeepEmbedding.Subroutine(p.internal))
         /**
           * Using this method enables debugging functionality for this parser. When it is entered a snapshot is taken and
           * presented on exit. It will signify when a parser is entered and exited as well. Use the break parameter to halt
