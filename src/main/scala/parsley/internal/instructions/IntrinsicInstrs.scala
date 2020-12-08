@@ -1,11 +1,12 @@
-package parsley.instructions
+package parsley.internal.instructions
 
-import parsley.{DeepEmbedding, UnsafeOption}
+import parsley.internal.UnsafeOption
+import parsley.internal.deepembedding
 import Stack.isEmpty
 
 import scala.collection.mutable.ListBuffer
 
-private [parsley] final class Lift2[A, B, C](f: (A, B) => C) extends Instr
+private [internal] final class Lift2[A, B, C](f: (A, B) => C) extends Instr
 {
     private [this] val g = f.asInstanceOf[(Any, Any) => C]
     override def apply(ctx: Context): Unit =
@@ -17,7 +18,7 @@ private [parsley] final class Lift2[A, B, C](f: (A, B) => C) extends Instr
     override def toString: String = "Lift2(f)"
 }
 
-private [parsley] final class Lift3[A, B, C, D](f: (A, B, C) => D) extends Instr
+private [internal] final class Lift3[A, B, C, D](f: (A, B, C) => D) extends Instr
 {
     private [this] val g = f.asInstanceOf[(Any, Any, Any) => D]
     override def apply(ctx: Context): Unit =
@@ -30,7 +31,7 @@ private [parsley] final class Lift3[A, B, C, D](f: (A, B, C) => D) extends Instr
     override def toString: String = "Lift3(f)"
 }
 
-private [parsley] final class Many(var label: Int) extends JumpInstr with Stateful
+private [internal] final class Many(var label: Int) extends JumpInstr with Stateful
 {
     private [this] val acc: ListBuffer[Any] = ListBuffer.empty
     override def apply(ctx: Context): Unit =
@@ -56,7 +57,7 @@ private [parsley] final class Many(var label: Int) extends JumpInstr with Statef
     override def copy: Many = new Many(label)
 }
 
-private [parsley] final class SkipMany(var label: Int) extends JumpInstr
+private [internal] final class SkipMany(var label: Int) extends JumpInstr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -79,7 +80,7 @@ private [parsley] final class SkipMany(var label: Int) extends JumpInstr
     override def toString: String = s"SkipMany($label)"
 }
 
-private [parsley] final class ChainPost(var label: Int) extends JumpInstr with Stateful
+private [internal] final class ChainPost(var label: Int) extends JumpInstr with Stateful
 {
     private [this] var acc: Any = _
     override def apply(ctx: Context): Unit =
@@ -119,7 +120,7 @@ private [parsley] final class ChainPost(var label: Int) extends JumpInstr with S
     override def copy: ChainPost = new ChainPost(label)
 }
 
-private [parsley] final class ChainPre(var label: Int) extends JumpInstr with Stateful
+private [internal] final class ChainPre(var label: Int) extends JumpInstr with Stateful
 {
     private var acc: Any => Any = _
     override def apply(ctx: Context): Unit =
@@ -147,7 +148,7 @@ private [parsley] final class ChainPre(var label: Int) extends JumpInstr with St
     override def toString: String = s"ChainPre($label)"
     override def copy: ChainPre = new ChainPre(label)
 }
-private [parsley] final class Chainl[A, B](var label: Int, _wrap: A => B) extends JumpInstr with Stateful
+private [internal] final class Chainl[A, B](var label: Int, _wrap: A => B) extends JumpInstr with Stateful
 {
     private [this] val wrap: Any => B = _wrap.asInstanceOf[Any => B]
     private [this] var acc: Any = _
@@ -189,7 +190,7 @@ private [parsley] final class Chainl[A, B](var label: Int, _wrap: A => B) extend
     override def toString: String = s"Chainl($label)"
     override def copy: Chainl[A, B] = new Chainl(label, wrap)
 }
-private [parsley] final class Chainr[A, B](var label: Int, _wrap: A => B) extends JumpInstr with Stateful
+private [internal] final class Chainr[A, B](var label: Int, _wrap: A => B) extends JumpInstr with Stateful
 {
     private [this] val wrap: Any => B = _wrap.asInstanceOf[Any => B]
     private [this] var acc: Any => Any = _
@@ -251,7 +252,7 @@ private [parsley] final class Chainr[A, B](var label: Int, _wrap: A => B) extend
     override def copy: Chainr[A, B] = new Chainr(label, wrap)
 }
 
-private [parsley] final class SepEndBy1(var label: Int) extends JumpInstr with Stateful
+private [internal] final class SepEndBy1(var label: Int) extends JumpInstr with Stateful
 {
     private [this] val acc: ListBuffer[Any] = ListBuffer.empty
     override def apply(ctx: Context): Unit =
@@ -304,7 +305,7 @@ private [parsley] final class SepEndBy1(var label: Int) extends JumpInstr with S
     override def copy: SepEndBy1 = new SepEndBy1(label)
 }
 
-private [parsley] final class ManyUntil(var label: Int) extends JumpInstr with Stateful
+private [internal] final class ManyUntil(var label: Int) extends JumpInstr with Stateful
 {
     private [this] val acc: ListBuffer[Any] = ListBuffer.empty
     override def apply(ctx: Context): Unit =
@@ -312,7 +313,7 @@ private [parsley] final class ManyUntil(var label: Int) extends JumpInstr with S
         if (ctx.status eq Good)
         {
             val x = ctx.stack.upop()
-            if (x == DeepEmbedding.ManyUntil.Stop)
+            if (x == deepembedding.ManyUntil.Stop)
             {
                 ctx.stack.push(acc.toList)
                 acc.clear()
@@ -332,7 +333,7 @@ private [parsley] final class ManyUntil(var label: Int) extends JumpInstr with S
     override def copy: ManyUntil = new ManyUntil(label)
 }
 
-private [parsley] final class If(var label: Int) extends JumpInstr
+private [internal] final class If(var label: Int) extends JumpInstr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -342,7 +343,7 @@ private [parsley] final class If(var label: Int) extends JumpInstr
     override def toString: String = s"If(true: $label)"
 }
 
-private [parsley] final class Ensure[A](pred: A=>Boolean, expected: UnsafeOption[String]) extends Instr
+private [internal] final class Ensure[A](pred: A=>Boolean, expected: UnsafeOption[String]) extends Instr
 {
     private [this] val pred_ = pred.asInstanceOf[Any=>Boolean]
     override def apply(ctx: Context): Unit =
@@ -358,7 +359,7 @@ private [parsley] final class Ensure[A](pred: A=>Boolean, expected: UnsafeOption
     override def toString: String = "Ensure(?)"
 }
 
-private [parsley] final class Guard[A](pred: A=>Boolean, msg: String, expected: UnsafeOption[String]) extends Instr
+private [internal] final class Guard[A](pred: A=>Boolean, msg: String, expected: UnsafeOption[String]) extends Instr
 {
     private [this] val pred_ = pred.asInstanceOf[Any=>Boolean]
     override def apply(ctx: Context): Unit =
@@ -374,7 +375,7 @@ private [parsley] final class Guard[A](pred: A=>Boolean, msg: String, expected: 
     override def toString: String = s"Guard(?, $msg)"
 }
 
-private [parsley] final class FastGuard[A](pred: A=>Boolean, msggen: A=>String, expected: UnsafeOption[String]) extends Instr
+private [internal] final class FastGuard[A](pred: A=>Boolean, msggen: A=>String, expected: UnsafeOption[String]) extends Instr
 {
     private [this] val pred_ = pred.asInstanceOf[Any=>Boolean]
     private [this] val msggen_ = msggen.asInstanceOf[Any=>String]
@@ -391,7 +392,7 @@ private [parsley] final class FastGuard[A](pred: A=>Boolean, msggen: A=>String, 
     override def toString: String = "FastGuard(?, ?)"
 }
 
-private [parsley] final class FastFail[A](msggen: A=>String, expected: UnsafeOption[String]) extends Instr
+private [internal] final class FastFail[A](msggen: A=>String, expected: UnsafeOption[String]) extends Instr
 {
     private [this] val msggen_ = msggen.asInstanceOf[Any => String]
     override def apply(ctx: Context): Unit =
@@ -403,7 +404,7 @@ private [parsley] final class FastFail[A](msggen: A=>String, expected: UnsafeOpt
     override def toString: String = "FastFail(?)"
 }
 
-private [parsley] final class FastUnexpected[A](msggen: A=>String, expected: UnsafeOption[String]) extends Instr
+private [internal] final class FastUnexpected[A](msggen: A=>String, expected: UnsafeOption[String]) extends Instr
 {
     private [this] val msggen_ = msggen.asInstanceOf[Any => String]
     override def apply(ctx: Context): Unit =
@@ -416,7 +417,7 @@ private [parsley] final class FastUnexpected[A](msggen: A=>String, expected: Uns
     override def toString: String = "FastUnexpected(?)"
 }
 
-private [parsley] final class NotFollowedBy(expected: UnsafeOption[String]) extends Instr
+private [internal] final class NotFollowedBy(expected: UnsafeOption[String]) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -447,7 +448,7 @@ private [parsley] final class NotFollowedBy(expected: UnsafeOption[String]) exte
     override def toString: String = "NotFollowedBy"
 }
 
-private [parsley] class Eof(_expected: UnsafeOption[String]) extends Instr
+private [internal] class Eof(_expected: UnsafeOption[String]) extends Instr
 {
     val expected: String = if (_expected == null) "end of input" else _expected
     override def apply(ctx: Context): Unit =

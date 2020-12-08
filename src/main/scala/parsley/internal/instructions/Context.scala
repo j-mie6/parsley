@@ -1,7 +1,8 @@
-package parsley.instructions
+package parsley.internal.instructions
 
 import Stack._
-import parsley.{Failure, Result, Success, UnsafeOption}
+import parsley.{Failure, Result, Success}
+import parsley.internal.UnsafeOption
 
 import scala.annotation.tailrec
 
@@ -214,4 +215,8 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
         debuglvl = 0
         this
     }
+}
+
+private [parsley] object Context {
+    def empty = new Context(null, Array.emptyCharArray)
 }

@@ -1,13 +1,13 @@
-package parsley.instructions
+package parsley.internal.instructions
 
-import parsley.DeepToken.Sign._
+import parsley.internal.deepembedding.Sign._
 import parsley.TokenParser.TokenSet
-import parsley.UnsafeOption
+import parsley.internal.UnsafeOption
 
 import scala.annotation.{switch, tailrec}
 
 // TODO This is considered as a VERY rough implementation of the intrinsic, just to get it working, it will be optimised later
-private [parsley] class TokenSkipComments(start: String, end: String, line: String, nested: Boolean) extends Instr
+private [internal] class TokenSkipComments(start: String, end: String, line: String, nested: Boolean) extends Instr
 {
     protected final val noLine = line.isEmpty
     protected final val noMulti = start.isEmpty
@@ -96,7 +96,7 @@ private [parsley] class TokenSkipComments(start: String, end: String, line: Stri
 }
 
 // TODO This is considered as a VERY rough implementation of the intrinsic, just to get it working, it will be optimised later
-private [parsley] final class TokenComment(start: String, end: String, line: String, nested: Boolean) extends Instr
+private [internal] final class TokenComment(start: String, end: String, line: String, nested: Boolean) extends Instr
 {
     protected final val noLine = line.isEmpty
     protected final val noMulti = start.isEmpty
@@ -193,7 +193,7 @@ private [parsley] final class TokenComment(start: String, end: String, line: Str
     override def toString: String = "TokenComment"
 }
 
-private [parsley] final class TokenWhiteSpace(ws: TokenSet, start: String, end: String, line: String, nested: Boolean) extends TokenSkipComments(start, end, line, nested)
+private [internal] final class TokenWhiteSpace(ws: TokenSet, start: String, end: String, line: String, nested: Boolean) extends TokenSkipComments(start, end, line, nested)
 {
     override def apply(ctx: Context): Unit =
     {
@@ -255,7 +255,7 @@ private [parsley] final class TokenWhiteSpace(ws: TokenSet, start: String, end: 
     override def toString: String = "TokenWhiteSpace"
 }
 
-private [parsley] final class TokenSign(ty: SignType, _expected: UnsafeOption[String]) extends Instr
+private [internal] final class TokenSign(ty: SignType, _expected: UnsafeOption[String]) extends Instr
 {
     val expected = if (_expected == null) "sign" else _expected
     val neg: Any => Any = ty match
@@ -289,7 +289,7 @@ private [parsley] final class TokenSign(ty: SignType, _expected: UnsafeOption[St
     override def toString: String = "TokenSign"
 }
 
-private [parsley] final class TokenNatural(_expected: UnsafeOption[String]) extends Instr
+private [internal] final class TokenNatural(_expected: UnsafeOption[String]) extends Instr
 {
     val expected = if (_expected == null) "natural" else _expected
     override def apply(ctx: Context): Unit =
@@ -415,7 +415,7 @@ private [parsley] final class TokenNatural(_expected: UnsafeOption[String]) exte
     override def toString: String = "TokenNatural"
 }
 
-private [parsley] final class TokenFloat(_expected: UnsafeOption[String]) extends Instr
+private [internal] final class TokenFloat(_expected: UnsafeOption[String]) extends Instr
 {
     val expected = if (_expected == null) "unsigned float" else _expected
     override def apply(ctx: Context): Unit =
@@ -500,7 +500,7 @@ private [parsley] final class TokenFloat(_expected: UnsafeOption[String]) extend
     override def toString: String = "TokenFloat"
 }
 
-private [parsley] class TokenEscape(_expected: UnsafeOption[String]) extends Instr with Stateful
+private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends Instr with Stateful
 {
     private [this] final val expected = if (_expected == null) "escape code" else _expected
     protected var escapeChar: Char = _
@@ -859,7 +859,7 @@ private [parsley] class TokenEscape(_expected: UnsafeOption[String]) extends Ins
     override def copy: TokenEscape = new TokenEscape(expected)
 }
 
-private [parsley] final class TokenString(ws: TokenSet, _expected: UnsafeOption[String]) extends TokenEscape(_expected)
+private [internal] final class TokenString(ws: TokenSet, _expected: UnsafeOption[String]) extends TokenEscape(_expected)
 {
     val expectedString = if (_expected == null) "string" else _expected
     val expectedEos = if (_expected == null) "end of string" else _expected
@@ -946,7 +946,7 @@ private [parsley] final class TokenString(ws: TokenSet, _expected: UnsafeOption[
     override def copy: TokenString = new TokenString(ws, _expected)
 }
 
-private [parsley] final class TokenRawString(_expected: UnsafeOption[String]) extends Instr
+private [internal] final class TokenRawString(_expected: UnsafeOption[String]) extends Instr
 {
     val expectedString = if (_expected == null) "string" else _expected
     val expectedEos = if (_expected == null) "end of string" else _expected
@@ -999,7 +999,7 @@ private [parsley] final class TokenRawString(_expected: UnsafeOption[String]) ex
     override def toString: String = "TokenRawString"
 }
 
-private [parsley] final class TokenIdentifier(start: TokenSet, letter: TokenSet, keywords: Set[String], _unexpected: UnsafeOption[String]) extends Instr
+private [internal] final class TokenIdentifier(start: TokenSet, letter: TokenSet, keywords: Set[String], _unexpected: UnsafeOption[String]) extends Instr
 {
     val expected = if (_unexpected == null) "identifier" else _unexpected
 
@@ -1045,7 +1045,7 @@ private [parsley] final class TokenIdentifier(start: TokenSet, letter: TokenSet,
     override def toString: String = "TokenIdentifier"
 }
 
-private [parsley] final class TokenUserOperator(start: TokenSet, letter: TokenSet, reservedOps: Set[String], _unexpected: UnsafeOption[String]) extends Instr
+private [internal] final class TokenUserOperator(start: TokenSet, letter: TokenSet, reservedOps: Set[String], _unexpected: UnsafeOption[String]) extends Instr
 {
     val expected = if (_unexpected == null) "operator" else _unexpected
 
@@ -1091,7 +1091,7 @@ private [parsley] final class TokenUserOperator(start: TokenSet, letter: TokenSe
     override def toString: String = "TokenUserOperator"
 }
 
-private [parsley] final class TokenOperator(start: TokenSet, letter: TokenSet, reservedOps: Set[String], _unexpected: UnsafeOption[String]) extends Instr
+private [internal] final class TokenOperator(start: TokenSet, letter: TokenSet, reservedOps: Set[String], _unexpected: UnsafeOption[String]) extends Instr
 {
     val expected = if (_unexpected == null) "operator" else _unexpected
 
@@ -1137,7 +1137,7 @@ private [parsley] final class TokenOperator(start: TokenSet, letter: TokenSet, r
     override def toString: String = "TokenReservedOperator"
 }
 
-private [parsley] class TokenKeyword(_keyword: String, letter: TokenSet, caseSensitive: Boolean, _expected: UnsafeOption[String]) extends Instr
+private [internal] class TokenKeyword(_keyword: String, letter: TokenSet, caseSensitive: Boolean, _expected: UnsafeOption[String]) extends Instr
 {
     val expected = if (_expected == null) _keyword else _expected
     val expectedEnd = if (_expected == null) "end of " + _keyword else _expected
@@ -1179,7 +1179,7 @@ private [parsley] class TokenKeyword(_keyword: String, letter: TokenSet, caseSen
     override def toString: String = s"TokenKeyword(${_keyword})"
 }
 
-private [parsley] class TokenOperator_(_operator: String, letter: TokenSet, _expected: UnsafeOption[String]) extends Instr
+private [internal] class TokenOperator_(_operator: String, letter: TokenSet, _expected: UnsafeOption[String]) extends Instr
 {
     val expected = if (_expected == null) _operator else _expected
     val expectedEnd = if (_expected == null) "end of " + _operator else _expected
@@ -1220,7 +1220,7 @@ private [parsley] class TokenOperator_(_operator: String, letter: TokenSet, _exp
     override def toString: String = s"TokenOperator(${_operator})"
 }
 
-private [parsley] class TokenMaxOp(_operator: String, _ops: Set[String], _expected: UnsafeOption[String]) extends Instr
+private [internal] class TokenMaxOp(_operator: String, _ops: Set[String], _expected: UnsafeOption[String]) extends Instr
 {
     val expected: UnsafeOption[String] = if (_expected == null) _operator else _expected
     val expectedEnd: UnsafeOption[String] = if (_expected == null) "end of " + _operator else _expected

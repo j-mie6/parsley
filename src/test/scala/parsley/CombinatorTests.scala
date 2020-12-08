@@ -8,174 +8,174 @@ import scala.language.implicitConversions
 
 class CombinatorTests extends ParsleyTest {
     "choice" should "fail if given the empty list" in {
-        runParser(choice(), "") shouldBe a [Failure]
+        choice().runParser("") shouldBe a [Failure]
     }
     it should "behave like p for List(p)" in {
-        runParser(choice('a'), "") should equal (runParser('a', ""))
-        runParser(choice('a'), "a") should equal (runParser('a', "a"))
+        choice('a').runParser("") should equal ('a'.runParser(""))
+        choice('a').runParser("a") should equal ('a'.runParser("a"))
     }
     it should "parse in order" in {
-        runParser(choice("a", "b", "bc", "bcd"), "bcd") should be (Success("b"))
+        choice("a", "b", "bc", "bcd").runParser("bcd") should be (Success("b"))
     }
     it should "fail if none of the parsers succeed" in {
-        runParser(choice("a", "b", "bc", "bcd"), "c") shouldBe a [Failure]
+        choice("a", "b", "bc", "bcd").runParser("c") shouldBe a [Failure]
     }
 
     "repeat" should "be pure(Nil) for n <= 0" in {
-        runParser(repeat(0, 'a'), "a") should be (Success(Nil))
-        runParser(repeat(-1, 'a'), "a") should be (Success(Nil))
+        repeat(0, 'a').runParser("a") should be (Success(Nil))
+        repeat(-1, 'a').runParser("a") should be (Success(Nil))
     }
     it should "parse n times for n > 0" in {
-        for (n <- 0 to 100) runParser(repeat(n, 'a'), "a"*n) should be (Success(("a" * n).toList))
+        for (n <- 0 to 100) repeat(n, 'a').runParser("a"*n) should be (Success(("a" * n).toList))
     }
     it must "fail if n inputs are not present" in {
-        runParser(repeat(2, 'a'), "a") shouldBe a [Failure]
+        repeat(2, 'a').runParser("a") shouldBe a [Failure]
     }
 
     "option" should "succeed with Some if p succeeds" in {
-        runParser(option(pure(7)), "") should be (Success(Some(7)))
+        option(pure(7)).runParser("") should be (Success(Some(7)))
     }
     it should "succeed with None if p fails without consumption" in {
-        runParser(option('a'), "") should be (Success(None))
+        option('a').runParser("") should be (Success(None))
     }
     it should "fail if p fails with consumption" in {
-        runParser(option("ab"), "a") shouldBe a [Failure]
+        option("ab").runParser("a") shouldBe a [Failure]
     }
 
     "decide" must "succeed for Some" in {
-        runParser(decide('a' <#> (Option(_))), "a") should be (Success('a'))
+        decide('a' <#> (Option(_))).runParser("a") should be (Success('a'))
     }
     it must "fail for None" in {
-        runParser(decide(pure(None)), "") shouldBe a [Failure]
+        decide(pure(None)).runParser("") shouldBe a [Failure]
     }
     it must "compose with option to become identity" in {
-        runParser(decide(option(pure(7))), "") should be (runParser(pure(7), ""))
-        runParser(decide(option('a')), "") should be (runParser('a', ""))
-        runParser(decide(option("ab")), "a") should be (runParser("ab", "a"))
+        decide(option(pure(7))).runParser("") should be (pure(7).runParser(""))
+        decide(option('a')).runParser("") should be ('a'.runParser(""))
+        decide(option("ab")).runParser("a") should be ("ab".runParser("a"))
     }
 
     "optional" must "succeed if p succeeds" in {
-        runParser(optional('a'), "a") should be (Success(()))
+        optional('a').runParser("a") should be (Success(()))
     }
     it must "also succeed if p fails without consumption" in {
-        runParser(optional('a'), "b") should be (Success(()))
+        optional('a').runParser("b") should be (Success(()))
     }
     it must "fail if p failed with consumption" in {
-        runParser(optional("ab"), "a") shouldBe a [Failure]
+        optional("ab").runParser("a") shouldBe a [Failure]
     }
 
     "manyN" must "ensure that n are parsed" in {
-        for (n <- 0 to 10) runParser(manyN(n, 'a'), "a"*n) should be (Success(("a"*n).toList))
-        for (n <- 0 to 10) runParser(manyN(n+1, 'a'), "a"*n) shouldBe a [Failure]
+        for (n <- 0 to 10) manyN(n, 'a').runParser("a"*n) should be (Success(("a"*n).toList))
+        for (n <- 0 to 10) manyN(n+1, 'a').runParser("a"*n) shouldBe a [Failure]
     }
     it should "not care if more are present" in {
-        for (n <- 0 to 10) runParser(manyN(n/2, 'a'), "a"*n) should be (Success(("a"*n).toList))
+        for (n <- 0 to 10) manyN(n/2, 'a').runParser("a"*n) should be (Success(("a"*n).toList))
     }
 
     "skipManyN" must "ensure that n are parsed" in {
-        for (n <- 0 to 10) runParser(skipManyN(n, 'a'), "a"*n) should be (Success(()))
-        for (n <- 0 to 10) runParser(skipManyN(n+1, 'a'), "a"*n) shouldBe a [Failure]
+        for (n <- 0 to 10) skipManyN(n, 'a').runParser("a"*n) should be (Success(()))
+        for (n <- 0 to 10) skipManyN(n+1, 'a').runParser("a"*n) shouldBe a [Failure]
     }
     it should "not care if more are present" in {
-        for (n <- 0 to 10) runParser(skipManyN(n/2, 'a'), "a"*n) should be (Success(()))
+        for (n <- 0 to 10) skipManyN(n/2, 'a').runParser("a"*n) should be (Success(()))
     }
 
     "sepBy" must "accept empty input" in {
-        runParser(sepBy('a', 'b'), "") should be (Success(Nil))
+        sepBy('a', 'b').runParser("") should be (Success(Nil))
     }
     it must "not allow sep at the end of chain" in {
-        runParser(sepBy('a', 'b'), "ab") shouldBe a [Failure]
+        sepBy('a', 'b').runParser("ab") shouldBe a [Failure]
     }
     it should "be able to parse 2 or more p" in {
-        runParser(sepBy('a', 'b'), "aba") should be (Success(List('a', 'a')))
-        runParser(sepBy('a', 'b'), "ababa") should be (Success(List('a', 'a', 'a')))
-        runParser(sepBy('a', 'b'), "abababa") should be (Success(List('a', 'a', 'a', 'a')))
+        sepBy('a', 'b').runParser("aba") should be (Success(List('a', 'a')))
+        sepBy('a', 'b').runParser("ababa") should be (Success(List('a', 'a', 'a')))
+        sepBy('a', 'b').runParser("abababa") should be (Success(List('a', 'a', 'a', 'a')))
     }
 
     "sepBy1" must "require a p" in {
-        runParser(sepBy1('a', 'b'), "a") should not be a [Failure]
-        runParser(sepBy1('a', 'b'), input = "") shouldBe a [Failure]
+        sepBy1('a', 'b').runParser("a") should not be a [Failure]
+        sepBy1('a', 'b').runParser(input = "") shouldBe a [Failure]
     }
 
     "sepEndBy" must "accept empty input" in {
-        runParser(sepEndBy('a', 'b'), "") should be (Success(Nil))
+        sepEndBy('a', 'b').runParser("") should be (Success(Nil))
     }
     it should "not require sep at the end of chain" in {
-        runParser(sepEndBy('a', 'b'), "a") should be (Success(List('a')))
+        sepEndBy('a', 'b').runParser("a") should be (Success(List('a')))
     }
     it should "be able to parse 2 or more p" in {
-        runParser(sepEndBy('a', 'b'), "aba") should be (Success(List('a', 'a')))
-        runParser(sepEndBy('a', 'b'), "ababa") should be (Success(List('a', 'a', 'a')))
+        sepEndBy('a', 'b').runParser("aba") should be (Success(List('a', 'a')))
+        sepEndBy('a', 'b').runParser("ababa") should be (Success(List('a', 'a', 'a')))
     }
     it should "be able to parse a final sep" in {
-        runParser(sepEndBy('a', 'b'), "ab") should be (Success(List('a')))
-        runParser(sepEndBy('a', 'b'), "abab") should be (Success(List('a', 'a')))
-        runParser(sepEndBy('a', 'b'), "ababab") should be (Success(List('a', 'a', 'a')))
+        sepEndBy('a', 'b').runParser("ab") should be (Success(List('a')))
+        sepEndBy('a', 'b').runParser("abab") should be (Success(List('a', 'a')))
+        sepEndBy('a', 'b').runParser("ababab") should be (Success(List('a', 'a', 'a')))
     }
     it should "fail if p fails after consuming input" in {
-        runParser(sepEndBy("aa", 'b'), "ab") shouldBe a [Failure]
+        sepEndBy("aa", 'b').runParser("ab") shouldBe a [Failure]
     }
     it should "fail if sep fails after consuming input" in {
-        runParser(sepEndBy('a', "bb"), "ab") shouldBe a [Failure]
+        sepEndBy('a', "bb").runParser("ab") shouldBe a [Failure]
     }
     it must "not corrupt the stack on sep hard-fail" in {
-        runParser('c' <::> attempt(sepEndBy('a', "bb")).getOrElse(List('d')), "cab") should be (Success(List('c', 'd')))
+        ('c' <::> attempt(sepEndBy('a', "bb")).getOrElse(List('d'))).runParser("cab") should be (Success(List('c', 'd')))
     }
 
     "sepEndBy1" must "require a p" in {
-        runParser(sepEndBy1('a', 'b'), "a") should not be a [Failure]
-        runParser(sepEndBy1('a', 'b'), input = "") shouldBe a [Failure]
+        sepEndBy1('a', 'b').runParser("a") should not be a [Failure]
+        sepEndBy1('a', 'b').runParser(input = "") shouldBe a [Failure]
     }
 
     "endBy" must "accept empty input" in {
-        runParser(endBy('a', 'b'), "") should be (Success(Nil))
+        endBy('a', 'b').runParser("") should be (Success(Nil))
     }
     it must "require sep at end of chain" in {
-        runParser(endBy('a', 'b'), "a") shouldBe a [Failure]
-        runParser(endBy('a', 'b'), "ab") should be (Success(List('a')))
+        endBy('a', 'b').runParser("a") shouldBe a [Failure]
+        endBy('a', 'b').runParser("ab") should be (Success(List('a')))
     }
     it should "be able to parse 2 or more p" in {
-        runParser(endBy('a', 'b'), "abab") should be (Success(List('a', 'a')))
-        runParser(endBy('a', 'b'), "ababab") should be (Success(List('a', 'a', 'a')))
+        endBy('a', 'b').runParser("abab") should be (Success(List('a', 'a')))
+        endBy('a', 'b').runParser("ababab") should be (Success(List('a', 'a', 'a')))
     }
 
     "endBy1" must "require a p" in {
-        runParser(endBy1('a', 'b'), "ab") should not be a [Failure]
-        runParser(endBy1('a', 'b'), input = "") shouldBe a [Failure]
+        endBy1('a', 'b').runParser("ab") should not be a [Failure]
+        endBy1('a', 'b').runParser(input = "") shouldBe a [Failure]
     }
 
     "eof" must "succeed at the end of input" in {
-        runParser(eof, "") should not be a [Failure]
+        eof.runParser("") should not be a [Failure]
     }
     it must "fail if input remains" in {
-        runParser(eof, "a") shouldBe a [Failure]
+        eof.runParser("a") shouldBe a [Failure]
     }
 
     "notFollowedBy" must "succeed if p fails" in {
-        runParser(notFollowedBy('a'), "") should be (Success(()))
+        notFollowedBy('a').runParser("") should be (Success(()))
     }
     it must "succeed even if p consumed input" in {
-        runParser(notFollowedBy("aa"), "a") should be (Success(()))
+        notFollowedBy("aa").runParser("a") should be (Success(()))
     }
     it must "fail if p succeeds" in {
-        runParser(notFollowedBy('a'), "a") shouldBe a [Failure]
+        notFollowedBy('a').runParser("a") shouldBe a [Failure]
     }
 
     "manyUntil" must "require an end" in {
-        runParser(manyUntil('a', 'b'), "aa") shouldBe a [Failure]
-        runParser(manyUntil('a', 'b'), "ab") should be (Success(List('a')))
+        manyUntil('a', 'b').runParser("aa") shouldBe a [Failure]
+        manyUntil('a', 'b').runParser("ab") should be (Success(List('a')))
     }
     it should "parse the end without result" in {
-        runParser(manyUntil('a', 'b'), "b") should be (Success(Nil))
+        manyUntil('a', 'b').runParser("b") should be (Success(Nil))
     }
     it should "parse p until that end is found" in {
-        runParser(manyUntil('a', 'b'), "aaaaaaaaaaaab") should not be a [Failure]
-        runParser(manyUntil("aa", 'b'), "ab") shouldBe a [Failure]
+        manyUntil('a', 'b').runParser("aaaaaaaaaaaab") should not be a [Failure]
+        manyUntil("aa", 'b').runParser("ab") shouldBe a [Failure]
     }
 
     "someUntil" must "parse at least 1 p" in {
-        runParser(someUntil('a', 'b'), "ab") should be (Success(List('a')))
-        runParser(someUntil('a', 'b'), "b") shouldBe a [Failure]
+        someUntil('a', 'b').runParser("ab") should be (Success(List('a')))
+        someUntil('a', 'b').runParser("b") shouldBe a [Failure]
     }
 
     "forP" should "be able to parse context-sensitive grammars" in {
@@ -185,7 +185,7 @@ class CombinatorTests extends ParsleyTest {
                   many('a' *> modify[Int](v1, _ + 1)) *>
                   forP[Int](v2, get[Int](v1), pure(_ != 0), pure(_ - 1), 'b') *>
                   forP[Int](v2, get[Int](v1), pure(_ != 0), pure(_ - 1), 'c')
-        runParser(abc, "aaabbbccc") should be (Success(()))
-        runParser(abc, "aaaabc") shouldBe a [Failure]
+        abc.runParser("aaabbbccc") should be (Success(()))
+        abc.runParser("aaaabc") shouldBe a [Failure]
     }
 }

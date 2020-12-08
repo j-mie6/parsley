@@ -1,8 +1,21 @@
-package parsley
+package parsley.internal.deepembedding
 
 import scala.language.{higherKinds, reflectiveCalls}
+import scala.annotation.tailrec
 
-private [parsley] abstract class ContOps[Cont[_, _]]
+// Trampoline for CPS
+private [deepembedding] sealed abstract class Bounce[A]
+{
+    @tailrec final def run: A = this match
+    {
+        case thunk: Thunk[A] => thunk.cont().run
+        case chunk: Chunk[A] => chunk.x
+    }
+}
+private [deepembedding] final class Chunk[A](val x: A) extends Bounce[A]
+private [deepembedding] final class Thunk[A](val cont: () => Bounce[A]) extends Bounce[A]
+
+private [deepembedding] abstract class ContOps[Cont[_, _]]
 {
     def wrap[R, A](x: A): Cont[R, A]
     def unwrap[R](wrapped: Cont[R, R]): R
@@ -11,7 +24,7 @@ private [parsley] abstract class ContOps[Cont[_, _]]
     def >>[R, A, B](c: =>Cont[R, A], k: =>Cont[R, B]): Cont[R, B] = flatMap[R, A, B](c, _ => k)
     def |>[R, A, B](c: =>Cont[R, A], x: =>B): Cont[R, B] = map[R, A, B](c, _ => x)
 }
-private [parsley] object ContOps
+private [deepembedding] object ContOps
 {
     implicit class ContAdapter[R, A, Cont[_, _]](c: =>Cont[R, A])(implicit ops: ContOps[Cont])
     {
@@ -28,8 +41,8 @@ private [parsley] object ContOps
         catch { case _: StackOverflowError => task(Cont.ops.asInstanceOf[GenOps]) }
 }
 
-private [parsley] class Cont[R, A](val cont: (A => Bounce[R]) => Bounce[R]) extends AnyVal
-private [parsley] object Cont
+private [deepembedding] class Cont[R, A](val cont: (A => Bounce[R]) => Bounce[R]) extends AnyVal
+private [deepembedding] object Cont
 {
     implicit val ops: ContOps[Cont] = new ContOps[Cont]
     {
@@ -59,8 +72,8 @@ private [parsley] object Cont
     }
 }
 
-private [parsley] class Id[R, A](var x: A)
-private [parsley] object Id
+private [deepembedding] class Id[R, A](var x: A)
+private [deepembedding] object Id
 {
     implicit val ops: ContOps[Id] = new ContOps[Id]
     {
