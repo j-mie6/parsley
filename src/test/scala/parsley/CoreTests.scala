@@ -179,14 +179,6 @@ class CoreTests extends ParsleyTest {
         noException should be thrownBy uhoh.runParser("a")
     }
 
-    // TODO: move this test into the future `internal` package
-    "subroutines" should "function correctly" in {
-        val p = satisfy(_ => true) *> satisfy(_ => true) *> satisfy(_ => true)
-        val q = 'a' *> p <* 'b' <* p <* 'c'
-        q.internal.instrs.last should be (instructions.Return)
-        q.runParser("a123b123c") should be (Success('3'))
-    }
-
     "parsers" should "be thread safe when ran correctly" ignore {
         import scala.concurrent.{Future, ExecutionContext, Await, duration}, ExecutionContext.global, duration._
         implicit val ec = global

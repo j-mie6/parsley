@@ -1,6 +1,6 @@
 package parsley
 
-import parsley.instructions.Context
+import parsley.internal.instructions.Context
 
 object unsafe {
     /**
@@ -9,7 +9,7 @@ object unsafe {
       * execution contexts due to multi-threaded parsing.
       * @return A fresh execution context for parsers
       */
-    def giveContext: Context = new Context(null, Array.emptyCharArray)
+    def giveContext: Context = Context.empty
 
     implicit class FastRun[A](val p: Parsley[A])(implicit ctx: Context = internalCtx) {
         /** This method allows you to run a parser with a cached context, which improves performance.

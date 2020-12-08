@@ -1,12 +1,12 @@
-package parsley.deepembedding
+package parsley.internal.deepembedding
 
 import scala.language.{higherKinds, implicitConversions}
 import scala.annotation.tailrec
 import scala.collection.mutable
 
-import parsley.instructions
-import instructions.{Stateful, Instr, JumpTable, JumpInstr, Label}
-import parsley.{ResizableArray, UnsafeOption}
+import parsley.internal.instructions
+import instructions.{Instr, JumpTable, JumpInstr, Label}
+import parsley.internal.{UnsafeOption, ResizableArray}
 import ContOps._
 
 /**
@@ -32,32 +32,32 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     final def overflows(): Unit = cps = true
 
     // Internals
-    final private [parsley] def findLets[Cont[_, _]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] =
+    final private [deepembedding] def findLets[Cont[_, _]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] =
     {
         state.addPred(this)
         if (seen(this)) result(state.addRec(this))
         else if (state.notProcessedBefore(this)) findLetsAux(seen + this, state, ops)
         else result(())
     }
-    final private [parsley] def fix(implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String]): Parsley[A] =
+    final private def fix(implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String]): Parsley[A] =
     {
         // We use the seen set here to prevent cascading sub-routines
         val self = sub(this)
         if (seen(this))
         {
-            if (self == this) new DeepEmbedding.Rec(this, label)
+            if (self == this) new Rec(this, label)
             else this
         }
         else self
     }
-    final private [parsley] def optimised[Cont[_, _], A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]] =
+    final private [deepembedding] def optimised[Cont[_, _], A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]] =
     {
         for (p <- this.fix.preprocess(seen + this, sub, label, ops)) yield p.optimise
     }
-    final private [parsley] var safe = true
-    final private [parsley] var cps = false
-    final private [parsley] var size: Int = 1
-    final private [parsley] var processed = false
+    final private [deepembedding] var safe = true
+    final private var cps = false
+    final private [deepembedding] var size: Int = 1
+    final private [deepembedding] var processed = false
 
     final private def computeInstrs(implicit ops: GenOps): Array[Instr] =
     {
@@ -111,11 +111,11 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     }
 
     final private [parsley] lazy val instrs: Array[Instr] = if (cps) computeInstrs(Cont.ops.asInstanceOf[GenOps]) else safeCall(computeInstrs(_))
-    final private [this] lazy val pindices: Array[Int] = Parsley.statefulIndices(instrs)
-    final private [parsley] def threadSafeInstrs: Array[Instr] = Parsley.stateSafeCopy(instrs, pindices)
+    final private lazy val pindices: Array[Int] = instructions.statefulIndices(instrs)
+    final private [parsley] def threadSafeInstrs: Array[Instr] = instructions.stateSafeCopy(instrs, pindices)
 
     // This is a trick to get tail-calls to fire even in the presence of a legimate recursion
-    final private [parsley] def optimiseDefinitelyNotTailRec: Parsley[A] = optimise
+    final private [deepembedding] def optimiseDefinitelyNotTailRec: Parsley[A] = optimise
 
     // Abstracts
     // Sub-tree optimisation and Rec calculation - Bottom-up
@@ -123,55 +123,10 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     // Let-finder recursion
     protected def findLetsAux[Cont[_, _]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit]
     // Optimisation - Bottom-up
-    private [parsley] def optimise: Parsley[A] = this
+    protected def optimise: Parsley[A] = this
     // Peephole optimisation and code generation - Top-down
     private [parsley] def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit]
     private [parsley] def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String]
-}
-
-object Parsley
-{
-    final private [parsley] def pretty(instrs: Array[Instr]): String = {
-        val n = instrs.length
-        val digits = if (n != 0) Math.log10(n).toInt + 1 else 0
-        instrs.zipWithIndex.map {
-            case (instr, idx) =>
-                val paddedIdx = {
-                    val str = idx.toString
-                    " " * (digits - str.length) + str
-                }
-                val paddedHex = {
-                    val str = instr.##.toHexString
-                    "0" * (8 - str.length) + str
-                }
-                s"$paddedIdx [$paddedHex]: $instr"
-        }.mkString(";\n")
-    }
-
-    final private [parsley] def stateSafeCopy(instrs: Array[Instr], pindices: Array[Int]): Array[Instr] =
-    {
-        val nstateful = pindices.length
-        if (nstateful != 0)
-        {
-            val instrs_ = instrs.clone
-            for (i <- 0 until nstateful)
-            {
-                val j = pindices(i)
-                instrs_(j) = instrs(j).copy
-            }
-            instrs_
-        }
-        else instrs
-    }
-
-    final private [parsley] def statefulIndices(instrs: Array[Instr]): Array[Int] = {
-        val buff = new ResizableArray[Int]()
-        for (i <- 0 until instrs.length)
-        {
-            if (instrs(i).isInstanceOf[Stateful]) buff += i
-        }
-        buff.toArray
-    }
 }
 
 // Internals
@@ -227,7 +182,7 @@ private [parsley] class LetFinderState
         (for ((k, v) <- _preds;
             if v >= 2 && !_recs.contains(k))
         yield k -> {
-            val sub = DeepEmbedding.Subroutine(k, null)
+            val sub = Subroutine(k, null)
             sub.processed = false
             sub
         }).toMap

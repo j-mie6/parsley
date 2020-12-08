@@ -1,14 +1,15 @@
-package parsley.instructions
+package parsley.internal.instructions
 
 import Stack.{isEmpty, push}
-import parsley.{ResizableArray, UnsafeOption}
-import parsley.deepembedding.Parsley
+import parsley.internal.ResizableArray
+import parsley.internal.UnsafeOption
+import parsley.internal.deepembedding.Parsley
 
 import scala.annotation.tailrec
 import scala.language.existentials
 
 // Stack Manipulators
-private [parsley] final class Push[A](x: A) extends Instr
+private [internal] final class Push[A](x: A) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -18,7 +19,7 @@ private [parsley] final class Push[A](x: A) extends Instr
     override def toString: String = s"Push($x)"
 }
 
-private [parsley] object Pop extends Instr
+private [internal] object Pop extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -28,7 +29,7 @@ private [parsley] object Pop extends Instr
     override def toString: String = "Pop"
 }
 
-private [parsley] object Flip extends Instr
+private [internal] object Flip extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -41,7 +42,7 @@ private [parsley] object Flip extends Instr
 }
 
 // Primitives
-private [parsley] class CharTok protected (protected final val c: Char, _expected: UnsafeOption[String]) extends Instr
+private [internal] class CharTok protected (protected final val c: Char, _expected: UnsafeOption[String]) extends Instr
 {
     protected val expected: String = if (_expected == null) "\"" + c + "\"" else _expected
     protected final val ac: Any = c
@@ -59,7 +60,7 @@ private [parsley] class CharTok protected (protected final val c: Char, _expecte
     override final def toString: String = s"Chr($c)"
 }
 
-private [parsley] final class Satisfies(f: Char => Boolean, expected: UnsafeOption[String]) extends Instr
+private [internal] final class Satisfies(f: Char => Boolean, expected: UnsafeOption[String]) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -85,7 +86,7 @@ private [parsley] final class Satisfies(f: Char => Boolean, expected: UnsafeOpti
     override def toString: String = "Sat(?)"
 }
 
-private [parsley] final class StringTok(s: String, _expected: UnsafeOption[String]) extends Instr
+private [internal] final class StringTok(s: String, _expected: UnsafeOption[String]) extends Instr
 {
     private [this] val expected = if (_expected == null) "\"" + s + "\"" else _expected
     private [this] val cs = s.toCharArray
@@ -152,7 +153,7 @@ private [parsley] final class StringTok(s: String, _expected: UnsafeOption[Strin
 }
 
 // Applicative Functors
-private [parsley] object Apply extends Instr
+private [internal] object Apply extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -165,7 +166,7 @@ private [parsley] object Apply extends Instr
 }
 
 // Monadic
-private [parsley] final class DynCall[-A](f: A => Array[Instr], expected: UnsafeOption[String]) extends Instr
+private [internal] final class DynCall[-A](f: A => Array[Instr], expected: UnsafeOption[String]) extends Instr
 {
     private [DynCall] val g = f.asInstanceOf[Any => Array[Instr]]
     override def apply(ctx: Context): Unit =
@@ -184,17 +185,17 @@ private [parsley] final class DynCall[-A](f: A => Array[Instr], expected: Unsafe
 }
 
 // Control Flow
-private [parsley] final class Call(_instrs: =>Array[Instr], expected: UnsafeOption[String]) extends Instr
+private [internal] final class Call(_instrs: =>Array[Instr], expected: UnsafeOption[String]) extends Instr
 {
     private [Call] lazy val (instrs, pindices) = {
         val is = _instrs
-        (is, Parsley.statefulIndices(is))
+        (is, statefulIndices(is))
     }
 
     override def apply(ctx: Context): Unit =
     {
         ctx.calls = push(ctx.calls, new Frame(ctx.pc + 1, ctx.instrs))
-        ctx.instrs = Parsley.stateSafeCopy(instrs, pindices)
+        ctx.instrs = stateSafeCopy(instrs, pindices)
         ctx.depth += 1
         if (expected != null && ctx.errorOverride == null)
         {
@@ -206,7 +207,7 @@ private [parsley] final class Call(_instrs: =>Array[Instr], expected: UnsafeOpti
     override def toString: String = "Call"
 }
 
-private [parsley] final class GoSub(var label: Int, expected: UnsafeOption[String]) extends JumpInstr
+private [internal] final class GoSub(var label: Int, expected: UnsafeOption[String]) extends JumpInstr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -222,13 +223,13 @@ private [parsley] final class GoSub(var label: Int, expected: UnsafeOption[Strin
     override def toString: String = s"GoSub($label)"
 }
 
-private [parsley] object Return extends Instr
+private [internal] object Return extends Instr
 {
     override def apply(ctx: Context): Unit = ctx.ret()
     override def toString: String = "Return"
 }
 
-private [parsley] final class Fail(msg: String, expected: UnsafeOption[String]) extends Instr
+private [internal] final class Fail(msg: String, expected: UnsafeOption[String]) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -238,7 +239,7 @@ private [parsley] final class Fail(msg: String, expected: UnsafeOption[String]) 
     override def toString: String = s"Fail($msg)"
 }
 
-private [parsley] final class Unexpected(msg: String, expected: UnsafeOption[String]) extends Instr
+private [internal] final class Unexpected(msg: String, expected: UnsafeOption[String]) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -249,7 +250,7 @@ private [parsley] final class Unexpected(msg: String, expected: UnsafeOption[Str
     override def toString: String = s"Unexpected($msg)"
 }
 
-private [parsley] final class Empty(expected: UnsafeOption[String]) extends Instr
+private [internal] final class Empty(expected: UnsafeOption[String]) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -260,7 +261,7 @@ private [parsley] final class Empty(expected: UnsafeOption[String]) extends Inst
     override def toString: String = "Empty"
 }
 
-private [parsley] final class PushHandler(var label: Int) extends JumpInstr
+private [internal] final class PushHandler(var label: Int) extends JumpInstr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -271,7 +272,7 @@ private [parsley] final class PushHandler(var label: Int) extends JumpInstr
     override def toString: String = s"PushHandler($label)"
 }
 
-private [parsley] final class PushFallthrough(var label: Int) extends JumpInstr
+private [internal] final class PushFallthrough(var label: Int) extends JumpInstr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -281,7 +282,7 @@ private [parsley] final class PushFallthrough(var label: Int) extends JumpInstr
     override def toString: String = s"PushFallthrough($label)"
 }
 
-private [parsley] object Attempt extends Instr
+private [internal] object Attempt extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -307,7 +308,7 @@ private [parsley] object Attempt extends Instr
     override def toString: String = "Attempt"
 }
 
-private [parsley] object Look extends Instr
+private [internal] object Look extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -331,7 +332,7 @@ private [parsley] object Look extends Instr
     override def toString: String = "Look"
 }
 
-private [parsley] final class InputCheck(var label: Int) extends JumpInstr
+private [internal] final class InputCheck(var label: Int) extends JumpInstr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -342,13 +343,13 @@ private [parsley] final class InputCheck(var label: Int) extends JumpInstr
     override def toString: String = s"InputCheck($label)"
 }
 
-private [parsley] final class Jump(var label: Int) extends JumpInstr
+private [internal] final class Jump(var label: Int) extends JumpInstr
 {
     override def apply(ctx: Context): Unit = ctx.pc = label
     override def toString: String = s"Jump($label)"
 }
 
-private [parsley] final class JumpGood(var label: Int) extends JumpInstr
+private [internal] final class JumpGood(var label: Int) extends JumpInstr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -359,7 +360,7 @@ private [parsley] final class JumpGood(var label: Int) extends JumpInstr
     override def toString: String = s"JumpGood($label)"
 }
 
-private [parsley] object Catch extends Instr
+private [internal] object Catch extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -375,7 +376,7 @@ private [parsley] object Catch extends Instr
 }
 
 // Position Extractors
-private [parsley] object Line extends Instr
+private [internal] object Line extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -385,7 +386,7 @@ private [parsley] object Line extends Instr
     override def toString: String = "Line"
 }
 
-private [parsley] object Col extends Instr
+private [internal] object Col extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -396,7 +397,7 @@ private [parsley] object Col extends Instr
 }
 
 // Register-Manipulators
-private [parsley] final class Get(v: Int) extends Instr
+private [internal] final class Get(v: Int) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -406,7 +407,7 @@ private [parsley] final class Get(v: Int) extends Instr
     override def toString: String = s"Get($v)"
 }
 
-private [parsley] final class Put(v: Int) extends Instr
+private [internal] final class Put(v: Int) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -417,7 +418,7 @@ private [parsley] final class Put(v: Int) extends Instr
     override def toString: String = s"Put($v)"
 }
 
-private [parsley] final class Modify[S](v: Int, f: S => S) extends Instr
+private [internal] final class Modify[S](v: Int, f: S => S) extends Instr
 {
     private [this] val g = f.asInstanceOf[Any => Any]
     override def apply(ctx: Context): Unit =
@@ -430,7 +431,7 @@ private [parsley] final class Modify[S](v: Int, f: S => S) extends Instr
     override def toString: String = s"Modify($v, f)"
 }
 
-private [parsley] final class LocalEntry(v: Int) extends Instr
+private [internal] final class LocalEntry(v: Int) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -442,7 +443,7 @@ private [parsley] final class LocalEntry(v: Int) extends Instr
     override def toString: String = s"LocalEntry($v)"
 }
 
-private [parsley] final class LocalExit[S](v: Int) extends Instr
+private [internal] final class LocalExit[S](v: Int) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -481,7 +482,7 @@ private [instructions] trait Logger
     final def indent(ctx: Context) = " " * (ctx.debuglvl * 2)
 }
 
-private [parsley] final class LogBegin(var label: Int, val name: String, break: Boolean) extends JumpInstr with Logger
+private [internal] final class LogBegin(var label: Int, val name: String, break: Boolean) extends JumpInstr with Logger
 {
     override def apply(ctx: Context): Unit =
     {
@@ -500,7 +501,7 @@ private [parsley] final class LogBegin(var label: Int, val name: String, break: 
     override def toString: String = s"LogBegin($label, $name)"
 }
 
-private [parsley] final class LogEnd(val name: String, break: Boolean) extends Instr with Logger
+private [internal] final class LogEnd(val name: String, break: Boolean) extends Instr with Logger
 {
     override def apply(ctx: Context): Unit =
     {
@@ -529,7 +530,7 @@ private [parsley] final class LogEnd(val name: String, break: Boolean) extends I
 }
 
 // Extractor Objects
-private [parsley] object CharTok
+private [internal] object CharTok
 {
     def apply(c: Char, expected: UnsafeOption[String]): CharTok = c match
     {

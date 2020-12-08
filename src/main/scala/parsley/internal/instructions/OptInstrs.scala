@@ -1,14 +1,14 @@
-package parsley.instructions
+package parsley.internal.instructions
 
-import parsley.UnsafeOption
+import parsley.internal.UnsafeOption
 import parsley.XCompat._
-import parsley.instructions.Stack.push
+import Stack.push
 
 import scala.annotation.tailrec
 import scala.language.implicitConversions
 import scala.collection.mutable
 
-private [parsley] final class Perform[-A, +B](f: A => B) extends Instr
+private [internal] final class Perform[-A, +B](f: A => B) extends Instr
 {
     private [Perform] val g = f.asInstanceOf[Any => B]
     override def apply(ctx: Context): Unit =
@@ -19,7 +19,7 @@ private [parsley] final class Perform[-A, +B](f: A => B) extends Instr
     override def toString: String = "Perform(?)"
 }
 
-private [parsley] final class Exchange[A](private [Exchange] val x: A) extends Instr
+private [internal] final class Exchange[A](private [Exchange] val x: A) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -29,7 +29,7 @@ private [parsley] final class Exchange[A](private [Exchange] val x: A) extends I
     override def toString: String = s"Ex($x)"
 }
 
-private [parsley] class Newline(_expected: UnsafeOption[String]) extends CharTok('\n', _expected)
+private [internal] class Newline(_expected: UnsafeOption[String]) extends CharTok('\n', _expected)
 {
     override def apply(ctx: Context): Unit =
     {
@@ -45,7 +45,7 @@ private [parsley] class Newline(_expected: UnsafeOption[String]) extends CharTok
     }
 }
 
-private [parsley] class Tab(_expected: UnsafeOption[String]) extends CharTok('\t', _expected)
+private [internal] class Tab(_expected: UnsafeOption[String]) extends CharTok('\t', _expected)
 {
     override def apply(ctx: Context): Unit =
     {
@@ -60,7 +60,7 @@ private [parsley] class Tab(_expected: UnsafeOption[String]) extends CharTok('\t
     }
 }
 
-private [parsley] class CharTokFastPerform protected (protected final val c: Char, protected final val f: Char => Any, _expected: UnsafeOption[String]) extends Instr
+private [internal] class CharTokFastPerform protected (protected final val c: Char, protected final val f: Char => Any, _expected: UnsafeOption[String]) extends Instr
 {
     protected val expected: String = if (_expected == null) "\"" + c.toString + "\"" else _expected
     protected final val fc: Any = f(c)
@@ -78,7 +78,7 @@ private [parsley] class CharTokFastPerform protected (protected final val c: Cha
     override final def toString: String = s"ChrPerform($c, ?)"
 }
 
-private [parsley] final class NewlineFastPerform(g: Char => Any, _expected: UnsafeOption[String]) extends CharTokFastPerform('\n', g, _expected)
+private [internal] final class NewlineFastPerform(g: Char => Any, _expected: UnsafeOption[String]) extends CharTokFastPerform('\n', g, _expected)
 {
     override def apply(ctx: Context): Unit =
     {
@@ -94,7 +94,7 @@ private [parsley] final class NewlineFastPerform(g: Char => Any, _expected: Unsa
     }
 }
 
-private [parsley] final class TabFastPerform(g: Char => Any, _expected: UnsafeOption[String]) extends CharTokFastPerform('\t', g, _expected)
+private [internal] final class TabFastPerform(g: Char => Any, _expected: UnsafeOption[String]) extends CharTokFastPerform('\t', g, _expected)
 {
     override def apply(ctx: Context): Unit =
     {
@@ -109,7 +109,7 @@ private [parsley] final class TabFastPerform(g: Char => Any, _expected: UnsafeOp
     }
 }
 
-private [parsley] final class StringTokFastPerform(s: String, f: String => Any, _expected: UnsafeOption[String]) extends Instr
+private [internal] final class StringTokFastPerform(s: String, f: String => Any, _expected: UnsafeOption[String]) extends Instr
 {
     protected val expected: String = if (_expected == null) "\"" + s + "\"" else _expected
     private [this] val cs = s.toCharArray
@@ -175,7 +175,7 @@ private [parsley] final class StringTokFastPerform(s: String, f: String => Any, 
     override def toString: String = s"StrPerform($s, ?)"
 }
 
-private [parsley] final class SatisfyExchange[A](f: Char => Boolean, x: A, expected: UnsafeOption[String]) extends Instr
+private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, expected: UnsafeOption[String]) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -201,7 +201,7 @@ private [parsley] final class SatisfyExchange[A](f: Char => Boolean, x: A, expec
     override def toString: String = s"SatEx(?, $x)"
 }
 
-private [parsley] final class JumpGoodAttempt(var label: Int) extends JumpInstr
+private [internal] final class JumpGoodAttempt(var label: Int) extends JumpInstr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -226,7 +226,7 @@ private [parsley] final class JumpGoodAttempt(var label: Int) extends JumpInstr
     override def toString: String = s"JumpGood'($label)"
 }
 
-private [parsley] final class RecoverWith[A](x: A) extends Instr
+private [internal] final class RecoverWith[A](x: A) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -242,7 +242,7 @@ private [parsley] final class RecoverWith[A](x: A) extends Instr
     override def toString: String = s"Recover($x)"
 }
 
-private [parsley] final class AlwaysRecoverWith[A](x: A) extends Instr
+private [internal] final class AlwaysRecoverWith[A](x: A) extends Instr
 {
     override def apply(ctx: Context): Unit =
     {
@@ -268,7 +268,7 @@ private [parsley] final class AlwaysRecoverWith[A](x: A) extends Instr
     override def toString: String = s"AlwaysRecover($x)"
 }
 
-private [parsley] final class JumpTable(prefixes: List[Char], labels: List[Int], private [this] var default: Int, _expecteds: List[UnsafeOption[String]]) extends Instr
+private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int], private [this] var default: Int, _expecteds: List[UnsafeOption[String]]) extends Instr
 {
     private [this] var defaultPreamble: Int = _
     private [this] val jumpTable = mutable.LongMap(prefixes.map(_.toLong).zip(labels): _*)
@@ -313,7 +313,7 @@ private [parsley] final class JumpTable(prefixes: List[Char], labels: List[Int],
         }
     }
 
-    private [parsley] def relabel(labels: Array[Int]): Unit =
+    private [internal] def relabel(labels: Array[Int]): Unit =
     {
         jumpTable.mapValuesInPlace((_, v) => labels(v))
         default = labels(default)
@@ -322,7 +322,7 @@ private [parsley] final class JumpTable(prefixes: List[Char], labels: List[Int],
     override def toString: String = s"JumpTable(${jumpTable.map{case (k, v) => k.toChar -> v}.mkString(", ")}, _ -> $default)"
 }
 
-private [parsley] object CharTokFastPerform
+private [internal] object CharTokFastPerform
 {
     def apply[A >: Char, B](c: Char, f: A => B, expected: UnsafeOption[String]): CharTokFastPerform = c match
     {
@@ -332,7 +332,7 @@ private [parsley] object CharTokFastPerform
     }
 }
 
-private [parsley] object Exchange
+private [internal] object Exchange
 {
     def unapply[A](ex: Exchange[A]): Option[A] = Some(ex.x)
 }

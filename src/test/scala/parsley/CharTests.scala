@@ -53,8 +53,8 @@ class CharTests extends ParsleyTest {
     }
 
     "endOfLine" should "consume windows or unix line endings" in {
-        runParser(endOfLine, "\n") should not be a [Failure]
-        runParser(endOfLine, "\r\n") should not be a [Failure]
+        endOfLine.runParser("\n") should not be a [Failure]
+        endOfLine.runParser("\r\n") should not be a [Failure]
     }
     it should "fail otherwise" in {
         for (i <- 0 to 65535; if i != 10) endOfLine.runParser(i.toChar.toString) shouldBe a [Failure]

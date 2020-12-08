@@ -1,7 +1,7 @@
 package parsley
 
 import parsley.Parsley._
-import parsley.deepembedding.{Parsley => _, _}
+import parsley.internal.deepembedding
 import scala.annotation.{tailrec, implicitNotFound}
 
 object Combinator
@@ -103,7 +103,7 @@ object Combinator
 
     /**`sepEndBy1(p, sep)` parses *one* or more occurrences of `p`, separated and optionally ended
       * by `sep`. Returns a list of values returned by `p`.*/
-    def sepEndBy1[A, B](p: =>Parsley[A], sep: =>Parsley[B]): Parsley[List[A]] = new Parsley(new DeepEmbedding.SepEndBy1(p.internal, sep.internal))
+    def sepEndBy1[A, B](p: =>Parsley[A], sep: =>Parsley[B]): Parsley[List[A]] = new Parsley(new deepembedding.SepEndBy1(p.internal, sep.internal))
 
     /**`endBy(p, sep)` parses *zero* or more occurrences of `p`, separated and ended by `sep`. Returns a list
       * of values returned by `p`.*/
@@ -126,23 +126,23 @@ object Combinator
     /**`chainr1(p, op)` parses *one* or more occurrences of `p`, separated by `op`. Returns a value
       * obtained by a right associative application of all functions return by `op` to the values
       * returned by `p`.*/
-    def chainr1[A, B](p: =>Parsley[A], op: =>Parsley[(A, B) => B])(implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${B}") wrap: A => B): Parsley[B] = new Parsley(new DeepEmbedding.Chainr(p.internal, op.internal, wrap))
+    def chainr1[A, B](p: =>Parsley[A], op: =>Parsley[(A, B) => B])(implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${B}") wrap: A => B): Parsley[B] = new Parsley(new deepembedding.Chainr(p.internal, op.internal, wrap))
 
     /**`chainPre(op, p)` parses many prefixed applications of `op` onto a single final result of `p`*/
-    def chainPre[A](op: =>Parsley[A => A], p: =>Parsley[A]): Parsley[A] = new Parsley(new DeepEmbedding.ChainPre(p.internal, op.internal))
+    def chainPre[A](op: =>Parsley[A => A], p: =>Parsley[A]): Parsley[A] = new Parsley(new deepembedding.ChainPre(p.internal, op.internal))
 
     /**chainl1(p, op) parses *one* or more occurrences of `p`, separated by `op`. Returns a value
       * obtained by a left associative application of all functions return by `op` to the values
       * returned by `p`. This parser can for example be used to eliminate left recursion which
       * typically occurs in expression grammars.*/
-    def chainl1[A, B](p: =>Parsley[A], op: =>Parsley[(B, A) => B])(implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${B}") wrap: A => B): Parsley[B] = new Parsley(new DeepEmbedding.Chainl(new DeepEmbedding.Subroutine(p.internal), op.internal, wrap))
+    def chainl1[A, B](p: =>Parsley[A], op: =>Parsley[(B, A) => B])(implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${B}") wrap: A => B): Parsley[B] = new Parsley(new deepembedding.Chainl(new deepembedding.Subroutine(p.internal), op.internal, wrap))
 
     /**`chainPost(p, op)` parses one occurrence of `p`, followed by many postfix applications of `op`
       * that associate to the left.*/
-    def chainPost[A](p: =>Parsley[A], op: =>Parsley[A => A]): Parsley[A] = new Parsley(new DeepEmbedding.ChainPost(p.internal, op.internal))
+    def chainPost[A](p: =>Parsley[A], op: =>Parsley[A => A]): Parsley[A] = new Parsley(new deepembedding.ChainPost(p.internal, op.internal))
 
     /**This parser only succeeds at the end of the input. This is a primitive parser.*/
-    val eof: Parsley[Unit] = new Parsley(new DeepEmbedding.Eof)
+    val eof: Parsley[Unit] = new Parsley(new deepembedding.Eof)
 
     /**This parser only succeeds if there is still more input.*/
     val more: Parsley[Unit] = notFollowedBy(eof)
@@ -152,13 +152,13 @@ object Combinator
       * keywords, we want to make sure that a keyword is not followed by a legal identifier character,
       * in which case the keyword is actually an identifier. We can program this behaviour as follows:
       * {{{attempt(kw *> notFollowedBy(alphaNum))}}}*/
-    def notFollowedBy(p: Parsley[_]): Parsley[Unit] = new Parsley(new DeepEmbedding.NotFollowedBy(p.internal))
+    def notFollowedBy(p: Parsley[_]): Parsley[Unit] = new Parsley(new deepembedding.NotFollowedBy(p.internal))
 
     /**`manyUntil(p, end)` applies parser `p` zero or more times until the parser `end` succeeds.
       * Returns a list of values returned by `p`. This parser can be used to scan comments.*/
     def manyUntil[A, B](p: =>Parsley[A], end: =>Parsley[B]): Parsley[List[A]] =
     {
-        new Parsley(new DeepEmbedding.ManyUntil((end #> DeepEmbedding.ManyUntil.Stop <|> p).internal))
+        new Parsley(new deepembedding.ManyUntil((end #> deepembedding.ManyUntil.Stop <|> p).internal))
     }
 
     /**`someUntil(p, end)` applies parser `p` one or more times until the parser `end` succeeds.

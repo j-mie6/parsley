@@ -1,6 +1,6 @@
-import parsley.instructions.Context
+import parsley.internal.instructions.Context
 
-import scala.annotation.{implicitAmbiguous, tailrec}
+import scala.annotation.implicitAmbiguous
 import scala.language.implicitConversions
 
 package object parsley
@@ -73,9 +73,6 @@ package object parsley
       */
     @deprecated("parsley.unsafe.giveContext should be used instead")
     def giveContext: Context = unsafe.giveContext
-
-    // Internals
-    private [parsley] type UnsafeOption[A >: Null] = A
 
     // TODO: Remove
     // From shapeless library :)
