@@ -471,7 +471,7 @@ private [instructions] trait Logger
         val indent = this.indent(ctx)
         val start = Math.max(ctx.offset - 5, 0)
         val end = Math.min(ctx.offset + 6, ctx.inputsz)
-        val input = ctx.input.toString.substring(start, end).replace("\n", Console.GREEN + "↙" + Console.RESET)
+        val input = ctx.input.mkString.substring(start, end).replace("\n", Console.GREEN + "↙" + Console.RESET)
                                                             .replace(" ", Console.WHITE + "·" + Console.RESET)
         val inputAndEof = if (end == ctx.inputsz) input + Console.RED + "•" + Console.RESET else input
         val prelude = s"$indent$dir$name$dir (${ctx.line}, ${ctx.col}): "
