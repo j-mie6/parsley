@@ -179,9 +179,12 @@ class CoreTests extends ParsleyTest {
         noException should be thrownBy runParser(uhoh, "a")
     }
 
+    // TODO: move this test into the future `internal` package
     "subroutines" should "function correctly" in {
         val p = satisfy(_ => true) *> satisfy(_ => true) *> satisfy(_ => true)
-        runParser('a' *> +p <* 'b' <* +p <* 'c', "a123b123c") should be (Success('3'))
+        val q = 'a' *> p <* 'b' <* p <* 'c'
+        q.internal.instrs.last should be (instructions.Return)
+        runParser(q, "a123b123c") should be (Success('3'))
     }
 
     "parsers" should "be thread safe when ran correctly" ignore {

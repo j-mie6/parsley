@@ -1,6 +1,6 @@
 package parsley.instructions
 
-import parsley.DeepToken.Sign._
+import parsley.deepembedding.DeepToken.Sign._
 import parsley.TokenParser.TokenSet
 import parsley.UnsafeOption
 

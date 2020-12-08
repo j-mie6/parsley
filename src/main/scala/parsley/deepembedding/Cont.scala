@@ -1,5 +1,6 @@
-package parsley
+package parsley.deepembedding
 
+import parsley.{Bounce, Thunk, Chunk}
 import scala.language.{higherKinds, reflectiveCalls}
 
 private [parsley] abstract class ContOps[Cont[_, _]]

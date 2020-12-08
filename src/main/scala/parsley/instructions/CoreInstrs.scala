@@ -1,7 +1,8 @@
 package parsley.instructions
 
 import Stack.{isEmpty, push}
-import parsley.{Parsley, ResizableArray, UnsafeOption}
+import parsley.{ResizableArray, UnsafeOption}
+import parsley.deepembedding.Parsley
 
 import scala.annotation.tailrec
 import scala.language.existentials

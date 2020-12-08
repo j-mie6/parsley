@@ -1,6 +1,7 @@
 package parsley.instructions
 
-import parsley.{DeepEmbedding, UnsafeOption}
+import parsley.UnsafeOption
+import parsley.deepembedding.DeepEmbedding
 import Stack.isEmpty
 
 import scala.collection.mutable.ListBuffer
