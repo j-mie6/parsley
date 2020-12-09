@@ -31,16 +31,10 @@ lazy val root = project.in(file("."))
       ),
 
     scalaVersion := scala213Version,
-    crossScalaVersions := List(scala212Version, scala213Version, dottyVersion/*, scala3Version*/),
+    crossScalaVersions := List(scala212Version, scala213Version/*, dottyVersion, scala3Version*/),
 
     scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature"),
-    scalacOptions ++= {
-      if (isDotty.value)
-        Seq(
-          "-source:3.0-migration"
-        )
-      else Seq.empty
-    },
+    scalacOptions ++= (if (isDotty.value) Seq("-source:3.0-migration") else Seq.empty),
 
     // Trick from sbt-spiewak: disable dottydoc, which is struggling
     // with our package object.

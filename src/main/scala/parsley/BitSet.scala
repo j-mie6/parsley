@@ -26,8 +26,9 @@ private [parsley] final class BitSet(gen: Either[Set[Char], Char => Boolean]) ex
     {
         var i: Int = 0
         var max = 0
-        val bigarr = new Array[Int](2048)
-        while (i < 65535)
+        val IntsFor16Bit = 0x10000 / 32
+        val bigarr = new Array[Int](IntsFor16Bit)
+        while (i < 0xffff)
         {
             if (f(i.toChar))
             {

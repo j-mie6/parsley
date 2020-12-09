@@ -40,7 +40,9 @@ object ExpressionParser
      *              Each list in the table corresponds to operators of the same precedence level.
      * @return A parser for the described expression language
      */
-    def apply[A](atom: =>Parsley[A], table: MonoOps[A]*) = new ExpressionParser(atom, table.foldRight(Levels.empty[A])(Level.apply[A, A, A]))
+    def apply[A](atom: =>Parsley[A], table: MonoOps[A]*): ExpressionParser[A, A] = {
+        new ExpressionParser(atom, table.foldRight(Levels.empty[A])(Level.apply[A, A, A]))
+    }
     /** This is used to build an expression parser for a multi-layered expression tree type. Levels are specified
      * from strongest to weakest.
      * @tparam A The type of the atomic unit of the expression
@@ -50,7 +52,7 @@ object ExpressionParser
      *              See [[Levels]] and it's subtypes for a description of how the types work.
      * @return A parser for the described expression language
      */
-    def apply[A, B](atom: =>Parsley[A], table: Levels[A, B]) = new ExpressionParser(atom, table)
+    def apply[A, B](atom: =>Parsley[A], table: Levels[A, B]): ExpressionParser[A, B] = new ExpressionParser(atom, table)
     /** Denotes the associativity of an operator, either `AssocLeft` or `AssocRight`. */
     sealed trait Assoc
     case object AssocLeft extends Assoc

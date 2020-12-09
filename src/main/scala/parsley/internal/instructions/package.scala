@@ -1,6 +1,7 @@
 package parsley.internal
 
 import scala.annotation.tailrec
+import scala.language.implicitConversions
 
 package object instructions
 {
@@ -74,13 +75,13 @@ package object instructions
         @tailrec def drop[A](s: Stack[A], n: Int): Stack[A] = if (n > 0 && !isEmpty(s)) drop(s.tail, n - 1) else s
         def map[A, B](s: Stack[A], f: A => B): Stack[B] = if (!isEmpty(s)) new Stack(f(s.head), map(s.tail, f)) else empty
         def mkString(s: Stack[_], sep: String): String = if (isEmpty(s)) "" else s.head.toString + sep + mkString(s.tail, sep)
-        def push[A](s: Stack[A], x: A) = new Stack(x, s)
+        def push[A](s: Stack[A], x: A): Stack[A] = new Stack(x, s)
     }
 
     // Designed to replace the operational stack
     // Since elements are of type Any, this serves as a optimised implementation
     // Its success may result in the deprecation of the Stack class in favour of a generic version of this!
-    private [instructions] final class ArrayStack[A](initialSize: Int = 8) {
+    private [instructions] final class ArrayStack[A](initialSize: Int = ArrayStack.DefaultSize) {
         private [this] var array: Array[Any] = new Array(initialSize)
         private [this] var sp = -1
 
@@ -119,7 +120,7 @@ package object instructions
         def usize: Int = sp
         def size: Int = usize + 1
         def isEmpty: Boolean = sp == -1
-        def mkString(sep: String): String = array.take(sp+1).reverse.mkString(sep)
+        def mkString(sep: String): String = array.take(sp + 1).reverse.mkString(sep)
         def clear(): Unit = {
             sp = -1
             var i = array.length-1
@@ -128,10 +129,8 @@ package object instructions
                 i -= 1
             }
         }
-        override def clone: ArrayStack[A] = {
-            val me = new ArrayStack[A](array.length)
-            for (i <- 0 to sp) me.push(array(i).asInstanceOf[A])
-            me
-        }
+    }
+    object ArrayStack {
+        val DefaultSize = 8
     }
 }

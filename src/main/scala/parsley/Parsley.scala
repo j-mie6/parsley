@@ -1,6 +1,6 @@
 package parsley
 
-import parsley.internal.instructions._
+import parsley.internal.instructions.Context
 import parsley.internal.deepembedding
 
 import scala.annotation.tailrec
@@ -36,6 +36,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: deepe
       */
     def overflows(): Unit = internal.overflows()
 
+    //TODO: we need a way to set source pos and filename
     /** This method is responsible for actually executing parsers. Given a `Parsley[A]` and an input
       * string, will parse the string with the parser. The result is either a `Success` or a `Failure`.
       * @param p The parser to run
@@ -220,7 +221,7 @@ object Parsley
           * of parsers that are very big and used many times considerably.
           * @return The same parser, but wrapped in a subroutine call
           */
-        @deprecated("This functionality is now automatically provided by default")
+        @deprecated("This functionality is now automatically provided by default", "parsley-1.5.1")
         def unary_+ : Parsley[A] = new Parsley(new deepembedding.Subroutine(p.internal))
         /**
           * Using this method enables debugging functionality for this parser. When it is entered a snapshot is taken and
@@ -302,7 +303,9 @@ object Parsley
       * @param r The third parser to parse
       * @return `f(x, y, z)` where `x` is the result of `p`, `y` is the result of `q` and `z` is the result of `r`.
       */
-    def lift3[A, B, C, D](f: (A, B, C) => D, p: =>Parsley[A], q: =>Parsley[B], r: =>Parsley[C]): Parsley[D] = new Parsley(new deepembedding.Lift3(f, p.internal, q.internal, r.internal))
+    def lift3[A, B, C, D](f: (A, B, C) => D, p: =>Parsley[A], q: =>Parsley[B], r: =>Parsley[C]): Parsley[D] = {
+        new Parsley(new deepembedding.Lift3(f, p.internal, q.internal, r.internal))
+    }
 
     /** This is one of the core operations of a selective functor. It will conditionally execute one of `p` and `q`
       * depending on the result from `b`. This can be used to implement conditional choice within a parser without

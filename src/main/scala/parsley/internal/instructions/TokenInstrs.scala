@@ -193,7 +193,8 @@ private [internal] final class TokenComment(start: String, end: String, line: St
     override def toString: String = "TokenComment"
 }
 
-private [internal] final class TokenWhiteSpace(ws: TokenSet, start: String, end: String, line: String, nested: Boolean) extends TokenSkipComments(start, end, line, nested)
+private [internal] final class TokenWhiteSpace(ws: TokenSet, start: String, end: String, line: String, nested: Boolean)
+    extends TokenSkipComments(start, end, line, nested)
 {
     override def apply(ctx: Context): Unit =
     {

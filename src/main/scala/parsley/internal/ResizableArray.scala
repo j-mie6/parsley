@@ -1,8 +1,10 @@
 package parsley.internal
 
-// This is designed to be a lighter-weight wrapper around Array to make it resizeable
 import scala.reflect.ClassTag
-private [internal] final class ResizableArray[A: ClassTag](initialSize: Int = 16)
+import scala.language.implicitConversions
+
+// This is designed to be a lighter-weight wrapper around Array to make it resizeable
+private [internal] final class ResizableArray[A: ClassTag](initialSize: Int = ResizableArray.InitialSize)
 {
     private [this] var array: Array[A] = new Array(initialSize)
     private [this] var size = 0
@@ -22,4 +24,7 @@ private [internal] final class ResizableArray[A: ClassTag](initialSize: Int = 16
     }
     def length: Int = size
     def toArray: Array[A] = array
+}
+object ResizableArray {
+    val InitialSize = 16
 }

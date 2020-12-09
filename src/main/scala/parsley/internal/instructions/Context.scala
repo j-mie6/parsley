@@ -1,28 +1,25 @@
 package parsley.internal.instructions
 
-import Stack._
+import Stack.{drop, isEmpty, mkString, map}
 import parsley.{Failure, Result, Success}
 import parsley.internal.UnsafeOption
 
 import scala.annotation.tailrec
 
 // Private internals
-private [instructions] final class Frame(val ret: Int, val instrs: Array[Instr])
-{
+private [instructions] final class Frame(val ret: Int, val instrs: Array[Instr]) {
     override def toString: String = s"[$instrs@$ret]"
 }
-private [instructions] final class Handler(val depth: Int, val pc: Int, var stacksz: Int)
-{
-    override def toString: String = s"Handler@$depth:$pc(-${stacksz+1})"
+private [instructions] final class Handler(val depth: Int, val pc: Int, var stacksz: Int) {
+    override def toString: String = s"Handler@$depth:$pc(-${stacksz + 1})"
 }
-private [instructions] final class State(val offset: Int, val line: Int, val col: Int, val regs: Array[Any])
-{
+private [instructions] final class State(val offset: Int, val line: Int, val col: Int, val regs: Array[Any]) {
     override def toString: String = s"$offset ($line, $col)"
 }
 
+// TODO: Make this private for 2.0
 final class Context private [parsley] (private [instructions] var instrs: Array[Instr],
-                                       private [instructions] var input: Array[Char])
-{
+                                       private [instructions] var input: Array[Char]) {
     private [instructions] val stack: ArrayStack[Any] = new ArrayStack()
     private [instructions] var offset: Int = 0
     private [instructions] var inputsz: Int = input.length
@@ -44,15 +41,14 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
     private [instructions] var unexpectAnyway: Boolean = false
     private [instructions] var errorOverride: UnsafeOption[String] = _
     private [instructions] var overrideDepth: Int = 0
-    private [instructions] var regs: Array[Any] = new Array[Any](4)
+    private [instructions] var regs: Array[Any] = new Array[Any](Context.NumRegs)
     private [instructions] var debuglvl: Int = 0
     private [instructions] var startline: Int = 1
     private [instructions] var startcol: Int = 1
     var sourceName: String = "input"
 
     //override def toString: String = pretty
-    private [instructions] def pretty: String =
-    {
+    private [instructions] def pretty: String = {
         s"""[
            |  stack     = [${stack.mkString(", ")}]
            |  instrs    = ${instrs.mkString("; ")}
@@ -62,23 +58,21 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
            |  pc        = $pc
            |  depth     = $depth
            |  rets      = ${mkString(map[Frame, Int](calls, _.ret), ", ")}
-           |  handlers  = ${mkString(handlers, ":") + "[]"}
-           |  recstates = ${mkString(states, ":") + "[]"}
-           |  checks    = ${mkString(checkStack, ":") + "[]"}
+           |  handlers  = ${mkString(handlers, ":")}[]
+           |  recstates = ${mkString(states, ":")}[]
+           |  checks    = ${mkString(checkStack, ":")}[]
            |  registers = ${regs.zipWithIndex.map{case (r, i) => s"r$i = $r"}.mkString("\n              ")}
            |]""".stripMargin
     }
 
     def pos: (Int, Int) = (startline, startcol)
-    def pos_=(pos: (Int, Int)): Unit =
-    {
+    def pos_=(pos: (Int, Int)): Unit = {
         val (line, col) = pos
         startline = line
         startcol = col
     }
 
-    @tailrec @inline private [parsley] def runParser[A](): Result[A] =
-    {
+    @tailrec @inline private [parsley] def runParser[A](): Result[A] = {
         //println(this)
         if (status eq Failed) return Failure(errorMessage)
         if (pc < instrs.length)
@@ -94,39 +88,32 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
         }
     }
 
-    private [instructions] def ret(): Unit =
-    {
+    private [instructions] def ret(): Unit = {
         val frame = calls.head
         instrs = frame.instrs
         calls = calls.tail
         pc = frame.ret
         depth -= 1
-        if (depth < overrideDepth)
-        {
+        if (depth < overrideDepth) {
             overrideDepth = 0
             errorOverride = null
         }
     }
 
-    private [instructions] def fail(e: UnsafeOption[String] = null): Unit =
-    {
-        if (isEmpty(handlers))
-        {
+    private [instructions] def fail(e: UnsafeOption[String] = null): Unit = {
+        if (isEmpty(handlers)) {
             status = Failed
-            if (erroffset == -1)
-            {
+            if (erroffset == -1) {
                 errcol = col
                 errline = line
             }
         }
-        else
-        {
+        else {
             status = Recover
             val handler = handlers.head
             handlers = handlers.tail
             val diffdepth = depth - handler.depth - 1
-            if (diffdepth >= 0)
-            {
+            if (diffdepth >= 0) {
                 val calls_ = if (diffdepth != 0) drop(calls, diffdepth) else calls
                 instrs = calls_.head.instrs
                 calls = calls_.tail
@@ -136,8 +123,7 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
             if (diffstack > 0) stack.drop(diffstack)
             depth = handler.depth
         }
-        if (offset > erroffset)
-        {
+        if (offset > erroffset) {
             erroffset = offset
             errcol = col
             errline = line
@@ -147,15 +133,13 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
             unexpectAnyway = false
         }
         else if (offset == erroffset) expected ::= (if (errorOverride == null) e else errorOverride)
-        if (depth < overrideDepth)
-        {
+        if (depth < overrideDepth) {
             overrideDepth = 0
             errorOverride = null
         }
     }
 
-    private def errorMessage: String =
-    {
+    private def errorMessage: String = {
         val posStr = s"(line $errline, column $errcol):"
         val unexpectedStr = Option(unexpected).map(s => s"unexpected $s")
         val expectedFlat = expected.flatMap(Option(_))
@@ -164,20 +148,16 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
         val expectedStr = if (expectedFiltered.isEmpty) None else Some(s"expected ${expectedFiltered.distinct.reverse.mkString(" or ")}")
         val rawStr = if (rawFiltered.isEmpty) None else Some(rawFiltered.distinct.reverse.mkString(" or "))
         unexpectAnyway = unexpectAnyway || expectedFlat.nonEmpty || raw.nonEmpty
-        if (rawStr.isEmpty && expectedStr.isEmpty && unexpectAnyway)
-        {
+        if (rawStr.isEmpty && expectedStr.isEmpty && unexpectAnyway) {
             s"$posStr\n  ${unexpectedStr.getOrElse("unknown parse error")}"
         }
-        else if (rawStr.isEmpty && expectedStr.isEmpty)
-        {
+        else if (rawStr.isEmpty && expectedStr.isEmpty) {
             s"$posStr\n  unknown parse error"
         }
-        else if (expectedStr.isEmpty)
-        {
+        else if (expectedStr.isEmpty) {
             s"$posStr\n  ${rawStr.get}"
         }
-        else
-        {
+        else {
             s"$posStr${unexpectedStr.fold("")("\n  " + _)}\n  ${expectedStr.get}${rawStr.fold("")("\n  " + _)}"
         }
     }
@@ -187,8 +167,7 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
     private [instructions] def moreInput: Boolean = offset < inputsz
 
     // Allows us to reuse a context, helpful for benchmarking and potentially user applications
-    private [parsley] def apply(_instrs: Array[Instr], _input: Array[Char]): Context =
-    {
+    private [parsley] def apply(_instrs: Array[Instr], _input: Array[Char]): Context = {
         instrs = _instrs
         input = _input
         stack.clear()
@@ -218,5 +197,6 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
 }
 
 private [parsley] object Context {
+    val NumRegs = 4
     def empty = new Context(null, Array.emptyCharArray)
 }

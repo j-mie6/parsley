@@ -1,9 +1,9 @@
 package parsley
 
 import parsley.Char.{digit, hexDigit, octDigit, satisfy}
-import parsley.Combinator._
-import parsley.internal.deepembedding.Sign._
-import parsley.Parsley._
+import parsley.Combinator.{sepBy, sepBy1, between, some, skipSome, notFollowedBy}
+import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
+import parsley.Parsley.{unit, fail, many, skipMany, attempt, lift2, pure, empty, LazyParsley}
 import parsley.TokenParser.TokenSet
 import parsley.Implicits.{charLift, stringLift}
 import parsley.internal.deepembedding
@@ -91,7 +91,7 @@ object CharSet
   */
 object BitGen
 {
-    def apply(f: Char => Boolean) = BitSetImpl(new BitSet(Right(f)))
+    def apply(f: Char => Boolean): Impl = BitSetImpl(new BitSet(Right(f)))
 }
 
 
@@ -276,9 +276,9 @@ final class TokenParser(lang: LanguageDef)
       * parsed according to the grammar rules defined in the Haskell report.*/
     lazy val naturalOrFloat: Parsley[Either[Int, Double]] = lexeme(natFloat) ? "unsigned number"
 
-    private lazy val decimal_ = number(10, digit)
-    private lazy val hexadecimal_ = satisfy(c => c == 'x' || c == 'X') *> number(16, hexDigit)
-    private lazy val octal_ = satisfy(c => c == 'o' || c == 'O') *> number(8, octDigit)
+    private lazy val decimal_ = number(base = 10, digit)
+    private lazy val hexadecimal_ = satisfy(c => c == 'x' || c == 'X') *> number(base = 16, hexDigit)
+    private lazy val octal_ = satisfy(c => c == 'o' || c == 'O') *> number(base = 8, octDigit)
 
     // Floats
     private def sign(ty: SignType) = new Parsley(new deepembedding.Sign[ty.resultType](ty))
@@ -340,29 +340,42 @@ final class TokenParser(lang: LanguageDef)
      * that is provided to the token parser.*/
     val whiteSpace_ : Impl => Parsley[Unit] =
     {
-        case BitSetImpl(ws) => new Parsley(new deepembedding.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
-        case Predicate(ws) => new Parsley(new deepembedding.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
-        case Parser(space_) => skipMany(new Parsley(new deepembedding.Comment(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments)) <\> space_)
+        case BitSetImpl(ws) =>
+            new Parsley(new deepembedding.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
+        case Predicate(ws) =>
+            new Parsley(new deepembedding.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
+        case Parser(space_) =>
+            skipMany(new Parsley(new deepembedding.Comment(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments)) <\> space_)
         case NotRequired => skipComments
     }
 
     /**Parses any comments and skips them, this includes both line comments and block comments.*/
-    lazy val skipComments: Parsley[Unit] = new Parsley(new deepembedding.SkipComments(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
+    lazy val skipComments: Parsley[Unit] = {
+        new Parsley(new deepembedding.SkipComments(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
+    }
 
     // Bracketing
     /**Lexeme parser `parens(p)` parses `p` enclosed in parenthesis, returning the value of `p`.*/
-    def parens[A](p: =>Parsley[A]): Parsley[A] = between(symbol('(') ? "open parenthesis", symbol(')') ? "closing parenthesis" <|> fail("unclosed parentheses"), p)
+    def parens[A](p: =>Parsley[A]): Parsley[A] = between(symbol('(') ? "open parenthesis",
+                                                         symbol(')') ? "closing parenthesis" <|> fail("unclosed parentheses"),
+                                                         p)
 
     /**Lexeme parser `braces(p)` parses `p` enclosed in braces ('{', '}'), returning the value of 'p'*/
-    def braces[A](p: =>Parsley[A]): Parsley[A] = between(symbol('{') ? "open brace", symbol('}') ? "matching closing brace" <|> fail("unclosed braces"), p)
+    def braces[A](p: =>Parsley[A]): Parsley[A] = between(symbol('{') ? "open brace",
+                                                         symbol('}') ? "matching closing brace" <|> fail("unclosed braces"),
+                                                         p)
 
     /**Lexeme parser `angles(p)` parses `p` enclosed in angle brackets ('<', '>'), returning the
      * value of `p`.*/
-    def angles[A](p: =>Parsley[A]): Parsley[A] = between(symbol('<') ? "open angle bracket", symbol('>') ? "matching closing angle bracket" <|> fail("unclosed angle brackets"), p)
+    def angles[A](p: =>Parsley[A]): Parsley[A] = between(symbol('<') ? "open angle bracket",
+                                                         symbol('>') ? "matching closing angle bracket" <|> fail("unclosed angle brackets"),
+                                                         p)
 
     /**Lexeme parser `brackets(p)` parses `p` enclosed in brackets ('[', ']'), returning the value
      * of `p`.*/
-    def brackets[A](p: =>Parsley[A]): Parsley[A] = between(symbol('[') ? "open square bracket", symbol(']') ? "matching closing square bracket" <|> fail("unclosed square brackets"), p)
+    def brackets[A](p: =>Parsley[A]): Parsley[A] = between(symbol('[') ? "open square bracket",
+                                                           symbol(']') ? "matching closing square bracket" <|> fail("unclosed square brackets"),
+                                                           p)
 
     /**Lexeme parser `semi` parses the character ';' and skips any trailing white space. Returns ";"*/
     val semi: Parsley[Char] = symbol(';') ? "semicolon"

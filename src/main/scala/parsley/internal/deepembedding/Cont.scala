@@ -15,7 +15,7 @@ private [deepembedding] sealed abstract class Bounce[A]
 private [deepembedding] final class Chunk[A](val x: A) extends Bounce[A]
 private [deepembedding] final class Thunk[A](val cont: () => Bounce[A]) extends Bounce[A]
 
-private [deepembedding] abstract class ContOps[Cont[_, _]]
+private [deepembedding] abstract class ContOps[Cont[_, +_]]
 {
     def wrap[R, A](x: A): Cont[R, A]
     def unwrap[R](wrapped: Cont[R, R]): R
@@ -26,22 +26,22 @@ private [deepembedding] abstract class ContOps[Cont[_, _]]
 }
 private [deepembedding] object ContOps
 {
-    implicit class ContAdapter[R, A, Cont[_, _]](c: =>Cont[R, A])(implicit ops: ContOps[Cont])
+    implicit class ContAdapter[R, A, Cont[_, +_]](c: =>Cont[R, A])(implicit ops: ContOps[Cont])
     {
         def map[B](f: A => B): Cont[R, B] = ops.map(c, f)
         def flatMap[B](f: A => Cont[R, B]): Cont[R, B] = ops.flatMap(c, f)
         def >>[B](k: =>Cont[R, B]): Cont[R, B] = ops.>>(c, k)
         def |>[B](x: =>B): Cont[R, B] = ops.|>(c, x)
     }
-    def result[R, A, Cont[_, _]](x: A)(implicit canWrap: ContOps[Cont]): Cont[R, A] = canWrap.wrap(x)
-    def perform[R, Cont[_, _]](wrapped: Cont[R, R])(implicit canUnwrap: ContOps[Cont]): R = canUnwrap.unwrap(wrapped)
-    type GenOps = ContOps[({type C[_, _]})#C]
+    def result[R, A, Cont[_, +_]](x: A)(implicit canWrap: ContOps[Cont]): Cont[R, A] = canWrap.wrap(x)
+    def perform[R, Cont[_, +_]](wrapped: Cont[R, R])(implicit canUnwrap: ContOps[Cont]): R = canUnwrap.unwrap(wrapped)
+    type GenOps = ContOps[({type C[_, +_]})#C]
     def safeCall[A](task: GenOps => A): A =
         try task(Id.ops.asInstanceOf[GenOps])
         catch { case _: StackOverflowError => task(Cont.ops.asInstanceOf[GenOps]) }
 }
 
-private [deepembedding] class Cont[R, A](val cont: (A => Bounce[R]) => Bounce[R]) extends AnyVal
+private [deepembedding] class Cont[R, +A](val cont: (A => Bounce[R]) => Bounce[R]) extends AnyVal
 private [deepembedding] object Cont
 {
     implicit val ops: ContOps[Cont] = new ContOps[Cont]
@@ -72,27 +72,20 @@ private [deepembedding] object Cont
     }
 }
 
-private [deepembedding] class Id[R, A](var x: A)
+private [deepembedding] class Id[R, +A](val x: A) extends AnyVal
 private [deepembedding] object Id
 {
     implicit val ops: ContOps[Id] = new ContOps[Id]
     {
         override def wrap[R, A](x: A): Id[R, A] = new Id(x)
         override def unwrap[R](wrapped: Id[R, R]): R = wrapped.x
-        override def map[R, A, B](c: =>Id[R, A], f: A => B): Id[R, B] = //new Id(f(c.x))
-        {
-            // I'm sorry, but this /is/ a little faster...
-            val i = c
-            i.x = f(i.x).asInstanceOf[A]
-            i.asInstanceOf[Id[R, B]]
-        }
+        override def map[R, A, B](c: =>Id[R, A], f: A => B): Id[R, B] = new Id(f(c.x))
         override def flatMap[R, A, B](c: =>Id[R, A], f: A => Id[R, B]): Id[R, B] = f(c.x)
         override def >>[R, A, B](c: => Id[R, A], k: => Id[R, B]): Id[R, B] = {c; k}
         override def |>[R, A, B](c: => Id[R, A], x: => B): Id[R, B] =
         {
-            val i = c
-            i.x = x.asInstanceOf[A]
-            i.asInstanceOf[Id[R, B]]
+            c.x
+            new Id(x)
         }
     }
 }

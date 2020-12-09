@@ -19,3 +19,5 @@ plugins:
         enabled: false
       org.scalastyle.scalariform.LowercasePatternMatchChecker:
         enabled: false
+      org.scalastyle.scalariform.MultipleStringLiteralsChecker:
+        enabled: false
