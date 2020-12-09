@@ -40,7 +40,9 @@ object ExpressionParser
      *              Each list in the table corresponds to operators of the same precedence level.
      * @return A parser for the described expression language
      */
-    def apply[A](atom: =>Parsley[A], table: MonoOps[A]*): ExpressionParser[A, A] = new ExpressionParser(atom, table.foldRight(Levels.empty[A])(Level.apply[A, A, A]))
+    def apply[A](atom: =>Parsley[A], table: MonoOps[A]*): ExpressionParser[A, A] = {
+        new ExpressionParser(atom, table.foldRight(Levels.empty[A])(Level.apply[A, A, A]))
+    }
     /** This is used to build an expression parser for a multi-layered expression tree type. Levels are specified
      * from strongest to weakest.
      * @tparam A The type of the atomic unit of the expression

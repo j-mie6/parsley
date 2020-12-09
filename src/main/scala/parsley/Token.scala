@@ -340,29 +340,42 @@ final class TokenParser(lang: LanguageDef)
      * that is provided to the token parser.*/
     val whiteSpace_ : Impl => Parsley[Unit] =
     {
-        case BitSetImpl(ws) => new Parsley(new deepembedding.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
-        case Predicate(ws) => new Parsley(new deepembedding.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
-        case Parser(space_) => skipMany(new Parsley(new deepembedding.Comment(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments)) <\> space_)
+        case BitSetImpl(ws) =>
+            new Parsley(new deepembedding.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
+        case Predicate(ws) =>
+            new Parsley(new deepembedding.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
+        case Parser(space_) =>
+            skipMany(new Parsley(new deepembedding.Comment(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments)) <\> space_)
         case NotRequired => skipComments
     }
 
     /**Parses any comments and skips them, this includes both line comments and block comments.*/
-    lazy val skipComments: Parsley[Unit] = new Parsley(new deepembedding.SkipComments(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
+    lazy val skipComments: Parsley[Unit] = {
+        new Parsley(new deepembedding.SkipComments(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
+    }
 
     // Bracketing
     /**Lexeme parser `parens(p)` parses `p` enclosed in parenthesis, returning the value of `p`.*/
-    def parens[A](p: =>Parsley[A]): Parsley[A] = between(symbol('(') ? "open parenthesis", symbol(')') ? "closing parenthesis" <|> fail("unclosed parentheses"), p)
+    def parens[A](p: =>Parsley[A]): Parsley[A] = between(symbol('(') ? "open parenthesis",
+                                                         symbol(')') ? "closing parenthesis" <|> fail("unclosed parentheses"),
+                                                         p)
 
     /**Lexeme parser `braces(p)` parses `p` enclosed in braces ('{', '}'), returning the value of 'p'*/
-    def braces[A](p: =>Parsley[A]): Parsley[A] = between(symbol('{') ? "open brace", symbol('}') ? "matching closing brace" <|> fail("unclosed braces"), p)
+    def braces[A](p: =>Parsley[A]): Parsley[A] = between(symbol('{') ? "open brace",
+                                                         symbol('}') ? "matching closing brace" <|> fail("unclosed braces"),
+                                                         p)
 
     /**Lexeme parser `angles(p)` parses `p` enclosed in angle brackets ('<', '>'), returning the
      * value of `p`.*/
-    def angles[A](p: =>Parsley[A]): Parsley[A] = between(symbol('<') ? "open angle bracket", symbol('>') ? "matching closing angle bracket" <|> fail("unclosed angle brackets"), p)
+    def angles[A](p: =>Parsley[A]): Parsley[A] = between(symbol('<') ? "open angle bracket",
+                                                         symbol('>') ? "matching closing angle bracket" <|> fail("unclosed angle brackets"),
+                                                         p)
 
     /**Lexeme parser `brackets(p)` parses `p` enclosed in brackets ('[', ']'), returning the value
      * of `p`.*/
-    def brackets[A](p: =>Parsley[A]): Parsley[A] = between(symbol('[') ? "open square bracket", symbol(']') ? "matching closing square bracket" <|> fail("unclosed square brackets"), p)
+    def brackets[A](p: =>Parsley[A]): Parsley[A] = between(symbol('[') ? "open square bracket",
+                                                           symbol(']') ? "matching closing square bracket" <|> fail("unclosed square brackets"),
+                                                           p)
 
     /**Lexeme parser `semi` parses the character ';' and skips any trailing white space. Returns ";"*/
     val semi: Parsley[Char] = symbol(';') ? "semicolon"

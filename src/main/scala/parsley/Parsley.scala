@@ -303,7 +303,9 @@ object Parsley
       * @param r The third parser to parse
       * @return `f(x, y, z)` where `x` is the result of `p`, `y` is the result of `q` and `z` is the result of `r`.
       */
-    def lift3[A, B, C, D](f: (A, B, C) => D, p: =>Parsley[A], q: =>Parsley[B], r: =>Parsley[C]): Parsley[D] = new Parsley(new deepembedding.Lift3(f, p.internal, q.internal, r.internal))
+    def lift3[A, B, C, D](f: (A, B, C) => D, p: =>Parsley[A], q: =>Parsley[B], r: =>Parsley[C]): Parsley[D] = {
+        new Parsley(new deepembedding.Lift3(f, p.internal, q.internal, r.internal))
+    }
 
     /** This is one of the core operations of a selective functor. It will conditionally execute one of `p` and `q`
       * depending on the result from `b`. This can be used to implement conditional choice within a parser without

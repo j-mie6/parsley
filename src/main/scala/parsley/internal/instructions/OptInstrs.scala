@@ -60,7 +60,8 @@ private [internal] class Tab(_expected: UnsafeOption[String]) extends CharTok('\
     }
 }
 
-private [internal] class CharTokFastPerform protected (protected final val c: Char, protected final val f: Char => Any, _expected: UnsafeOption[String]) extends Instr
+private [internal] class CharTokFastPerform protected (protected final val c: Char, protected final val f: Char => Any, _expected: UnsafeOption[String])
+    extends Instr
 {
     protected val expected: String = if (_expected == null) "\"" + c.toString + "\"" else _expected
     protected final val fc: Any = f(c)
@@ -268,7 +269,8 @@ private [internal] final class AlwaysRecoverWith[A](x: A) extends Instr
     override def toString: String = s"AlwaysRecover($x)"
 }
 
-private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int], private [this] var default: Int, _expecteds: List[UnsafeOption[String]]) extends Instr
+private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int], private [this] var default: Int, _expecteds: List[UnsafeOption[String]])
+    extends Instr
 {
     private [this] var defaultPreamble: Int = _
     private [this] val jumpTable = mutable.LongMap(prefixes.map(_.toLong).zip(labels): _*)
