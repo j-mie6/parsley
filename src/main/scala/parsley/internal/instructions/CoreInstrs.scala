@@ -107,10 +107,10 @@ private [internal] final class StringTok(s: String, _expected: UnsafeOption[Stri
         adjustAtIndex(i) = makeAdjusters(col, line, tabprefix)
         if (i < cs.length) cs(i) match
         {
-            case '\n' => compute(cs, i+1, 1, line + 1)(Some(0))
-            case '\t' if tabprefix.isEmpty => compute(cs, i+1, 0, line)(Some(col))
-            case '\t' => compute(cs, i+1, col + 4 - ((col-1) & 3), line)
-            case _ => compute(cs, i+1, col + 1, line)
+            case '\n' => compute(cs, i + 1, 1, line + 1)(Some(0))
+            case '\t' if tabprefix.isEmpty => compute(cs, i + 1, 0, line)(Some(col))
+            case '\t' => compute(cs, i + 1, col + 4 - ((col - 1) & 3), line)
+            case _ => compute(cs, i + 1, col + 1, line)
         }
     }
     compute(cs)
@@ -467,7 +467,7 @@ private [internal] final class LocalExit[S](v: Int) extends Instr
 private [instructions] trait Logger
 {
     val name: String
-    final def preludeString(dir: Char, ctx: Context, ends: String = "") =
+    final protected def preludeString(dir: Char, ctx: Context, ends: String = "") =
     {
         val indent = this.indent(ctx)
         val start = Math.max(ctx.offset - 5, 0)
@@ -479,7 +479,7 @@ private [instructions] trait Logger
         val caret = " " * (prelude.length + ctx.offset - start) + Console.BLUE + "^" + Console.RESET
         s"$prelude$inputAndEof$ends\n$caret"
     }
-    final def indent(ctx: Context) = " " * (ctx.debuglvl * 2)
+    final protected def indent(ctx: Context) = " " * (ctx.debuglvl * 2)
 }
 
 private [internal] final class LogBegin(var label: Int, val name: String, break: Boolean) extends JumpInstr with Logger

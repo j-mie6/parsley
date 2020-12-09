@@ -1,9 +1,9 @@
 package parsley
 
 import parsley.Char.{digit, hexDigit, octDigit, satisfy}
-import parsley.Combinator._
-import parsley.internal.deepembedding.Sign._
-import parsley.Parsley._
+import parsley.Combinator.{sepBy, sepBy1, between, some, skipSome, notFollowedBy}
+import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
+import parsley.Parsley.{unit, fail, many, skipMany, attempt, lift2, pure, empty, LazyParsley}
 import parsley.TokenParser.TokenSet
 import parsley.Implicits.{charLift, stringLift}
 import parsley.internal.deepembedding
@@ -91,7 +91,7 @@ object CharSet
   */
 object BitGen
 {
-    def apply(f: Char => Boolean) = BitSetImpl(new BitSet(Right(f)))
+    def apply(f: Char => Boolean): Impl = BitSetImpl(new BitSet(Right(f)))
 }
 
 
@@ -276,9 +276,9 @@ final class TokenParser(lang: LanguageDef)
       * parsed according to the grammar rules defined in the Haskell report.*/
     lazy val naturalOrFloat: Parsley[Either[Int, Double]] = lexeme(natFloat) ? "unsigned number"
 
-    private lazy val decimal_ = number(10, digit)
-    private lazy val hexadecimal_ = satisfy(c => c == 'x' || c == 'X') *> number(16, hexDigit)
-    private lazy val octal_ = satisfy(c => c == 'o' || c == 'O') *> number(8, octDigit)
+    private lazy val decimal_ = number(base = 10, digit)
+    private lazy val hexadecimal_ = satisfy(c => c == 'x' || c == 'X') *> number(base = 16, hexDigit)
+    private lazy val octal_ = satisfy(c => c == 'o' || c == 'O') *> number(base = 8, octDigit)
 
     // Floats
     private def sign(ty: SignType) = new Parsley(new deepembedding.Sign[ty.resultType](ty))

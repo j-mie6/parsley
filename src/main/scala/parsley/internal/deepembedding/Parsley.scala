@@ -7,7 +7,7 @@ import scala.collection.mutable
 import parsley.internal.instructions
 import instructions.{Instr, JumpTable, JumpInstr, Label}
 import parsley.internal.{UnsafeOption, ResizableArray}
-import ContOps._
+import ContOps.{safeCall, GenOps, perform, result, ContAdapter}
 
 /**
   * This is the class that encapsulates the act of parsing and running an object of this class with `runParser` will
@@ -32,7 +32,7 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     final def overflows(): Unit = cps = true
 
     // Internals
-    final private [deepembedding] def findLets[Cont[_, _]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] =
+    final private [deepembedding] def findLets[Cont[_, +_]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] =
     {
         state.addPred(this)
         if (seen(this)) result(state.addRec(this))
@@ -50,7 +50,7 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
         }
         else self
     }
-    final private [deepembedding] def optimised[Cont[_, _], A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]] =
+    final private [deepembedding] def optimised[Cont[_, +_], A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]] =
     {
         for (p <- this.fix.preprocess(seen + this, sub, label, ops)) yield p.optimise
     }
@@ -65,7 +65,7 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
         val state = new CodeGenState
         val letFinderState = new LetFinderState
         perform(findLets(Set.empty, letFinderState, ops))
-        perform(perform(optimised(Set.empty, new SubMap(letFinderState.lets), null, ops).asInstanceOf[({type C[_, _]})#C[Parsley[_], Parsley[_]]]).codeGen(instrs, state, ops))
+        perform(perform(optimised(Set.empty, new SubMap(letFinderState.lets), null, ops)/*.asInstanceOf[({type C[_, _]})#C[Parsley[_], Parsley[_]]]*/).codeGen(instrs, state, ops))
         if (state.map.nonEmpty)
         {
             val end = state.freshLabel()
@@ -119,14 +119,14 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
 
     // Abstracts
     // Sub-tree optimisation and Rec calculation - Bottom-up
-    protected def preprocess[Cont[_, _], A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]]
+    protected def preprocess[Cont[_, +_], A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[A_]]
     // Let-finder recursion
-    protected def findLetsAux[Cont[_, _]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit]
+    protected def findLetsAux[Cont[_, +_]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit]
     // Optimisation - Bottom-up
     protected def optimise: Parsley[A] = this
     // Peephole optimisation and code generation - Top-down
-    private [parsley] def codeGen[Cont[_, _]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit]
-    private [parsley] def prettyASTAux[Cont[_, _]](implicit ops: ContOps[Cont]): Cont[String, String]
+    private [parsley] def codeGen[Cont[_, +_]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit]
+    private [parsley] def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont]): Cont[String, String]
 }
 
 // Internals
@@ -193,5 +193,5 @@ private [parsley] class LetFinderState
 private [parsley] class SubMap(val subMap: Map[Parsley[_], Parsley[_]]) extends AnyVal
 {
     def apply[A](p: Parsley[A]): Parsley[A] = subMap.getOrElse(p, p).asInstanceOf[Parsley[A]]
-    override def toString = subMap.toString
+    override def toString: String = subMap.toString
 }

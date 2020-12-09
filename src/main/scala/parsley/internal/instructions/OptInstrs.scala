@@ -131,10 +131,10 @@ private [internal] final class StringTokFastPerform(s: String, f: String => Any,
         adjustAtIndex(i) = makeAdjusters(col, line, tabprefix)
         if (i < cs.length) cs(i) match
         {
-            case '\n' => compute(cs, i+1, 1, line + 1)(Some(0))
-            case '\t' if tabprefix.isEmpty => compute(cs, i+1, 0, line)(Some(col))
-            case '\t' => compute(cs, i+1, col + 4 - ((col-1) & 3), line)
-            case _ => compute(cs, i+1, col + 1, line)
+            case '\n' => compute(cs, i + 1, 1, line + 1)(Some(0))
+            case '\t' if tabprefix.isEmpty => compute(cs, i + 1, 0, line)(Some(col))
+            case '\t' => compute(cs, i + 1, col + 4 - ((col-1) & 3), line)
+            case _ => compute(cs, i + 1, col + 1, line)
         }
     }
     compute(cs)

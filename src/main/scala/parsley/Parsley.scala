@@ -1,6 +1,6 @@
 package parsley
 
-import parsley.internal.instructions._
+import parsley.internal.instructions.Context
 import parsley.internal.deepembedding
 
 import scala.annotation.tailrec
@@ -36,6 +36,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: deepe
       */
     def overflows(): Unit = internal.overflows()
 
+    //TODO: we need a way to set source pos and filename
     /** This method is responsible for actually executing parsers. Given a `Parsley[A]` and an input
       * string, will parse the string with the parser. The result is either a `Success` or a `Failure`.
       * @param p The parser to run
@@ -220,7 +221,7 @@ object Parsley
           * of parsers that are very big and used many times considerably.
           * @return The same parser, but wrapped in a subroutine call
           */
-        @deprecated("This functionality is now automatically provided by default")
+        @deprecated("This functionality is now automatically provided by default", "parsley-1.5.1")
         def unary_+ : Parsley[A] = new Parsley(new deepembedding.Subroutine(p.internal))
         /**
           * Using this method enables debugging functionality for this parser. When it is entered a snapshot is taken and
