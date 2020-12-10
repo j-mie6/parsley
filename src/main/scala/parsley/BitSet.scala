@@ -44,5 +44,5 @@ private [parsley] final class BitSet(gen: Either[Set[Char], Char => Boolean]) ex
     }
 
     def contains(c: Char): Boolean = c <= max && ((arr(c >> 5) >> (c & 31)) & 1) == 1
-    def apply(c: Char): Boolean = c <= max && ((arr(c >> 5) >> (c & 31)) & 1) == 1
+    def apply(c: Char): Boolean = contains(c)
 }
