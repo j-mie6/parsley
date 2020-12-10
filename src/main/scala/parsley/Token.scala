@@ -104,19 +104,23 @@ object BitGen
   */
 final class TokenParser(lang: LanguageDef)
 {
+    private def keyOrOp(startImpl: Impl, letterImpl: Impl, parser: Parsley[String], predicate: String => Boolean, name: String,
+                        builder: (TokenSet, TokenSet) => deepembedding.Parsley[String]) = (startImpl, letterImpl) match
+    {
+        case (BitSetImpl(start), BitSetImpl(letter)) => lexeme(new Parsley(builder(start, letter)))
+        case (BitSetImpl(start), Predicate(letter)) => lexeme(new Parsley(builder(start, letter)))
+        case (Predicate(start), BitSetImpl(letter)) => lexeme(new Parsley(builder(start, letter)))
+        case (Predicate(start), Predicate(letter)) => lexeme(new Parsley(builder(start, letter)))
+        case _ => lexeme(attempt(parser.guard(predicate, s"unexpected $name " + _)))
+    }
+
     // Identifiers & Reserved words
     /**This lexeme parser parses a legal identifier. Returns the identifier string. This parser will
      * fail on identifiers that are reserved words (i.e. keywords). Legal identifier characters and
      * keywords are defined in the `LanguageDef` provided to the token parser. An identifier is treated
      * as a single token using `attempt`.*/
-    lazy val identifier: Parsley[String] = (lang.identStart, lang.identLetter) match
-    {
-        case (BitSetImpl(start), BitSetImpl(letter)) => lexeme(new Parsley(new deepembedding.Identifier(start, letter, theReservedNames)))
-        case (BitSetImpl(start), Predicate(letter)) => lexeme(new Parsley(new deepembedding.Identifier(start, letter, theReservedNames)))
-        case (Predicate(start), BitSetImpl(letter)) => lexeme(new Parsley(new deepembedding.Identifier(start, letter, theReservedNames)))
-        case (Predicate(start), Predicate(letter)) => lexeme(new Parsley(new deepembedding.Identifier(start, letter, theReservedNames)))
-        case _ => lexeme(attempt(ident.guard(!isReservedName (_), "unexpected keyword " + _)))
-    }
+    lazy val identifier: Parsley[String] = keyOrOp(lang.identStart, lang.identLetter, ident, !isReservedName(_), "keyword",
+                                                   (start, letter) => new deepembedding.Identifier(start, letter, theReservedNames))
 
     /**The lexeme parser `keyword(name)` parses the symbol `name`, but it also checks that the `name`
      * is not a prefix of a valid identifier. A `keyword` is treated as a single token using `attempt`.*/
@@ -144,26 +148,14 @@ final class TokenParser(lang: LanguageDef)
      * will fail on any operators that are reserved operators. Legal operator characters and
      * reserved operators are defined in the `LanguageDef` provided to the token parser. A
      * `userOp` is treated as a single token using `attempt`.*/
-    lazy val userOp: Parsley[String] = (lang.opStart, lang.opLetter) match
-    {
-        case (BitSetImpl(start), BitSetImpl(letter)) => lexeme(new Parsley(new deepembedding.UserOp(start, letter, lang.operators)))
-        case (BitSetImpl(start), Predicate(letter)) => lexeme(new Parsley(new deepembedding.UserOp(start, letter, lang.operators)))
-        case (Predicate(start), BitSetImpl(letter)) => lexeme(new Parsley(new deepembedding.UserOp(start, letter, lang.operators)))
-        case (Predicate(start), Predicate(letter)) => lexeme(new Parsley(new deepembedding.UserOp(start, letter, lang.operators)))
-        case _ => lexeme(attempt(oper.guard(!isReservedOp(_), "unexpected reserved operator " + _)))
-    }
+    lazy val userOp: Parsley[String] = keyOrOp(lang.opStart, lang.opLetter, oper, !isReservedOp(_), "reserved operator",
+                                               (start, letter) => new deepembedding.UserOp(start, letter, lang.operators))
 
     /**This non-lexeme parser parses a reserved operator. Returns the name of the operator.
      * Legal operator characters and reserved operators are defined in the `LanguageDef`
      * provided to the token parser. A `reservedOp_` is treated as a single token using `attempt`.*/
-    lazy val reservedOp_ : Parsley[String] = (lang.opStart, lang.opLetter) match
-    {
-        case (BitSetImpl(start), BitSetImpl(letter)) => new Parsley(new deepembedding.ReservedOp(start, letter, lang.operators))
-        case (BitSetImpl(start), Predicate(letter)) => new Parsley(new deepembedding.ReservedOp(start, letter, lang.operators))
-        case (Predicate(start), BitSetImpl(letter)) => new Parsley(new deepembedding.ReservedOp(start, letter, lang.operators))
-        case (Predicate(start), Predicate(letter)) => new Parsley(new deepembedding.ReservedOp(start, letter, lang.operators))
-        case _ => attempt(oper.guard(isReservedOp, "unexpected non-reserved operator " + _))
-    }
+    lazy val reservedOp_ : Parsley[String] = keyOrOp(lang.opStart, lang.opLetter, oper, isReservedOp(_), "non-reserved operator",
+                                                     (start, letter) => new deepembedding.ReservedOp(start, letter, lang.operators))
 
     /**This lexeme parser parses a reserved operator. Returns the name of the operator. Legal
      * operator characters and reserved operators are defined in the `LanguageDef` provided
@@ -229,14 +221,16 @@ final class TokenParser(lang: LanguageDef)
      * instead of becoming a quote character. Does not support string gaps. */
     lazy val rawStringLiteral: Parsley[String] = new Parsley(new deepembedding.RawStringLiteral)
 
+    private def letter(terminal: Char): Parsley[Char] = satisfy(c => c != terminal && c != '\\' && c > '\u0016')
+
     private lazy val escapeCode = new Parsley(new deepembedding.Escape)
     private lazy val charEscape = '\\' *> escapeCode
-    private lazy val charLetter = satisfy(c => (c != '\'') && (c != '\\') && (c > '\u0016'))
+    private lazy val charLetter = letter('\'')
     private lazy val characterChar = (charLetter <|> charEscape) ? "literal character"
 
     private val escapeEmpty = '&'
     private lazy val escapeGap = skipSome(space) *> '\\' ? "end of string gap"
-    private lazy val stringLetter = satisfy(c => (c != '"') && (c != '\\') && (c > '\u0016'))
+    private lazy val stringLetter = letter('"')
     private lazy val stringEscape: Parsley[Option[Char]] =
     {
         '\\' *> (escapeGap #> None
@@ -277,8 +271,10 @@ final class TokenParser(lang: LanguageDef)
     lazy val naturalOrFloat: Parsley[Either[Int, Double]] = lexeme(natFloat) ? "unsigned number"
 
     private lazy val decimal_ = number(base = 10, digit)
-    private lazy val hexadecimal_ = satisfy(c => c == 'x' || c == 'X') *> number(base = 16, hexDigit)
-    private lazy val octal_ = satisfy(c => c == 'o' || c == 'O') *> number(base = 8, octDigit)
+
+    private def prefixedNumber(prefix: Char, base: Int, digit: Parsley[Char]) = satisfy(c => c.toLower == prefix.toLower) *> number(base, digit)
+    private lazy val hexadecimal_ = prefixedNumber('x', 16, hexDigit)
+    private lazy val octal_ = prefixedNumber('o', 8, octDigit)
 
     // Floats
     private def sign(ty: SignType) = new Parsley(new deepembedding.Sign[ty.resultType](ty))
@@ -354,28 +350,25 @@ final class TokenParser(lang: LanguageDef)
         new Parsley(new deepembedding.SkipComments(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
     }
 
+    private def enclosing[A](p: =>Parsley[A], open: Char, close: Char, singular: String, plural: String) =
+        between(symbol(open) ? s"open $singular",
+                symbol(close) ? s"matching closing $singular" <|> fail(s"unclosed $plural"),
+                p)
+
     // Bracketing
     /**Lexeme parser `parens(p)` parses `p` enclosed in parenthesis, returning the value of `p`.*/
-    def parens[A](p: =>Parsley[A]): Parsley[A] = between(symbol('(') ? "open parenthesis",
-                                                         symbol(')') ? "closing parenthesis" <|> fail("unclosed parentheses"),
-                                                         p)
+    def parens[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, '(', ')', "parenthesis", "parentheses")
 
     /**Lexeme parser `braces(p)` parses `p` enclosed in braces ('{', '}'), returning the value of 'p'*/
-    def braces[A](p: =>Parsley[A]): Parsley[A] = between(symbol('{') ? "open brace",
-                                                         symbol('}') ? "matching closing brace" <|> fail("unclosed braces"),
-                                                         p)
+    def braces[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, '{', '}', "brace", "braces")
 
     /**Lexeme parser `angles(p)` parses `p` enclosed in angle brackets ('<', '>'), returning the
      * value of `p`.*/
-    def angles[A](p: =>Parsley[A]): Parsley[A] = between(symbol('<') ? "open angle bracket",
-                                                         symbol('>') ? "matching closing angle bracket" <|> fail("unclosed angle brackets"),
-                                                         p)
+    def angles[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, '<', '>', "angle bracket", "angle brackets")
 
     /**Lexeme parser `brackets(p)` parses `p` enclosed in brackets ('[', ']'), returning the value
      * of `p`.*/
-    def brackets[A](p: =>Parsley[A]): Parsley[A] = between(symbol('[') ? "open square bracket",
-                                                           symbol(']') ? "matching closing square bracket" <|> fail("unclosed square brackets"),
-                                                           p)
+    def brackets[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, '[', ']', "square bracket", "square brackets")
 
     /**Lexeme parser `semi` parses the character ';' and skips any trailing white space. Returns ";"*/
     val semi: Parsley[Char] = symbol(';') ? "semicolon"

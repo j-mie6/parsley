@@ -74,8 +74,8 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
 
     @tailrec @inline private [parsley] def runParser[A](): Result[A] = {
         //println(this)
-        if (status eq Failed) return Failure(errorMessage)
-        if (pc < instrs.length)
+        if (status eq Failed) Failure(errorMessage)
+        else if (pc < instrs.length)
         {
             instrs(pc)(this)
             runParser[A]()
@@ -197,6 +197,6 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
 }
 
 private [parsley] object Context {
-    val NumRegs = 4
-    def empty = new Context(null, Array.emptyCharArray)
+    private [Context] val NumRegs = 4
+    def empty: Context = new Context(null, Array.emptyCharArray)
 }

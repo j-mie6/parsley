@@ -1,8 +1,8 @@
 package parsley
 
 import scala.annotation.tailrec
-import parsley.ExpressionParser._
-import parsley.Combinator._
+import parsley.ExpressionParser.{Level, NoLevel, Levels, Postfixes, Prefixes, Infixes, Lefts, Rights, Ops}
+import parsley.Combinator.{chainl1, chainr1, chainPre, chainPost, choice}
 import parsley.XCompat._
 
 /** This class is used to generate efficient expression parsers given a table of operators
