@@ -6,195 +6,52 @@ import ContOps.result
 import parsley.internal.{instructions, UnsafeOption}
 import scala.language.higherKinds
 
-private [parsley] class WhiteSpace(ws: TokenSet, start: String, end: String, line: String, nested: Boolean) extends Parsley[Unit] {
-    override def preprocess[Cont[_, +_], U >: Unit](implicit seen: Set[Parsley[_]], sub: SubMap,
-                                                             label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[U]] = result(this)
-    override def findLetsAux[Cont[_, +_]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] = result(())
-    override def codeGen[Cont[_, +_]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = {
-        result(instrs += new instructions.TokenWhiteSpace(ws, start, end, line, nested))
-    }
-    override def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont]): Cont[String, String] = result("whiteSpace")
-}
+private [parsley] class WhiteSpace(ws: TokenSet, start: String, end: String, line: String, nested: Boolean)
+    extends Singleton[Unit]("whiteSpace", new instructions.TokenWhiteSpace(ws, start, end, line, nested))
 
-private [parsley] class SkipComments(start: String, end: String, line: String, nested: Boolean) extends Parsley[Unit] {
-    override def preprocess[Cont[_, +_], U >: Unit](implicit seen: Set[Parsley[_]], sub: SubMap,
-                                                             label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[U]] = result(this)
-    override def findLetsAux[Cont[_, +_]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] = result(())
-    override def codeGen[Cont[_, +_]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = {
-        result(instrs += new instructions.TokenSkipComments(start, end, line, nested))
-    }
-    override def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont]): Cont[String, String] = result("skipComments")
-}
+private [parsley] class SkipComments(start: String, end: String, line: String, nested: Boolean)
+    extends Singleton[Unit]("skipComments", new instructions.TokenSkipComments(start, end, line, nested))
 
-private [parsley] class Comment(start: String, end: String, line: String, nested: Boolean) extends Parsley[Unit]
-{
-    override def preprocess[Cont[_, +_], U >: Unit](implicit seen: Set[Parsley[_]], sub: SubMap,
-                                                             label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[U]] = result(this)
-    override def findLetsAux[Cont[_, +_]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] = result(())
-    override def codeGen[Cont[_, +_]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = {
-        result(instrs += new instructions.TokenComment(start, end, line, nested))
-    }
-    override def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont]): Cont[String, String] = result("comment")
-}
+private [parsley] class Comment(start: String, end: String, line: String, nested: Boolean)
+    extends Singleton[Unit]("comment", new instructions.TokenComment(start, end, line, nested))
 
-private [parsley] class Sign[A](ty: SignType, val expected: UnsafeOption[String] = null) extends Parsley[A => A] {
-    override def preprocess[Cont[_, +_], F >: A => A](implicit seen: Set[Parsley[_]], sub: SubMap,
-                                                               label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[F]] = {
-        if (label == null) result(this)
-        else result(new Sign(ty, label))
-    }
-    override def findLetsAux[Cont[_, +_]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] = result(())
-    override def codeGen[Cont[_, +_]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] ={
-        result(instrs += new instructions.TokenSign(ty, expected))
-    }
-    override def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont]): Cont[String, String] = result("sign")
-}
+private [parsley] class Sign[A](ty: SignType, val expected: UnsafeOption[String] = null)
+    extends SingletonExpect[A => A]("sign", new Sign(ty, _), new instructions.TokenSign(ty, expected))
 
-private [parsley] class Natural(val expected: UnsafeOption[String] = null) extends Parsley[Int] {
-    override def preprocess[Cont[_, +_], I >: Int](implicit seen: Set[Parsley[_]], sub: SubMap,
-                                                            label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[I]] = {
-        if (label == null) result(this)
-        else result(new Natural(label))
-    }
-    override def findLetsAux[Cont[_, +_]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] = result(())
-    override def codeGen[Cont[_, +_]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = {
-        result(instrs += new instructions.TokenNatural(expected))
-    }
-    override def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont]): Cont[String, String] = result("natural")
-}
+private [parsley] class Natural(val expected: UnsafeOption[String] = null)
+    extends SingletonExpect[Int]("natural", new Natural(_), new instructions.TokenNatural(expected))
 
-private [parsley] class Float(val expected: UnsafeOption[String] = null) extends Parsley[Double] {
-    override def preprocess[Cont[_, +_], D >: Double](implicit seen: Set[Parsley[_]], sub: SubMap,
-                                                               label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[D]] = {
-        if (label == null) result(this)
-        else result(new Float(label))
-    }
-    override def findLetsAux[Cont[_, +_]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] = result(())
-    override def codeGen[Cont[_, +_]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = {
-        result(instrs += new instructions.TokenFloat(expected))
-    }
-    override def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont]): Cont[String, String] = result("float")
-}
+private [parsley] class Float(val expected: UnsafeOption[String] = null)
+    extends SingletonExpect[Double]("float", new Float(_), new instructions.TokenFloat(expected))
 
-private [parsley] class Escape(val expected: UnsafeOption[String] = null) extends Parsley[Char] {
-    override def preprocess[Cont[_, +_], C >: Char](implicit seen: Set[Parsley[_]], sub: SubMap,
-                                                             label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[C]] = {
-        if (label == null) result(this)
-        else result(new Escape(label))
-    }
-    override def findLetsAux[Cont[_, +_]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] = result(())
-    override def codeGen[Cont[_, +_]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = {
-        result(instrs += new instructions.TokenEscape(expected))
-    }
-    override def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont]): Cont[String, String] = result("escape")
-}
+private [parsley] class Escape(val expected: UnsafeOption[String] = null)
+    extends SingletonExpect[Char]("escape", new Escape(_), new instructions.TokenEscape(expected))
 
-private [parsley] class StringLiteral(ws: TokenSet, val expected: UnsafeOption[String] = null) extends Parsley[String] {
-    override def preprocess[Cont[_, +_], S >: String](implicit seen: Set[Parsley[_]], sub: SubMap,
-                                                               label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[S]] = {
-        if (label == null) result(this)
-        else result(new StringLiteral(ws, label))
-    }
-    override def findLetsAux[Cont[_, +_]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] = result(())
-    override def codeGen[Cont[_, +_]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = {
-        result(instrs += new instructions.TokenString(ws, expected))
-    }
-    override def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont]): Cont[String, String] = result("stringLiteral")
-}
+private [parsley] class StringLiteral(ws: TokenSet, val expected: UnsafeOption[String] = null)
+    extends SingletonExpect[String]("stringLiteral", new StringLiteral(ws, _), new instructions.TokenString(ws, expected))
 
-private [parsley] class RawStringLiteral(val expected: UnsafeOption[String] = null) extends Parsley[String] {
-    override def preprocess[Cont[_, +_], S >: String](implicit seen: Set[Parsley[_]], sub: SubMap,
-                                                               label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[S]] = {
-        if (label == null) result(this)
-        else result(new RawStringLiteral(label))
-    }
-    override def findLetsAux[Cont[_, +_]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] = result(())
-    override def codeGen[Cont[_, +_]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = {
-        result(instrs += new instructions.TokenRawString(expected))
-    }
-    override def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont]): Cont[String, String] = result("rawStringLiteral")
-}
+private [parsley] class RawStringLiteral(val expected: UnsafeOption[String] = null)
+    extends SingletonExpect[String]("rawStringLiteral", new RawStringLiteral(_), new instructions.TokenRawString(expected))
 
 private [parsley] class Identifier(start: TokenSet, letter: TokenSet, keywords: Set[String], val expected: UnsafeOption[String] = null)
-    extends Parsley[String] {
-    override def preprocess[Cont[_, +_], S >: String](implicit seen: Set[Parsley[_]], sub: SubMap,
-                                                               label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[S]] = {
-        if (label == null) result(this)
-        else result(new Identifier(start, letter, keywords, label))
-    }
-    override def findLetsAux[Cont[_, +_]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] = result(())
-    override def codeGen[Cont[_, +_]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = {
-        result(instrs += new instructions.TokenIdentifier(start, letter, keywords, expected))
-    }
-    override def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont]): Cont[String, String] = result("identifier")
-}
+    extends SingletonExpect[String]("identifier", new Identifier(start, letter, keywords, _),
+                                    new instructions.TokenIdentifier(start, letter, keywords, expected))
 
-private [parsley] class UserOp(start: TokenSet, letter: TokenSet, operators: Set[String], val expected: UnsafeOption[String] = null) extends Parsley[String] {
-    override def preprocess[Cont[_, +_], S >: String](implicit seen: Set[Parsley[_]], sub: SubMap,
-                                                               label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[S]] = {
-        if (label == null) result(this)
-        else result(new UserOp(start, letter, operators, label))
-    }
-    override def findLetsAux[Cont[_, +_]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] = result(())
-    override def codeGen[Cont[_, +_]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = {
-        result(instrs += new instructions.TokenUserOperator(start, letter, operators, expected))
-    }
-    override def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont]): Cont[String, String] = result("userOp")
-}
+private [parsley] class UserOp(start: TokenSet, letter: TokenSet, ops: Set[String], val expected: UnsafeOption[String] = null)
+    extends SingletonExpect[String]("userOp", new UserOp(start, letter, ops, _), new instructions.TokenUserOperator(start, letter, ops, expected))
 
-private [parsley] class ReservedOp(start: TokenSet, letter: TokenSet, operators: Set[String], val expected: UnsafeOption[String] = null)
-    extends Parsley[String] {
-    override def preprocess[Cont[_, +_], S >: String](implicit seen: Set[Parsley[_]], sub: SubMap,
-                                                               label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[S]] = {
-        if (label == null) result(this)
-        else result(new ReservedOp(start, letter, operators, label))
-    }
-    override def findLetsAux[Cont[_, +_]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] = result(())
-    override def codeGen[Cont[_, +_]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = {
-        result(instrs += new instructions.TokenOperator(start, letter, operators, expected))
-    }
-    override def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont]): Cont[String, String] = result("reservedOp")
-}
+private [parsley] class ReservedOp(start: TokenSet, letter: TokenSet, ops: Set[String], val expected: UnsafeOption[String] = null)
+    extends SingletonExpect[String]("reservedOp", new ReservedOp(start, letter, ops, _), new instructions.TokenOperator(start, letter, ops, expected))
 
 private [parsley] class Keyword(private [Keyword] val keyword: String, letter: TokenSet, caseSensitive: Boolean, val expected: UnsafeOption[String] = null)
-    extends Parsley[Unit] {
-    override def preprocess[Cont[_, +_], U >: Unit](implicit seen: Set[Parsley[_]], sub: SubMap,
-                                                             label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[U]] = {
-        if (label == null) result(this)
-        else result(new Keyword(keyword, letter, caseSensitive, label))
-    }
-    override def findLetsAux[Cont[_, +_]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] = result(())
-    override def codeGen[Cont[_, +_]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = {
-        result(instrs += new instructions.TokenKeyword(keyword, letter, caseSensitive, expected))
-    }
-    override def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont]): Cont[String, String] = result(s"keyword($keyword)")
-}
+    extends SingletonExpect[Unit](s"keyword($keyword)", new Keyword(keyword, letter, caseSensitive, _),
+                                  new instructions.TokenKeyword(keyword, letter, caseSensitive, expected))
 
-private [parsley] class Operator(private [Operator] val operator: String, letter: TokenSet, val expected: UnsafeOption[String] = null) extends Parsley[Unit] {
-    override def preprocess[Cont[_, +_], U >: Unit](implicit seen: Set[Parsley[_]], sub: SubMap,
-                                                             label: UnsafeOption[String], ops: ContOps[Cont]): Cont[Parsley[_], Parsley[U]] = {
-        if (label == null) result(this)
-        else result(new Operator(operator, letter, label))
-    }
-    override def findLetsAux[Cont[_, +_]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] = result(())
-    override def codeGen[Cont[_, +_]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = {
-        result(instrs += new instructions.TokenOperator_(operator, letter, expected))
-    }
-    override def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont]): Cont[String, String] = result(s"operator($operator)")
-}
+private [parsley] class Operator(private [Operator] val operator: String, letter: TokenSet, val expected: UnsafeOption[String] = null)
+    extends SingletonExpect[Unit](s"operator($operator)", new Operator(operator, letter, _), new instructions.TokenOperator_(operator, letter, expected))
 
-private [parsley] class MaxOp(private [MaxOp] val operator: String, ops: Set[String], val expected: UnsafeOption[String] = null) extends Parsley[Unit] {
-    override def preprocess[Cont[_, +_], U >: Unit](implicit seen: Set[Parsley[_]], sub: SubMap,
-                                                             label: UnsafeOption[String], ops_ : ContOps[Cont]): Cont[Parsley[_], Parsley[U]] = {
-        if (label == null) result(this)
-        else result(new MaxOp(operator, ops, label))
-    }
-    override def findLetsAux[Cont[_, +_]](implicit seen: Set[Parsley[_]], state: LetFinderState, ops: ContOps[Cont]): Cont[Unit, Unit] = result(())
-    override def codeGen[Cont[_, +_]](implicit instrs: InstrBuffer, state: CodeGenState, ops_ : ContOps[Cont]): Cont[Unit, Unit] = {
-        result(instrs += new instructions.TokenMaxOp(operator, ops, expected))
-    }
-    override def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont]): Cont[String, String] = result(s"maxOp($operator)")
-}
+private [parsley] class MaxOp(private [MaxOp] val operator: String, ops: Set[String], val expected: UnsafeOption[String] = null)
+    extends SingletonExpect[Unit](s"maxOp($operator)", new MaxOp(operator, ops, _), new instructions.TokenMaxOp(operator, ops, expected))
 
 private [parsley] object Sign {
     private [parsley] sealed trait SignType {

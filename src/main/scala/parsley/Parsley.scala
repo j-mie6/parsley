@@ -270,7 +270,7 @@ object Parsley
           * @param b The parser that yields the condition value
           * @return The result of either `p` or `q` depending on the return value of the invokee
           */
-        def ?:(b: =>Parsley[Boolean]): Parsley[A] = new Parsley(new deepembedding.Ternary(b.internal, p.internal, q.internal))
+        def ?:(b: =>Parsley[Boolean]): Parsley[A] = new Parsley(new deepembedding.If(b.internal, p.internal, q.internal))
     }
 
     /** This is the traditional applicative pure function (or monadic return) for parsers. It consumes no input and
