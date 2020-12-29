@@ -310,22 +310,24 @@ private [deepembedding] sealed abstract class Seq[A, B](_discard: =>Parsley[A], 
     }
 }
 private [parsley] final class *>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) extends Seq[A, B](_p, _q, "*>", *>.empty) {
-    val optimiseSeq: PartialFunction[Parsley[A], Parsley[B]] = optimiseSeq(_ + _, (str, res) => {
+    def optimiseSeq: Option[Parsley[B]] = optimiseSeq(_ + _, (str, res) => {
         discard = str.asInstanceOf[Parsley[A]]
         result = res
         optimise
-    })
-    @tailrec override def optimise: Parsley[B] = discard match {
-        case optimiseSeq(p) => p
-        // mzero *> p = mzero (left zero and definition of *> in terms of >>=)
-        case z: MZero => z
-        case u => result match {
-            // re-association - normal form of Then chain is to have result at the top of tree
-            case v *> w =>
-                discard = *>(u, v).asInstanceOf[Parsley[A]].optimiseDefinitelyNotTailRec
-                result = w
-                optimise
-            case _ => this
+    }).lift(discard)
+    @tailrec override def optimise: Parsley[B] = optimiseSeq match {
+        case Some(p) => p
+        case None => discard match {
+            // mzero *> p = mzero (left zero and definition of *> in terms of >>=)
+            case z: MZero => z
+            case u => result match {
+                // re-association - normal form of Then chain is to have result at the top of tree
+                case v *> w =>
+                    discard = *>(u, v).asInstanceOf[Parsley[A]].optimiseDefinitelyNotTailRec
+                    result = w
+                    optimise
+                case _ => this
+            }
         }
     }
     override def codeGen[Cont[_, +_]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = codeGenSeq {
@@ -337,22 +339,24 @@ private [parsley] final class *>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exten
     override def copy[B_ >: B](prev: Parsley[A], next: Parsley[B_]): A *> B_ = *>(prev, next)
 }
 private [parsley] final class <*[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) extends Seq[B, A](_q, _p, "<*", <*.empty) {
-    val optimiseSeq: PartialFunction[Parsley[B], Parsley[A]] = optimiseSeq((t, s) => s + t, *>.apply)
-    @tailrec override def optimise: Parsley[A] = discard match {
-        case optimiseSeq(p) => p
-        // p <* mzero = p *> mzero (by preservation of error messages and failure properties) - This moves the pop instruction after the failure
-        case z: MZero => *>(result, z)
-        case w => result match {
-            // re-association law 3: pure x <* p = p *> pure x
-            case u: Pure[_] => *>(w, u).optimise
-            // mzero <* p = mzero (left zero law and definition of <* in terms of >>=)
-            case z: MZero => z
-            // re-association - normal form of Prev chain is to have result at the top of tree
-            case u <* v =>
-                result = u
-                discard = <*(v, w).asInstanceOf[Parsley[B]].optimiseDefinitelyNotTailRec
-                optimise
-            case _ => this
+    def optimiseSeq: Option[Parsley[A]] = optimiseSeq((t, s) => s + t, *>.apply).lift(discard)
+    @tailrec override def optimise: Parsley[A] =  optimiseSeq match {
+        case Some(p) => p
+        case None => discard match {
+            // p <* mzero = p *> mzero (by preservation of error messages and failure properties) - This moves the pop instruction after the failure
+            case z: MZero => *>(result, z)
+            case w => result match {
+                // re-association law 3: pure x <* p = p *> pure x
+                case u: Pure[_] => *>(w, u).optimise
+                // mzero <* p = mzero (left zero law and definition of <* in terms of >>=)
+                case z: MZero => z
+                // re-association - normal form of Prev chain is to have result at the top of tree
+                case u <* v =>
+                    result = u
+                    discard = <*(v, w).asInstanceOf[Parsley[B]].optimiseDefinitelyNotTailRec
+                    optimise
+                case _ => this
+            }
         }
     }
     override def codeGen[Cont[_, +_]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = codeGenSeq {
