@@ -88,16 +88,34 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
         }
     }
 
+    private def adjustErrorOverride(): Unit = {
+        if (depth < overrideDepth) {
+            overrideDepth = 0
+            errorOverride = null
+        }
+    }
+
     private [instructions] def ret(): Unit = {
         val frame = calls.head
         instrs = frame.instrs
         calls = calls.tail
         pc = frame.ret
         depth -= 1
-        if (depth < overrideDepth) {
-            overrideDepth = 0
-            errorOverride = null
+        adjustErrorOverride()
+    }
+
+    private def adjustErrors(e: UnsafeOption[String]): Unit = {
+        if (offset > erroffset) {
+            erroffset = offset
+            errcol = col
+            errline = line
+            unexpected = if (offset < inputsz) "\"" + nextChar + "\"" else "end of " + sourceName
+            expected = (if (errorOverride == null) e else errorOverride)::Nil
+            raw = Nil
+            unexpectAnyway = false
         }
+        else if (offset == erroffset) expected ::= (if (errorOverride == null) e else errorOverride)
+        adjustErrorOverride()
     }
 
     private [instructions] def fail(e: UnsafeOption[String] = null): Unit = {
@@ -114,7 +132,7 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
             handlers = handlers.tail
             val diffdepth = depth - handler.depth - 1
             if (diffdepth >= 0) {
-                val calls_ = if (diffdepth != 0) drop(calls, diffdepth) else calls
+                val calls_ = drop(calls, diffdepth)
                 instrs = calls_.head.instrs
                 calls = calls_.tail
             }
@@ -123,20 +141,7 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
             if (diffstack > 0) stack.drop(diffstack)
             depth = handler.depth
         }
-        if (offset > erroffset) {
-            erroffset = offset
-            errcol = col
-            errline = line
-            unexpected = if (offset < inputsz) "\"" + nextChar + "\"" else "end of " + sourceName
-            expected = (if (errorOverride == null) e else errorOverride)::Nil
-            raw = Nil
-            unexpectAnyway = false
-        }
-        else if (offset == erroffset) expected ::= (if (errorOverride == null) e else errorOverride)
-        if (depth < overrideDepth) {
-            overrideDepth = 0
-            errorOverride = null
-        }
+        adjustErrors(e)
     }
 
     private def errorMessage: String = {
@@ -147,19 +152,11 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
         val rawFiltered = raw.filterNot(_.isEmpty)
         val expectedStr = if (expectedFiltered.isEmpty) None else Some(s"expected ${expectedFiltered.distinct.reverse.mkString(" or ")}")
         val rawStr = if (rawFiltered.isEmpty) None else Some(rawFiltered.distinct.reverse.mkString(" or "))
-        unexpectAnyway = unexpectAnyway || expectedFlat.nonEmpty || raw.nonEmpty
-        if (rawStr.isEmpty && expectedStr.isEmpty && unexpectAnyway) {
-            s"$posStr\n  ${unexpectedStr.getOrElse("unknown parse error")}"
-        }
-        else if (rawStr.isEmpty && expectedStr.isEmpty) {
-            s"$posStr\n  unknown parse error"
-        }
-        else if (expectedStr.isEmpty) {
-            s"$posStr\n  ${rawStr.get}"
-        }
-        else {
-            s"$posStr${unexpectedStr.fold("")("\n  " + _)}\n  ${expectedStr.get}${rawStr.fold("")("\n  " + _)}"
-        }
+        unexpectAnyway ||= expectedFlat.nonEmpty || raw.nonEmpty
+        if      (expectedStr.nonEmpty) s"$posStr${unexpectedStr.fold("")("\n  " + _)}\n  ${expectedStr.get}${rawStr.fold("")("\n  " + _)}"
+        else if (rawStr.nonEmpty)      s"$posStr\n  ${rawStr.get}"
+        else if (unexpectAnyway)       s"$posStr\n  ${unexpectedStr.getOrElse("unknown parse error")}"
+        else                           s"$posStr\n  unknown parse error"
     }
 
     private [instructions] def inc(): Unit = pc += 1
