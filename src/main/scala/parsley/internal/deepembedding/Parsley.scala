@@ -124,6 +124,8 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     private [parsley] def prettyASTAux[Cont[_, +_]: ContOps]: Cont[String, String]
 }
 
+private [deepembedding] trait MZero extends Parsley[Nothing]
+
 // Internals
 // TODO: Can we remove this SubQueueNode? ListBuffer would be fine using pairs too would be nice.
 private [parsley] class CodeGenState {
