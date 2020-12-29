@@ -13,6 +13,7 @@ private [parsley] final class Pure[A](private [Pure] val x: A) extends Singleton
 
 private [parsley] final class <*>[A, B](_pf: =>Parsley[A => B], _px: =>Parsley[A]) extends Binary[A => B, A, B](_pf, _px)((l, r) => s"($l <*> $r)", <*>.empty) {
     override val numInstrs = 1
+    // TODO: Refactor
     override def optimise: Parsley[B] = (left, right) match {
         // Fusion laws
         case (uf, Pure(x)) if uf.isInstanceOf[Pure[_]] || uf.isInstanceOf[_ <*> _] && uf.safe => uf match {
@@ -91,6 +92,7 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
             this
         case _ => this
     }
+    // TODO: Refactor
     override def codeGen[Cont[_, +_]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = tablify(this, Nil) match {
         // If the tablified list is single element, that implies that this should be generated as normal!
         case _::Nil => left match {
@@ -191,6 +193,7 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
                 ops.|>(codeGenAlternatives(alts_), instrs += new instructions.Label(skip))
             }
     }
+    // TODO: Refactor
     @tailrec def foldTablified(tablified: List[(Parsley[_], Option[Parsley[_]])], labelGen: CodeGenState,
                                roots: mutable.Map[Char, List[Parsley[_]]],
                                leads: List[Char],
@@ -267,7 +270,7 @@ private [parsley] final class >>=[A, B](_p: =>Parsley[A], private [>>=] var f: A
 private [parsley] final class Satisfy(private [Satisfy] val f: Char => Boolean, val expected: UnsafeOption[String] = null)
     extends SingletonExpect[Char]("satisfy(f)", new Satisfy(f, _), new instructions.Satisfies(f, expected))
 
-private [deepembedding] abstract class Seq[A, B](_discard: =>Parsley[A], _result: =>Parsley[B], pretty: String, empty: =>Seq[A, B])
+private [deepembedding] sealed abstract class Seq[A, B](_discard: =>Parsley[A], _result: =>Parsley[B], pretty: String, empty: =>Seq[A, B])
     extends Binary[A, B, B](_discard, _result)((l, r) => s"($l $pretty $r)", empty) {
     final def result: Parsley[B] = right
     final def discard: Parsley[A] = left
@@ -275,7 +278,14 @@ private [deepembedding] abstract class Seq[A, B](_discard: =>Parsley[A], _result
     final def discard_=(p: Parsley[A]): Unit = left = p
     final override val numInstrs = 1
     def copy[B_ >: B](prev: Parsley[A], next: Parsley[B_]): Seq[A, B_]
-    private def unionUnsafe[A >: Null](x: UnsafeOption[A], y: UnsafeOption[A]): UnsafeOption[A] = if (x != null) x else y
+    private def buildResult[R](make: (StringTok, Pure[B]) => Parsley[B])(s: String, r: R, ex1: UnsafeOption[String], ex2: UnsafeOption[String]) = {
+        make(new StringTok(s, if (ex1 != null) ex1 else ex2), new Pure(r.asInstanceOf[B]))
+    }
+    private def optimiseStringResult(combine: (String, String) => String, make: (StringTok, Pure[B]) => Parsley[B])
+                                    (s: String, ex: UnsafeOption[String]): Parsley[B] = result match {
+        case ct@CharTok(c) => buildResult(make)(combine(s, c.toString), c, ex, ct.expected)
+        case st@StringTok(t) => buildResult(make)(combine(s, t), t, ex, st.expected)
+    }
     final protected def optimiseSeq(combine: (String, String) => String,
                                     make: (StringTok, Pure[B]) => Parsley[B]): PartialFunction[Parsley[A], Parsley[B]] = {
         // pure _ *> p = p = p <* pure _
@@ -284,22 +294,8 @@ private [deepembedding] abstract class Seq[A, B](_discard: =>Parsley[A], _result
         case u *> (_: Pure[_]) =>
             discard = u.asInstanceOf[Parsley[A]]
             optimise
-        case ct1@CharTok(c) if result.isInstanceOf[CharTok] || result.isInstanceOf[StringTok] => result match {
-            // char(c) *> char(d) = string(cd) *> pure(d)
-            // char(c) <* char(d) = string(cd) *> pure(c)
-            case ct2@CharTok(d) => make(new StringTok(combine(c.toString, d.toString), unionUnsafe(ct1.expected, ct2.expected)), new Pure(d.asInstanceOf[B]))
-            // char(c) *> string(s) = string(cs) *> pure(s)
-            // string(s) <* char(d) = string(sd) *> pure(s)
-            case st2@StringTok(s) => make(new StringTok(combine(c.toString, s), unionUnsafe(ct1.expected, st2.expected)), new Pure(s.asInstanceOf[B]))
-        }
-        case st1@StringTok(s) if result.isInstanceOf[CharTok] || result.isInstanceOf[StringTok] => result match {
-            // string(s) *> char(c) = string(sc) *> pure(c)
-            // char(c) <* string(s) = string(cs) *> pure(c)
-            case ct2@CharTok(c) => make(new StringTok(combine(s, c.toString), unionUnsafe(st1.expected, ct2.expected)), new Pure(c.asInstanceOf[B]))
-            // string(s) *> string(t) = string(st) *> pure(t)
-            // string(s) <* string(t) = string(st) *> pure(s)
-            case st2@StringTok(t) => make(new StringTok(combine(s, t), unionUnsafe(st1.expected, st2.expected)), new Pure(t.asInstanceOf[B]))
-        }
+        case ct@CharTok(c) if result.isInstanceOf[CharTok] || result.isInstanceOf[StringTok] => optimiseStringResult(combine, make)(c.toString, ct.expected)
+        case st@StringTok(s) if result.isInstanceOf[CharTok] || result.isInstanceOf[StringTok] => optimiseStringResult(combine, make)(s, st.expected)
     }
     final protected def codeGenSeq[Cont[_, +_]](default: =>Cont[Unit, Unit])(implicit instrs: InstrBuffer,
                                                                                       state: CodeGenState,
@@ -513,50 +509,38 @@ private [parsley] final class FastGuard[A](_p: =>Parsley[A], private [FastGuard]
         (instrs += new instructions.FastGuard(pred, msggen, expected))
     }
 }
-private [parsley] final class Many[A](_p: =>Parsley[A]) extends Unary[A, List[A]](_p)(c => s"many($c)", _ => Many.empty) {
-    override val numInstrs = 2
-    override def optimise: Parsley[List[A]] = p match {
-        case _: Pure[A @unchecked] => throw new Exception("many given parser which consumes no input")
-        case _: MZero => new Pure(Nil)
+private [deepembedding] sealed abstract class ManyLike[A, B](_p: =>Parsley[A], name: String, empty: =>ManyLike[A, B], unit: B, instr: Int => instructions.Instr)
+    extends Unary[A, B](_p)(c => s"$name($c)", _ => empty) {
+    final override val numInstrs = 2
+    final override def optimise: Parsley[B] = p match {
+        case _: Pure[_] => throw new Exception(s"$name given parser which consumes no input")
+        case _: MZero => new Pure(unit)
         case _ => this
     }
-    override def codeGen[Cont[_, +_]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = {
+    final override def codeGen[Cont[_, +_]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = {
         val body = state.freshLabel()
         val handler = state.freshLabel()
         instrs += new instructions.InputCheck(handler)
         instrs += new instructions.Label(body)
         p.codeGen |> {
             instrs += new instructions.Label(handler)
-            instrs += new instructions.Many(body)
+            instrs += instr(body)
         }
     }
 }
-private [parsley] final class SkipMany[A](_p: =>Parsley[A]) extends Unary[A, Unit](_p)(c => s"skipMany($c)", _ => SkipMany.empty) {
-    override val numInstrs = 2
-    override def optimise: Parsley[Unit] = p match {
-        case _: Pure[A @unchecked] => throw new Exception("skipMany given parser which consumes no input")
-        case _: MZero => new Pure(()).asInstanceOf[Parsley[Nothing]]
-        case _ => this
-    }
-    override def codeGen[Cont[_, +_]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = {
-        val body = state.freshLabel()
-        val handler = state.freshLabel()
-        instrs += new instructions.InputCheck(handler)
-        instrs += new instructions.Label(body)
-        p.codeGen |> {
-            instrs += new instructions.Label(handler)
-            instrs += new instructions.SkipMany(body)
-        }
-    }
-}
-private [parsley] final class ChainPost[A](_p: =>Parsley[A], _op: =>Parsley[A => A])
-    extends Binary[A, A => A, A](_p, _op)((l, r) => s"chainPost($l, $r)", ChainPost.empty) {
-    override val numInstrs = 2
+private [parsley] final class Many[A](_p: =>Parsley[A]) extends ManyLike[A, List[A]](_p, "many", Many.empty, Nil, new instructions.Many(_))
+private [parsley] final class SkipMany[A](_p: =>Parsley[A]) extends ManyLike[A, Unit](_p, "skipMany", SkipMany.empty, (), new instructions.SkipMany(_))
+private [deepembedding] sealed abstract class ChainLike[A](_p: =>Parsley[A], _op: =>Parsley[A => A], pretty: (String, String) => String, empty: =>ChainLike[A])
+    extends Binary[A, A => A, A](_p, _op)(pretty, empty) {
     override def optimise: Parsley[A] = right match {
-        case _: Pure[(A => A) @unchecked] => throw new Exception("left chain given parser which consumes no input")
+        case _: Pure[_] => throw new Exception("chain given parser which consumes no input")
         case _: MZero => left
         case _ => this
     }
+}
+private [parsley] final class ChainPost[A](_p: =>Parsley[A], _op: =>Parsley[A => A])
+    extends ChainLike[A](_p, _op, (l, r) => s"chainPost($l, $r)", ChainPost.empty) {
+    override val numInstrs = 2
     override def codeGen[Cont[_, +_]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = {
         val body = state.freshLabel()
         val handler = state.freshLabel()
@@ -571,13 +555,8 @@ private [parsley] final class ChainPost[A](_p: =>Parsley[A], _op: =>Parsley[A =>
     }
 }
 private [parsley] final class ChainPre[A](_p: =>Parsley[A], _op: =>Parsley[A => A])
-    extends Binary[A, A => A, A](_p, _op)((l, r) => s"chainPre($r, $l)", ChainPre.empty) {
+    extends ChainLike[A](_p, _op, (l, r) => s"chainPre($r, $l)", ChainPre.empty) {
     override val numInstrs = 3
-    override def optimise: Parsley[A] = right match {
-        case _: Pure[(A => A) @unchecked] => throw new Exception("right chain given parser which consumes no input")
-        case _: MZero => left
-        case _ => this
-    }
     override def codeGen[Cont[_, +_]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = {
         val body = state.freshLabel()
         val handler = state.freshLabel()
