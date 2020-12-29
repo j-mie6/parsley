@@ -2,9 +2,7 @@ package parsley.internal.deepembedding
 
 import parsley.TokenParser.TokenSet
 import Sign.SignType
-import ContOps.result
 import parsley.internal.{instructions, UnsafeOption}
-import scala.language.higherKinds
 
 private [parsley] class WhiteSpace(ws: TokenSet, start: String, end: String, line: String, nested: Boolean)
     extends Singleton[Unit]("whiteSpace", new instructions.TokenWhiteSpace(ws, start, end, line, nested))

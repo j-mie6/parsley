@@ -275,43 +275,52 @@ private [deepembedding] abstract class Seq[A, B](_discard: =>Parsley[A], _result
     final def discard_=(p: Parsley[A]): Unit = left = p
     final override val numInstrs = 1
     def copy[B_ >: B](prev: Parsley[A], next: Parsley[B_]): Seq[A, B_]
-}
-private [parsley] final class *>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) extends Seq[A, B](_p, _q, "*>", *>.empty) {
-    @tailrec override def optimise: Parsley[B] = discard match {
-        // pure _ *> p = p
+    private def unionUnsafe[A >: Null](x: UnsafeOption[A], y: UnsafeOption[A]): UnsafeOption[A] = if (x != null) x else y
+    final protected def optimiseSeq(combine: (String, String) => String,
+                                    make: (StringTok, Pure[B]) => Parsley[B]): PartialFunction[Parsley[A], Parsley[B]] = {
+        // pure _ *> p = p = p <* pure _
         case _: Pure[_] => result
-        // p *> pure _ *> q = p *> q
+        // p *> pure _ *> q = p *> q, p <* (q *> pure _) = p <* q
         case u *> (_: Pure[_]) =>
             discard = u.asInstanceOf[Parsley[A]]
             optimise
         case ct1@CharTok(c) if result.isInstanceOf[CharTok] || result.isInstanceOf[StringTok] => result match {
             // char(c) *> char(d) = string(cd) *> pure(d)
-            case ct2@CharTok(d) =>
-                discard = new StringTok(c.toString + d, if (ct1.expected != null) ct1.expected else
-                                                        if (ct2.expected != null) ct2.expected else null).asInstanceOf[Parsley[A]]
-                result = new Pure(d).asInstanceOf[Parsley[B]]
-                optimise
+            // char(c) <* char(d) = string(cd) *> pure(c)
+            case ct2@CharTok(d) => make(new StringTok(combine(c.toString, d.toString), unionUnsafe(ct1.expected, ct2.expected)), new Pure(d.asInstanceOf[B]))
             // char(c) *> string(s) = string(cs) *> pure(s)
-            case st1@StringTok(s) =>
-                discard = new StringTok(c.toString + s, if (ct1.expected != null) ct1.expected else
-                                                        if (st1.expected != null) st1.expected else null).asInstanceOf[Parsley[A]]
-                result = new Pure(s).asInstanceOf[Parsley[B]]
-                optimise
+            // string(s) <* char(d) = string(sd) *> pure(s)
+            case st2@StringTok(s) => make(new StringTok(combine(c.toString, s), unionUnsafe(ct1.expected, st2.expected)), new Pure(s.asInstanceOf[B]))
         }
         case st1@StringTok(s) if result.isInstanceOf[CharTok] || result.isInstanceOf[StringTok] => result match {
             // string(s) *> char(c) = string(sc) *> pure(c)
-            case ct2@CharTok(c) =>
-                discard = new StringTok(s + c, if (st1.expected != null) st1.expected else
-                                               if (ct2.expected != null) ct2.expected else null).asInstanceOf[Parsley[A]]
-                result = new Pure(c).asInstanceOf[Parsley[B]]
-                optimise
+            // char(c) <* string(s) = string(cs) *> pure(c)
+            case ct2@CharTok(c) => make(new StringTok(combine(s, c.toString), unionUnsafe(st1.expected, ct2.expected)), new Pure(c.asInstanceOf[B]))
             // string(s) *> string(t) = string(st) *> pure(t)
-            case st2@StringTok(t) =>
-                discard = new StringTok(s + t, if (st1.expected != null) st1.expected else
-                                               if (st2.expected != null) st2.expected else null).asInstanceOf[Parsley[A]]
-                result = new Pure(t).asInstanceOf[Parsley[B]]
-                optimise
+            // string(s) <* string(t) = string(st) *> pure(s)
+            case st2@StringTok(t) => make(new StringTok(combine(s, t), unionUnsafe(st1.expected, st2.expected)), new Pure(t.asInstanceOf[B]))
         }
+    }
+    final protected def codeGenSeq[Cont[_, +_]](default: =>Cont[Unit, Unit])(implicit instrs: InstrBuffer,
+                                                                                      state: CodeGenState,
+                                                                                      ops: ContOps[Cont]): Cont[Unit, Unit] = (result, discard) match {
+        case (Pure(x), ct@CharTok(c)) => ops.wrap(instrs += instructions.CharTokFastPerform[Char, B](c, _ => x, ct.expected))
+        case (Pure(x), st@StringTok(s)) => ops.wrap(instrs += new instructions.StringTokFastPerform(s, _ => x, st.expected))
+        case (Pure(x), st@Satisfy(f)) => ops.wrap(instrs += new instructions.SatisfyExchange(f, x, st.expected))
+        case (Pure(x), v) =>
+            v.codeGen |>
+            (instrs += new instructions.Exchange(x))
+        case _ => default
+    }
+}
+private [parsley] final class *>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) extends Seq[A, B](_p, _q, "*>", *>.empty) {
+    val optimiseSeq: PartialFunction[Parsley[A], Parsley[B]] = optimiseSeq(_ + _, (str, res) => {
+        discard = str.asInstanceOf[Parsley[A]]
+        result = res
+        optimise
+    })
+    @tailrec override def optimise: Parsley[B] = discard match {
+        case optimiseSeq(p) => p
         // mzero *> p = mzero (left zero and definition of *> in terms of >>=)
         case z: MZero => z
         case u => result match {
@@ -323,47 +332,18 @@ private [parsley] final class *>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exten
             case _ => this
         }
     }
-    override def codeGen[Cont[_, +_]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = result match {
-        case Pure(x) => discard match {
-            case ct@CharTok(c) => ops.wrap(instrs += instructions.CharTokFastPerform[Char, B](c, _ => x, ct.expected))
-            case st@StringTok(s) => ops.wrap(instrs += new instructions.StringTokFastPerform(s, _ => x, st.expected))
-            case st@Satisfy(f) => ops.wrap(instrs += new instructions.SatisfyExchange(f, x, st.expected))
-            case u =>
-                u.codeGen |>
-                (instrs += new instructions.Exchange(x))
+    override def codeGen[Cont[_, +_]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = codeGenSeq {
+        discard.codeGen >> {
+            instrs += instructions.Pop
+            result.codeGen
         }
-        case v =>
-            discard.codeGen >> {
-                instrs += instructions.Pop
-                v.codeGen
-            }
     }
     override def copy[B_ >: B](prev: Parsley[A], next: Parsley[B_]): A *> B_ = *>(prev, next)
 }
 private [parsley] final class <*[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) extends Seq[B, A](_q, _p, "<*", <*.empty) {
+    val optimiseSeq: PartialFunction[Parsley[B], Parsley[A]] = optimiseSeq((t, s) => s + t, *>.apply)
     @tailrec override def optimise: Parsley[A] = discard match {
-        // p <* pure _ = p
-        case _: Pure[_] => result
-        // p <* (q *> pure _) = p <* q
-        case v *> (_: Pure[_]) =>
-            discard = v.asInstanceOf[Parsley[B]]
-            optimise
-        case ct1@CharTok(d) if result.isInstanceOf[CharTok] || result.isInstanceOf[StringTok] => result match {
-            // char(c) <* char(d) = string(cd) *> pure(c)
-            case ct2@CharTok(c) => *>(new StringTok(c.toString + d, if (ct1.expected != null) ct1.expected else
-                                                                    if (ct2.expected != null) ct2.expected else null), new Pure(c)).asInstanceOf[Parsley[A]]
-            // string(s) <* char(d) = string(sd) *> pure(s)
-            case st1@StringTok(s) => *>(new StringTok(s + d, if (ct1.expected != null) ct1.expected else
-                                                             if (st1.expected != null) st1.expected else null), new Pure(s)).asInstanceOf[Parsley[A]]
-        }
-        case st1@StringTok(t) if result.isInstanceOf[CharTok] || result.isInstanceOf[StringTok]  => result match {
-            // char(c) <* string(t) = string(ct) *> pure(c)
-            case ct1@CharTok(c) => *>(new StringTok(c.toString + t, if (st1.expected != null) st1.expected else
-                                                                    if (ct1.expected != null) ct1.expected else null), new Pure(c)).asInstanceOf[Parsley[A]]
-            // string(s) <* string(t) = string(st) *> pure(s)
-            case st2@StringTok(s) => *>(new StringTok(s + t, if (st1.expected != null) st1.expected else
-                                                             if (st2.expected != null) st2.expected else null), new Pure(s)).asInstanceOf[Parsley[A]]
-        }
+        case optimiseSeq(p) => p
         // p <* mzero = p *> mzero (by preservation of error messages and failure properties) - This moves the pop instruction after the failure
         case z: MZero => *>(result, z)
         case w => result match {
@@ -379,17 +359,10 @@ private [parsley] final class <*[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exten
             case _ => this
         }
     }
-    override def codeGen[Cont[_, +_]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = (result, discard) match{
-        case (Pure(x), ct@CharTok(c)) => ops.wrap(instrs += instructions.CharTokFastPerform[Char, A](c, _ => x, ct.expected))
-        case (Pure(x), st@StringTok(s)) => ops.wrap(instrs += new instructions.StringTokFastPerform(s, _ => x, st.expected))
-        case (Pure(x), st@Satisfy(f)) => ops.wrap(instrs += new instructions.SatisfyExchange(f, x, st.expected))
-        case (Pure(x), v) =>
-            v.codeGen |>
-            (instrs += new instructions.Exchange(x))
-        case _=>
-            result.codeGen >>
-            discard.codeGen |>
-            (instrs += instructions.Pop)
+    override def codeGen[Cont[_, +_]](implicit instrs: InstrBuffer, state: CodeGenState, ops: ContOps[Cont]): Cont[Unit, Unit] = codeGenSeq {
+        result.codeGen >>
+        discard.codeGen |>
+        (instrs += instructions.Pop)
     }
     override def copy[A_ >: A](prev: Parsley[B], next: Parsley[A_]): <*[A_, B] = <*(next, prev)
 }
