@@ -343,7 +343,7 @@ private [internal] final class If(var label: Int) extends JumpInstr
     override def toString: String = s"If(true: $label)"
 }
 
-private [internal] final class Ensure[A](pred: A=>Boolean, expected: UnsafeOption[String]) extends Instr
+private [internal] final class Filter[A](pred: A=>Boolean, expected: UnsafeOption[String]) extends Instr
 {
     private [this] val pred_ = pred.asInstanceOf[Any=>Boolean]
     override def apply(ctx: Context): Unit =
@@ -356,7 +356,7 @@ private [internal] final class Ensure[A](pred: A=>Boolean, expected: UnsafeOptio
             if (strip) ctx.unexpected = null
         }
     }
-    override def toString: String = "Ensure(?)"
+    override def toString: String = "Filter(?)"
 }
 
 private [internal] final class Guard[A](pred: A=>Boolean, msg: String, expected: UnsafeOption[String]) extends Instr

@@ -156,7 +156,7 @@ object Parsley
           * @param pred The predicate that is tested against the parser result
           * @return The result of the invokee if it passes the predicate
           */
-        def filter(pred: A => Boolean): Parsley[A] = new Parsley(new deepembedding.Ensure(p.internal, pred))
+        def filter(pred: A => Boolean): Parsley[A] = new Parsley(new deepembedding.Filter(p.internal, pred))
         /** Filter the value of a parser; if the value returned by the parser does not match the predicate `pred` then the
          * filter succeeded, otherwise the parser fails with an empty error
          * @param pred The predicate that is tested against the parser result
