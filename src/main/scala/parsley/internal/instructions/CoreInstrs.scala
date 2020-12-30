@@ -81,18 +81,17 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
         val inputsz = ctx.inputsz
         val input = ctx.input
         @tailrec def go(i: Int, j: Int): Unit = {
-            if (j < sz && i != inputsz && input(i) == cs(j)) go(i + 1, j + 1)
+            if (j < sz && i < inputsz && input(i) == cs(j)) go(i + 1, j + 1)
             else {
-                ctx.offset = i
                 val (colAdjust, lineAdjust) = adjustAtIndex(j)
                 ctx.col = colAdjust(ctx.col)
                 ctx.line = lineAdjust(ctx.line)
+                ctx.offset = i
                 if (j < sz) ctx.fail(expected)
                 else ctx.pushAndContinue(x)
             }
         }
-        if (ctx.moreInput) go(ctx.offset, 0)
-        else ctx.fail(expected)
+        go(ctx.offset, 0)
     }
     override def toString: String = if (x.isInstanceOf[String] && (s eq x.asInstanceOf[String])) s"Str($s)" else s"StrPerform($s, $x)"
 }
