@@ -80,30 +80,18 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
     override def apply(ctx: Context): Unit = {
         val inputsz = ctx.inputsz
         val input = ctx.input
-        val i = ctx.offset
-        if (inputsz != i) {
-            @tailrec def go(i: Int, j: Int): Unit = {
-                if (j < sz) {
-                    val c = cs(j)
-                    if (i == inputsz || input(i) != c) {
-                        ctx.offset = i
-                        val (colAdjust, lineAdjust) = adjustAtIndex(j)
-                        ctx.col = colAdjust(ctx.col)
-                        ctx.line = lineAdjust(ctx.line)
-                        ctx.fail(expected)
-                    }
-                    else go(i + 1, j + 1)
-                }
-                else {
-                    val (colAdjust, lineAdjust) = adjustAtIndex(j)
-                    ctx.col = colAdjust(ctx.col)
-                    ctx.line = lineAdjust(ctx.line)
-                    ctx.offset = i
-                    ctx.pushAndContinue(x)
-                }
+        @tailrec def go(i: Int, j: Int): Unit = {
+            if (j < sz && i != inputsz && input(i) == cs(j)) go(i + 1, j + 1)
+            else {
+                ctx.offset = i
+                val (colAdjust, lineAdjust) = adjustAtIndex(j)
+                ctx.col = colAdjust(ctx.col)
+                ctx.line = lineAdjust(ctx.line)
+                if (j < sz) ctx.fail(expected)
+                else ctx.pushAndContinue(x)
             }
-            go(i, 0)
         }
+        if (ctx.moreInput) go(ctx.offset, 0)
         else ctx.fail(expected)
     }
     override def toString: String = if (x.isInstanceOf[String] && (s eq x.asInstanceOf[String])) s"Str($s)" else s"StrPerform($s, $x)"
