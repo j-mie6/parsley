@@ -1,6 +1,6 @@
 package parsley.internal.instructions
 
-import Stack.{drop, isEmpty, mkString, map}
+import Stack.{drop, isEmpty, mkString, map, push}
 import parsley.{Failure, Result, Success}
 import parsley.internal.UnsafeOption
 
@@ -95,6 +95,18 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
         }
     }
 
+    private [instructions] def call(newInstrs: Array[Instr], at: Int, expected: UnsafeOption[String]) = {
+        calls = push(calls, new Frame(pc + 1, instrs))
+        instrs = newInstrs
+        pc = at
+        depth += 1
+        if (expected != null && errorOverride == null)
+        {
+            overrideDepth = depth
+            errorOverride = expected
+        }
+    }
+
     private [instructions] def ret(): Unit = {
         val frame = calls.head
         instrs = frame.instrs
@@ -118,7 +130,12 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
         adjustErrorOverride()
     }
 
-    private [instructions] def fail(e: UnsafeOption[String] = null): Unit = {
+    private [instructions] def fail(expected: UnsafeOption[String], unexpected: String): Unit = {
+        this.fail(expected)
+        this.unexpected = unexpected
+        this.unexpectAnyway = true
+    }
+    private [instructions] def fail(expected: UnsafeOption[String] = null): Unit = {
         if (isEmpty(handlers)) {
             status = Failed
             if (erroffset == -1) {
@@ -141,7 +158,7 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
             if (diffstack > 0) stack.drop(diffstack)
             depth = handler.depth
         }
-        adjustErrors(e)
+        adjustErrors(expected)
     }
 
     private def errorMessage: String = {
@@ -159,9 +176,32 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
         else                           s"$posStr\n  unknown parse error"
     }
 
+    private [instructions] def pushAndContinue(x: Any) = {
+        stack.push(x)
+        inc()
+    }
+    private [instructions] def exchangeAndContinue(x: Any) = {
+        stack.exchange(x)
+        inc()
+    }
     private [instructions] def inc(): Unit = pc += 1
     private [instructions] def nextChar: Char = input(offset)
     private [instructions] def moreInput: Boolean = offset < inputsz
+    private [instructions] def pushHandler(label: Int): Unit = handlers = push(handlers, new Handler(depth, label, stack.usize))
+    private [instructions] def pushCheck(): Unit = checkStack = push(checkStack, offset)
+    private [instructions] def saveState(): Unit = states = push(states, new State(offset, line, col, regs))
+    private [instructions] def restoreState(): Unit = {
+        val state = states.head
+        states = states.tail
+        offset = state.offset
+        line = state.line
+        col = state.col
+        regs = state.regs
+    }
+    private [instructions] def copyOnWrite(v: Int, x: Any): Unit = {
+        if (!isEmpty(states) && (states.head.regs eq regs)) regs = regs.clone
+        regs(v) = x
+    }
 
     // Allows us to reuse a context, helpful for benchmarking and potentially user applications
     private [parsley] def apply(_instrs: Array[Instr], _input: Array[Char]): Context = {

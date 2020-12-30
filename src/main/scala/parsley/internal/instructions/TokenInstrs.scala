@@ -36,8 +36,7 @@ private [internal] class TokenSkipComments(start: String, end: String, line: Str
                 startsMulti = ctx.input.startsWith(start, ctx.offset)
             }
         }
-        ctx.stack.push(())
-        ctx.inc()
+        ctx.pushAndContinue(())
     }
 
     protected final def singleLineComment(ctx: Context): Unit =
@@ -110,8 +109,7 @@ private [internal] final class TokenComment(start: String, end: String, line: St
             else
             {
                 if (!multiLineComment(ctx)) return
-                ctx.stack.push(())
-                ctx.inc()
+                ctx.pushAndContinue(())
             }
         }
         else if (noMulti)
@@ -120,8 +118,7 @@ private [internal] final class TokenComment(start: String, end: String, line: St
             else
             {
                 singleLineComment(ctx)
-                ctx.stack.push(())
-                ctx.inc()
+                ctx.pushAndContinue(())
             }
         }
         else
@@ -136,8 +133,7 @@ private [internal] final class TokenComment(start: String, end: String, line: St
                     if (!multiLineComment(ctx)) return
                 }
                 else singleLineComment(ctx)
-                ctx.stack.push(())
-                ctx.inc()
+                ctx.pushAndContinue(())
             }
         }
     }
@@ -235,8 +231,7 @@ private [internal] final class TokenWhiteSpace(ws: TokenSet, start: String, end:
                 startsMulti = ctx.input.startsWith(start, ctx.offset)
             }
         }
-        ctx.inc()
-        ctx.stack.push(())
+        ctx.pushAndContinue(())
     }
 
     private def spaces(ctx: Context): Unit =
@@ -276,13 +271,13 @@ private [internal] final class TokenSign(ty: SignType, _expected: UnsafeOption[S
                 ctx.col += 1
                 ctx.stack.push(neg)
             }
-            else if (ctx.nextChar == '+')
-            {
-                ctx.offset += 1
-                ctx.col += 1
+            else {
+                if (ctx.nextChar == '+') {
+                    ctx.offset += 1
+                    ctx.col += 1
+                }
                 ctx.stack.push(pos)
             }
-            else ctx.stack.push(pos)
         }
         ctx.inc()
     }
@@ -300,11 +295,7 @@ private [internal] final class TokenNatural(_expected: UnsafeOption[String]) ext
             case '0' =>
                 ctx.offset += 1
                 ctx.col += 1
-                if (!ctx.moreInput)
-                {
-                    ctx.stack.push(0)
-                    ctx.inc()
-                }
+                if (!ctx.moreInput) ctx.pushAndContinue(0)
                 else
                 {
                     (ctx.nextChar: @switch) match
@@ -321,8 +312,7 @@ private [internal] final class TokenNatural(_expected: UnsafeOption[String]) ext
                                             | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
                                         ctx.offset += 1
                                         ctx.col += 1
-                                        ctx.stack.push(hexadecimal(ctx, d.asDigit))
-                                        ctx.inc()
+                                        ctx.pushAndContinue(hexadecimal(ctx, d.asDigit))
                                     case _ => ctx.fail(expected)
                                 }
                             }
@@ -337,8 +327,7 @@ private [internal] final class TokenNatural(_expected: UnsafeOption[String]) ext
                                 {
                                     ctx.offset += 1
                                     ctx.col += 1
-                                    ctx.stack.push(octal(ctx, d.asDigit))
-                                    ctx.inc()
+                                    ctx.pushAndContinue(octal(ctx, d.asDigit))
                                 }
                                 else ctx.fail(expected)
                             }
@@ -346,18 +335,14 @@ private [internal] final class TokenNatural(_expected: UnsafeOption[String]) ext
                         case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9') =>
                             ctx.offset += 1
                             ctx.col += 1
-                            ctx.stack.push(decimal(ctx, d.asDigit))
-                            ctx.inc()
-                        case _ =>
-                            ctx.stack.push(0)
-                            ctx.inc()
+                            ctx.pushAndContinue(decimal(ctx, d.asDigit))
+                        case _ => ctx.pushAndContinue(0)
                     }
                 }
             case d@('1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9') =>
                 ctx.offset += 1
                 ctx.col += 1
-                ctx.stack.push(decimal(ctx, d.asDigit))
-                ctx.inc()
+                ctx.pushAndContinue(decimal(ctx, d.asDigit))
             case _ => ctx.fail(expected)
         }
         else ctx.fail(expected)
@@ -509,11 +494,7 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
     override def apply(ctx: Context): Unit =
     {
         badCode = false
-        if (escape(ctx))
-        {
-            ctx.stack.push(escapeChar)
-            ctx.inc()
-        }
+        if (escape(ctx)) ctx.pushAndContinue(escapeChar)
         else
         {
             ctx.fail(expected)
@@ -887,8 +868,7 @@ private [internal] final class TokenString(ws: TokenSet, _expected: UnsafeOption
             case '"' =>
                 ctx.offset += 1
                 ctx.col += 1
-                ctx.stack.push(builder.toString)
-                ctx.inc()
+                ctx.pushAndContinue(builder.toString)
             case '\\' =>
                 ctx.offset += 1
                 ctx.col += 1
@@ -971,8 +951,7 @@ private [internal] final class TokenRawString(_expected: UnsafeOption[String]) e
             case '"' =>
                 ctx.offset += 1
                 ctx.col += 1
-                ctx.stack.push(builder.toString)
-                ctx.inc()
+                ctx.pushAndContinue(builder.toString)
             case '\\' =>
                 ctx.offset += 1
                 ctx.col += 1
@@ -1037,8 +1016,7 @@ private [internal] final class TokenIdentifier(start: TokenSet, letter: TokenSet
             else
             {
                 ctx.col += nameStr.length
-                ctx.stack.push(nameStr)
-                ctx.inc()
+                ctx.pushAndContinue(nameStr)
             }
         }
     }
@@ -1083,8 +1061,7 @@ private [internal] final class TokenUserOperator(start: TokenSet, letter: TokenS
             else
             {
                 ctx.col += nameStr.length
-                ctx.stack.push(nameStr)
-                ctx.inc()
+                ctx.pushAndContinue(nameStr)
             }
         }
     }
@@ -1129,8 +1106,7 @@ private [internal] final class TokenOperator(start: TokenSet, letter: TokenSet, 
             else
             {
                 ctx.col += nameStr.length
-                ctx.stack.push(nameStr)
-                ctx.inc()
+                ctx.pushAndContinue(nameStr)
             }
         }
     }
@@ -1168,11 +1144,7 @@ private [internal] class TokenKeyword(_keyword: String, letter: TokenSet, caseSe
             ctx.col += strsz
             ctx.offset = i
             if (i < inputsz && letter(input(i))) ctx.fail(expectedEnd)
-            else
-            {
-                ctx.stack.push(())
-                ctx.inc()
-            }
+            else ctx.pushAndContinue(())
         }
         else ctx.fail(expected)
     }
@@ -1209,11 +1181,7 @@ private [internal] class TokenOperator_(_operator: String, letter: TokenSet, _ex
             ctx.col += strsz
             ctx.offset = i
             if (i < inputsz && letter(input(i))) ctx.fail(expectedEnd)
-            else
-            {
-                ctx.stack.push(())
-                ctx.inc()
-            }
+            else ctx.pushAndContinue(())
         }
         else ctx.fail(expected)
     }
@@ -1270,8 +1238,7 @@ private [internal] class TokenMaxOp(_operator: String, _ops: Set[String], _expec
             }
             ctx.col = ctx.col + strsz
             ctx.offset = j
-            ctx.stack.push(())
-            ctx.inc()
+            ctx.pushAndContinue(())
         }
         else ctx.fail(expected)
     }
