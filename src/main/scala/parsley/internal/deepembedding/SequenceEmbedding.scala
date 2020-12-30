@@ -63,7 +63,7 @@ private [parsley] final class <*>[A, B](_pf: =>Parsley[A => B], _px: =>Parsley[A
         // pure f <*> p = f <$> p
         case Pure(f) => right match {
             case ct@CharTok(c) => result(instrs += instructions.CharTokFastPerform[Char, B](c, f.asInstanceOf[Char => B], ct.expected))
-            case st@StringTok(s) => result(instrs += new instructions.StringTokFastPerform(s, f.asInstanceOf[String => B], st.expected))
+            case st@StringTok(s) => result(instrs += instructions.StringTokFastPerform(s, f.asInstanceOf[String => B], st.expected))
             case _ =>
                 right.codeGen |>
                 (instrs += new instructions.Perform(f))
@@ -131,7 +131,7 @@ private [deepembedding] sealed abstract class Seq[A, B](_discard: =>Parsley[A], 
     final protected def codeGenSeq[Cont[_, +_]: ContOps](default: =>Cont[Unit, Unit])(implicit instrs: InstrBuffer,
                                                                                       state: CodeGenState): Cont[Unit, Unit] = (result, discard) match {
         case (Pure(x), ct@CharTok(c)) => ContOps.result(instrs += instructions.CharTokFastPerform[Char, B](c, _ => x, ct.expected))
-        case (Pure(x), st@StringTok(s)) => ContOps.result(instrs += new instructions.StringTokFastPerform(s, _ => x, st.expected))
+        case (Pure(x), st@StringTok(s)) => ContOps.result(instrs += instructions.StringTokFastPerform(s, _ => x, st.expected))
         case (Pure(x), st@Satisfy(f)) => ContOps.result(instrs += new instructions.SatisfyExchange(f, x, st.expected))
         case (Pure(x), v) =>
             v.codeGen |>

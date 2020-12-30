@@ -63,7 +63,7 @@ private [internal] final class Satisfies(f: Char => Boolean, expected: UnsafeOpt
     override def toString: String = "Sat(?)"
 }
 
-private [internal] final class StringTok(s: String, _expected: UnsafeOption[String]) extends Instr {
+private [internal] final class StringTok private [instructions] (s: String, x: Any, _expected: UnsafeOption[String]) extends Instr {
     private [this] val expected = if (_expected == null) "\"" + s + "\"" else _expected
     private [this] val cs = s.toCharArray
     private [this] val sz = cs.length
@@ -110,14 +110,14 @@ private [internal] final class StringTok(s: String, _expected: UnsafeOption[Stri
                     ctx.col = colAdjust(ctx.col)
                     ctx.line = lineAdjust(ctx.line)
                     ctx.offset = i
-                    ctx.pushAndContinue(s)
+                    ctx.pushAndContinue(x)
                 }
             }
             go(i, 0)
         }
         else ctx.fail(expected)
     }
-    override def toString: String = s"Str($s)"
+    override def toString: String = if (x.isInstanceOf[String] && (s eq x.asInstanceOf[String])) s"Str($s)" else s"StrPerform($s, $x)"
 }
 
 // Applicative Functors
@@ -372,7 +372,7 @@ private [internal] final class LogEnd(val name: String, break: Boolean) extends 
     override def toString: String = s"LogEnd($name)"
 }
 
-// Extractor Objects
+// Companion Objects
 private [internal] object CharTok {
     def apply(c: Char, expected: UnsafeOption[String]): Instr = CharTok(c, c, expected)
     def apply(c: Char, x: Any, expected: UnsafeOption[String]): CharTok = c match {
@@ -380,4 +380,8 @@ private [internal] object CharTok {
         case '\t' => new Tab(x, expected)
         case _ => new CharTok(c, x, expected)
     }
+}
+
+private [internal] object StringTok {
+    def apply(s: String, expected: UnsafeOption[String]) = new StringTok(s, s, expected)
 }

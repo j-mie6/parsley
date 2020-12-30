@@ -30,63 +30,6 @@ private [instructions] class Tab(x: Any, _expected: UnsafeOption[String]) extend
     override def updatePos(ctx: Context): Unit = ctx.col += 4 - ((ctx.col - 1) & 3)
 }
 
-private [internal] final class StringTokFastPerform(s: String, f: String => Any, _expected: UnsafeOption[String]) extends Instr {
-    protected val expected: String = if (_expected == null) "\"" + s + "\"" else _expected
-    private [this] val cs = s.toCharArray
-    private [this] val sz = cs.length
-    private [this] val fs: Any = f(s)
-    private [this] val adjustAtIndex = new Array[(Int => Int, Int => Int)](s.length + 1)
-    def makeAdjusters(col: Int, line: Int, tabprefix: Option[Int]): (Int => Int, Int => Int) =
-        if (line > 0) ((_: Int) => col, (x: Int) => x + line)
-        else (tabprefix match {
-            case Some(prefix) =>
-                val outer = 4 + col + prefix
-                val inner = prefix - 1
-                (x: Int) => outer + x - ((x + inner) & 3)
-            case None => (x: Int) => x + col
-        }, (x: Int) => x)
-    @tailrec def compute(cs: Array[Char], i: Int = 0, col: Int = 0, line: Int = 0)(implicit tabprefix: Option[Int] = None): Unit = {
-        adjustAtIndex(i) = makeAdjusters(col, line, tabprefix)
-        if (i < cs.length) cs(i) match {
-            case '\n' => compute(cs, i + 1, 1, line + 1)(Some(0))
-            case '\t' if tabprefix.isEmpty => compute(cs, i + 1, 0, line)(Some(col))
-            case '\t' => compute(cs, i + 1, col + 4 - ((col-1) & 3), line)
-            case _ => compute(cs, i + 1, col + 1, line)
-        }
-    }
-    compute(cs)
-    override def apply(ctx: Context): Unit = {
-        val inputsz = ctx.inputsz
-        val input = ctx.input
-        var i = ctx.offset
-        if (inputsz != i) {
-            @tailrec def go(i: Int, j: Int): Unit = {
-                if (j < sz) {
-                    val c = cs(j)
-                    if (i == inputsz || input(i) != c) {
-                        ctx.offset = i
-                        val (colAdjust, lineAdjust) = adjustAtIndex(j)
-                        ctx.col = colAdjust(ctx.col)
-                        ctx.line = lineAdjust(ctx.line)
-                        ctx.fail(expected)
-                    }
-                    else go(i + 1, j + 1)
-                }
-                else {
-                    val (colAdjust, lineAdjust) = adjustAtIndex(j)
-                    ctx.col = colAdjust(ctx.col)
-                    ctx.line = lineAdjust(ctx.line)
-                    ctx.offset = i
-                    ctx.pushAndContinue(fs)
-                }
-            }
-            go(i, 0)
-        }
-        else ctx.fail(expected)
-    }
-    override def toString: String = s"StrPerform($s, ?)"
-}
-
 private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, expected: UnsafeOption[String]) extends Instr {
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput) {
@@ -199,6 +142,10 @@ private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int]
 
 private [internal] object CharTokFastPerform {
     def apply[A >: Char, B](c: Char, f: A => B, expected: UnsafeOption[String]): CharTok = CharTok(c, f(c), expected)
+}
+
+private [internal] object StringTokFastPerform {
+    def apply(s: String, f: String => Any, expected: UnsafeOption[String]) = new StringTok(s, f(s), expected)
 }
 
 private [internal] object Exchange {
