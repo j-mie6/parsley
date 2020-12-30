@@ -32,18 +32,16 @@ private [internal] object Flip extends Instr {
 }
 
 // Primitives
-private [internal] class CharTok protected (c: Char, x: Any, _expected: UnsafeOption[String]) extends Instr {
-    protected val expected: String = if (_expected == null) "\"" + c + "\"" else _expected
-    protected def updatePos(ctx: Context) = ctx.col += 1
-    final override def apply(ctx: Context): Unit = {
+private [internal] class CharTok(c: Char, x: Any, _expected: UnsafeOption[String]) extends Instr {
+    val expected: String = if (_expected == null) "\"" + c + "\"" else _expected
+    override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && ctx.nextChar == c) {
-            updatePos(ctx)
-            ctx.offset += 1
+            ctx.consumeChar()
             ctx.pushAndContinue(x)
         }
         else ctx.fail(expected)
     }
-    override final def toString: String = if (x == c) s"Chr($c)" else s"ChrPerform($c, $x)"
+    override def toString: String = if (x == c) s"Chr($c)" else s"ChrPerform($c, $x)"
 }
 
 private [internal] final class Satisfies(f: Char => Boolean, expected: UnsafeOption[String]) extends Instr {
@@ -365,14 +363,9 @@ private [internal] final class LogEnd(val name: String, break: Boolean) extends 
 
 // Companion Objects
 private [internal] object CharTok {
-    def apply(c: Char, expected: UnsafeOption[String]): Instr = CharTok(c, c, expected)
-    def apply(c: Char, x: Any, expected: UnsafeOption[String]): CharTok = c match {
-        case '\n' => new Newline(x, expected)
-        case '\t' => new Tab(x, expected)
-        case _ => new CharTok(c, x, expected)
-    }
+    def apply(c: Char, expected: UnsafeOption[String]): Instr = new CharTok(c, c, expected)
 }
 
 private [internal] object StringTok {
-    def apply(s: String, expected: UnsafeOption[String]) = new StringTok(s, s, expected)
+    def apply(s: String, expected: UnsafeOption[String]): StringTok = new StringTok(s, s, expected)
 }

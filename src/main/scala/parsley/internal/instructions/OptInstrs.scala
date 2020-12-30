@@ -19,17 +19,6 @@ private [internal] final class Exchange[A](private [Exchange] val x: A) extends 
     override def toString: String = s"Ex($x)"
 }
 
-private [instructions] class Newline(x: Any, _expected: UnsafeOption[String]) extends CharTok('\n', x, _expected) {
-    override def updatePos(ctx: Context): Unit = {
-        ctx.col = 1
-        ctx.line += 1
-    }
-}
-
-private [instructions] class Tab(x: Any, _expected: UnsafeOption[String]) extends CharTok('\t', x, _expected) {
-    override def updatePos(ctx: Context): Unit = ctx.col += 4 - ((ctx.col - 1) & 3)
-}
-
 private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, expected: UnsafeOption[String]) extends Instr {
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && f(ctx.nextChar)) {
@@ -132,7 +121,7 @@ private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int]
 }
 
 private [internal] object CharTokFastPerform {
-    def apply[A >: Char, B](c: Char, f: A => B, expected: UnsafeOption[String]): CharTok = CharTok(c, f(c), expected)
+    def apply[A >: Char, B](c: Char, f: A => B, expected: UnsafeOption[String]): CharTok = new CharTok(c, f(c), expected)
 }
 
 private [internal] object StringTokFastPerform {
