@@ -43,46 +43,26 @@ private [internal] class TokenSkipComments(start: String, end: String, line: Str
     {
         ctx.offset += line.length
         ctx.col += line.length
-        while (ctx.moreInput && ctx.nextChar != '\n')
-        {
-            ctx.nextChar match
-            {
-                case '\t' => ctx.col += 4 - ((ctx.col - 1) & 3)
-                case _ => ctx.col += 1
-            }
-            ctx.offset += 1
-        }
+        while (ctx.moreInput && ctx.nextChar != '\n') ctx.consumeChar()
     }
 
     protected final def multiLineComment(ctx: Context): Boolean =
     {
-        ctx.offset += start.length
-        ctx.col += start.length
+        ctx.fastUncheckedConsumeChars(start.length)
         var n = 1
         while (n != 0)
         {
             if (ctx.input.startsWith(end, ctx.offset))
             {
-                ctx.offset += end.length
-                ctx.col += end.length
+                ctx.fastUncheckedConsumeChars(end.length)
                 n -= 1
             }
             else if (nested && ctx.input.startsWith(start, ctx.offset))
             {
-                ctx.offset += start.length
-                ctx.col += start.length
+                ctx.fastUncheckedConsumeChars(start.length)
                 n += 1
             }
-            else if (ctx.moreInput)
-            {
-                ctx.nextChar match
-                {
-                    case '\n' => ctx.line += 1; ctx.col = 1
-                    case '\t' => ctx.col += 4 - ((ctx.col - 1) & 3)
-                    case _ => ctx.col += 1
-                }
-                ctx.offset += 1
-            }
+            else if (ctx.moreInput) ctx.consumeChar()
             else
             {
                 ctx.fail("end of comment")
@@ -140,44 +120,27 @@ private [internal] final class TokenComment(start: String, end: String, line: St
 
     private def singleLineComment(ctx: Context): Unit =
     {
-        ctx.offset += line.length
-        ctx.col += line.length
-        while (ctx.moreInput && ctx.nextChar != '\n')
-        {
-            ctx.col += (if (ctx.nextChar == '\t') 4 - ((ctx.col - 1) & 3) else 1)
-            ctx.offset += 1
-        }
+        ctx.fastUncheckedConsumeChars(line.length)
+        while (ctx.moreInput && ctx.nextChar != '\n') ctx.consumeChar()
     }
 
     private def multiLineComment(ctx: Context): Boolean =
     {
-        ctx.offset += start.length
-        ctx.col += start.length
+        ctx.fastUncheckedConsumeChars(start.length)
         var n = 1
         while (n != 0)
         {
             if (ctx.input.startsWith(end, ctx.offset))
             {
-                ctx.offset += end.length
-                ctx.col += end.length
+                ctx.fastUncheckedConsumeChars(end.length)
                 n -= 1
             }
             else if (nested && ctx.input.startsWith(start, ctx.offset))
             {
-                ctx.offset += start.length
-                ctx.col += start.length
+                ctx.fastUncheckedConsumeChars(start.length)
                 n += 1
             }
-            else if (ctx.moreInput)
-            {
-                ctx.nextChar match
-                {
-                    case '\n' => ctx.line += 1; ctx.col = 1
-                    case '\t' => ctx.col += 4 - ((ctx.col - 1) & 3)
-                    case _ => ctx.col += 1
-                }
-                ctx.offset += 1
-            }
+            else if (ctx.moreInput) ctx.consumeChar()
             else
             {
                 ctx.fail("end of comment")
@@ -234,20 +197,7 @@ private [internal] final class TokenWhiteSpace(ws: TokenSet, start: String, end:
         ctx.pushAndContinue(())
     }
 
-    private def spaces(ctx: Context): Unit =
-    {
-        while (ctx.moreInput && ws(ctx.nextChar))
-        {
-            ctx.nextChar match
-            {
-                case '\n' => ctx.line += 1; ctx.col = 1
-                case '\t' => ctx.col += 4 - ((ctx.col - 1) & 3)
-                case _ => ctx.col += 1
-            }
-            ctx.offset += 1
-        }
-    }
-
+    private def spaces(ctx: Context): Unit = while (ctx.moreInput && ws(ctx.nextChar)) ctx.consumeChar()
     override def toString: String = "TokenWhiteSpace"
 }
 
@@ -267,15 +217,11 @@ private [internal] final class TokenSign(ty: SignType, _expected: UnsafeOption[S
         {
             if (ctx.nextChar == '-')
             {
-                ctx.offset += 1
-                ctx.col += 1
+                ctx.fastUncheckedConsumeChars(1)
                 ctx.stack.push(neg)
             }
             else {
-                if (ctx.nextChar == '+') {
-                    ctx.offset += 1
-                    ctx.col += 1
-                }
+                if (ctx.nextChar == '+') ctx.fastUncheckedConsumeChars(1)
                 ctx.stack.push(pos)
             }
         }
@@ -293,16 +239,14 @@ private [internal] final class TokenNatural(_expected: UnsafeOption[String]) ext
         if (ctx.moreInput) (ctx.nextChar: @switch) match
         {
             case '0' =>
-                ctx.offset += 1
-                ctx.col += 1
+                ctx.fastUncheckedConsumeChars(1)
                 if (!ctx.moreInput) ctx.pushAndContinue(0)
                 else
                 {
                     (ctx.nextChar: @switch) match
                     {
                         case 'x' | 'X' =>
-                            ctx.offset += 1
-                            ctx.col += 1
+                            ctx.fastUncheckedConsumeChars(1)
                             if (ctx.moreInput)
                             {
                                 (ctx.nextChar: @switch) match
@@ -310,38 +254,33 @@ private [internal] final class TokenNatural(_expected: UnsafeOption[String]) ext
                                     case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
                                             | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
                                             | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
-                                        ctx.offset += 1
-                                        ctx.col += 1
+                                        ctx.fastUncheckedConsumeChars(1)
                                         ctx.pushAndContinue(hexadecimal(ctx, d.asDigit))
                                     case _ => ctx.fail(expected)
                                 }
                             }
                             else ctx.fail(expected)
                         case 'o' | 'O' =>
-                            ctx.offset += 1
-                            ctx.col += 1
+                            ctx.fastUncheckedConsumeChars(1)
                             if (ctx.moreInput)
                             {
                                 val d = ctx.nextChar
                                 if (d >= '0' && d <= '7')
                                 {
-                                    ctx.offset += 1
-                                    ctx.col += 1
+                                    ctx.fastUncheckedConsumeChars(1)
                                     ctx.pushAndContinue(octal(ctx, d.asDigit))
                                 }
                                 else ctx.fail(expected)
                             }
                             else ctx.fail(expected)
                         case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9') =>
-                            ctx.offset += 1
-                            ctx.col += 1
+                            ctx.fastUncheckedConsumeChars(1)
                             ctx.pushAndContinue(decimal(ctx, d.asDigit))
                         case _ => ctx.pushAndContinue(0)
                     }
                 }
             case d@('1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9') =>
-                ctx.offset += 1
-                ctx.col += 1
+                ctx.fastUncheckedConsumeChars(1)
                 ctx.pushAndContinue(decimal(ctx, d.asDigit))
             case _ => ctx.fail(expected)
         }
@@ -355,8 +294,7 @@ private [internal] final class TokenNatural(_expected: UnsafeOption[String]) ext
             val d = ctx.nextChar
             if (d >= '0' && d <= '9')
             {
-                ctx.offset += 1
-                ctx.col += 1
+                ctx.fastUncheckedConsumeChars(1)
                 decimal(ctx, x * 10 + d.asDigit)
             }
             else x
@@ -373,8 +311,7 @@ private [internal] final class TokenNatural(_expected: UnsafeOption[String]) ext
                 case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
                         | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
                         | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
-                    ctx.offset += 1
-                    ctx.col += 1
+                    ctx.fastUncheckedConsumeChars(1)
                     hexadecimal(ctx, x * 16 + d.asDigit)
                 case _ => x
             }
@@ -389,8 +326,7 @@ private [internal] final class TokenNatural(_expected: UnsafeOption[String]) ext
             val d = ctx.nextChar
             if (d >= '0' && d <= '7')
             {
-                ctx.offset += 1
-                ctx.col += 1
+                ctx.fastUncheckedConsumeChars(1)
                 octal(ctx, x * 8 + d.asDigit)
             }
             else x
@@ -410,30 +346,26 @@ private [internal] final class TokenFloat(_expected: UnsafeOption[String]) exten
         if (ctx.moreInput) (ctx.nextChar: @switch) match
         {
             case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9') =>
-                ctx.offset += 1
-                ctx.col += 1
+                ctx.fastUncheckedConsumeChars(1)
                 val builder = new StringBuilder()
                 failed = decimal(ctx, builder += d, false)
                 if (ctx.moreInput) (ctx.nextChar: @switch) match
                 {
                     case '.' => // fraction
-                        ctx.offset += 1
-                        ctx.col += 1
+                        ctx.fastUncheckedConsumeChars(1)
                         failed = decimal(ctx, builder += '.')
                         if (!failed)
                         {
                             if (ctx.moreInput && (ctx.nextChar == 'e' || ctx.nextChar == 'E'))
                             {
-                                ctx.offset += 1
-                                ctx.col += 1
+                                ctx.fastUncheckedConsumeChars(1)
                                 failed = exponent(ctx, builder += 'e')
                             }
                             if (!failed) try ctx.stack.push(builder.toString.toDouble)
                             catch { case _: NumberFormatException => failed = true }
                         }
                     case 'e' | 'E' => // exponent
-                        ctx.offset += 1
-                        ctx.col += 1
+                        ctx.fastUncheckedConsumeChars(1)
                         failed = exponent(ctx, builder += 'e')
                         if (!failed) try ctx.stack.push(builder.toString.toDouble)
                         catch { case _: NumberFormatException => ctx.fail(expected) }
@@ -454,8 +386,7 @@ private [internal] final class TokenFloat(_expected: UnsafeOption[String]) exten
             val d = ctx.nextChar
             if (d >= '0' && d <= '9')
             {
-                ctx.offset += 1
-                ctx.col += 1
+                ctx.fastUncheckedConsumeChars(1)
                 decimal(ctx, x += d, false)
             }
             else first
@@ -470,12 +401,10 @@ private [internal] final class TokenFloat(_expected: UnsafeOption[String]) exten
             ctx.nextChar match
             {
                 case '+' =>
-                    ctx.offset += 1
-                    ctx.col += 1
+                    ctx.fastUncheckedConsumeChars(1)
                     decimal(ctx, x)
                 case '-' =>
-                    ctx.offset += 1
-                    ctx.col += 1
+                    ctx.fastUncheckedConsumeChars(1)
                     decimal(ctx, x += '-')
                 case _ => decimal(ctx, x)
             }
@@ -508,19 +437,18 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
         {
             (ctx.nextChar: @switch) match
             {
-                case 'a' => ctx.offset += 1; ctx.col += 1; escapeChar = '\u0007'
-                case 'b' => ctx.offset += 1; ctx.col += 1; escapeChar = '\b'
-                case 'f' => ctx.offset += 1; ctx.col += 1; escapeChar = '\u000c'
-                case 'n' => ctx.offset += 1; ctx.col += 1; escapeChar = '\n'
-                case 'r' => ctx.offset += 1; ctx.col += 1; escapeChar = '\r'
-                case 't' => ctx.offset += 1; ctx.col += 1; escapeChar = '\t'
-                case 'v' => ctx.offset += 1; ctx.col += 1; escapeChar = '\u000b'
-                case '\\' => ctx.offset += 1; ctx.col += 1; escapeChar = '\\'
-                case '\"' => ctx.offset += 1; ctx.col += 1; escapeChar = '\"'
-                case '\'' => ctx.offset += 1; ctx.col += 1; escapeChar = '\''
+                case 'a' => ctx.fastUncheckedConsumeChars(1); escapeChar = '\u0007'
+                case 'b' => ctx.fastUncheckedConsumeChars(1); escapeChar = '\b'
+                case 'f' => ctx.fastUncheckedConsumeChars(1); escapeChar = '\u000c'
+                case 'n' => ctx.fastUncheckedConsumeChars(1); escapeChar = '\n'
+                case 'r' => ctx.fastUncheckedConsumeChars(1); escapeChar = '\r'
+                case 't' => ctx.fastUncheckedConsumeChars(1); escapeChar = '\t'
+                case 'v' => ctx.fastUncheckedConsumeChars(1); escapeChar = '\u000b'
+                case '\\' => ctx.fastUncheckedConsumeChars(1); escapeChar = '\\'
+                case '\"' => ctx.fastUncheckedConsumeChars(1); escapeChar = '\"'
+                case '\'' => ctx.fastUncheckedConsumeChars(1); escapeChar = '\''
                 case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9') =>
-                    ctx.offset += 1
-                    ctx.col += 1
+                    ctx.fastUncheckedConsumeChars(1)
                     val escapeCode = decimal(ctx, d.asDigit)
                     if (escapeCode <= 0x10FFFF) escapeChar = escapeCode.toChar
                     else
@@ -529,8 +457,7 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
                         return false
                     }
                 case 'x' =>
-                    ctx.offset += 1
-                    ctx.col += 1
+                    ctx.fastUncheckedConsumeChars(1)
                     if (ctx.moreInput)
                     {
                         (ctx.nextChar: @switch) match
@@ -538,8 +465,7 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
                             case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
                                     | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
                                     | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
-                                ctx.offset += 1
-                                ctx.col += 1
+                                ctx.fastUncheckedConsumeChars(1)
                                 val escapeCode = hexadecimal(ctx, d.asDigit)
                                 if (escapeCode <= 0x10FFFF) escapeChar = escapeCode.toChar
                                 else
@@ -552,15 +478,13 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
                     }
                     else return false
                 case 'o' =>
-                    ctx.offset += 1
-                    ctx.col += 1
+                    ctx.fastUncheckedConsumeChars(1)
                     if (ctx.moreInput)
                     {
                         val d = ctx.nextChar
                         if (d >= '0' && d <= '7')
                         {
-                            ctx.offset += 1
-                            ctx.col += 1
+                            ctx.fastUncheckedConsumeChars(1)
                             val escapeCode = octal(ctx, d.asDigit)
                             if (escapeCode <= 0x10FFFF) escapeChar = escapeCode.toChar
                             else
@@ -573,15 +497,13 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
                     }
                     else return false
                 case '^' =>
-                    ctx.offset += 1
-                    ctx.col += 1
+                    ctx.fastUncheckedConsumeChars(1)
                     if (ctx.moreInput)
                     {
                         val c = ctx.nextChar
                         if (c >= 'A' && c <= 'Z')
                         {
-                            ctx.offset += 1
-                            ctx.col += 1
+                            ctx.fastUncheckedConsumeChars(1)
                             escapeChar = (c - 'A' + 1).toChar
                         }
                         else return false
@@ -590,36 +512,31 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
                 case 'A' => //ACK
                     if (ctx.offset + 2 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'C' && ctx.input(ctx.offset + 2) == 'K')
                     {
-                        ctx.offset += 3
-                        ctx.col += 3
+                        ctx.fastUncheckedConsumeChars(3)
                         escapeChar = '\u0006'
                     }
                     else return false
                 case 'B' => //BS BEL
                     if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'S')
                     {
-                        ctx.offset += 2
-                        ctx.col += 2
+                        ctx.fastUncheckedConsumeChars(2)
                         escapeChar = '\u0008'
                     }
                     else if (ctx.offset + 2 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'E' && ctx.input(ctx.offset + 2) == 'L')
                     {
-                        ctx.offset += 3
-                        ctx.col += 3
+                        ctx.fastUncheckedConsumeChars(3)
                         escapeChar = '\u0007'
                     }
                     else return false
                 case 'C' => //CR CAN
                     if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'R')
                     {
-                        ctx.offset += 2
-                        ctx.col += 2
+                        ctx.fastUncheckedConsumeChars(2)
                         escapeChar = '\u000d'
                     }
                     else if (ctx.offset + 2 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'A' && ctx.input(ctx.offset + 2) == 'N')
                     {
-                        ctx.offset += 3
-                        ctx.col += 3
+                        ctx.fastUncheckedConsumeChars(3)
                         escapeChar = '\u0018'
                     }
                     else return false
@@ -628,17 +545,17 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
                     {
                         case 'C' => (ctx.input(ctx.offset + 2): @switch) match
                         {
-                            case '1' => ctx.offset += 3; ctx.col += 3; escapeChar = '\u0011'
-                            case '2' => ctx.offset += 3; ctx.col += 3; escapeChar = '\u0012'
-                            case '3' => ctx.offset += 3; ctx.col += 3; escapeChar = '\u0013'
-                            case '4' => ctx.offset += 3; ctx.col += 3; escapeChar = '\u0014'
+                            case '1' => ctx.fastUncheckedConsumeChars(3); escapeChar = '\u0011'
+                            case '2' => ctx.fastUncheckedConsumeChars(3); escapeChar = '\u0012'
+                            case '3' => ctx.fastUncheckedConsumeChars(3); escapeChar = '\u0013'
+                            case '4' => ctx.fastUncheckedConsumeChars(3); escapeChar = '\u0014'
                             case _ => return false
                         }
                         case 'E' =>
-                            if (ctx.input(ctx.offset + 2) == 'L') { ctx.offset += 3; ctx.col += 3; escapeChar = '\u001f' }
+                            if (ctx.input(ctx.offset + 2) == 'L') { ctx.fastUncheckedConsumeChars(3); escapeChar = '\u001f' }
                             else return false
                         case 'L' =>
-                            if (ctx.input(ctx.offset + 2) == 'E') { ctx.offset += 3; ctx.col += 3; escapeChar = '\u0010' }
+                            if (ctx.input(ctx.offset + 2) == 'E') { ctx.fastUncheckedConsumeChars(3); escapeChar = '\u0010' }
                             else return false
                         case _ => return false
                     }
@@ -646,24 +563,23 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
                 case 'E' => //EM ETX ETB ESC EOT ENQ
                     if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'M')
                     {
-                        ctx.offset += 2
-                        ctx.col += 2
+                        ctx.fastUncheckedConsumeChars(2)
                         escapeChar = '\u0019'
                     }
                     else if (ctx.offset + 2 < ctx.inputsz) (ctx.input(ctx.offset + 1): @switch) match
                     {
                         case 'N' =>
-                            if (ctx.input(ctx.offset + 2) == 'Q') { ctx.offset += 3; ctx.col += 3; escapeChar = '\u0005' }
+                            if (ctx.input(ctx.offset + 2) == 'Q') { ctx.fastUncheckedConsumeChars(3); escapeChar = '\u0005' }
                             else return false
                         case 'O' =>
-                            if (ctx.input(ctx.offset + 2) == 'T') { ctx.offset += 3; ctx.col += 3; escapeChar = '\u0004' }
+                            if (ctx.input(ctx.offset + 2) == 'T') { ctx.fastUncheckedConsumeChars(3); escapeChar = '\u0004' }
                             else return false
                         case 'S' =>
-                            if (ctx.input(ctx.offset + 2) == 'C') { ctx.offset += 3; ctx.col += 3; escapeChar = '\u001b' }
+                            if (ctx.input(ctx.offset + 2) == 'C') { ctx.fastUncheckedConsumeChars(3); escapeChar = '\u001b' }
                             else return false
                         case 'T' =>
-                            if (ctx.input(ctx.offset + 2) == 'X') { ctx.offset += 3; ctx.col += 3; escapeChar = '\u0003' }
-                            else if (ctx.input(ctx.offset + 2) == 'B') { ctx.offset += 3; ctx.col += 3; escapeChar = '\u0017' }
+                            if (ctx.input(ctx.offset + 2) == 'X') { ctx.fastUncheckedConsumeChars(3); escapeChar = '\u0003' }
+                            else if (ctx.input(ctx.offset + 2) == 'B') { ctx.fastUncheckedConsumeChars(3); escapeChar = '\u0017' }
                             else return false
                         case _ => return false
                     }
@@ -671,95 +587,84 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
                 case 'F' => //FF FS
                     if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'F')
                     {
-                        ctx.offset += 2
-                        ctx.col += 2
+                        ctx.fastUncheckedConsumeChars(2)
                         escapeChar = '\u000c'
                     }
                     else if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'S')
                     {
-                        ctx.offset += 2
-                        ctx.col += 2
+                        ctx.fastUncheckedConsumeChars(2)
                         escapeChar = '\u001c'
                     }
                     else return false
                 case 'G' => //GS
                     if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'S')
                     {
-                        ctx.offset += 2
-                        ctx.col += 2
+                        ctx.fastUncheckedConsumeChars(2)
                         escapeChar = '\u001d'
                     }
                     else return false
                 case 'H' => //HT
                     if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'T')
                     {
-                        ctx.offset += 2
-                        ctx.col += 2
+                        ctx.fastUncheckedConsumeChars(2)
                         escapeChar = '\u0009'
                     }
                     else return false
                 case 'L' => //LF
                     if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'F')
                     {
-                        ctx.offset += 2
-                        ctx.col += 2
+                        ctx.fastUncheckedConsumeChars(2)
                         escapeChar = '\n'
                     }
                     else return false
                 case 'N' => //NUL NAK
                     if (ctx.offset + 2 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'U' && ctx.input(ctx.offset + 2) == 'L')
                     {
-                        ctx.offset += 3
-                        ctx.col += 3
+                        ctx.fastUncheckedConsumeChars(3)
                         escapeChar = '\u0000'
                     }
                     else if (ctx.offset + 2 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'A' && ctx.input(ctx.offset + 2) == 'K')
                     {
-                        ctx.offset += 3
-                        ctx.col += 3
+                        ctx.fastUncheckedConsumeChars(3)
                         escapeChar = '\u0015'
                     }
                     else return false
                 case 'R' => //RS
                     if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'S')
                     {
-                        ctx.offset += 2
-                        ctx.col += 2
+                        ctx.fastUncheckedConsumeChars(2)
                         escapeChar = '\u001e'
                     }
                     else return false
                 case 'S' => //SO SI SP SOH STX SYN SUB
                     if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'O')
                     {
-                        ctx.offset += 2
-                        ctx.col += 2
+                        ctx.fastUncheckedConsumeChars(2)
                         escapeChar = '\u000e'
                     }
                     else if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'I')
                     {
-                        ctx.offset += 2
-                        ctx.col += 2
+                        ctx.fastUncheckedConsumeChars(2)
                         escapeChar = '\u000f'
                     }
                     else if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'P')
                     {
-                        ctx.offset += 2
-                        ctx.col += 2
+                        ctx.fastUncheckedConsumeChars(2)
                         escapeChar = '\u0020'
                     }
                     else if (ctx.offset + 2 < ctx.inputsz) (ctx.input(ctx.offset + 1): @switch) match
                     {
                         case 'O' =>
-                            if (ctx.input(ctx.offset + 2) == 'H') { ctx.offset += 3; ctx.col += 3; escapeChar = '\u0001' }
+                            if (ctx.input(ctx.offset + 2) == 'H') { ctx.fastUncheckedConsumeChars(3); escapeChar = '\u0001' }
                             else return false
                         case 'T' =>
-                            if (ctx.input(ctx.offset + 2) == 'X') { ctx.offset += 3; ctx.col += 3; escapeChar = '\u0002' }
+                            if (ctx.input(ctx.offset + 2) == 'X') { ctx.fastUncheckedConsumeChars(3); escapeChar = '\u0002' }
                             else return false
                         case 'Y' =>
-                            if (ctx.input(ctx.offset + 2) == 'N') { ctx.offset += 3; ctx.col += 3; escapeChar = '\u0016' }
+                            if (ctx.input(ctx.offset + 2) == 'N') { ctx.fastUncheckedConsumeChars(3); escapeChar = '\u0016' }
                             else return false
                         case 'U' =>
-                            if (ctx.input(ctx.offset + 2) == 'B') { ctx.offset += 3; ctx.col += 3; escapeChar = '\u001a' }
+                            if (ctx.input(ctx.offset + 2) == 'B') { ctx.fastUncheckedConsumeChars(3); escapeChar = '\u001a' }
                             else return false
                         case _ => return false
                     }
@@ -767,16 +672,14 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
                 case 'U' => //US
                     if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'S')
                     {
-                        ctx.offset += 2
-                        ctx.col += 2
+                        ctx.fastUncheckedConsumeChars(2)
                         escapeChar = '\u001f'
                     }
                     else return false
                 case 'V' => //VT
                     if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'T')
                     {
-                        ctx.offset += 2
-                        ctx.col += 2
+                        ctx.fastUncheckedConsumeChars(2)
                         escapeChar = '\u000b'
                     }
                     else return false
@@ -794,8 +697,7 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
             val d = ctx.nextChar
             if (d >= '0' && d <= '9')
             {
-                ctx.offset += 1
-                ctx.col += 1
+                ctx.fastUncheckedConsumeChars(1)
                 decimal(ctx, x * 10 + d.asDigit)
             }
             else x
@@ -812,8 +714,7 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
                 case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
                         | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
                         | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
-                    ctx.offset += 1
-                    ctx.col += 1
+                    ctx.fastUncheckedConsumeChars(1)
                     hexadecimal(ctx, x * 16 + d.asDigit)
                 case _ => x
             }
@@ -828,8 +729,7 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
             val d = ctx.nextChar
             if (d >= '0' && d <= '7')
             {
-                ctx.offset += 1
-                ctx.col += 1
+                ctx.fastUncheckedConsumeChars(1)
                 octal(ctx, x * 8 + d.asDigit)
             }
             else x
@@ -854,8 +754,7 @@ private [internal] final class TokenString(ws: TokenSet, _expected: UnsafeOption
         badCode = false
         if (ctx.moreInput && ctx.nextChar == '"')
         {
-            ctx.offset += 1
-            ctx.col += 1
+            ctx.fastUncheckedConsumeChars(1)
             restOfString(ctx, new StringBuilder())
         }
         else ctx.fail(expectedString)
@@ -866,26 +765,22 @@ private [internal] final class TokenString(ws: TokenSet, _expected: UnsafeOption
         if (ctx.moreInput) ctx.nextChar match
         {
             case '"' =>
-                ctx.offset += 1
-                ctx.col += 1
+                ctx.fastUncheckedConsumeChars(1)
                 ctx.pushAndContinue(builder.toString)
             case '\\' =>
-                ctx.offset += 1
-                ctx.col += 1
+                ctx.fastUncheckedConsumeChars(1)
                 if (spaces(ctx) != 0)
                 {
                     if (ctx.moreInput && ctx.nextChar == '\\')
                     {
-                        ctx.offset += 1
-                        ctx.col += 1
+                        ctx.fastUncheckedConsumeChars(1)
                         restOfString(ctx, builder)
                     }
                     else ctx.fail(expectedGap)
                 }
                 else if (ctx.moreInput && ctx.nextChar == '&')
                 {
-                    ctx.offset += 1
-                    ctx.col += 1
+                    ctx.fastUncheckedConsumeChars(1)
                     restOfString(ctx, builder)
                 }
                 else if (escape(ctx)) restOfString(ctx, builder += escapeChar)
@@ -897,8 +792,7 @@ private [internal] final class TokenString(ws: TokenSet, _expected: UnsafeOption
             case c =>
                 if (c > '\u0016')
                 {
-                    ctx.offset += 1
-                    ctx.col += 1
+                    ctx.fastUncheckedConsumeChars(1)
                     restOfString(ctx, builder += c)
                 }
                 else ctx.fail(expectedChar)
@@ -911,13 +805,7 @@ private [internal] final class TokenString(ws: TokenSet, _expected: UnsafeOption
         var n = 0
         while (ctx.moreInput && ws(ctx.nextChar))
         {
-            ctx.nextChar match
-            {
-                case '\n' => ctx.line += 1; ctx.col = 1
-                case '\t' => ctx.col += 4 - ((ctx.col - 1) & 3)
-                case _ => ctx.col += 1
-            }
-            ctx.offset += 1
+            ctx.consumeChar()
             n += 1
         }
         n
@@ -937,8 +825,7 @@ private [internal] final class TokenRawString(_expected: UnsafeOption[String]) e
     {
         if (ctx.moreInput && ctx.nextChar == '"')
         {
-            ctx.offset += 1
-            ctx.col += 1
+            ctx.fastUncheckedConsumeChars(1)
             restOfString(ctx, new StringBuilder())
         }
         else ctx.fail(expectedString)
@@ -949,26 +836,22 @@ private [internal] final class TokenRawString(_expected: UnsafeOption[String]) e
         if (ctx.moreInput) ctx.nextChar match
         {
             case '"' =>
-                ctx.offset += 1
-                ctx.col += 1
+                ctx.fastUncheckedConsumeChars(1)
                 ctx.pushAndContinue(builder.toString)
             case '\\' =>
-                ctx.offset += 1
-                ctx.col += 1
+                ctx.fastUncheckedConsumeChars(1)
                 builder += '\\'
                 if (ctx.moreInput && ctx.nextChar > '\u0016')
                 {
                     builder += ctx.nextChar
-                    ctx.offset += 1
-                    ctx.col += 1
+                    ctx.fastUncheckedConsumeChars(1)
                     restOfString(ctx, builder)
                 }
                 else ctx.fail(expectedChar)
             case c =>
                 if (c > '\u0016')
                 {
-                    ctx.offset += 1
-                    ctx.col += 1
+                    ctx.fastUncheckedConsumeChars(1)
                     restOfString(ctx, builder += c)
                 }
                 else ctx.fail(expectedChar)
@@ -1141,8 +1024,7 @@ private [internal] class TokenKeyword(_keyword: String, letter: TokenSet, caseSe
                 i += 1
                 j += 1
             }
-            ctx.col += strsz
-            ctx.offset = i
+            ctx.fastUncheckedConsumeChars(strsz)
             if (i < inputsz && letter(input(i))) ctx.fail(expectedEnd)
             else ctx.pushAndContinue(())
         }
@@ -1178,8 +1060,7 @@ private [internal] class TokenOperator_(_operator: String, letter: TokenSet, _ex
                 i += 1
                 j += 1
             }
-            ctx.col += strsz
-            ctx.offset = i
+            ctx.fastUncheckedConsumeChars(strsz)
             if (i < inputsz && letter(input(i))) ctx.fail(expectedEnd)
             else ctx.pushAndContinue(())
         }
@@ -1236,8 +1117,7 @@ private [internal] class TokenMaxOp(_operator: String, _ops: Set[String], _expec
                     i += 1
                 }
             }
-            ctx.col = ctx.col + strsz
-            ctx.offset = j
+            ctx.fastUncheckedConsumeChars(strsz)
             ctx.pushAndContinue(())
         }
         else ctx.fail(expected)

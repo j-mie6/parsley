@@ -32,18 +32,9 @@ private [instructions] class Tab(x: Any, _expected: UnsafeOption[String]) extend
 
 private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, expected: UnsafeOption[String]) extends Instr {
     override def apply(ctx: Context): Unit = {
-        if (ctx.moreInput) {
-            val c = ctx.nextChar
-            if (f(ctx.nextChar)) {
-                ctx.offset += 1
-                c match {
-                    case '\n' => ctx.line += 1; ctx.col = 1
-                    case '\t' => ctx.col += 4 - ((ctx.col - 1) & 3)
-                    case _ => ctx.col += 1
-                }
-                ctx.pushAndContinue(x)
-            }
-            else ctx.fail(expected)
+        if (ctx.moreInput && f(ctx.nextChar)) {
+            ctx.consumeChar()
+            ctx.pushAndContinue(x)
         }
         else ctx.fail(expected)
     }
@@ -145,7 +136,7 @@ private [internal] object CharTokFastPerform {
 }
 
 private [internal] object StringTokFastPerform {
-    def apply(s: String, f: String => Any, expected: UnsafeOption[String]) = new StringTok(s, f(s), expected)
+    def apply(s: String, f: String => Any, expected: UnsafeOption[String]): StringTok = new StringTok(s, f(s), expected)
 }
 
 private [internal] object Exchange {

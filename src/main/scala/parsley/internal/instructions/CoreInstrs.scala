@@ -48,16 +48,7 @@ private [internal] class CharTok protected (c: Char, x: Any, _expected: UnsafeOp
 
 private [internal] final class Satisfies(f: Char => Boolean, expected: UnsafeOption[String]) extends Instr {
     override def apply(ctx: Context): Unit = {
-        if (ctx.moreInput && f(ctx.nextChar)) {
-            val c = ctx.nextChar
-            ctx.offset += 1
-            c match {
-                case '\n' => ctx.line += 1; ctx.col = 1
-                case '\t' => ctx.col += 4 - ((ctx.col - 1) & 3)
-                case _ => ctx.col += 1
-            }
-            ctx.pushAndContinue(c)
-        }
+        if (ctx.moreInput && f(ctx.nextChar)) ctx.pushAndContinue(ctx.consumeChar())
         else ctx.fail(expected)
     }
     override def toString: String = "Sat(?)"

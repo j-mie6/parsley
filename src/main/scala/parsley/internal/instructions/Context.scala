@@ -4,7 +4,7 @@ import Stack.{drop, isEmpty, mkString, map, push}
 import parsley.{Failure, Result, Success}
 import parsley.internal.UnsafeOption
 
-import scala.annotation.tailrec
+import scala.annotation.{tailrec, switch}
 
 // Private internals
 private [instructions] final class Frame(val ret: Int, val instrs: Array[Instr]) {
@@ -184,6 +184,21 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
     private [instructions] def inc(): Unit = pc += 1
     private [instructions] def nextChar: Char = input(offset)
     private [instructions] def moreInput: Boolean = offset < inputsz
+    private [instructions] def updatePos(c: Char) = (c: @switch) match {
+        case '\n' => line += 1; col = 1
+        case '\t' => col += 4 - ((col - 1) & 3)
+        case _ => col += 1
+    }
+    private [instructions] def consumeChar(): Char = {
+        val c = nextChar
+        updatePos(c)
+        offset += 1
+        c
+    }
+    private [instructions] def fastUncheckedConsumeChars(n: Int) = {
+        offset += n
+        col += n
+    }
     private [instructions] def pushHandler(label: Int): Unit = handlers = push(handlers, new Handler(depth, label, stack.usize))
     private [instructions] def pushCheck(): Unit = checkStack = push(checkStack, offset)
     private [instructions] def saveState(): Unit = states = push(states, new State(offset, line, col, regs))
