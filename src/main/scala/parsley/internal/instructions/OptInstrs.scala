@@ -25,7 +25,7 @@ private [internal] class Newline(_expected: UnsafeOption[String]) extends CharTo
             ctx.offset += 1
             ctx.col = 1
             ctx.line += 1
-            ctx.pushAndContinue(ac)
+            ctx.pushAndContinue('\n')
         }
         else ctx.fail(expected)
     }
@@ -36,7 +36,7 @@ private [internal] class Tab(_expected: UnsafeOption[String]) extends CharTok('\
         if (ctx.moreInput && ctx.nextChar == '\t') {
             ctx.offset += 1
             ctx.col += 4 - ((ctx.col - 1) & 3)
-            ctx.pushAndContinue(ac)
+            ctx.pushAndContinue('\t')
         }
         else ctx.fail(expected)
     }

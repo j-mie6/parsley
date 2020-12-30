@@ -34,12 +34,11 @@ private [internal] object Flip extends Instr {
 // Primitives
 private [internal] class CharTok protected (protected final val c: Char, _expected: UnsafeOption[String]) extends Instr {
     protected val expected: String = if (_expected == null) "\"" + c + "\"" else _expected
-    protected final val ac: Any = c
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && ctx.nextChar == c) {
             ctx.offset += 1
             ctx.col += 1
-            ctx.pushAndContinue(ac)
+            ctx.pushAndContinue(c)
         }
         else ctx.fail(expected)
     }
@@ -48,18 +47,15 @@ private [internal] class CharTok protected (protected final val c: Char, _expect
 
 private [internal] final class Satisfies(f: Char => Boolean, expected: UnsafeOption[String]) extends Instr {
     override def apply(ctx: Context): Unit = {
-        if (ctx.moreInput) {
+        if (ctx.moreInput && f(ctx.nextChar)) {
             val c = ctx.nextChar
-            if (f(ctx.nextChar)) {
-                ctx.offset += 1
-                c match {
-                    case '\n' => ctx.line += 1; ctx.col = 1
-                    case '\t' => ctx.col += 4 - ((ctx.col - 1) & 3)
-                    case _ => ctx.col += 1
-                }
-                ctx.pushAndContinue(c)
+            ctx.offset += 1
+            c match {
+                case '\n' => ctx.line += 1; ctx.col = 1
+                case '\t' => ctx.col += 4 - ((ctx.col - 1) & 3)
+                case _ => ctx.col += 1
             }
-            else ctx.fail(expected)
+            ctx.pushAndContinue(c)
         }
         else ctx.fail(expected)
     }
@@ -337,18 +333,19 @@ private [instructions] trait Logger {
         val caret = " " * (prelude.length + ctx.offset - start) + Console.BLUE + "^" + Console.RESET
         s"$prelude$inputAndEof$ends\n$caret"
     }
+    final protected def doBreak(ctx: Context): Unit = {
+        print(s"${indent(ctx)}{stack: ${ctx.stack.mkString(", ")}})\n" +
+              s"${indent(ctx)}{registers: ${ctx.regs.zipWithIndex.map{case (x, i) => s"r$i: $x"}.mkString("[", ", ", "])}")}}\n" +
+              s"${indent(ctx)}...")
+        Console.in.read()
+    }
     final protected def indent(ctx: Context) = " " * (ctx.debuglvl * 2)
 }
 
 private [internal] final class LogBegin(var label: Int, val name: String, break: Boolean) extends JumpInstr with Logger {
     override def apply(ctx: Context): Unit = {
         println(preludeString('>', ctx))
-        if (break) {
-            print(s"${indent(ctx)}{stack: ${ctx.stack.mkString(", ")}})\n" +
-                  s"${indent(ctx)}{registers: ${ctx.regs.zipWithIndex.map{case (x, i) => s"r$i: $x"}.mkString("[", ", ", "])}")}}\n" +
-                  s"${indent(ctx)}...")
-            Console.in.read()
-        }
+        if (break) doBreak(ctx)
         ctx.debuglvl += 1
         ctx.pushHandler(label)
         ctx.inc()
@@ -369,12 +366,7 @@ private [internal] final class LogEnd(val name: String, break: Boolean) extends 
                 Console.RED + "Fail" + Console.RESET
         })
         println(preludeString('<', ctx, end))
-        if (break) {
-            print(s"${indent(ctx)}{stack: ${ctx.stack.mkString(", ")}})\n" +
-                  s"${indent(ctx)}{registers: ${ctx.regs.zipWithIndex.map{case (x, i) => s"r$i: $x"}.mkString("[", ", ", "])}")}}\n" +
-                  s"${indent(ctx)}...")
-            Console.in.read()
-        }
+        if (break) doBreak(ctx)
     }
     override def toString: String = s"LogEnd($name)"
 }
