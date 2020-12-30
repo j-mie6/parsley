@@ -75,14 +75,12 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
     @tailrec @inline private [parsley] def runParser[A](): Result[A] = {
         //println(this)
         if (status eq Failed) Failure(errorMessage)
-        else if (pc < instrs.length)
-        {
+        else if (pc < instrs.length) {
             instrs(pc)(this)
             runParser[A]()
         }
         else if (isEmpty(calls)) Success(stack.peek[A])
-        else
-        {
+        else {
             ret()
             runParser[A]()
         }
@@ -100,8 +98,7 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
         instrs = newInstrs
         pc = at
         depth += 1
-        if (expected != null && errorOverride == null)
-        {
+        if (expected != null && errorOverride == null) {
             overrideDepth = depth
             errorOverride = expected
         }

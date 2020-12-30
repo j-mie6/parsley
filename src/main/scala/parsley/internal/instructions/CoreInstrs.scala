@@ -32,17 +32,18 @@ private [internal] object Flip extends Instr {
 }
 
 // Primitives
-private [internal] class CharTok protected (protected final val c: Char, _expected: UnsafeOption[String]) extends Instr {
+private [internal] class CharTok protected (c: Char, x: Any, _expected: UnsafeOption[String]) extends Instr {
     protected val expected: String = if (_expected == null) "\"" + c + "\"" else _expected
-    override def apply(ctx: Context): Unit = {
+    protected def updatePos(ctx: Context) = ctx.col += 1
+    final override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && ctx.nextChar == c) {
+            updatePos(ctx)
             ctx.offset += 1
-            ctx.col += 1
-            ctx.pushAndContinue(c)
+            ctx.pushAndContinue(x)
         }
         else ctx.fail(expected)
     }
-    override final def toString: String = s"Chr($c)"
+    override final def toString: String = if (x == c) s"Chr($c)" else s"ChrPerform($c, $x)"
 }
 
 private [internal] final class Satisfies(f: Char => Boolean, expected: UnsafeOption[String]) extends Instr {
@@ -88,31 +89,31 @@ private [internal] final class StringTok(s: String, _expected: UnsafeOption[Stri
     compute(cs)
 
     override def apply(ctx: Context): Unit = {
-        val strsz = this.sz
         val inputsz = ctx.inputsz
         val input = ctx.input
-        var i = ctx.offset
-        var j = 0
-        val cs = this.cs
+        val i = ctx.offset
         if (inputsz != i) {
-            while (j < strsz) {
-                val c = cs(j)
-                if (i == inputsz || input(i) != c) {
-                    ctx.offset = i
+            @tailrec def go(i: Int, j: Int): Unit = {
+                if (j < sz) {
+                    val c = cs(j)
+                    if (i == inputsz || input(i) != c) {
+                        ctx.offset = i
+                        val (colAdjust, lineAdjust) = adjustAtIndex(j)
+                        ctx.col = colAdjust(ctx.col)
+                        ctx.line = lineAdjust(ctx.line)
+                        ctx.fail(expected)
+                    }
+                    else go(i + 1, j + 1)
+                }
+                else {
                     val (colAdjust, lineAdjust) = adjustAtIndex(j)
                     ctx.col = colAdjust(ctx.col)
                     ctx.line = lineAdjust(ctx.line)
-                    ctx.fail(expected)
-                    return
+                    ctx.offset = i
+                    ctx.pushAndContinue(s)
                 }
-                i += 1
-                j += 1
             }
-            val (colAdjust, lineAdjust) = adjustAtIndex(j)
-            ctx.col = colAdjust(ctx.col)
-            ctx.line = lineAdjust(ctx.line)
-            ctx.offset = i
-            ctx.pushAndContinue(s)
+            go(i, 0)
         }
         else ctx.fail(expected)
     }
@@ -373,9 +374,10 @@ private [internal] final class LogEnd(val name: String, break: Boolean) extends 
 
 // Extractor Objects
 private [internal] object CharTok {
-    def apply(c: Char, expected: UnsafeOption[String]): CharTok = c match {
-        case '\n' => new Newline(expected)
-        case '\t' => new Tab(expected)
-        case _ => new CharTok(c, expected)
+    def apply(c: Char, expected: UnsafeOption[String]): Instr = CharTok(c, c, expected)
+    def apply(c: Char, x: Any, expected: UnsafeOption[String]): CharTok = c match {
+        case '\n' => new Newline(x, expected)
+        case '\t' => new Tab(x, expected)
+        case _ => new CharTok(c, x, expected)
     }
 }
