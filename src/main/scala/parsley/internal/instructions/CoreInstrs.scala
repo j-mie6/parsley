@@ -77,22 +77,19 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
     }
     compute(cs)
 
-    override def apply(ctx: Context): Unit = {
-        val inputsz = ctx.inputsz
-        val input = ctx.input
-        @tailrec def go(i: Int, j: Int): Unit = {
-            if (j < sz && i < inputsz && input(i) == cs(j)) go(i + 1, j + 1)
-            else {
-                val (colAdjust, lineAdjust) = adjustAtIndex(j)
-                ctx.col = colAdjust(ctx.col)
-                ctx.line = lineAdjust(ctx.line)
-                ctx.offset = i
-                if (j < sz) ctx.fail(expected)
-                else ctx.pushAndContinue(x)
-            }
+    @tailrec private def go(ctx: Context, i: Int, j: Int): Unit = {
+        if (j < sz && i < ctx.inputsz && ctx.input(i) == cs(j)) go(ctx, i + 1, j + 1)
+        else {
+            val (colAdjust, lineAdjust) = adjustAtIndex(j)
+            ctx.col = colAdjust(ctx.col)
+            ctx.line = lineAdjust(ctx.line)
+            ctx.offset = i
+            if (j < sz) ctx.fail(expected)
+            else ctx.pushAndContinue(x)
         }
-        go(ctx.offset, 0)
     }
+
+    override def apply(ctx: Context): Unit = go(ctx, ctx.offset, 0)
     override def toString: String = if (x.isInstanceOf[String] && (s eq x.asInstanceOf[String])) s"Str($s)" else s"StrPerform($s, $x)"
 }
 
