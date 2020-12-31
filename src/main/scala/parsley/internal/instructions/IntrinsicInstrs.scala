@@ -178,23 +178,17 @@ private [internal] final class Chainr[A, B](var label: Int, _wrap: A => B) exten
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else if (ctx.offset != ctx.checkStack.head) {
-            // H1 might still be on the stack
-            if (!isEmpty(ctx.handlers) && ctx.handlers.head.pc == ctx.pc) {
-                ctx.handlers = ctx.handlers.tail
-                ctx.checkStack = ctx.checkStack.tail.tail
-            }
-            else ctx.checkStack = ctx.checkStack.tail
-            acc = null
-            ctx.fail()
-        }
         else {
-            // H1 is on the stack, so p succeeded, just not op
+            // H1 might still be on the stack, so p succeeded at least, just not op
             if (!isEmpty(ctx.handlers) && ctx.handlers.head.pc == ctx.pc) {
-                ctx.exchangeAndContinue(if (acc != null) acc(wrap(ctx.stack.upeek)) else wrap(ctx.stack.upeek))
+                val check = ctx.checkStack.head
                 ctx.handlers = ctx.handlers.tail
                 ctx.checkStack = ctx.checkStack.tail.tail
-                ctx.status = Good
+                if (ctx.offset != check) ctx.fail()
+                else {
+                    ctx.status = Good
+                    ctx.exchangeAndContinue(if (acc != null) acc(wrap(ctx.stack.upeek)) else wrap(ctx.stack.upeek))
+                }
             }
             // p did not succeed and hence neither did op
             else {
@@ -221,31 +215,21 @@ private [internal] final class SepEndBy1(var label: Int) extends JumpInstr with 
             ctx.checkStack.head = ctx.offset
             ctx.pc = label
         }
-        // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else if (ctx.offset != ctx.checkStack.head) {
-            // H1 might still be on the stack
-            if (!isEmpty(ctx.handlers) && ctx.handlers.head.pc == ctx.pc) {
-                ctx.handlers = ctx.handlers.tail
-                ctx.checkStack = ctx.checkStack.tail.tail
-            }
-            else ctx.checkStack = ctx.checkStack.tail
-            acc.clear()
-            ctx.fail()
-        }
         else {
+            val check = ctx.checkStack.head
             // H1 is on the stack, so p succeeded, just not sep
             if (!isEmpty(ctx.handlers) && ctx.handlers.head.pc == ctx.pc) {
-                acc += ctx.stack.upop()
                 ctx.checkStack = ctx.checkStack.tail.tail
                 ctx.handlers = ctx.handlers.tail
+                acc += ctx.stack.upop()
             }
             else ctx.checkStack = ctx.checkStack.tail
-            if (acc.isEmpty) ctx.fail()
+            if (ctx.offset != check || acc.isEmpty) ctx.fail()
             else {
-                ctx.pushAndContinue(acc.toList)
-                acc.clear()
                 ctx.status = Good
+                ctx.pushAndContinue(acc.toList)
             }
+            acc.clear()
         }
     }
     override def toString: String = s"SepEndBy1($label)"
