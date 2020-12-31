@@ -769,161 +769,79 @@ private [internal] final class TokenRawString(_expected: UnsafeOption[String]) e
     override def toString: String = "TokenRawString"
 }
 
-private [internal] final class TokenIdentifier(start: TokenSet, letter: TokenSet, keywords: Set[String], _unexpected: UnsafeOption[String]) extends Instr
+private [instructions] abstract class TokenLexi(name: String, illegalName: String)
+                                               (start: TokenSet, letter: TokenSet, illegal: String => Boolean, _expected: UnsafeOption[String]) extends Instr
 {
-    val expected = if (_unexpected == null) "identifier" else _unexpected
+    private val expected = if (_expected == null) name else _expected
 
-    override def apply(ctx: Context): Unit =
+    final override def apply(ctx: Context): Unit =
     {
         if (ctx.moreInput && start(ctx.nextChar))
         {
             val name = new StringBuilder()
             name += ctx.nextChar
             ctx.offset += 1
-            restOfIdentifier(ctx, name)
+            restOfToken(ctx, name)
         }
         else ctx.fail(expected)
     }
 
-    @tailrec def restOfIdentifier(ctx: Context, name: StringBuilder): Unit =
+    @tailrec private final def restOfToken(ctx: Context, tok: StringBuilder): Unit =
     {
         if (ctx.moreInput && letter(ctx.nextChar))
         {
-            name += ctx.nextChar
+            tok += ctx.nextChar
             ctx.offset += 1
-            restOfIdentifier(ctx, name)
+            restOfToken(ctx, tok)
         }
         else
         {
-            val nameStr = name.toString
-            if (keywords.contains(nameStr))
+            val tokStr = tok.toString
+            if (illegal(tokStr))
             {
-                ctx.offset -= nameStr.length
-                ctx.fail(expected)
-                ctx.unexpected = "keyword " + nameStr
-                ctx.unexpectAnyway = true
+                ctx.offset -= tokStr.length
+                ctx.unexpectedFail(expected = expected, unexpected = s"$illegalName $tokStr")
             }
             else
             {
-                ctx.col += nameStr.length
-                ctx.pushAndContinue(nameStr)
+                ctx.col += tokStr.length
+                ctx.pushAndContinue(tokStr)
             }
         }
     }
 
-    override def toString: String = "TokenIdentifier"
+    final override def toString: String = s"TokenLexi($name)"
 }
 
-private [internal] final class TokenUserOperator(start: TokenSet, letter: TokenSet, reservedOps: Set[String], _unexpected: UnsafeOption[String]) extends Instr
+private [internal] final class TokenIdentifier(start: TokenSet, letter: TokenSet, keywords: Set[String], _expected: UnsafeOption[String])
+    extends TokenLexi("identifier", "keyword")(start, letter, keywords, _expected)
+
+private [internal] final class TokenUserOperator(start: TokenSet, letter: TokenSet, reservedOps: Set[String], _expected: UnsafeOption[String])
+    extends TokenLexi("operator", "reserved operator")(start, letter, reservedOps, _expected)
+
+private [internal] final class TokenOperator(start: TokenSet, letter: TokenSet, reservedOps: Set[String], _expected: UnsafeOption[String])
+    extends TokenLexi("operator", "non-reserved operator")(start, letter, reservedOps.andThen(!_), _expected)
+
+private [instructions] abstract class TokenSpecific(_specific: String, letter: TokenSet, caseSensitive: Boolean, _expected: UnsafeOption[String]) extends Instr
 {
-    val expected = if (_unexpected == null) "operator" else _unexpected
+    private final val expected = if (_expected == null) _specific else _expected
+    private final val expectedEnd = if (_expected == null) "end of " + _specific else _expected
+    private final val specific = (if (caseSensitive) _specific else _specific.toLowerCase).toCharArray
 
-    override def apply(ctx: Context): Unit =
+    final override def apply(ctx: Context): Unit =
     {
-        if (ctx.moreInput && start(ctx.nextChar))
-        {
-            val name = new StringBuilder()
-            name += ctx.nextChar
-            ctx.offset += 1
-            restOfIdentifier(ctx, name)
-        }
-        else ctx.fail(expected)
-    }
-
-    @tailrec def restOfIdentifier(ctx: Context, name: StringBuilder): Unit =
-    {
-        if (ctx.moreInput && letter(ctx.nextChar))
-        {
-            name += ctx.nextChar
-            ctx.offset += 1
-            restOfIdentifier(ctx, name)
-        }
-        else
-        {
-            val nameStr = name.toString
-            if (reservedOps.contains(nameStr))
-            {
-                ctx.offset -= nameStr.length
-                ctx.fail(expected)
-                ctx.unexpected = "reserved operator " + nameStr
-                ctx.unexpectAnyway = true
-            }
-            else
-            {
-                ctx.col += nameStr.length
-                ctx.pushAndContinue(nameStr)
-            }
-        }
-    }
-
-    override def toString: String = "TokenUserOperator"
-}
-
-private [internal] final class TokenOperator(start: TokenSet, letter: TokenSet, reservedOps: Set[String], _unexpected: UnsafeOption[String]) extends Instr
-{
-    val expected = if (_unexpected == null) "operator" else _unexpected
-
-    override def apply(ctx: Context): Unit =
-    {
-        if (ctx.moreInput && start(ctx.nextChar))
-        {
-            val name = new StringBuilder()
-            name += ctx.nextChar
-            ctx.offset += 1
-            restOfIdentifier(ctx, name)
-        }
-        else ctx.fail(expected)
-    }
-
-    @tailrec def restOfIdentifier(ctx: Context, name: StringBuilder): Unit =
-    {
-        if (ctx.moreInput && letter(ctx.nextChar))
-        {
-            name += ctx.nextChar
-            ctx.offset += 1
-            restOfIdentifier(ctx, name)
-        }
-        else
-        {
-            val nameStr = name.toString
-            if (!reservedOps.contains(nameStr))
-            {
-                ctx.offset -= nameStr.length
-                ctx.fail(expected)
-                ctx.unexpected = "non-reserved operator " + nameStr
-                ctx.unexpectAnyway = true
-            }
-            else
-            {
-                ctx.col += nameStr.length
-                ctx.pushAndContinue(nameStr)
-            }
-        }
-    }
-
-    override def toString: String = "TokenReservedOperator"
-}
-
-private [internal] class TokenKeyword(_keyword: String, letter: TokenSet, caseSensitive: Boolean, _expected: UnsafeOption[String]) extends Instr
-{
-    val expected = if (_expected == null) _keyword else _expected
-    val expectedEnd = if (_expected == null) "end of " + _keyword else _expected
-    val keyword = (if (caseSensitive) _keyword else _keyword.toLowerCase).toCharArray
-
-    override def apply(ctx: Context): Unit =
-    {
-        val strsz = this.keyword.length
+        val strsz = this.specific.length
         val inputsz = ctx.inputsz
         val input = ctx.input
         var i = ctx.offset
         var j = 0
-        val keyword = this.keyword
+        val specific = this.specific
         if (inputsz >= i + strsz)
         {
             while (j < strsz)
             {
                 val c = if (caseSensitive) input(i) else input(i).toLower
-                if (c != keyword(j))
+                if (c != specific(j))
                 {
                     ctx.fail(expected)
                     return
@@ -938,45 +856,16 @@ private [internal] class TokenKeyword(_keyword: String, letter: TokenSet, caseSe
         else ctx.fail(expected)
     }
 
-    override def toString: String = s"TokenKeyword(${_keyword})"
+    final override def toString: String = s"TokenSpecific(${_specific})"
 }
 
-private [internal] class TokenOperator_(_operator: String, letter: TokenSet, _expected: UnsafeOption[String]) extends Instr
-{
-    val expected = if (_expected == null) _operator else _expected
-    val expectedEnd = if (_expected == null) "end of " + _operator else _expected
-    val operator = _operator.toCharArray
+private [internal] final class TokenKeyword(keyword: String, letter: TokenSet, caseSensitive: Boolean, expected: UnsafeOption[String])
+    extends TokenSpecific(keyword, letter, caseSensitive, expected)
 
-    override def apply(ctx: Context): Unit =
-    {
-        val strsz = this.operator.length
-        val inputsz = ctx.inputsz
-        val input = ctx.input
-        var i = ctx.offset
-        var j = 0
-        val operator = this.operator
-        if (inputsz >= i + strsz)
-        {
-            while (j < strsz)
-            {
-                if (input(i) != operator(j))
-                {
-                    ctx.fail(expected)
-                    return
-                }
-                i += 1
-                j += 1
-            }
-            ctx.fastUncheckedConsumeChars(strsz)
-            if (i < inputsz && letter(input(i))) ctx.fail(expectedEnd)
-            else ctx.pushAndContinue(())
-        }
-        else ctx.fail(expected)
-    }
+private [internal] final class TokenOperator_(operator: String, letter: TokenSet, expected: UnsafeOption[String])
+    extends TokenSpecific(operator, letter, true, expected)
 
-    override def toString: String = s"TokenOperator(${_operator})"
-}
-
+// This can be combined into the above two
 private [internal] class TokenMaxOp(_operator: String, _ops: Set[String], _expected: UnsafeOption[String]) extends Instr
 {
     val expected: UnsafeOption[String] = if (_expected == null) _operator else _expected
