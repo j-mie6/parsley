@@ -118,13 +118,8 @@ private [internal] final class JumpGood(var label: Int) extends JumpInstr {
 }
 
 private [internal] object Catch extends Instr {
-    override def apply(ctx: Context): Unit = {
-        if (ctx.offset != ctx.checkStack.head) ctx.fail()
-        else {
-            ctx.status = Good
-            ctx.inc()
-        }
-        ctx.checkStack = ctx.checkStack.tail
+    override def apply(ctx: Context): Unit = ctx.catchNoConsumed {
+        ctx.inc()
     }
     override def toString: String = s"Catch"
 }

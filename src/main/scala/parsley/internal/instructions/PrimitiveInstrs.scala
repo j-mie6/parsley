@@ -68,15 +68,12 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
 }
 
 private [internal] final class Fail(msg: String, expected: UnsafeOption[String]) extends Instr {
-    override def apply(ctx: Context): Unit = {
-        ctx.fail(expected)
-        ctx.raw ::= msg
-    }
+    override def apply(ctx: Context): Unit = ctx.failWithMessage(expected, msg)
     override def toString: String = s"Fail($msg)"
 }
 
 private [internal] final class Unexpected(msg: String, expected: UnsafeOption[String]) extends Instr {
-    override def apply(ctx: Context): Unit = ctx.fail(expected = expected, unexpected = msg)
+    override def apply(ctx: Context): Unit = ctx.unexpectedFail(expected = expected, unexpected = msg)
     override def toString: String = s"Unexpected($msg)"
 }
 

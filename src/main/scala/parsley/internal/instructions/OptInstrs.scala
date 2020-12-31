@@ -47,13 +47,8 @@ private [internal] final class JumpGoodAttempt(var label: Int) extends JumpInstr
 }
 
 private [internal] final class RecoverWith[A](x: A) extends Instr {
-    override def apply(ctx: Context): Unit = {
-        if (ctx.offset != ctx.checkStack.head) ctx.fail()
-        else {
-            ctx.status = Good
-            ctx.pushAndContinue(x)
-        }
-        ctx.checkStack = ctx.checkStack.tail
+    override def apply(ctx: Context): Unit = ctx.catchNoConsumed {
+        ctx.pushAndContinue(x)
     }
     override def toString: String = s"Recover($x)"
 }

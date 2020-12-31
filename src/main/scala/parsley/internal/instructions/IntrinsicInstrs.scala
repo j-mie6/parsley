@@ -34,18 +34,16 @@ private [internal] final class Many(var label: Int) extends JumpInstr with State
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else if (ctx.offset != ctx.checkStack.head) { ctx.checkStack = ctx.checkStack.tail; acc.clear(); ctx.fail() }
         else {
-            ctx.pushAndContinue(acc.toList)
+            ctx.catchNoConsumed {
+                ctx.pushAndContinue(acc.toList)
+            }
             acc.clear()
-            ctx.checkStack = ctx.checkStack.tail
-            ctx.status = Good
         }
     }
     override def toString: String = s"Many($label)"
     override def copy: Many = new Many(label)
 }
-
 private [internal] final class SkipMany(var label: Int) extends JumpInstr {
     override def apply(ctx: Context): Unit = {
         if (ctx.status eq Good) {
@@ -54,10 +52,7 @@ private [internal] final class SkipMany(var label: Int) extends JumpInstr {
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else if (ctx.offset != ctx.checkStack.head) { ctx.checkStack = ctx.checkStack.tail; ctx.fail() }
-        else {
-            ctx.checkStack = ctx.checkStack.tail
-            ctx.status = Good
+        else ctx.catchNoConsumed {
             ctx.pushAndContinue(())
         }
     }
@@ -82,16 +77,13 @@ private [internal] final class ChainPost(var label: Int) extends JumpInstr with 
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else if (ctx.offset != ctx.checkStack.head) { ctx.checkStack = ctx.checkStack.tail; acc = null; ctx.fail() }
         else {
-            // When acc is null, we have entered for first time but the op failed, so the result is already on the stack
-            if (acc != null) {
-                ctx.stack.push(acc)
-                acc = null
+            ctx.catchNoConsumed {
+                // When acc is null, we have entered for first time but the op failed, so the result is already on the stack
+                if (acc != null) ctx.stack.push(acc)
+                ctx.inc()
             }
-            ctx.checkStack = ctx.checkStack.tail
-            ctx.status = Good
-            ctx.inc()
+            acc = null
         }
     }
     override def toString: String = s"ChainPost($label)"
@@ -103,19 +95,18 @@ private [internal] final class ChainPre(var label: Int) extends JumpInstr with S
     override def apply(ctx: Context): Unit = {
         if (ctx.status eq Good) {
             // If acc is null we are entering the instruction, so nothing to compose, this saves on an identity call
-            if (acc == null) acc = ctx.stack.pop[Any => Any]()
-            // We perform the acc after the tos function; the tos function is "closer" to the final p
-            else acc = ctx.stack.pop[Any => Any]().andThen(acc)
+            acc = if (acc == null) ctx.stack.pop[Any => Any]()
+                  // We perform the acc after the tos function; the tos function is "closer" to the final p
+                  else ctx.stack.pop[Any => Any]().andThen(acc)
             ctx.checkStack.head = ctx.offset
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else if (ctx.offset != ctx.checkStack.head) { ctx.checkStack = ctx.checkStack.tail; acc = null; ctx.fail() }
         else {
-            ctx.pushAndContinue(if (acc == null) identity[Any] _ else acc)
+            ctx.catchNoConsumed {
+                ctx.pushAndContinue(if (acc == null) identity[Any] _ else acc)
+            }
             acc = null
-            ctx.checkStack = ctx.checkStack.tail
-            ctx.status = Good
         }
     }
     override def toString: String = s"ChainPre($label)"
@@ -140,18 +131,13 @@ private [internal] final class Chainl[A, B](var label: Int, _wrap: A => B) exten
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else if (ctx.offset != ctx.checkStack.head) {
-            ctx.checkStack = ctx.checkStack.tail
-            acc = null
-            ctx.fail()
-        }
         else {
-            ctx.checkStack = ctx.checkStack.tail
-            // if acc is null this is first entry, p already on the stack!
-            if (acc != null) ctx.stack.push(acc)
+            ctx.catchNoConsumed {
+                // if acc is null this is first entry, p already on the stack!
+                if (acc != null) ctx.stack.push(acc)
+                ctx.inc()
+            }
             acc = null
-            ctx.status = Good
-            ctx.inc()
         }
     }
     override def toString: String = s"Chainl($label)"
@@ -162,13 +148,10 @@ private [instructions] sealed trait DualHandler {
     final protected def checkForFirstHandlerAndPop(ctx: Context, otherwise: =>Unit)(action: =>Unit) = {
         if (!isEmpty(ctx.handlers) && ctx.handlers.head.pc == ctx.pc) {
             ctx.handlers = ctx.handlers.tail
-            ctx.checkStack = ctx.checkStack.tail.tail
             action
         }
-        else {
-            ctx.checkStack = ctx.checkStack.tail
-            otherwise
-        }
+        else otherwise
+        ctx.checkStack = ctx.checkStack.tail
     }
     final protected def popSecondHandlerAndJump(ctx: Context, label: Int) = {
         ctx.handlers = ctx.handlers.tail
@@ -196,12 +179,9 @@ private [internal] final class Chainr[A, B](var label: Int, _wrap: A => B) exten
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
         else {
-            val check = ctx.checkStack.head
             // presence of first handler indicates p succeeded and op didn't
             checkForFirstHandlerAndPop(ctx, ctx.fail()) {
-                if (ctx.offset != check) ctx.fail()
-                else {
-                    ctx.status = Good
+                ctx.catchNoConsumed {
                     ctx.exchangeAndContinue(if (acc != null) acc(wrap(ctx.stack.upeek)) else wrap(ctx.stack.upeek))
                 }
             }
@@ -225,6 +205,7 @@ private [internal] final class SepEndBy1(var label: Int) extends JumpInstr with 
             // presence of first handler indicates p succeeded and sep didn't
             checkForFirstHandlerAndPop(ctx, ()) {
                 acc += ctx.stack.upop()
+                ctx.checkStack = ctx.checkStack.tail
             }
             if (ctx.offset != check || acc.isEmpty) ctx.fail()
             else {
@@ -285,11 +266,7 @@ private [internal] final class Guard[A](pred: A=>Boolean, msg: String, expected:
     private [this] val pred_ = pred.asInstanceOf[Any=>Boolean]
     override def apply(ctx: Context): Unit = {
         if (pred_(ctx.stack.upeek)) ctx.inc()
-        else {
-            ctx.stack.pop_() //this might not be needed? drop handles in fail
-            ctx.fail(expected)
-            ctx.raw ::= msg
-        }
+        else ctx.failWithMessage(expected, msg)
     }
     override def toString: String = s"Guard(?, $msg)"
 }
@@ -299,28 +276,20 @@ private [internal] final class FastGuard[A](pred: A=>Boolean, msggen: A=>String,
     private [this] val msggen_ = msggen.asInstanceOf[Any=>String]
     override def apply(ctx: Context): Unit = {
         if (pred_(ctx.stack.upeek)) ctx.inc()
-        else {
-            val msg = msggen_(ctx.stack.upop())
-            ctx.fail(expected)
-            ctx.raw ::= msg
-        }
+        else ctx.failWithMessage(expected, msggen_(ctx.stack.upop()))
     }
     override def toString: String = "FastGuard(?, ?)"
 }
 
 private [internal] final class FastFail[A](msggen: A=>String, expected: UnsafeOption[String]) extends Instr {
     private [this] val msggen_ = msggen.asInstanceOf[Any => String]
-    override def apply(ctx: Context): Unit = {
-        val msg = msggen_(ctx.stack.upop())
-        ctx.fail(expected)
-        ctx.raw ::= msg
-    }
+    override def apply(ctx: Context): Unit = ctx.failWithMessage(expected, msggen_(ctx.stack.upop()))
     override def toString: String = "FastFail(?)"
 }
 
 private [internal] final class FastUnexpected[A](msggen: A=>String, expected: UnsafeOption[String]) extends Instr {
     private [this] val msggen_ = msggen.asInstanceOf[Any => String]
-    override def apply(ctx: Context): Unit = ctx.fail(expected = expected, unexpected = msggen_(ctx.stack.upop()))
+    override def apply(ctx: Context): Unit = ctx.unexpectedFail(expected = expected, unexpected = msggen_(ctx.stack.upop()))
     override def toString: String = "FastUnexpected(?)"
 }
 
@@ -331,7 +300,7 @@ private [internal] final class NotFollowedBy(expected: UnsafeOption[String]) ext
         // A previous success is a failure
         if (ctx.status eq Good) {
             ctx.handlers = ctx.handlers.tail
-            ctx.fail(expected = expected, unexpected = "\"" + ctx.stack.upop().toString + "\"")
+            ctx.unexpectedFail(expected = expected, unexpected = "\"" + ctx.stack.upop().toString + "\"")
         }
         // A failure is what we wanted
         else {
@@ -344,10 +313,7 @@ private [internal] final class NotFollowedBy(expected: UnsafeOption[String]) ext
 
 private [internal] class Eof(_expected: UnsafeOption[String]) extends Instr {
     val expected: String = if (_expected == null) "end of input" else _expected
-    override def apply(ctx: Context): Unit = {
-        if (ctx.offset == ctx.inputsz) ctx.pushAndContinue(())
-        else ctx.fail(expected)
-    }
+    override def apply(ctx: Context): Unit = if (ctx.offset == ctx.inputsz) ctx.pushAndContinue(()) else ctx.fail(expected)
     override final def toString: String = "Eof"
 }
 

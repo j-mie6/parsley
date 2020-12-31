@@ -113,6 +113,15 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
         adjustErrorOverride()
     }
 
+    private [instructions] def catchNoConsumed(handler: =>Unit): Unit = {
+        if (offset != checkStack.head) fail()
+        else {
+            status = Good
+            handler
+        }
+        checkStack = checkStack.tail
+    }
+
     private def adjustErrors(e: UnsafeOption[String]): Unit = {
         if (offset > erroffset) {
             erroffset = offset
@@ -127,7 +136,11 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
         adjustErrorOverride()
     }
 
-    private [instructions] def fail(expected: UnsafeOption[String], unexpected: String): Unit = {
+    private [instructions] def failWithMessage(expected: UnsafeOption[String], msg: String): Unit = {
+        this.fail(expected)
+        this.raw ::= msg
+    }
+    private [instructions] def unexpectedFail(expected: UnsafeOption[String], unexpected: String): Unit = {
         this.fail(expected)
         this.unexpected = unexpected
         this.unexpectAnyway = true
