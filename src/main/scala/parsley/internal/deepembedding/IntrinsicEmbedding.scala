@@ -12,7 +12,7 @@ private [parsley] final class CharTok(private [CharTok] val c: Char, val expecte
     extends SingletonExpect[Char](s"char($c)", new CharTok(c, _), instructions.CharTok(c, expected))
 
 private [parsley] final class StringTok(private [StringTok] val s: String, val expected: UnsafeOption[String] = null)
-    extends SingletonExpect[String](s"string($s)", new StringTok(s, _), new instructions.StringTok(s, expected)) {
+    extends SingletonExpect[String](s"string($s)", new StringTok(s, _), instructions.StringTok(s, expected)) {
     override def optimise: Parsley[String] = s match {
         case "" => new Pure("")
         case _ => this

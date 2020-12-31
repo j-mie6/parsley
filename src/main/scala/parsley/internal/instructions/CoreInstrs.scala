@@ -6,7 +6,6 @@ import parsley.internal.UnsafeOption
 import parsley.internal.deepembedding.Parsley
 
 import scala.annotation.tailrec
-import scala.language.existentials
 
 // Stack Manipulators
 private [internal] final class Push[A](x: A) extends Instr {
@@ -29,98 +28,6 @@ private [internal] object Flip extends Instr {
         ctx.exchangeAndContinue(x)
     }
     override def toString: String = "Flip"
-}
-
-// Primitives
-private [internal] class CharTok protected (protected final val c: Char, _expected: UnsafeOption[String]) extends Instr {
-    protected val expected: String = if (_expected == null) "\"" + c + "\"" else _expected
-    protected final val ac: Any = c
-    override def apply(ctx: Context): Unit = {
-        if (ctx.moreInput && ctx.nextChar == c) {
-            ctx.offset += 1
-            ctx.col += 1
-            ctx.pushAndContinue(ac)
-        }
-        else ctx.fail(expected)
-    }
-    override final def toString: String = s"Chr($c)"
-}
-
-private [internal] final class Satisfies(f: Char => Boolean, expected: UnsafeOption[String]) extends Instr {
-    override def apply(ctx: Context): Unit = {
-        if (ctx.moreInput) {
-            val c = ctx.nextChar
-            if (f(ctx.nextChar)) {
-                ctx.offset += 1
-                c match {
-                    case '\n' => ctx.line += 1; ctx.col = 1
-                    case '\t' => ctx.col += 4 - ((ctx.col - 1) & 3)
-                    case _ => ctx.col += 1
-                }
-                ctx.pushAndContinue(c)
-            }
-            else ctx.fail(expected)
-        }
-        else ctx.fail(expected)
-    }
-    override def toString: String = "Sat(?)"
-}
-
-private [internal] final class StringTok(s: String, _expected: UnsafeOption[String]) extends Instr {
-    private [this] val expected = if (_expected == null) "\"" + s + "\"" else _expected
-    private [this] val cs = s.toCharArray
-    private [this] val sz = cs.length
-    private [this] val adjustAtIndex = new Array[(Int => Int, Int => Int)](s.length + 1)
-    def makeAdjusters(col: Int, line: Int, tabprefix: Option[Int]): (Int => Int, Int => Int) =
-        if (line > 0) ((_: Int) => col, (x: Int) => x + line)
-        else (tabprefix match {
-            case Some(prefix) =>
-                val outer = 4 + col + prefix
-                val inner = prefix - 1
-                (x: Int) => outer + x - ((x + inner) & 3)
-            case None => (x: Int) => x + col
-        }, (x: Int) => x)
-    @tailrec def compute(cs: Array[Char], i: Int = 0, col: Int = 0, line: Int = 0)(implicit tabprefix: Option[Int] = None): Unit = {
-        adjustAtIndex(i) = makeAdjusters(col, line, tabprefix)
-        if (i < cs.length) cs(i) match {
-            case '\n' => compute(cs, i + 1, 1, line + 1)(Some(0))
-            case '\t' if tabprefix.isEmpty => compute(cs, i + 1, 0, line)(Some(col))
-            case '\t' => compute(cs, i + 1, col + 4 - ((col - 1) & 3), line)
-            case _ => compute(cs, i + 1, col + 1, line)
-        }
-    }
-    compute(cs)
-
-    override def apply(ctx: Context): Unit = {
-        val strsz = this.sz
-        val inputsz = ctx.inputsz
-        val input = ctx.input
-        var i = ctx.offset
-        var j = 0
-        val cs = this.cs
-        if (inputsz != i) {
-            while (j < strsz) {
-                val c = cs(j)
-                if (i == inputsz || input(i) != c) {
-                    ctx.offset = i
-                    val (colAdjust, lineAdjust) = adjustAtIndex(j)
-                    ctx.col = colAdjust(ctx.col)
-                    ctx.line = lineAdjust(ctx.line)
-                    ctx.fail(expected)
-                    return
-                }
-                i += 1
-                j += 1
-            }
-            val (colAdjust, lineAdjust) = adjustAtIndex(j)
-            ctx.col = colAdjust(ctx.col)
-            ctx.line = lineAdjust(ctx.line)
-            ctx.offset = i
-            ctx.pushAndContinue(s)
-        }
-        else ctx.fail(expected)
-    }
-    override def toString: String = s"Str($s)"
 }
 
 // Applicative Functors
@@ -161,19 +68,6 @@ private [internal] object Return extends Instr {
     override def toString: String = "Return"
 }
 
-private [internal] final class Fail(msg: String, expected: UnsafeOption[String]) extends Instr {
-    override def apply(ctx: Context): Unit = {
-        ctx.fail(expected)
-        ctx.raw ::= msg
-    }
-    override def toString: String = s"Fail($msg)"
-}
-
-private [internal] final class Unexpected(msg: String, expected: UnsafeOption[String]) extends Instr {
-    override def apply(ctx: Context): Unit = ctx.fail(expected = expected, unexpected = msg)
-    override def toString: String = s"Unexpected($msg)"
-}
-
 private [internal] final class Empty(expected: UnsafeOption[String]) extends Instr {
     override def apply(ctx: Context): Unit = {
         val strip = ctx.expected.isEmpty
@@ -200,38 +94,6 @@ private [internal] final class PushFallthrough(var label: Int) extends JumpInstr
     override def toString: String = s"PushFallthrough($label)"
 }
 
-private [internal] object Attempt extends Instr {
-    override def apply(ctx: Context): Unit = {
-        // Remove the recovery input from the stack, it isn't needed anymore
-        if (ctx.status eq Good) {
-            ctx.states = ctx.states.tail
-            ctx.handlers = ctx.handlers.tail
-            ctx.inc()
-        }
-        // Pop input off head then fail to next handler
-        else {
-            ctx.restoreState()
-            ctx.fail()
-        }
-    }
-    override def toString: String = "Attempt"
-}
-
-private [internal] object Look extends Instr {
-    override def apply(ctx: Context): Unit = {
-        if (ctx.status eq Good) {
-            ctx.restoreState()
-            ctx.handlers = ctx.handlers.tail
-            ctx.inc()
-        }
-        else {
-            ctx.states = ctx.states.tail
-            ctx.fail()
-        }
-    }
-    override def toString: String = "Look"
-}
-
 private [internal] final class InputCheck(var label: Int) extends JumpInstr {
     override def apply(ctx: Context): Unit = {
         ctx.pushCheck()
@@ -256,71 +118,10 @@ private [internal] final class JumpGood(var label: Int) extends JumpInstr {
 }
 
 private [internal] object Catch extends Instr {
-    override def apply(ctx: Context): Unit = {
-        if (ctx.offset != ctx.checkStack.head) ctx.fail()
-        else {
-            ctx.status = Good
-            ctx.inc()
-        }
-        ctx.checkStack = ctx.checkStack.tail
+    override def apply(ctx: Context): Unit = ctx.catchNoConsumed {
+        ctx.inc()
     }
     override def toString: String = s"Catch"
-}
-
-// Position Extractors
-private [internal] object Line extends Instr {
-    override def apply(ctx: Context): Unit = ctx.pushAndContinue(ctx.line)
-    override def toString: String = "Line"
-}
-
-private [internal] object Col extends Instr {
-    override def apply(ctx: Context): Unit = ctx.pushAndContinue(ctx.col)
-    override def toString: String = "Col"
-}
-
-// Register-Manipulators
-private [internal] final class Get(v: Int) extends Instr {
-    override def apply(ctx: Context): Unit = ctx.pushAndContinue(ctx.regs(v))
-    override def toString: String = s"Get($v)"
-}
-
-private [internal] final class Put(v: Int) extends Instr {
-    override def apply(ctx: Context): Unit = {
-        ctx.copyOnWrite(v, ctx.stack.peekAndExchange(()))
-        ctx.inc()
-    }
-    override def toString: String = s"Put($v)"
-}
-
-private [internal] final class Modify[S](v: Int, f: S => S) extends Instr {
-    private [this] val g = f.asInstanceOf[Any => Any]
-    override def apply(ctx: Context): Unit = {
-        ctx.copyOnWrite(v, g(ctx.regs(v)))
-        ctx.pushAndContinue(())
-    }
-    override def toString: String = s"Modify($v, f)"
-}
-
-private [internal] final class LocalEntry(v: Int) extends Instr {
-    override def apply(ctx: Context): Unit = {
-        ctx.saveState()
-        // This will always cause a copy
-        ctx.copyOnWrite(v, ctx.stack.upop())
-        ctx.inc()
-    }
-    override def toString: String = s"LocalEntry($v)"
-}
-
-private [internal] final class LocalExit[S](v: Int) extends Instr {
-    override def apply(ctx: Context): Unit = {
-        if (ctx.status eq Good) {
-            ctx.regs(v) = ctx.states.head.regs(v)
-            ctx.inc()
-        }
-        else ctx.fail()
-        ctx.states = ctx.states.tail
-    }
-    override def toString: String = s"LocalExit($v)"
 }
 
 // Debugging Instructions
@@ -337,18 +138,19 @@ private [instructions] trait Logger {
         val caret = " " * (prelude.length + ctx.offset - start) + Console.BLUE + "^" + Console.RESET
         s"$prelude$inputAndEof$ends\n$caret"
     }
+    final protected def doBreak(ctx: Context): Unit = {
+        print(s"${indent(ctx)}{stack: ${ctx.stack.mkString(", ")}})\n" +
+              s"${indent(ctx)}{registers: ${ctx.regs.zipWithIndex.map{case (x, i) => s"r$i: $x"}.mkString("[", ", ", "])}")}}\n" +
+              s"${indent(ctx)}...")
+        Console.in.read()
+    }
     final protected def indent(ctx: Context) = " " * (ctx.debuglvl * 2)
 }
 
 private [internal] final class LogBegin(var label: Int, val name: String, break: Boolean) extends JumpInstr with Logger {
     override def apply(ctx: Context): Unit = {
         println(preludeString('>', ctx))
-        if (break) {
-            print(s"${indent(ctx)}{stack: ${ctx.stack.mkString(", ")}})\n" +
-                  s"${indent(ctx)}{registers: ${ctx.regs.zipWithIndex.map{case (x, i) => s"r$i: $x"}.mkString("[", ", ", "])}")}}\n" +
-                  s"${indent(ctx)}...")
-            Console.in.read()
-        }
+        if (break) doBreak(ctx)
         ctx.debuglvl += 1
         ctx.pushHandler(label)
         ctx.inc()
@@ -369,21 +171,7 @@ private [internal] final class LogEnd(val name: String, break: Boolean) extends 
                 Console.RED + "Fail" + Console.RESET
         })
         println(preludeString('<', ctx, end))
-        if (break) {
-            print(s"${indent(ctx)}{stack: ${ctx.stack.mkString(", ")}})\n" +
-                  s"${indent(ctx)}{registers: ${ctx.regs.zipWithIndex.map{case (x, i) => s"r$i: $x"}.mkString("[", ", ", "])}")}}\n" +
-                  s"${indent(ctx)}...")
-            Console.in.read()
-        }
+        if (break) doBreak(ctx)
     }
     override def toString: String = s"LogEnd($name)"
-}
-
-// Extractor Objects
-private [internal] object CharTok {
-    def apply(c: Char, expected: UnsafeOption[String]): CharTok = c match {
-        case '\n' => new Newline(expected)
-        case '\t' => new Tab(expected)
-        case _ => new CharTok(c, expected)
-    }
 }

@@ -4,7 +4,7 @@ import Stack.{drop, isEmpty, mkString, map, push}
 import parsley.{Failure, Result, Success}
 import parsley.internal.UnsafeOption
 
-import scala.annotation.tailrec
+import scala.annotation.{tailrec, switch}
 
 // Private internals
 private [instructions] final class Frame(val ret: Int, val instrs: Array[Instr]) {
@@ -75,14 +75,12 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
     @tailrec @inline private [parsley] def runParser[A](): Result[A] = {
         //println(this)
         if (status eq Failed) Failure(errorMessage)
-        else if (pc < instrs.length)
-        {
+        else if (pc < instrs.length) {
             instrs(pc)(this)
             runParser[A]()
         }
         else if (isEmpty(calls)) Success(stack.peek[A])
-        else
-        {
+        else {
             ret()
             runParser[A]()
         }
@@ -100,8 +98,7 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
         instrs = newInstrs
         pc = at
         depth += 1
-        if (expected != null && errorOverride == null)
-        {
+        if (expected != null && errorOverride == null) {
             overrideDepth = depth
             errorOverride = expected
         }
@@ -114,6 +111,15 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
         pc = frame.ret
         depth -= 1
         adjustErrorOverride()
+    }
+
+    private [instructions] def catchNoConsumed(handler: =>Unit): Unit = {
+        if (offset != checkStack.head) fail()
+        else {
+            status = Good
+            handler
+        }
+        checkStack = checkStack.tail
     }
 
     private def adjustErrors(e: UnsafeOption[String]): Unit = {
@@ -130,7 +136,11 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
         adjustErrorOverride()
     }
 
-    private [instructions] def fail(expected: UnsafeOption[String], unexpected: String): Unit = {
+    private [instructions] def failWithMessage(expected: UnsafeOption[String], msg: String): Unit = {
+        this.fail(expected)
+        this.raw ::= msg
+    }
+    private [instructions] def unexpectedFail(expected: UnsafeOption[String], unexpected: String): Unit = {
         this.fail(expected)
         this.unexpected = unexpected
         this.unexpectAnyway = true
@@ -187,6 +197,21 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
     private [instructions] def inc(): Unit = pc += 1
     private [instructions] def nextChar: Char = input(offset)
     private [instructions] def moreInput: Boolean = offset < inputsz
+    private [instructions] def updatePos(c: Char) = (c: @switch) match {
+        case '\n' => line += 1; col = 1
+        case '\t' => col += 4 - ((col - 1) & 3)
+        case _ => col += 1
+    }
+    private [instructions] def consumeChar(): Char = {
+        val c = nextChar
+        updatePos(c)
+        offset += 1
+        c
+    }
+    private [instructions] def fastUncheckedConsumeChars(n: Int) = {
+        offset += n
+        col += n
+    }
     private [instructions] def pushHandler(label: Int): Unit = handlers = push(handlers, new Handler(depth, label, stack.usize))
     private [instructions] def pushCheck(): Unit = checkStack = push(checkStack, offset)
     private [instructions] def saveState(): Unit = states = push(states, new State(offset, line, col, regs))
