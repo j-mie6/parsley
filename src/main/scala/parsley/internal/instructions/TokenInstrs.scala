@@ -7,75 +7,7 @@ import parsley.internal.UnsafeOption
 import scala.annotation.{switch, tailrec}
 
 // TODO This is considered as a VERY rough implementation of the intrinsic, just to get it working, it will be optimised later
-private [internal] class TokenSkipComments(start: String, end: String, line: String, nested: Boolean) extends Instr
-{
-    protected final val noLine = line.isEmpty
-    protected final val noMulti = start.isEmpty
-    override def apply(ctx: Context): Unit =
-    {
-        if (noLine && !noMulti)
-        {
-            while (ctx.moreInput && ctx.input.startsWith(start, ctx.offset)) if (!multiLineComment(ctx)) return
-        }
-        else if (noMulti && !noLine)
-        {
-            while (ctx.moreInput && ctx.input.startsWith(line, ctx.offset)) singleLineComment(ctx)
-        }
-        else if (!noLine && !noMulti)
-        {
-            var startsSingle = ctx.input.startsWith(line, ctx.offset)
-            var startsMulti = ctx.input.startsWith(start, ctx.offset)
-            while (ctx.moreInput && (startsSingle || startsMulti))
-            {
-                if (startsMulti)
-                {
-                    if (!multiLineComment(ctx)) return
-                }
-                else singleLineComment(ctx)
-                startsSingle = ctx.input.startsWith(line, ctx.offset)
-                startsMulti = ctx.input.startsWith(start, ctx.offset)
-            }
-        }
-        ctx.pushAndContinue(())
-    }
-
-    protected final def singleLineComment(ctx: Context): Unit =
-    {
-        ctx.offset += line.length
-        ctx.col += line.length
-        while (ctx.moreInput && ctx.nextChar != '\n') ctx.consumeChar()
-    }
-
-    protected final def multiLineComment(ctx: Context): Boolean =
-    {
-        ctx.fastUncheckedConsumeChars(start.length)
-        var n = 1
-        while (n != 0)
-        {
-            if (ctx.input.startsWith(end, ctx.offset))
-            {
-                ctx.fastUncheckedConsumeChars(end.length)
-                n -= 1
-            }
-            else if (nested && ctx.input.startsWith(start, ctx.offset))
-            {
-                ctx.fastUncheckedConsumeChars(start.length)
-                n += 1
-            }
-            else if (ctx.moreInput) ctx.consumeChar()
-            else
-            {
-                ctx.fail("end of comment")
-                return false
-            }
-        }
-        true
-    }
-    override def toString: String = "TokenSkipComments"
-}
-
-// TODO This is considered as a VERY rough implementation of the intrinsic, just to get it working, it will be optimised later
-private [internal] final class TokenComment(start: String, end: String, line: String, nested: Boolean) extends Instr
+private [internal] class TokenComment(start: String, end: String, line: String, nested: Boolean) extends Instr
 {
     protected final val noLine = line.isEmpty
     protected final val noMulti = start.isEmpty
@@ -118,13 +50,13 @@ private [internal] final class TokenComment(start: String, end: String, line: St
         }
     }
 
-    private def singleLineComment(ctx: Context): Unit =
+    protected final def singleLineComment(ctx: Context): Unit =
     {
         ctx.fastUncheckedConsumeChars(line.length)
         while (ctx.moreInput && ctx.nextChar != '\n') ctx.consumeChar()
     }
 
-    private def multiLineComment(ctx: Context): Boolean =
+    protected final def multiLineComment(ctx: Context): Boolean =
     {
         ctx.fastUncheckedConsumeChars(start.length)
         var n = 1
@@ -152,8 +84,41 @@ private [internal] final class TokenComment(start: String, end: String, line: St
     override def toString: String = "TokenComment"
 }
 
+// TODO This is considered as a VERY rough implementation of the intrinsic, just to get it working, it will be optimised later
+private [internal] final class TokenSkipComments(start: String, end: String, line: String, nested: Boolean) extends TokenComment(start, end, line, nested)
+{
+    override def apply(ctx: Context): Unit =
+    {
+        if (noLine && !noMulti)
+        {
+            while (ctx.moreInput && ctx.input.startsWith(start, ctx.offset)) if (!multiLineComment(ctx)) return
+        }
+        else if (noMulti && !noLine)
+        {
+            while (ctx.moreInput && ctx.input.startsWith(line, ctx.offset)) singleLineComment(ctx)
+        }
+        else if (!noLine && !noMulti)
+        {
+            var startsSingle = ctx.input.startsWith(line, ctx.offset)
+            var startsMulti = ctx.input.startsWith(start, ctx.offset)
+            while (ctx.moreInput && (startsSingle || startsMulti))
+            {
+                if (startsMulti)
+                {
+                    if (!multiLineComment(ctx)) return
+                }
+                else singleLineComment(ctx)
+                startsSingle = ctx.input.startsWith(line, ctx.offset)
+                startsMulti = ctx.input.startsWith(start, ctx.offset)
+            }
+        }
+        ctx.pushAndContinue(())
+    }
+    override def toString: String = "TokenSkipComments"
+}
+
 private [internal] final class TokenWhiteSpace(ws: TokenSet, start: String, end: String, line: String, nested: Boolean)
-    extends TokenSkipComments(start, end, line, nested)
+    extends TokenComment(start, end, line, nested)
 {
     override def apply(ctx: Context): Unit =
     {
