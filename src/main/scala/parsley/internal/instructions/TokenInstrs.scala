@@ -231,7 +231,56 @@ private [internal] final class TokenSign(ty: SignType, _expected: UnsafeOption[S
     override def toString: String = "TokenSign"
 }
 
-private [internal] final class TokenNatural(_expected: UnsafeOption[String]) extends Instr
+private [instructions] sealed trait NumericReader {
+    @tailrec protected final def decimal(ctx: Context, x: Int = 0): Int =
+        {
+            if (ctx.moreInput)
+            {
+                val d = ctx.nextChar
+                if (d >= '0' && d <= '9')
+                {
+                    ctx.fastUncheckedConsumeChars(1)
+                    decimal(ctx, x * 10 + d.asDigit)
+                }
+                else x
+            }
+            else x
+        }
+
+        @tailrec protected final def hexadecimal(ctx: Context, x: Int = 0): Int =
+        {
+            if (ctx.moreInput)
+            {
+                (ctx.nextChar: @switch) match
+                {
+                    case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
+                            | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
+                            | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
+                        ctx.fastUncheckedConsumeChars(1)
+                        hexadecimal(ctx, x * 16 + d.asDigit)
+                    case _ => x
+                }
+            }
+            else x
+        }
+
+        @tailrec protected final def octal(ctx: Context, x: Int = 0): Int =
+        {
+            if (ctx.moreInput)
+            {
+                val d = ctx.nextChar
+                if (d >= '0' && d <= '7')
+                {
+                    ctx.fastUncheckedConsumeChars(1)
+                    octal(ctx, x * 8 + d.asDigit)
+                }
+                else x
+            }
+            else x
+        }
+}
+
+private [internal] final class TokenNatural(_expected: UnsafeOption[String]) extends Instr with NumericReader
 {
     val expected = if (_expected == null) "natural" else _expected
     override def apply(ctx: Context): Unit =
@@ -285,53 +334,6 @@ private [internal] final class TokenNatural(_expected: UnsafeOption[String]) ext
             case _ => ctx.fail(expected)
         }
         else ctx.fail(expected)
-    }
-
-    @tailrec private def decimal(ctx: Context, x: Int = 0): Int =
-    {
-        if (ctx.moreInput)
-        {
-            val d = ctx.nextChar
-            if (d >= '0' && d <= '9')
-            {
-                ctx.fastUncheckedConsumeChars(1)
-                decimal(ctx, x * 10 + d.asDigit)
-            }
-            else x
-        }
-        else x
-    }
-
-    @tailrec private def hexadecimal(ctx: Context, x: Int = 0): Int =
-    {
-        if (ctx.moreInput)
-        {
-            (ctx.nextChar: @switch) match
-            {
-                case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
-                        | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
-                        | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
-                    ctx.fastUncheckedConsumeChars(1)
-                    hexadecimal(ctx, x * 16 + d.asDigit)
-                case _ => x
-            }
-        }
-        else x
-    }
-
-    @tailrec private def octal(ctx: Context, x: Int = 0): Int =
-    {
-        if (ctx.moreInput)
-        {
-            val d = ctx.nextChar
-            if (d >= '0' && d <= '7')
-            {
-                ctx.fastUncheckedConsumeChars(1)
-                octal(ctx, x * 8 + d.asDigit)
-            }
-            else x
-        }
-        else x
     }
 
     override def toString: String = "TokenNatural"
@@ -415,7 +417,7 @@ private [internal] final class TokenFloat(_expected: UnsafeOption[String]) exten
     override def toString: String = "TokenFloat"
 }
 
-private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends Instr with Stateful
+private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends Instr with Stateful with NumericReader
 {
     private [this] final val expected = if (_expected == null) "escape code" else _expected
     protected var escapeChar: Char = _
@@ -688,53 +690,6 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
             true
         }
         else false
-    }
-
-    @tailrec private final def decimal(ctx: Context, x: Int = 0): Int =
-    {
-        if (ctx.moreInput)
-        {
-            val d = ctx.nextChar
-            if (d >= '0' && d <= '9')
-            {
-                ctx.fastUncheckedConsumeChars(1)
-                decimal(ctx, x * 10 + d.asDigit)
-            }
-            else x
-        }
-        else x
-    }
-
-    @tailrec private final def hexadecimal(ctx: Context, x: Int = 0): Int =
-    {
-        if (ctx.moreInput)
-        {
-            (ctx.nextChar: @switch) match
-            {
-                case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
-                        | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
-                        | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
-                    ctx.fastUncheckedConsumeChars(1)
-                    hexadecimal(ctx, x * 16 + d.asDigit)
-                case _ => x
-            }
-        }
-        else x
-    }
-
-    @tailrec private final def octal(ctx: Context, x: Int = 0): Int =
-    {
-        if (ctx.moreInput)
-        {
-            val d = ctx.nextChar
-            if (d >= '0' && d <= '7')
-            {
-                ctx.fastUncheckedConsumeChars(1)
-                octal(ctx, x * 8 + d.asDigit)
-            }
-            else x
-        }
-        else x
     }
 
     override def toString: String = "TokenEscape"
