@@ -830,6 +830,7 @@ private [instructions] abstract class TokenSpecific(_specific: String, letter: T
 
     final override def apply(ctx: Context): Unit =
     {
+        ctx.saveState()
         val strsz = this.specific.length
         val inputsz = ctx.inputsz
         val input = ctx.input
@@ -854,6 +855,8 @@ private [instructions] abstract class TokenSpecific(_specific: String, letter: T
             else ctx.pushAndContinue(())
         }
         else ctx.fail(expected)
+        if (ctx.status eq Good) ctx.states = ctx.states.tail
+        else ctx.restoreState()
     }
 
     final override def toString: String = s"TokenSpecific(${_specific})"
@@ -865,7 +868,7 @@ private [internal] final class TokenKeyword(keyword: String, letter: TokenSet, c
 private [internal] final class TokenOperator_(operator: String, letter: TokenSet, expected: UnsafeOption[String])
     extends TokenSpecific(operator, letter, true, expected)
 
-// This can be combined into the above two
+// This can be combined into the above
 private [internal] class TokenMaxOp(_operator: String, _ops: Set[String], _expected: UnsafeOption[String]) extends Instr
 {
     val expected: UnsafeOption[String] = if (_expected == null) _operator else _expected
@@ -893,7 +896,6 @@ private [internal] class TokenMaxOp(_operator: String, _ops: Set[String], _expec
                 i += 1
                 j += 1
             }
-            j = i
             if (i < inputsz)
             {
                 var ops = this.ops

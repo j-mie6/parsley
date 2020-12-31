@@ -142,6 +142,9 @@ class TokeniserTests extends ParsleyTest {
         (tokeniser_.operator("++") <* eof).runParser("++=") should equal {
             (tokeniser.operator("++") <* eof).runParser("++=")
         }
+        (tokeniser_.operator("+") <|> tokeniser_.operator("++") <* eof).runParser("++") should equal {
+            (tokeniser.operator("+") <|> tokeniser.operator("++") <* eof).runParser("++")
+        }
     }
 
     "maxOp" should "match valid operators" in {
