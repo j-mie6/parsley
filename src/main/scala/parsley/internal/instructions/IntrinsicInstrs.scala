@@ -157,7 +157,27 @@ private [internal] final class Chainl[A, B](var label: Int, _wrap: A => B) exten
     override def toString: String = s"Chainl($label)"
     override def copy: Chainl[A, B] = new Chainl(label, wrap)
 }
-private [internal] final class Chainr[A, B](var label: Int, _wrap: A => B) extends JumpInstr with Stateful {
+
+private [instructions] sealed trait DualHandler {
+    final protected def checkForFirstHandlerAndPop(ctx: Context, otherwise: =>Unit)(action: =>Unit) = {
+        if (!isEmpty(ctx.handlers) && ctx.handlers.head.pc == ctx.pc) {
+            ctx.handlers = ctx.handlers.tail
+            ctx.checkStack = ctx.checkStack.tail.tail
+            action
+        }
+        else {
+            ctx.checkStack = ctx.checkStack.tail
+            otherwise
+        }
+    }
+    final protected def popSecondHandlerAndJump(ctx: Context, label: Int) = {
+        ctx.handlers = ctx.handlers.tail
+        ctx.checkStack = ctx.checkStack.tail
+        ctx.checkStack.head = ctx.offset
+        ctx.pc = label
+    }
+}
+private [internal] final class Chainr[A, B](var label: Int, _wrap: A => B) extends JumpInstr with DualHandler with Stateful{
     private [this] val wrap: Any => B = _wrap.asInstanceOf[Any => B]
     private [this] var acc: Any => Any = _
     override def apply(ctx: Context): Unit = {
@@ -168,32 +188,22 @@ private [internal] final class Chainr[A, B](var label: Int, _wrap: A => B) exten
             if (acc == null) acc = (y: Any) => f(x, y)
             // We perform the acc after the tos function; the tos function is "closer" to the final p
             else {
+                // This must be bound here to avoid late binding issues
                 val acc_ = acc
                 acc = (y: Any) => acc_(f(x, y))
             }
-            // Pop H2 off the stack
-            ctx.handlers = ctx.handlers.tail
-            ctx.checkStack = ctx.checkStack.tail
-            ctx.checkStack.head = ctx.offset
-            ctx.pc = label
+            popSecondHandlerAndJump(ctx, label)
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
         else {
-            // H1 might still be on the stack, so p succeeded at least, just not op
-            if (!isEmpty(ctx.handlers) && ctx.handlers.head.pc == ctx.pc) {
-                val check = ctx.checkStack.head
-                ctx.handlers = ctx.handlers.tail
-                ctx.checkStack = ctx.checkStack.tail.tail
+            val check = ctx.checkStack.head
+            // presence of first handler indicates p succeeded and op didn't
+            checkForFirstHandlerAndPop(ctx, ctx.fail()) {
                 if (ctx.offset != check) ctx.fail()
                 else {
                     ctx.status = Good
                     ctx.exchangeAndContinue(if (acc != null) acc(wrap(ctx.stack.upeek)) else wrap(ctx.stack.upeek))
                 }
-            }
-            // p did not succeed and hence neither did op
-            else {
-                ctx.checkStack = ctx.checkStack.tail
-                ctx.fail()
             }
             acc = null
         }
@@ -202,28 +212,20 @@ private [internal] final class Chainr[A, B](var label: Int, _wrap: A => B) exten
     override def copy: Chainr[A, B] = new Chainr(label, wrap)
 }
 
-private [internal] final class SepEndBy1(var label: Int) extends JumpInstr with Stateful {
+private [internal] final class SepEndBy1(var label: Int) extends JumpInstr with DualHandler with Stateful {
     private [this] val acc: ListBuffer[Any] = ListBuffer.empty
     override def apply(ctx: Context): Unit = {
         if (ctx.status eq Good) {
             ctx.stack.pop_()
             acc += ctx.stack.upop()
-            // Pop H2 off the stack
-            ctx.handlers = ctx.handlers.tail
-            // Pop a check off the stack and edit the other
-            ctx.checkStack = ctx.checkStack.tail
-            ctx.checkStack.head = ctx.offset
-            ctx.pc = label
+            popSecondHandlerAndJump(ctx, label)
         }
         else {
             val check = ctx.checkStack.head
-            // H1 is on the stack, so p succeeded, just not sep
-            if (!isEmpty(ctx.handlers) && ctx.handlers.head.pc == ctx.pc) {
-                ctx.checkStack = ctx.checkStack.tail.tail
-                ctx.handlers = ctx.handlers.tail
+            // presence of first handler indicates p succeeded and sep didn't
+            checkForFirstHandlerAndPop(ctx, ()) {
                 acc += ctx.stack.upop()
             }
-            else ctx.checkStack = ctx.checkStack.tail
             if (ctx.offset != check || acc.isEmpty) ctx.fail()
             else {
                 ctx.status = Good
