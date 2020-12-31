@@ -232,52 +232,39 @@ private [internal] final class TokenSign(ty: SignType, _expected: UnsafeOption[S
 }
 
 private [instructions] sealed trait NumericReader {
-    @tailrec protected final def decimal(ctx: Context, x: Int = 0): Int =
-        {
-            if (ctx.moreInput)
-            {
+    private final def subDecimal(base: Int, maxDigit: Char, ctx: Context): Int => Int = {
+        @tailrec def go(x: Int): Int = {
+            if (ctx.moreInput) {
                 val d = ctx.nextChar
-                if (d >= '0' && d <= '9')
-                {
+                if (d >= '0' && d <= maxDigit) {
                     ctx.fastUncheckedConsumeChars(1)
-                    decimal(ctx, x * 10 + d.asDigit)
+                    go(x * base + d.asDigit)
                 }
                 else x
             }
             else x
         }
+        go
+    }
+    protected final def decimal(ctx: Context, firstDigit: Int = 0): Int = subDecimal(10, '9', ctx)(firstDigit)
+    protected final def octal(ctx: Context, firstDigit: Int = 0): Int = subDecimal(8, '7', ctx)(firstDigit)
 
-        @tailrec protected final def hexadecimal(ctx: Context, x: Int = 0): Int =
+    @tailrec protected final def hexadecimal(ctx: Context, x: Int = 0): Int =
+    {
+        if (ctx.moreInput)
         {
-            if (ctx.moreInput)
+            (ctx.nextChar: @switch) match
             {
-                (ctx.nextChar: @switch) match
-                {
-                    case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
-                            | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
-                            | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
-                        ctx.fastUncheckedConsumeChars(1)
-                        hexadecimal(ctx, x * 16 + d.asDigit)
-                    case _ => x
-                }
-            }
-            else x
-        }
-
-        @tailrec protected final def octal(ctx: Context, x: Int = 0): Int =
-        {
-            if (ctx.moreInput)
-            {
-                val d = ctx.nextChar
-                if (d >= '0' && d <= '7')
-                {
+                case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
+                        | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
+                        | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
                     ctx.fastUncheckedConsumeChars(1)
-                    octal(ctx, x * 8 + d.asDigit)
-                }
-                else x
+                    hexadecimal(ctx, x * 16 + d.asDigit)
+                case _ => x
             }
-            else x
         }
+        else x
+    }
 }
 
 private [internal] final class TokenNatural(_expected: UnsafeOption[String]) extends Instr with NumericReader
