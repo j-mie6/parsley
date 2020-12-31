@@ -364,3 +364,34 @@ private [internal] class Eof(_expected: UnsafeOption[String]) extends Instr {
     }
     override final def toString: String = "Eof"
 }
+
+private [internal] final class Modify[S](v: Int, f: S => S) extends Instr {
+    private [this] val g = f.asInstanceOf[Any => Any]
+    override def apply(ctx: Context): Unit = {
+        ctx.copyOnWrite(v, g(ctx.regs(v)))
+        ctx.pushAndContinue(())
+    }
+    override def toString: String = s"Modify($v, f)"
+}
+
+private [internal] final class LocalEntry(v: Int) extends Instr {
+    override def apply(ctx: Context): Unit = {
+        ctx.saveState()
+        // This will always cause a copy
+        ctx.copyOnWrite(v, ctx.stack.upop())
+        ctx.inc()
+    }
+    override def toString: String = s"LocalEntry($v)"
+}
+
+private [internal] final class LocalExit[S](v: Int) extends Instr {
+    override def apply(ctx: Context): Unit = {
+        if (ctx.status eq Good) {
+            ctx.regs(v) = ctx.states.head.regs(v)
+            ctx.inc()
+        }
+        else ctx.fail()
+        ctx.states = ctx.states.tail
+    }
+    override def toString: String = s"LocalExit($v)"
+}
