@@ -1,10 +1,10 @@
 package parsley.internal
 
+import Radix.Entry
 import scala.collection.mutable
 import scala.language.implicitConversions
 
 class Radix[A] {
-    import Radix.Entry
     private var x = Option.empty[A]
     private val m = mutable.Map.empty[Char, Entry[A]]
 
@@ -66,6 +66,6 @@ object Radix {
     }
 
     private class Entry[A](var prefix: String, val radix: Radix[A]) {
-        def dropInPlace(n: Int) = prefix = prefix.drop(n)
+        def dropInPlace(n: Int): Unit = prefix = prefix.drop(n)
     }
 }

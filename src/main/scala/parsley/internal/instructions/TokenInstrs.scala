@@ -755,29 +755,27 @@ private [internal] final class TokenKeyword(keyword: String, letter: TokenSet, c
 private [internal] final class TokenOperator_(operator: String, letter: TokenSet, expected: UnsafeOption[String])
     extends TokenSpecificNoTrailLetter(operator, letter, true, expected)
 
-private [internal] class TokenMaxOp(operator: String, _ops: Set[String], expected: UnsafeOption[String])
+private [internal] final class TokenMaxOp(operator: String, _ops: Set[String], expected: UnsafeOption[String])
     extends TokenSpecific(operator, true, expected) {
     private val ops = Radix(_ops.collect {
         case op if op.length > operator.length && op.startsWith(operator) => op.substring(operator.length)
     })
 
-    override def postprocess(ctx: Context, i: Int): Unit = {
-        @tailrec def go(i: Int, ops: Radix[Unit]): Unit = {
-            if (i < ctx.inputsz && ops.nonEmpty) {
-                val ops_ = ops.suffixes(ctx.input(i))
-                if (ops_.contains("")) {
-                    ctx.fail(expectedEnd)
-                    ctx.restoreState()
-                }
-                else go(i + 1, ops_)
-            }
-            else {
-                ctx.states = ctx.states.tail
-                ctx.pushAndContinue(())
-            }
+    @tailrec private def go(ctx: Context, i: Int, ops: Radix[Unit]): Unit = {
+        lazy val ops_ = ops.suffixes(ctx.input(i))
+        val possibleOpsRemain = i < ctx.inputsz && ops.nonEmpty
+        if (possibleOpsRemain && ops_.contains("")) {
+            ctx.fail(expectedEnd)
+            ctx.restoreState()
         }
-        go(i, ops)
+        else if (possibleOpsRemain) go(ctx, i + 1, ops_)
+        else {
+            ctx.states = ctx.states.tail
+            ctx.pushAndContinue(())
+        }
     }
+
+    override def postprocess(ctx: Context, i: Int): Unit = go(ctx, i, ops)
 
     // $COVERAGE-OFF$
     override def toString: String = s"TokenMaxOp(${operator})"
