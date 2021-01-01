@@ -62,10 +62,6 @@ private [deepembedding] object Cont
         {
             new Cont(k => new Thunk(() => mx.cont(_ => my.cont(k))))
         }
-        override def |>[R, A, B](mx: => Cont[R, A], y: => B): Cont[R, B] =
-        {
-            new Cont(k => new Thunk(() => mx.cont(_ => k(y))))
-        }
     }
 }
 
@@ -79,10 +75,6 @@ private [deepembedding] object Id
         override def map[R, A, B](c: =>Id[R, A], f: A => B): Id[R, B] = new Id(f(c.x))
         override def flatMap[R, A, B](c: =>Id[R, A], f: A => Id[R, B]): Id[R, B] = f(c.x)
         override def >>[R, A, B](c: => Id[R, A], k: => Id[R, B]): Id[R, B] = {c; k}
-        override def |>[R, A, B](c: => Id[R, A], x: => B): Id[R, B] =
-        {
-            c.x
-            new Id(x)
-        }
+        override def |>[R, A, B](c: => Id[R, A], x: => B): Id[R, B] = {c; new Id(x)}
     }
 }

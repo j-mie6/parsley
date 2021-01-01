@@ -662,17 +662,15 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
     override def copy: TokenEscape = new TokenEscape(expected)
 }
 
-private [internal] final class TokenString(ws: TokenSet, _expected: UnsafeOption[String]) extends TokenEscape(_expected)
-{
-    val expectedString = if (_expected == null) "string" else _expected
-    val expectedEos = if (_expected == null) "end of string" else _expected
-    val expectedEscape = if (_expected == null) "escape code" else _expected
-    val expectedGap = if (_expected == null) "end of string gap" else _expected
-    val expectedChar = if (_expected == null) "string character" else _expected
+private [instructions] sealed trait TokenStringLike extends Instr {
+    protected val expected: UnsafeOption[String]
+    final protected lazy val expectedString = if (expected == null) "string" else expected
+    final protected lazy val expectedEos = if (expected == null) "end of string" else expected
+    final protected lazy val expectedChar = if (expected == null) "string character" else expected
 
-    override def apply(ctx: Context): Unit =
+    protected def restOfString(ctx: Context, builder: StringBuilder): Unit
+    final override def apply(ctx: Context): Unit =
     {
-        badCode = false
         if (ctx.moreInput && ctx.nextChar == '"')
         {
             ctx.fastUncheckedConsumeChars(1)
@@ -680,45 +678,88 @@ private [internal] final class TokenString(ws: TokenSet, _expected: UnsafeOption
         }
         else ctx.fail(expectedString)
     }
+}
 
-    @tailrec def restOfString(ctx: Context, builder: StringBuilder): Unit =
-    {
-        if (ctx.moreInput) ctx.nextChar match
-        {
-            case '"' =>
-                ctx.fastUncheckedConsumeChars(1)
-                ctx.pushAndContinue(builder.toString)
-            case '\\' =>
-                ctx.fastUncheckedConsumeChars(1)
-                if (spaces(ctx) != 0)
-                {
-                    if (ctx.moreInput && ctx.nextChar == '\\')
+private [internal] final class TokenRawString(_expected: UnsafeOption[String]) extends TokenStringLike
+{
+    override val expected = _expected
+    override def restOfString(ctx: Context, builder: StringBuilder): Unit = {
+        @tailrec def go(): Unit = {
+            if (ctx.moreInput) ctx.nextChar match {
+                case '"' =>
+                    ctx.fastUncheckedConsumeChars(1)
+                    ctx.pushAndContinue(builder.toString)
+                case '\\' =>
+                    ctx.fastUncheckedConsumeChars(1)
+                    builder += '\\'
+                    if (ctx.moreInput && ctx.nextChar > '\u0016') {
+                        builder += ctx.nextChar
+                        ctx.fastUncheckedConsumeChars(1)
+                        go()
+                    }
+                    else ctx.fail(expectedChar)
+                case c if c > '\u0016' =>
+                    builder += c
+                    ctx.fastUncheckedConsumeChars(1)
+                    go()
+                case _ => ctx.fail(expectedChar)
+            }
+            else ctx.fail(expectedEos)
+        }
+        go()
+    }
+
+    // $COVERAGE-OFF$
+    override def toString: String = "TokenRawString"
+    // $COVERAGE-ON$
+}
+
+private [internal] final class TokenString(ws: TokenSet, _expected: UnsafeOption[String]) extends TokenEscape(_expected) with TokenStringLike
+{
+    override val expected = _expected
+    val expectedEscape = if (_expected == null) "escape code" else _expected
+    val expectedGap = if (_expected == null) "end of string gap" else _expected
+
+    override def restOfString(ctx: Context, builder: StringBuilder): Unit = {
+        @tailrec def go(): Unit = {
+            if (ctx.moreInput) ctx.nextChar match {
+                case '"' =>
+                    ctx.fastUncheckedConsumeChars(1)
+                    ctx.pushAndContinue(builder.toString)
+                case '\\' =>
+                    ctx.fastUncheckedConsumeChars(1)
+                    if (spaces(ctx) != 0)
+                    {
+                        if (ctx.moreInput && ctx.nextChar == '\\')
+                        {
+                            ctx.fastUncheckedConsumeChars(1)
+                            go()
+                        }
+                        else ctx.fail(expectedGap)
+                    }
+                    else if (ctx.moreInput && ctx.nextChar == '&')
                     {
                         ctx.fastUncheckedConsumeChars(1)
-                        restOfString(ctx, builder)
+                        go()
                     }
-                    else ctx.fail(expectedGap)
-                }
-                else if (ctx.moreInput && ctx.nextChar == '&')
-                {
+                    else if (escape(ctx)) {
+                        builder += escapeChar
+                        go()
+                    }
+                    else
+                    {
+                        ctx.fail(expectedEscape)
+                        if (badCode) ctx.raw ::= "invalid escape sequence"
+                    }
+                case c if c > '\u0016' =>
+                    builder += c
                     ctx.fastUncheckedConsumeChars(1)
-                    restOfString(ctx, builder)
-                }
-                else if (escape(ctx)) restOfString(ctx, builder += escapeChar)
-                else
-                {
-                    ctx.fail(expectedEscape)
-                    if (badCode) ctx.raw ::= "invalid escape sequence"
-                }
-            case c =>
-                if (c > '\u0016')
-                {
-                    ctx.fastUncheckedConsumeChars(1)
-                    restOfString(ctx, builder += c)
-                }
-                else ctx.fail(expectedChar)
+                    go()
+                case _ => ctx.fail(expectedChar)
+            }
+            else ctx.fail(expectedEos)
         }
-        else ctx.fail(expectedEos)
+        go()
     }
 
     private def spaces(ctx: Context): Int =
@@ -736,55 +777,6 @@ private [internal] final class TokenString(ws: TokenSet, _expected: UnsafeOption
     override def toString: String = "TokenString"
     // $COVERAGE-ON$
     override def copy: TokenString = new TokenString(ws, _expected)
-}
-
-private [internal] final class TokenRawString(_expected: UnsafeOption[String]) extends Instr
-{
-    val expectedString = if (_expected == null) "string" else _expected
-    val expectedEos = if (_expected == null) "end of string" else _expected
-    val expectedChar = if (_expected == null) "string character" else _expected
-
-    override def apply(ctx: Context): Unit =
-    {
-        if (ctx.moreInput && ctx.nextChar == '"')
-        {
-            ctx.fastUncheckedConsumeChars(1)
-            restOfString(ctx, new StringBuilder())
-        }
-        else ctx.fail(expectedString)
-    }
-
-    @tailrec def restOfString(ctx: Context, builder: StringBuilder): Unit =
-    {
-        if (ctx.moreInput) ctx.nextChar match
-        {
-            case '"' =>
-                ctx.fastUncheckedConsumeChars(1)
-                ctx.pushAndContinue(builder.toString)
-            case '\\' =>
-                ctx.fastUncheckedConsumeChars(1)
-                builder += '\\'
-                if (ctx.moreInput && ctx.nextChar > '\u0016')
-                {
-                    builder += ctx.nextChar
-                    ctx.fastUncheckedConsumeChars(1)
-                    restOfString(ctx, builder)
-                }
-                else ctx.fail(expectedChar)
-            case c =>
-                if (c > '\u0016')
-                {
-                    ctx.fastUncheckedConsumeChars(1)
-                    restOfString(ctx, builder += c)
-                }
-                else ctx.fail(expectedChar)
-        }
-        else ctx.fail(expectedEos)
-    }
-
-    // $COVERAGE-OFF$
-    override def toString: String = "TokenRawString"
-    // $COVERAGE-ON$
 }
 
 private [instructions] abstract class TokenLexi(name: String, illegalName: String)
