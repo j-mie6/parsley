@@ -38,9 +38,10 @@ private [deepembedding] object ContOps
     def result[R, A, Cont[_, +_]](x: A)(implicit canWrap: ContOps[Cont]): Cont[R, A] = canWrap.wrap(x)
     def perform[R, Cont[_, +_]](wrapped: Cont[R, R])(implicit canUnwrap: ContOps[Cont]): R = canUnwrap.unwrap(wrapped)
     type GenOps = ContOps[({type C[_, +_]})#C]
-    def safeCall[A](task: GenOps => A): A =
+    def safeCall[A](task: GenOps => A): A = {
         try task(Id.ops.asInstanceOf[GenOps])
         catch { case _: StackOverflowError => task(Cont.ops.asInstanceOf[GenOps]) }
+    }
 }
 
 private [deepembedding] class Cont[R, +A](val cont: (A => Bounce[R]) => Bounce[R]) extends AnyVal

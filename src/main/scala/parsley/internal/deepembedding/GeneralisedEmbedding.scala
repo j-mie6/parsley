@@ -8,7 +8,7 @@ import scala.language.higherKinds
 // Core Embedding
 private [parsley] abstract class Singleton[A](pretty: String, instr: instructions.Instr) extends Parsley[A] {
     final override def preprocess[Cont[_, +_]: ContOps, A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap,
-                                                                 label: UnsafeOption[String]): Cont[Parsley[_], Parsley[A_]] = result(this)
+                                                                 label: UnsafeOption[String]): Cont[Unit, Parsley[A_]] = result(this)
     final override def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState): Cont[Unit, Unit] = result(())
     final override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
         result(instrs += instr)
@@ -21,7 +21,7 @@ private [parsley] abstract class Singleton[A](pretty: String, instr: instruction
 private [deepembedding] abstract class SingletonExpect[A](pretty: String, builder: UnsafeOption[String] => SingletonExpect[A], instr: instructions.Instr)
     extends Parsley[A] {
     final override def preprocess[Cont[_, +_]: ContOps, A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap,
-                                                           label: UnsafeOption[String]): Cont[Parsley[_], Parsley[A]] = {
+                                                           label: UnsafeOption[String]): Cont[Unit, Parsley[A]] = {
         if (label == null) result(this)
         else result(builder(label))
     }
@@ -44,7 +44,7 @@ private [deepembedding] abstract class Unary[A, B](_p: =>Parsley[A])(pretty: Str
         p.findLets
     }
     override def preprocess[Cont[_, +_]: ContOps, B_ >: B](implicit seen: Set[Parsley[_]], sub: SubMap,
-                                                   label: UnsafeOption[String]): Cont[Parsley[_], Parsley[B_]] =
+                                                   label: UnsafeOption[String]): Cont[Unit, Parsley[B_]] =
         if (label == null && processed) result(this) else for (p <- this.p.optimised) yield {
             val self = if (label == null) this else empty(label)
             self.ready(p)
@@ -74,7 +74,7 @@ private [deepembedding] abstract class Binary[A, B, C](_left: =>Parsley[A], _rig
         left.findLets >> right.findLets
     }
     override def preprocess[Cont[_, +_]: ContOps, C_ >: C](implicit seen: Set[Parsley[_]], sub: SubMap,
-                                                   label: UnsafeOption[String]): Cont[Parsley[_], Parsley[C_]] =
+                                                   label: UnsafeOption[String]): Cont[Unit, Parsley[C_]] =
         if (label == null && processed) result(this) else for (left <- this.left.optimised; right <- this.right.optimised) yield {
             val self = if (label == null) this else empty
             self.ready(left, right)
@@ -100,7 +100,7 @@ private [deepembedding] abstract class Ternary[A, B, C, D](_first: =>Parsley[A],
     protected var third: Parsley[C] = _
     protected val numInstrs: Int
     override def preprocess[Cont[_, +_]: ContOps, D_ >: D](implicit seen: Set[Parsley[_]], sub: SubMap,
-                                                           label: UnsafeOption[String]): Cont[Parsley[_], Parsley[D_]] =
+                                                           label: UnsafeOption[String]): Cont[Unit, Parsley[D_]] =
         if (label == null && processed) result(this) else
             for (first <- this.first.optimised; second <- this.second.optimised; third <- this.third.optimised) yield {
                 val self = if (label == null) this else empty

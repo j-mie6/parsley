@@ -44,7 +44,7 @@ private [parsley] final class Subroutine[A](_p: =>Parsley[A], val expected: Unsa
     override val childRepeats = 0
 
     override def preprocess[Cont[_, +_]: ContOps, A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap,
-                                                           label: UnsafeOption[String]): Cont[Parsley[_], Parsley[A_]] = {
+                                                           label: UnsafeOption[String]): Cont[Unit, Parsley[A_]] = {
         val self = if (label == null) this else Subroutine(p, label)
         if (!processed) for (p <- this.p.optimised(implicitly[ContOps[Cont]], seen, sub, null)) yield self.ready(p)
         else result(self)
@@ -69,7 +69,7 @@ private [parsley] final class Put[S](private [Put] val v: Var, _p: =>Parsley[S])
 private [parsley] final class ErrorRelabel[+A](_p: =>Parsley[A], msg: String) extends Parsley[A] {
     lazy val p = _p
     override def preprocess[Cont[_, +_]: ContOps, A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap,
-                                                           label: UnsafeOption[String]): Cont[Parsley[_], Parsley[A_]] = {
+                                                           label: UnsafeOption[String]): Cont[Unit, Parsley[A_]] = {
         if (label == null) p.optimised(implicitly[ContOps[Cont]], seen, sub, msg)
         else p.optimised
     }
