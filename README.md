@@ -35,7 +35,8 @@ its competitive performance, but for best effect a parser should be compiled onc
 To make recursive parsers work in this AST format, you must ensure that recursion is done by knot-tying: you should define all
 recursive parsers with `val` and introduce `lazy val` where necessary for the compiler to accept the definition.
 
-## Bug Reports [![Percentage of issues still open](https://isitmaintained.com/badge/open/j-mie6/parsley.svg)](https://isitmaintained.com/project/j-mie6/parsley "Percentage of issues still open") [![Maintainability](https://api.codeclimate.com/v1/badges/337556ceb02f4d6dc599/maintainability)](https://codeclimate.com/github/j-mie6/parsley/maintainability)
+## Bug Reports [![Percentage of issues still open](https://isitmaintained.com/badge/open/j-mie6/Parsley.svg)](https://isitmaintained.com/project/j-mie6/Parsley "Percentage of issues still open") [![Maintainability](https://img.shields.io/codeclimate/maintainability/j-mie6/Parsley)](https://codeclimate.com/github/j-mie6/Parsley) [![Test Coverage](https://img.shields.io/codeclimate/coverage-letter/j-mie6/Parsley)](https://codeclimate.com/github/j-mie6/Parsley)
+
 If you encounter a bug when using Parsley, try and minimise the example of the parser (and the input) that triggers the bug.
 If possible, make a self contained example: this will help me to identify the issue without too much issue.
 
