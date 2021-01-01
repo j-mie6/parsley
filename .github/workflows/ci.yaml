@@ -3,11 +3,13 @@ on: [push, pull_request]
 env:
   CI: true
   CI_SNAPSHOT_RELEASE: +publishSigned
-  SCALA_VERSION: 2.12.12
+  SCALA_VERSION: 2.13.4
+  JAVA_VERSION: adopt@1.11
+  UBUNTU: ubuntu-20.04
 jobs:
   validate:
     name: Scala ${{ matrix.scala }}, Java ${{ matrix.java }}
-    runs-on: ubuntu-20.04
+    runs-on: $UBUNTU
     strategy:
       fail-fast: false
       matrix:
@@ -34,3 +36,28 @@ jobs:
         run: sbt ++$SCALA_VERSION test
       - name: Scaladoc
         run: sbt ++$SCALA_VERSION doc
+  coverage:
+    needs: [validate]
+    name: Test Coverage
+    runs-on: $UBUNTU
+    steps:
+      - uses: actions/checkout@v2.3.4
+      - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: $JAVA_VERSION
+      - uses: actions/cache@v1
+        with:
+          path: ~/.cache/coursier
+          key: sbt-coursier-cache
+      - uses: actions/cache@v1
+        with:
+          path: ~/.sbt
+          key: sbt-${{ hashFiles('**/build.sbt') }}
+      - run: sbt clean coverage test
+      - uses: paambaati/codeclimate-action@v2.7.5
+        env:
+          CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
+        with:
+          coverageCommand: sbt coverageReport
+          coverageLocations: ${{github.workspace}}/target/scala-2.13/coverage-report/cobertura.xml:cobertura
+          debug: true
