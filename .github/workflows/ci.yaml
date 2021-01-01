@@ -5,11 +5,10 @@ env:
   CI_SNAPSHOT_RELEASE: +publishSigned
   SCALA_VERSION: 2.13.4
   JAVA_VERSION: adopt@1.11
-  UBUNTU: ubuntu-20.04
 jobs:
   validate:
     name: Scala ${{ matrix.scala }}, Java ${{ matrix.java }}
-    runs-on: $UBUNTU
+    runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
@@ -39,7 +38,7 @@ jobs:
   coverage:
     needs: [validate]
     name: Test Coverage
-    runs-on: $UBUNTU
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2.3.4
       - uses: olafurpg/setup-scala@v10
