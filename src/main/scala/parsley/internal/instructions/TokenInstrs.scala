@@ -2,7 +2,7 @@ package parsley.internal.instructions
 
 import parsley.internal.deepembedding.Sign.{SignType, IntType, DoubleType}
 import parsley.TokenParser.TokenSet
-import parsley.internal.UnsafeOption
+import parsley.internal.{Radix, UnsafeOption}
 
 import scala.annotation.{switch, tailrec}
 
@@ -755,31 +755,30 @@ private [internal] final class TokenKeyword(keyword: String, letter: TokenSet, c
 private [internal] final class TokenOperator_(operator: String, letter: TokenSet, expected: UnsafeOption[String])
     extends TokenSpecificNoTrailLetter(operator, letter, true, expected)
 
-// This can be combined into the above
 private [internal] class TokenMaxOp(operator: String, _ops: Set[String], expected: UnsafeOption[String])
     extends TokenSpecific(operator, true, expected) {
-    // TODO: We want a Trie backed map here, not whatever this is
-    private val ops = for (op <- _ops.toList if op.length > operator.length && op.startsWith(operator)) yield op.substring(operator.length)
+    private val ops = Radix(_ops.collect {
+        case op if op.length > operator.length && op.startsWith(operator) => op.substring(operator.length)
+    })
 
-    override def postprocess(ctx: Context, _i: Int): Unit = {
-        var i = _i
-        var ops = this.ops
-        while (i < ctx.inputsz && ops.nonEmpty) {
-            val c = ctx.input(i)
-            ops = for (op <- ops if op.charAt(0) == c) yield {
-                val op_ = op.substring(1)
-                if (op_.isEmpty) {
+    override def postprocess(ctx: Context, i: Int): Unit = {
+        @tailrec def go(i: Int, ops: Radix[Unit]): Unit = {
+            if (i < ctx.inputsz && ops.nonEmpty) {
+                val ops_ = ops.suffixes(ctx.input(i))
+                if (ops_.contains("")) {
                     ctx.fail(expectedEnd)
                     ctx.restoreState()
-                    return
                 }
-                op_
+                else go(i + 1, ops_)
             }
-            i += 1
+            else {
+                ctx.states = ctx.states.tail
+                ctx.pushAndContinue(())
+            }
         }
-        ctx.states = ctx.states.tail
-        ctx.pushAndContinue(())
+        go(i, ops)
     }
+
     // $COVERAGE-OFF$
     override def toString: String = s"TokenMaxOp(${operator})"
     // $COVERAGE-ON$
