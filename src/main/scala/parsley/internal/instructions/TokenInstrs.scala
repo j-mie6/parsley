@@ -822,22 +822,19 @@ private [internal] final class TokenUserOperator(start: TokenSet, letter: TokenS
 private [internal] final class TokenOperator(start: TokenSet, letter: TokenSet, reservedOps: Set[String], _expected: UnsafeOption[String])
     extends TokenLexi("operator", "non-reserved operator")(start, letter, reservedOps.andThen(!_), _expected)
 
-private [instructions] abstract class TokenSpecific(_specific: String, letter: TokenSet, caseSensitive: Boolean, _expected: UnsafeOption[String]) extends Instr
+private [instructions] abstract class TokenSpecific(_specific: String, caseSensitive: Boolean, _expected: UnsafeOption[String]) extends Instr
 {
     private final val expected = if (_expected == null) _specific else _expected
-    private final val expectedEnd = if (_expected == null) "end of " + _specific else _expected
+    protected final val expectedEnd = if (_expected == null) "end of " + _specific else _expected
     private final val specific = (if (caseSensitive) _specific else _specific.toLowerCase).toCharArray
-
+    private final val strsz = specific.length
+    protected def postprocess(ctx: Context, i: Int): Unit
     final override def apply(ctx: Context): Unit =
     {
-        ctx.saveState()
-        val strsz = this.specific.length
-        val inputsz = ctx.inputsz
         val input = ctx.input
         var i = ctx.offset
         var j = 0
-        val specific = this.specific
-        if (inputsz >= i + strsz)
+        if (ctx.inputsz >= i + strsz)
         {
             while (j < strsz)
             {
@@ -850,76 +847,67 @@ private [instructions] abstract class TokenSpecific(_specific: String, letter: T
                 i += 1
                 j += 1
             }
+            ctx.saveState()
             ctx.fastUncheckedConsumeChars(strsz)
-            if (i < inputsz && letter(input(i))) ctx.fail(expectedEnd)
-            else ctx.pushAndContinue(())
+            postprocess(ctx, i)
         }
         else ctx.fail(expected)
-        if (ctx.status eq Good) ctx.states = ctx.states.tail
-        else ctx.restoreState()
     }
 
-    final override def toString: String = s"TokenSpecific(${_specific})"
+    override def toString: String = s"TokenSpecific(${_specific})"
+}
+
+private [internal] abstract class TokenSpecificNoTrailLetter(keyword: String, letter: TokenSet, caseSensitive: Boolean, expected: UnsafeOption[String])
+    extends TokenSpecific(keyword, caseSensitive, expected) {
+    final override def postprocess(ctx: Context, i: Int): Unit = {
+        if (i < ctx.inputsz && letter(ctx.input(i))) {
+            ctx.fail(expectedEnd)
+            ctx.restoreState()
+        }
+        else {
+            ctx.states = ctx.states.tail
+            ctx.pushAndContinue(())
+        }
+    }
 }
 
 private [internal] final class TokenKeyword(keyword: String, letter: TokenSet, caseSensitive: Boolean, expected: UnsafeOption[String])
-    extends TokenSpecific(keyword, letter, caseSensitive, expected)
+    extends TokenSpecificNoTrailLetter(keyword, letter, caseSensitive, expected)
 
 private [internal] final class TokenOperator_(operator: String, letter: TokenSet, expected: UnsafeOption[String])
-    extends TokenSpecific(operator, letter, true, expected)
+    extends TokenSpecificNoTrailLetter(operator, letter, true, expected)
 
 // This can be combined into the above
-private [internal] class TokenMaxOp(_operator: String, _ops: Set[String], _expected: UnsafeOption[String]) extends Instr
+private [internal] class TokenMaxOp(operator: String, _ops: Set[String], expected: UnsafeOption[String])
+    extends TokenSpecific(operator, true, expected)
 {
-    val expected: UnsafeOption[String] = if (_expected == null) _operator else _expected
-    val expectedEnd: UnsafeOption[String] = if (_expected == null) "end of " + _operator else _expected
-    val operator = _operator.toCharArray
-    val ops = for (op <- _ops.toList if op.length > _operator.length && op.startsWith(_operator)) yield op.substring(_operator.length)
+    // TODO: We want a Trie backed map here, not whatever this is
+    private val ops = for (op <- _ops.toList if op.length > operator.length && op.startsWith(operator)) yield op.substring(operator.length)
 
-    override def apply(ctx: Context): Unit =
-    {
-        val inputsz: Int = ctx.inputsz
-        val input = ctx.input
-        var i = ctx.offset
-        var j = 0
-        val operator = this.operator
-        val strsz: Int = operator.length
-        if (inputsz >= i + strsz)
+    override def postprocess(ctx: Context, _i: Int): Unit = {
+        var i = _i
+        if (i < ctx.inputsz)
         {
-            while (j < strsz)
+            var ops = this.ops
+            while (ops.nonEmpty && i < ctx.inputsz)
             {
-                if (input(i) != operator(j))
+                val c = ctx.input(i)
+                ops = for (op <- ops if op.charAt(0) == c) yield
                 {
-                    ctx.fail(expected)
-                    return
+                    val op_ = op.substring(1)
+                    if (op_.isEmpty)
+                    {
+                        ctx.fail(expectedEnd)
+                        ctx.restoreState()
+                        return
+                    }
+                    op_
                 }
                 i += 1
-                j += 1
             }
-            if (i < inputsz)
-            {
-                var ops = this.ops
-                while (ops.nonEmpty && i < inputsz)
-                {
-                    val c = input(i)
-                    ops = for (op <- ops if op.charAt(0) == c) yield
-                    {
-                        val op_ = op.substring(1)
-                        if (op_.isEmpty)
-                        {
-                            ctx.fail(expectedEnd)
-                            return
-                        }
-                        op_
-                    }
-                    i += 1
-                }
-            }
-            ctx.fastUncheckedConsumeChars(strsz)
-            ctx.pushAndContinue(())
         }
-        else ctx.fail(expected)
+        ctx.states = ctx.states.tail
+        ctx.pushAndContinue(())
     }
-
-    override def toString: String = s"TokenMaxOp(${_operator})"
+    override def toString: String = s"TokenMaxOp(${operator})"
 }
