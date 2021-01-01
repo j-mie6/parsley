@@ -119,7 +119,7 @@ private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int]
         }
     }
 
-    private [internal] def relabel(labels: Array[Int]): Unit = {
+    override def relabel(labels: Array[Int]): Unit = {
         jumpTable.mapValuesInPlace((_, v) => labels(v))
         default = labels(default)
         defaultPreamble = default - 1

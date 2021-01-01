@@ -12,6 +12,7 @@ package object instructions
 
     private [internal] abstract class Instr {
         def apply(ctx: Context): Unit
+        def relabel(labels: Array[Int]): Unit = ()
         // Instructions should override this if they have mutable state inside!
         def copy: Instr = this
     }
@@ -20,6 +21,7 @@ package object instructions
 
     private [internal] abstract class JumpInstr extends Instr {
         var label: Int
+        override def relabel(labels: Array[Int]): Unit = label = labels(label)
     }
 
     // It's 2018 and Labels are making a come-back, along with 2 pass assembly

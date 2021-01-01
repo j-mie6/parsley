@@ -42,11 +42,10 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     }
     final private def fix(implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String]): Parsley[A] = {
         // We use the seen set here to prevent cascading sub-routines
+        val wasSeen = seen(this)
         val self = sub(this)
-        if (seen(this)) {
-            if (self == this) new Rec(this, label)
-            else this
-        }
+        if (wasSeen && (self eq this)) new Rec(this, label)
+        else if (wasSeen) this
         else self
     }
     final private [deepembedding] def optimised[Cont[_, +_]: ContOps, A_ >: A](implicit seen: Set[Parsley[_]],
@@ -89,27 +88,23 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
 
         pipeline(ops, instrs, state)
 
-        val instrsOversize = instrs.toArray
-        val labelMapping = new Array[Int](state.nlabels)
         @tailrec def findLabels(instrs: Array[Instr], labels: Array[Int], n: Int, i: Int, off: Int): Int = if (i + off < n) instrs(i + off) match {
-            case label: Label => instrs(i + off) = null; labels(label.i) = i; findLabels(instrs, labels, n, i, off + 1)
+            case label: Label =>
+                instrs(i + off) = null
+                labels(label.i) = i
+                findLabels(instrs, labels, n, i, off + 1)
             case _ => findLabels(instrs, labels, n, i + 1, off)
         }
         else i
         @tailrec def applyLabels(srcs: Array[Instr], labels: Array[Int], dests: Array[Instr], n: Int, i: Int, off: Int): Unit = if (i < n) srcs(i + off) match {
             case null => applyLabels(srcs, labels, dests, n, i, off + 1)
-            case jump: JumpInstr =>
-                jump.label = labels(jump.label)
-                dests(i) = jump
-                applyLabels(srcs, labels, dests, n, i + 1, off)
-            case table: JumpTable =>
-                table.relabel(labels)
-                dests(i) = table
-                applyLabels(srcs, labels, dests, n, i + 1, off)
             case instr =>
+                instr.relabel(labels)
                 dests(i) = instr
                 applyLabels(srcs, labels, dests, n, i + 1, off)
         }
+        val instrsOversize = instrs.toArray
+        val labelMapping = new Array[Int](state.nlabels)
         val size = findLabels(instrsOversize, labelMapping, instrs.length, 0, 0)
         val instrs_ = new Array[Instr](size)
         applyLabels(instrsOversize, labelMapping, instrs_, instrs_.length, 0, 0)
