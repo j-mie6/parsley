@@ -81,7 +81,9 @@ private [internal] class TokenComment(start: String, end: String, line: String, 
         }
         true
     }
+    // $COVERAGE-OFF$
     override def toString: String = "TokenComment"
+    // $COVERAGE-ON$
 }
 
 // TODO This is considered as a VERY rough implementation of the intrinsic, just to get it working, it will be optimised later
@@ -114,7 +116,9 @@ private [internal] final class TokenSkipComments(start: String, end: String, lin
         }
         ctx.pushAndContinue(())
     }
+    // $COVERAGE-OFF$
     override def toString: String = "TokenSkipComments"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class TokenWhiteSpace(ws: TokenSet, start: String, end: String, line: String, nested: Boolean)
@@ -163,7 +167,9 @@ private [internal] final class TokenWhiteSpace(ws: TokenSet, start: String, end:
     }
 
     private def spaces(ctx: Context): Unit = while (ctx.moreInput && ws(ctx.nextChar)) ctx.consumeChar()
+    // $COVERAGE-OFF$
     override def toString: String = "TokenWhiteSpace"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class TokenSign(ty: SignType, _expected: UnsafeOption[String]) extends Instr
@@ -193,7 +199,9 @@ private [internal] final class TokenSign(ty: SignType, _expected: UnsafeOption[S
         ctx.inc()
     }
 
+    // $COVERAGE-OFF$
     override def toString: String = "TokenSign"
+    // $COVERAGE-ON$
 }
 
 private [instructions] sealed trait NumericReader {
@@ -288,7 +296,9 @@ private [internal] final class TokenNatural(_expected: UnsafeOption[String]) ext
         else ctx.fail(expected)
     }
 
+    // $COVERAGE-OFF$
     override def toString: String = "TokenNatural"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class TokenFloat(_expected: UnsafeOption[String]) extends Instr
@@ -366,7 +376,9 @@ private [internal] final class TokenFloat(_expected: UnsafeOption[String]) exten
         else true
     }
 
+    // $COVERAGE-OFF$
     override def toString: String = "TokenFloat"
+    // $COVERAGE-ON$
 }
 
 private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends Instr with Stateful with NumericReader
@@ -644,7 +656,9 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
         else false
     }
 
+    // $COVERAGE-OFF$
     override def toString: String = "TokenEscape"
+    // $COVERAGE-ON$
     override def copy: TokenEscape = new TokenEscape(expected)
 }
 
@@ -718,7 +732,9 @@ private [internal] final class TokenString(ws: TokenSet, _expected: UnsafeOption
         n
     }
 
+    // $COVERAGE-OFF$
     override def toString: String = "TokenString"
+    // $COVERAGE-ON$
     override def copy: TokenString = new TokenString(ws, _expected)
 }
 
@@ -766,7 +782,9 @@ private [internal] final class TokenRawString(_expected: UnsafeOption[String]) e
         else ctx.fail(expectedEos)
     }
 
+    // $COVERAGE-OFF$
     override def toString: String = "TokenRawString"
+    // $COVERAGE-ON$
 }
 
 private [instructions] abstract class TokenLexi(name: String, illegalName: String)
@@ -810,7 +828,9 @@ private [instructions] abstract class TokenLexi(name: String, illegalName: Strin
         }
     }
 
+    // $COVERAGE-OFF$
     final override def toString: String = s"TokenLexi($name)"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class TokenIdentifier(start: TokenSet, letter: TokenSet, keywords: Set[String], _expected: UnsafeOption[String])
@@ -854,7 +874,9 @@ private [instructions] abstract class TokenSpecific(_specific: String, caseSensi
         else ctx.fail(expected)
     }
 
+    // $COVERAGE-OFF$
     override def toString: String = s"TokenSpecific(${_specific})"
+    // $COVERAGE-ON$
 }
 
 private [internal] abstract class TokenSpecificNoTrailLetter(keyword: String, letter: TokenSet, caseSensitive: Boolean, expected: UnsafeOption[String])
@@ -909,5 +931,7 @@ private [internal] class TokenMaxOp(operator: String, _ops: Set[String], expecte
         ctx.states = ctx.states.tail
         ctx.pushAndContinue(())
     }
+    // $COVERAGE-OFF$
     override def toString: String = s"TokenMaxOp(${operator})"
+    // $COVERAGE-ON$
 }

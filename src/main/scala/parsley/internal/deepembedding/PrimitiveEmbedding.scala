@@ -74,11 +74,13 @@ private [parsley] final class ErrorRelabel[+A](_p: =>Parsley[A], msg: String) ex
         else p.optimised
     }
     override def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState): Cont[Unit, Unit] = p.findLets
+    // $COVERAGE-OFF$
     override def optimise: Parsley[A] = throw new Exception("Error relabelling should not be in optimisation!")
     override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
         throw new Exception("Error relabelling should not be in code gen!")
     }
     override def prettyASTAux[Cont[_, +_]: ContOps]: Cont[String, String] = for (c <- p.prettyASTAux) yield s"($c ? $msg)"
+    // $COVERAGE-ON$
 }
 private [parsley] final class Debug[A](_p: =>Parsley[A], name: String, break: Breakpoint)
     extends Unary[A, A](_p)(identity[String], _ => Debug.empty(name, break)) {

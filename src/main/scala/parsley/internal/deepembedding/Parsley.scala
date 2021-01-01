@@ -25,7 +25,9 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     final protected type U = Any
     final protected type V = Any
 
+    // $COVERAGE-OFF$
     final private [parsley] def prettyAST: String = {force(); safeCall((g: GenOps) => perform(prettyASTAux(g))(g))}
+    // $COVERAGE-ON$
 
     final def unsafe(): Unit = safe = false
     final def force(): Unit = instrs
@@ -182,5 +184,7 @@ private [parsley] class LetFinderState {
 
 private [parsley] class SubMap(val subMap: Map[Parsley[_], Parsley[_]]) extends AnyVal {
     def apply[A](p: Parsley[A]): Parsley[A] = subMap.getOrElse(p, p).asInstanceOf[Parsley[A]]
+    // $COVERAGE-OFF$
     override def toString: String = subMap.toString
+    // $COVERAGE-ON$
 }

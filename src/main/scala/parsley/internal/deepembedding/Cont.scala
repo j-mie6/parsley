@@ -21,8 +21,10 @@ private [deepembedding] abstract class ContOps[Cont[_, +_]]
     def unwrap[R](wrapped: Cont[R, R]): R
     def map[R, A, B](c: =>Cont[R, A], f: A => B): Cont[R, B]
     def flatMap[R, A, B](c: =>Cont[R, A], f: A => Cont[R, B]): Cont[R, B]
+    // $COVERAGE-OFF$
     def >>[R, A, B](c: =>Cont[R, A], k: =>Cont[R, B]): Cont[R, B] = flatMap[R, A, B](c, _ => k)
     def |>[R, A, B](c: =>Cont[R, A], x: =>B): Cont[R, B] = map[R, A, B](c, _ => x)
+    // $COVERAGE-ON$
 }
 private [deepembedding] object ContOps
 {
@@ -64,11 +66,6 @@ private [deepembedding] object Cont
         {
             new Cont(k => new Thunk(() => mx.cont(_ => k(y))))
         }
-    }
-
-    def callCC[R, A, B](f: (A => Cont[R, B]) => Cont[R, A]): Cont[R, A] =
-    {
-        new Cont[R, A](k => f(x => new Cont[R, B](_ => k(x))).cont(k))
     }
 }
 

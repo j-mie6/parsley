@@ -13,7 +13,9 @@ private [parsley] abstract class Singleton[A](pretty: String, instr: instruction
     final override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
         result(instrs += instr)
     }
+    // $COVERAGE-OFF$
     final override def prettyASTAux[Cont[_, +_]: ContOps]: Cont[String, String] = result(pretty)
+    // $COVERAGE-ON$
 }
 
 private [deepembedding] abstract class SingletonExpect[A](pretty: String, builder: UnsafeOption[String] => SingletonExpect[A], instr: instructions.Instr)
@@ -27,7 +29,9 @@ private [deepembedding] abstract class SingletonExpect[A](pretty: String, builde
     final override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
         result(instrs += instr)
     }
+    // $COVERAGE-OFF$
     final override def prettyASTAux[Cont[_, +_]: ContOps]: Cont[String, String] = result(pretty)
+    // $COVERAGE-ON$
 }
 
 private [deepembedding] abstract class Unary[A, B](_p: =>Parsley[A])(pretty: String => String, empty: String => Unary[A, B]) extends Parsley[B] {
@@ -51,7 +55,9 @@ private [deepembedding] abstract class Unary[A, B](_p: =>Parsley[A])(pretty: Str
         size = p.size + numInstrs
         this
     }
+    // $COVERAGE-OFF$
     override def prettyASTAux[Cont[_, +_]: ContOps]: Cont[String,String] = for (c <- p.prettyASTAux) yield pretty(c)
+    // $COVERAGE-ON$
 }
 
 private [deepembedding] abstract class Binary[A, B, C](_left: =>Parsley[A], _right: =>Parsley[B])(pretty: (String, String) => String, empty: =>Binary[A, B, C])
@@ -80,9 +86,11 @@ private [deepembedding] abstract class Binary[A, B, C](_left: =>Parsley[A], _rig
         size = leftRepeats * left.size + rightRepeats * right.size + numInstrs
         this
     }
+    // $COVERAGE-OFF$
     override def prettyASTAux[Cont[_, +_]: ContOps]: Cont[String,String] = {
         for (l <- left.prettyASTAux; r <- right.prettyASTAux) yield pretty(l, r)
     }
+    // $COVERAGE-ON$
 }
 
 private [deepembedding] abstract class Ternary[A, B, C, D](_first: =>Parsley[A], _second: =>Parsley[B], _third: =>Parsley[C])
@@ -113,6 +121,8 @@ private [deepembedding] abstract class Ternary[A, B, C, D](_first: =>Parsley[A],
         third = _third
         first.findLets >> second.findLets >> third.findLets
     }
+    // $COVERAGE-OFF$
     override def prettyASTAux[Cont[_, +_]: ContOps]: Cont[String, String] =
         for (f <- first.prettyASTAux; s <- second.prettyASTAux; t <- third.prettyASTAux) yield pretty(f, s, t)
+    // $COVERAGE-ON$
 }

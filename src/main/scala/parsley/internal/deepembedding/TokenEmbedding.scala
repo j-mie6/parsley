@@ -63,6 +63,7 @@ private [parsley] object Sign {
     }
 }
 
+// $COVERAGE-OFF$
 private [deepembedding] object Keyword {
     def unapply(self: Keyword): Option[String] = Some(self.keyword)
 }
@@ -72,3 +73,4 @@ private [deepembedding] object Operator {
 private [deepembedding] object MaxOp {
     def unapply(self: MaxOp): Option[String] = Some(self.operator)
 }
+// $COVERAGE-ON$

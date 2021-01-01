@@ -22,7 +22,9 @@ private [internal] final class Many(var label: Int) extends JumpInstr with State
             acc.clear()
         }
     }
+    // $COVERAGE-OFF$
     override def toString: String = s"Many($label)"
+    // $COVERAGE-ON$
     override def copy: Many = new Many(label)
 }
 private [internal] final class SkipMany(var label: Int) extends JumpInstr {
@@ -37,7 +39,9 @@ private [internal] final class SkipMany(var label: Int) extends JumpInstr {
             ctx.pushAndContinue(())
         }
     }
+    // $COVERAGE-OFF$
     override def toString: String = s"SkipMany($label)"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class ChainPost(var label: Int) extends JumpInstr with Stateful {
@@ -67,7 +71,9 @@ private [internal] final class ChainPost(var label: Int) extends JumpInstr with 
             acc = null
         }
     }
+    // $COVERAGE-OFF$
     override def toString: String = s"ChainPost($label)"
+    // $COVERAGE-ON$
     override def copy: ChainPost = new ChainPost(label)
 }
 
@@ -90,7 +96,9 @@ private [internal] final class ChainPre(var label: Int) extends JumpInstr with S
             acc = null
         }
     }
+    // $COVERAGE-OFF$
     override def toString: String = s"ChainPre($label)"
+    // $COVERAGE-ON$
     override def copy: ChainPre = new ChainPre(label)
 }
 private [internal] final class Chainl[A, B](var label: Int, _wrap: A => B) extends JumpInstr with Stateful {
@@ -121,7 +129,9 @@ private [internal] final class Chainl[A, B](var label: Int, _wrap: A => B) exten
             acc = null
         }
     }
+    // $COVERAGE-OFF$
     override def toString: String = s"Chainl($label)"
+    // $COVERAGE-ON$
     override def copy: Chainl[A, B] = new Chainl(label, wrap)
 }
 
@@ -169,7 +179,9 @@ private [internal] final class Chainr[A, B](var label: Int, _wrap: A => B) exten
             acc = null
         }
     }
+    // $COVERAGE-OFF$
     override def toString: String = s"Chainr($label)"
+    // $COVERAGE-ON$
     override def copy: Chainr[A, B] = new Chainr(label, wrap)
 }
 
@@ -196,7 +208,9 @@ private [internal] final class SepEndBy1(var label: Int) extends JumpInstr with 
             acc.clear()
         }
     }
+    // $COVERAGE-OFF$
     override def toString: String = s"SepEndBy1($label)"
+    // $COVERAGE-ON$
     override def copy: SepEndBy1 = new SepEndBy1(label)
 }
 
@@ -218,6 +232,8 @@ private [internal] final class ManyUntil(var label: Int) extends JumpInstr with 
         // ManyUntil is a fallthrough handler, it must be visited during failure, but does nothing to the external state
         else { acc.clear(); ctx.fail() }
     }
+    // $COVERAGE-OFF$
     override def toString: String = s"ManyUntil($label)"
+    // $COVERAGE-ON$
     override def copy: ManyUntil = new ManyUntil(label)
 }

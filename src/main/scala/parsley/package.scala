@@ -6,6 +6,7 @@ import scala.language.implicitConversions
 
 package object parsley
 {
+    // $COVERAGE-OFF$
     // Public API
     /** This method is responsible for actually executing parsers. Given a `Parsley[A]` and an input
       * string, will parse the string with the parser. The result is either a `Success` or a `Failure`.
@@ -81,4 +82,5 @@ package object parsley
     @implicitAmbiguous("Must specify the type for get operation; S cannot be Nothing")
     implicit def neqAmbig1[A] : A =!= A = null
     implicit def neqAmbig2[A] : A =!= A = null
+    // $COVERAGE-ON$
 }
