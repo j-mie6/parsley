@@ -686,10 +686,8 @@ private [instructions] sealed trait TokenStringLike extends Instr {
             }
             else ctx.fail(expectedEos)
     }
-    final override def apply(ctx: Context): Unit =
-    {
-        if (ctx.moreInput && ctx.nextChar == '"')
-        {
+    final override def apply(ctx: Context): Unit = {
+        if (ctx.moreInput && ctx.nextChar == '"') {
             ctx.fastUncheckedConsumeChars(1)
             restOfString(ctx, new StringBuilder())
         }
@@ -697,8 +695,7 @@ private [instructions] sealed trait TokenStringLike extends Instr {
     }
 }
 
-private [internal] final class TokenRawString(_expected: UnsafeOption[String]) extends TokenStringLike
-{
+private [internal] final class TokenRawString(_expected: UnsafeOption[String]) extends TokenStringLike {
     override val expected = _expected
     override def handleEscaped(ctx: Context, builder: StringBuilder): Boolean = {
         builder += '\\'
@@ -718,51 +715,38 @@ private [internal] final class TokenRawString(_expected: UnsafeOption[String]) e
     // $COVERAGE-ON$
 }
 
-private [internal] final class TokenString(ws: TokenSet, _expected: UnsafeOption[String]) extends TokenEscape(_expected) with TokenStringLike
-{
+private [internal] final class TokenString(ws: TokenSet, _expected: UnsafeOption[String]) extends TokenEscape(_expected) with TokenStringLike {
     override val expected = _expected
-    val expectedEscape = if (_expected == null) "escape code" else _expected
-    val expectedGap = if (_expected == null) "end of string gap" else _expected
+    private val expectedEscape = if (_expected == null) "escape code" else _expected
+    private val expectedGap = if (_expected == null) "end of string gap" else _expected
 
     override def handleEscaped(ctx: Context, builder: StringBuilder): Boolean = {
         if (spaces(ctx) != 0)
         {
-            if (ctx.moreInput && ctx.nextChar == '\\')
-            {
-                ctx.fastUncheckedConsumeChars(1)
-                true
-            }
+            val completedGap = ctx.moreInput && ctx.nextChar == '\\'
+            if (completedGap) ctx.fastUncheckedConsumeChars(1)
+            else ctx.fail(expectedGap)
+            completedGap
+        }
+        else {
+            val isDeadChar = ctx.moreInput && ctx.nextChar == '&'
+            lazy val isEscapeChar = escape(ctx)
+            if (isDeadChar) ctx.fastUncheckedConsumeChars(1)
+            else if (isEscapeChar) builder += escapeChar
             else {
-                ctx.fail(expectedGap)
-                false
+                ctx.fail(expectedEscape)
+                if (badCode) ctx.raw ::= "invalid escape sequence"
             }
-        }
-        else if (ctx.moreInput && ctx.nextChar == '&')
-        {
-            ctx.fastUncheckedConsumeChars(1)
-            true
-        }
-        else if (escape(ctx)) {
-            builder += escapeChar
-            true
-        }
-        else
-        {
-            ctx.fail(expectedEscape)
-            if (badCode) ctx.raw ::= "invalid escape sequence"
-            false
+            isDeadChar || isEscapeChar
         }
     }
 
-    private def spaces(ctx: Context): Int =
-    {
-        var n = 0
-        while (ctx.moreInput && ws(ctx.nextChar))
-        {
+    @tailrec private def spaces(ctx: Context, n: Int = 0): Int = {
+        if (ctx.moreInput && ws(ctx.nextChar)) {
             ctx.consumeChar()
-            n += 1
+            spaces(ctx, n + 1)
         }
-        n
+        else n
     }
 
     // $COVERAGE-OFF$
@@ -772,14 +756,11 @@ private [internal] final class TokenString(ws: TokenSet, _expected: UnsafeOption
 }
 
 private [instructions] abstract class TokenLexi(name: String, illegalName: String)
-                                               (start: TokenSet, letter: TokenSet, illegal: String => Boolean, _expected: UnsafeOption[String]) extends Instr
-{
+                                               (start: TokenSet, letter: TokenSet, illegal: String => Boolean, _expected: UnsafeOption[String]) extends Instr {
     private val expected = if (_expected == null) name else _expected
 
-    final override def apply(ctx: Context): Unit =
-    {
-        if (ctx.moreInput && start(ctx.nextChar))
-        {
+    final override def apply(ctx: Context): Unit = {
+        if (ctx.moreInput && start(ctx.nextChar)) {
             val name = new StringBuilder()
             name += ctx.nextChar
             ctx.offset += 1
@@ -788,24 +769,19 @@ private [instructions] abstract class TokenLexi(name: String, illegalName: Strin
         else ctx.fail(expected)
     }
 
-    @tailrec private final def restOfToken(ctx: Context, tok: StringBuilder): Unit =
-    {
-        if (ctx.moreInput && letter(ctx.nextChar))
-        {
+    @tailrec private final def restOfToken(ctx: Context, tok: StringBuilder): Unit = {
+        if (ctx.moreInput && letter(ctx.nextChar)) {
             tok += ctx.nextChar
             ctx.offset += 1
             restOfToken(ctx, tok)
         }
-        else
-        {
+        else {
             val tokStr = tok.toString
-            if (illegal(tokStr))
-            {
+            if (illegal(tokStr)) {
                 ctx.offset -= tokStr.length
                 ctx.unexpectedFail(expected = expected, unexpected = s"$illegalName $tokStr")
             }
-            else
-            {
+            else {
                 ctx.col += tokStr.length
                 ctx.pushAndContinue(tokStr)
             }
@@ -826,35 +802,28 @@ private [internal] final class TokenUserOperator(start: TokenSet, letter: TokenS
 private [internal] final class TokenOperator(start: TokenSet, letter: TokenSet, reservedOps: Set[String], _expected: UnsafeOption[String])
     extends TokenLexi("operator", "non-reserved operator")(start, letter, reservedOps.andThen(!_), _expected)
 
-private [instructions] abstract class TokenSpecific(_specific: String, caseSensitive: Boolean, _expected: UnsafeOption[String]) extends Instr
-{
+private [instructions] abstract class TokenSpecific(_specific: String, caseSensitive: Boolean, _expected: UnsafeOption[String]) extends Instr {
     private final val expected = if (_expected == null) _specific else _expected
     protected final val expectedEnd = if (_expected == null) "end of " + _specific else _expected
     private final val specific = (if (caseSensitive) _specific else _specific.toLowerCase).toCharArray
     private final val strsz = specific.length
     protected def postprocess(ctx: Context, i: Int): Unit
-    final override def apply(ctx: Context): Unit =
-    {
-        val input = ctx.input
-        var i = ctx.offset
-        var j = 0
-        if (ctx.inputsz >= i + strsz)
-        {
-            while (j < strsz)
-            {
-                val c = if (caseSensitive) input(i) else input(i).toLower
-                if (c != specific(j))
-                {
-                    ctx.fail(expected)
-                    return
-                }
-                i += 1
-                j += 1
-            }
+
+    @tailrec final private def readSpecific(ctx: Context, i: Int, j: Int): Unit = {
+        if (j < strsz) {
+            val c = if (caseSensitive) ctx.input(i) else ctx.input(i).toLower
+            if (c != specific(j)) ctx.fail(expected)
+            else readSpecific(ctx, i + 1, j + 1)
+        }
+        else {
             ctx.saveState()
             ctx.fastUncheckedConsumeChars(strsz)
             postprocess(ctx, i)
         }
+    }
+
+    final override def apply(ctx: Context): Unit = {
+        if (ctx.inputsz >= ctx.offset + strsz) readSpecific(ctx, ctx.offset, 0)
         else ctx.fail(expected)
     }
 
@@ -885,32 +854,25 @@ private [internal] final class TokenOperator_(operator: String, letter: TokenSet
 
 // This can be combined into the above
 private [internal] class TokenMaxOp(operator: String, _ops: Set[String], expected: UnsafeOption[String])
-    extends TokenSpecific(operator, true, expected)
-{
+    extends TokenSpecific(operator, true, expected) {
     // TODO: We want a Trie backed map here, not whatever this is
     private val ops = for (op <- _ops.toList if op.length > operator.length && op.startsWith(operator)) yield op.substring(operator.length)
 
     override def postprocess(ctx: Context, _i: Int): Unit = {
         var i = _i
-        if (i < ctx.inputsz)
-        {
-            var ops = this.ops
-            while (ops.nonEmpty && i < ctx.inputsz)
-            {
-                val c = ctx.input(i)
-                ops = for (op <- ops if op.charAt(0) == c) yield
-                {
-                    val op_ = op.substring(1)
-                    if (op_.isEmpty)
-                    {
-                        ctx.fail(expectedEnd)
-                        ctx.restoreState()
-                        return
-                    }
-                    op_
+        var ops = this.ops
+        while (i < ctx.inputsz && ops.nonEmpty) {
+            val c = ctx.input(i)
+            ops = for (op <- ops if op.charAt(0) == c) yield {
+                val op_ = op.substring(1)
+                if (op_.isEmpty) {
+                    ctx.fail(expectedEnd)
+                    ctx.restoreState()
+                    return
                 }
-                i += 1
+                op_
             }
+            i += 1
         }
         ctx.states = ctx.states.tail
         ctx.pushAndContinue(())
