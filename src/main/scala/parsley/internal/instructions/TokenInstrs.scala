@@ -250,60 +250,60 @@ private [internal] final class TokenFloat(_expected: UnsafeOption[String]) exten
             val d = ctx.nextChar
             ctx.fastUncheckedConsumeChars(1)
             val builder = new StringBuilder()
-            if (decimal(ctx, builder += d, false) && ctx.moreInput) ctx.nextChar match {
-                case '.' => // fraction
+            if (decimal(ctx, builder += d, false) && ctx.moreInput) {
+                if (ctx.nextChar == '.') { // fraction
                     ctx.fastUncheckedConsumeChars(1)
-                    if (decimal(ctx, builder += '.')) {
-                        if (ctx.moreInput && (ctx.nextChar == 'e' || ctx.nextChar == 'E')) {
-                            ctx.fastUncheckedConsumeChars(1)
-                            if (exponent(ctx, builder += 'e')) {
-                                try ctx.pushAndContinue(builder.toString.toDouble)
-                                catch { case _: NumberFormatException => ctx.fail(expected) }
-                            }
-                            else ctx.fail(expected)
-                        }
-                        else {
-                            try ctx.pushAndContinue(builder.toString.toDouble)
-                            catch { case _: NumberFormatException => ctx.fail(expected) }
-                        }
-                    }
+                    if (decimal(ctx, builder += '.')) lexExponent(ctx, builder, missingOk = true)
                     else ctx.fail(expected)
-                case 'e' | 'E' => // exponent
-                    ctx.fastUncheckedConsumeChars(1)
-                    if (exponent(ctx, builder += 'e')) {
-                        try ctx.pushAndContinue(builder.toString.toDouble)
-                        catch { case _: NumberFormatException => ctx.fail(expected) }
-                    }
-                    else ctx.fail(expected)
-                case _ => ctx.fail(expected)
+                }
+                else lexExponent(ctx, builder, missingOk = false)
             }
             else ctx.fail(expected)
         }
         else ctx.fail(expected)
     }
 
-    @tailrec private def decimal(ctx: Context, x: StringBuilder, first: Boolean = true): Boolean = {
+    @tailrec private final def decimal(ctx: Context, builder: StringBuilder, first: Boolean = true): Boolean = {
         if (ctx.moreInput && ctx.nextChar >= '0' && ctx.nextChar <= '9') {
             val d = ctx.nextChar
             ctx.fastUncheckedConsumeChars(1)
-            decimal(ctx, x += d, false)
+            decimal(ctx, builder += d, false)
         }
         else !first
     }
 
-    private def exponent(ctx: Context, x: StringBuilder): Boolean = {
+    private final def exponent(ctx: Context, builder: StringBuilder): Boolean = {
         if (ctx.moreInput) {
             ctx.nextChar match {
                 case '+' =>
                     ctx.fastUncheckedConsumeChars(1)
-                    decimal(ctx, x)
+                    decimal(ctx, builder)
                 case '-' =>
                     ctx.fastUncheckedConsumeChars(1)
-                    decimal(ctx, x += '-')
-                case _ => decimal(ctx, x)
+                    decimal(ctx, builder += '-')
+                case _ => decimal(ctx, builder)
             }
         }
         else false
+    }
+
+    private final def attemptCastAndContinue(ctx: Context, builder: StringBuilder): Unit = {
+        try ctx.pushAndContinue(builder.toString.toDouble)
+        catch {
+            case _: NumberFormatException => ctx.fail(expected)
+        }
+    }
+
+    private final def lexExponent(ctx: Context, builder: StringBuilder, missingOk: Boolean): Unit = {
+        if (ctx.moreInput && (ctx.nextChar == 'e' || ctx.nextChar == 'E')) {
+            ctx.fastUncheckedConsumeChars(1)
+            if (exponent(ctx, builder += 'e')) {
+                attemptCastAndContinue(ctx, builder)
+            }
+            else ctx.fail(expected)
+        }
+        else if (missingOk) attemptCastAndContinue(ctx, builder)
+        else ctx.fail(expected)
     }
 
     // $COVERAGE-OFF$
