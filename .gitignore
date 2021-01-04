@@ -8,6 +8,6 @@ target/
 .cache-main
 .classpath
 .project
+.jvmopts
 *.class
 *.log
-parsley*.jar

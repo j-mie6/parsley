@@ -27,7 +27,12 @@ private [deepembedding] sealed abstract class ScopedUnary[A, B](_p: =>Parsley[A]
 private [parsley] final class Attempt[A](_p: =>Parsley[A]) extends ScopedUnary[A, A](_p, "attempt", _ => Attempt.empty, instructions.Attempt)
 private [parsley] final class Look[A](_p: =>Parsley[A]) extends ScopedUnary[A, A](_p, "lookAhead", _ => Look.empty, instructions.Look)
 private [parsley] final class NotFollowedBy[A](_p: =>Parsley[A], val expected: UnsafeOption[String] = null)
-    extends ScopedUnary[A, Unit](_p, "notFollowedBy", NotFollowedBy.empty, new instructions.NotFollowedBy(expected))
+    extends ScopedUnary[A, Unit](_p, "notFollowedBy", NotFollowedBy.empty, new instructions.NotFollowedBy(expected)) {
+    override def optimise: Parsley[Unit] = p match {
+        case z: MZero => new Pure(())
+        case _ => this
+    }
+}
 
 private [parsley] final class Fail(private [Fail] val msg: String, val expected: UnsafeOption[String] = null)
     extends SingletonExpect[Nothing](s"fail($msg)", new Fail(msg, _), new instructions.Fail(msg, expected)) with MZero

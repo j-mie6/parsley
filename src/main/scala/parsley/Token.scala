@@ -46,7 +46,9 @@ final case class LanguageDef(commentStart: String,
                              keywords: Set[String],
                              operators: Set[String],
                              caseSensitive: Boolean,
-                             space: Impl)
+                             space: Impl) {
+    private [parsley] val supportsComments = commentStart.nonEmpty || commentEnd.nonEmpty || commentLine.nonEmpty
+}
 object LanguageDef
 {
     val plain = LanguageDef("", "", "", false, NotRequired, NotRequired, NotRequired, NotRequired, Set.empty, Set.empty, true, NotRequired)
@@ -213,6 +215,7 @@ final class TokenParser(lang: LanguageDef)
     {
         case BitSetImpl(ws) => new Parsley(new deepembedding.StringLiteral(ws))
         case Predicate(ws) => new Parsley(new deepembedding.StringLiteral(ws))
+        case NotRequired => new Parsley(new deepembedding.StringLiteral(_ => false))
         case _ => between('"' ? "string", '"' ? "end of string", many(stringChar)) <#> (_.flatten.mkString)
     }
 
@@ -340,14 +343,18 @@ final class TokenParser(lang: LanguageDef)
             new Parsley(new deepembedding.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
         case Predicate(ws) =>
             new Parsley(new deepembedding.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
-        case Parser(space_) =>
+        case Parser(space_) if lang.supportsComments =>
             skipMany(new Parsley(new deepembedding.Comment(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments)) <\> space_)
+        case Parser(space_) => skipMany(space_)
         case NotRequired => skipComments
     }
 
     /**Parses any comments and skips them, this includes both line comments and block comments.*/
     lazy val skipComments: Parsley[Unit] = {
-        new Parsley(new deepembedding.SkipComments(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
+        if (!lang.supportsComments) unit
+        else {
+            new Parsley(new deepembedding.SkipComments(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
+        }
     }
 
     private def enclosing[A](p: =>Parsley[A], open: Char, close: Char, singular: String, plural: String) =
