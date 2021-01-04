@@ -326,13 +326,62 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
         case TokenEscape.NoParse => ctx.fail(expected)
     }
 
-    private final def consumeAndReturn(ctx: Context, n: Int, c: Char): TokenEscape.Escape = {
+    private final def consumeAndReturn(ctx: Context, n: Int, c: Char) = {
         ctx.fastUncheckedConsumeChars(n)
         new TokenEscape.EscapeChar(c)
     }
 
     private final def lookAhead(ctx: Context, n: Int): Char = ctx.input(ctx.offset + n)
     private final def lookAhead(ctx: Context, n: Int, c: Char): Boolean = ctx.offset + n < ctx.inputsz && lookAhead(ctx, n) == c
+
+    private final def decimalEscape(ctx: Context, d: Int) = {
+        ctx.fastUncheckedConsumeChars(1)
+        val escapeCode = decimal(ctx, d)
+        if (escapeCode <= 0x10FFFF) new TokenEscape.EscapeChar(escapeCode.toChar)
+        else TokenEscape.BadCode
+    }
+
+    private final def hexadecimalEscape(ctx: Context) = {
+        ctx.fastUncheckedConsumeChars(1)
+        if (ctx.moreInput) {
+            ctx.nextChar match {
+                case d@( '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
+                        | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
+                        | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
+                    ctx.fastUncheckedConsumeChars(1)
+                    val escapeCode = hexadecimal(ctx, d.asDigit)
+                    if (escapeCode <= 0x10FFFF) new TokenEscape.EscapeChar(escapeCode.toChar)
+                    else TokenEscape.BadCode
+                case _ => TokenEscape.NoParse
+            }
+        }
+        else TokenEscape.NoParse
+    }
+
+    private final def octalEscape(ctx: Context) = {
+        ctx.fastUncheckedConsumeChars(1)
+        if (ctx.moreInput) {
+            val d = ctx.nextChar.asDigit
+            if (d >= 0 && d <= 7) {
+                ctx.fastUncheckedConsumeChars(1)
+                val escapeCode = octal(ctx, d)
+                if (escapeCode <= 0x10FFFF) new TokenEscape.EscapeChar(escapeCode.toChar)
+                else TokenEscape.BadCode
+            }
+            else TokenEscape.NoParse
+        }
+        else TokenEscape.NoParse
+    }
+
+    private final def caretEscape(ctx: Context) = {
+        ctx.fastUncheckedConsumeChars(1)
+        if (ctx.moreInput) {
+            val c = ctx.nextChar
+            if (c >= 'A' && c <= 'Z') consumeAndReturn(ctx, 1, (c - 'A' + 1).toChar)
+            else TokenEscape.NoParse
+        }
+        else TokenEscape.NoParse
+    }
 
     protected final def escape(ctx: Context): TokenEscape.Escape = {
         val threeAvailable = ctx.offset + 2 < ctx.inputsz
@@ -348,47 +397,10 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
                 case '\\' => consumeAndReturn(ctx, 1, '\\')
                 case '\"' => consumeAndReturn(ctx, 1, '\"')
                 case '\'' => consumeAndReturn(ctx, 1, '\'')
-                case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9') =>
-                    ctx.fastUncheckedConsumeChars(1)
-                    val escapeCode = decimal(ctx, d.asDigit)
-                    if (escapeCode <= 0x10FFFF) new TokenEscape.EscapeChar(escapeCode.toChar)
-                    else TokenEscape.BadCode
-                case 'x' =>
-                    ctx.fastUncheckedConsumeChars(1)
-                    if (ctx.moreInput) {
-                        ctx.nextChar match {
-                            case d@( '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
-                                   | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
-                                   | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
-                                ctx.fastUncheckedConsumeChars(1)
-                                val escapeCode = hexadecimal(ctx, d.asDigit)
-                                if (escapeCode <= 0x10FFFF) new TokenEscape.EscapeChar(escapeCode.toChar)
-                                else TokenEscape.BadCode
-                            case _ => TokenEscape.NoParse
-                        }
-                    }
-                    else TokenEscape.NoParse
-                case 'o' =>
-                    ctx.fastUncheckedConsumeChars(1)
-                    if (ctx.moreInput) {
-                        val d = ctx.nextChar
-                        if (d >= '0' && d <= '7') {
-                            ctx.fastUncheckedConsumeChars(1)
-                            val escapeCode = octal(ctx, d.asDigit)
-                            if (escapeCode <= 0x10FFFF) new TokenEscape.EscapeChar(escapeCode.toChar)
-                            else TokenEscape.BadCode
-                        }
-                        else TokenEscape.NoParse
-                    }
-                    else TokenEscape.NoParse
-                case '^' =>
-                    ctx.fastUncheckedConsumeChars(1)
-                    if (ctx.moreInput) {
-                        val c = ctx.nextChar
-                        if (c >= 'A' && c <= 'Z') consumeAndReturn(ctx, 1, (c - 'A' + 1).toChar)
-                        else TokenEscape.NoParse
-                    }
-                    else TokenEscape.NoParse
+                case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9') => decimalEscape(ctx, d.asDigit)
+                case 'x' => hexadecimalEscape(ctx)
+                case 'o' => octalEscape(ctx)
+                case '^' => caretEscape(ctx)
                 case 'A' if threeAvailable && lookAhead(ctx, 1) == 'C' && lookAhead(ctx, 2) == 'K' => consumeAndReturn(ctx, 3, '\u0006') //ACK
                 case 'B' => //BS BEL
                     if (lookAhead(ctx, 1, 'S')) consumeAndReturn(ctx, 2, '\u0008')
