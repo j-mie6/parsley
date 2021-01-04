@@ -343,43 +343,31 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
 
     private final def hexadecimalEscape(ctx: Context) = {
         ctx.fastUncheckedConsumeChars(1)
-        if (ctx.moreInput) {
-            ctx.nextChar match {
-                case d@( '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
-                        | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
-                        | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
-                    ctx.fastUncheckedConsumeChars(1)
-                    val escapeCode = hexadecimal(ctx, d.asDigit)
-                    if (escapeCode <= 0x10FFFF) new TokenEscape.EscapeChar(escapeCode.toChar)
-                    else TokenEscape.BadCode
-                case _ => TokenEscape.NoParse
-            }
+        if (ctx.moreInput && (ctx.nextChar.isDigit || (ctx.nextChar.toLower >= 'a' && ctx.nextChar.toLower <= 'f'))) {
+            val d = ctx.nextChar.asDigit
+            ctx.fastUncheckedConsumeChars(1)
+            val escapeCode = hexadecimal(ctx, d)
+            if (escapeCode <= 0x10FFFF) new TokenEscape.EscapeChar(escapeCode.toChar)
+            else TokenEscape.BadCode
         }
         else TokenEscape.NoParse
     }
 
     private final def octalEscape(ctx: Context) = {
         ctx.fastUncheckedConsumeChars(1)
-        if (ctx.moreInput) {
+        if (ctx.moreInput && ctx.nextChar >= '0' && ctx.nextChar <= '7') {
             val d = ctx.nextChar.asDigit
-            if (d >= 0 && d <= 7) {
-                ctx.fastUncheckedConsumeChars(1)
-                val escapeCode = octal(ctx, d)
-                if (escapeCode <= 0x10FFFF) new TokenEscape.EscapeChar(escapeCode.toChar)
-                else TokenEscape.BadCode
-            }
-            else TokenEscape.NoParse
+            ctx.fastUncheckedConsumeChars(1)
+            val escapeCode = octal(ctx, d)
+            if (escapeCode <= 0x10FFFF) new TokenEscape.EscapeChar(escapeCode.toChar)
+            else TokenEscape.BadCode
         }
         else TokenEscape.NoParse
     }
 
     private final def caretEscape(ctx: Context) = {
         ctx.fastUncheckedConsumeChars(1)
-        if (ctx.moreInput) {
-            val c = ctx.nextChar
-            if (c >= 'A' && c <= 'Z') consumeAndReturn(ctx, 1, (c - 'A' + 1).toChar)
-            else TokenEscape.NoParse
-        }
+        if (ctx.moreInput && ctx.nextChar >= 'A' && ctx.nextChar <= 'Z') consumeAndReturn(ctx, 1, (ctx.nextChar - 'A' + 1).toChar)
         else TokenEscape.NoParse
     }
 
