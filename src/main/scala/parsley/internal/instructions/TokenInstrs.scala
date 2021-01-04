@@ -709,10 +709,8 @@ private [instructions] abstract class TokenSpecific(_specific: String, caseSensi
     }
 
     @tailrec final private def readSpecific(ctx: Context, i: Int, j: Int): Unit = {
-        if (j < strsz) {
-            if (readCharCaseHandled(ctx, i) != specific(j)) ctx.fail(expected)
-            else readSpecific(ctx, i + 1, j + 1)
-        }
+        if (j < strsz && readCharCaseHandled(ctx, i) == specific(j)) readSpecific(ctx, i + 1, j + 1)
+        else if (j < strsz) ctx.fail(expected)
         else {
             ctx.saveState()
             ctx.fastUncheckedConsumeChars(strsz)
