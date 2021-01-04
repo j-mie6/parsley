@@ -331,9 +331,13 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
         new TokenEscape.EscapeChar(c)
     }
 
+    private final def lookAhead(ctx: Context, n: Int): Char = ctx.input(ctx.offset + n)
+    private final def lookAhead(ctx: Context, n: Int, c: Char): Boolean = ctx.offset + n < ctx.inputsz && lookAhead(ctx, n) == c
+
     protected final def escape(ctx: Context): TokenEscape.Escape = {
+        val threeAvailable = ctx.offset + 2 < ctx.inputsz
         if (ctx.moreInput) {
-            (ctx.nextChar: @switch) match {
+            ctx.nextChar match {
                 case 'a' => consumeAndReturn(ctx, 1, '\u0007')
                 case 'b' => consumeAndReturn(ctx, 1, '\b')
                 case 'f' => consumeAndReturn(ctx, 1, '\u000c')
@@ -352,10 +356,10 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
                 case 'x' =>
                     ctx.fastUncheckedConsumeChars(1)
                     if (ctx.moreInput) {
-                        (ctx.nextChar: @switch) match {
-                            case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
-                                    | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
-                                    | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
+                        ctx.nextChar match {
+                            case d@( '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
+                                   | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
+                                   | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
                                 ctx.fastUncheckedConsumeChars(1)
                                 val escapeCode = hexadecimal(ctx, d.asDigit)
                                 if (escapeCode <= 0x10FFFF) new TokenEscape.EscapeChar(escapeCode.toChar)
@@ -385,86 +389,67 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
                         else TokenEscape.NoParse
                     }
                     else TokenEscape.NoParse
-                case 'A' => //ACK
-                    if (ctx.offset + 2 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'C' && ctx.input(ctx.offset + 2) == 'K') consumeAndReturn(ctx, 3, '\u0006')
-                    else TokenEscape.NoParse
+                case 'A' if threeAvailable && lookAhead(ctx, 1) == 'C' && lookAhead(ctx, 2) == 'K' => consumeAndReturn(ctx, 3, '\u0006') //ACK
                 case 'B' => //BS BEL
-                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'S') consumeAndReturn(ctx, 2, '\u0008')
-                    else if (ctx.offset + 2 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'E' && ctx.input(ctx.offset + 2) == 'L') {
+                    if (lookAhead(ctx, 1, 'S')) consumeAndReturn(ctx, 2, '\u0008')
+                    else if (lookAhead(ctx, 2, 'L') && lookAhead(ctx, 1) == 'E') {
                         consumeAndReturn(ctx, 3, '\u0007')
                     }
                     else TokenEscape.NoParse
                 case 'C' => //CR CAN
-                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'R') consumeAndReturn(ctx, 2, '\u000d')
-                    else if (ctx.offset + 2 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'A' && ctx.input(ctx.offset + 2) == 'N') {
-                        consumeAndReturn(ctx, 3, '\u0018')
-                    }
+                    if (lookAhead(ctx, 1, 'R')) consumeAndReturn(ctx, 2, '\u000d')
+                    else if (lookAhead(ctx, 2, 'N') && lookAhead(ctx, 1) == 'A') consumeAndReturn(ctx, 3, '\u0018')
                     else TokenEscape.NoParse
-                case 'D' => //DC1 DC2 DC3 DC4 DEL DLE
-                    if (ctx.offset + 2 < ctx.inputsz) ctx.input(ctx.offset + 1) match {
-                        case 'C' => (ctx.input(ctx.offset + 2): @switch) match {
-                            case '1' => consumeAndReturn(ctx, 3, '\u0011')
-                            case '2' => consumeAndReturn(ctx, 3, '\u0012')
-                            case '3' => consumeAndReturn(ctx, 3, '\u0013')
-                            case '4' => consumeAndReturn(ctx, 3, '\u0014')
-                            case _ => TokenEscape.NoParse
-                        }
-                        case 'E' if ctx.input(ctx.offset + 2) == 'L' => consumeAndReturn(ctx, 3, '\u001f')
-                        case 'L' if ctx.input(ctx.offset + 2) == 'E' => consumeAndReturn(ctx, 3, '\u0010')
+                case 'D' if threeAvailable => //DC1 DC2 DC3 DC4 DEL DLE
+                    val c = lookAhead(ctx, 2)
+                    lookAhead(ctx, 1) match {
+                        case 'C' if c == '1' => consumeAndReturn(ctx, 3, '\u0011')
+                        case 'C' if c == '2' => consumeAndReturn(ctx, 3, '\u0012')
+                        case 'C' if c == '3' => consumeAndReturn(ctx, 3, '\u0013')
+                        case 'C' if c == '4' => consumeAndReturn(ctx, 3, '\u0014')
+                        case 'E' if c == 'L' => consumeAndReturn(ctx, 3, '\u001f')
+                        case 'L' if c == 'E' => consumeAndReturn(ctx, 3, '\u0010')
                         case _ => TokenEscape.NoParse
                     }
-                    else TokenEscape.NoParse
                 case 'E' => //EM ETX ETB ESC EOT ENQ
-                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'M') consumeAndReturn(ctx, 2, '\u0019')
-                    else if (ctx.offset + 2 < ctx.inputsz) ctx.input(ctx.offset + 1) match {
-                        case 'N' if ctx.input(ctx.offset + 2) == 'Q' => consumeAndReturn(ctx, 3, '\u0005')
-                        case 'O' if ctx.input(ctx.offset + 2) == 'T' => consumeAndReturn(ctx, 3, '\u0004')
-                        case 'S' if ctx.input(ctx.offset + 2) == 'C' => consumeAndReturn(ctx, 3, '\u001b')
-                        case 'T' if ctx.input(ctx.offset + 2) == 'X' => consumeAndReturn(ctx, 3, '\u0003')
-                        case 'T' if ctx.input(ctx.offset + 2) == 'B' => consumeAndReturn(ctx, 3, '\u0017')
+                    if (lookAhead(ctx, 1, 'M')) consumeAndReturn(ctx, 2, '\u0019')
+                    else if (threeAvailable) lookAhead(ctx, 1) match {
+                        case 'N' if lookAhead(ctx, 2) == 'Q' => consumeAndReturn(ctx, 3, '\u0005')
+                        case 'O' if lookAhead(ctx, 2) == 'T' => consumeAndReturn(ctx, 3, '\u0004')
+                        case 'S' if lookAhead(ctx, 2) == 'C' => consumeAndReturn(ctx, 3, '\u001b')
+                        case 'T' if lookAhead(ctx, 2) == 'X' => consumeAndReturn(ctx, 3, '\u0003')
+                        case 'T' if lookAhead(ctx, 2) == 'B' => consumeAndReturn(ctx, 3, '\u0017')
                         case _ => TokenEscape.NoParse
                     }
                     else TokenEscape.NoParse
                 case 'F' => //FF FS
-                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'F') consumeAndReturn(ctx, 2, '\u000c')
-                    else if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'S') consumeAndReturn(ctx, 2, '\u001c')
+                    if (lookAhead(ctx, 1, 'F')) consumeAndReturn(ctx, 2, '\u000c')
+                    else if (lookAhead(ctx, 1, 'S')) consumeAndReturn(ctx, 2, '\u001c')
                     else TokenEscape.NoParse
-                case 'G' => //GS
-                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'S') consumeAndReturn(ctx, 2, '\u001d')
-                    else TokenEscape.NoParse
-                case 'H' => //HT
-                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'T') consumeAndReturn(ctx, 2, '\u0009')
-                    else TokenEscape.NoParse
-                case 'L' => //LF
-                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'F') consumeAndReturn(ctx, 2, '\n')
-                    else TokenEscape.NoParse
+                case 'G' if lookAhead(ctx, 1, 'S') => consumeAndReturn(ctx, 2, '\u001d') //GS
+                case 'H' if lookAhead(ctx, 1, 'T') => consumeAndReturn(ctx, 2, '\u0009') //HT
+                case 'L' if lookAhead(ctx, 1, 'F') => consumeAndReturn(ctx, 2, '\n')     //LF
                 case 'N' => //NUL NAK
-                    if (ctx.offset + 2 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'U' && ctx.input(ctx.offset + 2) == 'L') consumeAndReturn(ctx, 3, '\u0000')
-                    else if (ctx.offset + 2 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'A' && ctx.input(ctx.offset + 2) == 'K') {
+                    if (threeAvailable && lookAhead(ctx, 1) == 'U' && lookAhead(ctx, 2) == 'L') consumeAndReturn(ctx, 3, '\u0000')
+                    else if (threeAvailable && lookAhead(ctx, 1) == 'A' && lookAhead(ctx, 2) == 'K') {
                         consumeAndReturn(ctx, 3, '\u0015')
                     }
                     else TokenEscape.NoParse
-                case 'R' => //RS
-                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'S') consumeAndReturn(ctx, 2, '\u001e')
-                    else TokenEscape.NoParse
+                case 'R' if lookAhead(ctx, 1, 'S') => consumeAndReturn(ctx, 2, '\u001e') //RS
                 case 'S' => //SO SI SP SOH STX SYN SUB
-                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'O')      consumeAndReturn(ctx, 2, '\u000e')
-                    else if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'I') consumeAndReturn(ctx, 2, '\u000f')
-                    else if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'P') consumeAndReturn(ctx, 2, '\u0020')
-                    else if (ctx.offset + 2 < ctx.inputsz) ctx.input(ctx.offset + 1) match {
-                        case 'O' if ctx.input(ctx.offset + 2) == 'H' => consumeAndReturn(ctx, 3, '\u0001')
-                        case 'T' if ctx.input(ctx.offset + 2) == 'X' => consumeAndReturn(ctx, 3, '\u0002')
-                        case 'Y' if ctx.input(ctx.offset + 2) == 'N' => consumeAndReturn(ctx, 3, '\u0016')
-                        case 'U' if ctx.input(ctx.offset + 2) == 'B' => consumeAndReturn(ctx, 3, '\u001a')
+                    if (lookAhead(ctx, 1, 'O')) consumeAndReturn(ctx, 2, '\u000e')
+                    else if (lookAhead(ctx, 1, 'I')) consumeAndReturn(ctx, 2, '\u000f')
+                    else if (lookAhead(ctx, 1, 'P')) consumeAndReturn(ctx, 2, '\u0020')
+                    else if (threeAvailable) lookAhead(ctx, 1) match {
+                        case 'O' if lookAhead(ctx, 2) == 'H' => consumeAndReturn(ctx, 3, '\u0001')
+                        case 'T' if lookAhead(ctx, 2) == 'X' => consumeAndReturn(ctx, 3, '\u0002')
+                        case 'Y' if lookAhead(ctx, 2) == 'N' => consumeAndReturn(ctx, 3, '\u0016')
+                        case 'U' if lookAhead(ctx, 2) == 'B' => consumeAndReturn(ctx, 3, '\u001a')
                         case _ => TokenEscape.NoParse
                     }
                     else TokenEscape.NoParse
-                case 'U' => //US
-                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'S') consumeAndReturn(ctx, 2, '\u001f')
-                    else TokenEscape.NoParse
-                case 'V' => //VT
-                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'T') consumeAndReturn(ctx, 2, '\u000b')
-                    else TokenEscape.NoParse
+                case 'U' if lookAhead(ctx, 1, 'S') => consumeAndReturn(ctx, 2, '\u001f') //US
+                case 'V' if lookAhead(ctx, 1, 'T') => consumeAndReturn(ctx, 2, '\u000b') //VT
                 case _ => TokenEscape.NoParse
             }
         }
