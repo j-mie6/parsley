@@ -201,43 +201,36 @@ private [instructions] sealed trait NumericReader {
 private [internal] final class TokenNatural(_expected: UnsafeOption[String]) extends Instr with NumericReader {
     val expected = if (_expected == null) "natural" else _expected
     override def apply(ctx: Context): Unit = {
-        if (ctx.moreInput) (ctx.nextChar: @switch) match {
+        if (ctx.moreInput) ctx.nextChar match {
             case '0' =>
                 ctx.fastUncheckedConsumeChars(1)
                 if (!ctx.moreInput) ctx.pushAndContinue(0)
-                else {
-                    (ctx.nextChar: @switch) match {
-                        case 'x' | 'X' =>
+                else ctx.nextChar match {
+                    case 'x' | 'X' =>
+                        ctx.fastUncheckedConsumeChars(1)
+                        if (ctx.moreInput) ctx.nextChar match {
+                            case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
+                                    | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
+                                    | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
+                                ctx.fastUncheckedConsumeChars(1)
+                                ctx.pushAndContinue(hexadecimal(ctx, d.asDigit))
+                            case _ => ctx.fail(expected)
+                        }
+                        else ctx.fail(expected)
+                    case 'o' | 'O' =>
+                        ctx.fastUncheckedConsumeChars(1)
+                        if (ctx.moreInput && ctx.nextChar >= '0' && ctx.nextChar <= '7') {
+                            val d = ctx.nextChar
                             ctx.fastUncheckedConsumeChars(1)
-                            if (ctx.moreInput) {
-                                (ctx.nextChar: @switch) match {
-                                    case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
-                                            | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
-                                            | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
-                                        ctx.fastUncheckedConsumeChars(1)
-                                        ctx.pushAndContinue(hexadecimal(ctx, d.asDigit))
-                                    case _ => ctx.fail(expected)
-                                }
-                            }
-                            else ctx.fail(expected)
-                        case 'o' | 'O' =>
-                            ctx.fastUncheckedConsumeChars(1)
-                            if (ctx.moreInput) {
-                                val d = ctx.nextChar
-                                if (d >= '0' && d <= '7') {
-                                    ctx.fastUncheckedConsumeChars(1)
-                                    ctx.pushAndContinue(octal(ctx, d.asDigit))
-                                }
-                                else ctx.fail(expected)
-                            }
-                            else ctx.fail(expected)
-                        case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9') =>
-                            ctx.fastUncheckedConsumeChars(1)
-                            ctx.pushAndContinue(decimal(ctx, d.asDigit))
-                        case _ => ctx.pushAndContinue(0)
-                    }
+                            ctx.pushAndContinue(octal(ctx, d.asDigit))
+                        }
+                        else ctx.fail(expected)
+                    case d if d.isDigit =>
+                        ctx.fastUncheckedConsumeChars(1)
+                        ctx.pushAndContinue(decimal(ctx, d.asDigit))
+                    case _ => ctx.pushAndContinue(0)
                 }
-            case d@('1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9') =>
+            case d if d.isDigit =>
                 ctx.fastUncheckedConsumeChars(1)
                 ctx.pushAndContinue(decimal(ctx, d.asDigit))
             case _ => ctx.fail(expected)
@@ -253,49 +246,49 @@ private [internal] final class TokenNatural(_expected: UnsafeOption[String]) ext
 private [internal] final class TokenFloat(_expected: UnsafeOption[String]) extends Instr {
     val expected = if (_expected == null) "unsigned float" else _expected
     override def apply(ctx: Context): Unit = {
-        var failed = false
-        if (ctx.moreInput) (ctx.nextChar: @switch) match {
-            case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9') =>
-                ctx.fastUncheckedConsumeChars(1)
-                val builder = new StringBuilder()
-                failed = decimal(ctx, builder += d, false)
-                if (ctx.moreInput) (ctx.nextChar: @switch) match {
-                    case '.' => // fraction
-                        ctx.fastUncheckedConsumeChars(1)
-                        failed = decimal(ctx, builder += '.')
-                        if (!failed) {
-                            if (ctx.moreInput && (ctx.nextChar == 'e' || ctx.nextChar == 'E')) {
-                                ctx.fastUncheckedConsumeChars(1)
-                                failed = exponent(ctx, builder += 'e')
+        if (ctx.moreInput && ctx.nextChar.isDigit) {
+            val d = ctx.nextChar
+            ctx.fastUncheckedConsumeChars(1)
+            val builder = new StringBuilder()
+            if (decimal(ctx, builder += d, false) && ctx.moreInput) ctx.nextChar match {
+                case '.' => // fraction
+                    ctx.fastUncheckedConsumeChars(1)
+                    if (decimal(ctx, builder += '.')) {
+                        if (ctx.moreInput && (ctx.nextChar == 'e' || ctx.nextChar == 'E')) {
+                            ctx.fastUncheckedConsumeChars(1)
+                            if (exponent(ctx, builder += 'e')) {
+                                try ctx.pushAndContinue(builder.toString.toDouble)
+                                catch { case _: NumberFormatException => ctx.fail(expected) }
                             }
-                            if (!failed) try ctx.stack.push(builder.toString.toDouble)
-                            catch { case _: NumberFormatException => failed = true }
+                            else ctx.fail(expected)
                         }
-                    case 'e' | 'E' => // exponent
-                        ctx.fastUncheckedConsumeChars(1)
-                        failed = exponent(ctx, builder += 'e')
-                        if (!failed) try ctx.stack.push(builder.toString.toDouble)
+                        else {
+                            try ctx.pushAndContinue(builder.toString.toDouble)
+                            catch { case _: NumberFormatException => ctx.fail(expected) }
+                        }
+                    }
+                    else ctx.fail(expected)
+                case 'e' | 'E' => // exponent
+                    ctx.fastUncheckedConsumeChars(1)
+                    if (exponent(ctx, builder += 'e')) {
+                        try ctx.pushAndContinue(builder.toString.toDouble)
                         catch { case _: NumberFormatException => ctx.fail(expected) }
-                    case _ => failed = true
-                }
-                else failed = true
-            case _ => failed = true
+                    }
+                    else ctx.fail(expected)
+                case _ => ctx.fail(expected)
+            }
+            else ctx.fail(expected)
         }
-        else failed = true
-        if (failed) ctx.fail(expected)
-        else ctx.inc()
+        else ctx.fail(expected)
     }
 
     @tailrec private def decimal(ctx: Context, x: StringBuilder, first: Boolean = true): Boolean = {
-        if (ctx.moreInput) {
+        if (ctx.moreInput && ctx.nextChar >= '0' && ctx.nextChar <= '9') {
             val d = ctx.nextChar
-            if (d >= '0' && d <= '9') {
-                ctx.fastUncheckedConsumeChars(1)
-                decimal(ctx, x += d, false)
-            }
-            else first
+            ctx.fastUncheckedConsumeChars(1)
+            decimal(ctx, x += d, false)
         }
-        else first
+        else !first
     }
 
     private def exponent(ctx: Context, x: StringBuilder): Boolean = {
@@ -310,7 +303,7 @@ private [internal] final class TokenFloat(_expected: UnsafeOption[String]) exten
                 case _ => decimal(ctx, x)
             }
         }
-        else true
+        else false
     }
 
     // $COVERAGE-OFF$
