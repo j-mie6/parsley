@@ -334,37 +334,25 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
     private final def lookAhead(ctx: Context, n: Int): Char = ctx.input(ctx.offset + n)
     private final def lookAhead(ctx: Context, n: Int, c: Char): Boolean = ctx.offset + n < ctx.inputsz && lookAhead(ctx, n) == c
 
-    private final def decimalEscape(ctx: Context, d: Int) = {
+    private final def numericEscape(ctx: Context, code: =>Int) = {
         ctx.fastUncheckedConsumeChars(1)
-        val escapeCode = decimal(ctx, d)
+        val escapeCode = code
         if (escapeCode <= 0x10FFFF) new TokenEscape.EscapeChar(escapeCode.toChar)
         else TokenEscape.BadCode
     }
 
-    private final def hexadecimalEscape(ctx: Context) = {
+    private final def nonDecimalNumericEscape(ctx: Context, lexer: (Context, Int) => Int, validDigit: Char => Boolean) = {
         ctx.fastUncheckedConsumeChars(1)
-        if (ctx.moreInput && (ctx.nextChar.isDigit || (ctx.nextChar.toLower >= 'a' && ctx.nextChar.toLower <= 'f'))) {
+        if (ctx.moreInput && validDigit(ctx.nextChar)) {
             val d = ctx.nextChar.asDigit
-            ctx.fastUncheckedConsumeChars(1)
-            val escapeCode = hexadecimal(ctx, d)
-            if (escapeCode <= 0x10FFFF) new TokenEscape.EscapeChar(escapeCode.toChar)
-            else TokenEscape.BadCode
+            numericEscape(ctx, lexer(ctx, d))
         }
         else TokenEscape.NoParse
     }
 
-    private final def octalEscape(ctx: Context) = {
-        ctx.fastUncheckedConsumeChars(1)
-        if (ctx.moreInput && ctx.nextChar >= '0' && ctx.nextChar <= '7') {
-            val d = ctx.nextChar.asDigit
-            ctx.fastUncheckedConsumeChars(1)
-            val escapeCode = octal(ctx, d)
-            if (escapeCode <= 0x10FFFF) new TokenEscape.EscapeChar(escapeCode.toChar)
-            else TokenEscape.BadCode
-        }
-        else TokenEscape.NoParse
-    }
-
+    private final def decimalEscape(ctx: Context, d: Int) = numericEscape(ctx, decimal(ctx, d))
+    private final def hexadecimalEscape(ctx: Context) = nonDecimalNumericEscape(ctx, hexadecimal, c => c.isDigit || (c.toLower >= 'a' && c.toLower <= 'f'))
+    private final def octalEscape(ctx: Context) = nonDecimalNumericEscape(ctx, octal, c => c >= '0' && c <= '7')
     private final def caretEscape(ctx: Context) = {
         ctx.fastUncheckedConsumeChars(1)
         if (ctx.moreInput && ctx.nextChar >= 'A' && ctx.nextChar <= 'Z') consumeAndReturn(ctx, 1, (ctx.nextChar - 'A' + 1).toChar)
