@@ -318,16 +318,8 @@ private [internal] final class TokenFloat(_expected: UnsafeOption[String]) exten
     // $COVERAGE-ON$
 }
 
-object TokenEscape {
-    private [instructions] sealed trait Escape
-    private [instructions] case class EscapeChar(escapeChar: Char) extends Escape
-    private [instructions] case object BadCode extends Escape
-    private [instructions] case object NoParse extends Escape
-}
-private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends Instr with Stateful with NumericReader {
+private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends Instr with NumericReader {
     private [this] final val expected = if (_expected == null) "escape code" else _expected
-    protected var escapeChar: Char = _
-    protected var badCode: Boolean = _
     override def apply(ctx: Context): Unit = escape(ctx) match {
         case TokenEscape.EscapeChar(escapeChar) =>ctx.pushAndContinue(escapeChar)
         case TokenEscape.BadCode => ctx.failWithMessage(expected, msg = "invalid escape sequence")
@@ -551,7 +543,12 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
     // $COVERAGE-OFF$
     override def toString: String = "TokenEscape"
     // $COVERAGE-ON$
-    override def copy: TokenEscape = new TokenEscape(expected)
+}
+object TokenEscape {
+    private [instructions] sealed trait Escape
+    private [instructions] case class EscapeChar(escapeChar: Char) extends Escape
+    private [instructions] case object BadCode extends Escape
+    private [instructions] case object NoParse extends Escape
 }
 
 private [instructions] sealed trait TokenStringLike extends Instr {
@@ -649,7 +646,6 @@ private [internal] final class TokenString(ws: TokenSet, _expected: UnsafeOption
     // $COVERAGE-OFF$
     override def toString: String = "TokenString"
     // $COVERAGE-ON$
-    override def copy: TokenString = new TokenString(ws, _expected)
 }
 
 private [instructions] abstract class TokenLexi(name: String, illegalName: String)
@@ -707,10 +703,14 @@ private [instructions] abstract class TokenSpecific(_specific: String, caseSensi
     private final val strsz = specific.length
     protected def postprocess(ctx: Context, i: Int): Unit
 
+    val readCharCaseHandled = {
+        if (caseSensitive) (ctx: Context, i: Int) => ctx.input(i)
+        else (ctx: Context, i: Int) => ctx.input(i).toLower
+    }
+
     @tailrec final private def readSpecific(ctx: Context, i: Int, j: Int): Unit = {
         if (j < strsz) {
-            val c = if (caseSensitive) ctx.input(i) else ctx.input(i).toLower
-            if (c != specific(j)) ctx.fail(expected)
+            if (readCharCaseHandled(ctx, i) != specific(j)) ctx.fail(expected)
             else readSpecific(ctx, i + 1, j + 1)
         }
         else {
