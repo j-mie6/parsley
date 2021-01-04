@@ -326,19 +326,24 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
         case TokenEscape.NoParse => ctx.fail(expected)
     }
 
+    private final def consumeAndReturn(ctx: Context, n: Int, c: Char): TokenEscape.Escape = {
+        ctx.fastUncheckedConsumeChars(n)
+        new TokenEscape.EscapeChar(c)
+    }
+
     protected final def escape(ctx: Context): TokenEscape.Escape = {
         if (ctx.moreInput) {
             (ctx.nextChar: @switch) match {
-                case 'a' => ctx.fastUncheckedConsumeChars(1); new TokenEscape.EscapeChar('\u0007')
-                case 'b' => ctx.fastUncheckedConsumeChars(1); new TokenEscape.EscapeChar('\b')
-                case 'f' => ctx.fastUncheckedConsumeChars(1); new TokenEscape.EscapeChar('\u000c')
-                case 'n' => ctx.fastUncheckedConsumeChars(1); new TokenEscape.EscapeChar('\n')
-                case 'r' => ctx.fastUncheckedConsumeChars(1); new TokenEscape.EscapeChar('\r')
-                case 't' => ctx.fastUncheckedConsumeChars(1); new TokenEscape.EscapeChar('\t')
-                case 'v' => ctx.fastUncheckedConsumeChars(1); new TokenEscape.EscapeChar('\u000b')
-                case '\\' => ctx.fastUncheckedConsumeChars(1); new TokenEscape.EscapeChar('\\')
-                case '\"' => ctx.fastUncheckedConsumeChars(1); new TokenEscape.EscapeChar('\"')
-                case '\'' => ctx.fastUncheckedConsumeChars(1); new TokenEscape.EscapeChar('\'')
+                case 'a' => consumeAndReturn(ctx, 1, '\u0007')
+                case 'b' => consumeAndReturn(ctx, 1, '\b')
+                case 'f' => consumeAndReturn(ctx, 1, '\u000c')
+                case 'n' => consumeAndReturn(ctx, 1, '\n')
+                case 'r' => consumeAndReturn(ctx, 1, '\r')
+                case 't' => consumeAndReturn(ctx, 1, '\t')
+                case 'v' => consumeAndReturn(ctx, 1, '\u000b')
+                case '\\' => consumeAndReturn(ctx, 1, '\\')
+                case '\"' => consumeAndReturn(ctx, 1, '\"')
+                case '\'' => consumeAndReturn(ctx, 1, '\'')
                 case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9') =>
                     ctx.fastUncheckedConsumeChars(1)
                     val escapeCode = decimal(ctx, d.asDigit)
@@ -376,163 +381,89 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
                     ctx.fastUncheckedConsumeChars(1)
                     if (ctx.moreInput) {
                         val c = ctx.nextChar
-                        if (c >= 'A' && c <= 'Z') {
-                            ctx.fastUncheckedConsumeChars(1)
-                            new TokenEscape.EscapeChar((c - 'A' + 1).toChar)
-                        }
+                        if (c >= 'A' && c <= 'Z') consumeAndReturn(ctx, 1, (c - 'A' + 1).toChar)
                         else TokenEscape.NoParse
                     }
                     else TokenEscape.NoParse
                 case 'A' => //ACK
-                    if (ctx.offset + 2 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'C' && ctx.input(ctx.offset + 2) == 'K') {
-                        ctx.fastUncheckedConsumeChars(3)
-                        new TokenEscape.EscapeChar('\u0006')
-                    }
+                    if (ctx.offset + 2 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'C' && ctx.input(ctx.offset + 2) == 'K') consumeAndReturn(ctx, 3, '\u0006')
                     else TokenEscape.NoParse
                 case 'B' => //BS BEL
-                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'S') {
-                        ctx.fastUncheckedConsumeChars(2)
-                        new TokenEscape.EscapeChar('\u0008')
-                    }
+                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'S') consumeAndReturn(ctx, 2, '\u0008')
                     else if (ctx.offset + 2 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'E' && ctx.input(ctx.offset + 2) == 'L') {
-                        ctx.fastUncheckedConsumeChars(3)
-                        new TokenEscape.EscapeChar('\u0007')
+                        consumeAndReturn(ctx, 3, '\u0007')
                     }
                     else TokenEscape.NoParse
                 case 'C' => //CR CAN
-                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'R') {
-                        ctx.fastUncheckedConsumeChars(2)
-                        new TokenEscape.EscapeChar('\u000d')
-                    }
+                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'R') consumeAndReturn(ctx, 2, '\u000d')
                     else if (ctx.offset + 2 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'A' && ctx.input(ctx.offset + 2) == 'N') {
-                        ctx.fastUncheckedConsumeChars(3)
-                        new TokenEscape.EscapeChar('\u0018')
+                        consumeAndReturn(ctx, 3, '\u0018')
                     }
                     else TokenEscape.NoParse
                 case 'D' => //DC1 DC2 DC3 DC4 DEL DLE
-                    if (ctx.offset + 2 < ctx.inputsz) (ctx.input(ctx.offset + 1): @switch) match {
+                    if (ctx.offset + 2 < ctx.inputsz) ctx.input(ctx.offset + 1) match {
                         case 'C' => (ctx.input(ctx.offset + 2): @switch) match {
-                            case '1' => ctx.fastUncheckedConsumeChars(3); new TokenEscape.EscapeChar('\u0011')
-                            case '2' => ctx.fastUncheckedConsumeChars(3); new TokenEscape.EscapeChar('\u0012')
-                            case '3' => ctx.fastUncheckedConsumeChars(3); new TokenEscape.EscapeChar('\u0013')
-                            case '4' => ctx.fastUncheckedConsumeChars(3); new TokenEscape.EscapeChar('\u0014')
+                            case '1' => consumeAndReturn(ctx, 3, '\u0011')
+                            case '2' => consumeAndReturn(ctx, 3, '\u0012')
+                            case '3' => consumeAndReturn(ctx, 3, '\u0013')
+                            case '4' => consumeAndReturn(ctx, 3, '\u0014')
                             case _ => TokenEscape.NoParse
                         }
-                        case 'E' =>
-                            if (ctx.input(ctx.offset + 2) == 'L') { ctx.fastUncheckedConsumeChars(3); new TokenEscape.EscapeChar('\u001f') }
-                            else TokenEscape.NoParse
-                        case 'L' =>
-                            if (ctx.input(ctx.offset + 2) == 'E') { ctx.fastUncheckedConsumeChars(3); new TokenEscape.EscapeChar('\u0010') }
-                            else TokenEscape.NoParse
+                        case 'E' if ctx.input(ctx.offset + 2) == 'L' => consumeAndReturn(ctx, 3, '\u001f')
+                        case 'L' if ctx.input(ctx.offset + 2) == 'E' => consumeAndReturn(ctx, 3, '\u0010')
                         case _ => TokenEscape.NoParse
                     }
                     else TokenEscape.NoParse
                 case 'E' => //EM ETX ETB ESC EOT ENQ
-                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'M') {
-                        ctx.fastUncheckedConsumeChars(2)
-                        new TokenEscape.EscapeChar('\u0019')
-                    }
-                    else if (ctx.offset + 2 < ctx.inputsz) (ctx.input(ctx.offset + 1): @switch) match {
-                        case 'N' =>
-                            if (ctx.input(ctx.offset + 2) == 'Q') { ctx.fastUncheckedConsumeChars(3); new TokenEscape.EscapeChar('\u0005') }
-                            else TokenEscape.NoParse
-                        case 'O' =>
-                            if (ctx.input(ctx.offset + 2) == 'T') { ctx.fastUncheckedConsumeChars(3); new TokenEscape.EscapeChar('\u0004') }
-                            else TokenEscape.NoParse
-                        case 'S' =>
-                            if (ctx.input(ctx.offset + 2) == 'C') { ctx.fastUncheckedConsumeChars(3); new TokenEscape.EscapeChar('\u001b') }
-                            else TokenEscape.NoParse
-                        case 'T' =>
-                            if (ctx.input(ctx.offset + 2) == 'X') { ctx.fastUncheckedConsumeChars(3); new TokenEscape.EscapeChar('\u0003') }
-                            else if (ctx.input(ctx.offset + 2) == 'B') { ctx.fastUncheckedConsumeChars(3); new TokenEscape.EscapeChar('\u0017') }
-                            else TokenEscape.NoParse
+                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'M') consumeAndReturn(ctx, 2, '\u0019')
+                    else if (ctx.offset + 2 < ctx.inputsz) ctx.input(ctx.offset + 1) match {
+                        case 'N' if ctx.input(ctx.offset + 2) == 'Q' => consumeAndReturn(ctx, 3, '\u0005')
+                        case 'O' if ctx.input(ctx.offset + 2) == 'T' => consumeAndReturn(ctx, 3, '\u0004')
+                        case 'S' if ctx.input(ctx.offset + 2) == 'C' => consumeAndReturn(ctx, 3, '\u001b')
+                        case 'T' if ctx.input(ctx.offset + 2) == 'X' => consumeAndReturn(ctx, 3, '\u0003')
+                        case 'T' if ctx.input(ctx.offset + 2) == 'B' => consumeAndReturn(ctx, 3, '\u0017')
                         case _ => TokenEscape.NoParse
                     }
                     else TokenEscape.NoParse
                 case 'F' => //FF FS
-                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'F') {
-                        ctx.fastUncheckedConsumeChars(2)
-                        new TokenEscape.EscapeChar('\u000c')
-                    }
-                    else if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'S') {
-                        ctx.fastUncheckedConsumeChars(2)
-                        new TokenEscape.EscapeChar('\u001c')
-                    }
+                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'F') consumeAndReturn(ctx, 2, '\u000c')
+                    else if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'S') consumeAndReturn(ctx, 2, '\u001c')
                     else TokenEscape.NoParse
                 case 'G' => //GS
-                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'S') {
-                        ctx.fastUncheckedConsumeChars(2)
-                        new TokenEscape.EscapeChar('\u001d')
-                    }
+                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'S') consumeAndReturn(ctx, 2, '\u001d')
                     else TokenEscape.NoParse
                 case 'H' => //HT
-                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'T') {
-                        ctx.fastUncheckedConsumeChars(2)
-                        new TokenEscape.EscapeChar('\u0009')
-                    }
+                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'T') consumeAndReturn(ctx, 2, '\u0009')
                     else TokenEscape.NoParse
                 case 'L' => //LF
-                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'F') {
-                        ctx.fastUncheckedConsumeChars(2)
-                        new TokenEscape.EscapeChar('\n')
-                    }
+                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'F') consumeAndReturn(ctx, 2, '\n')
                     else TokenEscape.NoParse
                 case 'N' => //NUL NAK
-                    if (ctx.offset + 2 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'U' && ctx.input(ctx.offset + 2) == 'L') {
-                        ctx.fastUncheckedConsumeChars(3)
-                        new TokenEscape.EscapeChar('\u0000')
-                    }
+                    if (ctx.offset + 2 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'U' && ctx.input(ctx.offset + 2) == 'L') consumeAndReturn(ctx, 3, '\u0000')
                     else if (ctx.offset + 2 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'A' && ctx.input(ctx.offset + 2) == 'K') {
-                        ctx.fastUncheckedConsumeChars(3)
-                        new TokenEscape.EscapeChar('\u0015')
+                        consumeAndReturn(ctx, 3, '\u0015')
                     }
                     else TokenEscape.NoParse
                 case 'R' => //RS
-                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'S') {
-                        ctx.fastUncheckedConsumeChars(2)
-                        new TokenEscape.EscapeChar('\u001e')
-                    }
+                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'S') consumeAndReturn(ctx, 2, '\u001e')
                     else TokenEscape.NoParse
                 case 'S' => //SO SI SP SOH STX SYN SUB
-                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'O') {
-                        ctx.fastUncheckedConsumeChars(2)
-                        new TokenEscape.EscapeChar('\u000e')
-                    }
-                    else if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'I') {
-                        ctx.fastUncheckedConsumeChars(2)
-                        new TokenEscape.EscapeChar('\u000f')
-                    }
-                    else if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'P') {
-                        ctx.fastUncheckedConsumeChars(2)
-                        new TokenEscape.EscapeChar('\u0020')
-                    }
-                    else if (ctx.offset + 2 < ctx.inputsz) (ctx.input(ctx.offset + 1): @switch) match {
-                        case 'O' =>
-                            if (ctx.input(ctx.offset + 2) == 'H') { ctx.fastUncheckedConsumeChars(3); new TokenEscape.EscapeChar('\u0001') }
-                            else TokenEscape.NoParse
-                        case 'T' =>
-                            if (ctx.input(ctx.offset + 2) == 'X') { ctx.fastUncheckedConsumeChars(3); new TokenEscape.EscapeChar('\u0002') }
-                            else TokenEscape.NoParse
-                        case 'Y' =>
-                            if (ctx.input(ctx.offset + 2) == 'N') { ctx.fastUncheckedConsumeChars(3); new TokenEscape.EscapeChar('\u0016') }
-                            else TokenEscape.NoParse
-                        case 'U' =>
-                            if (ctx.input(ctx.offset + 2) == 'B') { ctx.fastUncheckedConsumeChars(3); new TokenEscape.EscapeChar('\u001a') }
-                            else TokenEscape.NoParse
+                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'O')      consumeAndReturn(ctx, 2, '\u000e')
+                    else if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'I') consumeAndReturn(ctx, 2, '\u000f')
+                    else if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'P') consumeAndReturn(ctx, 2, '\u0020')
+                    else if (ctx.offset + 2 < ctx.inputsz) ctx.input(ctx.offset + 1) match {
+                        case 'O' if ctx.input(ctx.offset + 2) == 'H' => consumeAndReturn(ctx, 3, '\u0001')
+                        case 'T' if ctx.input(ctx.offset + 2) == 'X' => consumeAndReturn(ctx, 3, '\u0002')
+                        case 'Y' if ctx.input(ctx.offset + 2) == 'N' => consumeAndReturn(ctx, 3, '\u0016')
+                        case 'U' if ctx.input(ctx.offset + 2) == 'B' => consumeAndReturn(ctx, 3, '\u001a')
                         case _ => TokenEscape.NoParse
                     }
                     else TokenEscape.NoParse
                 case 'U' => //US
-                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'S') {
-                        ctx.fastUncheckedConsumeChars(2)
-                        new TokenEscape.EscapeChar('\u001f')
-                    }
+                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'S') consumeAndReturn(ctx, 2, '\u001f')
                     else TokenEscape.NoParse
                 case 'V' => //VT
-                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'T') {
-                        ctx.fastUncheckedConsumeChars(2)
-                        new TokenEscape.EscapeChar('\u000b')
-                    }
+                    if (ctx.offset + 1 < ctx.inputsz && ctx.input(ctx.offset + 1) == 'T') consumeAndReturn(ctx, 2, '\u000b')
                     else TokenEscape.NoParse
                 case _ => TokenEscape.NoParse
             }
