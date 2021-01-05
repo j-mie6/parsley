@@ -47,6 +47,7 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
     private [instructions] var startcol: Int = 1
     var sourceName: String = "input"
 
+    // $COVERAGE-OFF$
     //override def toString: String = pretty
     private [instructions] def pretty: String = {
         s"""[
@@ -64,6 +65,7 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
            |  registers = ${regs.zipWithIndex.map{case (r, i) => s"r$i = $r"}.mkString("\n              ")}
            |]""".stripMargin
     }
+    // $COVERAGE-ON$
 
     def pos: (Int, Int) = (startline, startcol)
     def pos_=(pos: (Int, Int)): Unit = {

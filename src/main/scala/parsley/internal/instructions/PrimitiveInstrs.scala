@@ -9,17 +9,23 @@ private [internal] final class Satisfies(f: Char => Boolean, expected: UnsafeOpt
         if (ctx.moreInput && f(ctx.nextChar)) ctx.pushAndContinue(ctx.consumeChar())
         else ctx.fail(expected)
     }
+    // $COVERAGE-OFF$
     override def toString: String = "Sat(?)"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class Fail(msg: String, expected: UnsafeOption[String]) extends Instr {
     override def apply(ctx: Context): Unit = ctx.failWithMessage(expected, msg)
+    // $COVERAGE-OFF$
     override def toString: String = s"Fail($msg)"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class Unexpected(msg: String, expected: UnsafeOption[String]) extends Instr {
     override def apply(ctx: Context): Unit = ctx.unexpectedFail(expected = expected, unexpected = msg)
+    // $COVERAGE-OFF$
     override def toString: String = s"Unexpected($msg)"
+    // $COVERAGE-ON$
 }
 
 private [internal] object Attempt extends Instr {
@@ -36,7 +42,9 @@ private [internal] object Attempt extends Instr {
             ctx.fail()
         }
     }
+    // $COVERAGE-OFF$
     override def toString: String = "Attempt"
+    // $COVERAGE-ON$
 }
 
 private [internal] object Look extends Instr {
@@ -51,24 +59,32 @@ private [internal] object Look extends Instr {
             ctx.fail()
         }
     }
+    // $COVERAGE-OFF$
     override def toString: String = "Look"
+    // $COVERAGE-ON$
 }
 
 // Position Extractors
 private [internal] object Line extends Instr {
     override def apply(ctx: Context): Unit = ctx.pushAndContinue(ctx.line)
+    // $COVERAGE-OFF$
     override def toString: String = "Line"
+    // $COVERAGE-ON$
 }
 
 private [internal] object Col extends Instr {
     override def apply(ctx: Context): Unit = ctx.pushAndContinue(ctx.col)
+    // $COVERAGE-OFF$
     override def toString: String = "Col"
+    // $COVERAGE-ON$
 }
 
 // Register-Manipulators
 private [internal] final class Get(v: Int) extends Instr {
     override def apply(ctx: Context): Unit = ctx.pushAndContinue(ctx.regs(v))
+    // $COVERAGE-OFF$
     override def toString: String = s"Get($v)"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class Put(v: Int) extends Instr {
@@ -76,5 +92,7 @@ private [internal] final class Put(v: Int) extends Instr {
         ctx.copyOnWrite(v, ctx.stack.peekAndExchange(()))
         ctx.inc()
     }
+    // $COVERAGE-OFF$
     override def toString: String = s"Put($v)"
+    // $COVERAGE-ON$
 }

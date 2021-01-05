@@ -11,7 +11,9 @@ private [internal] final class Lift2[A, B, C](f: (A, B) => C) extends Instr {
         val y = ctx.stack.upop()
         ctx.exchangeAndContinue(g(ctx.stack.peek, y))
     }
+    // $COVERAGE-OFF$
     override def toString: String = "Lift2(f)"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class Lift3[A, B, C, D](f: (A, B, C) => D) extends Instr {
@@ -21,7 +23,9 @@ private [internal] final class Lift3[A, B, C, D](f: (A, B, C) => D) extends Inst
         val y = ctx.stack.upop()
         ctx.exchangeAndContinue(g(ctx.stack.peek, y, z))
     }
+    // $COVERAGE-OFF$
     override def toString: String = "Lift3(f)"
+    // $COVERAGE-ON$
 }
 
 private [internal] class CharTok(c: Char, x: Any, _expected: UnsafeOption[String]) extends Instr {
@@ -33,7 +37,9 @@ private [internal] class CharTok(c: Char, x: Any, _expected: UnsafeOption[String
         }
         else ctx.fail(expected)
     }
+    // $COVERAGE-OFF$
     override def toString: String = if (x == c) s"Chr($c)" else s"ChrPerform($c, $x)"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class StringTok private [instructions] (s: String, x: Any, _expected: UnsafeOption[String]) extends Instr {
@@ -74,7 +80,9 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
     }
 
     override def apply(ctx: Context): Unit = go(ctx, ctx.offset, 0)
+    // $COVERAGE-OFF$
     override def toString: String = if (x.isInstanceOf[String] && (s eq x.asInstanceOf[String])) s"Str($s)" else s"StrPerform($s, $x)"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class If(var label: Int) extends JumpInstr {
@@ -82,7 +90,9 @@ private [internal] final class If(var label: Int) extends JumpInstr {
         if (ctx.stack.pop()) ctx.pc = label
         else ctx.inc()
     }
+    // $COVERAGE-OFF$
     override def toString: String = s"If(true: $label)"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class Filter[A](pred: A=>Boolean, expected: UnsafeOption[String]) extends Instr {
@@ -95,7 +105,9 @@ private [internal] final class Filter[A](pred: A=>Boolean, expected: UnsafeOptio
             if (strip) ctx.unexpected = null
         }
     }
+    // $COVERAGE-OFF$
     override def toString: String = "Filter(?)"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class Guard[A](pred: A=>Boolean, msg: String, expected: UnsafeOption[String]) extends Instr {
@@ -104,7 +116,9 @@ private [internal] final class Guard[A](pred: A=>Boolean, msg: String, expected:
         if (pred_(ctx.stack.upeek)) ctx.inc()
         else ctx.failWithMessage(expected, msg)
     }
+    // $COVERAGE-OFF$
     override def toString: String = s"Guard(?, $msg)"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class FastGuard[A](pred: A=>Boolean, msggen: A=>String, expected: UnsafeOption[String]) extends Instr {
@@ -114,19 +128,25 @@ private [internal] final class FastGuard[A](pred: A=>Boolean, msggen: A=>String,
         if (pred_(ctx.stack.upeek)) ctx.inc()
         else ctx.failWithMessage(expected, msggen_(ctx.stack.upop()))
     }
+    // $COVERAGE-OFF$
     override def toString: String = "FastGuard(?, ?)"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class FastFail[A](msggen: A=>String, expected: UnsafeOption[String]) extends Instr {
     private [this] val msggen_ = msggen.asInstanceOf[Any => String]
     override def apply(ctx: Context): Unit = ctx.failWithMessage(expected, msggen_(ctx.stack.upop()))
+    // $COVERAGE-OFF$
     override def toString: String = "FastFail(?)"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class FastUnexpected[A](msggen: A=>String, expected: UnsafeOption[String]) extends Instr {
     private [this] val msggen_ = msggen.asInstanceOf[Any => String]
     override def apply(ctx: Context): Unit = ctx.unexpectedFail(expected = expected, unexpected = msggen_(ctx.stack.upop()))
+    // $COVERAGE-OFF$
     override def toString: String = "FastUnexpected(?)"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class NotFollowedBy(expected: UnsafeOption[String]) extends Instr {
@@ -144,13 +164,17 @@ private [internal] final class NotFollowedBy(expected: UnsafeOption[String]) ext
             ctx.pushAndContinue(())
         }
     }
+    // $COVERAGE-OFF$
     override def toString: String = "NotFollowedBy"
+    // $COVERAGE-ON$
 }
 
 private [internal] class Eof(_expected: UnsafeOption[String]) extends Instr {
     val expected: String = if (_expected == null) "end of input" else _expected
     override def apply(ctx: Context): Unit = if (ctx.offset == ctx.inputsz) ctx.pushAndContinue(()) else ctx.fail(expected)
+    // $COVERAGE-OFF$
     override final def toString: String = "Eof"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class Modify[S](v: Int, f: S => S) extends Instr {
@@ -159,7 +183,9 @@ private [internal] final class Modify[S](v: Int, f: S => S) extends Instr {
         ctx.copyOnWrite(v, g(ctx.regs(v)))
         ctx.pushAndContinue(())
     }
+    // $COVERAGE-OFF$
     override def toString: String = s"Modify($v, f)"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class LocalEntry(v: Int) extends Instr {
@@ -169,7 +195,9 @@ private [internal] final class LocalEntry(v: Int) extends Instr {
         ctx.copyOnWrite(v, ctx.stack.upop())
         ctx.inc()
     }
+    // $COVERAGE-OFF$
     override def toString: String = s"LocalEntry($v)"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class LocalExit[S](v: Int) extends Instr {
@@ -181,7 +209,9 @@ private [internal] final class LocalExit[S](v: Int) extends Instr {
         else ctx.fail()
         ctx.states = ctx.states.tail
     }
+    // $COVERAGE-OFF$
     override def toString: String = s"LocalExit($v)"
+    // $COVERAGE-ON$
 }
 
 // Companion Objects

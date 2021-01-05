@@ -11,12 +11,16 @@ import scala.collection.mutable
 private [internal] final class Perform[-A, +B](f: A => B) extends Instr {
     private [Perform] val g = f.asInstanceOf[Any => B]
     override def apply(ctx: Context): Unit = ctx.exchangeAndContinue(g(ctx.stack.upeek))
+    // $COVERAGE-OFF$
     override def toString: String = "Perform(?)"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class Exchange[A](private [Exchange] val x: A) extends Instr {
     override def apply(ctx: Context): Unit = ctx.exchangeAndContinue(x)
+    // $COVERAGE-OFF$
     override def toString: String = s"Ex($x)"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, expected: UnsafeOption[String]) extends Instr {
@@ -27,7 +31,9 @@ private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, expe
         }
         else ctx.fail(expected)
     }
+    // $COVERAGE-OFF$
     override def toString: String = s"SatEx(?, $x)"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class JumpGoodAttempt(var label: Int) extends JumpInstr {
@@ -43,14 +49,18 @@ private [internal] final class JumpGoodAttempt(var label: Int) extends JumpInstr
             ctx.inc()
         }
     }
+    // $COVERAGE-OFF$
     override def toString: String = s"JumpGood'($label)"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class RecoverWith[A](x: A) extends Instr {
     override def apply(ctx: Context): Unit = ctx.catchNoConsumed {
         ctx.pushAndContinue(x)
     }
+    // $COVERAGE-OFF$
     override def toString: String = s"Recover($x)"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class AlwaysRecoverWith[A](x: A) extends Instr {
@@ -66,7 +76,9 @@ private [internal] final class AlwaysRecoverWith[A](x: A) extends Instr {
             ctx.pushAndContinue(x)
         }
     }
+    // $COVERAGE-OFF$
     override def toString: String = s"AlwaysRecover($x)"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int], private [this] var default: Int, _expecteds: List[UnsafeOption[String]])
@@ -107,12 +119,14 @@ private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int]
         }
     }
 
-    private [internal] def relabel(labels: Array[Int]): Unit = {
+    override def relabel(labels: Array[Int]): Unit = {
         jumpTable.mapValuesInPlace((_, v) => labels(v))
         default = labels(default)
         defaultPreamble = default - 1
     }
+    // $COVERAGE-OFF$
     override def toString: String = s"JumpTable(${jumpTable.map{case (k, v) => k.toChar -> v}.mkString(", ")}, _ -> $default)"
+    // $COVERAGE-ON$
 }
 
 private [internal] object CharTokFastPerform {

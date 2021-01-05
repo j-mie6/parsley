@@ -27,7 +27,12 @@ private [deepembedding] sealed abstract class ScopedUnary[A, B](_p: =>Parsley[A]
 private [parsley] final class Attempt[A](_p: =>Parsley[A]) extends ScopedUnary[A, A](_p, "attempt", _ => Attempt.empty, instructions.Attempt)
 private [parsley] final class Look[A](_p: =>Parsley[A]) extends ScopedUnary[A, A](_p, "lookAhead", _ => Look.empty, instructions.Look)
 private [parsley] final class NotFollowedBy[A](_p: =>Parsley[A], val expected: UnsafeOption[String] = null)
-    extends ScopedUnary[A, Unit](_p, "notFollowedBy", NotFollowedBy.empty, new instructions.NotFollowedBy(expected))
+    extends ScopedUnary[A, Unit](_p, "notFollowedBy", NotFollowedBy.empty, new instructions.NotFollowedBy(expected)) {
+    override def optimise: Parsley[Unit] = p match {
+        case z: MZero => new Pure(())
+        case _ => this
+    }
+}
 
 private [parsley] final class Fail(private [Fail] val msg: String, val expected: UnsafeOption[String] = null)
     extends SingletonExpect[Nothing](s"fail($msg)", new Fail(msg, _), new instructions.Fail(msg, expected)) with MZero
@@ -44,7 +49,7 @@ private [parsley] final class Subroutine[A](_p: =>Parsley[A], val expected: Unsa
     override val childRepeats = 0
 
     override def preprocess[Cont[_, +_]: ContOps, A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap,
-                                                           label: UnsafeOption[String]): Cont[Parsley[_], Parsley[A_]] = {
+                                                           label: UnsafeOption[String]): Cont[Unit, Parsley[A_]] = {
         val self = if (label == null) this else Subroutine(p, label)
         if (!processed) for (p <- this.p.optimised(implicitly[ContOps[Cont]], seen, sub, null)) yield self.ready(p)
         else result(self)
@@ -69,16 +74,18 @@ private [parsley] final class Put[S](private [Put] val v: Var, _p: =>Parsley[S])
 private [parsley] final class ErrorRelabel[+A](_p: =>Parsley[A], msg: String) extends Parsley[A] {
     lazy val p = _p
     override def preprocess[Cont[_, +_]: ContOps, A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap,
-                                                           label: UnsafeOption[String]): Cont[Parsley[_], Parsley[A_]] = {
+                                                           label: UnsafeOption[String]): Cont[Unit, Parsley[A_]] = {
         if (label == null) p.optimised(implicitly[ContOps[Cont]], seen, sub, msg)
         else p.optimised
     }
     override def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState): Cont[Unit, Unit] = p.findLets
+    // $COVERAGE-OFF$
     override def optimise: Parsley[A] = throw new Exception("Error relabelling should not be in optimisation!")
     override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
         throw new Exception("Error relabelling should not be in code gen!")
     }
     override def prettyASTAux[Cont[_, +_]: ContOps]: Cont[String, String] = for (c <- p.prettyASTAux) yield s"($c ? $msg)"
+    // $COVERAGE-ON$
 }
 private [parsley] final class Debug[A](_p: =>Parsley[A], name: String, break: Breakpoint)
     extends Unary[A, A](_p)(identity[String], _ => Debug.empty(name, break)) {

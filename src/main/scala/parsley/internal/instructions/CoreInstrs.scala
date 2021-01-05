@@ -10,7 +10,9 @@ import scala.annotation.tailrec
 // Stack Manipulators
 private [internal] final class Push[A](x: A) extends Instr {
     override def apply(ctx: Context): Unit = ctx.pushAndContinue(x)
+    // $COVERAGE-OFF$
     override def toString: String = s"Push($x)"
+    // $COVERAGE-ON$
 }
 
 private [internal] object Pop extends Instr {
@@ -18,7 +20,9 @@ private [internal] object Pop extends Instr {
         ctx.stack.pop_()
         ctx.inc()
     }
+    // $COVERAGE-OFF$
     override def toString: String = "Pop"
+    // $COVERAGE-ON$
 }
 
 private [internal] object Flip extends Instr {
@@ -27,7 +31,9 @@ private [internal] object Flip extends Instr {
         ctx.stack(1) = ctx.stack.upeek
         ctx.exchangeAndContinue(x)
     }
+    // $COVERAGE-OFF$
     override def toString: String = "Flip"
+    // $COVERAGE-ON$
 }
 
 // Applicative Functors
@@ -37,14 +43,18 @@ private [internal] object Apply extends Instr {
         val f = ctx.stack.peek[Any => Any]
         ctx.exchangeAndContinue(f(x))
     }
+    // $COVERAGE-OFF$
     override def toString: String = "Apply"
+    // $COVERAGE-ON$
 }
 
 // Monadic
 private [internal] final class DynCall[-A](f: A => Array[Instr], expected: UnsafeOption[String]) extends Instr {
     private [DynCall] val g = f.asInstanceOf[Any => Array[Instr]]
     override def apply(ctx: Context): Unit = ctx.call(g(ctx.stack.upop()), 0, expected)
+    // $COVERAGE-OFF$
     override def toString: String = "DynCall(?)"
+    // $COVERAGE-ON$
 }
 
 // Control Flow
@@ -55,17 +65,23 @@ private [internal] final class Call(_instrs: =>Array[Instr], expected: UnsafeOpt
     }
 
     override def apply(ctx: Context): Unit = ctx.call(stateSafeCopy(instrs, pindices), 0, expected)
+    // $COVERAGE-OFF$
     override def toString: String = "Call"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class GoSub(var label: Int, expected: UnsafeOption[String]) extends JumpInstr {
     override def apply(ctx: Context): Unit = ctx.call(ctx.instrs, label, expected)
+    // $COVERAGE-OFF$
     override def toString: String = s"GoSub($label)"
+    // $COVERAGE-ON$
 }
 
 private [internal] object Return extends Instr {
     override def apply(ctx: Context): Unit = ctx.ret()
+    // $COVERAGE-OFF$
     override def toString: String = "Return"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class Empty(expected: UnsafeOption[String]) extends Instr {
@@ -74,7 +90,9 @@ private [internal] final class Empty(expected: UnsafeOption[String]) extends Ins
         ctx.fail(expected)
         if (strip) ctx.unexpected = null
     }
+    // $COVERAGE-OFF$
     override def toString: String = "Empty"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class PushHandler(var label: Int) extends JumpInstr {
@@ -83,7 +101,9 @@ private [internal] final class PushHandler(var label: Int) extends JumpInstr {
         ctx.saveState()
         ctx.inc()
     }
+    // $COVERAGE-OFF$
     override def toString: String = s"PushHandler($label)"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class PushFallthrough(var label: Int) extends JumpInstr {
@@ -91,7 +111,9 @@ private [internal] final class PushFallthrough(var label: Int) extends JumpInstr
         ctx.pushHandler(label)
         ctx.inc()
     }
+    // $COVERAGE-OFF$
     override def toString: String = s"PushFallthrough($label)"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class InputCheck(var label: Int) extends JumpInstr {
@@ -100,12 +122,16 @@ private [internal] final class InputCheck(var label: Int) extends JumpInstr {
         ctx.pushHandler(label)
         ctx.inc()
     }
+    // $COVERAGE-OFF$
     override def toString: String = s"InputCheck($label)"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class Jump(var label: Int) extends JumpInstr {
     override def apply(ctx: Context): Unit = ctx.pc = label
+    // $COVERAGE-OFF$
     override def toString: String = s"Jump($label)"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class JumpGood(var label: Int) extends JumpInstr {
@@ -114,14 +140,18 @@ private [internal] final class JumpGood(var label: Int) extends JumpInstr {
         ctx.checkStack = ctx.checkStack.tail
         ctx.pc = label
     }
+    // $COVERAGE-OFF$
     override def toString: String = s"JumpGood($label)"
+    // $COVERAGE-ON$
 }
 
 private [internal] object Catch extends Instr {
     override def apply(ctx: Context): Unit = ctx.catchNoConsumed {
         ctx.inc()
     }
+    // $COVERAGE-OFF$
     override def toString: String = s"Catch"
+    // $COVERAGE-ON$
 }
 
 // Debugging Instructions
@@ -155,7 +185,9 @@ private [internal] final class LogBegin(var label: Int, val name: String, break:
         ctx.pushHandler(label)
         ctx.inc()
     }
+    // $COVERAGE-OFF$
     override def toString: String = s"LogBegin($label, $name)"
+    // $COVERAGE-ON$
 }
 
 private [internal] final class LogEnd(val name: String, break: Boolean) extends Instr with Logger {
@@ -173,5 +205,7 @@ private [internal] final class LogEnd(val name: String, break: Boolean) extends 
         println(preludeString('<', ctx, end))
         if (break) doBreak(ctx)
     }
+    // $COVERAGE-OFF$
     override def toString: String = s"LogEnd($name)"
+    // $COVERAGE-ON$
 }

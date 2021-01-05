@@ -12,6 +12,7 @@ package object instructions
 
     private [internal] abstract class Instr {
         def apply(ctx: Context): Unit
+        def relabel(labels: Array[Int]): Unit = ()
         // Instructions should override this if they have mutable state inside!
         def copy: Instr = this
     }
@@ -20,13 +21,17 @@ package object instructions
 
     private [internal] abstract class JumpInstr extends Instr {
         var label: Int
+        override def relabel(labels: Array[Int]): Unit = label = labels(label)
     }
 
     // It's 2018 and Labels are making a come-back, along with 2 pass assembly
     private [internal] final class Label(val i: Int) extends Instr {
+        // $COVERAGE-OFF$
         def apply(ctx: Context): Unit = throw new Exception("Cannot execute label")
+        // $COVERAGE-ON$
     }
 
+    // $COVERAGE-OFF$
     final private [parsley] def pretty(instrs: Array[Instr]): String = {
         val n = instrs.length
         val digits = if (n != 0) Math.log10(n).toInt + 1 else 0
@@ -43,6 +48,7 @@ package object instructions
                 s"$paddedIdx [$paddedHex]: $instr"
         }.mkString(";\n")
     }
+    // $COVERAGE-ON$
 
     final private [internal] def stateSafeCopy(instrs: Array[Instr], pindices: Array[Int]): Array[Instr] = {
         val nstateful = pindices.length
@@ -73,8 +79,10 @@ package object instructions
         def empty[A]: Stack[A] = null
         @inline def isEmpty(s: Stack[_]): Boolean = s == null
         @tailrec def drop[A](s: Stack[A], n: Int): Stack[A] = if (n > 0 && !isEmpty(s)) drop(s.tail, n - 1) else s
+        // $COVERAGE-OFF$
         def map[A, B](s: Stack[A], f: A => B): Stack[B] = if (!isEmpty(s)) new Stack(f(s.head), map(s.tail, f)) else empty
         def mkString(s: Stack[_], sep: String): String = if (isEmpty(s)) "" else s.head.toString + sep + mkString(s.tail, sep)
+        // $COVERAGE-ON$
         def push[A](s: Stack[A], x: A): Stack[A] = new Stack(x, s)
     }
 
@@ -118,9 +126,11 @@ package object instructions
 
         // This is off by one, but that's fine, if everything is also off by one :P
         def usize: Int = sp
+        // $COVERAGE-OFF$
         def size: Int = usize + 1
         def isEmpty: Boolean = sp == -1
         def mkString(sep: String): String = array.take(sp + 1).reverse.mkString(sep)
+        // $COVERAGE-ON$
         def clear(): Unit = {
             sp = -1
             var i = array.length-1

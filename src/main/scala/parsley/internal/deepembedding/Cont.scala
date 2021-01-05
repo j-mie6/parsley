@@ -21,8 +21,10 @@ private [deepembedding] abstract class ContOps[Cont[_, +_]]
     def unwrap[R](wrapped: Cont[R, R]): R
     def map[R, A, B](c: =>Cont[R, A], f: A => B): Cont[R, B]
     def flatMap[R, A, B](c: =>Cont[R, A], f: A => Cont[R, B]): Cont[R, B]
+    // $COVERAGE-OFF$
     def >>[R, A, B](c: =>Cont[R, A], k: =>Cont[R, B]): Cont[R, B] = flatMap[R, A, B](c, _ => k)
     def |>[R, A, B](c: =>Cont[R, A], x: =>B): Cont[R, B] = map[R, A, B](c, _ => x)
+    // $COVERAGE-ON$
 }
 private [deepembedding] object ContOps
 {
@@ -36,9 +38,10 @@ private [deepembedding] object ContOps
     def result[R, A, Cont[_, +_]](x: A)(implicit canWrap: ContOps[Cont]): Cont[R, A] = canWrap.wrap(x)
     def perform[R, Cont[_, +_]](wrapped: Cont[R, R])(implicit canUnwrap: ContOps[Cont]): R = canUnwrap.unwrap(wrapped)
     type GenOps = ContOps[({type C[_, +_]})#C]
-    def safeCall[A](task: GenOps => A): A =
+    def safeCall[A](task: GenOps => A): A = {
         try task(Id.ops.asInstanceOf[GenOps])
         catch { case _: StackOverflowError => task(Cont.ops.asInstanceOf[GenOps]) }
+    }
 }
 
 private [deepembedding] class Cont[R, +A](val cont: (A => Bounce[R]) => Bounce[R]) extends AnyVal
@@ -60,15 +63,6 @@ private [deepembedding] object Cont
         {
             new Cont(k => new Thunk(() => mx.cont(_ => my.cont(k))))
         }
-        override def |>[R, A, B](mx: => Cont[R, A], y: => B): Cont[R, B] =
-        {
-            new Cont(k => new Thunk(() => mx.cont(_ => k(y))))
-        }
-    }
-
-    def callCC[R, A, B](f: (A => Cont[R, B]) => Cont[R, A]): Cont[R, A] =
-    {
-        new Cont[R, A](k => f(x => new Cont[R, B](_ => k(x))).cont(k))
     }
 }
 
@@ -82,10 +76,6 @@ private [deepembedding] object Id
         override def map[R, A, B](c: =>Id[R, A], f: A => B): Id[R, B] = new Id(f(c.x))
         override def flatMap[R, A, B](c: =>Id[R, A], f: A => Id[R, B]): Id[R, B] = f(c.x)
         override def >>[R, A, B](c: => Id[R, A], k: => Id[R, B]): Id[R, B] = {c; k}
-        override def |>[R, A, B](c: => Id[R, A], x: => B): Id[R, B] =
-        {
-            c.x
-            new Id(x)
-        }
+        override def |>[R, A, B](c: => Id[R, A], x: => B): Id[R, B] = {c; new Id(x)}
     }
 }
