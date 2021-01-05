@@ -8,7 +8,7 @@ import scala.annotation.{switch, tailrec}
 
 private [instructions] abstract class CommentLexer(start: String, end: String, line: String, nested: Boolean) extends Instr {
     protected final val noLine = line.isEmpty
-    protected final val noMulti = start.isEmpty
+    protected final val noMulti = start.isEmpty || end.isEmpty
 
     protected final def singleLineComment(ctx: Context): Unit = {
         ctx.fastUncheckedConsumeChars(line.length)
@@ -39,60 +39,64 @@ private [instructions] abstract class CommentLexer(start: String, end: String, l
 }
 
 private [instructions] abstract class WhiteSpaceLike(start: String, end: String, line: String, nested: Boolean) extends CommentLexer(start, end, line, nested) {
-    override final def apply(ctx: Context): Unit = {
-        if (noLine && noMulti) spaces(ctx)
-        else if (noLine) {
+    private final def singlesOnly(ctx: Context): Unit = {
+        spaces(ctx)
+        while (ctx.moreInput && ctx.input.startsWith(line, ctx.offset)) {
+            singleLineComment(ctx)
             spaces(ctx)
-            while (ctx.moreInput && ctx.input.startsWith(start, ctx.offset)) {
-                if (!multiLineComment(ctx)) {
-                    ctx.fail("end of comment")
-                    return
-                }
-                spaces(ctx)
-            }
-        }
-        else if (noMulti) {
-            spaces(ctx)
-            while (ctx.moreInput && ctx.input.startsWith(line, ctx.offset)) {
-                singleLineComment(ctx)
-                spaces(ctx)
-            }
-        }
-        else {
-            spaces(ctx)
-            // TODO This is considered as a VERY rough implementation of the intrinsic, just to get it working, it will be optimised later
-            var startsSingle = ctx.input.startsWith(line, ctx.offset)
-            var startsMulti = ctx.input.startsWith(start, ctx.offset)
-            while (ctx.moreInput && (startsSingle || startsMulti)) {
-                if (startsMulti) {
-                    if (!multiLineComment(ctx)) {
-                        ctx.fail("end of comment")
-                        return
-                    }
-                }
-                else singleLineComment(ctx)
-                spaces(ctx)
-                startsSingle = ctx.input.startsWith(line, ctx.offset)
-                startsMulti = ctx.input.startsWith(start, ctx.offset)
-            }
         }
         ctx.pushAndContinue(())
     }
 
+    @tailrec private final def multisOnly(ctx: Context): Unit = {
+        spaces(ctx)
+        val startsMulti = ctx.moreInput && ctx.input.startsWith(start, ctx.offset)
+        if (startsMulti && multiLineComment(ctx)) {
+            spaces(ctx)
+            multisOnly(ctx)
+        }
+        else if (startsMulti) ctx.fail("end of comment")
+        else ctx.pushAndContinue(())
+    }
+
+    private val sharedPrefix = line.view.zip(start).takeWhile(Function.tupled(_ == _)).map(_._1).mkString
+    private val factoredStart = start.drop(sharedPrefix.length)
+    private val factoredLine = line.drop(sharedPrefix.length)
+    // PRE: Multi-line comments may not prefix single-line, but single-line may prefix multi-line
+    @tailrec final def singlesAndMultis(ctx: Context): Unit = {
+        spaces(ctx)
+        if (ctx.moreInput && ctx.input.startsWith(sharedPrefix, ctx.offset)) {
+            val startsMulti = ctx.input.startsWith(factoredStart, ctx.offset + sharedPrefix.length)
+            if (startsMulti && multiLineComment(ctx)) singlesAndMultis(ctx)
+            else if (startsMulti) ctx.fail("end of comment")
+            else if (ctx.input.startsWith(factoredLine, ctx.offset + sharedPrefix.length)) {
+                singleLineComment(ctx)
+                singlesAndMultis(ctx)
+            }
+        }
+        else ctx.pushAndContinue(())
+    }
+
+    private final val impl = {
+        if (noLine) multisOnly(_)
+        else if (noMulti) singlesOnly(_)
+        else singlesAndMultis(_)
+    }
+
+    override final def apply(ctx: Context): Unit = impl(ctx)
     protected def spaces(ctx: Context): Unit
 }
 
-// TODO This is considered as a VERY rough implementation of the intrinsic, just to get it working, it will be optimised later
 private [internal] final class TokenComment(start: String, end: String, line: String, nested: Boolean) extends CommentLexer(start, end, line, nested) {
+    // PRE: one of the comments is supported
+    // PRE: Multi-line comments may not prefix single-line, but single-line may prefix multi-line
     override def apply(ctx: Context): Unit = {
-        val startsSingle = ctx.input.startsWith(line, ctx.offset)
-        val startsMulti = ctx.input.startsWith(start, ctx.offset)
-        if (noLine && noMulti) ctx.fail()
+        val startsMulti = !noMulti && ctx.input.startsWith(start, ctx.offset)
         // If neither comment is available we fail
-        else if (!ctx.moreInput || (!noLine && !startsSingle) && (!noMulti && !startsMulti)) ctx.fail("comment")
+        if (!ctx.moreInput || (!noLine && !ctx.input.startsWith(line, ctx.offset)) && (!noMulti && !startsMulti)) ctx.fail("comment")
         // One of the comments must be available
-        else if (!noMulti && startsMulti && multiLineComment(ctx)) ctx.pushAndContinue(())
-        else if (!noMulti && startsMulti) ctx.fail("end of comment")
+        else if (startsMulti && multiLineComment(ctx)) ctx.pushAndContinue(())
+        else if (startsMulti) ctx.fail("end of comment")
         // It clearly wasn't the multi-line comment, so we are left with single line
         else {
             singleLineComment(ctx)

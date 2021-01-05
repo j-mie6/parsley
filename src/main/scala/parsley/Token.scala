@@ -47,7 +47,15 @@ final case class LanguageDef(commentStart: String,
                              operators: Set[String],
                              caseSensitive: Boolean,
                              space: Impl) {
-    private [parsley] val supportsComments = commentStart.nonEmpty || commentEnd.nonEmpty || commentLine.nonEmpty
+    private [parsley] lazy val supportsComments = {
+        val on = (commentStart.nonEmpty && commentEnd.nonEmpty) || commentLine.nonEmpty
+        if (on && commentStart.nonEmpty && commentLine.startsWith(commentStart)) {
+            throw new IllegalArgumentException(
+                "multi-line comments which are a valid prefix of a single-line comment are not allowed as this causes ambiguity in the parser"
+            )
+        }
+        on
+    }
 }
 object LanguageDef
 {
