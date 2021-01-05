@@ -6,7 +6,6 @@ import scala.util.{Try, Success => TSuccess, Failure => TFailure}
 * Result of a parser. Either a `Success[A]` or a `Failure`
 * @tparam A The type of expected success result
 */
-//TODO: Make these a bit more full fledged
 sealed abstract class Result[+A]
 {
   /** Applies `fa` if this is a `Failure` or `fb` if this is a `Success`.
