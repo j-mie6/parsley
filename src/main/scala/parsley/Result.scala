@@ -143,9 +143,9 @@ sealed abstract class Result[+A]
 */
 case class Success[A] private [parsley] (x: A) extends Result[A]
 {
-    override def isSuccess = true
-    override def isFailure = false
-    override def get = x
+    override def isSuccess: Boolean = true
+    override def isFailure: Boolean = false
+    override def get: A = x
 }
 
 /**
@@ -154,7 +154,7 @@ case class Success[A] private [parsley] (x: A) extends Result[A]
 */
 case class Failure private [parsley] (msg: String) extends Result[Nothing]
 {
-    override def isSuccess = false
-    override def isFailure = true
-    override def get = throw new NoSuchElementException("get called on Failure")
+    override def isSuccess: Boolean = false
+    override def isFailure: Boolean = true
+    override def get: A = throw new NoSuchElementException("get called on Failure")
 }
