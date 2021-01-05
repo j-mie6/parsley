@@ -114,14 +114,18 @@ object BitGen
   */
 final class TokenParser(lang: LanguageDef)
 {
-    private def keyOrOp(startImpl: Impl, letterImpl: Impl, parser: Parsley[String], predicate: String => Boolean, name: String,
-                        builder: (TokenSet, TokenSet) => deepembedding.Parsley[String]) = (startImpl, letterImpl) match
-    {
-        case (BitSetImpl(start), BitSetImpl(letter)) => lexeme(new Parsley(builder(start, letter)))
-        case (BitSetImpl(start), Predicate(letter)) => lexeme(new Parsley(builder(start, letter)))
-        case (Predicate(start), BitSetImpl(letter)) => lexeme(new Parsley(builder(start, letter)))
-        case (Predicate(start), Predicate(letter)) => lexeme(new Parsley(builder(start, letter)))
-        case _ => lexeme(attempt(parser.guard(predicate, s"unexpected $name " + _)))
+    private def keyOrOp(startImpl: Impl, letterImpl: Impl, parser: Parsley[String], predicate: String => Boolean,
+                        combinatorName: String, name: String, illegalName: String) = {
+        val builder = (start: TokenSet, letter: TokenSet) =>
+            new Parsley(new deepembedding.NonSpecific(combinatorName, name, illegalName, start, letter, !predicate(_)))
+        lexeme((startImpl, letterImpl) match
+        {
+            case (BitSetImpl(start), BitSetImpl(letter)) => builder(start, letter)
+            case (BitSetImpl(start), Predicate(letter)) => builder(start, letter)
+            case (Predicate(start), BitSetImpl(letter)) => builder(start, letter)
+            case (Predicate(start), Predicate(letter)) => builder(start, letter)
+            case _ => attempt((parser ? name).guard(predicate, s"unexpected $illegalName " + _))
+        })
     }
 
     // Identifiers & Reserved words
@@ -129,15 +133,14 @@ final class TokenParser(lang: LanguageDef)
      * fail on identifiers that are reserved words (i.e. keywords). Legal identifier characters and
      * keywords are defined in the `LanguageDef` provided to the token parser. An identifier is treated
      * as a single token using `attempt`.*/
-    lazy val identifier: Parsley[String] = keyOrOp(lang.identStart, lang.identLetter, ident, !isReservedName(_), "keyword",
-                                                   (start, letter) => new deepembedding.Identifier(start, letter, theReservedNames))
+    lazy val identifier: Parsley[String] = keyOrOp(lang.identStart, lang.identLetter, ident, !isReservedName(_),  "identifier", "identifier", "keyword")
 
     /**The lexeme parser `keyword(name)` parses the symbol `name`, but it also checks that the `name`
      * is not a prefix of a valid identifier. A `keyword` is treated as a single token using `attempt`.*/
     def keyword(name: String): Parsley[Unit] = lang.identLetter match
     {
-        case BitSetImpl(letter) => lexeme(new Parsley(new deepembedding.Keyword(name, letter, lang.caseSensitive)))
-        case Predicate(letter) => lexeme(new Parsley(new deepembedding.Keyword(name, letter, lang.caseSensitive)))
+        case BitSetImpl(letter) => lexeme(new Parsley(new deepembedding.Specific("keyword", name, letter, lang.caseSensitive)))
+        case Predicate(letter) => lexeme(new Parsley(new deepembedding.Specific("keyword", name, letter, lang.caseSensitive)))
         case _ => lexeme(attempt(caseString(name) *> notFollowedBy(identLetter) ? ("end of " + name)))
     }
 
@@ -151,21 +154,19 @@ final class TokenParser(lang: LanguageDef)
     private val theReservedNames =  if (lang.caseSensitive) lang.keywords else lang.keywords.map(_.toLowerCase)
     private lazy val identStart = toParser(lang.identStart)
     private lazy val identLetter = toParser(lang.identLetter)
-    private lazy val ident = lift2((c: Char, cs: List[Char]) => (c::cs).mkString, identStart, many(identLetter)) ? "identifier"
+    private lazy val ident = lift2((c: Char, cs: List[Char]) => (c::cs).mkString, identStart, many(identLetter))
 
     // Operators & Reserved ops
     /**This lexeme parser parses a legal operator. Returns the name of the operator. This parser
      * will fail on any operators that are reserved operators. Legal operator characters and
      * reserved operators are defined in the `LanguageDef` provided to the token parser. A
      * `userOp` is treated as a single token using `attempt`.*/
-    lazy val userOp: Parsley[String] = keyOrOp(lang.opStart, lang.opLetter, oper, !isReservedOp(_), "reserved operator",
-                                               (start, letter) => new deepembedding.UserOp(start, letter, lang.operators))
+    lazy val userOp: Parsley[String] = keyOrOp(lang.opStart, lang.opLetter, oper, !isReservedOp(_), "userOp", "operator", "reserved operator")
 
     /**This non-lexeme parser parses a reserved operator. Returns the name of the operator.
      * Legal operator characters and reserved operators are defined in the `LanguageDef`
      * provided to the token parser. A `reservedOp_` is treated as a single token using `attempt`.*/
-    lazy val reservedOp_ : Parsley[String] = keyOrOp(lang.opStart, lang.opLetter, oper, isReservedOp(_), "non-reserved operator",
-                                                     (start, letter) => new deepembedding.ReservedOp(start, letter, lang.operators))
+    lazy val reservedOp_ : Parsley[String] = keyOrOp(lang.opStart, lang.opLetter, oper, isReservedOp(_), "reservedOp", "operator", "non-reserved operator")
 
     /**This lexeme parser parses a reserved operator. Returns the name of the operator. Legal
      * operator characters and reserved operators are defined in the `LanguageDef` provided
@@ -182,8 +183,8 @@ final class TokenParser(lang: LanguageDef)
      * `attempt`.*/
     def operator_(name: String): Parsley[Unit] = lang.opLetter match
     {
-        case BitSetImpl(letter) => new Parsley(new deepembedding.Operator(name, letter))
-        case Predicate(letter) => new Parsley(new deepembedding.Operator(name, letter))
+        case BitSetImpl(letter) => new Parsley(new deepembedding.Specific("operator", name, letter, true))
+        case Predicate(letter) => new Parsley(new deepembedding.Specific("operator", name, letter, true))
         case _ => attempt(name *> notFollowedBy(opLetter) ? ("end of " + name))
     }
 
@@ -200,7 +201,7 @@ final class TokenParser(lang: LanguageDef)
     private def isReservedOp(op: String): Boolean = lang.operators.contains(op)
     private lazy val opStart = toParser(lang.opStart)
     private lazy val opLetter = toParser(lang.opLetter)
-    private lazy val oper = lift2((c: Char, cs: List[Char]) => (c::cs).mkString, opStart, many(opLetter)) ? "operator"
+    private lazy val oper = lift2((c: Char, cs: List[Char]) => (c::cs).mkString, opStart, many(opLetter))
 
     // Chars & Strings
     /**This lexeme parser parses a single literal character. Returns the literal character value.
@@ -312,10 +313,7 @@ final class TokenParser(lang: LanguageDef)
      * or "0O". Returns the value of the number.*/
     lazy val octal: Parsley[Int] = lexeme('0' *> octal_)
 
-    private def number(base: Int, baseDigit: Parsley[Char]): Parsley[Int] =
-    {
-        for (digits <- some(baseDigit)) yield digits.foldLeft(0)((x, d) => base*x + d.asDigit)
-    }
+    private def number(base: Int, baseDigit: Parsley[Char]): Parsley[Int] = baseDigit.foldLeft(0)((x, d) => base*x + d.asDigit)
 
     // White space & symbols
     /**Lexeme parser `symbol(s)` parses `string(s)` and skips trailing white space.*/

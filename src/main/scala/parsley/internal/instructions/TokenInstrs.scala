@@ -121,11 +121,11 @@ private [internal] final class TokenSkipComments(start: String, end: String, lin
     // $COVERAGE-ON$
 }
 
-private [instructions] abstract class TokenLexi(name: String, illegalName: String)
+private [internal] final class TokenNonSpecific(name: String, illegalName: String)
                                                (start: TokenSet, letter: TokenSet, illegal: String => Boolean, _expected: UnsafeOption[String]) extends Instr {
     private val expected = if (_expected == null) name else _expected
 
-    final override def apply(ctx: Context): Unit = {
+    override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && start(ctx.nextChar)) {
             val name = new StringBuilder()
             name += ctx.nextChar
@@ -146,7 +146,7 @@ private [instructions] abstract class TokenLexi(name: String, illegalName: Strin
         }
     }
 
-    @tailrec private final def restOfToken(ctx: Context, tok: StringBuilder): Unit = {
+    @tailrec private def restOfToken(ctx: Context, tok: StringBuilder): Unit = {
         if (ctx.moreInput && letter(ctx.nextChar)) {
             tok += ctx.nextChar
             ctx.offset += 1
@@ -156,20 +156,11 @@ private [instructions] abstract class TokenLexi(name: String, illegalName: Strin
     }
 
     // $COVERAGE-OFF$
-    final override def toString: String = s"TokenLexi($name)"
+    override def toString: String = s"TokenNonSpecific($name)"
     // $COVERAGE-ON$
 }
 
-private [internal] final class TokenIdentifier(start: TokenSet, letter: TokenSet, keywords: Set[String], _expected: UnsafeOption[String])
-    extends TokenLexi("identifier", "keyword")(start, letter, keywords, _expected)
-
-private [internal] final class TokenUserOperator(start: TokenSet, letter: TokenSet, reservedOps: Set[String], _expected: UnsafeOption[String])
-    extends TokenLexi("operator", "reserved operator")(start, letter, reservedOps, _expected)
-
-private [internal] final class TokenOperator(start: TokenSet, letter: TokenSet, reservedOps: Set[String], _expected: UnsafeOption[String])
-    extends TokenLexi("operator", "non-reserved operator")(start, letter, reservedOps.andThen(!_), _expected)
-
-private [instructions] abstract class TokenSpecific(_specific: String, caseSensitive: Boolean, _expected: UnsafeOption[String]) extends Instr {
+private [instructions] abstract class TokenSpecificAllowTrailing(_specific: String, caseSensitive: Boolean, _expected: UnsafeOption[String]) extends Instr {
     private final val expected = if (_expected == null) _specific else _expected
     protected final val expectedEnd = if (_expected == null) "end of " + _specific else _expected
     private final val specific = (if (caseSensitive) _specific else _specific.toLowerCase).toCharArray
@@ -195,15 +186,11 @@ private [instructions] abstract class TokenSpecific(_specific: String, caseSensi
         if (ctx.inputsz >= ctx.offset + strsz) readSpecific(ctx, ctx.offset, 0)
         else ctx.fail(expected)
     }
-
-    // $COVERAGE-OFF$
-    override def toString: String = s"TokenSpecific(${_specific})"
-    // $COVERAGE-ON$
 }
 
-private [internal] abstract class TokenSpecificNoTrailLetter(keyword: String, letter: TokenSet, caseSensitive: Boolean, expected: UnsafeOption[String])
-    extends TokenSpecific(keyword, caseSensitive, expected) {
-    final override def postprocess(ctx: Context, i: Int): Unit = {
+private [internal] final class TokenSpecific(_specific: String, letter: TokenSet, caseSensitive: Boolean, expected: UnsafeOption[String])
+    extends TokenSpecificAllowTrailing(_specific, caseSensitive, expected) {
+    override def postprocess(ctx: Context, i: Int): Unit = {
         if (i < ctx.inputsz && letter(ctx.input(i))) {
             ctx.fail(expectedEnd)
             ctx.restoreState()
@@ -213,16 +200,14 @@ private [internal] abstract class TokenSpecificNoTrailLetter(keyword: String, le
             ctx.pushAndContinue(())
         }
     }
+
+    // $COVERAGE-OFF$
+    override def toString: String = s"TokenSpecific(${_specific})"
+    // $COVERAGE-ON$
 }
 
-private [internal] final class TokenKeyword(keyword: String, letter: TokenSet, caseSensitive: Boolean, expected: UnsafeOption[String])
-    extends TokenSpecificNoTrailLetter(keyword, letter, caseSensitive, expected)
-
-private [internal] final class TokenOperator_(operator: String, letter: TokenSet, expected: UnsafeOption[String])
-    extends TokenSpecificNoTrailLetter(operator, letter, true, expected)
-
 private [internal] final class TokenMaxOp(operator: String, _ops: Set[String], expected: UnsafeOption[String])
-    extends TokenSpecific(operator, true, expected) {
+    extends TokenSpecificAllowTrailing(operator, true, expected) {
     private val ops = Radix(_ops.collect {
         case op if op.length > operator.length && op.startsWith(operator) => op.substring(operator.length)
     })
