@@ -246,18 +246,12 @@ private [internal] final class TokenNatural(_expected: UnsafeOption[String]) ext
 private [internal] final class TokenFloat(_expected: UnsafeOption[String]) extends Instr {
     val expected = if (_expected == null) "unsigned float" else _expected
     override def apply(ctx: Context): Unit = {
+
         if (ctx.moreInput && ctx.nextChar.isDigit) {
-            val d = ctx.nextChar
-            ctx.fastUncheckedConsumeChars(1)
             val builder = new StringBuilder()
-            if (decimal(ctx, builder += d, false) && ctx.moreInput) {
-                if (ctx.nextChar == '.') { // fraction
-                    ctx.fastUncheckedConsumeChars(1)
-                    if (decimal(ctx, builder += '.')) lexExponent(ctx, builder, missingOk = true)
-                    else ctx.fail(expected)
-                }
-                else lexExponent(ctx, builder, missingOk = false)
-            }
+            builder += ctx.nextChar
+            ctx.fastUncheckedConsumeChars(1)
+            if (decimal(ctx, builder, false) && ctx.moreInput) lexFraction(ctx, builder)
             else ctx.fail(expected)
         }
         else ctx.fail(expected)
@@ -265,24 +259,22 @@ private [internal] final class TokenFloat(_expected: UnsafeOption[String]) exten
 
     @tailrec private final def decimal(ctx: Context, builder: StringBuilder, first: Boolean = true): Boolean = {
         if (ctx.moreInput && ctx.nextChar >= '0' && ctx.nextChar <= '9') {
-            val d = ctx.nextChar
+            builder += ctx.nextChar
             ctx.fastUncheckedConsumeChars(1)
-            decimal(ctx, builder += d, false)
+            decimal(ctx, builder, false)
         }
         else !first
     }
 
     private final def exponent(ctx: Context, builder: StringBuilder): Boolean = {
+        ctx.fastUncheckedConsumeChars(1)
         if (ctx.moreInput) {
-            ctx.nextChar match {
-                case '+' =>
-                    ctx.fastUncheckedConsumeChars(1)
-                    decimal(ctx, builder)
-                case '-' =>
-                    ctx.fastUncheckedConsumeChars(1)
-                    decimal(ctx, builder += '-')
-                case _ => decimal(ctx, builder)
+            if (ctx.nextChar == '+') ctx.fastUncheckedConsumeChars(1)
+            else if (ctx.nextChar == '-') {
+                ctx.fastUncheckedConsumeChars(1)
+                builder += '-'
             }
+            decimal(ctx, builder)
         }
         else false
     }
@@ -295,15 +287,20 @@ private [internal] final class TokenFloat(_expected: UnsafeOption[String]) exten
     }
 
     private final def lexExponent(ctx: Context, builder: StringBuilder, missingOk: Boolean): Unit = {
-        if (ctx.moreInput && (ctx.nextChar == 'e' || ctx.nextChar == 'E')) {
-            ctx.fastUncheckedConsumeChars(1)
-            if (exponent(ctx, builder += 'e')) {
-                attemptCastAndContinue(ctx, builder)
-            }
-            else ctx.fail(expected)
-        }
+        val requireExponent = ctx.moreInput && ctx.nextChar == 'e' || ctx.nextChar == 'E'
+        if (requireExponent && exponent(ctx, builder += 'e')) attemptCastAndContinue(ctx, builder)
+        else if (requireExponent) ctx.fail(expected)
         else if (missingOk) attemptCastAndContinue(ctx, builder)
         else ctx.fail(expected)
+    }
+
+    private final def lexFraction(ctx: Context, builder: StringBuilder) = {
+        if (ctx.nextChar == '.') {
+            ctx.fastUncheckedConsumeChars(1)
+            if (decimal(ctx, builder += '.')) lexExponent(ctx, builder, missingOk = true)
+            else ctx.fail(expected)
+        }
+        else lexExponent(ctx, builder, missingOk = false)
     }
 
     // $COVERAGE-OFF$
