@@ -147,19 +147,18 @@ private [internal] final class TokenSign(ty: SignType, _expected: UnsafeOption[S
         case IntType => ((x: Int) => -x).asInstanceOf[Any => Any]
         case DoubleType => ((x: Double) => -x).asInstanceOf[Any => Any]
     }
-    val pos: Any => Any = x => x
+    val pos = (x: Any) => x
 
     override def apply(ctx: Context): Unit = {
-        if (ctx.moreInput) {
-            if (ctx.nextChar == '-') {
-                ctx.fastUncheckedConsumeChars(1)
-                ctx.stack.push(neg)
-            }
-            else {
-                if (ctx.nextChar == '+') ctx.fastUncheckedConsumeChars(1)
-                ctx.stack.push(pos)
-            }
+        if (ctx.moreInput && ctx.nextChar == '-') {
+            ctx.fastUncheckedConsumeChars(1)
+            ctx.stack.push(neg)
         }
+        else if (ctx.moreInput && ctx.nextChar == '+') {
+            ctx.fastUncheckedConsumeChars(1)
+            ctx.stack.push(pos)
+        }
+        else ctx.stack.push(pos)
         ctx.inc()
     }
 
@@ -169,73 +168,63 @@ private [internal] final class TokenSign(ty: SignType, _expected: UnsafeOption[S
 }
 
 private [instructions] sealed trait NumericReader {
-    private final def subDecimal(base: Int, maxDigit: Char, ctx: Context): Int => Int = {
-        @tailrec def go(x: Int): Int = {
+    private final def subDecimal(base: Int, maxDigit: Char, ctx: Context): (Int, Boolean) => Option[Int] = {
+        @tailrec def go(x: Int, first: Boolean): Option[Int] = {
             if (ctx.moreInput && ctx.nextChar >= '0' && ctx.nextChar <= maxDigit) {
                 val d = ctx.nextChar.asDigit
                 ctx.fastUncheckedConsumeChars(1)
-                go(x * base + d)
+                go(x * base + d, false)
             }
-            else x
+            else if (first) None
+            else Some(x)
         }
         go
     }
-    protected final def decimal(ctx: Context, firstDigit: Int = 0): Int = subDecimal(10, '9', ctx)(firstDigit)
-    protected final def octal(ctx: Context, firstDigit: Int = 0): Int = subDecimal(8, '7', ctx)(firstDigit)
+    protected final def decimal(ctx: Context, x: Int, first: Boolean): Option[Int] = subDecimal(10, '9', ctx)(x, first)
+    protected final def octal(ctx: Context, x: Int, first: Boolean): Option[Int] = subDecimal(8, '7', ctx)(x, first)
 
-    @tailrec protected final def hexadecimal(ctx: Context, x: Int = 0): Int = {
+    @tailrec protected final def hexadecimal(ctx: Context, x: Int, first: Boolean): Option[Int] = {
         if (ctx.moreInput) {
             (ctx.nextChar: @switch) match {
-                case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
-                        | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
-                        | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
+                case d@( '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
+                       | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
+                       | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
                     ctx.fastUncheckedConsumeChars(1)
-                    hexadecimal(ctx, x * 16 + d.asDigit)
-                case _ => x
+                    hexadecimal(ctx, x * 16 + d.asDigit, false)
+                case _ => Some(x)
             }
         }
-        else x
+        else if (first) None
+        else Some(x)
     }
 }
 
 private [internal] final class TokenNatural(_expected: UnsafeOption[String]) extends Instr with NumericReader {
     val expected = if (_expected == null) "natural" else _expected
     override def apply(ctx: Context): Unit = {
-        if (ctx.moreInput) ctx.nextChar match {
-            case '0' =>
-                ctx.fastUncheckedConsumeChars(1)
-                if (!ctx.moreInput) ctx.pushAndContinue(0)
-                else ctx.nextChar match {
-                    case 'x' | 'X' =>
-                        ctx.fastUncheckedConsumeChars(1)
-                        if (ctx.moreInput) ctx.nextChar match {
-                            case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
-                                    | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
-                                    | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
-                                ctx.fastUncheckedConsumeChars(1)
-                                ctx.pushAndContinue(hexadecimal(ctx, d.asDigit))
-                            case _ => ctx.fail(expected)
-                        }
-                        else ctx.fail(expected)
-                    case 'o' | 'O' =>
-                        ctx.fastUncheckedConsumeChars(1)
-                        if (ctx.moreInput && ctx.nextChar >= '0' && ctx.nextChar <= '7') {
-                            val d = ctx.nextChar
-                            ctx.fastUncheckedConsumeChars(1)
-                            ctx.pushAndContinue(octal(ctx, d.asDigit))
-                        }
-                        else ctx.fail(expected)
-                    case d if d.isDigit =>
-                        ctx.fastUncheckedConsumeChars(1)
-                        ctx.pushAndContinue(decimal(ctx, d.asDigit))
-                    case _ => ctx.pushAndContinue(0)
-                }
-            case d if d.isDigit =>
-                ctx.fastUncheckedConsumeChars(1)
-                ctx.pushAndContinue(decimal(ctx, d.asDigit))
-            case _ => ctx.fail(expected)
+        if (ctx.moreInput && ctx.nextChar == '0') {
+            ctx.fastUncheckedConsumeChars(1)
+            if (!ctx.moreInput) ctx.pushAndContinue(0)
+            else ctx.nextChar match {
+                case 'x' | 'X' =>
+                    ctx.fastUncheckedConsumeChars(1)
+                    hexadecimal(ctx, 0, true) match {
+                        case Some(x) => ctx.pushAndContinue(x)
+                        case None => ctx.fail(expected)
+                    }
+                case 'o' | 'O' =>
+                    ctx.fastUncheckedConsumeChars(1)
+                    octal(ctx, 0, true) match {
+                        case Some(x) => ctx.pushAndContinue(x)
+                        case None => ctx.fail(expected)
+                    }
+                case _ => ctx.pushAndContinue(decimal(ctx, 0, true).getOrElse(0))
+            }
         }
-        else ctx.fail(expected)
+        else decimal(ctx, 0, true) match {
+            case Some(x) => ctx.pushAndContinue(x)
+            case None => ctx.fail(expected)
+        }
     }
 
     // $COVERAGE-OFF$
@@ -324,25 +313,25 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
     private final def lookAhead(ctx: Context, n: Int): Char = ctx.input(ctx.offset + n)
     private final def lookAhead(ctx: Context, n: Int, c: Char): Boolean = ctx.offset + n < ctx.inputsz && lookAhead(ctx, n) == c
 
-    private final def numericEscape(ctx: Context, code: =>Int) = {
-        ctx.fastUncheckedConsumeChars(1)
-        val escapeCode = code
+    private final def numericEscape(ctx: Context, escapeCode: Int) = {
         if (escapeCode <= 0x10FFFF) new TokenEscape.EscapeChar(escapeCode.toChar)
         else TokenEscape.BadCode
     }
 
-    private final def nonDecimalNumericEscape(ctx: Context, lexer: (Context, Int) => Int, validDigit: Char => Boolean) = {
+    private final def nonDecimalNumericEscape(ctx: Context, lexer: (Context, Int, Boolean) => Option[Int]) = {
         ctx.fastUncheckedConsumeChars(1)
-        if (ctx.moreInput && validDigit(ctx.nextChar)) {
-            val d = ctx.nextChar.asDigit
-            numericEscape(ctx, lexer(ctx, d))
+        lexer(ctx, 0, true) match {
+            case Some(x) => numericEscape(ctx, x)
+            case None => TokenEscape.NoParse
         }
-        else TokenEscape.NoParse
     }
 
-    private final def decimalEscape(ctx: Context, d: Int) = numericEscape(ctx, decimal(ctx, d))
-    private final def hexadecimalEscape(ctx: Context) = nonDecimalNumericEscape(ctx, hexadecimal, c => c.isDigit || (c.toLower >= 'a' && c.toLower <= 'f'))
-    private final def octalEscape(ctx: Context) = nonDecimalNumericEscape(ctx, octal, c => c >= '0' && c <= '7')
+    private final def decimalEscape(ctx: Context, d: Int) = {
+        ctx.fastUncheckedConsumeChars(1)
+        numericEscape(ctx, decimal(ctx, d, false).get)
+    }
+    private final def hexadecimalEscape(ctx: Context) = nonDecimalNumericEscape(ctx, hexadecimal)
+    private final def octalEscape(ctx: Context) = nonDecimalNumericEscape(ctx, octal)
     private final def caretEscape(ctx: Context) = {
         ctx.fastUncheckedConsumeChars(1)
         if (ctx.moreInput && ctx.nextChar >= 'A' && ctx.nextChar <= 'Z') consumeAndReturn(ctx, 1, (ctx.nextChar - 'A' + 1).toChar)
