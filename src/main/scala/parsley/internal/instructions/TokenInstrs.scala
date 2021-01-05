@@ -168,35 +168,21 @@ private [internal] final class TokenSign(ty: SignType, _expected: UnsafeOption[S
 }
 
 private [instructions] sealed trait NumericReader {
-    private final def subDecimal(base: Int, maxDigit: Char, ctx: Context): (Int, Boolean) => Option[Int] = {
-        @tailrec def go(x: Int, first: Boolean): Option[Int] = {
-            if (ctx.moreInput && ctx.nextChar >= '0' && ctx.nextChar <= maxDigit) {
+    private final def subDecimal(base: Int, isDigit: Char => Boolean): (Context, Int, Boolean) => Option[Int] = {
+        @tailrec def go(ctx: Context, x: Int, first: Boolean): Option[Int] = {
+            if (ctx.moreInput && isDigit(ctx.nextChar)) {
                 val d = ctx.nextChar.asDigit
                 ctx.fastUncheckedConsumeChars(1)
-                go(x * base + d, false)
+                go(ctx, x * base + d, false)
             }
             else if (first) None
             else Some(x)
         }
         go
     }
-    protected final def decimal(ctx: Context, x: Int, first: Boolean): Option[Int] = subDecimal(10, '9', ctx)(x, first)
-    protected final def octal(ctx: Context, x: Int, first: Boolean): Option[Int] = subDecimal(8, '7', ctx)(x, first)
-
-    @tailrec protected final def hexadecimal(ctx: Context, x: Int, first: Boolean): Option[Int] = {
-        if (ctx.moreInput) {
-            (ctx.nextChar: @switch) match {
-                case d@( '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
-                       | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
-                       | 'A' | 'B' | 'C' | 'D' | 'E' | 'F') =>
-                    ctx.fastUncheckedConsumeChars(1)
-                    hexadecimal(ctx, x * 16 + d.asDigit, false)
-                case _ => Some(x)
-            }
-        }
-        else if (first) None
-        else Some(x)
-    }
+    protected final val decimal = subDecimal(10, _.isDigit)
+    protected final val octal = subDecimal(8, parsley.Char.isOctDigit)
+    protected final val hexadecimal = subDecimal(16, parsley.Char.isHexDigit)
 }
 
 private [internal] final class TokenNatural(_expected: UnsafeOption[String]) extends Instr with NumericReader {
@@ -204,22 +190,16 @@ private [internal] final class TokenNatural(_expected: UnsafeOption[String]) ext
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && ctx.nextChar == '0') {
             ctx.fastUncheckedConsumeChars(1)
-            if (!ctx.moreInput) ctx.pushAndContinue(0)
-            else ctx.nextChar match {
-                case 'x' | 'X' =>
-                    ctx.fastUncheckedConsumeChars(1)
-                    hexadecimal(ctx, 0, true) match {
-                        case Some(x) => ctx.pushAndContinue(x)
-                        case None => ctx.fail(expected)
-                    }
-                case 'o' | 'O' =>
-                    ctx.fastUncheckedConsumeChars(1)
-                    octal(ctx, 0, true) match {
-                        case Some(x) => ctx.pushAndContinue(x)
-                        case None => ctx.fail(expected)
-                    }
-                case _ => ctx.pushAndContinue(decimal(ctx, 0, true).getOrElse(0))
+            lazy val hexa = ctx.nextChar == 'x' || ctx.nextChar == 'X'
+            lazy val octa = ctx.nextChar == 'o' || ctx.nextChar == 'O'
+            if (ctx.moreInput && (hexa || octa)) {
+                ctx.fastUncheckedConsumeChars(1)
+                (if (hexa) hexadecimal else octal)(ctx, 0, true) match {
+                    case Some(x) => ctx.pushAndContinue(x)
+                    case None => ctx.fail(expected)
+                }
             }
+            else ctx.pushAndContinue(decimal(ctx, 0, true).getOrElse(0))
         }
         else decimal(ctx, 0, true) match {
             case Some(x) => ctx.pushAndContinue(x)
@@ -235,13 +215,9 @@ private [internal] final class TokenNatural(_expected: UnsafeOption[String]) ext
 private [internal] final class TokenFloat(_expected: UnsafeOption[String]) extends Instr {
     val expected = if (_expected == null) "unsigned float" else _expected
     override def apply(ctx: Context): Unit = {
-
-        if (ctx.moreInput && ctx.nextChar.isDigit) {
-            val builder = new StringBuilder()
-            builder += ctx.nextChar
-            ctx.fastUncheckedConsumeChars(1)
-            if (decimal(ctx, builder, false) && ctx.moreInput) lexFraction(ctx, builder)
-            else ctx.fail(expected)
+        val builder = new StringBuilder()
+        if (decimal(ctx, builder)) {
+            lexFraction(ctx, builder)
         }
         else ctx.fail(expected)
     }
@@ -257,15 +233,12 @@ private [internal] final class TokenFloat(_expected: UnsafeOption[String]) exten
 
     private final def exponent(ctx: Context, builder: StringBuilder): Boolean = {
         ctx.fastUncheckedConsumeChars(1)
-        if (ctx.moreInput) {
-            if (ctx.nextChar == '+') ctx.fastUncheckedConsumeChars(1)
-            else if (ctx.nextChar == '-') {
-                ctx.fastUncheckedConsumeChars(1)
-                builder += '-'
-            }
-            decimal(ctx, builder)
+        if (ctx.moreInput && ctx.nextChar == '+') ctx.fastUncheckedConsumeChars(1)
+        else if (ctx.moreInput && ctx.nextChar == '-') {
+            ctx.fastUncheckedConsumeChars(1)
+            builder += '-'
         }
-        else false
+        decimal(ctx, builder)
     }
 
     private final def attemptCastAndContinue(ctx: Context, builder: StringBuilder): Unit = {
@@ -284,7 +257,7 @@ private [internal] final class TokenFloat(_expected: UnsafeOption[String]) exten
     }
 
     private final def lexFraction(ctx: Context, builder: StringBuilder) = {
-        if (ctx.nextChar == '.') {
+        if (ctx.moreInput && ctx.nextChar == '.') {
             ctx.fastUncheckedConsumeChars(1)
             if (decimal(ctx, builder += '.')) lexExponent(ctx, builder, missingOk = true)
             else ctx.fail(expected)
