@@ -156,5 +156,5 @@ case class Failure private [parsley] (msg: String) extends Result[Nothing]
 {
     override def isSuccess: Boolean = false
     override def isFailure: Boolean = true
-    override def get: A = throw new NoSuchElementException("get called on Failure")
+    override def get: Nothing = throw new NoSuchElementException("get called on Failure")
 }
