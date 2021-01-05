@@ -287,7 +287,7 @@ private [internal] final class TokenFloat(_expected: UnsafeOption[String]) exten
     }
 
     private final def lexExponent(ctx: Context, builder: StringBuilder, missingOk: Boolean): Unit = {
-        val requireExponent = ctx.moreInput && ctx.nextChar == 'e' || ctx.nextChar == 'E'
+        val requireExponent = ctx.moreInput && (ctx.nextChar == 'e' || ctx.nextChar == 'E')
         if (requireExponent && exponent(ctx, builder += 'e')) attemptCastAndContinue(ctx, builder)
         else if (requireExponent) ctx.fail(expected)
         else if (missingOk) attemptCastAndContinue(ctx, builder)
