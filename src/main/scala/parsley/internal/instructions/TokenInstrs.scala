@@ -6,107 +6,48 @@ import parsley.internal.{Radix, UnsafeOption}
 
 import scala.annotation.{switch, tailrec}
 
-// TODO This is considered as a VERY rough implementation of the intrinsic, just to get it working, it will be optimised later
-private [internal] class TokenComment(start: String, end: String, line: String, nested: Boolean) extends Instr {
+private [instructions] abstract class CommentLexer(start: String, end: String, line: String, nested: Boolean) extends Instr {
     protected final val noLine = line.isEmpty
     protected final val noMulti = start.isEmpty
-    override def apply(ctx: Context): Unit = {
-        if (!ctx.moreInput) ctx.fail("comment")
-        else if (noLine && noMulti) ctx.fail("comment")
-        else if (noLine) {
-            if (!ctx.input.startsWith(start, ctx.offset)) ctx.fail("comment")
-            else {
-                if (!multiLineComment(ctx)) return
-                ctx.pushAndContinue(())
-            }
-        }
-        else if (noMulti) {
-            if (!ctx.input.startsWith(line, ctx.offset)) ctx.fail("comment")
-            else {
-                singleLineComment(ctx)
-                ctx.pushAndContinue(())
-            }
-        }
-        else {
-            val startsSingle = ctx.input.startsWith(line, ctx.offset)
-            val startsMulti = ctx.input.startsWith(start, ctx.offset)
-            if (!startsSingle && !startsMulti) ctx.fail("comment")
-            else {
-                if (startsMulti) {
-                    if (!multiLineComment(ctx)) return
-                }
-                else singleLineComment(ctx)
-                ctx.pushAndContinue(())
-            }
-        }
-    }
 
     protected final def singleLineComment(ctx: Context): Unit = {
         ctx.fastUncheckedConsumeChars(line.length)
         while (ctx.moreInput && ctx.nextChar != '\n') ctx.consumeChar()
     }
 
+    @tailrec private final def wellNested(ctx: Context, unmatched: Int): Boolean = {
+        if (unmatched == 0) true
+        else if (ctx.input.startsWith(end, ctx.offset)) {
+            ctx.fastUncheckedConsumeChars(end.length)
+            wellNested(ctx, unmatched - 1)
+        }
+        else if (nested && ctx.input.startsWith(start, ctx.offset)) {
+            ctx.fastUncheckedConsumeChars(start.length)
+            wellNested(ctx, unmatched + 1)
+        }
+        else if (ctx.moreInput) {
+            ctx.consumeChar()
+            wellNested(ctx, unmatched)
+        }
+        else false
+    }
+
     protected final def multiLineComment(ctx: Context): Boolean = {
         ctx.fastUncheckedConsumeChars(start.length)
-        var n = 1
-        while (n != 0) {
-            if (ctx.input.startsWith(end, ctx.offset)) {
-                ctx.fastUncheckedConsumeChars(end.length)
-                n -= 1
-            }
-            else if (nested && ctx.input.startsWith(start, ctx.offset)) {
-                ctx.fastUncheckedConsumeChars(start.length)
-                n += 1
-            }
-            else if (ctx.moreInput) ctx.consumeChar()
-            else {
-                ctx.fail("end of comment")
-                return false
-            }
-        }
-        true
+        wellNested(ctx, 1)
     }
-    // $COVERAGE-OFF$
-    override def toString: String = "TokenComment"
-    // $COVERAGE-ON$
 }
 
-// TODO This is considered as a VERY rough implementation of the intrinsic, just to get it working, it will be optimised later
-private [internal] final class TokenSkipComments(start: String, end: String, line: String, nested: Boolean) extends TokenComment(start, end, line, nested) {
-    override def apply(ctx: Context): Unit = {
-        if (noLine && !noMulti) {
-            while (ctx.moreInput && ctx.input.startsWith(start, ctx.offset)) if (!multiLineComment(ctx)) return
-        }
-        else if (noMulti && !noLine) {
-            while (ctx.moreInput && ctx.input.startsWith(line, ctx.offset)) singleLineComment(ctx)
-        }
-        else if (!noLine && !noMulti) {
-            var startsSingle = ctx.input.startsWith(line, ctx.offset)
-            var startsMulti = ctx.input.startsWith(start, ctx.offset)
-            while (ctx.moreInput && (startsSingle || startsMulti)) {
-                if (startsMulti) {
-                    if (!multiLineComment(ctx)) return
-                }
-                else singleLineComment(ctx)
-                startsSingle = ctx.input.startsWith(line, ctx.offset)
-                startsMulti = ctx.input.startsWith(start, ctx.offset)
-            }
-        }
-        ctx.pushAndContinue(())
-    }
-    // $COVERAGE-OFF$
-    override def toString: String = "TokenSkipComments"
-    // $COVERAGE-ON$
-}
-
-private [internal] final class TokenWhiteSpace(ws: TokenSet, start: String, end: String, line: String, nested: Boolean)
-    extends TokenComment(start, end, line, nested) {
-    override def apply(ctx: Context): Unit = {
+private [instructions] abstract class WhiteSpaceLike(start: String, end: String, line: String, nested: Boolean) extends CommentLexer(start, end, line, nested) {
+    override final def apply(ctx: Context): Unit = {
         if (noLine && noMulti) spaces(ctx)
         else if (noLine) {
             spaces(ctx)
             while (ctx.moreInput && ctx.input.startsWith(start, ctx.offset)) {
-                if (!multiLineComment(ctx)) return
+                if (!multiLineComment(ctx)) {
+                    ctx.fail("end of comment")
+                    return
+                }
                 spaces(ctx)
             }
         }
@@ -124,7 +65,10 @@ private [internal] final class TokenWhiteSpace(ws: TokenSet, start: String, end:
             var startsMulti = ctx.input.startsWith(start, ctx.offset)
             while (ctx.moreInput && (startsSingle || startsMulti)) {
                 if (startsMulti) {
-                    if (!multiLineComment(ctx)) return
+                    if (!multiLineComment(ctx)) {
+                        ctx.fail("end of comment")
+                        return
+                    }
                 }
                 else singleLineComment(ctx)
                 spaces(ctx)
@@ -135,9 +79,56 @@ private [internal] final class TokenWhiteSpace(ws: TokenSet, start: String, end:
         ctx.pushAndContinue(())
     }
 
-    private def spaces(ctx: Context): Unit = while (ctx.moreInput && ws(ctx.nextChar)) ctx.consumeChar()
+    protected def spaces(ctx: Context): Unit
+}
+
+// TODO This is considered as a VERY rough implementation of the intrinsic, just to get it working, it will be optimised later
+private [internal] final class TokenComment(start: String, end: String, line: String, nested: Boolean) extends CommentLexer(start, end, line, nested) {
+    override def apply(ctx: Context): Unit = {
+        if (!ctx.moreInput) ctx.fail("comment")
+        else if (noLine && noMulti) ctx.fail()
+        else if (noLine) {
+            if (!ctx.input.startsWith(start, ctx.offset)) ctx.fail("comment")
+            else if (multiLineComment(ctx)) ctx.pushAndContinue(())
+            else ctx.fail("end of comment")
+        }
+        else if (noMulti) {
+            if (!ctx.input.startsWith(line, ctx.offset)) ctx.fail("comment")
+            else {
+                singleLineComment(ctx)
+                ctx.pushAndContinue(())
+            }
+        }
+        else {
+            val startsSingle = ctx.input.startsWith(line, ctx.offset)
+            val startsMulti = ctx.input.startsWith(start, ctx.offset)
+            if (!startsSingle && !startsMulti) ctx.fail("comment")
+            else if (startsMulti && multiLineComment(ctx)) ctx.pushAndContinue(())
+            else if (startsMulti) ctx.fail("end of comment")
+            else {
+                singleLineComment(ctx)
+                ctx.pushAndContinue(())
+            }
+        }
+    }
+
+    // $COVERAGE-OFF$
+    override def toString: String = "TokenComment"
+    // $COVERAGE-ON$
+}
+
+private [internal] final class TokenWhiteSpace(ws: TokenSet, start: String, end: String, line: String, nested: Boolean)
+    extends WhiteSpaceLike(start, end, line, nested) {
+    override def spaces(ctx: Context): Unit = while (ctx.moreInput && ws(ctx.nextChar)) ctx.consumeChar()
     // $COVERAGE-OFF$
     override def toString: String = "TokenWhiteSpace"
+    // $COVERAGE-ON$
+}
+
+private [internal] final class TokenSkipComments(start: String, end: String, line: String, nested: Boolean) extends WhiteSpaceLike(start, end, line, nested) {
+    override def spaces(ctx: Context): Unit = ()
+    // $COVERAGE-OFF$
+    override def toString: String = "TokenSkipComments"
     // $COVERAGE-ON$
 }
 
