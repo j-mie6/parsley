@@ -85,30 +85,18 @@ private [instructions] abstract class WhiteSpaceLike(start: String, end: String,
 // TODO This is considered as a VERY rough implementation of the intrinsic, just to get it working, it will be optimised later
 private [internal] final class TokenComment(start: String, end: String, line: String, nested: Boolean) extends CommentLexer(start, end, line, nested) {
     override def apply(ctx: Context): Unit = {
-        if (!ctx.moreInput) ctx.fail("comment")
-        else if (noLine && noMulti) ctx.fail()
-        else if (noLine) {
-            if (!ctx.input.startsWith(start, ctx.offset)) ctx.fail("comment")
-            else if (multiLineComment(ctx)) ctx.pushAndContinue(())
-            else ctx.fail("end of comment")
-        }
-        else if (noMulti) {
-            if (!ctx.input.startsWith(line, ctx.offset)) ctx.fail("comment")
-            else {
-                singleLineComment(ctx)
-                ctx.pushAndContinue(())
-            }
-        }
+        val startsSingle = ctx.input.startsWith(line, ctx.offset)
+        val startsMulti = ctx.input.startsWith(start, ctx.offset)
+        if (noLine && noMulti) ctx.fail()
+        // If neither comment is available we fail
+        else if (!ctx.moreInput || (!noLine && !startsSingle) && (!noMulti && !startsMulti)) ctx.fail("comment")
+        // One of the comments must be available
+        else if (!noMulti && startsMulti && multiLineComment(ctx)) ctx.pushAndContinue(())
+        else if (!noMulti && startsMulti) ctx.fail("end of comment")
+        // It clearly wasn't the multi-line comment, so we are left with single line
         else {
-            val startsSingle = ctx.input.startsWith(line, ctx.offset)
-            val startsMulti = ctx.input.startsWith(start, ctx.offset)
-            if (!startsSingle && !startsMulti) ctx.fail("comment")
-            else if (startsMulti && multiLineComment(ctx)) ctx.pushAndContinue(())
-            else if (startsMulti) ctx.fail("end of comment")
-            else {
-                singleLineComment(ctx)
-                ctx.pushAndContinue(())
-            }
+            singleLineComment(ctx)
+            ctx.pushAndContinue(())
         }
     }
 
