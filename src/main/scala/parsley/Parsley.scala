@@ -5,6 +5,7 @@ import parsley.internal.deepembedding
 
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.reflect.ClassTag
 import scala.language.{higherKinds, implicitConversions}
 
 // User API
@@ -158,12 +159,18 @@ object Parsley
           */
         def filter(pred: A => Boolean): Parsley[A] = new Parsley(new deepembedding.Filter(p.internal, pred))
         /** Filter the value of a parser; if the value returned by the parser does not match the predicate `pred` then the
-         * filter succeeded, otherwise the parser fails with an empty error
-         * @param pred The predicate that is tested against the parser result
-         * @return The result of the invokee if it passes the predicate
-         */
+          * filter succeeded, otherwise the parser fails with an empty error
+          * @param pred The predicate that is tested against the parser result
+          * @return The result of the invokee if it passes the predicate
+          */
         def filterNot(pred: A => Boolean): Parsley[A] = filter(!pred(_))
         def withFilter(pred: A => Boolean): Parsley[A] = filter(pred)
+        /** Attempts to first filter the parser to ensure that `pf` is defined over it. If it is, then the function `pf`
+          * is mapped over its result. Roughly the same as a `filter` then a `map`.
+          * @param pf The partial function
+          * @return The result of applying `pf` to this parsers value (if possible), or fails
+          */
+        def collect[B](pf: PartialFunction[A, B]): Parsley[B] = filter(pf.isDefinedAt).map(pf)
         /** Similar to `filter`, except the error message desired is also provided. This allows you to name the message
           * itself.
           * @param pred The predicate that is tested against the parser result
@@ -253,6 +260,13 @@ object Parsley
           * @return the result of folding the results of `p` with `f` and `k`
           */
         def foldLeft[B](k: B)(f: (B, A) => B): Parsley[B] = Combinator.chainPost(pure(k), map(x => (y: B) => f(y, x)))
+        /**
+          * This casts the result of the parser into a new type `B`. If the value returned by the parser
+          * is castable to type `B`, then this cast is performed. Otherwise the parser fails.
+          */
+        def cast[B: ClassTag]: Parsley[B] = collect {
+            case x: B => x
+        }
     }
     implicit final class LazyMapParsley[A, +B](f: A => B)
     {
