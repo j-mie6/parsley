@@ -3,7 +3,7 @@ package parsley
 import parsley.Char.{digit, hexDigit, octDigit, satisfy}
 import parsley.Combinator.{sepBy, sepBy1, between, some, skipSome, notFollowedBy}
 import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
-import parsley.Parsley.{unit, fail, many, skipMany, attempt, lift2, pure, empty, LazyParsley}
+import parsley.Parsley.{void, unit, fail, many, skipMany, attempt, lift2, pure, empty, LazyParsley}
 import parsley.TokenParser.TokenSet
 import parsley.Implicits.{charLift, stringLift}
 import parsley.internal.deepembedding
@@ -196,7 +196,7 @@ final class TokenParser(lang: LanguageDef)
     /**The non-lexeme parser `maxOp_(name)` parses the symbol `name`, but also checks that the `name`
       * is not part of a larger reserved operator. An `operator` is treated as a single token using
       * `attempt`.*/
-    def maxOp_(name: String): Parsley[Unit] = new Parsley(new deepembedding.MaxOp(name, lang.operators)) *> unit
+    def maxOp_(name: String): Parsley[Unit] = void(new Parsley(new deepembedding.MaxOp(name, lang.operators)))
 
     private def isReservedOp(op: String): Boolean = lang.operators.contains(op)
     private lazy val opStart = toParser(lang.opStart)

@@ -95,4 +95,20 @@ class CharTests extends ParsleyTest {
         octDigit.runParser("8") shouldBe a [Failure]
         octDigit.runParser("9") shouldBe a [Failure]
     }
+
+    "oneOf" should "match any of the characters provided" in {
+        val p = Char.oneOf('a', 'b', 'c')
+        p.runParser("a") should not be a [Failure]
+        p.runParser("b") should not be a [Failure]
+        p.runParser("c") should not be a [Failure]
+        p.runParser("d") shouldBe a [Failure]
+    }
+
+    "noneOf" should "match none of the characters provided" in {
+        val p = Char.noneOf('a', 'b', 'c')
+        p.runParser("a") shouldBe a [Failure]
+        p.runParser("b") shouldBe a [Failure]
+        p.runParser("c") shouldBe a [Failure]
+        p.runParser("d") should not be a [Failure]
+    }
 }

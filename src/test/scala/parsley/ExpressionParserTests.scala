@@ -2,7 +2,7 @@ package parsley
 
 import parsley.Char.digit
 import parsley.Implicits.{charLift, stringLift}
-import parsley.Combinator.{chainPost, chainPre, chainl1, chainr1}
+import parsley.Combinator.{chainPost, chainPre, chainl1, chainr1, chainl, chainr}
 import parsley.ExpressionParser._
 import parsley.Parsley._
 import parsley._
@@ -43,6 +43,8 @@ class ExpressionParserTests extends ParsleyTest {
 
     "chainr1" must "require an initial value" in {
         chainr1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)).runParser("11") should be (Success(1))
+        chainr1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)).runParser("1") shouldBe a [Failure]
+        chainr1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)).runParser("2") shouldBe a [Failure]
     }
     it must "parse all operators and values that follow" in {
         chainr1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)).runParser("11+11+11+11+11") should be (Success(5))
@@ -62,9 +64,15 @@ class ExpressionParserTests extends ParsleyTest {
         p.runParser("1+1+1") should be (Success(Add(1, Add(1, Num(1)))))
         p.runParser("1") should be (Success(Num(1)))
     }
+    "chainr" must "allow for no initial value" in {
+        chainr("11" #> 1, '+' #> ((x: Int, y: Int) => x + y), 0).runParser("2") shouldBe Success(0)
+        chainr("11" #> 1, '+' #> ((x: Int, y: Int) => x + y), 0).runParser("1") shouldBe a [Failure]
+    }
 
     "chainl1" must "require an initial value" in {
         chainl1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)).runParser("11") should be (Success(1))
+        chainl1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)).runParser("1") shouldBe a [Failure]
+        chainl1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)).runParser("2") shouldBe a [Failure]
     }
     it must "parse all operators and values that follow" in {
         chainl1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)).runParser("11+11+11+11+11") should be (Success(5))
@@ -86,6 +94,11 @@ class ExpressionParserTests extends ParsleyTest {
         case class Add(x: Expr, y: Int) extends Expr
         case class Num(x: Int) extends Expr
         chainl1[Int, Expr]("1" #> 1, "+" #> Add.apply)(Num).runParser("1+1+1") should be (Success(Add(Add(Num(1), 1), 1)))
+    }
+    "chainl" must "allow for no initial value" in {
+        chainl("11" #> 1, '+' #> ((x: Int, y: Int) => x + y), 0).runParser("11") should be (Success(1))
+        chainl("11" #> 1, '+' #> ((x: Int, y: Int) => x + y), 0).runParser("1") shouldBe a [Failure]
+        chainl("11" #> 1, '+' #> ((x: Int, y: Int) => x + y), 0).runParser("2") shouldBe Success(0)
     }
 
     "expression parsers" should "result in correct precedence" in {
