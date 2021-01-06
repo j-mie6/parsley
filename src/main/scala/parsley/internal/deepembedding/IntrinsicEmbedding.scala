@@ -94,8 +94,8 @@ private [parsley] final class If[A](_b: =>Parsley[Boolean], _p: =>Parsley[A], _q
 private [parsley] final class Eof(val expected: UnsafeOption[String] = null)
     extends SingletonExpect[Unit]("eof", new Eof(_), new instructions.Eof(expected))
 
-private [parsley] final class Modify[S](v: Var, f: S => S) extends Singleton[Unit](s"modify($v, ?)", new instructions.Modify(v.v, f))
-private [parsley] final class Local[S, A](private [Local] val v: Var, _p: =>Parsley[S], _q: =>Parsley[A])
+private [parsley] final class Modify[S](v: Var[S], f: S => S) extends Singleton[Unit](s"modify($v, ?)", new instructions.Modify(v.v, f))
+private [parsley] final class Local[S, A](v: Var[S], _p: =>Parsley[S], _q: =>Parsley[A])
     extends Binary[S, A, A](_p, _q)((l, r) => s"local($v, $l, $r)", Local.empty(v)) {
     override val numInstrs = 2
     override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
@@ -150,6 +150,6 @@ private [deepembedding] object If {
     def apply[A](b: Parsley[Boolean], p: Parsley[A], q: Parsley[A]): If[A] = empty.ready(b, p, q)
 }
 private [deepembedding] object Local {
-    def empty[S, A](v: Var): Local[S, A] = new Local(v, null, null)
-    def apply[S, A](v: Var, left: Parsley[S], right: Parsley[A]): Local[S, A] = empty(v).ready(left, right)
+    def empty[S, A](v: Var[S]): Local[S, A] = new Local(v, null, null)
+    def apply[S, A](v: Var[S], left: Parsley[S], right: Parsley[A]): Local[S, A] = empty(v).ready(left, right)
 }

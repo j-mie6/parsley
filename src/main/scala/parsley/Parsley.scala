@@ -401,7 +401,7 @@ object Parsley
       * @tparam S The type of the value in register `v` (this will result in a runtime type-check)
       * @return The value stored in register `v` of type `S`
       */
-    def get[S](v: Var)(implicit ev: S =!= Nothing): Parsley[S] = new Parsley(new deepembedding.Get(v))
+    def get[S](v: Var[S]): Parsley[S] = new Parsley(new deepembedding.Get(v))
     /**
       * Consumes no input and returns the value stored in one of the parser registers after applying a function.
       * @note There are only 4 registers at present.
@@ -411,7 +411,7 @@ object Parsley
       * @tparam A The desired result type
       * @return The value stored in register `v` applied to `f`
       */
-    def gets[S, A](v: Var, f: S => A): Parsley[A] = gets(v, pure(f))
+    def gets[S, A](v: Var[S], f: S => A): Parsley[A] = gets(v, pure(f))
     /**
       * Returns the value stored in one of the parser registers after applying a function obtained from given parser.
       * @note There are only 4 registers at present. The value is fetched before `pf` is executed
@@ -421,21 +421,21 @@ object Parsley
       * @tparam A The desired result type
       * @return The value stored in register `v` applied to `f` from `pf`
       */
-    def gets[S, A](v: Var, pf: Parsley[S => A]): Parsley[A] = get[S](v) <**> pf
+    def gets[S, A](v: Var[S], pf: Parsley[S => A]): Parsley[A] = get[S](v) <**> pf
     /**
       * Consumes no input and places the value `x` into register `v`.
       * @note There are only 4 registers at present.
       * @param v The index of the register to place the value in
       * @param x The value to place in the register
       */
-    def put[S](v: Var, x: S): Parsley[Unit] = put(v, pure(x))
+    def put[S](v: Var[S], x: S): Parsley[Unit] = put(v, pure(x))
     /**
       * Places the result of running `p` into register `v`.
       * @note There are only 4 registers at present.
       * @param v The index of the register to place the value in
       * @param p The parser to derive the value from
       */
-    def put[S](v: Var, p: =>Parsley[S]): Parsley[Unit] = new Parsley(new deepembedding.Put(v, p.internal))
+    def put[S](v: Var[S], p: =>Parsley[S]): Parsley[Unit] = new Parsley(new deepembedding.Put(v, p.internal))
     /**
       * Modifies the value contained in register `v` using function `f`. It is left to the users responsibility to
       * ensure the types line up. There is no compile-time type checking enforced!
@@ -444,7 +444,7 @@ object Parsley
       * @param f The function used to modify the register
       * @tparam S The type of value currently assumed to be in the register
       */
-    def modify[S](v: Var, f: S => S): Parsley[Unit] = new Parsley(new deepembedding.Modify(v, f))
+    def modify[S](v: Var[S], f: S => S): Parsley[Unit] = new Parsley(new deepembedding.Modify(v, f))
     /**
       * For the duration of parser `p` the state stored in register `v` is instead set to `x`. The change is undone
       * after `p` has finished.
@@ -454,7 +454,7 @@ object Parsley
       * @param p The parser to execute with the adjusted state
       * @return The parser that performs `p` with the modified state
       */
-    def local[R, A](v: Var, x: R, p: =>Parsley[A]): Parsley[A] = local(v, pure(x), p)
+    def local[R, A](v: Var[R], x: R, p: =>Parsley[A]): Parsley[A] = local(v, pure(x), p)
     /**
       * For the duration of parser `q` the state stored in register `v` is instead set to the return value of `p`. The
       * change is undone after `q` has finished.
@@ -464,7 +464,7 @@ object Parsley
       * @param q The parser to execute with the adjusted state
       * @return The parser that performs `q` with the modified state
       */
-    def local[R, A](v: Var, p: =>Parsley[R], q: =>Parsley[A]): Parsley[A] = new Parsley(new deepembedding.Local(v, p.internal, q.internal))
+    def local[R, A](v: Var[R], p: =>Parsley[R], q: =>Parsley[A]): Parsley[A] = new Parsley(new deepembedding.Local(v, p.internal, q.internal))
     /**
       * For the duration of parser `p` the state stored in register `v` is instead modified with `f`. The change is undone
       * after `p` has finished.
@@ -474,5 +474,5 @@ object Parsley
       * @param p The parser to execute with the adjusted state
       * @return The parser that performs `p` with the modified state
       */
-    def local[R, A](v: Var, f: R => R, p: =>Parsley[A]): Parsley[A] = local(v, get[R](v).map(f), p)
+    def local[R, A](v: Var[R], f: R => R, p: =>Parsley[A]): Parsley[A] = local(v, get[R](v).map(f), p)
 }
