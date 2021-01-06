@@ -229,7 +229,9 @@ object Parsley
           * @return The same parser, but wrapped in a subroutine call
           */
         @deprecated("This functionality is now automatically provided by default", "parsley-1.5.1")
+        // $COVERAGE-OFF$
         def unary_+ : Parsley[A] = new Parsley(new deepembedding.Subroutine(p.internal))
+        // $COVERAGE-ON$
         /**
           * Using this method enables debugging functionality for this parser. When it is entered a snapshot is taken and
           * presented on exit. It will signify when a parser is entered and exited as well. Use the break parameter to halt
