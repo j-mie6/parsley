@@ -122,10 +122,10 @@ class CoreTests extends ParsleyTest {
         lookAhead("ab").runParser("ac") shouldBe a [Failure]
     }
     "lookAhead" should "not affect the state of the registers on success" in {
-        (put(Var[Int](0), 5) *> lookAhead(put(Var[Int](0), 7) *> 'a') *> get(Var[Int](0))).runParser("a") should be {
+        (put(Reg[Int](0), 5) *> lookAhead(put(Reg[Int](0), 7) *> 'a') *> get(Reg[Int](0))).runParser("a") should be {
             Success(5)
         }
-        (put(Var[Int](0), 5) *> (lookAhead(put(Var[Int](0), 7) *> 'a') <|> 'b') *> get(Var[Int](0))).runParser("b") should be {
+        (put(Reg[Int](0), 5) *> (lookAhead(put(Reg[Int](0), 7) *> 'a') <|> 'b') *> get(Reg[Int](0))).runParser("b") should be {
             Success(7)
         }
     }
@@ -135,8 +135,8 @@ class CoreTests extends ParsleyTest {
     }
 
     "stateful parsers" should "allow for persistent state" in {
-        val r1 = Var[Int](0)
-        val r2 = Var[Int](1)
+        val r1 = Reg[Int](0)
+        val r2 = Reg[Int](1)
         val p = (put(r1, 5)
               *> put(r2, 7)
               *> put(r1, lift2[Int, Int, Int](_+_, get(r1), get(r2)))
@@ -144,12 +144,12 @@ class CoreTests extends ParsleyTest {
         p.runParser("") should be (Success((12, 7)))
     }
     they should "be modifiable" in {
-        val r1 = Var[Int](0)
+        val r1 = Reg[Int](0)
         val p = put(r1, 5) *> modify[Int](r1, _+1) *> get(r1)
         p.runParser("") should be (Success(6))
     }
     they should "provide localised context" in {
-        val r1 = Var[Int](0)
+        val r1 = Reg[Int](0)
         val p = put(r1, 5) *> (local(r1, (x: Int) => x+1, get(r1)) <~> get(r1))
         p.runParser("") should be (Success((6, 5)))
     }

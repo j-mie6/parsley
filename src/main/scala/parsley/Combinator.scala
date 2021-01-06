@@ -217,7 +217,7 @@ object Combinator
       * @return ()
       */
     // TODO: We can put this back for Parsley 2.1, because the new version will not have a `v` parameter
-    /*def forP[A](v: Var[A], init: =>Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A], body: =>Parsley[_]): Parsley[Unit] =
+    /*def forP[A](r: Reg[A], init: =>Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A], body: =>Parsley[_]): Parsley[Unit] =
     {
         val _cond = gets(v, cond)
         val _step = put(v, gets(v, step))
