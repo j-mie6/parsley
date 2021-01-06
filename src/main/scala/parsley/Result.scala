@@ -36,13 +36,10 @@ sealed abstract class Result[+A]
     def get: A
 
     /** Returns the value from this `Success` or the given argument if this is a `Failure`.  */
-    def getOrElse[B >: A](or: =>B): B = this match {
-        case Success(x) => x
-        case _          => or
-    }
+    def getOrElse[B >: A](or: =>B): B = orElse(Success(or)).get
 
     /** Returns this `Success` or the given argument if this is a `Failure`. */
-    def orElse[B >: A](or: => Result[B]): Result[B] = this match {
+    def orElse[B >: A](or: =>Result[B]): Result[B] = this match {
         case Success(_) => this
         case _          => or
     }
@@ -53,10 +50,7 @@ sealed abstract class Result[+A]
     *  @param elem    the element to test.
     *  @return `true` if this is a `Success` value equal to `elem`.
     */
-    final def contains[B >: A](elem: B): Boolean = this match {
-        case Success(x) => x== elem
-        case _          => false
-    }
+    final def contains[B >: A](elem: B): Boolean = exists(_ == elem)
 
     /** Returns `true` if `Failure` or returns the result of the application of
     *  the given predicate to the `Success` value.
