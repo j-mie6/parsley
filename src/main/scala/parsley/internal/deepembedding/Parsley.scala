@@ -67,14 +67,12 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
                 optimised.flatMap(_.codeGen)
             }
         }
-        if (state.map.nonEmpty) {
+        if (state.subsExist) {
             val end = state.freshLabel()
             instrs += new instructions.Jump(end)
-            val map = state.map
             while (state.more) {
                 val p = state.nextSub()
-                val label = map(p)
-                instrs += new instructions.Label(label)
+                instrs += new instructions.Label(state.getSubLabel(p))
                 perform(p.codeGen)
                 instrs += instructions.Return
             }
@@ -135,12 +133,10 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
 private [deepembedding] trait MZero extends Parsley[Nothing]
 
 // Internals
-// TODO: Can we remove this SubQueueNode? ListBuffer would be fine using pairs too would be nice.
 private [parsley] class CodeGenState {
-    import CodeGenState.CodeGenSubQueueNode
-    private [this] var current = 0
-    private [this] var queue: CodeGenSubQueueNode = _
-    val map = mutable.Map.empty[Parsley[_], Int]
+    private var current = 0
+    private val queue = mutable.ListBuffer.empty[Parsley[_]]
+    private val map = mutable.Map.empty[Parsley[_], Int]
     def freshLabel(): Int = {
         val next = current
         current += 1
@@ -148,24 +144,15 @@ private [parsley] class CodeGenState {
     }
     def nlabels: Int = current
 
-    def getSubLabel(p: Parsley[_]) = {
-        map.getOrElseUpdate(p,
-        {
-            queue = new CodeGenSubQueueNode(p, queue)
-            freshLabel()
-        })
-    }
+    def getSubLabel(p: Parsley[_]): Int = map.getOrElseUpdate(p,
+    {
+        p +=: queue
+        freshLabel()
+    })
 
-    def nextSub(): Parsley[_] = {
-        val p = queue.p
-        queue = queue.tail
-        p
-    }
-
-    def more: Boolean = queue != null
-}
-private [parsley] object CodeGenState {
-    private [CodeGenState] class CodeGenSubQueueNode(val p: Parsley[_], val tail: CodeGenSubQueueNode)
+    def nextSub(): Parsley[_] = queue.remove(0)
+    def more: Boolean = queue.nonEmpty
+    def subsExist: Boolean = map.nonEmpty
 }
 
 private [parsley] class LetFinderState {
