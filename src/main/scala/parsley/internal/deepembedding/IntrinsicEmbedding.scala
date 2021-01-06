@@ -50,21 +50,19 @@ private [deepembedding] sealed abstract class FilterLike[A, B](_p: =>Parsley[A],
     }
     final override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = p.codeGen |> (instrs += instr)
 }
-private [parsley] final class FastFail[A](_p: =>Parsley[A], private [FastFail] val msggen: A => String, val expected: UnsafeOption[String] = null)
+private [parsley] final class FastFail[A](_p: =>Parsley[A], msggen: A => String, expected: UnsafeOption[String] = null)
     extends FilterLike[A, Nothing](_p, c => s"$c ! ?", FastFail.empty(msggen, _),
                                    x => new Fail(msggen(x), expected), new instructions.FastFail(msggen, expected), _ => false) with MZero
-private [parsley] final class FastUnexpected[A](_p: =>Parsley[A], private [FastUnexpected] val msggen: A => String, val expected: UnsafeOption[String] = null)
+private [parsley] final class FastUnexpected[A](_p: =>Parsley[A], msggen: A => String, expected: UnsafeOption[String] = null)
     extends FilterLike[A, Nothing](_p, c => s"$c.unexpected(?)", FastFail.empty(msggen, _),
                                    x => new Unexpected(msggen(x), expected), new instructions.FastUnexpected(msggen, expected), _ => false) with MZero
-private [parsley] final class Filter[A](_p: =>Parsley[A], private [Filter] val pred: A => Boolean, val expected: UnsafeOption[String] = null)
+private [parsley] final class Filter[A](_p: =>Parsley[A], pred: A => Boolean, expected: UnsafeOption[String] = null)
     extends FilterLike[A, A](_p, c => s"$c.filter(?)", Filter.empty(pred, _),
                              _ => new Empty(expected), new instructions.Filter(pred, expected), pred)
-private [parsley] final class Guard[A](_p: =>Parsley[A], private [Guard] val pred: A => Boolean,
-                                       private [Guard] val msg: String, val expected: UnsafeOption[String] = null)
+private [parsley] final class Guard[A](_p: =>Parsley[A], pred: A => Boolean, msg: String, expected: UnsafeOption[String] = null)
     extends FilterLike[A, A](_p, c => s"$c.guard(?, $msg)", Guard.empty(pred, msg, _),
                              _ => new Fail(msg, expected), new instructions.Guard(pred, msg, expected), pred)
-private [parsley] final class FastGuard[A](_p: =>Parsley[A], private [FastGuard] val pred: A => Boolean,
-                                           private [FastGuard] val msggen: A => String, val expected: UnsafeOption[String] = null)
+private [parsley] final class FastGuard[A](_p: =>Parsley[A], pred: A => Boolean, msggen: A => String, expected: UnsafeOption[String] = null)
     extends FilterLike[A, A](_p, c => s"$c.guard(?, ?)", FastGuard.empty(pred, msggen, _),
                              x => new Fail(msggen(x), expected), new instructions.FastGuard(pred, msggen, expected), pred)
 

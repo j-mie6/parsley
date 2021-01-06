@@ -159,6 +159,39 @@ class CoreTests extends ParsleyTest {
         (p ?: ('a', 'b')).runParser("a") should be (Success('a'))
     }
 
+    "filtered parsers" should "function correctly" in {
+        val p = Char.anyChar.filter(_.isUpper)
+        p.runParser("a") shouldBe a [Failure]
+        p.runParser("A") shouldBe Success('A')
+
+        val q = Char.anyChar.guard(_.isUpper, "letter was not uppercase")
+        q.runParser("a") shouldBe Failure("(line 1, column 2):\n  letter was not uppercase")
+        q.runParser("A") shouldBe Success('A')
+
+        val r = Char.anyChar.guard(_.isUpper, c => s"'$c' is not uppercase")
+        r.runParser("a") shouldBe Failure("(line 1, column 2):\n  'a' is not uppercase")
+        r.runParser("A") shouldBe Success('A')
+    }
+
+    "the collect combinator" should "act like a filter then a map" in {
+        val p = Char.anyChar.collect {
+            case '+' => 0
+            case c if c.isUpper => c - 'A' + 1
+        }
+        p.runParser("+") shouldBe Success(0)
+        p.runParser("C") shouldBe Success(3)
+        p.runParser("a") shouldBe a [Failure]
+    }
+
+    "the cast combinator" should "allow for casts to valid types" in {
+        val p = pure[Any](7)
+        p.cast[Int].runParser("") shouldBe Success(7)
+    }
+    it should "reject invalid casts by failing" in {
+        val p = pure[Any](7)
+        p.cast[String].runParser("") shouldBe a [Failure]
+    }
+
     "stack overflows" should "not occur" in {
         def repeat(n: Int, p: Parsley[Char]): Parsley[Char] = {
             if (n > 0) p *> repeat(n-1, p)
