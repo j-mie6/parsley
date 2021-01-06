@@ -27,15 +27,12 @@ object Combinator
     def option[A](p: =>Parsley[A]): Parsley[Option[A]] = p.map(Some(_)).getOrElse(None)
 
     /**`decide(p)` removes the option from inside parser `p`, and if it returned `None` will fail.*/
-    def decide[A](p: =>Parsley[Option[A]]): Parsley[A] = for (opt <- p; if opt.isDefined) yield opt.get
+    def decide[A](p: =>Parsley[Option[A]]): Parsley[A] = p.collect {
+        case Some(x) => x
+    }
 
     /**`decide(p, q)` removes the option from inside parser `p`, if it returned `None` then `q` is executed.*/
-    def decide[A](p: =>Parsley[Option[A]], q: =>Parsley[A]): Parsley[A] =
-        select(p <#>
-        {
-            case Some(x) => Right(x)
-            case None => Left(())
-        }, q.map[Unit => A](x => _ => x))
+    def decide[A](p: =>Parsley[Option[A]], q: =>Parsley[A]): Parsley[A] = decide(p).orElse(q)
 
     /**optional(p) tries to apply parser `p`. It will parse `p` or nothing. It only fails if `p`
       * fails after consuming input. It discards the result of `p`.*/
