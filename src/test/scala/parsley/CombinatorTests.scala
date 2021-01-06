@@ -21,6 +21,10 @@ class CombinatorTests extends ParsleyTest {
         choice("a", "b", "bc", "bcd").runParser("c") shouldBe a [Failure]
     }
 
+    "attemptChoice" should "correctly ensure the subparsers backtrack" in {
+        attemptChoice("ac", "aba", "abc").runParser("abc") should be (Success("abc"))
+    }
+
     "repeat" should "be pure(Nil) for n <= 0" in {
         repeat(0, 'a').runParser("a") should be (Success(Nil))
         repeat(-1, 'a').runParser("a") should be (Success(Nil))
@@ -47,6 +51,9 @@ class CombinatorTests extends ParsleyTest {
     }
     it must "fail for None" in {
         decide(pure(None)).runParser("") shouldBe a [Failure]
+    }
+    it must "succeed for None with an alternative" in {
+        decide(pure(None), pure(7)).runParser("") shouldBe Success(7)
     }
     it must "compose with option to become identity" in {
         decide(option(pure(7))).runParser("") should be (pure(7).runParser(""))

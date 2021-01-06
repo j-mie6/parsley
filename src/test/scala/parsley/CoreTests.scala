@@ -78,6 +78,14 @@ class CoreTests extends ParsleyTest {
         (pure(compose) <*> u <*> v <*> w).runParser("abc") should equal ((u <*> (v <*> w)).runParser("abc"))
     }
 
+    // SELECTIVE LAWS
+    they must "obey the selective left-branch law" in {
+        branch[Int, Int, Int](pure(Left(7)), pure(_+1), pure(_-1)).runParser("") shouldBe Success(8)
+    }
+    they must "obey the selective right-branch law" in {
+        select(pure(Right(7)), Parsley.empty).runParser("") shouldBe Success(7)
+    }
+
     // MONAD LAWS
     they must "obey the left identity law: pure x >>= f = f x" in {
         (pure('a') >>= char).runParser("a") should equal ('a'.runParser("a"))
@@ -91,10 +99,14 @@ class CoreTests extends ParsleyTest {
         val m = '1' #> 4
         ((m >>= f) >>= g).runParser("1") should equal ((m >>= (x => f(x) >>= g)).runParser("1"))
     }
+    they must "allow for flattening" in {
+        join(pure(char('a'))).runParser("a") shouldBe Success('a')
+        join(Parsley.empty).runParser("") shouldBe a [Failure]
+    }
 
     "mzero parsers" should "always fail" in {
-        (Parsley.empty *> 'a').runParser("a") shouldBe a [Failure]
-        (Parsley.fail("") *> 'a').runParser("a") shouldBe a [Failure]
+        (Parsley.empty >> 'a').runParser("a") shouldBe a [Failure]
+        (Parsley.fail("") >> 'a').runParser("a") shouldBe a [Failure]
         (Parsley.unexpected("") *> 'a').runParser("a") shouldBe a [Failure]
         (('a' ! (_ => "")) *> 'b').runParser("ab") shouldBe a [Failure]
         ('a'.unexpected(_ => "") *> 'b').runParser("ab") shouldBe a [Failure]
@@ -111,7 +123,7 @@ class CoreTests extends ParsleyTest {
     }
 
     "attempt" should "cause <|> to try second alternative even if input consumed" in {
-        (attempt("ab") <|> "ac").runParser("ac") should not be a [Failure]
+        attempt("ab").orElse("ac").runParser("ac") should not be a [Failure]
     }
 
     "lookAhead" should "consume no input on success" in {
@@ -160,17 +172,25 @@ class CoreTests extends ParsleyTest {
     }
 
     "filtered parsers" should "function correctly" in {
-        val p = Char.anyChar.filter(_.isUpper)
+        val p = Char.anyChar.filterNot(_.isLower)
         p.runParser("a") shouldBe a [Failure]
         p.runParser("A") shouldBe Success('A')
 
-        val q = Char.anyChar.guard(_.isUpper, "letter was not uppercase")
+        val q = Char.anyChar.guardNot(_.isLower, "letter was not uppercase")
         q.runParser("a") shouldBe Failure("(line 1, column 2):\n  letter was not uppercase")
         q.runParser("A") shouldBe Success('A')
 
-        val r = Char.anyChar.guard(_.isUpper, c => s"'$c' is not uppercase")
+        val r = Char.anyChar.guardNot(_.isLower, c => s"'$c' is not uppercase")
         r.runParser("a") shouldBe Failure("(line 1, column 2):\n  'a' is not uppercase")
         r.runParser("A") shouldBe Success('A')
+
+        val s = Char.anyChar >?> (_.isUpper, "letter was not uppercase")
+        s.runParser("a") shouldBe Failure("(line 1, column 2):\n  letter was not uppercase")
+        s.runParser("A") shouldBe Success('A')
+
+        val t = Char.anyChar >?> (_.isUpper, c => s"'$c' is not uppercase")
+        t.runParser("a") shouldBe Failure("(line 1, column 2):\n  'a' is not uppercase")
+        t.runParser("A") shouldBe Success('A')
     }
 
     "the collect combinator" should "act like a filter then a map" in {
