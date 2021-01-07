@@ -4,9 +4,10 @@ import scala.language.{higherKinds, implicitConversions}
 import scala.annotation.tailrec
 import scala.collection.mutable
 
-import parsley.internal.instructions
-import instructions.{Instr, JumpTable, JumpInstr, Label}
+import parsley.Reg
+import parsley.internal.instructions, instructions.{Instr, JumpTable, JumpInstr, Label}
 import parsley.internal.{UnsafeOption, ResizableArray}
+import Parsley.allocateRegisters
 import ContOps.{safeCall, GenOps, perform, result, ContAdapter}
 
 /**
@@ -64,7 +65,10 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
             implicit val seenSet: Set[Parsley[_]] = Set.empty
             findLets >> {
                 implicit val subMap: SubMap = new SubMap(letFinderState.lets)
-                optimised.flatMap(_.codeGen)
+                optimised.flatMap(p => {
+                    allocateRegisters(letFinderState.usedRegs)
+                    p.codeGen
+                })
             }
         }
         if (state.map.nonEmpty) {
@@ -131,6 +135,27 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     private [parsley] def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit]
     private [parsley] def prettyASTAux[Cont[_, +_]: ContOps]: Cont[String, String]
 }
+object Parsley {
+    private [Parsley] def allocateRegisters(regs: Set[Reg[_]]): Unit = {
+        // Global registers cannot occupy the same slot as another global register
+        // In a flatMap, that means a newly discovered global register must be allocated to a new slot
+        // This should resize the register pool, but under current restrictions we'll just throw an
+        // excepton if there are no available slots
+        // For simplicity, we'll demand that the DynCall instruction saves all registers for now (this will be stored on all the call stack)
+        // This allows us to only rely on the locally computing information (this is temporary!)
+        val unallocatedRegs = regs.filterNot(_.allocated)
+        if (unallocatedRegs.nonEmpty) {
+            val usedSlots = regs.collect {
+                case reg if reg.allocated => reg.addr
+            }
+            val freeSlots = (0 until 4).filterNot(usedSlots)
+            if (unallocatedRegs.size > freeSlots.size) {
+                throw new IllegalStateException("Current restrictions require that the maximum number of registers in use is 4")
+            }
+            for ((reg, addr) <- unallocatedRegs.zip(freeSlots)) reg.allocate(addr)
+        }
+    }
+}
 
 private [deepembedding] trait MZero extends Parsley[Nothing]
 
@@ -149,8 +174,7 @@ private [parsley] class CodeGenState {
     def nlabels: Int = current
 
     def getSubLabel(p: Parsley[_]) = {
-        map.getOrElseUpdate(p,
-        {
+        map.getOrElseUpdate(p, {
             queue = new CodeGenSubQueueNode(p, queue)
             freshLabel()
         })
@@ -171,9 +195,11 @@ private [parsley] object CodeGenState {
 private [parsley] class LetFinderState {
     private val _recs = mutable.Set.empty[Parsley[_]]
     private val _preds = mutable.Map.empty[Parsley[_], Int]
+    private val _usedRegs = mutable.Set.empty[Reg[_]]
 
     def addPred(p: Parsley[_]): Unit = _preds += p -> (_preds.getOrElseUpdate(p, 0) + 1)
     def addRec(p: Parsley[_]): Unit = _recs += p
+    def addReg(reg: Reg[_]): Unit = _usedRegs += reg
     def notProcessedBefore(p: Parsley[_]): Boolean = _preds(p) == 1
 
     def lets: Map[Parsley[_], Parsley[_]] = {
@@ -186,6 +212,7 @@ private [parsley] class LetFinderState {
         }).toMap
     }
     def recs: Set[Parsley[_]] = _recs.toSet
+    def usedRegs: Set[Reg[_]] = _usedRegs.toSet
 }
 
 private [parsley] class SubMap(val subMap: Map[Parsley[_], Parsley[_]]) extends AnyVal {
