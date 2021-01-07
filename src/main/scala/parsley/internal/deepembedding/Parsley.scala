@@ -33,6 +33,10 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     final def unsafe(): Unit = safe = false
     final def force(): Unit = instrs
     final def overflows(): Unit = cps = true
+    private [deepembedding] def demandCalleeSave(): this.type = {
+        calleeSaveNeeded = true
+        this
+    }
 
     // Internals
     final private [deepembedding] def findLets[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState): Cont[Unit, Unit] = {
@@ -64,6 +68,22 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     final private var cps = false
     final private [deepembedding] var size: Int = 1
     final private [deepembedding] var processed = false
+    final private var calleeSaveNeeded = false
+
+    final private def generateCalleeSave[Cont[_, +_]: ContOps, R](bodyGen: =>Cont[R, Unit], allocatedRegs: List[Int])
+                                                                 (implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+        if (calleeSaveNeeded && allocatedRegs.nonEmpty) {
+            val start = state.freshLabel()
+            val calleeSave = state.freshLabel()
+            instrs += new instructions.Jump(calleeSave)
+            instrs += new instructions.Label(start)
+            bodyGen |> {
+                instrs += new instructions.Label(calleeSave)
+                instrs += new instructions.CalleeSave(start, allocatedRegs)
+            }
+        }
+        else bodyGen
+    }
 
     final private def pipeline[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Unit = {
         perform {
@@ -71,10 +91,7 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
             implicit val seenSet: Set[Parsley[_]] = Set.empty
             findLets >> {
                 implicit val subMap: SubMap = new SubMap(letFinderState.lets)
-                optimised.flatMap(p => {
-                    allocateRegisters(letFinderState.usedRegs)
-                    p.codeGen
-                })
+                optimised.flatMap(p => generateCalleeSave(p.codeGen, allocateRegisters(letFinderState.usedRegs)))
             }
         }
         if (state.map.nonEmpty) {
@@ -142,13 +159,11 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     private [parsley] def prettyASTAux[Cont[_, +_]: ContOps]: Cont[String, String]
 }
 object Parsley {
-    private [Parsley] def allocateRegisters(regs: Set[Reg[_]]): Unit = {
+    private [Parsley] def allocateRegisters(regs: Set[Reg[_]]): List[Int] = {
         // Global registers cannot occupy the same slot as another global register
         // In a flatMap, that means a newly discovered global register must be allocated to a new slot
         // This should resize the register pool, but under current restrictions we'll just throw an
         // excepton if there are no available slots
-        // For simplicity, we'll demand that the DynCall instruction saves all registers for which it allocated something to that slot
-        // This is hopefully a temporary measure
         val unallocatedRegs = regs.filterNot(_.allocated)
         if (unallocatedRegs.nonEmpty) {
             val usedSlots = regs.collect {
@@ -158,8 +173,14 @@ object Parsley {
             if (unallocatedRegs.size > freeSlots.size) {
                 throw new IllegalStateException("Current restrictions require that the maximum number of registers in use is 4")
             }
-            for ((reg, addr) <- unallocatedRegs.zip(freeSlots)) reg.allocate(addr)
+            val allocatedSlots = mutable.ListBuffer.empty[Int]
+            for ((reg, addr) <- unallocatedRegs.zip(freeSlots)) {
+                reg.allocate(addr)
+                allocatedSlots += addr
+            }
+            allocatedSlots.toList
         }
+        else Nil
     }
 }
 
