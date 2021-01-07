@@ -5,4 +5,4 @@ package parsley
   * Currently, there are only 4 available registers, so use them wisely!
   * @param v The index of the register to interact with
   */
-case class Var(v: Int) extends AnyVal
+case class Reg[A](v: Int) extends AnyVal

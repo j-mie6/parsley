@@ -2,7 +2,7 @@ package parsley.internal.deepembedding
 
 import ContOps.{result, ContAdapter}
 import parsley.internal.{UnsafeOption, instructions}
-import parsley.{Var, Breakpoint, EntryBreak, FullBreak, ExitBreak}
+import parsley.{Reg, Breakpoint, EntryBreak, FullBreak, ExitBreak}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -62,12 +62,12 @@ private [parsley] final class Subroutine[A](_p: =>Parsley[A], val expected: Unsa
 
 private [parsley] object Line extends Singleton[Int]("line", instructions.Line)
 private [parsley] object Col extends Singleton[Int]("col", instructions.Col)
-private [parsley] final class Get[S](v: Var) extends Singleton[S](s"get($v)", new instructions.Get(v.v))
-private [parsley] final class Put[S](private [Put] val v: Var, _p: =>Parsley[S]) extends Unary[S, Unit](_p)(c => s"put($v, $c)", _ => Put.empty(v)) {
+private [parsley] final class Get[S](r: Reg[S]) extends Singleton[S](s"get($r)", new instructions.Get(r.v))
+private [parsley] final class Put[S](r: Reg[S], _p: =>Parsley[S]) extends Unary[S, Unit](_p)(c => s"put($r, $c)", _ => Put.empty(r)) {
     override val numInstrs = 1
     override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
         p.codeGen |>
-        (instrs += new instructions.Put(v.v))
+        (instrs += new instructions.Put(r.v))
     }
 }
 
@@ -122,8 +122,8 @@ private [parsley] object Subroutine {
     def unapply[A](self: Subroutine[A]): Option[Parsley[A]] = Some(self.p)
 }
 private [deepembedding] object Put {
-    def empty[S](v: Var): Put[S] = new Put(v, null)
-    def apply[S](v: Var, p: Parsley[S]): Put[S] = empty(v).ready(p)
+    def empty[S](r: Reg[S]): Put[S] = new Put(r, null)
+    def apply[S](r: Reg[S], p: Parsley[S]): Put[S] = empty(r).ready(p)
 }
 private [deepembedding] object Debug {
     def empty[A](name: String, break: Breakpoint): Debug[A] = new Debug(null, name, break)

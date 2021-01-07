@@ -74,13 +74,5 @@ package object parsley
       */
     @deprecated("parsley.unsafe.giveContext should be used instead", "parsley-1.5.1")
     def giveContext: Context = unsafe.giveContext
-
-    // TODO: Remove
-    // From shapeless library :)
-    private [parsley] trait =!=[A, B]
-    implicit def neq[A, B] : A =!= B = null
-    @implicitAmbiguous("Must specify the type for get operation; S cannot be Nothing")
-    implicit def neqAmbig1[A] : A =!= A = null
-    implicit def neqAmbig2[A] : A =!= A = null
     // $COVERAGE-ON$
 }
