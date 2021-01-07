@@ -92,15 +92,16 @@ private [parsley] final class If[A](_b: =>Parsley[Boolean], _p: =>Parsley[A], _q
 private [parsley] final class Eof(val expected: UnsafeOption[String] = null)
     extends SingletonExpect[Unit]("eof", new Eof(_), new instructions.Eof(expected))
 
-private [parsley] final class Modify[S](r: Reg[S], f: S => S) extends Singleton[Unit](s"modify($r, ?)", new instructions.Modify(r.v, f))
-private [parsley] final class Local[S, A](r: Reg[S], _p: =>Parsley[S], _q: =>Parsley[A])
-    extends Binary[S, A, A](_p, _q)((l, r) => s"local($r, $l, $r)", Local.empty(r)) {
+private [parsley] final class Modify[S](val reg: Reg[S], f: S => S)
+    extends Singleton[Unit](s"modify($reg, ?)", new instructions.Modify(reg.addr, f)) with UsesRegister
+private [parsley] final class Local[S, A](val reg: Reg[S], _p: =>Parsley[S], _q: =>Parsley[A])
+    extends Binary[S, A, A](_p, _q)((l, r) => s"local($reg, $l, $r)", Local.empty(reg)) with UsesRegister {
     override val numInstrs = 2
     override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
         left.codeGen >> {
-            instrs += new instructions.LocalEntry(r.v)
+            instrs += new instructions.LocalEntry(reg.addr)
             right.codeGen |>
-            (instrs += new instructions.LocalExit(r.v))
+            (instrs += new instructions.LocalExit(reg.addr))
         }
     }
 }

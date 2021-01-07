@@ -62,12 +62,13 @@ private [parsley] final class Subroutine[A](_p: =>Parsley[A], val expected: Unsa
 
 private [parsley] object Line extends Singleton[Int]("line", instructions.Line)
 private [parsley] object Col extends Singleton[Int]("col", instructions.Col)
-private [parsley] final class Get[S](r: Reg[S]) extends Singleton[S](s"get($r)", new instructions.Get(r.v))
-private [parsley] final class Put[S](r: Reg[S], _p: =>Parsley[S]) extends Unary[S, Unit](_p)(c => s"put($r, $c)", _ => Put.empty(r)) {
+private [parsley] final class Get[S](val reg: Reg[S]) extends Singleton[S](s"get($reg)", new instructions.Get(reg.addr)) with UsesRegister
+private [parsley] final class Put[S](val reg: Reg[S], _p: =>Parsley[S])
+    extends Unary[S, Unit](_p)(c => s"put($reg, $c)", _ => Put.empty(reg)) with UsesRegister {
     override val numInstrs = 1
     override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
         p.codeGen |>
-        (instrs += new instructions.Put(r.v))
+        (instrs += new instructions.Put(reg.addr))
     }
 }
 

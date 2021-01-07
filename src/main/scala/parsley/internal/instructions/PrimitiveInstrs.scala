@@ -96,3 +96,39 @@ private [internal] final class Put(v: Int) extends Instr {
     override def toString: String = s"Put($v)"
     // $COVERAGE-ON$
 }
+
+private [parsley] final class CalleeSave(var label: Int, _slots: List[Int]) extends JumpInstr with Stateful {
+    private val saveArray = new Array[AnyRef](_slots.length)
+    private val slots = _slots.zipWithIndex
+    private var inUse = false
+
+    override def apply(ctx: Context): Unit = {
+        // Second-entry, caller-restore and either inc or fail
+        if (inUse) {
+            for ((slot, idx) <- slots) {
+                ctx.regs(slot) = saveArray(idx)
+                saveArray(idx) = null
+            }
+            inUse = false
+            if (ctx.status eq Good) {
+                ctx.handlers = ctx.handlers.tail
+                ctx.inc()
+            }
+            else ctx.fail()
+        }
+        // Entry for the first time, register as a handle, callee-save and jump
+        else {
+            for ((slot, idx) <- slots) {
+                saveArray(idx) = ctx.regs(slot)
+            }
+            inUse = true
+            ctx.pushHandler(ctx.pc)
+            ctx.pc = label
+        }
+    }
+
+    // $COVERAGE-OFF$
+    override def toString: String = s"CalleeSave($label)"
+    // $COVERAGE-ON$
+    override def copy: CalleeSave = new CalleeSave(label, _slots)
+}
