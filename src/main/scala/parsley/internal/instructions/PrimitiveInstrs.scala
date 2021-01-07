@@ -102,25 +102,37 @@ private [parsley] final class CalleeSave(var label: Int, _slots: List[Int]) exte
     private val slots = _slots.zipWithIndex
     private var inUse = false
 
+    private def save(ctx: Context): Unit = {
+        for ((slot, idx) <- slots) {
+            saveArray(idx) = ctx.regs(slot)
+        }
+    }
+
+    private def restore(ctx: Context): Unit = {
+        for ((slot, idx) <- slots) {
+            ctx.regs(slot) = saveArray(idx)
+            saveArray(idx) = null
+        }
+    }
+
+    private def continue(ctx: Context): Unit = {
+        if (ctx.status eq Good) {
+            ctx.handlers = ctx.handlers.tail
+            ctx.inc()
+        }
+        else ctx.fail()
+    }
+
     override def apply(ctx: Context): Unit = {
         // Second-entry, caller-restore and either inc or fail
         if (inUse) {
-            for ((slot, idx) <- slots) {
-                ctx.regs(slot) = saveArray(idx)
-                saveArray(idx) = null
-            }
+            restore(ctx)
             inUse = false
-            if (ctx.status eq Good) {
-                ctx.handlers = ctx.handlers.tail
-                ctx.inc()
-            }
-            else ctx.fail()
+            continue(ctx)
         }
         // Entry for the first time, register as a handle, callee-save and jump
         else {
-            for ((slot, idx) <- slots) {
-                saveArray(idx) = ctx.regs(slot)
-            }
+            save(ctx)
             inUse = true
             ctx.pushHandler(ctx.pc)
             ctx.pc = label

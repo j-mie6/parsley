@@ -159,6 +159,15 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     private [parsley] def prettyASTAux[Cont[_, +_]: ContOps]: Cont[String, String]
 }
 object Parsley {
+    private def applyAllocation(regs: Set[Reg[_]], freeSlots: Iterable[Int]): List[Int] = {
+        val allocatedSlots = mutable.ListBuffer.empty[Int]
+        for ((reg, addr) <- regs.zip(freeSlots)) {
+            reg.allocate(addr)
+            allocatedSlots += addr
+        }
+        allocatedSlots.toList
+    }
+
     private [Parsley] def allocateRegisters(regs: Set[Reg[_]]): List[Int] = {
         // Global registers cannot occupy the same slot as another global register
         // In a flatMap, that means a newly discovered global register must be allocated to a new slot
@@ -173,12 +182,7 @@ object Parsley {
             if (unallocatedRegs.size > freeSlots.size) {
                 throw new IllegalStateException("Current restrictions require that the maximum number of registers in use is 4")
             }
-            val allocatedSlots = mutable.ListBuffer.empty[Int]
-            for ((reg, addr) <- unallocatedRegs.zip(freeSlots)) {
-                reg.allocate(addr)
-                allocatedSlots += addr
-            }
-            allocatedSlots.toList
+            applyAllocation(unallocatedRegs, freeSlots)
         }
         else Nil
     }
