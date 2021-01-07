@@ -180,11 +180,21 @@ class CoreTests extends ParsleyTest {
         val p = put(r2, "hello :)") *> q *> q *> get(r2)
         p.runParser("aa") shouldBe Success("hello :)")
     }
-    they should "by preserved by flatMap (at least non-captured registers in context)" in {
+    they should "be preserved by callee-save in flatMap" in {
         val r1 = Reg.make[Int]
         val r2 = Reg.make[Int]
         val r3 = Reg.make[String]
         val p = (put(r3, "hello world") *> put(r1, 6)).flatMap(_ => put(r3, "hi") *> put(r2, 4)) *> (get(r1) <~> get(r3))
+        p.runParser("") shouldBe Success((6, "hi"))
+    }
+    they should "be preserved by callee-save in flatMap even when it fails" in {
+        val r1 = Reg.make[Int]
+        val r2 = Reg.make[Int]
+        val r3 = Reg.make[String]
+        val p = put(r3, "hello world") *>
+                put(r1, 6) *>
+                Combinator.optional(unit.flatMap(_ => put(r3, "hi") *> put(r2, 4) *> Parsley.empty)) *>
+                (get(r1) <~> get(r3))
         p.runParser("") shouldBe Success((6, "hi"))
     }
 

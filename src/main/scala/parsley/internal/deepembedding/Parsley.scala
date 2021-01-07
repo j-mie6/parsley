@@ -147,11 +147,10 @@ object Parsley {
         // In a flatMap, that means a newly discovered global register must be allocated to a new slot
         // This should resize the register pool, but under current restrictions we'll just throw an
         // excepton if there are no available slots
-        // For simplicity, we'll demand that the DynCall instruction saves all registers for now (this will be stored on all the call stack)
-        // This allows us to only rely on the locally computing information (this is temporary!)
+        // For simplicity, we'll demand that the DynCall instruction saves all registers for which it allocated something to that slot
+        // This is hopefully a temporary measure
         val unallocatedRegs = regs.filterNot(_.allocated)
         if (unallocatedRegs.nonEmpty) {
-            println(unallocatedRegs)
             val usedSlots = regs.collect {
                 case reg if reg.allocated => reg.addr
             }

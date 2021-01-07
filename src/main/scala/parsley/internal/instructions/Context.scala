@@ -13,7 +13,7 @@ private [instructions] final class Frame(val ret: Int, val instrs: Array[Instr])
 private [instructions] final class Handler(val depth: Int, val pc: Int, var stacksz: Int) {
     override def toString: String = s"Handler@$depth:$pc(-${stacksz + 1})"
 }
-private [instructions] final class State(val offset: Int, val line: Int, val col: Int, val regs: Array[Any]) {
+private [instructions] final class State(val offset: Int, val line: Int, val col: Int, val regs: Array[AnyRef]) {
     override def toString: String = s"$offset ($line, $col)"
 }
 
@@ -41,7 +41,7 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
     private [instructions] var unexpectAnyway: Boolean = false
     private [instructions] var errorOverride: UnsafeOption[String] = _
     private [instructions] var overrideDepth: Int = 0
-    private [instructions] var regs: Array[Any] = new Array[Any](Context.NumRegs)
+    private [instructions] var regs: Array[AnyRef] = new Array[AnyRef](Context.NumRegs)
     private [instructions] var debuglvl: Int = 0
     private [instructions] var startline: Int = 1
     private [instructions] var startcol: Int = 1
@@ -227,7 +227,7 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
     }
     private [instructions] def copyOnWrite(v: Int, x: Any): Unit = {
         if (!isEmpty(states) && (states.head.regs eq regs)) regs = regs.clone
-        regs(v) = x
+        regs(v) = x.asInstanceOf[AnyRef]
     }
 
     // Allows us to reuse a context, helpful for benchmarking and potentially user applications
