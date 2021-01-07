@@ -186,8 +186,8 @@ class CombinatorTests extends ParsleyTest {
     }
 
     /*"forP" should "be able to parse context-sensitive grammars" in {
-        val r1 = Reg[Int](0)
-        val r2 = Reg[Int](1)
+        val r1 = Reg.make[Int]
+        val r2 = Reg.make[Int]
         val abc = put(r1, 0) *>
                   many('a' *> modify[Int](r1, _ + 1)) *>
                   forP[Int](r2, get(r1), pure(_ != 0), pure(_ - 1), 'b') *>

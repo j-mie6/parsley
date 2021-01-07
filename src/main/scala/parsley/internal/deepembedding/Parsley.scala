@@ -38,7 +38,13 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     final private [deepembedding] def findLets[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState): Cont[Unit, Unit] = {
         state.addPred(this)
         if (seen(this)) result(state.addRec(this))
-        else if (state.notProcessedBefore(this)) findLetsAux(implicitly[ContOps[Cont]], seen + this, state)
+        else if (state.notProcessedBefore(this)) {
+            this match {
+                case self: UsesRegister => state.addReg(self.reg)
+                case _ =>
+            }
+            findLetsAux(implicitly[ContOps[Cont]], seen + this, state)
+        }
         else result(())
     }
     final private def fix(implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String]): Parsley[A] = {
@@ -145,6 +151,7 @@ object Parsley {
         // This allows us to only rely on the locally computing information (this is temporary!)
         val unallocatedRegs = regs.filterNot(_.allocated)
         if (unallocatedRegs.nonEmpty) {
+            println(unallocatedRegs)
             val usedSlots = regs.collect {
                 case reg if reg.allocated => reg.addr
             }
@@ -158,6 +165,9 @@ object Parsley {
 }
 
 private [deepembedding] trait MZero extends Parsley[Nothing]
+private [deepembedding] trait UsesRegister {
+    val reg: Reg[_]
+}
 
 // Internals
 // TODO: Can we remove this SubQueueNode? ListBuffer would be fine using pairs too would be nice.

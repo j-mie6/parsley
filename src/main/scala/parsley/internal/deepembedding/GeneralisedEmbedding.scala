@@ -6,7 +6,7 @@ import parsley.internal.{UnsafeOption, instructions}
 import scala.language.higherKinds
 
 // Core Embedding
-private [parsley] abstract class Singleton[A](pretty: String, instr: instructions.Instr) extends Parsley[A] {
+private [parsley] abstract class Singleton[A](pretty: String, instr: =>instructions.Instr) extends Parsley[A] {
     final override def preprocess[Cont[_, +_]: ContOps, A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap,
                                                                  label: UnsafeOption[String]): Cont[Unit, Parsley[A_]] = result(this)
     final override def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState): Cont[Unit, Unit] = result(())

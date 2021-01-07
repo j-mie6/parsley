@@ -134,10 +134,11 @@ class CoreTests extends ParsleyTest {
         lookAhead("ab").runParser("ac") shouldBe a [Failure]
     }
     "lookAhead" should "not affect the state of the registers on success" in {
-        (put(Reg[Int](0), 5) *> lookAhead(put(Reg[Int](0), 7) *> 'a') *> get(Reg[Int](0))).runParser("a") should be {
+        val r1 = Reg.make[Int]
+        (put(r1, 5) *> lookAhead(put(r1, 7) *> 'a') *> get(r1)).runParser("a") should be {
             Success(5)
         }
-        (put(Reg[Int](0), 5) *> (lookAhead(put(Reg[Int](0), 7) *> 'a') <|> 'b') *> get(Reg[Int](0))).runParser("b") should be {
+        (put(r1, 5) *> (lookAhead(put(r1, 7) *> 'a') <|> 'b') *> get(r1)).runParser("b") should be {
             Success(7)
         }
     }
@@ -147,8 +148,8 @@ class CoreTests extends ParsleyTest {
     }
 
     "stateful parsers" should "allow for persistent state" in {
-        val r1 = Reg[Int](0)
-        val r2 = Reg[Int](1)
+        val r1 = Reg.make[Int]
+        val r2 = Reg.make[Int]
         val p = (put(r1, 5)
               *> put(r2, 7)
               *> put(r1, lift2[Int, Int, Int](_+_, get(r1), get(r2)))
@@ -156,14 +157,35 @@ class CoreTests extends ParsleyTest {
         p.runParser("") should be (Success((12, 7)))
     }
     they should "be modifiable" in {
-        val r1 = Reg[Int](0)
+        val r1 = Reg.make[Int]
         val p = put(r1, 5) *> modify[Int](r1, _+1) *> get(r1)
         p.runParser("") should be (Success(6))
     }
     they should "provide localised context" in {
-        val r1 = Reg[Int](0)
+        val r1 = Reg.make[Int]
         val p = put(r1, 5) *> (local(r1, (x: Int) => x+1, get(r1)) <~> get(r1))
         p.runParser("") should be (Success((6, 5)))
+    }
+    they should "be correctly allocated when found inside recursion" in {
+        val r1 = Reg.make[Int]
+        val r2 = Reg.make[String]
+        lazy val rec: Parsley[Unit] = char('a') *> put(r1, 1) *> rec <|> unit
+        val p = put(r2, "hello :)") *> rec *> get(r2)
+        p.runParser("a") shouldBe Success("hello :)")
+    }
+    they should "be correctly allocated when found inside sub-routines" in {
+        val r1 = Reg.make[Int]
+        val r2 = Reg.make[String]
+        val q = char('a') *> put(r1, 1)
+        val p = put(r2, "hello :)") *> q *> q *> get(r2)
+        p.runParser("aa") shouldBe Success("hello :)")
+    }
+    they should "by preserved by flatMap (at least non-captured registers in context)" in {
+        val r1 = Reg.make[Int]
+        val r2 = Reg.make[Int]
+        val r3 = Reg.make[String]
+        val p = (put(r3, "hello world") *> put(r1, 6)).flatMap(_ => put(r3, "hi") *> put(r2, 4)) *> (get(r1) <~> get(r3))
+        p.runParser("") shouldBe Success((6, "hi"))
     }
 
     "ternary parsers" should "function correctly" in {

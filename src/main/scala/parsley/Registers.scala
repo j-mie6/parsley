@@ -16,13 +16,8 @@ class Reg[A] private [Reg] {
         assert(!allocated)
         this._v = v
     }
-    override def toString: String = s"Reg(${if (allocated) addr else "unallocated"})"
+    //override def toString: String = s"Reg(${if (allocated) addr else "unallocated"})"
 }
 object Reg {
-    private [parsley] def apply[A](v: Int): Reg[A] = {
-        val reg = new Reg[A]
-        reg.allocate(v)
-        reg
-    }
     def make[A]: Reg[A] = new Reg
 }
