@@ -156,7 +156,7 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     private [parsley] def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit]
     private [parsley] def prettyASTAux[Cont[_, +_]: ContOps]: Cont[String, String]
 }
-object Parsley {
+private [deepembedding] object Parsley {
     private def applyAllocation(regs: Set[Reg[_]], freeSlots: Iterable[Int]): List[Int] = {
         val allocatedSlots = mutable.ListBuffer.empty[Int]
         for ((reg, addr) <- regs.zip(freeSlots)) {

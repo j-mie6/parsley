@@ -31,7 +31,7 @@ sealed abstract class Result[+A]
     /** Returns the results's value.
     *
     *  @note The result must not be a failure.
-    *  @throws NoSuchElementException if the result is a failure.
+    *  @throws java.util.NoSuchElementException if the result is a failure.
     */
     def get: A
 

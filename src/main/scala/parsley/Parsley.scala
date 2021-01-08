@@ -169,6 +169,7 @@ object Parsley
           * is mapped over its result. Roughly the same as a `filter` then a `map`.
           * @param pf The partial function
           * @return The result of applying `pf` to this parsers value (if possible), or fails
+          * @since 1.7
           */
         def collect[B](pf: PartialFunction[A, B]): Parsley[B] = filter(pf.isDefinedAt).map(pf)
         /** Similar to `filter`, except the error message desired is also provided. This allows you to name the message
@@ -255,6 +256,8 @@ object Parsley
         /**
           * This casts the result of the parser into a new type `B`. If the value returned by the parser
           * is castable to type `B`, then this cast is performed. Otherwise the parser fails.
+          * @tparam B The type to attempt to cast into
+          * @since 1.7
           */
         def cast[B: ClassTag]: Parsley[B] = collect {
             case x: B => x
@@ -486,6 +489,7 @@ object Parsley
       * @param p The parser to perform
       * @param reg The register to rollback on failure of `p`
       * @return The result of the parser `p`, if any
+      * @since 2.0
       */
       def rollback[A, B](reg: Reg[A], p: Parsley[B]): Parsley[B] = {
         get(reg).flatMap(x => {
