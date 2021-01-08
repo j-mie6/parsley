@@ -2,7 +2,7 @@ package parsley.internal.deepembedding
 
 import ContOps.{result, ContAdapter}
 import parsley.internal.{UnsafeOption, instructions}
-import parsley.Var
+import parsley.Reg
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -92,9 +92,10 @@ private [parsley] final class If[A](_b: =>Parsley[Boolean], _p: =>Parsley[A], _q
 private [parsley] final class Eof(val expected: UnsafeOption[String] = null)
     extends SingletonExpect[Unit]("eof", new Eof(_), new instructions.Eof(expected))
 
-private [parsley] final class Modify[S](v: Var, f: S => S) extends Singleton[Unit](s"modify($v, ?)", new instructions.Modify(v.v, f))
-private [parsley] final class Local[S, A](private [Local] val v: Var, _p: =>Parsley[S], _q: =>Parsley[A])
-    extends Binary[S, A, A](_p, _q)((l, r) => s"local($v, $l, $r)", Local.empty(v)) {
+private [parsley] final class Modify[S](val reg: Reg[S], f: S => S)
+    extends Singleton[Unit](s"modify($reg, ?)", new instructions.Modify(reg.addr, f)) with UsesRegister
+private [parsley] final class Local[S, A](val reg: Reg[S], _p: =>Parsley[S], _q: =>Parsley[A])
+    extends Binary[S, A, A](_p, _q)((l, r) => s"local($reg, $l, $r)", Local.empty(reg)) with UsesRegister {
     override val numInstrs = 2
     override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
         left.codeGen >> {
@@ -104,7 +105,7 @@ private [parsley] final class Local[S, A](private [Local] val v: Var, _p: =>Pars
             instrs += new instructions.Label(body)
             right.codeGen |> {
                 instrs += new instructions.Label(local)
-                instrs += new instructions.Local(body, v.v)
+                instrs += new instructions.Local(body, reg.addr)
             }
         }
     }
@@ -153,6 +154,6 @@ private [deepembedding] object If {
     def apply[A](b: Parsley[Boolean], p: Parsley[A], q: Parsley[A]): If[A] = empty.ready(b, p, q)
 }
 private [deepembedding] object Local {
-    def empty[S, A](v: Var): Local[S, A] = new Local(v, null, null)
-    def apply[S, A](v: Var, left: Parsley[S], right: Parsley[A]): Local[S, A] = empty(v).ready(left, right)
+    def empty[S, A](r: Reg[S]): Local[S, A] = new Local(r, null, null)
+    def apply[S, A](r: Reg[S], left: Parsley[S], right: Parsley[A]): Local[S, A] = empty(r).ready(left, right)
 }

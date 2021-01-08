@@ -1,6 +1,6 @@
 package parsley
 
-import parsley.Parsley.{LazyParsley, gets, put, local, unit, many, skipMany, empty, select, sequence}
+import parsley.Parsley.{LazyParsley, get, gets, put, local, unit, many, skipMany, empty, select, sequence}
 import parsley.internal.deepembedding
 import scala.annotation.{tailrec, implicitNotFound}
 
@@ -213,10 +213,11 @@ object Combinator
       * @param body The body of the loop performed each iteration
       * @return ()
       */
-    def forP[A](v: Var, init: =>Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A], body: =>Parsley[_]): Parsley[Unit] =
+    // TODO: We can put this back for Parsley 2.1, because the new version will not have a `v` parameter
+    /*def forP[A](r: Reg[A], init: =>Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A], body: =>Parsley[_]): Parsley[Unit] =
     {
         val _cond = gets(v, cond)
         val _step = put(v, gets(v, step))
         local(v, init, when(_cond, whileP(body *> _step *> _cond)))
-    }
+    }*/
 }

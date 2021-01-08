@@ -41,7 +41,7 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
     private [instructions] var unexpectAnyway: Boolean = false
     private [instructions] var errorOverride: UnsafeOption[String] = _
     private [instructions] var overrideDepth: Int = 0
-    private [instructions] var regs: Array[Any] = new Array[Any](Context.NumRegs)
+    private [instructions] var regs: Array[AnyRef] = new Array[AnyRef](Context.NumRegs)
     private [instructions] var debuglvl: Int = 0
     private [instructions] var startline: Int = 1
     private [instructions] var startcol: Int = 1
@@ -224,9 +224,8 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
         line = state.line
         col = state.col
     }
-    private [instructions] def copyOnWrite(v: Int, x: Any): Unit = {
-        //if (!isEmpty(states) && (states.head.regs eq regs)) regs = regs.clone
-        regs(v) = x
+    private [instructions] def writeReg(reg: Int, x: Any): Unit = {
+        regs(reg) = x.asInstanceOf[AnyRef]
     }
 
     // Allows us to reuse a context, helpful for benchmarking and potentially user applications

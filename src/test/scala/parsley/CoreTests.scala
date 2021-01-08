@@ -134,10 +134,11 @@ class CoreTests extends ParsleyTest {
         lookAhead("ab").runParser("ac") shouldBe a [Failure]
     }
     /*it should "not affect the state of the registers on success" in {
-        (put(Var(0), 5) *> lookAhead(put(Var(0), 7) *> 'a') *> get[Int](Var(0))).runParser("a") should be {
+        val r1 = Reg.make[Int]
+        (put(r1, 5) *> lookAhead(put(r1, 7) *> 'a') *> get(r1)).runParser("a") should be {
             Success(5)
         }
-        (put(Var(0), 5) *> (lookAhead(put(Var(0), 7) *> 'a') <|> 'b') *> get[Int](Var(0))).runParser("b") should be {
+        (put(r1, 5) *> (lookAhead(put(r1, 7) *> 'a') <|> 'b') *> get(r1)).runParser("b") should be {
             Success(7)
         }
     }*/
@@ -147,23 +148,71 @@ class CoreTests extends ParsleyTest {
     }
 
     "stateful parsers" should "allow for persistent state" in {
-        val r1 = Var(0)
-        val r2 = Var(1)
+        val r1 = Reg.make[Int]
+        val r2 = Reg.make[Int]
         val p = (put(r1, 5)
               *> put(r2, 7)
-              *> put(r1, lift2[Int, Int, Int](_+_, get[Int](r1), get[Int](r2)))
-              *> (get[Int](r1) <~> get[Int](r2)))
-        p.runParser("") should be (Success((12, 7)))
+              *> put(r1, lift2[Int, Int, Int](_+_, get(r1), get(r2)))
+              *> (get(r1) <~> gets(r2, (x: Int) => x+1)))
+        p.runParser("") should be (Success((12, 8)))
     }
     they should "be modifiable" in {
-        val r1 = Var(0)
-        val p = put(r1, 5) *> modify[Int](r1, _+1) *> get[Int](r1)
+        val r1 = Reg.make[Int]
+        val p = put(r1, 5) *> modify[Int](r1, _+1) *> get(r1)
         p.runParser("") should be (Success(6))
     }
     they should "provide localised context" in {
-        val r1 = Var(0)
-        val p = put(r1, 5) *> (local(r1, (x: Int) => x+1, get[Int](r1)) <~> get[Int](r1))
+        val r1 = Reg.make[Int]
+        val p = put(r1, 5) *> (local(r1, (x: Int) => x+1, get(r1)) <~> get(r1))
+        val q = put(r1, 5) *> (local(r1, 6, get(r1)) <~> get(r1))
         p.runParser("") should be (Success((6, 5)))
+        q.runParser("") should be (Success((6, 5)))
+    }
+    they should "be correctly allocated when found inside recursion" in {
+        val r1 = Reg.make[Int]
+        val r2 = Reg.make[String]
+        lazy val rec: Parsley[Unit] = char('a') *> put(r1, 1) *> rec <|> unit
+        val p = put(r2, "hello :)") *> rec *> get(r2)
+        p.runParser("a") shouldBe Success("hello :)")
+    }
+    they should "be correctly allocated when found inside sub-routines" in {
+        val r1 = Reg.make[Int]
+        val r2 = Reg.make[String]
+        val q = char('a') *> put(r1, 1)
+        val p = put(r2, "hello :)") *> q *> q *> get(r2)
+        p.runParser("aa") shouldBe Success("hello :)")
+    }
+    they should "be preserved by callee-save in flatMap" in {
+        val r1 = Reg.make[Int]
+        val r2 = Reg.make[Int]
+        val r3 = Reg.make[String]
+        val p = (put(r3, "hello world") *> put(r1, 6)).flatMap(_ => put(r3, "hi") *> put(r2, 4)) *> (get(r1) <~> get(r3))
+        p.runParser("") shouldBe Success((6, "hi"))
+    }
+    they should "be preserved by callee-save in flatMap even when it fails" in {
+        val r1 = Reg.make[Int]
+        val r2 = Reg.make[Int]
+        val r3 = Reg.make[String]
+        val p = put(r3, "hello world") *>
+                put(r1, 6) *>
+                Combinator.optional(unit.flatMap(_ => put(r3, "hi") *> put(r2, 4) *> Parsley.empty)) *>
+                (get(r1) <~> get(r3))
+        p.runParser("") shouldBe Success((6, "hi"))
+    }
+    they should "be able to be rolled back if they fail softly" in {
+        val r1 = Reg.make[Int]
+        val p = put(r1, 3) *> (rollback(r1, put(r1, 2) *> Parsley.empty) <|> unit) *> get(r1)
+        p.runParser("") shouldBe Success(3)
+    }
+    they should "but not roll back if they hard fail" in {
+        val r1 = Reg.make[Int]
+        val p = put(r1, 3) *> (rollback(r1, 'a' *> put(r1, 2) *> Parsley.empty) <\> unit) *> get(r1)
+        p.runParser("a") shouldBe Success(2)
+    }
+    they should "not rollback if successful" in {
+        val r1 = Reg.make[Int]
+        val p = put(r1, 3) *> rollback(r1, put(r1, 2)) *> get(r1)
+        p.runParser("") shouldBe Success(2)
     }
 
     "ternary parsers" should "function correctly" in {

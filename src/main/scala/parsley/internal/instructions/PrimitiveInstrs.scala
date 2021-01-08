@@ -80,19 +80,67 @@ private [internal] object Col extends Instr {
 }
 
 // Register-Manipulators
-private [internal] final class Get(v: Int) extends Instr {
-    override def apply(ctx: Context): Unit = ctx.pushAndContinue(ctx.regs(v))
+private [internal] final class Get(reg: Int) extends Instr {
+    override def apply(ctx: Context): Unit = ctx.pushAndContinue(ctx.regs(reg))
     // $COVERAGE-OFF$
-    override def toString: String = s"Get($v)"
+    override def toString: String = s"Get($reg)"
     // $COVERAGE-ON$
 }
 
-private [internal] final class Put(v: Int) extends Instr {
+private [internal] final class Put(reg: Int) extends Instr {
     override def apply(ctx: Context): Unit = {
-        ctx.copyOnWrite(v, ctx.stack.peekAndExchange(()))
+        ctx.writeReg(reg, ctx.stack.peekAndExchange(()))
         ctx.inc()
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"Put($v)"
+    override def toString: String = s"Put($reg)"
     // $COVERAGE-ON$
+}
+
+private [parsley] final class CalleeSave(var label: Int, _slots: List[Int]) extends JumpInstr with Stateful {
+    private val saveArray = new Array[AnyRef](_slots.length)
+    private val slots = _slots.zipWithIndex
+    private var inUse = false
+
+    private def save(ctx: Context): Unit = {
+        for ((slot, idx) <- slots) {
+            saveArray(idx) = ctx.regs(slot)
+        }
+    }
+
+    private def restore(ctx: Context): Unit = {
+        for ((slot, idx) <- slots) {
+            ctx.regs(slot) = saveArray(idx)
+            saveArray(idx) = null
+        }
+    }
+
+    private def continue(ctx: Context): Unit = {
+        if (ctx.status eq Good) {
+            ctx.handlers = ctx.handlers.tail
+            ctx.pc = label
+        }
+        else ctx.fail()
+    }
+
+    override def apply(ctx: Context): Unit = {
+        // Second-entry, callee-restore and either jump or fail
+        if (inUse) {
+            restore(ctx)
+            inUse = false
+            continue(ctx)
+        }
+        // Entry for the first time, register as a handle, callee-save and inc
+        else {
+            save(ctx)
+            inUse = true
+            ctx.pushHandler(ctx.pc)
+            ctx.inc()
+        }
+    }
+
+    // $COVERAGE-OFF$
+    override def toString: String = s"CalleeSave($label)"
+    // $COVERAGE-ON$
+    override def copy: CalleeSave = new CalleeSave(label, _slots)
 }

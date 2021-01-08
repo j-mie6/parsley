@@ -97,7 +97,7 @@ private [parsley] final class >>=[A, B](_p: =>Parsley[A], private [>>=] var f: A
     }
     override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
         p.codeGen |>
-        (instrs += new instructions.DynCall[A](x => f(x).instrs, expected))
+        (instrs += new instructions.DynCall[A](x => f(x).demandCalleeSave().instrs, expected))
     }
 }
 
