@@ -18,8 +18,8 @@ private [instructions] final class State(val offset: Int, val line: Int, val col
 }
 
 // TODO: Make this private for 2.0
-final class Context private [parsley] (private [instructions] var instrs: Array[Instr],
-                                       private [instructions] var input: Array[Char]) {
+private [parsley] final class Context(private [instructions] var instrs: Array[Instr],
+                                      private [instructions] var input: Array[Char]) {
     private [instructions] val stack: ArrayStack[Any] = new ArrayStack()
     private [instructions] var offset: Int = 0
     private [instructions] var inputsz: Int = input.length
@@ -45,7 +45,7 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
     private [instructions] var debuglvl: Int = 0
     private [instructions] var startline: Int = 1
     private [instructions] var startcol: Int = 1
-    var sourceName: String = "input"
+    private [parsley] var sourceName: String = "input"
 
     // $COVERAGE-OFF$
     //override def toString: String = pretty
@@ -67,8 +67,8 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
     }
     // $COVERAGE-ON$
 
-    def pos: (Int, Int) = (startline, startcol)
-    def pos_=(pos: (Int, Int)): Unit = {
+    private [parsley] def pos: (Int, Int) = (startline, startcol)
+    private [parsley] def pos_=(pos: (Int, Int)): Unit = {
         val (line, col) = pos
         startline = line
         startcol = col

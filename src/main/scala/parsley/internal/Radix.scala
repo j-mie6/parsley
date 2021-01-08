@@ -4,7 +4,7 @@ import Radix.Entry
 import scala.collection.mutable
 import scala.language.implicitConversions
 
-class Radix[A] {
+private [internal] class Radix[A] {
     private var x = Option.empty[A]
     private val m = mutable.Map.empty[Char, Entry[A]]
 
@@ -50,7 +50,7 @@ class Radix[A] {
         }
 }
 
-object Radix {
+private [internal] object Radix {
     def empty[A]: Radix[A] = new Radix
 
     private def apply[A](e: Entry[A]): Radix[A] = {
