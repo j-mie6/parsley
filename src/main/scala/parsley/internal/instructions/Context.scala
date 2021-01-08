@@ -67,12 +67,12 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     }
     // $COVERAGE-ON$
 
-    private [parsley] def pos: (Int, Int) = (startline, startcol)
+    /*private [parsley] def pos: (Int, Int) = (startline, startcol)
     private [parsley] def pos_=(pos: (Int, Int)): Unit = {
         val (line, col) = pos
         startline = line
         startcol = col
-    }
+    }*/
 
     @tailrec @inline private [parsley] def runParser[A](): Result[A] = {
         //println(this)
