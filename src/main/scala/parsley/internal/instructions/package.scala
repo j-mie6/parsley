@@ -140,7 +140,7 @@ package object instructions
             }
         }
     }
-    object ArrayStack {
+    private [instructions] object ArrayStack {
         val DefaultSize = 8
     }
 }

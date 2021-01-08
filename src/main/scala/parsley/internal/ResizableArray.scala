@@ -25,6 +25,6 @@ private [internal] final class ResizableArray[A: ClassTag](initialSize: Int = Re
     def length: Int = size
     def toArray: Array[A] = array
 }
-object ResizableArray {
+private [internal] object ResizableArray {
     val InitialSize = 16
 }

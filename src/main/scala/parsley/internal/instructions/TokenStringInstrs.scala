@@ -135,7 +135,7 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
     override def toString: String = "TokenEscape"
     // $COVERAGE-ON$
 }
-object TokenEscape {
+private [instructions] object TokenEscape {
     private [instructions] sealed trait Escape
     private [instructions] case class EscapeChar(escapeChar: Char) extends Escape
     private [instructions] case object BadCode extends Escape
