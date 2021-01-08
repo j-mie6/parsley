@@ -2,6 +2,8 @@ package parsley
 
 import parsley.internal.instructions
 
+// This is hard to test, because it's not thread-safe!s
+// $COVERAGE-OFF$
 object unsafe {
     /**
       * This function returns a fresh Context. Contexts are used by the parsers to store their state.
@@ -31,3 +33,4 @@ object unsafe {
     // Internals
     private [parsley] val internalCtx = giveContext
 }
+// $COVERAGE-ON$
