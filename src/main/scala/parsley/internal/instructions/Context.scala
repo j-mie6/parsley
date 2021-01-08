@@ -224,8 +224,8 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
         line = state.line
         col = state.col
     }
-    private [instructions] def copyOnWrite(v: Int, x: Any): Unit = {
-        regs(v) = x.asInstanceOf[AnyRef]
+    private [instructions] def writeReg(reg: Int, x: Any): Unit = {
+        regs(reg) = x.asInstanceOf[AnyRef]
     }
 
     // Allows us to reuse a context, helpful for benchmarking and potentially user applications

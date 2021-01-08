@@ -197,6 +197,21 @@ class CoreTests extends ParsleyTest {
                 (get(r1) <~> get(r3))
         p.runParser("") shouldBe Success((6, "hi"))
     }
+    they should "be able to be rolled back if they fail softly" in {
+        val r1 = Reg.make[Int]
+        val p = put(r1, 3) *> (rollback(r1, put(r1, 2) *> Parsley.empty) <|> unit) *> get(r1)
+        p.runParser("") shouldBe Success(3)
+    }
+    they should "but not roll back if they hard fail" in {
+        val r1 = Reg.make[Int]
+        val p = put(r1, 3) *> (rollback(r1, 'a' *> put(r1, 2) *> Parsley.empty) <\> unit) *> get(r1)
+        p.runParser("a") shouldBe Success(2)
+    }
+    they should "not rollback if successful" in {
+        val r1 = Reg.make[Int]
+        val p = put(r1, 3) *> rollback(r1, put(r1, 2)) *> get(r1)
+        p.runParser("") shouldBe Success(2)
+    }
 
     "ternary parsers" should "function correctly" in {
         val p = pure(true)

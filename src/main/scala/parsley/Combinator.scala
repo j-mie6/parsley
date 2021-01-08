@@ -1,6 +1,6 @@
 package parsley
 
-import parsley.Parsley.{LazyParsley, gets, put, local, unit, many, skipMany, empty, select, sequence}
+import parsley.Parsley.{LazyParsley, get, gets, put, local, unit, many, skipMany, empty, select, sequence}
 import parsley.internal.deepembedding
 import scala.annotation.{tailrec, implicitNotFound}
 

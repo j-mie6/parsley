@@ -480,4 +480,16 @@ object Parsley
       * @return The parser that performs `p` with the modified state
       */
     def local[R, A](r: Reg[R], f: R => R, p: =>Parsley[A]): Parsley[A] = local(r, get[R](r).map(f), p)
+
+    /** `rollback(reg, p)` will perform `p`, but if it fails without consuming input, any changes to the register `reg` will
+      * be reverted.
+      * @param p The parser to perform
+      * @param reg The register to rollback on failure of `p`
+      * @return The result of the parser `p`, if any
+      */
+      def rollback[A, B](reg: Reg[A], p: Parsley[B]): Parsley[B] = {
+        get(reg).flatMap(x => {
+            p <|> (put(reg, x) *> empty)
+        })
+    }
 }

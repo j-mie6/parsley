@@ -80,20 +80,20 @@ private [internal] object Col extends Instr {
 }
 
 // Register-Manipulators
-private [internal] final class Get(v: Int) extends Instr {
-    override def apply(ctx: Context): Unit = ctx.pushAndContinue(ctx.regs(v))
+private [internal] final class Get(reg: Int) extends Instr {
+    override def apply(ctx: Context): Unit = ctx.pushAndContinue(ctx.regs(reg))
     // $COVERAGE-OFF$
-    override def toString: String = s"Get($v)"
+    override def toString: String = s"Get($reg)"
     // $COVERAGE-ON$
 }
 
-private [internal] final class Put(v: Int) extends Instr {
+private [internal] final class Put(reg: Int) extends Instr {
     override def apply(ctx: Context): Unit = {
-        ctx.copyOnWrite(v, ctx.stack.peekAndExchange(()))
+        ctx.writeReg(reg, ctx.stack.peekAndExchange(()))
         ctx.inc()
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"Put($v)"
+    override def toString: String = s"Put($reg)"
     // $COVERAGE-ON$
 }
 
