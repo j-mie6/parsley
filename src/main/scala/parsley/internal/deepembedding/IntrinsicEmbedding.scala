@@ -98,9 +98,14 @@ private [parsley] final class Local[S, A](private [Local] val v: Var, _p: =>Pars
     override val numInstrs = 2
     override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
         left.codeGen >> {
-            instrs += new instructions.LocalEntry(v.v)
-            right.codeGen |>
-            (instrs += new instructions.LocalExit(v.v))
+            val local = state.freshLabel()
+            val body = state.freshLabel()
+            instrs += new instructions.Jump(local)
+            instrs += new instructions.Label(body)
+            right.codeGen |> {
+                instrs += new instructions.Label(local)
+                instrs += new instructions.Local(body, v.v)
+            }
         }
     }
 }

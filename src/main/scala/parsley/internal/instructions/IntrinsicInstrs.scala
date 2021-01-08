@@ -188,30 +188,42 @@ private [internal] final class Modify[S](v: Int, f: S => S) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class LocalEntry(v: Int) extends Instr {
-    override def apply(ctx: Context): Unit = {
-        ctx.saveState()
-        // This will always cause a copy
-        ctx.copyOnWrite(v, ctx.stack.upop())
-        ctx.inc()
-    }
-    // $COVERAGE-OFF$
-    override def toString: String = s"LocalEntry($v)"
-    // $COVERAGE-ON$
-}
+private [internal] final class Local(var label: Int, slot: Int) extends JumpInstr with Stateful {
+    private var saved: AnyRef = _
+    private var inUse = false
 
-private [internal] final class LocalExit[S](v: Int) extends Instr {
-    override def apply(ctx: Context): Unit = {
-        if (ctx.status eq Good) {
-            ctx.regs(v) = ctx.states.head.regs(v)
-            ctx.inc()
-        }
-        else ctx.fail()
-        ctx.states = ctx.states.tail
+    private def save(ctx: Context): Unit = saved = ctx.regs(slot).asInstanceOf[AnyRef]
+
+    private def restore(ctx: Context): Unit = {
+        ctx.regs(slot) = saved
+        saved = null
     }
+
+    private def continue(ctx: Context): Unit = {
+        if (ctx.status eq Good) ctx.inc()
+        else ctx.fail()
+    }
+
+    override def apply(ctx: Context): Unit = {
+        // Second-entry, restore and either inc or fail
+        if (inUse) {
+            restore(ctx)
+            inUse = false
+            continue(ctx)
+        }
+        // Entry for the first time, register as a handle, and jump
+        else {
+            save(ctx)
+            ctx.copyOnWrite(slot, ctx.stack.upop())
+            inUse = true
+            ctx.pc = label
+        }
+    }
+
     // $COVERAGE-OFF$
-    override def toString: String = s"LocalExit($v)"
+    override def toString: String = s"Local($label, $slot)"
     // $COVERAGE-ON$
+    override def copy: Local = new Local(label, slot)
 }
 
 // Companion Objects

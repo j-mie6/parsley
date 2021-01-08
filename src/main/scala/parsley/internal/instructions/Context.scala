@@ -13,7 +13,7 @@ private [instructions] final class Frame(val ret: Int, val instrs: Array[Instr])
 private [instructions] final class Handler(val depth: Int, val pc: Int, var stacksz: Int) {
     override def toString: String = s"Handler@$depth:$pc(-${stacksz + 1})"
 }
-private [instructions] final class State(val offset: Int, val line: Int, val col: Int, val regs: Array[Any]) {
+private [instructions] final class State(val offset: Int, val line: Int, val col: Int) {
     override def toString: String = s"$offset ($line, $col)"
 }
 
@@ -216,17 +216,16 @@ final class Context private [parsley] (private [instructions] var instrs: Array[
     }
     private [instructions] def pushHandler(label: Int): Unit = handlers = push(handlers, new Handler(depth, label, stack.usize))
     private [instructions] def pushCheck(): Unit = checkStack = push(checkStack, offset)
-    private [instructions] def saveState(): Unit = states = push(states, new State(offset, line, col, regs))
+    private [instructions] def saveState(): Unit = states = push(states, new State(offset, line, col))
     private [instructions] def restoreState(): Unit = {
         val state = states.head
         states = states.tail
         offset = state.offset
         line = state.line
         col = state.col
-        regs = state.regs
     }
     private [instructions] def copyOnWrite(v: Int, x: Any): Unit = {
-        if (!isEmpty(states) && (states.head.regs eq regs)) regs = regs.clone
+        //if (!isEmpty(states) && (states.head.regs eq regs)) regs = regs.clone
         regs(v) = x
     }
 
