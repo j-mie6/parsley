@@ -133,7 +133,7 @@ class CoreTests extends ParsleyTest {
     it must "fail when input is consumed, and input is consumed" in {
         lookAhead("ab").runParser("ac") shouldBe a [Failure]
     }
-    "lookAhead" should "not affect the state of the registers on success" in {
+    /*it should "not affect the state of the registers on success" in {
         val r1 = Reg.make[Int]
         (put(r1, 5) *> lookAhead(put(r1, 7) *> 'a') *> get(r1)).runParser("a") should be {
             Success(5)
@@ -141,7 +141,7 @@ class CoreTests extends ParsleyTest {
         (put(r1, 5) *> (lookAhead(put(r1, 7) *> 'a') <|> 'b') *> get(r1)).runParser("b") should be {
             Success(7)
         }
-    }
+    }*/
 
     "many" should "crash when given a parser that does not consume input" in {
        an [Exception] should be thrownBy many(pure(5)).runParser("")

@@ -222,16 +222,6 @@ object Parsley
           * @return A parser that fails if it succeeds, with the given generator used to produce an unexpected message
           */
         def unexpected(msggen: A => String): Parsley[Nothing] = new Parsley(new deepembedding.FastUnexpected(p.internal, msggen))
-        /** Transforms this parser into a subroutine; instead of inlining this parser into every use-site (performing
-          * optimisations and repeatedly generating code), produces a subroutine-like parser which is jumped to when
-          * required. This will introduce runtime overhead, but it is fairly cheap and speeds up the compilation
-          * of parsers that are very big and used many times considerably.
-          * @return The same parser, but wrapped in a subroutine call
-          */
-        @deprecated("This functionality is now automatically provided by default", "parsley-1.5.1")
-        // $COVERAGE-OFF$
-        def unary_+ : Parsley[A] = new Parsley(new deepembedding.Subroutine(p.internal))
-        // $COVERAGE-ON$
         /**
           * Using this method enables debugging functionality for this parser. When it is entered a snapshot is taken and
           * presented on exit. It will signify when a parser is entered and exited as well. Use the break parameter to halt
