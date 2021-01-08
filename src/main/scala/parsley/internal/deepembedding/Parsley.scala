@@ -73,13 +73,13 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     final private def generateCalleeSave[Cont[_, +_]: ContOps, R](bodyGen: =>Cont[R, Unit], allocatedRegs: List[Int])
                                                                  (implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         if (calleeSaveNeeded && allocatedRegs.nonEmpty) {
-            val start = state.freshLabel()
+            val end = state.freshLabel()
             val calleeSave = state.freshLabel()
-            instrs += new instructions.Jump(calleeSave)
-            instrs += new instructions.Label(start)
+            instrs += new instructions.Label(calleeSave)
+            instrs += new instructions.CalleeSave(end, allocatedRegs)
             bodyGen |> {
-                instrs += new instructions.Label(calleeSave)
-                instrs += new instructions.CalleeSave(start, allocatedRegs)
+                instrs += new instructions.Jump(calleeSave)
+                instrs += new instructions.Label(end)
             }
         }
         else bodyGen

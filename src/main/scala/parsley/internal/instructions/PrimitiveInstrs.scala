@@ -118,24 +118,24 @@ private [parsley] final class CalleeSave(var label: Int, _slots: List[Int]) exte
     private def continue(ctx: Context): Unit = {
         if (ctx.status eq Good) {
             ctx.handlers = ctx.handlers.tail
-            ctx.inc()
+            ctx.pc = label
         }
         else ctx.fail()
     }
 
     override def apply(ctx: Context): Unit = {
-        // Second-entry, caller-restore and either inc or fail
+        // Second-entry, callee-restore and either jump or fail
         if (inUse) {
             restore(ctx)
             inUse = false
             continue(ctx)
         }
-        // Entry for the first time, register as a handle, callee-save and jump
+        // Entry for the first time, register as a handle, callee-save and inc
         else {
             save(ctx)
             inUse = true
             ctx.pushHandler(ctx.pc)
-            ctx.pc = label
+            ctx.inc()
         }
     }
 

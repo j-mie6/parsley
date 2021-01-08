@@ -153,8 +153,8 @@ class CoreTests extends ParsleyTest {
         val p = (put(r1, 5)
               *> put(r2, 7)
               *> put(r1, lift2[Int, Int, Int](_+_, get(r1), get(r2)))
-              *> (get(r1) <~> get(r2)))
-        p.runParser("") should be (Success((12, 7)))
+              *> (get(r1) <~> gets(r2, (x: Int) => x+1)))
+        p.runParser("") should be (Success((12, 8)))
     }
     they should "be modifiable" in {
         val r1 = Reg.make[Int]
@@ -164,7 +164,9 @@ class CoreTests extends ParsleyTest {
     they should "provide localised context" in {
         val r1 = Reg.make[Int]
         val p = put(r1, 5) *> (local(r1, (x: Int) => x+1, get(r1)) <~> get(r1))
+        val q = put(r1, 5) *> (local(r1, 6, get(r1)) <~> get(r1))
         p.runParser("") should be (Success((6, 5)))
+        q.runParser("") should be (Success((6, 5)))
     }
     they should "be correctly allocated when found inside recursion" in {
         val r1 = Reg.make[Int]
