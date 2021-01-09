@@ -26,7 +26,6 @@ def extraSources(rootSrcFile: File, base: String, major: Long, minor: Long): Seq
     val srcs = mutable.ListBuffer.empty[File]
     srcs += file(s"$rootSrc/src/$base/scala-$major.x")
     srcs += file(s"$rootSrc/src/$base/scala-2.${if (usesLib213(major, minor)) "13+" else "12"}")
-    println(srcs)
     srcs.toList
 }
 def extraSources(rootSrcFile: File, base: String, version: String): Seq[File] = CrossVersion.partialVersion(version) match {
