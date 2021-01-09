@@ -13,6 +13,11 @@ jobs:
       matrix:
         java: [adopt@1.8, adopt@1.11, adopt@1.15]
         scala: [2.12.12, 2.13.4, 3.0.0-M3]
+        experimental: [false]
+        include:
+          - java: adopt@1.11
+            scala: 0.27.0-RC1
+            experimental: true
     env:
       SCALA_VERSION: ${{ matrix.scala }}
     steps:
