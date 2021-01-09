@@ -1,6 +1,13 @@
 version: "2"
 exclude_patterns:
 - "**/scala-3.x"
+- "**/test"
+- ".github"
+- "project"
+- "build.sbt"
+- "*.md"
+- "*.yml"
+- "LICENSE"
 plugins:
   scalastyle:
     enabled: true
