@@ -75,7 +75,7 @@ private [parsley] final class <*>[A, B](_pf: =>Parsley[A => B], _px: =>Parsley[A
     }
 }
 
-private [parsley] final class >>=[A, B](_p: =>Parsley[A], private [>>=] var f: A => Parsley[B], val expected: UnsafeOption[String] = null)
+private [parsley] final class >>=[A, B](_p: =>Parsley[A], private [>>=] val f: A => Parsley[B], val expected: UnsafeOption[String] = null)
     extends Unary[A, B](_p)(l => s"($l >>= ?)", >>=.empty(f, _)) {
     override val numInstrs = 1
     override def optimise: Parsley[B] = p match {

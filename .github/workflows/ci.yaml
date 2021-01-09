@@ -12,7 +12,7 @@ jobs:
       fail-fast: false
       matrix:
         java: [adopt@1.8, adopt@1.11, adopt@1.15]
-        scala: [2.12.12, 2.13.4]
+        scala: [2.12.12, 2.13.4, 3.0.0-M3]
     env:
       SCALA_VERSION: ${{ matrix.scala }}
     steps:
@@ -51,10 +51,10 @@ jobs:
         with:
           path: ~/.sbt
           key: sbt-${{ hashFiles('**/build.sbt') }}
-      - run: sbt clean coverage test
+      - run: sbt ++$SCALA_VERSION clean coverage test
+      - run: sbt ++$SCALA_VERSION coverageReport
       - uses: paambaati/codeclimate-action@v2.7.5
         env:
           CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
         with:
-          coverageCommand: sbt coverageReport
           coverageLocations: ${{github.workspace}}/target/scala-2.13/coverage-report/cobertura.xml:cobertura

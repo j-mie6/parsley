@@ -13,7 +13,7 @@ object unsafe {
       */
     def giveContext: Context = new Context(instructions.Context.empty)
 
-    implicit class FastRun[A](val p: Parsley[A])(implicit ctx: Context = internalCtx) {
+    implicit class FastRun[A](private val p: Parsley[A])(implicit ctx: Context = internalCtx) {
         /** This method allows you to run a parser with a cached context, which improves performance.
         *  If no implicit context can be found, the parsley default context is used. This will
         *  cause issues with multi-threaded execution of parsers. In order to mitigate these issues,

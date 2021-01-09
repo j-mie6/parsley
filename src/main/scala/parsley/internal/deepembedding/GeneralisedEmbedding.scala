@@ -35,7 +35,7 @@ private [deepembedding] abstract class SingletonExpect[A](pretty: String, builde
 }
 
 private [deepembedding] abstract class Unary[A, B](_p: =>Parsley[A])(pretty: String => String, empty: String => Unary[A, B]) extends Parsley[B] {
-    protected var p: Parsley[A] = _
+    private [deepembedding] var p: Parsley[A] = _
     protected val childRepeats: Int = 1
     protected val numInstrs: Int
     override def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState): Cont[Unit,Unit] = {
@@ -62,8 +62,8 @@ private [deepembedding] abstract class Unary[A, B](_p: =>Parsley[A])(pretty: Str
 
 private [deepembedding] abstract class Binary[A, B, C](_left: =>Parsley[A], _right: =>Parsley[B])(pretty: (String, String) => String, empty: =>Binary[A, B, C])
     extends Parsley[C] {
-    protected var left: Parsley[A] = _
-    protected var right: Parsley[B] = _
+    private [deepembedding] var left: Parsley[A] = _
+    private [deepembedding] var right: Parsley[B] = _
     protected val numInstrs: Int
     protected val leftRepeats: Int = 1
     protected val rightRepeats: Int = 1
@@ -95,9 +95,9 @@ private [deepembedding] abstract class Binary[A, B, C](_left: =>Parsley[A], _rig
 
 private [deepembedding] abstract class Ternary[A, B, C, D](_first: =>Parsley[A], _second: =>Parsley[B], _third: =>Parsley[C])
                                                           (pretty: (String, String, String) => String, empty: =>Ternary[A, B, C, D]) extends Parsley[D] {
-    protected var first: Parsley[A] = _
-    protected var second: Parsley[B] = _
-    protected var third: Parsley[C] = _
+    private [deepembedding] var first: Parsley[A] = _
+    private [deepembedding] var second: Parsley[B] = _
+    private [deepembedding] var third: Parsley[C] = _
     protected val numInstrs: Int
     override def preprocess[Cont[_, +_]: ContOps, D_ >: D](implicit seen: Set[Parsley[_]], sub: SubMap,
                                                            label: UnsafeOption[String]): Cont[Unit, Parsley[D_]] =
