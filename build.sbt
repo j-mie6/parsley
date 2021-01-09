@@ -58,4 +58,11 @@ lazy val root = project.in(file("."))
 
     scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature"),
     scalacOptions ++= (if (isDotty.value) Seq("-source:3.0-migration") else Seq.empty),
+
+    // Trick from sbt-spiewak: disable dottydoc, which is struggling
+    // with our package object.
+    Compile / doc / sources := {
+      val old = (Compile / doc / sources).value
+      if (scalaVersion.value == dottyVersion) Seq() else old
+    }
   )

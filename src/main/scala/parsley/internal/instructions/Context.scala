@@ -4,7 +4,7 @@ import Stack.{drop, isEmpty, mkString, map, push}
 import parsley.{Failure, Result, Success}
 import parsley.internal.UnsafeOption
 
-import scala.annotation.{tailrec, switch}
+import scala.annotation.tailrec
 
 // Private internals
 private [instructions] final class Frame(val ret: Int, val instrs: Array[Instr]) {
@@ -17,7 +17,6 @@ private [instructions] final class State(val offset: Int, val line: Int, val col
     override def toString: String = s"$offset ($line, $col)"
 }
 
-// TODO: Make this private for 2.0
 private [parsley] final class Context(private [instructions] var instrs: Array[Instr],
                                       private [instructions] var input: Array[Char]) {
     private [instructions] val stack: ArrayStack[Any] = new ArrayStack()
@@ -199,7 +198,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     private [instructions] def inc(): Unit = pc += 1
     private [instructions] def nextChar: Char = input(offset)
     private [instructions] def moreInput: Boolean = offset < inputsz
-    private [instructions] def updatePos(c: Char) = (c: @switch) match {
+    private [instructions] def updatePos(c: Char) = c match {
         case '\n' => line += 1; col = 1
         case '\t' => col += 4 - ((col - 1) & 3)
         case _ => col += 1
