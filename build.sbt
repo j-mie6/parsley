@@ -45,7 +45,7 @@ lazy val root = project.in(file("."))
         "org.scalatest" %% "scalatest" % "3.2.3" % Test
       ),
 
-    scalaVersion := scala3Version,
+    scalaVersion := scala213Version,
     crossScalaVersions := List(scala212Version, scala213Version, scala3Version),
     Compile / unmanagedSourceDirectories ++= extraSources(baseDirectory.value, "main", scalaVersion.value),
     Test / unmanagedSourceDirectories ++= extraSources(baseDirectory.value, "test", scalaVersion.value),
