@@ -6,7 +6,9 @@ exclude_patterns:
 - "project"
 - "build.sbt"
 - "*.md"
-- "*.yml"
+- ".codeclimate.yml"
+- ".gitignore"
+- "*.pdf"
 - "LICENSE"
 plugins:
   scalastyle:
