@@ -56,5 +56,5 @@ jobs:
         env:
           CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
         with:
-          coverageCommand: sbt coverageReport
+          coverageCommand: sbt ++$SCALA_VERSION coverageReport
           coverageLocations: ${{github.workspace}}/target/scala-2.13/coverage-report/cobertura.xml:cobertura
