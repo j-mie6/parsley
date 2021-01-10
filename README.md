@@ -25,7 +25,7 @@ hello.runParser("hello world!") // returns Success(())
 hello.runParser("hi world!") // returns Success(())
 hello.runParser("hey world!") // returns a Failure
 
-val natural: Parsley[Int] = lookAhead(digit) *> digit.foldLeft(0)((n, d) => n * 10 + d.asDigit) // lookahead ensures at least one digit
+val natural: Parsley[Int] = digit.foldLeft1(0)((n, d) => n * 10 + d.asDigit)
 natural.runParser("0") // returns Success(0)
 natural.runParser("123) // returns Success(123)
 ```

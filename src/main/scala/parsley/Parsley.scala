@@ -254,6 +254,30 @@ object Parsley
           */
         def foldLeft[B](k: B)(f: (B, A) => B): Parsley[B] = Combinator.chainPost(pure(k), map(x => (y: B) => f(y, x)))
         /**
+          * A fold for a parser: `p.foldRight1(k)(f)` will try executing `p` many times until it fails, combining the
+          * results with right-associative application of `f` with a `k` at the right-most position. It must parse `p`
+          * at least once.
+          *
+          * @example {{{p.foldRight1(Nil)(_::_) == some(p) //some is more efficient, however}}}
+          *
+          * @param k base case for iteration
+          * @param f combining function
+          * @return the result of folding the results of `p` with `f` and `k`
+          */
+          def foldRight1[B](k: B)(f: (A, B) => B): Parsley[B] = lift2(f, p, foldRight(k)(f))
+          /**
+            * A fold for a parser: `p.foldLeft1(k)(f)` will try executing `p` many times until it fails, combining the
+            * results with left-associative application of `f` with a `k` on the left-most position. It must parse `p`
+            * at least once.
+            *
+            * @example {{{val natural: Parsley[Int] = digit.foldLeft1(0)((x, d) => x * 10 + d.toInt)}}}
+            *
+            * @param k base case for iteration
+            * @param f combining function
+            * @return the result of folding the results of `p` with `f` and `k`
+            */
+          def foldLeft1[B](k: B)(f: (B, A) => B): Parsley[B] = Combinator.chainPost(map(f(k, _)), map(x => (y: B) => f(y, x)))
+        /**
           * This casts the result of the parser into a new type `B`. If the value returned by the parser
           * is castable to type `B`, then this cast is performed. Otherwise the parser fails.
           * @tparam B The type to attempt to cast into

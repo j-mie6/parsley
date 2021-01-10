@@ -232,6 +232,22 @@ class TokeniserTests extends ParsleyTest {
         tokeniser.integer.runParser("-0xb") should be (Success(-0xb))
     }
 
+    "decimal" should "parse unsigned integers in the decimal system" in {
+        tokeniser.decimal.runParser("123") should be (Success(123))
+    }
+    it should "not succeed when given no input" in {
+        tokeniser.decimal.runParser("") shouldBe a [Failure]
+    }
+
+    "hexadecimal" should "parse unsigned hexadecimal integers" in {
+        tokeniser.hexadecimal.runParser("0xff") should be (Success(255))
+    }
+    it should "require at least one digit" in {
+        tokeniser.hexadecimal.runParser("") shouldBe a [Failure]
+        tokeniser.hexadecimal.runParser("0") shouldBe a [Failure]
+        tokeniser.hexadecimal.runParser("0x") shouldBe a [Failure]
+    }
+
     "unsignedFloat" should "parse unsigned fractional floats" in {
         tokeniser.unsignedFloat.runParser("3.142") should be (Success(3.142))
         tokeniser.unsignedFloat.runParser("0.23") should be (Success(0.23))
