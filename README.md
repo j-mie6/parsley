@@ -27,7 +27,7 @@ hello.runParser("hey world!") // returns a Failure
 
 val natural: Parsley[Int] = digit.foldLeft1(0)((n, d) => n * 10 + d.asDigit)
 natural.runParser("0") // returns Success(0)
-natural.runParser("123) // returns Success(123)
+natural.runParser("123") // returns Success(123)
 ```
 
 For more see [the Wiki](https://github.com/j-mie6/Parsley/wiki/Examples)!
