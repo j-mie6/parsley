@@ -1,7 +1,7 @@
 package parsley
 
 import parsley.Parsley._
-import parsley.Char.{char, satisfy}
+import parsley.Char.{char, satisfy, digit}
 import parsley.Implicits.{charLift, stringLift}
 
 import scala.language.implicitConversions
@@ -259,6 +259,30 @@ class CoreTests extends ParsleyTest {
     it should "reject invalid casts by failing" in {
         val p = pure[Any](7)
         p.cast[String].runParser("") shouldBe a [Failure]
+    }
+
+    "foldRight" should "work correctly" in {
+        val p = 'a'.foldRight[List[Char]](Nil)(_::_)
+
+        p.runParser("") should be (Success(Nil))
+        p.runParser("aaa") should be (Success(List('a', 'a', 'a')))
+    }
+    "foldRight1" should "work correctly" in {
+        val p = 'a'.foldRight1[List[Char]](Nil)(_::_)
+        p.runParser("") shouldBe a [Failure]
+        p.runParser("aaa") should be (Success(List('a', 'a', 'a')))
+    }
+
+    "foldLeft" should "work correctly" in {
+        val p = digit.foldLeft(0)((x, d) => x * 10 + d.asDigit)
+
+        p.runParser("") should be (Success(0))
+        p.runParser("123") should be (Success(123))
+    }
+    "foldLeft1" should "work correctly" in {
+        val p = digit.foldLeft1(0)((x, d) => x * 10 + d.asDigit)
+        p.runParser("") shouldBe a [Failure]
+        p.runParser("123") should be (Success(123))
     }
 
     "stack overflows" should "not occur" in {

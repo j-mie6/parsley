@@ -313,7 +313,7 @@ final class TokenParser(lang: LanguageDef)
      * or "0O". Returns the value of the number.*/
     lazy val octal: Parsley[Int] = lexeme('0' *> octal_)
 
-    private def number(base: Int, baseDigit: Parsley[Char]): Parsley[Int] = baseDigit.foldLeft(0)((x, d) => base*x + d.asDigit)
+    private def number(base: Int, baseDigit: Parsley[Char]): Parsley[Int] = baseDigit.foldLeft1(0)((x, d) => base*x + d.asDigit)
 
     // White space & symbols
     /**Lexeme parser `symbol(s)` parses `string(s)` and skips trailing white space.*/
