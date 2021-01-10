@@ -14,7 +14,23 @@ libraryDependencies += "com.github.j-mie6" %% "parsley" % PARSLEY_VER
 Documentation can be found [**here**](https://javadoc.io/doc/com.github.j-mie6/parsley_2.13/latest/index.html)
 
 ### Examples
-TODO
+
+```scala
+import parsley.Parsley, Parsley._
+import parsley.Char.{char, string, digit}
+import parsley.Implicits.{charLift, stringLift}
+
+val hello: Parsley[Unit] = void('h' *> ("ello" <|> "i") *> " world!")
+hello.runParser("hello world!") // returns Success(())
+hello.runParser("hi world!") // returns Success(())
+hello.runParser("hey world!") // returns a Failure
+
+val natural: Parsley[Int] = lookAhead(digit) *> digit.foldLeft(0)((n, d) => n * 10 + d.asDigit) // lookahead ensures at least one digit
+natural.runParser("0") // returns Success(0)
+natural.runParser("123) // returns Success(123)
+```
+
+For more see [the Wiki](https://github.com/j-mie6/Parsley/wiki/Examples)!
 
 ### What are the differences to Haskell's Parsec?
 Mostly, this library is quite similar. However, due to Scala's differences in operator characters a few operators are changed:
