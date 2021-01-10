@@ -7,7 +7,7 @@ Parsley is a very fast parser combinator library for Scala based on a Haskell-st
 
 Parsley is distributed on Maven Central, and can be added to your project via:
 
-```
+```scala
 libraryDependencies += "com.github.j-mie6" %% "parsley" % PARSLEY_VER
 ```
 
