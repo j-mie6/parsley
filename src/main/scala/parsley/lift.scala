@@ -6,7 +6,7 @@ import parsley.internal.deepembedding
   * application of a `FunctionN` to `N` parsers for example:
   *
   * @example {{{lift2[Int, Int, Int](_+_, px, py): Parsley[Int]}}}
-  * @example {{{lift3((x: Int, y: Int, z: Int) => s"$x$y$z", px, py, pz): Parsley[String]}}}
+  * @example {{{lift3((x: Int, y: Int, z: Int) => x + y + z, px, py, pz): Parsley[Int]}}}
   */
 object lift {
     def lift1[T1, R]

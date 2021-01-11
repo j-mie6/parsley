@@ -79,6 +79,15 @@ class CoreTests extends ParsleyTest {
         (pure(compose) <*> u <*> v <*> w).runParser("abc") should equal ((u <*> (v <*> w)).runParser("abc"))
     }
 
+    "lift22" must "work correctly (and by extension 21-3)" in {
+        val p = lift.lift22[Char, Char, Char, Char, Char, Char, Char, Char, Char, Char, Char,
+                            Char, Char, Char, Char, Char, Char, Char, Char, Char, Char, Char, String](
+            (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v) => s"$a$b$c$d$e$f$g$h$i$j$k$l$m$n$o$p$q$r$s$t$u$v",
+            anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar,
+            anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar)
+        p.runParser("abcdefghijklmnopqrstuv") shouldBe Success("abcdefghijklmnopqrstuv")
+    }
+
     // SELECTIVE LAWS
     they must "obey the selective left-branch law" in {
         branch[Int, Int, Int](pure(Left(7)), pure(_+1), pure(_-1)).runParser("") shouldBe Success(8)
