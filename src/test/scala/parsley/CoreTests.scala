@@ -1,6 +1,7 @@
 package parsley
 
-import parsley.Parsley._
+import parsley.Parsley.{lift2 => _, lift1 => _, lift3 => _, _}
+import parsley.lift._
 import parsley.Char.{char, satisfy, digit}
 import parsley.Implicits.{charLift, stringLift}
 
