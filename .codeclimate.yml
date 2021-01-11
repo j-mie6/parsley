@@ -10,6 +10,7 @@ exclude_patterns:
 - ".gitignore"
 - "*.pdf"
 - "LICENSE"
+- "src/main/scala/parsley/implicits.scala"
 plugins:
   scalastyle:
     enabled: true
