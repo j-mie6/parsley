@@ -1,5 +1,6 @@
 package parsley.internal.instructions
 
+import parsley.character
 import parsley.internal.deepembedding.Sign.{SignType, IntType, DoubleType}
 import parsley.internal.UnsafeOption
 
@@ -45,8 +46,8 @@ private [instructions] trait NumericReader {
         go
     }
     protected final val decimal = subDecimal(10, _.isDigit)
-    protected final val octal = subDecimal(8, parsley.Char.isOctDigit)
-    protected final val hexadecimal = subDecimal(16, parsley.Char.isHexDigit)
+    protected final val octal = subDecimal(8, character.isOctDigit)
+    protected final val hexadecimal = subDecimal(16, character.isHexDigit)
 }
 
 private [internal] final class TokenNatural(_expected: UnsafeOption[String]) extends Instr with NumericReader {

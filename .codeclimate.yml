@@ -10,7 +10,8 @@ exclude_patterns:
 - ".gitignore"
 - "*.pdf"
 - "LICENSE"
-- "src/main/scala/parsley/implicits.scala"
+- "src/main/scala/parsley/Char.scala"
+- "src/main/scala/parsley/Implicits.scala"
 plugins:
   scalastyle:
     enabled: true

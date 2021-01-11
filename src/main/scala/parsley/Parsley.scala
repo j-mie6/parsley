@@ -305,7 +305,7 @@ object Parsley
       * @return A parser which consumes nothing and returns `x`
       */
     def pure[A](x: A): Parsley[A] = new Parsley(new deepembedding.Pure(x))
-
+    // $COVERAGE-OFF$
     /** `lift1(f, p)` is an alias for `p.map(f)`. It is provided for symmetry with lift2 and lift3 */
     @deprecated("This method will be removed in Parsley 3.0, use `parsley.lift.lift1` instead", "v2.1.0")
     def lift1[A, B](f: A => B, p: =>Parsley[A]): Parsley[B] = lift.lift1(f, p)
@@ -332,7 +332,7 @@ object Parsley
       */
     @deprecated("This method will be removed in Parsley 3.0, use `parsley.lift.lift3` instead", "v2.1.0")
     def lift3[A, B, C, D](f: (A, B, C) => D, p: =>Parsley[A], q: =>Parsley[B], r: =>Parsley[C]): Parsley[D] = lift.lift3(f, p, q, r)
-
+    // $COVERAGE-ON$
     /** This is one of the core operations of a selective functor. It will conditionally execute one of `p` and `q`
       * depending on the result from `b`. This can be used to implement conditional choice within a parser without
       * relying on expensive monadic operations.

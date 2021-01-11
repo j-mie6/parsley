@@ -1,6 +1,6 @@
 package parsley
 
-import parsley.Char.{char, string}
+import parsley.character.{char, string}
 import parsley.Parsley.{void, pure}
 import parsley.lift.{lift1, lift2, lift3, lift4, lift5, lift6, lift7, lift8, lift9, lift10, lift11,
                      lift12, lift13, lift14, lift15, lift16, lift17, lift18, lift19, lift20, lift21, lift22}

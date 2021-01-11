@@ -2,8 +2,8 @@ package parsley
 
 import parsley.Parsley.{lift2 => _, lift1 => _, lift3 => _, _}
 import parsley.lift._
-import parsley.Char.{char, satisfy, digit}
-import parsley.Implicits.{charLift, stringLift}
+import parsley.character.{char, satisfy, digit, anyChar}
+import parsley.implicits.{charLift, stringLift}
 
 import scala.language.implicitConversions
 
@@ -222,29 +222,29 @@ class CoreTests extends ParsleyTest {
     }
 
     "filtered parsers" should "function correctly" in {
-        val p = Char.anyChar.filterNot(_.isLower)
+        val p = anyChar.filterNot(_.isLower)
         p.runParser("a") shouldBe a [Failure]
         p.runParser("A") shouldBe Success('A')
 
-        val q = Char.anyChar.guardNot(_.isLower, "letter was not uppercase")
+        val q = anyChar.guardNot(_.isLower, "letter was not uppercase")
         q.runParser("a") shouldBe Failure("(line 1, column 2):\n  letter was not uppercase")
         q.runParser("A") shouldBe Success('A')
 
-        val r = Char.anyChar.guardNot(_.isLower, c => s"'$c' is not uppercase")
+        val r = anyChar.guardNot(_.isLower, c => s"'$c' is not uppercase")
         r.runParser("a") shouldBe Failure("(line 1, column 2):\n  'a' is not uppercase")
         r.runParser("A") shouldBe Success('A')
 
-        val s = Char.anyChar >?> (_.isUpper, "letter was not uppercase")
+        val s = anyChar >?> (_.isUpper, "letter was not uppercase")
         s.runParser("a") shouldBe Failure("(line 1, column 2):\n  letter was not uppercase")
         s.runParser("A") shouldBe Success('A')
 
-        val t = Char.anyChar >?> (_.isUpper, c => s"'$c' is not uppercase")
+        val t = anyChar >?> (_.isUpper, c => s"'$c' is not uppercase")
         t.runParser("a") shouldBe Failure("(line 1, column 2):\n  'a' is not uppercase")
         t.runParser("A") shouldBe Success('A')
     }
 
     "the collect combinator" should "act like a filter then a map" in {
-        val p = Char.anyChar.collect {
+        val p = anyChar.collect {
             case '+' => 0
             case c if c.isUpper => c - 'A' + 1
         }

@@ -1,8 +1,8 @@
 package parsley
 
 import parsley._
-import parsley.Char.{alphaNum, letter, whitespace, oneOf => inSet}
-import parsley.Implicits.charLift
+import parsley.character.{alphaNum, letter, whitespace, oneOf => inSet}
+import parsley.implicits.charLift
 import parsley.Combinator.eof
 
 import scala.language.implicitConversions
@@ -40,7 +40,7 @@ class TokeniserTests extends ParsleyTest {
                 "trait", "abstract", "override"),
             Set(":", "=", "::", ":="),
             true,
-            Predicate(Char.isWhitespace))
+            Predicate(character.isWhitespace))
     val tokeniser = new TokenParser(scala)
     val tokeniser_ = new TokenParser(scala_)
 

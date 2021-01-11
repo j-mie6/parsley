@@ -2,8 +2,8 @@ package parsley.internal
 
 import parsley.{ParsleyTest, Success}
 import parsley.Parsley._
-import parsley.Char.{char, satisfy}
-import parsley.Implicits.charLift
+import parsley.character.{char, satisfy}
+import parsley.implicits.charLift
 
 import scala.language.implicitConversions
 

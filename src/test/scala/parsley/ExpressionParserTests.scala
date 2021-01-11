@@ -1,7 +1,7 @@
 package parsley
 
-import parsley.Char.digit
-import parsley.Implicits.{charLift, stringLift}
+import parsley.character.digit
+import parsley.implicits.{charLift, stringLift}
 import parsley.Combinator.{chainPost, chainPre, chainl1, chainr1, chainl, chainr}
 import parsley.ExpressionParser._
 import parsley.Parsley._

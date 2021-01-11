@@ -1,12 +1,12 @@
 package parsley
 
-import parsley.Char.{digit, hexDigit, octDigit, satisfy}
+import parsley.character.{digit, hexDigit, octDigit, satisfy}
 import parsley.Combinator.{sepBy, sepBy1, between, some, skipSome, notFollowedBy}
 import parsley.lift.lift2
 import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
 import parsley.Parsley.{void, unit, fail, many, skipMany, attempt, pure, empty, LazyParsley}
 import parsley.TokenParser.TokenSet
-import parsley.Implicits.{charLift, stringLift}
+import parsley.implicits.{charLift, stringLift}
 import parsley.internal.deepembedding
 
 import scala.language.{higherKinds, implicitConversions}
