@@ -102,7 +102,7 @@ object Parsley
         /**This combinator is an alias for `flatMap`*/
         def >>=[B](f: A => Parsley[B]): Parsley[B] = flatMap(f)
         /**This combinator is defined as `lift2((x, f) => f(x), p, f)`. It is pure syntactic sugar.*/
-        def <**>[B](pf: =>Parsley[A => B]): Parsley[B] = lift2[A, A=>B, B]((x, f) => f(x), p, pf)
+        def <**>[B](pf: =>Parsley[A => B]): Parsley[B] = lift.lift2[A, A=>B, B]((x, f) => f(x), p, pf)
         /**
           * This is the traditional Alternative choice operator for parsers. Following the parsec semantics precisely,
           * this combinator first tries to parse the invokee. If this is successful, no further action is taken. If the
@@ -147,11 +147,11 @@ object Parsley
         /**This combinator is an alias for `*>`*/
         def >>[B](q: Parsley[B]): Parsley[B] = this *> q
         /**This parser corresponds to `lift2(_+:_, p, ps)`.*/
-        def <+:>[B >: A](ps: =>Parsley[Seq[B]]): Parsley[Seq[B]] = lift2[A, Seq[B], Seq[B]](_ +: _, p, ps)
+        def <+:>[B >: A](ps: =>Parsley[Seq[B]]): Parsley[Seq[B]] = lift.lift2[A, Seq[B], Seq[B]](_ +: _, p, ps)
         /**This parser corresponds to `lift2(_::_, p, ps)`.*/
-        def <::>[B >: A](ps: =>Parsley[List[B]]): Parsley[List[B]] = lift2[A, List[B], List[B]](_ :: _, p, ps)
+        def <::>[B >: A](ps: =>Parsley[List[B]]): Parsley[List[B]] = lift.lift2[A, List[B], List[B]](_ :: _, p, ps)
         /**This parser corresponds to `lift2((_, _), p, q)`. For now it is sugar, but in future may be more optimal*/
-        def <~>[A_ >: A, B](q: =>Parsley[B]): Parsley[(A_, B)] = lift2[A_, B, (A_, B)]((_, _), p, q)
+        def <~>[A_ >: A, B](q: =>Parsley[B]): Parsley[(A_, B)] = lift.lift2[A_, B, (A_, B)]((_, _), p, q)
         /** Filter the value of a parser; if the value returned by the parser matches the predicate `pred` then the
           * filter succeeded, otherwise the parser fails with an empty error
           * @param pred The predicate that is tested against the parser result
@@ -264,7 +264,7 @@ object Parsley
           * @param f combining function
           * @return the result of folding the results of `p` with `f` and `k`
           */
-          def foldRight1[B](k: B)(f: (A, B) => B): Parsley[B] = lift2(f, p, foldRight(k)(f))
+          def foldRight1[B](k: B)(f: (A, B) => B): Parsley[B] = lift.lift2(f, p, foldRight(k)(f))
           /**
             * A fold for a parser: `p.foldLeft1(k)(f)` will try executing `p` many times until it fails, combining the
             * results with left-associative application of `f` with a `k` on the left-most position. It must parse `p`
@@ -315,7 +315,8 @@ object Parsley
     def pure[A](x: A): Parsley[A] = new Parsley(new deepembedding.Pure(x))
 
     /** `lift1(f, p)` is an alias for `p.map(f)`. It is provided for symmetry with lift2 and lift3 */
-    def lift1[A, B](f: A => B, p: =>Parsley[A]): Parsley[B] = p.map(f)
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.lift.lift1` instead", "v2.1.0")
+    def lift1[A, B](f: A => B, p: =>Parsley[A]): Parsley[B] = lift.lift1(f, p)
     /** Traditionally, `lift2` is defined as `lift2(f, p, q) = p.map(f) <*> q`. However, `f` is actually uncurried,
       * so it's actually more exactly defined as; read `p` and then read `q` then provide their results to function
       * `f`. This is designed to bring higher performance to any curried operations that are not themselves
@@ -325,7 +326,8 @@ object Parsley
       * @param q The second parser to parse
       * @return `f(x, y)` where `x` is the result of `p` and `y` is the result of `q`.
       */
-    def lift2[A, B, C](f: (A, B) => C, p: =>Parsley[A], q: =>Parsley[B]): Parsley[C] = new Parsley(new deepembedding.Lift2(f, p.internal, q.internal))
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.lift.lift2` instead", "v2.1.0")
+    def lift2[A, B, C](f: (A, B) => C, p: =>Parsley[A], q: =>Parsley[B]): Parsley[C] = lift.lift2(f, p, q)
     /** Traditionally, `lift2` is defined as `lift3(f, p, q, r) = p.map(f) <*> q <*> r`. However, `f` is actually uncurried,
       * so it's actually more exactly defined as; read `p` and then read `q` and then read 'r' then provide their results
       * to function `f`. This is designed to bring higher performance to any curried operations that are not themselves
@@ -336,9 +338,8 @@ object Parsley
       * @param r The third parser to parse
       * @return `f(x, y, z)` where `x` is the result of `p`, `y` is the result of `q` and `z` is the result of `r`.
       */
-    def lift3[A, B, C, D](f: (A, B, C) => D, p: =>Parsley[A], q: =>Parsley[B], r: =>Parsley[C]): Parsley[D] = {
-        new Parsley(new deepembedding.Lift3(f, p.internal, q.internal, r.internal))
-    }
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.lift.lift3` instead", "v2.1.0")
+    def lift3[A, B, C, D](f: (A, B, C) => D, p: =>Parsley[A], q: =>Parsley[B], r: =>Parsley[C]): Parsley[D] = lift.lift3(f, p, q, r)
 
     /** This is one of the core operations of a selective functor. It will conditionally execute one of `p` and `q`
       * depending on the result from `b`. This can be used to implement conditional choice within a parser without
