@@ -37,7 +37,7 @@ class Lexer(lang: LanguageDef)
     // Identifiers & Reserved words
     /**This lexeme parser parses a legal identifier. Returns the identifier string. This parser will
      * fail on identifiers that are reserved words (i.e. keywords). Legal identifier characters and
-     * keywords are defined in the `LanguageDef` provided to the token parser. An identifier is treated
+     * keywords are defined in the `LanguageDef` provided to the lexer. An identifier is treated
      * as a single token using `attempt`.*/
     lazy val identifier: Parsley[String] = keyOrOp(lang.identStart, lang.identLetter, ident, !isReservedName(_),  "identifier", "identifier", "keyword")
 
@@ -65,18 +65,18 @@ class Lexer(lang: LanguageDef)
     // Operators & Reserved ops
     /**This lexeme parser parses a legal operator. Returns the name of the operator. This parser
      * will fail on any operators that are reserved operators. Legal operator characters and
-     * reserved operators are defined in the `LanguageDef` provided to the token parser. A
+     * reserved operators are defined in the `LanguageDef` provided to the lexer. A
      * `userOp` is treated as a single token using `attempt`.*/
     lazy val userOp: Parsley[String] = keyOrOp(lang.opStart, lang.opLetter, oper, !isReservedOp(_), "userOp", "operator", "reserved operator")
 
     /**This non-lexeme parser parses a reserved operator. Returns the name of the operator.
      * Legal operator characters and reserved operators are defined in the `LanguageDef`
-     * provided to the token parser. A `reservedOp_` is treated as a single token using `attempt`.*/
+     * provided to the lexer. A `reservedOp_` is treated as a single token using `attempt`.*/
     lazy val reservedOp_ : Parsley[String] = keyOrOp(lang.opStart, lang.opLetter, oper, isReservedOp(_), "reservedOp", "operator", "non-reserved operator")
 
     /**This lexeme parser parses a reserved operator. Returns the name of the operator. Legal
      * operator characters and reserved operators are defined in the `LanguageDef` provided
-     * to the token parser. A `reservedOp` is treated as a single token using `attempt`.*/
+     * to the lexer. A `reservedOp` is treated as a single token using `attempt`.*/
     lazy val reservedOp: Parsley[String] = lexeme(reservedOp_)
 
     /**The lexeme parser `operator(name)` parses the symbol `name`, but also checks that the `name`
@@ -242,13 +242,13 @@ class Lexer(lang: LanguageDef)
     /**Parses any white space. White space consists of zero or more occurrences of a `space` (as
      * provided by the `LanguageDef`), a line comment or a block (multi-line) comment. Block
      * comments may be nested. How comments are started and ended is defined in the `LanguageDef`
-     * that is provided to the token parser.*/
+     * that is provided to the lexer.*/
     lazy val whiteSpace: Parsley[Unit] = whiteSpace_(lang.space).hide
 
     /**Parses any white space. White space consists of zero or more occurrences of a `space` (as
      * provided by the parameter), a line comment or a block (multi-line) comment. Block
      * comments may be nested. How comments are started and ended is defined in the `LanguageDef`
-     * that is provided to the token parser.*/
+     * that is provided to the lexer.*/
     val whiteSpace_ : Impl => Parsley[Unit] =
     {
         case BitSetImpl(ws) =>
