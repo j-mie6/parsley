@@ -7,7 +7,7 @@ on:
       - '*'
 env:
   CI: true
-  SCALA_VERSION: 2.12.12
+  SCALA_VERSION: 2.12.13
 jobs:
   release:
     name: Release

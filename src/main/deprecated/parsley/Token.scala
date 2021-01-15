@@ -29,7 +29,7 @@ import parsley.token.BitSet
   * @param caseSensitive Is the language case-sensitive. I.e. is IF equivalent to if?
   * @param space What characters count as whitespace in the language?
   */
-@deprecated("This class will be removed in Parsley 3.0, use `parsley.token.LanguageDef` instead", "v2.1.0")
+@deprecated("This class will be removed in Parsley 3.0, use `parsley.token.LanguageDef` instead", "v2.2.0")
 final case class LanguageDef(commentStart: String,
                              commentEnd: String,
                              commentLine: String,
@@ -49,14 +49,14 @@ final case class LanguageDef(commentStart: String,
 }
 object LanguageDef
 {
-    @deprecated("This value will be removed in Parsley 3.0, use `parsley.token.LanguageDef.plan` instead", "v2.1.0")
+    @deprecated("This value will be removed in Parsley 3.0, use `parsley.token.LanguageDef.plan` instead", "v2.2.0")
     val plain = LanguageDef("", "", "", false, NotRequired, NotRequired, NotRequired, NotRequired, Set.empty, Set.empty, true, NotRequired)
 }
 
 /**
   * The Impl trait is used to provide implementation of the parser requirements from `LanguageDef`
   */
-@deprecated("This trait will be removed in Parsley 3.0, use `parsley.token.Impl` instead", "v2.1.0")
+@deprecated("This trait will be removed in Parsley 3.0, use `parsley.token.Impl` instead", "v2.2.0")
 sealed trait Impl {
     private [parsley] def adapt: token.Impl = this match {
         case Parser(p) => token.Parser(p)
@@ -111,6 +111,6 @@ object BitGen
   * programming languages. This class also has a large number of hand-optimised intrinsic parsers to improve performance!
   * @param lang The rules that govern the language we are tokenising
   */
-@deprecated("This class will be removed in Parsley 3.0, use `parsley.token.Lexer` instead", "v2.1.0")
+@deprecated("This class will be removed in Parsley 3.0, use `parsley.token.Lexer` instead", "v2.2.0")
 final class TokenParser(lang: LanguageDef) extends token.Lexer(lang.adapt)
 // $COVERAGE-ON$
