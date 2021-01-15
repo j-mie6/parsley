@@ -1,4 +1,4 @@
-package parsley
+package parsley.token
 
 // This is designed to be a very optimised and light-weight implementation of a BitSet for characters
 private [parsley] final class BitSet(gen: Either[Set[Char], Char => Boolean]) extends Function[Char, Boolean]

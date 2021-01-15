@@ -1,110 +1,15 @@
-package parsley
+package parsley.token
 
 import parsley.character.{digit, hexDigit, octDigit, satisfy}
 import parsley.Combinator.{sepBy, sepBy1, between, some, skipSome, notFollowedBy}
 import parsley.lift.lift2
 import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
-import parsley.Parsley.{void, unit, fail, many, skipMany, attempt, pure, empty, LazyParsley}
-import parsley.TokenParser.TokenSet
+import parsley.Parsley, Parsley.{void, unit, fail, many, skipMany, attempt, pure, empty, LazyParsley}
+import parsley.token.TokenSet
 import parsley.implicits.{charLift, stringLift}
 import parsley.internal.deepembedding
 
-import scala.language.{higherKinds, implicitConversions}
-
-/**
-  * This class is required to construct a TokenParser. It defines the various characteristics of the language to be
-  * tokenised. Where a parameter can be either a `Set[Char]` or a `Parsley` object, prefer the `Set` where possible.
-  * It will unlock a variety of faster intrinsic versions of the parsers, which will greatly improve tokenisation
-  * performance! In addition, the Sets are one time converted to heavily optimised BitSets, though that has up to 8KB
-  * memory usage associated but at least doubles the execution speed for that instruction. See `parsley.Impl`.
-  *
-  * @param commentStart For multi-line comments; how does the comment start? (If this or `commentEnd` is the empty
-  *                     string, multi-line comments are disabled)
-  * @param commentEnd For multi-line comments; how does the comment end? (If this or `commentEnd` is the empty
-  *                   string, multi-line comments are disabled)
-  * @param commentLine For single-line comments; how does the comment start? (This this is the empty string, single-line
-  *                    comments are disabled)
-  * @param nestedComments Are multi-line comments allowed to be nested inside each other? E.g. If `{-` and `-}` are
-  *                       opening and closing comments, is the following valid syntax: `{-{-hello -}-}`? Note in C this
-  *                       is not the case.
-  * @param identStart What characters can an identifier in the language start with?
-  * @param identLetter What characters can an identifier in the language consist of after the starting character?
-  * @param opStart What characters can an operator in the language start with?
-  * @param opLetter What characters can an operator in the language consist of after the starting character?
-  * @param keywords What keywords does the language contain?
-  * @param operators What operators does the language contain?
-  * @param caseSensitive Is the language case-sensitive. I.e. is IF equivalent to if?
-  * @param space What characters count as whitespace in the language?
-  */
-final case class LanguageDef(commentStart: String,
-                             commentEnd: String,
-                             commentLine: String,
-                             nestedComments: Boolean,
-                             identStart: Impl,
-                             identLetter: Impl,
-                             opStart: Impl,
-                             opLetter: Impl,
-                             keywords: Set[String],
-                             operators: Set[String],
-                             caseSensitive: Boolean,
-                             space: Impl) {
-    private [parsley] lazy val supportsComments = {
-        val on = (commentStart.nonEmpty && commentEnd.nonEmpty) || commentLine.nonEmpty
-        if (on && commentStart.nonEmpty && commentLine.startsWith(commentStart)) {
-            throw new IllegalArgumentException(
-                "multi-line comments which are a valid prefix of a single-line comment are not allowed as this causes ambiguity in the parser"
-            )
-        }
-        on
-    }
-}
-object LanguageDef
-{
-    val plain = LanguageDef("", "", "", false, NotRequired, NotRequired, NotRequired, NotRequired, Set.empty, Set.empty, true, NotRequired)
-}
-
-/**
-  * The Impl trait is used to provide implementation of the parser requirements from `LanguageDef`
-  */
-sealed trait Impl
-/**
-  * The implementation provided is a parser which parses the required token.
-  * @param p The parser which will parse the token
-  */
-final case class Parser(p: Parsley[_]) extends Impl
-/**
-  * The implementation provided is a function which matches on the input streams characters
-  * @param f The predicate that input tokens are tested against
-  */
-final case class Predicate(f: Char => Boolean) extends Impl
-/**
-  * This implementation states that the required functionality is not required. If it is used it will raise an error
-  * at parse-time
-  */
-case object NotRequired extends Impl
-private [parsley] final case class BitSetImpl(cs: TokenSet) extends Impl
-/**
-  * This implementation uses a set of valid tokens. It is converted to a high-performance BitSet.
-  */
-object CharSet
-{
-    /**
-      * @param cs The set to convert
-      */
-    def apply(cs: Set[Char]): Impl = BitSetImpl(new BitSet(Left(cs)))
-    def apply(cs: Char*): Impl = apply(Set(cs: _*))
-}
-/**
-  * This implementation uses a predicate to generate a BitSet. This should be preferred over `Predicate` when the
-  * function in question is expensive to execute and the parser itself is expected to be used many times. If the
-  * predicate is cheap, this is unlikely to provide any performance improvements, but will instead incur heavy space
-  * costs
-  */
-object BitGen
-{
-    def apply(f: Char => Boolean): Impl = BitSetImpl(new BitSet(Right(f)))
-}
-
+import scala.language.implicitConversions
 
 /**
   * When provided with a `LanguageDef`, this class will produce a large variety of parsers that can be used for
@@ -113,7 +18,7 @@ object BitGen
   * programming languages. This class also has a large number of hand-optimised intrinsic parsers to improve performance!
   * @param lang The rules that govern the language we are tokenising
   */
-final class TokenParser(lang: LanguageDef)
+class Lexer(lang: LanguageDef)
 {
     private def keyOrOp(startImpl: Impl, letterImpl: Impl, parser: Parsley[String], predicate: String => Boolean,
                         combinatorName: String, name: String, illegalName: String) = {
@@ -419,9 +324,4 @@ final class TokenParser(lang: LanguageDef)
         case Predicate(f) => satisfy(f)
         case NotRequired => empty
     }
-}
-
-private [parsley] object TokenParser
-{
-    type TokenSet = Char => Boolean
 }

@@ -428,7 +428,7 @@ object Parsley
       * @tparam S The type of the value in register `r` (this will result in a runtime type-check)
       * @return The value stored in register `r` of type `S`
       */
-      @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.get` instead", "v2.1.0")
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.get` instead", "v2.1.0")
     def get[S](r: registers.Reg[S]): Parsley[S] = registers.get(r)
     /**
       * Consumes no input and returns the value stored in one of the parser registers after applying a function.

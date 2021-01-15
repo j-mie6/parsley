@@ -1,7 +1,7 @@
 package parsley.internal.instructions
 
 import parsley.internal.UnsafeOption
-import parsley.TokenParser.TokenSet
+import parsley.token.TokenSet
 
 import scala.annotation.tailrec
 

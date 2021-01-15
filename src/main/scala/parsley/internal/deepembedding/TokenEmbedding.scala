@@ -1,6 +1,6 @@
 package parsley.internal.deepembedding
 
-import parsley.TokenParser.TokenSet
+import parsley.token.TokenSet
 import Sign.SignType
 import parsley.internal.{instructions, UnsafeOption}
 

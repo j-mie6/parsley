@@ -168,9 +168,9 @@ class ExpressionParserTests extends ParsleyTest {
     }
 
     "mixed expressions" should "also be parsable" in {
-        val lang = LanguageDef.plain.copy(
-            identStart     = Predicate(_.isLetter),
-            identLetter    = Predicate(_.isLetter)
+        val lang = token.LanguageDef.plain.copy(
+            identStart     = token.Predicate(_.isLetter),
+            identLetter    = token.Predicate(_.isLetter)
         )
 
         sealed trait Expr
@@ -178,7 +178,7 @@ class ExpressionParserTests extends ParsleyTest {
         case class Unary(c: Expr) extends Expr
         case class Constant(x: String) extends Expr
 
-        val tok = new TokenParser(lang)
+        val tok = new token.Lexer(lang)
 
         lazy val ops: List[MonoOps[Expr]] = List(
             Postfixes(tok.parens(expr </> Constant("")) <#> (e1 => (e2: Expr) => Binary(e2, e1))),

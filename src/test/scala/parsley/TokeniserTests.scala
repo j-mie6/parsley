@@ -9,40 +9,40 @@ import scala.language.implicitConversions
 
 class TokeniserTests extends ParsleyTest {
     val scala =
-        LanguageDef(
+        token.LanguageDef(
             "/*",
             "*/",
             "//",
             true,
-            Parser(letter <|> '_'),
-            Parser(alphaNum <|> '_'),
-            Parser(inSet('+', '-', ':', '/', '*', '=')),
-            Parser(inSet('+', '-', ':', '/', '*', '=')),
+            token.Parser(letter <|> '_'),
+            token.Parser(alphaNum <|> '_'),
+            token.Parser(inSet('+', '-', ':', '/', '*', '=')),
+            token.Parser(inSet('+', '-', ':', '/', '*', '=')),
             Set("if", "else", "for", "yield", "while", "def", "class",
                 "trait", "abstract", "override"),
             Set(":", "=", "::", ":="),
             true,
-            Parser(whitespace))
+            token.Parser(whitespace))
     val scala_ =
-        LanguageDef(
+        token.LanguageDef(
             "/*",
             "*/",
             "//",
             false,
-            CharSet(('a' to 'z').toSet
-                 ++ ('A' to 'Z').toSet + '_'),
-            CharSet(('a' to 'z').toSet
-                 ++ ('A' to 'Z').toSet
-                 ++ ('0' to '9').toSet + '_'),
-            CharSet(Set('+', '-', ':', '/', '*', '=')),
-            CharSet(Set('+', '-', ':', '/', '*', '=')),
+            token.CharSet(('a' to 'z').toSet
+                       ++ ('A' to 'Z').toSet + '_'),
+                 token.CharSet(('a' to 'z').toSet
+                            ++ ('A' to 'Z').toSet
+                            ++ ('0' to '9').toSet + '_'),
+                 token.CharSet(Set('+', '-', ':', '/', '*', '=')),
+                 token.CharSet(Set('+', '-', ':', '/', '*', '=')),
             Set("if", "else", "for", "yield", "while", "def", "class",
                 "trait", "abstract", "override"),
             Set(":", "=", "::", ":="),
             true,
-            Predicate(character.isWhitespace))
-    val tokeniser = new TokenParser(scala)
-    val tokeniser_ = new TokenParser(scala_)
+            token.Predicate(character.isWhitespace))
+    val tokeniser = new token.Lexer(scala)
+    val tokeniser_ = new token.Lexer(scala_)
 
     "identifier" should "read valid identifiers" in {
         (tokeniser.identifier <* eof).runParser("foo123 ") should be (Success("foo123"))
