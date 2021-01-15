@@ -427,7 +427,8 @@ object Parsley
       * @tparam S The type of the value in register `r` (this will result in a runtime type-check)
       * @return The value stored in register `r` of type `S`
       */
-    def get[S](r: Reg[S]): Parsley[S] = new Parsley(new deepembedding.Get(r))
+      @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.get` instead", "v2.1.0")
+    def get[S](r: registers.Reg[S]): Parsley[S] = registers.get(r)
     /**
       * Consumes no input and returns the value stored in one of the parser registers after applying a function.
       * @note There are only 4 registers at present.
@@ -437,7 +438,8 @@ object Parsley
       * @tparam A The desired result type
       * @return The value stored in register `r` applied to `f`
       */
-    def gets[S, A](r: Reg[S], f: S => A): Parsley[A] = gets(r, pure(f))
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.gets` instead", "v2.1.0")
+    def gets[S, A](r: registers.Reg[S], f: S => A): Parsley[A] = registers.gets(r, f)
     /**
       * Returns the value stored in one of the parser registers after applying a function obtained from given parser.
       * @note There are only 4 registers at present. The value is fetched before `pf` is executed
@@ -447,21 +449,24 @@ object Parsley
       * @tparam A The desired result type
       * @return The value stored in register `r` applied to `f` from `pf`
       */
-    def gets[S, A](r: Reg[S], pf: Parsley[S => A]): Parsley[A] = get(r) <**> pf
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.gets` instead", "v2.1.0")
+    def gets[S, A](r: registers.Reg[S], pf: Parsley[S => A]): Parsley[A] = get(r) <**> pf
     /**
       * Consumes no input and places the value `x` into register `r`.
       * @note There are only 4 registers at present.
       * @param r The index of the register to place the value in
       * @param x The value to place in the register
       */
-    def put[S](r: Reg[S], x: S): Parsley[Unit] = put(r, pure(x))
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.put` instead", "v2.1.0")
+    def put[S](r: registers.Reg[S], x: S): Parsley[Unit] = registers.put(r, x)
     /**
       * Places the result of running `p` into register `r`.
       * @note There are only 4 registers at present.
       * @param r The index of the register to place the value in
       * @param p The parser to derive the value from
       */
-    def put[S](r: Reg[S], p: =>Parsley[S]): Parsley[Unit] = new Parsley(new deepembedding.Put(r, p.internal))
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.put` instead", "v2.1.0")
+    def put[S](r: registers.Reg[S], p: =>Parsley[S]): Parsley[Unit] = registers.put(r, p)
     /**
       * Modifies the value contained in register `r` using function `f`.
       * @note There are only 4 registers at present.
@@ -469,7 +474,8 @@ object Parsley
       * @param f The function used to modify the register
       * @tparam S The type of value currently assumed to be in the register
       */
-    def modify[S](r: Reg[S], f: S => S): Parsley[Unit] = new Parsley(new deepembedding.Modify(r, f))
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.modify` instead", "v2.1.0")
+    def modify[S](r: registers.Reg[S], f: S => S): Parsley[Unit] = registers.modify(r, f)
     /**
       * For the duration of parser `p` the state stored in register `r` is instead set to `x`. The change is undone
       * after `p` has finished.
@@ -479,7 +485,8 @@ object Parsley
       * @param p The parser to execute with the adjusted state
       * @return The parser that performs `p` with the modified state
       */
-    def local[R, A](r: Reg[R], x: R, p: =>Parsley[A]): Parsley[A] = local(r, pure(x), p)
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.local` instead", "v2.1.0")
+    def local[R, A](r: registers.Reg[R], x: R, p: =>Parsley[A]): Parsley[A] = registers.local(r, x, p)
     /**
       * For the duration of parser `q` the state stored in register `r` is instead set to the return value of `p`. The
       * change is undone after `q` has finished.
@@ -489,7 +496,8 @@ object Parsley
       * @param q The parser to execute with the adjusted state
       * @return The parser that performs `q` with the modified state
       */
-    def local[R, A](r: Reg[R], p: =>Parsley[R], q: =>Parsley[A]): Parsley[A] = new Parsley(new deepembedding.Local(r, p.internal, q.internal))
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.local` instead", "v2.1.0")
+    def local[R, A](r: registers.Reg[R], p: =>Parsley[R], q: =>Parsley[A]): Parsley[A] = registers.local(r, p, q)
     /**
       * For the duration of parser `p` the state stored in register `r` is instead modified with `f`. The change is undone
       * after `p` has finished.
@@ -499,7 +507,8 @@ object Parsley
       * @param p The parser to execute with the adjusted state
       * @return The parser that performs `p` with the modified state
       */
-    def local[R, A](r: Reg[R], f: R => R, p: =>Parsley[A]): Parsley[A] = local(r, get[R](r).map(f), p)
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.local` instead", "v2.1.0")
+    def local[R, A](r: registers.Reg[R], f: R => R, p: =>Parsley[A]): Parsley[A] = registers.local(r, f, p)
 
     /** `rollback(reg, p)` will perform `p`, but if it fails without consuming input, any changes to the register `reg` will
       * be reverted.
@@ -508,9 +517,6 @@ object Parsley
       * @return The result of the parser `p`, if any
       * @since 2.0
       */
-      def rollback[A, B](reg: Reg[A], p: Parsley[B]): Parsley[B] = {
-        get(reg).flatMap(x => {
-            p <|> (put(reg, x) *> empty)
-        })
-    }
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.rollback` instead", "v2.1.0")
+    def rollback[A, B](reg: registers.Reg[A], p: Parsley[B]): Parsley[B] = registers.rollback(reg, p)
 }

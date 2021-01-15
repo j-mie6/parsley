@@ -15,23 +15,13 @@ package parsley
   *       registers in shared parsers and allocate fresh ones for each "top-level"
   *       parser you will run.
   */
-class Reg[A] private [Reg] {
-    private [parsley] var _v: Int = -1
-    private [parsley] def addr: Int = {
-        assert(allocated)
-        _v
-    }
-    private [parsley] def allocated: Boolean = _v != -1
-    private [parsley] def allocate(v: Int): Unit = {
-        assert(!allocated)
-        this._v = v
-    }
-    //override def toString: String = s"Reg(${if (allocated) addr else "unallocated"})"
-}
+@deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.Reg` instead", "v2.1.0")
+final class Reg[A] private [Reg] extends registers.Reg[A]
 object Reg {
     /**
       * @tparam A The type to be contained in this register during runtime
       * @return A new register which can contain the given type
       */
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.Reg.make` instead", "v2.1.0")
     def make[A]: Reg[A] = new Reg
 }

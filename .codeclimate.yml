@@ -33,3 +33,5 @@ plugins:
         enabled: false
       org.scalastyle.scalariform.MultipleStringLiteralsChecker:
         enabled: false
+      org.scalastyle.scalariform.ClassTypeParameterChecker:
+        enabled: false

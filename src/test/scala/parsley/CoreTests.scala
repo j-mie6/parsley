@@ -1,9 +1,11 @@
 package parsley
 
-import parsley.Parsley.{lift2 => _, lift1 => _, lift3 => _, _}
+import parsley.{Reg => _}
+import parsley.Parsley.{lift2 => _, lift1 => _, lift3 => _, get => _, gets => _, modify => _, put => _, local => _, rollback => _, _}
 import parsley.lift._
 import parsley.character.{char, satisfy, digit, anyChar}
 import parsley.implicits.{charLift, stringLift}
+import parsley.registers._
 
 import scala.language.implicitConversions
 
