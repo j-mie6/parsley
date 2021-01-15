@@ -420,6 +420,7 @@ object Parsley
       * @return Tuple of line and column number that the parser has reached
       */
     val pos: Parsley[(Int, Int)] = line <~> col
+    // $COVERAGE-OFF$
     /**
       * Consumes no input and returns the value stored in one of the parser registers.
       * @note There are only 4 registers at present.
@@ -519,4 +520,5 @@ object Parsley
       */
     @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.rollback` instead", "v2.1.0")
     def rollback[A, B](reg: registers.Reg[A], p: Parsley[B]): Parsley[B] = registers.rollback(reg, p)
+    // $COVERAGE-ON$
 }
