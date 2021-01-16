@@ -113,37 +113,43 @@ object Combinator
     /**`chainr(p, op, x)` parses *zero* or more occurrences of `p`, separated by `op`. Returns a value
       * obtained by a right associative application of all functions return by `op` to the values
       * returned by `p`. If there are no occurrences of `p`, the value `x` is returned.*/
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.expr.chain.right` instead", "v2.2.0")
     def chainr[A, B](p: =>Parsley[A], op: =>Parsley[(A, B) => B], x: B)
                     (implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${B}") wrap: A => B): Parsley[B] = chainr1(p, op).getOrElse(x)
 
     /**`chainl(p, op, x)` parses *zero* or more occurrences of `p`, separated by `op`. Returns a value
       * obtained by a left associative application of all functions returned by `op` to the values
       * returned by `p`. If there are no occurrences of `p`, the value `x` is returned.*/
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.expr.chain.left` instead", "v2.2.0")
     def chainl[A, B](p: =>Parsley[A], op: =>Parsley[(B, A) => B], x: B)
                     (implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${B}") wrap: A => B): Parsley[B] = chainl1(p, op).getOrElse(x)
 
     /**`chainr1(p, op)` parses *one* or more occurrences of `p`, separated by `op`. Returns a value
       * obtained by a right associative application of all functions return by `op` to the values
       * returned by `p`.*/
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.expr.chain.right1` instead", "v2.2.0")
     def chainr1[A, B](p: =>Parsley[A], op: =>Parsley[(A, B) => B])
                      (implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${B}") wrap: A => B): Parsley[B] = {
         new Parsley(new deepembedding.Chainr(p.internal, op.internal, wrap))
     }
 
-    /**`chainPre(op, p)` parses many prefixed applications of `op` onto a single final result of `p`*/
-    def chainPre[A](op: =>Parsley[A => A], p: =>Parsley[A]): Parsley[A] = new Parsley(new deepembedding.ChainPre(p.internal, op.internal))
-
     /**chainl1(p, op) parses *one* or more occurrences of `p`, separated by `op`. Returns a value
       * obtained by a left associative application of all functions return by `op` to the values
       * returned by `p`. This parser can for example be used to eliminate left recursion which
       * typically occurs in expression grammars.*/
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.expr.chain.left1` instead", "v2.2.0")
     def chainl1[A, B](p: =>Parsley[A], op: =>Parsley[(B, A) => B])
                      (implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${B}") wrap: A => B): Parsley[B] = {
         new Parsley(new deepembedding.Chainl(new deepembedding.Subroutine(p.internal), op.internal, wrap))
     }
 
+    /**`chainPre(op, p)` parses many prefixed applications of `op` onto a single final result of `p`*/
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.expr.chain.prefix` instead", "v2.2.0")
+    def chainPre[A](op: =>Parsley[A => A], p: =>Parsley[A]): Parsley[A] = new Parsley(new deepembedding.ChainPre(p.internal, op.internal))
+
     /**`chainPost(p, op)` parses one occurrence of `p`, followed by many postfix applications of `op`
       * that associate to the left.*/
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.expr.chain.postfix` instead", "v2.2.0")
     def chainPost[A](p: =>Parsley[A], op: =>Parsley[A => A]): Parsley[A] = new Parsley(new deepembedding.ChainPost(p.internal, op.internal))
 
     /**This parser only succeeds at the end of the input. This is a primitive parser.*/

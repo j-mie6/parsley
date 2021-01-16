@@ -9,11 +9,11 @@ import parsley.XCompat._
 object precedence {
     private def convertOperators[A, B](atom: Parsley[A], opList: Ops[A, B])(implicit wrap: A => B): Parsley[B] = opList match
     {
-        case Lefts(ops @ _*) => chainl1(atom, choice(ops: _*))
-        case Rights(ops @ _*) => chainr1(atom, choice(ops: _*))
-        case Prefixes(ops @ _*) => chainPre(choice(ops: _*), atom.map(wrap))
+        case Lefts(ops @ _*) => chain.left1(atom, choice(ops: _*))
+        case Rights(ops @ _*) => chain.right1(atom, choice(ops: _*))
+        case Prefixes(ops @ _*) => chain.prefix(choice(ops: _*), atom.map(wrap))
         // FIXME: Postfix operators which are similar to binary ops may fail, how can we work around this?
-        case Postfixes(ops @ _*) => chainPost(atom.map(wrap), choice(ops: _*))
+        case Postfixes(ops @ _*) => chain.postfix(atom.map(wrap), choice(ops: _*))
     }
 
     @tailrec private def crushLevels[A, B](atom: Parsley[A], lvls: Levels[A, B]): Parsley[B] = lvls match

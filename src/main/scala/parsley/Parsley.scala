@@ -2,6 +2,7 @@ package parsley
 
 import parsley.internal.instructions.Context
 import parsley.internal.deepembedding
+import parsley.expr.chain
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -233,7 +234,7 @@ object Parsley
           * @param f combining function
           * @return the result of folding the results of `p` with `f` and `k`
           */
-        def foldRight[B](k: B)(f: (A, B) => B): Parsley[B] = Combinator.chainPre(map(f.curried), pure(k))
+        def foldRight[B](k: B)(f: (A, B) => B): Parsley[B] = chain.prefix(map(f.curried), pure(k))
         /**
           * A fold for a parser: `p.foldLeft(k)(f)` will try executing `p` many times until it fails, combining the
           * results with left-associative application of `f` with a `k` on the left-most position
@@ -244,7 +245,7 @@ object Parsley
           * @param f combining function
           * @return the result of folding the results of `p` with `f` and `k`
           */
-        def foldLeft[B](k: B)(f: (B, A) => B): Parsley[B] = Combinator.chainPost(pure(k), map(x => (y: B) => f(y, x)))
+        def foldLeft[B](k: B)(f: (B, A) => B): Parsley[B] = chain.postfix(pure(k), map(x => (y: B) => f(y, x)))
         /**
           * A fold for a parser: `p.foldRight1(k)(f)` will try executing `p` many times until it fails, combining the
           * results with right-associative application of `f` with a `k` at the right-most position. It must parse `p`
@@ -268,7 +269,7 @@ object Parsley
             * @param f combining function
             * @return the result of folding the results of `p` with `f` and `k`
             */
-          def foldLeft1[B](k: B)(f: (B, A) => B): Parsley[B] = Combinator.chainPost(map(f(k, _)), map(x => (y: B) => f(y, x)))
+          def foldLeft1[B](k: B)(f: (B, A) => B): Parsley[B] = chain.postfix(map(f(k, _)), map(x => (y: B) => f(y, x)))
         /**
           * This casts the result of the parser into a new type `B`. If the value returned by the parser
           * is castable to type `B`, then this cast is performed. Otherwise the parser fails.
