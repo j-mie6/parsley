@@ -17,8 +17,8 @@ Documentation can be found [**here**](https://javadoc.io/doc/com.github.j-mie6/p
 
 ```scala
 import parsley.Parsley, Parsley._
-import parsley.Char.{char, string, digit}
-import parsley.Implicits.{charLift, stringLift}
+import parsley.character.{char, string, digit}
+import parsley.implicits.{charLift, stringLift}
 
 val hello: Parsley[Unit] = void('h' *> ("ello" <|> "i") *> " world!")
 hello.runParser("hello world!") // returns Success(())

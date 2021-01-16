@@ -1,8 +1,12 @@
 package parsley
 
-import parsley.Parsley._
-import parsley.Char.{char, satisfy, digit}
-import parsley.Implicits.{charLift, stringLift}
+import parsley.{Reg => _}
+import parsley.Parsley.{lift2 => _, lift1 => _, lift3 => _, get => _, gets => _, modify => _, put => _, local => _, rollback => _, many => _, _}
+import parsley.combinator.many
+import parsley.lift._
+import parsley.character.{char, satisfy, digit, anyChar}
+import parsley.implicits.{charLift, stringLift}
+import parsley.registers._
 
 import scala.language.implicitConversions
 
@@ -76,6 +80,15 @@ class CoreTests extends ParsleyTest {
         val w: Parsley[Int] = 'c' #> 7
         val compose: (Int => Int) => (Int => Int) => Int => Int = f => g => f.compose(g)
         (pure(compose) <*> u <*> v <*> w).runParser("abc") should equal ((u <*> (v <*> w)).runParser("abc"))
+    }
+
+    "lift22" must "work correctly (and by extension 21-3)" in {
+        val p = lift.lift22[Char, Char, Char, Char, Char, Char, Char, Char, Char, Char, Char,
+                            Char, Char, Char, Char, Char, Char, Char, Char, Char, Char, Char, String](
+            (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v) => s"$a$b$c$d$e$f$g$h$i$j$k$l$m$n$o$p$q$r$s$t$u$v",
+            anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar,
+            anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar)
+        p.runParser("abcdefghijklmnopqrstuv") shouldBe Success("abcdefghijklmnopqrstuv")
     }
 
     // SELECTIVE LAWS
@@ -195,7 +208,7 @@ class CoreTests extends ParsleyTest {
         val r3 = Reg.make[String]
         val p = put(r3, "hello world") *>
                 put(r1, 6) *>
-                Combinator.optional(unit.flatMap(_ => put(r3, "hi") *> put(r2, 4) *> Parsley.empty)) *>
+                combinator.optional(unit.flatMap(_ => put(r3, "hi") *> put(r2, 4) *> Parsley.empty)) *>
                 (get(r1) <~> get(r3))
         p.runParser("") shouldBe Success((6, "hi"))
     }
@@ -221,29 +234,29 @@ class CoreTests extends ParsleyTest {
     }
 
     "filtered parsers" should "function correctly" in {
-        val p = Char.anyChar.filterNot(_.isLower)
+        val p = anyChar.filterNot(_.isLower)
         p.runParser("a") shouldBe a [Failure]
         p.runParser("A") shouldBe Success('A')
 
-        val q = Char.anyChar.guardNot(_.isLower, "letter was not uppercase")
+        val q = anyChar.guardNot(_.isLower, "letter was not uppercase")
         q.runParser("a") shouldBe Failure("(line 1, column 2):\n  letter was not uppercase")
         q.runParser("A") shouldBe Success('A')
 
-        val r = Char.anyChar.guardNot(_.isLower, c => s"'$c' is not uppercase")
+        val r = anyChar.guardNot(_.isLower, c => s"'$c' is not uppercase")
         r.runParser("a") shouldBe Failure("(line 1, column 2):\n  'a' is not uppercase")
         r.runParser("A") shouldBe Success('A')
 
-        val s = Char.anyChar >?> (_.isUpper, "letter was not uppercase")
+        val s = anyChar >?> (_.isUpper, "letter was not uppercase")
         s.runParser("a") shouldBe Failure("(line 1, column 2):\n  letter was not uppercase")
         s.runParser("A") shouldBe Success('A')
 
-        val t = Char.anyChar >?> (_.isUpper, c => s"'$c' is not uppercase")
+        val t = anyChar >?> (_.isUpper, c => s"'$c' is not uppercase")
         t.runParser("a") shouldBe Failure("(line 1, column 2):\n  'a' is not uppercase")
         t.runParser("A") shouldBe Success('A')
     }
 
     "the collect combinator" should "act like a filter then a map" in {
-        val p = Char.anyChar.collect {
+        val p = anyChar.collect {
             case '+' => 0
             case c if c.isUpper => c - 'A' + 1
         }

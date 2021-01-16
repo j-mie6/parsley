@@ -1,8 +1,8 @@
 package parsley
 
-import parsley.Combinator._
+import parsley.combinator._
 import parsley.Parsley._
-import parsley.Implicits.{charLift, stringLift}
+import parsley.implicits.{charLift, stringLift}
 
 import scala.language.implicitConversions
 

@@ -2,7 +2,8 @@ package parsley.internal.deepembedding
 
 import ContOps.{result, ContAdapter}
 import parsley.internal.{UnsafeOption, instructions}
-import parsley.{Reg, Breakpoint, EntryBreak, FullBreak, ExitBreak}
+import parsley.registers.Reg
+import parsley.debug.{Breakpoint, EntryBreak, FullBreak, ExitBreak}
 
 import scala.annotation.tailrec
 import scala.collection.mutable

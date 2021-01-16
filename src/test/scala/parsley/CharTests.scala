@@ -1,8 +1,8 @@
 package parsley
 
-import parsley.Char._
+import parsley.character._
 import parsley.Parsley._
-import parsley.Implicits.{charLift, stringLift}
+import parsley.implicits.{charLift, stringLift}
 
 import scala.language.implicitConversions
 
@@ -97,7 +97,7 @@ class CharTests extends ParsleyTest {
     }
 
     "oneOf" should "match any of the characters provided" in {
-        val p = Char.oneOf('a', 'b', 'c')
+        val p = character.oneOf('a', 'b', 'c')
         p.runParser("a") should not be a [Failure]
         p.runParser("b") should not be a [Failure]
         p.runParser("c") should not be a [Failure]
@@ -105,7 +105,7 @@ class CharTests extends ParsleyTest {
     }
 
     "noneOf" should "match none of the characters provided" in {
-        val p = Char.noneOf('a', 'b', 'c')
+        val p = character.noneOf('a', 'b', 'c')
         p.runParser("a") shouldBe a [Failure]
         p.runParser("b") shouldBe a [Failure]
         p.runParser("c") shouldBe a [Failure]

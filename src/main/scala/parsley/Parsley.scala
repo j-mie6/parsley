@@ -2,6 +2,7 @@ package parsley
 
 import parsley.internal.instructions.Context
 import parsley.internal.deepembedding
+import parsley.expr.chain
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -56,6 +57,8 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: deepe
     def runParser(input: Array[Char]): Result[A] = new Context(internal.threadSafeInstrs, input).runParser()
 
 }
+/** This object contains the core "function-style" combinators as well as the implicit classes which provide
+  * the "method-style" combinators. All parsers will likely require something from within! */
 object Parsley
 {
     implicit final class LazyParsley[P, +A](p: =>P)(implicit con: P => Parsley[A])
@@ -102,7 +105,7 @@ object Parsley
         /**This combinator is an alias for `flatMap`*/
         def >>=[B](f: A => Parsley[B]): Parsley[B] = flatMap(f)
         /**This combinator is defined as `lift2((x, f) => f(x), p, f)`. It is pure syntactic sugar.*/
-        def <**>[B](pf: =>Parsley[A => B]): Parsley[B] = lift2[A, A=>B, B]((x, f) => f(x), p, pf)
+        def <**>[B](pf: =>Parsley[A => B]): Parsley[B] = lift.lift2[A, A=>B, B]((x, f) => f(x), p, pf)
         /**
           * This is the traditional Alternative choice operator for parsers. Following the parsec semantics precisely,
           * this combinator first tries to parse the invokee. If this is successful, no further action is taken. If the
@@ -147,11 +150,11 @@ object Parsley
         /**This combinator is an alias for `*>`*/
         def >>[B](q: Parsley[B]): Parsley[B] = this *> q
         /**This parser corresponds to `lift2(_+:_, p, ps)`.*/
-        def <+:>[B >: A](ps: =>Parsley[Seq[B]]): Parsley[Seq[B]] = lift2[A, Seq[B], Seq[B]](_ +: _, p, ps)
+        def <+:>[B >: A](ps: =>Parsley[Seq[B]]): Parsley[Seq[B]] = lift.lift2[A, Seq[B], Seq[B]](_ +: _, p, ps)
         /**This parser corresponds to `lift2(_::_, p, ps)`.*/
-        def <::>[B >: A](ps: =>Parsley[List[B]]): Parsley[List[B]] = lift2[A, List[B], List[B]](_ :: _, p, ps)
+        def <::>[B >: A](ps: =>Parsley[List[B]]): Parsley[List[B]] = lift.lift2[A, List[B], List[B]](_ :: _, p, ps)
         /**This parser corresponds to `lift2((_, _), p, q)`. For now it is sugar, but in future may be more optimal*/
-        def <~>[A_ >: A, B](q: =>Parsley[B]): Parsley[(A_, B)] = lift2[A_, B, (A_, B)]((_, _), p, q)
+        def <~>[A_ >: A, B](q: =>Parsley[B]): Parsley[(A_, B)] = lift.lift2[A_, B, (A_, B)]((_, _), p, q)
         /** Filter the value of a parser; if the value returned by the parser matches the predicate `pred` then the
           * filter succeeded, otherwise the parser fails with an empty error
           * @param pred The predicate that is tested against the parser result
@@ -224,14 +227,6 @@ object Parsley
           */
         def unexpected(msggen: A => String): Parsley[Nothing] = new Parsley(new deepembedding.FastUnexpected(p.internal, msggen))
         /**
-          * Using this method enables debugging functionality for this parser. When it is entered a snapshot is taken and
-          * presented on exit. It will signify when a parser is entered and exited as well. Use the break parameter to halt
-          * execution on either entry, exit, both or neither.
-          * @param name The name to be assigned to this parser
-          * @param break The breakpoint properties of this parser, defaults to NoBreak
-          */
-        def debug[A_ >: A](name: String, break: Breakpoint = NoBreak): Parsley[A_] = new Parsley(new deepembedding.Debug[A_](p.internal, name, break))
-        /**
           * A fold for a parser: `p.foldRight(k)(f)` will try executing `p` many times until it fails, combining the
           * results with right-associative application of `f` with a `k` at the right-most position
           *
@@ -241,7 +236,7 @@ object Parsley
           * @param f combining function
           * @return the result of folding the results of `p` with `f` and `k`
           */
-        def foldRight[B](k: B)(f: (A, B) => B): Parsley[B] = Combinator.chainPre(map(f.curried), pure(k))
+        def foldRight[B](k: B)(f: (A, B) => B): Parsley[B] = chain.prefix(map(f.curried), pure(k))
         /**
           * A fold for a parser: `p.foldLeft(k)(f)` will try executing `p` many times until it fails, combining the
           * results with left-associative application of `f` with a `k` on the left-most position
@@ -252,7 +247,7 @@ object Parsley
           * @param f combining function
           * @return the result of folding the results of `p` with `f` and `k`
           */
-        def foldLeft[B](k: B)(f: (B, A) => B): Parsley[B] = Combinator.chainPost(pure(k), map(x => (y: B) => f(y, x)))
+        def foldLeft[B](k: B)(f: (B, A) => B): Parsley[B] = chain.postfix(pure(k), map(x => (y: B) => f(y, x)))
         /**
           * A fold for a parser: `p.foldRight1(k)(f)` will try executing `p` many times until it fails, combining the
           * results with right-associative application of `f` with a `k` at the right-most position. It must parse `p`
@@ -264,7 +259,7 @@ object Parsley
           * @param f combining function
           * @return the result of folding the results of `p` with `f` and `k`
           */
-          def foldRight1[B](k: B)(f: (A, B) => B): Parsley[B] = lift2(f, p, foldRight(k)(f))
+          def foldRight1[B](k: B)(f: (A, B) => B): Parsley[B] = lift.lift2(f, p, foldRight(k)(f))
           /**
             * A fold for a parser: `p.foldLeft1(k)(f)` will try executing `p` many times until it fails, combining the
             * results with left-associative application of `f` with a `k` on the left-most position. It must parse `p`
@@ -276,7 +271,7 @@ object Parsley
             * @param f combining function
             * @return the result of folding the results of `p` with `f` and `k`
             */
-          def foldLeft1[B](k: B)(f: (B, A) => B): Parsley[B] = Combinator.chainPost(map(f(k, _)), map(x => (y: B) => f(y, x)))
+          def foldLeft1[B](k: B)(f: (B, A) => B): Parsley[B] = chain.postfix(map(f(k, _)), map(x => (y: B) => f(y, x)))
         /**
           * This casts the result of the parser into a new type `B`. If the value returned by the parser
           * is castable to type `B`, then this cast is performed. Otherwise the parser fails.
@@ -313,9 +308,10 @@ object Parsley
       * @return A parser which consumes nothing and returns `x`
       */
     def pure[A](x: A): Parsley[A] = new Parsley(new deepembedding.Pure(x))
-
+    // $COVERAGE-OFF$
     /** `lift1(f, p)` is an alias for `p.map(f)`. It is provided for symmetry with lift2 and lift3 */
-    def lift1[A, B](f: A => B, p: =>Parsley[A]): Parsley[B] = p.map(f)
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.lift.lift1` instead", "v2.2.0")
+    def lift1[A, B](f: A => B, p: =>Parsley[A]): Parsley[B] = lift.lift1(f, p)
     /** Traditionally, `lift2` is defined as `lift2(f, p, q) = p.map(f) <*> q`. However, `f` is actually uncurried,
       * so it's actually more exactly defined as; read `p` and then read `q` then provide their results to function
       * `f`. This is designed to bring higher performance to any curried operations that are not themselves
@@ -325,7 +321,8 @@ object Parsley
       * @param q The second parser to parse
       * @return `f(x, y)` where `x` is the result of `p` and `y` is the result of `q`.
       */
-    def lift2[A, B, C](f: (A, B) => C, p: =>Parsley[A], q: =>Parsley[B]): Parsley[C] = new Parsley(new deepembedding.Lift2(f, p.internal, q.internal))
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.lift.lift2` instead", "v2.2.0")
+    def lift2[A, B, C](f: (A, B) => C, p: =>Parsley[A], q: =>Parsley[B]): Parsley[C] = lift.lift2(f, p, q)
     /** Traditionally, `lift2` is defined as `lift3(f, p, q, r) = p.map(f) <*> q <*> r`. However, `f` is actually uncurried,
       * so it's actually more exactly defined as; read `p` and then read `q` and then read 'r' then provide their results
       * to function `f`. This is designed to bring higher performance to any curried operations that are not themselves
@@ -336,10 +333,9 @@ object Parsley
       * @param r The third parser to parse
       * @return `f(x, y, z)` where `x` is the result of `p`, `y` is the result of `q` and `z` is the result of `r`.
       */
-    def lift3[A, B, C, D](f: (A, B, C) => D, p: =>Parsley[A], q: =>Parsley[B], r: =>Parsley[C]): Parsley[D] = {
-        new Parsley(new deepembedding.Lift3(f, p.internal, q.internal, r.internal))
-    }
-
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.lift.lift3` instead", "v2.2.0")
+    def lift3[A, B, C, D](f: (A, B, C) => D, p: =>Parsley[A], q: =>Parsley[B], r: =>Parsley[C]): Parsley[D] = lift.lift3(f, p, q, r)
+    // $COVERAGE-ON$
     /** This is one of the core operations of a selective functor. It will conditionally execute one of `p` and `q`
       * depending on the result from `b`. This can be used to implement conditional choice within a parser without
       * relying on expensive monadic operations.
@@ -377,6 +373,12 @@ object Parsley
       * @return The result of the lookahead
       */
     def lookAhead[A](p: =>Parsley[A]): Parsley[A] = new Parsley(new deepembedding.Look(p.internal))
+    /**`notFollowedBy(p)` only succeeds when parser `p` fails. This parser does not consume any input.
+      * This parser can be used to implement the 'longest match' rule. For example, when recognising
+      * keywords, we want to make sure that a keyword is not followed by a legal identifier character,
+      * in which case the keyword is actually an identifier. We can program this behaviour as follows:
+      * {{{attempt(kw *> notFollowedBy(alphaNum))}}}*/
+    def notFollowedBy(p: Parsley[_]): Parsley[Unit] = new Parsley(new deepembedding.NotFollowedBy(p.internal))
     /**Alias for `p ? msg`.*/
     def label[A](p: Parsley[A], msg: String): Parsley[A] = p ? msg
     /** The `fail(msg)` parser consumes no input and fails with `msg` as the error message */
@@ -389,10 +391,14 @@ object Parsley
     val unit: Parsley[Unit] = pure(())
     /** converts a parser's result to () */
     def void(p: Parsley[_]): Parsley[Unit] = p *> unit
+    // $COVERAGE-OFF$
     /** `many(p)` executes the parser `p` zero or more times. Returns a list of the returned values of `p`. */
-    def many[A](p: =>Parsley[A]): Parsley[List[A]] = new Parsley(new deepembedding.Many(p.internal))
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.many` instead", "v2.2.0")
+    def many[A](p: =>Parsley[A]): Parsley[List[A]] = combinator.many(p)
     /** `skipMany(p)` executes the parser `p` zero or more times and ignores the results. Returns `()` */
-    def skipMany[A](p: =>Parsley[A]): Parsley[Unit] = new Parsley(new deepembedding.SkipMany(p.internal))
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.skipMany` instead", "v2.2.0")
+    def skipMany[A](p: =>Parsley[A]): Parsley[Unit] = combinator.skipMany(p)
+    // $COVERAGE-ON$
     /**
       * Evaluate each of the parsers in `ps` sequentially from left to right, collecting the results.
       * @param ps Parsers to be sequenced
@@ -427,6 +433,7 @@ object Parsley
       * @return Tuple of line and column number that the parser has reached
       */
     val pos: Parsley[(Int, Int)] = line <~> col
+    // $COVERAGE-OFF$
     /**
       * Consumes no input and returns the value stored in one of the parser registers.
       * @note There are only 4 registers at present.
@@ -434,7 +441,8 @@ object Parsley
       * @tparam S The type of the value in register `r` (this will result in a runtime type-check)
       * @return The value stored in register `r` of type `S`
       */
-    def get[S](r: Reg[S]): Parsley[S] = new Parsley(new deepembedding.Get(r))
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.get` instead", "v2.2.0")
+    def get[S](r: registers.Reg[S]): Parsley[S] = registers.get(r)
     /**
       * Consumes no input and returns the value stored in one of the parser registers after applying a function.
       * @note There are only 4 registers at present.
@@ -444,7 +452,8 @@ object Parsley
       * @tparam A The desired result type
       * @return The value stored in register `r` applied to `f`
       */
-    def gets[S, A](r: Reg[S], f: S => A): Parsley[A] = gets(r, pure(f))
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.gets` instead", "v2.2.0")
+    def gets[S, A](r: registers.Reg[S], f: S => A): Parsley[A] = registers.gets(r, f)
     /**
       * Returns the value stored in one of the parser registers after applying a function obtained from given parser.
       * @note There are only 4 registers at present. The value is fetched before `pf` is executed
@@ -454,21 +463,24 @@ object Parsley
       * @tparam A The desired result type
       * @return The value stored in register `r` applied to `f` from `pf`
       */
-    def gets[S, A](r: Reg[S], pf: Parsley[S => A]): Parsley[A] = get(r) <**> pf
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.gets` instead", "v2.2.0")
+    def gets[S, A](r: registers.Reg[S], pf: Parsley[S => A]): Parsley[A] = get(r) <**> pf
     /**
       * Consumes no input and places the value `x` into register `r`.
       * @note There are only 4 registers at present.
       * @param r The index of the register to place the value in
       * @param x The value to place in the register
       */
-    def put[S](r: Reg[S], x: S): Parsley[Unit] = put(r, pure(x))
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.put` instead", "v2.2.0")
+    def put[S](r: registers.Reg[S], x: S): Parsley[Unit] = registers.put(r, x)
     /**
       * Places the result of running `p` into register `r`.
       * @note There are only 4 registers at present.
       * @param r The index of the register to place the value in
       * @param p The parser to derive the value from
       */
-    def put[S](r: Reg[S], p: =>Parsley[S]): Parsley[Unit] = new Parsley(new deepembedding.Put(r, p.internal))
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.put` instead", "v2.2.0")
+    def put[S](r: registers.Reg[S], p: =>Parsley[S]): Parsley[Unit] = registers.put(r, p)
     /**
       * Modifies the value contained in register `r` using function `f`.
       * @note There are only 4 registers at present.
@@ -476,7 +488,8 @@ object Parsley
       * @param f The function used to modify the register
       * @tparam S The type of value currently assumed to be in the register
       */
-    def modify[S](r: Reg[S], f: S => S): Parsley[Unit] = new Parsley(new deepembedding.Modify(r, f))
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.modify` instead", "v2.2.0")
+    def modify[S](r: registers.Reg[S], f: S => S): Parsley[Unit] = registers.modify(r, f)
     /**
       * For the duration of parser `p` the state stored in register `r` is instead set to `x`. The change is undone
       * after `p` has finished.
@@ -486,7 +499,8 @@ object Parsley
       * @param p The parser to execute with the adjusted state
       * @return The parser that performs `p` with the modified state
       */
-    def local[R, A](r: Reg[R], x: R, p: =>Parsley[A]): Parsley[A] = local(r, pure(x), p)
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.local` instead", "v2.2.0")
+    def local[R, A](r: registers.Reg[R], x: R, p: =>Parsley[A]): Parsley[A] = registers.local(r, x, p)
     /**
       * For the duration of parser `q` the state stored in register `r` is instead set to the return value of `p`. The
       * change is undone after `q` has finished.
@@ -496,7 +510,8 @@ object Parsley
       * @param q The parser to execute with the adjusted state
       * @return The parser that performs `q` with the modified state
       */
-    def local[R, A](r: Reg[R], p: =>Parsley[R], q: =>Parsley[A]): Parsley[A] = new Parsley(new deepembedding.Local(r, p.internal, q.internal))
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.local` instead", "v2.2.0")
+    def local[R, A](r: registers.Reg[R], p: =>Parsley[R], q: =>Parsley[A]): Parsley[A] = registers.local(r, p, q)
     /**
       * For the duration of parser `p` the state stored in register `r` is instead modified with `f`. The change is undone
       * after `p` has finished.
@@ -506,7 +521,8 @@ object Parsley
       * @param p The parser to execute with the adjusted state
       * @return The parser that performs `p` with the modified state
       */
-    def local[R, A](r: Reg[R], f: R => R, p: =>Parsley[A]): Parsley[A] = local(r, get[R](r).map(f), p)
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.local` instead", "v2.2.0")
+    def local[R, A](r: registers.Reg[R], f: R => R, p: =>Parsley[A]): Parsley[A] = registers.local(r, f, p)
 
     /** `rollback(reg, p)` will perform `p`, but if it fails without consuming input, any changes to the register `reg` will
       * be reverted.
@@ -515,9 +531,7 @@ object Parsley
       * @return The result of the parser `p`, if any
       * @since 2.0
       */
-      def rollback[A, B](reg: Reg[A], p: Parsley[B]): Parsley[B] = {
-        get(reg).flatMap(x => {
-            p <|> (put(reg, x) *> empty)
-        })
-    }
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.rollback` instead", "v2.2.0")
+    def rollback[A, B](reg: registers.Reg[A], p: Parsley[B]): Parsley[B] = registers.rollback(reg, p)
+    // $COVERAGE-ON$
 }

@@ -2,8 +2,9 @@ package parsley
 
 import parsley.internal.instructions
 
-// This is hard to test, because it's not thread-safe!s
+// This is hard to test, because it's not thread-safe!
 // $COVERAGE-OFF$
+/** This module contains various machinery to run parsers faster, but at the cost of safety */
 object unsafe {
     /**
       * This function returns a fresh Context. Contexts are used by the parsers to store their state.

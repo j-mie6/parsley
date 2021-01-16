@@ -1,13 +1,15 @@
 package parsley
 
-import parsley.Parsley.{LazyParsley, skipMany}
-import parsley.Implicits.charLift
+import parsley.Parsley.{LazyParsley}
+import parsley.combinator.skipMany
+import parsley.implicits.charLift
 import parsley.internal.deepembedding
 
 import scala.annotation.switch
 import scala.language.implicitConversions
 
-object Char
+/** This module contains many parsers to do with reading one or more characters. Almost every parser will need something from this module. */
+object character
 {
     /** Reads a character from the input stream and returns it, else fails if the character is not found at the head
       * of the stream.
@@ -96,15 +98,13 @@ object Char
 
     // Functions
     /** Helper function, equivalent to the predicate used by whitespace. Useful for providing to LanguageDef */
-    def isWhitespace(c: Char): Boolean = (c: @switch) match
-    {
+    def isWhitespace(c: Char): Boolean = (c: @switch) match {
         case ' ' | '\t' | '\n' | '\r' | '\f' | '\u000b' => true
         case _ => false
     }
 
     /** Helper function, equivalent to the predicate used by hexDigit. Useful for providing to LanguageDef */
-    def isHexDigit(c: Char): Boolean = (c: @switch) match
-    {
+    def isHexDigit(c: Char): Boolean = (c: @switch) match {
         case '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
              | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
              | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' => true

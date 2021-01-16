@@ -10,6 +10,7 @@ exclude_patterns:
 - ".gitignore"
 - "*.pdf"
 - "LICENSE"
+- "**/deprecated"
 plugins:
   scalastyle:
     enabled: true
@@ -31,4 +32,6 @@ plugins:
       org.scalastyle.scalariform.LowercasePatternMatchChecker:
         enabled: false
       org.scalastyle.scalariform.MultipleStringLiteralsChecker:
+        enabled: false
+      org.scalastyle.scalariform.ClassTypeParameterChecker:
         enabled: false

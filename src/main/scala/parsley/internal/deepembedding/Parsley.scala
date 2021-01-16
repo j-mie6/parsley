@@ -4,7 +4,7 @@ import scala.language.{higherKinds, implicitConversions}
 import scala.annotation.tailrec
 import scala.collection.mutable
 
-import parsley.Reg
+import parsley.registers.Reg
 import parsley.internal.instructions, instructions.{Instr, JumpTable, JumpInstr, Label}
 import parsley.internal.{UnsafeOption, ResizableArray}
 import Parsley.allocateRegisters

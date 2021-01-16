@@ -16,7 +16,7 @@ inThisBuild(List(
   )
 ))
 
-val scala212Version = "2.12.12"
+val scala212Version = "2.12.13"
 val scala213Version = "2.13.4"
 val scala3Version = "3.0.0-M3"
 val dottyVersion = "0.27.0-RC1"
@@ -53,12 +53,15 @@ lazy val root = project.in(file("."))
       ),
 
     crossScalaVersions := List(scala212Version, scala213Version, scala3Version, dottyVersion),
+    // temporary until Parsley 3.0
+    Compile / unmanagedSourceDirectories += file(s"${baseDirectory.value.getPath}/src/main/deprecated"),
     Compile / unmanagedSourceDirectories ++= extraSources(baseDirectory.value, "main", scalaVersion.value),
     Test / unmanagedSourceDirectories ++= extraSources(baseDirectory.value, "test", scalaVersion.value),
 
     scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature"),
     scalacOptions ++= (if (isDotty.value) Seq("-source:3.0-migration") else Seq.empty),
 
+    Compile / doc / scalacOptions ++= Seq("-doc-root-content", s"${(Compile / sourceDirectory).value}/rootdoc.md"),
     // Trick from sbt-spiewak: disable dottydoc, which is struggling
     // with our package object.
     Compile / doc / sources := {

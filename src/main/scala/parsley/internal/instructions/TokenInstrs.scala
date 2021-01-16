@@ -1,7 +1,7 @@
 package parsley.internal.instructions
 
 import parsley.internal.deepembedding.Sign.{SignType, IntType, DoubleType}
-import parsley.TokenParser.TokenSet
+import parsley.token.TokenSet
 import parsley.internal.{Radix, UnsafeOption}
 
 import scala.annotation.tailrec
