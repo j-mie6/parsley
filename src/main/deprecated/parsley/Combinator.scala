@@ -21,110 +21,80 @@ object Combinator
     /** `repeat(n, p)` parses `n` occurrences of `p`. If `n` is smaller or equal to zero, the parser is
       *  `pure(Nil)`. Returns a list of `n` values returned by `p`.*/
     @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.repeat` instead", "v2.2.0")
-    def repeat[A](n: Int, p: =>Parsley[A]): Parsley[List[A]] =
-    {
-        lazy val _p = p
-        sequence((for (_ <- 1 to n) yield _p): _*)
-    }
+    def repeat[A](n: Int, p: =>Parsley[A]): Parsley[List[A]] = combinator.repeat(n, p)
 
     /**`option(p)` tries to apply parser `p`. If `p` fails without consuming input, it returns
       * `None`, otherwise it returns `Some` of the value returned by `p`.*/
     @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.option` instead", "v2.2.0")
-    def option[A](p: =>Parsley[A]): Parsley[Option[A]] = p.map(Some(_)).getOrElse(None)
+    def option[A](p: =>Parsley[A]): Parsley[Option[A]] = combinator.option(p)
 
     /**`decide(p)` removes the option from inside parser `p`, and if it returned `None` will fail.*/
     @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.decide` instead", "v2.2.0")
-    def decide[A](p: =>Parsley[Option[A]]): Parsley[A] = p.collect {
-        case Some(x) => x
-    }
+    def decide[A](p: =>Parsley[Option[A]]): Parsley[A] = combinator.decide(p)
 
     /**`decide(p, q)` removes the option from inside parser `p`, if it returned `None` then `q` is executed.*/
     @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.decide` instead", "v2.2.0")
-    def decide[A](p: =>Parsley[Option[A]], q: =>Parsley[A]): Parsley[A] = decide(p).orElse(q)
+    def decide[A](p: =>Parsley[Option[A]], q: =>Parsley[A]): Parsley[A] = combinator.decide(p, q)
 
     /**optional(p) tries to apply parser `p`. It will parse `p` or nothing. It only fails if `p`
       * fails after consuming input. It discards the result of `p`.*/
     @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.optional` instead", "v2.2.0")
-    def optional(p: =>Parsley[_]): Parsley[Unit] = optionally(p, ())
+    def optional(p: =>Parsley[_]): Parsley[Unit] = combinator.optional(p)
 
     /**optionally(p, x) tries to apply parser `p`. It will always result in `x` regardless of
       * whether or not `p` succeeded or `p` failed without consuming input.*/
     @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.optionally` instead", "v2.2.0")
-    def optionally[A](p: =>Parsley[_], x: =>A): Parsley[A] =
-    {
-        lazy val _x = x
-        (p #> x).getOrElse(x)
-    }
+    def optionally[A](p: =>Parsley[_], x: =>A): Parsley[A] = combinator.optionally(p, x)
 
     /**`between(open, close, p)` parses `open`, followed by `p` and `close`. Returns the value returned by `p`.*/
     @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.between` instead", "v2.2.0")
-    def between[A](open: =>Parsley[_],
-                   close: =>Parsley[_],
-                   p: =>Parsley[A]): Parsley[A] = open *> p <* close
+    def between[A](open: =>Parsley[_], close: =>Parsley[_], p: =>Parsley[A]): Parsley[A] = combinator.between(open, close, p)
 
     /**`some(p)` applies the parser `p` *one* or more times. Returns a list of the returned values of `p`.*/
     @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.some` instead", "v2.2.0")
-    def some[A](p: =>Parsley[A]): Parsley[List[A]] = manyN(1, p)
+    def some[A](p: =>Parsley[A]): Parsley[List[A]] = combinator.some(p)
 
     /**`manyN(n, p)` applies the parser `p` *n* or more times. Returns a list of the returned values of `p`.*/
     @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.manyN` instead", "v2.2.0")
-    def manyN[A](n: Int, p: =>Parsley[A]): Parsley[List[A]] = {
-        lazy val _p = p
-        @tailrec def go(n: Int, acc: Parsley[List[A]] = many(_p)): Parsley[List[A]] = {
-            if (n == 0) acc
-            else go(n-1, _p <::> acc)
-        }
-        go(n)
-    }
+    def manyN[A](n: Int, p: =>Parsley[A]): Parsley[List[A]] = combinator.manyN(n, p)
 
     /**`skipSome(p)` applies the parser `p` *one* or more times, skipping its result.*/
     @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.skipSome` instead", "v2.2.0")
-    def skipSome[A](p: => Parsley[A]): Parsley[Unit] = skipManyN(1, p)
+    def skipSome[A](p: => Parsley[A]): Parsley[Unit] = combinator.skipSome(p)
 
     /**`skipManyN(n, p)` applies the parser `p` *n* or more times, skipping its result.*/
     @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.skipManyN` instead", "v2.2.0")
-    def skipManyN[A](n: Int, p: =>Parsley[A]): Parsley[Unit] = {
-        lazy val _p = p
-        @tailrec def go(n: Int, acc: Parsley[Unit] = skipMany(_p)): Parsley[Unit] = {
-            if (n == 0) acc
-            else go(n-1, _p *> acc)
-        }
-        go(n)
-    }
+    def skipManyN[A](n: Int, p: =>Parsley[A]): Parsley[Unit] = combinator.skipManyN(n, p)
 
     /**`sepBy(p, sep)` parses *zero* or more occurrences of `p`, separated by `sep`. Returns a list
       * of values returned by `p`.*/
     @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.sepBy` instead", "v2.2.0")
-    def sepBy[A, B](p: =>Parsley[A], sep: =>Parsley[B]): Parsley[List[A]] = sepBy1(p, sep).getOrElse(Nil)
+    def sepBy[A, B](p: =>Parsley[A], sep: =>Parsley[B]): Parsley[List[A]] = combinator.sepBy(p, sep)
 
     /**`sepBy1(p, sep)` parses *one* or more occurrences of `p`, separated by `sep`. Returns a list
       *  of values returned by `p`.*/
     @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.sepBy1` instead", "v2.2.0")
-    def sepBy1[A, B](p: =>Parsley[A], sep: =>Parsley[B]): Parsley[List[A]] = {
-        lazy val _p = p
-        lazy val _sep = sep
-        _p <::> many(_sep *> _p)
-    }
+    def sepBy1[A, B](p: =>Parsley[A], sep: =>Parsley[B]): Parsley[List[A]] = combinator.sepBy1(p, sep)
 
     /**`sepEndBy(p, sep)` parses *zero* or more occurrences of `p`, separated and optionally ended
       * by `sep`. Returns a list of values returned by `p`.*/
     @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.sepEndBy` instead", "v2.2.0")
-    def sepEndBy[A, B](p: =>Parsley[A], sep: =>Parsley[B]): Parsley[List[A]] = sepEndBy1(p, sep).getOrElse(Nil)
+    def sepEndBy[A, B](p: =>Parsley[A], sep: =>Parsley[B]): Parsley[List[A]] = combinator.sepEndBy(p, sep)
 
     /**`sepEndBy1(p, sep)` parses *one* or more occurrences of `p`, separated and optionally ended
       * by `sep`. Returns a list of values returned by `p`.*/
     @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.sepEndBy1` instead", "v2.2.0")
-    def sepEndBy1[A, B](p: =>Parsley[A], sep: =>Parsley[B]): Parsley[List[A]] = new Parsley(new deepembedding.SepEndBy1(p.internal, sep.internal))
+    def sepEndBy1[A, B](p: =>Parsley[A], sep: =>Parsley[B]): Parsley[List[A]] = combinator.sepEndBy1(p, sep)
 
     /**`endBy(p, sep)` parses *zero* or more occurrences of `p`, separated and ended by `sep`. Returns a list
       * of values returned by `p`.*/
     @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.endBy` instead", "v2.2.0")
-    def endBy[A, B](p: =>Parsley[A], sep: =>Parsley[B]): Parsley[List[A]] = many(p <* sep)
+    def endBy[A, B](p: =>Parsley[A], sep: =>Parsley[B]): Parsley[List[A]] = combinator.endBy(p, sep)
 
     /**`endBy1(p, sep)` parses *one* or more occurrences of `p`, separated and ended by `sep`. Returns a list
       * of values returned by `p`.*/
     @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.endBy1` instead", "v2.2.0")
-    def endBy1[A, B](p: =>Parsley[A], sep: =>Parsley[B]): Parsley[List[A]] = some(p <* sep)
+    def endBy1[A, B](p: =>Parsley[A], sep: =>Parsley[B]): Parsley[List[A]] = combinator.endBy1(p, sep)
 
     // $COVERAGE-OFF$
     /**`chainr(p, op, x)` parses *zero* or more occurrences of `p`, separated by `op`. Returns a value
@@ -168,11 +138,11 @@ object Combinator
 
     /**This parser only succeeds at the end of the input. This is a primitive parser.*/
     @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.eof` instead", "v2.2.0")
-    val eof: Parsley[Unit] = new Parsley(new deepembedding.Eof)
+    val eof: Parsley[Unit] = combinator.eof
 
     /**This parser only succeeds if there is still more input.*/
     @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.more` instead", "v2.2.0")
-    val more: Parsley[Unit] = notFollowedBy(eof)
+    val more: Parsley[Unit] = combinator.more
 
     /**`notFollowedBy(p)` only succeeds when parser `p` fails. This parser does not consume any input.
       * This parser can be used to implement the 'longest match' rule. For example, when recognising
@@ -180,25 +150,17 @@ object Combinator
       * in which case the keyword is actually an identifier. We can program this behaviour as follows:
       * {{{attempt(kw *> notFollowedBy(alphaNum))}}}*/
     @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.notFollowedBy` instead", "v2.2.0")
-    def notFollowedBy(p: Parsley[_]): Parsley[Unit] = new Parsley(new deepembedding.NotFollowedBy(p.internal))
+    def notFollowedBy(p: Parsley[_]): Parsley[Unit] = combinator.notFollowedBy(p)
 
     /**`manyUntil(p, end)` applies parser `p` zero or more times until the parser `end` succeeds.
       * Returns a list of values returned by `p`. This parser can be used to scan comments.*/
     @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.manyUntil` instead", "v2.2.0")
-    def manyUntil[A, B](p: =>Parsley[A], end: =>Parsley[B]): Parsley[List[A]] =
-    {
-        new Parsley(new deepembedding.ManyUntil((end #> deepembedding.ManyUntil.Stop <|> p).internal))
-    }
+    def manyUntil[A, B](p: =>Parsley[A], end: =>Parsley[B]): Parsley[List[A]] = combinator.manyUntil(p, end)
 
     /**`someUntil(p, end)` applies parser `p` one or more times until the parser `end` succeeds.
       * Returns a list of values returned by `p`.*/
     @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.someUntil` instead", "v2.2.0")
-    def someUntil[A, B](p: =>Parsley[A], end: =>Parsley[B]): Parsley[List[A]] =
-    {
-        lazy val _p = p
-        lazy val _end = end
-        notFollowedBy(_end) *> (_p <::> manyUntil(_p, _end))
-    }
+    def someUntil[A, B](p: =>Parsley[A], end: =>Parsley[B]): Parsley[List[A]] = combinator.someUntil(p, end)
 
     /** `when(p, q)` will first perform `p`, and if the result is `true` will then execute `q` or else return unit.
       * @param p The first parser to parse
@@ -206,7 +168,7 @@ object Combinator
       * @return ()
       */
     @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.when` instead", "v2.2.0")
-    def when(p: =>Parsley[Boolean], q: =>Parsley[Unit]): Parsley[Unit] = p ?: (q, unit)
+    def when(p: =>Parsley[Boolean], q: =>Parsley[Unit]): Parsley[Unit] = combinator.when(p, q)
 
     /** `whileP(p)` will continue to run `p` until it returns `false`. This is often useful in conjunction with stateful
       * parsers.
@@ -214,10 +176,6 @@ object Combinator
       * @return ()
       */
     @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.whileP` instead", "v2.2.0")
-    def whileP(p: =>Parsley[Boolean]): Parsley[Unit] =
-    {
-        lazy val whilePP: Parsley[Unit] = when(p, whilePP)
-        whilePP
-    }
+    def whileP(p: =>Parsley[Boolean]): Parsley[Unit] = combinator.whileP(p)
 }
 // $COVERAGE-ON$
