@@ -1,6 +1,6 @@
 package parsley
 
-import parsley.Combinator.eof
+import parsley.combinator.eof
 import parsley.Parsley._
 import parsley.implicits.{charLift, stringLift}
 

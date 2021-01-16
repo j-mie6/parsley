@@ -1,7 +1,8 @@
 package parsley
 
 import parsley.{Reg => _}
-import parsley.Parsley.{lift2 => _, lift1 => _, lift3 => _, get => _, gets => _, modify => _, put => _, local => _, rollback => _, _}
+import parsley.Parsley.{lift2 => _, lift1 => _, lift3 => _, get => _, gets => _, modify => _, put => _, local => _, rollback => _, many => _, _}
+import parsley.combinator.many
 import parsley.lift._
 import parsley.character.{char, satisfy, digit, anyChar}
 import parsley.implicits.{charLift, stringLift}
@@ -207,7 +208,7 @@ class CoreTests extends ParsleyTest {
         val r3 = Reg.make[String]
         val p = put(r3, "hello world") *>
                 put(r1, 6) *>
-                Combinator.optional(unit.flatMap(_ => put(r3, "hi") *> put(r2, 4) *> Parsley.empty)) *>
+                combinator.optional(unit.flatMap(_ => put(r3, "hi") *> put(r2, 4) *> Parsley.empty)) *>
                 (get(r1) <~> get(r3))
         p.runParser("") shouldBe Success((6, "hi"))
     }

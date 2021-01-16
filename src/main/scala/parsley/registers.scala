@@ -133,4 +133,32 @@ object registers {
             p <|> (put(reg, x) *> empty)
         })
     }
+
+    /** `forP(v, init, cond, step, body)` behaves much like a traditional for loop using variable `v` as the loop
+      * variable and `init`, `cond`, `step` and `body` as parsers which control the loop itself. This is useful for
+      * performing certain context sensitive tasks. For instance, to read an equal number of as, bs and cs you can do:
+      *
+      * {{{
+      * put(v1, 0) *>
+      * many('a' *> modify[Int](v1, _+1)) *>
+      * forP[Int](v2, get[Int](v1), pure(_ != 0), pure(_ - 1), 'b') *>
+      * forP[Int](v2, get[Int](v1), pure(_ != 0), pure(_ - 1), 'c')
+      * }}}
+      *
+      * The value of `v` is reset on exiting this parser. This is to preserve the limited register numbers.
+      *
+      * @param v The address the induction variable is stored in
+      * @param init The initial value that register v should take
+      * @param cond The condition by which the loop terminates
+      * @param step The change in induction variable on each iteration
+      * @param body The body of the loop performed each iteration
+      * @return ()
+      */
+    // TODO: We can put this back for Parsley 2.1, because the new version will not have a `v` parameter
+    /*def forP[A](r: Reg[A], init: =>Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A], body: =>Parsley[_]): Parsley[Unit] =
+    {
+        val _cond = gets(v, cond)
+        val _step = put(v, gets(v, step))
+        local(v, init, when(_cond, whileP(body *> _step *> _cond)))
+    }*/
 }

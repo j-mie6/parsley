@@ -3,7 +3,7 @@ package parsley.expr
 import scala.annotation.tailrec
 
 import parsley.Parsley
-import parsley.Combinator.{chainl1, chainr1, chainPre, chainPost, choice}
+import parsley.combinator.choice
 import parsley.XCompat._
 
 object precedence {

@@ -1,6 +1,7 @@
 package parsley
 
-import parsley.Parsley.{LazyParsley, skipMany}
+import parsley.Parsley.{LazyParsley}
+import parsley.combinator.skipMany
 import parsley.implicits.charLift
 import parsley.internal.deepembedding
 

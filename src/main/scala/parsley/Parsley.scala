@@ -383,10 +383,14 @@ object Parsley
     val unit: Parsley[Unit] = pure(())
     /** converts a parser's result to () */
     def void(p: Parsley[_]): Parsley[Unit] = p *> unit
+    // $COVERAGE-OFF$
     /** `many(p)` executes the parser `p` zero or more times. Returns a list of the returned values of `p`. */
-    def many[A](p: =>Parsley[A]): Parsley[List[A]] = new Parsley(new deepembedding.Many(p.internal))
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.many` instead", "v2.2.0")
+    def many[A](p: =>Parsley[A]): Parsley[List[A]] = combinator.many(p)
     /** `skipMany(p)` executes the parser `p` zero or more times and ignores the results. Returns `()` */
-    def skipMany[A](p: =>Parsley[A]): Parsley[Unit] = new Parsley(new deepembedding.SkipMany(p.internal))
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.skipMany` instead", "v2.2.0")
+    def skipMany[A](p: =>Parsley[A]): Parsley[Unit] = combinator.skipMany(p)
+    // $COVERAGE-ON$
     /**
       * Evaluate each of the parsers in `ps` sequentially from left to right, collecting the results.
       * @param ps Parsers to be sequenced
