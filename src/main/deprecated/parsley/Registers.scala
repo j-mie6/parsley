@@ -15,8 +15,9 @@ package parsley
   *       registers in shared parsers and allocate fresh ones for each "top-level"
   *       parser you will run.
   */
-@deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.Reg` instead", "v2.2.0")
+@deprecated("This class will be removed in Parsley 3.0, use `parsley.registers.Reg` instead", "v2.2.0")
 final class Reg[A] private [Reg] extends registers.Reg[A]
+@deprecated("This object will be removed in Parsley 3.0, use `parsley.registers.Reg` instead", "v2.2.0")
 object Reg {
     /**
       * @tparam A The type to be contained in this register during runtime

@@ -1,10 +1,10 @@
 package parsley.token
 
 import parsley.character.{digit, hexDigit, octDigit, satisfy}
-import parsley.combinator.{sepBy, sepBy1, between, many, skipMany, some, skipSome, notFollowedBy}
+import parsley.combinator.{sepBy, sepBy1, between, many, skipMany, some, skipSome}
 import parsley.lift.lift2
 import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
-import parsley.Parsley, Parsley.{void, unit, fail, attempt, pure, empty, LazyParsley}
+import parsley.Parsley, Parsley.{void, unit, fail, attempt, pure, empty, notFollowedBy, LazyParsley}
 import parsley.token.TokenSet
 import parsley.implicits.{charLift, stringLift}
 import parsley.internal.deepembedding

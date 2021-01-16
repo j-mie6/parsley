@@ -371,6 +371,12 @@ object Parsley
       * @return The result of the lookahead
       */
     def lookAhead[A](p: =>Parsley[A]): Parsley[A] = new Parsley(new deepembedding.Look(p.internal))
+    /**`notFollowedBy(p)` only succeeds when parser `p` fails. This parser does not consume any input.
+      * This parser can be used to implement the 'longest match' rule. For example, when recognising
+      * keywords, we want to make sure that a keyword is not followed by a legal identifier character,
+      * in which case the keyword is actually an identifier. We can program this behaviour as follows:
+      * {{{attempt(kw *> notFollowedBy(alphaNum))}}}*/
+    def notFollowedBy(p: Parsley[_]): Parsley[Unit] = new Parsley(new deepembedding.NotFollowedBy(p.internal))
     /**Alias for `p ? msg`.*/
     def label[A](p: Parsley[A], msg: String): Parsley[A] = p ? msg
     /** The `fail(msg)` parser consumes no input and fails with `msg` as the error message */

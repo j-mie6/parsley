@@ -6,6 +6,7 @@ import parsley.expr.chain
 import scala.annotation.{tailrec, implicitNotFound}
 
 // $COVERAGE-OFF$
+@deprecated("This object will be removed in Parsley 3.0, use `parsley.combinator` instead", "v2.2.0")
 object Combinator
 {
     /**`choice(ps)` tries to apply the parsers in the list `ps` in order, until one of them succeeds.
@@ -149,8 +150,8 @@ object Combinator
       * keywords, we want to make sure that a keyword is not followed by a legal identifier character,
       * in which case the keyword is actually an identifier. We can program this behaviour as follows:
       * {{{attempt(kw *> notFollowedBy(alphaNum))}}}*/
-    @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.notFollowedBy` instead", "v2.2.0")
-    def notFollowedBy(p: Parsley[_]): Parsley[Unit] = combinator.notFollowedBy(p)
+    @deprecated("This method will be removed in Parsley 3.0, use `parsley.Parsley.notFollowedBy` instead", "v2.2.0")
+    def notFollowedBy(p: Parsley[_]): Parsley[Unit] = Parsley.notFollowedBy(p)
 
     /**`manyUntil(p, end)` applies parser `p` zero or more times until the parser `end` succeeds.
       * Returns a list of values returned by `p`. This parser can be used to scan comments.*/

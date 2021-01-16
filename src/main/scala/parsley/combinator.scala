@@ -1,6 +1,6 @@
 package parsley
 
-import parsley.Parsley.{LazyParsley, unit, empty, select, sequence}
+import parsley.Parsley.{LazyParsley, unit, empty, select, sequence, notFollowedBy}
 import parsley.internal.deepembedding
 import parsley.expr.chain
 import parsley.registers.{get, gets, put, local}
@@ -116,13 +116,6 @@ object combinator {
 
     /**This parser only succeeds if there is still more input.*/
     val more: Parsley[Unit] = notFollowedBy(eof)
-
-    /**`notFollowedBy(p)` only succeeds when parser `p` fails. This parser does not consume any input.
-      * This parser can be used to implement the 'longest match' rule. For example, when recognising
-      * keywords, we want to make sure that a keyword is not followed by a legal identifier character,
-      * in which case the keyword is actually an identifier. We can program this behaviour as follows:
-      * {{{attempt(kw *> notFollowedBy(alphaNum))}}}*/
-    def notFollowedBy(p: Parsley[_]): Parsley[Unit] = new Parsley(new deepembedding.NotFollowedBy(p.internal))
 
     /**`manyUntil(p, end)` applies parser `p` zero or more times until the parser `end` succeeds.
       * Returns a list of values returned by `p`. This parser can be used to scan comments.*/

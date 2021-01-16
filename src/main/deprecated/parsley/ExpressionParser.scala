@@ -15,6 +15,7 @@ final class ExpressionParser[-A, +B] private (atom: =>Parsley[A], table: Levels[
     lazy val expr: Parsley[B] = parsley.expr.precedence(atom, table)
 }
 
+@deprecated("This object will be removed in Parsley 3.0, use `parsley.expr.precedence` instead", "v2.2.0")
 object ExpressionParser
 {
     /** This is used to build an expression parser for a monolithic type. Levels are specified from strongest

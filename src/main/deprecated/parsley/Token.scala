@@ -47,6 +47,7 @@ final case class LanguageDef(commentStart: String,
                                                                        opStart.adapt, opLetter.adapt,
                                                                        keywords, operators, caseSensitive, space.adapt)
 }
+@deprecated("This object will be removed in Parsley 3.0, use `parsley.token.LanguageDef` instead", "v2.2.0")
 object LanguageDef
 {
     @deprecated("This value will be removed in Parsley 3.0, use `parsley.token.LanguageDef.plan` instead", "v2.2.0")
@@ -69,21 +70,25 @@ sealed trait Impl {
   * The implementation provided is a parser which parses the required token.
   * @param p The parser which will parse the token
   */
+@deprecated("This class will be removed in Parsley 3.0, use `parsley.token.Parser` instead", "v2.2.0")
 case class Parser(p: Parsley[_]) extends Impl
 /**
   * The implementation provided is a function which matches on the input streams characters
   * @param f The predicate that input tokens are tested against
   */
+@deprecated("This class will be removed in Parsley 3.0, use `parsley.token.Predicate` instead", "v2.2.0")
 case class Predicate(f: Char => Boolean) extends Impl
 /**
   * This implementation states that the required functionality is not required. If it is used it will raise an error
   * at parse-time
   */
+@deprecated("This class will be removed in Parsley 3.0, use `parsley.token.NotRequired` instead", "v2.2.0")
 case object NotRequired extends Impl
 private [parsley] case class BitSetImpl(cs: TokenSet) extends Impl
 /**
   * This implementation uses a set of valid tokens. It is converted to a high-performance BitSet.
   */
+@deprecated("This object will be removed in Parsley 3.0, use `parsley.token.CharSet` instead", "v2.2.0")
 object CharSet
 {
     /**
@@ -98,6 +103,7 @@ object CharSet
   * predicate is cheap, this is unlikely to provide any performance improvements, but will instead incur heavy space
   * costs
   */
+@deprecated("This class will be removed in Parsley 3.0, use `parsley.token.BitGen` instead", "v2.2.0")
 object BitGen
 {
     def apply(f: Char => Boolean): Impl = BitSetImpl(new BitSet(Right(f)))
