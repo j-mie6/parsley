@@ -74,7 +74,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     }*/
 
     @tailrec @inline private [parsley] def runParser[A](): Result[A] = {
-        //println(this)
+        //println(pretty)
         if (status eq Failed) Failure(errorMessage)
         else if (pc < instrs.length) {
             instrs(pc)(this)

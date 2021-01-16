@@ -123,8 +123,9 @@ private [internal] final class Chainl[A, B](var label: Int, _wrap: A => B) exten
         else {
             ctx.catchNoConsumed {
                 // if acc is null this is first entry, p already on the stack!
-                if (acc != null) ctx.stack.push(acc)
-                ctx.inc()
+                if (acc != null) ctx.pushAndContinue(acc)
+                // but p does need to be wrapped
+                else ctx.exchangeAndContinue(wrap(ctx.stack.upeek))
             }
             acc = null
         }

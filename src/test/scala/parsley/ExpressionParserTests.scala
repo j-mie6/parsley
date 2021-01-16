@@ -161,10 +161,27 @@ class ExpressionParserTests extends ParsleyTest {
         case class Num(x: Int) extends Atom
         lazy val atom: Parsley[Atom] = digit.map(_.asDigit).map(Num) <|> ('(' *> expr.map(Parens) <* ')')
         lazy val expr = precedence[Atom, Expr](atom,
-            GOps[Atom, Term](InfixR)('*' #> Mul.apply)(TermOf) +:
-            GOps[Term, Expr](InfixL)('+' #> Add.apply)(ExprOf) +:
+            GOps[Atom, Term](InfixR)('*' #> Mul)(TermOf) +:
+            GOps[Term, Expr](InfixL)('+' #> Add)(ExprOf) +:
             Levels.empty[Expr])
         expr.runParser("(7+8)*2+3+6*2") should be (Success(Add(Add(ExprOf(Mul(Parens(Add(ExprOf(TermOf(Num(7))), TermOf(Num(8)))), TermOf(Num(2)))), TermOf(Num(3))), Mul(Num(6), TermOf(Num(2))))))
+    }
+    they should "generalise to non-monolithic structures with most than one chainl1" in {
+        sealed trait Expr
+        case class Add(x: Expr, y: Term) extends Expr
+        case class ExprOf(x: Term) extends Expr
+        sealed trait Term
+        case class Mul(x: Term, y: Atom) extends Term
+        case class TermOf(x: Atom) extends Term
+        sealed trait Atom
+        case class Parens(x: Expr) extends Atom
+        case class Num(x: Int) extends Atom
+        lazy val atom: Parsley[Atom] = digit.map(_.asDigit).map(Num) <|> ('(' *> expr.map(Parens) <* ')')
+        lazy val expr = precedence[Atom, Expr](atom,
+            GOps[Atom, Term](InfixL)('*' #> Mul)(TermOf) +:
+            GOps[Term, Expr](InfixL)('+' #> Add)(ExprOf) +:
+            Levels.empty[Expr])
+        expr.runParser("1*(2+3)") shouldBe a [Success[_]]
     }
 
     "mixed expressions" should "also be parsable" in {
