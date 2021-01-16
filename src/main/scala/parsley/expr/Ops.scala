@@ -22,7 +22,7 @@ private [expr] case class Postfixes[-A, B](ops: Parsley[B => B]*)(override val w
  */
 object GOps {
     /**
-    * NOTE: Currently a bug in scaladoc incorrect displays this functions type, it should be:
+    * '''NOTE''': Currently a bug in scaladoc incorrect displays this functions type, it should be:
     * `fixity.GOp[A, B]`, NOT `GOp[A, B]`. Builds an `Ops` object which represents many operators
     * which act at the same precedence level, with a given fixity. Using path-dependent typing,
     * the given fixity describes the shape of the operators expected. For more information see
@@ -48,7 +48,7 @@ object GOps {
  */
 object Ops {
     /**
-    * NOTE: Currently a bug in scaladoc incorrect displays this functions type, it should be:
+    * '''NOTE''': Currently a bug in scaladoc incorrect displays this functions type, it should be:
     * `fixity.Op[A]`, NOT `Op[A]`. Builds an `Ops` object which represents many operators
     * which act at the same precedence level, with a given fixity. Using path-dependent typing,
     * the given fixity describes the shape of the operators expected. For more information see
