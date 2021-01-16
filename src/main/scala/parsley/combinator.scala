@@ -6,6 +6,7 @@ import parsley.expr.chain
 import parsley.registers.{get, gets, put, local}
 import scala.annotation.{tailrec, implicitNotFound}
 
+/** This module contains a huge number of pre-made combinators that are very useful for a variety of purposes. */
 object combinator {
     /**`choice(ps)` tries to apply the parsers in the list `ps` in order, until one of them succeeds.
       *  Returns the value of the succeeding parser.*/

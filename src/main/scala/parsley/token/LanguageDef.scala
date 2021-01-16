@@ -47,6 +47,7 @@ case class LanguageDef (commentStart: String,
         on
     }
 }
+/** This object contains any preconfigured language definitions */
 object LanguageDef
 {
     val plain = LanguageDef("", "", "", false, NotRequired, NotRequired, NotRequired, NotRequired, Set.empty, Set.empty, true, NotRequired)

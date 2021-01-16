@@ -57,6 +57,8 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: deepe
     def runParser(input: Array[Char]): Result[A] = new Context(internal.threadSafeInstrs, input).runParser()
 
 }
+/** This object contains the core "function-style" combinators as well as the implicit classes which provide
+  * the "method-style" combinators. All parsers will likely require something from within! */
 object Parsley
 {
     implicit final class LazyParsley[P, +A](p: =>P)(implicit con: P => Parsley[A])

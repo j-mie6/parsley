@@ -2,6 +2,7 @@ package parsley
 
 import parsley.internal.deepembedding
 
+/** This module contains the very useful debugging combinator, as well as breakpoints. */
 object debug {
     trait Breakpoint
     case object NoBreak extends Breakpoint
@@ -9,6 +10,7 @@ object debug {
     case object ExitBreak extends Breakpoint
     case object FullBreak extends Breakpoint
 
+    /** This class enables the `debug` combinator on parsers */
     implicit class DebugCombinators[P, +A](val p: P)(implicit val con: P => Parsley[A]) {
         /**
           * Using this method enables debugging functionality for this parser. When it is entered a snapshot is taken and

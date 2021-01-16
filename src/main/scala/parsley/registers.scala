@@ -3,6 +3,7 @@ package parsley
 import parsley.Parsley.{empty, pure}
 import parsley.internal.deepembedding
 
+/** This module contains all the functionality and operations for using and manipulating registers. */
 object registers {
     /**
     * This class is used to index registers within the mutable state.

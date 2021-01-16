@@ -5,6 +5,9 @@ import parsley.internal.deepembedding
 
 import scala.annotation.implicitNotFound
 
+/** This module contains the very useful chaining family of combinators,
+    which are mostly used to parse operators and expressions of varying fixities.
+    It is a more low-level API compared with [[precedence]]. */
 object chain {
     /**`right(p, op, x)` parses *zero* or more occurrences of `p`, separated by `op`. Returns a value
       * obtained by a right associative application of all functions return by `op` to the values

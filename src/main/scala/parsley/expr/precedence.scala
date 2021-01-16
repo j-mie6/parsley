@@ -6,6 +6,7 @@ import parsley.Parsley
 import parsley.combinator.choice
 import parsley.XCompat._
 
+/** This object is used to construct precedence parsers from either a [[Levels]] or many `Ops[A, A]`. */
 object precedence {
     private def convertOperators[A, B](atom: Parsley[A], opList: Ops[A, B])(implicit wrap: A => B): Parsley[B] = opList match
     {
