@@ -18,7 +18,8 @@ private [instructions] final class State(val offset: Int, val line: Int, val col
 }
 
 private [parsley] final class Context(private [instructions] var instrs: Array[Instr],
-                                      private [instructions] var input: Array[Char]) {
+                                      private [instructions] var input: Array[Char],
+                                      private [instructions] val sourceName: Option[String] = None) {
     private [instructions] val stack: ArrayStack[Any] = new ArrayStack()
     private [instructions] var offset: Int = 0
     private [instructions] var inputsz: Int = input.length
@@ -44,7 +45,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     private [instructions] var debuglvl: Int = 0
     private [instructions] var startline: Int = 1
     private [instructions] var startcol: Int = 1
-    private [parsley] var sourceName: String = "input"
+    private val inputDescriptor = sourceName.fold("input")(_ => "file")
 
     // $COVERAGE-OFF$
     //override def toString: String = pretty
@@ -128,7 +129,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
             erroffset = offset
             errcol = col
             errline = line
-            unexpected = if (offset < inputsz) "\"" + nextChar + "\"" else "end of " + sourceName
+            unexpected = if (offset < inputsz) "\"" + nextChar + "\"" else s"end of $inputDescriptor"
             expected = (if (errorOverride == null) e else errorOverride)::Nil
             raw = Nil
             unexpectAnyway = false
@@ -173,7 +174,8 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     }
 
     private def errorMessage: String = {
-        val posStr = s"(line $errline, column $errcol):"
+        val scopeName = sourceName.fold("")(name => s"In file '$name' ")
+        val posStr = s"$scopeName(line $errline, column $errcol):"
         val unexpectedStr = Option(unexpected).map(s => s"unexpected $s")
         val expectedFlat = expected.flatMap(Option(_))
         val expectedFiltered = expectedFlat.filterNot(_.isEmpty)
