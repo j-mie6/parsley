@@ -35,7 +35,10 @@ object chain {
       * typically occurs in expression grammars.*/
     def left1[A, B](p: =>Parsley[A], op: =>Parsley[(B, A) => B])
                    (implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${B}") wrap: A => B): Parsley[B] = {
-        new Parsley(new deepembedding.Chainl(new deepembedding.Subroutine(p.internal), op.internal, wrap))
+        lazy val _p = p
+        // a sneaky sneaky trick :) If we know that A =:= B because refl was provided, then we can skip the wrapping
+        lazy val init = if (parsley.XCompat.isIdentityWrap(wrap)) _p.asInstanceOf[Parsley[B]] else _p.map(wrap)
+        new Parsley(new deepembedding.Chainl(init.internal, _p.internal, op.internal))
     }
 
     /**`prefix(op, p)` parses many prefixed applications of `op` onto a single final result of `p`*/

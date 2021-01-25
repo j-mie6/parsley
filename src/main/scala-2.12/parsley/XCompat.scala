@@ -3,7 +3,9 @@ package parsley
 import scala.collection.mutable
 import scala.language.higherKinds
 
-private[parsley] object XCompat {
+private [parsley] object XCompat {
+  def isIdentityWrap[A, B](f: A => B): Boolean = f eq $conforms[A]
+
   def refl[A]: A =:= A = implicitly[A =:= A]
 
   implicit class Subtitution[A, B](ev: A =:= B) {

@@ -101,8 +101,7 @@ private [internal] final class ChainPre(var label: Int) extends JumpInstr with S
     // $COVERAGE-ON$
     override def copy: ChainPre = new ChainPre(label)
 }
-private [internal] final class Chainl[A, B](var label: Int, _wrap: A => B) extends JumpInstr with Stateful {
-    private [this] val wrap: Any => B = _wrap.asInstanceOf[Any => B]
+private [internal] final class Chainl(var label: Int) extends JumpInstr with Stateful {
     private [this] var acc: Any = _
     override def apply(ctx: Context): Unit = {
         if (ctx.status eq Good) {
@@ -112,7 +111,7 @@ private [internal] final class Chainl[A, B](var label: Int, _wrap: A => B) exten
             if (acc == null) {
                 // after this point, the inputCheck will roll back one too many items on the stack, because this item
                 // was consumed. It should be adjusted
-                acc = op(wrap(ctx.stack.upop()), y)
+                acc = op(ctx.stack.upop(), y)
                 ctx.handlers.head.stacksz -= 1
             }
             else acc = op(acc, y)
@@ -125,7 +124,7 @@ private [internal] final class Chainl[A, B](var label: Int, _wrap: A => B) exten
                 // if acc is null this is first entry, p already on the stack!
                 if (acc != null) ctx.pushAndContinue(acc)
                 // but p does need to be wrapped
-                else ctx.exchangeAndContinue(wrap(ctx.stack.upeek))
+                else ctx.exchangeAndContinue(ctx.stack.upeek)
             }
             acc = null
         }
@@ -133,7 +132,7 @@ private [internal] final class Chainl[A, B](var label: Int, _wrap: A => B) exten
     // $COVERAGE-OFF$
     override def toString: String = s"Chainl($label)"
     // $COVERAGE-ON$
-    override def copy: Chainl[A, B] = new Chainl(label, wrap)
+    override def copy: Chainl = new Chainl(label)
 }
 
 private [instructions] sealed trait DualHandler {

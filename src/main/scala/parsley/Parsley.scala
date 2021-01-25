@@ -250,7 +250,7 @@ object Parsley
           * @param f combining function
           * @return the result of folding the results of `p` with `f` and `k`
           */
-        def foldLeft[B](k: B)(f: (B, A) => B): Parsley[B] = chain.postfix(pure(k), this.map(x => (y: B) => f(y, x)))
+        def foldLeft[B](k: B)(f: (B, A) => B): Parsley[B] = new Parsley(new deepembedding.Chainl(pure(k).internal, p.internal, pure(f).internal))
         /**
           * A fold for a parser: `p.foldRight1(k)(f)` will try executing `p` many times until it fails, combining the
           * results with right-associative application of `f` with a `k` at the right-most position. It must parse `p`
@@ -279,7 +279,7 @@ object Parsley
           */
         def foldLeft1[B](k: B)(f: (B, A) => B): Parsley[B] = {
             lazy val q: Parsley[A] = p
-            chain.postfix(q.map(f(k, _)), q.map(x => (y: B) => f(y, x)))
+            new Parsley(new deepembedding.Chainl(q.map(f(k, _)).internal, q.internal, pure(f).internal))
         }
         /**
           * A reduction for a parser: `p.reduceRight(op)` will try executing `p` many times until it fails, combining the
