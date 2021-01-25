@@ -7,6 +7,8 @@ import parsley.expr.chain
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.reflect.ClassTag
+import scala.io.Source
+import java.io.File
 import scala.language.{higherKinds, implicitConversions}
 
 // User API
@@ -39,23 +41,24 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: deepe
     def overflows(): Unit = internal.overflows()
 
     //TODO: we need a way to set source pos and filename
-    /** This method is responsible for actually executing parsers. Given a `Parsley[A]` and an input
+    /** This method is responsible for actually executing parsers. Given an input
       * string, will parse the string with the parser. The result is either a `Success` or a `Failure`.
-      * @param p The parser to run
       * @param input The input to run against
-      * @tparam A The type of the result of parsing
       * @return Either a success with a value of type `A` or a failure with error message
       */
     def runParser(input: String): Result[A] = runParser(input.toCharArray)
-    /** This method is responsible for actually executing parsers. Given a `Parsley[A]` and an input
+    /** This method is responsible for actually executing parsers. Given an input
       * array, will parse the string with the parser. The result is either a `Success` or a `Failure`.
-      * @param p The parser to run
       * @param input The input to run against
-      * @tparam A The type of the result of parsing
       * @return Either a success with a value of type `A` or a failure with error message
       */
     def runParser(input: Array[Char]): Result[A] = new Context(internal.threadSafeInstrs, input).runParser()
-
+    /** This method executes a parser, but collects the input to the parser from the given file.
+      * The file name is used to annotate any error messages.
+      * @param file The file to load and run against
+      * @return Either a success with a value of type `A` or a failure with error message
+      */
+    def parseFromFile(file: File): Result[A] = new Context(internal.threadSafeInstrs, Source.fromFile(file).toArray, Some(file.getName)).runParser()
 }
 /** This object contains the core "function-style" combinators as well as the implicit classes which provide
   * the "method-style" combinators. All parsers will likely require something from within! */
