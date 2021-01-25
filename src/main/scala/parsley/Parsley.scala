@@ -3,6 +3,7 @@ package parsley
 import parsley.internal.instructions.Context
 import parsley.internal.deepembedding
 import parsley.expr.chain
+import parsley.combinator.{option, some}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -155,6 +156,8 @@ object Parsley
         def <::>[B >: A](ps: =>Parsley[List[B]]): Parsley[List[B]] = lift.lift2[A, List[B], List[B]](_ :: _, p, ps)
         /**This parser corresponds to `lift2((_, _), p, q)`. For now it is sugar, but in future may be more optimal*/
         def <~>[A_ >: A, B](q: =>Parsley[B]): Parsley[(A_, B)] = lift.lift2[A_, B, (A_, B)]((_, _), p, q)
+        /**This combinator is an alias for `<~>`*/
+        def zip[A_ >: A, B](q: =>Parsley[B]): Parsley[(A_, B)] = this <~> q
         /** Filter the value of a parser; if the value returned by the parser matches the predicate `pred` then the
           * filter succeeded, otherwise the parser fails with an empty error
           * @param pred The predicate that is tested against the parser result
@@ -263,21 +266,55 @@ object Parsley
             lazy val q: Parsley[A] = p
             lift.lift2(f, q, q.foldRight(k)(f))
         }
-          /**
-            * A fold for a parser: `p.foldLeft1(k)(f)` will try executing `p` many times until it fails, combining the
-            * results with left-associative application of `f` with a `k` on the left-most position. It must parse `p`
-            * at least once.
-            *
-            * @example {{{val natural: Parsley[Int] = digit.foldLeft1(0)((x, d) => x * 10 + d.toInt)}}}
-            *
-            * @param k base case for iteration
-            * @param f combining function
-            * @return the result of folding the results of `p` with `f` and `k`
-            */
+        /**
+          * A fold for a parser: `p.foldLeft1(k)(f)` will try executing `p` many times until it fails, combining the
+          * results with left-associative application of `f` with a `k` on the left-most position. It must parse `p`
+          * at least once.
+          *
+          * @example {{{val natural: Parsley[Int] = digit.foldLeft1(0)((x, d) => x * 10 + d.toInt)}}}
+          *
+          * @param k base case for iteration
+          * @param f combining function
+          * @return the result of folding the results of `p` with `f` and `k`
+          */
         def foldLeft1[B](k: B)(f: (B, A) => B): Parsley[B] = {
             lazy val q: Parsley[A] = p
             chain.postfix(q.map(f(k, _)), q.map(x => (y: B) => f(y, x)))
         }
+        /**
+          * A reduction for a parser: `p.reduceRight(op)` will try executing `p` many times until it fails, combining the
+          * results with right-associative application of `op`. It must parse `p` at least once.
+          *
+          * @param op combining function
+          * @return the result of reducing the results of `p` with `op`
+          */
+        def reduceRight[B >: A](op: (A, B) => B): Parsley[B] = some(p).map(_.reduceRight(op))
+        /**
+          * A reduction for a parser: `p.reduceRight(op)` will try executing `p` many times until it fails, combining the
+          * results with right-associative application of `op`. If there is no `p`, it returns `None`, otherwise it returns
+          * `Some(x)` where `x` is the result of the reduction.
+          *
+          * @param op combining function
+          * @return the result of reducing the results of `p` with `op` wrapped in `Some` or `None` otherwise
+          */
+        def reduceRightOption[B >: A](op: (A, B) => B): Parsley[Option[B]] = option(this.reduceRight(op))
+        /**
+          * A reduction for a parser: `p.reduceLeft(op)` will try executing `p` many times until it fails, combining the
+          * results with left-associative application of `op`. It must parse `p` at least once.
+          *
+          * @param op combining function
+          * @return the result of reducing the results of `p` with `op`
+          */
+        def reduceLeft[B >: A](op: (B, A) => B): Parsley[B] = chain.left1(p, pure(op))
+        /**
+          * A reduction for a parser: `p.reduceLeft(op)` will try executing `p` many times until it fails, combining the
+          * results with left-associative application of `op`. If there is no `p`, it returns `None`, otherwise it returns
+          * `Some(x)` where `x` is the result of the reduction.
+          *
+          * @param op combining function
+          * @return the result of reducing the results of `p` with `op` wrapped in `Some` or `None` otherwise
+          */
+        def reduceLeftOption[B >: A](op: (B, A) => B): Parsley[Option[B]] = option(this.reduceLeft(op))
         /**
           * This casts the result of the parser into a new type `B`. If the value returned by the parser
           * is castable to type `B`, then this cast is performed. Otherwise the parser fails.
