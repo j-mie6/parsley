@@ -75,7 +75,7 @@ object Parsley
           */
         def map[B](f: A => B): Parsley[B] = pure(f) <*> p
         /**This combinator is an alias for `map`*/
-        def <#>[B](f: A => B): Parsley[B] = map(f)
+        def <#>[B](f: A => B): Parsley[B] = this.map(f)
         /**
           * This is the Applicative application parser. The type of `pf` is `Parsley[A => B]`. Then, given a
           * `Parsley[A]`, we can produce a `Parsley[B]` by parsing `pf` to retrieve `f: A => B`, then parse `px`
@@ -100,10 +100,10 @@ object Parsley
           */
         def flatMap[B](f: A => Parsley[B]): Parsley[B] = new Parsley(new deepembedding.>>=(p.internal, f.andThen(_.internal)))
         /**This combinator is an alias for `flatMap(identity)`.*/
-        def flatten[B](implicit ev: A <:< Parsley[B]): Parsley[B] = flatMap[B](ev)
+        def flatten[B](implicit ev: A <:< Parsley[B]): Parsley[B] = this.flatMap[B](ev)
 
         /**This combinator is an alias for `flatMap`*/
-        def >>=[B](f: A => Parsley[B]): Parsley[B] = flatMap(f)
+        def >>=[B](f: A => Parsley[B]): Parsley[B] = this.flatMap(f)
         /**This combinator is defined as `lift2((x, f) => f(x), p, f)`. It is pure syntactic sugar.*/
         def <**>[B](pf: =>Parsley[A => B]): Parsley[B] = lift.lift2[A, A=>B, B]((x, f) => f(x), p, pf)
         /**
@@ -123,7 +123,7 @@ object Parsley
         /**This combinator is an alias for `<|>`.*/
         def orElse[B >: A](q: =>Parsley[B]): Parsley[B] = this <|> q
         /**This combinator is an alias for `</>`.*/
-        def getOrElse[B >: A](x: B): Parsley[B] = p </> x
+        def getOrElse[B >: A](x: B): Parsley[B] = this </> x
         /**This combinator is defined as `attempt(p) <|> q`. It is pure syntactic sugar.*/
         def <\>[B >: A](q: Parsley[B]): Parsley[B] = attempt(p) <|> q
         /**
@@ -166,15 +166,15 @@ object Parsley
           * @param pred The predicate that is tested against the parser result
           * @return The result of the invokee if it passes the predicate
           */
-        def filterNot(pred: A => Boolean): Parsley[A] = filter(!pred(_))
-        def withFilter(pred: A => Boolean): Parsley[A] = filter(pred)
+        def filterNot(pred: A => Boolean): Parsley[A] = this.filter(!pred(_))
+        def withFilter(pred: A => Boolean): Parsley[A] = this.filter(pred)
         /** Attempts to first filter the parser to ensure that `pf` is defined over it. If it is, then the function `pf`
           * is mapped over its result. Roughly the same as a `filter` then a `map`.
           * @param pf The partial function
           * @return The result of applying `pf` to this parsers value (if possible), or fails
           * @since 1.7
           */
-        def collect[B](pf: PartialFunction[A, B]): Parsley[B] = filter(pf.isDefinedAt).map(pf)
+        def collect[B](pf: PartialFunction[A, B]): Parsley[B] = this.filter(pf.isDefinedAt).map(pf)
         /** Similar to `filter`, except the error message desired is also provided. This allows you to name the message
           * itself.
           * @param pred The predicate that is tested against the parser result
@@ -196,7 +196,7 @@ object Parsley
          * @param msg The message used for the error if the input failed the check
          * @return The result of the invokee if it passes the predicate
          */
-        def guardNot(pred: A => Boolean, msg: String): Parsley[A] = guard((a: A) => !pred(a), msg)
+        def guardNot(pred: A => Boolean, msg: String): Parsley[A] = this.guard((a: A) => !pred(a), msg)
         /** Similar to `filterNot`, except the error message desired is also provided. This allows you to name the message
          * itself. The message is provided as a generator, which allows the user to avoid otherwise expensive
          * computation.
@@ -204,11 +204,11 @@ object Parsley
          * @param msggen Generator function for error message, generating a message based on the result of the parser
          * @return The result of the invokee if it passes the predicate
          */
-        def guardNot(pred: A => Boolean, msggen: A => String): Parsley[A] = guard((a: A) => !pred(a), msggen)
+        def guardNot(pred: A => Boolean, msggen: A => String): Parsley[A] = this.guard((a: A) => !pred(a), msggen)
         /**Alias for guard combinator, taking a fixed message.*/
-        def >?>(pred: A => Boolean, msg: String): Parsley[A] = guard(pred, msg)
+        def >?>(pred: A => Boolean, msg: String): Parsley[A] = this.guard(pred, msg)
         /**Alias for guard combinator, taking a dynamic message generator.*/
-        def >?>(pred: A => Boolean, msggen: A => String): Parsley[A] = guard(pred, msggen)
+        def >?>(pred: A => Boolean, msggen: A => String): Parsley[A] = this.guard(pred, msggen)
         /**Sets the expected message for a parser. If the parser fails then `expected msg` will added to the error*/
         def ?(msg: String): Parsley[A] = new Parsley(new deepembedding.ErrorRelabel(p.internal, msg))
         /**Hides the "expected" error message for a parser.*/
@@ -236,7 +236,7 @@ object Parsley
           * @param f combining function
           * @return the result of folding the results of `p` with `f` and `k`
           */
-        def foldRight[B](k: B)(f: (A, B) => B): Parsley[B] = chain.prefix(map(f.curried), pure(k))
+        def foldRight[B](k: B)(f: (A, B) => B): Parsley[B] = chain.prefix(this.map(f.curried), pure(k))
         /**
           * A fold for a parser: `p.foldLeft(k)(f)` will try executing `p` many times until it fails, combining the
           * results with left-associative application of `f` with a `k` on the left-most position
@@ -247,7 +247,7 @@ object Parsley
           * @param f combining function
           * @return the result of folding the results of `p` with `f` and `k`
           */
-        def foldLeft[B](k: B)(f: (B, A) => B): Parsley[B] = chain.postfix(pure(k), map(x => (y: B) => f(y, x)))
+        def foldLeft[B](k: B)(f: (B, A) => B): Parsley[B] = chain.postfix(pure(k), this.map(x => (y: B) => f(y, x)))
         /**
           * A fold for a parser: `p.foldRight1(k)(f)` will try executing `p` many times until it fails, combining the
           * results with right-associative application of `f` with a `k` at the right-most position. It must parse `p`
@@ -259,7 +259,10 @@ object Parsley
           * @param f combining function
           * @return the result of folding the results of `p` with `f` and `k`
           */
-          def foldRight1[B](k: B)(f: (A, B) => B): Parsley[B] = lift.lift2(f, p, foldRight(k)(f))
+        def foldRight1[B](k: B)(f: (A, B) => B): Parsley[B] = {
+            lazy val q: Parsley[A] = p
+            lift.lift2(f, q, q.foldRight(k)(f))
+        }
           /**
             * A fold for a parser: `p.foldLeft1(k)(f)` will try executing `p` many times until it fails, combining the
             * results with left-associative application of `f` with a `k` on the left-most position. It must parse `p`
@@ -271,14 +274,17 @@ object Parsley
             * @param f combining function
             * @return the result of folding the results of `p` with `f` and `k`
             */
-          def foldLeft1[B](k: B)(f: (B, A) => B): Parsley[B] = chain.postfix(map(f(k, _)), map(x => (y: B) => f(y, x)))
+        def foldLeft1[B](k: B)(f: (B, A) => B): Parsley[B] = {
+            lazy val q: Parsley[A] = p
+            chain.postfix(q.map(f(k, _)), q.map(x => (y: B) => f(y, x)))
+        }
         /**
           * This casts the result of the parser into a new type `B`. If the value returned by the parser
           * is castable to type `B`, then this cast is performed. Otherwise the parser fails.
           * @tparam B The type to attempt to cast into
           * @since 1.7
           */
-        def cast[B: ClassTag]: Parsley[B] = collect {
+        def cast[B: ClassTag]: Parsley[B] = this.collect {
             case x: B => x
         }
     }

@@ -2,6 +2,8 @@ package parsley
 
 import parsley.internal.deepembedding
 
+import scala.language.implicitConversions
+
 /** This module contains the very useful debugging combinator, as well as breakpoints. */
 object debug {
     trait Breakpoint
