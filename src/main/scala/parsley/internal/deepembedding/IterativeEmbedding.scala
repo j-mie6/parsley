@@ -68,20 +68,19 @@ private [parsley] final class ChainPre[A](_p: =>Parsley[A], _op: =>Parsley[A => 
         }
     }
 }
-private [parsley] final class Chainl[A, B](_p: =>Parsley[A], _op: =>Parsley[(B, A) => B], private [Chainl] val wrap: A => B)
-    extends Binary[A, (B, A) => B, B](_p, _op)((l, r) => s"chainl1($l, $r)", Chainl.empty(wrap)) {
+private [parsley] final class Chainl[A, B](_init: Parsley[B], _p: =>Parsley[A], _op: =>Parsley[(B, A) => B])
+    extends Ternary[B, A, (B, A) => B, B](_init, _p, _op)((f, s, t) => s"chainl1($s, $t)", Chainl.empty) {
     override val numInstrs = 2
-    override val leftRepeats = 2
     override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
         val body = state.freshLabel()
         val handler = state.freshLabel()
-        left.codeGen >> {
+        first.codeGen >> {
             instrs += new instructions.InputCheck(handler)
             instrs += new instructions.Label(body)
-            right.codeGen >>
-            left.codeGen |> {
+            third.codeGen >>
+            second.codeGen |> {
                 instrs += new instructions.Label(handler)
-                instrs += new instructions.Chainl(body, wrap)
+                instrs += new instructions.Chainl(body)
             }
         }
     }
@@ -151,8 +150,8 @@ private [deepembedding] object ChainPre {
     def apply[A](left: Parsley[A], right: Parsley[A => A]): ChainPre[A] = empty.ready(left, right)
 }
 private [deepembedding] object Chainl {
-    def empty[A, B](wrap: A => B): Chainl[A, B] = new Chainl(null, null, wrap)
-    def apply[A, B](left: Parsley[A], right: Parsley[(B, A) => B], wrap: A => B): Chainl[A, B] = empty(wrap).ready(left, right)
+    def empty[A, B]: Chainl[A, B] = new Chainl(null, null, null)
+    def apply[A, B](first: Parsley[B], second: Parsley[A], third: Parsley[(B, A) => B]): Chainl[A, B] = empty.ready(first, second, third)
 }
 private [deepembedding] object Chainr {
     def empty[A, B](wrap: A => B): Chainr[A, B] = new Chainr(null, null, wrap)

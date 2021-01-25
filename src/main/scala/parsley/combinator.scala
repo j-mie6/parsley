@@ -92,8 +92,7 @@ object combinator {
       *  of values returned by `p`.*/
     def sepBy1[A, B](p: =>Parsley[A], sep: =>Parsley[B]): Parsley[List[A]] = {
         lazy val _p = p
-        lazy val _sep = sep
-        _p <::> many(_sep *> _p)
+        _p <::> many(sep *> _p)
     }
 
     /**`sepEndBy(p, sep)` parses *zero* or more occurrences of `p`, separated and optionally ended

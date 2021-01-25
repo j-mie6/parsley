@@ -4,7 +4,7 @@ import parsley.{Reg => _}
 import parsley.Parsley.{lift2 => _, lift1 => _, lift3 => _, get => _, gets => _, modify => _, put => _, local => _, rollback => _, many => _, _}
 import parsley.combinator.many
 import parsley.lift._
-import parsley.character.{char, satisfy, digit, anyChar}
+import parsley.character.{char, satisfy, digit, anyChar, string}
 import parsley.implicits.{charLift, stringLift}
 import parsley.registers._
 
@@ -296,6 +296,22 @@ class CoreTests extends ParsleyTest {
         val p = digit.foldLeft1(0)((x, d) => x * 10 + d.asDigit)
         p.runParser("") shouldBe a [Failure]
         p.runParser("123") should be (Success(123))
+    }
+    "reduceRightOption" should "return Some on success" in {
+        val p = string("a").reduceRightOption((s1, s2) => s"$s1($s2)")
+        p.runParser("aaaaa") shouldBe Success(Some("a(a(a(a(a))))"))
+    }
+    it should "return None if there is no p" in {
+        val p = string("a").reduceRightOption((s1, s2) => s"$s1($s2)")
+        p.runParser("") shouldBe Success(None)
+    }
+    "reduceLeftOption" should "return Some on success" in {
+        val p = string("a").reduceLeftOption((s1, s2) => s"($s1)$s2")
+        p.runParser("aaaaa") shouldBe Success(Some("((((a)a)a)a)a"))
+    }
+    it should "return None if there is no p" in {
+        val p = string("a").reduceLeftOption((s1, s2) => s"($s1)$s2")
+        p.runParser("") shouldBe Success(None)
     }
 
     "stack overflows" should "not occur" in {
