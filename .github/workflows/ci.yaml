@@ -60,6 +60,6 @@ jobs:
       - run: sbt ++$SCALA_VERSION coverageReport
       - uses: paambaati/codeclimate-action@v2.7.5
         env:
-          CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
+          CC_TEST_REPORTER_ID: d2376ef4077556821a44dd82803411deea8fd904d5008713754dda5f3ab42875
         with:
           coverageLocations: ${{github.workspace}}/target/scala-2.13/coverage-report/cobertura.xml:cobertura
