@@ -1,13 +1,25 @@
 name: CI
-on: [push, pull_request]
+on: [push, pull_request, workflow_dispatch]
 env:
   CI: true
   CI_SNAPSHOT_RELEASE: +publishSigned
   SCALA_VERSION: 2.13.4
 jobs:
+  check-duplicate:
+    name: Check duplicate action
+    runs-on: ubuntu-20.04
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@master
+        with:
+          concurrent_skipping: 'same_content'
   validate:
     name: Scala ${{ matrix.scala }}, Java ${{ matrix.java }}
     runs-on: ubuntu-20.04
+    needs: check-duplicate
+    if: ${{ needs.check-duplicate.outputs.should_skip != 'true' }}
     strategy:
       fail-fast: false
       matrix:
