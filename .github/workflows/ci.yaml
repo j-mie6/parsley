@@ -2,10 +2,6 @@ name: CI
 
 on: [push, pull_request, workflow_dispatch]
 
-env:
-  CI_SNAPSHOT_RELEASE: +publishSigned
-  SCALA_VERSION: 2.13.4
-
 jobs:
   check-duplicate:
     name: Check duplicate action
@@ -16,7 +12,8 @@ jobs:
       should_skip: ${{ steps.skip_check.outputs.should_skip }}
 
     steps:
-      - id: skip_check
+      - name: Check duplicate
+        id: skip_check
         uses: fkirc/skip-duplicate-actions@master
         with:
           concurrent_skipping: 'same_content'
@@ -88,6 +85,9 @@ jobs:
       github.ref == 'refs/heads/master' && (needs.validate.result == 'success' || needs.validate.result == 'skipped') ||
       github.event_name == 'pull_request' && (needs.validate.result == 'success' || needs.validate.result == 'skipped')
 
+    env:
+      SCALA_VERSION: 2.13.4
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2.3.4
@@ -115,7 +115,8 @@ jobs:
       - name: Coverage report
         run: sbt ++$SCALA_VERSION coverageReport
 
-      - uses: paambaati/codeclimate-action@v2.7.5
+      - name: Upload coverage to Code Climate
+        uses: paambaati/codeclimate-action@v2.7.5
         env:
           CC_TEST_REPORTER_ID: d2376ef4077556821a44dd82803411deea8fd904d5008713754dda5f3ab42875
         with:

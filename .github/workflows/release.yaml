@@ -9,7 +9,10 @@ on:
   workflow_dispatch:
 
 env:
-  SCALA_VERSION: 2.12.13
+#  WARN: Updating sbt ci-release to any version past 1.5.4 changes the default (+publishSigned) to +publish
+#  CI_SNAPSHOT_RELEASE: +publishSigned
+#  Temp: testing if SCALA_VERSION is needed
+#  SCALA_VERSION: 2.12.13
 
 jobs:
   release:
