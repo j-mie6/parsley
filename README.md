@@ -30,7 +30,7 @@ natural.runParser("0") // returns Success(0)
 natural.runParser("123") // returns Success(123)
 ```
 
-For more see [the Wiki](https://github.com/j-mie6/Parsley/wiki/Examples)!
+For more see [the Wiki](https://github.com/j-mie6/Parsley/wiki)!
 
 ### What are the differences to Haskell's Parsec?
 Mostly, this library is quite similar. However, due to Scala's differences in operator characters a few operators are changed:
