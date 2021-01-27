@@ -8,7 +8,7 @@ on:
       - '*'
   workflow_dispatch:
 
-env:
+#env:
 #  WARN: Updating sbt ci-release to any version past 1.5.4 changes the default (+publishSigned) to +publish
 #  CI_SNAPSHOT_RELEASE: +publishSigned
 #  Temp: testing if SCALA_VERSION is needed
@@ -17,7 +17,6 @@ env:
 jobs:
   release:
     name: Release
-
     runs-on: ubuntu-20.04
 
     steps:
