@@ -60,7 +60,13 @@ jobs:
     needs: validate
     name: Test Coverage
     # Temp: Also run on pull requests when validate is skipped, due to codeclimate/coverage being a required check
+#<<<<<<< devops-logging
     if: always()
+#=======
+#    if: |
+#      github.ref == 'refs/heads/master' && (needs.validate.result == 'success' || needs.validate.result == 'skipped') ||
+#      github.event_name == 'pull_request' && (needs.validate.result == 'success' || needs.validate.result == 'skipped')
+#>>>>>>> master
     runs-on: ubuntu-20.04
     steps:
       - run: |
