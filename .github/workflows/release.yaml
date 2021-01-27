@@ -1,34 +1,49 @@
 name: Release
+
 on:
-  workflow_dispatch:
   push:
     branches:
       - master
     tags:
       - '*'
+  workflow_dispatch:
+
 env:
-  CI: true
-  SCALA_VERSION: 2.12.13
+#  WARN: Updating sbt ci-release to any version past 1.5.4 changes the default (+publishSigned) to +publish
+#  CI_SNAPSHOT_RELEASE: +publishSigned
+#  Temp: testing if SCALA_VERSION is needed
+#  SCALA_VERSION: 2.12.13
+
 jobs:
   release:
     name: Release
+
     runs-on: ubuntu-20.04
+
     steps:
-      - uses: actions/checkout@v2.3.4
+      - name: Checkout repository
+        uses: actions/checkout@v2.3.4
         with:
           fetch-depth: 0
-      - uses: olafurpg/setup-scala@v10
-      - uses: olafurpg/setup-gpg@v3
+
+      - name: Setup Scala
+        uses: olafurpg/setup-scala@v10
+
+      - name: Setup GPG
+        uses: olafurpg/setup-gpg@v3
+
       - name: Cache Coursier
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
           path: ~/.cache/coursier
           key: sbt-coursier-cache
+
       - name: Cache SBT
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
           path: ~/.sbt
           key: sbt-${{ hashFiles('**/build.sbt') }}
+
       - name: Publish
         run: sbt ci-release
         env:

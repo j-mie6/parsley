@@ -1,85 +1,122 @@
 name: CI
+
 on: [push, pull_request, workflow_dispatch]
-env:
-  CI: true
-  CI_SNAPSHOT_RELEASE: +publishSigned
-  SCALA_VERSION: 2.13.4
+
 jobs:
   check-duplicate:
     name: Check duplicate action
+
     runs-on: ubuntu-20.04
+
     outputs:
       should_skip: ${{ steps.skip_check.outputs.should_skip }}
+
     steps:
-      - id: skip_check
+      - name: Check duplicate
+        id: skip_check
         uses: fkirc/skip-duplicate-actions@master
         with:
           concurrent_skipping: 'same_content'
+
   validate:
     name: Scala ${{ matrix.scala }}, Java ${{ matrix.java }}
+
     runs-on: ubuntu-20.04
+
     needs: check-duplicate
+
+    env:
+      SCALA_VERSION: ${{ matrix.scala }}
+
     strategy:
       fail-fast: false
       matrix:
         java: [adopt@1.8, adopt@1.11, adopt@1.15]
         scala: [2.12.13, 2.13.4, 3.0.0-M3]
-        experimental: [false]
+        experimental: [ false ]
+
         include:
           - java: adopt@1.11
             scala: 0.27.0-RC1
             experimental: true
-    env:
-      SCALA_VERSION: ${{ matrix.scala }}
+
     steps:
-      - uses: actions/checkout@v2.3.4
-        if: needs.check-duplicate.outputs.should_skip != 'true'
-      - uses: olafurpg/setup-scala@v10
-        if: needs.check-duplicate.outputs.should_skip != 'true'
+      - name: Checkout repository
+        if: needs.check-duplicate.outputs.should_skip != true
+        uses: actions/checkout@v2.3.4
+
+      - name: Setup Scala
+        if: needs.check-duplicate.outputs.should_skip != true
+        uses: olafurpg/setup-scala@v10
         with:
           java-version: ${{ matrix.java }}
+
       - name: Cache Coursier
-        if: needs.check-duplicate.outputs.should_skip != 'true'
-        uses: actions/cache@v1
+        if: needs.check-duplicate.outputs.should_skip != true
+        uses: actions/cache@v2
         with:
           path: ~/.cache/coursier
           key: sbt-coursier-cache
+
       - name: Cache SBT
-        if: needs.check-duplicate.outputs.should_skip != 'true'
-        uses: actions/cache@v1
+        if: needs.check-duplicate.outputs.should_skip != true
+        uses: actions/cache@v2
         with:
           path: ~/.sbt
           key: sbt-${{ hashFiles('**/build.sbt') }}
+
       - name: Test
-        if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != true
         run: sbt ++$SCALA_VERSION test
+
       - name: Scaladoc
-        if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != true
         run: sbt ++$SCALA_VERSION doc
+
   coverage:
-    needs: validate
     name: Test Coverage
+
+    runs-on: ubuntu-20.04
+
+    needs: validate
+
     # Temp: Also run on pull requests when validate is skipped, due to codeclimate/coverage being a required check
     if: >-
       github.ref == 'refs/heads/master' && (needs.validate.result == 'success' || needs.validate.result == 'skipped') ||
       github.event_name == 'pull_request' && (needs.validate.result == 'success' || needs.validate.result == 'skipped')
-    runs-on: ubuntu-20.04
+
+    env:
+      SCALA_VERSION: 2.13.4
+
     steps:
-      - uses: actions/checkout@v2.3.4
-      - uses: olafurpg/setup-scala@v10
+      - name: Checkout repository
+        uses: actions/checkout@v2.3.4
+
+      - name: Setup Scala
+        uses: olafurpg/setup-scala@v10
         with:
           java-version: adopt@1.11
-      - uses: actions/cache@v1
+
+      - name: Restore cached Coursier
+        uses: actions/cache@v2
         with:
           path: ~/.cache/coursier
           key: sbt-coursier-cache
-      - uses: actions/cache@v1
+
+      - name: Restore cached SBT
+        uses: actions/cache@v2
         with:
           path: ~/.sbt
           key: sbt-${{ hashFiles('**/build.sbt') }}
-      - run: sbt ++$SCALA_VERSION clean coverage test
-      - run: sbt ++$SCALA_VERSION coverageReport
-      - uses: paambaati/codeclimate-action@v2.7.5
+
+      - name: Test with coverage
+        run: sbt ++$SCALA_VERSION clean coverage test
+
+      - name: Coverage report
+        run: sbt ++$SCALA_VERSION coverageReport
+
+      - name: Upload coverage to Code Climate
+        uses: paambaati/codeclimate-action@v2.7.5
         env:
           CC_TEST_REPORTER_ID: d2376ef4077556821a44dd82803411deea8fd904d5008713754dda5f3ab42875
         with:
