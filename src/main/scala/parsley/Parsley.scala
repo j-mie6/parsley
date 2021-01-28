@@ -202,7 +202,7 @@ object Parsley
           * @return The result of applying `pf` to this parsers value (if possible), or fails
           * @since 1.7
           */
-        def collect[B](msg: String)(pf: PartialFunction[A, B]): Parsley[B] = this.guard(pf.isDefinedAt, msg).map(pf)
+        def collect[B](msg: String)(pf: PartialFunction[A, B]): Parsley[B] = this.guard(pf.isDefinedAt(_), msg).map(pf)
         /** Attempts to first filter the parser to ensure that `pf` is defined over it. If it is, then the function `pf`
           * is mapped over its result. Roughly the same as a `guard` then a `map`.
           * @param pf The partial function
@@ -210,7 +210,7 @@ object Parsley
           * @return The result of applying `pf` to this parsers value (if possible), or fails
           * @since 1.7
           */
-        def collect[B](msggen: A => String)(pf: PartialFunction[A, B]): Parsley[B] = this.guard(pf.isDefinedAt, msggen).map(pf)
+        def collect[B](msggen: A => String)(pf: PartialFunction[A, B]): Parsley[B] = this.guard(pf.isDefinedAt(_), msggen).map(pf)
         /** Similar to `filter`, except the error message desired is also provided. This allows you to name the message
           * itself.
           * @param pred The predicate that is tested against the parser result
