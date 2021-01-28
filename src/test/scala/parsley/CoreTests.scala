@@ -264,7 +264,7 @@ class CoreTests extends ParsleyTest {
         p.runParser("C") shouldBe Success(3)
         p.runParser("a") shouldBe a [Failure]
 
-        val q = anyChar.collect("oops") {
+        val q = anyChar.collectMsg("oops") {
             case '+' => 0
             case c if c.isUpper => c - 'A' + 1
         }
@@ -272,7 +272,7 @@ class CoreTests extends ParsleyTest {
         q.runParser("C") shouldBe Success(3)
         q.runParser("a") shouldBe Failure("(line 1, column 2):\n  oops")
 
-        val r = anyChar.collect(c => s"$c is not appropriate") {
+        val r = anyChar.collectMsg(c => s"$c is not appropriate") {
             case '+' => 0
             case c if c.isUpper => c - 'A' + 1
         }
