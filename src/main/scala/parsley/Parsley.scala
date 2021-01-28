@@ -153,6 +153,20 @@ object Parsley
         def #>[B](x: B): Parsley[B] = this *> pure(x)
         /**This combinator is an alias for `*>`*/
         def >>[B](q: Parsley[B]): Parsley[B] = this *> q
+        /**
+          * This is the parser that corresponds to a more optimal version of `(p <~> q).map(_._2)`. It performs
+          * the parse action of both parsers, in order, but discards the result of the invokee.
+          * @param q The parser whose result should be returned
+          * @return A new parser which first parses `p`, then `q` and returns the result of `q`
+          */
+        def ~>[B](q: Parsley[B]): Parsley[B] = this *> q
+        /**
+          * This is the parser that corresponds to a more optimal version of `(p <~> q).map(_._1)`. It performs
+          * the parse action of both parsers, in order, but discards the result of the second parser.
+          * @param q The parser who should be executed but then discarded
+          * @return A new parser which first parses `p`, then `q` and returns the result of the `p`
+          */
+        def <~[B](q: Parsley[B]): Parsley[A] = this <* q
         /**This parser corresponds to `lift2(_+:_, p, ps)`.*/
         def <+:>[B >: A](ps: =>Parsley[Seq[B]]): Parsley[Seq[B]] = lift.lift2[A, Seq[B], Seq[B]](_ +: _, p, ps)
         /**This parser corresponds to `lift2(_::_, p, ps)`.*/
@@ -181,6 +195,22 @@ object Parsley
           * @since 1.7
           */
         def collect[B](pf: PartialFunction[A, B]): Parsley[B] = this.filter(pf.isDefinedAt).map(pf)
+        /** Attempts to first filter the parser to ensure that `pf` is defined over it. If it is, then the function `pf`
+          * is mapped over its result. Roughly the same as a `guard` then a `map`.
+          * @param pf The partial function
+          * @param msg The message used for the error if the input failed the check
+          * @return The result of applying `pf` to this parsers value (if possible), or fails
+          * @since 1.7
+          */
+        def collectMsg[B](msg: String)(pf: PartialFunction[A, B]): Parsley[B] = this.guard(pf.isDefinedAt(_), msg).map(pf)
+        /** Attempts to first filter the parser to ensure that `pf` is defined over it. If it is, then the function `pf`
+          * is mapped over its result. Roughly the same as a `guard` then a `map`.
+          * @param pf The partial function
+          * @param msggen Generator function for error message, generating a message based on the result of the parser
+          * @return The result of applying `pf` to this parsers value (if possible), or fails
+          * @since 1.7
+          */
+        def collectMsg[B](msggen: A => String)(pf: PartialFunction[A, B]): Parsley[B] = this.guard(pf.isDefinedAt(_), msggen).map(pf)
         /** Similar to `filter`, except the error message desired is also provided. This allows you to name the message
           * itself.
           * @param pred The predicate that is tested against the parser result
