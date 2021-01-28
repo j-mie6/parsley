@@ -35,7 +35,7 @@ class CoreTests extends ParsleyTest {
             case Failure(err) => err should startWith ("(line 1, column 2)")
             case _ =>
         }
-        res = ('a' *> 'b').runParser("bc")
+        res = ('a' ~> 'b').runParser("bc")
         res shouldBe a [Failure]
         res match {
             case Failure(err) => err should startWith ("(line 1, column 1)")
@@ -54,7 +54,7 @@ class CoreTests extends ParsleyTest {
     }
 
     they must "not consume any input" in {
-        (pure('a') *> 'a').runParser("a") should be (Success('a'))
+        (pure('a') <~ 'a').runParser("a") should be (Success('a'))
     }
 
     // APPLICATIVE LAWS
@@ -263,6 +263,22 @@ class CoreTests extends ParsleyTest {
         p.runParser("+") shouldBe Success(0)
         p.runParser("C") shouldBe Success(3)
         p.runParser("a") shouldBe a [Failure]
+
+        val q = anyChar.collect("oops") {
+            case '+' => 0
+            case c if c.isUpper => c - 'A' + 1
+        }
+        q.runParser("+") shouldBe Success(0)
+        q.runParser("C") shouldBe Success(3)
+        q.runParser("a") shouldBe Failure("(line 1, column 2):\n  oops")
+
+        val r = anyChar.collect(c => s"$c is not appropriate") {
+            case '+' => 0
+            case c if c.isUpper => c - 'A' + 1
+        }
+        r.runParser("+") shouldBe Success(0)
+        r.runParser("C") shouldBe Success(3)
+        r.runParser("a") shouldBe Failure("(line 1, column 2):\n  a is not appropriate")
     }
 
     "the cast combinator" should "allow for casts to valid types" in {
