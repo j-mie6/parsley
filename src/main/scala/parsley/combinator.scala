@@ -33,7 +33,7 @@ object combinator {
     }
 
     /**`decide(p, q)` removes the option from inside parser `p`, if it returned `None` then `q` is executed.*/
-    def decide[A](p: =>Parsley[Option[A]], q: =>Parsley[A]): Parsley[A] = decide(p).orElse(q)
+    def decide[A](p: =>Parsley[Option[A]], q: =>Parsley[A]): Parsley[A] = select(p.map(_.toRight(())), q.map(x => (_: Unit) => x))
 
     /**optional(p) tries to apply parser `p`. It will parse `p` or nothing. It only fails if `p`
       * fails after consuming input. It discards the result of `p`.*/
