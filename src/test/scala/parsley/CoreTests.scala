@@ -256,7 +256,7 @@ class CoreTests extends ParsleyTest {
     }
 
     "the collect combinator" should "act like a filter then a map" in {
-        val p = anyChar.collect {
+        val p = anyChar.collect[Int] {
             case '+' => 0
             case c if c.isUpper => c - 'A' + 1
         }
