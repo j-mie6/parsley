@@ -51,6 +51,7 @@ private [parsley] final class Subroutine[A](_p: =>Parsley[A], val expected: Unsa
 
     override def preprocess[Cont[_, +_]: ContOps, A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap,
                                                            label: UnsafeOption[String]): Cont[Unit, Parsley[A_]] = {
+        // something is horribly off here!
         val self = if (label == null) this else Subroutine(p, label)
         if (!processed) for (p <- this.p.optimised(implicitly[ContOps[Cont]], seen, sub, null)) yield self.ready(p)
         else result(self)

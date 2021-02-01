@@ -46,7 +46,7 @@ private [deepembedding] abstract class Unary[A, B](_p: =>Parsley[A])(pretty: Str
     override def preprocess[Cont[_, +_]: ContOps, B_ >: B](implicit seen: Set[Parsley[_]], sub: SubMap,
                                                    label: UnsafeOption[String]): Cont[Unit, Parsley[B_]] =
         if (label == null && processed) result(this) else for (p <- this.p.optimised) yield {
-            val self = if (label == null) this else empty(label)
+            val self = /*if (label == null) this else*/ empty(label)
             self.ready(p)
         }
     private [deepembedding] def ready(p: Parsley[A]): this.type = this.synchronized {
@@ -76,7 +76,7 @@ private [deepembedding] abstract class Binary[A, B, C](_left: =>Parsley[A], _rig
     final override def preprocess[Cont[_, +_]: ContOps, C_ >: C](implicit seen: Set[Parsley[_]], sub: SubMap,
                                                    label: UnsafeOption[String]): Cont[Unit, Parsley[C_]] =
         if (label == null && processed) result(this) else for (left <- this.left.optimised; right <- this.right.optimised) yield {
-            val self = if (label == null) this else empty
+            val self = /*if (label == null) this else*/ empty
             self.ready(left, right)
         }
     private [deepembedding] def ready(left: Parsley[A], right: Parsley[B]): this.type = this.synchronized {
@@ -103,7 +103,7 @@ private [deepembedding] abstract class Ternary[A, B, C, D](_first: =>Parsley[A],
                                                            label: UnsafeOption[String]): Cont[Unit, Parsley[D_]] =
         if (label == null && processed) result(this) else
             for (first <- this.first.optimised; second <- this.second.optimised; third <- this.third.optimised) yield {
-                val self = if (label == null) this else empty
+                val self = /*if (label == null) this else*/ empty
                 self.ready(first, second, third)
             }
     private [deepembedding] def ready(first: Parsley[A], second: Parsley[B], third: Parsley[C]): this.type = this.synchronized {
