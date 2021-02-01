@@ -38,7 +38,7 @@ private [deepembedding] abstract class Unary[A, B](_p: =>Parsley[A])(pretty: Str
     private [deepembedding] var p: Parsley[A] = _
     protected val childRepeats: Int = 1
     protected val numInstrs: Int
-    override def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState): Cont[Unit,Unit] = {
+    final override def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState): Cont[Unit,Unit] = this.synchronized {
         processed = false
         p = _p
         p.findLets
@@ -49,14 +49,14 @@ private [deepembedding] abstract class Unary[A, B](_p: =>Parsley[A])(pretty: Str
             val self = if (label == null) this else empty(label)
             self.ready(p)
         }
-    private [deepembedding] def ready(p: Parsley[A]): this.type = {
+    private [deepembedding] def ready(p: Parsley[A]): this.type = this.synchronized {
         processed = true
         this.p = p
         size = p.size + numInstrs
         this
     }
     // $COVERAGE-OFF$
-    override def prettyASTAux[Cont[_, +_]: ContOps]: Cont[String,String] = for (c <- p.prettyASTAux) yield pretty(c)
+    final override def prettyASTAux[Cont[_, +_]: ContOps]: Cont[String,String] = for (c <- p.prettyASTAux) yield pretty(c)
     // $COVERAGE-ON$
 }
 
@@ -67,19 +67,19 @@ private [deepembedding] abstract class Binary[A, B, C](_left: =>Parsley[A], _rig
     protected val numInstrs: Int
     protected val leftRepeats: Int = 1
     protected val rightRepeats: Int = 1
-    override def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState): Cont[Unit,Unit] = {
+    final override def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState): Cont[Unit,Unit] = this.synchronized {
         processed = false
         left = _left
         right = _right
         left.findLets >> right.findLets
     }
-    override def preprocess[Cont[_, +_]: ContOps, C_ >: C](implicit seen: Set[Parsley[_]], sub: SubMap,
+    final override def preprocess[Cont[_, +_]: ContOps, C_ >: C](implicit seen: Set[Parsley[_]], sub: SubMap,
                                                    label: UnsafeOption[String]): Cont[Unit, Parsley[C_]] =
         if (label == null && processed) result(this) else for (left <- this.left.optimised; right <- this.right.optimised) yield {
             val self = if (label == null) this else empty
             self.ready(left, right)
         }
-    private [deepembedding] def ready(left: Parsley[A], right: Parsley[B]): this.type = {
+    private [deepembedding] def ready(left: Parsley[A], right: Parsley[B]): this.type = this.synchronized {
         processed = true
         this.left = left
         this.right = right
@@ -87,7 +87,7 @@ private [deepembedding] abstract class Binary[A, B, C](_left: =>Parsley[A], _rig
         this
     }
     // $COVERAGE-OFF$
-    override def prettyASTAux[Cont[_, +_]: ContOps]: Cont[String,String] = {
+    final override def prettyASTAux[Cont[_, +_]: ContOps]: Cont[String,String] = {
         for (l <- left.prettyASTAux; r <- right.prettyASTAux) yield pretty(l, r)
     }
     // $COVERAGE-ON$
@@ -99,14 +99,14 @@ private [deepembedding] abstract class Ternary[A, B, C, D](_first: =>Parsley[A],
     private [deepembedding] var second: Parsley[B] = _
     private [deepembedding] var third: Parsley[C] = _
     protected val numInstrs: Int
-    override def preprocess[Cont[_, +_]: ContOps, D_ >: D](implicit seen: Set[Parsley[_]], sub: SubMap,
+    final override def preprocess[Cont[_, +_]: ContOps, D_ >: D](implicit seen: Set[Parsley[_]], sub: SubMap,
                                                            label: UnsafeOption[String]): Cont[Unit, Parsley[D_]] =
         if (label == null && processed) result(this) else
             for (first <- this.first.optimised; second <- this.second.optimised; third <- this.third.optimised) yield {
                 val self = if (label == null) this else empty
                 self.ready(first, second, third)
             }
-    private [deepembedding] def ready(first: Parsley[A], second: Parsley[B], third: Parsley[C]): this.type = {
+    private [deepembedding] def ready(first: Parsley[A], second: Parsley[B], third: Parsley[C]): this.type = this.synchronized {
         processed = true
         this.first = first
         this.second = second
@@ -114,7 +114,7 @@ private [deepembedding] abstract class Ternary[A, B, C, D](_first: =>Parsley[A],
         size = first.size + second.size + third.size + numInstrs
         this
     }
-    override def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState): Cont[Unit, Unit] = {
+    final override def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState): Cont[Unit, Unit] = this.synchronized {
         processed = false
         first = _first
         second = _second
@@ -122,7 +122,7 @@ private [deepembedding] abstract class Ternary[A, B, C, D](_first: =>Parsley[A],
         first.findLets >> second.findLets >> third.findLets
     }
     // $COVERAGE-OFF$
-    override def prettyASTAux[Cont[_, +_]: ContOps]: Cont[String, String] =
+    final override def prettyASTAux[Cont[_, +_]: ContOps]: Cont[String, String] =
         for (f <- first.prettyASTAux; s <- second.prettyASTAux; t <- third.prettyASTAux) yield pretty(f, s, t)
     // $COVERAGE-ON$
 }

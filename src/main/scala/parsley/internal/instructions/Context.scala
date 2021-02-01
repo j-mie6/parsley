@@ -67,13 +67,6 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     }
     // $COVERAGE-ON$
 
-    /*private [parsley] def pos: (Int, Int) = (startline, startcol)
-    private [parsley] def pos_=(pos: (Int, Int)): Unit = {
-        val (line, col) = pos
-        startline = line
-        startcol = col
-    }*/
-
     @tailrec @inline private [parsley] def runParser[A](): Result[A] = {
         //println(pretty)
         if (status eq Failed) Failure(errorMessage)
@@ -127,6 +120,8 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     private def adjustErrors(e: UnsafeOption[String]): Unit = {
         if (offset > erroffset) {
             erroffset = offset
+            // FIXME: These get stuck at deepest error
+            // Regular parsec semantics, however says that an earlier error message may override this if it is "more meaningful"
             errcol = col
             errline = line
             unexpected = if (offset < inputsz) "\"" + nextChar + "\"" else s"end of $inputDescriptor"
