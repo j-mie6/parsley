@@ -40,9 +40,9 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
 
     // Internals
     final private [deepembedding] def findLets[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState): Cont[Unit, Unit] = {
-        state.addPred(this)
+        state.addPred(this, null)
         if (seen(this)) result(state.addRec(this))
-        else if (state.notProcessedBefore(this)) {
+        else if (state.notProcessedBefore(this, null)) {
             this match {
                 case self: UsesRegister => state.addReg(self.reg)
                 case _ =>
@@ -54,7 +54,7 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     final private def fix(implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String]): Parsley[A] = {
         // We use the seen set here to prevent cascading sub-routines
         val wasSeen = seen(this)
-        val self = sub(this)
+        val self = sub(label, this)
         if (wasSeen && (self eq this)) new Rec(this, label)
         else if (wasSeen) this
         else self
@@ -216,29 +216,33 @@ private [parsley] class CodeGenState {
 
 private [parsley] class LetFinderState {
     private val _recs = mutable.Set.empty[Parsley[_]]
-    private val _preds = mutable.Map.empty[Parsley[_], Int]
+    private val _preds = mutable.Map.empty[(UnsafeOption[String], Parsley[_]), Int]
     private val _usedRegs = mutable.Set.empty[Reg[_]]
 
-    def addPred(p: Parsley[_]): Unit = _preds += p -> (_preds.getOrElseUpdate(p, 0) + 1)
+    def addPred(p: Parsley[_], label: UnsafeOption[String]): Unit = _preds += (label, p) -> (_preds.getOrElseUpdate((label, p), 0) + 1)
     def addRec(p: Parsley[_]): Unit = _recs += p
     def addReg(reg: Reg[_]): Unit = _usedRegs += reg
-    def notProcessedBefore(p: Parsley[_]): Boolean = _preds(p) == 1
+    def notProcessedBefore(p: Parsley[_], label: UnsafeOption[String]): Boolean = _preds((label, p)) == 1
 
-    def lets: Map[Parsley[_], Parsley[_]] = {
-        (for ((k, v) <- _preds;
-            if v >= 2 && !_recs.contains(k))
-        yield k -> {
-            val sub = Subroutine(k, null)
-            sub.processed = false
-            sub
-        }).toMap
-    }
+    def lets: Set[(UnsafeOption[String], Parsley[_])] = _preds.collect {
+        case (k@(label, p), refs) if refs >= 2 && !_recs(p) => k
+    }.toSet
     def recs: Set[Parsley[_]] = _recs.toSet
     def usedRegs: Set[Reg[_]] = _usedRegs.toSet
 }
 
-private [parsley] class SubMap(val subMap: Map[Parsley[_], Parsley[_]]) extends AnyVal {
-    def apply[A](p: Parsley[A]): Parsley[A] = subMap.getOrElse(p, p).asInstanceOf[Parsley[A]]
+private [parsley] class SubMap(subs: Set[(UnsafeOption[String], Parsley[_])]) {
+    private val subMap: Map[(UnsafeOption[String], Parsley[_]), Subroutine[_]] = subs.map {
+        case k@(label, p) => k -> {
+            val sub = Subroutine(p, label)
+            sub.processed = false
+            sub
+        }
+    }.toMap
+
+    private val invertedSubMap: Map[Subroutine[_], (UnsafeOption[String], Parsley[_])] = subMap.map(_.swap)
+
+    def apply[A](label: UnsafeOption[String], p: Parsley[A]): Parsley[A] = subMap.getOrElse((null, p), p).asInstanceOf[Parsley[A]]
     // $COVERAGE-OFF$
     override def toString: String = subMap.toString
     // $COVERAGE-ON$
