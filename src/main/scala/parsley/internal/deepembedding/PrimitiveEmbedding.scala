@@ -81,7 +81,10 @@ private [parsley] final class ErrorRelabel[+A](_p: =>Parsley[A], msg: String) ex
         if (label == null) p.optimised(implicitly[ContOps[Cont]], seen, sub, msg)
         else p.optimised
     }
-    override def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState): Cont[Unit, Unit] = p.findLets
+    override def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState, label: UnsafeOption[String]): Cont[Unit, Unit] = {
+        if (label == null) p.findLets(implicitly[ContOps[Cont]], seen, state, msg)
+        else p.findLets
+    }
     // $COVERAGE-OFF$
     override def optimise: Parsley[A] = throw new Exception("Error relabelling should not be in optimisation!")
     override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {

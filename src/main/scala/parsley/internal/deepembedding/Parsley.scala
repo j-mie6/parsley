@@ -39,7 +39,8 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     }
 
     // Internals
-    final private [deepembedding] def findLets[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState): Cont[Unit, Unit] = {
+    final private [deepembedding] def findLets[Cont[_, +_]: ContOps]
+        (implicit seen: Set[Parsley[_]], state: LetFinderState, label: UnsafeOption[String]): Cont[Unit, Unit] = {
         state.addPred(this, null)
         if (seen(this)) result(state.addRec(this))
         else if (state.notProcessedBefore(this, null)) {
@@ -47,7 +48,7 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
                 case self: UsesRegister => state.addReg(self.reg)
                 case _ =>
             }
-            findLetsAux(implicitly[ContOps[Cont]], seen + this, state)
+            findLetsAux(implicitly[ContOps[Cont]], seen + this, state, label)
         }
         else result(())
     }
@@ -61,7 +62,7 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     }
     final private [deepembedding] def optimised[Cont[_, +_]: ContOps, A_ >: A](implicit seen: Set[Parsley[_]],
                                                                                         sub: SubMap,
-                                                                                        label: UnsafeOption[String] = null): Cont[Unit, Parsley[A_]] = {
+                                                                                        label: UnsafeOption[String]): Cont[Unit, Parsley[A_]] = {
         for (p <- this.fix.preprocess(implicitly[ContOps[Cont]], seen + this, sub, label)) yield p.optimise
     }
     final private [deepembedding] var safe = true
@@ -89,6 +90,7 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
         perform {
             implicit val letFinderState: LetFinderState = new LetFinderState
             implicit val seenSet: Set[Parsley[_]] = Set.empty
+            implicit val label: UnsafeOption[String] = null
             findLets >> {
                 implicit val subMap: SubMap = new SubMap(letFinderState.lets)
                 optimised.flatMap(p => generateCalleeSave(p.codeGen, allocateRegisters(letFinderState.usedRegs)))
@@ -149,7 +151,7 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
                                                             sub: SubMap,
                                                             label: UnsafeOption[String]): Cont[Unit, Parsley[A_]]
     // Let-finder recursion
-    protected def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState): Cont[Unit, Unit]
+    protected def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState, label: UnsafeOption[String]): Cont[Unit, Unit]
     // Optimisation - Bottom-up
     protected def optimise: Parsley[A] = this
     // Peephole optimisation and code generation - Top-down
@@ -240,6 +242,7 @@ private [parsley] class SubMap(subs: Set[(UnsafeOption[String], Parsley[_])]) {
         }
     }.toMap
 
+    // Don't need this if Subroutine keeps it's internal state?
     private val invertedSubMap: Map[Subroutine[_], (UnsafeOption[String], Parsley[_])] = subMap.map(_.swap)
 
     def apply[A](label: UnsafeOption[String], p: Parsley[A]): Parsley[A] = subMap.getOrElse((null, p), p).asInstanceOf[Parsley[A]]

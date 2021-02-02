@@ -9,7 +9,8 @@ import scala.language.higherKinds
 private [parsley] abstract class Singleton[A](pretty: String, instr: =>instructions.Instr) extends Parsley[A] {
     final override def preprocess[Cont[_, +_]: ContOps, A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap,
                                                                  label: UnsafeOption[String]): Cont[Unit, Parsley[A_]] = result(this)
-    final override def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState): Cont[Unit, Unit] = result(())
+    final override def findLetsAux[Cont[_, +_]: ContOps]
+        (implicit seen: Set[Parsley[_]], state: LetFinderState, label: UnsafeOption[String]): Cont[Unit, Unit] = result(())
     final override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
         result(instrs += instr)
     }
@@ -21,11 +22,12 @@ private [parsley] abstract class Singleton[A](pretty: String, instr: =>instructi
 private [deepembedding] abstract class SingletonExpect[A](pretty: String, builder: UnsafeOption[String] => SingletonExpect[A], instr: instructions.Instr)
     extends Parsley[A] {
     final override def preprocess[Cont[_, +_]: ContOps, A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap,
-                                                           label: UnsafeOption[String]): Cont[Unit, Parsley[A]] = {
+                                                                 label: UnsafeOption[String]): Cont[Unit, Parsley[A]] = {
         if (label == null) result(this)
         else result(builder(label))
     }
-    final override def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState): Cont[Unit, Unit] = result(())
+    final override def findLetsAux[Cont[_, +_]: ContOps]
+        (implicit seen: Set[Parsley[_]], state: LetFinderState, label: UnsafeOption[String]): Cont[Unit, Unit] = result(())
     final override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
         result(instrs += instr)
     }
@@ -38,13 +40,14 @@ private [deepembedding] abstract class Unary[A, B](_p: =>Parsley[A])(pretty: Str
     private [deepembedding] var p: Parsley[A] = _
     protected val childRepeats: Int = 1
     protected val numInstrs: Int
-    final override def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState): Cont[Unit,Unit] = this.synchronized {
+    final override def findLetsAux[Cont[_, +_]: ContOps]
+        (implicit seen: Set[Parsley[_]], state: LetFinderState, label: UnsafeOption[String]): Cont[Unit,Unit] = this.synchronized {
         processed = false
         p = _p
         p.findLets
     }
     override def preprocess[Cont[_, +_]: ContOps, B_ >: B](implicit seen: Set[Parsley[_]], sub: SubMap,
-                                                   label: UnsafeOption[String]): Cont[Unit, Parsley[B_]] =
+                                                           label: UnsafeOption[String]): Cont[Unit, Parsley[B_]] =
         if (label == null && processed) result(this) else for (p <- this.p.optimised) yield {
             val self = /*if (label == null) this else*/ empty(label)
             self.ready(p)
@@ -67,7 +70,8 @@ private [deepembedding] abstract class Binary[A, B, C](_left: =>Parsley[A], _rig
     protected val numInstrs: Int
     protected val leftRepeats: Int = 1
     protected val rightRepeats: Int = 1
-    final override def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState): Cont[Unit,Unit] = this.synchronized {
+    final override def findLetsAux[Cont[_, +_]: ContOps]
+        (implicit seen: Set[Parsley[_]], state: LetFinderState, label: UnsafeOption[String]): Cont[Unit,Unit] = this.synchronized {
         processed = false
         left = _left
         right = _right
@@ -114,7 +118,8 @@ private [deepembedding] abstract class Ternary[A, B, C, D](_first: =>Parsley[A],
         size = first.size + second.size + third.size + numInstrs
         this
     }
-    final override def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState): Cont[Unit, Unit] = this.synchronized {
+    final override def findLetsAux[Cont[_, +_]: ContOps]
+        (implicit seen: Set[Parsley[_]], state: LetFinderState, label: UnsafeOption[String]): Cont[Unit, Unit] = this.synchronized {
         processed = false
         first = _first
         second = _second
