@@ -1,8 +1,10 @@
 package parsley.internal
 
 import parsley.{ParsleyTest, Success}
-import parsley.Parsley._
-import parsley.character.{char, satisfy}
+import parsley.Parsley, Parsley._
+import parsley.character.{char, satisfy, digit}
+import parsley.combinator.some
+import parsley.expr._
 import parsley.implicits.charLift
 
 import scala.language.implicitConversions
@@ -35,5 +37,23 @@ class InternalTests extends ParsleyTest {
         val q = 'a' *> p ? "err1" <* 'b' <* p ? "err1" <* 'c'
         q.internal.instrs.count(_ == instructions.Return) shouldBe 1
         q.runParser("a123b123c") should be (Success('3'))
+    }
+
+    they should "function properly when a recursion boundary is inside" in {
+        lazy val q: Parsley[Unit] = (p *> p) <|> unit
+        lazy val p: Parsley[Unit] = '(' *> q <* ')'
+        //println(instructions.pretty(q.internal.instrs))
+        q.internal.instrs.count(_ == instructions.Return) shouldBe 1
+        q.runParser("(()())()") shouldBe a [Success[_]]
+    }
+
+    they should "appear frequently inside expression parsers" in {
+        val atom = some(digit).map(_.mkString.toInt)
+        val expr = precedence[Int](atom,
+            Ops(InfixL)('+' #> (_ + _)),
+            Ops(InfixL)('*' #> (_ * _)),
+            Ops(InfixL)('%' #> (_ % _)))
+        //println(instructions.pretty(expr.internal.instrs))
+        expr.internal.instrs.count(_ == instructions.Return) shouldBe 3
     }
 }
