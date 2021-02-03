@@ -52,9 +52,9 @@ private [parsley] final class Subroutine[A](var p: Parsley[A], val expected: Uns
                                                            label: UnsafeOption[String]): Cont[Unit, Parsley[A_]] = {
         // The idea here is that the label itself was already established by letFinding, so we just use expected which should be equal to label
         assert(expected == label)
-        for (p <- this.p.optimised) yield this.update(p)
+        for (p <- this.p.optimised) yield this.ready(p)
     }
-    private def update(p: Parsley[A]): this.type = {
+    private def ready(p: Parsley[A]): this.type = {
         this.p = p
         processed = true
         this
