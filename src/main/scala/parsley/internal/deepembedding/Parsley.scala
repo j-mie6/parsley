@@ -87,11 +87,11 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     }
 
     final private def pipeline[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Unit = {
-        implicit val letFinderState: LetFinderState = new LetFinderState
-        implicit lazy val subMap: SubMap = new SubMap(letFinderState.lets)
         perform {
             implicit val seenSet: Set[Parsley[_]] = Set.empty
             implicit val label: UnsafeOption[String] = null
+            implicit val letFinderState: LetFinderState = new LetFinderState
+            implicit lazy val subMap: SubMap = new SubMap(letFinderState.lets)
             findLets >> {
                 optimised.flatMap(p => generateCalleeSave(p.codeGen, allocateRegisters(letFinderState.usedRegs)))
             }
@@ -102,10 +102,8 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
             while (state.more) {
                 val sub = state.nextSub()
                 println(s"processing $sub")
-                implicit val label: UnsafeOption[String] = sub.expected
-                implicit val seenSet: Set[Parsley[_]] = Set(sub.p) //this prevents the annoying cascading
                 instrs += new instructions.Label(state.getSubLabel(sub))
-                perform(sub.p.optimised.flatMap(_.codeGen))
+                perform(sub.p.codeGen)
                 instrs += instructions.Return
             }
             instrs += new instructions.Label(end)
@@ -230,25 +228,19 @@ private [parsley] class LetFinderState {
     def addReg(reg: Reg[_]): Unit = _usedRegs += reg
     def notProcessedBefore(p: Parsley[_], label: UnsafeOption[String]): Boolean = _preds((label, p)) == 1
 
-    def lets: Set[(UnsafeOption[String], Parsley[_])] = _preds.collect {
+    def lets: Iterable[((UnsafeOption[String], Parsley[_]), Int)] = _preds.collect[(UnsafeOption[String], Parsley[_])] {
         case (k@(label, p), refs) if refs >= 2 && !_recs(p) => k
-    }.toSet
+    }.zipWithIndex
+
     def recs: Set[Parsley[_]] = _recs.toSet
     def usedRegs: Set[Reg[_]] = _usedRegs.toSet
 }
 
-private [parsley] class SubMap(subs: Set[(UnsafeOption[String], Parsley[_])]) {
+private [parsley] class SubMap(subs: Iterable[((UnsafeOption[String], Parsley[_]), Int)]) {
     println(subs)
     private val subMap: Map[(UnsafeOption[String], Parsley[_]), Subroutine[_]] = subs.map {
-        case k@(label, p) => k -> {
-            val sub = new Subroutine(p, label)
-            sub.processed = false
-            sub
-        }
+        case (k@(label, p), id) => k -> Subroutine(id)(p, label, false)
     }.toMap
-
-    // Don't need this if Subroutine keeps it's internal state?
-    //private val invertedSubMap: Map[Subroutine[_], (UnsafeOption[String], Parsley[_])] = subMap.map(_.swap)
 
     def apply[A](label: UnsafeOption[String], p: Parsley[A]): Parsley[A] = subMap.getOrElse((label, p), p).asInstanceOf[Parsley[A]]
     // $COVERAGE-OFF$

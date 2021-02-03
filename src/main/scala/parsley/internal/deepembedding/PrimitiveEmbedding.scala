@@ -44,20 +44,21 @@ private [parsley] final class Unexpected(private [Unexpected] val msg: String, v
 private [parsley] final class Rec[A](val p: Parsley[A], val expected: UnsafeOption[String] = null)
     extends SingletonExpect[A](s"rec $p", new Rec(p, _), new instructions.Call(p.instrs, expected))
 
-private [parsley] final class Subroutine[A](val p: Parsley[A], val expected: UnsafeOption[String] = null) extends Parsley[A] {//Unary[A, A](_p)(c => s"+$c", Subroutine.empty) {
+private [parsley] final case class Subroutine[A](id: Int)(val p: Parsley[A], val expected: UnsafeOption[String], processed: Boolean) extends Parsley[A] {
     size = 1
     override def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState, label: UnsafeOption[String]): Cont[Unit, Unit] = {
         throw new Exception("Subroutines cannot exist during let detection")
     }
     override def preprocess[Cont[_, +_]: ContOps, A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap,
                                                            label: UnsafeOption[String]): Cont[Unit, Parsley[A_]] = {
-        // something is horribly off here!
-        val self = /*if (label == null)*/ this/* else Subroutine(p, label)*/
-        //if (!processed) for (p <- this.p.optimised(implicitly[ContOps[Cont]], seen, sub, null)) yield self.ready(p)
-        /*else*/ result(self)
+        if (!processed) {
+            // The idea here is that the label itself was already established by letFinding, so we just use expected which should be equal to label
+            assert(expected == label)
+            for (p <- this.p.optimised) yield Subroutine(id)(p, expected, true)
+        }
+        else result(this)
     }
-    // Well this is frankly going to be painful... We'll need an inlining phase shortly after this is merged!
-    //override def optimise: Parsley[A] = if (p.size <= 1) p else this // This threshold might need tuning?
+    override def optimise: Parsley[A] = if (p.size <= 1) p else this // This threshold might need tuning?
     override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
         result(instrs += new instructions.GoSub(state.getSubLabel(this), expected))
     }
@@ -123,9 +124,6 @@ private [deepembedding] object Look {
 private [deepembedding] object NotFollowedBy {
     def empty[A](expected: UnsafeOption[String]): NotFollowedBy[A] = new NotFollowedBy(null, expected)
     def apply[A](p: Parsley[A], expected: UnsafeOption[String]): NotFollowedBy[A] = empty(expected).ready(p)
-}
-private [parsley] object Subroutine {
-    def unapply[A](self: Subroutine[A]): Option[Parsley[A]] = Some(self.p)
 }
 private [deepembedding] object Put {
     def empty[S](r: Reg[S]): Put[S] = new Put(r, null)

@@ -42,9 +42,15 @@ class InternalTests extends ParsleyTest {
     they should "function properly when a recursion boundary is inside" in {
         lazy val q: Parsley[Unit] = (p *> p) <|> unit
         lazy val p: Parsley[Unit] = '(' *> q <* ')'
-        //println(instructions.pretty(q.internal.instrs))
         q.internal.instrs.count(_ == instructions.Return) shouldBe 1
         q.runParser("(()())()") shouldBe a [Success[_]]
+    }
+
+    they should "work in the precedence parser with one op" in {
+        val atom = some(digit).map(_.mkString.toInt)
+        val expr = precedence[Int](atom,
+            Ops(InfixL)('+' #> (_ + _)))
+        expr.internal.instrs.count(_ == instructions.Return) shouldBe 1
     }
 
     they should "appear frequently inside expression parsers" in {
