@@ -54,7 +54,11 @@ private [parsley] final case class Subroutine[A](id: Int)(val p: Parsley[A], val
         if (!processed) {
             // The idea here is that the label itself was already established by letFinding, so we just use expected which should be equal to label
             assert(expected == label)
-            for (p <- this.p.optimised) yield Subroutine(id)(p, expected, true)
+            for (p <- this.p.optimised) yield {
+                val newSub = Subroutine(id)(p, expected, true)
+                sub(this) = newSub
+                newSub
+            }
         }
         else result(this)
     }

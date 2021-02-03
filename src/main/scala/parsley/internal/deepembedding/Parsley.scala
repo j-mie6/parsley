@@ -244,6 +244,9 @@ private [parsley] class SubMap(subs: Iterable[((UnsafeOption[String], Parsley[_]
     }.toSeq: _*)
 
     def apply[A](label: UnsafeOption[String], p: Parsley[A]): Parsley[A] = subMap.getOrElse((label, p), p).asInstanceOf[Parsley[A]]
+    def update(oldSub: Subroutine[_], newSub: Subroutine[_]) = {
+        subMap((oldSub.expected, oldSub.p)) = newSub
+    }
     // $COVERAGE-OFF$
     override def toString: String = subMap.toString
     // $COVERAGE-ON$
