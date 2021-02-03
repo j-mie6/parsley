@@ -64,7 +64,9 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     final private [deepembedding] def optimised[Cont[_, +_]: ContOps, A_ >: A](implicit seen: Set[Parsley[_]],
                                                                                         sub: SubMap,
                                                                                         label: UnsafeOption[String]): Cont[Unit, Parsley[A_]] = {
-        for (p <- this.fix.preprocess(implicitly[ContOps[Cont]], seen + this, sub, label)) yield p.optimise
+        val fixed = this.fix
+        if (fixed.processed) result(fixed.optimise)
+        else for (p <- fixed.preprocess(implicitly[ContOps[Cont]], seen + this, sub, label)) yield p.optimise
     }
     final private [deepembedding] var safe = true
     final private var cps = false
@@ -102,7 +104,6 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
             instrs += new instructions.Jump(end)
             while (state.more) {
                 val sub = state.nextSub()
-                println(s"processing $sub")
                 instrs += new instructions.Label(state.getSubLabel(sub))
                 perform(sub.p.codeGen)
                 instrs += instructions.Return
@@ -207,9 +208,7 @@ private [parsley] class CodeGenState {
     }
     def nlabels: Int = current
 
-    def getSubLabel(sub: Subroutine[_]): Int = map.getOrElseUpdate(sub,
-    {
-        println(s"$sub added")
+    def getSubLabel(sub: Subroutine[_]): Int = map.getOrElseUpdate(sub, {
         sub +=: queue
         freshLabel()
     })
@@ -238,15 +237,12 @@ private [parsley] class LetFinderState {
 }
 
 private [parsley] class SubMap(subs: Iterable[((UnsafeOption[String], Parsley[_]), Int)]) {
-    println(subs)
     private val subMap: mutable.Map[(UnsafeOption[String], Parsley[_]), Subroutine[_]] = mutable.Map(subs.map {
         case (k@(label, p), id) => k -> Subroutine(id)(p, label, false)
     }.toSeq: _*)
 
     def apply[A](label: UnsafeOption[String], p: Parsley[A]): Parsley[A] = subMap.getOrElse((label, p), p).asInstanceOf[Parsley[A]]
-    def update(oldSub: Subroutine[_], newSub: Subroutine[_]) = {
-        subMap((oldSub.expected, oldSub.p)) = newSub
-    }
+    def update(oldSub: Subroutine[_], newSub: Subroutine[_]) = subMap((oldSub.expected, oldSub.p)) = newSub
     // $COVERAGE-OFF$
     override def toString: String = subMap.toString
     // $COVERAGE-ON$

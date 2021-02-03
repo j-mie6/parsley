@@ -45,26 +45,22 @@ private [parsley] final class Rec[A](val p: Parsley[A], val expected: UnsafeOpti
     extends SingletonExpect[A](s"rec $p", new Rec(p, _), new instructions.Call(p.instrs, expected))
 
 private [parsley] final case class Subroutine[A](id: Int)(val p: Parsley[A], val expected: UnsafeOption[String], processed: Boolean) extends Parsley[A] {
-    size = 1
     override def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState, label: UnsafeOption[String]): Cont[Unit, Unit] = {
         throw new Exception("Subroutines cannot exist during let detection")
     }
     override def preprocess[Cont[_, +_]: ContOps, A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap,
                                                            label: UnsafeOption[String]): Cont[Unit, Parsley[A_]] = {
-        if (!processed) {
-            // The idea here is that the label itself was already established by letFinding, so we just use expected which should be equal to label
-            assert(expected == label)
-            for (p <- this.p.optimised) yield {
-                val newSub = Subroutine(id)(p, expected, true)
-                sub(this) = newSub
-                newSub
-            }
+        // The idea here is that the label itself was already established by letFinding, so we just use expected which should be equal to label
+        assert(expected == label)
+        for (p <- this.p.optimised) yield {
+            val newSub = Subroutine(id)(p, expected, true)
+            sub(this) = newSub
+            newSub
         }
-        else result(this)
     }
     override def optimise: Parsley[A] = if (p.size <= 1) p else this // This threshold might need tuning?
     override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
-        result(instrs += new instructions.GoSub(state.getSubLabel(this), expected))
+        result(instrs += new instructions.GoSub(state.getSubLabel(this)))
     }
     override def prettyASTAux[Cont[_, +_]: ContOps]: Cont[String, String] = result(s"Sub($p, $expected)")
 }

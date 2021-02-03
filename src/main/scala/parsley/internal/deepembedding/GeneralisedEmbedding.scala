@@ -42,17 +42,13 @@ private [deepembedding] abstract class Unary[A, B](_p: =>Parsley[A])(pretty: Str
     protected val numInstrs: Int
     final override def findLetsAux[Cont[_, +_]: ContOps]
         (implicit seen: Set[Parsley[_]], state: LetFinderState, label: UnsafeOption[String]): Cont[Unit,Unit] = this.synchronized {
-        processed = false
         p = _p
         p.findLets
     }
     override def preprocess[Cont[_, +_]: ContOps, B_ >: B](implicit seen: Set[Parsley[_]], sub: SubMap,
                                                            label: UnsafeOption[String]): Cont[Unit, Parsley[B_]] =
-        if (label == null && processed) result(this) else for (p <- this.p.optimised) yield {
-            val self = /*if (label == null) this else*/ empty(label)
-            self.ready(p)
-        }
-    private [deepembedding] def ready(p: Parsley[A]): this.type = this.synchronized {
+        for (p <- this.p.optimised) yield empty(label).ready(p)
+    private [deepembedding] def ready(p: Parsley[A]): this.type = {
         processed = true
         this.p = p
         size = p.size + numInstrs
@@ -72,18 +68,16 @@ private [deepembedding] abstract class Binary[A, B, C](_left: =>Parsley[A], _rig
     protected val rightRepeats: Int = 1
     final override def findLetsAux[Cont[_, +_]: ContOps]
         (implicit seen: Set[Parsley[_]], state: LetFinderState, label: UnsafeOption[String]): Cont[Unit,Unit] = this.synchronized {
-        processed = false
         left = _left
         right = _right
         left.findLets >> right.findLets
     }
     final override def preprocess[Cont[_, +_]: ContOps, C_ >: C](implicit seen: Set[Parsley[_]], sub: SubMap,
                                                    label: UnsafeOption[String]): Cont[Unit, Parsley[C_]] =
-        if (label == null && processed) result(this) else for (left <- this.left.optimised; right <- this.right.optimised) yield {
-            val self = /*if (label == null) this else*/ empty
-            self.ready(left, right)
+        for (left <- this.left.optimised; right <- this.right.optimised) yield {
+            empty.ready(left, right)
         }
-    private [deepembedding] def ready(left: Parsley[A], right: Parsley[B]): this.type = this.synchronized {
+    private [deepembedding] def ready(left: Parsley[A], right: Parsley[B]): this.type = {
         processed = true
         this.left = left
         this.right = right
@@ -103,28 +97,25 @@ private [deepembedding] abstract class Ternary[A, B, C, D](_first: =>Parsley[A],
     private [deepembedding] var second: Parsley[B] = _
     private [deepembedding] var third: Parsley[C] = _
     protected val numInstrs: Int
+    final override def findLetsAux[Cont[_, +_]: ContOps]
+        (implicit seen: Set[Parsley[_]], state: LetFinderState, label: UnsafeOption[String]): Cont[Unit, Unit] = this.synchronized {
+        first = _first
+        second = _second
+        third = _third
+        first.findLets >> second.findLets >> third.findLets
+    }
     final override def preprocess[Cont[_, +_]: ContOps, D_ >: D](implicit seen: Set[Parsley[_]], sub: SubMap,
                                                            label: UnsafeOption[String]): Cont[Unit, Parsley[D_]] =
-        if (label == null && processed) result(this) else
-            for (first <- this.first.optimised; second <- this.second.optimised; third <- this.third.optimised) yield {
-                val self = /*if (label == null) this else*/ empty
-                self.ready(first, second, third)
-            }
-    private [deepembedding] def ready(first: Parsley[A], second: Parsley[B], third: Parsley[C]): this.type = this.synchronized {
+        for (first <- this.first.optimised; second <- this.second.optimised; third <- this.third.optimised) yield {
+            empty.ready(first, second, third)
+        }
+    private [deepembedding] def ready(first: Parsley[A], second: Parsley[B], third: Parsley[C]): this.type = {
         processed = true
         this.first = first
         this.second = second
         this.third = third
         size = first.size + second.size + third.size + numInstrs
         this
-    }
-    final override def findLetsAux[Cont[_, +_]: ContOps]
-        (implicit seen: Set[Parsley[_]], state: LetFinderState, label: UnsafeOption[String]): Cont[Unit, Unit] = this.synchronized {
-        processed = false
-        first = _first
-        second = _second
-        third = _third
-        first.findLets >> second.findLets >> third.findLets
     }
     // $COVERAGE-OFF$
     final override def prettyASTAux[Cont[_, +_]: ContOps]: Cont[String, String] =
