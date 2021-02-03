@@ -228,21 +228,20 @@ private [parsley] class LetFinderState {
     def addReg(reg: Reg[_]): Unit = _usedRegs += reg
     def notProcessedBefore(p: Parsley[_], label: UnsafeOption[String]): Boolean = _preds((label, p)) == 1
 
-    def lets: Iterable[((UnsafeOption[String], Parsley[_]), Int)] = _preds.toSeq.collect {
+    def lets: Iterable[(UnsafeOption[String], Parsley[_])] = _preds.toSeq.collect {
         case (k@(label, p), refs) if refs >= 2 && !_recs(p) => k
-    }.zipWithIndex
+    }
 
     def recs: Set[Parsley[_]] = _recs.toSet
     def usedRegs: Set[Reg[_]] = _usedRegs.toSet
 }
 
-private [parsley] class SubMap(subs: Iterable[((UnsafeOption[String], Parsley[_]), Int)]) {
-    private val subMap: mutable.Map[(UnsafeOption[String], Parsley[_]), Subroutine[_]] = mutable.Map(subs.map {
-        case (k@(label, p), id) => k -> Subroutine(id)(p, label, false)
-    }.toSeq: _*)
+private [parsley] class SubMap(subs: Iterable[(UnsafeOption[String], Parsley[_])]) {
+    private val subMap: Map[(UnsafeOption[String], Parsley[_]), Subroutine[_]] = subs.map {
+        case k@(label, p) => k -> new Subroutine(p, label)
+    }.toMap
 
     def apply[A](label: UnsafeOption[String], p: Parsley[A]): Parsley[A] = subMap.getOrElse((label, p), p).asInstanceOf[Parsley[A]]
-    def update(oldSub: Subroutine[_], newSub: Subroutine[_]) = subMap((oldSub.expected, oldSub.p)) = newSub
     // $COVERAGE-OFF$
     override def toString: String = subMap.toString
     // $COVERAGE-ON$
