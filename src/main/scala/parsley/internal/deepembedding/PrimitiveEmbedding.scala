@@ -44,22 +44,26 @@ private [parsley] final class Unexpected(private [Unexpected] val msg: String, v
 private [parsley] final class Rec[A](val p: Parsley[A], val expected: UnsafeOption[String] = null)
     extends SingletonExpect[A](s"rec $p", new Rec(p, _), new instructions.Call(p.instrs, expected))
 
-private [parsley] final class Subroutine[A](_p: =>Parsley[A], val expected: UnsafeOption[String] = null)
-    extends Unary[A, A](_p)(c => s"+$c", Subroutine.empty) {
-    override val numInstrs = 1
-    override val childRepeats = 0
-
+private [parsley] final class Subroutine[A](var p: Parsley[A], val expected: UnsafeOption[String]) extends Parsley[A] {
+    override def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState, label: UnsafeOption[String]): Cont[Unit, Unit] = {
+        throw new Exception("Subroutines cannot exist during let detection")
+    }
     override def preprocess[Cont[_, +_]: ContOps, A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap,
                                                            label: UnsafeOption[String]): Cont[Unit, Parsley[A_]] = {
-        // something is horribly off here!
-        val self = if (label == null) this else Subroutine(p, label)
-        if (!processed) for (p <- this.p.optimised(implicitly[ContOps[Cont]], seen, sub, null)) yield self.ready(p)
-        else result(self)
+        // The idea here is that the label itself was already established by letFinding, so we just use expected which should be equal to label
+        assert(expected == label)
+        for (p <- this.p.optimised) yield this.ready(p)
+    }
+    private def ready(p: Parsley[A]): this.type = {
+        this.p = p
+        processed = true
+        this
     }
     override def optimise: Parsley[A] = if (p.size <= 1) p else this // This threshold might need tuning?
     override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
-        result(instrs += new instructions.GoSub(state.getSubLabel(p), expected))
+        result(instrs += new instructions.GoSub(state.getSubLabel(this)))
     }
+    override def prettyASTAux[Cont[_, +_]: ContOps]: Cont[String, String] = result(s"Sub($p, $expected)")
 }
 
 private [parsley] object Line extends Singleton[Int]("line", instructions.Line)
@@ -81,7 +85,10 @@ private [parsley] final class ErrorRelabel[+A](_p: =>Parsley[A], msg: String) ex
         if (label == null) p.optimised(implicitly[ContOps[Cont]], seen, sub, msg)
         else p.optimised
     }
-    override def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState): Cont[Unit, Unit] = p.findLets
+    override def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState, label: UnsafeOption[String]): Cont[Unit, Unit] = {
+        if (label == null) p.findLets(implicitly[ContOps[Cont]], seen, state, msg)
+        else p.findLets
+    }
     // $COVERAGE-OFF$
     override def optimise: Parsley[A] = throw new Exception("Error relabelling should not be in optimisation!")
     override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
@@ -118,11 +125,6 @@ private [deepembedding] object Look {
 private [deepembedding] object NotFollowedBy {
     def empty[A](expected: UnsafeOption[String]): NotFollowedBy[A] = new NotFollowedBy(null, expected)
     def apply[A](p: Parsley[A], expected: UnsafeOption[String]): NotFollowedBy[A] = empty(expected).ready(p)
-}
-private [parsley] object Subroutine {
-    def empty[A](expected: UnsafeOption[String]): Subroutine[A] = new Subroutine(null, expected)
-    def apply[A](p: Parsley[A], expected: UnsafeOption[String]): Subroutine[A] = empty(expected).ready(p)
-    def unapply[A](self: Subroutine[A]): Option[Parsley[A]] = Some(self.p)
 }
 private [deepembedding] object Put {
     def empty[S](r: Reg[S]): Put[S] = new Put(r, null)

@@ -70,8 +70,8 @@ private [internal] final class Call(_instrs: =>Array[Instr], expected: UnsafeOpt
     // $COVERAGE-ON$
 }
 
-private [internal] final class GoSub(var label: Int, expected: UnsafeOption[String]) extends JumpInstr {
-    override def apply(ctx: Context): Unit = ctx.call(ctx.instrs, label, expected)
+private [internal] final class GoSub(var label: Int) extends JumpInstr {
+    override def apply(ctx: Context): Unit = ctx.call(ctx.instrs, label, null)
     // $COVERAGE-OFF$
     override def toString: String = s"GoSub($label)"
     // $COVERAGE-ON$
