@@ -57,8 +57,8 @@ private [deepembedding] abstract class Unary[A, B](__p: =>Parsley[A])(pretty: St
     // $COVERAGE-ON$
 }
 
-private [deepembedding] abstract class Binary[A, B, C](__left: =>Parsley[A], __right: =>Parsley[B])(pretty: (String, String) => String, empty: =>Binary[A, B, C])
-    extends Parsley[C] {
+private [deepembedding] abstract class Binary[A, B, C](__left: =>Parsley[A], __right: =>Parsley[B])
+                                                      (pretty: (String, String) => String, empty: =>Binary[A, B, C]) extends Parsley[C] {
     private lazy val _left = __left
     private lazy val _right = __right
     private [deepembedding] var left: Parsley[A] = _

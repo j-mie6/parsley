@@ -9,7 +9,6 @@ import parsley.internal.instructions, instructions.{Instr, JumpTable, JumpInstr,
 import parsley.internal.{UnsafeOption, ResizableArray}
 import Parsley.allocateRegisters
 import ContOps.{safeCall, GenOps, perform, result, ContAdapter}
-import parsley.XCompat._
 
 /**
   * This is the class that encapsulates the act of parsing and running an object of this class with `runParser` will
