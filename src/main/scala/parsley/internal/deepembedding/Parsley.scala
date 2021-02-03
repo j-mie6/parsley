@@ -9,6 +9,7 @@ import parsley.internal.instructions, instructions.{Instr, JumpTable, JumpInstr,
 import parsley.internal.{UnsafeOption, ResizableArray}
 import Parsley.allocateRegisters
 import ContOps.{safeCall, GenOps, perform, result, ContAdapter}
+import parsley.XCompat._
 
 /**
   * This is the class that encapsulates the act of parsing and running an object of this class with `runParser` will
@@ -228,7 +229,7 @@ private [parsley] class LetFinderState {
     def addReg(reg: Reg[_]): Unit = _usedRegs += reg
     def notProcessedBefore(p: Parsley[_], label: UnsafeOption[String]): Boolean = _preds((label, p)) == 1
 
-    def lets: Iterable[((UnsafeOption[String], Parsley[_]), Int)] = _preds.collect[(UnsafeOption[String], Parsley[_])] {
+    def lets: Iterable[((UnsafeOption[String], Parsley[_]), Int)] = _preds.toSeq.collect {
         case (k@(label, p), refs) if refs >= 2 && !_recs(p) => k
     }.zipWithIndex
 
@@ -238,9 +239,9 @@ private [parsley] class LetFinderState {
 
 private [parsley] class SubMap(subs: Iterable[((UnsafeOption[String], Parsley[_]), Int)]) {
     println(subs)
-    private val subMap: Map[(UnsafeOption[String], Parsley[_]), Subroutine[_]] = subs.map {
+    private val subMap: mutable.Map[(UnsafeOption[String], Parsley[_]), Subroutine[_]] = mutable.Map(subs.map {
         case (k@(label, p), id) => k -> Subroutine(id)(p, label, false)
-    }.toMap
+    }.toSeq: _*)
 
     def apply[A](label: UnsafeOption[String], p: Parsley[A]): Parsley[A] = subMap.getOrElse((label, p), p).asInstanceOf[Parsley[A]]
     // $COVERAGE-OFF$

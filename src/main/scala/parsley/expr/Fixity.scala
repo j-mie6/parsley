@@ -1,5 +1,7 @@
 package parsley.expr
 
+import scala.language.higherKinds
+
 /**
   * Denotes the fixity and associativity of an operator. Importantly, it also specifies the type of the
   * of the operations themselves. For non-monolithic structures this is described by `fixity.GOp` and
