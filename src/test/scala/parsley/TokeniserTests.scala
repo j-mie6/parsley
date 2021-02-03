@@ -345,4 +345,14 @@ class TokeniserTests extends ParsleyTest {
             (tokeniser_.whiteSpace <* eof).runParser("/*this comment*/ /*is spaced out*/\n//by whitespace!\n ")
         }
     }
+
+    // Issue #59
+    "comments" should "not aggressively eat everything" in {
+        val lexer1 = new token.Lexer(token.LanaguageDef.plain(lineComment = "//", space = token.Parser(empty)))
+        val lexer2 = new token.Lexer(token.LanguageDef.plain(commentStart = "/*", commentEnd = "*/", space = token.Parser(empty)))
+        val lexer3 = new token.Lexer(token.LanguageDef.plain(lineComment = "//", commentStart = "/*", commentEnd = "*/", space = token.Parser(empty)))
+        (lexer1.whiteSpace *> 'a').runParser("a") shouldBe a [Success[_]]
+        (lexer2.whiteSpace *> 'a').runParser("a") shouldBe a [Success[_]]
+        (lexer3.whiteSpace *> 'a').runParser("a") shouldBe a [Success[_]]
+    }
 }
