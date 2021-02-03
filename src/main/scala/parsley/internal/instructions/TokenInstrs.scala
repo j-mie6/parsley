@@ -7,8 +7,8 @@ import parsley.internal.{Radix, UnsafeOption}
 import scala.annotation.tailrec
 
 private [instructions] abstract class CommentLexer(start: String, end: String, line: String, nested: Boolean) extends Instr {
-    protected final val noLine = line.isEmpty
-    protected final val noMulti = start.isEmpty || end.isEmpty
+    protected final val lineAllowed = line.nonEmpty
+    protected final val multiAllowed = start.nonEmpty && end.nonEmpty
 
     protected final def singleLineComment(ctx: Context): Unit = {
         ctx.fastUncheckedConsumeChars(line.length)
@@ -75,8 +75,8 @@ private [instructions] abstract class WhiteSpaceLike(start: String, end: String,
     }
 
     private final val impl = {
-        if (noLine) multisOnly(_)
-        else if (noMulti) singlesOnly(_)
+        if (!lineAllowed) multisOnly(_)
+        else if (!multiAllowed) singlesOnly(_)
         else singlesAndMultis(_)
     }
 
@@ -88,9 +88,9 @@ private [internal] final class TokenComment(start: String, end: String, line: St
     // PRE: one of the comments is supported
     // PRE: Multi-line comments may not prefix single-line, but single-line may prefix multi-line
     override def apply(ctx: Context): Unit = {
-        val startsMulti = !noMulti && ctx.input.startsWith(start, ctx.offset)
+        val startsMulti = multiAllowed && ctx.input.startsWith(start, ctx.offset)
         // If neither comment is available we fail
-        if (!ctx.moreInput || (!noLine && !ctx.input.startsWith(line, ctx.offset)) && (!noMulti && !startsMulti)) ctx.expectedFail("comment")
+        if (!ctx.moreInput || (!lineAllowed || !ctx.input.startsWith(line, ctx.offset)) && !startsMulti) ctx.expectedFail("comment")
         // One of the comments must be available
         else if (startsMulti && multiLineComment(ctx)) ctx.pushAndContinue(())
         else if (startsMulti) ctx.expectedFail("end of comment")
