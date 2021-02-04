@@ -10,7 +10,7 @@ class ErrorMessageTests extends ParsleyTest {
     //TODO: Bind tests
     lazy val r: Parsley[List[String]] = "correct error message" <::> (r </> Nil)
     "?" should "affect base error messages" in {
-        label('a', "ay!").runParser("b") should be (Failure("(line 1, column 1):\n  unexpected \"b\"\n  expected ay!"))
+        'a'.label("ay!").runParser("b") should be (Failure("(line 1, column 1):\n  unexpected \"b\"\n  expected ay!"))
     }
     it should "work across a recursion boundary" in {
         (r ? "nothing but this :)").runParser("") should be {

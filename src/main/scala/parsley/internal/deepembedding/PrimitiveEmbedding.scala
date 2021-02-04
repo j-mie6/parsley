@@ -78,7 +78,7 @@ private [parsley] final class Put[S](val reg: Reg[S], _p: =>Parsley[S])
     }
 }
 
-private [parsley] final class ErrorRelabel[+A](_p: =>Parsley[A], msg: String) extends Parsley[A] {
+private [parsley] final class UnsafeErrorRelabel[+A](_p: =>Parsley[A], msg: String) extends Parsley[A] {
     lazy val p = _p
     override def preprocess[Cont[_, +_]: ContOps, A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap,
                                                            label: UnsafeOption[String]): Cont[Unit, Parsley[A_]] = {

@@ -1,6 +1,7 @@
 package parsley
 
 import parsley.internal.instructions
+import parsley.internal.deepembedding
 
 /** This module contains various things that shouldn't be used without care and caution
   * @since 1.6.0
@@ -55,9 +56,9 @@ object unsafe {
         /** Sets the expected message for a parser. If the parser fails then `expected msg` will added to the error.
           * This will supercede '''all''' labels that that are present in the parser `p`. Whilst this does improve
           * the speed of the parser, it may render your error messages useless if not used carefully. This method
-          * should _only_ be used for '''non-terminals''' in the grammar
+          * should ''only'' be used for '''non-terminals''' in the grammar
           * @since 2.6.0
           */
-        def unsafeLabel[A](msg: String): Parsley[A] = new Parsley(new deepembedding.ErrorRelabel(p.internal, msg))
+        def unsafeLabel(msg: String): Parsley[A] = new Parsley(new deepembedding.UnsafeErrorRelabel(p.internal, msg))
     }
 }

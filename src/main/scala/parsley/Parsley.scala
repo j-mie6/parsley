@@ -254,9 +254,9 @@ object Parsley
         def ?(msg: String): Parsley[A] = this.label(msg)
         /**Sets the expected message for a parser. If the parser fails then `expected msg` will added to the error
           * @since 2.6.0 */
-        def label[A](msg: String): Parsley[A] = new Parsley(new deepembedding.ErrorRelabel(p.internal, msg))
+        def label(msg: String): Parsley[A] = new Parsley(new deepembedding.UnsafeErrorRelabel(p.internal, msg))
         /**Hides the "expected" error message for a parser.*/
-        def hide: Parsley[A] = ?("")
+        def hide: Parsley[A] = this.label("")
         /** Same as `fail`, except allows for a message generated from the result of the failed parser. In essence, this
           * is equivalent to `p >>= (x => fail(msggen(x))` but requires no expensive computations from the use of `>>=`.
           * @param msggen The generator function for error message, creating a message based on the result of invokee
