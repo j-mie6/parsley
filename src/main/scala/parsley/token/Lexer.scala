@@ -17,6 +17,7 @@ import scala.language.implicitConversions
   * all operations consume whitespace after them (so-called lexeme parsers). These are very useful in parsing
   * programming languages. This class also has a large number of hand-optimised intrinsic parsers to improve performance!
   * @param lang The rules that govern the language we are tokenising
+  * @since 2.2.0
   */
 class Lexer(lang: LanguageDef)
 {

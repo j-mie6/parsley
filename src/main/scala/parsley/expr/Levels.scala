@@ -8,6 +8,7 @@ import parsley.XCompat._
  * structure between each level.
  * @tparam A The base type accepted by this list of levels
  * @tparam B The type of structure produced by the list of levels
+ * @since 2.2.0
  */
 sealed trait Levels[-A, +B]
 /**
@@ -20,6 +21,7 @@ sealed trait Levels[-A, +B]
  * @param lvls The next, weaker, levels in the precedence table
  * @return A larger precedence table transforming atoms of type `A` into
  *          a structure of type `C`.
+ * @since 2.2.0
  */
 final case class Level[-A, B, +C](ops: Ops[A, B], lvls: Levels[B, C]) extends Levels[A, C]
 private [expr] final case class NoLevel[A, B](ev: A =:= B) extends Levels[A, B]
@@ -28,6 +30,7 @@ object Levels {
      * This represents the end of a precedence table. It will not
      * touch the structure in any way.
      * @tparam A The type of the structure to be produced by the table.
+     * @since 2.2.0
      */
     def empty[A]: Levels[A, A] = NoLevel(refl[A])
 

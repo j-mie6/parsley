@@ -24,6 +24,7 @@ package parsley.token
   * @param operators What operators does the language contain?
   * @param caseSensitive Is the language case-sensitive. I.e. is IF equivalent to if?
   * @param space What characters count as whitespace in the language?
+  * @since 2.2.0
   */
 case class LanguageDef (commentStart: String,
                         commentEnd: String,
@@ -47,7 +48,9 @@ case class LanguageDef (commentStart: String,
         on
     }
 }
-/** This object contains any preconfigured language definitions */
+/** This object contains any preconfigured language definitions
+  * @since 2.2.0
+  */
 object LanguageDef
 {
     val plain = LanguageDef("", "", "", false, NotRequired, NotRequired, NotRequired, NotRequired, Set.empty, Set.empty, true, NotRequired)

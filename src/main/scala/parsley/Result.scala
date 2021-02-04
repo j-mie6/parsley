@@ -9,136 +9,162 @@ import scala.util.{Try, Success => TSuccess, Failure => TFailure}
 sealed abstract class Result[+A]
 {
     /** Applies `fa` if this is a `Failure` or `fb` if this is a `Success`.
-    *
-    *  @param ferr the function to apply if this is a `Failure`
-    *  @param fa the function to apply if this is a `Success`
-    *  @return the results of applying the function
-    */
+      *
+      * @param ferr the function to apply if this is a `Failure`
+      * @param fa the function to apply if this is a `Success`
+      * @return the results of applying the function
+      * @since 1.7.0
+      */
     def fold[B](ferr: String => B, fa: A => B): B = this match {
         case Success(x)   => fa(x)
         case Failure(msg) => ferr(msg)
     }
 
     /** Executes the given side-effecting function if this is a `Success`.
-    *
-    *  @param f The side-effecting function to execute.
-    */
+      *
+      * @param f The side-effecting function to execute.
+      * @since 1.7.0
+      */
     def foreach[U](f: A => U): Unit = this match {
         case Success(x) => f(x)
         case _          =>
     }
 
     /** Returns the results's value.
-    *
-    *  @note The result must not be a failure.
-    *  @throws java.util.NoSuchElementException if the result is a failure.
-    */
+      *
+      * @note The result must not be a failure.
+      * @throws java.util.NoSuchElementException if the result is a failure.
+      * @since 1.7.0
+      */
     def get: A
 
-    /** Returns the value from this `Success` or the given argument if this is a `Failure`.  */
+    /** Returns the value from this `Success` or the given argument if this is a `Failure`.
+      * @since 1.7.0
+      */
     def getOrElse[B >: A](or: =>B): B = orElse(Success(or)).get
 
-    /** Returns this `Success` or the given argument if this is a `Failure`. */
+    /** Returns this `Success` or the given argument if this is a `Failure`.
+      * @since 1.7.0
+      */
     def orElse[B >: A](or: =>Result[B]): Result[B] = this match {
         case Success(_) => this
         case _          => or
     }
 
     /** Returns `true` if this is a `Success` and its value is equal to `elem` (as determined by `==`),
-    *  returns `false` otherwise.
-    *
-    *  @param elem    the element to test.
-    *  @return `true` if this is a `Success` value equal to `elem`.
-    */
+      * returns `false` otherwise.
+      *
+      * @param elem    the element to test.
+      * @return `true` if this is a `Success` value equal to `elem`.
+      * @since 1.7.0
+      */
     final def contains[B >: A](elem: B): Boolean = exists(_ == elem)
 
     /** Returns `true` if `Failure` or returns the result of the application of
-    *  the given predicate to the `Success` value.
-    */
+      * the given predicate to the `Success` value.
+      * @since 1.7.0
+      */
     def forall(f: A => Boolean): Boolean = this match {
         case Success(x) => f(x)
         case _          => true
     }
 
     /** Returns `false` if `Failure` or returns the result of the application of
-    *  the given predicate to the `Success` value.
-    */
+      * the given predicate to the `Success` value.
+      * @since 1.7.0
+      */
     def exists(p: A => Boolean): Boolean = this match {
         case Success(x) => p(x)
         case _          => false
     }
 
     /** Binds the given function across `Success`.
-    *
-    *  @param f The function to bind across `Success`.
-    */
+      *
+      * @param f The function to bind across `Success`.
+      * @since 1.7.0
+      */
     def flatMap[B](f: A => Result[B]): Result[B] = this match {
         case Success(x) => f(x)
         case _          => this.asInstanceOf[Result[B]]
     }
 
     /** Returns the right value if this is right
-        * or this value if this is left
-        *
-        * Equivalent to `flatMap(id => id)`
-        */
+      * or this value if this is left
+      *
+      * Equivalent to `flatMap(id => id)`
+      * @since 1.7.0
+      */
     def flatten[B](implicit ev: A <:< Result[B]): Result[B] = flatMap(ev)
 
-    /** The given function is applied if this is a `Success`. */
+    /** The given function is applied if this is a `Success`.
+      * @since 1.7.0
+      */
     def map[B](f: A => B): Result[B] = this match {
         case Success(x) => Success(f(x))
         case _          => this.asInstanceOf[Result[B]]
     }
 
     /** Returns `Success` with the existing value of `Success` if this is a `Success`
-    *  and the given predicate `p` holds for the right value,
-    *  or `Failure(msg)` if this is a `Success` and the given predicate `p` does not hold for the right value,
-    *  or `Failure` with the existing value of `Failure` if this is a `Failure`.
-    */
+      * and the given predicate `p` holds for the right value,
+      * or `Failure(msg)` if this is a `Success` and the given predicate `p` does not hold for the right value,
+      * or `Failure` with the existing value of `Failure` if this is a `Failure`.
+      * @since 1.7.0
+      */
     def filterOrElse(p: A => Boolean, msg: =>String): Result[A] = this match {
         case Success(x) if !p(x) => Failure(msg)
         case _                   => this
     }
 
     /** Returns a `Seq` containing the `Success` value if
-    *  it exists or an empty `Seq` if this is a `Failure`.
-    */
+      * it exists or an empty `Seq` if this is a `Failure`.
+      * @since 1.7.0
+      */
     def toSeq: collection.immutable.Seq[A] = this match {
         case Success(x) => collection.immutable.Seq(x)
         case _          => collection.immutable.Seq.empty
     }
 
     /** Returns a `Some` containing the `Success` value
-    *  if it exists or a `None` if this is a `Failure`.
-    */
+      * if it exists or a `None` if this is a `Failure`.
+      * @since 1.7.0
+      */
     def toOption: Option[A] = this match {
         case Success(x) => Some(x)
         case _          => None
     }
 
-    /** Converts the `Result` into a `Try` where `Failure` maps to a plain `Exception` */
+    /** Converts the `Result` into a `Try` where `Failure` maps to a plain `Exception`
+      * @since 1.7.0
+      */
     def toTry: Try[A] = this match {
         case Success(x)   => TSuccess(x)
         case Failure(msg) => TFailure(new Exception(s"ParseError: $msg"))
     }
 
+    /** Converts the `Result` into a `Either` where `Failure` maps to a `Left[String]`
+      * @since 1.7.0
+      */
     def toEither: Either[String, A] = this match {
         case Success(x)   => Right(x)
         case Failure(msg) => Left(msg)
     }
 
-    /** Returns `true` if this is a `Success`, `false` otherwise. */
+    /** Returns `true` if this is a `Success`, `false` otherwise.
+      * @since 1.7.0
+      */
     def isSuccess: Boolean
 
-    /** Returns `true` if this is a `Failure`, `false` otherwise. */
+    /** Returns `true` if this is a `Failure`, `false` otherwise.
+      * @since 1.7.0
+      */
     def isFailure: Boolean
 }
 
 /**
-* Returned when a parser succeeded.
-* @param x The result value of the successful parse
-* @tparam A The type of expected success result
-*/
+  * Returned when a parser succeeded.
+  * @param x The result value of the successful parse
+  * @tparam A The type of expected success result
+  */
 case class Success[A] private [parsley] (x: A) extends Result[A]
 {
     override def isSuccess: Boolean = true
@@ -147,9 +173,9 @@ case class Success[A] private [parsley] (x: A) extends Result[A]
 }
 
 /**
-* Returned on parsing failure
-* @param msg The error message reported by the parser
-*/
+  * Returned on parsing failure
+  * @param msg The error message reported by the parser
+  */
 case class Failure private [parsley] (msg: String) extends Result[Nothing]
 {
     override def isSuccess: Boolean = false

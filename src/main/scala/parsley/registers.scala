@@ -3,7 +3,9 @@ package parsley
 import parsley.Parsley.{empty, pure}
 import parsley.internal.deepembedding
 
-/** This module contains all the functionality and operations for using and manipulating registers. */
+/** This module contains all the functionality and operations for using and manipulating registers.
+  * @since 2.2.0
+  */
 object registers {
     /**
     * This class is used to index registers within the mutable state.
@@ -19,6 +21,7 @@ object registers {
     *       independent parsers. You should be careful to parameterise the
     *       registers in shared parsers and allocate fresh ones for each "top-level"
     *       parser you will run.
+    * @since 2.2.0
     */
     class Reg[A] private [parsley] {
         private [parsley] var _v: Int = -1
@@ -37,6 +40,7 @@ object registers {
         /**
         * @tparam A The type to be contained in this register during runtime
         * @return A new register which can contain the given type
+        * @since 2.2.0
         */
         def make[A]: Reg[A] = new Reg
     }
@@ -47,6 +51,7 @@ object registers {
       * @param r The index of the register to collect from
       * @tparam S The type of the value in register `r` (this will result in a runtime type-check)
       * @return The value stored in register `r` of type `S`
+      * @since 2.2.0
       */
     def get[S](r: Reg[S]): Parsley[S] = new Parsley(new deepembedding.Get(r))
     /**
@@ -57,6 +62,7 @@ object registers {
       * @tparam S The type of the value in register `r` (this will result in a runtime type-check)
       * @tparam A The desired result type
       * @return The value stored in register `r` applied to `f`
+      * @since 2.2.0
       */
     def gets[S, A](r: Reg[S], f: S => A): Parsley[A] = gets(r, pure(f))
     /**
@@ -67,6 +73,7 @@ object registers {
       * @tparam S The type of the value in register `r` (this will result in a runtime type-check)
       * @tparam A The desired result type
       * @return The value stored in register `r` applied to `f` from `pf`
+      * @since 2.2.0
       */
     def gets[S, A](r: Reg[S], pf: Parsley[S => A]): Parsley[A] = pf <*> get(r)
     /**
@@ -74,6 +81,7 @@ object registers {
       * @note There are only 4 registers at present.
       * @param r The index of the register to place the value in
       * @param x The value to place in the register
+      * @since 2.2.0
       */
     def put[S](r: Reg[S], x: S): Parsley[Unit] = put(r, pure(x))
     /**
@@ -81,6 +89,7 @@ object registers {
       * @note There are only 4 registers at present.
       * @param r The index of the register to place the value in
       * @param p The parser to derive the value from
+      * @since 2.2.0
       */
     def put[S](r: Reg[S], p: =>Parsley[S]): Parsley[Unit] = new Parsley(new deepembedding.Put(r, p.internal))
     /**
@@ -89,6 +98,7 @@ object registers {
       * @param r The index of the register to modify
       * @param f The function used to modify the register
       * @tparam S The type of value currently assumed to be in the register
+      * @since 2.2.0
       */
     def modify[S](r: Reg[S], f: S => S): Parsley[Unit] = new Parsley(new deepembedding.Modify(r, f))
     /**
@@ -99,6 +109,7 @@ object registers {
       * @param x The value to place in the register `r`
       * @param p The parser to execute with the adjusted state
       * @return The parser that performs `p` with the modified state
+      * @since 2.2.0
       */
     def local[R, A](r: Reg[R], x: R, p: =>Parsley[A]): Parsley[A] = local(r, pure(x), p)
     /**
@@ -109,6 +120,7 @@ object registers {
       * @param p The parser whose return value is placed in register `r`
       * @param q The parser to execute with the adjusted state
       * @return The parser that performs `q` with the modified state
+      * @since 2.2.0
       */
     def local[R, A](r: Reg[R], p: =>Parsley[R], q: =>Parsley[A]): Parsley[A] = new Parsley(new deepembedding.Local(r, p.internal, q.internal))
     /**
@@ -119,6 +131,7 @@ object registers {
       * @param f The function used to modify the value in register `r`
       * @param p The parser to execute with the adjusted state
       * @return The parser that performs `p` with the modified state
+      * @since 2.2.0
       */
     def local[R, A](r: Reg[R], f: R => R, p: =>Parsley[A]): Parsley[A] = local(r, get[R](r).map(f), p)
 
@@ -127,7 +140,7 @@ object registers {
       * @param p The parser to perform
       * @param reg The register to rollback on failure of `p`
       * @return The result of the parser `p`, if any
-      * @since 2.0
+      * @since 2.2.0
       */
       def rollback[A, B](reg: Reg[A], p: Parsley[B]): Parsley[B] = {
         get(reg).flatMap(x => {
@@ -135,7 +148,8 @@ object registers {
         })
     }
 
-    /** `forP(v, init, cond, step, body)` behaves much like a traditional for loop using variable `v` as the loop
+    // TODO: We can put this back for Parsley 2.1, because the new version will not have a `v` parameter
+    /* `forP(v, init, cond, step, body)` behaves much like a traditional for loop using variable `v` as the loop
       * variable and `init`, `cond`, `step` and `body` as parsers which control the loop itself. This is useful for
       * performing certain context sensitive tasks. For instance, to read an equal number of as, bs and cs you can do:
       *
@@ -155,7 +169,6 @@ object registers {
       * @param body The body of the loop performed each iteration
       * @return ()
       */
-    // TODO: We can put this back for Parsley 2.1, because the new version will not have a `v` parameter
     /*def forP[A](r: Reg[A], init: =>Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A], body: =>Parsley[_]): Parsley[Unit] =
     {
         val _cond = gets(v, cond)

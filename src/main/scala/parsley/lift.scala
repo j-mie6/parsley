@@ -7,6 +7,7 @@ import parsley.internal.deepembedding
   *
   * @example {{{lift2[Int, Int, Int](_+_, px, py): Parsley[Int]}}}
   * @example {{{lift3((x: Int, y: Int, z: Int) => x + y + z, px, py, pz): Parsley[Int]}}}
+  * @since 2.2.0
   */
 object lift {
     def lift1[T1, R]

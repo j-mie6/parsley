@@ -8,7 +8,9 @@ import parsley.internal.deepembedding
 import scala.annotation.switch
 import scala.language.implicitConversions
 
-/** This module contains many parsers to do with reading one or more characters. Almost every parser will need something from this module. */
+/** This module contains many parsers to do with reading one or more characters. Almost every parser will need something from this module.
+  * @since 2.2.0
+  */
 object character
 {
     /** Reads a character from the input stream and returns it, else fails if the character is not found at the head

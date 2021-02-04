@@ -6,7 +6,9 @@ import parsley.expr.chain
 import parsley.registers.{get, gets, put, local}
 import scala.annotation.{tailrec, implicitNotFound}
 
-/** This module contains a huge number of pre-made combinators that are very useful for a variety of purposes. */
+/** This module contains a huge number of pre-made combinators that are very useful for a variety of purposes.
+  * @since 2.2.0
+  */
 object combinator {
     /**`choice(ps)` tries to apply the parsers in the list `ps` in order, until one of them succeeds.
       *  Returns the value of the succeeding parser.*/
@@ -51,7 +53,9 @@ object combinator {
                    close: =>Parsley[_],
                    p: =>Parsley[A]): Parsley[A] = open *> p <* close
 
-    /** `many(p)` executes the parser `p` zero or more times. Returns a list of the returned values of `p`. */
+    /** `many(p)` executes the parser `p` zero or more times. Returns a list of the returned values of `p`.
+      * @since 2.2.0
+      */
     def many[A](p: =>Parsley[A]): Parsley[List[A]] = new Parsley(new deepembedding.Many(p.internal))
 
     /**`some(p)` applies the parser `p` *one* or more times. Returns a list of the returned values of `p`.*/
@@ -67,7 +71,9 @@ object combinator {
         go(n)
     }
 
-    /** `skipMany(p)` executes the parser `p` zero or more times and ignores the results. Returns `()` */
+    /** `skipMany(p)` executes the parser `p` zero or more times and ignores the results. Returns `()`
+      * @since 2.2.0
+      */
     def skipMany[A](p: =>Parsley[A]): Parsley[Unit] = new Parsley(new deepembedding.SkipMany(p.internal))
 
     /**`skipSome(p)` applies the parser `p` *one* or more times, skipping its result.*/
