@@ -3,13 +3,14 @@ package parsley
 import parsley.combinator.eof
 import parsley.Parsley._
 import parsley.implicits.{charLift, stringLift}
+import parsley.character.{anyChar, digit}
 
 import scala.language.implicitConversions
 
 class ErrorMessageTests extends ParsleyTest {
     //TODO: Bind tests
     lazy val r: Parsley[List[String]] = "correct error message" <::> (r </> Nil)
-    "?" should "affect base error messages" in {
+    "label" should "affect base error messages" in {
         'a'.label("ay!").runParser("b") should be (Failure("(line 1, column 1):\n  unexpected \"b\"\n  expected ay!"))
     }
     it should "work across a recursion boundary" in {
@@ -72,6 +73,16 @@ class ErrorMessageTests extends ParsleyTest {
     it should "change message under influence of ?" in {
         (eof ? "something more").runParser("a") should be {
             Failure("(line 1, column 1):\n  unexpected \"a\"\n  expected something more")
+        }
+    }
+
+    "error position" should "be correctly reset in" in {
+        val p = attempt('a' *> digit) <|> Parsley.fail("hello :)")
+        p.runParser("aa") should be {
+            Failure("(line 1, column 1):\n  unexpected end of input\n  expected any character\n  hello :)")
+        }
+        p.runParser("c") should be {
+            Failure("")
         }
     }
 }

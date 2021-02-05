@@ -133,22 +133,6 @@ private [internal] final class FastGuard[A](pred: A=>Boolean, msggen: A=>String,
     // $COVERAGE-ON$
 }
 
-private [internal] final class FastFail[A](msggen: A=>String, expected: UnsafeOption[String]) extends Instr {
-    private [this] val msggen_ = msggen.asInstanceOf[Any => String]
-    override def apply(ctx: Context): Unit = ctx.failWithMessage(expected, msggen_(ctx.stack.upop()))
-    // $COVERAGE-OFF$
-    override def toString: String = "FastFail(?)"
-    // $COVERAGE-ON$
-}
-
-private [internal] final class FastUnexpected[A](msggen: A=>String, expected: UnsafeOption[String]) extends Instr {
-    private [this] val msggen_ = msggen.asInstanceOf[Any => String]
-    override def apply(ctx: Context): Unit = ctx.unexpectedFail(expected = expected, unexpected = msggen_(ctx.stack.upop()))
-    // $COVERAGE-OFF$
-    override def toString: String = "FastUnexpected(?)"
-    // $COVERAGE-ON$
-}
-
 private [internal] final class NotFollowedBy(expected: UnsafeOption[String]) extends Instr {
     override def apply(ctx: Context): Unit = {
         // Recover the previous state; notFollowedBy NEVER consumes input

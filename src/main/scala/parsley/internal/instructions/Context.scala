@@ -5,6 +5,7 @@ import parsley.{Failure, Result, Success}
 import parsley.internal.UnsafeOption
 
 import scala.annotation.tailrec
+import scala.collection.mutable
 
 // Private internals
 private [instructions] final class Frame(val ret: Int, val instrs: Array[Instr]) {
@@ -20,20 +21,35 @@ private [instructions] final class State(val offset: Int, val line: Int, val col
 private [parsley] final class Context(private [instructions] var instrs: Array[Instr],
                                       private [instructions] var input: Array[Char],
                                       private [instructions] val sourceName: Option[String] = None) {
+    /** This is the operand stack, where results go to live  */
     private [instructions] val stack: ArrayStack[Any] = new ArrayStack()
+    /** Current offset into the input */
     private [instructions] var offset: Int = 0
+    /** The length of the input, stored for whatever reason */
     private [instructions] var inputsz: Int = input.length
+    /** Call stack consisting of Frames that track the return position and the old instructions */
     private [instructions] var calls: Stack[Frame] = Stack.empty
+    /** State stack consisting of offsets and positions that can be rolled back */
     private [instructions] var states: Stack[State] = Stack.empty
+    /** Stack consisting of offsets at previous checkpoints, which may query to test for consumed input */
     private [instructions] var checkStack: Stack[Int] = Stack.empty
+    /** Current operational status of the machine */
     private [instructions] var status: Status = Good
+    /** Stack of handlers, which track the call depth, program counter and stack size of error handlers */
     private [instructions] var handlers: Stack[Handler] = Stack.empty
+    /** Current size of the call stack */
     private [instructions] var depth: Int = 0
+    /** Current offset into program instruction buffer */
     private [instructions] var pc: Int = 0
+    /** Current line number */
     private [instructions] var line: Int = 1
+    /** Current column number */
     private [instructions] var col: Int = 1
+    /** Deepest offset reached for the current error */
     private [instructions] var erroffset: Int = -1
+    /** Deepest column reached for the current error */
     private [instructions] var errcol: Int = -1
+    /** Deepest line reached for the current error */
     private [instructions] var errline: Int = -1
     private [instructions] var raw: List[String] = Nil
     private [instructions] var unexpected: UnsafeOption[String] = _
@@ -41,11 +57,19 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     private [instructions] var unexpectAnyway: Boolean = false
     private [instructions] var errorOverride: UnsafeOption[String] = _
     private [instructions] var overrideDepth: Int = 0
+    /** State held by the registers, AnyRef to allow for `null` */
     private [instructions] var regs: Array[AnyRef] = new Array[AnyRef](Context.NumRegs)
+    /** Amount of indentation to apply to debug combinators output */
     private [instructions] var debuglvl: Int = 0
-    private [instructions] var startline: Int = 1
-    private [instructions] var startcol: Int = 1
+    /** Name which describes the type of input in error messages */
     private val inputDescriptor = sourceName.fold("input")(_ => "file")
+
+    // NEW ERROR MECHANISMS
+    private val hints = mutable.ListBuffer.empty[Hint]
+    private [instructions] var errs = Stack.empty[ParseError]
+
+    def popHints: Unit = if (hints.nonEmpty) hints.remove(0)
+    def replaceHint(label: String): Unit = if (hints.nonEmpty) hints(0) = new Hint(Set(Desc(label)))
 
     // $COVERAGE-OFF$
     //override def toString: String = pretty
@@ -69,7 +93,10 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
 
     @tailrec @inline private [parsley] def runParser[A](): Result[A] = {
         //println(pretty)
-        if (status eq Failed) Failure(errorMessage)
+        if (status eq Failed) {
+            println(s"errors: [${Stack.mkString(errs, ": ")}]")
+            Failure(errorMessage)
+        }
         else if (pc < instrs.length) {
             instrs(pc)(this)
             runParser[A]()
@@ -175,6 +202,8 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         val expectedFlat = expected.flatMap(Option(_))
         val expectedFiltered = expectedFlat.filterNot(_.isEmpty)
         val rawFiltered = raw.filterNot(_.isEmpty)
+        // TODO: or should be final, commas elsewhere
+        // TODO: I want the line and the caret!
         val expectedStr = if (expectedFiltered.isEmpty) None else Some(s"expected ${expectedFiltered.distinct.reverse.mkString(" or ")}")
         val rawStr = if (rawFiltered.isEmpty) None else Some(rawFiltered.distinct.reverse.mkString(" or "))
         unexpectAnyway ||= expectedFlat.nonEmpty || raw.nonEmpty
@@ -238,8 +267,8 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         handlers = Stack.empty
         depth = 0
         pc = 0
-        line = startline
-        col = startcol
+        line = 1
+        col = 1
         erroffset = -1
         errcol = -1
         errline = -1

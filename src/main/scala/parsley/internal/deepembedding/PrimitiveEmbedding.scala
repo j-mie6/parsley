@@ -78,6 +78,24 @@ private [parsley] final class Put[S](val reg: Reg[S], _p: =>Parsley[S])
     }
 }
 
+private [parsley] final class ErrorLabel[A](_p: =>Parsley[A], label: String)
+    extends Unary[A, A](_p)(c => s"$c.label($label)", expected =>
+        ErrorLabel.empty(if (expected == null) label else {
+            println(s"""WARNING: a label "$label" has been forcibly overriden by an unsafeLabel "$expected" that encapsulates it.
+                       |This is likely a mistake: confirm your intent by removing this label!""".stripMargin)
+            expected
+        })) {
+    final override val numInstrs = 2
+    final override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
+        val handler = state.freshLabel()
+        instrs += new instructions.InputCheck(handler)
+        p.codeGen |> {
+            instrs += new instructions.Label(handler)
+            instrs += new instructions.ApplyError(label)
+        }
+    }
+}
+
 private [parsley] final class UnsafeErrorRelabel[+A](_p: =>Parsley[A], msg: String) extends Parsley[A] {
     lazy val p = _p
     override def preprocess[Cont[_, +_]: ContOps, A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap,
@@ -121,6 +139,9 @@ private [deepembedding] object Attempt {
 private [deepembedding] object Look {
     def empty[A]: Look[A] = new Look(null)
     def apply[A](p: Parsley[A]): Look[A] = empty.ready(p)
+}
+private [deepembedding] object ErrorLabel {
+    def empty[A](label: String): ErrorLabel[A] = new ErrorLabel(null, label)
 }
 private [deepembedding] object NotFollowedBy {
     def empty[A](expected: UnsafeOption[String]): NotFollowedBy[A] = new NotFollowedBy(null, expected)

@@ -14,20 +14,6 @@ private [internal] final class Satisfies(f: Char => Boolean, expected: UnsafeOpt
     // $COVERAGE-ON$
 }
 
-private [internal] final class Fail(msg: String, expected: UnsafeOption[String]) extends Instr {
-    override def apply(ctx: Context): Unit = ctx.failWithMessage(expected, msg)
-    // $COVERAGE-OFF$
-    override def toString: String = s"Fail($msg)"
-    // $COVERAGE-ON$
-}
-
-private [internal] final class Unexpected(msg: String, expected: UnsafeOption[String]) extends Instr {
-    override def apply(ctx: Context): Unit = ctx.unexpectedFail(expected = expected, unexpected = msg)
-    // $COVERAGE-OFF$
-    override def toString: String = s"Unexpected($msg)"
-    // $COVERAGE-ON$
-}
-
 private [internal] object Attempt extends Instr {
     override def apply(ctx: Context): Unit = {
         // Remove the recovery input from the stack, it isn't needed anymore
