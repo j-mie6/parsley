@@ -69,19 +69,31 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
     }
     compute(cs)
 
-    @tailrec private def go(ctx: Context, i: Int, j: Int): Unit = {
-        if (j < sz && i < ctx.inputsz && ctx.input(i) == cs(j)) go(ctx, i + 1, j + 1)
+    @tailrec private def go(ctx: Context, i: Int, j: Int, err: =>TrivialError): Unit = {
+        if (j < sz && i < ctx.inputsz && ctx.input(i) == cs(j)) go(ctx, i + 1, j + 1, err)
         else {
             val (colAdjust, lineAdjust) = adjustAtIndex(j)
             ctx.col = colAdjust(ctx.col)
             ctx.line = lineAdjust(ctx.line)
             ctx.offset = i
-            if (j < sz) ctx.expectedFail(Set(errorItem))
+            if (j < sz) {
+                ctx.fail(expected)
+                ctx.errs = Stack.push(ctx.errs, err)
+                //ctx.expectedFail(Set(errorItem))
+            }
             else ctx.pushAndContinue(x)
         }
     }
 
-    override def apply(ctx: Context): Unit = go(ctx, ctx.offset, 0)
+    override def apply(ctx: Context): Unit = {
+        val origOffset = ctx.offset
+        val origLine = ctx.line
+        val origCol = ctx.col
+        go(ctx, ctx.offset, 0,
+            TrivialError(origOffset, origLine, origCol,
+                Some(if (ctx.inputsz - origOffset + 1 > sz) Raw(ctx.input.slice(origOffset, origOffset + sz).mkString) else EndOfInput), Set(errorItem)
+            ))
+    }
     // $COVERAGE-OFF$
     override def toString: String = if (x.isInstanceOf[String] && (s eq x.asInstanceOf[String])) s"Str($s)" else s"StrPerform($s, $x)"
     // $COVERAGE-ON$

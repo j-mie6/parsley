@@ -90,7 +90,7 @@ private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int]
     //val expecteds = prefixes.zip(_expecteds).map{case (c, expected) => if (expected == null) "\"" + c + "\"" else expected}
     //val errorItems = prefixes.zip(_expecteds).map{case (c, expected) => if (expected == null) Raw(s"$c") else Desc(expected)}.toSet[ErrorItem]
     val expecteds = _expecteds.toList.flatMap(_._2)
-    val errorItems = _expecteds.toSet[(Char, Set[UnsafeOption[String]])].flatMap(_._2.map[ErrorItem](Desc))
+    val errorItems = _expecteds.toSet[(Char, Set[UnsafeOption[String]])].flatMap[ErrorItem](_._2.map(Desc))
 
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput) {
