@@ -52,7 +52,7 @@ private [instructions] abstract class WhiteSpaceLike(start: String, end: String,
         spaces(ctx)
         val startsMulti = ctx.moreInput && ctx.input.startsWith(start, ctx.offset)
         if (startsMulti && multiLineComment(ctx)) multisOnly(ctx)
-        else if (startsMulti) ctx.fail("end of comment")
+        else if (startsMulti) ctx.expectedFail("end of comment")
         else ctx.pushAndContinue(())
     }
 
@@ -65,7 +65,7 @@ private [instructions] abstract class WhiteSpaceLike(start: String, end: String,
         if (ctx.moreInput && ctx.input.startsWith(sharedPrefix, ctx.offset)) {
             val startsMulti = ctx.input.startsWith(factoredStart, ctx.offset + sharedPrefix.length)
             if (startsMulti && multiLineComment(ctx)) singlesAndMultis(ctx)
-            else if (startsMulti) ctx.fail("end of comment")
+            else if (startsMulti) ctx.expectedFail("end of comment")
             else if (ctx.input.startsWith(factoredLine, ctx.offset + sharedPrefix.length)) {
                 singleLineComment(ctx)
                 singlesAndMultis(ctx)
@@ -90,10 +90,10 @@ private [internal] final class TokenComment(start: String, end: String, line: St
     override def apply(ctx: Context): Unit = {
         val startsMulti = !noMulti && ctx.input.startsWith(start, ctx.offset)
         // If neither comment is available we fail
-        if (!ctx.moreInput || (!noLine && !ctx.input.startsWith(line, ctx.offset)) && (!noMulti && !startsMulti)) ctx.fail("comment")
+        if (!ctx.moreInput || (!noLine && !ctx.input.startsWith(line, ctx.offset)) && (!noMulti && !startsMulti)) ctx.expectedFail("comment")
         // One of the comments must be available
         else if (startsMulti && multiLineComment(ctx)) ctx.pushAndContinue(())
-        else if (startsMulti) ctx.fail("end of comment")
+        else if (startsMulti) ctx.expectedFail("end of comment")
         // It clearly wasn't the multi-line comment, so we are left with single line
         else {
             singleLineComment(ctx)
@@ -132,7 +132,7 @@ private [internal] final class TokenNonSpecific(name: String, illegalName: Strin
             ctx.offset += 1
             restOfToken(ctx, name)
         }
-        else ctx.fail(expected)
+        else ctx.expectedFail(expected)
     }
 
     private def ensureLegal(ctx: Context, tok: String) = {
@@ -174,7 +174,7 @@ private [instructions] abstract class TokenSpecificAllowTrailing(_specific: Stri
 
     @tailrec final private def readSpecific(ctx: Context, i: Int, j: Int): Unit = {
         if (j < strsz && readCharCaseHandled(ctx, i) == specific(j)) readSpecific(ctx, i + 1, j + 1)
-        else if (j < strsz) ctx.fail(expected)
+        else if (j < strsz) ctx.expectedFail(expected)
         else {
             ctx.saveState()
             ctx.fastUncheckedConsumeChars(strsz)
@@ -184,7 +184,7 @@ private [instructions] abstract class TokenSpecificAllowTrailing(_specific: Stri
 
     final override def apply(ctx: Context): Unit = {
         if (ctx.inputsz >= ctx.offset + strsz) readSpecific(ctx, ctx.offset, 0)
-        else ctx.fail(expected)
+        else ctx.expectedFail(expected)
     }
 }
 
@@ -192,7 +192,7 @@ private [internal] final class TokenSpecific(_specific: String, letter: TokenSet
     extends TokenSpecificAllowTrailing(_specific, caseSensitive, expected) {
     override def postprocess(ctx: Context, i: Int): Unit = {
         if (i < ctx.inputsz && letter(ctx.input(i))) {
-            ctx.fail(expectedEnd)
+            ctx.expectedFail(expectedEnd)
             ctx.restoreState()
         }
         else {
@@ -216,7 +216,7 @@ private [internal] final class TokenMaxOp(operator: String, _ops: Set[String], e
         lazy val ops_ = ops.suffixes(ctx.input(i))
         val possibleOpsRemain = i < ctx.inputsz && ops.nonEmpty
         if (possibleOpsRemain && ops_.contains("")) {
-            ctx.fail(expectedEnd)
+            ctx.expectedFail(expectedEnd)
             ctx.restoreState()
         }
         else if (possibleOpsRemain) go(ctx, i + 1, ops_)

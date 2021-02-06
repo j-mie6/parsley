@@ -45,7 +45,6 @@ private [internal] final class JumpGoodAttempt(var label: Int) extends JumpInstr
         }
         else {
             ctx.restoreState()
-            ctx.errs = ctx.errs.tail
             ctx.status = Good
             ctx.inc()
         }

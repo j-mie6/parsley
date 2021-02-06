@@ -129,7 +129,13 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
             alt.codeGen >> {
                 instrs += new instructions.Label(handler)
                 instrs += new instructions.JumpGoodAttempt(skip)
-                codeGenAlternatives(alts_) |> (instrs += new instructions.Label(skip))
+                val merge = state.freshLabel()
+                instrs += new instructions.PushHandler(merge)
+                codeGenAlternatives(alts_) |> {
+                    instrs += new instructions.Label(merge)
+                    instrs += instructions.MergeErrors
+                    instrs += new instructions.Label(skip)
+                }
             }
         case alt::alts_ =>
             val handler = state.freshLabel()
@@ -139,7 +145,13 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
                 instrs += new instructions.JumpGood(skip)
                 instrs += new instructions.Label(handler)
                 instrs += instructions.Catch
-                codeGenAlternatives(alts_) |> (instrs += new instructions.Label(skip))
+                val merge = state.freshLabel()
+                instrs += new instructions.PushHandler(merge)
+                codeGenAlternatives(alts_) |> {
+                    instrs += new instructions.Label(merge)
+                    instrs += instructions.MergeErrors
+                    instrs += new instructions.Label(skip)
+                }
             }
     }
     // TODO: Refactor

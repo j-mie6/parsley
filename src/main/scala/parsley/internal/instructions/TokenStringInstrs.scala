@@ -10,7 +10,7 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
     override def apply(ctx: Context): Unit = escape(ctx) match {
         case TokenEscape.EscapeChar(escapeChar) =>ctx.pushAndContinue(escapeChar)
         case TokenEscape.BadCode => ctx.failWithMessage(expected, msg = "invalid escape sequence")
-        case TokenEscape.NoParse => ctx.fail(expected)
+        case TokenEscape.NoParse => ctx.expectedFail(expected)
     }
 
     private final def consumeAndReturn(ctx: Context, n: Int, c: Char) = {
@@ -162,16 +162,16 @@ private [instructions] sealed trait TokenStringLike extends Instr {
                     builder += c
                     ctx.fastUncheckedConsumeChars(1)
                     restOfString(ctx, builder)
-                case _ => ctx.fail(expectedChar)
+                case _ => ctx.expectedFail(expectedChar)
             }
-            else ctx.fail(expectedEos)
+            else ctx.expectedFail(expectedEos)
     }
     final override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && ctx.nextChar == '"') {
             ctx.fastUncheckedConsumeChars(1)
             restOfString(ctx, new StringBuilder())
         }
-        else ctx.fail(expectedString)
+        else ctx.expectedFail(expectedString)
     }
 }
 
@@ -185,7 +185,7 @@ private [internal] final class TokenRawString(_expected: UnsafeOption[String]) e
             true
         }
         else {
-            ctx.fail(expectedChar)
+            ctx.expectedFail(expectedChar)
             false
         }
     }
@@ -203,7 +203,7 @@ private [internal] final class TokenString(ws: TokenSet, _expected: UnsafeOption
     private def readGap(ctx: Context): Boolean = {
         val completedGap = ctx.moreInput && ctx.nextChar == '\\'
         if (completedGap) ctx.fastUncheckedConsumeChars(1)
-        else ctx.fail(expectedGap)
+        else ctx.expectedFail(expectedGap)
         completedGap
     }
 
@@ -221,7 +221,7 @@ private [internal] final class TokenString(ws: TokenSet, _expected: UnsafeOption
                 ctx.failWithMessage(expectedEscape, "invalid escape sequence")
                 false
             case TokenEscape.NoParse =>
-                ctx.fail(expectedEscape)
+                ctx.expectedFail(expectedEscape)
                 false
         }
     }

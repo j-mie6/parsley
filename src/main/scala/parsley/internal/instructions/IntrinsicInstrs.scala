@@ -103,7 +103,7 @@ private [internal] final class Filter[A](pred: A=>Boolean, expected: UnsafeOptio
         if (pred_(ctx.stack.upeek)) ctx.inc()
         else {
             val strip = ctx.expected.isEmpty
-            ctx.fail(expected)
+            ctx.expectedFail(expected)
             if (strip) ctx.unexpected = null
         }
     }
