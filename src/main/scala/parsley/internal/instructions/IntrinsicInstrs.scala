@@ -29,13 +29,14 @@ private [internal] final class Lift3[A, B, C, D](f: (A, B, C) => D) extends Inst
 }
 
 private [internal] class CharTok(c: Char, x: Any, _expected: UnsafeOption[String]) extends Instr {
-    val expected: String = if (_expected == null) "\"" + c + "\"" else _expected
+    private val expected: String = if (_expected == null) "\"" + c + "\"" else _expected
+    private val errorItem: ErrorItem = if (_expected == null) Raw(s"$c") else Desc(expected)
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && ctx.nextChar == c) {
             ctx.consumeChar()
             ctx.pushAndContinue(x)
         }
-        else ctx.expectedFail(Set[ErrorItem](if (_expected == null) Raw(s"$c") else Desc(expected)))
+        else ctx.expectedFail(Set(errorItem))
     }
     // $COVERAGE-OFF$
     override def toString: String = if (x == c) s"Chr($c)" else s"ChrPerform($c, $x)"
@@ -44,6 +45,7 @@ private [internal] class CharTok(c: Char, x: Any, _expected: UnsafeOption[String
 
 private [internal] final class StringTok private [instructions] (s: String, x: Any, _expected: UnsafeOption[String]) extends Instr {
     private [this] val expected = if (_expected == null) "\"" + s + "\"" else _expected
+    private [this] val errorItem: ErrorItem = if (_expected == null) Raw(s) else Desc(expected)
     private [this] val cs = s.toCharArray
     private [this] val sz = cs.length
     private [this] val adjustAtIndex = new Array[(Int => Int, Int => Int)](s.length + 1)
@@ -74,7 +76,7 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
             ctx.col = colAdjust(ctx.col)
             ctx.line = lineAdjust(ctx.line)
             ctx.offset = i
-            if (j < sz) ctx.expectedFail(expected)
+            if (j < sz) ctx.expectedFail(Set(errorItem))
             else ctx.pushAndContinue(x)
         }
     }
@@ -145,6 +147,7 @@ private [internal] final class NotFollowedBy(expected: UnsafeOption[String]) ext
         // A failure is what we wanted
         else {
             ctx.status = Good
+            ctx.errs = ctx.errs.tail
             ctx.pushAndContinue(())
         }
     }

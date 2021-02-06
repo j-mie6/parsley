@@ -124,7 +124,7 @@ private [parsley] final class ManyUntil[A](_body: Parsley[Any]) extends Unary[An
     override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
         val start = state.freshLabel()
         val loop = state.freshLabel()
-        instrs += new instructions.PushFallthrough(loop)
+        instrs += new instructions.PushHandler(loop)
         instrs += new instructions.Label(start)
         p.codeGen |> {
             instrs += new instructions.Label(loop)

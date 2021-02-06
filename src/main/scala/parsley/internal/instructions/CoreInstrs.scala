@@ -99,7 +99,6 @@ private [internal] final class Empty(expected: UnsafeOption[String]) extends Ins
 private [internal] final class PushHandler(var label: Int) extends JumpInstr {
     override def apply(ctx: Context): Unit = {
         ctx.pushHandler(label)
-        ctx.saveState()
         ctx.inc()
     }
     // $COVERAGE-OFF$
@@ -107,13 +106,14 @@ private [internal] final class PushHandler(var label: Int) extends JumpInstr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class PushFallthrough(var label: Int) extends JumpInstr {
+private [internal] final class PushHandlerAndState(var label: Int) extends JumpInstr {
     override def apply(ctx: Context): Unit = {
         ctx.pushHandler(label)
+        ctx.saveState()
         ctx.inc()
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"PushFallthrough($label)"
+    override def toString: String = s"PushHandlerAndState($label)"
     // $COVERAGE-ON$
 }
 

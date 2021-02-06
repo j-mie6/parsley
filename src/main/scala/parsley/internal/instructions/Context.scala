@@ -94,14 +94,18 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     @tailrec @inline private [parsley] def runParser[A](): Result[A] = {
         //println(pretty)
         if (status eq Failed) {
-            println(s"errors: [${Stack.mkString(errs, ": ")}]")
+            assert(!isEmpty(errs) && isEmpty(errs.tail), "there should be only one error on failure")
+            //println(s"errors: ${errs.head}")
             Failure(errorMessage)
         }
         else if (pc < instrs.length) {
             instrs(pc)(this)
             runParser[A]()
         }
-        else if (isEmpty(calls)) Success(stack.peek[A])
+        else if (isEmpty(calls)) {
+            assert(isEmpty(errs), "there should be no errors on success")
+            Success(stack.peek[A])
+        }
         else {
             ret()
             runParser[A]()

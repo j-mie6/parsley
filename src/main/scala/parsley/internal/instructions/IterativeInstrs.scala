@@ -17,6 +17,7 @@ private [internal] final class Many(var label: Int) extends JumpInstr with State
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
         else {
             ctx.catchNoConsumed {
+                ctx.errs = ctx.errs.tail
                 ctx.pushAndContinue(acc.toList)
             }
             acc.clear()
@@ -36,6 +37,7 @@ private [internal] final class SkipMany(var label: Int) extends JumpInstr {
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
         else ctx.catchNoConsumed {
+            ctx.errs = ctx.errs.tail
             ctx.pushAndContinue(())
         }
     }
@@ -64,6 +66,7 @@ private [internal] final class ChainPost(var label: Int) extends JumpInstr with 
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
         else {
             ctx.catchNoConsumed {
+                ctx.errs = ctx.errs.tail
                 // When acc is null, we have entered for first time but the op failed, so the result is already on the stack
                 if (acc != null) ctx.stack.push(acc)
                 ctx.inc()
@@ -91,6 +94,7 @@ private [internal] final class ChainPre(var label: Int) extends JumpInstr with S
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
         else {
             ctx.catchNoConsumed {
+                ctx.errs = ctx.errs.tail
                 ctx.pushAndContinue(if (acc == null) identity[Any] _ else acc)
             }
             acc = null
@@ -121,6 +125,7 @@ private [internal] final class Chainl(var label: Int) extends JumpInstr with Sta
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
         else {
             ctx.catchNoConsumed {
+                ctx.errs = ctx.errs.tail
                 // if acc is null this is first entry, p already on the stack!
                 if (acc != null) ctx.pushAndContinue(acc)
                 // but p does need to be wrapped
@@ -173,6 +178,7 @@ private [internal] final class Chainr[A, B](var label: Int, _wrap: A => B) exten
             // presence of first handler indicates p succeeded and op didn't
             checkForFirstHandlerAndPop(ctx, ctx.fail()) {
                 ctx.catchNoConsumed {
+                    ctx.errs = ctx.errs.tail
                     ctx.exchangeAndContinue(if (acc != null) acc(wrap(ctx.stack.upeek)) else wrap(ctx.stack.upeek))
                 }
             }
@@ -202,6 +208,7 @@ private [internal] final class SepEndBy1(var label: Int) extends JumpInstr with 
             }
             if (ctx.offset != check || acc.isEmpty) ctx.fail()
             else {
+                ctx.errs = ctx.errs.tail
                 ctx.status = Good
                 ctx.pushAndContinue(acc.toList)
             }

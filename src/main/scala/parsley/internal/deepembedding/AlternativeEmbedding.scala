@@ -31,7 +31,7 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
             case Attempt(u) => right match {
                 case Pure(x) =>
                     val handler = state.freshLabel()
-                    instrs += new instructions.PushHandler(handler)
+                    instrs += new instructions.PushHandlerAndState(handler)
                     u.codeGen |> {
                         instrs += new instructions.Label(handler)
                         instrs += new instructions.AlwaysRecoverWith[B](x)
@@ -39,12 +39,17 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
                 case v =>
                     val handler = state.freshLabel()
                     val skip = state.freshLabel()
-                    instrs += new instructions.PushHandler(handler)
+                    instrs += new instructions.PushHandlerAndState(handler)
                     u.codeGen >> {
                         instrs += new instructions.Label(handler)
                         instrs += new instructions.JumpGoodAttempt(skip)
-                        v.codeGen |>
-                        (instrs += new instructions.Label(skip))
+                        val merge = state.freshLabel()
+                        instrs += new instructions.PushHandler(merge)
+                        v.codeGen |> {
+                            instrs += new instructions.Label(merge)
+                            instrs += instructions.MergeErrors
+                            instrs += new instructions.Label(skip)
+                        }
                     }
             }
             case u => right match {
@@ -66,8 +71,13 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
                         instrs += new instructions.JumpGood(skip)
                         instrs += new instructions.Label(handler)
                         instrs += instructions.Catch
-                        v.codeGen |>
-                        (instrs += new instructions.Label(skip))
+                        val merge = state.freshLabel()
+                        instrs += new instructions.PushHandler(merge)
+                        v.codeGen |> {
+                            instrs += new instructions.Label(merge)
+                            instrs += instructions.MergeErrors
+                            instrs += new instructions.Label(skip)
+                        }
                     }
             }
         }
@@ -82,13 +92,20 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
             codeGenRoots(roots, ls, end) >> {
                 instrs += instructions.Catch //This instruction is reachable as default - 1
                 instrs += new instructions.Label(default)
+                val merge = state.freshLabel()
+                instrs += new instructions.PushHandler(merge)
                 if (needsDefault) {
                     instrs += new instructions.Empty(null)
+                    instrs += new instructions.Label(merge)
+                    instrs += instructions.MergeErrors
                     result(instrs += new instructions.Label(end))
                 }
                 else {
-                    tablified.head._1.codeGen |>
-                    (instrs += new instructions.Label(end))
+                    tablified.head._1.codeGen |> {
+                        instrs += new instructions.Label(merge)
+                        instrs += instructions.MergeErrors
+                        instrs += new instructions.Label(end)
+                    }
                 }
             }
     }
@@ -108,7 +125,7 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
         case Attempt(alt)::alts_ =>
             val handler = state.freshLabel()
             val skip = state.freshLabel()
-            instrs += new instructions.PushHandler(handler)
+            instrs += new instructions.PushHandlerAndState(handler)
             alt.codeGen >> {
                 instrs += new instructions.Label(handler)
                 instrs += new instructions.JumpGoodAttempt(skip)

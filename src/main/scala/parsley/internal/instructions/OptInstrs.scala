@@ -45,6 +45,7 @@ private [internal] final class JumpGoodAttempt(var label: Int) extends JumpInstr
         }
         else {
             ctx.restoreState()
+            ctx.errs = ctx.errs.tail
             ctx.status = Good
             ctx.inc()
         }
@@ -56,6 +57,7 @@ private [internal] final class JumpGoodAttempt(var label: Int) extends JumpInstr
 
 private [internal] final class RecoverWith[A](x: A) extends Instr {
     override def apply(ctx: Context): Unit = ctx.catchNoConsumed {
+        ctx.errs = ctx.errs.tail
         ctx.pushAndContinue(x)
     }
     // $COVERAGE-OFF$
@@ -72,6 +74,7 @@ private [internal] final class AlwaysRecoverWith[A](x: A) extends Instr {
         }
         else {
             ctx.restoreState()
+            ctx.errs = ctx.errs.tail
             ctx.status = Good
             ctx.pushAndContinue(x)
         }

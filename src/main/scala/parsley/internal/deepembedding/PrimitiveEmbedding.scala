@@ -18,7 +18,7 @@ private [deepembedding] sealed abstract class ScopedUnary[A, B](_p: =>Parsley[A]
     final override val numInstrs = 2
     final override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
         val handler = state.freshLabel()
-        instrs += new instructions.PushHandler(handler)
+        instrs += new instructions.PushHandlerAndState(handler)
         p.codeGen |> {
             instrs += new instructions.Label(handler)
             instrs += instr
@@ -51,7 +51,7 @@ private [parsley] final class Subroutine[A](var p: Parsley[A], val expected: Uns
     override def preprocess[Cont[_, +_]: ContOps, A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap,
                                                            label: UnsafeOption[String]): Cont[Unit, Parsley[A_]] = {
         // The idea here is that the label itself was already established by letFinding, so we just use expected which should be equal to label
-        assert(expected == label)
+        assert(expected == label, "letFinding should have already set the expected label for a subroutine")
         for (p <- this.p.optimised) yield this.ready(p)
     }
     private def ready(p: Parsley[A]): this.type = {

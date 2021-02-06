@@ -39,10 +39,11 @@ private [internal] final class ApplyError(label: String) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class MergeErrors extends Instr {
+private [internal] object MergeErrors extends Instr {
     override def apply(ctx: Context): Unit = {
         if (ctx.status eq Good) {
             ctx.handlers = ctx.handlers.tail
+            ctx.errs = ctx.errs.tail
             ctx.inc()
         }
         else {
