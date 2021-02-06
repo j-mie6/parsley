@@ -20,6 +20,11 @@ sealed trait ParseError {
                 TrivialError(offset, line, col, u, es1 union es2)
         }
     }
+
+    def withHints(hints: Iterable[Hint]): ParseError = this match {
+        case err: TrivialError => err.copy(expecteds = hints.foldLeft(err.expecteds)((es, h) => es union h.hint))
+        case _ => this
+    }
 }
 case class TrivialError(offset: Int, line: Int, col: Int, unexpected: Option[ErrorItem], expecteds: Set[ErrorItem]) extends ParseError
 case class FailError(offset: Int, line: Int, col: Int, msgs: Set[String]) extends ParseError
@@ -44,11 +49,14 @@ object ErrorItem {
 case class Raw(cs: String) extends ErrorItem {
     override val msg = "\"" + cs + "\""
 }
+object Raw {
+    def apply(c: Char): Raw = new Raw(s"$c")
+}
 case class Desc(msg: String) extends ErrorItem
 case object EndOfInput extends ErrorItem {
     override val msg = "end of input"
 }
 
 final class Hint(val hint: Set[ErrorItem]) extends AnyVal {
-
+    override def toString: String = hint.toString
 }

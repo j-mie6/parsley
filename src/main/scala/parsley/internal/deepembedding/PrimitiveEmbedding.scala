@@ -18,7 +18,7 @@ private [deepembedding] sealed abstract class ScopedUnary[A, B](_p: =>Parsley[A]
     final override val numInstrs = 2
     final override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
         val handler = state.freshLabel()
-        instrs += new instructions.PushHandlerAndState(handler)
+        instrs += new instructions.PushHandlerAndState(handler, false)
         p.codeGen |> {
             instrs += new instructions.Label(handler)
             instrs += instr
@@ -88,7 +88,7 @@ private [parsley] final class ErrorLabel[A](_p: =>Parsley[A], label: String)
     final override val numInstrs = 2
     final override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
         val handler = state.freshLabel()
-        instrs += new instructions.InputCheck(handler)
+        instrs += new instructions.InputCheck(handler, false)
         p.codeGen |> {
             instrs += new instructions.Label(handler)
             instrs += new instructions.ApplyError(label)

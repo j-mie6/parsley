@@ -30,7 +30,7 @@ private [internal] final class Lift3[A, B, C, D](f: (A, B, C) => D) extends Inst
 
 private [internal] class CharTok(c: Char, x: Any, _expected: UnsafeOption[String]) extends Instr {
     private val expected: String = if (_expected == null) "\"" + c + "\"" else _expected
-    private val errorItem: ErrorItem = if (_expected == null) Raw(s"$c") else Desc(expected)
+    private val errorItem: ErrorItem = if (_expected == null) Raw(c) else Desc(expected)
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && ctx.nextChar == c) {
             ctx.consumeChar()
@@ -78,8 +78,7 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
             ctx.offset = i
             if (j < sz) {
                 ctx.fail(expected)
-                ctx.errs = Stack.push(ctx.errs, err)
-                //ctx.expectedFail(Set(errorItem))
+                ctx.pushError(err)
             }
             else ctx.pushAndContinue(x)
         }
@@ -91,7 +90,7 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
         val origCol = ctx.col
         go(ctx, ctx.offset, 0,
             TrivialError(origOffset, origLine, origCol,
-                Some(if (ctx.inputsz - origOffset + 1 > sz) Raw(ctx.input.slice(origOffset, origOffset + sz).mkString) else EndOfInput), Set(errorItem)
+                Some(if (ctx.inputsz > origOffset) Raw(ctx.input.slice(origOffset, Math.max(origOffset + sz, ctx.inputsz)).mkString) else EndOfInput), Set(errorItem)
             ))
     }
     // $COVERAGE-OFF$

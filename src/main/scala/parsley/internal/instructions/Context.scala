@@ -65,11 +65,44 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     private val inputDescriptor = sourceName.fold("input")(_ => "file")
 
     // NEW ERROR MECHANISMS
-    private val hints = mutable.ListBuffer.empty[Hint]
+    private var hints = mutable.ListBuffer.empty[Hint]
+    private var hintsValidOffset = 0
+    private var hintStack = Stack.empty[(Int, mutable.ListBuffer[Hint])]
     private [instructions] var errs = Stack.empty[ParseError]
 
-    def popHints: Unit = if (hints.nonEmpty) hints.remove(0)
-    def replaceHint(label: String): Unit = if (hints.nonEmpty) hints(0) = new Hint(Set(Desc(label)))
+    private [instructions] def popHints: Unit = if (hints.nonEmpty) hints.remove(0)
+    private [instructions] def replaceHint(label: String): Unit = if (hints.nonEmpty) hints(0) = new Hint(Set(Desc(label)))
+    private [instructions] def saveHints(): Unit = {
+        hintStack = push(hintStack, (hintsValidOffset, hints))
+        hints = hints.clone
+    }
+    private [instructions] def restoreHints(): Unit = {
+        val (hintsValidOffset, hints) = hintStack.head
+        this.hintsValidOffset = hintsValidOffset
+        this.hints = hints
+        this.commitHints()
+    }
+    private def commitHints(): Unit = {
+        this.hintStack = this.hintStack.tail
+    }
+    private [instructions] def addErrorToHints(): Unit = errs.head match {
+        case TrivialError(errOffset, _, _, _, es) if errOffset == offset && es.nonEmpty =>
+            //println(s"$es have been hinted")
+            hints += new Hint(es)
+        case _ => //println(s"${errs.head} was not suitable for hinting")
+    }
+    private def useHints(): Unit = {
+        if (hintsValidOffset == offset) {
+            //println(s"hints $hints applied!")
+            errs.head = errs.head.withHints(hints)
+        }
+        else {
+            //println(s"hints ($hints) were invalid :(")
+            hintsValidOffset = offset
+            hints.clear()
+            hintStack
+        }
+    }
 
     // $COVERAGE-OFF$
     //override def toString: String = pretty
@@ -95,7 +128,9 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         //println(pretty)
         if (status eq Failed) {
             assert(!isEmpty(errs) && isEmpty(errs.tail), "there should be only one error on failure")
-            //println(s"errors: ${errs.head}")
+            assert(isEmpty(handlers), "there should be no handlers left on failure")
+            assert(isEmpty(hintStack), "there should be at most one set of hints left at the end")
+            //println(s"error: ${errs.head}")
             Failure(errorMessage)
         }
         else if (pc < instrs.length) {
@@ -104,6 +139,8 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         }
         else if (isEmpty(calls)) {
             assert(isEmpty(errs), "there should be no errors on success")
+            assert(isEmpty(handlers), "there should be no handlers on success")
+            assert(isEmpty(hintStack), "there should be at most one set of hints left at the end")
             Success(stack.peek[A])
         }
         else {
@@ -164,21 +201,26 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         adjustErrorOverride()
     }
 
+    private [instructions] def pushError(err: ParseError): Unit = {
+        this.errs = push(this.errs, err)
+        this.useHints()
+    }
+
     private [instructions] def failWithMessage(expected: UnsafeOption[String], msg: String): Unit = {
         this.fail(expected)
         this.raw ::= msg
-        this.errs = push(this.errs, ParseError.fail(msg, offset, line, col))
+        this.pushError(ParseError.fail(msg, offset, line, col))
     }
     private [instructions] def unexpectedFail(expected: UnsafeOption[String], unexpected: String): Unit = {
         this.fail(expected)
         this.unexpected = unexpected
         this.unexpectAnyway = true
-        this.errs = push(this.errs, TrivialError(offset, line, col, Some(Desc(unexpected)), if (expected == null) Set.empty else Set(Desc(expected))))
+        this.pushError(TrivialError(offset, line, col, Some(Desc(unexpected)), if (expected == null) Set.empty else Set(Desc(expected))))
     }
     private [instructions] def expectedFail(expected: Set[ErrorItem]): Unit = {
         this.fail(expected.headOption.map(_.msg).orNull)
         val unexpected = if (offset < inputsz) Raw(s"$nextChar") else EndOfInput
-        this.errs = push(this.errs, TrivialError(offset, line, col, Some(unexpected), expected))
+        this.pushError(TrivialError(offset, line, col, Some(unexpected), expected))
     }
     private [instructions] def expectedFail(expected: UnsafeOption[String]): Unit = expectedFail(if (expected == null) Set.empty[ErrorItem] else Set[ErrorItem](Desc(expected)))
     private [instructions] def fail(expected: UnsafeOption[String] = null): Unit = {
@@ -251,7 +293,11 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         offset += n
         col += n
     }
-    private [instructions] def pushHandler(label: Int): Unit = handlers = push(handlers, new Handler(depth, label, stack.usize))
+    private [instructions] def pushHandler(label: Int): Unit = {
+        handlers = push(handlers, new Handler(depth, label, stack.usize))
+        //TODO: This may change
+        //this.saveHints()
+    }
     private [instructions] def pushCheck(): Unit = checkStack = push(checkStack, offset)
     private [instructions] def saveState(): Unit = states = push(states, new State(offset, line, col))
     private [instructions] def restoreState(): Unit = {

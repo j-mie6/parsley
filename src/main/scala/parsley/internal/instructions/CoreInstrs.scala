@@ -89,7 +89,7 @@ private [internal] final class Empty(expected: UnsafeOption[String]) extends Ins
         val strip = ctx.expected.isEmpty
         ctx.fail(expected)
         if (strip) ctx.unexpected = null
-        ctx.errs = push(ctx.errs, TrivialError(ctx.offset, ctx.line, ctx.col, None, if (expected == null) Set.empty else Set(Desc(expected))))
+        ctx.pushError(TrivialError(ctx.offset, ctx.line, ctx.col, None, if (expected == null) Set.empty else Set(Desc(expected))))
     }
     // $COVERAGE-OFF$
     override def toString: String = "Empty"
@@ -106,10 +106,11 @@ private [internal] final class PushHandler(var label: Int) extends JumpInstr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class PushHandlerAndState(var label: Int) extends JumpInstr {
+private [internal] final class PushHandlerAndState(var label: Int, saveHints: Boolean) extends JumpInstr {
     override def apply(ctx: Context): Unit = {
         ctx.pushHandler(label)
         ctx.saveState()
+        if (saveHints) ctx.saveHints()
         ctx.inc()
     }
     // $COVERAGE-OFF$
@@ -117,10 +118,11 @@ private [internal] final class PushHandlerAndState(var label: Int) extends JumpI
     // $COVERAGE-ON$
 }
 
-private [internal] final class InputCheck(var label: Int) extends JumpInstr {
+private [internal] final class InputCheck(var label: Int, saveHints: Boolean = false) extends JumpInstr {
     override def apply(ctx: Context): Unit = {
         ctx.pushCheck()
         ctx.pushHandler(label)
+        if (saveHints) ctx.saveHints()
         ctx.inc()
     }
     // $COVERAGE-OFF$
@@ -139,6 +141,7 @@ private [internal] final class JumpGood(var label: Int) extends JumpInstr {
     override def apply(ctx: Context): Unit = {
         ctx.handlers = ctx.handlers.tail
         ctx.checkStack = ctx.checkStack.tail
+        ctx.restoreHints()
         ctx.pc = label
     }
     // $COVERAGE-OFF$
@@ -147,8 +150,12 @@ private [internal] final class JumpGood(var label: Int) extends JumpInstr {
 }
 
 private [internal] object Catch extends Instr {
-    override def apply(ctx: Context): Unit = ctx.catchNoConsumed {
-        ctx.inc()
+    override def apply(ctx: Context): Unit = {
+        ctx.catchNoConsumed {
+            ctx.inc()
+            ctx.addErrorToHints()
+        }
+        ctx.restoreHints()
     }
     // $COVERAGE-OFF$
     override def toString: String = s"Catch"

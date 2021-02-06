@@ -1,7 +1,7 @@
 package parsley.internal.deepembedding
 
 import ContOps.{result, ContAdapter}
-import parsley.internal.{UnsafeOption, instructions}
+import parsley.internal.{UnsafeOption, instructions}, instructions.{ErrorItem, Raw, Desc}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -31,7 +31,7 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
             case Attempt(u) => right match {
                 case Pure(x) =>
                     val handler = state.freshLabel()
-                    instrs += new instructions.PushHandlerAndState(handler)
+                    instrs += new instructions.PushHandlerAndState(handler, true)
                     u.codeGen |> {
                         instrs += new instructions.Label(handler)
                         instrs += new instructions.AlwaysRecoverWith[B](x)
@@ -39,7 +39,7 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
                 case v =>
                     val handler = state.freshLabel()
                     val skip = state.freshLabel()
-                    instrs += new instructions.PushHandlerAndState(handler)
+                    instrs += new instructions.PushHandlerAndState(handler, true)
                     u.codeGen >> {
                         instrs += new instructions.Label(handler)
                         instrs += new instructions.JumpGoodAttempt(skip)
@@ -56,7 +56,7 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
                 case Pure(x) =>
                     val handler = state.freshLabel()
                     val skip = state.freshLabel()
-                    instrs += new instructions.InputCheck(handler)
+                    instrs += new instructions.InputCheck(handler, true)
                     u.codeGen |> {
                         instrs += new instructions.JumpGood(skip)
                         instrs += new instructions.Label(handler)
@@ -66,7 +66,7 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
                 case v =>
                     val handler = state.freshLabel()
                     val skip = state.freshLabel()
-                    instrs += new instructions.InputCheck(handler)
+                    instrs += new instructions.InputCheck(handler, true)
                     u.codeGen >> {
                         instrs += new instructions.JumpGood(skip)
                         instrs += new instructions.Label(handler)
@@ -125,7 +125,7 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
         case Attempt(alt)::alts_ =>
             val handler = state.freshLabel()
             val skip = state.freshLabel()
-            instrs += new instructions.PushHandlerAndState(handler)
+            instrs += new instructions.PushHandlerAndState(handler, true)
             alt.codeGen >> {
                 instrs += new instructions.Label(handler)
                 instrs += new instructions.JumpGoodAttempt(skip)
@@ -140,7 +140,7 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
         case alt::alts_ =>
             val handler = state.freshLabel()
             val skip = state.freshLabel()
-            instrs += new instructions.InputCheck(handler)
+            instrs += new instructions.InputCheck(handler, true)
             alt.codeGen >> {
                 instrs += new instructions.JumpGood(skip)
                 instrs += new instructions.Label(handler)
@@ -159,18 +159,17 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
                                roots: mutable.Map[Char, List[Parsley[_]]],
                                leads: List[Char],
                                labels: List[Int],
-                               expecteds: mutable.Map[Char, Set[UnsafeOption[String]]]):
-        (List[List[Parsley[_]]], List[Char], List[Int], Map[Char, Set[UnsafeOption[String]]]) = tablified match {
+                               expecteds: mutable.Map[Char, Set[ErrorItem]]):
+        (List[List[Parsley[_]]], List[Char], List[Int], Map[Char, Set[ErrorItem]]) = tablified match {
         case (_, None)::tablified_ => foldTablified(tablified_, labelGen, roots, leads, labels, expecteds)
         case (root, Some(lead))::tablified_ =>
-            // TODO: These need to be error items, annoyingly
-            val (c, expected) = lead match {
-                case ct@CharTok(d) => (d, if (ct.expected == null) "\"" + d + "\"" else ct.expected )
-                case st@StringTok(s) => (s.head, if (st.expected == null) "\"" + s + "\"" else st.expected)
-                case st@Specific(s) => (s.head, if (st.expected == null) s else st.expected)
-                case op@MaxOp(o) => (o.head, if (op.expected == null) o else op.expected)
-                case sl: StringLiteral => ('"', if (sl.expected == null) "string" else sl.expected)
-                case rs: RawStringLiteral => ('"', if (rs.expected == null) "string" else rs.expected)
+            val (c: Char, expected: ErrorItem) = lead match {
+                case ct@CharTok(d) => (d, if (ct.expected == null) Raw(d) else Desc(ct.expected))
+                case st@StringTok(s) => (s.head, if (st.expected == null) Raw(s) else Desc(st.expected))
+                case st@Specific(s) => (s.head, Desc(if (st.expected == null) s else st.expected))
+                case op@MaxOp(o) => (o.head, Desc(if (op.expected == null) o else op.expected))
+                case sl: StringLiteral => ('"', Desc(if (sl.expected == null) "string" else sl.expected))
+                case rs: RawStringLiteral => ('"', Desc(if (rs.expected == null) "string" else rs.expected))
             }
             if (roots.contains(c)) {
                 roots(c) = root::roots(c)

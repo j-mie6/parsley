@@ -38,6 +38,7 @@ private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, expe
 
 private [internal] final class JumpGoodAttempt(var label: Int) extends JumpInstr {
     override def apply(ctx: Context): Unit = {
+        ctx.restoreHints() //TODO: Verify
         if (ctx.status eq Good) {
             ctx.states = ctx.states.tail
             ctx.handlers = ctx.handlers.tail
@@ -45,6 +46,7 @@ private [internal] final class JumpGoodAttempt(var label: Int) extends JumpInstr
         }
         else {
             ctx.restoreState()
+            ctx.addErrorToHints()
             ctx.status = Good
             ctx.inc()
         }
@@ -55,9 +57,13 @@ private [internal] final class JumpGoodAttempt(var label: Int) extends JumpInstr
 }
 
 private [internal] final class RecoverWith[A](x: A) extends Instr {
-    override def apply(ctx: Context): Unit = ctx.catchNoConsumed {
-        ctx.errs = ctx.errs.tail
-        ctx.pushAndContinue(x)
+    override def apply(ctx: Context): Unit = {
+        ctx.restoreHints() // TODO: Verify
+        ctx.catchNoConsumed {
+            ctx.addErrorToHints()
+            ctx.errs = ctx.errs.tail
+            ctx.pushAndContinue(x)
+        }
     }
     // $COVERAGE-OFF$
     override def toString: String = s"Recover($x)"
@@ -66,6 +72,7 @@ private [internal] final class RecoverWith[A](x: A) extends Instr {
 
 private [internal] final class AlwaysRecoverWith[A](x: A) extends Instr {
     override def apply(ctx: Context): Unit = {
+        ctx.restoreHints() // TODO: Verify
         if (ctx.status eq Good) {
             ctx.states = ctx.states.tail
             ctx.handlers = ctx.handlers.tail
@@ -73,6 +80,7 @@ private [internal] final class AlwaysRecoverWith[A](x: A) extends Instr {
         }
         else {
             ctx.restoreState()
+            ctx.addErrorToHints()
             ctx.errs = ctx.errs.tail
             ctx.status = Good
             ctx.pushAndContinue(x)
@@ -83,14 +91,12 @@ private [internal] final class AlwaysRecoverWith[A](x: A) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int], private [this] var default: Int, _expecteds: Map[Char, Set[UnsafeOption[String]]])
+private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int], private [this] var default: Int, _expecteds: Map[Char, Set[ErrorItem]])
     extends Instr {
     private [this] var defaultPreamble: Int = _
     private [this] val jumpTable = mutable.LongMap(prefixes.map(_.toLong).zip(labels): _*)
-    //val expecteds = prefixes.zip(_expecteds).map{case (c, expected) => if (expected == null) "\"" + c + "\"" else expected}
-    //val errorItems = prefixes.zip(_expecteds).map{case (c, expected) => if (expected == null) Raw(s"$c") else Desc(expected)}.toSet[ErrorItem]
-    val expecteds = _expecteds.toList.flatMap(_._2)
-    val errorItems = _expecteds.toSet[(Char, Set[UnsafeOption[String]])].flatMap(_._2.map(Desc(_): ErrorItem))
+    val expecteds = _expecteds.toList.flatMap(_._2.map(_.msg))
+    val errorItems = _expecteds.toSet[(Char, Set[ErrorItem])].flatMap(_._2)
 
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput) {
@@ -100,6 +106,7 @@ private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int]
             else {
                 ctx.pushCheck()
                 ctx.pushHandler(defaultPreamble)
+                ctx.saveHints() //TODO: Verify
             }
         }
         else {
@@ -123,7 +130,8 @@ private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int]
             else ctx.expected ::= ctx.errorOverride
         }
         val unexpected = if (ctx.offset < ctx.inputsz) Raw(s"${ctx.nextChar}") else EndOfInput
-        ctx.errs = push(ctx.errs, TrivialError(ctx.offset, ctx.line, ctx.col, Some(unexpected), errorItems))
+        ctx.pushError(TrivialError(ctx.offset, ctx.line, ctx.col, Some(unexpected), errorItems))
+        ctx.addErrorToHints()
     }
 
     override def relabel(labels: Array[Int]): Unit = {
