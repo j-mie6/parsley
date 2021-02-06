@@ -7,7 +7,7 @@ import parsley.internal.UnsafeOption
 private [internal] final class Satisfies(f: Char => Boolean, expected: UnsafeOption[String]) extends Instr {
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && f(ctx.nextChar)) ctx.pushAndContinue(ctx.consumeChar())
-        else ctx.fail(expected)
+        else ctx.expectedFail(expected)
     }
     // $COVERAGE-OFF$
     override def toString: String = "Sat(?)"

@@ -60,6 +60,7 @@ class ErrorMessageTests extends ParsleyTest {
         }
     }
     it should "produce an expected error under influence of ? in <|> chain" in {
+        //println(internal.instructions.pretty(('a' <|> Parsley.empty ? "something, at least").internal.instrs))
         ('a' <|> Parsley.empty ? "something, at least").runParser("b") should be {
             Failure("(line 1, column 1):\n  unexpected \"b\"\n  expected \"a\" or something, at least")
         }

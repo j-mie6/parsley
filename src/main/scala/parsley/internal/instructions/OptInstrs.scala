@@ -29,7 +29,7 @@ private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, expe
             ctx.consumeChar()
             ctx.pushAndContinue(x)
         }
-        else ctx.fail(expected)
+        else ctx.expectedFail(expected)
     }
     // $COVERAGE-OFF$
     override def toString: String = s"SatEx(?, $x)"
@@ -86,6 +86,7 @@ private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int]
     private [this] var defaultPreamble: Int = _
     private [this] val jumpTable = mutable.LongMap(prefixes.map(_.toLong).zip(labels): _*)
     val expecteds = prefixes.zip(_expecteds).map{case (c, expected) => if (expected == null) "\"" + c + "\"" else expected}
+    val errorItems = prefixes.zip(_expecteds).map{case (c, expected) => if (expected == null) Raw(s"$c") else Desc(expected)}.toSet[ErrorItem]
 
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput) {
@@ -117,6 +118,8 @@ private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int]
             if (ctx.errorOverride == null) ctx.expected = ctx.expected reverse_::: expecteds
             else ctx.expected ::= ctx.errorOverride
         }
+        val unexpected = if (ctx.offset < ctx.inputsz) Raw(s"${ctx.nextChar}") else EndOfInput
+        ctx.errs = push(ctx.errs, TrivialError(ctx.offset, ctx.line, ctx.col, Some(unexpected), errorItems))
     }
 
     override def relabel(labels: Array[Int]): Unit = {

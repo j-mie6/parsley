@@ -163,12 +163,20 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     private [instructions] def failWithMessage(expected: UnsafeOption[String], msg: String): Unit = {
         this.fail(expected)
         this.raw ::= msg
+        this.errs = push(this.errs, ParseError.fail(msg, offset, line, col))
     }
     private [instructions] def unexpectedFail(expected: UnsafeOption[String], unexpected: String): Unit = {
         this.fail(expected)
         this.unexpected = unexpected
         this.unexpectAnyway = true
+        this.errs = push(this.errs, TrivialError(offset, line, col, Some(Desc(unexpected)), if (expected == null) Set.empty else Set(Desc(expected))))
     }
+    private [instructions] def expectedFail(expected: Set[ErrorItem]): Unit = {
+        this.fail(expected.headOption.map(_.msg).orNull)
+        val unexpected = if (offset < inputsz) Raw(s"$nextChar") else EndOfInput
+        this.errs = push(this.errs, TrivialError(offset, line, col, Some(unexpected), expected))
+    }
+    private [instructions] def expectedFail(expected: UnsafeOption[String]): Unit = expectedFail(if (expected == null) Set.empty[ErrorItem] else Set[ErrorItem](Desc(expected)))
     private [instructions] def fail(expected: UnsafeOption[String] = null): Unit = {
         if (isEmpty(handlers)) {
             status = Failed
@@ -192,7 +200,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
             if (diffstack > 0) stack.drop(diffstack)
             depth = handler.depth
         }
-        adjustErrors(expected)
+        if (expected != null) adjustErrors(expected)
     }
 
     private def errorMessage: String = {

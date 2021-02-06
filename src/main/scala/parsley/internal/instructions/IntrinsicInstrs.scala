@@ -35,7 +35,7 @@ private [internal] class CharTok(c: Char, x: Any, _expected: UnsafeOption[String
             ctx.consumeChar()
             ctx.pushAndContinue(x)
         }
-        else ctx.fail(expected)
+        else ctx.expectedFail(Set[ErrorItem](if (_expected == null) Raw(s"$c") else Desc(expected)))
     }
     // $COVERAGE-OFF$
     override def toString: String = if (x == c) s"Chr($c)" else s"ChrPerform($c, $x)"
@@ -74,7 +74,7 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
             ctx.col = colAdjust(ctx.col)
             ctx.line = lineAdjust(ctx.line)
             ctx.offset = i
-            if (j < sz) ctx.fail(expected)
+            if (j < sz) ctx.expectedFail(expected)
             else ctx.pushAndContinue(x)
         }
     }
@@ -155,7 +155,12 @@ private [internal] final class NotFollowedBy(expected: UnsafeOption[String]) ext
 
 private [internal] class Eof(_expected: UnsafeOption[String]) extends Instr {
     val expected: String = if (_expected == null) "end of input" else _expected
-    override def apply(ctx: Context): Unit = if (ctx.offset == ctx.inputsz) ctx.pushAndContinue(()) else ctx.fail(expected)
+    override def apply(ctx: Context): Unit = {
+        if (ctx.offset == ctx.inputsz) ctx.pushAndContinue(())
+        else {
+            ctx.expectedFail(Set[ErrorItem](if (_expected == null) EndOfInput else Desc(_expected)))
+        }
+    }
     // $COVERAGE-OFF$
     override final def toString: String = "Eof"
     // $COVERAGE-ON$

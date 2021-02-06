@@ -89,6 +89,7 @@ private [internal] final class Empty(expected: UnsafeOption[String]) extends Ins
         val strip = ctx.expected.isEmpty
         ctx.fail(expected)
         if (strip) ctx.unexpected = null
+        ctx.errs = push(ctx.errs, TrivialError(ctx.offset, ctx.line, ctx.col, None, if (expected == null) Set.empty else Set(Desc(expected))))
     }
     // $COVERAGE-OFF$
     override def toString: String = "Empty"

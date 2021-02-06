@@ -14,6 +14,7 @@ private [internal] final class ApplyError(label: String) extends Instr {
             else if (ctx.offset == ctx.checkStack.head) ctx.replaceHint(label)
             // COK
             // do nothing
+            ctx.handlers = ctx.handlers.tail
             ctx.inc()
         }
         else {
@@ -21,7 +22,7 @@ private [internal] final class ApplyError(label: String) extends Instr {
             // the top of the error stack is adjusted:
             if (ctx.offset == ctx.checkStack.head) ctx.errs.head = ctx.errs.head match {
                 // - if it is a fail, it is left alone
-                case err: FailMessage            => err
+                case err: FailError              => err
                 //  - otherwise if this is a hide, the expected set is discarded
                 case err: TrivialError if isHide => err.copy(expecteds = Set.empty)
                 //  - otherwise expected set is replaced by singleton containing this label
@@ -35,6 +36,25 @@ private [internal] final class ApplyError(label: String) extends Instr {
     }
     // $COVERAGE-OFF$
     override def toString: String = s"ApplyError($label)"
+    // $COVERAGE-ON$
+}
+
+private [internal] final class MergeErrors extends Instr {
+    override def apply(ctx: Context): Unit = {
+        if (ctx.status eq Good) {
+            ctx.handlers = ctx.handlers.tail
+            ctx.inc()
+        }
+        else {
+            val err2 = ctx.errs.head
+            ctx.errs = ctx.errs.tail
+            ctx.errs.head = ctx.errs.head.merge(err2)
+            ctx.fail()
+        }
+    }
+
+    // $COVERAGE-OFF$
+    override def toString: String = s"MergeErrors"
     // $COVERAGE-ON$
 }
 
