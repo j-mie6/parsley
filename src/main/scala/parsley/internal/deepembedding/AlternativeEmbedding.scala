@@ -87,7 +87,7 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
             val needsDefault = tablified.head._2.isDefined
             val end = state.freshLabel()
             val default = state.freshLabel()
-            val (roots, leads, ls, expecteds) = foldTablified(tablified, state, mutable.Map.empty, Nil, Nil, Nil)
+            val (roots, leads, ls, expecteds) = foldTablified(tablified, state, mutable.Map.empty, Nil, Nil, mutable.Map.empty)
             instrs += new instructions.JumpTable(leads, ls, default, expecteds)
             codeGenRoots(roots, ls, end) >> {
                 instrs += instructions.Catch //This instruction is reachable as default - 1
@@ -159,12 +159,13 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
                                roots: mutable.Map[Char, List[Parsley[_]]],
                                leads: List[Char],
                                labels: List[Int],
-                               expecteds: List[UnsafeOption[String]]):
-        (List[List[Parsley[_]]], List[Char], List[Int], List[UnsafeOption[String]]) = tablified match {
+                               expecteds: mutable.Map[Char, Set[UnsafeOption[String]]]):
+        (List[List[Parsley[_]]], List[Char], List[Int], Map[Char, Set[UnsafeOption[String]]]) = tablified match {
         case (_, None)::tablified_ => foldTablified(tablified_, labelGen, roots, leads, labels, expecteds)
         case (root, Some(lead))::tablified_ =>
+            // TODO: These need to be error items, annoyingly
             val (c, expected) = lead match {
-                case ct@CharTok(d) => (d, ct.expected)
+                case ct@CharTok(d) => (d, if (ct.expected == null) "\"" + d + "\"" else ct.expected )
                 case st@StringTok(s) => (s.head, if (st.expected == null) "\"" + s + "\"" else st.expected)
                 case st@Specific(s) => (s.head, if (st.expected == null) s else st.expected)
                 case op@MaxOp(o) => (o.head, if (op.expected == null) o else op.expected)
@@ -172,14 +173,16 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
                 case rs: RawStringLiteral => ('"', if (rs.expected == null) "string" else rs.expected)
             }
             if (roots.contains(c)) {
-                roots.update(c, root::roots(c))
-                foldTablified(tablified_, labelGen, roots, leads, labelGen.freshLabel() :: labels, expected :: expecteds)
+                roots(c) = root::roots(c)
+                expecteds(c) = expecteds(c) + expected
+                foldTablified(tablified_, labelGen, roots, leads, labelGen.freshLabel() :: labels, expecteds)
             }
             else {
-                roots.update(c, root::Nil)
-                foldTablified(tablified_, labelGen, roots, c::leads, labelGen.freshLabel() :: labels, expected :: expecteds)
+                roots(c) = root::Nil
+                expecteds(c) = Set(expected)
+                foldTablified(tablified_, labelGen, roots, c::leads, labelGen.freshLabel() :: labels, expecteds)
             }
-        case Nil => (leads.map(roots(_)), leads, labels, expecteds)
+        case Nil => (leads.map(roots(_)), leads, labels, expecteds.toMap)
     }
     @tailrec private def tablable(p: Parsley[_]): Option[Parsley[_]] = p match {
         // CODO: Numeric parsers by leading digit (This one would require changing the foldTablified function a bit)
