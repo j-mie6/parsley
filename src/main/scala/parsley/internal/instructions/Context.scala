@@ -85,8 +85,12 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         this.hints = hints
         this.commitHints()
     }
-    private def commitHints(): Unit = {
+    private [instructions] def commitHints(): Unit = {
         this.hintStack = this.hintStack.tail
+    }
+    private [instructions] def mergeHints(): Unit = {
+        this.hints ++= this.hintStack.head._2
+        commitHints()
     }
     private [instructions] def addErrorToHints(): Unit = errs.head match {
         case TrivialError(errOffset, _, _, _, es) if errOffset == offset && es.nonEmpty =>

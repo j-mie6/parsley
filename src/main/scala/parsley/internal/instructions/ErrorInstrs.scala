@@ -14,10 +14,12 @@ private [internal] final class ApplyError(label: String) extends Instr {
             else if (ctx.offset == ctx.checkStack.head) ctx.replaceHint(label)
             // COK
             // do nothing
+            ctx.mergeHints()
             ctx.handlers = ctx.handlers.tail
             ctx.inc()
         }
         else {
+            ctx.restoreHints()
             // EERR
             // the top of the error stack is adjusted:
             if (ctx.offset == ctx.checkStack.head) ctx.errs.head = ctx.errs.head match {

@@ -88,7 +88,7 @@ private [parsley] final class ErrorLabel[A](_p: =>Parsley[A], label: String)
     final override val numInstrs = 2
     final override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
         val handler = state.freshLabel()
-        instrs += new instructions.InputCheck(handler, false)
+        instrs += new instructions.InputCheck(handler, true)
         p.codeGen |> {
             instrs += new instructions.Label(handler)
             instrs += new instructions.ApplyError(label)

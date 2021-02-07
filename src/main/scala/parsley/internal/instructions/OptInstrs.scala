@@ -38,13 +38,14 @@ private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, expe
 
 private [internal] final class JumpGoodAttempt(var label: Int) extends JumpInstr {
     override def apply(ctx: Context): Unit = {
-        ctx.restoreHints() //TODO: Verify
         if (ctx.status eq Good) {
+            ctx.commitHints() // TODO: Verify
             ctx.states = ctx.states.tail
             ctx.handlers = ctx.handlers.tail
             ctx.pc = label
         }
         else {
+            ctx.restoreHints() //TODO: Verify
             ctx.restoreState()
             ctx.addErrorToHints()
             ctx.status = Good
@@ -71,13 +72,14 @@ private [internal] final class RecoverWith[A](x: A) extends Instr {
 
 private [internal] final class AlwaysRecoverWith[A](x: A) extends Instr {
     override def apply(ctx: Context): Unit = {
-        ctx.restoreHints() // TODO: Verify
         if (ctx.status eq Good) {
+            ctx.commitHints() // TODO: Verify
             ctx.states = ctx.states.tail
             ctx.handlers = ctx.handlers.tail
             ctx.inc()
         }
         else {
+            ctx.restoreHints() // TODO: Verify
             ctx.restoreState()
             ctx.addErrorToHintsAndPop()
             ctx.status = Good

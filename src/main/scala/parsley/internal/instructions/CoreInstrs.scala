@@ -141,7 +141,7 @@ private [internal] final class JumpGood(var label: Int) extends JumpInstr {
     override def apply(ctx: Context): Unit = {
         ctx.handlers = ctx.handlers.tail
         ctx.checkStack = ctx.checkStack.tail
-        ctx.restoreHints()
+        ctx.commitHints()
         ctx.pc = label
     }
     // $COVERAGE-OFF$
