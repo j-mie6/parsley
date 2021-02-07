@@ -72,7 +72,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
 
     private [instructions] def popHints: Unit = if (hints.nonEmpty) hints.remove(0)
     private [instructions] def replaceHint(label: String): Unit = {
-        println(hints)
+        //println(hints)
         if (hints.nonEmpty) hints(0) = new Hint(Set(Desc(label)))
     }
     private [instructions] def saveHints(shadow: Boolean): Unit = {
@@ -110,7 +110,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         }
     }
 
-    def updateCheckOffsetAndHints() = {
+    private [instructions] def updateCheckOffsetAndHints() = {
         this.checkStack.head = this.offset
         this.hintsValidOffset = this.offset
     }
@@ -144,7 +144,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
             assert(isEmpty(handlers), "there should be no handlers left on failure")
             assert(isEmpty(hintStack), "there should be at most one set of hints left at the end")
             //println(s"error: ${errs.head}")
-            Failure(errorMessage)
+            Failure(errs.head.pretty(sourceName, new InputHelper))
         }
         else if (pc < instrs.length) {
             instrs(pc)(this)
@@ -351,6 +351,20 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         overrideDepth = 0
         debuglvl = 0
         this
+    }
+
+    private [instructions] class InputHelper {
+        def nearestNewlineBefore(off: Int): Int = {
+            val idx = Context.this.input.lastIndexOf('\n', off-1)
+            if (idx == -1) 0 else idx
+        }
+        def nearestNewlineAfter(off: Int): Int = {
+            val idx = Context.this.input.indexOf('\n', off)
+            if (idx == -1) Context.this.inputsz else idx
+        }
+        def segmentBetween(start: Int, end: Int): String = {
+            Context.this.input.slice(start, end).mkString
+        }
     }
 }
 

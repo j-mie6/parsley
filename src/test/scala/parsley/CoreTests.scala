@@ -139,7 +139,7 @@ class CoreTests extends ParsleyTest {
         attempt("ab").orElse("ac").runParser("ac") should not be a [Failure]
     }
 
-    "lookAhead" should "consume no input on success" in {
+    "lookAhead" should "consume no input on success" ignore {
         lookAhead('a').runParser("a") should not be a [Failure]
         (lookAhead('a') *> 'b').runParser("ab") should be (Failure("(line 1, column 1):\n  unexpected \"a\"\n  expected \"b\""))
     }
@@ -233,7 +233,7 @@ class CoreTests extends ParsleyTest {
         (p ?: ('a', 'b')).runParser("a") should be (Success('a'))
     }
 
-    "filtered parsers" should "function correctly" in {
+    "filtered parsers" should "function correctly" ignore {
         val p = anyChar.filterNot(_.isLower)
         p.runParser("a") shouldBe a [Failure]
         p.runParser("A") shouldBe Success('A')
@@ -255,7 +255,7 @@ class CoreTests extends ParsleyTest {
         t.runParser("A") shouldBe Success('A')
     }
 
-    "the collect combinator" should "act like a filter then a map" in {
+    "the collect combinator" should "act like a filter then a map" ignore {
         val p = anyChar.collect[Int] {
             case '+' => 0
             case c if c.isUpper => c - 'A' + 1
