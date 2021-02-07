@@ -116,7 +116,7 @@ class Lexer(lang: LanguageDef)
      * This parser deals correctly with escape sequences. The literal character is parsed according
      * to the grammar rules defined in the Haskell report (which matches most programming languages
      * quite closely).*/
-    lazy val charLiteral: Parsley[Char] = lexeme(between('\'', '\''.unsafeLabel("end of character"), characterChar)).unsafeLabel("character")
+    lazy val charLiteral: Parsley[Char] = lexeme(between('\'', '\''.unsafeLabel("end of character"), characterChar).unsafeLabel("character"))
 
     /**This lexeme parser parses a literal string. Returns the literal string value. This parser
      * deals correctly with escape sequences and gaps. The literal string is parsed according to
@@ -146,10 +146,10 @@ class Lexer(lang: LanguageDef)
     private lazy val escapeCode = new Parsley(new deepembedding.Escape)
     private lazy val charEscape = '\\' *> escapeCode
     private lazy val charLetter = letter('\'')
-    private lazy val characterChar = (charLetter <|> charEscape) ? "literal character"
+    private lazy val characterChar = (charLetter <|> charEscape).unsafeLabel("literal character")
 
     private val escapeEmpty = '&'
-    private lazy val escapeGap = skipSome(space) *> '\\' ? "end of string gap"
+    private lazy val escapeGap = skipSome(space) *> '\\'.unsafeLabel("end of string gap")
     private lazy val stringLetter = letter('"')
     private lazy val stringEscape: Parsley[Option[Char]] =
     {
@@ -169,7 +169,7 @@ class Lexer(lang: LanguageDef)
      * that it can be prefixed with a sign (i.e '-' or '+'). Returns the value of the number. The
      * number can be specified in `decimal`, `hexadecimal` or `octal`. The number is parsed
      * according to the grammar rules in the haskell report.*/
-    lazy val integer: Parsley[Int] = lexeme(int).unsafeLabel("integer")
+    lazy val integer: Parsley[Int] = lexeme(int.unsafeLabel("integer"))
 
     /**This lexeme parser parses a floating point value. Returns the value of the number. The number
      * is parsed according to the grammar rules defined in the Haskell report.*/
@@ -178,17 +178,17 @@ class Lexer(lang: LanguageDef)
     /**This lexeme parser parses a floating point value. Returns the value of the number. The number
      * is parsed according to the grammar rules defined in the Haskell report. Accepts an optional
      * '+' or '-' sign.*/
-    lazy val float: Parsley[Double] = lexeme(signedFloating).unsafeLabel("float")
+    lazy val float: Parsley[Double] = lexeme(signedFloating.unsafeLabel("float"))
 
     /**This lexeme parser parses either `integer` or `float`. Returns the value of the number. This
      * parser deals with any overlap in the grammar rules for naturals and floats. The number is
      * parsed according to the grammar rules defined in the Haskell report.*/
-    lazy val number: Parsley[Either[Int, Double]] = lexeme(number_).unsafeLabel("number")
+    lazy val number: Parsley[Either[Int, Double]] = lexeme(number_.unsafeLabel("number"))
 
     /**This lexeme parser parses either `natural` or `unsigned float`. Returns the value of the number. This
       * parser deals with any overlap in the grammar rules for naturals and floats. The number is
       * parsed according to the grammar rules defined in the Haskell report.*/
-    lazy val naturalOrFloat: Parsley[Either[Int, Double]] = lexeme(natFloat).unsafeLabel("unsigned number")
+    lazy val naturalOrFloat: Parsley[Either[Int, Double]] = lexeme(natFloat.unsafeLabel("unsigned number"))
 
     private lazy val decimal_ = number(base = 10, digit)
 
@@ -272,8 +272,9 @@ class Lexer(lang: LanguageDef)
     }
 
     private def enclosing[A](p: =>Parsley[A], open: Char, close: Char, singular: String, plural: String) =
-        between(symbol(open).unsafeLabel(s"open $singular"),
-                symbol(close).unsafeLabel(s"matching closing $singular") <|> fail(s"unclosed $plural"),
+        between(lexeme(open.unsafeLabel(s"open $singular")),
+                //TODO: This use of fail is probably inappropriate with the new error message model
+                lexeme(close.unsafeLabel(s"matching closing $singular")) <|> fail(s"unclosed $plural"),
                 p)
 
     // Bracketing

@@ -91,6 +91,10 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
             hints += new Hint(es)
         case _ => //println(s"${errs.head} was not suitable for hinting")
     }
+    private [instructions] def addErrorToHintsAndPop(): Unit = {
+        this.addErrorToHints()
+        this.errs = this.errs.tail
+    }
     private def useHints(): Unit = {
         if (hintsValidOffset == offset) {
             //println(s"hints $hints applied!")
@@ -100,8 +104,12 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
             //println(s"hints ($hints) were invalid :(")
             hintsValidOffset = offset
             hints.clear()
-            hintStack
         }
+    }
+
+    def updateCheckOffsetAndHints() = {
+        this.checkStack.head = this.offset
+        this.hintsValidOffset = this.offset
     }
 
     // $COVERAGE-OFF$
@@ -120,6 +128,8 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
            |  recstates = ${mkString(states, ":")}[]
            |  checks    = ${mkString(checkStack, ":")}[]
            |  registers = ${regs.zipWithIndex.map{case (r, i) => s"r$i = $r"}.mkString("\n              ")}
+           |  errors    = ${mkString(errs, ":")}[]
+           |  hints     = ($hintsValidOffset, ${hints}):${mkString(hintStack, ":")}[]
            |]""".stripMargin
     }
     // $COVERAGE-ON$
@@ -130,7 +140,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
             assert(!isEmpty(errs) && isEmpty(errs.tail), "there should be only one error on failure")
             assert(isEmpty(handlers), "there should be no handlers left on failure")
             assert(isEmpty(hintStack), "there should be at most one set of hints left at the end")
-            //println(s"error: ${errs.head}")
+            println(s"error: ${errs.head}")
             Failure(errorMessage)
         }
         else if (pc < instrs.length) {

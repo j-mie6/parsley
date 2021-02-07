@@ -60,8 +60,7 @@ private [internal] final class RecoverWith[A](x: A) extends Instr {
     override def apply(ctx: Context): Unit = {
         ctx.restoreHints() // TODO: Verify
         ctx.catchNoConsumed {
-            ctx.addErrorToHints()
-            ctx.errs = ctx.errs.tail
+            ctx.addErrorToHintsAndPop()
             ctx.pushAndContinue(x)
         }
     }
@@ -80,8 +79,7 @@ private [internal] final class AlwaysRecoverWith[A](x: A) extends Instr {
         }
         else {
             ctx.restoreState()
-            ctx.addErrorToHints()
-            ctx.errs = ctx.errs.tail
+            ctx.addErrorToHintsAndPop()
             ctx.status = Good
             ctx.pushAndContinue(x)
         }

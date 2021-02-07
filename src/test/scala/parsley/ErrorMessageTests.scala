@@ -66,7 +66,7 @@ class ErrorMessageTests extends ParsleyTest {
         }
     }
 
-    "eof" should "produce unexpected end of input" in {
+    "eof" should "produce expected end of input" in {
         eof.runParser("a") should be {
             Failure("(line 1, column 1):\n  unexpected \"a\"\n  expected end of input")
         }
