@@ -9,6 +9,7 @@ import scala.language.implicitConversions
 
 /**
   * Provides implicit conversions and lifts for different values and parsers.
+  * @since 2.2.0
   */
 object implicits
 {

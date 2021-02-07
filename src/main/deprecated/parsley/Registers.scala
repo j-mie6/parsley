@@ -14,6 +14,7 @@ package parsley
   *       independent parsers. You should be careful to parameterise the
   *       registers in shared parsers and allocate fresh ones for each "top-level"
   *       parser you will run.
+  * @since 2.0.0
   */
 @deprecated("This class will be removed in Parsley 3.0, use `parsley.registers.Reg` instead", "v2.2.0")
 final class Reg[A] private [Reg] extends registers.Reg[A]
@@ -22,6 +23,7 @@ object Reg {
     /**
       * @tparam A The type to be contained in this register during runtime
       * @return A new register which can contain the given type
+      * @since 2.0.0
       */
     @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.Reg.make` instead", "v2.2.0")
     def make[A]: Reg[A] = new Reg

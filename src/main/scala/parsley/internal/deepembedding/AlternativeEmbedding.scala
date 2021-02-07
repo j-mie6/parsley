@@ -1,7 +1,7 @@
 package parsley.internal.deepembedding
 
 import ContOps.{result, ContAdapter}
-import parsley.internal.{UnsafeOption, instructions}
+import parsley.internal.{UnsafeOption, instructions}, instructions.{ErrorItem, Raw, Desc}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -31,7 +31,7 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
             case Attempt(u) => right match {
                 case Pure(x) =>
                     val handler = state.freshLabel()
-                    instrs += new instructions.PushHandler(handler)
+                    instrs += new instructions.PushHandlerAndState(handler, true, false)
                     u.codeGen |> {
                         instrs += new instructions.Label(handler)
                         instrs += new instructions.AlwaysRecoverWith[B](x)
@@ -39,19 +39,24 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
                 case v =>
                     val handler = state.freshLabel()
                     val skip = state.freshLabel()
-                    instrs += new instructions.PushHandler(handler)
+                    instrs += new instructions.PushHandlerAndState(handler, true, false)
                     u.codeGen >> {
                         instrs += new instructions.Label(handler)
                         instrs += new instructions.JumpGoodAttempt(skip)
-                        v.codeGen |>
-                        (instrs += new instructions.Label(skip))
+                        val merge = state.freshLabel()
+                        instrs += new instructions.PushHandler(merge)
+                        v.codeGen |> {
+                            instrs += new instructions.Label(merge)
+                            instrs += instructions.MergeErrors
+                            instrs += new instructions.Label(skip)
+                        }
                     }
             }
             case u => right match {
                 case Pure(x) =>
                     val handler = state.freshLabel()
                     val skip = state.freshLabel()
-                    instrs += new instructions.InputCheck(handler)
+                    instrs += new instructions.InputCheck(handler, true)
                     u.codeGen |> {
                         instrs += new instructions.JumpGood(skip)
                         instrs += new instructions.Label(handler)
@@ -61,13 +66,18 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
                 case v =>
                     val handler = state.freshLabel()
                     val skip = state.freshLabel()
-                    instrs += new instructions.InputCheck(handler)
+                    instrs += new instructions.InputCheck(handler, true)
                     u.codeGen >> {
                         instrs += new instructions.JumpGood(skip)
                         instrs += new instructions.Label(handler)
                         instrs += instructions.Catch
-                        v.codeGen |>
-                        (instrs += new instructions.Label(skip))
+                        val merge = state.freshLabel()
+                        instrs += new instructions.PushHandler(merge)
+                        v.codeGen |> {
+                            instrs += new instructions.Label(merge)
+                            instrs += instructions.MergeErrors
+                            instrs += new instructions.Label(skip)
+                        }
                     }
             }
         }
@@ -77,18 +87,25 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
             val needsDefault = tablified.head._2.isDefined
             val end = state.freshLabel()
             val default = state.freshLabel()
-            val (roots, leads, ls, expecteds) = foldTablified(tablified, state, mutable.Map.empty, Nil, Nil, Nil)
+            val (roots, leads, ls, expecteds) = foldTablified(tablified, state, mutable.Map.empty, Nil, Nil, mutable.Map.empty)
             instrs += new instructions.JumpTable(leads, ls, default, expecteds)
             codeGenRoots(roots, ls, end) >> {
                 instrs += instructions.Catch //This instruction is reachable as default - 1
                 instrs += new instructions.Label(default)
+                val merge = state.freshLabel()
+                instrs += new instructions.PushHandler(merge)
                 if (needsDefault) {
                     instrs += new instructions.Empty(null)
+                    instrs += new instructions.Label(merge)
+                    instrs += instructions.MergeErrors
                     result(instrs += new instructions.Label(end))
                 }
                 else {
-                    tablified.head._1.codeGen |>
-                    (instrs += new instructions.Label(end))
+                    tablified.head._1.codeGen |> {
+                        instrs += new instructions.Label(merge)
+                        instrs += instructions.MergeErrors
+                        instrs += new instructions.Label(end)
+                    }
                 }
             }
     }
@@ -108,21 +125,33 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
         case Attempt(alt)::alts_ =>
             val handler = state.freshLabel()
             val skip = state.freshLabel()
-            instrs += new instructions.PushHandler(handler)
+            instrs += new instructions.PushHandlerAndState(handler, true, false)
             alt.codeGen >> {
                 instrs += new instructions.Label(handler)
                 instrs += new instructions.JumpGoodAttempt(skip)
-                codeGenAlternatives(alts_) |> (instrs += new instructions.Label(skip))
+                val merge = state.freshLabel()
+                instrs += new instructions.PushHandler(merge)
+                codeGenAlternatives(alts_) |> {
+                    instrs += new instructions.Label(merge)
+                    instrs += instructions.MergeErrors
+                    instrs += new instructions.Label(skip)
+                }
             }
         case alt::alts_ =>
             val handler = state.freshLabel()
             val skip = state.freshLabel()
-            instrs += new instructions.InputCheck(handler)
+            instrs += new instructions.InputCheck(handler, true)
             alt.codeGen >> {
                 instrs += new instructions.JumpGood(skip)
                 instrs += new instructions.Label(handler)
                 instrs += instructions.Catch
-                codeGenAlternatives(alts_) |> (instrs += new instructions.Label(skip))
+                val merge = state.freshLabel()
+                instrs += new instructions.PushHandler(merge)
+                codeGenAlternatives(alts_) |> {
+                    instrs += new instructions.Label(merge)
+                    instrs += instructions.MergeErrors
+                    instrs += new instructions.Label(skip)
+                }
             }
     }
     // TODO: Refactor
@@ -130,27 +159,29 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
                                roots: mutable.Map[Char, List[Parsley[_]]],
                                leads: List[Char],
                                labels: List[Int],
-                               expecteds: List[UnsafeOption[String]]):
-        (List[List[Parsley[_]]], List[Char], List[Int], List[UnsafeOption[String]]) = tablified match {
+                               expecteds: mutable.Map[Char, Set[ErrorItem]]):
+        (List[List[Parsley[_]]], List[Char], List[Int], Map[Char, Set[ErrorItem]]) = tablified match {
         case (_, None)::tablified_ => foldTablified(tablified_, labelGen, roots, leads, labels, expecteds)
         case (root, Some(lead))::tablified_ =>
-            val (c, expected) = lead match {
-                case ct@CharTok(d) => (d, ct.expected)
-                case st@StringTok(s) => (s.head, if (st.expected == null) "\"" + s + "\"" else st.expected)
-                case st@Specific(s) => (s.head, if (st.expected == null) s else st.expected)
-                case op@MaxOp(o) => (o.head, if (op.expected == null) o else op.expected)
-                case sl: StringLiteral => ('"', if (sl.expected == null) "string" else sl.expected)
-                case rs: RawStringLiteral => ('"', if (rs.expected == null) "string" else rs.expected)
+            val (c: Char, expected: ErrorItem) = lead match {
+                case ct@CharTok(d) => (d, if (ct.expected == null) Raw(d) else Desc(ct.expected))
+                case st@StringTok(s) => (s.head, if (st.expected == null) Raw(s) else Desc(st.expected))
+                case st@Specific(s) => (s.head, Desc(if (st.expected == null) s else st.expected))
+                case op@MaxOp(o) => (o.head, Desc(if (op.expected == null) o else op.expected))
+                case sl: StringLiteral => ('"', Desc(if (sl.expected == null) "string" else sl.expected))
+                case rs: RawStringLiteral => ('"', Desc(if (rs.expected == null) "string" else rs.expected))
             }
             if (roots.contains(c)) {
-                roots.update(c, root::roots(c))
-                foldTablified(tablified_, labelGen, roots, leads, labelGen.freshLabel() :: labels, expected :: expecteds)
+                roots(c) = root::roots(c)
+                expecteds(c) = expecteds(c) + expected
+                foldTablified(tablified_, labelGen, roots, leads, labelGen.freshLabel() :: labels, expecteds)
             }
             else {
-                roots.update(c, root::Nil)
-                foldTablified(tablified_, labelGen, roots, c::leads, labelGen.freshLabel() :: labels, expected :: expecteds)
+                roots(c) = root::Nil
+                expecteds(c) = Set(expected)
+                foldTablified(tablified_, labelGen, roots, c::leads, labelGen.freshLabel() :: labels, expecteds)
             }
-        case Nil => (leads.map(roots(_)), leads, labels, expecteds)
+        case Nil => (leads.map(roots(_)), leads, labels, expecteds.toMap)
     }
     @tailrec private def tablable(p: Parsley[_]): Option[Parsley[_]] = p match {
         // CODO: Numeric parsers by leading digit (This one would require changing the foldTablified function a bit)

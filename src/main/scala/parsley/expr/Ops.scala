@@ -8,6 +8,7 @@ import parsley.Parsley
  * @tparam A The base type consumed by the operators
  * @tparam B The type produced/consumed by the operators
  * @note For less complex types, such as those which use subtyping `Ops[A, A]` is sufficient
+ * @since 2.2.0
  */
 trait Ops[-A, B] {
     private [expr] val wrap: A => B
@@ -19,6 +20,7 @@ private [expr] case class Postfixes[-A, B](ops: Parsley[B => B]*)(override val w
 
 /**
  * Helper object to build values of `Ops[A, B]`, for generalised precedence parsing
+ * @since 2.2.0
  */
 object GOps {
     /**
@@ -34,6 +36,7 @@ object GOps {
     * @param wrap The function which should be used to wrap up a value of type `A` when required
     *             (this will be at right of a left-assoc chain, left of a right-assoc chain, or
     *             the root of a prefix/postfix chain)
+    * @since 2.2.0
     */
     def apply[A, B](fixity: Fixity)(ops: Parsley[fixity.GOp[A, B]]*)(implicit wrap: A => B): Ops[A, B] = fixity match {
         case InfixL  => Lefts[A, B](ops.asInstanceOf[Seq[Parsley[InfixL.GOp[A, B]]]]: _*)(wrap)
@@ -45,6 +48,7 @@ object GOps {
 
 /**
  * Helper object to build values of `Ops[A, A]`, for monolithic precedence parsing
+ * @since 2.2.0
  */
 object Ops {
     /**
@@ -56,6 +60,7 @@ object Ops {
     * @tparam A The type associated with the operators (which it consumes and produces)
     * @param fixity The fixity of the operators described. See [[Fixity]]
     * @param ops The operators themselves, in varargs
+    * @since 2.2.0
     */
     def apply[A](fixity: Fixity)(ops: Parsley[fixity.Op[A]]*): Ops[A, A] = GOps[A, A](fixity)(ops: _*)
 }

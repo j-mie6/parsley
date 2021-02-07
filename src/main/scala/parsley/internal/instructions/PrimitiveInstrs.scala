@@ -7,24 +7,10 @@ import parsley.internal.UnsafeOption
 private [internal] final class Satisfies(f: Char => Boolean, expected: UnsafeOption[String]) extends Instr {
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && f(ctx.nextChar)) ctx.pushAndContinue(ctx.consumeChar())
-        else ctx.fail(expected)
+        else ctx.expectedFail(expected)
     }
     // $COVERAGE-OFF$
     override def toString: String = "Sat(?)"
-    // $COVERAGE-ON$
-}
-
-private [internal] final class Fail(msg: String, expected: UnsafeOption[String]) extends Instr {
-    override def apply(ctx: Context): Unit = ctx.failWithMessage(expected, msg)
-    // $COVERAGE-OFF$
-    override def toString: String = s"Fail($msg)"
-    // $COVERAGE-ON$
-}
-
-private [internal] final class Unexpected(msg: String, expected: UnsafeOption[String]) extends Instr {
-    override def apply(ctx: Context): Unit = ctx.unexpectedFail(expected = expected, unexpected = msg)
-    // $COVERAGE-OFF$
-    override def toString: String = s"Unexpected($msg)"
     // $COVERAGE-ON$
 }
 
@@ -49,6 +35,7 @@ private [internal] object Attempt extends Instr {
 
 private [internal] object Look extends Instr {
     override def apply(ctx: Context): Unit = {
+        ctx.restoreHints()
         if (ctx.status eq Good) {
             ctx.restoreState()
             ctx.handlers = ctx.handlers.tail

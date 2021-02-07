@@ -6,7 +6,9 @@ import parsley.Parsley
 import parsley.combinator.choice
 import parsley.XCompat._
 
-/** This object is used to construct precedence parsers from either a [[Levels]] or many `Ops[A, A]`. */
+/** This object is used to construct precedence parsers from either a [[Levels]] or many `Ops[A, A]`.
+  * @since 2.2.0
+  */
 object precedence {
     private def convertOperators[A, B](atom: Parsley[A], opList: Ops[A, B])(implicit wrap: A => B): Parsley[B] = opList match
     {
@@ -30,6 +32,7 @@ object precedence {
      * @param table A table of operators. Table is ordered highest precedence to lowest precedence.
      *              Each list in the table corresponds to operators of the same precedence level.
      * @return A parser for the described expression language
+     * @since 2.2.0
      */
     def apply[A](atom: =>Parsley[A], table: Ops[A, A]*): Parsley[A] = apply(atom, table.foldRight(Levels.empty[A])(Level.apply[A, A, A]))
 
@@ -41,6 +44,7 @@ object precedence {
      * @param table A table of operators. Table is ordered highest precedence to lowest precedence.
      *              See [[Levels]] and it's subtypes for a description of how the types work.
      * @return A parser for the described expression language
+     * @since 2.2.0
      */
     def apply[A, B](atom: =>Parsley[A], table: Levels[A, B]): Parsley[B] = crushLevels(atom, table)
 }

@@ -11,12 +11,13 @@ private [internal] final class Many(var label: Int) extends JumpInstr with State
     override def apply(ctx: Context): Unit = {
         if (ctx.status eq Good) {
             acc += ctx.stack.upop()
-            ctx.checkStack.head = ctx.offset
+            ctx.updateCheckOffsetAndHints()
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
         else {
             ctx.catchNoConsumed {
+                ctx.addErrorToHintsAndPop()
                 ctx.pushAndContinue(acc.toList)
             }
             acc.clear()
@@ -31,11 +32,12 @@ private [internal] final class SkipMany(var label: Int) extends JumpInstr {
     override def apply(ctx: Context): Unit = {
         if (ctx.status eq Good) {
             ctx.stack.pop_()
-            ctx.checkStack.head = ctx.offset
+            ctx.updateCheckOffsetAndHints()
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
         else ctx.catchNoConsumed {
+            ctx.addErrorToHintsAndPop()
             ctx.pushAndContinue(())
         }
     }
@@ -58,12 +60,13 @@ private [internal] final class ChainPost(var label: Int) extends JumpInstr with 
                 ctx.handlers.head.stacksz -= 1
             }
             acc = ctx.stack.pop[Any => Any]()(acc)
-            ctx.checkStack.head = ctx.offset
+            ctx.updateCheckOffsetAndHints()
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
         else {
             ctx.catchNoConsumed {
+                ctx.addErrorToHintsAndPop()
                 // When acc is null, we have entered for first time but the op failed, so the result is already on the stack
                 if (acc != null) ctx.stack.push(acc)
                 ctx.inc()
@@ -85,12 +88,13 @@ private [internal] final class ChainPre(var label: Int) extends JumpInstr with S
             acc = if (acc == null) ctx.stack.pop[Any => Any]()
                   // We perform the acc after the tos function; the tos function is "closer" to the final p
                   else ctx.stack.pop[Any => Any]().andThen(acc)
-            ctx.checkStack.head = ctx.offset
+            ctx.updateCheckOffsetAndHints()
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
         else {
             ctx.catchNoConsumed {
+                ctx.addErrorToHintsAndPop()
                 ctx.pushAndContinue(if (acc == null) identity[Any] _ else acc)
             }
             acc = null
@@ -115,12 +119,13 @@ private [internal] final class Chainl(var label: Int) extends JumpInstr with Sta
                 ctx.handlers.head.stacksz -= 1
             }
             else acc = op(acc, y)
-            ctx.checkStack.head = ctx.offset
+            ctx.updateCheckOffsetAndHints()
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
         else {
             ctx.catchNoConsumed {
+                ctx.addErrorToHintsAndPop()
                 // if acc is null this is first entry, p already on the stack!
                 if (acc != null) ctx.pushAndContinue(acc)
                 // but p does need to be wrapped
@@ -147,7 +152,7 @@ private [instructions] sealed trait DualHandler {
     final protected def popSecondHandlerAndJump(ctx: Context, label: Int) = {
         ctx.handlers = ctx.handlers.tail
         ctx.checkStack = ctx.checkStack.tail
-        ctx.checkStack.head = ctx.offset
+        ctx.updateCheckOffsetAndHints()
         ctx.pc = label
     }
 }
@@ -173,6 +178,7 @@ private [internal] final class Chainr[A, B](var label: Int, _wrap: A => B) exten
             // presence of first handler indicates p succeeded and op didn't
             checkForFirstHandlerAndPop(ctx, ctx.fail()) {
                 ctx.catchNoConsumed {
+                    ctx.addErrorToHintsAndPop()
                     ctx.exchangeAndContinue(if (acc != null) acc(wrap(ctx.stack.upeek)) else wrap(ctx.stack.upeek))
                 }
             }
@@ -202,6 +208,7 @@ private [internal] final class SepEndBy1(var label: Int) extends JumpInstr with 
             }
             if (ctx.offset != check || acc.isEmpty) ctx.fail()
             else {
+                ctx.addErrorToHintsAndPop()
                 ctx.status = Good
                 ctx.pushAndContinue(acc.toList)
             }

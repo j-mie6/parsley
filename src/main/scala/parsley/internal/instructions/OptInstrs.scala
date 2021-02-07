@@ -29,7 +29,7 @@ private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, expe
             ctx.consumeChar()
             ctx.pushAndContinue(x)
         }
-        else ctx.fail(expected)
+        else ctx.expectedFail(expected)
     }
     // $COVERAGE-OFF$
     override def toString: String = s"SatEx(?, $x)"
@@ -39,12 +39,15 @@ private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, expe
 private [internal] final class JumpGoodAttempt(var label: Int) extends JumpInstr {
     override def apply(ctx: Context): Unit = {
         if (ctx.status eq Good) {
+            ctx.commitHints() // TODO: Verify
             ctx.states = ctx.states.tail
             ctx.handlers = ctx.handlers.tail
             ctx.pc = label
         }
         else {
+            ctx.restoreHints() //TODO: Verify
             ctx.restoreState()
+            ctx.addErrorToHints()
             ctx.status = Good
             ctx.inc()
         }
@@ -55,8 +58,12 @@ private [internal] final class JumpGoodAttempt(var label: Int) extends JumpInstr
 }
 
 private [internal] final class RecoverWith[A](x: A) extends Instr {
-    override def apply(ctx: Context): Unit = ctx.catchNoConsumed {
-        ctx.pushAndContinue(x)
+    override def apply(ctx: Context): Unit = {
+        ctx.restoreHints() // TODO: Verify
+        ctx.catchNoConsumed {
+            ctx.addErrorToHintsAndPop()
+            ctx.pushAndContinue(x)
+        }
     }
     // $COVERAGE-OFF$
     override def toString: String = s"Recover($x)"
@@ -66,12 +73,15 @@ private [internal] final class RecoverWith[A](x: A) extends Instr {
 private [internal] final class AlwaysRecoverWith[A](x: A) extends Instr {
     override def apply(ctx: Context): Unit = {
         if (ctx.status eq Good) {
+            ctx.commitHints() // TODO: Verify
             ctx.states = ctx.states.tail
             ctx.handlers = ctx.handlers.tail
             ctx.inc()
         }
         else {
+            ctx.restoreHints() // TODO: Verify
             ctx.restoreState()
+            ctx.addErrorToHintsAndPop()
             ctx.status = Good
             ctx.pushAndContinue(x)
         }
@@ -81,11 +91,12 @@ private [internal] final class AlwaysRecoverWith[A](x: A) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int], private [this] var default: Int, _expecteds: List[UnsafeOption[String]])
+private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int], private [this] var default: Int, _expecteds: Map[Char, Set[ErrorItem]])
     extends Instr {
     private [this] var defaultPreamble: Int = _
     private [this] val jumpTable = mutable.LongMap(prefixes.map(_.toLong).zip(labels): _*)
-    val expecteds = prefixes.zip(_expecteds).map{case (c, expected) => if (expected == null) "\"" + c + "\"" else expected}
+    val expecteds = _expecteds.toList.flatMap(_._2.map(_.msg))
+    val errorItems = _expecteds.toSet[(Char, Set[ErrorItem])].flatMap(_._2)
 
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput) {
@@ -95,6 +106,7 @@ private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int]
             else {
                 ctx.pushCheck()
                 ctx.pushHandler(defaultPreamble)
+                ctx.saveHints(shadow = false)
             }
         }
         else {
@@ -117,6 +129,11 @@ private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int]
             if (ctx.errorOverride == null) ctx.expected = ctx.expected reverse_::: expecteds
             else ctx.expected ::= ctx.errorOverride
         }
+        val unexpected = if (ctx.offset < ctx.inputsz) Raw(s"${ctx.nextChar}") else EndOfInput
+        // We need to save hints here so that the jump table does not get a chance to use the hints before it
+        ctx.saveHints(shadow = false)
+        ctx.pushError(TrivialError(ctx.offset, ctx.line, ctx.col, Some(unexpected), errorItems))
+        ctx.restoreHints()
     }
 
     override def relabel(labels: Array[Int]): Unit = {

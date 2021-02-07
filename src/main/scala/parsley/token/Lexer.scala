@@ -8,6 +8,7 @@ import parsley.Parsley, Parsley.{void, unit, fail, attempt, pure, empty, notFoll
 import parsley.token.TokenSet
 import parsley.implicits.{charLift, stringLift}
 import parsley.internal.deepembedding
+import parsley.unsafe.ErrorLabel
 
 import scala.language.implicitConversions
 
@@ -17,6 +18,7 @@ import scala.language.implicitConversions
   * all operations consume whitespace after them (so-called lexeme parsers). These are very useful in parsing
   * programming languages. This class also has a large number of hand-optimised intrinsic parsers to improve performance!
   * @param lang The rules that govern the language we are tokenising
+  * @since 2.2.0
   */
 class Lexer(lang: LanguageDef)
 {
@@ -30,7 +32,7 @@ class Lexer(lang: LanguageDef)
             case (BitSetImpl(start), Predicate(letter)) => builder(start, letter)
             case (Predicate(start), BitSetImpl(letter)) => builder(start, letter)
             case (Predicate(start), Predicate(letter)) => builder(start, letter)
-            case _ => attempt((parser ? name).guard(predicate, s"unexpected $illegalName " + _))
+            case _ => attempt((parser.unsafeLabel(name)).guard(predicate, s"unexpected $illegalName " + _))
         })
     }
 
@@ -47,14 +49,14 @@ class Lexer(lang: LanguageDef)
     {
         case BitSetImpl(letter) => lexeme(new Parsley(new deepembedding.Specific("keyword", name, letter, lang.caseSensitive)))
         case Predicate(letter) => lexeme(new Parsley(new deepembedding.Specific("keyword", name, letter, lang.caseSensitive)))
-        case _ => lexeme(attempt(caseString(name) *> notFollowedBy(identLetter) ? ("end of " + name)))
+        case _ => lexeme(attempt(caseString(name) *> notFollowedBy(identLetter).unsafeLabel("end of " + name)))
     }
 
     private def caseString(name: String): Parsley[String] =
     {
         def caseChar(c: Char): Parsley[Char] = if (c.isLetter) c.toLower <|> c.toUpper else c
         if (lang.caseSensitive) name
-        else name.foldRight(pure(name))((c, p) => caseChar(c) *> p) ? name
+        else name.foldRight(pure(name))((c, p) => caseChar(c) *> p).unsafeLabel(name)
     }
     private def isReservedName(name: String): Boolean = theReservedNames.contains(if (lang.caseSensitive) name else name.toLowerCase)
     private val theReservedNames =  if (lang.caseSensitive) lang.keywords else lang.keywords.map(_.toLowerCase)
@@ -91,7 +93,7 @@ class Lexer(lang: LanguageDef)
     {
         case BitSetImpl(letter) => new Parsley(new deepembedding.Specific("operator", name, letter, true))
         case Predicate(letter) => new Parsley(new deepembedding.Specific("operator", name, letter, true))
-        case _ => attempt(name *> notFollowedBy(opLetter) ? ("end of " + name))
+        case _ => attempt(name *> notFollowedBy(opLetter).unsafeLabel("end of " + name))
     }
 
     /**The lexeme parser `maxOp(name)` parses the symbol `name`, but also checks that the `name`
@@ -114,7 +116,7 @@ class Lexer(lang: LanguageDef)
      * This parser deals correctly with escape sequences. The literal character is parsed according
      * to the grammar rules defined in the Haskell report (which matches most programming languages
      * quite closely).*/
-    lazy val charLiteral: Parsley[Char] = lexeme(between('\'', '\'' ? "end of character", characterChar)) ? "character"
+    lazy val charLiteral: Parsley[Char] = lexeme(between('\'', '\''.unsafeLabel("end of character"), characterChar).unsafeLabel("character"))
 
     /**This lexeme parser parses a literal string. Returns the literal string value. This parser
      * deals correctly with escape sequences and gaps. The literal string is parsed according to
@@ -131,7 +133,7 @@ class Lexer(lang: LanguageDef)
         case BitSetImpl(ws) => new Parsley(new deepembedding.StringLiteral(ws))
         case Predicate(ws) => new Parsley(new deepembedding.StringLiteral(ws))
         case NotRequired => new Parsley(new deepembedding.StringLiteral(_ => false))
-        case _ => between('"' ? "string", '"' ? "end of string", many(stringChar)) <#> (_.flatten.mkString)
+        case _ => between('"'.unsafeLabel("string"), '"'.unsafeLabel("end of string"), many(stringChar)) <#> (_.flatten.mkString)
     }
 
     /**This non-lexeme parser parses a string in a raw fashion. The escape characters in the string
@@ -144,10 +146,10 @@ class Lexer(lang: LanguageDef)
     private lazy val escapeCode = new Parsley(new deepembedding.Escape)
     private lazy val charEscape = '\\' *> escapeCode
     private lazy val charLetter = letter('\'')
-    private lazy val characterChar = (charLetter <|> charEscape) ? "literal character"
+    private lazy val characterChar = (charLetter <|> charEscape).unsafeLabel("literal character")
 
     private val escapeEmpty = '&'
-    private lazy val escapeGap = skipSome(space) *> '\\' ? "end of string gap"
+    private lazy val escapeGap = skipSome(space) *> '\\'.unsafeLabel("end of string gap")
     private lazy val stringLetter = letter('"')
     private lazy val stringEscape: Parsley[Option[Char]] =
     {
@@ -155,7 +157,7 @@ class Lexer(lang: LanguageDef)
              <|> escapeEmpty #> None
              <|> (escapeCode <#> (Some(_))))
     }
-    private lazy val stringChar: Parsley[Option[Char]] = ((stringLetter <#> (Some(_))) <|> stringEscape) ? "string character"
+    private lazy val stringChar: Parsley[Option[Char]] = ((stringLetter <#> (Some(_))) <|> stringEscape).unsafeLabel("string character")
 
     // Numbers
     /**This lexeme parser parses a natural number (a positive whole number). Returns the value of
@@ -167,7 +169,7 @@ class Lexer(lang: LanguageDef)
      * that it can be prefixed with a sign (i.e '-' or '+'). Returns the value of the number. The
      * number can be specified in `decimal`, `hexadecimal` or `octal`. The number is parsed
      * according to the grammar rules in the haskell report.*/
-    lazy val integer: Parsley[Int] = lexeme(int) ? "integer"
+    lazy val integer: Parsley[Int] = lexeme(int.unsafeLabel("integer"))
 
     /**This lexeme parser parses a floating point value. Returns the value of the number. The number
      * is parsed according to the grammar rules defined in the Haskell report.*/
@@ -176,17 +178,17 @@ class Lexer(lang: LanguageDef)
     /**This lexeme parser parses a floating point value. Returns the value of the number. The number
      * is parsed according to the grammar rules defined in the Haskell report. Accepts an optional
      * '+' or '-' sign.*/
-    lazy val float: Parsley[Double] = lexeme(signedFloating) ? "float"
+    lazy val float: Parsley[Double] = lexeme(signedFloating.unsafeLabel("float"))
 
     /**This lexeme parser parses either `integer` or `float`. Returns the value of the number. This
      * parser deals with any overlap in the grammar rules for naturals and floats. The number is
      * parsed according to the grammar rules defined in the Haskell report.*/
-    lazy val number: Parsley[Either[Int, Double]] = lexeme(number_) ? "number"
+    lazy val number: Parsley[Either[Int, Double]] = lexeme(number_.unsafeLabel("number"))
 
     /**This lexeme parser parses either `natural` or `unsigned float`. Returns the value of the number. This
       * parser deals with any overlap in the grammar rules for naturals and floats. The number is
       * parsed according to the grammar rules defined in the Haskell report.*/
-    lazy val naturalOrFloat: Parsley[Either[Int, Double]] = lexeme(natFloat) ? "unsigned number"
+    lazy val naturalOrFloat: Parsley[Either[Int, Double]] = lexeme(natFloat.unsafeLabel("unsigned number"))
 
     private lazy val decimal_ = number(base = 10, digit)
 
@@ -270,8 +272,9 @@ class Lexer(lang: LanguageDef)
     }
 
     private def enclosing[A](p: =>Parsley[A], open: Char, close: Char, singular: String, plural: String) =
-        between(symbol(open) ? s"open $singular",
-                symbol(close) ? s"matching closing $singular" <|> fail(s"unclosed $plural"),
+        between(lexeme(open.unsafeLabel(s"open $singular")),
+                //TODO: This use of fail is probably inappropriate with the new error message model
+                lexeme(close.unsafeLabel(s"matching closing $singular")) <|> fail(s"unclosed $plural"),
                 p)
 
     // Bracketing
@@ -290,16 +293,16 @@ class Lexer(lang: LanguageDef)
     def brackets[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, '[', ']', "square bracket", "square brackets")
 
     /**Lexeme parser `semi` parses the character ';' and skips any trailing white space. Returns ";"*/
-    val semi: Parsley[Char] = symbol(';') ? "semicolon"
+    val semi: Parsley[Char] = symbol(';').unsafeLabel("semicolon")
 
     /**Lexeme parser `comma` parses the character ',' and skips any trailing white space. Returns ","*/
-    val comma: Parsley[Char] = symbol(',') ? "comma"
+    val comma: Parsley[Char] = symbol(',').unsafeLabel("comma")
 
     /**Lexeme parser `colon` parses the character ':' and skips any trailing white space. Returns ":"*/
-    val colon: Parsley[Char] = symbol(':') ? "colon"
+    val colon: Parsley[Char] = symbol(':').unsafeLabel("colon")
 
     /**Lexeme parser `dot` parses the character '.' and skips any trailing white space. Returns "."*/
-    val dot: Parsley[Char] = symbol('.') ? "dot"
+    val dot: Parsley[Char] = symbol('.').unsafeLabel("dot")
 
     /**Lexeme parser `semiSep(p)` parses zero or more occurrences of `p` separated by `semi`. Returns
      * a list of values returned by `p`.*/

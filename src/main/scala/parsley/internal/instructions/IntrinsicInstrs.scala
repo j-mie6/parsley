@@ -29,13 +29,14 @@ private [internal] final class Lift3[A, B, C, D](f: (A, B, C) => D) extends Inst
 }
 
 private [internal] class CharTok(c: Char, x: Any, _expected: UnsafeOption[String]) extends Instr {
-    val expected: String = if (_expected == null) "\"" + c + "\"" else _expected
+    private val expected: String = if (_expected == null) "\"" + c + "\"" else _expected
+    private val errorItem: ErrorItem = if (_expected == null) Raw(c) else Desc(expected)
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && ctx.nextChar == c) {
             ctx.consumeChar()
             ctx.pushAndContinue(x)
         }
-        else ctx.fail(expected)
+        else ctx.expectedFail(Set(errorItem))
     }
     // $COVERAGE-OFF$
     override def toString: String = if (x == c) s"Chr($c)" else s"ChrPerform($c, $x)"
@@ -44,6 +45,7 @@ private [internal] class CharTok(c: Char, x: Any, _expected: UnsafeOption[String
 
 private [internal] final class StringTok private [instructions] (s: String, x: Any, _expected: UnsafeOption[String]) extends Instr {
     private [this] val expected = if (_expected == null) "\"" + s + "\"" else _expected
+    private [this] val errorItem: ErrorItem = if (_expected == null) Raw(s) else Desc(expected)
     private [this] val cs = s.toCharArray
     private [this] val sz = cs.length
     private [this] val adjustAtIndex = new Array[(Int => Int, Int => Int)](s.length + 1)
@@ -67,19 +69,30 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
     }
     compute(cs)
 
-    @tailrec private def go(ctx: Context, i: Int, j: Int): Unit = {
-        if (j < sz && i < ctx.inputsz && ctx.input(i) == cs(j)) go(ctx, i + 1, j + 1)
+    @tailrec private def go(ctx: Context, i: Int, j: Int, err: =>TrivialError): Unit = {
+        if (j < sz && i < ctx.inputsz && ctx.input(i) == cs(j)) go(ctx, i + 1, j + 1, err)
         else {
             val (colAdjust, lineAdjust) = adjustAtIndex(j)
             ctx.col = colAdjust(ctx.col)
             ctx.line = lineAdjust(ctx.line)
             ctx.offset = i
-            if (j < sz) ctx.fail(expected)
+            if (j < sz) {
+                ctx.fail(expected)
+                ctx.pushError(err)
+            }
             else ctx.pushAndContinue(x)
         }
     }
 
-    override def apply(ctx: Context): Unit = go(ctx, ctx.offset, 0)
+    override def apply(ctx: Context): Unit = {
+        val origOffset = ctx.offset
+        val origLine = ctx.line
+        val origCol = ctx.col
+        go(ctx, ctx.offset, 0,
+            TrivialError(origOffset, origLine, origCol,
+                Some(if (ctx.inputsz > origOffset) Raw(ctx.input.slice(origOffset, Math.min(origOffset + sz, ctx.inputsz)).mkString) else EndOfInput), Set(errorItem)
+            ))
+    }
     // $COVERAGE-OFF$
     override def toString: String = if (x.isInstanceOf[String] && (s eq x.asInstanceOf[String])) s"Str($s)" else s"StrPerform($s, $x)"
     // $COVERAGE-ON$
@@ -101,7 +114,7 @@ private [internal] final class Filter[A](pred: A=>Boolean, expected: UnsafeOptio
         if (pred_(ctx.stack.upeek)) ctx.inc()
         else {
             val strip = ctx.expected.isEmpty
-            ctx.fail(expected)
+            ctx.expectedFail(expected)
             if (strip) ctx.unexpected = null
         }
     }
@@ -133,26 +146,11 @@ private [internal] final class FastGuard[A](pred: A=>Boolean, msggen: A=>String,
     // $COVERAGE-ON$
 }
 
-private [internal] final class FastFail[A](msggen: A=>String, expected: UnsafeOption[String]) extends Instr {
-    private [this] val msggen_ = msggen.asInstanceOf[Any => String]
-    override def apply(ctx: Context): Unit = ctx.failWithMessage(expected, msggen_(ctx.stack.upop()))
-    // $COVERAGE-OFF$
-    override def toString: String = "FastFail(?)"
-    // $COVERAGE-ON$
-}
-
-private [internal] final class FastUnexpected[A](msggen: A=>String, expected: UnsafeOption[String]) extends Instr {
-    private [this] val msggen_ = msggen.asInstanceOf[Any => String]
-    override def apply(ctx: Context): Unit = ctx.unexpectedFail(expected = expected, unexpected = msggen_(ctx.stack.upop()))
-    // $COVERAGE-OFF$
-    override def toString: String = "FastUnexpected(?)"
-    // $COVERAGE-ON$
-}
-
 private [internal] final class NotFollowedBy(expected: UnsafeOption[String]) extends Instr {
     override def apply(ctx: Context): Unit = {
         // Recover the previous state; notFollowedBy NEVER consumes input
         ctx.restoreState()
+        ctx.restoreHints()
         // A previous success is a failure
         if (ctx.status eq Good) {
             ctx.handlers = ctx.handlers.tail
@@ -161,6 +159,7 @@ private [internal] final class NotFollowedBy(expected: UnsafeOption[String]) ext
         // A failure is what we wanted
         else {
             ctx.status = Good
+            ctx.errs = ctx.errs.tail
             ctx.pushAndContinue(())
         }
     }
@@ -171,7 +170,12 @@ private [internal] final class NotFollowedBy(expected: UnsafeOption[String]) ext
 
 private [internal] class Eof(_expected: UnsafeOption[String]) extends Instr {
     val expected: String = if (_expected == null) "end of input" else _expected
-    override def apply(ctx: Context): Unit = if (ctx.offset == ctx.inputsz) ctx.pushAndContinue(()) else ctx.fail(expected)
+    override def apply(ctx: Context): Unit = {
+        if (ctx.offset == ctx.inputsz) ctx.pushAndContinue(())
+        else {
+            ctx.expectedFail(Set[ErrorItem](if (_expected == null) EndOfInput else Desc(_expected)))
+        }
+    }
     // $COVERAGE-OFF$
     override final def toString: String = "Eof"
     // $COVERAGE-ON$

@@ -13,8 +13,8 @@ private [parsley] final class SkipComments(start: String, end: String, line: Str
 private [parsley] final class Comment(start: String, end: String, line: String, nested: Boolean)
     extends Singleton[Unit]("comment", new instructions.TokenComment(start, end, line, nested))
 
-private [parsley] final class Sign[A](ty: SignType, val expected: UnsafeOption[String] = null)
-    extends SingletonExpect[A => A]("sign", new Sign(ty, _), new instructions.TokenSign(ty, expected))
+private [parsley] final class Sign[A](ty: SignType)
+    extends SingletonExpect[A => A]("sign", _ => new Sign(ty), new instructions.TokenSign(ty))
 
 private [parsley] final class Natural(val expected: UnsafeOption[String] = null)
     extends SingletonExpect[Int]("natural", new Natural(_), new instructions.TokenNatural(expected))

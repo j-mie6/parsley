@@ -58,6 +58,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: deepe
       * The file name is used to annotate any error messages.
       * @param file The file to load and run against
       * @return Either a success with a value of type `A` or a failure with error message
+      * @since 2.3.0
       */
     def parseFromFile(file: File): Result[A] = new Context(internal.threadSafeInstrs, Source.fromFile(file).toArray, Some(file.getName)).runParser()
 }
@@ -158,6 +159,7 @@ object Parsley
           * the parse action of both parsers, in order, but discards the result of the invokee.
           * @param q The parser whose result should be returned
           * @return A new parser which first parses `p`, then `q` and returns the result of `q`
+          * @since 2.4.0
           */
         def ~>[B](q: Parsley[B]): Parsley[B] = this *> q
         /**
@@ -165,6 +167,7 @@ object Parsley
           * the parse action of both parsers, in order, but discards the result of the second parser.
           * @param q The parser who should be executed but then discarded
           * @return A new parser which first parses `p`, then `q` and returns the result of the `p`
+          * @since 2.4.0
           */
         def <~[B](q: Parsley[B]): Parsley[A] = this <* q
         /**This parser corresponds to `lift2(_+:_, p, ps)`.*/
@@ -173,7 +176,9 @@ object Parsley
         def <::>[B >: A](ps: =>Parsley[List[B]]): Parsley[List[B]] = lift.lift2[A, List[B], List[B]](_ :: _, p, ps)
         /**This parser corresponds to `lift2((_, _), p, q)`. For now it is sugar, but in future may be more optimal*/
         def <~>[A_ >: A, B](q: =>Parsley[B]): Parsley[(A_, B)] = lift.lift2[A_, B, (A_, B)]((_, _), p, q)
-        /**This combinator is an alias for `<~>`*/
+        /** This combinator is an alias for `<~>`
+          * @since 2.3.0
+          */
         def zip[A_ >: A, B](q: =>Parsley[B]): Parsley[(A_, B)] = this <~> q
         /** Filter the value of a parser; if the value returned by the parser matches the predicate `pred` then the
           * filter succeeded, otherwise the parser fails with an empty error
@@ -192,7 +197,7 @@ object Parsley
           * is mapped over its result. Roughly the same as a `filter` then a `map`.
           * @param pf The partial function
           * @return The result of applying `pf` to this parsers value (if possible), or fails
-          * @since 1.7
+          * @since 2.0.0
           */
         def collect[B](pf: PartialFunction[A, B]): Parsley[B] = this.filter(pf.isDefinedAt).map(pf)
         /** Attempts to first filter the parser to ensure that `pf` is defined over it. If it is, then the function `pf`
@@ -200,7 +205,7 @@ object Parsley
           * @param pf The partial function
           * @param msg The message used for the error if the input failed the check
           * @return The result of applying `pf` to this parsers value (if possible), or fails
-          * @since 1.7
+          * @since 2.4.0
           */
         def collectMsg[B](msg: String)(pf: PartialFunction[A, B]): Parsley[B] = this.guard(pf.isDefinedAt(_), msg).map(pf)
         /** Attempts to first filter the parser to ensure that `pf` is defined over it. If it is, then the function `pf`
@@ -208,7 +213,7 @@ object Parsley
           * @param pf The partial function
           * @param msggen Generator function for error message, generating a message based on the result of the parser
           * @return The result of applying `pf` to this parsers value (if possible), or fails
-          * @since 1.7
+          * @since 2.4.0
           */
         def collectMsg[B](msggen: A => String)(pf: PartialFunction[A, B]): Parsley[B] = this.guard(pf.isDefinedAt(_), msggen).map(pf)
         /** Similar to `filter`, except the error message desired is also provided. This allows you to name the message
@@ -245,10 +250,13 @@ object Parsley
         def >?>(pred: A => Boolean, msg: String): Parsley[A] = this.guard(pred, msg)
         /**Alias for guard combinator, taking a dynamic message generator.*/
         def >?>(pred: A => Boolean, msggen: A => String): Parsley[A] = this.guard(pred, msggen)
-        /**Sets the expected message for a parser. If the parser fails then `expected msg` will added to the error*/
-        def ?(msg: String): Parsley[A] = new Parsley(new deepembedding.ErrorRelabel(p.internal, msg))
+        /**Alias for `label`*/
+        def ?(msg: String): Parsley[A] = /*new Parsley(new deepembedding.UnsafeErrorRelabel(p.internal, msg))*/this.label(msg)
+        /**Sets the expected message for a parser. If the parser fails then `expected msg` will added to the error
+          * @since 2.6.0 */
+        def label(msg: String): Parsley[A] = new Parsley(new deepembedding.ErrorLabel(p.internal, msg))
         /**Hides the "expected" error message for a parser.*/
-        def hide: Parsley[A] = ?("")
+        def hide: Parsley[A] = this.label("") //THIS MUST BE LABEL
         /** Same as `fail`, except allows for a message generated from the result of the failed parser. In essence, this
           * is equivalent to `p >>= (x => fail(msggen(x))` but requires no expensive computations from the use of `>>=`.
           * @param msggen The generator function for error message, creating a message based on the result of invokee
@@ -294,6 +302,7 @@ object Parsley
           * @param k base case for iteration
           * @param f combining function
           * @return the result of folding the results of `p` with `f` and `k`
+          * @since 2.1.0
           */
         def foldRight1[B](k: B)(f: (A, B) => B): Parsley[B] = {
             lazy val q: Parsley[A] = p
@@ -309,6 +318,7 @@ object Parsley
           * @param k base case for iteration
           * @param f combining function
           * @return the result of folding the results of `p` with `f` and `k`
+          * @since 2.1.0
           */
         def foldLeft1[B](k: B)(f: (B, A) => B): Parsley[B] = {
             lazy val q: Parsley[A] = p
@@ -320,6 +330,7 @@ object Parsley
           *
           * @param op combining function
           * @return the result of reducing the results of `p` with `op`
+          * @since 2.3.0
           */
         def reduceRight[B >: A](op: (A, B) => B): Parsley[B] = some(p).map(_.reduceRight(op))
         /**
@@ -329,6 +340,7 @@ object Parsley
           *
           * @param op combining function
           * @return the result of reducing the results of `p` with `op` wrapped in `Some` or `None` otherwise
+          * @since 2.3.0
           */
         def reduceRightOption[B >: A](op: (A, B) => B): Parsley[Option[B]] = option(this.reduceRight(op))
         /**
@@ -337,6 +349,7 @@ object Parsley
           *
           * @param op combining function
           * @return the result of reducing the results of `p` with `op`
+          * @since 2.3.0
           */
         def reduceLeft[B >: A](op: (B, A) => B): Parsley[B] = chain.left1(p, pure(op))
         /**
@@ -346,13 +359,14 @@ object Parsley
           *
           * @param op combining function
           * @return the result of reducing the results of `p` with `op` wrapped in `Some` or `None` otherwise
+          * @since 2.3.0
           */
         def reduceLeftOption[B >: A](op: (B, A) => B): Parsley[Option[B]] = option(this.reduceLeft(op))
         /**
           * This casts the result of the parser into a new type `B`. If the value returned by the parser
           * is castable to type `B`, then this cast is performed. Otherwise the parser fails.
           * @tparam B The type to attempt to cast into
-          * @since 1.7
+          * @since 2.0.0
           */
         def cast[B: ClassTag]: Parsley[B] = this.collect {
             case x: B => x
@@ -455,8 +469,11 @@ object Parsley
       * in which case the keyword is actually an identifier. We can program this behaviour as follows:
       * {{{attempt(kw *> notFollowedBy(alphaNum))}}}*/
     def notFollowedBy(p: Parsley[_]): Parsley[Unit] = new Parsley(new deepembedding.NotFollowedBy(p.internal))
+    // $COVERAGE-OFF$
     /**Alias for `p ? msg`.*/
+    @deprecated("This method will be removed in Parsley 3.0, use `.label` or `?` instead", "v2.6.0")
     def label[A](p: Parsley[A], msg: String): Parsley[A] = p ? msg
+    // $COVERAGE-ON$
     /** The `fail(msg)` parser consumes no input and fails with `msg` as the error message */
     def fail(msg: String): Parsley[Nothing] = new Parsley(new deepembedding.Fail(msg))
     /** The `empty` parser consumes no input and fails softly (that is to say, no error message) */

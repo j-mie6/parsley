@@ -6,8 +6,7 @@ import parsley.internal.UnsafeOption
 
 import scala.annotation.tailrec
 
-private [internal] final class TokenSign(ty: SignType, _expected: UnsafeOption[String]) extends Instr {
-    val expected = if (_expected == null) "sign" else _expected
+private [internal] final class TokenSign(ty: SignType) extends Instr {
     val neg: Any => Any = ty match {
         case IntType => ((x: Int) => -x).asInstanceOf[Any => Any]
         case DoubleType => ((x: Double) => -x).asInstanceOf[Any => Any]
@@ -61,14 +60,14 @@ private [internal] final class TokenNatural(_expected: UnsafeOption[String]) ext
                 ctx.fastUncheckedConsumeChars(1)
                 (if (hexa) hexadecimal else octal)(ctx, 0, true) match {
                     case Some(x) => ctx.pushAndContinue(x)
-                    case None => ctx.fail(expected)
+                    case None => ctx.expectedFail(expected)
                 }
             }
             else ctx.pushAndContinue(decimal(ctx, 0, true).getOrElse(0))
         }
         else decimal(ctx, 0, true) match {
             case Some(x) => ctx.pushAndContinue(x)
-            case None => ctx.fail(expected)
+            case None => ctx.expectedFail(expected)
         }
     }
 
@@ -84,7 +83,7 @@ private [internal] final class TokenFloat(_expected: UnsafeOption[String]) exten
         if (decimal(ctx, builder)) {
             lexFraction(ctx, builder)
         }
-        else ctx.fail(expected)
+        else ctx.expectedFail(expected)
     }
 
     @tailrec private final def decimal(ctx: Context, builder: StringBuilder, first: Boolean = true): Boolean = {
@@ -109,23 +108,23 @@ private [internal] final class TokenFloat(_expected: UnsafeOption[String]) exten
     private final def attemptCastAndContinue(ctx: Context, builder: StringBuilder): Unit = {
         try ctx.pushAndContinue(builder.toString.toDouble)
         catch {
-            case _: NumberFormatException => ctx.fail(expected)
+            case _: NumberFormatException => ctx.expectedFail(expected)
         }
     }
 
     private final def lexExponent(ctx: Context, builder: StringBuilder, missingOk: Boolean): Unit = {
         val requireExponent = ctx.moreInput && (ctx.nextChar == 'e' || ctx.nextChar == 'E')
         if (requireExponent && exponent(ctx, builder += 'e')) attemptCastAndContinue(ctx, builder)
-        else if (requireExponent) ctx.fail(expected)
+        else if (requireExponent) ctx.expectedFail(expected)
         else if (missingOk) attemptCastAndContinue(ctx, builder)
-        else ctx.fail(expected)
+        else ctx.expectedFail(expected)
     }
 
     private final def lexFraction(ctx: Context, builder: StringBuilder) = {
         if (ctx.moreInput && ctx.nextChar == '.') {
             ctx.fastUncheckedConsumeChars(1)
             if (decimal(ctx, builder += '.')) lexExponent(ctx, builder, missingOk = true)
-            else ctx.fail(expected)
+            else ctx.expectedFail(expected)
         }
         else lexExponent(ctx, builder, missingOk = false)
     }
