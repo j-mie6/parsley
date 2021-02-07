@@ -12,23 +12,23 @@ import scala.language.higherKinds
 private [parsley] final class Satisfy(private [Satisfy] val f: Char => Boolean, val expected: UnsafeOption[String] = null)
     extends SingletonExpect[Char]("satisfy(f)", new Satisfy(f, _), new instructions.Satisfies(f, expected))
 
-private [deepembedding] sealed abstract class ScopedUnary[A, B](_p: =>Parsley[A], name: String,
+private [deepembedding] sealed abstract class ScopedUnary[A, B](_p: =>Parsley[A], name: String, doesNotProduceHints: Boolean,
                                                                 empty: UnsafeOption[String] => ScopedUnary[A, B], instr: instructions.Instr)
     extends Unary[A, B](_p)(c => s"$name($c)", empty) {
     final override val numInstrs = 2
     final override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
         val handler = state.freshLabel()
-        instrs += new instructions.PushHandlerAndState(handler, false)
+        instrs += new instructions.PushHandlerAndState(handler, doesNotProduceHints, doesNotProduceHints)
         p.codeGen |> {
             instrs += new instructions.Label(handler)
             instrs += instr
         }
     }
 }
-private [parsley] final class Attempt[A](_p: =>Parsley[A]) extends ScopedUnary[A, A](_p, "attempt", _ => Attempt.empty, instructions.Attempt)
-private [parsley] final class Look[A](_p: =>Parsley[A]) extends ScopedUnary[A, A](_p, "lookAhead", _ => Look.empty, instructions.Look)
+private [parsley] final class Attempt[A](_p: =>Parsley[A]) extends ScopedUnary[A, A](_p, "attempt", false, _ => Attempt.empty, instructions.Attempt)
+private [parsley] final class Look[A](_p: =>Parsley[A]) extends ScopedUnary[A, A](_p, "lookAhead", true, _ => Look.empty, instructions.Look)
 private [parsley] final class NotFollowedBy[A](_p: =>Parsley[A], val expected: UnsafeOption[String] = null)
-    extends ScopedUnary[A, Unit](_p, "notFollowedBy", NotFollowedBy.empty, new instructions.NotFollowedBy(expected)) {
+    extends ScopedUnary[A, Unit](_p, "notFollowedBy", true, NotFollowedBy.empty, new instructions.NotFollowedBy(expected)) {
     override def optimise: Parsley[Unit] = p match {
         case z: MZero => new Pure(())
         case _ => this

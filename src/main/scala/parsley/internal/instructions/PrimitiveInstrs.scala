@@ -35,6 +35,7 @@ private [internal] object Attempt extends Instr {
 
 private [internal] object Look extends Instr {
     override def apply(ctx: Context): Unit = {
+        ctx.restoreHints()
         if (ctx.status eq Good) {
             ctx.restoreState()
             ctx.handlers = ctx.handlers.tail

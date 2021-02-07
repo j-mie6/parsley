@@ -150,6 +150,7 @@ private [internal] final class NotFollowedBy(expected: UnsafeOption[String]) ext
     override def apply(ctx: Context): Unit = {
         // Recover the previous state; notFollowedBy NEVER consumes input
         ctx.restoreState()
+        ctx.restoreHints()
         // A previous success is a failure
         if (ctx.status eq Good) {
             ctx.handlers = ctx.handlers.tail

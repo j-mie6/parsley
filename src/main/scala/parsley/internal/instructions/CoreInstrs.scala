@@ -106,11 +106,11 @@ private [internal] final class PushHandler(var label: Int) extends JumpInstr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class PushHandlerAndState(var label: Int, saveHints: Boolean) extends JumpInstr {
+private [internal] final class PushHandlerAndState(var label: Int, saveHints: Boolean, hideHints: Boolean) extends JumpInstr {
     override def apply(ctx: Context): Unit = {
         ctx.pushHandler(label)
         ctx.saveState()
-        if (saveHints) ctx.saveHints()
+        if (saveHints) ctx.saveHints(shadow = hideHints)
         ctx.inc()
     }
     // $COVERAGE-OFF$
@@ -122,7 +122,7 @@ private [internal] final class InputCheck(var label: Int, saveHints: Boolean = f
     override def apply(ctx: Context): Unit = {
         ctx.pushCheck()
         ctx.pushHandler(label)
-        if (saveHints) ctx.saveHints()
+        if (saveHints) ctx.saveHints(false)
         ctx.inc()
     }
     // $COVERAGE-OFF$

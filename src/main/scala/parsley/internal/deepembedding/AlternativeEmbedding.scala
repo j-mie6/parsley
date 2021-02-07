@@ -31,7 +31,7 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
             case Attempt(u) => right match {
                 case Pure(x) =>
                     val handler = state.freshLabel()
-                    instrs += new instructions.PushHandlerAndState(handler, true)
+                    instrs += new instructions.PushHandlerAndState(handler, true, false)
                     u.codeGen |> {
                         instrs += new instructions.Label(handler)
                         instrs += new instructions.AlwaysRecoverWith[B](x)
@@ -39,7 +39,7 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
                 case v =>
                     val handler = state.freshLabel()
                     val skip = state.freshLabel()
-                    instrs += new instructions.PushHandlerAndState(handler, true)
+                    instrs += new instructions.PushHandlerAndState(handler, true, false)
                     u.codeGen >> {
                         instrs += new instructions.Label(handler)
                         instrs += new instructions.JumpGoodAttempt(skip)
@@ -125,7 +125,7 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
         case Attempt(alt)::alts_ =>
             val handler = state.freshLabel()
             val skip = state.freshLabel()
-            instrs += new instructions.PushHandlerAndState(handler, true)
+            instrs += new instructions.PushHandlerAndState(handler, true, false)
             alt.codeGen >> {
                 instrs += new instructions.Label(handler)
                 instrs += new instructions.JumpGoodAttempt(skip)

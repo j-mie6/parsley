@@ -75,9 +75,9 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         println(hints)
         if (hints.nonEmpty) hints(0) = new Hint(Set(Desc(label)))
     }
-    private [instructions] def saveHints(): Unit = {
+    private [instructions] def saveHints(shadow: Boolean): Unit = {
         hintStack = push(hintStack, (hintsValidOffset, hints))
-        hints = mutable.ListBuffer.empty
+        hints = if (shadow) hints.clone else mutable.ListBuffer.empty
     }
     private [instructions] def restoreHints(): Unit = {
         val (hintsValidOffset, hints) = hintStack.head
