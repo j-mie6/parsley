@@ -2,6 +2,7 @@ package parsley.internal.instructions
 
 import ParseError.Unknown
 import Raw.Unprintable
+import scala.util.matching.Regex
 
 sealed trait ParseError {
     val offset: Int
@@ -104,7 +105,7 @@ case class Raw(cs: String) extends ErrorItem {
     }
 }
 object Raw {
-    val Unprintable = "(\\p{C})".r
+    val Unprintable: Regex = "(\\p{C})".r
     def apply(c: Char): Raw = new Raw(s"$c")
 }
 case class Desc(msg: String) extends ErrorItem
