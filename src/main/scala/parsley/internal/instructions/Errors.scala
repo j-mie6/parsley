@@ -33,11 +33,11 @@ sealed trait ParseError {
         s"$scopeName(line $line, column $col)"
     }
 
-    protected final def disjunct(alts: List[String]): Option[String] = alts.sort.filter(_.nonEmpty) match {
+    protected final def disjunct(alts: List[String]): Option[String] = alts.sorted.reverse.filter(_.nonEmpty) match {
         case Nil => None
         case List(alt) => Some(alt)
-        case List(alt1, alt2) => Some(s"$alt1 or $alt2")
-        case alt::alts => Some(s"${alts.mkString(", ")}, or $alt")
+        case List(alt1, alt2) => Some(s"$alt2 or $alt1")
+        case alt::alts => Some(s"${alts.reverse.mkString(", ")}, or $alt")
     }
 
     protected final def getLineWithCaret(helper: Context#InputHelper): (String, String) = {
