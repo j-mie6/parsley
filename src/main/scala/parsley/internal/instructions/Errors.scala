@@ -41,6 +41,7 @@ sealed trait ParseError {
     }
 
     protected final def getLineWithCaret(helper: Context#InputHelper): (String, String) = {
+        // FIXME: Tabs man... tabs
         val startOffset = helper.nearestNewlineBefore(offset)
         val endOffset = helper.nearestNewlineAfter(offset)
         val segment = helper.segmentBetween(startOffset, endOffset)
@@ -55,9 +56,8 @@ sealed trait ParseError {
         val info = infoLines.filter(_.nonEmpty).mkString("\n  ")
         s"""$topStr:
            |  ${if (info.isEmpty) Unknown else info}
-           |
-           |    ${line}
-           |    ${caret}""".stripMargin
+           |    >${line}
+           |    >${caret}""".stripMargin
     }
 }
 case class TrivialError(offset: Int, line: Int, col: Int, unexpected: Option[ErrorItem], expecteds: Set[ErrorItem]) extends ParseError {
