@@ -90,7 +90,7 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
         val origCol = ctx.col
         go(ctx, ctx.offset, 0,
             TrivialError(origOffset, origLine, origCol,
-                Some(if (ctx.inputsz > origOffset) Raw(ctx.input.slice(origOffset, Math.max(origOffset + sz, ctx.inputsz)).mkString) else EndOfInput), Set(errorItem)
+                Some(if (ctx.inputsz > origOffset) Raw(ctx.input.slice(origOffset, Math.min(origOffset + sz, ctx.inputsz)).mkString) else EndOfInput), Set(errorItem)
             ))
     }
     // $COVERAGE-OFF$
