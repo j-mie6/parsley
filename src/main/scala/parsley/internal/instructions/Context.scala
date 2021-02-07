@@ -356,7 +356,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     private [instructions] class InputHelper {
         def nearestNewlineBefore(off: Int): Int = {
             val idx = Context.this.input.lastIndexOf('\n', off-1)
-            if (idx == -1) 0 else idx
+            if (idx == -1) 0 else idx + 1
         }
         def nearestNewlineAfter(off: Int): Int = {
             val idx = Context.this.input.indexOf('\n', off)
