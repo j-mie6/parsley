@@ -251,10 +251,10 @@ object Parsley
         /**Alias for guard combinator, taking a dynamic message generator.*/
         def >?>(pred: A => Boolean, msggen: A => String): Parsley[A] = this.guard(pred, msggen)
         /**Alias for `label`*/
-        def ?(msg: String): Parsley[A] = this.label(msg)
+        def ?(msg: String): Parsley[A] = new Parsley(new deepembedding.UnsafeErrorRelabel(p.internal, msg))//this.label(msg)
         /**Sets the expected message for a parser. If the parser fails then `expected msg` will added to the error
           * @since 2.6.0 */
-        def label(msg: String): Parsley[A] = new Parsley(new deepembedding.UnsafeErrorRelabel(p.internal, msg))
+        def label(msg: String): Parsley[A] = new Parsley(new deepembedding.ErrorLabel(p.internal, msg))
         /**Hides the "expected" error message for a parser.*/
         def hide: Parsley[A] = this.label("") //THIS MUST BE LABEL
         /** Same as `fail`, except allows for a message generated from the result of the failed parser. In essence, this

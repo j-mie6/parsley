@@ -71,10 +71,13 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     private [instructions] var errs = Stack.empty[ParseError]
 
     private [instructions] def popHints: Unit = if (hints.nonEmpty) hints.remove(0)
-    private [instructions] def replaceHint(label: String): Unit = if (hints.nonEmpty) hints(0) = new Hint(Set(Desc(label)))
+    private [instructions] def replaceHint(label: String): Unit = {
+        println(hints)
+        if (hints.nonEmpty) hints(0) = new Hint(Set(Desc(label)))
+    }
     private [instructions] def saveHints(): Unit = {
         hintStack = push(hintStack, (hintsValidOffset, hints))
-        hints = hints.clone
+        hints = mutable.ListBuffer.empty
     }
     private [instructions] def restoreHints(): Unit = {
         val (hintsValidOffset, hints) = hintStack.head
@@ -140,7 +143,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
             assert(!isEmpty(errs) && isEmpty(errs.tail), "there should be only one error on failure")
             assert(isEmpty(handlers), "there should be no handlers left on failure")
             assert(isEmpty(hintStack), "there should be at most one set of hints left at the end")
-            println(s"error: ${errs.head}")
+            //println(s"error: ${errs.head}")
             Failure(errorMessage)
         }
         else if (pc < instrs.length) {

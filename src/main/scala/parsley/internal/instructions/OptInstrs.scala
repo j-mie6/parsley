@@ -104,7 +104,7 @@ private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int]
             else {
                 ctx.pushCheck()
                 ctx.pushHandler(defaultPreamble)
-                ctx.saveHints() //TODO: Verify
+                ctx.saveHints()
             }
         }
         else {
@@ -128,8 +128,10 @@ private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int]
             else ctx.expected ::= ctx.errorOverride
         }
         val unexpected = if (ctx.offset < ctx.inputsz) Raw(s"${ctx.nextChar}") else EndOfInput
+        // We need to save hints here so that the jump table does not get a chance to use the hints before it
+        ctx.saveHints()
         ctx.pushError(TrivialError(ctx.offset, ctx.line, ctx.col, Some(unexpected), errorItems))
-        ctx.addErrorToHints()
+        ctx.restoreHints()
     }
 
     override def relabel(labels: Array[Int]): Unit = {
