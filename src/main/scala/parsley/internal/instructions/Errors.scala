@@ -4,7 +4,7 @@ import ParseError.Unknown
 import Raw.Unprintable
 import scala.util.matching.Regex
 
-sealed trait ParseError {
+private [internal] sealed trait ParseError {
     val offset: Int
     val col: Int
     val line: Int
@@ -47,7 +47,7 @@ sealed trait ParseError {
         val segment = helper.segmentBetween(startOffset, endOffset)
         val caretAt = offset - startOffset
         val caretPad = " " * caretAt
-        (segment, s"$caretPad^")
+        (segment.replace('\t', ' '), s"$caretPad^")
     }
 
     protected final def assemble(sourceName: Option[String], helper: Context#InputHelper, infoLines: List[String]): String = {
@@ -60,33 +60,32 @@ sealed trait ParseError {
            |  >${caret}""".stripMargin
     }
 }
-case class TrivialError(offset: Int, line: Int, col: Int, unexpected: Option[ErrorItem], expecteds: Set[ErrorItem]) extends ParseError {
+private [internal] case class TrivialError(offset: Int, line: Int, col: Int, unexpected: Option[ErrorItem], expecteds: Set[ErrorItem]) extends ParseError {
     def withHints(hints: Iterable[Hint]): ParseError = copy(expecteds = hints.foldLeft(expecteds)((es, h) => es union h.hint))
 
     def pretty(sourceName: Option[String], helper: Context#InputHelper): String = {
         assemble(sourceName, helper, List(unexpectedInfo, expectedInfo).flatten)
     }
 
-    private def unexpectedInfo: Option[String] = unexpected.map(u => s"unexpected ${u.msg.takeWhile(_ != '\n')}")
+    private def unexpectedInfo: Option[String] = unexpected.map(u => s"unexpected ${u.msg}")
     private def expectedInfo: Option[String] = disjunct(expecteds.map(_.msg).toList).map(es => s"expected $es")
 }
-case class FailError(offset: Int, line: Int, col: Int, msgs: Set[String]) extends ParseError {
+private [internal] case class FailError(offset: Int, line: Int, col: Int, msgs: Set[String]) extends ParseError {
     def withHints(hints: Iterable[Hint]): ParseError = this
     def pretty(sourceName: Option[String], helper: Context#InputHelper): String = {
         assemble(sourceName, helper, msgs.toList)
     }
 }
 
-object ParseError {
-    def unexpected(msg: String, offset: Int, line: Int, col: Int) = TrivialError(offset, line, col, Some(Desc(msg)), Set.empty)
-    def fail(msg: String, offset: Int, line: Int, col: Int) = FailError(offset, line, col, Set(msg))
+private [internal] object ParseError {
+    def fail(msg: String, offset: Int, line: Int, col: Int): ParseError = FailError(offset, line, col, Set(msg))
     val Unknown = "unknown parse error"
 }
 
-sealed trait ErrorItem {
+private [internal] sealed trait ErrorItem {
     val msg: String
 }
-object ErrorItem {
+private [internal] object ErrorItem {
     def higherPriority(e1: ErrorItem, e2: ErrorItem): ErrorItem = (e1, e2) match {
         case (EndOfInput, _) => EndOfInput
         case (_, EndOfInput) => EndOfInput
@@ -95,24 +94,24 @@ object ErrorItem {
         case (Raw(r1), Raw(r2)) => if (r1.length >= r2.length) e1 else e2
     }
 }
-case class Raw(cs: String) extends ErrorItem {
+private [internal] case class Raw(cs: String) extends ErrorItem {
     override val msg = cs match {
         case "\n"            => "newline"
         case "\t"            => "tab"
         case " "             => "space"
         case Unprintable(up) => s"unprintable character (${up.head.toInt})"
-        case cs              => "\"" + cs + "\""
+        case cs              => "\"" + cs.takeWhile(_ != '\n') + "\""
     }
 }
-object Raw {
+private [internal] object Raw {
     val Unprintable: Regex = "(\\p{C})".r
     def apply(c: Char): Raw = new Raw(s"$c")
 }
-case class Desc(msg: String) extends ErrorItem
-case object EndOfInput extends ErrorItem {
+private [internal] case class Desc(msg: String) extends ErrorItem
+private [internal] case object EndOfInput extends ErrorItem {
     override val msg = "end of input"
 }
 
-final class Hint(val hint: Set[ErrorItem]) extends AnyVal {
+private [instructions] final class Hint(val hint: Set[ErrorItem]) extends AnyVal {
     override def toString: String = hint.toString
 }

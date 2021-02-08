@@ -89,12 +89,16 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         this.hintStack = this.hintStack.tail
     }
     private [instructions] def mergeHints(): Unit = {
-        this.hints ++= this.hintStack.head._2
+        val (hintsValidOffset, hints) = this.hintStack.head
+        if (hintsValidOffset == offset) this.hints ++= hints
         commitHints()
     }
     private [instructions] def addErrorToHints(): Unit = errs.head match {
         case TrivialError(errOffset, _, _, _, es) if errOffset == offset && es.nonEmpty =>
             //println(s"$es have been hinted")
+            // If our new hints have taken place further in the input stream, then they must invalidate the old ones
+            if (hintsValidOffset < offset) hints.clear()
+            hintsValidOffset = offset
             hints += new Hint(es)
         case _ => //println(s"${errs.head} was not suitable for hinting")
     }
@@ -120,7 +124,6 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     }
 
     // $COVERAGE-OFF$
-    //override def toString: String = pretty
     private [instructions] def pretty: String = {
         s"""[
            |  stack     = [${stack.mkString(", ")}]
