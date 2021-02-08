@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - parsley-3
     tags:
       - '*'
   workflow_dispatch:

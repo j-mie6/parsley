@@ -442,34 +442,6 @@ object Parsley
       * @return A parser which consumes nothing and returns `x`
       */
     def pure[A](x: A): Parsley[A] = new Parsley(new deepembedding.Pure(x))
-    // $COVERAGE-OFF$
-    /** `lift1(f, p)` is an alias for `p.map(f)`. It is provided for symmetry with lift2 and lift3 */
-    @deprecated("This method will be removed in Parsley 3.0, use `parsley.lift.lift1` instead", "v2.2.0")
-    def lift1[A, B](f: A => B, p: =>Parsley[A]): Parsley[B] = lift.lift1(f, p)
-    /** Traditionally, `lift2` is defined as `lift2(f, p, q) = p.map(f) <*> q`. However, `f` is actually uncurried,
-      * so it's actually more exactly defined as; read `p` and then read `q` then provide their results to function
-      * `f`. This is designed to bring higher performance to any curried operations that are not themselves
-      * intrinsic.
-      * @param f The function to apply to the results of `p` and `q`
-      * @param p The first parser to parse
-      * @param q The second parser to parse
-      * @return `f(x, y)` where `x` is the result of `p` and `y` is the result of `q`.
-      */
-    @deprecated("This method will be removed in Parsley 3.0, use `parsley.lift.lift2` instead", "v2.2.0")
-    def lift2[A, B, C](f: (A, B) => C, p: =>Parsley[A], q: =>Parsley[B]): Parsley[C] = lift.lift2(f, p, q)
-    /** Traditionally, `lift2` is defined as `lift3(f, p, q, r) = p.map(f) <*> q <*> r`. However, `f` is actually uncurried,
-      * so it's actually more exactly defined as; read `p` and then read `q` and then read 'r' then provide their results
-      * to function `f`. This is designed to bring higher performance to any curried operations that are not themselves
-      * intrinsic.
-      * @param f The function to apply to the results of `p` and `q`
-      * @param p The first parser to parse
-      * @param q The second parser to parse
-      * @param r The third parser to parse
-      * @return `f(x, y, z)` where `x` is the result of `p`, `y` is the result of `q` and `z` is the result of `r`.
-      */
-    @deprecated("This method will be removed in Parsley 3.0, use `parsley.lift.lift3` instead", "v2.2.0")
-    def lift3[A, B, C, D](f: (A, B, C) => D, p: =>Parsley[A], q: =>Parsley[B], r: =>Parsley[C]): Parsley[D] = lift.lift3(f, p, q, r)
-    // $COVERAGE-ON$
     /** This is one of the core operations of a selective functor. It will conditionally execute one of `p` and `q`
       * depending on the result from `b`. This can be used to implement conditional choice within a parser without
       * relying on expensive monadic operations.
@@ -513,11 +485,6 @@ object Parsley
       * in which case the keyword is actually an identifier. We can program this behaviour as follows:
       * {{{attempt(kw *> notFollowedBy(alphaNum))}}}*/
     def notFollowedBy(p: Parsley[_]): Parsley[Unit] = new Parsley(new deepembedding.NotFollowedBy(p.internal))
-    // $COVERAGE-OFF$
-    /**Alias for `p ? msg`.*/
-    @deprecated("This method will be removed in Parsley 3.0, use `.label` or `?` instead", "v2.6.0")
-    def label[A](p: Parsley[A], msg: String): Parsley[A] = p ? msg
-    // $COVERAGE-ON$
     /** The `fail(msg)` parser consumes no input and fails with `msg` as the error message */
     def fail(msg: String): Parsley[Nothing] = new Parsley(new deepembedding.Fail(msg))
     /** The `empty` parser consumes no input and fails softly (that is to say, no error message) */
@@ -528,14 +495,6 @@ object Parsley
     val unit: Parsley[Unit] = pure(())
     /** converts a parser's result to () */
     def void(p: Parsley[_]): Parsley[Unit] = p *> unit
-    // $COVERAGE-OFF$
-    /** `many(p)` executes the parser `p` zero or more times. Returns a list of the returned values of `p`. */
-    @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.many` instead", "v2.2.0")
-    def many[A](p: =>Parsley[A]): Parsley[List[A]] = combinator.many(p)
-    /** `skipMany(p)` executes the parser `p` zero or more times and ignores the results. Returns `()` */
-    @deprecated("This method will be removed in Parsley 3.0, use `parsley.combinator.skipMany` instead", "v2.2.0")
-    def skipMany[A](p: =>Parsley[A]): Parsley[Unit] = combinator.skipMany(p)
-    // $COVERAGE-ON$
     /**
       * Evaluate each of the parsers in `ps` sequentially from left to right, collecting the results.
       * @param ps Parsers to be sequenced
@@ -570,105 +529,4 @@ object Parsley
       * @return Tuple of line and column number that the parser has reached
       */
     val pos: Parsley[(Int, Int)] = line <~> col
-    // $COVERAGE-OFF$
-    /**
-      * Consumes no input and returns the value stored in one of the parser registers.
-      * @note There are only 4 registers at present.
-      * @param r The index of the register to collect from
-      * @tparam S The type of the value in register `r` (this will result in a runtime type-check)
-      * @return The value stored in register `r` of type `S`
-      */
-    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.get` instead", "v2.2.0")
-    def get[S](r: registers.Reg[S]): Parsley[S] = registers.get(r)
-    /**
-      * Consumes no input and returns the value stored in one of the parser registers after applying a function.
-      * @note There are only 4 registers at present.
-      * @param r The index of the register to collect from
-      * @param f The function used to transform the value in the register
-      * @tparam S The type of the value in register `r` (this will result in a runtime type-check)
-      * @tparam A The desired result type
-      * @return The value stored in register `r` applied to `f`
-      */
-    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.gets` instead", "v2.2.0")
-    def gets[S, A](r: registers.Reg[S], f: S => A): Parsley[A] = registers.gets(r, f)
-    /**
-      * Returns the value stored in one of the parser registers after applying a function obtained from given parser.
-      * @note There are only 4 registers at present. The value is fetched before `pf` is executed
-      * @param r The index of the register to collect from
-      * @param pf The parser which provides the function to transform values
-      * @tparam S The type of the value in register `r` (this will result in a runtime type-check)
-      * @tparam A The desired result type
-      * @return The value stored in register `r` applied to `f` from `pf`
-      */
-    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.gets` instead", "v2.2.0")
-    def gets[S, A](r: registers.Reg[S], pf: Parsley[S => A]): Parsley[A] = get(r) <**> pf
-    /**
-      * Consumes no input and places the value `x` into register `r`.
-      * @note There are only 4 registers at present.
-      * @param r The index of the register to place the value in
-      * @param x The value to place in the register
-      */
-    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.put` instead", "v2.2.0")
-    def put[S](r: registers.Reg[S], x: S): Parsley[Unit] = registers.put(r, x)
-    /**
-      * Places the result of running `p` into register `r`.
-      * @note There are only 4 registers at present.
-      * @param r The index of the register to place the value in
-      * @param p The parser to derive the value from
-      */
-    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.put` instead", "v2.2.0")
-    def put[S](r: registers.Reg[S], p: =>Parsley[S]): Parsley[Unit] = registers.put(r, p)
-    /**
-      * Modifies the value contained in register `r` using function `f`.
-      * @note There are only 4 registers at present.
-      * @param r The index of the register to modify
-      * @param f The function used to modify the register
-      * @tparam S The type of value currently assumed to be in the register
-      */
-    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.modify` instead", "v2.2.0")
-    def modify[S](r: registers.Reg[S], f: S => S): Parsley[Unit] = registers.modify(r, f)
-    /**
-      * For the duration of parser `p` the state stored in register `r` is instead set to `x`. The change is undone
-      * after `p` has finished.
-      * @note There are only 4 registers at present.
-      * @param r The index of the register to modify
-      * @param x The value to place in the register `r`
-      * @param p The parser to execute with the adjusted state
-      * @return The parser that performs `p` with the modified state
-      */
-    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.local` instead", "v2.2.0")
-    def local[R, A](r: registers.Reg[R], x: R, p: =>Parsley[A]): Parsley[A] = registers.local(r, x, p)
-    /**
-      * For the duration of parser `q` the state stored in register `r` is instead set to the return value of `p`. The
-      * change is undone after `q` has finished.
-      * @note There are only 4 registers at present.
-      * @param r The index of the register to modify
-      * @param p The parser whose return value is placed in register `r`
-      * @param q The parser to execute with the adjusted state
-      * @return The parser that performs `q` with the modified state
-      */
-    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.local` instead", "v2.2.0")
-    def local[R, A](r: registers.Reg[R], p: =>Parsley[R], q: =>Parsley[A]): Parsley[A] = registers.local(r, p, q)
-    /**
-      * For the duration of parser `p` the state stored in register `r` is instead modified with `f`. The change is undone
-      * after `p` has finished.
-      * @note There are only 4 registers at present.
-      * @param r The index of the register to modify
-      * @param f The function used to modify the value in register `r`
-      * @param p The parser to execute with the adjusted state
-      * @return The parser that performs `p` with the modified state
-      */
-    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.local` instead", "v2.2.0")
-    def local[R, A](r: registers.Reg[R], f: R => R, p: =>Parsley[A]): Parsley[A] = registers.local(r, f, p)
-
-    /** `rollback(reg, p)` will perform `p`, but if it fails without consuming input, any changes to the register `reg` will
-      * be reverted.
-      * @param p The parser to perform
-      * @param reg The register to rollback on failure of `p`
-      * @return The result of the parser `p`, if any
-      * @since 2.0
-      */
-    @deprecated("This method will be removed in Parsley 3.0, use `parsley.registers.rollback` instead", "v2.2.0")
-    def rollback[A, B](reg: registers.Reg[A], p: Parsley[B]): Parsley[B] = registers.rollback(reg, p)
-    // $COVERAGE-ON$
 }
