@@ -47,7 +47,7 @@ sealed trait ParseError {
         val segment = helper.segmentBetween(startOffset, endOffset)
         val caretAt = offset - startOffset
         val caretPad = " " * caretAt
-        (segment, s"$caretPad^")
+        (segment.replace("\t", " "), s"$caretPad^")
     }
 
     protected final def assemble(sourceName: Option[String], helper: Context#InputHelper, infoLines: List[String]): String = {
