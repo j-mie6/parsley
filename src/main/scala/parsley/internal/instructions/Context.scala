@@ -120,7 +120,6 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     }
 
     // $COVERAGE-OFF$
-    //override def toString: String = pretty
     private [instructions] def pretty: String = {
         s"""[
            |  stack     = [${stack.mkString(", ")}]

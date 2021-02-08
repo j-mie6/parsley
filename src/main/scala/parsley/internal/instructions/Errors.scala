@@ -67,7 +67,7 @@ case class TrivialError(offset: Int, line: Int, col: Int, unexpected: Option[Err
         assemble(sourceName, helper, List(unexpectedInfo, expectedInfo).flatten)
     }
 
-    private def unexpectedInfo: Option[String] = unexpected.map(u => s"unexpected ${u.msg.takeWhile(_ != '\n')}")
+    private def unexpectedInfo: Option[String] = unexpected.map(u => s"unexpected ${u.msg}")
     private def expectedInfo: Option[String] = disjunct(expecteds.map(_.msg).toList).map(es => s"expected $es")
 }
 case class FailError(offset: Int, line: Int, col: Int, msgs: Set[String]) extends ParseError {
@@ -78,8 +78,7 @@ case class FailError(offset: Int, line: Int, col: Int, msgs: Set[String]) extend
 }
 
 object ParseError {
-    def unexpected(msg: String, offset: Int, line: Int, col: Int) = TrivialError(offset, line, col, Some(Desc(msg)), Set.empty)
-    def fail(msg: String, offset: Int, line: Int, col: Int) = FailError(offset, line, col, Set(msg))
+    def fail(msg: String, offset: Int, line: Int, col: Int): ParseError = FailError(offset, line, col, Set(msg))
     val Unknown = "unknown parse error"
 }
 
@@ -101,7 +100,7 @@ case class Raw(cs: String) extends ErrorItem {
         case "\t"            => "tab"
         case " "             => "space"
         case Unprintable(up) => s"unprintable character (${up.head.toInt})"
-        case cs              => "\"" + cs + "\""
+        case cs              => "\"" + cs.takeWhile(_ != '\n') + "\""
     }
 }
 object Raw {
