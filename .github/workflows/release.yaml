@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - error-rework
     tags:
       - '*'
   workflow_dispatch:

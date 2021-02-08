@@ -293,16 +293,16 @@ class Lexer(lang: LanguageDef)
     def brackets[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, '[', ']', "square bracket", "square brackets")
 
     /**Lexeme parser `semi` parses the character ';' and skips any trailing white space. Returns ";"*/
-    val semi: Parsley[Char] = symbol(';').unsafeLabel("semicolon")
+    val semi: Parsley[Char] = lexeme(';'.unsafeLabel("semicolon"))
 
     /**Lexeme parser `comma` parses the character ',' and skips any trailing white space. Returns ","*/
-    val comma: Parsley[Char] = symbol(',').unsafeLabel("comma")
+    val comma: Parsley[Char] = lexeme(','.unsafeLabel("comma"))
 
     /**Lexeme parser `colon` parses the character ':' and skips any trailing white space. Returns ":"*/
-    val colon: Parsley[Char] = symbol(':').unsafeLabel("colon")
+    val colon: Parsley[Char] = lexeme(':'.unsafeLabel("colon"))
 
     /**Lexeme parser `dot` parses the character '.' and skips any trailing white space. Returns "."*/
-    val dot: Parsley[Char] = symbol('.').unsafeLabel("dot")
+    val dot: Parsley[Char] = lexeme('.'.unsafeLabel("dot"))
 
     /**Lexeme parser `semiSep(p)` parses zero or more occurrences of `p` separated by `semi`. Returns
      * a list of values returned by `p`.*/
