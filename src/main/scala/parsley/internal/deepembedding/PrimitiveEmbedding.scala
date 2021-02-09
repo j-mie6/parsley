@@ -41,8 +41,8 @@ private [parsley] final class Fail(private [Fail] val msg: String, val expected:
 private [parsley] final class Unexpected(private [Unexpected] val msg: String, val expected: UnsafeOption[String] = null)
     extends SingletonExpect[Nothing](s"unexpected($msg)", new Unexpected(msg, _), new instructions.Unexpected(msg, expected)) with MZero
 
-private [parsley] final class Rec[A](val p: Parsley[A], val expected: UnsafeOption[String])
-    extends SingletonExpect[A](s"rec $p", new Rec(p, _), new instructions.Call(p.instrs, expected))
+private [parsley] final class Rec[A](val p: Parsley[A])
+    extends SingletonExpect[A](s"rec $p", _ => new Rec(p), new instructions.Call(p.instrs))
 
 private [parsley] final class Subroutine[A](var p: Parsley[A], val expected: UnsafeOption[String]) extends Parsley[A] {
     override def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState, label: UnsafeOption[String]): Cont[Unit, Unit] = {
@@ -158,7 +158,7 @@ private [deepembedding] object Debug {
 
 private [deepembedding] object Rec {
     def apply[A](p: Parsley[A], expected: UnsafeOption[String]): Parsley[A] = {
-        if (expected == null) new Rec(p, null)
-        else /*ErrorLabel.empty(expected).ready*/(new Rec(p, expected))
+        if (expected == null) new Rec(p)
+        else ErrorLabel.empty(expected).ready(new Rec(p))
     }
 }

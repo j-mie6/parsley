@@ -76,10 +76,7 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
             ctx.col = colAdjust(ctx.col)
             ctx.line = lineAdjust(ctx.line)
             ctx.offset = i
-            if (j < sz) {
-                ctx.fail(expected)
-                ctx.pushError(err)
-            }
+            if (j < sz) ctx.fail(err)
             else ctx.pushAndContinue(x)
         }
     }

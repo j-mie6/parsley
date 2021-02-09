@@ -116,14 +116,6 @@ private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int]
     }
 
     private def addErrors(ctx: Context): Unit = {
-        if (ctx.offset > ctx.erroffset) {
-            ctx.erroffset = ctx.offset
-            ctx.expected = if (ctx.errorOverride == null) expecteds else ctx.errorOverride::Nil
-        }
-        else if (ctx.offset == ctx.erroffset) {
-            if (ctx.errorOverride == null) ctx.expected = ctx.expected reverse_::: expecteds
-            else ctx.expected ::= ctx.errorOverride
-        }
         val unexpected = if (ctx.offset < ctx.inputsz) Raw(s"${ctx.nextChar}") else EndOfInput
         // We need to save hints here so that the jump table does not get a chance to use the hints before it
         ctx.saveHints(shadow = false)

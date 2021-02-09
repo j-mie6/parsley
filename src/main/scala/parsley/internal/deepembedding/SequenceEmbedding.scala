@@ -95,9 +95,10 @@ private [parsley] final class >>=[A, B](_p: =>Parsley[A], private [>>=] val f: A
         case z: MZero => z
         case _ => this
     }
+    // TODO: Make bind generate with expected != null a ErrorLabel instruction
     override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
         p.codeGen |>
-        (instrs += new instructions.DynCall[A](x => f(x).demandCalleeSave().instrs, expected))
+        (instrs += new instructions.DynCall[A](x => f(x).demandCalleeSave().instrs))
     }
 }
 

@@ -9,19 +9,17 @@ import parsley.unsafe.ErrorLabel
 import scala.language.implicitConversions
 
 class ErrorMessageTests extends ParsleyTest {
-    //TODO: Bind tests
     lazy val r: Parsley[List[String]] = "correct error message" <::> r
-    /"label" should "affect base error messages" in {
+    "label" should "affect base error messages" in {
         ('a' ? "ay!").runParser("b") should be (Failure("(line 1, column 1):\n  unexpected \"b\"\n  expected ay!\n  >b\n  >^"))
     }
-    //FIXME: This test doesn't actually do the right thing anymore, because label acts differently
     it should "work across a recursion boundary" in {
-        println(r.unsafeLabel("sup").internal.prettyAST)
+        val p = r.unsafeLabel("nothing but this :)")
         (r.unsafeLabel("nothing but this :)")).runParser("") should be {
             Failure("(line 1, column 1):\n  unexpected end of input\n  expected nothing but this :)\n  >\n  >^")
         }
-        (r.unsafeLabel("nothing but this :)")).runParser("correct error messagec") should be {
-            Failure("(line 1, column 23):\n  unexpected end of input\n  expected nothing but this :)\n  >correct error messagec\n  >                     ^")
+        (r.unsafeLabel("nothing but this :)")).runParser("correct error message") should be {
+            Failure("(line 1, column 22):\n  unexpected end of input\n  expected nothing but this :)\n  >correct error message\n  >                     ^")
         }
     }
 
