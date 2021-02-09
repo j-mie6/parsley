@@ -126,7 +126,8 @@ object implicits
                  p5: =>Parsley[T5], p6: =>Parsley[T6], p7: =>Parsley[T7], p8: =>Parsley[T8],
                  p9: =>Parsley[T9], p10: =>Parsley[T10], p11: =>Parsley[T11], p12: =>Parsley[T12],
                  p13: =>Parsley[T13], p14: =>Parsley[T14], p15: =>Parsley[T15], p16: =>Parsley[T16],
-                 p17: =>Parsley[T17], p18: =>Parsley[T18]): Parsley[R] = lift18(f, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18)
+                 p17: =>Parsley[T17], p18: =>Parsley[T18]): Parsley[R] =
+            lift18(f, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18)
     }
     implicit class Lift19[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, R]
         (private val f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19) => R) extends AnyVal {
