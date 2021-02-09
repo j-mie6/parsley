@@ -31,22 +31,3 @@ is defined as being an object which mocks a package):
     a host of helpful lexing combinators when provided with the description of a language.
   - [[parsley.unsafe$ `parsley.unsafe`]] contains unsafe (and not thread-safe) ways of speeding up
     the execution of a parser.
-
-In addition to the modules and packages outlined above, this version of Parsley (up to version 3.0),
-also includes the so-called `old-style` API, which is deprecated (see
-[[https://github.com/j-mie6/Parsley/wiki/The-Newstyle-API-vs-the-Oldstyle-API the Parsley wiki]] for
-a discussion of these differences). You should use the modules described above, and '''avoid''' the following:
-
-  - `parsley.BitGen`
-  - `parsley.Char`
-  - `parsley.CharSet`
-  - `parsley.Combinator`
-  - `parsley.ExpressionParser`
-  - `parsley.Impl`
-  - `parsley.Implicits`
-  - `parsley.LanguageDef`
-  - `parsley.NotRequired`
-  - `parsley.Parser`
-  - `parsley.Predicate`
-  - `parsley.Reg`
-  - `parsley.TokenParser`
