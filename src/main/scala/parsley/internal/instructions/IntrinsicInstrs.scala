@@ -76,10 +76,7 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
             ctx.col = colAdjust(ctx.col)
             ctx.line = lineAdjust(ctx.line)
             ctx.offset = i
-            if (j < sz) {
-                ctx.fail(expected)
-                ctx.pushError(err)
-            }
+            if (j < sz) ctx.fail(err)
             else ctx.pushAndContinue(x)
         }
     }
@@ -112,11 +109,7 @@ private [internal] final class Filter[A](pred: A=>Boolean, expected: UnsafeOptio
     private [this] val pred_ = pred.asInstanceOf[Any=>Boolean]
     override def apply(ctx: Context): Unit = {
         if (pred_(ctx.stack.upeek)) ctx.inc()
-        else {
-            val strip = ctx.expected.isEmpty
-            ctx.expectedFail(expected)
-            if (strip) ctx.unexpected = null
-        }
+        else ctx.expectedFail(expected)
     }
     // $COVERAGE-OFF$
     override def toString: String = "Filter(?)"

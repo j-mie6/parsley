@@ -4,24 +4,24 @@ import parsley.combinator.eof
 import parsley.Parsley._
 import parsley.implicits.{charLift, stringLift}
 import parsley.character.{anyChar, digit}
+import parsley.unsafe.ErrorLabel
 
 import scala.language.implicitConversions
 
 class ErrorMessageTests extends ParsleyTest {
-    //TODO: Bind tests
-    lazy val r: Parsley[List[String]] = "correct error message" <::> (r </> Nil)
+    lazy val r: Parsley[List[String]] = "correct error message" <::> r
     "label" should "affect base error messages" in {
         ('a' ? "ay!").runParser("b") should be (Failure("(line 1, column 1):\n  unexpected \"b\"\n  expected ay!\n  >b\n  >^"))
     }
-    //FIXME: This test doesn't actually do the right thing anymore, because label acts differently
-    /*it should "work across a recursion boundary" in {
-        (r ? "nothing but this :)").runParser("") should be {
-            Failure("(line 1, column 1):\n  unexpected end of input\n  expected nothing but this :)\n\n    \n    ^")
+    it should "work across a recursion boundary" in {
+        val p = r.unsafeLabel("nothing but this :)")
+        (r.unsafeLabel("nothing but this :)")).runParser("") should be {
+            Failure("(line 1, column 1):\n  unexpected end of input\n  expected nothing but this :)\n  >\n  >^")
         }
-        (r ? "nothing but this :)").runParser("correct error messagec") should be {
-            Failure("(line 1, column 23):\n  unexpected end of input\n  expected nothing but this :)")
+        (r.unsafeLabel("nothing but this :)")).runParser("correct error message") should be {
+            Failure("(line 1, column 22):\n  unexpected end of input\n  expected nothing but this :)\n  >correct error message\n  >                     ^")
         }
-    }*/
+    }
 
     "fail" should "yield a raw message" in {
         Parsley.fail("hi").runParser("b") should be {

@@ -45,18 +45,6 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     private [instructions] var line: Int = 1
     /** Current column number */
     private [instructions] var col: Int = 1
-    /** Deepest offset reached for the current error */
-    private [instructions] var erroffset: Int = -1
-    /** Deepest column reached for the current error */
-    private [instructions] var errcol: Int = -1
-    /** Deepest line reached for the current error */
-    private [instructions] var errline: Int = -1
-    private [instructions] var raw: List[String] = Nil
-    private [instructions] var unexpected: UnsafeOption[String] = _
-    private [instructions] var expected: List[UnsafeOption[String]] = Nil
-    private [instructions] var unexpectAnyway: Boolean = false
-    private [instructions] var errorOverride: UnsafeOption[String] = _
-    private [instructions] var overrideDepth: Int = 0
     /** State held by the registers, AnyRef to allow for `null` */
     private [instructions] var regs: Array[AnyRef] = new Array[AnyRef](Context.NumRegs)
     /** Amount of indentation to apply to debug combinators output */
@@ -95,27 +83,15 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     }
     private [instructions] def addErrorToHints(): Unit = errs.head match {
         case TrivialError(errOffset, _, _, _, es) if errOffset == offset && es.nonEmpty =>
-            //println(s"$es have been hinted")
             // If our new hints have taken place further in the input stream, then they must invalidate the old ones
             if (hintsValidOffset < offset) hints.clear()
             hintsValidOffset = offset
             hints += new Hint(es)
-        case _ => //println(s"${errs.head} was not suitable for hinting")
+        case _ =>
     }
     private [instructions] def addErrorToHintsAndPop(): Unit = {
         this.addErrorToHints()
         this.errs = this.errs.tail
-    }
-    private def useHints(): Unit = {
-        if (hintsValidOffset == offset) {
-            //println(s"hints $hints applied!")
-            errs.head = errs.head.withHints(hints)
-        }
-        else {
-            //println(s"hints ($hints) were invalid :(")
-            hintsValidOffset = offset
-            hints.clear()
-        }
     }
 
     private [instructions] def updateCheckOffsetAndHints() = {
@@ -150,7 +126,6 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
             assert(!isEmpty(errs) && isEmpty(errs.tail), "there should be only one error on failure")
             assert(isEmpty(handlers), "there should be no handlers left on failure")
             assert(isEmpty(hintStack), "there should be at most one set of hints left at the end")
-            //println(s"error: ${errs.head}")
             Failure(errs.head.pretty(sourceName, new InputHelper))
         }
         else if (pc < instrs.length) {
@@ -169,22 +144,11 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         }
     }
 
-    private def adjustErrorOverride(): Unit = {
-        if (depth < overrideDepth) {
-            overrideDepth = 0
-            errorOverride = null
-        }
-    }
-
-    private [instructions] def call(newInstrs: Array[Instr], at: Int, expected: UnsafeOption[String]) = {
+    private [instructions] def call(newInstrs: Array[Instr], at: Int) = {
         calls = push(calls, new Frame(pc + 1, instrs))
         instrs = newInstrs
         pc = at
         depth += 1
-        if (expected != null && errorOverride == null) {
-            overrideDepth = depth
-            errorOverride = expected
-        }
     }
 
     private [instructions] def ret(): Unit = {
@@ -193,7 +157,6 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         calls = calls.tail
         pc = frame.ret
         depth -= 1
-        adjustErrorOverride()
     }
 
     private [instructions] def catchNoConsumed(handler: =>Unit): Unit = {
@@ -205,52 +168,41 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         checkStack = checkStack.tail
     }
 
-    private def adjustErrors(e: UnsafeOption[String]): Unit = {
-        if (offset > erroffset) {
-            erroffset = offset
-            // FIXME: These get stuck at deepest error
-            // Regular parsec semantics, however says that an earlier error message may override this if it is "more meaningful"
-            errcol = col
-            errline = line
-            unexpected = if (offset < inputsz) "\"" + nextChar + "\"" else s"end of $inputDescriptor"
-            expected = (if (errorOverride == null) e else errorOverride)::Nil
-            raw = Nil
-            unexpectAnyway = false
-        }
-        else if (offset == erroffset) expected ::= (if (errorOverride == null) e else errorOverride)
-        adjustErrorOverride()
-    }
-
     private [instructions] def pushError(err: ParseError): Unit = {
         this.errs = push(this.errs, err)
         this.useHints()
     }
 
+    private def useHints(): Unit = {
+        if (hintsValidOffset == offset) {
+            errs.head = errs.head.withHints(hints)
+        }
+        else {
+            hintsValidOffset = offset
+            hints.clear()
+        }
+    }
+
+    // FIXME: This argument needs to go, it means nothing, but currently token parsers are relying on it. We need multiple unexcepts ASAP
     private [instructions] def failWithMessage(expected: UnsafeOption[String], msg: String): Unit = {
-        this.fail(expected)
-        this.raw ::= msg
-        this.pushError(ParseError.fail(msg, offset, line, col))
+        this.fail(ParseError.fail(msg, offset, line, col))
     }
     private [instructions] def unexpectedFail(expected: UnsafeOption[String], unexpected: String): Unit = {
-        this.fail(expected)
-        this.unexpected = unexpected
-        this.unexpectAnyway = true
-        this.pushError(TrivialError(offset, line, col, Some(Desc(unexpected)), if (expected == null) Set.empty else Set(Desc(expected))))
+        this.fail(TrivialError(offset, line, col, Some(Desc(unexpected)), if (expected == null) Set.empty else Set(Desc(expected))))
     }
     private [instructions] def expectedFail(expected: Set[ErrorItem]): Unit = {
-        this.fail(expected.headOption.map(_.msg).orNull)
         val unexpected = if (offset < inputsz) Raw(s"$nextChar") else EndOfInput
-        this.pushError(TrivialError(offset, line, col, Some(unexpected), expected))
+        this.fail(TrivialError(offset, line, col, Some(unexpected), expected))
     }
-    private [instructions] def expectedFail(expected: UnsafeOption[String]): Unit = expectedFail(if (expected == null) Set.empty[ErrorItem] else Set[ErrorItem](Desc(expected)))
-    private [instructions] def fail(expected: UnsafeOption[String] = null): Unit = {
-        if (isEmpty(handlers)) {
-            status = Failed
-            if (erroffset == -1) {
-                errcol = col
-                errline = line
-            }
-        }
+    private [instructions] def expectedFail(expected: UnsafeOption[String]): Unit = {
+        expectedFail(if (expected == null) Set.empty[ErrorItem] else Set[ErrorItem](Desc(expected)))
+    }
+    private [instructions] def fail(error: ParseError): Unit = {
+        this.pushError(error)
+        this.fail()
+    }
+    private [instructions] def fail(): Unit = {
+        if (isEmpty(handlers)) status = Failed
         else {
             status = Recover
             val handler = handlers.head
@@ -266,25 +218,6 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
             if (diffstack > 0) stack.drop(diffstack)
             depth = handler.depth
         }
-        if (expected != null) adjustErrors(expected)
-    }
-
-    private def errorMessage: String = {
-        val scopeName = sourceName.fold("")(name => s"In file '$name' ")
-        val posStr = s"$scopeName(line $errline, column $errcol):"
-        val unexpectedStr = Option(unexpected).map(s => s"unexpected $s")
-        val expectedFlat = expected.flatMap(Option(_))
-        val expectedFiltered = expectedFlat.filterNot(_.isEmpty)
-        val rawFiltered = raw.filterNot(_.isEmpty)
-        // TODO: or should be final, commas elsewhere
-        // TODO: I want the line and the caret!
-        val expectedStr = if (expectedFiltered.isEmpty) None else Some(s"expected ${expectedFiltered.distinct.reverse.mkString(" or ")}")
-        val rawStr = if (rawFiltered.isEmpty) None else Some(rawFiltered.distinct.reverse.mkString(" or "))
-        unexpectAnyway ||= expectedFlat.nonEmpty || raw.nonEmpty
-        if      (expectedStr.nonEmpty) s"$posStr${unexpectedStr.fold("")("\n  " + _)}\n  ${expectedStr.get}${rawStr.fold("")("\n  " + _)}"
-        else if (rawStr.nonEmpty)      s"$posStr\n  ${rawStr.get}"
-        else if (unexpectAnyway)       s"$posStr\n  ${unexpectedStr.getOrElse("unknown parse error")}"
-        else                           s"$posStr\n  unknown parse error"
     }
 
     private [instructions] def pushAndContinue(x: Any) = {
@@ -347,15 +280,6 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         pc = 0
         line = 1
         col = 1
-        erroffset = -1
-        errcol = -1
-        errline = -1
-        raw = Nil
-        unexpected = null
-        expected = Nil
-        unexpectAnyway = false
-        errorOverride = null
-        overrideDepth = 0
         debuglvl = 0
         this
     }

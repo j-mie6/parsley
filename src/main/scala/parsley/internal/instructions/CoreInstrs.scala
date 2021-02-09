@@ -49,29 +49,29 @@ private [internal] object Apply extends Instr {
 }
 
 // Monadic
-private [internal] final class DynCall[-A](f: A => Array[Instr], expected: UnsafeOption[String]) extends Instr {
+private [internal] final class DynCall[-A](f: A => Array[Instr]) extends Instr {
     private [DynCall] val g = f.asInstanceOf[Any => Array[Instr]]
-    override def apply(ctx: Context): Unit = ctx.call(g(ctx.stack.upop()), 0, expected)
+    override def apply(ctx: Context): Unit = ctx.call(g(ctx.stack.upop()), 0)
     // $COVERAGE-OFF$
     override def toString: String = "DynCall(?)"
     // $COVERAGE-ON$
 }
 
 // Control Flow
-private [internal] final class Call(_instrs: =>Array[Instr], expected: UnsafeOption[String]) extends Instr {
+private [internal] final class Call(_instrs: =>Array[Instr]) extends Instr {
     private [Call] lazy val (instrs, pindices) = {
         val is = _instrs
         (is, statefulIndices(is))
     }
 
-    override def apply(ctx: Context): Unit = ctx.call(stateSafeCopy(instrs, pindices), 0, expected)
+    override def apply(ctx: Context): Unit = ctx.call(stateSafeCopy(instrs, pindices), 0)
     // $COVERAGE-OFF$
     override def toString: String = "Call"
     // $COVERAGE-ON$
 }
 
 private [internal] final class GoSub(var label: Int) extends JumpInstr {
-    override def apply(ctx: Context): Unit = ctx.call(ctx.instrs, label, null)
+    override def apply(ctx: Context): Unit = ctx.call(ctx.instrs, label)
     // $COVERAGE-OFF$
     override def toString: String = s"GoSub($label)"
     // $COVERAGE-ON$
@@ -86,10 +86,7 @@ private [internal] object Return extends Instr {
 
 private [internal] final class Empty(expected: UnsafeOption[String]) extends Instr {
     override def apply(ctx: Context): Unit = {
-        val strip = ctx.expected.isEmpty
-        ctx.fail(expected)
-        if (strip) ctx.unexpected = null
-        ctx.pushError(TrivialError(ctx.offset, ctx.line, ctx.col, None, if (expected == null) Set.empty else Set(Desc(expected))))
+        ctx.fail(TrivialError(ctx.offset, ctx.line, ctx.col, None, if (expected == null) Set.empty else Set(Desc(expected))))
     }
     // $COVERAGE-OFF$
     override def toString: String = "Empty"
