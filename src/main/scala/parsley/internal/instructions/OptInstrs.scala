@@ -118,12 +118,7 @@ private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int]
     private def addErrors(ctx: Context): Unit = {
         if (ctx.offset > ctx.erroffset) {
             ctx.erroffset = ctx.offset
-            ctx.errcol = ctx.col
-            ctx.errline = ctx.line
-            ctx.unexpected = if (ctx.offset < ctx.inputsz) "\"" + ctx.nextChar + "\"" else "end of input"
             ctx.expected = if (ctx.errorOverride == null) expecteds else ctx.errorOverride::Nil
-            ctx.raw = Nil
-            ctx.unexpectAnyway = false
         }
         else if (ctx.offset == ctx.erroffset) {
             if (ctx.errorOverride == null) ctx.expected = ctx.expected reverse_::: expecteds

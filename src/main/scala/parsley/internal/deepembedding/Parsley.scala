@@ -54,9 +54,13 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     }
     final private def fix(implicit seen: Set[Parsley[_]], sub: SubMap, label: UnsafeOption[String]): Parsley[A] = {
         // We use the seen set here to prevent cascading sub-routines
+        println(this, seen)
         val wasSeen = seen(this)
         val self = sub(label, this)
-        if (wasSeen && (self eq this)) new Rec(this, label)
+        if (wasSeen && (self eq this)) {
+            println("sup")
+            new Rec(this, label)
+        }
         else if (wasSeen) this
         else self
     }

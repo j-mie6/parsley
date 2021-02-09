@@ -47,14 +47,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     private [instructions] var col: Int = 1
     /** Deepest offset reached for the current error */
     private [instructions] var erroffset: Int = -1
-    /** Deepest column reached for the current error */
-    private [instructions] var errcol: Int = -1
-    /** Deepest line reached for the current error */
-    private [instructions] var errline: Int = -1
-    private [instructions] var raw: List[String] = Nil
-    private [instructions] var unexpected: UnsafeOption[String] = _
     private [instructions] var expected: List[UnsafeOption[String]] = Nil
-    private [instructions] var unexpectAnyway: Boolean = false
     private [instructions] var errorOverride: UnsafeOption[String] = _
     private [instructions] var overrideDepth: Int = 0
     /** State held by the registers, AnyRef to allow for `null` */
@@ -208,14 +201,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     private def adjustErrors(e: UnsafeOption[String]): Unit = {
         if (offset > erroffset) {
             erroffset = offset
-            // FIXME: These get stuck at deepest error
-            // Regular parsec semantics, however says that an earlier error message may override this if it is "more meaningful"
-            errcol = col
-            errline = line
-            unexpected = if (offset < inputsz) "\"" + nextChar + "\"" else s"end of $inputDescriptor"
             expected = (if (errorOverride == null) e else errorOverride)::Nil
-            raw = Nil
-            unexpectAnyway = false
         }
         else if (offset == erroffset) expected ::= (if (errorOverride == null) e else errorOverride)
         adjustErrorOverride()
@@ -228,13 +214,13 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
 
     private [instructions] def failWithMessage(expected: UnsafeOption[String], msg: String): Unit = {
         this.fail(expected)
-        this.raw ::= msg
+        //this.raw ::= msg
         this.pushError(ParseError.fail(msg, offset, line, col))
     }
     private [instructions] def unexpectedFail(expected: UnsafeOption[String], unexpected: String): Unit = {
         this.fail(expected)
-        this.unexpected = unexpected
-        this.unexpectAnyway = true
+        //this.unexpected = unexpected
+        //this.unexpectAnyway = true
         this.pushError(TrivialError(offset, line, col, Some(Desc(unexpected)), if (expected == null) Set.empty else Set(Desc(expected))))
     }
     private [instructions] def expectedFail(expected: Set[ErrorItem]): Unit = {
@@ -246,10 +232,10 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     private [instructions] def fail(expected: UnsafeOption[String] = null): Unit = {
         if (isEmpty(handlers)) {
             status = Failed
-            if (erroffset == -1) {
-                errcol = col
-                errline = line
-            }
+            //if (erroffset == -1) {
+            //    errcol = col
+            //    errline = line
+            //}
         }
         else {
             status = Recover
@@ -267,24 +253,6 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
             depth = handler.depth
         }
         if (expected != null) adjustErrors(expected)
-    }
-
-    private def errorMessage: String = {
-        val scopeName = sourceName.fold("")(name => s"In file '$name' ")
-        val posStr = s"$scopeName(line $errline, column $errcol):"
-        val unexpectedStr = Option(unexpected).map(s => s"unexpected $s")
-        val expectedFlat = expected.flatMap(Option(_))
-        val expectedFiltered = expectedFlat.filterNot(_.isEmpty)
-        val rawFiltered = raw.filterNot(_.isEmpty)
-        // TODO: or should be final, commas elsewhere
-        // TODO: I want the line and the caret!
-        val expectedStr = if (expectedFiltered.isEmpty) None else Some(s"expected ${expectedFiltered.distinct.reverse.mkString(" or ")}")
-        val rawStr = if (rawFiltered.isEmpty) None else Some(rawFiltered.distinct.reverse.mkString(" or "))
-        unexpectAnyway ||= expectedFlat.nonEmpty || raw.nonEmpty
-        if      (expectedStr.nonEmpty) s"$posStr${unexpectedStr.fold("")("\n  " + _)}\n  ${expectedStr.get}${rawStr.fold("")("\n  " + _)}"
-        else if (rawStr.nonEmpty)      s"$posStr\n  ${rawStr.get}"
-        else if (unexpectAnyway)       s"$posStr\n  ${unexpectedStr.getOrElse("unknown parse error")}"
-        else                           s"$posStr\n  unknown parse error"
     }
 
     private [instructions] def pushAndContinue(x: Any) = {
@@ -348,12 +316,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         line = 1
         col = 1
         erroffset = -1
-        errcol = -1
-        errline = -1
-        raw = Nil
-        unexpected = null
         expected = Nil
-        unexpectAnyway = false
         errorOverride = null
         overrideDepth = 0
         debuglvl = 0

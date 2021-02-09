@@ -112,11 +112,7 @@ private [internal] final class Filter[A](pred: A=>Boolean, expected: UnsafeOptio
     private [this] val pred_ = pred.asInstanceOf[Any=>Boolean]
     override def apply(ctx: Context): Unit = {
         if (pred_(ctx.stack.upeek)) ctx.inc()
-        else {
-            val strip = ctx.expected.isEmpty
-            ctx.expectedFail(expected)
-            if (strip) ctx.unexpected = null
-        }
+        else ctx.expectedFail(expected)
     }
     // $COVERAGE-OFF$
     override def toString: String = "Filter(?)"

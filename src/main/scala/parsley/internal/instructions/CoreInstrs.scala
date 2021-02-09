@@ -86,9 +86,7 @@ private [internal] object Return extends Instr {
 
 private [internal] final class Empty(expected: UnsafeOption[String]) extends Instr {
     override def apply(ctx: Context): Unit = {
-        val strip = ctx.expected.isEmpty
         ctx.fail(expected)
-        if (strip) ctx.unexpected = null
         ctx.pushError(TrivialError(ctx.offset, ctx.line, ctx.col, None, if (expected == null) Set.empty else Set(Desc(expected))))
     }
     // $COVERAGE-OFF$
