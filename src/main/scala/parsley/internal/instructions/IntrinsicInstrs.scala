@@ -5,23 +5,23 @@ import Stack.isEmpty
 
 import scala.annotation.tailrec
 
-private [internal] final class Lift2[A, B, C](f: (A, B) => C) extends Instr {
-    private [this] val g = f.asInstanceOf[(Any, Any) => C]
+private [internal] final class Lift2[A, B, C](_f: (A, B) => C) extends Instr {
+    private [this] val f = _f.asInstanceOf[(Any, Any) => C]
     override def apply(ctx: Context): Unit = {
         val y = ctx.stack.upop()
-        ctx.exchangeAndContinue(g(ctx.stack.peek, y))
+        ctx.exchangeAndContinue(f(ctx.stack.peek, y))
     }
     // $COVERAGE-OFF$
     override def toString: String = "Lift2(f)"
     // $COVERAGE-ON$
 }
 
-private [internal] final class Lift3[A, B, C, D](f: (A, B, C) => D) extends Instr {
-    private [this] val g = f.asInstanceOf[(Any, Any, Any) => D]
+private [internal] final class Lift3[A, B, C, D](_f: (A, B, C) => D) extends Instr {
+    private [this] val f = _f.asInstanceOf[(Any, Any, Any) => D]
     override def apply(ctx: Context): Unit = {
         val z = ctx.stack.upop()
         val y = ctx.stack.upop()
-        ctx.exchangeAndContinue(g(ctx.stack.peek, y, z))
+        ctx.exchangeAndContinue(f(ctx.stack.peek, y, z))
     }
     // $COVERAGE-OFF$
     override def toString: String = "Lift3(f)"
@@ -106,10 +106,10 @@ private [internal] final class If(var label: Int) extends JumpInstr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class Filter[A](pred: A=>Boolean, expected: UnsafeOption[String]) extends Instr {
-    private [this] val pred_ = pred.asInstanceOf[Any=>Boolean]
+private [internal] final class Filter[A](_pred: A=>Boolean, expected: UnsafeOption[String]) extends Instr {
+    private [this] val pred = _pred.asInstanceOf[Any=>Boolean]
     override def apply(ctx: Context): Unit = {
-        if (pred_(ctx.stack.upeek)) ctx.inc()
+        if (pred(ctx.stack.upeek)) ctx.inc()
         else ctx.expectedFail(expected)
     }
     // $COVERAGE-OFF$
@@ -117,26 +117,28 @@ private [internal] final class Filter[A](pred: A=>Boolean, expected: UnsafeOptio
     // $COVERAGE-ON$
 }
 
-private [internal] final class Guard[A](pred: A=>Boolean, msg: String) extends Instr {
-    private [this] val pred_ = pred.asInstanceOf[Any=>Boolean]
+private [internal] final class FilterOut[A](_pred: PartialFunction[A, String], expected: UnsafeOption[String]) extends Instr {
+    private [this] val pred = _pred.asInstanceOf[PartialFunction[Any, String]]
     override def apply(ctx: Context): Unit = {
-        if (pred_(ctx.stack.upeek)) ctx.inc()
-        else ctx.failWithMessage(msg)
+        if (pred.isDefinedAt(ctx.stack.upeek)) {
+            ctx.expectedFail(expected)
+            ctx.errs.head = ctx.errs.head.giveReason(pred(ctx.stack.upop()))
+        }
+        else ctx.inc()
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"Guard(?, $msg)"
+    override def toString: String = "Filter(?)"
     // $COVERAGE-ON$
 }
 
-private [internal] final class FastGuard[A](pred: A=>Boolean, msggen: A=>String) extends Instr {
-    private [this] val pred_ = pred.asInstanceOf[Any=>Boolean]
-    private [this] val msggen_ = msggen.asInstanceOf[Any=>String]
+private [internal] final class GuardAgainst[A](_pred: PartialFunction[A, String]) extends Instr {
+    private [this] val pred = _pred.asInstanceOf[PartialFunction[Any, String]]
     override def apply(ctx: Context): Unit = {
-        if (pred_(ctx.stack.upeek)) ctx.inc()
-        else ctx.failWithMessage(msggen_(ctx.stack.upop()))
+        if (pred.isDefinedAt(ctx.stack.upeek)) ctx.failWithMessage(pred(ctx.stack.upop()))
+        else ctx.inc()
     }
     // $COVERAGE-OFF$
-    override def toString: String = "FastGuard(?, ?)"
+    override def toString: String = "GuardAgainst(?)"
     // $COVERAGE-ON$
 }
 
@@ -175,10 +177,10 @@ private [internal] class Eof(_expected: UnsafeOption[String]) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class Modify[S](reg: Int, f: S => S) extends Instr {
-    private [this] val g = f.asInstanceOf[Any => Any]
+private [internal] final class Modify[S](reg: Int, _f: S => S) extends Instr {
+    private [this] val f = _f.asInstanceOf[Any => Any]
     override def apply(ctx: Context): Unit = {
-        ctx.writeReg(reg, g(ctx.regs(reg)))
+        ctx.writeReg(reg, f(ctx.regs(reg)))
         ctx.pushAndContinue(())
     }
     // $COVERAGE-OFF$

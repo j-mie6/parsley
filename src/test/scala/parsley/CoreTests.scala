@@ -139,9 +139,9 @@ class CoreTests extends ParsleyTest {
         attempt("ab").orElse("ac").runParser("ac") should not be a [Failure]
     }
 
-    "lookAhead" should "consume no input on success" ignore {
+    "lookAhead" should "consume no input on success" in {
         lookAhead('a').runParser("a") should not be a [Failure]
-        (lookAhead('a') *> 'b').runParser("ab") should be (Failure("(line 1, column 1):\n  unexpected \"a\"\n  expected \"b\""))
+        (lookAhead('a') *> 'b').runParser("ab") should be (Failure("(line 1, column 1):\n  unexpected \"a\"\n  expected \"b\"\n  >ab\n  >^"))
     }
     it must "fail when input is consumed, and input is consumed" in {
         lookAhead("ab").runParser("ac") shouldBe a [Failure]
@@ -233,29 +233,33 @@ class CoreTests extends ParsleyTest {
         (p ?: ('a', 'b')).runParser("a") should be (Success('a'))
     }
 
-    "filtered parsers" should "function correctly" ignore {
+    "filtered parsers" should "function correctly" in {
         val p = anyChar.filterNot(_.isLower)
         p.runParser("a") shouldBe a [Failure]
         p.runParser("A") shouldBe Success('A')
 
-        val q = anyChar.guardNot(_.isLower, "letter was not uppercase")
-        q.runParser("a") shouldBe Failure("(line 1, column 2):\n  letter was not uppercase")
+        val q = anyChar.filterOut {
+            case c if c.isLower => s"'$c' should have been uppercase"
+        }
+        q.runParser("a") shouldBe Failure("(line 1, column 2):\n  unexpected end of input\n  'a' should have been uppercase\n  >a\n  > ^")
         q.runParser("A") shouldBe Success('A')
 
-        val r = anyChar.guardNot(_.isLower, c => s"'$c' is not uppercase")
-        r.runParser("a") shouldBe Failure("(line 1, column 2):\n  'a' is not uppercase")
+        val r = anyChar.guardAgainst {
+            case c if c.isLower => s"'$c' is not uppercase"
+        }
+        r.runParser("a") shouldBe Failure("(line 1, column 2):\n  'a' is not uppercase\n  >a\n  > ^")
         r.runParser("A") shouldBe Success('A')
 
-        val s = anyChar >?> (_.isUpper, "letter was not uppercase")
-        s.runParser("a") shouldBe Failure("(line 1, column 2):\n  letter was not uppercase")
+        val s = anyChar.guard(_.isUpper, "letter was not uppercase")
+        s.runParser("a") shouldBe Failure("(line 1, column 2):\n  letter was not uppercase\n  >a\n  > ^")
         s.runParser("A") shouldBe Success('A')
 
-        val t = anyChar >?> (_.isUpper, c => s"'$c' is not uppercase")
-        t.runParser("a") shouldBe Failure("(line 1, column 2):\n  'a' is not uppercase")
+        val t = anyChar.guard(_.isUpper, c => s"'$c' is not uppercase")
+        t.runParser("a") shouldBe Failure("(line 1, column 2):\n  'a' is not uppercase\n  >a\n  > ^")
         t.runParser("A") shouldBe Success('A')
     }
 
-    "the collect combinator" should "act like a filter then a map" ignore {
+    "the collect combinator" should "act like a filter then a map" in {
         val p = anyChar.collect[Int] {
             case '+' => 0
             case c if c.isUpper => c - 'A' + 1
@@ -270,7 +274,7 @@ class CoreTests extends ParsleyTest {
         }
         q.runParser("+") shouldBe Success(0)
         q.runParser("C") shouldBe Success(3)
-        q.runParser("a") shouldBe Failure("(line 1, column 2):\n  oops")
+        q.runParser("a") shouldBe Failure("(line 1, column 2):\n  oops\n  >a\n  > ^")
 
         val r = anyChar.collectMsg(c => s"$c is not appropriate") {
             case '+' => 0
@@ -278,7 +282,7 @@ class CoreTests extends ParsleyTest {
         }
         r.runParser("+") shouldBe Success(0)
         r.runParser("C") shouldBe Success(3)
-        r.runParser("a") shouldBe Failure("(line 1, column 2):\n  a is not appropriate")
+        r.runParser("a") shouldBe Failure("(line 1, column 2):\n  a is not appropriate\n  >a\n  > ^")
     }
 
     "the cast combinator" should "allow for casts to valid types" in {
