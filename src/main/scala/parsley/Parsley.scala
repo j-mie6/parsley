@@ -252,25 +252,6 @@ object Parsley
           * @return The result of the invokee if it passes the predicate
           */
         def guard(pred: A => Boolean, msggen: A => String): Parsley[A] = this.guardAgainst { case x if !pred(x) => msggen(x) }
-        /** Similar to `filterNot`, except the error message desired is also provided. This allows you to name the message
-          * itself.
-          * @param pred The predicate that is tested against the parser result
-          * @param msg The message used for the error if the input failed the check
-          * @return The result of the invokee if it fails the predicate
-          */
-        // $COVERAGE-OFF$
-        @deprecated("This method will be removed in Parsley 3.0, use `guardAgainst` instead", "2.8.0")
-        def guardNot(pred: A => Boolean, msg: String): Parsley[A] = this.guardAgainst { case x if pred(x) => msg }
-        /** Similar to `filterNot`, except the error message desired is also provided. This allows you to name the message
-          * itself. The message is provided as a generator, which allows the user to avoid otherwise expensive
-          * computation.
-          * @param pred The predicate that is tested against the parser result
-          * @param msggen Generator function for error message, generating a message based on the result of the parser
-          * @return The result of the invokee if it fails the predicate
-          */
-        @deprecated("This method will be removed in Parsley 3.0, use `guardAgainst` instead", "2.8.0")
-        def guardNot(pred: A => Boolean, msggen: A => String): Parsley[A] = this.guardAgainst { case x if pred(x) => msggen(x) }
-        // $COVERAGE-ON$
         /** Similar to `filterOut`, except the error message generated yields a ''true failure''. This means that it will
           * uses the same mechanism as [[Parsley.fail]], as opposed to the reason provided by [[filterOut]]
           * @param pred The predicate that is tested against the parser result and produces error messages
@@ -278,14 +259,6 @@ object Parsley
           * @since 2.8.0
           */
         def guardAgainst(pred: PartialFunction[A, String]): Parsley[A] = new Parsley(new deepembedding.GuardAgainst(p.internal, pred))
-        // $COVERAGE-OFF$
-        /**Alias for guard combinator, taking a fixed message.*/
-        @deprecated("This method will be removed in Parsley 3.0, use `guard` instead", "2.8.0")
-        def >?>(pred: A => Boolean, msg: String): Parsley[A] = this.guard(pred, msg)
-        /**Alias for guard combinator, taking a dynamic message generator.*/
-        @deprecated("This method will be removed in Parsley 3.0, use `guard` instead", "2.8.0")
-        def >?>(pred: A => Boolean, msggen: A => String): Parsley[A] = this.guard(pred, msggen)
-        // $COVERAGE-ON$
         /**Alias for `label`*/
         def ?(msg: String): Parsley[A] = this.label(msg)
         /**Sets the expected message for a parser. If the parser fails then `expected msg` will added to the error
