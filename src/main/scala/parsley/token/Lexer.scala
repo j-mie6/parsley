@@ -116,7 +116,7 @@ class Lexer(lang: LanguageDef)
      * This parser deals correctly with escape sequences. The literal character is parsed according
      * to the grammar rules defined in the Haskell report (which matches most programming languages
      * quite closely).*/
-    lazy val charLiteral: Parsley[Char] = lexeme(between('\'', '\''.unsafeLabel("end of character"), characterChar).unsafeLabel("character"))
+    lazy val charLiteral: Parsley[Char] = lexeme(between('\''.unsafeLabel("character"), '\''.unsafeLabel("end of character"), characterChar))
 
     /**This lexeme parser parses a literal string. Returns the literal string value. This parser
      * deals correctly with escape sequences and gaps. The literal string is parsed according to
@@ -155,7 +155,7 @@ class Lexer(lang: LanguageDef)
     {
         '\\' *> (escapeGap #> None
              <|> escapeEmpty #> None
-             <|> (escapeCode <#> (Some(_))))
+             <|> (escapeCode <#> (Some(_))).explain("invalid escape sequence"))
     }
     private lazy val stringChar: Parsley[Option[Char]] = ((stringLetter <#> (Some(_))) <|> stringEscape).label("string character")
 

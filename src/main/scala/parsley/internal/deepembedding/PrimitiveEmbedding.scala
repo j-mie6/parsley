@@ -95,6 +95,18 @@ private [parsley] final class ErrorLabel[A](_p: =>Parsley[A], label: String)
         }
     }
 }
+private [parsley] final class ErrorExplain[A](_p: =>Parsley[A], reason: String)
+    extends Unary[A, A](_p)(c => s"$c.explain($reason)", _ => ErrorExplain.empty(reason)) {
+    final override val numInstrs = 2
+    final override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
+        val handler = state.freshLabel()
+        instrs += new instructions.PushHandler(handler)
+        p.codeGen |> {
+            instrs += new instructions.Label(handler)
+            instrs += new instructions.ApplyReason(reason)
+        }
+    }
+}
 
 private [parsley] final class UnsafeErrorRelabel[+A](_p: =>Parsley[A], msg: String) extends Parsley[A] {
     lazy val p = _p
@@ -142,6 +154,9 @@ private [deepembedding] object Look {
 }
 private [deepembedding] object ErrorLabel {
     def empty[A](label: String): ErrorLabel[A] = new ErrorLabel(null, label)
+}
+private [deepembedding] object ErrorExplain {
+    def empty[A](reason: String): ErrorExplain[A] = new ErrorExplain(null, reason)
 }
 private [deepembedding] object NotFollowedBy {
     def empty[A](expected: UnsafeOption[String]): NotFollowedBy[A] = new NotFollowedBy(null, expected)
