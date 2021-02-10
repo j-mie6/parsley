@@ -57,7 +57,24 @@ private [internal] object MergeErrors extends Instr {
     }
 
     // $COVERAGE-OFF$
-    override def toString: String = s"MergeErrors"
+    override def toString: String = "MergeErrors"
+    // $COVERAGE-ON$
+}
+
+private [internal] class ApplyReason(reason: String) extends Instr {
+    override def apply(ctx: Context): Unit = {
+        if (ctx.status eq Good) {
+            ctx.handlers = ctx.handlers.tail
+            ctx.inc()
+        }
+        else {
+            ctx.errs.head = ctx.errs.head.giveReason(reason)
+            ctx.fail()
+        }
+    }
+
+    // $COVERAGE-OFF$
+    override def toString: String = s"ApplyReason($reason)"
     // $COVERAGE-ON$
 }
 

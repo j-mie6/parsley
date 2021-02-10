@@ -16,16 +16,17 @@ private [internal] sealed trait ParseError {
             case (_: FailError, _: TrivialError) => this
             case (_: TrivialError, _: FailError) => that
             case (_this: FailError, _that: FailError) => FailError(offset, line, col, _this.msgs union _that.msgs)
-            case (TrivialError(_, _, _, u1, es1, msgs1), TrivialError(_, _, _, u2, es2, msgs2)) =>
+            case (TrivialError(_, _, _, u1, es1, rs1), TrivialError(_, _, _, u2, es2, rs2)) =>
                 val u = (u1, u2) match {
                     case (Some(u1), Some(u2)) => Some(ErrorItem.higherPriority(u1, u2))
                     case _ => u1.orElse(u2)
                 }
-                TrivialError(offset, line, col, u, es1 union es2, msgs1 union msgs2)
+                TrivialError(offset, line, col, u, es1 union es2, rs1 union rs2)
         }
     }
 
     def withHints(hints: Iterable[Hint]): ParseError
+    def giveReason(reason: String): ParseError
     def pretty(sourceName: Option[String], helper: Context#InputHelper): String
 
     protected final def posStr(sourceName: Option[String]): String = {
@@ -60,14 +61,15 @@ private [internal] sealed trait ParseError {
            |  >${caret}""".stripMargin
     }
 }
-// The explanations here are lightweight, two errors can merge their messages, but messages do not get converted to hints
+// The reasons here are lightweight, two errors can merge their messages, but messages do not get converted to hints
 private [internal] case class TrivialError(offset: Int, line: Int, col: Int,
-                                           unexpected: Option[ErrorItem], expecteds: Set[ErrorItem], explanations: Set[String])
+                                           unexpected: Option[ErrorItem], expecteds: Set[ErrorItem], reasons: Set[String])
     extends ParseError {
     def withHints(hints: Iterable[Hint]): ParseError = copy(expecteds = hints.foldLeft(expecteds)((es, h) => es union h.hint))
+    def giveReason(reason: String): ParseError = copy(reasons = reasons + reason)
 
     def pretty(sourceName: Option[String], helper: Context#InputHelper): String = {
-        assemble(sourceName, helper, List(unexpectedInfo, expectedInfo).flatten ::: explanations.toList)
+        assemble(sourceName, helper, List(unexpectedInfo, expectedInfo).flatten ::: reasons.toList)
     }
 
     private def unexpectedInfo: Option[String] = unexpected.map(u => s"unexpected ${u.msg}")
@@ -75,6 +77,7 @@ private [internal] case class TrivialError(offset: Int, line: Int, col: Int,
 }
 private [internal] case class FailError(offset: Int, line: Int, col: Int, msgs: Set[String]) extends ParseError {
     def withHints(hints: Iterable[Hint]): ParseError = this
+    def giveReason(reason: String): ParseError = this
     def pretty(sourceName: Option[String], helper: Context#InputHelper): String = {
         assemble(sourceName, helper, msgs.toList)
     }

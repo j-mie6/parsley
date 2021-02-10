@@ -155,7 +155,7 @@ class Lexer(lang: LanguageDef)
     {
         '\\' *> (escapeGap #> None
              <|> escapeEmpty #> None
-             <|> (escapeCode <#> (Some(_))))
+             <|> (escapeCode <#> (Some(_))).explain("invalid escape sequence"))
     }
     private lazy val stringChar: Parsley[Option[Char]] = ((stringLetter <#> (Some(_))) <|> stringEscape).label("string character")
 

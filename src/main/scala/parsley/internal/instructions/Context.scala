@@ -121,7 +121,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     // $COVERAGE-ON$
 
     @tailrec @inline private [parsley] def runParser[A](): Result[A] = {
-        //println(pretty)
+        println(pretty)
         if (status eq Failed) {
             assert(!isEmpty(errs) && isEmpty(errs.tail), "there should be only one error on failure")
             assert(isEmpty(handlers), "there should be no handlers left on failure")
