@@ -82,7 +82,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         commitHints()
     }
     private [instructions] def addErrorToHints(): Unit = errs.head match {
-        case TrivialError(errOffset, _, _, _, es) if errOffset == offset && es.nonEmpty =>
+        case TrivialError(errOffset, _, _, _, es, _) if errOffset == offset && es.nonEmpty =>
             // If our new hints have taken place further in the input stream, then they must invalidate the old ones
             if (hintsValidOffset < offset) hints.clear()
             hintsValidOffset = offset
@@ -184,18 +184,21 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     }
 
     // FIXME: This argument needs to go, it means nothing, but currently token parsers are relying on it. We need multiple unexcepts ASAP
-    private [instructions] def failWithMessage(expected: UnsafeOption[String], msg: String): Unit = {
+    private [instructions] def failWithMessage(msg: String): Unit = {
         this.fail(ParseError.fail(msg, offset, line, col))
     }
     private [instructions] def unexpectedFail(expected: UnsafeOption[String], unexpected: String): Unit = {
-        this.fail(TrivialError(offset, line, col, Some(Desc(unexpected)), if (expected == null) Set.empty else Set(Desc(expected))))
+        this.fail(TrivialError(offset, line, col, Some(Desc(unexpected)), if (expected == null) Set.empty else Set(Desc(expected)), Set.empty))
     }
-    private [instructions] def expectedFail(expected: Set[ErrorItem]): Unit = {
+    private [instructions] def expectedFail(expected: Set[ErrorItem], msg: Option[String]): Unit = {
         val unexpected = if (offset < inputsz) Raw(s"$nextChar") else EndOfInput
-        this.fail(TrivialError(offset, line, col, Some(unexpected), expected))
+        this.fail(TrivialError(offset, line, col, Some(unexpected), expected, msg.fold(Set.empty[String])(Set(_))))
     }
     private [instructions] def expectedFail(expected: UnsafeOption[String]): Unit = {
-        expectedFail(if (expected == null) Set.empty[ErrorItem] else Set[ErrorItem](Desc(expected)))
+        expectedFail(if (expected == null) Set.empty[ErrorItem] else Set[ErrorItem](Desc(expected)), None)
+    }
+    private [instructions] def expectedFailWithExplanation(expected: UnsafeOption[String], msg: String): Unit = {
+        expectedFail(if (expected == null) Set.empty[ErrorItem] else Set[ErrorItem](Desc(expected)), Some(msg))
     }
     private [instructions] def fail(error: ParseError): Unit = {
         this.pushError(error)

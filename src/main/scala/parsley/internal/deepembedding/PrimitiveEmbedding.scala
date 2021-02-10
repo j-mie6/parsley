@@ -35,8 +35,8 @@ private [parsley] final class NotFollowedBy[A](_p: =>Parsley[A], val expected: U
     }
 }
 
-private [parsley] final class Fail(private [Fail] val msg: String, val expected: UnsafeOption[String] = null)
-    extends SingletonExpect[Nothing](s"fail($msg)", new Fail(msg, _), new instructions.Fail(msg, expected)) with MZero
+private [parsley] final class Fail(private [Fail] val msg: String)
+    extends SingletonExpect[Nothing](s"fail($msg)", _ => new Fail(msg), new instructions.Fail(msg)) with MZero
 
 private [parsley] final class Unexpected(private [Unexpected] val msg: String, val expected: UnsafeOption[String] = null)
     extends SingletonExpect[Nothing](s"unexpected($msg)", new Unexpected(msg, _), new instructions.Unexpected(msg, expected)) with MZero

@@ -86,7 +86,7 @@ private [internal] object Return extends Instr {
 
 private [internal] final class Empty(expected: UnsafeOption[String]) extends Instr {
     override def apply(ctx: Context): Unit = {
-        ctx.fail(TrivialError(ctx.offset, ctx.line, ctx.col, None, if (expected == null) Set.empty else Set(Desc(expected))))
+        ctx.fail(TrivialError(ctx.offset, ctx.line, ctx.col, None, if (expected == null) Set.empty else Set(Desc(expected)), Set.empty))
     }
     // $COVERAGE-OFF$
     override def toString: String = "Empty"

@@ -36,7 +36,7 @@ private [internal] class CharTok(c: Char, x: Any, _expected: UnsafeOption[String
             ctx.consumeChar()
             ctx.pushAndContinue(x)
         }
-        else ctx.expectedFail(Set(errorItem))
+        else ctx.expectedFail(Set(errorItem), None)
     }
     // $COVERAGE-OFF$
     override def toString: String = if (x == c) s"Chr($c)" else s"ChrPerform($c, $x)"
@@ -87,7 +87,8 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
         val origCol = ctx.col
         go(ctx, ctx.offset, 0,
             TrivialError(origOffset, origLine, origCol,
-                Some(if (ctx.inputsz > origOffset) Raw(ctx.input.slice(origOffset, Math.min(origOffset + sz, ctx.inputsz)).mkString) else EndOfInput), Set(errorItem)
+                Some(if (ctx.inputsz > origOffset) Raw(ctx.input.slice(origOffset, Math.min(origOffset + sz, ctx.inputsz)).mkString) else EndOfInput),
+                Set(errorItem), Set.empty
             ))
     }
     // $COVERAGE-OFF$
@@ -116,23 +117,23 @@ private [internal] final class Filter[A](pred: A=>Boolean, expected: UnsafeOptio
     // $COVERAGE-ON$
 }
 
-private [internal] final class Guard[A](pred: A=>Boolean, msg: String, expected: UnsafeOption[String]) extends Instr {
+private [internal] final class Guard[A](pred: A=>Boolean, msg: String) extends Instr {
     private [this] val pred_ = pred.asInstanceOf[Any=>Boolean]
     override def apply(ctx: Context): Unit = {
         if (pred_(ctx.stack.upeek)) ctx.inc()
-        else ctx.failWithMessage(expected, msg)
+        else ctx.failWithMessage(msg)
     }
     // $COVERAGE-OFF$
     override def toString: String = s"Guard(?, $msg)"
     // $COVERAGE-ON$
 }
 
-private [internal] final class FastGuard[A](pred: A=>Boolean, msggen: A=>String, expected: UnsafeOption[String]) extends Instr {
+private [internal] final class FastGuard[A](pred: A=>Boolean, msggen: A=>String) extends Instr {
     private [this] val pred_ = pred.asInstanceOf[Any=>Boolean]
     private [this] val msggen_ = msggen.asInstanceOf[Any=>String]
     override def apply(ctx: Context): Unit = {
         if (pred_(ctx.stack.upeek)) ctx.inc()
-        else ctx.failWithMessage(expected, msggen_(ctx.stack.upop()))
+        else ctx.failWithMessage(msggen_(ctx.stack.upop()))
     }
     // $COVERAGE-OFF$
     override def toString: String = "FastGuard(?, ?)"
@@ -166,7 +167,7 @@ private [internal] class Eof(_expected: UnsafeOption[String]) extends Instr {
     override def apply(ctx: Context): Unit = {
         if (ctx.offset == ctx.inputsz) ctx.pushAndContinue(())
         else {
-            ctx.expectedFail(Set[ErrorItem](if (_expected == null) EndOfInput else Desc(_expected)))
+            ctx.expectedFail(Set[ErrorItem](if (_expected == null) EndOfInput else Desc(_expected)), None)
         }
     }
     // $COVERAGE-OFF$

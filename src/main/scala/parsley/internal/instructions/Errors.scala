@@ -16,12 +16,12 @@ private [internal] sealed trait ParseError {
             case (_: FailError, _: TrivialError) => this
             case (_: TrivialError, _: FailError) => that
             case (_this: FailError, _that: FailError) => FailError(offset, line, col, _this.msgs union _that.msgs)
-            case (TrivialError(_, _, _, u1, es1), TrivialError(_, _, _, u2, es2)) =>
+            case (TrivialError(_, _, _, u1, es1, msgs1), TrivialError(_, _, _, u2, es2, msgs2)) =>
                 val u = (u1, u2) match {
                     case (Some(u1), Some(u2)) => Some(ErrorItem.higherPriority(u1, u2))
                     case _ => u1.orElse(u2)
                 }
-                TrivialError(offset, line, col, u, es1 union es2)
+                TrivialError(offset, line, col, u, es1 union es2, msgs1 union msgs2)
         }
     }
 
@@ -60,11 +60,14 @@ private [internal] sealed trait ParseError {
            |  >${caret}""".stripMargin
     }
 }
-private [internal] case class TrivialError(offset: Int, line: Int, col: Int, unexpected: Option[ErrorItem], expecteds: Set[ErrorItem]) extends ParseError {
+// The explanations here are lightweight, two errors can merge their messages, but messages do not get converted to hints
+private [internal] case class TrivialError(offset: Int, line: Int, col: Int,
+                                           unexpected: Option[ErrorItem], expecteds: Set[ErrorItem], explanations: Set[String])
+    extends ParseError {
     def withHints(hints: Iterable[Hint]): ParseError = copy(expecteds = hints.foldLeft(expecteds)((es, h) => es union h.hint))
 
     def pretty(sourceName: Option[String], helper: Context#InputHelper): String = {
-        assemble(sourceName, helper, List(unexpectedInfo, expectedInfo).flatten)
+        assemble(sourceName, helper, List(unexpectedInfo, expectedInfo).flatten ::: explanations.toList)
     }
 
     private def unexpectedInfo: Option[String] = unexpected.map(u => s"unexpected ${u.msg}")
@@ -99,7 +102,7 @@ private [internal] case class Raw(cs: String) extends ErrorItem {
         case "\n"            => "newline"
         case "\t"            => "tab"
         case " "             => "space"
-        case Unprintable(up) => s"unprintable character (${up.head.toInt})"
+        case Unprintable(up) => f"unprintable character (\\u${up.head.toInt}%04X)"
         case cs              => "\"" + cs.takeWhile(_ != '\n') + "\""
     }
 }
