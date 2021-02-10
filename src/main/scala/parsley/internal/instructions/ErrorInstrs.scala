@@ -61,8 +61,8 @@ private [internal] object MergeErrors extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class Fail(msg: String, expected: UnsafeOption[String]) extends Instr {
-    override def apply(ctx: Context): Unit = ctx.failWithMessage(expected, msg)
+private [internal] final class Fail(msg: String) extends Instr {
+    override def apply(ctx: Context): Unit = ctx.failWithMessage(msg)
     // $COVERAGE-OFF$
     override def toString: String = s"Fail($msg)"
     // $COVERAGE-ON$
@@ -75,9 +75,9 @@ private [internal] final class Unexpected(msg: String, expected: UnsafeOption[St
     // $COVERAGE-ON$
 }
 
-private [internal] final class FastFail[A](msggen: A=>String, expected: UnsafeOption[String]) extends Instr {
+private [internal] final class FastFail[A](msggen: A=>String) extends Instr {
     private [this] val msggen_ = msggen.asInstanceOf[Any => String]
-    override def apply(ctx: Context): Unit = ctx.failWithMessage(expected, msggen_(ctx.stack.upop()))
+    override def apply(ctx: Context): Unit = ctx.failWithMessage(msggen_(ctx.stack.upop()))
     // $COVERAGE-OFF$
     override def toString: String = "FastFail(?)"
     // $COVERAGE-ON$

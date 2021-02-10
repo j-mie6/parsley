@@ -9,7 +9,7 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
     private [this] final val expected = if (_expected == null) "escape code" else _expected
     override def apply(ctx: Context): Unit = escape(ctx) match {
         case TokenEscape.EscapeChar(escapeChar) =>ctx.pushAndContinue(escapeChar)
-        case TokenEscape.BadCode => ctx.failWithMessage(expected, msg = "invalid escape sequence")
+        case TokenEscape.BadCode => ctx.expectedFailWithExplanation(expected, msg = "invalid escape sequence")
         case TokenEscape.NoParse => ctx.expectedFail(expected)
     }
 
@@ -218,7 +218,7 @@ private [internal] final class TokenString(ws: TokenSet, _expected: UnsafeOption
                 builder += c
                 true
             case TokenEscape.BadCode =>
-                ctx.failWithMessage(expectedEscape, "invalid escape sequence")
+                ctx.expectedFailWithExplanation(expectedEscape, "invalid escape sequence")
                 false
             case TokenEscape.NoParse =>
                 ctx.expectedFail(expectedEscape)

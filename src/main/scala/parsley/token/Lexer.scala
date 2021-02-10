@@ -146,10 +146,10 @@ class Lexer(lang: LanguageDef)
     private lazy val escapeCode = new Parsley(new deepembedding.Escape)
     private lazy val charEscape = '\\' *> escapeCode
     private lazy val charLetter = letter('\'')
-    private lazy val characterChar = (charLetter <|> charEscape).unsafeLabel("literal character")
+    private lazy val characterChar = (charLetter <|> charEscape).label("literal character")
 
     private val escapeEmpty = '&'
-    private lazy val escapeGap = skipSome(space) *> '\\'.unsafeLabel("end of string gap")
+    private lazy val escapeGap = skipSome(space.unsafeLabel("string gap")) *> '\\'.unsafeLabel("end of string gap")
     private lazy val stringLetter = letter('"')
     private lazy val stringEscape: Parsley[Option[Char]] =
     {
@@ -157,7 +157,7 @@ class Lexer(lang: LanguageDef)
              <|> escapeEmpty #> None
              <|> (escapeCode <#> (Some(_))))
     }
-    private lazy val stringChar: Parsley[Option[Char]] = ((stringLetter <#> (Some(_))) <|> stringEscape).unsafeLabel("string character")
+    private lazy val stringChar: Parsley[Option[Char]] = ((stringLetter <#> (Some(_))) <|> stringEscape).label("string character")
 
     // Numbers
     /**This lexeme parser parses a natural number (a positive whole number). Returns the value of
