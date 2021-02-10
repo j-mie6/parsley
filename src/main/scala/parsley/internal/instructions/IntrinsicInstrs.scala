@@ -127,7 +127,7 @@ private [internal] final class FilterOut[A](_pred: PartialFunction[A, String], e
         else ctx.inc()
     }
     // $COVERAGE-OFF$
-    override def toString: String = "Filter(?)"
+    override def toString: String = "FilterOut(?)"
     // $COVERAGE-ON$
 }
 
