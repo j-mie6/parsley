@@ -157,6 +157,7 @@ private [deepembedding] object ErrorLabel {
 }
 private [deepembedding] object ErrorExplain {
     def empty[A](reason: String): ErrorExplain[A] = new ErrorExplain(null, reason)
+    def apply[A](p: Parsley[A], reason: String): ErrorExplain[A] = empty(reason).ready(p)
 }
 private [deepembedding] object NotFollowedBy {
     def empty[A](expected: UnsafeOption[String]): NotFollowedBy[A] = new NotFollowedBy(null, expected)

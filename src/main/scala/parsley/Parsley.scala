@@ -189,9 +189,17 @@ object Parsley
         /** Filter the value of a parser; if the value returned by the parser does not match the predicate `pred` then the
           * filter succeeded, otherwise the parser fails with an empty error
           * @param pred The predicate that is tested against the parser result
-          * @return The result of the invokee if it passes the predicate
+          * @return The result of the invokee if it fails the predicate
           */
         def filterNot(pred: A => Boolean): Parsley[A] = this.filter(!pred(_))
+        /** Filter the value of a parser; if the value returned by the parser is defined for the given partial function, then
+          * the `filterOut` fails, using the result of the function as the ''reason'' (see [[explain]]), otherwise the parser
+          * succeeds
+          * @param pred The predicate that is tested against the parser result
+          * @return The result of the invokee if the value failed the predicate
+          * @since 2.8.0
+          */
+        def filterOut(pred: PartialFunction[A, String]): Parsley[A] = new Parsley(new deepembedding.FilterOut(p.internal, pred))
         def withFilter(pred: A => Boolean): Parsley[A] = this.filter(pred)
         /** Attempts to first filter the parser to ensure that `pf` is defined over it. If it is, then the function `pf`
           * is mapped over its result. Roughly the same as a `filter` then a `map`.
@@ -222,7 +230,7 @@ object Parsley
           * @param msg The message used for the error if the input failed the check
           * @return The result of the invokee if it passes the predicate
           */
-        def guard(pred: A => Boolean, msg: String): Parsley[A] = new Parsley(new deepembedding.Guard(p.internal, pred, msg))
+        def guard(pred: A => Boolean, msg: String): Parsley[A] = this.guardAgainst { case x if !pred(x) => msg }
         /** Similar to `filter`, except the error message desired is also provided. This allows you to name the message
           * itself. The message is provided as a generator, which allows the user to avoid otherwise expensive
           * computation.
@@ -230,26 +238,41 @@ object Parsley
           * @param msggen Generator function for error message, generating a message based on the result of the parser
           * @return The result of the invokee if it passes the predicate
           */
-        def guard(pred: A => Boolean, msggen: A => String): Parsley[A] = new Parsley(new deepembedding.FastGuard(p.internal, pred, msggen))
+        def guard(pred: A => Boolean, msggen: A => String): Parsley[A] = this.guardAgainst { case x if !pred(x) => msggen(x) }
         /** Similar to `filterNot`, except the error message desired is also provided. This allows you to name the message
-         * itself.
-         * @param pred The predicate that is tested against the parser result
-         * @param msg The message used for the error if the input failed the check
-         * @return The result of the invokee if it passes the predicate
-         */
-        def guardNot(pred: A => Boolean, msg: String): Parsley[A] = this.guard((a: A) => !pred(a), msg)
+          * itself.
+          * @param pred The predicate that is tested against the parser result
+          * @param msg The message used for the error if the input failed the check
+          * @return The result of the invokee if it fails the predicate
+          */
+        // $COVERAGE-OFF$
+        @deprecated("This method will be removed in Parsley 3.0, use `guardAgainst` instead", "2.8.0")
+        def guardNot(pred: A => Boolean, msg: String): Parsley[A] = this.guardAgainst { case x if pred(x) => msg }
         /** Similar to `filterNot`, except the error message desired is also provided. This allows you to name the message
-         * itself. The message is provided as a generator, which allows the user to avoid otherwise expensive
-         * computation.
-         * @param pred The predicate that is tested against the parser result
-         * @param msggen Generator function for error message, generating a message based on the result of the parser
-         * @return The result of the invokee if it passes the predicate
-         */
-        def guardNot(pred: A => Boolean, msggen: A => String): Parsley[A] = this.guard((a: A) => !pred(a), msggen)
+          * itself. The message is provided as a generator, which allows the user to avoid otherwise expensive
+          * computation.
+          * @param pred The predicate that is tested against the parser result
+          * @param msggen Generator function for error message, generating a message based on the result of the parser
+          * @return The result of the invokee if it fails the predicate
+          */
+        @deprecated("This method will be removed in Parsley 3.0, use `guardAgainst` instead", "2.8.0")
+        def guardNot(pred: A => Boolean, msggen: A => String): Parsley[A] = this.guardAgainst { case x if pred(x) => msggen(x) }
+        // $COVERAGE-ON$
+        /** Similar to `filterOut`, except the error message generated yields a ''true failure''. This means that it will
+          * uses the same mechanism as [[Parsley.fail]], as opposed to the reason provided by [[filterOut]]
+          * @param pred The predicate that is tested against the parser result and produces error messages
+          * @return The result of the invokee if it fails the predicate
+          * @since 2.8.0
+          */
+        def guardAgainst(pred: PartialFunction[A, String]): Parsley[A] = new Parsley(new deepembedding.GuardAgainst(p.internal, pred))
+        // $COVERAGE-OFF$
         /**Alias for guard combinator, taking a fixed message.*/
+        @deprecated("This method will be removed in Parsley 3.0, use `guard` instead", "2.8.0")
         def >?>(pred: A => Boolean, msg: String): Parsley[A] = this.guard(pred, msg)
         /**Alias for guard combinator, taking a dynamic message generator.*/
+        @deprecated("This method will be removed in Parsley 3.0, use `guard` instead", "2.8.0")
         def >?>(pred: A => Boolean, msggen: A => String): Parsley[A] = this.guard(pred, msggen)
+        // $COVERAGE-ON$
         /**Alias for `label`*/
         def ?(msg: String): Parsley[A] = this.label(msg)
         /**Sets the expected message for a parser. If the parser fails then `expected msg` will added to the error
@@ -264,7 +287,7 @@ object Parsley
           */
         def explain(reason: String): Parsley[A] = new Parsley(new deepembedding.ErrorExplain(p.internal, reason))
         /**Hides the "expected" error message for a parser.*/
-        def hide: Parsley[A] = this.label("") //THIS MUST BE LABEL
+        def hide: Parsley[A] = this.label("")
         /** Same as `fail`, except allows for a message generated from the result of the failed parser. In essence, this
           * is equivalent to `p >>= (x => fail(msggen(x))` but requires no expensive computations from the use of `>>=`.
           * @param msggen The generator function for error message, creating a message based on the result of invokee

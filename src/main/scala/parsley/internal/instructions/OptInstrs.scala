@@ -8,9 +8,9 @@ import scala.annotation.tailrec
 import scala.language.implicitConversions
 import scala.collection.mutable
 
-private [internal] final class Perform[-A, +B](f: A => B) extends Instr {
-    private [Perform] val g = f.asInstanceOf[Any => B]
-    override def apply(ctx: Context): Unit = ctx.exchangeAndContinue(g(ctx.stack.upeek))
+private [internal] final class Perform[-A, +B](_f: A => B) extends Instr {
+    private [Perform] val f = _f.asInstanceOf[Any => B]
+    override def apply(ctx: Context): Unit = ctx.exchangeAndContinue(f(ctx.stack.upeek))
     // $COVERAGE-OFF$
     override def toString: String = "Perform(?)"
     // $COVERAGE-ON$
