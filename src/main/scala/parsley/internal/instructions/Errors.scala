@@ -118,12 +118,6 @@ private [internal] case object EndOfInput extends ErrorItem {
     override val msg = "end of input"
 }
 
-// The referential equality is used to drop old hints during error relabeling, it is important
-private [instructions] final class Hint(val hint: Set[ErrorItem]) {
-    override def equals(other: Any) = other match {
-        case other: Hint => this.hint eq other.hint
-        case _ => false
-    }
-    override def hashCode: Int = 0
+private [instructions] final class Hint(val hint: Set[ErrorItem]) extends AnyVal {
     override def toString: String = hint.toString
 }
