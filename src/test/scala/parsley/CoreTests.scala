@@ -259,7 +259,7 @@ class CoreTests extends ParsleyTest {
         t.runParser("A") shouldBe Success('A')
     }
 
-    // Issue #
+    // Issue #70
     "filterOut" should "not corrupt the stack under a handler" in {
         val p = attempt(anyChar.filterOut {
             case c if c.isLower => "no lowercase!"
