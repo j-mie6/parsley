@@ -58,11 +58,6 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     private var hintStack = Stack.empty[(Int, mutable.ListBuffer[Hint])]
     private [instructions] var errs = Stack.empty[ParseError]
 
-    private [instructions] def popHints: Unit = if (hints.nonEmpty) hints.remove(0)
-    private [instructions] def replaceHint(label: String): Unit = {
-        //println(hints)
-        if (hints.nonEmpty) hints(0) = new Hint(Set(Desc(label)))
-    }
     private [instructions] def saveHints(shadow: Boolean): Unit = {
         hintStack = push(hintStack, (hintsValidOffset, hints))
         hints = if (shadow) hints.clone else mutable.ListBuffer.empty
@@ -76,11 +71,23 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     private [instructions] def commitHints(): Unit = {
         this.hintStack = this.hintStack.tail
     }
+
+    /* ERROR RELABELLING BEGIN */
     private [instructions] def mergeHints(): Unit = {
-        val (hintsValidOffset, hints) = this.hintStack.head
-        if (hintsValidOffset == offset) this.hints ++= hints
+        val newHints = this.hints
+        val (hintsValidOffset, oldHints) = this.hintStack.head
+        if (hintsValidOffset == offset) {
+            this.hints = oldHints
+            this.hints ++= newHints
+        }
         commitHints()
     }
+    private [instructions] def replaceHint(label: String): Unit = {
+        if (hints.nonEmpty) hints(0) = new Hint(Set(Desc(label)))
+    }
+    private [instructions] def popHints: Unit = if (hints.nonEmpty) hints.remove(0)
+    /* ERROR RELABELLING END */
+
     private [instructions] def addErrorToHints(): Unit = errs.head match {
         case TrivialError(errOffset, _, _, _, es, _) if errOffset == offset && es.nonEmpty =>
             // If our new hints have taken place further in the input stream, then they must invalidate the old ones
@@ -173,7 +180,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         this.useHints()
     }
 
-    private def useHints(): Unit = {
+    private [instructions] def useHints(): Unit = {
         if (hintsValidOffset == offset) {
             errs.head = errs.head.withHints(hints)
         }
@@ -183,7 +190,6 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         }
     }
 
-    // FIXME: This argument needs to go, it means nothing, but currently token parsers are relying on it. We need multiple unexcepts ASAP
     private [instructions] def failWithMessage(msg: String): Unit = {
         this.fail(ParseError.fail(msg, offset, line, col))
     }

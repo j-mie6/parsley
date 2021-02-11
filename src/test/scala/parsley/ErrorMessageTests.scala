@@ -1,6 +1,6 @@
 package parsley
 
-import parsley.combinator.eof
+import parsley.combinator.{eof, optional}
 import parsley.Parsley._
 import parsley.implicits.{charLift, stringLift}
 import parsley.character.{anyChar, digit}
@@ -20,6 +20,12 @@ class ErrorMessageTests extends ParsleyTest {
         }
         (r.unsafeLabel("nothing but this :)")).runParser("correct error message") should be {
             Failure("(line 1, column 22):\n  unexpected end of input\n  expected nothing but this :)\n  >correct error message\n  >                     ^")
+        }
+    }
+    it should "replace the first instance" in {
+        val s = (optional('a') *> optional('b')).label("hi") *> 'c'
+        s.runParser("e") should be {
+            Failure("(line 1, column 1):\n  unexpected \"e\"\n  expected \"b\", \"c\", or hi\n  >e\n  >^")
         }
     }
 
