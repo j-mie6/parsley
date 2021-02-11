@@ -57,8 +57,10 @@ class CombinatorTests extends ParsleyTest {
     }
     it must "compose with option to become identity" in {
         decide(option(pure(7))).runParser("") should be (pure(7).runParser(""))
-        decide(option('a')).runParser("") should be ('a'.runParser(""))
-        decide(option("ab")).runParser("a") should be ("ab".runParser("a"))
+        decide(option('a')).runParser("") shouldBe a [Failure]
+        'a'.runParser("") shouldBe a [Failure]
+        decide(option("ab")).runParser("a") shouldBe a [Failure]
+        "ab".runParser("a") shouldBe a [Failure]
     }
 
     "optional" must "succeed if p succeeds" in {

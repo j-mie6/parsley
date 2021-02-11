@@ -241,7 +241,7 @@ class CoreTests extends ParsleyTest {
         val q = anyChar.filterOut {
             case c if c.isLower => s"'$c' should have been uppercase"
         }
-        q.runParser("a") shouldBe Failure("(line 1, column 2):\n  unexpected end of input\n  'a' should have been uppercase\n  >a\n  > ^")
+        q.runParser("a") shouldBe Failure("(line 1, column 2):\n  'a' should have been uppercase\n  >a\n  > ^")
         q.runParser("A") shouldBe Success('A')
 
         val r = anyChar.guardAgainst {
@@ -257,6 +257,14 @@ class CoreTests extends ParsleyTest {
         val t = anyChar.guard(_.isUpper, c => s"'$c' is not uppercase")
         t.runParser("a") shouldBe Failure("(line 1, column 2):\n  'a' is not uppercase\n  >a\n  > ^")
         t.runParser("A") shouldBe Success('A')
+    }
+
+    // Issue #
+    "filterOut" should "not corrupt the stack under a handler" in {
+        val p = attempt(anyChar.filterOut {
+            case c if c.isLower => "no lowercase!"
+        })
+        p.runParser("a") shouldBe a [Failure]
     }
 
     "the collect combinator" should "act like a filter then a map" in {
