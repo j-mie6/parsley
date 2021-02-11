@@ -110,7 +110,7 @@ private [internal] final class Filter[A](_pred: A=>Boolean, expected: UnsafeOpti
     private [this] val pred = _pred.asInstanceOf[Any=>Boolean]
     override def apply(ctx: Context): Unit = {
         if (pred(ctx.stack.upeek)) ctx.inc()
-        else ctx.expectedFail(expected)
+        else ctx.fail(TrivialError(ctx.offset, ctx.line, ctx.col, None, if (expected == null) Set.empty else Set(Desc(expected)), Set.empty))
     }
     // $COVERAGE-OFF$
     override def toString: String = "Filter(?)"
@@ -121,8 +121,8 @@ private [internal] final class FilterOut[A](_pred: PartialFunction[A, String], e
     private [this] val pred = _pred.asInstanceOf[PartialFunction[Any, String]]
     override def apply(ctx: Context): Unit = {
         if (pred.isDefinedAt(ctx.stack.upeek)) {
-            ctx.expectedFail(expected)
-            ctx.errs.head = ctx.errs.head.giveReason(pred(ctx.stack.upop()))
+            val reason = pred(ctx.stack.upop())
+            ctx.fail(TrivialError(ctx.offset, ctx.line, ctx.col, None, if (expected == null) Set.empty else Set(Desc(expected)), Set(reason)))
         }
         else ctx.inc()
     }
