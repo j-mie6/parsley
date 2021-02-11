@@ -27,6 +27,10 @@ class ErrorMessageTests extends ParsleyTest {
         s.runParser("e") should be {
             Failure("(line 1, column 1):\n  unexpected \"e\"\n  expected \"b\", \"c\", or hi\n  >e\n  >^")
         }
+        val t = (optional('a') *> optional('b').label("bee")).label("hi") *> 'c'
+        t.runParser("e") should be {
+            Failure("(line 1, column 1):\n  unexpected \"e\"\n  expected \"c\", bee, or hi\n  >e\n  >^")
+        }
     }
 
     "fail" should "yield a raw message" in {
