@@ -32,6 +32,7 @@ private [internal] final class ApplyError(label: String) extends Instr {
             }
             // CERR
             // do nothing
+            ctx.useHints()
             ctx.fail()
         }
         ctx.checkStack = ctx.checkStack.tail
