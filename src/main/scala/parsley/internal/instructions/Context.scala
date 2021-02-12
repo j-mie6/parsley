@@ -238,7 +238,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         inc()
     }
     private [instructions] def inc(): Unit = pc += 1
-    private [instructions] def nextChar: Char = input(offset)
+    private [instructions] def nextChar: Char = input.charAt(offset)
     private [instructions] def moreInput: Boolean = offset < inputsz
     private [instructions] def updatePos(c: Char) = c match {
         case '\n' => line += 1; col = 1
@@ -303,7 +303,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
             if (idx == -1) Context.this.inputsz else idx
         }
         def segmentBetween(start: Int, end: Int): String = {
-            Context.this.input.slice(start, end).mkString
+            Context.this.input.substring(start, end)
         }
     }
 }

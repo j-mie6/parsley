@@ -70,7 +70,7 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
     compute(cs)
 
     @tailrec private def go(ctx: Context, i: Int, j: Int, err: =>TrivialError): Unit = {
-        if (j < sz && i < ctx.inputsz && ctx.input(i) == cs(j)) go(ctx, i + 1, j + 1, err)
+        if (j < sz && i < ctx.inputsz && ctx.input.charAt(i) == cs(j)) go(ctx, i + 1, j + 1, err)
         else {
             val (colAdjust, lineAdjust) = adjustAtIndex(j)
             ctx.col = colAdjust(ctx.col)
@@ -87,7 +87,7 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
         val origCol = ctx.col
         go(ctx, ctx.offset, 0,
             TrivialError(origOffset, origLine, origCol,
-                Some(if (ctx.inputsz > origOffset) Raw(ctx.input.slice(origOffset, Math.min(origOffset + sz, ctx.inputsz)).mkString) else EndOfInput),
+                Some(if (ctx.inputsz > origOffset) Raw(ctx.input.substring(origOffset, Math.min(origOffset + sz, ctx.inputsz))) else EndOfInput),
                 Set(errorItem), Set.empty
             ))
     }
