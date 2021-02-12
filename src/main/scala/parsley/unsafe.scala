@@ -31,7 +31,8 @@ object unsafe {
           * implicit for convenience.
           * @since 1.6.0
           */
-        //def runParserFastUnsafe(input: String): Result[A] = runParserFastUnsafe(input.toCharArray)
+        @deprecated("This method will be removed in Parsley 3.0 since Strings are now the underlying representation for Parsley", "2.8.4")
+        def runParserFastUnsafe(input: Array[Char]): Result[A] = runParserFastUnsafe(new String(input))
         /** This method allows you to run a parser with a cached context, which improves performance.
           * If no implicit context can be found, the parsley default context is used. This will
           * cause issues with multi-threaded execution of parsers. In order to mitigate these issues,

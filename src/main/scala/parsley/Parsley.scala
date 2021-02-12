@@ -47,7 +47,8 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: deepe
       * @param input The input to run against
       * @return Either a success with a value of type `A` or a failure with error message
       */
-    //def runParser(input: String): Result[A] = runParser(input.toCharArray)
+    @deprecated("This method will be removed in Parsley 3.0 since Strings are now the underlying representation for Parsley", "2.8.4")
+    def runParser(input: Array[Char]): Result[A] = runParser(new String(input))
     /** This method is responsible for actually executing parsers. Given an input
       * array, will parse the string with the parser. The result is either a `Success` or a `Failure`.
       * @param input The input to run against

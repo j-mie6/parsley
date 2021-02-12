@@ -127,10 +127,9 @@ private [internal] final class TokenNonSpecific(name: String, illegalName: Strin
 
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && start(ctx.nextChar)) {
-            val name = new StringBuilder()
-            name += ctx.nextChar
+            val initialOffset = ctx.offset
             ctx.offset += 1
-            restOfToken(ctx, name)
+            restOfToken(ctx, initialOffset)
         }
         else ctx.expectedFail(expected)
     }
@@ -146,13 +145,12 @@ private [internal] final class TokenNonSpecific(name: String, illegalName: Strin
         }
     }
 
-    @tailrec private def restOfToken(ctx: Context, tok: StringBuilder): Unit = {
+    @tailrec private def restOfToken(ctx: Context, initialOffset: Int): Unit = {
         if (ctx.moreInput && letter(ctx.nextChar)) {
-            tok += ctx.nextChar
             ctx.offset += 1
-            restOfToken(ctx, tok)
+            restOfToken(ctx, initialOffset)
         }
-        else ensureLegal(ctx, tok.toString)
+        else ensureLegal(ctx, ctx.input.substring(initialOffset, ctx.offset))
     }
 
     // $COVERAGE-OFF$
