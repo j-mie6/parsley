@@ -4,7 +4,7 @@ import ParseError.Unknown
 import Raw.Unprintable
 import scala.util.matching.Regex
 
-private [internal] sealed trait ParseError {
+private [internal] sealed abstract class ParseError {
     val offset: Int
     val col: Int
     val line: Int

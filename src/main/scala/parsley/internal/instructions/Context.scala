@@ -257,8 +257,6 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     }
     private [instructions] def pushHandler(label: Int): Unit = {
         handlers = push(handlers, new Handler(depth, label, stack.usize))
-        //TODO: This may change
-        //this.saveHints()
     }
     private [instructions] def pushCheck(): Unit = checkStack = push(checkStack, offset)
     private [instructions] def saveState(): Unit = states = push(states, new State(offset, line, col))

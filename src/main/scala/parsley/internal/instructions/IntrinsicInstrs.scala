@@ -29,14 +29,13 @@ private [internal] final class Lift3[A, B, C, D](_f: (A, B, C) => D) extends Ins
 }
 
 private [internal] class CharTok(c: Char, x: Any, _expected: UnsafeOption[String]) extends Instr {
-    private val expected: String = if (_expected == null) "\"" + c + "\"" else _expected
-    private val errorItem: ErrorItem = if (_expected == null) Raw(c) else Desc(expected)
+    private val errorItem: Set[ErrorItem] = Set(if (_expected == null) Raw(c) else Desc(_expected))
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && ctx.nextChar == c) {
             ctx.consumeChar()
             ctx.pushAndContinue(x)
         }
-        else ctx.expectedFail(Set(errorItem), None)
+        else ctx.expectedFail(errorItem, None)
     }
     // $COVERAGE-OFF$
     override def toString: String = if (x == c) s"Chr($c)" else s"ChrPerform($c, $x)"
@@ -44,8 +43,7 @@ private [internal] class CharTok(c: Char, x: Any, _expected: UnsafeOption[String
 }
 
 private [internal] final class StringTok private [instructions] (s: String, x: Any, _expected: UnsafeOption[String]) extends Instr {
-    private [this] val expected = if (_expected == null) "\"" + s + "\"" else _expected
-    private [this] val errorItem: ErrorItem = if (_expected == null) Raw(s) else Desc(expected)
+    private [this] val errorItem: Set[ErrorItem] = Set(if (_expected == null) Raw(s) else Desc(_expected))
     private [this] val cs = s.toCharArray
     private [this] val sz = cs.length
     private [this] val adjustAtIndex = new Array[(Int => Int, Int => Int)](s.length + 1)
@@ -88,7 +86,7 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
         go(ctx, ctx.offset, 0,
             TrivialError(origOffset, origLine, origCol,
                 Some(if (ctx.inputsz > origOffset) Raw(ctx.input.substring(origOffset, Math.min(origOffset + sz, ctx.inputsz))) else EndOfInput),
-                Set(errorItem), Set.empty
+                errorItem, Set.empty
             ))
     }
     // $COVERAGE-OFF$
