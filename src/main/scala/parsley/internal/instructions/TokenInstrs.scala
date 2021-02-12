@@ -168,8 +168,8 @@ private [instructions] abstract class TokenSpecificAllowTrailing(_specific: Stri
     protected def postprocess(ctx: Context, i: Int): Unit
 
     val readCharCaseHandled = {
-        if (caseSensitive) (ctx: Context, i: Int) => ctx.input(i)
-        else (ctx: Context, i: Int) => ctx.input(i).toLower
+        if (caseSensitive) (ctx: Context, i: Int) => ctx.input.charAt(i)
+        else (ctx: Context, i: Int) => ctx.input.charAt(i).toLower
     }
 
     @tailrec final private def readSpecific(ctx: Context, i: Int, j: Int): Unit = {
@@ -191,7 +191,7 @@ private [instructions] abstract class TokenSpecificAllowTrailing(_specific: Stri
 private [internal] final class TokenSpecific(_specific: String, letter: TokenSet, caseSensitive: Boolean, expected: UnsafeOption[String])
     extends TokenSpecificAllowTrailing(_specific, caseSensitive, expected) {
     override def postprocess(ctx: Context, i: Int): Unit = {
-        if (i < ctx.inputsz && letter(ctx.input(i))) {
+        if (i < ctx.inputsz && letter(ctx.input.charAt(i))) {
             ctx.expectedFail(expectedEnd)
             ctx.restoreState()
         }
@@ -213,7 +213,7 @@ private [internal] final class TokenMaxOp(operator: String, _ops: Set[String], e
     })
 
     @tailrec private def go(ctx: Context, i: Int, ops: Radix[Unit]): Unit = {
-        lazy val ops_ = ops.suffixes(ctx.input(i))
+        lazy val ops_ = ops.suffixes(ctx.input.charAt(i))
         val possibleOpsRemain = i < ctx.inputsz && ops.nonEmpty
         if (possibleOpsRemain && ops_.contains("")) {
             ctx.expectedFail(expectedEnd)

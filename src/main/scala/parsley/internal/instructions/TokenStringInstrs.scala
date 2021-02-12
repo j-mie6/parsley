@@ -18,7 +18,7 @@ private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends In
         new TokenEscape.EscapeChar(c)
     }
 
-    private final def lookAhead(ctx: Context, n: Int): Char = ctx.input(ctx.offset + n)
+    private final def lookAhead(ctx: Context, n: Int): Char = ctx.input.charAt(ctx.offset + n)
     private final def lookAhead(ctx: Context, n: Int, c: Char): Boolean = ctx.offset + n < ctx.inputsz && lookAhead(ctx, n) == c
 
     private final def numericEscape(ctx: Context, escapeCode: Int) = {
