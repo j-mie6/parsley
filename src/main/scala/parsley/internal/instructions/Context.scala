@@ -19,7 +19,7 @@ private [instructions] final class State(val offset: Int, val line: Int, val col
 }
 
 private [parsley] final class Context(private [instructions] var instrs: Array[Instr],
-                                      private [instructions] var input: Array[Char],
+                                      private [instructions] var input: String,
                                       private [instructions] val sourceName: Option[String] = None) {
     /** This is the operand stack, where results go to live  */
     private [instructions] val stack: ArrayStack[Any] = new ArrayStack()
@@ -274,7 +274,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     }
 
     // Allows us to reuse a context, helpful for benchmarking and potentially user applications
-    private [parsley] def apply(_instrs: Array[Instr], _input: Array[Char]): Context = {
+    private [parsley] def apply(_instrs: Array[Instr], _input: String): Context = {
         instrs = _instrs
         input = _input
         stack.clear()
@@ -310,5 +310,5 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
 
 private [parsley] object Context {
     private [Context] val NumRegs = 4
-    def empty: Context = new Context(null, Array.emptyCharArray)
+    def empty: Context = new Context(null, "")
 }

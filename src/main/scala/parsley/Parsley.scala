@@ -47,20 +47,20 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: deepe
       * @param input The input to run against
       * @return Either a success with a value of type `A` or a failure with error message
       */
-    def runParser(input: String): Result[A] = runParser(input.toCharArray)
+    //def runParser(input: String): Result[A] = runParser(input.toCharArray)
     /** This method is responsible for actually executing parsers. Given an input
       * array, will parse the string with the parser. The result is either a `Success` or a `Failure`.
       * @param input The input to run against
       * @return Either a success with a value of type `A` or a failure with error message
       */
-    def runParser(input: Array[Char]): Result[A] = new Context(internal.threadSafeInstrs, input).runParser()
+    def runParser(input: String): Result[A] = new Context(internal.threadSafeInstrs, input).runParser()
     /** This method executes a parser, but collects the input to the parser from the given file.
       * The file name is used to annotate any error messages.
       * @param file The file to load and run against
       * @return Either a success with a value of type `A` or a failure with error message
       * @since 2.3.0
       */
-    def parseFromFile(file: File): Result[A] = new Context(internal.threadSafeInstrs, Source.fromFile(file).toArray, Some(file.getName)).runParser()
+    def parseFromFile(file: File): Result[A] = new Context(internal.threadSafeInstrs, Source.fromFile(file).toString, Some(file.getName)).runParser()
 }
 /** This object contains the core "function-style" combinators as well as the implicit classes which provide
   * the "method-style" combinators. All parsers will likely require something from within! */

@@ -55,6 +55,7 @@ private [internal] sealed trait ParseError {
         val topStr = posStr(sourceName)
         val (line, caret) = getLineWithCaret(helper)
         val info = infoLines.filter(_.nonEmpty).mkString("\n  ")
+        // TODO: Add preamble of parse error?
         // Apparently, multi-line strings use whatever line endings the file has instead of platform-independent LIKE EVERYTHING ELSE
         // So we can't use them without breaking the error messages on Windows.
         /*s"""$topStr:
