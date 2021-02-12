@@ -132,9 +132,9 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     @tailrec @inline private [parsley] def runParser[A](): Result[A] = {
         //println(pretty)
         if (status eq Failed) {
-            assert(!isEmpty(errs) && isEmpty(errs.tail), "there should be only one error on failure")
-            assert(isEmpty(handlers), "there should be no handlers left on failure")
-            assert(isEmpty(hintStack), "there should be at most one set of hints left at the end")
+            //assert(!isEmpty(errs) && isEmpty(errs.tail), "there should be only one error on failure")
+            //assert(isEmpty(handlers), "there should be no handlers left on failure")
+            //assert(isEmpty(hintStack), "there should be at most one set of hints left at the end")
             Failure(errs.head.pretty(sourceName, new InputHelper))
         }
         else if (pc < instrs.length) {
@@ -142,9 +142,9 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
             runParser[A]()
         }
         else if (isEmpty(calls)) {
-            assert(isEmpty(errs), "there should be no errors on success")
-            assert(isEmpty(handlers), "there should be no handlers on success")
-            assert(isEmpty(hintStack), "there should be at most one set of hints left at the end")
+            //assert(isEmpty(errs), "there should be no errors on success")
+            //assert(isEmpty(handlers), "there should be no handlers on success")
+            //assert(isEmpty(hintStack), "there should be at most one set of hints left at the end")
             Success(stack.peek[A])
         }
         else {
