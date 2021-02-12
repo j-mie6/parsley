@@ -55,10 +55,13 @@ private [internal] sealed trait ParseError {
         val topStr = posStr(sourceName)
         val (line, caret) = getLineWithCaret(helper)
         val info = infoLines.filter(_.nonEmpty).mkString("\n  ")
-        s"""$topStr:
+        // Apparently, multi-line strings use whatever line endings the file has instead of platform-independent LIKE EVERYTHING ELSE
+        // So we can't use them without breaking the error messages on Windows.
+        /*s"""$topStr:
            |  ${if (info.isEmpty) Unknown else info}
            |  >${line}
-           |  >${caret}""".stripMargin
+           |  >${caret}""".stripMargin*/
+        s"$topStr:\n  ${if (info.isEmpty) Unknown else info}\n  >${line}\n  >${caret}"
     }
 }
 // The reasons here are lightweight, two errors can merge their messages, but messages do not get converted to hints
