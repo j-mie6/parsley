@@ -79,54 +79,52 @@ private [internal] final class TokenNatural(_expected: UnsafeOption[String]) ext
 private [internal] final class TokenFloat(_expected: UnsafeOption[String]) extends Instr {
     val expected = if (_expected == null) "unsigned float" else _expected
     override def apply(ctx: Context): Unit = {
-        val builder = new StringBuilder()
-        if (decimal(ctx, builder)) {
-            lexFraction(ctx, builder)
+        val initialOffset = ctx.offset
+        if (decimal(ctx)) {
+            lexFraction(ctx, initialOffset)
         }
         else ctx.expectedFail(expected)
     }
 
-    @tailrec private final def decimal(ctx: Context, builder: StringBuilder, first: Boolean = true): Boolean = {
+    @tailrec private final def decimal(ctx: Context, first: Boolean = true): Boolean = {
         if (ctx.moreInput && ctx.nextChar >= '0' && ctx.nextChar <= '9') {
-            builder += ctx.nextChar
             ctx.fastUncheckedConsumeChars(1)
-            decimal(ctx, builder, false)
+            decimal(ctx, false)
         }
         else !first
     }
 
-    private final def exponent(ctx: Context, builder: StringBuilder): Boolean = {
+    private final def exponent(ctx: Context): Boolean = {
         ctx.fastUncheckedConsumeChars(1)
         if (ctx.moreInput && ctx.nextChar == '+') ctx.fastUncheckedConsumeChars(1)
         else if (ctx.moreInput && ctx.nextChar == '-') {
             ctx.fastUncheckedConsumeChars(1)
-            builder += '-'
         }
-        decimal(ctx, builder)
+        decimal(ctx)
     }
 
-    private final def attemptCastAndContinue(ctx: Context, builder: StringBuilder): Unit = {
-        try ctx.pushAndContinue(builder.toString.toDouble)
+    private final def attemptCastAndContinue(ctx: Context, initialOffset: Int): Unit = {
+        try ctx.pushAndContinue(ctx.input.substring(initialOffset, ctx.offset).toDouble)
         catch {
             case _: NumberFormatException => ctx.expectedFail(expected)
         }
     }
 
-    private final def lexExponent(ctx: Context, builder: StringBuilder, missingOk: Boolean): Unit = {
+    private final def lexExponent(ctx: Context, initialOffset: Int, missingOk: Boolean): Unit = {
         val requireExponent = ctx.moreInput && (ctx.nextChar == 'e' || ctx.nextChar == 'E')
-        if (requireExponent && exponent(ctx, builder += 'e')) attemptCastAndContinue(ctx, builder)
+        if (requireExponent && exponent(ctx)) attemptCastAndContinue(ctx, initialOffset)
         else if (requireExponent) ctx.expectedFail(expected)
-        else if (missingOk) attemptCastAndContinue(ctx, builder)
+        else if (missingOk) attemptCastAndContinue(ctx, initialOffset)
         else ctx.expectedFail(expected)
     }
 
-    private final def lexFraction(ctx: Context, builder: StringBuilder) = {
+    private final def lexFraction(ctx: Context, initialOffset: Int) = {
         if (ctx.moreInput && ctx.nextChar == '.') {
             ctx.fastUncheckedConsumeChars(1)
-            if (decimal(ctx, builder += '.')) lexExponent(ctx, builder, missingOk = true)
+            if (decimal(ctx)) lexExponent(ctx, initialOffset, missingOk = true)
             else ctx.expectedFail(expected)
         }
-        else lexExponent(ctx, builder, missingOk = false)
+        else lexExponent(ctx, initialOffset, missingOk = false)
     }
 
     // $COVERAGE-OFF$
