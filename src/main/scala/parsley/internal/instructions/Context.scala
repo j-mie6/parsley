@@ -88,11 +88,13 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     private [instructions] def popHints: Unit = if (hints.nonEmpty) hints.remove(0)
     /* ERROR RELABELLING END */
 
-    private [instructions] def addErrorToHints(): Unit = errs.head match {
+    private def addErrorToHints(): Unit = errs.head match {
         case TrivialError(errOffset, _, _, _, es, _) if errOffset == offset && es.nonEmpty =>
             // If our new hints have taken place further in the input stream, then they must invalidate the old ones
-            if (hintsValidOffset < offset) hints.clear()
-            hintsValidOffset = offset
+            if (hintsValidOffset < offset) {
+                hints.clear()
+                hintsValidOffset = offset
+            }
             hints += new Hint(es)
         case _ =>
     }

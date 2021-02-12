@@ -46,7 +46,7 @@ private [internal] final class JumpGoodAttempt(var label: Int) extends JumpInstr
         }
         else {
             ctx.restoreState()
-            ctx.addErrorToHints()
+            //ctx.addErrorToHints() //TODO: This actually does NOTHING?!
             ctx.restoreHints()
             ctx.status = Good
             ctx.inc()

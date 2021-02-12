@@ -150,7 +150,7 @@ private [internal] object Catch extends Instr {
     override def apply(ctx: Context): Unit = {
         ctx.catchNoConsumed {
             ctx.inc()
-            ctx.addErrorToHints()
+            //ctx.addErrorToHints() //TODO: This actually does NOTHING?!
         }
         ctx.restoreHints()
     }
