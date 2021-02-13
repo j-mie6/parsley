@@ -53,9 +53,9 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     private val inputDescriptor = sourceName.fold("input")(_ => "file")
 
     // NEW ERROR MECHANISMS
-    private var hints = mutable.ListBuffer.empty[Hint]
+    private var hints = mutable.ListBuffer.empty[Set[ErrorItem]]
     private var hintsValidOffset = 0
-    private var hintStack = Stack.empty[(Int, mutable.ListBuffer[Hint])]
+    private var hintStack = Stack.empty[(Int, mutable.ListBuffer[Set[ErrorItem]])]
     private [instructions] var errs = Stack.empty[ParseError]
 
     private [instructions] def saveHints(shadow: Boolean): Unit = {
@@ -83,7 +83,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         commitHints()
     }
     private [instructions] def replaceHint(label: String): Unit = {
-        if (hints.nonEmpty) hints(0) = new Hint(Set(Desc(label)))
+        if (hints.nonEmpty) hints(0) = Set(Desc(label))
     }
     private [instructions] def popHints: Unit = if (hints.nonEmpty) hints.remove(0)
     /* ERROR RELABELLING END */
@@ -95,7 +95,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
                 hints.clear()
                 hintsValidOffset = offset
             }
-            hints += new Hint(es)
+            hints += es
         case _ =>
     }
     private [instructions] def addErrorToHintsAndPop(): Unit = {

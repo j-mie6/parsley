@@ -7,7 +7,7 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.higherKinds
 
-// Tablification is too aggressive. It appears that `optional` is being compiled to jumptable
+// TODO: Tablification is too aggressive. It appears that `optional` is being compiled to jumptable
 private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) extends Binary[A, B, B](_p, _q)((l, r) => s"($l <|> $r)", <|>.empty) {
     override val numInstrs = 3
 
@@ -89,6 +89,7 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
             val end = state.freshLabel()
             val default = state.freshLabel()
             val (roots, leads, ls, expecteds) = foldTablified(tablified, state, mutable.Map.empty, Nil, Nil, mutable.Map.empty)
+            //println(leads, tablified)
             instrs += new instructions.JumpTable(leads, ls, default, expecteds)
             codeGenRoots(roots, ls, end) >> {
                 instrs += instructions.Catch //This instruction is reachable as default - 1

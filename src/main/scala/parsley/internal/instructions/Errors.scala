@@ -25,7 +25,7 @@ private [internal] sealed abstract class ParseError {
         }
     }
 
-    def withHints(hints: Iterable[Hint]): ParseError
+    def withHints(hints: Iterable[Set[ErrorItem]]): ParseError
     def giveReason(reason: String): ParseError
     def pretty(sourceName: Option[String], helper: Context#InputHelper): String
 
@@ -69,7 +69,7 @@ private [internal] sealed abstract class ParseError {
 private [internal] case class TrivialError(offset: Int, line: Int, col: Int,
                                            unexpected: Option[ErrorItem], expecteds: Set[ErrorItem], reasons: Set[String])
     extends ParseError {
-    def withHints(hints: Iterable[Hint]): ParseError = copy(expecteds = hints.foldLeft(expecteds)((es, h) => es union h.hint))
+    def withHints(hints: Iterable[Set[ErrorItem]]): ParseError = copy(expecteds = hints.foldLeft(expecteds)(_ union _))
     def giveReason(reason: String): ParseError = copy(reasons = reasons + reason)
 
     def pretty(sourceName: Option[String], helper: Context#InputHelper): String = {
@@ -80,7 +80,7 @@ private [internal] case class TrivialError(offset: Int, line: Int, col: Int,
     private def expectedInfo: Option[String] = disjunct(expecteds.map(_.msg).toList).map(es => s"expected $es")
 }
 private [internal] case class FailError(offset: Int, line: Int, col: Int, msgs: Set[String]) extends ParseError {
-    def withHints(hints: Iterable[Hint]): ParseError = this
+    def withHints(hints: Iterable[Set[ErrorItem]]): ParseError = this
     def giveReason(reason: String): ParseError = this
     def pretty(sourceName: Option[String], helper: Context#InputHelper): String = {
         assemble(sourceName, helper, msgs.toList)
@@ -120,10 +120,4 @@ private [internal] object Raw {
 private [internal] case class Desc(msg: String) extends ErrorItem
 private [internal] case object EndOfInput extends ErrorItem {
     override val msg = "end of input"
-}
-
-private [instructions] final class Hint(val hint: Set[ErrorItem]) extends AnyVal {
-    // $COVERAGE-OFF$
-    override def toString: String = hint.toString
-    // $COVERAGE-ON$
 }
