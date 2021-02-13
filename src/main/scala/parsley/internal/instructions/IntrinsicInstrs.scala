@@ -67,28 +67,29 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
     }
     compute(cs)
 
-    @tailrec private def go(ctx: Context, i: Int, j: Int, err: =>TrivialError): Unit = {
-        if (j < sz && i < ctx.inputsz && ctx.input.charAt(i) == cs(j)) go(ctx, i + 1, j + 1, err)
+    @tailrec private def go(ctx: Context, i: Int, j: Int): Unit = {
+        if (j < sz && i < ctx.inputsz && ctx.input.charAt(i) == cs(j)) go(ctx, i + 1, j + 1)
         else {
-            val (colAdjust, lineAdjust) = adjustAtIndex(j)
-            ctx.col = colAdjust(ctx.col)
-            ctx.line = lineAdjust(ctx.line)
-            ctx.offset = i
-            if (j < sz) ctx.fail(err)
-            else ctx.pushAndContinue(x)
+            if (j < sz) {
+                // The offset, line and column haven't been edited yet, so are in the right place
+                val err = new TrivialError(ctx.offset, ctx.line, ctx.col,
+                    Some(if (ctx.inputsz > ctx.offset) new Raw(ctx.input.substring(ctx.offset, Math.min(ctx.offset + sz, ctx.inputsz))) else EndOfInput),
+                    errorItem, Set.empty
+                )
+                ctx.offset = i
+                ctx.fail(err)
+            }
+            else {
+                val (colAdjust, lineAdjust) = adjustAtIndex(j)
+                ctx.col = colAdjust(ctx.col)
+                ctx.line = lineAdjust(ctx.line)
+                ctx.offset = i
+                ctx.pushAndContinue(x)
+            }
         }
     }
 
-    override def apply(ctx: Context): Unit = {
-        val origOffset = ctx.offset
-        val origLine = ctx.line
-        val origCol = ctx.col
-        go(ctx, ctx.offset, 0,
-            new TrivialError(origOffset, origLine, origCol,
-                Some(if (ctx.inputsz > origOffset) new Raw(ctx.input.substring(origOffset, Math.min(origOffset + sz, ctx.inputsz))) else EndOfInput),
-                errorItem, Set.empty
-            ))
-    }
+    override def apply(ctx: Context): Unit = go(ctx, ctx.offset, 0)
     // $COVERAGE-OFF$
     override def toString: String = if (x.isInstanceOf[String] && (s eq x.asInstanceOf[String])) s"Str($s)" else s"StrPerform($s, $x)"
     // $COVERAGE-ON$
