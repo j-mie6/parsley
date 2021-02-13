@@ -133,7 +133,7 @@ class Lexer(lang: LanguageDef)
         case BitSetImpl(ws) => new Parsley(new deepembedding.StringLiteral(ws))
         case Predicate(ws) => new Parsley(new deepembedding.StringLiteral(ws))
         case NotRequired => new Parsley(new deepembedding.StringLiteral(_ => false))
-        case _ => between('"'.unsafeLabel("string"), '"'.unsafeLabel("end of string"), many(stringChar)) <#> (_.flatten.mkString)
+        case _ => between('"'.unsafeLabel("string"), '"'.unsafeLabel("end of string"), many(stringChar)).map(_.flatten.mkString)
     }
 
     /**This non-lexeme parser parses a string in a raw fashion. The escape characters in the string
@@ -155,9 +155,9 @@ class Lexer(lang: LanguageDef)
     {
         '\\' *> (escapeGap #> None
              <|> escapeEmpty #> None
-             <|> (escapeCode <#> (Some(_))).explain("invalid escape sequence"))
+             <|> (escapeCode.map(Some(_))).explain("invalid escape sequence"))
     }
-    private lazy val stringChar: Parsley[Option[Char]] = ((stringLetter <#> (Some(_))) <|> stringEscape).label("string character")
+    private lazy val stringChar: Parsley[Option[Char]] = ((stringLetter.map(Some(_))) <|> stringEscape).label("string character")
 
     // Numbers
     /**This lexeme parser parses a natural number (a positive whole number). Returns the value of

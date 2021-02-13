@@ -33,9 +33,6 @@ private [instructions] final class ArrayStack[A](initialSize: Int = ArrayStack.D
     def upeek: Any = array(sp)
     def peek[B <: A]: B = upeek.asInstanceOf[B]
 
-    def update(off: Int, x: A): Unit = array(sp - off) = x
-    def apply(off: Int): Any = array(sp - off)
-
     def drop(x: Int): Unit = sp -= x
 
     // This is off by one, but that's fine, if everything is also off by one :P

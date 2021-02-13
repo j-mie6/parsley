@@ -231,7 +231,6 @@ private [parsley] class LetFinderState {
         case (k@(label, p), refs) if refs >= 2 && !_recs(p) => k
     }
 
-    def recs: Set[Parsley[_]] = _recs.toSet
     def usedRegs: Set[Reg[_]] = _usedRegs.toSet
 }
 

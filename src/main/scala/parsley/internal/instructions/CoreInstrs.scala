@@ -25,17 +25,6 @@ private [internal] object Pop extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] object Flip extends Instr {
-    override def apply(ctx: Context): Unit = {
-        val x = ctx.stack(1)
-        ctx.stack(1) = ctx.stack.upeek
-        ctx.exchangeAndContinue(x)
-    }
-    // $COVERAGE-OFF$
-    override def toString: String = "Flip"
-    // $COVERAGE-ON$
-}
-
 // Applicative Functors
 private [internal] object Apply extends Instr {
     override def apply(ctx: Context): Unit = {

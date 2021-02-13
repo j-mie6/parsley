@@ -45,9 +45,11 @@ private [parsley] final class Rec[A](val p: Parsley[A])
     extends SingletonExpect[A](s"rec $p", _ => new Rec(p), new instructions.Call(p.instrs))
 
 private [parsley] final class Subroutine[A](var p: Parsley[A], val expected: UnsafeOption[String]) extends Parsley[A] {
+    // $COVERAGE-OFF$
     override def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState, label: UnsafeOption[String]): Cont[Unit, Unit] = {
         throw new Exception("Subroutines cannot exist during let detection")
     }
+    // $COVERAGE-ON$
     override def preprocess[Cont[_, +_]: ContOps, A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap,
                                                            label: UnsafeOption[String]): Cont[Unit, Parsley[A_]] = {
         // The idea here is that the label itself was already established by letFinding, so we just use expected which should be equal to label
@@ -63,7 +65,9 @@ private [parsley] final class Subroutine[A](var p: Parsley[A], val expected: Uns
     override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
         result(instrs += new instructions.GoSub(state.getSubLabel(this)))
     }
+    // $COVERAGE-OFF$
     override def prettyASTAux[Cont[_, +_]: ContOps]: Cont[String, String] = result(s"Sub($p, $expected)")
+    // $COVERAGE-ON$
 }
 
 private [parsley] object Line extends Singleton[Int]("line", instructions.Line)
@@ -145,15 +149,14 @@ private [deepembedding] object Satisfy {
 }
 private [deepembedding] object Attempt {
     def empty[A]: Attempt[A] = new Attempt(null)
-    def apply[A](p: Parsley[A]): Attempt[A] = empty.ready(p)
     def unapply[A](self: Attempt[A]): Option[Parsley[A]] = Some(self.p)
 }
 private [deepembedding] object Look {
     def empty[A]: Look[A] = new Look(null)
-    def apply[A](p: Parsley[A]): Look[A] = empty.ready(p)
 }
 private [deepembedding] object ErrorLabel {
     def empty[A](label: String): ErrorLabel[A] = new ErrorLabel(null, label)
+    def apply[A](p: Parsley[A], label: String): ErrorLabel[A] = empty(label).ready(p)
 }
 private [deepembedding] object ErrorExplain {
     def empty[A](reason: String): ErrorExplain[A] = new ErrorExplain(null, reason)
@@ -161,20 +164,17 @@ private [deepembedding] object ErrorExplain {
 }
 private [deepembedding] object NotFollowedBy {
     def empty[A](expected: UnsafeOption[String]): NotFollowedBy[A] = new NotFollowedBy(null, expected)
-    def apply[A](p: Parsley[A], expected: UnsafeOption[String]): NotFollowedBy[A] = empty(expected).ready(p)
 }
 private [deepembedding] object Put {
     def empty[S](r: Reg[S]): Put[S] = new Put(r, null)
-    def apply[S](r: Reg[S], p: Parsley[S]): Put[S] = empty(r).ready(p)
 }
 private [deepembedding] object Debug {
     def empty[A](name: String, break: Breakpoint): Debug[A] = new Debug(null, name, break)
-    def apply[A](p: Parsley[A], name: String, break: Breakpoint): Debug[A] = empty(name, break).ready(p)
 }
 
 private [deepembedding] object Rec {
     def apply[A](p: Parsley[A], expected: UnsafeOption[String]): Parsley[A] = {
         if (expected == null) new Rec(p)
-        else ErrorLabel.empty(expected).ready(new Rec(p))
+        else ErrorLabel(new Rec(p), expected)
     }
 }

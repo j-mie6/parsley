@@ -110,8 +110,6 @@ private [deepembedding] sealed abstract class Seq[A, B](_discard: =>Parsley[A], 
     final def discard_=(p: Parsley[A]): Unit = left = p
     final override val numInstrs = 1
     def copy[B_ >: B](prev: Parsley[A], next: Parsley[B_]): Seq[A, B_]
-    //TODO I don't think this optimisation is valid anymore, considering how strings error messages have changed. But perhaps we can adapt it somehow?
-    // An error message reflecting something then something would work...
     private def buildResult[R](make: (StringTok, Pure[B]) => Parsley[B])(s: String, r: R, ex1: UnsafeOption[String], ex2: UnsafeOption[String]) = {
         make(new StringTok(s, if (ex1 != null) ex1 else ex2), new Pure(r.asInstanceOf[B]))
     }

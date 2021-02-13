@@ -53,7 +53,10 @@ object CharSet
   * costs
   * @since 2.2.0
   */
+@deprecated("This will be removed in Parsley 3.0, use Predicate instead", "2.8.4")
+// $COVERAGE-OFF$
 object BitGen
 {
     def apply(f: Char => Boolean): Impl = BitSetImpl(new BitSet(Right(f)))
 }
+// $COVERAGE-ON$

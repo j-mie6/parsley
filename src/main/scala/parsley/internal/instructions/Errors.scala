@@ -123,5 +123,7 @@ private [internal] case object EndOfInput extends ErrorItem {
 }
 
 private [instructions] final class Hint(val hint: Set[ErrorItem]) extends AnyVal {
+    // $COVERAGE-OFF$
     override def toString: String = hint.toString
+    // $COVERAGE-ON$
 }

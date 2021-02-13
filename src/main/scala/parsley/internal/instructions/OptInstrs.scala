@@ -140,7 +140,3 @@ private [internal] object CharTokFastPerform {
 private [internal] object StringTokFastPerform {
     def apply(s: String, f: String => Any, expected: UnsafeOption[String]): StringTok = new StringTok(s, f(s), expected)
 }
-
-private [internal] object Exchange {
-    def unapply[A](ex: Exchange[A]): Option[A] = Some(ex.x)
-}
