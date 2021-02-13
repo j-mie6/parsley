@@ -7,6 +7,7 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.higherKinds
 
+// Tablification is too aggressive. It appears that `optional` is being compiled to jumptable
 private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) extends Binary[A, B, B](_p, _q)((l, r) => s"($l <|> $r)", <|>.empty) {
     override val numInstrs = 3
 

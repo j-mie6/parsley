@@ -46,27 +46,26 @@ private [internal] final class JumpGoodAttempt(var label: Int) extends JumpInstr
         }
         else {
             ctx.restoreState()
-            //ctx.addErrorToHints() //TODO: This actually does NOTHING?!
             ctx.restoreHints()
             ctx.status = Good
             ctx.inc()
         }
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"JumpGood'($label)"
+    override def toString: String = s"JumpGoodAttempt($label)"
     // $COVERAGE-ON$
 }
 
 private [internal] final class RecoverWith[A](x: A) extends Instr {
     override def apply(ctx: Context): Unit = {
+        ctx.restoreHints() // This must be before adding the error to hints
         ctx.catchNoConsumed {
             ctx.addErrorToHintsAndPop()
             ctx.pushAndContinue(x)
         }
-        ctx.restoreHints()
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"Recover($x)"
+    override def toString: String = s"RecoverWith($x)"
     // $COVERAGE-ON$
 }
 
@@ -80,14 +79,14 @@ private [internal] final class AlwaysRecoverWith[A](x: A) extends Instr {
         }
         else {
             ctx.restoreState()
+            ctx.restoreHints() // This must be before adding the error to hints
             ctx.addErrorToHintsAndPop()
             ctx.status = Good
-            ctx.restoreHints()
             ctx.pushAndContinue(x)
         }
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"AlwaysRecover($x)"
+    override def toString: String = s"AlwaysRecoverWith($x)"
     // $COVERAGE-ON$
 }
 

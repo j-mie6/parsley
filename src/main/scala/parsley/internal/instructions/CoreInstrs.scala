@@ -137,11 +137,10 @@ private [internal] final class JumpGood(var label: Int) extends JumpInstr {
 
 private [internal] object Catch extends Instr {
     override def apply(ctx: Context): Unit = {
+        ctx.restoreHints()
         ctx.catchNoConsumed {
             ctx.inc()
-            //ctx.addErrorToHints() //TODO: This actually does NOTHING?!
         }
-        ctx.restoreHints()
     }
     // $COVERAGE-OFF$
     override def toString: String = s"Catch"
