@@ -83,7 +83,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         commitHints()
     }
     private [instructions] def replaceHint(label: String): Unit = {
-        if (hints.nonEmpty) hints(0) = Set(Desc(label))
+        if (hints.nonEmpty) hints(0) = Set(new Desc(label))
     }
     private [instructions] def popHints: Unit = if (hints.nonEmpty) hints.remove(0)
     /* ERROR RELABELLING END */
@@ -186,17 +186,17 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         this.fail(ParseError.fail(msg, offset, line, col))
     }
     private [instructions] def unexpectedFail(expected: UnsafeOption[String], unexpected: String): Unit = {
-        this.fail(TrivialError(offset, line, col, Some(Desc(unexpected)), if (expected == null) Set.empty else Set(Desc(expected)), Set.empty))
+        this.fail(new TrivialError(offset, line, col, Some(new Desc(unexpected)), if (expected == null) Set.empty else Set(new Desc(expected)), Set.empty))
     }
     private [instructions] def expectedFail(expected: Set[ErrorItem], msg: Option[String]): Unit = {
-        val unexpected = if (offset < inputsz) Raw(s"$nextChar") else EndOfInput
-        this.fail(TrivialError(offset, line, col, Some(unexpected), expected, msg.fold(Set.empty[String])(Set(_))))
+        val unexpected = if (offset < inputsz) new Raw(s"$nextChar") else EndOfInput
+        this.fail(new TrivialError(offset, line, col, Some(unexpected), expected, msg.fold(Set.empty[String])(Set(_))))
     }
     private [instructions] def expectedFail(expected: UnsafeOption[String]): Unit = {
-        expectedFail(if (expected == null) Set.empty[ErrorItem] else Set[ErrorItem](Desc(expected)), None)
+        expectedFail(if (expected == null) Set.empty[ErrorItem] else Set[ErrorItem](new Desc(expected)), None)
     }
     private [instructions] def expectedFailWithExplanation(expected: UnsafeOption[String], msg: String): Unit = {
-        expectedFail(if (expected == null) Set.empty[ErrorItem] else Set[ErrorItem](Desc(expected)), Some(msg))
+        expectedFail(if (expected == null) Set.empty[ErrorItem] else Set[ErrorItem](new Desc(expected)), Some(msg))
     }
     private [instructions] def fail(error: ParseError): Unit = {
         this.pushError(error)

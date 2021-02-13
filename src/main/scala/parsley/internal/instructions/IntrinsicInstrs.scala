@@ -29,7 +29,7 @@ private [internal] final class Lift3[A, B, C, D](_f: (A, B, C) => D) extends Ins
 }
 
 private [internal] class CharTok(c: Char, x: Any, _expected: UnsafeOption[String]) extends Instr {
-    private val errorItem: Set[ErrorItem] = Set(if (_expected == null) Raw(c) else Desc(_expected))
+    private val errorItem: Set[ErrorItem] = Set(if (_expected == null) Raw(c) else new Desc(_expected))
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && ctx.nextChar == c) {
             ctx.consumeChar()
@@ -43,7 +43,7 @@ private [internal] class CharTok(c: Char, x: Any, _expected: UnsafeOption[String
 }
 
 private [internal] final class StringTok private [instructions] (s: String, x: Any, _expected: UnsafeOption[String]) extends Instr {
-    private [this] val errorItem: Set[ErrorItem] = Set(if (_expected == null) Raw(s) else Desc(_expected))
+    private [this] val errorItem: Set[ErrorItem] = Set(if (_expected == null) new Raw(s) else new Desc(_expected))
     private [this] val cs = s.toCharArray
     private [this] val sz = cs.length
     private [this] val adjustAtIndex = new Array[(Int => Int, Int => Int)](s.length + 1)
@@ -84,8 +84,8 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
         val origLine = ctx.line
         val origCol = ctx.col
         go(ctx, ctx.offset, 0,
-            TrivialError(origOffset, origLine, origCol,
-                Some(if (ctx.inputsz > origOffset) Raw(ctx.input.substring(origOffset, Math.min(origOffset + sz, ctx.inputsz))) else EndOfInput),
+            new TrivialError(origOffset, origLine, origCol,
+                Some(if (ctx.inputsz > origOffset) new Raw(ctx.input.substring(origOffset, Math.min(origOffset + sz, ctx.inputsz))) else EndOfInput),
                 errorItem, Set.empty
             ))
     }
@@ -108,7 +108,7 @@ private [internal] final class Filter[A](_pred: A=>Boolean, expected: UnsafeOpti
     private [this] val pred = _pred.asInstanceOf[Any=>Boolean]
     override def apply(ctx: Context): Unit = {
         if (pred(ctx.stack.upeek)) ctx.inc()
-        else ctx.fail(TrivialError(ctx.offset, ctx.line, ctx.col, None, if (expected == null) Set.empty else Set(Desc(expected)), Set.empty))
+        else ctx.fail(TrivialError(ctx.offset, ctx.line, ctx.col, None, if (expected == null) Set.empty else Set(new Desc(expected)), Set.empty))
     }
     // $COVERAGE-OFF$
     override def toString: String = "Filter(?)"
@@ -120,7 +120,7 @@ private [internal] final class FilterOut[A](_pred: PartialFunction[A, String], e
     override def apply(ctx: Context): Unit = {
         if (pred.isDefinedAt(ctx.stack.upeek)) {
             val reason = pred(ctx.stack.upop())
-            ctx.fail(TrivialError(ctx.offset, ctx.line, ctx.col, None, if (expected == null) Set.empty else Set(Desc(expected)), Set(reason)))
+            ctx.fail(TrivialError(ctx.offset, ctx.line, ctx.col, None, if (expected == null) Set.empty else Set(new Desc(expected)), Set(reason)))
         }
         else ctx.inc()
     }
@@ -167,7 +167,7 @@ private [internal] class Eof(_expected: UnsafeOption[String]) extends Instr {
     override def apply(ctx: Context): Unit = {
         if (ctx.offset == ctx.inputsz) ctx.pushAndContinue(())
         else {
-            ctx.expectedFail(Set[ErrorItem](if (_expected == null) EndOfInput else Desc(_expected)), None)
+            ctx.expectedFail(Set[ErrorItem](if (_expected == null) EndOfInput else new Desc(_expected)), None)
         }
     }
     // $COVERAGE-OFF$
