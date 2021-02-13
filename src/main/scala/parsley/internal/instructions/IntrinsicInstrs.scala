@@ -46,7 +46,6 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
     private [this] val errorItem: Set[ErrorItem] = Set(if (_expected == null) new Raw(s) else new Desc(_expected))
     private [this] val cs = s.toCharArray
     private [this] val sz = cs.length
-    private [this] val adjustAtIndex = new Array[(Int => Int, Int => Int)](s.length + 1)
     def makeAdjusters(col: Int, line: Int, tabprefix: Option[Int]): (Int => Int, Int => Int) =
         if (line > 0) ((_: Int) => col, (x: Int) => x + line)
         else (tabprefix match {
@@ -56,16 +55,16 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
                 (x: Int) => outer + x - ((x + inner) & 3)
             case None => (x: Int) => x + col
         }, (x: Int) => x)
-    @tailrec def compute(cs: Array[Char], i: Int = 0, col: Int = 0, line: Int = 0)(implicit tabprefix: Option[Int] = None): Unit = {
-        adjustAtIndex(i) = makeAdjusters(col, line, tabprefix)
+    @tailrec def compute(cs: Array[Char], i: Int = 0, col: Int = 0, line: Int = 0)(implicit tabprefix: Option[Int] = None): (Int => Int, Int => Int) = {
         if (i < cs.length) cs(i) match {
             case '\n' => compute(cs, i + 1, 1, line + 1)(Some(0))
             case '\t' if tabprefix.isEmpty => compute(cs, i + 1, 0, line)(Some(col))
             case '\t' => compute(cs, i + 1, col + 4 - ((col - 1) & 3), line)
             case _ => compute(cs, i + 1, col + 1, line)
         }
+        else makeAdjusters(col, line, tabprefix)
     }
-    compute(cs)
+    private [this] val (colAdjust, lineAdjust) = compute(cs)
 
     @tailrec private def go(ctx: Context, i: Int, j: Int): Unit = {
         if (j < sz && i < ctx.inputsz && ctx.input.charAt(i) == cs(j)) go(ctx, i + 1, j + 1)
@@ -80,7 +79,6 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
                 ctx.fail(err)
             }
             else {
-                val (colAdjust, lineAdjust) = adjustAtIndex(j)
                 ctx.col = colAdjust(ctx.col)
                 ctx.line = lineAdjust(ctx.line)
                 ctx.offset = i
