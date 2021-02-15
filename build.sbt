@@ -5,7 +5,7 @@ val projectName = "parsley"
 inThisBuild(List(
   organization := "com.github.j-mie6",
   homepage := Some(url("https://github.com/j-mie6/parsley")),
-  licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+  licenses := List("BSD 3-Clause" -> url("https://opensource.org/licenses/BSD-3-Clause")),
   developers := List(
     Developer(
       "j-mie6",

@@ -1,7 +1,7 @@
 package parsley.internal.deepembedding
 
 import ContOps.{result, ContAdapter}
-import parsley.internal.{UnsafeOption, instructions}, instructions.{ErrorItem, Raw, Desc}
+import parsley.internal.instructions, instructions.{ErrorItem, Raw, Desc}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -97,7 +97,7 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
                 val merge = state.freshLabel()
                 instrs += new instructions.PushHandler(merge)
                 if (needsDefault) {
-                    instrs += new instructions.Empty(null)
+                    instrs += new instructions.Empty(None)
                     instrs += new instructions.Label(merge)
                     instrs += instructions.MergeErrors
                     result(instrs += new instructions.Label(end))
@@ -207,7 +207,7 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
 }
 
 private [parsley] class Empty(val expected: UnsafeOption[String] = null)
-    extends SingletonExpect[Nothing]("empty", new Empty(_), new instructions.Empty(expected)) with MZero
+    extends SingletonExpect[Nothing]("empty", new Empty(_), new instructions.Empty(Option(expected))) with MZero
 
 private [deepembedding] object <|> {
     def empty[A, B]: A <|> B = new <|>(null, null)

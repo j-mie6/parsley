@@ -1,7 +1,7 @@
 package parsley.internal.deepembedding
 
 import ContOps.{result, ContAdapter}
-import parsley.internal.{UnsafeOption, instructions}
+import parsley.internal.instructions
 import parsley.registers.Reg
 import parsley.debug.{Breakpoint, EntryBreak, FullBreak, ExitBreak}
 
@@ -10,7 +10,7 @@ import scala.collection.mutable
 import scala.language.higherKinds
 
 private [parsley] final class Satisfy(private [Satisfy] val f: Char => Boolean, val expected: UnsafeOption[String] = null)
-    extends SingletonExpect[Char]("satisfy(f)", new Satisfy(f, _), new instructions.Satisfies(f, expected))
+    extends SingletonExpect[Char]("satisfy(f)", new Satisfy(f, _), new instructions.Satisfies(f, Option(expected)))
 
 private [deepembedding] sealed abstract class ScopedUnary[A, B](_p: =>Parsley[A], name: String, doesNotProduceHints: Boolean,
                                                                 empty: UnsafeOption[String] => ScopedUnary[A, B], instr: instructions.Instr)
@@ -28,7 +28,7 @@ private [deepembedding] sealed abstract class ScopedUnary[A, B](_p: =>Parsley[A]
 private [parsley] final class Attempt[A](_p: =>Parsley[A]) extends ScopedUnary[A, A](_p, "attempt", false, _ => Attempt.empty, instructions.Attempt)
 private [parsley] final class Look[A](_p: =>Parsley[A]) extends ScopedUnary[A, A](_p, "lookAhead", true, _ => Look.empty, instructions.Look)
 private [parsley] final class NotFollowedBy[A](_p: =>Parsley[A], val expected: UnsafeOption[String] = null)
-    extends ScopedUnary[A, Unit](_p, "notFollowedBy", true, NotFollowedBy.empty, new instructions.NotFollowedBy(expected)) {
+    extends ScopedUnary[A, Unit](_p, "notFollowedBy", true, NotFollowedBy.empty, new instructions.NotFollowedBy(Some(expected))) {
     override def optimise: Parsley[Unit] = p match {
         case z: MZero => new Pure(())
         case _ => this
@@ -39,7 +39,7 @@ private [parsley] final class Fail(private [Fail] val msg: String)
     extends SingletonExpect[Nothing](s"fail($msg)", _ => new Fail(msg), new instructions.Fail(msg)) with MZero
 
 private [parsley] final class Unexpected(private [Unexpected] val msg: String, val expected: UnsafeOption[String] = null)
-    extends SingletonExpect[Nothing](s"unexpected($msg)", new Unexpected(msg, _), new instructions.Unexpected(msg, expected)) with MZero
+    extends SingletonExpect[Nothing](s"unexpected($msg)", new Unexpected(msg, _), new instructions.Unexpected(msg, Option(expected))) with MZero
 
 private [parsley] final class Rec[A](val p: Parsley[A])
     extends SingletonExpect[A](s"rec $p", _ => new Rec(p), new instructions.Call(p.instrs))

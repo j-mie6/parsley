@@ -1,7 +1,6 @@
 package parsley.internal.instructions
 
 import parsley.internal.ResizableArray
-import parsley.internal.UnsafeOption
 
 private [internal] final class ApplyError(label: String) extends Instr {
     val isHide: Boolean = label.isEmpty
@@ -86,8 +85,13 @@ private [internal] final class Fail(msg: String) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class Unexpected(msg: String, expected: UnsafeOption[String]) extends Instr {
-    override def apply(ctx: Context): Unit = ctx.unexpectedFail(expected = expected, unexpected = msg)
+private [internal] final class Unexpected(msg: String, _expected: Option[String]) extends Instr {
+    val expected: Set[ErrorItem] = _expected match {
+        case Some(ex) => Set(Desc(ex))
+        case None => Set.empty
+    }
+    val unexpected = Some(Desc(msg))
+    override def apply(ctx: Context): Unit = ctx.unexpectedFail(expected, unexpected)
     // $COVERAGE-OFF$
     override def toString: String = s"Unexpected($msg)"
     // $COVERAGE-ON$
@@ -101,9 +105,13 @@ private [internal] final class FastFail[A](msggen: A=>String) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class FastUnexpected[A](msggen: A=>String, expected: UnsafeOption[String]) extends Instr {
-    private [this] val msggen_ = msggen.asInstanceOf[Any => String]
-    override def apply(ctx: Context): Unit = ctx.unexpectedFail(expected = expected, unexpected = msggen_(ctx.stack.upop()))
+private [internal] final class FastUnexpected[A](_msggen: A=>String, _expected: Option[String]) extends Instr {
+    private [this] def msggen(x: Any) = new Some(new Desc(_msggen(x.asInstanceOf[A])))
+    val expected: Set[ErrorItem] = _expected match {
+        case Some(ex) => Set(Desc(ex))
+        case None => Set.empty
+    }
+    override def apply(ctx: Context): Unit = ctx.unexpectedFail(expected = expected, unexpected = msggen(ctx.stack.upop()))
     // $COVERAGE-OFF$
     override def toString: String = "FastUnexpected(?)"
     // $COVERAGE-ON$

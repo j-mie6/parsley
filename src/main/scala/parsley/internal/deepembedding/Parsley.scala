@@ -6,7 +6,7 @@ import scala.collection.mutable
 
 import parsley.registers.Reg
 import parsley.internal.instructions, instructions.{Instr, JumpTable, JumpInstr, Label}
-import parsley.internal.{UnsafeOption, ResizableArray}
+import parsley.internal.ResizableArray
 import Parsley.allocateRegisters
 import ContOps.{safeCall, GenOps, perform, result, ContAdapter}
 

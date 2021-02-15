@@ -1,7 +1,7 @@
 package parsley.internal.deepembedding
 
 import ContOps.{result, ContAdapter}
-import parsley.internal.{UnsafeOption, instructions}
+import parsley.internal.instructions
 
 import scala.annotation.tailrec
 import scala.collection.mutable

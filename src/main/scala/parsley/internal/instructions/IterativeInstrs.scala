@@ -1,6 +1,5 @@
 package parsley.internal.instructions
 
-import parsley.internal.UnsafeOption
 import parsley.internal.deepembedding
 import Stack.isEmpty
 

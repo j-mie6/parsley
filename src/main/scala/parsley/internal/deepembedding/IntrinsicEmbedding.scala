@@ -1,7 +1,7 @@
 package parsley.internal.deepembedding
 
 import ContOps.{result, ContAdapter}
-import parsley.internal.{UnsafeOption, instructions}
+import parsley.internal.instructions
 import parsley.registers.Reg
 
 import scala.annotation.tailrec
@@ -9,10 +9,10 @@ import scala.collection.mutable
 import scala.language.higherKinds
 
 private [parsley] final class CharTok(private [CharTok] val c: Char, val expected: UnsafeOption[String] = null)
-    extends SingletonExpect[Char](s"char($c)", new CharTok(c, _), instructions.CharTok(c, expected))
+    extends SingletonExpect[Char](s"char($c)", new CharTok(c, _), instructions.CharTok(c, Option(expected)))
 
 private [parsley] final class StringTok(private [StringTok] val s: String, val expected: UnsafeOption[String] = null)
-    extends SingletonExpect[String](s"string($s)", new StringTok(s, _), instructions.StringTok(s, expected)) {
+    extends SingletonExpect[String](s"string($s)", new StringTok(s, _), instructions.StringTok(s, Option(expected))) {
     override def optimise: Parsley[String] = s match {
         case "" => new Pure("")
         case _ => this
@@ -55,13 +55,13 @@ private [parsley] final class FastFail[A](_p: =>Parsley[A], msggen: A => String)
                                    x => new Fail(msggen(x)), new instructions.FastFail(msggen), _ => true) with MZero
 private [parsley] final class FastUnexpected[A](_p: =>Parsley[A], msggen: A => String, expected: UnsafeOption[String] = null)
     extends FilterLike[A, Nothing](_p, c => s"$c.unexpected(?)", FastUnexpected.empty(msggen, _),
-                                   x => new Unexpected(msggen(x), expected), new instructions.FastUnexpected(msggen, expected), _ => true) with MZero
+                                   x => new Unexpected(msggen(x), expected), new instructions.FastUnexpected(msggen, Option(expected)), _ => true) with MZero
 private [parsley] final class Filter[A](_p: =>Parsley[A], pred: A => Boolean, expected: UnsafeOption[String] = null)
     extends FilterLike[A, A](_p, c => s"$c.filter(?)", Filter.empty(pred, _),
-                             _ => new Empty(expected), new instructions.Filter(pred, expected), !pred(_))
+                             _ => new Empty(expected), new instructions.Filter(pred, Option(expected)), !pred(_))
 private [parsley] final class FilterOut[A](_p: =>Parsley[A], pred: PartialFunction[A, String], expected: UnsafeOption[String] = null)
     extends FilterLike[A, A](_p, c => s"$c.filterOut(?)", FilterOut.empty(pred, _),
-                             x => ErrorExplain(new Empty(expected), pred(x)), new instructions.FilterOut(pred, expected), pred.isDefinedAt(_))
+                             x => ErrorExplain(new Empty(expected), pred(x)), new instructions.FilterOut(pred, Option(expected)), pred.isDefinedAt(_))
 private [parsley] final class GuardAgainst[A](_p: =>Parsley[A], pred: PartialFunction[A, String])
     extends FilterLike[A, A](_p, c => s"$c.guardAgainst(?)", _ => GuardAgainst.empty(pred),
                             x => new Fail(pred(x)), new instructions.GuardAgainst(pred), pred.isDefinedAt(_))
@@ -89,7 +89,7 @@ private [parsley] final class If[A](_b: =>Parsley[Boolean], _p: =>Parsley[A], _q
     }
 }
 private [parsley] final class Eof(val expected: UnsafeOption[String] = null)
-    extends SingletonExpect[Unit]("eof", new Eof(_), new instructions.Eof(expected))
+    extends SingletonExpect[Unit]("eof", new Eof(_), new instructions.Eof(Option(expected)))
 
 private [parsley] final class Modify[S](val reg: Reg[S], f: S => S)
     extends Singleton[Unit](s"modify($reg, ?)", new instructions.Modify(reg.addr, f)) with UsesRegister

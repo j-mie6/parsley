@@ -90,6 +90,7 @@ private [internal] case class FailError(offset: Int, line: Int, col: Int, msgs: 
 private [internal] object ParseError {
     def fail(msg: String, offset: Int, line: Int, col: Int): ParseError = FailError(offset, line, col, Set(msg))
     val Unknown = "unknown parse error"
+    val NoReason = Set.empty[String]
 }
 
 private [internal] sealed trait ErrorItem {

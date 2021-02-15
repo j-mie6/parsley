@@ -2,7 +2,6 @@ package parsley.internal.instructions
 
 import Stack.{drop, isEmpty, mkString, map, push}
 import parsley.{Failure, Result, Success}
-import parsley.internal.UnsafeOption
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -185,18 +184,12 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     private [instructions] def failWithMessage(msg: String): Unit = {
         this.fail(ParseError.fail(msg, offset, line, col))
     }
-    private [instructions] def unexpectedFail(expected: UnsafeOption[String], unexpected: String): Unit = {
-        this.fail(new TrivialError(offset, line, col, Some(new Desc(unexpected)), if (expected == null) Set.empty else Set(new Desc(expected)), Set.empty))
+    private [instructions] def unexpectedFail(expected: Set[ErrorItem], unexpected: Option[ErrorItem]): Unit = {
+        this.fail(new TrivialError(offset, line, col, unexpected, expected, ParseError.NoReason))
     }
-    private [instructions] def expectedFail(expected: Set[ErrorItem], msg: Option[String]): Unit = {
-        val unexpected = if (offset < inputsz) new Raw(s"$nextChar") else EndOfInput
-        this.fail(new TrivialError(offset, line, col, Some(unexpected), expected, msg.fold(Set.empty[String])(Set(_))))
-    }
-    private [instructions] def expectedFail(expected: UnsafeOption[String]): Unit = {
-        expectedFail(if (expected == null) Set.empty[ErrorItem] else Set[ErrorItem](new Desc(expected)), None)
-    }
-    private [instructions] def expectedFailWithExplanation(expected: UnsafeOption[String], msg: String): Unit = {
-        expectedFail(if (expected == null) Set.empty[ErrorItem] else Set[ErrorItem](new Desc(expected)), Some(msg))
+    private [instructions] def expectedFail(expected: Set[ErrorItem], reason: Option[String]): Unit = {
+        val unexpected = new Some(if (offset < inputsz) new Raw(s"$nextChar") else EndOfInput)
+        this.fail(new TrivialError(offset, line, col, unexpected, expected, reason.fold(ParseError.NoReason)(Set(_))))
     }
     private [instructions] def fail(error: ParseError): Unit = {
         this.pushError(error)
@@ -301,4 +294,5 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
 private [parsley] object Context {
     private [Context] val NumRegs = 4
     def empty: Context = new Context(null, "")
+    val emptyExpected = Set.empty[ErrorItem]
 }

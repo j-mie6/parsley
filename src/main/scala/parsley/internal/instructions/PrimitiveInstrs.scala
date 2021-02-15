@@ -2,12 +2,15 @@ package parsley.internal.instructions
 
 import Stack.{isEmpty, push}
 import parsley.internal.ResizableArray
-import parsley.internal.UnsafeOption
 
-private [internal] final class Satisfies(f: Char => Boolean, expected: UnsafeOption[String]) extends Instr {
+private [internal] final class Satisfies(f: Char => Boolean, _expected: Option[String]) extends Instr {
+    val expected: Set[ErrorItem] = _expected match {
+        case Some(ex) => Set(Desc(ex))
+        case None => Set.empty
+    }
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && f(ctx.nextChar)) ctx.pushAndContinue(ctx.consumeChar())
-        else ctx.expectedFail(expected)
+        else ctx.expectedFail(expected, reason = None)
     }
     // $COVERAGE-OFF$
     override def toString: String = "Sat(?)"

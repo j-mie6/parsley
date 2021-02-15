@@ -2,7 +2,7 @@ package parsley.internal.deepembedding
 
 import parsley.token.TokenSet
 import Sign.SignType
-import parsley.internal.{instructions, UnsafeOption}
+import parsley.internal.instructions
 
 private [parsley] final class WhiteSpace(ws: TokenSet, start: String, end: String, line: String, nested: Boolean)
     extends Singleton[Unit]("whiteSpace", new instructions.TokenWhiteSpace(ws, start, end, line, nested))
@@ -17,32 +17,32 @@ private [parsley] final class Sign[A](ty: SignType)
     extends SingletonExpect[A => A]("sign", _ => new Sign(ty), new instructions.TokenSign(ty))
 
 private [parsley] final class Natural(val expected: UnsafeOption[String] = null)
-    extends SingletonExpect[Int]("natural", new Natural(_), new instructions.TokenNatural(expected))
+    extends SingletonExpect[Int]("natural", new Natural(_), new instructions.TokenNatural(Option(expected)))
 
 private [parsley] final class Float(val expected: UnsafeOption[String] = null)
-    extends SingletonExpect[Double]("float", new Float(_), new instructions.TokenFloat(expected))
+    extends SingletonExpect[Double]("float", new Float(_), new instructions.TokenFloat(Option(expected)))
 
 private [parsley] final class Escape(val expected: UnsafeOption[String] = null)
-    extends SingletonExpect[Char]("escape", new Escape(_), new instructions.TokenEscape(expected))
+    extends SingletonExpect[Char]("escape", new Escape(_), new instructions.TokenEscape(Option(expected)))
 
 private [parsley] final class StringLiteral(ws: TokenSet, val expected: UnsafeOption[String] = null)
-    extends SingletonExpect[String]("stringLiteral", new StringLiteral(ws, _), new instructions.TokenString(ws, expected))
+    extends SingletonExpect[String]("stringLiteral", new StringLiteral(ws, _), new instructions.TokenString(ws, Option(expected)))
 
 private [parsley] final class RawStringLiteral(val expected: UnsafeOption[String] = null)
-    extends SingletonExpect[String]("rawStringLiteral", new RawStringLiteral(_), new instructions.TokenRawString(expected))
+    extends SingletonExpect[String]("rawStringLiteral", new RawStringLiteral(_), new instructions.TokenRawString(Option(expected)))
 
 private [parsley] class NonSpecific(combinatorName: String, name: String, illegalName: String, start: TokenSet,
                                     letter: TokenSet, illegal: String => Boolean, val expected: UnsafeOption[String] = null)
     extends SingletonExpect[String](combinatorName, new NonSpecific(combinatorName, name, illegalName, start, letter, illegal, _),
-                                    new instructions.TokenNonSpecific(name, illegalName)(start, letter, illegal, expected))
+                                    new instructions.TokenNonSpecific(name, illegalName)(start, letter, illegal, Option(expected)))
 
 private [parsley] final class Specific(name: String, private [Specific] val specific: String,
                                        letter: TokenSet, caseSensitive: Boolean, val expected: UnsafeOption[String] = null)
     extends SingletonExpect[Unit](s"$name($specific)", new Specific(name, specific, letter, caseSensitive, _),
-                                  new instructions.TokenSpecific(specific, letter, caseSensitive, expected))
+                                  new instructions.TokenSpecific(specific, letter, caseSensitive, Option(expected)))
 
 private [parsley] final class MaxOp(private [MaxOp] val operator: String, ops: Set[String], val expected: UnsafeOption[String] = null)
-    extends SingletonExpect[Unit](s"maxOp($operator)", new MaxOp(operator, ops, _), new instructions.TokenMaxOp(operator, ops, expected))
+    extends SingletonExpect[Unit](s"maxOp($operator)", new MaxOp(operator, ops, _), new instructions.TokenMaxOp(operator, ops, Option(expected)))
 
 private [parsley] object Sign {
     private [parsley] sealed trait SignType {

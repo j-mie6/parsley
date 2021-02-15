@@ -1,6 +1,5 @@
 package parsley.internal.instructions
 
-import parsley.internal.UnsafeOption
 import parsley.XCompat._
 import Stack.push
 
@@ -23,13 +22,17 @@ private [internal] final class Exchange[A](private [Exchange] val x: A) extends 
     // $COVERAGE-ON$
 }
 
-private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, expected: UnsafeOption[String]) extends Instr {
+private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, _expected: Option[String]) extends Instr {
+    private [this] final val expected: Set[ErrorItem] = _expected match {
+        case Some(ex) => Set(Desc(ex))
+        case None => Set.empty
+    }
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && f(ctx.nextChar)) {
             ctx.consumeChar()
             ctx.pushAndContinue(x)
         }
-        else ctx.expectedFail(expected)
+        else ctx.expectedFail(expected, reason = None)
     }
     // $COVERAGE-OFF$
     override def toString: String = s"SatEx(?, $x)"
@@ -94,8 +97,8 @@ private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int]
     extends Instr {
     private [this] var defaultPreamble: Int = _
     private [this] val jumpTable = mutable.LongMap(prefixes.map(_.toLong).zip(labels): _*)
-    val expecteds = _expecteds.toList.flatMap(_._2.map(_.msg))
     val errorItems = _expecteds.toSet[(Char, Set[ErrorItem])].flatMap(_._2)
+    val messages = Set.empty[String]
 
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput) {
@@ -115,10 +118,10 @@ private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int]
     }
 
     private def addErrors(ctx: Context): Unit = {
-        val unexpected = if (ctx.offset < ctx.inputsz) Raw(s"${ctx.nextChar}") else EndOfInput
+        val unexpected = new Some(if (ctx.offset < ctx.inputsz) new Raw(s"${ctx.nextChar}") else EndOfInput)
         // We need to save hints here so that the jump table does not get a chance to use the hints before it
         ctx.saveHints(shadow = false)
-        ctx.pushError(TrivialError(ctx.offset, ctx.line, ctx.col, Some(unexpected), errorItems, Set.empty))
+        ctx.pushError(TrivialError(ctx.offset, ctx.line, ctx.col, unexpected, errorItems, messages))
         ctx.restoreHints()
     }
 
@@ -130,12 +133,4 @@ private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int]
     // $COVERAGE-OFF$
     override def toString: String = s"JumpTable(${jumpTable.map{case (k, v) => k.toChar -> v}.mkString(", ")}, _ -> $default)"
     // $COVERAGE-ON$
-}
-
-private [internal] object CharTokFastPerform {
-    def apply[A >: Char, B](c: Char, f: A => B, expected: UnsafeOption[String]): CharTok = new CharTok(c, f(c), expected)
-}
-
-private [internal] object StringTokFastPerform {
-    def apply(s: String, f: String => Any, expected: UnsafeOption[String]): StringTok = new StringTok(s, f(s), expected)
 }

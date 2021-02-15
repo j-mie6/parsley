@@ -2,7 +2,6 @@ package parsley.internal.instructions
 
 import Stack.{isEmpty, push}
 import parsley.internal.ResizableArray
-import parsley.internal.UnsafeOption
 import parsley.internal.deepembedding.Parsley
 
 import scala.annotation.tailrec
@@ -73,9 +72,10 @@ private [internal] object Return extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class Empty(expected: UnsafeOption[String]) extends Instr {
+private [internal] final class Empty(_expected: Option[String]) extends Instr {
+    val expected = _expected.fold(Set.empty[ErrorItem])(e => Set[ErrorItem](Desc(e)))
     override def apply(ctx: Context): Unit = {
-        ctx.fail(TrivialError(ctx.offset, ctx.line, ctx.col, None, if (expected == null) Set.empty else Set(Desc(expected)), Set.empty))
+        ctx.fail(TrivialError(ctx.offset, ctx.line, ctx.col, None, expected, ParseError.NoReason))
     }
     // $COVERAGE-OFF$
     override def toString: String = "Empty"
