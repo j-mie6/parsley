@@ -16,6 +16,9 @@ private [instructions] final class Handler(val depth: Int, val pc: Int, var stac
 private [instructions] final class State(val offset: Int, val line: Int, val col: Int) {
     override def toString: String = s"$offset ($line, $col)"
 }
+private [instructions] final class Hints(val hints: mutable.ListBuffer[Set[ErrorItem]], val validOffset: Int) {
+    override def toString: String = s"($validOffset, $hints)"
+}
 
 private [parsley] final class Context(private [instructions] var instrs: Array[Instr],
                                       private [instructions] var input: String,
@@ -54,17 +57,17 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     // NEW ERROR MECHANISMS
     private var hints = mutable.ListBuffer.empty[Set[ErrorItem]]
     private var hintsValidOffset = 0
-    private var hintStack = Stack.empty[(Int, mutable.ListBuffer[Set[ErrorItem]])]
+    private var hintStack = Stack.empty[Hints]
     private [instructions] var errs = Stack.empty[ParseError]
 
     private [instructions] def saveHints(shadow: Boolean): Unit = {
-        hintStack = push(hintStack, (hintsValidOffset, hints))
+        hintStack = push(hintStack, new Hints(hints, hintsValidOffset))
         hints = if (shadow) hints.clone else mutable.ListBuffer.empty
     }
     private [instructions] def restoreHints(): Unit = {
-        val (hintsValidOffset, hints) = hintStack.head
-        this.hintsValidOffset = hintsValidOffset
-        this.hints = hints
+        val hintFrame = this.hintStack.head
+        this.hintsValidOffset = hintFrame.validOffset
+        this.hints = hintFrame.hints
         this.commitHints()
     }
     private [instructions] def commitHints(): Unit = {
@@ -74,9 +77,9 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     /* ERROR RELABELLING BEGIN */
     private [instructions] def mergeHints(): Unit = {
         val newHints = this.hints
-        val (hintsValidOffset, oldHints) = this.hintStack.head
-        if (hintsValidOffset == offset) {
-            this.hints = oldHints
+        val hintFrame = this.hintStack.head
+        if (hintFrame.validOffset == offset) {
+            this.hints = hintFrame.hints
             this.hints ++= newHints
         }
         commitHints()
