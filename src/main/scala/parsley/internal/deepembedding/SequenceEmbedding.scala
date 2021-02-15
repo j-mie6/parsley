@@ -62,8 +62,8 @@ private [parsley] final class <*>[A, B](_pf: =>Parsley[A => B], _px: =>Parsley[A
     override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = left match {
         // pure f <*> p = f <$> p
         case Pure(f) => right match {
-            case ct@CharTok(c) => result(instrs += instructions.CharTokFastPerform[Char, B](c, f.asInstanceOf[Char => B], Option(ct.expected)))
-            case st@StringTok(s) => result(instrs += instructions.StringTokFastPerform(s, f.asInstanceOf[String => B], Option(st.expected)))
+            case ct@CharTok(c) => result(instrs += instructions.CharTokFastPerform[Char, B](c, f.asInstanceOf[Char => B], ct.expected))
+            case st@StringTok(s) => result(instrs += instructions.StringTokFastPerform(s, f.asInstanceOf[String => B], st.expected))
             case _ =>
                 right.codeGen |>
                 (instrs += new instructions.Perform(f))
@@ -75,7 +75,7 @@ private [parsley] final class <*>[A, B](_pf: =>Parsley[A => B], _px: =>Parsley[A
     }
 }
 
-private [parsley] final class >>=[A, B](_p: =>Parsley[A], private [>>=] val f: A => Parsley[B], val expected: UnsafeOption[String] = null)
+private [parsley] final class >>=[A, B](_p: =>Parsley[A], private [>>=] val f: A => Parsley[B], val expected: Option[String] = None)
     extends Unary[A, B](_p)(l => s"($l >>= ?)", >>=.empty(f, _)) {
     override val numInstrs = 1
     override def optimise: Parsley[B] = p match {
@@ -95,7 +95,7 @@ private [parsley] final class >>=[A, B](_p: =>Parsley[A], private [>>=] val f: A
         case z: MZero => z
         case _ => this
     }
-    // TODO: Make bind generate with expected != null a ErrorLabel instruction
+    // TODO: Make bind generate with expected != None a ErrorLabel instruction
     override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
         p.codeGen |>
         (instrs += new instructions.DynCall[A](x => f(x).demandCalleeSave().instrs))
@@ -110,11 +110,11 @@ private [deepembedding] sealed abstract class Seq[A, B](_discard: =>Parsley[A], 
     final def discard_=(p: Parsley[A]): Unit = left = p
     final override val numInstrs = 1
     def copy[B_ >: B](prev: Parsley[A], next: Parsley[B_]): Seq[A, B_]
-    private def buildResult[R](make: (StringTok, Pure[B]) => Parsley[B])(s: String, r: R, ex1: UnsafeOption[String], ex2: UnsafeOption[String]) = {
+    private def buildResult[R](make: (StringTok, Pure[B]) => Parsley[B])(s: String, r: R, ex1: Option[String], ex2: Option[String]) = {
         make(new StringTok(s, if (ex1 != null) ex1 else ex2), new Pure(r.asInstanceOf[B]))
     }
     private def optimiseStringResult(combine: (String, String) => String, make: (StringTok, Pure[B]) => Parsley[B])
-                                    (s: String, ex: UnsafeOption[String]): Parsley[B] = result match {
+                                    (s: String, ex: Option[String]): Parsley[B] = result match {
         case ct@CharTok(c) => buildResult(make)(combine(s, c.toString), c, ex, ct.expected)
         case st@StringTok(t) => buildResult(make)(combine(s, t), t, ex, st.expected)
     }
@@ -131,9 +131,9 @@ private [deepembedding] sealed abstract class Seq[A, B](_discard: =>Parsley[A], 
     }
     final protected def codeGenSeq[Cont[_, +_]: ContOps](default: =>Cont[Unit, Unit])(implicit instrs: InstrBuffer,
                                                                                       state: CodeGenState): Cont[Unit, Unit] = (result, discard) match {
-        case (Pure(x), ct@CharTok(c)) => ContOps.result(instrs += instructions.CharTokFastPerform[Char, B](c, _ => x, Option(ct.expected)))
-        case (Pure(x), st@StringTok(s)) => ContOps.result(instrs += instructions.StringTokFastPerform(s, _ => x, Option(st.expected)))
-        case (Pure(x), st@Satisfy(f)) => ContOps.result(instrs += new instructions.SatisfyExchange(f, x, Option(st.expected)))
+        case (Pure(x), ct@CharTok(c)) => ContOps.result(instrs += instructions.CharTokFastPerform[Char, B](c, _ => x, ct.expected))
+        case (Pure(x), st@StringTok(s)) => ContOps.result(instrs += instructions.StringTokFastPerform(s, _ => x, st.expected))
+        case (Pure(x), st@Satisfy(f)) => ContOps.result(instrs += new instructions.SatisfyExchange(f, x, st.expected))
         case (Pure(x), v) =>
             v.codeGen |>
             (instrs += new instructions.Exchange(x))
@@ -207,8 +207,8 @@ private [deepembedding] object <*> {
     def unapply[A, B](self: <*>[A, B]): Option[(Parsley[A=>B], Parsley[A])] = Some((self.left, self.right))
 }
 private [deepembedding] object >>= {
-    def empty[A, B](f: A => Parsley[B], expected: UnsafeOption[String]): >>=[A, B] = new >>=(null, f, expected)
-    def apply[A, B](p: Parsley[A], f: A => Parsley[B], expected: UnsafeOption[String]): >>=[A, B] = empty(f, expected).ready(p)
+    def empty[A, B](f: A => Parsley[B], expected: Option[String]): >>=[A, B] = new >>=(null, f, expected)
+    def apply[A, B](p: Parsley[A], f: A => Parsley[B], expected: Option[String]): >>=[A, B] = empty(f, expected).ready(p)
     def unapply[A, B](self: >>=[A, B]): Option[(Parsley[A], A => Parsley[B])] = Some((self.p, self.f))
 }
 private [deepembedding] object Seq {

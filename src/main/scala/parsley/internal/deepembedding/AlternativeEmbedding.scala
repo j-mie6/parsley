@@ -15,9 +15,9 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
         // left catch law: pure x <|> p = pure x
         case (u: Pure[B @unchecked], _) => u
         // alternative law: empty <|> p = p
-        case (e: Empty, v) if e.expected == null => v
+        case (e: Empty, v) if e.expected.isEmpty => v
         // alternative law: p <|> empty = p
-        case (u: Parsley[B @unchecked], e: Empty) if e.expected == null => u
+        case (u: Parsley[B @unchecked], e: Empty) if e.expected.isEmpty => u
         // associative law: (u <|> v) <|> w = u <|> (v <|> w)
         case ((u: Parsley[T]) <|> (v: Parsley[A]), w) =>
             left = u.asInstanceOf[Parsley[A]]
@@ -166,12 +166,12 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
         case (_, None)::tablified_ => foldTablified(tablified_, labelGen, roots, leads, labels, expecteds)
         case (root, Some(lead))::tablified_ =>
             val (c: Char, expected: ErrorItem) = lead match {
-                case ct@CharTok(d) => (d, if (ct.expected == null) Raw(d) else Desc(ct.expected))
-                case st@StringTok(s) => (s.head, if (st.expected == null) Raw(s) else Desc(st.expected))
-                case st@Specific(s) => (s.head, Desc(if (st.expected == null) s else st.expected))
-                case op@MaxOp(o) => (o.head, Desc(if (op.expected == null) o else op.expected))
-                case sl: StringLiteral => ('"', Desc(if (sl.expected == null) "string" else sl.expected))
-                case rs: RawStringLiteral => ('"', Desc(if (rs.expected == null) "string" else rs.expected))
+                case ct@CharTok(d) => (d, ct.expected.fold[ErrorItem](Raw(d))(Desc(_)))
+                case st@StringTok(s) => (s.head, st.expected.fold[ErrorItem](Raw(s))(Desc(_)))
+                case st@Specific(s) => (s.head, Desc(st.expected.getOrElse(s)))
+                case op@MaxOp(o) => (o.head, Desc(op.expected.getOrElse(o)))
+                case sl: StringLiteral => ('"', Desc(sl.expected.getOrElse("string")))
+                case rs: RawStringLiteral => ('"', Desc(rs.expected.getOrElse("string")))
             }
             if (roots.contains(c)) {
                 roots(c) = root::roots(c)
@@ -206,8 +206,8 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
     }
 }
 
-private [parsley] class Empty(val expected: UnsafeOption[String] = null)
-    extends SingletonExpect[Nothing]("empty", new Empty(_), new instructions.Empty(Option(expected))) with MZero
+private [parsley] class Empty(val expected: Option[String] = None)
+    extends SingletonExpect[Nothing]("empty", new Empty(_), new instructions.Empty(expected)) with MZero
 
 private [deepembedding] object <|> {
     def empty[A, B]: A <|> B = new <|>(null, null)
