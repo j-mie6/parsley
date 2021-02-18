@@ -19,19 +19,21 @@ private [internal] final class ApplyError(label: String) extends Instr {
         }
         else {
             ctx.restoreHints()
-            // EERR
-            // the top of the error stack is adjusted:
-            if (ctx.offset == ctx.checkStack.head) ctx.errs.head = ctx.errs.head match {
-                // - if it is a fail, it is left alone
-                case err: FailError              => err
-                //  - otherwise if this is a hide, the expected set is discarded
-                case err: TrivialError if isHide => err.copy(expecteds = Set.empty)
-                //  - otherwise expected set is replaced by singleton containing this label
-                case err: TrivialError           => err.copy(expecteds = Set(Desc(label)))
+            ctx.errs.head = ctx.useHints {
+                // EERR
+                // the top of the error stack is adjusted:
+                if (ctx.offset == ctx.checkStack.head) ctx.errs.head match {
+                    // - if it is a fail, it is left alone
+                    case err: FailError              => err
+                    //  - otherwise if this is a hide, the expected set is discarded
+                    case err: TrivialError if isHide => err.copy(expecteds = Set.empty)
+                    //  - otherwise expected set is replaced by singleton containing this label
+                    case err: TrivialError           => err.copy(expecteds = Set(Desc(label)))
+                }
+                // CERR
+                // do nothing
+                else ctx.errs.head
             }
-            // CERR
-            // do nothing
-            ctx.useHints()
             ctx.fail()
         }
         ctx.checkStack = ctx.checkStack.tail

@@ -170,9 +170,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     }
 
     private [instructions] def pushError(err: ParseError): Unit = this.errs = push(this.errs, this.useHints(err))
-    private [instructions] def useHints(): Unit = errs.head = useHints(errs.head)
-
-    private def useHints(err: ParseError): ParseError = {
+    private [instructions] def useHints(err: ParseError): ParseError = {
         if (hintsValidOffset == offset) err.withHints(hints)
         else {
             hintsValidOffset = offset
