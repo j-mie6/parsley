@@ -58,7 +58,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     private var hints = mutable.ListBuffer.empty[Set[ErrorItem]]
     private var hintsValidOffset = 0
     private var hintStack = Stack.empty[Hints]
-    private [instructions] var errs = Stack.empty[ParseError]
+    private [instructions] var errs: Stack[ParseError] = Stack.empty
 
     private [instructions] def saveHints(shadow: Boolean): Unit = {
         hintStack = push(hintStack, new Hints(hints, hintsValidOffset))

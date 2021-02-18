@@ -119,10 +119,7 @@ private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int]
 
     private def addErrors(ctx: Context): Unit = {
         val unexpected = new Some(if (ctx.offset < ctx.inputsz) new Raw(s"${ctx.nextChar}") else EndOfInput)
-        // We need to save hints here so that the jump table does not get a chance to use the hints before it
-        ctx.saveHints(shadow = false)
-        ctx.pushError(TrivialError(ctx.offset, ctx.line, ctx.col, unexpected, errorItems, messages))
-        ctx.restoreHints()
+        ctx.errs = push(ctx.errs, new TrivialError(ctx.offset, ctx.line, ctx.col, unexpected, errorItems, messages))
     }
 
     override def relabel(labels: Array[Int]): Unit = {
