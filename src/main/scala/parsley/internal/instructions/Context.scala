@@ -169,18 +169,15 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         checkStack = checkStack.tail
     }
 
-    private [instructions] def pushError(err: ParseError): Unit = {
-        this.errs = push(this.errs, err)
-        this.useHints()
-    }
+    private [instructions] def pushError(err: ParseError): Unit = this.errs = push(this.errs, this.useHints(err))
+    private [instructions] def useHints(): Unit = errs.head = useHints(errs.head)
 
-    private [instructions] def useHints(): Unit = {
-        if (hintsValidOffset == offset) {
-            errs.head = errs.head.withHints(hints)
-        }
+    private def useHints(err: ParseError): ParseError = {
+        if (hintsValidOffset == offset) err.withHints(hints)
         else {
             hintsValidOffset = offset
             hints.clear()
+            err
         }
     }
 
