@@ -39,23 +39,31 @@ private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, _exp
     // $COVERAGE-ON$
 }
 
-private [internal] final class JumpGoodAttempt(var label: Int) extends InstrWithLabel {
+private [internal] final class JumpGoodAttempt(private [this] var jumpLabel: Int, private [this] var merge: Int) extends Instr {
     override def apply(ctx: Context): Unit = {
         if (ctx.status eq Good) {
             ctx.states = ctx.states.tail
             ctx.handlers = ctx.handlers.tail
             ctx.commitHints()
-            ctx.pc = label
+            ctx.pc = jumpLabel
         }
         else {
             ctx.restoreState()
             ctx.restoreHints()
             ctx.status = Good
+            ctx.pushHandler(merge)
             ctx.inc()
         }
     }
+
+    override def relabel(labels: Array[Int]): this.type = {
+        jumpLabel = labels(jumpLabel)
+        merge = labels(merge)
+        this
+    }
+
     // $COVERAGE-OFF$
-    override def toString: String = s"JumpGoodAttempt($label)"
+    override def toString: String = s"JumpGoodAttempt($jumpLabel, $merge)"
     // $COVERAGE-ON$
 }
 

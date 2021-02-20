@@ -40,12 +40,11 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
                 case v =>
                     val handler = state.freshLabel()
                     val skip = state.freshLabel()
+                    val merge = state.freshLabel()
                     instrs += new instructions.PushHandlerAndState(handler, true, false)
                     u.codeGen >> {
                         instrs += new instructions.Label(handler)
-                        instrs += new instructions.JumpGoodAttempt(skip)
-                        val merge = state.freshLabel()
-                        instrs += new instructions.PushHandler(merge)
+                        instrs += new instructions.JumpGoodAttempt(skip, merge)
                         v.codeGen |> {
                             instrs += new instructions.Label(merge)
                             instrs += instructions.MergeErrors
@@ -125,12 +124,11 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
         case Attempt(alt)::alts_ =>
             val handler = state.freshLabel()
             val skip = state.freshLabel()
+            val merge = state.freshLabel()
             instrs += new instructions.PushHandlerAndState(handler, true, false)
             alt.codeGen >> {
                 instrs += new instructions.Label(handler)
-                instrs += new instructions.JumpGoodAttempt(skip)
-                val merge = state.freshLabel()
-                instrs += new instructions.PushHandler(merge)
+                instrs += new instructions.JumpGoodAttempt(skip, merge)
                 codeGenAlternatives(alts_) |> {
                     instrs += new instructions.Label(merge)
                     instrs += instructions.MergeErrors
