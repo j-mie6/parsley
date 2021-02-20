@@ -135,15 +135,16 @@ private [internal] final class JumpGood(var label: Int) extends InstrWithLabel {
     // $COVERAGE-ON$
 }
 
-private [internal] object Catch extends Instr {
+private [internal] final class Catch(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ctx.restoreHints()
         ctx.catchNoConsumed {
+            ctx.pushHandler(label)
             ctx.inc()
         }
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"Catch"
+    override def toString: String = s"Catch($label)"
     // $COVERAGE-ON$
 }
 

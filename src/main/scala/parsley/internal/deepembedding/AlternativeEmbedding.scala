@@ -67,13 +67,12 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
                 case v =>
                     val handler = state.freshLabel()
                     val skip = state.freshLabel()
+                    val merge = state.freshLabel()
                     instrs += new instructions.InputCheck(handler, true)
                     u.codeGen >> {
                         instrs += new instructions.JumpGood(skip)
                         instrs += new instructions.Label(handler)
-                        instrs += instructions.Catch
-                        val merge = state.freshLabel()
-                        instrs += new instructions.PushHandler(merge)
+                        instrs += new instructions.Catch(merge)
                         v.codeGen |> {
                             instrs += new instructions.Label(merge)
                             instrs += instructions.MergeErrors
@@ -88,14 +87,13 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
             val needsDefault = tablified.head._2.isDefined
             val end = state.freshLabel()
             val default = state.freshLabel()
+            val merge = state.freshLabel()
             val (roots, leads, ls, expecteds) = foldTablified(tablified, state, mutable.Map.empty, Nil, Nil, mutable.Map.empty)
             //println(leads, tablified)
-            instrs += new instructions.JumpTable(leads, ls, default, expecteds)
+            instrs += new instructions.JumpTable(leads, ls, default, merge, expecteds)
             codeGenRoots(roots, ls, end) >> {
-                instrs += instructions.Catch //This instruction is reachable as default - 1
+                instrs += new instructions.Catch(merge) //This instruction is reachable as default - 1
                 instrs += new instructions.Label(default)
-                val merge = state.freshLabel()
-                instrs += new instructions.PushHandler(merge)
                 if (needsDefault) {
                     instrs += new instructions.Empty(None)
                     instrs += new instructions.Label(merge)
@@ -142,13 +140,12 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
         case alt::alts_ =>
             val handler = state.freshLabel()
             val skip = state.freshLabel()
+            val merge = state.freshLabel()
             instrs += new instructions.InputCheck(handler, true)
             alt.codeGen >> {
                 instrs += new instructions.JumpGood(skip)
                 instrs += new instructions.Label(handler)
-                instrs += instructions.Catch
-                val merge = state.freshLabel()
-                instrs += new instructions.PushHandler(merge)
+                instrs += new instructions.Catch(merge)
                 codeGenAlternatives(alts_) |> {
                     instrs += new instructions.Label(merge)
                     instrs += instructions.MergeErrors

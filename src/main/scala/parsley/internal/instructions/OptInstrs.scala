@@ -93,8 +93,10 @@ private [internal] final class AlwaysRecoverWith[A](x: A) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int], private [this] var default: Int, _expecteds: Map[Char, Set[ErrorItem]])
-    extends Instr {
+private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int],
+        private [this] var default: Int,
+        private [this] var merge: Int,
+        _expecteds: Map[Char, Set[ErrorItem]]) extends Instr {
     private [this] var defaultPreamble: Int = _
     private [this] val jumpTable = mutable.LongMap(prefixes.map(_.toLong).zip(labels): _*)
     val errorItems = _expecteds.toSet[(Char, Set[ErrorItem])].flatMap(_._2)
@@ -120,15 +122,17 @@ private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int]
     private def addErrors(ctx: Context): Unit = {
         val unexpected = new Some(if (ctx.offset < ctx.inputsz) new Raw(s"${ctx.nextChar}") else EndOfInput)
         ctx.errs = push(ctx.errs, new TrivialError(ctx.offset, ctx.line, ctx.col, unexpected, errorItems, messages))
+        ctx.pushHandler(merge)
     }
 
     override def relabel(labels: Array[Int]): this.type = {
         jumpTable.mapValuesInPlace((_, v) => labels(v))
         default = labels(default)
+        merge = labels(merge)
         defaultPreamble = default - 1
         this
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"JumpTable(${jumpTable.map{case (k, v) => k.toChar -> v}.mkString(", ")}, _ -> $default)"
+    override def toString: String = s"JumpTable(${jumpTable.map{case (k, v) => k.toChar -> v}.mkString(", ")}, _ -> $default, $merge)"
     // $COVERAGE-ON$
 }
