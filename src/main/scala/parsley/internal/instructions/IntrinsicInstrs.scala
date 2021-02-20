@@ -96,7 +96,7 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
     // $COVERAGE-ON$
 }
 
-private [internal] final class If(var label: Int) extends JumpInstr {
+private [internal] final class If(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         if (ctx.stack.pop()) ctx.pc = label
         else ctx.inc()
@@ -200,7 +200,7 @@ private [internal] final class Modify[S](reg: Int, _f: S => S) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class Local(var label: Int, reg: Int) extends JumpInstr with Stateful {
+private [internal] final class Local(var label: Int, reg: Int) extends InstrWithLabel with Stateful {
     private var saved: AnyRef = _
     private var inUse = false
 

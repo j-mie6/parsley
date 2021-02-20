@@ -5,7 +5,7 @@ import Stack.isEmpty
 
 import scala.collection.mutable.ListBuffer
 
-private [internal] final class Many(var label: Int) extends JumpInstr with Stateful {
+private [internal] final class Many(var label: Int) extends InstrWithLabel with Stateful {
     private [this] val acc: ListBuffer[Any] = ListBuffer.empty
     override def apply(ctx: Context): Unit = {
         if (ctx.status eq Good) {
@@ -27,7 +27,7 @@ private [internal] final class Many(var label: Int) extends JumpInstr with State
     // $COVERAGE-ON$
     override def copy: Many = new Many(label)
 }
-private [internal] final class SkipMany(var label: Int) extends JumpInstr {
+private [internal] final class SkipMany(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         if (ctx.status eq Good) {
             ctx.stack.pop_()
@@ -45,7 +45,7 @@ private [internal] final class SkipMany(var label: Int) extends JumpInstr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class ChainPost(var label: Int) extends JumpInstr with Stateful {
+private [internal] final class ChainPost(var label: Int) extends InstrWithLabel with Stateful {
     private [this] var acc: Any = _
     override def apply(ctx: Context): Unit = {
         if (ctx.status eq Good) {
@@ -79,7 +79,7 @@ private [internal] final class ChainPost(var label: Int) extends JumpInstr with 
     override def copy: ChainPost = new ChainPost(label)
 }
 
-private [internal] final class ChainPre(var label: Int) extends JumpInstr with Stateful {
+private [internal] final class ChainPre(var label: Int) extends InstrWithLabel with Stateful {
     private var acc: Any => Any = _
     override def apply(ctx: Context): Unit = {
         if (ctx.status eq Good) {
@@ -104,7 +104,7 @@ private [internal] final class ChainPre(var label: Int) extends JumpInstr with S
     // $COVERAGE-ON$
     override def copy: ChainPre = new ChainPre(label)
 }
-private [internal] final class Chainl(var label: Int) extends JumpInstr with Stateful {
+private [internal] final class Chainl(var label: Int) extends InstrWithLabel with Stateful {
     private [this] var acc: Any = _
     override def apply(ctx: Context): Unit = {
         if (ctx.status eq Good) {
@@ -155,7 +155,7 @@ private [instructions] sealed trait DualHandler {
         ctx.pc = label
     }
 }
-private [internal] final class Chainr[A, B](var label: Int, _wrap: A => B) extends JumpInstr with DualHandler with Stateful{
+private [internal] final class Chainr[A, B](var label: Int, _wrap: A => B) extends InstrWithLabel with DualHandler with Stateful{
     private [this] val wrap: Any => B = _wrap.asInstanceOf[Any => B]
     private [this] var acc: Any => Any = _
     override def apply(ctx: Context): Unit = {
@@ -190,7 +190,7 @@ private [internal] final class Chainr[A, B](var label: Int, _wrap: A => B) exten
     override def copy: Chainr[A, B] = new Chainr(label, wrap)
 }
 
-private [internal] final class SepEndBy1(var label: Int) extends JumpInstr with DualHandler with Stateful {
+private [internal] final class SepEndBy1(var label: Int) extends InstrWithLabel with DualHandler with Stateful {
     private [this] val acc: ListBuffer[Any] = ListBuffer.empty
     override def apply(ctx: Context): Unit = {
         if (ctx.status eq Good) {
@@ -220,7 +220,7 @@ private [internal] final class SepEndBy1(var label: Int) extends JumpInstr with 
     override def copy: SepEndBy1 = new SepEndBy1(label)
 }
 
-private [internal] final class ManyUntil(var label: Int) extends JumpInstr with Stateful {
+private [internal] final class ManyUntil(var label: Int) extends InstrWithLabel with Stateful {
     private [this] val acc: ListBuffer[Any] = ListBuffer.empty
     override def apply(ctx: Context): Unit = {
         if (ctx.status eq Good) {

@@ -5,7 +5,7 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 
 import parsley.registers.Reg
-import parsley.internal.instructions, instructions.{Instr, JumpTable, JumpInstr, Label}
+import parsley.internal.instructions, instructions.{Instr, JumpTable, Label}
 import parsley.internal.ResizableArray
 import Parsley.allocateRegisters
 import ContOps.{safeCall, GenOps, perform, result, ContAdapter}
@@ -128,8 +128,7 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
         @tailrec def applyLabels(srcs: Array[Instr], labels: Array[Int], dests: Array[Instr], n: Int, i: Int, off: Int): Unit = if (i < n) srcs(i + off) match {
             case null => applyLabels(srcs, labels, dests, n, i, off + 1)
             case instr =>
-                instr.relabel(labels)
-                dests(i) = instr
+                dests(i) = instr.relabel(labels)
                 applyLabels(srcs, labels, dests, n, i + 1, off)
         }
         val instrsOversize = instrs.toArray

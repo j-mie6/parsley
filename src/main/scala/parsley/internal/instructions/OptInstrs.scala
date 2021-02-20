@@ -39,7 +39,7 @@ private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, _exp
     // $COVERAGE-ON$
 }
 
-private [internal] final class JumpGoodAttempt(var label: Int) extends JumpInstr {
+private [internal] final class JumpGoodAttempt(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         if (ctx.status eq Good) {
             ctx.states = ctx.states.tail
@@ -122,10 +122,11 @@ private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int]
         ctx.errs = push(ctx.errs, new TrivialError(ctx.offset, ctx.line, ctx.col, unexpected, errorItems, messages))
     }
 
-    override def relabel(labels: Array[Int]): Unit = {
+    override def relabel(labels: Array[Int]): this.type = {
         jumpTable.mapValuesInPlace((_, v) => labels(v))
         default = labels(default)
         defaultPreamble = default - 1
+        this
     }
     // $COVERAGE-OFF$
     override def toString: String = s"JumpTable(${jumpTable.map{case (k, v) => k.toChar -> v}.mkString(", ")}, _ -> $default)"

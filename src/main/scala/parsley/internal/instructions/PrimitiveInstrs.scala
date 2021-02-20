@@ -87,7 +87,7 @@ private [internal] final class Put(reg: Int) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [parsley] final class CalleeSave(var label: Int, _slots: List[Int]) extends JumpInstr with Stateful {
+private [parsley] final class CalleeSave(var label: Int, _slots: List[Int]) extends InstrWithLabel with Stateful {
     private val saveArray = new Array[AnyRef](_slots.length)
     private val slots = _slots.zipWithIndex
     private var inUse = false

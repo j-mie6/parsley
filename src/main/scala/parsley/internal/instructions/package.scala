@@ -11,16 +11,19 @@ package object instructions
 
     private [internal] abstract class Instr {
         def apply(ctx: Context): Unit
-        def relabel(labels: Array[Int]): Unit = ()
+        def relabel(labels: Array[Int]): this.type = this
         // Instructions should override this if they have mutable state inside!
         def copy: Instr = this
     }
 
     private [internal] trait Stateful
 
-    private [internal] abstract class JumpInstr extends Instr {
+    private [internal] abstract class InstrWithLabel extends Instr {
         var label: Int
-        override def relabel(labels: Array[Int]): Unit = label = labels(label)
+        override def relabel(labels: Array[Int]): this.type = {
+            label = labels(label)
+            this
+        }
     }
 
     // It's 2018 and Labels are making a come-back, along with 2 pass assembly
