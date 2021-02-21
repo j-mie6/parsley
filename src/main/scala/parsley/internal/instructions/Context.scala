@@ -2,7 +2,12 @@ package parsley.internal.instructions
 
 import Stack.{drop, isEmpty, mkString, map, push}
 import parsley.{Failure, Result, Success}
-import parsley.internal.errors.{DefuncError, WithHints, ClassicExpectedError, ClassicExpectedErrorWithReason, ClassicFancyError, ClassicUnexpectedError}
+import parsley.internal.errors.{
+    TrivialError,
+    ErrorItem, Desc,
+    LineBuilder, ErrorItemBuilder,
+    DefuncError, ClassicExpectedError, ClassicExpectedErrorWithReason, ClassicFancyError, ClassicUnexpectedError, WithHints
+}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
