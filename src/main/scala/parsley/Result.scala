@@ -193,16 +193,13 @@ class Failure private [parsley] (_msg: =>String) extends Result[Nothing] with Pr
     override def productElement(idx: Int): Any = {
         if (idx != 0) throw new IndexOutOfBoundsException("Failure only has arity 1") else msg
     }
-    override def productElementName(idx: Int): String = {
-        if (idx != 0) throw new IndexOutOfBoundsException("Failure only has arity 1") else "msg"
-    }
     override def equals(x: Any): Boolean = x != null && (x match {
         case x: Failure => x.msg == msg
     })
-    def copy(msg: =>String = this.msg) = new Failure(msg)
+    def copy(msg: =>String = this.msg): Failure = new Failure(msg)
 }
 object Failure {
-    def apply(msg: =>String) = new Failure(msg)
+    def apply(msg: =>String): Failure = new Failure(msg)
     def unapply(x: Failure): Some[String] = Some(x.msg)
     def andThen[A](f: Failure => A): String => A = msg => f(Failure(msg))
     def compose[A](f: A => String): A => Failure = msg => Failure(f(msg))
