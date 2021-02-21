@@ -289,7 +289,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         }
     }
 
-    private implicit val errorItemBuilder = new ErrorItemBuilder {
+    private implicit val errorItemBuilder: ErrorItemBuilder = new ErrorItemBuilder {
         def inRange(offset: Int): Boolean = offset < Context.this.inputsz
         def charAt(offset: Int): Char = Context.this.input.charAt(offset)
         def substring(offset: Int, size: Int): String = Context.this.input.substring(offset, Math.min(offset + size, Context.this.inputsz))
