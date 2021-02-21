@@ -1,12 +1,13 @@
 package parsley
 
 import scala.util.{Try, Success => TSuccess, Failure => TFailure}
+import scala.util.hashing.MurmurHash3
 
 /**
 * Result of a parser. Either a `Success[A]` or a `Failure`
 * @tparam A The type of expected success result
 */
-sealed abstract class Result[+A]
+sealed trait Result[+A]
 {
     /** Applies `fa` if this is a `Failure` or `fb` if this is a `Success`.
       *
@@ -176,9 +177,33 @@ case class Success[A] private [parsley] (x: A) extends Result[A]
   * Returned on parsing failure
   * @param msg The error message reported by the parser
   */
-case class Failure private [parsley] (msg: String) extends Result[Nothing]
+//case class Failure private [parsley] (msg: String) extends Result[Nothing]
+class Failure private [parsley] (_msg: =>String) extends Result[Nothing] with Product with Serializable
 {
+    lazy val msg: String = _msg
     override def isSuccess: Boolean = false
     override def isFailure: Boolean = true
     override def get: Nothing = throw new NoSuchElementException("get called on Failure")
+    // We are normally given everything below, but ideally we want to make error generation lazy
+    override def toString: String = s"Failure($msg)"
+    override def hashCode: Int = MurmurHash3.productHash(this)
+    override def canEqual(x: Any): Boolean = x.isInstanceOf[Failure]
+    override def productPrefix: String = "Failure"
+    override def productArity: Int = 1
+    override def productElement(idx: Int): Any = {
+        if (idx != 0) throw new IndexOutOfBoundsException("Failure only has arity 1") else msg
+    }
+    override def productElementName(idx: Int): String = {
+        if (idx != 0) throw new IndexOutOfBoundsException("Failure only has arity 1") else "msg"
+    }
+    override def equals(x: Any): Boolean = x != null && (x match {
+        case x: Failure => x.msg == msg
+    })
+    def copy(msg: =>String = this.msg) = new Failure(msg)
+}
+object Failure {
+    def apply(msg: =>String) = new Failure(msg)
+    def unapply(x: Failure): Some[String] = Some(x.msg)
+    def andThen[A](f: Failure => A): String => A = msg => f(Failure(msg))
+    def compose[A](f: A => String): A => Failure = msg => Failure(f(msg))
 }
