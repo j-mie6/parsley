@@ -6,7 +6,7 @@ import Stack.push
 import scala.annotation.tailrec
 import scala.language.implicitConversions
 import scala.collection.mutable
-import parsley.internal.errors.{TrivialError, ErrorItem, Desc, Raw, EndOfInput, ParseError, MultiExpectedError}, ParseError.NoReason
+import parsley.internal.errors.{ErrorItem, Desc, MultiExpectedError}
 
 private [internal] final class Perform[-A, +B](_f: A => B) extends Instr {
     private [Perform] val f = _f.asInstanceOf[Any => B]
@@ -24,10 +24,6 @@ private [internal] final class Exchange[A](private [Exchange] val x: A) extends 
 }
 
 private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, _expected: Option[String]) extends Instr {
-    /*private [this] final val expected: Set[ErrorItem] = _expected match {
-        case Some(ex) => Set(Desc(ex))
-        case None => Set.empty
-    }*/
     private [this] final val expected = _expected.map(Desc)
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && f(ctx.nextChar)) {
@@ -129,8 +125,6 @@ private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int]
     }
 
     private def addErrors(ctx: Context): Unit = {
-        //val unexpected = new Some(if (ctx.offset < ctx.inputsz) new Raw(s"${ctx.nextChar}") else EndOfInput)
-        //ctx.errs = push(ctx.errs, new TrivialError(ctx.offset, ctx.line, ctx.col, unexpected, errorItems, ParseError.NoReason))
         ctx.errs = push(ctx.errs, new MultiExpectedError(ctx.offset, ctx.line, ctx.col, errorItems))
         ctx.pushHandler(merge)
     }

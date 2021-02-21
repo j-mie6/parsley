@@ -127,7 +127,6 @@ private [internal] final class TokenSkipComments(start: String, end: String, lin
 
 private [internal] final class TokenNonSpecific(name: String, illegalName: String)
                                                (start: TokenSet, letter: TokenSet, illegal: String => Boolean, _expected: Option[String]) extends Instr {
-    //val expected: Some = Set(Desc(_expected.getOrElse(name)))
     private [this] final val expected = Some(Desc(_expected.getOrElse(name)))
 
     override def apply(ctx: Context): Unit = {

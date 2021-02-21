@@ -2,7 +2,6 @@ package parsley.internal.instructions
 
 import Stack.{drop, isEmpty, mkString, map, push}
 import parsley.{Failure, Result, Success}
-import parsley.internal.errors.{ParseError, TrivialError, FailError, LineBuilder, ErrorItemBuilder, ErrorItem, Raw, Desc, EndOfInput}, ParseError.NoReason
 import parsley.internal.errors.{DefuncError, WithHints, ClassicExpectedError, ClassicExpectedErrorWithReason, ClassicFancyError, ClassicUnexpectedError}
 
 import scala.annotation.tailrec
@@ -173,7 +172,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
 
     private [instructions] def pushError(err: DefuncError): Unit = this.errs = push(this.errs, this.useHints(err))
     private [instructions] def useHints(err: DefuncError): DefuncError = {
-        if (hintsValidOffset == offset) new WithHints(err, hints)//err.withHints(hints)
+        if (hintsValidOffset == offset) new WithHints(err, hints)
         else {
             hintsValidOffset = offset
             hints.clear()
@@ -182,21 +181,8 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     }
 
     private [instructions] def failWithMessage(msg: String): Unit = {
-        this.fail(new ClassicFancyError(offset, line, col, msg))//new FailError(offset, line, col, Set(msg)))
+        this.fail(new ClassicFancyError(offset, line, col, msg))
     }
-    //private [instructions] def unexpectedFail(expected: Set[ErrorItem], unexpected: Option[ErrorItem]): Unit = {
-    //    this.fail(new ClassicUnexpectedError(offset, line, col, expected.headOption, unexpected.get))//new TrivialError(offset, line, col, unexpected, expected, NoReason))
-    //}
-    //private [instructions] def expectedFail(expected: Set[ErrorItem], reason: Option[String]): Unit = {
-        //val unexpected = new Some(if (offset < inputsz) new Raw(s"$nextChar") else EndOfInput)
-        //this.fail(new TrivialError(offset, line, col, unexpected, expected, reason.fold(NoReason)(Set(_))))
-    //}
-    //private [instructions] def expectedFail(expected: Set[ErrorItem]): Unit = {
-    //    this.fail(new ClassicExpectedError(offset, line, col, expected.headOption))
-    //}
-    //private [instructions] def expectedFail(expected: Set[ErrorItem], reason: String): Unit = {
-    //    this.fail(new ClassicExpectedErrorWithReason(offset, line, col, expected.headOption, reason))
-    //}
     private [instructions] def unexpectedFail(expected: Option[ErrorItem], unexpected: ErrorItem): Unit = {
         this.fail(new ClassicUnexpectedError(offset, line, col, expected, unexpected))
     }
