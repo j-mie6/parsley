@@ -2,7 +2,7 @@ package parsley.internal.instructions
 
 import parsley.character
 import parsley.internal.deepembedding.Sign.{SignType, IntType, DoubleType}
-import parsley.internal.errors._
+import parsley.internal.errors.{ErrorItem, Desc}
 
 import scala.annotation.tailrec
 

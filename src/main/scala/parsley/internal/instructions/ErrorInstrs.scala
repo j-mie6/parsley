@@ -2,7 +2,7 @@ package parsley.internal.instructions
 
 import parsley.internal.ResizableArray
 
-import parsley.internal.errors._
+import parsley.internal.errors.{ErrorItem, Desc, TrivialError, FailError}
 
 private [internal] final class ApplyError(label: String) extends Instr {
     val isHide: Boolean = label.isEmpty

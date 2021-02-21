@@ -2,7 +2,7 @@ package parsley.internal.instructions
 
 import Stack.isEmpty
 
-import parsley.internal.errors._
+import parsley.internal.errors.{TrivialError, ErrorItem, Desc, Raw, EndOfInput, ParseError}, ParseError.NoReason
 
 import scala.annotation.tailrec
 
@@ -79,7 +79,7 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
             // The offset, line and column haven't been edited yet, so are in the right place
             val err = new TrivialError(ctx.offset, ctx.line, ctx.col,
                 new Some(if (ctx.inputsz > ctx.offset) new Raw(ctx.input.substring(ctx.offset, Math.min(ctx.offset + sz, ctx.inputsz))) else EndOfInput),
-                errorItem, ParseError.NoReason
+                errorItem, NoReason
             )
             ctx.offset = i
             ctx.fail(err)

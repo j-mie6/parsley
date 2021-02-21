@@ -2,7 +2,7 @@ package parsley.internal.instructions
 
 import Stack.{drop, isEmpty, mkString, map, push}
 import parsley.{Failure, Result, Success}
-import parsley.internal.errors._
+import parsley.internal.errors.{ParseError, TrivialError, FailError, LineBuilder, ErrorItemBuilder, ErrorItem, Raw, Desc, EndOfInput}, ParseError.NoReason
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -181,14 +181,14 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     }
 
     private [instructions] def failWithMessage(msg: String): Unit = {
-        this.fail(ParseError.fail(msg, offset, line, col))
+        this.fail(new FailError(offset, line, col, Set(msg)))
     }
     private [instructions] def unexpectedFail(expected: Set[ErrorItem], unexpected: Option[ErrorItem]): Unit = {
-        this.fail(new TrivialError(offset, line, col, unexpected, expected, ParseError.NoReason))
+        this.fail(new TrivialError(offset, line, col, unexpected, expected, NoReason))
     }
     private [instructions] def expectedFail(expected: Set[ErrorItem], reason: Option[String]): Unit = {
         val unexpected = new Some(if (offset < inputsz) new Raw(s"$nextChar") else EndOfInput)
-        this.fail(new TrivialError(offset, line, col, unexpected, expected, reason.fold(ParseError.NoReason)(Set(_))))
+        this.fail(new TrivialError(offset, line, col, unexpected, expected, reason.fold(NoReason)(Set(_))))
     }
     private [instructions] def fail(error: ParseError): Unit = {
         this.pushError(error)
