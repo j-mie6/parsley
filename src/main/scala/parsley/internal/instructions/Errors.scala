@@ -106,7 +106,7 @@ private [internal] object ErrorItem {
     }
 }
 private [internal] case class Raw(cs: String) extends ErrorItem {
-    override val msg = cs match {
+    override lazy val msg = cs match {
         case "\n"            => "newline"
         case "\t"            => "tab"
         case " "             => "space"
