@@ -12,9 +12,15 @@ private [internal] sealed trait DefuncError {
         case Some(item) => Set(item)
     }
 }
-private [internal] case class ClassicExpectedError(offset: Int, line: Int, col: Int, expected: Option[ErrorItem], reason: Option[String]) extends DefuncError {
+private [internal] case class ClassicExpectedError(offset: Int, line: Int, col: Int, expected: Option[ErrorItem]) extends DefuncError {
     override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
-        TrivialError(offset, line, col, Some(builder(offset)), expectedSet(expected), reason.fold(ParseError.NoReason)(Set(_)))
+        TrivialError(offset, line, col, Some(builder(offset)), expectedSet(expected), ParseError.NoReason)
+    }
+}
+private [internal] case class ClassicExpectedErrorWithReason(offset: Int, line: Int, col: Int, expected: Option[ErrorItem], reason: String)
+    extends DefuncError {
+    override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
+        TrivialError(offset, line, col, Some(builder(offset)), expectedSet(expected), Set(reason))
     }
 }
 private [internal] case class ClassicUnexpectedError(offset: Int, line: Int, col: Int, expected: Option[ErrorItem], unexpected: ErrorItem) extends DefuncError {
@@ -40,5 +46,22 @@ private [internal] case class StringTokError(offset: Int, line: Int, col: Int, e
 private [internal] case class EmptyErrorWithReason(offset: Int, line: Int, col: Int, expected: Option[ErrorItem], reason: String) extends DefuncError {
     override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
         TrivialError(offset, line, col, None, expectedSet(expected), Set(reason))
+    }
+}
+private [internal] case class MergedErrors(err1: DefuncError, err2: DefuncError) extends DefuncError {
+    override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
+        err1.asParseError.merge(err2.asParseError)
+    }
+}
+
+private [internal] case class WithHints(err: DefuncError, hints: Iterable[Set[ErrorItem]]) extends DefuncError {
+    override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
+        err.asParseError.withHints(hints)
+    }
+}
+
+private [internal] case class WithReason(err: DefuncError, reason: String) extends DefuncError {
+    override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
+        err.asParseError.giveReason(reason)
     }
 }
