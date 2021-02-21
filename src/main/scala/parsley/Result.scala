@@ -185,6 +185,7 @@ class Failure private [parsley] (_msg: =>String) extends Result[Nothing] with Pr
     override def isFailure: Boolean = true
     override def get: Nothing = throw new NoSuchElementException("get called on Failure")
     // We are normally given everything below, but ideally we want to make error generation lazy
+    // $COVERAGE-OFF$
     override def toString: String = s"Failure($msg)"
     override def hashCode: Int = MurmurHash3.productHash(this)
     override def canEqual(x: Any): Boolean = x.isInstanceOf[Failure]
@@ -197,10 +198,13 @@ class Failure private [parsley] (_msg: =>String) extends Result[Nothing] with Pr
         case x: Failure => x.msg == msg
     })
     def copy(msg: =>String = this.msg): Failure = new Failure(msg)
+    // $COVERAGE-ON$
 }
+// $COVERAGE-OFF$
 object Failure {
     def apply(msg: =>String): Failure = new Failure(msg)
     def unapply(x: Failure): Some[String] = Some(x.msg)
     def andThen[A](f: Failure => A): String => A = msg => f(Failure(msg))
     def compose[A](f: A => String): A => Failure = msg => Failure(f(msg))
 }
+// $COVERAGE-ON$
