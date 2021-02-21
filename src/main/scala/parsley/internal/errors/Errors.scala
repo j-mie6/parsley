@@ -1,4 +1,4 @@
-package parsley.internal.instructions
+package parsley.internal.errors
 
 import ParseError.Unknown
 import Raw.Unprintable
@@ -27,7 +27,7 @@ private [internal] sealed abstract class ParseError {
 
     def withHints(hints: Iterable[Set[ErrorItem]]): ParseError
     def giveReason(reason: String): ParseError
-    def pretty(sourceName: Option[String], helper: Context#InputHelper): String
+    def pretty(sourceName: Option[String])(implicit helper: LineBuilder): String
 
     protected final def posStr(sourceName: Option[String]): String = {
         val scopeName = sourceName.fold("")(name => s"In file '$name' ")
@@ -41,19 +41,9 @@ private [internal] sealed abstract class ParseError {
         case alt::alts => Some(s"${alts.reverse.mkString(", ")}, or $alt")
     }
 
-    protected final def getLineWithCaret(helper: Context#InputHelper): (String, String) = {
-        // FIXME: Tabs man... tabs
-        val startOffset = helper.nearestNewlineBefore(offset)
-        val endOffset = helper.nearestNewlineAfter(offset)
-        val segment = helper.segmentBetween(startOffset, endOffset)
-        val caretAt = offset - startOffset
-        val caretPad = " " * caretAt
-        (segment.replace('\t', ' '), s"$caretPad^")
-    }
-
-    protected final def assemble(sourceName: Option[String], helper: Context#InputHelper, infoLines: List[String]): String = {
+    protected final def assemble(sourceName: Option[String], infoLines: List[String])(implicit helper: LineBuilder): String = {
         val topStr = posStr(sourceName)
-        val (line, caret) = getLineWithCaret(helper)
+        val (line, caret) = helper.getLineWithCaret(offset)
         val info = infoLines.filter(_.nonEmpty).mkString("\n  ")
         // TODO: Add preamble of parse error?
         // Apparently, multi-line strings use whatever line endings the file has instead of platform-independent LIKE EVERYTHING ELSE
@@ -72,8 +62,8 @@ private [internal] case class TrivialError(offset: Int, line: Int, col: Int,
     def withHints(hints: Iterable[Set[ErrorItem]]): ParseError = copy(expecteds = hints.foldLeft(expecteds)(_ union _))
     def giveReason(reason: String): ParseError = copy(reasons = reasons + reason)
 
-    def pretty(sourceName: Option[String], helper: Context#InputHelper): String = {
-        assemble(sourceName, helper, List(unexpectedInfo, expectedInfo).flatten ::: reasons.toList)
+    def pretty(sourceName: Option[String])(implicit helper: LineBuilder): String = {
+        assemble(sourceName, List(unexpectedInfo, expectedInfo).flatten ::: reasons.toList)
     }
 
     private def unexpectedInfo: Option[String] = unexpected.map(u => s"unexpected ${u.msg}")
@@ -82,8 +72,8 @@ private [internal] case class TrivialError(offset: Int, line: Int, col: Int,
 private [internal] case class FailError(offset: Int, line: Int, col: Int, msgs: Set[String]) extends ParseError {
     def withHints(hints: Iterable[Set[ErrorItem]]): ParseError = this
     def giveReason(reason: String): ParseError = this
-    def pretty(sourceName: Option[String], helper: Context#InputHelper): String = {
-        assemble(sourceName, helper, msgs.toList)
+    def pretty(sourceName: Option[String])(implicit helper: LineBuilder): String = {
+        assemble(sourceName, msgs.toList)
     }
 }
 
@@ -91,6 +81,7 @@ private [internal] object ParseError {
     def fail(msg: String, offset: Int, line: Int, col: Int): ParseError = FailError(offset, line, col, Set(msg))
     val Unknown = "unknown parse error"
     val NoReason = Set.empty[String]
+    val NoItems = Set.empty[ErrorItem]
 }
 
 private [internal] sealed trait ErrorItem {
@@ -106,6 +97,7 @@ private [internal] object ErrorItem {
     }
 }
 private [internal] case class Raw(cs: String) extends ErrorItem {
+    // This could be marked threadUnsafe in Scala 3?
     override lazy val msg = cs match {
         case "\n"            => "newline"
         case "\t"            => "tab"

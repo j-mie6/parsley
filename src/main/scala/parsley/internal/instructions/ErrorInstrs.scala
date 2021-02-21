@@ -2,6 +2,8 @@ package parsley.internal.instructions
 
 import parsley.internal.ResizableArray
 
+import parsley.internal.errors._
+
 private [internal] final class ApplyError(label: String) extends Instr {
     val isHide: Boolean = label.isEmpty
     override def apply(ctx: Context): Unit = {

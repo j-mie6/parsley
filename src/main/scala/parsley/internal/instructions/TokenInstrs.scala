@@ -3,6 +3,7 @@ package parsley.internal.instructions
 import parsley.internal.deepembedding.Sign.{SignType, IntType, DoubleType}
 import parsley.token.TokenSet
 import parsley.internal.Radix
+import parsley.internal.errors._
 
 import scala.annotation.tailrec
 

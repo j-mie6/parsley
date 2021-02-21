@@ -1,6 +1,7 @@
 package parsley.internal.instructions
 
 import parsley.token.TokenSet
+import parsley.internal.errors._
 
 import scala.annotation.tailrec
 

@@ -2,6 +2,7 @@ package parsley.internal.instructions
 
 import Stack.{isEmpty, push}
 import parsley.internal.ResizableArray
+import parsley.internal.errors._
 
 private [internal] final class Satisfies(f: Char => Boolean, _expected: Option[String]) extends Instr {
     val expected: Set[ErrorItem] = _expected match {

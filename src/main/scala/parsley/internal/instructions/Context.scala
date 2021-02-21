@@ -2,6 +2,7 @@ package parsley.internal.instructions
 
 import Stack.{drop, isEmpty, mkString, map, push}
 import parsley.{Failure, Result, Success}
+import parsley.internal.errors._
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -133,7 +134,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
 
     @tailrec @inline private [parsley] def runParser[A](): Result[A] = {
         //println(pretty)
-        if (status eq Failed) Failure(errs.head.pretty(sourceName, new InputHelper))
+        if (status eq Failed) Failure(errs.head.pretty(sourceName))
         else if (pc < instrs.length) {
             instrs(pc)(this)
             runParser[A]()
@@ -274,7 +275,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         this
     }
 
-    private [instructions] class InputHelper {
+    private implicit val lineBuilder: LineBuilder = new LineBuilder {
         def nearestNewlineBefore(off: Int): Int = {
             val idx = Context.this.input.lastIndexOf('\n', off-1)
             if (idx == -1) 0 else idx + 1
@@ -286,6 +287,12 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         def segmentBetween(start: Int, end: Int): String = {
             Context.this.input.substring(start, end)
         }
+    }
+
+    private implicit val errorItemBuilder = new ErrorItemBuilder {
+        def inRange(offset: Int): Boolean = offset < Context.this.inputsz
+        def charAt(offset: Int): Char = Context.this.input.charAt(offset)
+        def substring(offset: Int, size: Int): String = Context.this.input.substring(offset, Math.min(offset + size, Context.this.inputsz))
     }
 }
 

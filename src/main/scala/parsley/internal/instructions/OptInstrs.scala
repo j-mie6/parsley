@@ -6,6 +6,7 @@ import Stack.push
 import scala.annotation.tailrec
 import scala.language.implicitConversions
 import scala.collection.mutable
+import parsley.internal.errors._
 
 private [internal] final class Perform[-A, +B](_f: A => B) extends Instr {
     private [Perform] val f = _f.asInstanceOf[Any => B]

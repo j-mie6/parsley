@@ -1,6 +1,7 @@
 package parsley.internal.instructions
 
 import parsley.internal.deepembedding
+import parsley.internal.errors._
 import Stack.isEmpty
 
 import scala.collection.mutable.ListBuffer

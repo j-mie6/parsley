@@ -3,6 +3,7 @@ package parsley.internal.instructions
 import Stack.{isEmpty, push}
 import parsley.internal.ResizableArray
 import parsley.internal.deepembedding.Parsley
+import parsley.internal.errors._
 
 import scala.annotation.tailrec
 

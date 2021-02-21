@@ -2,6 +2,8 @@ package parsley.internal.instructions
 
 import Stack.isEmpty
 
+import parsley.internal.errors._
+
 import scala.annotation.tailrec
 
 private [internal] final class Lift2[A, B, C](_f: (A, B) => C) extends Instr {
@@ -76,8 +78,8 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
         else if (j < sz) {
             // The offset, line and column haven't been edited yet, so are in the right place
             val err = new TrivialError(ctx.offset, ctx.line, ctx.col,
-                Some(if (ctx.inputsz > ctx.offset) new Raw(ctx.input.substring(ctx.offset, Math.min(ctx.offset + sz, ctx.inputsz))) else EndOfInput),
-                errorItem, Set.empty
+                new Some(if (ctx.inputsz > ctx.offset) new Raw(ctx.input.substring(ctx.offset, Math.min(ctx.offset + sz, ctx.inputsz))) else EndOfInput),
+                errorItem, ParseError.NoReason
             )
             ctx.offset = i
             ctx.fail(err)
