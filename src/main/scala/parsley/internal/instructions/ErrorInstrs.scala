@@ -2,7 +2,7 @@ package parsley.internal.instructions
 
 import parsley.internal.ResizableArray
 
-import parsley.internal.errors.{ErrorItem, Desc, TrivialError, FailError}
+import parsley.internal.errors.{ErrorItem, Desc, TrivialError, FailError, WithReason, MergedErrors, WithLabel}
 
 private [internal] final class ApplyError(label: String) extends Instr {
     val isHide: Boolean = label.isEmpty
@@ -24,14 +24,14 @@ private [internal] final class ApplyError(label: String) extends Instr {
             ctx.errs.head = ctx.useHints {
                 // EERR
                 // the top of the error stack is adjusted:
-                if (ctx.offset == ctx.checkStack.head) ctx.errs.head match {
+                if (ctx.offset == ctx.checkStack.head) new WithLabel(ctx.errs.head, label) /*match {
                     // - if it is a fail, it is left alone
                     case err: FailError              => err
                     //  - otherwise if this is a hide, the expected set is discarded
                     case err: TrivialError if isHide => err.copy(expecteds = Set.empty)
                     //  - otherwise expected set is replaced by singleton containing this label
                     case err: TrivialError           => err.copy(expecteds = Set(Desc(label)))
-                }
+                }*/
                 // CERR
                 // do nothing
                 else ctx.errs.head
@@ -55,7 +55,7 @@ private [internal] object MergeErrors extends Instr {
         else {
             val err2 = ctx.errs.head
             ctx.errs = ctx.errs.tail
-            ctx.errs.head = ctx.errs.head.merge(err2)
+            ctx.errs.head = new MergedErrors(ctx.errs.head, err2)
             ctx.fail()
         }
     }
@@ -72,7 +72,7 @@ private [internal] class ApplyReason(reason: String) extends Instr {
             ctx.inc()
         }
         else {
-            ctx.errs.head = ctx.errs.head.giveReason(reason)
+            ctx.errs.head = new WithReason(ctx.errs.head, reason)
             ctx.fail()
         }
     }
@@ -90,11 +90,12 @@ private [internal] final class Fail(msg: String) extends Instr {
 }
 
 private [internal] final class Unexpected(msg: String, _expected: Option[String]) extends Instr {
-    val expected: Set[ErrorItem] = _expected match {
+    /*val expected: Set[ErrorItem] = _expected match {
         case Some(ex) => Set(Desc(ex))
         case None => Set.empty
-    }
-    val unexpected = Some(Desc(msg))
+    }*/
+    private [this] val expected = _expected.map(Desc)
+    private [this] val unexpected = Desc(msg)
     override def apply(ctx: Context): Unit = ctx.unexpectedFail(expected, unexpected)
     // $COVERAGE-OFF$
     override def toString: String = s"Unexpected($msg)"
@@ -110,11 +111,12 @@ private [internal] final class FastFail[A](msggen: A=>String) extends Instr {
 }
 
 private [internal] final class FastUnexpected[A](_msggen: A=>String, _expected: Option[String]) extends Instr {
-    private [this] def msggen(x: Any) = new Some(new Desc(_msggen(x.asInstanceOf[A])))
-    val expected: Set[ErrorItem] = _expected match {
+    private [this] def msggen(x: Any) = new Desc(_msggen(x.asInstanceOf[A]))
+    /*val expected: Set[ErrorItem] = _expected match {
         case Some(ex) => Set(Desc(ex))
         case None => Set.empty
-    }
+    }*/
+    private [this] val expected = _expected.map(Desc)
     override def apply(ctx: Context): Unit = ctx.unexpectedFail(expected = expected, unexpected = msggen(ctx.stack.upop()))
     // $COVERAGE-OFF$
     override def toString: String = "FastUnexpected(?)"

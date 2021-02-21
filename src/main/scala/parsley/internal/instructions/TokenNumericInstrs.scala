@@ -50,7 +50,7 @@ private [instructions] trait NumericReader {
 }
 
 private [internal] final class TokenNatural(_expected: Option[String]) extends Instr with NumericReader {
-    val expected = Set[ErrorItem](Desc(_expected.getOrElse("natural")))
+    private [this] final val expected = Some(Desc(_expected.getOrElse("natural")))
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && ctx.nextChar == '0') {
             ctx.fastUncheckedConsumeChars(1)
@@ -60,14 +60,14 @@ private [internal] final class TokenNatural(_expected: Option[String]) extends I
                 ctx.fastUncheckedConsumeChars(1)
                 (if (hexa) hexadecimal else octal)(ctx, 0, true) match {
                     case Some(x) => ctx.pushAndContinue(x)
-                    case None => ctx.expectedFail(expected, reason = None)
+                    case None => ctx.expectedFail(expected)
                 }
             }
             else ctx.pushAndContinue(decimal(ctx, 0, true).getOrElse(0))
         }
         else decimal(ctx, 0, true) match {
             case Some(x) => ctx.pushAndContinue(x)
-            case None => ctx.expectedFail(expected, reason = None)
+            case None => ctx.expectedFail(expected)
         }
     }
 
@@ -77,13 +77,13 @@ private [internal] final class TokenNatural(_expected: Option[String]) extends I
 }
 
 private [internal] final class TokenFloat(_expected: Option[String]) extends Instr {
-    val expected = Set[ErrorItem](Desc(_expected.getOrElse("unsigned float")))
+    private [this] final val expected = Some(Desc(_expected.getOrElse("unsigned float")))
     override def apply(ctx: Context): Unit = {
         val initialOffset = ctx.offset
         if (decimal(ctx)) {
             lexFraction(ctx, initialOffset)
         }
-        else ctx.expectedFail(expected, reason = None)
+        else ctx.expectedFail(expected)
     }
 
     @tailrec private final def decimal(ctx: Context, first: Boolean = true): Boolean = {
@@ -106,23 +106,23 @@ private [internal] final class TokenFloat(_expected: Option[String]) extends Ins
     private final def attemptCastAndContinue(ctx: Context, initialOffset: Int): Unit = {
         try ctx.pushAndContinue(ctx.input.substring(initialOffset, ctx.offset).toDouble)
         catch {
-            case _: NumberFormatException => ctx.expectedFail(expected, reason = None)
+            case _: NumberFormatException => ctx.expectedFail(expected)
         }
     }
 
     private final def lexExponent(ctx: Context, initialOffset: Int, missingOk: Boolean): Unit = {
         val requireExponent = ctx.moreInput && (ctx.nextChar == 'e' || ctx.nextChar == 'E')
         if (requireExponent && exponent(ctx)) attemptCastAndContinue(ctx, initialOffset)
-        else if (requireExponent) ctx.expectedFail(expected, reason = None)
+        else if (requireExponent) ctx.expectedFail(expected)
         else if (missingOk) attemptCastAndContinue(ctx, initialOffset)
-        else ctx.expectedFail(expected, reason = None)
+        else ctx.expectedFail(expected)
     }
 
     private final def lexFraction(ctx: Context, initialOffset: Int) = {
         if (ctx.moreInput && ctx.nextChar == '.') {
             ctx.fastUncheckedConsumeChars(1)
             if (decimal(ctx)) lexExponent(ctx, initialOffset, missingOk = true)
-            else ctx.expectedFail(expected, reason = None)
+            else ctx.expectedFail(expected)
         }
         else lexExponent(ctx, initialOffset, missingOk = false)
     }

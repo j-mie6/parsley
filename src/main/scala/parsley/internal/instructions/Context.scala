@@ -3,6 +3,7 @@ package parsley.internal.instructions
 import Stack.{drop, isEmpty, mkString, map, push}
 import parsley.{Failure, Result, Success}
 import parsley.internal.errors.{ParseError, TrivialError, FailError, LineBuilder, ErrorItemBuilder, ErrorItem, Raw, Desc, EndOfInput}, ParseError.NoReason
+import parsley.internal.errors.{DefuncError, WithHints, ClassicExpectedError, ClassicExpectedErrorWithReason, ClassicFancyError, ClassicUnexpectedError}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -59,7 +60,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     private var hints = mutable.ListBuffer.empty[Set[ErrorItem]]
     private var hintsValidOffset = 0
     private var hintStack = Stack.empty[Hints]
-    private [instructions] var errs: Stack[ParseError] = Stack.empty
+    private [instructions] var errs: Stack[DefuncError] = Stack.empty
 
     private [instructions] def saveHints(shadow: Boolean): Unit = {
         hintStack = push(hintStack, new Hints(hints, hintsValidOffset))
@@ -91,7 +92,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     private [instructions] def popHints: Unit = if (hints.nonEmpty) hints.remove(0)
     /* ERROR RELABELLING END */
 
-    private def addErrorToHints(): Unit = errs.head match {
+    private def addErrorToHints(): Unit = errs.head.asParseError match {
         case TrivialError(errOffset, _, _, _, es, _) if errOffset == offset && es.nonEmpty =>
             // If our new hints have taken place further in the input stream, then they must invalidate the old ones
             if (hintsValidOffset < offset) {
@@ -134,7 +135,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
 
     @tailrec @inline private [parsley] def runParser[A](): Result[A] = {
         //println(pretty)
-        if (status eq Failed) Failure(errs.head.pretty(sourceName))
+        if (status eq Failed) Failure(errs.head.asParseError.pretty(sourceName))
         else if (pc < instrs.length) {
             instrs(pc)(this)
             runParser[A]()
@@ -170,9 +171,9 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         checkStack = checkStack.tail
     }
 
-    private [instructions] def pushError(err: ParseError): Unit = this.errs = push(this.errs, this.useHints(err))
-    private [instructions] def useHints(err: ParseError): ParseError = {
-        if (hintsValidOffset == offset) err.withHints(hints)
+    private [instructions] def pushError(err: DefuncError): Unit = this.errs = push(this.errs, this.useHints(err))
+    private [instructions] def useHints(err: DefuncError): DefuncError = {
+        if (hintsValidOffset == offset) new WithHints(err, hints)//err.withHints(hints)
         else {
             hintsValidOffset = offset
             hints.clear()
@@ -181,16 +182,31 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     }
 
     private [instructions] def failWithMessage(msg: String): Unit = {
-        this.fail(new FailError(offset, line, col, Set(msg)))
+        this.fail(new ClassicFancyError(offset, line, col, msg))//new FailError(offset, line, col, Set(msg)))
     }
-    private [instructions] def unexpectedFail(expected: Set[ErrorItem], unexpected: Option[ErrorItem]): Unit = {
-        this.fail(new TrivialError(offset, line, col, unexpected, expected, NoReason))
+    //private [instructions] def unexpectedFail(expected: Set[ErrorItem], unexpected: Option[ErrorItem]): Unit = {
+    //    this.fail(new ClassicUnexpectedError(offset, line, col, expected.headOption, unexpected.get))//new TrivialError(offset, line, col, unexpected, expected, NoReason))
+    //}
+    //private [instructions] def expectedFail(expected: Set[ErrorItem], reason: Option[String]): Unit = {
+        //val unexpected = new Some(if (offset < inputsz) new Raw(s"$nextChar") else EndOfInput)
+        //this.fail(new TrivialError(offset, line, col, unexpected, expected, reason.fold(NoReason)(Set(_))))
+    //}
+    //private [instructions] def expectedFail(expected: Set[ErrorItem]): Unit = {
+    //    this.fail(new ClassicExpectedError(offset, line, col, expected.headOption))
+    //}
+    //private [instructions] def expectedFail(expected: Set[ErrorItem], reason: String): Unit = {
+    //    this.fail(new ClassicExpectedErrorWithReason(offset, line, col, expected.headOption, reason))
+    //}
+    private [instructions] def unexpectedFail(expected: Option[ErrorItem], unexpected: ErrorItem): Unit = {
+        this.fail(new ClassicUnexpectedError(offset, line, col, expected, unexpected))
     }
-    private [instructions] def expectedFail(expected: Set[ErrorItem], reason: Option[String]): Unit = {
-        val unexpected = new Some(if (offset < inputsz) new Raw(s"$nextChar") else EndOfInput)
-        this.fail(new TrivialError(offset, line, col, unexpected, expected, reason.fold(NoReason)(Set(_))))
+    private [instructions] def expectedFail(expected: Option[ErrorItem]): Unit = {
+        this.fail(new ClassicExpectedError(offset, line, col, expected))
     }
-    private [instructions] def fail(error: ParseError): Unit = {
+    private [instructions] def expectedFail(expected: Option[ErrorItem], reason: String): Unit = {
+        this.fail(new ClassicExpectedErrorWithReason(offset, line, col, expected, reason))
+    }
+    private [instructions] def fail(error: DefuncError): Unit = {
         this.pushError(error)
         this.fail()
     }

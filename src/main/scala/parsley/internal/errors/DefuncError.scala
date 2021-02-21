@@ -48,6 +48,12 @@ private [internal] case class EmptyErrorWithReason(offset: Int, line: Int, col: 
         TrivialError(offset, line, col, None, expectedSet(expected), Set(reason))
     }
 }
+private [internal] case class MultiExpectedError(offset: Int, line: Int, col: Int, expected: Set[ErrorItem]) extends DefuncError {
+    override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
+        TrivialError(offset, line, col, Some(builder(offset)), expected, ParseError.NoReason)
+    }
+}
+
 private [internal] case class MergedErrors(err1: DefuncError, err2: DefuncError) extends DefuncError {
     override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
         err1.asParseError.merge(err2.asParseError)
@@ -63,5 +69,18 @@ private [internal] case class WithHints(err: DefuncError, hints: Iterable[Set[Er
 private [internal] case class WithReason(err: DefuncError, reason: String) extends DefuncError {
     override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
         err.asParseError.giveReason(reason)
+    }
+}
+
+private [internal] case class WithLabel(err: DefuncError, label: String) extends DefuncError {
+    override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
+        err.asParseError match {
+            // - if it is a fail, it is left alone
+            case err: FailError                     => err
+            //  - otherwise if this is a hide, the expected set is discarded
+            case err: TrivialError if label.isEmpty => err.copy(expecteds = Set.empty)
+            //  - otherwise expected set is replaced by singleton containing this label
+            case err: TrivialError                  => err.copy(expecteds = Set(Desc(label)))
+        }
     }
 }

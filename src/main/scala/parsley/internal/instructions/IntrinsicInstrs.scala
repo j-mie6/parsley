@@ -2,7 +2,7 @@ package parsley.internal.instructions
 
 import Stack.isEmpty
 
-import parsley.internal.errors.{TrivialError, ErrorItem, Desc, Raw, EndOfInput, ParseError}, ParseError.NoReason
+import parsley.internal.errors.{TrivialError, ErrorItem, Desc, Raw, EndOfInput, ParseError, EmptyError, EmptyErrorWithReason, StringTokError}, ParseError.NoReason
 
 import scala.annotation.tailrec
 
@@ -30,7 +30,7 @@ private [internal] final class Lift3[A, B, C, D](_f: (A, B, C) => D) extends Ins
 }
 
 private [internal] class CharTok(c: Char, x: Any, _expected: Option[String]) extends Instr {
-    private [this] final val errorItem = Set[ErrorItem](_expected match {
+    private [this] final val errorItem = Some(_expected match {
         case Some(e) => Desc(e)
         case None    => Raw(c)
     })
@@ -39,7 +39,7 @@ private [internal] class CharTok(c: Char, x: Any, _expected: Option[String]) ext
             ctx.consumeChar()
             ctx.pushAndContinue(x)
         }
-        else ctx.expectedFail(errorItem, None)
+        else ctx.expectedFail(errorItem)
     }
     // $COVERAGE-OFF$
     override def toString: String = if (x == c) s"Chr($c)" else s"ChrPerform($c, $x)"
@@ -47,10 +47,11 @@ private [internal] class CharTok(c: Char, x: Any, _expected: Option[String]) ext
 }
 
 private [internal] final class StringTok private [instructions] (s: String, x: Any, _expected: Option[String]) extends Instr {
-    private [this] val errorItem: Set[ErrorItem] = Set(_expected match {
+    /*private [this] val errorItem: Set[ErrorItem] = Set(_expected match {
         case Some(e) => Desc(e)
         case None    => Raw(s)
-    })
+    })*/
+    private [this] val errorItem = _expected.map(Desc)
     private [this] val cs = s.toCharArray
     private [this] val sz = cs.length
     def makeAdjusters(col: Int, line: Int, tabprefix: Option[Int]): (Int => Int, Int => Int) =
@@ -77,10 +78,11 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
         if (j < sz && i < ctx.inputsz && ctx.input.charAt(i) == cs(j)) go(ctx, i + 1, j + 1)
         else if (j < sz) {
             // The offset, line and column haven't been edited yet, so are in the right place
-            val err = new TrivialError(ctx.offset, ctx.line, ctx.col,
+            /*val err = new TrivialError(ctx.offset, ctx.line, ctx.col,
                 new Some(if (ctx.inputsz > ctx.offset) new Raw(ctx.input.substring(ctx.offset, Math.min(ctx.offset + sz, ctx.inputsz))) else EndOfInput),
                 errorItem, NoReason
-            )
+            )*/
+            val err = new StringTokError(ctx.offset, ctx.line, ctx.col, errorItem, sz)
             ctx.offset = i
             ctx.fail(err)
         }
@@ -110,13 +112,15 @@ private [internal] final class If(var label: Int) extends InstrWithLabel {
 
 private [internal] final class Filter[A](_pred: A=>Boolean, _expected: Option[String]) extends Instr {
     private [this] val pred = _pred.asInstanceOf[Any=>Boolean]
-    private [this] val expected = _expected match {
+    /*private [this] val expected = _expected match {
         case None => Set.empty[ErrorItem]
         case Some(e) => Set[ErrorItem](new Desc(e))
-    }
+    }*/
+    private [this] val expected = _expected.map(Desc)
     override def apply(ctx: Context): Unit = {
         if (pred(ctx.stack.upeek)) ctx.inc()
-        else ctx.fail(TrivialError(ctx.offset, ctx.line, ctx.col, None, expected, ParseError.NoReason))
+        //else ctx.fail(TrivialError(ctx.offset, ctx.line, ctx.col, None, expected, ParseError.NoReason))
+        else ctx.fail(new EmptyError(ctx.offset, ctx.line, ctx.col, expected))
     }
     // $COVERAGE-OFF$
     override def toString: String = "Filter(?)"
@@ -125,14 +129,16 @@ private [internal] final class Filter[A](_pred: A=>Boolean, _expected: Option[St
 
 private [internal] final class FilterOut[A](_pred: PartialFunction[A, String], _expected: Option[String]) extends Instr {
     private [this] val pred = _pred.asInstanceOf[PartialFunction[Any, String]]
-    private [this] val expected = _expected match {
+    /*private [this] val expected = _expected match {
         case None => Set.empty[ErrorItem]
         case Some(e) => Set[ErrorItem](new Desc(e))
-    }
+    }*/
+    private [this] val expected = _expected.map(Desc)
     override def apply(ctx: Context): Unit = {
         if (pred.isDefinedAt(ctx.stack.upeek)) {
             val reason = pred(ctx.stack.upop())
-            ctx.fail(TrivialError(ctx.offset, ctx.line, ctx.col, None, expected, Set(reason)))
+            //ctx.fail(TrivialError(ctx.offset, ctx.line, ctx.col, None, expected, Set(reason))
+            ctx.fail(new EmptyErrorWithReason(ctx.offset, ctx.line, ctx.col, expected, reason))
         }
         else ctx.inc()
     }
@@ -153,10 +159,11 @@ private [internal] final class GuardAgainst[A](_pred: PartialFunction[A, String]
 }
 
 private [internal] final class NotFollowedBy(_expected: Option[String]) extends Instr {
-    private [this] final val expected: Set[ErrorItem] = _expected match {
-        case Some(ex) => Set(Desc(ex))
-        case None => Set.empty
-    }
+    //private [this] final val expected: Set[ErrorItem] = _expected match {
+    //    case Some(ex) => Set(Desc(ex))
+    //    case None => Set.empty
+    //}
+    private [this] final val expected = _expected.map(Desc)
     override def apply(ctx: Context): Unit = {
         // Recover the previous state; notFollowedBy NEVER consumes input
         ctx.restoreState()
@@ -164,7 +171,7 @@ private [internal] final class NotFollowedBy(_expected: Option[String]) extends 
         // A previous success is a failure
         if (ctx.status eq Good) {
             ctx.handlers = ctx.handlers.tail
-            ctx.unexpectedFail(expected = expected, unexpected = new Some(new Raw(ctx.stack.upop().toString)))
+            ctx.unexpectedFail(expected = expected, unexpected = new Raw(ctx.stack.upop().toString))
         }
         // A failure is what we wanted
         else {
@@ -179,12 +186,10 @@ private [internal] final class NotFollowedBy(_expected: Option[String]) extends 
 }
 
 private [internal] final class Eof(_expected: Option[String]) extends Instr {
-    private [this] final val expected = Set[ErrorItem](Desc(_expected.getOrElse("end of input")))
+    private [this] final val expected = Some(Desc(_expected.getOrElse("end of input")))
     override def apply(ctx: Context): Unit = {
         if (ctx.offset == ctx.inputsz) ctx.pushAndContinue(())
-        else {
-            ctx.expectedFail(expected, reason = None)
-        }
+        else ctx.expectedFail(expected)
     }
     // $COVERAGE-OFF$
     override final def toString: String = "Eof"
