@@ -117,33 +117,33 @@ private [deepembedding] object StringTok {
     def unapply(self: StringTok): Option[String] = Some(self.s)
 }
 private [deepembedding] object Lift2 {
-    def empty[A, B, C](f: (A, B) => C): Lift2[A, B, C] = new Lift2(f, null, null)
+    def empty[A, B, C](f: (A, B) => C): Lift2[A, B, C] = new Lift2(f, ???, ???)
     def unapply[A, B, C](self: Lift2[A, B, C]): Option[((A, B) => C, Parsley[A], Parsley[B])] = Some((self.f, self.left, self.right))
 }
 private [deepembedding] object Lift3 {
-    def empty[A, B, C, D](f: (A, B, C) => D): Lift3[A, B, C, D] = new Lift3(f, null, null, null)
+    def empty[A, B, C, D](f: (A, B, C) => D): Lift3[A, B, C, D] = new Lift3(f, ???, ???, ???)
     def unapply[A, B, C, D](self: Lift3[A, B, C, D]): Option[((A, B, C) => D, Parsley[A], Parsley[B], Parsley[C])] = {
         Some((self.f, self.first, self.second, self.third))
     }
 }
 private [deepembedding] object FastFail {
-    def empty[A](msggen: A => String): FastFail[A] = new FastFail(null, msggen)
+    def empty[A](msggen: A => String): FastFail[A] = new FastFail(???, msggen)
 }
 private [deepembedding] object FastUnexpected {
-    def empty[A](msggen: A => String, expected: Option[String]): FastUnexpected[A] = new FastUnexpected(null, msggen, expected)
+    def empty[A](msggen: A => String, expected: Option[String]): FastUnexpected[A] = new FastUnexpected(???, msggen, expected)
 }
 private [deepembedding] object Filter {
-    def empty[A](pred: A => Boolean, expected: Option[String]): Filter[A] = new Filter(null, pred, expected)
+    def empty[A](pred: A => Boolean, expected: Option[String]): Filter[A] = new Filter(???, pred, expected)
 }
 private [deepembedding] object FilterOut {
-    def empty[A](pred: PartialFunction[A, String], expected: Option[String]): FilterOut[A] = new FilterOut(null, pred, expected)
+    def empty[A](pred: PartialFunction[A, String], expected: Option[String]): FilterOut[A] = new FilterOut(???, pred, expected)
 }
 private [deepembedding] object GuardAgainst {
-    def empty[A](pred: PartialFunction[A, String]): GuardAgainst[A] = new GuardAgainst(null, pred)
+    def empty[A](pred: PartialFunction[A, String]): GuardAgainst[A] = new GuardAgainst(???, pred)
 }
 private [deepembedding] object If {
-    def empty[A]: If[A] = new If(null, null, null)
+    def empty[A]: If[A] = new If(???, ???, ???)
 }
 private [deepembedding] object Local {
-    def empty[S, A](r: Reg[S]): Local[S, A] = new Local(r, null, null)
+    def empty[S, A](r: Reg[S]): Local[S, A] = new Local(r, ???, ???)
 }

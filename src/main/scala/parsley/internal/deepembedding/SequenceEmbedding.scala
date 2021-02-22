@@ -111,7 +111,7 @@ private [deepembedding] sealed abstract class Seq[A, B](_discard: =>Parsley[A], 
     final override val numInstrs = 1
     def copy[B_ >: B](prev: Parsley[A], next: Parsley[B_]): Seq[A, B_]
     private def buildResult[R](make: (StringTok, Pure[B]) => Parsley[B])(s: String, r: R, ex1: Option[String], ex2: Option[String]) = {
-        make(new StringTok(s, if (ex1 != null) ex1 else ex2), new Pure(r.asInstanceOf[B]))
+        make(new StringTok(s, if (ex1.nonEmpty) ex1 else ex2), new Pure(r.asInstanceOf[B]))
     }
     private def optimiseStringResult(combine: (String, String) => String, make: (StringTok, Pure[B]) => Parsley[B])
                                     (s: String, ex: Option[String]): Parsley[B] = result match {
@@ -202,12 +202,12 @@ private [deepembedding] object Pure {
     def unapply[A](self: Pure[A]): Option[A] = Some(self.x)
 }
 private [deepembedding] object <*> {
-    def empty[A, B]: A <*> B = new <*>(null, null)
+    def empty[A, B]: A <*> B = new <*>(???, ???)
     def apply[A, B](left: Parsley[A=>B], right: Parsley[A]): <*>[A, B] = empty.ready(left, right)
     def unapply[A, B](self: <*>[A, B]): Option[(Parsley[A=>B], Parsley[A])] = Some((self.left, self.right))
 }
 private [deepembedding] object >>= {
-    def empty[A, B](f: A => Parsley[B], expected: Option[String]): >>=[A, B] = new >>=(null, f, expected)
+    def empty[A, B](f: A => Parsley[B], expected: Option[String]): >>=[A, B] = new >>=(???, f, expected)
     def apply[A, B](p: Parsley[A], f: A => Parsley[B], expected: Option[String]): >>=[A, B] = empty(f, expected).ready(p)
     def unapply[A, B](self: >>=[A, B]): Option[(Parsley[A], A => Parsley[B])] = Some((self.p, self.f))
 }
@@ -215,12 +215,12 @@ private [deepembedding] object Seq {
     def unapply[A, B](self: Seq[A, B]): Option[(Parsley[A], Parsley[B])] = Some((self.discard, self.result))
 }
 private [deepembedding] object *> {
-    def empty[A, B]: A *> B = new *>(null, null)
+    def empty[A, B]: A *> B = new *>(???, ???)
     def apply[A, B](left: Parsley[A], right: Parsley[B]): A *> B = empty.ready(left, right)
     def unapply[A, B](self: A *> B): Option[(Parsley[A], Parsley[B])] = Some((self.left, self.right))
 }
 private [deepembedding] object <* {
-    def empty[A, B]: A <* B = new <*(null, null)
+    def empty[A, B]: A <* B = new <*(???, ???)
     def apply[A, B](left: Parsley[A], right: Parsley[B]): A <* B = empty.ready(right, left)
     def unapply[A, B](self: A <* B): Option[(Parsley[A], Parsley[B])] = Some((self.result, self.discard))
 }

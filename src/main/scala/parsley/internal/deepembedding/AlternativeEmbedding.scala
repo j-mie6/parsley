@@ -206,7 +206,7 @@ private [parsley] class Empty(val expected: Option[String] = None)
     extends SingletonExpect[Nothing]("empty", new Empty(_), new instructions.Empty(expected)) with MZero
 
 private [deepembedding] object <|> {
-    def empty[A, B]: A <|> B = new <|>(null, null)
+    def empty[A, B]: A <|> B = new <|>(???, ???)
     def apply[A, B](left: Parsley[A], right: Parsley[B]): A <|> B = empty.ready(left, right)
     def unapply[A, B](self: A <|> B): Option[(Parsley[A], Parsley[B])] = Some((self.left, self.right))
 }

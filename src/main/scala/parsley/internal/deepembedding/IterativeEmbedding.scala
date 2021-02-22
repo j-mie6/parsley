@@ -119,7 +119,7 @@ private [parsley] final class SepEndBy1[A, B](_p: =>Parsley[A], _sep: =>Parsley[
         }
     }
 }
-private [parsley] final class ManyUntil[A](_body: Parsley[Any]) extends Unary[Any, List[A]](_body)(c => s"manyUntil($c)", _ => ManyUntil.empty) {
+private [parsley] final class ManyUntil[A](_body: =>Parsley[Any]) extends Unary[Any, List[A]](_body)(c => s"manyUntil($c)", _ => ManyUntil.empty) {
     override val numInstrs = 2
     override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
         val start = state.freshLabel()

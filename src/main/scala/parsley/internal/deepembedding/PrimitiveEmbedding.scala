@@ -150,28 +150,28 @@ private [deepembedding] object Satisfy {
     def unapply(self: Satisfy): Option[Char => Boolean] = Some(self.f)
 }
 private [deepembedding] object Attempt {
-    def empty[A]: Attempt[A] = new Attempt(null)
+    def empty[A]: Attempt[A] = new Attempt(???)
     def unapply[A](self: Attempt[A]): Option[Parsley[A]] = Some(self.p)
 }
 private [deepembedding] object Look {
-    def empty[A]: Look[A] = new Look(null)
+    def empty[A]: Look[A] = new Look(???)
 }
 private [deepembedding] object ErrorLabel {
-    def empty[A](label: String): ErrorLabel[A] = new ErrorLabel(null, label)
+    def empty[A](label: String): ErrorLabel[A] = new ErrorLabel(???, label)
     def apply[A](p: Parsley[A], label: String): ErrorLabel[A] = empty(label).ready(p)
 }
 private [deepembedding] object ErrorExplain {
-    def empty[A](reason: String): ErrorExplain[A] = new ErrorExplain(null, reason)
+    def empty[A](reason: String): ErrorExplain[A] = new ErrorExplain(???, reason)
     def apply[A](p: Parsley[A], reason: String): ErrorExplain[A] = empty(reason).ready(p)
 }
 private [deepembedding] object NotFollowedBy {
-    def empty[A](expected: Option[String]): NotFollowedBy[A] = new NotFollowedBy(null, expected)
+    def empty[A](expected: Option[String]): NotFollowedBy[A] = new NotFollowedBy(???, expected)
 }
 private [deepembedding] object Put {
-    def empty[S](r: Reg[S]): Put[S] = new Put(r, null)
+    def empty[S](r: Reg[S]): Put[S] = new Put(r, ???)
 }
 private [deepembedding] object Debug {
-    def empty[A](name: String, break: Breakpoint): Debug[A] = new Debug(null, name, break)
+    def empty[A](name: String, break: Breakpoint): Debug[A] = new Debug(???, name, break)
 }
 
 private [deepembedding] object Rec {

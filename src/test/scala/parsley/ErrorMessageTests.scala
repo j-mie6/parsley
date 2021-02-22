@@ -31,6 +31,25 @@ class ErrorMessageTests extends ParsleyTest {
         t.runParser("e") should be {
             Failure("(line 1, column 1):\n  unexpected \"e\"\n  expected \"c\", bee, or hi\n  >e\n  >^")
         }
+        t.runParser("ae") should be {
+            Failure("(line 1, column 2):\n  unexpected \"e\"\n  expected \"c\" or bee\n  >ae\n  > ^")
+        }
+    }
+    it should "not relabel hidden things" in {
+        val s = (optional('a').hide *> optional('b')).label("hi") *> 'c'
+        s.runParser("e") should be {
+            Failure("(line 1, column 1):\n  unexpected \"e\"\n  expected \"c\" or hi\n  >e\n  >^")
+        }
+        s.runParser("ae") should be {
+            Failure("(line 1, column 2):\n  unexpected \"e\"\n  expected \"b\" or \"c\"\n  >ae\n  > ^")
+        }
+        val t = (optional('a').hide *> optional('b').label("bee")).label("hi") *> 'c'
+        t.runParser("e") should be {
+            Failure("(line 1, column 1):\n  unexpected \"e\"\n  expected \"c\" or hi\n  >e\n  >^")
+        }
+        t.runParser("ae") should be {
+            Failure("(line 1, column 2):\n  unexpected \"e\"\n  expected \"c\" or bee\n  >ae\n  > ^")
+        }
     }
 
     "explain" should "provide a message, but only on failure" in {
