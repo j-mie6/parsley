@@ -47,7 +47,10 @@ private [internal] class CharTok(c: Char, x: Any, _expected: Option[String]) ext
 }
 
 private [internal] final class StringTok private [instructions] (s: String, x: Any, _expected: Option[String]) extends Instr {
-    private [this] val errorItem = _expected.map(Desc)
+    private [this] final val errorItem = Some(_expected match {
+        case Some(e) => Desc(e)
+        case None    => Raw(s)
+    })
     private [this] val cs = s.toCharArray
     private [this] val sz = cs.length
     def makeAdjusters(col: Int, line: Int, tabprefix: Option[Int]): (Int => Int, Int => Int) =
