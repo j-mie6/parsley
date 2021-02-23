@@ -57,8 +57,6 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     private [instructions] var regs: Array[AnyRef] = new Array[AnyRef](Context.NumRegs)
     /** Amount of indentation to apply to debug combinators output */
     private [instructions] var debuglvl: Int = 0
-    /** Name which describes the type of input in error messages */
-    private val inputDescriptor = sourceName.fold("input")(_ => "file")
 
     // NEW ERROR MECHANISMS
     private var hints = mutable.ListBuffer.empty[Set[ErrorItem]]
