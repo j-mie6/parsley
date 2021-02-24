@@ -38,6 +38,8 @@ private [internal] sealed abstract class ParseError {
         case Nil => None
         case List(alt) => Some(alt)
         case List(alt1, alt2) => Some(s"$alt2 or $alt1")
+        // If the result would contains "," then it's probably nicer to preserve any potential grouping using ";"
+        case any@(alt::alts) if any.exists(_.contains(",")) => Some(s"${alts.reverse.mkString("; ")}; or $alt")
         case alt::alts => Some(s"${alts.reverse.mkString(", ")}, or $alt")
     }
 
