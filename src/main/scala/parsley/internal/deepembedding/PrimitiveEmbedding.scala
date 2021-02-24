@@ -106,7 +106,7 @@ private [parsley] final class ErrorExplain[A](_p: =>Parsley[A], reason: String)
     final override val numInstrs = 2
     final override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
         val handler = state.freshLabel()
-        instrs += new instructions.PushHandler(handler)
+        instrs += new instructions.InputCheck(handler)
         p.codeGen |> {
             instrs += new instructions.Label(handler)
             instrs += new instructions.ApplyReason(reason)

@@ -65,7 +65,8 @@ private [internal] class ApplyReason(reason: String) extends Instr {
             ctx.inc()
         }
         else {
-            ctx.errs.head = new WithReason(ctx.errs.head, reason)
+            if (ctx.offset == ctx.checkStack.head) ctx.errs.head = new WithReason(ctx.errs.head, reason)
+            ctx.checkStack = ctx.checkStack.tail
             ctx.fail()
         }
     }
