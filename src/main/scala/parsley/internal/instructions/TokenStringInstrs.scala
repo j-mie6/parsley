@@ -1,15 +1,15 @@
 package parsley.internal.instructions
 
-import parsley.internal.UnsafeOption
 import parsley.token.TokenSet
+import parsley.internal.errors.{ErrorItem, Desc}
 
 import scala.annotation.tailrec
 
-private [internal] class TokenEscape(_expected: UnsafeOption[String]) extends Instr with NumericReader {
-    private [this] final val expected = if (_expected == null) "escape code" else _expected
+private [internal] class TokenEscape(_expected: Option[String]) extends Instr with NumericReader {
+    private [this] final val expected = Some(Desc(_expected.getOrElse("escape code")))
     override def apply(ctx: Context): Unit = escape(ctx) match {
         case TokenEscape.EscapeChar(escapeChar) =>ctx.pushAndContinue(escapeChar)
-        case TokenEscape.BadCode => ctx.expectedFailWithExplanation(expected, msg = "invalid escape sequence")
+        case TokenEscape.BadCode => ctx.expectedFail(expected, reason = "invalid escape sequence")
         case TokenEscape.NoParse => ctx.expectedFail(expected)
     }
 
@@ -143,10 +143,10 @@ private [instructions] object TokenEscape {
 }
 
 private [instructions] sealed trait TokenStringLike extends Instr {
-    protected val expected: UnsafeOption[String]
-    final protected lazy val expectedString = if (expected == null) "string" else expected
-    final protected lazy val expectedEos = if (expected == null) "end of string" else expected
-    final protected lazy val expectedChar = if (expected == null) "string character" else expected
+    protected val expected: Option[String]
+    final protected lazy val expectedString = Some(Desc(expected.getOrElse("string")))
+    final protected lazy val expectedEos = Some(Desc(expected.getOrElse("end of string")))
+    final protected lazy val expectedChar = Some(Desc(expected.getOrElse("string character")))
 
     // All failures must be handled by this function
     protected def handleEscaped(ctx: Context, builder: StringBuilder): Boolean
@@ -175,8 +175,7 @@ private [instructions] sealed trait TokenStringLike extends Instr {
     }
 }
 
-private [internal] final class TokenRawString(_expected: UnsafeOption[String]) extends TokenStringLike {
-    override val expected = _expected
+private [internal] final class TokenRawString(val expected: Option[String]) extends TokenStringLike {
     override def handleEscaped(ctx: Context, builder: StringBuilder): Boolean = {
         builder += '\\'
         if (ctx.moreInput && ctx.nextChar > '\u0016') {
@@ -195,10 +194,9 @@ private [internal] final class TokenRawString(_expected: UnsafeOption[String]) e
     // $COVERAGE-ON$
 }
 
-private [internal] final class TokenString(ws: TokenSet, _expected: UnsafeOption[String]) extends TokenEscape(_expected) with TokenStringLike {
-    override val expected = _expected
-    private val expectedEscape = if (_expected == null) "escape code" else _expected
-    private val expectedGap = if (_expected == null) "end of string gap" else _expected
+private [internal] final class TokenString(ws: TokenSet, val expected: Option[String]) extends TokenEscape(expected) with TokenStringLike {
+    private [this] final val expectedEscape = Some(Desc(expected.getOrElse("escape code")))
+    private [this] final val expectedGap = Some(Desc(expected.getOrElse("end of string gap")))
 
     private def readGap(ctx: Context): Boolean = {
         val completedGap = ctx.moreInput && ctx.nextChar == '\\'
@@ -218,7 +216,7 @@ private [internal] final class TokenString(ws: TokenSet, _expected: UnsafeOption
                 builder += c
                 true
             case TokenEscape.BadCode =>
-                ctx.expectedFailWithExplanation(expectedEscape, "invalid escape sequence")
+                ctx.expectedFail(expectedEscape, reason = "invalid escape sequence")
                 false
             case TokenEscape.NoParse =>
                 ctx.expectedFail(expectedEscape)

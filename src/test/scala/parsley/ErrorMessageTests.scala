@@ -31,6 +31,41 @@ class ErrorMessageTests extends ParsleyTest {
         t.runParser("e") should be {
             Failure("(line 1, column 1):\n  unexpected \"e\"\n  expected \"c\", bee, or hi\n  >e\n  >^")
         }
+        t.runParser("ae") should be {
+            Failure("(line 1, column 2):\n  unexpected \"e\"\n  expected \"c\" or bee\n  >ae\n  > ^")
+        }
+    }
+    it should "not relabel hidden things" in {
+        val s = (optional('a').hide *> optional('b')).label("hi") *> 'c'
+        s.runParser("e") should be {
+            Failure("(line 1, column 1):\n  unexpected \"e\"\n  expected \"c\" or hi\n  >e\n  >^")
+        }
+        s.runParser("ae") should be {
+            Failure("(line 1, column 2):\n  unexpected \"e\"\n  expected \"b\" or \"c\"\n  >ae\n  > ^")
+        }
+        val t = (optional('a').hide *> optional('b').label("bee")).label("hi") *> 'c'
+        t.runParser("e") should be {
+            Failure("(line 1, column 1):\n  unexpected \"e\"\n  expected \"c\" or hi\n  >e\n  >^")
+        }
+        t.runParser("ae") should be {
+            Failure("(line 1, column 2):\n  unexpected \"e\"\n  expected \"c\" or bee\n  >ae\n  > ^")
+        }
+    }
+
+    "explain" should "provide a message, but only on failure" in {
+        Parsley.empty.explain("oops!").runParser("") shouldBe Failure("(line 1, column 1):\n  oops!\n  >\n  >^")
+        'a'.explain("requires an a").runParser("b") shouldBe Failure("(line 1, column 1):\n  unexpected \"b\"\n  expected \"a\"\n  requires an a\n  >b\n  >^")
+        ('a'.explain("an a") <|> 'b'.explain("a b")).runParser("c") shouldBe {
+            Failure("(line 1, column 1):\n  unexpected \"c\"\n  expected \"a\" or \"b\"\n  an a\n  a b\n  >c\n  >^")
+        }
+        ('a'.explain("should be absent") *> 'b').runParser("a") shouldBe {
+            Failure("(line 1, column 2):\n  unexpected end of input\n  expected \"b\"\n  >a\n  > ^")
+        }
+    }
+    it should "not have any effect when more input has been consumed since it was added" in {
+        ('a'.explain("should be absent") <|> ('b' *> digit)).runParser("b") shouldBe {
+            Failure("(line 1, column 2):\n  unexpected end of input\n  expected digit\n  >b\n  > ^")
+        }
     }
 
     "fail" should "yield a raw message" in {
@@ -72,7 +107,6 @@ class ErrorMessageTests extends ParsleyTest {
         }
     }
     it should "produce an expected error under influence of ? in <|> chain" in {
-        //println(internal.instructions.pretty(('a' <|> Parsley.empty ? "something, at least").internal.instrs))
         ('a' <|> Parsley.empty ? "something, at least").runParser("b") should be {
             Failure("(line 1, column 1):\n  unexpected \"b\"\n  expected \"a\" or something, at least\n  >b\n  >^")
         }

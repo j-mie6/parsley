@@ -22,6 +22,7 @@ private [parsley] final class BitSet(gen: Either[Set[Char], Char => Boolean]) ex
         }
         (max, arr)
     }
+    // $COVERAGE-OFF$
     def setup(f: Char => Boolean): (Int, Array[Int]) =
     {
         var i: Int = 0
@@ -42,6 +43,7 @@ private [parsley] final class BitSet(gen: Either[Set[Char], Char => Boolean]) ex
         java.lang.System.arraycopy(bigarr, 0, arr, 0, (max >> 5) + 1)
         (max, arr)
     }
+    // $COVERAGE-ON$
 
     def contains(c: Char): Boolean = c <= max && ((arr(c >> 5) >> (c & 31)) & 1) == 1
     def apply(c: Char): Boolean = contains(c)

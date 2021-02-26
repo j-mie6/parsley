@@ -2,13 +2,15 @@ package parsley.internal.instructions
 
 import parsley.internal.deepembedding.Sign.{SignType, IntType, DoubleType}
 import parsley.token.TokenSet
-import parsley.internal.{Radix, UnsafeOption}
+import parsley.internal.Radix
+import parsley.internal.errors.{ErrorItem, Desc}
 
 import scala.annotation.tailrec
 
 private [instructions] abstract class CommentLexer(start: String, end: String, line: String, nested: Boolean) extends Instr {
     protected final val lineAllowed = line.nonEmpty
     protected final val multiAllowed = start.nonEmpty && end.nonEmpty
+    protected final val endOfComment = Some(Desc("end of comment"))
 
     protected final def singleLineComment(ctx: Context): Unit = {
         ctx.fastUncheckedConsumeChars(line.length)
@@ -52,7 +54,7 @@ private [instructions] abstract class WhiteSpaceLike(start: String, end: String,
         spaces(ctx)
         val startsMulti = ctx.moreInput && ctx.input.startsWith(start, ctx.offset)
         if (startsMulti && multiLineComment(ctx)) multisOnly(ctx)
-        else if (startsMulti) ctx.expectedFail("end of comment")
+        else if (startsMulti) ctx.expectedFail(expected = endOfComment)
         else ctx.pushAndContinue(())
     }
 
@@ -65,7 +67,7 @@ private [instructions] abstract class WhiteSpaceLike(start: String, end: String,
         if (ctx.moreInput && ctx.input.startsWith(sharedPrefix, ctx.offset)) {
             val startsMulti = ctx.input.startsWith(factoredStart, ctx.offset + sharedPrefix.length)
             if (startsMulti && multiLineComment(ctx)) singlesAndMultis(ctx)
-            else if (startsMulti) ctx.expectedFail("end of comment")
+            else if (startsMulti) ctx.expectedFail(expected = endOfComment)
             else if (ctx.input.startsWith(factoredLine, ctx.offset + sharedPrefix.length)) {
                 singleLineComment(ctx)
                 singlesAndMultis(ctx)
@@ -85,15 +87,17 @@ private [instructions] abstract class WhiteSpaceLike(start: String, end: String,
 }
 
 private [internal] final class TokenComment(start: String, end: String, line: String, nested: Boolean) extends CommentLexer(start, end, line, nested) {
+    private [this] final val comment = Some(Desc("comment"))
+
     // PRE: one of the comments is supported
     // PRE: Multi-line comments may not prefix single-line, but single-line may prefix multi-line
     override def apply(ctx: Context): Unit = {
         val startsMulti = multiAllowed && ctx.input.startsWith(start, ctx.offset)
         // If neither comment is available we fail
-        if (!ctx.moreInput || (!lineAllowed || !ctx.input.startsWith(line, ctx.offset)) && !startsMulti) ctx.expectedFail("comment")
+        if (!ctx.moreInput || (!lineAllowed || !ctx.input.startsWith(line, ctx.offset)) && !startsMulti) ctx.expectedFail(expected = comment)
         // One of the comments must be available
         else if (startsMulti && multiLineComment(ctx)) ctx.pushAndContinue(())
-        else if (startsMulti) ctx.expectedFail("end of comment")
+        else if (startsMulti) ctx.expectedFail(expected = endOfComment)
         // It clearly wasn't the multi-line comment, so we are left with single line
         else {
             singleLineComment(ctx)
@@ -122,8 +126,8 @@ private [internal] final class TokenSkipComments(start: String, end: String, lin
 }
 
 private [internal] final class TokenNonSpecific(name: String, illegalName: String)
-                                               (start: TokenSet, letter: TokenSet, illegal: String => Boolean, _expected: UnsafeOption[String]) extends Instr {
-    private val expected = if (_expected == null) name else _expected
+                                               (start: TokenSet, letter: TokenSet, illegal: String => Boolean, _expected: Option[String]) extends Instr {
+    private [this] final val expected = Some(Desc(_expected.getOrElse(name)))
 
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && start(ctx.nextChar)) {
@@ -137,7 +141,7 @@ private [internal] final class TokenNonSpecific(name: String, illegalName: Strin
     private def ensureLegal(ctx: Context, tok: String) = {
         if (illegal(tok)) {
             ctx.offset -= tok.length
-            ctx.unexpectedFail(expected = expected, unexpected = s"$illegalName $tok")
+            ctx.unexpectedFail(expected = expected, unexpected = new Desc(s"$illegalName $tok"))
         }
         else {
             ctx.col += tok.length
@@ -158,9 +162,9 @@ private [internal] final class TokenNonSpecific(name: String, illegalName: Strin
     // $COVERAGE-ON$
 }
 
-private [instructions] abstract class TokenSpecificAllowTrailing(_specific: String, caseSensitive: Boolean, _expected: UnsafeOption[String]) extends Instr {
-    private final val expected = if (_expected == null) _specific else _expected
-    protected final val expectedEnd = if (_expected == null) "end of " + _specific else _expected
+private [instructions] abstract class TokenSpecificAllowTrailing(_specific: String, caseSensitive: Boolean, _expected: Option[String]) extends Instr {
+    private final val expected = Some(Desc(_expected.getOrElse(_specific)))
+    protected final val expectedEnd = Some(Desc(_expected.getOrElse(s"end of ${_specific}")))
     private final val specific = (if (caseSensitive) _specific else _specific.toLowerCase).toCharArray
     private final val strsz = specific.length
     protected def postprocess(ctx: Context, i: Int): Unit
@@ -186,7 +190,7 @@ private [instructions] abstract class TokenSpecificAllowTrailing(_specific: Stri
     }
 }
 
-private [internal] final class TokenSpecific(_specific: String, letter: TokenSet, caseSensitive: Boolean, expected: UnsafeOption[String])
+private [internal] final class TokenSpecific(_specific: String, letter: TokenSet, caseSensitive: Boolean, expected: Option[String])
     extends TokenSpecificAllowTrailing(_specific, caseSensitive, expected) {
     override def postprocess(ctx: Context, i: Int): Unit = {
         if (i < ctx.inputsz && letter(ctx.input.charAt(i))) {
@@ -204,7 +208,7 @@ private [internal] final class TokenSpecific(_specific: String, letter: TokenSet
     // $COVERAGE-ON$
 }
 
-private [internal] final class TokenMaxOp(operator: String, _ops: Set[String], expected: UnsafeOption[String])
+private [internal] final class TokenMaxOp(operator: String, _ops: Set[String], expected: Option[String])
     extends TokenSpecificAllowTrailing(operator, true, expected) {
     private val ops = Radix(_ops.collect {
         case op if op.length > operator.length && op.startsWith(operator) => op.substring(operator.length)

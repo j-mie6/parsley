@@ -41,7 +41,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: deepe
       */
     def overflows(): Unit = internal.overflows()
 
-    //TODO: we need a way to set source pos and filename
+    // $COVERAGE-OFF$
     /** This method is responsible for actually executing parsers. Given an input
       * string, will parse the string with the parser. The result is either a `Success` or a `Failure`.
       * @param input The input to run against
@@ -49,6 +49,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: deepe
       */
     @deprecated("This method will be removed in Parsley 3.0 since Strings are now the underlying representation for Parsley", "2.8.4")
     def runParser(input: Array[Char]): Result[A] = runParser(new String(input))
+    // $COVERAGE-ON$
     /** This method is responsible for actually executing parsers. Given an input
       * array, will parse the string with the parser. The result is either a `Success` or a `Failure`.
       * @param input The input to run against
@@ -61,7 +62,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: deepe
       * @return Either a success with a value of type `A` or a failure with error message
       * @since 2.3.0
       */
-    def parseFromFile(file: File): Result[A] = new Context(internal.threadSafeInstrs, Source.fromFile(file).toString, Some(file.getName)).runParser()
+    def parseFromFile(file: File): Result[A] = new Context(internal.threadSafeInstrs, Source.fromFile(file).mkString, Some(file.getName)).runParser()
 }
 /** This object contains the core "function-style" combinators as well as the implicit classes which provide
   * the "method-style" combinators. All parsers will likely require something from within! */
@@ -81,7 +82,10 @@ object Parsley
           */
         def map[B](f: A => B): Parsley[B] = pure(f) <*> p
         /**This combinator is an alias for `map`*/
+        @deprecated("This combinator will be removed in Parsley 3.0, use .map instead", "2.8.4")
+        // $COVERAGE-OFF$
         def <#>[B](f: A => B): Parsley[B] = this.map(f)
+        // $COVERAGE-ON$
         /**
           * This is the Applicative application parser. The type of `pf` is `Parsley[A => B]`. Then, given a
           * `Parsley[A]`, we can produce a `Parsley[B]` by parsing `pf` to retrieve `f: A => B`, then parse `px`
@@ -201,7 +205,10 @@ object Parsley
           * @since 2.8.0
           */
         def filterOut(pred: PartialFunction[A, String]): Parsley[A] = new Parsley(new deepembedding.FilterOut(p.internal, pred))
+        // $COVERAGE-OFF$
+        // This can be dropped when we stop supporting scala 2.12
         def withFilter(pred: A => Boolean): Parsley[A] = this.filter(pred)
+        // $COVERAGE-ON$
         /** Attempts to first filter the parser to ensure that `pf` is defined over it. If it is, then the function `pf`
           * is mapped over its result. Roughly the same as a `filter` then a `map`.
           * @param pf The partial function

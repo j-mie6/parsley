@@ -2,8 +2,8 @@ package parsley.internal.instructions
 
 import Stack.{isEmpty, push}
 import parsley.internal.ResizableArray
-import parsley.internal.UnsafeOption
 import parsley.internal.deepembedding.Parsley
+import parsley.internal.errors.{ErrorItem, Desc, ParseError, TrivialError, EmptyError}, ParseError.NoReason
 
 import scala.annotation.tailrec
 
@@ -22,17 +22,6 @@ private [internal] object Pop extends Instr {
     }
     // $COVERAGE-OFF$
     override def toString: String = "Pop"
-    // $COVERAGE-ON$
-}
-
-private [internal] object Flip extends Instr {
-    override def apply(ctx: Context): Unit = {
-        val x = ctx.stack(1)
-        ctx.stack(1) = ctx.stack.upeek
-        ctx.exchangeAndContinue(x)
-    }
-    // $COVERAGE-OFF$
-    override def toString: String = "Flip"
     // $COVERAGE-ON$
 }
 
@@ -70,7 +59,7 @@ private [internal] final class Call(_instrs: =>Array[Instr]) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class GoSub(var label: Int) extends JumpInstr {
+private [internal] final class GoSub(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = ctx.call(ctx.instrs, label)
     // $COVERAGE-OFF$
     override def toString: String = s"GoSub($label)"
@@ -84,16 +73,19 @@ private [internal] object Return extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class Empty(expected: UnsafeOption[String]) extends Instr {
+private [internal] final class Empty(_expected: Option[String]) extends Instr {
+    //val expected = _expected.fold(Set.empty[ErrorItem])(e => Set[ErrorItem](Desc(e)))
+    val expected = _expected.map(Desc)
     override def apply(ctx: Context): Unit = {
-        ctx.fail(TrivialError(ctx.offset, ctx.line, ctx.col, None, if (expected == null) Set.empty else Set(Desc(expected)), Set.empty))
+        //ctx.fail(TrivialError(ctx.offset, ctx.line, ctx.col, None, expected, NoReason))
+        ctx.fail(new EmptyError(ctx.offset, ctx.line, ctx.col, expected))
     }
     // $COVERAGE-OFF$
     override def toString: String = "Empty"
     // $COVERAGE-ON$
 }
 
-private [internal] final class PushHandler(var label: Int) extends JumpInstr {
+private [internal] final class PushHandler(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ctx.pushHandler(label)
         ctx.inc()
@@ -103,7 +95,7 @@ private [internal] final class PushHandler(var label: Int) extends JumpInstr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class PushHandlerAndState(var label: Int, saveHints: Boolean, hideHints: Boolean) extends JumpInstr {
+private [internal] final class PushHandlerAndState(var label: Int, saveHints: Boolean, hideHints: Boolean) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ctx.pushHandler(label)
         ctx.saveState()
@@ -115,7 +107,7 @@ private [internal] final class PushHandlerAndState(var label: Int, saveHints: Bo
     // $COVERAGE-ON$
 }
 
-private [internal] final class InputCheck(var label: Int, saveHints: Boolean = false) extends JumpInstr {
+private [internal] final class InputCheck(var label: Int, saveHints: Boolean = false) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ctx.pushCheck()
         ctx.pushHandler(label)
@@ -127,14 +119,14 @@ private [internal] final class InputCheck(var label: Int, saveHints: Boolean = f
     // $COVERAGE-ON$
 }
 
-private [internal] final class Jump(var label: Int) extends JumpInstr {
+private [internal] final class Jump(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = ctx.pc = label
     // $COVERAGE-OFF$
     override def toString: String = s"Jump($label)"
     // $COVERAGE-ON$
 }
 
-private [internal] final class JumpGood(var label: Int) extends JumpInstr {
+private [internal] final class JumpGood(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ctx.handlers = ctx.handlers.tail
         ctx.checkStack = ctx.checkStack.tail
@@ -146,16 +138,16 @@ private [internal] final class JumpGood(var label: Int) extends JumpInstr {
     // $COVERAGE-ON$
 }
 
-private [internal] object Catch extends Instr {
+private [internal] final class Catch(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
-        ctx.catchNoConsumed {
-            ctx.inc()
-            ctx.addErrorToHints()
-        }
         ctx.restoreHints()
+        ctx.catchNoConsumed {
+            ctx.pushHandler(label)
+            ctx.inc()
+        }
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"Catch"
+    override def toString: String = s"Catch($label)"
     // $COVERAGE-ON$
 }
 
@@ -182,7 +174,7 @@ private [instructions] trait Logger {
     final protected def indent(ctx: Context) = " " * (ctx.debuglvl * 2)
 }
 
-private [internal] final class LogBegin(var label: Int, val name: String, break: Boolean) extends JumpInstr with Logger {
+private [internal] final class LogBegin(var label: Int, val name: String, break: Boolean) extends InstrWithLabel with Logger {
     override def apply(ctx: Context): Unit = {
         println(preludeString('>', ctx))
         if (break) doBreak(ctx)

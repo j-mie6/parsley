@@ -1,12 +1,12 @@
 package parsley.internal.instructions
 
-import parsley.internal.UnsafeOption
 import parsley.XCompat._
 import Stack.push
 
 import scala.annotation.tailrec
 import scala.language.implicitConversions
 import scala.collection.mutable
+import parsley.internal.errors.{ErrorItem, Desc, MultiExpectedError}
 
 private [internal] final class Perform[-A, +B](_f: A => B) extends Instr {
     private [Perform] val f = _f.asInstanceOf[Any => B]
@@ -23,7 +23,8 @@ private [internal] final class Exchange[A](private [Exchange] val x: A) extends 
     // $COVERAGE-ON$
 }
 
-private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, expected: UnsafeOption[String]) extends Instr {
+private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, _expected: Option[String]) extends Instr {
+    private [this] final val expected = _expected.map(Desc)
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && f(ctx.nextChar)) {
             ctx.consumeChar()
@@ -36,37 +37,44 @@ private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, expe
     // $COVERAGE-ON$
 }
 
-private [internal] final class JumpGoodAttempt(var label: Int) extends JumpInstr {
+private [internal] final class JumpGoodAttempt(private [this] var jumpLabel: Int, private [this] var merge: Int) extends Instr {
     override def apply(ctx: Context): Unit = {
         if (ctx.status eq Good) {
             ctx.states = ctx.states.tail
             ctx.handlers = ctx.handlers.tail
             ctx.commitHints()
-            ctx.pc = label
+            ctx.pc = jumpLabel
         }
         else {
             ctx.restoreState()
-            ctx.addErrorToHints()
             ctx.restoreHints()
             ctx.status = Good
+            ctx.pushHandler(merge)
             ctx.inc()
         }
     }
+
+    override def relabel(labels: Array[Int]): this.type = {
+        jumpLabel = labels(jumpLabel)
+        merge = labels(merge)
+        this
+    }
+
     // $COVERAGE-OFF$
-    override def toString: String = s"JumpGood'($label)"
+    override def toString: String = s"JumpGoodAttempt($jumpLabel, $merge)"
     // $COVERAGE-ON$
 }
 
 private [internal] final class RecoverWith[A](x: A) extends Instr {
     override def apply(ctx: Context): Unit = {
+        ctx.restoreHints() // This must be before adding the error to hints
         ctx.catchNoConsumed {
             ctx.addErrorToHintsAndPop()
             ctx.pushAndContinue(x)
         }
-        ctx.restoreHints()
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"Recover($x)"
+    override def toString: String = s"RecoverWith($x)"
     // $COVERAGE-ON$
 }
 
@@ -80,22 +88,23 @@ private [internal] final class AlwaysRecoverWith[A](x: A) extends Instr {
         }
         else {
             ctx.restoreState()
+            ctx.restoreHints() // This must be before adding the error to hints
             ctx.addErrorToHintsAndPop()
             ctx.status = Good
-            ctx.restoreHints()
             ctx.pushAndContinue(x)
         }
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"AlwaysRecover($x)"
+    override def toString: String = s"AlwaysRecoverWith($x)"
     // $COVERAGE-ON$
 }
 
-private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int], private [this] var default: Int, _expecteds: Map[Char, Set[ErrorItem]])
-    extends Instr {
+private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int],
+        private [this] var default: Int,
+        private [this] var merge: Int,
+        _expecteds: Map[Char, Set[ErrorItem]]) extends Instr {
     private [this] var defaultPreamble: Int = _
     private [this] val jumpTable = mutable.LongMap(prefixes.map(_.toLong).zip(labels): _*)
-    val expecteds = _expecteds.toList.flatMap(_._2.map(_.msg))
     val errorItems = _expecteds.toSet[(Char, Set[ErrorItem])].flatMap(_._2)
 
     override def apply(ctx: Context): Unit = {
@@ -116,31 +125,18 @@ private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int]
     }
 
     private def addErrors(ctx: Context): Unit = {
-        val unexpected = if (ctx.offset < ctx.inputsz) Raw(s"${ctx.nextChar}") else EndOfInput
-        // We need to save hints here so that the jump table does not get a chance to use the hints before it
-        ctx.saveHints(shadow = false)
-        ctx.pushError(TrivialError(ctx.offset, ctx.line, ctx.col, Some(unexpected), errorItems, Set.empty))
-        ctx.restoreHints()
+        ctx.errs = push(ctx.errs, new MultiExpectedError(ctx.offset, ctx.line, ctx.col, errorItems))
+        ctx.pushHandler(merge)
     }
 
-    override def relabel(labels: Array[Int]): Unit = {
+    override def relabel(labels: Array[Int]): this.type = {
         jumpTable.mapValuesInPlace((_, v) => labels(v))
         default = labels(default)
+        merge = labels(merge)
         defaultPreamble = default - 1
+        this
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"JumpTable(${jumpTable.map{case (k, v) => k.toChar -> v}.mkString(", ")}, _ -> $default)"
+    override def toString: String = s"JumpTable(${jumpTable.map{case (k, v) => k.toChar -> v}.mkString(", ")}, _ -> $default, $merge)"
     // $COVERAGE-ON$
-}
-
-private [internal] object CharTokFastPerform {
-    def apply[A >: Char, B](c: Char, f: A => B, expected: UnsafeOption[String]): CharTok = new CharTok(c, f(c), expected)
-}
-
-private [internal] object StringTokFastPerform {
-    def apply(s: String, f: String => Any, expected: UnsafeOption[String]): StringTok = new StringTok(s, f(s), expected)
-}
-
-private [internal] object Exchange {
-    def unapply[A](ex: Exchange[A]): Option[A] = Some(ex.x)
 }

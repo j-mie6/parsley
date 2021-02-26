@@ -1,12 +1,14 @@
 package parsley.internal.deepembedding
 
 import ContOps.{result, ContAdapter}
-import parsley.internal.{UnsafeOption, instructions}, instructions.{ErrorItem, Raw, Desc}
+import parsley.internal.instructions
+import parsley.internal.errors.{ErrorItem, Raw, Desc}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.higherKinds
 
+// TODO: Tablification is too aggressive. It appears that `optional` is being compiled to jumptable
 private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) extends Binary[A, B, B](_p, _q)((l, r) => s"($l <|> $r)", <|>.empty) {
     override val numInstrs = 3
 
@@ -14,9 +16,9 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
         // left catch law: pure x <|> p = pure x
         case (u: Pure[B @unchecked], _) => u
         // alternative law: empty <|> p = p
-        case (e: Empty, v) if e.expected == null => v
+        case (e: Empty, v) if e.expected.isEmpty => v
         // alternative law: p <|> empty = p
-        case (u: Parsley[B @unchecked], e: Empty) if e.expected == null => u
+        case (u: Parsley[B @unchecked], e: Empty) if e.expected.isEmpty => u
         // associative law: (u <|> v) <|> w = u <|> (v <|> w)
         case ((u: Parsley[T]) <|> (v: Parsley[A]), w) =>
             left = u.asInstanceOf[Parsley[A]]
@@ -39,12 +41,11 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
                 case v =>
                     val handler = state.freshLabel()
                     val skip = state.freshLabel()
+                    val merge = state.freshLabel()
                     instrs += new instructions.PushHandlerAndState(handler, true, false)
                     u.codeGen >> {
                         instrs += new instructions.Label(handler)
-                        instrs += new instructions.JumpGoodAttempt(skip)
-                        val merge = state.freshLabel()
-                        instrs += new instructions.PushHandler(merge)
+                        instrs += new instructions.JumpGoodAttempt(skip, merge)
                         v.codeGen |> {
                             instrs += new instructions.Label(merge)
                             instrs += instructions.MergeErrors
@@ -66,13 +67,12 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
                 case v =>
                     val handler = state.freshLabel()
                     val skip = state.freshLabel()
+                    val merge = state.freshLabel()
                     instrs += new instructions.InputCheck(handler, true)
                     u.codeGen >> {
                         instrs += new instructions.JumpGood(skip)
                         instrs += new instructions.Label(handler)
-                        instrs += instructions.Catch
-                        val merge = state.freshLabel()
-                        instrs += new instructions.PushHandler(merge)
+                        instrs += new instructions.Catch(merge)
                         v.codeGen |> {
                             instrs += new instructions.Label(merge)
                             instrs += instructions.MergeErrors
@@ -87,15 +87,15 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
             val needsDefault = tablified.head._2.isDefined
             val end = state.freshLabel()
             val default = state.freshLabel()
+            val merge = state.freshLabel()
             val (roots, leads, ls, expecteds) = foldTablified(tablified, state, mutable.Map.empty, Nil, Nil, mutable.Map.empty)
-            instrs += new instructions.JumpTable(leads, ls, default, expecteds)
+            //println(leads, tablified)
+            instrs += new instructions.JumpTable(leads, ls, default, merge, expecteds)
             codeGenRoots(roots, ls, end) >> {
-                instrs += instructions.Catch //This instruction is reachable as default - 1
+                instrs += new instructions.Catch(merge) //This instruction is reachable as default - 1
                 instrs += new instructions.Label(default)
-                val merge = state.freshLabel()
-                instrs += new instructions.PushHandler(merge)
                 if (needsDefault) {
-                    instrs += new instructions.Empty(null)
+                    instrs += new instructions.Empty(None)
                     instrs += new instructions.Label(merge)
                     instrs += instructions.MergeErrors
                     result(instrs += new instructions.Label(end))
@@ -125,12 +125,11 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
         case Attempt(alt)::alts_ =>
             val handler = state.freshLabel()
             val skip = state.freshLabel()
+            val merge = state.freshLabel()
             instrs += new instructions.PushHandlerAndState(handler, true, false)
             alt.codeGen >> {
                 instrs += new instructions.Label(handler)
-                instrs += new instructions.JumpGoodAttempt(skip)
-                val merge = state.freshLabel()
-                instrs += new instructions.PushHandler(merge)
+                instrs += new instructions.JumpGoodAttempt(skip, merge)
                 codeGenAlternatives(alts_) |> {
                     instrs += new instructions.Label(merge)
                     instrs += instructions.MergeErrors
@@ -140,13 +139,12 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
         case alt::alts_ =>
             val handler = state.freshLabel()
             val skip = state.freshLabel()
+            val merge = state.freshLabel()
             instrs += new instructions.InputCheck(handler, true)
             alt.codeGen >> {
                 instrs += new instructions.JumpGood(skip)
                 instrs += new instructions.Label(handler)
-                instrs += instructions.Catch
-                val merge = state.freshLabel()
-                instrs += new instructions.PushHandler(merge)
+                instrs += new instructions.Catch(merge)
                 codeGenAlternatives(alts_) |> {
                     instrs += new instructions.Label(merge)
                     instrs += instructions.MergeErrors
@@ -164,12 +162,12 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
         case (_, None)::tablified_ => foldTablified(tablified_, labelGen, roots, leads, labels, expecteds)
         case (root, Some(lead))::tablified_ =>
             val (c: Char, expected: ErrorItem) = lead match {
-                case ct@CharTok(d) => (d, if (ct.expected == null) Raw(d) else Desc(ct.expected))
-                case st@StringTok(s) => (s.head, if (st.expected == null) Raw(s) else Desc(st.expected))
-                case st@Specific(s) => (s.head, Desc(if (st.expected == null) s else st.expected))
-                case op@MaxOp(o) => (o.head, Desc(if (op.expected == null) o else op.expected))
-                case sl: StringLiteral => ('"', Desc(if (sl.expected == null) "string" else sl.expected))
-                case rs: RawStringLiteral => ('"', Desc(if (rs.expected == null) "string" else rs.expected))
+                case ct@CharTok(d) => (d, ct.expected.fold[ErrorItem](Raw(d))(Desc(_)))
+                case st@StringTok(s) => (s.head, st.expected.fold[ErrorItem](Raw(s))(Desc(_)))
+                case st@Specific(s) => (s.head, Desc(st.expected.getOrElse(s)))
+                case op@MaxOp(o) => (o.head, Desc(op.expected.getOrElse(o)))
+                case sl: StringLiteral => ('"', Desc(sl.expected.getOrElse("string")))
+                case rs: RawStringLiteral => ('"', Desc(rs.expected.getOrElse("string")))
             }
             if (roots.contains(c)) {
                 roots(c) = root::roots(c)
@@ -204,11 +202,11 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
     }
 }
 
-private [parsley] class Empty(val expected: UnsafeOption[String] = null)
+private [parsley] class Empty(val expected: Option[String] = None)
     extends SingletonExpect[Nothing]("empty", new Empty(_), new instructions.Empty(expected)) with MZero
 
 private [deepembedding] object <|> {
-    def empty[A, B]: A <|> B = new <|>(null, null)
+    def empty[A, B]: A <|> B = new <|>(???, ???)
     def apply[A, B](left: Parsley[A], right: Parsley[B]): A <|> B = empty.ready(left, right)
     def unapply[A, B](self: A <|> B): Option[(Parsley[A], Parsley[B])] = Some((self.left, self.right))
 }

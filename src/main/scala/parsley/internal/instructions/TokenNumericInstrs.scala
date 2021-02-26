@@ -2,7 +2,7 @@ package parsley.internal.instructions
 
 import parsley.character
 import parsley.internal.deepembedding.Sign.{SignType, IntType, DoubleType}
-import parsley.internal.UnsafeOption
+import parsley.internal.errors.{ErrorItem, Desc}
 
 import scala.annotation.tailrec
 
@@ -49,8 +49,8 @@ private [instructions] trait NumericReader {
     protected final val hexadecimal = subDecimal(16, character.isHexDigit)
 }
 
-private [internal] final class TokenNatural(_expected: UnsafeOption[String]) extends Instr with NumericReader {
-    val expected = if (_expected == null) "natural" else _expected
+private [internal] final class TokenNatural(_expected: Option[String]) extends Instr with NumericReader {
+    private [this] final val expected = Some(Desc(_expected.getOrElse("natural")))
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && ctx.nextChar == '0') {
             ctx.fastUncheckedConsumeChars(1)
@@ -76,8 +76,8 @@ private [internal] final class TokenNatural(_expected: UnsafeOption[String]) ext
     // $COVERAGE-ON$
 }
 
-private [internal] final class TokenFloat(_expected: UnsafeOption[String]) extends Instr {
-    val expected = if (_expected == null) "unsigned float" else _expected
+private [internal] final class TokenFloat(_expected: Option[String]) extends Instr {
+    private [this] final val expected = Some(Desc(_expected.getOrElse("unsigned float")))
     override def apply(ctx: Context): Unit = {
         val initialOffset = ctx.offset
         if (decimal(ctx)) {

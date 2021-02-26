@@ -2,9 +2,10 @@ package parsley.internal.instructions
 
 import Stack.{isEmpty, push}
 import parsley.internal.ResizableArray
-import parsley.internal.UnsafeOption
+import parsley.internal.errors.{ErrorItem, Desc}
 
-private [internal] final class Satisfies(f: Char => Boolean, expected: UnsafeOption[String]) extends Instr {
+private [internal] final class Satisfies(f: Char => Boolean, _expected: Option[String]) extends Instr {
+    private [this] final val expected = _expected.map(Desc)
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && f(ctx.nextChar)) ctx.pushAndContinue(ctx.consumeChar())
         else ctx.expectedFail(expected)
@@ -84,7 +85,7 @@ private [internal] final class Put(reg: Int) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [parsley] final class CalleeSave(var label: Int, _slots: List[Int]) extends JumpInstr with Stateful {
+private [parsley] final class CalleeSave(var label: Int, _slots: List[Int]) extends InstrWithLabel with Stateful {
     private val saveArray = new Array[AnyRef](_slots.length)
     private val slots = _slots.zipWithIndex
     private var inUse = false

@@ -1,7 +1,8 @@
 package parsley.internal.instructions
 
 import parsley.internal.ResizableArray
-import parsley.internal.UnsafeOption
+
+import parsley.internal.errors.{ErrorItem, Desc, TrivialError, FailError, WithReason, MergedErrors, WithLabel}
 
 private [internal] final class ApplyError(label: String) extends Instr {
     val isHide: Boolean = label.isEmpty
@@ -20,19 +21,14 @@ private [internal] final class ApplyError(label: String) extends Instr {
         }
         else {
             ctx.restoreHints()
-            // EERR
-            // the top of the error stack is adjusted:
-            if (ctx.offset == ctx.checkStack.head) ctx.errs.head = ctx.errs.head match {
-                // - if it is a fail, it is left alone
-                case err: FailError              => err
-                //  - otherwise if this is a hide, the expected set is discarded
-                case err: TrivialError if isHide => err.copy(expecteds = Set.empty)
-                //  - otherwise expected set is replaced by singleton containing this label
-                case err: TrivialError           => err.copy(expecteds = Set(Desc(label)))
+            ctx.errs.head = ctx.useHints {
+                // EERR
+                // the top of the error stack is adjusted:
+                if (ctx.offset == ctx.checkStack.head) WithLabel(ctx.errs.head, label)
+                // CERR
+                // do nothing
+                else ctx.errs.head
             }
-            // CERR
-            // do nothing
-            ctx.useHints()
             ctx.fail()
         }
         ctx.checkStack = ctx.checkStack.tail
@@ -52,7 +48,7 @@ private [internal] object MergeErrors extends Instr {
         else {
             val err2 = ctx.errs.head
             ctx.errs = ctx.errs.tail
-            ctx.errs.head = ctx.errs.head.merge(err2)
+            ctx.errs.head = MergedErrors(ctx.errs.head, err2)
             ctx.fail()
         }
     }
@@ -69,9 +65,10 @@ private [internal] class ApplyReason(reason: String) extends Instr {
             ctx.inc()
         }
         else {
-            ctx.errs.head = ctx.errs.head.giveReason(reason)
+            if (ctx.offset == ctx.checkStack.head) ctx.errs.head = new WithReason(ctx.errs.head, reason)
             ctx.fail()
         }
+        ctx.checkStack = ctx.checkStack.tail
     }
 
     // $COVERAGE-OFF$
@@ -86,8 +83,10 @@ private [internal] final class Fail(msg: String) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class Unexpected(msg: String, expected: UnsafeOption[String]) extends Instr {
-    override def apply(ctx: Context): Unit = ctx.unexpectedFail(expected = expected, unexpected = msg)
+private [internal] final class Unexpected(msg: String, _expected: Option[String]) extends Instr {
+    private [this] val expected = _expected.map(Desc)
+    private [this] val unexpected = Desc(msg)
+    override def apply(ctx: Context): Unit = ctx.unexpectedFail(expected, unexpected)
     // $COVERAGE-OFF$
     override def toString: String = s"Unexpected($msg)"
     // $COVERAGE-ON$
@@ -101,9 +100,10 @@ private [internal] final class FastFail[A](msggen: A=>String) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class FastUnexpected[A](msggen: A=>String, expected: UnsafeOption[String]) extends Instr {
-    private [this] val msggen_ = msggen.asInstanceOf[Any => String]
-    override def apply(ctx: Context): Unit = ctx.unexpectedFail(expected = expected, unexpected = msggen_(ctx.stack.upop()))
+private [internal] final class FastUnexpected[A](_msggen: A=>String, _expected: Option[String]) extends Instr {
+    private [this] def msggen(x: Any) = new Desc(_msggen(x.asInstanceOf[A]))
+    private [this] val expected = _expected.map(Desc)
+    override def apply(ctx: Context): Unit = ctx.unexpectedFail(expected = expected, unexpected = msggen(ctx.stack.upop()))
     // $COVERAGE-OFF$
     override def toString: String = "FastUnexpected(?)"
     // $COVERAGE-ON$

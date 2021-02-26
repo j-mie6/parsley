@@ -1,17 +1,17 @@
 package parsley.internal.deepembedding
 
 import ContOps.{result, ContAdapter}
-import parsley.internal.{UnsafeOption, instructions}
+import parsley.internal.instructions
 import parsley.registers.Reg
 
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.higherKinds
 
-private [parsley] final class CharTok(private [CharTok] val c: Char, val expected: UnsafeOption[String] = null)
+private [parsley] final class CharTok(private [CharTok] val c: Char, val expected: Option[String] = None)
     extends SingletonExpect[Char](s"char($c)", new CharTok(c, _), instructions.CharTok(c, expected))
 
-private [parsley] final class StringTok(private [StringTok] val s: String, val expected: UnsafeOption[String] = null)
+private [parsley] final class StringTok(private [StringTok] val s: String, val expected: Option[String] = None)
     extends SingletonExpect[String](s"string($s)", new StringTok(s, _), instructions.StringTok(s, expected)) {
     override def optimise: Parsley[String] = s match {
         case "" => new Pure("")
@@ -39,7 +39,7 @@ private [parsley] final class Lift3[A, B, C, D](private [Lift3] val f: (A, B, C)
     }
 }
 
-private [deepembedding] sealed abstract class FilterLike[A, B](_p: =>Parsley[A], pretty: String => String, empty: UnsafeOption[String] => FilterLike[A, B],
+private [deepembedding] sealed abstract class FilterLike[A, B](_p: =>Parsley[A], pretty: String => String, empty: Option[String] => FilterLike[A, B],
                                                                fail: A => Parsley[B], instr: instructions.Instr, pred: A => Boolean)
     extends Unary[A, B](_p)(pretty, empty) {
     final override val numInstrs = 1
@@ -53,13 +53,13 @@ private [deepembedding] sealed abstract class FilterLike[A, B](_p: =>Parsley[A],
 private [parsley] final class FastFail[A](_p: =>Parsley[A], msggen: A => String)
     extends FilterLike[A, Nothing](_p, c => s"$c ! ?", _ => FastFail.empty(msggen),
                                    x => new Fail(msggen(x)), new instructions.FastFail(msggen), _ => true) with MZero
-private [parsley] final class FastUnexpected[A](_p: =>Parsley[A], msggen: A => String, expected: UnsafeOption[String] = null)
-    extends FilterLike[A, Nothing](_p, c => s"$c.unexpected(?)", _ => FastFail.empty(msggen),
+private [parsley] final class FastUnexpected[A](_p: =>Parsley[A], msggen: A => String, expected: Option[String] = None)
+    extends FilterLike[A, Nothing](_p, c => s"$c.unexpected(?)", FastUnexpected.empty(msggen, _),
                                    x => new Unexpected(msggen(x), expected), new instructions.FastUnexpected(msggen, expected), _ => true) with MZero
-private [parsley] final class Filter[A](_p: =>Parsley[A], pred: A => Boolean, expected: UnsafeOption[String] = null)
+private [parsley] final class Filter[A](_p: =>Parsley[A], pred: A => Boolean, expected: Option[String] = None)
     extends FilterLike[A, A](_p, c => s"$c.filter(?)", Filter.empty(pred, _),
                              _ => new Empty(expected), new instructions.Filter(pred, expected), !pred(_))
-private [parsley] final class FilterOut[A](_p: =>Parsley[A], pred: PartialFunction[A, String], expected: UnsafeOption[String] = null)
+private [parsley] final class FilterOut[A](_p: =>Parsley[A], pred: PartialFunction[A, String], expected: Option[String] = None)
     extends FilterLike[A, A](_p, c => s"$c.filterOut(?)", FilterOut.empty(pred, _),
                              x => ErrorExplain(new Empty(expected), pred(x)), new instructions.FilterOut(pred, expected), pred.isDefinedAt(_))
 private [parsley] final class GuardAgainst[A](_p: =>Parsley[A], pred: PartialFunction[A, String])
@@ -88,7 +88,7 @@ private [parsley] final class If[A](_b: =>Parsley[Boolean], _p: =>Parsley[A], _q
         }
     }
 }
-private [parsley] final class Eof(val expected: UnsafeOption[String] = null)
+private [parsley] final class Eof(val expected: Option[String] = None)
     extends SingletonExpect[Unit]("eof", new Eof(_), new instructions.Eof(expected))
 
 private [parsley] final class Modify[S](val reg: Reg[S], f: S => S)
@@ -117,42 +117,33 @@ private [deepembedding] object StringTok {
     def unapply(self: StringTok): Option[String] = Some(self.s)
 }
 private [deepembedding] object Lift2 {
-    def empty[A, B, C](f: (A, B) => C): Lift2[A, B, C] = new Lift2(f, null, null)
-    def apply[A, B, C](f: (A, B) => C, left: Parsley[A], right: Parsley[B]): Lift2[A, B, C] = empty(f).ready(left, right)
+    def empty[A, B, C](f: (A, B) => C): Lift2[A, B, C] = new Lift2(f, ???, ???)
     def unapply[A, B, C](self: Lift2[A, B, C]): Option[((A, B) => C, Parsley[A], Parsley[B])] = Some((self.f, self.left, self.right))
 }
 private [deepembedding] object Lift3 {
-    def empty[A, B, C, D](f: (A, B, C) => D): Lift3[A, B, C, D] = new Lift3(f, null, null, null)
-    def apply[A, B, C, D](f: (A, B, C) => D, p: Parsley[A], q: Parsley[B], r: Parsley[C]): Lift3[A, B, C, D] = empty(f).ready(p, q, r)
+    def empty[A, B, C, D](f: (A, B, C) => D): Lift3[A, B, C, D] = new Lift3(f, ???, ???, ???)
     def unapply[A, B, C, D](self: Lift3[A, B, C, D]): Option[((A, B, C) => D, Parsley[A], Parsley[B], Parsley[C])] = {
         Some((self.f, self.first, self.second, self.third))
     }
 }
 private [deepembedding] object FastFail {
-    def empty[A](msggen: A => String): FastFail[A] = new FastFail(null, msggen)
-    def apply[A](p: Parsley[A], msggen: A => String): FastFail[A] = empty(msggen).ready(p)
+    def empty[A](msggen: A => String): FastFail[A] = new FastFail(???, msggen)
 }
 private [deepembedding] object FastUnexpected {
-    def empty[A](msggen: A => String, expected: UnsafeOption[String]): FastUnexpected[A] = new FastUnexpected(null, msggen, expected)
-    def apply[A](p: Parsley[A], msggen: A => String, expected: UnsafeOption[String]): FastUnexpected[A] = empty(msggen, expected).ready(p)
+    def empty[A](msggen: A => String, expected: Option[String]): FastUnexpected[A] = new FastUnexpected(???, msggen, expected)
 }
 private [deepembedding] object Filter {
-    def empty[A](pred: A => Boolean, expected: UnsafeOption[String]): Filter[A] = new Filter(null, pred, expected)
-    def apply[A](p: Parsley[A], pred: A => Boolean, expected: UnsafeOption[String]): Filter[A] = empty(pred, expected).ready(p)
+    def empty[A](pred: A => Boolean, expected: Option[String]): Filter[A] = new Filter(???, pred, expected)
 }
 private [deepembedding] object FilterOut {
-    def empty[A](pred: PartialFunction[A, String], expected: UnsafeOption[String]): FilterOut[A] = new FilterOut(null, pred, expected)
-    def apply[A](p: Parsley[A], pred: PartialFunction[A, String], expected: UnsafeOption[String]): FilterOut[A] = empty(pred, expected).ready(p)
+    def empty[A](pred: PartialFunction[A, String], expected: Option[String]): FilterOut[A] = new FilterOut(???, pred, expected)
 }
 private [deepembedding] object GuardAgainst {
-    def empty[A](pred: PartialFunction[A, String]): GuardAgainst[A] = new GuardAgainst(null, pred)
-    def apply[A](p: Parsley[A], pred: PartialFunction[A, String]): GuardAgainst[A] = empty(pred).ready(p)
+    def empty[A](pred: PartialFunction[A, String]): GuardAgainst[A] = new GuardAgainst(???, pred)
 }
 private [deepembedding] object If {
-    def empty[A]: If[A] = new If(null, null, null)
-    def apply[A](b: Parsley[Boolean], p: Parsley[A], q: Parsley[A]): If[A] = empty.ready(b, p, q)
+    def empty[A]: If[A] = new If(???, ???, ???)
 }
 private [deepembedding] object Local {
-    def empty[S, A](r: Reg[S]): Local[S, A] = new Local(r, null, null)
-    def apply[S, A](r: Reg[S], left: Parsley[S], right: Parsley[A]): Local[S, A] = empty(r).ready(left, right)
+    def empty[S, A](r: Reg[S]): Local[S, A] = new Local(r, ???, ???)
 }

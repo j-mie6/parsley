@@ -47,7 +47,7 @@ class CombinatorTests extends ParsleyTest {
     }
 
     "decide" must "succeed for Some" in {
-        decide('a' <#> (Option(_))).runParser("a") should be (Success('a'))
+        decide('a'.map(Option(_))).runParser("a") should be (Success('a'))
     }
     it must "fail for None" in {
         decide(pure(None)).runParser("") shouldBe a [Failure]

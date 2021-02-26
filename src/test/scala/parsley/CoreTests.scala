@@ -2,13 +2,15 @@ package parsley
 
 import parsley.{Reg => _}
 import parsley.Parsley.{lift2 => _, lift1 => _, lift3 => _, get => _, gets => _, modify => _, put => _, local => _, rollback => _, many => _, _}
-import parsley.combinator.many
+import parsley.combinator.{many, manyUntil}
 import parsley.lift._
 import parsley.character.{char, satisfy, digit, anyChar, string}
-import parsley.implicits.{charLift, stringLift}
+import parsley.implicits.{charLift, stringLift, Lift1}
 import parsley.registers._
 
 import scala.language.implicitConversions
+
+import java.io.File
 
 class CoreTests extends ParsleyTest {
     private val add: (Int, Int) => Int = _+_
@@ -60,10 +62,11 @@ class CoreTests extends ParsleyTest {
     // APPLICATIVE LAWS
     they must "obey the homomorphism law: pure f <*> pure x = pure (f x)" in {
         (pure(add1) <*> pure(42)).runParser("") should be (Success(43))
+        (pure(42) <**> pure(add1)).runParser("") should be (Success(43))
     }
 
     they must "obey the fmap law: pure f <*> p = f <$> p" in {
-        (pure(toUpper) <*> 'a').runParser("a") should equal ((toUpper <#> 'a').runParser("a"))
+        (pure(toUpper) <*> 'a').runParser("a") should equal ((toUpper.lift('a')).runParser("a"))
         (pure(toUpper) <*> ('a' <|> 'b')).runParser("a") should equal ((toUpper <#> ('a' <|> 'b')).runParser("a"))
         (pure(toUpper) <*> ('a' <|> 'b')).runParser("b") should equal ((toUpper <#> ('a' <|> 'b')).runParser("b"))
     }
@@ -134,6 +137,9 @@ class CoreTests extends ParsleyTest {
     it should "not try the second alternative if the first failed after consuming input" in {
         ("ab" <|> "ac").runParser("ac") shouldBe a [Failure]
     }
+    it should "not be affected by an empty on the left" in {
+        (Parsley.empty <|> 'a').runParser("b") shouldBe Failure("(line 1, column 1):\n  unexpected \"b\"\n  expected \"a\"\n  >b\n  >^")
+    }
 
     "attempt" should "cause <|> to try second alternative even if input consumed" in {
         attempt("ab").orElse("ac").runParser("ac") should not be a [Failure]
@@ -166,7 +172,7 @@ class CoreTests extends ParsleyTest {
         val p = (put(r1, 5)
               *> put(r2, 7)
               *> put(r1, lift2[Int, Int, Int](_+_, get(r1), get(r2)))
-              *> (get(r1) <~> gets(r2, (x: Int) => x+1)))
+              *> (get(r1) zip gets(r2, (x: Int) => x+1)))
         p.runParser("") should be (Success((12, 8)))
     }
     they should "be modifiable" in {
@@ -176,7 +182,7 @@ class CoreTests extends ParsleyTest {
     }
     they should "provide localised context" in {
         val r1 = Reg.make[Int]
-        val p = put(r1, 5) *> (local(r1, (x: Int) => x+1, get(r1)) <~> get(r1))
+        val p = put(r1, 5) *> (local(r1, (x: Int) => x+1, get(r1)) zip get(r1))
         val q = put(r1, 5) *> (local(r1, 6, get(r1)) <~> get(r1))
         p.runParser("") should be (Success((6, 5)))
         q.runParser("") should be (Success((6, 5)))
@@ -209,7 +215,7 @@ class CoreTests extends ParsleyTest {
         val p = put(r3, "hello world") *>
                 put(r1, 6) *>
                 combinator.optional(unit.flatMap(_ => put(r3, "hi") *> put(r2, 4) *> Parsley.empty)) *>
-                (get(r1) <~> get(r3))
+                (get(r1) zip get(r3))
         p.runParser("") shouldBe Success((6, "hi"))
     }
     they should "be able to be rolled back if they fail softly" in {
@@ -362,18 +368,7 @@ class CoreTests extends ParsleyTest {
         noException should be thrownBy uhoh.runParser("a")
     }
 
-    "parsers" should "be thread safe when ran correctly" ignore {
-        import scala.concurrent.{Future, ExecutionContext, Await, duration}, ExecutionContext.global, duration._
-        implicit val ec = global
-        lazy val p: Parsley[List[List[Char]]] = (('a' *> many('b' *> 'b' *> 'b')) <::> p) </> Nil
-        val as = 1000
-        val bs = 2000
-        val input = ("a" + "b" * (bs * 3)) * as
-        val output = Success(List.fill[Char](as, bs)('b'))
-
-        val futs = Future.traverse(1 to 16)(_ => Future(p.runParser(input)))
-        for (out <- Await.result(futs, 10.second)) {
-            out should be (output)
-        }
+    "parseFromFile" should "work" in {
+        (manyUntil(anyChar, "Jamie Willis") *> anyChar).parseFromFile(new File("LICENSE")) shouldBe Success('\n')
     }
 }
