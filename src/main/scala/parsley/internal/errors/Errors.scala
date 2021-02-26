@@ -9,22 +9,6 @@ private [internal] sealed abstract class ParseError {
     val col: Int
     val line: Int
 
-    final def merge(that: ParseError): ParseError = {
-        if (this.offset < that.offset) that
-        else if (this.offset > that.offset) this
-        else (this, that) match {
-            case (_: FailError, _: TrivialError) => this
-            case (_: TrivialError, _: FailError) => that
-            case (_this: FailError, _that: FailError) => FailError(offset, line, col, _this.msgs union _that.msgs)
-            case (TrivialError(_, _, _, u1, es1, rs1), TrivialError(_, _, _, u2, es2, rs2)) =>
-                val u = (u1, u2) match {
-                    case (Some(u1), Some(u2)) => Some(ErrorItem.higherPriority(u1, u2))
-                    case _ => u1.orElse(u2)
-                }
-                TrivialError(offset, line, col, u, es1 union es2, rs1 union rs2)
-        }
-    }
-
     def withHints(hints: Iterable[Set[ErrorItem]]): ParseError
     def giveReason(reason: String): ParseError
     def pretty(sourceName: Option[String])(implicit helper: LineBuilder): String

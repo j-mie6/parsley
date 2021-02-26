@@ -24,7 +24,7 @@ private [internal] final class ApplyError(label: String) extends Instr {
             ctx.errs.head = ctx.useHints {
                 // EERR
                 // the top of the error stack is adjusted:
-                if (ctx.offset == ctx.checkStack.head) new WithLabel(ctx.errs.head, label)
+                if (ctx.offset == ctx.checkStack.head) WithLabel(ctx.errs.head, label)
                 // CERR
                 // do nothing
                 else ctx.errs.head
@@ -48,7 +48,7 @@ private [internal] object MergeErrors extends Instr {
         else {
             val err2 = ctx.errs.head
             ctx.errs = ctx.errs.tail
-            ctx.errs.head = new MergedErrors(ctx.errs.head, err2)
+            ctx.errs.head = MergedErrors(ctx.errs.head, err2)
             ctx.fail()
         }
     }

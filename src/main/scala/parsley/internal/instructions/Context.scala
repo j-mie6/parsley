@@ -88,9 +88,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     /* ERROR RELABELLING BEGIN */
     private [instructions] def mergeHints(): Unit = {
         val hintFrame = this.hintStack.head
-        if (hintFrame.validOffset == offset) {
-            this.hints = MergeHints(hintFrame.hints, this.hints)
-        }
+        if (hintFrame.validOffset == offset) this.hints = MergeHints(hintFrame.hints, this.hints)
         commitHints()
     }
     private [instructions] def replaceHint(label: String): Unit = hints = ReplaceHint(label, hints)

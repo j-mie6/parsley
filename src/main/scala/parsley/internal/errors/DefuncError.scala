@@ -73,12 +73,32 @@ private [internal] case class MultiExpectedError(offset: Int, line: Int, col: In
     }
 }
 
-private [internal] case class MergedErrors(err1: DefuncError, err2: DefuncError) extends DefuncError {
+private [errors] case class MergedErrors private (err1: DefuncError, err2: DefuncError) extends DefuncError {
     val isTrivialError: Boolean = err1.isTrivialError && err2.isTrivialError
     val isExpectedEmpty: Boolean = !isTrivialError || err1.isExpectedEmpty && err2.isExpectedEmpty
-    val offset = Math.max(err1.offset, err2.offset)
+    // So long as the MergedErrors factory checks that they are equal we can pick arbitrarily
+    val offset = err1.offset //Math.max(err1.offset, err2.offset)
+    // This has been optimised assuming the factory is doing its job
     override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
-        err1.asParseError.merge(err2.asParseError)
+        val err1_ = err1.asParseError
+        ((err1_, err2.asParseError): @unchecked) match {
+            case (_this: FailError, _that: FailError) => FailError(offset, err1_.line, err1_.col, _this.msgs union _that.msgs)
+            case (TrivialError(_, _, _, u1, es1, rs1), TrivialError(_, _, _, u2, es2, rs2)) =>
+                val u = (u1, u2) match {
+                    case (Some(u1), Some(u2)) => Some(ErrorItem.higherPriority(u1, u2))
+                    case _ => u1.orElse(u2)
+                }
+                TrivialError(offset, err1_.line, err1_.col, u, es1 union es2, rs1 union rs2)
+        }
+    }
+}
+private [internal] object MergedErrors {
+    def apply(err1: DefuncError, err2: DefuncError): DefuncError = {
+        if (err1.offset > err2.offset) err1
+        else if (err2.offset > err1.offset) err2
+        else if (!err1.isTrivialError && err2.isTrivialError) err1
+        else if (err1.isTrivialError && !err2.isTrivialError) err2
+        else new MergedErrors(err1, err2)
     }
 }
 
@@ -108,18 +128,23 @@ private [internal] case class WithReason(err: DefuncError, reason: String) exten
     }
 }
 
-private [internal] case class WithLabel(err: DefuncError, label: String) extends DefuncError {
-    val isTrivialError: Boolean = err.isTrivialError
+private [errors] case class WithLabel private (err: DefuncError, label: String) extends DefuncError {
+    // So long as the WithLabel factory ensures the err is trivial this is true
+    val isTrivialError: Boolean = true //err.isTrivialError
     val isExpectedEmpty: Boolean = label.isEmpty
     val offset = err.offset
     override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
-        err.asParseError match {
-            // - if it is a fail, it is left alone
-            case err: FailError                     => err
+        (err.asParseError: @unchecked) match {
             //  - otherwise if this is a hide, the expected set is discarded
             case err: TrivialError if label.isEmpty => err.copy(expecteds = Set.empty)
             //  - otherwise expected set is replaced by singleton containing this label
             case err: TrivialError                  => err.copy(expecteds = Set(Desc(label)))
         }
+    }
+}
+private [internal] object WithLabel {
+    def apply(err: DefuncError, label: String): DefuncError = {
+        if (err.isTrivialError) new WithLabel(err, label)
+        else err
     }
 }
