@@ -12,9 +12,6 @@ private [internal] sealed abstract class DefuncHints {
         buff.toList
     }
     private [errors] def collect(buff: mutable.ListBuffer[Set[ErrorItem]])(implicit builder: ErrorItemBuilder): Unit
-    private [internal] def check(hints: Iterable[Set[ErrorItem]])(implicit builder: ErrorItemBuilder): Unit = {
-        assert(hints.toList == toList, "hints should match")
-    }
 }
 
 private [internal] case object EmptyHints extends DefuncHints {

@@ -82,20 +82,20 @@ private [internal] case class MergedErrors(err1: DefuncError, err2: DefuncError)
     }
 }
 
-private [errors] case class WithHints private (err: DefuncError, hints: List[Set[ErrorItem]]) extends DefuncError {
+private [errors] case class WithHints private (err: DefuncError, hints: DefuncHints) extends DefuncError {
     val isTrivialError: Boolean = err.isTrivialError
     // So long as the WithHints factory ensures hints is nonEmpty this is false
     val isExpectedEmpty: Boolean = false //err.isExpectedEmpty && hints.isEmpty
     val offset = err.offset
     override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
-        err.asParseError.withHints(hints)
+        err.asParseError.withHints(hints.toList)
     }
 }
 
 private [internal] object WithHints {
-    def apply(err: DefuncError, hints: Iterable[Set[ErrorItem]], defuncHints: DefuncHints): DefuncError = {
+    def apply(err: DefuncError, hints: DefuncHints): DefuncError = {
         if (hints.isEmpty || !err.isTrivialError) err
-        else new WithHints(err, hints.toList)
+        else new WithHints(err, hints)
     }
 }
 

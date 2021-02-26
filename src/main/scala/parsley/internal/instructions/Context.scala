@@ -28,7 +28,7 @@ private [parsley] object Context {
     private [Context] final class State(val offset: Int, val line: Int, val col: Int) {
         override def toString: String = s"$offset ($line, $col)"
     }
-    private [Context] final class Hints(val hints: mutable.ListBuffer[Set[ErrorItem]], val defuncHints: DefuncHints, val validOffset: Int) {
+    private [Context] final class Hints(val hints: DefuncHints, val validOffset: Int) {
         override def toString: String = s"($validOffset, $hints)"
     }
 }
@@ -66,22 +66,19 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     private [instructions] var debuglvl: Int = 0
 
     // NEW ERROR MECHANISMS
-    private var hints = mutable.ListBuffer.empty[Set[ErrorItem]]
-    private var defuncHints: DefuncHints = EmptyHints
+    private var hints: DefuncHints = EmptyHints
     private var hintsValidOffset = 0
     private var hintStack = Stack.empty[Hints]
     private [instructions] var errs: Stack[DefuncError] = Stack.empty
 
     private [instructions] def saveHints(shadow: Boolean): Unit = {
-        hintStack = push(hintStack, new Hints(hints, defuncHints, hintsValidOffset))
-        hints = if (shadow) hints.clone else mutable.ListBuffer.empty
-        if (!shadow) defuncHints = EmptyHints
+        hintStack = push(hintStack, new Hints(hints, hintsValidOffset))
+        if (!shadow) hints = EmptyHints
     }
     private [instructions] def restoreHints(): Unit = {
         val hintFrame = this.hintStack.head
         this.hintsValidOffset = hintFrame.validOffset
         this.hints = hintFrame.hints
-        this.defuncHints = hintFrame.defuncHints
         this.commitHints()
     }
     private [instructions] def commitHints(): Unit = {
@@ -90,47 +87,25 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
 
     /* ERROR RELABELLING BEGIN */
     private [instructions] def mergeHints(): Unit = {
-        val newHints = this.hints
         val hintFrame = this.hintStack.head
         if (hintFrame.validOffset == offset) {
-            this.hints = hintFrame.hints
-            this.hints ++= newHints
-            this.defuncHints = MergeHints(hintFrame.defuncHints, this.defuncHints)
+            this.hints = MergeHints(hintFrame.hints, this.hints)
         }
         commitHints()
     }
-    private [instructions] def replaceHint(label: String): Unit = {
-        if (hints.nonEmpty) hints(0) = Set(new Desc(label))
-        defuncHints = ReplaceHint(label, defuncHints)
-    }
-    private [instructions] def popHints: Unit = {
-        if (hints.nonEmpty) hints.remove(0)
-        defuncHints = PopHints(defuncHints)
-    }
+    private [instructions] def replaceHint(label: String): Unit = hints = ReplaceHint(label, hints)
+    private [instructions] def popHints: Unit = hints = PopHints(hints)
     /* ERROR RELABELLING END */
 
-    private def addErrorToHints(): Unit = {/*errs.head.asParseError match {
-        case TrivialError(errOffset, _, _, _, es, _) if errOffset == offset && es.nonEmpty =>
-            // If our new hints have taken place further in the input stream, then they must invalidate the old ones
-            if (hintsValidOffset < offset) {
-                hints.clear()
-                defuncHints = EmptyHints
-                hintsValidOffset = offset
-            }
-            hints += es
-            defuncHints = AddError(defuncHints, errs.head)
-        case _ =>*/
+    private def addErrorToHints(): Unit = {
         val err = errs.head
         if (err.isTrivialError && err.offset == offset && !err.isExpectedEmpty) {
             // If our new hints have taken place further in the input stream, then they must invalidate the old ones
             if (hintsValidOffset < offset) {
-                hints.clear()
-                defuncHints = EmptyHints
+                hints = EmptyHints
                 hintsValidOffset = offset
             }
-            val TrivialError(_, _, _, _, es, _) = err.asParseError
-            hints += es
-            defuncHints = new AddError(defuncHints, err)
+            hints = new AddError(hints, err)
         }
     }
     private [instructions] def addErrorToHintsAndPop(): Unit = {
@@ -159,14 +134,13 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
            |  checks    = ${mkString(checkStack, ":")}[]
            |  registers = ${regs.zipWithIndex.map{case (r, i) => s"r$i = $r"}.mkString("\n              ")}
            |  errors    = ${mkString(errs, ":")}[]
-           |  hints     = ($hintsValidOffset, ${hints}, ${defuncHints.toList}):${mkString(hintStack, ":")}[]
+           |  hints     = ($hintsValidOffset, ${hints.toList}):${mkString(hintStack, ":")}[]
            |]""".stripMargin
     }
     // $COVERAGE-ON$
 
     @tailrec @inline private [parsley] def runParser[A](): Result[A] = {
         //println(pretty)
-        defuncHints.check(hints)
         if (status eq Failed) Failure(errs.head.asParseError.pretty(sourceName))
         else if (pc < instrs.length) {
             instrs(pc)(this)
@@ -205,11 +179,10 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
 
     private [instructions] def pushError(err: DefuncError): Unit = this.errs = push(this.errs, this.useHints(err))
     private [instructions] def useHints(err: DefuncError): DefuncError = {
-        if (hintsValidOffset == offset) WithHints(err, hints, defuncHints)
+        if (hintsValidOffset == offset) WithHints(err, hints)
         else {
             hintsValidOffset = offset
-            hints.clear()
-            defuncHints = EmptyHints
+            hints = EmptyHints
             err
         }
     }
@@ -308,9 +281,8 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         line = 1
         col = 1
         debuglvl = 0
-        hints.clear()
         hintsValidOffset = 0
-        defuncHints = EmptyHints
+        hints = EmptyHints
         hintStack = Stack.empty
         this
     }
