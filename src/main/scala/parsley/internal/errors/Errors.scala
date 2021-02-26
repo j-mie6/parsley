@@ -31,13 +31,6 @@ private [internal] sealed abstract class ParseError {
         val topStr = posStr(sourceName)
         val (line, caret) = helper.getLineWithCaret(offset)
         val info = infoLines.filter(_.nonEmpty).mkString("\n  ")
-        // TODO: Add preamble of parse error?
-        // Apparently, multi-line strings use whatever line endings the file has instead of platform-independent LIKE EVERYTHING ELSE
-        // So we can't use them without breaking the error messages on Windows.
-        /*s"""$topStr:
-           |  ${if (info.isEmpty) Unknown else info}
-           |  >${line}
-           |  >${caret}""".stripMargin*/
         s"$topStr:\n  ${if (info.isEmpty) Unknown else info}\n  >${line}\n  >${caret}"
     }
 }
