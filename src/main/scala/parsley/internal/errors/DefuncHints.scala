@@ -19,12 +19,12 @@ private [internal] sealed abstract class DefuncHints {
 
 private [internal] case object EmptyHints extends DefuncHints {
     val size = 0
-    def collect(buff: mutable.ListBuffer[Set[ErrorItem]])(implicit builder: ErrorItemBuilder) = ()
+    def collect(buff: mutable.ListBuffer[Set[ErrorItem]])(implicit builder: ErrorItemBuilder): Unit = ()
 }
 
 private [internal] case class PopHints private (hints: DefuncHints) extends DefuncHints {
     val size = hints.size - 1
-    def collect(buff: mutable.ListBuffer[Set[ErrorItem]])(implicit builder: ErrorItemBuilder) = {
+    def collect(buff: mutable.ListBuffer[Set[ErrorItem]])(implicit builder: ErrorItemBuilder): Unit = {
         hints.collect(buff)
         buff.remove(0)
     }
@@ -35,7 +35,7 @@ private [internal] object PopHints {
 
 private [errors] case class ReplaceHint private (label: String, hints: DefuncHints) extends DefuncHints {
     val size = hints.size
-    def collect(buff: mutable.ListBuffer[Set[ErrorItem]])(implicit builder: ErrorItemBuilder) = {
+    def collect(buff: mutable.ListBuffer[Set[ErrorItem]])(implicit builder: ErrorItemBuilder): Unit = {
         hints.collect(buff)
         buff(0) = Set(Desc(label))
     }
@@ -46,7 +46,7 @@ private [internal] object ReplaceHint {
 
 private [errors] case class MergeHints private (oldHints: DefuncHints, newHints: DefuncHints) extends DefuncHints {
     val size = oldHints.size + newHints.size
-    def collect(buff: mutable.ListBuffer[Set[ErrorItem]])(implicit builder: ErrorItemBuilder) = {
+    def collect(buff: mutable.ListBuffer[Set[ErrorItem]])(implicit builder: ErrorItemBuilder): Unit = {
         oldHints.collect(buff)
         buff ++= newHints.toList
     }
@@ -61,7 +61,7 @@ private [internal] object MergeHints {
 
 private [internal] case class AddError(hints: DefuncHints, err: DefuncError) extends DefuncHints {
     val size = hints.size + 1
-    def collect(buff: mutable.ListBuffer[Set[ErrorItem]])(implicit builder: ErrorItemBuilder) = {
+    def collect(buff: mutable.ListBuffer[Set[ErrorItem]])(implicit builder: ErrorItemBuilder): Unit = {
         hints.collect(buff)
         val TrivialError(_, _, _, _, es, _) = err.asParseError
         buff += es
