@@ -6,29 +6,36 @@ import parsley.internal.errors.{
     TrivialError,
     ErrorItem, Desc,
     LineBuilder, ErrorItemBuilder,
-    DefuncError, ClassicExpectedError, ClassicExpectedErrorWithReason, ClassicFancyError, ClassicUnexpectedError, WithHints
+    DefuncError, ClassicExpectedError, ClassicExpectedErrorWithReason, ClassicFancyError, ClassicUnexpectedError, WithHints,
+    DefuncHints, EmptyHints, MergeHints, ReplaceHint, PopHints, AddError
 }
+import Context.{Frame, State, Handler, Hints}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
 
-// Private internals
-private [instructions] final class Frame(val ret: Int, val instrs: Array[Instr]) {
-    override def toString: String = s"[$instrs@$ret]"
-}
-private [instructions] final class Handler(val depth: Int, val pc: Int, var stacksz: Int) {
-    override def toString: String = s"Handler@$depth:$pc(-${stacksz + 1})"
-}
-private [instructions] final class State(val offset: Int, val line: Int, val col: Int) {
-    override def toString: String = s"$offset ($line, $col)"
-}
-private [instructions] final class Hints(val hints: mutable.ListBuffer[Set[ErrorItem]], val validOffset: Int) {
-    override def toString: String = s"($validOffset, $hints)"
+private [parsley] object Context {
+    private [Context] val NumRegs = 4
+    private [parsley] def empty: Context = new Context(null, "")
+
+    // Private internals
+    private [Context] final class Frame(val ret: Int, val instrs: Array[Instr]) {
+        override def toString: String = s"[$instrs@$ret]"
+    }
+    private [Context] final class Handler(val depth: Int, val pc: Int, var stacksz: Int) {
+        override def toString: String = s"Handler@$depth:$pc(-${stacksz + 1})"
+    }
+    private [Context] final class State(val offset: Int, val line: Int, val col: Int) {
+        override def toString: String = s"$offset ($line, $col)"
+    }
+    private [Context] final class Hints(val hints: mutable.ListBuffer[Set[ErrorItem]], val defuncHints: DefuncHints, val validOffset: Int) {
+        override def toString: String = s"($validOffset, $hints)"
+    }
 }
 
 private [parsley] final class Context(private [instructions] var instrs: Array[Instr],
                                       private [instructions] var input: String,
-                                      private [instructions] val sourceName: Option[String] = None) {
+                                      private val sourceName: Option[String] = None) {
     /** This is the operand stack, where results go to live  */
     private [instructions] val stack: ArrayStack[Any] = new ArrayStack()
     /** Current offset into the input */
@@ -36,7 +43,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     /** The length of the input, stored for whatever reason */
     private [instructions] var inputsz: Int = input.length
     /** Call stack consisting of Frames that track the return position and the old instructions */
-    private [instructions] var calls: Stack[Frame] = Stack.empty
+    private var calls: Stack[Frame] = Stack.empty
     /** State stack consisting of offsets and positions that can be rolled back */
     private [instructions] var states: Stack[State] = Stack.empty
     /** Stack consisting of offsets at previous checkpoints, which may query to test for consumed input */
@@ -46,7 +53,7 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     /** Stack of handlers, which track the call depth, program counter and stack size of error handlers */
     private [instructions] var handlers: Stack[Handler] = Stack.empty
     /** Current size of the call stack */
-    private [instructions] var depth: Int = 0
+    private var depth: Int = 0
     /** Current offset into program instruction buffer */
     private [instructions] var pc: Int = 0
     /** Current line number */
@@ -54,24 +61,27 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
     /** Current column number */
     private [instructions] var col: Int = 1
     /** State held by the registers, AnyRef to allow for `null` */
-    private [instructions] var regs: Array[AnyRef] = new Array[AnyRef](Context.NumRegs)
+    private [instructions] val regs: Array[AnyRef] = new Array[AnyRef](Context.NumRegs)
     /** Amount of indentation to apply to debug combinators output */
     private [instructions] var debuglvl: Int = 0
 
     // NEW ERROR MECHANISMS
     private var hints = mutable.ListBuffer.empty[Set[ErrorItem]]
+    private var defuncHints: DefuncHints = EmptyHints
     private var hintsValidOffset = 0
     private var hintStack = Stack.empty[Hints]
     private [instructions] var errs: Stack[DefuncError] = Stack.empty
 
     private [instructions] def saveHints(shadow: Boolean): Unit = {
-        hintStack = push(hintStack, new Hints(hints, hintsValidOffset))
+        hintStack = push(hintStack, new Hints(hints, defuncHints, hintsValidOffset))
         hints = if (shadow) hints.clone else mutable.ListBuffer.empty
+        if (!shadow) defuncHints = EmptyHints
     }
     private [instructions] def restoreHints(): Unit = {
         val hintFrame = this.hintStack.head
         this.hintsValidOffset = hintFrame.validOffset
         this.hints = hintFrame.hints
+        this.defuncHints = hintFrame.defuncHints
         this.commitHints()
     }
     private [instructions] def commitHints(): Unit = {
@@ -85,24 +95,43 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         if (hintFrame.validOffset == offset) {
             this.hints = hintFrame.hints
             this.hints ++= newHints
+            this.defuncHints = MergeHints(hintFrame.defuncHints, this.defuncHints)
         }
         commitHints()
     }
     private [instructions] def replaceHint(label: String): Unit = {
         if (hints.nonEmpty) hints(0) = Set(new Desc(label))
+        defuncHints = ReplaceHint(label, defuncHints)
     }
-    private [instructions] def popHints: Unit = if (hints.nonEmpty) hints.remove(0)
+    private [instructions] def popHints: Unit = {
+        if (hints.nonEmpty) hints.remove(0)
+        defuncHints = PopHints(defuncHints)
+    }
     /* ERROR RELABELLING END */
 
-    private def addErrorToHints(): Unit = errs.head.asParseError match {
+    private def addErrorToHints(): Unit = {/*errs.head.asParseError match {
         case TrivialError(errOffset, _, _, _, es, _) if errOffset == offset && es.nonEmpty =>
             // If our new hints have taken place further in the input stream, then they must invalidate the old ones
             if (hintsValidOffset < offset) {
                 hints.clear()
+                defuncHints = EmptyHints
                 hintsValidOffset = offset
             }
             hints += es
-        case _ =>
+            defuncHints = AddError(defuncHints, errs.head)
+        case _ =>*/
+        val err = errs.head
+        if (err.isTrivialError && err.offset == offset && !err.isExpectedEmpty) {
+            // If our new hints have taken place further in the input stream, then they must invalidate the old ones
+            if (hintsValidOffset < offset) {
+                hints.clear()
+                defuncHints = EmptyHints
+                hintsValidOffset = offset
+            }
+            val TrivialError(_, _, _, _, es, _) = err.asParseError
+            hints += es
+            defuncHints = new AddError(defuncHints, err)
+        }
     }
     private [instructions] def addErrorToHintsAndPop(): Unit = {
         this.addErrorToHints()
@@ -130,13 +159,14 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
            |  checks    = ${mkString(checkStack, ":")}[]
            |  registers = ${regs.zipWithIndex.map{case (r, i) => s"r$i = $r"}.mkString("\n              ")}
            |  errors    = ${mkString(errs, ":")}[]
-           |  hints     = ($hintsValidOffset, ${hints}):${mkString(hintStack, ":")}[]
+           |  hints     = ($hintsValidOffset, ${hints}, ${defuncHints.toList}):${mkString(hintStack, ":")}[]
            |]""".stripMargin
     }
     // $COVERAGE-ON$
 
     @tailrec @inline private [parsley] def runParser[A](): Result[A] = {
         //println(pretty)
+        defuncHints.check(hints)
         if (status eq Failed) Failure(errs.head.asParseError.pretty(sourceName))
         else if (pc < instrs.length) {
             instrs(pc)(this)
@@ -175,10 +205,11 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
 
     private [instructions] def pushError(err: DefuncError): Unit = this.errs = push(this.errs, this.useHints(err))
     private [instructions] def useHints(err: DefuncError): DefuncError = {
-        if (hintsValidOffset == offset) new WithHints(err, hints)
+        if (hintsValidOffset == offset) WithHints(err, hints, defuncHints)
         else {
             hintsValidOffset = offset
             hints.clear()
+            defuncHints = EmptyHints
             err
         }
     }
@@ -277,6 +308,10 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         line = 1
         col = 1
         debuglvl = 0
+        hints.clear()
+        hintsValidOffset = 0
+        defuncHints = EmptyHints
+        hintStack = Stack.empty
         this
     }
 
@@ -299,10 +334,4 @@ private [parsley] final class Context(private [instructions] var instrs: Array[I
         def charAt(offset: Int): Char = Context.this.input.charAt(offset)
         def substring(offset: Int, size: Int): String = Context.this.input.substring(offset, Math.min(offset + size, Context.this.inputsz))
     }
-}
-
-private [parsley] object Context {
-    private [Context] val NumRegs = 4
-    def empty: Context = new Context(null, "")
-    val emptyExpected = Set.empty[ErrorItem]
 }

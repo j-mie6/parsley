@@ -5,9 +5,10 @@ package parsley.internal.errors
  * these case classes. This means that every error message created will be done in a single
  * O(1) allocation, avoiding anything to do with the underlying sets, options etc.
  */
-private [internal] sealed trait DefuncError {
+private [internal] sealed abstract class DefuncError {
     val isTrivialError: Boolean
     val isExpectedEmpty: Boolean
+    val offset: Int
     def asParseError(implicit builder: ErrorItemBuilder): ParseError
     protected final def expectedSet(errorItem: Option[ErrorItem]): Set[ErrorItem] = errorItem match {
         case None => ParseError.NoItems
@@ -75,22 +76,33 @@ private [internal] case class MultiExpectedError(offset: Int, line: Int, col: In
 private [internal] case class MergedErrors(err1: DefuncError, err2: DefuncError) extends DefuncError {
     val isTrivialError: Boolean = err1.isTrivialError && err2.isTrivialError
     val isExpectedEmpty: Boolean = !isTrivialError || err1.isExpectedEmpty && err2.isExpectedEmpty
+    val offset = Math.max(err1.offset, err2.offset)
     override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
         err1.asParseError.merge(err2.asParseError)
     }
 }
 
-private [internal] case class WithHints(err: DefuncError, hints: Iterable[Set[ErrorItem]]) extends DefuncError {
+private [errors] case class WithHints private (err: DefuncError, hints: List[Set[ErrorItem]]) extends DefuncError {
     val isTrivialError: Boolean = err.isTrivialError
-    val isExpectedEmpty: Boolean = err.isExpectedEmpty || hints.exists(_.nonEmpty)
+    // So long as the WithHints factory ensures hints is nonEmpty this is false
+    val isExpectedEmpty: Boolean = false //err.isExpectedEmpty && hints.isEmpty
+    val offset = err.offset
     override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
         err.asParseError.withHints(hints)
+    }
+}
+
+private [internal] object WithHints {
+    def apply(err: DefuncError, hints: Iterable[Set[ErrorItem]], defuncHints: DefuncHints): DefuncError = {
+        if (hints.isEmpty || !err.isTrivialError) err
+        else new WithHints(err, hints.toList)
     }
 }
 
 private [internal] case class WithReason(err: DefuncError, reason: String) extends DefuncError {
     val isTrivialError: Boolean = err.isTrivialError
     val isExpectedEmpty: Boolean = err.isExpectedEmpty
+    val offset = err.offset
     override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
         err.asParseError.giveReason(reason)
     }
@@ -99,6 +111,7 @@ private [internal] case class WithReason(err: DefuncError, reason: String) exten
 private [internal] case class WithLabel(err: DefuncError, label: String) extends DefuncError {
     val isTrivialError: Boolean = err.isTrivialError
     val isExpectedEmpty: Boolean = label.isEmpty
+    val offset = err.offset
     override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
         err.asParseError match {
             // - if it is a fail, it is left alone

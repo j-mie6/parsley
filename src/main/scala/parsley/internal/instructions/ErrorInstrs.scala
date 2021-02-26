@@ -66,9 +66,9 @@ private [internal] class ApplyReason(reason: String) extends Instr {
         }
         else {
             if (ctx.offset == ctx.checkStack.head) ctx.errs.head = new WithReason(ctx.errs.head, reason)
-            ctx.checkStack = ctx.checkStack.tail
             ctx.fail()
         }
+        ctx.checkStack = ctx.checkStack.tail
     }
 
     // $COVERAGE-OFF$

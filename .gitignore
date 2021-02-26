@@ -12,3 +12,8 @@ target/
 .jvmopts
 *.class
 *.log
+.vscode
+.metals
+.bloop
+project/project
+project/metals.sbt
