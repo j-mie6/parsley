@@ -2,6 +2,13 @@ package parsley.internal.errors
 
 import scala.collection.mutable
 
+// TODO: We can optimise the way this works by adding "do-not-compute" indices during evaluation
+// This means that merging hints does not need to make a new buffer and unneeded work can be skipped
+// entirely.
+// TODO: After this system is in place, we need a similar one which tracks what indices of each object
+// have made it into the final value already. If an object is encountered again (i.e. during a merge)
+// we can safely discard the computation of all values which have already appeared in the output: this
+// reduces the potential complexity of the evaluator down from O(2^n) down to O(n)
 private [internal] sealed abstract class DefuncHints {
     private [errors] val size: Int
     private [errors] def nonEmpty: Boolean = size != 0
