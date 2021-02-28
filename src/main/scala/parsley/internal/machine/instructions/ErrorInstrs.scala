@@ -1,5 +1,6 @@
-package parsley.internal.instructions
+package parsley.internal.machine.instructions
 
+import parsley.internal.machine.{Context, Good}
 import parsley.internal.ResizableArray
 
 import parsley.internal.errors.{ErrorItem, Desc, TrivialError, FailError, WithReason, MergedErrors, WithLabel}
@@ -12,7 +13,7 @@ private [internal] final class ApplyError(label: String) extends Instr {
             if (isHide) ctx.popHints
             // EOK
             // replace the head of the hints with the singleton for our label
-            else if (ctx.offset == ctx.checkStack.head) ctx.replaceHint(label)
+            else if (ctx.offset == ctx.checkStack.offset) ctx.replaceHint(label)
             // COK
             // do nothing
             ctx.mergeHints()
@@ -21,13 +22,13 @@ private [internal] final class ApplyError(label: String) extends Instr {
         }
         else {
             ctx.restoreHints()
-            ctx.errs.head = ctx.useHints {
+            ctx.errs.error = ctx.useHints {
                 // EERR
                 // the top of the error stack is adjusted:
-                if (ctx.offset == ctx.checkStack.head) WithLabel(ctx.errs.head, label)
+                if (ctx.offset == ctx.checkStack.offset) WithLabel(ctx.errs.error, label)
                 // CERR
                 // do nothing
-                else ctx.errs.head
+                else ctx.errs.error
             }
             ctx.fail()
         }
@@ -46,9 +47,9 @@ private [internal] object MergeErrors extends Instr {
             ctx.inc()
         }
         else {
-            val err2 = ctx.errs.head
+            val err2 = ctx.errs.error
             ctx.errs = ctx.errs.tail
-            ctx.errs.head = MergedErrors(ctx.errs.head, err2)
+            ctx.errs.error = MergedErrors(ctx.errs.error, err2)
             ctx.fail()
         }
     }
@@ -65,7 +66,7 @@ private [internal] class ApplyReason(reason: String) extends Instr {
             ctx.inc()
         }
         else {
-            if (ctx.offset == ctx.checkStack.head) ctx.errs.head = new WithReason(ctx.errs.head, reason)
+            if (ctx.offset == ctx.checkStack.offset) ctx.errs.error = new WithReason(ctx.errs.error, reason)
             ctx.fail()
         }
         ctx.checkStack = ctx.checkStack.tail

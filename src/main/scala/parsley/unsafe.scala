@@ -1,6 +1,6 @@
 package parsley
 
-import parsley.internal.instructions
+import parsley.internal.machine
 import parsley.internal.deepembedding
 
 /** This module contains various things that shouldn't be used without care and caution
@@ -17,7 +17,7 @@ object unsafe {
       * @return A fresh execution context for parsers
       * @since 1.6.0
       */
-    def giveContext: Context = new Context(instructions.Context.empty)
+    def giveContext: Context = new Context(machine.Context.empty)
 
     /** This class enables a bunch of unsafe running functionality on parsers, which makes them run faster
       * at the cost of thread-safety. Use at your own risk.
@@ -43,7 +43,7 @@ object unsafe {
         def runParserFastUnsafe(input: String): Result[A] = ctx.internal(p.internal.instrs, input).runParser()
     }
 
-    final class Context private [parsley] (private [parsley] val internal: instructions.Context)
+    final class Context private [parsley] (private [parsley] val internal: machine.Context)
 
     // Internals
     private [parsley] val internalCtx = giveContext

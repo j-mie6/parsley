@@ -1,7 +1,8 @@
-package parsley.internal.instructions
+package parsley.internal.machine.instructions
 
 import parsley.internal.deepembedding
-import Stack.isEmpty
+import parsley.internal.machine.{Context, Good}
+import parsley.internal.machine.stacks.{HandlerStack, Stack}, Stack.StackExt
 
 import scala.collection.mutable.ListBuffer
 
@@ -56,7 +57,7 @@ private [internal] final class ChainPost(var label: Int) extends InstrWithLabel 
                 val op = ctx.stack.upop()
                 acc = ctx.stack.upeek
                 ctx.stack.exchange(op)
-                ctx.handlers.head.stacksz -= 1
+                ctx.handlers.stacksz -= 1
             }
             acc = ctx.stack.pop[Any => Any]()(acc)
             ctx.updateCheckOffsetAndHints()
@@ -115,7 +116,7 @@ private [internal] final class Chainl(var label: Int) extends InstrWithLabel wit
                 // after this point, the inputCheck will roll back one too many items on the stack, because this item
                 // was consumed. It should be adjusted
                 acc = op(ctx.stack.upop(), y)
-                ctx.handlers.head.stacksz -= 1
+                ctx.handlers.stacksz -= 1
             }
             else acc = op(acc, y)
             ctx.updateCheckOffsetAndHints()
@@ -141,7 +142,7 @@ private [internal] final class Chainl(var label: Int) extends InstrWithLabel wit
 
 private [instructions] sealed trait DualHandler {
     final protected def checkForFirstHandlerAndPop(ctx: Context, otherwise: =>Unit)(action: =>Unit) = {
-        if (!isEmpty(ctx.handlers) && ctx.handlers.head.pc == ctx.pc) {
+        if (!ctx.handlers.isEmpty && ctx.handlers.pc == ctx.pc) {
             ctx.handlers = ctx.handlers.tail
             action
         }
@@ -199,7 +200,7 @@ private [internal] final class SepEndBy1(var label: Int) extends InstrWithLabel 
             popSecondHandlerAndJump(ctx, label)
         }
         else {
-            val check = ctx.checkStack.head
+            val check = ctx.checkStack.offset
             // presence of first handler indicates p succeeded and sep didn't
             checkForFirstHandlerAndPop(ctx, ()) {
                 acc += ctx.stack.upop()

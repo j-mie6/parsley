@@ -1,6 +1,6 @@
-package parsley.internal.instructions
+package parsley.internal.machine.instructions
 
-import Stack.{isEmpty, push}
+import parsley.internal.machine.{Context, Good, Recover, Failed}
 import parsley.internal.ResizableArray
 import parsley.internal.deepembedding.Parsley
 import parsley.internal.errors.{ErrorItem, Desc, ParseError, TrivialError, EmptyError}, ParseError.NoReason

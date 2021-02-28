@@ -2,7 +2,7 @@ package parsley.internal.deepembedding
 
 import parsley.token.TokenSet
 import Sign.SignType
-import parsley.internal.instructions
+import parsley.internal.machine.instructions
 
 private [parsley] final class WhiteSpace(ws: TokenSet, start: String, end: String, line: String, nested: Boolean)
     extends Singleton[Unit]("whiteSpace", new instructions.TokenWhiteSpace(ws, start, end, line, nested))

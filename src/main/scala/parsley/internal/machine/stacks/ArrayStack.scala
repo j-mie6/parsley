@@ -1,9 +1,9 @@
-package parsley.internal.instructions
+package parsley.internal.machine.stacks
 
 // Designed to replace the operational stack
 // Since elements are of type Any, this serves as a optimised implementation
 // Its success may result in the deprecation of the Stack class in favour of a generic version of this!
-private [instructions] final class ArrayStack[A](initialSize: Int = ArrayStack.DefaultSize) {
+private [machine] final class ArrayStack[A](initialSize: Int = ArrayStack.DefaultSize) {
     private [this] var array: Array[Any] = new Array(initialSize)
     private [this] var sp = -1
 
@@ -51,6 +51,6 @@ private [instructions] final class ArrayStack[A](initialSize: Int = ArrayStack.D
         }
     }
 }
-private [instructions] object ArrayStack {
+private [machine] object ArrayStack {
     val DefaultSize = 8
 }

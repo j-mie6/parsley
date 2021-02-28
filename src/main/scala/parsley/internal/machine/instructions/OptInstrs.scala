@@ -1,12 +1,13 @@
-package parsley.internal.instructions
+package parsley.internal.machine.instructions
 
 import parsley.XCompat._
-import Stack.push
+import parsley.internal.machine.{Context, Good}
 
 import scala.annotation.tailrec
 import scala.language.implicitConversions
 import scala.collection.mutable
 import parsley.internal.errors.{ErrorItem, Desc, MultiExpectedError}
+import parsley.internal.machine.stacks.ErrorStack
 
 private [internal] final class Perform[-A, +B](_f: A => B) extends Instr {
     private [Perform] val f = _f.asInstanceOf[Any => B]
@@ -125,7 +126,7 @@ private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int]
     }
 
     private def addErrors(ctx: Context): Unit = {
-        ctx.errs = push(ctx.errs, new MultiExpectedError(ctx.offset, ctx.line, ctx.col, errorItems))
+        ctx.errs = new ErrorStack(new MultiExpectedError(ctx.offset, ctx.line, ctx.col, errorItems), ctx.errs)
         ctx.pushHandler(merge)
     }
 

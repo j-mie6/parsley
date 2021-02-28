@@ -1,7 +1,8 @@
-package parsley.internal.instructions
+package parsley.internal.machine.instructions
 
 import parsley.token.TokenSet
 import parsley.internal.errors.{ErrorItem, Desc}
+import parsley.internal.machine.Context
 
 import scala.annotation.tailrec
 
@@ -154,7 +155,7 @@ private [instructions] sealed trait TokenStringLike extends Instr {
         if (ctx.moreInput) ctx.nextChar match {
                 case '"' =>
                     ctx.fastUncheckedConsumeChars(1)
-                    ctx.pushAndContinue(builder.toString)
+                    ctx.pushAndContinue(builder.result())
                 case '\\' =>
                     ctx.fastUncheckedConsumeChars(1)
                     if (handleEscaped(ctx, builder)) restOfString(ctx, builder)
@@ -169,7 +170,7 @@ private [instructions] sealed trait TokenStringLike extends Instr {
     final override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && ctx.nextChar == '"') {
             ctx.fastUncheckedConsumeChars(1)
-            restOfString(ctx, new StringBuilder())
+            restOfString(ctx, new StringBuilder)
         }
         else ctx.expectedFail(expectedString)
     }
