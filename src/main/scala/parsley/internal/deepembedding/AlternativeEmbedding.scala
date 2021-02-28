@@ -1,7 +1,7 @@
 package parsley.internal.deepembedding
 
 import ContOps.{result, ContAdapter}
-import parsley.internal.instructions
+import parsley.internal.machine.instructions
 import parsley.internal.errors.{ErrorItem, Raw, Desc}
 
 import scala.annotation.tailrec

@@ -1,6 +1,6 @@
 package parsley
 
-import parsley.internal.instructions.Context
+import parsley.internal.machine.Context
 import parsley.internal.deepembedding
 import parsley.expr.chain
 import parsley.combinator.{option, some}

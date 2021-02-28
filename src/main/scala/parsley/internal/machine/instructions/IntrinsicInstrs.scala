@@ -1,7 +1,6 @@
-package parsley.internal.instructions
+package parsley.internal.machine.instructions
 
-import Stack.isEmpty
-
+import parsley.internal.machine.{Context, Good}
 import parsley.internal.errors.{Desc, Raw, EmptyError, EmptyErrorWithReason, StringTokError}
 
 import scala.annotation.tailrec

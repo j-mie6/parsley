@@ -1,5 +1,6 @@
-package parsley.internal.instructions
+package parsley.internal.machine.instructions
 
+import parsley.internal.machine.Context
 import parsley.internal.deepembedding.Sign.{SignType, IntType, DoubleType}
 import parsley.token.TokenSet
 import parsley.internal.Radix

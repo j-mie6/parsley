@@ -7,6 +7,7 @@ import parsley.combinator.some
 import parsley.expr._
 import parsley.implicits.charLift
 import parsley.unsafe.ErrorLabel
+import machine.instructions
 
 import scala.language.implicitConversions
 
