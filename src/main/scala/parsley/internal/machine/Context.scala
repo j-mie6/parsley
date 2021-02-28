@@ -238,9 +238,13 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     private [machine] def restoreState(): Unit = {
         val state = states
         states = states.tail
-        offset = state.offset
-        line = state.line
-        col = state.col
+        restoreState(state.offset, state.line, state.col)
+    }
+    private [machine] def restoreState(save: SavePoint): Unit = restoreState(save.offset, save.line, save.col)
+    private def restoreState(offset: Int, line: Int, col: Int): Unit = {
+        this.offset = offset
+        this.line = line
+        this.col = col
     }
     private [machine] def writeReg(reg: Int, x: Any): Unit = {
         regs(reg) = x.asInstanceOf[AnyRef]

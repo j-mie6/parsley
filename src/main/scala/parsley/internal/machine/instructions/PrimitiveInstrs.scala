@@ -1,6 +1,6 @@
 package parsley.internal.machine.instructions
 
-import parsley.internal.machine.{Context, Good}
+import parsley.internal.machine.{Context, Good, SavePoint}
 import parsley.internal.ResizableArray
 import parsley.internal.errors.{ErrorItem, Desc}
 
@@ -33,6 +33,24 @@ private [internal] object Attempt extends Instr {
     override def toString: String = "Attempt"
     // $COVERAGE-ON$
 }
+
+private [internal] object Tell extends Instr {
+    override def apply(ctx: Context): Unit = ctx.pushAndContinue(new SavePoint(ctx.offset, ctx.line, ctx.col))
+    // $COVERAGE-OFF$
+    override def toString: String = "Tell"
+    // $COVERAGE-ON$
+}
+private [internal] object Seek extends Instr {
+    override def apply(ctx: Context): Unit = {
+        val save = ctx.stack.rotAndPop[SavePoint]()
+        ctx.restoreState(save)
+        ctx.inc()
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = "Seek"
+    // $COVERAGE-ON$
+}
+
 
 private [internal] object Look extends Instr {
     override def apply(ctx: Context): Unit = {

@@ -26,7 +26,15 @@ private [deepembedding] sealed abstract class ScopedUnary[A, B](_p: =>Parsley[A]
     }
 }
 private [parsley] final class Attempt[A](_p: =>Parsley[A]) extends ScopedUnary[A, A](_p, "attempt", false, _ => Attempt.empty, instructions.Attempt)
-private [parsley] final class Look[A](_p: =>Parsley[A]) extends ScopedUnary[A, A](_p, "lookAhead", true, _ => Look.empty, instructions.Look)
+private [parsley] final class Look[A](_p: =>Parsley[A]) extends Unary[A, A](_p)(c => s"lookAhead($c)", _ => Look.empty) {
+    final override val numInstrs = 2
+    final override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
+        instrs += instructions.Tell
+        p.codeGen |> {
+            instrs += instructions.Seek
+        }
+    }
+}
 private [parsley] final class NotFollowedBy[A](_p: =>Parsley[A], val expected: Option[String] = None)
     extends ScopedUnary[A, Unit](_p, "notFollowedBy", true, NotFollowedBy.empty, new instructions.NotFollowedBy(expected)) {
     override def optimise: Parsley[Unit] = p match {
