@@ -4,7 +4,7 @@ import parsley.internal.machine.instructions.Instr
 import scala.annotation.tailrec
 
 private [machine] final class CallStack(val ret: Int, val instrs: Array[Instr], val tail: CallStack)
-object CallStack extends Stack[CallStack] {
+private [machine] object CallStack extends Stack[CallStack] {
     implicit val inst: Stack[CallStack] = this
     type ElemTy = (Int, Array[Instr])
     override protected def show(x: ElemTy): String = x._1.toString

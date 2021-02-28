@@ -1,7 +1,7 @@
 package parsley.internal.machine.stacks
 
 private [machine] final class CheckStack(var offset: Int, val tail: CheckStack)
-object CheckStack extends Stack[CheckStack] {
+private [machine] object CheckStack extends Stack[CheckStack] {
     implicit val inst: Stack[CheckStack] = this
     type ElemTy = Int
     override protected def show(x: ElemTy): String = x.toString
