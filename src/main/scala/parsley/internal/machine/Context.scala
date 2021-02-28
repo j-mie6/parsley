@@ -68,9 +68,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         this.hints = hintFrame.hints
         this.commitHints()
     }
-    private [machine] def commitHints(): Unit = {
-        this.hintStack = this.hintStack.tail
-    }
+    private [machine] def commitHints(): Unit = this.hintStack = this.hintStack.tail
 
     /* ERROR RELABELLING BEGIN */
     private [machine] def mergeHints(): Unit = {
@@ -171,15 +169,11 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         }
     }
 
-    private [machine] def failWithMessage(msg: String): Unit = {
-        this.fail(new ClassicFancyError(offset, line, col, msg))
-    }
+    private [machine] def failWithMessage(msg: String): Unit = this.fail(new ClassicFancyError(offset, line, col, msg))
     private [machine] def unexpectedFail(expected: Option[ErrorItem], unexpected: ErrorItem): Unit = {
         this.fail(new ClassicUnexpectedError(offset, line, col, expected, unexpected))
     }
-    private [machine] def expectedFail(expected: Option[ErrorItem]): Unit = {
-        this.fail(new ClassicExpectedError(offset, line, col, expected))
-    }
+    private [machine] def expectedFail(expected: Option[ErrorItem]): Unit = this.fail(new ClassicExpectedError(offset, line, col, expected))
     private [machine] def expectedFail(expected: Option[ErrorItem], reason: String): Unit = {
         this.fail(new ClassicExpectedErrorWithReason(offset, line, col, expected, reason))
     }
@@ -246,9 +240,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         this.line = line
         this.col = col
     }
-    private [machine] def writeReg(reg: Int, x: Any): Unit = {
-        regs(reg) = x.asInstanceOf[AnyRef]
-    }
+    private [machine] def writeReg(reg: Int, x: Any): Unit = regs(reg) = x.asInstanceOf[AnyRef]
 
     // Allows us to reuse a context, helpful for benchmarking and potentially user applications
     private [parsley] def apply(_instrs: Array[Instr], _input: String): Context = {
