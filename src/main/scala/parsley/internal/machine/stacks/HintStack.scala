@@ -4,7 +4,7 @@ import parsley.internal.errors.DefuncHints
 
 private [machine] final class HintStack(val hints: DefuncHints, val validOffset: Int, val tail: HintStack)
 object HintStack extends Stack[HintStack] {
-    implicit val inst = this
+    implicit val inst: Stack[HintStack] = this
     type ElemTy = (DefuncHints, Int)
     override protected def show(x: ElemTy): String = {
         val (hints, validOffset) = x
