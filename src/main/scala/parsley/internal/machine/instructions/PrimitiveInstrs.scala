@@ -42,8 +42,7 @@ private [internal] object Tell extends Instr {
 }
 private [internal] object Seek extends Instr {
     override def apply(ctx: Context): Unit = {
-        val save = ctx.stack.rotAndPop[SavePoint]()
-        ctx.restoreState(save)
+        ctx.restoreState(ctx.stack.rotAndPop[SavePoint]())
         ctx.inc()
     }
     // $COVERAGE-OFF$
@@ -51,8 +50,7 @@ private [internal] object Seek extends Instr {
     // $COVERAGE-ON$
 }
 
-
-private [internal] object Look extends Instr {
+/*private [internal] object Look extends Instr {
     override def apply(ctx: Context): Unit = {
         ctx.restoreHints()
         if (ctx.status eq Good) {
@@ -68,7 +66,7 @@ private [internal] object Look extends Instr {
     // $COVERAGE-OFF$
     override def toString: String = "Look"
     // $COVERAGE-ON$
-}
+}*/
 
 // Position Extractors
 private [internal] object Line extends Instr {
