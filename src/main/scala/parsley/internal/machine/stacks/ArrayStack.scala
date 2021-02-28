@@ -32,11 +32,6 @@ private [machine] final class ArrayStack[A](initialSize: Int = ArrayStack.Defaul
     def pop[B <: A](): B = upop().asInstanceOf[B]
     def upeek: Any = array(sp)
     def peek[B <: A]: B = upeek.asInstanceOf[B]
-    def rot(): Unit = {
-        val x = array(sp)
-        array(sp) = array(sp-1)
-        array(sp-1) = x
-    }
     def rotAndPop[B <: A](): B = {
         val x = array(sp-1)
         array(sp-1) = array(sp)
