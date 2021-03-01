@@ -73,12 +73,6 @@ class ErrorMessageTests extends ParsleyTest {
             Failure("(line 1, column 1):\n  hi\n  >b\n  >^")
         }
     }
-    // Not anymore it doesn't!
-    /*it should "produce an expected message under influence of ?, along with original message" in {
-        ('a' <|> (Parsley.fail("oops") ? "hi")).runParser("b") should be {
-            Failure("(line 1, column 1):\n  unexpected \"b\"\n  expected \"a\" or hi\n  oops\n\n    b\n    ^")
-        }
-    }*/
 
     "unexpected" should "yield changes to unexpected messages" in {
         unexpected("bee").runParser("b") should be {
@@ -88,6 +82,32 @@ class ErrorMessageTests extends ParsleyTest {
     it should "produce expected message under influence of ?, along with original message" in {
         ('a' <|> unexpected("bee") ? "something less cute").runParser("b") should be {
             Failure("(line 1, column 1):\n  unexpected bee\n  expected \"a\" or something less cute\n  >b\n  >^")
+        }
+    }
+
+    "lookAhead" should "produce no hints following it" in {
+        val p = 'a' <|> lookAhead(optional(digit) *> 'c') <|> 'b'
+        p.runParser("d") shouldBe {
+            Failure("(line 1, column 1):\n  unexpected \"d\"\n  expected \"a\", \"b\", \"c\", or digit\n  >d\n  >^")
+        }
+        val q = 'a' <|> lookAhead(optional(digit)) *> 'c' <|> 'b'
+        q.runParser("d") shouldBe {
+            Failure("(line 1, column 1):\n  unexpected \"d\"\n  expected \"a\", \"b\", or \"c\"\n  >d\n  >^")
+        }
+        val r = 'a' <|> lookAhead(digit) *> 'c' <|> 'b'
+        r.runParser("d") shouldBe {
+            Failure("(line 1, column 1):\n  unexpected \"d\"\n  expected \"a\", \"b\", or digit\n  >d\n  >^")
+        }
+    }
+
+    "notFollowedBy" should "produce no hints" in {
+        val p = 'a' <|> notFollowedBy(optional(digit)) *> 'c' <|> 'b'
+        p.runParser("d") shouldBe {
+            Failure("(line 1, column 1):\n  unexpected \"d\"\n  expected \"a\" or \"b\"\n  >d\n  >^")
+        }
+        val q = 'a' <|> notFollowedBy(digit) *> 'c' <|> 'b'
+        q.runParser("d") shouldBe {
+            Failure("(line 1, column 1):\n  unexpected \"d\"\n  expected \"a\", \"b\", or \"c\"\n  >d\n  >^")
         }
     }
 

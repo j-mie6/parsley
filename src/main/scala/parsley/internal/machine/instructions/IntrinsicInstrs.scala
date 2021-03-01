@@ -151,7 +151,8 @@ private [internal] final class NotFollowedBy(_expected: Option[String]) extends 
         // A previous success is a failure
         if (ctx.status eq Good) {
             ctx.handlers = ctx.handlers.tail
-            ctx.unexpectedFail(expected = expected, unexpected = new Raw(ctx.stack.upop().toString))
+            // TODO: Perhaps we could use the same mechanism as string?
+            ctx.expectedFail(expected)
         }
         // A failure is what we wanted
         else {
