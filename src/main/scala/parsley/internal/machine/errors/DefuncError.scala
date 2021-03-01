@@ -1,4 +1,6 @@
-package parsley.internal.errors
+package parsley.internal.machine.errors
+
+import parsley.internal.errors.{ParseError, TrivialError, FailError, ErrorItem, Desc}
 
 /* This file contains the defunctionalised forms of the error messages.
  * Essentially, whenever an error is created in the machine, it should make use of one of

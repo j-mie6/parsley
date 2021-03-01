@@ -3,7 +3,8 @@ package parsley.internal.machine.instructions
 import parsley.internal.machine.{Context, Good, Recover, Failed}
 import parsley.internal.ResizableArray
 import parsley.internal.deepembedding.Parsley
-import parsley.internal.errors.{ErrorItem, Desc, ParseError, TrivialError, EmptyError}, ParseError.NoReason
+import parsley.internal.errors.{ErrorItem, Desc}
+import parsley.internal.machine.errors.EmptyError
 
 import scala.annotation.tailrec
 

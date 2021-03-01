@@ -1,4 +1,6 @@
-package parsley.internal.errors
+package parsley.internal.machine.errors
+
+import parsley.internal.errors.{TrivialError, ErrorItem, Desc}
 
 import scala.collection.mutable
 
@@ -9,11 +11,11 @@ import scala.collection.mutable
 // have made it into the final value already. If an object is encountered again (i.e. during a merge)
 // we can safely discard the computation of all values which have already appeared in the output: this
 // reduces the potential complexity of the evaluator down from O(2^n) down to O(n)
-private [internal] sealed abstract class DefuncHints {
+private [machine] sealed abstract class DefuncHints {
     private [errors] val size: Int
     private [errors] def nonEmpty: Boolean = size != 0
     private [errors] def isEmpty: Boolean = size == 0
-    private [internal] def toList(implicit builder: ErrorItemBuilder): List[Set[ErrorItem]] = {
+    private [machine] def toList(implicit builder: ErrorItemBuilder): List[Set[ErrorItem]] = {
         val buff = mutable.ListBuffer.empty[Set[ErrorItem]]
         collect(buff)
         buff.toList
@@ -21,19 +23,19 @@ private [internal] sealed abstract class DefuncHints {
     private [errors] def collect(buff: mutable.ListBuffer[Set[ErrorItem]])(implicit builder: ErrorItemBuilder): Unit
 }
 
-private [internal] case object EmptyHints extends DefuncHints {
+private [machine] case object EmptyHints extends DefuncHints {
     val size = 0
     def collect(buff: mutable.ListBuffer[Set[ErrorItem]])(implicit builder: ErrorItemBuilder): Unit = ()
 }
 
-private [internal] case class PopHints private (hints: DefuncHints) extends DefuncHints {
+private [machine] case class PopHints private (hints: DefuncHints) extends DefuncHints {
     val size = hints.size - 1
     def collect(buff: mutable.ListBuffer[Set[ErrorItem]])(implicit builder: ErrorItemBuilder): Unit = {
         hints.collect(buff)
         buff.remove(0)
     }
 }
-private [internal] object PopHints {
+private [machine] object PopHints {
     def apply(hints: DefuncHints): DefuncHints = if (hints.size > 1) new PopHints(hints) else EmptyHints
 }
 
@@ -44,7 +46,7 @@ private [errors] case class ReplaceHint private (label: String, hints: DefuncHin
         buff(0) = Set(Desc(label))
     }
 }
-private [internal] object ReplaceHint {
+private [machine] object ReplaceHint {
     def apply(label: String, hints: DefuncHints): DefuncHints = if (hints.nonEmpty) new ReplaceHint(label, hints) else hints
 }
 
@@ -55,7 +57,7 @@ private [errors] case class MergeHints private (oldHints: DefuncHints, newHints:
         buff ++= newHints.toList
     }
 }
-private [internal] object MergeHints {
+private [machine] object MergeHints {
     def apply(oldHints: DefuncHints, newHints: DefuncHints): DefuncHints = {
         if (oldHints.isEmpty) newHints
         else if (newHints.isEmpty) oldHints
@@ -63,7 +65,7 @@ private [internal] object MergeHints {
     }
 }
 
-private [internal] case class AddError(hints: DefuncHints, err: DefuncError) extends DefuncHints {
+private [machine] case class AddError(hints: DefuncHints, err: DefuncError) extends DefuncHints {
     val size = hints.size + 1
     def collect(buff: mutable.ListBuffer[Set[ErrorItem]])(implicit builder: ErrorItemBuilder): Unit = {
         hints.collect(buff)
