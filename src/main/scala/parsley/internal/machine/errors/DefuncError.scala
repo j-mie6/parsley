@@ -76,7 +76,8 @@ private [internal] case class MultiExpectedError(offset: Int, line: Int, col: In
 }
 
 private [errors] case class MergedErrors private (err1: DefuncError, err2: DefuncError) extends DefuncError {
-    val isTrivialError: Boolean = err1.isTrivialError && err2.isTrivialError
+    // So long as the MergedErrors factory checks for parity and offset checks this is fine
+    val isTrivialError: Boolean = err1.isTrivialError
     val isExpectedEmpty: Boolean = !isTrivialError || err1.isExpectedEmpty && err2.isExpectedEmpty
     // So long as the MergedErrors factory checks that they are equal we can pick arbitrarily
     val offset = err1.offset //Math.max(err1.offset, err2.offset)
@@ -105,7 +106,8 @@ private [internal] object MergedErrors {
 }
 
 private [errors] case class WithHints private (err: DefuncError, hints: DefuncHints) extends DefuncError {
-    val isTrivialError: Boolean = err.isTrivialError
+    // So long as the WithHints factory ensures the err is trivial this is true
+    val isTrivialError: Boolean = true //err.isTrivialError
     // So long as the WithHints factory ensures hints is nonEmpty this is false
     val isExpectedEmpty: Boolean = false //err.isExpectedEmpty && hints.isEmpty
     val offset = err.offset
