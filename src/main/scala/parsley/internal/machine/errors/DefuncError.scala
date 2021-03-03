@@ -112,7 +112,7 @@ private [errors] case class WithHints private (err: DefuncError, hints: DefuncHi
     val isExpectedEmpty: Boolean = false //err.isExpectedEmpty && hints.isEmpty
     val offset = err.offset
     override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
-        err.asParseError.withHints(hints.toList)
+        err.asParseError.withHints(hints.toSet)
     }
 }
 

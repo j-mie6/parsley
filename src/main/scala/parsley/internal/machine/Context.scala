@@ -118,7 +118,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
            |  checks    = ${checkStack.mkString(", ")}
            |  registers = ${regs.zipWithIndex.map{case (r, i) => s"r$i = $r"}.mkString("\n              ")}
            |  errors    = ${errs.mkString(", ")}
-           |  hints     = ($hintsValidOffset, ${hints.toList}):${hintStack.mkString(", ")}
+           |  hints     = ($hintsValidOffset, ${hints.toSet}):${hintStack.mkString(", ")}
            |]""".stripMargin
     }
     // $COVERAGE-ON$

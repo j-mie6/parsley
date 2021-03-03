@@ -15,7 +15,10 @@ private [machine] sealed abstract class DefuncHints {
     private [errors] val size: Int
     private [errors] def nonEmpty: Boolean = size != 0
     private [errors] def isEmpty: Boolean = size == 0
-    private [machine] def toList(implicit builder: ErrorItemBuilder): List[Set[ErrorItem]] = {
+    private [machine] def toSet(implicit builder: ErrorItemBuilder): Set[ErrorItem] = {
+        toList.foldLeft(Set.empty[ErrorItem])(_ union _)
+    }
+    private [errors] def toList(implicit builder: ErrorItemBuilder): List[Set[ErrorItem]] = {
         val buff = mutable.ListBuffer.empty[Set[ErrorItem]]
         collect(buff)
         buff.toList
