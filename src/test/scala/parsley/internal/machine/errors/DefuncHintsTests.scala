@@ -18,8 +18,8 @@ class DefuncHintsTests extends ParsleyTest {
     "EmptyHints" should "have size 0" in {
         EmptyHints shouldBe 'isEmpty
     }
-    it should "yield an empty list" in {
-        EmptyHints.toList shouldBe empty
+    it should "yield an empty set" in {
+        EmptyHints.toSet shouldBe empty
     }
 
     "AddError" should "should increase the size" in {
@@ -34,7 +34,7 @@ class DefuncHintsTests extends ParsleyTest {
         val hints_ = PopHints(hints)
         hints should have size 2
         hints_ should have size 1
-        hints_.toList should contain only (Set(Desc("b")))
+        hints_.toSet should contain only (Desc("b"))
         PopHints(hints_) shouldBe empty
     }
 
@@ -43,7 +43,7 @@ class DefuncHintsTests extends ParsleyTest {
     }
     it should "replace the first set otherwise" in {
         val hints = ReplaceHint("hi", AddError(AddError(EmptyHints, mkErr("a", "c")), mkErr("b")))
-        hints.toList should contain inOrderOnly (Set(Desc("hi")), Set(Desc("b")))
+        hints.toSet should contain only (Desc("hi"), Desc("b"))
     }
 
     "MergeHints" should "ensure all elements from both hints" in {
