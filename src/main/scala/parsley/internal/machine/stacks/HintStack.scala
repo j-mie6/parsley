@@ -1,6 +1,6 @@
 package parsley.internal.machine.stacks
 
-import parsley.internal.errors.DefuncHints
+import parsley.internal.machine.errors.DefuncHints
 
 private [machine] final class HintStack(val hints: DefuncHints, val validOffset: Int, val tail: HintStack)
 private [machine] object HintStack extends Stack[HintStack] {

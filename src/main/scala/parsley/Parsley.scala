@@ -62,7 +62,12 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: deepe
       * @return Either a success with a value of type `A` or a failure with error message
       * @since 2.3.0
       */
-    def parseFromFile(file: File): Result[A] = new Context(internal.threadSafeInstrs, Source.fromFile(file).mkString, Some(file.getName)).runParser()
+    def parseFromFile(file: File): Result[A] = {
+        val src = Source.fromFile(file)
+        val input = src.mkString
+        src.close()
+        new Context(internal.threadSafeInstrs, input, Some(file.getName)).runParser()
+    }
 }
 /** This object contains the core "function-style" combinators as well as the implicit classes which provide
   * the "method-style" combinators. All parsers will likely require something from within! */

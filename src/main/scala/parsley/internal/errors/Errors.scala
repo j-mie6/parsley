@@ -9,7 +9,7 @@ private [internal] sealed abstract class ParseError {
     val col: Int
     val line: Int
 
-    def withHints(hints: Iterable[Set[ErrorItem]]): ParseError
+    def withHints(hints: Set[ErrorItem]): ParseError
     def giveReason(reason: String): ParseError
     def pretty(sourceName: Option[String])(implicit helper: LineBuilder): String
 
@@ -38,7 +38,7 @@ private [internal] sealed abstract class ParseError {
 private [internal] case class TrivialError(offset: Int, line: Int, col: Int,
                                            unexpected: Option[ErrorItem], expecteds: Set[ErrorItem], reasons: Set[String])
     extends ParseError {
-    def withHints(hints: Iterable[Set[ErrorItem]]): ParseError = copy(expecteds = hints.foldLeft(expecteds)(_ union _))
+    def withHints(hints: Set[ErrorItem]): ParseError = copy(expecteds = expecteds union hints)
     def giveReason(reason: String): ParseError = copy(reasons = reasons + reason)
 
     def pretty(sourceName: Option[String])(implicit helper: LineBuilder): String = {
@@ -49,7 +49,7 @@ private [internal] case class TrivialError(offset: Int, line: Int, col: Int,
     private def expectedInfo: Option[String] = disjunct(expecteds.map(_.msg).toList).map(es => s"expected $es")
 }
 private [internal] case class FailError(offset: Int, line: Int, col: Int, msgs: Set[String]) extends ParseError {
-    def withHints(hints: Iterable[Set[ErrorItem]]): ParseError = this
+    def withHints(hints: Set[ErrorItem]): ParseError = this
     def giveReason(reason: String): ParseError = this
     def pretty(sourceName: Option[String])(implicit helper: LineBuilder): String = {
         assemble(sourceName, msgs.toList)

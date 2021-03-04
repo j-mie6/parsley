@@ -6,7 +6,8 @@ import parsley.internal.machine.{Context, Good}
 import scala.annotation.tailrec
 import scala.language.implicitConversions
 import scala.collection.mutable
-import parsley.internal.errors.{ErrorItem, Desc, MultiExpectedError}
+import parsley.internal.errors.{ErrorItem, Desc}
+import parsley.internal.machine.errors.MultiExpectedError
 import parsley.internal.machine.stacks.ErrorStack
 
 private [internal] final class Perform[-A, +B](_f: A => B) extends Instr {

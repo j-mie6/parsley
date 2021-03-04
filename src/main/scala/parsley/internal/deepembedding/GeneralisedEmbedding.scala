@@ -100,8 +100,7 @@ private [deepembedding] abstract class Ternary[A, B, C, D](__first: =>Parsley[A]
         (implicit seen: Set[Parsley[_]], state: LetFinderState, label: Option[String]): Cont[Unit, Unit] = {
         _first.findLets >> _second.findLets >> _third.findLets
     }
-    final override def preprocess[Cont[_, +_]: ContOps, D_ >: D](implicit seen: Set[Parsley[_]], sub: SubMap,
-                                                           label: Option[String]): Cont[Unit, Parsley[D_]] =
+    final override def preprocess[Cont[_, +_]: ContOps, D_ >: D](implicit seen: Set[Parsley[_]], sub: SubMap, label: Option[String]): Cont[Unit, Parsley[D_]] =
         for (first <- _first.optimised; second <- _second.optimised; third <- _third.optimised) yield {
             empty.ready(first, second, third)
         }

@@ -3,10 +3,9 @@ package parsley.internal.machine
 import instructions.Instr
 import stacks.{ArrayStack, Stack, CallStack, CheckStack, HandlerStack, StateStack, HintStack, ErrorStack}, Stack.StackExt
 import parsley.{Failure, Result, Success}
-import parsley.internal.errors.{
-    TrivialError,
-    ErrorItem, Desc,
-    LineBuilder, ErrorItemBuilder,
+import parsley.internal.errors.{ErrorItem, LineBuilder}
+import parsley.internal.machine.errors.{
+    ErrorItemBuilder,
     DefuncError, ClassicExpectedError, ClassicExpectedErrorWithReason, ClassicFancyError, ClassicUnexpectedError, WithHints,
     DefuncHints, EmptyHints, MergeHints, ReplaceHint, PopHints, AddError
 }
@@ -119,7 +118,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
            |  checks    = ${checkStack.mkString(", ")}
            |  registers = ${regs.zipWithIndex.map{case (r, i) => s"r$i = $r"}.mkString("\n              ")}
            |  errors    = ${errs.mkString(", ")}
-           |  hints     = ($hintsValidOffset, ${hints.toList}):${hintStack.mkString(", ")}
+           |  hints     = ($hintsValidOffset, ${hints.toSet}):${hintStack.mkString(", ")}
            |]""".stripMargin
     }
     // $COVERAGE-ON$
