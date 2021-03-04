@@ -20,22 +20,22 @@ private [machine] sealed abstract class DefuncHints {
     }
     private [errors] def toList(implicit builder: ErrorItemBuilder): List[Set[ErrorItem]] = {
         val buff = mutable.ListBuffer.empty[Set[ErrorItem]]
-        collect(buff)
+        val skipNext = collect(buff, 0)
+        assert(skipNext == 0)
         buff.toList
     }
-    private [errors] def collect(buff: mutable.ListBuffer[Set[ErrorItem]])(implicit builder: ErrorItemBuilder): Unit
+    private [errors] def collect(buff: mutable.ListBuffer[Set[ErrorItem]], skipNext: Int)(implicit builder: ErrorItemBuilder): Int
 }
 
 private [machine] case object EmptyHints extends DefuncHints {
     val size = 0
-    def collect(buff: mutable.ListBuffer[Set[ErrorItem]])(implicit builder: ErrorItemBuilder): Unit = ()
+    def collect(buff: mutable.ListBuffer[Set[ErrorItem]], skipNext: Int)(implicit builder: ErrorItemBuilder): Int = skipNext
 }
 
 private [machine] case class PopHints private (hints: DefuncHints) extends DefuncHints {
     val size = hints.size - 1
-    def collect(buff: mutable.ListBuffer[Set[ErrorItem]])(implicit builder: ErrorItemBuilder): Unit = {
-        hints.collect(buff)
-        buff.remove(0)
+    def collect(buff: mutable.ListBuffer[Set[ErrorItem]], skipNext: Int)(implicit builder: ErrorItemBuilder): Int = {
+        hints.collect(buff, skipNext + 1)
     }
 }
 private [machine] object PopHints {
@@ -44,9 +44,12 @@ private [machine] object PopHints {
 
 private [errors] case class ReplaceHint private (label: String, hints: DefuncHints) extends DefuncHints {
     val size = hints.size
-    def collect(buff: mutable.ListBuffer[Set[ErrorItem]])(implicit builder: ErrorItemBuilder): Unit = {
-        hints.collect(buff)
-        buff(0) = Set(Desc(label))
+    def collect(buff: mutable.ListBuffer[Set[ErrorItem]], skipNext: Int)(implicit builder: ErrorItemBuilder): Int = {
+        if (skipNext > 0) hints.collect(buff, skipNext)
+        else {
+            buff += Set(Desc(label))
+            hints.collect(buff, skipNext+1)
+        }
     }
 }
 private [machine] object ReplaceHint {
@@ -55,9 +58,12 @@ private [machine] object ReplaceHint {
 
 private [errors] case class MergeHints private (oldHints: DefuncHints, newHints: DefuncHints) extends DefuncHints {
     val size = oldHints.size + newHints.size
-    def collect(buff: mutable.ListBuffer[Set[ErrorItem]])(implicit builder: ErrorItemBuilder): Unit = {
-        oldHints.collect(buff)
-        buff ++= newHints.toList
+    def collect(buff: mutable.ListBuffer[Set[ErrorItem]], skipNext: Int)(implicit builder: ErrorItemBuilder): Int = {
+        val skipNext_ = oldHints.collect(buff, skipNext)
+        val newBuff = mutable.ListBuffer.empty[Set[ErrorItem]]
+        val skipNext__ = newHints.collect(newBuff, skipNext_)
+        buff ++= newBuff.toList
+        skipNext__
     }
 }
 private [machine] object MergeHints {
@@ -70,9 +76,13 @@ private [machine] object MergeHints {
 
 private [machine] case class AddError(hints: DefuncHints, err: DefuncError) extends DefuncHints {
     val size = hints.size + 1
-    def collect(buff: mutable.ListBuffer[Set[ErrorItem]])(implicit builder: ErrorItemBuilder): Unit = {
-        hints.collect(buff)
-        val TrivialError(_, _, _, _, es, _) = err.asParseError
-        buff += es
+    def collect(buff: mutable.ListBuffer[Set[ErrorItem]], skipNext: Int)(implicit builder: ErrorItemBuilder): Int = {
+        val skipNext_ = hints.collect(buff, skipNext)
+        if (skipNext_ == 0) {
+            val TrivialError(_, _, _, _, es, _) = err.asParseError
+            buff += es
+            0
+        }
+        else skipNext_ - 1
     }
 }
