@@ -14,7 +14,7 @@ private [machine] sealed abstract class DefuncHints {
     private [errors] def isEmpty: Boolean = size == 0
     private [machine] def toSet(implicit builder: ErrorItemBuilder): Set[ErrorItem] = {
         val set = mutable.Set.empty[ErrorItem]
-        assert(collect(set, 0) == 0)
+        collect(set, 0)
         set.toSet
     }
     private [errors] def collect(set: mutable.Set[ErrorItem], skipNext: Int)(implicit builder: ErrorItemBuilder): Int
@@ -68,8 +68,7 @@ private [machine] case class AddError(hints: DefuncHints, err: DefuncError) exte
     def collect(set: mutable.Set[ErrorItem], skipNext: Int)(implicit builder: ErrorItemBuilder): Int = {
         hints.collect(set, skipNext) match {
             case 0 =>
-                val TrivialError(_, _, _, _, es, _) = err.asParseError
-                set ++= es
+                err.collectHints(set)
                 0
             case skipNext => skipNext - 1
         }
