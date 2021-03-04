@@ -59,7 +59,9 @@ private [machine] object ReplaceHint {
 private [errors] case class MergeHints private (oldHints: DefuncHints, newHints: DefuncHints) extends DefuncHints {
     val size = oldHints.size + newHints.size
     def collect(buff: mutable.ListBuffer[Set[ErrorItem]], skipNext: Int)(implicit builder: ErrorItemBuilder): Int = {
-        val skipNext_ = oldHints.collect(buff, skipNext)
+        val skipNext_ =
+            if (oldHints.size < skipNext) skipNext - oldHints.size
+            else oldHints.collect(buff, skipNext)
         newHints.collect(buff, skipNext_)
     }
 }

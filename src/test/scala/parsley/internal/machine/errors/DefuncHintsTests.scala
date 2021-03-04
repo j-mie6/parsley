@@ -51,9 +51,15 @@ class DefuncHintsTests extends ParsleyTest {
         val hints2 = AddError(AddError(EmptyHints, mkErr("c")), mkErr("d"))
         MergeHints(hints1, hints2).toSet should contain only (Desc("a"), Desc("b"), Desc("c"), Desc("d"))
     }
-    it should "correct ensure pops on the right do not impact the left" in {
+    it should "ensure pops on the right do not impact the left" in {
         val hints1 = AddError(AddError(EmptyHints, mkErr("a")), mkErr("b"))
         val hints2 = PopHints(AddError(AddError(EmptyHints, mkErr("c")), mkErr("d")))
         MergeHints(hints1, hints2).toSet should contain only (Desc("a"), Desc("b"), Desc("d"))
+    }
+    it should "ensure that if the left needs complete popping that is ok" in {
+        val hints1 = AddError(AddError(EmptyHints, mkErr("a")), mkErr("b"))
+        val hints2 = AddError(AddError(EmptyHints, mkErr("c")), mkErr("d"))
+        PopHints(PopHints(PopHints(MergeHints(hints1, hints2)))).toSet should contain only (Desc("d"))
+        PopHints(PopHints(MergeHints(PopHints(hints1), hints2))).toSet should contain only (Desc("d"))
     }
 }
