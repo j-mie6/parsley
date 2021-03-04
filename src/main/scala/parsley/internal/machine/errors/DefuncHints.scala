@@ -3,6 +3,7 @@ package parsley.internal.machine.errors
 import parsley.internal.errors.{TrivialError, ErrorItem, Desc}
 
 import scala.collection.mutable
+import scala.annotation.tailrec
 
 // TODO: After this system is in place, we need a similar one which tracks what indices of each object
 // have made it into the final value already. If an object is encountered again (i.e. during a merge)
@@ -18,6 +19,7 @@ private [machine] sealed abstract class DefuncHints {
         set.toSet
     }
     private [errors] def collect(set: mutable.Set[ErrorItem], skipNext: Int)(implicit builder: ErrorItemBuilder): Int
+    //@tailrec final private [errors] def collect(set: mutable.Set[ErrorItem], skipNext: Int)(implicit builder: ErrorItemBuilder): Int = this match
 }
 
 private [machine] case object EmptyHints extends DefuncHints {

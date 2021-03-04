@@ -3,6 +3,7 @@ package parsley.internal.machine.errors
 import parsley.internal.errors.{ParseError, TrivialError, FailError, ErrorItem, Desc}
 
 import scala.collection.mutable
+import scala.annotation.tailrec
 
 /* This file contains the defunctionalised forms of the error messages.
  * Essentially, whenever an error is created in the machine, it should make use of one of
@@ -14,19 +15,43 @@ private [machine] sealed abstract class DefuncError {
     val isExpectedEmpty: Boolean
     val offset: Int
     private [machine] def asParseError(implicit builder: ErrorItemBuilder): ParseError
-    private [errors] def collectHints(set: mutable.Set[ErrorItem])(implicit builder: ErrorItemBuilder): Unit
+    @tailrec private [errors] final def collectHints(set: mutable.Set[ErrorItem])(implicit builder: ErrorItemBuilder): Unit = (this: @unchecked) match {
+        case BaseError(expected) => for (item <- expected) set += item
+        case MultiExpectedError(_, _, _, expected) => set ++= expected
+        case WithLabel(_, label) => if (label.nonEmpty) set += Desc(label)
+        case WithReason(err, _) => err.collectHints(set)
+        case WithHints(err, hints) =>
+            hints.collect(set, 0)
+            err.collectHints(set)
+        case MergedErrors(err1, err2) =>
+            err1.collectHintsNonTail(set)
+            err2.collectHints(set)
+    }
+    final private def collectHintsNonTail(set: mutable.Set[ErrorItem])(implicit builder: ErrorItemBuilder): Unit = collectHints(set)
     protected final def expectedSet(errorItem: Option[ErrorItem]): Set[ErrorItem] = errorItem match {
         case None => ParseError.NoItems
         case Some(item) => Set(item)
     }
 }
+
+object BaseError {
+    def unapply(err: DefuncError): Option[Option[ErrorItem]] = err match {
+        case ClassicExpectedError(_, _, _, expected) => Some(expected)
+        case ClassicExpectedErrorWithReason(_, _, _, expected, _) => Some(expected)
+        case ClassicUnexpectedError(_, _, _, expected, _) => Some(expected)
+        case EmptyError(_, _, _, expected) => Some(expected)
+        case EmptyErrorWithReason(_, _, _, expected, _) => Some(expected)
+        case StringTokError(_, _, _, expected, _) => Some(expected)
+        case _ => None
+    }
+}
+
 private [machine] case class ClassicExpectedError(offset: Int, line: Int, col: Int, expected: Option[ErrorItem]) extends DefuncError {
     val isTrivialError: Boolean = true
     val isExpectedEmpty: Boolean = expected.isEmpty
     override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
         TrivialError(offset, line, col, Some(builder(offset)), expectedSet(expected), ParseError.NoReason)
     }
-    override def collectHints(set: mutable.Set[ErrorItem])(implicit builder: ErrorItemBuilder): Unit = for (item <- expected) set += item
 }
 private [machine] case class ClassicExpectedErrorWithReason(offset: Int, line: Int, col: Int, expected: Option[ErrorItem], reason: String)
     extends DefuncError {
@@ -35,7 +60,6 @@ private [machine] case class ClassicExpectedErrorWithReason(offset: Int, line: I
     override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
         TrivialError(offset, line, col, Some(builder(offset)), expectedSet(expected), Set(reason))
     }
-    override def collectHints(set: mutable.Set[ErrorItem])(implicit builder: ErrorItemBuilder): Unit = for (item <- expected) set += item
 }
 private [machine] case class ClassicUnexpectedError(offset: Int, line: Int, col: Int, expected: Option[ErrorItem], unexpected: ErrorItem) extends DefuncError {
     val isTrivialError: Boolean = true
@@ -43,7 +67,6 @@ private [machine] case class ClassicUnexpectedError(offset: Int, line: Int, col:
     override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
         TrivialError(offset, line, col, Some(unexpected), expectedSet(expected), ParseError.NoReason)
     }
-    override def collectHints(set: mutable.Set[ErrorItem])(implicit builder: ErrorItemBuilder): Unit = for (item <- expected) set += item
 }
 private [machine] case class ClassicFancyError(offset: Int, line: Int, col: Int, msg: String) extends DefuncError {
     val isTrivialError: Boolean = false
@@ -51,9 +74,6 @@ private [machine] case class ClassicFancyError(offset: Int, line: Int, col: Int,
     override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
         FailError(offset, line, col, Set(msg))
     }
-    // $COVERAGE-OFF$
-    override def collectHints(set: mutable.Set[ErrorItem])(implicit builder: ErrorItemBuilder): Unit = ???
-    // $COVERAGE-ON$
 }
 private [machine] case class EmptyError(offset: Int, line: Int, col: Int, expected: Option[ErrorItem]) extends DefuncError {
     val isTrivialError: Boolean = true
@@ -61,7 +81,6 @@ private [machine] case class EmptyError(offset: Int, line: Int, col: Int, expect
     override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
         TrivialError(offset, line, col, None, expectedSet(expected), ParseError.NoReason)
     }
-    override def collectHints(set: mutable.Set[ErrorItem])(implicit builder: ErrorItemBuilder): Unit = for (item <- expected) set += item
 }
 private [machine] case class StringTokError(offset: Int, line: Int, col: Int, expected: Option[ErrorItem], size: Int) extends DefuncError {
     val isTrivialError: Boolean = true
@@ -69,7 +88,6 @@ private [machine] case class StringTokError(offset: Int, line: Int, col: Int, ex
     override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
         TrivialError(offset, line, col, Some(builder(offset, size)), expectedSet(expected), ParseError.NoReason)
     }
-    override def collectHints(set: mutable.Set[ErrorItem])(implicit builder: ErrorItemBuilder): Unit = for (item <- expected) set += item
 }
 private [machine] case class EmptyErrorWithReason(offset: Int, line: Int, col: Int, expected: Option[ErrorItem], reason: String) extends DefuncError {
     val isTrivialError: Boolean = true
@@ -77,7 +95,6 @@ private [machine] case class EmptyErrorWithReason(offset: Int, line: Int, col: I
     override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
         TrivialError(offset, line, col, None, expectedSet(expected), Set(reason))
     }
-    override def collectHints(set: mutable.Set[ErrorItem])(implicit builder: ErrorItemBuilder): Unit = for (item <- expected) set += item
 }
 private [machine] case class MultiExpectedError(offset: Int, line: Int, col: Int, expected: Set[ErrorItem]) extends DefuncError {
     val isTrivialError: Boolean = true
@@ -85,7 +102,6 @@ private [machine] case class MultiExpectedError(offset: Int, line: Int, col: Int
     override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
         TrivialError(offset, line, col, Some(builder(offset)), expected, ParseError.NoReason)
     }
-    override def collectHints(set: mutable.Set[ErrorItem])(implicit builder: ErrorItemBuilder): Unit = set ++= expected
 }
 
 private [errors] case class MergedErrors private (err1: DefuncError, err2: DefuncError) extends DefuncError {
@@ -107,10 +123,6 @@ private [errors] case class MergedErrors private (err1: DefuncError, err2: Defun
                 TrivialError(offset, err1_.line, err1_.col, u, es1 union es2, rs1 union rs2)
         }
     }
-    override def collectHints(set: mutable.Set[ErrorItem])(implicit builder: ErrorItemBuilder): Unit = {
-        err1.collectHints(set)
-        err2.collectHints(set)
-    }
 }
 private [machine] object MergedErrors {
     def apply(err1: DefuncError, err2: DefuncError): DefuncError = {
@@ -131,10 +143,6 @@ private [errors] case class WithHints private (err: DefuncError, hints: DefuncHi
     override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
         err.asParseError.withHints(hints.toSet)
     }
-    override def collectHints(set: mutable.Set[ErrorItem])(implicit builder: ErrorItemBuilder): Unit = {
-        err.collectHints(set)
-        hints.collect(set, 0)
-    }
 }
 
 private [machine] object WithHints {
@@ -151,7 +159,6 @@ private [machine] case class WithReason(err: DefuncError, reason: String) extend
     override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
         err.asParseError.giveReason(reason)
     }
-    override def collectHints(set: mutable.Set[ErrorItem])(implicit builder: ErrorItemBuilder): Unit = err.collectHints(set)
 }
 
 private [errors] case class WithLabel private (err: DefuncError, label: String) extends DefuncError {
@@ -167,7 +174,6 @@ private [errors] case class WithLabel private (err: DefuncError, label: String) 
             case err: TrivialError                  => err.copy(expecteds = Set(Desc(label)))
         }
     }
-    override def collectHints(set: mutable.Set[ErrorItem])(implicit builder: ErrorItemBuilder): Unit = if (label.nonEmpty) set += Desc(label)
 }
 private [machine] object WithLabel {
     def apply(err: DefuncError, label: String): DefuncError = {
