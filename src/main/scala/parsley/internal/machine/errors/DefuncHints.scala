@@ -1,6 +1,6 @@
 package parsley.internal.machine.errors
 
-import parsley.internal.errors.{TrivialError, ErrorItem, Desc}
+import parsley.internal.errors.{ErrorItem, Desc}
 
 import scala.collection.mutable
 import scala.annotation.tailrec

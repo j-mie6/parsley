@@ -17,15 +17,15 @@ private [machine] sealed abstract class DefuncError {
     private [machine] def asParseError(implicit builder: ErrorItemBuilder): ParseError
     @tailrec private [errors] final def collectHints(set: mutable.Set[ErrorItem]): Unit = (this: @unchecked) match {
         case BaseError(expected) => for (item <- expected) set += item
-        case MultiExpectedError(_, _, _, expected) => set ++= expected
-        case WithLabel(_, label) => if (label.nonEmpty) set += Desc(label)
-        case WithReason(err, _) => err.collectHints(set)
-        case WithHints(err, hints) =>
-            hints.collect(set, 0)
-            err.collectHints(set)
-        case MergedErrors(err1, err2) =>
-            err1.collectHintsNonTail(set)
-            err2.collectHints(set)
+        case self: MultiExpectedError => set ++= self.expected
+        case self: WithLabel => if (self.label.nonEmpty) set += Desc(self.label)
+        case self: WithReason => self.err.collectHints(set)
+        case self: WithHints =>
+            self.hints.collect(set, 0)
+            self.err.collectHints(set)
+        case self: MergedErrors =>
+            self.err1.collectHintsNonTail(set)
+            self.err2.collectHints(set)
     }
     final private def collectHintsNonTail(set: mutable.Set[ErrorItem]): Unit = collectHints(set)
     protected final def expectedSet(errorItem: Option[ErrorItem]): Set[ErrorItem] = errorItem match {
