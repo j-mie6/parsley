@@ -60,10 +60,7 @@ private [errors] case class MergeHints private (oldHints: DefuncHints, newHints:
     val size = oldHints.size + newHints.size
     def collect(buff: mutable.ListBuffer[Set[ErrorItem]], skipNext: Int)(implicit builder: ErrorItemBuilder): Int = {
         val skipNext_ = oldHints.collect(buff, skipNext)
-        val newBuff = mutable.ListBuffer.empty[Set[ErrorItem]]
-        val skipNext__ = newHints.collect(newBuff, skipNext_)
-        buff ++= newBuff.toList
-        skipNext__
+        newHints.collect(buff, skipNext_)
     }
 }
 private [machine] object MergeHints {
