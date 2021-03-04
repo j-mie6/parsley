@@ -15,7 +15,7 @@ private [machine] sealed abstract class DefuncError {
     val isExpectedEmpty: Boolean
     val offset: Int
     private [machine] def asParseError(implicit builder: ErrorItemBuilder): ParseError
-    @tailrec private [errors] final def collectHints(set: mutable.Set[ErrorItem])(implicit builder: ErrorItemBuilder): Unit = (this: @unchecked) match {
+    @tailrec private [errors] final def collectHints(set: mutable.Set[ErrorItem]): Unit = (this: @unchecked) match {
         case BaseError(expected) => for (item <- expected) set += item
         case MultiExpectedError(_, _, _, expected) => set ++= expected
         case WithLabel(_, label) => if (label.nonEmpty) set += Desc(label)
@@ -27,7 +27,7 @@ private [machine] sealed abstract class DefuncError {
             err1.collectHintsNonTail(set)
             err2.collectHints(set)
     }
-    final private def collectHintsNonTail(set: mutable.Set[ErrorItem])(implicit builder: ErrorItemBuilder): Unit = collectHints(set)
+    final private def collectHintsNonTail(set: mutable.Set[ErrorItem]): Unit = collectHints(set)
     protected final def expectedSet(errorItem: Option[ErrorItem]): Set[ErrorItem] = errorItem match {
         case None => ParseError.NoItems
         case Some(item) => Set(item)

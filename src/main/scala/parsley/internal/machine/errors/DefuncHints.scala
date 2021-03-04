@@ -13,12 +13,12 @@ private [machine] sealed abstract class DefuncHints {
     private [errors] val size: Int
     private [errors] def nonEmpty: Boolean = size != 0
     private [errors] def isEmpty: Boolean = size == 0
-    private [machine] def toSet(implicit builder: ErrorItemBuilder): Set[ErrorItem] = {
+    private [machine] def toSet: Set[ErrorItem] = {
         val set = mutable.Set.empty[ErrorItem]
         collect(set, 0)
         set.toSet
     }
-    @tailrec final private [errors] def collect(set: mutable.Set[ErrorItem], skipNext: Int)(implicit builder: ErrorItemBuilder): Unit = this match {
+    @tailrec final private [errors] def collect(set: mutable.Set[ErrorItem], skipNext: Int): Unit = this match {
         case EmptyHints =>
         case self: PopHints => self.hints.collect(set, skipNext + 1)
         case self: ReplaceHint =>
@@ -34,7 +34,7 @@ private [machine] sealed abstract class DefuncHints {
             if (skipNext - self.hints.size <= 0) self.err.collectHints(set)
             self.hints.collect(set, skipNext)
     }
-    final private def collectNonTail(set: mutable.Set[ErrorItem], skipNext: Int)(implicit builder: ErrorItemBuilder): Unit = collect(set, skipNext)
+    final private def collectNonTail(set: mutable.Set[ErrorItem], skipNext: Int): Unit = collect(set, skipNext)
 }
 
 private [machine] case object EmptyHints extends DefuncHints {
