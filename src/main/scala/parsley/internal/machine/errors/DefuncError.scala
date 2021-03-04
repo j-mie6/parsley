@@ -36,12 +36,12 @@ private [machine] sealed abstract class DefuncError {
 
 object BaseError {
     def unapply(err: DefuncError): Option[Option[ErrorItem]] = err match {
-        case ClassicExpectedError(_, _, _, expected) => Some(expected)
-        case ClassicExpectedErrorWithReason(_, _, _, expected, _) => Some(expected)
-        case ClassicUnexpectedError(_, _, _, expected, _) => Some(expected)
-        case EmptyError(_, _, _, expected) => Some(expected)
-        case EmptyErrorWithReason(_, _, _, expected, _) => Some(expected)
-        case StringTokError(_, _, _, expected, _) => Some(expected)
+        case err: ClassicExpectedError => Some(err.expected)
+        case err: ClassicExpectedErrorWithReason => Some(err.expected)
+        case err: ClassicUnexpectedError => Some(err.expected)
+        case err: EmptyError => Some(err.expected)
+        case err: EmptyErrorWithReason => Some(err.expected)
+        case err: StringTokError => Some(err.expected)
         case _ => None
     }
 }
