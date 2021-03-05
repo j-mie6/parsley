@@ -34,7 +34,7 @@ private [machine] sealed abstract class DefuncError {
     }
 }
 
-object BaseError {
+private [errors] object BaseError {
     def unapply(err: DefuncError): Option[Option[ErrorItem]] = err match {
         case err: ClassicExpectedError => Some(err.expected)
         case err: ClassicExpectedErrorWithReason => Some(err.expected)
