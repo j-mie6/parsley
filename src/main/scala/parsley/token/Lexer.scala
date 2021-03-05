@@ -32,7 +32,9 @@ class Lexer(lang: LanguageDef)
             case (BitSetImpl(start), Predicate(letter)) => builder(start, letter)
             case (Predicate(start), BitSetImpl(letter)) => builder(start, letter)
             case (Predicate(start), Predicate(letter)) => builder(start, letter)
-            case _ => attempt((parser.unsafeLabel(name)).guard(predicate, s"unexpected $illegalName " + _))
+            case _ => attempt((parser.unsafeLabel(name)).guardAgainst {
+                case x if !predicate(x) => s"unexpected $illegalName $x"
+            })
         })
     }
 
