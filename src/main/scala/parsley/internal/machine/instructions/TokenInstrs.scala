@@ -55,7 +55,7 @@ private [instructions] abstract class WhiteSpaceLike(start: String, end: String,
         spaces(ctx)
         val startsMulti = ctx.moreInput && ctx.input.startsWith(start, ctx.offset)
         if (startsMulti && multiLineComment(ctx)) multisOnly(ctx)
-        else if (startsMulti) ctx.expectedFail(expected = endOfComment)
+        else if (startsMulti) ctx.expectedTokenFail(expected = endOfComment, end.length)
         else ctx.pushAndContinue(())
     }
 
@@ -68,7 +68,7 @@ private [instructions] abstract class WhiteSpaceLike(start: String, end: String,
         if (ctx.moreInput && ctx.input.startsWith(sharedPrefix, ctx.offset)) {
             val startsMulti = ctx.input.startsWith(factoredStart, ctx.offset + sharedPrefix.length)
             if (startsMulti && multiLineComment(ctx)) singlesAndMultis(ctx)
-            else if (startsMulti) ctx.expectedFail(expected = endOfComment)
+            else if (startsMulti) ctx.expectedTokenFail(expected = endOfComment, end.length)
             else if (ctx.input.startsWith(factoredLine, ctx.offset + sharedPrefix.length)) {
                 singleLineComment(ctx)
                 singlesAndMultis(ctx)
@@ -89,13 +89,14 @@ private [instructions] abstract class WhiteSpaceLike(start: String, end: String,
 
 private [internal] final class TokenComment(start: String, end: String, line: String, nested: Boolean) extends CommentLexer(start, end, line, nested) {
     private [this] final val comment = Some(Desc("comment"))
+    private [this] final val openingSize = Math.max(start.size, line.size)
 
     // PRE: one of the comments is supported
     // PRE: Multi-line comments may not prefix single-line, but single-line may prefix multi-line
     override def apply(ctx: Context): Unit = {
         val startsMulti = multiAllowed && ctx.input.startsWith(start, ctx.offset)
         // If neither comment is available we fail
-        if (!ctx.moreInput || (!lineAllowed || !ctx.input.startsWith(line, ctx.offset)) && !startsMulti) ctx.expectedFail(expected = comment)
+        if (!ctx.moreInput || (!lineAllowed || !ctx.input.startsWith(line, ctx.offset)) && !startsMulti) ctx.expectedTokenFail(expected = comment, openingSize)
         // One of the comments must be available
         else if (startsMulti && multiLineComment(ctx)) ctx.pushAndContinue(())
         else if (startsMulti) ctx.expectedFail(expected = endOfComment)
@@ -177,7 +178,7 @@ private [instructions] abstract class TokenSpecificAllowTrailing(_specific: Stri
 
     @tailrec final private def readSpecific(ctx: Context, i: Int, j: Int): Unit = {
         if (j < strsz && readCharCaseHandled(ctx, i) == specific(j)) readSpecific(ctx, i + 1, j + 1)
-        else if (j < strsz) ctx.expectedFail(expected)
+        else if (j < strsz) ctx.expectedTokenFail(expected, strsz)
         else {
             ctx.saveState()
             ctx.fastUncheckedConsumeChars(strsz)
@@ -187,7 +188,7 @@ private [instructions] abstract class TokenSpecificAllowTrailing(_specific: Stri
 
     final override def apply(ctx: Context): Unit = {
         if (ctx.inputsz >= ctx.offset + strsz) readSpecific(ctx, ctx.offset, 0)
-        else ctx.expectedFail(expected)
+        else ctx.expectedTokenFail(expected, strsz)
     }
 }
 
@@ -195,7 +196,7 @@ private [internal] final class TokenSpecific(_specific: String, letter: TokenSet
     extends TokenSpecificAllowTrailing(_specific, caseSensitive, expected) {
     override def postprocess(ctx: Context, i: Int): Unit = {
         if (i < ctx.inputsz && letter(ctx.input.charAt(i))) {
-            ctx.expectedFail(expectedEnd)
+            ctx.expectedFail(expectedEnd) //This should only report a single token
             ctx.restoreState()
         }
         else {
@@ -219,7 +220,7 @@ private [internal] final class TokenMaxOp(operator: String, _ops: Set[String], e
         lazy val ops_ = ops.suffixes(ctx.input.charAt(i))
         val possibleOpsRemain = i < ctx.inputsz && ops.nonEmpty
         if (possibleOpsRemain && ops_.contains("")) {
-            ctx.expectedFail(expectedEnd)
+            ctx.expectedFail(expectedEnd) //This should only report a single token
             ctx.restoreState()
         }
         else if (possibleOpsRemain) go(ctx, i + 1, ops_)

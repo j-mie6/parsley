@@ -11,7 +11,7 @@ private [internal] class TokenEscape(_expected: Option[String]) extends Instr wi
     override def apply(ctx: Context): Unit = escape(ctx) match {
         case TokenEscape.EscapeChar(escapeChar) =>ctx.pushAndContinue(escapeChar)
         case TokenEscape.BadCode => ctx.expectedFail(expected, reason = "invalid escape sequence")
-        case TokenEscape.NoParse => ctx.expectedFail(expected)
+        case TokenEscape.NoParse => ctx.expectedTokenFail(expected, 3)
     }
 
     private final def consumeAndReturn(ctx: Context, n: Int, c: Char) = {

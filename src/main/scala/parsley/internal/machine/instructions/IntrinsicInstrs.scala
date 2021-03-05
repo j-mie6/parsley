@@ -2,7 +2,7 @@ package parsley.internal.machine.instructions
 
 import parsley.internal.errors.{Desc, Raw}
 import parsley.internal.machine.{Context, Good}
-import parsley.internal.machine.errors.{EmptyError, EmptyErrorWithReason, StringTokError}
+import parsley.internal.machine.errors.{EmptyError, EmptyErrorWithReason}
 
 import scala.annotation.tailrec
 
@@ -77,9 +77,8 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
         if (j < sz && i < ctx.inputsz && ctx.input.charAt(i) == cs(j)) go(ctx, i + 1, j + 1)
         else if (j < sz) {
             // The offset, line and column haven't been edited yet, so are in the right place
-            val err = new StringTokError(ctx.offset, ctx.line, ctx.col, errorItem, sz)
+            ctx.expectedTokenFail(errorItem, sz)
             ctx.offset = i
-            ctx.fail(err)
         }
         else {
             ctx.col = colAdjust(ctx.col)

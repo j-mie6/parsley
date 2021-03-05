@@ -104,10 +104,10 @@ private [internal] final class AlwaysRecoverWith[A](x: A) extends Instr {
 private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int],
         private [this] var default: Int,
         private [this] var merge: Int,
-        _expecteds: Map[Char, Set[ErrorItem]]) extends Instr {
+        private [this] val size: Int,
+        private [this] val errorItems: Set[ErrorItem]) extends Instr {
     private [this] var defaultPreamble: Int = _
     private [this] val jumpTable = mutable.LongMap(prefixes.map(_.toLong).zip(labels): _*)
-    val errorItems = _expecteds.toSet[(Char, Set[ErrorItem])].flatMap(_._2)
 
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput) {
@@ -127,7 +127,7 @@ private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int]
     }
 
     private def addErrors(ctx: Context): Unit = {
-        ctx.errs = new ErrorStack(new MultiExpectedError(ctx.offset, ctx.line, ctx.col, errorItems), ctx.errs)
+        ctx.errs = new ErrorStack(new MultiExpectedError(ctx.offset, ctx.line, ctx.col, errorItems, size), ctx.errs)
         ctx.pushHandler(merge)
     }
 

@@ -81,7 +81,8 @@ private [internal] case class Raw(cs: String) extends ErrorItem {
         case "\t"            => "tab"
         case " "             => "space"
         case Unprintable(up) => f"unprintable character (\\u${up.head.toInt}%04X)"
-        case cs              => "\"" + cs.takeWhile(_ != '\n') + "\""
+        // Do we want this only in unexpecteds?
+        case cs              => "\"" + cs.takeWhile(c => c != '\n' && c != ' ') + "\""
     }
 }
 private [internal] object Raw {

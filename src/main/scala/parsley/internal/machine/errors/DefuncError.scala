@@ -41,7 +41,7 @@ private [errors] object BaseError {
         case err: ClassicUnexpectedError => Some(err.expected)
         case err: EmptyError => Some(err.expected)
         case err: EmptyErrorWithReason => Some(err.expected)
-        case err: StringTokError => Some(err.expected)
+        case err: TokenError => Some(err.expected)
         case _ => None
     }
 }
@@ -82,7 +82,7 @@ private [machine] case class EmptyError(offset: Int, line: Int, col: Int, expect
         TrivialError(offset, line, col, None, expectedSet(expected), ParseError.NoReason)
     }
 }
-private [machine] case class StringTokError(offset: Int, line: Int, col: Int, expected: Option[ErrorItem], size: Int) extends DefuncError {
+private [machine] case class TokenError(offset: Int, line: Int, col: Int, expected: Option[ErrorItem], size: Int) extends DefuncError {
     val isTrivialError: Boolean = true
     val isExpectedEmpty: Boolean = expected.isEmpty
     override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
@@ -96,11 +96,11 @@ private [machine] case class EmptyErrorWithReason(offset: Int, line: Int, col: I
         TrivialError(offset, line, col, None, expectedSet(expected), Set(reason))
     }
 }
-private [machine] case class MultiExpectedError(offset: Int, line: Int, col: Int, expected: Set[ErrorItem]) extends DefuncError {
+private [machine] case class MultiExpectedError(offset: Int, line: Int, col: Int, expected: Set[ErrorItem], size: Int) extends DefuncError {
     val isTrivialError: Boolean = true
     val isExpectedEmpty: Boolean = expected.isEmpty
     override def asParseError(implicit builder: ErrorItemBuilder): ParseError = {
-        TrivialError(offset, line, col, Some(builder(offset)), expected, ParseError.NoReason)
+        TrivialError(offset, line, col, Some(builder(offset, size)), expected, ParseError.NoReason)
     }
 }
 
