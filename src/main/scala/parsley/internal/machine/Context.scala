@@ -6,7 +6,7 @@ import parsley.{Failure, Result, Success}
 import parsley.internal.errors.{ErrorItem, LineBuilder}
 import parsley.internal.machine.errors.{
     ErrorItemBuilder,
-    DefuncError, ClassicExpectedError, ClassicExpectedErrorWithReason, ClassicFancyError, ClassicUnexpectedError, WithHints,
+    DefuncError, ClassicExpectedError, ClassicExpectedErrorWithReason, ClassicFancyError, ClassicUnexpectedError, WithHints, TokenError,
     DefuncHints, EmptyHints, MergeHints, ReplaceHint, PopHints, AddError
 }
 
@@ -181,6 +181,9 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     }
     private [machine] def expectedFail(expected: Option[ErrorItem], reason: String): Unit = {
         this.fail(new ClassicExpectedErrorWithReason(offset, line, col, expected, reason))
+    }
+    private [machine] def expectedTokenFail(expected: Option[ErrorItem], size: Int): Unit = {
+        this.fail(new TokenError(offset, line, col, expected, size))
     }
     private [machine] def fail(error: DefuncError): Unit = {
         this.pushError(error)

@@ -88,9 +88,9 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
             val end = state.freshLabel()
             val default = state.freshLabel()
             val merge = state.freshLabel()
-            val (roots, leads, ls, expecteds) = foldTablified(tablified, state, mutable.Map.empty, Nil, Nil, mutable.Map.empty)
+            val (roots, leads, ls, size, expecteds) = foldTablified(tablified, state, mutable.Map.empty, Nil, Nil, 0, mutable.Set.empty)
             //println(leads, tablified)
-            instrs += new instructions.JumpTable(leads, ls, default, merge, expecteds)
+            instrs += new instructions.JumpTable(leads, ls, default, merge, size, expecteds)
             codeGenRoots(roots, ls, end) >> {
                 instrs += new instructions.Catch(merge) //This instruction is reachable as default - 1
                 instrs += new instructions.Label(default)
@@ -157,29 +157,29 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
                                roots: mutable.Map[Char, List[Parsley[_]]],
                                leads: List[Char],
                                labels: List[Int],
-                               expecteds: mutable.Map[Char, Set[ErrorItem]]):
-        (List[List[Parsley[_]]], List[Char], List[Int], Map[Char, Set[ErrorItem]]) = tablified match {
-        case (_, None)::tablified_ => foldTablified(tablified_, labelGen, roots, leads, labels, expecteds)
+                               size: Int,
+                               expecteds: mutable.Set[ErrorItem]):
+        (List[List[Parsley[_]]], List[Char], List[Int], Int, Set[ErrorItem]) = tablified match {
+        case (_, None)::tablified_ => foldTablified(tablified_, labelGen, roots, leads, labels, size, expecteds)
         case (root, Some(lead))::tablified_ =>
-            val (c: Char, expected: ErrorItem) = lead match {
-                case ct@CharTok(d) => (d, ct.expected.fold[ErrorItem](Raw(d))(Desc(_)))
-                case st@StringTok(s) => (s.head, st.expected.fold[ErrorItem](Raw(s))(Desc(_)))
-                case st@Specific(s) => (s.head, Desc(st.expected.getOrElse(s)))
-                case op@MaxOp(o) => (o.head, Desc(op.expected.getOrElse(o)))
-                case sl: StringLiteral => ('"', Desc(sl.expected.getOrElse("string")))
-                case rs: RawStringLiteral => ('"', Desc(rs.expected.getOrElse("string")))
+            val (c: Char, expected: ErrorItem, _size: Int) = lead match {
+                case ct@CharTok(d) => (d, ct.expected.fold[ErrorItem](Raw(d))(Desc(_)), 1)
+                case st@StringTok(s) => (s.head, st.expected.fold[ErrorItem](Raw(s))(Desc(_)), s.size)
+                case st@Specific(s) => (s.head, Desc(st.expected.getOrElse(s)), s.size)
+                case op@MaxOp(o) => (o.head, Desc(op.expected.getOrElse(o)), o.size)
+                case sl: StringLiteral => ('"', Desc(sl.expected.getOrElse("string")), 1)
+                case rs: RawStringLiteral => ('"', Desc(rs.expected.getOrElse("string")), 1)
             }
+            expecteds += expected
             if (roots.contains(c)) {
                 roots(c) = root::roots(c)
-                expecteds(c) = expecteds(c) + expected
-                foldTablified(tablified_, labelGen, roots, leads, labelGen.freshLabel() :: labels, expecteds)
+                foldTablified(tablified_, labelGen, roots, leads, labelGen.freshLabel() :: labels, Math.max(size, _size), expecteds)
             }
             else {
                 roots(c) = root::Nil
-                expecteds(c) = Set(expected)
-                foldTablified(tablified_, labelGen, roots, c::leads, labelGen.freshLabel() :: labels, expecteds)
+                foldTablified(tablified_, labelGen, roots, c::leads, labelGen.freshLabel() :: labels, Math.max(size, _size), expecteds)
             }
-        case Nil => (leads.map(roots(_)), leads, labels, expecteds.toMap)
+        case Nil => (leads.map(roots(_)), leads, labels, size, expecteds.toSet)
     }
     @tailrec private def tablable(p: Parsley[_]): Option[Parsley[_]] = p match {
         // CODO: Numeric parsers by leading digit (This one would require changing the foldTablified function a bit)
