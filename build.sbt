@@ -53,8 +53,6 @@ lazy val root = project.in(file("."))
       ),
 
     crossScalaVersions := List(scala212Version, scala213Version, scala3Version, dottyVersion),
-    // temporary until Parsley 3.0
-    Compile / unmanagedSourceDirectories += file(s"${baseDirectory.value.getPath}/src/main/deprecated"),
     Compile / unmanagedSourceDirectories ++= extraSources(baseDirectory.value, "main", scalaVersion.value),
     Test / unmanagedSourceDirectories ++= extraSources(baseDirectory.value, "test", scalaVersion.value),
 
