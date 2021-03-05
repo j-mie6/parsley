@@ -70,8 +70,6 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
 
     libraryDependencies += "org.scalatest" %%% "scalatest" % scalaTestDependency(scalaVersion.value) % Test,
 
-    // temporary until Parsley 3.0
-    Compile / unmanagedSourceDirectories += file(s"${baseDirectory.value.getParentFile.getPath}/src/main/deprecated"),
     Compile / unmanagedSourceDirectories ++= extraSources(baseDirectory.value.getParentFile, "main", scalaVersion.value),
     Test / unmanagedSourceDirectories ++= extraSources(baseDirectory.value.getParentFile, "test", scalaVersion.value),
 
