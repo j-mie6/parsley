@@ -10,7 +10,6 @@ exclude_patterns:
 - ".gitignore"
 - "*.pdf"
 - "LICENSE"
-- "**/deprecated"
 plugins:
   scalastyle:
     enabled: true
