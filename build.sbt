@@ -18,7 +18,7 @@ inThisBuild(List(
 
 val scala212Version = "2.12.13"
 val scala213Version = "2.13.5"
-val scala3Version = "3.0.0-RC1"
+val scala3Version = "3.0.0-M3"
 val dottyVersion = "0.27.0-RC1"
 
 def usesLib213(major: Long, minor: Long): Boolean = major > 2 || minor >= 13
@@ -38,7 +38,7 @@ def extraSources(rootSrcFile: File, base: String, version: String): Seq[File] = 
     case None => Seq.empty
 }
 
-def scalaTestDependency(version: String): String = Map("0.27.0-RC1" -> "3.2.2").getOrElse(version, "3.2.5")
+def scalaTestDependency(version: String): String = Map("0.27.0-RC1" -> "3.2.2", "3.0.0-M3" -> "3.2.3").getOrElse(version, "3.2.5")
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
