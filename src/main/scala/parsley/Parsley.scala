@@ -41,15 +41,6 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: deepe
       */
     def overflows(): Unit = internal.overflows()
 
-    // $COVERAGE-OFF$
-    /** This method is responsible for actually executing parsers. Given an input
-      * string, will parse the string with the parser. The result is either a `Success` or a `Failure`.
-      * @param input The input to run against
-      * @return Either a success with a value of type `A` or a failure with error message
-      */
-    @deprecated("This method will be removed in Parsley 3.0 since Strings are now the underlying representation for Parsley", "2.8.4")
-    def runParser(input: Array[Char]): Result[A] = runParser(new String(input))
-    // $COVERAGE-ON$
     /** This method is responsible for actually executing parsers. Given an input
       * array, will parse the string with the parser. The result is either a `Success` or a `Failure`.
       * @param input The input to run against
@@ -86,11 +77,6 @@ object Parsley
           * @return A new parser which parses the same input as the invokee but mutated by function `f`
           */
         def map[B](f: A => B): Parsley[B] = pure(f) <*> p
-        /**This combinator is an alias for `map`*/
-        @deprecated("This combinator will be removed in Parsley 3.0, use .map instead", "2.8.4")
-        // $COVERAGE-OFF$
-        def <#>[B](f: A => B): Parsley[B] = this.map(f)
-        // $COVERAGE-ON$
         /**
           * This is the Applicative application parser. The type of `pf` is `Parsley[A => B]`. Then, given a
           * `Parsley[A]`, we can produce a `Parsley[B]` by parsing `pf` to retrieve `f: A => B`, then parse `px`
@@ -210,10 +196,6 @@ object Parsley
           * @since 2.8.0
           */
         def filterOut(pred: PartialFunction[A, String]): Parsley[A] = new Parsley(new deepembedding.FilterOut(p.internal, pred))
-        // $COVERAGE-OFF$
-        // This can be dropped when we stop supporting scala 2.12
-        def withFilter(pred: A => Boolean): Parsley[A] = this.filter(pred)
-        // $COVERAGE-ON$
         /** Attempts to first filter the parser to ensure that `pf` is defined over it. If it is, then the function `pf`
           * is mapped over its result. Roughly the same as a `filter` then a `map`.
           * @param pf The partial function
@@ -228,7 +210,7 @@ object Parsley
           * @return The result of applying `pf` to this parsers value (if possible), or fails
           * @since 2.4.0
           */
-        def collectMsg[B](msg: String)(pf: PartialFunction[A, B]): Parsley[B] = this.guard(pf.isDefinedAt(_), msg).map(pf)
+        def collectMsg[B](msg: String)(pf: PartialFunction[A, B]): Parsley[B] = this.guardAgainst{case x if !pf.isDefinedAt(x) => msg}.map(pf)
         /** Attempts to first filter the parser to ensure that `pf` is defined over it. If it is, then the function `pf`
           * is mapped over its result. Roughly the same as a `guard` then a `map`.
           * @param pf The partial function
@@ -236,22 +218,7 @@ object Parsley
           * @return The result of applying `pf` to this parsers value (if possible), or fails
           * @since 2.4.0
           */
-        def collectMsg[B](msggen: A => String)(pf: PartialFunction[A, B]): Parsley[B] = this.guard(pf.isDefinedAt(_), msggen).map(pf)
-        /** Similar to `filter`, except the error message desired is also provided. This allows you to name the message
-          * itself.
-          * @param pred The predicate that is tested against the parser result
-          * @param msg The message used for the error if the input failed the check
-          * @return The result of the invokee if it passes the predicate
-          */
-        def guard(pred: A => Boolean, msg: String): Parsley[A] = this.guardAgainst { case x if !pred(x) => msg }
-        /** Similar to `filter`, except the error message desired is also provided. This allows you to name the message
-          * itself. The message is provided as a generator, which allows the user to avoid otherwise expensive
-          * computation.
-          * @param pred The predicate that is tested against the parser result
-          * @param msggen Generator function for error message, generating a message based on the result of the parser
-          * @return The result of the invokee if it passes the predicate
-          */
-        def guard(pred: A => Boolean, msggen: A => String): Parsley[A] = this.guardAgainst { case x if !pred(x) => msggen(x) }
+        def collectMsg[B](msggen: A => String)(pf: PartialFunction[A, B]): Parsley[B] = this.guardAgainst{case x if !pf.isDefinedAt(x) => msggen(x)}.map(pf)
         /** Similar to `filterOut`, except the error message generated yields a ''true failure''. This means that it will
           * uses the same mechanism as [[Parsley.fail]], as opposed to the reason provided by [[filterOut]]
           * @param pred The predicate that is tested against the parser result and produces error messages
