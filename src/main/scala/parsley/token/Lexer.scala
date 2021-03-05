@@ -22,10 +22,10 @@ import scala.language.implicitConversions
   */
 class Lexer(lang: LanguageDef)
 {
-    private def keyOrOp(startImpl: Impl, letterImpl: Impl, parser: Parsley[String], predicate: String => Boolean,
+    private def keyOrOp(startImpl: Impl, letterImpl: Impl, parser: Parsley[String], illegal: String => Boolean,
                         combinatorName: String, name: String, illegalName: String) = {
         val builder = (start: TokenSet, letter: TokenSet) =>
-            new Parsley(new deepembedding.NonSpecific(combinatorName, name, illegalName, start, letter, !predicate(_)))
+            new Parsley(new deepembedding.NonSpecific(combinatorName, name, illegalName, start, letter, illegal))
         lexeme((startImpl, letterImpl) match
         {
             case (BitSetImpl(start), BitSetImpl(letter)) => builder(start, letter)
@@ -33,7 +33,7 @@ class Lexer(lang: LanguageDef)
             case (Predicate(start), BitSetImpl(letter)) => builder(start, letter)
             case (Predicate(start), Predicate(letter)) => builder(start, letter)
             case _ => attempt((parser.unsafeLabel(name)).guardAgainst {
-                case x if !predicate(x) => s"unexpected $illegalName $x"
+                case x if illegal(x) => s"unexpected $illegalName $x"
             })
         })
     }
@@ -43,7 +43,7 @@ class Lexer(lang: LanguageDef)
      * fail on identifiers that are reserved words (i.e. keywords). Legal identifier characters and
      * keywords are defined in the `LanguageDef` provided to the lexer. An identifier is treated
      * as a single token using `attempt`.*/
-    lazy val identifier: Parsley[String] = keyOrOp(lang.identStart, lang.identLetter, ident, !isReservedName(_),  "identifier", "identifier", "keyword")
+    lazy val identifier: Parsley[String] = keyOrOp(lang.identStart, lang.identLetter, ident, isReservedName(_),  "identifier", "identifier", "keyword")
 
     /**The lexeme parser `keyword(name)` parses the symbol `name`, but it also checks that the `name`
      * is not a prefix of a valid identifier. A `keyword` is treated as a single token using `attempt`.*/
@@ -71,12 +71,12 @@ class Lexer(lang: LanguageDef)
      * will fail on any operators that are reserved operators. Legal operator characters and
      * reserved operators are defined in the `LanguageDef` provided to the lexer. A
      * `userOp` is treated as a single token using `attempt`.*/
-    lazy val userOp: Parsley[String] = keyOrOp(lang.opStart, lang.opLetter, oper, !isReservedOp(_), "userOp", "operator", "reserved operator")
+    lazy val userOp: Parsley[String] = keyOrOp(lang.opStart, lang.opLetter, oper, isReservedOp(_), "userOp", "operator", "reserved operator")
 
     /**This non-lexeme parser parses a reserved operator. Returns the name of the operator.
      * Legal operator characters and reserved operators are defined in the `LanguageDef`
      * provided to the lexer. A `reservedOp_` is treated as a single token using `attempt`.*/
-    lazy val reservedOp_ : Parsley[String] = keyOrOp(lang.opStart, lang.opLetter, oper, isReservedOp(_), "reservedOp", "operator", "non-reserved operator")
+    lazy val reservedOp_ : Parsley[String] = keyOrOp(lang.opStart, lang.opLetter, oper, !isReservedOp(_), "reservedOp", "operator", "non-reserved operator")
 
     /**This lexeme parser parses a reserved operator. Returns the name of the operator. Legal
      * operator characters and reserved operators are defined in the `LanguageDef` provided
