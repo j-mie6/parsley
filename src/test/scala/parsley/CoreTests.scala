@@ -254,14 +254,6 @@ class CoreTests extends ParsleyTest {
         }
         r.runParser("a") shouldBe Failure("(line 1, column 2):\n  'a' is not uppercase\n  >a\n  > ^")
         r.runParser("A") shouldBe Success('A')
-
-        val s = anyChar.guard(_.isUpper, "letter was not uppercase")
-        s.runParser("a") shouldBe Failure("(line 1, column 2):\n  letter was not uppercase\n  >a\n  > ^")
-        s.runParser("A") shouldBe Success('A')
-
-        val t = anyChar.guard(_.isUpper, c => s"'$c' is not uppercase")
-        t.runParser("a") shouldBe Failure("(line 1, column 2):\n  'a' is not uppercase\n  >a\n  > ^")
-        t.runParser("A") shouldBe Success('A')
     }
 
     // Issue #70
