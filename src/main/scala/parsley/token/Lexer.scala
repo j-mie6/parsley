@@ -6,7 +6,7 @@ import parsley.lift.lift2
 import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
 import parsley.Parsley, Parsley.{void, unit, fail, attempt, pure, empty, notFollowedBy, LazyParsley}
 import parsley.token.TokenSet
-import parsley.implicits.{charLift, stringLift}
+import parsley.implicits.character.{charLift, stringLift}
 import parsley.internal.deepembedding
 import parsley.unsafe.ErrorLabel
 

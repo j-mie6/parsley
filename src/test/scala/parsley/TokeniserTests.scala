@@ -2,7 +2,7 @@ package parsley
 
 import parsley._
 import parsley.character.{alphaNum, letter, whitespace, oneOf => inSet}
-import parsley.implicits.charLift
+import parsley.implicits.character.charLift
 import parsley.combinator.eof
 
 import scala.language.implicitConversions

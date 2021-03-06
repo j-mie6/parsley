@@ -18,12 +18,21 @@ is defined as being an object which mocks a package):
   - [[parsley.io$ `parsley.io`]] contains extension methods to run parsers with input sourced from
     IO sources.
   - [[parsley.expr `parsley.expr`]] contains the following sub modules:
-    - [[parsley.expr.chain `parsley.expr.chain`]] contains combinators used in expression parsing
-    - [[parsley.expr.precedence `parsley.expr.precedence`]] is a builder for expression parsers built
+    - [[parsley.expr.chain$ `parsley.expr.chain`]] contains combinators used in expression parsing
+    - [[parsley.expr.precedence$ `parsley.expr.precedence`]] is a builder for expression parsers built
       on a precedence table.
-  - [[parsley.implicits$ `parsley.implicits`]] contains several implicits to add syntactic sugar
-    to the combinators, such as being able to use character and string literals directly as parsers,
-    as well as enabling lifting of functions to work on parsers.
+  - [[parsley.implicits `parsley.implicits`]] contains several implicits to add syntactic sugar
+    to the combinators. These are sub-categorised into the following sub modules:
+     - [[parsley.implicits.character$ `parsley.implicits.character]] contains implicits to allow you
+       to use character and string literals as parsers.
+     - [[parsley.implicits.combinator$ `parsley.implicits.combinator]] contains implicits related to
+       combinators, such as the ability to make any parser into a `Parsley[Unit]` automatically.
+     - [[parsley.implicits.lift$ `parsley.implicits.lift`]] enables postfix application of the lift
+       combinator onto a function (or value).
+     - [[parsley.implicits.zipped$ `parsley.implicits.zipped`]] enables boths a reversed form of
+       lift where the function appears on the right and is applied on a tuple (useful when type
+       inference has failed) as well as a `.zipped` method for building tuples out of several
+       combinators.
   - [[parsley.lift$ `parsley.lift`]] contains functions which lift functions that work on regular
     types to those which now combine the results of parsers returning those same types. these are
     ubiquitous.
