@@ -11,7 +11,7 @@ exclude_patterns:
 - "*.pdf"
 - "LICENSE"
 - "**/implicits/lift.scala"
-- "**/impliicts/zipped.scala"
+- "**/implicits/zipped.scala"
 plugins:
   scalastyle:
     enabled: true
