@@ -10,8 +10,6 @@ import parsley.registers._
 
 import scala.language.implicitConversions
 
-import java.io.File
-
 class CoreTests extends ParsleyTest {
     private val add: (Int, Int) => Int = _+_
     private val add1 = (x: Int) => x + 1
@@ -348,14 +346,7 @@ class CoreTests extends ParsleyTest {
         p.runParser("") shouldBe Success(None)
     }
 
-    "stack overflows" should "not occur" in {
-        def repeat(n: Int, p: Parsley[Char]): Parsley[Char] = {
-            if (n > 0) p *> repeat(n-1, p)
-            else p
-        }
-        noException should be thrownBy repeat(4000, 'a').runParser("a")
-    }
-    they should "not be thrown by recursive parsers" in {
+    "stack overflows" should "not be thrown by recursive parsers" in {
         lazy val p: Parsley[Int] = p.map((x: Int) => x+1)
         def many_[A](p: Parsley[A]): Parsley[List[A]] = {
             lazy val manyp: Parsley[List[A]] = (p <::> manyp) </> Nil
@@ -366,9 +357,5 @@ class CoreTests extends ParsleyTest {
     they should "not be caused by bind optimisation" in {
         lazy val uhoh: Parsley[Unit] = 'a' >>= (_ => uhoh)
         noException should be thrownBy uhoh.runParser("a")
-    }
-
-    "parseFromFile" should "work" in {
-        (manyUntil(anyChar, "Jamie Willis") *> anyChar).parseFromFile(new File("LICENSE")) shouldBe Success('\n')
     }
 }

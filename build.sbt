@@ -1,4 +1,5 @@
 import scala.collection.mutable
+import sbtcrossproject.Platform
 
 val projectName = "parsley"
 
@@ -37,26 +38,51 @@ def extraSources(rootSrcFile: File, base: String, version: String): Seq[File] = 
     case Some((major, minor)) => extraSources(rootSrcFile, base, major, minor)
     case None => Seq.empty
 }
+def sharedBaseDirectory(baseDirectory: File): File = {
+  baseDirectory.getParentFile
+}
 
 def scalaTestDependency(version: String): String = Map("0.27.0-RC1" -> "3.2.2", "3.0.0-M3" -> "3.2.3").getOrElse(version, "3.2.5")
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
+val PureVisible: CrossType = new CrossType {
+    def projectDir(crossBase: File, projectType: String): File =
+      crossBase / projectType
+
+    def projectDir(crossBase: File, platform: Platform): File =
+      crossBase / platform.identifier
+
+    def sharedSrcDir(projectBase: File, conf: String): Option[File] =
+      Some(projectBase.getParentFile / "src" / conf / "scala")
+  }
+
 lazy val root = project.in(file("."))
+  .aggregate(parsley.js, parsley.jvm)
+  .settings(
+    publish := {},
+    publishLocal := {},
+
+    Compile / unmanagedSourceDirectories += file(s"${sharedBaseDirectory(baseDirectory.value).getPath}/src/main/deprecated"),
+    Compile / unmanagedSourceDirectories ++= extraSources(sharedBaseDirectory(baseDirectory.value), "main", scalaVersion.value),
+    Test / unmanagedSourceDirectories ++= extraSources(sharedBaseDirectory(baseDirectory.value), "test", scalaVersion.value),
+  )
+
+lazy val parsley = crossProject(JSPlatform, JVMPlatform)
+  .withoutSuffixFor(JVMPlatform)
+  .crossType(PureVisible)
+  .in(file("."))
   .settings(
     name := projectName,
     scalaVersion := scala213Version,
 
-    libraryDependencies ++=
-      Seq(
-        "org.scalatest" %% "scalatest" % scalaTestDependency(scalaVersion.value) % Test
-      ),
+    libraryDependencies += "org.scalatest" %%% "scalatest" % scalaTestDependency(scalaVersion.value) % Test,
 
     crossScalaVersions := List(scala212Version, scala213Version, scala3Version, dottyVersion),
     // temporary until Parsley 3.0
-    Compile / unmanagedSourceDirectories += file(s"${baseDirectory.value.getPath}/src/main/deprecated"),
-    Compile / unmanagedSourceDirectories ++= extraSources(baseDirectory.value, "main", scalaVersion.value),
-    Test / unmanagedSourceDirectories ++= extraSources(baseDirectory.value, "test", scalaVersion.value),
+    Compile / unmanagedSourceDirectories += file(s"${sharedBaseDirectory(baseDirectory.value).getPath}/src/main/deprecated"),
+    Compile / unmanagedSourceDirectories ++= extraSources(sharedBaseDirectory(baseDirectory.value), "main", scalaVersion.value),
+    Test / unmanagedSourceDirectories ++= extraSources(sharedBaseDirectory(baseDirectory.value), "test", scalaVersion.value),
 
     scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature"),
     scalacOptions ++= (if (isDotty.value) Seq("-source:3.0-migration") else Seq.empty),
