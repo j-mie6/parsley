@@ -1,9 +1,9 @@
 version: "2"
 exclude_patterns:
-- "**/scala-3.x"
-- "**/native"
-- "**/js"
-- "**/test"
+- "**/scala-3.x/"
+- "**/native/"
+- "**/js/"
+- "**/test/"
 - ".github"
 - "project"
 - "build.sbt"
@@ -12,6 +12,8 @@ exclude_patterns:
 - ".gitignore"
 - "*.pdf"
 - "LICENSE"
+- "**/lift.scala"
+- "**/implicits/zipped.scala"
 plugins:
   scalastyle:
     enabled: true

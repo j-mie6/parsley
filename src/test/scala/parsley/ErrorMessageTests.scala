@@ -2,7 +2,7 @@ package parsley
 
 import parsley.combinator.{eof, optional}
 import parsley.Parsley._
-import parsley.implicits.{charLift, stringLift}
+import parsley.implicits.character.{charLift, stringLift}
 import parsley.character.{anyChar, digit}
 import parsley.unsafe.ErrorLabel
 

@@ -5,7 +5,7 @@ import parsley.Parsley, Parsley._
 import parsley.character.{char, satisfy, digit}
 import parsley.combinator.some
 import parsley.expr._
-import parsley.implicits.charLift
+import parsley.implicits.character.charLift
 import parsley.unsafe.ErrorLabel
 import machine.instructions
 
