@@ -2,7 +2,7 @@ package parsley
 
 import parsley.character._
 import parsley.Parsley._
-import parsley.implicits.{charLift, stringLift}
+import parsley.implicits.character.{charLift, stringLift}
 
 import scala.language.implicitConversions
 

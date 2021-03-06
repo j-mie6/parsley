@@ -4,7 +4,8 @@ import parsley.Parsley._
 import parsley.combinator.{many, manyUntil}
 import parsley.lift._
 import parsley.character.{char, satisfy, digit, anyChar, string}
-import parsley.implicits.{charLift, stringLift, Lift1}
+import parsley.implicits.character.{charLift, stringLift}
+import parsley.implicits.lift.Lift1
 import parsley.registers._
 import parsley.io._
 

@@ -2,7 +2,7 @@ package parsley
 
 import parsley.Parsley.{LazyParsley}
 import parsley.combinator.skipMany
-import parsley.implicits.charLift
+import parsley.implicits.character.charLift
 import parsley.internal.deepembedding
 import parsley.unsafe.ErrorLabel
 

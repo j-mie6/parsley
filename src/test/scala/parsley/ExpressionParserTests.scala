@@ -1,7 +1,7 @@
 package parsley
 
 import parsley.character.digit
-import parsley.implicits.{charLift, stringLift}
+import parsley.implicits.character.{charLift, stringLift}
 import parsley.expr.chain
 import parsley.expr.{precedence, Ops, GOps, Levels, Level, InfixL, InfixR, Prefix, Postfix}
 import parsley.Parsley._
