@@ -16,7 +16,7 @@ class DefuncHintsTests extends ParsleyTest {
     }
 
     "EmptyHints" should "have size 0" in {
-        EmptyHints shouldBe 'isEmpty
+        EmptyHints shouldBe empty
     }
     it should "yield an empty set" in {
         EmptyHints.toSet shouldBe empty
