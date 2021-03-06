@@ -8,7 +8,6 @@ import scala.language.implicitConversions
 import MockedBuilders.mockedErrorItemBuilder
 import scala.annotation.nowarn
 
-@nowarn("msg=deprecated")
 class DefuncHintsTests extends ParsleyTest {
     def mkErr(labels: String*): DefuncError = {
         assert(labels.nonEmpty)
