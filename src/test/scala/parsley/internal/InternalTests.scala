@@ -17,35 +17,35 @@ class InternalTests extends ParsleyTest {
         val q = 'a' *> p <* 'b' <* p <* 'c'
         q.internal.instrs.count(_ == instructions.Return) shouldBe 1
         q.internal.instrs.last should be (instructions.Return)
-        q.runParser("a123b123c") should be (Success('3'))
+        q.parse("a123b123c") should be (Success('3'))
     }
 
     they should "function correctly under error messages" in {
         val p = satisfy(_ => true) *> satisfy(_ => true) *> satisfy(_ => true)
         val q = p.unsafeLabel("err1") *> 'a' *> p.unsafeLabel("err1") <* 'b' <* p.unsafeLabel("err2") <* 'c' <* p.unsafeLabel("err2") <* 'd'
         q.internal.instrs.count(_ == instructions.Return) shouldBe 2
-        q.runParser("123a123b123c123d") should be (Success('3'))
+        q.parse("123a123b123c123d") should be (Success('3'))
     }
 
     they should "not appear when only referenced once with any given error message" in {
         val p = satisfy(_ => true) *> satisfy(_ => true) *> satisfy(_ => true)
         val q = 'a' *> p.unsafeLabel("err1") <* 'b' <* p.unsafeLabel("err2") <* 'c'
         q.internal.instrs.count(_ == instructions.Return) shouldBe 0
-        q.runParser("a123b123c") should be (Success('3'))
+        q.parse("a123b123c") should be (Success('3'))
     }
 
     they should "not duplicate subroutines when error label is the same" in {
         val p = satisfy(_ => true) *> satisfy(_ => true) *> satisfy(_ => true)
         val q = 'a' *> p.unsafeLabel("err1") <* 'b' <* p.unsafeLabel("err1") <* 'c'
         q.internal.instrs.count(_ == instructions.Return) shouldBe 1
-        q.runParser("a123b123c") should be (Success('3'))
+        q.parse("a123b123c") should be (Success('3'))
     }
 
     they should "function properly when a recursion boundary is inside" in {
         lazy val q: Parsley[Unit] = (p *> p) <|> unit
         lazy val p: Parsley[Unit] = '(' *> q <* ')'
         q.internal.instrs.count(_ == instructions.Return) shouldBe 1
-        q.runParser("(()())()") shouldBe a [Success[_]]
+        q.parse("(()())()") shouldBe a [Success[_]]
     }
 
     they should "work in the precedence parser with one op" in {

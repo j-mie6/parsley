@@ -8,14 +8,12 @@ import parsley.combinator.{option, some}
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.reflect.ClassTag
-import scala.io.Source
-import java.io.File
 import scala.language.{higherKinds, implicitConversions}
 
 // User API
 /**
-  * This is the class that encapsulates the act of parsing and running an object of this class with `runParser` will
-  * parse the string given as input to `runParser`.
+  * This is the class that encapsulates the act of parsing and running an object of this class with `parse` will
+  * parse the string given as input to `parse`.
   *
   * Note: In order to construct an object of this class you must use the combinators; the class itself is abstract
   *
@@ -45,20 +43,9 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: deepe
       * array, will parse the string with the parser. The result is either a `Success` or a `Failure`.
       * @param input The input to run against
       * @return Either a success with a value of type `A` or a failure with error message
+      * @since 3.0.0
       */
-    def runParser(input: String): Result[A] = new Context(internal.threadSafeInstrs, input).runParser()
-    /** This method executes a parser, but collects the input to the parser from the given file.
-      * The file name is used to annotate any error messages.
-      * @param file The file to load and run against
-      * @return Either a success with a value of type `A` or a failure with error message
-      * @since 2.3.0
-      */
-    def parseFromFile(file: File): Result[A] = {
-        val src = Source.fromFile(file)
-        val input = src.mkString
-        src.close()
-        new Context(internal.threadSafeInstrs, input, Some(file.getName)).runParser()
-    }
+    def parse(input: String): Result[A] = new Context(internal.threadSafeInstrs, input).runParser()
 }
 /** This object contains the core "function-style" combinators as well as the implicit classes which provide
   * the "method-style" combinators. All parsers will likely require something from within! */
@@ -148,8 +135,6 @@ object Parsley
           * @return A new parser which first parses the invokee, then results `x`
           */
         def #>[B](x: B): Parsley[B] = this *> pure(x)
-        /**This combinator is an alias for `*>`*/
-        def >>[B](q: Parsley[B]): Parsley[B] = this *> q
         /**
           * This is the parser that corresponds to a more optimal version of `(p <~> q).map(_._2)`. It performs
           * the parse action of both parsers, in order, but discards the result of the invokee.
