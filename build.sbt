@@ -41,8 +41,6 @@ def extraSources(rootSrcFile: File, base: String, version: String): Seq[File] = 
 
 def scalaTestDependency(version: String): String = Map("0.27.0-RC1" -> "3.2.2", "3.0.0-M3" -> "3.2.3").getOrElse(version, "3.2.5")
 
-Global / onChangedBuildSource := ReloadOnSourceChanges
-
 val PureVisible: CrossType = new CrossType {
     def projectDir(crossBase: File, projectType: String): File =
       crossBase / projectType
@@ -54,17 +52,10 @@ val PureVisible: CrossType = new CrossType {
       Some(projectBase.getParentFile / "src" / conf / "scala")
   }
 
-lazy val root = project.in(file("."))
-  .aggregate(parsley.jvm)
-  .settings(
-    publish := {},
-    publishLocal := {},
+Global / onChangedBuildSource := ReloadOnSourceChanges
 
-    // temporary until Parsley 3.0
-    Compile / unmanagedSourceDirectories += file(s"${baseDirectory.value.getPath}/src/main/deprecated"),
-    Compile / unmanagedSourceDirectories ++= extraSources(baseDirectory.value, "main", scalaVersion.value),
-    Test / unmanagedSourceDirectories ++= extraSources(baseDirectory.value, "test", scalaVersion.value),
-  )
+// See https://github.com/sbt/sbt/issues/1224
+onLoad in Global ~= (_ andThen ("project parsley" :: _))
 
 lazy val parsley = crossProject(JSPlatform, JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
