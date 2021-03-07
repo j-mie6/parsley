@@ -8,12 +8,6 @@ on:
       - '*'
   workflow_dispatch:
 
-#env:
-#  WARN: Updating sbt ci-release to any version past 1.5.4 changes the default (+publishSigned) to +publish
-#  CI_SNAPSHOT_RELEASE: +publishSigned
-#  Temp: testing if SCALA_VERSION is needed
-#  SCALA_VERSION: 2.12.13
-
 jobs:
   release:
     name: Release
@@ -43,9 +37,21 @@ jobs:
           path: ~/.sbt
           key: sbt-${{ hashFiles('**/build.sbt') }}
 
-      - name: Publish
+      - name: Publish JVM
         run: sbt ci-release
         env:
+          CI_RELEASE:          +publishSigned
+          CI_SNAPSHOT_RELEASE: +publishSigned
+          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+          PGP_SECRET: ${{ secrets.PGP_SECRET }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+
+      - name: Publish JS
+        run: sbt ci-release
+        env:
+          CI_RELEASE:          +parsleyJS/publishSigned
+          CI_SNAPSHOT_RELEASE: +parsleyJS/publishSigned
           PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
