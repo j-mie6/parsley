@@ -67,7 +67,7 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform)
 
     libraryDependencies += "org.scalatest" %%% "scalatest" % scalaTestDependency(scalaVersion.value) % Test,
 
-    crossScalaVersions := List(scala212Version, scala213Version, scala3Version, dottyVersion),
+    //crossScalaVersions := List(scala212Version, scala213Version, scala3Version, dottyVersion),
     // temporary until Parsley 3.0
     Compile / unmanagedSourceDirectories += file(s"${baseDirectory.value.getParentFile.getPath}/src/main/deprecated"),
     Compile / unmanagedSourceDirectories ++= extraSources(baseDirectory.value.getParentFile, "main", scalaVersion.value),
@@ -83,4 +83,10 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform)
       val old = (Compile / doc / sources).value
       if (scalaVersion.value == dottyVersion) Seq() else old
     }
+  )
+  .jvmSettings(
+    crossScalaVersions := List(scala212Version, scala213Version, scala3Version, dottyVersion)
+  )
+  .jsSettings(
+    crossScalaVersions := List(scala212Version, scala213Version)
   )

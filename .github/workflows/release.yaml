@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - js-publish
     tags:
       - '*'
   workflow_dispatch:
