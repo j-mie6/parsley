@@ -41,8 +41,7 @@ def extraSources(rootSrcFile: File, base: String, version: String): Seq[File] = 
 
 def scalaTestDependency(version: String): String =
     Map("0.27.0-RC1" -> "3.2.2",
-        "3.0.0-M3" -> "3.2.3",
-        "2.13.4" -> "3.2.3")
+        "3.0.0-M3" -> "3.2.3")
     .getOrElse(version, "3.2.5")
 
 val PureVisible: CrossType = new CrossType {
