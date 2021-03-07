@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - native-support
     tags:
       - '*'
   workflow_dispatch:
@@ -52,6 +53,16 @@ jobs:
         env:
           CI_RELEASE:          +parsleyJS/publishSigned
           CI_SNAPSHOT_RELEASE: +parsleyJS/publishSigned
+          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+          PGP_SECRET: ${{ secrets.PGP_SECRET }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+
+      - name: Publish Native
+        run: sbt ci-release
+        env:
+          CI_RELEASE:          +parsleyNative/publishSigned
+          CI_SNAPSHOT_RELEASE: +parsleyNative/publishSigned
           PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}

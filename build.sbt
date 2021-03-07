@@ -39,7 +39,11 @@ def extraSources(rootSrcFile: File, base: String, version: String): Seq[File] = 
     case None => Seq.empty
 }
 
-def scalaTestDependency(version: String): String = Map("0.27.0-RC1" -> "3.2.2", "3.0.0-M3" -> "3.2.3").getOrElse(version, "3.2.5")
+def scalaTestDependency(version: String): String =
+    Map("0.27.0-RC1" -> "3.2.2",
+        "3.0.0-M3" -> "3.2.3",
+        "2.13.4" -> "3.2.3")
+    .getOrElse(version, "3.2.5")
 
 val PureVisible: CrossType = new CrossType {
     def projectDir(crossBase: File, projectType: String): File =
@@ -57,7 +61,7 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 // See https://github.com/sbt/sbt/issues/1224
 onLoad in Global ~= (_ andThen ("project parsley" :: _))
 
-lazy val parsley = crossProject(JSPlatform, JVMPlatform)
+lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .withoutSuffixFor(JVMPlatform)
   .crossType(PureVisible)
   .in(file("."))
@@ -88,4 +92,7 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform)
   )
   .jsSettings(
     crossScalaVersions := List(scala212Version, scala213Version)
+  )
+  .nativeSettings(
+    crossScalaVersions := List(scala212Version, "2.13.4") //TODO: This can change when scala native updates
   )
