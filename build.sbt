@@ -93,5 +93,5 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     crossScalaVersions := List(scala212Version, scala213Version)
   )
   .nativeSettings(
-    crossScalaVersions := List(scala212Version, "2.13.4") //TODO: This can change when scala native updates
+    crossScalaVersions := List(scala212Version, scala213Version)
   )
