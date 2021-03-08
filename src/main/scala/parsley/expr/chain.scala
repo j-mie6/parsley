@@ -62,7 +62,7 @@ object chain {
       */
     def postfix[A](p: =>Parsley[A], op: =>Parsley[A => A]): Parsley[A] = new Parsley(new deepembedding.ChainPost(p.internal, op.internal))
 
-    /**`prefix(op, p)` parses one or more prefixed applications of `op` onto a single final result of `p`
+    /**`prefix1(op, p)` parses one or more prefixed applications of `op` onto a single final result of `p`
       * @since 3.0.0
       */
     def prefix1[A, B <: A](op: =>Parsley[A => B], p: =>Parsley[A]): Parsley[B] = {
