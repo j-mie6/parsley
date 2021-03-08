@@ -102,24 +102,24 @@ class ExpressionParserTests extends ParsleyTest {
     }
 
     "expression parsers" should "result in correct precedence" in {
-        val expr = precedence[Int](digit.map(_.asDigit), Ops(InfixL)('*' #> (_*_)),
+        val expr = precedence[Int](digit.map(_.asDigit))(Ops(InfixL)('*' #> (_*_)),
                                                          Ops(InfixL)('+' #> (_+_)))
         expr.parse("1+2*3+4") should be (Success(11))
         expr.parse("1*2+3*4") should be (Success(14))
     }
     they should "work for multiple operators at the same level" in {
-        val expr = precedence[Int](digit.map(_.asDigit), Ops(InfixL)('+' #> (_+_), '-' #> (_-_)))
+        val expr = precedence[Int](digit.map(_.asDigit))(Ops(InfixL)('+' #> (_+_), '-' #> (_-_)))
         expr.parse("1+2-3+4") should be (Success(4))
         expr.parse("1-2+3-4") should be (Success(-2))
     }
     they should "work for mixed associativity operators" in {
-        val expr = precedence[Int](digit.map(_.asDigit), Ops(InfixL)('*' #> (_*_)),
+        val expr = precedence[Int](digit.map(_.asDigit))(Ops(InfixL)('*' #> (_*_)),
                                                          Ops(InfixR)('+' #> (_+_)))
         expr.parse("1+2*3+4") should be (Success(11))
         expr.parse("1*2+3*4") should be (Success(14))
     }
     they should "parse mathematical expressions" in {
-        lazy val expr: Parsley[Int] = precedence[Int](atom,
+        lazy val expr: Parsley[Int] = precedence[Int](atom)(
             Ops(Prefix)('-' #> (x => -x)),
             Ops(InfixL)('/' #> (_/_)),
             Ops(InfixR)('*' #> (_*_)),
@@ -131,7 +131,7 @@ class ExpressionParserTests extends ParsleyTest {
         expr.parse("(3+-7)*(-2--4)/2") should be (Success(-4))
     }
     they should "parse prefix operators mixed with infix operators" in {
-        lazy val expr = precedence[Int](atom, Ops(Prefix)('-' #> (x => -x)),
+        lazy val expr = precedence[Int](atom)(Ops(Prefix)('-' #> (x => -x)),
                                               Ops(InfixL)('-' #> (_-_)))
         lazy val atom: Parsley[Int] = digit.map(_.asDigit) <|> ('(' *> expr <* ')')
         expr.parse("-1") should be (Success(-1))
@@ -145,7 +145,7 @@ class ExpressionParserTests extends ParsleyTest {
         case class Lt(x: Expr, y: Expr) extends Expr
         case class Inc(x: Expr) extends Expr
         case class Num(x: Int) extends Expr
-        val expr = precedence[Expr](digit.map(_.asDigit).map(Num), Ops(InfixL)('<' #> Lt),
+        val expr = precedence[Expr](digit.map(_.asDigit).map(Num))(Ops(InfixL)('<' #> Lt),
                                                                    Ops(Prefix)("++" #> Inc))
         expr.parse("++1<2") should be (Success(Inc(Lt(Num(1), Num(2)))))
     }
@@ -205,7 +205,7 @@ class ExpressionParserTests extends ParsleyTest {
         )
 
         lazy val atom: Parsley[Expr] = tok.identifier.map(Constant)
-        lazy val expr: Parsley[Expr] = precedence(atom, ops: _*)
+        lazy val expr: Parsley[Expr] = precedence(atom)(ops: _*)
 
         expr.parse("o.f()") shouldBe a [Success[_]]
         expr.parse("o.f(x,y)") shouldBe a [Success[_]]
