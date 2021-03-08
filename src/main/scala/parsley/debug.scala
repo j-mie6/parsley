@@ -5,6 +5,7 @@ import parsley.internal.deepembedding
 import scala.language.implicitConversions
 
 /** This module contains the very useful debugging combinator, as well as breakpoints. */
+// COVERAGE-OFF
 object debug {
     trait Breakpoint
     case object NoBreak extends Breakpoint
@@ -31,3 +32,4 @@ object debug {
         }
     }
 }
+// COVERAGE-ON

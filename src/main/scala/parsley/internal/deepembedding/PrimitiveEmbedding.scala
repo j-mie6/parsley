@@ -133,6 +133,7 @@ private [parsley] final class UnsafeErrorRelabel[+A](_p: =>Parsley[A], msg: Stri
     override def prettyASTAux[Cont[_, +_]: ContOps]: Cont[String, String] = for (c <- p.prettyASTAux) yield s"($c ? $msg)"
     // $COVERAGE-ON$
 }
+// COVERAGE-OFF
 private [parsley] final class Debug[A](_p: =>Parsley[A], name: String, ascii: Boolean, break: Breakpoint)
     extends Unary[A, A](_p)(identity[String], _ => Debug.empty(name, ascii, break)) {
     override val numInstrs = 2
@@ -145,6 +146,7 @@ private [parsley] final class Debug[A](_p: =>Parsley[A], name: String, ascii: Bo
         }
     }
 }
+// COVERAGE-ON
 
 private [deepembedding] object Satisfy {
     def unapply(self: Satisfy): Option[Char => Boolean] = Some(self.f)
@@ -170,9 +172,11 @@ private [deepembedding] object NotFollowedBy {
 private [deepembedding] object Put {
     def empty[S](r: Reg[S]): Put[S] = new Put(r, ???)
 }
+// COVERAGE-OFF
 private [deepembedding] object Debug {
     def empty[A](name: String, ascii: Boolean, break: Breakpoint): Debug[A] = new Debug(???, name, ascii, break)
 }
+// COVERAGE-ON
 
 private [deepembedding] object Rec {
     def apply[A](p: Parsley[A], expected: Option[String]): Parsley[A] = expected match {

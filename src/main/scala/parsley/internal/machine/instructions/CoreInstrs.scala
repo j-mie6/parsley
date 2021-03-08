@@ -153,6 +153,7 @@ private [internal] final class Catch(var label: Int) extends InstrWithLabel {
 }
 
 // Debugging Instructions
+// COVERAGE-OFF
 private [instructions] trait Logger {
     val name: String
     val ascii: Boolean
@@ -192,9 +193,7 @@ private [internal] final class LogBegin(var label: Int, val name: String, val as
         ctx.pushHandler(label)
         ctx.inc()
     }
-    // $COVERAGE-OFF$
     override def toString: String = s"LogBegin($label, $name)"
-    // $COVERAGE-ON$
 }
 
 private [internal] final class LogEnd(val name: String, val ascii: Boolean, break: Boolean) extends Instr with Logger {
@@ -212,7 +211,6 @@ private [internal] final class LogEnd(val name: String, val ascii: Boolean, brea
         println(preludeString('<', ctx, end))
         if (break) doBreak(ctx)
     }
-    // $COVERAGE-OFF$
     override def toString: String = s"LogEnd($name)"
-    // $COVERAGE-ON$
 }
+// COVERAGE-ON
