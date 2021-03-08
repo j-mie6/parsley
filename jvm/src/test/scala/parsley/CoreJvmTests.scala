@@ -13,6 +13,9 @@ class CoreJvmTests extends ParsleyTest {
     "parseFromFile" should "work" in {
         (manyUntil(anyChar, "Jamie Willis") *> anyChar).parseFromFile(new File("LICENSE")).get shouldBe Success('\n')
     }
+    it should "fail with an error when file does not exist" in {
+        Parsley.empty.parseFromFile(new File("foo.diuh")) shouldBe a [scala.util.Failure[_]]
+    }
 
     "stack overflows" should "not occur" in {
         def repeat(n: Int, p: Parsley[Char]): Parsley[Char] = {

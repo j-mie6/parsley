@@ -1,9 +1,9 @@
 version: "2"
 exclude_patterns:
-- "**/scala-3.x/"
-- "**/native/"
-- "**/js/"
-- "**/test/"
+- "**/scala-3.x"
+- "**/native"
+- "**/js"
+- "**/test"
 - ".github"
 - "project"
 - "build.sbt"

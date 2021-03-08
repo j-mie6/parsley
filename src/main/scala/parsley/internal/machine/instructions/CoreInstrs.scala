@@ -153,7 +153,7 @@ private [internal] final class Catch(var label: Int) extends InstrWithLabel {
 }
 
 // Debugging Instructions
-// COVERAGE-OFF
+// $COVERAGE-OFF$
 private [instructions] trait Logger {
     val name: String
     val ascii: Boolean
@@ -213,4 +213,4 @@ private [internal] final class LogEnd(val name: String, val ascii: Boolean, brea
     }
     override def toString: String = s"LogEnd($name)"
 }
-// COVERAGE-ON
+// $COVERAGE-ON$
