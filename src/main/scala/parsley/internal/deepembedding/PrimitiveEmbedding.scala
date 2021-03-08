@@ -133,15 +133,15 @@ private [parsley] final class UnsafeErrorRelabel[+A](_p: =>Parsley[A], msg: Stri
     override def prettyASTAux[Cont[_, +_]: ContOps]: Cont[String, String] = for (c <- p.prettyASTAux) yield s"($c ? $msg)"
     // $COVERAGE-ON$
 }
-private [parsley] final class Debug[A](_p: =>Parsley[A], name: String, break: Breakpoint)
-    extends Unary[A, A](_p)(identity[String], _ => Debug.empty(name, break)) {
+private [parsley] final class Debug[A](_p: =>Parsley[A], name: String, ascii: Boolean, break: Breakpoint)
+    extends Unary[A, A](_p)(identity[String], _ => Debug.empty(name, ascii, break)) {
     override val numInstrs = 2
     override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
         val handler = state.freshLabel()
-        instrs += new instructions.LogBegin(handler, name, (break eq EntryBreak) || (break eq FullBreak))
+        instrs += new instructions.LogBegin(handler, name, ascii, (break eq EntryBreak) || (break eq FullBreak))
         p.codeGen |> {
             instrs += new instructions.Label(handler)
-            instrs += new instructions.LogEnd(name, (break eq ExitBreak) || (break eq FullBreak))
+            instrs += new instructions.LogEnd(name, ascii, (break eq ExitBreak) || (break eq FullBreak))
         }
     }
 }
@@ -171,7 +171,7 @@ private [deepembedding] object Put {
     def empty[S](r: Reg[S]): Put[S] = new Put(r, ???)
 }
 private [deepembedding] object Debug {
-    def empty[A](name: String, break: Breakpoint): Debug[A] = new Debug(???, name, break)
+    def empty[A](name: String, ascii: Boolean, break: Breakpoint): Debug[A] = new Debug(???, name, ascii, break)
 }
 
 private [deepembedding] object Rec {
