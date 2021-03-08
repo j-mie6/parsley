@@ -275,8 +275,7 @@ class Lexer(lang: LanguageDef)
 
     private def enclosing[A](p: =>Parsley[A], open: Char, close: Char, singular: String, plural: String) =
         between(lexeme(open.unsafeLabel(s"open $singular")),
-                //TODO: This use of fail is probably inappropriate with the new error message model
-                lexeme(close.unsafeLabel(s"matching closing $singular")) <|> fail(s"unclosed $plural"),
+                lexeme(close.unsafeLabel(s"matching closing $singular").explain(s"unclosed $plural")),
                 p)
 
     // Bracketing
