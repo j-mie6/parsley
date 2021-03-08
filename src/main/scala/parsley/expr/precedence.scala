@@ -28,13 +28,13 @@ object precedence {
     /** This is used to build an expression parser for a monolithic type. Levels are specified from strongest
      * to weakest.
      * @tparam A The type of the monolithic tree
-     * @param atom The atomic unit of the expression, for instance numbers/variables
+     * @param atoms The atomic units of the expression, for instance numbers/variables
      * @param table A table of operators. Table is ordered highest precedence to lowest precedence.
      *              Each list in the table corresponds to operators of the same precedence level.
      * @return A parser for the described expression language
-     * @since 2.2.0
+     * @since 3.0.0
      */
-    def apply[A](atom: =>Parsley[A], table: Ops[A, A]*): Parsley[A] = apply(atom, table.foldRight(Levels.empty[A])(Level.apply[A, A, A]))
+    def apply[A](atoms: Parsley[A]*)(table: Ops[A, A]*): Parsley[A] = apply(choice(atoms: _*), table.foldRight(Levels.empty[A])(Level.apply[A, A, A]))
 
     /** This is used to build an expression parser for a multi-layered expression tree type. Levels are specified
      * from strongest to weakest.
@@ -46,5 +46,5 @@ object precedence {
      * @return A parser for the described expression language
      * @since 2.2.0
      */
-    def apply[A, B](atom: =>Parsley[A], table: Levels[A, B]): Parsley[B] = crushLevels(atom, table)
+    def apply[A, B](atom: Parsley[A], table: Levels[A, B]): Parsley[B] = crushLevels(atom, table)
 }

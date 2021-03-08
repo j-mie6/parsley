@@ -28,6 +28,20 @@ class ExpressionParserTests extends ParsleyTest {
         noException should be thrownBy q.parse("1+*1+")
     }
 
+    "chain.postfix1" must "require and initial value AND an initial operator" in {
+        chain.postfix1('1' #> 1, '+' #> ((x: Int) => x + 1)).parse("1") shouldBe a [Failure]
+        chain.postfix1('1' #> 1, '+' #> ((x: Int) => x + 1)).parse("1+") shouldBe Success(2)
+    }
+    it must "parse all operators that follow" in {
+        chain.postfix1('1' #> 1, '+' #> ((x: Int) => x + 1)).parse("1++++++++++++++") should not be a [Failure]
+    }
+    it must "apply the functions" in {
+        chain.postfix1('1' #> 1, '+' #> ((x: Int) => x + 1)).parse("1++++++++++++++") should be (Success(15))
+    }
+    it must "fail if an operator fails after consuming input" in {
+        chain.postfix1('1' #> 1, "++" #> ((x: Int) => x + 1)).parse("1+++++++++++++") shouldBe a [Failure]
+    }
+
     "chain.prefix" must "parse an operatorless value" in {
         chain.prefix('+' #> ((x: Int) => x + 1), '1' #> 1).parse("1") should be (Success(1))
     }
@@ -39,6 +53,19 @@ class ExpressionParserTests extends ParsleyTest {
     }
     it must "apply the functions" in {
         chain.prefix('+' #> ((x: Int) => x + 1), '1' #> 1).parse("+++++++++++1") should be (Success(12))
+    }
+
+    "chain.prefix1" must "not parse an operatorless value" in {
+        chain.prefix1('+' #> ((x: Int) => x + 1), '1' #> 1).parse("1") shouldBe a [Failure]
+    }
+    it must "parse all operators that precede a value" in {
+        chain.prefix1('+' #> ((x: Int) => x + 1), '1' #> 1).parse("+++++++++++1") should not be a [Failure]
+    }
+    it must "fail if the final value is absent" in {
+        chain.prefix1('+' #> ((x: Int) => x + 1), '1' #> 1).parse("+++++++++++") shouldBe a [Failure]
+    }
+    it must "apply the functions" in {
+        chain.prefix1('+' #> ((x: Int) => x + 1), '1' #> 1).parse("+++++++++++1") should be (Success(12))
     }
 
     "chain.right1" must "require an initial value" in {
@@ -102,24 +129,24 @@ class ExpressionParserTests extends ParsleyTest {
     }
 
     "expression parsers" should "result in correct precedence" in {
-        val expr = precedence[Int](digit.map(_.asDigit), Ops(InfixL)('*' #> (_*_)),
+        val expr = precedence[Int](digit.map(_.asDigit))(Ops(InfixL)('*' #> (_*_)),
                                                          Ops(InfixL)('+' #> (_+_)))
         expr.parse("1+2*3+4") should be (Success(11))
         expr.parse("1*2+3*4") should be (Success(14))
     }
     they should "work for multiple operators at the same level" in {
-        val expr = precedence[Int](digit.map(_.asDigit), Ops(InfixL)('+' #> (_+_), '-' #> (_-_)))
+        val expr = precedence[Int](digit.map(_.asDigit))(Ops(InfixL)('+' #> (_+_), '-' #> (_-_)))
         expr.parse("1+2-3+4") should be (Success(4))
         expr.parse("1-2+3-4") should be (Success(-2))
     }
     they should "work for mixed associativity operators" in {
-        val expr = precedence[Int](digit.map(_.asDigit), Ops(InfixL)('*' #> (_*_)),
+        val expr = precedence[Int](digit.map(_.asDigit))(Ops(InfixL)('*' #> (_*_)),
                                                          Ops(InfixR)('+' #> (_+_)))
         expr.parse("1+2*3+4") should be (Success(11))
         expr.parse("1*2+3*4") should be (Success(14))
     }
     they should "parse mathematical expressions" in {
-        lazy val expr: Parsley[Int] = precedence[Int](atom,
+        lazy val expr: Parsley[Int] = precedence[Int](atom)(
             Ops(Prefix)('-' #> (x => -x)),
             Ops(InfixL)('/' #> (_/_)),
             Ops(InfixR)('*' #> (_*_)),
@@ -131,7 +158,7 @@ class ExpressionParserTests extends ParsleyTest {
         expr.parse("(3+-7)*(-2--4)/2") should be (Success(-4))
     }
     they should "parse prefix operators mixed with infix operators" in {
-        lazy val expr = precedence[Int](atom, Ops(Prefix)('-' #> (x => -x)),
+        lazy val expr = precedence[Int](atom)(Ops(Prefix)('-' #> (x => -x)),
                                               Ops(InfixL)('-' #> (_-_)))
         lazy val atom: Parsley[Int] = digit.map(_.asDigit) <|> ('(' *> expr <* ')')
         expr.parse("-1") should be (Success(-1))
@@ -145,7 +172,7 @@ class ExpressionParserTests extends ParsleyTest {
         case class Lt(x: Expr, y: Expr) extends Expr
         case class Inc(x: Expr) extends Expr
         case class Num(x: Int) extends Expr
-        val expr = precedence[Expr](digit.map(_.asDigit).map(Num), Ops(InfixL)('<' #> Lt),
+        val expr = precedence[Expr](digit.map(_.asDigit).map(Num))(Ops(InfixL)('<' #> Lt),
                                                                    Ops(Prefix)("++" #> Inc))
         expr.parse("++1<2") should be (Success(Inc(Lt(Num(1), Num(2)))))
     }
@@ -205,7 +232,7 @@ class ExpressionParserTests extends ParsleyTest {
         )
 
         lazy val atom: Parsley[Expr] = tok.identifier.map(Constant)
-        lazy val expr: Parsley[Expr] = precedence(atom, ops: _*)
+        lazy val expr: Parsley[Expr] = precedence(atom)(ops: _*)
 
         expr.parse("o.f()") shouldBe a [Success[_]]
         expr.parse("o.f(x,y)") shouldBe a [Success[_]]
