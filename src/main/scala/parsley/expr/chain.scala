@@ -65,7 +65,7 @@ object chain {
     /**`prefix(op, p)` parses one or more prefixed applications of `op` onto a single final result of `p`
       * @since 3.0.0
       */
-    def prefix1[A, B <: A](p: =>Parsley[A], op: =>Parsley[A => B]): Parsley[B] = {
+    def prefix1[A, B <: A](op: =>Parsley[A => B], p: =>Parsley[A]): Parsley[B] = {
         lazy val op_ = op
         op_ <*> prefix(op_, p)
     }

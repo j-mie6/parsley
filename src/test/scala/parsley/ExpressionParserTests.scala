@@ -28,6 +28,20 @@ class ExpressionParserTests extends ParsleyTest {
         noException should be thrownBy q.parse("1+*1+")
     }
 
+    "chain.postfix1" must "require and initial value AND an initial operator" in {
+        chain.postfix1('1' #> 1, '+' #> ((x: Int) => x + 1)).parse("1") shouldBe a [Failure]
+        chain.postfix1('1' #> 1, '+' #> ((x: Int) => x + 1)).parse("1+") shouldBe Success(2)
+    }
+    it must "parse all operators that follow" in {
+        chain.postfix1('1' #> 1, '+' #> ((x: Int) => x + 1)).parse("1++++++++++++++") should not be a [Failure]
+    }
+    it must "apply the functions" in {
+        chain.postfix1('1' #> 1, '+' #> ((x: Int) => x + 1)).parse("1++++++++++++++") should be (Success(15))
+    }
+    it must "fail if an operator fails after consuming input" in {
+        chain.postfix1('1' #> 1, "++" #> ((x: Int) => x + 1)).parse("1+++++++++++++") shouldBe a [Failure]
+    }
+
     "chain.prefix" must "parse an operatorless value" in {
         chain.prefix('+' #> ((x: Int) => x + 1), '1' #> 1).parse("1") should be (Success(1))
     }
@@ -39,6 +53,19 @@ class ExpressionParserTests extends ParsleyTest {
     }
     it must "apply the functions" in {
         chain.prefix('+' #> ((x: Int) => x + 1), '1' #> 1).parse("+++++++++++1") should be (Success(12))
+    }
+
+    "chain.prefix1" must "not parse an operatorless value" in {
+        chain.prefix1('+' #> ((x: Int) => x + 1), '1' #> 1).parse("1") shouldBe a [Failure]
+    }
+    it must "parse all operators that precede a value" in {
+        chain.prefix1('+' #> ((x: Int) => x + 1), '1' #> 1).parse("+++++++++++1") should not be a [Failure]
+    }
+    it must "fail if the final value is absent" in {
+        chain.prefix1('+' #> ((x: Int) => x + 1), '1' #> 1).parse("+++++++++++") shouldBe a [Failure]
+    }
+    it must "apply the functions" in {
+        chain.prefix1('+' #> ((x: Int) => x + 1), '1' #> 1).parse("+++++++++++1") should be (Success(12))
     }
 
     "chain.right1" must "require an initial value" in {
