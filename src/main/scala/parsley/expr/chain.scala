@@ -61,4 +61,21 @@ object chain {
       * @since 2.2.0
       */
     def postfix[A](p: =>Parsley[A], op: =>Parsley[A => A]): Parsley[A] = new Parsley(new deepembedding.ChainPost(p.internal, op.internal))
+
+    /**`prefix(op, p)` parses one or more prefixed applications of `op` onto a single final result of `p`
+      * @since 3.0.0
+      */
+    def prefix1[A](p: =>Parsley[A], op: =>Parsley[A => A]): Parsley[A] = {
+        lazy val op_ = op
+        op_ <*> prefix(op_, p)
+    }
+
+    /**`postfix1(p, op)` parses one occurrence of `p`, followed by one or more postfix applications of `op`
+      * that associate to the left.
+      * @since 3.0.0
+      */
+    def postfix1[A](p: =>Parsley[A], op: =>Parsley[A => A]): Parsley[A] = {
+        lazy val op_ = op
+        postfix(p <**> op_, op_)
+    }
 }
