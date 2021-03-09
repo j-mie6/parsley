@@ -1,14 +1,13 @@
 package parsley.internal.errors
 
-private [internal] abstract class LineBuilder {
-    final private [errors] def getLineWithCaret(offset: Int): (String, String) = {
+private [parsley] abstract class LineBuilder {
+    final def getLineWithCaret(offset: Int): (String, Int) = {
         // FIXME: Tabs man... tabs
         val startOffset = nearestNewlineBefore(offset)
         val endOffset = nearestNewlineAfter(offset)
         val segment = segmentBetween(startOffset, endOffset)
         val caretAt = offset - startOffset
-        val caretPad = " " * caretAt
-        (segment.replace('\t', ' '), s"$caretPad^")
+        (segment.replace('\t', ' '), caretAt)
     }
 
     protected def nearestNewlineBefore(off: Int): Int
