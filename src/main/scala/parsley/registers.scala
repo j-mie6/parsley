@@ -93,6 +93,15 @@ object registers {
       */
     def put[S](r: Reg[S], p: =>Parsley[S]): Parsley[Unit] = new Parsley(new deepembedding.Put(r, p.internal))
     /**
+      * Places the result of running `p` into register `r`.
+      * @note There are only 4 registers at present.
+      * @param r The index of the register to place the value in
+      * @param p The parser to derive the value from
+      * @param f A function which adapts the result of `p` so that it can fit in `r`
+      * @since 3.0.0
+      */
+    def puts[A, S](r: Reg[S], p: =>Parsley[A], f: A => S): Parsley[Unit] = put(r.asInstanceOf[Reg[A]], p) *> modify(r, f.asInstanceOf[S => S])
+    /**
       * Modifies the value contained in register `r` using function `f`.
       * @note There are only 4 registers at present.
       * @param r The index of the register to modify
@@ -133,7 +142,7 @@ object registers {
       * @return The parser that performs `p` with the modified state
       * @since 2.2.0
       */
-    def local[R, A](r: Reg[R], f: R => R, p: =>Parsley[A]): Parsley[A] = local(r, get[R](r).map(f), p)
+    def local[R, A](r: Reg[R], f: R => R, p: =>Parsley[A]): Parsley[A] = local(r, gets(r, f), p)
 
     /** `rollback(reg, p)` will perform `p`, but if it fails without consuming input, any changes to the register `reg` will
       * be reverted.

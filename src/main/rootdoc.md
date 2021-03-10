@@ -33,6 +33,10 @@ is defined as being an object which mocks a package):
        lift where the function appears on the right and is applied on a tuple (useful when type
        inference has failed) as well as a `.zipped` method for building tuples out of several
        combinators.
+  - [[parsley.errors `parsley.errors`]] contains modules to deal with error messages, their refinement
+    and generation.
+     - [[parsley.errors.combinator$ `parsley.errors.combinator`]] provides combinators that can be
+       used to either produce more detailed errors as well as refine existing errors.
   - [[parsley.lift$ `parsley.lift`]] contains functions which lift functions that work on regular
     types to those which now combine the results of parsers returning those same types. these are
     ubiquitous.

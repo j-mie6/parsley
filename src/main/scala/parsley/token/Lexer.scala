@@ -4,7 +4,8 @@ import parsley.character.{digit, hexDigit, octDigit, satisfy}
 import parsley.combinator.{sepBy, sepBy1, between, many, skipMany, some, skipSome}
 import parsley.lift.lift2
 import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
-import parsley.Parsley, Parsley.{void, unit, fail, attempt, pure, empty, notFollowedBy, LazyParsley}
+import parsley.Parsley, Parsley.{void, unit, attempt, pure, empty, notFollowedBy, LazyParsley}
+import parsley.errors.combinator.{fail, ErrorMethods}
 import parsley.token.TokenSet
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.internal.deepembedding

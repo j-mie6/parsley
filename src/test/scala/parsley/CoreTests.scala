@@ -7,6 +7,7 @@ import parsley.character.{char, satisfy, digit, anyChar, string}
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.implicits.lift.Lift1
 import parsley.registers._
+import parsley.errors.combinator.{fail => pfail, unexpected}
 
 import scala.language.implicitConversions
 
@@ -118,16 +119,8 @@ class CoreTests extends ParsleyTest {
         join(Parsley.empty).parse("") shouldBe a [Failure]
     }
 
-    "mzero parsers" should "always fail" in {
-        (Parsley.empty ~> 'a').parse("a") shouldBe a [Failure]
-        (Parsley.fail("") ~> 'a').parse("a") shouldBe a [Failure]
-        (Parsley.unexpected("") *> 'a').parse("a") shouldBe a [Failure]
-        (('a' ! (_ => "")) *> 'b').parse("ab") shouldBe a [Failure]
-        ('a'.unexpected(_ => "") *> 'b').parse("ab") shouldBe a [Failure]
-    }
-
     "<|>" should "not try the second alternative if the first succeeded" in {
-        ('a' <|> Parsley.fail("wrong!")).parse("a") should not be a [Failure]
+        ('a' <|> pfail("wrong!")).parse("a") should not be a [Failure]
     }
     it should "only try second alternative if the first failed without consuming input" in {
         ('a' <|> 'b').parse("b") should not be a [Failure]
@@ -241,26 +234,6 @@ class CoreTests extends ParsleyTest {
         val p = anyChar.filterNot(_.isLower)
         p.parse("a") shouldBe a [Failure]
         p.parse("A") shouldBe Success('A')
-
-        val q = anyChar.filterOut {
-            case c if c.isLower => s"'$c' should have been uppercase"
-        }
-        q.parse("a") shouldBe Failure("(line 1, column 2):\n  'a' should have been uppercase\n  >a\n  > ^")
-        q.parse("A") shouldBe Success('A')
-
-        val r = anyChar.guardAgainst {
-            case c if c.isLower => s"'$c' is not uppercase"
-        }
-        r.parse("a") shouldBe Failure("(line 1, column 2):\n  'a' is not uppercase\n  >a\n  > ^")
-        r.parse("A") shouldBe Success('A')
-    }
-
-    // Issue #70
-    "filterOut" should "not corrupt the stack under a handler" in {
-        val p = attempt(anyChar.filterOut {
-            case c if c.isLower => "no lowercase!"
-        })
-        p.parse("a") shouldBe a [Failure]
     }
 
     "the collect combinator" should "act like a filter then a map" in {
@@ -271,22 +244,6 @@ class CoreTests extends ParsleyTest {
         p.parse("+") shouldBe Success(0)
         p.parse("C") shouldBe Success(3)
         p.parse("a") shouldBe a [Failure]
-
-        val q = anyChar.collectMsg("oops") {
-            case '+' => 0
-            case c if c.isUpper => c - 'A' + 1
-        }
-        q.parse("+") shouldBe Success(0)
-        q.parse("C") shouldBe Success(3)
-        q.parse("a") shouldBe Failure("(line 1, column 2):\n  oops\n  >a\n  > ^")
-
-        val r = anyChar.collectMsg(c => s"$c is not appropriate") {
-            case '+' => 0
-            case c if c.isUpper => c - 'A' + 1
-        }
-        r.parse("+") shouldBe Success(0)
-        r.parse("C") shouldBe Success(3)
-        r.parse("a") shouldBe Failure("(line 1, column 2):\n  a is not appropriate\n  >a\n  > ^")
     }
 
     "the cast combinator" should "allow for casts to valid types" in {
