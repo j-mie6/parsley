@@ -1,7 +1,6 @@
 package parsley.internal.errors
 
 import parsley.errors.ErrorBuilder
-import java.io.File
 
 private [internal] sealed trait ParseError {
     val offset: Int
@@ -11,7 +10,7 @@ private [internal] sealed trait ParseError {
     def withHints(hints: Set[ErrorItem]): ParseError
     def giveReason(reason: String): ParseError
     protected def format[Err](line: String, caret: Int)(implicit builder: ErrorBuilder[Err]): builder.ErrorInfoLines
-    private [internal] final def format[Err](sourceName: Option[File])(implicit helper: LineBuilder, builder: ErrorBuilder[Err]): Err = {
+    private [internal] final def format[Err](sourceName: Option[String])(implicit helper: LineBuilder, builder: ErrorBuilder[Err]): Err = {
         val (errLine, caret) = helper.getLineWithCaret(offset)
         val lines = format(errLine, caret)
         builder.format(builder.pos(line, col), builder.source(sourceName), builder.nestContexts(Nil), lines)

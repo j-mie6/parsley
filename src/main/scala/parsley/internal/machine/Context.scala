@@ -12,7 +12,6 @@ import parsley.internal.machine.errors.{
 
 import scala.annotation.tailrec
 import scala.collection.mutable
-import java.io.File
 import parsley.errors.ErrorBuilder
 
 private [parsley] object Context {
@@ -22,7 +21,7 @@ private [parsley] object Context {
 
 private [parsley] final class Context(private [machine] var instrs: Array[Instr],
                                       private [machine] var input: String,
-                                      private val sourceFile: Option[File] = None) {
+                                      private val sourceFile: Option[String] = None) {
     /** This is the operand stack, where results go to live  */
     private [machine] val stack: ArrayStack[Any] = new ArrayStack()
     /** Current offset into the input */

@@ -1,6 +1,5 @@
 package parsley.errors
 
-import java.io.File
 import scala.util.matching.Regex
 
 trait ErrorBuilder[Err] {
@@ -11,7 +10,7 @@ trait ErrorBuilder[Err] {
     type Position
     type Context
     def pos(line: Int, col: Int): Position
-    def source(sourceName: Option[File]): Context
+    def source(sourceName: Option[String]): Context
     def contexualScope(context: String): Context
 
     type NestedContexts
@@ -54,15 +53,15 @@ object ErrorBuilder {
 
         protected def mergeScopes(source: Context, ctxs: NestedContexts): String = (source, ctxs) match {
             case (None, None) => ""
-            case (Some(name), None) => s"In $name"
-            case (None, Some(ctxs)) => s"In $ctxs"
-            case (Some(name), Some(ctxs)) => s"In $name, $ctxs"
+            case (Some(name), None) => s"In $name "
+            case (None, Some(ctxs)) => s"In $ctxs "
+            case (Some(name), Some(ctxs)) => s"In $name, $ctxs "
         }
 
         type Position = String
         type Context = Option[String]
         override def pos(line: Int, col: Int): Position = s"(line $line, column $col)"
-        override def source(sourceName: Option[File]): Context = sourceName.map(name => s"file '${name.getName}' ")
+        override def source(sourceName: Option[String]): Context = sourceName.map(name => s"file '$name'")
         override def contexualScope(context: String): Context = Some(context)
 
         type NestedContexts = Option[String]
