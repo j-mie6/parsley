@@ -9,6 +9,7 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.language.{higherKinds, implicitConversions}
+import parsley.errors.ErrorBuilder
 
 // User API
 /**
@@ -45,7 +46,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: deepe
       * @return Either a success with a value of type `A` or a failure with error message
       * @since 3.0.0
       */
-    def parse(input: String): Result[A] = new Context(internal.threadSafeInstrs, input).runParser()
+    def parse[Err: ErrorBuilder](input: String): Result[Err, A] = new Context(internal.threadSafeInstrs, input).runParser()
 }
 /** This object contains the core "function-style" combinators as well as the implicit classes which provide
   * the "method-style" combinators. All parsers will likely require something from within! */

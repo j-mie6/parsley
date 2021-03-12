@@ -31,13 +31,13 @@ class CoreTests extends ParsleyTest {
 
     they must "only consume a single character of input at most" in {
         var res = (satisfy(_ == 'a') *> 'b').parse("aaaaaa")
-        res shouldBe a [Failure]
+        res shouldBe a [Failure[_]]
         res match {
             case Failure(err) => err should startWith ("(line 1, column 2)")
             case _ =>
         }
         res = ('a' ~> 'b').parse("bc")
-        res shouldBe a [Failure]
+        res shouldBe a [Failure[_]]
         res match {
             case Failure(err) => err should startWith ("(line 1, column 1)")
             case _ =>
@@ -45,7 +45,7 @@ class CoreTests extends ParsleyTest {
     }
 
     "Pure parsers" should "not require input" in {
-        unit.parse("") should not be a [Failure]
+        unit.parse("") should not be a [Failure[_]]
     }
 
     they must "result in their correct value" in {
@@ -116,32 +116,32 @@ class CoreTests extends ParsleyTest {
     }
     they must "allow for flattening" in {
         join(pure(char('a'))).parse("a") shouldBe Success('a')
-        join(Parsley.empty).parse("") shouldBe a [Failure]
+        join(Parsley.empty).parse("") shouldBe a [Failure[_]]
     }
 
     "<|>" should "not try the second alternative if the first succeeded" in {
-        ('a' <|> pfail("wrong!")).parse("a") should not be a [Failure]
+        ('a' <|> pfail("wrong!")).parse("a") should not be a [Failure[_]]
     }
     it should "only try second alternative if the first failed without consuming input" in {
-        ('a' <|> 'b').parse("b") should not be a [Failure]
+        ('a' <|> 'b').parse("b") should not be a [Failure[_]]
     }
     it should "not try the second alternative if the first failed after consuming input" in {
-        ("ab" <|> "ac").parse("ac") shouldBe a [Failure]
+        ("ab" <|> "ac").parse("ac") shouldBe a [Failure[_]]
     }
     it should "not be affected by an empty on the left" in {
         (Parsley.empty <|> 'a').parse("b") shouldBe Failure("(line 1, column 1):\n  unexpected \"b\"\n  expected \"a\"\n  >b\n  >^")
     }
 
     "attempt" should "cause <|> to try second alternative even if input consumed" in {
-        attempt("ab").orElse("ac").parse("ac") should not be a [Failure]
+        attempt("ab").orElse("ac").parse("ac") should not be a [Failure[_]]
     }
 
     "lookAhead" should "consume no input on success" in {
-        lookAhead('a').parse("a") should not be a [Failure]
+        lookAhead('a').parse("a") should not be a [Failure[_]]
         (lookAhead('a') *> 'b').parse("ab") should be (Failure("(line 1, column 1):\n  unexpected \"a\"\n  expected \"b\"\n  >ab\n  >^"))
     }
     it must "fail when input is consumed, and input is consumed" in {
-        lookAhead("ab").parse("ac") shouldBe a [Failure]
+        lookAhead("ab").parse("ac") shouldBe a [Failure[_]]
     }
     /*it should "not affect the state of the registers on success" in {
         val r1 = Reg.make[Int]
@@ -232,7 +232,7 @@ class CoreTests extends ParsleyTest {
 
     "filtered parsers" should "function correctly" in {
         val p = anyChar.filterNot(_.isLower)
-        p.parse("a") shouldBe a [Failure]
+        p.parse("a") shouldBe a [Failure[_]]
         p.parse("A") shouldBe Success('A')
     }
 
@@ -243,7 +243,7 @@ class CoreTests extends ParsleyTest {
         }
         p.parse("+") shouldBe Success(0)
         p.parse("C") shouldBe Success(3)
-        p.parse("a") shouldBe a [Failure]
+        p.parse("a") shouldBe a [Failure[_]]
     }
 
     "the cast combinator" should "allow for casts to valid types" in {
@@ -252,7 +252,7 @@ class CoreTests extends ParsleyTest {
     }
     it should "reject invalid casts by failing" in {
         val p = pure[Any](7)
-        p.cast[String].parse("") shouldBe a [Failure]
+        p.cast[String].parse("") shouldBe a [Failure[_]]
     }
 
     "foldRight" should "work correctly" in {
@@ -263,7 +263,7 @@ class CoreTests extends ParsleyTest {
     }
     "foldRight1" should "work correctly" in {
         val p = 'a'.foldRight1[List[Char]](Nil)(_::_)
-        p.parse("") shouldBe a [Failure]
+        p.parse("") shouldBe a [Failure[_]]
         p.parse("aaa") should be (Success(List('a', 'a', 'a')))
     }
 
@@ -275,7 +275,7 @@ class CoreTests extends ParsleyTest {
     }
     "foldLeft1" should "work correctly" in {
         val p = digit.foldLeft1(0)((x, d) => x * 10 + d.asDigit)
-        p.parse("") shouldBe a [Failure]
+        p.parse("") shouldBe a [Failure[_]]
         p.parse("123") should be (Success(123))
     }
     "reduceRightOption" should "return Some on success" in {

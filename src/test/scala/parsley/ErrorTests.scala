@@ -11,11 +11,11 @@ import scala.language.implicitConversions
 
 class ErrorTests extends ParsleyTest {
     "mzero parsers" should "always fail" in {
-        (Parsley.empty ~> 'a').parse("a") shouldBe a [Failure]
-        (pfail("") ~> 'a').parse("a") shouldBe a [Failure]
-        (unexpected("") *> 'a').parse("a") shouldBe a [Failure]
-        (('a' ! (_ => "")) *> 'b').parse("ab") shouldBe a [Failure]
-        ('a'.unexpected(_ => "") *> 'b').parse("ab") shouldBe a [Failure]
+        (Parsley.empty ~> 'a').parse("a") shouldBe a [Failure[_]]
+        (pfail("") ~> 'a').parse("a") shouldBe a [Failure[_]]
+        (unexpected("") *> 'a').parse("a") shouldBe a [Failure[_]]
+        (('a' ! (_ => "")) *> 'b').parse("ab") shouldBe a [Failure[_]]
+        ('a'.unexpected(_ => "") *> 'b').parse("ab") shouldBe a [Failure[_]]
     }
 
     "filtering parsers" should "function correctly" in {
@@ -55,7 +55,7 @@ class ErrorTests extends ParsleyTest {
         val p = attempt(anyChar.filterOut {
             case c if c.isLower => "no lowercase!"
         })
-        p.parse("a") shouldBe a [Failure]
+        p.parse("a") shouldBe a [Failure[_]]
     }
 
     lazy val r: Parsley[List[String]] = "correct error message" <::> r

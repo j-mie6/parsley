@@ -2,6 +2,7 @@ package parsley
 
 import parsley.internal.machine
 import parsley.internal.deepembedding
+import parsley.errors.ErrorBuilder
 
 /** This module contains various things that shouldn't be used without care and caution
   * @since 1.6.0
@@ -31,7 +32,7 @@ object unsafe {
           * implicit for convenience.
           * @since 3.0.0
           */
-        def parseFastUnsafe(input: String): Result[A] = ctx.internal(p.internal.instrs, input).runParser()
+        def parseFastUnsafe[Err: ErrorBuilder](input: String): Result[Err, A] = ctx.internal(p.internal.instrs, input).runParser()
     }
 
     final class Context private [parsley] (private [parsley] val internal: machine.Context)
