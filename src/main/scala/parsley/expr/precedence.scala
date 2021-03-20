@@ -1,7 +1,5 @@
 package parsley.expr
 
-import scala.annotation.tailrec
-
 import parsley.Parsley
 import parsley.combinator.choice
 import parsley.XCompat._
@@ -14,9 +12,9 @@ object precedence {
     {
         case Lefts(ops @ _*) => chain.left1(atom, choice(ops: _*))
         case Rights(ops @ _*) => chain.right1(atom, choice(ops: _*))
-        case Prefixes(ops @ _*) => chain.prefix(choice(ops: _*), atom.map(wrap))
+        case Prefixes(ops @ _*) => chain.prefix(choice(ops: _*), parsley.XCompat.applyWrap(wrap)(atom))
         // FIXME: Postfix operators which are similar to binary ops may fail, how can we work around this?
-        case Postfixes(ops @ _*) => chain.postfix(atom.map(wrap), choice(ops: _*))
+        case Postfixes(ops @ _*) => chain.postfix(parsley.XCompat.applyWrap(wrap)(atom), choice(ops: _*))
     }
 
     private def crushLevels[A, B](lvls: Levels[A, B]): Parsley[B] = lvls match {
