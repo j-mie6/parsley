@@ -257,15 +257,15 @@ class ExpressionParserTests extends ParsleyTest {
 
         val tok = new token.Lexer(lang)
 
-        lazy val ops: List[Ops[Expr, Expr]] = List(
-            Ops(Postfix)(tok.parens(expr </> Constant("")).map(e1 => (e2: Expr) => Binary(e2, e1))),
-            Ops(InfixL)('.' #> Binary),
+        lazy val ops: Seq[Ops[Expr, Expr]] = Seq(
+            Ops(InfixR)(',' #> Binary),
             Ops(InfixR)(".=" #> Binary),
-            Ops(InfixR)(',' #> Binary)
+            Ops(InfixL)('.' #> Binary),
+            Ops(Postfix)(tok.parens(expr </> Constant("")).map(e1 => Binary(_, e1)))
         )
 
         lazy val atom: Parsley[Expr] = tok.identifier.map(Constant)
-        lazy val expr: Parsley[Expr] = precedence(atom)(ops: _*)
+        lazy val expr: Parsley[Expr] = precedence(ops: _*)(atom)
 
         expr.parse("o.f()") shouldBe a [Success[_]]
         expr.parse("o.f(x,y)") shouldBe a [Success[_]]
