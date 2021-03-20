@@ -3,7 +3,7 @@ package parsley
 import parsley.character.digit
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.expr.chain
-import parsley.expr.{precedence, Ops, GOps, InfixL, InfixR, Prefix, Postfix, Atoms}
+import parsley.expr.{precedence, Ops, GOps, SOps, InfixL, InfixR, Prefix, Postfix, Atoms}
 import parsley.Parsley._
 import parsley._
 
@@ -185,8 +185,8 @@ class ExpressionParserTests extends ParsleyTest {
         case class Parens(x: Expr) extends Atom
         case class Num(x: Int) extends Atom
         lazy val expr: Parsley[Expr] = precedence(
-            GOps[Term, Expr](InfixL)('+' #> Add) +:
-            GOps[Atom, Term](InfixR)('*' #> Mul) +:
+            SOps(InfixL)('+' #> Add) +:
+            SOps(InfixR)('*' #> Mul) +:
             Atoms(digit.map(_.asDigit).map(Num), '(' *> expr.map(Parens) <* ')'))
         expr.parse("(7+8)*2+3+6*2") should be (Success(Add(Add(Mul(Parens(Add(Num(7), Num(8))), Num(2)), Num(3)), Mul(Num(6), Num(2)))))
     }
