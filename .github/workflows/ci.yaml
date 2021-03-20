@@ -62,9 +62,9 @@ jobs:
           path: ~/.sbt
           key: sbt-${{ hashFiles('**/build.sbt') }}
 
-      - name: Build
+      #- name: Build
         #if: needs.check-duplicate.outputs.should_skip != 'true'
-        run: sbt ++$SCALA_VERSION compile
+      #  run: sbt ++$SCALA_VERSION compile
 
       - name: Test
         #if: needs.check-duplicate.outputs.should_skip != 'true'
@@ -118,9 +118,9 @@ jobs:
           path: ~/.sbt
           key: sbt-${{ hashFiles('**/build.sbt') }}
 
-      - name: Build
+      #- name: Build
         #if: needs.check-duplicate.outputs.should_skip != 'true'
-        run: sbt ++$SCALA_VERSION parsleyJS/compile
+      #  run: sbt ++$SCALA_VERSION parsleyJS/compile
 
       - name: Test
         #if: needs.check-duplicate.outputs.should_skip != 'true'
@@ -182,9 +182,9 @@ jobs:
           path: ~/.sbt
           key: sbt-${{ hashFiles('**/build.sbt') }}
 
-      - name: Build
+      #- name: Build
         #if: needs.check-duplicate.outputs.should_skip != 'true'
-        run: sbt ++$SCALA_VERSION parsleyNative/compile
+      #  run: sbt ++$SCALA_VERSION parsleyNative/compile
 
       - name: Test
         #if: needs.check-duplicate.outputs.should_skip != 'true'
