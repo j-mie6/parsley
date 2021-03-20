@@ -171,21 +171,16 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         }
     }
 
-    private [machine] def failWithMessage(msg: String): Unit = {
-        this.fail(new ClassicFancyError(offset, line, col, msg))
-    }
+    private [machine] def failWithMessage(msg: String): Unit = this.fail(new ClassicFancyError(offset, line, col, msg))
     private [machine] def unexpectedFail(expected: Option[ErrorItem], unexpected: ErrorItem): Unit = {
         this.fail(new ClassicUnexpectedError(offset, line, col, expected, unexpected))
     }
-    private [machine] def expectedFail(expected: Option[ErrorItem]): Unit = {
-        this.fail(new ClassicExpectedError(offset, line, col, expected))
-    }
+    private [machine] def expectedFail(expected: Option[ErrorItem]): Unit = this.fail(new ClassicExpectedError(offset, line, col, expected))
     private [machine] def expectedFail(expected: Option[ErrorItem], reason: String): Unit = {
         this.fail(new ClassicExpectedErrorWithReason(offset, line, col, expected, reason))
     }
-    private [machine] def expectedTokenFail(expected: Option[ErrorItem], size: Int): Unit = {
-        this.fail(new TokenError(offset, line, col, expected, size))
-    }
+    private [machine] def expectedTokenFail(expected: Option[ErrorItem], size: Int): Unit = this.fail(new TokenError(offset, line, col, expected, size))
+
     private [machine] def fail(error: DefuncError): Unit = {
         this.pushError(error)
         this.fail()
