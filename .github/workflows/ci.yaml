@@ -62,9 +62,9 @@ jobs:
           path: ~/.sbt
           key: sbt-${{ hashFiles('**/build.sbt') }}
 
-      #- name: Build
+      - name: Build
         #if: needs.check-duplicate.outputs.should_skip != 'true'
-      #  run: sbt ++$SCALA_VERSION compile
+        run: sbt ++$SCALA_VERSION compile
 
       - name: Test
         #if: needs.check-duplicate.outputs.should_skip != 'true'
@@ -118,9 +118,9 @@ jobs:
           path: ~/.sbt
           key: sbt-${{ hashFiles('**/build.sbt') }}
 
-      #- name: Build
+      - name: Build
         #if: needs.check-duplicate.outputs.should_skip != 'true'
-      #  run: sbt ++$SCALA_VERSION parsleyJS/compile
+        run: sbt ++$SCALA_VERSION parsleyJS/compile
 
       - name: Test
         #if: needs.check-duplicate.outputs.should_skip != 'true'
@@ -182,9 +182,9 @@ jobs:
           path: ~/.sbt
           key: sbt-${{ hashFiles('**/build.sbt') }}
 
-      #- name: Build
+      - name: Build
         #if: needs.check-duplicate.outputs.should_skip != 'true'
-      #  run: sbt ++$SCALA_VERSION parsleyNative/compile
+        run: sbt ++$SCALA_VERSION parsleyNative/compile
 
       - name: Test
         #if: needs.check-duplicate.outputs.should_skip != 'true'
@@ -201,9 +201,10 @@ jobs:
     needs: validate
 
     # Temp: Also run on pull requests when validate is skipped, due to codeclimate/coverage being a required check
-    if: >-
-      github.ref == 'refs/heads/master' && (needs.validate.result == 'success' || needs.validate.result == 'skipped') ||
-      github.event_name == 'pull_request' && (needs.validate.result == 'success' || needs.validate.result == 'skipped')
+    # FIXME: This seems not to be working on the parsley-3 branch?
+    #if: >-
+    #  github.ref == 'refs/heads/master' && (needs.validate.result == 'success' || needs.validate.result == 'skipped') ||
+    #  github.event_name == 'pull_request' && (needs.validate.result == 'success' || needs.validate.result == 'skipped')
 
     env:
       SCALA_VERSION: 2.13.5
