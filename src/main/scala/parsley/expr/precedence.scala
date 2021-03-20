@@ -19,10 +19,9 @@ object precedence {
         case Postfixes(ops @ _*) => chain.postfix(atom.map(wrap), choice(ops: _*))
     }
 
-    @tailrec private def crushLevels[A, B](atom: Parsley[A], lvls: Levels[A, B]): Parsley[B] = lvls match
-    {
-        case NoLevel(ev) => ev.substituteCo[Parsley](atom)
-        case Level(ops, lvls) => crushLevels(convertOperators(atom, ops)(ops.wrap), lvls)
+    private def crushLevels[A, B](lvls: Levels[A, B]): Parsley[B] = lvls match {
+        case Atoms(ev, atoms@_*) => ev.substituteCo[Parsley](choice(atoms: _*))
+        case Level(lvls, ops) => convertOperators(crushLevels(lvls), ops)(ops.wrap)
     }
 
     /** This is used to build an expression parser for a monolithic type. Levels are specified from strongest
@@ -34,17 +33,18 @@ object precedence {
      * @return A parser for the described expression language
      * @since 3.0.0
      */
-    def apply[A](atoms: Parsley[A]*)(table: Ops[A, A]*): Parsley[A] = apply(choice(atoms: _*), table.foldRight(Levels.empty[A])(Level.apply[A, A, A]))
+    def apply[A](atoms: Parsley[A]*)(table: Ops[A, A]*): Parsley[A] = apply(table.foldLeft(Atoms(atoms: _*))(Level.apply[A, A, A]))
 
-    /** This is used to build an expression parser for a multi-layered expression tree type. Levels are specified
-     * from strongest to weakest.
-     * @tparam A The type of the atomic unit of the expression
-     * @tparam B The type of the resulting parse tree (outermost operations)
-     * @param atom The atomic unit of the expression
-     * @param table A table of operators. Table is ordered highest precedence to lowest precedence.
-     *              See [[Levels]] and it's subtypes for a description of how the types work.
-     * @return A parser for the described expression language
-     * @since 2.2.0
-     */
-    def apply[A, B](atom: Parsley[A], table: Levels[A, B]): Parsley[B] = crushLevels(atom, table)
+    //def apply[A](atoms: Parsley[A]*)(table: Ops[A, A]*): Parsley[A] = apply(table.foldLeft(Atoms(atoms: _*))(Lvl.apply[A, A, A]))
+
+    /** This is used to build an expression parser for a multi-layered expression tree type. Levels can be
+      * either tightest to loosest binding (using `:+`) or loosest to tightest (using `+:`)
+      * @tparam A The type of the atomic unit of the expression
+      * @tparam B The type of the resulting parse tree (outermost operations)
+      * @param table A table of operators. Table is ordered depending on the operator used to build it.
+      *              See [[Levels]] and it's subtypes for a description of how the types work.
+      * @return A parser for the described expression language
+      * @since 3.0.0
+      */
+    def apply[A, B](table: Levels[A, B]): Parsley[B] = crushLevels(table)
 }
