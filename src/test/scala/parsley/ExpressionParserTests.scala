@@ -14,13 +14,13 @@ class ExpressionParserTests extends ParsleyTest {
         chain.postfix('1' #> 1, '+' #> ((x: Int) => x + 1)).parse("1") should be (Success(1))
     }
     it must "parse all operators that follow" in {
-        chain.postfix('1' #> 1, '+' #> ((x: Int) => x + 1)).parse("1++++++++++++++") should not be a [Failure]
+        chain.postfix('1' #> 1, '+' #> ((x: Int) => x + 1)).parse("1++++++++++++++") should not be a [Failure[_]]
     }
     it must "apply the functions" in {
         chain.postfix('1' #> 1, '+' #> ((x: Int) => x + 1)).parse("1++++++++++++++") should be (Success(15))
     }
     it must "fail if an operator fails after consuming input" in {
-        chain.postfix('1' #> 1, "++" #> ((x: Int) => x + 1)).parse("1+++++++++++++") shouldBe a [Failure]
+        chain.postfix('1' #> 1, "++" #> ((x: Int) => x + 1)).parse("1+++++++++++++") shouldBe a [Failure[_]]
     }
     it must "not leave the stack in an inconsistent state on failure" in {
         val p = chain.postfix[Int]('1' #> 1, (col.#>[Int => Int](_ + 1)) <* '+')
@@ -29,40 +29,40 @@ class ExpressionParserTests extends ParsleyTest {
     }
 
     "chain.postfix1" must "require and initial value AND an initial operator" in {
-        chain.postfix1('1' #> 1, '+' #> ((x: Int) => x + 1)).parse("1") shouldBe a [Failure]
+        chain.postfix1('1' #> 1, '+' #> ((x: Int) => x + 1)).parse("1") shouldBe a [Failure[_]]
         chain.postfix1('1' #> 1, '+' #> ((x: Int) => x + 1)).parse("1+") shouldBe Success(2)
     }
     it must "parse all operators that follow" in {
-        chain.postfix1('1' #> 1, '+' #> ((x: Int) => x + 1)).parse("1++++++++++++++") should not be a [Failure]
+        chain.postfix1('1' #> 1, '+' #> ((x: Int) => x + 1)).parse("1++++++++++++++") should not be a [Failure[_]]
     }
     it must "apply the functions" in {
         chain.postfix1('1' #> 1, '+' #> ((x: Int) => x + 1)).parse("1++++++++++++++") should be (Success(15))
     }
     it must "fail if an operator fails after consuming input" in {
-        chain.postfix1('1' #> 1, "++" #> ((x: Int) => x + 1)).parse("1+++++++++++++") shouldBe a [Failure]
+        chain.postfix1('1' #> 1, "++" #> ((x: Int) => x + 1)).parse("1+++++++++++++") shouldBe a [Failure[_]]
     }
 
     "chain.prefix" must "parse an operatorless value" in {
         chain.prefix('+' #> ((x: Int) => x + 1), '1' #> 1).parse("1") should be (Success(1))
     }
     it must "parse all operators that precede a value" in {
-        chain.prefix('+' #> ((x: Int) => x + 1), '1' #> 1).parse("+++++++++++1") should not be a [Failure]
+        chain.prefix('+' #> ((x: Int) => x + 1), '1' #> 1).parse("+++++++++++1") should not be a [Failure[_]]
     }
     it must "fail if the final value is absent" in {
-        chain.prefix('+' #> ((x: Int) => x + 1), '1' #> 1).parse("+++++++++++") shouldBe a [Failure]
+        chain.prefix('+' #> ((x: Int) => x + 1), '1' #> 1).parse("+++++++++++") shouldBe a [Failure[_]]
     }
     it must "apply the functions" in {
         chain.prefix('+' #> ((x: Int) => x + 1), '1' #> 1).parse("+++++++++++1") should be (Success(12))
     }
 
     "chain.prefix1" must "not parse an operatorless value" in {
-        chain.prefix1('+' #> ((x: Int) => x + 1), '1' #> 1).parse("1") shouldBe a [Failure]
+        chain.prefix1('+' #> ((x: Int) => x + 1), '1' #> 1).parse("1") shouldBe a [Failure[_]]
     }
     it must "parse all operators that precede a value" in {
-        chain.prefix1('+' #> ((x: Int) => x + 1), '1' #> 1).parse("+++++++++++1") should not be a [Failure]
+        chain.prefix1('+' #> ((x: Int) => x + 1), '1' #> 1).parse("+++++++++++1") should not be a [Failure[_]]
     }
     it must "fail if the final value is absent" in {
-        chain.prefix1('+' #> ((x: Int) => x + 1), '1' #> 1).parse("+++++++++++") shouldBe a [Failure]
+        chain.prefix1('+' #> ((x: Int) => x + 1), '1' #> 1).parse("+++++++++++") shouldBe a [Failure[_]]
     }
     it must "apply the functions" in {
         chain.prefix1('+' #> ((x: Int) => x + 1), '1' #> 1).parse("+++++++++++1") should be (Success(12))
@@ -70,8 +70,8 @@ class ExpressionParserTests extends ParsleyTest {
 
     "chain.right1" must "require an initial value" in {
         chain.right1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)).parse("11") should be (Success(1))
-        chain.right1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)).parse("1") shouldBe a [Failure]
-        chain.right1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)).parse("2") shouldBe a [Failure]
+        chain.right1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)).parse("1") shouldBe a [Failure[_]]
+        chain.right1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)).parse("2") shouldBe a [Failure[_]]
     }
     it must "parse all operators and values that follow" in {
         chain.right1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)).parse("11+11+11+11+11") should be (Success(5))
@@ -80,8 +80,8 @@ class ExpressionParserTests extends ParsleyTest {
         chain.right1(digit.map(_.asDigit), '%' #> ((x: Int, y: Int) => x % y)).parse("6%5%2%7") should be (Success(0))
     }
     it must "fail if an operator or p fails after consuming input" in {
-        chain.right1("11" #> 1, "++" #> ((x: Int, y: Int) => x + y)).parse("11+11+11+11+11") shouldBe a [Failure]
-        chain.right1("11" #> 1, "++" #> ((x: Int, y: Int) => x + y)).parse("11++11++11++1++11") shouldBe a [Failure]
+        chain.right1("11" #> 1, "++" #> ((x: Int, y: Int) => x + y)).parse("11+11+11+11+11") shouldBe a [Failure[_]]
+        chain.right1("11" #> 1, "++" #> ((x: Int, y: Int) => x + y)).parse("11++11++11++1++11") shouldBe a [Failure[_]]
     }
     it must "correctly accept the use of a wrapping function" in {
         sealed trait Expr
@@ -93,13 +93,13 @@ class ExpressionParserTests extends ParsleyTest {
     }
     "chain.right" must "allow for no initial value" in {
         chain.right("11" #> 1, '+' #> ((x: Int, y: Int) => x + y), 0).parse("2") shouldBe Success(0)
-        chain.right("11" #> 1, '+' #> ((x: Int, y: Int) => x + y), 0).parse("1") shouldBe a [Failure]
+        chain.right("11" #> 1, '+' #> ((x: Int, y: Int) => x + y), 0).parse("1") shouldBe a [Failure[_]]
     }
 
     "chain.left1" must "require an initial value" in {
         chain.left1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)).parse("11") should be (Success(1))
-        chain.left1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)).parse("1") shouldBe a [Failure]
-        chain.left1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)).parse("2") shouldBe a [Failure]
+        chain.left1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)).parse("1") shouldBe a [Failure[_]]
+        chain.left1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)).parse("2") shouldBe a [Failure[_]]
     }
     it must "parse all operators and values that follow" in {
         chain.left1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)).parse("11+11+11+11+11") should be (Success(5))
@@ -108,8 +108,8 @@ class ExpressionParserTests extends ParsleyTest {
         chain.left1(digit.map(_.asDigit), '%' #> ((x: Int, y: Int) => x % y)).parse("6%5%2%7") should be (Success(1))
     }
     it must "fail if an operator fails after consuming input" in {
-        chain.left1("11" #> 1, "++" #> ((x: Int, y: Int) => x + y)).parse("11+11+11+11+11") shouldBe a [Failure]
-        chain.left1("11" #> 1, "++" #> ((x: Int, y: Int) => x + y)).parse("11++11++11++1++11") shouldBe a [Failure]
+        chain.left1("11" #> 1, "++" #> ((x: Int, y: Int) => x + y)).parse("11+11+11+11+11") shouldBe a [Failure[_]]
+        chain.left1("11" #> 1, "++" #> ((x: Int, y: Int) => x + y)).parse("11++11++11++1++11") shouldBe a [Failure[_]]
     }
     it must "not leave the stack in an inconsistent state on failure" in {
         val p = chain.left1[Int, Int]('1' #> 1, (col.#>[(Int, Int) => Int](_ + _)) <* '+')
@@ -124,7 +124,7 @@ class ExpressionParserTests extends ParsleyTest {
     }
     "chain.left" must "allow for no initial value" in {
         chain.left("11" #> 1, '+' #> ((x: Int, y: Int) => x + y), 0).parse("11") should be (Success(1))
-        chain.left("11" #> 1, '+' #> ((x: Int, y: Int) => x + y), 0).parse("1") shouldBe a [Failure]
+        chain.left("11" #> 1, '+' #> ((x: Int, y: Int) => x + y), 0).parse("1") shouldBe a [Failure[_]]
         chain.left("11" #> 1, '+' #> ((x: Int, y: Int) => x + y), 0).parse("2") shouldBe Success(0)
     }
 

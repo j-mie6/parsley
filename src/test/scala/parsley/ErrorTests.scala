@@ -5,10 +5,59 @@ import parsley.Parsley._
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.character.{anyChar, digit}
 import parsley.unsafe.ErrorLabel
+import parsley.errors.combinator.{fail => pfail, unexpected, ErrorMethods}
 
 import scala.language.implicitConversions
 
-class ErrorMessageTests extends ParsleyTest {
+class ErrorTests extends ParsleyTest {
+    "mzero parsers" should "always fail" in {
+        (Parsley.empty ~> 'a').parse("a") shouldBe a [Failure[_]]
+        (pfail("") ~> 'a').parse("a") shouldBe a [Failure[_]]
+        (unexpected("") *> 'a').parse("a") shouldBe a [Failure[_]]
+        (('a' ! (_ => "")) *> 'b').parse("ab") shouldBe a [Failure[_]]
+        ('a'.unexpected(_ => "") *> 'b').parse("ab") shouldBe a [Failure[_]]
+    }
+
+    "filtering parsers" should "function correctly" in {
+        val p = anyChar.filterOut {
+            case c if c.isLower => s"'$c' should have been uppercase"
+        }
+        p.parse("a") shouldBe Failure("(line 1, column 2):\n  'a' should have been uppercase\n  >a\n  > ^")
+        p.parse("A") shouldBe Success('A')
+
+        val q = anyChar.guardAgainst {
+            case c if c.isLower => s"'$c' is not uppercase"
+        }
+        q.parse("a") shouldBe Failure("(line 1, column 2):\n  'a' is not uppercase\n  >a\n  > ^")
+        q.parse("A") shouldBe Success('A')
+    }
+
+    "the collectMsg combinator" should "act like a filter then a map" in {
+        val p = anyChar.collectMsg("oops") {
+            case '+' => 0
+            case c if c.isUpper => c - 'A' + 1
+        }
+        p.parse("+") shouldBe Success(0)
+        p.parse("C") shouldBe Success(3)
+        p.parse("a") shouldBe Failure("(line 1, column 2):\n  oops\n  >a\n  > ^")
+
+        val q = anyChar.collectMsg(c => s"$c is not appropriate") {
+            case '+' => 0
+            case c if c.isUpper => c - 'A' + 1
+        }
+        q.parse("+") shouldBe Success(0)
+        q.parse("C") shouldBe Success(3)
+        q.parse("a") shouldBe Failure("(line 1, column 2):\n  a is not appropriate\n  >a\n  > ^")
+    }
+
+    // Issue #70
+    "filterOut" should "not corrupt the stack under a handler" in {
+        val p = attempt(anyChar.filterOut {
+            case c if c.isLower => "no lowercase!"
+        })
+        p.parse("a") shouldBe a [Failure[_]]
+    }
+
     lazy val r: Parsley[List[String]] = "correct error message" <::> r
     "label" should "affect base error messages" in {
         ('a' ? "ay!").parse("b") should be (Failure("(line 1, column 1):\n  unexpected \"b\"\n  expected ay!\n  >b\n  >^"))
@@ -69,7 +118,7 @@ class ErrorMessageTests extends ParsleyTest {
     }
 
     "fail" should "yield a raw message" in {
-        Parsley.fail("hi").parse("b") should be {
+        pfail("hi").parse("b") should be {
             Failure("(line 1, column 1):\n  hi\n  >b\n  >^")
         }
     }

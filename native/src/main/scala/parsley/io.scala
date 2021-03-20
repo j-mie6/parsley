@@ -7,6 +7,7 @@ import java.io.File
 import parsley.internal.machine.Context
 
 import scala.language.{higherKinds, implicitConversions}
+import parsley.errors.ErrorBuilder
 
 /** This module contains utilities to have parsers interact with IO, including the very useful `parseFromFile` method (exposed by `ParseFromIO`)
   * @since 3.0.0
@@ -22,7 +23,7 @@ object io {
          *         and a failure if an IOException occured
          * @since 3.0.0
          */
-        def parseFromFile(file: File)(implicit codec: Codec): Try[Result[A]] = {
+        def parseFromFile[Err: ErrorBuilder](file: File)(implicit codec: Codec): Try[Result[Err, A]] = {
             for {
                 src <- Try(Source.fromFile(file))
                 input <- Try(src.mkString).recoverWith {

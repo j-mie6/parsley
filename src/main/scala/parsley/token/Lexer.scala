@@ -4,7 +4,8 @@ import parsley.character.{digit, hexDigit, octDigit, satisfy}
 import parsley.combinator.{sepBy, sepBy1, between, many, skipMany, some, skipSome}
 import parsley.lift.lift2
 import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
-import parsley.Parsley, Parsley.{void, unit, fail, attempt, pure, empty, notFollowedBy, LazyParsley}
+import parsley.Parsley, Parsley.{void, unit, attempt, pure, empty, notFollowedBy, LazyParsley}
+import parsley.errors.combinator.{fail, ErrorMethods}
 import parsley.token.TokenSet
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.internal.deepembedding
@@ -275,8 +276,7 @@ class Lexer(lang: LanguageDef)
 
     private def enclosing[A](p: =>Parsley[A], open: Char, close: Char, singular: String, plural: String) =
         between(lexeme(open.unsafeLabel(s"open $singular")),
-                //TODO: This use of fail is probably inappropriate with the new error message model
-                lexeme(close.unsafeLabel(s"matching closing $singular")) <|> fail(s"unclosed $plural"),
+                lexeme(close.unsafeLabel(s"matching closing $singular").explain(s"unclosed $plural")),
                 p)
 
     // Bracketing

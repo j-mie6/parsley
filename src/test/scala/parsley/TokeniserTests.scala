@@ -48,10 +48,10 @@ class TokeniserTests extends ParsleyTest {
         (tokeniser.identifier <* eof).parse("foo123 ") should be (Success("foo123"))
         (tokeniser.identifier <* eof).parse("_bar") should be (Success("_bar"))
         (tokeniser.identifier <* eof).parse("iffy") should be (Success("iffy"))
-        (tokeniser.identifier <* eof).parse("1_bar") shouldBe a [Failure]
+        (tokeniser.identifier <* eof).parse("1_bar") shouldBe a [Failure[_]]
     }
     it should "fail if the result is a keyword" in {
-        (tokeniser.identifier <* eof).parse("class") shouldBe a [Failure]
+        (tokeniser.identifier <* eof).parse("class") shouldBe a [Failure[_]]
     }
     it must "be the same regardless of the intrinsic" in {
         (tokeniser_.identifier <* eof).parse("foo123 ") should be (Success("foo123"))
@@ -60,7 +60,7 @@ class TokeniserTests extends ParsleyTest {
         (tokeniser_.identifier <* eof).parse("1_bar") should equal {
             (tokeniser.identifier <* eof).parse("1_bar")
         }
-        (tokeniser_.identifier <* eof).parse("class") shouldBe a [Failure]
+        (tokeniser_.identifier <* eof).parse("class") shouldBe a [Failure[_]]
     }
 
     "keyword" should "match valid keywords" in {
@@ -68,8 +68,8 @@ class TokeniserTests extends ParsleyTest {
         tokeniser.keyword("volatile").parse("volatile") should be (Success(()))
     }
     it should "fail if the input has more identifier letters" in {
-        tokeniser.keyword("if").parse("ifthen") shouldBe a [Failure]
-        tokeniser.keyword("volatile").parse("volatilev") shouldBe a [Failure]
+        tokeniser.keyword("if").parse("ifthen") shouldBe a [Failure[_]]
+        tokeniser.keyword("volatile").parse("volatilev") shouldBe a [Failure[_]]
     }
     it must "be the same regardless of the intrinsic" in {
         tokeniser_.keyword("if").parse("if then") should be (Success(()))
@@ -87,15 +87,15 @@ class TokeniserTests extends ParsleyTest {
 
     "userOp" should "read valid operator" in {
         (tokeniser.userOp <* eof).parse(":+:") should be (Success(":+:"))
-        (tokeniser.userOp <* eof).parse(":+:h") shouldBe a [Failure]
+        (tokeniser.userOp <* eof).parse(":+:h") shouldBe a [Failure[_]]
     }
     it should "fail if the result is reserved" in {
-        (tokeniser.userOp <* eof).parse(":") shouldBe a [Failure]
+        (tokeniser.userOp <* eof).parse(":") shouldBe a [Failure[_]]
     }
     it must "be the same regardless of the intrinsic" in {
         (tokeniser_.userOp <* eof).parse(":+:") should be (Success(":+:"))
-        (tokeniser_.userOp <* eof).parse(":+:h") shouldBe a [Failure]
-        (tokeniser_.userOp <* eof).parse(":") shouldBe a [Failure]
+        (tokeniser_.userOp <* eof).parse(":+:h") shouldBe a [Failure[_]]
+        (tokeniser_.userOp <* eof).parse(":") shouldBe a [Failure[_]]
     }
 
     "reservedOp" should "match valid reserved operators" in {
@@ -103,14 +103,14 @@ class TokeniserTests extends ParsleyTest {
         (tokeniser.reservedOp <* eof).parse(":") should be (Success(":"))
     }
     it should "fail if the result isn't reserved" in {
-        (tokeniser.reservedOp <* eof).parse("+") shouldBe a [Failure]
-        (tokeniser.reservedOp <* eof).parse("::=") shouldBe a [Failure]
+        (tokeniser.reservedOp <* eof).parse("+") shouldBe a [Failure[_]]
+        (tokeniser.reservedOp <* eof).parse("::=") shouldBe a [Failure[_]]
     }
     it must "be the same regardless of the intrinsic" in {
         (tokeniser_.reservedOp <* eof).parse("=") should be (Success("="))
         (tokeniser_.reservedOp <* eof).parse(":") should be (Success(":"))
-        (tokeniser_.reservedOp <* eof).parse("+") shouldBe a [Failure]
-        (tokeniser_.reservedOp <* eof).parse("::=") shouldBe a [Failure]
+        (tokeniser_.reservedOp <* eof).parse("+") shouldBe a [Failure[_]]
+        (tokeniser_.reservedOp <* eof).parse("::=") shouldBe a [Failure[_]]
     }
 
     "operator" should "match valid operators" in {
@@ -119,9 +119,9 @@ class TokeniserTests extends ParsleyTest {
         (tokeniser.operator("++") <* eof).parse("++") should be (Success(()))
     }
     it should "fail if the input has more operator letters" in {
-        (tokeniser.operator("=") <* eof).parse("=+") shouldBe a [Failure]
-        (tokeniser.operator(":") <* eof).parse("::") shouldBe a [Failure]
-        (tokeniser.operator("++") <* eof).parse("++=") shouldBe a [Failure]
+        (tokeniser.operator("=") <* eof).parse("=+") shouldBe a [Failure[_]]
+        (tokeniser.operator(":") <* eof).parse("::") shouldBe a [Failure[_]]
+        (tokeniser.operator("++") <* eof).parse("++=") shouldBe a [Failure[_]]
     }
     it must "be the same regardless of the intrinsic" in {
         (tokeniser_.operator("=") <* eof).parse("=") should equal {
@@ -155,8 +155,8 @@ class TokeniserTests extends ParsleyTest {
         (tokeniser_.maxOp("=") <* '=' <* eof).parse("==") should be (Success(()))
     }
     it must "fail if the operator is a valid prefix of another operator and that operator is parsable" in {
-        (tokeniser_.maxOp(":") <* '=' <* eof).parse(":=") shouldBe a [Failure]
-        (tokeniser_.maxOp(":") <* ':' <* eof).parse("::") shouldBe a [Failure]
+        (tokeniser_.maxOp(":") <* '=' <* eof).parse(":=") shouldBe a [Failure[_]]
+        (tokeniser_.maxOp(":") <* ':' <* eof).parse("::") shouldBe a [Failure[_]]
     }
 
     "charLiteral" should "parse valid haskell characters" in {
@@ -236,16 +236,16 @@ class TokeniserTests extends ParsleyTest {
         tokeniser.decimal.parse("123") should be (Success(123))
     }
     it should "not succeed when given no input" in {
-        tokeniser.decimal.parse("") shouldBe a [Failure]
+        tokeniser.decimal.parse("") shouldBe a [Failure[_]]
     }
 
     "hexadecimal" should "parse unsigned hexadecimal integers" in {
         tokeniser.hexadecimal.parse("0xff") should be (Success(255))
     }
     it should "require at least one digit" in {
-        tokeniser.hexadecimal.parse("") shouldBe a [Failure]
-        tokeniser.hexadecimal.parse("0") shouldBe a [Failure]
-        tokeniser.hexadecimal.parse("0x") shouldBe a [Failure]
+        tokeniser.hexadecimal.parse("") shouldBe a [Failure[_]]
+        tokeniser.hexadecimal.parse("0") shouldBe a [Failure[_]]
+        tokeniser.hexadecimal.parse("0x") shouldBe a [Failure[_]]
     }
 
     "unsignedFloat" should "parse unsigned fractional floats" in {
@@ -263,11 +263,11 @@ class TokeniserTests extends ParsleyTest {
         tokeniser.unsignedFloat.parse("10.0e-5") should be (Success(10.0e-5))
     }
     it should "not parse integers" in {
-        tokeniser.unsignedFloat.parse("3") shouldBe a [Failure]
+        tokeniser.unsignedFloat.parse("3") shouldBe a [Failure[_]]
     }
     it should "not allow .1 or 1." in {
-        tokeniser.unsignedFloat.parse(".0") shouldBe a [Failure]
-        tokeniser.unsignedFloat.parse("0.") shouldBe a [Failure]
+        tokeniser.unsignedFloat.parse(".0") shouldBe a [Failure[_]]
+        tokeniser.unsignedFloat.parse("0.") shouldBe a [Failure[_]]
     }
 
     "float" should "parse signed floats" in {
@@ -292,10 +292,10 @@ class TokeniserTests extends ParsleyTest {
         tokeniser.naturalOrFloat.parse("0o201 //ooh, octal") should be (Success(Left(129)))
     }
     it should "not allow hexadecimal floats" in {
-        (tokeniser.naturalOrFloat <* eof).parse("0x340.0") shouldBe a [Failure]
+        (tokeniser.naturalOrFloat <* eof).parse("0x340.0") shouldBe a [Failure[_]]
     }
     it should "not allow octal floats" in {
-        (tokeniser.naturalOrFloat <* eof).parse("0o201.0") shouldBe a [Failure]
+        (tokeniser.naturalOrFloat <* eof).parse("0o201.0") shouldBe a [Failure[_]]
     }
 
     "number" should "parse integers or floats" in {
@@ -324,18 +324,18 @@ class TokeniserTests extends ParsleyTest {
     }
     it should "parse nested comments when applicable" in {
         (tokeniser.skipComments <* eof).parse("/*/*hello world*/ this /*comment*/ is nested*/") should be (Success(()))
-        (tokeniser.skipComments <* eof).parse("/*/*hello world*/ this /*comment is nested*/") shouldBe a [Failure]
+        (tokeniser.skipComments <* eof).parse("/*/*hello world*/ this /*comment is nested*/") shouldBe a [Failure[_]]
     }
     it should "not parse nested comments when applicable" in {
-        (tokeniser_.skipComments <* eof).parse("/*/*hello world*/ this /*comment*/ is nested*/") shouldBe a [Failure]
+        (tokeniser_.skipComments <* eof).parse("/*/*hello world*/ this /*comment*/ is nested*/") shouldBe a [Failure[_]]
         (tokeniser_.skipComments <* eof).parse("/*/*hello world this /*comment is nested*/") should be (Success(()))
     }
 
     "whiteSpace" should "parse all whitespace" in {
-        (tokeniser.whiteSpace <* eof).parse(" \n\t \r\n ") should not be a [Failure]
+        (tokeniser.whiteSpace <* eof).parse(" \n\t \r\n ") should not be a [Failure[_]]
     }
     it should "parse comments interleaved with spaces" in {
-        (tokeniser.whiteSpace <* eof).parse("/*this comment*/ /*is spaced out*/\n//by whitespace!\n ") should not be a [Failure]
+        (tokeniser.whiteSpace <* eof).parse("/*this comment*/ /*is spaced out*/\n//by whitespace!\n ") should not be a [Failure[_]]
     }
     it must "be the same regardless of the intrinsic" in {
         (tokeniser.whiteSpace <* eof).parse(" \n\t \r\n ") should equal {

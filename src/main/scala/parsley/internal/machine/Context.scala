@@ -12,6 +12,7 @@ import parsley.internal.machine.errors.{
 
 import scala.annotation.tailrec
 import scala.collection.mutable
+import parsley.errors.ErrorBuilder
 
 private [parsley] object Context {
     private [Context] val NumRegs = 4
@@ -20,7 +21,7 @@ private [parsley] object Context {
 
 private [parsley] final class Context(private [machine] var instrs: Array[Instr],
                                       private [machine] var input: String,
-                                      private val sourceName: Option[String] = None) {
+                                      private val sourceFile: Option[String] = None) {
     /** This is the operand stack, where results go to live  */
     private [machine] val stack: ArrayStack[Any] = new ArrayStack()
     /** Current offset into the input */
@@ -123,17 +124,17 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     }
     // $COVERAGE-ON$
 
-    @tailrec @inline private [parsley] def runParser[A](): Result[A] = {
+    @tailrec @inline private [parsley] def runParser[Err: ErrorBuilder, A](): Result[Err, A] = {
         //println(pretty)
-        if (status eq Failed) Failure(errs.error.asParseError.pretty(sourceName))
+        if (status eq Failed) Failure(errs.error.asParseError.format(sourceFile))
         else if (pc < instrs.length) {
             instrs(pc)(this)
-            runParser[A]()
+            runParser[Err, A]()
         }
         else if (calls.isEmpty) Success(stack.peek[A])
         else {
             ret()
-            runParser[A]()
+            runParser[Err, A]()
         }
     }
 
