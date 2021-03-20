@@ -3,7 +3,7 @@ package parsley
 import parsley.character.digit
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.expr.chain
-import parsley.expr.{precedence, Ops, GOps, SOps, InfixL, InfixR, Prefix, Postfix, Atoms}
+import parsley.expr.{precedence, Ops, GOps, SOps, InfixL, InfixR, Prefix, Postfix, NonAssoc, Atoms}
 import parsley.Parsley._
 import parsley._
 
@@ -177,16 +177,19 @@ class ExpressionParserTests extends ParsleyTest {
         expr.parse("++1<2") should be (Success(Inc(Lt(Num(1), Num(2)))))
     }
     they should "generalise to sub-typed structures" in {
-        sealed trait Expr
+        sealed trait Comp
+        case class Less(x: Expr, y: Expr) extends Comp
+        sealed trait Expr extends Comp
         case class Add(x: Expr, y: Term) extends Expr
         sealed trait Term extends Expr
         case class Mul(x: Factor, y: Term) extends Term
         sealed trait Factor extends Term
         case class Neg(x: Factor) extends Factor
         sealed trait Atom extends Factor
-        case class Parens(x: Expr) extends Atom
+        case class Parens(x: Comp) extends Atom
         case class Num(x: Int) extends Atom
-        lazy val expr: Parsley[Expr] = precedence(
+        lazy val expr: Parsley[Comp] = precedence(
+            SOps(NonAssoc)('<' #> Less) +:
             SOps(InfixL)('+' #> Add) +:
             SOps(InfixR)('*' #> Mul) +:
             SOps[Factor, Atom](Prefix)('-' #> Neg) +:
@@ -194,6 +197,9 @@ class ExpressionParserTests extends ParsleyTest {
         expr.parse("(7+8)*2+3+6*2") should be (Success(Add(Add(Mul(Parens(Add(Num(7), Num(8))), Num(2)), Num(3)), Mul(Num(6), Num(2)))))
     }
     they should "generalise to non-monolithic structures" in {
+        sealed trait Comp
+        case class Less(x: Expr, y: Expr) extends Comp
+        case class CompOf(x: Expr) extends Comp
         sealed trait Expr
         case class Add(x: Expr, y: Term) extends Expr
         case class ExprOf(x: Term) extends Expr
@@ -201,13 +207,25 @@ class ExpressionParserTests extends ParsleyTest {
         case class Mul(x: Atom, y: Term) extends Term
         case class TermOf(x: Atom) extends Term
         sealed trait Atom
-        case class Parens(x: Expr) extends Atom
+        case class Parens(x: Comp) extends Atom
         case class Num(x: Int) extends Atom
-        lazy val expr: Parsley[Expr] = precedence(
+        lazy val expr: Parsley[Comp] = precedence(
+            GOps[Expr, Comp](NonAssoc)('<' #> Less)(CompOf) +:
             GOps[Term, Expr](InfixL)('+' #> Add)(ExprOf) +:
             GOps[Atom, Term](InfixR)('*' #> Mul)(TermOf) +:
             Atoms(digit.map(_.asDigit).map(Num), '(' *> expr.map(Parens) <* ')'))
-        expr.parse("(7+8)*2+3+6*2") should be (Success(Add(Add(ExprOf(Mul(Parens(Add(ExprOf(TermOf(Num(7))), TermOf(Num(8)))), TermOf(Num(2)))), TermOf(Num(3))), Mul(Num(6), TermOf(Num(2))))))
+        expr.parse("(7+8)*2+3+6*2<4") should be {
+            Success(Less(
+                Add(
+                    Add(
+                        ExprOf(
+                            Mul(
+                                Parens(CompOf(Add(ExprOf(TermOf(Num(7))), TermOf(Num(8))))),
+                                TermOf(Num(2)))),
+                        TermOf(Num(3))),
+                    Mul(Num(6), TermOf(Num(2)))),
+                ExprOf(TermOf(Num(4)))))
+        }
     }
     they should "generalise to non-monolithic structures with more than one chainl1" in {
         sealed trait Expr

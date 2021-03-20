@@ -1,8 +1,10 @@
 package parsley.expr
 
-import parsley.Parsley
+import parsley.Parsley, Parsley.notFollowedBy
 import parsley.combinator.choice
+import parsley.implicits.zipped.Zipped2
 import parsley.XCompat._
+import parsley.errors.combinator.ErrorMethods
 
 /** This object is used to construct precedence parsers from either a [[Levels]] or many `Ops[A, A]`.
   * @since 2.2.0
@@ -15,6 +17,12 @@ object precedence {
         case Prefixes(ops @ _*) => chain.prefix(choice(ops: _*), parsley.XCompat.applyWrap(wrap)(atom))
         // FIXME: Postfix operators which are similar to binary ops may fail, how can we work around this?
         case Postfixes(ops @ _*) => chain.postfix(parsley.XCompat.applyWrap(wrap)(atom), choice(ops: _*))
+        case NonAssocs(ops @ _*) => {
+            val op = choice(ops: _*)
+            val guardNonAssoc = notFollowedBy(op).explain("non-associative operators cannot be chained together")
+            atom <**> ((op, atom).zipped((f, y) => f(_, y)) </> wrap) <* guardNonAssoc
+        }
+
     }
 
     private def crushLevels[A, B](lvls: Levels[A, B]): Parsley[B] = lvls match {

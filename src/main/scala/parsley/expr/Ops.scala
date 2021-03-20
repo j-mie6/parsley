@@ -17,6 +17,7 @@ private [expr] case class Lefts[-A, B](ops: Parsley[(B, A) => B]*)(implicit over
 private [expr] case class Rights[-A, B](ops: Parsley[(A, B) => B]*)(implicit override val wrap: A => B) extends Ops[A, B]
 private [expr] case class Prefixes[-A, B](ops: Parsley[B => B]*)(implicit override val wrap: A => B) extends Ops[A, B]
 private [expr] case class Postfixes[-A, B](ops: Parsley[B => B]*)(implicit override val wrap: A => B) extends Ops[A, B]
+private [expr] case class NonAssocs[-A, B](ops: Parsley[(A, A) => B]*)(implicit override val wrap: A => B) extends Ops[A, B]
 
 /**
  * Helper object to build values of `Ops[A, B]`, for generalised precedence parsing
@@ -39,10 +40,11 @@ object GOps {
     * @since 2.2.0
     */
     def apply[A, B](fixity: Fixity)(ops: Parsley[fixity.GOp[A, B]]*)(implicit wrap: A => B): Ops[A, B] = fixity match {
-        case InfixL  => Lefts[A, B](ops.asInstanceOf[Seq[Parsley[InfixL.GOp[A, B]]]]: _*)
-        case InfixR  => Rights[A, B](ops.asInstanceOf[Seq[Parsley[InfixR.GOp[A, B]]]]: _*)
-        case Prefix  => Prefixes[A, B](ops.asInstanceOf[Seq[Parsley[Prefix.GOp[A, B]]]]: _*)
-        case Postfix => Postfixes[A, B](ops.asInstanceOf[Seq[Parsley[Postfix.GOp[A, B]]]]: _*)
+        case InfixL   => Lefts[A, B](ops.asInstanceOf[Seq[Parsley[InfixL.GOp[A, B]]]]: _*)
+        case InfixR   => Rights[A, B](ops.asInstanceOf[Seq[Parsley[InfixR.GOp[A, B]]]]: _*)
+        case Prefix   => Prefixes[A, B](ops.asInstanceOf[Seq[Parsley[Prefix.GOp[A, B]]]]: _*)
+        case Postfix  => Postfixes[A, B](ops.asInstanceOf[Seq[Parsley[Postfix.GOp[A, B]]]]: _*)
+        case NonAssoc => NonAssocs[A, B](ops.asInstanceOf[Seq[Parsley[NonAssoc.GOp[A, B]]]]: _*)
     }
 }
 
