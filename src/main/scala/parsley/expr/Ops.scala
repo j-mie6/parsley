@@ -63,12 +63,7 @@ object SOps {
     * @param ops The operators themselves, in varargs
     * @since 3.0.0
     */
-    def apply[B, A <: B](fixity: Fixity)(ops: Parsley[fixity.SOp[A, B]]*): Ops[A, B] = fixity match {
-        case InfixL  => Lefts[A, B](ops.asInstanceOf[Seq[Parsley[InfixL.SOp[A, B]]]]: _*)
-        case InfixR  => Rights[A, B](ops.asInstanceOf[Seq[Parsley[InfixR.SOp[A, B]]]]: _*)
-        case Prefix  => Prefixes[A, B](ops.asInstanceOf[Seq[Parsley[Prefix.SOp[A, B]]]]: _*)
-        case Postfix => Postfixes[A, B](ops.asInstanceOf[Seq[Parsley[Postfix.SOp[A, B]]]]: _*)
-    }
+    def apply[B, A <: B](fixity: Fixity)(ops: Parsley[fixity.SOp[A, B]]*): Ops[A, B] = GOps(fixity)(ops: _*)
 }
 
 /**
