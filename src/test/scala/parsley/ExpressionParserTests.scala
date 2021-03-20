@@ -180,13 +180,16 @@ class ExpressionParserTests extends ParsleyTest {
         sealed trait Expr
         case class Add(x: Expr, y: Term) extends Expr
         sealed trait Term extends Expr
-        case class Mul(x: Atom, y: Term) extends Term
-        sealed trait Atom extends Term
+        case class Mul(x: Factor, y: Term) extends Term
+        sealed trait Factor extends Term
+        case class Neg(x: Factor) extends Factor
+        sealed trait Atom extends Factor
         case class Parens(x: Expr) extends Atom
         case class Num(x: Int) extends Atom
         lazy val expr: Parsley[Expr] = precedence(
             SOps(InfixL)('+' #> Add) +:
             SOps(InfixR)('*' #> Mul) +:
+            SOps[Factor, Atom](Prefix)('-' #> Neg) +:
             Atoms(digit.map(_.asDigit).map(Num), '(' *> expr.map(Parens) <* ')'))
         expr.parse("(7+8)*2+3+6*2") should be (Success(Add(Add(Mul(Parens(Add(Num(7), Num(8))), Num(2)), Num(3)), Mul(Num(6), Num(2)))))
     }

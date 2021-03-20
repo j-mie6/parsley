@@ -7,7 +7,7 @@ import parsley.Parsley
  * consume `B`s, possibly `A`s and produce `B`s: this depends on the [[Fixity]] of the operators.
  * @tparam A The base type consumed by the operators
  * @tparam B The type produced/consumed by the operators
- * @note For less complex types, such as those which use subtyping `Ops[A, A]` is sufficient
+ * @note For less complex types `Ops[A, A]` is sufficient
  * @since 2.2.0
  */
 trait Ops[-A, B] {
