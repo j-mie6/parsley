@@ -25,9 +25,9 @@ sealed trait Levels[-A, +B]
  * @since 3.0.0
  */
 case class Level[-A, B, C](lvls: Levels[A, B], ops: Ops[B, C]) extends Levels[A, C]
-private [expr] case class Atoms[A, B](ev: A =:= B, atoms: Parsley[A]*) extends Levels[A, B]
+private [expr] case class Atoms_[A, B](ev: A =:= B, atoms: Parsley[A]*) extends Levels[A, B]
 object Atoms {
-    def apply[A](atoms: Parsley[A]*): Levels[A, A] = new Atoms(refl[A], atoms: _*)
+    def apply[A](atoms: Parsley[A]*): Levels[A, A] = new Atoms_(refl[A], atoms: _*)
 }
 object Levels {
     implicit class LevelBuilder[-A, +B](lvls: Levels[A, B]) {

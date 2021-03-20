@@ -20,7 +20,7 @@ object precedence {
     }
 
     private def crushLevels[A, B](lvls: Levels[A, B]): Parsley[B] = lvls match {
-        case Atoms(ev, atoms@_*) => ev.substituteCo[Parsley](choice(atoms: _*))
+        case Atoms_(ev, atoms@_*) => ev.substituteCo[Parsley](choice(atoms: _*))
         case Level(lvls, ops) => convertOperators(crushLevels(lvls), ops)(ops.wrap)
     }
 
