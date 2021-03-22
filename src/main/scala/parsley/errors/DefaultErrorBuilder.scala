@@ -9,7 +9,7 @@ import scala.util.matching.Regex
   * time and without notice. The API, however, will remain stable.
   * @since 3.0.0
   */
-class DefaultErrorBuilder extends ErrorBuilder[String] {
+class DefaultErrorBuilder extends ErrorBuilder[String] with revisions.Revision0 {
     override def format(pos: Position, source: Context, ctxs: NestedContexts, lines: ErrorInfoLines): String = {
         s"${mergeScopes(source, ctxs)}$pos:\n${lines.mkString("  ", "\n  ", "")}"
     }
