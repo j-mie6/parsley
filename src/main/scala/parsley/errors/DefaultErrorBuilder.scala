@@ -2,6 +2,13 @@ package parsley.errors
 
 import scala.util.matching.Regex
 
+/**
+  * This is the class used to build Parsley's default error messages.
+  * While it compiles with the `ErrorBuilder` typeclass, it should not
+  * be considered a stable contract: the formatting can be changed at any
+  * time and without notice. The API, however, will remain stable.
+  * @since 3.0.0
+  */
 class DefaultErrorBuilder extends ErrorBuilder[String] {
     override def format(pos: Position, source: Context, ctxs: NestedContexts, lines: ErrorInfoLines): String = {
         s"${mergeScopes(source, ctxs)}$pos:\n${lines.mkString("  ", "\n  ", "")}"
