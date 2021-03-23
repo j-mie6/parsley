@@ -12,7 +12,8 @@ exclude_patterns:
 - ".gitignore"
 - "*.pdf"
 - "LICENSE"
-- "**/deprecated"
+- "**/lift.scala"
+- "**/implicits/zipped.scala"
 plugins:
   scalastyle:
     enabled: true

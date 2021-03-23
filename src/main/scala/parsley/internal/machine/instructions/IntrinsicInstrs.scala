@@ -145,14 +145,14 @@ private [internal] final class GuardAgainst[A](_pred: PartialFunction[A, String]
 private [internal] final class NotFollowedBy(_expected: Option[String]) extends Instr {
     private [this] final val expected = _expected.map(Desc)
     override def apply(ctx: Context): Unit = {
+        val reached = ctx.offset
         // Recover the previous state; notFollowedBy NEVER consumes input
         ctx.restoreState()
         ctx.restoreHints()
         // A previous success is a failure
         if (ctx.status eq Good) {
             ctx.handlers = ctx.handlers.tail
-            // TODO: Perhaps we could use the same mechanism as string?
-            ctx.expectedFail(expected)
+            ctx.expectedTokenFail(expected, reached - ctx.offset)
         }
         // A failure is what we wanted
         else {

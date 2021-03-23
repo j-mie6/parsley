@@ -58,7 +58,10 @@ val PureVisible: CrossType = new CrossType {
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 // See https://github.com/sbt/sbt/issues/1224
-onLoad in Global ~= (_ andThen ("project parsley" :: _))
+Global / onLoad ~= (_ andThen ("project parsley" :: _))
+
+Compile / bloopGenerate := None
+Test / bloopGenerate := None
 
 lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .withoutSuffixFor(JVMPlatform)
@@ -70,10 +73,10 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
 
     libraryDependencies += "org.scalatest" %%% "scalatest" % scalaTestDependency(scalaVersion.value) % Test,
 
-    // temporary until Parsley 3.0
-    Compile / unmanagedSourceDirectories += file(s"${baseDirectory.value.getParentFile.getPath}/src/main/deprecated"),
     Compile / unmanagedSourceDirectories ++= extraSources(baseDirectory.value.getParentFile, "main", scalaVersion.value),
+    Compile / unmanagedSourceDirectories ++= extraSources(baseDirectory.value, "main", scalaVersion.value),
     Test / unmanagedSourceDirectories ++= extraSources(baseDirectory.value.getParentFile, "test", scalaVersion.value),
+    Test / unmanagedSourceDirectories ++= extraSources(baseDirectory.value, "test", scalaVersion.value),
 
     scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature"),
     scalacOptions ++= (if (isDotty.value) Seq("-source:3.0-migration") else Seq.empty),
@@ -90,8 +93,12 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     crossScalaVersions := List(scala212Version, scala213Version, scala3Version, dottyVersion),
   )
   .jsSettings(
-    crossScalaVersions := List(scala212Version, scala213Version)
+    crossScalaVersions := List(scala212Version, scala213Version),
+    Compile / bloopGenerate := None,
+    Test / bloopGenerate := None
   )
   .nativeSettings(
-    crossScalaVersions := List(scala212Version, scala213Version)
+    crossScalaVersions := List(scala212Version, scala213Version),
+    Compile / bloopGenerate := None,
+    Test / bloopGenerate := None
   )
