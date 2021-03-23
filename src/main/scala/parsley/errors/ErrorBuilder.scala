@@ -25,13 +25,13 @@ trait ErrorBuilder[Err] {
       * sub-parts into a finished value of type `Err`.
       *
       * @param pos This is the representation of the position of the error in the
-      *            input (see the `pos` method)
+      *            input (see the `[[pos]]` method)
       * @param source This is the representation of the filename (if it exists)
-      *               (see the `source` method)
+      *               (see the `[[source]]` method)
       * @param ctxs This is the representation of any addition contextual information
-      *             in the error (see the `nestedContexts` method)
-      * @param lines This is the main body of the error message (see `vanillaError`
-      *              or `specialisedError` methods)
+      *             in the error (see the `[[nestedContexts]]` method)
+      * @param lines This is the main body of the error message (see `[[vanillaError]]`
+      *              or `[[specialisedError]]` methods)
       * @return The final assembled error message
       * @since 3.0.0
       */
@@ -42,11 +42,11 @@ trait ErrorBuilder[Err] {
       * sub-parts into a finished value of type `Err`.
       *
       * @param pos This is the representation of the position of the error in the
-      *            input (see the `pos` method)
+      *            input (see the `[[pos]]` method)
       * @param source This is the representation of the filename (if it exists)
-      *               (see the `source` method)
-      * @param lines This is the main body of the error message (see `vanillaError`
-      *              or `specialisedError` methods)
+      *               (see the `[[source]]` method)
+      * @param lines This is the main body of the error message (see `[[vanillaError]]`
+      *              or `[[specialisedError]]` methods)
       * @return The final assembled error message
       * @since 3.0.0
       */
@@ -78,7 +78,7 @@ trait ErrorBuilder[Err] {
       */
     def pos(line: Int, col: Int): Position
     /**
-      * Formats the name of the file if it exists into the type give by `Context`
+      * Formats the name of the file if it exists into the type give by `Source`
       *
       * @param sourceName The source name of the file, if any
       * @since 3.0.0
@@ -100,12 +100,12 @@ trait ErrorBuilder[Err] {
       */
     //type NestedContexts
     /*
-      * Contextual information produced by `contextualScope` is combined by this
+      * Contextual information produced by `[[contextualScope]]` is combined by this
       * method into a single piece of information. This does not include information
       * about the source file.
       *
       * @param contexts The nested contexts to be collapsed, most general first
-      *                 (produced by `contextualScope`)
+      *                 (produced by `[[contextualScope]]`)
       * @since ???
       */
     //def nestContexts(contexts: List[Context]): NestedContexts
@@ -121,13 +121,13 @@ trait ErrorBuilder[Err] {
       * and are not produced by `fail` (or any derivative) combinators.
       *
       * @param unexpected Information about which token(s) caused the error
-      *                   (see the `unexpected` method)
+      *                   (see the `[[unexpected]]` method)
       * @param expected Information about which token(s) would have avoided
-      *                 the error (see the `expected` method)
+      *                 the error (see the `[[expected]]` method)
       * @param reasons Additional information about why the error occured
-      *                (see the `combineMessages` method)
+      *                (see the `[[combineMessages]]` method)
       * @param line Representation of the line of input that this error occured
-      *             on (see the `lineInfo` method)
+      *             on (see the `[[lineInfo]]` method)
       * @since 3.0.0
       */
     def vanillaError(unexpected: UnexpectedLine, expected: ExpectedLine, reasons: Messages, line: LineInfo): ErrorInfoLines
@@ -136,9 +136,9 @@ trait ErrorBuilder[Err] {
       * implemented in terms of `fail`. These errors take precedence over
       * the vanilla errors, and contain less, more specialised, information
       *
-      * @param msgs Information detailing the error (see the `combineMessages` method)
+      * @param msgs Information detailing the error (see the `[[combineMessages]]` method)
       * @param line Representation of the line of input that this error occured
-      *             on (see the `lineInfo` method)
+      *             on (see the `[[lineInfo]]` method)
       * @since 3.0.0
       */
     def specialisedError(msgs: Messages, line: LineInfo): ErrorInfoLines
@@ -166,7 +166,7 @@ trait ErrorBuilder[Err] {
       * single error. Reasons are used by `vanilla` messages and messages
       * are used by `specialised` messages.
       *
-      * @param alts The messages to combine (see the `message` or `reason`
+      * @param alts The messages to combine (see the `[[message]]` or `[[reason]]`
       *             methods)
       * @since 3.0.0
       */
@@ -205,7 +205,7 @@ trait ErrorBuilder[Err] {
       * could have avoided the error.
       *
       * @param alts The tokens that could have prevented the error
-      *             (see the `combineExpectedItems` method)
+      *             (see the `[[combineExpectedItems]]` method)
       * @since 3.0.0
       */
     def expected(alts: ExpectedItems): ExpectedLine

@@ -49,7 +49,7 @@ object GOps {
 }
 
 /**
- * Helper object to build values of `Ops[A, B]`, for generalised precedence parsing
+ * Helper object to build values of `Ops[A, B]`, for precedence parsing with subtyped data-structures.
  * @since 3.0.0
  */
 object SOps {
@@ -64,6 +64,8 @@ object SOps {
     * @param fixity The fixity of the operators described. See [[Fixity]]
     * @param ops The operators themselves, in varargs
     * @since 3.0.0
+    * @note The order of types in this method is reversed compared with [[GOps.apply]], this is due to
+    *       a Scala typing issue.
     */
     def apply[B, A <: B](fixity: Fixity)(ops: Parsley[fixity.SOp[A, B]]*): Ops[A, B] = GOps(fixity)(ops: _*)
 }

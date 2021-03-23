@@ -52,6 +52,14 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: deepe
   * the "method-style" combinators. All parsers will likely require something from within! */
 object Parsley
 {
+    /**
+      * This class exposes the commonly used combinators in Parsley. For a description of why the library is
+      * designed in this way, see: [[https://github.com/j-mie6/Parsley/wiki/Understanding-the-API the Parsley wiki]]
+      *
+      * @param p The parser which serves as the method receiver
+      * @param con A conversion (if required) to turn `p` into a parser
+      * @version 1.0.0
+      */
     implicit final class LazyParsley[P, +A](p: =>P)(implicit con: P => Parsley[A])
     {
         /**
@@ -283,11 +291,24 @@ object Parsley
             case x: B => x
         }
     }
-    implicit final class LazyMapParsley[A, +B](f: A => B)
+    /**
+      * This class exposes the `<#>` combinator on functions.
+      *
+      * @param f The function that is used for the map
+      * @version 1.0.0
+      */
+    implicit final class LazyMapParsley[-A, +B](f: A => B)
     {
         /**This combinator is an alias for `map`*/
         def <#>(p: =>Parsley[A]): Parsley[B] = p.map(f)
     }
+    /**
+      * This class exposes a ternary operator on pairs of parsers.
+      *
+      * @param pq The parsers which serve the branches of the if
+      * @param con A conversion (if required) to turn elements of `pq` into parsers
+      * @version 1.0.0
+      */
     implicit final class LazyChooseParsley[P, +A](pq: =>(P, P))(implicit con: P => Parsley[A])
     {
         private lazy val (p, q) = pq

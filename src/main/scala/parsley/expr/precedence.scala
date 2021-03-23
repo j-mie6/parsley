@@ -30,7 +30,7 @@ object precedence {
         case Level(lvls, ops) => convertOperators(crushLevels(lvls), ops)(ops.wrap)
     }
 
-    /** This is used to build an expression parser for a monolithic type. Levels are specified from strongest
+    /** This is used to build an expression parser for a monolithic type: levels are specified from strongest
       * to weakest.
       * @tparam A The type of the monolithic result
       * @param atoms The atomic units of the expression, for instance numbers/variables
@@ -41,7 +41,7 @@ object precedence {
       */
     def apply[A](atoms: Parsley[A]*)(table: Ops[A, A]*): Parsley[A] = apply(table.foldLeft(Atoms(atoms: _*))(Level.apply[A, A, A]))
 
-    /** This is used to build an expression parser for a monolithic type. Levels are specified from weakest
+    /** This is used to build an expression parser for a monolithic type: levels are specified from weakest
       * to strongest.
       * @tparam A The type of the monolithic result
       * @param atom The atomic unit of the expression, for instance numbers/variables
@@ -49,6 +49,7 @@ object precedence {
       *              Each list in the table corresponds to operators of the same precedence level.
       * @return A parser for the described expression language
       * @since 3.0.0
+      * @note due to limitations with type erasure, the `atom` for this function is ''not'' variadic.
       */
     def apply[A](table: Ops[A, A]*)(atom: Parsley[A]): Parsley[A] = apply(atom)(table.reverse: _*)
 

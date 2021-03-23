@@ -23,9 +23,9 @@ is defined as being an object which mocks a package):
       on a precedence table.
   - [[parsley.implicits `parsley.implicits`]] contains several implicits to add syntactic sugar
     to the combinators. These are sub-categorised into the following sub modules:
-     - [[parsley.implicits.character$ `parsley.implicits.character]] contains implicits to allow you
+     - [[parsley.implicits.character$ `parsley.implicits.character`]] contains implicits to allow you
        to use character and string literals as parsers.
-     - [[parsley.implicits.combinator$ `parsley.implicits.combinator]] contains implicits related to
+     - [[parsley.implicits.combinator$ `parsley.implicits.combinator`]] contains implicits related to
        combinators, such as the ability to make any parser into a `Parsley[Unit]` automatically.
      - [[parsley.implicits.lift$ `parsley.implicits.lift`]] enables postfix application of the lift
        combinator onto a function (or value).

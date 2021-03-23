@@ -13,6 +13,13 @@ import parsley.errors.ErrorBuilder
   * @since 3.0.0
   */
 object io {
+    /**
+      * This class exposes a method of running parsers from a file.
+      *
+      * @param p The parser which serves as the method receiver
+      * @param con A conversion (if required) to turn `p` into a parser
+      * @version 3.0.0
+      */
     implicit final class ParseFromIO[P, +A](p: P)(implicit con: P => Parsley[A]) {
         /** This method executes a parser, but collects the input to the parser from the given file.
          * The file name is used to annotate any error messages. The result of this method handles

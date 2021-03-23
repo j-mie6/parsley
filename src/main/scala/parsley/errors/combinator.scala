@@ -21,6 +21,15 @@ object combinator {
       */
     def unexpected(msg: String): Parsley[Nothing] = new Parsley(new deepembedding.Unexpected(msg))
 
+    /**
+      * This class exposes helpful combinators that are specialised for generating more helpful errors messages.
+      * For a description of why the library is designed in this way,
+      * see: [[https://github.com/j-mie6/Parsley/wiki/Understanding-the-API the Parsley wiki]]
+      *
+      * @param p The parser which serves as the method receiver
+      * @param con A conversion (if required) to turn `p` into a parser
+      * @version 3.0.0
+      */
     implicit final class ErrorMethods[P, +A](p: =>P)(implicit con: P => Parsley[A]) {
         /** Filter the value of a parser; if the value returned by the parser is defined for the given partial function, then
           * the `filterOut` fails, using the result of the function as the ''reason'' (see [[explain]]), otherwise the parser
@@ -47,7 +56,7 @@ object combinator {
           */
         def collectMsg[B](msggen: A => String)(pf: PartialFunction[A, B]): Parsley[B] = this.guardAgainst{case x if !pf.isDefinedAt(x) => msggen(x)}.map(pf)
         /** Similar to `filterOut`, except the error message generated yields a ''true failure''. This means that it will
-          * uses the same mechanism as [[Parsley.fail]], as opposed to the reason provided by [[filterOut]]
+          * uses the same mechanism as [[fail]], as opposed to the reason provided by [[filterOut]]
           * @param pred The predicate that is tested against the parser result and produces error messages
           * @return The result of the invokee if it fails the predicate
           * @since 2.8.0
