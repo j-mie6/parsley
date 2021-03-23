@@ -10,29 +10,30 @@ import scala.util.matching.Regex
   * @since 3.0.0
   */
 class DefaultErrorBuilder extends ErrorBuilder[String] with revisions.Revision0 {
-    override def format(pos: Position, source: Context, ctxs: NestedContexts, lines: ErrorInfoLines): String = {
-        s"${mergeScopes(source, ctxs)}$pos:\n${lines.mkString("  ", "\n  ", "")}"
+    override def format(pos: Position, source: Source, lines: ErrorInfoLines): String = {
+        s"${source.fold("")(name => s"In $name ")}$pos:\n${lines.mkString("  ", "\n  ", "")}"
     }
 
-    protected def mergeScopes(source: Context, ctxs: NestedContexts): String = (source, ctxs) match {
+    /*protected def mergeScopes(source: Source, ctxs: NestedContexts): String = (source, ctxs) match {
         case (None, None) => ""
         case (Some(name), None) => s"In $name "
         case (None, Some(ctxs)) => s"In $ctxs "
         case (Some(name), Some(ctxs)) => s"In $name, $ctxs "
-    }
+    }*/
 
     type Position = String
-    type Context = Option[String]
+    type Source = Option[String]
+    //type Context = Option[String]
     override def pos(line: Int, col: Int): Position = s"(line $line, column $col)"
-    override def source(sourceName: Option[String]): Context = sourceName.map(name => s"file '$name'")
-    override def contexualScope(context: String): Context = Some(context)
+    override def source(sourceName: Option[String]): Source = sourceName.map(name => s"file '$name'")
+    //override def contexualScope(context: String): Context = Some(context)
 
-    type NestedContexts = Option[String]
-    override def nestContexts(contexts: List[Context]): NestedContexts = {
+    //type NestedContexts = Option[String]
+    /*override def nestContexts(contexts: List[Context]): NestedContexts = {
         val nonEmptyContexts = contexts.flatten
         if (nonEmptyContexts.nonEmpty) Some(nonEmptyContexts.mkString(", "))
         else None
-    }
+    }*/
 
     type ErrorInfoLines = List[String]
     override def vanillaError(unexpected: UnexpectedLine, expected: ExpectedLine, reasons: Messages, line: LineInfo): ErrorInfoLines = {

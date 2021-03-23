@@ -11,5 +11,16 @@ package parsley.errors
   */
 object revisions {
     /** @since 3.0.0 */
-    trait Revision0 { this: ErrorBuilder[_] => }
+    trait Revision0/* extends Revision1*/ { this: ErrorBuilder[_] =>
+        //type Context = Unit
+        //final override def contexualScope(context: String): Context = ()
+
+        //type NestedContexts = Unit
+        //final override def nestContexts(contexts: List[Context]): NestedContexts = ()
+
+        // Make sure this starts life out deprecated
+        //def format(pos: Position, source: Source, lines: ErrorInfoLines): _Err
+        //final override def format(pos: Position, source: Source, ctxs: NestedContexts, lines: ErrorInfoLines): _Err = format(pos, source, lines)
+    }
+    //trait Revision1 { this: ErrorBuilder[_] => }
 }

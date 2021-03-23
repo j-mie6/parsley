@@ -13,7 +13,7 @@ private [internal] sealed trait ParseError {
     private [internal] final def format[Err](sourceName: Option[String])(implicit helper: LineBuilder, builder: ErrorBuilder[Err]): Err = {
         val (errLine, caret) = helper.getLineWithCaret(offset)
         val lines = format(errLine, caret)
-        builder.format(builder.pos(line, col), builder.source(sourceName), builder.nestContexts(Nil), lines)
+        builder.format(builder.pos(line, col), builder.source(sourceName), lines)
     }
 }
 // The reasons here are lightweight, two errors can merge their messages, but messages do not get converted to hints

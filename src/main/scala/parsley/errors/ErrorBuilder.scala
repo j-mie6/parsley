@@ -20,7 +20,7 @@ package parsley.errors
 trait ErrorBuilder[Err] {
     private [errors] final type _Err = Err
 
-    /**
+    /*
       * This is the top level function, which finally compiles all the formatted
       * sub-parts into a finished value of type `Err`.
       *
@@ -35,7 +35,22 @@ trait ErrorBuilder[Err] {
       * @return The final assembled error message
       * @since 3.0.0
       */
-    def format(pos: Position, source: Context, ctxs: NestedContexts, lines: ErrorInfoLines): Err
+    //def format(pos: Position, source: Source, ctxs: NestedContexts, lines: ErrorInfoLines): Err
+
+    /**
+      * This is the top level function, which finally compiles all the formatted
+      * sub-parts into a finished value of type `Err`.
+      *
+      * @param pos This is the representation of the position of the error in the
+      *            input (see the `pos` method)
+      * @param source This is the representation of the filename (if it exists)
+      *               (see the `source` method)
+      * @param lines This is the main body of the error message (see `vanillaError`
+      *              or `specialisedError` methods)
+      * @return The final assembled error message
+      * @since 3.0.0
+      */
+    def format(pos: Position, source: Source, lines: ErrorInfoLines): Err
 
     /**
       * The representation type of position information within the generated message
@@ -43,11 +58,16 @@ trait ErrorBuilder[Err] {
       */
     type Position
     /**
-      * The representation of contextual information, including the file and additional
-      * context
+      * The representation of the file information
       * @since 3.0.0
       */
-    type Context
+    type Source
+    /*
+      * The representation of contextual information, including the file and additional
+      * context
+      * @since ???
+      */
+    //type Context
     /**
       * Formats a position into the representation type given by `Position`.
       *
@@ -63,32 +83,32 @@ trait ErrorBuilder[Err] {
       * @param sourceName The source name of the file, if any
       * @since 3.0.0
       */
-    def source(sourceName: Option[String]): Context
-    /**
+    def source(sourceName: Option[String]): Source
+    /*
       * Formats any additional contextual information from the parser. This might,
       * for instance, include function or class names.
       *
       * @param context The context information produced by the parser
       * @return A representation of the context
-      * @since 3.0.0
+      * @since ???
       */
-    def contexualScope(context: String): Context
+    //def contexualScope(context: String): Context
 
-    /**
+    /*
       * The representation of collapsed nested contextual information.
-      * @since 3.0.0
+      * @since ???
       */
-    type NestedContexts
-    /**
+    //type NestedContexts
+    /*
       * Contextual information produced by `contextualScope` is combined by this
       * method into a single piece of information. This does not include information
       * about the source file.
       *
       * @param contexts The nested contexts to be collapsed, most general first
       *                 (produced by `contextualScope`)
-      * @since 3.0.0
+      * @since ???
       */
-    def nestContexts(contexts: List[Context]): NestedContexts
+    //def nestContexts(contexts: List[Context]): NestedContexts
 
     /**
       * The representation type of the main body within the error message
