@@ -22,5 +22,6 @@ object revisions {
         //def format(pos: Position, source: Source, lines: ErrorInfoLines): _Err
         //final override def format(pos: Position, source: Source, ctxs: NestedContexts, lines: ErrorInfoLines): _Err = format(pos, source, lines)
     }
+    /* @since ??? */
     //trait Revision1 { this: ErrorBuilder[_] => }
 }

@@ -14,6 +14,10 @@ class DefaultErrorBuilder extends ErrorBuilder[String] with revisions.Revision0 
         s"${source.fold("")(name => s"In $name ")}$pos:\n${lines.mkString("  ", "\n  ", "")}"
     }
 
+    //override def format(pos: Position, source: Source, ctxs: NestedContexts, lines: ErrorInfoLines): String = {
+    //    s"${mergeScopes(source, ctxs)}$pos:\n${lines.mkString("  ", "\n  ", "")}"
+    //}
+
     /*protected def mergeScopes(source: Source, ctxs: NestedContexts): String = (source, ctxs) match {
         case (None, None) => ""
         case (Some(name), None) => s"In $name "
