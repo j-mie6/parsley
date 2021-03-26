@@ -62,6 +62,7 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
                 (x: Int) => outer + x - ((x + inner) & 3)
             case None => (x: Int) => x + col
         }, (x: Int) => x)
+    // TODO: This could be improved by traversing back to front?
     @tailrec def compute(i: Int, col: Int, line: Int)(implicit tabprefix: Option[Int]): (Int => Int, Int => Int) = {
         if (i < cs.length) cs(i) match {
             case '\n' => compute(i + 1, 1, line + 1)(Some(0))

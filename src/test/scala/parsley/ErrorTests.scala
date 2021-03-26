@@ -105,7 +105,7 @@ class ErrorTests extends ParsleyTest {
         Parsley.empty.explain("oops!").parse("") shouldBe Failure("(line 1, column 1):\n  oops!\n  >\n  >^")
         'a'.explain("requires an a").parse("b") shouldBe Failure("(line 1, column 1):\n  unexpected \"b\"\n  expected \"a\"\n  requires an a\n  >b\n  >^")
         ('a'.explain("an a") <|> 'b'.explain("a b")).parse("c") shouldBe {
-            Failure("(line 1, column 1):\n  unexpected \"c\"\n  expected \"a\" or \"b\"\n  an a\n  a b\n  >c\n  >^")
+            Failure("(line 1, column 1):\n  unexpected \"c\"\n  expected \"a\" or \"b\"\n  a b\n  an a\n  >c\n  >^")
         }
         ('a'.explain("should be absent") *> 'b').parse("a") shouldBe {
             Failure("(line 1, column 2):\n  unexpected end of input\n  expected \"b\"\n  >a\n  > ^")

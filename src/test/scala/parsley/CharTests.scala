@@ -17,7 +17,7 @@ class CharTests extends ParsleyTest {
         ("abc" <|> "ab").parse("ab") shouldBe a [Failure[_]]
     }
     it should "not consume input if it fails mid-string when combined with attempt" in {
-        ("abc" <\> "ab").parse("ab") should not be a [Failure[_]]
+        (attempt("abc") <|> "ab").parse("ab") should not be a [Failure[_]]
     }
 
     "anyChar" should "accept any character" in {

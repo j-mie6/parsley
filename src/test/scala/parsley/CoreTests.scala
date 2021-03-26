@@ -216,7 +216,7 @@ class CoreTests extends ParsleyTest {
     }
     they should "but not roll back if they hard fail" in {
         val r1 = Reg.make[Int]
-        val p = put(r1, 3) *> (rollback(r1, 'a' *> put(r1, 2) *> Parsley.empty) <\> unit) *> get(r1)
+        val p = put(r1, 3) *> (attempt(rollback(r1, 'a' *> put(r1, 2) *> Parsley.empty)) <|> unit) *> get(r1)
         p.parse("a") shouldBe Success(2)
     }
     they should "not rollback if successful" in {

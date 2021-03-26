@@ -261,7 +261,7 @@ class Lexer(lang: LanguageDef)
         case Predicate(ws) =>
             new Parsley(new deepembedding.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
         case Parser(space_) if lang.supportsComments =>
-            skipMany(new Parsley(new deepembedding.Comment(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments)) <\> space_)
+            skipMany(attempt(new Parsley(new deepembedding.Comment(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))) <|> space_)
         case Parser(space_) => skipMany(space_)
         case NotRequired => skipComments
     }
