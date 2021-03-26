@@ -4,28 +4,9 @@ import parsley.internal.errors.{TrivialError, FailError, ErrorItem, EndOfInput}
 
 import scala.collection.mutable
 
-private [errors] sealed trait UnexpectItem {
-    final def pickHigher(other: UnexpectItem): UnexpectItem = (this, other) match {
-        case (Other(u1), Other(u2)) => Other(ErrorItem.higherPriority(u1, u2))
-        case (higher: Other, _) => higher
-        case (_, higher: Other) => higher
-        case (u, NoItem) => u
-        case (u1: Raw, u2: Raw) if u1.size > u2.size => u1
-        case (_, u: Raw) => u
-    }
-    def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Option[ErrorItem]
-}
-private [errors] case class Raw(size: Int) extends UnexpectItem {
-    def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder) = Some(builder(offset, size))
-}
-private [errors] case class Other(underlying: ErrorItem) extends UnexpectItem {
-    def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder) = Some(underlying)
-}
-private [errors] case object NoItem extends UnexpectItem {
-    def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder) = None
-}
+import TrivialState._
 
-private [errors] class TrivialState(offset: Int, outOfRange: Boolean) {
+private [errors] final class TrivialState(offset: Int, outOfRange: Boolean) {
     private var line: Int = _
     private var col: Int = _
     private val expecteds = mutable.Set.empty[ErrorItem]
@@ -53,7 +34,30 @@ private [errors] class TrivialState(offset: Int, outOfRange: Boolean) {
         acceptingExpected = true
     }
 }
-private [errors] class FancyState(offset: Int) {
+object TrivialState {
+    private [TrivialState] sealed trait UnexpectItem {
+        final def pickHigher(other: UnexpectItem): UnexpectItem = (this, other) match {
+            case (Other(u1), Other(u2)) => Other(ErrorItem.higherPriority(u1, u2))
+            case (higher: Other, _) => higher
+            case (_, higher: Other) => higher
+            case (u, NoItem) => u
+            case (u1: Raw, u2: Raw) if u1.size > u2.size => u1
+            case (_, u: Raw) => u
+        }
+        def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Option[ErrorItem]
+    }
+    private [TrivialState] case class Raw(size: Int) extends UnexpectItem {
+        def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder) = Some(builder(offset, size))
+    }
+    private [TrivialState] case class Other(underlying: ErrorItem) extends UnexpectItem {
+        def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder) = Some(underlying)
+    }
+    private [TrivialState] case object NoItem extends UnexpectItem {
+        def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder) = None
+    }
+}
+
+private [errors] final class FancyState(offset: Int) {
     private var line: Int = _
     private var col: Int = _
     private val msgs = mutable.Set.empty[String]
