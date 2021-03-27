@@ -34,7 +34,7 @@ private [errors] final class TrivialState(offset: Int, outOfRange: Boolean) {
         acceptingExpected = true
     }
 }
-object TrivialState {
+private [errors] object TrivialState {
     private [TrivialState] sealed trait UnexpectItem {
         final def pickHigher(other: UnexpectItem): UnexpectItem = (this, other) match {
             case (Other(u1), Other(u2)) => Other(ErrorItem.higherPriority(u1, u2))
