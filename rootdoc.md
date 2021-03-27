@@ -15,13 +15,28 @@ is defined as being an object which mocks a package):
     strings, as well as combinators to match specific sub-sets of characters.
   - [[parsley.debug$ `parsley.debug`]] contains debugging combinators, helpful for identifying faults
     in parsers.
+  - [[parsley.io$ `parsley.io`]] contains extension methods to run parsers with input sourced from
+    IO sources.
   - [[parsley.expr `parsley.expr`]] contains the following sub modules:
-    - [[parsley.expr.chain `parsley.expr.chain`]] contains combinators used in expression parsing
-    - [[parsley.expr.precedence `parsley.expr.precedence`]] is a builder for expression parsers built
+    - [[parsley.expr.chain$ `parsley.expr.chain`]] contains combinators used in expression parsing
+    - [[parsley.expr.precedence$ `parsley.expr.precedence`]] is a builder for expression parsers built
       on a precedence table.
-  - [[parsley.implicits$ `parsley.implicits`]] contains several implicits to add syntactic sugar
-    to the combinators, such as being able to use character and string literals directly as parsers,
-    as well as enabling lifting of functions to work on parsers.
+  - [[parsley.implicits `parsley.implicits`]] contains several implicits to add syntactic sugar
+    to the combinators. These are sub-categorised into the following sub modules:
+     - [[parsley.implicits.character$ `parsley.implicits.character`]] contains implicits to allow you
+       to use character and string literals as parsers.
+     - [[parsley.implicits.combinator$ `parsley.implicits.combinator`]] contains implicits related to
+       combinators, such as the ability to make any parser into a `Parsley[Unit]` automatically.
+     - [[parsley.implicits.lift$ `parsley.implicits.lift`]] enables postfix application of the lift
+       combinator onto a function (or value).
+     - [[parsley.implicits.zipped$ `parsley.implicits.zipped`]] enables boths a reversed form of
+       lift where the function appears on the right and is applied on a tuple (useful when type
+       inference has failed) as well as a `.zipped` method for building tuples out of several
+       combinators.
+  - [[parsley.errors `parsley.errors`]] contains modules to deal with error messages, their refinement
+    and generation.
+     - [[parsley.errors.combinator$ `parsley.errors.combinator`]] provides combinators that can be
+       used to either produce more detailed errors as well as refine existing errors.
   - [[parsley.lift$ `parsley.lift`]] contains functions which lift functions that work on regular
     types to those which now combine the results of parsers returning those same types. these are
     ubiquitous.
@@ -31,22 +46,3 @@ is defined as being an object which mocks a package):
     a host of helpful lexing combinators when provided with the description of a language.
   - [[parsley.unsafe$ `parsley.unsafe`]] contains unsafe (and not thread-safe) ways of speeding up
     the execution of a parser.
-
-In addition to the modules and packages outlined above, this version of Parsley (up to version 3.0),
-also includes the so-called `old-style` API, which is deprecated (see
-[[https://github.com/j-mie6/Parsley/wiki/The-Newstyle-API-vs-the-Oldstyle-API the Parsley wiki]] for
-a discussion of these differences). You should use the modules described above, and '''avoid''' the following:
-
-  - `parsley.BitGen`
-  - `parsley.Char`
-  - `parsley.CharSet`
-  - `parsley.Combinator`
-  - `parsley.ExpressionParser`
-  - `parsley.Impl`
-  - `parsley.Implicits`
-  - `parsley.LanguageDef`
-  - `parsley.NotRequired`
-  - `parsley.Parser`
-  - `parsley.Predicate`
-  - `parsley.Reg`
-  - `parsley.TokenParser`

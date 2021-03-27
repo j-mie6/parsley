@@ -1,6 +1,6 @@
 package parsley.internal.machine.instructions
 
-import parsley.internal.errors.{Desc, Raw}
+import parsley.internal.errors.{Desc, Raw, EndOfInput}
 import parsley.internal.machine.{Context, Good}
 import parsley.internal.machine.errors.{EmptyError, EmptyErrorWithReason}
 
@@ -62,6 +62,7 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
                 (x: Int) => outer + x - ((x + inner) & 3)
             case None => (x: Int) => x + col
         }, (x: Int) => x)
+    // TODO: This could be improved by traversing back to front?
     @tailrec def compute(i: Int, col: Int, line: Int)(implicit tabprefix: Option[Int]): (Int => Int, Int => Int) = {
         if (i < cs.length) cs(i) match {
             case '\n' => compute(i + 1, 1, line + 1)(Some(0))
@@ -145,14 +146,14 @@ private [internal] final class GuardAgainst[A](_pred: PartialFunction[A, String]
 private [internal] final class NotFollowedBy(_expected: Option[String]) extends Instr {
     private [this] final val expected = _expected.map(Desc)
     override def apply(ctx: Context): Unit = {
+        val reached = ctx.offset
         // Recover the previous state; notFollowedBy NEVER consumes input
         ctx.restoreState()
         ctx.restoreHints()
         // A previous success is a failure
         if (ctx.status eq Good) {
             ctx.handlers = ctx.handlers.tail
-            // TODO: Perhaps we could use the same mechanism as string?
-            ctx.expectedFail(expected)
+            ctx.expectedTokenFail(expected, reached - ctx.offset)
         }
         // A failure is what we wanted
         else {
@@ -167,7 +168,7 @@ private [internal] final class NotFollowedBy(_expected: Option[String]) extends 
 }
 
 private [internal] final class Eof(_expected: Option[String]) extends Instr {
-    private [this] final val expected = Some(Desc(_expected.getOrElse("end of input")))
+    private [this] final val expected = Some(_expected.map(Desc).getOrElse(EndOfInput))
     override def apply(ctx: Context): Unit = {
         if (ctx.offset == ctx.inputsz) ctx.pushAndContinue(())
         else ctx.expectedFail(expected)

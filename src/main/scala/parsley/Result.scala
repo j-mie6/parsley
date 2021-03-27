@@ -7,7 +7,7 @@ import scala.util.hashing.MurmurHash3
 * Result of a parser. Either a `Success[A]` or a `Failure`
 * @tparam A The type of expected success result
 */
-sealed trait Result[+A]
+sealed trait Result[+Err, +A]
 {
     /** Applies `fa` if this is a `Failure` or `fb` if this is a `Success`.
       *
@@ -16,7 +16,7 @@ sealed trait Result[+A]
       * @return the results of applying the function
       * @since 1.7.0
       */
-    def fold[B](ferr: String => B, fa: A => B): B = this match {
+    def fold[B](ferr: Err => B, fa: A => B): B = this match {
         case Success(x)   => fa(x)
         case Failure(msg) => ferr(msg)
     }
@@ -47,7 +47,7 @@ sealed trait Result[+A]
     /** Returns this `Success` or the given argument if this is a `Failure`.
       * @since 1.7.0
       */
-    def orElse[B >: A](or: =>Result[B]): Result[B] = this match {
+    def orElse[B >: A, Err_ >: Err](or: =>Result[Err_, B]): Result[Err_, B] = this match {
         case Success(_) => this
         case _          => or
     }
@@ -84,9 +84,9 @@ sealed trait Result[+A]
       * @param f The function to bind across `Success`.
       * @since 1.7.0
       */
-    def flatMap[B](f: A => Result[B]): Result[B] = this match {
+    def flatMap[B, Err_ >: Err](f: A => Result[Err_, B]): Result[Err_, B] = this match {
         case Success(x) => f(x)
-        case _          => this.asInstanceOf[Result[B]]
+        case _          => this.asInstanceOf[Result[Err, B]]
     }
 
     /** Returns the right value if this is right
@@ -95,14 +95,14 @@ sealed trait Result[+A]
       * Equivalent to `flatMap(id => id)`
       * @since 1.7.0
       */
-    def flatten[B](implicit ev: A <:< Result[B]): Result[B] = flatMap(ev)
+    def flatten[B, Err_ >: Err](implicit ev: A <:< Result[Err_, B]): Result[Err_, B] = flatMap(ev)
 
     /** The given function is applied if this is a `Success`.
       * @since 1.7.0
       */
-    def map[B](f: A => B): Result[B] = this match {
+    def map[B](f: A => B): Result[Err, B] = this match {
         case Success(x) => Success(f(x))
-        case _          => this.asInstanceOf[Result[B]]
+        case _          => this.asInstanceOf[Result[Err, B]]
     }
 
     /** Returns `Success` with the existing value of `Success` if this is a `Success`
@@ -111,7 +111,7 @@ sealed trait Result[+A]
       * or `Failure` with the existing value of `Failure` if this is a `Failure`.
       * @since 1.7.0
       */
-    def filterOrElse(p: A => Boolean, msg: =>String): Result[A] = this match {
+    def filterOrElse[Err_ >: Err](p: A => Boolean, msg: =>Err_): Result[Err_, A] = this match {
         case Success(x) if !p(x) => Failure(msg)
         case _                   => this
     }
@@ -142,10 +142,10 @@ sealed trait Result[+A]
         case Failure(msg) => TFailure(new Exception(s"ParseError: $msg"))
     }
 
-    /** Converts the `Result` into a `Either` where `Failure` maps to a `Left[String]`
+    /** Converts the `Result` into a `Either` where `Failure` maps to a `Left[Err]`
       * @since 1.7.0
       */
-    def toEither: Either[String, A] = this match {
+    def toEither: Either[Err, A] = this match {
         case Success(x)   => Right(x)
         case Failure(msg) => Left(msg)
     }
@@ -166,7 +166,7 @@ sealed trait Result[+A]
   * @param x The result value of the successful parse
   * @tparam A The type of expected success result
   */
-case class Success[A] private [parsley] (x: A) extends Result[A]
+case class Success[A] private [parsley] (x: A) extends Result[Nothing, A]
 {
     override def isSuccess: Boolean = true
     override def isFailure: Boolean = false
@@ -178,9 +178,9 @@ case class Success[A] private [parsley] (x: A) extends Result[A]
   * @param msg The error message reported by the parser
   */
 //case class Failure private [parsley] (msg: String) extends Result[Nothing]
-class Failure private [parsley] (_msg: =>String) extends Result[Nothing] with Product with Serializable
+class Failure[Err] private [parsley] (_msg: =>Err) extends Result[Err, Nothing] with Product with Serializable
 {
-    lazy val msg: String = _msg
+    lazy val msg: Err = _msg
     override def isSuccess: Boolean = false
     override def isFailure: Boolean = true
     override def get: Nothing = throw new NoSuchElementException("get called on Failure")
@@ -188,23 +188,23 @@ class Failure private [parsley] (_msg: =>String) extends Result[Nothing] with Pr
     // $COVERAGE-OFF$
     override def toString: String = s"Failure($msg)"
     override def hashCode: Int = MurmurHash3.productHash(this)
-    override def canEqual(x: Any): Boolean = x.isInstanceOf[Failure]
+    override def canEqual(x: Any): Boolean = x.isInstanceOf[Failure[_]]
     override def productPrefix: String = "Failure"
     override def productArity: Int = 1
     override def productElement(idx: Int): Any = {
         if (idx != 0) throw new IndexOutOfBoundsException("Failure only has arity 1") else msg
     }
     override def equals(x: Any): Boolean = x != null && (x match {
-        case x: Failure => x.msg == msg
+        case x: Failure[_] => x.msg == msg
     })
-    def copy(msg: =>String = this.msg): Failure = new Failure(msg)
+    def copy(msg: =>Err = this.msg): Failure[Err] = new Failure(msg)
     // $COVERAGE-ON$
 }
 // $COVERAGE-OFF$
 object Failure {
-    def apply(msg: =>String): Failure = new Failure(msg)
-    def unapply(x: Failure): Some[String] = Some(x.msg)
-    def andThen[A](f: Failure => A): String => A = msg => f(Failure(msg))
-    def compose[A](f: A => String): A => Failure = msg => Failure(f(msg))
+    def apply[Err](msg: =>Err): Failure[Err] = new Failure(msg)
+    def unapply[Err](x: Failure[Err]): Some[Err] = Some(x.msg)
+    def andThen[A, Err](f: Failure[Err] => A): Err => A = msg => f(Failure(msg))
+    def compose[A, Err](f: A => Err): A => Failure[Err] = msg => Failure(f(msg))
 }
 // $COVERAGE-ON$

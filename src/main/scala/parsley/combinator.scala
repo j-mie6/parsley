@@ -1,6 +1,6 @@
 package parsley
 
-import parsley.Parsley.{LazyParsley, unit, empty, select, sequence, notFollowedBy}
+import parsley.Parsley.{LazyParsley, unit, empty, select, sequence, notFollowedBy, attempt}
 import parsley.internal.deepembedding
 import parsley.expr.chain
 import parsley.registers.{get, gets, put, local}
@@ -12,11 +12,11 @@ import scala.annotation.{tailrec, implicitNotFound}
 object combinator {
     /**`choice(ps)` tries to apply the parsers in the list `ps` in order, until one of them succeeds.
       *  Returns the value of the succeeding parser.*/
-    def choice[A](ps: Parsley[A]*): Parsley[A] = ps.reduceLeftOption(_<|>_).getOrElse(empty)
+    def choice[A](ps: Parsley[A]*): Parsley[A] = ps.reduceRightOption(_<|>_).getOrElse(empty)
 
     /**`attemptChoice(ps)` tries to apply the parsers in the list `ps` in order, until one of them succeeds.
-      *  Returns the value of the succeeding parser. Utilises `<\>` vs choice's `<|>`.*/
-    def attemptChoice[A](ps: Parsley[A]*): Parsley[A] = ps.reduceLeftOption(_<\>_).getOrElse(empty)
+      *  Returns the value of the succeeding parser. Utilises `attempt p <|> q` vs choice's `p <|> q`.*/
+    def attemptChoice[A](ps: Parsley[A]*): Parsley[A] = ps.reduceRightOption((p, q) => attempt(p) <|> q).getOrElse(empty)
 
     /** `repeat(n, p)` parses `n` occurrences of `p`. If `n` is smaller or equal to zero, the parser is
       *  `pure(Nil)`. Returns a list of `n` values returned by `p`.*/

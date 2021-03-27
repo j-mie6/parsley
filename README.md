@@ -18,16 +18,16 @@ Documentation can be found [**here**](https://javadoc.io/doc/com.github.j-mie6/p
 ```scala
 import parsley.Parsley, Parsley._
 import parsley.character.{char, string, digit}
-import parsley.implicits.{charLift, stringLift}
+import parsley.implicits.character.{charLift, stringLift}
 
 val hello: Parsley[Unit] = void('h' *> ("ello" <|> "i") *> " world!")
-hello.runParser("hello world!") // returns Success(())
-hello.runParser("hi world!") // returns Success(())
-hello.runParser("hey world!") // returns a Failure
+hello.parse("hello world!") // returns Success(())
+hello.parse("hi world!") // returns Success(())
+hello.parse("hey world!") // returns a Failure
 
 val natural: Parsley[Int] = digit.foldLeft1(0)((n, d) => n * 10 + d.asDigit)
-natural.runParser("0") // returns Success(0)
-natural.runParser("123") // returns Success(123)
+natural.parse("0") // returns Success(0)
+natural.parse("123") // returns Success(123)
 ```
 
 For more see [the Wiki](https://github.com/j-mie6/Parsley/wiki)!
