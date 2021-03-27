@@ -2,6 +2,9 @@ package parsley.errors
 
 import scala.util.matching.Regex
 
+// Turn coverage off, because the tests have their own error builder
+// We might want to test this on its own though
+// $COVERAGE-OFF$
 /**
   * This is the class used to build Parsley's default error messages.
   * While it compiles with the `ErrorBuilder` typeclass, it should not
@@ -100,3 +103,4 @@ class DefaultErrorBuilder extends ErrorBuilder[String] with revisions.Revision0 
     private val Unprintable: Regex = "(\\p{C})".r
     private val Unknown = "unknown parse error"
 }
+// $COVERAGE-ON$

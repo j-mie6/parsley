@@ -10,7 +10,7 @@ import scala.annotation.tailrec
  * these case classes. This means that every error message created will be done in a single
  * O(1) allocation, avoiding anything to do with the underlying sets, options etc.
  */
-private [machine] sealed trait MakesTrivial { this: DefuncError =>
+private [errors] sealed trait MakesTrivial { this: DefuncError =>
     val isTrivialError = true
     final def makeTrivial(implicit builder: ErrorItemBuilder): TrivialError = {
         val state = new TrivialState(offset, !builder.inRange(offset))
@@ -19,7 +19,7 @@ private [machine] sealed trait MakesTrivial { this: DefuncError =>
     }
     def makeTrivial(state: TrivialState): Unit
 }
-private [machine] sealed trait MakesFancy { this: DefuncError =>
+private [errors] sealed trait MakesFancy { this: DefuncError =>
     val isTrivialError = false
     val isExpectedEmpty = true
     final def makeFancy: FailError = {

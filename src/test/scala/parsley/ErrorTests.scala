@@ -22,13 +22,18 @@ class ErrorTests extends ParsleyTest {
         val p = anyChar.filterOut {
             case c if c.isLower => s"'$c' should have been uppercase"
         }
-        p.parse("a") shouldBe Failure("(line 1, column 2):\n  'a' should have been uppercase\n  >a\n  > ^")
+        inside(p.parse("a")) {
+            case Failure(TestError((1, 2), VanillaError(unex, exs, rs))) =>
+                unex shouldBe empty
+                exs shouldBe empty
+                rs should contain only ("'a' should have been uppercase")
+        }
         p.parse("A") shouldBe Success('A')
 
         val q = anyChar.guardAgainst {
             case c if c.isLower => s"'$c' is not uppercase"
         }
-        q.parse("a") shouldBe Failure("(line 1, column 2):\n  'a' is not uppercase\n  >a\n  > ^")
+        inside(q.parse("a")) { case Failure(TestError((1, 2), SpecialisedError(msgs))) => msgs should contain only ("'a' is not uppercase") }
         q.parse("A") shouldBe Success('A')
     }
 
@@ -39,7 +44,7 @@ class ErrorTests extends ParsleyTest {
         }
         p.parse("+") shouldBe Success(0)
         p.parse("C") shouldBe Success(3)
-        p.parse("a") shouldBe Failure("(line 1, column 2):\n  oops\n  >a\n  > ^")
+        inside(p.parse("a"))  { case Failure(TestError((1, 2), SpecialisedError(msgs))) => msgs should contain only ("oops") }
 
         val q = anyChar.collectMsg(c => s"$c is not appropriate") {
             case '+' => 0
@@ -47,7 +52,7 @@ class ErrorTests extends ParsleyTest {
         }
         q.parse("+") shouldBe Success(0)
         q.parse("C") shouldBe Success(3)
-        q.parse("a") shouldBe Failure("(line 1, column 2):\n  a is not appropriate\n  >a\n  > ^")
+        inside(q.parse("a")) { case Failure(TestError((1, 2), SpecialisedError(msgs))) => msgs should contain only ("a is not appropriate") }
     }
 
     // Issue #70
@@ -60,145 +65,223 @@ class ErrorTests extends ParsleyTest {
 
     lazy val r: Parsley[List[String]] = "correct error message" <::> r
     "label" should "affect base error messages" in {
-        ('a' ? "ay!").parse("b") should be (Failure("(line 1, column 1):\n  unexpected \"b\"\n  expected ay!\n  >b\n  >^"))
+        inside(('a'? "ay!").parse("b")) {
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+                unex should contain (Raw("b"))
+                exs should contain only (Named("ay!"))
+                rs shouldBe empty
+        }
     }
     it should "work across a recursion boundary" in {
-        val p = r.unsafeLabel("nothing but this :)")
-        (r.unsafeLabel("nothing but this :)")).parse("") should be {
-            Failure("(line 1, column 1):\n  unexpected end of input\n  expected nothing but this :)\n  >\n  >^")
+        def p = r.unsafeLabel("nothing but this :)")
+        inside(p.parse("")) {
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+                unex should contain (EndOfInput)
+                exs should contain only (Named("nothing but this :)"))
+                rs shouldBe empty
         }
-        (r.unsafeLabel("nothing but this :)")).parse("correct error message") should be {
-            Failure("(line 1, column 22):\n  unexpected end of input\n  expected nothing but this :)\n  >correct error message\n  >                     ^")
+        inside(p.parse("correct error message")) {
+            case Failure(TestError((1, 22), VanillaError(unex, exs, rs))) =>
+                unex should contain (EndOfInput)
+                exs should contain only (Named("nothing but this :)"))
+                rs shouldBe empty
         }
     }
     it should "replace the first instance" in {
         val s = (optional('a') *> optional('b')).label("hi") *> 'c'
-        s.parse("e") should be {
-            Failure("(line 1, column 1):\n  unexpected \"e\"\n  expected \"b\", \"c\", or hi\n  >e\n  >^")
+        inside(s.parse("e")) {
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+                unex should contain (Raw("e"))
+                exs should contain only (Named("hi"), Raw("b"), Raw("c"))
+                rs shouldBe empty
         }
         val t = (optional('a') *> optional('b').label("bee")).label("hi") *> 'c'
-        t.parse("e") should be {
-            Failure("(line 1, column 1):\n  unexpected \"e\"\n  expected \"c\", bee, or hi\n  >e\n  >^")
+        inside(t.parse("e")) {
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+                unex should contain (Raw("e"))
+                exs should contain only (Named("hi"), Named("bee"), Raw("c"))
+                rs shouldBe empty
         }
-        t.parse("ae") should be {
-            Failure("(line 1, column 2):\n  unexpected \"e\"\n  expected \"c\" or bee\n  >ae\n  > ^")
+        inside(t.parse("ae")) {
+            case Failure(TestError((1, 2), VanillaError(unex, exs, rs))) =>
+                unex should contain (Raw("e"))
+                exs should contain only (Named("bee"), Raw("c"))
+                rs shouldBe empty
         }
     }
     it should "not relabel hidden things" in {
         val s = (optional('a').hide *> optional('b')).label("hi") *> 'c'
-        s.parse("e") should be {
-            Failure("(line 1, column 1):\n  unexpected \"e\"\n  expected \"c\" or hi\n  >e\n  >^")
+        inside(s.parse("e")) {
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+                unex should contain (Raw("e"))
+                exs should contain only (Named("hi"), Raw("c"))
+                rs shouldBe empty
         }
-        s.parse("ae") should be {
-            Failure("(line 1, column 2):\n  unexpected \"e\"\n  expected \"b\" or \"c\"\n  >ae\n  > ^")
+        inside(s.parse("ae")) {
+            case Failure(TestError((1, 2), VanillaError(unex, exs, rs))) =>
+                unex should contain (Raw("e"))
+                exs should contain only (Raw("b"), Raw("c"))
+                rs shouldBe empty
         }
         val t = (optional('a').hide *> optional('b').label("bee")).label("hi") *> 'c'
-        t.parse("e") should be {
-            Failure("(line 1, column 1):\n  unexpected \"e\"\n  expected \"c\" or hi\n  >e\n  >^")
+        inside(t.parse("e")) {
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+                unex should contain (Raw("e"))
+                exs should contain only (Named("hi"), Raw("c"))
+                rs shouldBe empty
         }
-        t.parse("ae") should be {
-            Failure("(line 1, column 2):\n  unexpected \"e\"\n  expected \"c\" or bee\n  >ae\n  > ^")
+        inside(t.parse("ae")) {
+            case Failure(TestError((1, 2), VanillaError(unex, exs, rs))) =>
+                unex should contain (Raw("e"))
+                exs should contain only (Named("bee"), Raw("c"))
+                rs shouldBe empty
         }
     }
 
     "explain" should "provide a message, but only on failure" in {
-        Parsley.empty.explain("oops!").parse("") shouldBe Failure("(line 1, column 1):\n  oops!\n  >\n  >^")
-        'a'.explain("requires an a").parse("b") shouldBe Failure("(line 1, column 1):\n  unexpected \"b\"\n  expected \"a\"\n  requires an a\n  >b\n  >^")
-        ('a'.explain("an a") <|> 'b'.explain("a b")).parse("c") shouldBe {
-            Failure("(line 1, column 1):\n  unexpected \"c\"\n  expected \"a\" or \"b\"\n  a b\n  an a\n  >c\n  >^")
+        inside(Parsley.empty.explain("oops!").parse("")) {
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+                unex shouldBe empty
+                exs shouldBe empty
+                rs should contain only ("oops!")
         }
-        ('a'.explain("should be absent") *> 'b').parse("a") shouldBe {
-            Failure("(line 1, column 2):\n  unexpected end of input\n  expected \"b\"\n  >a\n  > ^")
+        inside('a'.explain("requires an a").parse("b")) {
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+                unex should contain (Raw("b"))
+                exs should contain only (Raw("a"))
+                rs should contain only ("requires an a")
+        }
+        inside(('a'.explain("an a") <|> 'b'.explain("a b")).parse("c")){
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+                unex should contain (Raw("c"))
+                exs should contain only (Raw("a"), Raw("b"))
+                rs should contain only ("an a", "a b")
+        }
+        inside(('a'.explain("should be absent") *> 'b').parse("a")) {
+            case Failure(TestError((1, 2), VanillaError(unex, exs, rs))) =>
+                unex should contain (EndOfInput)
+                exs should contain only (Raw("b"))
+                rs shouldBe empty
         }
     }
     it should "not have any effect when more input has been consumed since it was added" in {
-        ('a'.explain("should be absent") <|> ('b' *> digit)).parse("b") shouldBe {
-            Failure("(line 1, column 2):\n  unexpected end of input\n  expected digit\n  >b\n  > ^")
+        inside(('a'.explain("should be absent") <|> ('b' *> digit)).parse("b")) {
+            case Failure(TestError((1, 2), VanillaError(unex, exs, rs))) =>
+                unex should contain (EndOfInput)
+                exs should contain only (Named("digit"))
+                rs shouldBe empty
         }
     }
 
     "fail" should "yield a raw message" in {
-        pfail("hi").parse("b") should be {
-            Failure("(line 1, column 1):\n  hi\n  >b\n  >^")
-        }
+        inside(pfail("hi").parse("b")) { case Failure(TestError((1, 1), SpecialisedError(msgs))) => msgs should contain only ("hi") }
     }
 
     "unexpected" should "yield changes to unexpected messages" in {
-        unexpected("bee").parse("b") should be {
-            Failure("(line 1, column 1):\n  unexpected bee\n  >b\n  >^")
+        inside(unexpected("bee").parse("b")) {
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+                unex should contain (Named("bee"))
+                exs shouldBe empty
+                rs shouldBe empty
         }
     }
     it should "produce expected message under influence of ?, along with original message" in {
-        ('a' <|> unexpected("bee") ? "something less cute").parse("b") should be {
-            Failure("(line 1, column 1):\n  unexpected bee\n  expected \"a\" or something less cute\n  >b\n  >^")
+        inside(('a' <|> unexpected("bee") ? "something less cute").parse("b")) {
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+                unex should contain (Named("bee"))
+                exs should contain only (Raw("a"), Named("something less cute"))
+                rs shouldBe empty
         }
     }
 
     "lookAhead" should "produce no hints following it" in {
         val p = 'a' <|> lookAhead(optional(digit) *> 'c') <|> 'b'
-        p.parse("d") shouldBe {
-            Failure("(line 1, column 1):\n  unexpected \"d\"\n  expected \"a\", \"b\", \"c\", or digit\n  >d\n  >^")
+        inside(p.parse("d")) {
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+                unex should contain (Raw("d"))
+                exs should contain only (Raw("a"), Raw("c"), Raw("b"), Named("digit"))
+                rs shouldBe empty
         }
         val q = 'a' <|> lookAhead(optional(digit)) *> 'c' <|> 'b'
-        q.parse("d") shouldBe {
-            Failure("(line 1, column 1):\n  unexpected \"d\"\n  expected \"a\", \"b\", or \"c\"\n  >d\n  >^")
+        inside(q.parse("d")){
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+                unex should contain (Raw("d"))
+                exs should contain only (Raw("a"), Raw("b"), Raw("c"))
+                rs shouldBe empty
         }
         val r = 'a' <|> lookAhead(digit) *> 'c' <|> 'b'
-        r.parse("d") shouldBe {
-            Failure("(line 1, column 1):\n  unexpected \"d\"\n  expected \"a\", \"b\", or digit\n  >d\n  >^")
+        inside(r.parse("d")) {
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+                unex should contain (Raw("d"))
+                exs should contain only (Raw("a"), Raw("b"), Named("digit"))
+                rs shouldBe empty
         }
     }
 
     "notFollowedBy" should "produce no hints" in {
         val p = 'a' <|> notFollowedBy(optional(digit)) *> 'c' <|> 'b'
-        p.parse("d") shouldBe {
-            Failure("(line 1, column 1):\n  unexpected \"d\"\n  expected \"a\" or \"b\"\n  >d\n  >^")
+        inside(p.parse("d")) {
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+                unex should contain (Raw("d"))
+                exs should contain only (Raw("a"), Raw("b"))
+                rs shouldBe empty
         }
         val q = 'a' <|> notFollowedBy(digit) *> 'c' <|> 'b'
-        q.parse("d") shouldBe {
-            Failure("(line 1, column 1):\n  unexpected \"d\"\n  expected \"a\", \"b\", or \"c\"\n  >d\n  >^")
+        inside(q.parse("d")) {
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+                unex should contain (Raw("d"))
+                exs should contain only (Raw("a"), Raw("c"), Raw("b"))
+                rs shouldBe empty
         }
     }
 
     "empty" should "produce unknown error messages" in {
-        Parsley.empty.parse("b") should be {
-            Failure("(line 1, column 1):\n  unknown parse error\n  >b\n  >^")
+        inside(Parsley.empty.parse("b")) {
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+                unex shouldBe empty
+                exs shouldBe empty
+                rs shouldBe empty
         }
     }
     it should "produce no unknown message under influence of ?" in {
-        (Parsley.empty ? "something, at least").parse("b") should be {
-            Failure("(line 1, column 1):\n  expected something, at least\n  >b\n  >^")
+        inside((Parsley.empty ? "something, at least").parse("b")) {
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+                unex shouldBe empty
+                exs should contain only (Named("something, at least"))
+                rs shouldBe empty
         }
     }
     it should "not produce an error message at the end of <|> chain" in {
-        ('a' <|> Parsley.empty).parse("b") should be {
-            Failure("(line 1, column 1):\n  unexpected \"b\"\n  expected \"a\"\n  >b\n  >^")
+        inside(('a' <|> Parsley.empty).parse("b")) {
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+                unex should contain (Raw("b"))
+                exs should contain only (Raw("a"))
+                rs shouldBe empty
         }
     }
     it should "produce an expected error under influence of ? in <|> chain" in {
-        ('a' <|> Parsley.empty ? "something, at least").parse("b") should be {
-            Failure("(line 1, column 1):\n  unexpected \"b\"\n  expected \"a\" or something, at least\n  >b\n  >^")
+        inside(('a' <|> Parsley.empty ? "something, at least").parse("b")) {
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+                unex should contain (Raw("b"))
+                exs should contain only (Named("something, at least"), Raw("a"))
+                rs shouldBe empty
         }
     }
 
     "eof" should "produce expected end of input" in {
-        eof.parse("a") should be {
-            Failure("(line 1, column 1):\n  unexpected \"a\"\n  expected end of input\n  >a\n  >^")
+        inside(eof.parse("a")) {
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+                unex should contain (Raw("a"))
+                exs should contain only (EndOfInput)
+                rs shouldBe empty
         }
     }
     it should "change message under influence of ?" in {
-        (eof ? "something more").parse("a") should be {
-            Failure("(line 1, column 1):\n  unexpected \"a\"\n  expected something more\n  >a\n  >^")
+        inside((eof ? "something more").parse("a")) {
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+                unex should contain (Raw("a"))
+                exs should contain only (Named("something more"))
+                rs shouldBe empty
         }
     }
-
-    /*"error position" should "be correctly reset in" in {
-        val p = attempt('a' *> digit) <|> Parsley.fail("hello :)")
-        p.parse("aa") should be {
-            Failure("(line 1, column 1):\n  unexpected end of input\n  expected any character\n  hello :)")
-        }
-        p.parse("c") should be {
-            Failure("")
-        }
-    }*/
 }

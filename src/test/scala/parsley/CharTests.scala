@@ -24,7 +24,12 @@ class CharTests extends ParsleyTest {
         for (i <- 0 to 65535) anyChar.parse(i.toChar.toString) should not be a [Failure[_]]
     }
     it should "fail if the input has run out, expecting any character" in {
-        anyChar.parse("") should be (Failure("(line 1, column 1):\n  unexpected end of input\n  expected any character\n  >\n  >^"))
+        inside(anyChar.parse("")) {
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+                unex should contain (EndOfInput)
+                exs should contain only (Named("any character"))
+                rs shouldBe empty
+        }
     }
 
     "space" should "consume ' ' or '\t'" in {

@@ -1,6 +1,6 @@
 package parsley.internal.machine.instructions
 
-import parsley.internal.errors.{Desc, Raw}
+import parsley.internal.errors.{Desc, Raw, EndOfInput}
 import parsley.internal.machine.{Context, Good}
 import parsley.internal.machine.errors.{EmptyError, EmptyErrorWithReason}
 
@@ -168,7 +168,7 @@ private [internal] final class NotFollowedBy(_expected: Option[String]) extends 
 }
 
 private [internal] final class Eof(_expected: Option[String]) extends Instr {
-    private [this] final val expected = Some(Desc(_expected.getOrElse("end of input")))
+    private [this] final val expected = Some(_expected.map(Desc).getOrElse(EndOfInput))
     override def apply(ctx: Context): Unit = {
         if (ctx.offset == ctx.inputsz) ctx.pushAndContinue(())
         else ctx.expectedFail(expected)

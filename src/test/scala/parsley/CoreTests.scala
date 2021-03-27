@@ -31,17 +31,9 @@ class CoreTests extends ParsleyTest {
 
     they must "only consume a single character of input at most" in {
         var res = (satisfy(_ == 'a') *> 'b').parse("aaaaaa")
-        res shouldBe a [Failure[_]]
-        res match {
-            case Failure(err) => err should startWith ("(line 1, column 2)")
-            case _ =>
-        }
+        res should matchPattern { case Failure(TestError((1, 2), _)) => }
         res = ('a' ~> 'b').parse("bc")
-        res shouldBe a [Failure[_]]
-        res match {
-            case Failure(err) => err should startWith ("(line 1, column 1)")
-            case _ =>
-        }
+        res should matchPattern { case Failure(TestError((1, 1), _)) => }
     }
 
     "Pure parsers" should "not require input" in {
@@ -129,7 +121,12 @@ class CoreTests extends ParsleyTest {
         ("ab" <|> "ac").parse("ac") shouldBe a [Failure[_]]
     }
     it should "not be affected by an empty on the left" in {
-        (Parsley.empty <|> 'a').parse("b") shouldBe Failure("(line 1, column 1):\n  unexpected \"b\"\n  expected \"a\"\n  >b\n  >^")
+        inside((Parsley.empty <|> 'a').parse("b")) {
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+                unex should contain (Raw("b"))
+                exs should contain only (Raw("a"))
+                rs shouldBe empty
+        }
     }
 
     "attempt" should "cause <|> to try second alternative even if input consumed" in {
@@ -138,7 +135,12 @@ class CoreTests extends ParsleyTest {
 
     "lookAhead" should "consume no input on success" in {
         lookAhead('a').parse("a") should not be a [Failure[_]]
-        (lookAhead('a') *> 'b').parse("ab") should be (Failure("(line 1, column 1):\n  unexpected \"a\"\n  expected \"b\"\n  >ab\n  >^"))
+        inside((lookAhead('a') *> 'b').parse("ab")) {
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+                unex should contain (Raw("a"))
+                exs should contain only (Raw("b"))
+                rs shouldBe empty
+        }
     }
     it must "fail when input is consumed, and input is consumed" in {
         lookAhead("ab").parse("ac") shouldBe a [Failure[_]]
