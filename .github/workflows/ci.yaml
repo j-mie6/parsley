@@ -29,7 +29,7 @@ jobs:
       fail-fast: false
       matrix:
         java: [adopt@1.8, adopt@1.11, adopt@1.15]
-        scala: [2.12.13, 2.13.4, 3.0.0-M3]
+        scala: [2.12.13, 2.13.5, 3.0.0-M3]
         experimental: [false]
 
         include:
@@ -62,6 +62,10 @@ jobs:
           path: ~/.sbt
           key: sbt-${{ hashFiles('**/build.sbt') }}
 
+      - name: Build
+        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        run: sbt ++$SCALA_VERSION compile
+
       - name: Test
         #if: needs.check-duplicate.outputs.should_skip != 'true'
         run: sbt ++$SCALA_VERSION test
@@ -70,18 +74,140 @@ jobs:
         #if: needs.check-duplicate.outputs.should_skip != 'true'
         run: sbt ++$SCALA_VERSION doc
 
+  # This is largely temporary, we'll find a better way to do this...
+  validate-js:
+    name: Scala-JS ${{ matrix.scala }}, Node ${{ matrix.node }}
+    runs-on: ubuntu-20.04
+    needs: check-duplicate
+
+    env:
+      SCALA_VERSION: ${{ matrix.scala }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [14, 15]
+        scala: [2.12.13, 2.13.5]
+
+    steps:
+      - name: Checkout repository
+        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        uses: actions/checkout@v2.3.4
+
+      - name: Setup Node
+        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        uses: actions/setup-node@v2.1.5
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Setup Scala
+        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        uses: olafurpg/setup-scala@v10
+
+      - name: Cache Coursier
+        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/coursier
+          key: sbt-coursier-cache
+
+      - name: Cache SBT
+        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        uses: actions/cache@v2
+        with:
+          path: ~/.sbt
+          key: sbt-${{ hashFiles('**/build.sbt') }}
+
+      - name: Build
+        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        run: sbt ++$SCALA_VERSION parsleyJS/compile
+
+      - name: Test
+        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        run: sbt ++$SCALA_VERSION parsleyJS/test
+
+      - name: Scaladoc
+        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        run: sbt ++$SCALA_VERSION parsleyJS/doc
+
+  validate-native:
+    name: Scala-Native ${{ matrix.scala }} LLVM 10
+    runs-on: ubuntu-20.04
+    needs: check-duplicate
+
+    env:
+      SCALA_VERSION: ${{ matrix.scala }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        scala: [2.12.13, 2.13.5]
+
+    steps:
+      - name: Checkout repository
+        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        uses: actions/checkout@v2.3.4
+
+      - name: Cache LLVM and Clang
+        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        id: cache-llvm
+        uses: actions/cache@v2
+        with:
+          path: ${{ runner.temp }}/llvm
+          key: llvm-10.0
+
+      - name: Setup LLVM + Clang
+        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        uses: KyleMayes/install-llvm-action@v1.1.1
+        with:
+          version: "10.0"
+          directory: ${{ runner.temp }}/llvm
+          cached: ${{ steps.cache-llvm.outputs.cache-hit }}
+
+      - name: Setup Scala
+        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        uses: olafurpg/setup-scala@v10
+
+      - name: Cache Coursier
+        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/coursier
+          key: sbt-coursier-cache
+
+      - name: Cache SBT
+        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        uses: actions/cache@v2
+        with:
+          path: ~/.sbt
+          key: sbt-${{ hashFiles('**/build.sbt') }}
+
+      - name: Build
+        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        run: sbt ++$SCALA_VERSION parsleyNative/compile
+
+      - name: Test
+        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        run: sbt ++$SCALA_VERSION parsleyNative/test
+
+      - name: Scaladoc
+        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        run: sbt ++$SCALA_VERSION parsleyNative/doc
+  # End attrocity
+
   coverage:
     name: Test Coverage
     runs-on: ubuntu-20.04
     needs: validate
 
     # Temp: Also run on pull requests when validate is skipped, due to codeclimate/coverage being a required check
-    if: >-
-      github.ref == 'refs/heads/master' && (needs.validate.result == 'success' || needs.validate.result == 'skipped') ||
-      github.event_name == 'pull_request' && (needs.validate.result == 'success' || needs.validate.result == 'skipped')
+    # FIXME: This seems not to be working on the parsley-3 branch?
+    #if: >-
+    #  github.ref == 'refs/heads/master' && (needs.validate.result == 'success' || needs.validate.result == 'skipped') ||
+    #  github.event_name == 'pull_request' && (needs.validate.result == 'success' || needs.validate.result == 'skipped')
 
     env:
-      SCALA_VERSION: 2.13.4
+      SCALA_VERSION: 2.13.5
 
     steps:
       - name: Checkout repository
@@ -115,4 +241,4 @@ jobs:
         env:
           CC_TEST_REPORTER_ID: d2376ef4077556821a44dd82803411deea8fd904d5008713754dda5f3ab42875
         with:
-          coverageLocations: ${{github.workspace}}/target/scala-2.13/coverage-report/cobertura.xml:cobertura
+          coverageLocations: ${{github.workspace}}/jvm/target/scala-2.13/coverage-report/cobertura.xml:cobertura

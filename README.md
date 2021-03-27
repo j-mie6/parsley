@@ -3,7 +3,7 @@
 ## What is Parsley?
 Parsley is a very fast parser combinator library for Scala based on a Haskell-style Parsec API.
 
-## How do I use it? [![Scaladoc](https://javadoc-badge.appspot.com/com.github.j-mie6/parsley_2.13.svg?label=scaladoc)](https://javadoc-badge.appspot.com/com.github.j-mie6/parsley_2.13) [![Maven Central](https://img.shields.io/maven-central/v/com.github.j-mie6/parsley_2.12?label=maven-central-2.12)](https://mvnrepository.com/artifact/com.github.j-mie6/parsley_2.12) [![Maven Central](https://img.shields.io/maven-central/v/com.github.j-mie6/parsley_2.13?label=maven-central-2.13)](https://mvnrepository.com/artifact/com.github.j-mie6/parsley_2.13) [![Maven Central](https://img.shields.io/maven-central/v/com.github.j-mie6/parsley_3.0.0-M3?label=maven-central-3.0.0-M3)](https://mvnrepository.com/artifact/com.github.j-mie6/parsley_3.0.0-M3) [![Maven Central](https://img.shields.io/maven-central/v/com.github.j-mie6/parsley_0.27?label=maven-central-0.27)](https://mvnrepository.com/artifact/com.github.j-mie6/parsley_0.27)
+## How do I use it? [![Scaladoc](https://javadoc-badge.appspot.com/com.github.j-mie6/parsley_2.13.svg?label=scaladoc)](https://javadoc-badge.appspot.com/com.github.j-mie6/parsley_2.13) [![Maven Central](https://img.shields.io/maven-central/v/com.github.j-mie6/parsley_2.12?label=maven-central-2.12)](https://mvnrepository.com/artifact/com.github.j-mie6/parsley_2.12) [![Maven Central](https://img.shields.io/maven-central/v/com.github.j-mie6/parsley_2.13?label=maven-central-2.13)](https://mvnrepository.com/artifact/com.github.j-mie6/parsley_2.13) [![Maven Central](https://img.shields.io/maven-central/v/com.github.j-mie6/parsley_3.0.0-M3?label=maven-central-3.0.0-M3)](https://mvnrepository.com/artifact/com.github.j-mie6/parsley_3.0.0-M3) [![Maven Central](https://img.shields.io/maven-central/v/com.github.j-mie6/parsley_3.0.0-RC1?label=maven-central-3.0.0-RC1)](https://mvnrepository.com/artifact/com.github.j-mie6/parsley_3.0.0-RC1) [![Maven Central](https://img.shields.io/maven-central/v/com.github.j-mie6/parsley_0.27?label=maven-central-0.27)](https://mvnrepository.com/artifact/com.github.j-mie6/parsley_0.27)
 
 Parsley is distributed on Maven Central, and can be added to your project via:
 
@@ -18,16 +18,16 @@ Documentation can be found [**here**](https://javadoc.io/doc/com.github.j-mie6/p
 ```scala
 import parsley.Parsley, Parsley._
 import parsley.character.{char, string, digit}
-import parsley.implicits.{charLift, stringLift}
+import parsley.implicits.character.{charLift, stringLift}
 
 val hello: Parsley[Unit] = void('h' *> ("ello" <|> "i") *> " world!")
-hello.runParser("hello world!") // returns Success(())
-hello.runParser("hi world!") // returns Success(())
-hello.runParser("hey world!") // returns a Failure
+hello.parse("hello world!") // returns Success(())
+hello.parse("hi world!") // returns Success(())
+hello.parse("hey world!") // returns a Failure
 
 val natural: Parsley[Int] = digit.foldLeft1(0)((n, d) => n * 10 + d.asDigit)
-natural.runParser("0") // returns Success(0)
-natural.runParser("123") // returns Success(123)
+natural.parse("0") // returns Success(0)
+natural.parse("123") // returns Success(123)
 ```
 
 For more see [the Wiki](https://github.com/j-mie6/Parsley/wiki)!

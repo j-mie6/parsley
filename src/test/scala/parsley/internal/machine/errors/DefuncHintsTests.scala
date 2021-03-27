@@ -8,15 +8,14 @@ import scala.language.implicitConversions
 import MockedBuilders.mockedErrorItemBuilder
 import scala.annotation.nowarn
 
-@nowarn("msg=deprecated")
 class DefuncHintsTests extends ParsleyTest {
     def mkErr(labels: String*): DefuncError = {
         assert(labels.nonEmpty)
-        MultiExpectedError(0, 0, 0, labels.map(Desc(_)).toSet)
+        MultiExpectedError(0, 0, 0, labels.map(Desc(_)).toSet, 1)
     }
 
     "EmptyHints" should "have size 0" in {
-        EmptyHints shouldBe 'isEmpty
+        EmptyHints shouldBe empty
     }
     it should "yield an empty set" in {
         EmptyHints.toSet shouldBe empty

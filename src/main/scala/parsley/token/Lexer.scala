@@ -4,9 +4,10 @@ import parsley.character.{digit, hexDigit, octDigit, satisfy}
 import parsley.combinator.{sepBy, sepBy1, between, many, skipMany, some, skipSome}
 import parsley.lift.lift2
 import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
-import parsley.Parsley, Parsley.{void, unit, fail, attempt, pure, empty, notFollowedBy, LazyParsley}
+import parsley.Parsley, Parsley.{void, unit, attempt, pure, empty, notFollowedBy, LazyParsley}
+import parsley.errors.combinator.{fail, ErrorMethods}
 import parsley.token.TokenSet
-import parsley.implicits.{charLift, stringLift}
+import parsley.implicits.character.{charLift, stringLift}
 import parsley.internal.deepembedding
 import parsley.unsafe.ErrorLabel
 
@@ -22,17 +23,19 @@ import scala.language.implicitConversions
   */
 class Lexer(lang: LanguageDef)
 {
-    private def keyOrOp(startImpl: Impl, letterImpl: Impl, parser: Parsley[String], predicate: String => Boolean,
+    private def keyOrOp(startImpl: Impl, letterImpl: Impl, parser: Parsley[String], illegal: String => Boolean,
                         combinatorName: String, name: String, illegalName: String) = {
         val builder = (start: TokenSet, letter: TokenSet) =>
-            new Parsley(new deepembedding.NonSpecific(combinatorName, name, illegalName, start, letter, !predicate(_)))
+            new Parsley(new deepembedding.NonSpecific(combinatorName, name, illegalName, start, letter, illegal))
         lexeme((startImpl, letterImpl) match
         {
             case (BitSetImpl(start), BitSetImpl(letter)) => builder(start, letter)
             case (BitSetImpl(start), Predicate(letter)) => builder(start, letter)
             case (Predicate(start), BitSetImpl(letter)) => builder(start, letter)
             case (Predicate(start), Predicate(letter)) => builder(start, letter)
-            case _ => attempt((parser.unsafeLabel(name)).guard(predicate, s"unexpected $illegalName " + _))
+            case _ => attempt((parser.unsafeLabel(name)).guardAgainst {
+                case x if illegal(x) => s"unexpected $illegalName $x"
+            })
         })
     }
 
@@ -41,7 +44,7 @@ class Lexer(lang: LanguageDef)
      * fail on identifiers that are reserved words (i.e. keywords). Legal identifier characters and
      * keywords are defined in the `LanguageDef` provided to the lexer. An identifier is treated
      * as a single token using `attempt`.*/
-    lazy val identifier: Parsley[String] = keyOrOp(lang.identStart, lang.identLetter, ident, !isReservedName(_),  "identifier", "identifier", "keyword")
+    lazy val identifier: Parsley[String] = keyOrOp(lang.identStart, lang.identLetter, ident, isReservedName(_),  "identifier", "identifier", "keyword")
 
     /**The lexeme parser `keyword(name)` parses the symbol `name`, but it also checks that the `name`
      * is not a prefix of a valid identifier. A `keyword` is treated as a single token using `attempt`.*/
@@ -69,12 +72,12 @@ class Lexer(lang: LanguageDef)
      * will fail on any operators that are reserved operators. Legal operator characters and
      * reserved operators are defined in the `LanguageDef` provided to the lexer. A
      * `userOp` is treated as a single token using `attempt`.*/
-    lazy val userOp: Parsley[String] = keyOrOp(lang.opStart, lang.opLetter, oper, !isReservedOp(_), "userOp", "operator", "reserved operator")
+    lazy val userOp: Parsley[String] = keyOrOp(lang.opStart, lang.opLetter, oper, isReservedOp(_), "userOp", "operator", "reserved operator")
 
     /**This non-lexeme parser parses a reserved operator. Returns the name of the operator.
      * Legal operator characters and reserved operators are defined in the `LanguageDef`
      * provided to the lexer. A `reservedOp_` is treated as a single token using `attempt`.*/
-    lazy val reservedOp_ : Parsley[String] = keyOrOp(lang.opStart, lang.opLetter, oper, isReservedOp(_), "reservedOp", "operator", "non-reserved operator")
+    lazy val reservedOp_ : Parsley[String] = keyOrOp(lang.opStart, lang.opLetter, oper, !isReservedOp(_), "reservedOp", "operator", "non-reserved operator")
 
     /**This lexeme parser parses a reserved operator. Returns the name of the operator. Legal
      * operator characters and reserved operators are defined in the `LanguageDef` provided
@@ -258,7 +261,7 @@ class Lexer(lang: LanguageDef)
         case Predicate(ws) =>
             new Parsley(new deepembedding.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
         case Parser(space_) if lang.supportsComments =>
-            skipMany(new Parsley(new deepembedding.Comment(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments)) <\> space_)
+            skipMany(attempt(new Parsley(new deepembedding.Comment(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))) <|> space_)
         case Parser(space_) => skipMany(space_)
         case NotRequired => skipComments
     }
@@ -273,8 +276,7 @@ class Lexer(lang: LanguageDef)
 
     private def enclosing[A](p: =>Parsley[A], open: Char, close: Char, singular: String, plural: String) =
         between(lexeme(open.unsafeLabel(s"open $singular")),
-                //TODO: This use of fail is probably inappropriate with the new error message model
-                lexeme(close.unsafeLabel(s"matching closing $singular")) <|> fail(s"unclosed $plural"),
+                lexeme(close.unsafeLabel(s"matching closing $singular").explain(s"unclosed $plural")),
                 p)
 
     // Bracketing

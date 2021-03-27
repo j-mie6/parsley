@@ -47,8 +47,7 @@ object chain {
                    (implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${B}") wrap: A => B): Parsley[B] = {
         lazy val _p = p
         // a sneaky sneaky trick :) If we know that A =:= B because refl was provided, then we can skip the wrapping
-        lazy val init = if (parsley.XCompat.isIdentityWrap(wrap)) _p.asInstanceOf[Parsley[B]] else _p.map(wrap)
-        new Parsley(new deepembedding.Chainl(init.internal, _p.internal, op.internal))
+        new Parsley(new deepembedding.Chainl(parsley.XCompat.applyWrap(wrap)(_p).internal, _p.internal, op.internal))
     }
 
     /**`prefix(op, p)` parses many prefixed applications of `op` onto a single final result of `p`
@@ -61,4 +60,21 @@ object chain {
       * @since 2.2.0
       */
     def postfix[A](p: =>Parsley[A], op: =>Parsley[A => A]): Parsley[A] = new Parsley(new deepembedding.ChainPost(p.internal, op.internal))
+
+    /**`prefix1(op, p)` parses one or more prefixed applications of `op` onto a single final result of `p`
+      * @since 3.0.0
+      */
+    def prefix1[A, B <: A](op: =>Parsley[A => B], p: =>Parsley[A]): Parsley[B] = {
+        lazy val op_ = op
+        op_ <*> prefix(op_, p)
+    }
+
+    /**`postfix1(p, op)` parses one occurrence of `p`, followed by one or more postfix applications of `op`
+      * that associate to the left.
+      * @since 3.0.0
+      */
+    def postfix1[A, B <: A](p: =>Parsley[A], op: =>Parsley[A => B]): Parsley[B] = {
+        lazy val op_ = op
+        postfix(p <**> op_, op_)
+    }
 }

@@ -1,4 +1,5 @@
 import scala.collection.mutable
+import sbtcrossproject.Platform
 
 val projectName = "parsley"
 
@@ -17,7 +18,7 @@ inThisBuild(List(
 ))
 
 val scala212Version = "2.12.13"
-val scala213Version = "2.13.4"
+val scala213Version = "2.13.5"
 val scala3Version = "3.0.0-M3"
 val dottyVersion = "0.27.0-RC1"
 
@@ -38,34 +39,66 @@ def extraSources(rootSrcFile: File, base: String, version: String): Seq[File] = 
     case None => Seq.empty
 }
 
-def scalaTestDependency(version: String): String = Map("0.27.0-RC1" -> "3.2.2").getOrElse(version, "3.2.3")
+def scalaTestDependency(version: String): String =
+    Map("0.27.0-RC1" -> "3.2.2",
+        "3.0.0-M3" -> "3.2.3")
+    .getOrElse(version, "3.2.5")
+
+val PureVisible: CrossType = new CrossType {
+    def projectDir(crossBase: File, projectType: String): File =
+      crossBase / projectType
+
+    def projectDir(crossBase: File, platform: Platform): File =
+      crossBase / platform.identifier
+
+    def sharedSrcDir(projectBase: File, conf: String): Option[File] =
+      Some(projectBase.getParentFile / "src" / conf / "scala")
+  }
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
-lazy val root = project.in(file("."))
+// See https://github.com/sbt/sbt/issues/1224
+Global / onLoad ~= (_ andThen ("project parsley" :: _))
+
+Compile / bloopGenerate := None
+Test / bloopGenerate := None
+
+lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
+  .withoutSuffixFor(JVMPlatform)
+  .crossType(PureVisible)
+  .in(file("."))
   .settings(
     name := projectName,
     scalaVersion := scala213Version,
 
-    libraryDependencies ++=
-      Seq(
-        "org.scalatest" %% "scalatest" % scalaTestDependency(scalaVersion.value) % Test
-      ),
+    libraryDependencies += "org.scalatest" %%% "scalatest" % scalaTestDependency(scalaVersion.value) % Test,
 
-    crossScalaVersions := List(scala212Version, scala213Version, scala3Version, dottyVersion),
-    // temporary until Parsley 3.0
-    Compile / unmanagedSourceDirectories += file(s"${baseDirectory.value.getPath}/src/main/deprecated"),
+    Compile / unmanagedSourceDirectories ++= extraSources(baseDirectory.value.getParentFile, "main", scalaVersion.value),
     Compile / unmanagedSourceDirectories ++= extraSources(baseDirectory.value, "main", scalaVersion.value),
+    Test / unmanagedSourceDirectories ++= extraSources(baseDirectory.value.getParentFile, "test", scalaVersion.value),
     Test / unmanagedSourceDirectories ++= extraSources(baseDirectory.value, "test", scalaVersion.value),
 
     scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature"),
     scalacOptions ++= (if (isDotty.value) Seq("-source:3.0-migration") else Seq.empty),
 
-    Compile / doc / scalacOptions ++= Seq("-doc-root-content", s"${(Compile / sourceDirectory).value}/rootdoc.md"),
+    Compile / doc / scalacOptions ++= Seq("-doc-root-content", s"${baseDirectory.value.getParentFile.getPath}/rootdoc.md"),
     // Trick from sbt-spiewak: disable dottydoc, which is struggling
     // with our package object.
     Compile / doc / sources := {
       val old = (Compile / doc / sources).value
       if (scalaVersion.value == dottyVersion) Seq() else old
     }
+  )
+  .jvmSettings(
+    crossScalaVersions := List(scala212Version, scala213Version, scala3Version, dottyVersion),
+  )
+  .jsSettings(
+    crossScalaVersions := List(scala212Version, scala213Version),
+    Compile / bloopGenerate := None,
+    Test / bloopGenerate := None
+  )
+  .nativeSettings(
+    crossScalaVersions := List(scala212Version, scala213Version),
+    Compile / bloopGenerate := None,
+    Test / bloopGenerate := None
   )
