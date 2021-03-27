@@ -1,6 +1,6 @@
 package parsley.internal.machine.errors
 
-import parsley.internal.errors.{ParseError, TrivialError, FailError, ErrorItem, Desc}
+import parsley.internal.errors.{ParseError, TrivialError, FancyError, ErrorItem, Desc}
 
 import scala.collection.mutable
 import scala.annotation.tailrec
@@ -22,7 +22,7 @@ private [errors] sealed trait MakesTrivial { this: DefuncError =>
 private [errors] sealed trait MakesFancy { this: DefuncError =>
     val isTrivialError = false
     val isExpectedEmpty = true
-    final def makeFancy: FailError = {
+    final def makeFancy: FancyError = {
         val state = new FancyState(offset)
         makeFancy(state)
         state.mkError

@@ -26,7 +26,7 @@ private [internal] case class TrivialError(offset: Int, line: Int, col: Int,
             builder.lineInfo(line, caret))
     }
 }
-private [internal] case class FailError(offset: Int, line: Int, col: Int, msgs: Set[String]) extends ParseError {
+private [internal] case class FancyError(offset: Int, line: Int, col: Int, msgs: Set[String]) extends ParseError {
     def format[Err](line: String, caret: Int)(implicit builder: ErrorBuilder[Err]): builder.ErrorInfoLines = {
         builder.specialisedError(
             builder.combineMessages(msgs.map(builder.message(_))),

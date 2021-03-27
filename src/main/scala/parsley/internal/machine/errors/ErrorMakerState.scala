@@ -1,6 +1,6 @@
 package parsley.internal.machine.errors
 
-import parsley.internal.errors.{TrivialError, FailError, ErrorItem, EndOfInput}
+import parsley.internal.errors.{TrivialError, FancyError, ErrorItem, EndOfInput}
 
 import scala.collection.mutable
 
@@ -68,7 +68,7 @@ private [errors] final class FancyState(offset: Int) {
     }
 
     def +=(msg: String): Unit = this.msgs += msg
-    def mkError: FailError = {
-        new FailError(offset, line, col, msgs.toSet)
+    def mkError: FancyError = {
+        new FancyError(offset, line, col, msgs.toSet)
     }
 }
