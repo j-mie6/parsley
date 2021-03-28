@@ -4,6 +4,7 @@ import scala.language.{higherKinds, implicitConversions}
 import scala.annotation.tailrec
 import scala.collection.mutable
 
+import parsley.BadLazinessException
 import parsley.registers.Reg
 import parsley.internal.machine.instructions, instructions.{Instr, JumpTable, Label}
 import parsley.internal.ResizableArray
@@ -48,7 +49,11 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
                 case self: UsesRegister => state.addReg(self.reg)
                 case _ =>
             }
-            findLetsAux(implicitly[ContOps[Cont]], seen + this, state, label)
+
+            try findLetsAux(implicitly[ContOps[Cont]], seen + this, state, label)
+            catch {
+                case npe: NullPointerException => throw new BadLazinessException
+            }
         }
         else result(())
     }
