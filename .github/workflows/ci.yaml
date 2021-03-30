@@ -24,7 +24,7 @@ jobs:
     needs: check-duplicate
     if: >-
       !contains(github.event.head_commit.message, '[skip ci]') &&
-      !contains(github.event.head_commit.message, '[skip ci jvm]')
+      !contains(github.event.head_commit.message, '[skip jvm]')
 
     env:
       SCALA_VERSION: ${{ matrix.scala }}
@@ -85,7 +85,7 @@ jobs:
     needs: check-duplicate
     if: >-
       !contains(github.event.head_commit.message, '[skip ci]') &&
-      !contains(github.event.head_commit.message, '[skip ci js]')
+      !contains(github.event.head_commit.message, '[skip js]')
 
     env:
       SCALA_VERSION: ${{ matrix.scala }}
@@ -143,7 +143,7 @@ jobs:
     needs: check-duplicate
     if: >-
       !contains(github.event.head_commit.message, '[skip ci]') &&
-      !contains(github.event.head_commit.message, '[skip ci native]')
+      !contains(github.event.head_commit.message, '[skip native]')
 
     env:
       SCALA_VERSION: ${{ matrix.scala }}
@@ -211,7 +211,7 @@ jobs:
     needs: validate
     if: >-
       !contains(github.event.head_commit.message, '[skip ci]') &&
-      !contains(github.event.head_commit.message, '[skip ci jvm]') &&
+      !contains(github.event.head_commit.message, '[skip jvm]') &&
       (github.ref == 'refs/heads/master' && (needs.validate.result == 'success' || needs.validate.result == 'skipped') ||
        github.event_name == 'pull_request' && (needs.validate.result == 'success' || needs.validate.result == 'skipped'))
 
