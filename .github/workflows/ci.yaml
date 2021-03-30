@@ -6,6 +6,7 @@ jobs:
   check-duplicate:
     name: Check duplicate action
     runs-on: ubuntu-20.04
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
 
     outputs:
       should_skip: ${{ steps.skip_check.outputs.should_skip }}
@@ -21,6 +22,9 @@ jobs:
     name: Scala ${{ matrix.scala }}, Java ${{ matrix.java }}
     runs-on: ubuntu-20.04
     needs: check-duplicate
+    if: >-
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !contains(github.event.head_commit.message, '[skip ci jvm]')
 
     env:
       SCALA_VERSION: ${{ matrix.scala }}
@@ -79,6 +83,9 @@ jobs:
     name: Scala-JS ${{ matrix.scala }}, Node ${{ matrix.node }}
     runs-on: ubuntu-20.04
     needs: check-duplicate
+    if: >-
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !contains(github.event.head_commit.message, '[skip ci js]')
 
     env:
       SCALA_VERSION: ${{ matrix.scala }}
@@ -134,6 +141,9 @@ jobs:
     name: Scala-Native ${{ matrix.scala }} LLVM 10
     runs-on: ubuntu-20.04
     needs: check-duplicate
+    if: >-
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !contains(github.event.head_commit.message, '[skip ci native]')
 
     env:
       SCALA_VERSION: ${{ matrix.scala }}
@@ -199,12 +209,11 @@ jobs:
     name: Test Coverage
     runs-on: ubuntu-20.04
     needs: validate
-
-    # Temp: Also run on pull requests when validate is skipped, due to codeclimate/coverage being a required check
-    # FIXME: This seems not to be working on the parsley-3 branch?
-    #if: >-
-    #  github.ref == 'refs/heads/master' && (needs.validate.result == 'success' || needs.validate.result == 'skipped') ||
-    #  github.event_name == 'pull_request' && (needs.validate.result == 'success' || needs.validate.result == 'skipped')
+    if: >-
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !contains(github.event.head_commit.message, '[skip ci jvm]') &&
+      (github.ref == 'refs/heads/master' && (needs.validate.result == 'success' || needs.validate.result == 'skipped') ||
+       github.event_name == 'pull_request' && (needs.validate.result == 'success' || needs.validate.result == 'skipped'))
 
     env:
       SCALA_VERSION: 2.13.5
