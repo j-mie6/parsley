@@ -361,13 +361,9 @@ object Parsley
       * @param q If `b` returns `Right` then this parser is executed with the result
       * @return Either the result from `p` or `q` depending on `b`.
       */
-    def branch[A, B, C](b: =>Parsley[Either[A, B]], p: =>Parsley[A => C], q: =>Parsley[B => C]): Parsley[C] =
-        // TODO: This should be converted to use Case instruction from Haskell Parsley, this is too inefficient right now
-        // We can then apply some laws and optimisations to it...
-        b >>= {
-            case Left(x) => p <*> pure(x)
-            case Right(y) => q <*> pure(y)
-        }
+    def branch[A, B, C](b: =>Parsley[Either[A, B]], p: =>Parsley[A => C], q: =>Parsley[B => C]): Parsley[C] = {
+        new Parsley(new deepembedding.Branch(b.internal, p.internal, q.internal))
+    }
     /** This is one of the core operations of a selective functor. It will conditionally execute one of `q` depending on
       * whether or not `p` returns a `Left`. It can be used to implement `branch` and other selective operations, however
       * it is more efficiently implemented with `branch` itself.
