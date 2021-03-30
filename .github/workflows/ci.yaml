@@ -6,6 +6,7 @@ jobs:
   check-duplicate:
     name: Check duplicate action
     runs-on: ubuntu-20.04
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
 
     outputs:
       should_skip: ${{ steps.skip_check.outputs.should_skip }}
@@ -13,14 +14,19 @@ jobs:
     steps:
       - name: Check duplicate
         id: skip_check
-        uses: fkirc/skip-duplicate-actions@master
+        uses: fkirc/skip-duplicate-actions@v3.4.0
         with:
-          concurrent_skipping: 'same_content'
+          cancel_others: true
+          # Was same_content, but that didn't seem to work properly, we'll go with this
+          concurrent_skipping: 'never'
 
   validate:
     name: Scala ${{ matrix.scala }}, Java ${{ matrix.java }}
     runs-on: ubuntu-20.04
     needs: check-duplicate
+    if: >-
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !contains(github.event.head_commit.message, '[skip jvm]')
 
     env:
       SCALA_VERSION: ${{ matrix.scala }}
@@ -39,39 +45,39 @@ jobs:
 
     steps:
       - name: Checkout repository
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: actions/checkout@v2.3.4
 
       - name: Setup Scala
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: olafurpg/setup-scala@v10
         with:
           java-version: ${{ matrix.java }}
 
       - name: Cache Coursier
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: actions/cache@v2
         with:
           path: ~/.cache/coursier
           key: sbt-coursier-cache
 
       - name: Cache SBT
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: actions/cache@v2
         with:
           path: ~/.sbt
           key: sbt-${{ hashFiles('**/build.sbt') }}
 
       - name: Build
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         run: sbt ++$SCALA_VERSION compile
 
       - name: Test
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         run: sbt ++$SCALA_VERSION test
 
       - name: Scaladoc
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         run: sbt ++$SCALA_VERSION doc
 
   # This is largely temporary, we'll find a better way to do this...
@@ -79,6 +85,9 @@ jobs:
     name: Scala-JS ${{ matrix.scala }}, Node ${{ matrix.node }}
     runs-on: ubuntu-20.04
     needs: check-duplicate
+    if: >-
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !contains(github.event.head_commit.message, '[skip js]')
 
     env:
       SCALA_VERSION: ${{ matrix.scala }}
@@ -91,49 +100,52 @@ jobs:
 
     steps:
       - name: Checkout repository
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: actions/checkout@v2.3.4
 
       - name: Setup Node
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: actions/setup-node@v2.1.5
         with:
           node-version: ${{ matrix.node }}
 
       - name: Setup Scala
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: olafurpg/setup-scala@v10
 
       - name: Cache Coursier
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: actions/cache@v2
         with:
           path: ~/.cache/coursier
           key: sbt-coursier-cache
 
       - name: Cache SBT
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: actions/cache@v2
         with:
           path: ~/.sbt
           key: sbt-${{ hashFiles('**/build.sbt') }}
 
       - name: Build
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         run: sbt ++$SCALA_VERSION parsleyJS/compile
 
       - name: Test
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         run: sbt ++$SCALA_VERSION parsleyJS/test
 
       - name: Scaladoc
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         run: sbt ++$SCALA_VERSION parsleyJS/doc
 
   validate-native:
     name: Scala-Native ${{ matrix.scala }} LLVM 10
     runs-on: ubuntu-20.04
     needs: check-duplicate
+    if: >-
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !contains(github.event.head_commit.message, '[skip native]')
 
     env:
       SCALA_VERSION: ${{ matrix.scala }}
@@ -145,11 +157,11 @@ jobs:
 
     steps:
       - name: Checkout repository
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: actions/checkout@v2.3.4
 
       - name: Cache LLVM and Clang
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         id: cache-llvm
         uses: actions/cache@v2
         with:
@@ -157,7 +169,7 @@ jobs:
           key: llvm-10.0
 
       - name: Setup LLVM + Clang
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: KyleMayes/install-llvm-action@v1.1.1
         with:
           version: "10.0"
@@ -165,33 +177,33 @@ jobs:
           cached: ${{ steps.cache-llvm.outputs.cache-hit }}
 
       - name: Setup Scala
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: olafurpg/setup-scala@v10
 
       - name: Cache Coursier
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: actions/cache@v2
         with:
           path: ~/.cache/coursier
           key: sbt-coursier-cache
 
       - name: Cache SBT
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: actions/cache@v2
         with:
           path: ~/.sbt
           key: sbt-${{ hashFiles('**/build.sbt') }}
 
       - name: Build
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         run: sbt ++$SCALA_VERSION parsleyNative/compile
 
       - name: Test
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         run: sbt ++$SCALA_VERSION parsleyNative/test
 
       - name: Scaladoc
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         run: sbt ++$SCALA_VERSION parsleyNative/doc
   # End attrocity
 
@@ -199,12 +211,11 @@ jobs:
     name: Test Coverage
     runs-on: ubuntu-20.04
     needs: validate
-
-    # Temp: Also run on pull requests when validate is skipped, due to codeclimate/coverage being a required check
-    # FIXME: This seems not to be working on the parsley-3 branch?
-    #if: >-
-    #  github.ref == 'refs/heads/master' && (needs.validate.result == 'success' || needs.validate.result == 'skipped') ||
-    #  github.event_name == 'pull_request' && (needs.validate.result == 'success' || needs.validate.result == 'skipped')
+    if: >-
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !contains(github.event.head_commit.message, '[skip jvm]') &&
+      (github.ref == 'refs/heads/master' && (needs.validate.result == 'success' || needs.validate.result == 'skipped') ||
+       github.event_name == 'pull_request' && (needs.validate.result == 'success' || needs.validate.result == 'skipped'))
 
     env:
       SCALA_VERSION: 2.13.5

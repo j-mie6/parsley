@@ -105,6 +105,18 @@ private [internal] final class If(var label: Int) extends InstrWithLabel {
     // $COVERAGE-ON$
 }
 
+private [internal] final class Case(var label: Int) extends InstrWithLabel {
+    override def apply(ctx: Context): Unit = ctx.stack.pop[Either[_, _]]() match {
+        case Left(x) =>
+            ctx.stack.push(x)
+            ctx.pc = label
+        case Right(y) => ctx.pushAndContinue(y)
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = s"Case(left: $label)"
+    // $COVERAGE-ON$
+}
+
 private [internal] final class Filter[A](_pred: A=>Boolean, _expected: Option[String]) extends Instr {
     private [this] val pred = _pred.asInstanceOf[Any=>Boolean]
     private [this] val expected = _expected.map(Desc)

@@ -1,6 +1,6 @@
 package parsley.internal.machine.errors
 
-import parsley.internal.errors.{TrivialError, FailError, ErrorItem, EndOfInput}
+import parsley.internal.errors.{TrivialError, FancyError, ErrorItem, EndOfInput}
 
 import scala.collection.mutable
 
@@ -34,7 +34,7 @@ private [errors] final class TrivialState(offset: Int, outOfRange: Boolean) {
         acceptingExpected = true
     }
 }
-object TrivialState {
+private [errors] object TrivialState {
     private [TrivialState] sealed trait UnexpectItem {
         final def pickHigher(other: UnexpectItem): UnexpectItem = (this, other) match {
             case (Other(u1), Other(u2)) => Other(ErrorItem.higherPriority(u1, u2))
@@ -68,7 +68,20 @@ private [errors] final class FancyState(offset: Int) {
     }
 
     def +=(msg: String): Unit = this.msgs += msg
-    def mkError: FailError = {
-        new FailError(offset, line, col, msgs.toSet)
+    def mkError: FancyError = {
+        new FancyError(offset, line, col, msgs.toSet)
     }
+}
+
+private [errors] final class HintState {
+    private val hints = mutable.Set.empty[ErrorItem]
+    private var _unexpectSize = 0
+
+    def +=(hint: ErrorItem): Unit = this.hints += hint
+    def ++=(hints: Set[ErrorItem]) = this.hints ++= hints
+
+    def unexpectSize: Int = _unexpectSize
+    def updateSize(sz: Int) = _unexpectSize = Math.max(_unexpectSize, sz)
+
+    def mkSet: Set[ErrorItem] = this.hints.toSet
 }

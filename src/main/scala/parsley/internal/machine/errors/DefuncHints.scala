@@ -9,32 +9,36 @@ private [machine] sealed abstract class DefuncHints(private [errors] val size: I
     private var incorporatedAfter: Int = size
     private [errors] def nonEmpty: Boolean = size != 0
     private [errors] def isEmpty: Boolean = size == 0
-    private [machine] def toSet: Set[ErrorItem] = {
-        val set = mutable.Set.empty[ErrorItem]
-        collect(set, 0)
-        set.toSet
+    private [machine] def toExpectedsAndSize: (Set[ErrorItem], Int) = {
+        implicit val state: HintState = new HintState
+        collect(0)
+        (state.mkSet, state.unexpectSize)
     }
-    @tailrec final private [errors] def collect(set: mutable.Set[ErrorItem], skipNext: Int): Unit = if (skipNext < incorporatedAfter) {
+    private [machine] def toSet: Set[ErrorItem] = toExpectedsAndSize._1
+    @tailrec final private [errors] def collect(skipNext: Int)(implicit state: HintState): Unit = if (skipNext < incorporatedAfter) {
         // This error only needs to provide the first `skipNext` elements if we encounter it again
         incorporatedAfter = skipNext
         this match {
             case EmptyHints =>
-            case self: PopHints => self.hints.collect(set, skipNext + 1)
+            case self: PopHints => self.hints.collect(skipNext + 1)
             case self: ReplaceHint =>
-                if (skipNext > 0) self.hints.collect(set, skipNext)
-                else self.hints.collect(set += Desc(self.label), skipNext+1)
-            case self: MergeHints =>
-                if (self.oldHints.size < skipNext) self.newHints.collect(set, skipNext - self.oldHints.size)
+                if (skipNext > 0) self.hints.collect(skipNext)
                 else {
-                    self.oldHints.collectNonTail(set, skipNext)
-                    self.newHints.collect(set, 0)
+                    state += Desc(self.label)
+                    self.hints.collect(skipNext+1)
+                }
+            case self: MergeHints =>
+                if (self.oldHints.size < skipNext) self.newHints.collect(skipNext - self.oldHints.size)
+                else {
+                    self.oldHints.collectNonTail(skipNext)
+                    self.newHints.collect(0)
                 }
             case self: AddError =>
-                if (skipNext - self.hints.size <= 0) self.err.collectHints(set)
-                self.hints.collect(set, skipNext)
+                if (skipNext - self.hints.size <= 0) self.err.collectHints()
+                self.hints.collect(skipNext)
         }
     }
-    final private def collectNonTail(set: mutable.Set[ErrorItem], skipNext: Int): Unit = collect(set, skipNext)
+    final private def collectNonTail(skipNext: Int)(implicit state: HintState): Unit = collect(skipNext)
 }
 
 private [machine] case object EmptyHints extends DefuncHints(size = 0)

@@ -285,9 +285,11 @@ trait ErrorBuilder[Err] {
 }
 
 object ErrorBuilder {
+    // $COVERAGE-OFF$
     /**
       * The default error builder used by Parsley, which produces
       * an error as a String. An instance of `DefaultErrorBuilder`.
       */
     implicit val stringError: ErrorBuilder[String] = new DefaultErrorBuilder
+    // $COVERAGE-ON$
 }

@@ -1,6 +1,6 @@
 package parsley.internal.machine.errors
 
-import parsley.internal.errors.{ParseError, TrivialError, FailError, ErrorItem, Desc}
+import parsley.internal.errors.{ParseError, TrivialError, FancyError, ErrorItem, Desc}
 
 import scala.collection.mutable
 import scala.annotation.tailrec
@@ -22,7 +22,7 @@ private [errors] sealed trait MakesTrivial { this: DefuncError =>
 private [errors] sealed trait MakesFancy { this: DefuncError =>
     val isTrivialError = false
     val isExpectedEmpty = true
-    final def makeFancy: FailError = {
+    final def makeFancy: FancyError = {
         val state = new FancyState(offset)
         makeFancy(state)
         state.mkError
@@ -38,19 +38,26 @@ private [machine] sealed abstract class DefuncError {
         case terr: MakesTrivial if terr.isTrivialError => terr.makeTrivial
         case ferr: MakesFancy => ferr.makeFancy
     }
-    @tailrec private [errors] final def collectHints(set: mutable.Set[ErrorItem]): Unit = (this: @unchecked) match {
-        case BaseError(expected) => for (item <- expected) set += item
-        case self: MultiExpectedError => set ++= self.expected
-        case self: WithLabel => if (self.label.nonEmpty) set += Desc(self.label)
-        case self: WithReason => self.err.collectHints(set)
+    @tailrec private [errors] final def collectHints()(implicit state: HintState): Unit = (this: @unchecked) match {
+        case BaseError(expected) =>
+            for (item <- expected) state += item
+            state.updateSize(1)
+        case self: TokenError =>
+            for (item <- self.expected) state += item
+            state.updateSize(self.size)
+        case self: MultiExpectedError =>
+            state.updateSize(self.size)
+            state ++= self.expected
+        case self: WithLabel => if (self.label.nonEmpty) state += Desc(self.label)
+        case self: WithReason => self.err.collectHints()
         case self: WithHints =>
-            self.hints.collect(set, 0)
-            self.err.collectHints(set)
+            self.hints.collect(0)
+            self.err.collectHints()
         case self: MergedErrors =>
-            self.err1.collectHintsNonTail(set)
-            self.err2.collectHints(set)
+            self.err1.collectHintsNonTail()
+            self.err2.collectHints()
     }
-    final private def collectHintsNonTail(set: mutable.Set[ErrorItem]): Unit = collectHints(set)
+    final private def collectHintsNonTail()(implicit state: HintState): Unit = collectHints()
 }
 
 private [errors] object BaseError {
@@ -60,7 +67,6 @@ private [errors] object BaseError {
         case err: ClassicUnexpectedError => Some(err.expected)
         case err: EmptyError => Some(err.expected)
         case err: EmptyErrorWithReason => Some(err.expected)
-        case err: TokenError => Some(err.expected)
         case _ => None
     }
 }
@@ -162,7 +168,9 @@ private [errors] case class WithHints private (err: DefuncError, hints: DefuncHi
     val offset = err.offset
     override def makeTrivial(state: TrivialState): Unit = {
         err.asInstanceOf[MakesTrivial].makeTrivial(state)
-        state ++= hints.toSet
+        val (expecteds, size) = hints.toExpectedsAndSize
+        state ++= expecteds
+        state.updateUnexpected(size)
     }
 }
 
