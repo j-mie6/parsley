@@ -29,6 +29,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: deepe
       */
     def unsafe(): Unit = internal.unsafe()
 
+    // $COVERAGE-OFF$
     /**
       * Forces the compilation of a parser as opposed to the regular lazy evaluation.
       */
@@ -39,6 +40,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: deepe
       * Provides an indicator that this parser is likely to stack-overflow
       */
     def overflows(): Unit = internal.overflows()
+    // $COVERAGE-ON$
 
     /** This method is responsible for actually executing parsers. Given an input
       * array, will parse the string with the parser. The result is either a `Success` or a `Failure`.
@@ -135,6 +137,15 @@ object Parsley
             "3.0.1")
         def <\>[B >: A](q: Parsley[B]): Parsley[B] = attempt(p) <|> q
         // $COVERAGE-ON$
+        /**
+          * This combinator, pronounced "sum", is similar to `<|>`, except it allows the
+          * types of either side of the combinator to vary by returning their result as
+          * part of an `Either`.
+          *
+          * @param q The parser to run if the invokee failed without consuming input
+          * @return the result of the parser which succeeded, if any
+          */
+        def <+>[B](q: Parsley[B]): Parsley[Either[A, B]] = p.map(Left(_)) <|> q.map(Right(_))
         /**
           * This is the parser that corresponds to a more optimal version of `p.map(_ => x => x) <*> q`. It performs
           * the parse action of both parsers, in order, but discards the result of the invokee.
@@ -350,13 +361,9 @@ object Parsley
       * @param q If `b` returns `Right` then this parser is executed with the result
       * @return Either the result from `p` or `q` depending on `b`.
       */
-    def branch[A, B, C](b: =>Parsley[Either[A, B]], p: =>Parsley[A => C], q: =>Parsley[B => C]): Parsley[C] =
-        // TODO: This should be converted to use Case instruction from Haskell Parsley, this is too inefficient right now
-        // We can then apply some laws and optimisations to it...
-        b >>= {
-            case Left(x) => p <*> pure(x)
-            case Right(y) => q <*> pure(y)
-        }
+    def branch[A, B, C](b: =>Parsley[Either[A, B]], p: =>Parsley[A => C], q: =>Parsley[B => C]): Parsley[C] = {
+        new Parsley(new deepembedding.Branch(b.internal, p.internal, q.internal))
+    }
     /** This is one of the core operations of a selective functor. It will conditionally execute one of `q` depending on
       * whether or not `p` returns a `Left`. It can be used to implement `branch` and other selective operations, however
       * it is more efficiently implemented with `branch` itself.
