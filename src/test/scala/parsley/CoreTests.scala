@@ -112,10 +112,10 @@ class CoreTests extends ParsleyTest {
     }
 
     "<|>" should "not try the second alternative if the first succeeded" in {
-        ('a' <|> pfail("wrong!")).parse("a") should not be a [Failure[_]]
+        ('a' <|> pfail("wrong!")).parse("a") shouldBe Success('a')
     }
     it should "only try second alternative if the first failed without consuming input" in {
-        ('a' <|> 'b').parse("b") should not be a [Failure[_]]
+        ('a' <+> 'b').parse("b") shouldBe Success(Right('b'))
     }
     it should "not try the second alternative if the first failed after consuming input" in {
         ("ab" <|> "ac").parse("ac") shouldBe a [Failure[_]]
