@@ -14,9 +14,11 @@ jobs:
     steps:
       - name: Check duplicate
         id: skip_check
-        uses: fkirc/skip-duplicate-actions@master
+        uses: fkirc/skip-duplicate-actions@v3.4.0
         with:
-          concurrent_skipping: 'same_content'
+          cancel_others: true
+          # Was same_content, but that didn't seem to work properly, we'll go with this
+          concurrent_skipping: 'never'
 
   validate:
     name: Scala ${{ matrix.scala }}, Java ${{ matrix.java }}
@@ -43,39 +45,39 @@ jobs:
 
     steps:
       - name: Checkout repository
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: actions/checkout@v2.3.4
 
       - name: Setup Scala
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: olafurpg/setup-scala@v10
         with:
           java-version: ${{ matrix.java }}
 
       - name: Cache Coursier
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: actions/cache@v2
         with:
           path: ~/.cache/coursier
           key: sbt-coursier-cache
 
       - name: Cache SBT
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: actions/cache@v2
         with:
           path: ~/.sbt
           key: sbt-${{ hashFiles('**/build.sbt') }}
 
       - name: Build
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         run: sbt ++$SCALA_VERSION compile
 
       - name: Test
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         run: sbt ++$SCALA_VERSION test
 
       - name: Scaladoc
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         run: sbt ++$SCALA_VERSION doc
 
   # This is largely temporary, we'll find a better way to do this...
@@ -98,43 +100,43 @@ jobs:
 
     steps:
       - name: Checkout repository
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: actions/checkout@v2.3.4
 
       - name: Setup Node
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: actions/setup-node@v2.1.5
         with:
           node-version: ${{ matrix.node }}
 
       - name: Setup Scala
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: olafurpg/setup-scala@v10
 
       - name: Cache Coursier
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: actions/cache@v2
         with:
           path: ~/.cache/coursier
           key: sbt-coursier-cache
 
       - name: Cache SBT
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: actions/cache@v2
         with:
           path: ~/.sbt
           key: sbt-${{ hashFiles('**/build.sbt') }}
 
       - name: Build
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         run: sbt ++$SCALA_VERSION parsleyJS/compile
 
       - name: Test
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         run: sbt ++$SCALA_VERSION parsleyJS/test
 
       - name: Scaladoc
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         run: sbt ++$SCALA_VERSION parsleyJS/doc
 
   validate-native:
@@ -155,11 +157,11 @@ jobs:
 
     steps:
       - name: Checkout repository
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: actions/checkout@v2.3.4
 
       - name: Cache LLVM and Clang
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         id: cache-llvm
         uses: actions/cache@v2
         with:
@@ -167,7 +169,7 @@ jobs:
           key: llvm-10.0
 
       - name: Setup LLVM + Clang
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: KyleMayes/install-llvm-action@v1.1.1
         with:
           version: "10.0"
@@ -175,33 +177,33 @@ jobs:
           cached: ${{ steps.cache-llvm.outputs.cache-hit }}
 
       - name: Setup Scala
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: olafurpg/setup-scala@v10
 
       - name: Cache Coursier
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: actions/cache@v2
         with:
           path: ~/.cache/coursier
           key: sbt-coursier-cache
 
       - name: Cache SBT
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: actions/cache@v2
         with:
           path: ~/.sbt
           key: sbt-${{ hashFiles('**/build.sbt') }}
 
       - name: Build
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         run: sbt ++$SCALA_VERSION parsleyNative/compile
 
       - name: Test
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         run: sbt ++$SCALA_VERSION parsleyNative/test
 
       - name: Scaladoc
-        #if: needs.check-duplicate.outputs.should_skip != 'true'
+        if: needs.check-duplicate.outputs.should_skip != 'true'
         run: sbt ++$SCALA_VERSION parsleyNative/doc
   # End attrocity
 
