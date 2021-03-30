@@ -86,18 +86,23 @@ class CoreTests extends ParsleyTest {
     }
 
     // SELECTIVE LAWS
-    they must "obey the selective left-branch law" in {
+    "Selective parsers" must "obey the selective left-branch law" in {
         branch[Int, Int, Int](pure(Left(7)), pure(_+1), pure(_-1)).parse("") shouldBe Success(8)
     }
     they must "obey the selective right-branch law" in {
         select(pure(Right(7)), Parsley.empty).parse("") shouldBe Success(7)
     }
+    they must "obey the fold law" in {
+        val p = ('a' #> 7) <+> ('b' #> 6)
+        branch[Int, Int, Int](p, pure(_+1), pure(_-1)).parse("a") shouldBe Success(8)
+        branch[Int, Int, Int](p, pure(_+1), pure(_-1)).parse("b") shouldBe Success(5)
+    }
 
     // MONAD LAWS
-    they must "obey the left identity law: pure x >>= f = f x" in {
+    "Monadic parsers" must "obey the left identity law: pure x >>= f = f x" in {
         (pure('a') >>= char).parse("a") should equal ('a'.parse("a"))
     }
-    "Parsers" must "obey the right identity law: m >>= pure = m" in {
+    they must "obey the right identity law: m >>= pure = m" in {
         ('a' >>= pure).parse("a") should equal ('a'.parse("a"))
     }
     they must "obey the associativity law: (m >>= f) >>= g = m >>= (x => f x >>= g)" in {
@@ -109,6 +114,15 @@ class CoreTests extends ParsleyTest {
     they must "allow for flattening" in {
         join(pure(char('a'))).parse("a") shouldBe Success('a')
         join(Parsley.empty).parse("") shouldBe a [Failure[_]]
+    }
+
+    "branch" must "work correctly for non-pure components" in {
+        val p = ('a' #> 7) <+> ('b' #> 6)
+        val q = ('+' #>[Int => Int] (_ + 1) <|> '-' #>[Int => Int] (_ - 1))
+        branch[Int, Int, Int](p, q, q).parse("a+") shouldBe Success(8)
+        branch[Int, Int, Int](p, q, q).parse("b+") shouldBe Success(7)
+        branch[Int, Int, Int](p, q, q).parse("a-") shouldBe Success(6)
+        branch[Int, Int, Int](p, q, q).parse("b-") shouldBe Success(5)
     }
 
     "<|>" should "not try the second alternative if the first succeeded" in {
@@ -228,8 +242,13 @@ class CoreTests extends ParsleyTest {
     }
 
     "ternary parsers" should "function correctly" in {
-        val p = pure(true)
-        (p ?: ('a', 'b')).parse("a") should be (Success('a'))
+        val p = pure(true) ?: ('a', 'b')
+        p.parse("a") should be (Success('a'))
+        val q = pure(false) ?: ('a', 'b')
+        q.parse("b") should be (Success('b'))
+        val r = anyChar.map(_.isLower) ?: ('a', 'b')
+        r.parse("aa") should be (Success('a'))
+        r.parse("Ab") should be (Success('b'))
     }
 
     "filtered parsers" should "function correctly" in {

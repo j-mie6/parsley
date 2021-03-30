@@ -3,12 +3,13 @@ package parsley.internal.deepembedding
 import ContOps.{result, ContAdapter}
 import parsley.internal.machine.instructions
 
-import scala.annotation.tailrec
 import scala.language.higherKinds
+
+import Branch.FlipApp
 
 private [deepembedding] sealed abstract class BranchLike[A, B, C, D](_b: =>Parsley[A], _p: =>Parsley[B], _q: =>Parsley[C],
                                                                      pretty: (String, String, String) => String, empty: =>BranchLike[A, B, C, D],
-                                                                     instr: Int => instructions.Instr)
+                                                                     instr: Int => instructions.Instr, finaliser: Option[instructions.Instr])
     extends Ternary[A, B, C, D](_b, _p, _q)(pretty, empty) {
     final override val numInstrs = 2
     final override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
@@ -17,27 +18,33 @@ private [deepembedding] sealed abstract class BranchLike[A, B, C, D](_b: =>Parsl
         first.codeGen >> {
             instrs += instr(toSecond)
             third.codeGen >> {
+                for (instr <- finaliser) instrs += instr
                 instrs += new instructions.Jump(end)
                 instrs += new instructions.Label(toSecond)
-                second.codeGen |>
-                (instrs += new instructions.Label(end))
+                second.codeGen |> {
+                    for (instr <- finaliser) instrs += instr
+                    instrs += new instructions.Label(end)
+                }
             }
         }
     }
 }
 
 private [parsley] final class Branch[A, B, C](_b: =>Parsley[Either[A, B]], _p: =>Parsley[A => C], _q: =>Parsley[B => C])
-    extends BranchLike[Either[A, B], A => C, B => C, C](_b, _p, _q, (f, s, t) => s"branch($f, $s, $t)", Branch.empty, new instructions.Case(_)) {
+    extends BranchLike[Either[A, B], A => C, B => C, C](_b, _p, _q, (f, s, t) => s"branch($f, $s, $t)", Branch.empty, new instructions.Case(_), Some(FlipApp)) {
 
     override def optimise: Parsley[C] = first match {
         case Pure(Left(x)) => <*>(second, new Pure(x)).optimise
         case Pure(Right(y)) => <*>(third, new Pure(y)).optimise
-        case _ => this
+        case _ => (second, third) match {
+            case (Pure(f), Pure(g)) => <*>(new Pure((x: Either[A, B]) => x.fold(f, g)), first)
+            case _ => this
+        }
     }
 }
 
 private [parsley] final class If[A](_b: =>Parsley[Boolean], _p: =>Parsley[A], _q: =>Parsley[A])
-    extends BranchLike[Boolean, A, A, A](_b, _p, _q, (f, s, t) => s"($f ? $s : $t)", If.empty, new instructions.If(_)) {
+    extends BranchLike[Boolean, A, A, A](_b, _p, _q, (f, s, t) => s"($f ? $s : $t)", If.empty, new instructions.If(_), None) {
     override def optimise: Parsley[A] = first match {
         case Pure(true) => second
         case Pure(false) => third
@@ -74,6 +81,7 @@ private [parsley] final class GuardAgainst[A](_p: =>Parsley[A], pred: PartialFun
 
 private [deepembedding] object Branch {
     def empty[A, B, C]: Branch[A, B, C] = new Branch(???, ???, ???)
+    val FlipApp = new instructions.Lift2[Any, Any => Any, Any]((x, f) => f(x))
 }
 private [deepembedding] object If {
     def empty[A]: If[A] = new If(???, ???, ???)
