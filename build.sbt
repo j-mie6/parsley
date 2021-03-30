@@ -19,7 +19,7 @@ inThisBuild(List(
 
 val scala212Version = "2.12.13"
 val scala213Version = "2.13.5"
-val scala3Version = "3.0.0-M3"
+val scala3Version = "3.0.0-RC1"
 val dottyVersion = "0.27.0-RC1"
 
 def usesLib213(major: Long, minor: Long): Boolean = major > 2 || minor >= 13
