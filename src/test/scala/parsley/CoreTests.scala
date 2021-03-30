@@ -118,7 +118,7 @@ class CoreTests extends ParsleyTest {
 
     "branch" must "work correctly for non-pure components" in {
         val p = ('a' #> 7) <+> ('b' #> 6)
-        val q = ('+' #>[Int => Int] (_ + 1) <|> '-' #>[Int => Int] (_ - 1))
+        val q = ('+'.#>[Int => Int](_ + 1) <|> '-'.#>[Int => Int](_ - 1))
         branch[Int, Int, Int](p, q, q).parse("a+") shouldBe Success(8)
         branch[Int, Int, Int](p, q, q).parse("b+") shouldBe Success(7)
         branch[Int, Int, Int](p, q, q).parse("a-") shouldBe Success(6)
