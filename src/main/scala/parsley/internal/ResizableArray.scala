@@ -30,7 +30,7 @@ private [internal] final class ResizableArray[A: ClassTag](initialSize: Int = Re
     }
     // A size that is already a power of two is fully saturated
     def toShrunkenArray: Array[A] = if ((size & (size - 1)) == 0) toArray else {
-        val newArray = new Array(size)
+        val newArray = new Array[A](size)
         java.lang.System.arraycopy(array, 0, newArray, 0, size)
         array = null
         newArray

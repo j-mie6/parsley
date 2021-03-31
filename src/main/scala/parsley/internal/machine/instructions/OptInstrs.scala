@@ -26,7 +26,7 @@ private [internal] final class Exchange[A](private [Exchange] val x: A) extends 
 }
 
 private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, _expected: Option[String]) extends Instr {
-    private [this] final val expected = _expected.map(Desc)
+    private [this] final val expected = _expected.map(Desc(_))
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && f(ctx.nextChar)) {
             ctx.consumeChar()

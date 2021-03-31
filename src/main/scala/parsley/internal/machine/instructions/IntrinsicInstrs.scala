@@ -119,7 +119,7 @@ private [internal] final class Case(var label: Int) extends InstrWithLabel {
 
 private [internal] final class Filter[A](_pred: A=>Boolean, _expected: Option[String]) extends Instr {
     private [this] val pred = _pred.asInstanceOf[Any=>Boolean]
-    private [this] val expected = _expected.map(Desc)
+    private [this] val expected = _expected.map(Desc(_))
     override def apply(ctx: Context): Unit = {
         if (pred(ctx.stack.upeek)) ctx.inc()
         else ctx.fail(new EmptyError(ctx.offset, ctx.line, ctx.col, expected))
@@ -131,7 +131,7 @@ private [internal] final class Filter[A](_pred: A=>Boolean, _expected: Option[St
 
 private [internal] final class FilterOut[A](_pred: PartialFunction[A, String], _expected: Option[String]) extends Instr {
     private [this] val pred = _pred.asInstanceOf[PartialFunction[Any, String]]
-    private [this] val expected = _expected.map(Desc)
+    private [this] val expected = _expected.map(Desc(_))
     override def apply(ctx: Context): Unit = {
         if (pred.isDefinedAt(ctx.stack.upeek)) {
             val reason = pred(ctx.stack.upop())
@@ -156,7 +156,7 @@ private [internal] final class GuardAgainst[A](_pred: PartialFunction[A, String]
 }
 
 private [internal] final class NotFollowedBy(_expected: Option[String]) extends Instr {
-    private [this] final val expected = _expected.map(Desc)
+    private [this] final val expected = _expected.map(Desc(_))
     override def apply(ctx: Context): Unit = {
         val reached = ctx.offset
         // Recover the previous state; notFollowedBy NEVER consumes input
@@ -180,7 +180,7 @@ private [internal] final class NotFollowedBy(_expected: Option[String]) extends 
 }
 
 private [internal] final class Eof(_expected: Option[String]) extends Instr {
-    private [this] final val expected = Some(_expected.map(Desc).getOrElse(EndOfInput))
+    private [this] final val expected = Some(_expected.map(Desc(_)).getOrElse(EndOfInput))
     override def apply(ctx: Context): Unit = {
         if (ctx.offset == ctx.inputsz) ctx.pushAndContinue(())
         else ctx.expectedFail(expected)

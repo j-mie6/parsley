@@ -75,10 +75,8 @@ private [internal] object Return extends Instr {
 }
 
 private [internal] final class Empty(_expected: Option[String]) extends Instr {
-    //val expected = _expected.fold(Set.empty[ErrorItem])(e => Set[ErrorItem](Desc(e)))
-    val expected = _expected.map(Desc)
+    val expected = _expected.map(Desc(_))
     override def apply(ctx: Context): Unit = {
-        //ctx.fail(TrivialError(ctx.offset, ctx.line, ctx.col, None, expected, NoReason))
         ctx.fail(new EmptyError(ctx.offset, ctx.line, ctx.col, expected))
     }
     // $COVERAGE-OFF$
