@@ -20,7 +20,7 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
         // alternative law: p <|> empty = p
         case (u: Parsley[B @unchecked], e: Empty) if e.expected.isEmpty => u
         // associative law: (u <|> v) <|> w = u <|> (v <|> w)
-        case ((u: Parsley[T]) <|> (v: Parsley[A]), w) =>
+        case ((u: Parsley[T]) <|> (v: Parsley[A @unchecked]), w) =>
             left = u.asInstanceOf[Parsley[A]]
             right = <|>[A, B](v, w).optimise
             this

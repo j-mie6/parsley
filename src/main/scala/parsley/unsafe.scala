@@ -52,6 +52,6 @@ object unsafe {
           * should ''only'' be used for '''non-terminals''' in the grammar
           * @since 2.6.0
           */
-        def unsafeLabel(msg: String): Parsley[A] = new Parsley(new deepembedding.UnsafeErrorRelabel(p.internal, msg))
+        def unsafeLabel(msg: String): Parsley[A] = new Parsley(new deepembedding.UnsafeErrorRelabel(con(p).internal, msg))
     }
 }

@@ -12,7 +12,7 @@ object Parsley212 {
         /**
           * This is an alias for `p.filter(pred)`. It is needed to support for-comprehension syntax with `if`s in Scala 2.12.
           */
-        def withFilter(pred: A => Boolean): Parsley[A] = p.filter(pred)
+        def withFilter(pred: A => Boolean): Parsley[A] = new LazyParsley(p).filter(pred)
         // $COVERAGE-ON$
     }
 }

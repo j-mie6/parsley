@@ -40,7 +40,7 @@ object io {
                 }
             } yield {
                 src.close()
-                new Context(p.internal.threadSafeInstrs, input, Some(file.getName)).runParser()
+                new Context(con(p).internal.threadSafeInstrs, input, Some(file.getName)).runParser()
             }
         }
     }

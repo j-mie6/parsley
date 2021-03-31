@@ -38,7 +38,7 @@ object combinator {
           * @return The result of the invokee if the value failed the predicate
           * @since 3.0.0
           */
-        def filterOut(pred: PartialFunction[A, String]): Parsley[A] = new Parsley(new deepembedding.FilterOut(p.internal, pred))
+        def filterOut(pred: PartialFunction[A, String]): Parsley[A] = new Parsley(new deepembedding.FilterOut(con(p).internal, pred))
         /** Attempts to first filter the parser to ensure that `pf` is defined over it. If it is, then the function `pf`
           * is mapped over its result. Roughly the same as a `guard` then a `map`.
           * @param pf The partial function
@@ -61,13 +61,13 @@ object combinator {
           * @return The result of the invokee if it fails the predicate
           * @since 2.8.0
           */
-        def guardAgainst(pred: PartialFunction[A, String]): Parsley[A] = new Parsley(new deepembedding.GuardAgainst(p.internal, pred))
+        def guardAgainst(pred: PartialFunction[A, String]): Parsley[A] = new Parsley(new deepembedding.GuardAgainst(con(p).internal, pred))
         /** Alias for `label`
           * @since 3.0.0 */
         def ?(msg: String): Parsley[A] = this.label(msg)
         /** Sets the expected message for a parser. If the parser fails then `expected msg` will added to the error
           * @since 3.0.0 */
-        def label(msg: String): Parsley[A] = new Parsley(new deepembedding.ErrorLabel(p.internal, msg))
+        def label(msg: String): Parsley[A] = new Parsley(new deepembedding.ErrorLabel(con(p).internal, msg))
         /** Similar to `label`, except instead of providing an expected message replacing the original tag, this combinator
           * adds a ''reason'' that the error occurred. This is in complement to the label. The `reason` is only added when
           * the parser fails, and will disappear if any further progress in the parser is made (unlike labels, which may
@@ -75,7 +75,7 @@ object combinator {
           * @param reason The reason why a parser failed
           * @since 3.0.0
           */
-        def explain(reason: String): Parsley[A] = new Parsley(new deepembedding.ErrorExplain(p.internal, reason))
+        def explain(reason: String): Parsley[A] = new Parsley(new deepembedding.ErrorExplain(con(p).internal, reason))
         /** Hides the "expected" error message for a parser.
           * @since 3.0.0 */
         def hide: Parsley[A] = this.label("")
@@ -84,13 +84,13 @@ object combinator {
           * @param msggen The generator function for error message, creating a message based on the result of invokee
           * @return A parser that fails if it succeeds, with the given generator used to produce the error message
           */
-        def !(msggen: A => String): Parsley[Nothing] = new Parsley(new deepembedding.FastFail(p.internal, msggen))
+        def !(msggen: A => String): Parsley[Nothing] = new Parsley(new deepembedding.FastFail(con(p).internal, msggen))
         /** Same as `unexpected`, except allows for a message generated from the result of the failed parser. In essence,
           * this is equivalent to `p >>= (x => unexpected(x))` but requires no expensive computations from the use of
           * `>>=`
           * @param msggen The generator function for error message, creating a message based on the result of invokee
           * @return A parser that fails if it succeeds, with the given generator used to produce an unexpected message
           */
-        def unexpected(msggen: A => String): Parsley[Nothing] = new Parsley(new deepembedding.FastUnexpected(p.internal, msggen))
+        def unexpected(msggen: A => String): Parsley[Nothing] = new Parsley(new deepembedding.FastUnexpected(con(p).internal, msggen))
     }
 }
