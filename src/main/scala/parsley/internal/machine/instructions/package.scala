@@ -43,6 +43,6 @@ package object instructions
         for (i <- 0 until instrs.length) {
             if (instrs(i).isInstanceOf[Stateful]) buff += i
         }
-        buff.toArray
+        buff.toShrunkenArray
     }
 }
