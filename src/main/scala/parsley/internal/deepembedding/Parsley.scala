@@ -59,20 +59,24 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
         }
         else result(())
     }
-    final private def fix(implicit seen: Set[Parsley[_]], sub: SubMap, label: Option[String]): Parsley[A] = {
+    final private def fix(implicit seen: Set[Parsley[_]], sub: SubMap, recs: RecMap, label: Option[String]): Parsley[A] = {
         // We use the seen set here to prevent cascading sub-routines
         val wasSeen = seen(this)
         val self = sub(label, this)
-        if (wasSeen && (self eq this)) Rec(this, label)
+        if (wasSeen && (self eq this)) recs(label, this)
         else if (wasSeen) this
         else self
     }
     final private [deepembedding] def optimised[Cont[_, +_]: ContOps, A_ >: A](implicit seen: Set[Parsley[_]],
-                                                                                        sub: SubMap,
+                                                                                        sub: SubMap, recs: RecMap,
                                                                                         label: Option[String]): Cont[Unit, Parsley[A_]] = {
         val fixed = this.fix
+        val _seen = seen // Not needed in Scala 3, but really?!
         if (fixed.processed) result(fixed.optimise)
-        else for (p <- fixed.preprocess(implicitly[ContOps[Cont]], seen + this, sub, label)) yield p.optimise
+        else {
+            implicit val seen: Set[Parsley[_]] = _seen + this
+            for (p <- fixed.preprocess) yield p.optimise
+        }
     }
     final private [deepembedding] var safe = true
     final private var cps = false
@@ -101,6 +105,7 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
             implicit val label: Option[String] = None
             implicit val letFinderState: LetFinderState = new LetFinderState
             implicit lazy val subMap: SubMap = new SubMap(letFinderState.lets)
+            implicit lazy val recMap: RecMap = new RecMap(letFinderState.recs)
             findLets >> {
                 optimised.flatMap(p => generateCalleeSave(p.codeGen, allocateRegisters(letFinderState.usedRegs)))
             }
@@ -156,7 +161,7 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     // Abstracts
     // Sub-tree optimisation and Rec calculation - Bottom-up
     protected def preprocess[Cont[_, +_]: ContOps, A_ >: A](implicit seen: Set[Parsley[_]],
-                                                            sub: SubMap,
+                                                            sub: SubMap, recs: RecMap,
                                                             label: Option[String]): Cont[Unit, Parsley[A_]]
     // Let-finder recursion
     protected def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState, label: Option[String]): Cont[Unit, Unit]
@@ -202,7 +207,7 @@ private [deepembedding] trait UsesRegister {
 }
 
 // Internals
-private [parsley] class CodeGenState {
+private [deepembedding] class CodeGenState {
     private var current = 0
     private val queue = mutable.ListBuffer.empty[Subroutine[_]]
     private val map = mutable.Map.empty[Subroutine[_], Int]
@@ -223,7 +228,7 @@ private [parsley] class CodeGenState {
     def subsExist: Boolean = map.nonEmpty
 }
 
-private [parsley] class LetFinderState {
+private [deepembedding] class LetFinderState {
     private val _recs = mutable.Set.empty[Parsley[_]]
     private val _preds = mutable.Map.empty[(Option[String], Parsley[_]), Int]
     private val _usedRegs = mutable.Set.empty[Reg[_]]
@@ -233,20 +238,27 @@ private [parsley] class LetFinderState {
     def addReg(reg: Reg[_]): Unit = _usedRegs += reg
     def notProcessedBefore(p: Parsley[_], label: Option[String]): Boolean = _preds((label, p)) == 1
 
-    def lets: Iterable[(Option[String], Parsley[_])] = _preds.toSeq.collect {
+    def lets: Iterable[(Option[String], Parsley[_])] = _preds.toSeq.view.collect {
         case (k@(label, p), refs) if refs >= 2 && !_recs(p) => k
+    }
+
+    def recs: Iterable[(Option[String], Parsley[_])] = _preds.toSeq.view.collect {
+        case (k@(label, p), _) if _recs(p) => k
     }
 
     def usedRegs: Set[Reg[_]] = _usedRegs.toSet
 }
 
-private [parsley] class SubMap(subs: Iterable[(Option[String], Parsley[_])]) {
-    private val subMap: Map[(Option[String], Parsley[_]), Subroutine[_]] = subs.map {
-        case k@(label, p) => k -> new Subroutine(p, label)
+private [deepembedding] abstract class ParserMap[V <: Parsley[_]](kvs: Iterable[(Option[String], Parsley[_])], make: (Parsley[_], Option[String]) => V) {
+    protected val map: Map[(Option[String], Parsley[_]), V] = kvs.map {
+        case k@(label, p) => k -> make(p, label)
     }.toMap
+}
 
-    def apply[A](label: Option[String], p: Parsley[A]): Parsley[A] = subMap.getOrElse((label, p), p).asInstanceOf[Parsley[A]]
-    // $COVERAGE-OFF$
-    override def toString: String = subMap.toString
-    // $COVERAGE-ON$
+private [deepembedding] class SubMap(subs: Iterable[(Option[String], Parsley[_])]) extends ParserMap(subs, (p, label) => new Subroutine(p, label)) {
+    def apply[A](label: Option[String], p: Parsley[A]): Parsley[A] = map.getOrElse((label, p), p).asInstanceOf[Parsley[A]]
+}
+
+private [deepembedding] class RecMap(recs: Iterable[(Option[String], Parsley[_])]) extends ParserMap(recs, (p, label) => Rec(p, label)) {
+    def apply[A](label: Option[String], p: Parsley[A]): Parsley[A] = map((label, p)).asInstanceOf[Parsley[A]]
 }

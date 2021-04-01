@@ -50,7 +50,7 @@ private [parsley] final class Subroutine[A](var p: Parsley[A], val expected: Opt
         throw new Exception("Subroutines cannot exist during let detection")
     }
     // $COVERAGE-ON$
-    override def preprocess[Cont[_, +_]: ContOps, A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap,
+    override def preprocess[Cont[_, +_]: ContOps, A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap, recs: RecMap,
                                                            label: Option[String]): Cont[Unit, Parsley[A_]] = {
         // The idea here is that the label itself was already established by letFinding, so we just use expected which should be equal to label
         assert(expected == label, "letFinding should have already set the expected label for a subroutine")
@@ -116,13 +116,19 @@ private [parsley] final class ErrorExplain[A](_p: =>Parsley[A], reason: String)
 
 private [parsley] final class UnsafeErrorRelabel[+A](_p: =>Parsley[A], msg: String) extends Parsley[A] {
     lazy val p = _p
-    override def preprocess[Cont[_, +_]: ContOps, A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap,
+    override def preprocess[Cont[_, +_]: ContOps, A_ >: A](implicit seen: Set[Parsley[_]], sub: SubMap, recs: RecMap,
                                                            label: Option[String]): Cont[Unit, Parsley[A_]] = {
-        if (label.isEmpty) p.optimised(implicitly[ContOps[Cont]], seen, sub, Some(msg))
+        if (label.isEmpty) {
+            implicit val label: Option[String] = Some(msg)
+            p.optimised
+        }
         else p.optimised
     }
     override def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState, label: Option[String]): Cont[Unit, Unit] = {
-        if (label.isEmpty) p.findLets(implicitly[ContOps[Cont]], seen, state, Some(msg))
+        if (label.isEmpty) {
+            implicit val label: Option[String] = Some(msg)
+            p.findLets
+        }
         else p.findLets
     }
     // $COVERAGE-OFF$

@@ -51,6 +51,8 @@ private [internal] final class DynCall[-A](f: A => Array[Instr]) extends Instr {
 private [internal] final class Call(_instrs: =>Array[Instr]) extends Instr {
     private [Call] lazy val (instrs, pindices) = {
         val is = _instrs
+        //println("Call evaluated")
+        //println(pretty(is))
         (is, statefulIndices(is))
     }
 
