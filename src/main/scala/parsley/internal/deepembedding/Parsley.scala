@@ -42,8 +42,8 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     }
 
     // Internals
-    final private [deepembedding] def findLets[Cont[_, +_]]
-        (implicit ops: ContOps[Cont, Unit], seen: Set[Parsley[_]], state: LetFinderState, label: Option[String]): Cont[Unit, Unit] = {
+    final private [deepembedding] def findLets[Cont[_, +_], R]
+        (implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState, label: Option[String]): Cont[R, Unit] = {
         state.addPred(this, label)
         if (seen(this)) result(state.addRec(this))
         else if (state.notProcessedBefore(this, label)) {
@@ -67,9 +67,9 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
         else if (wasSeen) this
         else self
     }
-    final private [deepembedding] def optimised[Cont[_, +_], A_ >: A](implicit ops: ContOps[Cont, Unit], seen: Set[Parsley[_]],
+    final private [deepembedding] def optimised[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]],
                                                                                         sub: SubMap, recs: RecMap,
-                                                                                        label: Option[String]): Cont[Unit, Parsley[A_]] = {
+                                                                                        label: Option[String]): Cont[R, Parsley[A_]] = {
         val fixed = this.applyLets
         val _seen = seen // Not needed in Scala 3, but really?!
         if (fixed.processed) result(fixed.optimise)
@@ -173,16 +173,16 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
 
     // Abstracts
     // Sub-tree optimisation and Rec calculation - Bottom-up
-    protected def preprocess[Cont[_, +_], A_ >: A](implicit ops: ContOps[Cont, Unit], seen: Set[Parsley[_]],
+    protected def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]],
                                                                      sub: SubMap, recs: RecMap,
-                                                                     label: Option[String]): Cont[Unit, Parsley[A_]]
+                                                                     label: Option[String]): Cont[R, Parsley[A_]]
     // Let-finder recursion
-    protected def findLetsAux[Cont[_, +_]](implicit ops: ContOps[Cont, Unit], seen: Set[Parsley[_]], state: LetFinderState, label: Option[String]): Cont[Unit, Unit]
+    protected def findLetsAux[Cont[_, +_], R](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState, label: Option[String]): Cont[R, Unit]
     // Optimisation - Bottom-up
     protected def optimise: Parsley[A] = this
     // Peephole optimisation and code generation - Top-down
-    private [parsley] def codeGen[Cont[_, +_]](implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit]
-    private [parsley] def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont, String]): Cont[String, String]
+    private [parsley] def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit]
+    private [parsley] def prettyASTAux[Cont[_, +_], R](implicit ops: ContOps[Cont, R]): Cont[R, String]
 }
 private [deepembedding] object Parsley {
     private def applyAllocation(regs: Set[Reg[_]], freeSlots: Iterable[Int]): List[Int] = {

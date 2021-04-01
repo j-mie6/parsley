@@ -7,32 +7,32 @@ import scala.language.higherKinds
 
 // Core Embedding
 private [parsley] abstract class Singleton[A](pretty: String, instr: =>instructions.Instr) extends Parsley[A] {
-    final override def findLetsAux[Cont[_, +_]]
-        (implicit ops: ContOps[Cont, Unit], seen: Set[Parsley[_]], state: LetFinderState, label: Option[String]): Cont[Unit, Unit] = result(())
-    final override def preprocess[Cont[_, +_], A_ >: A](implicit ops: ContOps[Cont, Unit], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap,
-                                                                 label: Option[String]): Cont[Unit, Parsley[A_]] = result(this)
-    final override def codeGen[Cont[_, +_]](implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
+    final override def findLetsAux[Cont[_, +_], R]
+        (implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState, label: Option[String]): Cont[R, Unit] = result(())
+    final override def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap,
+                                                                 label: Option[String]): Cont[R, Parsley[A_]] = result(this)
+    final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         result(instrs += instr)
     }
     // $COVERAGE-OFF$
-    final override def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont, String]): Cont[String, String] = result(pretty)
+    final override def prettyASTAux[Cont[_, +_], R](implicit ops: ContOps[Cont, R]): Cont[R, String] = result(pretty)
     // $COVERAGE-ON$
 }
 
 private [deepembedding] abstract class SingletonExpect[A](pretty: String, builder: Option[String] => SingletonExpect[A], instr: instructions.Instr)
     extends Parsley[A] {
-    final override def findLetsAux[Cont[_, +_]]
-        (implicit ops: ContOps[Cont, Unit], seen: Set[Parsley[_]], state: LetFinderState, label: Option[String]): Cont[Unit, Unit] = result(())
-    final override def preprocess[Cont[_, +_], A_ >: A](implicit ops: ContOps[Cont, Unit], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap,
-                                                                 label: Option[String]): Cont[Unit, Parsley[A]] = {
+    final override def findLetsAux[Cont[_, +_], R]
+        (implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState, label: Option[String]): Cont[R, Unit] = result(())
+    final override def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap,
+                                                                 label: Option[String]): Cont[R, Parsley[A]] = {
         if (label.isEmpty) result(this)
         else result(builder(label))
     }
-    final override def codeGen[Cont[_, +_]](implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
+    final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         result(instrs += instr)
     }
     // $COVERAGE-OFF$
-    final override def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont, String]): Cont[String, String] = result(pretty)
+    final override def prettyASTAux[Cont[_, +_], R](implicit ops: ContOps[Cont, R]): Cont[R, String] = result(pretty)
     // $COVERAGE-ON$
 }
 
@@ -41,10 +41,10 @@ private [deepembedding] abstract class Unary[A, B](__p: =>Parsley[A])(pretty: St
     private [deepembedding] var p: Parsley[A] = _
     protected val childRepeats: Int = 1
     protected val numInstrs: Int
-    final override def findLetsAux[Cont[_, +_]]
-        (implicit ops: ContOps[Cont, Unit], seen: Set[Parsley[_]], state: LetFinderState, label: Option[String]): Cont[Unit,Unit] = _p.findLets
-    override def preprocess[Cont[_, +_], B_ >: B](implicit ops: ContOps[Cont, Unit], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap,
-                                                           label: Option[String]): Cont[Unit, Parsley[B_]] =
+    final override def findLetsAux[Cont[_, +_], R]
+        (implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState, label: Option[String]): Cont[R,Unit] = _p.findLets
+    override def preprocess[Cont[_, +_], R, B_ >: B](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap,
+                                                           label: Option[String]): Cont[R, Parsley[B_]] =
         for (p <- _p.optimised) yield empty(label).ready(p)
     private [deepembedding] def ready(p: Parsley[A]): this.type = {
         processed = true
@@ -53,7 +53,7 @@ private [deepembedding] abstract class Unary[A, B](__p: =>Parsley[A])(pretty: St
         this
     }
     // $COVERAGE-OFF$
-    final override def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont, String]): Cont[String,String] = for (c <- p.prettyASTAux) yield pretty(c)
+    final override def prettyASTAux[Cont[_, +_], R](implicit ops: ContOps[Cont, R]): Cont[R, String] = for (c <- p.prettyASTAux) yield pretty(c)
     // $COVERAGE-ON$
 }
 
@@ -66,10 +66,10 @@ private [deepembedding] abstract class Binary[A, B, C](__left: =>Parsley[A], __r
     protected val numInstrs: Int
     protected val leftRepeats: Int = 1
     protected val rightRepeats: Int = 1
-    final override def findLetsAux[Cont[_, +_]]
-        (implicit ops: ContOps[Cont, Unit], seen: Set[Parsley[_]], state: LetFinderState, label: Option[String]): Cont[Unit,Unit] = _left.findLets >> _right.findLets
-    final override def preprocess[Cont[_, +_], C_ >: C](implicit ops: ContOps[Cont, Unit], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap,
-                                                                 label: Option[String]): Cont[Unit, Parsley[C_]] =
+    final override def findLetsAux[Cont[_, +_], R]
+        (implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState, label: Option[String]): Cont[R,Unit] = _left.findLets >> _right.findLets
+    final override def preprocess[Cont[_, +_], R, C_ >: C](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap,
+                                                                 label: Option[String]): Cont[R, Parsley[C_]] =
         for (left <- _left.optimised; right <- _right.optimised) yield {
             empty.ready(left, right)
         }
@@ -81,7 +81,7 @@ private [deepembedding] abstract class Binary[A, B, C](__left: =>Parsley[A], __r
         this
     }
     // $COVERAGE-OFF$
-    final override def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont, String]): Cont[String,String] = {
+    final override def prettyASTAux[Cont[_, +_], R](implicit ops: ContOps[Cont, R]): Cont[R, String] = {
         for (l <- left.prettyASTAux; r <- right.prettyASTAux) yield pretty(l, r)
     }
     // $COVERAGE-ON$
@@ -96,12 +96,12 @@ private [deepembedding] abstract class Ternary[A, B, C, D](__first: =>Parsley[A]
     private [deepembedding] var second: Parsley[B] = _
     private [deepembedding] var third: Parsley[C] = _
     protected val numInstrs: Int
-    final override def findLetsAux[Cont[_, +_]]
-        (implicit ops: ContOps[Cont, Unit], seen: Set[Parsley[_]], state: LetFinderState, label: Option[String]): Cont[Unit, Unit] = {
+    final override def findLetsAux[Cont[_, +_], R]
+        (implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState, label: Option[String]): Cont[R, Unit] = {
         _first.findLets >> _second.findLets >> _third.findLets
     }
-    final override def preprocess[Cont[_, +_], D_ >: D](implicit ops: ContOps[Cont, Unit], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap,
-                                                                 label: Option[String]): Cont[Unit, Parsley[D_]] =
+    final override def preprocess[Cont[_, +_], R, D_ >: D](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap,
+                                                                 label: Option[String]): Cont[R, Parsley[D_]] =
         for (first <- _first.optimised; second <- _second.optimised; third <- _third.optimised) yield {
             empty.ready(first, second, third)
         }
@@ -114,7 +114,7 @@ private [deepembedding] abstract class Ternary[A, B, C, D](__first: =>Parsley[A]
         this
     }
     // $COVERAGE-OFF$
-    final override def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont, String]): Cont[String, String] =
+    final override def prettyASTAux[Cont[_, +_], R](implicit ops: ContOps[Cont, R]): Cont[R, String] =
         for (f <- first.prettyASTAux; s <- second.prettyASTAux; t <- third.prettyASTAux) yield pretty(f, s, t)
     // $COVERAGE-ON$
 }

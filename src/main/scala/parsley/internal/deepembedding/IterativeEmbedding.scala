@@ -15,7 +15,7 @@ private [deepembedding] sealed abstract class ManyLike[A, B](_p: =>Parsley[A], n
         case _: MZero => new Pure(unit)
         case _ => this
     }
-    final override def codeGen[Cont[_, +_]](implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
+    final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val body = state.freshLabel()
         val handler = state.freshLabel()
         instrs += new instructions.InputCheck(handler)
@@ -39,7 +39,7 @@ private [deepembedding] sealed abstract class ChainLike[A](_p: =>Parsley[A], _op
 private [parsley] final class ChainPost[A](_p: =>Parsley[A], _op: =>Parsley[A => A])
     extends ChainLike[A](_p, _op, (l, r) => s"chainPost($l, $r)", ChainPost.empty) {
     override val numInstrs = 2
-    override def codeGen[Cont[_, +_]](implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
+    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val body = state.freshLabel()
         val handler = state.freshLabel()
         left.codeGen >> {
@@ -55,7 +55,7 @@ private [parsley] final class ChainPost[A](_p: =>Parsley[A], _op: =>Parsley[A =>
 private [parsley] final class ChainPre[A](_p: =>Parsley[A], _op: =>Parsley[A => A])
     extends ChainLike[A](_p, _op, (l, r) => s"chainPre($r, $l)", ChainPre.empty) {
     override val numInstrs = 3
-    override def codeGen[Cont[_, +_]](implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
+    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val body = state.freshLabel()
         val handler = state.freshLabel()
         instrs += new instructions.InputCheck(handler)
@@ -71,7 +71,7 @@ private [parsley] final class ChainPre[A](_p: =>Parsley[A], _op: =>Parsley[A => 
 private [parsley] final class Chainl[A, B](_init: Parsley[B], _p: =>Parsley[A], _op: =>Parsley[(B, A) => B])
     extends Ternary[B, A, (B, A) => B, B](_init, _p, _op)((f, s, t) => s"chainl1($s, $t)", Chainl.empty) {
     override val numInstrs = 2
-    override def codeGen[Cont[_, +_]](implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
+    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val body = state.freshLabel()
         val handler = state.freshLabel()
         first.codeGen >> {
@@ -88,7 +88,7 @@ private [parsley] final class Chainl[A, B](_init: Parsley[B], _p: =>Parsley[A], 
 private [parsley] final class Chainr[A, B](_p: =>Parsley[A], _op: =>Parsley[(A, B) => B], private [Chainr] val wrap: A => B)
     extends Binary[A, (A, B) => B, B](_p, _op)((l, r) => s"chainr1($l, $r)", Chainr.empty(wrap)) {
     override val numInstrs = 3
-    override def codeGen[Cont[_, +_]](implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit]= {
+    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit]= {
         val body = state.freshLabel()
         val handler = state.freshLabel()
         instrs += new instructions.InputCheck(handler)
@@ -105,7 +105,7 @@ private [parsley] final class Chainr[A, B](_p: =>Parsley[A], _op: =>Parsley[(A, 
 private [parsley] final class SepEndBy1[A, B](_p: =>Parsley[A], _sep: =>Parsley[B])
     extends Binary[A, B, List[A]](_p, _sep)((l, r) => s"sepEndBy1($r, $l)", SepEndBy1.empty) {
     override val numInstrs = 3
-    override def codeGen[Cont[_, +_]](implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
+    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val body = state.freshLabel()
         val handler = state.freshLabel()
         instrs += new instructions.InputCheck(handler)
@@ -121,7 +121,7 @@ private [parsley] final class SepEndBy1[A, B](_p: =>Parsley[A], _sep: =>Parsley[
 }
 private [parsley] final class ManyUntil[A](_body: =>Parsley[Any]) extends Unary[Any, List[A]](_body)(c => s"manyUntil($c)", _ => ManyUntil.empty) {
     override val numInstrs = 2
-    override def codeGen[Cont[_, +_]](implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
+    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val start = state.freshLabel()
         val loop = state.freshLabel()
         instrs += new instructions.PushHandler(loop)

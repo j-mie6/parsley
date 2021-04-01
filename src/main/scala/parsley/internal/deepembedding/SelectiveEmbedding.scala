@@ -12,7 +12,7 @@ private [deepembedding] sealed abstract class BranchLike[A, B, C, D](_b: =>Parsl
                                                                      instr: Int => instructions.Instr, finaliser: Option[instructions.Instr])
     extends Ternary[A, B, C, D](_b, _p, _q)(pretty, empty) {
     final override val numInstrs = 2
-    final override def codeGen[Cont[_, +_]](implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
+    final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val toSecond = state.freshLabel()
         val end = state.freshLabel()
         first.codeGen >> {
@@ -61,7 +61,7 @@ private [deepembedding] sealed abstract class FilterLike[A, B](_p: =>Parsley[A],
         case z: MZero => z
         case _ => this
     }
-    final override def codeGen[Cont[_, +_]](implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = p.codeGen |> (instrs += instr)
+    final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = p.codeGen |> (instrs += instr)
 }
 private [parsley] final class FastFail[A](_p: =>Parsley[A], msggen: A => String)
     extends FilterLike[A, Nothing](_p, c => s"$c ! ?", _ => FastFail.empty(msggen),
