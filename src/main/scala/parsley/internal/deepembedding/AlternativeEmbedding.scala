@@ -27,7 +27,7 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
         case _ => this
     }
     // TODO: Refactor
-    override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = tablify(this, Nil) match {
+    override def codeGen[Cont[_, +_]](implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = tablify(this, Nil) match {
         // If the tablified list is single element, that implies that this should be generated as normal!
         case _::Nil => left match {
             case Attempt(u) => right match {
@@ -109,8 +109,8 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
                 }
             }
     }
-    def codeGenRoots[Cont[_, +_]: ContOps](roots: List[List[Parsley[_]]], ls: List[Int], end: Int)
-                                 (implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = roots match {
+    def codeGenRoots[Cont[_, +_]](roots: List[List[Parsley[_]]], ls: List[Int], end: Int)
+                                 (implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = roots match {
         case root::roots_ =>
             instrs += new instructions.Label(ls.head)
             codeGenAlternatives(root) >> {
@@ -119,8 +119,8 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
             }
         case Nil => result(())
     }
-    def codeGenAlternatives[Cont[_, +_]: ContOps](alts: List[Parsley[_]])
-                                        (implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = (alts: @unchecked) match {
+    def codeGenAlternatives[Cont[_, +_]](alts: List[Parsley[_]])
+                                        (implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = (alts: @unchecked) match {
         case alt::Nil => alt.codeGen
         case Attempt(alt)::alts_ =>
             val handler = state.freshLabel()

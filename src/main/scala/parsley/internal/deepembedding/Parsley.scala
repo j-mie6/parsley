@@ -28,7 +28,7 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     final protected type V = Any
 
     // $COVERAGE-OFF$
-    final private [parsley] def prettyAST: String = {force(); safeCall((g: GenOps) => perform(prettyASTAux(g))(g))}
+    final private [parsley] def prettyAST: String = {force(); safeCall((g: GenOps[String]) => perform(prettyASTAux(g))(g))}
     // $COVERAGE-ON$
 
     final def unsafe(): Unit = safe = false
@@ -42,8 +42,8 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     }
 
     // Internals
-    final private [deepembedding] def findLets[Cont[_, +_]: ContOps]
-        (implicit seen: Set[Parsley[_]], state: LetFinderState, label: Option[String]): Cont[Unit, Unit] = {
+    final private [deepembedding] def findLets[Cont[_, +_]]
+        (implicit ops: ContOps[Cont, Unit], seen: Set[Parsley[_]], state: LetFinderState, label: Option[String]): Cont[Unit, Unit] = {
         state.addPred(this, label)
         if (seen(this)) result(state.addRec(this))
         else if (state.notProcessedBefore(this, label)) {
@@ -52,14 +52,14 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
                 case _ =>
             }
 
-            try findLetsAux(implicitly[ContOps[Cont]], seen + this, state, label)
+            try findLetsAux(ops, seen + this, state, label)
             catch {
                 case npe: NullPointerException => throw new BadLazinessException
             }
         }
         else result(())
     }
-    final private def fix(implicit seen: Set[Parsley[_]], sub: SubMap, recs: RecMap, label: Option[String]): Parsley[A] = {
+    final private def applyLets(implicit seen: Set[Parsley[_]], sub: SubMap, recs: RecMap, label: Option[String]): Parsley[A] = {
         // We use the seen set here to prevent cascading sub-routines
         val wasSeen = seen(this)
         val self = sub(label, this)
@@ -67,10 +67,10 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
         else if (wasSeen) this
         else self
     }
-    final private [deepembedding] def optimised[Cont[_, +_]: ContOps, A_ >: A](implicit seen: Set[Parsley[_]],
+    final private [deepembedding] def optimised[Cont[_, +_], A_ >: A](implicit ops: ContOps[Cont, Unit], seen: Set[Parsley[_]],
                                                                                         sub: SubMap, recs: RecMap,
                                                                                         label: Option[String]): Cont[Unit, Parsley[A_]] = {
-        val fixed = this.fix
+        val fixed = this.applyLets
         val _seen = seen // Not needed in Scala 3, but really?!
         if (fixed.processed) result(fixed.optimise)
         else {
@@ -84,8 +84,8 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     final private [deepembedding] var processed = false
     final private var calleeSaveNeeded = false
 
-    final private def generateCalleeSave[Cont[_, +_]: ContOps, R](bodyGen: =>Cont[R, Unit], allocatedRegs: List[Int])
-                                                                 (implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    final private def generateCalleeSave[Cont[_, +_], R](bodyGen: =>Cont[R, Unit], allocatedRegs: List[Int])
+                                                        (implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         if (calleeSaveNeeded && allocatedRegs.nonEmpty) {
             val end = state.freshLabel()
             val calleeSave = state.freshLabel()
@@ -99,17 +99,27 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
         else bodyGen
     }
 
-    final private def pipeline[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Unit = {
+    final private def pipeline[Cont[_, +_]](implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer, state: CodeGenState): Unit = {
         perform {
             implicit val seenSet: Set[Parsley[_]] = Set.empty
             implicit val label: Option[String] = None
             implicit val letFinderState: LetFinderState = new LetFinderState
             implicit lazy val subMap: SubMap = new SubMap(letFinderState.lets)
             implicit lazy val recMap: RecMap = new RecMap(letFinderState.recs)
-            findLets >> {
-                optimised.flatMap(p => generateCalleeSave(p.codeGen, allocateRegisters(letFinderState.usedRegs)))
-            }
+            findLets >> postLetFinding()
         }
+    }
+
+    final private def postLetFinding[Cont[_, +_]]()(implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer, state: CodeGenState,
+                                                                      seen: Set[Parsley[_]], sub: SubMap, recs: RecMap,
+                                                                      letFinderState: LetFinderState,
+                                                                      label: Option[String]): Cont[Unit, Unit] = {
+        optimised.flatMap(p => generateCalleeSave(p.codeGen, allocateRegisters(letFinderState.usedRegs))) |> {
+            finaliseSubs()
+        }
+    }
+
+    final private def finaliseSubs[Cont[_, +_]]()(implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer, state: CodeGenState): Unit = {
         if (state.subsExist) {
             val end = state.freshLabel()
             instrs += new instructions.Jump(end)
@@ -123,12 +133,15 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
         }
     }
 
-    final private def computeInstrs(ops: GenOps): Array[Instr] = {
+    final private def computeInstrs(ops: GenOps[Unit]): Array[Instr] = {
         val instrs: InstrBuffer = new ResizableArray()
         val state = new CodeGenState
 
         pipeline(ops, instrs, state)
+        finaliseInstrs(instrs, state)
+    }
 
+    final private def finaliseInstrs(instrs: InstrBuffer, state: CodeGenState): Array[Instr] = {
         @tailrec def findLabels(instrs: Array[Instr], labels: Array[Int], n: Int, i: Int, off: Int): Int = if (i + off < n) instrs(i + off) match {
             case label: Label =>
                 instrs(i + off) = null
@@ -151,7 +164,7 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
         instrs_
     }
 
-    final private [parsley] lazy val instrs: Array[Instr] = if (cps) computeInstrs(Cont.ops.asInstanceOf[GenOps]) else safeCall(computeInstrs(_))
+    final private [parsley] lazy val instrs: Array[Instr] = if (cps) computeInstrs(Cont.ops.asInstanceOf[GenOps[Unit]]) else safeCall(computeInstrs(_))
     final private lazy val pindices: Array[Int] = instructions.statefulIndices(instrs)
     final private [parsley] def threadSafeInstrs: Array[Instr] = instructions.stateSafeCopy(instrs, pindices)
 
@@ -160,16 +173,16 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
 
     // Abstracts
     // Sub-tree optimisation and Rec calculation - Bottom-up
-    protected def preprocess[Cont[_, +_]: ContOps, A_ >: A](implicit seen: Set[Parsley[_]],
-                                                            sub: SubMap, recs: RecMap,
-                                                            label: Option[String]): Cont[Unit, Parsley[A_]]
+    protected def preprocess[Cont[_, +_], A_ >: A](implicit ops: ContOps[Cont, Unit], seen: Set[Parsley[_]],
+                                                                     sub: SubMap, recs: RecMap,
+                                                                     label: Option[String]): Cont[Unit, Parsley[A_]]
     // Let-finder recursion
-    protected def findLetsAux[Cont[_, +_]: ContOps](implicit seen: Set[Parsley[_]], state: LetFinderState, label: Option[String]): Cont[Unit, Unit]
+    protected def findLetsAux[Cont[_, +_]](implicit ops: ContOps[Cont, Unit], seen: Set[Parsley[_]], state: LetFinderState, label: Option[String]): Cont[Unit, Unit]
     // Optimisation - Bottom-up
     protected def optimise: Parsley[A] = this
     // Peephole optimisation and code generation - Top-down
-    private [parsley] def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit]
-    private [parsley] def prettyASTAux[Cont[_, +_]: ContOps]: Cont[String, String]
+    private [parsley] def codeGen[Cont[_, +_]](implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit]
+    private [parsley] def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont, String]): Cont[String, String]
 }
 private [deepembedding] object Parsley {
     private def applyAllocation(regs: Set[Reg[_]], freeSlots: Iterable[Int]): List[Int] = {
