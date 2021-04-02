@@ -41,12 +41,14 @@ class InternalTests extends ParsleyTest {
         q.parse("a123b123c") should be (Success('3'))
     }
 
-    they should "function properly when a recursion boundary is inside" in {
+    // TODO: While this test works, exposing calls inner instructions is super dodgy.
+    // This test was broken when calls were correctly factored out!
+    /*they should "function properly when a recursion boundary is inside" in {
         lazy val q: Parsley[Unit] = (p *> p) <|> unit
         lazy val p: Parsley[Unit] = '(' *> q <* ')'
-        q.internal.instrs.count(_ == instructions.Return) shouldBe 1
+        q.internal.instrs(0).asInstanceOf[instructions.Call].instrs.count(_ == instructions.Return) shouldBe 1
         q.parse("(()())()") shouldBe a [Success[_]]
-    }
+    }*/
 
     they should "work in the precedence parser with one op" in {
         val atom = some(digit).map(_.mkString.toInt)

@@ -41,8 +41,17 @@ private [parsley] final class Fail(private [Fail] val msg: String)
 private [parsley] final class Unexpected(private [Unexpected] val msg: String, val expected: Option[String] = None)
     extends SingletonExpect[Nothing](s"unexpected($msg)", new Unexpected(msg, _), new instructions.Unexpected(msg, expected)) with MZero
 
-private [parsley] final class Rec[A](val p: Parsley[A])
-    extends SingletonExpect[A](s"rec $p", _ => new Rec(p), new instructions.Call(p.instrs))
+private [parsley] final class Rec[A, Cont[_, +_]](val p: Parsley[A], recs: RecMap[Cont])(implicit ops: ContOps[Cont, _]) extends Parsley[A] {
+    val call = new instructions.Call(p.computeRecInstrs(recs))
+    final override def findLetsAux[Cont[_, +_], R]
+        (implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState, label: Option[String]): Cont[R, Unit] = result(())
+    override def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap[Cont],
+                                                              label: Option[String]): Cont[R, Parsley[A]] = result(this)
+    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = result(instrs += call)
+    // $COVERAGE-OFF$
+    override def prettyASTAux[Cont[_, +_], R](implicit ops: ContOps[Cont, R]): Cont[R, String] = result(s"rec $p")
+    // $COVERAGE-ON$
+}
 
 private [parsley] final class Subroutine[A](var p: Parsley[A], val expected: Option[String]) extends Parsley[A] {
     // $COVERAGE-OFF$
@@ -50,7 +59,7 @@ private [parsley] final class Subroutine[A](var p: Parsley[A], val expected: Opt
         throw new Exception("Subroutines cannot exist during let detection")
     }
     // $COVERAGE-ON$
-    override def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap,
+    override def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap[Cont],
                                                            label: Option[String]): Cont[R, Parsley[A_]] = {
         // The idea here is that the label itself was already established by letFinding, so we just use expected which should be equal to label
         assert(expected == label, "letFinding should have already set the expected label for a subroutine")
@@ -116,7 +125,7 @@ private [parsley] final class ErrorExplain[A](_p: =>Parsley[A], reason: String)
 
 private [parsley] final class UnsafeErrorRelabel[+A](_p: =>Parsley[A], msg: String) extends Parsley[A] {
     lazy val p = _p
-    override def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap,
+    override def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap[Cont],
                                                            label: Option[String]): Cont[R, Parsley[A_]] = {
         if (label.isEmpty) {
             implicit val label: Option[String] = Some(msg)
@@ -127,9 +136,9 @@ private [parsley] final class UnsafeErrorRelabel[+A](_p: =>Parsley[A], msg: Stri
     override def findLetsAux[Cont[_, +_], R](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState, label: Option[String]): Cont[R, Unit] = {
         if (label.isEmpty) {
             implicit val label: Option[String] = Some(msg)
-            p.findLets
+            p.findLets()
         }
-        else p.findLets
+        else p.findLets()
     }
     // $COVERAGE-OFF$
     override def optimise: Parsley[A] = throw new Exception("Error relabelling should not be in optimisation!")
@@ -185,8 +194,8 @@ private [deepembedding] object Debug {
 // $COVERAGE-ON$
 
 private [deepembedding] object Rec {
-    def apply[A](p: Parsley[A], expected: Option[String]): Parsley[A] = expected match {
-        case None => new Rec(p)
-        case Some(expected) => ErrorLabel(new Rec(p), expected)
+    def apply[A, Cont[_, +_], R](p: Parsley[A], expected: Option[String], recs: RecMap[Cont])(implicit ops: ContOps[Cont, R]): Parsley[A] = expected match {
+        case None => new Rec(p, recs)
+        case Some(expected) => new Rec(new UnsafeErrorRelabel(p, expected), recs)
     }
 }

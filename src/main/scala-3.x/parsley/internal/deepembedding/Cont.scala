@@ -1,6 +1,6 @@
 package parsley.internal.deepembedding
 
-import scala.language.{higherKinds, reflectiveCalls}
+import scala.language.{higherKinds, reflectiveCalls, implicitConversions}
 import scala.annotation.tailrec
 
 // Trampoline for CPS
@@ -26,8 +26,10 @@ private [deepembedding] abstract class ContOps[Cont[_, +_], R]
     def |>[A, B](c: =>Cont[R, A], x: =>B): Cont[R, B] = map[A, B](c, _ => x)
     // $COVERAGE-ON$
 }
+
 private [deepembedding] object ContOps
 {
+    implicit def rIsPhantom[Cont[_, +_], R](implicit ops: ContOps[Cont, _]): ContOps[Cont, R] = ops.asInstanceOf[ContOps[Cont, R]]
     implicit class ContAdapter[R, A, Cont[_, +_]](c: =>Cont[R, A])(implicit ops: ContOps[Cont, R])
     {
         def map[B](f: A => B): Cont[R, B] = ops.map(c, f)

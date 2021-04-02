@@ -33,7 +33,7 @@ class Lexer(lang: LanguageDef)
             case (BitSetImpl(start), Predicate(letter)) => builder(start, letter)
             case (Predicate(start), BitSetImpl(letter)) => builder(start, letter)
             case (Predicate(start), Predicate(letter)) => builder(start, letter)
-            case _ => attempt((parser.unsafeLabel(name)).guardAgainst {
+            case _ => attempt((parser.label(name)).guardAgainst {
                 case x if illegal(x) => s"unexpected $illegalName $x"
             })
         })
@@ -52,7 +52,7 @@ class Lexer(lang: LanguageDef)
     {
         case BitSetImpl(letter) => lexeme(new Parsley(new deepembedding.Specific("keyword", name, letter, lang.caseSensitive)))
         case Predicate(letter) => lexeme(new Parsley(new deepembedding.Specific("keyword", name, letter, lang.caseSensitive)))
-        case _ => lexeme(attempt(caseString(name) *> notFollowedBy(identLetter).unsafeLabel("end of " + name)))
+        case _ => lexeme(attempt(caseString(name) *> notFollowedBy(identLetter).label("end of " + name)))
     }
 
     private def caseString(name: String): Parsley[String] =
@@ -96,7 +96,7 @@ class Lexer(lang: LanguageDef)
     {
         case BitSetImpl(letter) => new Parsley(new deepembedding.Specific("operator", name, letter, true))
         case Predicate(letter) => new Parsley(new deepembedding.Specific("operator", name, letter, true))
-        case _ => attempt(name *> notFollowedBy(opLetter).unsafeLabel("end of " + name))
+        case _ => attempt(name *> notFollowedBy(opLetter).label("end of " + name))
     }
 
     /**The lexeme parser `maxOp(name)` parses the symbol `name`, but also checks that the `name`
@@ -152,7 +152,7 @@ class Lexer(lang: LanguageDef)
     private lazy val characterChar = (charLetter <|> charEscape).label("literal character")
 
     private val escapeEmpty = '&'
-    private lazy val escapeGap = skipSome(space.unsafeLabel("string gap")) *> '\\'.unsafeLabel("end of string gap")
+    private lazy val escapeGap = skipSome(space.label("string gap")) *> '\\'.unsafeLabel("end of string gap")
     private lazy val stringLetter = letter('"')
     private lazy val stringEscape: Parsley[Option[Char]] =
     {
