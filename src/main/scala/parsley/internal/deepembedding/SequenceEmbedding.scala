@@ -75,8 +75,8 @@ private [parsley] final class <*>[A, B](_pf: =>Parsley[A => B], _px: =>Parsley[A
     }
 }
 
-private [parsley] final class >>=[A, B](_p: =>Parsley[A], private [>>=] val f: A => Parsley[B], val expected: Option[String] = None)
-    extends Unary[A, B](_p)(l => s"($l >>= ?)", >>=.empty(f, _)) {
+private [parsley] final class >>=[A, B](_p: =>Parsley[A], private [>>=] val f: A => Parsley[B])
+    extends Unary[A, B](_p)(l => s"($l >>= ?)", >>=.empty(f)) {
     override val numInstrs = 1
     override def optimise: Parsley[B] = p match {
         // monad law 1: pure x >>= f = f x
@@ -85,7 +85,7 @@ private [parsley] final class >>=[A, B](_p: =>Parsley[A], private [>>=] val f: A
         //case p@CharTok(c) => *>(p, new Rec(() => f(c.asInstanceOf[A]), expected))
         //case p@StringTok(s) => *>(p, new Rec(() => f(s.asInstanceOf[A]), expected))
         // (q *> p) >>= f = q *> (p >>= f)
-        case u *> v => *>(u, >>=(v, f, expected).optimise)
+        case u *> v => *>(u, >>=(v, f).optimise)
         // monad law 3: (m >>= g) >>= f = m >>= (\x -> g x >>= f) Note: this *could* help if g x ended with a pure, since this would be optimised out!
         //case (m: Parsley[T] @unchecked) >>= (g: (T => A) @unchecked) =>
         //    p = m.asInstanceOf[Parsley[A]]
@@ -207,8 +207,8 @@ private [deepembedding] object <*> {
     def unapply[A, B](self: <*>[A, B]): Option[(Parsley[A=>B], Parsley[A])] = Some((self.left, self.right))
 }
 private [deepembedding] object >>= {
-    def empty[A, B](f: A => Parsley[B], expected: Option[String]): >>=[A, B] = new >>=(???, f, expected)
-    def apply[A, B](p: Parsley[A], f: A => Parsley[B], expected: Option[String]): >>=[A, B] = empty(f, expected).ready(p)
+    def empty[A, B](f: A => Parsley[B]): >>=[A, B] = new >>=(???, f)
+    def apply[A, B](p: Parsley[A], f: A => Parsley[B]): >>=[A, B] = empty(f).ready(p)
     def unapply[A, B](self: >>=[A, B]): Option[(Parsley[A], A => Parsley[B])] = Some((self.p, self.f))
 }
 private [deepembedding] object Seq {

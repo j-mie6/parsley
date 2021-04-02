@@ -10,10 +10,10 @@ import scala.collection.mutable
 import scala.language.higherKinds
 
 private [parsley] final class Satisfy(private [Satisfy] val f: Char => Boolean, val expected: Option[String] = None)
-    extends SingletonExpect[Char]("satisfy(f)", new Satisfy(f, _), new instructions.Satisfies(f, expected))
+    extends Singleton[Char]("satisfy(f)", new instructions.Satisfies(f, expected))
 
 private [deepembedding] sealed abstract class ScopedUnary[A, B](_p: =>Parsley[A], name: String, doesNotProduceHints: Boolean,
-                                                                empty: Option[String] => ScopedUnary[A, B], instr: instructions.Instr)
+                                                                empty: =>ScopedUnary[A, B], instr: instructions.Instr)
     extends Unary[A, B](_p)(c => s"$name($c)", empty) {
     final override val numInstrs = 2
     final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
@@ -25,10 +25,10 @@ private [deepembedding] sealed abstract class ScopedUnary[A, B](_p: =>Parsley[A]
         }
     }
 }
-private [parsley] final class Attempt[A](_p: =>Parsley[A]) extends ScopedUnary[A, A](_p, "attempt", false, _ => Attempt.empty, instructions.Attempt)
-private [parsley] final class Look[A](_p: =>Parsley[A]) extends ScopedUnary[A, A](_p, "lookAhead", true, _ => Look.empty, instructions.Look)
-private [parsley] final class NotFollowedBy[A](_p: =>Parsley[A], val expected: Option[String] = None)
-    extends ScopedUnary[A, Unit](_p, "notFollowedBy", true, NotFollowedBy.empty, new instructions.NotFollowedBy(expected)) {
+private [parsley] final class Attempt[A](_p: =>Parsley[A]) extends ScopedUnary[A, A](_p, "attempt", false, Attempt.empty, instructions.Attempt)
+private [parsley] final class Look[A](_p: =>Parsley[A]) extends ScopedUnary[A, A](_p, "lookAhead", true, Look.empty, instructions.Look)
+private [parsley] final class NotFollowedBy[A](_p: =>Parsley[A])
+    extends ScopedUnary[A, Unit](_p, "notFollowedBy", true, NotFollowedBy.empty, instructions.NotFollowedBy) {
     override def optimise: Parsley[Unit] = p match {
         case z: MZero => new Pure(())
         case _ => this
@@ -36,33 +36,29 @@ private [parsley] final class NotFollowedBy[A](_p: =>Parsley[A], val expected: O
 }
 
 private [parsley] final class Fail(private [Fail] val msg: String)
-    extends SingletonExpect[Nothing](s"fail($msg)", _ => new Fail(msg), new instructions.Fail(msg)) with MZero
+    extends Singleton[Nothing](s"fail($msg)", new instructions.Fail(msg)) with MZero
 
-private [parsley] final class Unexpected(private [Unexpected] val msg: String, val expected: Option[String] = None)
-    extends SingletonExpect[Nothing](s"unexpected($msg)", new Unexpected(msg, _), new instructions.Unexpected(msg, expected)) with MZero
+private [parsley] final class Unexpected(private [Unexpected] val msg: String)
+    extends Singleton[Nothing](s"unexpected($msg)", new instructions.Unexpected(msg)) with MZero
 
 private [parsley] final class Rec[A, Cont[_, +_]](val p: Parsley[A], recs: RecMap[Cont])(implicit ops: ContOps[Cont, _]) extends Parsley[A] {
     val call = new instructions.Call(p.computeRecInstrs(recs))
     final override def findLetsAux[Cont[_, +_], R]
-        (implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState, label: Option[String]): Cont[R, Unit] = result(())
-    override def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap[Cont],
-                                                              label: Option[String]): Cont[R, Parsley[A]] = result(this)
+        (implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState): Cont[R, Unit] = result(())
+    override def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap[Cont]): Cont[R, Parsley[A]] = result(this)
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = result(instrs += call)
     // $COVERAGE-OFF$
     override def prettyASTAux[Cont[_, +_], R](implicit ops: ContOps[Cont, R]): Cont[R, String] = result(s"rec $p")
     // $COVERAGE-ON$
 }
 
-private [parsley] final class Subroutine[A](var p: Parsley[A], val expected: Option[String]) extends Parsley[A] {
+private [parsley] final class Subroutine[A](var p: Parsley[A]) extends Parsley[A] {
     // $COVERAGE-OFF$
-    override def findLetsAux[Cont[_, +_], R](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState, label: Option[String]): Cont[R, Unit] = {
+    override def findLetsAux[Cont[_, +_], R](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState): Cont[R, Unit] = {
         throw new Exception("Subroutines cannot exist during let detection")
     }
     // $COVERAGE-ON$
-    override def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap[Cont],
-                                                           label: Option[String]): Cont[R, Parsley[A_]] = {
-        // The idea here is that the label itself was already established by letFinding, so we just use expected which should be equal to label
-        assert(expected == label, "letFinding should have already set the expected label for a subroutine")
+    override def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap[Cont]): Cont[R, Parsley[A_]] = {
         for (p <- this.p.optimised) yield this.ready(p)
     }
     private def ready(p: Parsley[A]): this.type = {
@@ -75,7 +71,7 @@ private [parsley] final class Subroutine[A](var p: Parsley[A], val expected: Opt
         result(instrs += new instructions.GoSub(state.getSubLabel(this)))
     }
     // $COVERAGE-OFF$
-    override def prettyASTAux[Cont[_, +_], R](implicit ops: ContOps[Cont, R]): Cont[R, String] = result(s"Sub($p, $expected)")
+    override def prettyASTAux[Cont[_, +_], R](implicit ops: ContOps[Cont, R]): Cont[R, String] = result(s"Sub($p)")
     // $COVERAGE-ON$
 }
 
@@ -83,7 +79,7 @@ private [parsley] object Line extends Singleton[Int]("line", instructions.Line)
 private [parsley] object Col extends Singleton[Int]("col", instructions.Col)
 private [parsley] final class Get[S](val reg: Reg[S]) extends Singleton[S](s"get($reg)", new instructions.Get(reg.addr)) with UsesRegister
 private [parsley] final class Put[S](val reg: Reg[S], _p: =>Parsley[S])
-    extends Unary[S, Unit](_p)(c => s"put($reg, $c)", _ => Put.empty(reg)) with UsesRegister {
+    extends Unary[S, Unit](_p)(c => s"put($reg, $c)", Put.empty(reg)) with UsesRegister {
     override val numInstrs = 1
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         p.codeGen |>
@@ -92,14 +88,7 @@ private [parsley] final class Put[S](val reg: Reg[S], _p: =>Parsley[S])
 }
 
 private [parsley] final class ErrorLabel[A](_p: =>Parsley[A], label: String)
-    extends Unary[A, A](_p)(c => s"$c.label($label)", expected =>
-        ErrorLabel.empty(expected match {
-            case None => label
-            case Some(e) =>
-                println(s"""WARNING: a label "$label" has been forcibly overriden by an unsafeLabel "$e" that encapsulates it.
-                        |This is likely a mistake: confirm your intent by removing this label!""".stripMargin)
-                e
-        })) {
+    extends Unary[A, A](_p)(c => s"$c.label($label)", ErrorLabel.empty(label)) {
     final override val numInstrs = 2
     final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val handler = state.freshLabel()
@@ -111,7 +100,7 @@ private [parsley] final class ErrorLabel[A](_p: =>Parsley[A], label: String)
     }
 }
 private [parsley] final class ErrorExplain[A](_p: =>Parsley[A], reason: String)
-    extends Unary[A, A](_p)(c => s"$c.explain($reason)", _ => ErrorExplain.empty(reason)) {
+    extends Unary[A, A](_p)(c => s"$c.explain($reason)", ErrorExplain.empty(reason)) {
     final override val numInstrs = 2
     final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val handler = state.freshLabel()
@@ -123,34 +112,9 @@ private [parsley] final class ErrorExplain[A](_p: =>Parsley[A], reason: String)
     }
 }
 
-private [parsley] final class UnsafeErrorRelabel[+A](_p: =>Parsley[A], msg: String) extends Parsley[A] {
-    lazy val p = _p
-    override def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap[Cont],
-                                                           label: Option[String]): Cont[R, Parsley[A_]] = {
-        if (label.isEmpty) {
-            implicit val label: Option[String] = Some(msg)
-            p.optimised
-        }
-        else p.optimised
-    }
-    override def findLetsAux[Cont[_, +_], R](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState, label: Option[String]): Cont[R, Unit] = {
-        if (label.isEmpty) {
-            implicit val label: Option[String] = Some(msg)
-            p.findLets()
-        }
-        else p.findLets()
-    }
-    // $COVERAGE-OFF$
-    override def optimise: Parsley[A] = throw new Exception("Error relabelling should not be in optimisation!")
-    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
-        throw new Exception("Error relabelling should not be in code gen!")
-    }
-    override def prettyASTAux[Cont[_, +_], R](implicit ops: ContOps[Cont, R]): Cont[R, String] = for (c <- p.prettyASTAux) yield s"($c ? $msg)"
-    // $COVERAGE-ON$
-}
 // $COVERAGE-OFF$
 private [parsley] final class Debug[A](_p: =>Parsley[A], name: String, ascii: Boolean, break: Breakpoint)
-    extends Unary[A, A](_p)(identity[String], _ => Debug.empty(name, ascii, break)) {
+    extends Unary[A, A](_p)(identity[String], Debug.empty(name, ascii, break)) {
     override val numInstrs = 2
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val handler = state.freshLabel()
@@ -182,7 +146,7 @@ private [deepembedding] object ErrorExplain {
     def apply[A](p: Parsley[A], reason: String): ErrorExplain[A] = empty(reason).ready(p)
 }
 private [deepembedding] object NotFollowedBy {
-    def empty[A](expected: Option[String]): NotFollowedBy[A] = new NotFollowedBy(???, expected)
+    def empty[A]: NotFollowedBy[A] = new NotFollowedBy(???)
 }
 private [deepembedding] object Put {
     def empty[S](r: Reg[S]): Put[S] = new Put(r, ???)
@@ -192,10 +156,3 @@ private [deepembedding] object Debug {
     def empty[A](name: String, ascii: Boolean, break: Breakpoint): Debug[A] = new Debug(???, name, ascii, break)
 }
 // $COVERAGE-ON$
-
-private [deepembedding] object Rec {
-    def apply[A, Cont[_, +_], R](p: Parsley[A], expected: Option[String], recs: RecMap[Cont])(implicit ops: ContOps[Cont, R]): Parsley[A] = expected match {
-        case None => new Rec(p, recs)
-        case Some(expected) => new Rec(new UnsafeErrorRelabel(p, expected), recs)
-    }
-}

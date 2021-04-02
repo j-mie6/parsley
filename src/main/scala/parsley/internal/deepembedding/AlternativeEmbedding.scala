@@ -16,9 +16,9 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
         // left catch law: pure x <|> p = pure x
         case (u: Pure[B @unchecked], _) => u
         // alternative law: empty <|> p = p
-        case (e: Empty, v) if e.expected.isEmpty => v
+        case (Empty, v) => v
         // alternative law: p <|> empty = p
-        case (u: Parsley[B @unchecked], e: Empty) if e.expected.isEmpty => u
+        case (u: Parsley[B @unchecked], Empty) => u
         // associative law: (u <|> v) <|> w = u <|> (v <|> w)
         case ((u: Parsley[T]) <|> (v: Parsley[A @unchecked]), w) =>
             left = u.asInstanceOf[Parsley[A]]
@@ -95,7 +95,7 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
                 instrs += new instructions.Catch(merge) //This instruction is reachable as default - 1
                 instrs += new instructions.Label(default)
                 if (needsDefault) {
-                    instrs += new instructions.Empty(None)
+                    instrs += instructions.Empty
                     instrs += new instructions.Label(merge)
                     instrs += instructions.MergeErrors
                     result(instrs += new instructions.Label(end))
@@ -165,10 +165,10 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
             val (c: Char, expected: ErrorItem, _size: Int) = lead match {
                 case ct@CharTok(d) => (d, ct.expected.fold[ErrorItem](Raw(d))(Desc(_)), 1)
                 case st@StringTok(s) => (s.head, st.expected.fold[ErrorItem](Raw(s))(Desc(_)), s.size)
-                case st@Specific(s) => (s.head, Desc(st.expected.getOrElse(s)), s.size)
-                case op@MaxOp(o) => (o.head, Desc(op.expected.getOrElse(o)), o.size)
-                case sl: StringLiteral => ('"', Desc(sl.expected.getOrElse("string")), 1)
-                case rs: RawStringLiteral => ('"', Desc(rs.expected.getOrElse("string")), 1)
+                case st@Specific(s) => (s.head, Desc(s), s.size)
+                case op@MaxOp(o) => (o.head, Desc(o), o.size)
+                case sl: StringLiteral => ('"', Desc("string"), 1)
+                case RawStringLiteral => ('"', Desc("string"), 1)
             }
             expecteds += expected
             if (roots.contains(c)) {
@@ -183,7 +183,7 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
     }
     @tailrec private def tablable(p: Parsley[_]): Option[Parsley[_]] = p match {
         // CODO: Numeric parsers by leading digit (This one would require changing the foldTablified function a bit)
-        case t@(_: CharTok | _: StringTok | _: Specific | _: StringLiteral | _: RawStringLiteral | _: MaxOp) => Some(t)
+        case t@(_: CharTok | _: StringTok | _: Specific | _: StringLiteral | RawStringLiteral | _: MaxOp) => Some(t)
         case Attempt(t) => tablable(t)
         case (_: Pure[_]) <*> t => tablable(t)
         case Lift2(_, t, _) => tablable(t)
@@ -202,8 +202,7 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
     }
 }
 
-private [parsley] class Empty(val expected: Option[String] = None)
-    extends SingletonExpect[Nothing]("empty", new Empty(_), new instructions.Empty(expected)) with MZero
+private [parsley] object Empty extends Singleton[Nothing]("empty", instructions.Empty) with MZero
 
 private [deepembedding] object <|> {
     def empty[A, B]: A <|> B = new <|>(???, ???)

@@ -50,8 +50,8 @@ private [instructions] trait NumericReader {
     protected final val hexadecimal = subDecimal(16, character.isHexDigit)
 }
 
-private [internal] final class TokenNatural(_expected: Option[String]) extends Instr with NumericReader {
-    private [this] final val expected = Some(Desc(_expected.getOrElse("natural")))
+private [internal] final object TokenNatural extends Instr with NumericReader {
+    private [this] final val expected = Some(Desc("natural"))
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && ctx.nextChar == '0') {
             ctx.fastUncheckedConsumeChars(1)
@@ -77,8 +77,8 @@ private [internal] final class TokenNatural(_expected: Option[String]) extends I
     // $COVERAGE-ON$
 }
 
-private [internal] final class TokenFloat(_expected: Option[String]) extends Instr {
-    private [this] final val expected = Some(Desc(_expected.getOrElse("unsigned float")))
+private [internal] final object TokenFloat extends Instr {
+    private [this] final val expected = Some(Desc("unsigned float"))
     override def apply(ctx: Context): Unit = {
         val initialOffset = ctx.offset
         if (decimal(ctx)) {

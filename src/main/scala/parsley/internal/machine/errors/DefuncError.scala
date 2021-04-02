@@ -65,8 +65,8 @@ private [errors] object BaseError {
         case err: ClassicExpectedError => Some(err.expected)
         case err: ClassicExpectedErrorWithReason => Some(err.expected)
         case err: ClassicUnexpectedError => Some(err.expected)
-        case err: EmptyError => Some(err.expected)
-        case err: EmptyErrorWithReason => Some(err.expected)
+        case err: EmptyError => Some(None)
+        case err: EmptyErrorWithReason => Some(None)
         case _ => None
     }
 }
@@ -104,12 +104,9 @@ private [machine] case class ClassicFancyError(offset: Int, line: Int, col: Int,
         state += msg
     }
 }
-private [machine] case class EmptyError(offset: Int, line: Int, col: Int, expected: Option[ErrorItem]) extends DefuncError with MakesTrivial  {
-    val isExpectedEmpty: Boolean = expected.isEmpty
-    override def makeTrivial(state: TrivialState): Unit = {
-        state.pos_=(line, col)
-        state += expected
-    }
+private [machine] case class EmptyError(offset: Int, line: Int, col: Int) extends DefuncError with MakesTrivial  {
+    val isExpectedEmpty: Boolean = true
+    override def makeTrivial(state: TrivialState): Unit = state.pos_=(line, col)
 }
 private [machine] case class TokenError(offset: Int, line: Int, col: Int, expected: Option[ErrorItem], size: Int) extends DefuncError with MakesTrivial  {
     val isExpectedEmpty: Boolean = expected.isEmpty
@@ -119,12 +116,11 @@ private [machine] case class TokenError(offset: Int, line: Int, col: Int, expect
         state.updateUnexpected(size)
     }
 }
-private [machine] case class EmptyErrorWithReason(offset: Int, line: Int, col: Int, expected: Option[ErrorItem], reason: String)
+private [machine] case class EmptyErrorWithReason(offset: Int, line: Int, col: Int, reason: String)
     extends DefuncError with MakesTrivial  {
-    val isExpectedEmpty: Boolean = expected.isEmpty
+    val isExpectedEmpty: Boolean = true
     override def makeTrivial(state: TrivialState): Unit = {
         state.pos_=(line, col)
-        state += expected
         state += reason
     }
 }

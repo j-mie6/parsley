@@ -6,8 +6,8 @@ import parsley.internal.machine.Context
 
 import scala.annotation.tailrec
 
-private [internal] class TokenEscape(_expected: Option[String]) extends Instr with NumericReader {
-    private [this] final val expected = Some(Desc(_expected.getOrElse("escape code")))
+private [internal] class TokenEscape extends Instr with NumericReader {
+    private [this] final val expected = Some(Desc("escape code"))
     override def apply(ctx: Context): Unit = escape(ctx) match {
         case TokenEscape.EscapeChar(escapeChar) =>ctx.pushAndContinue(escapeChar)
         case TokenEscape.BadCode => ctx.expectedFail(expected, reason = "invalid escape sequence")
@@ -144,10 +144,9 @@ private [instructions] object TokenEscape {
 }
 
 private [instructions] sealed trait TokenStringLike extends Instr {
-    protected val expected: Option[String]
-    final protected lazy val expectedString = Some(Desc(expected.getOrElse("string")))
-    final protected lazy val expectedEos = Some(Desc(expected.getOrElse("end of string")))
-    final protected lazy val expectedChar = Some(Desc(expected.getOrElse("string character")))
+    final protected lazy val expectedString = Some(Desc("string"))
+    final protected lazy val expectedEos = Some(Desc("end of string"))
+    final protected lazy val expectedChar = Some(Desc("string character"))
 
     // All failures must be handled by this function
     protected def handleEscaped(ctx: Context, builder: StringBuilder): Boolean
@@ -176,7 +175,7 @@ private [instructions] sealed trait TokenStringLike extends Instr {
     }
 }
 
-private [internal] final class TokenRawString(val expected: Option[String]) extends TokenStringLike {
+private [internal] final object TokenRawString extends TokenStringLike {
     override def handleEscaped(ctx: Context, builder: StringBuilder): Boolean = {
         builder += '\\'
         if (ctx.moreInput && ctx.nextChar > '\u0016') {
@@ -195,9 +194,9 @@ private [internal] final class TokenRawString(val expected: Option[String]) exte
     // $COVERAGE-ON$
 }
 
-private [internal] final class TokenString(ws: TokenSet, val expected: Option[String]) extends TokenEscape(expected) with TokenStringLike {
-    private [this] final val expectedEscape = Some(Desc(expected.getOrElse("escape code")))
-    private [this] final val expectedGap = Some(Desc(expected.getOrElse("end of string gap")))
+private [internal] final class TokenString(ws: TokenSet) extends TokenEscape with TokenStringLike {
+    private [this] final val expectedEscape = Some(Desc("escape code"))
+    private [this] final val expectedGap = Some(Desc("end of string gap"))
 
     private def readGap(ctx: Context): Boolean = {
         val completedGap = ctx.moreInput && ctx.nextChar == '\\'

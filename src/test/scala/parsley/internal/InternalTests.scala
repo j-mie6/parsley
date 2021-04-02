@@ -6,7 +6,7 @@ import parsley.character.{char, satisfy, digit}
 import parsley.combinator.some
 import parsley.expr._
 import parsley.implicits.character.charLift
-import parsley.unsafe.ErrorLabel
+import parsley.errors.combinator.ErrorMethods
 import machine.instructions
 
 import scala.language.implicitConversions
@@ -22,21 +22,14 @@ class InternalTests extends ParsleyTest {
 
     they should "function correctly under error messages" in {
         val p = satisfy(_ => true) *> satisfy(_ => true) *> satisfy(_ => true)
-        val q = p.unsafeLabel("err1") *> 'a' *> p.unsafeLabel("err1") <* 'b' <* p.unsafeLabel("err2") <* 'c' <* p.unsafeLabel("err2") <* 'd'
-        q.internal.instrs.count(_ == instructions.Return) shouldBe 2
+        val q = p.label("err1") *> 'a' *> p.label("err1") <* 'b' <* p.label("err2") <* 'c' <* p.label("err2") <* 'd'
+        q.internal.instrs.count(_ == instructions.Return) shouldBe 1
         q.parse("123a123b123c123d") should be (Success('3'))
-    }
-
-    they should "not appear when only referenced once with any given error message" in {
-        val p = satisfy(_ => true) *> satisfy(_ => true) *> satisfy(_ => true)
-        val q = 'a' *> p.unsafeLabel("err1") <* 'b' <* p.unsafeLabel("err2") <* 'c'
-        q.internal.instrs.count(_ == instructions.Return) shouldBe 0
-        q.parse("a123b123c") should be (Success('3'))
     }
 
     they should "not duplicate subroutines when error label is the same" in {
         val p = satisfy(_ => true) *> satisfy(_ => true) *> satisfy(_ => true)
-        val q = 'a' *> p.unsafeLabel("err1") <* 'b' <* p.unsafeLabel("err1") <* 'c'
+        val q = 'a' *> p.label("err1") <* 'b' <* p.label("err1") <* 'c'
         q.internal.instrs.count(_ == instructions.Return) shouldBe 1
         q.parse("a123b123c") should be (Success('3'))
     }
@@ -54,7 +47,7 @@ class InternalTests extends ParsleyTest {
         val atom = some(digit).map(_.mkString.toInt)
         val expr = precedence[Int](atom)(
             Ops(InfixL)('+' #> (_ + _)))
-        expr.internal.instrs.count(_ == instructions.Return) shouldBe 1
+        expr.internal.instrs.count(_ == instructions.Return) shouldBe 2 // This will be 1 when we introduce the backdoor into the old labelling mechanism
     }
 
     they should "appear frequently inside expression parsers" in {
@@ -64,6 +57,6 @@ class InternalTests extends ParsleyTest {
             Ops(InfixL)('*' #> (_ * _)),
             Ops(InfixL)('%' #> (_ % _)))
         //println(instructions.pretty(expr.internal.instrs))
-        expr.internal.instrs.count(_ == instructions.Return) shouldBe 3
+        expr.internal.instrs.count(_ == instructions.Return) shouldBe 4 // This will be 3 when we introduce the backdoor into the old labelling mechanism
     }
 }

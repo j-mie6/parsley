@@ -7,10 +7,10 @@ import parsley.registers.Reg
 import scala.language.higherKinds
 
 private [parsley] final class CharTok(private [CharTok] val c: Char, val expected: Option[String] = None)
-    extends SingletonExpect[Char](s"char($c)", new CharTok(c, _), instructions.CharTok(c, expected))
+    extends Singleton[Char](s"char($c)", instructions.CharTok(c, expected))
 
 private [parsley] final class StringTok(private [StringTok] val s: String, val expected: Option[String] = None)
-    extends SingletonExpect[String](s"string($s)", new StringTok(s, _), instructions.StringTok(s, expected)) {
+    extends Singleton[String](s"string($s)", instructions.StringTok(s, expected)) {
     override def optimise: Parsley[String] = s match {
         case "" => new Pure("")
         case _ => this
@@ -37,8 +37,7 @@ private [parsley] final class Lift3[A, B, C, D](private [Lift3] val f: (A, B, C)
     }
 }
 
-private [parsley] final class Eof(val expected: Option[String] = None)
-    extends SingletonExpect[Unit]("eof", new Eof(_), new instructions.Eof(expected))
+private [parsley] final object Eof extends Singleton[Unit]("eof", instructions.Eof)
 
 private [parsley] final class Modify[S](val reg: Reg[S], f: S => S)
     extends Singleton[Unit](s"modify($reg, ?)", new instructions.Modify(reg.addr, f)) with UsesRegister

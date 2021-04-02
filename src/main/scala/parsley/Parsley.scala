@@ -393,7 +393,7 @@ object Parsley
       * {{{attempt(kw *> notFollowedBy(alphaNum))}}}*/
     def notFollowedBy(p: Parsley[_]): Parsley[Unit] = new Parsley(new deepembedding.NotFollowedBy(p.internal))
     /** The `empty` parser consumes no input and fails softly (that is to say, no error message) */
-    val empty: Parsley[Nothing] = new Parsley(new deepembedding.Empty)
+    val empty: Parsley[Nothing] = new Parsley(deepembedding.Empty)
     /** Returns `()`. Defined as `pure(())` but aliased for sugar*/
     val unit: Parsley[Unit] = pure(())
     /** converts a parser's result to () */

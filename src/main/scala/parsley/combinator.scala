@@ -118,7 +118,7 @@ object combinator {
     def endBy1[A, B](p: =>Parsley[A], sep: =>Parsley[B]): Parsley[List[A]] = some(p <* sep)
 
     /**This parser only succeeds at the end of the input. This is a primitive parser.*/
-    val eof: Parsley[Unit] = new Parsley(new deepembedding.Eof)
+    val eof: Parsley[Unit] = new Parsley(deepembedding.Eof)
 
     /**This parser only succeeds if there is still more input.*/
     val more: Parsley[Unit] = notFollowedBy(eof)

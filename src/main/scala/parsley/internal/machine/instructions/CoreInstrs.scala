@@ -74,11 +74,8 @@ private [internal] object Return extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class Empty(_expected: Option[String]) extends Instr {
-    val expected = _expected.map(Desc(_))
-    override def apply(ctx: Context): Unit = {
-        ctx.fail(new EmptyError(ctx.offset, ctx.line, ctx.col, expected))
-    }
+private [internal] final object Empty extends Instr {
+    override def apply(ctx: Context): Unit = ctx.fail(new EmptyError(ctx.offset, ctx.line, ctx.col))
     // $COVERAGE-OFF$
     override def toString: String = "Empty"
     // $COVERAGE-ON$

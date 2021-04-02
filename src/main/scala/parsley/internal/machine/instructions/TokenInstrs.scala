@@ -128,8 +128,8 @@ private [internal] final class TokenSkipComments(start: String, end: String, lin
 }
 
 private [internal] final class TokenNonSpecific(name: String, illegalName: String)
-                                               (start: TokenSet, letter: TokenSet, illegal: String => Boolean, _expected: Option[String]) extends Instr {
-    private [this] final val expected = Some(Desc(_expected.getOrElse(name)))
+                                               (start: TokenSet, letter: TokenSet, illegal: String => Boolean) extends Instr {
+    private [this] final val expected = Some(Desc(name))
 
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && start(ctx.nextChar)) {
@@ -164,9 +164,9 @@ private [internal] final class TokenNonSpecific(name: String, illegalName: Strin
     // $COVERAGE-ON$
 }
 
-private [instructions] abstract class TokenSpecificAllowTrailing(_specific: String, caseSensitive: Boolean, _expected: Option[String]) extends Instr {
-    private final val expected = Some(Desc(_expected.getOrElse(_specific)))
-    protected final val expectedEnd = Some(Desc(_expected.getOrElse(s"end of ${_specific}")))
+private [instructions] abstract class TokenSpecificAllowTrailing(_specific: String, caseSensitive: Boolean) extends Instr {
+    private final val expected = Some(Desc(_specific))
+    protected final val expectedEnd = Some(Desc(s"end of ${_specific}"))
     private final val specific = (if (caseSensitive) _specific else _specific.toLowerCase).toCharArray
     private final val strsz = specific.length
     protected def postprocess(ctx: Context, i: Int): Unit
@@ -192,8 +192,8 @@ private [instructions] abstract class TokenSpecificAllowTrailing(_specific: Stri
     }
 }
 
-private [internal] final class TokenSpecific(_specific: String, letter: TokenSet, caseSensitive: Boolean, expected: Option[String])
-    extends TokenSpecificAllowTrailing(_specific, caseSensitive, expected) {
+private [internal] final class TokenSpecific(_specific: String, letter: TokenSet, caseSensitive: Boolean)
+    extends TokenSpecificAllowTrailing(_specific, caseSensitive) {
     override def postprocess(ctx: Context, i: Int): Unit = {
         if (i < ctx.inputsz && letter(ctx.input.charAt(i))) {
             ctx.expectedFail(expectedEnd) //This should only report a single token
@@ -210,8 +210,7 @@ private [internal] final class TokenSpecific(_specific: String, letter: TokenSet
     // $COVERAGE-ON$
 }
 
-private [internal] final class TokenMaxOp(operator: String, _ops: Set[String], expected: Option[String])
-    extends TokenSpecificAllowTrailing(operator, true, expected) {
+private [internal] final class TokenMaxOp(operator: String, _ops: Set[String]) extends TokenSpecificAllowTrailing(operator, true) {
     private val ops = Radix(_ops.collect {
         case op if op.length > operator.length && op.startsWith(operator) => op.substring(operator.length)
     })

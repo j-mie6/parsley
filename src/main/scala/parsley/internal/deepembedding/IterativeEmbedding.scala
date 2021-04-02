@@ -8,7 +8,7 @@ import scala.collection.mutable
 import scala.language.higherKinds
 
 private [deepembedding] sealed abstract class ManyLike[A, B](_p: =>Parsley[A], name: String, empty: =>ManyLike[A, B], unit: B, instr: Int => instructions.Instr)
-    extends Unary[A, B](_p)(c => s"$name($c)", _ => empty) {
+    extends Unary[A, B](_p)(c => s"$name($c)", empty) {
     final override val numInstrs = 2
     final override def optimise: Parsley[B] = p match {
         case _: Pure[_] => throw new Exception(s"$name given parser which consumes no input")
@@ -119,7 +119,7 @@ private [parsley] final class SepEndBy1[A, B](_p: =>Parsley[A], _sep: =>Parsley[
         }
     }
 }
-private [parsley] final class ManyUntil[A](_body: =>Parsley[Any]) extends Unary[Any, List[A]](_body)(c => s"manyUntil($c)", _ => ManyUntil.empty) {
+private [parsley] final class ManyUntil[A](_body: =>Parsley[Any]) extends Unary[Any, List[A]](_body)(c => s"manyUntil($c)", ManyUntil.empty) {
     override val numInstrs = 2
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val start = state.freshLabel()
