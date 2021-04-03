@@ -97,34 +97,33 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
         else bodyGen
     }
 
-    final private def pipeline[Cont[_, +_]](implicit ops: ContOps[Cont, Array[Instr]]): Array[Instr] = perform {
-        implicit val seenSet: Set[Parsley[_]] = Set.empty
-        implicit val letFinderState: LetFinderState = new LetFinderState
-        findLets() >> {
-            val recs = letFinderState.recs
-            implicit val seenSet: Set[Parsley[_]] = recs.toSet
-            postLetFinding(new SubMap(letFinderState.lets), new RecMap(recs))
+    final private def pipeline[Cont[_, +_]](implicit ops: ContOps[Cont, Unit]): Array[Instr] ={
+        implicit val instrs: InstrBuffer = new ResizableArray()
+        implicit val state: CodeGenState = new CodeGenState
+        perform {
+            implicit val seenSet: Set[Parsley[_]] = Set.empty
+            implicit val letFinderState: LetFinderState = new LetFinderState
+            findLets() >> {
+                implicit val seenSet: Set[Parsley[_]] = letFinderState.recs.toSet
+                implicit val usedRegs: Set[Reg[_]] = letFinderState.usedRegs
+                implicit val subMap: SubMap = new SubMap(letFinderState.lets)
+                implicit val recMap: RecMap[Cont] = new RecMap(subMap, seenSet)
+                optimised.flatMap(p => generateCalleeSave(p.codeGen, allocateRegisters(usedRegs)))
+            }
         }
+        finaliseSubs()
+        finaliseInstrs(instrs, state)
     }
 
-    final private [deepembedding] def computeRecInstrs[Cont[_, +_]](/*sub: SubMap, */recs: RecMap[Cont])(implicit ops: ContOps[Cont, Array[Instr]]): Array[Instr] = perform {
+    final private [deepembedding] def computeRecInstrs[Cont[_, +_]](subs: SubMap, recs: RecMap[Cont])(implicit ops: ContOps[Cont, Unit]): Array[Instr] = {
         implicit val seenSet: Set[Parsley[_]] = Set.empty
-        implicit val letFinderState: LetFinderState = new LetFinderState
-        findLets() >> postLetFinding(new SubMap(letFinderState.lets), recs)
-    }
-
-    final private [deepembedding] def postLetFinding[Cont[_, +_]](sub: SubMap, recs: RecMap[Cont])
-                                                                 (implicit ops: ContOps[Cont, Array[Instr]],
-                                                                           seen: Set[Parsley[_]],
-                                                                           letFinderState: LetFinderState): Cont[Array[Instr], Array[Instr]] = {
-        implicit val subMap: SubMap = sub
+        implicit val subMap: SubMap = subs
         implicit val recMap: RecMap[Cont] = recs
         implicit val instrs: InstrBuffer = new ResizableArray()
         implicit val state: CodeGenState = new CodeGenState
-        optimised.flatMap(p => generateCalleeSave(p.codeGen, allocateRegisters(letFinderState.usedRegs))) |> {
-            finaliseSubs()
-            finaliseInstrs(instrs, state)
-        }
+        perform(optimised.flatMap(_.codeGen))
+        finaliseSubs()
+        finaliseInstrs(instrs, state)
     }
 
     final private def finaliseSubs[Cont[_, +_]]()(implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer, state: CodeGenState): Unit = {
@@ -141,7 +140,7 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
         }
     }
 
-    final private def computeInstrs(ops: GenOps[Array[Instr]]): Array[Instr] = pipeline(ops)
+    final private def computeInstrs(ops: GenOps[Unit]): Array[Instr] = pipeline(ops)
 
     final private def finaliseInstrs(instrs: InstrBuffer, state: CodeGenState): Array[Instr] = {
         @tailrec def findLabels(instrs: Array[Instr], labels: Array[Int], n: Int, i: Int, off: Int): Int = if (i + off < n) instrs(i + off) match {
@@ -166,7 +165,7 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
         instrs_
     }
 
-    final private [parsley] lazy val instrs: Array[Instr] = if (cps) computeInstrs(Cont.ops.asInstanceOf[GenOps[Array[Instr]]]) else safeCall(computeInstrs(_))
+    final private [parsley] lazy val instrs: Array[Instr] = if (cps) computeInstrs(Cont.ops.asInstanceOf[GenOps[Unit]]) else safeCall(computeInstrs(_))
     final private lazy val pindices: Array[Int] = instructions.statefulIndices(instrs)
     final private [parsley] def threadSafeInstrs: Array[Instr] = instructions.stateSafeCopy(instrs, pindices)
 
@@ -275,8 +274,8 @@ private [deepembedding] class SubMap(subs: Iterable[Parsley[_]]) extends ParserM
     def apply[A](p: Parsley[A]): Parsley[A] = map.getOrElse(p, p).asInstanceOf[Parsley[A]]
 }
 
-private [deepembedding] class RecMap[Cont[_, +_]](recs: Iterable[Parsley[_]])(implicit ops: ContOps[Cont, Array[Instr]])
+private [deepembedding] class RecMap[Cont[_, +_]](subs: SubMap, recs: Iterable[Parsley[_]])(implicit ops: ContOps[Cont, Unit])
     extends ParserMap[Parsley[_]](recs) {
-    def make(p: Parsley[_]) = new Rec(p, this)
+    def make(p: Parsley[_]) = new Rec(p, subs, this)
     def apply[A](p: Parsley[A]): Parsley[A] = map(p).asInstanceOf[Parsley[A]]
 }

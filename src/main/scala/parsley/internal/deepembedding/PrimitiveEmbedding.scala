@@ -41,8 +41,8 @@ private [parsley] final class Fail(private [Fail] val msg: String)
 private [parsley] final class Unexpected(private [Unexpected] val msg: String)
     extends Singleton[Nothing](s"unexpected($msg)", new instructions.Unexpected(msg)) with MZero
 
-private [parsley] final class Rec[A, Cont[_, +_]](val p: Parsley[A], recs: RecMap[Cont])(implicit ops: ContOps[Cont, _]) extends Parsley[A] {
-    val call = new instructions.Call(p.computeRecInstrs(recs))
+private [parsley] final class Rec[A, Cont[_, +_]](val p: Parsley[A], lets: SubMap, recs: RecMap[Cont])(implicit ops: ContOps[Cont, Unit]) extends Parsley[A] {
+    val call = new instructions.Call(p.computeRecInstrs(lets, recs))
     final override def findLetsAux[Cont[_, +_], R]
         (implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState): Cont[R, Unit] = result(())
     override def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap[Cont]): Cont[R, Parsley[A]] = result(this)
