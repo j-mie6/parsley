@@ -153,7 +153,7 @@ private [internal] final class GuardAgainst[A](_pred: PartialFunction[A, String]
     // $COVERAGE-ON$
 }
 
-private [internal] final object NotFollowedBy extends Instr {
+private [internal] object NotFollowedBy extends Instr {
     override def apply(ctx: Context): Unit = {
         val reached = ctx.offset
         // Recover the previous state; notFollowedBy NEVER consumes input
@@ -176,7 +176,7 @@ private [internal] final object NotFollowedBy extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final object Eof extends Instr {
+private [internal] object Eof extends Instr {
     private [this] final val expected = Some(EndOfInput)
     override def apply(ctx: Context): Unit = {
         if (ctx.offset == ctx.inputsz) ctx.pushAndContinue(())

@@ -70,10 +70,10 @@ object character
     val newline: Parsley[Char] = '\n'.label("newline")
 
     /**Parses a carriage return character '\r' followed by a newline character '\n', returns the newline character.*/
-    val crlf: Parsley[Char] = ('\r' *> '\n'.label("end of crlf")).label("crlf newline")
+    val crlf: Parsley[Char] = '\r'.label("crlf newline") *> '\n'.label("end of crlf")
 
     /**Parses a CRLF or LF end-of-line. Returns a newline character ('\n').*/
-    val endOfLine: Parsley[Char] = ('\n' <|> crlf).label("end of line")
+    val endOfLine: Parsley[Char] = '\n'.label("end of line") <|> ('\r'.label("end of line") *> '\n'.label("end of crlf"))
 
     /**Parses a tab character ('\t'). Returns a tab character.*/
     val tab: Parsley[Char] = '\t'.label("tab")

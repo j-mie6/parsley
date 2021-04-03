@@ -50,7 +50,7 @@ private [instructions] trait NumericReader {
     protected final val hexadecimal = subDecimal(16, character.isHexDigit)
 }
 
-private [internal] final object TokenNatural extends Instr with NumericReader {
+private [internal] object TokenNatural extends Instr with NumericReader {
     private [this] final val expected = Some(Desc("natural"))
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && ctx.nextChar == '0') {
@@ -77,7 +77,7 @@ private [internal] final object TokenNatural extends Instr with NumericReader {
     // $COVERAGE-ON$
 }
 
-private [internal] final object TokenFloat extends Instr {
+private [internal] object TokenFloat extends Instr {
     private [this] final val expected = Some(Desc("unsigned float"))
     override def apply(ctx: Context): Unit = {
         val initialOffset = ctx.offset

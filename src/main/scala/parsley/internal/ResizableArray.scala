@@ -22,14 +22,14 @@ private [internal] final class ResizableArray[A: ClassTag](initialSize: Int = Re
         array(size) = x
         size += 1
     }
+    def apply(idx: Int): A = array(idx)
     def length: Int = size
     def toArray: Array[A] = {
         val res = array
         array = null
         res
     }
-    // A size that is already a power of two is fully saturated
-    def toShrunkenArray: Array[A] = if ((size & (size - 1)) == 0) toArray else {
+    def toShrunkenArray: Array[A] = if (array.length == size) toArray else {
         val newArray = new Array[A](size)
         java.lang.System.arraycopy(array, 0, newArray, 0, size)
         array = null

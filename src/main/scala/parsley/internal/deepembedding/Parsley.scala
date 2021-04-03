@@ -107,12 +107,37 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
                 implicit val seenSet: Set[Parsley[_]] = letFinderState.recs.toSet
                 implicit val usedRegs: Set[Reg[_]] = letFinderState.usedRegs
                 implicit val subMap: SubMap = new SubMap(letFinderState.lets)
-                implicit val recMap: RecMap[Cont] = new RecMap(subMap, seenSet)
-                optimised.flatMap(p => generateCalleeSave(p.codeGen, allocateRegisters(usedRegs)))
+                implicit val recMap: RecMap[Cont] = new RecMap(subMap, seenSet, state)
+                optimised.flatMap(p => generateCalleeSave(p.codeGen, allocateRegisters(usedRegs))) |> {
+                    val end = generatePreamble(state.subsExist || seenSet.nonEmpty)
+                    finaliseRecs()
+                    finaliseSubs()
+                    generatePostamble(end)
+                }
             }
         }
-        finaliseSubs()
         finaliseInstrs(instrs, state)
+    }
+
+    final private def generatePreamble(required: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): Option[Int] = if (!required) None else {
+        val end = state.freshLabel()
+        instrs += new instructions.Jump(end)
+        Some(end)
+    }
+
+    final private def generatePostamble(endLabel: Option[Int])(implicit instrs: InstrBuffer): Unit = {
+        for (end <- endLabel) instrs += new instructions.Label(end)
+    }
+
+    final private def finaliseRecs[Cont[_, +_]]()(implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer, state: CodeGenState, lets: SubMap, recs: RecMap[Cont]): Unit = {
+        implicit val seenSet: Set[Parsley[_]] = Set.empty
+        for (rec <- recs) {
+            instrs += new instructions.Label(rec.label)
+            val start = instrs.length
+            perform(rec.p.optimised.flatMap(_.codeGen))
+            //rec.call._statefulIndices = instructions.statefulIndices(instrs, start, instrs.length)
+            instrs += instructions.Return
+        }
     }
 
     final private [deepembedding] def computeRecInstrs[Cont[_, +_]](subs: SubMap, recs: RecMap[Cont])(implicit ops: ContOps[Cont, Unit]): Array[Instr] = {
@@ -122,21 +147,18 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
         implicit val instrs: InstrBuffer = new ResizableArray()
         implicit val state: CodeGenState = new CodeGenState
         perform(optimised.flatMap(_.codeGen))
+        val endLabel = generatePreamble(state.subsExist)
         finaliseSubs()
+        generatePostamble(endLabel)
         finaliseInstrs(instrs, state)
     }
 
     final private def finaliseSubs[Cont[_, +_]]()(implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer, state: CodeGenState): Unit = {
-        if (state.subsExist) {
-            val end = state.freshLabel()
-            instrs += new instructions.Jump(end)
-            while (state.more) {
-                val sub = state.nextSub()
-                instrs += new instructions.Label(state.getLabel(sub))
-                perform(sub.p.codeGen)
-                instrs += instructions.Return
-            }
-            instrs += new instructions.Label(end)
+        while (state.more) {
+            val sub = state.nextSub()
+            instrs += new instructions.Label(state.getLabel(sub))
+            perform(sub.p.codeGen)
+            instrs += instructions.Return
         }
     }
 
@@ -274,8 +296,9 @@ private [deepembedding] class SubMap(subs: Iterable[Parsley[_]]) extends ParserM
     def apply[A](p: Parsley[A]): Parsley[A] = map.getOrElse(p, p).asInstanceOf[Parsley[A]]
 }
 
-private [deepembedding] class RecMap[Cont[_, +_]](subs: SubMap, recs: Iterable[Parsley[_]])(implicit ops: ContOps[Cont, Unit])
-    extends ParserMap[Rec[_, Cont]](recs) {
-    def make(p: Parsley[_]) = new Rec(p, subs, this)
-    def apply[A](p: Parsley[A]): Rec[A, Cont] = map(p).asInstanceOf[Rec[A, Cont]]
+private [deepembedding] class RecMap[Cont[_, +_]](subs: SubMap, recs: Iterable[Parsley[_]], state: CodeGenState)(implicit ops: ContOps[Cont, Unit])
+    extends ParserMap[Rec[_]](recs) with Iterable[Rec[_]] {
+    def make(p: Parsley[_]) = new Rec(p, state.freshLabel(), new instructions.Call(p.computeRecInstrs(subs, this)))
+    def apply[A](p: Parsley[A]): Rec[A] = map(p).asInstanceOf[Rec[A]]
+    override def iterator: Iterator[Rec[_]] = map.values.iterator
 }

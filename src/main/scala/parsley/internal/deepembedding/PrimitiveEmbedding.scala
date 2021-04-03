@@ -41,18 +41,9 @@ private [parsley] final class Fail(private [Fail] val msg: String)
 private [parsley] final class Unexpected(private [Unexpected] val msg: String)
     extends Singleton[Nothing](s"unexpected($msg)", new instructions.Unexpected(msg)) with MZero
 
-private [parsley] final class Rec[A, Cont[_, +_]](val p: Parsley[A], lets: SubMap, recs: RecMap[Cont])(implicit ops: ContOps[Cont, Unit]) extends Parsley[A] {
-    val call = new instructions.Call(p.computeRecInstrs(lets, recs))
-    final override def findLetsAux[Cont[_, +_], R]
-        (implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState): Cont[R, Unit] = result(())
-    override def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap[Cont]): Cont[R, Parsley[A]] = result(this)
-    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = result(instrs += call)
-    // $COVERAGE-OFF$
-    override def prettyASTAux[Cont[_, +_], R](implicit ops: ContOps[Cont, R]): Cont[R, String] = result(s"rec $p")
-    // $COVERAGE-ON$
-}
-
-private [parsley] final class Subroutine[A](var p: Parsley[A]) extends Parsley[A] {
+private [deepembedding] final class Rec[A](private [deepembedding] val p: Parsley[A], private [deepembedding] val label: Int, val call: instructions.Call)
+    extends Singleton(s"rec($p)", call)
+private [deepembedding] final class Subroutine[A](var p: Parsley[A]) extends Parsley[A] {
     // $COVERAGE-OFF$
     override def findLetsAux[Cont[_, +_], R](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState): Cont[R, Unit] = {
         throw new Exception("Subroutines cannot exist during let detection")
@@ -66,7 +57,7 @@ private [parsley] final class Subroutine[A](var p: Parsley[A]) extends Parsley[A
         processed = true
         this
     }
-    override def optimise: Parsley[A] = if (p.size <= 1) p else this // This threshold might need tuning?
+    override def optimise: Parsley[A] = if (p.size <= 1) p else this
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         result(instrs += new instructions.GoSub(state.getLabel(this)))
     }

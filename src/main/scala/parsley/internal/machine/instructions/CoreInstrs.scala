@@ -53,8 +53,12 @@ private [internal] final class Call(_instrs: =>Array[Instr]) extends Instr {
         val is = _instrs
         (is, statefulIndices(is))
     }
+    private [internal] var _statefulIndices: Array[Int] = _
 
-    override def apply(ctx: Context): Unit = ctx.call(stateSafeCopy(instrs, pindices), 0)
+    override def apply(ctx: Context): Unit = {
+        //if (ctx.instrs.length != instrs.length && _statefulIndices.length > 0) println(_statefulIndices.map(ctx.instrs).mkString(", "))
+        ctx.call(stateSafeCopy(instrs, pindices), 0)
+    }
     // $COVERAGE-OFF$
     override def toString: String = "Call"
     // $COVERAGE-ON$
@@ -74,7 +78,7 @@ private [internal] object Return extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final object Empty extends Instr {
+private [internal] object Empty extends Instr {
     override def apply(ctx: Context): Unit = ctx.fail(new EmptyError(ctx.offset, ctx.line, ctx.col))
     // $COVERAGE-OFF$
     override def toString: String = "Empty"

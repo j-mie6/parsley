@@ -3,6 +3,7 @@ package parsley.internal.machine
 import parsley.internal.ResizableArray
 
 import scala.language.implicitConversions
+import scala.collection.mutable
 
 package object instructions
 {
@@ -41,6 +42,14 @@ package object instructions
     final private [internal] def statefulIndices(instrs: Array[Instr]): Array[Int] = {
         val buff = new ResizableArray[Int]()
         for (i <- 0 until instrs.length) {
+            if (instrs(i).isInstanceOf[Stateful]) buff += i
+        }
+        buff.toShrunkenArray
+    }
+
+    final private [internal] def statefulIndices(instrs: ResizableArray[Instr], start: Int, end: Int): Array[Int] = {
+        val buff = new ResizableArray[Int]()
+        for (i <- start until end) {
             if (instrs(i).isInstanceOf[Stateful]) buff += i
         }
         buff.toShrunkenArray

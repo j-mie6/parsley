@@ -175,7 +175,7 @@ private [instructions] sealed trait TokenStringLike extends Instr {
     }
 }
 
-private [internal] final object TokenRawString extends TokenStringLike {
+private [internal] object TokenRawString extends TokenStringLike {
     override def handleEscaped(ctx: Context, builder: StringBuilder): Boolean = {
         builder += '\\'
         if (ctx.moreInput && ctx.nextChar > '\u0016') {
