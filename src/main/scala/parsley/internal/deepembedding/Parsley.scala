@@ -132,7 +132,7 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
             instrs += new instructions.Jump(end)
             while (state.more) {
                 val sub = state.nextSub()
-                instrs += new instructions.Label(state.getSubLabel(sub))
+                instrs += new instructions.Label(state.getLabel(sub))
                 perform(sub.p.codeGen)
                 instrs += instructions.Return
             }
@@ -230,7 +230,7 @@ private [deepembedding] class CodeGenState {
     }
     def nlabels: Int = current
 
-    def getSubLabel(sub: Subroutine[_]): Int = map.getOrElseUpdate(sub, {
+    def getLabel(sub: Subroutine[_]): Int = map.getOrElseUpdate(sub, {
         sub +=: queue
         freshLabel()
     })
@@ -275,7 +275,7 @@ private [deepembedding] class SubMap(subs: Iterable[Parsley[_]]) extends ParserM
 }
 
 private [deepembedding] class RecMap[Cont[_, +_]](subs: SubMap, recs: Iterable[Parsley[_]])(implicit ops: ContOps[Cont, Unit])
-    extends ParserMap[Parsley[_]](recs) {
+    extends ParserMap[Rec[_, Cont]](recs) {
     def make(p: Parsley[_]) = new Rec(p, subs, this)
-    def apply[A](p: Parsley[A]): Parsley[A] = map(p).asInstanceOf[Parsley[A]]
+    def apply[A](p: Parsley[A]): Rec[A, Cont] = map(p).asInstanceOf[Rec[A, Cont]]
 }

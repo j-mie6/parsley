@@ -199,28 +199,28 @@ private [parsley] final class <*[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exten
 }
 
 private [deepembedding] object Pure {
-    def unapply[A](self: Pure[A]): Option[A] = Some(self.x)
+    def unapply[A](self: Pure[A]): Some[A] = Some(self.x)
 }
 private [deepembedding] object <*> {
     def empty[A, B]: A <*> B = new <*>(???, ???)
     def apply[A, B](left: Parsley[A=>B], right: Parsley[A]): <*>[A, B] = empty.ready(left, right)
-    def unapply[A, B](self: <*>[A, B]): Option[(Parsley[A=>B], Parsley[A])] = Some((self.left, self.right))
+    def unapply[A, B](self: <*>[A, B]): Some[(Parsley[A=>B], Parsley[A])] = Some((self.left, self.right))
 }
 private [deepembedding] object >>= {
     def empty[A, B](f: A => Parsley[B]): >>=[A, B] = new >>=(???, f)
     def apply[A, B](p: Parsley[A], f: A => Parsley[B]): >>=[A, B] = empty(f).ready(p)
-    def unapply[A, B](self: >>=[A, B]): Option[(Parsley[A], A => Parsley[B])] = Some((self.p, self.f))
+    def unapply[A, B](self: >>=[A, B]): Some[(Parsley[A], A => Parsley[B])] = Some((self.p, self.f))
 }
 private [deepembedding] object Seq {
-    def unapply[A, B](self: Seq[A, B]): Option[(Parsley[A], Parsley[B])] = Some((self.discard, self.result))
+    def unapply[A, B](self: Seq[A, B]): Some[(Parsley[A], Parsley[B])] = Some((self.discard, self.result))
 }
 private [deepembedding] object *> {
     def empty[A, B]: A *> B = new *>(???, ???)
     def apply[A, B](left: Parsley[A], right: Parsley[B]): A *> B = empty.ready(left, right)
-    def unapply[A, B](self: A *> B): Option[(Parsley[A], Parsley[B])] = Some((self.left, self.right))
+    def unapply[A, B](self: A *> B): Some[(Parsley[A], Parsley[B])] = Some((self.left, self.right))
 }
 private [deepembedding] object <* {
     def empty[A, B]: A <* B = new <*(???, ???)
     def apply[A, B](left: Parsley[A], right: Parsley[B]): A <* B = empty.ready(right, left)
-    def unapply[A, B](self: A <* B): Option[(Parsley[A], Parsley[B])] = Some((self.result, self.discard))
+    def unapply[A, B](self: A <* B): Some[(Parsley[A], Parsley[B])] = Some((self.result, self.discard))
 }

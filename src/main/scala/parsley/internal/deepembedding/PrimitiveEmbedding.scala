@@ -9,7 +9,7 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.higherKinds
 
-private [parsley] final class Satisfy(private [Satisfy] val f: Char => Boolean, val expected: Option[String] = None)
+private [parsley] final class Satisfy(private [Satisfy] val f: Char => Boolean, val expected: Option[String])
     extends Singleton[Char]("satisfy(f)", new instructions.Satisfies(f, expected))
 
 private [deepembedding] sealed abstract class ScopedUnary[A, B](_p: =>Parsley[A], name: String, doesNotProduceHints: Boolean,
@@ -68,7 +68,7 @@ private [parsley] final class Subroutine[A](var p: Parsley[A]) extends Parsley[A
     }
     override def optimise: Parsley[A] = if (p.size <= 1) p else this // This threshold might need tuning?
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
-        result(instrs += new instructions.GoSub(state.getSubLabel(this)))
+        result(instrs += new instructions.GoSub(state.getLabel(this)))
     }
     // $COVERAGE-OFF$
     override def prettyASTAux[Cont[_, +_], R](implicit ops: ContOps[Cont, R]): Cont[R, String] = result(s"Sub($p)")
@@ -87,9 +87,16 @@ private [parsley] final class Put[S](val reg: Reg[S], _p: =>Parsley[S])
     }
 }
 
-private [parsley] final class ErrorLabel[A](_p: =>Parsley[A], label: String)
+private [parsley] final class ErrorLabel[A](_p: =>Parsley[A], private [ErrorLabel] val label: String)
     extends Unary[A, A](_p)(c => s"$c.label($label)", ErrorLabel.empty(label)) {
     final override val numInstrs = 2
+    final override def optimise: Parsley[A] = p match {
+        case ct@CharTok(c) if !ct.expected.contains("") => new CharTok(c, Some(label)).asInstanceOf[Parsley[A]]
+        case st@StringTok(s) if !st.expected.contains("") => new StringTok(s, Some(label)).asInstanceOf[Parsley[A]]
+        case sat@Satisfy(f) if !sat.expected.contains("") => new Satisfy(f, Some(label)).asInstanceOf[Parsley[A]]
+        case ErrorLabel(p, label2) if label2 != "" => ErrorLabel(p, label)
+        case _ => this
+    }
     final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val handler = state.freshLabel()
         instrs += new instructions.InputCheck(handler, true)
@@ -128,11 +135,11 @@ private [parsley] final class Debug[A](_p: =>Parsley[A], name: String, ascii: Bo
 // $COVERAGE-ON$
 
 private [deepembedding] object Satisfy {
-    def unapply(self: Satisfy): Option[Char => Boolean] = Some(self.f)
+    def unapply(self: Satisfy): Some[Char => Boolean] = Some(self.f)
 }
 private [deepembedding] object Attempt {
     def empty[A]: Attempt[A] = new Attempt(???)
-    def unapply[A](self: Attempt[A]): Option[Parsley[A]] = Some(self.p)
+    def unapply[A](self: Attempt[A]): Some[Parsley[A]] = Some(self.p)
 }
 private [deepembedding] object Look {
     def empty[A]: Look[A] = new Look(???)
@@ -140,6 +147,7 @@ private [deepembedding] object Look {
 private [deepembedding] object ErrorLabel {
     def empty[A](label: String): ErrorLabel[A] = new ErrorLabel(???, label)
     def apply[A](p: Parsley[A], label: String): ErrorLabel[A] = empty(label).ready(p)
+    def unapply[A](self: ErrorLabel[A]): Some[(Parsley[A], String)] = Some((self.p, self.label))
 }
 private [deepembedding] object ErrorExplain {
     def empty[A](reason: String): ErrorExplain[A] = new ErrorExplain(???, reason)

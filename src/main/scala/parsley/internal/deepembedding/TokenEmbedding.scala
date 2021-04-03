@@ -56,9 +56,9 @@ private [parsley] object Sign {
 
 // $COVERAGE-OFF$
 private [deepembedding] object Specific {
-    def unapply(self: Specific): Option[String] = Some(self.specific)
+    def unapply(self: Specific): Some[String] = Some(self.specific)
 }
 private [deepembedding] object MaxOp {
-    def unapply(self: MaxOp): Option[String] = Some(self.operator)
+    def unapply(self: MaxOp): Some[String] = Some(self.operator)
 }
 // $COVERAGE-ON$

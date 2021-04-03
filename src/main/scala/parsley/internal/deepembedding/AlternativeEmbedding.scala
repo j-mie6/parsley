@@ -207,5 +207,5 @@ private [parsley] object Empty extends Singleton[Nothing]("empty", instructions.
 private [deepembedding] object <|> {
     def empty[A, B]: A <|> B = new <|>(???, ???)
     def apply[A, B](left: Parsley[A], right: Parsley[B]): A <|> B = empty.ready(left, right)
-    def unapply[A, B](self: A <|> B): Option[(Parsley[A], Parsley[B])] = Some((self.left, self.right))
+    def unapply[A, B](self: A <|> B): Some[(Parsley[A], Parsley[B])] = Some((self.left, self.right))
 }

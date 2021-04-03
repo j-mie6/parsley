@@ -47,7 +47,7 @@ class InternalTests extends ParsleyTest {
         val atom = some(digit).map(_.mkString.toInt)
         val expr = precedence[Int](atom)(
             Ops(InfixL)('+' #> (_ + _)))
-        expr.internal.instrs.count(_ == instructions.Return) shouldBe 2 // This will be 1 when we introduce the backdoor into the old labelling mechanism
+        expr.internal.instrs.count(_ == instructions.Return) shouldBe 1
     }
 
     they should "appear frequently inside expression parsers" in {
@@ -56,7 +56,6 @@ class InternalTests extends ParsleyTest {
             Ops(InfixL)('+' #> (_ + _)),
             Ops(InfixL)('*' #> (_ * _)),
             Ops(InfixL)('%' #> (_ % _)))
-        //println(instructions.pretty(expr.internal.instrs))
-        expr.internal.instrs.count(_ == instructions.Return) shouldBe 4 // This will be 3 when we introduce the backdoor into the old labelling mechanism
+        expr.internal.instrs.count(_ == instructions.Return) shouldBe 3
     }
 }

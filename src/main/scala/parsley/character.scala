@@ -19,21 +19,21 @@ object character
       * @param c The character to search for
       * @return `c` if it can be found at the head of the input
       */
-    def char(c: Char): Parsley[Char] = new Parsley(new deepembedding.CharTok(c))
+    def char(c: Char): Parsley[Char] = new Parsley(new deepembedding.CharTok(c, None))
 
     /** Reads a character from the head of the input stream if and only if it satisfies the given predicate. Else it
       * fails without consuming the character.
       * @param f The function to test the character on
       * @return `c` if `f(c)` is true.
       */
-    def satisfy(f: Char => Boolean): Parsley[Char] = new Parsley(new deepembedding.Satisfy(f))
+    def satisfy(f: Char => Boolean): Parsley[Char] = new Parsley(new deepembedding.Satisfy(f, None))
 
     /** Reads a string from the input stream and returns it, else fails if the string is not found at the head
       * of the stream.
       * @param s The string to match against
       * @return `s` if it can be found at the head of the input
       */
-    def string(s: String): Parsley[String] = new Parsley(new deepembedding.StringTok(s))
+    def string(s: String): Parsley[String] = new Parsley(new deepembedding.StringTok(s, None))
 
     /**`oneOf(cs)` succeeds if the current character is in the supplied set of characters `cs`.
       * Returns the parsed character. See also `satisfy`.*/

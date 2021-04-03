@@ -6,10 +6,10 @@ import parsley.registers.Reg
 
 import scala.language.higherKinds
 
-private [parsley] final class CharTok(private [CharTok] val c: Char, val expected: Option[String] = None)
+private [parsley] final class CharTok(private [CharTok] val c: Char, val expected: Option[String])
     extends Singleton[Char](s"char($c)", instructions.CharTok(c, expected))
 
-private [parsley] final class StringTok(private [StringTok] val s: String, val expected: Option[String] = None)
+private [parsley] final class StringTok(private [StringTok] val s: String, val expected: Option[String])
     extends Singleton[String](s"string($s)", instructions.StringTok(s, expected)) {
     override def optimise: Parsley[String] = s match {
         case "" => new Pure("")
