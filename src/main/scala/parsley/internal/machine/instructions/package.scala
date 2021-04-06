@@ -3,6 +3,7 @@ package parsley.internal.machine
 import parsley.internal.ResizableArray
 
 import scala.language.implicitConversions
+import scala.util.control.Breaks.{breakable, break}
 import scala.collection.mutable
 
 package object instructions
@@ -47,10 +48,13 @@ package object instructions
         buff.toShrunkenArray
     }
 
-    final private [internal] def statefulIndices(instrs: ResizableArray[Instr], start: Int, end: Int): Array[Int] = {
+    final private [internal] def statefulIndicesToReturn(instrs: Array[Instr], start: Int): Array[Int] = {
         val buff = new ResizableArray[Int]()
-        for (i <- start until end) {
-            if (instrs(i).isInstanceOf[Stateful]) buff += i
+        breakable {
+            for (i <- start until instrs.length) {
+                if (instrs(i).isInstanceOf[Stateful]) buff += i
+                if (instrs(i) == Return) break()
+            }
         }
         buff.toShrunkenArray
     }

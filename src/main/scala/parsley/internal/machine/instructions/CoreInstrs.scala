@@ -41,34 +41,46 @@ private [internal] object Apply extends Instr {
 // Monadic
 private [internal] final class DynCall[-A](f: A => Array[Instr]) extends Instr {
     private [DynCall] val g = f.asInstanceOf[Any => Array[Instr]]
-    override def apply(ctx: Context): Unit = ctx.call(g(ctx.stack.upop()), 0)
+    override def apply(ctx: Context): Unit = ctx.call(g(ctx.stack.upop()), 0, DynCall.EmptyArray)
     // $COVERAGE-OFF$
     override def toString: String = "DynCall(?)"
     // $COVERAGE-ON$
 }
+object DynCall {
+    val EmptyArray = Array.emptyIntArray
+}
 
 // Control Flow
-private [internal] final class Call(_instrs: =>Array[Instr]) extends Instr {
+private [internal] final class Call(_instrs: =>Array[Instr], var label: Int) extends InstrWithLabel {
+    private var isSet: Boolean = false
+    override def relabel(labels: Array[Int]): this.type = {
+        if (!isSet) {
+            label = labels(label)
+            isSet = true
+        }
+        this
+    }
     private [Call] lazy val (instrs, pindices) = {
         val is = _instrs
         (is, statefulIndices(is))
     }
     private [internal] var _statefulIndices: Array[Int] = _
 
-    override def apply(ctx: Context): Unit = {
-        //if (ctx.instrs.length != instrs.length && _statefulIndices.length > 0) println(_statefulIndices.map(ctx.instrs).mkString(", "))
-        ctx.call(stateSafeCopy(instrs, pindices), 0)
-    }
+    override def apply(ctx: Context): Unit = ctx.call(stateSafeCopy(instrs, pindices), 0, Array.emptyIntArray)
+    //override def apply(ctx: Context): Unit = ctx.call(ctx.instrs, label, _statefulIndices)
     // $COVERAGE-OFF$
-    override def toString: String = "Call"
+    override def toString: String = s"Call($label)"
     // $COVERAGE-ON$
 }
 
 private [internal] final class GoSub(var label: Int) extends InstrWithLabel {
-    override def apply(ctx: Context): Unit = ctx.call(ctx.instrs, label)
+    override def apply(ctx: Context): Unit = ctx.call(ctx.instrs, label, GoSub.EmptyArray)
     // $COVERAGE-OFF$
     override def toString: String = s"GoSub($label)"
     // $COVERAGE-ON$
+}
+object GoSub {
+    val EmptyArray = Array.emptyIntArray
 }
 
 private [internal] object Return extends Instr {

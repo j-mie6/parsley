@@ -22,7 +22,6 @@ private [internal] final class ResizableArray[A: ClassTag](initialSize: Int = Re
         array(size) = x
         size += 1
     }
-    def apply(idx: Int): A = array(idx)
     def length: Int = size
     def toArray: Array[A] = {
         val res = array

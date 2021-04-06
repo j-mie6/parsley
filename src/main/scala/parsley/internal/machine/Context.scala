@@ -138,18 +138,34 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         }
     }
 
-    private [machine] def call(newInstrs: Array[Instr], at: Int) = {
-        calls = new CallStack(pc + 1, instrs, calls)
-        instrs = newInstrs
+    private [machine] def call(newInstrs: Array[Instr], at: Int, preserve: Array[Int]) = {
+        val exchange = preserve.map(idx => idx -> instrs(idx))
+        calls = new CallStack(pc + 1, instrs, exchange, calls)
+        //println(instructions.pretty(instrs))
+        //println(instrs eq newInstrs)
+        if (newInstrs ne instrs) instrs = newInstrs
+        else for (idx <- preserve) instrs(idx) = instrs(idx).copy
         pc = at
         depth += 1
     }
 
     private [machine] def ret(): Unit = {
+        val exchange = calls.exchange
         instrs = calls.instrs
+        for ((idx, instr) <- exchange) instrs(idx) = instr
         pc = calls.ret
         calls = calls.tail
         depth -= 1
+    }
+
+    private def multiRet(n: Int): Unit = {
+        if (n > 0) {
+            /*val calls_ = CallStack.drop(calls, n-1)
+            instrs = calls_.instrs
+            calls = calls_.tail
+            depth -= n*/
+            for (_ <- 0 until n) ret()
+        }
     }
 
     private [machine] def catchNoConsumed(handler: =>Unit): Unit = {
@@ -191,15 +207,9 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
             status = Recover
             val handler = handlers
             handlers = handlers.tail
+            multiRet(depth - handler.depth)
             pc = handler.pc
             val diffstack = stack.usize - handler.stacksz
-            val diffdepth = depth - handler.depth - 1
-            depth = handler.depth
-            if (diffdepth >= 0) {
-                val calls_ = CallStack.drop(calls, diffdepth)
-                instrs = calls_.instrs
-                calls = calls_.tail
-            }
             if (diffstack > 0) stack.drop(diffstack)
         }
     }

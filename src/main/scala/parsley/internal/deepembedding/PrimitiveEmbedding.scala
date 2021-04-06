@@ -41,8 +41,12 @@ private [parsley] final class Fail(private [Fail] val msg: String)
 private [parsley] final class Unexpected(private [Unexpected] val msg: String)
     extends Singleton[Nothing](s"unexpected($msg)", new instructions.Unexpected(msg)) with MZero
 
-private [deepembedding] final class Rec[A](private [deepembedding] val p: Parsley[A], private [deepembedding] val label: Int, val call: instructions.Call)
-    extends Singleton(s"rec($p)", call)
+private [deepembedding] final class Rec[A](private [deepembedding] val p: Parsley[A], val call: instructions.Call)
+    extends Singleton(s"rec($p)", call) {
+    def label: Int = call.label
+    def statefulIndices = call._statefulIndices
+    def statefulIndices_=(indices: Array[Int]): Unit = call._statefulIndices = indices
+}
 private [deepembedding] final class Subroutine[A](var p: Parsley[A]) extends Parsley[A] {
     // $COVERAGE-OFF$
     override def findLetsAux[Cont[_, +_], R](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState): Cont[R, Unit] = {
