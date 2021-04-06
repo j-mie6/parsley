@@ -9,7 +9,7 @@ import scala.language.higherKinds
 private [parsley] abstract class Singleton[A](pretty: String, instr: =>instructions.Instr) extends Parsley[A] {
     final override def findLetsAux[Cont[_, +_], R]
         (implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState): Cont[R, Unit] = result(())
-    final override def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap[Cont]): Cont[R, Parsley[A_]] = result(this)
+    final override def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap): Cont[R, Parsley[A_]] = result(this)
     final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         result(instrs += instr)
     }
@@ -25,7 +25,7 @@ private [deepembedding] abstract class Unary[A, B](__p: =>Parsley[A])(pretty: St
     protected val numInstrs: Int
     final override def findLetsAux[Cont[_, +_], R]
         (implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState): Cont[R,Unit] = _p.findLets()
-    override def preprocess[Cont[_, +_], R, B_ >: B](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap[Cont]): Cont[R, Parsley[B_]] =
+    override def preprocess[Cont[_, +_], R, B_ >: B](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap): Cont[R, Parsley[B_]] =
         for (p <- _p.optimised) yield empty.ready(p)
     private [deepembedding] def ready(p: Parsley[A]): this.type = {
         processed = true
@@ -51,7 +51,7 @@ private [deepembedding] abstract class Binary[A, B, C](__left: =>Parsley[A], __r
         (implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState): Cont[R,Unit] = {
         _left.findLets() >> _right.findLets()
     }
-    final override def preprocess[Cont[_, +_], R, C_ >: C](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap[Cont]): Cont[R, Parsley[C_]] =
+    final override def preprocess[Cont[_, +_], R, C_ >: C](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap): Cont[R, Parsley[C_]] =
         for (left <- _left.optimised; right <- _right.optimised) yield {
             empty.ready(left, right)
         }
@@ -82,7 +82,7 @@ private [deepembedding] abstract class Ternary[A, B, C, D](__first: =>Parsley[A]
         (implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState): Cont[R, Unit] = {
         _first.findLets() >> _second.findLets() >> _third.findLets()
     }
-    final override def preprocess[Cont[_, +_], R, D_ >: D](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap[Cont]): Cont[R, Parsley[D_]] =
+    final override def preprocess[Cont[_, +_], R, D_ >: D](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap): Cont[R, Parsley[D_]] =
         for (first <- _first.optimised; second <- _second.optimised; third <- _third.optimised) yield {
             empty.ready(first, second, third)
         }

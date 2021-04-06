@@ -48,14 +48,28 @@ package object instructions
         buff.toShrunkenArray
     }
 
-    final private [internal] def statefulIndicesToReturn(instrs: Array[Instr], start: Int): Array[Int] = {
-        val buff = new ResizableArray[Int]()
+    final private [internal] def statefulIndicesToReturn(instrs: Array[Instr], start: Int): List[Int] = {
+        val buff = mutable.ListBuffer.empty[Int]
         breakable {
-            for (i <- start until instrs.length) {
-                if (instrs(i).isInstanceOf[Stateful]) buff += i
-                if (instrs(i) == Return) break()
+            for (i <- start until instrs.length) instrs(i) match {
+                case _: Stateful => buff += i
+                case Return => break()
+                case _ =>
             }
         }
-        buff.toShrunkenArray
+        buff.toList
+    }
+
+    final private [internal] def dependencies(instrs: Array[Instr], start: Int): Set[Int] = {
+        val deps = mutable.Set.empty[Int]
+        breakable {
+            for (i <- start until instrs.length) instrs(i) match {
+                case call: Call => deps += call.label
+                case sub: GoSub => deps += sub.label
+                case Return => break()
+                case _ =>
+            }
+        }
+        deps.toSet
     }
 }

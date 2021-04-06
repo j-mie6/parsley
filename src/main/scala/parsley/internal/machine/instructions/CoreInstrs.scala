@@ -51,7 +51,7 @@ object DynCall {
 }
 
 // Control Flow
-private [internal] final class Call(_instrs: =>Array[Instr], var label: Int) extends InstrWithLabel {
+private [internal] final class Call(var label: Int) extends InstrWithLabel {
     private var isSet: Boolean = false
     override def relabel(labels: Array[Int]): this.type = {
         if (!isSet) {
@@ -60,14 +60,9 @@ private [internal] final class Call(_instrs: =>Array[Instr], var label: Int) ext
         }
         this
     }
-    private [Call] lazy val (instrs, pindices) = {
-        val is = _instrs
-        (is, statefulIndices(is))
-    }
-    private [internal] var _statefulIndices: Array[Int] = _
+    private [internal] var preserve: Array[Int] = _
 
-    override def apply(ctx: Context): Unit = ctx.call(stateSafeCopy(instrs, pindices), 0, Array.emptyIntArray)
-    //override def apply(ctx: Context): Unit = ctx.call(ctx.instrs, label, _statefulIndices)
+    override def apply(ctx: Context): Unit = ctx.call(ctx.instrs, label, preserve)
     // $COVERAGE-OFF$
     override def toString: String = s"Call($label)"
     // $COVERAGE-ON$

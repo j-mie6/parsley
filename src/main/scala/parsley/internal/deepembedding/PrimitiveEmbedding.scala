@@ -41,11 +41,10 @@ private [parsley] final class Fail(private [Fail] val msg: String)
 private [parsley] final class Unexpected(private [Unexpected] val msg: String)
     extends Singleton[Nothing](s"unexpected($msg)", new instructions.Unexpected(msg)) with MZero
 
-private [deepembedding] final class Rec[A](private [deepembedding] val p: Parsley[A], val call: instructions.Call)
-    extends Singleton(s"rec($p)", call) {
+private [deepembedding] final class Rec[A](private [deepembedding] val p: Parsley[A], val call: instructions.Call) extends Singleton(s"rec($p)", call) {
     def label: Int = call.label
-    def statefulIndices = call._statefulIndices
-    def statefulIndices_=(indices: Array[Int]): Unit = call._statefulIndices = indices
+    def preserve = call.preserve
+    def preserve_=(indices: Array[Int]): Unit = call.preserve = indices
 }
 private [deepembedding] final class Subroutine[A](var p: Parsley[A]) extends Parsley[A] {
     // $COVERAGE-OFF$
@@ -53,7 +52,7 @@ private [deepembedding] final class Subroutine[A](var p: Parsley[A]) extends Par
         throw new Exception("Subroutines cannot exist during let detection")
     }
     // $COVERAGE-ON$
-    override def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap[Cont]): Cont[R, Parsley[A_]] = {
+    override def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap): Cont[R, Parsley[A_]] = {
         for (p <- this.p.optimised) yield this.ready(p)
     }
     private def ready(p: Parsley[A]): this.type = {
