@@ -43,7 +43,10 @@ private [parsley] final class Unexpected(private [Unexpected] val msg: String)
 
 private [deepembedding] final class Rec[A](private [deepembedding] val p: Parsley[A], val call: instructions.Call) extends Singleton(s"rec($p)", call) {
     def label: Int = call.label
+    // $COVERAGE-OFF$
+    // This is here because Scala needs it to be, it's not used
     def preserve = call.preserve
+    // $COVERAGE-ON$
     def preserve_=(indices: Array[Int]): Unit = call.preserve = indices
 }
 private [deepembedding] final class Subroutine[A](var p: Parsley[A]) extends Parsley[A] {

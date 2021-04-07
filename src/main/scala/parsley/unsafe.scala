@@ -46,6 +46,7 @@ object unsafe {
     /** This class enables faster, but potentially misleading error behaviour
       *  @since 2.6.0
       */
+    // $COVERAGE-OFF$
     implicit class ErrorLabel[P, A](p: =>P)(implicit con: P => Parsley[A]) {
         /** Sets the expected message for a parser. If the parser fails then `expected msg` will added to the error.
           * This will supercede '''all''' labels that that are present in the parser `p`. Whilst this does improve
@@ -54,6 +55,7 @@ object unsafe {
           * @since 2.6.0
           */
         @deprecated("The infrastructure required to keep this incredibly niche functionality going is too prohibitive, it will be removed in 4.0", "3.1.0")
-        def unsafeLabel(msg: String): Parsley[A] = p.label(msg)//new Parsley(new deepembedding.UnsafeErrorRelabel(con(p).internal, msg))
+        def unsafeLabel(msg: String): Parsley[A] = p.label(msg)
     }
+    // $COVERAGE-ON$
 }

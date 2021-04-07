@@ -328,4 +328,12 @@ class CoreTests extends ParsleyTest {
         lazy val uhoh: Parsley[Unit] = 'a' >>= (_ => uhoh)
         noException should be thrownBy uhoh.parse("a")
     }
+
+    "failures through call boundary" should "ensure that stateful instructions are restored correctly" in {
+        import parsley.combinator.{whileP, some, eof}
+        val n = registers.Reg.make[Int]
+        lazy val p: Parsley[Unit] = whileP((gets(n, (i: Int) => i % 2 == 0) ?: (some('a'), some('b'))) *> modify[Int](n, _ - 1) *> gets(n, (i: Int) => i != 0))
+        val q = attempt(put(n, 4) *> p <* eof) <|> (put(n, 2) *> p <* eof)
+        q.parse("aaaabbb") shouldBe a [Success[_]]
+    }
 }
