@@ -61,7 +61,9 @@ private [deepembedding] sealed abstract class FilterLike[A, B](_p: =>Parsley[A],
         case z: MZero => z
         case _ => this
     }
-    final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = p.codeGen |> (instrs += instr)
+    final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+        p.codeGen |> (instrs += instr)
+    }
 }
 private [parsley] final class FastFail[A](_p: =>Parsley[A], msggen: A => String)
     extends FilterLike[A, Nothing](_p, c => s"$c ! ?", FastFail.empty(msggen),

@@ -85,7 +85,7 @@ private [parsley] final class >>=[A, B](_p: =>Parsley[A], private [>>=] val f: A
         //case p@CharTok(c) => *>(p, new Rec(() => f(c.asInstanceOf[A]), expected))
         //case p@StringTok(s) => *>(p, new Rec(() => f(s.asInstanceOf[A]), expected))
         // (q *> p) >>= f = q *> (p >>= f)
-        case u *> v => *>(u, >>=(v, f).optimise)
+        //case u *> v => *>(u, >>=(v, f).optimise)
         // monad law 3: (m >>= g) >>= f = m >>= (\x -> g x >>= f) Note: this *could* help if g x ended with a pure, since this would be optimised out!
         //case (m: Parsley[T] @unchecked) >>= (g: (T => A) @unchecked) =>
         //    p = m.asInstanceOf[Parsley[A]]

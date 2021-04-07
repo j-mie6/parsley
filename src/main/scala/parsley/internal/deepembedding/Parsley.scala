@@ -42,7 +42,7 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     }
 
     // Internals
-    final private [deepembedding] def findLets[Cont[_, +_], R]()(implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState): Cont[R, Unit] = {
+    final private [deepembedding] def findLets[Cont[_, +_], R](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState): Cont[R, Unit] = {
         state.addPred(this)
         if (seen(this)) result(state.addRec(this))
         else if (state.notProcessedBefore(this)) {
@@ -104,32 +104,22 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
         implicit lazy val recMap: RecMap = new RecMap(letFinderState.recs, state)
         perform {
             implicit val seenSet: Set[Parsley[_]] = Set.empty
-            findLets() >> {
+            findLets >> {
                 implicit val seenSet: Set[Parsley[_]] = letFinderState.recs
                 implicit val usedRegs: Set[Reg[_]] = letFinderState.usedRegs
                 implicit val subMap: SubMap = new SubMap(letFinderState.lets)
                 optimised.flatMap(p => generateCalleeSave(p.codeGen, allocateRegisters(usedRegs))) |> {
-                    val end = generatePreamble(state.subsExist || seenSet.nonEmpty)
+                    instrs += instructions.Halt
                     finaliseRecs()
                     finaliseSubs()
-                    generatePostamble(end)
                 }
             }
         }
         finaliseInstrs(instrs, state, recMap)
     }
 
-    final private def generatePreamble(required: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): Option[Int] = if (!required) None else {
-        val end = state.freshLabel()
-        instrs += new instructions.Jump(end)
-        Some(end)
-    }
-
-    final private def generatePostamble(endLabel: Option[Int])(implicit instrs: InstrBuffer): Unit = {
-        for (end <- endLabel) instrs += new instructions.Label(end)
-    }
-
-    final private def finaliseRecs[Cont[_, +_]]()(implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer, state: CodeGenState, lets: SubMap, recs: RecMap): Unit = {
+    final private def finaliseRecs[Cont[_, +_]]()(implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer,
+                                                           state: CodeGenState, lets: SubMap, recs: RecMap): Unit = {
         implicit val seenSet: Set[Parsley[_]] = Set.empty
         for (rec <- recs) {
             instrs += new instructions.Label(rec.label)

@@ -1,6 +1,6 @@
 package parsley.internal.machine.instructions
 
-import parsley.internal.machine.{Context, Good, Recover, Failed}
+import parsley.internal.machine.{Context, Good, Recover, Failed, Finished}
 import parsley.internal.ResizableArray
 import parsley.internal.deepembedding.Parsley
 import parsley.internal.errors.{ErrorItem, Desc}
@@ -41,16 +41,20 @@ private [internal] object Apply extends Instr {
 // Monadic
 private [internal] final class DynCall[-A](f: A => Array[Instr]) extends Instr {
     private [DynCall] val g = f.asInstanceOf[Any => Array[Instr]]
-    override def apply(ctx: Context): Unit = ctx.call(g(ctx.stack.upop()), 0, DynCall.EmptyArray)
+    override def apply(ctx: Context): Unit = ctx.call(g(ctx.stack.upop()))
     // $COVERAGE-OFF$
     override def toString: String = "DynCall(?)"
     // $COVERAGE-ON$
 }
-object DynCall {
-    val EmptyArray = Array.emptyIntArray
-}
 
 // Control Flow
+private [internal] object Halt extends Instr {
+    override def apply(ctx: Context) = ctx.status = Finished
+    // $COVERAGE-OFF$
+    override def toString: String = s"Halt"
+    // $COVERAGE-ON$
+}
+
 private [internal] final class Call(var label: Int) extends InstrWithLabel {
     private var isSet: Boolean = false
     override def relabel(labels: Array[Int]): this.type = {
@@ -62,20 +66,17 @@ private [internal] final class Call(var label: Int) extends InstrWithLabel {
     }
     private [internal] var preserve: Array[Int] = _
 
-    override def apply(ctx: Context): Unit = ctx.call(ctx.instrs, label, preserve)
+    override def apply(ctx: Context): Unit = ctx.call(label, preserve)
     // $COVERAGE-OFF$
     override def toString: String = s"Call($label)"
     // $COVERAGE-ON$
 }
 
 private [internal] final class GoSub(var label: Int) extends InstrWithLabel {
-    override def apply(ctx: Context): Unit = ctx.call(ctx.instrs, label, GoSub.EmptyArray)
+    override def apply(ctx: Context): Unit = ctx.call(label)
     // $COVERAGE-OFF$
     override def toString: String = s"GoSub($label)"
     // $COVERAGE-ON$
-}
-object GoSub {
-    val EmptyArray = Array.emptyIntArray
 }
 
 private [internal] object Return extends Instr {
@@ -213,6 +214,7 @@ private [internal] final class LogEnd(val name: String, val ascii: Boolean, brea
             case Recover | Failed =>
                 ctx.fail()
                 red("Fail")
+            case Finished => throw new Exception("debug cannot wrap a halt?!")
         })
         println(preludeString('<', ctx, end))
         if (break) doBreak(ctx)

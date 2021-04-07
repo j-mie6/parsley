@@ -16,6 +16,7 @@ import parsley.errors.ErrorBuilder
 
 private [parsley] object Context {
     private [Context] val NumRegs = 4
+    private [Context] val EmptyExchange = Array.empty[(Int, Instr)]
     private [parsley] def empty: Context = new Context(null, "")
 }
 
@@ -127,22 +128,35 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     @tailrec @inline private [parsley] def runParser[Err: ErrorBuilder, A](): Result[Err, A] = {
         //println(pretty)
         if (status eq Failed) Failure(errs.error.asParseError.format(sourceFile))
-        else if (pc < instrs.length) {
-            instrs(pc)(this)
-            runParser[Err, A]()
+        else if (status eq Finished) {
+            if (calls.isEmpty) Success(stack.peek[A])
+            else {
+                status = Good
+                ret()
+                runParser[Err, A]()
+            }
         }
-        else if (calls.isEmpty) Success(stack.peek[A])
         else {
-            ret()
+            instrs(pc)(this)
             runParser[Err, A]()
         }
     }
 
-    private [machine] def call(newInstrs: Array[Instr], at: Int, preserve: Array[Int]) = {
+    private [machine] def call(at: Int, preserve: Array[Int]): Unit = {
         val exchange = preserve.map(idx => idx -> instrs(idx))
         calls = new CallStack(pc + 1, instrs, exchange, at, calls)
-        if (newInstrs ne instrs) instrs = newInstrs
-        else for (idx <- preserve) instrs(idx) = instrs(idx).copy
+        for (idx <- preserve) instrs(idx) = instrs(idx).copy
+        pc = at
+        depth += 1
+    }
+
+    private [machine] def call(newInstrs: Array[Instr]): Unit = {
+        call(0)
+        instrs = newInstrs
+    }
+
+    private [machine] def call(at: Int): Unit = {
+        calls = new CallStack(pc + 1, instrs, Context.EmptyExchange, at, calls)
         pc = at
         depth += 1
     }
