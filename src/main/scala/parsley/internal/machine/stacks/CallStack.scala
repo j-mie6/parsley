@@ -3,7 +3,7 @@ package parsley.internal.machine.stacks
 import parsley.internal.machine.instructions.Instr
 import scala.annotation.tailrec
 
-private [machine] final class CallStack(val ret: Int, val instrs: Array[Instr], val exchange: Array[(Int, Instr)], val tail: CallStack)
+private [machine] final class CallStack(val ret: Int, val instrs: Array[Instr], val exchange: Array[(Int, Instr)], val callId: Int, val tail: CallStack)
 private [machine] object CallStack extends Stack[CallStack] {
     implicit val inst: Stack[CallStack] = this
     type ElemTy = (Int, Array[Instr])

@@ -268,9 +268,7 @@ private [deepembedding] class LetFinderState {
 
 private [deepembedding] abstract class ParserMap[V <: Parsley[_]](ks: Iterable[Parsley[_]]) {
     protected def make(p: Parsley[_]): V
-    protected val map: Map[Parsley[_], V] = ks.map {
-        case p => p -> make(p)
-    }.toMap
+    protected val map: Map[Parsley[_], V] = ks.map(p => p -> make(p)).toMap
     override def toString: String = map.toString
 }
 

@@ -140,9 +140,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
 
     private [machine] def call(newInstrs: Array[Instr], at: Int, preserve: Array[Int]) = {
         val exchange = preserve.map(idx => idx -> instrs(idx))
-        calls = new CallStack(pc + 1, instrs, exchange, calls)
-        //println(instructions.pretty(instrs))
-        //println(instrs eq newInstrs)
+        calls = new CallStack(pc + 1, instrs, exchange, at, calls)
         if (newInstrs ne instrs) instrs = newInstrs
         else for (idx <- preserve) instrs(idx) = instrs(idx).copy
         pc = at
@@ -158,13 +156,17 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         depth -= 1
     }
 
-    private def multiRet(n: Int): Unit = {
-        if (n > 0) {
-            /*val calls_ = CallStack.drop(calls, n-1)
-            instrs = calls_.instrs
-            calls = calls_.tail
-            depth -= n*/
-            for (_ <- 0 until n) ret()
+    @tailrec private def multiRet(n: Int): Unit = if (n > 0) {
+        if (n == 1) ret()
+        else {
+            val callId = calls.callId
+            var m = n - 1
+            while (calls.tail != null && calls.tail.callId == callId && m > 0) {
+                calls = calls.tail
+                m -= 1
+            }
+            ret()
+            multiRet(m)
         }
     }
 
