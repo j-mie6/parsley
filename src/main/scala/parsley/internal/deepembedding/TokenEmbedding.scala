@@ -14,35 +14,33 @@ private [parsley] final class Comment(start: String, end: String, line: String, 
     extends Singleton[Unit]("comment", new instructions.TokenComment(start, end, line, nested))
 
 private [parsley] final class Sign[A](ty: SignType)
-    extends SingletonExpect[A => A]("sign", _ => new Sign(ty), new instructions.TokenSign(ty))
+    extends Singleton[A => A]("sign", new instructions.TokenSign(ty))
 
-private [parsley] final class Natural(val expected: Option[String] = None)
-    extends SingletonExpect[Int]("natural", new Natural(_), new instructions.TokenNatural(expected))
+private [parsley] final object Natural
+    extends Singleton[Int]("natural", instructions.TokenNatural)
 
-private [parsley] final class Float(val expected: Option[String] = None)
-    extends SingletonExpect[Double]("float", new Float(_), new instructions.TokenFloat(expected))
+private [parsley] final object Float
+    extends Singleton[Double]("float", instructions.TokenFloat)
 
-private [parsley] final class Escape(val expected: Option[String] = None)
-    extends SingletonExpect[Char]("escape", new Escape(_), new instructions.TokenEscape(expected))
+private [parsley] final object Escape
+    extends Singleton[Char]("escape", new instructions.TokenEscape)
 
-private [parsley] final class StringLiteral(ws: TokenSet, val expected: Option[String] = None)
-    extends SingletonExpect[String]("stringLiteral", new StringLiteral(ws, _), new instructions.TokenString(ws, expected))
+private [parsley] final class StringLiteral(ws: TokenSet)
+    extends Singleton[String]("stringLiteral", new instructions.TokenString(ws))
 
-private [parsley] final class RawStringLiteral(val expected: Option[String] = None)
-    extends SingletonExpect[String]("rawStringLiteral", new RawStringLiteral(_), new instructions.TokenRawString(expected))
+private [parsley] final object RawStringLiteral
+    extends Singleton[String]("rawStringLiteral", instructions.TokenRawString)
 
 private [parsley] class NonSpecific(combinatorName: String, name: String, illegalName: String, start: TokenSet,
-                                    letter: TokenSet, illegal: String => Boolean, val expected: Option[String] = None)
-    extends SingletonExpect[String](combinatorName, new NonSpecific(combinatorName, name, illegalName, start, letter, illegal, _),
-                                    new instructions.TokenNonSpecific(name, illegalName)(start, letter, illegal, expected))
+                                    letter: TokenSet, illegal: String => Boolean)
+    extends Singleton[String](combinatorName, new instructions.TokenNonSpecific(name, illegalName)(start, letter, illegal))
 
 private [parsley] final class Specific(name: String, private [Specific] val specific: String,
-                                       letter: TokenSet, caseSensitive: Boolean, val expected: Option[String] = None)
-    extends SingletonExpect[Unit](s"$name($specific)", new Specific(name, specific, letter, caseSensitive, _),
-                                  new instructions.TokenSpecific(specific, letter, caseSensitive, expected))
+                                       letter: TokenSet, caseSensitive: Boolean)
+    extends Singleton[Unit](s"$name($specific)", new instructions.TokenSpecific(specific, letter, caseSensitive))
 
-private [parsley] final class MaxOp(private [MaxOp] val operator: String, ops: Set[String], val expected: Option[String] = None)
-    extends SingletonExpect[Unit](s"maxOp($operator)", new MaxOp(operator, ops, _), new instructions.TokenMaxOp(operator, ops, expected))
+private [parsley] final class MaxOp(private [MaxOp] val operator: String, ops: Set[String])
+    extends Singleton[Unit](s"maxOp($operator)", new instructions.TokenMaxOp(operator, ops))
 
 private [parsley] object Sign {
     private [parsley] sealed trait SignType {
@@ -58,9 +56,9 @@ private [parsley] object Sign {
 
 // $COVERAGE-OFF$
 private [deepembedding] object Specific {
-    def unapply(self: Specific): Option[String] = Some(self.specific)
+    def unapply(self: Specific): Some[String] = Some(self.specific)
 }
 private [deepembedding] object MaxOp {
-    def unapply(self: MaxOp): Option[String] = Some(self.operator)
+    def unapply(self: MaxOp): Some[String] = Some(self.operator)
 }
 // $COVERAGE-ON$

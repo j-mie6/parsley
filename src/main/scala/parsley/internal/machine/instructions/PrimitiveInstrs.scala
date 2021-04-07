@@ -5,7 +5,7 @@ import parsley.internal.ResizableArray
 import parsley.internal.errors.{ErrorItem, Desc}
 
 private [internal] final class Satisfies(f: Char => Boolean, _expected: Option[String]) extends Instr {
-    private [this] final val expected = _expected.map(Desc)
+    private [this] final val expected = _expected.map(Desc(_))
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && f(ctx.nextChar)) ctx.pushAndContinue(ctx.consumeChar())
         else ctx.expectedFail(expected)

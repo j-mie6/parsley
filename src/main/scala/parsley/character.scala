@@ -4,7 +4,7 @@ import parsley.Parsley.{LazyParsley}
 import parsley.combinator.skipMany
 import parsley.implicits.character.charLift
 import parsley.internal.deepembedding
-import parsley.unsafe.ErrorLabel
+import parsley.errors.combinator.ErrorMethods
 
 import scala.annotation.switch
 import scala.language.implicitConversions
@@ -19,21 +19,21 @@ object character
       * @param c The character to search for
       * @return `c` if it can be found at the head of the input
       */
-    def char(c: Char): Parsley[Char] = new Parsley(new deepembedding.CharTok(c))
+    def char(c: Char): Parsley[Char] = new Parsley(new deepembedding.CharTok(c, None))
 
     /** Reads a character from the head of the input stream if and only if it satisfies the given predicate. Else it
       * fails without consuming the character.
       * @param f The function to test the character on
       * @return `c` if `f(c)` is true.
       */
-    def satisfy(f: Char => Boolean): Parsley[Char] = new Parsley(new deepembedding.Satisfy(f))
+    def satisfy(f: Char => Boolean): Parsley[Char] = new Parsley(new deepembedding.Satisfy(f, None))
 
     /** Reads a string from the input stream and returns it, else fails if the string is not found at the head
       * of the stream.
       * @param s The string to match against
       * @return `s` if it can be found at the head of the input
       */
-    def string(s: String): Parsley[String] = new Parsley(new deepembedding.StringTok(s))
+    def string(s: String): Parsley[String] = new Parsley(new deepembedding.StringTok(s, None))
 
     /**`oneOf(cs)` succeeds if the current character is in the supplied set of characters `cs`.
       * Returns the parsed character. See also `satisfy`.*/
@@ -52,52 +52,52 @@ object character
     def noneOf(cs: Char*): Parsley[Char] = noneOf(cs.toSet)
 
     /**The parser `anyChar` accepts any kind of character. Returns the accepted character.*/
-    val anyChar: Parsley[Char] = satisfy(_ => true).unsafeLabel("any character")
+    val anyChar: Parsley[Char] = satisfy(_ => true).label("any character")
 
     /**Parses a whitespace character (either ' ' or '\t'). Returns the parsed character.*/
-    val space: Parsley[Char] = satisfy(isSpace).unsafeLabel("space/tab")
+    val space: Parsley[Char] = satisfy(isSpace).label("space/tab")
 
     /**Skips zero or more whitespace characters. See also `skipMany`. Uses space.*/
     val spaces: Parsley[Unit] = skipMany(space)
 
     /**Parses a whitespace character (' ', '\t', '\n', '\r', '\f', '\v'). Returns the parsed character.*/
-    val whitespace: Parsley[Char] = satisfy(isWhitespace).unsafeLabel("whitespace")
+    val whitespace: Parsley[Char] = satisfy(isWhitespace).label("whitespace")
 
     /**Skips zero or more whitespace characters. See also `skipMany`. Uses whitespace.*/
     val whitespaces: Parsley[Unit] = skipMany(whitespace)
 
     /**Parses a newline character ('\n'). Returns a newline character.*/
-    val newline: Parsley[Char] = '\n'.unsafeLabel("newline")
+    val newline: Parsley[Char] = '\n'.label("newline")
 
     /**Parses a carriage return character '\r' followed by a newline character '\n', returns the newline character.*/
-    val crlf: Parsley[Char] = ('\r' *> '\n').unsafeLabel("crlf newline")
+    val crlf: Parsley[Char] = '\r'.label("crlf newline") *> '\n'.label("end of crlf")
 
     /**Parses a CRLF or LF end-of-line. Returns a newline character ('\n').*/
-    val endOfLine: Parsley[Char] = ('\n' <|> ('\r' *> '\n')).unsafeLabel("end of line")
+    val endOfLine: Parsley[Char] = '\n'.label("end of line") <|> ('\r'.label("end of line") *> '\n'.label("end of crlf"))
 
     /**Parses a tab character ('\t'). Returns a tab character.*/
-    val tab: Parsley[Char] = '\t'.unsafeLabel("tab")
+    val tab: Parsley[Char] = '\t'.label("tab")
 
     /**Parses an upper case letter. Returns the parsed character.*/
-    val upper: Parsley[Char] = satisfy(_.isUpper).unsafeLabel("uppercase letter")
+    val upper: Parsley[Char] = satisfy(_.isUpper).label("uppercase letter")
 
     /**Parses a lower case letter. Returns the parsed character.*/
-    val lower: Parsley[Char] = satisfy(_.isLower).unsafeLabel("lowercase letter")
+    val lower: Parsley[Char] = satisfy(_.isLower).label("lowercase letter")
 
     /**Parses a letter or digit. Returns the parsed character.*/
-    val alphaNum: Parsley[Char] = satisfy(_.isLetterOrDigit).unsafeLabel("alpha-numeric character")
+    val alphaNum: Parsley[Char] = satisfy(_.isLetterOrDigit).label("alpha-numeric character")
 
     /**Parses a letter. Returns the parsed character.*/
-    val letter: Parsley[Char] = satisfy(_.isLetter).unsafeLabel("letter")
+    val letter: Parsley[Char] = satisfy(_.isLetter).label("letter")
 
     /**Parses a digit. Returns the parsed character.*/
-    val digit: Parsley[Char] = satisfy(_.isDigit).unsafeLabel("digit")
+    val digit: Parsley[Char] = satisfy(_.isDigit).label("digit")
 
     /**Parses a hexadecimal digit. Returns the parsed character.*/
     val hexDigit: Parsley[Char] = satisfy(isHexDigit)
 
     /**Parses an octal digit. Returns the parsed character.*/
-    val octDigit: Parsley[Char] = satisfy(isOctDigit).unsafeLabel("octal digit")
+    val octDigit: Parsley[Char] = satisfy(isOctDigit).label("octal digit")
 
     // Functions
     /** Helper function, equivalent to the predicate used by whitespace. Useful for providing to LanguageDef */

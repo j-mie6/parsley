@@ -23,7 +23,17 @@ private [internal] final class ResizableArray[A: ClassTag](initialSize: Int = Re
         size += 1
     }
     def length: Int = size
-    def toArray: Array[A] = array
+    def toArray: Array[A] = {
+        val res = array
+        array = null
+        res
+    }
+    def toShrunkenArray: Array[A] = if (array.length == size) toArray else {
+        val newArray = new Array[A](size)
+        java.lang.System.arraycopy(array, 0, newArray, 0, size)
+        array = null
+        newArray
+    }
 }
 private [internal] object ResizableArray {
     val InitialSize = 16

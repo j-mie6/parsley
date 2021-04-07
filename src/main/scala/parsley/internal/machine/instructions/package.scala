@@ -3,6 +3,8 @@ package parsley.internal.machine
 import parsley.internal.ResizableArray
 
 import scala.language.implicitConversions
+import scala.annotation.tailrec
+import scala.collection.mutable
 
 package object instructions
 {
@@ -43,6 +45,34 @@ package object instructions
         for (i <- 0 until instrs.length) {
             if (instrs(i).isInstanceOf[Stateful]) buff += i
         }
-        buff.toArray
+        buff.toShrunkenArray
+    }
+
+    @tailrec final private def statefulIndicesToReturn(instrs: Array[Instr], idx: Int, buff: mutable.ListBuffer[Int]): Unit = instrs(idx) match {
+        case _: Stateful =>
+            buff += idx
+            statefulIndicesToReturn(instrs, idx + 1, buff)
+        case Return =>
+        case _ => statefulIndicesToReturn(instrs, idx + 1, buff)
+    }
+
+    final private [internal] def statefulIndicesToReturn(instrs: Array[Instr], start: Int): List[Int] = {
+        val buff = mutable.ListBuffer.empty[Int]
+        statefulIndicesToReturn(instrs, start, buff)
+        buff.toList
+    }
+
+    @tailrec final private def dependencies(instrs: Array[Instr], idx: Int, deps: mutable.Set[Int]): Unit = instrs(idx) match {
+        case sub: GoSub =>
+            deps += sub.label
+            dependencies(instrs, idx + 1, deps)
+        case Return =>
+        case _ => dependencies(instrs, idx + 1, deps)
+    }
+
+    final private [internal] def dependencies(instrs: Array[Instr], start: Int): Set[Int] = {
+        val deps = mutable.Set.empty[Int]
+        dependencies(instrs, start, deps)
+        deps.toSet
     }
 }

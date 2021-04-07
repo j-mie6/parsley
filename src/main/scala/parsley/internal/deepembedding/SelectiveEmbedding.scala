@@ -12,7 +12,7 @@ private [deepembedding] sealed abstract class BranchLike[A, B, C, D](_b: =>Parsl
                                                                      instr: Int => instructions.Instr, finaliser: Option[instructions.Instr])
     extends Ternary[A, B, C, D](_b, _p, _q)(pretty, empty) {
     final override val numInstrs = 2
-    final override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
+    final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val toSecond = state.freshLabel()
         val end = state.freshLabel()
         first.codeGen >> {
@@ -52,7 +52,7 @@ private [parsley] final class If[A](_b: =>Parsley[Boolean], _p: =>Parsley[A], _q
     }
 }
 
-private [deepembedding] sealed abstract class FilterLike[A, B](_p: =>Parsley[A], pretty: String => String, empty: Option[String] => FilterLike[A, B],
+private [deepembedding] sealed abstract class FilterLike[A, B](_p: =>Parsley[A], pretty: String => String, empty: =>FilterLike[A, B],
                                                                fail: A => Parsley[B], instr: instructions.Instr, pred: A => Boolean)
     extends Unary[A, B](_p)(pretty, empty) {
     final override val numInstrs = 1
@@ -61,22 +61,24 @@ private [deepembedding] sealed abstract class FilterLike[A, B](_p: =>Parsley[A],
         case z: MZero => z
         case _ => this
     }
-    final override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = p.codeGen |> (instrs += instr)
+    final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+        p.codeGen |> (instrs += instr)
+    }
 }
 private [parsley] final class FastFail[A](_p: =>Parsley[A], msggen: A => String)
-    extends FilterLike[A, Nothing](_p, c => s"$c ! ?", _ => FastFail.empty(msggen),
+    extends FilterLike[A, Nothing](_p, c => s"$c ! ?", FastFail.empty(msggen),
                                    x => new Fail(msggen(x)), new instructions.FastFail(msggen), _ => true) with MZero
-private [parsley] final class FastUnexpected[A](_p: =>Parsley[A], msggen: A => String, expected: Option[String] = None)
-    extends FilterLike[A, Nothing](_p, c => s"$c.unexpected(?)", FastUnexpected.empty(msggen, _),
-                                   x => new Unexpected(msggen(x), expected), new instructions.FastUnexpected(msggen, expected), _ => true) with MZero
-private [parsley] final class Filter[A](_p: =>Parsley[A], pred: A => Boolean, expected: Option[String] = None)
-    extends FilterLike[A, A](_p, c => s"$c.filter(?)", Filter.empty(pred, _),
-                             _ => new Empty(expected), new instructions.Filter(pred, expected), !pred(_))
-private [parsley] final class FilterOut[A](_p: =>Parsley[A], pred: PartialFunction[A, String], expected: Option[String] = None)
-    extends FilterLike[A, A](_p, c => s"$c.filterOut(?)", FilterOut.empty(pred, _),
-                             x => ErrorExplain(new Empty(expected), pred(x)), new instructions.FilterOut(pred, expected), pred.isDefinedAt(_))
+private [parsley] final class FastUnexpected[A](_p: =>Parsley[A], msggen: A => String)
+    extends FilterLike[A, Nothing](_p, c => s"$c.unexpected(?)", FastUnexpected.empty(msggen),
+                                   x => new Unexpected(msggen(x)), new instructions.FastUnexpected(msggen), _ => true) with MZero
+private [parsley] final class Filter[A](_p: =>Parsley[A], pred: A => Boolean)
+    extends FilterLike[A, A](_p, c => s"$c.filter(?)", Filter.empty(pred),
+                             _ => Empty, new instructions.Filter(pred), !pred(_))
+private [parsley] final class FilterOut[A](_p: =>Parsley[A], pred: PartialFunction[A, String])
+    extends FilterLike[A, A](_p, c => s"$c.filterOut(?)", FilterOut.empty(pred),
+                             x => ErrorExplain(Empty, pred(x)), new instructions.FilterOut(pred), pred.isDefinedAt(_))
 private [parsley] final class GuardAgainst[A](_p: =>Parsley[A], pred: PartialFunction[A, String])
-    extends FilterLike[A, A](_p, c => s"$c.guardAgainst(?)", _ => GuardAgainst.empty(pred),
+    extends FilterLike[A, A](_p, c => s"$c.guardAgainst(?)", GuardAgainst.empty(pred),
                             x => new Fail(pred(x)), new instructions.GuardAgainst(pred), pred.isDefinedAt(_))
 
 private [deepembedding] object Branch {
@@ -91,13 +93,13 @@ private [deepembedding] object FastFail {
     def empty[A](msggen: A => String): FastFail[A] = new FastFail(???, msggen)
 }
 private [deepembedding] object FastUnexpected {
-    def empty[A](msggen: A => String, expected: Option[String]): FastUnexpected[A] = new FastUnexpected(???, msggen, expected)
+    def empty[A](msggen: A => String): FastUnexpected[A] = new FastUnexpected(???, msggen)
 }
 private [deepembedding] object Filter {
-    def empty[A](pred: A => Boolean, expected: Option[String]): Filter[A] = new Filter(???, pred, expected)
+    def empty[A](pred: A => Boolean): Filter[A] = new Filter(???, pred)
 }
 private [deepembedding] object FilterOut {
-    def empty[A](pred: PartialFunction[A, String], expected: Option[String]): FilterOut[A] = new FilterOut(???, pred, expected)
+    def empty[A](pred: PartialFunction[A, String]): FilterOut[A] = new FilterOut(???, pred)
 }
 private [deepembedding] object GuardAgainst {
     def empty[A](pred: PartialFunction[A, String]): GuardAgainst[A] = new GuardAgainst(???, pred)

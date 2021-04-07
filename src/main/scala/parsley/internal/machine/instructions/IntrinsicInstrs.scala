@@ -117,25 +117,23 @@ private [internal] final class Case(var label: Int) extends InstrWithLabel {
     // $COVERAGE-ON$
 }
 
-private [internal] final class Filter[A](_pred: A=>Boolean, _expected: Option[String]) extends Instr {
+private [internal] final class Filter[A](_pred: A=>Boolean) extends Instr {
     private [this] val pred = _pred.asInstanceOf[Any=>Boolean]
-    private [this] val expected = _expected.map(Desc)
     override def apply(ctx: Context): Unit = {
         if (pred(ctx.stack.upeek)) ctx.inc()
-        else ctx.fail(new EmptyError(ctx.offset, ctx.line, ctx.col, expected))
+        else ctx.fail(new EmptyError(ctx.offset, ctx.line, ctx.col))
     }
     // $COVERAGE-OFF$
     override def toString: String = "Filter(?)"
     // $COVERAGE-ON$
 }
 
-private [internal] final class FilterOut[A](_pred: PartialFunction[A, String], _expected: Option[String]) extends Instr {
+private [internal] final class FilterOut[A](_pred: PartialFunction[A, String]) extends Instr {
     private [this] val pred = _pred.asInstanceOf[PartialFunction[Any, String]]
-    private [this] val expected = _expected.map(Desc)
     override def apply(ctx: Context): Unit = {
         if (pred.isDefinedAt(ctx.stack.upeek)) {
             val reason = pred(ctx.stack.upop())
-            ctx.fail(new EmptyErrorWithReason(ctx.offset, ctx.line, ctx.col, expected, reason))
+            ctx.fail(new EmptyErrorWithReason(ctx.offset, ctx.line, ctx.col, reason))
         }
         else ctx.inc()
     }
@@ -155,8 +153,7 @@ private [internal] final class GuardAgainst[A](_pred: PartialFunction[A, String]
     // $COVERAGE-ON$
 }
 
-private [internal] final class NotFollowedBy(_expected: Option[String]) extends Instr {
-    private [this] final val expected = _expected.map(Desc)
+private [internal] object NotFollowedBy extends Instr {
     override def apply(ctx: Context): Unit = {
         val reached = ctx.offset
         // Recover the previous state; notFollowedBy NEVER consumes input
@@ -165,7 +162,7 @@ private [internal] final class NotFollowedBy(_expected: Option[String]) extends 
         // A previous success is a failure
         if (ctx.status eq Good) {
             ctx.handlers = ctx.handlers.tail
-            ctx.expectedTokenFail(expected, reached - ctx.offset)
+            ctx.expectedTokenFail(None, reached - ctx.offset)
         }
         // A failure is what we wanted
         else {
@@ -179,8 +176,8 @@ private [internal] final class NotFollowedBy(_expected: Option[String]) extends 
     // $COVERAGE-ON$
 }
 
-private [internal] final class Eof(_expected: Option[String]) extends Instr {
-    private [this] final val expected = Some(_expected.map(Desc).getOrElse(EndOfInput))
+private [internal] object Eof extends Instr {
+    private [this] final val expected = Some(EndOfInput)
     override def apply(ctx: Context): Unit = {
         if (ctx.offset == ctx.inputsz) ctx.pushAndContinue(())
         else ctx.expectedFail(expected)

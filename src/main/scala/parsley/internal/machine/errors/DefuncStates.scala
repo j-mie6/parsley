@@ -12,7 +12,8 @@ private [errors] final class TrivialState(offset: Int, outOfRange: Boolean) {
     private val expecteds = mutable.Set.empty[ErrorItem]
     private var unexpected: UnexpectItem = NoItem
     private val reasons = mutable.Set.empty[String]
-    private var acceptingExpected = true
+    private var _acceptingExpected = 0
+    private def acceptingExpected = _acceptingExpected == 0
 
     def pos_=(line: Int, col: Int): Unit = {
         this.line = line
@@ -29,9 +30,9 @@ private [errors] final class TrivialState(offset: Int, outOfRange: Boolean) {
         new TrivialError(offset, line, col, unexpected.toErrorItem(offset), expecteds.toSet, reasons.toSet)
     }
     def ignoreExpected(action: =>Unit): Unit = {
-        acceptingExpected = false
+        _acceptingExpected += 1
         action
-        acceptingExpected = true
+        _acceptingExpected -= 1
     }
 }
 private [errors] object TrivialState {

@@ -59,7 +59,7 @@ private [parsley] final class <*>[A, B](_pf: =>Parsley[A => B], _px: =>Parsley[A
             this
         case _ => this
     }
-    override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = left match {
+    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = left match {
         // pure f <*> p = f <$> p
         case Pure(f) => right match {
             case ct@CharTok(c) => result(instrs += instructions.CharTokFastPerform[Char, B](c, f.asInstanceOf[Char => B], ct.expected))
@@ -75,8 +75,8 @@ private [parsley] final class <*>[A, B](_pf: =>Parsley[A => B], _px: =>Parsley[A
     }
 }
 
-private [parsley] final class >>=[A, B](_p: =>Parsley[A], private [>>=] val f: A => Parsley[B], val expected: Option[String] = None)
-    extends Unary[A, B](_p)(l => s"($l >>= ?)", >>=.empty(f, _)) {
+private [parsley] final class >>=[A, B](_p: =>Parsley[A], private [>>=] val f: A => Parsley[B])
+    extends Unary[A, B](_p)(l => s"($l >>= ?)", >>=.empty(f)) {
     override val numInstrs = 1
     override def optimise: Parsley[B] = p match {
         // monad law 1: pure x >>= f = f x
@@ -85,7 +85,7 @@ private [parsley] final class >>=[A, B](_p: =>Parsley[A], private [>>=] val f: A
         //case p@CharTok(c) => *>(p, new Rec(() => f(c.asInstanceOf[A]), expected))
         //case p@StringTok(s) => *>(p, new Rec(() => f(s.asInstanceOf[A]), expected))
         // (q *> p) >>= f = q *> (p >>= f)
-        case u *> v => *>(u, >>=(v, f, expected).optimise)
+        //case u *> v => *>(u, >>=(v, f).optimise)
         // monad law 3: (m >>= g) >>= f = m >>= (\x -> g x >>= f) Note: this *could* help if g x ended with a pure, since this would be optimised out!
         //case (m: Parsley[T] @unchecked) >>= (g: (T => A) @unchecked) =>
         //    p = m.asInstanceOf[Parsley[A]]
@@ -96,7 +96,7 @@ private [parsley] final class >>=[A, B](_p: =>Parsley[A], private [>>=] val f: A
         case _ => this
     }
     // TODO: Make bind generate with expected != None a ErrorLabel instruction
-    override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = {
+    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         p.codeGen |>
         (instrs += new instructions.DynCall[A](x => f(x).demandCalleeSave().instrs))
     }
@@ -129,8 +129,8 @@ private [deepembedding] sealed abstract class Seq[A, B](_discard: =>Parsley[A], 
         case ct@CharTok(c) if result.isInstanceOf[CharTok] || result.isInstanceOf[StringTok] => optimiseStringResult(combine, make)(c.toString, ct.expected)
         case st@StringTok(s) if result.isInstanceOf[CharTok] || result.isInstanceOf[StringTok] => optimiseStringResult(combine, make)(s, st.expected)
     }
-    final protected def codeGenSeq[Cont[_, +_]: ContOps](default: =>Cont[Unit, Unit])(implicit instrs: InstrBuffer,
-                                                                                      state: CodeGenState): Cont[Unit, Unit] = (result, discard) match {
+    final protected def codeGenSeq[Cont[_, +_], R](default: =>Cont[R, Unit])(implicit ops: ContOps[Cont, R], instrs: InstrBuffer,
+                                                                                      state: CodeGenState): Cont[R, Unit] = (result, discard) match {
         case (Pure(x), ct@CharTok(c)) => ContOps.result(instrs += instructions.CharTokFastPerform[Char, B](c, _ => x, ct.expected))
         case (Pure(x), st@StringTok(s)) => ContOps.result(instrs += instructions.StringTokFastPerform(s, _ => x, st.expected))
         case (Pure(x), st@Satisfy(f)) => ContOps.result(instrs += new instructions.SatisfyExchange(f, x, st.expected))
@@ -161,7 +161,7 @@ private [parsley] final class *>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exten
             }
         }
     }
-    override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = codeGenSeq {
+    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = codeGenSeq {
         discard.codeGen >> {
             instrs += instructions.Pop
             result.codeGen
@@ -190,7 +190,7 @@ private [parsley] final class <*[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exten
             }
         }
     }
-    override def codeGen[Cont[_, +_]: ContOps](implicit instrs: InstrBuffer, state: CodeGenState): Cont[Unit, Unit] = codeGenSeq {
+    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = codeGenSeq {
         result.codeGen >>
         discard.codeGen |>
         (instrs += instructions.Pop)
@@ -199,28 +199,28 @@ private [parsley] final class <*[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exten
 }
 
 private [deepembedding] object Pure {
-    def unapply[A](self: Pure[A]): Option[A] = Some(self.x)
+    def unapply[A](self: Pure[A]): Some[A] = Some(self.x)
 }
 private [deepembedding] object <*> {
     def empty[A, B]: A <*> B = new <*>(???, ???)
     def apply[A, B](left: Parsley[A=>B], right: Parsley[A]): <*>[A, B] = empty.ready(left, right)
-    def unapply[A, B](self: <*>[A, B]): Option[(Parsley[A=>B], Parsley[A])] = Some((self.left, self.right))
+    def unapply[A, B](self: <*>[A, B]): Some[(Parsley[A=>B], Parsley[A])] = Some((self.left, self.right))
 }
 private [deepembedding] object >>= {
-    def empty[A, B](f: A => Parsley[B], expected: Option[String]): >>=[A, B] = new >>=(???, f, expected)
-    def apply[A, B](p: Parsley[A], f: A => Parsley[B], expected: Option[String]): >>=[A, B] = empty(f, expected).ready(p)
-    def unapply[A, B](self: >>=[A, B]): Option[(Parsley[A], A => Parsley[B])] = Some((self.p, self.f))
+    def empty[A, B](f: A => Parsley[B]): >>=[A, B] = new >>=(???, f)
+    def apply[A, B](p: Parsley[A], f: A => Parsley[B]): >>=[A, B] = empty(f).ready(p)
+    def unapply[A, B](self: >>=[A, B]): Some[(Parsley[A], A => Parsley[B])] = Some((self.p, self.f))
 }
 private [deepembedding] object Seq {
-    def unapply[A, B](self: Seq[A, B]): Option[(Parsley[A], Parsley[B])] = Some((self.discard, self.result))
+    def unapply[A, B](self: Seq[A, B]): Some[(Parsley[A], Parsley[B])] = Some((self.discard, self.result))
 }
 private [deepembedding] object *> {
     def empty[A, B]: A *> B = new *>(???, ???)
     def apply[A, B](left: Parsley[A], right: Parsley[B]): A *> B = empty.ready(left, right)
-    def unapply[A, B](self: A *> B): Option[(Parsley[A], Parsley[B])] = Some((self.left, self.right))
+    def unapply[A, B](self: A *> B): Some[(Parsley[A], Parsley[B])] = Some((self.left, self.right))
 }
 private [deepembedding] object <* {
     def empty[A, B]: A <* B = new <*(???, ???)
     def apply[A, B](left: Parsley[A], right: Parsley[B]): A <* B = empty.ready(right, left)
-    def unapply[A, B](self: A <* B): Option[(Parsley[A], Parsley[B])] = Some((self.result, self.discard))
+    def unapply[A, B](self: A <* B): Some[(Parsley[A], Parsley[B])] = Some((self.result, self.discard))
 }

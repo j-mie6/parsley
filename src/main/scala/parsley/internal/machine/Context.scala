@@ -16,6 +16,7 @@ import parsley.errors.ErrorBuilder
 
 private [parsley] object Context {
     private [Context] val NumRegs = 4
+    private [Context] val EmptyExchange = Array.empty[(Int, Instr)]
     private [parsley] def empty: Context = new Context(null, "")
 }
 
@@ -127,29 +128,58 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     @tailrec @inline private [parsley] def runParser[Err: ErrorBuilder, A](): Result[Err, A] = {
         //println(pretty)
         if (status eq Failed) Failure(errs.error.asParseError.format(sourceFile))
-        else if (pc < instrs.length) {
+        else if (status ne Finished) {
             instrs(pc)(this)
             runParser[Err, A]()
         }
         else if (calls.isEmpty) Success(stack.peek[A])
         else {
+            status = Good
             ret()
             runParser[Err, A]()
         }
     }
 
-    private [machine] def call(newInstrs: Array[Instr], at: Int) = {
-        calls = new CallStack(pc + 1, instrs, calls)
+    private [machine] def call(at: Int, preserve: Array[Int]): Unit = {
+        val exchange = preserve.map(idx => idx -> instrs(idx))
+        calls = new CallStack(pc + 1, instrs, exchange, at, calls)
+        for (idx <- preserve) instrs(idx) = instrs(idx).copy
+        pc = at
+        depth += 1
+    }
+
+    private [machine] def call(newInstrs: Array[Instr]): Unit = {
+        call(0)
         instrs = newInstrs
+    }
+
+    private [machine] def call(at: Int): Unit = {
+        calls = new CallStack(pc + 1, instrs, Context.EmptyExchange, at, calls)
         pc = at
         depth += 1
     }
 
     private [machine] def ret(): Unit = {
+        val exchange = calls.exchange
         instrs = calls.instrs
+        for ((idx, instr) <- exchange) instrs(idx) = instr
         pc = calls.ret
         calls = calls.tail
         depth -= 1
+    }
+
+    @tailrec private def multiRet(n: Int): Unit = if (n > 0) {
+        if (n == 1) ret()
+        else {
+            val callId = calls.callId
+            var m = n - 1
+            while (calls.tail != null && calls.tail.callId == callId && m > 0) {
+                calls = calls.tail
+                m -= 1
+            }
+            ret()
+            multiRet(m)
+        }
     }
 
     private [machine] def catchNoConsumed(handler: =>Unit): Unit = {
@@ -191,15 +221,9 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
             status = Recover
             val handler = handlers
             handlers = handlers.tail
+            multiRet(depth - handler.depth)
             pc = handler.pc
             val diffstack = stack.usize - handler.stacksz
-            val diffdepth = depth - handler.depth - 1
-            depth = handler.depth
-            if (diffdepth >= 0) {
-                val calls_ = CallStack.drop(calls, diffdepth)
-                instrs = calls_.instrs
-                calls = calls_.tail
-            }
             if (diffstack > 0) stack.drop(diffstack)
         }
     }

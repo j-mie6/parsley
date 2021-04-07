@@ -74,7 +74,7 @@ object Parsley
           * @param f The mutator to apply to the result of previous parse
           * @return A new parser which parses the same input as the invokee but mutated by function `f`
           */
-        def map[B](f: A => B): Parsley[B] = pure(f) <*> p
+        def map[B](f: A => B): Parsley[B] = pure(f) <*> con(p)
         /**
           * This is the Applicative application parser. The type of `pf` is `Parsley[A => B]`. Then, given a
           * `Parsley[A]`, we can produce a `Parsley[B]` by parsing `pf` to retrieve `f: A => B`, then parse `px`
@@ -97,14 +97,14 @@ object Parsley
           * @param f A function that produces the next parser
           * @return The parser produces from the application of `f` on the result of the last parser
           */
-        def flatMap[B](f: A => Parsley[B]): Parsley[B] = new Parsley(new deepembedding.>>=(p.internal, f.andThen(_.internal)))
+        def flatMap[B](f: A => Parsley[B]): Parsley[B] = new Parsley(new deepembedding.>>=(con(p).internal, f.andThen(_.internal)))
         /**This combinator is an alias for `flatMap(identity)`.*/
         def flatten[B](implicit ev: A <:< Parsley[B]): Parsley[B] = this.flatMap[B](ev)
 
         /**This combinator is an alias for `flatMap`*/
         def >>=[B](f: A => Parsley[B]): Parsley[B] = this.flatMap(f)
         /**This combinator is defined as `lift2((x, f) => f(x), p, f)`. It is pure syntactic sugar.*/
-        def <**>[B](pf: =>Parsley[A => B]): Parsley[B] = lift.lift2[A, A=>B, B]((x, f) => f(x), p, pf)
+        def <**>[B](pf: =>Parsley[A => B]): Parsley[B] = lift.lift2[A, A=>B, B]((x, f) => f(x), con(p), pf)
         /**
           * This is the traditional Alternative choice operator for parsers. Following the parsec semantics precisely,
           * this combinator first tries to parse the invokee. If this is successful, no further action is taken. If the
@@ -116,7 +116,7 @@ object Parsley
           * @return The value produced by the invokee if it was successful, or if it failed without consuming input, the
           *         possible result of parsing q.
           */
-        def <|>[B >: A](q: =>Parsley[B]): Parsley[B] = new Parsley(new deepembedding.<|>(p.internal, q.internal))
+        def <|>[B >: A](q: =>Parsley[B]): Parsley[B] = new Parsley(new deepembedding.<|>(con(p).internal, q.internal))
         /**This combinator is defined as `p <|> pure(x)`. It is pure syntactic sugar.*/
         def </>[B >: A](x: B): Parsley[B] = this <|> pure(x)
         /**This combinator is an alias for `<|>`.*/
@@ -135,7 +135,7 @@ object Parsley
         @deprecated(
             "This combinator is unfortunately misleading since it is left-associative. It will be removed in 4.0.0, use `attempt` with `<|>` instead",
             "3.0.1")
-        def <\>[B >: A](q: Parsley[B]): Parsley[B] = attempt(p) <|> q
+        def <\>[B >: A](q: Parsley[B]): Parsley[B] = attempt(con(p)) <|> q
         // $COVERAGE-ON$
         /**
           * This combinator, pronounced "sum", is similar to `<|>`, except it allows the
@@ -145,21 +145,21 @@ object Parsley
           * @param q The parser to run if the invokee failed without consuming input
           * @return the result of the parser which succeeded, if any
           */
-        def <+>[B](q: Parsley[B]): Parsley[Either[A, B]] = p.map(Left(_)) <|> q.map(Right(_))
+        def <+>[B](q: Parsley[B]): Parsley[Either[A, B]] = this.map(Left(_)) <|> q.map(Right(_))
         /**
           * This is the parser that corresponds to a more optimal version of `p.map(_ => x => x) <*> q`. It performs
           * the parse action of both parsers, in order, but discards the result of the invokee.
           * @param q The parser whose result should be returned
           * @return A new parser which first parses `p`, then `q` and returns the result of `q`
           */
-        def *>[A_ >: A, B](q: =>Parsley[B]): Parsley[B] = new Parsley(new deepembedding.*>[A_, B](p.internal, q.internal))
+        def *>[A_ >: A, B](q: =>Parsley[B]): Parsley[B] = new Parsley(new deepembedding.*>[A_, B](con(p).internal, q.internal))
         /**
           * This is the parser that corresponds to a more optimal version of `p.map(x => _ => x) <*> q`. It performs
           * the parse action of both parsers, in order, but discards the result of the second parser.
           * @param q The parser who should be executed but then discarded
           * @return A new parser which first parses `p`, then `q` and returns the result of the `p`
           */
-        def <*[B](q: =>Parsley[B]): Parsley[A] = new Parsley(new deepembedding.<*(p.internal, q.internal))
+        def <*[B](q: =>Parsley[B]): Parsley[A] = new Parsley(new deepembedding.<*(con(p).internal, q.internal))
         /**
           * This is the parser that corresponds to `p *> pure(x)` or a more optimal version of `p.map(_ => x)`.
           * It performs the parse action of the invokee but discards its result and then results the value `x` instead
@@ -184,11 +184,11 @@ object Parsley
           */
         def <~[B](q: Parsley[B]): Parsley[A] = this <* q
         /**This parser corresponds to `lift2(_+:_, p, ps)`.*/
-        def <+:>[B >: A](ps: =>Parsley[Seq[B]]): Parsley[Seq[B]] = lift.lift2[A, Seq[B], Seq[B]](_ +: _, p, ps)
+        def <+:>[B >: A](ps: =>Parsley[Seq[B]]): Parsley[Seq[B]] = lift.lift2[A, Seq[B], Seq[B]](_ +: _, con(p), ps)
         /**This parser corresponds to `lift2(_::_, p, ps)`.*/
-        def <::>[B >: A](ps: =>Parsley[List[B]]): Parsley[List[B]] = lift.lift2[A, List[B], List[B]](_ :: _, p, ps)
+        def <::>[B >: A](ps: =>Parsley[List[B]]): Parsley[List[B]] = lift.lift2[A, List[B], List[B]](_ :: _, con(p), ps)
         /**This parser corresponds to `lift2((_, _), p, q)`. For now it is sugar, but in future may be more optimal*/
-        def <~>[A_ >: A, B](q: =>Parsley[B]): Parsley[(A_, B)] = lift.lift2[A_, B, (A_, B)]((_, _), p, q)
+        def <~>[A_ >: A, B](q: =>Parsley[B]): Parsley[(A_, B)] = lift.lift2[A_, B, (A_, B)]((_, _), con(p), q)
         /** This combinator is an alias for `<~>`
           * @since 2.3.0
           */
@@ -198,7 +198,7 @@ object Parsley
           * @param pred The predicate that is tested against the parser result
           * @return The result of the invokee if it passes the predicate
           */
-        def filter(pred: A => Boolean): Parsley[A] = new Parsley(new deepembedding.Filter(p.internal, pred))
+        def filter(pred: A => Boolean): Parsley[A] = new Parsley(new deepembedding.Filter(con(p).internal, pred))
         /** Filter the value of a parser; if the value returned by the parser does not match the predicate `pred` then the
           * filter succeeded, otherwise the parser fails with an empty error
           * @param pred The predicate that is tested against the parser result
@@ -233,7 +233,7 @@ object Parsley
           * @param f combining function
           * @return the result of folding the results of `p` with `f` and `k`
           */
-        def foldLeft[B](k: B)(f: (B, A) => B): Parsley[B] = new Parsley(new deepembedding.Chainl(pure(k).internal, p.internal, pure(f).internal))
+        def foldLeft[B](k: B)(f: (B, A) => B): Parsley[B] = new Parsley(new deepembedding.Chainl(pure(k).internal, con(p).internal, pure(f).internal))
         /**
           * A fold for a parser: `p.foldRight1(k)(f)` will try executing `p` many times until it fails, combining the
           * results with right-associative application of `f` with a `k` at the right-most position. It must parse `p`
@@ -247,7 +247,7 @@ object Parsley
           * @since 2.1.0
           */
         def foldRight1[B](k: B)(f: (A, B) => B): Parsley[B] = {
-            lazy val q: Parsley[A] = p
+            lazy val q: Parsley[A] = con(p)
             lift.lift2(f, q, q.foldRight(k)(f))
         }
         /**
@@ -263,7 +263,7 @@ object Parsley
           * @since 2.1.0
           */
         def foldLeft1[B](k: B)(f: (B, A) => B): Parsley[B] = {
-            lazy val q: Parsley[A] = p
+            lazy val q: Parsley[A] = con(p)
             new Parsley(new deepembedding.Chainl(q.map(f(k, _)).internal, q.internal, pure(f).internal))
         }
         /**
@@ -274,7 +274,7 @@ object Parsley
           * @return the result of reducing the results of `p` with `op`
           * @since 2.3.0
           */
-        def reduceRight[B >: A](op: (A, B) => B): Parsley[B] = some(p).map(_.reduceRight(op))
+        def reduceRight[B >: A](op: (A, B) => B): Parsley[B] = some(con(p)).map(_.reduceRight(op))
         /**
           * A reduction for a parser: `p.reduceRight(op)` will try executing `p` many times until it fails, combining the
           * results with right-associative application of `op`. If there is no `p`, it returns `None`, otherwise it returns
@@ -293,7 +293,7 @@ object Parsley
           * @return the result of reducing the results of `p` with `op`
           * @since 2.3.0
           */
-        def reduceLeft[B >: A](op: (B, A) => B): Parsley[B] = chain.left1(p, pure(op))
+        def reduceLeft[B >: A](op: (B, A) => B): Parsley[B] = chain.left1(con(p), pure(op))
         /**
           * A reduction for a parser: `p.reduceLeft(op)` will try executing `p` many times until it fails, combining the
           * results with left-associative application of `op`. If there is no `p`, it returns `None`, otherwise it returns
@@ -343,7 +343,7 @@ object Parsley
           * @param b The parser that yields the condition value
           * @return The result of either `p` or `q` depending on the return value of the invokee
           */
-        def ?:(b: =>Parsley[Boolean]): Parsley[A] = new Parsley(new deepembedding.If(b.internal, p.internal, q.internal))
+        def ?:(b: =>Parsley[Boolean]): Parsley[A] = new Parsley(new deepembedding.If(b.internal, con(p).internal, con(q).internal))
     }
 
     /** This is the traditional applicative pure function (or monadic return) for parsers. It consumes no input and
@@ -393,7 +393,7 @@ object Parsley
       * {{{attempt(kw *> notFollowedBy(alphaNum))}}}*/
     def notFollowedBy(p: Parsley[_]): Parsley[Unit] = new Parsley(new deepembedding.NotFollowedBy(p.internal))
     /** The `empty` parser consumes no input and fails softly (that is to say, no error message) */
-    val empty: Parsley[Nothing] = new Parsley(new deepembedding.Empty)
+    val empty: Parsley[Nothing] = new Parsley(deepembedding.Empty)
     /** Returns `()`. Defined as `pure(())` but aliased for sugar*/
     val unit: Parsley[Unit] = pure(())
     /** converts a parser's result to () */

@@ -3,6 +3,7 @@ package parsley
 import parsley.internal.machine
 import parsley.internal.deepembedding
 import parsley.errors.ErrorBuilder
+import parsley.errors.combinator.ErrorMethods
 
 /** This module contains various things that shouldn't be used without care and caution
   * @since 1.6.0
@@ -45,6 +46,7 @@ object unsafe {
     /** This class enables faster, but potentially misleading error behaviour
       *  @since 2.6.0
       */
+    // $COVERAGE-OFF$
     implicit class ErrorLabel[P, A](p: =>P)(implicit con: P => Parsley[A]) {
         /** Sets the expected message for a parser. If the parser fails then `expected msg` will added to the error.
           * This will supercede '''all''' labels that that are present in the parser `p`. Whilst this does improve
@@ -52,6 +54,8 @@ object unsafe {
           * should ''only'' be used for '''non-terminals''' in the grammar
           * @since 2.6.0
           */
-        def unsafeLabel(msg: String): Parsley[A] = new Parsley(new deepembedding.UnsafeErrorRelabel(p.internal, msg))
+        @deprecated("The infrastructure required to keep this incredibly niche functionality going is too prohibitive, it will be removed in 4.0", "3.1.0")
+        def unsafeLabel(msg: String): Parsley[A] = p.label(msg)
     }
+    // $COVERAGE-ON$
 }

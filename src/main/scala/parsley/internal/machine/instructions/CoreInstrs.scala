@@ -1,6 +1,6 @@
 package parsley.internal.machine.instructions
 
-import parsley.internal.machine.{Context, Good, Recover, Failed}
+import parsley.internal.machine.{Context, Good, Recover, Failed, Finished}
 import parsley.internal.ResizableArray
 import parsley.internal.deepembedding.Parsley
 import parsley.internal.errors.{ErrorItem, Desc}
@@ -41,27 +41,39 @@ private [internal] object Apply extends Instr {
 // Monadic
 private [internal] final class DynCall[-A](f: A => Array[Instr]) extends Instr {
     private [DynCall] val g = f.asInstanceOf[Any => Array[Instr]]
-    override def apply(ctx: Context): Unit = ctx.call(g(ctx.stack.upop()), 0)
+    override def apply(ctx: Context): Unit = ctx.call(g(ctx.stack.upop()))
     // $COVERAGE-OFF$
     override def toString: String = "DynCall(?)"
     // $COVERAGE-ON$
 }
 
 // Control Flow
-private [internal] final class Call(_instrs: =>Array[Instr]) extends Instr {
-    private [Call] lazy val (instrs, pindices) = {
-        val is = _instrs
-        (is, statefulIndices(is))
-    }
-
-    override def apply(ctx: Context): Unit = ctx.call(stateSafeCopy(instrs, pindices), 0)
+private [internal] object Halt extends Instr {
+    override def apply(ctx: Context): Unit = ctx.status = Finished
     // $COVERAGE-OFF$
-    override def toString: String = "Call"
+    override def toString: String = s"Halt"
+    // $COVERAGE-ON$
+}
+
+private [internal] final class Call(var label: Int) extends InstrWithLabel {
+    private var isSet: Boolean = false
+    override def relabel(labels: Array[Int]): this.type = {
+        if (!isSet) {
+            label = labels(label)
+            isSet = true
+        }
+        this
+    }
+    private [internal] var preserve: Array[Int] = _
+
+    override def apply(ctx: Context): Unit = ctx.call(label, preserve)
+    // $COVERAGE-OFF$
+    override def toString: String = s"Call($label)"
     // $COVERAGE-ON$
 }
 
 private [internal] final class GoSub(var label: Int) extends InstrWithLabel {
-    override def apply(ctx: Context): Unit = ctx.call(ctx.instrs, label)
+    override def apply(ctx: Context): Unit = ctx.call(label)
     // $COVERAGE-OFF$
     override def toString: String = s"GoSub($label)"
     // $COVERAGE-ON$
@@ -74,13 +86,8 @@ private [internal] object Return extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class Empty(_expected: Option[String]) extends Instr {
-    //val expected = _expected.fold(Set.empty[ErrorItem])(e => Set[ErrorItem](Desc(e)))
-    val expected = _expected.map(Desc)
-    override def apply(ctx: Context): Unit = {
-        //ctx.fail(TrivialError(ctx.offset, ctx.line, ctx.col, None, expected, NoReason))
-        ctx.fail(new EmptyError(ctx.offset, ctx.line, ctx.col, expected))
-    }
+private [internal] object Empty extends Instr {
+    override def apply(ctx: Context): Unit = ctx.fail(new EmptyError(ctx.offset, ctx.line, ctx.col))
     // $COVERAGE-OFF$
     override def toString: String = "Empty"
     // $COVERAGE-ON$
@@ -207,6 +214,7 @@ private [internal] final class LogEnd(val name: String, val ascii: Boolean, brea
             case Recover | Failed =>
                 ctx.fail()
                 red("Fail")
+            case Finished => throw new Exception("debug cannot wrap a halt?!")
         })
         println(preludeString('<', ctx, end))
         if (break) doBreak(ctx)

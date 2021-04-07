@@ -48,13 +48,9 @@ class DefuncErrorTests extends ParsleyTest {
     }
 
     "EmptyError" should "evaluate to TrivialError" in {
-        val err = EmptyError(0, 0, 0, None)
+        val err = EmptyError(0, 0, 0)
         err.isTrivialError shouldBe true
         err.asParseError shouldBe a [TrivialError]
-    }
-    it should "only be empty when its label is" in {
-        EmptyError(0, 0, 0, None).isExpectedEmpty shouldBe true
-        EmptyError(0, 0, 0, Some(EndOfInput)).isExpectedEmpty shouldBe false
     }
 
     "TokenError" should "evaluate to TrivialError" in {
@@ -68,13 +64,9 @@ class DefuncErrorTests extends ParsleyTest {
     }
 
     "EmptyErrorWithReason" should "evaluate to TrivialError" in {
-        val err = EmptyErrorWithReason(0, 0, 0, None, "")
+        val err = EmptyErrorWithReason(0, 0, 0, "")
         err.isTrivialError shouldBe true
         err.asParseError shouldBe a [TrivialError]
-    }
-    it should "only be empty when its label is" in {
-        EmptyErrorWithReason(0, 0, 0, None, "").isExpectedEmpty shouldBe true
-        EmptyErrorWithReason(0, 0, 0, Some(EndOfInput), "").isExpectedEmpty shouldBe false
     }
 
     "MultiExpectedError" should "evaluate to TrivialError" in {
@@ -88,33 +80,33 @@ class DefuncErrorTests extends ParsleyTest {
     }
 
     "MergedErrors" should "be trivial if both children are" in {
-        val err = MergedErrors(EmptyError(0, 0, 0, None), MultiExpectedError(0, 0, 0, Set.empty, 1))
+        val err = MergedErrors(EmptyError(0, 0, 0), MultiExpectedError(0, 0, 0, Set.empty, 1))
         err.isTrivialError shouldBe true
         err.asParseError shouldBe a [TrivialError]
     }
     they should "be a trivial error if one trivial child is further than the other fancy child" in {
-        val err1 = MergedErrors(EmptyError(1, 0, 0, None), ClassicFancyError(0, 0, 0, ""))
+        val err1 = MergedErrors(EmptyError(1, 0, 0), ClassicFancyError(0, 0, 0, ""))
         err1.isTrivialError shouldBe true
         err1.asParseError shouldBe a [TrivialError]
 
-        val err2 = MergedErrors(ClassicFancyError(0, 0, 0, ""), EmptyError(1, 0, 0, None))
+        val err2 = MergedErrors(ClassicFancyError(0, 0, 0, ""), EmptyError(1, 0, 0))
         err2.isTrivialError shouldBe true
         err2.asParseError shouldBe a [TrivialError]
     }
     they should "be a fancy error in any other case" in {
-        val err1 = MergedErrors(EmptyError(0, 0, 0, None), ClassicFancyError(0, 0, 0, ""))
+        val err1 = MergedErrors(EmptyError(0, 0, 0), ClassicFancyError(0, 0, 0, ""))
         err1.isTrivialError shouldBe false
         err1.asParseError shouldBe a [FancyError]
 
-        val err2 = MergedErrors(ClassicFancyError(0, 0, 0, ""), EmptyError(0, 0, 0, None))
+        val err2 = MergedErrors(ClassicFancyError(0, 0, 0, ""), EmptyError(0, 0, 0))
         err2.isTrivialError shouldBe false
         err2.asParseError shouldBe a [FancyError]
 
-        val err3 = MergedErrors(EmptyError(0, 0, 0, None), ClassicFancyError(1, 0, 0, ""))
+        val err3 = MergedErrors(EmptyError(0, 0, 0), ClassicFancyError(1, 0, 0, ""))
         err3.isTrivialError shouldBe false
         err3.asParseError shouldBe a [FancyError]
 
-        val err4 = MergedErrors(ClassicFancyError(1, 0, 0, ""), EmptyError(0, 0, 0, None))
+        val err4 = MergedErrors(ClassicFancyError(1, 0, 0, ""), EmptyError(0, 0, 0))
         err4.isTrivialError shouldBe false
         err4.asParseError shouldBe a [FancyError]
 
@@ -127,10 +119,10 @@ class DefuncErrorTests extends ParsleyTest {
         err6.asParseError shouldBe a [FancyError]
     }
     they should "be empty when trivial and same offset only when both children are empty" in {
-        MergedErrors(EmptyError(0, 0, 0, None), EmptyError(0, 0, 0, None)).isExpectedEmpty shouldBe true
-        MergedErrors(EmptyError(0, 0, 0, None), EmptyError(0, 0, 0, Some(EndOfInput))).isExpectedEmpty shouldBe false
-        MergedErrors(EmptyError(0, 0, 0, Some(EndOfInput)), EmptyError(0, 0, 0, None)).isExpectedEmpty shouldBe false
-        MergedErrors(EmptyError(0, 0, 0, Some(EndOfInput)), EmptyError(0, 0, 0, Some(EndOfInput))).isExpectedEmpty shouldBe false
+        MergedErrors(EmptyError(0, 0, 0), EmptyError(0, 0, 0)).isExpectedEmpty shouldBe true
+        MergedErrors(EmptyError(0, 0, 0), ClassicExpectedError(0, 0, 0, Some(EndOfInput))).isExpectedEmpty shouldBe false
+        MergedErrors(ClassicExpectedError(0, 0, 0, Some(EndOfInput)), EmptyError(0, 0, 0)).isExpectedEmpty shouldBe false
+        MergedErrors(ClassicExpectedError(0, 0, 0, Some(EndOfInput)), ClassicExpectedError(0, 0, 0, Some(EndOfInput))).isExpectedEmpty shouldBe false
     }
     they should "contain all the expecteds from both branches when appropriate" in {
         val err = MergedErrors(MultiExpectedError(0, 0, 0, Set(Raw("a"), Raw("b")), 1),
@@ -149,8 +141,8 @@ class DefuncErrorTests extends ParsleyTest {
         err.asParseError shouldBe a [FancyError]
     }
     it should "only be empty when its label is" in {
-        WithHints(EmptyError(0, 0, 0, None), EmptyHints).isExpectedEmpty shouldBe true
-        WithHints(EmptyError(0, 0, 0, Some(EndOfInput)), EmptyHints).isExpectedEmpty shouldBe false
+        WithHints(EmptyError(0, 0, 0), EmptyHints).isExpectedEmpty shouldBe true
+        WithHints(ClassicExpectedError(0, 0, 0, Some(EndOfInput)), EmptyHints).isExpectedEmpty shouldBe false
     }
 
     "WithReason" should "be trivial if its child is" in {
@@ -164,8 +156,8 @@ class DefuncErrorTests extends ParsleyTest {
         err.asParseError shouldBe a [FancyError]
     }
     it should "only be empty when its label is" in {
-        WithReason(EmptyError(0, 0, 0, None), "").isExpectedEmpty shouldBe true
-        WithReason(EmptyError(0, 0, 0, Some(EndOfInput)), "").isExpectedEmpty shouldBe false
+        WithReason(EmptyError(0, 0, 0), "").isExpectedEmpty shouldBe true
+        WithReason(ClassicExpectedError(0, 0, 0, Some(EndOfInput)), "").isExpectedEmpty shouldBe false
     }
 
     "WithLabel" should "be trivial if its child is" in {
@@ -179,10 +171,10 @@ class DefuncErrorTests extends ParsleyTest {
         err.asParseError shouldBe a [FancyError]
     }
     it should "be empty if the label is empty and not otherwise" in {
-        WithLabel(EmptyError(0, 0, 0, None), "").isExpectedEmpty shouldBe true
-        WithLabel(EmptyError(0, 0, 0, None), "a").isExpectedEmpty shouldBe false
-        WithLabel(EmptyError(0, 0, 0, Some(Desc("x"))), "").isExpectedEmpty shouldBe true
-        WithLabel(EmptyError(0, 0, 0, Some(Desc("x"))), "a").isExpectedEmpty shouldBe false
+        WithLabel(EmptyError(0, 0, 0), "").isExpectedEmpty shouldBe true
+        WithLabel(EmptyError(0, 0, 0), "a").isExpectedEmpty shouldBe false
+        WithLabel(ClassicExpectedError(0, 0, 0, Some(Desc("x"))), "").isExpectedEmpty shouldBe true
+        WithLabel(ClassicExpectedError(0, 0, 0, Some(Desc("x"))), "a").isExpectedEmpty shouldBe false
     }
     it should "replace all expected" in {
         val errShow = WithLabel(MultiExpectedError(0, 0, 0, Set(Raw("a"), Raw("b")), 1), "x")

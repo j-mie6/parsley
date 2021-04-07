@@ -85,10 +85,9 @@ private [internal] final class Fail(msg: String) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class Unexpected(msg: String, _expected: Option[String]) extends Instr {
-    private [this] val expected = _expected.map(Desc)
+private [internal] final class Unexpected(msg: String) extends Instr {
     private [this] val unexpected = Desc(msg)
-    override def apply(ctx: Context): Unit = ctx.unexpectedFail(expected, unexpected)
+    override def apply(ctx: Context): Unit = ctx.unexpectedFail(None, unexpected)
     // $COVERAGE-OFF$
     override def toString: String = s"Unexpected($msg)"
     // $COVERAGE-ON$
@@ -102,10 +101,9 @@ private [internal] final class FastFail[A](msggen: A=>String) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class FastUnexpected[A](_msggen: A=>String, _expected: Option[String]) extends Instr {
+private [internal] final class FastUnexpected[A](_msggen: A=>String) extends Instr {
     private [this] def msggen(x: Any) = new Desc(_msggen(x.asInstanceOf[A]))
-    private [this] val expected = _expected.map(Desc)
-    override def apply(ctx: Context): Unit = ctx.unexpectedFail(expected = expected, unexpected = msggen(ctx.stack.upop()))
+    override def apply(ctx: Context): Unit = ctx.unexpectedFail(expected = None, unexpected = msggen(ctx.stack.upop()))
     // $COVERAGE-OFF$
     override def toString: String = "FastUnexpected(?)"
     // $COVERAGE-ON$

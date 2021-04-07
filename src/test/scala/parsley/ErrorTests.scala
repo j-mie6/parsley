@@ -73,7 +73,7 @@ class ErrorTests extends ParsleyTest {
         }
     }
     it should "work across a recursion boundary" in {
-        def p = r.unsafeLabel("nothing but this :)")
+        def p = r.label("nothing but this :)")
         inside(p.parse("")) {
             case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
                 unex should contain (EndOfInput)
@@ -83,7 +83,7 @@ class ErrorTests extends ParsleyTest {
         inside(p.parse("correct error message")) {
             case Failure(TestError((1, 22), VanillaError(unex, exs, rs))) =>
                 unex should contain (EndOfInput)
-                exs should contain only (Named("nothing but this :)"))
+                exs should contain only (Raw("correct error message"))
                 rs shouldBe empty
         }
     }
