@@ -64,7 +64,6 @@ package object instructions
         val deps = mutable.Set.empty[Int]
         breakable {
             for (i <- start until instrs.length) instrs(i) match {
-                case call: Call => deps += call.label
                 case sub: GoSub => deps += sub.label
                 case Return => break()
                 case _ =>

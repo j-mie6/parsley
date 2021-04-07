@@ -11,34 +11,37 @@ private [deepembedding] object PreservationAnalysis {
         val reactors = mutable.Map.empty[Int, DataflowReactor]
         val sources = mutable.Map.empty[Int, EventSource[Iterable[Int]]]
         val dependencies = new EventSource[(DataflowReactor, Int)]
-        for (relation <- dependencies) {
-            val (dependent, label) = relation
-            val source = sources.getOrElseUpdate(label, {
-                // new dependency identified
-                val source = new EventSource[Iterable[Int]]
-                val reactor = new DataflowReactor(label, source)
-                reactors(label) = reactor
-                for (dependency <- instructions.dependencies(instrs, label)) {
-                    dependencies.fire((reactor, dependency))
-                }
-                source
-            })
-            source.foreach(dependent)
-        }
+        val topo = mutable.ListBuffer.empty[(Int, DataflowReactor)]
         // Build reactors and event streams
+        def addToNetwork(label: Int, reactor: DataflowReactor): Unit = {
+            reactors(label) = reactor
+            for (dependency <- instructions.dependencies(instrs, label)) {
+                dependencies.fire((reactor, dependency))
+            }
+            // Poor mans topological sort, it's not completely accurate
+            // to make it accurate we'd have to form a graph in the _other_ direction
+            // graph from dependency -> dependent as opposed to dependent -> dependencies
+            (label -> reactor) +=: topo
+        }
         for (rec <- recs) {
             val source = new EventSource[Iterable[Int]]
             val reactor = new DataflowReactor(rec.label, source)
             recReactors += (rec -> reactor)
-            reactors(rec.label) = reactor
             sources(rec.label) = source
-            for (dependency <- instructions.dependencies(instrs, rec.label)) {
-                dependencies.fire((reactor, dependency))
-            }
+            addToNetwork(rec.label, reactor)
+        }
+        for (relation <- dependencies) {
+            val (dependent, label) = relation
+            val source = sources.getOrElseUpdate(label, {
+                val source = new EventSource[Iterable[Int]]
+                addToNetwork(label, new DataflowReactor(label, source))
+                source
+            })
+            source.foreach(dependent)
         }
         // Initialise dataflow
         coordinator.run()
-        for ((label, reactor) <- reactors) {
+        for ((label, reactor) <- topo) {
             reactor(instructions.statefulIndicesToReturn(instrs, label))
         }
         // Execute
@@ -67,7 +70,7 @@ private [deepembedding] case class Handled(f: () => Unit) extends Event[Nothing]
 
 private [deepembedding] class EventCoordinator {
     val events = mutable.Queue.empty[Event[_]]
-    def add(event: Event[_]): Unit = events.prepend(event)
+    def add(event: Event[_]): Unit = events.enqueue(event)
     def run(): Unit = {
         while (events.nonEmpty) events.dequeue() match {
             case Fired(x, handlers) => for (handler <- handlers) add(Handled(() => handler(x)))
