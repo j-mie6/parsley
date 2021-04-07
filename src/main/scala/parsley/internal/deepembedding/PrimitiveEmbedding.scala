@@ -45,17 +45,17 @@ private [deepembedding] final class Rec[A](private [deepembedding] val p: Parsle
     def label: Int = call.label
     // $COVERAGE-OFF$
     // This is here because Scala needs it to be, it's not used
-    def preserve = call.preserve
+    def preserve: Array[Int] = call.preserve
     // $COVERAGE-ON$
     def preserve_=(indices: Array[Int]): Unit = call.preserve = indices
 }
-private [deepembedding] final class Subroutine[A](var p: Parsley[A]) extends Parsley[A] {
+private [deepembedding] final class Let[A](var p: Parsley[A]) extends Parsley[A] {
     // $COVERAGE-OFF$
     override def findLetsAux[Cont[_, +_], R](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState): Cont[R, Unit] = {
-        throw new Exception("Subroutines cannot exist during let detection")
+        throw new Exception("Lets cannot exist during let detection")
     }
     // $COVERAGE-ON$
-    override def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: SubMap, recs: RecMap): Cont[R, Parsley[A_]] = {
+    override def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: LetMap, recs: RecMap): Cont[R, Parsley[A_]] = {
         for (p <- this.p.optimised) yield this.ready(p)
     }
     private def ready(p: Parsley[A]): this.type = {

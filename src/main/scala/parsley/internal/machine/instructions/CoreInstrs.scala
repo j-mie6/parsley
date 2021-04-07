@@ -49,7 +49,7 @@ private [internal] final class DynCall[-A](f: A => Array[Instr]) extends Instr {
 
 // Control Flow
 private [internal] object Halt extends Instr {
-    override def apply(ctx: Context) = ctx.status = Finished
+    override def apply(ctx: Context): Unit = ctx.status = Finished
     // $COVERAGE-OFF$
     override def toString: String = s"Halt"
     // $COVERAGE-ON$

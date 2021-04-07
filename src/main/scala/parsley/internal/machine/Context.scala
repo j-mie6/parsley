@@ -128,16 +128,14 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     @tailrec @inline private [parsley] def runParser[Err: ErrorBuilder, A](): Result[Err, A] = {
         //println(pretty)
         if (status eq Failed) Failure(errs.error.asParseError.format(sourceFile))
-        else if (status eq Finished) {
-            if (calls.isEmpty) Success(stack.peek[A])
-            else {
-                status = Good
-                ret()
-                runParser[Err, A]()
-            }
-        }
-        else {
+        else if (status ne Finished) {
             instrs(pc)(this)
+            runParser[Err, A]()
+        }
+        else if (calls.isEmpty) Success(stack.peek[A])
+        else {
+            status = Good
+            ret()
             runParser[Err, A]()
         }
     }

@@ -86,5 +86,5 @@ private [deepembedding] abstract class EventStream[+A] {
 private [deepembedding] class EventSource[A](implicit coordinator: EventCoordinator) extends EventStream[A] {
     val observers = mutable.Set.empty[A => Unit]
     def fire(x: A): Unit = coordinator.add(Fired(x, observers))
-    def foreach(f: A => Unit) = observers += f
+    def foreach(f: A => Unit): Unit = observers += f
 }
