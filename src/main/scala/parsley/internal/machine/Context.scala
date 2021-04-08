@@ -141,21 +141,17 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         }
     }
 
-    private def preserveInstrs(preserve: Array[Int]): Array[Instr] = {
-        val exchange = new Array[Instr](preserve.size)
-        var i = 0
-        while (i < preserve.size) {
-            val idx = preserve(i)
-            val instr = instrs(idx)
-            exchange(i) = instr
-            instrs(idx) = instr.copy
-            i += 1
-        }
-        exchange
+    @tailrec @inline private def preserveInstrs(preserve: Array[Int], exchange: Array[Instr], i: Int): Unit = if (i >= 0) {
+        val idx = preserve(i)
+        val instr = instrs(idx)
+        exchange(i) = instr
+        instrs(idx) = instr.copy
+        preserveInstrs(preserve, exchange, i - 1)
     }
 
     private [machine] def call(at: Int, preserve: Array[Int]): Unit = {
-        val exchange = preserveInstrs(preserve)
+        val exchange = new Array[Instr](preserve.size)
+        preserveInstrs(preserve, exchange, preserve.size - 1)
         calls = new CallStack(pc + 1, instrs, preserve, exchange, at, calls)
         for (idx <- preserve) instrs(idx) = instrs(idx).copy
         pc = at
@@ -173,17 +169,14 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         depth += 1
     }
 
-    private def restoreInstrs(preserve: Array[Int], exchange: Array[Instr]): Unit = {
-        var i = 0
-        while (i < preserve.size) {
-            instrs(preserve(i)) = exchange(i)
-            i += 1
-        }
+    @tailrec @inline private def restoreInstrs(preserve: Array[Int], exchange: Array[Instr], i: Int): Unit = if (i >= 0) {
+        instrs(preserve(i)) = exchange(i)
+        restoreInstrs(preserve, exchange, i-1)
     }
 
     private [machine] def ret(): Unit = {
         instrs = calls.instrs
-        restoreInstrs(calls.indices, calls.exchange)
+        restoreInstrs(calls.indices, calls.exchange, calls.indices.size-1)
         pc = calls.ret
         calls = calls.tail
         depth -= 1

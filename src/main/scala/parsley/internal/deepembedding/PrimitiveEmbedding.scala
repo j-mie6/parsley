@@ -41,7 +41,8 @@ private [parsley] final class Fail(private [Fail] val msg: String)
 private [parsley] final class Unexpected(private [Unexpected] val msg: String)
     extends Singleton[Nothing](s"unexpected($msg)", new instructions.Unexpected(msg)) with MZero
 
-private [deepembedding] final class Rec[A](private [deepembedding] val p: Parsley[A], val call: instructions.Call) extends Singleton(s"rec($p)", call) {
+private [deepembedding] final class Rec[A](private [deepembedding] val p: Parsley[A], val call: instructions.Call)
+    extends Singleton(s"rec($p)", call) with Binding {
     def label: Int = call.label
     // $COVERAGE-OFF$
     // This is here because Scala needs it to be, it's not used
@@ -49,7 +50,8 @@ private [deepembedding] final class Rec[A](private [deepembedding] val p: Parsle
     // $COVERAGE-ON$
     def preserve_=(indices: Array[Int]): Unit = call.preserve = indices
 }
-private [deepembedding] final class Let[A](var p: Parsley[A]) extends Parsley[A] {
+private [deepembedding] final class Let[A](var p: Parsley[A]) extends Parsley[A] with Binding {
+    def label(implicit state: CodeGenState): Int = state.getLabel(this)
     // $COVERAGE-OFF$
     override def findLetsAux[Cont[_, +_], R](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState): Cont[R, Unit] = {
         throw new Exception("Lets cannot exist during let detection")
@@ -65,7 +67,7 @@ private [deepembedding] final class Let[A](var p: Parsley[A]) extends Parsley[A]
     }
     override def optimise: Parsley[A] = if (p.size <= 1) p else this
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
-        result(instrs += new instructions.GoSub(state.getLabel(this)))
+        result(instrs += new instructions.GoSub(label))
     }
     // $COVERAGE-OFF$
     override def prettyASTAux[Cont[_, +_], R](implicit ops: ContOps[Cont, R]): Cont[R, String] = result(s"Sub($p)")

@@ -48,7 +48,7 @@ package object instructions
         buff.toShrunkenArray
     }
 
-    @tailrec final private def statefulIndicesToReturn(instrs: Array[Instr], idx: Int, buff: mutable.ListBuffer[Int]): Unit = instrs(idx) match {
+    @tailrec @inline final private def statefulIndicesToReturn(instrs: Array[Instr], idx: Int, buff: mutable.ListBuffer[Int]): Unit = instrs(idx) match {
         case _: Stateful =>
             buff += idx
             statefulIndicesToReturn(instrs, idx + 1, buff)
@@ -62,7 +62,7 @@ package object instructions
         buff.toList
     }
 
-    @tailrec final private def dependencies(instrs: Array[Instr], idx: Int, deps: mutable.Set[Int]): Unit = instrs(idx) match {
+    @tailrec @inline final private def dependencies(instrs: Array[Instr], idx: Int, deps: mutable.Set[Int]): Unit = instrs(idx) match {
         case sub: GoSub =>
             deps += sub.label
             dependencies(instrs, idx + 1, deps)

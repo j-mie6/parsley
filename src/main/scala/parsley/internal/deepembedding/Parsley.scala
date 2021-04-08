@@ -102,6 +102,7 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
         implicit val state: CodeGenState = new CodeGenState
         implicit val letFinderState: LetFinderState = new LetFinderState
         implicit lazy val recMap: RecMap = new RecMap(letFinderState.recs, state)
+        val bindings = mutable.ListBuffer.empty[Binding]
         perform {
             implicit val seenSet: Set[Parsley[_]] = Set.empty
             findLets >> {
@@ -110,18 +111,19 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
                 implicit val letMap: LetMap = new LetMap(letFinderState.lets)
                 optimised.flatMap(p => generateCalleeSave(p.codeGen, allocateRegisters(usedRegs))) |> {
                     instrs += instructions.Halt
-                    finaliseRecs()
-                    finaliseSubs()
+                    finaliseRecs(bindings)
+                    finaliseLets(bindings)
                 }
             }
         }
-        finaliseInstrs(instrs, state, recMap)
+        finaliseInstrs(instrs, state, recMap, bindings.toList)
     }
 
-    final private def finaliseRecs[Cont[_, +_]]()(implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer,
-                                                           state: CodeGenState, lets: LetMap, recs: RecMap): Unit = {
+    final private def finaliseRecs[Cont[_, +_]](bindings: mutable.ListBuffer[Binding])(implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer,
+                                                                                                state: CodeGenState, lets: LetMap, recs: RecMap): Unit = {
         implicit val seenSet: Set[Parsley[_]] = Set.empty
         for (rec <- recs) {
+            bindings += rec
             instrs += new instructions.Label(rec.label)
             val start = instrs.length
             perform(rec.p.optimised.flatMap(_.codeGen))
@@ -129,18 +131,20 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
         }
     }
 
-    final private def finaliseSubs[Cont[_, +_]]()(implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer, state: CodeGenState): Unit = {
+    final private def finaliseLets[Cont[_, +_]](bindings: mutable.ListBuffer[Binding])(implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer,
+                                                                                                state: CodeGenState): Unit = {
         while (state.more) {
-            val sub = state.nextSub()
-            instrs += new instructions.Label(state.getLabel(sub))
-            perform(sub.p.codeGen)
+            val let = state.nextLet()
+            bindings += let
+            instrs += new instructions.Label(let.label)
+            perform(let.p.codeGen)
             instrs += instructions.Return
         }
     }
 
     final private def computeInstrs(ops: GenOps[Unit]): Array[Instr] = pipeline(ops)
 
-    final private def finaliseInstrs(instrs: InstrBuffer, state: CodeGenState, recs: Iterable[Rec[_]]): Array[Instr] = {
+    final private def finaliseInstrs(instrs: InstrBuffer, state: CodeGenState, recs: Iterable[Rec[_]], bindings: List[Binding]): Array[Instr] = {
         @tailrec def findLabels(instrs: Array[Instr], labels: Array[Int], n: Int, i: Int, off: Int): Int = if (i + off < n) instrs(i + off) match {
             case label: Label =>
                 instrs(i + off) = null
@@ -149,11 +153,13 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
             case _ => findLabels(instrs, labels, n, i + 1, off)
         }
         else i
-        @tailrec def applyLabels(srcs: Array[Instr], labels: Array[Int], dests: Array[Instr], n: Int, i: Int, off: Int): Unit = if (i < n) srcs(i + off) match {
-            case null => applyLabels(srcs, labels, dests, n, i, off + 1)
-            case instr =>
-                dests(i) = instr.relabel(labels)
-                applyLabels(srcs, labels, dests, n, i + 1, off)
+        @tailrec def applyLabels(srcs: Array[Instr], labels: Array[Int], dests: Array[Instr], n: Int, i: Int, off: Int): Unit = {
+            if (i < n) srcs(i + off) match {
+                case null => applyLabels(srcs, labels, dests, n, i, off + 1)
+                case instr =>
+                    dests(i) = instr.relabel(labels)
+                    applyLabels(srcs, labels, dests, n, i + 1, off)
+            }
         }
         val instrsOversize = instrs.toArray
         val labelMapping = new Array[Int](state.nlabels)
@@ -161,7 +167,26 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
         val instrs_ = new Array[Instr](size)
         applyLabels(instrsOversize, labelMapping, instrs_, instrs_.length, 0, 0)
         PreservationAnalysis.determinePreserve(recs, instrs_)
+        tco(instrs_, labelMapping, bindings)(state)
         instrs_
+    }
+
+    // Applies tail-call optimisation:
+    //   recursive bindings may tail-call to themselves or anything that doesn't require state-save
+    //   other bindings may tail-call to anything that doesn't require state-save
+    //   non-recursive bindings do not require state-save
+    //   Call/GoSub replaced with Jump
+    final private def tco(instrs: Array[Instr], labels: Array[Int], bindings: List[Binding])(implicit state: CodeGenState): Unit = if (bindings.nonEmpty) {
+        val bindingsWithReturns = bindings.zip(bindings.tail.map(_.location(labels) - 1) :+ (instrs.size-1))
+        lazy val locToBinding = bindings.map(b => b.location(labels) -> b).toMap
+        for ((binding, retLoc) <- bindingsWithReturns) instrs(retLoc-1) match {
+            case instr: instructions.Call =>
+                if (binding.isSelfCall(instr) || !locToBinding(instr.label).hasStateSave) {
+                    instrs(retLoc-1) = new instructions.Jump(instr.label)
+                }
+            case instr: instructions.GoSub => instrs(retLoc-1) = new instructions.Jump(instr.label)
+            case _ =>
+        }
     }
 
     final private [parsley] lazy val instrs: Array[Instr] = if (cps) computeInstrs(Cont.ops.asInstanceOf[GenOps[Unit]]) else safeCall(computeInstrs(_))
@@ -212,6 +237,21 @@ private [deepembedding] object Parsley {
     }
 }
 
+private [deepembedding] trait Binding {
+    // When these are used by tco, the call instructions labels have already been shifted, but lets have not
+    final def location(labelMap: Array[Int])(implicit state: CodeGenState): Int = this match {
+        case self: Rec[_] => self.label
+        case self: Let[_] => labelMap(self.label)
+    }
+    final def hasStateSave: Boolean = this match {
+        case self: Rec[_] => self.preserve.nonEmpty
+        case _: Let[_] => false
+    }
+    final def isSelfCall(call: instructions.Call): Boolean = this match {
+        case self: Rec[_] => self.call == call
+        case _: Let[_] => false
+    }
+}
 private [deepembedding] trait MZero extends Parsley[Nothing]
 private [deepembedding] trait UsesRegister {
     val reg: Reg[_]
@@ -234,7 +274,7 @@ private [deepembedding] class CodeGenState {
         freshLabel()
     })
 
-    def nextSub(): Let[_] = queue.remove(0)
+    def nextLet(): Let[_] = queue.remove(0)
     def more: Boolean = queue.nonEmpty
     def subsExist: Boolean = map.nonEmpty
 }
