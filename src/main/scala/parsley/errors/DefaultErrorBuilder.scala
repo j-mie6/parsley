@@ -53,7 +53,7 @@ class DefaultErrorBuilder extends ErrorBuilder[String] with revisions.Revision1 
 
     private def combineOrUnknown(info: List[String], lines: List[String]): ErrorInfoLines = {
         if (info.isEmpty) Unknown :: lines
-        else info ++ lines
+        else info ::: lines
     }
 
     type ExpectedItems = Option[String]

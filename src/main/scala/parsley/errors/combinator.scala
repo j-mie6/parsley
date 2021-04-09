@@ -22,6 +22,28 @@ object combinator {
     def unexpected(msg: String): Parsley[Nothing] = new Parsley(new deepembedding.Unexpected(msg))
 
     /**
+      * This combinator adjusts the error messages that are generated within its scope so that they
+      * happen at the position on entry to the combinator. This is useful if validation work is done
+      * on the output of a parser that may render it invalid, but the error should point to the
+      * beginning of the structure. This combinators effect can be cancelled with `[[entrench]]`
+      *
+      * @param p A parser whose error messages should be adjusted
+      * @since 3.1.0
+      */
+    def amend[A](p: =>Parsley[A]): Parsley[A] = new Parsley(new deepembedding.ErrorAmend(p.internal))
+
+    /**
+      * Sometimes, the error adjustments performed by `[[amend]]` should only affect errors generated
+      * within a certain part of a parser and not the whole thing. In this case, `entrench` can be used
+      * to protect sub-parsers from having their errors adjusted, providing a much more fine-grained
+      * scope for error adjustment.
+      *
+      * @param p A parser whose error messages should not be adjusted by any surrounding `[[amend]]`
+      * @since 3.1.0
+      */
+    def entrench[A](p: =>Parsley[A]): Parsley[A] = new Parsley(new deepembedding.ErrorEntrench(p.internal))
+
+    /**
       * This class exposes helpful combinators that are specialised for generating more helpful errors messages.
       * For a description of why the library is designed in this way,
       * see: [[https://github.com/j-mie6/Parsley/wiki/Understanding-the-API the Parsley wiki]]

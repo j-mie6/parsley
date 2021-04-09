@@ -33,6 +33,7 @@ private [errors] sealed trait MakesFancy { this: DefuncError =>
 private [machine] sealed abstract class DefuncError {
     private [machine] val isTrivialError: Boolean
     private [machine] val isExpectedEmpty: Boolean
+    private [machine] val entrenched: Boolean = false
     private [machine] val offset: Int
     private [machine] final def asParseError(implicit builder: ErrorItemBuilder): ParseError = (this: @unchecked) match {
         case terr: MakesTrivial if terr.isTrivialError => terr.makeTrivial
@@ -137,6 +138,7 @@ private [errors] case class MergedErrors private (err1: DefuncError, err2: Defun
     // So long as the MergedErrors factory checks for parity and offset checks this is fine
     override val isTrivialError: Boolean = err1.isTrivialError
     override val isExpectedEmpty: Boolean = !isTrivialError || err1.isExpectedEmpty && err2.isExpectedEmpty
+    override val entrenched: Boolean = err1.entrenched && err2.entrenched
     // So long as the MergedErrors factory checks that they are equal we can pick arbitrarily
     val offset = err1.offset //Math.max(err1.offset, err2.offset)
     override def makeTrivial(state: TrivialState): Unit = {
@@ -162,6 +164,7 @@ private [errors] case class WithHints private (err: DefuncError, hints: DefuncHi
     // So long as the WithHints factory ensures hints is nonEmpty this is false
     val isExpectedEmpty: Boolean = false //err.isExpectedEmpty && hints.isEmpty
     val offset = err.offset
+    override val entrenched: Boolean = err.entrenched
     override def makeTrivial(state: TrivialState): Unit = {
         err.asInstanceOf[MakesTrivial].makeTrivial(state)
         val (expecteds, size) = hints.toExpectedsAndSize
@@ -180,6 +183,7 @@ private [machine] object WithHints {
 private [errors] case class WithReason private (err: DefuncError, reason: String) extends DefuncError with MakesTrivial {
     override val isTrivialError: Boolean = err.isTrivialError
     override val isExpectedEmpty: Boolean = err.isExpectedEmpty
+    override val entrenched: Boolean = err.entrenched
     val offset = err.offset
     override def makeTrivial(state: TrivialState): Unit = {
         err.asInstanceOf[MakesTrivial].makeTrivial(state)
@@ -195,6 +199,7 @@ private [machine] object WithReason {
 
 private [errors] case class WithLabel private (err: DefuncError, label: String) extends DefuncError with MakesTrivial {
     val isExpectedEmpty: Boolean = label.isEmpty
+    override val entrenched: Boolean = err.entrenched
     val offset = err.offset
     override def makeTrivial(state: TrivialState): Unit = {
         state.ignoreExpected {
@@ -206,6 +211,39 @@ private [errors] case class WithLabel private (err: DefuncError, label: String) 
 private [machine] object WithLabel {
     def apply(err: DefuncError, label: String): DefuncError = {
         if (err.isTrivialError) new WithLabel(err, label)
+        else err
+    }
+}
+
+private [errors] case class Amended private (offset: Int, line: Int, col: Int, err: DefuncError) extends DefuncError with MakesTrivial with MakesFancy {
+    override val isTrivialError: Boolean = err.isTrivialError
+    override val isExpectedEmpty: Boolean = err.isExpectedEmpty
+    override def makeTrivial(state: TrivialState): Unit = {
+        err.asInstanceOf[MakesTrivial].makeTrivial(state)
+        state.pos_=(line, col)
+    }
+    override def makeFancy(state: FancyState): Unit = {
+        err.asInstanceOf[MakesFancy].makeFancy(state)
+        state.pos_=(line, col)
+    }
+}
+private [machine] object Amended {
+    def apply(offset: Int, line: Int, col: Int, err: DefuncError): DefuncError = {
+        if (!err.entrenched) new Amended(offset, line, col, err)
+        else err
+    }
+}
+
+private [errors] case class Entrenched private (err: DefuncError) extends DefuncError with MakesTrivial with MakesFancy {
+    override val isTrivialError: Boolean = err.isTrivialError
+    override val isExpectedEmpty: Boolean = err.isExpectedEmpty
+    val offset = err.offset
+    override def makeTrivial(state: TrivialState): Unit = err.asInstanceOf[MakesTrivial].makeTrivial(state)
+    override def makeFancy(state: FancyState): Unit = err.asInstanceOf[MakesFancy].makeFancy(state)
+}
+private [machine] object Entrenched {
+    def apply(err: DefuncError): DefuncError = {
+        if (!err.entrenched) new Entrenched(err)
         else err
     }
 }
