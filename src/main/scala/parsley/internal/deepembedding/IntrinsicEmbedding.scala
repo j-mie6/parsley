@@ -37,7 +37,7 @@ private [parsley] final class Lift3[A, B, C, D](private [Lift3] val f: (A, B, C)
     }
 }
 
-private [parsley] final object Eof extends Singleton[Unit]("eof", instructions.Eof)
+private [parsley] object Eof extends Singleton[Unit]("eof", instructions.Eof)
 
 private [parsley] final class Modify[S](val reg: Reg[S], f: S => S)
     extends Singleton[Unit](s"modify($reg, ?)", new instructions.Modify(reg.addr, f)) with UsesRegister

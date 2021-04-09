@@ -16,19 +16,19 @@ private [parsley] final class Comment(start: String, end: String, line: String, 
 private [parsley] final class Sign[A](ty: SignType)
     extends Singleton[A => A]("sign", new instructions.TokenSign(ty))
 
-private [parsley] final object Natural
+private [parsley] object Natural
     extends Singleton[Int]("natural", instructions.TokenNatural)
 
-private [parsley] final object Float
+private [parsley] object Float
     extends Singleton[Double]("float", instructions.TokenFloat)
 
-private [parsley] final object Escape
+private [parsley] object Escape
     extends Singleton[Char]("escape", new instructions.TokenEscape)
 
 private [parsley] final class StringLiteral(ws: TokenSet)
     extends Singleton[String]("stringLiteral", new instructions.TokenString(ws))
 
-private [parsley] final object RawStringLiteral
+private [parsley] object RawStringLiteral
     extends Singleton[String]("rawStringLiteral", instructions.TokenRawString)
 
 private [parsley] class NonSpecific(combinatorName: String, name: String, illegalName: String, start: TokenSet,

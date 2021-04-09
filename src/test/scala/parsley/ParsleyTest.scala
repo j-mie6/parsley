@@ -19,7 +19,7 @@ case class Raw(item: String) extends TestErrorItem
 case class Named(item: String) extends TestErrorItem
 case object EndOfInput extends TestErrorItem
 
-class TestErrorBuilder extends ErrorBuilder[TestError] with revisions.Revision0 {
+class TestErrorBuilder extends ErrorBuilder[TestError] with revisions.Revision1 {
     override def format(pos: Position, source: Source, lines: ErrorInfoLines): TestError = TestError(pos, lines)
 
     type Position = (Int, Int)
@@ -50,7 +50,10 @@ class TestErrorBuilder extends ErrorBuilder[TestError] with revisions.Revision0 
     override def message(msg: String): Message = msg
 
     type LineInfo = Unit
-    override def lineInfo(line: String, errorPointsAt: Int): LineInfo = ()
+    override def lineInfo(line: String, linesBefore: List[String], linesAfter: List[String], errorPointsAt: Int): Unit = ()
+
+    override val numLinesBefore: Int = 2
+    override val numLinesAfter: Int = 2
 
     type Item = TestErrorItem
     type Raw = parsley.Raw

@@ -9,6 +9,7 @@ package parsley.errors
   * `Revision0` again.
   * @since 3.0.0
   */
+// $COVERAGE-OFF$
 object revisions {
     /** @since 3.0.0 */
     trait Revision0 extends Revision1 { this: ErrorBuilder[_] =>
@@ -45,3 +46,4 @@ object revisions {
     /* @since ??? */
     //trait Revision2 { this: ErrorBuilder[_] => }
 }
+// $COVERAGE-ON$

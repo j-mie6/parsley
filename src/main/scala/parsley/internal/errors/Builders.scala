@@ -20,7 +20,7 @@ private [parsley] abstract class LineBuilder {
     @tailrec private final def getLinesBefore(offset: Int, i: Int, lines: mutable.ListBuffer[String]): Unit = if (i >= 0) getLineWithEndPoints(offset) match {
         case Some((line, startOffset, _)) =>
             line +=: lines
-            getLinesBefore(startOffset-1, i - 1, lines)
+            getLinesBefore(startOffset - 1, i - 1, lines)
         case None =>
     }
 
@@ -33,7 +33,7 @@ private [parsley] abstract class LineBuilder {
     private final def getLinesAfter(offset: Int, i: Int, lines: mutable.ListBuffer[String]): Unit = if (i >= 0) getLineWithEndPoints(offset) match {
         case Some((line, _, endOffset)) =>
             lines += line
-            getLinesAfter(endOffset+1, i - 1, lines)
+            getLinesAfter(endOffset + 1, i - 1, lines)
         case None =>
     }
 
