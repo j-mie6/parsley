@@ -3,8 +3,8 @@ package parsley.internal.deepembedding
 import ContOps.{result, ContAdapter}
 import parsley.internal.machine.instructions
 
-private [parsley] final class Fail(private [Fail] val msg: String)
-    extends Singleton[Nothing](s"fail($msg)", new instructions.Fail(msg)) with MZero
+private [parsley] final class Fail(private [Fail] val msgs: String*)
+    extends Singleton[Nothing](s"fail(${msgs.mkString(", ")})", new instructions.Fail(msgs: _*)) with MZero
 
 private [parsley] final class Unexpected(private [Unexpected] val msg: String)
     extends Singleton[Nothing](s"unexpected($msg)", new instructions.Unexpected(msg)) with MZero
@@ -44,7 +44,6 @@ private [parsley] final class ErrorExplain[A](_p: =>Parsley[A], reason: String)
 private [parsley] final class ErrorAmend[A](_p: =>Parsley[A]) extends ScopedUnaryWithState[A, A](_p, "amend", false, ErrorAmend.empty, instructions.Amend)
 private [parsley] final class ErrorEntrench[A](_p: =>Parsley[A])
     extends ScopedUnary[A, A](_p, "entrench", ErrorEntrench.empty, new instructions.PushHandler(_), instructions.Entrench)
-
 
 private [deepembedding] object ErrorLabel {
     def empty[A](label: String): ErrorLabel[A] = new ErrorLabel(???, label)

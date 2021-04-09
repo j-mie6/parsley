@@ -182,4 +182,34 @@ class DefuncErrorTests extends ParsleyTest {
         errShow.asParseError.asInstanceOf[TrivialError].expecteds should contain only (Desc("x"))
         errHide.asParseError.asInstanceOf[TrivialError].expecteds shouldBe empty
     }
+
+    "Amended" should "Change the error position information" in {
+        val err = Amended(10, 10, 10, EmptyError(0, 0, 0))
+        val errOut = err.asParseError
+        errOut.col shouldBe 10
+        errOut.line shouldBe 10
+        errOut.offset shouldBe 10
+    }
+    it should "work for fancy errors too" in {
+        val err = Amended(10, 10, 10, ClassicFancyError(0, 0, 0, ""))
+        val errOut = err.asParseError
+        errOut.col shouldBe 10
+        errOut.line shouldBe 10
+        errOut.offset shouldBe 10
+    }
+
+    "Entrenched" should "guard against amendment" in {
+        val err = Amended(10, 10, 10, Entrenched(EmptyError(0, 0, 0)))
+        val errOut = err.asParseError
+        errOut.col shouldBe 0
+        errOut.line shouldBe 0
+        errOut.offset shouldBe 0
+    }
+    it should "work for fancy errors too" in {
+        val err = Amended(10, 10, 10, Entrenched(ClassicFancyError(0, 0, 0, "")))
+        val errOut = err.asParseError
+        errOut.col shouldBe 0
+        errOut.line shouldBe 0
+        errOut.offset shouldBe 0
+    }
 }

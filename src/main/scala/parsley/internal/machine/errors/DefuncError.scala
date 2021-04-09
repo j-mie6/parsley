@@ -99,10 +99,10 @@ private [machine] case class ClassicUnexpectedError(offset: Int, line: Int, col:
         state.updateUnexpected(unexpected)
     }
 }
-private [machine] case class ClassicFancyError(offset: Int, line: Int, col: Int, msg: String) extends DefuncError with MakesFancy {
+private [machine] case class ClassicFancyError(offset: Int, line: Int, col: Int, msgs: String*) extends DefuncError with MakesFancy {
     override def makeFancy(state: FancyState): Unit = {
         state.pos_=(line, col)
-        state += msg
+        state ++= msgs
     }
 }
 private [machine] case class EmptyError(offset: Int, line: Int, col: Int) extends DefuncError with MakesTrivial  {
@@ -237,6 +237,7 @@ private [machine] object Amended {
 private [errors] case class Entrenched private (err: DefuncError) extends DefuncError with MakesTrivial with MakesFancy {
     override val isTrivialError: Boolean = err.isTrivialError
     override val isExpectedEmpty: Boolean = err.isExpectedEmpty
+    override val entrenched: Boolean = true
     val offset = err.offset
     override def makeTrivial(state: TrivialState): Unit = err.asInstanceOf[MakesTrivial].makeTrivial(state)
     override def makeFancy(state: FancyState): Unit = err.asInstanceOf[MakesFancy].makeFancy(state)

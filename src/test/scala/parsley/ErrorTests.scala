@@ -5,7 +5,7 @@ import parsley.Parsley._
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.character.{anyChar, digit}
 import parsley.unsafe.ErrorLabel
-import parsley.errors.combinator.{fail => pfail, unexpected, ErrorMethods}
+import parsley.errors.combinator.{fail => pfail, unexpected, amend, entrench, ErrorMethods}
 
 import scala.language.implicitConversions
 
@@ -283,5 +283,30 @@ class ErrorTests extends ParsleyTest {
                 exs should contain only (Named("something more"))
                 rs shouldBe empty
         }
+    }
+
+    "amend" should "change error messages under it" in {
+        val p = 'a' *> amend('b' *> 'c' *> 'd')
+        inside(p.parse("ab")) { case Failure(TestError((1, 2), _)) => }
+        inside(p.parse("abc")) { case Failure(TestError((1, 2), _)) => }
+    }
+    it should "not affect input consumption" in {
+        (amend('a' *> 'b') <|> 'a').parse("a") shouldBe a [Failure[_]]
+    }
+
+    "amend" should "prevent the change of error messages under it" in {
+        val p = 'a' *> amend('b' *> entrench('c') *> 'd')
+        inside(p.parse("ab")) { case Failure(TestError((1, 3), _)) => }
+        inside(p.parse("abc")) { case Failure(TestError((1, 2), _)) => }
+        val q = 'a' *> amend('b' *> 'c' *> entrench('d'))
+        inside(q.parse("ab")) { case Failure(TestError((1, 2), _)) => }
+        inside(q.parse("abc")) { case Failure(TestError((1, 4), _)) => }
+    }
+    it should "not prevent the action of amend inside it" in {
+        val p = 'a' *> amend('b' *> entrench(amend('c' *> 'd' *> entrench('e'))) *> 'f')
+        inside(p.parse("ab")) { case Failure(TestError((1, 3), _)) => }
+        inside(p.parse("abc")) { case Failure(TestError((1, 3), _)) => }
+        inside(p.parse("abcd")) { case Failure(TestError((1, 5), _)) => }
+        inside(p.parse("abcde")) { case Failure(TestError((1, 2), _)) => }
     }
 }

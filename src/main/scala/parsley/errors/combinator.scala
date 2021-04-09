@@ -13,7 +13,7 @@ object combinator {
       * The `fail(msgs)` parser consumes no input and fails with `msg` as the error message
       * @since 3.0.0
       */
-    def fail(msgs: String*): Parsley[Nothing] = choice(msgs.map(msg => new Parsley(new deepembedding.Fail(msg))): _*)
+    def fail(msgs: String*): Parsley[Nothing] = new Parsley(new deepembedding.Fail(msgs: _*))
 
     /**
       * The `unexpected(msg)` parser consumes no input and fails with `msg` as an unexpected error

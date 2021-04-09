@@ -68,7 +68,7 @@ private [errors] final class FancyState(offset: Int) {
         this.col = col
     }
 
-    def +=(msg: String): Unit = this.msgs += msg
+    def ++=(msg: Seq[String]): Unit = this.msgs ++= msg
     def mkError: FancyError = {
         new FancyError(offset, line, col, msgs.toSet)
     }

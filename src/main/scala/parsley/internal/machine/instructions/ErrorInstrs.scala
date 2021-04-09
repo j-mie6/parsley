@@ -113,10 +113,10 @@ private [internal] object Entrench extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class Fail(msg: String) extends Instr {
-    override def apply(ctx: Context): Unit = ctx.failWithMessage(msg)
+private [internal] final class Fail(msgs: String*) extends Instr {
+    override def apply(ctx: Context): Unit = ctx.failWithMessage(msgs: _*)
     // $COVERAGE-OFF$
-    override def toString: String = s"Fail($msg)"
+    override def toString: String = s"Fail(${msgs.mkString(", ")})"
     // $COVERAGE-ON$
 }
 

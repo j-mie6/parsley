@@ -215,7 +215,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         }
     }
 
-    private [machine] def failWithMessage(msg: String): Unit = this.fail(new ClassicFancyError(offset, line, col, msg))
+    private [machine] def failWithMessage(msgs: String*): Unit = this.fail(new ClassicFancyError(offset, line, col, msgs: _*))
     private [machine] def unexpectedFail(expected: Option[ErrorItem], unexpected: ErrorItem): Unit = {
         this.fail(new ClassicUnexpectedError(offset, line, col, expected, unexpected))
     }
