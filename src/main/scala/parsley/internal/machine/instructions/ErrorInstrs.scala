@@ -4,7 +4,7 @@ import parsley.internal.machine.{Context, Good}
 import parsley.internal.ResizableArray
 
 import parsley.internal.errors.{ErrorItem, Desc}
-import parsley.internal.machine.errors.{WithReason, MergedErrors, WithLabel}
+import parsley.internal.machine.errors.{WithReason, MergedErrors, WithLabel, Entrenched, Amended}
 
 private [internal] final class ApplyError(label: String) extends Instr {
     val isHide: Boolean = label.isEmpty
@@ -78,10 +78,45 @@ private [internal] class ApplyReason(reason: String) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class Fail(msg: String) extends Instr {
-    override def apply(ctx: Context): Unit = ctx.failWithMessage(msg)
+private [internal] object Amend extends Instr {
+    override def apply(ctx: Context): Unit = {
+        if (ctx.status eq Good) {
+            ctx.handlers = ctx.handlers.tail
+            ctx.inc()
+        }
+        else {
+            ctx.errs.error = Amended(ctx.states.offset, ctx.states.line, ctx.states.col, ctx.errs.error)
+            ctx.fail()
+        }
+        ctx.states = ctx.states.tail
+    }
+
     // $COVERAGE-OFF$
-    override def toString: String = s"Fail($msg)"
+    override def toString: String = "Amend"
+    // $COVERAGE-ON$
+}
+
+private [internal] object Entrench extends Instr {
+    override def apply(ctx: Context): Unit = {
+        if (ctx.status eq Good) {
+            ctx.handlers = ctx.handlers.tail
+            ctx.inc()
+        }
+        else {
+            ctx.errs.error = Entrenched(ctx.errs.error)
+            ctx.fail()
+        }
+    }
+
+    // $COVERAGE-OFF$
+    override def toString: String = "Entrench"
+    // $COVERAGE-ON$
+}
+
+private [internal] final class Fail(msgs: String*) extends Instr {
+    override def apply(ctx: Context): Unit = ctx.failWithMessage(msgs: _*)
+    // $COVERAGE-OFF$
+    override def toString: String = s"Fail(${msgs.mkString(", ")})"
     // $COVERAGE-ON$
 }
 

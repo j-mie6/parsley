@@ -12,34 +12,15 @@ import scala.language.higherKinds
 private [parsley] final class Satisfy(private [Satisfy] val f: Char => Boolean, val expected: Option[String])
     extends Singleton[Char]("satisfy(f)", new instructions.Satisfies(f, expected))
 
-private [deepembedding] sealed abstract class ScopedUnary[A, B](_p: =>Parsley[A], name: String, doesNotProduceHints: Boolean,
-                                                                empty: =>ScopedUnary[A, B], instr: instructions.Instr)
-    extends Unary[A, B](_p)(c => s"$name($c)", empty) {
-    final override val numInstrs = 2
-    final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
-        val handler = state.freshLabel()
-        instrs += new instructions.PushHandlerAndState(handler, doesNotProduceHints, doesNotProduceHints)
-        p.codeGen |> {
-            instrs += new instructions.Label(handler)
-            instrs += instr
-        }
-    }
-}
-private [parsley] final class Attempt[A](_p: =>Parsley[A]) extends ScopedUnary[A, A](_p, "attempt", false, Attempt.empty, instructions.Attempt)
-private [parsley] final class Look[A](_p: =>Parsley[A]) extends ScopedUnary[A, A](_p, "lookAhead", true, Look.empty, instructions.Look)
+private [parsley] final class Attempt[A](_p: =>Parsley[A]) extends ScopedUnaryWithState[A, A](_p, "attempt", false, Attempt.empty, instructions.Attempt)
+private [parsley] final class Look[A](_p: =>Parsley[A]) extends ScopedUnaryWithState[A, A](_p, "lookAhead", true, Look.empty, instructions.Look)
 private [parsley] final class NotFollowedBy[A](_p: =>Parsley[A])
-    extends ScopedUnary[A, Unit](_p, "notFollowedBy", true, NotFollowedBy.empty, instructions.NotFollowedBy) {
+    extends ScopedUnaryWithState[A, Unit](_p, "notFollowedBy", true, NotFollowedBy.empty, instructions.NotFollowedBy) {
     override def optimise: Parsley[Unit] = p match {
         case z: MZero => new Pure(())
         case _ => this
     }
 }
-
-private [parsley] final class Fail(private [Fail] val msg: String)
-    extends Singleton[Nothing](s"fail($msg)", new instructions.Fail(msg)) with MZero
-
-private [parsley] final class Unexpected(private [Unexpected] val msg: String)
-    extends Singleton[Nothing](s"unexpected($msg)", new instructions.Unexpected(msg)) with MZero
 
 private [deepembedding] final class Rec[A](private [deepembedding] val p: Parsley[A], val call: instructions.Call)
     extends Singleton(s"rec($p)", call) with Binding {
@@ -86,38 +67,6 @@ private [parsley] final class Put[S](val reg: Reg[S], _p: =>Parsley[S])
     }
 }
 
-private [parsley] final class ErrorLabel[A](_p: =>Parsley[A], private [ErrorLabel] val label: String)
-    extends Unary[A, A](_p)(c => s"$c.label($label)", ErrorLabel.empty(label)) {
-    final override val numInstrs = 2
-    final override def optimise: Parsley[A] = p match {
-        case ct@CharTok(c) if !ct.expected.contains("") => new CharTok(c, Some(label)).asInstanceOf[Parsley[A]]
-        case st@StringTok(s) if !st.expected.contains("") => new StringTok(s, Some(label)).asInstanceOf[Parsley[A]]
-        case sat@Satisfy(f) if !sat.expected.contains("") => new Satisfy(f, Some(label)).asInstanceOf[Parsley[A]]
-        case ErrorLabel(p, label2) if label2 != "" => ErrorLabel(p, label)
-        case _ => this
-    }
-    final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
-        val handler = state.freshLabel()
-        instrs += new instructions.InputCheck(handler, true)
-        p.codeGen |> {
-            instrs += new instructions.Label(handler)
-            instrs += new instructions.ApplyError(label)
-        }
-    }
-}
-private [parsley] final class ErrorExplain[A](_p: =>Parsley[A], reason: String)
-    extends Unary[A, A](_p)(c => s"$c.explain($reason)", ErrorExplain.empty(reason)) {
-    final override val numInstrs = 2
-    final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
-        val handler = state.freshLabel()
-        instrs += new instructions.InputCheck(handler)
-        p.codeGen |> {
-            instrs += new instructions.Label(handler)
-            instrs += new instructions.ApplyReason(reason)
-        }
-    }
-}
-
 // $COVERAGE-OFF$
 private [parsley] final class Debug[A](_p: =>Parsley[A], name: String, ascii: Boolean, break: Breakpoint)
     extends Unary[A, A](_p)(identity[String], Debug.empty(name, ascii, break)) {
@@ -142,15 +91,6 @@ private [deepembedding] object Attempt {
 }
 private [deepembedding] object Look {
     def empty[A]: Look[A] = new Look(???)
-}
-private [deepembedding] object ErrorLabel {
-    def empty[A](label: String): ErrorLabel[A] = new ErrorLabel(???, label)
-    def apply[A](p: Parsley[A], label: String): ErrorLabel[A] = empty(label).ready(p)
-    def unapply[A](self: ErrorLabel[A]): Some[(Parsley[A], String)] = Some((self.p, self.label))
-}
-private [deepembedding] object ErrorExplain {
-    def empty[A](reason: String): ErrorExplain[A] = new ErrorExplain(???, reason)
-    def apply[A](p: Parsley[A], reason: String): ErrorExplain[A] = empty(reason).ready(p)
 }
 private [deepembedding] object NotFollowedBy {
     def empty[A]: NotFollowedBy[A] = new NotFollowedBy(???)

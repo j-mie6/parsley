@@ -40,6 +40,24 @@ private [deepembedding] abstract class Unary[A, B](__p: =>Parsley[A])(pretty: St
     // $COVERAGE-ON$
 }
 
+private [deepembedding] abstract class ScopedUnary[A, B](_p: =>Parsley[A], name: String, empty: =>ScopedUnary[A, B],
+                                                         setup: Int => instructions.Instr, instr: instructions.Instr)
+    extends Unary[A, B](_p)(c => s"$name($c)", empty) {
+    final override val numInstrs = 2
+    final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+        val handler = state.freshLabel()
+        instrs += setup(handler)
+        p.codeGen |> {
+            instrs += new instructions.Label(handler)
+            instrs += instr
+        }
+    }
+}
+
+private [deepembedding] abstract class ScopedUnaryWithState[A, B](_p: =>Parsley[A], name: String, doesNotProduceHints: Boolean,
+                                                                  empty: =>ScopedUnary[A, B], instr: instructions.Instr)
+    extends ScopedUnary[A, B](_p, name, empty, new instructions.PushHandlerAndState(_, doesNotProduceHints, doesNotProduceHints), instr)
+
 private [deepembedding] abstract class Binary[A, B, C](__left: =>Parsley[A], __right: =>Parsley[B])
                                                       (pretty: (String, String) => String, empty: =>Binary[A, B, C]) extends Parsley[C] {
     private lazy val _left = __left
