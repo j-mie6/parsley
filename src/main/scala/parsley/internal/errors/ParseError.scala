@@ -7,10 +7,13 @@ private [internal] sealed trait ParseError {
     val col: Int
     val line: Int
 
-    protected def format(line: String, caret: Int)(implicit builder: ErrorBuilder[_]): builder.ErrorInfoLines
+    protected def format(line: String, beforeLines: List[String], afterLines: List[String], caret: Int)
+                        (implicit builder: ErrorBuilder[_]): builder.ErrorInfoLines
     private [internal] final def format[Err](sourceName: Option[String])(implicit helper: LineBuilder, builder: ErrorBuilder[Err]): Err = {
-        val (errLine, caret) = helper.getLineWithCaret(offset)
-        val lines = format(errLine, caret)
+        val Some((errLine, caret)) = helper.getLineWithCaret(offset)
+        val beforeLines = helper.getLinesBefore(offset, builder.numLinesBefore)
+        val afterLines = helper.getLinesAfter(offset, builder.numLinesAfter)
+        val lines = format(errLine, beforeLines, afterLines, caret)
         builder.format(builder.pos(line, col), builder.source(sourceName), lines)
     }
 }
@@ -18,18 +21,18 @@ private [internal] sealed trait ParseError {
 private [internal] case class TrivialError(offset: Int, line: Int, col: Int,
                                            unexpected: Option[ErrorItem], expecteds: Set[ErrorItem], reasons: Set[String])
     extends ParseError {
-    def format(line: String, caret: Int)(implicit builder: ErrorBuilder[_]): builder.ErrorInfoLines = {
+    def format(line: String, beforeLines: List[String], afterLines: List[String], caret: Int)(implicit builder: ErrorBuilder[_]): builder.ErrorInfoLines = {
         builder.vanillaError(
             builder.unexpected(unexpected.map(_.format)),
             builder.expected(builder.combineExpectedItems(expecteds.map(_.format))),
             builder.combineMessages(reasons.map(builder.reason(_))),
-            builder.lineInfo(line, caret))
+            builder.lineInfo(line, beforeLines, afterLines, caret))
     }
 }
 private [internal] case class FancyError(offset: Int, line: Int, col: Int, msgs: Set[String]) extends ParseError {
-    def format(line: String, caret: Int)(implicit builder: ErrorBuilder[_]): builder.ErrorInfoLines = {
+    def format(line: String, beforeLines: List[String], afterLines: List[String], caret: Int)(implicit builder: ErrorBuilder[_]): builder.ErrorInfoLines = {
         builder.specialisedError(
             builder.combineMessages(msgs.map(builder.message(_))),
-            builder.lineInfo(line, caret))
+            builder.lineInfo(line, beforeLines, afterLines, caret))
     }
 }

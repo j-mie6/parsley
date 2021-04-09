@@ -12,7 +12,7 @@ import scala.util.matching.Regex
   * time and without notice. The API, however, will remain stable.
   * @since 3.0.0
   */
-class DefaultErrorBuilder extends ErrorBuilder[String] with revisions.Revision0 {
+class DefaultErrorBuilder extends ErrorBuilder[String] with revisions.Revision1 {
     override def format(pos: Position, source: Source, lines: ErrorInfoLines): String = {
         s"${source.fold("")(name => s"In $name ")}$pos:\n${lines.mkString("  ", "\n  ", "")}"
     }
@@ -43,21 +43,17 @@ class DefaultErrorBuilder extends ErrorBuilder[String] with revisions.Revision0 
     }*/
 
     type ErrorInfoLines = List[String]
-    override def vanillaError(unexpected: UnexpectedLine, expected: ExpectedLine, reasons: Messages, line: LineInfo): ErrorInfoLines = {
-        val (src, caret) = line
+    override def vanillaError(unexpected: UnexpectedLine, expected: ExpectedLine, reasons: Messages, lines: LineInfo): ErrorInfoLines = {
         val reasons_ = reasons.collect {
             case reason if reason.nonEmpty => Some(reason)
         }
-        combineOrUnknown((unexpected :: expected :: reasons_).flatten, src, caret)
+        combineOrUnknown((unexpected :: expected :: reasons_).flatten, lines)
     }
-    override def specialisedError(msgs: Messages, line: LineInfo): ErrorInfoLines = {
-        val (src, caret) = line
-        combineOrUnknown(msgs, src, caret)
-    }
+    override def specialisedError(msgs: Messages, lines: LineInfo): ErrorInfoLines = combineOrUnknown(msgs, lines)
 
-    private def combineOrUnknown(info: List[String], line: String, caret: String): ErrorInfoLines = {
-        if (info.isEmpty) List(Unknown, line, caret)
-        else info ++ List(line, caret)
+    private def combineOrUnknown(info: List[String], lines: List[String]): ErrorInfoLines = {
+        if (info.isEmpty) Unknown :: lines
+        else info ++ lines
     }
 
     type ExpectedItems = Option[String]
@@ -75,12 +71,19 @@ class DefaultErrorBuilder extends ErrorBuilder[String] with revisions.Revision0 
     type UnexpectedLine = Option[String]
     type ExpectedLine = Option[String]
     type Message = String
-    type LineInfo = (String, String)
+    type LineInfo = List[String]
     override def unexpected(item: Option[Item]): UnexpectedLine = item.map("unexpected " + _)
     override def expected(alts: ExpectedItems): ExpectedLine = alts.map("expected " + _)
     override def reason(reason: String): Message = reason
     override def message(msg: String): Message = msg
-    override def lineInfo(line: String, errorPointsAt: Int): LineInfo = (s"$errorLineStart$line", s"$errorLineStart${errorPointer(errorPointsAt)}")
+
+    override val numLinesBefore = 1
+    override val numLinesAfter = 1
+    override def lineInfo(line: String, linesBefore: List[String], linesAfter: List[String], errorPointsAt: Int): LineInfo = {
+        linesBefore.map(line => s"$errorLineStart$line") :::
+        List(s"$errorLineStart$line", s"${" " * errorLineStart.length}${errorPointer(errorPointsAt)}") :::
+        linesAfter.map(line => s"$errorLineStart$line")
+    }
 
     private val errorLineStart = ">"
     private def errorPointer(caretAt: Int) = s"${" " * caretAt}^"

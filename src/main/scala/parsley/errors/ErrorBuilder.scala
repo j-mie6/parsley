@@ -231,11 +231,26 @@ trait ErrorBuilder[Err] {
       *
       * @param line The full line of input that produced this error
       *             message
+      * @param linesBefore The lines of input just before the one that
+      *                    produced this message (up to `[[numLinesBefore]]`)
+      * @param linesAfter The lines of input just after the one that
+      *                   produced this message (up to `[[numLinesAfter]]`)
       * @param errorPointsAt The offset into the line that the error
       *                      points at
-      * @since 3.0.0
+      * @since 3.1.0
       */
-    def lineInfo(line: String, errorPointsAt: Int): LineInfo
+    def lineInfo(line: String, linesBefore: List[String], linesAfter: List[String], errorPointsAt: Int): LineInfo
+
+    /**
+      * The number of lines of input to request before an error occured
+      * @since 3.1.0
+      */
+    val numLinesBefore: Int
+    /**
+      * The number of lines of input to request after an error occured
+      * @since 3.1.0
+      */
+    val numLinesAfter: Int
 
     /**
       * The base type of `Raw`, `Named` and `EndOfInput` that

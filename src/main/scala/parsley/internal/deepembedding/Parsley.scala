@@ -300,7 +300,7 @@ private [deepembedding] abstract class ParserMap[V[_] <: Parsley[_]](ks: Iterabl
     protected def make(p: Parsley[_]): V[_]
     protected val map: Map[Parsley[_], V[_]] = ks.map(p => p -> make(p)).toMap
     val keys: Set[Parsley[_]] = ks.toSet
-    def contains(p: Parsley[_]): Boolean = map.contains(p)
+    def contains(p: Parsley[_]): Boolean = keys(p)
     def apply[A](p: Parsley[A]): V[A] = map(p).asInstanceOf[V[A]]
     override def toString: String = map.toString
 }

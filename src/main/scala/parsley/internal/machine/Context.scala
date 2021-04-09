@@ -306,13 +306,19 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     }
 
     private implicit val lineBuilder: LineBuilder = new LineBuilder {
-        def nearestNewlineBefore(off: Int): Int = {
-            val idx = Context.this.input.lastIndexOf('\n', off-1)
-            if (idx == -1) 0 else idx + 1
+        def nearestNewlineBefore(off: Int): Option[Int] = {
+            if (off < 0) None
+            else Some {
+                val idx = Context.this.input.lastIndexOf('\n', off-1)
+                if (idx == -1) 0 else idx + 1
+            }
         }
-        def nearestNewlineAfter(off: Int): Int = {
-            val idx = Context.this.input.indexOf('\n', off)
-            if (idx == -1) Context.this.inputsz else idx
+        def nearestNewlineAfter(off: Int): Option[Int] = {
+            if (off > Context.this.inputsz) None
+            else Some {
+                val idx = Context.this.input.indexOf('\n', off)
+                if (idx == -1) Context.this.inputsz else idx
+            }
         }
         def segmentBetween(start: Int, end: Int): String = {
             Context.this.input.substring(start, end)
