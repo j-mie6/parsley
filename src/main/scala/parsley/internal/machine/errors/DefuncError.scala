@@ -57,6 +57,8 @@ private [machine] sealed abstract class DefuncError {
         case self: MergedErrors =>
             self.err1.collectHintsNonTail()
             self.err2.collectHints()
+        case self: Amended => self.err.collectHints()
+        case self: Entrenched => self.err.collectHints()
     }
     final private def collectHintsNonTail()(implicit state: HintState): Unit = collectHints()
 }
