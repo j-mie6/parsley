@@ -170,7 +170,7 @@ trait ErrorBuilder[Err] {
       *             methods)
       * @since 3.0.0
       */
-    def combineMessages(alts: Set[Message]): Messages
+    def combineMessages(alts: Seq[Message]): Messages
 
     /**
       * The representation of the information regarding the problematic token.
@@ -239,7 +239,7 @@ trait ErrorBuilder[Err] {
       *                      points at
       * @since 3.1.0
       */
-    def lineInfo(line: String, linesBefore: List[String], linesAfter: List[String], errorPointsAt: Int): LineInfo
+    def lineInfo(line: String, linesBefore: Seq[String], linesAfter: Seq[String], errorPointsAt: Int): LineInfo
 
     /**
       * The number of lines of input to request before an error occured

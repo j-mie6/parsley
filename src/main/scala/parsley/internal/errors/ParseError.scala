@@ -25,11 +25,11 @@ private [internal] case class TrivialError(offset: Int, line: Int, col: Int,
         builder.vanillaError(
             builder.unexpected(unexpected.map(_.format)),
             builder.expected(builder.combineExpectedItems(expecteds.map(_.format))),
-            builder.combineMessages(reasons.map(builder.reason(_))),
+            builder.combineMessages(reasons.map(builder.reason(_)).toSeq),
             builder.lineInfo(line, beforeLines, afterLines, caret))
     }
 }
-private [internal] case class FancyError(offset: Int, line: Int, col: Int, msgs: Set[String]) extends ParseError {
+private [internal] case class FancyError(offset: Int, line: Int, col: Int, msgs: List[String]) extends ParseError {
     def format(line: String, beforeLines: List[String], afterLines: List[String], caret: Int)(implicit builder: ErrorBuilder[_]): builder.ErrorInfoLines = {
         builder.specialisedError(
             builder.combineMessages(msgs.map(builder.message(_))),

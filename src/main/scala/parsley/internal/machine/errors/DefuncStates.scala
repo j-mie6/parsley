@@ -61,7 +61,7 @@ private [errors] object TrivialState {
 private [errors] final class FancyState(offset: Int) {
     private var line: Int = _
     private var col: Int = _
-    private val msgs = mutable.Set.empty[String]
+    private val msgs = mutable.ListBuffer.empty[String]
 
     def pos_=(line: Int, col: Int): Unit = {
         this.line = line
@@ -70,7 +70,7 @@ private [errors] final class FancyState(offset: Int) {
 
     def ++=(msg: Seq[String]): Unit = this.msgs ++= msg
     def mkError: FancyError = {
-        new FancyError(offset, line, col, msgs.toSet)
+        new FancyError(offset, line, col, msgs.toList.distinct)
     }
 }
 

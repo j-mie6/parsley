@@ -26,7 +26,7 @@ private [internal] final class ApplyError(label: String) extends Instr {
             ctx.errs.error = ctx.useHints {
                 // EERR
                 // the top of the error stack is adjusted:
-                if (ctx.offset == ctx.checkStack.offset) WithLabel(ctx.errs.error, label)
+                if (ctx.errs.error.offset == ctx.checkStack.offset) WithLabel(ctx.errs.error, label)
                 // CERR
                 // do nothing
                 else ctx.errs.error
@@ -67,7 +67,7 @@ private [internal] class ApplyReason(reason: String) extends Instr {
             ctx.inc()
         }
         else {
-            if (ctx.offset == ctx.checkStack.offset) ctx.errs.error = WithReason(ctx.errs.error, reason)
+            if (ctx.errs.error.offset == ctx.checkStack.offset) ctx.errs.error = WithReason(ctx.errs.error, reason)
             ctx.fail()
         }
         ctx.checkStack = ctx.checkStack.tail

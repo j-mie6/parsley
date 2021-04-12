@@ -32,7 +32,18 @@ object revisions {
         }
     }
     /** @since 3.1.0 */
-    trait Revision1/* extends Revision2*/ { this: ErrorBuilder[_] =>
+    trait Revision1 extends Revision2 { this: ErrorBuilder[_] =>
+        final override def combineMessages(alts: Seq[Message]): Messages = combineMessages(alts.toSet)
+        def combineMessages(alts: Set[Message]): Messages
+
+        final override def lineInfo(line: String, linesBefore: Seq[String], linesAfter: Seq[String], errorPointsAt: Int): LineInfo = {
+            lineInfo(line, linesBefore.toList, linesAfter.toList, errorPointsAt)
+        }
+        def lineInfo(line: String, linesBefore: List[String], linesAfter: List[String], errorPointsAt: Int): LineInfo
+    }
+    /* @since 3.1.1 */
+    trait Revision2 /*extends Revision3*/ { this: ErrorBuilder[_] =>
+        // 3.2.0 will introduce contextualise which will require this new information
         //type Context = Unit
         //final override def contexualScope(context: String): Context = ()
 
