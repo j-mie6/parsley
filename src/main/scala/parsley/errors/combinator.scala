@@ -88,7 +88,7 @@ object combinator {
           * @since 3.0.0 */
         def ?(msg: String): Parsley[A] = this.label(msg)
         /** Sets the expected message for a parser. If the parser fails then `expected msg` will added to the error.
-          * The label is only applied if the error message does not occur at a deeper offset than on entry to the combinator.
+          * The label is only applied if the error message does not observe any consumption of input.
           * @since 3.0.0 */
         def label(msg: String): Parsley[A] = new Parsley(new deepembedding.ErrorLabel(con(p).internal, msg))
         /** Similar to `label`, except instead of providing an expected message replacing the original tag, this combinator
