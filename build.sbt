@@ -20,17 +20,12 @@ inThisBuild(List(
 val scala212Version = "2.12.13"
 val scala213Version = "2.13.5"
 val scala3Version = "3.0.0-RC2"
-val dottyVersion = "0.27.0-RC1"
 
 def usesLib213(major: Long, minor: Long): Boolean = major > 2 || minor >= 13
-def adjustForDotty(major: Long): Long = major match {
-    case 3 | 0 => 3
-    case 2     => 2
-}
 def extraSources(rootSrcFile: File, base: String, major: Long, minor: Long): Seq[File] = {
     val rootSrc = rootSrcFile.getPath
     val srcs = mutable.ListBuffer.empty[File]
-    srcs += file(s"$rootSrc/src/$base/scala-${adjustForDotty(major)}.x")
+    srcs += file(s"$rootSrc/src/$base/scala-$major.x")
     srcs += file(s"$rootSrc/src/$base/scala-2.${if (usesLib213(major, minor)) "13+" else "12"}")
     srcs.toList
 }
@@ -40,8 +35,7 @@ def extraSources(rootSrcFile: File, base: String, version: String): Seq[File] = 
 }
 
 def scalaTestDependency(version: String): String =
-    Map("0.27.0-RC1" -> "3.2.2",
-        "3.0.0-M3" -> "3.2.3")
+    Map()
     .getOrElse(version, "3.2.7")
 
 val PureVisible: CrossType = new CrossType {
@@ -79,21 +73,17 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     Test / unmanagedSourceDirectories ++= extraSources(baseDirectory.value, "test", scalaVersion.value),
 
     scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature"),
-    scalacOptions ++= (if (isDotty.value) Seq("-source:3.0-migration") else Seq.empty),
+    scalacOptions ++= {
+        if (scalaBinaryVersion.value == "3" || scalaBinaryVersion.value == "3.0.0-RC2") Seq("-source:3.0-migration") else Seq.empty
+    },
 
     Compile / doc / scalacOptions ++= Seq("-doc-root-content", s"${baseDirectory.value.getParentFile.getPath}/rootdoc.md"),
-    // Trick from sbt-spiewak: disable dottydoc, which is struggling
-    // with our package object.
-    Compile / doc / sources := {
-      val old = (Compile / doc / sources).value
-      if (scalaVersion.value == dottyVersion) Seq() else old
-    }
   )
   .jvmSettings(
-    crossScalaVersions := List(scala212Version, scala213Version, scala3Version, dottyVersion),
+    crossScalaVersions := List(scala212Version, scala213Version, scala3Version),
   )
   .jsSettings(
-    crossScalaVersions := List(scala212Version, scala213Version),
+    crossScalaVersions := List(scala212Version, scala213Version, scala3Version),
     Compile / bloopGenerate := None,
     Test / bloopGenerate := None
   )
