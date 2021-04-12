@@ -34,11 +34,34 @@ object revisions {
     /** @since 3.1.0 */
     trait Revision1 extends Revision2 { this: ErrorBuilder[_] =>
         final override def combineMessages(alts: Seq[Message]): Messages = combineMessages(alts.toSet)
+        /**
+          * Details how to combine any reasons or messages generated within a
+          * single error. Reasons are used by `vanilla` messages and messages
+          * are used by `specialised` messages.
+          *
+          * @param alts The messages to combine (see the `[[message]]` or `[[reason]]`
+          *             methods)
+          * @since 3.0.0
+          */
         def combineMessages(alts: Set[Message]): Messages
 
         final override def lineInfo(line: String, linesBefore: Seq[String], linesAfter: Seq[String], errorPointsAt: Int): LineInfo = {
             lineInfo(line, linesBefore.toList, linesAfter.toList, errorPointsAt)
         }
+        /**
+          * Describes how to format the information about the line that
+          * the error occured on.
+          *
+          * @param line The full line of input that produced this error
+          *             message
+          * @param linesBefore The lines of input just before the one that
+          *                    produced this message (up to `[[numLinesBefore]]`)
+          * @param linesAfter The lines of input just after the one that
+          *                   produced this message (up to `[[numLinesAfter]]`)
+          * @param errorPointsAt The offset into the line that the error
+          *                      points at
+          * @since 3.1.0
+          */
         def lineInfo(line: String, linesBefore: List[String], linesAfter: List[String], errorPointsAt: Int): LineInfo
     }
     /** @since 3.1.1 */
