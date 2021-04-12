@@ -41,7 +41,7 @@ object revisions {
         }
         def lineInfo(line: String, linesBefore: List[String], linesAfter: List[String], errorPointsAt: Int): LineInfo
     }
-    /* @since 3.1.1 */
+    /** @since 3.1.1 */
     trait Revision2 /*extends Revision3*/ { this: ErrorBuilder[_] =>
         // 3.2.0 will introduce contextualise which will require this new information
         //type Context = Unit
