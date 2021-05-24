@@ -18,8 +18,8 @@ inThisBuild(List(
 ))
 
 val scala212Version = "2.12.13"
-val scala213Version = "2.13.5"
-val scala3Version = "3.0.0-RC2"
+val scala213Version = "2.13.6"
+val scala3Version = "3.0.0"
 
 def usesLib213(major: Long, minor: Long): Boolean = major > 2 || minor >= 13
 def extraSources(rootSrcFile: File, base: String, major: Long, minor: Long): Seq[File] = {
@@ -36,7 +36,7 @@ def extraSources(rootSrcFile: File, base: String, version: String): Seq[File] = 
 
 def scalaTestDependency(version: String): String =
     Map()
-    .getOrElse(version, "3.2.7")
+    .getOrElse(version, "3.2.9")
 
 val PureVisible: CrossType = new CrossType {
     def projectDir(crossBase: File, projectType: String): File =
@@ -74,7 +74,7 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
 
     scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature"),
     scalacOptions ++= {
-        if (scalaBinaryVersion.value == "3" || scalaBinaryVersion.value == "3.0.0-RC2") Seq("-source:3.0-migration") else Seq.empty
+        if (scalaBinaryVersion.value == "3") Seq("-source:3.0-migration") else Seq.empty
     },
 
     Compile / doc / scalacOptions ++= Seq("-doc-root-content", s"${baseDirectory.value.getParentFile.getPath}/rootdoc.md"),
