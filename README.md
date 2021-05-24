@@ -1,4 +1,4 @@
-# Parsley ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/j-mie6/parsley/CI) ![GitHub release](https://img.shields.io/github/v/release/j-mie6/parsley?include_prereleases&sort=semver) [![GitHub license](https://img.shields.io/github/license/j-mie6/parsley.svg)](https://github.com/j-mie6/parsley/blob/master/LICENSE)
+# Parsley ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/j-mie6/parsley/CI) ![GitHub release](https://img.shields.io/github/v/release/j-mie6/parsley?include_prereleases&sort=semver) [![GitHub license](https://img.shields.io/github/license/j-mie6/parsley.svg)](https://github.com/j-mie6/parsley/blob/master/LICENSE) ![GitHub commits since latest release (by SemVer)](https://img.shields.io/github/commits-since/j-mie6/parsley/latest)
 
 ## What is Parsley?
 Parsley is a very fast parser combinator library for Scala based on a Haskell-style Parsec API.
