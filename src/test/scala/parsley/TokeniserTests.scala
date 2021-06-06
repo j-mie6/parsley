@@ -354,4 +354,25 @@ class TokeniserTests extends ParsleyTest {
         (lexer2.whiteSpace *> 'a').parse("a") shouldBe a [Success[_]]
         (lexer3.whiteSpace *> 'a').parse("a") shouldBe a [Success[_]]
     }
+
+    "case sensitivity" should "work for both lowercase and uppercase specified keywords" in {
+        val lexer = new token.Lexer(token.LanguageDef.plain.copy(caseSensitive = false, keywords = Set("hi", "HELLo", "BYE")))
+        lexer.identifier.parse("hi") shouldBe a [Failure[_]]
+        lexer.identifier.parse("hello") shouldBe a [Failure[_]]
+        lexer.identifier.parse("bye") shouldBe a [Failure[_]]
+        lexer.identifier.parse("hI") shouldBe a [Failure[_]]
+        lexer.identifier.parse("hELLo") shouldBe a [Failure[_]]
+        lexer.identifier.parse("bYe") shouldBe a [Failure[_]]
+        lexer.keyword("HELLO").parse("HELLO") shouldBe a [Success[_]]
+        lexer.keyword("HELLO").parse("hello") shouldBe a [Success[_]]
+        lexer.keyword("BYE").parse("bye") shouldBe a [Success[_]]
+        lexer.keyword("hi").parse("HI") shouldBe a [Success[_]]
+    }
+
+    it should "not be affected by tablification optimisation" in {
+        val lexer = new token.Lexer(token.LanguageDef.plain.copy(caseSensitive = false, keywords = Set("hi", "HELLo", "BYE")))
+        val p = lexer.keyword("hi") <|> lexer.keyword("HELLo") <|> lexer.keyword("BYE")
+        p.parse("bye") shouldBe a [Success[_]]
+        p.parse("Bye") shouldBe a [Success[_]]
+    }
 }

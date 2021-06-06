@@ -183,7 +183,9 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
     }
     @tailrec private def tablable(p: Parsley[_]): Option[Parsley[_]] = p match {
         // CODO: Numeric parsers by leading digit (This one would require changing the foldTablified function a bit)
-        case t@(_: CharTok | _: StringTok | _: Specific | _: StringLiteral | RawStringLiteral | _: MaxOp) => Some(t)
+        case t@(_: CharTok | _: StringTok | _: StringLiteral | RawStringLiteral | _: MaxOp) => Some(t)
+        // TODO: This can be done for case insensitive things too, but with duplicated branching
+        case t: Specific if t.caseSensitive => Some(t)
         case Attempt(t) => tablable(t)
         case (_: Pure[_]) <*> t => tablable(t)
         case Lift2(_, t, _) => tablable(t)

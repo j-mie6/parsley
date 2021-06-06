@@ -51,6 +51,7 @@ class Lexer(lang: LanguageDef)
     {
         case BitSetImpl(letter) => lexeme(new Parsley(new deepembedding.Specific("keyword", name, letter, lang.caseSensitive)))
         case Predicate(letter) => lexeme(new Parsley(new deepembedding.Specific("keyword", name, letter, lang.caseSensitive)))
+        case NotRequired => lexeme(new Parsley(new deepembedding.Specific("keyword", name, _ => false, lang.caseSensitive)))
         case _ => lexeme(attempt(caseString(name) *> notFollowedBy(identLetter).label("end of " + name)))
     }
 
@@ -95,6 +96,7 @@ class Lexer(lang: LanguageDef)
     {
         case BitSetImpl(letter) => new Parsley(new deepembedding.Specific("operator", name, letter, true))
         case Predicate(letter) => new Parsley(new deepembedding.Specific("operator", name, letter, true))
+        case NotRequired => new Parsley(new deepembedding.Specific("operator", name, _ => false, true))
         case _ => attempt(name *> notFollowedBy(opLetter).label("end of " + name))
     }
 
