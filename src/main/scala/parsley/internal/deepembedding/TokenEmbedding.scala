@@ -36,7 +36,7 @@ private [parsley] class NonSpecific(combinatorName: String, name: String, illega
     extends Singleton[String](combinatorName, new instructions.TokenNonSpecific(name, illegalName)(start, letter, illegal))
 
 private [parsley] final class Specific(name: String, private [Specific] val specific: String,
-                                       letter: TokenSet, caseSensitive: Boolean)
+                                       letter: TokenSet, val caseSensitive: Boolean)
     extends Singleton[Unit](s"$name($specific)", new instructions.TokenSpecific(specific, letter, caseSensitive))
 
 private [parsley] final class MaxOp(private [MaxOp] val operator: String, ops: Set[String])
