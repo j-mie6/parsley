@@ -17,9 +17,9 @@ inThisBuild(List(
   )
 ))
 
-val scala212Version = "2.12.13"
+val scala212Version = "2.12.15"
 val scala213Version = "2.13.6"
-val scala3Version = "3.0.0"
+val scala3Version = "3.0.2"
 
 def usesLib213(major: Long, minor: Long): Boolean = major > 2 || minor >= 13
 def extraSources(rootSrcFile: File, base: String, major: Long, minor: Long): Seq[File] = {
