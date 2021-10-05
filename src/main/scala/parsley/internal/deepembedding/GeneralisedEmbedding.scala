@@ -19,19 +19,17 @@ private [parsley] abstract class Singleton[A](pretty: String, instr: =>instructi
     // $COVERAGE-ON$
 }
 
-private [deepembedding] abstract class Unary[A, B](__p: =>Parsley[A])(pretty: String => String, empty: =>Unary[A, B]) extends Parsley[B] {
-    private lazy val _p = __p
-    private [deepembedding] var p: Parsley[A] = _
+private [deepembedding] abstract class Unary[A, B](pretty: String => String, make: Parsley[A] => Unary[A, B]) extends Parsley[B] {
+    private [deepembedding] var p: Parsley[A]
     protected val childRepeats: Int = 1
     protected val numInstrs: Int
     final override def findLetsAux[Cont[_, +_], R]
-        (implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState): Cont[R,Unit] = _p.findLets
+        (implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState): Cont[R,Unit] = p.findLets
     override def preprocess[Cont[_, +_], R, B_ >: B](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]],
                                                               lets: LetMap, recs: RecMap): Cont[R, Parsley[B_]] =
-        for (p <- _p.optimised) yield empty.ready(p)
-    private [deepembedding] def ready(p: Parsley[A]): this.type = {
+        for (p <- p.optimised) yield make(p).ready()
+    private [deepembedding] def ready(): this.type = {
         processed = true
-        this.p = p
         size = p.size + numInstrs
         this
     }
@@ -40,9 +38,9 @@ private [deepembedding] abstract class Unary[A, B](__p: =>Parsley[A])(pretty: St
     // $COVERAGE-ON$
 }
 
-private [deepembedding] abstract class ScopedUnary[A, B](_p: =>Parsley[A], name: String, empty: =>ScopedUnary[A, B],
+private [deepembedding] abstract class ScopedUnary[A, B](name: String, make: Parsley[A] => ScopedUnary[A, B],
                                                          setup: Int => instructions.Instr, instr: instructions.Instr)
-    extends Unary[A, B](_p)(c => s"$name($c)", empty) {
+    extends Unary[A, B](c => s"$name($c)", make) {
     final override val numInstrs = 2
     final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val handler = state.freshLabel()
@@ -54,9 +52,9 @@ private [deepembedding] abstract class ScopedUnary[A, B](_p: =>Parsley[A], name:
     }
 }
 
-private [deepembedding] abstract class ScopedUnaryWithState[A, B](_p: =>Parsley[A], name: String, doesNotProduceHints: Boolean,
-                                                                  empty: =>ScopedUnary[A, B], instr: instructions.Instr)
-    extends ScopedUnary[A, B](_p, name, empty, new instructions.PushHandlerAndState(_, doesNotProduceHints, doesNotProduceHints), instr)
+private [deepembedding] abstract class ScopedUnaryWithState[A, B](name: String, doesNotProduceHints: Boolean,
+                                                                  make: Parsley[A] => ScopedUnary[A, B], instr: instructions.Instr)
+    extends ScopedUnary[A, B](name, make, new instructions.PushHandlerAndState(_, doesNotProduceHints, doesNotProduceHints), instr)
 
 private [deepembedding] abstract class Binary[A, B, C](__left: =>Parsley[A], __right: =>Parsley[B])
                                                       (pretty: (String, String) => String, empty: =>Binary[A, B, C]) extends Parsley[C] {

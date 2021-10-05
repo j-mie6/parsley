@@ -52,9 +52,9 @@ private [parsley] final class If[A](_b: =>Parsley[Boolean], _p: =>Parsley[A], _q
     }
 }
 
-private [deepembedding] sealed abstract class FilterLike[A, B](_p: =>Parsley[A], pretty: String => String, empty: =>FilterLike[A, B],
+private [deepembedding] sealed abstract class FilterLike[A, B](pretty: String => String, make: Parsley[A] => FilterLike[A, B],
                                                                fail: A => Parsley[B], instr: instructions.Instr, pred: A => Boolean)
-    extends Unary[A, B](_p)(pretty, empty) {
+    extends Unary[A, B](pretty, make) {
     final override val numInstrs = 1
     final override def optimise: Parsley[B] = p match {
         case px@Pure(x) => if (!pred(x)) px.asInstanceOf[Parsley[B]] else fail(x)
@@ -65,20 +65,20 @@ private [deepembedding] sealed abstract class FilterLike[A, B](_p: =>Parsley[A],
         p.codeGen |> (instrs += instr)
     }
 }
-private [parsley] final class FastFail[A](_p: =>Parsley[A], msggen: A => String)
-    extends FilterLike[A, Nothing](_p, c => s"$c ! ?", FastFail.empty(msggen),
+private [parsley] final class FastFail[A](private [deepembedding] var p: Parsley[A], msggen: A => String)
+    extends FilterLike[A, Nothing](c => s"$c ! ?", new FastFail(_, msggen),
                                    x => new Fail(msggen(x)), new instructions.FastFail(msggen), _ => true) with MZero
-private [parsley] final class FastUnexpected[A](_p: =>Parsley[A], msggen: A => String)
-    extends FilterLike[A, Nothing](_p, c => s"$c.unexpected(?)", FastUnexpected.empty(msggen),
+private [parsley] final class FastUnexpected[A](private [deepembedding] var p: Parsley[A], msggen: A => String)
+    extends FilterLike[A, Nothing](c => s"$c.unexpected(?)", new FastUnexpected(_, msggen),
                                    x => new Unexpected(msggen(x)), new instructions.FastUnexpected(msggen), _ => true) with MZero
-private [parsley] final class Filter[A](_p: =>Parsley[A], pred: A => Boolean)
-    extends FilterLike[A, A](_p, c => s"$c.filter(?)", Filter.empty(pred),
+private [parsley] final class Filter[A](private [deepembedding] var p: Parsley[A], pred: A => Boolean)
+    extends FilterLike[A, A](c => s"$c.filter(?)", new Filter(_, pred),
                              _ => Empty, new instructions.Filter(pred), !pred(_))
-private [parsley] final class FilterOut[A](_p: =>Parsley[A], pred: PartialFunction[A, String])
-    extends FilterLike[A, A](_p, c => s"$c.filterOut(?)", FilterOut.empty(pred),
+private [parsley] final class FilterOut[A](private [deepembedding] var p: Parsley[A], pred: PartialFunction[A, String])
+    extends FilterLike[A, A](c => s"$c.filterOut(?)", new FilterOut(_, pred),
                              x => ErrorExplain(Empty, pred(x)), new instructions.FilterOut(pred), pred.isDefinedAt(_))
-private [parsley] final class GuardAgainst[A](_p: =>Parsley[A], pred: PartialFunction[A, String])
-    extends FilterLike[A, A](_p, c => s"$c.guardAgainst(?)", GuardAgainst.empty(pred),
+private [parsley] final class GuardAgainst[A](private [deepembedding] var p: Parsley[A], pred: PartialFunction[A, String])
+    extends FilterLike[A, A](c => s"$c.guardAgainst(?)", new GuardAgainst(_, pred),
                             x => new Fail(pred(x)), new instructions.GuardAgainst(pred), pred.isDefinedAt(_))
 
 private [deepembedding] object Branch {
@@ -87,20 +87,4 @@ private [deepembedding] object Branch {
 }
 private [deepembedding] object If {
     def empty[A]: If[A] = new If(???, ???, ???)
-}
-
-private [deepembedding] object FastFail {
-    def empty[A](msggen: A => String): FastFail[A] = new FastFail(???, msggen)
-}
-private [deepembedding] object FastUnexpected {
-    def empty[A](msggen: A => String): FastUnexpected[A] = new FastUnexpected(???, msggen)
-}
-private [deepembedding] object Filter {
-    def empty[A](pred: A => Boolean): Filter[A] = new Filter(???, pred)
-}
-private [deepembedding] object FilterOut {
-    def empty[A](pred: PartialFunction[A, String]): FilterOut[A] = new FilterOut(???, pred)
-}
-private [deepembedding] object GuardAgainst {
-    def empty[A](pred: PartialFunction[A, String]): GuardAgainst[A] = new GuardAgainst(???, pred)
 }

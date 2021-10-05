@@ -75,8 +75,8 @@ private [parsley] final class <*>[A, B](_pf: =>Parsley[A => B], _px: =>Parsley[A
     }
 }
 
-private [parsley] final class >>=[A, B](_p: =>Parsley[A], private [>>=] val f: A => Parsley[B])
-    extends Unary[A, B](_p)(l => s"($l >>= ?)", >>=.empty(f)) {
+private [parsley] final class >>=[A, B](private [deepembedding] var p: Parsley[A], private [>>=] val f: A => Parsley[B])
+    extends Unary[A, B](l => s"($l >>= ?)", new >>=(_, f)) {
     override val numInstrs = 1
     override def optimise: Parsley[B] = p match {
         // monad law 1: pure x >>= f = f x
@@ -207,8 +207,7 @@ private [deepembedding] object <*> {
     def unapply[A, B](self: <*>[A, B]): Some[(Parsley[A=>B], Parsley[A])] = Some((self.left, self.right))
 }
 private [deepembedding] object >>= {
-    def empty[A, B](f: A => Parsley[B]): >>=[A, B] = new >>=(???, f)
-    def apply[A, B](p: Parsley[A], f: A => Parsley[B]): >>=[A, B] = empty(f).ready(p)
+    def apply[A, B](p: Parsley[A], f: A => Parsley[B]): >>=[A, B] = new >>=(p, f).ready()
     def unapply[A, B](self: >>=[A, B]): Some[(Parsley[A], A => Parsley[B])] = Some((self.p, self.f))
 }
 private [deepembedding] object Seq {
