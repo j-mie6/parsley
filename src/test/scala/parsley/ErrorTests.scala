@@ -4,7 +4,6 @@ import parsley.combinator.{eof, optional}
 import parsley.Parsley._
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.character.{anyChar, digit}
-import parsley.unsafe.ErrorLabel
 import parsley.errors.combinator.{fail => pfail, unexpected, amend, entrench, ErrorMethods}
 
 import scala.language.implicitConversions
