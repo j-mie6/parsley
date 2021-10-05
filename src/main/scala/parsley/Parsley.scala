@@ -123,20 +123,6 @@ object Parsley
         def orElse[B >: A](q: =>Parsley[B]): Parsley[B] = this <|> q
         /**This combinator is an alias for `</>`.*/
         def getOrElse[B >: A](x: B): Parsley[B] = this </> x
-        // $COVERAGE-OFF$
-        /**
-          * This combinator is defined as `attempt(p) <|> q`. It is pure syntactic sugar.
-          * @note This combinator should not be used: operators without trailing colons in Scala are
-          *       left-associative, but this operator was designed to be right associative. This means
-          *       that where we might intend for `p <|> q <\> r` to mean `p <|> attempt(q) <|> r`, it
-          *       in fact means `attempt(p <|> q) <|> r`. While this will not break a parser, it hinders
-          *       optimisation and may damage the quality of generated messages.
-          */
-        @deprecated(
-            "This combinator is unfortunately misleading since it is left-associative. It will be removed in 4.0.0, use `attempt` with `<|>` instead",
-            "3.0.1")
-        def <\>[B >: A](q: Parsley[B]): Parsley[B] = attempt(con(p)) <|> q
-        // $COVERAGE-ON$
         /**
           * This combinator, pronounced "sum", is similar to `<|>`, except it allows the
           * types of either side of the combinator to vary by returning their result as
