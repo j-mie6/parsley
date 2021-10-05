@@ -6,7 +6,6 @@ import parsley.lift.lift2
 import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
 import parsley.Parsley, Parsley.{void, unit, attempt, pure, empty, notFollowedBy}
 import parsley.errors.combinator.{fail, ErrorMethods}
-import parsley.token.TokenSet
 import parsley.implicits.character.{charLift}
 import parsley.internal.deepembedding
 
