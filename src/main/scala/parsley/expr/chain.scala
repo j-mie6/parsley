@@ -16,8 +16,9 @@ object chain {
       * returned by `p`. If there are no occurrences of `p`, the value `x` is returned.
       * @since 2.2.0
       */
-    def right[A, B, C >: B](p: =>Parsley[A], op: =>Parsley[(A, C) => B], x: C)
-                           (implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${C}") wrap: A => C): Parsley[C] = right1(p, op).getOrElse(x)
+    def right[A, B, C >: B]
+        (p: =>Parsley[A], op: =>Parsley[(A, C) => B], x: C)
+        (implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${C}") wrap: A => C): Parsley[C] = right1(p, op).getOrElse(x)
 
     /**`left(p, op, x)` parses *zero* or more occurrences of `p`, separated by `op`. Returns a value
       * obtained by a left associative application of all functions returned by `op` to the values
