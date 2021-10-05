@@ -1,13 +1,13 @@
 package parsley.token
 
-import parsley.character.{digit, hexDigit, octDigit, satisfy}
+import parsley.character.{digit, hexDigit, octDigit, satisfy, char, string}
 import parsley.combinator.{sepBy, sepBy1, between, many, skipMany, some, skipSome}
 import parsley.lift.lift2
 import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
-import parsley.Parsley, Parsley.{void, unit, attempt, pure, empty, notFollowedBy, LazyParsley}
+import parsley.Parsley, Parsley.{void, unit, attempt, pure, empty, notFollowedBy}
 import parsley.errors.combinator.{fail, ErrorMethods}
 import parsley.token.TokenSet
-import parsley.implicits.character.{charLift, stringLift}
+import parsley.implicits.character.{charLift}
 import parsley.internal.deepembedding
 
 import scala.language.implicitConversions
@@ -58,7 +58,7 @@ class Lexer(lang: LanguageDef)
     private def caseString(name: String): Parsley[String] =
     {
         def caseChar(c: Char): Parsley[Char] = if (c.isLetter) c.toLower <|> c.toUpper else c
-        if (lang.caseSensitive) name
+        if (lang.caseSensitive) string(name)
         else name.foldRight(pure(name))((c, p) => caseChar(c) *> p).label(name)
     }
     private def isReservedName(name: String): Boolean = theReservedNames.contains(if (lang.caseSensitive) name else name.toLowerCase)
@@ -97,7 +97,7 @@ class Lexer(lang: LanguageDef)
         case BitSetImpl(letter) => new Parsley(new deepembedding.Specific("operator", name, letter, true))
         case Predicate(letter) => new Parsley(new deepembedding.Specific("operator", name, letter, true))
         case NotRequired => new Parsley(new deepembedding.Specific("operator", name, _ => false, true))
-        case _ => attempt(name *> notFollowedBy(opLetter).label("end of " + name))
+        case _ => attempt(string(name) *> notFollowedBy(opLetter).label("end of " + name))
     }
 
     /**The lexeme parser `maxOp(name)` parses the symbol `name`, but also checks that the `name`
@@ -229,9 +229,9 @@ class Lexer(lang: LanguageDef)
 
     // White space & symbols
     /**Lexeme parser `symbol(s)` parses `string(s)` and skips trailing white space.*/
-    def symbol(name: String): Parsley[String] = lexeme[String](name)
+    def symbol(name: String): Parsley[String] = lexeme(string(name))
     /**Lexeme parser `symbol(c)` parses `char(c)` and skips trailing white space.*/
-    def symbol(name: Char): Parsley[Char] = lexeme[Char](name)
+    def symbol(name: Char): Parsley[Char] = lexeme(char(name))
 
     /**Like `symbol`, but treats it as a single token using `attempt`. Only useful for
      * strings, since characters are already single token.*/

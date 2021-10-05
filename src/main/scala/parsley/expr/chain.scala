@@ -1,6 +1,6 @@
 package parsley.expr
 
-import parsley.Parsley, Parsley.LazyParsley
+import parsley.Parsley
 import parsley.internal.deepembedding
 
 import scala.annotation.implicitNotFound

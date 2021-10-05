@@ -7,7 +7,7 @@ object Parsley212 {
       *  It does not appear in any 2.13+ releases
       * @since 3.0
       */
-    implicit final class LazyParsley212[P, +A](p: =>P)(implicit con: P => Parsley[A]) {
+    implicit final class LazyParsley212[P, +A](p: P)(implicit con: P => Parsley[A]) {
         // $COVERAGE-OFF$
         /**
           * This is an alias for `p.filter(pred)`. It is needed to support for-comprehension syntax with `if`s in Scala 2.12.
