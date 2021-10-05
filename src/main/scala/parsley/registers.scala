@@ -255,16 +255,22 @@ object registers {
     // $COVERAGE-ON$
 
     implicit final class RegisterMethods[P, A](p: =>P)(implicit con: P => Parsley[A]) {
-        def fillReg[B](body: Reg[A] => Parsley[B]): Parsley[B] = {
+        /*def fillReg[B](body: Reg[A] => Parsley[B]): Parsley[B] = {
             val reg = Reg.make[A]
             reg.put(con(p)) *> body(reg)
-        }
+        }*/
+        /** This combinator allows for the result of one parser to be used multiple times within a function,
+          * without needing to reparse or recompute. Similar to `flatMap`, except it is most likely much cheaper
+          * to do, at the cost of the restriction that the argument is `Parsley[A]` and not just `A`.
+          *
+          * @since 3.2.0
+          */
         def persist[B](f: Parsley[A] => Parsley[B]): Parsley[B] = con(p).flatMap(x => f(pure(x)))//this.fillReg(reg => f(get(reg)))
     }
 
-    implicit final class RegisterMaker[A](x: A) {
+    /*implicit final class RegisterMaker[A](x: A) {
         def makeReg[B](body: Reg[A] => Parsley[B]): Parsley[B] = pure(x).fillReg(body)
-    }
+    }*/
 
     /** `forP(v, init, cond, step, body)` behaves much like a traditional for loop using variable `v` as the loop
       * variable and `init`, `cond`, `step` and `body` as parsers which control the loop itself. This is useful for
@@ -284,11 +290,11 @@ object registers {
       * @param body The body of the loop performed each iteration
       * @return ()
       */
-    def forP[A](init: =>Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A], body: =>Parsley[_]): Parsley[Unit] =
+    /*def forP[A](init: =>Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A], body: =>Parsley[_]): Parsley[Unit] =
     {
         val reg = Reg.make[A]
         val _cond = reg.gets(cond)
         val _step = reg.modify(step)
         reg.put(init) *> when(_cond, whileP(body *> _step *> _cond))
-    }
+    }*/
 }

@@ -173,6 +173,17 @@ class CoreTests extends ParsleyTest {
        an [Exception] should be thrownBy many(pure(5)).parse("")
     }
 
+    implicit final class RegisterMaker[A](x: A) {
+        def makeReg[B](body: Reg[A] => Parsley[B]): Parsley[B] = pure(x).fillReg(body)
+    }
+
+    implicit final class RegisterMethods[P, A](p: =>P)(implicit con: P => Parsley[A]) {
+        def fillReg[B](body: Reg[A] => Parsley[B]): Parsley[B] = {
+            val reg = Reg.make[A]
+            reg.put(con(p)) *> body(reg)
+        }
+    }
+
     "stateful parsers" should "allow for persistent state" in {
         val p = 5.makeReg(r1 =>
                 7.makeReg(r2 =>
