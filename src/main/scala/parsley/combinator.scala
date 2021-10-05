@@ -3,7 +3,6 @@ package parsley
 import parsley.Parsley.{LazyParsley, unit, empty, select, sequence, notFollowedBy, attempt}
 import parsley.internal.deepembedding
 import parsley.expr.chain
-import parsley.registers.{get, gets, put, local}
 import scala.annotation.{tailrec, implicitNotFound}
 
 /** This module contains a huge number of pre-made combinators that are very useful for a variety of purposes.
