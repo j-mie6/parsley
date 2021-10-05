@@ -9,24 +9,25 @@ import parsley.errors.combinator.ErrorMethods
   * @since 2.2.0
   */
 object precedence {
-    private def convertOperators[A, B](atom: Parsley[A], opList: Ops[A, B])(implicit wrap: A => B): Parsley[B] = opList match
-    {
-        case Lefts(ops @ _*) => chain.left1(atom, choice(ops: _*))
-        case Rights(ops @ _*) => chain.right1(atom, choice(ops: _*))
-        case Prefixes(ops @ _*) => chain.prefix(choice(ops: _*), parsley.XCompat.applyWrap(wrap)(atom))
-        // FIXME: Postfix operators which are similar to binary ops may fail, how can we work around this?
-        case Postfixes(ops @ _*) => chain.postfix(parsley.XCompat.applyWrap(wrap)(atom), choice(ops: _*))
-        case NonAssocs(ops @ _*) => {
-            val op = choice(ops: _*)
-            val guardNonAssoc = notFollowedBy(op).explain("non-associative operators cannot be chained together")
-            atom <**> ((op, atom).zipped((f, y) => f(_, y)) </> wrap) <* guardNonAssoc
+    private def convertOperators[A, B](atom: Parsley[A], opList: Ops[A, B]): Parsley[B] = {
+        implicit val wrap: A => B = opList.wrap
+        opList match {
+            case Lefts(ops @ _*) => chain.left1(atom, choice(ops: _*))
+            case Rights(ops @ _*) => chain.right1(atom, choice(ops: _*))
+            case Prefixes(ops @ _*) => chain.prefix(choice(ops: _*), parsley.XCompat.applyWrap(wrap)(atom))
+            // FIXME: Postfix operators which are similar to binary ops may fail, how can we work around this?
+            case Postfixes(ops @ _*) => chain.postfix(parsley.XCompat.applyWrap(wrap)(atom), choice(ops: _*))
+            case NonAssocs(ops @ _*) => {
+                val op = choice(ops: _*)
+                val guardNonAssoc = notFollowedBy(op).explain("non-associative operators cannot be chained together")
+                atom <**> ((op, atom).zipped((f, y) => f(_, y)) </> wrap) <* guardNonAssoc
+            }
         }
-
     }
 
-    private def crushLevels[A](lvls: Levels[A]): Parsley[A] = lvls match {
+    private def crushLevels[A](lvls: Prec[A]): Parsley[A] = lvls match {
         case Atoms(atoms @ _*) => choice(atoms: _*)
-        case Level(lvls, ops) => convertOperators(crushLevels(lvls), ops)(ops.wrap)
+        case Level(lvls, ops) => convertOperators(crushLevels(lvls), ops)
     }
 
     /** This is used to build an expression parser for a monolithic type: levels are specified from strongest
@@ -38,7 +39,7 @@ object precedence {
       * @return A parser for the described expression language
       * @since 3.0.0
       */
-    def apply[A](atoms: Parsley[A]*)(table: Ops[A, A]*): Parsley[A] = apply(table.foldLeft[Levels[A]](Atoms(atoms: _*))(Level.apply))
+    def apply[A](atoms: Parsley[A]*)(table: Ops[A, A]*): Parsley[A] = apply(table.foldLeft[Prec[A]](Atoms(atoms: _*))(Level.apply))
 
     /** This is used to build an expression parser for a monolithic type: levels are specified from weakest
       * to strongest.
@@ -60,5 +61,5 @@ object precedence {
       * @return A parser for the described expression language
       * @since 4.0.0
       */
-    def apply[A](table: Levels[A]): Parsley[A] = crushLevels(table)
+    def apply[A](table: Prec[A]): Parsley[A] = crushLevels(table)
 }
