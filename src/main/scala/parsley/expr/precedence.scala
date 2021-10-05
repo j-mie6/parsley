@@ -5,7 +5,7 @@ import parsley.combinator.choice
 import parsley.implicits.zipped.Zipped2
 import parsley.errors.combinator.ErrorMethods
 
-/** This object is used to construct precedence parsers from either a [[Levels]] or many `Ops[A, A]`.
+/** This object is used to construct precedence parsers from either a [[Prec]] or many `Ops[A, A]`.
   * @since 2.2.0
   */
 object precedence {
@@ -57,7 +57,7 @@ object precedence {
       * either tightest to loosest binding (using `:+`) or loosest to tightest (using `+:`)
       * @tparam A The type of the resulting parse tree (outermost operations)
       * @param table A table of operators. Table is ordered depending on the operator used to build it.
-      *              See [[Levels]] and it's subtypes for a description of how the types work.
+      *              See [[Prec]] and it's subtypes for a description of how the types work.
       * @return A parser for the described expression language
       * @since 4.0.0
       */
