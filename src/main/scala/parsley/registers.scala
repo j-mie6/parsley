@@ -59,14 +59,14 @@ object registers {
           * @param p The parser to derive the value from
           * @since 3.2.0
           */
-        def put(p: =>Parsley[A]): Parsley[Unit] = new Parsley(new deepembedding.Put(this, p.internal))
+        def put(p: Parsley[A]): Parsley[Unit] = new Parsley(new deepembedding.Put(this, p.internal))
         /**
           * Places the result of running `p` into this register.
           * @param p The parser to derive the value from
           * @param f A function which adapts the result of `p` so that it can fit in `r`
           * @since 3.0.0
           */
-        def puts[B](p: =>Parsley[B], f: B => A): Parsley[Unit] = this.put(p.map(f))
+        def puts[B](p: Parsley[B], f: B => A): Parsley[Unit] = this.put(p.map(f))
         /**
           * Modifies the value contained in this register using function `f`.
           * @param f The function used to modify the register
@@ -79,7 +79,7 @@ object registers {
           * @param f The function used to modify the register
           * @since 3.2.0
           */
-        def modify(pf: =>Parsley[A => A]): Parsley[Unit] = this.put(this.gets(pf))
+        def modify(pf: Parsley[A => A]): Parsley[Unit] = this.put(this.gets(pf))
         /**
           * For the duration of parser `p` the state stored in this register is instead set to `x`. The change is undone
           * after `p` has finished.
@@ -88,7 +88,7 @@ object registers {
           * @return The parser that performs `p` with the modified state
           * @since 3.2.0
           */
-        def local[B](x: A)(p: =>Parsley[B]): Parsley[B] = this.local(pure(x))(p)
+        def local[B](x: A)(p: Parsley[B]): Parsley[B] = this.local(pure(x))(p)
         /**
           * For the duration of parser `q` the state stored in this register is instead set to the return value of `p`. The
           * change is undone after `q` has finished.
@@ -97,7 +97,7 @@ object registers {
           * @return The parser that performs `q` with the modified state
           * @since 3.2.0
           */
-        def local[B](p: =>Parsley[A])(q: =>Parsley[B]): Parsley[B] = new Parsley(new deepembedding.Local(this, p.internal, q.internal))
+        def local[B](p: Parsley[A])(q: =>Parsley[B]): Parsley[B] = new Parsley(new deepembedding.Local(this, p.internal, q.internal))
         /**
           * For the duration of parser `p` the state stored in this register is instead modified with `f`. The change is undone
           * after `p` has finished.
@@ -106,7 +106,7 @@ object registers {
           * @return The parser that performs `p` with the modified state
           * @since 3.2.0
           */
-        def local[B](f: A => A)(p: =>Parsley[B]): Parsley[B] = this.local(this.gets(f))(p)
+        def local[B](f: A => A)(p: Parsley[B]): Parsley[B] = this.local(this.gets(f))(p)
 
         /** `rollback(reg, p)` will perform `p`, but if it fails without consuming input, any changes to this register will
           * be reverted.
@@ -141,7 +141,7 @@ object registers {
         def make[A]: Reg[A] = new Reg
     }
 
-    implicit final class RegisterMethods[P, A](p: =>P)(implicit con: P => Parsley[A]) {
+    implicit final class RegisterMethods[P, A](p: P)(implicit con: P => Parsley[A]) {
         /*def fillReg[B](body: Reg[A] => Parsley[B]): Parsley[B] = {
             val reg = Reg.make[A]
             reg.put(con(p)) *> body(reg)
@@ -177,7 +177,7 @@ object registers {
       * @param body The body of the loop performed each iteration
       * @return ()
       */
-    /*def forP[A](init: =>Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A], body: =>Parsley[_]): Parsley[Unit] =
+    /*def forP[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A], body: =>Parsley[_]): Parsley[Unit] =
     {
         val reg = Reg.make[A]
         val _cond = reg.gets(cond)
