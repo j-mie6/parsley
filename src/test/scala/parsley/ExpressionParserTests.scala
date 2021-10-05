@@ -3,7 +3,7 @@ package parsley
 import parsley.character.digit
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.expr.chain
-import parsley.expr.{precedence, Ops, GOps, SOps, InfixL, InfixR, Prefix, Postfix, NonAssoc, Atoms}
+import parsley.expr.{precedence, Ops, GOps, SOps, InfixL, InfixR, Prefix, Postfix, InfixN, Atoms}
 import parsley.Parsley._
 import parsley._
 
@@ -24,7 +24,7 @@ class ExpressionParserTests extends ParsleyTest {
     }
     it must "not leave the stack in an inconsistent state on failure" in {
         val p = chain.postfix[Int]('1' #> 1, (col.#>[Int => Int](_ + 1)) <* '+')
-        val q = chain.left1[Int, Int](p, '*' #> (_ * _))
+        val q = chain.left1(p, '*' #> ((x: Int, y: Int) => x * y))
         noException should be thrownBy q.parse("1+*1+")
     }
 
@@ -87,7 +87,7 @@ class ExpressionParserTests extends ParsleyTest {
         sealed trait Expr
         case class Add(x: Int, y: Expr) extends Expr
         case class Num(x: Int) extends Expr
-        val p = chain.right1[Int, Expr]("1" #> 1, "+" #> Add.apply)(Num)
+        val p = chain.right1("1" #> 1, "+" #> ((x: Int, y: Expr) => Add(x, y)))(Num)
         p.parse("1+1+1") should be (Success(Add(1, Add(1, Num(1)))))
         p.parse("1") should be (Success(Num(1)))
     }
@@ -112,15 +112,15 @@ class ExpressionParserTests extends ParsleyTest {
         chain.left1("11" #> 1, "++" #> ((x: Int, y: Int) => x + y)).parse("11++11++11++1++11") shouldBe a [Failure[_]]
     }
     it must "not leave the stack in an inconsistent state on failure" in {
-        val p = chain.left1[Int, Int]('1' #> 1, (col.#>[(Int, Int) => Int](_ + _)) <* '+')
-        val q = chain.left1[Int, Int](p, '*' #> (_ * _))
+        val p = chain.left1('1' #> 1, (col.#>[(Int, Int) => Int](_ + _)) <* '+')
+        val q = chain.left1(p, '*'.#>[(Int, Int) => Int](_ * _))
         noException should be thrownBy q.parse("1+1*1+1")
     }
     it must "correctly accept the use of a wrapping function" in {
         sealed trait Expr
         case class Add(x: Expr, y: Int) extends Expr
         case class Num(x: Int) extends Expr
-        chain.left1[Int, Expr]("1" #> 1, "+" #> Add.apply)(Num).parse("1+1+1") should be (Success(Add(Add(Num(1), 1), 1)))
+        chain.left1("1" #> 1, "+".#>[(Expr, Int) => Expr](Add.apply))(Num).parse("1+1+1") should be (Success(Add(Add(Num(1), 1), 1)))
     }
     "chain.left" must "allow for no initial value" in {
         chain.left("11" #> 1, '+' #> ((x: Int, y: Int) => x + y), 0).parse("11") should be (Success(1))
@@ -185,14 +185,17 @@ class ExpressionParserTests extends ParsleyTest {
         case class Mul(x: Factor, y: Term) extends Term
         sealed trait Factor extends Term
         case class Neg(x: Factor) extends Factor
+        object Neg {
+            val mk: Factor => Factor = Neg(_)
+        }
         sealed trait Atom extends Factor
         case class Parens(x: Comp) extends Atom
         case class Num(x: Int) extends Atom
         lazy val expr: Parsley[Comp] = precedence(
-            SOps(NonAssoc)('<' #> Less) +:
+            SOps(InfixN)('<' #> Less) +:
             SOps(InfixL)('+' #> Add) +:
             SOps(InfixR)('*' #> Mul) +:
-            SOps[Factor, Atom](Prefix)('-' #> Neg) +:
+            SOps(Prefix)('-' #> Neg.mk) +:
             Atoms(digit.map(_.asDigit).map(Num), '(' *> expr.map(Parens) <* ')'))
         expr.parse("(7+8)*2+3+6*2") should be (Success(Add(Add(Mul(Parens(Add(Num(7), Num(8))), Num(2)), Num(3)), Mul(Num(6), Num(2)))))
     }
@@ -210,7 +213,8 @@ class ExpressionParserTests extends ParsleyTest {
         case class Parens(x: Comp) extends Atom
         case class Num(x: Int) extends Atom
         lazy val expr: Parsley[Comp] = precedence(
-            GOps[Expr, Comp](NonAssoc)('<' #> Less)(CompOf) +:
+            // The type ascriptions are unneeded for Scala 3
+            GOps[Expr, Comp](InfixN)('<' #> Less)(CompOf) +:
             GOps[Term, Expr](InfixL)('+' #> Add)(ExprOf) +:
             GOps[Atom, Term](InfixR)('*' #> Mul)(TermOf) +:
             Atoms(digit.map(_.asDigit).map(Num), '(' *> expr.map(Parens) <* ')'))
