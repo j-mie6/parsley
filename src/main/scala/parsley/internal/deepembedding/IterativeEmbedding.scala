@@ -7,8 +7,8 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.higherKinds
 
-private [deepembedding] sealed abstract class ManyLike[A, B](name: String, make: Parsley[A] => ManyLike[A, B], unit: B, instr: Int => instructions.Instr)
-    extends Unary[A, B](c => s"$name($c)", make) {
+private [deepembedding] sealed abstract class ManyLike[A, B](_p: Parsley[A], name: String, make: Parsley[A] => ManyLike[A, B], unit: B, instr: Int => instructions.Instr)
+    extends Unary[A, B](_p, c => s"$name($c)", make) {
     final override val numInstrs = 2
     final override def optimise: Parsley[B] = p match {
         case _: Pure[_] => throw new Exception(s"$name given parser which consumes no input")
@@ -26,8 +26,8 @@ private [deepembedding] sealed abstract class ManyLike[A, B](name: String, make:
         }
     }
 }
-private [parsley] final class Many[A](private [deepembedding] var p: Parsley[A]) extends ManyLike[A, List[A]]("many", new Many(_), Nil, new instructions.Many(_))
-private [parsley] final class SkipMany[A](private [deepembedding] var p: Parsley[A]) extends ManyLike[A, Unit]("skipMany", new SkipMany(_), (), new instructions.SkipMany(_))
+private [parsley] final class Many[A](_p: Parsley[A]) extends ManyLike[A, List[A]](_p, "many", new Many(_), Nil, new instructions.Many(_))
+private [parsley] final class SkipMany[A](_p: Parsley[A]) extends ManyLike[A, Unit](_p, "skipMany", new SkipMany(_), (), new instructions.SkipMany(_))
 private [deepembedding] sealed abstract class ChainLike[A](_p: =>Parsley[A], _op: =>Parsley[A => A], pretty: (String, String) => String, empty: =>ChainLike[A])
     extends Binary[A, A => A, A](_p, _op)(pretty, empty) {
     override def optimise: Parsley[A] = right match {
@@ -119,7 +119,7 @@ private [parsley] final class SepEndBy1[A, B](_p: =>Parsley[A], _sep: =>Parsley[
         }
     }
 }
-private [parsley] final class ManyUntil[A](private [deepembedding] var p: Parsley[Any]) extends Unary[Any, List[A]](c => s"manyUntil($c)", new ManyUntil(_)) {
+private [parsley] final class ManyUntil[A](_body: Parsley[Any]) extends Unary[Any, List[A]](_body, c => s"manyUntil($c)", new ManyUntil(_)) {
     override val numInstrs = 2
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val start = state.freshLabel()

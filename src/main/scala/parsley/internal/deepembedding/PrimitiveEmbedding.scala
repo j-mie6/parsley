@@ -12,12 +12,10 @@ import scala.language.higherKinds
 private [parsley] final class Satisfy(private [Satisfy] val f: Char => Boolean, val expected: Option[String])
     extends Singleton[Char]("satisfy(f)", new instructions.Satisfies(f, expected))
 
-private [parsley] final class Attempt[A](private [deepembedding] var p: Parsley[A])
-    extends ScopedUnaryWithState[A, A]("attempt", false, new Attempt(_), instructions.Attempt)
-private [parsley] final class Look[A](private [deepembedding] var p: Parsley[A])
-    extends ScopedUnaryWithState[A, A]("lookAhead", true, new Look(_), instructions.Look)
-private [parsley] final class NotFollowedBy[A](private [deepembedding] var p: Parsley[A])
-    extends ScopedUnaryWithState[A, Unit]("notFollowedBy", true, new NotFollowedBy(_), instructions.NotFollowedBy) {
+private [parsley] final class Attempt[A](_p: Parsley[A]) extends ScopedUnaryWithState[A, A](_p, "attempt", false, new Attempt(_), instructions.Attempt)
+private [parsley] final class Look[A](_p: Parsley[A]) extends ScopedUnaryWithState[A, A](_p, "lookAhead", true, new Look(_), instructions.Look)
+private [parsley] final class NotFollowedBy[A](_p: Parsley[A])
+    extends ScopedUnaryWithState[A, Unit](_p, "notFollowedBy", true, new NotFollowedBy(_), instructions.NotFollowedBy) {
     override def optimise: Parsley[Unit] = p match {
         case z: MZero => new Pure(())
         case _ => this
@@ -60,8 +58,8 @@ private [deepembedding] final class Let[A](var p: Parsley[A]) extends Parsley[A]
 private [parsley] object Line extends Singleton[Int]("line", instructions.Line)
 private [parsley] object Col extends Singleton[Int]("col", instructions.Col)
 private [parsley] final class Get[S](val reg: Reg[S]) extends Singleton[S](s"get($reg)", new instructions.Get(reg.addr)) with UsesRegister
-private [parsley] final class Put[S](val reg: Reg[S], private [deepembedding] var p: Parsley[S])
-    extends Unary[S, Unit](c => s"put($reg, $c)", new Put(reg, _)) with UsesRegister {
+private [parsley] final class Put[S](val reg: Reg[S], _p: Parsley[S])
+    extends Unary[S, Unit](_p, c => s"put($reg, $c)", new Put(reg, _)) with UsesRegister {
     override val numInstrs = 1
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         p.codeGen |>
@@ -70,8 +68,8 @@ private [parsley] final class Put[S](val reg: Reg[S], private [deepembedding] va
 }
 
 // $COVERAGE-OFF$
-private [parsley] final class Debug[A](private [deepembedding] var p: Parsley[A], name: String, ascii: Boolean, break: Breakpoint)
-    extends Unary[A, A](identity[String], new Debug(_, name, ascii, break)) {
+private [parsley] final class Debug[A](_p: Parsley[A], name: String, ascii: Boolean, break: Breakpoint)
+    extends Unary[A, A](_p, identity[String], new Debug(_, name, ascii, break)) {
     override val numInstrs = 2
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val handler = state.freshLabel()

@@ -19,8 +19,7 @@ private [parsley] abstract class Singleton[A](pretty: String, instr: =>instructi
     // $COVERAGE-ON$
 }
 
-private [deepembedding] abstract class Unary[A, B](pretty: String => String, make: Parsley[A] => Unary[A, B]) extends Parsley[B] {
-    private [deepembedding] var p: Parsley[A]
+private [deepembedding] abstract class Unary[A, B](private [deepembedding] var p: Parsley[A], pretty: String => String, make: Parsley[A] => Unary[A, B]) extends Parsley[B] {
     protected val childRepeats: Int = 1
     protected val numInstrs: Int
     final override def findLetsAux[Cont[_, +_], R]
@@ -38,9 +37,9 @@ private [deepembedding] abstract class Unary[A, B](pretty: String => String, mak
     // $COVERAGE-ON$
 }
 
-private [deepembedding] abstract class ScopedUnary[A, B](name: String, make: Parsley[A] => ScopedUnary[A, B],
+private [deepembedding] abstract class ScopedUnary[A, B](_p: Parsley[A], name: String, make: Parsley[A] => ScopedUnary[A, B],
                                                          setup: Int => instructions.Instr, instr: instructions.Instr)
-    extends Unary[A, B](c => s"$name($c)", make) {
+    extends Unary[A, B](_p, c => s"$name($c)", make) {
     final override val numInstrs = 2
     final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val handler = state.freshLabel()
@@ -52,9 +51,9 @@ private [deepembedding] abstract class ScopedUnary[A, B](name: String, make: Par
     }
 }
 
-private [deepembedding] abstract class ScopedUnaryWithState[A, B](name: String, doesNotProduceHints: Boolean,
+private [deepembedding] abstract class ScopedUnaryWithState[A, B](_p: Parsley[A], name: String, doesNotProduceHints: Boolean,
                                                                   make: Parsley[A] => ScopedUnary[A, B], instr: instructions.Instr)
-    extends ScopedUnary[A, B](name, make, new instructions.PushHandlerAndState(_, doesNotProduceHints, doesNotProduceHints), instr)
+    extends ScopedUnary[A, B](_p, name, make, new instructions.PushHandlerAndState(_, doesNotProduceHints, doesNotProduceHints), instr)
 
 private [deepembedding] abstract class Binary[A, B, C](__left: =>Parsley[A], __right: =>Parsley[B])
                                                       (pretty: (String, String) => String, empty: =>Binary[A, B, C]) extends Parsley[C] {

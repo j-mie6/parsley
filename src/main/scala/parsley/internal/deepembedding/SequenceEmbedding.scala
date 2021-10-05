@@ -75,8 +75,8 @@ private [parsley] final class <*>[A, B](_pf: =>Parsley[A => B], _px: =>Parsley[A
     }
 }
 
-private [parsley] final class >>=[A, B](private [deepembedding] var p: Parsley[A], private [>>=] val f: A => Parsley[B])
-    extends Unary[A, B](l => s"($l >>= ?)", new >>=(_, f)) {
+private [parsley] final class >>=[A, B](_p: Parsley[A], private [>>=] val f: A => Parsley[B])
+    extends Unary[A, B](_p, l => s"($l >>= ?)", new >>=(_, f)) {
     override val numInstrs = 1
     override def optimise: Parsley[B] = p match {
         // monad law 1: pure x >>= f = f x

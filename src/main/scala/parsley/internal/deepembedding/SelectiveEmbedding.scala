@@ -52,9 +52,9 @@ private [parsley] final class If[A](_b: =>Parsley[Boolean], _p: =>Parsley[A], _q
     }
 }
 
-private [deepembedding] sealed abstract class FilterLike[A, B](pretty: String => String, make: Parsley[A] => FilterLike[A, B],
+private [deepembedding] sealed abstract class FilterLike[A, B](_p: Parsley[A], pretty: String => String, make: Parsley[A] => FilterLike[A, B],
                                                                fail: A => Parsley[B], instr: instructions.Instr, pred: A => Boolean)
-    extends Unary[A, B](pretty, make) {
+    extends Unary[A, B](_p, pretty, make) {
     final override val numInstrs = 1
     final override def optimise: Parsley[B] = p match {
         case px@Pure(x) => if (!pred(x)) px.asInstanceOf[Parsley[B]] else fail(x)
@@ -65,20 +65,20 @@ private [deepembedding] sealed abstract class FilterLike[A, B](pretty: String =>
         p.codeGen |> (instrs += instr)
     }
 }
-private [parsley] final class FastFail[A](private [deepembedding] var p: Parsley[A], msggen: A => String)
-    extends FilterLike[A, Nothing](c => s"$c ! ?", new FastFail(_, msggen),
+private [parsley] final class FastFail[A](_p: Parsley[A], msggen: A => String)
+    extends FilterLike[A, Nothing](_p, c => s"$c ! ?", new FastFail(_, msggen),
                                    x => new Fail(msggen(x)), new instructions.FastFail(msggen), _ => true) with MZero
-private [parsley] final class FastUnexpected[A](private [deepembedding] var p: Parsley[A], msggen: A => String)
-    extends FilterLike[A, Nothing](c => s"$c.unexpected(?)", new FastUnexpected(_, msggen),
+private [parsley] final class FastUnexpected[A](_p: Parsley[A], msggen: A => String)
+    extends FilterLike[A, Nothing](_p, c => s"$c.unexpected(?)", new FastUnexpected(_, msggen),
                                    x => new Unexpected(msggen(x)), new instructions.FastUnexpected(msggen), _ => true) with MZero
-private [parsley] final class Filter[A](private [deepembedding] var p: Parsley[A], pred: A => Boolean)
-    extends FilterLike[A, A](c => s"$c.filter(?)", new Filter(_, pred),
+private [parsley] final class Filter[A](_p: Parsley[A], pred: A => Boolean)
+    extends FilterLike[A, A](_p, c => s"$c.filter(?)", new Filter(_, pred),
                              _ => Empty, new instructions.Filter(pred), !pred(_))
-private [parsley] final class FilterOut[A](private [deepembedding] var p: Parsley[A], pred: PartialFunction[A, String])
-    extends FilterLike[A, A](c => s"$c.filterOut(?)", new FilterOut(_, pred),
+private [parsley] final class FilterOut[A](_p: Parsley[A], pred: PartialFunction[A, String])
+    extends FilterLike[A, A](_p, c => s"$c.filterOut(?)", new FilterOut(_, pred),
                              x => ErrorExplain(Empty, pred(x)), new instructions.FilterOut(pred), pred.isDefinedAt(_))
-private [parsley] final class GuardAgainst[A](private [deepembedding] var p: Parsley[A], pred: PartialFunction[A, String])
-    extends FilterLike[A, A](c => s"$c.guardAgainst(?)", new GuardAgainst(_, pred),
+private [parsley] final class GuardAgainst[A](_p: Parsley[A], pred: PartialFunction[A, String])
+    extends FilterLike[A, A](_p, c => s"$c.guardAgainst(?)", new GuardAgainst(_, pred),
                             x => new Fail(pred(x)), new instructions.GuardAgainst(pred), pred.isDefinedAt(_))
 
 private [deepembedding] object Branch {
