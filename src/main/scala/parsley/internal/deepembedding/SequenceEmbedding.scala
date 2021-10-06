@@ -103,7 +103,8 @@ private [parsley] final class >>=[A, B](_p: Parsley[A], private [>>=] val f: A =
     }
 }
 
-private [deepembedding] sealed abstract class Seq[A, B, Dis, Res](_left: Parsley[A], _right: =>Parsley[B], pretty: String, make: Parsley[A]=>Seq[A, B, Dis, Res])
+private [deepembedding] sealed abstract class Seq[A, B, Dis, Res](_left: Parsley[A], _right: =>Parsley[B],
+                                                                  pretty: String, make: Parsley[A]=>Seq[A, B, Dis, Res])
     extends Binary[A, B, Res](_left, _right, (l, r) => s"($l $pretty $r)", make) {
     def result: Parsley[Res]
     def discard: Parsley[Dis]

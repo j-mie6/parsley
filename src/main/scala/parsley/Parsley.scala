@@ -4,7 +4,7 @@ import parsley.internal.machine.Context
 import parsley.internal.deepembedding
 import parsley.expr.chain
 import parsley.combinator.{option, some}
-import parsley.Parsley._
+import parsley.Parsley.pure
 import parsley.errors.ErrorBuilder
 
 import scala.annotation.tailrec
@@ -75,7 +75,8 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: deepe
       * @return A new parser which parses `pf`, then `px` then applies the value returned by `px` to the function
       *         returned by `pf`
       */
-    def <*>[B, C](px: =>Parsley[B])(implicit ev: Parsley[A] <:< Parsley[B=>C]): Parsley[C] = new Parsley(new deepembedding.<*>[B, C](ev(this).internal, px.internal))
+    def <*>[B, C](px: =>Parsley[B])
+                 (implicit ev: Parsley[A] <:< Parsley[B=>C]): Parsley[C] = new Parsley(new deepembedding.<*>[B, C](ev(this).internal, px.internal))
 
     /**
       * This is the traditional Monadic binding operator for parsers. When the receiver produces a value, the function

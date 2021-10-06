@@ -7,7 +7,8 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.higherKinds
 
-private [deepembedding] sealed abstract class ManyLike[A, B](_p: Parsley[A], name: String, make: Parsley[A] => ManyLike[A, B], unit: B, instr: Int => instructions.Instr)
+private [deepembedding] sealed abstract class ManyLike[A, B](_p: Parsley[A], name: String, make: Parsley[A] => ManyLike[A, B],
+                                                             unit: B, instr: Int => instructions.Instr)
     extends Unary[A, B](_p, c => s"$name($c)", make) {
     final override val numInstrs = 2
     final override def optimise: Parsley[B] = p match {
@@ -28,7 +29,8 @@ private [deepembedding] sealed abstract class ManyLike[A, B](_p: Parsley[A], nam
 }
 private [parsley] final class Many[A](_p: Parsley[A]) extends ManyLike[A, List[A]](_p, "many", new Many(_), Nil, new instructions.Many(_))
 private [parsley] final class SkipMany[A](_p: Parsley[A]) extends ManyLike[A, Unit](_p, "skipMany", new SkipMany(_), (), new instructions.SkipMany(_))
-private [deepembedding] sealed abstract class ChainLike[A](_p: =>Parsley[A], _op: =>Parsley[A => A], pretty: (String, String) => String, make: Parsley[A] => ChainLike[A])
+private [deepembedding] sealed abstract class ChainLike[A](_p: =>Parsley[A], _op: =>Parsley[A => A],
+                                                           pretty: (String, String) => String, make: Parsley[A] => ChainLike[A])
     extends Binary[A, A => A, A](_p, _op, pretty, make) {
     override def optimise: Parsley[A] = right match {
         case _: Pure[_] => throw new Exception("chain given parser which consumes no input")
