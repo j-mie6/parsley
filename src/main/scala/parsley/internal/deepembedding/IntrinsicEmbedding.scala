@@ -18,7 +18,7 @@ private [parsley] final class StringTok(private [StringTok] val s: String, val e
 }
 // TODO: Perform applicative fusion optimisations
 private [parsley] final class Lift2[A, B, C](private [Lift2] val f: (A, B) => C, _p: =>Parsley[A], _q: =>Parsley[B])
-    extends Binary[A, B, C](_p, _q)((l, r) => s"lift2(f, $l, $r)", Lift2.empty(f))  {
+    extends Binary[A, B, C](_p, _q, (l, r) => s"lift2(f, $l, $r)", new Lift2(f, ???, ???))  {
     override val numInstrs = 1
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R],  instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         left.codeGen >>
@@ -27,7 +27,7 @@ private [parsley] final class Lift2[A, B, C](private [Lift2] val f: (A, B) => C,
     }
 }
 private [parsley] final class Lift3[A, B, C, D](private [Lift3] val f: (A, B, C) => D, _p: =>Parsley[A], _q: =>Parsley[B], _r: =>Parsley[C])
-    extends Ternary[A, B, C, D](_p, _q, _r)((f, s, t) => s"lift3(f, $f, $s, $t)", Lift3.empty(f)) {
+    extends Ternary[A, B, C, D](_p, _q, _r, (f, s, t) => s"lift3(f, $f, $s, $t)", new Lift3(f, _, ???, ???)) {
     override val numInstrs = 1
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         first.codeGen >>
@@ -42,7 +42,7 @@ private [parsley] object Eof extends Singleton[Unit]("eof", instructions.Eof)
 private [parsley] final class Modify[S](val reg: Reg[S], f: S => S)
     extends Singleton[Unit](s"modify($reg, ?)", new instructions.Modify(reg.addr, f)) with UsesRegister
 private [parsley] final class Local[S, A](val reg: Reg[S], _p: =>Parsley[S], _q: =>Parsley[A])
-    extends Binary[S, A, A](_p, _q)((l, r) => s"local($reg, $l, $r)", Local.empty(reg)) with UsesRegister {
+    extends Binary[S, A, A](_p, _q, (l, r) => s"local($reg, $l, $r)", new Local(reg, ???, ???)) with UsesRegister {
     override val numInstrs = 2
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         left.codeGen >> {
@@ -65,15 +65,10 @@ private [deepembedding] object StringTok {
     def unapply(self: StringTok): Option[String] = Some(self.s)
 }
 private [deepembedding] object Lift2 {
-    def empty[A, B, C](f: (A, B) => C): Lift2[A, B, C] = new Lift2(f, ???, ???)
     def unapply[A, B, C](self: Lift2[A, B, C]): Option[((A, B) => C, Parsley[A], Parsley[B])] = Some((self.f, self.left, self.right))
 }
 private [deepembedding] object Lift3 {
-    def empty[A, B, C, D](f: (A, B, C) => D): Lift3[A, B, C, D] = new Lift3(f, ???, ???, ???)
     def unapply[A, B, C, D](self: Lift3[A, B, C, D]): Option[((A, B, C) => D, Parsley[A], Parsley[B], Parsley[C])] = {
         Some((self.f, self.first, self.second, self.third))
     }
-}
-private [deepembedding] object Local {
-    def empty[S, A](r: Reg[S]): Local[S, A] = new Local(r, ???, ???)
 }

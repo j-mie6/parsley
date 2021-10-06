@@ -10,7 +10,8 @@ import scala.language.higherKinds
 // Core Embedding
 private [parsley] final class Pure[A](private [Pure] val x: A) extends Singleton[A](s"pure($x)", new instructions.Push(x))
 
-private [parsley] final class <*>[A, B](_pf: =>Parsley[A => B], _px: =>Parsley[A]) extends Binary[A => B, A, B](_pf, _px)((l, r) => s"($l <*> $r)", <*>.empty) {
+private [parsley] final class <*>[A, B](_pf: =>Parsley[A => B], _px: =>Parsley[A])
+    extends Binary[A => B, A, B](_pf, _px, (l, r) => s"($l <*> $r)", new <*>(???, ???)) {
     override val numInstrs = 1
     // TODO: Refactor
     override def optimise: Parsley[B] = (left, right) match {
@@ -103,7 +104,7 @@ private [parsley] final class >>=[A, B](_p: Parsley[A], private [>>=] val f: A =
 }
 
 private [deepembedding] sealed abstract class Seq[A, B](_discard: =>Parsley[A], _result: =>Parsley[B], pretty: String, empty: =>Seq[A, B])
-    extends Binary[A, B, B](_discard, _result)((l, r) => s"($l $pretty $r)", empty) {
+    extends Binary[A, B, B](_discard, _result, (l, r) => s"($l $pretty $r)", empty) {
     final def result: Parsley[B] = right
     final def discard: Parsley[A] = left
     final def result_=(p: Parsley[B]): Unit = right = p
@@ -140,7 +141,7 @@ private [deepembedding] sealed abstract class Seq[A, B](_discard: =>Parsley[A], 
         case _ => default
     }
 }
-private [parsley] final class *>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) extends Seq[A, B](_p, _q, "*>", *>.empty) {
+private [parsley] final class *>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) extends Seq[A, B](_p, _q, "*>", new *>(???, ???)) {
     def optimiseSeq: Option[Parsley[B]] = optimiseSeq(_ + _, (str, res) => {
         discard = str.asInstanceOf[Parsley[A]]
         result = res
@@ -169,7 +170,7 @@ private [parsley] final class *>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exten
     }
     override def copy[B_ >: B](prev: Parsley[A], next: Parsley[B_]): A *> B_ = *>(prev, next)
 }
-private [parsley] final class <*[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) extends Seq[B, A](_q, _p, "<*", <*.empty) {
+private [parsley] final class <*[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) extends Seq[B, A](_q, _p, "<*", new <*(???, ???)) {
     def optimiseSeq: Option[Parsley[A]] = optimiseSeq((t, s) => s + t, *>.apply).lift(discard)
     @tailrec override def optimise: Parsley[A] =  optimiseSeq match {
         case Some(p) => p
@@ -202,8 +203,7 @@ private [deepembedding] object Pure {
     def unapply[A](self: Pure[A]): Some[A] = Some(self.x)
 }
 private [deepembedding] object <*> {
-    def empty[A, B]: A <*> B = new <*>(???, ???)
-    def apply[A, B](left: Parsley[A=>B], right: Parsley[A]): <*>[A, B] = empty.ready(left, right)
+    def apply[A, B](left: Parsley[A=>B], right: Parsley[A]): <*>[A, B] = new <*>(???, ???).ready(left, right)
     def unapply[A, B](self: <*>[A, B]): Some[(Parsley[A=>B], Parsley[A])] = Some((self.left, self.right))
 }
 private [deepembedding] object >>= {
@@ -214,12 +214,10 @@ private [deepembedding] object Seq {
     def unapply[A, B](self: Seq[A, B]): Some[(Parsley[A], Parsley[B])] = Some((self.discard, self.result))
 }
 private [deepembedding] object *> {
-    def empty[A, B]: A *> B = new *>(???, ???)
-    def apply[A, B](left: Parsley[A], right: Parsley[B]): A *> B = empty.ready(left, right)
+    def apply[A, B](left: Parsley[A], right: Parsley[B]): A *> B = new *>(???, ???).ready(left, right)
     def unapply[A, B](self: A *> B): Some[(Parsley[A], Parsley[B])] = Some((self.left, self.right))
 }
 private [deepembedding] object <* {
-    def empty[A, B]: A <* B = new <*(???, ???)
-    def apply[A, B](left: Parsley[A], right: Parsley[B]): A <* B = empty.ready(right, left)
+    def apply[A, B](left: Parsley[A], right: Parsley[B]): A <* B = new <*(???, ???).ready(right, left)
     def unapply[A, B](self: A <* B): Some[(Parsley[A], Parsley[B])] = Some((self.result, self.discard))
 }

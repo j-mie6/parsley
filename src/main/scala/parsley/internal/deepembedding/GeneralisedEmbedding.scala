@@ -19,7 +19,8 @@ private [parsley] abstract class Singleton[A](pretty: String, instr: =>instructi
     // $COVERAGE-ON$
 }
 
-private [deepembedding] abstract class Unary[A, B](private [deepembedding] var p: Parsley[A], pretty: String => String, make: Parsley[A] => Unary[A, B]) extends Parsley[B] {
+private [deepembedding] abstract class Unary[A, B](private [deepembedding] var p: Parsley[A], pretty: String => String, make: Parsley[A] => Unary[A, B])
+    extends Parsley[B] {
     protected val childRepeats: Int = 1
     protected val numInstrs: Int
     final override def findLetsAux[Cont[_, +_], R]
@@ -55,8 +56,8 @@ private [deepembedding] abstract class ScopedUnaryWithState[A, B](_p: Parsley[A]
                                                                   make: Parsley[A] => ScopedUnary[A, B], instr: instructions.Instr)
     extends ScopedUnary[A, B](_p, name, make, new instructions.PushHandlerAndState(_, doesNotProduceHints, doesNotProduceHints), instr)
 
-private [deepembedding] abstract class Binary[A, B, C](__left: =>Parsley[A], __right: =>Parsley[B])
-                                                      (pretty: (String, String) => String, empty: =>Binary[A, B, C]) extends Parsley[C] {
+private [deepembedding] abstract class Binary[A, B, C](__left: =>Parsley[A], __right: =>Parsley[B],
+                                                       pretty: (String, String) => String, empty: =>Binary[A, B, C]) extends Parsley[C] {
     private lazy val _left = __left
     private lazy val _right = __right
     private [deepembedding] var left: Parsley[A] = _
@@ -87,27 +88,25 @@ private [deepembedding] abstract class Binary[A, B, C](__left: =>Parsley[A], __r
     // $COVERAGE-ON$
 }
 
-private [deepembedding] abstract class Ternary[A, B, C, D](__first: =>Parsley[A], __second: =>Parsley[B], __third: =>Parsley[C])
-                                                          (pretty: (String, String, String) => String, empty: =>Ternary[A, B, C, D]) extends Parsley[D] {
-    private lazy val _first: Parsley[A] = __first
+private [deepembedding] abstract class Ternary[A, B, C, D](private [deepembedding] var first: Parsley[A], __second: =>Parsley[B], __third: =>Parsley[C],
+                                                           pretty: (String, String, String) => String, make: Parsley[A] => Ternary[A, B, C, D])
+    extends Parsley[D] {
     private lazy val _second: Parsley[B] = __second
     private lazy val _third: Parsley[C] = __third
-    private [deepembedding] var first: Parsley[A] = _
     private [deepembedding] var second: Parsley[B] = _
     private [deepembedding] var third: Parsley[C] = _
     protected val numInstrs: Int
     final override def findLetsAux[Cont[_, +_], R]
         (implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState): Cont[R, Unit] = {
-        _first.findLets >> _second.findLets >> _third.findLets
+        first.findLets >> _second.findLets >> _third.findLets
     }
     final override def preprocess[Cont[_, +_], R, D_ >: D](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]],
                                                                     lets: LetMap, recs: RecMap): Cont[R, Parsley[D_]] =
-        for (first <- _first.optimised; second <- _second.optimised; third <- _third.optimised) yield {
-            empty.ready(first, second, third)
+        for (first <- first.optimised; second <- _second.optimised; third <- _third.optimised) yield {
+            make(first).ready(second, third)
         }
-    private [deepembedding] def ready(first: Parsley[A], second: Parsley[B], third: Parsley[C]): this.type = {
+    private [deepembedding] def ready(second: Parsley[B], third: Parsley[C]): this.type = {
         processed = true
-        this.first = first
         this.second = second
         this.third = third
         size = first.size + second.size + third.size + numInstrs
