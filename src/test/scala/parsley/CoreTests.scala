@@ -321,7 +321,7 @@ class CoreTests extends ParsleyTest {
     }
 
     "stack overflows" should "not be thrown by recursive parsers" in {
-        lazy val p: Parsley[Int] = p.map((x: Int) => x+1)
+        lazy val p: Parsley[Int] = 'b' *> p
         def many_[A](p: Parsley[A]): Parsley[List[A]] = {
             lazy val manyp: Parsley[List[A]] = (p <::> manyp) </> Nil
             manyp

@@ -30,7 +30,7 @@ object combinator {
       * @param p A parser whose error messages should be adjusted
       * @since 3.1.0
       */
-    def amend[A](p: =>Parsley[A]): Parsley[A] = new Parsley(new deepembedding.ErrorAmend(p.internal))
+    def amend[A](p: Parsley[A]): Parsley[A] = new Parsley(new deepembedding.ErrorAmend(p.internal))
 
     /**
       * Sometimes, the error adjustments performed by `[[amend]]` should only affect errors generated
@@ -41,7 +41,7 @@ object combinator {
       * @param p A parser whose error messages should not be adjusted by any surrounding `[[amend]]`
       * @since 3.1.0
       */
-    def entrench[A](p: =>Parsley[A]): Parsley[A] = new Parsley(new deepembedding.ErrorEntrench(p.internal))
+    def entrench[A](p: Parsley[A]): Parsley[A] = new Parsley(new deepembedding.ErrorEntrench(p.internal))
 
     /**
       * This class exposes helpful combinators that are specialised for generating more helpful errors messages.
@@ -52,7 +52,7 @@ object combinator {
       * @param con A conversion (if required) to turn `p` into a parser
       * @version 3.0.0
       */
-    implicit final class ErrorMethods[P, +A](p: =>P)(implicit con: P => Parsley[A]) {
+    implicit final class ErrorMethods[P, +A](p: P)(implicit con: P => Parsley[A]) {
         /** Filter the value of a parser; if the value returned by the parser is defined for the given partial function, then
           * the `filterOut` fails, using the result of the function as the ''reason'' (see [[explain]]), otherwise the parser
           * succeeds
