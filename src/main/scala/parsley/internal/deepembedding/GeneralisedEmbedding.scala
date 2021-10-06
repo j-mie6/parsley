@@ -56,27 +56,24 @@ private [deepembedding] abstract class ScopedUnaryWithState[A, B](_p: Parsley[A]
                                                                   make: Parsley[A] => ScopedUnary[A, B], instr: instructions.Instr)
     extends ScopedUnary[A, B](_p, name, make, new instructions.PushHandlerAndState(_, doesNotProduceHints, doesNotProduceHints), instr)
 
-private [deepembedding] abstract class Binary[A, B, C](__left: =>Parsley[A], __right: =>Parsley[B],
-                                                       pretty: (String, String) => String, empty: =>Binary[A, B, C]) extends Parsley[C] {
-    private lazy val _left = __left
+private [deepembedding] abstract class Binary[A, B, C](private [deepembedding] var left: Parsley[A], __right: =>Parsley[B],
+                                                       pretty: (String, String) => String, make: Parsley[A] => Binary[A, B, C]) extends Parsley[C] {
     private lazy val _right = __right
-    private [deepembedding] var left: Parsley[A] = _
     private [deepembedding] var right: Parsley[B] = _
     protected val numInstrs: Int
     protected val leftRepeats: Int = 1
     protected val rightRepeats: Int = 1
     final override def findLetsAux[Cont[_, +_], R]
         (implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState): Cont[R,Unit] = {
-        _left.findLets >> _right.findLets
+        left.findLets >> _right.findLets
     }
     final override def preprocess[Cont[_, +_], R, C_ >: C](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]],
                                                                     lets: LetMap, recs: RecMap): Cont[R, Parsley[C_]] =
-        for (left <- _left.optimised; right <- _right.optimised) yield {
-            empty.ready(left, right)
+        for (left <- left.optimised; right <- _right.optimised) yield {
+            make(left).ready(right)
         }
-    private [deepembedding] def ready(left: Parsley[A], right: Parsley[B]): this.type = {
+    private [deepembedding] def ready(right: Parsley[B]): this.type = {
         processed = true
-        this.left = left
         this.right = right
         size = leftRepeats * left.size + rightRepeats * right.size + numInstrs
         this

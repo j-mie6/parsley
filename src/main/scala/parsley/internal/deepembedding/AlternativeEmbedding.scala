@@ -9,7 +9,7 @@ import scala.collection.mutable
 import scala.language.higherKinds
 
 // TODO: Tablification is too aggressive. It appears that `optional` is being compiled to jumptable
-private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) extends Binary[A, B, B](_p, _q, (l, r) => s"($l <|> $r)", new <|>(???, ???)) {
+private [parsley] final class <|>[A, B](_p: Parsley[A], _q: =>Parsley[B]) extends Binary[A, B, B](_p, _q, (l, r) => s"($l <|> $r)", new <|>(_, ???)) {
     override val numInstrs = 3
 
     override def optimise: Parsley[B] = (left, right) match {
@@ -207,6 +207,6 @@ private [parsley] final class <|>[A, B](_p: =>Parsley[A], _q: =>Parsley[B]) exte
 private [parsley] object Empty extends Singleton[Nothing]("empty", instructions.Empty) with MZero
 
 private [deepembedding] object <|> {
-    def apply[A, B](left: Parsley[A], right: Parsley[B]): A <|> B = new <|>(???, ???).ready(left, right)
+    def apply[A, B](left: Parsley[A], right: Parsley[B]): A <|> B = new <|>(left, ???).ready(right)
     def unapply[A, B](self: A <|> B): Some[(Parsley[A], Parsley[B])] = Some((self.left, self.right))
 }

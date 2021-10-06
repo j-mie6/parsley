@@ -17,8 +17,8 @@ private [parsley] final class StringTok(private [StringTok] val s: String, val e
     }
 }
 // TODO: Perform applicative fusion optimisations
-private [parsley] final class Lift2[A, B, C](private [Lift2] val f: (A, B) => C, _p: =>Parsley[A], _q: =>Parsley[B])
-    extends Binary[A, B, C](_p, _q, (l, r) => s"lift2(f, $l, $r)", new Lift2(f, ???, ???))  {
+private [parsley] final class Lift2[A, B, C](private [Lift2] val f: (A, B) => C, _p: Parsley[A], _q: =>Parsley[B])
+    extends Binary[A, B, C](_p, _q, (l, r) => s"lift2(f, $l, $r)", new Lift2(f, _, ???))  {
     override val numInstrs = 1
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R],  instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         left.codeGen >>
@@ -41,8 +41,8 @@ private [parsley] object Eof extends Singleton[Unit]("eof", instructions.Eof)
 
 private [parsley] final class Modify[S](val reg: Reg[S], f: S => S)
     extends Singleton[Unit](s"modify($reg, ?)", new instructions.Modify(reg.addr, f)) with UsesRegister
-private [parsley] final class Local[S, A](val reg: Reg[S], _p: =>Parsley[S], _q: =>Parsley[A])
-    extends Binary[S, A, A](_p, _q, (l, r) => s"local($reg, $l, $r)", new Local(reg, ???, ???)) with UsesRegister {
+private [parsley] final class Local[S, A](val reg: Reg[S], _p: Parsley[S], _q: =>Parsley[A])
+    extends Binary[S, A, A](_p, _q, (l, r) => s"local($reg, $l, $r)", new Local(reg, _, ???)) with UsesRegister {
     override val numInstrs = 2
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         left.codeGen >> {
