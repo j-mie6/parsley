@@ -12,7 +12,7 @@ import scala.util.matching.Regex
   * time and without notice. The API, however, will remain stable.
   * @since 3.0.0
   */
-class DefaultErrorBuilder extends ErrorBuilder[String] with revisions.Revision2 {
+class DefaultErrorBuilder extends ErrorBuilder[String] with revisions.Revision0 {
     override def format(pos: Position, source: Source, lines: ErrorInfoLines): String = {
         s"${source.fold("")(name => s"In $name ")}$pos:\n${lines.mkString("  ", "\n  ", "")}"
     }

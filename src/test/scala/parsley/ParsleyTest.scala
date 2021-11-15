@@ -19,7 +19,7 @@ case class Raw(item: String) extends TestErrorItem
 case class Named(item: String) extends TestErrorItem
 case object EndOfInput extends TestErrorItem
 
-class TestErrorBuilder extends ErrorBuilder[TestError] with revisions.Revision1 {
+class TestErrorBuilder extends ErrorBuilder[TestError] with revisions.Revision0 {
     override def format(pos: Position, source: Source, lines: ErrorInfoLines): TestError = TestError(pos, lines)
 
     type Position = (Int, Int)
@@ -38,7 +38,7 @@ class TestErrorBuilder extends ErrorBuilder[TestError] with revisions.Revision1 
     override def combineExpectedItems(alts: Set[Item]): ExpectedItems = alts
 
     type Messages = Set[Message]
-    override def combineMessages(alts: Set[Message]): Messages = alts
+    override def combineMessages(alts: Seq[Message]): Messages = alts.toSet
 
     type UnexpectedLine = Option[Item]
     override def unexpected(item: Option[Item]): UnexpectedLine = item
@@ -50,7 +50,7 @@ class TestErrorBuilder extends ErrorBuilder[TestError] with revisions.Revision1 
     override def message(msg: String): Message = msg
 
     type LineInfo = Unit
-    override def lineInfo(line: String, linesBefore: List[String], linesAfter: List[String], errorPointsAt: Int): Unit = ()
+    override def lineInfo(line: String, linesBefore: Seq[String], linesAfter: Seq[String], errorPointsAt: Int): Unit = ()
 
     override val numLinesBefore: Int = 2
     override val numLinesAfter: Int = 2
