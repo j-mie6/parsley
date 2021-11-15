@@ -15,7 +15,7 @@ object registers {
     * If you need more than four registers but know that they will be used
     * at different times you can rename your register, as long as they point
     * to the same reference. You may find the
-    * [[parsley.Parsley$.LazyParsley.cast[B]* Parsley[A].cast[B: ClassTag]: Parsley[B] ]]
+    * [[parsley.Parsley.cast[B]* Parsley[A].cast[B: ClassTag]: Parsley[B] ]]
     * combinator useful to change the type of a `Reg[Any]`.
     *
     * @note It is undefined behaviour to use a register in multiple different
