@@ -90,7 +90,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [16, 17]
+        node: [14, 16]
         scala: [2.12.15, 2.13.7, 3.1.0]
 
     steps:
@@ -135,7 +135,7 @@ jobs:
         run: sbt ++$SCALA_VERSION parsleyJS/doc
 
   validate-native:
-    name: Scala-Native ${{ matrix.scala }} LLVM 10
+    name: Scala-Native ${{ matrix.scala }} LLVM 12
     runs-on: ubuntu-20.04
     needs: check-duplicate
     if: >-
