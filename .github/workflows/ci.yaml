@@ -34,8 +34,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: [adopt@1.8, adopt@1.11, adopt@1.15]
-        scala: [2.12.15, 2.13.6, 3.0.2]
+        java: [adopt@1.8, adopt@1.11, openjdk@1.17]
+        scala: [2.12.15, 2.13.7, 3.1.0]
         experimental: [false]
 
     steps:
@@ -90,8 +90,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [14, 15]
-        scala: [2.12.15, 2.13.6, 3.0.2]
+        node: [14, 16]
+        scala: [2.12.15, 2.13.7, 3.1.0]
 
     steps:
       - name: Checkout repository
@@ -135,7 +135,7 @@ jobs:
         run: sbt ++$SCALA_VERSION parsleyJS/doc
 
   validate-native:
-    name: Scala-Native ${{ matrix.scala }} LLVM 10
+    name: Scala-Native ${{ matrix.scala }} LLVM 12
     runs-on: ubuntu-20.04
     needs: check-duplicate
     if: >-
@@ -148,7 +148,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        scala: [2.12.15, 2.13.6]
+        scala: [2.12.15, 2.13.7]
 
     steps:
       - name: Checkout repository
@@ -161,13 +161,13 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ runner.temp }}/llvm
-          key: llvm-10.0
+          key: llvm-12.0
 
       - name: Setup LLVM + Clang
         if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: KyleMayes/install-llvm-action@v1.1.1
         with:
-          version: "10.0"
+          version: "12.0"
           directory: ${{ runner.temp }}/llvm
           cached: ${{ steps.cache-llvm.outputs.cache-hit }}
 
@@ -213,7 +213,7 @@ jobs:
        github.event_name == 'pull_request' && (needs.validate.result == 'success' || needs.validate.result == 'skipped'))
 
     env:
-      SCALA_VERSION: 2.13.6
+      SCALA_VERSION: 2.13.7
 
     steps:
       - name: Checkout repository
