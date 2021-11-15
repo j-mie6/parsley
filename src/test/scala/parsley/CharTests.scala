@@ -7,6 +7,9 @@ import parsley.implicits.character.{charLift, stringLift}
 import scala.language.implicitConversions
 
 class CharTests extends ParsleyTest {
+    def stringPositionCheck(initialCol: Int, str: String) =
+        (string("." * initialCol) *> string(str) *> pos).parse("." * initialCol + str)
+
     "string" should "consume succeed if it is found at head" in {
         "abc".parse("abc") should not be a [Failure[_]]
     }
@@ -19,7 +22,19 @@ class CharTests extends ParsleyTest {
     it should "not consume input if it fails mid-string when combined with attempt" in {
         (attempt("abc") <|> "ab").parse("ab") should not be a [Failure[_]]
     }
-
+    it should "update positions correctly" in {
+        stringPositionCheck(0, "abc") shouldBe Success((1, 4))
+        stringPositionCheck(1, "\na") shouldBe Success((2, 2))
+        stringPositionCheck(0, "a\t") shouldBe Success((1, 5))
+        stringPositionCheck(0, "ab\t") shouldBe Success((1, 5))
+        stringPositionCheck(0, "abc\t") shouldBe Success((1, 5))
+        stringPositionCheck(0, "abcd\t") shouldBe Success((1, 9))
+        stringPositionCheck(0, "\na\tb") shouldBe (Success((2, 6)))
+        stringPositionCheck(2, "\t") shouldBe (Success((1, 5)))
+    }
+    it should "respect double tabs" in {
+        stringPositionCheck(2, "\t\t") shouldBe (Success((1, 9)))
+    }
     "anyChar" should "accept any character" in {
         for (i <- 0 to 65535) anyChar.parse(i.toChar.toString) should not be a [Failure[_]]
     }
