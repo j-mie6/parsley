@@ -34,7 +34,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: [adopt@1.8, adopt@1.11, adopt@1.15, adopt@1.17]
+        java: [adopt@1.8, adopt@1.11, openjdk@1.17]
         scala: [2.12.15, 2.13.7, 3.1.0]
         experimental: [false]
 
@@ -90,7 +90,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [14, 15]
+        node: [16, 17]
         scala: [2.12.15, 2.13.7, 3.1.0]
 
     steps:
@@ -161,13 +161,13 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ runner.temp }}/llvm
-          key: llvm-10.0
+          key: llvm-12.0
 
       - name: Setup LLVM + Clang
         if: needs.check-duplicate.outputs.should_skip != 'true'
         uses: KyleMayes/install-llvm-action@v1.1.1
         with:
-          version: "10.0"
+          version: "12.0"
           directory: ${{ runner.temp }}/llvm
           cached: ${{ steps.cache-llvm.outputs.cache-hit }}
 
