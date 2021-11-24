@@ -82,10 +82,7 @@ val PureVisible: CrossType = new CrossType {
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 // See https://github.com/sbt/sbt/issues/1224
-Global / onLoad := (Global / onLoad).value.andThen { s =>
-    dynverAssertTagVersion.value                          // This is to ensure that the tagging versions are working _correctly_
-    "project parsley" :: s
-}
+Global / onLoad ~= (_ andThen ("project parsley" :: _))
 
 Compile / bloopGenerate := None
 Test / bloopGenerate := None

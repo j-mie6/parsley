@@ -41,6 +41,9 @@ jobs:
           path: ~/.sbt
           key: sbt-${{ hashFiles('**/build.sbt') }}
 
+      - name: Check version computed
+        run: sbt dynverAssertVersion
+
       - name: Check Version
         run: sbt versionCheck
 
