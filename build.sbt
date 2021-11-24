@@ -1,3 +1,6 @@
+import sbtversionpolicy.Compatibility.BinaryCompatible
+import sbtversionpolicy.Compatibility.BinaryAndSourceCompatible
+import sbtdynver.GitDescribeOutput
 import scala.collection.mutable
 import sbtcrossproject.Platform
 
@@ -14,8 +17,35 @@ inThisBuild(List(
       "j.willis19@imperial.ac.uk",
       url("https://github.com/j-mie6")
     )
-  )
+  ),
+  versionScheme := Some("early-semver"),
+  versionPolicyIgnoredInternalDependencyVersions := Some("^\\d+\\.\\d+\\.\\d+\\+\\d+".r),
+  version := dynverGitDescribeOutput.value.mkVersion(determineVersion(version.value, versionPolicyIntention.value, _), version.value),
+  dynver := {
+      val d = new java.util.Date
+      sbtdynver.DynVer.getGitDescribeOutput(d).mkVersion(determineVersion(dynver.value, versionPolicyIntention.value, _), dynver.value)
+  }
 ))
+
+def parseVersion(version: String): (Int, Int, Int, String) = {
+    val (ver, postfix) = version.splitAt(version.indexOf('+'))
+    val Array(majorBin, majorSrc, patch) = ver.split('.').map(_.toInt)
+    (majorBin, majorSrc, patch, postfix)
+}
+
+def determineVersion(currentVersion: String, compat: Compatibility, out: GitDescribeOutput): String = {
+    if (!out.isSnapshot) currentVersion
+    else {
+        // The new SNAPSHOT version must be set accounting for the versionPolicyIntention
+        val (majorBin, majorSrc, patch, postfix) = parseVersion(currentVersion)
+        val (newMajorBin, newMajorSrc, newPatch) = compat match {
+            case Compatibility.BinaryAndSourceCompatible => (majorBin,     majorSrc,     patch + 1)
+            case Compatibility.BinaryCompatible          => (majorBin,     majorSrc + 1, 0        )
+            case Compatibility.None                      => (majorBin + 1, 0,            0        )
+        }
+        s"$newMajorBin.$newMajorSrc.$newPatch$postfix"
+    }
+}
 
 val scala212Version = "2.12.15"
 val scala213Version = "2.13.7"
@@ -52,7 +82,10 @@ val PureVisible: CrossType = new CrossType {
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 // See https://github.com/sbt/sbt/issues/1224
-Global / onLoad ~= (_ andThen ("project parsley" :: _))
+Global / onLoad := (Global / onLoad).value.andThen { s =>
+    dynverAssertTagVersion.value                          // This is to ensure that the tagging versions are working _correctly_
+    "project parsley" :: s
+}
 
 Compile / bloopGenerate := None
 Test / bloopGenerate := None
@@ -81,6 +114,7 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   )
   .jvmSettings(
     crossScalaVersions := List(scala212Version, scala213Version, scala3Version),
+    versionPolicyPreviousVersions := previousStableVersion.value.toSeq           // This needs to be set to ensure that sbt-version-policy doesn't try handling the new SNAPSHOT versions.
   )
   .jsSettings(
     crossScalaVersions := List(scala212Version, scala213Version, scala3Version),

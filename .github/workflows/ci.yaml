@@ -248,3 +248,41 @@ jobs:
           CC_TEST_REPORTER_ID: d2376ef4077556821a44dd82803411deea8fd904d5008713754dda5f3ab42875
         with:
           coverageLocations: ${{github.workspace}}/jvm/target/scala-2.13/coverage-report/cobertura.xml:cobertura
+
+
+  semver-check:
+    name: Check SemVer Policy
+        runs-on: ubuntu-20.04
+    needs: validate
+    if: >-
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !contains(github.event.head_commit.message, '[skip jvm]') &&
+      (github.ref == 'refs/heads/master' && (needs.validate.result == 'success' || needs.validate.result == 'skipped') ||
+       github.event_name == 'pull_request' && (needs.validate.result == 'success' || needs.validate.result == 'skipped'))
+
+    env:
+      SCALA_VERSION: 2.13.7
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2.3.4
+
+      - name: Setup Scala
+        uses: olafurpg/setup-scala@v10
+        with:
+          java-version: adopt@1.11
+
+      - name: Restore cached Coursier
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/coursier
+          key: sbt-coursier-cache
+
+      - name: Restore cached SBT
+        uses: actions/cache@v2
+        with:
+          path: ~/.sbt
+          key: sbt-${{ hashFiles('**/build.sbt') }}
+
+      - name: Ensure policy matches changes
+        run: sbt versionPolicyCheck
