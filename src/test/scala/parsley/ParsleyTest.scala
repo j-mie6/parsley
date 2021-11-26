@@ -6,7 +6,6 @@ import org.scalatest.matchers.should.Matchers
 
 import parsley.errors.{DefaultErrorBuilder, ErrorBuilder}
 import org.scalatest.Inside
-import parsley.errors.revisions
 
 case class TestError(pos: (Int, Int), lines: TestErrorLines)
 
@@ -19,7 +18,7 @@ case class Raw(item: String) extends TestErrorItem
 case class Named(item: String) extends TestErrorItem
 case object EndOfInput extends TestErrorItem
 
-class TestErrorBuilder extends ErrorBuilder[TestError] with revisions.Revision0 {
+class TestErrorBuilder extends ErrorBuilder[TestError] {
     override def format(pos: Position, source: Source, lines: ErrorInfoLines): TestError = TestError(pos, lines)
 
     type Position = (Int, Int)
