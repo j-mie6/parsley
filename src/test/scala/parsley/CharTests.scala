@@ -32,8 +32,13 @@ class CharTests extends ParsleyTest {
         stringPositionCheck(0, "\na\tb") shouldBe (Success((2, 6)))
         stringPositionCheck(2, "\t") shouldBe (Success((1, 5)))
     }
-    it should "respect double tabs" in {
+    it should "respect multiple tabs" in {
         stringPositionCheck(2, "\t\t") shouldBe (Success((1, 9)))
+        stringPositionCheck(2, "\t\t\t") shouldBe (Success((1, 13)))
+        stringPositionCheck(2, "\taaa\t") shouldBe (Success((1, 9)))
+        stringPositionCheck(2, "\taa\taaa\t") shouldBe (Success((1, 13)))
+        stringPositionCheck(2, "a\t\t") shouldBe (Success((1, 9)))
+        stringPositionCheck(2, "aa\t") shouldBe (Success((1, 9)))
     }
     "anyChar" should "accept any character" in {
         for (i <- 0 to 65535) anyChar.parse(i.toChar.toString) should not be a [Failure[_]]

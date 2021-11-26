@@ -53,65 +53,17 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
     })
     private [this] val cs = s.toCharArray
     private [this] val sz = cs.length
-    def makeAdjusters(col: Int, line: Int, tabprefix: Option[Int]): (Int => Int, Int => Int) =
-        if (line > 0) ((_: Int) => col, (x: Int) => x + line)
-        else (tabprefix match {
-            case Some(prefix) =>
-                //val outer = 4 + col + prefix
-                //val inner = prefix - 1
-                //(x: Int) => outer + x - ((x + inner) & 3)
-                //val preCol = prefix + col
-                //val boundary = preCol
-                (x: Int) => {
-                    val preCol = prefix + x
-                    val boundary = ((preCol + 3) & -4) | 1
-                    boundary + col
-                }
-            case None => (x: Int) => x + col
-        }, (x: Int) => x)
-    // TODO: This could be improved by traversing back to front?
-    @tailrec def compute(i: Int, col: Int, line: Int)(implicit tabprefix: Option[Int]): (Int => Int, Int => Int) = {
+
+    import StringTok._
+    @tailrec def compute(i: Int, lineAdjust: Int, colAdjust: Adjust): (Int => Int, Int => Int) = {
         if (i < cs.length) cs(i) match {
-            case '\n' => compute(i + 1, 1, line + 1)(Some(0))
-            case '\t' if tabprefix.isEmpty => compute(i + 1, 0, line)(Some(col))
-            case '\t' => compute(i + 1, ((col + 3) & -4) | 1, line)
-            case _ => compute(i + 1, col + 1, line)
+            case '\n' => compute(i + 1, lineAdjust + 1, new Set)
+            case '\t' => compute(i + 1, lineAdjust, colAdjust.tab)
+            case _    => colAdjust.next; compute(i + 1, lineAdjust, colAdjust)
         }
-        else makeAdjusters(col, line, tabprefix)
+        else (if (lineAdjust == 0) line => line else _ + lineAdjust, colAdjust.toAdjuster)
     }
-    private [this] val (colAdjust, lineAdjust) = compute(0, 0, 0)(None)
-
-    /*
-    def makeAdjusters(line: Int, col: Int, tabs: Int): (Int => Int, Int => Int) = {
-        if (line > 0) ((x: Int) => x + line, (_: Int) => col)
-        else          ((x: Int) => x,        (x: Int) => ???)
-    }
-
-    // "abc\n" (1, 1, 0)
-    // "a\t" (0, 0, 1)
-    // "\na\tb" (1, 1, 1)
-    // "\t\t" (0, 0, 2)
-    // "abcde\tf" (0, 1, 2)
-    // (1, 1) "abc" (1, 4) "\t" (1, 5)
-    // (1, 2) "abc" (1, 5) "\t" (1, 9)
-
-    // (1, 1) "ab" (1, 3) "cd\t" ()
-    // (1, 1) "abcd" (1, 5)
-    // (1, 1) "\t"   (1, 5)
-    // (1, 4) "abcd" (1, 8)
-    // (1, 4) "\t"   (1, 5)
-
-    @tailrec def compute(i: Int, line: Int, col: Int, tabs: Int): (Int => Int, Int => Int) = {
-        if (i == sz) makeAdjusters(line, col, tabs)
-        else cs(i) match {
-            case '\n' => compute(i + 1, line + 1, 1,       0)        // switching from add to set by using 1
-            case '\t' => compute(i + 1, line,     0,       tabs + 1)
-            case _    => compute(i + 1, line,     (col + 1) % 4, tabs + ((col + 1) / 4))
-        }
-    }
-
-    private [this] val (lineAdjust, colAdjust) = compute(0, 0, 0, 0) // adjusted offset starts at 0
-    */
+    private [this] val (lineAdjust, colAdjust) = compute(0, 0, new Offset)
 
     @tailrec private def go(ctx: Context, i: Int, j: Int): Unit = {
         if (j < sz && i < ctx.inputsz && ctx.input.charAt(i) == cs(j)) go(ctx, i + 1, j + 1)
@@ -283,10 +235,32 @@ private [internal] object CharTok {
 private [internal] object StringTok {
     def apply(s: String, expected: Option[String]): StringTok = new StringTok(s, s, expected)
 
-    sealed trait Tabs
-    case object AfterLine
-    case class  Prefixed(x: Int)
-    case object NoTabs
+    private [StringTok] abstract class Adjust {
+        private [StringTok] def tab: Adjust
+        private [StringTok] def next: Unit
+        private [StringTok] def toAdjuster: Int => Int
+    }
+    // A line has been read, so any updates are fixed
+    private [StringTok] class Set extends Adjust {
+        private [this] var at = 1
+        private [StringTok] def tab = { at = ((at + 3) & -4) | 1; this }                      // Round up to the nearest multiple of 4 /+1/
+        private [StringTok] def next = at += 1
+        private [StringTok] def toAdjuster = _ => at
+    }
+    // No information about alignment: a line or a tab hasn't been read
+    private [StringTok] class Offset extends Adjust {
+        private [this] var by = 0
+        private [StringTok] def tab = new OffsetAlignOffset(by)
+        private [StringTok] def next = by += 1
+        private [StringTok] def toAdjuster = if (by == 0) col => col else _ + by
+    }
+    // A tab was read, and no lines, so we adjust first, then align, and work with an aligned value
+    private [StringTok] class OffsetAlignOffset(firstBy: Int) extends Adjust {
+        private [this] var thenBy = 0
+        private [StringTok] def tab = { thenBy = (thenBy | 3) + 1; this }                     // Round up to nearest multiple of /4/ (offset from aligned, not real value)
+        private [StringTok] def next = thenBy += 1
+        private [StringTok] def toAdjuster = col => (((col + firstBy + 3) & -4) | 1) + thenBy // Round up to the nearest multiple of 4 /+1/
+    }
 }
 
 private [internal] object CharTokFastPerform {
