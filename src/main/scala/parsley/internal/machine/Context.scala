@@ -153,7 +153,6 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         val exchange = new Array[Instr](preserve.size)
         preserveInstrs(preserve, exchange, preserve.size - 1)
         calls = new CallStack(pc + 1, instrs, preserve, exchange, at, calls)
-        for (idx <- preserve) instrs(idx) = instrs(idx).copy
         pc = at
         depth += 1
     }
@@ -255,8 +254,8 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     private [machine] def moreInput: Boolean = offset < inputsz
     private [machine] def updatePos(c: Char) = c match {
         case '\n' => line += 1; col = 1
-        case '\t' => col += 4 - ((col - 1) & 3)
-        case _ => col += 1
+        case '\t' => col = ((col + 3) & -4) | 1//((col - 1) | 3) + 2
+        case _    => col += 1
     }
     private [machine] def consumeChar(): Char = {
         val c = nextChar
