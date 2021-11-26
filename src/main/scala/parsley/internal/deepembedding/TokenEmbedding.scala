@@ -1,10 +1,9 @@
 package parsley.internal.deepembedding
 
-import parsley.token.TokenSet
 import Sign.SignType
 import parsley.internal.machine.instructions
 
-private [parsley] final class WhiteSpace(ws: TokenSet, start: String, end: String, line: String, nested: Boolean)
+private [parsley] final class WhiteSpace(ws: Char => Boolean, start: String, end: String, line: String, nested: Boolean)
     extends Singleton[Unit]("whiteSpace", new instructions.TokenWhiteSpace(ws, start, end, line, nested))
 
 private [parsley] final class SkipComments(start: String, end: String, line: String, nested: Boolean)
@@ -25,18 +24,18 @@ private [parsley] object Float
 private [parsley] object Escape
     extends Singleton[Char]("escape", new instructions.TokenEscape)
 
-private [parsley] final class StringLiteral(ws: TokenSet)
+private [parsley] final class StringLiteral(ws: Char => Boolean)
     extends Singleton[String]("stringLiteral", new instructions.TokenString(ws))
 
 private [parsley] object RawStringLiteral
     extends Singleton[String]("rawStringLiteral", instructions.TokenRawString)
 
-private [parsley] class NonSpecific(combinatorName: String, name: String, illegalName: String, start: TokenSet,
-                                    letter: TokenSet, illegal: String => Boolean)
+private [parsley] class NonSpecific(combinatorName: String, name: String, illegalName: String, start: Char => Boolean,
+                                    letter: Char => Boolean, illegal: String => Boolean)
     extends Singleton[String](combinatorName, new instructions.TokenNonSpecific(name, illegalName)(start, letter, illegal))
 
 private [parsley] final class Specific(name: String, private [Specific] val specific: String,
-                                       letter: TokenSet, val caseSensitive: Boolean)
+                                       letter: Char => Boolean, val caseSensitive: Boolean)
     extends Singleton[Unit](s"$name($specific)", new instructions.TokenSpecific(specific, letter, caseSensitive))
 
 private [parsley] final class MaxOp(private [MaxOp] val operator: String, ops: Set[String])

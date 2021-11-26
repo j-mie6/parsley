@@ -2,8 +2,7 @@ package parsley.internal.machine.instructions
 
 import parsley.internal.machine.Context
 import parsley.internal.deepembedding.Sign.{SignType, IntType, DoubleType}
-import parsley.token.TokenSet
-import parsley.internal.Radix
+import parsley.internal.Radix, Radix.RadixSet
 import parsley.internal.errors.{ErrorItem, Desc}
 
 import scala.annotation.tailrec
@@ -112,7 +111,7 @@ private [internal] final class TokenComment(start: String, end: String, line: St
     // $COVERAGE-ON$
 }
 
-private [internal] final class TokenWhiteSpace(ws: TokenSet, start: String, end: String, line: String, nested: Boolean)
+private [internal] final class TokenWhiteSpace(ws: Char => Boolean, start: String, end: String, line: String, nested: Boolean)
     extends WhiteSpaceLike(start, end, line, nested) {
     override def spaces(ctx: Context): Unit = while (ctx.moreInput && ws(ctx.nextChar)) ctx.consumeChar()
     // $COVERAGE-OFF$
@@ -128,7 +127,7 @@ private [internal] final class TokenSkipComments(start: String, end: String, lin
 }
 
 private [internal] final class TokenNonSpecific(name: String, illegalName: String)
-                                               (start: TokenSet, letter: TokenSet, illegal: String => Boolean) extends Instr {
+                                               (start: Char => Boolean, letter: Char => Boolean, illegal: String => Boolean) extends Instr {
     private [this] final val expected = Some(Desc(name))
 
     override def apply(ctx: Context): Unit = {
@@ -192,7 +191,7 @@ private [instructions] abstract class TokenSpecificAllowTrailing(_specific: Stri
     }
 }
 
-private [internal] final class TokenSpecific(_specific: String, letter: TokenSet, caseSensitive: Boolean)
+private [internal] final class TokenSpecific(_specific: String, letter: Char => Boolean, caseSensitive: Boolean)
     extends TokenSpecificAllowTrailing(_specific, caseSensitive) {
     override def postprocess(ctx: Context, i: Int): Unit = {
         if (i < ctx.inputsz && letter(ctx.input.charAt(i))) {
@@ -211,11 +210,11 @@ private [internal] final class TokenSpecific(_specific: String, letter: TokenSet
 }
 
 private [internal] final class TokenMaxOp(operator: String, _ops: Set[String]) extends TokenSpecificAllowTrailing(operator, true) {
-    private val ops = Radix(_ops.collect {
+    private val ops = Radix.makeSet(_ops.collect {
         case op if op.length > operator.length && op.startsWith(operator) => op.substring(operator.length)
     })
 
-    @tailrec private def go(ctx: Context, i: Int, ops: Radix[Unit]): Unit = {
+    @tailrec private def go(ctx: Context, i: Int, ops: RadixSet): Unit = {
         lazy val ops_ = ops.suffixes(ctx.input.charAt(i))
         val possibleOpsRemain = i < ctx.inputsz && ops.nonEmpty
         if (possibleOpsRemain && ops_.contains("")) {

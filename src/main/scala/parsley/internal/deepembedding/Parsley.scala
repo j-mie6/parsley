@@ -31,11 +31,11 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     final private [parsley] def prettyAST: String = {force(); safeCall((g: GenOps[String]) => perform(prettyASTAux(g))(g))}
     // $COVERAGE-ON$
 
+    // $COVERAGE-OFF$
     final def unsafe(): Unit = safe = false
-     // $COVERAGE-OFF$
     final def force(): Unit = instrs
     final def overflows(): Unit = cps = true
-     // $COVERAGE-ON$
+    // $COVERAGE-ON$
     private [deepembedding] def demandCalleeSave(): this.type = {
         calleeSaveNeeded = true
         this
@@ -53,7 +53,9 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
 
             try findLetsAux(ops, seen + this, state)
             catch {
+                // $COVERAGE-OFF$
                 case npe: NullPointerException => throw new BadLazinessException
+                // $COVERAGE-ON$
             }
         }
         else result(())

@@ -10,12 +10,20 @@ private [internal] class Radix[A] {
 
     def get(key: String): Option[A] = {
         if (key.isEmpty) x
-        else for
-        {
+        else for {
             e <- m.get(key.head)
             if key.startsWith(e.prefix)
             v <- e.radix.get(key.drop(e.prefix.length))
         } yield v
+    }
+
+    def getMax(key: String): Option[A] = {
+        (for {
+            k1 <- key.headOption
+            e <- m.get(k1)
+            if key.startsWith(e.prefix)
+            v <- e.radix.getMax(key.drop(e.prefix.length))
+        } yield v).orElse(x)
     }
 
     def isEmpty: Boolean = x.isEmpty && m.isEmpty
@@ -51,6 +59,8 @@ private [internal] class Radix[A] {
 }
 
 private [internal] object Radix {
+    type RadixSet = Radix[Unit]
+
     def empty[A]: Radix[A] = new Radix
 
     private def apply[A](e: Entry[A]): Radix[A] = {
@@ -59,9 +69,17 @@ private [internal] object Radix {
         radix
     }
 
-    def apply[A](xs: Iterable[String]): Radix[Unit] = {
+    // TODO: Is there a better way to build these when we have the full set of strings?
+    def makeSet(xs: Iterable[String]): RadixSet = {
         val r = Radix.empty[Unit]
         for (x <- xs) r(x) = ()
+        r
+    }
+
+    def apply[A](kvs: (String, A)*): Radix[A] = apply(kvs)
+    def apply[A](kvs: Iterable[(String, A)]): Radix[A] = {
+        val r = Radix.empty[A]
+        for ((k, v) <- kvs) r(k) = v
         r
     }
 

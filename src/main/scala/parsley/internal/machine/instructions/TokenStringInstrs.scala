@@ -1,8 +1,8 @@
 package parsley.internal.machine.instructions
 
-import parsley.token.TokenSet
 import parsley.internal.errors.{ErrorItem, Desc}
 import parsley.internal.machine.Context
+import parsley.internal.Radix
 
 import scala.annotation.tailrec
 
@@ -50,83 +50,17 @@ private [internal] class TokenEscape extends Instr with NumericReader {
     protected final def escape(ctx: Context): TokenEscape.Escape = {
         val threeAvailable = ctx.offset + 2 < ctx.inputsz
         if (ctx.moreInput) {
-            ctx.nextChar match {
-                case 'a' => consumeAndReturn(ctx, 1, '\u0007')
-                case 'b' => consumeAndReturn(ctx, 1, '\b')
-                case 'f' => consumeAndReturn(ctx, 1, '\u000c')
-                case 'n' => consumeAndReturn(ctx, 1, '\n')
-                case 'r' => consumeAndReturn(ctx, 1, '\r')
-                case 't' => consumeAndReturn(ctx, 1, '\t')
-                case 'v' => consumeAndReturn(ctx, 1, '\u000b')
-                case '\\' => consumeAndReturn(ctx, 1, '\\')
-                case '\"' => consumeAndReturn(ctx, 1, '\"')
-                case '\'' => consumeAndReturn(ctx, 1, '\'')
-                case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9') => decimalEscape(ctx, d.asDigit)
-                case 'x' => hexadecimalEscape(ctx)
-                case 'o' => octalEscape(ctx)
-                case '^' => caretEscape(ctx)
-                case 'A' if threeAvailable && lookAhead(ctx, 1) == 'C' && lookAhead(ctx, 2) == 'K' => consumeAndReturn(ctx, 3, '\u0006') //ACK
-                case 'B' => //BS BEL
-                    if (lookAhead(ctx, 1, 'S')) consumeAndReturn(ctx, 2, '\u0008')
-                    else if (lookAhead(ctx, 2, 'L') && lookAhead(ctx, 1) == 'E') {
-                        consumeAndReturn(ctx, 3, '\u0007')
-                    }
-                    else TokenEscape.NoParse
-                case 'C' => //CR CAN
-                    if (lookAhead(ctx, 1, 'R')) consumeAndReturn(ctx, 2, '\u000d')
-                    else if (lookAhead(ctx, 2, 'N') && lookAhead(ctx, 1) == 'A') consumeAndReturn(ctx, 3, '\u0018')
-                    else TokenEscape.NoParse
-                case 'D' if threeAvailable => //DC1 DC2 DC3 DC4 DEL DLE
-                    val c = lookAhead(ctx, 2)
-                    lookAhead(ctx, 1) match {
-                        case 'C' if c == '1' => consumeAndReturn(ctx, 3, '\u0011')
-                        case 'C' if c == '2' => consumeAndReturn(ctx, 3, '\u0012')
-                        case 'C' if c == '3' => consumeAndReturn(ctx, 3, '\u0013')
-                        case 'C' if c == '4' => consumeAndReturn(ctx, 3, '\u0014')
-                        case 'E' if c == 'L' => consumeAndReturn(ctx, 3, '\u001f')
-                        case 'L' if c == 'E' => consumeAndReturn(ctx, 3, '\u0010')
-                        case _ => TokenEscape.NoParse
-                    }
-                case 'E' => //EM ETX ETB ESC EOT ENQ
-                    if (lookAhead(ctx, 1, 'M')) consumeAndReturn(ctx, 2, '\u0019')
-                    else if (threeAvailable) lookAhead(ctx, 1) match {
-                        case 'N' if lookAhead(ctx, 2) == 'Q' => consumeAndReturn(ctx, 3, '\u0005')
-                        case 'O' if lookAhead(ctx, 2) == 'T' => consumeAndReturn(ctx, 3, '\u0004')
-                        case 'S' if lookAhead(ctx, 2) == 'C' => consumeAndReturn(ctx, 3, '\u001b')
-                        case 'T' if lookAhead(ctx, 2) == 'X' => consumeAndReturn(ctx, 3, '\u0003')
-                        case 'T' if lookAhead(ctx, 2) == 'B' => consumeAndReturn(ctx, 3, '\u0017')
-                        case _ => TokenEscape.NoParse
-                    }
-                    else TokenEscape.NoParse
-                case 'F' => //FF FS
-                    if (lookAhead(ctx, 1, 'F')) consumeAndReturn(ctx, 2, '\u000c')
-                    else if (lookAhead(ctx, 1, 'S')) consumeAndReturn(ctx, 2, '\u001c')
-                    else TokenEscape.NoParse
-                case 'G' if lookAhead(ctx, 1, 'S') => consumeAndReturn(ctx, 2, '\u001d') //GS
-                case 'H' if lookAhead(ctx, 1, 'T') => consumeAndReturn(ctx, 2, '\u0009') //HT
-                case 'L' if lookAhead(ctx, 1, 'F') => consumeAndReturn(ctx, 2, '\n')     //LF
-                case 'N' => //NUL NAK
-                    if (threeAvailable && lookAhead(ctx, 1) == 'U' && lookAhead(ctx, 2) == 'L') consumeAndReturn(ctx, 3, '\u0000')
-                    else if (threeAvailable && lookAhead(ctx, 1) == 'A' && lookAhead(ctx, 2) == 'K') {
-                        consumeAndReturn(ctx, 3, '\u0015')
-                    }
-                    else TokenEscape.NoParse
-                case 'R' if lookAhead(ctx, 1, 'S') => consumeAndReturn(ctx, 2, '\u001e') //RS
-                case 'S' => //SO SI SP SOH STX SYN SUB
-                    if (lookAhead(ctx, 1, 'O')) consumeAndReturn(ctx, 2, '\u000e')
-                    else if (lookAhead(ctx, 1, 'I')) consumeAndReturn(ctx, 2, '\u000f')
-                    else if (lookAhead(ctx, 1, 'P')) consumeAndReturn(ctx, 2, '\u0020')
-                    else if (threeAvailable) lookAhead(ctx, 1) match {
-                        case 'O' if lookAhead(ctx, 2) == 'H' => consumeAndReturn(ctx, 3, '\u0001')
-                        case 'T' if lookAhead(ctx, 2) == 'X' => consumeAndReturn(ctx, 3, '\u0002')
-                        case 'Y' if lookAhead(ctx, 2) == 'N' => consumeAndReturn(ctx, 3, '\u0016')
-                        case 'U' if lookAhead(ctx, 2) == 'B' => consumeAndReturn(ctx, 3, '\u001a')
-                        case _ => TokenEscape.NoParse
-                    }
-                    else TokenEscape.NoParse
-                case 'U' if lookAhead(ctx, 1, 'S') => consumeAndReturn(ctx, 2, '\u001f') //US
-                case 'V' if lookAhead(ctx, 1, 'T') => consumeAndReturn(ctx, 2, '\u000b') //VT
-                case _ => TokenEscape.NoParse
+            // This is a bit dodgy, but oh well: works for now.
+            // Basically, getMax needs to be able to stream in input from a source I guess?
+            TokenEscape.escRadix.getMax(ctx.input.substring(ctx.offset)) match {
+                case Some((c, n)) => consumeAndReturn(ctx, n, c)
+                case None => ctx.nextChar match {
+                    case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9') => decimalEscape(ctx, d.asDigit)
+                    case 'x' => hexadecimalEscape(ctx)
+                    case 'o' => octalEscape(ctx)
+                    case '^' => caretEscape(ctx)
+                    case _ => TokenEscape.NoParse
+                }
             }
         }
         else TokenEscape.NoParse
@@ -141,6 +75,53 @@ private [instructions] object TokenEscape {
     private [instructions] case class EscapeChar(escapeChar: Char) extends Escape
     private [instructions] case object BadCode extends Escape
     private [instructions] case object NoParse extends Escape
+
+    private [TokenEscape] val escRadix = Radix[(Char, Int)](
+        "a"   -> ('\u0007', 1),
+        "b"   -> ('\b', 1),
+        "f"   -> ('\u000c', 1),
+        "n"   -> ('\n', 1),
+        "r"   -> ('\r', 1),
+        "t"   -> ('\t', 1),
+        "v"   -> ('\u000b', 1),
+        "\\"  -> ('\\', 1),
+        "\""  -> ('\"', 1),
+        "\'"  -> ('\'', 1),
+        "ACK" -> ('\u0006', 3),
+        "BS"  -> ('\u0008', 2),
+        "BEL" -> ('\u0007', 3),
+        "CR"  -> ('\u000d', 2),
+        "CAN" -> ('\u0018', 3),
+        "DC1" -> ('\u0011', 3),
+        "DC2" -> ('\u0012', 3),
+        "DC3" -> ('\u0013', 3),
+        "DC4" -> ('\u0014', 3),
+        "DEL" -> ('\u001f', 3),
+        "DLE" -> ('\u0010', 3),
+        "EM"  -> ('\u0019', 2),
+        "ENQ" -> ('\u0005', 3),
+        "EOT" -> ('\u0004', 3),
+        "ESC" -> ('\u001b', 3),
+        "ETX" -> ('\u0003', 3),
+        "ETB" -> ('\u0017', 3),
+        "FF"  -> ('\u000c', 2),
+        "FS"  -> ('\u001c', 2),
+        "GS"  -> ('\u001d', 2),
+        "HT"  -> ('\u0009', 2),
+        "LF"  -> ('\n', 2),
+        "NUL" -> ('\u0000', 3),
+        "NAK" -> ('\u0015', 3),
+        "RS"  -> ('\u001e', 2),
+        "SO"  -> ('\u000e', 2),
+        "SI"  -> ('\u000f', 2),
+        "SP"  -> ('\u0020', 2),
+        "SOH" -> ('\u0001', 3),
+        "STX" -> ('\u0002', 3),
+        "SYN" -> ('\u0016', 3),
+        "SUB" -> ('\u001a', 3),
+        "US"  -> ('\u001f', 2),
+        "VT"  -> ('\u000b', 2)
+    )
 }
 
 private [instructions] sealed trait TokenStringLike extends Instr {
@@ -194,7 +175,7 @@ private [internal] object TokenRawString extends TokenStringLike {
     // $COVERAGE-ON$
 }
 
-private [internal] final class TokenString(ws: TokenSet) extends TokenEscape with TokenStringLike {
+private [internal] final class TokenString(ws: Char => Boolean) extends TokenEscape with TokenStringLike {
     private [this] final val expectedEscape = Some(Desc("escape code"))
     private [this] final val expectedGap = Some(Desc("end of string gap"))
 

@@ -23,14 +23,11 @@ class Lexer(lang: LanguageDef)
 {
     private def keyOrOp(startImpl: Impl, letterImpl: Impl, parser: Parsley[String], illegal: String => Boolean,
                         combinatorName: String, name: String, illegalName: String) = {
-        val builder = (start: TokenSet, letter: TokenSet) =>
+        val builder = (start: Char => Boolean, letter: Char => Boolean) =>
             new Parsley(new deepembedding.NonSpecific(combinatorName, name, illegalName, start, letter, illegal))
         lexeme((startImpl, letterImpl) match
         {
-            case (BitSetImpl(start), BitSetImpl(letter)) => builder(start, letter)
-            case (BitSetImpl(start), Predicate(letter)) => builder(start, letter)
-            case (Predicate(start), BitSetImpl(letter)) => builder(start, letter)
-            case (Predicate(start), Predicate(letter)) => builder(start, letter)
+            case (Static(start), Static(letter)) => builder(start, letter)
             case _ => attempt((parser.label(name)).guardAgainst {
                 case x if illegal(x) => s"unexpected $illegalName $x"
             })
@@ -48,9 +45,7 @@ class Lexer(lang: LanguageDef)
      * is not a prefix of a valid identifier. A `keyword` is treated as a single token using `attempt`.*/
     def keyword(name: String): Parsley[Unit] = lang.identLetter match
     {
-        case BitSetImpl(letter) => lexeme(new Parsley(new deepembedding.Specific("keyword", name, letter, lang.caseSensitive)))
-        case Predicate(letter) => lexeme(new Parsley(new deepembedding.Specific("keyword", name, letter, lang.caseSensitive)))
-        case NotRequired => lexeme(new Parsley(new deepembedding.Specific("keyword", name, _ => false, lang.caseSensitive)))
+        case Static(letter) => lexeme(new Parsley(new deepembedding.Specific("keyword", name, letter, lang.caseSensitive)))
         case _ => lexeme(attempt(caseString(name) *> notFollowedBy(identLetter).label("end of " + name)))
     }
 
@@ -58,7 +53,7 @@ class Lexer(lang: LanguageDef)
     {
         def caseChar(c: Char): Parsley[Char] = if (c.isLetter) c.toLower <|> c.toUpper else c
         if (lang.caseSensitive) string(name)
-        else name.foldRight(pure(name))((c, p) => caseChar(c) *> p).label(name)
+        else name.foldLeft(pure(name))((p, c) => p <* caseChar(c)).label(name)
     }
     private def isReservedName(name: String): Boolean = theReservedNames.contains(if (lang.caseSensitive) name else name.toLowerCase)
     private val theReservedNames =  if (lang.caseSensitive) lang.keywords else lang.keywords.map(_.toLowerCase)
@@ -93,9 +88,7 @@ class Lexer(lang: LanguageDef)
      * `attempt`.*/
     def operator_(name: String): Parsley[Unit] = lang.opLetter match
     {
-        case BitSetImpl(letter) => new Parsley(new deepembedding.Specific("operator", name, letter, true))
-        case Predicate(letter) => new Parsley(new deepembedding.Specific("operator", name, letter, true))
-        case NotRequired => new Parsley(new deepembedding.Specific("operator", name, _ => false, true))
+        case Static(letter) => new Parsley(new deepembedding.Specific("operator", name, letter, true))
         case _ => attempt(string(name) *> notFollowedBy(opLetter).label("end of " + name))
     }
 
@@ -133,9 +126,7 @@ class Lexer(lang: LanguageDef)
      * quite closely).*/
     lazy val stringLiteral_ : Parsley[String] = lang.space match
     {
-        case BitSetImpl(ws) => new Parsley(new deepembedding.StringLiteral(ws))
-        case Predicate(ws) => new Parsley(new deepembedding.StringLiteral(ws))
-        case NotRequired => new Parsley(new deepembedding.StringLiteral(_ => false))
+        case Static(ws) => new Parsley(new deepembedding.StringLiteral(ws))
         case _ => between('"'.label("string"), '"'.label("end of string"), many(stringChar)).map(_.flatten.mkString)
     }
 
@@ -256,14 +247,14 @@ class Lexer(lang: LanguageDef)
      * that is provided to the lexer.*/
     val whiteSpace_ : Impl => Parsley[Unit] =
     {
-        case BitSetImpl(ws) =>
-            new Parsley(new deepembedding.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
-        case Predicate(ws) =>
-            new Parsley(new deepembedding.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
+        case NotRequired => skipComments
+        case Static(ws) => new Parsley(new deepembedding.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
         case Parser(space_) if lang.supportsComments =>
             skipMany(attempt(new Parsley(new deepembedding.Comment(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))) <|> space_)
         case Parser(space_) => skipMany(space_)
-        case NotRequired => skipComments
+        // $COVERAGE-OFF$
+        case _ => ???
+        // $COVERAGE-ON$
     }
 
     /**Parses any comments and skips them, this includes both line comments and block comments.*/
@@ -324,9 +315,11 @@ class Lexer(lang: LanguageDef)
 
     private def toParser(e: Impl) = e match
     {
-        case BitSetImpl(cs) => satisfy(cs(_))
-        case Parser(p) => p.asInstanceOf[Parsley[Char]]
-        case Predicate(f) => satisfy(f)
         case NotRequired => empty
+        case Static(f)   => satisfy(f)
+        case Parser(p)   => p.asInstanceOf[Parsley[Char]]
+        // $COVERAGE-OFF$
+        case _ => ???
+        // $COVERAGE-ON$
     }
 }
