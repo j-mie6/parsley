@@ -54,16 +54,15 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
     private [this] val cs = s.toCharArray
     private [this] val sz = cs.length
 
-    import StringTok._
-    @tailrec def compute(i: Int, lineAdjust: Int, colAdjust: Adjust): (Int => Int, Int => Int) = {
+    @tailrec def compute(i: Int, lineAdjust: Int, colAdjust: StringTok.Adjust): (Int => Int, Int => Int) = {
         if (i < cs.length) cs(i) match {
-            case '\n' => compute(i + 1, lineAdjust + 1, new Set)
+            case '\n' => compute(i + 1, lineAdjust + 1, new StringTok.Set)
             case '\t' => compute(i + 1, lineAdjust, colAdjust.tab)
             case _    => colAdjust.next; compute(i + 1, lineAdjust, colAdjust)
         }
         else (if (lineAdjust == 0) line => line else _ + lineAdjust, colAdjust.toAdjuster)
     }
-    private [this] val (lineAdjust, colAdjust) = compute(0, 0, new Offset)
+    private [this] val (lineAdjust, colAdjust) = compute(0, 0, new StringTok.Offset)
 
     @tailrec private def go(ctx: Context, i: Int, j: Int): Unit = {
         if (j < sz && i < ctx.inputsz && ctx.input.charAt(i) == cs(j)) go(ctx, i + 1, j + 1)
@@ -243,7 +242,8 @@ private [internal] object StringTok {
     // A line has been read, so any updates are fixed
     private [StringTok] class Set extends Adjust {
         private [this] var at = 1
-        private [StringTok] def tab = { at = ((at + 3) & -4) | 1; this }                      // Round up to the nearest multiple of 4 /+1/
+        // Round up to the nearest multiple of 4 /+1/
+        private [StringTok] def tab = { at = ((at + 3) & -4) | 1; this }
         private [StringTok] def next = at += 1
         private [StringTok] def toAdjuster = _ => at
     }
@@ -257,9 +257,11 @@ private [internal] object StringTok {
     // A tab was read, and no lines, so we adjust first, then align, and work with an aligned value
     private [StringTok] class OffsetAlignOffset(firstBy: Int) extends Adjust {
         private [this] var thenBy = 0
-        private [StringTok] def tab = { thenBy = (thenBy | 3) + 1; this }                     // Round up to nearest multiple of /4/ (offset from aligned, not real value)
+        // Round up to nearest multiple of /4/ (offset from aligned, not real value)
+        private [StringTok] def tab = { thenBy = (thenBy | 3) + 1; this }
         private [StringTok] def next = thenBy += 1
-        private [StringTok] def toAdjuster = col => (((col + firstBy + 3) & -4) | 1) + thenBy // Round up to the nearest multiple of 4 /+1/
+        // Round up to the nearest multiple of 4 /+1/
+        private [StringTok] def toAdjuster = col => (((col + firstBy + 3) & -4) | 1) + thenBy
     }
 }
 
