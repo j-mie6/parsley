@@ -17,6 +17,10 @@ private [internal] class Radix[A] {
         } yield v
     }
 
+    // There needs to be a version of this that streams in.
+    // But the implementation needs to change such that we check if there are
+    // even any valid forward paths _first_ before taking the head, otherwise
+    // we might end up blocking on more input when there aren't any other possiblilities.
     def getMax(key: String): Option[A] = {
         (for {
             k1 <- key.headOption
