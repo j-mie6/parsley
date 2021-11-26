@@ -47,23 +47,26 @@ private [internal] class TokenEscape extends Instr with NumericReader {
         else TokenEscape.NoParse
     }
 
-    protected final def escape(ctx: Context): TokenEscape.Escape = {
-        val threeAvailable = ctx.offset + 2 < ctx.inputsz
+    private final def nonWordEscape(ctx: Context) = {
         if (ctx.moreInput) {
-            // This is a bit dodgy, but oh well: works for now.
-            // Basically, getMax needs to be able to stream in input from a source I guess?
-            TokenEscape.escRadix.getMax(ctx.input.substring(ctx.offset)) match {
-                case Some((c, n)) => consumeAndReturn(ctx, n, c)
-                case None => ctx.nextChar match {
-                    case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9') => decimalEscape(ctx, d.asDigit)
-                    case 'x' => hexadecimalEscape(ctx)
-                    case 'o' => octalEscape(ctx)
-                    case '^' => caretEscape(ctx)
-                    case _ => TokenEscape.NoParse
-                }
+            ctx.nextChar match {
+                case d@('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9') => decimalEscape(ctx, d.asDigit)
+                case 'x' => hexadecimalEscape(ctx)
+                case 'o' => octalEscape(ctx)
+                case '^' => caretEscape(ctx)
+                case _ => TokenEscape.NoParse
             }
         }
         else TokenEscape.NoParse
+    }
+
+    protected final def escape(ctx: Context): TokenEscape.Escape = {
+        // This is a bit dodgy, but oh well: works for now.
+        // Basically, getMax needs to be able to stream in input from a source I guess?
+        TokenEscape.escRadix.getMax(ctx.input.substring(ctx.offset)) match {
+            case Some((c, n)) => consumeAndReturn(ctx, n, c)
+            case None => nonWordEscape(ctx)
+        }
     }
 
     // $COVERAGE-OFF$
