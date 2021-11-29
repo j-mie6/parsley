@@ -105,7 +105,11 @@ private [internal] object Radix {
         def commonPrefix(s2: String): String = s1.view.zip(s2).takeWhile(Function.tupled(_ == _)).map(_._1).mkString
     }
 
-    private val units = new Iterator[Unit] {
+    private val units = new Iterable[Unit] {
+        def iterator: Iterator[Unit] = unitIterator
+    }
+
+    private val unitIterator = new Iterator[Unit] {
         def hasNext = true
         def next() = ()
     }
