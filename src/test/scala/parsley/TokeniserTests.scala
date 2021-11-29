@@ -171,6 +171,10 @@ class TokeniserTests extends ParsleyTest {
         tokeniser_.charLiteral.parse("'\\xa'") should be (Success('\n'))
         tokeniser_.charLiteral.parse("'\\^J'") should be (Success('\n'))
     }
+    it must "fail gracefully if there is no closing quote" in {
+        tokeniser_.charLiteral.parse("\'") shouldBe a [Failure[_]]
+        tokeniser_.charLiteral.parse("\'\\") shouldBe a [Failure[_]]
+    }
 
     "stringLiteral" should "parse valid haskell strings" in {
         tokeniser.stringLiteral.parse(""""This string should have correct\t\xa whitespace properties!\8."""") should be {

@@ -63,7 +63,7 @@ private [internal] class TokenEscape extends Instr with NumericReader {
     protected final def escape(ctx: Context): TokenEscape.Escape = {
         // This is a bit dodgy, but oh well: works for now.
         // Basically, getMax needs to be able to stream in input from a source I guess?
-        TokenEscape.escRadix.getMax(ctx.input.substring(ctx.offset)) match {
+        TokenEscape.escRadix.getMax(ctx.input.substring(ctx.offset).iterator.buffered) match {
             case Some((c, n)) => consumeAndReturn(ctx, n, c)
             case None => nonWordEscape(ctx)
         }

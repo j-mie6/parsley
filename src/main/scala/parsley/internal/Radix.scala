@@ -1,7 +1,7 @@
 package parsley.internal
 
-import Radix.Entry
-import scala.collection.mutable
+import Radix.{Entry, IteratorHelpers, StringHelpers}
+import scala.collection.{mutable, BufferedIterator}
 import scala.language.implicitConversions
 
 private [internal] class Radix[A] {
@@ -17,17 +17,18 @@ private [internal] class Radix[A] {
         } yield v
     }
 
-    // There needs to be a version of this that streams in.
-    // But the implementation needs to change such that we check if there are
-    // even any valid forward paths _first_ before taking the head, otherwise
-    // we might end up blocking on more input when there aren't any other possiblilities.
-    def getMax(key: String): Option[A] = {
-        (for {
-            k1 <- key.headOption
-            e <- m.get(k1)
-            if key.startsWith(e.prefix)
-            v <- e.radix.getMax(key.drop(e.prefix.length))
-        } yield v).orElse(x)
+    def getMax(key: BufferedIterator[Char]): Option[A] = {
+        // If there are no forwards paths, and no value at this node
+        // we don't need to check for input: it will always return None
+        if (m.isEmpty && x.isEmpty) None
+        else {
+            (for {
+                k1 <- key.headOption
+                e <- m.get(k1)
+                if key.checkPrefixWhileConsuming(e.prefix)
+                v <- e.radix.getMax(key)
+            } yield v).orElse(x)
+        }
     }
 
     def isEmpty: Boolean = x.isEmpty && m.isEmpty
@@ -51,7 +52,7 @@ private [internal] class Radix[A] {
             if (key.startsWith(e.prefix)) e.radix(key.drop(e.prefix.length)) = value
             else {
                 // Need to split the tree: find their common prefix first
-                val common = key.view.zip(e.prefix).takeWhile(Function.tupled(_ == _)).map(_._1).mkString
+                val common = key.commonPrefix(e.prefix)
                 e.dropInPlace(common.length)
                 val radix = Radix(e)
                 // Continue inserting the key
@@ -73,13 +74,7 @@ private [internal] object Radix {
         radix
     }
 
-    // TODO: Is there a better way to build these when we have the full set of strings?
-    def makeSet(xs: Iterable[String]): RadixSet = {
-        val r = Radix.empty[Unit]
-        for (x <- xs) r(x) = ()
-        r
-    }
-
+    def makeSet(ks: Iterable[String]): RadixSet = apply(ks.view.zip(units))
     def apply[A](kvs: (String, A)*): Radix[A] = apply(kvs)
     def apply[A](kvs: Iterable[(String, A)]): Radix[A] = {
         val r = Radix.empty[A]
@@ -89,5 +84,30 @@ private [internal] object Radix {
 
     private class Entry[A](var prefix: String, val radix: Radix[A]) {
         def dropInPlace(n: Int): Unit = prefix = prefix.drop(n)
+    }
+
+    private [internal] implicit class IteratorHelpers(val it: BufferedIterator[Char]) extends AnyVal {
+        def checkPrefixWhileConsuming(prefix: Iterable[Char]): Boolean = {
+            val itPre = prefix.iterator.buffered
+            while (it.hasNext || itPre.hasNext) {
+                if (!itPre.hasNext) return true
+                if (!it.hasNext) return false
+                if (it.head == itPre.head) {
+                    it.next()
+                    itPre.next()
+                }
+                else return false
+            }
+            return true
+        }
+    }
+
+    private [internal] implicit class StringHelpers(val s1: String) extends AnyVal {
+        def commonPrefix(s2: String) = s1.view.zip(s2).takeWhile(Function.tupled(_ == _)).map(_._1).mkString
+    }
+
+    private val units = new Iterator[Unit] {
+        def hasNext = true
+        def next() = ()
     }
 }
