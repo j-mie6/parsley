@@ -3,6 +3,7 @@ package parsley.internal
 import Radix.{Entry, IteratorHelpers, StringHelpers}
 import scala.collection.{mutable, BufferedIterator}
 import scala.language.implicitConversions
+import scala.annotation.tailrec
 
 private [internal] class Radix[A] {
     private var x = Option.empty[A]
@@ -87,23 +88,21 @@ private [internal] object Radix {
     }
 
     private [internal] implicit class IteratorHelpers(val it: BufferedIterator[Char]) extends AnyVal {
-        def checkPrefixWhileConsuming(prefix: Iterable[Char]): Boolean = {
-            val itPre = prefix.iterator.buffered
-            while (it.hasNext || itPre.hasNext) {
-                if (!itPre.hasNext) return true
-                if (!it.hasNext) return false
-                if (it.head == itPre.head) {
-                    it.next()
-                    itPre.next()
-                }
-                else return false
+        @tailrec private final def go(it: BufferedIterator[Char], itPre: BufferedIterator[Char]): Boolean = {
+            if (!itPre.hasNext) true
+            else if (!it.hasNext || it.head != itPre.head) false
+            else {
+                it.next()
+                itPre.next()
+                go(it, itPre)
             }
-            return true
         }
+
+        def checkPrefixWhileConsuming(prefix: Iterable[Char]): Boolean = go(it, prefix.iterator.buffered)
     }
 
     private [internal] implicit class StringHelpers(val s1: String) extends AnyVal {
-        def commonPrefix(s2: String) = s1.view.zip(s2).takeWhile(Function.tupled(_ == _)).map(_._1).mkString
+        def commonPrefix(s2: String): String = s1.view.zip(s2).takeWhile(Function.tupled(_ == _)).map(_._1).mkString
     }
 
     private val units = new Iterator[Unit] {
