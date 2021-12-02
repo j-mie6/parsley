@@ -19,9 +19,6 @@ private [internal] class TokenEscape extends Instr with NumericReader {
         new TokenEscape.EscapeChar(c)
     }
 
-    private final def lookAhead(ctx: Context, n: Int): Char = ctx.input.charAt(ctx.offset + n)
-    private final def lookAhead(ctx: Context, n: Int, c: Char): Boolean = ctx.offset + n < ctx.inputsz && lookAhead(ctx, n) == c
-
     private final def numericEscape(ctx: Context, escapeCode: Int) = {
         if (escapeCode <= 0x10FFFF) new TokenEscape.EscapeChar(escapeCode.toChar)
         else TokenEscape.BadCode
@@ -43,7 +40,7 @@ private [internal] class TokenEscape extends Instr with NumericReader {
     private final def octalEscape(ctx: Context) = nonDecimalNumericEscape(ctx, octal)
     private final def caretEscape(ctx: Context) = {
         ctx.fastUncheckedConsumeChars(1)
-        if (ctx.moreInput && ctx.nextChar >= 'A' && ctx.nextChar <= 'Z') consumeAndReturn(ctx, 1, (ctx.nextChar - 'A' + 1).toChar)
+        if (ctx.moreInput && ctx.nextChar >= '@' && ctx.nextChar <= '_') consumeAndReturn(ctx, 1, (ctx.nextChar - '@').toChar)
         else TokenEscape.NoParse
     }
 

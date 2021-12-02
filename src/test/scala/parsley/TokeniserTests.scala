@@ -1,6 +1,7 @@
 package parsley
 
 import parsley._
+import Parsley.col
 import parsley.character.{alphaNum, letter, whitespace, oneOf => inSet}
 import parsley.implicits.character.charLift
 import parsley.combinator.eof
@@ -175,10 +176,14 @@ class TokeniserTests extends ParsleyTest {
         tokeniser_.charLiteral.parse("\'") shouldBe a [Failure[_]]
         tokeniser_.charLiteral.parse("\'\\") shouldBe a [Failure[_]]
     }
+    it must "fail if given the zero-width char" in {
+        tokeniser.charLiteral.parse("'\\&'") shouldBe a [Failure[_]]
+        tokeniser_.charLiteral.parse("'\\&'") shouldBe a [Failure[_]]
+    }
 
     "stringLiteral" should "parse valid haskell strings" in {
-        tokeniser.stringLiteral.parse(""""This string should have correct\t\xa whitespace properties!\8."""") should be {
-            Success("This string should have correct\t\n whitespace properties!\b.")
+        tokeniser.stringLiteral.parse(""""This string should have correct\t\xa whitespace properties!\8\^@."""") should be {
+            Success("This string should have correct\t\n whitespace properties!\b\u0000.")
         }
         tokeniser.stringLiteral.parse(""""\73\32\99\97\x6e\x20\x77\x72\o151\o164\o145\o40\116\104\101\109\x20\x6c\x69\x6b\o145\o40\o164\o150is!\^J\LF\49\&0"""") should be {
             Success("I can write them like this!\n\n10")
@@ -189,10 +194,13 @@ class TokeniserTests extends ParsleyTest {
         tokeniser.stringLiteral.parse("\"Breaks can also contain newline\\   \n \\s, but we still don't notice them\"") should be {
             Success("Breaks can also contain newlines, but we still don't notice them")
         }
+        (tokeniser.stringLiteral <~> col).parse(""""\49\&0"""") should be {
+            Success(("10", 9))
+        }
     }
     it must "be the same regardless of the intrinsic" in {
-        tokeniser_.stringLiteral.parse(""""This string should have correct\t\xa whitespace properties!\8."""") should be {
-            Success("This string should have correct\t\n whitespace properties!\b.")
+        tokeniser_.stringLiteral.parse(""""This string should have correct\t\xa whitespace properties!\8\^@."""") should be {
+            Success("This string should have correct\t\n whitespace properties!\b\u0000.")
         }
         tokeniser_.stringLiteral.parse(""""\73\32\99\97\x6e\x20\x77\x72\o151\o164\o145\o40\116\104\101\109\x20\x6c\x69\x6b\o145\o40\o164\o150is!\^J\LF\49\&0"""") should be {
             Success("I can write them like this!\n\n10")
@@ -202,6 +210,9 @@ class TokeniserTests extends ParsleyTest {
         }
         tokeniser_.stringLiteral.parse("\"Breaks can also contain newline\\   \n \\s, but we still don't notice them\"") should be {
             Success("Breaks can also contain newlines, but we still don't notice them")
+        }
+        (tokeniser_.stringLiteral <~> col).parse(""""\49\&0"""") should be {
+            Success(("10", 9))
         }
     }
 
