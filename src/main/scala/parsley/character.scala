@@ -59,8 +59,8 @@ object character
       * sequence of characters `cs`. Returns the parsed character.*/
     def noneOf(cs: Char*): Parsley[Char] = noneOf(cs.toSet)
 
-    /**The parser `anyChar` accepts any kind of character. Returns the accepted character.*/
-    val anyChar: Parsley[Char] = satisfy(_ => true).label("any character")
+    /**The parser `item` accepts any kind of character. Returns the accepted character.*/
+    val item: Parsley[Char] = satisfy(_ => true).label("any character")
 
     /**Parses a whitespace character (either ' ' or '\t'). Returns the parsed character.*/
     val space: Parsley[Char] = satisfy(isSpace).label("space/tab")

@@ -3,7 +3,7 @@ package parsley
 import parsley.combinator.{eof, optional}
 import parsley.Parsley._
 import parsley.implicits.character.{charLift, stringLift}
-import parsley.character.{anyChar, digit}
+import parsley.character.{item, digit}
 import parsley.errors.combinator.{fail => pfail, unexpected, amend, entrench, ErrorMethods}
 
 import scala.language.implicitConversions
@@ -18,7 +18,7 @@ class ErrorTests extends ParsleyTest {
     }
 
     "filtering parsers" should "function correctly" in {
-        val p = anyChar.filterOut {
+        val p = item.filterOut {
             case c if c.isLower => s"'$c' should have been uppercase"
         }
         inside(p.parse("a")) {
@@ -29,7 +29,7 @@ class ErrorTests extends ParsleyTest {
         }
         p.parse("A") shouldBe Success('A')
 
-        val q = anyChar.guardAgainst {
+        val q = item.guardAgainst {
             case c if c.isLower => s"'$c' is not uppercase"
         }
         inside(q.parse("a")) { case Failure(TestError((1, 2), SpecialisedError(msgs))) => msgs should contain only ("'a' is not uppercase") }
@@ -37,7 +37,7 @@ class ErrorTests extends ParsleyTest {
     }
 
     "the collectMsg combinator" should "act like a filter then a map" in {
-        val p = anyChar.collectMsg("oops") {
+        val p = item.collectMsg("oops") {
             case '+' => 0
             case c if c.isUpper => c - 'A' + 1
         }
@@ -45,7 +45,7 @@ class ErrorTests extends ParsleyTest {
         p.parse("C") shouldBe Success(3)
         inside(p.parse("a"))  { case Failure(TestError((1, 2), SpecialisedError(msgs))) => msgs should contain only ("oops") }
 
-        val q = anyChar.collectMsg(c => s"$c is not appropriate") {
+        val q = item.collectMsg(c => s"$c is not appropriate") {
             case '+' => 0
             case c if c.isUpper => c - 'A' + 1
         }
@@ -56,7 +56,7 @@ class ErrorTests extends ParsleyTest {
 
     // Issue #70
     "filterOut" should "not corrupt the stack under a handler" in {
-        val p = attempt(anyChar.filterOut {
+        val p = attempt(item.filterOut {
             case c if c.isLower => "no lowercase!"
         })
         p.parse("a") shouldBe a [Failure[_]]

@@ -1,7 +1,7 @@
 package parsley
 
 import parsley.combinator.manyUntil
-import parsley.character.{anyChar, string}
+import parsley.character.{item, string}
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.io._
 
@@ -11,7 +11,7 @@ import java.io.File
 
 class CoreJvmTests extends ParsleyTest {
     "parseFromFile" should "work" in {
-        (manyUntil(anyChar, "Jamie Willis") *> anyChar).parseFromFile(new File("LICENSE")).get shouldBe Success('\n')
+        (manyUntil(item, "Jamie Willis") *> item).parseFromFile(new File("LICENSE")).get shouldBe Success('\n')
     }
     it should "fail with an error when file does not exist" in {
         Parsley.empty.parseFromFile(new File("foo.diuh")) shouldBe a [scala.util.Failure[_]]
