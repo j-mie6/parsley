@@ -121,17 +121,27 @@ class CharTests extends ParsleyTest {
 
     "oneOf" should "match any of the characters provided" in {
         val p = character.oneOf('a', 'b', 'c')
+        val q = character.oneOf('a' to 'c')
         p.parse("a") should not be a [Failure[_]]
         p.parse("b") should not be a [Failure[_]]
         p.parse("c") should not be a [Failure[_]]
         p.parse("d") shouldBe a [Failure[_]]
+        q.parse("a") should not be a [Failure[_]]
+        q.parse("b") should not be a [Failure[_]]
+        q.parse("c") should not be a [Failure[_]]
+        q.parse("d") shouldBe a [Failure[_]]
     }
 
     "noneOf" should "match none of the characters provided" in {
         val p = character.noneOf('a', 'b', 'c')
+        val q = character.noneOf('a' to 'c')
         p.parse("a") shouldBe a [Failure[_]]
         p.parse("b") shouldBe a [Failure[_]]
         p.parse("c") shouldBe a [Failure[_]]
         p.parse("d") should not be a [Failure[_]]
+        q.parse("a") shouldBe a [Failure[_]]
+        q.parse("b") shouldBe a [Failure[_]]
+        q.parse("c") shouldBe a [Failure[_]]
+        q.parse("d") should not be a [Failure[_]]
     }
 }
