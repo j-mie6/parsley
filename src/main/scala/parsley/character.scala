@@ -8,6 +8,7 @@ import parsley.errors.combinator.ErrorMethods
 
 import scala.annotation.switch
 import scala.language.implicitConversions
+import scala.collection.immutable.NumericRange
 
 /** This module contains many parsers to do with reading one or more characters. Almost every parser will need something from this module.
   * @since 2.2.0
@@ -46,6 +47,14 @@ object character
     /**`oneOf(cs)` succeeds if the current character is in the supplied sequence of characters `cs`.
       * Returns the parsed character. See also `satisfy`.*/
     def oneOf(cs: Char*): Parsley[Char] = oneOf(cs.toSet)
+
+    /**`oneOf(cs)` succeeds if the current character is in the supplied sequence of characters `cs`.
+      * Returns the parsed character. See also `satisfy`.*/
+    def oneOf(cs: NumericRange[Char]): Parsley[Char] = oneOf(cs.toSet)
+
+    /**As the dual of `oneOf`, `noneOf(cs)` succeeds if the current character is not in the supplied
+      * sequence of characters `cs`. Returns the parsed character.*/
+    def noneOf(cs: NumericRange[Char]): Parsley[Char] = noneOf(cs.toSet)
 
     /**As the dual of `oneOf`, `noneOf(cs)` succeeds if the current character is not in the supplied
       * sequence of characters `cs`. Returns the parsed character.*/
