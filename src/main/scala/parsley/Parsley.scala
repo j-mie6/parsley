@@ -110,7 +110,7 @@ object Parsley
           * this combinator first tries to parse the invokee. If this is successful, no further action is taken. If the
           * invokee failed *without* consuming input, then `q` is parsed instead. If the invokee did parse input then the
           * whole parser fails. This is done to prevent space leaks and to give good error messages. If this behaviour
-          * is not desired, use the `<\>` combinator (or `attempt(this) <|> q`) to parse `q` regardless of how the
+          * is not desired, use `attempt(this) <|> q` to parse `q` regardless of how the
           * invokee failed.
           * @param q The parser to run if the invokee failed without consuming input
           * @return The value produced by the invokee if it was successful, or if it failed without consuming input, the

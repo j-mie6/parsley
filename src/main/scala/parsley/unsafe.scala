@@ -14,7 +14,7 @@ object unsafe {
     // $COVERAGE-OFF$
     /**
       * This function returns a fresh Context. Contexts are used by the parsers to store their state.
-      * You should only need to use this if you are using `runParserFastUnsafe` and you need separate
+      * You should only need to use this if you are using `parseFastUnsafe` and you need separate
       * execution contexts due to multi-threaded parsing.
       * @return A fresh execution context for parsers
       * @since 1.6.0
