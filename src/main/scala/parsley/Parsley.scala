@@ -19,7 +19,7 @@ import parsley.errors.ErrorBuilder
   * Note: In order to construct an object of this class you must use the combinators; the class itself is abstract
   *
   * @author Jamie Willis
-  * @version 1
+  * @version 3.0.0
   */
 final class Parsley[+A] private [parsley] (private [parsley] val internal: deepembedding.Parsley[A]) extends AnyVal
 {
@@ -60,19 +60,19 @@ object Parsley
       *
       * @param p The parser which serves as the method receiver
       * @param con A conversion (if required) to turn `p` into a parser
-      * @version 1.0.0
+      * @version 3.0.0
       */
     implicit final class LazyParsley[P, +A](p: =>P)(implicit con: P => Parsley[A])
     {
         /**
-          * This is the functorial map operation for parsers. When the invokee produces a value, this value is fed through
+          * This is the functorial map operation for parsers. When the receiver produces a value, this value is fed through
           * the function `f`.
           *
           * @note This is subject to aggressive optimisations assuming purity; the compiler is permitted to optimise such
           * that the application of `f` actually only happens once at compile time. In order to preserve the behaviour of
           * impure functions, consider using the `unsafe` method before map; `p.unsafe.map(f)`.
           * @param f The mutator to apply to the result of previous parse
-          * @return A new parser which parses the same input as the invokee but mutated by function `f`
+          * @return A new parser which parses the same input as the receiver but mutated by function `f`
           */
         def map[B](f: A => B): Parsley[B] = pure(f) <*> con(p)
         /**
@@ -83,14 +83,14 @@ object Parsley
           * @note `pure(f) <*> p` is subject to the same aggressive optimisations as `map`. When using impure functions
           * the optimiser may decide to cache the result of the function execution, be sure to use `unsafe` in order to
           * prevent these optimisations.
-          * @param px A parser of type A, where the invokee is A => B
+          * @param px A parser of type A, where the receiver is A => B
           * @return A new parser which parses `pf`, then `px` then applies the value returned by `px` to the function
           *         returned by `pf`
           */
         def <*>[B, C](px: =>Parsley[B])(implicit ev: P <:< Parsley[B=>C]): Parsley[C] = new Parsley(new deepembedding.<*>[B, C](ev(p).internal, px.internal))
         /**
-          * This is the traditional Monadic binding operator for parsers. When the invokee produces a value, the function
-          * `f` is used to produce a new parser that continued the computation.
+          * This is the traditional Monadic binding operator for parsers. When the receiver produces a value, the function
+          * `f` is used to produce a new parser that continues the computation - this new parser is then executed.
           *
           * @note There is significant overhead for using flatMap; if possible try to write parsers in an applicative
           * style otherwise try and use the intrinsic parsers provided to replace the flatMap.
@@ -107,13 +107,13 @@ object Parsley
         def <**>[B](pf: =>Parsley[A => B]): Parsley[B] = lift.lift2[A, A=>B, B]((x, f) => f(x), con(p), pf)
         /**
           * This is the traditional Alternative choice operator for parsers. Following the parsec semantics precisely,
-          * this combinator first tries to parse the invokee. If this is successful, no further action is taken. If the
-          * invokee failed *without* consuming input, then `q` is parsed instead. If the invokee did parse input then the
+          * this combinator first tries to parse the receiver. If this is successful, no further action is taken. If the
+          * receiver failed *without* consuming input, then `q` is parsed instead. If the receiver did parse input then the
           * whole parser fails. This is done to prevent space leaks and to give good error messages. If this behaviour
           * is not desired, use `attempt(this) <|> q` to parse `q` regardless of how the
-          * invokee failed.
-          * @param q The parser to run if the invokee failed without consuming input
-          * @return The value produced by the invokee if it was successful, or if it failed without consuming input, the
+          * receiver failed.
+          * @param q The parser to run if the receiver failed without consuming input
+          * @return The value produced by the receiver if it was successful, or if it failed without consuming input, the
           *         possible result of parsing q.
           */
         def <|>[B >: A](q: =>Parsley[B]): Parsley[B] = new Parsley(new deepembedding.<|>(con(p).internal, q.internal))
@@ -142,13 +142,13 @@ object Parsley
           * types of either side of the combinator to vary by returning their result as
           * part of an `Either`.
           *
-          * @param q The parser to run if the invokee failed without consuming input
+          * @param q The parser to run if the receiver failed without consuming input
           * @return the result of the parser which succeeded, if any
           */
         def <+>[B](q: Parsley[B]): Parsley[Either[A, B]] = this.map(Left(_)) <|> q.map(Right(_))
         /**
           * This is the parser that corresponds to a more optimal version of `p.map(_ => x => x) <*> q`. It performs
-          * the parse action of both parsers, in order, but discards the result of the invokee.
+          * the parse action of both parsers, in order, but discards the result of the receiver.
           * @param q The parser whose result should be returned
           * @return A new parser which first parses `p`, then `q` and returns the result of `q`
           */
@@ -162,14 +162,14 @@ object Parsley
         def <*[B](q: =>Parsley[B]): Parsley[A] = new Parsley(new deepembedding.<*(con(p).internal, q.internal))
         /**
           * This is the parser that corresponds to `p *> pure(x)` or a more optimal version of `p.map(_ => x)`.
-          * It performs the parse action of the invokee but discards its result and then results the value `x` instead
-          * @param x The value to be returned after the execution of the invokee
-          * @return A new parser which first parses the invokee, then results `x`
+          * It performs the parse action of the receiver but discards its result and then results the value `x` instead
+          * @param x The value to be returned after the execution of the receiver
+          * @return A new parser which first parses the receiver, then results `x`
           */
         def #>[B](x: B): Parsley[B] = this *> pure(x)
         /**
           * This is the parser that corresponds to a more optimal version of `(p <~> q).map(_._2)`. It performs
-          * the parse action of both parsers, in order, but discards the result of the invokee.
+          * the parse action of both parsers, in order, but discards the result of the receiver.
           * @param q The parser whose result should be returned
           * @return A new parser which first parses `p`, then `q` and returns the result of `q`
           * @since 2.4.0
@@ -196,13 +196,13 @@ object Parsley
         /** Filter the value of a parser; if the value returned by the parser matches the predicate `pred` then the
           * filter succeeded, otherwise the parser fails with an empty error
           * @param pred The predicate that is tested against the parser result
-          * @return The result of the invokee if it passes the predicate
+          * @return The result of the receiver if it passes the predicate
           */
         def filter(pred: A => Boolean): Parsley[A] = new Parsley(new deepembedding.Filter(con(p).internal, pred))
         /** Filter the value of a parser; if the value returned by the parser does not match the predicate `pred` then the
           * filter succeeded, otherwise the parser fails with an empty error
           * @param pred The predicate that is tested against the parser result
-          * @return The result of the invokee if it fails the predicate
+          * @return The result of the receiver if it fails the predicate
           */
         def filterNot(pred: A => Boolean): Parsley[A] = this.filter(!pred(_))
         /** Attempts to first filter the parser to ensure that `pf` is defined over it. If it is, then the function `pf`
@@ -276,7 +276,7 @@ object Parsley
           */
         def reduceRight[B >: A](op: (A, B) => B): Parsley[B] = some(con(p)).map(_.reduceRight(op))
         /**
-          * A reduction for a parser: `p.reduceRight(op)` will try executing `p` many times until it fails, combining the
+          * A reduction for a parser: `p.reduceRightOption(op)` will try executing `p` many times until it fails, combining the
           * results with right-associative application of `op`. If there is no `p`, it returns `None`, otherwise it returns
           * `Some(x)` where `x` is the result of the reduction.
           *
@@ -295,7 +295,7 @@ object Parsley
           */
         def reduceLeft[B >: A](op: (B, A) => B): Parsley[B] = chain.left1(con(p), pure(op))
         /**
-          * A reduction for a parser: `p.reduceLeft(op)` will try executing `p` many times until it fails, combining the
+          * A reduction for a parser: `p.reduceLeftOption(op)` will try executing `p` many times until it fails, combining the
           * results with left-associative application of `op`. If there is no `p`, it returns `None`, otherwise it returns
           * `Some(x)` where `x` is the result of the reduction.
           *
@@ -339,14 +339,14 @@ object Parsley
           * This is an if statement lifted to the parser level. Formally, this is a selective functor operation,
           * equivalent to (branch b.map(boolToEither) (p.map(const)) (q.map(const))).
           * Note: due to Scala operator associativity laws, this is a right-associative operator, and must be properly
-          * bracketed, technically the invokee is the rhs...
+          * bracketed, technically the receiver is the rhs...
           * @param b The parser that yields the condition value
-          * @return The result of either `p` or `q` depending on the return value of the invokee
+          * @return The result of either `p` or `q` depending on the return value of the receiver
           */
         def ?:(b: =>Parsley[Boolean]): Parsley[A] = new Parsley(new deepembedding.If(b.internal, con(p).internal, con(q).internal))
     }
 
-    /** This is the traditional applicative pure function (or monadic return) for parsers. It consumes no input and
+    /** This is the traditional applicative `pure` function for parsers. It consumes no input and
       * does not influence the state of the parser, but does return the value provided. Useful to inject pure values
       * into the parsing process.
       * @param x The value to be returned from the parser
