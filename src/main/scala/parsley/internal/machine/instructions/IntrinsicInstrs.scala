@@ -55,16 +55,23 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
     private [this] val sz = cs.length
 
     @tailrec private [this] def compute(i: Int, lineAdjust: Int, colAdjust: StringTok.Adjust): (Int => Int, Int => Int) = {
-        if (i < cs.length) cs(i) match {
-            case '\n' => compute(i + 1, lineAdjust + 1, new StringTok.Set)
-            case '\t' => compute(i + 1, lineAdjust, colAdjust.tab)
-            case _    => colAdjust.next; compute(i + 1, lineAdjust, colAdjust)
+        if (i < cs.length) {
+            val (partialLineAdjust, partialColAdjust) = build(lineAdjust, colAdjust)
+            partialLineAdjusters(i) = partialLineAdjust
+            partialColAdjusters(i) = partialColAdjust
+            cs(i) match {
+                case '\n' => compute(i + 1, lineAdjust + 1, new StringTok.Set)
+                case '\t' => compute(i + 1, lineAdjust, colAdjust.tab)
+                case _    => colAdjust.next; compute(i + 1, lineAdjust, colAdjust)
+            }
         }
         else build(lineAdjust, colAdjust)
     }
     private [this] def build(lineAdjust: Int, colAdjust: StringTok.Adjust): (Int => Int, Int => Int) = {
         (if (lineAdjust == 0) line => line else _ + lineAdjust, colAdjust.toAdjuster)
     }
+    private [this] val partialLineAdjusters = new Array[Int => Int](sz)
+    private [this] val partialColAdjusters = new Array[Int => Int](sz)
     private [this] val (lineAdjust, colAdjust) = compute(0, 0, new StringTok.Offset)
 
     @tailrec private def go(ctx: Context, i: Int, j: Int): Unit = {
@@ -73,6 +80,10 @@ private [internal] final class StringTok private [instructions] (s: String, x: A
             // The offset, line and column haven't been edited yet, so are in the right place
             ctx.expectedTokenFail(errorItem, sz)
             ctx.offset = i
+            // These help maintain a consistent internal state, this makes the debuggers
+            // output less confusing in the string case in particular.
+            ctx.col = partialColAdjusters(j)(ctx.col)
+            ctx.line = partialLineAdjusters(j)(ctx.line)
         }
         else {
             ctx.col = colAdjust(ctx.col)
@@ -248,14 +259,20 @@ private [internal] object StringTok {
         // Round up to the nearest multiple of 4 /+1/
         private [StringTok] def tab = { at = ((at + 3) & -4) | 1; this }
         private [StringTok] def next = at += 1
-        private [StringTok] def toAdjuster = _ => at
+        private [StringTok] def toAdjuster = {
+            val x = at // capture it now, so it doesn't need to hold the object later
+            _ => x
+        }
     }
     // No information about alignment: a line or a tab hasn't been read
     private [StringTok] class Offset extends Adjust {
         private [this] var by = 0
         private [StringTok] def tab = new OffsetAlignOffset(by)
         private [StringTok] def next = by += 1
-        private [StringTok] def toAdjuster = if (by == 0) col => col else _ + by
+        private [StringTok] def toAdjuster = {
+            val x = by // capture it now, so it doesn't need to hold the object later
+            if (x == 0) col => col else _ + x
+        }
     }
     // A tab was read, and no lines, so we adjust first, then align, and work with an aligned value
     private [StringTok] class OffsetAlignOffset(firstBy: Int) extends Adjust {
@@ -264,7 +281,11 @@ private [internal] object StringTok {
         private [StringTok] def tab = { thenBy = (thenBy | 3) + 1; this }
         private [StringTok] def next = thenBy += 1
         // Round up to the nearest multiple of 4 /+1/
-        private [StringTok] def toAdjuster = col => (((col + firstBy + 3) & -4) | 1) + thenBy
+        private [StringTok] def toAdjuster = {
+            val x = firstBy // provide an indirection to the object
+            val y = thenBy  // capture it now, so it doesn't need to hold the object later
+            col => (((col + x + 3) & -4) | 1) + y
+        }
     }
 }
 
