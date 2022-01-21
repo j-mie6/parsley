@@ -16,7 +16,7 @@ import parsley.errors.ErrorBuilder
   * This is the class that encapsulates the act of parsing and running an object of this class with `parse` will
   * parse the string given as input to `parse`.
   *
-  * Note: In order to construct an object of this class you must use the combinators; the class itself is abstract
+  * Note: In order to construct an object of this class you must use the combinators; the class itself is opaque.
   *
   * @author Jamie Willis
   * @version 3.0.0
@@ -106,7 +106,7 @@ object Parsley
         /**This combinator is defined as `lift2((x, f) => f(x), p, f)`. It is pure syntactic sugar.*/
         def <**>[B](pf: =>Parsley[A => B]): Parsley[B] = lift.lift2[A, A=>B, B]((x, f) => f(x), con(p), pf)
         /**
-          * This is the traditional Alternative choice operator for parsers. Following the parsec semantics precisely,
+          * This is the traditional choice operator for parsers. Following the parsec semantics precisely,
           * this combinator first tries to parse the receiver. If this is successful, no further action is taken. If the
           * receiver failed *without* consuming input, then `q` is parsed instead. If the receiver did parse input then the
           * whole parser fails. This is done to prevent space leaks and to give good error messages. If this behaviour
@@ -147,21 +147,21 @@ object Parsley
           */
         def <+>[B](q: Parsley[B]): Parsley[Either[A, B]] = this.map(Left(_)) <|> q.map(Right(_))
         /**
-          * This is the parser that corresponds to a more optimal version of `p.map(_ => x => x) <*> q`. It performs
+          * This is the parser that corresponds to a more optimal version of `lift2(_ => x => x, p, q)`. It performs
           * the parse action of both parsers, in order, but discards the result of the receiver.
           * @param q The parser whose result should be returned
           * @return A new parser which first parses `p`, then `q` and returns the result of `q`
           */
         def *>[A_ >: A, B](q: =>Parsley[B]): Parsley[B] = new Parsley(new deepembedding.*>[A_, B](con(p).internal, q.internal))
         /**
-          * This is the parser that corresponds to a more optimal version of `p.map(x => _ => x) <*> q`. It performs
+          * This is the parser that corresponds to a more optimal version of `lift2(x => _ => x, p, q)`. It performs
           * the parse action of both parsers, in order, but discards the result of the second parser.
           * @param q The parser who should be executed but then discarded
           * @return A new parser which first parses `p`, then `q` and returns the result of the `p`
           */
         def <*[B](q: =>Parsley[B]): Parsley[A] = new Parsley(new deepembedding.<*(con(p).internal, q.internal))
         /**
-          * This is the parser that corresponds to `p *> pure(x)` or a more optimal version of `p.map(_ => x)`.
+          * This is the parser that corresponds to `p ~> pure(x)` or a more optimal version of `p.map(_ => x)`.
           * It performs the parse action of the receiver but discards its result and then results the value `x` instead
           * @param x The value to be returned after the execution of the receiver
           * @return A new parser which first parses the receiver, then results `x`
