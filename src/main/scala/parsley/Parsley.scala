@@ -174,7 +174,7 @@ object Parsley
           * @return A new parser which first parses `p`, then `q` and returns the result of `q`
           * @since 2.4.0
           */
-        def ~>[B](q: Parsley[B]): Parsley[B] = this *> q
+        def ~>[B](q: =>Parsley[B]): Parsley[B] = this *> q
         /**
           * This is the parser that corresponds to a more optimal version of `(p <~> q).map(_._1)`. It performs
           * the parse action of both parsers, in order, but discards the result of the second parser.
@@ -182,7 +182,7 @@ object Parsley
           * @return A new parser which first parses `p`, then `q` and returns the result of the `p`
           * @since 2.4.0
           */
-        def <~[B](q: Parsley[B]): Parsley[A] = this <* q
+        def <~[B](q: =>Parsley[B]): Parsley[A] = this <* q
         /**This parser corresponds to `lift2(_+:_, p, ps)`.*/
         def <+:>[B >: A](ps: =>Parsley[Seq[B]]): Parsley[Seq[B]] = lift.lift2[A, Seq[B], Seq[B]](_ +: _, con(p), ps)
         /**This parser corresponds to `lift2(_::_, p, ps)`.*/
