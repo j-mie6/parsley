@@ -3,7 +3,7 @@ package parsley
 import parsley.combinator.{eof, optional}
 import parsley.Parsley._
 import parsley.implicits.character.{charLift, stringLift}
-import parsley.character.{anyChar, digit}
+import parsley.character, character.{anyChar, digit}
 import parsley.unsafe.ErrorLabel
 import parsley.errors.combinator.{fail => pfail, unexpected, amend, entrench, ErrorMethods}
 
@@ -308,5 +308,33 @@ class ErrorTests extends ParsleyTest {
         inside(p.parse("abc")) { case Failure(TestError((1, 3), _)) => }
         inside(p.parse("abcd")) { case Failure(TestError((1, 5), _)) => }
         inside(p.parse("abcde")) { case Failure(TestError((1, 2), _)) => }
+    }
+
+    "oneOf" should "incorporate range notation into the error" in {
+        inside(character.oneOf('0' to '9').parse("a")) { 
+            case Failure(TestError(_, VanillaError(_, expecteds, _))) => 
+                expecteds should contain only Named("one of \"0\" to \"9\"")
+        }
+    }
+
+    it should "incorporate sets of characters into the error" in {
+        inside(character.oneOf(('0' to '9').toSet).parse("a")) { 
+            case Failure(TestError(_, VanillaError(_, expecteds, _))) => 
+                expecteds should contain only Named("one of \"0\", \"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\", \"8\", or \"9\"")
+        }
+    }
+
+    "noneOf" should "incorporate range notation into the error" in {
+        inside(character.noneOf('0' to '9').parse("8")) { 
+            case Failure(TestError(_, VanillaError(_, expecteds, _))) => 
+                expecteds should contain only Named("anything outside of \"0\" to \"9\"")
+        }
+    }
+    
+    it should "incorporate sets of characters into the error" in {
+        inside(character.noneOf(('0' to '9').toSet).parse("8")) { 
+            case Failure(TestError(_, VanillaError(_, expecteds, _))) => 
+                expecteds should contain only Named("anything except \"0\", \"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\", \"8\", or \"9\"")
+        }
     }
 }

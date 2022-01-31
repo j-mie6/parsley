@@ -1,6 +1,6 @@
 package parsley
 
-import parsley.Parsley.{LazyParsley}
+import parsley.Parsley.{LazyParsley, empty}
 import parsley.combinator.skipMany
 import parsley.implicits.character.charLift
 import parsley.internal.deepembedding
@@ -38,11 +38,14 @@ object character
 
     /**`oneOf(cs)` succeeds if the current character is in the supplied set of characters `cs`.
       * Returns the parsed character. See also `satisfy`.*/
-    def oneOf(cs: Set[Char]): Parsley[Char] = satisfy(cs.contains)
-
-    /**As the dual of `oneOf`, `noneOf(cs)` succeeds if the current character is not in the supplied
-      * set of characters `cs`. Returns the parsed character.*/
-    def noneOf(cs: Set[Char]): Parsley[Char] = satisfy(!cs.contains(_))
+    def oneOf(cs: Set[Char]): Parsley[Char] = cs.size match {
+        case 0 => empty
+        case 1 => char(cs.head)
+        case _ => satisfy(cs.contains).label {
+            val Some(label) = parsley.errors.helpers.combineAsList(cs.map(renderChar).toList)
+            s"one of $label"
+        }
+    }
 
     /**`oneOf(cs)` succeeds if the current character is in the supplied sequence of characters `cs`.
       * Returns the parsed character. See also `satisfy`.*/
@@ -50,15 +53,40 @@ object character
 
     /**`oneOf(cs)` succeeds if the current character is in the supplied sequence of characters `cs`.
       * Returns the parsed character. See also `satisfy`.*/
-    def oneOf(cs: NumericRange[Char]): Parsley[Char] = oneOf(cs.toSet)
+    def oneOf(cs: NumericRange[Char]): Parsley[Char] = cs.size match {
+        case 0 => empty
+        case 1 => char(cs.head)
+        case _ if Math.abs(cs(0).toInt - cs(1).toInt) == 1 => satisfy(cs.contains).label {
+            s"one of ${renderChar(cs.min)} to ${renderChar(cs.max)}"
+        }
+        case _ => satisfy(cs.contains)
+    }
 
     /**As the dual of `oneOf`, `noneOf(cs)` succeeds if the current character is not in the supplied
-      * sequence of characters `cs`. Returns the parsed character.*/
-    def noneOf(cs: NumericRange[Char]): Parsley[Char] = noneOf(cs.toSet)
+      * set of characters `cs`. Returns the parsed character.*/
+    def noneOf(cs: Set[Char]): Parsley[Char] = cs.size match {
+        case 0 => anyChar
+        case 1 => satisfy(cs.head != _).label(s"anything except ${renderChar(cs.head)}")
+        case _ => satisfy(!cs.contains(_)).label {
+            val Some(label) = parsley.errors.helpers.combineAsList(cs.map(renderChar).toList)
+            s"anything except $label"
+        }
+    }
 
     /**As the dual of `oneOf`, `noneOf(cs)` succeeds if the current character is not in the supplied
       * sequence of characters `cs`. Returns the parsed character.*/
     def noneOf(cs: Char*): Parsley[Char] = noneOf(cs.toSet)
+
+    /**As the dual of `oneOf`, `noneOf(cs)` succeeds if the current character is not in the supplied
+      * sequence of characters `cs`. Returns the parsed character.*/
+    def noneOf(cs: NumericRange[Char]): Parsley[Char] = cs.size match {
+        case 0 => anyChar
+        case 1 => satisfy(cs.head != _).label(s"anything except ${renderChar(cs.head)}")
+        case _ if Math.abs(cs(0).toInt - cs(1).toInt) == 1 => satisfy(!cs.contains(_)).label {
+            s"anything outside of ${renderChar(cs.min)} to ${renderChar(cs.max)}"
+        }
+        case _ => satisfy(!cs.contains(_))
+    }
 
     /**The parser `anyChar` accepts any kind of character. Returns the accepted character.*/
     val anyChar: Parsley[Char] = satisfy(_ => true).label("any character")
@@ -128,4 +156,7 @@ object character
 
     /** Helper function, equivalent to the predicate used by space. Useful for providing to LanguageDef */
     def isSpace(c: Char): Boolean = c == ' ' || c == '\t'
+
+    // Sue me.
+    private def renderChar(c: Char): String = parsley.errors.helpers.renderRawString(s"$c")
 }

@@ -78,7 +78,8 @@ private [instructions] abstract class WhiteSpaceLike(start: String, end: String,
     }
 
     private final val impl = {
-        if (!lineAllowed) multisOnly(_)
+        if (!lineAllowed && !multiAllowed) spaces(_)
+        else if (!lineAllowed) multisOnly(_)
         else if (!multiAllowed) singlesOnly(_)
         else singlesAndMultis(_)
     }
