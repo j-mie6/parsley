@@ -37,7 +37,7 @@ class CombinatorTests extends ParsleyTest {
     }
 
     "option" should "succeed with Some if p succeeds" in {
-        option(pure(7)).parse("") should be (Success(Some(7)))
+        option('a').parse("a") should be (Success(Some('a')))
     }
     it should "succeed with None if p fails without consumption" in {
         option('a').parse("") should be (Success(None))

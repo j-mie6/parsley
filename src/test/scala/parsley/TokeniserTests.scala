@@ -31,11 +31,11 @@ class TokeniserTests extends ParsleyTest {
             false,
             token.CharSet(('a' to 'z').toSet
                        ++ ('A' to 'Z').toSet + '_'),
-                 token.CharSet(('a' to 'z').toSet
-                            ++ ('A' to 'Z').toSet
-                            ++ ('0' to '9').toSet + '_'),
-                 token.CharSet(Set('+', '-', ':', '/', '*', '=')),
-                 token.CharSet(Set('+', '-', ':', '/', '*', '=')),
+            token.CharSet(('a' to 'z').toSet
+                       ++ ('A' to 'Z').toSet
+                       ++ ('0' to '9').toSet + '_'),
+            token.CharSet('+', '-', ':', '/', '*', '='),
+            token.CharSet('+', '-', ':', '/', '*', '='),
             Set("if", "else", "for", "yield", "while", "def", "class",
                 "trait", "abstract", "override"),
             Set(":", "=", "::", ":="),
@@ -53,6 +53,11 @@ class TokeniserTests extends ParsleyTest {
     it should "fail if the result is a keyword" in {
         (tokeniser.identifier <* eof).parse("class") shouldBe a [Failure[_]]
     }
+    it should "point at the correct place for the error" in {
+        (tokeniser.identifier <* eof).parse("class") should matchPattern {
+            case Failure(TestError((1, 1), _)) =>
+        }
+    }
     it must "be the same regardless of the intrinsic" in {
         (tokeniser_.identifier <* eof).parse("foo123 ") should be (Success("foo123"))
         (tokeniser_.identifier <* eof).parse("_bar") should be (Success("_bar"))
@@ -61,6 +66,9 @@ class TokeniserTests extends ParsleyTest {
             (tokeniser.identifier <* eof).parse("1_bar")
         }
         (tokeniser_.identifier <* eof).parse("class") shouldBe a [Failure[_]]
+        (tokeniser_.identifier <* eof).parse("class") should matchPattern {
+            case Failure(TestError((1, 1), _)) =>
+        }
     }
 
     "keyword" should "match valid keywords" in {

@@ -5,7 +5,7 @@ import parsley.combinator.{sepBy, sepBy1, between, many, skipMany, some, skipSom
 import parsley.lift.lift2
 import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
 import parsley.Parsley, Parsley.{void, unit, attempt, pure, empty, notFollowedBy, LazyParsley}
-import parsley.errors.combinator.{fail, ErrorMethods}
+import parsley.errors.combinator.{fail, amend, entrench, ErrorMethods}
 import parsley.token.TokenSet
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.internal.deepembedding
@@ -26,16 +26,22 @@ class Lexer(lang: LanguageDef)
                         combinatorName: String, name: String, illegalName: String) = {
         val builder = (start: TokenSet, letter: TokenSet) =>
             new Parsley(new deepembedding.NonSpecific(combinatorName, name, illegalName, start, letter, illegal))
-        lexeme((startImpl, letterImpl) match
-        {
-            case (BitSetImpl(start), BitSetImpl(letter)) => builder(start, letter)
-            case (BitSetImpl(start), Predicate(letter)) => builder(start, letter)
-            case (Predicate(start), BitSetImpl(letter)) => builder(start, letter)
-            case (Predicate(start), Predicate(letter)) => builder(start, letter)
-            case _ => attempt((parser.label(name)).guardAgainst {
-                case x if illegal(x) => s"unexpected $illegalName $x"
-            })
-        })
+        lexeme {
+            (startImpl, letterImpl) match {
+                case (BitSetImpl(start), BitSetImpl(letter)) => builder(start, letter)
+                case (BitSetImpl(start), Predicate(letter)) => builder(start, letter)
+                case (Predicate(start), BitSetImpl(letter)) => builder(start, letter)
+                case (Predicate(start), Predicate(letter)) => builder(start, letter)
+                case _ =>
+                    attempt {
+                        amend {
+                            entrench(parser.label(name)).guardAgainst {
+                                case x if illegal(x) => s"unexpected $illegalName $x"
+                            }
+                        }
+                    }
+            }
+        }
     }
 
     // Identifiers & Reserved words

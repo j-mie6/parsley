@@ -41,7 +41,9 @@ class CharTests extends ParsleyTest {
         stringPositionCheck(2, "aa\t") shouldBe (Success((1, 9)))
     }
     "anyChar" should "accept any character" in {
-        for (i <- 0 to 65535) anyChar.parse(i.toChar.toString) should not be a [Failure[_]]
+        val p = void(anyChar)
+        p.force()
+        for (i <- 0 to 65535) p.parse(i.toChar.toString) should not be a [Failure[_]]
     }
     it should "fail if the input has run out, expecting any character" in {
         inside(anyChar.parse("")) {

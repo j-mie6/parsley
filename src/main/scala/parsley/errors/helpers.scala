@@ -2,6 +2,9 @@ package parsley.errors
 
 import scala.util.matching.Regex
 
+// Turn coverage off, because the tests have their own error builder
+// We might want to test this on its own though
+// $COVERAGE-OFF$
 private [parsley] object helpers {
     def renderRawString(s: String): String = s match {
         case "\n"            => "newline"
@@ -23,3 +26,4 @@ private [parsley] object helpers {
 
     private val Unprintable: Regex = "(\\p{C})".r
 }
+// $COVERAGE-ON$
