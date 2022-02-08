@@ -121,7 +121,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
            |  checks    = ${checkStack.mkString(", ")}
            |  registers = ${regs.zipWithIndex.map{case (r, i) => s"r$i = $r"}.mkString("\n              ")}
            |  errors    = ${errs.mkString(", ")}
-           |  hints     = ($hintsValidOffset, ${hints.toSet}):${hintStack.mkString(", ")}
+           |  hints     = ($hintsValidOffset, ${hints/*.toSet*/}):${hintStack.mkString(", ")}
            |]""".stripMargin
     }
     // $COVERAGE-ON$
@@ -206,9 +206,9 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
 
     private [machine] def pushError(err: DefuncError): Unit = this.errs = new ErrorStack(this.useHints(err), this.errs)
     private [machine] def useHints(err: DefuncError): DefuncError = {
-        if (hintsValidOffset == offset) WithHints(err, hints)
+        if (hintsValidOffset == err.offset) WithHints(err, hints)
         else {
-            hintsValidOffset = offset
+            hintsValidOffset = err.offset
             hints = EmptyHints
             err
         }

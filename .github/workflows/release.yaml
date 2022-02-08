@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - hint-fix
     tags:
       - '*'
   workflow_dispatch:
