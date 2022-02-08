@@ -58,6 +58,14 @@ class TokeniserTests extends ParsleyTest {
             case Failure(TestError((1, 1), _)) =>
         }
     }
+    it should "report the correct labels" in {
+        inside((tokeniser.identifier <* eof).parse("class")) {
+            case Failure(TestError(_, VanillaError(unexpected, expecteds, reasons))) =>
+                unexpected should contain (Named("keyword class"))
+                expecteds should contain only (Named("identifier"))
+                reasons shouldBe empty
+        }
+    }
     it must "be the same regardless of the intrinsic" in {
         (tokeniser_.identifier <* eof).parse("foo123 ") should be (Success("foo123"))
         (tokeniser_.identifier <* eof).parse("_bar") should be (Success("_bar"))
@@ -68,6 +76,12 @@ class TokeniserTests extends ParsleyTest {
         (tokeniser_.identifier <* eof).parse("class") shouldBe a [Failure[_]]
         (tokeniser_.identifier <* eof).parse("class") should matchPattern {
             case Failure(TestError((1, 1), _)) =>
+        }
+        inside((tokeniser_.identifier <* eof).parse("class")) {
+            case Failure(TestError(_, VanillaError(unexpected, expecteds, reasons))) =>
+                unexpected should contain (Named("keyword class"))
+                expecteds should contain only (Named("identifier"))
+                reasons shouldBe empty
         }
     }
 

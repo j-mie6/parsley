@@ -5,7 +5,7 @@ import parsley.combinator.{sepBy, sepBy1, between, many, skipMany, some, skipSom
 import parsley.lift.lift2
 import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
 import parsley.Parsley, Parsley.{void, unit, attempt, pure, empty, notFollowedBy, LazyParsley}
-import parsley.errors.combinator.{fail, amend, entrench, ErrorMethods}
+import parsley.errors.combinator.{fail, amend, entrench, unexpected, ErrorMethods}
 import parsley.token.TokenSet
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.internal.deepembedding
@@ -35,11 +35,12 @@ class Lexer(lang: LanguageDef)
                 case _ =>
                     attempt {
                         amend {
-                            entrench(parser.label(name)).guardAgainst {
-                                case x if illegal(x) => s"unexpected $illegalName $x"
+                            entrench(parser).flatMap {
+                                case x if illegal(x) => unexpected(s"$illegalName $x")
+                                case x => pure(x)
                             }
                         }
-                    }
+                    }.label(name)
             }
         }
     }
