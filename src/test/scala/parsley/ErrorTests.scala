@@ -311,30 +311,47 @@ class ErrorTests extends ParsleyTest {
     }
 
     "oneOf" should "incorporate range notation into the error" in {
-        inside(character.oneOf('0' to '9').parse("a")) { 
-            case Failure(TestError(_, VanillaError(_, expecteds, _))) => 
+        inside(character.oneOf('0' to '9').parse("a")) {
+            case Failure(TestError(_, VanillaError(_, expecteds, _))) =>
                 expecteds should contain only Named("one of \"0\" to \"9\"")
         }
     }
 
     it should "incorporate sets of characters into the error" in {
-        inside(character.oneOf(('0' to '9').toSet).parse("a")) { 
-            case Failure(TestError(_, VanillaError(_, expecteds, _))) => 
+        inside(character.oneOf(('0' to '9').toSet).parse("a")) {
+            case Failure(TestError(_, VanillaError(_, expecteds, _))) =>
                 expecteds should contain only Named("one of \"0\", \"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\", \"8\", or \"9\"")
         }
     }
 
     "noneOf" should "incorporate range notation into the error" in {
-        inside(character.noneOf('0' to '9').parse("8")) { 
-            case Failure(TestError(_, VanillaError(_, expecteds, _))) => 
+        inside(character.noneOf('0' to '9').parse("8")) {
+            case Failure(TestError(_, VanillaError(_, expecteds, _))) =>
                 expecteds should contain only Named("anything outside of \"0\" to \"9\"")
         }
     }
-    
+
     it should "incorporate sets of characters into the error" in {
-        inside(character.noneOf(('0' to '9').toSet).parse("8")) { 
-            case Failure(TestError(_, VanillaError(_, expecteds, _))) => 
+        inside(character.noneOf(('0' to '9').toSet).parse("8")) {
+            case Failure(TestError(_, VanillaError(_, expecteds, _))) =>
                 expecteds should contain only Named("anything except \"0\", \"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\", \"8\", or \"9\"")
+        }
+    }
+
+    // Issue 107
+    "hints" should "incorporate only with errors at the same offset depth" in {
+        val p = attempt('a' ~> digit)
+        val parser = optional('b'.label("b")) ~> p.label("foo")
+        inside(parser.parse("aa")) {
+            case Failure(TestError(_, VanillaError(_, expected, _))) =>
+                expected should contain only (Named("digit"))
+        }
+
+        val q = amend('a' ~> digit)
+        val qarser = optional('b'.label("b")) ~> q.label("foo")
+        inside(qarser.parse("aa")) {
+            case Failure(TestError(_, VanillaError(_, expected, _))) =>
+                expected should contain allOf (Named("foo"), Named("b"))
         }
     }
 }
