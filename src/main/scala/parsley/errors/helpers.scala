@@ -7,12 +7,15 @@ import scala.util.matching.Regex
 // $COVERAGE-OFF$
 private [parsley] object helpers {
     def renderRawString(s: String): String = s match {
-        case "\n"            => "newline"
-        case "\t"            => "tab"
-        case " "             => "space"
+        case cs if cs.head.isWhitespace => cs.head match {
+            case c if c.isSpaceChar  => "space"
+            case '\n'                => "newline"
+            case '\t'                => "tab"
+            case _                   => "whitespace character"
+        }
         case Unprintable(up) => f"unprintable character (\\u${up.head.toInt}%04X)"
         // Do we want this only in unexpecteds?
-        case cs              => "\"" + cs.takeWhile(c => c != '\n' && c != ' ') + "\""
+        case cs              => "\"" + cs.takeWhile(!_.isWhitespace) + "\""
     }
 
     def combineAsList(elems: List[String]): Option[String] = elems.sorted.reverse match {
