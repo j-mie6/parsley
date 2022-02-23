@@ -106,15 +106,15 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: deepe
       * @return The value produced by the receiver if it was successful, or if it failed without consuming input, the
       *         possible result of parsing q.
       */
-    def <|>[Aʹ >: A](q: =>Parsley[Aʹ]): Parsley[Aʹ] = new Parsley(new deepembedding.<|>(this.internal, q.internal))
+    def <|>[Aʹ >: A](q: Parsley[Aʹ]): Parsley[Aʹ] = new Parsley(new deepembedding.<|>(this.internal, q.internal))
     /**This combinator is an alias for `<|>`.
       * @since 4.0.0
       */
-    def |[Aʹ >: A](q: =>Parsley[Aʹ]): Parsley[Aʹ] = this <|> q
+    def |[Aʹ >: A](q: Parsley[Aʹ]): Parsley[Aʹ] = this <|> q
     /**This combinator is defined as `p <|> pure(x)`. It is pure syntactic sugar.*/
     def </>[Aʹ >: A](x: Aʹ): Parsley[Aʹ] = this <|> pure(x)
     /**This combinator is an alias for `<|>`.*/
-    def orElse[Aʹ >: A](q: =>Parsley[Aʹ]): Parsley[Aʹ] = this <|> q
+    def orElse[Aʹ >: A](q: Parsley[Aʹ]): Parsley[Aʹ] = this <|> q
     /**This combinator is an alias for `</>`.*/
     def getOrElse[Aʹ >: A](x: Aʹ): Parsley[Aʹ] = this </> x
     /**

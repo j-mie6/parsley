@@ -38,7 +38,7 @@ object lift
     }
     /** Exposes a combinator for postfix application of `lift6` */
     implicit final class Lift6[T1, T2, T3, T4, T5, T6, R](private val f: (T1, T2, T3, T4, T5, T6) => R) extends AnyVal {
-        def lift(p1:   Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6]): Parsley[R] =
+        def lift(p1: Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3], p4: =>Parsley[T4], p5: =>Parsley[T5], p6: =>Parsley[T6]): Parsley[R] =
             lift6(f, p1, p2, p3, p4, p5, p6)
     }
     /** Exposes a combinator for postfix application of `lift7` */
