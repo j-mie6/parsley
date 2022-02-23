@@ -49,8 +49,7 @@ object infix {
       */
     def left1[A, B, C >: B](p: Parsley[A], op: =>Parsley[(C, A) => B])
             (implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${B}") wrap: A => C): Parsley[C] = {
-        lazy val _p = p
         // a sneaky sneaky trick :) If we know that A =:= B because refl was provided, then we can skip the wrapping
-        new Parsley(new deepembedding.Chainl(parsley.XCompat.applyWrap(wrap)(_p).internal, _p.internal, op.internal))
+        new Parsley(new deepembedding.Chainl(parsley.XCompat.applyWrap(wrap)(p).internal, p.internal, op.internal))
     }
 }
