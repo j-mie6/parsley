@@ -126,13 +126,13 @@ class CoreTests extends ParsleyTest {
     }
 
     "<|>" should "not try the second alternative if the first succeeded" in {
-        ('a' <|> pfail("wrong!")).parse("a") shouldBe Success('a')
+        ('a' | pfail("wrong!")).parse("a") shouldBe Success('a')
     }
     it should "only try second alternative if the first failed without consuming input" in {
         ('a' <+> 'b').parse("b") shouldBe Success(Right('b'))
     }
     it should "not try the second alternative if the first failed after consuming input" in {
-        ("ab" <|> "ac").parse("ac") shouldBe a [Failure[_]]
+        ("ab" | "ac").parse("ac") shouldBe a [Failure[_]]
     }
     it should "not be affected by an empty on the left" in {
         inside((Parsley.empty <|> 'a').parse("b")) {
@@ -337,7 +337,7 @@ class CoreTests extends ParsleyTest {
         import parsley.combinator.{whileP, some, eof}
         val n = registers.Reg.make[Int]
         lazy val p: Parsley[Unit] = whileP(n.gets(_ % 2 == 0) ?: (some('a'), some('b')) *> n.modify(_ - 1) *> n.gets(_ != 0))
-        val q = attempt(n.put(4) *> p <* eof) <|> (n.put(2) *> p <* eof)
+        val q = attempt(n.put(4) *> p <* eof) | n.put(2) *> p <* eof
         q.parse("aaaabbb") shouldBe a [Success[_]]
     }
 }

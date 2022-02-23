@@ -25,7 +25,6 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     final protected type InstrBuffer = ResizableArray[Instr]
     final protected type T = Any
     final protected type U = Any
-    final protected type V = Any
 
     // $COVERAGE-OFF$
     final private [parsley] def prettyAST: String = {force(); safeCall((g: GenOps[String]) => perform(prettyASTAux(g))(g))}

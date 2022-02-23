@@ -9,20 +9,20 @@ import scala.collection.mutable
 import scala.language.higherKinds
 
 // TODO: Tablification is too aggressive. It appears that `optional` is being compiled to jumptable
-private [parsley] final class <|>[A, B](_p: Parsley[A], _q: =>Parsley[B]) extends Binary[A, B, B](_p, _q, (l, r) => s"($l <|> $r)", new <|>(_, ???)) {
+private [parsley] final class <|>[A](_p: Parsley[A], _q: =>Parsley[A]) extends Binary[A, A, A](_p, _q, (l, r) => s"($l <|> $r)", new <|>(_, ???)) {
     override val numInstrs = 3
 
-    override def optimise: Parsley[B] = (left, right) match {
+    override def optimise: Parsley[A] = (left, right) match {
         // left catch law: pure x <|> p = pure x
-        case (u: Pure[B @unchecked], _) => u
+        case (u: Pure[A @unchecked], _) => u
         // alternative law: empty <|> p = p
         case (Empty, v) => v
         // alternative law: p <|> empty = p
-        case (u: Parsley[B @unchecked], Empty) => u
+        case (u, Empty) => u
         // associative law: (u <|> v) <|> w = u <|> (v <|> w)
-        case ((u: Parsley[T]) <|> (v: Parsley[A @unchecked]), w) =>
-            left = u.asInstanceOf[Parsley[A]]
-            right = <|>[A, B](v, w).optimise
+        case (u <|> v, w) =>
+            left = u
+            right = <|>[A](v, w).optimise
             this
         case _ => this
     }
@@ -36,7 +36,7 @@ private [parsley] final class <|>[A, B](_p: Parsley[A], _q: =>Parsley[B]) extend
                     instrs += new instructions.PushHandlerAndState(handler, true, false)
                     u.codeGen |> {
                         instrs += new instructions.Label(handler)
-                        instrs += new instructions.AlwaysRecoverWith[B](x)
+                        instrs += new instructions.AlwaysRecoverWith[A](x)
                     }
                 case v =>
                     val handler = state.freshLabel()
@@ -61,7 +61,7 @@ private [parsley] final class <|>[A, B](_p: Parsley[A], _q: =>Parsley[B]) extend
                     u.codeGen |> {
                         instrs += new instructions.JumpGood(skip)
                         instrs += new instructions.Label(handler)
-                        instrs += new instructions.RecoverWith[B](x)
+                        instrs += new instructions.RecoverWith[A](x)
                         instrs += new instructions.Label(skip)
                     }
                 case v =>
@@ -207,6 +207,6 @@ private [parsley] final class <|>[A, B](_p: Parsley[A], _q: =>Parsley[B]) extend
 private [parsley] object Empty extends Singleton[Nothing]("empty", instructions.Empty) with MZero
 
 private [deepembedding] object <|> {
-    def apply[A, B](left: Parsley[A], right: Parsley[B]): A <|> B = new <|>(left, ???).ready(right)
-    def unapply[A, B](self: A <|> B): Some[(Parsley[A], Parsley[B])] = Some((self.left, self.right))
+    def apply[A](left: Parsley[A], right: Parsley[A]): <|>[A] = new <|>(left, ???).ready(right)
+    def unapply[A](self: <|>[A]): Some[(Parsley[A], Parsley[A])] = Some((self.left, self.right))
 }

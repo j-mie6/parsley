@@ -107,6 +107,10 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: deepe
       *         possible result of parsing q.
       */
     def <|>[Aʹ >: A](q: =>Parsley[Aʹ]): Parsley[Aʹ] = new Parsley(new deepembedding.<|>(this.internal, q.internal))
+    /**This combinator is an alias for `<|>`.
+      * @since 4.0.0
+      */
+    def |[Aʹ >: A](q: =>Parsley[Aʹ]): Parsley[Aʹ] = this <|> q
     /**This combinator is defined as `p <|> pure(x)`. It is pure syntactic sugar.*/
     def </>[Aʹ >: A](x: Aʹ): Parsley[Aʹ] = this <|> pure(x)
     /**This combinator is an alias for `<|>`.*/
@@ -164,11 +168,11 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: deepe
     /**This parser corresponds to `lift2(_::_, p, ps)`.*/
     def <::>[Aʹ >: A](ps: =>Parsley[List[Aʹ]]): Parsley[List[Aʹ]] = lift.lift2[A, List[Aʹ], List[Aʹ]](_ :: _, this, ps)
     /**This parser corresponds to `lift2((_, _), p, q)`. For now it is sugar, but in future may be more optimal*/
-    def <~>[Aʹ >: A, B](q: =>Parsley[B]): Parsley[(Aʹ, B)] = lift.lift2[Aʹ, B, (Aʹ, B)]((_, _), this, q)
+    def <~>[B](q: =>Parsley[B]): Parsley[(A, B)] = lift.lift2[A, B, (A, B)]((_, _), this, q)
     /** This combinator is an alias for `<~>`
       * @since 2.3.0
       */
-    def zip[Aʹ >: A, B](q: =>Parsley[B]): Parsley[(Aʹ, B)] = this <~> q
+    def zip[B](q: =>Parsley[B]): Parsley[(A, B)] = this <~> q
     /** Filter the value of a parser; if the value returned by the parser matches the predicate `pred` then the
       * filter succeeded, otherwise the parser fails with an empty error
       * @param pred The predicate that is tested against the parser result

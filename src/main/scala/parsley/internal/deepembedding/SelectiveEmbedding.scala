@@ -53,12 +53,12 @@ private [parsley] final class If[A](_b: Parsley[Boolean], _p: =>Parsley[A], _q: 
     }
 }
 
-private [deepembedding] sealed abstract class FilterLike[A, B](_p: Parsley[A], pretty: String => String, make: Parsley[A] => FilterLike[A, B],
-                                                               fail: A => Parsley[B], instr: instructions.Instr, pred: A => Boolean)
-    extends Unary[A, B](_p, pretty, make) {
+private [deepembedding] sealed abstract class FastZero[A](_p: Parsley[A], pretty: String => String, make: Parsley[A] => FastZero[A],
+                                                          fail: A => Parsley[Nothing], instr: instructions.Instr)
+    extends Unary[A, Nothing](_p, pretty, make) {
     final override val numInstrs = 1
-    final override def optimise: Parsley[B] = p match {
-        case px@Pure(x) => if (!pred(x)) px.asInstanceOf[Parsley[B]] else fail(x)
+    final override def optimise: Parsley[Nothing] = p match {
+        case Pure(x) => fail(x)
         case z: MZero => z
         case _ => this
     }
@@ -67,20 +67,35 @@ private [deepembedding] sealed abstract class FilterLike[A, B](_p: Parsley[A], p
     }
 }
 private [parsley] final class FastFail[A](_p: Parsley[A], msggen: A => String)
-    extends FilterLike[A, Nothing](_p, c => s"$c ! ?", new FastFail(_, msggen),
-                                   x => new Fail(msggen(x)), new instructions.FastFail(msggen), _ => true) with MZero
+    extends FastZero[A](_p, c => s"$c ! ?", new FastFail(_, msggen),
+                        x => new Fail(msggen(x)), new instructions.FastFail(msggen)) with MZero
 private [parsley] final class FastUnexpected[A](_p: Parsley[A], msggen: A => String)
-    extends FilterLike[A, Nothing](_p, c => s"$c.unexpected(?)", new FastUnexpected(_, msggen),
-                                   x => new Unexpected(msggen(x)), new instructions.FastUnexpected(msggen), _ => true) with MZero
+    extends FastZero[A](_p, c => s"$c.unexpected(?)", new FastUnexpected(_, msggen),
+                        x => new Unexpected(msggen(x)), new instructions.FastUnexpected(msggen)) with MZero
+
+private [deepembedding] sealed abstract class FilterLike[A](_p: Parsley[A], pretty: String => String, make: Parsley[A] => FilterLike[A],
+                                                            fail: A => Parsley[Nothing], instr: instructions.Instr, pred: A => Boolean)
+    extends Unary[A, A](_p, pretty, make) {
+    final override val numInstrs = 1
+    final override def optimise: Parsley[A] = p match {
+        case Pure(x) if pred(x) => fail(x)
+        case px: Pure[_] => px
+        case z: MZero => z
+        case _ => this
+    }
+    final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+        p.codeGen |> (instrs += instr)
+    }
+}
 private [parsley] final class Filter[A](_p: Parsley[A], pred: A => Boolean)
-    extends FilterLike[A, A](_p, c => s"$c.filter(?)", new Filter(_, pred),
-                             _ => Empty, new instructions.Filter(pred), !pred(_))
+    extends FilterLike[A](_p, c => s"$c.filter(?)", new Filter(_, pred),
+                          _ => Empty, new instructions.Filter(pred), !pred(_))
 private [parsley] final class FilterOut[A](_p: Parsley[A], pred: PartialFunction[A, String])
-    extends FilterLike[A, A](_p, c => s"$c.filterOut(?)", new FilterOut(_, pred),
-                             x => ErrorExplain(Empty, pred(x)), new instructions.FilterOut(pred), pred.isDefinedAt(_))
+    extends FilterLike[A](_p, c => s"$c.filterOut(?)", new FilterOut(_, pred),
+                          x => ErrorExplain(Empty, pred(x)), new instructions.FilterOut(pred), pred.isDefinedAt(_))
 private [parsley] final class GuardAgainst[A](_p: Parsley[A], pred: PartialFunction[A, String])
-    extends FilterLike[A, A](_p, c => s"$c.guardAgainst(?)", new GuardAgainst(_, pred),
-                            x => new Fail(pred(x)), new instructions.GuardAgainst(pred), pred.isDefinedAt(_))
+    extends FilterLike[A](_p, c => s"$c.guardAgainst(?)", new GuardAgainst(_, pred),
+                          x => new Fail(pred(x)), new instructions.GuardAgainst(pred), pred.isDefinedAt(_))
 
 private [deepembedding] object Branch {
     val FlipApp = new instructions.Lift2[Any, Any => Any, Any]((x, f) => f(x))
