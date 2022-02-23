@@ -2,7 +2,7 @@ package parsley
 
 import parsley.character.digit
 import parsley.implicits.character.{charLift, stringLift}
-import parsley.expr.{chain, infix}
+import parsley.expr.{chain, infix, mixed}
 import parsley.expr.{precedence, Ops, GOps, SOps, InfixL, InfixR, Prefix, Postfix, InfixN, Atoms}
 import parsley.Parsley._
 import parsley._
@@ -273,5 +273,25 @@ class ExpressionParserTests extends ParsleyTest {
 
         expr.parse("o.f()") shouldBe a [Success[_]]
         expr.parse("o.f(x,y)") shouldBe a [Success[_]]
+    }
+
+    "mixed chains" should "allow the mixing of prefix with infix-right" in {
+        sealed trait Expr
+        case class Binary(l: Expr, r: Expr) extends Expr
+        case class Unary(c: Expr) extends Expr
+        case class Constant(x: Char) extends Expr
+
+        val p = mixed.right1(digit.map(Constant), '-' #> Unary, '+' #> Binary)
+        p.parse("-1+-2+-3") shouldBe Success(Unary(Binary(Constant('1'), Unary(Binary(Constant('2'), Unary(Constant('3')))))))
+    }
+
+    they should "allow the mixing of postfix with infix-left" in {
+        sealed trait Expr
+        case class Binary(l: Expr, r: Expr) extends Expr
+        case class Unary(c: Expr) extends Expr
+        case class Constant(x: Char) extends Expr
+
+        val p = mixed.left1(digit.map(Constant), '?' #> Unary, '+' #> Binary)
+        p.parse("1?+2?+3?") shouldBe Success(Unary(Binary(Unary(Binary(Unary(Constant('1')), Constant('2'))), Constant('3'))))
     }
 }
