@@ -15,6 +15,7 @@ private [parsley] final class ErrorLabel[A](_p: Parsley[A], private [ErrorLabel]
         case ct@CharTok(c) if !ct.expected.contains("") => new CharTok(c, Some(label)).asInstanceOf[Parsley[A]]
         case st@StringTok(s) if !st.expected.contains("") => new StringTok(s, Some(label)).asInstanceOf[Parsley[A]]
         case sat@Satisfy(f) if !sat.expected.contains("") => new Satisfy(f, Some(label)).asInstanceOf[Parsley[A]]
+        // TOOD: The hide property is required to be checked, but there is no test for it
         case ErrorLabel(p, label2) if label2 != "" => ErrorLabel(p, label)
         case _ => this
     }

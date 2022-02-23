@@ -122,6 +122,7 @@ class CharTests extends ParsleyTest {
     "oneOf" should "match any of the characters provided" in {
         val p = character.oneOf('a', 'b', 'c')
         val q = character.oneOf('a' to 'c')
+        val r = character.oneOf('a' to 'd' by 2)
         p.parse("a") should not be a [Failure[_]]
         p.parse("b") should not be a [Failure[_]]
         p.parse("c") should not be a [Failure[_]]
@@ -130,11 +131,36 @@ class CharTests extends ParsleyTest {
         q.parse("b") should not be a [Failure[_]]
         q.parse("c") should not be a [Failure[_]]
         q.parse("d") shouldBe a [Failure[_]]
+        r.parse("a") should not be a [Failure[_]]
+        r.parse("b") shouldBe a [Failure[_]]
+        r.parse("c") should not be a [Failure[_]]
+        r.parse("d") shouldBe a [Failure[_]]
+    }
+    it should "always fail if provided no characters" in {
+        val p = character.oneOf()
+        val q = character.oneOf('0' until '0')
+        p.parse("a") shouldBe a [Failure[_]]
+        p.parse("\n") shouldBe a [Failure[_]]
+        p.parse("0") shouldBe a [Failure[_]]
+        q.parse("a") shouldBe a [Failure[_]]
+        q.parse("\n") shouldBe a [Failure[_]]
+        q.parse("0") shouldBe a [Failure[_]]
+    }
+    it should "work for single character ranges too" in {
+        val p = character.oneOf('a')
+        val q = character.oneOf('a' to 'a')
+        p.parse("a") shouldBe a [Success[_]]
+        p.parse("\n") shouldBe a [Failure[_]]
+        p.parse("b") shouldBe a [Failure[_]]
+        q.parse("a") shouldBe a [Success[_]]
+        q.parse("\n") shouldBe a [Failure[_]]
+        q.parse("b") shouldBe a [Failure[_]]
     }
 
     "noneOf" should "match none of the characters provided" in {
         val p = character.noneOf('a', 'b', 'c')
         val q = character.noneOf('a' to 'c')
+        val r = character.noneOf('a' to 'd' by 2)
         p.parse("a") shouldBe a [Failure[_]]
         p.parse("b") shouldBe a [Failure[_]]
         p.parse("c") shouldBe a [Failure[_]]
@@ -143,5 +169,29 @@ class CharTests extends ParsleyTest {
         q.parse("b") shouldBe a [Failure[_]]
         q.parse("c") shouldBe a [Failure[_]]
         q.parse("d") should not be a [Failure[_]]
+        r.parse("a") shouldBe a [Failure[_]]
+        r.parse("b") should not be a [Failure[_]]
+        r.parse("c") shouldBe a [Failure[_]]
+        r.parse("d") should not be a [Failure[_]]
+    }
+    it should "match anything if provided no characters" in {
+        val p = character.noneOf()
+        val q = character.noneOf('0' until '0')
+        p.parse("a") shouldBe a [Success[_]]
+        p.parse("\n") shouldBe a [Success[_]]
+        p.parse("0") shouldBe a [Success[_]]
+        q.parse("a") shouldBe a [Success[_]]
+        q.parse("\n") shouldBe a [Success[_]]
+        q.parse("0") shouldBe a [Success[_]]
+    }
+    it should "work for single character ranges too" in {
+        val p = character.noneOf('a')
+        val q = character.noneOf('a' to 'a')
+        p.parse("a") shouldBe a [Failure[_]]
+        p.parse("\n") shouldBe a [Success[_]]
+        p.parse("b") shouldBe a [Success[_]]
+        q.parse("a") shouldBe a [Failure[_]]
+        q.parse("\n") shouldBe a [Success[_]]
+        q.parse("b") shouldBe a [Success[_]]
     }
 }

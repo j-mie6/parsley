@@ -1,7 +1,5 @@
 package parsley.errors
 
-import scala.util.matching.Regex
-
 // Turn coverage off, because the tests have their own error builder
 // We might want to test this on its own though
 // $COVERAGE-OFF$
@@ -58,13 +56,8 @@ class DefaultErrorBuilder extends ErrorBuilder[String] {
 
     type ExpectedItems = Option[String]
     type Messages = Seq[Message]
-    override def combineExpectedItems(alts: Set[Item]): ExpectedItems = alts.toList.sorted.reverse.filter(_.nonEmpty) match {
-        case Nil => None
-        case List(alt) => Some(alt)
-        case List(alt1, alt2) => Some(s"$alt2 or $alt1")
-        // If the result would contains "," then it's probably nicer to preserve any potential grouping using ";"
-        case any@(alt::alts) if any.exists(_.contains(",")) => Some(s"${alts.reverse.mkString("; ")}; or $alt")
-        case alt::alts => Some(s"${alts.reverse.mkString(", ")}, or $alt")
+    override def combineExpectedItems(alts: Set[Item]): ExpectedItems = {
+        helpers.combineAsList(alts.toList.filter(_.nonEmpty))
     }
     override def combineMessages(alts: Seq[Message]): Messages = alts.filter(_.nonEmpty)
 
@@ -92,18 +85,10 @@ class DefaultErrorBuilder extends ErrorBuilder[String] {
     type Raw = String
     type Named = String
     type EndOfInput = String
-    override def raw(item: String): Raw = item match {
-        case "\n"            => "newline"
-        case "\t"            => "tab"
-        case " "             => "space"
-        case Unprintable(up) => f"unprintable character (\\u${up.head.toInt}%04X)"
-        // Do we want this only in unexpecteds?
-        case cs              => "\"" + cs.takeWhile(c => c != '\n' && c != ' ') + "\""
-    }
+    override def raw(item: String): Raw = helpers.renderRawString(item)
     override def named(item: String): Named = item
     override val endOfInput: EndOfInput = "end of input"
 
-    private val Unprintable: Regex = "(\\p{C})".r
     private val Unknown = "unknown parse error"
 }
 // $COVERAGE-ON$

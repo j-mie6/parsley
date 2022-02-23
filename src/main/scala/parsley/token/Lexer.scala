@@ -5,8 +5,8 @@ import parsley.combinator.{sepBy, sepBy1, between, many, skipMany, some, skipSom
 import parsley.lift.lift2
 import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
 import parsley.Parsley, Parsley.{void, unit, attempt, pure, empty, notFollowedBy}
-import parsley.errors.combinator.{fail, ErrorMethods}
-import parsley.implicits.character.{charLift}
+import parsley.errors.combinator.{fail, amend, entrench, unexpected, ErrorMethods}
+import parsley.implicits.character.{charLift, stringLift}
 import parsley.internal.deepembedding
 
 import scala.language.implicitConversions
@@ -25,13 +25,20 @@ class Lexer(lang: LanguageDef)
                         combinatorName: String, name: String, illegalName: String) = {
         val builder = (start: Char => Boolean, letter: Char => Boolean) =>
             new Parsley(new deepembedding.NonSpecific(combinatorName, name, illegalName, start, letter, illegal))
-        lexeme((startImpl, letterImpl) match
-        {
-            case (Static(start), Static(letter)) => builder(start, letter)
-            case _ => attempt((parser.label(name)).guardAgainst {
-                case x if illegal(x) => s"unexpected $illegalName $x"
-            })
-        })
+        lexeme {
+            (startImpl, letterImpl) match {
+                case (Static(start), Static(letter)) => builder(start, letter)
+                case _ =>
+                    attempt {
+                        amend {
+                            entrench(parser).flatMap {
+                                case x if illegal(x) => unexpected(s"$illegalName $x")
+                                case x => pure(x)
+                            }
+                        }
+                    }.label(name)
+            }
+        }
     }
 
     // Identifiers & Reserved words

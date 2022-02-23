@@ -29,13 +29,13 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: deepe
       * are disabled.
       */
     def unsafe(): Unit = internal.unsafe()
-
-    // $COVERAGE-OFF$
+    
     /**
       * Forces the compilation of a parser as opposed to the regular lazy evaluation.
       */
     def force(): Unit = internal.force()
 
+    // $COVERAGE-OFF$
     /**
       *
       * Provides an indicator that this parser is likely to stack-overflow

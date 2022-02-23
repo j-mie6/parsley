@@ -33,6 +33,7 @@ private [parsley] abstract class Parsley[+A] private [deepembedding]
     // $COVERAGE-OFF$
     final def unsafe(): Unit = safe = false
     final def force(): Unit = instrs
+    // $COVERAGE-OFF$
     final def overflows(): Unit = cps = true
     // $COVERAGE-ON$
     private [deepembedding] def demandCalleeSave(): this.type = {

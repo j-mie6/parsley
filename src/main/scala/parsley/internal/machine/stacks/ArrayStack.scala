@@ -41,7 +41,6 @@ private [machine] final class ArrayStack[A](initialSize: Int = ArrayStack.Defaul
     def size: Int = usize + 1
     def isEmpty: Boolean = sp == -1
     def mkString(sep: String): String = array.take(sp + 1).reverse.mkString(sep)
-    // $COVERAGE-ON$
     def clear(): Unit = {
         sp = -1
         var i = array.length-1
@@ -50,6 +49,7 @@ private [machine] final class ArrayStack[A](initialSize: Int = ArrayStack.Defaul
             i -= 1
         }
     }
+    // $COVERAGE-ON$
 }
 private [machine] object ArrayStack {
     val DefaultSize = 8

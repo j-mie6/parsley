@@ -3,6 +3,7 @@ import sbtversionpolicy.Compatibility.BinaryAndSourceCompatible
 import sbtdynver.GitDescribeOutput
 import scala.collection.mutable
 import sbtcrossproject.Platform
+import org.scalajs.linker.interface.ESVersion
 
 val projectName = "parsley"
 
@@ -83,6 +84,7 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 
 // See https://github.com/sbt/sbt/issues/1224
 Global / onLoad ~= (_ andThen ("project parsley" :: _))
+//scalaJSLinkerConfig ~= { _.withESFeatures(_.withESVersion(ESVersion.ES2018)) }
 
 Compile / bloopGenerate := None
 Test / bloopGenerate := None
@@ -116,7 +118,8 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .jsSettings(
     crossScalaVersions := List(scala212Version, scala213Version, scala3Version),
     Compile / bloopGenerate := None,
-    Test / bloopGenerate := None
+    Test / bloopGenerate := None,
+    Test / scalaJSLinkerConfig := scalaJSLinkerConfig.value.withESFeatures(_.withESVersion(ESVersion.ES2018))
   )
   .nativeSettings(
     crossScalaVersions := List(scala212Version, scala213Version),
