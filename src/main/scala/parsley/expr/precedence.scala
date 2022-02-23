@@ -12,8 +12,8 @@ object precedence {
     private def convertOperators[A, B](atom: Parsley[A], opList: Ops[A, B]): Parsley[B] = {
         implicit val wrap: A => B = opList.wrap
         opList match {
-            case Lefts(ops @ _*) => chain.left1(atom, choice(ops: _*))
-            case Rights(ops @ _*) => chain.right1(atom, choice(ops: _*))
+            case Lefts(ops @ _*) => infix.left1(atom, choice(ops: _*))
+            case Rights(ops @ _*) => infix.right1(atom, choice(ops: _*))
             case Prefixes(ops @ _*) => chain.prefix(choice(ops: _*), parsley.XCompat.applyWrap(wrap)(atom))
             // FIXME: Postfix operators which are similar to binary ops may fail, how can we work around this?
             case Postfixes(ops @ _*) => chain.postfix(parsley.XCompat.applyWrap(wrap)(atom), choice(ops: _*))

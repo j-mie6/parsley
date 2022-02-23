@@ -2,7 +2,7 @@ package parsley
 
 import parsley.character.digit
 import parsley.implicits.character.{charLift, stringLift}
-import parsley.expr.chain
+import parsley.expr.{chain, infix}
 import parsley.expr.{precedence, Ops, GOps, SOps, InfixL, InfixR, Prefix, Postfix, InfixN, Atoms}
 import parsley.Parsley._
 import parsley._
@@ -87,7 +87,7 @@ class ExpressionParserTests extends ParsleyTest {
         sealed trait Expr
         case class Add(x: Int, y: Expr) extends Expr
         case class Num(x: Int) extends Expr
-        val p = chain.right1("1" #> 1, "+" #> ((x: Int, y: Expr) => Add(x, y)))(Num)
+        val p = infix.right1("1" #> 1, "+" #> ((x: Int, y: Expr) => Add(x, y)))(Num)
         p.parse("1+1+1") should be (Success(Add(1, Add(1, Num(1)))))
         p.parse("1") should be (Success(Num(1)))
     }
@@ -120,7 +120,7 @@ class ExpressionParserTests extends ParsleyTest {
         sealed trait Expr
         case class Add(x: Expr, y: Int) extends Expr
         case class Num(x: Int) extends Expr
-        chain.left1("1" #> 1, "+".#>[(Expr, Int) => Expr](Add.apply))(Num).parse("1+1+1") should be (Success(Add(Add(Num(1), 1), 1)))
+        infix.left1("1" #> 1, "+".#>[(Expr, Int) => Expr](Add.apply))(Num).parse("1+1+1") should be (Success(Add(Add(Num(1), 1), 1)))
     }
     "chain.left" must "allow for no initial value" in {
         chain.left("11" #> 1, '+' #> ((x: Int, y: Int) => x + y), 0).parse("11") should be (Success(1))
