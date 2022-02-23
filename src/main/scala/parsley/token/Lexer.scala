@@ -6,7 +6,7 @@ import parsley.lift.lift2
 import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
 import parsley.Parsley, Parsley.{void, unit, attempt, pure, empty, notFollowedBy}
 import parsley.errors.combinator.{fail, amend, entrench, unexpected, ErrorMethods}
-import parsley.implicits.character.{charLift, stringLift}
+import parsley.implicits.character.charLift
 import parsley.internal.deepembedding
 
 import scala.language.implicitConversions

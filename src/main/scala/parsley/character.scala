@@ -65,7 +65,7 @@ object character
     /**As the dual of `oneOf`, `noneOf(cs)` succeeds if the current character is not in the supplied
       * set of characters `cs`. Returns the parsed character.*/
     def noneOf(cs: Set[Char]): Parsley[Char] = cs.size match {
-        case 0 => anyChar
+        case 0 => item
         case 1 => satisfy(cs.head != _).label(s"anything except ${renderChar(cs.head)}")
         case _ => satisfy(!cs.contains(_)).label {
             val Some(label) = parsley.errors.helpers.combineAsList(cs.map(renderChar).toList)
@@ -80,7 +80,7 @@ object character
     /**As the dual of `oneOf`, `noneOf(cs)` succeeds if the current character is not in the supplied
       * sequence of characters `cs`. Returns the parsed character.*/
     def noneOf(cs: NumericRange[Char]): Parsley[Char] = cs.size match {
-        case 0 => anyChar
+        case 0 => item
         case 1 => satisfy(cs.head != _).label(s"anything except ${renderChar(cs.head)}")
         case _ if Math.abs(cs(0).toInt - cs(1).toInt) == 1 => satisfy(!cs.contains(_)).label {
             s"anything outside of ${renderChar(cs.min)} to ${renderChar(cs.max)}"
