@@ -208,10 +208,9 @@ jobs:
     needs: validate
     if: >-
       !contains(github.event.head_commit.message, '[skip ci]') &&
-      !contains(github.event.head_commit.message, '[skip jvm]')
-
-    #&&  (github.ref == 'refs/heads/master' && (needs.validate.result == 'success' || needs.validate.result == 'skipped') ||
-    #github.event_name == 'pull_request' && (needs.validate.result == 'success' || needs.validate.result == 'skipped'))
+      !contains(github.event.head_commit.message, '[skip jvm]') &&
+      (github.ref == 'refs/heads/master' && (needs.validate.result == 'success' || needs.validate.result == 'skipped') ||
+      github.event_name == 'pull_request' && (needs.validate.result == 'success' || needs.validate.result == 'skipped'))
 
     env:
       SCALA_VERSION: 2.13.7
