@@ -31,15 +31,14 @@ object mixed {
     /**
       * @since 4.0.0
       */
-    def left1[A, B](p: =>Parsley[A], uop: =>Parsley[B => B], bop: =>Parsley[(B, A) => B])
+    def left1[A, B](p: Parsley[A], uop: =>Parsley[B => B], bop: =>Parsley[(B, A) => B])
                    (implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${B}") wrap: A => B): Parsley[B] = {
-        lazy val _p = p
         lazy val _uop = uop
         lazy val uops = _uop.foldLeft(identity[B] _)(_ compose _)
         lazy val rest: Parsley[B => B] = (
-                lift4((b: (B, A) => B, y: A, u: B => B, r: B => B) => (x: B) => r(u(b(x, y))), bop, _p, uops, rest)
+                lift4((b: (B, A) => B, y: A, u: B => B, r: B => B) => (x: B) => r(u(b(x, y))), bop, p, uops, rest)
             <|> pure(identity[B] _)
         )
-        chain.postfix(_p.map(wrap), _uop) <**> rest
+        chain.postfix(p.map(wrap), _uop) <**> rest
     }
 }
