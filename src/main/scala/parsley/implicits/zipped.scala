@@ -9,6 +9,8 @@ import scala.language.implicitConversions
 /**
   * Provides an alterative to the `f.lift(x, y)` syntax that is instead `(x, y).zipped(f)`. This is prefered when type inferences fails. Also enables a
   * parameterless `zipped` method, to pair an arbitrary number of parsers such that `(p, q).zipped = p.zip(q)`
+  *
+  * Warning: these methods are *not* lazy like the `lift` syntax or `liftN` functions!
   * @since 3.0.0
   */
 object zipped
@@ -23,155 +25,133 @@ object zipped
         def zipped[R](f: (T1, T2, T3) => R): Parsley[R] = lift3(f, t._1, t._2, t._3)
         def zipped: Parsley[(T1, T2, T3)] = this.zipped((_, _, _))
     }
-    /** Compared with Zipped2, this class is lazy in the receiver and exposes `lazyZipped` instead, to avoid a clash with the `zipped` from Scala tuples. */
-    implicit final class LazyZipped2[T1, T2](t: =>(Parsley[T1], Parsley[T2])) {
-        lazy val (p1, p2) = t
-        def lazyZipped[R](f: (T1, T2) => R): Parsley[R] = lift2(f, p1, p2)
-        def lazyZipped: Parsley[(T1, T2)] = this.lazyZipped((_, _))
-    }
-    /** Compared with Zipped3, this class is lazy in the receiver and exposes `lazyZipped` instead, to avoid a clash with the `zipped` from Scala tuples. */
-    implicit final class LazyZipped3[T1, T2, T3](t: =>(Parsley[T1], Parsley[T2], Parsley[T3])) {
-        lazy val (p1, p2, p3) = t
-        def lazyZipped[R](f: (T1, T2, T3) => R): Parsley[R] = lift3(f, p1, p2, p3)
-        def lazyZipped: Parsley[(T1, T2, T3)] = this.lazyZipped((_, _, _))
-    }
-    implicit final class Zipped4[T1, T2, T3, T4](t: =>(Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4])) {
-        lazy val (p1, p2, p3, p4) = t
-        def zipped[R](f: (T1, T2, T3, T4) => R): Parsley[R] = lift4(f, p1, p2, p3, p4)
+    implicit final class Zipped4[T1, T2, T3, T4](private val t: (Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4])) extends AnyVal {
+        def zipped[R](f: (T1, T2, T3, T4) => R): Parsley[R] = lift4(f, t._1, t._2, t._3, t._4)
         def zipped: Parsley[(T1, T2, T3, T4)] = this.zipped((_, _, _, _))
     }
-    implicit final class Zipped5[T1, T2, T3, T4, T5](t: =>(Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5])) {
-        lazy val (p1, p2, p3, p4, p5) = t
-        def zipped[R](f: (T1, T2, T3, T4, T5) => R): Parsley[R] = lift5(f, p1, p2, p3, p4, p5)
+    implicit final class Zipped5[T1, T2, T3, T4, T5](private val t: (Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5])) extends AnyVal {
+        def zipped[R](f: (T1, T2, T3, T4, T5) => R): Parsley[R] = lift5(f, t._1, t._2, t._3, t._4, t._5)
         def zipped: Parsley[(T1, T2, T3, T4, T5)] = this.zipped((_, _, _, _, _))
     }
-    implicit final class Zipped6[T1, T2, T3, T4, T5, T6](t: =>(Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6])) {
-        lazy val (p1, p2, p3, p4, p5, p6) = t
-        def zipped[R](f: (T1, T2, T3, T4, T5, T6) => R): Parsley[R] = lift6(f, p1, p2, p3, p4, p5, p6)
+    implicit final class Zipped6[T1, T2, T3, T4, T5, T6]
+        (private val t: (Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6])) extends AnyVal {
+        def zipped[R](f: (T1, T2, T3, T4, T5, T6) => R): Parsley[R] = lift6(f, t._1, t._2, t._3, t._4, t._5, t._6)
         def zipped: Parsley[(T1, T2, T3, T4, T5, T6)] = this.zipped((_, _, _, _, _, _))
     }
-    implicit final class Zipped7[T1, T2, T3, T4, T5, T6, T7](t: =>(Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7])) {
-        lazy val (p1, p2, p3, p4, p5, p6, p7) = t
-        def zipped[R](f: (T1, T2, T3, T4, T5, T6, T7) => R): Parsley[R] = lift7(f, p1, p2, p3, p4, p5, p6, p7)
+    implicit final class Zipped7[T1, T2, T3, T4, T5, T6, T7]
+        (private val t: (Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7])) extends AnyVal {
+        def zipped[R](f: (T1, T2, T3, T4, T5, T6, T7) => R): Parsley[R] = lift7(f, t._1, t._2, t._3, t._4, t._5, t._6, t._7)
         def zipped: Parsley[(T1, T2, T3, T4, T5, T6, T7)] = this.zipped((_, _, _, _, _, _, _))
     }
     implicit final class Zipped8[T1, T2, T3, T4, T5, T6, T7, T8]
-        (t: =>(Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8])) {
-        lazy val (p1, p2, p3, p4, p5, p6, p7, p8) = t
-        def zipped[R](f: (T1, T2, T3, T4, T5, T6, T7, T8) => R): Parsley[R] = lift8(f, p1, p2, p3, p4, p5, p6, p7, p8)
+        (private val t: (Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8])) extends AnyVal {
+        def zipped[R](f: (T1, T2, T3, T4, T5, T6, T7, T8) => R): Parsley[R] = lift8(f, t._1, t._2, t._3, t._4, t._5, t._6, t._7, t._8)
         def zipped: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8)] = this.zipped((_, _, _, _, _, _, _, _))
     }
     implicit final class Zipped9[T1, T2, T3, T4, T5, T6, T7, T8, T9]
-        (t: =>(Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8], Parsley[T9])) {
-        lazy val (p1, p2, p3, p4, p5, p6, p7, p8, p9) = t
-        def zipped[R](f: (T1, T2, T3, T4, T5, T6, T7, T8, T9) => R): Parsley[R] = lift9(f, p1, p2, p3, p4, p5, p6, p7, p8, p9)
+        (private val t: (Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8], Parsley[T9])) extends AnyVal {
+        def zipped[R](f: (T1, T2, T3, T4, T5, T6, T7, T8, T9) => R): Parsley[R] = lift9(f, t._1, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9)
         def zipped: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9)] = this.zipped((_, _, _, _, _, _, _, _, _))
     }
     implicit final class Zipped10[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10]
-        (t: =>(Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8], Parsley[T9], Parsley[T10])) {
-        lazy val (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10) = t
-        def zipped[R](f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10) => R): Parsley[R] = lift10(f, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10)
+        (private val t: (Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8], Parsley[T9],
+                         Parsley[T10])) extends AnyVal {
+        def zipped[R](f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10) => R): Parsley[R] = lift10(f, t._1, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10)
         def zipped: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10)] = this.zipped((_, _, _, _, _, _, _, _, _, _))
     }
     implicit final class Zipped11[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11]
-        (t: =>(Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8], Parsley[T9], Parsley[T10],
-               Parsley[T11])) {
-        lazy val (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11) = t
-        def zipped[R](f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11) => R): Parsley[R] = lift11(f, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11)
+        (private val t: (Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8], Parsley[T9], Parsley[T10],
+                         Parsley[T11])) extends AnyVal {
+        def zipped[R](f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11) => R): Parsley[R] =
+            lift11(f, t._1, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10, t._11)
         def zipped: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11)] = this.zipped((_, _, _, _, _, _, _, _, _, _, _))
     }
     implicit final class Zipped12[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12]
-        (t: =>(Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8], Parsley[T9], Parsley[T10], Parsley[T11],
-               Parsley[T12])) {
-        lazy val (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12) = t
-        def zipped[R](f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12) => R): Parsley[R] = lift12(f, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12)
+        (private val t: (Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8], Parsley[T9], Parsley[T10],
+                         Parsley[T11], Parsley[T12])) extends AnyVal {
+        def zipped[R](f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12) => R): Parsley[R] =
+            lift12(f, t._1, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10, t._11, t._12)
         def zipped: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12)] = this.zipped((_, _, _, _, _, _, _, _, _, _, _, _))
     }
     implicit final class Zipped13[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13]
-        (t: =>(Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8], Parsley[T9], Parsley[T10], Parsley[T11],
-               Parsley[T12], Parsley[T13])) {
-        lazy val (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13) = t
+        (private val t: (Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8], Parsley[T9], Parsley[T10],
+                         Parsley[T11], Parsley[T12], Parsley[T13])) extends AnyVal {
         def zipped[R](f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13) => R): Parsley[R] =
-            lift13(f, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13)
+            lift13(f, t._1, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10, t._11, t._12, t._13)
         def zipped: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13)] = this.zipped((_, _, _, _, _, _, _, _, _, _, _, _, _))
     }
     implicit final class Zipped14[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14]
-        (t: =>(Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8], Parsley[T9], Parsley[T10], Parsley[T11],
-               Parsley[T12], Parsley[T13], Parsley[T14])) {
-        lazy val (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14) = t
+        (private val t: (Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8], Parsley[T9], Parsley[T10],
+                         Parsley[T11], Parsley[T12], Parsley[T13], Parsley[T14])) extends AnyVal {
         def zipped[R](f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14) => R): Parsley[R] =
-            lift14(f, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14)
+            lift14(f, t._1, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10, t._11, t._12, t._13, t._14)
         def zipped: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14)] = this.zipped((_, _, _, _, _, _, _, _, _, _, _, _, _, _))
     }
     implicit final class Zipped15[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15]
-        (t: =>(Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8], Parsley[T9], Parsley[T10], Parsley[T11],
-               Parsley[T12], Parsley[T13], Parsley[T14], Parsley[T15])) {
-        lazy val (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15) = t
+        (private val t: (Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8], Parsley[T9], Parsley[T10],
+                         Parsley[T11], Parsley[T12], Parsley[T13], Parsley[T14], Parsley[T15])) extends AnyVal {
         def zipped[R](f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15) => R): Parsley[R] =
-            lift15(f, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15)
+            lift15(f, t._1, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10, t._11, t._12, t._13, t._14, t._15)
         def zipped: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15)] = this.zipped((_, _, _, _, _, _, _, _, _, _, _, _, _, _, _))
     }
     implicit final class Zipped16[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16]
-        (t: =>(Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8], Parsley[T9], Parsley[T10], Parsley[T11],
-               Parsley[T12], Parsley[T13], Parsley[T14], Parsley[T15], Parsley[T16])) {
-        lazy val (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16) = t
+        (private val t: (Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8], Parsley[T9], Parsley[T10],
+                         Parsley[T11], Parsley[T12], Parsley[T13], Parsley[T14], Parsley[T15], Parsley[T16])) extends AnyVal {
         def zipped[R](f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16) => R): Parsley[R] =
-            lift16(f, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16)
+            lift16(f, t._1, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10, t._11, t._12, t._13, t._14, t._15, t._16)
         def zipped: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16)] =
             this.zipped((_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _))
     }
     implicit final class Zipped17[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17]
-        (t: =>(Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8], Parsley[T9], Parsley[T10], Parsley[T11],
-               Parsley[T12], Parsley[T13], Parsley[T14], Parsley[T15], Parsley[T16], Parsley[T17])) {
-        lazy val (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17) = t
+        (private val t: (Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8], Parsley[T9], Parsley[T10],
+                         Parsley[T11], Parsley[T12], Parsley[T13], Parsley[T14], Parsley[T15], Parsley[T16], Parsley[T17])) extends AnyVal {
         def zipped[R](f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17) => R): Parsley[R] =
-            lift17(f, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17)
+            lift17(f, t._1, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10, t._11, t._12, t._13, t._14, t._15, t._16, t._17)
         def zipped: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17)] =
             this.zipped((_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _))
     }
     implicit final class Zipped18[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18]
-        (t: =>(Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8], Parsley[T9], Parsley[T10], Parsley[T11],
-               Parsley[T12], Parsley[T13], Parsley[T14], Parsley[T15], Parsley[T16], Parsley[T17], Parsley[T18])) {
-        lazy val (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18) = t
+        (private val t: (Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8], Parsley[T9], Parsley[T10],
+                         Parsley[T11], Parsley[T12], Parsley[T13], Parsley[T14], Parsley[T15], Parsley[T16], Parsley[T17], Parsley[T18])) extends AnyVal {
         def zipped[R](f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18) => R): Parsley[R] =
-            lift18(f, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18)
+            lift18(f, t._1, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10, t._11, t._12, t._13, t._14, t._15, t._16, t._17, t._18)
         def zipped: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18)] =
             this.zipped((_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _))
     }
     implicit final class Zipped19[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19]
-        (t: =>(Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8], Parsley[T9], Parsley[T10], Parsley[T11],
-               Parsley[T12], Parsley[T13], Parsley[T14], Parsley[T15], Parsley[T16], Parsley[T17], Parsley[T18], Parsley[T19])) {
-        lazy val (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19) = t
+        (private val t: (Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8], Parsley[T9], Parsley[T10],
+                         Parsley[T11], Parsley[T12], Parsley[T13], Parsley[T14], Parsley[T15], Parsley[T16], Parsley[T17], Parsley[T18],
+                         Parsley[T19])) extends AnyVal {
         def zipped[R](f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19) => R): Parsley[R] =
-            lift19(f, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19)
+            lift19(f, t._1, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10, t._11, t._12, t._13, t._14, t._15, t._16, t._17, t._18, t._19)
         def zipped: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19)] =
             this.zipped((_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _))
     }
     implicit final class Zipped20[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20]
-        (t: =>(Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8], Parsley[T9], Parsley[T10], Parsley[T11],
-               Parsley[T12], Parsley[T13], Parsley[T14], Parsley[T15], Parsley[T16], Parsley[T17], Parsley[T18], Parsley[T19], Parsley[T20])) {
-        lazy val (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20) = t
+        (private val t: (Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8], Parsley[T9], Parsley[T10],
+                         Parsley[T11], Parsley[T12], Parsley[T13], Parsley[T14], Parsley[T15], Parsley[T16], Parsley[T17], Parsley[T18], Parsley[T19],
+                         Parsley[T20])) extends AnyVal {
         def zipped[R](f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20) => R): Parsley[R] =
-            lift20(f, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20)
+            lift20(f, t._1, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10, t._11, t._12, t._13, t._14, t._15, t._16, t._17, t._18, t._19, t._20)
         def zipped: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20)] =
             this.zipped((_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _))
     }
     implicit final class Zipped21[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21]
-        (t: =>(Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8], Parsley[T9], Parsley[T10], Parsley[T11],
-               Parsley[T12], Parsley[T13], Parsley[T14], Parsley[T15], Parsley[T16], Parsley[T17], Parsley[T18], Parsley[T19], Parsley[T20], Parsley[T21])) {
-        lazy val (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, p21) = t
+        (private val t: (Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8], Parsley[T9], Parsley[T10],
+                         Parsley[T11], Parsley[T12], Parsley[T13], Parsley[T14], Parsley[T15], Parsley[T16], Parsley[T17], Parsley[T18], Parsley[T19],
+                         Parsley[T20], Parsley[T21])) extends AnyVal {
         def zipped[R](f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21) => R): Parsley[R] =
-            lift21(f, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, p21)
+            lift21(f, t._1, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10, t._11, t._12, t._13, t._14, t._15, t._16, t._17, t._18, t._19, t._20, t._21)
         def zipped: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21)] =
             this.zipped((_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _))
     }
     implicit final class Zipped22[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22]
-        (t: =>(Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8], Parsley[T9], Parsley[T10], Parsley[T11],
-               Parsley[T12], Parsley[T13], Parsley[T14], Parsley[T15], Parsley[T16], Parsley[T17], Parsley[T18], Parsley[T19], Parsley[T20], Parsley[T21],
-               Parsley[T22])) {
-        lazy val (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, p21, p22) = t
+        (private val t: (Parsley[T1], Parsley[T2], Parsley[T3], Parsley[T4], Parsley[T5], Parsley[T6], Parsley[T7], Parsley[T8], Parsley[T9], Parsley[T10],
+                         Parsley[T11], Parsley[T12], Parsley[T13], Parsley[T14], Parsley[T15], Parsley[T16], Parsley[T17], Parsley[T18], Parsley[T19],
+                         Parsley[T20], Parsley[T21], Parsley[T22])) extends AnyVal {
         def zipped[R](f: (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22) => R): Parsley[R] =
-            lift22(f, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, p21, p22)
+            lift22(f, t._1, t._2, t._3, t._4, t._5, t._6, t._7, t._8, t._9, t._10, t._11,
+                      t._12, t._13, t._14, t._15, t._16, t._17, t._18, t._19, t._20, t._21, t._22)
         def zipped: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22)] =
             this.zipped((_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _))
     }

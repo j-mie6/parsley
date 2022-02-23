@@ -118,15 +118,14 @@ object combinator {
 
     /**`manyUntil(p, end)` applies parser `p` zero or more times until the parser `end` succeeds.
       * Returns a list of values returned by `p`. This parser can be used to scan comments.*/
-    def manyUntil[A, B](p: =>Parsley[A], end: Parsley[B]): Parsley[List[A]] = {
+    def manyUntil[A, B](p: Parsley[A], end: Parsley[B]): Parsley[List[A]] = {
         new Parsley(new deepembedding.ManyUntil((end #> deepembedding.ManyUntil.Stop <|> p).internal))
     }
 
     /**`someUntil(p, end)` applies parser `p` one or more times until the parser `end` succeeds.
       * Returns a list of values returned by `p`.*/
-    def someUntil[A, B](p: =>Parsley[A], end: Parsley[B]): Parsley[List[A]] = {
-        lazy val _p = p
-        notFollowedBy(end) *> (_p <::> manyUntil(_p, end))
+    def someUntil[A, B](p: Parsley[A], end: Parsley[B]): Parsley[List[A]] = {
+        notFollowedBy(end) *> (p <::> manyUntil(p, end))
     }
 
     /** `when(p, q)` will first perform `p`, and if the result is `true` will then execute `q` or else return unit.

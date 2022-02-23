@@ -2,7 +2,7 @@ package parsley
 
 import parsley.internal.machine.Context
 import parsley.internal.deepembedding
-import parsley.expr.chain
+import parsley.expr.{chain, infix}
 import parsley.combinator.{option, some}
 import parsley.Parsley.pure
 import parsley.errors.ErrorBuilder
@@ -271,7 +271,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: deepe
       * @return the result of reducing the results of `p` with `op`
       * @since 2.3.0
       */
-    def reduceLeft[B >: A](op: (B, A) => B): Parsley[B] = chain.left1(this, pure(op))
+    def reduceLeft[B >: A](op: (B, A) => B): Parsley[B] = infix.left1(this, pure(op))
     /**
       * A reduction for a parser: `p.reduceLeftOption(op)` will try executing `p` many times until it fails, combining the
       * results with left-associative application of `op`. If there is no `p`, it returns `None`, otherwise it returns
