@@ -8,23 +8,24 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.higherKinds
 
-import backend.StrictParsley
+import backend.CodeGenState
+import backend.StrictParsley.InstrBuffer
 
 // TODO: Tablification is too aggressive. It appears that `optional` is being compiled to jumptable
-private [parsley] final class <|>[A](_p: StrictParsley[A], _q: =>Parsley[A]) extends Binary[A, A, A](_p.asInstanceOf, _q, (l, r) => s"($l <|> $r)", new <|>(_, ???)) {
+private [parsley] final class <|>[A](_p: Parsley[A], _q: =>Parsley[A]) extends Binary[A, A, A](_p, _q, (l, r) => s"($l <|> $r)", new <|>(_, ???)) {
     override val numInstrs = 3
 
     override def optimise: Parsley[A] = (left, right) match {
         // left catch law: pure x <|> p = pure x
         case (u: Pure[A @unchecked], _) => u
         // alternative law: empty <|> p = p
-        case (Empty, v) => v.asInstanceOf
+        case (Empty, v) => v
         // alternative law: p <|> empty = p
         case (u, Empty) => u
         // associative law: (u <|> v) <|> w = u <|> (v <|> w)
         case (u <|> v, w) =>
             left = u
-            right = <|>[A](v, w.asInstanceOf).optimise
+            right = <|>[A](v, w).optimise
             this
         case _ => this
     }
@@ -210,5 +211,5 @@ private [parsley] object Empty extends Singleton[Nothing]("empty", instructions.
 
 private [deepembedding] object <|> {
     def apply[A](left: Parsley[A], right: Parsley[A]): <|>[A] = new <|>(left, ???).ready(right)
-    def unapply[A](self: <|>[A]): Some[(Parsley[A], Parsley[A])] = Some((self.left, self.right.asInstanceOf))
+    def unapply[A](self: <|>[A]): Some[(Parsley[A], Parsley[A])] = Some((self.left, self.right))
 }

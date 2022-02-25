@@ -8,16 +8,16 @@ import parsley.debug.{Breakpoint, EntryBreak, FullBreak, ExitBreak}
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.higherKinds
-
-import backend.StrictParsley
+import backend.CodeGenState
+import backend.StrictParsley.InstrBuffer
 
 private [parsley] final class Satisfy(private [Satisfy] val f: Char => Boolean, val expected: Option[String])
     extends Singleton[Char]("satisfy(f)", new instructions.Satisfies(f, expected))
 
-private [parsley] final class Attempt[A](_p: StrictParsley[A]) extends ScopedUnaryWithState[A, A](_p.asInstanceOf, "attempt", false, new Attempt(_), instructions.Attempt)
-private [parsley] final class Look[A](_p: StrictParsley[A]) extends ScopedUnaryWithState[A, A](_p.asInstanceOf, "lookAhead", true, new Look(_), instructions.Look)
-private [parsley] final class NotFollowedBy[A](_p: StrictParsley[A])
-    extends ScopedUnaryWithState[A, Unit](_p.asInstanceOf, "notFollowedBy", true, new NotFollowedBy(_), instructions.NotFollowedBy) {
+private [parsley] final class Attempt[A](_p: Parsley[A]) extends ScopedUnaryWithState[A, A](_p, "attempt", false, new Attempt(_), instructions.Attempt)
+private [parsley] final class Look[A](_p: Parsley[A]) extends ScopedUnaryWithState[A, A](_p, "lookAhead", true, new Look(_), instructions.Look)
+private [parsley] final class NotFollowedBy[A](_p: Parsley[A])
+    extends ScopedUnaryWithState[A, Unit](_p, "notFollowedBy", true, new NotFollowedBy(_), instructions.NotFollowedBy) {
     override def optimise: Parsley[Unit] = p match {
         case z: MZero => new Pure(())
         case _ => this
@@ -42,10 +42,10 @@ private [deepembedding] final class Let[A](var p: Parsley[A]) extends Parsley[A]
     }
     // $COVERAGE-ON$
     override def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: LetMap, recs: RecMap): Cont[R, Parsley[A_]] = {
-        for (p <- this.p.optimised) yield this.ready(p)
+        for (p <- this.p.optimised) yield this.ready(p.asInstanceOf[Parsley[A]])
     }
-    private def ready(p: StrictParsley[A]): this.type = {
-        this.p = p.asInstanceOf
+    private def ready(p: Parsley[A]): this.type = {
+        this.p = p
         processed = true
         this
     }
@@ -61,8 +61,8 @@ private [deepembedding] final class Let[A](var p: Parsley[A]) extends Parsley[A]
 private [parsley] object Line extends Singleton[Int]("line", instructions.Line)
 private [parsley] object Col extends Singleton[Int]("col", instructions.Col)
 private [parsley] final class Get[S](val reg: Reg[S]) extends Singleton[S](s"get($reg)", new instructions.Get(reg.addr)) with UsesRegister
-private [parsley] final class Put[S](val reg: Reg[S], _p: StrictParsley[S])
-    extends Unary[S, Unit](_p.asInstanceOf, c => s"put($reg, $c)", new Put(reg, _)) with UsesRegister {
+private [parsley] final class Put[S](val reg: Reg[S], _p: Parsley[S])
+    extends Unary[S, Unit](_p, c => s"put($reg, $c)", new Put(reg, _)) with UsesRegister {
     override val numInstrs = 1
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         p.codeGen |>
@@ -71,8 +71,8 @@ private [parsley] final class Put[S](val reg: Reg[S], _p: StrictParsley[S])
 }
 
 // $COVERAGE-OFF$
-private [parsley] final class Debug[A](_p: StrictParsley[A], name: String, ascii: Boolean, break: Breakpoint)
-    extends Unary[A, A](_p.asInstanceOf, identity[String], new Debug(_, name, ascii, break)) {
+private [parsley] final class Debug[A](_p: Parsley[A], name: String, ascii: Boolean, break: Breakpoint)
+    extends Unary[A, A](_p, identity[String], new Debug(_, name, ascii, break)) {
     override val numInstrs = 2
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val handler = state.freshLabel()

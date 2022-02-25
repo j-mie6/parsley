@@ -87,7 +87,7 @@ private [parsley] abstract class Parsley[+A] private [deepembedding] extends Str
     final private [deepembedding] var processed = false
     final private var calleeSaveNeeded = false
 
-    final private def generateCalleeSave[Cont[_, +_], R](bodyGen: =>Cont[R, Unit], allocatedRegs: List[Int])
+    /*final private def generateCalleeSave[Cont[_, +_], R](bodyGen: =>Cont[R, Unit], allocatedRegs: List[Int])
                                                         (implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         if (calleeSaveNeeded && allocatedRegs.nonEmpty) {
             val end = state.freshLabel()
@@ -100,11 +100,11 @@ private [parsley] abstract class Parsley[+A] private [deepembedding] extends Str
             }
         }
         else bodyGen
-    }
+    }*/
 
     final private def pipeline[Cont[_, +_]](implicit ops: ContOps[Cont, Unit]): Array[Instr] ={
-        implicit val instrs: InstrBuffer = new ResizableArray()
-        implicit val state: CodeGenState = new CodeGenState
+        //implicit val instrs: InstrBuffer = new ResizableArray()
+        implicit val state: backend.CodeGenState = new backend.CodeGenState
         implicit val letFinderState: LetFinderState = new LetFinderState
         implicit lazy val recMap: RecMap = new RecMap(letFinderState.recs, state)
         //val bindings = mutable.ListBuffer.empty[Binding]
@@ -115,10 +115,11 @@ private [parsley] abstract class Parsley[+A] private [deepembedding] extends Str
             implicit val seenSet: Set[Parsley[_]] = recMap.keys - rec.p
             (rec, rec.p.optimised)
         }
+        var sp: StrictParsley[A] = null
         perform {
             implicit val seenSet: Set[Parsley[_]] = Set.empty
-            findLets/* >> {
-                implicit val seenSet: Set[Parsley[_]] = letFinderState.recs
+            findLets >> {
+                /*implicit val seenSet: Set[Parsley[_]] = letFinderState.recs
                 //implicit val usedRegs: Set[Reg[_]] = letFinderState.usedRegs
                 implicit val letMap: LetMap = new LetMap(letFinderState.lets)
                 //bindings ++= recMap
@@ -131,10 +132,13 @@ private [parsley] abstract class Parsley[+A] private [deepembedding] extends Str
                     instrs += instructions.Halt
                     finaliseRecs(recs_)
                     finaliseLets(bindings)
-                }*/
-            }*/
+                }*/*/
+                optimised.map(p => sp = p)
+            }
         }
-        generateInstructions(usedRegs, recs_)
+        //if (calleeSaveNeeded) sp.demandCalleeSave()
+        //TODO: We need this to work on sp, but the callee-save characteristics are not getting ported
+        generateInstructions(sp, usedRegs, recs_)
         //finaliseInstrs(instrs, state, recMap, bindings.toList)
     }
 
@@ -255,7 +259,7 @@ private [parsley] abstract class Parsley[+A] private [deepembedding] extends Str
 
 private [deepembedding] trait Binding {
     // When these are used by tco, the call instructions labels have already been shifted, but lets have not
-    final def location(labelMap: Array[Int])(implicit state: CodeGenState): Int = this match {
+    final def location(labelMap: Array[Int])(implicit state: backend.CodeGenState): Int = this match {
         case self: Rec[_] => self.label
         case self: Let[_] => labelMap(self.label)
     }
@@ -274,7 +278,7 @@ private [deepembedding] trait UsesRegister {
 }
 
 // Internals
-private [deepembedding] class CodeGenState {
+/*private [deepembedding] class CodeGenState {
     private var current = 0
     private val queue = mutable.ListBuffer.empty[Let[_]]
     private val map = mutable.Map.empty[Let[_], Int]
@@ -293,7 +297,7 @@ private [deepembedding] class CodeGenState {
     def nextLet(): Let[_] = queue.remove(0)
     def more: Boolean = queue.nonEmpty
     def subsExist: Boolean = map.nonEmpty
-}
+}*/
 
 private [deepembedding] class LetFinderState {
     private val _recs = mutable.Set.empty[Parsley[_]]
@@ -325,7 +329,7 @@ private [deepembedding] class LetMap(lets: Iterable[Parsley[_]]) extends ParserM
     def make(p: Parsley[_]): Let[_] = new Let(p)
 }
 
-private [deepembedding] class RecMap(recs: Iterable[Parsley[_]], state: CodeGenState) extends ParserMap[Rec](recs) with Iterable[Rec[_]] {
+private [deepembedding] class RecMap(recs: Iterable[Parsley[_]], state: backend.CodeGenState) extends ParserMap[Rec](recs) with Iterable[Rec[_]] {
     def make(p: Parsley[_]): Rec[_] = new Rec(p, new instructions.Call(state.freshLabel()))
     override def iterator: Iterator[Rec[_]] = map.values.iterator
 }
