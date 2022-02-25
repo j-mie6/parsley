@@ -9,8 +9,8 @@ import backend.StrictParsley.InstrBuffer
 
 // Core Embedding
 private [parsley] abstract class Singleton[A](pretty: String, instr: =>instructions.Instr) extends Parsley[A] {
-    final override def findLetsAux[Cont[_, +_], R]
-        (implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState): Cont[R, Unit] = result(())
+    final override def findLetsAux[Cont[_, +_], R](seen: Set[Parsley[_]])
+        (implicit ops: ContOps[Cont, R], state: LetFinderState): Cont[R, Unit] = result(())
     final override def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]],
                                                                     lets: LetMap, recs: RecMap): Cont[R, Parsley[A_]] = result(this)
     final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
@@ -25,8 +25,8 @@ private [deepembedding] abstract class Unary[A, B](private [deepembedding] var p
     extends Parsley[B] {
     protected val childRepeats: Int = 1
     protected val numInstrs: Int
-    final override def findLetsAux[Cont[_, +_], R]
-        (implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState): Cont[R,Unit] = p.findLets
+    final override def findLetsAux[Cont[_, +_], R](seen: Set[Parsley[_]])
+        (implicit ops: ContOps[Cont, R], state: LetFinderState): Cont[R,Unit] = p.findLets(seen)
     override def preprocess[Cont[_, +_], R, B_ >: B](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]],
                                                               lets: LetMap, recs: RecMap): Cont[R, Parsley[B_]] =
         for (p <- p.optimised) yield make(p.asInstanceOf[Parsley[A]]).ready()
@@ -65,9 +65,9 @@ private [deepembedding] abstract class Binary[A, B, C](private [deepembedding] v
     protected val numInstrs: Int
     protected val leftRepeats: Int = 1
     protected val rightRepeats: Int = 1
-    final override def findLetsAux[Cont[_, +_], R]
-        (implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState): Cont[R,Unit] = {
-        left.findLets >> _right.findLets
+    final override def findLetsAux[Cont[_, +_], R](seen: Set[Parsley[_]])
+        (implicit ops: ContOps[Cont, R], state: LetFinderState): Cont[R,Unit] = {
+        left.findLets(seen) >> _right.findLets(seen)
     }
     final override def preprocess[Cont[_, +_], R, C_ >: C](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]],
                                                                     lets: LetMap, recs: RecMap): Cont[R, Parsley[C_]] =
@@ -95,9 +95,9 @@ private [deepembedding] abstract class Ternary[A, B, C, D](private [deepembeddin
     private [deepembedding] var second: Parsley[B] = _
     private [deepembedding] var third: Parsley[C] = _
     protected val numInstrs: Int
-    final override def findLetsAux[Cont[_, +_], R]
-        (implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState): Cont[R, Unit] = {
-        first.findLets >> _second.findLets >> _third.findLets
+    final override def findLetsAux[Cont[_, +_], R](seen: Set[Parsley[_]])
+        (implicit ops: ContOps[Cont, R], state: LetFinderState): Cont[R, Unit] = {
+        first.findLets(seen) >> _second.findLets(seen) >> _third.findLets(seen)
     }
     final override def preprocess[Cont[_, +_], R, D_ >: D](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]],
                                                                     lets: LetMap, recs: RecMap): Cont[R, Parsley[D_]] =

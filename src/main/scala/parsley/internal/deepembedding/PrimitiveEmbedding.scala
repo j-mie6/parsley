@@ -37,7 +37,7 @@ private [deepembedding] final class Rec[A](private [deepembedding] val p: Parsle
 private [deepembedding] final class Let[A](var p: Parsley[A]) extends Parsley[A] with Binding {
     def label(implicit state: CodeGenState): Int = state.getLabel(this)
     // $COVERAGE-OFF$
-    override def findLetsAux[Cont[_, +_], R](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], state: LetFinderState): Cont[R, Unit] = {
+    override def findLetsAux[Cont[_, +_], R](seen: Set[Parsley[_]])(implicit ops: ContOps[Cont, R], state: LetFinderState): Cont[R, Unit] = {
         throw new Exception("Lets cannot exist during let detection")
     }
     // $COVERAGE-ON$
