@@ -28,10 +28,9 @@ private [parsley] abstract class Parsley[+A] private [deepembedding] extends Str
     // $COVERAGE-ON$
 
     // $COVERAGE-OFF$
-    final def unsafe(): Unit = safe = false
+    //final def unsafe(): Unit = safe = false
     final def force(): Unit = instrs
-    // $COVERAGE-OFF$
-    final def overflows(): Unit = cps = true
+    //final def overflows(): Unit = cps = true
     // $COVERAGE-ON$
     private [deepembedding] def demandCalleeSave(): this.type = {
         calleeSaveNeeded = true
@@ -76,10 +75,12 @@ private [parsley] abstract class Parsley[+A] private [deepembedding] extends Str
             for (p <- fixed.preprocess) yield p.optimise
         }
     }
-    final private [deepembedding] var safe = true
-    final private var cps = false
+    //final private [deepembedding] var safe = true
+    //final private var cps = false
     final private [deepembedding] var processed = false
     final private [deepembedding] var calleeSaveNeeded = false
+    val size = 0
+    final private [deepembedding] var _size: Int = 1
 
     final private def pipeline[Cont[_, +_]](implicit ops: ContOps[Cont, Unit]): Array[Instr] ={
         implicit val state: backend.CodeGenState = new backend.CodeGenState
@@ -100,6 +101,8 @@ private [parsley] abstract class Parsley[+A] private [deepembedding] extends Str
             implicit val seenSet: Set[Parsley[_]] = recMap.keys - rec.p
             (rec, rec.p.optimised)
         }
+        sp.cps = cps
+        sp.safe = safe
         sp.generateInstructions(calleeSaveNeeded, usedRegs, recs_)
     }
 

@@ -1,13 +1,13 @@
-package parsley.internal.deepembedding
+package parsley.internal.deepembedding.backend
 
 import scala.collection.mutable
 import parsley.internal.machine.instructions, instructions.Instr
 
 private [deepembedding] object PreservationAnalysis {
-    def determinePreserve(recs: Iterable[Rec[_]], instrs: Array[Instr]): Unit = if (recs.nonEmpty) {
+    def determinePreserve(recs: Iterable[parsley.internal.deepembedding.Rec[_]], instrs: Array[Instr]): Unit = if (recs.nonEmpty) {
         var start = System.currentTimeMillis()
         implicit val coordinator: EventCoordinator = new EventCoordinator
-        val recReactors = mutable.ListBuffer.empty[(Rec[_], DataflowReactor)]
+        val recReactors = mutable.ListBuffer.empty[(parsley.internal.deepembedding.Rec[_], DataflowReactor)]
         val reactors = mutable.Map.empty[Int, DataflowReactor]
         val sources = mutable.Map.empty[Int, EventSource[Iterable[Int]]]
         val dependencies = new EventSource[(DataflowReactor, Int)]

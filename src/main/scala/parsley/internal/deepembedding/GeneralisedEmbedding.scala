@@ -32,7 +32,7 @@ private [deepembedding] abstract class Unary[A, B](private [deepembedding] var p
         for (p <- p.optimised) yield make(p.asInstanceOf[Parsley[A]]).ready()
     private [deepembedding] def ready(): this.type = {
         processed = true
-        size = p.size + numInstrs
+        _size = p._size + numInstrs
         this
     }
     // $COVERAGE-OFF$
@@ -77,7 +77,7 @@ private [deepembedding] abstract class Binary[A, B, C](private [deepembedding] v
     private [deepembedding] def ready(right: Parsley[B]): this.type = {
         processed = true
         this.right = right
-        size = leftRepeats * left.size + rightRepeats * right.size + numInstrs
+        _size = leftRepeats * left._size + rightRepeats * right._size + numInstrs
         this
     }
     // $COVERAGE-OFF$
@@ -108,7 +108,7 @@ private [deepembedding] abstract class Ternary[A, B, C, D](private [deepembeddin
         processed = true
         this.second = second
         this.third = third
-        size = first.size + second.size + third.size + numInstrs
+        _size = first._size + second._size + third._size + numInstrs
         this
     }
     // $COVERAGE-OFF$

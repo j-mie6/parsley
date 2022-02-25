@@ -49,7 +49,7 @@ private [deepembedding] final class Let[A](var p: Parsley[A]) extends Parsley[A]
         processed = true
         this
     }
-    override def optimise: Parsley[A] = if (p.size <= 1) p else this
+    override def optimise: Parsley[A] = if (p._size <= 1) p else this
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         result(instrs += new instructions.GoSub(label))
     }
