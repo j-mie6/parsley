@@ -7,14 +7,16 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.higherKinds
 
+import backend.StrictParsley
+
 // Core Embedding
 private [parsley] final class Pure[A](private [Pure] val x: A) extends Singleton[A](s"pure($x)", new instructions.Push(x))
 
-private [parsley] final class <*>[A, B](_pf: Parsley[A => B], _px: =>Parsley[A])
-    extends Binary[A => B, A, B](_pf, _px, (l, r) => s"($l <*> $r)", new <*>(_, ???)) {
+private [parsley] final class <*>[A, B](_pf: StrictParsley[A => B], _px: =>Parsley[A])
+    extends Binary[A => B, A, B](_pf.asInstanceOf, _px, (l, r) => s"($l <*> $r)", new <*>(_, ???)) {
     override val numInstrs = 1
     // TODO: Refactor
-    override def optimise: Parsley[B] = (left, right) match {
+    override def optimise: StrictParsley[B] = (left, right) match {
         // Fusion laws
         case (uf, Pure(x)) if uf.isInstanceOf[Pure[_]] || uf.isInstanceOf[_ <*> _] && uf.safe => uf match {
             // first position fusion
@@ -42,13 +44,13 @@ private [parsley] final class <*>[A, B](_pf: Parsley[A => B], _px: =>Parsley[A])
         case (z: MZero, _) => z
         /* RE-ASSOCIATION LAWS */
         // re-association law 1: (q *> left) <*> right = q *> (left <*> right)
-        case (q *> uf, ux) => *>(q, <*>(uf, ux).optimise)
+        case (q *> uf, ux) => *>(q, <*>(uf.asInstanceOf, ux.asInstanceOf).optimise.asInstanceOf)
         case (uf, seq: Seq[_, _, A @unchecked]) => seq match {
             // re-association law 2: left <*> (right <* q) = (left <*> right) <* q
-            case ux <* v => <*(<*>(uf, ux).optimise, v).optimise
+            case ux <* v => <*(<*>(uf, ux).optimise.asInstanceOf, v).optimise
             // re-association law 3: p *> pure x = pure x <* p
             // consequence of re-association law 3: left <*> (q *> pure x) = (left <*> pure x) <* q
-            case v *> (ux: Pure[_]) => <*(<*>(uf, ux).optimise, v).optimise
+            case v *> (ux: Pure[_]) => <*(<*>(uf, ux).optimise.asInstanceOf, v).optimise
             case _ => this
         }
         // consequence of left zero law and monadic definition of <*>, preserving error properties of left
@@ -76,8 +78,8 @@ private [parsley] final class <*>[A, B](_pf: Parsley[A => B], _px: =>Parsley[A])
     }
 }
 
-private [parsley] final class >>=[A, B](_p: Parsley[A], private [>>=] val f: A => Parsley[B])
-    extends Unary[A, B](_p, l => s"($l >>= ?)", new >>=(_, f)) {
+private [parsley] final class >>=[A, B](_p: StrictParsley[A], private [>>=] val f: A => Parsley[B])
+    extends Unary[A, B](_p.asInstanceOf, l => s"($l >>= ?)", new >>=(_, f)) {
     override val numInstrs = 1
     override def optimise: Parsley[B] = p match {
         // monad law 1: pure x >>= f = f x
@@ -103,10 +105,10 @@ private [parsley] final class >>=[A, B](_p: Parsley[A], private [>>=] val f: A =
     }
 }
 
-private [deepembedding] sealed abstract class Seq[A, B, Res](_left: Parsley[A], _right: =>Parsley[B], pretty: String, make: Parsley[A]=>Seq[A, B, Res])
-    extends Binary[A, B, Res](_left, _right, (l, r) => s"($l $pretty $r)", make) {
-    def result: Parsley[Res]
-    def discard: Parsley[_]
+private [deepembedding] sealed abstract class Seq[A, B, Res](_left: StrictParsley[A], _right: =>Parsley[B], pretty: String, make: StrictParsley[A]=>Seq[A, B, Res])
+    extends Binary[A, B, Res](_left.asInstanceOf, _right, (l, r) => s"($l $pretty $r)", make) {
+    def result: StrictParsley[Res]
+    def discard: StrictParsley[_]
     def result_=(p: Parsley[Res]): Unit
     def discard_=(p: Parsley[_]): Unit
     final override val numInstrs = 1
@@ -114,13 +116,13 @@ private [deepembedding] sealed abstract class Seq[A, B, Res](_left: Parsley[A], 
     private def buildResult[R](s: String, r: R, ex1: Option[String], ex2: Option[String]) = {
         makeSeq(new StringTok(s, if (ex1.nonEmpty) ex1 else ex2), new Pure(r.asInstanceOf[Res]))
     }
-    private def optimiseStringResult(s: String, ex: Option[String]): Parsley[Res] = result match {
+    private def optimiseStringResult(s: String, ex: Option[String]): StrictParsley[Res] = result match {
         case ct@CharTok(c) => buildResult(combineSeq(s, c.toString), c, ex, ct.expected)
         case st@StringTok(t) => buildResult(combineSeq(s, t), t, ex, st.expected)
     }
-    protected def makeSeq(str: Parsley[String], res: Pure[Res]): Parsley[Res]
+    protected def makeSeq(str: Parsley[String], res: Pure[Res]): StrictParsley[Res]
     protected def combineSeq(sdis: String, sres: String): String
-    final protected def optimiseSeq: Option[Parsley[Res]] = discard match {
+    final protected def optimiseSeq: Option[StrictParsley[Res]] = discard match {
         // pure _ *> p = p = p <* pure _
         case _: Pure[_] => Some(result)
         // p *> pure _ *> q = p *> q, p <* (q *> pure _) = p <* q
@@ -142,18 +144,18 @@ private [deepembedding] sealed abstract class Seq[A, B, Res](_left: Parsley[A], 
         case _ => default
     }
 }
-private [parsley] final class *>[A](_p: Parsley[_], _q: =>Parsley[A]) extends Seq[Any, A, A](_p, _q, "*>", new *>(_, ???)) {
-    override def result: Parsley[A] = right
+private [parsley] final class *>[A](_p: StrictParsley[_], _q: =>Parsley[A]) extends Seq[Any, A, A](_p, _q, "*>", new *>(_, ???)) {
+    override def result: StrictParsley[A] = right
     override def discard: Parsley[_] = left
     override def result_=(p: Parsley[A]): Unit = right = p
     override def discard_=(p: Parsley[_]): Unit = left = p
-    def makeSeq(str: Parsley[String], res: Pure[A]): Parsley[A] = {
+    def makeSeq(str: Parsley[String], res: Pure[A]): StrictParsley[A] = {
         discard = str
         result = res
         optimise
     }
     def combineSeq(sdis: String, sres: String): String = sdis + sres
-    @tailrec override def optimise: Parsley[A] = optimiseSeq match {
+    @tailrec override def optimise: StrictParsley[A] = optimiseSeq match {
         case Some(p) => p
         case None => discard match {
             // mzero *> p = mzero (left zero and definition of *> in terms of >>=)
@@ -161,7 +163,7 @@ private [parsley] final class *>[A](_p: Parsley[_], _q: =>Parsley[A]) extends Se
             case u => result match {
                 // re-association - normal form of Then chain is to have result at the top of tree
                 case v *> w =>
-                    discard = *>(u, v).optimiseDefinitelyNotTailRec
+                    discard = *>(u, v).optimiseDefinitelyNotTailRec.asInstanceOf
                     result = w
                     optimise
                 case _ => this
@@ -175,28 +177,28 @@ private [parsley] final class *>[A](_p: Parsley[_], _q: =>Parsley[A]) extends Se
         }
     }
 }
-private [parsley] final class <*[A](_p: Parsley[A], _q: =>Parsley[_]) extends Seq[A, Any, A](_p, _q, "<*", new <*(_, ???)) {
+private [parsley] final class <*[A](_p: StrictParsley[A], _q: =>Parsley[_]) extends Seq[A, Any, A](_p, _q, "<*", new <*(_, ???)) {
     override def result: Parsley[A] = left
-    override def discard: Parsley[_] = right
+    override def discard: StrictParsley[_] = right
     override def result_=(p: Parsley[A]): Unit = left = p
     override def discard_=(p: Parsley[_]): Unit = right = p
 
     def makeSeq(str: Parsley[String], res: Pure[A]): Parsley[A] = *>(str, res)
     def combineSeq(sdis: String, sres: String): String = sres + sdis
-    @tailrec override def optimise: Parsley[A] =  optimiseSeq match {
+    @tailrec override def optimise: StrictParsley[A] =  optimiseSeq match {
         case Some(p) => p
         case None => discard match {
             // p <* mzero = p *> mzero (by preservation of error messages and failure properties) - This moves the pop instruction after the failure
             case z: MZero => *>(result, z)
             case w => result match {
                 // re-association law 3: pure x <* p = p *> pure x
-                case u: Pure[_] => *>(w, u).optimise
+                case u: Pure[_] => *>(w.asInstanceOf, u).optimise
                 // mzero <* p = mzero (left zero law and definition of <* in terms of >>=)
                 case z: MZero => z
                 // re-association - normal form of Prev chain is to have result at the top of tree
                 case u <* v =>
                     result = u
-                    discard = <*(v, w).optimiseDefinitelyNotTailRec
+                    discard = <*(v, w.asInstanceOf).optimiseDefinitelyNotTailRec.asInstanceOf
                     optimise
                 case _ => this
             }
@@ -214,20 +216,20 @@ private [deepembedding] object Pure {
 }
 private [deepembedding] object <*> {
     def apply[A, B](left: Parsley[A=>B], right: Parsley[A]): <*>[A, B] = new <*>[A, B](left, ???).ready(right)
-    def unapply[A, B](self: <*>[A, B]): Some[(Parsley[A=>B], Parsley[A])] = Some((self.left, self.right))
+    def unapply[A, B](self: <*>[A, B]): Some[(Parsley[A=>B], Parsley[A])] = Some((self.left, self.right.asInstanceOf))
 }
 private [deepembedding] object >>= {
     def apply[A, B](p: Parsley[A], f: A => Parsley[B]): >>=[A, B] = new >>=(p, f).ready()
     def unapply[A, B](self: >>=[A, B]): Some[(Parsley[A], A => Parsley[B])] = Some((self.p, self.f))
 }
 private [deepembedding] object Seq {
-    def unapply[A, B, Res](self: Seq[A, B, Res]): Some[(Parsley[_], Parsley[Res])] = Some((self.discard, self.result))
+    def unapply[A, B, Res](self: Seq[A, B, Res]): Some[(Parsley[_], Parsley[Res])] = Some((self.discard.asInstanceOf, self.result.asInstanceOf))
 }
 private [deepembedding] object *> {
     def apply[A](left: Parsley[_], right: Parsley[A]): *>[A]= new *>(left, ???).ready(right)
-    def unapply[A](self: *>[A]): Some[(Parsley[_], Parsley[A])] = Some((self.discard, self.result))
+    def unapply[A](self: *>[A]): Some[(Parsley[_], Parsley[A])] = Some((self.discard, self.result.asInstanceOf))
 }
 private [deepembedding] object <* {
     def apply[A](left: Parsley[A], right: Parsley[_]): <*[A] = new <*(left, ???).ready(right)
-    def unapply[A](self: <*[A]): Some[(Parsley[A], Parsley[_])] = Some((self.result, self.discard))
+    def unapply[A](self: <*[A]): Some[(Parsley[A], Parsley[_])] = Some((self.result, self.discard.asInstanceOf))
 }
