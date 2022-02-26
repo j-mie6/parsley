@@ -19,14 +19,22 @@ private [parsley] final class NotFollowedBy[A](p: Parsley[A]) extends ScopedUnar
 
 private [deepembedding] final class Rec[A](private [deepembedding] val p: Parsley[A], val strict: backend.Rec[A]) extends Singleton(s"rec($p)", strict)
 private [deepembedding] final class Let[A](p: Parsley[A]) extends Parsley[A] {
+    var strict: backend.Let[A] = _
+
     // $COVERAGE-OFF$
     override def findLetsAux[Cont[_, +_], R](seen: Set[Parsley[_]])(implicit ops: ContOps[Cont, R], state: LetFinderState): Cont[R, Unit] = {
         throw new Exception("Lets cannot exist during let detection")
     }
     // $COVERAGE-ON$
+    //TODO: This is gross
     override def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], sub: LetMap, recs: RecMap): Cont[R, StrictParsley[A_]] = {
-        for (p <- this.p.optimised) yield new backend.Let(p)
+        for (p <- this.p.optimised) yield {
+            processed = true
+            strict = new backend.Let(p)
+            strict
+        }
     }
+    override def optimise: StrictParsley[A] = strict.optimise
     // $COVERAGE-OFF$
     override def prettyASTAux[Cont[_, +_], R](implicit ops: ContOps[Cont, R]): Cont[R, String] = result(s"Sub($p)")
     // $COVERAGE-ON$

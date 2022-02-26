@@ -69,7 +69,7 @@ private [parsley] abstract class Parsley[+A] private [deepembedding] extends Str
                                                                                   lets: LetMap, recs: RecMap): Cont[R, StrictParsley[A_]] = {
         val fixed = this.applyLets
         val _seen = seen // Not needed in Scala 3, but really?!
-        // It's fairly suspicious that this optimise method is not being called...
+        //TODO: Bit of a mess, do we need the processed flag anymore?
         if (fixed.processed) result(fixed.optimise)
         else {
             implicit val seen: Set[Parsley[_]] = if (recs.contains(this) || lets.contains(this)) _seen + this else _seen
@@ -122,7 +122,7 @@ private [parsley] abstract class Parsley[+A] private [deepembedding] extends Str
     final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: backend.StrictParsley.InstrBuffer, state: backend.CodeGenState): Cont[R, Unit] = {
         ???
     }
-    final override def optimise: Parsley[A] = ???
+    override def optimise: StrictParsley[A] = ???
 }
 
 private [deepembedding] trait MZero extends Parsley[Nothing]

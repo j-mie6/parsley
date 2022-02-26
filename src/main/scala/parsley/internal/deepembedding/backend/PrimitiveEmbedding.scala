@@ -22,7 +22,7 @@ private [parsley] final class NotFollowedBy[A](var p: StrictParsley[A])
     }
 }
 
-private [deepembedding] final class Rec[A](/*private [deepembedding] val p: StrictParsley[A], */val call: instructions.Call) extends Singleton(call) with Binding {
+private [deepembedding] final class Rec[A](val call: instructions.Call) extends Singleton(call) with Binding {
     // Must be a def, since call.label can change!
     def label: Int = call.label
     // $COVERAGE-OFF$

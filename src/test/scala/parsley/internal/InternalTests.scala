@@ -12,7 +12,7 @@ import machine.instructions
 import scala.language.implicitConversions
 
 class InternalTests extends ParsleyTest {
-    "subroutines" should "function correctly and be picked up" ignore {
+    "subroutines" should "function correctly and be picked up" in {
         val p = satisfy(_ => true) *> satisfy(_ => true) *> satisfy(_ => true)
         val q = 'a' *> p <* 'b' <* p <* 'c'
         q.internal.instrs.count(_ == instructions.Return) shouldBe 1
@@ -20,14 +20,14 @@ class InternalTests extends ParsleyTest {
         q.parse("a123b123c") should be (Success('3'))
     }
 
-    they should "function correctly under error messages" ignore {
+    they should "function correctly under error messages" in {
         val p = satisfy(_ => true) *> satisfy(_ => true) *> satisfy(_ => true)
         val q = p.label("err1") *> 'a' *> p.label("err1") <* 'b' <* p.label("err2") <* 'c' <* p.label("err2") <* 'd'
         q.internal.instrs.count(_ == instructions.Return) shouldBe 1
         q.parse("123a123b123c123d") should be (Success('3'))
     }
 
-    they should "not duplicate subroutines when error label is the same" ignore {
+    they should "not duplicate subroutines when error label is the same" in {
         val p = satisfy(_ => true) *> satisfy(_ => true) *> satisfy(_ => true)
         val q = 'a' *> p.label("err1") <* 'b' <* p.label("err1") <* 'c'
         q.internal.instrs.count(_ == instructions.Return) shouldBe 1
@@ -43,14 +43,14 @@ class InternalTests extends ParsleyTest {
         q.parse("(()())()") shouldBe a [Success[_]]
     }*/
 
-    they should "work in the precedence parser with one op" ignore {
+    they should "work in the precedence parser with one op" in {
         val atom = some(digit).map(_.mkString.toInt)
         val expr = precedence[Int](atom)(
             Ops(InfixL)('+' #> (_ + _)))
         expr.internal.instrs.count(_ == instructions.Return) shouldBe 1
     }
 
-    they should "appear frequently inside expression parsers" ignore {
+    they should "appear frequently inside expression parsers" in {
         val atom = some(digit).map(_.mkString.toInt)
         val expr = precedence[Int](atom)(
             Ops(InfixL)('+' #> (_ + _)),
