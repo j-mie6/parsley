@@ -39,9 +39,8 @@ private [parsley] final class Lift3[A, B, C, D](private [Lift3] val f: (A, B, C)
 
 private [parsley] object Eof extends Singleton[Unit](instructions.Eof)
 
-private [parsley] final class Modify[S](val reg: Reg[S], f: S => S)
-    extends Singleton[Unit](new instructions.Modify(reg.addr, f)) with UsesRegister
-private [parsley] final class Local[S, A](val reg: Reg[S], var left: StrictParsley[S], var right: StrictParsley[A]) extends Binary[S, A, A] with UsesRegister {
+private [parsley] final class Modify[S](reg: Reg[S], f: S => S) extends Singleton[Unit](new instructions.Modify(reg.addr, f))
+private [parsley] final class Local[S, A](reg: Reg[S], var left: StrictParsley[S], var right: StrictParsley[A]) extends Binary[S, A, A] {
     override val numInstrs = 2
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         left.codeGen >> {

@@ -29,18 +29,19 @@ private [parsley] abstract class StrictParsley[+A] private [deepembedding]
     final private [deepembedding] var safe = true
     final private [deepembedding] var cps = false
 
-    final private [deepembedding] def generateInstructions[Cont[_, +_]](calleeSaveRequired: Boolean, usedRegs: Set[Reg[_]], recs: Iterable[(Rec[_], Cont[Unit, StrictParsley[_]])])(implicit ops: ContOps[Cont, Unit], state: CodeGenState): Array[Instr] ={
+    final private [deepembedding] def generateInstructions[Cont[_, +_]](calleeSaveRequired: Boolean, usedRegs: Set[Reg[_]], recs: Iterable[(Rec[_], Cont[Unit, StrictParsley[_]])])(implicit ops: ContOps[Cont, Array[Instr]], state: CodeGenState): Array[Instr] ={
         implicit val instrs: InstrBuffer = new ResizableArray()
         //implicit val state: CodeGenState = new CodeGenState
         val bindings = mutable.ListBuffer.empty[Binding]
         perform {
             generateCalleeSave(calleeSaveRequired, this.codeGen, allocateRegisters(usedRegs)) |> {
                 instrs += instructions.Halt
+                implicit val _ops: ContOps[Cont, Unit] = ops.asInstanceOf[ContOps[Cont, Unit]]
                 finaliseRecs(recs)
                 finaliseLets(bindings)
+                finaliseInstrs(instrs, state, recs.map(_._1), bindings.toList)
             }
         }
-        finaliseInstrs(instrs, state, recs.map(_._1), bindings.toList)
     }
 
     // This is a trick to get tail-calls to fire even in the presence of a legimate recursion
@@ -179,9 +180,6 @@ private [deepembedding] trait Binding {
     }
 }
 private [deepembedding] trait MZero extends StrictParsley[Nothing]
-private [deepembedding] trait UsesRegister {
-    val reg: Reg[_]
-}
 
 // Internals
 private [deepembedding] class CodeGenState {

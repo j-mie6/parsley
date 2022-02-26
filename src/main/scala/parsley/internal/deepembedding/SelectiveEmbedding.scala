@@ -11,9 +11,9 @@ private [parsley] final class If[A](b: Parsley[Boolean], p: =>Parsley[A], q: =>P
     extends Ternary[Boolean, A, A, A](b, p, q, (f, s, t) => s"($f ? $s : $t)", new backend.If(_, _, _))
 
 private [parsley] final class FastFail[A](p: Parsley[A], msggen: A => String)
-    extends Unary[A, Nothing](p, c => s"$c ! ?", new backend.FastFail(_, msggen)) with MZero
+    extends Unary[A, Nothing](p, c => s"$c ! ?", new backend.FastFail(_, msggen))
 private [parsley] final class FastUnexpected[A](p: Parsley[A], msggen: A => String)
-    extends Unary[A, Nothing](p, c => s"$c.unexpected(?)", new backend.FastUnexpected(_, msggen)) with MZero
+    extends Unary[A, Nothing](p, c => s"$c.unexpected(?)", new backend.FastUnexpected(_, msggen))
 
 private [parsley] final class Filter[A](p: Parsley[A], pred: A => Boolean) extends Unary[A, A](p, c => s"$c.filter(?)", new backend.Filter(_, pred))
 private [parsley] final class FilterOut[A](p: Parsley[A], pred: PartialFunction[A, String])

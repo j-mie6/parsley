@@ -42,8 +42,8 @@ private [deepembedding] final class Let[A](val p: StrictParsley[A]) extends Stri
 
 private [parsley] object Line extends Singleton[Int](instructions.Line)
 private [parsley] object Col extends Singleton[Int](instructions.Col)
-private [parsley] final class Get[S](val reg: Reg[S]) extends Singleton[S](new instructions.Get(reg.addr)) with UsesRegister
-private [parsley] final class Put[S](val reg: Reg[S], var p: StrictParsley[S]) extends Unary[S, Unit] with UsesRegister {
+private [parsley] final class Get[S](reg: Reg[S]) extends Singleton[S](new instructions.Get(reg.addr))
+private [parsley] final class Put[S](reg: Reg[S], var p: StrictParsley[S]) extends Unary[S, Unit] {
     override val numInstrs = 1
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         p.codeGen |>

@@ -216,7 +216,7 @@ private [deepembedding] object <*> {
 }
 private [deepembedding] object >>= {
     def apply[A, B](p: StrictParsley[A], f: A => parsley.internal.deepembedding.Parsley[B]): >>=[A, B] = new >>=(p, f)
-    def unapply[A, B](self: >>=[A, B]): Some[(StrictParsley[A], A => StrictParsley[B])] = Some((self.p, self.f))
+    def unapply[A, B](self: >>=[A, B]): Some[(StrictParsley[A], A => parsley.internal.deepembedding.Parsley[B])] = Some((self.p, self.f))
 }
 private [deepembedding] object Seq {
     def unapply[A, B, Res](self: Seq[A, B, Res]): Some[(StrictParsley[_], StrictParsley[Res])] = Some((self.discard, self.result))
