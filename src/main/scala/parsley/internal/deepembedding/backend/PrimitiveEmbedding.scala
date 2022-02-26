@@ -22,7 +22,7 @@ private [parsley] final class NotFollowedBy[A](var p: StrictParsley[A])
     }
 }
 
-private [deepembedding] final class Rec[A](private [deepembedding] val p: StrictParsley[A], val call: instructions.Call) extends Singleton(call) with Binding {
+private [deepembedding] final class Rec[A](/*private [deepembedding] val p: StrictParsley[A], */val call: instructions.Call) extends Singleton(call) with Binding {
     // Must be a def, since call.label can change!
     def label: Int = call.label
     // $COVERAGE-OFF$
@@ -31,9 +31,9 @@ private [deepembedding] final class Rec[A](private [deepembedding] val p: Strict
     // $COVERAGE-ON$
     def preserve_=(indices: Array[Int]): Unit = call.preserve = indices
 }
-private [deepembedding] final class Let[A](var p: StrictParsley[A]) extends StrictParsley[A] with Binding {
+private [deepembedding] final class Let[A](val p: StrictParsley[A]) extends StrictParsley[A] with Binding {
     val size = 1
-    def label(implicit state: CodeGenState): Int = ???//state.getLabel(this)
+    def label(implicit state: CodeGenState): Int = state.getLabel(this)
     override def optimise: StrictParsley[A] = if (p.size <= 1) p else this
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         result(instrs += new instructions.GoSub(label))

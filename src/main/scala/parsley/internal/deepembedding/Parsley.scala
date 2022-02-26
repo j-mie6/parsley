@@ -28,9 +28,9 @@ private [parsley] abstract class Parsley[+A] private [deepembedding] extends Str
     // $COVERAGE-ON$
 
     // $COVERAGE-OFF$
-    //final def unsafe(): Unit = safe = false
+    final def unsafe(): Unit = safe = false
     final def force(): Unit = instrs
-    //final def overflows(): Unit = cps = true
+    final def overflows(): Unit = cps = true
     // $COVERAGE-ON$
     private [deepembedding] def demandCalleeSave(): this.type = {
         calleeSaveNeeded = true
@@ -69,6 +69,7 @@ private [parsley] abstract class Parsley[+A] private [deepembedding] extends Str
                                                                                   lets: LetMap, recs: RecMap): Cont[R, StrictParsley[A_]] = {
         val fixed = this.applyLets
         val _seen = seen // Not needed in Scala 3, but really?!
+        // It's fairly suspicious that this optimise method is not being called...
         if (fixed.processed) result(fixed.optimise)
         else {
             implicit val seen: Set[Parsley[_]] = if (recs.contains(this) || lets.contains(this)) _seen + this else _seen
@@ -80,7 +81,6 @@ private [parsley] abstract class Parsley[+A] private [deepembedding] extends Str
     final private [deepembedding] var processed = false
     final private [deepembedding] var calleeSaveNeeded = false
     val size = 0
-    final private [deepembedding] var _size: Int = 1
 
     final private def pipeline[Cont[_, +_]](implicit ops: ContOps[Cont, Unit]): Array[Instr] ={
         implicit val state: backend.CodeGenState = new backend.CodeGenState
@@ -99,7 +99,7 @@ private [parsley] abstract class Parsley[+A] private [deepembedding] extends Str
         val usedRegs: Set[Reg[_]] = letFinderState.usedRegs
         val recs_ = recMap.map { rec =>
             implicit val seenSet: Set[Parsley[_]] = recMap.keys - rec.p
-            (rec, rec.p.optimised)
+            (rec.strict, rec.p.optimised)
         }
         sp.cps = cps
         sp.safe = safe
@@ -114,27 +114,17 @@ private [parsley] abstract class Parsley[+A] private [deepembedding] extends Str
 
     // Abstracts
     // Sub-tree optimisation and Rec calculation - Bottom-up
-    protected def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], lets: LetMap, recs: RecMap): Cont[R, Parsley[A_]]
+    protected def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont, R], seen: Set[Parsley[_]], lets: LetMap, recs: RecMap): Cont[R, StrictParsley[A_]]
     // Let-finder recursion
     protected def findLetsAux[Cont[_, +_], R](seen: Set[Parsley[_]])(implicit ops: ContOps[Cont, R], state: LetFinderState): Cont[R, Unit]
     private [parsley] def prettyASTAux[Cont[_, +_], R](implicit ops: ContOps[Cont, R]): Cont[R, String]
+
+    final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: backend.StrictParsley.InstrBuffer, state: backend.CodeGenState): Cont[R, Unit] = {
+        ???
+    }
+    final override def optimise: Parsley[A] = ???
 }
 
-private [deepembedding] trait Binding {
-    // When these are used by tco, the call instructions labels have already been shifted, but lets have not
-    final def location(labelMap: Array[Int])(implicit state: backend.CodeGenState): Int = this match {
-        case self: Rec[_] => self.label
-        case self: Let[_] => labelMap(self.label)
-    }
-    final def hasStateSave: Boolean = this match {
-        case self: Rec[_] => self.preserve.nonEmpty
-        case _: Let[_] => false
-    }
-    final def isSelfCall(call: instructions.Call): Boolean = this match {
-        case self: Rec[_] => self.call == call
-        case _: Let[_] => false
-    }
-}
 private [deepembedding] trait MZero extends Parsley[Nothing]
 private [deepembedding] trait UsesRegister {
     val reg: Reg[_]
@@ -171,6 +161,6 @@ private [deepembedding] class LetMap(lets: Iterable[Parsley[_]]) extends ParserM
 }
 
 private [deepembedding] class RecMap(recs: Iterable[Parsley[_]], state: backend.CodeGenState) extends ParserMap[Rec](recs) with Iterable[Rec[_]] {
-    def make(p: Parsley[_]): Rec[_] = new Rec(p, new instructions.Call(state.freshLabel()))
+    def make(p: Parsley[_]): Rec[_] = new Rec(p, new backend.Rec(new instructions.Call(state.freshLabel())))
     override def iterator: Iterator[Rec[_]] = map.values.iterator
 }
