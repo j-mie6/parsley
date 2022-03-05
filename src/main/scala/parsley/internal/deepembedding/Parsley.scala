@@ -82,7 +82,7 @@ private [parsley] abstract class Parsley[+A] private [deepembedding] //extends S
             findLets(Set.empty) >> {
                 val usedRegs: Set[Reg[_]] = letFinderState.usedRegs
                 implicit val seenSet: Set[Parsley[_]] = letFinderState.recs
-                implicit val recMap: RecMap = new RecMap(letFinderState.recs, state)
+                implicit val recMap: RecMap = RecMap(letFinderState.recs)
                 implicit val letMap: LetMap = LetMap(letFinderState.lets)(ops.asInstanceOf[ContOps[Cont, StrictParsley[_]]], recMap)
                 val recs_ = recMap.map { case (p, strict) =>
                     // Pretty uggo, ngl.
@@ -133,32 +133,34 @@ private [deepembedding] class LetFinderState {
     def usedRegs: Set[Reg[_]] = _usedRegs.toSet
 }
 
-private [deepembedding] final class LetMap(letGen: Map[Parsley[_], LetMap => StrictParsley[_]], lets: Iterable[Parsley[_]]) {
+private [deepembedding] final class LetMap(letGen: Map[Parsley[_], LetMap => StrictParsley[_]]) {
     // This might not necessarily contain Let nodes: if they were inlined then they will not be present here
-    private val mutMap = mutable.Map.empty[Parsley[_], backend.StrictParsley[_]]
+    private val mutMap = mutable.Map.empty[Parsley[_], StrictParsley[_]]
 
     def contains(p: Parsley[_]): Boolean = letGen.contains(p)
-    def apply[A](p: Parsley[A]): backend.StrictParsley[A] = mutMap.getOrElseUpdate(p, {
+    def apply[A](p: Parsley[A]): StrictParsley[A] = mutMap.getOrElseUpdate(p, {
         val sp = letGen(p)(this)
         if (sp.inlinable) sp else new backend.Let(sp)
-    }).asInstanceOf[backend.StrictParsley[A]]
+    }).asInstanceOf[StrictParsley[A]]
     override def toString: String = mutMap.toString
 }
-object LetMap {
+private [deepembedding] object LetMap {
     def apply[Cont[_, +_]](lets: Iterable[Parsley[_]])(implicit ops: ContOps[Cont, StrictParsley[_]], recs: RecMap): LetMap = {
         new LetMap(lets.map(p => p -> ((_self: LetMap) => {
             implicit val self: LetMap = _self
             perform(p.unsafeOptimised)
-        })).toMap, lets)
+        })).toMap)
     }
 }
 
-private [deepembedding] final class RecMap(recs: Iterable[Parsley[_]], state: backend.CodeGenState) extends Iterable[(Parsley[_], backend.Rec[_])] {
-    def make(p: Parsley[_]): backend.Rec[_] = new backend.Rec(new instructions.Call(state.freshLabel()))
-    protected val map: Map[Parsley[_], backend.Rec[_]] = recs.map(p => p -> make(p)).toMap
-    val keys: Set[Parsley[_]] = recs.toSet
-    def contains(p: Parsley[_]): Boolean = keys(p)
+private [deepembedding] final class RecMap(map: Map[Parsley[_], backend.Rec[_]]) extends Iterable[(Parsley[_], backend.Rec[_])] {
+    def contains(p: Parsley[_]): Boolean = map.contains(p)
     def apply[A](p: Parsley[A]): backend.Rec[A] = map(p).asInstanceOf[backend.Rec[A]]
     override def toString: String = map.toString
     override def iterator: Iterator[(Parsley[_], backend.Rec[_])] = map.iterator
+}
+private [deepembedding] object RecMap {
+    def apply(recs: Iterable[Parsley[_]])(implicit state: backend.CodeGenState): RecMap = {
+        new RecMap(recs.map(p => p -> new backend.Rec(new instructions.Call(state.freshLabel()))).toMap)
+    }
 }
