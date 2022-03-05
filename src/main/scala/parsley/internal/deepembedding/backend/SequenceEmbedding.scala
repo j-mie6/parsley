@@ -60,7 +60,7 @@ private [parsley] final class <*>[A, B](var left: StrictParsley[A => B], var rig
             this
         case _ => this
     }
-    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = left match {
+    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = left match {
         // pure f <*> p = f <$> p
         case Pure(f) => right match {
             case ct@CharTok(c) => result(instrs += instructions.CharTokFastPerform[Char, B](c, f.asInstanceOf[Char => B], ct.expected))
@@ -70,7 +70,7 @@ private [parsley] final class <*>[A, B](var left: StrictParsley[A => B], var rig
                 (instrs += new instructions.Perform(f))
         }
         case _ =>
-            left.codeGen >>
+            left.codeGen[Cont, R] >>
             right.codeGen |>
             (instrs += instructions.Apply)
     }
@@ -95,7 +95,7 @@ private [parsley] final class >>=[A, B](var p: StrictParsley[A], private [>>=] v
         case _ => this
     }
     // TODO: Make bind generate with expected != None a ErrorLabel instruction
-    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         p.codeGen |>
         (instrs += new instructions.DynCall[A](x => f(x).demandCalleeSave().instrs))
     }
@@ -128,7 +128,7 @@ private [deepembedding] sealed abstract class Seq[A, B, Res] extends StrictParsl
         case st@StringTok(s) if result.isInstanceOf[CharTok] || result.isInstanceOf[StringTok] => Some(this.optimiseStringResult(s, st.expected))
         case _ => None
     }
-    final protected def codeGenSeq[Cont[_, +_], R](default: =>Cont[R, Unit])(implicit ops: ContOps[Cont, R], instrs: InstrBuffer,
+    final protected def codeGenSeq[Cont[_, +_], R](default: =>Cont[R, Unit])(implicit ops: ContOps[Cont], instrs: InstrBuffer,
                                                                                       state: CodeGenState): Cont[R, Unit] = (result, discard) match {
         case (Pure(x), ct@CharTok(c)) => ContOps.result(instrs += instructions.CharTokFastPerform[Char, Res](c, _ => x, ct.expected))
         case (Pure(x), st@StringTok(s)) => ContOps.result(instrs += instructions.StringTokFastPerform(s, _ => x, st.expected))
@@ -165,7 +165,7 @@ private [parsley] final class *>[A](var left: StrictParsley[Any], var right: Str
             }
         }
     }
-    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = codeGenSeq {
+    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = codeGenSeq {
         discard.codeGen >> {
             instrs += instructions.Pop
             result.codeGen
@@ -199,8 +199,8 @@ private [parsley] final class <*[A](var left: StrictParsley[A], var right: Stric
             }
         }
     }
-    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = codeGenSeq {
-        result.codeGen >>
+    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = codeGenSeq {
+        result.codeGen[Cont, R] >>
         discard.codeGen |>
         (instrs += instructions.Pop)
     }

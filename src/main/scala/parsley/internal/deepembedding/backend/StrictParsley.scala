@@ -29,14 +29,14 @@ private [parsley] abstract class StrictParsley[+A] private [deepembedding]
     final private [deepembedding] var safe = true
     final private [deepembedding] var cps = false
 
-    final private [deepembedding] def generateInstructions[Cont[_, +_]](calleeSaveRequired: Boolean, usedRegs: Set[Reg[_]], recs: Iterable[(Rec[_], Cont[Unit, StrictParsley[_]])])(implicit ops: ContOps[Cont, Array[Instr]], state: CodeGenState): Array[Instr] ={
+    final private [deepembedding] def generateInstructions[Cont[_, +_]](calleeSaveRequired: Boolean, usedRegs: Set[Reg[_]],
+                                                                        recs: Iterable[(Rec[_], Cont[Unit, StrictParsley[_]])])
+                                                                       (implicit ops: ContOps[Cont], state: CodeGenState): Array[Instr] ={
         implicit val instrs: InstrBuffer = new ResizableArray()
-        //implicit val state: CodeGenState = new CodeGenState
         val bindings = mutable.ListBuffer.empty[Binding]
         perform {
-            generateCalleeSave(calleeSaveRequired, this.codeGen, allocateRegisters(usedRegs)) |> {
+            generateCalleeSave[Cont, Array[Instr]](calleeSaveRequired, this.codeGen, allocateRegisters(usedRegs)) |> {
                 instrs += instructions.Halt
-                implicit val _ops: ContOps[Cont, Unit] = ops.asInstanceOf[ContOps[Cont, Unit]]
                 finaliseRecs(recs)
                 finaliseLets(bindings)
                 finaliseInstrs(instrs, state, recs.map(_._1), bindings.toList)
@@ -49,7 +49,7 @@ private [parsley] abstract class StrictParsley[+A] private [deepembedding]
     protected  [deepembedding] def optimise: StrictParsley[A] = this
 
     // Peephole optimisation and code generation - Top-down
-    private [parsley] def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit]
+    private [parsley] def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit]
 }
 
 private [deepembedding] object StrictParsley {
@@ -84,7 +84,7 @@ private [deepembedding] object StrictParsley {
     }
 
     private def generateCalleeSave[Cont[_, +_], R](calleeSaveRequired: Boolean, bodyGen: =>Cont[R, Unit], allocatedRegs: List[Int])
-                                                        (implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+                                                  (implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         if (calleeSaveRequired && allocatedRegs.nonEmpty) {
             val end = state.freshLabel()
             val calleeSave = state.freshLabel()
@@ -98,8 +98,8 @@ private [deepembedding] object StrictParsley {
         else bodyGen
     }
 
-    private def finaliseRecs[Cont[_, +_]](recs: Iterable[(Rec[_], Cont[Unit, StrictParsley[_]])])(implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer,
-                                                                                                                 state: CodeGenState): Unit = {
+    private def finaliseRecs[Cont[_, +_]](recs: Iterable[(Rec[_], Cont[Unit, StrictParsley[_]])])
+                                         (implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Unit = {
         for ((rec, p) <- recs) {
             instrs += new instructions.Label(rec.label)
             perform(p.flatMap(_.codeGen))
@@ -107,13 +107,13 @@ private [deepembedding] object StrictParsley {
         }
     }
 
-    private def finaliseLets[Cont[_, +_]](bindings: mutable.ListBuffer[Binding])(implicit ops: ContOps[Cont, Unit], instrs: InstrBuffer,
-                                                                                                state: CodeGenState): Unit = {
+    private def finaliseLets[Cont[_, +_]](bindings: mutable.ListBuffer[Binding])
+                                         (implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Unit = {
         while (state.more) {
             val let = state.nextLet()
             bindings += let
             instrs += new instructions.Label(let.label)
-            perform(let.p.codeGen)
+            perform[Cont, Unit](let.p.codeGen)
             instrs += instructions.Return
         }
     }

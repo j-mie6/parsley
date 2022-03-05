@@ -29,7 +29,7 @@ private [parsley] final class <|>[A](var left: StrictParsley[A], var right: Stri
         case _ => this
     }
     // TODO: Refactor
-    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = tablify(this, Nil) match {
+    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = tablify(this, Nil) match {
         // If the tablified list is single element, that implies that this should be generated as normal!
         case _::Nil => left match {
             case Attempt(u) => right match {
@@ -112,7 +112,7 @@ private [parsley] final class <|>[A](var left: StrictParsley[A], var right: Stri
             }
     }
     def codeGenRoots[Cont[_, +_], R](roots: List[List[StrictParsley[_]]], ls: List[Int], end: Int)
-                                 (implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = roots match {
+                                 (implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = roots match {
         case root::roots_ =>
             instrs += new instructions.Label(ls.head)
             codeGenAlternatives(root) >> {
@@ -122,7 +122,7 @@ private [parsley] final class <|>[A](var left: StrictParsley[A], var right: Stri
         case Nil => result(())
     }
     def codeGenAlternatives[Cont[_, +_], R](alts: List[StrictParsley[_]])
-                                        (implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = (alts: @unchecked) match {
+                                        (implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = (alts: @unchecked) match {
         case alt::Nil => alt.codeGen
         case Attempt(alt)::alts_ =>
             val handler = state.freshLabel()

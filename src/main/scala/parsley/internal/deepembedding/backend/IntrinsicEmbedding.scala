@@ -18,19 +18,20 @@ private [parsley] final class StringTok(private [StringTok] val s: String, val e
     }
 }
 // TODO: Perform applicative fusion optimisations
-private [parsley] final class Lift2[A, B, C](private [Lift2] val f: (A, B) => C, val left: StrictParsley[A], val right: StrictParsley[B]) extends StrictParsley[C] {
+private [parsley] final class Lift2[A, B, C](private [Lift2] val f: (A, B) => C, val left: StrictParsley[A], val right: StrictParsley[B])
+    extends StrictParsley[C] {
     val inlinable = false
-    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R],  instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
-        left.codeGen >>
+    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont],  instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+        left.codeGen[Cont, R] >>
         right.codeGen |>
         (instrs += new instructions.Lift2(f))
     }
 }
-private [parsley] final class Lift3[A, B, C, D](private [Lift3] val f: (A, B, C) => D, val p: StrictParsley[A], val q: StrictParsley[B], val r: StrictParsley[C])
+private [parsley] final class Lift3[A, B, C, D](val f: (A, B, C) => D, val p: StrictParsley[A], val q: StrictParsley[B], val r: StrictParsley[C])
     extends StrictParsley[D] {
     val inlinable = false
-    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
-        p.codeGen >>
+    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+        p.codeGen[Cont, R] >>
         q.codeGen >>
         r.codeGen |>
         (instrs += new instructions.Lift3(f))
@@ -42,7 +43,7 @@ private [parsley] object Eof extends Singleton[Unit](instructions.Eof)
 private [parsley] final class Modify[S](reg: Reg[S], f: S => S) extends Singleton[Unit](new instructions.Modify(reg.addr, f))
 private [parsley] final class Local[S, A](reg: Reg[S], left: StrictParsley[S], right: StrictParsley[A]) extends StrictParsley[A] {
     val inlinable = false
-    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         left.codeGen >> {
             val local = state.freshLabel()
             val body = state.freshLabel()

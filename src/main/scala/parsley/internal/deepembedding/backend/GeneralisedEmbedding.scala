@@ -9,7 +9,7 @@ import StrictParsley.InstrBuffer
 // Core Embedding
 private [parsley] abstract class Singleton[A](instr: =>instructions.Instr) extends StrictParsley[A] {
     val inlinable = true
-    final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         result(instrs += instr)
     }
 }
@@ -20,7 +20,7 @@ private [deepembedding] abstract class Unary[A, B] extends StrictParsley[B] {
 }
 
 private [deepembedding] abstract class ScopedUnary[A, B](setup: Int => instructions.Instr, instr: instructions.Instr) extends Unary[A, B] {
-    final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val handler = state.freshLabel()
         instrs += setup(handler)
         p.codeGen |> {
