@@ -7,19 +7,19 @@ import scala.language.higherKinds
 import StrictParsley.InstrBuffer
 
 // Core Embedding
-private [deepembedding] abstract class Singleton[A](instr: =>instructions.Instr) extends StrictParsley[A] {
+private [backend] abstract class Singleton[A](instr: =>instructions.Instr) extends StrictParsley[A] {
     def inlinable = true
     final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         result(instrs += instr)
     }
 }
 
-private [deepembedding] abstract class Unary[A, B] extends StrictParsley[B] {
-    private [deepembedding] var p: StrictParsley[A]
+private [backend] abstract class Unary[A, B] extends StrictParsley[B] {
+    protected var p: StrictParsley[A]
     def inlinable = false
 }
 
-private [deepembedding] abstract class ScopedUnary[A, B](setup: Int => instructions.Instr, instr: instructions.Instr) extends Unary[A, B] {
+private [backend] abstract class ScopedUnary[A, B](setup: Int => instructions.Instr, instr: instructions.Instr) extends Unary[A, B] {
     final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val handler = state.freshLabel()
         instrs += setup(handler)
@@ -30,5 +30,5 @@ private [deepembedding] abstract class ScopedUnary[A, B](setup: Int => instructi
     }
 }
 
-private [deepembedding] abstract class ScopedUnaryWithState[A, B](doesNotProduceHints: Boolean, instr: instructions.Instr)
+private [backend] abstract class ScopedUnaryWithState[A, B](doesNotProduceHints: Boolean, instr: instructions.Instr)
     extends ScopedUnary[A, B](new instructions.PushHandlerAndState(_, doesNotProduceHints, doesNotProduceHints), instr)

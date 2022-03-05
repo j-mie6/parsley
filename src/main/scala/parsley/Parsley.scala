@@ -291,6 +291,13 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
     def cast[B: ClassTag]: Parsley[B] = this.collect {
         case x: B => x
     }
+
+    // Possibly should be added as a syntax extension. I don't want them in the default API
+    /*def * : Parsley[List[A]] = many(p)
+    def + : Parsley[List[A]] = some(p)
+    def unary_! : Parsley[Unit] = notFollowedBy(p)
+    def -[B](q: Parsley[B]): Parsley[A] = !q *> p
+    def ? : Parsley[Option[A]] = option(p)*/
 }
 
 /** This object contains the core "function-style" combinators as well as the implicit classes which provide

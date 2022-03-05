@@ -80,7 +80,8 @@ private [deepembedding] final class Chainl[A, B](init: StrictParsley[B], p: Stri
         }
     }
 }
-private [deepembedding] final class Chainr[A, B](p: StrictParsley[A], op: StrictParsley[(A, B) => B], private [Chainr] val wrap: A => B) extends StrictParsley[B] {
+private [deepembedding] final class Chainr[A, B](p: StrictParsley[A], op: StrictParsley[(A, B) => B], private [Chainr] val wrap: A => B)
+    extends StrictParsley[B] {
     def inlinable = false
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit]= {
         val body = state.freshLabel()
