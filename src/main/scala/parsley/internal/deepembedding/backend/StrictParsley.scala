@@ -20,12 +20,12 @@ import parsley.internal.deepembedding.ContOps, ContOps.{safeCall, GenOps, perfor
   * @author Jamie Willis
   * @version 1
   */
-private [parsley] abstract class StrictParsley[+A] private [deepembedding]
+private [deepembedding] abstract class StrictParsley[+A] private [backend]
 {
     final protected type T = Any
     final protected type U = Any
 
-    private [deepembedding] val inlinable: Boolean
+    private [deepembedding] def inlinable: Boolean
     final private [deepembedding] var safe = true
     final private [deepembedding] var cps = false
 
@@ -49,11 +49,11 @@ private [parsley] abstract class StrictParsley[+A] private [deepembedding]
     protected  [deepembedding] def optimise: StrictParsley[A] = this
 
     // Peephole optimisation and code generation - Top-down
-    private [parsley] def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit]
+    private [backend] def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit]
 }
 
-private [deepembedding] object StrictParsley {
-    private [deepembedding] type InstrBuffer = ResizableArray[Instr]
+private [backend] object StrictParsley {
+    private [backend] type InstrBuffer = ResizableArray[Instr]
 
     private def applyAllocation(regs: Set[Reg[_]], freeSlots: Iterable[Int]): List[Int] = {
         val allocatedSlots = mutable.ListBuffer.empty[Int]
@@ -164,7 +164,7 @@ private [deepembedding] object StrictParsley {
     }
 }
 
-private [deepembedding] trait Binding {
+private [backend] trait Binding {
     // When these are used by tco, the call instructions labels have already been shifted, but lets have not
     final def location(labelMap: Array[Int])(implicit state: CodeGenState): Int = this match {
         case self: Rec[_] => self.label
@@ -179,7 +179,7 @@ private [deepembedding] trait Binding {
         case _: Let[_] => false
     }
 }
-private [deepembedding] trait MZero extends StrictParsley[Nothing]
+private [backend] trait MZero extends StrictParsley[Nothing]
 
 // Internals
 private [deepembedding] class CodeGenState {

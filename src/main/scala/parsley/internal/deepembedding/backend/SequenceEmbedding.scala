@@ -9,10 +9,10 @@ import scala.language.higherKinds
 import StrictParsley.InstrBuffer
 
 // Core Embedding
-private [parsley] final class Pure[A](private [Pure] val x: A) extends Singleton[A](new instructions.Push(x))
+private [deepembedding] final class Pure[A](private [Pure] val x: A) extends Singleton[A](new instructions.Push(x))
 
-private [parsley] final class <*>[A, B](var left: StrictParsley[A => B], var right: StrictParsley[A]) extends StrictParsley[B] {
-    val inlinable = false
+private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], var right: StrictParsley[A]) extends StrictParsley[B] {
+    def inlinable = false
     // TODO: Refactor
     override def optimise: StrictParsley[B] = (left, right) match {
         // Fusion laws
@@ -76,7 +76,7 @@ private [parsley] final class <*>[A, B](var left: StrictParsley[A => B], var rig
     }
 }
 
-private [parsley] final class >>=[A, B](var p: StrictParsley[A], private [>>=] val f: A => parsley.internal.deepembedding.Parsley[B]) extends Unary[A, B] {
+private [deepembedding] final class >>=[A, B](var p: StrictParsley[A], private [>>=] val f: A => parsley.internal.deepembedding.Parsley[B]) extends Unary[A, B] {
     override def optimise: StrictParsley[B] = p match {
         // monad law 1: pure x >>= f = f x
         //case Pure(x) if safe => new Rec(() => f(x), expected)
@@ -101,12 +101,12 @@ private [parsley] final class >>=[A, B](var p: StrictParsley[A], private [>>=] v
     }
 }
 
-private [deepembedding] sealed abstract class Seq[A, B, Res] extends StrictParsley[Res] {
+private [backend] sealed abstract class Seq[A, B, Res] extends StrictParsley[Res] {
     def result: StrictParsley[Res]
     def discard: StrictParsley[_]
     def result_=(p: StrictParsley[Res]): Unit
     def discard_=(p: StrictParsley[_]): Unit
-    val inlinable = false
+    def inlinable = false
     // The type parameter R here is for /some/ reason necessary because Scala can't infer that Res =:= Char/String in `optimiseStringResult`...
     private def buildResult[R](s: String, r: R, ex1: Option[String], ex2: Option[String]) = {
         makeSeq(new StringTok(s, if (ex1.nonEmpty) ex1 else ex2), new Pure(r.asInstanceOf[Res]))
@@ -139,7 +139,7 @@ private [deepembedding] sealed abstract class Seq[A, B, Res] extends StrictParsl
         case _ => default
     }
 }
-private [parsley] final class *>[A](var left: StrictParsley[Any], var right: StrictParsley[A]) extends Seq[Any, A, A] {
+private [deepembedding] final class *>[A](var left: StrictParsley[Any], var right: StrictParsley[A]) extends Seq[Any, A, A] {
     override def result: StrictParsley[A] = right
     override def discard: StrictParsley[_] = left
     override def result_=(p: StrictParsley[A]): Unit = right = p
@@ -172,7 +172,7 @@ private [parsley] final class *>[A](var left: StrictParsley[Any], var right: Str
         }
     }
 }
-private [parsley] final class <*[A](var left: StrictParsley[A], var right: StrictParsley[Any]) extends Seq[A, Any, A] {
+private [deepembedding] final class <*[A](var left: StrictParsley[A], var right: StrictParsley[Any]) extends Seq[A, Any, A] {
     override def result: StrictParsley[A] = left
     override def discard: StrictParsley[_] = right
     override def result_=(p: StrictParsley[A]): Unit = left = p
@@ -206,25 +206,25 @@ private [parsley] final class <*[A](var left: StrictParsley[A], var right: Stric
     }
 }
 
-private [deepembedding] object Pure {
+private [backend] object Pure {
     def unapply[A](self: Pure[A]): Some[A] = Some(self.x)
 }
-private [deepembedding] object <*> {
+private [backend] object <*> {
     def apply[A, B](left: StrictParsley[A=>B], right: StrictParsley[A]): <*>[A, B] = new <*>[A, B](left, right)
     def unapply[A, B](self: <*>[A, B]): Some[(StrictParsley[A=>B], StrictParsley[A])] = Some((self.left, self.right))
 }
-private [deepembedding] object >>= {
+private [backend] object >>= {
     def apply[A, B](p: StrictParsley[A], f: A => parsley.internal.deepembedding.Parsley[B]): >>=[A, B] = new >>=(p, f)
     def unapply[A, B](self: >>=[A, B]): Some[(StrictParsley[A], A => parsley.internal.deepembedding.Parsley[B])] = Some((self.p, self.f))
 }
-private [deepembedding] object Seq {
+private [backend] object Seq {
     def unapply[A, B, Res](self: Seq[A, B, Res]): Some[(StrictParsley[_], StrictParsley[Res])] = Some((self.discard, self.result))
 }
-private [deepembedding] object *> {
+private [backend] object *> {
     def apply[A](left: StrictParsley[_], right: StrictParsley[A]): *>[A]= new *>(left, right)
     def unapply[A](self: *>[A]): Some[(StrictParsley[_], StrictParsley[A])] = Some((self.discard, self.result))
 }
-private [deepembedding] object <* {
+private [backend] object <* {
     def apply[A](left: StrictParsley[A], right: StrictParsley[_]): <*[A] = new <*(left, right)
     def unapply[A](self: <*[A]): Some[(StrictParsley[A], StrictParsley[_])] = Some((self.result, self.discard))
 }

@@ -7,8 +7,8 @@ import scala.language.higherKinds
 import StrictParsley.InstrBuffer
 
 // Core Embedding
-private [parsley] abstract class Singleton[A](instr: =>instructions.Instr) extends StrictParsley[A] {
-    val inlinable = true
+private [deepembedding] abstract class Singleton[A](instr: =>instructions.Instr) extends StrictParsley[A] {
+    def inlinable = true
     final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         result(instrs += instr)
     }
@@ -16,7 +16,7 @@ private [parsley] abstract class Singleton[A](instr: =>instructions.Instr) exten
 
 private [deepembedding] abstract class Unary[A, B] extends StrictParsley[B] {
     private [deepembedding] var p: StrictParsley[A]
-    val inlinable = false
+    def inlinable = false
 }
 
 private [deepembedding] abstract class ScopedUnary[A, B](setup: Int => instructions.Instr, instr: instructions.Instr) extends Unary[A, B] {

@@ -3,8 +3,7 @@ package parsley.internal.deepembedding
 import ContOps.{result, ContAdapter}
 
 import scala.language.higherKinds
-import backend.CodeGenState
-import backend.StrictParsley, StrictParsley.InstrBuffer
+import backend.StrictParsley
 
 // Core Embedding
 private [parsley] abstract class Singleton[A](pretty: String, strict: StrictParsley[A]) extends Parsley[A] {

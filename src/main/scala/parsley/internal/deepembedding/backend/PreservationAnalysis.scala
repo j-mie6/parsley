@@ -3,7 +3,7 @@ package parsley.internal.deepembedding.backend
 import scala.collection.mutable
 import parsley.internal.machine.instructions, instructions.Instr
 
-private [deepembedding] object PreservationAnalysis {
+private [backend] object PreservationAnalysis {
     def determinePreserve(recs: Iterable[Rec[_]], instrs: Array[Instr]): Unit = if (recs.nonEmpty) {
         var start = System.currentTimeMillis()
         implicit val coordinator: EventCoordinator = new EventCoordinator
@@ -52,7 +52,7 @@ private [deepembedding] object PreservationAnalysis {
     }
 }
 
-private [deepembedding] class DataflowReactor(label: Int, val source: EventSource[Iterable[Int]]) extends (Iterable[Int] => Unit) {
+private [backend] class DataflowReactor(label: Int, val source: EventSource[Iterable[Int]]) extends (Iterable[Int] => Unit) {
     private val preserveSet = mutable.Set.empty[Int]
     def apply(newInfo: Iterable[Int]): Unit = {
         val oldSize = preserveSet.size
@@ -64,11 +64,11 @@ private [deepembedding] class DataflowReactor(label: Int, val source: EventSourc
     def preserve: Array[Int] = preserveSet.toSeq.sorted.toArray
 }
 
-private [deepembedding] sealed trait Event[+A]
-private [deepembedding] case class Fired[A](x: A, handlers: Iterable[A => Unit]) extends Event[A]
-private [deepembedding] case class Handled(f: () => Unit) extends Event[Nothing]
+private [backend] sealed trait Event[+A]
+private [backend] case class Fired[A](x: A, handlers: Iterable[A => Unit]) extends Event[A]
+private [backend] case class Handled(f: () => Unit) extends Event[Nothing]
 
-private [deepembedding] class EventCoordinator {
+private [backend] class EventCoordinator {
     val events = mutable.Queue.empty[Event[_]]
     def add(event: Event[_]): Unit = events.enqueue(event)
     def run(): Unit = {
@@ -79,11 +79,11 @@ private [deepembedding] class EventCoordinator {
     }
 }
 
-private [deepembedding] abstract class EventStream[+A] {
+private [backend] abstract class EventStream[+A] {
     def foreach(f: A => Unit): Unit
 }
 
-private [deepembedding] class EventSource[A](implicit coordinator: EventCoordinator) extends EventStream[A] {
+private [backend] class EventSource[A](implicit coordinator: EventCoordinator) extends EventStream[A] {
     val observers = mutable.Set.empty[A => Unit]
     def fire(x: A): Unit = coordinator.add(Fired(x, observers))
     def foreach(f: A => Unit): Unit = observers += f

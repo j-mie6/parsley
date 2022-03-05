@@ -8,8 +8,7 @@ import parsley.debug.{Breakpoint, EntryBreak, FullBreak, ExitBreak}
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.higherKinds
-import backend.CodeGenState
-import backend.StrictParsley, StrictParsley.InstrBuffer
+import backend.StrictParsley
 
 private [parsley] final class Satisfy(private [Satisfy] val f: Char => Boolean, val expected: Option[String])
     extends Singleton[Char]("satisfy(f)", new backend.Satisfy(f, expected))

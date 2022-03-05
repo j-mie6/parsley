@@ -21,10 +21,9 @@ import backend.StrictParsley
   * @author Jamie Willis
   * @version 1
   */
-private [parsley] abstract class Parsley[+A] private [deepembedding] //extends StrictParsley[A]
-{
+private [parsley] abstract class Parsley[+A] private [deepembedding] {
     // $COVERAGE-OFF$
-    final private [parsley] def prettyAST: String = {force(); safeCall((g: GenOps) => perform(prettyASTAux(g))(g))}
+    final private [parsley] def prettyAST: String = {force(); safeCall(g => perform(prettyASTAux(g))(g))}
     // $COVERAGE-ON$
 
     // $COVERAGE-OFF$
@@ -70,7 +69,7 @@ private [parsley] abstract class Parsley[+A] private [deepembedding] //extends S
     final private var cps = false
     final private [deepembedding] var calleeSaveNeeded = false
 
-    final private def pipeline[Cont[_, +_]](implicit ops: ContOps[Cont]): Array[Instr] ={
+    final private def pipeline[Cont[_, +_]](implicit ops: ContOps[Cont]): Array[Instr] = {
         implicit val state: backend.CodeGenState = new backend.CodeGenState
         implicit val letFinderState: LetFinderState = new LetFinderState
         perform[Cont, Array[Instr]] {
