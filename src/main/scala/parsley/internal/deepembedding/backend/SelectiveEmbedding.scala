@@ -12,7 +12,7 @@ private [deepembedding] sealed abstract class BranchLike[A, B, C, D](instr: Int 
     val b: StrictParsley[A]
     val p: StrictParsley[B]
     val q: StrictParsley[C]
-    val size = b.size + p.size + q.size + 2 + finaliser.size * 2
+    val inlinable = false
     final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val toP = state.freshLabel()
         val end = state.freshLabel()
@@ -53,7 +53,7 @@ private [parsley] final class If[A](val b: StrictParsley[Boolean], val p: Strict
 }
 
 private [deepembedding] sealed abstract class FastZero[A](fail: A => StrictParsley[Nothing], instr: instructions.Instr) extends Unary[A, Nothing] {
-    final override val numInstrs = 1
+
     final override def optimise: StrictParsley[Nothing] = p match {
         case Pure(x) => fail(x)
         case z: MZero => z
@@ -67,7 +67,6 @@ private [parsley] final class FastFail[A](var p: StrictParsley[A], msggen: A => 
 private [parsley] final class FastUnexpected[A](var p: StrictParsley[A], msggen: A => String) extends FastZero[A](x => new Unexpected(msggen(x)), new instructions.FastUnexpected(msggen)) with MZero
 
 private [deepembedding] sealed abstract class FilterLike[A](fail: A => StrictParsley[Nothing], instr: instructions.Instr, pred: A => Boolean) extends Unary[A, A] {
-    final override val numInstrs = 1
     final override def optimise: StrictParsley[A] = p match {
         case Pure(x) if pred(x) => fail(x)
         case px: Pure[_] => px

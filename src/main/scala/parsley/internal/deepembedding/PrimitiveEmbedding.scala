@@ -17,8 +17,6 @@ private [parsley] final class Attempt[A](p: Parsley[A]) extends ScopedUnary[A, A
 private [parsley] final class Look[A](p: Parsley[A]) extends ScopedUnary[A, A](p, "lookAhead", new backend.Look(_))
 private [parsley] final class NotFollowedBy[A](p: Parsley[A]) extends ScopedUnary[A, Unit](p, "notFollowedBy", new backend.NotFollowedBy(_))
 
-private [deepembedding] final class Rec[A](private [deepembedding] val p: Parsley[A], val strict: backend.Rec[A]) extends Singleton(s"rec($p)", strict)
-
 private [parsley] object Line extends Singleton[Int]("line", backend.Line)
 private [parsley] object Col extends Singleton[Int]("col", backend.Col)
 private [parsley] final class Get[S](val reg: Reg[S]) extends Singleton[S](s"get($reg)", new backend.Get(reg)) with UsesRegister

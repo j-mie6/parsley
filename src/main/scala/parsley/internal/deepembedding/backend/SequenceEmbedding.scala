@@ -11,8 +11,8 @@ import StrictParsley.InstrBuffer
 // Core Embedding
 private [parsley] final class Pure[A](private [Pure] val x: A) extends Singleton[A](new instructions.Push(x))
 
-private [parsley] final class <*>[A, B](var left: StrictParsley[A => B], var right: StrictParsley[A]) extends Binary[A => B, A, B] {
-    override val numInstrs = 1
+private [parsley] final class <*>[A, B](var left: StrictParsley[A => B], var right: StrictParsley[A]) extends StrictParsley[B] {
+    val inlinable = false
     // TODO: Refactor
     override def optimise: StrictParsley[B] = (left, right) match {
         // Fusion laws
@@ -77,7 +77,6 @@ private [parsley] final class <*>[A, B](var left: StrictParsley[A => B], var rig
 }
 
 private [parsley] final class >>=[A, B](var p: StrictParsley[A], private [>>=] val f: A => parsley.internal.deepembedding.Parsley[B]) extends Unary[A, B] {
-    override val numInstrs = 1
     override def optimise: StrictParsley[B] = p match {
         // monad law 1: pure x >>= f = f x
         //case Pure(x) if safe => new Rec(() => f(x), expected)
@@ -102,12 +101,12 @@ private [parsley] final class >>=[A, B](var p: StrictParsley[A], private [>>=] v
     }
 }
 
-private [deepembedding] sealed abstract class Seq[A, B, Res] extends Binary[A, B, Res] {
+private [deepembedding] sealed abstract class Seq[A, B, Res] extends StrictParsley[Res] {
     def result: StrictParsley[Res]
     def discard: StrictParsley[_]
     def result_=(p: StrictParsley[Res]): Unit
     def discard_=(p: StrictParsley[_]): Unit
-    final override val numInstrs = 1
+    val inlinable = false
     // The type parameter R here is for /some/ reason necessary because Scala can't infer that Res =:= Char/String in `optimiseStringResult`...
     private def buildResult[R](s: String, r: R, ex1: Option[String], ex2: Option[String]) = {
         makeSeq(new StringTok(s, if (ex1.nonEmpty) ex1 else ex2), new Pure(r.asInstanceOf[Res]))

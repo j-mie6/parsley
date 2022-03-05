@@ -9,7 +9,6 @@ import scala.collection.mutable
 import scala.language.higherKinds
 
 private [deepembedding] sealed abstract class ManyLike[A, B](name: String, unit: B, instr: Int => instructions.Instr) extends Unary[A, B] {
-    final override val numInstrs = 2
     final override def optimise: StrictParsley[B] = p match {
         case _: Pure[_] => throw new Exception(s"$name given parser which consumes no input")
         case _: MZero => new Pure(unit)
@@ -29,8 +28,7 @@ private [deepembedding] sealed abstract class ManyLike[A, B](name: String, unit:
 private [parsley] final class Many[A](var p: StrictParsley[A]) extends ManyLike[A, List[A]]("many", Nil, new instructions.Many(_))
 private [parsley] final class SkipMany[A](var p: StrictParsley[A]) extends ManyLike[A, Unit]("skipMany", (), new instructions.SkipMany(_))
 private [deepembedding] sealed abstract class ChainLike[A](var p: StrictParsley[A], var op: StrictParsley[A => A]) extends StrictParsley[A] {
-    val size = p.size + op.size + numInstrs
-    val numInstrs: Int
+    val inlinable = false
     override def optimise: StrictParsley[A] = op match {
         case _: Pure[_] => throw new Exception("chain given parser which consumes no input")
         case _: MZero => p
@@ -38,7 +36,6 @@ private [deepembedding] sealed abstract class ChainLike[A](var p: StrictParsley[
     }
 }
 private [parsley] final class ChainPost[A](p: StrictParsley[A], _op: StrictParsley[A => A]) extends ChainLike[A](p, _op) {
-    override val numInstrs = 2
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val body = state.freshLabel()
         val handler = state.freshLabel()
@@ -54,7 +51,6 @@ private [parsley] final class ChainPost[A](p: StrictParsley[A], _op: StrictParsl
 }
 // This can't be fully strict, because it depends on binary!
 private [parsley] final class ChainPre[A](p: StrictParsley[A], _op: StrictParsley[A => A]) extends ChainLike[A](p, _op) {
-    override val numInstrs = 3
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val body = state.freshLabel()
         val handler = state.freshLabel()
@@ -69,7 +65,7 @@ private [parsley] final class ChainPre[A](p: StrictParsley[A], _op: StrictParsle
     }
 }
 private [parsley] final class Chainl[A, B](init: StrictParsley[B], p: StrictParsley[A], op: StrictParsley[(B, A) => B]) extends StrictParsley[B] {
-    val size = init.size + p.size + op.size + 2
+    val inlinable = false
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val body = state.freshLabel()
         val handler = state.freshLabel()
@@ -85,7 +81,7 @@ private [parsley] final class Chainl[A, B](init: StrictParsley[B], p: StrictPars
     }
 }
 private [parsley] final class Chainr[A, B](p: StrictParsley[A], op: StrictParsley[(A, B) => B], private [Chainr] val wrap: A => B) extends StrictParsley[B] {
-    val size = p.size + op.size + 3
+    val inlinable = false
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit]= {
         val body = state.freshLabel()
         val handler = state.freshLabel()
@@ -101,7 +97,7 @@ private [parsley] final class Chainr[A, B](p: StrictParsley[A], op: StrictParsle
     }
 }
 private [parsley] final class SepEndBy1[A, B](p: StrictParsley[A], sep: StrictParsley[B]) extends StrictParsley[List[A]] {
-    val size = p.size + sep.size + 3
+    val inlinable = false
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val body = state.freshLabel()
         val handler = state.freshLabel()
@@ -117,7 +113,6 @@ private [parsley] final class SepEndBy1[A, B](p: StrictParsley[A], sep: StrictPa
     }
 }
 private [parsley] final class ManyUntil[A](var p: StrictParsley[Any]) extends Unary[Any, List[A]] {
-    override val numInstrs = 2
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val start = state.freshLabel()
         val loop = state.freshLabel()

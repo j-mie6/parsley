@@ -25,7 +25,7 @@ private [parsley] abstract class StrictParsley[+A] private [deepembedding]
     final protected type T = Any
     final protected type U = Any
 
-    private [deepembedding] val size: Int
+    private [deepembedding] val inlinable: Boolean
     final private [deepembedding] var safe = true
     final private [deepembedding] var cps = false
 

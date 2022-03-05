@@ -11,8 +11,8 @@ import scala.language.higherKinds
 import StrictParsley.InstrBuffer
 
 // TODO: Tablification is too aggressive. It appears that `optional` is being compiled to jumptable
-private [parsley] final class <|>[A](var left: StrictParsley[A], var right: StrictParsley[A]) extends Binary[A, A, A] {
-    override val numInstrs = 3
+private [parsley] final class <|>[A](var left: StrictParsley[A], var right: StrictParsley[A]) extends StrictParsley[A] {
+    val inlinable = false
 
     override def optimise: StrictParsley[A] = (left, right) match {
         // left catch law: pure x <|> p = pure x
