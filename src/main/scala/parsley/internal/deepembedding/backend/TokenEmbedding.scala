@@ -33,18 +33,6 @@ private [deepembedding] final class Specific(name: String, private [Specific] va
 private [deepembedding] final class MaxOp(private [MaxOp] val operator: String, ops: Set[String])
     extends Singleton[Unit](new instructions.TokenMaxOp(operator, ops))
 
-private [deepembedding] object Sign {
-    private [deepembedding] sealed trait SignType {
-        type resultType
-    }
-    private [deepembedding] case object DoubleType extends SignType {
-        override type resultType = Double
-    }
-    private [deepembedding] case object IntType extends SignType {
-        override type resultType = Int
-    }
-}
-
 // $COVERAGE-OFF$
 private [backend] object Specific {
     def unapply(self: Specific): Some[String] = Some(self.specific)

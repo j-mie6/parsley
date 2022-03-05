@@ -1,7 +1,7 @@
 package parsley.expr
 
 import parsley.Parsley
-import parsley.internal.deepembedding
+import parsley.internal.deepembedding.frontend
 
 import scala.annotation.implicitNotFound
 
@@ -43,13 +43,13 @@ object chain {
     /** `prefix(op, p)` parses many prefixed applications of `op` onto a single final result of `p`
       * @since 2.2.0
       */
-    def prefix[A](op: Parsley[A => A], p: Parsley[A]): Parsley[A] = new Parsley(new deepembedding.ChainPre(p.internal, op.internal))
+    def prefix[A](op: Parsley[A => A], p: Parsley[A]): Parsley[A] = new Parsley(new frontend.ChainPre(p.internal, op.internal))
 
     /** `postfix(p, op)` parses one occurrence of `p`, followed by many postfix applications of `op`
       * that associate to the left.
       * @since 2.2.0
       */
-    def postfix[A](p: Parsley[A], op: =>Parsley[A => A]): Parsley[A] = new Parsley(new deepembedding.ChainPost(p.internal, op.internal))
+    def postfix[A](p: Parsley[A], op: =>Parsley[A => A]): Parsley[A] = new Parsley(new frontend.ChainPost(p.internal, op.internal))
 
     /** `prefix1(op, p)` parses one or more prefixed applications of `op` onto a single final result of `p`
       * @since 3.0.0

@@ -226,7 +226,7 @@ private [internal] final class ManyUntil(var label: Int) extends InstrWithLabel 
     override def apply(ctx: Context): Unit = {
         if (ctx.status eq Good) {
             val x = ctx.stack.upop()
-            if (x == deepembedding.ManyUntil.Stop) {
+            if (x == parsley.combinator.ManyUntil.Stop) {
                 ctx.pushAndContinue(acc.toList)
                 acc.clear()
                 ctx.handlers = ctx.handlers.tail

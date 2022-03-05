@@ -1,6 +1,8 @@
-package parsley.internal.deepembedding
+package parsley.internal.deepembedding.frontend
 
-import Sign.SignType
+import parsley.internal.deepembedding.backend
+
+import parsley.internal.deepembedding.Sign.SignType
 
 private [parsley] final class WhiteSpace(ws: Char => Boolean, start: String, end: String, line: String, nested: Boolean)
     extends Singleton[Unit]("whiteSpace", new backend.WhiteSpace(ws, start, end, line, nested))
@@ -39,15 +41,3 @@ private [parsley] final class Specific(name: String, private [Specific] val spec
 
 private [parsley] final class MaxOp(private [MaxOp] val operator: String, ops: Set[String])
     extends Singleton[Unit](s"maxOp($operator)", new backend.MaxOp(operator, ops))
-
-private [parsley] object Sign {
-    private [parsley] sealed trait SignType {
-        type resultType
-    }
-    private [parsley] case object DoubleType extends SignType {
-        override type resultType = Double
-    }
-    private [parsley] case object IntType extends SignType {
-        override type resultType = Int
-    }
-}

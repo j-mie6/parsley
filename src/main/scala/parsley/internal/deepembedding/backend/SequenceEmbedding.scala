@@ -1,6 +1,7 @@
 package parsley.internal.deepembedding.backend
 
 import parsley.internal.deepembedding.ContOps, ContOps.{result, ContAdapter}
+import parsley.internal.deepembedding.frontend
 import parsley.internal.machine.instructions
 
 import scala.annotation.tailrec
@@ -76,7 +77,7 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
     }
 }
 
-private [deepembedding] final class >>=[A, B](var p: StrictParsley[A], private [>>=] val f: A => parsley.internal.deepembedding.Parsley[B]) extends Unary[A, B] {
+private [deepembedding] final class >>=[A, B](var p: StrictParsley[A], private [>>=] val f: A => frontend.LazyParsley[B]) extends Unary[A, B] {
     override def optimise: StrictParsley[B] = p match {
         // monad law 1: pure x >>= f = f x
         //case Pure(x) if safe => new Rec(() => f(x), expected)
@@ -214,8 +215,8 @@ private [backend] object <*> {
     def unapply[A, B](self: <*>[A, B]): Some[(StrictParsley[A=>B], StrictParsley[A])] = Some((self.left, self.right))
 }
 private [backend] object >>= {
-    def apply[A, B](p: StrictParsley[A], f: A => parsley.internal.deepembedding.Parsley[B]): >>=[A, B] = new >>=(p, f)
-    def unapply[A, B](self: >>=[A, B]): Some[(StrictParsley[A], A => parsley.internal.deepembedding.Parsley[B])] = Some((self.p, self.f))
+    def apply[A, B](p: StrictParsley[A], f: A => frontend.LazyParsley[B]): >>=[A, B] = new >>=(p, f)
+    def unapply[A, B](self: >>=[A, B]): Some[(StrictParsley[A], A => frontend.LazyParsley[B])] = Some((self.p, self.f))
 }
 private [backend] object Seq {
     def unapply[A, B, Res](self: Seq[A, B, Res]): Some[(StrictParsley[_], StrictParsley[Res])] = Some((self.discard, self.result))

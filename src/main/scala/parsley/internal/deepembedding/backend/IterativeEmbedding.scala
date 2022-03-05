@@ -124,7 +124,3 @@ private [deepembedding] final class ManyUntil[A](var p: StrictParsley[Any]) exte
         }
     }
 }
-
-private [deepembedding] object ManyUntil {
-    object Stop
-}

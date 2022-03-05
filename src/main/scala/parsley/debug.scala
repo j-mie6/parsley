@@ -1,6 +1,6 @@
 package parsley
 
-import parsley.internal.deepembedding
+import parsley.internal.deepembedding.frontend
 
 import scala.language.implicitConversions
 
@@ -28,7 +28,7 @@ object debug {
           * @param coloured Whether to render with colour (default true: render colours)
           */
         def debug(name: String, break: Breakpoint = NoBreak, coloured: Boolean = true): Parsley[A] = {
-            new Parsley(new deepembedding.Debug[A](con(p).internal, name, !coloured, break))
+            new Parsley(new frontend.Debug[A](con(p).internal, name, !coloured, break))
         }
     }
 }

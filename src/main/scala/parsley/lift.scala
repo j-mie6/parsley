@@ -1,5 +1,5 @@
 package parsley
-import parsley.internal.deepembedding
+import parsley.internal.deepembedding.frontend
 
 /**
   * This module contains `lift1` through `lift22`, which allow for the
@@ -17,11 +17,11 @@ object lift {
     def lift2[T1, T2, R]
         (f: (T1, T2) => R,
          p1: Parsley[T1], p2: =>Parsley[T2]): Parsley[R] =
-        new Parsley(new deepembedding.Lift2(f, p1.internal, p2.internal))
+        new Parsley(new frontend.Lift2(f, p1.internal, p2.internal))
     def lift3[T1, T2, T3, R]
         (f: (T1, T2, T3) => R,
          p1: Parsley[T1], p2: =>Parsley[T2], p3: =>Parsley[T3]): Parsley[R] =
-        new Parsley(new deepembedding.Lift3(f, p1.internal, p2.internal, p3.internal))
+        new Parsley(new frontend.Lift3(f, p1.internal, p2.internal, p3.internal))
     // $COVERAGE-OFF$
     def lift4[T1, T2, T3, T4, R]
         (f: (T1, T2, T3, T4) => R,
