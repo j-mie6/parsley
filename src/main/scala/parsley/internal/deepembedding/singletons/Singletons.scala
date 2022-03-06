@@ -7,9 +7,11 @@ import parsley.internal.deepembedding.backend, backend.StrictParsley
 import parsley.internal.deepembedding.frontend, frontend.LazyParsley
 import parsley.internal.machine.instructions
 
-private [singletons] abstract class Singleton[A](pretty: String, instr: =>instructions.Instr) extends LazyParsley[A] with StrictParsley[A] {
+private [singletons] abstract class Singleton[A] extends LazyParsley[A] with StrictParsley[A] {
     def inlinable = true
-    
+    def pretty: String
+    def instr: instructions.Instr
+
     final override def findLetsAux[Cont[_, +_], R](seen: Set[LazyParsley[_]])
         (implicit ops: ContOps[Cont], state: frontend.LetFinderState): Cont[R, Unit] = result(())
     final override def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont],
