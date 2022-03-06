@@ -7,7 +7,6 @@ import scala.collection.mutable
 import parsley.BadLazinessException
 import parsley.registers.Reg
 import parsley.internal.machine.instructions, instructions.{Instr, JumpTable, Label}
-import parsley.internal.ResizableArray
 import StrictParsley._
 import parsley.internal.deepembedding.ContOps, ContOps.{safeCall, GenOps, perform, result, ContAdapter}
 

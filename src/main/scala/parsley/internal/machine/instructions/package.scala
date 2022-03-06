@@ -1,7 +1,5 @@
 package parsley.internal.machine
 
-import parsley.internal.ResizableArray
-
 import scala.language.implicitConversions
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -41,11 +39,11 @@ package object instructions
     }
 
     final private [internal] def statefulIndices(instrs: Array[Instr]): Array[Int] = {
-        val buff = new ResizableArray[Int]()
+        val buff = mutable.ArrayBuffer.empty[Int]
         for (i <- 0 until instrs.length) {
             if (instrs(i).isInstanceOf[Stateful]) buff += i
         }
-        buff.toShrunkenArray
+        buff.toArray
     }
 
     @tailrec @inline final private def statefulIndicesToReturn(instrs: Array[Instr], idx: Int, buff: mutable.ListBuffer[Int]): Unit = instrs(idx) match {

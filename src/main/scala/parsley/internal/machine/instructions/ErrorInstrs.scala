@@ -1,7 +1,6 @@
 package parsley.internal.machine.instructions
 
 import parsley.internal.machine.{Context, Good}
-import parsley.internal.ResizableArray
 
 import parsley.internal.errors.{ErrorItem, Desc}
 import parsley.internal.machine.errors.{WithReason, MergedErrors, WithLabel, Entrenched, Amended}
