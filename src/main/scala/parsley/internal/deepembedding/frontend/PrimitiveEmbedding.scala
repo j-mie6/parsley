@@ -1,6 +1,5 @@
 package parsley.internal.deepembedding.frontend
 
-import parsley.internal.deepembedding.ContOps, ContOps.{result, ContAdapter}
 import parsley.internal.machine.instructions
 import parsley.registers.Reg
 import parsley.debug.{Breakpoint, EntryBreak, FullBreak, ExitBreak}

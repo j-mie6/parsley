@@ -1,6 +1,6 @@
 package parsley.internal.deepembedding.backend
 
-import parsley.internal.deepembedding.ContOps, ContOps.{result, ContAdapter}
+import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
 import parsley.internal.deepembedding.singletons._
 import parsley.internal.machine.instructions
 import StrictParsley.InstrBuffer
@@ -21,7 +21,7 @@ private [backend] sealed abstract class ManyLike[A, B](name: String, unit: B) ex
         val handler = state.freshLabel()
         instrs += new instructions.InputCheck(handler)
         instrs += new instructions.Label(body)
-        p.codeGen |> {
+        suspend(p.codeGen[Cont, R]) |> {
             instrs += new instructions.Label(handler)
             instrs += instr(body)
         }
@@ -45,10 +45,10 @@ private [deepembedding] final class ChainPost[A](p: StrictParsley[A], op: Strict
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val body = state.freshLabel()
         val handler = state.freshLabel()
-        p.codeGen >> {
+        suspend(p.codeGen[Cont, R]) >> {
             instrs += new instructions.InputCheck(handler)
             instrs += new instructions.Label(body)
-            op.codeGen |> {
+            suspend(op.codeGen[Cont, R]) |> {
                 instrs += new instructions.Label(handler)
                 instrs += new instructions.ChainPost(body)
             }
@@ -62,10 +62,10 @@ private [deepembedding] final class ChainPre[A](p: StrictParsley[A], op: StrictP
         val handler = state.freshLabel()
         instrs += new instructions.InputCheck(handler)
         instrs += new instructions.Label(body)
-        op.codeGen >> {
+        suspend(op.codeGen[Cont, R]) >> {
             instrs += new instructions.Label(handler)
             instrs += new instructions.ChainPre(body)
-            p.codeGen |>
+            suspend(p.codeGen[Cont, R]) |>
             (instrs += instructions.Apply)
         }
     }
@@ -75,11 +75,11 @@ private [deepembedding] final class Chainl[A, B](init: StrictParsley[B], p: Stri
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val body = state.freshLabel()
         val handler = state.freshLabel()
-        init.codeGen >> {
+        suspend(init.codeGen[Cont, R]) >> {
             instrs += new instructions.InputCheck(handler)
             instrs += new instructions.Label(body)
             op.codeGen[Cont, R] >>
-            p.codeGen |> {
+            suspend(p.codeGen[Cont, R]) |> {
                 instrs += new instructions.Label(handler)
                 instrs += new instructions.Chainl(body)
             }
@@ -94,9 +94,9 @@ private [deepembedding] final class Chainr[A, B](p: StrictParsley[A], op: Strict
         val handler = state.freshLabel()
         instrs += new instructions.InputCheck(handler)
         instrs += new instructions.Label(body)
-        p.codeGen >> {
+        suspend(p.codeGen[Cont, R]) >> {
             instrs += new instructions.InputCheck(handler)
-            op.codeGen |> {
+            suspend(op.codeGen[Cont, R]) |> {
                 instrs += new instructions.Label(handler)
                 instrs += new instructions.Chainr(body, wrap)
             }
@@ -110,9 +110,9 @@ private [deepembedding] final class SepEndBy1[A, B](p: StrictParsley[A], sep: St
         val handler = state.freshLabel()
         instrs += new instructions.InputCheck(handler)
         instrs += new instructions.Label(body)
-        p.codeGen >> {
+        suspend(p.codeGen[Cont, R]) >> {
             instrs += new instructions.InputCheck(handler)
-            sep.codeGen |> {
+            suspend(sep.codeGen[Cont, R]) |> {
                 instrs += new instructions.Label(handler)
                 instrs += new instructions.SepEndBy1(body)
             }
@@ -125,7 +125,7 @@ private [deepembedding] final class ManyUntil[A](val p: StrictParsley[Any]) exte
         val loop = state.freshLabel()
         instrs += new instructions.PushHandler(loop)
         instrs += new instructions.Label(start)
-        p.codeGen |> {
+        suspend(p.codeGen[Cont, R]) |> {
             instrs += new instructions.Label(loop)
             instrs += new instructions.ManyUntil(start)
         }

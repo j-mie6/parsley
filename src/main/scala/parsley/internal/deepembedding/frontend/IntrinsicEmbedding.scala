@@ -1,6 +1,5 @@
 package parsley.internal.deepembedding.frontend
 
-import parsley.internal.deepembedding.ContOps, ContOps.{result, ContAdapter}
 import parsley.registers.Reg
 
 import scala.language.higherKinds

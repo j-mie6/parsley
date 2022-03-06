@@ -1,9 +1,7 @@
 package parsley.internal.deepembedding.backend
 
-import parsley.internal.deepembedding.ContOps.{result, ContAdapter}
 import parsley.internal.deepembedding.singletons._
 import parsley.internal.machine.instructions
-
 private [deepembedding] final class ErrorLabel[A](val p: StrictParsley[A], private [ErrorLabel] val label: String) extends ScopedUnary[A, A] {
     override def setup(label: Int) = new instructions.InputCheck(label, true)
     override def instr = new instructions.ApplyError(label)

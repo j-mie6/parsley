@@ -1,6 +1,5 @@
 package parsley.internal.deepembedding.frontend
 
-import parsley.internal.deepembedding.ContOps.{result, ContAdapter}
 import parsley.internal.errors.{ErrorItem, Raw, Desc}
 
 import scala.annotation.tailrec

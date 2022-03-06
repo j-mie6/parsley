@@ -1,6 +1,6 @@
 package parsley.internal.deepembedding.backend
 
-import parsley.internal.deepembedding.ContOps, ContOps.{result, ContAdapter}
+import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
 import parsley.internal.deepembedding.singletons._
 import parsley.internal.machine.instructions
 
@@ -19,13 +19,13 @@ private [backend] sealed abstract class BranchLike[A, B, C, D](finaliser: Option
     final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val toP = state.freshLabel()
         val end = state.freshLabel()
-        b.codeGen >> {
+        suspend(b.codeGen[Cont, R]) >> {
             instrs += instr(toP)
-            q.codeGen >> {
+            suspend(q.codeGen[Cont, R]) >> {
                 for (instr <- finaliser) instrs += instr
                 instrs += new instructions.Jump(end)
                 instrs += new instructions.Label(toP)
-                p.codeGen |> {
+                suspend(p.codeGen[Cont, R]) |> {
                     for (instr <- finaliser) instrs += instr
                     instrs += new instructions.Label(end)
                 }
@@ -65,7 +65,7 @@ private [backend] sealed abstract class FastZero[A](fail: A => StrictParsley[Not
         case _ => this
     }
     final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
-        p.codeGen |> (instrs += instr)
+        suspend(p.codeGen[Cont, R]) |> (instrs += instr)
     }
 }
 private [deepembedding] final class FastFail[A](val p: StrictParsley[A], msggen: A => String)
@@ -82,7 +82,7 @@ private [backend] sealed abstract class FilterLike[A](fail: A => StrictParsley[N
         case _ => this
     }
     final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
-        p.codeGen |> (instrs += instr)
+        suspend(p.codeGen[Cont, R]) |> (instrs += instr)
     }
 }
 private [deepembedding] final class Filter[A](val p: StrictParsley[A], pred: A => Boolean)

@@ -1,6 +1,6 @@
 package parsley.internal.deepembedding.backend
 
-import parsley.internal.deepembedding.ContOps, ContOps.{result, ContAdapter}
+import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
 import parsley.internal.deepembedding.singletons._
 import parsley.internal.machine.instructions
 import parsley.registers.Reg
@@ -46,7 +46,7 @@ private [deepembedding] final class Let[A](val p: StrictParsley[A]) extends Stri
 }
 private [deepembedding] final class Put[S](reg: Reg[S], val p: StrictParsley[S]) extends Unary[S, Unit] {
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
-        p.codeGen |>
+        suspend(p.codeGen[Cont, R]) |>
         (instrs += new instructions.Put(reg.addr))
     }
 }
@@ -56,7 +56,7 @@ private [deepembedding] final class Debug[A](val p: StrictParsley[A], name: Stri
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val handler = state.freshLabel()
         instrs += new instructions.LogBegin(handler, name, ascii, (break eq EntryBreak) || (break eq FullBreak))
-        p.codeGen |> {
+        suspend(p.codeGen[Cont, R]) |> {
             instrs += new instructions.Label(handler)
             instrs += new instructions.LogEnd(name, ascii, (break eq ExitBreak) || (break eq FullBreak))
         }

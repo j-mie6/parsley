@@ -1,6 +1,6 @@
 package parsley.internal.deepembedding.backend
 
-import parsley.internal.deepembedding.ContOps, ContOps.{result, ContAdapter}
+import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
 import parsley.internal.machine.instructions
 import parsley.registers.Reg
 import StrictParsley.InstrBuffer
@@ -12,8 +12,8 @@ private [deepembedding] final class Lift2[A, B, C](private [Lift2] val f: (A, B)
     extends StrictParsley[C] {
     def inlinable = false
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont],  instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
-        left.codeGen[Cont, R] >>
-        right.codeGen |>
+        suspend(left.codeGen[Cont, R]) >>
+        suspend(right.codeGen[Cont, R]) |>
         (instrs += new instructions.Lift2(f))
     }
 }
@@ -21,9 +21,9 @@ private [deepembedding] final class Lift3[A, B, C, D](val f: (A, B, C) => D, val
     extends StrictParsley[D] {
     def inlinable = false
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
-        p.codeGen[Cont, R] >>
-        q.codeGen >>
-        r.codeGen |>
+        suspend(p.codeGen[Cont, R]) >>
+        suspend(q.codeGen[Cont, R]) >>
+        suspend(r.codeGen[Cont, R]) |>
         (instrs += new instructions.Lift3(f))
     }
 }
@@ -31,12 +31,12 @@ private [deepembedding] final class Lift3[A, B, C, D](val f: (A, B, C) => D, val
 private [deepembedding] final class Local[S, A](reg: Reg[S], left: StrictParsley[S], right: StrictParsley[A]) extends StrictParsley[A] {
     def inlinable = false
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
-        left.codeGen >> {
+        suspend(left.codeGen[Cont, R]) >> {
             val local = state.freshLabel()
             val body = state.freshLabel()
             instrs += new instructions.Jump(local)
             instrs += new instructions.Label(body)
-            right.codeGen |> {
+            suspend(right.codeGen[Cont, R])|> {
                 instrs += new instructions.Label(local)
                 instrs += new instructions.Local(body, reg.addr)
             }

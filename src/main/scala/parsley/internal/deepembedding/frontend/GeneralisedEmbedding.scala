@@ -1,6 +1,6 @@
 package parsley.internal.deepembedding.frontend
 
-import parsley.internal.deepembedding.ContOps, ContOps.{result, ContAdapter}
+import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
 
 import scala.language.higherKinds
 import parsley.internal.deepembedding.backend, backend.StrictParsley
@@ -11,11 +11,11 @@ private [frontend] abstract class Unary[A, B](p: LazyParsley[A]) extends LazyPar
     def make(p: StrictParsley[A]): StrictParsley[B]
 
     final override def findLetsAux[Cont[_, +_], R](seen: Set[LazyParsley[_]])(implicit ops: ContOps[Cont], state: LetFinderState): Cont[R,Unit] =
-        p.findLets(seen)
+        suspend(p.findLets(seen))
     override def preprocess[Cont[_, +_], R, B_ >: B](implicit ops: ContOps[Cont], lets: LetMap, recs: RecMap): Cont[R, StrictParsley[B_]] =
-        for (p <- p.optimised) yield make(p)
+        for (p <- suspend(p.optimised[Cont, R, A])) yield make(p)
     // $COVERAGE-OFF$
-    final override def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont]): Cont[String, String] = for (c <- p.prettyASTAux) yield pretty(c)
+    final override def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont]): Cont[String, String] = for (c <- suspend(p.prettyASTAux)) yield pretty(c)
     // $COVERAGE-ON$
 }
 
@@ -31,13 +31,13 @@ private [frontend] abstract class Binary[A, B, C](left: LazyParsley[A], _right: 
     def make(p: StrictParsley[A], q: StrictParsley[B]): StrictParsley[C]
 
     final override def findLetsAux[Cont[_, +_], R](seen: Set[LazyParsley[_]])(implicit ops: ContOps[Cont], state: LetFinderState): Cont[R,Unit] = {
-        left.findLets(seen) >> right.findLets(seen)
+        suspend(left.findLets[Cont, R](seen)) >> suspend(right.findLets(seen))
     }
     final override def preprocess[Cont[_, +_], R, C_ >: C](implicit ops: ContOps[Cont], lets: LetMap, recs: RecMap): Cont[R, StrictParsley[C_]] =
-        for (left <- left.optimised; right <- right.optimised) yield make(left, right)
+        for (left <- suspend(left.optimised[Cont, R, A]); right <- suspend(right.optimised[Cont, R, B])) yield make(left, right)
     // $COVERAGE-OFF$
     final override def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont]): Cont[String, String] = {
-        for (l <- left.prettyASTAux; r <- right.prettyASTAux) yield pretty(l, r)
+        for (l <- suspend(left.prettyASTAux); r <- suspend(right.prettyASTAux)) yield pretty(l, r)
     }
     // $COVERAGE-ON$
 }
@@ -50,12 +50,16 @@ private [frontend] abstract class Ternary[A, B, C, D](first: LazyParsley[A], _se
     def make(p: StrictParsley[A], q: StrictParsley[B], r: StrictParsley[C]): StrictParsley[D]
 
     final override def findLetsAux[Cont[_, +_], R](seen: Set[LazyParsley[_]])(implicit ops: ContOps[Cont], state: LetFinderState): Cont[R, Unit] = {
-        first.findLets[Cont, R](seen) >> second.findLets(seen) >> third.findLets(seen)
+        suspend(first.findLets[Cont, R](seen)) >> suspend(second.findLets(seen)) >> suspend(third.findLets(seen))
     }
     final override def preprocess[Cont[_, +_], R, D_ >: D](implicit ops: ContOps[Cont], lets: LetMap, recs: RecMap): Cont[R, StrictParsley[D_]] =
-        for (first <- first.optimised; second <- second.optimised; third <- third.optimised) yield make(first, second, third)
+        for {
+            first <- suspend(first.optimised[Cont, R, A])
+            second <- suspend(second.optimised[Cont, R, B])
+            third <- suspend(third.optimised[Cont, R, C])
+        } yield make(first, second, third)
     // $COVERAGE-OFF$
     final override def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont]): Cont[String, String] =
-        for (f <- first.prettyASTAux; s <- second.prettyASTAux; t <- third.prettyASTAux) yield pretty(f, s, t)
+        for (f <- suspend(first.prettyASTAux); s <- suspend(second.prettyASTAux); t <- suspend(third.prettyASTAux)) yield pretty(f, s, t)
     // $COVERAGE-ON$
 }

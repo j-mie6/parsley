@@ -1,6 +1,6 @@
 package parsley.internal.deepembedding.backend
 
-import parsley.internal.deepembedding.ContOps, ContOps.{result, ContAdapter}
+import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
 import parsley.internal.deepembedding.frontend
 import parsley.internal.deepembedding.singletons._
 import parsley.internal.machine.instructions
@@ -66,12 +66,12 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
             case ct@CharTok(c) => result(instrs += instructions.CharTokFastPerform[Char, B](c, f.asInstanceOf[Char => B], ct.expected))
             case st@StringTok(s) => result(instrs += instructions.StringTokFastPerform(s, f.asInstanceOf[String => B], st.expected))
             case _ =>
-                right.codeGen |>
+                suspend(right.codeGen[Cont, R]) |>
                 (instrs += new instructions.Perform(f))
         }
         case _ =>
-            left.codeGen[Cont, R] >>
-            right.codeGen |>
+            suspend(left.codeGen[Cont, R]) >>
+            suspend(right.codeGen[Cont, R]) |>
             (instrs += instructions.Apply)
     }
 }
@@ -96,7 +96,7 @@ private [deepembedding] final class >>=[A, B](val p: StrictParsley[A], private [
     }
     // TODO: Make bind generate with expected != None a ErrorLabel instruction
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
-        p.codeGen |>
+        suspend(p.codeGen[Cont, R]) |>
         (instrs += new instructions.DynCall[A](x => f(x).demandCalleeSave().instrs))
     }
 }
@@ -134,7 +134,7 @@ private [backend] sealed abstract class Seq[A, B, Res] extends StrictParsley[Res
         case (Pure(x), st@StringTok(s)) => ContOps.result(instrs += instructions.StringTokFastPerform(s, _ => x, st.expected))
         case (Pure(x), st@Satisfy(f)) => ContOps.result(instrs += new instructions.SatisfyExchange(f, x, st.expected))
         case (Pure(x), v) =>
-            v.codeGen |>
+            suspend(v.codeGen[Cont, R]) |>
             (instrs += new instructions.Exchange(x))
         case _ => default
     }
@@ -166,9 +166,9 @@ private [deepembedding] final class *>[A](var left: StrictParsley[Any], var righ
         }
     }
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = codeGenSeq {
-        discard.codeGen >> {
+        suspend(discard.codeGen[Cont, R]) >> {
             instrs += instructions.Pop
-            result.codeGen
+            suspend(result.codeGen[Cont, R])
         }
     }
 }
@@ -200,8 +200,8 @@ private [deepembedding] final class <*[A](var left: StrictParsley[A], var right:
         }
     }
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = codeGenSeq {
-        result.codeGen[Cont, R] >>
-        discard.codeGen |>
+        suspend(result.codeGen[Cont, R]) >>
+        suspend(discard.codeGen[Cont, R]) |>
         (instrs += instructions.Pop)
     }
 }

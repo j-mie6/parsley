@@ -1,6 +1,6 @@
 package parsley.internal.deepembedding.backend
 
-import parsley.internal.deepembedding.ContOps, ContOps.{result, ContAdapter}
+import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
 import parsley.internal.machine.instructions
 
 import scala.language.higherKinds
@@ -18,7 +18,7 @@ private [backend] abstract class ScopedUnary[A, B] extends Unary[A, B] {
     final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val handler = state.freshLabel()
         instrs += setup(handler)
-        p.codeGen |> {
+        suspend[Cont, R, Unit](p.codeGen) |> {
             instrs += new instructions.Label(handler)
             instrs += instr
         }

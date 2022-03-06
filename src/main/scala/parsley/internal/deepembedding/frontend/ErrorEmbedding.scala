@@ -1,7 +1,5 @@
 package parsley.internal.deepembedding.frontend
 
-import parsley.internal.deepembedding.ContOps.{result, ContAdapter}
-
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 
 private [parsley] final class ErrorLabel[A](p: LazyParsley[A], private [ErrorLabel] val label: String) extends ScopedUnary[A, A](p) {
