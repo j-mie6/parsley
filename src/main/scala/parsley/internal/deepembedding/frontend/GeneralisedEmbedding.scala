@@ -6,8 +6,9 @@ import scala.language.higherKinds
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 
 // Core Embedding
-private [frontend] abstract class Unary[A, B](p: LazyParsley[A], make: StrictParsley[A] => StrictParsley[B]) extends LazyParsley[B] {
+private [frontend] abstract class Unary[A, B](p: LazyParsley[A]) extends LazyParsley[B] {
     def pretty(p: String): String
+    def make(p: StrictParsley[A]): StrictParsley[B]
 
     final override def findLetsAux[Cont[_, +_], R](seen: Set[LazyParsley[_]])
         (implicit ops: ContOps[Cont], state: LetFinderState): Cont[R,Unit] = p.findLets(seen)
@@ -19,15 +20,16 @@ private [frontend] abstract class Unary[A, B](p: LazyParsley[A], make: StrictPar
     // $COVERAGE-ON$
 }
 
-private [frontend] abstract class ScopedUnary[A, B](_p: LazyParsley[A], make: StrictParsley[A] => StrictParsley[B]) extends Unary[A, B](_p, make) {
+private [frontend] abstract class ScopedUnary[A, B](_p: LazyParsley[A]) extends Unary[A, B](_p) {
     def name: String
     final def pretty(c: String) = s"$name($c)"
 }
 
-private [frontend] abstract class Binary[A, B, C](left: LazyParsley[A], _right: =>LazyParsley[B], make: (StrictParsley[A], StrictParsley[B]) => StrictParsley[C]) extends LazyParsley[C] {
+private [frontend] abstract class Binary[A, B, C](left: LazyParsley[A], _right: =>LazyParsley[B]) extends LazyParsley[C] {
     private lazy val right = _right
 
     def pretty(p: String, q: String): String
+    def make(p: StrictParsley[A], q: StrictParsley[B]): StrictParsley[C]
 
     final override def findLetsAux[Cont[_, +_], R](seen: Set[LazyParsley[_]])
         (implicit ops: ContOps[Cont], state: LetFinderState): Cont[R,Unit] = {
@@ -43,11 +45,12 @@ private [frontend] abstract class Binary[A, B, C](left: LazyParsley[A], _right: 
     // $COVERAGE-ON$
 }
 
-private [frontend] abstract class Ternary[A, B, C, D](first: LazyParsley[A], _second: =>LazyParsley[B], _third: =>LazyParsley[C], make: (StrictParsley[A], StrictParsley[B], StrictParsley[C]) => StrictParsley[D]) extends LazyParsley[D] {
+private [frontend] abstract class Ternary[A, B, C, D](first: LazyParsley[A], _second: =>LazyParsley[B], _third: =>LazyParsley[C]) extends LazyParsley[D] {
     private lazy val second: LazyParsley[B] = _second
     private lazy val third: LazyParsley[C] = _third
 
     def pretty(p: String, q: String, r: String): String
+    def make(p: StrictParsley[A], q: StrictParsley[B], r: StrictParsley[C]): StrictParsley[D]
 
     final override def findLetsAux[Cont[_, +_], R](seen: Set[LazyParsley[_]])
         (implicit ops: ContOps[Cont], state: LetFinderState): Cont[R, Unit] = {
