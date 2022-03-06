@@ -3,7 +3,7 @@ package parsley
 import parsley.Parsley.empty
 import parsley.combinator.skipMany
 import parsley.implicits.character.charLift
-import parsley.internal.deepembedding.frontend
+import parsley.internal.deepembedding.singletons
 import parsley.errors.combinator.ErrorMethods
 
 import scala.annotation.switch
@@ -20,21 +20,21 @@ object character
       * @param c The character to search for
       * @return `c` if it can be found at the head of the input
       */
-    def char(c: Char): Parsley[Char] = new Parsley(new frontend.CharTok(c, None))
+    def char(c: Char): Parsley[Char] = new Parsley(new singletons.CharTok(c, None))
 
     /** Reads a character from the head of the input stream if and only if it satisfies the given predicate. Else it
       * fails without consuming the character.
       * @param f The function to test the character on
       * @return `c` if `f(c)` is true.
       */
-    def satisfy(f: Char => Boolean): Parsley[Char] = new Parsley(new frontend.Satisfy(f, None))
+    def satisfy(f: Char => Boolean): Parsley[Char] = new Parsley(new singletons.Satisfy(f, None))
 
     /** Reads a string from the input stream and returns it, else fails if the string is not found at the head
       * of the stream.
       * @param s The string to match against
       * @return `s` if it can be found at the head of the input
       */
-    def string(s: String): Parsley[String] = new Parsley(new frontend.StringTok(s, None))
+    def string(s: String): Parsley[String] = new Parsley(new singletons.StringTok(s, None))
 
     /**`oneOf(cs)` succeeds if the current character is in the supplied set of characters `cs`.
       * Returns the parsed character. See also `satisfy`.*/

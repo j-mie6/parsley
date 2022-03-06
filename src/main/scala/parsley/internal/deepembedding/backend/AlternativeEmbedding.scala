@@ -1,6 +1,7 @@
 package parsley.internal.deepembedding.backend
 
 import parsley.internal.deepembedding.ContOps, ContOps.{result, ContAdapter}
+import parsley.internal.deepembedding.singletons._
 import parsley.internal.machine.instructions
 import parsley.internal.errors.{ErrorItem, Raw, Desc}
 
@@ -205,8 +206,6 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
         case _ => (p, tablable(p))::acc
     }
 }
-
-private [deepembedding] object Empty extends Singleton[Nothing](instructions.Empty) with MZero
 
 private [backend] object <|> {
     def apply[A](left: StrictParsley[A], right: StrictParsley[A]): <|>[A] = new <|>(left, right)

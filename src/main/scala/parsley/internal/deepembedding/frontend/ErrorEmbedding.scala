@@ -4,12 +4,6 @@ import parsley.internal.deepembedding.ContOps.{result, ContAdapter}
 
 import parsley.internal.deepembedding.backend
 
-private [parsley] final class Fail(private [Fail] val msgs: String*)
-    extends Singleton[Nothing](s"fail(${msgs.mkString(", ")})", new backend.Fail(msgs: _*))
-
-private [parsley] final class Unexpected(private [Unexpected] val msg: String)
-    extends Singleton[Nothing](s"unexpected($msg)", new backend.Unexpected(msg))
-
 private [parsley] final class ErrorLabel[A](p: LazyParsley[A], private [ErrorLabel] val label: String)
     extends ScopedUnary[A, A](p, s"label($label)", new backend.ErrorLabel(_, label))
 private [parsley] final class ErrorExplain[A](p: LazyParsley[A], reason: String)

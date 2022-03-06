@@ -2,6 +2,7 @@ package parsley.internal.deepembedding.backend
 
 import parsley.internal.deepembedding.ContOps, ContOps.{result, ContAdapter}
 import parsley.internal.deepembedding.frontend
+import parsley.internal.deepembedding.singletons._
 import parsley.internal.machine.instructions
 
 import scala.annotation.tailrec
@@ -10,8 +11,6 @@ import scala.language.higherKinds
 import StrictParsley.InstrBuffer
 
 // Core Embedding
-private [deepembedding] final class Pure[A](private [Pure] val x: A) extends Singleton[A](new instructions.Push(x))
-
 private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], var right: StrictParsley[A]) extends StrictParsley[B] {
     def inlinable = false
     // TODO: Refactor
@@ -207,9 +206,6 @@ private [deepembedding] final class <*[A](var left: StrictParsley[A], var right:
     }
 }
 
-private [backend] object Pure {
-    def unapply[A](self: Pure[A]): Some[A] = Some(self.x)
-}
 private [backend] object <*> {
     def apply[A, B](left: StrictParsley[A=>B], right: StrictParsley[A]): <*>[A, B] = new <*>[A, B](left, right)
     def unapply[A, B](self: <*>[A, B]): Some[(StrictParsley[A=>B], StrictParsley[A])] = Some((self.left, self.right))

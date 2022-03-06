@@ -9,8 +9,6 @@ import scala.language.higherKinds
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 
 // Core Embedding
-private [parsley] final class Pure[A](private [Pure] val x: A) extends Singleton[A](s"pure($x)", new backend.Pure(x))
-
 private [parsley] final class <*>[A, B](pf: LazyParsley[A => B], px: =>LazyParsley[A])
     extends Binary[A => B, A, B](pf, px, (l, r) => s"($l <*> $r)", new backend.<*>(_, _))
 

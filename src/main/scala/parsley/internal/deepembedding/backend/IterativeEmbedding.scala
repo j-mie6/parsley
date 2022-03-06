@@ -1,6 +1,7 @@
 package parsley.internal.deepembedding.backend
 
 import parsley.internal.deepembedding.ContOps, ContOps.{result, ContAdapter}
+import parsley.internal.deepembedding.singletons._
 import parsley.internal.machine.instructions
 import StrictParsley.InstrBuffer
 

@@ -6,16 +6,6 @@ import scala.language.higherKinds
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 
 // Core Embedding
-private [frontend] abstract class Singleton[A](pretty: String, strict: StrictParsley[A]) extends LazyParsley[A] {
-    final override def findLetsAux[Cont[_, +_], R](seen: Set[LazyParsley[_]])
-        (implicit ops: ContOps[Cont], state: LetFinderState): Cont[R, Unit] = result(())
-    final override def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont],
-                                                                    lets: LetMap, recs: RecMap): Cont[R, StrictParsley[A_]] = result(strict)
-    // $COVERAGE-OFF$
-    final override def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont]): Cont[String, String] = result(pretty)
-    // $COVERAGE-ON$
-}
-
 private [frontend] abstract class Unary[A, B](p: LazyParsley[A], pretty: String => String, make: StrictParsley[A] => StrictParsley[B])
     extends LazyParsley[B] {
     final override def findLetsAux[Cont[_, +_], R](seen: Set[LazyParsley[_]])

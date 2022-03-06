@@ -1,7 +1,7 @@
 package parsley
 
 import parsley.Parsley.{unit, empty, select, sequence, notFollowedBy, attempt}
-import parsley.internal.deepembedding.frontend
+import parsley.internal.deepembedding.{singletons, frontend}
 import parsley.expr.chain
 import scala.annotation.{tailrec, implicitNotFound}
 
@@ -111,7 +111,7 @@ object combinator {
     def endBy1[A, B](p: Parsley[A], sep: =>Parsley[B]): Parsley[List[A]] = some(p <* sep)
 
     /**This parser only succeeds at the end of the input. This is a primitive parser.*/
-    val eof: Parsley[Unit] = new Parsley(frontend.Eof)
+    val eof: Parsley[Unit] = new Parsley(singletons.Eof)
 
     /**This parser only succeeds if there is still more input.*/
     val more: Parsley[Unit] = notFollowedBy(eof)

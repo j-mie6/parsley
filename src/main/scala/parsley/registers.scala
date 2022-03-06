@@ -2,7 +2,7 @@ package parsley
 
 import parsley.Parsley.{empty, pure}
 import parsley.combinator.{when, whileP}
-import parsley.internal.deepembedding.frontend
+import parsley.internal.deepembedding.{singletons, frontend}
 
 /** This module contains all the functionality and operations for using and manipulating registers.
   * @since 2.2.0
@@ -30,7 +30,7 @@ object registers {
           * @return The value stored in register
           * @since 3.2.0
           */
-        def get: Parsley[A] = new Parsley(new frontend.Get(this))
+        def get: Parsley[A] = new Parsley(new  singletons.Get(this))
         /**
           * Consumes no input and returns the value stored in this register after applying a function.
           * @param f The function used to transform the value in this register
@@ -72,7 +72,7 @@ object registers {
           * @param f The function used to modify the register
           * @since 3.2.0
           */
-        def modify(f: A => A): Parsley[Unit] = new Parsley(new frontend.Modify(this, f))
+        def modify(f: A => A): Parsley[Unit] = new Parsley(new singletons.Modify(this, f))
         /**
           * Modifies the value contained in this register using function `f` obtained from executing `p`.
           * @note The value is modified after `pf` is executed

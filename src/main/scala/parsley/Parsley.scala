@@ -1,7 +1,7 @@
 package parsley
 
 import parsley.internal.machine.Context
-import parsley.internal.deepembedding.frontend
+import parsley.internal.deepembedding.{singletons, frontend}
 import parsley.expr.{chain, infix}
 import parsley.combinator.{option, some}
 import parsley.Parsley.pure
@@ -342,7 +342,7 @@ object Parsley
       * @param x The value to be returned from the parser
       * @return A parser which consumes nothing and returns `x`
       */
-    def pure[A](x: A): Parsley[A] = new Parsley(new frontend.Pure(x))
+    def pure[A](x: A): Parsley[A] = new Parsley(new singletons.Pure(x))
     /** This is one of the core operations of a selective functor. It will conditionally execute one of `p` and `q`
       * depending on the result from `b`. This can be used to implement conditional choice within a parser without
       * relying on expensive monadic operations.
@@ -383,7 +383,7 @@ object Parsley
       * {{{attempt(kw *> notFollowedBy(alphaNum))}}}*/
     def notFollowedBy(p: Parsley[_]): Parsley[Unit] = new Parsley(new frontend.NotFollowedBy(p.internal))
     /** The `empty` parser consumes no input and fails softly (that is to say, no error message) */
-    val empty: Parsley[Nothing] = new Parsley(frontend.Empty)
+    val empty: Parsley[Nothing] = new Parsley(singletons.Empty)
     /** Returns `()`. Defined as `pure(())` but aliased for sugar*/
     val unit: Parsley[Unit] = pure(())
     /** converts a parser's result to () */
@@ -411,12 +411,12 @@ object Parsley
       * This parser consumes no input and returns the current line number reached in the input stream
       * @return The line number the parser is currently at
       */
-    val line: Parsley[Int] = new Parsley(frontend.Line)
+    val line: Parsley[Int] = new Parsley(singletons.Line)
     /**
       * This parser consumes no input and returns the current column number reached in the input stream
       * @return The column number the parser is currently at
       */
-    val col: Parsley[Int] = new Parsley(frontend.Col)
+    val col: Parsley[Int] = new Parsley(singletons.Col)
     /**
       * This parser consumes no input and returns the current position reached in the input stream
       * @return Tuple of line and column number that the parser has reached

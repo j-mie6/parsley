@@ -21,13 +21,13 @@ import parsley.internal.deepembedding.backend, backend.StrictParsley
   * @author Jamie Willis
   * @version 1
   */
-private [parsley] abstract class LazyParsley[+A] private [frontend] {
+private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     // $COVERAGE-OFF$
     final private [parsley] def prettyAST: String = {force(); safeCall(g => perform(prettyASTAux(g))(g))}
     // $COVERAGE-ON$
 
     // $COVERAGE-OFF$
-    final def unsafe(): Unit = safe = false
+    final def unsafe(): Unit = sSafe = false
     final def force(): Unit = instrs
     final def overflows(): Unit = cps = true
     // $COVERAGE-ON$
@@ -64,7 +64,7 @@ private [parsley] abstract class LazyParsley[+A] private [frontend] {
                                                                                    lets: LetMap, recs: RecMap): Cont[R, StrictParsley[A_]] = {
         for (p <- this.preprocess) yield p.optimise
     }
-    final private [deepembedding] var safe = true
+    final private [deepembedding] var sSafe = true
     final private var cps = false
     final private var calleeSaveNeeded = false
 
@@ -79,8 +79,8 @@ private [parsley] abstract class LazyParsley[+A] private [frontend] {
                 implicit val letMap: LetMap = LetMap(letFinderState.lets)(ops, recMap)
                 val recs_ = recMap.map { case (p, strict) => (strict, p.unsafeOptimised[Cont, Unit, Any]) }
                 for (sp <- this.optimised) yield {
-                    sp.cps = cps
-                    sp.safe = safe
+                    //sp.cps = cps
+                    sp.safe = sSafe
                     sp.generateInstructions(calleeSaveNeeded, usedRegs, recs_)
                 }
             }
@@ -101,11 +101,11 @@ private [parsley] abstract class LazyParsley[+A] private [frontend] {
     private [parsley] def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont]): Cont[String, String]
 }
 
-private [frontend] trait UsesRegister {
+private [deepembedding] trait UsesRegister {
     val reg: Reg[_]
 }
 
-private [frontend] class LetFinderState {
+private [deepembedding] class LetFinderState {
     private val _recs = mutable.Set.empty[LazyParsley[_]]
     private val _preds = mutable.Map.empty[LazyParsley[_], Int]
     private val _usedRegs = mutable.Set.empty[Reg[_]]
@@ -122,7 +122,7 @@ private [frontend] class LetFinderState {
     def usedRegs: Set[Reg[_]] = _usedRegs.toSet
 }
 
-private [frontend] final class LetMap(letGen: Map[LazyParsley[_], LetMap => StrictParsley[_]]) {
+private [deepembedding] final class LetMap(letGen: Map[LazyParsley[_], LetMap => StrictParsley[_]]) {
     // This might not necessarily contain Let nodes: if they were inlined then they will not be present here
     private val mutMap = mutable.Map.empty[LazyParsley[_], StrictParsley[_]]
 
@@ -142,7 +142,7 @@ private [frontend] object LetMap {
     }
 }
 
-private [frontend] final class RecMap(map: Map[LazyParsley[_], backend.Rec[_]]) extends Iterable[(LazyParsley[_], backend.Rec[_])] {
+private [deepembedding] final class RecMap(map: Map[LazyParsley[_], backend.Rec[_]]) extends Iterable[(LazyParsley[_], backend.Rec[_])] {
     def contains(p: LazyParsley[_]): Boolean = map.contains(p)
     def apply[A](p: LazyParsley[A]): backend.Rec[A] = map(p).asInstanceOf[backend.Rec[A]]
     override def toString: String = map.toString

@@ -1,7 +1,7 @@
 package parsley.errors
 
 import parsley.Parsley
-import parsley.internal.deepembedding.frontend
+import parsley.internal.deepembedding.{singletons, frontend}
 
 import parsley.combinator.choice
 
@@ -13,13 +13,13 @@ object combinator {
       * The `fail(msgs)` parser consumes no input and fails with `msg` as the error message
       * @since 3.0.0
       */
-    def fail(msgs: String*): Parsley[Nothing] = new Parsley(new frontend.Fail(msgs: _*))
+    def fail(msgs: String*): Parsley[Nothing] = new Parsley(new singletons.Fail(msgs: _*))
 
     /**
       * The `unexpected(msg)` parser consumes no input and fails with `msg` as an unexpected error
       * @since 3.0.0
       */
-    def unexpected(msg: String): Parsley[Nothing] = new Parsley(new frontend.Unexpected(msg))
+    def unexpected(msg: String): Parsley[Nothing] = new Parsley(new singletons.Unexpected(msg))
 
     /**
       * This combinator adjusts the error messages that are generated within its scope so that they

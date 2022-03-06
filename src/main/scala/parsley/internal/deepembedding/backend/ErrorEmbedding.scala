@@ -1,13 +1,8 @@
 package parsley.internal.deepembedding.backend
 
 import parsley.internal.deepembedding.ContOps.{result, ContAdapter}
+import parsley.internal.deepembedding.singletons._
 import parsley.internal.machine.instructions
-
-private [deepembedding] final class Fail(private [Fail] val msgs: String*)
-    extends Singleton[Nothing](new instructions.Fail(msgs: _*)) with MZero
-
-private [deepembedding] final class Unexpected(private [Unexpected] val msg: String)
-    extends Singleton[Nothing](new instructions.Unexpected(msg)) with MZero
 
 private [deepembedding] final class ErrorLabel[A](var p: StrictParsley[A], private [ErrorLabel] val label: String)
     extends ScopedUnary[A, A](new instructions.InputCheck(_, true), new instructions.ApplyError(label)) {

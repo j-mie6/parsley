@@ -11,23 +11,12 @@ import parsley.internal.ResizableArray
 import StrictParsley._
 import parsley.internal.deepembedding.ContOps, ContOps.{safeCall, GenOps, perform, result, ContAdapter}
 
-/**
-  * This is the class that encapsulates the act of parsing and running an object of this class with `runParser` will
-  * parse the string given as input to `runParser`.
-  *
-  * Note: In order to construct an object of this class you must use the combinators; the class itself is abstract
-  *
-  * @author Jamie Willis
-  * @version 1
-  */
-private [deepembedding] abstract class StrictParsley[+A] private [backend]
-{
+private [deepembedding] trait StrictParsley[+A] /*private [backend]*/ {
     final protected type T = Any
     final protected type U = Any
 
     private [deepembedding] def inlinable: Boolean
     final private [deepembedding] var safe = true
-    final private [deepembedding] var cps = false
 
     final private [deepembedding] def generateInstructions[Cont[_, +_]](calleeSaveRequired: Boolean, usedRegs: Set[Reg[_]],
                                                                         recs: Iterable[(Rec[_], Cont[Unit, StrictParsley[_]])])
@@ -52,8 +41,8 @@ private [deepembedding] abstract class StrictParsley[+A] private [backend]
     private [backend] def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit]
 }
 
-private [backend] object StrictParsley {
-    private [backend] type InstrBuffer = ResizableArray[Instr]
+private [deepembedding] object StrictParsley {
+    private [deepembedding] type InstrBuffer = ResizableArray[Instr]
 
     private def applyAllocation(regs: Set[Reg[_]], freeSlots: Iterable[Int]): List[Int] = {
         val allocatedSlots = mutable.ListBuffer.empty[Int]
@@ -179,7 +168,7 @@ private [backend] trait Binding {
         case _: Let[_] => false
     }
 }
-private [backend] trait MZero extends StrictParsley[Nothing]
+private [deepembedding] trait MZero extends StrictParsley[Nothing]
 
 // Internals
 private [deepembedding] class CodeGenState {
