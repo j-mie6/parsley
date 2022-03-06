@@ -9,7 +9,8 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.higherKinds
 
-private [backend] sealed abstract class ManyLike[A, B](name: String, unit: B, instr: Int => instructions.Instr) extends Unary[A, B] {
+private [backend] sealed abstract class ManyLike[A, B](name: String, unit: B) extends Unary[A, B] {
+    def instr(label: Int): instructions.Instr
     final override def optimise: StrictParsley[B] = p match {
         case _: Pure[_] => throw new Exception(s"$name given parser which consumes no input")
         case _: MZero => new Pure(unit)
@@ -26,8 +27,12 @@ private [backend] sealed abstract class ManyLike[A, B](name: String, unit: B, in
         }
     }
 }
-private [deepembedding] final class Many[A](val p: StrictParsley[A]) extends ManyLike[A, List[A]]("many", Nil, new instructions.Many(_))
-private [deepembedding] final class SkipMany[A](val p: StrictParsley[A]) extends ManyLike[A, Unit]("skipMany", (), new instructions.SkipMany(_))
+private [deepembedding] final class Many[A](val p: StrictParsley[A]) extends ManyLike[A, List[A]]("many", Nil) {
+    override def instr(label: Int) = new instructions.Many(label)
+}
+private [deepembedding] final class SkipMany[A](val p: StrictParsley[A]) extends ManyLike[A, Unit]("skipMany", ()) {
+    override def instr(label: Int) = new instructions.SkipMany(label)
+}
 private [backend] sealed abstract class ChainLike[A](p: StrictParsley[A], op: StrictParsley[A => A]) extends StrictParsley[A] {
     def inlinable = false
     override def optimise: StrictParsley[A] = op match {

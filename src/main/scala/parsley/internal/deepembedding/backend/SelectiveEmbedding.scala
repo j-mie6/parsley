@@ -9,11 +9,12 @@ import StrictParsley.InstrBuffer
 
 import Branch.FlipApp
 
-private [backend] sealed abstract class BranchLike[A, B, C, D](instr: Int => instructions.Instr, finaliser: Option[instructions.Instr])
-    extends StrictParsley[D] {
+private [backend] sealed abstract class BranchLike[A, B, C, D](finaliser: Option[instructions.Instr]) extends StrictParsley[D] {
     val b: StrictParsley[A]
     val p: StrictParsley[B]
     val q: StrictParsley[C]
+    def instr(label: Int): instructions.Instr
+
     def inlinable = false
     final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val toP = state.freshLabel()
@@ -34,8 +35,8 @@ private [backend] sealed abstract class BranchLike[A, B, C, D](instr: Int => ins
 }
 
 private [deepembedding] final class Branch[A, B, C](val b: StrictParsley[Either[A, B]], val p: StrictParsley[A => C], val q: StrictParsley[B => C])
-    extends BranchLike[Either[A, B], A => C, B => C, C](new instructions.Case(_), Some(FlipApp)) {
-
+    extends BranchLike[Either[A, B], A => C, B => C, C](Some(FlipApp)) {
+    override def instr(label: Int) = new instructions.Case(label)
     override def optimise: StrictParsley[C] = b match {
         case Pure(Left(x)) => <*>(p, new Pure(x)).optimise
         case Pure(Right(y)) => <*>(q, new Pure(y)).optimise
@@ -47,7 +48,8 @@ private [deepembedding] final class Branch[A, B, C](val b: StrictParsley[Either[
 }
 
 private [deepembedding] final class If[A](val b: StrictParsley[Boolean], val p: StrictParsley[A], val q: StrictParsley[A])
-    extends BranchLike[Boolean, A, A, A](new instructions.If(_), None) {
+    extends BranchLike[Boolean, A, A, A](None) {
+    override def instr(label: Int) = new instructions.If(label)
     override def optimise: StrictParsley[A] = b match {
         case Pure(true) => p
         case Pure(false) => q

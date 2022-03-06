@@ -10,10 +10,14 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.higherKinds
 import StrictParsley.InstrBuffer
-private [deepembedding] final class Attempt[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, A](false, instructions.Attempt)
-private [deepembedding] final class Look[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, A](true, instructions.Look)
-private [deepembedding] final class NotFollowedBy[A](val p: StrictParsley[A])
-    extends ScopedUnaryWithState[A, Unit](true, instructions.NotFollowedBy) {
+private [deepembedding] final class Attempt[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, A](false) {
+    override val instr = instructions.Attempt
+}
+private [deepembedding] final class Look[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, A](true) {
+    override val instr = instructions.Look
+}
+private [deepembedding] final class NotFollowedBy[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, Unit](true) {
+    override val instr = instructions.NotFollowedBy
     override def optimise: StrictParsley[Unit] = p match {
         case z: MZero => new Pure(())
         case _ => this

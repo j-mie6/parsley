@@ -12,7 +12,9 @@ private [backend] abstract class Unary[A, B] extends StrictParsley[B] {
     def inlinable = false
 }
 
-private [backend] abstract class ScopedUnary[A, B](setup: Int => instructions.Instr, instr: instructions.Instr) extends Unary[A, B] {
+private [backend] abstract class ScopedUnary[A, B] extends Unary[A, B] {
+    def instr: instructions.Instr
+    def setup(label: Int): instructions.Instr
     final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val handler = state.freshLabel()
         instrs += setup(handler)
@@ -23,5 +25,6 @@ private [backend] abstract class ScopedUnary[A, B](setup: Int => instructions.In
     }
 }
 
-private [backend] abstract class ScopedUnaryWithState[A, B](doesNotProduceHints: Boolean, instr: instructions.Instr)
-    extends ScopedUnary[A, B](new instructions.PushHandlerAndState(_, doesNotProduceHints, doesNotProduceHints), instr)
+private [backend] abstract class ScopedUnaryWithState[A, B](doesNotProduceHints: Boolean) extends ScopedUnary[A, B] {
+    override def setup(label: Int) = new instructions.PushHandlerAndState(label, doesNotProduceHints, doesNotProduceHints)
+}
