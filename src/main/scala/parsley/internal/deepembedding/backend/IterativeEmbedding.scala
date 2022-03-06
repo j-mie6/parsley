@@ -34,7 +34,7 @@ private [deepembedding] final class SkipMany[A](val p: StrictParsley[A]) extends
     override def instr(label: Int): instructions.Instr = new instructions.SkipMany(label)
 }
 private [backend] sealed abstract class ChainLike[A](p: StrictParsley[A], op: StrictParsley[A => A]) extends StrictParsley[A] {
-    def inlinable = false
+    def inlinable: Boolean = false
     override def optimise: StrictParsley[A] = op match {
         case _: Pure[_] => throw new Exception("chain given parser which consumes no input")
         case _: MZero => p

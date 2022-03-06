@@ -33,7 +33,7 @@ private [deepembedding] final class Rec[A](val call: instructions.Call) extends 
     // $COVERAGE-ON$
     def preserve_=(indices: Array[Int]): Unit = call.preserve = indices
 
-    def inlinable = true
+    def inlinable: Boolean = true
 
     final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = result(instrs += call)
 }

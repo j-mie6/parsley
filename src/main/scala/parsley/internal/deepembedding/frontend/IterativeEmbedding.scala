@@ -21,7 +21,7 @@ private [parsley] final class SkipMany[A](p: LazyParsley[A]) extends ScopedUnary
 private [parsley] final class ChainPost[A](p: LazyParsley[A], _op: =>LazyParsley[A => A]) extends Binary[A, A => A, A](p, _op) {
     // $COVERAGE-OFF$
     override def pretty(l: String, r: String): String = s"chainPost($l, $r)"
-    override def make(p: StrictParsley[A], op: StrictParsley[A => A]) = new backend.ChainPost(p, op)
+    override def make(p: StrictParsley[A], op: StrictParsley[A => A]): StrictParsley[A] = new backend.ChainPost(p, op)
 }
 
 // This can't be fully strict, because it depends on binary!

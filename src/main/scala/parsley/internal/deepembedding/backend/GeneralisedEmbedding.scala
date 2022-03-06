@@ -26,5 +26,5 @@ private [backend] abstract class ScopedUnary[A, B] extends Unary[A, B] {
 }
 
 private [backend] abstract class ScopedUnaryWithState[A, B](doesNotProduceHints: Boolean) extends ScopedUnary[A, B] {
-    override def setup(label: Int) = new instructions.PushHandlerAndState(label, doesNotProduceHints, doesNotProduceHints)
+    override def setup(label: Int): instructions.Instr = new instructions.PushHandlerAndState(label, doesNotProduceHints, doesNotProduceHints)
 }

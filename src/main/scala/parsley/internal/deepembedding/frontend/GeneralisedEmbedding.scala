@@ -21,7 +21,7 @@ private [frontend] abstract class Unary[A, B](p: LazyParsley[A]) extends LazyPar
 
 private [frontend] abstract class ScopedUnary[A, B](p: LazyParsley[A]) extends Unary[A, B](p) {
     def name: String
-    final def pretty(c: String) = s"$name($c)"
+    final def pretty(c: String): String = s"$name($c)"
 }
 
 private [frontend] abstract class Binary[A, B, C](left: LazyParsley[A], _right: =>LazyParsley[B]) extends LazyParsley[C] {

@@ -8,7 +8,7 @@ import parsley.internal.deepembedding.frontend, frontend.LazyParsley
 import parsley.internal.machine.instructions
 
 private [singletons] abstract class Singleton[A] extends LazyParsley[A] with StrictParsley[A] {
-    def inlinable = true
+    def inlinable: Boolean = true
     def pretty: String
     def instr: instructions.Instr
 
