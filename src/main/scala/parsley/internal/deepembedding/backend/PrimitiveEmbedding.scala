@@ -10,9 +10,9 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.higherKinds
 import StrictParsley.InstrBuffer
-private [deepembedding] final class Attempt[A](var p: StrictParsley[A]) extends ScopedUnaryWithState[A, A](false, instructions.Attempt)
-private [deepembedding] final class Look[A](var p: StrictParsley[A]) extends ScopedUnaryWithState[A, A](true, instructions.Look)
-private [deepembedding] final class NotFollowedBy[A](var p: StrictParsley[A])
+private [deepembedding] final class Attempt[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, A](false, instructions.Attempt)
+private [deepembedding] final class Look[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, A](true, instructions.Look)
+private [deepembedding] final class NotFollowedBy[A](val p: StrictParsley[A])
     extends ScopedUnaryWithState[A, Unit](true, instructions.NotFollowedBy) {
     override def optimise: StrictParsley[Unit] = p match {
         case z: MZero => new Pure(())
@@ -40,7 +40,7 @@ private [deepembedding] final class Let[A](val p: StrictParsley[A]) extends Stri
         result(instrs += new instructions.GoSub(label))
     }
 }
-private [deepembedding] final class Put[S](reg: Reg[S], var p: StrictParsley[S]) extends Unary[S, Unit] {
+private [deepembedding] final class Put[S](reg: Reg[S], val p: StrictParsley[S]) extends Unary[S, Unit] {
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         p.codeGen |>
         (instrs += new instructions.Put(reg.addr))
@@ -48,7 +48,7 @@ private [deepembedding] final class Put[S](reg: Reg[S], var p: StrictParsley[S])
 }
 
 // $COVERAGE-OFF$
-private [deepembedding] final class Debug[A](var p: StrictParsley[A], name: String, ascii: Boolean, break: Breakpoint) extends Unary[A, A] {
+private [deepembedding] final class Debug[A](val p: StrictParsley[A], name: String, ascii: Boolean, break: Breakpoint) extends Unary[A, A] {
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val handler = state.freshLabel()
         instrs += new instructions.LogBegin(handler, name, ascii, (break eq EntryBreak) || (break eq FullBreak))

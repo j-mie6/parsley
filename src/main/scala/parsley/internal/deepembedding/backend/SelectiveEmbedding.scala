@@ -66,9 +66,9 @@ private [backend] sealed abstract class FastZero[A](fail: A => StrictParsley[Not
         p.codeGen |> (instrs += instr)
     }
 }
-private [deepembedding] final class FastFail[A](var p: StrictParsley[A], msggen: A => String)
+private [deepembedding] final class FastFail[A](val p: StrictParsley[A], msggen: A => String)
     extends FastZero[A](x => new Fail(msggen(x)), new instructions.FastFail(msggen)) with MZero
-private [deepembedding] final class FastUnexpected[A](var p: StrictParsley[A], msggen: A => String)
+private [deepembedding] final class FastUnexpected[A](val p: StrictParsley[A], msggen: A => String)
     extends FastZero[A](x => new Unexpected(msggen(x)), new instructions.FastUnexpected(msggen)) with MZero
 
 private [backend] sealed abstract class FilterLike[A](fail: A => StrictParsley[Nothing], instr: instructions.Instr, pred: A => Boolean)
@@ -83,11 +83,11 @@ private [backend] sealed abstract class FilterLike[A](fail: A => StrictParsley[N
         p.codeGen |> (instrs += instr)
     }
 }
-private [deepembedding] final class Filter[A](var p: StrictParsley[A], pred: A => Boolean)
+private [deepembedding] final class Filter[A](val p: StrictParsley[A], pred: A => Boolean)
     extends FilterLike[A](_ => Empty, new instructions.Filter(pred), !pred(_))
-private [deepembedding] final class FilterOut[A](var p: StrictParsley[A], pred: PartialFunction[A, String])
+private [deepembedding] final class FilterOut[A](val p: StrictParsley[A], pred: PartialFunction[A, String])
     extends FilterLike[A](x => ErrorExplain(Empty, pred(x)), new instructions.FilterOut(pred), pred.isDefinedAt(_))
-private [deepembedding] final class GuardAgainst[A](var p: StrictParsley[A], pred: PartialFunction[A, String])
+private [deepembedding] final class GuardAgainst[A](val p: StrictParsley[A], pred: PartialFunction[A, String])
     extends FilterLike[A](x => new Fail(pred(x)), new instructions.GuardAgainst(pred), pred.isDefinedAt(_))
 
 private [backend] object Branch {

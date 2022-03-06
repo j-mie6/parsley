@@ -4,7 +4,7 @@ import parsley.internal.deepembedding.ContOps.{result, ContAdapter}
 import parsley.internal.deepembedding.singletons._
 import parsley.internal.machine.instructions
 
-private [deepembedding] final class ErrorLabel[A](var p: StrictParsley[A], private [ErrorLabel] val label: String)
+private [deepembedding] final class ErrorLabel[A](val p: StrictParsley[A], private [ErrorLabel] val label: String)
     extends ScopedUnary[A, A](new instructions.InputCheck(_, true), new instructions.ApplyError(label)) {
     final override def optimise: StrictParsley[A] = p match {
         case ct@CharTok(c) if !ct.expected.contains("") => new CharTok(c, Some(label)).asInstanceOf[StrictParsley[A]]
@@ -15,11 +15,11 @@ private [deepembedding] final class ErrorLabel[A](var p: StrictParsley[A], priva
         case _ => this
     }
 }
-private [deepembedding] final class ErrorExplain[A](var p: StrictParsley[A], reason: String)
+private [deepembedding] final class ErrorExplain[A](val p: StrictParsley[A], reason: String)
     extends ScopedUnary[A, A](new instructions.InputCheck(_), new instructions.ApplyReason(reason))
 
-private [deepembedding] final class ErrorAmend[A](var p: StrictParsley[A]) extends ScopedUnaryWithState[A, A](false, instructions.Amend)
-private [deepembedding] final class ErrorEntrench[A](var p: StrictParsley[A])
+private [deepembedding] final class ErrorAmend[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, A](false, instructions.Amend)
+private [deepembedding] final class ErrorEntrench[A](val p: StrictParsley[A])
     extends ScopedUnary[A, A](new instructions.PushHandler(_), instructions.Entrench)
 
 private [backend] object ErrorLabel {

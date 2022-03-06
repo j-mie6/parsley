@@ -76,7 +76,7 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
     }
 }
 
-private [deepembedding] final class >>=[A, B](var p: StrictParsley[A], private [>>=] val f: A => frontend.LazyParsley[B]) extends Unary[A, B] {
+private [deepembedding] final class >>=[A, B](val p: StrictParsley[A], private [>>=] val f: A => frontend.LazyParsley[B]) extends Unary[A, B] {
     override def optimise: StrictParsley[B] = p match {
         // monad law 1: pure x >>= f = f x
         //case Pure(x) if safe => new Rec(() => f(x), expected)
