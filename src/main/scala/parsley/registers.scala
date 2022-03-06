@@ -2,7 +2,7 @@ package parsley
 
 import parsley.Parsley.{empty, pure}
 import parsley.combinator.{when, whileP}
-import parsley.internal.deepembedding
+import parsley.internal.deepembedding.{singletons, frontend}
 
 /** This module contains all the functionality and operations for using and manipulating registers.
   * @since 2.2.0
@@ -30,7 +30,7 @@ object registers {
           * @return The value stored in register
           * @since 3.2.0
           */
-        def get: Parsley[A] = new Parsley(new deepembedding.Get(this))
+        def get: Parsley[A] = new Parsley(new  singletons.Get(this))
         /**
           * Consumes no input and returns the value stored in this register after applying a function.
           * @param f The function used to transform the value in this register
@@ -59,7 +59,7 @@ object registers {
           * @param p The parser to derive the value from
           * @since 3.2.0
           */
-        def put(p: Parsley[A]): Parsley[Unit] = new Parsley(new deepembedding.Put(this, p.internal))
+        def put(p: Parsley[A]): Parsley[Unit] = new Parsley(new frontend.Put(this, p.internal))
         /**
           * Places the result of running `p` into this register.
           * @param p The parser to derive the value from
@@ -72,7 +72,7 @@ object registers {
           * @param f The function used to modify the register
           * @since 3.2.0
           */
-        def modify(f: A => A): Parsley[Unit] = new Parsley(new deepembedding.Modify(this, f))
+        def modify(f: A => A): Parsley[Unit] = new Parsley(new singletons.Modify(this, f))
         /**
           * Modifies the value contained in this register using function `f` obtained from executing `p`.
           * @note The value is modified after `pf` is executed
@@ -97,7 +97,7 @@ object registers {
           * @return The parser that performs `q` with the modified state
           * @since 3.2.0
           */
-        def local[B](p: Parsley[A])(q: =>Parsley[B]): Parsley[B] = new Parsley(new deepembedding.Local(this, p.internal, q.internal))
+        def local[B](p: Parsley[A])(q: =>Parsley[B]): Parsley[B] = new Parsley(new frontend.Local(this, p.internal, q.internal))
         /**
           * For the duration of parser `p` the state stored in this register is instead modified with `f`. The change is undone
           * after `p` has finished.

@@ -7,7 +7,7 @@ import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
 import parsley.Parsley, Parsley.{void, unit, attempt, pure, empty, notFollowedBy}
 import parsley.errors.combinator.{fail, amend, entrench, unexpected, ErrorMethods}
 import parsley.implicits.character.charLift
-import parsley.internal.deepembedding
+import parsley.internal.deepembedding.singletons
 
 import scala.language.implicitConversions
 
@@ -24,7 +24,7 @@ class Lexer(lang: LanguageDef)
     private def keyOrOp(startImpl: Impl, letterImpl: Impl, parser: Parsley[String], illegal: String => Boolean,
                         combinatorName: String, name: String, illegalName: String) = {
         val builder = (start: Char => Boolean, letter: Char => Boolean) =>
-            new Parsley(new deepembedding.NonSpecific(combinatorName, name, illegalName, start, letter, illegal))
+            new Parsley(new singletons.NonSpecific(combinatorName, name, illegalName, start, letter, illegal))
         lexeme {
             (startImpl, letterImpl) match {
                 case (Static(start), Static(letter)) => builder(start, letter)
@@ -52,7 +52,7 @@ class Lexer(lang: LanguageDef)
      * is not a prefix of a valid identifier. A `keyword` is treated as a single token using `attempt`.*/
     def keyword(name: String): Parsley[Unit] = lang.identLetter match
     {
-        case Static(letter) => lexeme(new Parsley(new deepembedding.Specific("keyword", name, letter, lang.caseSensitive)))
+        case Static(letter) => lexeme(new Parsley(new singletons.Specific("keyword", name, letter, lang.caseSensitive)))
         case _ => lexeme(attempt(caseString(name) *> notFollowedBy(identLetter).label("end of " + name)))
     }
 
@@ -95,7 +95,7 @@ class Lexer(lang: LanguageDef)
      * `attempt`.*/
     def operator_(name: String): Parsley[Unit] = lang.opLetter match
     {
-        case Static(letter) => new Parsley(new deepembedding.Specific("operator", name, letter, true))
+        case Static(letter) => new Parsley(new singletons.Specific("operator", name, letter, true))
         case _ => attempt(string(name) *> notFollowedBy(opLetter).label("end of " + name))
     }
 
@@ -107,7 +107,7 @@ class Lexer(lang: LanguageDef)
     /**The non-lexeme parser `maxOp_(name)` parses the symbol `name`, but also checks that the `name`
       * is not part of a larger reserved operator. An `operator` is treated as a single token using
       * `attempt`.*/
-    def maxOp_(name: String): Parsley[Unit] = void(new Parsley(new deepembedding.MaxOp(name, lang.operators)))
+    def maxOp_(name: String): Parsley[Unit] = void(new Parsley(new singletons.MaxOp(name, lang.operators)))
 
     private def isReservedOp(op: String): Boolean = lang.operators.contains(op)
     private lazy val opStart = toParser(lang.opStart)
@@ -133,18 +133,18 @@ class Lexer(lang: LanguageDef)
      * quite closely).*/
     lazy val stringLiteral_ : Parsley[String] = lang.space match
     {
-        case Static(ws) => new Parsley(new deepembedding.StringLiteral(ws))
+        case Static(ws) => new Parsley(new singletons.StringLiteral(ws))
         case _ => between('"'.label("string"), '"'.label("end of string"), many(stringChar)).map(_.flatten.mkString)
     }
 
     /**This non-lexeme parser parses a string in a raw fashion. The escape characters in the string
      * remain untouched. While escaped quotes do not end the string, they remain as \" in the result
      * instead of becoming a quote character. Does not support string gaps. */
-    lazy val rawStringLiteral: Parsley[String] = new Parsley(deepembedding.RawStringLiteral)
+    lazy val rawStringLiteral: Parsley[String] = new Parsley(singletons.RawStringLiteral)
 
     private def letter(terminal: Char): Parsley[Char] = satisfy(c => c != terminal && c != '\\' && c > '\u0016')
 
-    private lazy val escapeCode = new Parsley(deepembedding.Escape)
+    private lazy val escapeCode = new Parsley(singletons.Escape)
     private lazy val charEscape = '\\' *> escapeCode
     private lazy val charLetter = letter('\'')
     private lazy val characterChar = (charLetter <|> charEscape).label("literal character")
@@ -198,8 +198,8 @@ class Lexer(lang: LanguageDef)
     private lazy val octal_ = prefixedNumber('o', 8, octDigit)
 
     // Floats
-    private def sign(ty: SignType) = new Parsley(new deepembedding.Sign[ty.resultType](ty))
-    private lazy val floating = new Parsley(deepembedding.Float)
+    private def sign(ty: SignType) = new Parsley(new singletons.Sign[ty.resultType](ty))
+    private lazy val floating = new Parsley(singletons.Float)
     private lazy val signedFloating = sign(DoubleType) <*> floating
     private lazy val natFloat = attempt(floating.map(Right(_))) <|> nat.map(Left(_))
     private lazy val number_ =
@@ -208,7 +208,7 @@ class Lexer(lang: LanguageDef)
      <|> natFloat)
 
     // Integers and Naturals
-    private lazy val nat = new Parsley(deepembedding.Natural)
+    private lazy val nat = new Parsley(singletons.Natural)
     private lazy val int = sign(IntType) <*> nat
 
     /**Parses a positive whole number in the decimal system. Returns the value of the number.*/
@@ -255,9 +255,9 @@ class Lexer(lang: LanguageDef)
     val whiteSpace_ : Impl => Parsley[Unit] =
     {
         case NotRequired => skipComments
-        case Static(ws) => new Parsley(new deepembedding.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
+        case Static(ws) => new Parsley(new singletons.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
         case Parser(space_) if lang.supportsComments =>
-            skipMany(attempt(new Parsley(new deepembedding.Comment(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))) <|> space_)
+            skipMany(attempt(new Parsley(new singletons.Comment(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))) <|> space_)
         case Parser(space_) => skipMany(space_)
         // $COVERAGE-OFF$
         case _ => ???
@@ -268,7 +268,7 @@ class Lexer(lang: LanguageDef)
     lazy val skipComments: Parsley[Unit] = {
         if (!lang.supportsComments) unit
         else {
-            new Parsley(new deepembedding.SkipComments(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
+            new Parsley(new singletons.SkipComments(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
         }
     }
 

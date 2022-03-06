@@ -1,42 +1,42 @@
-package parsley.internal.deepembedding
+package parsley.internal.deepembedding.backend
 
-import ContOps.{result, ContAdapter}
+import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
+import parsley.internal.deepembedding.frontend
+import parsley.internal.deepembedding.singletons._
 import parsley.internal.machine.instructions
 
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.higherKinds
+import StrictParsley.InstrBuffer
 
 // Core Embedding
-private [parsley] final class Pure[A](private [Pure] val x: A) extends Singleton[A](s"pure($x)", new instructions.Push(x))
-
-private [parsley] final class <*>[A, B](_pf: Parsley[A => B], _px: =>Parsley[A])
-    extends Binary[A => B, A, B](_pf, _px, (l, r) => s"($l <*> $r)", new <*>(_, ???)) {
-    override val numInstrs = 1
+private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], var right: StrictParsley[A]) extends StrictParsley[B] {
+    def inlinable = false
     // TODO: Refactor
-    override def optimise: Parsley[B] = (left, right) match {
+    override def optimise: StrictParsley[B] = (left, right) match {
         // Fusion laws
         case (uf, Pure(x)) if uf.isInstanceOf[Pure[_]] || uf.isInstanceOf[_ <*> _] && uf.safe => uf match {
             // first position fusion
             case Pure(f) => new Pure(f(x))
             // second position fusion
-            case Pure(f: (T => A => B) @unchecked) <*> (uy: Parsley[T]) =>
+            case Pure(f: (T => A => B) @unchecked) <*> (uy: StrictParsley[T]) =>
                 left = new Pure((y: T) => f(y)(x))
-                right = uy.asInstanceOf[Parsley[A]]
+                right = uy.asInstanceOf[StrictParsley[A]]
                 this
             // third position fusion
-            case Pure(f: (T => U => A => B) @unchecked) <*> (uy: Parsley[T]) <*> (uz: Parsley[U]) =>
+            case Pure(f: (T => U => A => B) @unchecked) <*> (uy: StrictParsley[T]) <*> (uz: StrictParsley[U]) =>
                 left = <*>(new Pure((y: T) => (z: U) => f(y)(z)(x)), uy)
-                right = uz.asInstanceOf[Parsley[A]]
+                right = uz.asInstanceOf[StrictParsley[A]]
                 this
             // interchange law: u <*> pure y == pure ($y) <*> u == ($y) <$> u (single instruction, so we benefit at code-gen)
             case _ =>
-                left = new Pure((f: A => B) => f(x)).asInstanceOf[Parsley[A => B]]
-                right = uf.asInstanceOf[Parsley[A]]
+                left = new Pure((f: A => B) => f(x)).asInstanceOf[StrictParsley[A => B]]
+                right = uf.asInstanceOf[StrictParsley[A]]
                 this
         }
         // functor law: fmap f (fmap g p) == fmap (f . g) p where fmap f p = pure f <*> p from applicative
-        case (Pure(f), Pure(g: (T => A) @unchecked) <*> (u: Parsley[T])) => <*>(new Pure(f.compose(g)), u)
+        case (Pure(f), Pure(g: (T => A) @unchecked) <*> (u: StrictParsley[T])) => <*>(new Pure(f.compose(g)), u)
         // TODO: functor law with lift2!
         // right absorption law: mzero <*> p = mzero
         case (z: MZero, _) => z
@@ -55,31 +55,29 @@ private [parsley] final class <*>[A, B](_pf: Parsley[A => B], _px: =>Parsley[A])
         case (u, z: MZero) => *>(u, z)
         // interchange law: u <*> pure y == pure ($y) <*> u == ($y) <$> u (single instruction, so we benefit at code-gen)
         case (uf, Pure(x)) =>
-            left = new Pure((f: A => B) => f(x)).asInstanceOf[Parsley[A => B]]
-            right = uf.asInstanceOf[Parsley[A]]
+            left = new Pure((f: A => B) => f(x)).asInstanceOf[StrictParsley[A => B]]
+            right = uf.asInstanceOf[StrictParsley[A]]
             this
         case _ => this
     }
-    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = left match {
+    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = left match {
         // pure f <*> p = f <$> p
         case Pure(f) => right match {
             case ct@CharTok(c) => result(instrs += instructions.CharTokFastPerform[Char, B](c, f.asInstanceOf[Char => B], ct.expected))
             case st@StringTok(s) => result(instrs += instructions.StringTokFastPerform(s, f.asInstanceOf[String => B], st.expected))
             case _ =>
-                right.codeGen |>
+                suspend(right.codeGen[Cont, R]) |>
                 (instrs += new instructions.Perform(f))
         }
         case _ =>
-            left.codeGen >>
-            right.codeGen |>
+            suspend(left.codeGen[Cont, R]) >>
+            suspend(right.codeGen[Cont, R]) |>
             (instrs += instructions.Apply)
     }
 }
 
-private [parsley] final class >>=[A, B](_p: Parsley[A], private [>>=] val f: A => Parsley[B])
-    extends Unary[A, B](_p, l => s"($l >>= ?)", new >>=(_, f)) {
-    override val numInstrs = 1
-    override def optimise: Parsley[B] = p match {
+private [deepembedding] final class >>=[A, B](val p: StrictParsley[A], private [>>=] val f: A => frontend.LazyParsley[B]) extends Unary[A, B] {
+    override def optimise: StrictParsley[B] = p match {
         // monad law 1: pure x >>= f = f x
         //case Pure(x) if safe => new Rec(() => f(x), expected)
         // char/string x = char/string x *> pure x and monad law 1
@@ -97,63 +95,62 @@ private [parsley] final class >>=[A, B](_p: Parsley[A], private [>>=] val f: A =
         case _ => this
     }
     // TODO: Make bind generate with expected != None a ErrorLabel instruction
-    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
-        p.codeGen |>
+    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+        suspend(p.codeGen[Cont, R]) |>
         (instrs += new instructions.DynCall[A](x => f(x).demandCalleeSave().instrs))
     }
 }
 
-private [deepembedding] sealed abstract class Seq[A, B, Res](_left: Parsley[A], _right: =>Parsley[B], pretty: String, make: Parsley[A]=>Seq[A, B, Res])
-    extends Binary[A, B, Res](_left, _right, (l, r) => s"($l $pretty $r)", make) {
-    def result: Parsley[Res]
-    def discard: Parsley[_]
-    def result_=(p: Parsley[Res]): Unit
-    def discard_=(p: Parsley[_]): Unit
-    final override val numInstrs = 1
+private [backend] sealed abstract class Seq[A, B, Res] extends StrictParsley[Res] {
+    def result: StrictParsley[Res]
+    def discard: StrictParsley[_]
+    def result_=(p: StrictParsley[Res]): Unit
+    def discard_=(p: StrictParsley[_]): Unit
+    def inlinable = false
     // The type parameter R here is for /some/ reason necessary because Scala can't infer that Res =:= Char/String in `optimiseStringResult`...
     private def buildResult[R](s: String, r: R, ex1: Option[String], ex2: Option[String]) = {
         makeSeq(new StringTok(s, if (ex1.nonEmpty) ex1 else ex2), new Pure(r.asInstanceOf[Res]))
     }
-    private def optimiseStringResult(s: String, ex: Option[String]): Parsley[Res] = result match {
+    private def optimiseStringResult(s: String, ex: Option[String]): StrictParsley[Res] = result match {
         case ct@CharTok(c) => buildResult(combineSeq(s, c.toString), c, ex, ct.expected)
         case st@StringTok(t) => buildResult(combineSeq(s, t), t, ex, st.expected)
     }
-    protected def makeSeq(str: Parsley[String], res: Pure[Res]): Parsley[Res]
+    protected def makeSeq(str: StrictParsley[String], res: Pure[Res]): StrictParsley[Res]
     protected def combineSeq(sdis: String, sres: String): String
-    final protected def optimiseSeq: Option[Parsley[Res]] = discard match {
+    final protected def optimiseSeq: Option[StrictParsley[Res]] = discard match {
         // pure _ *> p = p = p <* pure _
         case _: Pure[_] => Some(result)
         // p *> pure _ *> q = p *> q, p <* (q *> pure _) = p <* q
         case u *> (_: Pure[_]) =>
             discard = u
-            Some(this.optimise)
+            Some(this.optimise.asInstanceOf[StrictParsley[Res]])
         case ct@CharTok(c) if result.isInstanceOf[CharTok] || result.isInstanceOf[StringTok] => Some(this.optimiseStringResult(c.toString, ct.expected))
         case st@StringTok(s) if result.isInstanceOf[CharTok] || result.isInstanceOf[StringTok] => Some(this.optimiseStringResult(s, st.expected))
         case _ => None
     }
-    final protected def codeGenSeq[Cont[_, +_], R](default: =>Cont[R, Unit])(implicit ops: ContOps[Cont, R], instrs: InstrBuffer,
+    final protected def codeGenSeq[Cont[_, +_], R](default: =>Cont[R, Unit])(implicit ops: ContOps[Cont], instrs: InstrBuffer,
                                                                                       state: CodeGenState): Cont[R, Unit] = (result, discard) match {
         case (Pure(x), ct@CharTok(c)) => ContOps.result(instrs += instructions.CharTokFastPerform[Char, Res](c, _ => x, ct.expected))
         case (Pure(x), st@StringTok(s)) => ContOps.result(instrs += instructions.StringTokFastPerform(s, _ => x, st.expected))
         case (Pure(x), st@Satisfy(f)) => ContOps.result(instrs += new instructions.SatisfyExchange(f, x, st.expected))
         case (Pure(x), v) =>
-            v.codeGen |>
+            suspend(v.codeGen[Cont, R]) |>
             (instrs += new instructions.Exchange(x))
         case _ => default
     }
 }
-private [parsley] final class *>[A](_p: Parsley[_], _q: =>Parsley[A]) extends Seq[Any, A, A](_p, _q, "*>", new *>(_, ???)) {
-    override def result: Parsley[A] = right
-    override def discard: Parsley[_] = left
-    override def result_=(p: Parsley[A]): Unit = right = p
-    override def discard_=(p: Parsley[_]): Unit = left = p
-    def makeSeq(str: Parsley[String], res: Pure[A]): Parsley[A] = {
+private [deepembedding] final class *>[A](var left: StrictParsley[Any], var right: StrictParsley[A]) extends Seq[Any, A, A] {
+    override def result: StrictParsley[A] = right
+    override def discard: StrictParsley[_] = left
+    override def result_=(p: StrictParsley[A]): Unit = right = p
+    override def discard_=(p: StrictParsley[_]): Unit = left = p
+    def makeSeq(str: StrictParsley[String], res: Pure[A]): StrictParsley[A] = {
         discard = str
         result = res
         optimise
     }
     def combineSeq(sdis: String, sres: String): String = sdis + sres
-    @tailrec override def optimise: Parsley[A] = optimiseSeq match {
+    @tailrec override def optimise: StrictParsley[A] = optimiseSeq match {
         case Some(p) => p
         case None => discard match {
             // mzero *> p = mzero (left zero and definition of *> in terms of >>=)
@@ -168,22 +165,22 @@ private [parsley] final class *>[A](_p: Parsley[_], _q: =>Parsley[A]) extends Se
             }
         }
     }
-    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = codeGenSeq {
-        discard.codeGen >> {
+    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = codeGenSeq {
+        suspend(discard.codeGen[Cont, R]) >> {
             instrs += instructions.Pop
-            result.codeGen
+            suspend(result.codeGen[Cont, R])
         }
     }
 }
-private [parsley] final class <*[A](_p: Parsley[A], _q: =>Parsley[_]) extends Seq[A, Any, A](_p, _q, "<*", new <*(_, ???)) {
-    override def result: Parsley[A] = left
-    override def discard: Parsley[_] = right
-    override def result_=(p: Parsley[A]): Unit = left = p
-    override def discard_=(p: Parsley[_]): Unit = right = p
+private [deepembedding] final class <*[A](var left: StrictParsley[A], var right: StrictParsley[Any]) extends Seq[A, Any, A] {
+    override def result: StrictParsley[A] = left
+    override def discard: StrictParsley[_] = right
+    override def result_=(p: StrictParsley[A]): Unit = left = p
+    override def discard_=(p: StrictParsley[_]): Unit = right = p
 
-    def makeSeq(str: Parsley[String], res: Pure[A]): Parsley[A] = *>(str, res)
+    def makeSeq(str: StrictParsley[String], res: Pure[A]): StrictParsley[A] = *>(str, res)
     def combineSeq(sdis: String, sres: String): String = sres + sdis
-    @tailrec override def optimise: Parsley[A] =  optimiseSeq match {
+    @tailrec override def optimise: StrictParsley[A] =  optimiseSeq match {
         case Some(p) => p
         case None => discard match {
             // p <* mzero = p *> mzero (by preservation of error messages and failure properties) - This moves the pop instruction after the failure
@@ -202,32 +199,29 @@ private [parsley] final class <*[A](_p: Parsley[A], _q: =>Parsley[_]) extends Se
             }
         }
     }
-    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = codeGenSeq {
-        result.codeGen >>
-        discard.codeGen |>
+    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = codeGenSeq {
+        suspend(result.codeGen[Cont, R]) >>
+        suspend(discard.codeGen[Cont, R]) |>
         (instrs += instructions.Pop)
     }
 }
 
-private [deepembedding] object Pure {
-    def unapply[A](self: Pure[A]): Some[A] = Some(self.x)
+private [backend] object <*> {
+    def apply[A, B](left: StrictParsley[A=>B], right: StrictParsley[A]): <*>[A, B] = new <*>[A, B](left, right)
+    def unapply[A, B](self: <*>[A, B]): Some[(StrictParsley[A=>B], StrictParsley[A])] = Some((self.left, self.right))
 }
-private [deepembedding] object <*> {
-    def apply[A, B](left: Parsley[A=>B], right: Parsley[A]): <*>[A, B] = new <*>[A, B](left, ???).ready(right)
-    def unapply[A, B](self: <*>[A, B]): Some[(Parsley[A=>B], Parsley[A])] = Some((self.left, self.right))
+private [backend] object >>= {
+    def apply[A, B](p: StrictParsley[A], f: A => frontend.LazyParsley[B]): >>=[A, B] = new >>=(p, f)
+    def unapply[A, B](self: >>=[A, B]): Some[(StrictParsley[A], A => frontend.LazyParsley[B])] = Some((self.p, self.f))
 }
-private [deepembedding] object >>= {
-    def apply[A, B](p: Parsley[A], f: A => Parsley[B]): >>=[A, B] = new >>=(p, f).ready()
-    def unapply[A, B](self: >>=[A, B]): Some[(Parsley[A], A => Parsley[B])] = Some((self.p, self.f))
+private [backend] object Seq {
+    def unapply[A, B, Res](self: Seq[A, B, Res]): Some[(StrictParsley[_], StrictParsley[Res])] = Some((self.discard, self.result))
 }
-private [deepembedding] object Seq {
-    def unapply[A, B, Res](self: Seq[A, B, Res]): Some[(Parsley[_], Parsley[Res])] = Some((self.discard, self.result))
+private [backend] object *> {
+    def apply[A](left: StrictParsley[_], right: StrictParsley[A]): *>[A]= new *>(left, right)
+    def unapply[A](self: *>[A]): Some[(StrictParsley[_], StrictParsley[A])] = Some((self.discard, self.result))
 }
-private [deepembedding] object *> {
-    def apply[A](left: Parsley[_], right: Parsley[A]): *>[A]= new *>(left, ???).ready(right)
-    def unapply[A](self: *>[A]): Some[(Parsley[_], Parsley[A])] = Some((self.discard, self.result))
-}
-private [deepembedding] object <* {
-    def apply[A](left: Parsley[A], right: Parsley[_]): <*[A] = new <*(left, ???).ready(right)
-    def unapply[A](self: <*[A]): Some[(Parsley[A], Parsley[_])] = Some((self.result, self.discard))
+private [backend] object <* {
+    def apply[A](left: StrictParsley[A], right: StrictParsley[_]): <*[A] = new <*(left, right)
+    def unapply[A](self: <*[A]): Some[(StrictParsley[A], StrictParsley[_])] = Some((self.result, self.discard))
 }

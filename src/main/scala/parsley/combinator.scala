@@ -1,7 +1,7 @@
 package parsley
 
 import parsley.Parsley.{unit, empty, select, sequence, notFollowedBy, attempt}
-import parsley.internal.deepembedding
+import parsley.internal.deepembedding.{singletons, frontend}
 import parsley.expr.chain
 import scala.annotation.{tailrec, implicitNotFound}
 
@@ -53,7 +53,7 @@ object combinator {
     /** `many(p)` executes the parser `p` zero or more times. Returns a list of the returned values of `p`.
       * @since 2.2.0
       */
-    def many[A](p: Parsley[A]): Parsley[List[A]] = new Parsley(new deepembedding.Many(p.internal))
+    def many[A](p: Parsley[A]): Parsley[List[A]] = new Parsley(new frontend.Many(p.internal))
 
     /**`some(p)` applies the parser `p` *one* or more times. Returns a list of the returned values of `p`.*/
     def some[A](p: Parsley[A]): Parsley[List[A]] = manyN(1, p)
@@ -70,7 +70,7 @@ object combinator {
     /** `skipMany(p)` executes the parser `p` zero or more times and ignores the results. Returns `()`
       * @since 2.2.0
       */
-    def skipMany[A](p: Parsley[A]): Parsley[Unit] = new Parsley(new deepembedding.SkipMany(p.internal))
+    def skipMany[A](p: Parsley[A]): Parsley[Unit] = new Parsley(new frontend.SkipMany(p.internal))
 
     /**`skipSome(p)` applies the parser `p` *one* or more times, skipping its result.*/
     def skipSome[A](p: Parsley[A]): Parsley[Unit] = skipManyN(1, p)
@@ -100,7 +100,7 @@ object combinator {
 
     /**`sepEndBy1(p, sep)` parses *one* or more occurrences of `p`, separated and optionally ended
       * by `sep`. Returns a list of values returned by `p`.*/
-    def sepEndBy1[A, B](p: Parsley[A], sep: =>Parsley[B]): Parsley[List[A]] = new Parsley(new deepembedding.SepEndBy1(p.internal, sep.internal))
+    def sepEndBy1[A, B](p: Parsley[A], sep: =>Parsley[B]): Parsley[List[A]] = new Parsley(new frontend.SepEndBy1(p.internal, sep.internal))
 
     /**`endBy(p, sep)` parses *zero* or more occurrences of `p`, separated and ended by `sep`. Returns a list
       * of values returned by `p`.*/
@@ -111,7 +111,7 @@ object combinator {
     def endBy1[A, B](p: Parsley[A], sep: =>Parsley[B]): Parsley[List[A]] = some(p <* sep)
 
     /**This parser only succeeds at the end of the input. This is a primitive parser.*/
-    val eof: Parsley[Unit] = new Parsley(deepembedding.Eof)
+    val eof: Parsley[Unit] = new Parsley(singletons.Eof)
 
     /**This parser only succeeds if there is still more input.*/
     val more: Parsley[Unit] = notFollowedBy(eof)
@@ -119,7 +119,11 @@ object combinator {
     /**`manyUntil(p, end)` applies parser `p` zero or more times until the parser `end` succeeds.
       * Returns a list of values returned by `p`. This parser can be used to scan comments.*/
     def manyUntil[A, B](p: Parsley[A], end: Parsley[B]): Parsley[List[A]] = {
-        new Parsley(new deepembedding.ManyUntil((end #> deepembedding.ManyUntil.Stop <|> p).internal))
+        new Parsley(new frontend.ManyUntil((end #> ManyUntil.Stop <|> p).internal))
+    }
+
+    private [parsley] object ManyUntil {
+        object Stop
     }
 
     /**`someUntil(p, end)` applies parser `p` one or more times until the parser `end` succeeds.

@@ -1,7 +1,6 @@
 package parsley.internal.machine.instructions
 
 import parsley.internal.machine.{Context, Good}
-import parsley.internal.ResizableArray
 import parsley.internal.errors.{ErrorItem, Desc}
 
 private [internal] final class Satisfies(f: Char => Boolean, _expected: Option[String]) extends Instr {

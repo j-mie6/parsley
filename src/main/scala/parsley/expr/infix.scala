@@ -1,7 +1,7 @@
 package parsley.expr
 
 import parsley.Parsley
-import parsley.internal.deepembedding
+import parsley.internal.deepembedding.frontend
 
 import scala.annotation.implicitNotFound
 
@@ -38,7 +38,7 @@ object infix {
       */
     def right1[A, B, C >: B](p: Parsley[A], op: =>Parsley[(A, C) => B])
             (implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${B}") wrap: A => C): Parsley[C] = {
-        new Parsley(new deepembedding.Chainr(p.internal, op.internal, wrap))
+        new Parsley(new frontend.Chainr(p.internal, op.internal, wrap))
     }
 
     /** `left1(p, op)` parses *one* or more occurrences of `p`, separated by `op`. Returns a value
@@ -50,6 +50,6 @@ object infix {
     def left1[A, B, C >: B](p: Parsley[A], op: =>Parsley[(C, A) => B])
             (implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${B}") wrap: A => C): Parsley[C] = {
         // a sneaky sneaky trick :) If we know that A =:= B because refl was provided, then we can skip the wrapping
-        new Parsley(new deepembedding.Chainl(parsley.XCompat.applyWrap(wrap)(p).internal, p.internal, op.internal))
+        new Parsley(new frontend.Chainl(parsley.XCompat.applyWrap(wrap)(p).internal, p.internal, op.internal))
     }
 }

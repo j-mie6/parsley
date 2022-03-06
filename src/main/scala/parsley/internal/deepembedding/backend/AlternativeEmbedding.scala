@@ -1,6 +1,7 @@
-package parsley.internal.deepembedding
+package parsley.internal.deepembedding.backend
 
-import ContOps.{result, ContAdapter}
+import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
+import parsley.internal.deepembedding.singletons._
 import parsley.internal.machine.instructions
 import parsley.internal.errors.{ErrorItem, Raw, Desc}
 
@@ -8,11 +9,13 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.higherKinds
 
-// TODO: Tablification is too aggressive. It appears that `optional` is being compiled to jumptable
-private [parsley] final class <|>[A](_p: Parsley[A], _q: =>Parsley[A]) extends Binary[A, A, A](_p, _q, (l, r) => s"($l <|> $r)", new <|>(_, ???)) {
-    override val numInstrs = 3
+import StrictParsley.InstrBuffer
 
-    override def optimise: Parsley[A] = (left, right) match {
+// TODO: Tablification is too aggressive. It appears that `optional` is being compiled to jumptable
+private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right: StrictParsley[A]) extends StrictParsley[A] {
+    def inlinable = false
+
+    override def optimise: StrictParsley[A] = (left, right) match {
         // left catch law: pure x <|> p = pure x
         case (u: Pure[A @unchecked], _) => u
         // alternative law: empty <|> p = p
@@ -27,14 +30,14 @@ private [parsley] final class <|>[A](_p: Parsley[A], _q: =>Parsley[A]) extends B
         case _ => this
     }
     // TODO: Refactor
-    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = tablify(this, Nil) match {
+    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = tablify(this, Nil) match {
         // If the tablified list is single element, that implies that this should be generated as normal!
         case _::Nil => left match {
             case Attempt(u) => right match {
                 case Pure(x) =>
                     val handler = state.freshLabel()
                     instrs += new instructions.PushHandlerAndState(handler, true, false)
-                    u.codeGen |> {
+                    suspend(u.codeGen[Cont, R]) |> {
                         instrs += new instructions.Label(handler)
                         instrs += new instructions.AlwaysRecoverWith[A](x)
                     }
@@ -43,10 +46,10 @@ private [parsley] final class <|>[A](_p: Parsley[A], _q: =>Parsley[A]) extends B
                     val skip = state.freshLabel()
                     val merge = state.freshLabel()
                     instrs += new instructions.PushHandlerAndState(handler, true, false)
-                    u.codeGen >> {
+                    suspend(u.codeGen[Cont, R]) >> {
                         instrs += new instructions.Label(handler)
                         instrs += new instructions.JumpGoodAttempt(skip, merge)
-                        v.codeGen |> {
+                        suspend(v.codeGen[Cont, R]) |> {
                             instrs += new instructions.Label(merge)
                             instrs += instructions.MergeErrors
                             instrs += new instructions.Label(skip)
@@ -58,7 +61,7 @@ private [parsley] final class <|>[A](_p: Parsley[A], _q: =>Parsley[A]) extends B
                     val handler = state.freshLabel()
                     val skip = state.freshLabel()
                     instrs += new instructions.InputCheck(handler, true)
-                    u.codeGen |> {
+                    suspend(u.codeGen[Cont, R]) |> {
                         instrs += new instructions.JumpGood(skip)
                         instrs += new instructions.Label(handler)
                         instrs += new instructions.RecoverWith[A](x)
@@ -69,11 +72,11 @@ private [parsley] final class <|>[A](_p: Parsley[A], _q: =>Parsley[A]) extends B
                     val skip = state.freshLabel()
                     val merge = state.freshLabel()
                     instrs += new instructions.InputCheck(handler, true)
-                    u.codeGen >> {
+                    suspend(u.codeGen[Cont, R]) >> {
                         instrs += new instructions.JumpGood(skip)
                         instrs += new instructions.Label(handler)
                         instrs += new instructions.Catch(merge)
-                        v.codeGen |> {
+                        suspend(v.codeGen[Cont, R]) |> {
                             instrs += new instructions.Label(merge)
                             instrs += instructions.MergeErrors
                             instrs += new instructions.Label(skip)
@@ -109,28 +112,28 @@ private [parsley] final class <|>[A](_p: Parsley[A], _q: =>Parsley[A]) extends B
                 }
             }
     }
-    def codeGenRoots[Cont[_, +_], R](roots: List[List[Parsley[_]]], ls: List[Int], end: Int)
-                                 (implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = roots match {
+    def codeGenRoots[Cont[_, +_], R](roots: List[List[StrictParsley[_]]], ls: List[Int], end: Int)
+                                 (implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = roots match {
         case root::roots_ =>
             instrs += new instructions.Label(ls.head)
             codeGenAlternatives(root) >> {
                 instrs += new instructions.JumpGood(end)
-                codeGenRoots(roots_, ls.tail, end)
+                suspend(codeGenRoots[Cont, R](roots_, ls.tail, end))
             }
         case Nil => result(())
     }
-    def codeGenAlternatives[Cont[_, +_], R](alts: List[Parsley[_]])
-                                        (implicit ops: ContOps[Cont, R], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = (alts: @unchecked) match {
+    def codeGenAlternatives[Cont[_, +_], R](alts: List[StrictParsley[_]])
+                                        (implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = (alts: @unchecked) match {
         case alt::Nil => alt.codeGen
         case Attempt(alt)::alts_ =>
             val handler = state.freshLabel()
             val skip = state.freshLabel()
             val merge = state.freshLabel()
             instrs += new instructions.PushHandlerAndState(handler, true, false)
-            alt.codeGen >> {
+            suspend(alt.codeGen[Cont, R]) >> {
                 instrs += new instructions.Label(handler)
                 instrs += new instructions.JumpGoodAttempt(skip, merge)
-                codeGenAlternatives(alts_) |> {
+                suspend(codeGenAlternatives[Cont, R](alts_)) |> {
                     instrs += new instructions.Label(merge)
                     instrs += instructions.MergeErrors
                     instrs += new instructions.Label(skip)
@@ -141,11 +144,11 @@ private [parsley] final class <|>[A](_p: Parsley[A], _q: =>Parsley[A]) extends B
             val skip = state.freshLabel()
             val merge = state.freshLabel()
             instrs += new instructions.InputCheck(handler, true)
-            alt.codeGen >> {
+            suspend(alt.codeGen[Cont, R]) >> {
                 instrs += new instructions.JumpGood(skip)
                 instrs += new instructions.Label(handler)
                 instrs += new instructions.Catch(merge)
-                codeGenAlternatives(alts_) |> {
+                suspend(codeGenAlternatives[Cont, R](alts_)) |> {
                     instrs += new instructions.Label(merge)
                     instrs += instructions.MergeErrors
                     instrs += new instructions.Label(skip)
@@ -153,13 +156,13 @@ private [parsley] final class <|>[A](_p: Parsley[A], _q: =>Parsley[A]) extends B
             }
     }
     // TODO: Refactor
-    @tailrec def foldTablified(tablified: List[(Parsley[_], Option[Parsley[_]])], labelGen: CodeGenState,
-                               roots: mutable.Map[Char, List[Parsley[_]]],
+    @tailrec def foldTablified(tablified: List[(StrictParsley[_], Option[StrictParsley[_]])], labelGen: CodeGenState,
+                               roots: mutable.Map[Char, List[StrictParsley[_]]],
                                leads: List[Char],
                                labels: List[Int],
                                size: Int,
                                expecteds: mutable.Set[ErrorItem]):
-        (List[List[Parsley[_]]], List[Char], List[Int], Int, Set[ErrorItem]) = tablified match {
+        (List[List[StrictParsley[_]]], List[Char], List[Int], Int, Set[ErrorItem]) = tablified match {
         case (_, None)::tablified_ => foldTablified(tablified_, labelGen, roots, leads, labels, size, expecteds)
         case (root, Some(lead))::tablified_ =>
             val (c: Char, expected: ErrorItem, _size: Int) = lead match {
@@ -181,7 +184,7 @@ private [parsley] final class <|>[A](_p: Parsley[A], _q: =>Parsley[A]) extends B
             }
         case Nil => (leads.map(roots(_)), leads, labels, size, expecteds.toSet)
     }
-    @tailrec private def tablable(p: Parsley[_]): Option[Parsley[_]] = p match {
+    @tailrec private def tablable(p: StrictParsley[_]): Option[StrictParsley[_]] = p match {
         // CODO: Numeric parsers by leading digit (This one would require changing the foldTablified function a bit)
         case t@(_: CharTok | _: StringTok | _: StringLiteral | RawStringLiteral | _: MaxOp) => Some(t)
         // TODO: This can be done for case insensitive things too, but with duplicated branching
@@ -195,7 +198,8 @@ private [parsley] final class <|>[A](_p: Parsley[A], _q: =>Parsley[A]) extends B
         case t <* _ => tablable(t)
         case _ => None
     }
-    @tailrec private [deepembedding] def tablify(p: Parsley[_], acc: List[(Parsley[_], Option[Parsley[_]])]): List[(Parsley[_], Option[Parsley[_]])] = p match {
+    @tailrec private [deepembedding] def tablify(p: StrictParsley[_], acc: List[(StrictParsley[_], Option[StrictParsley[_]])]):
+        List[(StrictParsley[_], Option[StrictParsley[_]])] = p match {
         case u <|> v =>
             val leading = tablable(u)
             if (leading.isDefined) tablify(v, (u, leading)::acc)
@@ -204,9 +208,7 @@ private [parsley] final class <|>[A](_p: Parsley[A], _q: =>Parsley[A]) extends B
     }
 }
 
-private [parsley] object Empty extends Singleton[Nothing]("empty", instructions.Empty) with MZero
-
-private [deepembedding] object <|> {
-    def apply[A](left: Parsley[A], right: Parsley[A]): <|>[A] = new <|>(left, ???).ready(right)
-    def unapply[A](self: <|>[A]): Some[(Parsley[A], Parsley[A])] = Some((self.left, self.right))
+private [backend] object <|> {
+    def apply[A](left: StrictParsley[A], right: StrictParsley[A]): <|>[A] = new <|>(left, right)
+    def unapply[A](self: <|>[A]): Some[(StrictParsley[A], StrictParsley[A])] = Some((self.left, self.right))
 }
