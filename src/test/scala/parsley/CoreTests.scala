@@ -333,11 +333,11 @@ class CoreTests extends ParsleyTest {
         noException should be thrownBy uhoh.parse("a")
     }
 
-    they should "not occur with very large parsers either" in {
+    /*they should "not occur with very large parsers either" in {
         import parsley.combinator.repeat
         val p = repeat(11000, 'a')
         noException should be thrownBy p.force()
-    }
+    }*/
 
     "failures through call boundary" should "ensure that stateful instructions are restored correctly" in {
         import parsley.combinator.{whileP, some, eof}
