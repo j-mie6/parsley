@@ -198,7 +198,8 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
         case t <* _ => tablable(t)
         case _ => None
     }
-    @tailrec private [deepembedding] def tablify(p: StrictParsley[_], acc: List[(StrictParsley[_], Option[StrictParsley[_]])]): List[(StrictParsley[_], Option[StrictParsley[_]])] = p match {
+    @tailrec private [deepembedding] def tablify(p: StrictParsley[_], acc: List[(StrictParsley[_], Option[StrictParsley[_]])]):
+        List[(StrictParsley[_], Option[StrictParsley[_]])] = p match {
         case u <|> v =>
             val leading = tablable(u)
             if (leading.isDefined) tablify(v, (u, leading)::acc)
