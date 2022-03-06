@@ -12,15 +12,6 @@ import parsley.internal.deepembedding.{Cont, ContOps}, ContOps.{safeCall, GenOps
 
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 
-/**
-  * This is the class that encapsulates the act of parsing and running an object of this class with `runParser` will
-  * parse the string given as input to `runParser`.
-  *
-  * Note: In order to construct an object of this class you must use the combinators; the class itself is abstract
-  *
-  * @author Jamie Willis
-  * @version 1
-  */
 private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     // $COVERAGE-OFF$
     final private [parsley] def prettyAST: String = {force(); safeCall(g => perform(prettyASTAux(g))(g))}
@@ -79,7 +70,6 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
                 implicit val letMap: LetMap = LetMap(letFinderState.lets)(ops, recMap)
                 val recs_ = recMap.map { case (p, strict) => (strict, p.unsafeOptimised[Cont, Unit, Any]) }
                 for (sp <- this.optimised) yield {
-                    //sp.cps = cps
                     sp.safe = sSafe
                     sp.generateInstructions(calleeSaveNeeded, usedRegs, recs_)
                 }

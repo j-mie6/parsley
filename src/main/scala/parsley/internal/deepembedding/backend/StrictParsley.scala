@@ -11,7 +11,7 @@ import parsley.internal.ResizableArray
 import StrictParsley._
 import parsley.internal.deepembedding.ContOps, ContOps.{safeCall, GenOps, perform, result, ContAdapter}
 
-private [deepembedding] trait StrictParsley[+A] /*private [backend]*/ {
+private [deepembedding] trait StrictParsley[+A] {
     final protected type T = Any
     final protected type U = Any
 

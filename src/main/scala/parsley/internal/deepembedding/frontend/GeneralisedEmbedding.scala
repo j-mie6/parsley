@@ -10,17 +10,16 @@ private [frontend] abstract class Unary[A, B](p: LazyParsley[A]) extends LazyPar
     def pretty(p: String): String
     def make(p: StrictParsley[A]): StrictParsley[B]
 
-    final override def findLetsAux[Cont[_, +_], R](seen: Set[LazyParsley[_]])
-        (implicit ops: ContOps[Cont], state: LetFinderState): Cont[R,Unit] = p.findLets(seen)
-    override def preprocess[Cont[_, +_], R, B_ >: B](implicit ops: ContOps[Cont],
-                                                              lets: LetMap, recs: RecMap): Cont[R, StrictParsley[B_]] =
+    final override def findLetsAux[Cont[_, +_], R](seen: Set[LazyParsley[_]])(implicit ops: ContOps[Cont], state: LetFinderState): Cont[R,Unit] =
+        p.findLets(seen)
+    override def preprocess[Cont[_, +_], R, B_ >: B](implicit ops: ContOps[Cont], lets: LetMap, recs: RecMap): Cont[R, StrictParsley[B_]] =
         for (p <- p.optimised) yield make(p)
     // $COVERAGE-OFF$
     final override def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont]): Cont[String, String] = for (c <- p.prettyASTAux) yield pretty(c)
     // $COVERAGE-ON$
 }
 
-private [frontend] abstract class ScopedUnary[A, B](_p: LazyParsley[A]) extends Unary[A, B](_p) {
+private [frontend] abstract class ScopedUnary[A, B](p: LazyParsley[A]) extends Unary[A, B](p) {
     def name: String
     final def pretty(c: String) = s"$name($c)"
 }
@@ -31,12 +30,10 @@ private [frontend] abstract class Binary[A, B, C](left: LazyParsley[A], _right: 
     def pretty(p: String, q: String): String
     def make(p: StrictParsley[A], q: StrictParsley[B]): StrictParsley[C]
 
-    final override def findLetsAux[Cont[_, +_], R](seen: Set[LazyParsley[_]])
-        (implicit ops: ContOps[Cont], state: LetFinderState): Cont[R,Unit] = {
+    final override def findLetsAux[Cont[_, +_], R](seen: Set[LazyParsley[_]])(implicit ops: ContOps[Cont], state: LetFinderState): Cont[R,Unit] = {
         left.findLets(seen) >> right.findLets(seen)
     }
-    final override def preprocess[Cont[_, +_], R, C_ >: C](implicit ops: ContOps[Cont],
-                                                                    lets: LetMap, recs: RecMap): Cont[R, StrictParsley[C_]] =
+    final override def preprocess[Cont[_, +_], R, C_ >: C](implicit ops: ContOps[Cont], lets: LetMap, recs: RecMap): Cont[R, StrictParsley[C_]] =
         for (left <- left.optimised; right <- right.optimised) yield make(left, right)
     // $COVERAGE-OFF$
     final override def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont]): Cont[String, String] = {
@@ -52,12 +49,10 @@ private [frontend] abstract class Ternary[A, B, C, D](first: LazyParsley[A], _se
     def pretty(p: String, q: String, r: String): String
     def make(p: StrictParsley[A], q: StrictParsley[B], r: StrictParsley[C]): StrictParsley[D]
 
-    final override def findLetsAux[Cont[_, +_], R](seen: Set[LazyParsley[_]])
-        (implicit ops: ContOps[Cont], state: LetFinderState): Cont[R, Unit] = {
+    final override def findLetsAux[Cont[_, +_], R](seen: Set[LazyParsley[_]])(implicit ops: ContOps[Cont], state: LetFinderState): Cont[R, Unit] = {
         first.findLets[Cont, R](seen) >> second.findLets(seen) >> third.findLets(seen)
     }
-    final override def preprocess[Cont[_, +_], R, D_ >: D](implicit ops: ContOps[Cont],
-                                                                    lets: LetMap, recs: RecMap): Cont[R, StrictParsley[D_]] =
+    final override def preprocess[Cont[_, +_], R, D_ >: D](implicit ops: ContOps[Cont], lets: LetMap, recs: RecMap): Cont[R, StrictParsley[D_]] =
         for (first <- first.optimised; second <- second.optimised; third <- third.optimised) yield make(first, second, third)
     // $COVERAGE-OFF$
     final override def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont]): Cont[String, String] =
