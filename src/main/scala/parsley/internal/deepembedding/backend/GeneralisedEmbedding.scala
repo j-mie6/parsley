@@ -9,7 +9,7 @@ import StrictParsley.InstrBuffer
 // Core Embedding
 private [backend] abstract class Unary[A, B] extends StrictParsley[B] {
     protected val p: StrictParsley[A]
-    def inlinable = false
+    def inlinable: Boolean = false
 }
 
 private [backend] abstract class ScopedUnary[A, B] extends Unary[A, B] {

@@ -13,7 +13,7 @@ import StrictParsley.InstrBuffer
 
 // TODO: Tablification is too aggressive. It appears that `optional` is being compiled to jumptable
 private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right: StrictParsley[A]) extends StrictParsley[A] {
-    def inlinable = false
+    def inlinable: Boolean = false
 
     override def optimise: StrictParsley[A] = (left, right) match {
         // left catch law: pure x <|> p = pure x

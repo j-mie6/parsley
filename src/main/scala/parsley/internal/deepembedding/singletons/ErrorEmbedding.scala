@@ -5,14 +5,14 @@ import parsley.internal.deepembedding.backend.MZero
 
 private [parsley] final class Fail(private [Fail] val msgs: String*) extends Singleton[Nothing] with MZero {
     // $COVERAGE-OFF$
-    override def pretty = s"fail(${msgs.mkString(", ")})"
+    override def pretty: String = s"fail(${msgs.mkString(", ")})"
     // $COVERAGE-ON$
-    override def instr = new instructions.Fail(msgs: _*)
+    override def instr: instructions.Instr = new instructions.Fail(msgs: _*)
 }
 
 private [parsley] final class Unexpected(private [Unexpected] val msg: String) extends Singleton[Nothing] with MZero {
     // $COVERAGE-OFF$
-    override def pretty = s"unexpected($msg)"
+    override def pretty: String = s"unexpected($msg)"
     // $COVERAGE-ON$
-    override def instr = new instructions.Unexpected(msg)
+    override def instr: instructions.Instr = new instructions.Unexpected(msg)
 }

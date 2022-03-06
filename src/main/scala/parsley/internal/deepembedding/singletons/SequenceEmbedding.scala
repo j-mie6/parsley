@@ -6,9 +6,9 @@ import parsley.internal.machine.instructions
 // Core Embedding
 private [parsley] final class Pure[A](private [Pure] val x: A) extends Singleton[A] {
     // $COVERAGE-OFF$
-    override def pretty = s"pure($x)"
+    override def pretty: String = s"pure($x)"
     // $COVERAGE-ON$
-    override def instr = new instructions.Push(x)
+    override def instr: instructions.Instr = new instructions.Push(x)
 }
 
 private [deepembedding] object Pure {

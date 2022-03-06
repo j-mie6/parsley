@@ -15,7 +15,7 @@ private [backend] sealed abstract class BranchLike[A, B, C, D](finaliser: Option
     val q: StrictParsley[C]
     def instr(label: Int): instructions.Instr
 
-    def inlinable = false
+    def inlinable: Boolean = false
     final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val toP = state.freshLabel()
         val end = state.freshLabel()
@@ -36,7 +36,7 @@ private [backend] sealed abstract class BranchLike[A, B, C, D](finaliser: Option
 
 private [deepembedding] final class Branch[A, B, C](val b: StrictParsley[Either[A, B]], val p: StrictParsley[A => C], val q: StrictParsley[B => C])
     extends BranchLike[Either[A, B], A => C, B => C, C](Some(FlipApp)) {
-    override def instr(label: Int) = new instructions.Case(label)
+    override def instr(label: Int): instructions.Instr = new instructions.Case(label)
     override def optimise: StrictParsley[C] = b match {
         case Pure(Left(x)) => <*>(p, new Pure(x)).optimise
         case Pure(Right(y)) => <*>(q, new Pure(y)).optimise
@@ -49,7 +49,7 @@ private [deepembedding] final class Branch[A, B, C](val b: StrictParsley[Either[
 
 private [deepembedding] final class If[A](val b: StrictParsley[Boolean], val p: StrictParsley[A], val q: StrictParsley[A])
     extends BranchLike[Boolean, A, A, A](None) {
-    override def instr(label: Int) = new instructions.If(label)
+    override def instr(label: Int): instructions.Instr = new instructions.If(label)
     override def optimise: StrictParsley[A] = b match {
         case Pure(true) => p
         case Pure(false) => q

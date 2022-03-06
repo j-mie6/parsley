@@ -7,16 +7,16 @@ import parsley.registers.Reg
 
 private [parsley] final class CharTok(private [CharTok] val c: Char, val expected: Option[String]) extends Singleton[Char] {
     // $COVERAGE-OFF$
-    override def pretty = s"char($c)"
+    override def pretty: String = s"char($c)"
     // $COVERAGE-ON$
-    override def instr = instructions.CharTok(c, expected)
+    override def instr: instructions.Instr = instructions.CharTok(c, expected)
 }
 
 private [parsley] final class StringTok(private [StringTok] val s: String, val expected: Option[String]) extends Singleton[String] {
     // $COVERAGE-OFF$
-    override def pretty = s"string($s)"
+    override def pretty: String = s"string($s)"
     // $COVERAGE-ON$
-    override def instr = instructions.StringTok(s, expected)
+    override def instr: instructions.Instr = instructions.StringTok(s, expected)
     override def optimise: StrictParsley[String] = s match {
         case "" => new Pure("")
         case _ => this
@@ -25,16 +25,16 @@ private [parsley] final class StringTok(private [StringTok] val s: String, val e
 
 private [parsley] object Eof extends Singleton[Unit] {
     // $COVERAGE-OFF$
-    override val pretty = "eof"
+    override val pretty: String = "eof"
     // $COVERAGE-ON$
-    override val instr = instructions.Eof
+    override val instr: instructions.Instr = instructions.Eof
 }
 
 private [parsley] final class Modify[S](val reg: Reg[S], f: S => S) extends Singleton[Unit] with UsesRegister {
     // $COVERAGE-OFF$
-    override def pretty = s"modify($reg, ?)"
+    override def pretty: String = s"modify($reg, ?)"
     // $COVERAGE-ON$
-    override def instr = new instructions.Modify(reg.addr, f)
+    override def instr: instructions.Instr = new instructions.Modify(reg.addr, f)
 }
 
 private [deepembedding] object CharTok {

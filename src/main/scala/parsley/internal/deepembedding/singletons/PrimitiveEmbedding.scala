@@ -5,28 +5,28 @@ import parsley.registers.Reg
 
 private [parsley] final class Satisfy(private [Satisfy] val f: Char => Boolean, val expected: Option[String]) extends Singleton[Char] {
     // $COVERAGE-OFF$
-    override val pretty = "satisfy(f)"
+    override val pretty: String = "satisfy(f)"
     // $COVERAGE-ON$
-    override def instr = new instructions.Satisfies(f, expected)
+    override def instr: instructions.Instr = new instructions.Satisfies(f, expected)
 }
 
 private [parsley] object Line extends Singleton[Int] {
     // $COVERAGE-OFF$
-    override val pretty = "line"
+    override val pretty: String = "line"
     // $COVERAGE-ON$
-    override val instr = instructions.Line
+    override val instr: instructions.Instr = instructions.Line
 }
 private [parsley] object Col extends Singleton[Int] {
     // $COVERAGE-OFF$
-    override val pretty = "col"
+    override val pretty: String = "col"
     // $COVERAGE-ON$
-    override val instr = instructions.Col
+    override val instr: instructions.Instr = instructions.Col
 }
 private [parsley] final class Get[S](reg: Reg[S]) extends Singleton[S] {
     // $COVERAGE-OFF$
-    override def pretty = s"get($reg)"
+    override def pretty: String = s"get($reg)"
     // $COVERAGE-ON$
-    override def instr = new instructions.Get(reg.addr)
+    override def instr: instructions.Instr = new instructions.Get(reg.addr)
 }
 
 private [deepembedding] object Satisfy {

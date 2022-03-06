@@ -28,10 +28,10 @@ private [backend] sealed abstract class ManyLike[A, B](name: String, unit: B) ex
     }
 }
 private [deepembedding] final class Many[A](val p: StrictParsley[A]) extends ManyLike[A, List[A]]("many", Nil) {
-    override def instr(label: Int) = new instructions.Many(label)
+    override def instr(label: Int): instructions.Instr = new instructions.Many(label)
 }
 private [deepembedding] final class SkipMany[A](val p: StrictParsley[A]) extends ManyLike[A, Unit]("skipMany", ()) {
-    override def instr(label: Int) = new instructions.SkipMany(label)
+    override def instr(label: Int): instructions.Instr = new instructions.SkipMany(label)
 }
 private [backend] sealed abstract class ChainLike[A](p: StrictParsley[A], op: StrictParsley[A => A]) extends StrictParsley[A] {
     def inlinable = false
@@ -71,7 +71,7 @@ private [deepembedding] final class ChainPre[A](p: StrictParsley[A], op: StrictP
     }
 }
 private [deepembedding] final class Chainl[A, B](init: StrictParsley[B], p: StrictParsley[A], op: StrictParsley[(B, A) => B]) extends StrictParsley[B] {
-    def inlinable = false
+    def inlinable: Boolean = false
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val body = state.freshLabel()
         val handler = state.freshLabel()
@@ -88,7 +88,7 @@ private [deepembedding] final class Chainl[A, B](init: StrictParsley[B], p: Stri
 }
 private [deepembedding] final class Chainr[A, B](p: StrictParsley[A], op: StrictParsley[(A, B) => B], private [Chainr] val wrap: A => B)
     extends StrictParsley[B] {
-    def inlinable = false
+    def inlinable: Boolean = false
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit]= {
         val body = state.freshLabel()
         val handler = state.freshLabel()
@@ -104,7 +104,7 @@ private [deepembedding] final class Chainr[A, B](p: StrictParsley[A], op: Strict
     }
 }
 private [deepembedding] final class SepEndBy1[A, B](p: StrictParsley[A], sep: StrictParsley[B]) extends StrictParsley[List[A]] {
-    def inlinable = false
+    def inlinable: Boolean = false
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val body = state.freshLabel()
         val handler = state.freshLabel()

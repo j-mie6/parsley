@@ -11,13 +11,13 @@ import scala.collection.mutable
 import scala.language.higherKinds
 import StrictParsley.InstrBuffer
 private [deepembedding] final class Attempt[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, A](false) {
-    override val instr = instructions.Attempt
+    override val instr: instructions.Instr = instructions.Attempt
 }
 private [deepembedding] final class Look[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, A](true) {
-    override val instr = instructions.Look
+    override val instr: instructions.Instr = instructions.Look
 }
 private [deepembedding] final class NotFollowedBy[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, Unit](true) {
-    override val instr = instructions.NotFollowedBy
+    override val instr: instructions.Instr = instructions.NotFollowedBy
     override def optimise: StrictParsley[Unit] = p match {
         case z: MZero => new Pure(())
         case _ => this
@@ -38,7 +38,7 @@ private [deepembedding] final class Rec[A](val call: instructions.Call) extends 
     final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = result(instrs += call)
 }
 private [deepembedding] final class Let[A](val p: StrictParsley[A]) extends StrictParsley[A] with Binding {
-    def inlinable = true
+    def inlinable: Boolean = true
     def label(implicit state: CodeGenState): Int = state.getLabel(this)
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         result(instrs += new instructions.GoSub(label))
