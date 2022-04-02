@@ -20,7 +20,7 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
 
     override def optimise: StrictParsley[A] = (left, right) match {
         // left catch law: pure x <|> p = pure x
-        case (u: Pure[A @unchecked], _) => u
+        case (u: Pure[_], _) => u
         // alternative law: empty <|> p = p
         case (Empty, v)                 => v
         // alternative law: p <|> empty = p
