@@ -159,16 +159,16 @@ object registers {
         def makeReg[B](body: Reg[A] => Parsley[B]): Parsley[B] = pure(x).fillReg(body)
     }*/
 
-    /** `forP(v, init, cond, step, body)` behaves much like a traditional for loop using variable `v` as the loop
-      * variable and `init`, `cond`, `step` and `body` as parsers which control the loop itself. This is useful for
-      * performing certain context sensitive tasks. For instance, to read an equal number of as, bs and cs you can do:
+    /** `forP(init, cond, step)(body)` behaves much like a traditional for loop using `init`, `cond`, `step` and `body` as parsers
+      * which control the loop itself. This is useful for performing certain context sensitive tasks. For instance, to read an equal number of as,
+      * bs and cs you can do:
       *
       * {{{
       * val r = Reg.make[Int]
-      * put(r, 0) *>
-      * many('a' *> modify[Int](r, _+1)) *>
-      * forP[Int](get](r), pure(_ != 0), pure(_ - 1), 'b') *>
-      * forP[Int](get(r), pure(_ != 0), pure(_ - 1), 'c')
+      * r.put(0) *>
+      * many('a' *> r.modify(_+1)) *>
+      * forP[Int](r.get, pure(_ != 0), pure(_ - 1)){_ => 'b'} *>
+      * forP[Int](r.get, pure(_ != 0), pure(_ - 1)){_ => 'c'}
       * }}}
       *
       * @param init The initial value of the induction variable
@@ -177,11 +177,48 @@ object registers {
       * @param body The body of the loop performed each iteration
       * @return ()
       */
-    /*def forP[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A], body: =>Parsley[_]): Parsley[Unit] =
-    {
-        val reg = Reg.make[A]
+    private def forP_[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: Parsley[A] => Parsley[_]): Parsley[Unit] = {
+        /*val reg = Reg.make[A]
         val _cond = reg.gets(cond)
         val _step = reg.modify(step)
-        reg.put(init) *> when(_cond, whileP(body *> _step *> _cond))
-    }*/
+        reg.put(init) *> when(_cond, whileP(body(reg) *> _step *> _cond))*/
+        import parsley.Parsley.unit
+        lazy val _cond = cond
+        lazy val _step = step
+        def loop(x: A): Parsley[Unit] =
+            _cond.flatMap { p =>
+                if (!p(x)) unit else {
+                    body(pure(x)) *>
+                    _step.flatMap { f =>
+                        loop(f(x))
+                    }
+                }
+            }
+        init.flatMap(loop)
+    }
+
+    /** `forP(init, cond, step)(body)` behaves much like a traditional for loop using `init`, `cond`, `step` and `body` as parsers
+      * which control the loop itself. This is useful for performing certain context sensitive tasks. For instance, to read an equal number of as,
+      * bs and cs you can do:
+      *
+      * {{{
+      * val r = Reg.make[Int]
+      * r.put(0) *>
+      * many('a' *> r.modify(_+1)) *>
+      * forP[Int](r.get, pure(_ != 0), pure(_ - 1)){'b'} *>
+      * forP[Int](r.get, pure(_ != 0), pure(_ - 1)){'c'}
+      * }}}
+      *
+      * @param init The initial value of the induction variable
+      * @param cond The condition by which the loop terminates
+      * @param step The change in induction variable on each iteration
+      * @param body The body of the loop performed each iteration
+      * @return ()
+      */
+    def forP[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: =>Parsley[_]): Parsley[Unit] = {
+        lazy val _body = body
+        forP_(init, cond, step) { _ =>
+            _body
+        }
+    }
 }

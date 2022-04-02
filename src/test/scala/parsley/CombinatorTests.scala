@@ -2,6 +2,7 @@ package parsley
 
 import parsley.combinator._
 import parsley.Parsley._
+import parsley.registers.{forP, Reg}
 import parsley.implicits.character.{charLift, stringLift}
 
 import scala.language.implicitConversions
@@ -187,14 +188,16 @@ class CombinatorTests extends ParsleyTest {
         someUntil('a', 'b').parse("b") shouldBe a [Failure[_]]
     }
 
-    /*"forP" should "be able to parse context-sensitive grammars" in {
+    "forP" should "be able to parse context-sensitive grammars" in {
         val r1 = Reg.make[Int]
-        val r2 = Reg.make[Int]
-        val abc = put(r1, 0) *>
-                  many('a' *> modify[Int](r1, _ + 1)) *>
-                  forP[Int](r2, get(r1), pure(_ != 0), pure(_ - 1), 'b') *>
-                  forP[Int](r2, get(r1), pure(_ != 0), pure(_ - 1), 'c')
+        def matching(p: Parsley[_]) = forP[Int](r1.get, pure(_ != 0), pure(_ - 1)) {
+            p
+        }
+        val abc = r1.put(0) *>
+                  many('a' *> r1.modify(_ + 1)) *>
+                  matching('b') *>
+                  matching('c')
         abc.parse("aaabbbccc") should be (Success(()))
         abc.parse("aaaabc") shouldBe a [Failure[_]]
-    }*/
+    }
 }
