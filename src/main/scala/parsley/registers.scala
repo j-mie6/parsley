@@ -165,6 +165,7 @@ object registers {
       *
       * {{{
       * val r = Reg.make[Int]
+      *
       * r.put(0) *>
       * many('a' *> r.modify(_+1)) *>
       * forP[Int](r.get, pure(_ != 0), pure(_ - 1)){_ => 'b'} *>
@@ -175,7 +176,6 @@ object registers {
       * @param cond The condition by which the loop terminates
       * @param step The change in induction variable on each iteration
       * @param body The body of the loop performed each iteration
-      * @return ()
       */
     private def forP_[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: Parsley[A] => Parsley[_]): Parsley[Unit] = {
         /*val reg = Reg.make[A]
@@ -203,6 +203,7 @@ object registers {
       *
       * {{{
       * val r = Reg.make[Int]
+      *
       * r.put(0) *>
       * many('a' *> r.modify(_+1)) *>
       * forP[Int](r.get, pure(_ != 0), pure(_ - 1)){'b'} *>
@@ -213,7 +214,6 @@ object registers {
       * @param cond The condition by which the loop terminates
       * @param step The change in induction variable on each iteration
       * @param body The body of the loop performed each iteration
-      * @return ()
       */
     def forP[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: =>Parsley[_]): Parsley[Unit] = {
         lazy val _body = body

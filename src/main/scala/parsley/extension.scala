@@ -39,17 +39,17 @@ object extension {
      *
      * @since 4.0.0
      */
-    implicit final class OperatorSugar[P, +A](p: =>P)(implicit con: P => Parsley[A]) {
+    implicit final class OperatorSugar[P, +A](p: P)(implicit con: P => Parsley[A]) {
         // TODO: doc
-        def * : Parsley[List[A]] = many(p)
+        def * : Parsley[List[A]] = many(con(p))
         // TODO: doc
-        def + : Parsley[List[A]] = some(p)
+        def + : Parsley[List[A]] = some(con(p))
         // TODO: doc
-        def unary_! : Parsley[Unit] = notFollowedBy(p)
+        def unary_! : Parsley[Unit] = notFollowedBy(con(p))
         // TODO: doc
-        def -[B](q: Parsley[B]): Parsley[A] = !q *> p
+        def -[B](q: Parsley[B]): Parsley[A] = !q *> con(p)
         // TODO: doc
-        def ? : Parsley[Option[A]] = option(p)
+        def ? : Parsley[Option[A]] = option(con(p))
     }
 }
 // $COVERAGE-ON$
