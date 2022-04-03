@@ -7,8 +7,7 @@ the [[parsley.Result `Result`]], [[parsley.Success `Success`]], and [[parsley.Fa
 types. In addition to these, it also contains the following packages and "modules" (a module
 is defined as being an object which mocks a package):
 
-  - [[parsley.Parsley$ `parsley.Parsley`]] contains the bulk of the core "function-style" combinators,
-    as well as the implicit classes which enable the "method-style" combinators.
+  - [[parsley.Parsley$ `parsley.Parsley`]] contains the bulk of the core "function-style" combinators.
   - [[parsley.combinator$ `parsley.combinator`]] contains many helpful combinators that simplify some
     common parser patterns.
   - [[parsley.character$ `parsley.character`]] contains the combinators needed to read characters and
@@ -23,6 +22,11 @@ is defined as being an object which mocks a package):
     - [[parsley.expr.chain$ `parsley.expr.chain`]] contains combinators used in expression parsing
     - [[parsley.expr.precedence$ `parsley.expr.precedence`]] is a builder for expression parsers built
       on a precedence table.
+    - [[parsley.expr.infix$ `parsley.expr.infix`]] contains combinators used in expression parsing,
+      but with more permissive types than their equivalents in `chain`.
+    - [[parsley.expr.mixed$ `parsley.expr.mixed`]] contains combinators that can be used for
+      expression parsing, but where different fixities may be mixed on the same level: this is rare
+      in practice.
   - [[parsley.implicits `parsley.implicits`]] contains several implicits to add syntactic sugar
     to the combinators. These are sub-categorised into the following sub modules:
      - [[parsley.implicits.character$ `parsley.implicits.character`]] contains implicits to allow you
@@ -46,5 +50,3 @@ is defined as being an object which mocks a package):
     context-sensitive functionality in the form of registers.
   - [[parsley.token `parsley.token`]] contains the [[parsley.token.Lexer `Lexer`]] class that provides
     a host of helpful lexing combinators when provided with the description of a language.
-  - [[parsley.unsafe$ `parsley.unsafe`]] contains unsafe (and not thread-safe) ways of speeding up
-    the execution of a parser.

@@ -29,7 +29,7 @@ object extension {
      */
     implicit final class LazyChooseParsley[P, +A](pq: =>(P, P))(implicit con: P => Parsley[A]) {
         private lazy val (p, q) = pq
-        /**This combinator is an alias for `ite`.*/
+        /**This combinator is an alias for `ifP`.*/
         def ?:(b: Parsley[Boolean]): Parsley[A] = ifP(b, con(p), con(q))
     }
 
