@@ -3,7 +3,7 @@ package parsley
 import parsley.internal.machine.Context
 import parsley.internal.deepembedding.{singletons, frontend}
 import parsley.expr.{chain, infix}
-import parsley.combinator.{option, some}
+import parsley.combinator.{option, some, many}
 import parsley.Parsley.pure
 import parsley.errors.ErrorBuilder
 
@@ -32,7 +32,13 @@ import scala.language.{higherKinds, implicitConversions}
   *
   * @groupprio fold 50
   * @groupname fold Folding Combinators
-  * @groupdesc fold TODO:
+  * @groupdesc fold
+  *     These combinators repeatedly execute a parser (at least zero or one times depending on
+  *     the specific combinator) until it fails. The results of the successes are then combined
+  *     together using a folding function. An initial value for the accumulation may be given
+  *     (for the `fold`s), or the first successful result is the initial accumulator (for the
+  *     `reduce`s). These are implemented efficiently and do not need to construct any intermediate
+  *     list with which to store the results.
   *
   * @groupprio map 20
   * @groupname map Result Changing Combinators
@@ -59,11 +65,21 @@ import scala.language.{higherKinds, implicitConversions}
   *
   * @groupprio monad 75
   * @groupname monad Expensive Sequencing Combinators
-  * @groupdesc monad TODO:
+  * @groupdesc monad
+  *     These combinators can sequence two parsers, where the first parser's result influences
+  *     the structure of the second one. This may be because the second parser is generated
+  *     from the result of the first, or that the first parser ''returns'' the second parser.
+  *     Either way, the second parser cannot be known until runtime, when the first parser
+  *     has been executed: this means that Parsley is forced to compile the second parser during
+  *     parse-time, which is '''very''' expensive to do repeatedly. These combinators are only
+  *     needed in exceptional circumstances, and should be avoided otherwise.
   *
   * @groupprio filter 50
   * @groupname filter Filtering Combinators
-  * @groupdesc filter TODO:
+  * @groupdesc filter
+  *     These combinators perform filtering on the results of a parser. This means that, given
+  *     the result of a parser, they will perform some function on that result, and the success
+  *     of that function effects whether or not the parser fails.
   *
   * @define or
   *    This is the traditional choice operator for parsers: try to parse the left-hand side, and parses
@@ -243,6 +259,11 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       */
     // TODO: improve
     def #>[B](x: B): Parsley[B] = this *> pure(x)
+    /** converts the parser's result to ().
+      *
+      * @group map
+      */
+    def void: Parsley[Unit] = this #> ()
     /**
       * This is the parser that corresponds to a more optimal version of `(p <~> q).map(_._2)`. It performs
       * the parse action of both parsers, in order, but discards the result of the receiver.
@@ -420,58 +441,73 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
     def cast[B: ClassTag]: Parsley[B] = this.collect {
         case x: B => x
     }
-
-    // Possibly should be added as a syntax extension. I don't want them in the default API
-    /*def * : Parsley[List[A]] = many(p)
-    def + : Parsley[List[A]] = some(p)
-    def unary_! : Parsley[Unit] = notFollowedBy(p)
-    def -[B](q: Parsley[B]): Parsley[A] = !q *> p
-    def ? : Parsley[Option[A]] = option(p)*/
 }
 
-/** This object contains the core "function-style" combinators as well as the implicit classes which provide
-  * the "method-style" combinators. All parsers will likely require something from within! */
+/** This object contains the core "function-style" combinators: all parsers will likely require something from within!
+  *
+  * @groupprio cond 25
+  * @groupname cond Conditional Combinators
+  * @groupdesc cond
+  *     These combinators will decide which branch to take next based on the result of another parser.
+  *     This differs from combinators like `<|>` which make decisions based on the success/failure of
+  *     a parser: here the result of a ''successful'' parse will direct which option is done. These
+  *     are sometimes known as "selective" combinators.
+  *
+  * @groupprio prim 0
+  * @groupname prim Primitive Combinators
+  * @groupdesc prim
+  *     These combinators are specific to parser combinators. In one way or another, they influence how a
+  *     parser consumes input, or under what conditions a parser does or does not fail. These are really
+  *     important for most practical parsing considerations, although `lookAhead` is much less well used.
+  *
+  * @groupprio basic 5
+  * @groupname basic Consumptionless Parsers
+  * @groupdesc basic
+  *     These combinators and parsers do not consume input: they are the most primitive ways of producing
+  *     successes and failures with the minimal possible effect on the parse. They are, however, reasonably
+  *     useful; in particular, `pure` and `unit` can be put to good use in injecting results into a parser
+  *     without needing to consume anything, or mapping another parser.
+  *
+  * @groupprio pos 10
+  * @groupname pos Position-Tracking Parsers
+  * @groupdesc pos
+  *     These parsers provide a way to extract position information during a parse. This can be important
+  *     for when the final result of the parser needs to encode position information for later consumption:
+  *     this is particularly useful for abstract syntax trees.
+  *
+  * @groupprio seq 50
+  * @groupname seq Sequencing Combinators
+  * @groupdesc seq
+  *     These combinators sequence a large number of parsers in one go. Be careful, however, these are
+  *     variadic combinators and are necessarily (for compatibility with Scala 2) '''not lazy'''.
+  *
+  *     In such a case where laziness is desired without resorting to the other lazier combinators, there
+  *     is a neat trick: unroll the first iteration of the combinator, and use the regular combinator
+  *     to do that (probably `<::>` or `*>`): since these will have a lazy right-hand side, the remaining
+  *     variadic arguments will be kept lazily suspended until later.
+  *
+  * @groupprio monad 100
+  * @groupname monad Expensive Sequencing Combinators
+  * @groupdesc monad
+  *     These combinators can sequence two parsers, where the first parser's result influences
+  *     the structure of the second one. This may be because the second parser is generated
+  *     from the result of the first, or that the first parser ''returns'' the second parser.
+  *     Either way, the second parser cannot be known until runtime, when the first parser
+  *     has been executed: this means that Parsley is forced to compile the second parser during
+  *     parse-time, which is '''very''' expensive to do repeatedly. These combinators are only
+  *     needed in exceptional circumstances, and should be avoided otherwise.
+  */
 object Parsley
 {
-    /**
-      * This class exposes the `<#>` combinator on functions.
-      *
-      * @param f The function that is used for the map
-      * @version 1.0.0
-      */
-    implicit final class LazyMapParsley[-A, +B](val f: A => B) extends AnyVal
-    {
-        /**This combinator is an alias for `map`*/
-        def <#>(p: Parsley[A]): Parsley[B] = p.map(f)
-    }
-    /**
-      * This class exposes a ternary operator on pairs of parsers.
-      *
-      * @param pq The parsers which serve the branches of the if
-      * @param con A conversion (if required) to turn elements of `pq` into parsers
-      * @version 1.0.0
-      */
-    implicit final class LazyChooseParsley[P, +A](pq: =>(P, P))(implicit con: P => Parsley[A])
-    {
-        private lazy val (p, q) = pq
-        /**
-          * This is an if statement lifted to the parser level. Formally, this is a selective functor operation,
-          * equivalent to (branch b.map(boolToEither) (p.map(const)) (q.map(const))).
-          * Note: due to Scala operator associativity laws, this is a right-associative operator, and must be properly
-          * bracketed, technically the receiver is the rhs...
-          * @param b The parser that yields the condition value
-          * @return The result of either `p` or `q` depending on the return value of the receiver
-          */
-        def ?:(b: Parsley[Boolean]): Parsley[A] = new Parsley(new frontend.If(b.internal, con(p).internal, con(q).internal))
-    }
-
     /** This is the traditional applicative `pure` function for parsers. It consumes no input and
       * does not influence the state of the parser, but does return the value provided. Useful to inject pure values
       * into the parsing process.
       * @param x The value to be returned from the parser
       * @return A parser which consumes nothing and returns `x`
+      * @group basic
       */
     def pure[A](x: A): Parsley[A] = new Parsley(new singletons.Pure(x))
+
     /** This is one of the core operations of a selective functor. It will conditionally execute one of `p` and `q`
       * depending on the result from `b`. This can be used to implement conditional choice within a parser without
       * relying on expensive monadic operations.
@@ -479,9 +515,22 @@ object Parsley
       * @param p If `b` returns `Left` then this parser is executed with the result
       * @param q If `b` returns `Right` then this parser is executed with the result
       * @return Either the result from `p` or `q` depending on `b`.
+      * @group cond
       */
     def branch[A, B, C](b: Parsley[Either[A, B]], p: =>Parsley[A => C], q: =>Parsley[B => C]): Parsley[C] = {
         new Parsley(new frontend.Branch(b.internal, p.internal, q.internal))
+    }
+    /**
+      * This is an if statement lifted to the parser level. Formally, this is a selective functor operation,
+      * equivalent to `branch(b.map(boolToEither), p.map(const), q.map(const))`.
+      *
+      * @param b The parser that yields the condition value
+      * @param p
+      * @param q
+      * @group cond
+      */
+    def ite[A](b: Parsley[Boolean], p: =>Parsley[A], q: =>Parsley[A]): Parsley[A] = {
+        new Parsley(new frontend.If(b.internal, p.internal, q.internal))
     }
     /** This is one of the core operations of a selective functor. It will conditionally execute one of `q` depending on
       * whether or not `p` returns a `Left`. It can be used to implement `branch` and other selective operations, however
@@ -489,38 +538,56 @@ object Parsley
       * @param p The first parser to parse
       * @param q If `p` returns `Left` then this parser is executed with the result
       * @return Either the result from `p` if it returned `Left` or the result of `q` applied to the `Right` from `p`
+      * @group cond
       */
     def select[A, B](p: Parsley[Either[A, B]], q: =>Parsley[A => B]): Parsley[B] = branch(p, q, pure(identity[B](_)))
-    /**This function is an alias for `_.flatten`. Provides namesake to Haskell.*/
+    /** This function is an alias for `_.flatten`: provides namesake to Haskell.
+      *
+      * @group monad
+      */
     def join[A](p: Parsley[Parsley[A]]): Parsley[A] = p.flatten
     /** Given a parser `p`, attempts to parse `p`. If the parser fails, then `attempt` ensures that no input was
       * consumed. This allows for backtracking capabilities, disabling the implicit cut semantics offered by `<|>`.
+      *
       * @param p The parser to run
       * @return The result of `p`, or if `p` failed ensures the parser state was as it was on entry.
+      * @group prim
       */
     def attempt[A](p: Parsley[A]): Parsley[A] = new Parsley(new frontend.Attempt(p.internal))
     /** Parses `p` without consuming any input. If `p` fails and consumes input then so does `lookAhead(p)`. Combine with
       * `attempt` if this is undesirable.
+      *
       * @param p The parser to look ahead at
       * @return The result of the lookahead
+      * @group prim
       */
     def lookAhead[A](p: Parsley[A]): Parsley[A] = new Parsley(new frontend.Look(p.internal))
     /**`notFollowedBy(p)` only succeeds when parser `p` fails. This parser does not consume any input.
       * This parser can be used to implement the 'longest match' rule. For example, when recognising
       * keywords, we want to make sure that a keyword is not followed by a legal identifier character,
       * in which case the keyword is actually an identifier. We can program this behaviour as follows:
-      * {{{attempt(kw *> notFollowedBy(alphaNum))}}}*/
+      * {{{attempt(kw *> notFollowedBy(alphaNum))}}}
+      *
+      * @group prim
+      */
     def notFollowedBy(p: Parsley[_]): Parsley[Unit] = new Parsley(new frontend.NotFollowedBy(p.internal))
-    /** The `empty` parser consumes no input and fails softly (that is to say, no error message) */
+    /**
+      * The `empty` parser consumes no input and fails softly (that is to say, no error message)
+      *
+      * @group basic
+      */
     val empty: Parsley[Nothing] = new Parsley(singletons.Empty)
-    /** Returns `()`. Defined as `pure(())` but aliased for sugar*/
+    /**
+      * Returns `()`; defined as `pure(())` but aliased for sugar
+      *
+      * @group basic
+      */
     val unit: Parsley[Unit] = pure(())
-    /** converts a parser's result to () */
-    def void(p: Parsley[_]): Parsley[Unit] = p *> unit
     /**
       * Evaluate each of the parsers in `ps` sequentially from left to right, collecting the results.
       * @param ps Parsers to be sequenced
       * @return The list containing results, one from each parser, in order
+      * @group seq
       */
     def sequence[A](ps: Parsley[A]*): Parsley[List[A]] = ps.foldRight(pure[List[A]](Nil))(_ <::> _)
     /**
@@ -529,26 +596,31 @@ object Parsley
       * @param f The function to map on each element of `xs` to produce parsers
       * @param xs Values to generate parsers from
       * @return The list containing results formed by executing each parser generated from `xs` and `f` in sequence
+      * @group seq
       */
     def traverse[A, B](f: A => Parsley[B], xs: A*): Parsley[List[B]] = sequence(xs.map(f): _*)
     /**
       * Evaluate each of the parsers in `ps` sequentially from left to right, ignoring the results.
       * @param ps Parsers to be performed
+      * @group seq
       */
     def skip(ps: Parsley[_]*): Parsley[Unit] = ps.foldRight(unit)(_ *> _)
     /**
       * This parser consumes no input and returns the current line number reached in the input stream
       * @return The line number the parser is currently at
+      * @group pos
       */
     val line: Parsley[Int] = new Parsley(singletons.Line)
     /**
       * This parser consumes no input and returns the current column number reached in the input stream
       * @return The column number the parser is currently at
+      * @group pos
       */
     val col: Parsley[Int] = new Parsley(singletons.Col)
     /**
       * This parser consumes no input and returns the current position reached in the input stream
       * @return Tuple of line and column number that the parser has reached
+      * @group pos
       */
     val pos: Parsley[(Int, Int)] = line <~> col
 }

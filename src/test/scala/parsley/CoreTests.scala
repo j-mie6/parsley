@@ -58,14 +58,14 @@ class CoreTests extends ParsleyTest {
 
     they must "obey the fmap law: pure f <*> p = f <$> p" in {
         (pure(toUpper) <*> 'a').parse("a") should equal ((toUpper.lift('a')).parse("a"))
-        (pure(toUpper) <*> ('a' <|> 'b')).parse("a") should equal ((toUpper <#> ('a' <|> 'b')).parse("a"))
-        (pure(toUpper) <*> ('a' <|> 'b')).parse("b") should equal ((toUpper <#> ('a' <|> 'b')).parse("b"))
+        (pure(toUpper) <*> ('a' <|> 'b')).parse("a") should equal (('a' <|> 'b').map(toUpper).parse("a"))
+        (pure(toUpper) <*> ('a' <|> 'b')).parse("b") should equal (('a' <|> 'b').map(toUpper).parse("b"))
     }
 
     they must "obey the interchange law: u <*> pure x = ($x) <$> u" in {
-        (('a' #> add1) <*> pure(41)).parse("a") should equal ((((f: Int => Int) => f(41)) <#> ('a' #> add1)).parse("a"))
-        ((('a' <|> 'b') #> add1) <*> pure(41)).parse("a") should equal ((((f: Int => Int) => f(41)) <#> (('a' <|> 'b') #> add1)).parse("a"))
-        ((('a' <|> 'b') #> add1) <*> pure(41)).parse("b") should equal ((((f: Int => Int) => f(41)) <#> (('a' <|> 'b') #> add1)).parse("b"))
+        (('a' #> add1) <*> pure(41)).parse("a") should equal (('a' #> add1).map(_(41)).parse("a"))
+        ((('a' <|> 'b') #> add1) <*> pure(41)).parse("a") should equal ((('a' <|> 'b') #> add1).map(_(41)).parse("a"))
+        ((('a' <|> 'b') #> add1) <*> pure(41)).parse("b") should equal ((('a' <|> 'b') #> add1).map(_(41)).parse("b"))
     }
 
     they must "obey the composition law: pure (.) <*> u <*> v <*> w = u <*> (v <*> w)" in {
@@ -246,11 +246,11 @@ class CoreTests extends ParsleyTest {
     }
 
     "ternary parsers" should "function correctly" in {
-        val p = pure(true) ?: ('a', 'b')
+        val p = ite(pure(true), 'a', 'b')
         p.parse("a") should be (Success('a'))
-        val q = pure(false) ?: ('a', 'b')
+        val q = ite(pure(false), 'a', 'b')
         q.parse("b") should be (Success('b'))
-        val r = item.map(_.isLower) ?: ('a', 'b')
+        val r = ite(item.map(_.isLower), 'a', 'b')
         r.parse("aa") should be (Success('a'))
         r.parse("Ab") should be (Success('b'))
     }
@@ -342,7 +342,7 @@ class CoreTests extends ParsleyTest {
     "failures through call boundary" should "ensure that stateful instructions are restored correctly" in {
         import parsley.combinator.{whileP, some, eof}
         val n = registers.Reg.make[Int]
-        lazy val p: Parsley[Unit] = whileP(n.gets(_ % 2 == 0) ?: (some('a'), some('b')) *> n.modify(_ - 1) *> n.gets(_ != 0))
+        lazy val p: Parsley[Unit] = whileP(ite(n.gets(_ % 2 == 0), some('a'), some('b')) *> n.modify(_ - 1) *> n.gets(_ != 0))
         val q = attempt(n.put(4) *> p <* eof) | n.put(2) *> p <* eof
         q.parse("aaaabbb") shouldBe a [Success[_]]
     }

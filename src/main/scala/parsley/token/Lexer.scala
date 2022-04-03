@@ -4,7 +4,7 @@ import parsley.character.{digit, hexDigit, octDigit, satisfy, char, string}
 import parsley.combinator.{sepBy, sepBy1, between, many, skipMany, some, skipSome}
 import parsley.lift.lift2
 import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
-import parsley.Parsley, Parsley.{void, unit, attempt, pure, empty, notFollowedBy}
+import parsley.Parsley, Parsley.{unit, attempt, pure, empty, notFollowedBy}
 import parsley.errors.combinator.{fail, amend, entrench, unexpected, ErrorMethods}
 import parsley.implicits.character.charLift
 import parsley.internal.deepembedding.singletons
@@ -107,7 +107,7 @@ class Lexer(lang: LanguageDef)
     /**The non-lexeme parser `maxOp_(name)` parses the symbol `name`, but also checks that the `name`
       * is not part of a larger reserved operator. An `operator` is treated as a single token using
       * `attempt`.*/
-    def maxOp_(name: String): Parsley[Unit] = void(new Parsley(new singletons.MaxOp(name, lang.operators)))
+    def maxOp_(name: String): Parsley[Unit] = new Parsley(new singletons.MaxOp(name, lang.operators)).void
 
     private def isReservedOp(op: String): Boolean = lang.operators.contains(op)
     private lazy val opStart = toParser(lang.opStart)

@@ -1,7 +1,6 @@
 package parsley.implicits
 
 import parsley.Parsley
-import parsley.Parsley.void
 
 import scala.language.implicitConversions
 
@@ -12,6 +11,6 @@ import scala.language.implicitConversions
 object combinator {
     // $COVERAGE-OFF$
     /** Drops the result of a parser when required by another combinator */
-    @inline implicit def voidImplicitly[P](p: P)(implicit con: P => Parsley[_]): Parsley[Unit] = void(con(p))
+    @inline implicit def voidImplicitly[P](p: P)(implicit con: P => Parsley[_]): Parsley[Unit] = con(p).void
     // $COVERAGE-ON$
 }

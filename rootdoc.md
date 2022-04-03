@@ -15,6 +15,8 @@ is defined as being an object which mocks a package):
     strings, as well as combinators to match specific sub-sets of characters.
   - [[parsley.debug$ `parsley.debug`]] contains debugging combinators, helpful for identifying faults
     in parsers.
+  - [[parsley.extension$ `parsley.extension`]] contains syntactic sugar combinators exposed as
+    implicit classes.
   - [[parsley.io$ `parsley.io`]] contains extension methods to run parsers with input sourced from
     IO sources.
   - [[parsley.expr `parsley.expr`]] contains the following sub modules:

@@ -1,6 +1,6 @@
 package parsley
 
-import parsley.Parsley.{unit, empty, select, sequence, notFollowedBy, attempt}
+import parsley.Parsley.{unit, empty, select, sequence, notFollowedBy, attempt, ite}
 import parsley.internal.deepembedding.{singletons, frontend}
 import parsley.expr.chain
 import scala.annotation.{tailrec, implicitNotFound}
@@ -137,7 +137,7 @@ object combinator {
       * @param q If `p` returns `true` then this parser is executed
       * @return ()
       */
-    def when(p: Parsley[Boolean], q: =>Parsley[Unit]): Parsley[Unit] = p ?: (q, unit)
+    def when(p: Parsley[Boolean], q: =>Parsley[Unit]): Parsley[Unit] = ite(p, q, unit)
 
     /** `whileP(p)` will continue to run `p` until it returns `false`. This is often useful in conjunction with stateful
       * parsers.
