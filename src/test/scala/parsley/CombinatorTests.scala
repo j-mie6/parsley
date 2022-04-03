@@ -1,6 +1,6 @@
 package parsley
 
-import parsley.combinator._
+import parsley.combinator.{exactly => repeat, _}
 import parsley.Parsley._
 import parsley.registers.{forP, Reg}
 import parsley.implicits.character.{charLift, stringLift}
@@ -26,7 +26,7 @@ class CombinatorTests extends ParsleyTest {
         attemptChoice("ac", "aba", "abc").parse("abc") should be (Success("abc"))
     }
 
-    "repeat" should "be pure(Nil) for n <= 0" in {
+    "exactly" should "be pure(Nil) for n <= 0" in {
         repeat(0, 'a').parse("a") should be (Success(Nil))
         repeat(-1, 'a').parse("a") should be (Success(Nil))
     }
