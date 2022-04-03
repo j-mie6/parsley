@@ -16,6 +16,7 @@ package parsley.errors
   *
   * @tparam Err The final result type of the error message
   * @since 3.0.0
+  * @group formatting
   */
 trait ErrorBuilder[Err] {
     private [errors] final type _Err = Err
@@ -299,6 +300,10 @@ trait ErrorBuilder[Err] {
     val endOfInput: EndOfInput
 }
 
+/** Contains the default instance for the `ErrorBuilder` typeclass, which will be automatically available without import.
+  *
+  * @group formatting
+  */
 object ErrorBuilder {
     // $COVERAGE-OFF$
     /**

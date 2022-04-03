@@ -9,6 +9,7 @@ package parsley.errors
   * be considered a stable contract: the formatting can be changed at any
   * time and without notice. The API, however, will remain stable.
   * @since 3.0.0
+  * @group formatting
   */
 class DefaultErrorBuilder extends ErrorBuilder[String] {
     override def format(pos: Position, source: Source, lines: ErrorInfoLines): String = {
