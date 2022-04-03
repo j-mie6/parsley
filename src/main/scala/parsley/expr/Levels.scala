@@ -8,6 +8,7 @@ import parsley.Parsley
   * structure between each level.
   * @tparam A The type of structure produced by the list of levels
   * @since 4.0.0
+  * @group table
   */
 sealed trait Prec[+A] {
     /**
@@ -33,6 +34,7 @@ sealed trait Prec[+A] {
   * @return A larger precedence table transforming atoms of type `A` into
   *          a structure of type `B`.
   * @since 4.0.0
+  * @group table
   */
 case class Level[A, B](lvls: Prec[A], ops: Ops[A, B]) extends Prec[B]
 /**
@@ -40,5 +42,6 @@ case class Level[A, B](lvls: Prec[A], ops: Ops[A, B]) extends Prec[B]
   * @tparam A The base type of the hierarchy
   * @param atoms The atoms at the bottom of the precedence table
   * @since 4.0.0
+  * @group table
   */
 case class Atoms[+A](atoms: Parsley[A]*) extends Prec[A]

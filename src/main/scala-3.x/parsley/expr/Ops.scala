@@ -9,8 +9,9 @@ import parsley.Parsley
  * @tparam B The type produced/consumed by the operators
  * @note For less complex types `Ops[A, A]` is sufficient
  * @since 2.2.0
+ * @group table
  */
-sealed trait Ops[A, B] {
+sealed abstract class Ops[A, B] {
     private [expr] val wrap: A => B
 }
 private [expr] case class Lefts[A, B](ops: Parsley[InfixL.Op[A, B]]*)(implicit override val wrap: A => B) extends Ops[A, B]
@@ -22,6 +23,7 @@ private [expr] case class NonAssocs[A, B](ops: Parsley[InfixN.Op[A, B]]*)(implic
 /**
  * Helper object to build values of `Ops[A, A]`, for monolithic precedence parsing
  * @since 2.2.0
+ * @group builders
  */
 object Ops {
     /**

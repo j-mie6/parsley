@@ -3,14 +3,15 @@ package parsley.expr
 import parsley.Parsley
 
 /**
- * Describes the operators at a specific level in the precedence tree, such that these ops
- * consume `B`s, possibly `A`s and produce `B`s: this depends on the [[Fixity]] of the operators.
- * @tparam A The base type consumed by the operators
- * @tparam B The type produced/consumed by the operators
- * @note For less complex types `Ops[A, A]` is sufficient
- * @since 2.2.0
- */
-sealed trait Ops[-A, B] {
+  * Describes the operators at a specific level in the precedence tree, such that these ops
+  * consume `B`s, possibly `A`s and produce `B`s: this depends on the [[Fixity]] of the operators.
+  * @tparam A The base type consumed by the operators
+  * @tparam B The type produced/consumed by the operators
+  * @note For less complex types `Ops[A, A]` is sufficient
+  * @since 2.2.0
+  * @group table
+  */
+sealed abstract class Ops[-A, B] {
     private [expr] val wrap: A => B
 }
 private [expr] case class Lefts[A, B](ops: Parsley[InfixL.Op[A, B]]*)(implicit override val wrap: A => B) extends Ops[A, B]
@@ -22,6 +23,7 @@ private [expr] case class NonAssocs[A, B](ops: Parsley[InfixN.Op[A, B]]*)(implic
 /**
  * Helper object to build values of `Ops[A, A]`, for monolithic precedence parsing
  * @since 2.2.0
+ * @group builders
  */
 object Ops {
     /**

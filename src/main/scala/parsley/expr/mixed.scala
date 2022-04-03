@@ -12,6 +12,7 @@ import scala.annotation.implicitNotFound
   * or infix-right and prefix.
   *
   * @since 4.0.0
+  * @group chains
   */
 object mixed {
     private def flip[A, B, C](f: (A, B) => C, y: B)(x: A) = f(x, y)

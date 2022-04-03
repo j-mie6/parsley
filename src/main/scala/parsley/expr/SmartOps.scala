@@ -5,6 +5,7 @@ import parsley.Parsley
 /**
  * Helper object to build values of `Ops[A, B]`, for generalised precedence parsing
  * @since 2.2.0
+ * @group builders
  */
 object GOps {
     /**
@@ -34,6 +35,7 @@ object GOps {
 /**
  * Helper object to build values of `Ops[A, B]`, for precedence parsing with subtyped data-structures.
  * @since 3.0.0
+ * @group builders
  */
 object SOps {
     /**

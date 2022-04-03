@@ -13,9 +13,10 @@ import scala.annotation.implicitNotFound
   * the type of the values and the operators.
   *
   * @since 4.0.0
+  * @group chains
   */
 object infix {
-    /** `right(p, op, x)` parses *zero* or more occurrences of `p`, separated by `op`. Returns a value
+    /** `right(p, op, x)` parses '''zero''' or more occurrences of `p`, separated by `op`. Returns a value
       * obtained by a right associative application of all functions return by `op` to the values
       * returned by `p`. If there are no occurrences of `p`, the value `x` is returned.
       * @since 4.0.0
@@ -23,7 +24,7 @@ object infix {
     def right[A, B, C >: B](p: Parsley[A], op: =>Parsley[(A, C) => B], x: C)
             (implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${C}") wrap: A => C): Parsley[C] = right1(p, op).getOrElse(x)
 
-    /** `left(p, op, x)` parses *zero* or more occurrences of `p`, separated by `op`. Returns a value
+    /** `left(p, op, x)` parses '''zero''' or more occurrences of `p`, separated by `op`. Returns a value
       * obtained by a left associative application of all functions returned by `op` to the values
       * returned by `p`. If there are no occurrences of `p`, the value `x` is returned.
       * @since 4.0.0
@@ -31,7 +32,7 @@ object infix {
     def left[A, B, C >: B](p: Parsley[A], op: =>Parsley[(C, A) => B], x: C)
             (implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${C}") wrap: A => C): Parsley[C] = left1(p, op).getOrElse(x)
 
-    /** `right1(p, op)` parses *one* or more occurrences of `p`, separated by `op`. Returns a value
+    /** `right1(p, op)` parses '''one''' or more occurrences of `p`, separated by `op`. Returns a value
       * obtained by a right associative application of all functions return by `op` to the values
       * returned by `p`.
       * @since 4.0.0
@@ -41,7 +42,7 @@ object infix {
         new Parsley(new frontend.Chainr(p.internal, op.internal, wrap))
     }
 
-    /** `left1(p, op)` parses *one* or more occurrences of `p`, separated by `op`. Returns a value
+    /** `left1(p, op)` parses '''one''' or more occurrences of `p`, separated by `op`. Returns a value
       * obtained by a left associative application of all functions return by `op` to the values
       * returned by `p`. This parser can for example be used to eliminate left recursion which
       * typically occurs in expression grammars.
