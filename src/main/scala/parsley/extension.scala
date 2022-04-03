@@ -1,7 +1,7 @@
 package parsley
 
-import Parsley.{ite, notFollowedBy}
-import combinator.{many, option, some}
+import Parsley.{notFollowedBy}
+import combinator.{many, option, some, ifP}
 
 /**
   * These implicit classes can be used to extend the core combinator set of Parsley.
@@ -30,7 +30,7 @@ object extension {
     implicit final class LazyChooseParsley[P, +A](pq: =>(P, P))(implicit con: P => Parsley[A]) {
         private lazy val (p, q) = pq
         /**This combinator is an alias for `ite`.*/
-        def ?:(b: Parsley[Boolean]): Parsley[A] = ite(b, con(p), con(q))
+        def ?:(b: Parsley[Boolean]): Parsley[A] = ifP(b, con(p), con(q))
     }
 
     /** This class exposes a collection of "operator-style" combinators that are

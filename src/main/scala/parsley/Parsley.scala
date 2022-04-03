@@ -520,18 +520,6 @@ object Parsley
     def branch[A, B, C](b: Parsley[Either[A, B]], p: =>Parsley[A => C], q: =>Parsley[B => C]): Parsley[C] = {
         new Parsley(new frontend.Branch(b.internal, p.internal, q.internal))
     }
-    /**
-      * This is an if statement lifted to the parser level. Formally, this is a selective functor operation,
-      * equivalent to `branch(b.map(boolToEither), p.map(const), q.map(const))`.
-      *
-      * @param b The parser that yields the condition value
-      * @param p
-      * @param q
-      * @group cond
-      */
-    def ite[A](b: Parsley[Boolean], p: =>Parsley[A], q: =>Parsley[A]): Parsley[A] = {
-        new Parsley(new frontend.If(b.internal, p.internal, q.internal))
-    }
     /** This is one of the core operations of a selective functor. It will conditionally execute one of `q` depending on
       * whether or not `p` returns a `Left`. It can be used to implement `branch` and other selective operations, however
       * it is more efficiently implemented with `branch` itself.
