@@ -539,38 +539,99 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
     def zip[B](q: =>Parsley[B]): Parsley[(A, B)] = this <~> q
 
     // FILTERING COMBINATORS
-    /** Filter the value of a parser; if the value returned by the parser matches the predicate `pred` then the
-      * filter succeeded, otherwise the parser fails with an empty error
-      * @param pred The predicate that is tested against the parser result
-      * @return The result of the receiver if it passes the predicate
+    /** This combinator filters the result of this parser using a given predicate, succeeding only if the predicate returns `true`.
+      *
+      * First, parse this parser. If it succeeds then take its result `x` and apply it to the predicate `pred`. If `pred(x)` is
+      * true, then return `x`. Otherwise, the combinator fails.
+      *
+      * @example {{{
+      * scala> import parsley.character.letter
+      * scala> val keywords = Set("if", "then", "else")
+      * scala> val identifier = some(letter).map(_.mkString)
+      *                                     .filter(!keywords.contains(_))
+      * scala> identifier.parse("hello")
+      * val res0 = Success("hello")
+      * scala> idenfitier.parse("if")
+      * val res1 = Failure(..)
+      * }}}
+      *
+      * @param pred the predicate that is tested against the parser result
+      * @return a parser that returns the result of this parser if it passes the predicate
       * @group filter
       */
-    // TODO: improve
     def filter(pred: A => Boolean): Parsley[A] = new Parsley(new frontend.Filter(this.internal, pred))
-    /** Filter the value of a parser; if the value returned by the parser does not match the predicate `pred` then the
-      * filter succeeded, otherwise the parser fails with an empty error
-      * @param pred The predicate that is tested against the parser result
-      * @return The result of the receiver if it fails the predicate
+    /** This combinator filters the result of this parser using a given predicate, succeeding only if the predicate returns `false`.
+      *
+      * First, parse this parser. If it succeeds then take its result `x` and apply it to the predicate `pred`. If `pred(x) is
+      * false, then return `x`. Otherwise, the combinator fails.
+      *
+      * @example {{{
+      * scala> import parsley.character.letter
+      * scala> val keywords = Set("if", "then", "else")
+      * scala> val identifier = some(letter).map(_.mkString)
+      *                                     .filterNot(keywords.contains(_))
+      * scala> identifier.parse("hello")
+      * val res0 = Success("hello")
+      * scala> idenfitier.parse("if")
+      * val res1 = Failure(..)
+      * }}}
+      *
+      * @param pred the predicate that is tested against the parser result
+      * @return a parser that returns the result of this parser if it fails the predicate
       * @group filter
       */
-    // TODO: improve
     def filterNot(pred: A => Boolean): Parsley[A] = this.filter(!pred(_))
-    /** Attempts to first filter the parser to ensure that `pf` is defined over it. If it is, then the function `pf`
-      * is mapped over its result. Roughly the same as a `filter` then a `map`.
-      * @param pf The partial function
-      * @return The result of applying `pf` to this parsers value (if possible), or fails
+    /** This combinator applies a partial function `pf` to the result of this parser if its result
+      * is defined for `pf`, failing if it is not.
+      *
+      * First, parse this parser. If it succeeds, test whether its result `x` is in the
+      * domain of the partial function `pf`. If it is defined for `pf`, return `pf(x)`.
+      * If it is undefined, or this parser failed, then this combinator fails. Equivalent
+      * to a `filter` followed by a `map`.
+      *
+      * @example {{{
+      * scala> val int: Parsley[Int] = ..
+      * scala> val safeDiv: Parsley[Int] = (int <~> char(' ') *> int).collect {
+      *   case (x, y) if y != 0 => x / y
+      * }
+      * scala> safeDiv.parse("7 0")
+      * val res0 = Failure(..) // y cannot be 0!
+      * scala> safeDiv.parse("10 2")
+      * val res1 = Success(5)
+      * }}}
+      *
+      * @param pf the partial function used to both filter the result of this parser and transform it.
+      * @return a parser which returns the result of this parser applied to `pf`, if possible.
       * @since 2.0.0
       * @group filter
       */
-    // TODO: improve
     def collect[B](pf: PartialFunction[A, B]): Parsley[B] = this.filter(pf.isDefinedAt).map(pf)
-    /** This casts the result of the parser into a new type `B`: if the value returned by the parser
-      * is castable to type `B`, then this cast is performed; otherwise, the parser fails.
+    /** This combinator attempts to downcast the result of this parser into a value of type `B`, failing
+      * if this was not possible.
+      *
+      * First, this parser is parsed. If it is successful, an attempt is made to cast the result
+      * of type `A` into a value of type `B`. If this cast was legal, then the combinator succeeds
+      * with this casted result. Otherwise, the combinator fails.
+      *
+      * This combinator is safe (bad casting will result in a parse error, not a crash), but should
+      * not be used purely to satisfy the type-checker. Its intended purpose is downcast values that
+      * are ''known'' to be the right type, but for whatever reason must be stored as a weaker
+      * type (say, `Any`).
+      *
+      * @example {{{
+      * scala> import parsley.Parsley.pure
+      * scala> val p: Parsley[Any] = pure(7)
+      * scala> p.cast[Int].parse("")
+      * val res0 = Success(7)
+      * scala> p.cast[String].parse("")
+      * val res1 = Failure(..)
+      * }}}
+      *
       * @tparam B the type to attempt to cast into, for which a `ClassTag[B]` must exist.
+      * @return a parser that downcasts the result of this parser to have type `B`.
       * @since 2.0.0
       * @group filter
       */
-    // TODO: improve?
     def cast[B: ClassTag]: Parsley[B] = this.collect {
         case x: B => x
     }
@@ -829,8 +890,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
   *     parse-time, which is '''very''' expensive to do repeatedly. These combinators are only
   *     needed in exceptional circumstances, and should be avoided otherwise.
   */
-object Parsley
-{
+object Parsley {
     /** This is the traditional applicative `pure` function for parsers. It consumes no input and
       * does not influence the state of the parser, but does return the value provided. Useful to inject pure values
       * into the parsing process.
