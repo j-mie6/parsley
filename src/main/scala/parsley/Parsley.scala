@@ -6,6 +6,7 @@ import parsley.expr.{chain, infix}
 import parsley.combinator.{option, some, many}
 import parsley.Parsley.pure
 import parsley.errors.ErrorBuilder
+import parsley.XCompat._
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -97,6 +98,18 @@ import scala.language.{higherKinds, implicitConversions}
   *     If this parser is successful, then this combinator is successful and no further action is taken. Otherwise, if this parser
   *     fails '''without''' consuming input, then `x` is unconditionally returned. If this parser fails having consumed
   *     input, this combinator fails. Functionally the same as `this <|> pure(x)`.
+  *
+  * @define bind
+  *     first performs this parser, then uses its result to generate and execute a new parser.
+  *
+  *     First, this combinator runs this parser. If it succeeded, the result `x` is given to the function `f`
+  *     to produce a new parser `f(x)`. This new parser is then executed and its result returned. If either
+  *     of this parser or the new parser fails, then the entire combinator fails.
+  *
+  *     This is a very powerful combinator (Turing-powerful, in fact): it is only necessary (and not ''all''
+  *     the time) to use this for context-sensitive parsing. The idea is that it can make any form of
+  *     decision based on the result of a parser, allowing it to perform a different parser for each
+  *     possible output of another without exhaustively enumerating them all.
   */
 final class Parsley[+A] private [parsley] (private [parsley] val internal: frontend.LazyParsley[A]) extends AnyVal
 {
@@ -551,8 +564,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       */
     // TODO: improve
     def collect[B](pf: PartialFunction[A, B]): Parsley[B] = this.filter(pf.isDefinedAt).map(pf)
-    /**
-      * This casts the result of the parser into a new type `B`: if the value returned by the parser
+    /** This casts the result of the parser into a new type `B`: if the value returned by the parser
       * is castable to type `B`, then this cast is performed; otherwise, the parser fails.
       * @tparam B The type to attempt to cast into
       * @since 2.0.0
@@ -564,8 +576,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
     }
 
     // FOLDING COMBINATORS
-    /**
-      * A fold for a parser: `p.foldRight(k)(f)` will try executing `p` many times until it fails, combining the
+    /** A fold for a parser: `p.foldRight(k)(f)` will try executing `p` many times until it fails, combining the
       * results with right-associative application of `f` with a `k` at the right-most position
       *
       * @example {{{p.foldRight(Nil)(_::_) == many(p) //many is more efficient, however}}}
@@ -577,8 +588,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       */
     // TODO: improve?
     def foldRight[B](k: B)(f: (A, B) => B): Parsley[B] = chain.prefix(this.map(f.curried), pure(k))
-    /**
-      * A fold for a parser: `p.foldLeft(k)(f)` will try executing `p` many times until it fails, combining the
+    /** A fold for a parser: `p.foldLeft(k)(f)` will try executing `p` many times until it fails, combining the
       * results with left-associative application of `f` with a `k` on the left-most position
       *
       * @example {{{val natural: Parsley[Int] = digit.foldLeft(0)((x, d) => x * 10 + d.toInt)}}}
@@ -590,8 +600,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       */
     // TODO: improve?
     def foldLeft[B](k: B)(f: (B, A) => B): Parsley[B] = new Parsley(new frontend.Chainl(pure(k).internal, this.internal, pure(f).internal))
-    /**
-      * A fold for a parser: `p.foldRight1(k)(f)` will try executing `p` many times until it fails, combining the
+    /** A fold for a parser: `p.foldRight1(k)(f)` will try executing `p` many times until it fails, combining the
       * results with right-associative application of `f` with a `k` at the right-most position: it must parse `p`
       * at least once.
       *
@@ -607,8 +616,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
     def foldRight1[B](k: B)(f: (A, B) => B): Parsley[B] = {
         lift.lift2(f, this, this.foldRight(k)(f))
     }
-    /**
-      * A fold for a parser: `p.foldLeft1(k)(f)` will try executing `p` many times until it fails, combining the
+    /** A fold for a parser: `p.foldLeft1(k)(f)` will try executing `p` many times until it fails, combining the
       * results with left-associative application of `f` with a `k` on the left-most position: it must parse `p`
       * at least once.
       *
@@ -624,8 +632,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
     def foldLeft1[B](k: B)(f: (B, A) => B): Parsley[B] = {
         new Parsley(new frontend.Chainl(this.map(f(k, _)).internal, this.internal, pure(f).internal))
     }
-    /**
-      * A reduction for a parser: `p.reduceRight(op)` will try executing `p` many times until it fails, combining the
+    /** A reduction for a parser: `p.reduceRight(op)` will try executing `p` many times until it fails, combining the
       * results with right-associative application of `op`: it must parse `p` at least once.
       *
       * @param op combining function
@@ -635,8 +642,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       */
     // TODO: improve?
     def reduceRight[B >: A](op: (A, B) => B): Parsley[B] = some(this).map(_.reduceRight(op))
-    /**
-      * A reduction for a parser: `p.reduceRightOption(op)` will try executing `p` many times until it fails, combining the
+    /** A reduction for a parser: `p.reduceRightOption(op)` will try executing `p` many times until it fails, combining the
       * results with right-associative application of `op`. If there is no `p`, it returns `None`, otherwise it returns
       * `Some(x)` where `x` is the result of the reduction.
       *
@@ -647,8 +653,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       */
     // TODO: improve?
     def reduceRightOption[B >: A](op: (A, B) => B): Parsley[Option[B]] = option(this.reduceRight(op))
-    /**
-      * A reduction for a parser: `p.reduceLeft(op)` will try executing `p` many times until it fails, combining the
+    /** A reduction for a parser: `p.reduceLeft(op)` will try executing `p` many times until it fails, combining the
       * results with left-associative application of `op`: it must parse `p` at least once.
       *
       * @param op combining function
@@ -658,8 +663,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       */
     // TODO: improve?
     def reduceLeft[B >: A](op: (B, A) => B): Parsley[B] = infix.left1(this, pure(op))
-    /**
-      * A reduction for a parser: `p.reduceLeftOption(op)` will try executing `p` many times until it fails, combining the
+    /** A reduction for a parser: `p.reduceLeftOption(op)` will try executing `p` many times until it fails, combining the
       * results with left-associative application of `op`. If there is no `p`, it returns `None`, otherwise it returns
       * `Some(x)` where `x` is the result of the reduction.
       *
@@ -672,30 +676,85 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
     def reduceLeftOption[B >: A](op: (B, A) => B): Parsley[Option[B]] = option(this.reduceLeft(op))
 
     // EXPENSIVE SEQUENCING COMBINATORS
-    /**
-      * This is the traditional Monadic binding operator for parsers. When the receiver produces a value, the function
-      * `f` is used to produce a new parser that continued the computation.
+    /** This combinator $bind
       *
-      * @note There is significant overhead for using flatMap; if possible try to write parsers in an applicative
-      * style otherwise try and use the intrinsic parsers provided to replace the flatMap.
-      * @param f A function that produces the next parser
-      * @return The parser produces from the application of `f` on the result of the last parser
+      * ''In Haskell, this combinator is known as `(>>=)` (pronounced "bind")''.
+      *
+      * @example {{{
+      * // this is an inefficient implementation, but does work
+      * def filter(pred: A => Boolean): Parsley[A] = {
+      *     this.flatMap { x =>
+      *         if (pred(x)) pure(x)
+      *         else empty
+      *     }
+      * }
+      * }}}
+      *
+      * @note there is '''significant''' overhead for using `flatMap`: if possible try to avoid using it! This
+      *       is because Parsley will need to generate, process, and compile each parser produced by the combinator
+      *       during parse-time.
+      * @param f the function that produces the next parser.
+      * @return a new parser, which sequences this parser with the parser generated from its result.
       * @group monad
       */
-    // TODO: improve
     def flatMap[B](f: A => Parsley[B]): Parsley[B] = new Parsley(new frontend.>>=(this.internal, f.andThen(_.internal)))
-    /** This combinator is an alias for `flatMap(identity)`.
+    /** This combinator, pronounced "bind", $bind
       *
+      * @example {{{
+      * // this is an inefficient implementation, but does work
+      * def filter(pred: A => Boolean): Parsley[A] = {
+      *     this >>= { x =>
+      *         if (pred(x)) pure(x)
+      *         else empty
+      *     }
+      * }
+      * }}}
+      *
+      * @note there is '''significant''' overhead for using `>>=`: if possible try to avoid using it! This
+      *       is because Parsley will need to generate, process, and compile each parser produced by the combinator
+      *       during parse-time.
+      * @param f the function that produces the next parser.
+      * @return a new parser, which sequences this parser with the parser generated from its result.
       * @group monad
       */
-    // TODO: improve
-    def flatten[B](implicit ev: A <:< Parsley[B]): Parsley[B] = this.flatMap[B](ev)
-    /** This combinator is an alias for `flatMap`
-      *
-      * @group monad
-      */
-    // TODO: improve
     def >>=[B](f: A => Parsley[B]): Parsley[B] = this.flatMap(f)
+    /** This combinator collapses two layers of parsing structure into one.
+      *
+      * The implicit (compiler-provided) evidence proves that this parser really has type `Parsley[Parsley[B]]`.
+      * First, this parser is executed, which, if successful, will produce a new parser `p`. The parser `p` is
+      * then executed, and its result is returned. If either this parser or `p` fail, then the entire combinator
+      * fails.
+      *
+      * This is a very powerful combinator (Turing-powerful, in fact): it is only necessary (and not ''all''
+      * the time) to use this for context-sensitive parsing. The idea is that it can allow a parser to return
+      * any other parser as its result: this allows for an implementation of a later parser to be picked
+      * by an earlier one.
+      *
+      * ''In Haskell, this combinator is known as `join`''.
+      *
+      * @example imagine a parser for RegEx that first reads the description of the regular expression, then runs
+      *          that against the remaining input string. It is possible to implement the parser for the regular
+      *          expression itself as a `Parsley[Parsley[Unit]]`, which returns a parser that matches the regular
+      *          expression. This can then be used to parse the remaining input by using `flatten` to incorporate
+      *          it into the parser again:
+      * {{{
+      * scala> val regexDesc: Parsley[Parsley[Unit]] = ..
+      * // let's suppose "#" is the delimeter between expression and input
+      * scala> val regex: Parsley[Unit] = (regexDesc <* char('#')).flatten
+      * scala> regex.parse("a.(c*)#abccc")
+      * val res0 = Success(())
+      * scala> regex.parse("a.(c*)#a")
+      * val res1 = Failure(..)
+      * }}}
+      *
+      * @param ev witnesses that the result type of this parser, `A`, is really `Parsley[B]`.
+      * @return a new parser, which sequences this parser with its result parser.
+      * @note there is '''significant''' overhead for using `flatten`: if possible try to avoid using it! This
+      *       is because Parsley will need to generate, process, and compile each parser produced by the combinator
+      *       during parse-time.
+      * @group monad
+      */
+    def flatten[B](implicit ev: A <:< Parsley[B]): Parsley[B] = this.flatMap[B](ev)
 
     // SPECIAL METHODS
     /**
