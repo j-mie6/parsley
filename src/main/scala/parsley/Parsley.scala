@@ -566,7 +566,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
     def collect[B](pf: PartialFunction[A, B]): Parsley[B] = this.filter(pf.isDefinedAt).map(pf)
     /** This casts the result of the parser into a new type `B`: if the value returned by the parser
       * is castable to type `B`, then this cast is performed; otherwise, the parser fails.
-      * @tparam B The type to attempt to cast into
+      * @tparam B the type to attempt to cast into, for which a `ClassTag[B]` must exist.
       * @since 2.0.0
       * @group filter
       */
