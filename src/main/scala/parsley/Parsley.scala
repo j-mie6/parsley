@@ -279,6 +279,17 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *
       * $attemptreason
       *
+      * @example {{{
+      * scala> import parsley.character.char
+      * scala> val p = string("abc") <+> char("xyz")
+      * scala> p.parse("abc")
+      * val res0 = Success(Left("abc"))
+      * scala> p.parse("xyz")
+      * val res1 = Success(Right("xyz"))
+      * scala> p.parse("ab")
+      * val res2 = Failure(..) // first parser consumed an 'a'!
+      * }}}
+      *
       * @param q the parser to run if this parser fails having not consumed input.
       * @return a parser which either parses this parser or parses `q` projecting their results into an `Either[A, B]`.
       * @group alt
