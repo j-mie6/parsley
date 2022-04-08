@@ -50,14 +50,14 @@ object registers {
     * @since 2.2.0
     * @group reg
     *
-    * @groupprio 0
+    * @groupprio getters 0
     * @groupname getters Getters
     * @groupdesc getters
     *   These combinators allow for the retrieval of the stateful value of a register, and
     *   injecting it into the parsing context. Does not modify the contents of the register
     *   itself.
     *
-    * @groupprio 5
+    * @groupprio setters 5
     * @groupname setters Setters
     * @groupdesc setters
     *   These combinators directly update the value contained within a register. This new

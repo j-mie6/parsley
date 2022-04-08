@@ -91,16 +91,12 @@ import scala.language.{higherKinds, implicitConversions}
   *     fails '''without''' consuming input, then `q` is parsed instead. If this parser fails having consumed
   *     input, this combinator fails.
   *
-  *     $attemptreason
-  *
   * @define orconst
   *     returns `x` if this parser fails '''without''' consuming input.
   *
   *     If this parser is successful, then this combinator is successful and no further action is taken. Otherwise, if this parser
   *     fails '''without''' consuming input, then `x` is unconditionally returned. If this parser fails having consumed
   *     input, this combinator fails. Functionally the same as `this <|> pure(x)`.
-  *
-  *     $attemptreason
   */
 final class Parsley[+A] private [parsley] (private [parsley] val internal: frontend.LazyParsley[A]) extends AnyVal
 {
@@ -170,6 +166,8 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
     // BRANCHING COMBINATORS
     /** This combinator, pronounced "or", $or
       *
+      * $attemptreason
+      *
       * @example {{{
       * scala> import parsley.character.string
       * scala> val p = string("a") <|> string("b")
@@ -189,6 +187,8 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       */
     def <|>[Aʹ >: A](q: Parsley[Aʹ]): Parsley[Aʹ] = new Parsley(new frontend.<|>(this.internal, q.internal))
     /** This combinator, pronounced "or", $or
+      *
+      * $attemptreason
       *
       * @example {{{
       * scala> import parsley.character.string
@@ -212,6 +212,8 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
     def |[Aʹ >: A](q: Parsley[Aʹ]): Parsley[Aʹ] = this <|> q
     /** This combinator $or
       *
+      * $attemptreason
+      *
       * @example {{{
       * scala> import parsley.character.string
       * scala> val p = string("a").orElse(string("b"))
@@ -234,6 +236,8 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
     def orElse[Aʹ >: A](q: Parsley[Aʹ]): Parsley[Aʹ] = this <|> q
     /** This combinator, pronounced "or constant", $orconst
       *
+      * $attemptreason
+      *
       * @example {{{
       * scala> import parsley.character.string
       * scala> val p = string("aa") </> "b"
@@ -252,6 +256,8 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       */
     def </>[Aʹ >: A](x: Aʹ): Parsley[Aʹ] = this <|> pure(x)
     /** This combinator $orconst
+      *
+      * $attemptreason
       *
       * @example {{{
       * scala> import parsley.character.string
@@ -297,89 +303,226 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
     def <+>[B](q: Parsley[B]): Parsley[Either[A, B]] = this.map(Left(_)) <|> q.map(Right(_))
 
     // SEQUENCING COMBINATORS
-    /**
-      * This is the Applicative application parser. The type of `pf` is `Parsley[A => B]`. Then, given a
-      * `Parsley[A]`, we can produce a `Parsley[B]` by parsing `pf` to retrieve `f: A => B`, then parse `px`
-      * to receive `x: A` then return `f(x): B`.
+    /** This combinator, pronounced "ap", first parses this parser then parses `px`: if both succeed then the function
+      * returned by this parser is applied to the value returned by `px`.
       *
-      * @note `pure(f) <*> p` is subject to the same aggressive optimisations as `map`. When using impure functions
-      * the optimiser may decide to cache the result of the function execution, be sure to use `unsafe` in order to
-      * prevent these optimisations.
-      * @param px A parser of type A, where the receiver is A => B
-      * @return A new parser which parses `pf`, then `px` then applies the value returned by `px` to the function
-      *         returned by `pf`
+      * The implicit (compiler-provided) evidence proves that this parser really has type `Parsley[B => C]`.
+      * First, this parser is ran, yielding a function `f` on success, then `px` is ran, yielding a value `x`
+      * on success. If both are successful, then `f(x)` is returned. If either fail then the entire combinator
+      * fails.
+      *
+      * @example {{{
+      * scala> import parsley.Parsley, parsley.character.char
+      * scala> val sign: Parsley[Int => Int] = char('+') #> (identity[Int] _) <|> char('-') #> (x => -x)
+      * scala> val nat: Parsley[Int] = ..
+      * scala> val int = sign <*> nat
+      * scala> int.parse("-7")
+      * val res0 = Success(-7)
+      * scala> int.parse("+42")
+      * val res1 = Success(42)
+      * scala> int.parse("2")
+      * val res2 = Failure(..) // `sign` failed: no + or -
+      * scala> int.parse("-a")
+      * val res3 = Failure(..) // `nat` failed
+      * }}}
+      *
+      * @param px the parser to run second, which returns a value applicable to this parser's result.
+      * @param ev witnesses that the type of this parser, `A`, is actually `B => C`.
+      * @return a parser that sequences this parser with `px` and combines their results with function application.
+      * @note equivalent to `lift2((f, x) => f(x), this, px)`.
       * @group seq
       */
-    // TODO: improve
     def <*>[B, C](px: =>Parsley[B])
-                 (implicit ev: Parsley[A] <:< Parsley[B=>C]): Parsley[C] = new Parsley(new frontend.<*>[B, C](ev(this).internal, px.internal))
-        /** This combinator is defined as `lift2((x, f) => f(x), p, f)`. It is pure syntactic sugar.
+                 (implicit ev: A <:< (B=>C)): Parsley[C] = new Parsley(new frontend.<*>[B, C](ev.substituteCo(this).internal, px.internal))
+    /** This combinator, pronounced "reverse ap", first parses this parser then parses `pf`: if both succeed then the value
+      * returned by this parser is applied to the function returned by `pf`.
       *
+      * First, this parser is ran, yielding a value `x` on success, then `pf` is ran, yielding a function `f`
+      * on success. If both are successful, then `f(x)` is returned. If either fail then the entire combinator
+      * fails.
+      *
+      * Compared with `<*>`, this combinator is useful for left-factoring: when two branches of a parser share
+      * a common prefix, this can often be factored out; but the result of that factored prefix may be required
+      * to help generate the results of each branch. In this case, the branches can return functions that, when
+      * given the factored result, can produce the original results from before the factoring.
+      *
+      * @example {{{
+    *  // this has a common prefix "term" and requires backtracking
+      * val expr1 = attempt(lift2(Add, term <* char('+'), expr2)) <|> term
+      * // common prefix factored out, and branches return a function to recombine
+      * val expr2 = term <**> (char('+') *> expr2.map(y => Add(_, y)) </> (identity[Expr] _))
+      * }}}
+      *
+      * @param pf the parser to run second, which returns a function this parser's result can be applied to.
+      * @return a parser that sequences this parser with `pf` and combines their results with function application.
+      * @note equivalent to `lift2((x, f) => f(x), this, pf)`.
       * @group seq
       */
-    // TODO: improve
     def <**>[B](pf: =>Parsley[A => B]): Parsley[B] = lift.lift2[A, A=>B, B]((x, f) => f(x), this, pf)
-    /**
-      * This is the parser that corresponds to a more optimal version of `lift2(_ => x => x, p, q)`. It performs
-      * the parse action of both parsers, in order, but discards the result of the receiver.
-      * @param q The parser whose result should be returned
-      * @return A new parser which first parses `p`, then `q` and returns the result of `q`
+    /** This combinator, pronounced "then", first parses this parser then parses `q`: if both succeed then the result
+      * of `q` is returned.
+      *
+      * First, this parser is ran, yielding `x` on success, then `q` is ran, yielding `y` on success. If both
+      * are successful then `y` is returned and `x` is ignored. If either fail then the entire combinator fails.
+      *
+      * ''Identical to `~>`: `*>` is more common in Haskell, wheras `~>` is more common in Scala.''
+      *
+      * @example {{{
+      * scala> import parsley.character.char
+      * scala> ('a' *> 'b').parse("ab")
+      * val res0 = Success('b')
+      * }}}
+      *
+      * @param q the parser to run second, which returns the result of this combinator.
+      * @return a parser that sequences this parser with `q` and returns `q`'s result.
       * @group seq
       */
-    // TODO: improve
     def *>[B](q: =>Parsley[B]): Parsley[B] = new Parsley(new frontend.*>(this.internal, q.internal))
-    /**
-      * This is the parser that corresponds to a more optimal version of `lift2(x => _ => x, p, q)`. It performs
-      * the parse action of both parsers, in order, but discards the result of the second parser.
-      * @param q The parser who should be executed but then discarded
-      * @return A new parser which first parses `p`, then `q` and returns the result of the `p`
+    /** This combinator, pronounced "then discard", first parses this parser then parses `q`: if both succeed then the result
+      * of this parser is returned.
+      *
+      * First, this parser is ran, yielding `x` on success, then `q` is ran, yielding `y` on success. If both
+      * are successful then `x` is returned and `y` is ignored. If either fail then the entire combinator fails.
+      *
+      * ''Identical to `<~`: `<*` is more common in Haskell, wheras `<~` is more common in Scala.''
+      *
+      * @example {{{
+      * scala> import parsley.character.char
+      * scala> ('a' <* 'b').parse("ab")
+      * val res0 = Success('a')
+      * }}}
+      *
+      * @param q the parser to run second, which returns the result of this combinator.
+      * @return a parser that sequences this parser with `q` and returns this parser's result.
       * @group seq
       */
-    // TODO: improve
     def <*[B](q: =>Parsley[B]): Parsley[A] = new Parsley(new frontend.<*(this.internal, q.internal))
-    /**
-      * This is the parser that corresponds to a more optimal version of `(p <~> q).map(_._2)`. It performs
-      * the parse action of both parsers, in order, but discards the result of the receiver.
-      * @param q The parser whose result should be returned
-      * @return A new parser which first parses `p`, then `q` and returns the result of `q`
+    /** This combinator, pronounced "then", first parses this parser then parses `q`: if both succeed then the result
+      * of `q` is returned.
+      *
+      * First, this parser is ran, yielding `x` on success, then `q` is ran, yielding `y` on success. If both
+      * are successful then `y` is returned and `x` is ignored. If either fail then the entire combinator fails.
+      *
+      * ''Identical to `*>`: `*>` is more common in Haskell, wheras `~>` is more common in Scala.''
+      *
+      * @example {{{
+      * scala> import parsley.character.char
+      * scala> ('a' ~> 'b').parse("ab")
+      * val res0 = Success('b')
+      * }}}
+      *
+      * @param q the parser to run second, which returns the result of this combinator.
+      * @return a parser that sequences this parser with `q` and returns `q`'s result.
       * @since 2.4.0
       * @group seq
       */
-    // TODO: improve
     def ~>[B](q: =>Parsley[B]): Parsley[B] = this *> q
-    /**
-      * This is the parser that corresponds to a more optimal version of `(p <~> q).map(_._1)`. It performs
-      * the parse action of both parsers, in order, but discards the result of the second parser.
-      * @param q The parser who should be executed but then discarded
-      * @return A new parser which first parses `p`, then `q` and returns the result of the `p`
+    /** This combinator, pronounced "then discard", first parses this parser then parses `q`: if both succeed then the result
+      * of this parser is returned.
+      *
+      * First, this parser is ran, yielding `x` on success, then `q` is ran, yielding `y` on success. If both
+      * are successful then `x` is returned and `y` is ignored. If either fail then the entire combinator fails.
+      *
+      * ''Identical to `<*`: `<*` is more common in Haskell, wheras `<~` is more common in Scala.''
+      *
+      * @example {{{
+      * scala> import parsley.character.char
+      * scala> ('a' <~ 'b').parse("ab")
+      * val res0 = Success('a')
+      * }}}
+      *
+      * @param q the parser to run second, which returns the result of this combinator.
+      * @return a parser that sequences this parser with `q` and returns this parser's result.
       * @since 2.4.0
       * @group seq
       */
-    // TODO: improve
     def <~[B](q: =>Parsley[B]): Parsley[A] = this <* q
-    /** This parser corresponds to `lift2(_+:_, p, ps)`.
+    /** This combinator, pronounced "prepend", first parses this parser then parses `ps`: if both succeed the result of this
+      * parser is prepended onto the result of `ps`.
       *
+      * First, this parser is ran, yielding `x` on success, then `ps` is ran, yielding `xs` on success. If both
+      * are successful then `x +: xs` is returned. If either fail then the entire combinator fails.
+      *
+      * @example {{{
+      * def some[A](p: Parsley[A]): Parsley[List[A]] = {
+      *     p <+:> many(p) // since List[A] <: Seq[A]
+      * }
+      * }}}
+      *
+      * @param ps the parser to run second, which returns a sequence
+      * @tparam Aʹ the type of the elements in the result sequence, which must be a supertype of
+      *            the result type of this parser: this allows for weakening of the result type.
+      * @return a parser that sequences this parser with `ps` and prepends its result onto `ps` result.
+      * @note equivalent to `lift2(_ +: _, this, ps)`.
       * @group seq
       */
-    // TODO: improve
     def <+:>[Aʹ >: A](ps: =>Parsley[Seq[Aʹ]]): Parsley[Seq[Aʹ]] = lift.lift2[A, Seq[Aʹ], Seq[Aʹ]](_ +: _, this, ps)
-    /** This parser corresponds to `lift2(_::_, p, ps)`.
+    /** This combinator, pronounced "cons", first parses this parser then parses `ps`: if both succeed the result of this
+      * parser is prepended onto the result of `ps`.
       *
+      * First, this parser is ran, yielding `x` on success, then `ps` is ran, yielding `xs` on success. If both
+      * are successful then `x :: xs` is returned. If either fail then the entire combinator fails.
+      *
+      * @example {{{
+      * def some[A](p: Parsley[A]): Parsley[List[A]] = {
+      *     p <::> many(p)
+      * }
+      * }}}
+      *
+      * @param ps the parser to run second, which returns a list
+      * @tparam Aʹ the type of the elements in the result list, which must be a supertype of
+      *            the result type of this parser: this allows for weakening of the result type.
+      * @return a parser that sequences this parser with `ps` and prepends its result onto `ps` result.
+      * @note equivalent to `lift2(_ :: _, this, ps)`.
       * @group seq
       */
-    // TODO: improve
     def <::>[Aʹ >: A](ps: =>Parsley[List[Aʹ]]): Parsley[List[Aʹ]] = lift.lift2[A, List[Aʹ], List[Aʹ]](_ :: _, this, ps)
-    /** This parser corresponds to `lift2((_, _), p, q)`. For now it is sugar, but in future may be more optimal
+    /** This combinator, pronounced "zip", first parses this parser then parses `q`: if both succeed the result of this
+      * parser is paired with the result of `q`.
       *
+      * First, this parser is ran, yielding `x` on success, then `q` is ran, yielding `y` on success. If both
+      * are successful then `(x, y)` is returned. If either fail then the entire combinator fails.
+      *
+      * @example {{{
+      * scala> import parsley.character.char
+      * scala> val p = char('a') <~> char('b')
+      * scala> p.parse("ab")
+      * val res0 = Success(('a', 'b'))
+      * scala> p.parse("b")
+      * val res1 = Failure(..)
+      * scala> p.parse("a")
+      * val res2 = Failure(..)
+      * }}}
+      *
+      * @param q the parser to run second
+      * @return a parser that sequences this parser with `q` and pairs their results together.
+      * @note equivalent to `lift2((_, _), this, q)`.
       * @group seq
       */
-    // TODO: improve
     def <~>[B](q: =>Parsley[B]): Parsley[(A, B)] = lift.lift2[A, B, (A, B)]((_, _), this, q)
-    /** This combinator is an alias for `<~>`
+    /** This combinator first parses this parser then parses `q`: if both succeed the result of this
+      * parser is paired with the result of `q`.
+      *
+      * First, this parser is ran, yielding `x` on success, then `q` is ran, yielding `y` on success. If both
+      * are successful then `(x, y)` is returned. If either fail then the entire combinator fails.
+      *
+      * @example {{{
+      * scala> import parsley.character.char
+      * scala> val p = char('a').zip(char('b'))
+      * scala> p.parse("ab")
+      * val res0 = Success(('a', 'b'))
+      * scala> p.parse("b")
+      * val res1 = Failure(..)
+      * scala> p.parse("a")
+      * val res2 = Failure(..)
+      * }}}
+      *
+      * @param q the parser to run second
+      * @return a parser that sequences this parser with `q` and pairs their results together.
+      * @note alias for `<~>`.
       * @since 2.3.0
       * @group seq
       */
-    // TODO: improve
     def zip[B](q: =>Parsley[B]): Parsley[(A, B)] = this <~> q
 
     // FILTERING COMBINATORS
