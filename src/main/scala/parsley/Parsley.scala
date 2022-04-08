@@ -80,15 +80,27 @@ import scala.language.{higherKinds, implicitConversions}
   * @groupname special Special Methods
   * @groupdesc special These are methods that should be rarely needed.
   *
+  * @define attemptreason
+  *     The reason for this behaviour is that it prevents space leaks and improves error messages. If this behaviour
+  *     is not desired, use `attempt(this)` to rollback any input consumed on failure.
+  *
   * @define or
-  *    This combinator, pronounced "or", parses `q` if this parser fails '''without''' consuming input.
+  *     parses `q` if this parser fails '''without''' consuming input.
   *
-  *    If this parser is successful this is successful, no further action is taken. Otherwise, if this parser
-  *    fails '''without''' consuming input, then `q` is parsed instead. If this parser fails having consumed
-  *    input, this combinator fails.
+  *     If this parser is successful, then this combinator is successful and no further action is taken. Otherwise, if this parser
+  *     fails '''without''' consuming input, then `q` is parsed instead. If this parser fails having consumed
+  *     input, this combinator fails.
   *
-  *    The reason for this behaviour is that it prevents space leaks and improves error messages. If this behaviour
-  *    is not desired, use `attempt(this)` to rollback any input consumed on failure.
+  *     $attemptreason
+  *
+  * @define orconst
+  *     returns `x` if this parser fails '''without''' consuming input.
+  *
+  *     If this parser is successful, then this combinator is successful and no further action is taken. Otherwise, if this parser
+  *     fails '''without''' consuming input, then `x` is unconditionally returned. If this parser fails having consumed
+  *     input, this combinator fails. Functionally the same as `this <|> pure(x)`.
+  *
+  *     $attemptreason
   */
 final class Parsley[+A] private [parsley] (private [parsley] val internal: frontend.LazyParsley[A]) extends AnyVal
 {
@@ -156,7 +168,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
     def void: Parsley[Unit] = this #> ()
 
     // BRANCHING COMBINATORS
-    /** $or
+    /** This combinator, pronounced "or", $or
       *
       * @example {{{
       * scala> import parsley.character.string
@@ -164,10 +176,10 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * scala> p.parse("a")
       * val res0 = Success("a")
       * scala> p.parse("b")
-      * val res0 = Success("b")
+      * val res1 = Success("b")
       * scala> val q = string("ab") <|> string("ac")
       * scala> q.parse("ac")
-      * val res0 = Failure(..) // first parser consumed an 'a'!
+      * val res2 = Failure(..) // first parser consumed an 'a'!
       * }}}
       *
       * @param q the parser to run if this parser fails having not consumed input.
@@ -176,7 +188,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @group alt
       */
     def <|>[Aʹ >: A](q: Parsley[Aʹ]): Parsley[Aʹ] = new Parsley(new frontend.<|>(this.internal, q.internal))
-    /** $or
+    /** This combinator, pronounced "or", $or
       *
       * @example {{{
       * scala> import parsley.character.string
@@ -184,10 +196,10 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * scala> p.parse("a")
       * val res0 = Success("a")
       * scala> p.parse("b")
-      * val res0 = Success("b")
+      * val res1 = Success("b")
       * scala> val q = string("ab") | string("ac")
       * scala> q.parse("ac")
-      * val res0 = Failure(..) // first parser consumed an 'a'!
+      * val res2 = Failure(..) // first parser consumed an 'a'!
       * }}}
       *
       * @since 4.0.0
@@ -198,13 +210,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @group alt
       */
     def |[Aʹ >: A](q: Parsley[Aʹ]): Parsley[Aʹ] = this <|> q
-    /** This combinator is defined as `this <|> pure(x)`: it is pure syntactic sugar.
-      *
-      * @group alt
-      */
-    // TODO: improve
-    def </>[Aʹ >: A](x: Aʹ): Parsley[Aʹ] = this <|> pure(x)
-    /** $or
+    /** This combinator $or
       *
       * @example {{{
       * scala> import parsley.character.string
@@ -212,10 +218,10 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * scala> p.parse("a")
       * val res0 = Success("a")
       * scala> p.parse("b")
-      * val res0 = Success("b")
+      * val res1 = Success("b")
       * scala> val q = string("ab").orElse(string("ac"))
       * scala> q.parse("ac")
-      * val res0 = Failure(..) // first parser consumed an 'a'!
+      * val res2 = Failure(..) // first parser consumed an 'a'!
       * }}}
       *
       * @since 4.0.0
@@ -226,22 +232,57 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @group alt
       */
     def orElse[Aʹ >: A](q: Parsley[Aʹ]): Parsley[Aʹ] = this <|> q
-    /** This combinator is defined as `this <|> pure(x)`: it is pure syntactic sugar.
+    /** This combinator, pronounced "or constant", $orconst
+      *
+      * @example {{{
+      * scala> import parsley.character.string
+      * scala> val p = string("aa") </> "b"
+      * scala> p.parse("aa")
+      * val res0 = Success("a")
+      * scala> p.parse("xyz")
+      * val res1 = Success("b")
+      * scala> p.parse("ab")
+      * val res2 = Failure(..) // first parser consumed an 'a'!
+      * }}}
+      *
+      * @param x the value to return if this parser fails having not consumed input.
+      * @tparam Aʹ the type of `x`, which must be a supertype of the result type of this parser: this allows for weakening of the result type.
+      * @return a parser which either parses this parser or returns `x`.
+      * @group alt
+      */
+    def </>[Aʹ >: A](x: Aʹ): Parsley[Aʹ] = this <|> pure(x)
+    /** This combinator $orconst
+      *
+      * @example {{{
+      * scala> import parsley.character.string
+      * scala> val p = string("aa").getOrElse("b")
+      * scala> p.parse("aa")
+      * val res0 = Success("a")
+      * scala> p.parse("xyz")
+      * val res1 = Success("b")
+      * scala> p.parse("ab")
+      * val res2 = Failure(..) // first parser consumed an 'a'!
+      * }}}
       *
       * @group alt
       * @note just an alias for `</>`
       */
-    // TODO: improve
     def getOrElse[Aʹ >: A](x: Aʹ): Parsley[Aʹ] = this </> x
     /**
-      * This combinator, pronounced "sum", is similar to `<|>`, except it allows the
-      * types of either side of the combinator to vary by returning their result as
-      * part of an `Either`.
+      * This combinator, pronounced "sum", wraps this parser's result in `Left` if it succeeds, and parses `q` if it failed '''without''' consuming input,
+      * wrapping the result in `Right`.
       *
-      * @param q The parser to run if the receiver failed without consuming input
+      * If this parser is successful, then its result is wrapped up using `Left(_)` and no further action is taken.
+      * Otherwise, if this parser fails '''without''' consuming input, then `q` is parsed instead and its result is
+      * wrapped up using `Right(_)`. If this parser fails having consumed input, this combinator fails.
+      * This is functionally equivalent to `this.map(Left(_)) <|> q.map(Right(_))`.
+      *
+      * $attemptreason
+      *
+      * @param q the parser to run if this parser fails having not consumed input.
+      * @return a parser which either parses this parser or parses `q` projecting their results into an `Either[A, B]`.
       * @group alt
       */
-    // TODO: improve
     def <+>[B](q: Parsley[B]): Parsley[Either[A, B]] = this.map(Left(_)) <|> q.map(Right(_))
 
     // SEQUENCING COMBINATORS
