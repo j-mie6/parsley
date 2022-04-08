@@ -1,6 +1,11 @@
 package parsley
 
-/** This package contains various functionality relating to the parsing of expressions, including precedence encoding combinators.
+/** This package contains various functionality relating to the parsing of expressions..
+  *
+  * This includes the "chain" combinators, which tackle the left-recursion problem and
+  * allow for the parsing and combining of operators with values. It also includes
+  * functionality for constructing larger precedence tables, which may even vary the
+  * type of each layer in the table, allowing for strongly-typed expression parsing.
   *
   * @groupprio Chains 0
   * @groupname Chains Chain Combinators

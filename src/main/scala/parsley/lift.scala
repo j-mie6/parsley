@@ -3,7 +3,7 @@ import parsley.internal.deepembedding.frontend
 
 /**
   * This module contains `lift1` through `lift22`, which allow for the
-  * application of a `FunctionN` to `N` parsers for example:
+  * application of a `FunctionN` to `N` parsers.
   *
   * @example {{{lift2[Int, Int, Int](_+_, px, py): Parsley[Int]}}}
   * @example {{{lift3((x: Int, y: Int, z: Int) => x + y + z, px, py, pz): Parsley[Int]}}}

@@ -5,6 +5,7 @@ import combinator.{many, option, some, ifP}
 
 /**
   * These implicit classes can be used to extend the core combinator set of Parsley.
+  * 
   * This may mean that importing them enables combinators that can be used on ''non-`Parsley`'' types,
   * or might enable some syntactic sugar that is not part of the core combinator "style".
   */

@@ -11,6 +11,10 @@ import scala.language.implicitConversions
 import scala.collection.immutable.NumericRange
 
 /** This module contains many parsers to do with reading one or more characters. Almost every parser will need something from this module.
+  *
+  * In particular, this module contains: combinators that can read specific characters; combinators that represent character classes and their negations;
+  * combinators for reading specific strings; as well as a selection of pre-made parsers to parse specific kinds of character, like digits and letters.
+  *
   * @since 2.2.0
   *
   * @groupprio pred 100

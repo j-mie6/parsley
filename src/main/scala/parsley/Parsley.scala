@@ -445,6 +445,10 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
 
 /** This object contains the core "function-style" combinators: all parsers will likely require something from within!
   *
+  * In particular, it contains combinators for: controlling how input is consumed; injecting values into
+  * the parser, or failing; extracting position information from the parser; conditional execution of
+  * parsers; and more.
+  *
   * @groupprio cond 25
   * @groupname cond Conditional Combinators
   * @groupdesc cond
@@ -474,17 +478,6 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
   *     These parsers provide a way to extract position information during a parse. This can be important
   *     for when the final result of the parser needs to encode position information for later consumption:
   *     this is particularly useful for abstract syntax trees.
-  *
-  * @groupprio seq 50
-  * @groupname seq Sequencing Combinators
-  * @groupdesc seq
-  *     These combinators sequence a large number of parsers in one go. Be careful, however, these are
-  *     variadic combinators and are necessarily (for compatibility with Scala 2) '''not lazy'''.
-  *
-  *     In such a case where laziness is desired without resorting to the other lazier combinators, there
-  *     is a neat trick: unroll the first iteration of the combinator, and use the regular combinator
-  *     to do that (probably `<::>` or `*>`): since these will have a lazy right-hand side, the remaining
-  *     variadic arguments will be kept lazily suspended until later.
   *
   * @groupprio monad 100
   * @groupname monad Expensive Sequencing Combinators
@@ -571,28 +564,6 @@ object Parsley
       * @group basic
       */
     val unit: Parsley[Unit] = pure(())
-    /**
-      * Evaluate each of the parsers in `ps` sequentially from left to right, collecting the results.
-      * @param ps Parsers to be sequenced
-      * @return The list containing results, one from each parser, in order
-      * @group seq
-      */
-    def sequence[A](ps: Parsley[A]*): Parsley[List[A]] = ps.foldRight(pure[List[A]](Nil))(_ <::> _)
-    /**
-      * Like `sequence` but produces a list of parsers to sequence by applying the function `f` to each
-      * element in `xs`.
-      * @param f The function to map on each element of `xs` to produce parsers
-      * @param xs Values to generate parsers from
-      * @return The list containing results formed by executing each parser generated from `xs` and `f` in sequence
-      * @group seq
-      */
-    def traverse[A, B](f: A => Parsley[B], xs: A*): Parsley[List[B]] = sequence(xs.map(f): _*)
-    /**
-      * Evaluate each of the parsers in `ps` sequentially from left to right, ignoring the results.
-      * @param ps Parsers to be performed
-      * @group seq
-      */
-    def skip(ps: Parsley[_]*): Parsley[Unit] = ps.foldRight(unit)(_ *> _)
     /**
       * This parser consumes no input and returns the current line number reached in the input stream
       * @return The line number the parser is currently at
