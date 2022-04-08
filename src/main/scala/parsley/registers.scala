@@ -5,7 +5,32 @@ import parsley.combinator.{when, whileP}
 import parsley.internal.deepembedding.{singletons, frontend}
 
 /** This module contains all the functionality and operations for using and manipulating registers.
+  *
+  * These often have a role in performing context-sensitive parsing tasks, where a Turing-powerful
+  * system is required. While `flatMap` is capable of such parsing, it is much less efficient
+  * than the use of registers, though slightly more flexible. In particular, the `persist` combinator
+  * enabled by `RegisterMethods` can serve as a drop-in replacement for `flatMap` in many scenarios.
+  *
   * @since 2.2.0
+  *
+  * @groupprio reg 0
+  * @groupname reg Registers
+  * @groupdesc reg
+  *     The `Reg` type is used to describe pieces of state that are threaded through a parser.
+  *     The creation and basic combinators of registers are found within `Reg` and its companion
+  *     object.
+  *
+  * @groupprio comb 5
+  * @groupname comb Register-Based Combinators
+  * @groupdesc comb
+  *     Some combinators are made much more efficient in the presence of registers and they can
+  *     be found here.
+  *
+  * @groupprio ext 10
+  * @groupname ext Register Extension Combinators
+  * @groupdesc ext
+  *     These are implicit classes that, when in scope, enable additional combinators on
+  *     parsers that interact with the register system in some way.
   */
 object registers {
     /**
@@ -23,20 +48,49 @@ object registers {
     *       registers in shared parsers and allocate fresh ones for each "top-level"
     *       parser you will run.
     * @since 2.2.0
+    * @group reg
+    *
+    * @groupprio 0
+    * @groupname getters Getters
+    * @groupdesc getters
+    *   These combinators allow for the retrieval of the stateful value of a register, and
+    *   injecting it into the parsing context. Does not modify the contents of the register
+    *   itself.
+    *
+    * @groupprio 5
+    * @groupname setters Setters
+    * @groupdesc setters
+    *   These combinators directly update the value contained within a register. This new
+    *   value can be provided directly or sourced from a parser.
+    *
+    * @groupprio mod 10
+    * @groupname mod Modification
+    * @groupdesc mod
+    *   These combinators modify the value stored within a register by using a function.
+    *   The function used can be provided directly or sourced from a parser.
+    *
+    * @groupprio local 15
+    * @groupname local Local Modification
+    * @groupdesc local
+    *   These combinators allow for some form of local stateful modification. This means
+    *   that any changes to the register may be reverted after the execution of the parser:
+    *   this may be on the parsers success, but it could also involve the parsers failure.
     */
     class Reg[A] private [parsley] {
         /**
           * Consumes no input and returns the value stored in this register
           * @return The value stored in register
           * @since 3.2.0
+          * @group getters
           */
-        def get: Parsley[A] = new Parsley(new  singletons.Get(this))
+        def get: Parsley[A] = new Parsley(new singletons.Get(this))
         /**
           * Consumes no input and returns the value stored in this register after applying a function.
           * @param f The function used to transform the value in this register
           * @tparam B The desired result type
           * @return The value stored in this register applied to `f`
           * @since 3.2.0
+          * @group getters
           */
         def gets[B](f: A => B): Parsley[B] = this.gets(pure(f))
         /**
@@ -46,18 +100,21 @@ object registers {
           * @tparam B The desired result type
           * @return The value stored in this register applied to `f` from `pf`
           * @since 3.2.0
+          * @group getters
           */
         def gets[B](pf: Parsley[A => B]): Parsley[B] = pf <*> this.get
         /**
           * Consumes no input and places the value `x` into this register.
           * @param x The value to place in the register
           * @since 3.2.0
+          * @group setters
           */
         def put(x: A): Parsley[Unit] = this.put(pure(x))
         /**
           * Places the result of running `p` into this register.
           * @param p The parser to derive the value from
           * @since 3.2.0
+          * @group setters
           */
         def put(p: Parsley[A]): Parsley[Unit] = new Parsley(new frontend.Put(this, p.internal))
         /**
@@ -65,12 +122,14 @@ object registers {
           * @param p The parser to derive the value from
           * @param f A function which adapts the result of `p` so that it can fit in `r`
           * @since 3.0.0
+          * @group setters
           */
         def puts[B](p: Parsley[B], f: B => A): Parsley[Unit] = this.put(p.map(f))
         /**
           * Modifies the value contained in this register using function `f`.
           * @param f The function used to modify the register
           * @since 3.2.0
+          * @group mod
           */
         def modify(f: A => A): Parsley[Unit] = new Parsley(new singletons.Modify(this, f))
         /**
@@ -78,6 +137,7 @@ object registers {
           * @note The value is modified after `pf` is executed
           * @param f The function used to modify the register
           * @since 3.2.0
+          * @group mod
           */
         def modify(pf: Parsley[A => A]): Parsley[Unit] = this.put(this.gets(pf))
         /**
@@ -87,6 +147,7 @@ object registers {
           * @param p The parser to execute with the adjusted state
           * @return The parser that performs `p` with the modified state
           * @since 3.2.0
+          * @group local
           */
         def local[B](x: A)(p: Parsley[B]): Parsley[B] = this.local(pure(x))(p)
         /**
@@ -96,6 +157,7 @@ object registers {
           * @param q The parser to execute with the adjusted state
           * @return The parser that performs `q` with the modified state
           * @since 3.2.0
+          * @group local
           */
         def local[B](p: Parsley[A])(q: =>Parsley[B]): Parsley[B] = new Parsley(new frontend.Local(this, p.internal, q.internal))
         /**
@@ -105,14 +167,16 @@ object registers {
           * @param p The parser to execute with the adjusted state
           * @return The parser that performs `p` with the modified state
           * @since 3.2.0
+          * @group local
           */
         def local[B](f: A => A)(p: Parsley[B]): Parsley[B] = this.local(this.gets(f))(p)
 
-        /** `rollback(reg, p)` will perform `p`, but if it fails without consuming input, any changes to this register will
+        /** `reg.rollback(p)` will perform `p`, but if it fails without consuming input, any changes to this register will
           * be reverted.
           * @param p The parser to perform
           * @return The result of the parser `p`, if any
           * @since 3.2.0
+          * @group local
           */
         def rollback[B](p: Parsley[B]): Parsley[B] = {
             this.get.persist(x => {
@@ -132,6 +196,9 @@ object registers {
         }
         //override def toString: String = s"Reg(${if (allocated) addr else "unallocated"})"
     }
+    /** This object allows for the construction of a register via its `make` function.
+      * @group reg
+      */
     object Reg {
         /**
         * @tparam A The type to be contained in this register during runtime
@@ -141,6 +208,11 @@ object registers {
         def make[A]: Reg[A] = new Reg
     }
 
+    /** This class, when in scope, enables the use of combinators directly on parsers
+      * that interact with the register system to store and persist results so they
+      * can be used multiple times.
+      * @group ext
+      */
     implicit final class RegisterMethods[P, A](p: P)(implicit con: P => Parsley[A]) {
         /*def fillReg[B](body: Reg[A] => Parsley[B]): Parsley[B] = {
             val reg = Reg.make[A]
@@ -176,6 +248,7 @@ object registers {
       * @param cond The condition by which the loop terminates
       * @param step The change in induction variable on each iteration
       * @param body The body of the loop performed each iteration
+      * @group comb
       */
     private def forP_[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: Parsley[A] => Parsley[_]): Parsley[Unit] = {
         /*val reg = Reg.make[A]
@@ -214,6 +287,7 @@ object registers {
       * @param cond The condition by which the loop terminates
       * @param step The change in induction variable on each iteration
       * @param body The body of the loop performed each iteration
+      * @group comb
       */
     def forP[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: =>Parsley[_]): Parsley[Unit] = {
         lazy val _body = body

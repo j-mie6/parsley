@@ -9,7 +9,7 @@ import scala.annotation.implicitNotFound
   * which are mostly used to parse operators and expressions of varying fixities.
   * It is a more low-level API compared with [[precedence]].
   * @since 2.2.0
-  * @group chains
+  * @group Chains
   *
   * @groupprio binary 0
   * @groupname binary Binary Operator Chains

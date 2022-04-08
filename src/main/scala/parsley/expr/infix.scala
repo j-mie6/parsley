@@ -13,7 +13,7 @@ import scala.annotation.implicitNotFound
   * the type of the values and the operators.
   *
   * @since 4.0.0
-  * @group chains
+  * @group Chains
   */
 object infix {
     /** `right(p, op, x)` parses '''zero''' or more occurrences of `p`, separated by `op`. Returns a value

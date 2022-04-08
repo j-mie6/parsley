@@ -7,7 +7,7 @@ import parsley.errors.combinator.ErrorMethods
 
 /** This object is used to construct precedence parsers from either a [[Prec]] or many `Ops[A, A]`.
   * @since 2.2.0
-  * @group precedence
+  * @group Precedence
   */
 object precedence {
     private def convertOperators[A, B](atom: Parsley[A], opList: Ops[A, B]): Parsley[B] = {
