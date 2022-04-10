@@ -959,6 +959,7 @@ object Parsley {
       *
       * @param x the value to be returned.
       * @return a parser which consumes no input and produces a value `x`.
+      * @group basic
       */
     def pure[A](x: A): Parsley[A] = new Parsley(new singletons.Pure(x))
 
