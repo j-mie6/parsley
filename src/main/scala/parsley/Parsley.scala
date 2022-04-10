@@ -943,106 +943,238 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
   *     needed in exceptional circumstances, and should be avoided otherwise.
   */
 object Parsley {
-    /** This is the traditional applicative `pure` function for parsers. It consumes no input and
-      * does not influence the state of the parser, but does return the value provided. Useful to inject pure values
-      * into the parsing process.
-      * @param x The value to be returned from the parser
-      * @return A parser which consumes nothing and returns `x`
-      * @group basic
+    /** This combinator produces a value without having any other effect.
+      *
+      * When this combinator is ran, no input is required, nor consumed, and
+      * the given value will always be successfully returned. It has no other
+      * effect on the state of the parser.
+      *
+      * @example {{{
+      * scala> import parsley.Parsley.pure
+      * scala> pure(7).parse("")
+      * val res0 = Success(7)
+      * scala> pure("hello!").parse("a")
+      * val res1 = Success("hello!")
+      * }}}
+      *
+      * @param x the value to be returned.
+      * @return a parser which consumes no input and produces a value `x`.
       */
-    // TODO: improve
     def pure[A](x: A): Parsley[A] = new Parsley(new singletons.Pure(x))
 
-    /** This is one of the core operations of a selective functor. It will conditionally execute one of `p` and `q`
-      * depending on the result from `b`. This can be used to implement conditional choice within a parser without
-      * relying on expensive monadic operations.
-      * @param b The first parser to parse
-      * @param p If `b` returns `Left` then this parser is executed with the result
-      * @param q If `b` returns `Right` then this parser is executed with the result
-      * @return Either the result from `p` or `q` depending on `b`.
+    /** This combinator parses its first argument `either`, and then parses either `left` or `right` depending on its result.
+      *
+      * First, `branch(either, left, right)` parses `either`, which, if successful, will produce either a `Left(x)` or a `Right(y)`.
+      * If a `Left(x)` is produced, the parser `left` is executed to produce a function `f`, and `f(x)` is returned. Otherwise,
+      * if a `Right(y)` is produced, the parser `right` is executed to produce a function `g`, and `g(y)` is returned. If either
+      * of the two executed parsers fail, the entire combinator fails.
+      *
+      * ''First introduced in [Selective Applicative Functors](https://www.staff.ncl.ac.uk/andrey.mokhov/selective-functors.pdf) (Mokhov et al. 2019)''.
+      *
+      * @example {{{
+      * def ifP[A](b: Parsley[Boolean], t: =>Parsley[A], e: =>Parsley[A]): Parsley[A] = {
+      *     val cond = b.map {
+      *         case true => Left(())
+      *         case false => Right(())
+      *     }
+      *     branch(cond, t.map[Unit => A](x => _ => x), e.map[Unit => A](x => _ => x))
+      * }
+      * }}}
+      *
+      * @param either the first parser to execute, its result decides which parser to execute next.
+      * @param left a parser to execute if `either` returns a `Left`.
+      * @param right a parser to execute if `either` returns a `Right`.
+      * @return a parser that will parse one of `left` or `right` depending on `either`'s result.
       * @group cond
       */
-    // TODO: improve
-    def branch[A, B, C](b: Parsley[Either[A, B]], p: =>Parsley[A => C], q: =>Parsley[B => C]): Parsley[C] = {
-        new Parsley(new frontend.Branch(b.internal, p.internal, q.internal))
+    def branch[A, B, C](either: Parsley[Either[A, B]], left: =>Parsley[A => C], right: =>Parsley[B => C]): Parsley[C] = {
+        new Parsley(new frontend.Branch(either.internal, left.internal, right.internal))
     }
-    /** This is one of the core operations of a selective functor. It will conditionally execute one of `q` depending on
-      * whether or not `p` returns a `Left`. It can be used to implement `branch` and other selective operations, however
-      * it is more efficiently implemented with `branch` itself.
-      * @param p The first parser to parse
-      * @param q If `p` returns `Left` then this parser is executed with the result
-      * @return Either the result from `p` if it returned `Left` or the result of `q` applied to the `Right` from `p`
+    /** This combinator parses its first argument `p`, then parses `q` only if `p` returns a `Left`.
+      *
+      * First, `select(p, q)` parses `p`, which, if successful, will produce either a `Left(x)` or
+      * a `Right(y)`. If a `Left(x)` is produced, then the parser `q` is executed to produce a function
+      * `f`, and `f(x)` is returned. Otherwise, if a `Right(y)` is produced, `y` is returned unmodified
+      * and `q` is not parsed. If either `p` or `q` fails, the entire combinator fails. This is a special
+      * case of `branch` where the right branch is `pure(identity[B])`.
+      *
+      * ''First introduced in [Selective Applicative Functors](https://www.staff.ncl.ac.uk/andrey.mokhov/selective-functors.pdf) (Mokhov et al. 2019)''.
+      *
+      * @example {{{
+      * def filter(pred: A => Boolean): Parsley[A] = {
+      *     val p = this.map(x => if (pred(x)) Right(x) else Left(()))
+      *     select(p, empty)
+      * }
+      * }}}
+      *
+      * @param p the first parser to execute, its result decides whether `q` is executed or not.
+      * @param q a parser to execute when `p` returns a `Left`.
+      * @return a parser that will parse `p` then possibly parse `q` to transform `p`'s result into a `B`.
       * @group cond
       */
-    // TODO: improve
     def select[A, B](p: Parsley[Either[A, B]], q: =>Parsley[A => B]): Parsley[B] = branch(p, q, pure(identity[B](_)))
-    /** This function is an alias for `_.flatten`: provides namesake to Haskell.
+    /** This combinator collapses two layers of parsing structure into one.
+      *
+      * Just an alias for `_.flatten`, providing a namesake to Haskell: see `[[Parsley.flatten]]`.
       *
       * @group monad
       */
-    // TODO: improve
     def join[A](p: Parsley[Parsley[A]]): Parsley[A] = p.flatten
-    /** Given a parser `p`, attempts to parse `p`. If the parser fails, then `attempt` ensures that no input was
-      * consumed. This allows for backtracking capabilities, disabling the implicit cut semantics offered by `<|>`.
+    /** This combinator parses its argument `p`, but rolls back any consumed input on failure.
       *
-      * @param p The parser to run
-      * @return The result of `p`, or if `p` failed ensures the parser state was as it was on entry.
+      * If the parser `p` succeeds, then `attempt(p)` has no effect. However, if `p` failed,
+      * then any input that it consumed is rolled back. This has two uses: it ensures that
+      * the parser `p` is all-or-nothing when consuming input (atomic), and it allows for
+      * parsers that consume input to backtrack when they fail (with `<|>`). It should be
+      * used for the latter purpose sparingly, however, since excessive backtracking in a
+      * parser can result in much lower efficiency.
+      *
+      * @example {{{
+      * scala> import parsley.character.string, parsley.Parsley.attempt
+      * scala> (string("abc") <|> string("abd")).parse("abd")
+      * val res0 = Failure(..) // first parser consumed a, so no backtrack
+      * scala> (attempt(atring("abc")) <|> string("abd")).parse("abd")
+      * val res1 = Success("abd") // first parser does not consume input on failure now
+      * }}}
+      *
+      * @param p the parser to execute, if it fails, it will not have consumed input.
+      * @return a parser that tries `p`, but does never consumes input if it fails.
       * @group prim
       */
-    // TODO: improve
     def attempt[A](p: Parsley[A]): Parsley[A] = new Parsley(new frontend.Attempt(p.internal))
-    /** Parses `p` without consuming any input. If `p` fails and consumes input then so does `lookAhead(p)`. Combine with
-      * `attempt` if this is undesirable.
+    /** This combinator parses its argument `p`, but does not consume input if it succeeds.
       *
-      * @param p The parser to look ahead at
-      * @return The result of the lookahead
+      * If the parser `p` succeeds, then `lookAhead(p)` will roll back any input consumed
+      * whilst parsing `p`. If `p` fails, however, then the whole combinator fails and
+      * any input consumed '''remains consumed'''. If this behaviour is not desirable,
+      * consider pairing `lookAhead` with `attempt`.
+      *
+      * @example {{{
+      * scala> import parsley.Parsley.lookAhead, parsley.character.string
+      * scala> (lookAhead(string("aaa")) *> string("aaa")).parse("aaa")
+      * val res0 = Success("aaa")
+      * scala> (lookAhead(string("abc")) <|> string("abd")).parse("abd")
+      * val res1 = Failure(..) // lookAhead does not roll back input consumed on failure
+      * }}}
+      *
+      * @param p the parser to execute, if it succeeds, it will not have consumed input.
+      * @return a parser that parses `p` and never consumes input if it succeeds.
       * @group prim
       */
-    // TODO: improve
     def lookAhead[A](p: Parsley[A]): Parsley[A] = new Parsley(new frontend.Look(p.internal))
-    /**`notFollowedBy(p)` only succeeds when parser `p` fails. This parser does not consume any input.
-      * This parser can be used to implement the 'longest match' rule. For example, when recognising
-      * keywords, we want to make sure that a keyword is not followed by a legal identifier character,
-      * in which case the keyword is actually an identifier. We can program this behaviour as follows:
-      * {{{attempt(kw *> notFollowedBy(alphaNum))}}}
+    /** This combinator parses its argument `p`, and succeeds when `p` fails and vice-versa, never consuming input.
       *
+      * If the parser `p` succeeds, then `notFollowedBy(p) will fail, consuming no input.
+      * Otherwise, should `p` fail, then `notFollowedBy(p) will succeed, consuming no input
+      * and returning `()`.
+      *
+      * @example one use for this combinator is to allow for "longest-match" behaviour.
+      * For instance, keywords are normally only considered keywords if they are not
+      * part of some larger valid identifier (i.e. the keyword "if" should not parse
+      * successfully given "ifp"). This can be accomplished as follows:
+      * {{{
+      * import parsley.character.{string, letterOrDigit}
+      * import parsley.Parsley.notFollowedBy
+      * def keyword(kw: String): Parsley[Unit] = attempt {
+      *     string(kw) *> notFollowedBy(letterOrDigit)
+      * }
+      * }}}
+      *
+      * @param p the parser to execute, it should fail in order for this combinator to succeed.
+      * @return a parser which fails when `p` succeeds and succeeds otherwise, never consuming input.
       * @group prim
       */
-    // TODO: improve
     def notFollowedBy(p: Parsley[_]): Parsley[Unit] = new Parsley(new frontend.NotFollowedBy(p.internal))
-    /**
-      * The `empty` parser consumes no input and fails softly (that is to say, no error message)
+    /** This parser fails immediately, with an unknown parse error.
       *
+      * @example {{{
+      * scala> import parsley.Parsley.empty
+      * scala> empty.parse("")
+      * val res0 = Failure(..)
+      * }}}
+      *
+      * @return a parser that fails.
       * @group basic
       */
-    // TODO: improve
     val empty: Parsley[Nothing] = new Parsley(singletons.Empty)
-    /**
-      * Returns `()`; defined as `pure(())` but aliased for sugar
+    /** This combinator produces `()` without having any other effect.
       *
+      * When this combinator is ran, no input is required, nor consumed, and
+      * the given value will always be successfully returned. It has no other
+      * effect on the state of the parser.
+      *
+      * @example {{{
+      * scala> import parsley.Parsley.unit
+      * scala> unit.parse("")
+      * val res0 = Success(())
+      * scala> unit.parse("a")
+      * val res0 = Success(())
+      * }}}
+      *
+      * @param x the value to be returned.
+      * @return a parser which consumes no input and produces `()`.
+      * @note defined as `pure(())` as a simple convenience.
       * @group basic
       */
-    // TODO: improve
     val unit: Parsley[Unit] = pure(())
-    /**
-      * This parser consumes no input and returns the current line number reached in the input stream
-      * @return The line number the parser is currently at
+    /** This parser returns the current line number of the input without having any other effect.
+      *
+      * When this combinator is ran, no input is required, nor consumed, and
+      * the current line number will always be successfully returned. It has no other
+      * effect on the state of the parser.
+      *
+      * @example {{{
+      * scala> import parsley.Parsley.line, parsley.character.char
+      * scala> line.parse("")
+      * val res0 = Success(1)
+      * scala> (char('a') *> line).parse("a")
+      * val res0 = Success(1)
+      * scala> (char('\n') *> line).parse("\n")
+      * val res0 = Success(2)
+      * }}}
+      *
+      * @return a parser that returns the line number the parser is currently at.
       * @group pos
       */
-    // TODO: improve
     val line: Parsley[Int] = new Parsley(singletons.Line)
-    /**
-      * This parser consumes no input and returns the current column number reached in the input stream
-      * @return The column number the parser is currently at
+    /** This parser returns the current column number of the input without having any other effect.
+      *
+      * When this combinator is ran, no input is required, nor consumed, and
+      * the current column number will always be successfully returned. It has no other
+      * effect on the state of the parser.
+      *
+      * @example {{{
+      * scala> import parsley.Parsley.col, parsley.character.char
+      * scala> col.parse("")
+      * val res0 = Success(1)
+      * scala> (char('a') *> col).parse("a")
+      * val res0 = Success(2)
+      * scala> (char('\n') *> col).parse("\n")
+      * val res0 = Success(1)
+      * }}}
+      *
+      * @return a parser that returns the column number the parser is currently at.
       * @group pos
       */
-    // TODO: improve
     val col: Parsley[Int] = new Parsley(singletons.Col)
-    /**
-      * This parser consumes no input and returns the current position reached in the input stream
-      * @return Tuple of line and column number that the parser has reached
+    /** This parser returns the current line and column numbers of the input without having any other effect.
+      *
+      * When this combinator is ran, no input is required, nor consumed, and
+      * the current line and column number will always be successfully returned. It has no other
+      * effect on the state of the parser.
+      *
+      * @example {{{
+      * scala> import parsley.Parsley.pos, parsley.character.char
+      * scala> pos.parse("")
+      * val res0 = Success((1, 1))
+      * scala> (char('a') *> pos).parse("a")
+      * val res0 = Success((1, 2))
+      * scala> (char('\n') *> pos).parse("\n")
+      * val res0 = Success((2, 1))
+      * }}}
+      *
+      * @return a parser that returns the line and column number the parser is currently at.
       * @group pos
       */
-    // TODO: improve
     val pos: Parsley[(Int, Int)] = line <~> col
 }
