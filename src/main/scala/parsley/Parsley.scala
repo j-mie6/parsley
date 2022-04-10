@@ -969,7 +969,7 @@ object Parsley {
       * if a `Right(y)` is produced, the parser `right` is executed to produce a function `g`, and `g(y)` is returned. If either
       * of the two executed parsers fail, the entire combinator fails.
       *
-      * ''First introduced in [Selective Applicative Functors](https://www.staff.ncl.ac.uk/andrey.mokhov/selective-functors.pdf) (Mokhov et al. 2019)''.
+      * ''First introduced in [[https://www.staff.ncl.ac.uk/andrey.mokhov/selective-functors.pdf Selective Applicative Functors]] (Mokhov et al. 2019)''.
       *
       * @example {{{
       * def ifP[A](b: Parsley[Boolean], t: =>Parsley[A], e: =>Parsley[A]): Parsley[A] = {
@@ -998,7 +998,7 @@ object Parsley {
       * and `q` is not parsed. If either `p` or `q` fails, the entire combinator fails. This is a special
       * case of `branch` where the right branch is `pure(identity[B])`.
       *
-      * ''First introduced in [Selective Applicative Functors](https://www.staff.ncl.ac.uk/andrey.mokhov/selective-functors.pdf) (Mokhov et al. 2019)''.
+      * ''First introduced in [[https://www.staff.ncl.ac.uk/andrey.mokhov/selective-functors.pdf Selective Applicative Functors]] (Mokhov et al. 2019)''.
       *
       * @example {{{
       * def filter(pred: A => Boolean): Parsley[A] = {
