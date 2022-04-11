@@ -2,7 +2,7 @@ package parsley
 
 import parsley._
 import Parsley.col
-import parsley.character.{alphaNum, letter, whitespace, oneOf => inSet}
+import parsley.character.{letterOrDigit, letter, whitespace, oneOf => inSet}
 import parsley.implicits.character.charLift
 import parsley.combinator.eof
 
@@ -16,7 +16,7 @@ class TokeniserTests extends ParsleyTest {
             "//",
             true,
             token.Parser(letter <|> '_'),
-            token.Parser(alphaNum <|> '_'),
+            token.Parser(letterOrDigit <|> '_'),
             token.Parser(inSet('+', '-', ':', '/', '*', '=')),
             token.Parser(inSet('+', '-', ':', '/', '*', '=')),
             Set("if", "else", "for", "yield", "while", "def", "class",

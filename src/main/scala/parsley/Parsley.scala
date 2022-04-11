@@ -557,6 +557,8 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *
       * @param pred the predicate that is tested against the parser result
       * @return a parser that returns the result of this parser if it passes the predicate
+      * @see [[parsley.errors.combinator.ErrorMethods.filterOut `filterOut`]] for a version which can produce custom ''reasons'' on failure.
+      * @see [[parsley.errors.combinator.ErrorMethods.guardAgainst `guardAgainst`]] for a version which can produce custom error messages on failure.
       * @group filter
       */
     def filter(pred: A => Boolean): Parsley[A] = new Parsley(new frontend.Filter(this.internal, pred))
@@ -578,6 +580,8 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *
       * @param pred the predicate that is tested against the parser result
       * @return a parser that returns the result of this parser if it fails the predicate
+      * @see [[parsley.errors.combinator.ErrorMethods.filterOut `filterOut`]] for a version which can produce custom ''reasons'' on failure.
+      * @see [[parsley.errors.combinator.ErrorMethods.guardAgainst `guardAgainst`]] for a version which can produce custom error messages on failure.
       * @group filter
       */
     def filterNot(pred: A => Boolean): Parsley[A] = this.filter(!pred(_))
@@ -1016,9 +1020,10 @@ object Parsley {
     def select[A, B](p: Parsley[Either[A, B]], q: =>Parsley[A => B]): Parsley[B] = branch(p, q, pure(identity[B](_)))
     /** This combinator collapses two layers of parsing structure into one.
       *
-      * Just an alias for `_.flatten`, providing a namesake to Haskell: see `[[Parsley.flatten]]`.
+      * Just an alias for `_.flatten`, providing a namesake to Haskell.
       *
       * @group monad
+      * @see [[Parsley.flatten `flatten`]] for details and examples.
       */
     def join[A](p: Parsley[Parsley[A]]): Parsley[A] = p.flatten
     /** This combinator parses its argument `p`, but rolls back any consumed input on failure.
@@ -1155,6 +1160,7 @@ object Parsley {
       * }}}
       *
       * @return a parser that returns the column number the parser is currently at.
+      * @note in the presence of wide unicode characters, the value returned may be inaccurate.
       * @group pos
       */
     val col: Parsley[Int] = new Parsley(singletons.Col)
@@ -1175,6 +1181,7 @@ object Parsley {
       * }}}
       *
       * @return a parser that returns the line and column number the parser is currently at.
+      * @note in the presence of wide unicode characters, the column value returned may be inaccurate.
       * @group pos
       */
     val pos: Parsley[(Int, Int)] = line <~> col

@@ -32,7 +32,7 @@ import scala.annotation.{tailrec, implicitNotFound}
   * @groupdesc opt
   *     These combinators allow for the ''possible'' parsing of some parser. If the parser succeeds, that is ok
   *     so long as it '''did not consume input'''. Be aware that the result of the success may be replaced with
-  *     these combinators, with the exception of `[[option]]`, which still preserves the result.
+  *     these combinators, with the exception of [[option `option`]], which still preserves the result.
   *
   * @groupprio sep 25
   * @groupname sep Separated Values Combinators
@@ -57,7 +57,7 @@ import scala.annotation.{tailrec, implicitNotFound}
   * @groupname cond Conditional Combinators
   * @groupdesc cond
   *     These combinators allow for the conditional extraction of a result, or the execution of a parser
-  *     based on another. They are morally related to `[[Parsley.branch]]` and `[[Parsley.select]]` but are
+  *     based on another. They are morally related to [[Parsley.branch `branch`]] and [[Parsley.select `select`]] but are
   *     less fundamental.
   *
   * @groupprio misc 100
