@@ -123,8 +123,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
     def parse[Err: ErrorBuilder](input: String): Result[Err, A] = new Context(internal.threadSafeInstrs, input).runParser()
 
     // RESULT CHANGING COMBINATORS
-    /**
-      * This combinator allows the result of this parser to be changed using a given function.
+    /** This combinator allows the result of this parser to be changed using a given function.
       *
       * When this parser succeeds, `map(f)` will adjust its result using the function `f`, which can
       * potentially change its type. This can be used to build more complex results from parsers, instead
@@ -146,8 +145,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @group map
       */
     def map[B](f: A => B): Parsley[B] = pure(f) <*> this
-        /**
-      * This combinator, pronounced "as", replaces the result of this parser, ignoring the old result.
+    /** This combinator, pronounced "as", replaces the result of this parser, ignoring the old result.
       *
       * Similar to `map`, except the old result of this parser is not required to
       * compute the new result. This is useful when the result is a constant value (or function!).
@@ -287,8 +285,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @note just an alias for `</>`
       */
     def getOrElse[Aʹ >: A](x: Aʹ): Parsley[Aʹ] = this </> x
-    /**
-      * This combinator, pronounced "sum", wraps this parser's result in `Left` if it succeeds, and parses `q` if it failed '''without''' consuming input,
+    /** This combinator, pronounced "sum", wraps this parser's result in `Left` if it succeeds, and parses `q` if it failed '''without''' consuming input,
       * wrapping the result in `Right`.
       *
       * If this parser is successful, then its result is wrapped up using `Left(_)` and no further action is taken.
@@ -360,7 +357,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * given the factored result, can produce the original results from before the factoring.
       *
       * @example {{{
-    *  // this has a common prefix "term" and requires backtracking
+      *  // this has a common prefix "term" and requires backtracking
       * val expr1 = attempt(lift2(Add, term <* char('+'), expr2)) <|> term
       * // common prefix factored out, and branches return a function to recombine
       * val expr2 = term <**> (char('+') *> expr2.map(y => Add(_, y)) </> (identity[Expr] _))
@@ -652,6 +649,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * // in reality, many is implemented more efficiently
       * def many[A](p: Parsley[A]) = {
       *     p.foldRight(List.empty[A])(_ :: _)
+      * }
       * }}}
       *
       * @param k value to use when this parser no longer succeeds.
@@ -690,6 +688,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * // in reality, some is implemented more efficiently
       * def some[A](p: Parsley[A]) = {
       *     p.foldRight1(List.empty[A])(_ :: _)
+      * }
       * }}}
       *
       * @param k value to use when this parser no longer succeeds.

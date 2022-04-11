@@ -60,7 +60,7 @@ import scala.collection.immutable.NumericRange
   * @define oneOf
   *     This combinator tries to parse any character from supplied set of characters `cs`, returning it if successful.
   * @define noneOf
-  *     This combinator tries to parse any character ```not``` from supplied set of characters `cs`, returning it if successful.
+  *     This combinator tries to parse any character '''not''' from supplied set of characters `cs`, returning it if successful.
   *
   * @define categories
   *     ''The full list of codepoints found in a category can be found in the
@@ -289,7 +289,7 @@ object character
       */
     def noneOf(cs: Char*): Parsley[Char] = noneOf(cs.toSet)
 
-    /** $oneOf
+    /** $noneOf
       *
       * If the next character in the input is outside of the range of characters `cs`, it is consumed
       * and returned. Otherwise, no input is consumed and the combinator fails.
