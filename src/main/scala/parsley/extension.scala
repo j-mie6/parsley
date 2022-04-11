@@ -67,7 +67,7 @@ object extension {
       * @since 4.0.0
       */
     implicit final class OperatorSugar[P, +A](p: P)(implicit con: P => Parsley[A]) {
-        /** This combinator will parse this parser '''zero''' or more times returning a list of the parsed results.
+        /** This combinator, pronounced "star", will parse this parser '''zero''' or more times returning a list of the parsed results.
           *
           * Equivalent to `many`, but as a postfix operator: `many(p)` is the same as `p.*`.
           *
@@ -75,7 +75,7 @@ object extension {
           * @see [[combinator.many `many`]] for more details.
           */
         def * : Parsley[List[A]] = many(con(p))
-        /** This combinator will parse this parser '''one''' or more times returning a list of the parsed results.
+        /** This combinator, pronounced "plus", will parse this parser '''one''' or more times returning a list of the parsed results.
           *
           * Equivalent to `some`, but as a postfix operator: `some(p)` is the same as `p.+`.
           *
@@ -83,7 +83,7 @@ object extension {
           * @see [[combinator.some `some`]] for more details.
           */
         def + : Parsley[List[A]] = some(con(p))
-        /** This combinator will succeed when this parser fails, and vice-versa, never consuming input.
+        /** This combinator, pronounced "not", will succeed when this parser fails, and vice-versa, never consuming input.
           *
           * Equivalent to `notFollowedBy`, but as a prefix operator: `notFollowedBy(p)` is the same as `!p`.
           *
@@ -91,10 +91,10 @@ object extension {
           * @see [[Parsley.notFollowedBy `notFollowedBy`]] for more details.
           */
         def unary_! : Parsley[Unit] = notFollowedBy(con(p))
-        /** This combinator first parses its argument `q`, and if it fails, it will parse this parser, returning its result.
+        /** This combinator, pronounced "and not", first parses its argument `q`, and if it fails, it will parse this parser, returning its result.
           *
-          * First `q` is parsed, and if it fails (regardless of whether it consumed input), then this parser is parsed.
-          * The result of this parser is returned. If either `q` succeeds or this parser fails, the combinator fails.
+          * First `q` is parsed, which will never consume input regardless of failure or success. If it failed, then this parser is executed and its result
+          * is returned. If either `q` succeeds or this parser fails, the combinator fails.
           *
           * @example {{{
           * // a less efficient version of a keyword: it's more efficient to not have to read the entire keyword twice
@@ -107,7 +107,7 @@ object extension {
           * @return a parser that only parses this parser if `q` cannot parse.
           */
         def -(q: Parsley[_]): Parsley[A] = !q *> con(p)
-        /** This combinator will try parsing this parser wrapping its result in `Some`, and return `None` if it fails.
+        /** This combinator, pronounced "option", will try parsing this parser wrapping its result in `Some`, and return `None` if it fails.
           *
           * Equivalent to `option`, but as a postfix operator: `option(p)` is the same as `p.?`.
           *
