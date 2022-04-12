@@ -90,7 +90,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [14, 16]
+        node: [16, 17]
         scala: [2.12.15, 2.13.7, 3.1.1]
 
     steps:

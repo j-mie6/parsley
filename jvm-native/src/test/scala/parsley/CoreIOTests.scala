@@ -9,7 +9,7 @@ import scala.language.implicitConversions
 
 import java.io.File
 
-class CoreJvmTests extends ParsleyTest {
+class CoreIOTests extends ParsleyTest {
     "parseFromFile" should "work" in {
         (manyUntil(item, "Jamie Willis") *> item).parseFromFile(new File("LICENSE")).get shouldBe Success('\n')
     }
