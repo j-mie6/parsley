@@ -67,24 +67,32 @@ def extraSources(rootSrcFile: File, base: String, version: String): Seq[File] = 
 
 def scalaTestDependency(version: String): String =
     Map()
-    .getOrElse(version, "3.2.9")
+    .getOrElse(version, "3.2.11")
 
 val PureVisible: CrossType = new CrossType {
-    def projectDir(crossBase: File, projectType: String): File =
+    def projectDir(crossBase: File, projectType: String): File = {
       crossBase / projectType
+    }
 
-    def projectDir(crossBase: File, platform: Platform): File =
+    def projectDir(crossBase: File, platform: Platform): File = {
       crossBase / platform.identifier
+    }
 
-    def sharedSrcDir(projectBase: File, conf: String): Option[File] =
+    def sharedSrcDir(projectBase: File, conf: String): Option[File] = {
       Some(projectBase.getParentFile / "src" / conf / "scala")
+    }
+
+    override def partiallySharedSrcDir(projectBase: File, platforms: Seq[Platform], conf: String): Option[File] = platforms match {
+        case Seq(JVMPlatform, NativePlatform) => Some(projectBase.getParentFile / "jvm-native" / "src" / conf / "scala")
+        case Seq(JSPlatform, NativePlatform) => Some(projectBase.getParentFile / "js-native" / "src" / conf / "scala")
+        case _ => None
+    }
   }
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 // See https://github.com/sbt/sbt/issues/1224
 Global / onLoad ~= (_ andThen ("project parsley" :: _))
-//scalaJSLinkerConfig ~= { _.withESFeatures(_.withESVersion(ESVersion.ES2018)) }
 
 Compile / bloopGenerate := None
 Test / bloopGenerate := None
