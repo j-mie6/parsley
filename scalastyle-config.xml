@@ -44,7 +44,6 @@
         </parameters>
         <customMessage>Classes must not start with a lowercase letter!</customMessage>
     </check>
-    <!-- TODO: -->
     <check enabled="true"  class="org.scalastyle.scalariform.ClassTypeParameterChecker" level="warning">
         <parameters>
             <parameter name="regex">^[A-Z_]|Err$</parameter>
