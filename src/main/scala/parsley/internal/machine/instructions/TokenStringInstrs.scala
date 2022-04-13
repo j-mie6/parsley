@@ -1,17 +1,17 @@
 package parsley.internal.machine.instructions
 
-import parsley.internal.errors.{ErrorItem, Desc}
-import parsley.internal.machine.Context
-import parsley.internal.Radix
-
 import scala.annotation.tailrec
+
+import parsley.internal.Radix
+import parsley.internal.errors.{Desc, ErrorItem}
+import parsley.internal.machine.Context
 
 private [internal] class TokenEscape extends Instr with NumericReader {
     private [this] final val expected = Some(Desc("escape code"))
     override def apply(ctx: Context): Unit = escape(ctx) match {
-        case TokenEscape.EscapeChar(escapeChar) =>ctx.pushAndContinue(escapeChar)
-        case TokenEscape.BadCode => ctx.expectedFail(expected, reason = "invalid escape sequence")
-        case TokenEscape.NoParse => ctx.expectedTokenFail(expected, 3)
+        case TokenEscape.EscapeChar(escapeChar)=> ctx.pushAndContinue(escapeChar)
+        case TokenEscape.BadCode               => ctx.expectedFail(expected, reason = "invalid escape sequence")
+        case TokenEscape.NoParse               => ctx.expectedTokenFail(expected, 3)
     }
 
     private final def consumeAndReturn(ctx: Context, n: Int, c: Char) = {

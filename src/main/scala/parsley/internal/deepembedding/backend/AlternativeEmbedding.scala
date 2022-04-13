@@ -1,13 +1,13 @@
 package parsley.internal.deepembedding.backend
 
-import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
-import parsley.internal.deepembedding.singletons._
-import parsley.internal.machine.instructions
-import parsley.internal.errors.{ErrorItem, Raw, Desc}
-
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.higherKinds
+
+import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
+import parsley.internal.deepembedding.singletons._
+import parsley.internal.errors.{Desc, ErrorItem, Raw}
+import parsley.internal.machine.instructions
 
 import StrictParsley.InstrBuffer
 
@@ -19,20 +19,20 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
         // left catch law: pure x <|> p = pure x
         case (u: Pure[A @unchecked], _) => u
         // alternative law: empty <|> p = p
-        case (Empty, v) => v
+        case (Empty, v)                 => v
         // alternative law: p <|> empty = p
-        case (u, Empty) => u
+        case (u, Empty)                 => u
         // associative law: (u <|> v) <|> w = u <|> (v <|> w)
-        case (u <|> v, w) =>
+        case (u <|> v, w)               =>
             left = u
             right = <|>[A](v, w).optimise
             this
-        case _ => this
+        case _                          => this
     }
     // TODO: Refactor
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = tablify(this, Nil) match {
         // If the tablified list is single element, that implies that this should be generated as normal!
-        case _::Nil => left match {
+        case _::Nil    => left match {
             case Attempt(u) => right match {
                 case Pure(x) =>
                     val handler = state.freshLabel()
@@ -41,7 +41,7 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
                         instrs += new instructions.Label(handler)
                         instrs += new instructions.AlwaysRecoverWith[A](x)
                     }
-                case v =>
+                case v       =>
                     val handler = state.freshLabel()
                     val skip = state.freshLabel()
                     val merge = state.freshLabel()
@@ -56,7 +56,7 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
                         }
                     }
             }
-            case u => right match {
+            case u          => right match {
                 case Pure(x) =>
                     val handler = state.freshLabel()
                     val skip = state.freshLabel()
@@ -67,7 +67,7 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
                         instrs += new instructions.RecoverWith[A](x)
                         instrs += new instructions.Label(skip)
                     }
-                case v =>
+                case v       =>
                     val handler = state.freshLabel()
                     val skip = state.freshLabel()
                     val merge = state.freshLabel()
@@ -186,17 +186,19 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
     }
     @tailrec private def tablable(p: StrictParsley[_]): Option[StrictParsley[_]] = p match {
         // CODO: Numeric parsers by leading digit (This one would require changing the foldTablified function a bit)
-        case t@(_: CharTok | _: StringTok | _: StringLiteral | RawStringLiteral | _: MaxOp) => Some(t)
+        case t@(_: CharTok | _: StringTok
+              | _: StringLiteral
+              | RawStringLiteral | _: MaxOp) => Some(t)
         // TODO: This can be done for case insensitive things too, but with duplicated branching
-        case t: Specific if t.caseSensitive => Some(t)
-        case Attempt(t) => tablable(t)
-        case (_: Pure[_]) <*> t => tablable(t)
-        case Lift2(_, t, _) => tablable(t)
-        case Lift3(_, t, _, _) => tablable(t)
-        case t <*> _ => tablable(t)
-        case t *> _ => tablable(t)
-        case t <* _ => tablable(t)
-        case _ => None
+        case t: Specific if t.caseSensitive   => Some(t)
+        case Attempt(t)                       => tablable(t)
+        case (_: Pure[_]) <*> t               => tablable(t)
+        case Lift2(_, t, _)                   => tablable(t)
+        case Lift3(_, t, _, _)                => tablable(t)
+        case t <*> _                          => tablable(t)
+        case t *> _                           => tablable(t)
+        case t <* _                           => tablable(t)
+        case _                                => None
     }
     @tailrec private [deepembedding] def tablify(p: StrictParsley[_], acc: List[(StrictParsley[_], Option[StrictParsley[_]])]):
         List[(StrictParsley[_], Option[StrictParsley[_]])] = p match {
@@ -204,7 +206,7 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
             val leading = tablable(u)
             if (leading.isDefined) tablify(v, (u, leading)::acc)
             else (p, None)::acc
-        case _ => (p, tablable(p))::acc
+        case _       => (p, tablable(p))::acc
     }
 }
 

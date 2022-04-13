@@ -1,8 +1,8 @@
 package parsley
 
-import parsley.internal.deepembedding.frontend
-
 import scala.language.implicitConversions
+
+import parsley.internal.deepembedding.frontend
 
 /** This module contains the very useful debugging combinator, as well as breakpoints. */
 // $COVERAGE-OFF$

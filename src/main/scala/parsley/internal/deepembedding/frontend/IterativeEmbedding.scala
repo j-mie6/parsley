@@ -1,11 +1,10 @@
 package parsley.internal.deepembedding.frontend
 
-import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
-
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.higherKinds
 
+import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 
 private [parsley] final class Many[A](p: LazyParsley[A]) extends ScopedUnary[A, List[A]](p) {
@@ -30,10 +29,16 @@ private [parsley] final class ChainPre[A](p: LazyParsley[A], op: LazyParsley[A =
         suspend(p.findLets[Cont, R](seen)) >> suspend(op.findLets(seen))
     }
     final override def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont], lets: LetMap, recs: RecMap): Cont[R, StrictParsley[A_]] =
-        for (p <- suspend(p.optimised[Cont, R, A]); op <- suspend(op.optimised[Cont, R, A => A])) yield new backend.ChainPre(p, op)
+        for {
+            p <- suspend(p.optimised[Cont, R, A])
+            op <- suspend(op.optimised[Cont, R, A => A])
+        } yield new backend.ChainPre(p, op)
     // $COVERAGE-OFF$
     final override def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont]): Cont[String, String] = {
-        for (p <- suspend(p.prettyASTAux); op <- suspend(op.prettyASTAux)) yield s"chainPre($p, $op)"
+        for {
+            p <- suspend(p.prettyASTAux)
+            op <- suspend(op.prettyASTAux)
+        } yield s"chainPre($p, $op)"
     }
     // $COVERAGE-ON$
 }

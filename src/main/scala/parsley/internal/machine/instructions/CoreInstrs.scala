@@ -1,10 +1,10 @@
 package parsley.internal.machine.instructions
 
-import parsley.internal.machine.{Context, Good, Recover, Failed, Finished}
-import parsley.internal.errors.{ErrorItem, Desc}
-import parsley.internal.machine.errors.EmptyError
-
 import scala.annotation.tailrec
+
+import parsley.internal.errors.{Desc, ErrorItem}
+import parsley.internal.machine.{Context, Failed, Finished, Good, Recover}
+import parsley.internal.machine.errors.EmptyError
 
 // Stack Manipulators
 private [internal] final class Push[A](x: A) extends Instr {
@@ -49,7 +49,7 @@ private [internal] final class DynCall[-A](f: A => Array[Instr]) extends Instr {
 private [internal] object Halt extends Instr {
     override def apply(ctx: Context): Unit = ctx.status = Finished
     // $COVERAGE-OFF$
-    override def toString: String = s"Halt"
+    override def toString: String = "Halt"
     // $COVERAGE-ON$
 }
 
@@ -162,16 +162,16 @@ private [internal] final class Catch(var label: Int) extends InstrWithLabel {
 private [instructions] trait Logger {
     val name: String
     val ascii: Boolean
-    final val Newline = green("↙")
-    final val Space = white("·")
-    final val EndOfInput = red("•")
+    final val newline = green("↙")
+    final val space = white("·")
+    final val endOfInput = red("•")
     final protected def preludeString(dir: Char, ctx: Context, ends: String = "") = {
         val indent = this.indent(ctx)
         val start = Math.max(ctx.offset - 5, 0)
         val end = Math.min(ctx.offset + 6, ctx.inputsz)
-        val input = ctx.input.mkString.substring(start, end).replace("\n", Newline)
-                                                            .replace(" ", Space)
-        val inputAndEof = if (end == ctx.inputsz) input + EndOfInput else input
+        val input = ctx.input.mkString.substring(start, end).replace("\n", newline)
+                                                            .replace(" ", space)
+        val inputAndEof = if (end == ctx.inputsz) input + endOfInput else input
         val prelude = s"$indent$dir$name$dir (${ctx.line}, ${ctx.col}): "
         val caret = " " * (prelude.length + ctx.offset - start) + blue("^")
         s"$prelude$inputAndEof$ends\n$caret"
@@ -205,14 +205,16 @@ private [internal] final class LogEnd(val name: String, val ascii: Boolean, brea
     override def apply(ctx: Context): Unit = {
         ctx.debuglvl -= 1
         val end = " " + (ctx.status match {
-            case Good =>
+            case Good             =>
                 ctx.handlers = ctx.handlers.tail
                 ctx.inc()
                 green("Good")
             case Recover | Failed =>
                 ctx.fail()
                 red("Fail")
-            case Finished => throw new Exception("debug cannot wrap a halt?!")
+            // scalastyle:off
+            case Finished         => throw new Exception("debug cannot wrap a halt?!")
+            // scalastyle:on
         })
         println(preludeString('<', ctx, end))
         if (break) doBreak(ctx)

@@ -1,7 +1,7 @@
 package parsley.internal.deepembedding.singletons
 
-import parsley.internal.machine.instructions
 import parsley.internal.deepembedding.backend.MZero
+import parsley.internal.machine.instructions
 
 private [parsley] final class Fail(private [Fail] val msgs: String*) extends Singleton[Nothing] with MZero {
     // $COVERAGE-OFF$

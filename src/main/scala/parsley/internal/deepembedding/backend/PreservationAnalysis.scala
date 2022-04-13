@@ -1,11 +1,11 @@
 package parsley.internal.deepembedding.backend
 
 import scala.collection.mutable
+
 import parsley.internal.machine.instructions, instructions.Instr
 
 private [backend] object PreservationAnalysis {
     def determinePreserve(recs: Iterable[Rec[_]], instrs: Array[Instr]): Unit = if (recs.nonEmpty) {
-        var start = System.currentTimeMillis()
         implicit val coordinator: EventCoordinator = new EventCoordinator
         val recReactors = mutable.ListBuffer.empty[(Rec[_], DataflowReactor)]
         val reactors = mutable.Map.empty[Int, DataflowReactor]
@@ -72,9 +72,11 @@ private [backend] class EventCoordinator {
     val events = mutable.Queue.empty[Event[_]]
     def add(event: Event[_]): Unit = events.enqueue(event)
     def run(): Unit = {
-        while (events.nonEmpty) events.dequeue() match {
-            case Fired(x, handlers) => for (handler <- handlers) add(Handled(() => handler(x)))
-            case Handled(f) => f()
+        while (events.nonEmpty) {
+            events.dequeue() match {
+                case Fired(x, handlers) => for (handler <- handlers) add(Handled(() => handler(x)))
+                case Handled(f) => f()
+            }
         }
     }
 }

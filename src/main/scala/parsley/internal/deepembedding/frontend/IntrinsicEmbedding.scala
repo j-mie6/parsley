@@ -1,8 +1,8 @@
 package parsley.internal.deepembedding.frontend
 
-import parsley.registers.Reg
-
 import scala.language.higherKinds
+
+import parsley.registers.Reg
 
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 

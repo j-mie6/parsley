@@ -1,11 +1,12 @@
 package parsley.internal.machine.instructions
 
-import parsley.character
-import parsley.internal.machine.Context
-import parsley.internal.deepembedding.Sign.{SignType, IntType, DoubleType}
-import parsley.internal.errors.{ErrorItem, Desc}
-
 import scala.annotation.tailrec
+
+import parsley.character
+
+import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
+import parsley.internal.errors.{Desc, ErrorItem}
+import parsley.internal.machine.Context
 
 private [internal] final class TokenSign(ty: SignType) extends Instr {
     val neg: Any => Any = ty match {

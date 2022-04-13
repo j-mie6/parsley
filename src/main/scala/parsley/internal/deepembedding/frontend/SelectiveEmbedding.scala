@@ -1,8 +1,8 @@
 package parsley.internal.deepembedding.frontend
 
-import parsley.internal.deepembedding.backend, backend.StrictParsley
-
 import scala.language.higherKinds
+
+import parsley.internal.deepembedding.backend, backend.StrictParsley
 
 private [parsley] final class Branch[A, B, C](b: LazyParsley[Either[A, B]], p: =>LazyParsley[A => C], q: =>LazyParsley[B => C])
     extends Ternary[Either[A, B], A => C, B => C, C](b, p, q) {

@@ -1,17 +1,15 @@
 package parsley.implicits
 
-import parsley.Parsley
-import parsley.Parsley.pure
-import parsley.lift.{lift1, lift2, lift3, lift4, lift5, lift6, lift7, lift8, lift9, lift10, lift11,
-                     lift12, lift13, lift14, lift15, lift16, lift17, lift18, lift19, lift20, lift21, lift22}
+import parsley.Parsley, Parsley.pure
+import parsley.lift._
 
 /**
   * Provides postfix lift notation on functions.
   * @since 3.0.0
   */
-object lift
-{
+object lift {
     // $COVERAGE-OFF$
+    // scalastyle:off
     /** Enables a postfix `pure`: `x.lift = pure(x)` */
     implicit final class Lift0[R](private val x: R) extends AnyVal {
         def lift: Parsley[R] = pure(x)
@@ -157,5 +155,6 @@ object lift
                  p19: =>Parsley[T19], p20: =>Parsley[T20], p21: =>Parsley[T21], p22: =>Parsley[T22]): Parsley[R] =
             lift22(f, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, p21, p22)
     }
+    // scalastyle:on
     // $COVERAGE-ON$
 }

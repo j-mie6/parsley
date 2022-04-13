@@ -1,15 +1,15 @@
 package parsley.internal.deepembedding.frontend
 
-import scala.language.{higherKinds, implicitConversions}
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.language.{higherKinds, implicitConversions}
 
 import parsley.BadLazinessException
 import parsley.registers.Reg
-import parsley.internal.machine.instructions, instructions.{Instr, JumpTable, Label}
-import parsley.internal.deepembedding.{Cont, ContOps}, ContOps.{safeCall, GenOps, perform, result, ContAdapter}
 
+import parsley.internal.deepembedding.{Cont, ContOps}, ContOps.{safeCall, GenOps, perform, result, ContAdapter}
 import parsley.internal.deepembedding.backend, backend.StrictParsley
+import parsley.internal.machine.instructions, instructions.{Instr, JumpTable, Label}
 
 private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     // $COVERAGE-OFF$
@@ -33,13 +33,15 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
         else if (state.notProcessedBefore(this)) {
             this match {
                 case self: UsesRegister => state.addReg(self.reg)
-                case _ =>
+                case _                  =>
             }
 
             try findLetsAux(seen + this)
             catch {
                 // $COVERAGE-OFF$
+                // scalastyle:off
                 case npe: NullPointerException => throw new BadLazinessException
+                // scalastyle:on
                 // $COVERAGE-ON$
             }
         }
@@ -68,7 +70,7 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
                 implicit val recMap: RecMap = RecMap(letFinderState.recs)
                 implicit val letMap: LetMap = LetMap(letFinderState.lets)(ops, recMap)
                 val recs_ = recMap.map { case (p, strict) => (strict, p.unsafeOptimised[Cont, Unit, Any]) }
-                for (sp <- this.optimised) yield {
+                for { sp <- this.optimised } yield {
                     sp.safe = sSafe
                     sp.generateInstructions(calleeSaveNeeded, usedRegs, recs_)
                 }

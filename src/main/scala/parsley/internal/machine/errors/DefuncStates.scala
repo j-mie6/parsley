@@ -1,10 +1,10 @@
 package parsley.internal.machine.errors
 
-import parsley.internal.errors.{TrivialError, FancyError, ErrorItem, EndOfInput}
-
 import scala.collection.mutable
 
-import TrivialState._
+import parsley.internal.errors.{EndOfInput, ErrorItem, FancyError, TrivialError}
+
+import TrivialState.{NoItem, Other, Raw, UnexpectItem}
 
 private [errors] final class TrivialState(offset: Int, outOfRange: Boolean) {
     private var line: Int = _
@@ -48,13 +48,13 @@ private [errors] object TrivialState {
         def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Option[ErrorItem]
     }
     private [TrivialState] case class Raw(size: Int) extends UnexpectItem {
-        def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder) = Some(builder(offset, size))
+        def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Option[ErrorItem] = Some(builder(offset, size))
     }
     private [TrivialState] case class Other(underlying: ErrorItem) extends UnexpectItem {
-        def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder) = Some(underlying)
+        def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Option[ErrorItem] = Some(underlying)
     }
     private [TrivialState] case object NoItem extends UnexpectItem {
-        def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder) = None
+        def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Option[ErrorItem] = None
     }
 }
 
@@ -79,10 +79,10 @@ private [errors] final class HintState {
     private var _unexpectSize = 0
 
     def +=(hint: ErrorItem): Unit = this.hints += hint
-    def ++=(hints: Set[ErrorItem]) = this.hints ++= hints
+    def ++=(hints: Set[ErrorItem]): Unit = this.hints ++= hints
 
     def unexpectSize: Int = _unexpectSize
-    def updateSize(sz: Int) = _unexpectSize = Math.max(_unexpectSize, sz)
+    def updateSize(sz: Int): Unit = _unexpectSize = Math.max(_unexpectSize, sz)
 
     def mkSet: Set[ErrorItem] = this.hints.toSet
 }

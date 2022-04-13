@@ -1,9 +1,10 @@
 package parsley.expr
 
-import parsley.Parsley
-import parsley.internal.deepembedding.frontend
-
 import scala.annotation.implicitNotFound
+
+import parsley.Parsley
+
+import parsley.internal.deepembedding.frontend
 
 /** This module contains the very useful chaining family of combinators,
   * which are mostly used to parse operators and expressions of varying fixities.

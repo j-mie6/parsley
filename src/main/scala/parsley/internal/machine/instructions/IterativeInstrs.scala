@@ -1,10 +1,10 @@
 package parsley.internal.machine.instructions
 
+import scala.collection.mutable.ListBuffer
+
 import parsley.internal.deepembedding
 import parsley.internal.machine.{Context, Good}
 import parsley.internal.machine.stacks.{HandlerStack, Stack}, Stack.StackExt
-
-import scala.collection.mutable.ListBuffer
 
 private [internal] final class Many(var label: Int) extends InstrWithLabel with Stateful {
     private [this] val acc: ListBuffer[Any] = ListBuffer.empty

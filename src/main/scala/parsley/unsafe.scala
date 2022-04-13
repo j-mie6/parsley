@@ -1,9 +1,10 @@
 package parsley
 
-import parsley.internal.machine
-import parsley.internal.deepembedding
 import parsley.errors.ErrorBuilder
 import parsley.errors.combinator.ErrorMethods
+
+import parsley.internal.deepembedding
+import parsley.internal.machine
 
 /** This module contains various things that shouldn't be used without care and caution
   * @since 1.6.0

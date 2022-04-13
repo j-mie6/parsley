@@ -1,13 +1,14 @@
 package parsley.internal.deepembedding.frontend
 
-import parsley.internal.machine.instructions
-import parsley.registers.Reg
-import parsley.debug.{Breakpoint, EntryBreak, FullBreak, ExitBreak}
-
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.higherKinds
+
+import parsley.debug.{Breakpoint, EntryBreak, ExitBreak, FullBreak}
+import parsley.registers.Reg
+
 import parsley.internal.deepembedding.backend, backend.StrictParsley
+import parsley.internal.machine.instructions
 
 private [parsley] final class Attempt[A](p: LazyParsley[A]) extends ScopedUnary[A, A](p) {
     // $COVERAGE-OFF$

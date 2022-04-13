@@ -1,9 +1,9 @@
 package parsley.implicits
 
+import scala.language.implicitConversions
+
 import parsley.Parsley
 import parsley.Parsley.void
-
-import scala.language.implicitConversions
 
 /**
   * Provides implicit conversions for parsers into unit parsers, and other implicits involving combinators.

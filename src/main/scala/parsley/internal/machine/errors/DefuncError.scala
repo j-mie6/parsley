@@ -1,9 +1,9 @@
 package parsley.internal.machine.errors
 
-import parsley.internal.errors.{ParseError, TrivialError, FancyError, ErrorItem, Desc}
-
-import scala.collection.mutable
 import scala.annotation.tailrec
+import scala.collection.mutable
+
+import parsley.internal.errors.{Desc, ErrorItem, FancyError, ParseError, TrivialError}
 
 /* This file contains the defunctionalised forms of the error messages.
  * Essentially, whenever an error is created in the machine, it should make use of one of
@@ -37,40 +37,40 @@ private [machine] sealed abstract class DefuncError {
     private [machine] val offset: Int
     private [machine] final def asParseError(implicit builder: ErrorItemBuilder): ParseError = (this: @unchecked) match {
         case terr: MakesTrivial if terr.isTrivialError => terr.makeTrivial
-        case ferr: MakesFancy => ferr.makeFancy
+        case ferr: MakesFancy                          => ferr.makeFancy
     }
     @tailrec private [errors] final def collectHints()(implicit state: HintState): Unit = (this: @unchecked) match {
-        case BaseError(expected) =>
+        case BaseError(expected)      =>
             for (item <- expected) state += item
             state.updateSize(1)
-        case self: TokenError =>
+        case self: TokenError         =>
             for (item <- self.expected) state += item
             state.updateSize(self.size)
         case self: MultiExpectedError =>
             state.updateSize(self.size)
             state ++= self.expected
-        case self: WithLabel => if (self.label.nonEmpty) state += Desc(self.label)
-        case self: WithReason => self.err.collectHints()
-        case self: WithHints =>
+        case self: WithLabel          => if (self.label.nonEmpty) state += Desc(self.label)
+        case self: WithReason         => self.err.collectHints()
+        case self: WithHints          =>
             self.hints.collect(0)
             self.err.collectHints()
-        case self: MergedErrors =>
+        case self: MergedErrors       =>
             self.err1.collectHintsNonTail()
             self.err2.collectHints()
-        case self: Amended => self.err.collectHints()
-        case self: Entrenched => self.err.collectHints()
+        case self: Amended            => self.err.collectHints()
+        case self: Entrenched         => self.err.collectHints()
     }
     final private def collectHintsNonTail()(implicit state: HintState): Unit = collectHints()
 }
 
 private [errors] object BaseError {
     def unapply(err: DefuncError): Option[Option[ErrorItem]] = err match {
-        case err: ClassicExpectedError => Some(err.expected)
+        case err: ClassicExpectedError           => Some(err.expected)
         case err: ClassicExpectedErrorWithReason => Some(err.expected)
-        case err: ClassicUnexpectedError => Some(err.expected)
-        case err: EmptyError => Some(None)
-        case err: EmptyErrorWithReason => Some(None)
-        case _ => None
+        case err: ClassicUnexpectedError         => Some(err.expected)
+        case err: EmptyError                     => Some(None)
+        case err: EmptyErrorWithReason           => Some(None)
+        case _                                   => None
     }
 }
 

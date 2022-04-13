@@ -1,9 +1,9 @@
 package parsley.errors
 
 import parsley.Parsley
-import parsley.internal.deepembedding.{singletons, frontend}
-
 import parsley.combinator.choice
+
+import parsley.internal.deepembedding.{frontend, singletons}
 
 /** This module contains combinators that can be used to directly influence error messages of parsers.
   * @since 3.0.0

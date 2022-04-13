@@ -1,7 +1,7 @@
 package parsley.internal.machine.instructions
 
+import parsley.internal.errors.{Desc, ErrorItem}
 import parsley.internal.machine.{Context, Good}
-import parsley.internal.errors.{ErrorItem, Desc}
 
 private [internal] final class Satisfies(f: Char => Boolean, _expected: Option[String]) extends Instr {
     private [this] final val expected = _expected.map(Desc(_))

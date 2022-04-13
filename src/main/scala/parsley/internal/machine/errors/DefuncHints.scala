@@ -1,9 +1,9 @@
 package parsley.internal.machine.errors
 
-import parsley.internal.errors.{ErrorItem, Desc}
-
-import scala.collection.mutable
 import scala.annotation.tailrec
+import scala.collection.mutable
+
+import parsley.internal.errors.{Desc, ErrorItem}
 
 private [machine] sealed abstract class DefuncHints(private [errors] val size: Int) {
     private var incorporatedAfter: Int = size
@@ -25,7 +25,7 @@ private [machine] sealed abstract class DefuncHints(private [errors] val size: I
                 if (skipNext > 0) self.hints.collect(skipNext)
                 else {
                     state += Desc(self.label)
-                    self.hints.collect(skipNext+1)
+                    self.hints.collect(skipNext + 1)
                 }
             case self: MergeHints =>
                 if (self.oldHints.size < skipNext) self.newHints.collect(skipNext - self.oldHints.size)

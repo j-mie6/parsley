@@ -1,9 +1,10 @@
 package parsley.internal
 
-import Radix.{Entry, IteratorHelpers, StringHelpers}
+import scala.annotation.tailrec
 import scala.collection.{mutable, BufferedIterator}
 import scala.language.implicitConversions
-import scala.annotation.tailrec
+
+import Radix.{Entry, IteratorHelpers, StringHelpers}
 
 private [internal] class Radix[A] {
     private var x = Option.empty[A]
@@ -44,7 +45,9 @@ private [internal] class Radix[A] {
     }
 
     def contains(key: String): Boolean = get(key).nonEmpty
+    // scalastyle:off
     def apply(key: String): A = get(key).getOrElse(throw new NoSuchElementException(key))
+    // scalastyle:on
 
     def update(key: String, value: A): Unit =
         if (key.isEmpty) x = Some(value)

@@ -1,11 +1,11 @@
 package parsley.internal.deepembedding.frontend
 
-import parsley.internal.machine.instructions
-
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.higherKinds
+
 import parsley.internal.deepembedding.backend, backend.StrictParsley
+import parsley.internal.machine.instructions
 
 // Core Embedding
 private [parsley] final class <*>[A, B](pf: LazyParsley[A => B], px: =>LazyParsley[A]) extends Binary[A => B, A, B](pf, px) {
