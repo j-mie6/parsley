@@ -2,7 +2,7 @@
     <name>Parsley configuration</name>
     <check enabled="true"  class="org.scalastyle.file.FileLengthChecker" level="warning">
         <parameters>
-            <parameter name="maxFileLength">800</parameter>
+            <parameter name="maxFileLength">1500</parameter>
         </parameters>
     </check>
     <check enabled="true"  class="org.scalastyle.file.FileLineLengthChecker" level="warning">

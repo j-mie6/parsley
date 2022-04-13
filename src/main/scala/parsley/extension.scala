@@ -1,7 +1,7 @@
 package parsley
 
 import Parsley.{notFollowedBy}
-import combinator.{many, option, some, ifP}
+import combinator.{ifP, many, option, some}
 
 /**
   * These implicit classes can be used to extend the core combinator set of Parsley.

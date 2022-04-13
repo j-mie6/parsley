@@ -13,6 +13,7 @@ import parsley.internal.deepembedding.{frontend, singletons}
 import parsley.internal.machine.Context
 
 import Parsley.pure
+import XCompat._
 
 /**
   * This is the class that encapsulates the act of parsing and running an object of this class with `parse` will
