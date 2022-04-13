@@ -1,13 +1,15 @@
 package parsley
 
-import parsley.Parsley.{empty, attempt}
-import parsley.combinator.skipMany
-import parsley.internal.deepembedding.singletons
-import parsley.errors.combinator.ErrorMethods
-
 import scala.annotation.switch
-import scala.language.implicitConversions
 import scala.collection.immutable.NumericRange
+import scala.language.implicitConversions
+
+import parsley.Parsley.{attempt, empty}
+import parsley.combinator.skipMany
+import parsley.errors.combinator.ErrorMethods
+import parsley.implicits.character.charLift
+
+import parsley.internal.deepembedding.singletons
 
 /** This module contains many parsers to do with reading one or more characters. Almost every parser will need something from this module.
   *

@@ -1,11 +1,11 @@
 package parsley.internal.machine.instructions
 
-import parsley.internal.machine.Context
-import parsley.internal.deepembedding.Sign.{SignType, IntType, DoubleType}
-import parsley.internal.Radix, Radix.RadixSet
-import parsley.internal.errors.{ErrorItem, Desc}
-
 import scala.annotation.tailrec
+
+import parsley.internal.Radix, Radix.RadixSet
+import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
+import parsley.internal.errors.{Desc, ErrorItem}
+import parsley.internal.machine.Context
 
 private [instructions] abstract class CommentLexer(start: String, end: String, line: String, nested: Boolean) extends Instr {
     protected final val lineAllowed = line.nonEmpty
@@ -14,7 +14,9 @@ private [instructions] abstract class CommentLexer(start: String, end: String, l
 
     protected final def singleLineComment(ctx: Context): Unit = {
         ctx.fastUncheckedConsumeChars(line.length)
-        while (ctx.moreInput && ctx.nextChar != '\n') ctx.consumeChar()
+        while (ctx.moreInput && ctx.nextChar != '\n') {
+            ctx.consumeChar()
+        }
     }
 
     @tailrec private final def wellNested(ctx: Context, unmatched: Int): Boolean = {
@@ -114,7 +116,11 @@ private [internal] final class TokenComment(start: String, end: String, line: St
 
 private [internal] final class TokenWhiteSpace(ws: Char => Boolean, start: String, end: String, line: String, nested: Boolean)
     extends WhiteSpaceLike(start, end, line, nested) {
-    override def spaces(ctx: Context): Unit = while (ctx.moreInput && ws(ctx.nextChar)) ctx.consumeChar()
+    override def spaces(ctx: Context): Unit = {
+        while (ctx.moreInput && ws(ctx.nextChar)) {
+            ctx.consumeChar()
+        }
+    }
     // $COVERAGE-OFF$
     override def toString: String = "TokenWhiteSpace"
     // $COVERAGE-ON$

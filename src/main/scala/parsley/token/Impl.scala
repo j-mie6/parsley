@@ -1,7 +1,8 @@
 package parsley.token
 
-import parsley.Parsley
 import scala.language.higherKinds
+
+import parsley.Parsley
 
 /**
   * The Impl trait is used to provide implementation of the parser requirements from `LanguageDef`

@@ -1,15 +1,16 @@
 package parsley.token
 
-import parsley.character.{digit, hexDigit, octDigit, satisfy, char, string}
-import parsley.combinator.{sepBy, sepBy1, between, many, skipMany, some, skipSome}
-import parsley.lift.lift2
-import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
-import parsley.Parsley, Parsley.{unit, attempt, pure, empty, notFollowedBy}
-import parsley.errors.combinator.{fail, amend, entrench, unexpected, ErrorMethods}
-import parsley.implicits.character.charLift
-import parsley.internal.deepembedding.singletons
-
 import scala.language.implicitConversions
+
+import parsley.Parsley, Parsley.{attempt, empty, notFollowedBy, pure, unit}
+import parsley.character.{char, digit, hexDigit, octDigit, satisfy, string}
+import parsley.combinator.{between, many, sepBy, sepBy1, skipMany, skipSome, some}
+import parsley.errors.combinator.{amend, entrench, fail, unexpected, ErrorMethods}
+import parsley.implicits.character.charLift
+import parsley.lift.lift2
+
+import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
+import parsley.internal.deepembedding.singletons
 
 /**
   * When provided with a `LanguageDef`, this class will produce a large variety of parsers that can be used for
@@ -260,7 +261,9 @@ class Lexer(lang: LanguageDef)
             skipMany(attempt(new Parsley(new singletons.Comment(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))) <|> space_)
         case Parser(space_) => skipMany(space_)
         // $COVERAGE-OFF$
+        // scalastyle:off
         case _ => ???
+        // scalastyle:on
         // $COVERAGE-ON$
     }
 
@@ -326,7 +329,9 @@ class Lexer(lang: LanguageDef)
         case Static(f)   => satisfy(f)
         case Parser(p)   => p.asInstanceOf[Parsley[Char]]
         // $COVERAGE-OFF$
+        // scalastyle:off
         case _ => ???
+        // scalastyle:on
         // $COVERAGE-ON$
     }
 }

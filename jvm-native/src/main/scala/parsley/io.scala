@@ -1,13 +1,14 @@
 package parsley
 
-import scala.io.{Source, Codec}
-import scala.util.Try
 import java.io.File
 
-import parsley.internal.machine.Context
-
+import scala.io.{Codec, Source}
 import scala.language.{higherKinds, implicitConversions}
+import scala.util.Try
+
 import parsley.errors.ErrorBuilder
+
+import parsley.internal.machine.Context
 
 /** This module contains utilities to have parsers interact with IO, including the very useful `parseFromFile` method (exposed by `ParseFromIO`)
   * @since 3.0.0

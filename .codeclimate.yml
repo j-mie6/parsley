@@ -1,12 +1,15 @@
 version: "2"
 exclude_patterns:
 - "**/scala-3.x"
+- "**/scala-2.12"
 - "**/native"
 - "**/js"
+- "**/js-native"
 - "**/test"
 - ".github"
 - "project"
 - "build.sbt"
+- "compatibility.sbt"
 - "*.md"
 - ".codeclimate.yml"
 - ".gitignore"
@@ -17,24 +20,8 @@ exclude_patterns:
 plugins:
   scalastyle:
     enabled: true
+    config:
+      config: scalastyle-config.xml
     checks:
-      org.scalastyle.scalariform.NoWhitespaceBeforeLeftBracketChecker:
-        enabled: false
-      org.scalastyle.scalariform.NullChecker:
-        enabled: false
-      org.scalastyle.file.NewLineAtEofChecker:
-        enabled: false
-      org.scalastyle.scalariform.IfBraceChecker:
-        enabled: false
-      org.scalastyle.scalariform.MethodNamesChecker:
-        enabled: false
-      org.scalastyle.scalariform.ObjectNamesChecker:
-        enabled: false
-      org.scalastyle.scalariform.ClassNamesChecker:
-        enabled: false
-      org.scalastyle.scalariform.LowercasePatternMatchChecker:
-        enabled: false
-      org.scalastyle.scalariform.MultipleStringLiteralsChecker:
-        enabled: false
-      org.scalastyle.scalariform.ClassTypeParameterChecker:
+      org.scalastyle.scalariform.ForBraceChecker:
         enabled: false

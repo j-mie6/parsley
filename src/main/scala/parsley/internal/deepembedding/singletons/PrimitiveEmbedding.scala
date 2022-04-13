@@ -1,7 +1,8 @@
 package parsley.internal.deepembedding.singletons
 
-import parsley.internal.machine.instructions
 import parsley.registers.Reg
+
+import parsley.internal.machine.instructions
 
 private [parsley] final class Satisfy(private [Satisfy] val f: Char => Boolean, val expected: Option[String]) extends Singleton[Char] {
     // $COVERAGE-OFF$

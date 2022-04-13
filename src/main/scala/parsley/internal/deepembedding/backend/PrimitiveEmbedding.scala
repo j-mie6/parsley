@@ -1,14 +1,16 @@
 package parsley.internal.deepembedding.backend
 
-import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
-import parsley.internal.deepembedding.singletons._
-import parsley.internal.machine.instructions
-import parsley.registers.Reg
-import parsley.debug.{Breakpoint, EntryBreak, FullBreak, ExitBreak}
-
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.higherKinds
+
+import parsley.debug.{Breakpoint, EntryBreak, ExitBreak, FullBreak}
+import parsley.registers.Reg
+
+import parsley.internal.deepembedding.ContOps, ContOps.{ContAdapter, result, suspend}
+import parsley.internal.deepembedding.singletons._
+import parsley.internal.machine.instructions
+
 import StrictParsley.InstrBuffer
 private [deepembedding] final class Attempt[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, A](false) {
     override val instr: instructions.Instr = instructions.Attempt
@@ -20,7 +22,7 @@ private [deepembedding] final class NotFollowedBy[A](val p: StrictParsley[A]) ex
     override val instr: instructions.Instr = instructions.NotFollowedBy
     override def optimise: StrictParsley[Unit] = p match {
         case z: MZero => new Pure(())
-        case _ => this
+        case _        => this
     }
 }
 

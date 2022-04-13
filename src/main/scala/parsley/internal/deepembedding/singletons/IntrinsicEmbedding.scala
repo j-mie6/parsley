@@ -1,9 +1,10 @@
 package parsley.internal.deepembedding.singletons
 
-import parsley.internal.machine.instructions
+import parsley.registers.Reg
+
 import parsley.internal.deepembedding.backend.StrictParsley
 import parsley.internal.deepembedding.frontend.UsesRegister
-import parsley.registers.Reg
+import parsley.internal.machine.instructions
 
 private [parsley] final class CharTok(private [CharTok] val c: Char, val expected: Option[String]) extends Singleton[Char] {
     // $COVERAGE-OFF$

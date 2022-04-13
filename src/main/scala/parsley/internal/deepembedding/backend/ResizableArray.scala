@@ -1,7 +1,7 @@
 package parsley.internal.deepembedding.backend
 
-import scala.reflect.ClassTag
 import scala.language.implicitConversions
+import scala.reflect.ClassTag
 
 // This is designed to be a lighter-weight wrapper around Array to make it resizeable
 private [backend] final class ResizableArray[A: ClassTag](initialSize: Int = ResizableArray.InitialSize)

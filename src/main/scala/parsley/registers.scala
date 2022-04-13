@@ -1,8 +1,9 @@
 package parsley
 
-import parsley.Parsley.{empty, pure}
+import parsley.Parsley.{empty, pure, unit}
 import parsley.combinator.{when, whileP}
-import parsley.internal.deepembedding.{singletons, frontend}
+
+import parsley.internal.deepembedding.{frontend, singletons}
 
 /** This module contains all the functionality and operations for using and manipulating registers.
   *
@@ -284,7 +285,6 @@ object registers {
         val _cond = reg.gets(cond)
         val _step = reg.modify(step)
         reg.put(init) *> when(_cond, whileP(body(reg) *> _step *> _cond))*/
-        import parsley.Parsley.unit
         lazy val _cond = cond
         lazy val _step = step
         def loop(x: A): Parsley[Unit] =

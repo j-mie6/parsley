@@ -1,9 +1,10 @@
 package parsley.internal.deepembedding.backend
 
+import scala.language.higherKinds
+
 import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
 import parsley.internal.machine.instructions
 
-import scala.language.higherKinds
 import StrictParsley.InstrBuffer
 
 // Core Embedding

@@ -1,8 +1,8 @@
 package parsley.internal.deepembedding.singletons
 
-import parsley.internal.deepembedding.ContOps, ContOps.{result, ContAdapter}
-
 import scala.language.higherKinds
+
+import parsley.internal.deepembedding.ContOps, ContOps.{result, ContAdapter}
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 import parsley.internal.deepembedding.frontend, frontend.LazyParsley
 import parsley.internal.machine.instructions

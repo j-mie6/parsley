@@ -1,10 +1,9 @@
 package parsley.implicits
 
-import parsley.Parsley
-import parsley.lift.{lift1, lift2, lift3, lift4, lift5, lift6, lift7, lift8, lift9, lift10, lift11,
-                     lift12, lift13, lift14, lift15, lift16, lift17, lift18, lift19, lift20, lift21, lift22}
-
 import scala.language.implicitConversions
+
+import parsley.Parsley
+import parsley.lift._
 
 /**
   * Provides an alterative to the `f.lift(x, y)` syntax that is instead `(x, y).zipped(f)`. This is prefered when type inferences fails. Also enables a
@@ -16,6 +15,7 @@ import scala.language.implicitConversions
 object zipped
 {
     // $COVERAGE-OFF$
+    // scalastyle:off
     // Forgive me, for I have sinned: courtesy of Andrei Gramescu and George Stacey, who wished to forever have their names stamped on this (useful) abomination
     implicit final class Zipped2[T1, T2](private val t: (Parsley[T1], Parsley[T2])) extends AnyVal {
         def zipped[R](f: (T1, T2) => R): Parsley[R] = lift2(f, t._1, t._2)
@@ -155,5 +155,6 @@ object zipped
         def zipped: Parsley[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22)] =
             this.zipped((_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _))
     }
+    // scalastyle:on
     // $COVERAGE-ON$
 }

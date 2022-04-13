@@ -1,9 +1,9 @@
 package parsley.implicits
 
+import scala.language.implicitConversions
+
 import parsley.Parsley
 import parsley.character.{char, string}
-
-import scala.language.implicitConversions
 
 /**
   * Provides implicit conversions for characters and strings.

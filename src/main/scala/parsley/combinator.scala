@@ -1,9 +1,11 @@
 package parsley
 
-import parsley.Parsley.{unit, empty, pure, select, notFollowedBy, attempt}
-import parsley.internal.deepembedding.{singletons, frontend}
+import scala.annotation.{implicitNotFound, tailrec}
+
+import parsley.Parsley.{attempt, empty, notFollowedBy, pure, select, unit}
 import parsley.expr.chain
-import scala.annotation.{tailrec, implicitNotFound}
+
+import parsley.internal.deepembedding.{frontend, singletons}
 
 /** This module contains a huge number of pre-made combinators that are very useful for a variety of purposes.
   *

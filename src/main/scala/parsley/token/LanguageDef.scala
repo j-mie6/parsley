@@ -41,9 +41,11 @@ case class LanguageDef (commentStart: String,
     private [token] lazy val supportsComments = {
         val on = (commentStart.nonEmpty && commentEnd.nonEmpty) || commentLine.nonEmpty
         if (on && commentStart.nonEmpty && commentLine.startsWith(commentStart)) {
+            // scalastyle:off
             throw new IllegalArgumentException(
                 "multi-line comments which are a valid prefix of a single-line comment are not allowed as this causes ambiguity in the parser"
             )
+            // scalastyle:on
         }
         on
     }

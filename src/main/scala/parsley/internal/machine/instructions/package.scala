@@ -1,11 +1,10 @@
 package parsley.internal.machine
 
-import scala.language.implicitConversions
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.language.implicitConversions
 
-package object instructions
-{
+package object instructions {
     // $COVERAGE-OFF$
     final private [parsley] def pretty(instrs: Array[Instr]): String = {
         val n = instrs.length

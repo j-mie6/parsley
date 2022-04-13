@@ -1,18 +1,22 @@
 package parsley.internal.machine
 
-import instructions.Instr
-import stacks.{ArrayStack, Stack, CallStack, CheckStack, HandlerStack, StateStack, HintStack, ErrorStack}, Stack.StackExt
-import parsley.{Failure, Result, Success}
-import parsley.internal.errors.{ErrorItem, LineBuilder}
-import parsley.internal.machine.errors.{
-    ErrorItemBuilder,
-    DefuncError, ClassicExpectedError, ClassicExpectedErrorWithReason, ClassicFancyError, ClassicUnexpectedError, WithHints, TokenError,
-    DefuncHints, EmptyHints, MergeHints, ReplaceHint, PopHints, AddError
-}
-
 import scala.annotation.tailrec
 import scala.collection.mutable
+
+//import parsley.{Failure, Result, Success} // not sure why this fails scalacheck, but I guess we'll leave it until I can submit a bug report
+import parsley.Failure
+import parsley.Result
+import parsley.Success
 import parsley.errors.ErrorBuilder
+
+import parsley.internal.errors.{ErrorItem, LineBuilder}
+import parsley.internal.machine.errors.{
+    AddError, ClassicExpectedError, ClassicExpectedErrorWithReason, ClassicFancyError, ClassicUnexpectedError, DefuncError,
+    DefuncHints, EmptyHints, ErrorItemBuilder, MergeHints, PopHints, ReplaceHint, TokenError, WithHints
+}
+
+import instructions.Instr
+import stacks.{ArrayStack, CallStack, CheckStack, ErrorStack, HandlerStack, HintStack, Stack, StateStack}, Stack.StackExt
 
 private [parsley] object Context {
     private [Context] val NumRegs = 4

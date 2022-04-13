@@ -1,13 +1,13 @@
 package parsley.internal.deepembedding.backend
 
+import scala.language.higherKinds
+
 import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
 import parsley.internal.deepembedding.singletons._
 import parsley.internal.machine.instructions
 
-import scala.language.higherKinds
-import StrictParsley.InstrBuffer
-
 import Branch.FlipApp
+import StrictParsley.InstrBuffer
 
 private [backend] sealed abstract class BranchLike[A, B, C, D](finaliser: Option[instructions.Instr]) extends StrictParsley[D] {
     val b: StrictParsley[A]

@@ -1,20 +1,23 @@
 package parsley.internal.deepembedding.backend
 
-import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
-import parsley.internal.deepembedding.singletons._
-import parsley.internal.machine.instructions
-import StrictParsley.InstrBuffer
-
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.higherKinds
 
+import parsley.internal.deepembedding.ContOps, ContOps.{ContAdapter, result, suspend}
+import parsley.internal.deepembedding.singletons._
+import parsley.internal.machine.instructions
+
+import StrictParsley.InstrBuffer
+
 private [backend] sealed abstract class ManyLike[A, B](name: String, unit: B) extends Unary[A, B] {
     def instr(label: Int): instructions.Instr
     final override def optimise: StrictParsley[B] = p match {
+        // scalastyle:off
         case _: Pure[_] => throw new Exception(s"$name given parser which consumes no input")
-        case _: MZero => new Pure(unit)
-        case _ => this
+        // scalastyle:on
+        case _: MZero   => new Pure(unit)
+        case _          => this
     }
     final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val body = state.freshLabel()
@@ -36,9 +39,11 @@ private [deepembedding] final class SkipMany[A](val p: StrictParsley[A]) extends
 private [backend] sealed abstract class ChainLike[A](p: StrictParsley[A], op: StrictParsley[A => A]) extends StrictParsley[A] {
     def inlinable: Boolean = false
     override def optimise: StrictParsley[A] = op match {
+        // scalastyle:off
         case _: Pure[_] => throw new Exception("chain given parser which consumes no input")
-        case _: MZero => p
-        case _ => this
+        // scalastyle:on
+        case _: MZero   => p
+        case _          => this
     }
 }
 private [deepembedding] final class ChainPost[A](p: StrictParsley[A], op: StrictParsley[A => A]) extends ChainLike[A](p, op) {

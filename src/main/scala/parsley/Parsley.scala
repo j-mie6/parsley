@@ -1,17 +1,18 @@
 package parsley
 
-import parsley.internal.machine.Context
-import parsley.internal.deepembedding.{singletons, frontend}
-import parsley.expr.{chain, infix}
-import parsley.combinator.{option, some, many}
-import parsley.Parsley.pure
-import parsley.errors.ErrorBuilder
-import parsley.XCompat._
-
 import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.reflect.ClassTag
 import scala.language.{higherKinds, implicitConversions}
+import scala.reflect.ClassTag
+
+import parsley.combinator.{option, some}
+import parsley.errors.ErrorBuilder
+import parsley.expr.{chain, infix}
+
+import parsley.internal.deepembedding.{frontend, singletons}
+import parsley.internal.machine.Context
+
+import Parsley.pure
 
 /**
   * This is the class that encapsulates the act of parsing and running an object of this class with `parse` will

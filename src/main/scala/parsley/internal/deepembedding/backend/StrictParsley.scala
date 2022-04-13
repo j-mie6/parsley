@@ -1,14 +1,16 @@
 package parsley.internal.deepembedding.backend
 
-import scala.language.{higherKinds, implicitConversions}
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.language.{higherKinds, implicitConversions}
 
 import parsley.BadLazinessException
 import parsley.registers.Reg
-import parsley.internal.machine.instructions, instructions.{Instr, JumpTable, Label}
-import StrictParsley._
+
 import parsley.internal.deepembedding.ContOps, ContOps.{safeCall, GenOps, perform, result, ContAdapter}
+import parsley.internal.machine.instructions, instructions.{Instr, JumpTable, Label}
+
+import StrictParsley._
 
 private [deepembedding] trait StrictParsley[+A] {
     final protected type T = Any
@@ -64,7 +66,9 @@ private [deepembedding] object StrictParsley {
             }
             val freeSlots = (0 until 4).filterNot(usedSlots)
             if (unallocatedRegs.size > freeSlots.size) {
+                // scalastyle:off
                 throw new IllegalStateException("Current restrictions require that the maximum number of registers in use is 4")
+                // scalastyle:on
             }
             applyAllocation(unallocatedRegs, freeSlots)
         }

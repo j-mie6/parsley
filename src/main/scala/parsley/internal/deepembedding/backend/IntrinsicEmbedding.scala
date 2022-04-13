@@ -1,11 +1,13 @@
 package parsley.internal.deepembedding.backend
 
+import scala.language.higherKinds
+
+import parsley.registers.Reg
+
 import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
 import parsley.internal.machine.instructions
-import parsley.registers.Reg
-import StrictParsley.InstrBuffer
 
-import scala.language.higherKinds
+import StrictParsley.InstrBuffer
 
 // TODO: Perform applicative fusion optimisations
 private [deepembedding] final class Lift2[A, B, C](private [Lift2] val f: (A, B) => C, val left: StrictParsley[A], val right: StrictParsley[B])

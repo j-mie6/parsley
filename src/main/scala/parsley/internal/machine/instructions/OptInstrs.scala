@@ -1,12 +1,13 @@
 package parsley.internal.machine.instructions
 
-import parsley.XCompat._
-import parsley.internal.machine.{Context, Good}
-
 import scala.annotation.tailrec
-import scala.language.implicitConversions
 import scala.collection.mutable
-import parsley.internal.errors.{ErrorItem, Desc}
+import scala.language.implicitConversions
+
+import parsley.XCompat._
+
+import parsley.internal.errors.{Desc, ErrorItem}
+import parsley.internal.machine.{Context, Good}
 import parsley.internal.machine.errors.MultiExpectedError
 import parsley.internal.machine.stacks.ErrorStack
 

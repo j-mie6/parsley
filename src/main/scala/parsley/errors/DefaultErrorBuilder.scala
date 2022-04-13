@@ -51,7 +51,7 @@ class DefaultErrorBuilder extends ErrorBuilder[String] {
     override def specialisedError(msgs: Messages, lines: LineInfo): ErrorInfoLines = combineOrUnknown(msgs, lines)
 
     private def combineOrUnknown(info: Seq[String], lines: Seq[String]): ErrorInfoLines = {
-        if (info.isEmpty) Unknown +: lines
+        if (info.isEmpty) DefaultErrorBuilder.Unknown +: lines
         else info ++: lines
     }
 
@@ -89,7 +89,8 @@ class DefaultErrorBuilder extends ErrorBuilder[String] {
     override def raw(item: String): Raw = helpers.renderRawString(item)
     override def named(item: String): Named = item
     override val endOfInput: EndOfInput = "end of input"
-
+}
+private object DefaultErrorBuilder {
     private val Unknown = "unknown parse error"
 }
 // $COVERAGE-ON$

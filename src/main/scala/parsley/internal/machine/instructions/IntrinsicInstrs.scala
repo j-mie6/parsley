@@ -1,10 +1,10 @@
 package parsley.internal.machine.instructions
 
-import parsley.internal.errors.{Desc, Raw, EndOfInput}
+import scala.annotation.tailrec
+
+import parsley.internal.errors.{Desc, EndOfInput, Raw}
 import parsley.internal.machine.{Context, Good}
 import parsley.internal.machine.errors.{EmptyError, EmptyErrorWithReason}
-
-import scala.annotation.tailrec
 
 private [internal] final class Lift2[A, B, C](_f: (A, B) => C) extends Instr {
     private [this] val f = _f.asInstanceOf[(Any, Any) => C]
@@ -111,7 +111,7 @@ private [internal] final class If(var label: Int) extends InstrWithLabel {
 
 private [internal] final class Case(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = ctx.stack.pop[Either[_, _]]() match {
-        case Left(x) =>
+        case Left(x)  =>
             ctx.stack.push(x)
             ctx.pc = label
         case Right(y) => ctx.pushAndContinue(y)

@@ -1,9 +1,8 @@
 package parsley.internal.machine.instructions
 
+import parsley.internal.errors.{Desc, ErrorItem}
 import parsley.internal.machine.{Context, Good}
-
-import parsley.internal.errors.{ErrorItem, Desc}
-import parsley.internal.machine.errors.{WithReason, MergedErrors, WithLabel, Entrenched, Amended}
+import parsley.internal.machine.errors.{Amended, Entrenched, MergedErrors, WithLabel, WithReason}
 
 private [internal] final class ApplyError(label: String) extends Instr {
     val isHide: Boolean = label.isEmpty

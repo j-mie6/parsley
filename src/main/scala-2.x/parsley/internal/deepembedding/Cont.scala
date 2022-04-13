@@ -1,13 +1,11 @@
 package parsley.internal.deepembedding
 
-import scala.language.{higherKinds, reflectiveCalls}
 import scala.annotation.tailrec
+import scala.language.{higherKinds, reflectiveCalls}
 
 // Trampoline for CPS
-private [deepembedding] sealed abstract class Bounce[A]
-{
-    @tailrec final def run: A = this match
-    {
+private [deepembedding] sealed abstract class Bounce[A] {
+    @tailrec final def run: A = this match {
         case thunk: Thunk[A] => thunk.cont().run
         case chunk: Chunk[A] => chunk.x
     }
@@ -15,8 +13,7 @@ private [deepembedding] sealed abstract class Bounce[A]
 private [deepembedding] final class Chunk[A](val x: A) extends Bounce[A]
 private [deepembedding] final class Thunk[A](val cont: () => Bounce[A]) extends Bounce[A]
 
-private [deepembedding] abstract class ContOps[Cont[_, +_]]
-{
+private [deepembedding] abstract class ContOps[Cont[_, +_]] {
     def wrap[R, A](x: A): Cont[R, A]
     def unwrap[R](wrapped: Cont[R, R]): R
     def map[R, A, B](c: Cont[R, A], f: A => B): Cont[R, B]
@@ -27,8 +24,7 @@ private [deepembedding] abstract class ContOps[Cont[_, +_]]
     def |>[R, A, B](c: Cont[R, A], x: =>B): Cont[R, B] = map[R, A, B](c, _ => x)
     // $COVERAGE-ON$
 }
-private [deepembedding] object ContOps
-{
+private [deepembedding] object ContOps {
     implicit class ContAdapter[R, A, Cont[_, +_]](val c: Cont[R, A]) extends AnyVal
     {
         @inline def map[B](f: A => B)(implicit ops: ContOps[Cont]): Cont[R, B] = ops.map(c, f)
@@ -39,7 +35,9 @@ private [deepembedding] object ContOps
     @inline def result[R, A, Cont[_, +_]](x: A)(implicit canWrap: ContOps[Cont]): Cont[R, A] = canWrap.wrap(x)
     @inline def perform[Cont[_, +_], R](wrapped: Cont[R, R])(implicit canUnwrap: ContOps[Cont]): R = canUnwrap.unwrap(wrapped)
     @inline def suspend[Cont[_, +_], R, A](x: =>Cont[R, A])(implicit ops: ContOps[Cont]): Cont[R, A] = ops.suspend(x)
+    // scalastyle:off
     type GenOps = ContOps[({type C[_, +_]})#C]
+    // scalastyle:on
     def safeCall[A](task: GenOps => A): A = {
         try task(Id.ops.asInstanceOf[GenOps])
         catch { case _: StackOverflowError => task(Cont.ops.asInstanceOf[GenOps]) }
@@ -47,10 +45,8 @@ private [deepembedding] object ContOps
 }
 
 private [deepembedding] class Cont[R, +A](val cont: (A => Bounce[R]) => Bounce[R]) extends AnyVal
-private [deepembedding] object Cont
-{
-    implicit val ops: ContOps[Cont] = new ContOps[Cont]
-    {
+private [deepembedding] object Cont {
+    implicit val ops: ContOps[Cont] = new ContOps[Cont] {
         override def wrap[R, A](x: A): Cont[R, A] = new Cont(k => new Thunk(() => k(x)))
         override def unwrap[R](wrapped: Cont[R, R]): R = wrapped.cont(x => new Chunk(x)).run
         override def map[R, A, B](mx: Cont[R, A], f: A => B): Cont[R, B] =
@@ -70,10 +66,8 @@ private [deepembedding] object Cont
 }
 
 private [deepembedding] class Id[R, +A](val x: A) extends AnyVal
-private [deepembedding] object Id
-{
-    implicit val ops: ContOps[Id] = new ContOps[Id]
-    {
+private [deepembedding] object Id {
+    implicit val ops: ContOps[Id] = new ContOps[Id] {
         override def wrap[R, A](x: A): Id[R, A] = new Id(x)
         override def unwrap[R](wrapped: Id[R, R]): R = wrapped.x
         override def map[R, A, B](c: Id[R, A], f: A => B): Id[R, B] = new Id(f(c.x))
