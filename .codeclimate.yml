@@ -22,3 +22,6 @@ plugins:
     enabled: true
     config:
       config: scalastyle-config.xml
+    checks:
+      org.scalastyle.scalariform.ForBraceChecker:
+        enabled: false
