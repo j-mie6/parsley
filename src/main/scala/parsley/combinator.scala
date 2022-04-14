@@ -53,7 +53,9 @@ import parsley.internal.deepembedding.{frontend, singletons}
   *     In such a case where laziness is desired without resorting to the other lazier combinators, there
   *     is a neat trick: unroll the first iteration of the combinator, and use the corresponding regular combinator
   *     to do that (i.e. `<::>`, `<|>` (with or without `attempt`), or `*>`): since these will have a lazy
-  *     right-hand side, the remaining variadic arguments will be kept lazily suspended until later.
+  *     right-hand side, the remaining variadic arguments will be kept lazily suspended until later. Alternatively,
+  *     it is possible to use the [[parsley.Parsley.LazyParsley.unary_~ prefix `~`]] combinator to make any individual
+  *     arguments lazy as required, for example `choice(p, ~q, r)`. 
   *
   * @groupprio cond 75
   * @groupname cond Conditional Combinators

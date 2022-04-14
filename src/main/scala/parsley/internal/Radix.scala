@@ -45,9 +45,7 @@ private [internal] class Radix[A] {
     }
 
     def contains(key: String): Boolean = get(key).nonEmpty
-    // scalastyle:off
-    def apply(key: String): A = get(key).getOrElse(throw new NoSuchElementException(key))
-    // scalastyle:on
+    def apply(key: String): A = get(key).getOrElse(throw new NoSuchElementException(key)) // scalastyle:ignore throw
 
     def update(key: String, value: A): Unit =
         if (key.isEmpty) x = Some(value)

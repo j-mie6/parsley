@@ -208,10 +208,11 @@
     <check enabled="true"  class="org.scalastyle.scalariform.PublicMethodsHaveTypeChecker" level="warning"/>
     <check enabled="true"  class="org.scalastyle.scalariform.RedundantIfChecker" level="warning"/>
     <check enabled="true"  class="org.scalastyle.scalariform.ReturnChecker" level="warning"/>
-    <check enabled="true"  class="org.scalastyle.scalariform.ScalaDocChecker" level="warning">
+    <!-- As nice as it would be, there are too many classes that would need to go in the ignore Regex: maybe in the future -->
+    <check enabled="false" class="org.scalastyle.scalariform.ScalaDocChecker" level="warning">
         <parameters>
-            <parameter name="ignoreRegex">(.*Spec$)|(.*SpecIT$)</parameter>
-            <parameter name="ignoreTokenTypes">PatDefOrDcl,TypeDefOrDcl,FunDefOrDcl,TmplDef</parameter>
+            <parameter name="ignoreRegex"></parameter>
+            <parameter name="ignoreTokenTypes"></parameter>
             <parameter name="ignoreOverride">false</parameter>
             <parameter name="indentStyle">scaladoc</parameter>
         </parameters>

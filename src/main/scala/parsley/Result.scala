@@ -183,9 +183,7 @@ class Failure[Err] private [parsley] (_msg: =>Err) extends Result[Err, Nothing] 
     lazy val msg: Err = _msg
     override def isSuccess: Boolean = false
     override def isFailure: Boolean = true
-    // scalastyle:off
-    override def get: Nothing = throw new NoSuchElementException("get called on Failure")
-    // scalastyle:on
+    override def get: Nothing = throw new NoSuchElementException("get called on Failure") // scalastyle:ignore throw
     // We are normally given everything below, but ideally we want to make error generation lazy
     // $COVERAGE-OFF$
     override def toString: String = s"Failure($msg)"
@@ -194,9 +192,7 @@ class Failure[Err] private [parsley] (_msg: =>Err) extends Result[Err, Nothing] 
     override def productPrefix: String = "Failure"
     override def productArity: Int = 1
     override def productElement(idx: Int): Any = {
-        // scalastyle:off
-        if (idx != 0) throw new IndexOutOfBoundsException("Failure only has arity 1") else msg
-        // scalastyle:on
+        if (idx != 0) throw new IndexOutOfBoundsException("Failure only has arity 1") else msg // scalastyle:ignore throw
     }
     override def equals(x: Any): Boolean = x != null && (x match {
         case x: Failure[_] => x.msg == msg

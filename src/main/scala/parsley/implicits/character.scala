@@ -5,16 +5,32 @@ import scala.language.implicitConversions
 import parsley.Parsley
 import parsley.character.{char, string}
 
-/**
-  * Provides implicit conversions for characters and strings.
+/** Provides implicit conversions for characters and strings into parsers.
+  *
+  * The use of `char` and `string` can be distracting to the overall structure
+  * of the parser with respect to the grammar. This module exposes combinators
+  * that can implicitly convert Scala's string and character literals so that
+  * they represent parsers. These will not be whitespace sensitive.
+  *
   * @since 3.0.0
   */
-object character
-{
+object character {
     // $COVERAGE-OFF$
-    /** Converts a string literal into a parser that reads that string */
+    /** Converts a string literal into a parser that reads that string.
+      *
+      * Allows for the implicit application of the `string` combinator to a
+      * string literal.
+      *
+      * @see [[parsley.character.string `character.string`]]
+      */
     @inline implicit def stringLift(str: String): Parsley[String] = string(str)
-    /** Converts a char literal into a parser that reads that character */
+    /** Converts a character literal into a parser that reads that character.
+      *
+      * Allows for the implicit application of the `char` combinator to a
+      * character literal.
+      *
+      * @see [[parsley.character.char `character.char`]]
+      */
     @inline implicit def charLift(c: Char): Parsley[Char] = char(c)
     // $COVERAGE-ON$
 }

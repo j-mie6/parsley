@@ -948,6 +948,56 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
   *     needed in exceptional circumstances, and should be avoided otherwise.
   */
 object Parsley {
+    /** This class enables the prefix `~` combinator, which allows a parser in an otherwise strict
+      * position to be made lazy.
+      *
+      * @constructor This constructor should not be called manually, it is designed to be used via Scala's implicit resolution.
+      * @param p the parser that `~` is enabled on.
+      * @since 4.0.0
+      */
+    implicit class LazyParsley[A](p: =>Parsley[A]) {
+        /** This combinator makes a parser lazy.
+          *
+          * There are some combinators that are, due to Scala limitations,
+          * strict in all their parameters. Usually, a combinator is strict
+          * in its "first position", which is to say the first part of the
+          * combinator to be executed; and lazy in all other "positions".
+          * The rationale behind this is that recursion appearing in a
+          * "first position" ''will'' result in infinite recursion at parse-time,
+          * it is left-recursive after all, and so it makes little sense to
+          * waste efficiency and complicate the API to support laziness
+          * in that position. Since method receivers are strict and only
+          * arguments can be lazy under regular conditions, this works well.
+          *
+          * However, for combinators that are always strict, this poses a
+          * problem: a recursion point inside one of these strict fields
+          * will cause an infinite loop at runtime! This can be fixed by
+          * ensuring that this becomes part of a lazy argument. This is
+          * a solution described by the [[combinator.choice `choice`]]
+          * combinator, for instance: `p <|> choice(q, .., r)` will ensure
+          * that the `choice` is in a lazy position in `<|>` meaning that
+          * even if any of `q` to `r` must be lazy, they can go in the strict
+          * positions of choice because the `p <|>` provides the required
+          * laziness. However, if this isn't possible (for instance, with
+          * the [[implicits.zipped `zipped`]] combinators), then how can
+          * this problem be solved?
+          *
+          * This is the job of the `~` combinator: very simply it wraps up
+          * a parser in a lazy box, so that even if the box is forced by
+          * a strict position, the parser will remain lazy. This means it
+          * serves as an adequate solution to this problem.
+          *
+          * @example {{{
+          * // this works fine, even though all of `zipped`'s parsers are strict
+          * lazy val expr = (attempt(term) <* '+', ~expr).zipped(_ + _) <|> term
+          * // in this case, however the following would fix the problem more elegantly:
+          * lazy val expr = (attempt(term), '+' *> expr).zipped(_ + _) <|> term
+          * }}}
+          *
+          * @return the parser `p`, but guaranteed to be lazy.
+          */
+        def unary_~ : Parsley[A] = unit *> p
+    }
     /** This combinator produces a value without having any other effect.
       *
       * When this combinator is ran, no input is required, nor consumed, and

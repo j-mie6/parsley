@@ -261,9 +261,7 @@ class Lexer(lang: LanguageDef)
             skipMany(attempt(new Parsley(new singletons.Comment(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))) <|> space_)
         case Parser(space_) => skipMany(space_)
         // $COVERAGE-OFF$
-        // scalastyle:off
-        case _ => ???
-        // scalastyle:on
+        case _ => ??? // scalastyle:ignore not.implemented.error.usage
         // $COVERAGE-ON$
     }
 
@@ -329,9 +327,7 @@ class Lexer(lang: LanguageDef)
         case Static(f)   => satisfy(f)
         case Parser(p)   => p.asInstanceOf[Parsley[Char]]
         // $COVERAGE-OFF$
-        // scalastyle:off
-        case _ => ???
-        // scalastyle:on
+        case _ => ??? // scalastyle:ignore not.implemented.error.usage
         // $COVERAGE-ON$
     }
 }

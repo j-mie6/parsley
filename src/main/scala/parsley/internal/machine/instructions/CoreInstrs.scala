@@ -212,9 +212,7 @@ private [internal] final class LogEnd(val name: String, val ascii: Boolean, brea
             case Recover | Failed =>
                 ctx.fail()
                 red("Fail")
-            // scalastyle:off
-            case Finished         => throw new Exception("debug cannot wrap a halt?!")
-            // scalastyle:on
+            case Finished         => throw new Exception("debug cannot wrap a halt?!") // scalastyle:ignore throw
         })
         println(preludeString('<', ctx, end))
         if (break) doBreak(ctx)
