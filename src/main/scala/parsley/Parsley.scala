@@ -461,7 +461,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * }
       * }}}
       *
-      * @param ps the parser to run second, which returns a sequence
+      * @param ps the parser to run second, which returns a sequence.
       * @tparam Aʹ the type of the elements in the result sequence, which must be a supertype of
       *            the result type of this parser: this allows for weakening of the result type.
       * @return a parser that sequences this parser with `ps` and prepends its result onto `ps` result.
@@ -481,7 +481,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * }
       * }}}
       *
-      * @param ps the parser to run second, which returns a list
+      * @param ps the parser to run second, which returns a list.
       * @tparam Aʹ the type of the elements in the result list, which must be a supertype of
       *            the result type of this parser: this allows for weakening of the result type.
       * @return a parser that sequences this parser with `ps` and prepends its result onto `ps` result.
@@ -506,7 +506,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * val res2 = Failure(..)
       * }}}
       *
-      * @param q the parser to run second
+      * @param q the parser to run second.
       * @return a parser that sequences this parser with `q` and pairs their results together.
       * @note equivalent to `lift2((_, _), this, q)`.
       * @group seq
@@ -529,7 +529,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * val res2 = Failure(..)
       * }}}
       *
-      * @param q the parser to run second
+      * @param q the parser to run second.
       * @return a parser that sequences this parser with `q` and pairs their results together.
       * @note alias for `<~>`.
       * @since 2.3.0
@@ -554,8 +554,8 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * val res1 = Failure(..)
       * }}}
       *
-      * @param pred the predicate that is tested against the parser result
-      * @return a parser that returns the result of this parser if it passes the predicate
+      * @param pred the predicate that is tested against the parser result.
+      * @return a parser that returns the result of this parser if it passes the predicate.
       * @see [[parsley.errors.combinator.ErrorMethods.filterOut `filterOut`]] for a version which can produce custom ''reasons'' on failure.
       * @see [[parsley.errors.combinator.ErrorMethods.guardAgainst `guardAgainst`]] for a version which can produce custom error messages on failure.
       * @group filter
@@ -577,10 +577,10 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * val res1 = Failure(..)
       * }}}
       *
-      * @param pred the predicate that is tested against the parser result
-      * @return a parser that returns the result of this parser if it fails the predicate
-      * @see [[parsley.errors.combinator.ErrorMethods.filterOut `filterOut`]] for a version which can produce custom ''reasons'' on failure.
-      * @see [[parsley.errors.combinator.ErrorMethods.guardAgainst `guardAgainst`]] for a version which can produce custom error messages on failure.
+      * @param pred the predicate that is tested against the parser result.
+      * @return a parser that returns the result of this parser if it fails the predicate.
+      * @see [[parsley.errors.combinator.ErrorMethods.filterOut `filterOut`]] for a version that can produce custom ''reasons'' on failure.
+      * @see [[parsley.errors.combinator.ErrorMethods.guardAgainst `guardAgainst`]] for a version that can produce custom error messages on failure.
       * @group filter
       */
     def filterNot(pred: A => Boolean): Parsley[A] = this.filter(!pred(_))
@@ -604,7 +604,9 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * }}}
       *
       * @param pf the partial function used to both filter the result of this parser and transform it.
-      * @return a parser which returns the result of this parser applied to `pf`, if possible.
+      * @return a parser that returns the result of this parser applied to `pf`, if possible.
+      * @see [[parsley.errors.combinator.ErrorMethods.collectMsg[B](msg:String)* `collectMsg(String)`]]
+      *      and [[parsley.errors.combinator.ErrorMethods.collectMsg[B](msggen:A=>String)* `collectMsg(A => String)`]] for versions that can produce custom error messages on failure.
       * @since 2.0.0
       * @group filter
       */
@@ -955,7 +957,7 @@ object Parsley {
       * @param p the parser that `~` is enabled on.
       * @since 4.0.0
       */
-    implicit class LazyParsley[A](p: =>Parsley[A]) {
+    implicit final class LazyParsley[A](p: =>Parsley[A]) {
         /** This combinator makes a parser lazy.
           *
           * There are some combinators that are, due to Scala limitations,
