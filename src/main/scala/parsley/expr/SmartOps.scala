@@ -2,12 +2,14 @@ package parsley.expr
 
 import parsley.Parsley
 
+//TODO: Standardise
 /**
  * Helper object to build values of `Ops[A, B]`, for generalised precedence parsing
  * @since 2.2.0
  * @group Builders
  */
 object GOps {
+    //TODO: Standardise
     /**
     * '''NOTE''': Currently a bug in scaladoc incorrect displays this functions type, it should be:
     * `fixity.Op[A, B]`, NOT `Op[A, B]`. Builds an `Ops` object which represents many operators
@@ -32,12 +34,14 @@ object GOps {
     }
 }
 
+//TODO: Standardise
 /**
  * Helper object to build values of `Ops[A, B]`, for precedence parsing with subtyped data-structures.
  * @since 3.0.0
  * @group Builders
  */
 object SOps {
+    //TODO: Standardise
     /**
     * '''NOTE''': Currently a bug in scaladoc incorrect displays this functions type, it should be:
     * `fixity.Op[A, B]`, NOT `Op[A, B]`. Builds an `Ops` object which represents many operators

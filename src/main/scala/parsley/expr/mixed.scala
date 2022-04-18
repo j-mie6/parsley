@@ -18,6 +18,7 @@ import parsley.internal.deepembedding
 object mixed {
     private def flip[A, B, C](f: (A, B) => C, y: B)(x: A) = f(x, y)
 
+    //TODO: Standardise
     /**
       * @since 4.0.0
       */
@@ -30,6 +31,7 @@ object mixed {
         rest
     }
 
+    //TODO: Standardise
     /**
       * @since 4.0.0
       */

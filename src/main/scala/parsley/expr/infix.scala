@@ -17,6 +17,7 @@ import parsley.internal.deepembedding.frontend
   * @group Chains
   */
 object infix {
+    //TODO: Standardise
     /** `right(p, op, x)` parses '''zero''' or more occurrences of `p`, separated by `op`. Returns a value
       * obtained by a right associative application of all functions return by `op` to the values
       * returned by `p`. If there are no occurrences of `p`, the value `x` is returned.
@@ -25,6 +26,7 @@ object infix {
     def right[A, B, C >: B](p: Parsley[A], op: =>Parsley[(A, C) => B], x: C)
             (implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${C}") wrap: A => C): Parsley[C] = right1(p, op).getOrElse(x)
 
+    //TODO: Standardise
     /** `left(p, op, x)` parses '''zero''' or more occurrences of `p`, separated by `op`. Returns a value
       * obtained by a left associative application of all functions returned by `op` to the values
       * returned by `p`. If there are no occurrences of `p`, the value `x` is returned.
@@ -33,6 +35,7 @@ object infix {
     def left[A, B, C >: B](p: Parsley[A], op: =>Parsley[(C, A) => B], x: C)
             (implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${C}") wrap: A => C): Parsley[C] = left1(p, op).getOrElse(x)
 
+    //TODO: Standardise
     /** `right1(p, op)` parses '''one''' or more occurrences of `p`, separated by `op`. Returns a value
       * obtained by a right associative application of all functions return by `op` to the values
       * returned by `p`.
@@ -43,6 +46,7 @@ object infix {
         new Parsley(new frontend.Chainr(p.internal, op.internal, wrap))
     }
 
+    //TODO: Standardise
     /** `left1(p, op)` parses '''one''' or more occurrences of `p`, separated by `op`. Returns a value
       * obtained by a left associative application of all functions return by `op` to the values
       * returned by `p`. This parser can for example be used to eliminate left recursion which

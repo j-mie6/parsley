@@ -138,14 +138,14 @@ package parsley.errors
   *     or a raw piece of input intrinsically associated with a combinator.
   *
   * @groupprio vanilla 16
-  * @groupname vanilla ''Vanilla''-Specific Components
+  * @groupname vanilla Vanilla-Specific Components
   * @groupdesc vanilla
   *     These methods control the ''Vanilla''-specific error components, namely how expected error items
   *     should be combined, how to format the unexpected line, and how to format reasons generated from
   *     [[combinator.ErrorMethods.explain `explain`]].
   *
   * @groupprio spec 15
-  * @groupname spec ''Specialised''-Specific Components
+  * @groupname spec Specialised-Specific Components
   * @groupdesc spec
   *     These methods control the ''Specialised''-specific components, namely the formatting of a bespoke
   *     error message.

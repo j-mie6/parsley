@@ -5,6 +5,7 @@ import parsley.combinator.choice
 import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.zipped.Zipped2
 
+//TODO: Standardise
 /** This object is used to construct precedence parsers from either a [[Prec]] or many `Ops[A, A]`.
   * @since 2.2.0
   * @group Precedence
@@ -30,6 +31,7 @@ object precedence {
         case Level(lvls, ops) => convertOperators(crushLevels(lvls), ops)
     }
 
+    //TODO: Standardise
     /** This is used to build an expression parser for a monolithic type: levels are specified from strongest
       * to weakest.
       * @tparam A The type of the monolithic result
@@ -41,6 +43,7 @@ object precedence {
       */
     def apply[A](atoms: Parsley[A]*)(table: Ops[A, A]*): Parsley[A] = apply(table.foldLeft[Prec[A]](Atoms(atoms: _*))(Level.apply))
 
+    //TODO: Standardise
     /** This is used to build an expression parser for a monolithic type: levels are specified from weakest
       * to strongest.
       * @tparam A The type of the monolithic result
@@ -53,6 +56,7 @@ object precedence {
       */
     def apply[A](table: Ops[A, A]*)(atom: Parsley[A]): Parsley[A] = apply(atom)(table.reverse: _*)
 
+    //TODO: Standardise
     /** This is used to build an expression parser for a multi-layered expression tree type. Levels can be
       * either tightest to loosest binding (using `:+`) or loosest to tightest (using `+:`)
       * @tparam A The type of the resulting parse tree (outermost operations)

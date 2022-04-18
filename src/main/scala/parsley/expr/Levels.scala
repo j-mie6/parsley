@@ -2,6 +2,7 @@ package parsley.expr
 
 import parsley.Parsley
 
+//TODO: Standardise
 /**
   * For more complex expression parser types `Prec` can be used to
   * describe the precedence table whilst preserving the intermediate
@@ -11,12 +12,14 @@ import parsley.Parsley
   * @group Table
   */
 sealed trait Prec[+A] {
+    //TODO: Standardise
     /**
       * Builds a larger precedence table from strongest to weakest
       * @tparam B The new result type for the larger table
       * @param ops The operators that transform the previous, stronger, layer into the new result
       */
     final def :+[Aʹ >: A, B](ops: Ops[Aʹ, B]): Prec[B] = Level(this, ops)
+    //TODO: Standardise
     /**
       * Builds a larger parser precedence table from weakest to strongest
       * @tparam B The new result type for the larger table
@@ -24,6 +27,7 @@ sealed trait Prec[+A] {
       */
     final def +:[Aʹ >: A, B](ops: Ops[Aʹ, B]): Prec[B] = Level(this, ops)
 }
+//TODO: Standardise
 /**
   * This represents a single new level of the hierarchy, with stronger
   * precedence than its tail.
@@ -37,6 +41,7 @@ sealed trait Prec[+A] {
   * @group Table
   */
 case class Level[A, B](lvls: Prec[A], ops: Ops[A, B]) extends Prec[B]
+//TODO: Standardise
 /**
   * Given some atoms, produces the base of the precedence hierarchy
   * @tparam A The base type of the hierarchy

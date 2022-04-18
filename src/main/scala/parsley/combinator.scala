@@ -55,7 +55,7 @@ import parsley.internal.deepembedding.{frontend, singletons}
   *     to do that (i.e. `<::>`, `<|>` (with or without `attempt`), or `*>`): since these will have a lazy
   *     right-hand side, the remaining variadic arguments will be kept lazily suspended until later. Alternatively,
   *     it is possible to use the [[parsley.Parsley.LazyParsley.unary_~ prefix `~`]] combinator to make any individual
-  *     arguments lazy as required, for example `choice(p, ~q, r)`. 
+  *     arguments lazy as required, for example `choice(p, ~q, r)`.
   *
   * @groupprio cond 75
   * @groupname cond Conditional Combinators
@@ -68,6 +68,7 @@ import parsley.internal.deepembedding.{frontend, singletons}
   * @groupname misc Miscellaneous
   */
 object combinator {
+    //TODO: Standardise
     /** `choice(ps)` tries to apply the parsers in the list `ps` in order, until one of them succeeds.
       * Returns the value of the succeeding parser.
       *
@@ -75,12 +76,15 @@ object combinator {
       */
     def choice[A](ps: Parsley[A]*): Parsley[A] = ps.reduceRightOption(_ <|> _).getOrElse(empty)
 
+    //TODO: Standardise
     /** `attemptChoice(ps)` tries to apply the parsers in the list `ps` in order, until one of them succeeds.
       * Returns the value of the succeeding parser. Utilises `attempt p <|> q` vs choice's `p <|> q`.
       *
       * @group multi
       */
     def attemptChoice[A](ps: Parsley[A]*): Parsley[A] = ps.reduceRightOption((p, q) => attempt(p) <|> q).getOrElse(empty)
+
+    //TODO: Standardise
     /**
       * Evaluate each of the parsers in `ps` sequentially from left to right, collecting the results.
       * @param ps Parsers to be sequenced
@@ -88,6 +92,8 @@ object combinator {
       * @group multi
       */
     def sequence[A](ps: Parsley[A]*): Parsley[List[A]] = ps.foldRight(pure[List[A]](Nil))(_ <::> _)
+
+    //TODO: Standardise
     /**
       * Like `sequence` but produces a list of parsers to sequence by applying the function `f` to each
       * element in `xs`.
@@ -97,6 +103,8 @@ object combinator {
       * @group multi
       */
     def traverse[A, B](f: A => Parsley[B], xs: A*): Parsley[List[B]] = sequence(xs.map(f): _*)
+
+    //TODO: Standardise
     /**
       * Evaluate each of the parsers in `ps` sequentially from left to right, ignoring the results.
       * @param ps Parsers to be performed
@@ -104,6 +112,7 @@ object combinator {
       */
     def skip(ps: Parsley[_]*): Parsley[Unit] = ps.foldRight(unit)(_ *> _)
 
+    //TODO: Standardise
     /** `exactly(n, p)` parses `n` occurrences of `p`. If `n` is smaller or equal to zero, the parser is
       * `pure(Nil)`. Returns a list of `n` values returned by `p`.
       *
@@ -111,6 +120,7 @@ object combinator {
       */
     def exactly[A](n: Int, p: Parsley[A]): Parsley[List[A]] = sequence((for (_ <- 1 to n) yield p): _*)
 
+    //TODO: Standardise
     /** `option(p)` tries to apply parser `p`. If `p` fails without consuming input, it returns
       * `None`, otherwise it returns `Some` of the value returned by `p`.
       *
@@ -118,6 +128,7 @@ object combinator {
       */
     def option[A](p: Parsley[A]): Parsley[Option[A]] = p.map(Some(_)).getOrElse(None)
 
+    //TODO: Standardise
     /** `decide(p)` removes the option from inside parser `p`, and if it returned `None` will fail.
       *
       * @group cond
@@ -126,12 +137,14 @@ object combinator {
         case Some(x) => x
     }
 
+    //TODO: Standardise
     /** `decide(p, q)` removes the option from inside parser `p`, if it returned `None` then `q` is executed.
       *
       * @group cond
       */
     def decide[A](p: Parsley[Option[A]], q: =>Parsley[A]): Parsley[A] = select(p.map(_.toRight(())), q.map(x => (_: Unit) => x))
 
+    //TODO: Standardise
     /** `optional(p)` tries to apply parser `p`. It will parse `p` or nothing. It only fails if `p`
       * fails after consuming input. It discards the result of `p`.
       *
@@ -139,6 +152,7 @@ object combinator {
       */
     def optional(p: Parsley[_]): Parsley[Unit] = optionalAs(p, ())
 
+    //TODO: Standardise
     /** `optionalAs(p, x)` tries to apply parser `p`. It will always result in `x` regardless of
       * whether or not `p` succeeded or `p` failed without consuming input.
       *
@@ -148,12 +162,14 @@ object combinator {
         (p #> x).getOrElse(x)
     }
 
+    //TODO: Standardise
     /** `between(open, close, p)` parses `open`, followed by `p` and `close`. Returns the value returned by `p`.
       *
       * @group misc
       */
     def between[A](open: Parsley[_], close: =>Parsley[_], p: =>Parsley[A]): Parsley[A] = open *> p <* close
 
+    //TODO: Standardise
     /** `many(p)` executes the parser `p` zero or more times. Returns a list of the returned values of `p`.
       *
       * @since 2.2.0
@@ -161,12 +177,14 @@ object combinator {
       */
     def many[A](p: Parsley[A]): Parsley[List[A]] = new Parsley(new frontend.Many(p.internal))
 
+    //TODO: Standardise
     /** `some(p)` applies the parser `p` '''one''' or more times. Returns a list of the returned values of `p`.
       *
       * @group iter
       */
     def some[A](p: Parsley[A]): Parsley[List[A]] = manyN(1, p)
 
+    //TODO: Standardise
     /** `manyN(n, p)` applies the parser `p` *n* or more times. Returns a list of the returned values of `p`.
       *
       * @group iter
@@ -179,6 +197,7 @@ object combinator {
         go(n)
     }
 
+    //TODO: Standardise
     /** `skipMany(p)` executes the parser `p` zero or more times and ignores the results.
       *
       * @since 2.2.0
@@ -186,12 +205,14 @@ object combinator {
       */
     def skipMany[A](p: Parsley[A]): Parsley[Unit] = new Parsley(new frontend.SkipMany(p.internal))
 
+    //TODO: Standardise
     /** `skipSome(p)` applies the parser `p` '''one''' or more times, skipping its result.
       *
       * @group iter
       */
     def skipSome[A](p: Parsley[A]): Parsley[Unit] = skipManyN(1, p)
 
+    //TODO: Standardise
     /** `skipManyN(n, p)` applies the parser `p` *n* or more times, skipping its result.
       *
       * @group iter
@@ -204,12 +225,14 @@ object combinator {
         go(n)
     }
 
+    //TODO: Standardise
     /** `sepBy(p, sep)` parses '''zero''' or more occurrences of `p`, separated by `sep`.
       *
       * @group sep
       */
     def sepBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = sepBy1(p, sep).getOrElse(Nil)
 
+    //TODO: Standardise
     /** `sepBy1(p, sep)` parses '''one''' or more occurrences of `p`, separated by `sep`.
       *
       * @group sep
@@ -218,6 +241,7 @@ object combinator {
         p <::> many(sep *> p)
     }
 
+    //TODO: Standardise
     /** `sepEndBy(p, sep)` parses '''zero''' or more occurrences of `p`, separated and optionally ended
       * by `sep`.
       *
@@ -225,6 +249,7 @@ object combinator {
       */
     def sepEndBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = sepEndBy1(p, sep).getOrElse(Nil)
 
+    //TODO: Standardise
     /** `sepEndBy1(p, sep)` parses '''one''' or more occurrences of `p`, separated and optionally ended
       * by `sep`.
       *
@@ -232,30 +257,35 @@ object combinator {
       */
     def sepEndBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = new Parsley(new frontend.SepEndBy1(p.internal, sep.internal))
 
+    //TODO: Standardise
     /** `endBy(p, sep)` parses '''zero''' or more occurrences of `p`, separated and ended by `sep`.
       *
       * @group sep
       */
     def endBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = many(p <* sep)
 
+    //TODO: Standardise
     /** `endBy1(p, sep)` parses '''one''' or more occurrences of `p`, separated and ended by `sep`.
       *
       * @group sep
       */
     def endBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = some(p <* sep)
 
+    //TODO: Standardise
     /** This parser only succeeds at the end of the input. This is a primitive parser.
       *
       * @group item
       */
     val eof: Parsley[Unit] = new Parsley(singletons.Eof)
 
+    //TODO: Standardise
     /** This parser only succeeds if there is still more input.
       *
       * @group item
       */
     val more: Parsley[Unit] = notFollowedBy(eof)
 
+    //TODO: Standardise
     /** `manyUntil(p, end)` applies parser `p` zero or more times until the parser `end` succeeds.
       * Returns a list of values returned by `p`. This parser can be used to scan comments.
       *
@@ -269,6 +299,7 @@ object combinator {
         object Stop
     }
 
+    //TODO: Standardise
     /** `someUntil(p, end)` applies parser `p` one or more times until the parser `end` succeeds.
       * Returns a list of values returned by `p`.
       *
@@ -278,6 +309,7 @@ object combinator {
         notFollowedBy(end) *> (p <::> manyUntil(p, end))
     }
 
+    //TODO: Standardise
     /**
       * This is an if statement lifted to the parser level.
       *
@@ -290,6 +322,7 @@ object combinator {
         new Parsley(new frontend.If(b.internal, p.internal, q.internal))
     }
 
+    //TODO: Standardise
     /** `when(p, q)` will first perform `p`, and if the result is `true` will then execute `q` or else return unit.
       * @param p The first parser to parse
       * @param q If `p` returns `true` then this parser is executed
@@ -297,6 +330,7 @@ object combinator {
       */
     def when(p: Parsley[Boolean], q: =>Parsley[Unit]): Parsley[Unit] = ifP(p, q, unit)
 
+    //TODO: Standardise
     /** `whileP(p)` will continue to run `p` until it returns `false`. This is often useful in conjunction with stateful
       * parsers.
       * @param p The parser to continuously execute
