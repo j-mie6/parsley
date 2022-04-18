@@ -367,7 +367,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *
       * @param pf the parser to run second, which returns a function this parser's result can be applied to.
       * @return a parser that sequences this parser with `pf` and combines their results with function application.
-      * @note equivalent to `lift2((x, f) => f(x), this, pf)`.
+      * @note equivalent to {{{lift2((x, f) => f(x), this, pf)}}}
       * @group seq
       */
     def <**>[B](pf: =>Parsley[A => B]): Parsley[B] = lift.lift2[A, A=>B, B]((x, f) => f(x), this, pf)
@@ -465,7 +465,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @tparam Aʹ the type of the elements in the result sequence, which must be a supertype of
       *            the result type of this parser: this allows for weakening of the result type.
       * @return a parser that sequences this parser with `ps` and prepends its result onto `ps` result.
-      * @note equivalent to `lift2(_ +: _, this, ps)`.
+      * @note equivalent to {{{lift2(_ +: _, this, ps)}}}
       * @group seq
       */
     def <+:>[Aʹ >: A](ps: =>Parsley[Seq[Aʹ]]): Parsley[Seq[Aʹ]] = lift.lift2[A, Seq[Aʹ], Seq[Aʹ]](_ +: _, this, ps)
@@ -485,7 +485,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @tparam Aʹ the type of the elements in the result list, which must be a supertype of
       *            the result type of this parser: this allows for weakening of the result type.
       * @return a parser that sequences this parser with `ps` and prepends its result onto `ps` result.
-      * @note equivalent to `lift2(_ :: _, this, ps)`.
+      * @note equivalent to {{{lift2(_ :: _, this, ps)}}}
       * @group seq
       */
     def <::>[Aʹ >: A](ps: =>Parsley[List[Aʹ]]): Parsley[List[Aʹ]] = lift.lift2[A, List[Aʹ], List[Aʹ]](_ :: _, this, ps)
@@ -508,7 +508,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *
       * @param q the parser to run second.
       * @return a parser that sequences this parser with `q` and pairs their results together.
-      * @note equivalent to `lift2((_, _), this, q)`.
+      * @note equivalent to {{{lift2((_, _), this, q)}}}
       * @group seq
       */
     def <~>[B](q: =>Parsley[B]): Parsley[(A, B)] = lift.lift2[A, B, (A, B)]((_, _), this, q)

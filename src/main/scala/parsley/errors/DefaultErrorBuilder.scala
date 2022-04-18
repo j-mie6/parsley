@@ -3,7 +3,8 @@ package parsley.errors
 // Turn coverage off, because the tests have their own error builder
 // We might want to test this on its own though
 // $COVERAGE-OFF$
-/** This is the class used to build Parsley's default error messages.
+/** This class us used to build Parsley's default error messages.
+  *
   * While it compiles with the `ErrorBuilder` typeclass, it should not
   * be considered a stable contract: the formatting can be changed at any
   * time and without notice. The API, however, will remain stable.

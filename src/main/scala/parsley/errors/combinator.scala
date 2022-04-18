@@ -44,12 +44,13 @@ object combinator {
       * val failing = fail("hello,", "this is an error message", "broken across multiple lines")
       * }}}
       *
-      * @param msgs the messages that will make up the error message.
+      * @param msg0 the first message in the error message.
+      * @param msgs the remaining messages that will make up the error message.
       * @return a parser that fails producing an error message consisting of all the given messages.
       * @since 3.0.0
       * @group fail
       */
-    def fail(msgs: String*): Parsley[Nothing] = new Parsley(new singletons.Fail(msgs: _*))
+    def fail(msg0: String, msgs: String*): Parsley[Nothing] = new Parsley(new singletons.Fail((msg0 +: msgs): _*))
 
     /** This combinator consumes no input and fails immediately, setting the unexpected component
       * to the given item.
