@@ -277,7 +277,7 @@ class ExpressionParserTests extends ParsleyTest {
 
     "mixed chains" should "allow the mixing of prefix with infix-right" in {
         sealed trait Expr
-        case class Binary(l: Expr, r: Expr) extends Expr
+        case class Binary(l: Constant, r: Expr) extends Expr
         case class Unary(c: Expr) extends Expr
         case class Constant(x: Char) extends Expr
 
@@ -287,7 +287,7 @@ class ExpressionParserTests extends ParsleyTest {
 
     they should "allow the mixing of postfix with infix-left" in {
         sealed trait Expr
-        case class Binary(l: Expr, r: Expr) extends Expr
+        case class Binary(l: Expr, r: Constant) extends Expr
         case class Unary(c: Expr) extends Expr
         case class Constant(x: Char) extends Expr
 
