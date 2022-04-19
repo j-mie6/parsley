@@ -90,6 +90,7 @@ object combinator {
       * @param ps Parsers to be sequenced
       * @return The list containing results, one from each parser, in order
       * @group multi
+      * @since 4.0.0
       */
     def sequence[A](ps: Parsley[A]*): Parsley[List[A]] = ps.foldRight(pure[List[A]](Nil))(_ <::> _)
 
@@ -101,6 +102,7 @@ object combinator {
       * @param xs Values to generate parsers from
       * @return The list containing results formed by executing each parser generated from `xs` and `f` in sequence
       * @group multi
+      * @since 4.0.0
       */
     def traverse[A, B](f: A => Parsley[B], xs: A*): Parsley[List[B]] = sequence(xs.map(f): _*)
 
@@ -117,6 +119,7 @@ object combinator {
       * `pure(Nil)`. Returns a list of `n` values returned by `p`.
       *
       * @group misc
+      * @since 4.0.0
       */
     def exactly[A](n: Int, p: Parsley[A]): Parsley[List[A]] = sequence((for (_ <- 1 to n) yield p): _*)
 
@@ -157,6 +160,7 @@ object combinator {
       * whether or not `p` succeeded or `p` failed without consuming input.
       *
       * @group opt
+      * @since 4.0.0
       */
     def optionalAs[A](p: Parsley[_], x: A): Parsley[A] = {
         (p #> x).getOrElse(x)
@@ -317,6 +321,7 @@ object combinator {
       * @param p
       * @param q
       * @group cond
+      * @since 4.0.0
       */
     def ifP[A](b: Parsley[Boolean], p: =>Parsley[A], q: =>Parsley[A]): Parsley[A] = {
         new Parsley(new frontend.If(b.internal, p.internal, q.internal))
