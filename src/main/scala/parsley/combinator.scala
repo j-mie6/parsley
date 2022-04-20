@@ -4,6 +4,7 @@ import scala.annotation.{implicitNotFound, tailrec}
 
 import parsley.Parsley.{attempt, empty, notFollowedBy, pure, select, unit}
 import parsley.expr.chain
+import parsley.implicits.zipped.{Zipped2, Zipped3}
 
 import parsley.internal.deepembedding.{frontend, singletons}
 
@@ -47,7 +48,7 @@ import parsley.internal.deepembedding.{frontend, singletons}
   * @groupprio multi 50
   * @groupname multi Multiple Branching/Sequencing Combinators
   * @groupdesc multi
-  *     These combinators allow for testing or seqeuncing a large number of parsers in one go. Be careful, however, these are
+  *     These combinators allow for testing or sequencing a large number of parsers in one go. Be careful, however, these are
   *     variadic combinators and are necessarily (for compatibility with Scala 2) '''not lazy'''.
   *
   *     In such a case where laziness is desired without resorting to the other lazier combinators, there
@@ -66,53 +67,146 @@ import parsley.internal.deepembedding.{frontend, singletons}
   *
   * @groupprio misc 100
   * @groupname misc Miscellaneous
+  *
+  * @define strict be aware that all of the arguments to this combinator are in '''strict''' positions.
   */
 object combinator {
-    //TODO: Standardise
-    /** `choice(ps)` tries to apply the parsers in the list `ps` in order, until one of them succeeds.
-      * Returns the value of the succeeding parser.
+    /** This combinator tries to parse each of the parsers `ps` in order, until one of them succeeds.
       *
+      * Finds the first parser in `ps` which succeeds, returning its result. If none of the parsers
+      * succeed, then this combinator fails. If a parser fails having consumed input, this combinator
+      * fails '''immediately'''.
+      *
+      * @example {{{
+      * scala> import parsley.combinator.choice
+      * scala> import parsley.character.string
+      * scala> val p = choice(string("abc"), string("ab"), string("bc"), string("d"))
+      * scala> p.parse("abc")
+      * val res0 = Success("abc")
+      * scala> p.parse("ab")
+      * val res1 = Failure(..)
+      * scala> p.parse("bc")
+      * val res2 = Success("bc")
+      * scala> p.parse("x")
+      * val res3 = Failure(..)
+      * }}}
+      *
+      * @param ps the parsers to try, in order.
+      * @return a parser that tries to parse one of `ps`.
       * @group multi
+      * @see [[parsley.Parsley.<|> `<|>`]]
+      * @note $strict
       */
     def choice[A](ps: Parsley[A]*): Parsley[A] = ps.reduceRightOption(_ <|> _).getOrElse(empty)
 
-    //TODO: Standardise
-    /** `attemptChoice(ps)` tries to apply the parsers in the list `ps` in order, until one of them succeeds.
-      * Returns the value of the succeeding parser. Utilises `attempt p <|> q` vs choice's `p <|> q`.
+    /** This combinator tries to parse each of the parsers `ps` in order, until one of them succeeds.
       *
+      * Finds the first parser in `ps` which succeeds, returning its result. If none of the parsers
+      * succeed, then this combinator fails. This combinator will always try and parse each of the
+      * combinators until one succeeds, regardless of how they fail. The last argument will '''not'''
+      * be wrapped in `attempt`, as this is not necessary.
+      *
+      * @example {{{
+      * scala> import parsley.combinator.attemptChoice
+      * scala> import parsley.character.string
+      * scala> val p = attemptChoice(string("abc"), string("ab"), string("bc"), string("d"))
+      * scala> p.parse("abc")
+      * val res0 = Success("abc")
+      * scala> p.parse("ab")
+      * val res1 = Success("ab")
+      * scala> p.parse("bc")
+      * val res2 = Success("bc")
+      * scala> p.parse("x")
+      * val res3 = Failure(..)
+      * }}}
+      *
+      * @param ps the parsers to try, in order.
+      * @return a parser that tries to parse one of `ps`.
       * @group multi
+      * @see [[parsley.Parsley.<|> `<|>`]]
+      * @see [[parsley.Parsley$.attempt `attempt`]]
+      * @note $strict
+      * @note this combinator is not particularly efficient, because it may unnecessarily backtrack for each alternative.
       */
     def attemptChoice[A](ps: Parsley[A]*): Parsley[A] = ps.reduceRightOption((p, q) => attempt(p) <|> q).getOrElse(empty)
 
-    //TODO: Standardise
-    /**
-      * Evaluate each of the parsers in `ps` sequentially from left to right, collecting the results.
-      * @param ps Parsers to be sequenced
-      * @return The list containing results, one from each parser, in order
+    /** This combinator will parse each of `ps` in order, collecting the results.
+      *
+      * Given the parsers `ps`, consisting of `p,,1,,` through `p,,n,,`, parses
+      * each in order. If they all succeed, producing the results `x,,1,,` through `x,,n,,`,
+      * then `List(x,,1,,, .., x,,n,,)` is returned. If any of the parsers fail, then
+      * the whole combinator fails.
+      *
+      * @example {{{
+      * scala> import parsley.combinator.sequence
+      * scala> import parsley.character.{char, item}
+      * scala> val p = sequence(char('a'), item, char('c'))
+      * scala> p.parse("abc")
+      * val res0 = Success(List('a', 'b', 'c'))
+      * scala> p.parse("ab")
+      * val res1 = Failure(..)
+      * }}}
+      *
+      * @param ps parsers to be sequenced.
+      * @return a parser that parses each of `ps`, returning the results in a list
       * @group multi
       * @since 4.0.0
+      * @see [[parsley.Parsley.<::> `<::>`]]
+      * @note $strict
       */
-    def sequence[A](ps: Parsley[A]*): Parsley[List[A]] = ps.foldRight(pure[List[A]](Nil))(_ <::> _)
+    def sequence[A](ps: Parsley[A]*): Parsley[List[A]] = ps match {
+        // these cases are going to be slightly more efficient as lift3 and below have efficient implementations
+        case Seq(p)       => p.map(List(_))
+        case Seq(p, q)    => (p, q).zipped(List(_, _))
+        case Seq(p, q, r) => (p, q, r).zipped(List(_, _, _))
+        case _            => ps.foldRight(pure(List.empty[A]))(_ <::> _)
+    }
 
-    //TODO: Standardise
-    /**
-      * Like `sequence` but produces a list of parsers to sequence by applying the function `f` to each
-      * element in `xs`.
-      * @param f The function to map on each element of `xs` to produce parsers
-      * @param xs Values to generate parsers from
-      * @return The list containing results formed by executing each parser generated from `xs` and `f` in sequence
+    /** This combinator will parse each of the parsers generated by applying `f` to `xs`, in order, collecting the results.
+      *
+      * Given the values `xs`, consisting of `x,,1,,` through `x,,n,,`, first creates
+      * the parses `f(x,,1,,)` through `f(x,,n,,)` and then called `sequence` on them.
+      *
+      * @example {{{
+      * // this is an OK implementation for `string`, which is common in Haskell.
+      * def string(str: String) = {
+      *     traverse(char, str:  _*).map(_.mkString)
+      * }
+      * }}}
+      *
+      * @param f the function used to generate parsers for each values
+      * @param xs the values to turn into parsers and sequence.
+      * @return a parser that sequences the parsers generated from applying `f` to each of `xs`.
       * @group multi
       * @since 4.0.0
+      * @see [[sequence `sequence`]]
+      * @note $strict
       */
     def traverse[A, B](f: A => Parsley[B], xs: A*): Parsley[List[B]] = sequence(xs.map(f): _*)
 
-    //TODO: Standardise
-    /**
-      * Evaluate each of the parsers in `ps` sequentially from left to right, ignoring the results.
-      * @param ps Parsers to be performed
+    /** This combinator will parse each of `ps` in order, discarding the results.
+      *
+      * Given the parsers `ps`, consisting of `p,,1,,` through `p,,n,,`, parses
+      * each in order. If they all succeed, this combinator succeeds. If any of
+      * the parsers fail, then the whole combinator fails.
+      *
+      * @example {{{
+      * scala> import parsley.combinator.skip
+      * scala> import parsley.character.{char, item}
+      * scala> val p = skip(char('a'), item, char('c'))
+      * scala> p.parse("abc")
+      * val res0 = Success(())
+      * scala> p.parse("ab")
+      * val res1 = Failure(..)
+      * }}}
+      *
+      * @param ps parsers to be sequenced.
+      * @return a parser that parses each of `ps`, returning `()`.
       * @group multi
+      * @see [[parsley.Parsley.*> `*>`]]
+      * @note $strict
       */
-    def skip(ps: Parsley[_]*): Parsley[Unit] = ps.foldRight(unit)(_ *> _)
+    def skip(ps: Parsley[_]*): Parsley[Unit] = ps.foldLeft(unit)(_ <* _)
 
     /** This combinator parses exactly `n` occurrences of `p`, returning these `n` results in a list.
       *
