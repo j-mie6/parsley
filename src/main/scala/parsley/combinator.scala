@@ -114,14 +114,31 @@ object combinator {
       */
     def skip(ps: Parsley[_]*): Parsley[Unit] = ps.foldRight(unit)(_ *> _)
 
-    //TODO: Standardise
-    /** `exactly(n, p)` parses `n` occurrences of `p`. If `n` is smaller or equal to zero, the parser is
-      * `pure(Nil)`. Returns a list of `n` values returned by `p`.
+    /** This combinator parses exactly `n` occurrences of `p`, returning these `n` results in a list.
       *
+      * Parses `p` repeatedly up to `n` times. If `p` fails before `n` is reached, then this combinator
+      * fails. It is not required for `p` to fail after the `n`^th^ parse. The results produced by
+      * `p`, `x,,1,,` through `x,,n,,`, are returned as `List(x,,1,,, .., x,,n,,)`.
+      *
+      * @example {{{
+      * scala> import parsley.character.item
+      * scala> import parsley.combinator.exactly
+      * scala> val p = exactly(3, item)
+      * scala> p.parse("ab")
+      * val res0 = Failure(..)
+      * scala> p.parse("abc")
+      * val res1 = Success(List('a', 'b', 'c'))
+      * scala> p.parse("abcd")
+      * val res2 = Success(List('a', 'b', 'c'))
+      * }}}
+      *
+      * @param n the number of times to repeat `p`.
+      * @param p the parser to repeat.
+      * @return a parser that parses `p` exactly `n` times, returning a list of the results.
       * @group misc
       * @since 4.0.0
       */
-    def exactly[A](n: Int, p: Parsley[A]): Parsley[List[A]] = sequence((for (_ <- 1 to n) yield p): _*)
+    def exactly[A](n: Int, p: Parsley[A]): Parsley[List[A]] = traverse[Int, A](_ => p, (1 to n): _*)
 
     /** This combinator tries to parse `p`, wrapping its result in a `Some` if it succeeds, or returns `None` if it fails.
       *
@@ -212,9 +229,19 @@ object combinator {
       */
     def decide[A](p: Parsley[Option[A]], q: =>Parsley[A]): Parsley[A] = select(p.map(_.toRight(())), q.map(x => (_: Unit) => x))
 
-    //TODO: Standardise
-    /** `between(open, close, p)` parses `open`, followed by `p` and `close`. Returns the value returned by `p`.
+    /** This combinator parses `open`, followed by `p`, and then `close`.
       *
+      * First parse `open`, ignore its result, then parse, `p`, producing `x`. Finally, parse `close`, ignoring its result.
+      * If `open`, `p`, and `close` all succeeded, then return `x`. If any of them failed, this combinator fails.
+      *
+      * @example {{{
+      * def braces[A](p: Parsley[A]) = between(char('{'), char('}'), p)
+      * }}}
+      *
+      * @param open the first parser to parse.
+      * @param close the last parser to parse.
+      * @param p the parser to parse between the other two.
+      * @return a parser that reads `open`, then `p`, then `close` and returns the result of `p`.
       * @group misc
       */
     def between[A](open: Parsley[_], close: =>Parsley[_], p: =>Parsley[A]): Parsley[A] = open *> p <* close
