@@ -123,13 +123,78 @@ object combinator {
       */
     def exactly[A](n: Int, p: Parsley[A]): Parsley[List[A]] = sequence((for (_ <- 1 to n) yield p): _*)
 
-    //TODO: Standardise
-    /** `option(p)` tries to apply parser `p`. If `p` fails without consuming input, it returns
-      * `None`, otherwise it returns `Some` of the value returned by `p`.
+    /** This combinator tries to parse `p`, wrapping its result in a `Some` if it succeeds, or returns `None` if it fails.
       *
+      * Tries to parse `p`. If `p` succeeded, producing `x`, then `Some(x)` is returned. Otherwise, if `p` failed
+      * '''without consuming input''', then `None` is returned instead.
+      *
+      * @example {{{
+      * scala> import parsley.combinator.option
+      * scala> import parsley.character.string
+      * scala> val p = option(string("abc"))
+      * scala> p.parse("")
+      * val res0 = Success(None)
+      * scala> p.parse("abc")
+      * val res1 = Success(Some("abc"))
+      * scala> p.parse("ab")
+      * val res2 = Failure(..)
+      * }}}
+      *
+      * @param p the parser to try to parse.
+      * @return a parser that tries to parse `p`, but can still succeed with `None` if that was not possible.
       * @group opt
       */
     def option[A](p: Parsley[A]): Parsley[Option[A]] = p.map(Some(_)).getOrElse(None)
+
+    /** This combinator will parse `p` if possible, otherwise will do nothing.
+      *
+      * Tries to parse `p`. If `p` succeeds, or fails '''without consuming input''' then this combinator is successful. Otherwise, if `p` failed
+      * having consumed input, this combinator fails.
+      *
+      * @example {{{
+      * scala> import parsley.combinator.optional
+      * scala> import parsley.character.string
+      * scala> val p = optional(string("abc"))
+      * scala> p.parse("")
+      * val res0 = Success(())
+      * scala> p.parse("abc")
+      * val res1 = Success(())
+      * scala> p.parse("ab")
+      * val res2 = Failure(..)
+      * }}}
+      *
+      * @param p the parser to try to parse.
+      * @return a parser that tries to parse `p`.
+      * @note equivalent to `optionalAs(p, ())`.
+      * @group opt
+      */
+    def optional(p: Parsley[_]): Parsley[Unit] = optionalAs(p, ())
+
+    /** This combinator will parse `p` if possible, otherwise will do nothing.
+      *
+      * Tries to parse `p`. If `p` succeeds, or fails '''without consuming input''' then this combinator is successful and returns `x`. Otherwise,
+      * if `p` failed having consumed input, this combinator fails.
+      *
+      * @example {{{
+      * scala> import parsley.combinator.optionalAs
+      * scala> import parsley.character.string
+      * scala> val p = optionalAs(string("abc"), 7)
+      * scala> p.parse("")
+      * val res0 = Success(7)
+      * scala> p.parse("abc")
+      * val res1 = Success(7)
+      * scala> p.parse("ab")
+      * val res2 = Failure(..)
+      * }}}
+      *
+      * @param p the parser to try to parse.
+      * @param x the value to return regardless of how `p` performs.
+      * @return a parser that tries to parse `p`, returning `x` regardless of success or failure.
+      * @group opt
+      */
+    def optionalAs[A](p: Parsley[_], x: A): Parsley[A] = {
+        (p #> x).getOrElse(x)
+    }
 
     //TODO: Standardise
     /** `decide(p)` removes the option from inside parser `p`, and if it returned `None` will fail.
@@ -146,25 +211,6 @@ object combinator {
       * @group cond
       */
     def decide[A](p: Parsley[Option[A]], q: =>Parsley[A]): Parsley[A] = select(p.map(_.toRight(())), q.map(x => (_: Unit) => x))
-
-    //TODO: Standardise
-    /** `optional(p)` tries to apply parser `p`. It will parse `p` or nothing. It only fails if `p`
-      * fails after consuming input. It discards the result of `p`.
-      *
-      * @group opt
-      */
-    def optional(p: Parsley[_]): Parsley[Unit] = optionalAs(p, ())
-
-    //TODO: Standardise
-    /** `optionalAs(p, x)` tries to apply parser `p`. It will always result in `x` regardless of
-      * whether or not `p` succeeded or `p` failed without consuming input.
-      *
-      * @group opt
-      * @since 4.0.0
-      */
-    def optionalAs[A](p: Parsley[_], x: A): Parsley[A] = {
-        (p #> x).getOrElse(x)
-    }
 
     //TODO: Standardise
     /** `between(open, close, p)` parses `open`, followed by `p` and `close`. Returns the value returned by `p`.
