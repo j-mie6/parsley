@@ -363,8 +363,8 @@ object registers {
       */
     private def forP_[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: Parsley[A] => Parsley[_]): Parsley[Unit] = {
         /*val reg = Reg.make[A]
-        val _cond = reg.gets(cond)
-        val _step = reg.modify(step)
+        lazy val _cond = reg.gets(cond)
+        lazy val _step = reg.modify(step)
         reg.put(init) *> when(_cond, whileP(body(reg) *> _step *> _cond))*/
         lazy val _cond = cond
         lazy val _step = step

@@ -307,18 +307,36 @@ object combinator {
         (p #> x).getOrElse(x)
     }
 
-    //TODO: Standardise
-    /** `decide(p)` removes the option from inside parser `p`, and if it returned `None` will fail.
+    /** This combinator can eliminate an `Option` from the result of the parser `p`.
       *
+      * First parse `p`, if it succeeds returning `Some(x)`, then return `x`. However,
+      * if `p` fails, or returned `None`, then this combinator fails.
+      *
+      * @example {{{
+      * decide(option(p)) = p
+      * }}}
+      *
+      * @param p the parser to parse and extract the result from.
+      * @return a parser that tries to extract the result from `p`.
       * @group cond
       */
     def decide[A](p: Parsley[Option[A]]): Parsley[A] = p.collect {
         case Some(x) => x
     }
 
-    //TODO: Standardise
-    /** `decide(p, q)` removes the option from inside parser `p`, if it returned `None` then `q` is executed.
+    /** This combinator parses `q` depending only if `p` returns a `None`.
       *
+      * First parses `p`. If `p` returned `Some(x)`, then `x` is returned.
+      * Otherwise, if `p` returned `None` then `q` is parsed, producing `y`,
+      * and `y` is returned. If `p` or `q` fails, the combinator fails.
+      *
+      * @example {{{
+      * decide(option(p), q) = p <|> q
+      * }}}
+      *
+      * @param p the first parser, which returns an `Option` to eliminate.
+      * @param q a parser to execute when `p` returns `None`, to provide a value of type `A`.
+      * @return a parser that either just parses `p` or both `p` and `q` in order to return an `A`.
       * @group cond
       */
     def decide[A](p: Parsley[Option[A]], q: =>Parsley[A]): Parsley[A] = select(p.map(_.toRight(())), q.map(x => (_: Unit) => x))
@@ -654,32 +672,72 @@ object combinator {
         notFollowedBy(end) *> (p <::> manyUntil(p, end))
     }
 
-    //TODO: Standardise
-    /**
-      * This is an if statement lifted to the parser level.
+    /** This combinator parses one of `thenP` or `elseP` depending on the result of parsing `condP`.
       *
-      * @param b The parser that yields the condition value
-      * @param p
-      * @param q
+      * This is a lifted `if`-statement. First, parse `condP`: if it is successful and returns
+      * `true`, then parse `thenP`; else, if it returned `false`, parse `elseP`; or, if `condP` failed
+      * then fail. If either of `thenP` or `elseP` fail, then this combinator also fails.
+      *
+      * Most useful in conjunction with ''Registers'', as this allows for decisions to be made
+      * based on state.
+      *
+      * @example {{{
+      * ifP(pure(true), p, _) == p
+      * ifP(pure(false), _, p) == p
+      * }}}
+      *
+      * @param condP the parser that yields the condition value.
+      * @param thenP the parser to execute if the condition is `true`.
+      * @param elseP the parser to execute if the condition is `false.
+      * @return a parser that conditionally parses `thenP` or `elseP` after `condP`.
       * @group cond
       * @since 4.0.0
       */
-    def ifP[A](b: Parsley[Boolean], p: =>Parsley[A], q: =>Parsley[A]): Parsley[A] = {
-        new Parsley(new frontend.If(b.internal, p.internal, q.internal))
+    def ifP[A](condP: Parsley[Boolean], thenP: =>Parsley[A], elseP: =>Parsley[A]): Parsley[A] = {
+        new Parsley(new frontend.If(condP.internal, thenP.internal, elseP.internal))
     }
 
-    //TODO: Standardise
-    /** `when(p, q)` will first perform `p`, and if the result is `true` will then execute `q` or else return unit.
-      * @param p The first parser to parse
-      * @param q If `p` returns `true` then this parser is executed
+    /** This combinator conditionally parses `thenP` depending on the result of parsing `condP`.
+      *
+      * This is a lifted `if`-statement. First, parse `condP`: if it is successful and returns
+      * `true`, then parse `thenP`; else, if it returned `false` do nothing; or, if `condP` failed
+      * then fail. If `thenP` fails, then this combinator also fails.
+      *
+      * Most useful in conjunction with ''Registers'', as this allows for decisions to be made
+      * based on state.
+      *
+      * @example {{{
+      * when(pure(true), p) == p
+      * when(pure(false), _) == unit
+      * }}}
+      *
+      * @param condP the parser that yields the condition value.
+      * @param thenP the parser to execute if the condition is `true`.
+      * @return a parser that conditionally parses `thenP` or `elseP` after `condP`.
       * @group cond
       */
-    def when(p: Parsley[Boolean], q: =>Parsley[Unit]): Parsley[Unit] = ifP(p, q, unit)
+    def when(condP: Parsley[Boolean], thenP: =>Parsley[Unit]): Parsley[Unit] = ifP(condP, thenP, unit)
 
-    //TODO: Standardise
-    /** `whileP(p)` will continue to run `p` until it returns `false`. This is often useful in conjunction with stateful
-      * parsers.
-      * @param p The parser to continuously execute
+    /** This combinator repeatedly parses `p` so long as it returns `true`.
+      *
+      * This is a lifted `while`-loop. First, parse `p`: if it is successful and
+      * returns `true`, then repeat; else if it returned `false` stop; or, if it
+      * failed then this combinator fails.
+      *
+      * Most useful in conjunction with ''Registers'', as this allows for decisions to be made
+      * based on state. In particular, this can be used to define the `forP` combinator.
+      *
+      * @example {{{
+      * def forP[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: =>Parsley[_]): Parsley[Unit] = {
+      *     val reg = Reg.make[A]
+      *     lazy val _cond = reg.gets(cond)
+      *     lazy val _step = reg.modify(step)
+      *     reg.put(init) *> when(_cond, whileP(body *> _step *> _cond))
+      * }
+      * }}}
+      *
+      * @param p the parser to repeatedly parse.
+      * @return a parser that continues to parse `p` until it returns `false`.
       * @group cond
       */
     def whileP(p: Parsley[Boolean]): Parsley[Unit] = {
