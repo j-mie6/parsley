@@ -173,24 +173,86 @@ object combinator {
       */
     def between[A](open: Parsley[_], close: =>Parsley[_], p: =>Parsley[A]): Parsley[A] = open *> p <* close
 
-    //TODO: Standardise
-    /** `many(p)` executes the parser `p` zero or more times. Returns a list of the returned values of `p`.
+    /** This combinator repeatedly parses a given parser '''zero''' or more times, collecting the results into a list.
       *
+      * Parses a given parser, `p`, repeatedly until it fails. If `p` failed having consumed input,
+      * this combinator fails. Otherwise when `p` fails '''without consuming input''', this combinator
+      * will return all of the results, `x,,1,,` through `x,,n,,` (with `n >= 0`), in a list: `List(x,,1,,, .., x,,n,,)`.
+      * If `p` was never successful, the empty list is returned.
+      *
+      * @example {{{
+      * scala> import parsley.character.string
+      * scala> import parsley.combinator.many
+      * scala> val p = many(string("ab"))
+      * scala> p.parse("")
+      * val res0 = Success(Nil)
+      * scala> p.parse("ab")
+      * val res1 = Success(List("ab"))
+      * scala> p.parse("abababab")
+      * val res2 = Success(List("ab", "ab", "ab", "ab"))
+      * scala> p.parse("aba")
+      * val res3 = Failure(..)
+      * }}}
+      *
+      * @param p the parser to execute multiple times.
+      * @return a parser that parses `p` until it fails, returning the list of all the successful results.
       * @since 2.2.0
       * @group iter
       */
     def many[A](p: Parsley[A]): Parsley[List[A]] = new Parsley(new frontend.Many(p.internal))
 
-    //TODO: Standardise
-    /** `some(p)` applies the parser `p` '''one''' or more times. Returns a list of the returned values of `p`.
+    /** This combinator repeatedly parses a given parser '''one''' or more times, collecting the results into a list.
       *
+      * Parses a given parser, `p`, repeatedly until it fails. If `p` failed having consumed input,
+      * this combinator fails. Otherwise when `p` fails '''without consuming input''', this combinator
+      * will return all of the results, `x,,1,,` through `x,,n,,` (with `n >= 1`), in a list: `List(x,,1,,, .., x,,n,,)`.
+      * If `p` was not successful at least one time, this combinator fails.
+      *
+      * @example {{{
+      * scala> import parsley.character.string
+      * scala> import parsley.combinator.some
+      * scala> val p = some(string("ab"))
+      * scala> p.parse("")
+      * val res0 = Failure(..)
+      * scala> p.parse("ab")
+      * val res1 = Success(List("ab"))
+      * scala> p.parse("abababab")
+      * val res2 = Success(List("ab", "ab", "ab", "ab"))
+      * scala> p.parse("aba")
+      * val res3 = Failure(..)
+      * }}}
+      *
+      * @param p the parser to execute multiple times.
+      * @return a parser that parses `p` until it fails, returning the list of all the successful results.
       * @group iter
       */
     def some[A](p: Parsley[A]): Parsley[List[A]] = manyN(1, p)
 
-    //TODO: Standardise
-    /** `manyN(n, p)` applies the parser `p` *n* or more times. Returns a list of the returned values of `p`.
+    /** This combinator repeatedly parses a given parser '''`n`''' or more times, collecting the results into a list.
       *
+      * Parses a given parser, `p`, repeatedly until it fails. If `p` failed having consumed input,
+      * this combinator fails. Otherwise when `p` fails '''without consuming input''', this combinator
+      * will return all of the results, `x,,1,,` through `x,,m,,` (with `m >= n`), in a list: `List(x,,1,,, .., x,,m,,)`.
+      * If `p` was not successful at least `n` times, this combinator fails.
+      *
+      * @example {{{
+      * scala> import parsley.character.string
+      * scala> import parsley.combinator.manyN
+      * scala> val p = manyN(2, string("ab"))
+      * scala> p.parse("")
+      * val res0 = Failure(..)
+      * scala> p.parse("ab")
+      * val res1 = Failure(..)
+      * scala> p.parse("abababab")
+      * val res2 = Success(List("ab", "ab", "ab", "ab"))
+      * scala> p.parse("aba")
+      * val res3 = Failure(..)
+      * }}}
+      *
+      * @param n the minimum number of `p`s required.
+      * @param p the parser to execute multiple times.
+      * @return a parser that parses `p` until it fails, returning the list of all the successful results.
+      * @note `many(p) == many(0, p)` and `some(p) == many(1, p)`.
       * @group iter
       */
     def manyN[A](n: Int, p: Parsley[A]): Parsley[List[A]] = {
@@ -201,27 +263,84 @@ object combinator {
         go(n)
     }
 
-    //TODO: Standardise
-    /** `skipMany(p)` executes the parser `p` zero or more times and ignores the results.
+    /** This combinator repeatedly parses a given parser '''zero''' or more times, ignoring the results.
       *
+      * Parses a given parser, `p`, repeatedly until it fails. If `p` failed having consumed input,
+      * this combinator fails. Otherwise when `p` fails '''without consuming input''', this combinator
+      * will succeed.
+      *
+      * @example {{{
+      * scala> import parsley.character.string
+      * scala> import parsley.combinator.skipMany
+      * scala> val p = skipMany(string("ab"))
+      * scala> p.parse("")
+      * val res0 = Success(())
+      * scala> p.parse("ab")
+      * val res1 = Success(())
+      * scala> p.parse("abababab")
+      * val res2 = Success(())
+      * scala> p.parse("aba")
+      * val res3 = Failure(..)
+      * }}}
+      *
+      * @param p the parser to execute multiple times.
+      * @return a parser that parses `p` until it fails, returning unit.
       * @since 2.2.0
       * @group iter
       */
-    def skipMany[A](p: Parsley[A]): Parsley[Unit] = new Parsley(new frontend.SkipMany(p.internal))
+    def skipMany(p: Parsley[_]): Parsley[Unit] = new Parsley(new frontend.SkipMany(p.internal))
 
-    //TODO: Standardise
-    /** `skipSome(p)` applies the parser `p` '''one''' or more times, skipping its result.
+    /** This combinator repeatedly parses a given parser '''one''' or more times, ignoring the results.
       *
+      * Parses a given parser, `p`, repeatedly until it fails. If `p` failed having consumed input,
+      * this combinator fails. Otherwise when `p` fails '''without consuming input''', this combinator
+      * will succeed. The parser `p` must succeed at least once.
+      *
+      * @example {{{
+      * scala> import parsley.character.string
+      * scala> import parsley.combinator.skipSome
+      * scala> val p = skipSome(string("ab"))
+      * scala> p.parse("")
+      * val res0 = Failure(..)
+      * scala> p.parse("ab")
+      * val res1 = Success(())
+      * scala> p.parse("abababab")
+      * val res2 = Success(())
+      * scala> p.parse("aba")
+      * val res3 = Failure(..)
+      * }}}
+      *
+      * @param p the parser to execute multiple times.
+      * @return a parser that parses `p` until it fails, returning unit.
       * @group iter
       */
-    def skipSome[A](p: Parsley[A]): Parsley[Unit] = skipManyN(1, p)
+    def skipSome(p: Parsley[_]): Parsley[Unit] = skipManyN(1, p)
 
-    //TODO: Standardise
-    /** `skipManyN(n, p)` applies the parser `p` *n* or more times, skipping its result.
+    /** This combinator repeatedly parses a given parser '''`n`''' or more times, ignoring the results.
       *
+      * Parses a given parser, `p`, repeatedly until it fails. If `p` failed having consumed input,
+      * this combinator fails. Otherwise when `p` fails '''without consuming input''', this combinator
+      * will succeed. The parser `p` must succeed at least `n` times.
+      *
+      * @example {{{
+      * scala> import parsley.character.string
+      * scala> import parsley.combinator.skipManyN
+      * scala> val p = skipManyN(2, string("ab"))
+      * scala> p.parse("")
+      * val res0 = Failure(..)
+      * scala> p.parse("ab")
+      * val res1 = Failure(..)
+      * scala> p.parse("abababab")
+      * val res2 = Success(())
+      * scala> p.parse("aba")
+      * val res3 = Failure(..)
+      * }}}
+      *
+      * @param p the parser to execute multiple times.
+      * @return a parser that parses `p` until it fails, returning unit.
       * @group iter
       */
-    def skipManyN[A](n: Int, p: Parsley[A]): Parsley[Unit] = {
+    def skipManyN(n: Int, p: Parsley[_]): Parsley[Unit] = {
         @tailrec def go(n: Int, acc: Parsley[Unit] = skipMany(p)): Parsley[Unit] = {
             if (n == 0) acc
             else go(n-1, p *> acc)
@@ -275,24 +394,59 @@ object combinator {
       */
     def endBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = some(p <* sep)
 
-    //TODO: Standardise
-    /** This parser only succeeds at the end of the input. This is a primitive parser.
+    /** This parser only succeeds at the end of the input.
+      *
+      * Equivalent to `notFollowedBy(item)`.
+      *
+      * @example {{{
+      * scala> import parsley.combinator.eof
+      * scala> eof.parse("a")
+      * val res0 = Failure(..)
+      * scala> eof.parse("")
+      * val res1 = Success(())
+      * }}}
       *
       * @group item
       */
     val eof: Parsley[Unit] = new Parsley(singletons.Eof)
 
-    //TODO: Standardise
     /** This parser only succeeds if there is still more input.
+      *
+      * Equivalent to `lookAhead(item).void`.
+      *
+      * @example {{{
+      * scala> import parsley.combinator.more
+      * scala> more.parse("")
+      * val res0 = Failure(..)
+      * scala> more.parse("a")
+      * val res1 = Success(())
+      * }}}
       *
       * @group item
       */
     val more: Parsley[Unit] = notFollowedBy(eof)
 
-    //TODO: Standardise
-    /** `manyUntil(p, end)` applies parser `p` zero or more times until the parser `end` succeeds.
-      * Returns a list of values returned by `p`. This parser can be used to scan comments.
+    /** This combinator repeatedly parses a given parser '''zero''' or more times, until the `end` parser succeeds, collecting the results into a list.
       *
+      * First tries to parse `end`, if it fails '''without consuming input''', then parses `p`, which must succeed. This repeats until `end` succeeds.
+      * When `end` does succeed, this combinator will return all of the results generated by `p`, `x,,1,,` through `x,,n,,` (with `n >= 0`), in a
+      * list: `List(x,,1,,, .., x,,n,,)`. If `end` could be parsed immediately, the empty list is returned.
+      *
+      * @example This can be useful for scanning comments: {{{
+      * scala> import parsley.character.{string, item, endOfLine}
+      * scala> import parsley.combinator.many
+      * scala> val comment = string("//") *> manyUntil(item, endOfLine)
+      * scala> p.parse("//hello world")
+      * val res0 = Failure(..)
+      * scala> p.parse("//hello world\n")
+      * val res1 = Success(List('h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd'))
+      * scala> p.parse("//\n")
+      * val res2 = Success(Nil)
+      * }}}
+      *
+      * @param p the parser to execute multiple times.
+      * @param end the parser that stops the parsing of `p`.
+      * @return a parser that parses `p` until `end` succeeds, returning the list of all the successful results.
       * @group iter
       */
     def manyUntil[A](p: Parsley[A], end: Parsley[_]): Parsley[List[A]] = {
@@ -303,10 +457,30 @@ object combinator {
         object Stop
     }
 
-    //TODO: Standardise
-    /** `someUntil(p, end)` applies parser `p` one or more times until the parser `end` succeeds.
-      * Returns a list of values returned by `p`.
+    /** This combinator repeatedly parses a given parser '''one''' or more times, until the `end` parser succeeds, collecting the results into a list.
       *
+      * First ensures that trying to parse `end` fails, then tries to parse `p`. If it succeed then it will repeatedly: try to parse `end`, if it fails
+      * '''without consuming input''', then parses `p`, which must succeed. When `end` does succeed, this combinator will return all of the results
+      * generated by `p`, `x,,1,,` through `x,,n,,` (with `n >= 1`), in a list: `List(x,,1,,, .., x,,n,,)`. The parser `p` must succeed at least once
+      * before `end` succeeds.
+      *
+      * @example This can be useful for scanning comments: {{{
+      * scala> import parsley.character.{string, item, endOfLine}
+      * scala> import parsley.combinator.many
+      * scala> val comment = string("//") *> someUntil(item, endOfLine)
+      * scala> p.parse("//hello world")
+      * val res0 = Failure(..)
+      * scala> p.parse("//hello world\n")
+      * val res1 = Success(List('h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd'))
+      * scala> p.parse("//\n")
+      * val res2 = Failure(..)
+      * scala> p.parse("//a\n")
+      * val res3 = Success(List('a'))
+      * }}}
+      *
+      * @param p the parser to execute multiple times.
+      * @param end the parser that stops the parsing of `p`.
+      * @return a parser that parses `p` until `end` succeeds, returning the list of all the successful results.
       * @group iter
       */
     def someUntil[A](p: Parsley[A], end: Parsley[_]): Parsley[List[A]] = {
