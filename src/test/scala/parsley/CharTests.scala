@@ -2,44 +2,11 @@ package parsley
 
 import parsley.character._
 import parsley.Parsley._
-import parsley.implicits.character.{charLift, stringLift}
+import parsley.implicits.character.charLift
 
 import scala.language.implicitConversions
 
 class CharTests extends ParsleyTest {
-    def stringPositionCheck(initialCol: Int, str: String) =
-        (string("." * initialCol) *> string(str) *> pos).parse("." * initialCol + str)
-
-    "string" should "consume succeed if it is found at head" in {
-        "abc".parse("abc") should not be a [Failure[_]]
-    }
-    it should "not consume input if it fails on first character" in {
-        ("abc" <|> 'b').parse("b") should not be a [Failure[_]]
-    }
-    it should "consume input if it fails mid-string" in {
-        ("abc" <|> "ab").parse("ab") shouldBe a [Failure[_]]
-    }
-    it should "not consume input if it fails mid-string when combined with attempt" in {
-        (attempt("abc") <|> "ab").parse("ab") should not be a [Failure[_]]
-    }
-    it should "update positions correctly" in {
-        stringPositionCheck(0, "abc") shouldBe Success((1, 4))
-        stringPositionCheck(1, "\na") shouldBe Success((2, 2))
-        stringPositionCheck(0, "a\t") shouldBe Success((1, 5))
-        stringPositionCheck(0, "ab\t") shouldBe Success((1, 5))
-        stringPositionCheck(0, "abc\t") shouldBe Success((1, 5))
-        stringPositionCheck(0, "abcd\t") shouldBe Success((1, 9))
-        stringPositionCheck(0, "\na\tb") shouldBe (Success((2, 6)))
-        stringPositionCheck(2, "\t") shouldBe (Success((1, 5)))
-    }
-    it should "respect multiple tabs" in {
-        stringPositionCheck(2, "\t\t") shouldBe (Success((1, 9)))
-        stringPositionCheck(2, "\t\t\t") shouldBe (Success((1, 13)))
-        stringPositionCheck(2, "\taaa\t") shouldBe (Success((1, 9)))
-        stringPositionCheck(2, "\taa\taaa\t") shouldBe (Success((1, 13)))
-        stringPositionCheck(2, "a\t\t") shouldBe (Success((1, 9)))
-        stringPositionCheck(2, "aa\t") shouldBe (Success((1, 9)))
-    }
     "item" should "accept any character" in {
         for (i <- 0 to 65535) item.parse(i.toChar.toString) should not be a [Failure[_]]
     }

@@ -113,8 +113,7 @@ import XCompat._
   *     decision based on the result of a parser, allowing it to perform a different parser for each
   *     possible output of another without exhaustively enumerating them all.
   */
-final class Parsley[+A] private [parsley] (private [parsley] val internal: frontend.LazyParsley[A]) extends AnyVal
-{
+final class Parsley[+A] private [parsley] (private [parsley] val internal: frontend.LazyParsley[A]) extends AnyVal {
     /** This method is responsible for actually executing parsers. Given an input
       * array, will parse the string with the parser. The result is either a `Success` or a `Failure`.
       * @param input The input to run against
