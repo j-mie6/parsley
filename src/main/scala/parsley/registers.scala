@@ -82,6 +82,11 @@ object registers {
           * Allows for the value stored in this register to be purely injected into
           * the parsing context. No input is consumed in this process, and it cannot fail.
           *
+          * @example Get-Get Law: {{{
+          * r.get *> r.get == r.get
+          * r.get <~> r.get == r.get.map(x => (x, x))
+          * }}}
+          *
           * @return a parser that returns the value stored in this register.
           * @since 3.2.0
           * @group getters
@@ -107,93 +112,158 @@ object registers {
           * The combinator returns `f(x)`. Only `pf` is allowed to consume input.
           * If `pf` fails, the combinator fails, otherwise it will succeed.
           *
-          * @param f the function used to transform the value in this register.
+          * @param pf the parser that produces the function used to transform the value in this register.
           * @tparam B the desired result type.
           * @return the value stored in this register applied to a function generated from `pf`.
           * @since 3.2.0
           * @group getters
           */
         def gets[B](pf: Parsley[A => B]): Parsley[B] = pf <*> this.get
-        //TODO: Standardise
-        /**
-          * Consumes no input and places the value `x` into this register.
-          * @param x The value to place in the register
+        /** This combinator stores a new value into this register.
+          *
+          * Without any other effect, the value `x` will be placed into this register.
+          *
+          * @example Put-Get Law: {{{
+          * r.put(x) *> r.get == r.put(x) #> x
+          * }}}
+          *
+          * @example Put-Put Law: {{{
+          * r.put(x) *> r.put(y) == r.put(y)
+          * }}}
+          *
+          * @param x the value to place in the register.
           * @since 3.2.0
           * @group setters
           */
         def put(x: A): Parsley[Unit] = this.put(pure(x))
-        //TODO: Standardise
-        /**
-          * Places the result of running `p` into this register.
-          * @param p The parser to derive the value from
+        /** This combinator stores a new value into this register.
+          *
+          * First, parse `p` to obtain its result `x`. Then store `x` into
+          * this register without any further effect. If `p` fails this
+          * combinator fails.
+          *
+          * @example Get-Put Law: {{{
+          * r.put(r.get) == unit
+          * }}}
+          *
+          * @example Put-Put Law: {{{
+          * // only when `q` does not inspect the value of `r`!
+          * r.put(p) *> r.put(q) == p *> r.put(q)
+          * }}}
+          *
+          * @param p the parser that produces the value to store in the register.
           * @since 3.2.0
           * @group setters
           */
         def put(p: Parsley[A]): Parsley[Unit] = new Parsley(new frontend.Put(this, p.internal))
-        //TODO: Standardise
-        /**
-          * Places the result of running `p` into this register.
-          * @param p The parser to derive the value from
-          * @param f A function which adapts the result of `p` so that it can fit in `r`
+        /** This combinator stores a new value into this register.
+          *
+          * First, parse `p` to obtain its result `x`. Then store `f(x)` into
+          * this register without any further effect. If `p` fails this
+          * combinator fails.
+          *
+          * Equivalent to {{{
+          * this.put(p.map(f))
+          * }}}
+          *
+          * @param p the parser that produces the value to store in the register.
+          * @param f a function which adapts the result of `p` so that it can fit into this register.
           * @since 3.0.0
           * @group setters
           */
         def puts[B](p: Parsley[B], f: B => A): Parsley[Unit] = this.put(p.map(f))
-        //TODO: Standardise
-        /**
-          * Modifies the value contained in this register using function `f`.
-          * @param f The function used to modify the register
+        /** This combinator modifies the value stored in this register with a function.
+          *
+          * Without any other effect, get the value stored in this register, `x`, and
+          * put back `f(x)`.
+          *
+          * Equivalent to {{{
+          * this.put(this.gets(f))
+          * }}}
+          *
+          * @param f the function used to modify this register's value.
           * @since 3.2.0
           * @group mod
           */
         def modify(f: A => A): Parsley[Unit] = new Parsley(new singletons.Modify(this, f))
-        //TODO: Standardise
-        /**
-          * Modifies the value contained in this register using function `f` obtained from executing `p`.
-          * @note The value is modified after `pf` is executed
-          * @param f The function used to modify the register
+        /** This combinator modifies the value stored in this register with a function.
+          *
+          * First, parse `pf` to obtain its result `f`. Then get the value stored in
+          * this register, `x`, and put back `f(x)`. If `p` fails this combinator fails.
+          *
+          * Equivalent to {{{
+          * this.put(this.gets(pf))
+          * }}}
+          *
+          * @param pf  the parser that produces the function used to transform the value in this register.
           * @since 3.2.0
           * @group mod
           */
         def modify(pf: Parsley[A => A]): Parsley[Unit] = this.put(this.gets(pf))
-        //TODO: Standardise
-        /**
-          * For the duration of parser `p` the state stored in this register is instead set to `x`. The change is undone
-          * after `p` has finished.
-          * @param x The value to place into this register
-          * @param p The parser to execute with the adjusted state
-          * @return The parser that performs `p` with the modified state
+        /** This combinator changed the value stored in this register for the duration of a given parser, resetting it afterwards.
+          *
+          * First get the current value in this register `x,,old,,`, then place `x` into this register
+          * without any further effect. Then, parse `p`, producing result `y` on success. Finally,
+          * put `x,,old,,` back into this register and return `y`. If `p` fails, the whole combinator fails and
+          * the state is '''not restored'''.
+          *
+          * @example Put-Put Law: {{{
+          * r.put(x) *> r.local(y)(p) == r.put(y) *> p <* r.put(x)
+          * }}}
+          *
+          * @param x the value to place into this register.
+          * @param p the parser to execute with the adjusted state.
+          * @return the parser that performs `p` with the modified state `x`.
           * @since 3.2.0
           * @group local
           */
         def local[B](x: A)(p: Parsley[B]): Parsley[B] = this.local(pure(x))(p)
-        //TODO: Standardise
-        /**
-          * For the duration of parser `q` the state stored in this register is instead set to the return value of `p`. The
-          * change is undone after `q` has finished.
-          * @param p The parser whose return value is placed in this register
-          * @param q The parser to execute with the adjusted state
-          * @return The parser that performs `q` with the modified state
+        /** This combinator changed the value stored in this register for the duration of a given parser, resetting it afterwards.
+          *
+          * First get the current value in this register `x,,old,,`, then parse `p` to get the result `x`, placing it into this register
+          * without any further effect. Then, parse `q`, producing result `y` on success. Finally,
+          * put `x,,old,,` back into this register and return `y`. If `p` or `q` fail, the whole combinator fails and
+          * the state is '''not restored'''.
+          *
+          * @param p the parser whose return value is placed in this register.
+          * @param q the parser to execute with the adjusted state.
+          * @return the parser that performs `q` with the modified state.
           * @since 3.2.0
           * @group local
           */
         def local[B](p: Parsley[A])(q: =>Parsley[B]): Parsley[B] = new Parsley(new frontend.Local(this, p.internal, q.internal))
-        //TODO: Standardise
-        /**
-          * For the duration of parser `p` the state stored in this register is instead modified with `f`. The change is undone
-          * after `p` has finished.
-          * @param f The function used to modify the value in this register
-          * @param p The parser to execute with the adjusted state
-          * @return The parser that performs `p` with the modified state
+        /** This combinator changed the value stored in this register for the duration of a given parser, resetting it afterwards.
+          *
+          * First get the current value in this register `x,,old,,`, then place `f(x,,old,,)` into this register
+          * without any further effect. Then, parse `p`, producing result `y` on success. Finally,
+          * put `x,,old,,` back into this register and return `y`. If `p` fails, the whole combinator fails and
+          * the state is '''not restored'''.
+          *
+          * @example Put-Put Law and Put-Get Law: {{{
+          * r.put(x) *> r.local(f)(p) == r.put(f(x)) *> p <* r.put(x)
+          * }}}
+          *
+          * @param f the function used to modify the value in this register.
+          * @param p the parser to execute with the adjusted state.
+          * @return the parser that performs `p` with the modified state.
           * @since 3.2.0
           * @group local
           */
         def local[B](f: A => A)(p: Parsley[B]): Parsley[B] = this.local(this.gets(f))(p)
-        //TODO: Standardise
-        /** `reg.rollback(p)` will perform `p`, but if it fails without consuming input, any changes to this register will
-          * be reverted.
-          * @param p The parser to perform
-          * @return The result of the parser `p`, if any
+        /** This combinator rolls-back any changes to this register made by a given parser if it fails.
+          *
+          * First get the current value in this register `x,,old,,`. Then parse `p`, if it succeeds,
+          * producing `y`, then `y` is returned and this register retains its value post-`p`. Otherwise,
+          * if `p` failed '''without consuming input''', `x,,old,,` is placed back into this register
+          * and this combinator fails.
+          *
+          * This can be used in conjunction with local to make an ''almost'' unconditional state restore: {{{
+          * // `r`'s state is always rolled back after `p` unless it fails having consumed input.
+          * r.rollback(r.local(x)(p))
+          * }}}
+          *
+          * @param p the parser to perform.
+          * @return the result of the parser `p`, if any.
           * @since 3.2.0
           * @group local
           */
@@ -231,10 +301,13 @@ object registers {
         def make[A]: Reg[A] = new Reg
     }
 
-    //TODO: Standardise
     /** This class, when in scope, enables the use of combinators directly on parsers
       * that interact with the register system to store and persist results so they
       * can be used multiple times.
+      *
+      * @constructor This constructor should not be called manually, it is designed to be used via Scala's implicit resolution.
+      * @param p the value that this class is enabling methods on.
+      * @param con a conversion that allows values convertible to parsers to be used.
       * @group ext
       */
     implicit final class RegisterMethods[P, A](p: P)(implicit con: P => Parsley[A]) {
@@ -242,11 +315,19 @@ object registers {
             val reg = Reg.make[A]
             reg.put(con(p)) *> body(reg)
         }*/
-        //TODO: Standardise
-        /** This combinator allows for the result of one parser to be used multiple times within a function,
-          * without needing to reparse or recompute. Similar to `flatMap`, except it is most likely much cheaper
-          * to do, at the cost of the restriction that the argument is `Parsley[A]` and not just `A`.
+        /** This combinator allows for the result of this parser to be used multiple times within a function,
+          * without needing to reparse or recompute.
           *
+          * Similar to `flatMap`, except it is much cheaper to do, at the cost of the restriction that the argument is `Parsley[A]` and not just `A`.
+          *
+          * @example {{{
+          * // this is a reasonable implementation, though direct use of `branch` may be more efficent.
+          * def filter(pred: A => Boolean): Parsley[A] = {
+          *     this.persist(px => ifP(px.map(pred), px, empty))
+          * }
+          * }}}
+          *
+          * @param f a function to generate a new parser that can observe the result of this parser many times without reparsing.
           * @since 3.2.0
           */
         def persist[B](f: Parsley[A] => Parsley[B]): Parsley[B] = con(p).flatMap(x => f(pure(x)))//this.fillReg(reg => f(get(reg)))
