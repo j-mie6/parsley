@@ -22,8 +22,6 @@ private [internal] abstract class InstrWithLabel extends Instr {
 // It's 2018 and Labels are making a come-back, along with 2 pass assembly
 private [internal] final class Label(val i: Int) extends Instr {
     // $COVERAGE-OFF$
-    // scalastyle:off
-    def apply(ctx: Context): Unit = throw new Exception("Cannot execute label")
-    // scalastyle:on
+    def apply(ctx: Context): Unit = throw new Exception("Cannot execute label") // scalastyle:ignore throw
     // $COVERAGE-ON$
 }

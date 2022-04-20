@@ -117,7 +117,10 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
         if (scalaBinaryVersion.value == "3") Seq("-source:3.0-migration") else Seq.empty
     },
 
-    Compile / doc / scalacOptions ++= Seq("-doc-root-content", s"${baseDirectory.value.getParentFile.getPath}/rootdoc.md"),
+    Compile / doc / scalacOptions ++= Seq("-groups", "-doc-root-content", s"${baseDirectory.value.getParentFile.getPath}/rootdoc.md"),
+    Compile / doc / scalacOptions ++= {
+        if (scalaBinaryVersion.value == "3") Seq("-comment-syntax", "wiki") else Seq.empty
+    },
   )
   .jvmSettings(
     crossScalaVersions := List(scala212Version, scala213Version, scala3Version),

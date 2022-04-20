@@ -6,6 +6,7 @@ import scala.language.higherKinds
   * Denotes the fixity and associativity of an operator. Importantly, it also specifies the type of the
   * of the operations themselves.
   * @since 4.0.0
+  * @group Fixities
   */
 sealed trait Fixity {
     type Op[A, B]
@@ -14,6 +15,7 @@ sealed trait Fixity {
 /**
   * Describes left-associative binary operators
   * @since 4.0.0
+  * @group Fixities
   */
 case object InfixL extends Fixity {
     override type Op[-A, B] = (B, A) => B
@@ -22,6 +24,7 @@ case object InfixL extends Fixity {
 /**
   * Describes right-associative binary operators
   * @since 4.0.0
+  * @group Fixities
   */
 case object InfixR extends Fixity {
     override type Op[-A, B] = (A, B) => B
@@ -30,6 +33,7 @@ case object InfixR extends Fixity {
 /**
   * Describes unary prefix operators
   * @since 4.0.0
+  * @group Fixities
   */
 case object Prefix extends Fixity {
     override type Op[A, B] = B => B
@@ -38,6 +42,7 @@ case object Prefix extends Fixity {
 /**
   * Describes unary postfix operators
   * @since 4.0.0
+  * @group Fixities
   */
 case object Postfix extends Fixity {
     override type Op[A, B] = B => B
@@ -46,6 +51,7 @@ case object Postfix extends Fixity {
 /**
   * Describes non-associative operators
   * @since 4.0.0
+  * @group Fixities
   */
 case object InfixN extends Fixity {
     override type Op[-A, +B] = (A, A) => B

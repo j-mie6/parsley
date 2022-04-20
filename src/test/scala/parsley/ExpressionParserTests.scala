@@ -261,7 +261,7 @@ class ExpressionParserTests extends ParsleyTest {
 
         val tok = new token.Lexer(lang)
 
-        lazy val ops: Seq[Ops[Expr, Expr]] = Seq(
+        lazy val (op +: ops): Seq[Ops[Expr, Expr]] = Seq(
             Ops(InfixR)(',' #> Binary),
             Ops(InfixR)(".=" #> Binary),
             Ops(InfixL)('.' #> Binary),
@@ -269,7 +269,7 @@ class ExpressionParserTests extends ParsleyTest {
         )
 
         lazy val atom: Parsley[Expr] = tok.identifier.map(Constant)
-        lazy val expr: Parsley[Expr] = precedence(ops: _*)(atom)
+        lazy val expr: Parsley[Expr] = precedence(op, ops: _*)(atom)
 
         expr.parse("o.f()") shouldBe a [Success[_]]
         expr.parse("o.f(x,y)") shouldBe a [Success[_]]
@@ -277,7 +277,7 @@ class ExpressionParserTests extends ParsleyTest {
 
     "mixed chains" should "allow the mixing of prefix with infix-right" in {
         sealed trait Expr
-        case class Binary(l: Expr, r: Expr) extends Expr
+        case class Binary(l: Constant, r: Expr) extends Expr
         case class Unary(c: Expr) extends Expr
         case class Constant(x: Char) extends Expr
 
@@ -287,7 +287,7 @@ class ExpressionParserTests extends ParsleyTest {
 
     they should "allow the mixing of postfix with infix-left" in {
         sealed trait Expr
-        case class Binary(l: Expr, r: Expr) extends Expr
+        case class Binary(l: Expr, r: Constant) extends Expr
         case class Unary(c: Expr) extends Expr
         case class Constant(x: Char) extends Expr
 

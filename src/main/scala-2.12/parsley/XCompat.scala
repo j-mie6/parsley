@@ -14,7 +14,7 @@ private [parsley] object XCompat {
         def substituteCo[F[_]](fa: F[A]): F[B] = fa.asInstanceOf[F[B]]
     }
 
-    private implicit class SubtitutionSub[A, B](ev: A <:< B) {
+    implicit class SubtitutionSub[A, B](ev: A <:< B) {
         def substituteCo[F[_]](fa: F[A]): F[B] = fa.asInstanceOf[F[B]]
     }
 

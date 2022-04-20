@@ -66,9 +66,7 @@ private [deepembedding] object StrictParsley {
             }
             val freeSlots = (0 until 4).filterNot(usedSlots)
             if (unallocatedRegs.size > freeSlots.size) {
-                // scalastyle:off
-                throw new IllegalStateException("Current restrictions require that the maximum number of registers in use is 4")
-                // scalastyle:on
+                throw new IllegalStateException("Current restrictions require that the maximum number of registers in use is 4") // scalastyle:ignore throw
             }
             applyAllocation(unallocatedRegs, freeSlots)
         }

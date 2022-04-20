@@ -39,9 +39,7 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
             try findLetsAux(seen + this)
             catch {
                 // $COVERAGE-OFF$
-                // scalastyle:off
-                case npe: NullPointerException => throw new BadLazinessException
-                // scalastyle:on
+                case npe: NullPointerException => throw new BadLazinessException // scalastyle:ignore throw
                 // $COVERAGE-ON$
             }
         }

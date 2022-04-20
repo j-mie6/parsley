@@ -2,7 +2,7 @@ package parsley.token
 
 import scala.language.implicitConversions
 
-import parsley.Parsley, Parsley.{void, unit, attempt, pure, empty, notFollowedBy}
+import parsley.Parsley, Parsley.{attempt, empty, notFollowedBy, pure, unit}
 import parsley.character.{char, digit, hexDigit, octDigit, satisfy, string}
 import parsley.combinator.{between, many, sepBy, sepBy1, skipMany, skipSome, some}
 import parsley.errors.combinator.{amend, entrench, fail, unexpected, ErrorMethods}
@@ -108,7 +108,7 @@ class Lexer(lang: LanguageDef)
     /**The non-lexeme parser `maxOp_(name)` parses the symbol `name`, but also checks that the `name`
       * is not part of a larger reserved operator. An `operator` is treated as a single token using
       * `attempt`.*/
-    def maxOp_(name: String): Parsley[Unit] = void(new Parsley(new singletons.MaxOp(name, lang.operators)))
+    def maxOp_(name: String): Parsley[Unit] = new Parsley(new singletons.MaxOp(name, lang.operators)).void
 
     private def isReservedOp(op: String): Boolean = lang.operators.contains(op)
     private lazy val opStart = toParser(lang.opStart)
@@ -261,9 +261,7 @@ class Lexer(lang: LanguageDef)
             skipMany(attempt(new Parsley(new singletons.Comment(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))) <|> space_)
         case Parser(space_) => skipMany(space_)
         // $COVERAGE-OFF$
-        // scalastyle:off
-        case _ => ???
-        // scalastyle:on
+        case _ => ??? // scalastyle:ignore not.implemented.error.usage
         // $COVERAGE-ON$
     }
 
@@ -329,9 +327,7 @@ class Lexer(lang: LanguageDef)
         case Static(f)   => satisfy(f)
         case Parser(p)   => p.asInstanceOf[Parsley[Char]]
         // $COVERAGE-OFF$
-        // scalastyle:off
-        case _ => ???
-        // scalastyle:on
+        case _ => ??? // scalastyle:ignore not.implemented.error.usage
         // $COVERAGE-ON$
     }
 }

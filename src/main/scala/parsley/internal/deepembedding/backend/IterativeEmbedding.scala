@@ -13,9 +13,7 @@ import StrictParsley.InstrBuffer
 private [backend] sealed abstract class ManyLike[A, B](name: String, unit: B) extends Unary[A, B] {
     def instr(label: Int): instructions.Instr
     final override def optimise: StrictParsley[B] = p match {
-        // scalastyle:off
-        case _: Pure[_] => throw new Exception(s"$name given parser which consumes no input")
-        // scalastyle:on
+        case _: Pure[_] => throw new Exception(s"$name given parser which consumes no input") // scalastyle:ignore throw
         case _: MZero   => new Pure(unit)
         case _          => this
     }
@@ -39,9 +37,7 @@ private [deepembedding] final class SkipMany[A](val p: StrictParsley[A]) extends
 private [backend] sealed abstract class ChainLike[A](p: StrictParsley[A], op: StrictParsley[A => A]) extends StrictParsley[A] {
     def inlinable: Boolean = false
     override def optimise: StrictParsley[A] = op match {
-        // scalastyle:off
-        case _: Pure[_] => throw new Exception("chain given parser which consumes no input")
-        // scalastyle:on
+        case _: Pure[_] => throw new Exception("chain given parser which consumes no input") // scalastyle:ignore throw
         case _: MZero   => p
         case _          => this
     }
