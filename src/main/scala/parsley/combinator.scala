@@ -533,48 +533,156 @@ object combinator {
         go(n)
     }
 
-    //TODO: Standardise
-    /** `sepBy(p, sep)` parses '''zero''' or more occurrences of `p`, separated by `sep`.
+    /** This combinator parses '''zero''' or more occurrences of `p`, separated by `sep`.
       *
+      * Behaves just like `sepBy1`, except does not require an initial `p`, returning the empty list instead.
+      *
+      * @example {{{
+      * scala> ...
+      * scala> val args = sepBy(int, string(", "))
+      * scala> args.parse("7, 3, 2")
+      * val res0 = Success(List(7, 3, 2))
+      * scala> args.parse("")
+      * val res1 = Success(Nil)
+      * scala> args.parse("1")
+      * val res2 = Success(List(1))
+      * scala> args.parse("1, 2, ")
+      * val res3 = Failure(..) // no trailing comma allowed
+      * }}}
+      *
+      * @param p the parser whose results are collected into a list.
+      * @param sep the delimiter that must be parsed between every `p`.
+      * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
     def sepBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = sepBy1(p, sep).getOrElse(Nil)
 
-    //TODO: Standardise
-    /** `sepBy1(p, sep)` parses '''one''' or more occurrences of `p`, separated by `sep`.
+    /** This combinator parses '''one''' or more occurrences of `p`, separated by `sep`.
       *
+      * First parses a `p`. Then parses `sep` followed by `p` until there are no more `sep`s.
+      * The results of the `p`'s, `x,,1,,` through `x,,n,,`, are returned as `List(x,,1,,, .., x,,n,,)`.
+      * If `p` or `sep` fails having consumed input, the whole parser fails. Requires at least
+      * one `p` to have been parsed.
+      *
+      * @example {{{
+      * scala> ...
+      * scala> val args = sepBy1(int, string(", "))
+      * scala> args.parse("7, 3, 2")
+      * val res0 = Success(List(7, 3, 2))
+      * scala> args.parse("")
+      * val res1 = Failure(..)
+      * scala> args.parse("1")
+      * val res2 = Success(List(1))
+      * scala> args.parse("1, 2, ")
+      * val res3 = Failure(..) // no trailing comma allowed
+      * }}}
+      *
+      * @param p the parser whose results are collected into a list.
+      * @param sep the delimiter that must be parsed between every `p`.
+      * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
     def sepBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = {
         p <::> many(sep *> p)
     }
 
-    //TODO: Standardise
-    /** `sepEndBy(p, sep)` parses '''zero''' or more occurrences of `p`, separated and optionally ended
-      * by `sep`.
+    /** This combinator parses '''zero''' or more occurrences of `p`, separated and optionally ended by `sep`.
       *
+      * Behaves just like `sepEndBy1`, except does not require an initial `p`, returning the empty list instead.
+      *
+      * @example {{{
+      * scala> ...
+      * scala> val args = sepEndBy(int, string(";\n"))
+      * scala> args.parse("7;\n3;\n2")
+      * val res0 = Success(List(7, 3, 2))
+      * scala> args.parse("")
+      * val res1 = Success(Nil)
+      * scala> args.parse("1")
+      * val res2 = Success(List(1))
+      * scala> args.parse("1;\n2;\n")
+      * val res3 = Success(List(1, 2))
+      * }}}
+      *
+      * @param p the parser whose results are collected into a list.
+      * @param sep the delimiter that must be parsed between every `p`.
+      * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
     def sepEndBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = sepEndBy1(p, sep).getOrElse(Nil)
 
-    //TODO: Standardise
-    /** `sepEndBy1(p, sep)` parses '''one''' or more occurrences of `p`, separated and optionally ended
-      * by `sep`.
+    /** This combinator parses '''one''' or more occurrences of `p`, separated and optionally ended by `sep`.
       *
+      * First parses a `p`. Then parses `sep` followed by `p` until there are no more: if a final `sep` exists, this is parsed.
+      * The results of the `p`'s, `x,,1,,` through `x,,n,,`, are returned as `List(x,,1,,, .., x,,n,,)`.
+      * If `p` or `sep` fails having consumed input, the whole parser fails. Requires at least
+      * one `p` to have been parsed.
+      *
+      * @example {{{
+      * scala> ...
+      * scala> val args = sepEndBy1(int, string(";\n"))
+      * scala> args.parse("7;\n3;\n2")
+      * val res0 = Success(List(7, 3, 2))
+      * scala> args.parse("")
+      * val res1 = Failure(..)
+      * scala> args.parse("1")
+      * val res2 = Success(List(1))
+      * scala> args.parse("1;\n2;\n")
+      * val res3 = Success(List(1, 2))
+      * }}}
+      *
+      * @param p the parser whose results are collected into a list.
+      * @param sep the delimiter that must be parsed between every `p`.
+      * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
     def sepEndBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = new Parsley(new frontend.SepEndBy1(p.internal, sep.internal))
 
-    //TODO: Standardise
-    /** `endBy(p, sep)` parses '''zero''' or more occurrences of `p`, separated and ended by `sep`.
+    /** This combinator parses '''zero''' or more occurrences of `p`, separated and ended by `sep`.
       *
+      * Behaves just like `endBy1`, except does not require an initial `p` and `sep`, returning the empty list instead.
+      *
+      * @example {{{
+      * scala> ...
+      * scala> val args = endBy(int, string(";\n"))
+      * scala> args.parse("7;\n3;\n2")
+      * val res0 = Failure(..)
+      * scala> args.parse("")
+      * val res1 = Success(Nil)
+      * scala> args.parse("1;\n")
+      * val res2 = Success(List(1))
+      * scala> args.parse("1;\n2;\n")
+      * val res3 = Success(List(1, 2))
+      * }}}
+      *
+      * @param p the parser whose results are collected into a list.
+      * @param sep the delimiter that must be parsed between every `p`.
+      * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
     def endBy[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = many(p <* sep)
 
-    //TODO: Standardise
-    /** `endBy1(p, sep)` parses '''one''' or more occurrences of `p`, separated and ended by `sep`.
+    /** This combinator parses '''one''' or more occurrences of `p`, separated and ended by `sep`.
       *
+      * Parses `p` followed by `sep` one or more times.
+      * The results of the `p`'s, `x,,1,,` through `x,,n,,`, are returned as `List(x,,1,,, .., x,,n,,)`.
+      * If `p` or `sep` fails having consumed input, the whole parser fails.
+      *
+      * @example {{{
+      * scala> ...
+      * scala> val args = endBy1(int, string(";\n"))
+      * scala> args.parse("7;\n3;\n2")
+      * val res0 = Failure(..)
+      * scala> args.parse("")
+      * val res1 = Failure(..)
+      * scala> args.parse("1;\n")
+      * val res2 = Success(List(1))
+      * scala> args.parse("1;\n2;\n")
+      * val res3 = Success(List(1, 2))
+      * }}}
+      *
+      * @param p the parser whose results are collected into a list.
+      * @param sep the delimiter that must be parsed between every `p`.
+      * @return a parser that parses `p` delimited by `sep`, returning the list of `p`'s results.
       * @group sep
       */
     def endBy1[A](p: Parsley[A], sep: =>Parsley[_]): Parsley[List[A]] = some(p <* sep)

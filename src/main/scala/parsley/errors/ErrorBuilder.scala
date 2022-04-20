@@ -157,9 +157,7 @@ package parsley.errors
   *     the representation of reasons and messages is shared, as well as how they are combined together
   *     to form a unified block of content lines.
   */
-trait ErrorBuilder[Err] {
-    private [errors] final type _Err = Err
-
+trait ErrorBuilder[+Err] {
     /* This is the top level function, which finally compiles all the formatted
       * sub-parts into a finished value of type `Err`.
       *
