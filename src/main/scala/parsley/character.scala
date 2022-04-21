@@ -9,7 +9,7 @@ import parsley.combinator.{choice, skipMany}
 import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.character.charLift
 
-import parsley.internal.deepembedding.{singletons, frontend}
+import parsley.internal.deepembedding.{frontend, singletons}
 
 /** This module contains many parsers to do with reading one or more characters. Almost every parser will need something from this module.
   *
