@@ -1,3 +1,6 @@
+/* SPDX-FileCopyrightText: © 2021 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package parsley.internal.machine.stacks
 
 private [machine] final class HandlerStack(val depth: Int, val pc: Int, var stacksz: Int, val tail: HandlerStack)
