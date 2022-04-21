@@ -4,12 +4,12 @@ import scala.annotation.switch
 import scala.collection.immutable.NumericRange
 import scala.language.implicitConversions
 
-import parsley.Parsley.{attempt, empty}
+import parsley.Parsley.{attempt, empty, fresh, pure}
 import parsley.combinator.{choice, skipMany}
 import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.character.charLift
 
-import parsley.internal.deepembedding.singletons
+import parsley.internal.deepembedding.{singletons, frontend}
 
 /** This module contains many parsers to do with reading one or more characters. Almost every parser will need something from this module.
   *
@@ -357,7 +357,9 @@ object character
       * @group string
       */
     def stringOfMany(pc: Parsley[Char]): Parsley[String] = {
-        pc.foldLeft(new StringBuilder)(_ += _).map(_.toString)
+        val pf = pure[(StringBuilder, Char) => StringBuilder](_ += _)
+        // Can't use the regular foldLeft here, because we need a fresh StringBuilder each time.
+        new Parsley(new frontend.Chainl(fresh(new StringBuilder).internal, pc.internal, pf.internal)).map(_.toString)
     }
 
     /** This combinator parses `pc` '''one''' or more times, collecting its results into a string.
@@ -382,7 +384,9 @@ object character
       * @group string
       */
     def stringOfSome(pc: Parsley[Char]): Parsley[String] = {
-        pc.foldLeft1(new StringBuilder)(_ += _).map(_.toString)
+        val pf = pure[(StringBuilder, Char) => StringBuilder](_ += _)
+        // Can't use the regular foldLeft1 here, because we need a fresh StringBuilder each time.
+        new Parsley(new frontend.Chainl(pc.map(new StringBuilder += _).internal, pc.internal, pf.internal)).map(_.toString)
     }
 
     /** This combinator tries to parse each of the strings `strs` (and `str0`), until one of them succeeds.

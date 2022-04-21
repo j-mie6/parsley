@@ -1,6 +1,6 @@
 package parsley
 
-import parsley.character.{string, strings, stringOfMany, stringOfSome}
+import parsley.character.{letter, string, strings, stringOfMany, stringOfSome}
 import parsley.combinator.{attemptChoice}
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.Parsley._
@@ -61,5 +61,35 @@ class StringTests extends ParsleyTest {
         p.parse("h") shouldBe q.parse("h")
         p.parse("a") shouldBe q.parse("a")
         p.parse("b") shouldBe q.parse("b")
+    }
+
+    "stringOfMany" should "allow for no letters" in {
+        val p = stringOfMany(letter)
+        p.parse("") shouldBe Success("")
+    }
+    it should "consume as many letters as it can" in {
+        val p = stringOfMany(letter)
+        p.parse("abc") shouldBe Success("abc")
+        p.parse("ab4c") shouldBe Success("ab")
+    }
+    it should "fail if pc fails having consumed input" in {
+        val p = stringOfMany(string("ab") #> 'a')
+        p.parse("ababab") shouldBe Success("aaa")
+        p.parse("aba") shouldBe a [Failure[_]]
+    }
+
+    "stringOfSome" should "not allow for no letters" in {
+        val p = stringOfSome(letter)
+        p.parse("") shouldBe a [Failure[_]]
+    }
+    it should "consume as many letters as it can" in {
+        val p = stringOfSome(letter)
+        p.parse("abc") shouldBe Success("abc")
+        p.parse("ab4c") shouldBe Success("ab")
+    }
+    it should "fail if pc fails having consumed input" in {
+        val p = stringOfSome(string("ab") #> 'a')
+        p.parse("ababab") shouldBe Success("aaa")
+        p.parse("aba") shouldBe a [Failure[_]]
     }
 }
