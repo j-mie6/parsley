@@ -420,8 +420,10 @@ object character
       * @group string
       */
     def strings(str0: String, strs: String*): Parsley[String] = {
-        // TODO: this isn't the best we could do: it's possible to eliminate backtracking with a Trie...
+        // this isn't the best we could do: it's possible to eliminate backtracking with a Trie...
         // can this be done in a semantic preserving way without resorting to a new instruction?
+        // I don't think it's worth it. Down the line a general Trie-backed optimisation would be
+        // more effective.
         val ss = str0 +: strs
         choice(ss.groupBy(_.head).view.map(_._2).flatMap { s =>
             val sLast :: rest = s.toList.sortBy(_.length)
