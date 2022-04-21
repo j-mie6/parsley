@@ -113,8 +113,7 @@ import XCompat._
   *     decision based on the result of a parser, allowing it to perform a different parser for each
   *     possible output of another without exhaustively enumerating them all.
   */
-final class Parsley[+A] private [parsley] (private [parsley] val internal: frontend.LazyParsley[A]) extends AnyVal
-{
+final class Parsley[+A] private [parsley] (private [parsley] val internal: frontend.LazyParsley[A]) extends AnyVal {
     /** This method is responsible for actually executing parsers. Given an input
       * array, will parse the string with the parser. The result is either a `Success` or a `Failure`.
       * @param input The input to run against
@@ -900,7 +899,10 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *
       * @group special
       */
-    def unsafe(): Unit = internal.unsafe()
+    def unsafe(): Parsley[A] = {
+        internal.unsafe()
+        this
+    }
 }
 
 /** This object contains the core "function-style" combinators: all parsers will likely require something from within!
@@ -1020,6 +1022,35 @@ object Parsley {
       * @group basic
       */
     def pure[A](x: A): Parsley[A] = new Parsley(new singletons.Pure(x))
+    /** This combinator produces a '''new''' value everytime it is parsed without having any other effect.
+      *
+      * When this combinator is ran, no input is required, nor consumed, and
+      * a '''new instance''' of the given value will always be successfully returned.
+      * It has no other effect on the state of the parser.
+      *
+      * This is useful primarily if mutable data is being threaded around a parser: this
+      * should not be needed for the ''vast'' majority of parsers.
+      *
+      * @example {{{
+      * scala> import parsley.Parsley.{pure, fresh}
+      * scala> val p = pure(new Object)
+      * scala> p.parse("")
+      * val res0 = Success(java.lang.Object@44a3ec6b)
+      * scala> p.parse("")
+      * val res1 = Success(java.lang.Object@44a3ec6b)
+      * scala> val q = fresh(new Object)
+      * scala> q.parse("")
+      * val res2 = Success(java.lang.Object@71623278)
+      * scala> q.parse("")
+      * val res3 = Success(java.lang.Object@768b970c)
+      * }}}
+      *
+      * @param x the value to be returned.
+      * @return a parser which consumes no input and produces a value `x`.
+      * @since 4.0.0
+      * @group basic
+      */
+    def fresh[A](x: =>A): Parsley[A] = pure(() => x).unsafe().map(_())
 
     /** This combinator parses its first argument `either`, and then parses either `left` or `right` depending on its result.
       *

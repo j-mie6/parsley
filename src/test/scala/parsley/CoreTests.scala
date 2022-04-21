@@ -50,6 +50,11 @@ class CoreTests extends ParsleyTest {
         (pure('a') <~ 'a').parse("a") should be (Success('a'))
     }
 
+    "Fresh parsers" should "generate unique objects on every run" in {
+        val p = fresh(new Object)
+        p.parse("") should not be p.parse("")
+    }
+
     // APPLICATIVE LAWS
     they must "obey the homomorphism law: pure f <*> pure x = pure (f x)" in {
         (pure(add1) <*> pure(42)).parse("") should be (Success(43))

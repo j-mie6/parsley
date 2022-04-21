@@ -52,7 +52,10 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     }
     final private [frontend] def unsafeOptimised[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont],
                                                                                    lets: LetMap, recs: RecMap): Cont[R, StrictParsley[A_]] = {
-        for (p <- this.preprocess) yield p.optimise
+        for (p <- this.preprocess) yield {
+            p.safe = this.sSafe
+            p.optimise
+        }
     }
     final private [deepembedding] var sSafe = true
     final private var cps = false
@@ -68,10 +71,7 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
                 implicit val recMap: RecMap = RecMap(letFinderState.recs)
                 implicit val letMap: LetMap = LetMap(letFinderState.lets)(ops, recMap)
                 val recs_ = recMap.map { case (p, strict) => (strict, p.unsafeOptimised[Cont, Unit, Any]) }
-                for { sp <- this.optimised } yield {
-                    sp.safe = sSafe
-                    sp.generateInstructions(calleeSaveNeeded, usedRegs, recs_)
-                }
+                for { sp <- this.optimised } yield sp.generateInstructions(calleeSaveNeeded, usedRegs, recs_)
             }
         }
     }
