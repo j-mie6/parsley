@@ -899,7 +899,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *
       * @group special
       */
-    def unsafe(): this.type = {
+    def unsafe(): Parsley[A] = {
         internal.unsafe()
         this
     }
