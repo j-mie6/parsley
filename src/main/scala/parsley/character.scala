@@ -5,7 +5,7 @@ import scala.collection.immutable.NumericRange
 import scala.language.implicitConversions
 
 import parsley.Parsley.{attempt, empty}
-import parsley.combinator.skipMany
+import parsley.combinator.{choice, skipMany}
 import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.character.charLift
 
@@ -342,7 +342,7 @@ object character
       * @example {{{
       * scala> import parsley.character.{letter, letterOrDigit, stringOfMany}
       * scala> import parsley.implicits.zipped.Zipped2
-      * scala> val ident = (letter, stringOfMany(letterOrDigit)).zipped((c, s) => s"$c$s")
+      * scala> val ident = (letter, stringOfMany(letterOrDigit)).zipped((c, s) => s"&#36;c&#36;s")
       * scala> ident.parse("abdc9d")
       * val res0 = Success("abdc9d")
       * scala> ident.parse("a")
@@ -416,8 +416,13 @@ object character
       * @group string
       */
     def strings(str0: String, strs: String*): Parsley[String] = {
-        import parsley.combinator.attemptChoice
-        attemptChoice((str0 +: strs).sorted(implicitly[Ordering[String]].reverse).map(string): _*)
+        // TODO: this isn't the best we could do: it's possible to eliminate backtracking with a Trie...
+        // can this be done in a semantic preserving way without resorting to a new instruction?
+        val ss = str0 +: strs
+        choice(ss.groupBy(_.head).view.map(_._2).flatMap { s =>
+            val sLast :: rest = s.toList.sortBy(_.length)
+            (string(sLast) :: rest.map(s => attempt(string(s)))).reverse
+        }.toSeq: _*)
     }
 
     /** This parser will parse '''any''' single character from the input, failing if there is no input remaining.
