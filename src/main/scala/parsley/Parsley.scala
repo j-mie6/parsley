@@ -1047,6 +1047,7 @@ object Parsley {
       *
       * @param x the value to be returned.
       * @return a parser which consumes no input and produces a value `x`.
+      * @since 4.0.0
       * @group basic
       */
     def fresh[A](x: =>A): Parsley[A] = pure(() => x).unsafe().map(_())
