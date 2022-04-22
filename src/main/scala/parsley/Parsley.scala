@@ -607,8 +607,8 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *
       * @param pf the partial function used to both filter the result of this parser and transform it.
       * @return a parser that returns the result of this parser applied to `pf`, if possible.
-      * @see [[parsley.errors.combinator.ErrorMethods.collectMsg[B](msg:String)* `collectMsg(String)`]]
-      *      and [[parsley.errors.combinator.ErrorMethods.collectMsg[B](msggen:A=>String)* `collectMsg(A => String)`]]
+      * @see [[parsley.errors.combinator.ErrorMethods.collectMsg[B](msg0:String,msgs:String*)* `collectMsg(String, String*)`]]
+      *      and [[parsley.errors.combinator.ErrorMethods.collectMsg[B](msggen:A=>Seq[String])* `collectMsg(A => Seq[String])`]]
       *      for versions that can produce custom error messages on failure.
       * @since 2.0.0
       * @group filter

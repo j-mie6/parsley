@@ -92,8 +92,8 @@ private [deepembedding] final class Filter[A](val p: StrictParsley[A], pred: A =
     extends FilterLike[A](_ => Empty, new instructions.Filter(pred), !pred(_))
 private [deepembedding] final class FilterOut[A](val p: StrictParsley[A], pred: PartialFunction[A, String])
     extends FilterLike[A](x => ErrorExplain(Empty, pred(x)), new instructions.FilterOut(pred), pred.isDefinedAt(_))
-private [deepembedding] final class GuardAgainst[A](val p: StrictParsley[A], pred: PartialFunction[A, String])
-    extends FilterLike[A](x => new Fail(pred(x)), new instructions.GuardAgainst(pred), pred.isDefinedAt(_))
+private [deepembedding] final class GuardAgainst[A](val p: StrictParsley[A], pred: PartialFunction[A, scala.collection.immutable.Seq[String]])
+    extends FilterLike[A](x => new Fail(pred(x): _*), new instructions.GuardAgainst(pred), pred.isDefinedAt(_))
 
 private [backend] object Branch {
     val FlipApp = new instructions.Lift2[Any, Any => Any, Any]((x, f) => f(x))
