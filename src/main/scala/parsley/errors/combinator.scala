@@ -210,15 +210,15 @@ object combinator {
           *     case ns if ns.nonEmpty
           *             && ns.zip(ns.tail).exists { case (x, y) => x == y } =>
           *         val Some((x, _)) = ns.zip(ns.tail).find { case (x, y) => x == y }
-          *         s"node &#36;x has been declared twice"
+          *         Seq(s"node &#36;x has been declared twice")
           *     case ns if ns.nonEmpty
           *             && ns.zip(ns.tail).exists { case (x, y) => x > y } =>
           *         val Some((x, y)) = ns.zip(ns.tail).find { case (x, y) => x > y }
-          *         s"nodes &#36;x and &#36;y are declared in the wrong order: all nodes should be ordered"
+          *         Seq(s"nodes &#36;x and &#36;y are declared in the wrong order", "all nodes should be ordered")
           * }
           * }}}
           *
-          * @since 2.8.0
+          * @since 4.0.0
           * @param pred the predicate that is tested against the parser result, which also generates errors.
           * @return a parser that returns the result of this parser if it fails the predicate.
           * @see [[parsley.Parsley.filterNot `filterNot`]], which is a basic version of this same combinator with no customised error message.
@@ -267,13 +267,13 @@ object combinator {
           * val integer: Parsley[BigInt] = ...
           * // this should be amended/entrenched for best results
           * val int16: Parsley[Short] =
-          *     integer.collectMsg(n => s"integer literal &#36;n is not within the range -2^16 to +2^16-1") {
+          *     integer.collectMsg(n => Seq(s"integer literal &#36;n is not within the range -2^16 to +2^16-1")) {
           *         case x if x >= Short.MinValue
           *                && x <= Short.MaxValue => x.toShort
           *     }
           * }}}
           *
-          * @since 3.0.0
+          * @since 4.0.0
           * @param msggen a function that generates the error messages to use if the filtering fails.
           * @param pf the partial function used to both filter the result of this parser and transform it.
           * @return a parser which returns the result of this parser applied to pf, if possible.
