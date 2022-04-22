@@ -149,10 +149,10 @@ private [internal] final class FilterOut[A](_pred: PartialFunction[A, String]) e
     // $COVERAGE-ON$
 }
 
-private [internal] final class GuardAgainst[A](_pred: PartialFunction[A, String]) extends Instr {
-    private [this] val pred = _pred.asInstanceOf[PartialFunction[Any, String]]
+private [internal] final class GuardAgainst[A](_pred: PartialFunction[A, Seq[String]]) extends Instr {
+    private [this] val pred = _pred.asInstanceOf[PartialFunction[Any, Seq[String]]]
     override def apply(ctx: Context): Unit = {
-        if (pred.isDefinedAt(ctx.stack.upeek)) ctx.failWithMessage(pred(ctx.stack.upop()))
+        if (pred.isDefinedAt(ctx.stack.upeek)) ctx.failWithMessage(pred(ctx.stack.upop()): _*)
         else ctx.inc()
     }
     // $COVERAGE-OFF$

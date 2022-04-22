@@ -210,23 +210,23 @@ object combinator {
           *     case ns if ns.nonEmpty
           *             && ns.zip(ns.tail).exists { case (x, y) => x == y } =>
           *         val Some((x, _)) = ns.zip(ns.tail).find { case (x, y) => x == y }
-          *         s"node &#36;x has been declared twice"
+          *         Seq(s"node &#36;x has been declared twice")
           *     case ns if ns.nonEmpty
           *             && ns.zip(ns.tail).exists { case (x, y) => x > y } =>
           *         val Some((x, y)) = ns.zip(ns.tail).find { case (x, y) => x > y }
-          *         s"nodes &#36;x and &#36;y are declared in the wrong order: all nodes should be ordered"
+          *         Seq(s"nodes &#36;x and &#36;y are declared in the wrong order", "all nodes should be ordered")
           * }
           * }}}
           *
-          * @since 2.8.0
+          * @since 4.0.0
           * @param pred the predicate that is tested against the parser result, which also generates errors.
           * @return a parser that returns the result of this parser if it fails the predicate.
           * @see [[parsley.Parsley.filterNot `filterNot`]], which is a basic version of this same combinator with no customised error message.
           * @see [[filterOut `filterOut`]], which is similar to `guardAgainst`, except it generates a reason for failure and not a ''specialised'' error.
-          * @see [[[collectMsg[B](msggen:A=>String)*  `collectMsg`]]], which is similar to `guardAgainst`, but can also transform the data on success.
+          * @see [[[collectMsg[B](msggen:A=>Seq[String])*  `collectMsg`]]], which is similar to `guardAgainst`, but can also transform the data on success.
           * @group filter
           */
-        def guardAgainst(pred: PartialFunction[A, String]): Parsley[A] = new Parsley(new frontend.GuardAgainst(con(p).internal, pred))
+        def guardAgainst(pred: PartialFunction[A, Seq[String]]): Parsley[A] = new Parsley(new frontend.GuardAgainst(con(p).internal, pred))
         /** This combinator applies a partial function `pf` to the result of this parser if its result is defined for `pf`, failing if it is not.
           *
           * First, parse this parser. If it succeeds, test whether its result `x` is in the domain of the partial function `pf`. If it is defined for
@@ -245,14 +245,17 @@ object combinator {
           * }}}
           *
           * @since 3.0.0
-          * @param msg the error message to use if the filtering fails.
+          * @param msg0 the first error message to use if the filtering fails.
+          * @param msgs the remaining error messages to use if the filtering fails.
           * @param pf the partial function used to both filter the result of this parser and transform it.
           * @return a parser which returns the result of this parser applied to pf, if possible.
           * @see [[parsley.Parsley.collect `collect`]], which is a basic version of this same combinator with no customised error message.
           * @see [[guardAgainst `guardAgainst`]], which is similar to `collectMsg`, except it does not transform the data.
           * @group filter
           */
-        def collectMsg[B](msg: String)(pf: PartialFunction[A, B]): Parsley[B] = this.guardAgainst{case x if !pf.isDefinedAt(x) => msg}.map(pf)
+        def collectMsg[B](msg0: String, msgs: String*)(pf: PartialFunction[A, B]): Parsley[B] = {
+            this.guardAgainst{case x if !pf.isDefinedAt(x) => msg0 +: msgs}.map(pf)
+        }
         /** This combinator applies a partial function `pf` to the result of this parser if its result is defined for `pf`, failing if it is not.
           *
           * First, parse this parser. If it succeeds, test whether its result `x` is in the domain of the partial function `pf`. If it is defined for
@@ -264,21 +267,23 @@ object combinator {
           * val integer: Parsley[BigInt] = ...
           * // this should be amended/entrenched for best results
           * val int16: Parsley[Short] =
-          *     integer.collectMsg(n => s"integer literal &#36;n is not within the range -2^16 to +2^16-1") {
+          *     integer.collectMsg(n => Seq(s"integer literal &#36;n is not within the range -2^16 to +2^16-1")) {
           *         case x if x >= Short.MinValue
           *                && x <= Short.MaxValue => x.toShort
           *     }
           * }}}
           *
-          * @since 3.0.0
-          * @param msg the error message to use if the filtering fails.
+          * @since 4.0.0
+          * @param msggen a function that generates the error messages to use if the filtering fails.
           * @param pf the partial function used to both filter the result of this parser and transform it.
           * @return a parser which returns the result of this parser applied to pf, if possible.
           * @see [[parsley.Parsley.collect `collect`]], which is a basic version of this same combinator with no customised error message.
           * @see [[guardAgainst `guardAgainst`]], which is similar to `collectMsg`, except it does not transform the data.
           * @group filter
           */
-        def collectMsg[B](msggen: A => String)(pf: PartialFunction[A, B]): Parsley[B] = this.guardAgainst{case x if !pf.isDefinedAt(x) => msggen(x)}.map(pf)
+        def collectMsg[B](msggen: A => Seq[String])(pf: PartialFunction[A, B]): Parsley[B] = {
+            this.guardAgainst{case x if !pf.isDefinedAt(x) => msggen(x)}.map(pf)
+        }
         /** This combinator changes the expected component of any errors generated by this parser.
           *
           * When this parser fails having not ''observably''* consumed input, the expected component of the generated

@@ -33,7 +33,7 @@ class ErrorTests extends ParsleyTest {
         p.parse("A") shouldBe Success('A')
 
         val q = item.guardAgainst {
-            case c if c.isLower => s"'$c' is not uppercase"
+            case c if c.isLower => Seq(s"'$c' is not uppercase")
         }
         inside(q.parse("a")) { case Failure(TestError((1, 2), SpecialisedError(msgs))) => msgs should contain only ("'a' is not uppercase") }
         q.parse("A") shouldBe Success('A')
@@ -48,7 +48,7 @@ class ErrorTests extends ParsleyTest {
         p.parse("C") shouldBe Success(3)
         inside(p.parse("a"))  { case Failure(TestError((1, 2), SpecialisedError(msgs))) => msgs should contain only ("oops") }
 
-        val q = item.collectMsg(c => s"$c is not appropriate") {
+        val q = item.collectMsg(c => Seq(s"$c is not appropriate")) {
             case '+' => 0
             case c if c.isUpper => c - 'A' + 1
         }
