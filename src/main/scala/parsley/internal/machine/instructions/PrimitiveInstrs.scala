@@ -17,6 +17,7 @@ private [internal] final class Satisfies(f: Char => Boolean, _expected: Option[S
     // $COVERAGE-ON$
 }
 
+@deprecated("Use PopHandlerAndState and AttemptHandler instead")
 private [internal] object Attempt extends Instr {
     override def apply(ctx: Context): Unit = {
         // Remove the recovery input from the stack, it isn't needed anymore

@@ -55,7 +55,7 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     }
     final private [frontend] def unsafeOptimised[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont],
                                                                                    lets: LetMap, recs: RecMap): Cont[R, StrictParsley[A_]] = {
-        for (p <- this.preprocess) yield {
+        for {p <- this.preprocess} yield {
             p.safe = this.sSafe
             p.optimise
         }

@@ -39,19 +39,23 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
             case Attempt(u) => right match {
                 case Pure(x) =>
                     val handler = state.freshLabel()
-                    instrs += new instructions.PushHandlerAndState(handler, true, false)
+                    val skip = state.freshLabel()
+                    instrs += new instructions.PushHandlerAndState(handler, saveHints = true, hideHints = false)
                     suspend(u.codeGen[Cont, R]) |> {
+                        instrs += new instructions.JumpAndPopState(skip)
                         instrs += new instructions.Label(handler)
                         instrs += new instructions.AlwaysRecoverWith[A](x)
+                        instrs += new instructions.Label(skip)
                     }
                 case v       =>
                     val handler = state.freshLabel()
                     val skip = state.freshLabel()
                     val merge = state.freshLabel()
-                    instrs += new instructions.PushHandlerAndState(handler, true, false)
+                    instrs += new instructions.PushHandlerAndState(handler, saveHints = true, hideHints = false)
                     suspend(u.codeGen[Cont, R]) >> {
+                        instrs += new instructions.JumpAndPopState(skip)
                         instrs += new instructions.Label(handler)
-                        instrs += new instructions.JumpGoodAttempt(skip, merge)
+                        instrs += new instructions.Restore(merge)
                         suspend(v.codeGen[Cont, R]) |> {
                             instrs += new instructions.Label(merge)
                             instrs += instructions.MergeErrors
@@ -63,9 +67,9 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
                 case Pure(x) =>
                     val handler = state.freshLabel()
                     val skip = state.freshLabel()
-                    instrs += new instructions.InputCheck(handler, true)
+                    instrs += new instructions.PushHandlerAndCheck(handler, saveHints = true)
                     suspend(u.codeGen[Cont, R]) |> {
-                        instrs += new instructions.JumpGood(skip)
+                        instrs += new instructions.JumpAndPopCheck(skip)
                         instrs += new instructions.Label(handler)
                         instrs += new instructions.RecoverWith[A](x)
                         instrs += new instructions.Label(skip)
@@ -74,9 +78,9 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
                     val handler = state.freshLabel()
                     val skip = state.freshLabel()
                     val merge = state.freshLabel()
-                    instrs += new instructions.InputCheck(handler, true)
+                    instrs += new instructions.PushHandlerAndCheck(handler, saveHints = true)
                     suspend(u.codeGen[Cont, R]) >> {
-                        instrs += new instructions.JumpGood(skip)
+                        instrs += new instructions.JumpAndPopCheck(skip)
                         instrs += new instructions.Label(handler)
                         instrs += new instructions.Catch(merge)
                         suspend(v.codeGen[Cont, R]) |> {
@@ -120,7 +124,7 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
         case root::roots_ =>
             instrs += new instructions.Label(ls.head)
             codeGenAlternatives(root) >> {
-                instrs += new instructions.JumpGood(end)
+                instrs += new instructions.JumpAndPopCheck(end)
                 suspend(codeGenRoots[Cont, R](roots_, ls.tail, end))
             }
         case Nil => result(())
@@ -132,10 +136,11 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
             val handler = state.freshLabel()
             val skip = state.freshLabel()
             val merge = state.freshLabel()
-            instrs += new instructions.PushHandlerAndState(handler, true, false)
+            instrs += new instructions.PushHandlerAndState(handler, saveHints = true, hideHints = false)
             suspend(alt.codeGen[Cont, R]) >> {
+                instrs += new instructions.JumpAndPopState(skip)
                 instrs += new instructions.Label(handler)
-                instrs += new instructions.JumpGoodAttempt(skip, merge)
+                instrs += new instructions.Restore(merge)
                 suspend(codeGenAlternatives[Cont, R](alts_)) |> {
                     instrs += new instructions.Label(merge)
                     instrs += instructions.MergeErrors
@@ -146,9 +151,9 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
             val handler = state.freshLabel()
             val skip = state.freshLabel()
             val merge = state.freshLabel()
-            instrs += new instructions.InputCheck(handler, true)
+            instrs += new instructions.PushHandlerAndCheck(handler, saveHints = true)
             suspend(alt.codeGen[Cont, R]) >> {
-                instrs += new instructions.JumpGood(skip)
+                instrs += new instructions.JumpAndPopCheck(skip)
                 instrs += new instructions.Label(handler)
                 instrs += new instructions.Catch(merge)
                 suspend(codeGenAlternatives[Cont, R](alts_)) |> {

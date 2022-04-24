@@ -7,6 +7,7 @@ import parsley.internal.errors.{Desc, ErrorItem}
 import parsley.internal.machine.{Context, Good}
 import parsley.internal.machine.errors.{Amended, Entrenched, MergedErrors, WithLabel, WithReason}
 
+@deprecated("RelabelHints and RelabelError should be used instead")
 private [internal] final class ApplyError(label: String) extends Instr {
     val isHide: Boolean = label.isEmpty
     override def apply(ctx: Context): Unit = {
@@ -41,6 +42,47 @@ private [internal] final class ApplyError(label: String) extends Instr {
     // $COVERAGE-ON$
 }
 
+private [internal] final class RelabelHints(label: String) extends Instr {
+    val isHide: Boolean = label.isEmpty
+    override def apply(ctx: Context): Unit = {
+        // if this was a hide, pop the hints if possible
+        if (isHide) ctx.popHints
+        // EOK
+        // replace the head of the hints with the singleton for our label
+        else if (ctx.offset == ctx.checkStack.offset) ctx.replaceHint(label)
+        // COK
+        // do nothing
+        ctx.mergeHints()
+        ctx.handlers = ctx.handlers.tail
+        ctx.checkStack = ctx.checkStack.tail
+        ctx.inc()
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = s"RelabelHints($label)"
+    // $COVERAGE-ON$
+}
+
+private [internal] final class RelabelError(label: String) extends Instr {
+    val isHide: Boolean = label.isEmpty
+    override def apply(ctx: Context): Unit = {
+        ctx.restoreHints()
+        ctx.errs.error = ctx.useHints {
+            // EERR
+            // the top of the error stack is adjusted:
+            if (ctx.errs.error.offset == ctx.checkStack.offset) WithLabel(ctx.errs.error, label)
+            // CERR
+            // do nothing
+            else ctx.errs.error
+        }
+        ctx.checkStack = ctx.checkStack.tail
+        ctx.fail()
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = s"ApplyError($label)"
+    // $COVERAGE-ON$
+}
+
+@deprecated("Use ErrorToHints and MergeErrorsHandler instead")
 private [internal] object MergeErrors extends Instr {
     override def apply(ctx: Context): Unit = {
         if (ctx.status eq Good) {
@@ -61,6 +103,7 @@ private [internal] object MergeErrors extends Instr {
     // $COVERAGE-ON$
 }
 
+@deprecated("Use PopHandlerAndCheck and ApplyReasonHandler instead")
 private [internal] class ApplyReason(reason: String) extends Instr {
     override def apply(ctx: Context): Unit = {
         if (ctx.status eq Good) {
@@ -79,6 +122,7 @@ private [internal] class ApplyReason(reason: String) extends Instr {
     // $COVERAGE-ON$
 }
 
+@deprecated("Use PopHandlerAndState and AmendHandler instead")
 private [internal] object Amend extends Instr {
     override def apply(ctx: Context): Unit = {
         if (ctx.status eq Good) {
@@ -97,6 +141,7 @@ private [internal] object Amend extends Instr {
     // $COVERAGE-ON$
 }
 
+@deprecated("Use PopHandler and EntrenchHandler instead")
 private [internal] object Entrench extends Instr {
     override def apply(ctx: Context): Unit = {
         if (ctx.status eq Good) {

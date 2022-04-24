@@ -6,7 +6,7 @@ package parsley.internal.deepembedding.backend
 import parsley.internal.deepembedding.singletons._
 import parsley.internal.machine.instructions
 private [deepembedding] final class ErrorLabel[A](val p: StrictParsley[A], private [ErrorLabel] val label: String) extends ScopedUnary[A, A] {
-    override def setup(label: Int): instructions.Instr = new instructions.InputCheck(label, true)
+    override def setup(label: Int): instructions.Instr = new instructions.PushHandlerAndCheck(label, saveHints = true)
     override def instr: instructions.Instr = new instructions.ApplyError(label)
     final override def optimise: StrictParsley[A] = p match {
         case ct@CharTok(c) if !ct.expected.contains("") => new CharTok(c, Some(label)).asInstanceOf[StrictParsley[A]]
@@ -18,7 +18,7 @@ private [deepembedding] final class ErrorLabel[A](val p: StrictParsley[A], priva
     }
 }
 private [deepembedding] final class ErrorExplain[A](val p: StrictParsley[A], reason: String) extends ScopedUnary[A, A] {
-    override def setup(label: Int): instructions.Instr = new instructions.InputCheck(label)
+    override def setup(label: Int): instructions.Instr = new instructions.PushHandlerAndCheck(label, saveHints = false)
     override def instr: instructions.Instr = new instructions.ApplyReason(reason)
 }
 
