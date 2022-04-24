@@ -32,8 +32,16 @@ private [deepembedding] trait StrictParsley[+A] {
                 instrs += instructions.Halt
                 finaliseRecs(recs)
                 finaliseLets(bindings)
+                generateHandlers(state.handlers)
                 finaliseInstrs(instrs, state, recs.map(_._1), bindings.toList)
             }
+        }
+    }
+
+    final private [deepembedding] def generateHandlers(handlers: Iterable[(Instr, Int)])(implicit instrs: InstrBuffer): Unit = {
+        for ((handler, label) <- handlers) {
+            instrs += new instructions.Label(label)
+            instrs += handler
         }
     }
 
@@ -194,4 +202,8 @@ private [deepembedding] class CodeGenState {
     def nextLet(): Let[_] = queue.remove(0)
     def more: Boolean = queue.nonEmpty
     def subsExist: Boolean = map.nonEmpty
+
+    private val handlerMap = mutable.Map.empty[Instr, Int]
+    def getLabel(handler: Instr) = handlerMap.getOrElseUpdate(handler, freshLabel())
+    def handlers: Iterable[(Instr, Int)] = handlerMap
 }

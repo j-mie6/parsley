@@ -82,20 +82,24 @@ private [internal] final class RelabelError(label: String) extends Instr {
     // $COVERAGE-ON$
 }
 
-@deprecated("Use ErrorToHints and MergeErrorsHandler instead")
+private [internal] object ErrorToHints extends Instr {
+    override def apply(ctx: Context): Unit = {
+        ctx.handlers = ctx.handlers.tail
+        ctx.addErrorToHintsAndPop()
+        ctx.inc()
+    }
+
+    // $COVERAGE-OFF$
+    override def toString: String = "ErrorToHints"
+    // $COVERAGE-ON$
+}
+
 private [internal] object MergeErrors extends Instr {
     override def apply(ctx: Context): Unit = {
-        if (ctx.status eq Good) {
-            ctx.handlers = ctx.handlers.tail
-            ctx.addErrorToHintsAndPop()
-            ctx.inc()
-        }
-        else {
-            val err2 = ctx.errs.error
-            ctx.errs = ctx.errs.tail
-            ctx.errs.error = MergedErrors(ctx.errs.error, err2)
-            ctx.fail()
-        }
+        val err2 = ctx.errs.error
+        ctx.errs = ctx.errs.tail
+        ctx.errs.error = MergedErrors(ctx.errs.error, err2)
+        ctx.fail()
     }
 
     // $COVERAGE-OFF$
