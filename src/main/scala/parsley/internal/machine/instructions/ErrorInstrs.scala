@@ -7,41 +7,6 @@ import parsley.internal.errors.{Desc, ErrorItem}
 import parsley.internal.machine.{Context, Good}
 import parsley.internal.machine.errors.{Amended, Entrenched, MergedErrors, WithLabel, WithReason}
 
-@deprecated("RelabelHints and RelabelErrorAndFail should be used instead")
-private [internal] final class ApplyError(label: String) extends Instr {
-    val isHide: Boolean = label.isEmpty
-    override def apply(ctx: Context): Unit = {
-        if (ctx.status eq Good) {
-            // if this was a hide, pop the hints if possible
-            if (isHide) ctx.popHints
-            // EOK
-            // replace the head of the hints with the singleton for our label
-            else if (ctx.offset == ctx.checkStack.offset) ctx.replaceHint(label)
-            // COK
-            // do nothing
-            ctx.mergeHints()
-            ctx.handlers = ctx.handlers.tail
-            ctx.inc()
-        }
-        else {
-            ctx.restoreHints()
-            ctx.errs.error = ctx.useHints {
-                // EERR
-                // the top of the error stack is adjusted:
-                if (ctx.errs.error.offset == ctx.checkStack.offset) WithLabel(ctx.errs.error, label)
-                // CERR
-                // do nothing
-                else ctx.errs.error
-            }
-            ctx.fail()
-        }
-        ctx.checkStack = ctx.checkStack.tail
-    }
-    // $COVERAGE-OFF$
-    override def toString: String = s"ApplyError($label)"
-    // $COVERAGE-ON$
-}
-
 private [internal] final class RelabelHints(label: String) extends Instr {
     val isHide: Boolean = label.isEmpty
     override def apply(ctx: Context): Unit = {
@@ -107,22 +72,15 @@ private [internal] object MergeErrorsAndFail extends Instr {
     // $COVERAGE-ON$
 }
 
-@deprecated("Use PopHandlerAndCheck and ApplyReasonAndFail instead")
-private [internal] class ApplyReason(reason: String) extends Instr {
+private [internal] class ApplyReasonAndFail(reason: String) extends Instr {
     override def apply(ctx: Context): Unit = {
-        if (ctx.status eq Good) {
-            ctx.handlers = ctx.handlers.tail
-            ctx.inc()
-        }
-        else {
-            if (ctx.errs.error.offset == ctx.checkStack.offset) ctx.errs.error = WithReason(ctx.errs.error, reason)
-            ctx.fail()
-        }
+        if (ctx.errs.error.offset == ctx.checkStack.offset) ctx.errs.error = WithReason(ctx.errs.error, reason)
         ctx.checkStack = ctx.checkStack.tail
+        ctx.fail()
     }
 
     // $COVERAGE-OFF$
-    override def toString: String = s"ApplyReason($reason)"
+    override def toString: String = s"ApplyReasonAndFail($reason)"
     // $COVERAGE-ON$
 }
 

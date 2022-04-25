@@ -38,7 +38,7 @@ private [deepembedding] trait StrictParsley[+A] {
         }
     }
 
-    final private def generateHandlers(handlers: Iterable[(Instr, Int)])(implicit instrs: InstrBuffer): Unit = {
+    final private def generateHandlers(handlers: Iterator[(Instr, Int)])(implicit instrs: InstrBuffer): Unit = {
         for ((handler, label) <- handlers) {
             instrs += new instructions.Label(label)
             instrs += handler
@@ -204,6 +204,18 @@ private [deepembedding] class CodeGenState {
     def subsExist: Boolean = map.nonEmpty
 
     private val handlerMap = mutable.Map.empty[Instr, Int]
+    private val relabelErrorMap = mutable.Map.empty[String, Int]
+    private val applyReasonMap = mutable.Map.empty[String, Int]
     def getLabel(handler: Instr) = handlerMap.getOrElseUpdate(handler, freshLabel())
-    def handlers: Iterable[(Instr, Int)] = handlerMap
+    def getLabelForRelabelError(label: String) = relabelErrorMap.getOrElseUpdate(label, freshLabel())
+    def getLabelForApplyReason(reason: String) = applyReasonMap.getOrElseUpdate(reason, freshLabel())
+    def handlers: Iterator[(Instr, Int)] = {
+        val relabelErrors = relabelErrorMap.view.map {
+            case (label, i) => new instructions.RelabelErrorAndFail(label) -> i
+        }
+        val applyReasons = applyReasonMap.view.map {
+            case (reason, i) => new instructions.ApplyReasonAndFail(reason) -> i
+        }
+        Iterator.concat(handlerMap, relabelErrors, applyReasons)
+    }
 }
