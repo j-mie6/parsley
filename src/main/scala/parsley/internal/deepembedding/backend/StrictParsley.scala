@@ -216,6 +216,18 @@ private [deepembedding] class CodeGenState {
         val applyReasons = applyReasonMap.view.map {
             case (reason, i) => new instructions.ApplyReasonAndFail(reason) -> i
         }
-        Iterator.concat(handlerMap, relabelErrors, applyReasons)
+        new Iterator[(Instr, Int)] {
+            private var rest = List(relabelErrors.iterator, applyReasons.iterator)
+            private var cur = handlerMap.iterator
+            override def hasNext: Boolean = {
+                cur.hasNext || (rest.nonEmpty && {
+                    cur = rest.head
+                    rest = rest.tail
+                    this.hasNext
+                })
+            }
+
+            override def next(): (Instr, Int) = cur.next()
+        }
     }
 }
