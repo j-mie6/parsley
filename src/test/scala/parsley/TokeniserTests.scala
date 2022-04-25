@@ -415,4 +415,10 @@ class TokeniserTests extends ParsleyTest {
         p.parse("bye") shouldBe a [Success[_]]
         p.parse("Bye") shouldBe a [Success[_]]
     }
+
+    "issue #199" should "not regress: whitespace should work without comments defined" in {
+        val lang = token.LanguageDef.plain.copy(space = token.Predicate(_.isWhitespace))
+        val lexer = new token.Lexer(lang)
+        lexer.whiteSpace.parse("[") shouldBe a [Success[_]]
+    }
 }

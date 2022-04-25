@@ -81,8 +81,13 @@ private [instructions] abstract class WhiteSpaceLike(start: String, end: String,
         else ctx.pushAndContinue(())
     }
 
+    final def spacesAndContinue(ctx: Context): Unit = {
+        spaces(ctx)
+        ctx.pushAndContinue(())
+    }
+
     private final val impl = {
-        if (!lineAllowed && !multiAllowed) spaces(_)
+        if (!lineAllowed && !multiAllowed) spacesAndContinue(_)
         else if (!lineAllowed) multisOnly(_)
         else if (!multiAllowed) singlesOnly(_)
         else singlesAndMultis(_)
