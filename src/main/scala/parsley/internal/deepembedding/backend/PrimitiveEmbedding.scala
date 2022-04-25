@@ -25,13 +25,19 @@ private [deepembedding] final class Look[A](val p: StrictParsley[A]) extends Sco
     override def instrNeedsLabel: Boolean = false
     override def handlerLabel(state: CodeGenState) = state.getLabel(instructions.PopStateAndFail)
 }
-private [deepembedding] final class NotFollowedBy[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, Unit](true) {
-    override val instr: instructions.Instr = instructions.NotFollowedBy
-    override def instrNeedsLabel: Boolean = true
-    override def handlerLabel(state: CodeGenState) = state.freshLabel()
+private [deepembedding] final class NotFollowedBy[A](val p: StrictParsley[A]) extends Unary[A, Unit] {
     override def optimise: StrictParsley[Unit] = p match {
         case z: MZero => new Pure(())
         case _        => this
+    }
+    final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+        val handler = state.freshLabel()
+        instrs += new instructions.PushHandlerAndState(handler, saveHints = true, hideHints = true)
+        suspend[Cont, R, Unit](p.codeGen) |> {
+            instrs += instructions.NegLookFail
+            instrs += new instructions.Label(handler)
+            instrs += instructions.NegLookGood
+        }
     }
 }
 

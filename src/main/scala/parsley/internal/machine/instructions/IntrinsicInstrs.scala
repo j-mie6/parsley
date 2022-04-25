@@ -160,27 +160,33 @@ private [internal] final class GuardAgainst[A](_pred: PartialFunction[A, Seq[Str
     // $COVERAGE-ON$
 }
 
-@deprecated("Use NegLookFail and NegLookGood instead")
-private [internal] object NotFollowedBy extends Instr {
+private [internal] object NegLookFail extends Instr {
     override def apply(ctx: Context): Unit = {
         val reached = ctx.offset
         // Recover the previous state; notFollowedBy NEVER consumes input
         ctx.restoreState()
         ctx.restoreHints()
         // A previous success is a failure
-        if (ctx.status eq Good) {
-            ctx.handlers = ctx.handlers.tail
-            ctx.expectedTokenFail(None, reached - ctx.offset)
-        }
-        // A failure is what we wanted
-        else {
-            ctx.status = Good
-            ctx.errs = ctx.errs.tail
-            ctx.pushAndContinue(())
-        }
+        ctx.handlers = ctx.handlers.tail
+        ctx.expectedTokenFail(None, reached - ctx.offset)
     }
     // $COVERAGE-OFF$
-    override def toString: String = "NotFollowedBy"
+    override def toString: String = "NegLookFail"
+    // $COVERAGE-ON$
+}
+
+private [internal] object NegLookGood extends Instr {
+    override def apply(ctx: Context): Unit = {
+        // Recover the previous state; notFollowedBy NEVER consumes input
+        ctx.restoreState()
+        ctx.restoreHints()
+        // A failure is what we wanted
+        ctx.status = Good
+        ctx.errs = ctx.errs.tail
+        ctx.pushAndContinue(())
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = "NegLookGood"
     // $COVERAGE-ON$
 }
 
