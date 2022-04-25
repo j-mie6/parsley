@@ -28,19 +28,23 @@ private [internal] object RestoreAndFail extends Instr {
     // $COVERAGE-ON$
 }
 
-@deprecated("Use RestoreHintsAndState and PopStateAndFail instead")
-private [internal] object Look extends Instr {
+private [internal] object RestoreHintsAndState extends Instr {
     override def apply(ctx: Context): Unit = {
         ctx.restoreHints()
-        if (ctx.status eq Good) {
-            ctx.restoreState()
-            ctx.handlers = ctx.handlers.tail
-            ctx.inc()
-        }
-        else {
-            ctx.states = ctx.states.tail
-            ctx.fail()
-        }
+        ctx.restoreState()
+        ctx.handlers = ctx.handlers.tail
+        ctx.inc()
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = "RestoreHintsAndState"
+    // $COVERAGE-ON$
+}
+
+private [internal] object PopStateAndFail extends Instr {
+    override def apply(ctx: Context): Unit = {
+        ctx.restoreHints()
+        ctx.states = ctx.states.tail
+        ctx.fail()
     }
     // $COVERAGE-OFF$
     override def toString: String = "Look"

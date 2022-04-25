@@ -133,7 +133,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     }
     // $COVERAGE-ON$
 
-    @tailrec @inline private [parsley] def runParser[Err: ErrorBuilder, A](): Result[Err, A] = {
+    @tailrec private [parsley] def runParser[Err: ErrorBuilder, A](): Result[Err, A] = {
         //println(pretty)
         if (status eq Failed) Failure(errs.error.asParseError.format(sourceFile))
         else if (status ne Finished) {
@@ -148,7 +148,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         }
     }
 
-    @tailrec @inline private def preserveInstrs(preserve: Array[Int], exchange: Array[Instr], i: Int): Unit = if (i >= 0) {
+    @tailrec private def preserveInstrs(preserve: Array[Int], exchange: Array[Instr], i: Int): Unit = if (i >= 0) {
         val idx = preserve(i)
         val instr = instrs(idx)
         exchange(i) = instr
@@ -188,15 +188,23 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         depth -= 1
     }
 
+    /** This method returns multiple times (in the case of a failure handler back many call-frames).
+      *
+      * @param n the number of frames to unwind.
+      */
     @tailrec private def multiRet(n: Int): Unit = if (n > 0) {
         if (n == 1) ret()
         else {
             val callId = calls.callId
             var m = n - 1
+            // each frame preserved a specific set of stateful instructions
+            // so long as you know the next frame has the same callId as you (i.e. the starting index)
+            // then you can defer the restoration of those stateful instructions for that call
             while (calls.tail != null && calls.tail.callId == callId && m > 0) {
                 calls = calls.tail
                 m -= 1
             }
+            // if the next frame is not the same callId as you, then you must restore your instructions yourself
             ret()
             multiRet(m)
         }

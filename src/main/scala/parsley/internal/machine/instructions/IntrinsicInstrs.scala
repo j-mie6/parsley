@@ -160,6 +160,7 @@ private [internal] final class GuardAgainst[A](_pred: PartialFunction[A, Seq[Str
     // $COVERAGE-ON$
 }
 
+@deprecated("Use NegLookFail and NegLookGood instead")
 private [internal] object NotFollowedBy extends Instr {
     override def apply(ctx: Context): Unit = {
         val reached = ctx.offset
