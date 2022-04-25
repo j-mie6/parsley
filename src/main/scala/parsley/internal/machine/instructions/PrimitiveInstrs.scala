@@ -17,26 +17,18 @@ private [internal] final class Satisfies(f: Char => Boolean, _expected: Option[S
     // $COVERAGE-ON$
 }
 
-@deprecated("Use PopHandlerAndState and AttemptHandler instead")
-private [internal] object Attempt extends Instr {
+private [internal] object RestoreAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
-        // Remove the recovery input from the stack, it isn't needed anymore
-        if (ctx.status eq Good) {
-            ctx.states = ctx.states.tail
-            ctx.handlers = ctx.handlers.tail
-            ctx.inc()
-        }
         // Pop input off head then fail to next handler
-        else {
-            ctx.restoreState()
-            ctx.fail()
-        }
+        ctx.restoreState()
+        ctx.fail()
     }
     // $COVERAGE-OFF$
-    override def toString: String = "Attempt"
+    override def toString: String = "RestoreAndFail"
     // $COVERAGE-ON$
 }
 
+@deprecated("Use RestoreHintsAndState and PopStateAndFail instead")
 private [internal] object Look extends Instr {
     override def apply(ctx: Context): Unit = {
         ctx.restoreHints()

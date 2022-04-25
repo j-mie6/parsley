@@ -104,7 +104,7 @@ private [internal] final class PushHandler(var label: Int) extends InstrWithLabe
     // $COVERAGE-ON$
 }
 
-private [internal] final class PopHandler extends Instr {
+private [internal] object PopHandler extends Instr {
     override def apply(ctx: Context): Unit = {
         ctx.handlers = ctx.handlers.tail
         ctx.inc()
@@ -126,7 +126,7 @@ private [internal] final class PushHandlerAndState(var label: Int, saveHints: Bo
     // $COVERAGE-ON$
 }
 
-private [internal] final class PopHandlerAndState extends Instr {
+private [internal] object PopHandlerAndState extends Instr {
     override def apply(ctx: Context): Unit = {
         ctx.states = ctx.states.tail
         ctx.handlers = ctx.handlers.tail
@@ -149,7 +149,7 @@ private [internal] final class PushHandlerAndCheck(var label: Int, saveHints: Bo
     // $COVERAGE-ON$
 }
 
-private [internal] final class PopHandlerAndCheck extends Instr {
+private [internal] object PopHandlerAndCheck extends Instr {
     override def apply(ctx: Context): Unit = {
         ctx.checkStack = ctx.checkStack.tail
         ctx.handlers = ctx.handlers.tail
@@ -204,7 +204,7 @@ private [internal] final class Catch(var label: Int) extends InstrWithLabel {
     // $COVERAGE-ON$
 }
 
-private [internal] final class Restore(var label: Int) extends InstrWithLabel {
+private [internal] final class RestoreAndPushHandler(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ctx.restoreState()
         ctx.restoreHints()

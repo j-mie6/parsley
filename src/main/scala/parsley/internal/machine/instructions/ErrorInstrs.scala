@@ -7,7 +7,7 @@ import parsley.internal.errors.{Desc, ErrorItem}
 import parsley.internal.machine.{Context, Good}
 import parsley.internal.machine.errors.{Amended, Entrenched, MergedErrors, WithLabel, WithReason}
 
-@deprecated("RelabelHints and RelabelError should be used instead")
+@deprecated("RelabelHints and RelabelErrorAndFail should be used instead")
 private [internal] final class ApplyError(label: String) extends Instr {
     val isHide: Boolean = label.isEmpty
     override def apply(ctx: Context): Unit = {
@@ -62,7 +62,7 @@ private [internal] final class RelabelHints(label: String) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class RelabelError(label: String) extends Instr {
+private [internal] final class RelabelErrorAndFail(label: String) extends Instr {
     val isHide: Boolean = label.isEmpty
     override def apply(ctx: Context): Unit = {
         ctx.restoreHints()
@@ -94,7 +94,7 @@ private [internal] object ErrorToHints extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] object MergeErrors extends Instr {
+private [internal] object MergeErrorsAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
         val err2 = ctx.errs.error
         ctx.errs = ctx.errs.tail
@@ -107,7 +107,7 @@ private [internal] object MergeErrors extends Instr {
     // $COVERAGE-ON$
 }
 
-@deprecated("Use PopHandlerAndCheck and ApplyReasonHandler instead")
+@deprecated("Use PopHandlerAndCheck and ApplyReasonAndFail instead")
 private [internal] class ApplyReason(reason: String) extends Instr {
     override def apply(ctx: Context): Unit = {
         if (ctx.status eq Good) {
@@ -126,40 +126,26 @@ private [internal] class ApplyReason(reason: String) extends Instr {
     // $COVERAGE-ON$
 }
 
-@deprecated("Use PopHandlerAndState and AmendHandler instead")
-private [internal] object Amend extends Instr {
+private [internal] object AmendAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
-        if (ctx.status eq Good) {
-            ctx.handlers = ctx.handlers.tail
-            ctx.inc()
-        }
-        else {
-            ctx.errs.error = Amended(ctx.states.offset, ctx.states.line, ctx.states.col, ctx.errs.error)
-            ctx.fail()
-        }
+        ctx.errs.error = Amended(ctx.states.offset, ctx.states.line, ctx.states.col, ctx.errs.error)
         ctx.states = ctx.states.tail
+        ctx.fail()
     }
 
     // $COVERAGE-OFF$
-    override def toString: String = "Amend"
+    override def toString: String = "AmendAndFail"
     // $COVERAGE-ON$
 }
 
-@deprecated("Use PopHandler and EntrenchHandler instead")
-private [internal] object Entrench extends Instr {
+private [internal] object EntrenchAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
-        if (ctx.status eq Good) {
-            ctx.handlers = ctx.handlers.tail
-            ctx.inc()
-        }
-        else {
-            ctx.errs.error = Entrenched(ctx.errs.error)
-            ctx.fail()
-        }
+        ctx.errs.error = Entrenched(ctx.errs.error)
+        ctx.fail()
     }
 
     // $COVERAGE-OFF$
-    override def toString: String = "Entrench"
+    override def toString: String = "EntrenchAndFail"
     // $COVERAGE-ON$
 }
 

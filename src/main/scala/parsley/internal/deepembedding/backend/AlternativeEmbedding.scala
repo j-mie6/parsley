@@ -50,12 +50,12 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
                 case v       =>
                     val handler = state.freshLabel()
                     val skip = state.freshLabel()
-                    val merge = state.getLabel(instructions.MergeErrors)
+                    val merge = state.getLabel(instructions.MergeErrorsAndFail)
                     instrs += new instructions.PushHandlerAndState(handler, saveHints = true, hideHints = false)
                     suspend(u.codeGen[Cont, R]) >> {
                         instrs += new instructions.JumpAndPopState(skip)
                         instrs += new instructions.Label(handler)
-                        instrs += new instructions.Restore(merge)
+                        instrs += new instructions.RestoreAndPushHandler(merge)
                         suspend(v.codeGen[Cont, R]) |> {
                             instrs += instructions.ErrorToHints
                             instrs += new instructions.Label(skip)
@@ -76,7 +76,7 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
                 case v       =>
                     val handler = state.freshLabel()
                     val skip = state.freshLabel()
-                    val merge = state.getLabel(instructions.MergeErrors)
+                    val merge = state.getLabel(instructions.MergeErrorsAndFail)
                     instrs += new instructions.PushHandlerAndCheck(handler, saveHints = true)
                     suspend(u.codeGen[Cont, R]) >> {
                         instrs += new instructions.JumpAndPopCheck(skip)
@@ -95,7 +95,7 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
             val needsDefault = tablified.head._2.isDefined
             val end = state.freshLabel()
             val default = state.freshLabel()
-            val merge = state.getLabel(instructions.MergeErrors)
+            val merge = state.getLabel(instructions.MergeErrorsAndFail)
             val (roots, leads, ls, size, expecteds) = foldTablified(tablified, state, mutable.Map.empty, Nil, Nil, 0, mutable.Set.empty)
             //println(leads, tablified)
             instrs += new instructions.JumpTable(leads, ls, default, merge, size, expecteds)
@@ -130,12 +130,12 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
         case Attempt(alt)::alts_ =>
             val handler = state.freshLabel()
             val skip = state.freshLabel()
-            val merge = state.getLabel(instructions.MergeErrors)
+            val merge = state.getLabel(instructions.MergeErrorsAndFail)
             instrs += new instructions.PushHandlerAndState(handler, saveHints = true, hideHints = false)
             suspend(alt.codeGen[Cont, R]) >> {
                 instrs += new instructions.JumpAndPopState(skip)
                 instrs += new instructions.Label(handler)
-                instrs += new instructions.Restore(merge)
+                instrs += new instructions.RestoreAndPushHandler(merge)
                 suspend(codeGenAlternatives[Cont, R](alts_)) |> {
                     instrs += instructions.ErrorToHints
                     instrs += new instructions.Label(skip)
@@ -144,7 +144,7 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
         case alt::alts_ =>
             val handler = state.freshLabel()
             val skip = state.freshLabel()
-            val merge = state.getLabel(instructions.MergeErrors)
+            val merge = state.getLabel(instructions.MergeErrorsAndFail)
             instrs += new instructions.PushHandlerAndCheck(handler, saveHints = true)
             suspend(alt.codeGen[Cont, R]) >> {
                 instrs += new instructions.JumpAndPopCheck(skip)

@@ -38,7 +38,7 @@ private [deepembedding] trait StrictParsley[+A] {
         }
     }
 
-    final private [deepembedding] def generateHandlers(handlers: Iterable[(Instr, Int)])(implicit instrs: InstrBuffer): Unit = {
+    final private def generateHandlers(handlers: Iterable[(Instr, Int)])(implicit instrs: InstrBuffer): Unit = {
         for ((handler, label) <- handlers) {
             instrs += new instructions.Label(label)
             instrs += handler
