@@ -213,7 +213,7 @@ private [internal] final class RestoreAndPushHandler(var label: Int) extends Ins
         ctx.inc()
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"Restore($label)"
+    override def toString: String = s"RestoreAndPushHandler($label)"
     // $COVERAGE-ON$
 }
 
