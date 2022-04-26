@@ -159,7 +159,7 @@ private [instructions] sealed trait DualHandler {
         ctx.pc = label
     }
 }
-private [internal] final class Chainr[A, B](var label: Int, _wrap: A => B) extends InstrWithLabel with DualHandler with Stateful{
+private [internal] final class Chainr[A, B](var label: Int, _wrap: A => B) extends InstrWithLabel with DualHandler with Stateful {
     private [this] val wrap: Any => B = _wrap.asInstanceOf[Any => B]
     private [this] var acc: Any => Any = _
     override def apply(ctx: Context): Unit = {

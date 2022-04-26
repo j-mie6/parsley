@@ -3,10 +3,10 @@
  */
 package parsley.internal
 
-import parsley.{ParsleyTest, Success}
+import parsley.{ParsleyTest, Success, Failure, TestError, VanillaError, Raw, Named}
 import parsley.Parsley, Parsley._
-import parsley.character.{char, satisfy, digit}
-import parsley.combinator.some
+import parsley.character.{char, satisfy, digit, string, stringOfSome}
+import parsley.combinator.{attemptChoice, some}
 import parsley.expr._
 import parsley.implicits.character.charLift
 import parsley.errors.combinator.ErrorMethods
@@ -60,5 +60,32 @@ class InternalTests extends ParsleyTest {
             Ops(InfixL)('*' #> (_ * _)),
             Ops(InfixL)('%' #> (_ % _)))
         expr.internal.instrs.count(_ == instructions.Return) shouldBe 3
+    }
+
+    // Issue 118
+    "error alternatives for JumpTable" should "be complete across all branches" ignore {
+        val fullStrs@(str0 +: str1 +: strs) = Seq("hello", "hi", "abc", "good", "g")
+        val p = attemptChoice(fullStrs.map(string): _*)
+        assume(p.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 1)
+        inside(p.parse("h")) {
+            case Failure(TestError((1, 1), VanillaError(_, expecteds, _))) =>
+                expecteds should contain allOf (Raw(str0), Raw(str1), strs.map(Raw): _*)
+        }
+        inside(p.parse("b")) {
+            case Failure(TestError((1, 1), VanillaError(_, expecteds, _))) =>
+                expecteds should contain allOf (Raw(str0), Raw(str1), strs.map(Raw): _*)
+        }
+        inside(p.parse("a")) {
+            case Failure(TestError((1, 1), VanillaError(_, expecteds, _))) =>
+                expecteds should contain allOf (Raw(str0), Raw(str1), strs.map(Raw): _*)
+        }
+    }
+    they should "contain the default in case of no input" in {
+        val p = attemptChoice(string("abc"), string("a"), string("dead"), stringOfSome(digit))
+        assume(p.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 1)
+        inside(p.parse("")) {
+            case Failure(TestError((1, 1), VanillaError(_, expecteds, _))) =>
+                expecteds should contain allOf (Raw("abc"), Raw("a"), Raw("dead"), Named("digit"))
+        }
     }
 }
