@@ -131,8 +131,7 @@ private [internal] final class Chainl(var label: Int) extends InstrWithLabel wit
                 ctx.addErrorToHintsAndPop()
                 // if acc is null this is first entry, p already on the stack!
                 if (acc != null) ctx.pushAndContinue(acc)
-                // but p does need to be wrapped
-                else ctx.exchangeAndContinue(ctx.stack.upeek)
+                else ctx.inc()
             }
             acc = null
         }
@@ -230,7 +229,7 @@ private [internal] final class ManyUntil(var label: Int) extends InstrWithLabel 
         if (ctx.status eq Good) {
             val x = ctx.stack.upop()
             if (x == parsley.combinator.ManyUntil.Stop) {
-                ctx.pushAndContinue(acc.toList)
+                ctx.unsafePushAndContinue(acc.toList)
                 acc.clear()
                 ctx.handlers = ctx.handlers.tail
             }

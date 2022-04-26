@@ -115,9 +115,9 @@ private [internal] final class If(var label: Int) extends InstrWithLabel {
 private [internal] final class Case(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = ctx.stack.pop[Either[_, _]]() match {
         case Left(x)  =>
-            ctx.stack.push(x)
+            ctx.stack.upush(x)
             ctx.pc = label
-        case Right(y) => ctx.pushAndContinue(y)
+        case Right(y) => ctx.unsafePushAndContinue(y)
     }
     // $COVERAGE-OFF$
     override def toString: String = s"Case(left: $label)"
@@ -212,42 +212,14 @@ private [internal] final class Modify[S](reg: Int, _f: S => S) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class Local(var label: Int, reg: Int) extends InstrWithLabel with Stateful {
-    private var saved: AnyRef = _
-    private var inUse = false
-
-    private def save(ctx: Context): Unit = saved = ctx.regs(reg).asInstanceOf[AnyRef]
-
-    private def restore(ctx: Context): Unit = {
-        ctx.regs(reg) = saved
-        saved = null
-    }
-
-    private def continue(ctx: Context): Unit = {
-        if (ctx.status eq Good) ctx.inc()
-        else ctx.fail()
-    }
-
+private [internal] final class SwapAndPut(reg: Int) extends Instr {
     override def apply(ctx: Context): Unit = {
-        // Second-entry, restore and either inc or fail
-        if (inUse) {
-            restore(ctx)
-            inUse = false
-            continue(ctx)
-        }
-        // Entry for the first time, register as a handle, and jump
-        else {
-            save(ctx)
-            ctx.writeReg(reg, ctx.stack.upop())
-            inUse = true
-            ctx.pc = label
-        }
+        ctx.writeReg(reg, ctx.stack.peekAndExchange(ctx.stack.upop()))
+        ctx.inc()
     }
-
     // $COVERAGE-OFF$
-    override def toString: String = s"Local($label, $reg)"
+    override def toString: String = s"SwapAndPut($reg)"
     // $COVERAGE-ON$
-    override def copy: Local = new Local(label, reg)
 }
 
 // Companion Objects

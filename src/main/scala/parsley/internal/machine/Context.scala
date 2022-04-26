@@ -260,6 +260,10 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         stack.push(x)
         inc()
     }
+    private [machine] def unsafePushAndContinue(x: Any) = {
+        stack.upush(x)
+        inc()
+    }
     private [machine] def exchangeAndContinue(x: Any) = {
         stack.exchange(x)
         inc()
@@ -294,29 +298,6 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     }
     private [machine] def writeReg(reg: Int, x: Any): Unit = {
         regs(reg) = x.asInstanceOf[AnyRef]
-    }
-
-    // Allows us to reuse a context, helpful for benchmarking and potentially user applications
-    private [parsley] def apply(_instrs: Array[Instr], _input: String): Context = {
-        instrs = _instrs
-        input = _input
-        stack.clear()
-        offset = 0
-        inputsz = input.length
-        calls = Stack.empty
-        states = Stack.empty
-        checkStack = Stack.empty
-        status = Good
-        handlers = Stack.empty
-        depth = 0
-        pc = 0
-        line = 1
-        col = 1
-        debuglvl = 0
-        hintsValidOffset = 0
-        hints = EmptyHints
-        hintStack = Stack.empty
-        this
     }
 
     private implicit val lineBuilder: LineBuilder = new LineBuilder {

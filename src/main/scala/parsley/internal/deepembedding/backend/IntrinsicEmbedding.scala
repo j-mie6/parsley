@@ -37,13 +37,10 @@ private [deepembedding] final class Local[S, A](reg: Reg[S], left: StrictParsley
     def inlinable: Boolean = false
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         suspend(left.codeGen[Cont, R]) >> {
-            val local = state.freshLabel()
-            val body = state.freshLabel()
-            instrs += new instructions.Jump(local)
-            instrs += new instructions.Label(body)
+            instrs += new instructions.Get(reg.addr)
+            instrs += new instructions.SwapAndPut(reg.addr)
             suspend(right.codeGen[Cont, R])|> {
-                instrs += new instructions.Label(local)
-                instrs += new instructions.Local(body, reg.addr)
+                instrs += new instructions.SwapAndPut(reg.addr)
             }
         }
     }

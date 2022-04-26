@@ -20,6 +20,11 @@ private [machine] final class ArrayStack[A](initialSize: Int = ArrayStack.Defaul
         array(sp) = x
     }
 
+    def upush(x: A): Unit = {
+        sp += 1
+        array(sp) = x
+    }
+
     def exchange(x: A): Unit = array(sp) = x
     def peekAndExchange(x: A): Any = {
         val y = array(sp)
@@ -44,14 +49,6 @@ private [machine] final class ArrayStack[A](initialSize: Int = ArrayStack.Defaul
     def size: Int = usize + 1
     def isEmpty: Boolean = sp == -1
     def mkString(sep: String): String = array.take(sp + 1).reverse.mkString(sep)
-    def clear(): Unit = {
-        sp = -1
-        var i = array.length-1
-        while (i >= 0) {
-            array(i) = null
-            i -= 1
-        }
-    }
     // $COVERAGE-ON$
 }
 private [machine] object ArrayStack {
