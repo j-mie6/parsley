@@ -55,16 +55,20 @@ class StringTests extends ParsleyTest {
         p.parse("hell") shouldBe Success("hell")
         p.parse("he") shouldBe Success("h")
     }
-    // now #118 is fixed, this isn't really true anymore: strings errors are going to be more focused.
-    /*it should "be extrinsically the same as a naive, but correct, implementation" in {
+    it should "be extrinsically the same as a manual equivalent" in {
         val p = strings("hell", "hello", "abc", "g", "goodbye")
-        val q = badStrings("hell", "hello", "abc", "g", "goodbye")
+        val q = string("abc") <|> attempt("goodbye") <|> string("g") <|> attempt(string("hello")) <|> string("hell")
+        info("parsing \"hello\"")
         p.parse("hello") shouldBe q.parse("hello")
+        info("parsing \"hell\"")
         p.parse("hell") shouldBe q.parse("hell")
+        info("parsing \"h\"")
         p.parse("h") shouldBe q.parse("h")
+        info("parsing \"a\"")
         p.parse("a") shouldBe q.parse("a")
+        info("parsing \"b\"")
         p.parse("b") shouldBe q.parse("b")
-    }*/
+    }
 
     "stringOfMany" should "allow for no letters" in {
         val p = stringOfMany(letter)
