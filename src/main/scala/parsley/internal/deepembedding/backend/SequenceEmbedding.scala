@@ -75,7 +75,7 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
             case st@StringTok(s) => result(instrs += instructions.StringTokFastPerform(s, f.asInstanceOf[String => B], st.expected))
             case _ =>
                 suspend(right.codeGen[Cont, R]) |>
-                (instrs += new instructions.Perform(f))
+                (instrs += instructions.Perform(f))
         }
         case _ =>
             suspend(left.codeGen[Cont, R]) >>
@@ -105,7 +105,7 @@ private [deepembedding] final class >>=[A, B](val p: StrictParsley[A], private [
     // TODO: Make bind generate with expected != None a ErrorLabel instruction
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         suspend(p.codeGen[Cont, R]) |>
-        (instrs += new instructions.DynCall[A](x => f(x).demandCalleeSave().instrs))
+        (instrs += instructions.DynCall[A](x => f(x).demandCalleeSave().instrs))
     }
 }
 

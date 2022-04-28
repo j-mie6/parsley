@@ -19,7 +19,7 @@ private [deepembedding] final class Lift2[A, B, C](private [Lift2] val f: (A, B)
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont],  instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         suspend(left.codeGen[Cont, R]) >>
         suspend(right.codeGen[Cont, R]) |>
-        (instrs += new instructions.Lift2(f))
+        (instrs += instructions.Lift2(f))
     }
 }
 private [deepembedding] final class Lift3[A, B, C, D](val f: (A, B, C) => D, val p: StrictParsley[A], val q: StrictParsley[B], val r: StrictParsley[C])
@@ -29,7 +29,7 @@ private [deepembedding] final class Lift3[A, B, C, D](val f: (A, B, C) => D, val
         suspend(p.codeGen[Cont, R]) >>
         suspend(q.codeGen[Cont, R]) >>
         suspend(r.codeGen[Cont, R]) |>
-        (instrs += new instructions.Lift3(f))
+        (instrs += instructions.Lift3(f))
     }
 }
 

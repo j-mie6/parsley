@@ -72,7 +72,7 @@ private [backend] sealed abstract class FastZero[A](fail: A => StrictParsley[Not
     }
 }
 private [deepembedding] final class FastFail[A](val p: StrictParsley[A], msggen: A => String)
-    extends FastZero[A](x => new Fail(msggen(x)), new instructions.FastFail(msggen)) with MZero
+    extends FastZero[A](x => new Fail(msggen(x)), instructions.FastFail(msggen)) with MZero
 private [deepembedding] final class FastUnexpected[A](val p: StrictParsley[A], msggen: A => String)
     extends FastZero[A](x => new Unexpected(msggen(x)), new instructions.FastUnexpected(msggen)) with MZero
 
@@ -93,8 +93,8 @@ private [deepembedding] final class Filter[A](val p: StrictParsley[A], pred: A =
 private [deepembedding] final class FilterOut[A](val p: StrictParsley[A], pred: PartialFunction[A, String])
     extends FilterLike[A](x => ErrorExplain(Empty, pred(x)), new instructions.FilterOut(pred), pred.isDefinedAt(_))
 private [deepembedding] final class GuardAgainst[A](val p: StrictParsley[A], pred: PartialFunction[A, scala.Seq[String]])
-    extends FilterLike[A](x => new Fail(pred(x): _*), new instructions.GuardAgainst(pred), pred.isDefinedAt(_))
+    extends FilterLike[A](x => new Fail(pred(x): _*), instructions.GuardAgainst(pred), pred.isDefinedAt(_))
 
 private [backend] object Branch {
-    val FlipApp = new instructions.Lift2[Any, Any => Any, Any]((x, f) => f(x))
+    val FlipApp = instructions.Lift2[Any, Any => Any, Any]((x, f) => f(x))
 }

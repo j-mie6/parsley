@@ -14,12 +14,14 @@ import parsley.internal.machine.{Context, Good}
 import parsley.internal.machine.errors.MultiExpectedError
 import parsley.internal.machine.stacks.ErrorStack
 
-private [internal] final class Perform[-A, +B](_f: A => B) extends Instr {
-    private [Perform] val f = _f.asInstanceOf[Any => B]
+private [internal] final class Perform(f: Any => Any) extends Instr {
     override def apply(ctx: Context): Unit = ctx.exchangeAndContinue(f(ctx.stack.upeek))
     // $COVERAGE-OFF$
     override def toString: String = "Perform(?)"
     // $COVERAGE-ON$
+}
+private [internal] object Perform {
+    def apply[A, B](f: A => B): Perform = new Perform(f.asInstanceOf[Any => Any])
 }
 
 private [internal] final class Exchange[A](private [Exchange] val x: A) extends Instr {
@@ -69,14 +71,16 @@ private [internal] final class AlwaysRecoverWith[A](x: A) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int],
+private [internal] final class JumpTable(jumpTable: mutable.LongMap[(Int, Set[ErrorItem])],
         private [this] var default: Int,
         private [this] var merge: Int,
-        private [this] val size: Int,
-        private [this] val allErrorItems: Set[ErrorItem],
-        private [this] val errorItemss: List[Set[ErrorItem]]) extends Instr {
+        size: Int,
+        allErrorItems: Set[ErrorItem]) extends Instr {
+    def this(prefixes: List[Char], labels: List[Int], default: Int, merge: Int,
+              size: Int, allErrorItems: Set[ErrorItem], errorItemss: List[Set[ErrorItem]]) = {
+        this(mutable.LongMap(prefixes.view.map(_.toLong).zip(labels.zip(errorItemss)).toSeq: _*), default, merge, size, allErrorItems)
+    }
     private [this] var defaultPreamble: Int = _
-    private [this] val jumpTable = mutable.LongMap(prefixes.view.map(_.toLong).zip(labels.zip(errorItemss)).toSeq: _*)
 
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput) {

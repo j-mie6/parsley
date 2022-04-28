@@ -51,12 +51,14 @@ private [internal] object Apply extends Instr {
 }
 
 // Monadic
-private [internal] final class DynCall[-A](f: A => Array[Instr]) extends Instr {
-    private [DynCall] val g = f.asInstanceOf[Any => Array[Instr]]
-    override def apply(ctx: Context): Unit = ctx.call(g(ctx.stack.upop()))
+private [internal] final class DynCall(f: Any => Array[Instr]) extends Instr {
+    override def apply(ctx: Context): Unit = ctx.call(f(ctx.stack.upop()))
     // $COVERAGE-OFF$
     override def toString: String = "DynCall(?)"
     // $COVERAGE-ON$
+}
+private [internal] object DynCall {
+    def apply[A](f: A => Array[Instr]): DynCall = new DynCall(f.asInstanceOf[Any => Array[Instr]])
 }
 
 // Control Flow

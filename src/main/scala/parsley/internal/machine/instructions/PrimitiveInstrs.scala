@@ -84,9 +84,8 @@ private [internal] final class Put(reg: Int) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [parsley] final class CalleeSave(var label: Int, _slots: List[Int]) extends InstrWithLabel with Stateful {
-    private val saveArray = new Array[AnyRef](_slots.length)
-    private val slots = _slots.zipWithIndex
+private [parsley] final class CalleeSave(var label: Int, slots: List[(Int, Int)], saveArray: Array[AnyRef]) extends InstrWithLabel with Stateful {
+    def this(label: Int, slots: List[Int]) = this(label, slots.zipWithIndex, new Array[AnyRef](slots.length))
     private var inUse = false
 
     private def save(ctx: Context): Unit = {
@@ -129,5 +128,5 @@ private [parsley] final class CalleeSave(var label: Int, _slots: List[Int]) exte
     // $COVERAGE-OFF$
     override def toString: String = s"CalleeSave($label)"
     // $COVERAGE-ON$
-    override def copy: CalleeSave = new CalleeSave(label, _slots)
+    override def copy: CalleeSave = new CalleeSave(label, slots, new Array[AnyRef](slots.length))
 }

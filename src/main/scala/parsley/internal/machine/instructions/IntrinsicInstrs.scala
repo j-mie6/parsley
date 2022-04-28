@@ -5,12 +5,12 @@ package parsley.internal.machine.instructions
 
 import scala.annotation.tailrec
 
-import parsley.internal.errors.{Desc, EndOfInput, Raw}
+import parsley.internal.errors.{Desc, EndOfInput, ErrorItem, Raw}
 import parsley.internal.machine.{Context, Good}
 import parsley.internal.machine.errors.{EmptyError, EmptyErrorWithReason}
+import java.security.Guard
 
-private [internal] final class Lift2[A, B, C](_f: (A, B) => C) extends Instr {
-    private [this] val f = _f.asInstanceOf[(Any, Any) => C]
+private [internal] final class Lift2(f: (Any, Any) => Any) extends Instr {
     override def apply(ctx: Context): Unit = {
         val y = ctx.stack.upop()
         ctx.exchangeAndContinue(f(ctx.stack.peek, y))
@@ -19,9 +19,11 @@ private [internal] final class Lift2[A, B, C](_f: (A, B) => C) extends Instr {
     override def toString: String = "Lift2(f)"
     // $COVERAGE-ON$
 }
+private [internal] object Lift2 {
+    def apply[A, B, C](f: (A, B) => C): Lift2 = new Lift2(f.asInstanceOf[(Any, Any) => Any])
+}
 
-private [internal] final class Lift3[A, B, C, D](_f: (A, B, C) => D) extends Instr {
-    private [this] val f = _f.asInstanceOf[(Any, Any, Any) => D]
+private [internal] final class Lift3(f: (Any, Any, Any) => Any) extends Instr {
     override def apply(ctx: Context): Unit = {
         val z = ctx.stack.upop()
         val y = ctx.stack.upop()
@@ -31,12 +33,11 @@ private [internal] final class Lift3[A, B, C, D](_f: (A, B, C) => D) extends Ins
     override def toString: String = "Lift3(f)"
     // $COVERAGE-ON$
 }
+private [internal] object Lift3 {
+    def apply[A, B, C, D](f: (A, B, C) => D): Lift3 = new Lift3(f.asInstanceOf[(Any, Any, Any) => Any])
+}
 
-private [internal] class CharTok(c: Char, x: Any, _expected: Option[String]) extends Instr {
-    private [this] final val errorItem = Some(_expected match {
-        case Some(e) => Desc(e)
-        case None    => Raw(c)
-    })
+private [internal] class CharTok(c: Char, x: Any, errorItem: Option[ErrorItem]) extends Instr {
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput && ctx.nextChar == c) {
             ctx.consumeChar()
@@ -49,11 +50,7 @@ private [internal] class CharTok(c: Char, x: Any, _expected: Option[String]) ext
     // $COVERAGE-ON$
 }
 
-private [internal] final class StringTok private [instructions] (s: String, x: Any, _expected: Option[String]) extends Instr {
-    private [this] final val errorItem = Some(_expected match {
-        case Some(e) => Desc(e)
-        case None    => Raw(s)
-    })
+private [internal] final class StringTok(s: String, x: Any, errorItem: Option[ErrorItem]) extends Instr {
     private [this] val cs = s.toCharArray
     private [this] val sz = cs.length
 
@@ -149,8 +146,7 @@ private [internal] final class FilterOut[A](_pred: PartialFunction[A, String]) e
     // $COVERAGE-ON$
 }
 
-private [internal] final class GuardAgainst[A](_pred: PartialFunction[A, Seq[String]]) extends Instr {
-    private [this] val pred = _pred.asInstanceOf[PartialFunction[Any, Seq[String]]]
+private [internal] final class GuardAgainst(pred: PartialFunction[Any, Seq[String]]) extends Instr {
     override def apply(ctx: Context): Unit = {
         if (pred.isDefinedAt(ctx.stack.upeek)) ctx.failWithMessage(pred(ctx.stack.upop()): _*)
         else ctx.inc()
@@ -158,6 +154,9 @@ private [internal] final class GuardAgainst[A](_pred: PartialFunction[A, Seq[Str
     // $COVERAGE-OFF$
     override def toString: String = "GuardAgainst(?)"
     // $COVERAGE-ON$
+}
+private [internal] object GuardAgainst {
+    def apply[A](pred: PartialFunction[A, Seq[String]]): GuardAgainst = new GuardAgainst(pred.asInstanceOf[PartialFunction[Any, Seq[String]]])
 }
 
 private [internal] object NegLookFail extends Instr {
@@ -224,11 +223,19 @@ private [internal] final class SwapAndPut(reg: Int) extends Instr {
 
 // Companion Objects
 private [internal] object CharTok {
-    def apply(c: Char, expected: Option[String]): Instr = new CharTok(c, c, expected)
+    def apply(c: Char, expected: Option[String]): CharTok = apply(c, c, expected)
+    def apply(c: Char, x: Any, expected: Option[String]): CharTok = new CharTok(c, x, Some(expected match {
+        case Some(e) => Desc(e)
+        case None    => Raw(c)
+    }))
 }
 
 private [internal] object StringTok {
-    def apply(s: String, expected: Option[String]): StringTok = new StringTok(s, s, expected)
+    def apply(s: String, expected: Option[String]): StringTok = apply(s, s, expected)
+    def apply(s: String, x: Any, expected: Option[String]): StringTok = new StringTok(s, x, Some(expected match {
+        case Some(e) => Desc(e)
+        case None    => Raw(s)
+    }))
 
     private [StringTok] abstract class Adjust {
         private [StringTok] def tab: Adjust
@@ -272,9 +279,9 @@ private [internal] object StringTok {
 }
 
 private [internal] object CharTokFastPerform {
-    def apply[A >: Char, B](c: Char, f: A => B, expected: Option[String]): CharTok = new CharTok(c, f(c), expected)
+    def apply[A >: Char, B](c: Char, f: A => B, expected: Option[String]): CharTok = CharTok(c, f(c), expected)
 }
 
 private [internal] object StringTokFastPerform {
-    def apply(s: String, f: String => Any, expected: Option[String]): StringTok = new StringTok(s, f(s), expected)
+    def apply(s: String, f: String => Any, expected: Option[String]): StringTok = StringTok(s, f(s), expected)
 }

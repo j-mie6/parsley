@@ -122,12 +122,14 @@ private [internal] final class Unexpected(msg: String) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class FastFail[A](msggen: A=>String) extends Instr {
-    private [this] val msggen_ = msggen.asInstanceOf[Any => String]
-    override def apply(ctx: Context): Unit = ctx.failWithMessage(msggen_(ctx.stack.upop()))
+private [internal] final class FastFail(msggen: Any => String) extends Instr {
+    override def apply(ctx: Context): Unit = ctx.failWithMessage(msggen(ctx.stack.upop()))
     // $COVERAGE-OFF$
     override def toString: String = "FastFail(?)"
     // $COVERAGE-ON$
+}
+private [internal] object FastFail {
+    def apply[A](msggen: A => String): FastFail = new FastFail(msggen.asInstanceOf[Any => String])
 }
 
 private [internal] final class FastUnexpected[A](_msggen: A=>String) extends Instr {
