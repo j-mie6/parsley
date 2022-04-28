@@ -91,7 +91,6 @@ class InternalTests extends ParsleyTest {
     they should "contain the default for mid-points without backtracking" in {
         val p = choice(string("abc"), string("cee"), stringOfSome(digit), string("dead"))
         assume(p.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 1)
-        //println(parsley.internal.machine.instructions.pretty(p.internal.instrs))
         val dummy = Reg.make[Unit]
         val q = choice(dummy.put(()) *> string("abc"), dummy.put(()) *> string("cee"),
                        dummy.put(()) *> stringOfSome(digit), dummy.put(()) *> string("dead"))

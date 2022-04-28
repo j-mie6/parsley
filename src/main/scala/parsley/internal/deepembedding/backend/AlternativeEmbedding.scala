@@ -36,7 +36,7 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
     // TODO: Refactor
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = tablify(this, mutable.ListBuffer.empty) match {
         // If the tablified list is single element, that implies that this should be generated as normal!
-        case _::Nil    => left match {
+        case (_ :: Nil) | (_ :: (_, None) :: Nil) => left match {
             case Attempt(u) => right match {
                 case Pure(x) =>
                     val handler = state.freshLabel()
@@ -92,7 +92,6 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
         }
         // In case of None'd list, the codeGen cont continues by codeGenning that p, else we are done for this tree, call cont!
         case tablified =>
-            // This list is backwards :) NO IT'S NOT
             val needsDefault = tablified.last._2.isDefined
             val end = state.freshLabel()
             val default = state.freshLabel()
@@ -102,9 +101,8 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
             }.unzip
             val (roots, leads, ls, size, expecteds, expectedss) =
                 foldTablified(tablified_.toList, state, mutable.Map.empty, mutable.ListBuffer.empty, mutable.ListBuffer.empty, 0, Set.empty, mutable.ListBuffer.empty)
-            //println(leads, expectedss)
             // The expectedss need to be adjusted for every backtracking parser
-            val expectedss_ = propagateExpecteds(expectedss.zip(backtracks).reverse, expecteds, Nil)
+            val expectedss_ = propagateExpecteds(expectedss.zip(backtracks.toList).reverse, expecteds, Nil)
             instrs += new instructions.JumpTable(leads, ls, default, merge, size, expecteds, expectedss_)
             codeGenRoots(roots, ls, end) >> {
                 instrs += new instructions.Catch(merge) //This instruction is reachable as default - 1
