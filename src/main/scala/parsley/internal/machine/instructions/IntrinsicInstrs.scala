@@ -113,11 +113,11 @@ private [internal] final class If(var label: Int) extends InstrWithLabel {
 }
 
 private [internal] final class Case(var label: Int) extends InstrWithLabel {
-    override def apply(ctx: Context): Unit = ctx.stack.pop[Either[_, _]]() match {
+    override def apply(ctx: Context): Unit = ctx.stack.peek[Either[_, _]] match {
         case Left(x)  =>
-            ctx.stack.upush(x)
+            ctx.stack.exchange(x)
             ctx.pc = label
-        case Right(y) => ctx.unsafePushAndContinue(y)
+        case Right(y) => ctx.exchangeAndContinue(y)
     }
     // $COVERAGE-OFF$
     override def toString: String = s"Case(left: $label)"

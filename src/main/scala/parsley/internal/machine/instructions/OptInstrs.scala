@@ -73,34 +73,35 @@ private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int]
         private [this] var default: Int,
         private [this] var merge: Int,
         private [this] val size: Int,
-        private [this] val errorItems: Set[ErrorItem]) extends Instr {
+        private [this] val allErrorItems: Set[ErrorItem],
+        private [this] val errorItemss: List[Set[ErrorItem]]) extends Instr {
     private [this] var defaultPreamble: Int = _
-    private [this] val jumpTable = mutable.LongMap(prefixes.map(_.toLong).zip(labels): _*)
+    private [this] val jumpTable = mutable.LongMap(prefixes.view.map(_.toLong).zip(labels.zip(errorItemss)).toSeq: _*)
 
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput) {
-            val dest = jumpTable.getOrElse(ctx.nextChar, default)
+            val (dest, errorItems) = jumpTable.getOrElse(ctx.nextChar, (default, allErrorItems))
             ctx.pc = dest
-            if (dest == default) addErrors(ctx)
-            else {
+            addErrors(ctx, errorItems) // adds a handler
+            if (dest != default) {
                 ctx.pushCheck()
                 ctx.pushHandler(defaultPreamble)
                 ctx.saveHints(shadow = false)
             }
         }
         else {
-            addErrors(ctx)
+            addErrors(ctx, allErrorItems)
             ctx.pc = default
         }
     }
 
-    private def addErrors(ctx: Context): Unit = {
+    private def addErrors(ctx: Context, errorItems: Set[ErrorItem]): Unit = {
         ctx.errs = new ErrorStack(new MultiExpectedError(ctx.offset, ctx.line, ctx.col, errorItems, size), ctx.errs)
         ctx.pushHandler(merge)
     }
 
     override def relabel(labels: Array[Int]): this.type = {
-        jumpTable.mapValuesInPlace((_, v) => labels(v))
+        jumpTable.mapValuesInPlace((_, v) => (labels(v._1), v._2))
         default = labels(default)
         merge = labels(merge)
         defaultPreamble = default - 1

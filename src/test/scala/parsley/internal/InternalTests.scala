@@ -6,10 +6,12 @@ package parsley.internal
 import parsley.{ParsleyTest, Success, Failure, TestError, VanillaError, Raw, Named}
 import parsley.Parsley, Parsley._
 import parsley.character.{char, satisfy, digit, string, stringOfSome}
-import parsley.combinator.{attemptChoice, some}
+import parsley.combinator.{attemptChoice, choice, some}
 import parsley.expr._
 import parsley.implicits.character.charLift
 import parsley.errors.combinator.ErrorMethods
+import parsley.registers.Reg
+
 import machine.instructions
 
 import scala.language.implicitConversions
@@ -63,29 +65,69 @@ class InternalTests extends ParsleyTest {
     }
 
     // Issue 118
-    "error alternatives for JumpTable" should "be complete across all branches" ignore {
-        val fullStrs@(str0 +: str1 +: strs) = Seq("hello", "hi", "abc", "good", "g")
-        val p = attemptChoice(fullStrs.map(string): _*)
+    "error alternatives for JumpTable" should "be complete across all branches" in {
+        val strs = Seq("hello", "hi", "abc", "good", "g")
+        val p = attemptChoice(strs.map(string): _*)
         assume(p.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 1)
-        inside(p.parse("h")) {
-            case Failure(TestError((1, 1), VanillaError(_, expecteds, _))) =>
-                expecteds should contain allOf (Raw(str0), Raw(str1), strs.map(Raw): _*)
-        }
-        inside(p.parse("b")) {
-            case Failure(TestError((1, 1), VanillaError(_, expecteds, _))) =>
-                expecteds should contain allOf (Raw(str0), Raw(str1), strs.map(Raw): _*)
-        }
-        inside(p.parse("a")) {
-            case Failure(TestError((1, 1), VanillaError(_, expecteds, _))) =>
-                expecteds should contain allOf (Raw(str0), Raw(str1), strs.map(Raw): _*)
-        }
+        val dummy = Reg.make[Unit]
+        val q = attemptChoice(strs.map(s => dummy.put(()) *> string(s)): _*)
+        assume(q.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 0)
+        info("parsing 'h'")
+        p.parse("h") shouldBe q.parse("h")
+        info("parsing 'b'")
+        p.parse("b") shouldBe q.parse("b")
+        info("parsing 'a'")
+        p.parse("a") shouldBe q.parse("a")
     }
     they should "contain the default in case of no input" in {
-        val p = attemptChoice(string("abc"), string("a"), string("dead"), stringOfSome(digit))
+        val p = attemptChoice(string("abc"), string("a"), stringOfSome(digit), string("dead"))
         assume(p.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 1)
-        inside(p.parse("")) {
-            case Failure(TestError((1, 1), VanillaError(_, expecteds, _))) =>
-                expecteds should contain allOf (Raw("abc"), Raw("a"), Raw("dead"), Named("digit"))
-        }
+        val dummy = Reg.make[Unit]
+        val q = attemptChoice(dummy.put(()) *> string("abc"), dummy.put(()) *> string("a"),
+                              dummy.put(()) *> stringOfSome(digit), dummy.put(()) *> string("dead"))
+        assume(q.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 0)
+        p.parse("") shouldBe q.parse("")
+    }
+    they should "contain the default for mid-points without backtracking" in {
+        val p = choice(string("abc"), string("cee"), stringOfSome(digit), string("dead"))
+        assume(p.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 1)
+        //println(parsley.internal.machine.instructions.pretty(p.internal.instrs))
+        val dummy = Reg.make[Unit]
+        val q = choice(dummy.put(()) *> string("abc"), dummy.put(()) *> string("cee"),
+                       dummy.put(()) *> stringOfSome(digit), dummy.put(()) *> string("dead"))
+        assume(q.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 0)
+        info("parsing 'c'")
+        p.parse("c") shouldBe q.parse("c")
+        info("parsing 'd'")
+        p.parse("d") shouldBe q.parse("d")
+    }
+    they should "be complete when backtracking is disabled" in {
+        val strs = Seq("hello", "hi", "abc", "good", "g")
+        val p = choice(strs.map(string): _*)
+        assume(p.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 1)
+        val dummy = Reg.make[Unit]
+        val q = choice(strs.map(s => dummy.put(()) *> string(s)): _*)
+        assume(q.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 0)
+        info("parsing 'h'")
+        p.parse("h") shouldBe q.parse("h")
+        info("parsing 'g'")
+        p.parse("g") shouldBe q.parse("g")
+        info("parsing 'a'")
+        p.parse("a") shouldBe q.parse("a")
+    }
+    they should "merge properly when more input is consumed in a non-backtracking branch" in {
+        val p = choice(string("abc"), char('b') *> stringOfSome(digit), string("cde"))
+        assume(p.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 1)
+        val dummy = Reg.make[Unit]
+        val q = choice(dummy.put(()) *> string("abc"), dummy.put(()) *> char('b') *> stringOfSome(digit), dummy.put(()) *> string("cde"))
+        assume(q.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 0)
+        info("parsing nothing")
+        p.parse("") shouldBe q.parse("")
+        info("parsing 'a'")
+        p.parse("a") shouldBe q.parse("a")
+        info("parsing 'b'")
+        p.parse("b") shouldBe q.parse("b")
+        info("parsing 'c'")
+        p.parse("c") shouldBe q.parse("c")
     }
 }

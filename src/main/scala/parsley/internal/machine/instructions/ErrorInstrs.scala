@@ -68,7 +68,7 @@ private [internal] object MergeErrorsAndFail extends Instr {
     }
 
     // $COVERAGE-OFF$
-    override def toString: String = "MergeErrors"
+    override def toString: String = "MergeErrorsAndFail"
     // $COVERAGE-ON$
 }
 
