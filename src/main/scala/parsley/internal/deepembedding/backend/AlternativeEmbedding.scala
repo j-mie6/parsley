@@ -95,13 +95,16 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
             val end = state.freshLabel()
             val default = state.freshLabel()
             val merge = state.getLabel(instructions.MergeErrorsAndFail)
-            val (tablified_, backtracks) = tablified.view.collect {
+            val (tablified_, backtracks) = tablified/*.view*/.collect {
                 case (root, Some((leading, backtrack))) => ((root, leading), backtrack)
             }.unzip
             val (roots, leads, ls, size, expecteds, expectedss) = foldTablified(tablified_.toList, state, mutable.Map.empty, mutable.ListBuffer.empty,
                                                                                 mutable.ListBuffer.empty, 0, Set.empty, mutable.ListBuffer.empty)
+            //println(tablified)
+            //println(leads, expectedss, expecteds, backtracks)
             // The expectedss need to be adjusted for every backtracking parser
             val expectedss_ = propagateExpecteds(expectedss.zip(backtracks.toList).reverse, expecteds, Nil)
+            //println(expectedss_)
             instrs += new instructions.JumpTable(leads, ls, default, merge, size, expecteds, expectedss_)
             codeGenRoots(roots, ls, end) >> {
                 instrs += new instructions.Catch(merge) //This instruction is reachable as default - 1

@@ -112,6 +112,6 @@ private [internal] final class JumpTable(jumpTable: mutable.LongMap[(Int, Set[Er
         this
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"JumpTable(${jumpTable.map{case (k, v) => k.toChar -> v}.mkString(", ")}, _ -> $default, $merge)"
+    override def toString: String = s"JumpTable(${jumpTable.map{case (k, v) => k.toChar -> v._1}.mkString(", ")}, _ -> $default, $merge)"
     // $COVERAGE-ON$
 }
