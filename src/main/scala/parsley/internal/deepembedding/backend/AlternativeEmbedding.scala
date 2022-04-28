@@ -15,7 +15,6 @@ import parsley.internal.machine.instructions
 import StrictParsley.InstrBuffer
 import scala.collection.immutable
 
-// TODO: Tablification is too aggressive. It appears that `optional` is being compiled to jumptable
 private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right: StrictParsley[A]) extends StrictParsley[A] {
     def inlinable: Boolean = false
 
@@ -35,7 +34,7 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
     }
     // TODO: Refactor
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = tablify(this, mutable.ListBuffer.empty) match {
-        // If the tablified list is single element, that implies that this should be generated as normal!
+        // If the tablified list is single element (or the next is None), that implies that this should be generated as normal!
         case (_ :: Nil) | (_ :: (_, None) :: Nil) => left match {
             case Attempt(u) => right match {
                 case Pure(x) =>
@@ -58,7 +57,7 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
                         instrs += new instructions.Label(handler)
                         instrs += new instructions.RestoreAndPushHandler(merge)
                         suspend(v.codeGen[Cont, R]) |> {
-                            instrs += instructions.ErrorToHints //TODO: If we know v must consume input to succeed then this should be PopError!
+                            instrs += instructions.ErrorToHints
                             instrs += new instructions.Label(skip)
                         }
                     }
@@ -84,7 +83,7 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
                         instrs += new instructions.Label(handler)
                         instrs += new instructions.Catch(merge)
                         suspend(v.codeGen[Cont, R]) |> {
-                            instrs += instructions.ErrorToHints //TODO: If we know v must consume input to succeed then this should be PopError!
+                            instrs += instructions.ErrorToHints
                             instrs += new instructions.Label(skip)
                         }
                     }
@@ -99,8 +98,8 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
             val (tablified_, backtracks) = tablified.view.collect {
                 case (root, Some((leading, backtrack))) => ((root, leading), backtrack)
             }.unzip
-            val (roots, leads, ls, size, expecteds, expectedss) =
-                foldTablified(tablified_.toList, state, mutable.Map.empty, mutable.ListBuffer.empty, mutable.ListBuffer.empty, 0, Set.empty, mutable.ListBuffer.empty)
+            val (roots, leads, ls, size, expecteds, expectedss) = foldTablified(tablified_.toList, state, mutable.Map.empty, mutable.ListBuffer.empty,
+                                                                                mutable.ListBuffer.empty, 0, Set.empty, mutable.ListBuffer.empty)
             // The expectedss need to be adjusted for every backtracking parser
             val expectedss_ = propagateExpecteds(expectedss.zip(backtracks.toList).reverse, expecteds, Nil)
             instrs += new instructions.JumpTable(leads, ls, default, merge, size, expecteds, expectedss_)
@@ -113,7 +112,7 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
                 }
                 else {
                     tablified.last._1.codeGen |> {
-                        instrs += instructions.ErrorToHints //TODO: If we know tablified.head._1 must consume input to succeed then this should be PopError!
+                        instrs += instructions.ErrorToHints
                         instrs += new instructions.Label(end)
                     }
                 }
@@ -133,7 +132,7 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
         case root::roots_ =>
             instrs += new instructions.Label(ls.head)
             codeGenAlternatives(root) >> {
-                instrs += instructions.ErrorToHints //TODO: If we know root must consume input to succeed then this should be PopError!
+                instrs += instructions.ErrorToHints
                 instrs += new instructions.JumpAndPopCheck(end)
                 suspend(codeGenRoots[Cont, R](roots_, ls.tail, end))
             }

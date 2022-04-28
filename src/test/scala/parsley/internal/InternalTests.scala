@@ -6,7 +6,7 @@ package parsley.internal
 import parsley.{ParsleyTest, Success, Failure, TestError, VanillaError, Raw, Named}
 import parsley.Parsley, Parsley._
 import parsley.character.{char, satisfy, digit, string, stringOfSome}
-import parsley.combinator.{attemptChoice, choice, some}
+import parsley.combinator.{attemptChoice, choice, some, optional}
 import parsley.expr._
 import parsley.implicits.character.charLift
 import parsley.errors.combinator.ErrorMethods
@@ -128,5 +128,10 @@ class InternalTests extends ParsleyTest {
         p.parse("b") shouldBe q.parse("b")
         info("parsing 'c'")
         p.parse("c") shouldBe q.parse("c")
+    }
+
+    "tablification" should "not occur for optional" in {
+        val p = optional(string("abc"))
+        p.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) shouldBe 0
     }
 }
