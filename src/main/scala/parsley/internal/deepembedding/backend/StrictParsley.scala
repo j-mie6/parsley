@@ -206,9 +206,9 @@ private [deepembedding] class CodeGenState {
     private val handlerMap = mutable.Map.empty[Instr, Int]
     private val relabelErrorMap = mutable.Map.empty[String, Int]
     private val applyReasonMap = mutable.Map.empty[String, Int]
-    def getLabel(handler: Instr) = handlerMap.getOrElseUpdate(handler, freshLabel())
-    def getLabelForRelabelError(label: String) = relabelErrorMap.getOrElseUpdate(label, freshLabel())
-    def getLabelForApplyReason(reason: String) = applyReasonMap.getOrElseUpdate(reason, freshLabel())
+    def getLabel(handler: Instr): Int  = handlerMap.getOrElseUpdate(handler, freshLabel())
+    def getLabelForRelabelError(label: String): Int = relabelErrorMap.getOrElseUpdate(label, freshLabel())
+    def getLabelForApplyReason(reason: String): Int = applyReasonMap.getOrElseUpdate(reason, freshLabel())
     def handlers: Iterator[(Instr, Int)] = {
         val relabelErrors = relabelErrorMap.view.map {
             case (label, i) => new instructions.RelabelErrorAndFail(label) -> i

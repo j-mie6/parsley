@@ -8,7 +8,6 @@ import scala.annotation.tailrec
 import parsley.internal.errors.{Desc, EndOfInput, ErrorItem, Raw}
 import parsley.internal.machine.{Context, Good}
 import parsley.internal.machine.errors.{EmptyError, EmptyErrorWithReason}
-import java.security.Guard
 
 private [internal] final class Lift2(f: (Any, Any) => Any) extends Instr {
     override def apply(ctx: Context): Unit = {

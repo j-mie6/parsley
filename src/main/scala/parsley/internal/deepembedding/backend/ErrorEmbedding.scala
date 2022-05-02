@@ -9,7 +9,7 @@ private [deepembedding] final class ErrorLabel[A](val p: StrictParsley[A], priva
     override def setup(label: Int): instructions.Instr = new instructions.PushHandlerAndCheck(label, saveHints = true)
     override def instr: instructions.Instr = new instructions.RelabelHints(label)
     override def instrNeedsLabel: Boolean = false
-    override def handlerLabel(state: CodeGenState) = state.getLabelForRelabelError(label)
+    override def handlerLabel(state: CodeGenState): Int = state.getLabelForRelabelError(label)
     final override def optimise: StrictParsley[A] = p match {
         case ct@CharTok(c) if !ct.expected.contains("") => new CharTok(c, Some(label)).asInstanceOf[StrictParsley[A]]
         case st@StringTok(s) if !st.expected.contains("") => new StringTok(s, Some(label)).asInstanceOf[StrictParsley[A]]
@@ -23,19 +23,19 @@ private [deepembedding] final class ErrorExplain[A](val p: StrictParsley[A], rea
     override def setup(label: Int): instructions.Instr = new instructions.PushHandlerAndCheck(label, saveHints = false)
     override def instr: instructions.Instr = instructions.PopHandlerAndCheck
     override def instrNeedsLabel: Boolean = false
-    override def handlerLabel(state: CodeGenState) = state.getLabelForApplyReason(reason)
+    override def handlerLabel(state: CodeGenState): Int  = state.getLabelForApplyReason(reason)
 }
 
 private [deepembedding] final class ErrorAmend[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, A](false) {
     override val instr: instructions.Instr = instructions.PopHandlerAndState
     override def instrNeedsLabel: Boolean = false
-    override def handlerLabel(state: CodeGenState) = state.getLabel(instructions.AmendAndFail)
+    override def handlerLabel(state: CodeGenState): Int  = state.getLabel(instructions.AmendAndFail)
 }
 private [deepembedding] final class ErrorEntrench[A](val p: StrictParsley[A]) extends ScopedUnary[A, A] {
     override def setup(label: Int): instructions.Instr = new instructions.PushHandler(label)
     override val instr: instructions.Instr = instructions.PopHandler
     override def instrNeedsLabel: Boolean = false
-    override def handlerLabel(state: CodeGenState) = state.getLabel(instructions.EntrenchAndFail)
+    override def handlerLabel(state: CodeGenState): Int  = state.getLabel(instructions.EntrenchAndFail)
 }
 
 private [backend] object ErrorLabel {

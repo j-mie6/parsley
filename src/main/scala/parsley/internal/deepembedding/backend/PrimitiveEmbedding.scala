@@ -18,12 +18,12 @@ import StrictParsley.InstrBuffer
 private [deepembedding] final class Attempt[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, A](false) {
     override val instr: instructions.Instr = instructions.PopHandlerAndState
     override def instrNeedsLabel: Boolean = false
-    override def handlerLabel(state: CodeGenState) = state.getLabel(instructions.RestoreAndFail)
+    override def handlerLabel(state: CodeGenState): Int  = state.getLabel(instructions.RestoreAndFail)
 }
 private [deepembedding] final class Look[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, A](true) {
     override val instr: instructions.Instr = instructions.RestoreHintsAndState
     override def instrNeedsLabel: Boolean = false
-    override def handlerLabel(state: CodeGenState) = state.getLabel(instructions.PopStateAndFail)
+    override def handlerLabel(state: CodeGenState): Int  = state.getLabel(instructions.PopStateAndFail)
 }
 private [deepembedding] final class NotFollowedBy[A](val p: StrictParsley[A]) extends Unary[A, Unit] {
     override def optimise: StrictParsley[Unit] = p match {
