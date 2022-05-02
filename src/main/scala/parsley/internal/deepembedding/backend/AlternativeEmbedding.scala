@@ -95,16 +95,12 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
             val end = state.freshLabel()
             val default = state.freshLabel()
             val merge = state.getLabel(instructions.MergeErrorsAndFail)
-            val (tablified_, backtracks) = tablified/*.view*/.collect {
-                case (root, Some((leading, backtrack))) => ((root, leading), backtrack)
-            }.unzip
-            val (roots, leads, ls, size, expecteds, expectedss) = foldTablified(tablified_.toList, state, mutable.Map.empty, mutable.ListBuffer.empty,
-                                                                                mutable.ListBuffer.empty, 0, Set.empty, mutable.ListBuffer.empty)
-            //println(tablified)
-            //println(leads, expectedss, expecteds, backtracks)
-            // The expectedss need to be adjusted for every backtracking parser
-            val expectedss_ = propagateExpecteds(expectedss.zip(backtracks.toList).reverse, expecteds, Nil)
-            //println(expectedss_)
+            val tablified_ = tablified.collect {
+                case (root, Some((leading, backtrack))) => (root, (leading, backtrack))
+            }
+            val (roots, leads, ls, size, expecteds, expectedss) = foldTablified(tablified_, state, mutable.Map.empty, mutable.Map.empty,
+                                                                                mutable.ListBuffer.empty, mutable.ListBuffer.empty, 0, Set.empty, Nil)
+            val expectedss_ = propagateExpecteds(expectedss, expecteds, Nil)
             instrs += new instructions.JumpTable(leads, ls, default, merge, size, expecteds, expectedss_)
             codeGenRoots(roots, ls, end) >> {
                 instrs += new instructions.Catch(merge) //This instruction is reachable as default - 1
@@ -122,11 +118,9 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
             }
     }
 
-    @tailrec def propagateExpecteds(expectedss: List[(Set[ErrorItem], Boolean)], previous: Set[ErrorItem], corrected: List[Set[ErrorItem]]):
+    @tailrec def propagateExpecteds(expectedss: List[(Set[ErrorItem], Boolean)], all: Set[ErrorItem], corrected: List[Set[ErrorItem]]):
         List[Set[ErrorItem]] = expectedss match {
-        case (expecteds, backtrack) :: expectedss =>
-            if (backtrack) propagateExpecteds(expectedss, previous, previous :: corrected)
-            else           propagateExpecteds(expectedss, expecteds, expecteds :: corrected)
+        case (expecteds, backtrack) :: expectedss => propagateExpecteds(expectedss, all, (if (backtrack) all else expecteds) :: corrected)
         case Nil => corrected
     }
 
@@ -174,15 +168,17 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
             }
     }
     // TODO: Refactor
-    @tailrec def foldTablified(tablified: List[(StrictParsley[_], StrictParsley[_])], labelGen: CodeGenState,
+    @tailrec def foldTablified(tablified: List[(StrictParsley[_], (StrictParsley[_], Boolean))], labelGen: CodeGenState,
                                roots: mutable.Map[Char, mutable.ListBuffer[StrictParsley[_]]],
+                               backtracking: mutable.Map[Char, Boolean],
                                leads: mutable.ListBuffer[Char],
                                labels: mutable.ListBuffer[Int],
                                size: Int,
                                expecteds: Set[ErrorItem],
-                               expectedss: mutable.ListBuffer[Set[ErrorItem]]):
-        (List[List[StrictParsley[_]]], List[Char], List[Int], Int, Set[ErrorItem], List[Set[ErrorItem]]) = tablified match {
-        case (root, lead)::tablified_ =>
+                               // build in reverse!
+                               expectedss: List[Set[ErrorItem]]):
+        (List[List[StrictParsley[_]]], List[Char], List[Int], Int, Set[ErrorItem], List[(Set[ErrorItem], Boolean)]) = tablified match {
+        case (root, (lead, backtracks))::tablified_ =>
             val (c: Char, expected: ErrorItem, _size: Int) = lead match {
                 case ct@CharTok(d) => (d, ct.expected.fold[ErrorItem](Raw(d))(Desc(_)), 1)
                 case st@StringTok(s) => (s.head, st.expected.fold[ErrorItem](Raw(s))(Desc(_)), s.size)
@@ -193,13 +189,18 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
             }
             if (roots.contains(c)) {
                 roots(c) += root
-                foldTablified(tablified_, labelGen, roots, leads, labels, Math.max(size, _size), expecteds + expected, expectedss)
+                backtracking(c) = backtracking(c) && backtracks
+                foldTablified(tablified_, labelGen, roots, backtracking, leads, labels, Math.max(size, _size), expecteds + expected, expectedss)
             }
             else {
                 roots(c) = mutable.ListBuffer(root)
-                foldTablified(tablified_, labelGen, roots, leads += c, labels += labelGen.freshLabel(), Math.max(size, _size), expecteds + expected, expectedss += expecteds)
+                backtracking(c) = backtracks
+                foldTablified(tablified_, labelGen, roots, backtracking, leads += c, labels += labelGen.freshLabel(),
+                              Math.max(size, _size), expecteds + expected, expecteds :: expectedss)
             }
-        case Nil => (leads.toList.map(roots(_).toList), leads.toList, labels.toList, size, expecteds, expectedss.toList)
+        case Nil => (leads.toList.map(roots(_).toList), leads.toList, labels.toList, size,
+                    // When 2.12 is dropped, the final toList can go
+                     expecteds, expectedss.zip(leads.toList.reverseIterator.map(backtracking(_)).toList))
     }
     @tailrec private def tablable(p: StrictParsley[_], backtracks: Boolean): Option[(StrictParsley[_], Boolean)] = p match {
         // CODO: Numeric parsers by leading digit (This one would require changing the foldTablified function a bit)
