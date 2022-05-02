@@ -27,6 +27,17 @@ private [internal] object Pop extends Instr {
     // $COVERAGE-ON$
 }
 
+/*private [internal] object Swap extends Instr {
+    override def apply(ctx: Context): Unit = {
+        val y = ctx.stack.upop()
+        val x = ctx.stack.peekAndExchange(y)
+        ctx.unsafePushAndContinue(x)
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = "Swap"
+    // $COVERAGE-ON$
+}*/
+
 // Applicative Functors
 private [internal] object Apply extends Instr {
     override def apply(ctx: Context): Unit = {
@@ -40,12 +51,14 @@ private [internal] object Apply extends Instr {
 }
 
 // Monadic
-private [internal] final class DynCall[-A](f: A => Array[Instr]) extends Instr {
-    private [DynCall] val g = f.asInstanceOf[Any => Array[Instr]]
-    override def apply(ctx: Context): Unit = ctx.call(g(ctx.stack.upop()))
+private [internal] final class DynCall(f: Any => Array[Instr]) extends Instr {
+    override def apply(ctx: Context): Unit = ctx.call(f(ctx.stack.upop()))
     // $COVERAGE-OFF$
     override def toString: String = "DynCall(?)"
     // $COVERAGE-ON$
+}
+private [internal] object DynCall {
+    def apply[A](f: A => Array[Instr]): DynCall = new DynCall(f.asInstanceOf[Any => Array[Instr]])
 }
 
 // Control Flow
@@ -104,6 +117,16 @@ private [internal] final class PushHandler(var label: Int) extends InstrWithLabe
     // $COVERAGE-ON$
 }
 
+private [internal] object PopHandler extends Instr {
+    override def apply(ctx: Context): Unit = {
+        ctx.handlers = ctx.handlers.tail
+        ctx.inc()
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = "PopHandler"
+    // $COVERAGE-ON$
+}
+
 private [internal] final class PushHandlerAndState(var label: Int, saveHints: Boolean, hideHints: Boolean) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ctx.pushHandler(label)
@@ -116,7 +139,18 @@ private [internal] final class PushHandlerAndState(var label: Int, saveHints: Bo
     // $COVERAGE-ON$
 }
 
-private [internal] final class InputCheck(var label: Int, saveHints: Boolean = false) extends InstrWithLabel {
+private [internal] object PopHandlerAndState extends Instr {
+    override def apply(ctx: Context): Unit = {
+        ctx.states = ctx.states.tail
+        ctx.handlers = ctx.handlers.tail
+        ctx.inc()
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = "PopHandlerAndState"
+    // $COVERAGE-ON$
+}
+
+private [internal] final class PushHandlerAndCheck(var label: Int, saveHints: Boolean) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ctx.pushCheck()
         ctx.pushHandler(label)
@@ -124,7 +158,18 @@ private [internal] final class InputCheck(var label: Int, saveHints: Boolean = f
         ctx.inc()
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"InputCheck($label)"
+    override def toString: String = s"PushHandlerAndCheck($label)"
+    // $COVERAGE-ON$
+}
+
+private [internal] object PopHandlerAndCheck extends Instr {
+    override def apply(ctx: Context): Unit = {
+        ctx.checkStack = ctx.checkStack.tail
+        ctx.handlers = ctx.handlers.tail
+        ctx.inc()
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = "PopHandlerAndCheck"
     // $COVERAGE-ON$
 }
 
@@ -135,7 +180,7 @@ private [internal] final class Jump(var label: Int) extends InstrWithLabel {
     // $COVERAGE-ON$
 }
 
-private [internal] final class JumpGood(var label: Int) extends InstrWithLabel {
+private [internal] final class JumpAndPopCheck(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ctx.handlers = ctx.handlers.tail
         ctx.checkStack = ctx.checkStack.tail
@@ -143,7 +188,19 @@ private [internal] final class JumpGood(var label: Int) extends InstrWithLabel {
         ctx.pc = label
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"JumpGood($label)"
+    override def toString: String = s"JumpAndPopCheck($label)"
+    // $COVERAGE-ON$
+}
+
+private [internal] final class JumpAndPopState(var label: Int) extends InstrWithLabel {
+    override def apply(ctx: Context): Unit = {
+        ctx.handlers = ctx.handlers.tail
+        ctx.states = ctx.states.tail
+        ctx.commitHints()
+        ctx.pc = label
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = s"JumpAndPopState($label)"
     // $COVERAGE-ON$
 }
 
@@ -157,6 +214,19 @@ private [internal] final class Catch(var label: Int) extends InstrWithLabel {
     }
     // $COVERAGE-OFF$
     override def toString: String = s"Catch($label)"
+    // $COVERAGE-ON$
+}
+
+private [internal] final class RestoreAndPushHandler(var label: Int) extends InstrWithLabel {
+    override def apply(ctx: Context): Unit = {
+        ctx.restoreState()
+        ctx.restoreHints()
+        ctx.status = Good
+        ctx.pushHandler(label)
+        ctx.inc()
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = s"RestoreAndPushHandler($label)"
     // $COVERAGE-ON$
 }
 

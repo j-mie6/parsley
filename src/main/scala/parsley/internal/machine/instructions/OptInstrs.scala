@@ -14,12 +14,14 @@ import parsley.internal.machine.{Context, Good}
 import parsley.internal.machine.errors.MultiExpectedError
 import parsley.internal.machine.stacks.ErrorStack
 
-private [internal] final class Perform[-A, +B](_f: A => B) extends Instr {
-    private [Perform] val f = _f.asInstanceOf[Any => B]
+private [internal] final class Perform(f: Any => Any) extends Instr {
     override def apply(ctx: Context): Unit = ctx.exchangeAndContinue(f(ctx.stack.upeek))
     // $COVERAGE-OFF$
     override def toString: String = "Perform(?)"
     // $COVERAGE-ON$
+}
+private [internal] object Perform {
+    def apply[A, B](f: A => B): Perform = new Perform(f.asInstanceOf[Any => Any])
 }
 
 private [internal] final class Exchange[A](private [Exchange] val x: A) extends Instr {
@@ -43,34 +45,6 @@ private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, _exp
     // $COVERAGE-ON$
 }
 
-private [internal] final class JumpGoodAttempt(private [this] var jumpLabel: Int, private [this] var merge: Int) extends Instr {
-    override def apply(ctx: Context): Unit = {
-        if (ctx.status eq Good) {
-            ctx.states = ctx.states.tail
-            ctx.handlers = ctx.handlers.tail
-            ctx.commitHints()
-            ctx.pc = jumpLabel
-        }
-        else {
-            ctx.restoreState()
-            ctx.restoreHints()
-            ctx.status = Good
-            ctx.pushHandler(merge)
-            ctx.inc()
-        }
-    }
-
-    override def relabel(labels: Array[Int]): this.type = {
-        jumpLabel = labels(jumpLabel)
-        merge = labels(merge)
-        this
-    }
-
-    // $COVERAGE-OFF$
-    override def toString: String = s"JumpGoodAttempt($jumpLabel, $merge)"
-    // $COVERAGE-ON$
-}
-
 private [internal] final class RecoverWith[A](x: A) extends Instr {
     override def apply(ctx: Context): Unit = {
         ctx.restoreHints() // This must be before adding the error to hints
@@ -86,63 +60,58 @@ private [internal] final class RecoverWith[A](x: A) extends Instr {
 
 private [internal] final class AlwaysRecoverWith[A](x: A) extends Instr {
     override def apply(ctx: Context): Unit = {
-        if (ctx.status eq Good) {
-            ctx.states = ctx.states.tail
-            ctx.handlers = ctx.handlers.tail
-            ctx.commitHints()
-            ctx.inc()
-        }
-        else {
-            ctx.restoreState()
-            ctx.restoreHints() // This must be before adding the error to hints
-            ctx.addErrorToHintsAndPop()
-            ctx.status = Good
-            ctx.pushAndContinue(x)
-        }
+        ctx.restoreState()
+        ctx.restoreHints() // This must be before adding the error to hints
+        ctx.addErrorToHintsAndPop()
+        ctx.status = Good
+        ctx.pushAndContinue(x)
     }
     // $COVERAGE-OFF$
     override def toString: String = s"AlwaysRecoverWith($x)"
     // $COVERAGE-ON$
 }
 
-private [internal] final class JumpTable(prefixes: List[Char], labels: List[Int],
+private [internal] final class JumpTable(jumpTable: mutable.LongMap[(Int, Set[ErrorItem])],
         private [this] var default: Int,
         private [this] var merge: Int,
-        private [this] val size: Int,
-        private [this] val errorItems: Set[ErrorItem]) extends Instr {
+        size: Int,
+        allErrorItems: Set[ErrorItem]) extends Instr {
+    def this(prefixes: List[Char], labels: List[Int], default: Int, merge: Int,
+              size: Int, allErrorItems: Set[ErrorItem], errorItemss: List[Set[ErrorItem]]) = {
+        this(mutable.LongMap(prefixes.view.map(_.toLong).zip(labels.zip(errorItemss)).toSeq: _*), default, merge, size, allErrorItems)
+    }
     private [this] var defaultPreamble: Int = _
-    private [this] val jumpTable = mutable.LongMap(prefixes.map(_.toLong).zip(labels): _*)
 
     override def apply(ctx: Context): Unit = {
         if (ctx.moreInput) {
-            val dest = jumpTable.getOrElse(ctx.nextChar, default)
+            val (dest, errorItems) = jumpTable.getOrElse(ctx.nextChar, (default, allErrorItems))
             ctx.pc = dest
-            if (dest == default) addErrors(ctx)
-            else {
+            addErrors(ctx, errorItems) // adds a handler
+            if (dest != default) {
                 ctx.pushCheck()
                 ctx.pushHandler(defaultPreamble)
                 ctx.saveHints(shadow = false)
             }
         }
         else {
-            addErrors(ctx)
+            addErrors(ctx, allErrorItems)
             ctx.pc = default
         }
     }
 
-    private def addErrors(ctx: Context): Unit = {
+    private def addErrors(ctx: Context, errorItems: Set[ErrorItem]): Unit = {
         ctx.errs = new ErrorStack(new MultiExpectedError(ctx.offset, ctx.line, ctx.col, errorItems, size), ctx.errs)
         ctx.pushHandler(merge)
     }
 
     override def relabel(labels: Array[Int]): this.type = {
-        jumpTable.mapValuesInPlace((_, v) => labels(v))
+        jumpTable.mapValuesInPlace((_, v) => (labels(v._1), v._2))
         default = labels(default)
         merge = labels(merge)
         defaultPreamble = default - 1
         this
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"JumpTable(${jumpTable.map{case (k, v) => k.toChar -> v}.mkString(", ")}, _ -> $default, $merge)"
+    override def toString: String = s"JumpTable(${jumpTable.map{case (k, v) => k.toChar -> v._1}.mkString(", ")}, _ -> $default, $merge)"
     // $COVERAGE-ON$
 }

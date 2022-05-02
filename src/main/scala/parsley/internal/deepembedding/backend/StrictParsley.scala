@@ -32,8 +32,16 @@ private [deepembedding] trait StrictParsley[+A] {
                 instrs += instructions.Halt
                 finaliseRecs(recs)
                 finaliseLets(bindings)
+                generateHandlers(state.handlers)
                 finaliseInstrs(instrs, state, recs.map(_._1), bindings.toList)
             }
+        }
+    }
+
+    final private def generateHandlers(handlers: Iterator[(Instr, Int)])(implicit instrs: InstrBuffer): Unit = {
+        for ((handler, label) <- handlers) {
+            instrs += new instructions.Label(label)
+            instrs += handler
         }
     }
 
@@ -194,4 +202,32 @@ private [deepembedding] class CodeGenState {
     def nextLet(): Let[_] = queue.remove(0)
     def more: Boolean = queue.nonEmpty
     def subsExist: Boolean = map.nonEmpty
+
+    private val handlerMap = mutable.Map.empty[Instr, Int]
+    private val relabelErrorMap = mutable.Map.empty[String, Int]
+    private val applyReasonMap = mutable.Map.empty[String, Int]
+    def getLabel(handler: Instr): Int  = handlerMap.getOrElseUpdate(handler, freshLabel())
+    def getLabelForRelabelError(label: String): Int = relabelErrorMap.getOrElseUpdate(label, freshLabel())
+    def getLabelForApplyReason(reason: String): Int = applyReasonMap.getOrElseUpdate(reason, freshLabel())
+    def handlers: Iterator[(Instr, Int)] = {
+        val relabelErrors = relabelErrorMap.view.map {
+            case (label, i) => new instructions.RelabelErrorAndFail(label) -> i
+        }
+        val applyReasons = applyReasonMap.view.map {
+            case (reason, i) => new instructions.ApplyReasonAndFail(reason) -> i
+        }
+        new Iterator[(Instr, Int)] {
+            private var rest = List(relabelErrors.iterator, applyReasons.iterator)
+            private var cur = handlerMap.iterator
+            override def hasNext: Boolean = {
+                cur.hasNext || (rest.nonEmpty && {
+                    cur = rest.head
+                    rest = rest.tail
+                    this.hasNext
+                })
+            }
+
+            override def next(): (Instr, Int) = cur.next()
+        }
+    }
 }

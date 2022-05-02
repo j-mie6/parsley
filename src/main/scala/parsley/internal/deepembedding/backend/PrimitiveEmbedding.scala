@@ -16,16 +16,28 @@ import parsley.internal.machine.instructions
 
 import StrictParsley.InstrBuffer
 private [deepembedding] final class Attempt[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, A](false) {
-    override val instr: instructions.Instr = instructions.Attempt
+    override val instr: instructions.Instr = instructions.PopHandlerAndState
+    override def instrNeedsLabel: Boolean = false
+    override def handlerLabel(state: CodeGenState): Int  = state.getLabel(instructions.RestoreAndFail)
 }
 private [deepembedding] final class Look[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, A](true) {
-    override val instr: instructions.Instr = instructions.Look
+    override val instr: instructions.Instr = instructions.RestoreHintsAndState
+    override def instrNeedsLabel: Boolean = false
+    override def handlerLabel(state: CodeGenState): Int  = state.getLabel(instructions.PopStateAndFail)
 }
-private [deepembedding] final class NotFollowedBy[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, Unit](true) {
-    override val instr: instructions.Instr = instructions.NotFollowedBy
+private [deepembedding] final class NotFollowedBy[A](val p: StrictParsley[A]) extends Unary[A, Unit] {
     override def optimise: StrictParsley[Unit] = p match {
         case z: MZero => new Pure(())
         case _        => this
+    }
+    final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+        val handler = state.freshLabel()
+        instrs += new instructions.PushHandlerAndState(handler, saveHints = true, hideHints = true)
+        suspend[Cont, R, Unit](p.codeGen) |> {
+            instrs += instructions.NegLookFail
+            instrs += new instructions.Label(handler)
+            instrs += instructions.NegLookGood
+        }
     }
 }
 

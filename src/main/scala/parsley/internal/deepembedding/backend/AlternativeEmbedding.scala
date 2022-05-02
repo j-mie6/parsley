@@ -13,8 +13,8 @@ import parsley.internal.errors.{Desc, ErrorItem, Raw}
 import parsley.internal.machine.instructions
 
 import StrictParsley.InstrBuffer
+import scala.collection.immutable
 
-// TODO: Tablification is too aggressive. It appears that `optional` is being compiled to jumptable
 private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right: StrictParsley[A]) extends StrictParsley[A] {
     def inlinable: Boolean = false
 
@@ -33,94 +33,106 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
         case _                          => this
     }
     // TODO: Refactor
-    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = tablify(this, Nil) match {
-        // If the tablified list is single element, that implies that this should be generated as normal!
-        case _::Nil    => left match {
-            case Attempt(u) => right match {
-                case Pure(x) =>
-                    val handler = state.freshLabel()
-                    instrs += new instructions.PushHandlerAndState(handler, true, false)
-                    suspend(u.codeGen[Cont, R]) |> {
-                        instrs += new instructions.Label(handler)
-                        instrs += new instructions.AlwaysRecoverWith[A](x)
-                    }
-                case v       =>
-                    val handler = state.freshLabel()
-                    val skip = state.freshLabel()
-                    val merge = state.freshLabel()
-                    instrs += new instructions.PushHandlerAndState(handler, true, false)
-                    suspend(u.codeGen[Cont, R]) >> {
-                        instrs += new instructions.Label(handler)
-                        instrs += new instructions.JumpGoodAttempt(skip, merge)
-                        suspend(v.codeGen[Cont, R]) |> {
-                            instrs += new instructions.Label(merge)
-                            instrs += instructions.MergeErrors
+    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+        tablify(this, mutable.ListBuffer.empty) match {
+            // If the tablified list is single element (or the next is None), that implies that this should be generated as normal!
+            case (_ :: Nil) | (_ :: (_, None) :: Nil) => left match {
+                case Attempt(u) => right match {
+                    case Pure(x) =>
+                        val handler = state.freshLabel()
+                        val skip = state.freshLabel()
+                        instrs += new instructions.PushHandlerAndState(handler, saveHints = true, hideHints = false)
+                        suspend(u.codeGen[Cont, R]) |> {
+                            instrs += new instructions.JumpAndPopState(skip)
+                            instrs += new instructions.Label(handler)
+                            instrs += new instructions.AlwaysRecoverWith[A](x)
                             instrs += new instructions.Label(skip)
                         }
-                    }
-            }
-            case u          => right match {
-                case Pure(x) =>
-                    val handler = state.freshLabel()
-                    val skip = state.freshLabel()
-                    instrs += new instructions.InputCheck(handler, true)
-                    suspend(u.codeGen[Cont, R]) |> {
-                        instrs += new instructions.JumpGood(skip)
-                        instrs += new instructions.Label(handler)
-                        instrs += new instructions.RecoverWith[A](x)
-                        instrs += new instructions.Label(skip)
-                    }
-                case v       =>
-                    val handler = state.freshLabel()
-                    val skip = state.freshLabel()
-                    val merge = state.freshLabel()
-                    instrs += new instructions.InputCheck(handler, true)
-                    suspend(u.codeGen[Cont, R]) >> {
-                        instrs += new instructions.JumpGood(skip)
-                        instrs += new instructions.Label(handler)
-                        instrs += new instructions.Catch(merge)
-                        suspend(v.codeGen[Cont, R]) |> {
-                            instrs += new instructions.Label(merge)
-                            instrs += instructions.MergeErrors
+                    case v       =>
+                        val handler = state.freshLabel()
+                        val skip = state.freshLabel()
+                        val merge = state.getLabel(instructions.MergeErrorsAndFail)
+                        instrs += new instructions.PushHandlerAndState(handler, saveHints = true, hideHints = false)
+                        suspend(u.codeGen[Cont, R]) >> {
+                            instrs += new instructions.JumpAndPopState(skip)
+                            instrs += new instructions.Label(handler)
+                            instrs += new instructions.RestoreAndPushHandler(merge)
+                            suspend(v.codeGen[Cont, R]) |> {
+                                instrs += instructions.ErrorToHints
+                                instrs += new instructions.Label(skip)
+                            }
+                        }
+                }
+                case u          => right match {
+                    case Pure(x) =>
+                        val handler = state.freshLabel()
+                        val skip = state.freshLabel()
+                        instrs += new instructions.PushHandlerAndCheck(handler, saveHints = true)
+                        suspend(u.codeGen[Cont, R]) |> {
+                            instrs += new instructions.JumpAndPopCheck(skip)
+                            instrs += new instructions.Label(handler)
+                            instrs += new instructions.RecoverWith[A](x)
                             instrs += new instructions.Label(skip)
                         }
-                    }
+                    case v       =>
+                        val handler = state.freshLabel()
+                        val skip = state.freshLabel()
+                        val merge = state.getLabel(instructions.MergeErrorsAndFail)
+                        instrs += new instructions.PushHandlerAndCheck(handler, saveHints = true)
+                        suspend(u.codeGen[Cont, R]) >> {
+                            instrs += new instructions.JumpAndPopCheck(skip)
+                            instrs += new instructions.Label(handler)
+                            instrs += new instructions.Catch(merge)
+                            suspend(v.codeGen[Cont, R]) |> {
+                                instrs += instructions.ErrorToHints
+                                instrs += new instructions.Label(skip)
+                            }
+                        }
+                }
             }
-        }
         // In case of None'd list, the codeGen cont continues by codeGenning that p, else we are done for this tree, call cont!
-        case tablified =>
-            // This list is backwards :)
-            val needsDefault = tablified.head._2.isDefined
-            val end = state.freshLabel()
-            val default = state.freshLabel()
-            val merge = state.freshLabel()
-            val (roots, leads, ls, size, expecteds) = foldTablified(tablified, state, mutable.Map.empty, Nil, Nil, 0, mutable.Set.empty)
-            //println(leads, tablified)
-            instrs += new instructions.JumpTable(leads, ls, default, merge, size, expecteds)
-            codeGenRoots(roots, ls, end) >> {
-                instrs += new instructions.Catch(merge) //This instruction is reachable as default - 1
-                instrs += new instructions.Label(default)
-                if (needsDefault) {
-                    instrs += instructions.Empty
-                    instrs += new instructions.Label(merge)
-                    instrs += instructions.MergeErrors
-                    result(instrs += new instructions.Label(end))
+            case tablified =>
+                val needsDefault = tablified.last._2.isDefined
+                val end = state.freshLabel()
+                val default = state.freshLabel()
+                val merge = state.getLabel(instructions.MergeErrorsAndFail)
+                val tablified_ = tablified.collect {
+                    case (root, Some((leading, backtrack))) => (root, (leading, backtrack))
                 }
-                else {
-                    tablified.head._1.codeGen |> {
-                        instrs += new instructions.Label(merge)
-                        instrs += instructions.MergeErrors
-                        instrs += new instructions.Label(end)
+                val (roots, leads, ls, size, expecteds, expectedss) = foldTablified(tablified_, state, mutable.Map.empty, mutable.Map.empty,
+                                                                                    mutable.ListBuffer.empty, mutable.ListBuffer.empty, 0, Set.empty, Nil)
+                val expectedss_ = propagateExpecteds(expectedss, expecteds, Nil)
+                instrs += new instructions.JumpTable(leads, ls, default, merge, size, expecteds, expectedss_)
+                codeGenRoots(roots, ls, end) >> {
+                    instrs += new instructions.Catch(merge) //This instruction is reachable as default - 1
+                    instrs += new instructions.Label(default)
+                    if (needsDefault) {
+                        instrs += instructions.Empty
+                        result(instrs += new instructions.Label(end))
+                    }
+                    else {
+                        tablified.last._1.codeGen |> {
+                            instrs += instructions.ErrorToHints
+                            instrs += new instructions.Label(end)
+                        }
                     }
                 }
-            }
+        }
     }
+
+    @tailrec def propagateExpecteds(expectedss: List[(Set[ErrorItem], Boolean)], all: Set[ErrorItem], corrected: List[Set[ErrorItem]]):
+        List[Set[ErrorItem]] = expectedss match {
+        case (expecteds, backtrack) :: expectedss => propagateExpecteds(expectedss, all, (if (backtrack) all else expecteds) :: corrected)
+        case Nil => corrected
+    }
+
     def codeGenRoots[Cont[_, +_], R](roots: List[List[StrictParsley[_]]], ls: List[Int], end: Int)
                                  (implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = roots match {
         case root::roots_ =>
             instrs += new instructions.Label(ls.head)
             codeGenAlternatives(root) >> {
-                instrs += new instructions.JumpGood(end)
+                instrs += instructions.ErrorToHints
+                instrs += new instructions.JumpAndPopCheck(end)
                 suspend(codeGenRoots[Cont, R](roots_, ls.tail, end))
             }
         case Nil => result(())
@@ -131,43 +143,44 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
         case Attempt(alt)::alts_ =>
             val handler = state.freshLabel()
             val skip = state.freshLabel()
-            val merge = state.freshLabel()
-            instrs += new instructions.PushHandlerAndState(handler, true, false)
+            val merge = state.getLabel(instructions.MergeErrorsAndFail)
+            instrs += new instructions.PushHandlerAndState(handler, saveHints = true, hideHints = false)
             suspend(alt.codeGen[Cont, R]) >> {
+                instrs += new instructions.JumpAndPopState(skip)
                 instrs += new instructions.Label(handler)
-                instrs += new instructions.JumpGoodAttempt(skip, merge)
+                instrs += new instructions.RestoreAndPushHandler(merge)
                 suspend(codeGenAlternatives[Cont, R](alts_)) |> {
-                    instrs += new instructions.Label(merge)
-                    instrs += instructions.MergeErrors
+                    instrs += instructions.ErrorToHints
                     instrs += new instructions.Label(skip)
                 }
             }
         case alt::alts_ =>
             val handler = state.freshLabel()
             val skip = state.freshLabel()
-            val merge = state.freshLabel()
-            instrs += new instructions.InputCheck(handler, true)
+            val merge = state.getLabel(instructions.MergeErrorsAndFail)
+            instrs += new instructions.PushHandlerAndCheck(handler, saveHints = true)
             suspend(alt.codeGen[Cont, R]) >> {
-                instrs += new instructions.JumpGood(skip)
+                instrs += new instructions.JumpAndPopCheck(skip)
                 instrs += new instructions.Label(handler)
                 instrs += new instructions.Catch(merge)
                 suspend(codeGenAlternatives[Cont, R](alts_)) |> {
-                    instrs += new instructions.Label(merge)
-                    instrs += instructions.MergeErrors
+                    instrs += instructions.ErrorToHints
                     instrs += new instructions.Label(skip)
                 }
             }
     }
     // TODO: Refactor
-    @tailrec def foldTablified(tablified: List[(StrictParsley[_], Option[StrictParsley[_]])], labelGen: CodeGenState,
-                               roots: mutable.Map[Char, List[StrictParsley[_]]],
-                               leads: List[Char],
-                               labels: List[Int],
+    @tailrec def foldTablified(tablified: List[(StrictParsley[_], (StrictParsley[_], Boolean))], labelGen: CodeGenState,
+                               roots: mutable.Map[Char, mutable.ListBuffer[StrictParsley[_]]],
+                               backtracking: mutable.Map[Char, Boolean],
+                               leads: mutable.ListBuffer[Char],
+                               labels: mutable.ListBuffer[Int],
                                size: Int,
-                               expecteds: mutable.Set[ErrorItem]):
-        (List[List[StrictParsley[_]]], List[Char], List[Int], Int, Set[ErrorItem]) = tablified match {
-        case (_, None)::tablified_ => foldTablified(tablified_, labelGen, roots, leads, labels, size, expecteds)
-        case (root, Some(lead))::tablified_ =>
+                               expecteds: Set[ErrorItem],
+                               // build in reverse!
+                               expectedss: List[Set[ErrorItem]]):
+        (List[List[StrictParsley[_]]], List[Char], List[Int], Int, Set[ErrorItem], List[(Set[ErrorItem], Boolean)]) = tablified match {
+        case (root, (lead, backtracks))::tablified_ =>
             val (c: Char, expected: ErrorItem, _size: Int) = lead match {
                 case ct@CharTok(d) => (d, ct.expected.fold[ErrorItem](Raw(d))(Desc(_)), 1)
                 case st@StringTok(s) => (s.head, st.expected.fold[ErrorItem](Raw(s))(Desc(_)), s.size)
@@ -176,40 +189,44 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
                 case sl: StringLiteral => ('"', Desc("string"), 1)
                 case RawStringLiteral => ('"', Desc("string"), 1)
             }
-            expecteds += expected
             if (roots.contains(c)) {
-                roots(c) = root::roots(c)
-                foldTablified(tablified_, labelGen, roots, leads, labelGen.freshLabel() :: labels, Math.max(size, _size), expecteds)
+                roots(c) += root
+                backtracking(c) = backtracking(c) && backtracks
+                foldTablified(tablified_, labelGen, roots, backtracking, leads, labels, Math.max(size, _size), expecteds + expected, expectedss)
             }
             else {
-                roots(c) = root::Nil
-                foldTablified(tablified_, labelGen, roots, c::leads, labelGen.freshLabel() :: labels, Math.max(size, _size), expecteds)
+                roots(c) = mutable.ListBuffer(root)
+                backtracking(c) = backtracks
+                foldTablified(tablified_, labelGen, roots, backtracking, leads += c, labels += labelGen.freshLabel(),
+                              Math.max(size, _size), expecteds + expected, expecteds :: expectedss)
             }
-        case Nil => (leads.map(roots(_)), leads, labels, size, expecteds.toSet)
+        case Nil => (leads.toList.map(roots(_).toList), leads.toList, labels.toList, size,
+                    // When 2.12 is dropped, the final toList can go
+                     expecteds, expectedss.zip(leads.toList.reverseIterator.map(backtracking(_)).toList))
     }
-    @tailrec private def tablable(p: StrictParsley[_]): Option[StrictParsley[_]] = p match {
+    @tailrec private def tablable(p: StrictParsley[_], backtracks: Boolean): Option[(StrictParsley[_], Boolean)] = p match {
         // CODO: Numeric parsers by leading digit (This one would require changing the foldTablified function a bit)
         case t@(_: CharTok | _: StringTok
               | _: StringLiteral
-              | RawStringLiteral | _: MaxOp) => Some(t)
+              | RawStringLiteral | _: MaxOp) => Some((t, backtracks))
         // TODO: This can be done for case insensitive things too, but with duplicated branching
-        case t: Specific if t.caseSensitive   => Some(t)
-        case Attempt(t)                       => tablable(t)
-        case (_: Pure[_]) <*> t               => tablable(t)
-        case Lift2(_, t, _)                   => tablable(t)
-        case Lift3(_, t, _, _)                => tablable(t)
-        case t <*> _                          => tablable(t)
-        case t *> _                           => tablable(t)
-        case t <* _                           => tablable(t)
+        case t: Specific if t.caseSensitive   => Some((t, backtracks))
+        case Attempt(t)                       => tablable(t, backtracks = true)
+        case (_: Pure[_]) <*> t               => tablable(t, backtracks)
+        case Lift2(_, t, _)                   => tablable(t, backtracks)
+        case Lift3(_, t, _, _)                => tablable(t, backtracks)
+        case t <*> _                          => tablable(t, backtracks)
+        case t *> _                           => tablable(t, backtracks)
+        case t <* _                           => tablable(t, backtracks)
         case _                                => None
     }
-    @tailrec private [deepembedding] def tablify(p: StrictParsley[_], acc: List[(StrictParsley[_], Option[StrictParsley[_]])]):
-        List[(StrictParsley[_], Option[StrictParsley[_]])] = p match {
+    @tailrec private [deepembedding] def tablify(p: StrictParsley[_], acc: mutable.ListBuffer[(StrictParsley[_], Option[(StrictParsley[_], Boolean)])]):
+        List[(StrictParsley[_], Option[(StrictParsley[_], Boolean)])] = p match {
         case u <|> v =>
-            val leading = tablable(u)
-            if (leading.isDefined) tablify(v, (u, leading)::acc)
-            else (p, None)::acc
-        case _       => (p, tablable(p))::acc
+            val leading = tablable(u, false)
+            if (leading.isDefined) tablify(v, acc += ((u, leading)))
+            else (acc += ((p, None))).toList
+        case _       => (acc += ((p, tablable(p, false)))).toList
     }
 }
 

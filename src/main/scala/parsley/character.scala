@@ -428,7 +428,7 @@ object character
         // I don't think it's worth it. Down the line a general Trie-backed optimisation would be
         // more effective.
         val ss = str0 +: strs
-        choice(ss.groupBy(_.head).view.map(_._2).flatMap { s =>
+        choice(ss.groupBy(_.head).toList.sortBy(_._1).view.map(_._2).flatMap { s =>
             val sLast :: rest = s.toList.sortBy(_.length)
             (string(sLast) :: rest.map(s => attempt(string(s)))).reverse
         }.toSeq: _*)

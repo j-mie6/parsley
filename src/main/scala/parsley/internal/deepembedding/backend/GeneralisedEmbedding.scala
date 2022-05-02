@@ -19,11 +19,13 @@ private [backend] abstract class Unary[A, B] extends StrictParsley[B] {
 private [backend] abstract class ScopedUnary[A, B] extends Unary[A, B] {
     def instr: instructions.Instr
     def setup(label: Int): instructions.Instr
+    def handlerLabel(state: CodeGenState): Int
+    def instrNeedsLabel: Boolean
     final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
-        val handler = state.freshLabel()
+        val handler = handlerLabel(state)
         instrs += setup(handler)
         suspend[Cont, R, Unit](p.codeGen) |> {
-            instrs += new instructions.Label(handler)
+            if (instrNeedsLabel) instrs += new instructions.Label(handler)
             instrs += instr
         }
     }

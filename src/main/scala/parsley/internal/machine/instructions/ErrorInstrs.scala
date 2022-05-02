@@ -7,110 +7,103 @@ import parsley.internal.errors.{Desc, ErrorItem}
 import parsley.internal.machine.{Context, Good}
 import parsley.internal.machine.errors.{Amended, Entrenched, MergedErrors, WithLabel, WithReason}
 
-private [internal] final class ApplyError(label: String) extends Instr {
+private [internal] final class RelabelHints(label: String) extends Instr {
     val isHide: Boolean = label.isEmpty
     override def apply(ctx: Context): Unit = {
-        if (ctx.status eq Good) {
-            // if this was a hide, pop the hints if possible
-            if (isHide) ctx.popHints
-            // EOK
-            // replace the head of the hints with the singleton for our label
-            else if (ctx.offset == ctx.checkStack.offset) ctx.replaceHint(label)
-            // COK
+        // if this was a hide, pop the hints if possible
+        if (isHide) ctx.popHints
+        // EOK
+        // replace the head of the hints with the singleton for our label
+        else if (ctx.offset == ctx.checkStack.offset) ctx.replaceHint(label)
+        // COK
+        // do nothing
+        ctx.mergeHints()
+        ctx.handlers = ctx.handlers.tail
+        ctx.checkStack = ctx.checkStack.tail
+        ctx.inc()
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = s"RelabelHints($label)"
+    // $COVERAGE-ON$
+}
+
+private [internal] final class RelabelErrorAndFail(label: String) extends Instr {
+    val isHide: Boolean = label.isEmpty
+    override def apply(ctx: Context): Unit = {
+        ctx.restoreHints()
+        ctx.errs.error = ctx.useHints {
+            // EERR
+            // the top of the error stack is adjusted:
+            if (ctx.errs.error.offset == ctx.checkStack.offset) WithLabel(ctx.errs.error, label)
+            // CERR
             // do nothing
-            ctx.mergeHints()
-            ctx.handlers = ctx.handlers.tail
-            ctx.inc()
-        }
-        else {
-            ctx.restoreHints()
-            ctx.errs.error = ctx.useHints {
-                // EERR
-                // the top of the error stack is adjusted:
-                if (ctx.errs.error.offset == ctx.checkStack.offset) WithLabel(ctx.errs.error, label)
-                // CERR
-                // do nothing
-                else ctx.errs.error
-            }
-            ctx.fail()
+            else ctx.errs.error
         }
         ctx.checkStack = ctx.checkStack.tail
+        ctx.fail()
     }
     // $COVERAGE-OFF$
     override def toString: String = s"ApplyError($label)"
     // $COVERAGE-ON$
 }
 
-private [internal] object MergeErrors extends Instr {
+private [internal] object ErrorToHints extends Instr {
     override def apply(ctx: Context): Unit = {
-        if (ctx.status eq Good) {
-            ctx.handlers = ctx.handlers.tail
-            ctx.addErrorToHintsAndPop()
-            ctx.inc()
-        }
-        else {
-            val err2 = ctx.errs.error
-            ctx.errs = ctx.errs.tail
-            ctx.errs.error = MergedErrors(ctx.errs.error, err2)
-            ctx.fail()
-        }
+        ctx.handlers = ctx.handlers.tail
+        ctx.addErrorToHintsAndPop()
+        ctx.inc()
     }
 
     // $COVERAGE-OFF$
-    override def toString: String = "MergeErrors"
+    override def toString: String = "ErrorToHints"
     // $COVERAGE-ON$
 }
 
-private [internal] class ApplyReason(reason: String) extends Instr {
+private [internal] object MergeErrorsAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
-        if (ctx.status eq Good) {
-            ctx.handlers = ctx.handlers.tail
-            ctx.inc()
-        }
-        else {
-            if (ctx.errs.error.offset == ctx.checkStack.offset) ctx.errs.error = WithReason(ctx.errs.error, reason)
-            ctx.fail()
-        }
+        val err2 = ctx.errs.error
+        ctx.errs = ctx.errs.tail
+        ctx.errs.error = MergedErrors(ctx.errs.error, err2)
+        ctx.fail()
+    }
+
+    // $COVERAGE-OFF$
+    override def toString: String = "MergeErrorsAndFail"
+    // $COVERAGE-ON$
+}
+
+private [internal] class ApplyReasonAndFail(reason: String) extends Instr {
+    override def apply(ctx: Context): Unit = {
+        if (ctx.errs.error.offset == ctx.checkStack.offset) ctx.errs.error = WithReason(ctx.errs.error, reason)
         ctx.checkStack = ctx.checkStack.tail
+        ctx.fail()
     }
 
     // $COVERAGE-OFF$
-    override def toString: String = s"ApplyReason($reason)"
+    override def toString: String = s"ApplyReasonAndFail($reason)"
     // $COVERAGE-ON$
 }
 
-private [internal] object Amend extends Instr {
+private [internal] object AmendAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
-        if (ctx.status eq Good) {
-            ctx.handlers = ctx.handlers.tail
-            ctx.inc()
-        }
-        else {
-            ctx.errs.error = Amended(ctx.states.offset, ctx.states.line, ctx.states.col, ctx.errs.error)
-            ctx.fail()
-        }
+        ctx.errs.error = Amended(ctx.states.offset, ctx.states.line, ctx.states.col, ctx.errs.error)
         ctx.states = ctx.states.tail
+        ctx.fail()
     }
 
     // $COVERAGE-OFF$
-    override def toString: String = "Amend"
+    override def toString: String = "AmendAndFail"
     // $COVERAGE-ON$
 }
 
-private [internal] object Entrench extends Instr {
+private [internal] object EntrenchAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
-        if (ctx.status eq Good) {
-            ctx.handlers = ctx.handlers.tail
-            ctx.inc()
-        }
-        else {
-            ctx.errs.error = Entrenched(ctx.errs.error)
-            ctx.fail()
-        }
+        ctx.errs.error = Entrenched(ctx.errs.error)
+        ctx.fail()
     }
 
     // $COVERAGE-OFF$
-    override def toString: String = "Entrench"
+    override def toString: String = "EntrenchAndFail"
     // $COVERAGE-ON$
 }
 
@@ -129,12 +122,14 @@ private [internal] final class Unexpected(msg: String) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class FastFail[A](msggen: A=>String) extends Instr {
-    private [this] val msggen_ = msggen.asInstanceOf[Any => String]
-    override def apply(ctx: Context): Unit = ctx.failWithMessage(msggen_(ctx.stack.upop()))
+private [internal] final class FastFail(msggen: Any => String) extends Instr {
+    override def apply(ctx: Context): Unit = ctx.failWithMessage(msggen(ctx.stack.upop()))
     // $COVERAGE-OFF$
     override def toString: String = "FastFail(?)"
     // $COVERAGE-ON$
+}
+private [internal] object FastFail {
+    def apply[A](msggen: A => String): FastFail = new FastFail(msggen.asInstanceOf[Any => String])
 }
 
 private [internal] final class FastUnexpected[A](_msggen: A=>String) extends Instr {

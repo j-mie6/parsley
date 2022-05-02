@@ -131,8 +131,7 @@ private [internal] final class Chainl(var label: Int) extends InstrWithLabel wit
                 ctx.addErrorToHintsAndPop()
                 // if acc is null this is first entry, p already on the stack!
                 if (acc != null) ctx.pushAndContinue(acc)
-                // but p does need to be wrapped
-                else ctx.exchangeAndContinue(ctx.stack.upeek)
+                else ctx.inc()
             }
             acc = null
         }
@@ -159,7 +158,7 @@ private [instructions] sealed trait DualHandler {
         ctx.pc = label
     }
 }
-private [internal] final class Chainr[A, B](var label: Int, _wrap: A => B) extends InstrWithLabel with DualHandler with Stateful{
+private [internal] final class Chainr[A, B](var label: Int, _wrap: A => B) extends InstrWithLabel with DualHandler with Stateful {
     private [this] val wrap: Any => B = _wrap.asInstanceOf[Any => B]
     private [this] var acc: Any => Any = _
     override def apply(ctx: Context): Unit = {
@@ -230,7 +229,7 @@ private [internal] final class ManyUntil(var label: Int) extends InstrWithLabel 
         if (ctx.status eq Good) {
             val x = ctx.stack.upop()
             if (x == parsley.combinator.ManyUntil.Stop) {
-                ctx.pushAndContinue(acc.toList)
+                ctx.unsafePushAndContinue(acc.toList)
                 acc.clear()
                 ctx.handlers = ctx.handlers.tail
             }

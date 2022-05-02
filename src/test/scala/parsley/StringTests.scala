@@ -4,7 +4,6 @@
 package parsley
 
 import parsley.character.{letter, string, strings, stringOfMany, stringOfSome}
-import parsley.combinator.{attemptChoice}
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.Parsley._
 
@@ -15,9 +14,9 @@ class StringTests extends ParsleyTest {
         (string("." * initialCol) *> string(str) *> pos).parse("." * initialCol + str)
     }
 
-    private def badStrings(str0: String, strs: String*) = {
+    /*private def badStrings(str0: String, strs: String*) = {
         attemptChoice((str0 +: strs).sorted(implicitly[Ordering[String]].reverse).map(string): _*)
-    }
+    }*/
 
     "string" should "consume succeed if it is found at head" in {
         "abc".parse("abc") should not be a [Failure[_]]
@@ -56,13 +55,18 @@ class StringTests extends ParsleyTest {
         p.parse("hell") shouldBe Success("hell")
         p.parse("he") shouldBe Success("h")
     }
-    it should "be extrinsically the same as a naive, but correct, implementation" in {
+    it should "be extrinsically the same as a manual equivalent" in {
         val p = strings("hell", "hello", "abc", "g", "goodbye")
-        val q = badStrings("hell", "hello", "abc", "g", "goodbye")
+        val q = string("abc") <|> attempt("goodbye") <|> string("g") <|> attempt(string("hello")) <|> string("hell")
+        info("parsing \"hello\"")
         p.parse("hello") shouldBe q.parse("hello")
+        info("parsing \"hell\"")
         p.parse("hell") shouldBe q.parse("hell")
+        info("parsing \"h\"")
         p.parse("h") shouldBe q.parse("h")
+        info("parsing \"a\"")
         p.parse("a") shouldBe q.parse("a")
+        info("parsing \"b\"")
         p.parse("b") shouldBe q.parse("b")
     }
 

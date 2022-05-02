@@ -17,37 +17,34 @@ private [internal] final class Satisfies(f: Char => Boolean, _expected: Option[S
     // $COVERAGE-ON$
 }
 
-private [internal] object Attempt extends Instr {
+private [internal] object RestoreAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
-        // Remove the recovery input from the stack, it isn't needed anymore
-        if (ctx.status eq Good) {
-            ctx.states = ctx.states.tail
-            ctx.handlers = ctx.handlers.tail
-            ctx.inc()
-        }
         // Pop input off head then fail to next handler
-        else {
-            ctx.restoreState()
-            ctx.fail()
-        }
+        ctx.restoreState()
+        ctx.fail()
     }
     // $COVERAGE-OFF$
-    override def toString: String = "Attempt"
+    override def toString: String = "RestoreAndFail"
     // $COVERAGE-ON$
 }
 
-private [internal] object Look extends Instr {
+private [internal] object RestoreHintsAndState extends Instr {
     override def apply(ctx: Context): Unit = {
         ctx.restoreHints()
-        if (ctx.status eq Good) {
-            ctx.restoreState()
-            ctx.handlers = ctx.handlers.tail
-            ctx.inc()
-        }
-        else {
-            ctx.states = ctx.states.tail
-            ctx.fail()
-        }
+        ctx.restoreState()
+        ctx.handlers = ctx.handlers.tail
+        ctx.inc()
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = "RestoreHintsAndState"
+    // $COVERAGE-ON$
+}
+
+private [internal] object PopStateAndFail extends Instr {
+    override def apply(ctx: Context): Unit = {
+        ctx.restoreHints()
+        ctx.states = ctx.states.tail
+        ctx.fail()
     }
     // $COVERAGE-OFF$
     override def toString: String = "Look"
@@ -87,9 +84,8 @@ private [internal] final class Put(reg: Int) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [parsley] final class CalleeSave(var label: Int, _slots: List[Int]) extends InstrWithLabel with Stateful {
-    private val saveArray = new Array[AnyRef](_slots.length)
-    private val slots = _slots.zipWithIndex
+private [parsley] final class CalleeSave(var label: Int, slots: List[(Int, Int)], saveArray: Array[AnyRef]) extends InstrWithLabel with Stateful {
+    def this(label: Int, slots: List[Int]) = this(label, slots.zipWithIndex, new Array[AnyRef](slots.length))
     private var inUse = false
 
     private def save(ctx: Context): Unit = {
@@ -132,5 +128,5 @@ private [parsley] final class CalleeSave(var label: Int, _slots: List[Int]) exte
     // $COVERAGE-OFF$
     override def toString: String = s"CalleeSave($label)"
     // $COVERAGE-ON$
-    override def copy: CalleeSave = new CalleeSave(label, _slots)
+    override def copy: CalleeSave = new CalleeSave(label, slots, new Array[AnyRef](slots.length))
 }
