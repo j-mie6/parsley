@@ -492,7 +492,7 @@ object character
       *
       * @group spec
       */
-    val crlf: Parsley[Char] = attempt(char('\r').label("crlf newline") *> char('\n').label("end of crlf"))
+    val crlf: Parsley[Char] = string("\r\n").label("end of crlf") #> '\n'
 
     /** This parser will parse either a line feed (`LF`) or a `CRLF` newline, returning `'\n'` if successful.
       *
