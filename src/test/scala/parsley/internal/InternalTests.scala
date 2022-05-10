@@ -130,6 +130,14 @@ class InternalTests extends ParsleyTest {
         p.parse("c") shouldBe q.parse("c")
     }
 
+    "JumpTable" must "not try and commute branches" in {
+        val p = attempt(string("abc")) <|> string("b") <|> string("abd")
+        assume(p.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 1)
+        inside(p.parse("abe")) {
+            case Failure(TestError(_, VanillaError(_, es, _))) => es.size shouldBe 3
+        }
+    }
+
     "tablification" should "not occur for optional" in {
         val p = optional(string("abc"))
         p.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) shouldBe 0
