@@ -422,15 +422,20 @@ object character
       * @since 4.0.0
       * @group string
       */
-    def strings(str0: String, strs: String*): Parsley[String] = {
+    def strings(str0: String, strs: String*): Parsley[String] = strings(str0 -> pure(str0), strs.map(s => s -> pure(s)): _*)
+
+    // TODO: Publish to parsley-4.0.0!
+    // Assumes that the correct parsing of the string commits to the branch, i.e. there are no duplicates
+    // As a result the backtracking that is performed is minimised to the scope of the string itself
+    private def strings[A](str0: (String, Parsley[A]), strs: (String, Parsley[A])*): Parsley[A] = {
         // this isn't the best we could do: it's possible to eliminate backtracking with a Trie...
         // can this be done in a semantic preserving way without resorting to a new instruction?
         // I don't think it's worth it. Down the line a general Trie-backed optimisation would be
         // more effective.
         val ss = str0 +: strs
-        choice(ss.groupBy(_.head).toList.sortBy(_._1).view.map(_._2).flatMap { s =>
-            val sLast :: rest = s.toList.sortBy(_.length)
-            (string(sLast) :: rest.map(s => attempt(string(s)))).reverse
+        choice(ss.groupBy(_._1.head).toList.sortBy(_._1).view.map(_._2).flatMap { s =>
+            val (sLast, pLast) :: rest = s.toList.sortBy(_._1.length)
+            ((string(sLast) *> pLast) :: rest.map { case (s, p) => attempt(string(s)) *> p }).reverse
         }.toSeq: _*)
     }
 
