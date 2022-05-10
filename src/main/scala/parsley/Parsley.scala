@@ -1158,8 +1158,8 @@ object Parsley {
     def lookAhead[A](p: Parsley[A]): Parsley[A] = new Parsley(new frontend.Look(p.internal))
     /** This combinator parses its argument `p`, and succeeds when `p` fails and vice-versa, never consuming input.
       *
-      * If the parser `p` succeeds, then `notFollowedBy(p) will fail, consuming no input.
-      * Otherwise, should `p` fail, then `notFollowedBy(p) will succeed, consuming no input
+      * If the parser `p` succeeds, then `notFollowedBy(p)` will fail, consuming no input.
+      * Otherwise, should `p` fail, then `notFollowedBy(p)` will succeed, consuming no input
       * and returning `()`.
       *
       * @example one use for this combinator is to allow for "longest-match" behaviour.
