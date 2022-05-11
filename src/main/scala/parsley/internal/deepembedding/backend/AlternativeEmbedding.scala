@@ -34,7 +34,7 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
     }
     // TODO: Refactor
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
-        tablify(this, mutable.ListBuffer.empty) match {
+        tablify(this, mutable.ListBuffer.empty, mutable.Set.empty, None) match {
             // If the tablified list is single element (or the next is None), that implies that this should be generated as normal!
             case (_ :: Nil) | (_ :: (_, None) :: Nil) => left match {
                 case Attempt(u) => right match {
@@ -97,7 +97,7 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
                 val default = state.freshLabel()
                 val merge = state.getLabel(instructions.MergeErrorsAndFail)
                 val tablified_ = tablified.collect {
-                    case (root, Some((leading, backtrack))) => (root, (leading, backtrack))
+                    case (root, Some(info)) => (root, info)
                 }
                 val (roots, leads, ls, size, expecteds, expectedss) = foldTablified(tablified_, state, mutable.Map.empty, mutable.Map.empty,
                                                                                     mutable.ListBuffer.empty, mutable.ListBuffer.empty, 0, Set.empty, Nil)
@@ -170,7 +170,7 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
             }
     }
     // TODO: Refactor
-    @tailrec def foldTablified(tablified: List[(StrictParsley[_], (StrictParsley[_], Boolean))], labelGen: CodeGenState,
+    @tailrec def foldTablified(tablified: List[(StrictParsley[_], (Char, ErrorItem, Int, Boolean))], labelGen: CodeGenState,
                                roots: mutable.Map[Char, mutable.ListBuffer[StrictParsley[_]]],
                                backtracking: mutable.Map[Char, Boolean],
                                leads: mutable.ListBuffer[Char],
@@ -180,15 +180,7 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
                                // build in reverse!
                                expectedss: List[Set[ErrorItem]]):
         (List[List[StrictParsley[_]]], List[Char], List[Int], Int, Set[ErrorItem], List[(Set[ErrorItem], Boolean)]) = tablified match {
-        case (root, (lead, backtracks))::tablified_ =>
-            val (c: Char, expected: ErrorItem, _size: Int) = lead match {
-                case ct@CharTok(d) => (d, ct.expected.fold[ErrorItem](Raw(d))(Desc(_)), 1)
-                case st@StringTok(s) => (s.head, st.expected.fold[ErrorItem](Raw(s))(Desc(_)), s.size)
-                case st@Specific(s) => (s.head, Desc(s), s.size)
-                case op@MaxOp(o) => (o.head, Desc(o), o.size)
-                case sl: StringLiteral => ('"', Desc("string"), 1)
-                case RawStringLiteral => ('"', Desc("string"), 1)
-            }
+        case (root, (c, expected, _size, backtracks))::tablified_ =>
             if (roots.contains(c)) {
                 roots(c) += root
                 backtracking(c) = backtracking(c) && backtracks
@@ -204,29 +196,42 @@ private [deepembedding] final class <|>[A](var left: StrictParsley[A], var right
                     // When 2.12 is dropped, the final toList can go
                      expecteds, expectedss.zip(leads.toList.reverseIterator.map(backtracking(_)).toList))
     }
-    @tailrec private def tablable(p: StrictParsley[_], backtracks: Boolean): Option[(StrictParsley[_], Boolean)] = p match {
+
+    @tailrec private def tablable(p: StrictParsley[_], backtracks: Boolean): Option[(Char, ErrorItem, Int, Boolean)] = p match {
         // CODO: Numeric parsers by leading digit (This one would require changing the foldTablified function a bit)
-        case t@(_: CharTok | _: StringTok
-              | _: StringLiteral
-              | RawStringLiteral | _: MaxOp) => Some((t, backtracks))
+        case ct@CharTok(d)                       => Some((d, ct.expected.fold[ErrorItem](Raw(d))(Desc(_)), 1, backtracks))
+        case st@StringTok(s)                     => Some((s.head, st.expected.fold[ErrorItem](Raw(s))(Desc(_)), s.size, backtracks))
+        case op@MaxOp(o)                         => Some((o.head, Desc(o), o.size, backtracks))
+        case _: StringLiteral | RawStringLiteral => Some(('"', Desc("string"), 1, backtracks))
         // TODO: This can be done for case insensitive things too, but with duplicated branching
-        case t: Specific if t.caseSensitive   => Some((t, backtracks))
-        case Attempt(t)                       => tablable(t, backtracks = true)
-        case (_: Pure[_]) <*> t               => tablable(t, backtracks)
-        case Lift2(_, t, _)                   => tablable(t, backtracks)
-        case Lift3(_, t, _, _)                => tablable(t, backtracks)
-        case t <*> _                          => tablable(t, backtracks)
-        case t *> _                           => tablable(t, backtracks)
-        case t <* _                           => tablable(t, backtracks)
-        case _                                => None
+        case t@Specific(s) if t.caseSensitive    => Some((s.head, Desc(s), s.size, backtracks))
+        case Attempt(t)                          => tablable(t, backtracks = true)
+        case (_: Pure[_]) <*> t                  => tablable(t, backtracks)
+        case Lift2(_, t, _)                      => tablable(t, backtracks)
+        case Lift3(_, t, _, _)                   => tablable(t, backtracks)
+        case t <*> _                             => tablable(t, backtracks)
+        case t *> _                              => tablable(t, backtracks)
+        case t <* _                              => tablable(t, backtracks)
+        case _                                   => None
     }
-    @tailrec private [deepembedding] def tablify(p: StrictParsley[_], acc: mutable.ListBuffer[(StrictParsley[_], Option[(StrictParsley[_], Boolean)])]):
-        List[(StrictParsley[_], Option[(StrictParsley[_], Boolean)])] = p match {
+
+    @tailrec private [deepembedding] def tablify(
+            p: StrictParsley[_],
+            acc: mutable.ListBuffer[(StrictParsley[_], Option[(Char, ErrorItem, Int, Boolean)])],
+            seen: mutable.Set[Char],
+            lastSeen: Option[Char]
+        ): List[(StrictParsley[_], Option[(Char, ErrorItem, Int, Boolean)])] = p match {
         case u <|> v =>
-            val leading = tablable(u, false)
-            if (leading.isDefined) tablify(v, acc += ((u, leading)))
-            else (acc += ((p, None))).toList
-        case _       => (acc += ((p, tablable(p, false)))).toList
+            val leadingInfo = tablable(u, backtracks = false)
+            leadingInfo match {
+                // if we've not seen it before that's ok
+                case Some((c, _, _, _)) if !seen.contains(c) => tablify(v, acc += ((u, leadingInfo)), seen += c, Some(c))
+                // if we've seen it, then only a repeat of the last character is allowed
+                case Some((c, _, _, _)) if lastSeen.contains(c) => tablify(v, acc += ((u, leadingInfo)), seen += c, lastSeen)
+                // if it's seen and not the last character we have to stop
+                case _ => (acc += ((p, None))).toList
+            }
+        case _       => (acc += ((p, tablable(p, backtracks = false)))).toList
     }
 }
 
