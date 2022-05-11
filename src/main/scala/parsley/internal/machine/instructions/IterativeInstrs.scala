@@ -49,20 +49,11 @@ private [internal] final class SkipMany(var label: Int) extends InstrWithLabel {
     // $COVERAGE-ON$
 }
 
-private [internal] final class ChainPost(var label: Int) extends InstrWithLabel with Stateful {
-    private [this] var acc: Any = _
+private [internal] final class ChainPost(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         if (ctx.status eq Good) {
-            // When acc is null, we are entering the instruction for the first time, a p will be on the stack
-            if (acc == null) {
-                // after this point, the inputCheck will roll back one too many items on the stack, because this item
-                // was consumed. It should be adjusted
-                val op = ctx.stack.upop()
-                acc = ctx.stack.upeek
-                ctx.stack.exchange(op)
-                ctx.handlers.stacksz -= 1
-            }
-            acc = ctx.stack.pop[Any => Any]()(acc)
+            val op = ctx.stack.pop[Any => Any]()
+            ctx.stack.exchange(op(ctx.stack.upeek))
             ctx.updateCheckOffsetAndHints()
             ctx.pc = label
         }
@@ -70,17 +61,13 @@ private [internal] final class ChainPost(var label: Int) extends InstrWithLabel 
         else {
             ctx.catchNoConsumed {
                 ctx.addErrorToHintsAndPop()
-                // When acc is null, we have entered for first time but the op failed, so the result is already on the stack
-                if (acc != null) ctx.stack.push(acc)
                 ctx.inc()
             }
-            acc = null
         }
     }
     // $COVERAGE-OFF$
     override def toString: String = s"ChainPost($label)"
     // $COVERAGE-ON$
-    override def copy: ChainPost = new ChainPost(label)
 }
 
 private [internal] final class ChainPre(var label: Int) extends InstrWithLabel with Stateful {
@@ -108,20 +95,12 @@ private [internal] final class ChainPre(var label: Int) extends InstrWithLabel w
     // $COVERAGE-ON$
     override def copy: ChainPre = new ChainPre(label)
 }
-private [internal] final class Chainl(var label: Int) extends InstrWithLabel with Stateful {
-    private [this] var acc: Any = _
+private [internal] final class Chainl(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         if (ctx.status eq Good) {
             val y = ctx.stack.upop()
             val op = ctx.stack.pop[(Any, Any) => Any]()
-            // When acc is null, we are entering the instruction for the first time, a p will be on the stack
-            if (acc == null) {
-                // after this point, the inputCheck will roll back one too many items on the stack, because this item
-                // was consumed. It should be adjusted
-                acc = op(ctx.stack.upop(), y)
-                ctx.handlers.stacksz -= 1
-            }
-            else acc = op(acc, y)
+            ctx.stack.exchange(op(ctx.stack.peek, y))
             ctx.updateCheckOffsetAndHints()
             ctx.pc = label
         }
@@ -129,17 +108,13 @@ private [internal] final class Chainl(var label: Int) extends InstrWithLabel wit
         else {
             ctx.catchNoConsumed {
                 ctx.addErrorToHintsAndPop()
-                // if acc is null this is first entry, p already on the stack!
-                if (acc != null) ctx.pushAndContinue(acc)
-                else ctx.inc()
+                ctx.inc()
             }
-            acc = null
         }
     }
     // $COVERAGE-OFF$
     override def toString: String = s"Chainl($label)"
     // $COVERAGE-ON$
-    override def copy: Chainl = new Chainl(label)
 }
 
 private [instructions] sealed trait DualHandler {
