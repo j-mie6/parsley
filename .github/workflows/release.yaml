@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - master
+    tags:
+      - '*'
+  pull_request:
+    branches:
       - parsley-4
     tags:
       - '*'
