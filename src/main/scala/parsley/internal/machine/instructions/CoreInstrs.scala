@@ -92,13 +92,6 @@ private [internal] final class Call(var label: Int) extends InstrWithLabel {
     // $COVERAGE-ON$
 }
 
-private [internal] final class GoSub(var label: Int) extends InstrWithLabel {
-    override def apply(ctx: Context): Unit = ctx.call(label)
-    // $COVERAGE-OFF$
-    override def toString: String = s"GoSub($label)"
-    // $COVERAGE-ON$
-}
-
 private [internal] object Return extends Instr {
     override def apply(ctx: Context): Unit = ctx.ret()
     // $COVERAGE-OFF$

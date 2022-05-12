@@ -58,7 +58,7 @@ private [deepembedding] final class Let[A](val p: StrictParsley[A]) extends Stri
     def inlinable: Boolean = true
     def label(implicit state: CodeGenState): Int = state.getLabel(this)
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
-        result(instrs += new instructions.GoSub(label))
+        result(instrs += new instructions.Call(label))
     }
 }
 private [deepembedding] final class Put[S](reg: Reg[S], val p: StrictParsley[S]) extends Unary[S, Unit] {

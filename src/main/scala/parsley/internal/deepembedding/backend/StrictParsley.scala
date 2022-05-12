@@ -119,17 +119,12 @@ private [deepembedding] object StrictParsley {
         }
     }
 
-    // Applies tail-call optimisation:
-    //   recursive bindings may tail-call to themselves or anything that doesn't require state-save
-    //   other bindings may tail-call to anything that doesn't require state-save
-    //   non-recursive bindings do not require state-save
-    //   Call/GoSub replaced with Jump
+    // Applies tail-call optimisation
     private def tco(instrs: Array[Instr], labels: Array[Int], bindings: List[Binding])(implicit state: CodeGenState): Unit = if (bindings.nonEmpty) {
         val bindingsWithReturns = bindings.zip(bindings.tail.map(_.location(labels) - 1) :+ (instrs.size-1))
         lazy val locToBinding = bindings.map(b => b.location(labels) -> b).toMap
         for ((binding, retLoc) <- bindingsWithReturns) instrs(retLoc-1) match {
             case instr: instructions.Call => instrs(retLoc-1) = new instructions.Jump(instr.label)
-            case instr: instructions.GoSub => instrs(retLoc-1) = new instructions.Jump(instr.label)
             case _ =>
         }
     }
