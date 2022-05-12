@@ -1053,7 +1053,7 @@ object Parsley {
       * @since 4.0.0
       * @group basic
       */
-    def fresh[A](x: =>A): Parsley[A] = pure(() => x).unsafe().map(_())
+    def fresh[A](x: =>A): Parsley[A] = new Parsley(new singletons.Fresh(x))
 
     /** This combinator parses its first argument `either`, and then parses either `left` or `right` depending on its result.
       *

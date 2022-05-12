@@ -17,6 +17,13 @@ private [internal] final class Push[A](x: A) extends Instr {
     // $COVERAGE-ON$
 }
 
+private [internal] final class Fresh[A](x: =>A) extends Instr {
+    override def apply(ctx: Context): Unit = ctx.pushAndContinue(x)
+    // $COVERAGE-OFF$
+    override def toString: String = s"Fresh($x)"
+    // $COVERAGE-ON$
+}
+
 private [internal] object Pop extends Instr {
     override def apply(ctx: Context): Unit = {
         ctx.stack.pop_()

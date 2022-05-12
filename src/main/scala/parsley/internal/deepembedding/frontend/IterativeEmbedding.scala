@@ -25,8 +25,6 @@ private [parsley] final class ChainPost[A](p: LazyParsley[A], _op: =>LazyParsley
     override def pretty(l: String, r: String): String = s"chainPost($l, $r)"
     override def make(p: StrictParsley[A], op: StrictParsley[A => A]): StrictParsley[A] = new backend.ChainPost(p, op)
 }
-
-// This can't be fully strict, because it depends on binary!
 private [parsley] final class ChainPre[A](p: LazyParsley[A], op: LazyParsley[A => A]) extends LazyParsley[A] {
     final override def findLetsAux[Cont[_, +_], R](seen: Set[LazyParsley[_]])(implicit ops: ContOps[Cont], state: LetFinderState): Cont[R, Unit] = {
         suspend(p.findLets[Cont, R](seen)) >> suspend(op.findLets(seen))
