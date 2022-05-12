@@ -3,7 +3,7 @@
  */
 package parsley.internal.machine.stacks
 
-private [machine] final class HandlerStack(val depth: Int, val pc: Int, var stacksz: Int, val tail: HandlerStack)
+private [machine] final class HandlerStack(val depth: Int, val pc: Int, val stacksz: Int, val tail: HandlerStack)
 private [machine] object HandlerStack extends Stack[HandlerStack] {
     implicit val inst: Stack[HandlerStack] = this
     type ElemTy = (Int, Int, Int)
