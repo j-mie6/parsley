@@ -236,7 +236,7 @@ class Lexer(lang: LanguageDef)
 
     /**Like `symbol`, but treats it as a single token using `attempt`. Only useful for
      * strings, since characters are already single token.*/
-    def symbol_(name: String): Parsley[String] = attempt(symbol(name))
+    def symbol_(name: String): Parsley[String] = lexeme(attempt(string(name)))
 
     /**`lexeme(p)` first applies parser `p` and then the `whiteSpace` parser, returning the value of
      * `p`. Every lexical token (lexeme) is defined using `lexeme`, this way every parse starts at a

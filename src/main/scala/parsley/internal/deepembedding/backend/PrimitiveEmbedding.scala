@@ -19,6 +19,12 @@ private [deepembedding] final class Attempt[A](val p: StrictParsley[A]) extends 
     override val instr: instructions.Instr = instructions.PopHandlerAndState
     override def instrNeedsLabel: Boolean = false
     override def handlerLabel(state: CodeGenState): Int  = state.getLabel(instructions.RestoreAndFail)
+    override def optimise: StrictParsley[A] = p match {
+        case p: CharTok => p
+        case p: Attempt[A] => p
+        case StringTok(s) if s.size == 1 => p
+        case _ => this
+    }
 }
 private [deepembedding] final class Look[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, A](true) {
     override val instr: instructions.Instr = instructions.RestoreHintsAndState

@@ -86,12 +86,12 @@ private [internal] final class JumpTable(jumpTable: mutable.LongMap[(Int, Set[Er
         if (ctx.moreInput) {
             val (dest, errorItems) = jumpTable.getOrElse(ctx.nextChar, (default, allErrorItems))
             ctx.pc = dest
-            addErrors(ctx, errorItems) // adds a handler
             if (dest != default) {
                 ctx.pushCheck()
                 ctx.pushHandler(defaultPreamble)
                 ctx.saveHints(shadow = false)
             }
+            addErrors(ctx, errorItems) // adds a handler
         }
         else {
             addErrors(ctx, allErrorItems)
