@@ -84,7 +84,8 @@ private [internal] final class Put(reg: Int) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [parsley] final class CalleeSave(var label: Int, slots: List[(Int, Int)], saveArray: Array[AnyRef]) extends InstrWithLabel with Stateful {
+// This instruction holds mutate state, but it is safe to do so, because it's always the find instruction of a DynCall.
+private [parsley] final class CalleeSave(var label: Int, slots: List[(Int, Int)], saveArray: Array[AnyRef]) extends InstrWithLabel {
     def this(label: Int, slots: List[Int]) = this(label, slots.zipWithIndex, new Array[AnyRef](slots.length))
     private var inUse = false
 
@@ -128,5 +129,4 @@ private [parsley] final class CalleeSave(var label: Int, slots: List[(Int, Int)]
     // $COVERAGE-OFF$
     override def toString: String = s"CalleeSave($label)"
     // $COVERAGE-ON$
-    override def copy: CalleeSave = new CalleeSave(label, slots, new Array[AnyRef](slots.length))
 }

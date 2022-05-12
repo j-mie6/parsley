@@ -43,14 +43,8 @@ private [deepembedding] final class NotFollowedBy[A](val p: StrictParsley[A]) ex
 
 private [deepembedding] final class Rec[A](val call: instructions.Call) extends StrictParsley[A] with Binding {
     // Must be a def, since call.label can change!
-    def label: Int = call.label
-    // $COVERAGE-OFF$
-    // This is here because Scala needs it to be, it's not used
-    def preserve: Array[Int] = call.preserve
-    // $COVERAGE-ON$
-    def preserve_=(indices: Array[Int]): Unit = call.preserve = indices
-
     def inlinable: Boolean = true
+    def label: Int = call.label
 
     final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = result(instrs += call)
 }

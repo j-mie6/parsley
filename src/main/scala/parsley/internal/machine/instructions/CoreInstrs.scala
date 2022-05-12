@@ -85,9 +85,8 @@ private [internal] final class Call(var label: Int) extends InstrWithLabel {
         }
         this
     }
-    private [internal] var preserve: Array[Int] = _
 
-    override def apply(ctx: Context): Unit = ctx.call(label, preserve)
+    override def apply(ctx: Context): Unit = ctx.call(label)
     // $COVERAGE-OFF$
     override def toString: String = s"Call($label)"
     // $COVERAGE-ON$

@@ -12,8 +12,6 @@ private [internal] abstract class Instr {
     def copy: Instr = this
 }
 
-private [internal] trait Stateful
-
 private [internal] abstract class InstrWithLabel extends Instr {
     var label: Int
     override def relabel(labels: Array[Int]): this.type = {

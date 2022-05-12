@@ -128,10 +128,7 @@ private [deepembedding] object StrictParsley {
         val bindingsWithReturns = bindings.zip(bindings.tail.map(_.location(labels) - 1) :+ (instrs.size-1))
         lazy val locToBinding = bindings.map(b => b.location(labels) -> b).toMap
         for ((binding, retLoc) <- bindingsWithReturns) instrs(retLoc-1) match {
-            case instr: instructions.Call =>
-                if (binding.isSelfCall(instr) || !locToBinding(instr.label).hasStateSave) {
-                    instrs(retLoc-1) = new instructions.Jump(instr.label)
-                }
+            case instr: instructions.Call => instrs(retLoc-1) = new instructions.Jump(instr.label)
             case instr: instructions.GoSub => instrs(retLoc-1) = new instructions.Jump(instr.label)
             case _ =>
         }
@@ -159,7 +156,6 @@ private [deepembedding] object StrictParsley {
         val size = findLabels(instrsOversize, labelMapping, instrs.length, 0, 0)
         val instrs_ = new Array[Instr](size)
         applyLabels(instrsOversize, labelMapping, instrs_, instrs_.length, 0, 0)
-        PreservationAnalysis.determinePreserve(recs, instrs_)
         tco(instrs_, labelMapping, bindings)(state)
         instrs_
     }
@@ -170,14 +166,6 @@ private [backend] trait Binding {
     final def location(labelMap: Array[Int])(implicit state: CodeGenState): Int = this match {
         case self: Rec[_] => self.label
         case self: Let[_] => labelMap(self.label)
-    }
-    final def hasStateSave: Boolean = this match {
-        case self: Rec[_] => self.preserve.nonEmpty
-        case _: Let[_] => false
-    }
-    final def isSelfCall(call: instructions.Call): Boolean = this match {
-        case self: Rec[_] => self.call == call
-        case _: Let[_] => false
     }
 }
 private [deepembedding] trait MZero extends StrictParsley[Nothing]

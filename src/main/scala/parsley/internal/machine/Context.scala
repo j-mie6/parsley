@@ -23,8 +23,6 @@ import stacks.{ArrayStack, CallStack, CheckStack, ErrorStack, HandlerStack, Hint
 
 private [parsley] object Context {
     private [Context] val NumRegs = 4
-    private [Context] val EmptyPreserve = Array.empty[Int]
-    private [Context] val EmptyExchange = Array.empty[Instr]
     private [parsley] def empty: Context = new Context(null, "")
 }
 
@@ -148,41 +146,19 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         }
     }
 
-    @tailrec private def preserveInstrs(preserve: Array[Int], exchange: Array[Instr], i: Int): Unit = if (i >= 0) {
-        val idx = preserve(i)
-        val instr = instrs(idx)
-        exchange(i) = instr
-        instrs(idx) = instr.copy
-        preserveInstrs(preserve, exchange, i - 1)
-    }
-
-    private [machine] def call(at: Int, preserve: Array[Int]): Unit = {
-        val exchange = new Array[Instr](preserve.size)
-        preserveInstrs(preserve, exchange, preserve.size - 1)
-        calls = new CallStack(pc + 1, instrs, preserve, exchange, at, calls)
-        pc = at
-        depth += 1
-    }
-
     private [machine] def call(newInstrs: Array[Instr]): Unit = {
         call(0)
         instrs = newInstrs
     }
 
     private [machine] def call(at: Int): Unit = {
-        calls = new CallStack(pc + 1, instrs, Context.EmptyPreserve, Context.EmptyExchange, at, calls)
+        calls = new CallStack(pc + 1, instrs, at, calls)
         pc = at
         depth += 1
     }
 
-    @tailrec @inline private def restoreInstrs(preserve: Array[Int], exchange: Array[Instr], i: Int): Unit = if (i >= 0) {
-        instrs(preserve(i)) = exchange(i)
-        restoreInstrs(preserve, exchange, i-1)
-    }
-
     private [machine] def ret(): Unit = {
         instrs = calls.instrs
-        restoreInstrs(calls.indices, calls.exchange, calls.indices.size-1)
         pc = calls.ret
         calls = calls.tail
         depth -= 1

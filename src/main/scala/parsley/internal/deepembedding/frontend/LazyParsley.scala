@@ -82,8 +82,6 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     final private def computeInstrs(ops: GenOps): Array[Instr] = pipeline(ops)
 
     final private [parsley] lazy val instrs: Array[Instr] = if (cps) computeInstrs(Cont.ops.asInstanceOf[GenOps]) else safeCall(computeInstrs(_))
-    final private lazy val pindices: Array[Int] = instructions.statefulIndices(instrs)
-    final private [parsley] def threadSafeInstrs: Array[Instr] = instructions.stateSafeCopy(instrs, pindices)
 
     // Abstracts
     // Sub-tree optimisation and Rec calculation - Bottom-up
