@@ -49,8 +49,8 @@ def determineVersion(currentVersion: String, compat: Compatibility, out: GitDesc
 }
 
 val scala212Version = "2.12.15"
-val scala213Version = "2.13.7"
-val scala3Version = "3.1.1"
+val scala213Version = "2.13.8"
+val scala3Version = "3.1.2"
 
 def usesLib213(major: Long, minor: Long): Boolean = major > 2 || minor >= 13
 def extraSources(rootSrcFile: File, base: String, major: Long, minor: Long): Seq[File] = {
@@ -67,7 +67,7 @@ def extraSources(rootSrcFile: File, base: String, version: String): Seq[File] = 
 
 def scalaTestDependency(version: String): String =
     Map()
-    .getOrElse(version, "3.2.11")
+    .getOrElse(version, "3.2.12")
 
 val PureVisible: CrossType = new CrossType {
     def projectDir(crossBase: File, projectType: String): File = {
@@ -133,7 +133,7 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     Test / scalaJSLinkerConfig := scalaJSLinkerConfig.value.withESFeatures(_.withESVersion(ESVersion.ES2018))
   )
   .nativeSettings(
-    crossScalaVersions := List(scala212Version, scala213Version),
+    crossScalaVersions := List(scala212Version, scala213Version, scala3Version),
     Compile / bloopGenerate := None,
     Test / bloopGenerate := None
   )
