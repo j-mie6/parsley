@@ -46,70 +46,11 @@ private [deepembedding] final class Choice[A](private [backend] val alt1: Strict
         case _ => this
     }
 
-    def to_<|> : StrictParsley[A] = {
-        alts.prependOne(alt2)
-        alts.prependOne(alt1)
-        alts.reduceRight(new <|>[A](_, _))
-    }
-
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         this.tablify match {
             // If the tablified list is single element (or the next is None), that implies that this should be generated as normal!
-            case (_ :: Nil) | (_ :: (_, None) :: Nil) => this.to_<|>.codeGen/*alt1 match {
-                case Attempt(u) => alt2 match {
-                    case Pure(x) =>
-                        val handler = state.freshLabel()
-                        val skip = state.freshLabel()
-                        instrs += new instructions.PushHandlerAndState(handler, saveHints = true, hideHints = false)
-                        suspend(u.codeGen[Cont, R]) |> {
-                            instrs += new instructions.JumpAndPopState(skip)
-                            instrs += new instructions.Label(handler)
-                            instrs += new instructions.AlwaysRecoverWith[A](x)
-                            instrs += new instructions.Label(skip)
-                        }
-                    case v       =>
-                        val handler = state.freshLabel()
-                        val skip = state.freshLabel()
-                        val merge = state.getLabel(instructions.MergeErrorsAndFail)
-                        instrs += new instructions.PushHandlerAndState(handler, saveHints = true, hideHints = false)
-                        suspend(u.codeGen[Cont, R]) >> {
-                            instrs += new instructions.JumpAndPopState(skip)
-                            instrs += new instructions.Label(handler)
-                            instrs += new instructions.RestoreAndPushHandler(merge)
-                            suspend(v.codeGen[Cont, R]) |> {
-                                instrs += instructions.ErrorToHints
-                                instrs += new instructions.Label(skip)
-                            }
-                        }
-                }
-                case u          => alt2 match {
-                    case Pure(x) =>
-                        val handler = state.freshLabel()
-                        val skip = state.freshLabel()
-                        instrs += new instructions.PushHandlerAndCheck(handler, saveHints = true)
-                        suspend(u.codeGen[Cont, R]) |> {
-                            instrs += new instructions.JumpAndPopCheck(skip)
-                            instrs += new instructions.Label(handler)
-                            instrs += new instructions.RecoverWith[A](x)
-                            instrs += new instructions.Label(skip)
-                        }
-                    case v       =>
-                        val handler = state.freshLabel()
-                        val skip = state.freshLabel()
-                        val merge = state.getLabel(instructions.MergeErrorsAndFail)
-                        instrs += new instructions.PushHandlerAndCheck(handler, saveHints = true)
-                        suspend(u.codeGen[Cont, R]) >> {
-                            instrs += new instructions.JumpAndPopCheck(skip)
-                            instrs += new instructions.Label(handler)
-                            instrs += new instructions.Catch(merge)
-                            suspend(v.codeGen[Cont, R]) |> {
-                                instrs += instructions.ErrorToHints
-                                instrs += new instructions.Label(skip)
-                            }
-                        }
-                }
-            }*/
-        // In case of None'd list, the codeGen cont continues by codeGenning that p, else we are done for this tree, call cont!
+            case (_ :: Nil) | (_ :: (_, None) :: Nil) => codeGenChain(alt1, alt2, alts.iterator)
+            // In case of None'd list, the codeGen cont continues by codeGenning that p, else we are done for this tree, call cont!
             case tablified =>
                 val needsDefault = tablified.last._2.isDefined
                 val end = state.freshLabel()
@@ -164,72 +105,79 @@ private [deepembedding] final class Choice[A](private [backend] val alt1: Strict
     }
 }
 
-private [backend] final class <|>[A](var left: StrictParsley[A], var right: StrictParsley[A]) extends StrictParsley[A] {
-    def inlinable: Boolean = false
-
-    override def optimise: StrictParsley[A] = ???
-    // TODO: Refactor
-    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
-        left match {
-            case Attempt(u) => right match {
-                case Pure(x) =>
-                    val handler = state.freshLabel()
-                    val skip = state.freshLabel()
-                    instrs += new instructions.PushHandlerAndState(handler, saveHints = true, hideHints = false)
-                    suspend(u.codeGen[Cont, R]) |> {
-                        instrs += new instructions.JumpAndPopState(skip)
-                        instrs += new instructions.Label(handler)
-                        instrs += new instructions.AlwaysRecoverWith[A](x)
-                        instrs += new instructions.Label(skip)
-                    }
-                case v       =>
-                    val handler = state.freshLabel()
-                    val skip = state.freshLabel()
-                    val merge = state.getLabel(instructions.MergeErrorsAndFail)
-                    instrs += new instructions.PushHandlerAndState(handler, saveHints = true, hideHints = false)
-                    suspend(u.codeGen[Cont, R]) >> {
-                        instrs += new instructions.JumpAndPopState(skip)
-                        instrs += new instructions.Label(handler)
-                        instrs += new instructions.RestoreAndPushHandler(merge)
-                        suspend(v.codeGen[Cont, R]) |> {
-                            instrs += instructions.ErrorToHints
-                            instrs += new instructions.Label(skip)
-                        }
-                    }
-            }
-            case u          => right match {
-                case Pure(x) =>
-                    val handler = state.freshLabel()
-                    val skip = state.freshLabel()
-                    instrs += new instructions.PushHandlerAndCheck(handler, saveHints = true)
-                    suspend(u.codeGen[Cont, R]) |> {
-                        instrs += new instructions.JumpAndPopCheck(skip)
-                        instrs += new instructions.Label(handler)
-                        instrs += new instructions.RecoverWith[A](x)
-                        instrs += new instructions.Label(skip)
-                    }
-                case v       =>
-                    val handler = state.freshLabel()
-                    val skip = state.freshLabel()
-                    val merge = state.getLabel(instructions.MergeErrorsAndFail)
-                    instrs += new instructions.PushHandlerAndCheck(handler, saveHints = true)
-                    suspend(u.codeGen[Cont, R]) >> {
-                        instrs += new instructions.JumpAndPopCheck(skip)
-                        instrs += new instructions.Label(handler)
-                        instrs += new instructions.Catch(merge)
-                        suspend(v.codeGen[Cont, R]) |> {
-                            instrs += instructions.ErrorToHints
-                            instrs += new instructions.Label(skip)
-                        }
-                    }
-            }
-        }
-    }
-}
-
 private [backend] object Choice {
     private [Choice] def unapply[A](self: Choice[A]): Some[(StrictParsley[A], StrictParsley[A], LinkedList[StrictParsley[A]])] =
         Some((self.alt1, self.alt2, self.alts))
+
+    private def scopedState[A, Cont[_, +_], R](p: StrictParsley[A])(generateHandler: =>Cont[R, Unit])
+                                              (implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+        val handler = state.freshLabel()
+        val skip = state.freshLabel()
+        instrs += new instructions.PushHandlerAndState(handler, saveHints = true, hideHints = false)
+        suspend(p.codeGen[Cont, R]) >> {
+            instrs += new instructions.JumpAndPopState(skip)
+            instrs += new instructions.Label(handler)
+            generateHandler |> {
+                instrs += new instructions.Label(skip)
+            }
+        }
+    }
+
+    private def scopedCheck[A, Cont[_, +_], R](p: StrictParsley[A])(generateHandler: =>Cont[R, Unit])
+                                              (implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+        val handler = state.freshLabel()
+        val skip = state.freshLabel()
+        instrs += new instructions.PushHandlerAndCheck(handler, saveHints = true)
+        suspend(p.codeGen[Cont, R]) >> {
+            instrs += new instructions.JumpAndPopCheck(skip)
+            instrs += new instructions.Label(handler)
+            generateHandler |> {
+                instrs += new instructions.Label(skip)
+            }
+        }
+    }
+
+    private [Choice] def codeGenChain[A, Cont[_, +_], R](alt1: StrictParsley[A], alt2: StrictParsley[A], alts: Iterator[StrictParsley[A]])
+                                                        (implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+        if (alts.hasNext) {
+            val alt3 = alts.next()
+            codeGenAlt(alt1, suspend(codeGenChain[A, Cont, R](alt2, alt3, alts)))
+        }
+        else alt2 match {
+            case Pure(x) => alt1 match {
+                case Attempt(u) => scopedState(u) {
+                    instrs += new instructions.AlwaysRecoverWith[A](x)
+                    result(())
+                }
+                case u => scopedCheck(u) {
+                    instrs += new instructions.RecoverWith[A](x)
+                    result(())
+                }
+            }
+            case v => codeGenAlt(alt1, suspend(v.codeGen[Cont, R]))
+        }
+    }
+
+    // Why is rest lazy? because Cont could be Id, and Id forces the argument immediately!
+    private def codeGenAlt[A, Cont[_, +_], R](p: StrictParsley[A], rest: =>Cont[R, Unit])
+                                             (implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+        val merge = state.getLabel(instructions.MergeErrorsAndFail)
+        p match {
+            case Attempt(u) => scopedState(u) {
+                instrs += new instructions.RestoreAndPushHandler(merge)
+                rest |> {
+                    instrs += instructions.ErrorToHints
+                }
+            }
+            case u => scopedCheck(u) {
+                instrs += new instructions.Catch(merge)
+                rest |> {
+                    instrs += instructions.ErrorToHints
+                }
+            }
+        }
+
+    }
 
     @tailrec def propagateExpecteds(expectedss: List[(Set[ErrorItem], Boolean)], all: Set[ErrorItem], corrected: List[Set[ErrorItem]]):
         List[Set[ErrorItem]] = expectedss match {
@@ -248,36 +196,26 @@ private [backend] object Choice {
             }
         case Nil => result(())
     }
+    //TODO: This looks really similar to the codeGenChain?! they could probably be merged
+    // my guess is that this one guarantees no pure parsers, but that shouldn't be a problem
     private [backend] def codeGenAlternatives[Cont[_, +_], R]
             (alts: List[StrictParsley[_]])
             (implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = (alts: @unchecked) match {
         case alt::Nil => alt.codeGen
         case Attempt(alt)::alts_ =>
-            val handler = state.freshLabel()
-            val skip = state.freshLabel()
             val merge = state.getLabel(instructions.MergeErrorsAndFail)
-            instrs += new instructions.PushHandlerAndState(handler, saveHints = true, hideHints = false)
-            suspend(alt.codeGen[Cont, R]) >> {
-                instrs += new instructions.JumpAndPopState(skip)
-                instrs += new instructions.Label(handler)
+            scopedState(alt) {
                 instrs += new instructions.RestoreAndPushHandler(merge)
                 suspend(codeGenAlternatives[Cont, R](alts_)) |> {
                     instrs += instructions.ErrorToHints
-                    instrs += new instructions.Label(skip)
                 }
             }
         case alt::alts_ =>
-            val handler = state.freshLabel()
-            val skip = state.freshLabel()
             val merge = state.getLabel(instructions.MergeErrorsAndFail)
-            instrs += new instructions.PushHandlerAndCheck(handler, saveHints = true)
-            suspend(alt.codeGen[Cont, R]) >> {
-                instrs += new instructions.JumpAndPopCheck(skip)
-                instrs += new instructions.Label(handler)
+            scopedCheck(alt) {
                 instrs += new instructions.Catch(merge)
                 suspend(codeGenAlternatives[Cont, R](alts_)) |> {
                     instrs += instructions.ErrorToHints
-                    instrs += new instructions.Label(skip)
                 }
             }
     }
