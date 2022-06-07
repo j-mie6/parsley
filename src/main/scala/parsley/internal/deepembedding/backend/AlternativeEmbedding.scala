@@ -196,28 +196,11 @@ private [backend] object Choice {
             }
         case Nil => result(())
     }
-    //TODO: This looks really similar to the codeGenChain?! they could probably be merged
-    // my guess is that this one guarantees no pure parsers, but that shouldn't be a problem
     private [backend] def codeGenAlternatives[Cont[_, +_], R]
             (alts: List[StrictParsley[_]])
             (implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = (alts: @unchecked) match {
         case alt::Nil => alt.codeGen
-        case Attempt(alt)::alts_ =>
-            val merge = state.getLabel(instructions.MergeErrorsAndFail)
-            scopedState(alt) {
-                instrs += new instructions.RestoreAndPushHandler(merge)
-                suspend(codeGenAlternatives[Cont, R](alts_)) |> {
-                    instrs += instructions.ErrorToHints
-                }
-            }
-        case alt::alts_ =>
-            val merge = state.getLabel(instructions.MergeErrorsAndFail)
-            scopedCheck(alt) {
-                instrs += new instructions.Catch(merge)
-                suspend(codeGenAlternatives[Cont, R](alts_)) |> {
-                    instrs += instructions.ErrorToHints
-                }
-            }
+        case alt::alts_ => codeGenAlt(alt, suspend(codeGenAlternatives[Cont, R](alts_)))
     }
     // TODO: Refactor
     @tailrec private [backend] def foldTablified(tablified: List[(StrictParsley[_], (Char, ErrorItem, Int, Boolean))], labelGen: CodeGenState,
