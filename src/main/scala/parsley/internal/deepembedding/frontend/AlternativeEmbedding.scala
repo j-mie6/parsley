@@ -14,5 +14,5 @@ private [parsley] final class <|>[A](p: LazyParsley[A], q: =>LazyParsley[A]) ext
     // $COVERAGE-OFF$
     override def pretty(l: String, r: String): String = s"($l <|> $r)"
     // $COVERAGE-ON$
-    override def make(p: StrictParsley[A], q: StrictParsley[A]): StrictParsley[A] = new backend.<|>(p, q)
+    override def make(p: StrictParsley[A], q: StrictParsley[A]): StrictParsley[A] = backend.<|>(p, q)
 }
