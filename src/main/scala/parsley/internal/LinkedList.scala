@@ -27,8 +27,8 @@ private [internal] class LinkedList[A] extends Iterable[A] {
     }
     def +=(x: A): this.type = addOne(x)
 
-    def addAll(xs: IterableOnce[A]): this.type = {
-        val it = xs.iterator
+    def addAll(xs: Iterable[A]): this.type = addAll(xs.iterator)
+    def addAll(it: Iterator[A]): this.type = {
         if (it.hasNext) {
             addOne(it.next())
             for (x <- it) {
