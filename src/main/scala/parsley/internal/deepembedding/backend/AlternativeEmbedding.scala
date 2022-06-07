@@ -7,7 +7,7 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.higherKinds
 
-import parsley.internal.LinkedList
+import parsley.internal.LinkedList, LinkedList.LinkedListIterator
 import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
 import parsley.internal.deepembedding.singletons._
 import parsley.internal.errors.{Desc, ErrorItem, Raw}
@@ -81,11 +81,11 @@ private [deepembedding] final class Choice[A](private [backend] val alt1: Strict
     }
 
     private def tablify: List[(StrictParsley[_], Option[(Char, ErrorItem, Int, Boolean)])] = {
-        tablify((alt1::alt2::alts.toList).iterator, mutable.ListBuffer.empty, mutable.Set.empty, None)
+        tablify((alt1::alt2::alts).iterator, mutable.ListBuffer.empty, mutable.Set.empty, None)
     }
 
     @tailrec private def tablify(
-            it: Iterator[StrictParsley[A]],
+            it: LinkedListIterator[StrictParsley[A]],
             acc: mutable.ListBuffer[(StrictParsley[_], Option[(Char, ErrorItem, Int, Boolean)])],
             seen: mutable.Set[Char],
             lastSeen: Option[Char]
@@ -98,8 +98,7 @@ private [deepembedding] final class Choice[A](private [backend] val alt1: Strict
                 // if we've seen it, then only a repeat of the last character is allowed
                 case Some((c, _, _, _)) if lastSeen.contains(c) => tablify(it, acc += ((u, leadingInfo)), seen += c, lastSeen)
                 // if it's seen and not the last character we have to stop
-                // TODO: This is so clumsy lol
-                case _ => (acc += ((new Choice(u, it.next(), (new LinkedList).addAll(it)), None))).toList
+                case _ => (acc += ((new Choice(u, it.next(), it.remaining), None))).toList
             }
         case p => (acc += ((p, tablable(p, backtracks = false)))).toList
     }

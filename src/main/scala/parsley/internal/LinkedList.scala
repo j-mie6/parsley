@@ -3,12 +3,13 @@
  */
 package parsley.internal
 
-import LinkedList.Node
-import scala.collection.AbstractIterator
+import LinkedList.{Node, LinkedListIterator}
 
-private [internal] class LinkedList[A] extends Iterable[A] {
-    var start: Node[A] = null
-    var end: Node[A] = null
+private [internal] class LinkedList[A] private [LinkedList]
+    (private [LinkedList] var start: Node[A],
+     private [LinkedList] var end: Node[A]) extends Iterable[A] {
+
+    private [LinkedList] def this() = this(null, null)
 
     // This method assumes that this list is non-empty
     private [LinkedList] def unsafeAddOne(x: A): this.type = {
@@ -26,6 +27,8 @@ private [internal] class LinkedList[A] extends Iterable[A] {
         else unsafeAddOne(x)
     }
     def +=(x: A): this.type = addOne(x)
+
+    def ::(x: A): LinkedList[A] = new LinkedList(new Node(x, this.start), this.end)
 
     def addAll(xs: Iterable[A]): this.type = addAll(xs.iterator)
     def addAll(it: Iterator[A]): this.type = {
@@ -56,10 +59,9 @@ private [internal] class LinkedList[A] extends Iterable[A] {
 
     override def isEmpty: Boolean = start == null
 
-    override def iterator: Iterator[A] = new AbstractIterator[A] {
-        private[this] var current = start
-        def hasNext = current != null
-        def next() = { val r = current.x; current = current.next; r }
+    override def iterator: LinkedListIterator[A] = new LinkedListIterator[A] {
+        override var current = start
+        override val end = LinkedList.this.end
     }
 }
 
@@ -74,4 +76,19 @@ private [internal] object LinkedList {
     }
     // This is pretty inefficient tbh!
     def unapplySeq[A](xs: LinkedList[A]): Some[Seq[A]] = Some(xs.toSeq)
+
+    abstract class LinkedListIterator[A] extends Iterator[A] {
+        protected var current: Node[A]
+        protected val end: Node[A]
+        def hasNext = current != null
+        def next() = { val r = current.x; current = current.next; r }
+        def remaining: LinkedList[A] = {
+            if (hasNext) {
+                new LinkedList(current, end)
+            }
+            else {
+                new LinkedList
+            }
+        }
+    }
 }
