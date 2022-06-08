@@ -168,22 +168,18 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
       *
       * @param n the number of frames to unwind.
       */
-    @tailrec private def multiRet(n: Int): Unit = if (n > 0) {
+    private def multiRet(n: Int): Unit = if (n > 0) {
         if (n == 1) ret()
         else {
-            val callId = calls.callId
             var m = n - 1
-            // each frame preserved a specific set of stateful instructions
-            // so long as you know the next frame has the same callId as you (i.e. the starting index)
-            // then you can defer the restoration of those stateful instructions for that call
-            while (calls.tail != null && calls.tail.callId == callId && m > 0) {
+            depth -= m
+            // the rollback can safely discard n-1 frames immediately, as stateful instructions are no longer a thing!
+            while (m > 0) {
                 calls = calls.tail
                 m -= 1
-                depth -= 1
             }
-            // if the next frame is not the same callId as you, then you must restore your instructions yourself
+            // this does the final, not shortcutted return
             ret()
-            multiRet(m)
         }
     }
 
