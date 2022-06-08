@@ -179,6 +179,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
             while (calls.tail != null && calls.tail.callId == callId && m > 0) {
                 calls = calls.tail
                 m -= 1
+                depth -= 1
             }
             // if the next frame is not the same callId as you, then you must restore your instructions yourself
             ret()
