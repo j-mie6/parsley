@@ -189,6 +189,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
             while (calls.tail != null && calls.tail.callId == callId && m > 0) {
                 calls = calls.tail
                 m -= 1
+                depth -= 1
             }
             ret()
             multiRet(m)
