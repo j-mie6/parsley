@@ -23,7 +23,7 @@ private [machine] object Stack {
             val str = new StringBuilder
             str ++= "["
             while (!inst.isEmpty(ys)) {
-                str ++= inst.show(inst.head(xs))
+                str ++= inst.show(inst.head(ys))
                 ys = inst.tail(ys)
                 if (!inst.isEmpty(ys)) str ++= sep
             }

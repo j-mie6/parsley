@@ -7,6 +7,7 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.higherKinds
 
+import parsley.internal.LinkedList, LinkedList.LinkedListIterator
 import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
 import parsley.internal.deepembedding.frontend
 /* SPDX-FileCopyrightText: © 2022 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
@@ -106,6 +107,36 @@ private [deepembedding] final class >>=[A, B](val p: StrictParsley[A], private [
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         suspend(p.codeGen[Cont, R]) |>
         (instrs += instructions.DynCall[A](x => f(x).demandCalleeSave().instrs))
+    }
+}
+
+private [deepembedding] final class NormSeq[A](private [backend] var before: LinkedList[StrictParsley[_]],
+                                               private [backend] val result: StrictParsley[A],
+                                               private [backend] var after: LinkedList[StrictParsley[_]]) extends StrictParsley[A] {
+    def inlinable: Boolean = false
+
+    override def optimise: StrictParsley[A] = this
+
+    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+        // peephole here involves CharTokFastPerform, StringTokFastPerform, and Exchange
+        suspend(NormSeq.codeGenMany[Cont, R](before.iterator)) >> {
+            suspend(result.codeGen[Cont, R]) >> {
+                suspend(NormSeq.codeGenMany(after.iterator))
+            }
+        }
+    }
+
+}
+
+object NormSeq {
+    private [NormSeq] def codeGenMany[Cont[_, +_], R](it: Iterator[StrictParsley[_]])
+                                                     (implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+        if (it.hasNext) {
+            suspend(it.next().codeGen[Cont, R]) >> {
+                instrs += instructions.Pop
+                suspend(codeGenMany(it))
+            }
+        } else result(())
     }
 }
 

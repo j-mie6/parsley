@@ -59,6 +59,9 @@ private [internal] class LinkedList[A] private [LinkedList]
 
     override def isEmpty: Boolean = start == null
 
+    override def lastOption: Option[A] = if (end != null) Some(end.x) else None
+    override def headOption: Option[A] = if (start != null) Some(start.x) else None
+
     override def iterator: LinkedListIterator[A] = new LinkedListIterator[A] {
         override var current = start
         override val end = LinkedList.this.end
