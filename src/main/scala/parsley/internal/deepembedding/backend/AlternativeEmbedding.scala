@@ -251,5 +251,8 @@ private [backend] object Choice {
 
 private [deepembedding] object <|> {
     def apply[A](left: StrictParsley[A], right: StrictParsley[A]): Choice[A] = new Choice(left, right, LinkedList.empty)
-    private [backend] def unapply[A](self: Choice[A]): Some[(StrictParsley[A], StrictParsley[A])] = Some((self.alt1, self.alt2))
+    private [backend] def unapply[A](self: Choice[A]): Some[(StrictParsley[A], StrictParsley[A])] = {
+        if (self.alts.nonEmpty) throw new IllegalStateException("<|> assumed, but full Choice given")
+        Some((self.alt1, self.alt2))
+    }
 }

@@ -111,11 +111,77 @@ private [deepembedding] final class >>=[A, B](val p: StrictParsley[A], private [
 }
 
 private [deepembedding] final class NormSeq[A](private [backend] var before: LinkedList[StrictParsley[_]],
-                                               private [backend] val result: StrictParsley[A],
+                                               private [backend] var result: StrictParsley[A],
                                                private [backend] var after: LinkedList[StrictParsley[_]]) extends StrictParsley[A] {
     def inlinable: Boolean = false
 
-    override def optimise: StrictParsley[A] = this
+    override def optimise: StrictParsley[A] = this match {
+        // Assume that this is eliminated first, so not other before or afters
+        case (_: Pure[_]) **> u => u
+        case (p: MZero) **> _ => p
+        case u <** (_: Pure[_]) => u
+        case (p: MZero) <** _ => p
+        case u@NormSeq(bs1, br, bs2) **> NormSeq(rs1, rr, rs2) =>
+            bs2.lastOption match {
+                case Some(_: MZero) => u
+                case _ =>
+                    before = bs1
+                    NormSeq.whenNonPure(br, before.addOne(_))
+                    before.stealAll(bs2)
+                    before.stealAll(rs1)
+                    result = rr
+                    after = rs2
+                    this
+            }
+        case u@NormSeq(bs1, br, bs2) **> r =>
+            bs2.lastOption match {
+                case Some(_: MZero) => u
+                case _ =>
+                    before = bs1
+                    NormSeq.whenNonPure(br, before.addOne(_))
+                    before.stealAll(bs2)
+                    this
+            }
+        case p **> NormSeq(as1, ar, as2) =>
+            before.stealAll(as1)
+            result = ar
+            after = as2
+            this
+        case u@NormSeq(rs1, rr, rs2) <** NormSeq(as1, ar, as2) =>
+            rs2.lastOption match {
+                case Some(_: MZero) => u
+                case _ =>
+                    before = rs1
+                    result = rr
+                    after = rs2
+                    after.stealAll(as1)
+                    NormSeq.whenNonPure(ar, after.addOne(_))
+                    after.stealAll(as2)
+                    this
+            }
+        case u@NormSeq(rs1, rr, rs2) <** p =>
+            rs2.lastOption match {
+                case Some(_: MZero) => u
+                case _ =>
+                    before = rs1
+                    result = rr
+                    after = rs2
+                    after.addOne(p)
+                    this
+            }
+        case p <** NormSeq(as1, ar, as2) =>
+            after = as1
+            NormSeq.whenNonPure(ar, after.addOne(_))
+            after.stealAll(as2)
+            this
+        // Assume that no component can contain Seq
+        // pure can still exist in the focus
+        // and empty can exist in the substructures (but will be the last)
+        // TODO: this is a pain because the lists need to be accounted for.
+
+        //case NormSeq(NormSeq(bs1, br, bs2), result, NormSeq(as1, ar, as2)) => this
+        case _ => this
+    }
 
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         // peephole here involves CharTokFastPerform, StringTokFastPerform, and Exchange
@@ -129,6 +195,11 @@ private [deepembedding] final class NormSeq[A](private [backend] var before: Lin
 }
 
 object NormSeq {
+
+    private [backend] def unapply[A](self: NormSeq[A]): Some[(LinkedList[StrictParsley[_]], StrictParsley[A], LinkedList[StrictParsley[_]])] = {
+        Some((self.before, self.result, self.after))
+    }
+
     private [NormSeq] def codeGenMany[Cont[_, +_], R](it: Iterator[StrictParsley[_]])
                                                      (implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         if (it.hasNext) {
@@ -137,6 +208,11 @@ object NormSeq {
                 suspend(codeGenMany(it))
             }
         } else result(())
+    }
+
+    private [NormSeq] def whenNonPure(p: StrictParsley[_], f: StrictParsley[_] => Unit): Unit = p match {
+        case _: Pure[_] =>
+        case p          => f(p)
     }
 }
 
@@ -260,7 +336,21 @@ private [backend] object *> {
     def apply[A](left: StrictParsley[_], right: StrictParsley[A]): *>[A]= new *>(left, right)
     def unapply[A](self: *>[A]): Some[(StrictParsley[_], StrictParsley[A])] = Some((self.discard, self.result))
 }
+private [backend] object **> {
+    private [backend] def unapply[A](self: NormSeq[A]): Option[(StrictParsley[_], StrictParsley[A])] = {
+        if (self.before.size == 1) Some((self.before.head, self.result))
+        else None
+    }
+}
+
 private [backend] object <* {
     def apply[A](left: StrictParsley[A], right: StrictParsley[_]): <*[A] = new <*(left, right)
     def unapply[A](self: <*[A]): Some[(StrictParsley[A], StrictParsley[_])] = Some((self.result, self.discard))
+}
+
+private [backend] object <** {
+    private [backend] def unapply[A](self: NormSeq[A]): Option[(StrictParsley[A], StrictParsley[_])] = {
+        if (self.after.size == 1) Some((self.result, self.after.head))
+        else None
+    }
 }
