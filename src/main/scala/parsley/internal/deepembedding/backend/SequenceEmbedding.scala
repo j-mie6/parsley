@@ -279,7 +279,7 @@ private [deepembedding] final class *>[A](var left: StrictParsley[Any], var righ
         optimise
     }
     def combineSeq(sdis: String, sres: String): String = sdis + sres
-    @tailrec override def optimise: StrictParsley[A] = optimiseSeq match {
+    override def optimise: StrictParsley[A] = this /*optimiseSeq match {
         case Some(p) => p
         case None => discard match {
             // mzero *> p = mzero (left zero and definition of *> in terms of >>=)
@@ -293,7 +293,7 @@ private [deepembedding] final class *>[A](var left: StrictParsley[Any], var righ
                 case _ => this
             }
         }
-    }
+    }*/
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = codeGenSeq {
         suspend(discard.codeGen[Cont, R]) >> {
             instrs += instructions.Pop
@@ -316,7 +316,7 @@ private [deepembedding] final class <*[A](var left: StrictParsley[A], var right:
 
     def makeSeq(str: StrictParsley[String], res: Pure[A]): StrictParsley[A] = *>(str, res)
     def combineSeq(sdis: String, sres: String): String = sres + sdis
-    @tailrec override def optimise: StrictParsley[A] =  optimiseSeq match {
+    override def optimise: StrictParsley[A] = this /*optimiseSeq match {
         case Some(p) => p
         case None => discard match {
             // p <* mzero = p *> mzero (by preservation of error messages and failure properties) - This moves the pop instruction after the failure
@@ -334,7 +334,7 @@ private [deepembedding] final class <*[A](var left: StrictParsley[A], var right:
                 case _ => this
             }
         }
-    }
+    }*/
     override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = codeGenSeq {
         suspend(result.codeGen[Cont, R]) >>
         suspend(discard.codeGen[Cont, R]) |>
@@ -360,9 +360,13 @@ private [backend] object >>= {
 private [backend] object Seq {
     def unapply[A, B, Res](self: Seq[A, B, Res]): Some[(StrictParsley[_], StrictParsley[Res])] = Some((self.discard, self.result))
 }
-private [backend] object *> {
-    def apply[A](left: StrictParsley[_], right: StrictParsley[A]): *>[A]= new *>(left, right)
-    def unapply[A](self: *>[A]): Some[(StrictParsley[_], StrictParsley[A])] = Some((self.discard, self.result))
+private [deepembedding] object *> {
+    def apply[A](left: StrictParsley[_], right: StrictParsley[A]): *>[A]= new *>(left, right) /*{
+        val before = LinkedList.empty[StrictParsley[_]]
+        before.addOne(left)
+        new NormSeq(before, right, LinkedList.empty)
+    }*/
+    private [backend] def unapply[A](self: *>[A]): Some[(StrictParsley[_], StrictParsley[A])] = Some((self.discard, self.result))
 }
 private [backend] object **> {
     private [backend] def unapply[A](self: NormSeq[A]): Option[(StrictParsley[_], StrictParsley[A])] = {
@@ -371,9 +375,13 @@ private [backend] object **> {
     }
 }
 
-private [backend] object <* {
-    def apply[A](left: StrictParsley[A], right: StrictParsley[_]): <*[A] = new <*(left, right)
-    def unapply[A](self: <*[A]): Some[(StrictParsley[A], StrictParsley[_])] = Some((self.result, self.discard))
+private [deepembedding]  object <* {
+    def apply[A](left: StrictParsley[A], right: StrictParsley[_]): <*[A] = new <*(left, right) /*{
+        val after = LinkedList.empty[StrictParsley[_]]
+        after.addOne(right)
+        new NormSeq(LinkedList.empty, left, after)
+    }*/
+    private [backend] def unapply[A](self: <*[A]): Some[(StrictParsley[A], StrictParsley[_])] = Some((self.result, self.discard))
 }
 
 private [backend] object <** {

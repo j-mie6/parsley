@@ -20,8 +20,8 @@ private [parsley] final class >>=[A, B](p: LazyParsley[A], private [>>=] val f: 
 }
 
 private [parsley] final class *>[A](_p: LazyParsley[_], _q: =>LazyParsley[A]) extends Binary[Any, A, A](_p, _q) {
-    override def make(p: StrictParsley[Any], q: StrictParsley[A]): StrictParsley[A] = new backend.*>(p, q)
+    override def make(p: StrictParsley[Any], q: StrictParsley[A]): StrictParsley[A] = backend.*>(p, q)
 }
 private [parsley] final class <*[A](_p: LazyParsley[A], _q: =>LazyParsley[_]) extends Binary[A, Any, A](_p, _q) {
-    override def make(p: StrictParsley[A], q: StrictParsley[Any]): StrictParsley[A] = new backend.<*(p, q)
+    override def make(p: StrictParsley[A], q: StrictParsley[Any]): StrictParsley[A] = backend.<*(p, q)
 }
