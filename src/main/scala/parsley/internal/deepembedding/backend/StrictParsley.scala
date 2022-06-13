@@ -22,9 +22,9 @@ private [deepembedding] trait StrictParsley[+A] {
     private [deepembedding] def inlinable: Boolean
     final private [deepembedding] var safe = true
 
-    final private [deepembedding] def generateInstructions[Cont[_, +_]](calleeSaveRequired: Boolean, usedRegs: Set[Reg[_]],
-                                                                        recs: Iterable[(Rec[_], Cont[Unit, StrictParsley[_]])])
-                                                                       (implicit ops: ContOps[Cont], state: CodeGenState): Array[Instr] ={
+    final private [deepembedding] def generateInstructions[Cont[_, +_]: ContOps](calleeSaveRequired: Boolean, usedRegs: Set[Reg[_]],
+                                                                                 recs: Iterable[(Rec[_], Cont[Unit, StrictParsley[_]])])
+                                                                                (implicit state: CodeGenState): Array[Instr] = {
         implicit val instrs: InstrBuffer = new ResizableArray()
         val bindings = mutable.ListBuffer.empty[Binding]
         perform {
@@ -50,7 +50,9 @@ private [deepembedding] trait StrictParsley[+A] {
     protected  [deepembedding] def optimise: StrictParsley[A] = this
 
     // Peephole optimisation and code generation - Top-down
-    private [backend] def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit]
+    private [backend] def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit]
+
+    private [deepembedding] def pretty[Cont[_, +_]: ContOps, R]() = ???
 }
 
 private [deepembedding] object StrictParsley {
@@ -84,8 +86,8 @@ private [deepembedding] object StrictParsley {
         else Nil
     }
 
-    private def generateCalleeSave[Cont[_, +_], R](calleeSaveRequired: Boolean, bodyGen: =>Cont[R, Unit], allocatedRegs: List[Int])
-                                                  (implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    private def generateCalleeSave[Cont[_, +_]: ContOps, R](calleeSaveRequired: Boolean, bodyGen: =>Cont[R, Unit], allocatedRegs: List[Int])
+                                                           (implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         if (calleeSaveRequired && allocatedRegs.nonEmpty) {
             val end = state.freshLabel()
             val calleeSave = state.freshLabel()
@@ -99,8 +101,8 @@ private [deepembedding] object StrictParsley {
         else bodyGen
     }
 
-    private def finaliseRecs[Cont[_, +_]](recs: Iterable[(Rec[_], Cont[Unit, StrictParsley[_]])])
-                                         (implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Unit = {
+    private def finaliseRecs[Cont[_, +_]: ContOps](recs: Iterable[(Rec[_], Cont[Unit, StrictParsley[_]])])
+                                                  (implicit instrs: InstrBuffer, state: CodeGenState): Unit = {
         for ((rec, p) <- recs) {
             instrs += new instructions.Label(rec.label)
             perform(p.flatMap(_.codeGen))
@@ -108,8 +110,8 @@ private [deepembedding] object StrictParsley {
         }
     }
 
-    private def finaliseLets[Cont[_, +_]](bindings: mutable.ListBuffer[Binding])
-                                         (implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Unit = {
+    private def finaliseLets[Cont[_, +_]: ContOps](bindings: mutable.ListBuffer[Binding])
+                                                  (implicit instrs: InstrBuffer, state: CodeGenState): Unit = {
         while (state.more) {
             val let = state.nextLet()
             bindings += let
