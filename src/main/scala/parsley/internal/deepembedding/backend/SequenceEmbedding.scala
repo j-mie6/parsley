@@ -10,9 +10,6 @@ import scala.language.higherKinds
 import parsley.internal.LinkedList, LinkedList.LinkedListIterator
 import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
 import parsley.internal.deepembedding.frontend
-/* SPDX-FileCopyrightText: © 2022 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
- * SPDX-License-Identifier: BSD-3-Clause
- */
 import parsley.internal.deepembedding.singletons._
 import parsley.internal.machine.instructions
 
