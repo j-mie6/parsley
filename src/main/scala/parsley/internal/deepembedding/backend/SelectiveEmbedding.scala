@@ -48,6 +48,14 @@ private [deepembedding] final class Branch[A, B, C](val b: StrictParsley[Either[
             case _ => this
         }
     }
+    // $COVERAGE-OFF$
+    final override def pretty[Cont[_, +_]: ContOps, R]: Cont[R,String] =
+        for {
+            s1 <- b.pretty
+            s2 <- p.pretty
+            s3 <- q.pretty
+        } yield s"branch($s1, $s2, $s3)"
+    // $COVERAGE-ON$
 }
 
 private [deepembedding] final class If[A](val b: StrictParsley[Boolean], val p: StrictParsley[A], val q: StrictParsley[A])
@@ -58,6 +66,14 @@ private [deepembedding] final class If[A](val b: StrictParsley[Boolean], val p: 
         case Pure(false) => q
         case _ => this
     }
+    // $COVERAGE-OFF$
+    final override def pretty[Cont[_, +_]: ContOps, R]: Cont[R,String] =
+        for {
+            s1 <- b.pretty
+            s2 <- p.pretty
+            s3 <- q.pretty
+        } yield s"if($s1, $s2, $s3)"
+    // $COVERAGE-ON$
 }
 
 private [backend] sealed abstract class FastZero[A](fail: A => StrictParsley[Nothing], instr: instructions.Instr) extends Unary[A, Nothing] {
@@ -72,9 +88,17 @@ private [backend] sealed abstract class FastZero[A](fail: A => StrictParsley[Not
     }
 }
 private [deepembedding] final class FastFail[A](val p: StrictParsley[A], msggen: A => String)
-    extends FastZero[A](x => new Fail(msggen(x)), instructions.FastFail(msggen)) with MZero
+    extends FastZero[A](x => new Fail(msggen(x)), instructions.FastFail(msggen)) with MZero {
+    // $COVERAGE-OFF$
+    final override def pretty(p: String): String = s"$p.fail(?)"
+    // $COVERAGE-ON$
+}
 private [deepembedding] final class FastUnexpected[A](val p: StrictParsley[A], msggen: A => String)
-    extends FastZero[A](x => new Unexpected(msggen(x)), new instructions.FastUnexpected(msggen)) with MZero
+    extends FastZero[A](x => new Unexpected(msggen(x)), new instructions.FastUnexpected(msggen)) with MZero {
+    // $COVERAGE-OFF$
+    final override def pretty(p: String): String = s"$p.unexpected(?)"
+    // $COVERAGE-ON$
+}
 
 private [backend] sealed abstract class FilterLike[A](fail: A => StrictParsley[Nothing], instr: instructions.Instr, pred: A => Boolean)
     extends Unary[A, A] {
@@ -89,11 +113,23 @@ private [backend] sealed abstract class FilterLike[A](fail: A => StrictParsley[N
     }
 }
 private [deepembedding] final class Filter[A](val p: StrictParsley[A], pred: A => Boolean)
-    extends FilterLike[A](_ => Empty, new instructions.Filter(pred), !pred(_))
+    extends FilterLike[A](_ => Empty, new instructions.Filter(pred), !pred(_)) {
+    // $COVERAGE-OFF$
+    final override def pretty(p: String): String = s"$p.filter(?)"
+    // $COVERAGE-ON$
+}
 private [deepembedding] final class FilterOut[A](val p: StrictParsley[A], pred: PartialFunction[A, String])
-    extends FilterLike[A](x => ErrorExplain(Empty, pred(x)), new instructions.FilterOut(pred), pred.isDefinedAt(_))
+    extends FilterLike[A](x => ErrorExplain(Empty, pred(x)), new instructions.FilterOut(pred), pred.isDefinedAt(_)) {
+    // $COVERAGE-OFF$
+    final override def pretty(p: String): String = s"$p.filterOut(?)"
+    // $COVERAGE-ON$
+}
 private [deepembedding] final class GuardAgainst[A](val p: StrictParsley[A], pred: PartialFunction[A, scala.Seq[String]])
-    extends FilterLike[A](x => new Fail(pred(x): _*), instructions.GuardAgainst(pred), pred.isDefinedAt(_))
+    extends FilterLike[A](x => new Fail(pred(x): _*), instructions.GuardAgainst(pred), pred.isDefinedAt(_)) {
+    // $COVERAGE-OFF$
+    final override def pretty(p: String): String = s"$p.guardAgainst(?)"
+    // $COVERAGE-ON$
+}
 
 private [backend] object Branch {
     val FlipApp = instructions.Lift2[Any, Any => Any, Any]((x, f) => f(x))

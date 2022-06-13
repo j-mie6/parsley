@@ -29,8 +29,7 @@ private [deepembedding] abstract class ContOps[Cont[_, +_]] {
     // $COVERAGE-ON$
 }
 private [deepembedding] object ContOps {
-    implicit class ContAdapter[R, A, Cont[_, +_]](val c: Cont[R, A]) extends AnyVal
-    {
+    implicit class ContAdapter[R, A, Cont[_, +_]](val c: Cont[R, A]) extends AnyVal {
         @inline def map[B](f: A => B)(implicit ops: ContOps[Cont]): Cont[R, B] = ops.map(c, f)
         @inline def flatMap[B](f: A => Cont[R, B])(implicit ops: ContOps[Cont]): Cont[R, B] = ops.flatMap(c, f)
         // This needs to be lazy, because I'm an idiot when I use it
@@ -44,6 +43,10 @@ private [deepembedding] object ContOps {
     def safeCall[A](task: GenOps => A): A = {
         try task(Id.ops.asInstanceOf[GenOps])
         catch { case _: StackOverflowError => task(Cont.ops.asInstanceOf[GenOps]) }
+    }
+    def sequence[Cont[_, +_]: ContOps, R, A](mxs: List[Cont[R, A]]): Cont[R, List[A]] = mxs match {
+        case Nil => result(Nil)
+        case mx :: mxs => for { x <- mx; xs <- sequence(mxs) } yield x :: xs
     }
 }
 

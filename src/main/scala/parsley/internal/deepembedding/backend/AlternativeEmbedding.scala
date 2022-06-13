@@ -102,6 +102,15 @@ private [deepembedding] final class Choice[A](private [backend] val alt1: Strict
             }
         case p => (acc += ((p, tablable(p, backtracks = false)))).toList
     }
+
+    // $COVERAGE-OFF$
+    final override def pretty[Cont[_, +_]: ContOps, R]: Cont[R,String] =
+        for {
+            s1 <- alt1.pretty
+            s2 <- alt2.pretty
+            ss <- ContOps.sequence(alts.map(_.pretty[Cont, R]).toList)
+        } yield (s1::s2::ss).mkString("choice(", ", ", ")")
+    // $COVERAGE-ON$
 }
 
 private [backend] object Choice {

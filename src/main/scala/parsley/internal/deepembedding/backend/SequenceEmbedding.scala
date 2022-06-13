@@ -83,6 +83,13 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
             suspend(right.codeGen[Cont, R]) |>
             (instrs += instructions.Apply)
     }
+    // $COVERAGE-OFF$
+    final override def pretty[Cont[_, +_]: ContOps, R]: Cont[R,String] =
+        for {
+            s1 <- left.pretty
+            s2 <- right.pretty
+        } yield s"($s1 <*> $s2)"
+    // $COVERAGE-ON$
 }
 
 private [deepembedding] final class >>=[A, B](val p: StrictParsley[A], private [>>=] val f: A => frontend.LazyParsley[B]) extends Unary[A, B] {
@@ -108,6 +115,9 @@ private [deepembedding] final class >>=[A, B](val p: StrictParsley[A], private [
         suspend(p.codeGen[Cont, R]) |>
         (instrs += instructions.DynCall[A](x => f(x).demandCalleeSave().instrs))
     }
+    // $COVERAGE-OFF$
+    final override def pretty(p: String): String = s"$p.flatMap(?)"
+    // $COVERAGE-ON$
 }
 
 private [deepembedding] final class NormSeq[A](private [backend] var before: LinkedList[StrictParsley[_]],
@@ -191,7 +201,14 @@ private [deepembedding] final class NormSeq[A](private [backend] var before: Lin
             }
         }
     }
-
+    // $COVERAGE-OFF$
+    final override def pretty[Cont[_, +_]: ContOps, R]: Cont[R,String] =
+        for {
+            ss1 <- ContOps.sequence(before.map(_.pretty[Cont, R]).toList)
+            rs <- result.pretty
+            ss2 <- ContOps.sequence(after.map(_.pretty[Cont, R]).toList)
+        } yield (ss1 ::: rs :: ss2).mkString("seq(", ", ", ")")
+    // $COVERAGE-ON$
 }
 
 object NormSeq {
@@ -286,6 +303,13 @@ private [deepembedding] final class *>[A](var left: StrictParsley[Any], var righ
             suspend(result.codeGen[Cont, R])
         }
     }
+    // $COVERAGE-OFF$
+    final override def pretty[Cont[_, +_]: ContOps, R]: Cont[R,String] =
+        for {
+            s1 <- left.pretty
+            s2 <- right.pretty
+        } yield s"($s1 *> $s2)"
+    // $COVERAGE-ON$
 }
 private [deepembedding] final class <*[A](var left: StrictParsley[A], var right: StrictParsley[Any]) extends Seq[A, Any, A] {
     override def result: StrictParsley[A] = left
@@ -319,6 +343,13 @@ private [deepembedding] final class <*[A](var left: StrictParsley[A], var right:
         suspend(discard.codeGen[Cont, R]) |>
         (instrs += instructions.Pop)
     }
+    // $COVERAGE-OFF$
+    final override def pretty[Cont[_, +_]: ContOps, R]: Cont[R,String] =
+        for {
+            s1 <- left.pretty
+            s2 <- right.pretty
+        } yield s"($s1 <* $s2)"
+    // $COVERAGE-ON$
 }
 
 private [backend] object <*> {

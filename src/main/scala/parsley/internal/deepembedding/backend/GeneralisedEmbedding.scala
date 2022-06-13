@@ -14,6 +14,10 @@ import StrictParsley.InstrBuffer
 private [backend] abstract class Unary[A, B] extends StrictParsley[B] {
     protected val p: StrictParsley[A]
     def inlinable: Boolean = false
+    // $COVERAGE-OFF$
+    final override def pretty[Cont[_, +_]: ContOps, R]: Cont[R,String] = for (c <- p.pretty) yield pretty(c)
+    protected def pretty(p: String): String
+    // $COVERAGE-ON$
 }
 
 private [backend] abstract class ScopedUnary[A, B] extends Unary[A, B] {

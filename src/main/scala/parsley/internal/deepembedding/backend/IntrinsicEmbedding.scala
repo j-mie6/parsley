@@ -21,6 +21,13 @@ private [deepembedding] final class Lift2[A, B, C](private [Lift2] val f: (A, B)
         suspend(right.codeGen[Cont, R]) |>
         (instrs += instructions.Lift2(f))
     }
+    // $COVERAGE-OFF$
+    final override def pretty[Cont[_, +_]: ContOps, R]: Cont[R,String] =
+        for {
+            s1 <- left.pretty
+            s2 <- right.pretty
+        } yield s"lift2(?, $s1, $s2)"
+    // $COVERAGE-ON$
 }
 private [deepembedding] final class Lift3[A, B, C, D](val f: (A, B, C) => D, val p: StrictParsley[A], val q: StrictParsley[B], val r: StrictParsley[C])
     extends StrictParsley[D] {
@@ -31,6 +38,14 @@ private [deepembedding] final class Lift3[A, B, C, D](val f: (A, B, C) => D, val
         suspend(r.codeGen[Cont, R]) |>
         (instrs += instructions.Lift3(f))
     }
+    // $COVERAGE-OFF$
+    final override def pretty[Cont[_, +_]: ContOps, R]: Cont[R,String] =
+        for {
+            s1 <- p.pretty
+            s2 <- q.pretty
+            s3 <- r.pretty
+        } yield s"lift3(?, $s1, $s2, $s3)"
+    // $COVERAGE-ON$
 }
 
 private [deepembedding] final class Local[S, A](reg: Reg[S], left: StrictParsley[S], right: StrictParsley[A]) extends StrictParsley[A] {
@@ -44,6 +59,13 @@ private [deepembedding] final class Local[S, A](reg: Reg[S], left: StrictParsley
             }
         }
     }
+    // $COVERAGE-OFF$
+    final override def pretty[Cont[_, +_]: ContOps, R]: Cont[R,String] =
+        for {
+            s1 <- left.pretty
+            s2 <- right.pretty
+        } yield s"local(r${reg.addr}, $s1, $s2)"
+    // $COVERAGE-ON$
 }
 
 private [backend] object Lift2 {

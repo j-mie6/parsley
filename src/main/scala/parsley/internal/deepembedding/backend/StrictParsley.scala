@@ -52,7 +52,9 @@ private [deepembedding] trait StrictParsley[+A] {
     // Peephole optimisation and code generation - Top-down
     private [backend] def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit]
 
-    private [deepembedding] def pretty[Cont[_, +_]: ContOps, R]() = ???
+    // $COVERAGE-OFF$
+    private [deepembedding] def pretty[Cont[_, +_]: ContOps, R]: Cont[R, String]
+    // $COVERAGE-ON$
 }
 
 private [deepembedding] object StrictParsley {
@@ -158,12 +160,16 @@ private [deepembedding] object StrictParsley {
     }
 }
 
-private [backend] trait Binding {
+private [backend] trait Binding { self: StrictParsley[_] =>
     // When these are used by tco, the call instructions labels have already been shifted, but lets have not
     final def location(labelMap: Array[Int])(implicit state: CodeGenState): Int = this match {
         case self: Rec[_] => self.label
         case self: Let[_] => labelMap(self.label)
     }
+
+    // $COVERAGE-OFF$
+    def pretty[Cont[_, +_]: ContOps, R]: Cont[R, String] = result(this.toString())
+    // $COVERAGE-ON$
 }
 private [deepembedding] trait MZero extends StrictParsley[Nothing]
 

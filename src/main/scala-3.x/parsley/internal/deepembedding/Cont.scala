@@ -43,6 +43,10 @@ private [deepembedding] object ContOps {
         try task(Id.ops.asInstanceOf[GenOps])
         catch { case _: StackOverflowError => task(Cont.ops.asInstanceOf[GenOps]) }
     }
+    def sequence[Cont[_, +_]: ContOps, R, A](mxs: List[Cont[R, A]]): Cont[R, List[A]] = mxs match {
+        case Nil => result(Nil)
+        case mx :: mxs => for { x <- mx; xs <- sequence(mxs) } yield x :: xs
+    }
 }
 
 private [deepembedding] class Cont[R, +A](val cont: (A => Bounce[R]) => Bounce[R]) extends AnyVal

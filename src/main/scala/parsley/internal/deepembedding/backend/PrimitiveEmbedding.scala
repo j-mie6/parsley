@@ -25,11 +25,17 @@ private [deepembedding] final class Attempt[A](val p: StrictParsley[A]) extends 
         case StringTok(s) if s.size == 1 => p
         case _ => this
     }
+    // $COVERAGE-OFF$
+    final override def pretty(p: String): String = s"attempt($p)"
+    // $COVERAGE-ON$
 }
 private [deepembedding] final class Look[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, A](true) {
     override val instr: instructions.Instr = instructions.RestoreHintsAndState
     override def instrNeedsLabel: Boolean = false
     override def handlerLabel(state: CodeGenState): Int  = state.getLabel(instructions.PopStateAndFail)
+    // $COVERAGE-OFF$
+    final override def pretty(p: String): String = s"lookAhead($p)"
+    // $COVERAGE-ON$
 }
 private [deepembedding] final class NotFollowedBy[A](val p: StrictParsley[A]) extends Unary[A, Unit] {
     override def optimise: StrictParsley[Unit] = p match {
@@ -45,6 +51,9 @@ private [deepembedding] final class NotFollowedBy[A](val p: StrictParsley[A]) ex
             instrs += instructions.NegLookGood
         }
     }
+    // $COVERAGE-OFF$
+    final override def pretty(p: String): String = s"notFollowedBy($p)"
+    // $COVERAGE-ON$
 }
 
 private [deepembedding] final class Rec[A](val call: instructions.Call) extends StrictParsley[A] with Binding {
@@ -66,6 +75,9 @@ private [deepembedding] final class Put[S](reg: Reg[S], val p: StrictParsley[S])
         suspend(p.codeGen[Cont, R]) |>
         (instrs += new instructions.Put(reg.addr))
     }
+    // $COVERAGE-OFF$
+    final override def pretty(p: String): String = s"put(r${reg.addr}, $p)"
+    // $COVERAGE-ON$
 }
 
 // $COVERAGE-OFF$
@@ -78,6 +90,9 @@ private [deepembedding] final class Debug[A](val p: StrictParsley[A], name: Stri
             instrs += new instructions.LogEnd(name, ascii, (break eq ExitBreak) || (break eq FullBreak))
         }
     }
+    // $COVERAGE-OFF$
+    final override def pretty(p: String): String = p
+    // $COVERAGE-ON$
 }
 // $COVERAGE-ON$
 

@@ -16,10 +16,6 @@ import parsley.internal.machine.instructions, instructions.{Instr, JumpTable, La
 
 private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     // $COVERAGE-OFF$
-    final private [parsley] def prettyAST: String = ???
-    // $COVERAGE-ON$
-
-    // $COVERAGE-OFF$
     final def unsafe(): Unit = sSafe = false
     final def force(): Unit = instrs
     final def overflows(): Unit = cps = true
@@ -63,16 +59,16 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     final private var cps = false
     final private var calleeSaveNeeded = false
 
-    final private def pipeline[Cont[_, +_]](implicit ops: ContOps[Cont]): Array[Instr] = {
-        implicit val state: backend.CodeGenState = new backend.CodeGenState
+    final private def pipeline[Cont[_, +_]: ContOps]: Array[Instr] = {
         implicit val letFinderState: LetFinderState = new LetFinderState
         perform[Cont, Array[Instr]] {
             findLets(Set.empty) >> {
                 val usedRegs: Set[Reg[_]] = letFinderState.usedRegs
                 implicit val seenSet: Set[LazyParsley[_]] = letFinderState.recs
+                implicit val state: backend.CodeGenState = new backend.CodeGenState
                 implicit val recMap: RecMap = RecMap(letFinderState.recs)
-                implicit val letMap: LetMap = LetMap(letFinderState.lets)(ops, recMap)
-                val recs_ = recMap.map { case (p, strict) => (strict, p.unsafeOptimised[Cont, Unit, Any]) }
+                implicit val letMap: LetMap = LetMap(letFinderState.lets)
+                val recs_ = recMap.map { case (p, rec) => (rec, p.unsafeOptimised[Cont, Unit, Any]) }
                 for { sp <- this.optimised } yield sp.generateInstructions(calleeSaveNeeded, usedRegs, recs_)
             }
         }
@@ -81,6 +77,37 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     final private def computeInstrs(ops: GenOps): Array[Instr] = pipeline(ops)
 
     final private [parsley] lazy val instrs: Array[Instr] = if (cps) computeInstrs(Cont.ops.asInstanceOf[GenOps]) else safeCall(computeInstrs(_))
+
+    // $COVERAGE-OFF$
+    // Don't @ me CodeClimate...
+    final private [internal] def prettyAST: String = {
+        import Cont.ops
+        implicit val letFinderState: LetFinderState = new LetFinderState
+        perform[Cont, String] {
+            findLets(Set.empty) >> {
+                val usedRegs: Set[Reg[_]] = letFinderState.usedRegs
+                implicit val seenSet: Set[LazyParsley[_]] = letFinderState.recs
+                implicit val state: backend.CodeGenState = new backend.CodeGenState
+                implicit val recMap: RecMap = RecMap(letFinderState.recs)
+                implicit val letMap: LetMap = LetMap(letFinderState.lets)
+                val mrecs = for {
+                    (p, rec) <- recMap
+                } yield for {
+                    sp <- p.unsafeOptimised[Cont, String, Any]
+                    str <- sp.pretty
+                } yield s"${rec.label}: $str"
+
+                for {
+                    sp <- this.optimised
+                    str <- sp.pretty
+                    strs <- ContOps.sequence(mrecs.toList)
+                } yield {
+                    s"main body: $str\n${strs.mkString("\n")}"
+                }
+            }
+        }
+    }
+    // $COVERAGE-ON$
 
     // Abstracts
     // Sub-tree optimisation and Rec calculation - Bottom-up

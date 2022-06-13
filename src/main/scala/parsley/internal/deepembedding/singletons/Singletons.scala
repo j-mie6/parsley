@@ -22,4 +22,5 @@ private [singletons] abstract class Singleton[A] extends LazyParsley[A] with Str
     final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: StrictParsley.InstrBuffer, state: backend.CodeGenState): Cont[R, Unit] = {
         result(instrs += instr)
     }
+    final override def pretty[Cont[_, +_]: ContOps, R]: Cont[R, String] = result(pretty)
 }
