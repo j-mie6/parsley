@@ -42,7 +42,7 @@ private [deepembedding] final class NotFollowedBy[A](val p: StrictParsley[A]) ex
         case z: MZero => new Pure(())
         case _        => this
     }
-    final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    final override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val handler = state.freshLabel()
         instrs += new instructions.PushHandlerAndState(handler, saveHints = true, hideHints = true)
         suspend[Cont, R, Unit](p.codeGen) |> {
@@ -66,12 +66,12 @@ private [deepembedding] final class Rec[A](val call: instructions.Call) extends 
 private [deepembedding] final class Let[A](val p: StrictParsley[A]) extends StrictParsley[A] with Binding {
     def inlinable: Boolean = true
     def label(implicit state: CodeGenState): Int = state.getLabel(this)
-    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         result(instrs += new instructions.Call(label))
     }
 }
 private [deepembedding] final class Put[S](reg: Reg[S], val p: StrictParsley[S]) extends Unary[S, Unit] {
-    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         suspend(p.codeGen[Cont, R]) |>
         (instrs += new instructions.Put(reg.addr))
     }
@@ -82,7 +82,7 @@ private [deepembedding] final class Put[S](reg: Reg[S], val p: StrictParsley[S])
 
 // $COVERAGE-OFF$
 private [deepembedding] final class Debug[A](val p: StrictParsley[A], name: String, ascii: Boolean, break: Breakpoint) extends Unary[A, A] {
-    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val handler = state.freshLabel()
         instrs += new instructions.LogBegin(handler, name, ascii, (break eq EntryBreak) || (break eq FullBreak))
         suspend(p.codeGen[Cont, R]) |> {

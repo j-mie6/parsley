@@ -16,7 +16,7 @@ import StrictParsley.InstrBuffer
 private [deepembedding] final class Lift2[A, B, C](private [Lift2] val f: (A, B) => C, val left: StrictParsley[A], val right: StrictParsley[B])
     extends StrictParsley[C] {
     def inlinable: Boolean = false
-    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont],  instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         suspend(left.codeGen[Cont, R]) >>
         suspend(right.codeGen[Cont, R]) |>
         (instrs += instructions.Lift2(f))
@@ -32,7 +32,7 @@ private [deepembedding] final class Lift2[A, B, C](private [Lift2] val f: (A, B)
 private [deepembedding] final class Lift3[A, B, C, D](val f: (A, B, C) => D, val p: StrictParsley[A], val q: StrictParsley[B], val r: StrictParsley[C])
     extends StrictParsley[D] {
     def inlinable: Boolean = false
-    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         suspend(p.codeGen[Cont, R]) >>
         suspend(q.codeGen[Cont, R]) >>
         suspend(r.codeGen[Cont, R]) |>
@@ -50,7 +50,7 @@ private [deepembedding] final class Lift3[A, B, C, D](val f: (A, B, C) => D, val
 
 private [deepembedding] final class Local[S, A](reg: Reg[S], left: StrictParsley[S], right: StrictParsley[A]) extends StrictParsley[A] {
     def inlinable: Boolean = false
-    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         suspend(left.codeGen[Cont, R]) >> {
             instrs += new instructions.Get(reg.addr)
             instrs += new instructions.SwapAndPut(reg.addr)

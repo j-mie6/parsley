@@ -19,7 +19,7 @@ private [backend] sealed abstract class BranchLike[A, B, C, D](finaliser: Option
     def instr(label: Int): instructions.Instr
 
     def inlinable: Boolean = false
-    final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    final override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val toP = state.freshLabel()
         val end = state.freshLabel()
         suspend(b.codeGen[Cont, R]) >> {
@@ -108,7 +108,7 @@ private [backend] sealed abstract class FilterLike[A](fail: A => StrictParsley[N
         case z: MZero => z
         case _ => this
     }
-    final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    final override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         suspend(p.codeGen[Cont, R]) |> (instrs += instr)
     }
 }

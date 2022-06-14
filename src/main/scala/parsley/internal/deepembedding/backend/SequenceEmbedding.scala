@@ -66,7 +66,7 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
             this
         case _ => this
     }
-    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = left match {
+    override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = left match {
         // pure f <*> p = f <$> p
         case Pure(f) => right match {
             case ct@CharTok(c) => result(instrs += instructions.CharTokFastPerform[Char, B](c, f.asInstanceOf[Char => B], ct.expected))
@@ -108,7 +108,7 @@ private [deepembedding] final class >>=[A, B](val p: StrictParsley[A], private [
         case _ => this
     }
     // TODO: Make bind generate with expected != None a ErrorLabel instruction
-    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         suspend(p.codeGen[Cont, R]) |>
         (instrs += instructions.DynCall[A](x => f(x).demandCalleeSave().instrs))
     }
@@ -122,24 +122,28 @@ private [deepembedding] final class NormSeq[A](private [backend] var before: Lin
                                                private [backend] var after: LinkedList[StrictParsley[_]]) extends StrictParsley[A] {
     def inlinable: Boolean = false
 
+    private def mergeIntoRight(p: StrictParsley[A]): this.type = p match {
+        case NormSeq(rs1, rr, rs2) =>
+            before.stealAll(rs1)
+            result = rr
+            after = rs2
+            this
+        case _ => this
+    }
+
+    private def mergeFromRight(p: NormSeq[_]): this.type = {
+        after.stealAll(p.before)
+        NormSeq.whenNonPure(p.result, after.addOne(_))
+        after.stealAll(p.after)
+        this
+    }
+
     override def optimise: StrictParsley[A] = this match {
         // Assume that this is eliminated first, so not other before or afters
         case (_: Pure[_]) **> u => u
         case (p: MZero) **> _ => p
         case u <** (_: Pure[_]) => u
         case (p: MZero) <** _ => p
-        case u@NormSeq(bs1, br, bs2) **> NormSeq(rs1, rr, rs2) =>
-            bs2.lastOption match {
-                case Some(_: MZero) => u
-                case _ =>
-                    before = bs1
-                    NormSeq.whenNonPure(br, before.addOne(_))
-                    before.stealAll(bs2)
-                    before.stealAll(rs1)
-                    result = rr
-                    after = rs2
-                    this
-            }
         case u@NormSeq(bs1, br, bs2) **> r =>
             bs2.lastOption match {
                 case Some(_: MZero) => u
@@ -147,25 +151,9 @@ private [deepembedding] final class NormSeq[A](private [backend] var before: Lin
                     before = bs1
                     NormSeq.whenNonPure(br, before.addOne(_))
                     before.stealAll(bs2)
-                    this
+                    mergeIntoRight(r)
             }
-        case p **> NormSeq(as1, ar, as2) =>
-            before.stealAll(as1)
-            result = ar
-            after = as2
-            this
-        case u@NormSeq(rs1, rr, rs2) <** NormSeq(as1, ar, as2) =>
-            rs2.lastOption match {
-                case Some(_: MZero) => u
-                case _ =>
-                    before = rs1
-                    result = rr
-                    after = rs2
-                    after.stealAll(as1)
-                    NormSeq.whenNonPure(ar, after.addOne(_))
-                    after.stealAll(as2)
-                    this
-            }
+        case _ **> q => mergeIntoRight(q)
         case u@NormSeq(rs1, rr, rs2) <** p =>
             rs2.lastOption match {
                 case Some(_: MZero) => u
@@ -173,14 +161,14 @@ private [deepembedding] final class NormSeq[A](private [backend] var before: Lin
                     before = rs1
                     result = rr
                     after = rs2
-                    after.addOne(p)
-                    this
+                    p match {
+                        case p: NormSeq[_] => mergeFromRight(p)
+                        case p =>
+                            after.addOne(p)
+                            this
+                    }
             }
-        case p <** NormSeq(as1, ar, as2) =>
-            after = as1
-            NormSeq.whenNonPure(ar, after.addOne(_))
-            after.stealAll(as2)
-            this
+        case _ <** (p: NormSeq[_]) => mergeFromRight(p)
         // Assume that no component can contain Seq
         // pure can still exist in the focus
         // and empty can exist in the substructures (but will be the last)
@@ -190,7 +178,7 @@ private [deepembedding] final class NormSeq[A](private [backend] var before: Lin
         case _ => this
     }
 
-    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         // peephole here involves CharTokFastPerform, StringTokFastPerform, and Exchange
         suspend(NormSeq.codeGenMany[Cont, R](before.iterator)) >> {
             suspend(result.codeGen[Cont, R]) >> {
@@ -214,8 +202,8 @@ object NormSeq {
         Some((self.before, self.result, self.after))
     }
 
-    private [NormSeq] def codeGenMany[Cont[_, +_], R](it: Iterator[StrictParsley[_]])
-                                                     (implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    private [NormSeq] def codeGenMany[Cont[_, +_]: ContOps, R](it: Iterator[StrictParsley[_]])
+                                                              (implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         if (it.hasNext) {
             suspend(it.next().codeGen[Cont, R]) >> {
                 instrs += instructions.Pop
@@ -257,8 +245,8 @@ private [backend] sealed abstract class Seq[A, B, Res] extends StrictParsley[Res
         case st@StringTok(s) if result.isInstanceOf[CharTok] || result.isInstanceOf[StringTok] => Some(this.optimiseStringResult(s, st.expected))
         case _ => None
     }
-    final protected def codeGenSeq[Cont[_, +_], R](default: =>Cont[R, Unit])(implicit ops: ContOps[Cont], instrs: InstrBuffer,
-                                                                                      state: CodeGenState): Cont[R, Unit] = (result, discard) match {
+    final protected def codeGenSeq[Cont[_, +_]: ContOps, R](default: =>Cont[R, Unit])(implicit instrs: InstrBuffer,
+                                                                                               state: CodeGenState): Cont[R, Unit] = (result, discard) match {
         case (Pure(x), ct@CharTok(c)) => ContOps.result(instrs += instructions.CharTokFastPerform[Char, Res](c, _ => x, ct.expected))
         case (Pure(x), st@StringTok(s)) => ContOps.result(instrs += instructions.StringTokFastPerform(s, _ => x, st.expected))
         case (Pure(x), st@Satisfy(f)) => ContOps.result(instrs += new instructions.SatisfyExchange(f, x, st.expected))
@@ -279,7 +267,7 @@ private [deepembedding] final class *>[A](var left: StrictParsley[Any], var righ
         optimise
     }
     def combineSeq(sdis: String, sres: String): String = sdis + sres
-    override def optimise: StrictParsley[A] = this /*optimiseSeq match {
+    override def optimise: StrictParsley[A] = optimiseSeq match {
         case Some(p) => p
         case None => discard match {
             // mzero *> p = mzero (left zero and definition of *> in terms of >>=)
@@ -287,14 +275,14 @@ private [deepembedding] final class *>[A](var left: StrictParsley[Any], var righ
             case u => result match {
                 // re-association - normal form of Then chain is to have result at the top of tree
                 case v *> w =>
-                    discard = *>(u, v).optimiseDefinitelyNotTailRec
+                    discard = new *>(u, v).optimiseDefinitelyNotTailRec
                     result = w
                     optimise
                 case _ => this
             }
         }
-    }*/
-    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = codeGenSeq {
+    }
+    override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = codeGenSeq {
         suspend(discard.codeGen[Cont, R]) >> {
             instrs += instructions.Pop
             suspend(result.codeGen[Cont, R])
@@ -316,7 +304,7 @@ private [deepembedding] final class <*[A](var left: StrictParsley[A], var right:
 
     def makeSeq(str: StrictParsley[String], res: Pure[A]): StrictParsley[A] = *>(str, res)
     def combineSeq(sdis: String, sres: String): String = sres + sdis
-    override def optimise: StrictParsley[A] = this /*optimiseSeq match {
+    override def optimise: StrictParsley[A] = optimiseSeq match {
         case Some(p) => p
         case None => discard match {
             // p <* mzero = p *> mzero (by preservation of error messages and failure properties) - This moves the pop instruction after the failure
@@ -329,13 +317,13 @@ private [deepembedding] final class <*[A](var left: StrictParsley[A], var right:
                 // re-association - normal form of Prev chain is to have result at the top of tree
                 case u <* v =>
                     result = u
-                    discard = <*(v, w).optimiseDefinitelyNotTailRec
+                    discard = new <*(v, w).optimiseDefinitelyNotTailRec
                     optimise
                 case _ => this
             }
         }
-    }*/
-    override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = codeGenSeq {
+    }
+    override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = codeGenSeq {
         suspend(result.codeGen[Cont, R]) >>
         suspend(discard.codeGen[Cont, R]) |>
         (instrs += instructions.Pop)
@@ -361,7 +349,8 @@ private [backend] object Seq {
     def unapply[A, B, Res](self: Seq[A, B, Res]): Some[(StrictParsley[_], StrictParsley[Res])] = Some((self.discard, self.result))
 }
 private [deepembedding] object *> {
-    def apply[A](left: StrictParsley[_], right: StrictParsley[A]): *>[A]= new *>(left, right) /*{
+    def apply[A](left: StrictParsley[_], right: StrictParsley[A]): *>[A] = new *>(left, right)
+    /*def apply[A](left: StrictParsley[_], right: StrictParsley[A]): NormSeq[A] = {
         val before = LinkedList.empty[StrictParsley[_]]
         before.addOne(left)
         new NormSeq(before, right, LinkedList.empty)
@@ -376,7 +365,8 @@ private [backend] object **> {
 }
 
 private [deepembedding]  object <* {
-    def apply[A](left: StrictParsley[A], right: StrictParsley[_]): <*[A] = new <*(left, right) /*{
+    def apply[A](left: StrictParsley[A], right: StrictParsley[_]): <*[A] = new <*(left, right)
+    /*def apply[A](left: StrictParsley[A], right: StrictParsley[_]): NormSeq[A] = {
         val after = LinkedList.empty[StrictParsley[_]]
         after.addOne(right)
         new NormSeq(LinkedList.empty, left, after)
