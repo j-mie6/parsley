@@ -124,17 +124,23 @@ private [deepembedding] final class NormSeq[A](private [backend] var before: Dou
     private def mergeIntoRight(p: StrictParsley[A]): this.type = p match {
         case NormSeq(rs1, rr, rs2) =>
             before.stealAll(rs1)
-            result = rr
+            // if rr is pure, then rs2 is empty, which retains normalisation
             after = rs2
+            result = rr
             this
         case _ => this
     }
 
-    private def mergeFromRight(p: NormSeq[_]): this.type = {
-        after.stealAll(p.before)
-        NormSeq.whenNonPure(p.result, after.addOne(_))
-        after.stealAll(p.after)
+    private def mergeFromRight(p: NormSeq[_], into: DoublyLinkedList[StrictParsley[_]]): this.type = {
+        into.stealAll(p.before)
+        NormSeq.whenNonPure(p.result, into.addOne(_))
+        into.stealAll(p.after)
         this
+    }
+
+    private def chooseInto(p: StrictParsley[A]): DoublyLinkedList[StrictParsley[_]] = p match {
+        case _: Pure[_] => before
+        case _          => after
     }
 
     override def optimise: StrictParsley[A] = this match {
@@ -159,21 +165,22 @@ private [deepembedding] final class NormSeq[A](private [backend] var before: Dou
                 case _ =>
                     before = rs1
                     result = rr
-                    after = rs2
+                    after = rs2 /*empty when rr is Pure*/
+                    val into = chooseInto(rr)
                     p match {
-                        case p: NormSeq[_] => mergeFromRight(p)
+                        case p: NormSeq[_] => mergeFromRight(p, into)
                         case p =>
-                            after.addOne(p)
+                            into.addOne(p)
                             this
                     }
             }
-        case _ <** (p: NormSeq[_]) => mergeFromRight(p)
-        // Assume that no component can contain Seq
-        // pure can still exist in the focus
-        // and empty can exist in the substructures (but will be the last)
-        // TODO: this is a pain because the lists need to be accounted for.
-
-        //case NormSeq(NormSeq(bs1, br, bs2), result, NormSeq(as1, ar, as2)) => this
+        case r <** (p: NormSeq[_]) => mergeFromRight(p, chooseInto(r))
+        // shift pure to the right by swapping before and after (before is empty linked list!)
+        case (_: Pure[_]) <** _ =>
+            val tmp = before /*empty*/
+            before = after
+            after = tmp /*empty*/
+            this
         case _ => this
     }
 
