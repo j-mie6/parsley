@@ -117,7 +117,7 @@ private [deepembedding] final class >>=[A, B](val p: StrictParsley[A], private [
 }
 
 private [deepembedding] final class NormSeq[A](private [backend] var before: DoublyLinkedList[StrictParsley[_]],
-                                               private [backend] var result: StrictParsley[A],
+                                               private [backend] var res: StrictParsley[A],
                                                private [backend] var after: DoublyLinkedList[StrictParsley[_]]) extends StrictParsley[A] {
     def inlinable: Boolean = false
 
@@ -126,14 +126,14 @@ private [deepembedding] final class NormSeq[A](private [backend] var before: Dou
             before.stealAll(rs1)
             // if rr is pure, then rs2 is empty, which retains normalisation
             after = rs2
-            result = rr
+            res = rr
             this
         case _ => this
     }
 
     private def mergeFromRight(p: NormSeq[_], into: DoublyLinkedList[StrictParsley[_]]): this.type = {
         into.stealAll(p.before)
-        NormSeq.whenNonPure(p.result, into.addOne(_))
+        NormSeq.whenNonPure(p.res, into.addOne(_))
         into.stealAll(p.after)
         this
     }
@@ -164,7 +164,7 @@ private [deepembedding] final class NormSeq[A](private [backend] var before: Dou
                 case Some(_: MZero) => u
                 case _ =>
                     before = rs1
-                    result = rr
+                    res = rr
                     after = rs2 /*empty when rr is Pure*/
                     val into = chooseInto(rr)
                     p match {
@@ -184,19 +184,35 @@ private [deepembedding] final class NormSeq[A](private [backend] var before: Dou
         case _ => this
     }
 
-    override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
-        // peephole here involves CharTokFastPerform, StringTokFastPerform, and Exchange
-        suspend(NormSeq.codeGenMany[Cont, R](before.iterator)) >> {
-            suspend(result.codeGen[Cont, R]) >> {
-                suspend(NormSeq.codeGenMany(after.iterator))
+    override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = res match {
+        case Pure(x) =>
+            // peephole here involves CharTokFastPerform, StringTokFastPerform, and Exchange
+            // The pure in question is normalised to the end: if result is pure, after is empty.
+            val last = before.last
+            before.initInPlace()
+            suspend(NormSeq.codeGenMany[Cont, R](before.iterator)) >> {
+                last match {
+                    case ct@CharTok(c) => result(instrs += instructions.CharTokFastPerform[Char, A](c, _ => x, ct.expected))
+                    case st@StringTok(s) => result(instrs += instructions.StringTokFastPerform(s, _ => x, st.expected))
+                    case st@Satisfy(f) => result(instrs += new instructions.SatisfyExchange(f, x, st.expected))
+                    case _ =>
+                        suspend(last.codeGen[Cont, R]) |> {
+                            instrs += new instructions.Exchange(x)
+                        }
+                }
             }
-        }
+        case _ =>
+            suspend(NormSeq.codeGenMany[Cont, R](before.iterator)) >> {
+                suspend(res.codeGen[Cont, R]) >> {
+                    suspend(NormSeq.codeGenMany(after.iterator))
+                }
+            }
     }
     // $COVERAGE-OFF$
     final override def pretty[Cont[_, +_]: ContOps, R]: Cont[R,String] =
         for {
             ss1 <- ContOps.sequence(before.map(_.pretty[Cont, R]).toList)
-            rs <- result.pretty
+            rs <- res.pretty
             ss2 <- ContOps.sequence(after.map(_.pretty[Cont, R]).toList)
         } yield (ss1 ::: rs :: ss2).mkString("seq(", ", ", ")")
     // $COVERAGE-ON$
@@ -205,7 +221,7 @@ private [deepembedding] final class NormSeq[A](private [backend] var before: Dou
 object NormSeq {
 
     private [backend] def unapply[A](self: NormSeq[A]): Some[(DoublyLinkedList[StrictParsley[_]], StrictParsley[A], DoublyLinkedList[StrictParsley[_]])] = {
-        Some((self.before, self.result, self.after))
+        Some((self.before, self.res, self.after))
     }
 
     private [NormSeq] def codeGenMany[Cont[_, +_]: ContOps, R](it: Iterator[StrictParsley[_]])
@@ -365,7 +381,7 @@ private [deepembedding] object *> {
 }
 private [backend] object **> {
     private [backend] def unapply[A](self: NormSeq[A]): Option[(StrictParsley[_], StrictParsley[A])] = {
-        if (self.before.size == 1) Some((self.before.head, self.result))
+        if (self.before.size == 1) Some((self.before.head, self.res))
         else None
     }
 }
@@ -382,7 +398,7 @@ private [deepembedding]  object <* {
 
 private [backend] object <** {
     private [backend] def unapply[A](self: NormSeq[A]): Option[(StrictParsley[A], StrictParsley[_])] = {
-        if (self.after.size == 1) Some((self.result, self.after.head))
+        if (self.after.size == 1) Some((self.res, self.after.head))
         else None
     }
 }

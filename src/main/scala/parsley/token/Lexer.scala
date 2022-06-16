@@ -111,7 +111,7 @@ class Lexer(lang: LanguageDef)
     /**The non-lexeme parser `maxOp_(name)` parses the symbol `name`, but also checks that the `name`
       * is not part of a larger reserved operator. An `operator` is treated as a single token using
       * `attempt`.*/
-    def maxOp_(name: String): Parsley[Unit] = new Parsley(new singletons.MaxOp(name, lang.operators)).void
+    def maxOp_(name: String): Parsley[Unit] = new Parsley(new singletons.MaxOp(name, lang.operators))
 
     private def isReservedOp(op: String): Boolean = lang.operators.contains(op)
     private lazy val opStart = toParser(lang.opStart)

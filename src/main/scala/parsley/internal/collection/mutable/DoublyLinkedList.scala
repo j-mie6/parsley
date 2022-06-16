@@ -14,8 +14,8 @@ private [internal] class DoublyLinkedList[A] private [DoublyLinkedList]
 
     // This method assumes that this list is non-empty
     private [DoublyLinkedList] def unsafeAddOne(x: A): this.type = {
-        val next = new Node(x, null, this.start)
-        if (this.end != null) this.end.next = next
+        val next = new Node(x, null, this.end)
+        this.end.next = next
         this.end = next
         this
     }
@@ -63,6 +63,14 @@ private [internal] class DoublyLinkedList[A] private [DoublyLinkedList]
 
     override def lastOption: Option[A] = if (end != null) Some(end.x) else None
     override def headOption: Option[A] = if (start != null) Some(start.x) else None
+
+    def initInPlace(): this.type = {
+        if (this.end == null) throw new IllegalStateException("Cannot take init of the empty list")
+        this.end = this.end.prev
+        if (this.end != null) this.end.next = null
+        else this.start = null
+        this
+    }
 
     override def iterator: Iterator[A] = new AbstractIterator[A] {
         var current: Node[A] = start
