@@ -7,7 +7,7 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.higherKinds
 
-import parsley.internal.LinkedList, LinkedList.LinkedListIterator
+import parsley.internal.collection.mutable.DoublyLinkedList
 import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
 import parsley.internal.deepembedding.frontend
 import parsley.internal.deepembedding.singletons._
@@ -91,13 +91,13 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
 
 private [deepembedding] final class >>=[A, B](val p: StrictParsley[A], private [>>=] val f: A => frontend.LazyParsley[B]) extends Unary[A, B] {
     override def optimise: StrictParsley[B] = p match {
-        // monad law 1: pure x >>= f = f x
-        //case Pure(x) if safe => new Rec(() => f(x), expected)
+        // monad law 1: pure x >>= f = f x: unsafe because it might expose recursion
+        //case Pure(x) if safe => new Rec(() => f(x))
         // char/string x = char/string x *> pure x and monad law 1
         //case p@CharTok(c) => *>(p, new Rec(() => f(c.asInstanceOf[A]), expected))
         //case p@StringTok(s) => *>(p, new Rec(() => f(s.asInstanceOf[A]), expected))
         // (q *> p) >>= f = q *> (p >>= f)
-        //case u *> v => *>(u, >>=(v, f).optimise)
+        case u *> v => *>(u, >>=(v, f).optimise)
         // monad law 3: (m >>= g) >>= f = m >>= (\x -> g x >>= f) Note: this *could* help if g x ended with a pure, since this would be optimised out!
         //case (m: Parsley[T] @unchecked) >>= (g: (T => A) @unchecked) =>
         //    p = m.asInstanceOf[Parsley[A]]
@@ -107,7 +107,6 @@ private [deepembedding] final class >>=[A, B](val p: StrictParsley[A], private [
         case z: MZero => z
         case _ => this
     }
-    // TODO: Make bind generate with expected != None a ErrorLabel instruction
     override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         suspend(p.codeGen[Cont, R]) |>
         (instrs += instructions.DynCall[A](x => f(x).demandCalleeSave().instrs))
@@ -117,9 +116,9 @@ private [deepembedding] final class >>=[A, B](val p: StrictParsley[A], private [
     // $COVERAGE-ON$
 }
 
-private [deepembedding] final class NormSeq[A](private [backend] var before: LinkedList[StrictParsley[_]],
+private [deepembedding] final class NormSeq[A](private [backend] var before: DoublyLinkedList[StrictParsley[_]],
                                                private [backend] var result: StrictParsley[A],
-                                               private [backend] var after: LinkedList[StrictParsley[_]]) extends StrictParsley[A] {
+                                               private [backend] var after: DoublyLinkedList[StrictParsley[_]]) extends StrictParsley[A] {
     def inlinable: Boolean = false
 
     private def mergeIntoRight(p: StrictParsley[A]): this.type = p match {
@@ -198,7 +197,7 @@ private [deepembedding] final class NormSeq[A](private [backend] var before: Lin
 
 object NormSeq {
 
-    private [backend] def unapply[A](self: NormSeq[A]): Some[(LinkedList[StrictParsley[_]], StrictParsley[A], LinkedList[StrictParsley[_]])] = {
+    private [backend] def unapply[A](self: NormSeq[A]): Some[(DoublyLinkedList[StrictParsley[_]], StrictParsley[A], DoublyLinkedList[StrictParsley[_]])] = {
         Some((self.before, self.result, self.after))
     }
 
@@ -349,12 +348,12 @@ private [backend] object Seq {
     def unapply[A, B, Res](self: Seq[A, B, Res]): Some[(StrictParsley[_], StrictParsley[Res])] = Some((self.discard, self.result))
 }
 private [deepembedding] object *> {
-    def apply[A](left: StrictParsley[_], right: StrictParsley[A]): *>[A] = new *>(left, right)
-    /*def apply[A](left: StrictParsley[_], right: StrictParsley[A]): NormSeq[A] = {
-        val before = LinkedList.empty[StrictParsley[_]]
+    //def apply[A](left: StrictParsley[_], right: StrictParsley[A]): *>[A] = new *>(left, right)
+    def apply[A](left: StrictParsley[_], right: StrictParsley[A]): NormSeq[A] = {
+        val before = DoublyLinkedList.empty[StrictParsley[_]]
         before.addOne(left)
-        new NormSeq(before, right, LinkedList.empty)
-    }*/
+        new NormSeq(before, right, DoublyLinkedList.empty)
+    }
     private [backend] def unapply[A](self: *>[A]): Some[(StrictParsley[_], StrictParsley[A])] = Some((self.discard, self.result))
 }
 private [backend] object **> {
@@ -365,12 +364,12 @@ private [backend] object **> {
 }
 
 private [deepembedding]  object <* {
-    def apply[A](left: StrictParsley[A], right: StrictParsley[_]): <*[A] = new <*(left, right)
-    /*def apply[A](left: StrictParsley[A], right: StrictParsley[_]): NormSeq[A] = {
-        val after = LinkedList.empty[StrictParsley[_]]
+    //def apply[A](left: StrictParsley[A], right: StrictParsley[_]): <*[A] = new <*(left, right)
+    def apply[A](left: StrictParsley[A], right: StrictParsley[_]): NormSeq[A] = {
+        val after = DoublyLinkedList.empty[StrictParsley[_]]
         after.addOne(right)
-        new NormSeq(LinkedList.empty, left, after)
-    }*/
+        new NormSeq(DoublyLinkedList.empty, left, after)
+    }
     private [backend] def unapply[A](self: <*[A]): Some[(StrictParsley[A], StrictParsley[_])] = Some((self.result, self.discard))
 }
 

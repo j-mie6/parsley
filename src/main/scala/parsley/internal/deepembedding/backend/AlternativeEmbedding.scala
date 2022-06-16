@@ -7,7 +7,7 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.higherKinds
 
-import parsley.internal.LinkedList, LinkedList.LinkedListIterator
+import parsley.internal.collection.mutable.SinglyLinkedList, SinglyLinkedList.LinkedListIterator
 import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
 import parsley.internal.deepembedding.singletons._
 import parsley.internal.errors.{Desc, ErrorItem, Raw}
@@ -18,7 +18,7 @@ import StrictParsley.InstrBuffer
 
 private [deepembedding] final class Choice[A](private [backend] val alt1: StrictParsley[A],
                                               private [backend] var alt2: StrictParsley[A],
-                                              private [backend] var alts: LinkedList[StrictParsley[A]]) extends StrictParsley[A] {
+                                              private [backend] var alts: SinglyLinkedList[StrictParsley[A]]) extends StrictParsley[A] {
     def inlinable: Boolean = false
 
     override def optimise: StrictParsley[A] = this match {
@@ -27,17 +27,17 @@ private [deepembedding] final class Choice[A](private [backend] val alt1: Strict
         case Empty <|> q => q
         case p <|> Empty => p
         // Assume that alts can never contain Choice
-        case Choice(ret@Choice(lalt1, lalt2, lalts: LinkedList[StrictParsley[A]]), Choice(ralt1, ralt2, ralts: LinkedList[StrictParsley[A]]), alts) =>
+        case Choice(ret@Choice(lalt1, lalt2, lalts: SinglyLinkedList[StrictParsley[A]]), Choice(ralt1, ralt2, ralts: SinglyLinkedList[StrictParsley[A]]), alts) =>
             lalts.addOne(ralt1)
             lalts.addOne(ralt2)
             lalts.stealAll(ralts)
             lalts.stealAll(alts)
             ret
-        case Choice(ret@Choice(alt1, alt2, alts: LinkedList[StrictParsley[A]]), p, alts_) =>
+        case Choice(ret@Choice(alt1, alt2, alts: SinglyLinkedList[StrictParsley[A]]), p, alts_) =>
             alts.addOne(p)
             alts.stealAll(alts_)
             ret
-        case Choice(p, Choice(alt1, alt2, alts: LinkedList[StrictParsley[A]]), alts_) =>
+        case Choice(p, Choice(alt1, alt2, alts: SinglyLinkedList[StrictParsley[A]]), alts_) =>
             this.alt2 = alt1
             this.alts = alts
             alts.prependOne(alt2)
@@ -114,7 +114,7 @@ private [deepembedding] final class Choice[A](private [backend] val alt1: Strict
 }
 
 private [backend] object Choice {
-    private [Choice] def unapply[A](self: Choice[A]): Some[(StrictParsley[A], StrictParsley[A], LinkedList[StrictParsley[A]])] =
+    private [Choice] def unapply[A](self: Choice[A]): Some[(StrictParsley[A], StrictParsley[A], SinglyLinkedList[StrictParsley[A]])] =
         Some((self.alt1, self.alt2, self.alts))
 
     private def scopedState[A, Cont[_, +_]: ContOps, R](p: StrictParsley[A])(generateHandler: =>Cont[R, Unit])
@@ -261,7 +261,7 @@ private [backend] object Choice {
 
 
 private [deepembedding] object <|> {
-    def apply[A](left: StrictParsley[A], right: StrictParsley[A]): Choice[A] = new Choice(left, right, LinkedList.empty)
+    def apply[A](left: StrictParsley[A], right: StrictParsley[A]): Choice[A] = new Choice(left, right, SinglyLinkedList.empty)
     private [backend] def unapply[A](self: Choice[A]): Some[(StrictParsley[A], StrictParsley[A])] = {
         if (self.alts.nonEmpty) throw new IllegalStateException("<|> assumed, but full Choice given")
         Some((self.alt1, self.alt2))

@@ -5,7 +5,7 @@ package parsley.internal.machine.instructions
 
 import scala.annotation.tailrec
 
-import parsley.internal.Radix
+import parsley.internal.collection.mutable
 import parsley.internal.errors.{Desc, ErrorItem}
 import parsley.internal.machine.Context
 
@@ -79,7 +79,7 @@ private [instructions] object TokenEscape {
     private [instructions] case object BadCode extends Escape
     private [instructions] case object NoParse extends Escape
 
-    private [TokenEscape] val escRadix = Radix[(Char, Int)](
+    private [TokenEscape] val escRadix = mutable.Radix[(Char, Int)](
         "a"   -> ('\u0007', 1),
         "b"   -> ('\b', 1),
         "f"   -> ('\u000c', 1),
