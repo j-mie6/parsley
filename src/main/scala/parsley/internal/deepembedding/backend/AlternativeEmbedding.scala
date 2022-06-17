@@ -27,7 +27,9 @@ private [deepembedding] final class Choice[A](private [backend] val alt1: Strict
         case Empty <|> q => q
         case p <|> Empty => p
         // Assume that alts can never contain Choice
-        case Choice(ret@Choice(lalt1, lalt2, lalts: SinglyLinkedList[StrictParsley[A]]), Choice(ralt1, ralt2, ralts: SinglyLinkedList[StrictParsley[A]]), alts) =>
+        case Choice(ret@Choice(lalt1, lalt2, lalts: SinglyLinkedList[StrictParsley[A]]),
+                    Choice(ralt1, ralt2, ralts: SinglyLinkedList[StrictParsley[A]]),
+                    alts) =>
             lalts.addOne(ralt1)
             lalts.addOne(ralt2)
             lalts.stealAll(ralts)
@@ -260,7 +262,7 @@ private [backend] object Choice {
 private [deepembedding] object <|> {
     def apply[A](left: StrictParsley[A], right: StrictParsley[A]): Choice[A] = new Choice(left, right, SinglyLinkedList.empty)
     private [backend] def unapply[A](self: Choice[A]): Some[(StrictParsley[A], StrictParsley[A])] = {
-        if (self.alts.nonEmpty) throw new IllegalStateException("<|> assumed, but full Choice given")
+        if (self.alts.nonEmpty) throw new IllegalStateException("<|> assumed, but full Choice given") // scalastyle:ignore throw
         Some((self.alt1, self.alt2))
     }
 }

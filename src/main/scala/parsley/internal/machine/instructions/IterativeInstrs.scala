@@ -154,7 +154,7 @@ private [internal] final class Chainr[A, B](var label: Int, wrap: Any => Any) ex
     // $COVERAGE-ON$
 }
 private [internal] object Chainr {
-    def apply[A, B](label: Int, wrap: A => B) = new Chainr(label, wrap.asInstanceOf[Any => Any])
+    def apply[A, B](label: Int, wrap: A => B): Chainr[A, B] = new Chainr(label, wrap.asInstanceOf[Any => Any])
 }
 
 private [internal] final class SepEndBy1(var label: Int) extends InstrWithLabel {

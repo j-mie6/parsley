@@ -19,7 +19,7 @@ private [machine] object Stack {
     implicit class StackExt[T](val xs: T) extends AnyVal {
         // $COVERAGE-OFF$
         def mkString(sep: String)(implicit inst: Stack[T]): String = {
-            var ys = xs
+            var ys = xs // scalastyle:ignore var.local
             val str = new StringBuilder
             str ++= "["
             while (!inst.isEmpty(ys)) {

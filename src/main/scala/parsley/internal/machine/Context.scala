@@ -171,7 +171,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     private def multiRet(n: Int): Unit = if (n > 0) {
         if (n == 1) ret()
         else {
-            var m = n - 1
+            var m = n - 1 // scalastyle:ignore var.local
             depth -= m
             // the rollback can safely discard n-1 frames immediately, as stateful instructions are no longer a thing!
             while (m > 0) {

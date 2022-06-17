@@ -55,7 +55,7 @@ private [backend] sealed abstract class ChainLike[A](p: StrictParsley[A], op: St
         case _          => this
     }
     // $COVERAGE-OFF$
-    final override def pretty[Cont[_, +_]: ContOps, R]: Cont[R,String] = for (c1 <- p.pretty; c2 <- op.pretty) yield pretty(c1, c2)
+    final override def pretty[Cont[_, +_]: ContOps, R]: Cont[R,String] = for {c1 <- p.pretty; c2 <- op.pretty} yield pretty(c1, c2)
     protected def pretty(p: String, op: String): String
     // $COVERAGE-ON$
 }

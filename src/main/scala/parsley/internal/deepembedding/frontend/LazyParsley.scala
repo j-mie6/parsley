@@ -79,9 +79,8 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     final private [parsley] lazy val instrs: Array[Instr] = if (cps) computeInstrs(Cont.ops.asInstanceOf[GenOps]) else safeCall(computeInstrs(_))
 
     // $COVERAGE-OFF$
-    // Don't @ me CodeClimate...
     final private [internal] def prettyAST: String = {
-        import Cont.ops
+        import Cont.ops // scalastyle:ignore import.grouping
         implicit val letFinderState: LetFinderState = new LetFinderState
         perform[Cont, String] {
             findLets(Set.empty) >> {

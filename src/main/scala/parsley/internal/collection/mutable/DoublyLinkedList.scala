@@ -65,7 +65,7 @@ private [internal] class DoublyLinkedList[A] private [DoublyLinkedList]
     override def headOption: Option[A] = if (start != null) Some(start.x) else None
 
     def initInPlace(): this.type = {
-        if (this.end == null) throw new IllegalStateException("Cannot take init of the empty list")
+        if (this.end == null) throw new IllegalStateException("Cannot take init of the empty list") // scalastyle:ignore throw
         this.end = this.end.prev
         if (this.end != null) this.end.next = null
         else this.start = null

@@ -3,7 +3,7 @@
  */
 package parsley.internal.collection.mutable
 
-import SinglyLinkedList.{Node, LinkedListIterator}
+import SinglyLinkedList.{LinkedListIterator, Node}
 
 private [internal] class SinglyLinkedList[A] private [SinglyLinkedList]
     (private [SinglyLinkedList] var start: Node[A],
@@ -81,8 +81,8 @@ private [internal] object SinglyLinkedList {
     abstract class LinkedListIterator[A] extends Iterator[A] {
         protected var current: Node[A]
         protected val end: Node[A]
-        def hasNext = current != null
-        def next() = { val r = current.x; current = current.next; r }
+        def hasNext: Boolean = current != null
+        def next(): A = { val r = current.x; current = current.next; r }
         def remaining: SinglyLinkedList[A] = {
             if (hasNext) {
                 new SinglyLinkedList(current, end)
