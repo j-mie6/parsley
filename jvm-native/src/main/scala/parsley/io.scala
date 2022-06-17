@@ -50,7 +50,8 @@ object io {
                 }
             } yield {
                 src.close()
-                new Context(con(p).internal.instrs, input, Some(file.getName)).runParser()
+                val internal = con(p).internal
+                new Context(internal.instrs, input, internal.numRegs, Some(file.getName)).runParser()
             }
         }
     }

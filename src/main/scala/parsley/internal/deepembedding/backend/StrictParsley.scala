@@ -28,7 +28,7 @@ private [deepembedding] trait StrictParsley[+A] {
         implicit val instrs: InstrBuffer = new ResizableArray()
         val bindings = mutable.ListBuffer.empty[Binding]
         perform {
-            generateCalleeSave[Cont, Array[Instr]](calleeSaveRequired, this.codeGen, allocateRegisters(usedRegs)) |> {
+            generateCalleeSave[Cont, Array[Instr]](calleeSaveRequired, this.codeGen, usedRegs.size, allocateRegisters(usedRegs)) |> {
                 instrs += instructions.Halt
                 finaliseRecs(recs)
                 finaliseLets(bindings)
@@ -71,30 +71,25 @@ private [deepembedding] object StrictParsley {
 
     private def allocateRegisters(regs: Set[Reg[_]]): List[Int] = {
         // Global registers cannot occupy the same slot as another global register
-        // In a flatMap, that means a newly discovered global register must be allocated to a new slot
-        // This should resize the register pool, but under current restrictions we'll just throw an
-        // excepton if there are no available slots
+        // In a flatMap, that means a newly discovered global register must be allocated to a new slot: this may resize the register pool
         val unallocatedRegs = regs.filterNot(_.allocated)
         if (unallocatedRegs.nonEmpty) {
             val usedSlots = regs.collect {
                 case reg if reg.allocated => reg.addr
             }
-            val freeSlots = (0 until 4).filterNot(usedSlots)
-            if (unallocatedRegs.size > freeSlots.size) {
-                throw new IllegalStateException("Current restrictions require that the maximum number of registers in use is 4") // scalastyle:ignore throw
-            }
+            val freeSlots = (0 until regs.size).filterNot(usedSlots)
             applyAllocation(unallocatedRegs, freeSlots)
         }
         else Nil
     }
 
-    private def generateCalleeSave[Cont[_, +_]: ContOps, R](calleeSaveRequired: Boolean, bodyGen: =>Cont[R, Unit], allocatedRegs: List[Int])
+    private def generateCalleeSave[Cont[_, +_]: ContOps, R](calleeSaveRequired: Boolean, bodyGen: =>Cont[R, Unit], reqRegs: Int, allocatedRegs: List[Int])
                                                            (implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         if (calleeSaveRequired && allocatedRegs.nonEmpty) {
             val end = state.freshLabel()
             val calleeSave = state.freshLabel()
             instrs += new instructions.Label(calleeSave)
-            instrs += new instructions.CalleeSave(end, allocatedRegs)
+            instrs += new instructions.CalleeSave(end, reqRegs, allocatedRegs)
             bodyGen |> {
                 instrs += new instructions.Jump(calleeSave)
                 instrs += new instructions.Label(end)

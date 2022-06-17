@@ -314,10 +314,10 @@ object registers {
       * @group ext
       */
     implicit final class RegisterMethods[P, A](p: P)(implicit con: P => Parsley[A]) {
-        /*def fillReg[B](body: Reg[A] => Parsley[B]): Parsley[B] = {
+        def fillReg[B](body: Reg[A] => Parsley[B]): Parsley[B] = {
             val reg = Reg.make[A]
             reg.put(con(p)) *> body(reg)
-        }*/
+        }
         /** This combinator allows for the result of this parser to be used multiple times within a function,
           * without needing to reparse or recompute.
           *
@@ -333,12 +333,12 @@ object registers {
           * @param f a function to generate a new parser that can observe the result of this parser many times without reparsing.
           * @since 3.2.0
           */
-        def persist[B](f: Parsley[A] => Parsley[B]): Parsley[B] = con(p).flatMap(x => f(pure(x)))//this.fillReg(reg => f(get(reg)))
+        def persist[B](f: Parsley[A] => Parsley[B]): Parsley[B] = this.fillReg(reg => f(reg.get))
     }
 
-    /*implicit final class RegisterMaker[A](x: A) {
+    implicit final class RegisterMaker[A](x: A) {
         def makeReg[B](body: Reg[A] => Parsley[B]): Parsley[B] = pure(x).fillReg(body)
-    }*/
+    }
 
     /** This combinator allows for the repeated execution of a parser `body` in a stateful loop, `body` will have access to the current value of the state.
       *
@@ -365,11 +365,11 @@ object registers {
       * @group comb
       */
     private def forP_[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: Parsley[A] => Parsley[_]): Parsley[Unit] = {
-        /*val reg = Reg.make[A]
+        val reg = Reg.make[A]
         lazy val _cond = reg.gets(cond)
         lazy val _step = reg.modify(step)
-        reg.put(init) *> when(_cond, whileP(body(reg) *> _step *> _cond))*/
-        lazy val _cond = cond
+        reg.put(init) *> when(_cond, whileP(body(reg.get) *> _step *> _cond))
+        /*lazy val _cond = cond
         lazy val _step = step
         def loop(x: A): Parsley[Unit] =
             _cond.flatMap { p =>
@@ -380,7 +380,7 @@ object registers {
                     }
                 }
             }
-        init.flatMap(loop)
+        init.flatMap(loop)*/
     }
 
     /** This combinator allows for the repeated execution of a parser in a stateful loop.
