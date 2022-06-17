@@ -309,7 +309,9 @@ object registers {
     implicit final class RegisterMethods[P, A](p: P)(implicit con: P => Parsley[A]) {
         def fillReg[B](body: Reg[A] => Parsley[B]): Parsley[B] = {
             val reg = Reg.make[A]
-            reg.put(con(p)) *> body(reg)
+            reg.local(con(p)) {
+              body(reg)
+            }
         }
         /** This combinator allows for the result of this parser to be used multiple times within a function,
           * without needing to reparse or recompute.
@@ -361,7 +363,9 @@ object registers {
         val reg = Reg.make[A]
         lazy val _cond = reg.gets(cond)
         lazy val _step = reg.modify(step)
-        reg.put(init) *> when(_cond, whileP(body(reg.get) *> _step *> _cond))
+        reg.local(init) {
+          when(_cond, whileP(body(reg.get) *> _step *> _cond))
+        }
         /*lazy val _cond = cond
         lazy val _step = step
         def loop(x: A): Parsley[Unit] =
