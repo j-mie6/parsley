@@ -1137,12 +1137,12 @@ object Parsley {
       * scala> import parsley.character.string, parsley.Parsley.attempt
       * scala> (string("abc") <|> string("abd")).parse("abd")
       * val res0 = Failure(..) // first parser consumed a, so no backtrack
-      * scala> (attempt(atring("abc")) <|> string("abd")).parse("abd")
+      * scala> (attempt(string("abc")) <|> string("abd")).parse("abd")
       * val res1 = Success("abd") // first parser does not consume input on failure now
       * }}}
       *
       * @param p the parser to execute, if it fails, it will not have consumed input.
-      * @return a parser that tries `p`, but does never consumes input if it fails.
+      * @return a parser that tries `p`, but never consumes input if it fails.
       * @group prim
       */
     def attempt[A](p: Parsley[A]): Parsley[A] = new Parsley(new frontend.Attempt(p.internal))
