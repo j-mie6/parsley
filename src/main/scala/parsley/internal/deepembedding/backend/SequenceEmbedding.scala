@@ -219,13 +219,12 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
 }
 
 object Seq {
-
     private [backend] def unapply[A](self: Seq[A]): Some[(DoublyLinkedList[StrictParsley[_]], StrictParsley[A], DoublyLinkedList[StrictParsley[_]])] = {
         Some((self.before, self.res, self.after))
     }
 
     private [Seq] def codeGenMany[Cont[_, +_]: ContOps, R](it: Iterator[StrictParsley[_]])
-                                                              (implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+                                                          (implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         if (it.hasNext) {
             suspend(it.next().codeGen[Cont, R]) >> {
                 instrs += instructions.Pop
@@ -254,11 +253,11 @@ private [deepembedding] object *> {
         before.addOne(left)
         *>(before, right)
     }
+    private [backend] def apply[A](before: DoublyLinkedList[StrictParsley[_]], res: StrictParsley[A]): Seq[A] = new Seq(before, res, DoublyLinkedList.empty)
     private [backend] def unapply[A](self: Seq[A]): Option[(DoublyLinkedList[StrictParsley[_]], StrictParsley[A])] = {
         if (self.after.isEmpty) Some((self.before, self.res))
         else None
     }
-    private [backend] def apply[A](before: DoublyLinkedList[StrictParsley[_]], res: StrictParsley[A]): Seq[A] = new Seq(before, res, DoublyLinkedList.empty)
 }
 private [backend] object **> {
     private [backend] def unapply[A](self: Seq[A]): Option[(StrictParsley[_], StrictParsley[A])] = *>.unapply(self).collect {
@@ -272,11 +271,11 @@ private [deepembedding]  object <* {
         after.addOne(right)
         <*(left, after)
     }
+    private [backend] def apply[A](res: StrictParsley[A], after: DoublyLinkedList[StrictParsley[_]]): Seq[A] = new Seq(DoublyLinkedList.empty, res, after)
     private [backend] def unapply[A](self: Seq[A]): Option[(StrictParsley[A], DoublyLinkedList[StrictParsley[_]])] = {
         if (self.before.isEmpty) Some((self.res, self.after))
         else None
     }
-    private [backend] def apply[A](res: StrictParsley[A], after: DoublyLinkedList[StrictParsley[_]]): Seq[A] = new Seq(DoublyLinkedList.empty, res, after)
 }
 
 private [backend] object <** {

@@ -251,8 +251,7 @@ private [backend] object Choice {
         case Lift2(_, t, _)                      => tablable(t, backtracks)
         case Lift3(_, t, _, _)                   => tablable(t, backtracks)
         case t <*> _                             => tablable(t, backtracks)
-        case t <* _                              => tablable(t, backtracks)
-        case Seq(before, r, _)               => tablable(before.headOption.getOrElse(r), backtracks)
+        case Seq(before, r, _)                   => tablable(before.headOption.getOrElse(r), backtracks)
         case _                                   => None
     }
 }
