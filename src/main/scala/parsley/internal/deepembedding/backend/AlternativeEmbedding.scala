@@ -52,7 +52,6 @@ private [deepembedding] final class Choice[A](private [backend] val alt1: Strict
         this.tablify match {
             // If the tablified list is single element (or the next is None), that implies that this should be generated as normal!
             case (_ :: Nil) | (_ :: (_, None) :: Nil) => codeGenChain(alt1, alt2, alts.iterator)
-            // In case of None'd list, the codeGen cont continues by codeGenning that p, else we are done for this tree, call cont!
             case tablified => codeGenJumpTable(tablified)
         }
     }

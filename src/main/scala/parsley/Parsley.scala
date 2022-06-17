@@ -906,6 +906,16 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
         internal.unsafe()
         this
     }
+
+    // $COVERAGE-OFF$
+    /**
+      * This is an alias for `p.filter(pred)`. It is needed to support for-comprehension syntax with `if`s.
+      *
+      * @since 4.0.0
+      * @see [[parsley.Parsley.filter `filter`]] for more information.
+      */
+    def withFilter(pred: A => Boolean): Parsley[A] = this.filter(pred)
+    // $COVERAGE-ON$
 }
 
 /** This object contains the core "function-style" combinators: all parsers will likely require something from within!
