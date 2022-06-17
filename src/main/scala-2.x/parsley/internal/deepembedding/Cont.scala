@@ -23,16 +23,17 @@ private [deepembedding] abstract class ContOps[Cont[_, +_]] {
     def flatMap[R, A, B](c: Cont[R, A], f: A => Cont[R, B]): Cont[R, B]
     def suspend[R, A](x: =>Cont[R, A]): Cont[R, A]
     // $COVERAGE-OFF$
-    def >>[R, A, B](c: Cont[R, A], k: Cont[R, B]): Cont[R, B] = flatMap[R, A, B](c, _ => k)
+    // This needs to be lazy, because I'm an idiot when I use it
+    def >>[R, A, B](c: Cont[R, A], k: =>Cont[R, B]): Cont[R, B] = flatMap[R, A, B](c, _ => k)
     def |>[R, A, B](c: Cont[R, A], x: =>B): Cont[R, B] = map[R, A, B](c, _ => x)
     // $COVERAGE-ON$
 }
 private [deepembedding] object ContOps {
-    implicit class ContAdapter[R, A, Cont[_, +_]](val c: Cont[R, A]) extends AnyVal
-    {
+    implicit class ContAdapter[R, A, Cont[_, +_]](val c: Cont[R, A]) extends AnyVal {
         @inline def map[B](f: A => B)(implicit ops: ContOps[Cont]): Cont[R, B] = ops.map(c, f)
         @inline def flatMap[B](f: A => Cont[R, B])(implicit ops: ContOps[Cont]): Cont[R, B] = ops.flatMap(c, f)
-        @inline def >>[B](k: Cont[R, B])(implicit ops: ContOps[Cont]): Cont[R, B] = ops.>>(c, k)
+        // This needs to be lazy, because I'm an idiot when I use it
+        @inline def >>[B](k: =>Cont[R, B])(implicit ops: ContOps[Cont]): Cont[R, B] = ops.>>(c, k)
         @inline def |>[B](x: =>B)(implicit ops: ContOps[Cont]): Cont[R, B] = ops.|>(c, x)
     }
     @inline def result[R, A, Cont[_, +_]](x: A)(implicit canWrap: ContOps[Cont]): Cont[R, A] = canWrap.wrap(x)
@@ -42,6 +43,10 @@ private [deepembedding] object ContOps {
     def safeCall[A](task: GenOps => A): A = {
         try task(Id.ops.asInstanceOf[GenOps])
         catch { case _: StackOverflowError => task(Cont.ops.asInstanceOf[GenOps]) }
+    }
+    def sequence[Cont[_, +_]: ContOps, R, A](mxs: List[Cont[R, A]]): Cont[R, List[A]] = mxs match {
+        case Nil => result(Nil)
+        case mx :: mxs => for { x <- mx; xs <- sequence(mxs) } yield x :: xs
     }
 }
 
@@ -59,7 +64,7 @@ private [deepembedding] object Cont {
             new Cont(k => new Thunk(() => mx.cont(x => f(x).cont(k))))
         }
         override def suspend[R, A](x: =>Cont[R, A]): Cont[R, A] = new Cont(k => new Thunk(() => x.cont(k)))
-        override def >>[R, A, B](mx: Cont[R, A], my: Cont[R, B]): Cont[R, B] =
+        override def >>[R, A, B](mx: Cont[R, A], my: =>Cont[R, B]): Cont[R, B] =
         {
             new Cont(k => new Thunk(() => mx.cont(_ => my.cont(k))))
         }

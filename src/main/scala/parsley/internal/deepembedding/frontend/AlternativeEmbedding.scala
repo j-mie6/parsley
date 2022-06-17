@@ -11,8 +11,5 @@ import parsley.internal.deepembedding.backend, backend.StrictParsley
 import parsley.internal.errors.{Desc, ErrorItem, Raw}
 
 private [parsley] final class <|>[A](p: LazyParsley[A], q: =>LazyParsley[A]) extends Binary[A, A, A](p, q) {
-    // $COVERAGE-OFF$
-    override def pretty(l: String, r: String): String = s"($l <|> $r)"
-    // $COVERAGE-ON$
-    override def make(p: StrictParsley[A], q: StrictParsley[A]): StrictParsley[A] = new backend.<|>(p, q)
+    override def make(p: StrictParsley[A], q: StrictParsley[A]): StrictParsley[A] = backend.<|>(p, q)
 }

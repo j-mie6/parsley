@@ -16,10 +16,6 @@ import parsley.internal.machine.instructions, instructions.{Instr, JumpTable, La
 
 private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     // $COVERAGE-OFF$
-    final private [parsley] def prettyAST: String = {force(); safeCall(g => perform(prettyASTAux(g))(g))}
-    // $COVERAGE-ON$
-
-    // $COVERAGE-OFF$
     final def unsafe(): Unit = sSafe = false
     final def force(): Unit = instrs
     final def overflows(): Unit = cps = true
@@ -30,7 +26,7 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     }
 
     // Internals
-    final private [frontend] def findLets[Cont[_, +_], R](seen: Set[LazyParsley[_]])(implicit ops: ContOps[Cont], state: LetFinderState): Cont[R, Unit] = {
+    final private [frontend] def findLets[Cont[_, +_]: ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): Cont[R, Unit] = {
         state.addPred(this)
         if (seen(this)) result(state.addRec(this))
         else if (state.notProcessedBefore(this)) {
@@ -48,13 +44,12 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
         }
         else result(())
     }
-    final private [frontend] def optimised[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont], lets: LetMap, recs: RecMap): Cont[R, StrictParsley[A_]] = {
+    final private [frontend] def optimised[Cont[_, +_]: ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): Cont[R, StrictParsley[A_]] = {
         if (recs.contains(this)) result(recs(this))
         else if (lets.contains(this)) result(lets(this))
         else this.unsafeOptimised
     }
-    final private [frontend] def unsafeOptimised[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont],
-                                                                                   lets: LetMap, recs: RecMap): Cont[R, StrictParsley[A_]] = {
+    final private [frontend] def unsafeOptimised[Cont[_, +_]: ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): Cont[R, StrictParsley[A_]] = {
         for {p <- this.preprocess} yield {
             p.safe = this.sSafe
             p.optimise
@@ -64,16 +59,16 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     final private var cps = false
     final private var calleeSaveNeeded = false
 
-    final private def pipeline[Cont[_, +_]](implicit ops: ContOps[Cont]): Array[Instr] = {
-        implicit val state: backend.CodeGenState = new backend.CodeGenState
+    final private def pipeline[Cont[_, +_]: ContOps]: Array[Instr] = {
         implicit val letFinderState: LetFinderState = new LetFinderState
         perform[Cont, Array[Instr]] {
             findLets(Set.empty) >> {
                 val usedRegs: Set[Reg[_]] = letFinderState.usedRegs
                 implicit val seenSet: Set[LazyParsley[_]] = letFinderState.recs
+                implicit val state: backend.CodeGenState = new backend.CodeGenState
                 implicit val recMap: RecMap = RecMap(letFinderState.recs)
-                implicit val letMap: LetMap = LetMap(letFinderState.lets)(ops, recMap)
-                val recs_ = recMap.map { case (p, strict) => (strict, p.unsafeOptimised[Cont, Unit, Any]) }
+                implicit val letMap: LetMap = LetMap(letFinderState.lets)
+                val recs_ = recMap.map { case (p, rec) => (rec, p.unsafeOptimised[Cont, Unit, Any]) }
                 for { sp <- this.optimised } yield sp.generateInstructions(calleeSaveNeeded, usedRegs, recs_)
             }
         }
@@ -83,12 +78,42 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
 
     final private [parsley] lazy val instrs: Array[Instr] = if (cps) computeInstrs(Cont.ops.asInstanceOf[GenOps]) else safeCall(computeInstrs(_))
 
+    // $COVERAGE-OFF$
+    // Don't @ me CodeClimate...
+    final private [internal] def prettyAST: String = {
+        import Cont.ops
+        implicit val letFinderState: LetFinderState = new LetFinderState
+        perform[Cont, String] {
+            findLets(Set.empty) >> {
+                val usedRegs: Set[Reg[_]] = letFinderState.usedRegs
+                implicit val seenSet: Set[LazyParsley[_]] = letFinderState.recs
+                implicit val state: backend.CodeGenState = new backend.CodeGenState
+                implicit val recMap: RecMap = RecMap(letFinderState.recs)
+                implicit val letMap: LetMap = LetMap(letFinderState.lets)
+                val mrecs = for {
+                    (p, rec) <- recMap
+                } yield for {
+                    sp <- p.unsafeOptimised[Cont, String, Any]
+                    str <- sp.pretty
+                } yield s"${rec.label}: $str"
+
+                for {
+                    sp <- this.optimised
+                    str <- sp.pretty
+                    strs <- ContOps.sequence(mrecs.toList)
+                } yield {
+                    s"main body: $str\n${strs.mkString("\n")}"
+                }
+            }
+        }
+    }
+    // $COVERAGE-ON$
+
     // Abstracts
     // Sub-tree optimisation and Rec calculation - Bottom-up
-    private [frontend] def preprocess[Cont[_, +_], R, A_ >: A](implicit ops: ContOps[Cont], lets: LetMap, recs: RecMap): Cont[R, StrictParsley[A_]]
+    private [frontend] def preprocess[Cont[_, +_]: ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): Cont[R, StrictParsley[A_]]
     // Let-finder recursion
-    protected def findLetsAux[Cont[_, +_], R](seen: Set[LazyParsley[_]])(implicit ops: ContOps[Cont], state: LetFinderState): Cont[R, Unit]
-    private [parsley] def prettyASTAux[Cont[_, +_]](implicit ops: ContOps[Cont]): Cont[String, String]
+    protected def findLetsAux[Cont[_, +_]: ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): Cont[R, Unit]
 }
 
 private [deepembedding] trait UsesRegister {
@@ -124,7 +149,7 @@ private [deepembedding] final class LetMap(letGen: Map[LazyParsley[_], LetMap =>
     override def toString: String = mutMap.toString
 }
 private [frontend] object LetMap {
-    def apply[Cont[_, +_]](lets: Iterable[LazyParsley[_]])(implicit ops: ContOps[Cont], recs: RecMap): LetMap = {
+    def apply[Cont[_, +_]: ContOps](lets: Iterable[LazyParsley[_]])(implicit recs: RecMap): LetMap = {
         new LetMap(lets.map(p => p -> ((_self: LetMap) => {
             implicit val self: LetMap = _self
             perform[Cont, StrictParsley[_]](p.unsafeOptimised)

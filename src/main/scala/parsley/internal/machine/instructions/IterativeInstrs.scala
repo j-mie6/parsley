@@ -112,7 +112,7 @@ private [internal] final class Chainl(var label: Int) extends InstrWithLabel {
 }
 
 private [instructions] object DualHandler {
-    def checkForFirstHandlerAndPop(ctx: Context, otherwise: =>Unit)(action: =>Unit) = {
+    def checkForFirstHandlerAndPop(ctx: Context, otherwise: =>Unit)(action: =>Unit): Unit = {
         if (!ctx.handlers.isEmpty && ctx.handlers.pc == ctx.pc) {
             ctx.handlers = ctx.handlers.tail
             action
@@ -120,7 +120,7 @@ private [instructions] object DualHandler {
         else otherwise
         ctx.checkStack = ctx.checkStack.tail
     }
-    def popSecondHandlerAndJump(ctx: Context, label: Int) = {
+    def popSecondHandlerAndJump(ctx: Context, label: Int): Unit = {
         ctx.handlers = ctx.handlers.tail
         ctx.checkStack = ctx.checkStack.tail
         ctx.updateCheckOffsetAndHints()

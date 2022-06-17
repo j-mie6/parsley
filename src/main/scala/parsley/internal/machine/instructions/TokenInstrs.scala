@@ -5,7 +5,7 @@ package parsley.internal.machine.instructions
 
 import scala.annotation.tailrec
 
-import parsley.internal.Radix, Radix.RadixSet
+import parsley.internal.collection.mutable.Radix, Radix.RadixSet
 import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
 import parsley.internal.errors.{Desc, ErrorItem}
 import parsley.internal.machine.Context

@@ -23,7 +23,7 @@ private [deepembedding] abstract class ContOps[Cont[_, +_]] {
     def flatMap[R, A, B](c: Cont[R, A], f: A => Cont[R, B]): Cont[R, B]
     def suspend[R, A](x: =>Cont[R, A]): Cont[R, A]
     // $COVERAGE-OFF$
-    def >>[R, A, B](c: Cont[R, A], k: Cont[R, B]): Cont[R, B] = flatMap[R, A, B](c, _ => k)
+    def >>[R, A, B](c: Cont[R, A], k: =>Cont[R, B]): Cont[R, B] = flatMap[R, A, B](c, _ => k)
     def |>[R, A, B](c: Cont[R, A], x: =>B): Cont[R, B] = map[R, A, B](c, _ => x)
     // $COVERAGE-ON$
 }
@@ -43,6 +43,10 @@ private [deepembedding] object ContOps {
         try task(Id.ops.asInstanceOf[GenOps])
         catch { case _: StackOverflowError => task(Cont.ops.asInstanceOf[GenOps]) }
     }
+    def sequence[Cont[_, +_]: ContOps, R, A](mxs: List[Cont[R, A]]): Cont[R, List[A]] = mxs match {
+        case Nil => result(Nil)
+        case mx :: mxs => for { x <- mx; xs <- sequence(mxs) } yield x :: xs
+    }
 }
 
 private [deepembedding] class Cont[R, +A](val cont: (A => Bounce[R]) => Bounce[R]) extends AnyVal
@@ -57,7 +61,7 @@ private [deepembedding] object Cont {
             new Cont(k => new Thunk(() => mx.cont(x => f(x).cont(k))))
         }
         override def suspend[R, A](x: =>Cont[R, A]): Cont[R, A] = new Cont(k => new Thunk(() => x.cont(k)))
-        override def >>[R, A, B](mx: Cont[R, A], my: Cont[R, B]): Cont[R, B] = {
+        override def >>[R, A, B](mx: Cont[R, A], my: =>Cont[R, B]): Cont[R, B] = {
             new Cont(k => new Thunk(() => mx.cont(_ => my.cont(k))))
         }
     }
@@ -71,7 +75,7 @@ private [deepembedding] object Id {
         override def map[R, A, B](c: Id[R, A], f: A => B): Id[R, B] = new Id(f(c.x))
         override def flatMap[R, A, B](c: Id[R, A], f: A => Id[R, B]): Id[R, B] = f(c.x)
         override def suspend[R, A](x: =>Id[R, A]): Id[R, A] = x
-        override def >>[R, A, B](c: Id[R, A], k: Id[R, B]): Id[R, B] = k
+        override def >>[R, A, B](c: Id[R, A], k: =>Id[R, B]): Id[R, B] = k
         override def |>[R, A, B](c: Id[R, A], x: =>B): Id[R, B] = new Id(x)
     }
 }
