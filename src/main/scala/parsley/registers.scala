@@ -307,8 +307,26 @@ object registers {
       * @group ext
       */
     implicit final class RegisterMethods[P, A](p: P)(implicit con: P => Parsley[A]) {
+        /** This combinator fills a fresh register with the result of this parser, this
+          * register is provided to the given function, which continues the parse.
+          *
+          * This allows for a more controlled way of creating registers during a parse,
+          * without explicitly creating them with `Reg.make[A]` and using `put`. These
+          * registers are intended to be fresh every time they are "created", which is
+          * accomplished by using `local` to populate it. In other words, a recursive
+          * call with a `fillReg` call inside will appear to modify a different register.
+          *
+          * @example {{{
+          * // this is an efficient implementation for persist.
+          * def persist[B](f: Parsley[A] => Parsley[B]): Parsley[B] = this.fillReg(reg => f(reg.get))
+          * }}}
+          *
+          * @param body a function to generate a parser that can interact with the freshly created register.
+          * @since 4.0.0
+          */
         def fillReg[B](body: Reg[A] => Parsley[B]): Parsley[B] = {
             val reg = Reg.make[A]
+            // FIXME: not quite, we also need to ensure it is rolled back on failure too!
             reg.local(con(p)) {
               body(reg)
             }
@@ -332,6 +350,18 @@ object registers {
     }
 
     implicit final class RegisterMaker[A](x: A) {
+        /** This combinator fills a fresh register with the this value.
+          *
+          * This allows for a more controlled way of creating registers during a parse,
+          * without explicitly creating them with `Reg.make[A]` and using `put`. These
+          * registers are intended to be fresh every time they are "created", which is
+          * accomplished by using `local` to populate it. In other words, a recursive
+          * call with a `makeReg` call inside will appear to modify a different register.
+          *
+          * @param body a function to generate a parser that can interact with the freshly created register.
+          * @see [[parsley.registers.RegisterMethods.fillReg `fillReg`]] for a version that uses the result of a parser to fill the register instead.
+          * @since 4.0.0
+          */
         def makeReg[B](body: Reg[A] => Parsley[B]): Parsley[B] = pure(x).fillReg(body)
     }
 
@@ -363,6 +393,7 @@ object registers {
         val reg = Reg.make[A]
         lazy val _cond = reg.gets(cond)
         lazy val _step = reg.modify(step)
+        // FIXME: not quite, we also need to ensure it is rolled back on failure too!
         reg.local(init) {
           when(_cond, whileP(body(reg.get) *> _step *> _cond))
         }
