@@ -673,8 +673,9 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * If this parser does fail at any point having consumed input, this combinator will fail.
       *
       * @example {{{
+      * // this is not an efficient implementation of stringOfMany
       * def stringOfMany(pc: Parsley[Char]): Parsley[String] = {
-      *     pc.foldLeft(new StringBuilder)(_ += _).map(_.toString)
+      *     pc.foldLeft("")(_ + _)
       * }
       * }}}
       *
@@ -984,7 +985,7 @@ object Parsley {
           * "first position" ''will'' result in infinite recursion at parse-time,
           * it is left-recursive after all, and so it makes little sense to
           * waste efficiency and complicate the API to support laziness
-          * in that position. Since method receivers are strict and only
+          * there. Since method receivers are strict and only
           * arguments can be lazy under regular conditions, this works well.
           *
           * However, for combinators that are always strict, this poses a
@@ -1008,7 +1009,7 @@ object Parsley {
           * @example {{{
           * // this works fine, even though all of `zipped`'s parsers are strict
           * lazy val expr = (attempt(term) <* '+', ~expr).zipped(_ + _) <|> term
-          * // in this case, however the following would fix the problem more elegantly:
+          * // in this case, however, the following would fix the problem more elegantly:
           * lazy val expr = (attempt(term), '+' *> expr).zipped(_ + _) <|> term
           * }}}
           *
