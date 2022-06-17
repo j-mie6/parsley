@@ -94,7 +94,7 @@ private [parsley] final class CalleeSave(var label: Int, reqSize: Int, slots: Li
         // If this is known to increase the size of the register pool, then we need to keep the old array to the side
         if (reqSize > ctx.regs.size) {
             oldRegs = ctx.regs
-            ctx.regs = Array.copyOf(oldRegs, reqSize)
+            ctx.regs = java.util.Arrays.copyOf(oldRegs, reqSize)
         }
         // TODO: it's wasteful doing the resize first, we could cut the slots off so that
         //       it doesn't do callee-save wider than the array itself!
@@ -110,7 +110,7 @@ private [parsley] final class CalleeSave(var label: Int, reqSize: Int, slots: Li
             saveArray(idx) = null
         }
         if (oldRegs != null) {
-            Array.copy(ctx.regs, 0, oldRegs, 0, oldRegs.size)
+            java.lang.System.arraycopy(ctx.regs, 0, oldRegs, 0, oldRegs.size)
             ctx.regs = oldRegs
             oldRegs = null
         }
