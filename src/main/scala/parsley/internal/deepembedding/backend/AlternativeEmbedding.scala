@@ -251,10 +251,8 @@ private [backend] object Choice {
         case Lift2(_, t, _)                      => tablable(t, backtracks)
         case Lift3(_, t, _, _)                   => tablable(t, backtracks)
         case t <*> _                             => tablable(t, backtracks)
-        case t *> _                              => tablable(t, backtracks)
         case t <* _                              => tablable(t, backtracks)
-        // TODO: This doesn't check for leading pure! (normal form should have the pure as the second element anyway)
-        case NormSeq(before, r, _)               => tablable(before.headOption.getOrElse(r), backtracks)
+        case Seq(before, r, _)               => tablable(before.headOption.getOrElse(r), backtracks)
         case _                                   => None
     }
 }
