@@ -261,9 +261,8 @@ private [deepembedding] object *> {
     private [backend] def apply[A](before: DoublyLinkedList[StrictParsley[_]], res: StrictParsley[A]): Seq[A] = new Seq(before, res, DoublyLinkedList.empty)
 }
 private [backend] object **> {
-    private [backend] def unapply[A](self: Seq[A]): Option[(StrictParsley[_], StrictParsley[A])] = {
-        if (self.before.size == 1 && self.after.isEmpty) Some((self.before.head, self.res))
-        else None
+    private [backend] def unapply[A](self: Seq[A]): Option[(StrictParsley[_], StrictParsley[A])] = *>.unapply(self).collect {
+        case (before, res) if self.before.size == 1 => (before.head, res)
     }
 }
 
@@ -281,8 +280,7 @@ private [deepembedding]  object <* {
 }
 
 private [backend] object <** {
-    private [backend] def unapply[A](self: Seq[A]): Option[(StrictParsley[A], StrictParsley[_])] = {
-        if (self.after.size == 1 && self.before.isEmpty) Some((self.res, self.after.head))
-        else None
+    private [backend] def unapply[A](self: Seq[A]): Option[(StrictParsley[A], StrictParsley[_])] = <*.unapply(self).collect {
+        case (res, after) if after.size == 1 => (res, after.head)
     }
 }
