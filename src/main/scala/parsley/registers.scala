@@ -394,6 +394,17 @@ object registers {
         }
     }
 
+    /*def forYieldP_[A, B](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: Parsley[A] => Parsley[B]): Parsley[List[B]] = {
+        import parsley.Parsley.fresh
+        import scala.collection.mutable
+        import parsley.implicits.zipped.Zipped2
+        fresh(mutable.ListBuffer.empty[B]).fillReg { acc =>
+            forP_(init, cond, step) { x =>
+                acc.put((acc.get, body(x)).zipped(_ += _))
+            } *> acc.gets(_.toList)
+        }
+    }*/
+
     /** This combinator allows for the repeated execution of a parser in a stateful loop.
       *
       * `forP(init, cond, step)(body)` behaves much like a traditional for loop using `init`, `cond`, `step` and `body` as parsers
@@ -424,4 +435,15 @@ object registers {
             _body
         }
     }
+
+    /*def forYieldP[A, B](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: =>Parsley[B]): Parsley[List[B]] = {
+        import parsley.Parsley.fresh
+        import scala.collection.mutable
+        import parsley.implicits.zipped.Zipped2
+        fresh(mutable.ListBuffer.empty[B]).fillReg { acc =>
+            forP(init, cond, step) {
+                acc.put((acc.get, body).zipped(_ += _))
+            } *> acc.gets(_.toList)
+        }
+    }*/
 }
