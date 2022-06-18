@@ -132,6 +132,7 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
     }
 
     private def mergeFromRight(p: Seq[_], into: DoublyLinkedList[StrictParsley[_]]): this.type = {
+        after.clear() // after contains just p, which is going to get flattened
         into.stealAll(p.before)
         Seq.whenNonPure(p.res, into.addOne(_))
         into.stealAll(p.after)
@@ -188,6 +189,9 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
         case Pure(x) =>
             // peephole here involves CharTokFastPerform, StringTokFastPerform, and Exchange
             // The pure in question is normalised to the end: if result is pure, after is empty.
+            if (before.isEmpty) {
+                println(this)
+            }
             val last = before.last
             before.initInPlace()
             suspend(Seq.codeGenMany[Cont, R](before.iterator)) >> {
