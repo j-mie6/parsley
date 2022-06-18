@@ -25,6 +25,10 @@ private [parsley] final class NotFollowedBy[A](p: LazyParsley[A]) extends Unary[
 private [parsley] final class Put[S](val reg: Reg[S], _p: LazyParsley[S]) extends Unary[S, Unit](_p) with UsesRegister {
     override def make(p: StrictParsley[S]): StrictParsley[Unit] = new backend.Put(reg, p)
 }
+private [parsley] final class NewReg[S, A](val reg: Reg[S], init: LazyParsley[S], body: =>LazyParsley[A])
+    extends Binary[S, A, A](init, body) with UsesRegister {
+    override def make(init: StrictParsley[S], body: StrictParsley[A]): StrictParsley[A] = new backend.NewReg(reg, init, body)
+}
 // $COVERAGE-OFF$
 private [parsley] final class Debug[A](p: LazyParsley[A], name: String, ascii: Boolean, break: Breakpoint) extends Unary[A, A](p) {
     override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.Debug(p, name, ascii, break)

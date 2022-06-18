@@ -326,10 +326,7 @@ object registers {
           */
         def fillReg[B](body: Reg[A] => Parsley[B]): Parsley[B] = {
             val reg = Reg.make[A]
-            // FIXME: not quite, we also need to ensure it is rolled back on failure too!
-            reg.local(con(p)) {
-              body(reg)
-            }
+            new Parsley(new frontend.NewReg(reg, con(p).internal, body(reg).internal))
         }
         /** This combinator allows for the result of this parser to be used multiple times within a function,
           * without needing to reparse or recompute.
@@ -389,26 +386,12 @@ object registers {
       * @return a parser that initialises some state with `init` and then parses body until `cond` is true, modifying the state each iteration with `step`.
       * @group comb
       */
-    private def forP_[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: Parsley[A] => Parsley[_]): Parsley[Unit] = {
-        val reg = Reg.make[A]
-        lazy val _cond = reg.gets(cond)
-        lazy val _step = reg.modify(step)
-        // FIXME: not quite, we also need to ensure it is rolled back on failure too!
-        reg.local(init) {
+    def forP_[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: Parsley[A] => Parsley[_]): Parsley[Unit] = {
+        init.fillReg { reg =>
+          lazy val _cond = reg.gets(cond)
+          lazy val _step = reg.modify(step)
           when(_cond, whileP(body(reg.get) *> _step *> _cond))
         }
-        /*lazy val _cond = cond
-        lazy val _step = step
-        def loop(x: A): Parsley[Unit] =
-            _cond.flatMap { p =>
-                if (!p(x)) unit else {
-                    body(pure(x)) *>
-                    _step.flatMap { f =>
-                        loop(f(x))
-                    }
-                }
-            }
-        init.flatMap(loop)*/
     }
 
     /** This combinator allows for the repeated execution of a parser in a stateful loop.

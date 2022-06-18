@@ -84,6 +84,16 @@ private [internal] final class Put(reg: Int) extends Instr {
     // $COVERAGE-ON$
 }
 
+private [internal] final class PutAndFail(reg: Int) extends Instr {
+    override def apply(ctx: Context): Unit = {
+        ctx.writeReg(reg, ctx.stack.upeek)
+        ctx.fail()
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = s"PutAndFail($reg)"
+    // $COVERAGE-ON$
+}
+
 // This instruction holds mutate state, but it is safe to do so, because it's always the first instruction of a DynCall.
 private [parsley] final class CalleeSave(var label: Int, reqSize: Int, slots: List[(Int, Int)], saveArray: Array[AnyRef]) extends InstrWithLabel {
     def this(label: Int, reqSize: Int, slots: List[Int]) = this(label, reqSize, slots.zipWithIndex, new Array[AnyRef](slots.length))

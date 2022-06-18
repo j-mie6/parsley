@@ -80,6 +80,29 @@ private [deepembedding] final class Put[S](reg: Reg[S], val p: StrictParsley[S])
     // $COVERAGE-ON$
 }
 
+private [deepembedding] final class NewReg[S, A](reg: Reg[S], init: StrictParsley[S], body: StrictParsley[A]) extends StrictParsley[A] {
+    def inlinable: Boolean = false
+    override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+        val handler = state.getLabelForPutAndFail(reg)
+        suspend(init.codeGen[Cont, R]) >> {
+            instrs += new instructions.Get(reg.addr)
+            instrs += new instructions.SwapAndPut(reg.addr)
+            instrs += new instructions.PushHandler(handler)
+            suspend(body.codeGen[Cont, R]) |> {
+                instrs += new instructions.SwapAndPut(reg.addr)
+                instrs += instructions.PopHandler
+            }
+        }
+    }
+    // $COVERAGE-OFF$
+    final override def pretty[Cont[_, +_]: ContOps, R]: Cont[R,String] =
+        for {
+            s1 <- init.pretty
+            s2 <- body.pretty
+        } yield s"newreg(r${reg.addr}, $s1, $s2)"
+    // $COVERAGE-ON$
+}
+
 // $COVERAGE-OFF$
 private [deepembedding] final class Debug[A](val p: StrictParsley[A], name: String, ascii: Boolean, break: Breakpoint) extends Unary[A, A] {
     override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {

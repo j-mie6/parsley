@@ -192,9 +192,11 @@ private [deepembedding] class CodeGenState {
     private val handlerMap = mutable.Map.empty[Instr, Int]
     private val relabelErrorMap = mutable.Map.empty[String, Int]
     private val applyReasonMap = mutable.Map.empty[String, Int]
+    private val putAndFailMap = mutable.Map.empty[Reg[_], Int]
     def getLabel(handler: Instr): Int  = handlerMap.getOrElseUpdate(handler, freshLabel())
     def getLabelForRelabelError(label: String): Int = relabelErrorMap.getOrElseUpdate(label, freshLabel())
     def getLabelForApplyReason(reason: String): Int = applyReasonMap.getOrElseUpdate(reason, freshLabel())
+    def getLabelForPutAndFail(reg: Reg[_]): Int = putAndFailMap.getOrElseUpdate(reg, freshLabel())
     def handlers: Iterator[(Instr, Int)] = {
         val relabelErrors = relabelErrorMap.view.map {
             case (label, i) => new instructions.RelabelErrorAndFail(label) -> i
@@ -202,8 +204,11 @@ private [deepembedding] class CodeGenState {
         val applyReasons = applyReasonMap.view.map {
             case (reason, i) => new instructions.ApplyReasonAndFail(reason) -> i
         }
+        val putAndFail = putAndFailMap.view.map {
+            case (reg, i) => new instructions.PutAndFail(reg.addr) -> i
+        }
         new Iterator[(Instr, Int)] {
-            private var rest = List(relabelErrors.iterator, applyReasons.iterator)
+            private var rest = List(relabelErrors.iterator, applyReasons.iterator, putAndFail.iterator)
             private var cur = handlerMap.iterator
             override def hasNext: Boolean = {
                 cur.hasNext || (rest.nonEmpty && {
