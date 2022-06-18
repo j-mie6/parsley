@@ -63,6 +63,13 @@ private [internal] class DoublyLinkedList[A] private [DoublyLinkedList]
 
     override def lastOption: Option[A] = if (end != null) Some(end.x) else None
     override def headOption: Option[A] = if (start != null) Some(start.x) else None
+    override def last: A = if (end != null) end.x else throw new NoSuchElementException("last on the empty list") // scalastyle:ignore throw
+    override def head: A = if (start != null) start.x else throw new NoSuchElementException("head on the empty list") // scalastyle:ignore throw
+
+    def clear(): Unit = {
+        start = null
+        end = null
+    }
 
     def initInPlace(): this.type = {
         if (this.end == null) throw new IllegalStateException("Cannot take init of the empty list") // scalastyle:ignore throw
