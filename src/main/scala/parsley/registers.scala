@@ -312,9 +312,9 @@ object registers {
           *
           * This allows for a more controlled way of creating registers during a parse,
           * without explicitly creating them with `Reg.make[A]` and using `put`. These
-          * registers are intended to be fresh every time they are "created", which is
-          * accomplished by using `local` to populate it. In other words, a recursive
-          * call with a `fillReg` call inside will appear to modify a different register.
+          * registers are intended to be fresh every time they are "created", in other
+          * words, a recursive call with a `fillReg` call inside will modify a different
+          * register each time.
           *
           * @example {{{
           * // this is an efficient implementation for persist.
@@ -351,9 +351,9 @@ object registers {
           *
           * This allows for a more controlled way of creating registers during a parse,
           * without explicitly creating them with `Reg.make[A]` and using `put`. These
-          * registers are intended to be fresh every time they are "created", which is
-          * accomplished by using `local` to populate it. In other words, a recursive
-          * call with a `makeReg` call inside will appear to modify a different register.
+          * registers are intended to be fresh every time they are "created", in other
+          * words, a recursive call with a `makeReg` call inside will modify a different
+          * register.
           *
           * @param body a function to generate a parser that can interact with the freshly created register.
           * @see [[parsley.registers.RegisterMethods.fillReg `fillReg`]] for a version that uses the result of a parser to fill the register instead.

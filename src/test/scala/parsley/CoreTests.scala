@@ -9,6 +9,7 @@ import parsley.lift._
 import parsley.character.{char, satisfy, digit, item, string}
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.implicits.lift.Lift1
+import parsley.implicits.zipped.Zipped2
 import parsley.registers._
 import parsley.errors.combinator.{fail => pfail, unexpected}
 
@@ -241,6 +242,16 @@ class CoreTests extends ParsleyTest {
     they should "not rollback if successful" in {
         val p = 3.makeReg(r1 => r1.rollback(r1.put(2)) *> r1.get)
         p.parse("") shouldBe Success(2)
+    }
+
+    "fillReg" should "appear to create a fresh register every time its invoked" in {
+        def inc(reg: Reg[Int]): Parsley[Int] = reg.get <* reg.modify(_ + 1)
+        val p = 0.makeReg { i =>
+            // the register j is static, however, each recursive call should save its value, making it appear dynamic
+            lazy val p: Parsley[List[Int]] = char('a') *> inc(i).fillReg(j => (p, j.get).zipped(_ :+ _) <* char('b')) <|> pure(Nil)
+            p
+        }
+        p.parse("aaabbb") shouldBe Success(List(2, 1, 0))
     }
 
     "ternary parsers" should "function correctly" in {
