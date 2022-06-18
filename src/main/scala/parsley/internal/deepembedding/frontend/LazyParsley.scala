@@ -20,9 +20,8 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     final def force(): Unit = instrs
     final def overflows(): Unit = cps = true
     // $COVERAGE-ON$
-    private [deepembedding] def demandCalleeSave(): this.type = {
-        calleeSaveNeeded = true
-        // TODO: The number of registers could be stored here, this way CalleeSave can be improved to not always save redundantly
+    private [deepembedding] def demandCalleeSave(numRegs: Int): this.type = {
+        numRegsUsedByParent = numRegs
         this
     }
 
@@ -58,7 +57,7 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     }
     final private [deepembedding] var sSafe = true
     final private var cps = false
-    final private var calleeSaveNeeded = false
+    final private var numRegsUsedByParent = -1
 
     final private def pipeline[Cont[_, +_]: ContOps]: (Array[Instr], Int) = {
         implicit val letFinderState: LetFinderState = new LetFinderState
@@ -66,11 +65,11 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
             findLets(Set.empty) >> {
                 val usedRegs: Set[Reg[_]] = letFinderState.usedRegs
                 implicit val seenSet: Set[LazyParsley[_]] = letFinderState.recs
-                implicit val state: backend.CodeGenState = new backend.CodeGenState
+                implicit val state: backend.CodeGenState = new backend.CodeGenState(letFinderState.numRegs)
                 implicit val recMap: RecMap = RecMap(letFinderState.recs)
                 implicit val letMap: LetMap = LetMap(letFinderState.lets)
                 val recs_ = recMap.map { case (p, rec) => (rec, p.unsafeOptimised[Cont, Unit, Any]) }
-                for { sp <- this.optimised } yield sp.generateInstructions(calleeSaveNeeded, usedRegs, recs_)
+                for { sp <- this.optimised } yield sp.generateInstructions(numRegsUsedByParent, usedRegs, recs_)
             }
         }, letFinderState.numRegs)
     }
@@ -87,9 +86,8 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
         implicit val letFinderState: LetFinderState = new LetFinderState
         perform[Cont, String] {
             findLets(Set.empty) >> {
-                val usedRegs: Set[Reg[_]] = letFinderState.usedRegs
                 implicit val seenSet: Set[LazyParsley[_]] = letFinderState.recs
-                implicit val state: backend.CodeGenState = new backend.CodeGenState
+                implicit val state: backend.CodeGenState = new backend.CodeGenState(0)
                 implicit val recMap: RecMap = RecMap(letFinderState.recs)
                 implicit val letMap: LetMap = LetMap(letFinderState.lets)
                 val mrecs = for {

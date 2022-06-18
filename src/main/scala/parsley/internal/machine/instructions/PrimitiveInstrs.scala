@@ -96,33 +96,33 @@ private [internal] final class PutAndFail(reg: Int) extends Instr {
 
 // This instruction holds mutate state, but it is safe to do so, because it's always the first instruction of a DynCall.
 private [parsley] final class CalleeSave(var label: Int, reqSize: Int, slots: List[(Int, Int)], saveArray: Array[AnyRef]) extends InstrWithLabel {
-    def this(label: Int, reqSize: Int, slots: List[Int]) = this(label, reqSize, slots.zipWithIndex, new Array[AnyRef](slots.length))
+    private def this(label: Int, reqSize: Int, slots: List[Int]) = this(label, reqSize, slots.zipWithIndex, new Array[AnyRef](slots.length))
+    // this filters out the slots to ensure we only do callee-save on registers that might exist in the parent
+    def this(label: Int, reqSize: Int, slots: List[Int], numRegsInContext: Int) = this(label, reqSize, slots.takeWhile(_ < numRegsInContext))
     private var inUse = false
     private var oldRegs: Array[AnyRef] = null
 
     private def save(ctx: Context): Unit = {
+        for ((slot, idx) <- slots) {
+            saveArray(idx) = ctx.regs(slot)
+            ctx.regs(slot) = null
+        }
         // If this is known to increase the size of the register pool, then we need to keep the old array to the side
         if (reqSize > ctx.regs.size) {
             oldRegs = ctx.regs
             ctx.regs = java.util.Arrays.copyOf(oldRegs, reqSize)
         }
-        // TODO: it's wasteful doing the resize first, we could cut the slots off so that
-        //       it doesn't do callee-save wider than the array itself!
-        for ((slot, idx) <- slots) {
-            saveArray(idx) = ctx.regs(slot)
-            ctx.regs(slot) = null
-        }
     }
 
     private def restore(ctx: Context): Unit = {
-        for ((slot, idx) <- slots) {
-            ctx.regs(slot) = saveArray(idx)
-            saveArray(idx) = null
-        }
         if (oldRegs != null) {
             java.lang.System.arraycopy(ctx.regs, 0, oldRegs, 0, oldRegs.size)
             ctx.regs = oldRegs
             oldRegs = null
+        }
+        for ((slot, idx) <- slots) {
+            ctx.regs(slot) = saveArray(idx)
+            saveArray(idx) = null
         }
     }
 

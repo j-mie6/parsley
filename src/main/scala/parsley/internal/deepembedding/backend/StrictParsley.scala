@@ -22,13 +22,13 @@ private [deepembedding] trait StrictParsley[+A] {
     private [deepembedding] def inlinable: Boolean
     final private [deepembedding] var safe = true
 
-    final private [deepembedding] def generateInstructions[Cont[_, +_]: ContOps](calleeSaveRequired: Boolean, usedRegs: Set[Reg[_]],
+    final private [deepembedding] def generateInstructions[Cont[_, +_]: ContOps](numRegsUsedByParent: Int, usedRegs: Set[Reg[_]],
                                                                                  recs: Iterable[(Rec[_], Cont[Unit, StrictParsley[_]])])
                                                                                 (implicit state: CodeGenState): Array[Instr] = {
         implicit val instrs: InstrBuffer = new ResizableArray()
         val bindings = mutable.ListBuffer.empty[Binding]
         perform {
-            generateCalleeSave[Cont, Array[Instr]](calleeSaveRequired, this.codeGen, usedRegs.size, allocateRegisters(usedRegs)) |> {
+            generateCalleeSave[Cont, Array[Instr]](numRegsUsedByParent, this.codeGen, usedRegs.size, allocateRegisters(usedRegs)) |> {
                 instrs += instructions.Halt
                 finaliseRecs(recs)
                 finaliseLets(bindings)
@@ -83,13 +83,14 @@ private [deepembedding] object StrictParsley {
         else Nil
     }
 
-    private def generateCalleeSave[Cont[_, +_]: ContOps, R](calleeSaveRequired: Boolean, bodyGen: =>Cont[R, Unit], reqRegs: Int, allocatedRegs: List[Int])
+    private def generateCalleeSave[Cont[_, +_]: ContOps, R](numRegsUsedByParent: Int, bodyGen: =>Cont[R, Unit], reqRegs: Int, allocatedRegs: List[Int])
                                                            (implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+        val calleeSaveRequired = numRegsUsedByParent >= 0 // if this is -1, then we are the top level and have no parent, otherwise it needs to be done
         if (calleeSaveRequired && allocatedRegs.nonEmpty) {
             val end = state.freshLabel()
             val calleeSave = state.freshLabel()
             instrs += new instructions.Label(calleeSave)
-            instrs += new instructions.CalleeSave(end, reqRegs, allocatedRegs)
+            instrs += new instructions.CalleeSave(end, reqRegs, allocatedRegs, numRegsUsedByParent)
             bodyGen |> {
                 instrs += new instructions.Jump(calleeSave)
                 instrs += new instructions.Label(end)
@@ -169,7 +170,7 @@ private [backend] trait Binding { self: StrictParsley[_] =>
 private [deepembedding] trait MZero extends StrictParsley[Nothing]
 
 // Internals
-private [deepembedding] class CodeGenState {
+private [deepembedding] class CodeGenState(val numRegs: Int) {
     private var current = 0
     private val queue = mutable.ListBuffer.empty[Let[_]]
     private val map = mutable.Map.empty[Let[_], Int]
