@@ -9,6 +9,7 @@ import parsley.lift._
 import parsley.character.{char, satisfy, digit, item, string}
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.implicits.lift.Lift1
+import parsley.implicits.zipped.Zipped2
 import parsley.registers._
 import parsley.errors.combinator.{fail => pfail, unexpected}
 
@@ -181,22 +182,12 @@ class CoreTests extends ParsleyTest {
        an [Exception] should be thrownBy many(pure(5)).parse("")
     }
 
-    implicit final class RegisterMaker[A](x: A) {
-        def makeReg[B](body: Reg[A] => Parsley[B]): Parsley[B] = pure(x).fillReg(body)
-    }
-
-    implicit final class RegisterMethods[P, A](p: =>P)(implicit con: P => Parsley[A]) {
-        def fillReg[B](body: Reg[A] => Parsley[B]): Parsley[B] = {
-            val reg = Reg.make[A]
-            reg.put(con(p)) *> body(reg)
-        }
-    }
-
     "stateful parsers" should "allow for persistent state" in {
-        val p = 5.makeReg(r1 =>
-                7.makeReg(r2 =>
-                 r1.put(lift2[Int, Int, Int](_+_, r1.get, r2.get))
-              *> (r1.get zip r2.gets(_+1))))
+        val p = 5.makeReg { r1 =>
+            7.makeReg { r2 =>
+                r1.put(lift2[Int, Int, Int](_+_, r1.get, r2.get)) *> (r1.get zip r2.gets(_+1))
+            }
+        }
         p.parse("") should be (Success((12, 8)))
     }
     they should "be modifiable" in {
@@ -251,6 +242,29 @@ class CoreTests extends ParsleyTest {
     they should "not rollback if successful" in {
         val p = 3.makeReg(r1 => r1.rollback(r1.put(2)) *> r1.get)
         p.parse("") shouldBe Success(2)
+    }
+    they should "support more than 4 registers" in {
+        def loop(n: Int): Parsley[List[Char]] = {
+            if (n == 0) pure(Nil)
+            else item.fillReg { c => c.get <::> loop(n-1) }
+        }
+        val p = loop(16)
+        p.parse("abcdefghijklmnop") shouldBe Success(List('a', 'b', 'c','d', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p'))
+    }
+
+    "fillReg" should "appear to create a fresh register every time its invoked" in {
+        def inc(reg: Reg[Int]): Parsley[Int] = reg.get <* reg.modify(_ + 1)
+        val p = 0.makeReg { i =>
+            // the register j is static, however, each recursive call should save its value, making it appear dynamic
+            lazy val p: Parsley[List[Int]] = char('a') *> inc(i).fillReg(j => (p, j.get).zipped(_ :+ _) <* char('b')) <|> pure(Nil)
+            p
+        }
+        p.parse("aaabbb") shouldBe Success(List(2, 1, 0))
+    }
+
+    it should "also appear to create a fresh register even in the presence of a hard failure" in {
+        lazy val p: Parsley[Char] = item.fillReg(c => item *> (attempt(p) <|> c.get))
+        p.parse("abc") shouldBe Success('a')
     }
 
     "ternary parsers" should "function correctly" in {

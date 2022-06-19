@@ -84,18 +84,42 @@ private [internal] final class Put(reg: Int) extends Instr {
     // $COVERAGE-ON$
 }
 
-// This instruction holds mutate state, but it is safe to do so, because it's always the find instruction of a DynCall.
-private [parsley] final class CalleeSave(var label: Int, slots: List[(Int, Int)], saveArray: Array[AnyRef]) extends InstrWithLabel {
-    def this(label: Int, slots: List[Int]) = this(label, slots.zipWithIndex, new Array[AnyRef](slots.length))
+private [internal] final class PutAndFail(reg: Int) extends Instr {
+    override def apply(ctx: Context): Unit = {
+        ctx.writeReg(reg, ctx.stack.upeek)
+        ctx.fail()
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = s"PutAndFail($reg)"
+    // $COVERAGE-ON$
+}
+
+// This instruction holds mutate state, but it is safe to do so, because it's always the first instruction of a DynCall.
+private [parsley] final class CalleeSave(var label: Int, reqSize: Int, slots: List[(Int, Int)], saveArray: Array[AnyRef]) extends InstrWithLabel {
+    private def this(label: Int, reqSize: Int, slots: List[Int]) = this(label, reqSize, slots.zipWithIndex, new Array[AnyRef](slots.length))
+    // this filters out the slots to ensure we only do callee-save on registers that might exist in the parent
+    def this(label: Int, reqSize: Int, slots: List[Int], numRegsInContext: Int) = this(label, reqSize, slots.takeWhile(_ < numRegsInContext))
     private var inUse = false
+    private var oldRegs: Array[AnyRef] = null
 
     private def save(ctx: Context): Unit = {
         for ((slot, idx) <- slots) {
             saveArray(idx) = ctx.regs(slot)
+            ctx.regs(slot) = null
+        }
+        // If this is known to increase the size of the register pool, then we need to keep the old array to the side
+        if (reqSize > ctx.regs.size) {
+            oldRegs = ctx.regs
+            ctx.regs = java.util.Arrays.copyOf(oldRegs, reqSize)
         }
     }
 
     private def restore(ctx: Context): Unit = {
+        if (oldRegs != null) {
+            java.lang.System.arraycopy(ctx.regs, 0, oldRegs, 0, oldRegs.size)
+            ctx.regs = oldRegs
+            oldRegs = null
+        }
         for ((slot, idx) <- slots) {
             ctx.regs(slot) = saveArray(idx)
             saveArray(idx) = null

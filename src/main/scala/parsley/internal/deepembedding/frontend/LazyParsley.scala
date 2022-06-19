@@ -20,8 +20,8 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     final def force(): Unit = instrs
     final def overflows(): Unit = cps = true
     // $COVERAGE-ON$
-    private [deepembedding] def demandCalleeSave(): this.type = {
-        calleeSaveNeeded = true
+    private [deepembedding] def demandCalleeSave(numRegs: Int): this.type = {
+        numRegsUsedByParent = numRegs
         this
     }
 
@@ -57,26 +57,28 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     }
     final private [deepembedding] var sSafe = true
     final private var cps = false
-    final private var calleeSaveNeeded = false
+    final private var numRegsUsedByParent = -1
 
-    final private def pipeline[Cont[_, +_]: ContOps]: Array[Instr] = {
+    final private def pipeline[Cont[_, +_]: ContOps]: (Array[Instr], Int) = {
         implicit val letFinderState: LetFinderState = new LetFinderState
-        perform[Cont, Array[Instr]] {
+        (perform[Cont, Array[Instr]] {
             findLets(Set.empty) >> {
                 val usedRegs: Set[Reg[_]] = letFinderState.usedRegs
                 implicit val seenSet: Set[LazyParsley[_]] = letFinderState.recs
-                implicit val state: backend.CodeGenState = new backend.CodeGenState
+                implicit val state: backend.CodeGenState = new backend.CodeGenState(letFinderState.numRegs)
                 implicit val recMap: RecMap = RecMap(letFinderState.recs)
                 implicit val letMap: LetMap = LetMap(letFinderState.lets)
                 val recs_ = recMap.map { case (p, rec) => (rec, p.unsafeOptimised[Cont, Unit, Any]) }
-                for { sp <- this.optimised } yield sp.generateInstructions(calleeSaveNeeded, usedRegs, recs_)
+                for { sp <- this.optimised } yield sp.generateInstructions(numRegsUsedByParent, usedRegs, recs_)
             }
-        }
+        }, letFinderState.numRegs)
     }
 
-    final private def computeInstrs(ops: GenOps): Array[Instr] = pipeline(ops)
+    final private def computeInstrs(ops: GenOps): (Array[Instr], Int) = pipeline(ops)
 
-    final private [parsley] lazy val instrs: Array[Instr] = if (cps) computeInstrs(Cont.ops.asInstanceOf[GenOps]) else safeCall(computeInstrs(_))
+    final private [parsley] lazy val (instrs: Array[Instr], numRegs: Int) = {
+        if (cps) computeInstrs(Cont.ops.asInstanceOf[GenOps]) else safeCall(computeInstrs(_))
+    }
 
     // $COVERAGE-OFF$
     final private [internal] def prettyAST: String = {
@@ -84,9 +86,8 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
         implicit val letFinderState: LetFinderState = new LetFinderState
         perform[Cont, String] {
             findLets(Set.empty) >> {
-                val usedRegs: Set[Reg[_]] = letFinderState.usedRegs
                 implicit val seenSet: Set[LazyParsley[_]] = letFinderState.recs
-                implicit val state: backend.CodeGenState = new backend.CodeGenState
+                implicit val state: backend.CodeGenState = new backend.CodeGenState(0)
                 implicit val recMap: RecMap = RecMap(letFinderState.recs)
                 implicit val letMap: LetMap = LetMap(letFinderState.lets)
                 val mrecs = for {
@@ -134,6 +135,7 @@ private [deepembedding] class LetFinderState {
     }
     lazy val recs: Set[LazyParsley[_]] = _recs.toSet
     def usedRegs: Set[Reg[_]] = _usedRegs.toSet
+    def numRegs: Int = _usedRegs.size
 }
 
 private [deepembedding] final class LetMap(letGen: Map[LazyParsley[_], LetMap => StrictParsley[_]]) {

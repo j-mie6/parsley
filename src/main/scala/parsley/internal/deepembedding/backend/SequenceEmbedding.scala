@@ -109,7 +109,7 @@ private [deepembedding] final class >>=[A, B](val p: StrictParsley[A], private [
     }
     override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         suspend(p.codeGen[Cont, R]) |>
-        (instrs += instructions.DynCall[A](x => f(x).demandCalleeSave().instrs))
+        (instrs += instructions.DynCall[A](x => f(x).demandCalleeSave(state.numRegs).instrs))
     }
     // $COVERAGE-OFF$
     final override def pretty(p: String): String = s"$p.flatMap(?)"

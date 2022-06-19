@@ -22,13 +22,13 @@ private [deepembedding] trait StrictParsley[+A] {
     private [deepembedding] def inlinable: Boolean
     final private [deepembedding] var safe = true
 
-    final private [deepembedding] def generateInstructions[Cont[_, +_]: ContOps](calleeSaveRequired: Boolean, usedRegs: Set[Reg[_]],
+    final private [deepembedding] def generateInstructions[Cont[_, +_]: ContOps](numRegsUsedByParent: Int, usedRegs: Set[Reg[_]],
                                                                                  recs: Iterable[(Rec[_], Cont[Unit, StrictParsley[_]])])
                                                                                 (implicit state: CodeGenState): Array[Instr] = {
         implicit val instrs: InstrBuffer = new ResizableArray()
         val bindings = mutable.ListBuffer.empty[Binding]
         perform {
-            generateCalleeSave[Cont, Array[Instr]](calleeSaveRequired, this.codeGen, allocateRegisters(usedRegs)) |> {
+            generateCalleeSave[Cont, Array[Instr]](numRegsUsedByParent, this.codeGen, usedRegs.size, allocateRegisters(usedRegs)) |> {
                 instrs += instructions.Halt
                 finaliseRecs(recs)
                 finaliseLets(bindings)
@@ -71,30 +71,26 @@ private [deepembedding] object StrictParsley {
 
     private def allocateRegisters(regs: Set[Reg[_]]): List[Int] = {
         // Global registers cannot occupy the same slot as another global register
-        // In a flatMap, that means a newly discovered global register must be allocated to a new slot
-        // This should resize the register pool, but under current restrictions we'll just throw an
-        // excepton if there are no available slots
+        // In a flatMap, that means a newly discovered global register must be allocated to a new slot: this may resize the register pool
         val unallocatedRegs = regs.filterNot(_.allocated)
         if (unallocatedRegs.nonEmpty) {
             val usedSlots = regs.collect {
                 case reg if reg.allocated => reg.addr
             }
-            val freeSlots = (0 until 4).filterNot(usedSlots)
-            if (unallocatedRegs.size > freeSlots.size) {
-                throw new IllegalStateException("Current restrictions require that the maximum number of registers in use is 4") // scalastyle:ignore throw
-            }
+            val freeSlots = (0 until regs.size).filterNot(usedSlots)
             applyAllocation(unallocatedRegs, freeSlots)
         }
         else Nil
     }
 
-    private def generateCalleeSave[Cont[_, +_]: ContOps, R](calleeSaveRequired: Boolean, bodyGen: =>Cont[R, Unit], allocatedRegs: List[Int])
+    private def generateCalleeSave[Cont[_, +_]: ContOps, R](numRegsUsedByParent: Int, bodyGen: =>Cont[R, Unit], reqRegs: Int, allocatedRegs: List[Int])
                                                            (implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+        val calleeSaveRequired = numRegsUsedByParent >= 0 // if this is -1, then we are the top level and have no parent, otherwise it needs to be done
         if (calleeSaveRequired && allocatedRegs.nonEmpty) {
             val end = state.freshLabel()
             val calleeSave = state.freshLabel()
             instrs += new instructions.Label(calleeSave)
-            instrs += new instructions.CalleeSave(end, allocatedRegs)
+            instrs += new instructions.CalleeSave(end, reqRegs, allocatedRegs, numRegsUsedByParent)
             bodyGen |> {
                 instrs += new instructions.Jump(calleeSave)
                 instrs += new instructions.Label(end)
@@ -174,7 +170,7 @@ private [backend] trait Binding { self: StrictParsley[_] =>
 private [deepembedding] trait MZero extends StrictParsley[Nothing]
 
 // Internals
-private [deepembedding] class CodeGenState {
+private [deepembedding] class CodeGenState(val numRegs: Int) {
     private var current = 0
     private val queue = mutable.ListBuffer.empty[Let[_]]
     private val map = mutable.Map.empty[Let[_], Int]
@@ -197,9 +193,11 @@ private [deepembedding] class CodeGenState {
     private val handlerMap = mutable.Map.empty[Instr, Int]
     private val relabelErrorMap = mutable.Map.empty[String, Int]
     private val applyReasonMap = mutable.Map.empty[String, Int]
+    private val putAndFailMap = mutable.Map.empty[Reg[_], Int]
     def getLabel(handler: Instr): Int  = handlerMap.getOrElseUpdate(handler, freshLabel())
     def getLabelForRelabelError(label: String): Int = relabelErrorMap.getOrElseUpdate(label, freshLabel())
     def getLabelForApplyReason(reason: String): Int = applyReasonMap.getOrElseUpdate(reason, freshLabel())
+    def getLabelForPutAndFail(reg: Reg[_]): Int = putAndFailMap.getOrElseUpdate(reg, freshLabel())
     def handlers: Iterator[(Instr, Int)] = {
         val relabelErrors = relabelErrorMap.view.map {
             case (label, i) => new instructions.RelabelErrorAndFail(label) -> i
@@ -207,8 +205,11 @@ private [deepembedding] class CodeGenState {
         val applyReasons = applyReasonMap.view.map {
             case (reason, i) => new instructions.ApplyReasonAndFail(reason) -> i
         }
+        val putAndFail = putAndFailMap.view.map {
+            case (reg, i) => new instructions.PutAndFail(reg.addr) -> i
+        }
         new Iterator[(Instr, Int)] {
-            private var rest = List(relabelErrors.iterator, applyReasons.iterator)
+            private var rest = List(relabelErrors.iterator, applyReasons.iterator, putAndFail.iterator)
             private var cur = handlerMap.iterator
             override def hasNext: Boolean = {
                 cur.hasNext || (rest.nonEmpty && {

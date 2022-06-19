@@ -38,13 +38,6 @@ import parsley.internal.deepembedding.{frontend, singletons}
   */
 object registers {
     /** This class is used to index registers within the mutable state.
-      * Currently, there are only '''four''' available registers, so use them wisely!
-      *
-      * If you need more than four registers but know that they will be used
-      * at different times you can rename your register, as long as they point
-      * to the same reference. You may find the
-      * [[parsley.Parsley.cast[B]* `Parsley[A].cast[B: ClassTag]: Parsley[B]` ]]
-      * combinator useful to change the type of a `Reg[Any]`.
       *
       * @note it is undefined behaviour to use a register in multiple different
       *       independent parsers. You should be careful to parameterise the
@@ -314,10 +307,27 @@ object registers {
       * @group ext
       */
     implicit final class RegisterMethods[P, A](p: P)(implicit con: P => Parsley[A]) {
-        /*def fillReg[B](body: Reg[A] => Parsley[B]): Parsley[B] = {
+        /** This combinator fills a fresh register with the result of this parser, this
+          * register is provided to the given function, which continues the parse.
+          *
+          * This allows for a more controlled way of creating registers during a parse,
+          * without explicitly creating them with `Reg.make[A]` and using `put`. These
+          * registers are intended to be fresh every time they are "created", in other
+          * words, a recursive call with a `fillReg` call inside will modify a different
+          * register each time.
+          *
+          * @example {{{
+          * // this is an efficient implementation for persist.
+          * def persist[B](f: Parsley[A] => Parsley[B]): Parsley[B] = this.fillReg(reg => f(reg.get))
+          * }}}
+          *
+          * @param body a function to generate a parser that can interact with the freshly created register.
+          * @since 4.0.0
+          */
+        def fillReg[B](body: Reg[A] => Parsley[B]): Parsley[B] = {
             val reg = Reg.make[A]
-            reg.put(con(p)) *> body(reg)
-        }*/
+            new Parsley(new frontend.NewReg(reg, con(p).internal, body(reg).internal))
+        }
         /** This combinator allows for the result of this parser to be used multiple times within a function,
           * without needing to reparse or recompute.
           *
@@ -333,12 +343,24 @@ object registers {
           * @param f a function to generate a new parser that can observe the result of this parser many times without reparsing.
           * @since 3.2.0
           */
-        def persist[B](f: Parsley[A] => Parsley[B]): Parsley[B] = con(p).flatMap(x => f(pure(x)))//this.fillReg(reg => f(get(reg)))
+        def persist[B](f: Parsley[A] => Parsley[B]): Parsley[B] = this.fillReg(reg => f(reg.get))
     }
 
-    /*implicit final class RegisterMaker[A](x: A) {
+    implicit final class RegisterMaker[A](x: A) {
+        /** This combinator fills a fresh register with the this value.
+          *
+          * This allows for a more controlled way of creating registers during a parse,
+          * without explicitly creating them with `Reg.make[A]` and using `put`. These
+          * registers are intended to be fresh every time they are "created", in other
+          * words, a recursive call with a `makeReg` call inside will modify a different
+          * register.
+          *
+          * @param body a function to generate a parser that can interact with the freshly created register.
+          * @see [[parsley.registers.RegisterMethods.fillReg `fillReg`]] for a version that uses the result of a parser to fill the register instead.
+          * @since 4.0.0
+          */
         def makeReg[B](body: Reg[A] => Parsley[B]): Parsley[B] = pure(x).fillReg(body)
-    }*/
+    }
 
     /** This combinator allows for the repeated execution of a parser `body` in a stateful loop, `body` will have access to the current value of the state.
       *
@@ -364,24 +386,24 @@ object registers {
       * @return a parser that initialises some state with `init` and then parses body until `cond` is true, modifying the state each iteration with `step`.
       * @group comb
       */
-    private def forP_[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: Parsley[A] => Parsley[_]): Parsley[Unit] = {
-        /*val reg = Reg.make[A]
-        lazy val _cond = reg.gets(cond)
-        lazy val _step = reg.modify(step)
-        reg.put(init) *> when(_cond, whileP(body(reg) *> _step *> _cond))*/
-        lazy val _cond = cond
-        lazy val _step = step
-        def loop(x: A): Parsley[Unit] =
-            _cond.flatMap { p =>
-                if (!p(x)) unit else {
-                    body(pure(x)) *>
-                    _step.flatMap { f =>
-                        loop(f(x))
-                    }
-                }
-            }
-        init.flatMap(loop)
+    def forP_[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: Parsley[A] => Parsley[_]): Parsley[Unit] = {
+        init.fillReg { reg =>
+          lazy val _cond = reg.gets(cond)
+          lazy val _step = reg.modify(step)
+          when(_cond, whileP(body(reg.get) *> _step *> _cond))
+        }
     }
+
+    /*def forYieldP_[A, B](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: Parsley[A] => Parsley[B]): Parsley[List[B]] = {
+        import parsley.Parsley.fresh
+        import scala.collection.mutable
+        import parsley.implicits.zipped.Zipped2
+        fresh(mutable.ListBuffer.empty[B]).fillReg { acc =>
+            forP_(init, cond, step) { x =>
+                acc.put((acc.get, body(x)).zipped(_ += _))
+            } *> acc.gets(_.toList)
+        }
+    }*/
 
     /** This combinator allows for the repeated execution of a parser in a stateful loop.
       *
@@ -413,4 +435,15 @@ object registers {
             _body
         }
     }
+
+    /*def forYieldP[A, B](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: =>Parsley[B]): Parsley[List[B]] = {
+        import parsley.Parsley.fresh
+        import scala.collection.mutable
+        import parsley.implicits.zipped.Zipped2
+        fresh(mutable.ListBuffer.empty[B]).fillReg { acc =>
+            forP(init, cond, step) {
+                acc.put((acc.get, body).zipped(_ += _))
+            } *> acc.gets(_.toList)
+        }
+    }*/
 }

@@ -21,13 +21,9 @@ import parsley.internal.machine.errors.{
 import instructions.Instr
 import stacks.{ArrayStack, CallStack, CheckStack, ErrorStack, HandlerStack, HintStack, Stack, StateStack}, Stack.StackExt
 
-private [parsley] object Context {
-    private [Context] val NumRegs = 4
-    private [parsley] def empty: Context = new Context(null, "")
-}
-
 private [parsley] final class Context(private [machine] var instrs: Array[Instr],
                                       private [machine] var input: String,
+                                      numRegs: Int,
                                       private val sourceFile: Option[String] = None) {
     /** This is the operand stack, where results go to live  */
     private [machine] val stack: ArrayStack[Any] = new ArrayStack()
@@ -36,7 +32,6 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     /** The length of the input, stored for whatever reason */
     private [machine] var inputsz: Int = input.length
     /** Call stack consisting of Frames that track the return position and the old instructions */
-    //private var calls: FastStack[Frame] = FastStack.empty
     private var calls: CallStack = Stack.empty
     /** State stack consisting of offsets and positions that can be rolled back */
     private [machine] var states: StateStack = Stack.empty
@@ -55,7 +50,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     /** Current column number */
     private [machine] var col: Int = 1
     /** State held by the registers, AnyRef to allow for `null` */
-    private [machine] val regs: Array[AnyRef] = new Array[AnyRef](Context.NumRegs)
+    private [machine] var regs: Array[AnyRef] = new Array[AnyRef](numRegs)
     /** Amount of indentation to apply to debug combinators output */
     private [machine] var debuglvl: Int = 0
 
