@@ -293,15 +293,6 @@ class CoreTests extends ParsleyTest {
         p.parse("a") shouldBe a [Failure[_]]
     }
 
-    "the cast combinator" should "allow for casts to valid types" in {
-        val p = pure[Any](7)
-        p.cast[Int].parse("") shouldBe Success(7)
-    }
-    it should "reject invalid casts by failing" in {
-        val p = pure[Any](7)
-        p.cast[String].parse("") shouldBe a [Failure[_]]
-    }
-
     "foldRight" should "work correctly" in {
         val p = 'a'.foldRight[List[Char]](Nil)(_::_)
 

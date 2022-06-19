@@ -614,35 +614,6 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @group filter
       */
     def collect[B](pf: PartialFunction[A, B]): Parsley[B] = this.filter(pf.isDefinedAt).map(pf)
-    /** This combinator attempts to downcast the result of this parser into a value of type `B`, failing
-      * if this was not possible.
-      *
-      * First, this parser is parsed. If it is successful, an attempt is made to cast the result
-      * of type `A` into a value of type `B`. If this cast was legal, then the combinator succeeds
-      * with this casted result. Otherwise, the combinator fails.
-      *
-      * This combinator is safe (bad casting will result in a parse error, not a crash), but should
-      * not be used purely to satisfy the type-checker. Its intended purpose is downcast values that
-      * are ''known'' to be the right type, but for whatever reason must be stored as a weaker
-      * type (say, `Any`).
-      *
-      * @example {{{
-      * scala> import parsley.Parsley.pure
-      * scala> val p: Parsley[Any] = pure(7)
-      * scala> p.cast[Int].parse("")
-      * val res0 = Success(7)
-      * scala> p.cast[String].parse("")
-      * val res1 = Failure(..)
-      * }}}
-      *
-      * @tparam B the type to attempt to cast into, for which a `ClassTag[B]` must exist.
-      * @return a parser that downcasts the result of this parser to have type `B`.
-      * @since 2.0.0
-      * @group filter
-      */
-    def cast[B: ClassTag]: Parsley[B] = this.collect {
-        case x: B => x
-    }
 
     // FOLDING COMBINATORS
     /** This combinator will parse this parser '''zero''' or more times combining the results with the function `f` and base value `k` from the right.
