@@ -243,6 +243,14 @@ class CoreTests extends ParsleyTest {
         val p = 3.makeReg(r1 => r1.rollback(r1.put(2)) *> r1.get)
         p.parse("") shouldBe Success(2)
     }
+    they should "support more than 4 registers" in {
+        def loop(n: Int): Parsley[List[Char]] = {
+            if (n == 0) pure(Nil)
+            else item.fillReg { c => c.get <::> loop(n-1) }
+        }
+        val p = loop(16)
+        p.parse("abcdefghijklmnop") shouldBe Success(List('a', 'b', 'c','d', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p'))
+    }
 
     "fillReg" should "appear to create a fresh register every time its invoked" in {
         def inc(reg: Reg[Int]): Parsley[Int] = reg.get <* reg.modify(_ + 1)
@@ -252,6 +260,11 @@ class CoreTests extends ParsleyTest {
             p
         }
         p.parse("aaabbb") shouldBe Success(List(2, 1, 0))
+    }
+
+    it should "also appear to create a fresh register even in the presence of a hard failure" in {
+        lazy val p: Parsley[Char] = item.fillReg(c => item *> (attempt(p) <|> c.get))
+        p.parse("abc") shouldBe Success('a')
     }
 
     "ternary parsers" should "function correctly" in {
