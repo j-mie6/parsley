@@ -50,28 +50,25 @@ private [deepembedding] object ContOps {
     }
 }
 
-private [deepembedding] class Cont[R, +A](val cont: (A => Bounce[R]) => Bounce[R]) extends AnyVal
+private [deepembedding] final class Cont[R, +A](val cont: (A => Bounce[R]) => Bounce[R]) extends AnyVal
 private [deepembedding] object Cont {
     implicit val ops: ContOps[Cont] = new ContOps[Cont] {
         override def wrap[R, A](x: A): Cont[R, A] = new Cont(k => new Thunk(() => k(x)))
         override def unwrap[R](wrapped: Cont[R, R]): R = wrapped.cont(x => new Chunk(x)).run
-        override def map[R, A, B](mx: Cont[R, A], f: A => B): Cont[R, B] =
-        {
+        override def map[R, A, B](mx: Cont[R, A], f: A => B): Cont[R, B] = {
             new Cont(k => new Thunk(() => mx.cont(x => new Thunk(() => k(f(x))))))
         }
-        override def flatMap[R, A, B](mx: Cont[R, A], f: A => Cont[R, B]): Cont[R, B] =
-        {
+        override def flatMap[R, A, B](mx: Cont[R, A], f: A => Cont[R, B]): Cont[R, B] = {
             new Cont(k => new Thunk(() => mx.cont(x => f(x).cont(k))))
         }
         override def suspend[R, A](x: =>Cont[R, A]): Cont[R, A] = new Cont(k => new Thunk(() => x.cont(k)))
-        override def >>[R, A, B](mx: Cont[R, A], my: =>Cont[R, B]): Cont[R, B] =
-        {
+        override def >>[R, A, B](mx: Cont[R, A], my: =>Cont[R, B]): Cont[R, B] = {
             new Cont(k => new Thunk(() => mx.cont(_ => my.cont(k))))
         }
     }
 }
 
-private [deepembedding] class Id[R, +A](val x: A) extends AnyVal
+private [deepembedding] final class Id[R, +A](val x: A) extends AnyVal
 private [deepembedding] object Id {
     implicit val ops: ContOps[Id] = new ContOps[Id] {
         override def wrap[R, A](x: A): Id[R, A] = new Id(x)

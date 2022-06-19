@@ -23,6 +23,7 @@ private [deepembedding] abstract class ContOps[Cont[_, +_]] {
     def flatMap[R, A, B](c: Cont[R, A], f: A => Cont[R, B]): Cont[R, B]
     def suspend[R, A](x: =>Cont[R, A]): Cont[R, A]
     // $COVERAGE-OFF$
+    // This needs to be lazy, because I'm an idiot when I use it
     def >>[R, A, B](c: Cont[R, A], k: =>Cont[R, B]): Cont[R, B] = flatMap[R, A, B](c, _ => k)
     def |>[R, A, B](c: Cont[R, A], x: =>B): Cont[R, B] = map[R, A, B](c, _ => x)
     // $COVERAGE-ON$
@@ -49,7 +50,7 @@ private [deepembedding] object ContOps {
     }
 }
 
-private [deepembedding] class Cont[R, +A](val cont: (A => Bounce[R]) => Bounce[R]) extends AnyVal
+private [deepembedding] final class Cont[R, +A](val cont: (A => Bounce[R]) => Bounce[R]) extends AnyVal
 private [deepembedding] object Cont {
     implicit val ops: ContOps[Cont] = new ContOps[Cont] {
         override def wrap[R, A](x: A): Cont[R, A] = new Cont(k => new Thunk(() => k(x)))
@@ -67,7 +68,8 @@ private [deepembedding] object Cont {
     }
 }
 
-private [deepembedding] class Id[R, +A](val x: A)
+// We can't use a value class here, see: https://github.com/lampepfl/dotty/issues/11264
+private [deepembedding] final class Id[R, +A](val x: A) /*extends AnyVal*/
 private [deepembedding] object Id {
     implicit val ops: ContOps[Id] = new ContOps[Id] {
         override def wrap[R, A](x: A): Id[R, A] = new Id(x)
