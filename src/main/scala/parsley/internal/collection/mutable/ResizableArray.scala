@@ -1,14 +1,13 @@
 /* SPDX-FileCopyrightText: © 2022 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package parsley.internal.deepembedding.backend
+package parsley.internal.collection.mutable
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 // This is designed to be a lighter-weight wrapper around Array to make it resizeable
-private [backend] final class ResizableArray[A: ClassTag](initialSize: Int = ResizableArray.InitialSize)
-{
+private [internal] final class ResizableArray[A: ClassTag](initialSize: Int = ResizableArray.InitialSize) {
     private [this] var array: Array[A] = new Array(initialSize)
     private [this] var size = 0
 
@@ -32,6 +31,6 @@ private [backend] final class ResizableArray[A: ClassTag](initialSize: Int = Res
         res
     }
 }
-private [backend] object ResizableArray {
+private [internal] object ResizableArray {
     val InitialSize = 16
 }

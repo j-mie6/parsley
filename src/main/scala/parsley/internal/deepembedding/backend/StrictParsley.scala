@@ -10,6 +10,7 @@ import scala.language.{higherKinds, implicitConversions}
 import parsley.BadLazinessException
 import parsley.registers.Reg
 
+import parsley.internal.collection.mutable.ResizableArray
 import parsley.internal.deepembedding.ContOps, ContOps.{safeCall, GenOps, perform, result, ContAdapter}
 import parsley.internal.machine.instructions, instructions.{Instr, JumpTable, Label}
 
