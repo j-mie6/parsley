@@ -3,8 +3,11 @@
  */
 package parsley
 
-import parsley.Parsley.{empty, pure, unit}
+import scala.collection.mutable
+
+import parsley.Parsley.{empty, fresh, pure, unit}
 import parsley.combinator.{when, whileP}
+import parsley.implicits.zipped.Zipped2
 
 import parsley.internal.deepembedding.{frontend, singletons}
 
@@ -384,6 +387,7 @@ object registers {
       * @param step the change in induction variable on each iteration.
       * @param body the body of the loop performed each iteration, which has access to the current value of the state.
       * @return a parser that initialises some state with `init` and then parses body until `cond` is true, modifying the state each iteration with `step`.
+      * @see [[parsley.registers.forYieldP_ `forYieldP_`]] for a version that returns the results of each `body` parse.
       * @group comb
       */
     def forP_[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: Parsley[A] => Parsley[_]): Parsley[Unit] = {
@@ -394,16 +398,41 @@ object registers {
         }
     }
 
-    /*def forYieldP_[A, B](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: Parsley[A] => Parsley[B]): Parsley[List[B]] = {
-        import parsley.Parsley.fresh
-        import scala.collection.mutable
-        import parsley.implicits.zipped.Zipped2
+    /** This combinator allows for the repeated execution of a parser `body` in a stateful loop, `body` will have access to the current value of the state.
+      *
+      * `forP_(init, cond, step)(body)` behaves much like a traditional for comprehension using `init`, `cond`, `step` and `body` as parsers
+      * which control the loop itself. First, a register `r` is created and initialised with `init`. Then `cond` is parsed, producing
+      * the function `pred`. If `r.gets(pred)` returns true, then `body` is parsed, then `r` is modified with the result of parsing `step`.
+      * This repeats until `r.gets(pred)` returns false. This is useful for performing certain context sensitive tasks. Unlike `forP_` the
+      * results of the body invokations are returned in a list.
+      *
+      * @example the classic context sensitive grammar of `a^n^b^n^c^n^` can be matched using `forP_`:
+      * {{{
+      * val r = Reg.make[Int]
+      *
+      * r.put(0) *>
+      * many('a' *> r.modify(_+1)) *>
+      * forYieldP_[Int](r.get, pure(_ != 0), pure(_ - 1)){_ => 'b'} *>
+      * forYieldP_[Int](r.get, pure(_ != 0), pure(_ - 1)){_ => 'c'}
+      * }}}
+      *
+      * This will return a list `n` `'c'` characters.
+      *
+      * @param init the initial value of the induction variable.
+      * @param cond the condition by which the loop terminates.
+      * @param step the change in induction variable on each iteration.
+      * @param body the body of the loop performed each iteration, which has access to the current value of the state.
+      * @return a parser that initialises some state with `init` and then parses body until `cond` is true, modifying the state each iteration with `step`.
+      * @see [[parsley.registers.forP_ `forP_`]] for a version that ignores the results of the body.
+      * @group comb
+      */
+    def forYieldP_[A, B](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: Parsley[A] => Parsley[B]): Parsley[List[B]] = {
         fresh(mutable.ListBuffer.empty[B]).fillReg { acc =>
             forP_(init, cond, step) { x =>
                 acc.put((acc.get, body(x)).zipped(_ += _))
             } *> acc.gets(_.toList)
         }
-    }*/
+    }
 
     /** This combinator allows for the repeated execution of a parser in a stateful loop.
       *
@@ -427,6 +456,7 @@ object registers {
       * @param step the change in induction variable on each iteration.
       * @param body the body of the loop performed each iteration.
       * @return a parser that initialises some state with `init` and then parses body until `cond` is true, modifying the state each iteration with `step`.
+      * @see [[parsley.registers.forYieldP `forYieldP`]] for a version that returns the results of each `body` parse.
       * @group comb
       */
     def forP[A](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: =>Parsley[_]): Parsley[Unit] = {
@@ -436,14 +466,40 @@ object registers {
         }
     }
 
-    /*def forYieldP[A, B](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: =>Parsley[B]): Parsley[List[B]] = {
-        import parsley.Parsley.fresh
-        import scala.collection.mutable
-        import parsley.implicits.zipped.Zipped2
+    /** This combinator allows for the repeated execution of a parser in a stateful loop.
+      *
+      * `forYieldP(init, cond, step)(body)` behaves much like a traditional for comprehension using `init`, `cond`, `step` and `body` as parsers
+      * which control the loop itself. First, a register `r` is created and initialised with `init`. Then `cond` is parsed, producing
+      * the function `pred`. If `r.gets(pred)` returns true, then `body` is parsed, then `r` is modified with the result of parsing `step`.
+      * This repeats until `r.gets(pred)` returns false. This is useful for performing certain context sensitive tasks. Unlike `forP` the
+      * results of the body invokations are returned in a list.
+      *
+      * @example the classic context sensitive grammar of `a^n^b^n^c^n^` can be matched using `forP`:
+      * {{{
+      * val r = Reg.make[Int]
+      *
+      * r.put(0) *>
+      * many('a' *> r.modify(_+1)) *>
+      * forYieldP[Int](r.get, pure(_ != 0), pure(_ - 1)){'b'} *>
+      * forYieldP[Int](r.get, pure(_ != 0), pure(_ - 1)){'c'}
+      * }}}
+      *
+      * This will return a list `n` `'c'` characters.
+      *
+      * @param init the initial value of the induction variable.
+      * @param cond the condition by which the loop terminates.
+      * @param step the change in induction variable on each iteration.
+      * @param body the body of the loop performed each iteration.
+      * @return a parser that initialises some state with `init` and then parses body until `cond` is true, modifying the state each iteration with `step`.
+      *         The results of the iterations are returned in a list.
+      * @see [[parsley.registers.forP `forP`]] for a version that ignores the results.
+      * @group comb
+      */
+    def forYieldP[A, B](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: =>Parsley[B]): Parsley[List[B]] = {
         fresh(mutable.ListBuffer.empty[B]).fillReg { acc =>
             forP(init, cond, step) {
                 acc.put((acc.get, body).zipped(_ += _))
             } *> acc.gets(_.toList)
         }
-    }*/
+    }
 }

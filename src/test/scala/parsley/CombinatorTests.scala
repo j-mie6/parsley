@@ -5,7 +5,7 @@ package parsley
 
 import parsley.combinator.{exactly => repeat, _}
 import parsley.Parsley._
-import parsley.registers.{forP, Reg}
+import parsley.registers.{forYieldP, forYieldP_, Reg}
 import parsley.implicits.character.{charLift, stringLift}
 
 import scala.language.implicitConversions
@@ -191,16 +191,29 @@ class CombinatorTests extends ParsleyTest {
         someUntil('a', 'b').parse("b") shouldBe a [Failure[_]]
     }
 
-    "forP" should "be able to parse context-sensitive grammars" in {
+    "forYieldP" should "be able to parse context-sensitive grammars" in {
         val r1 = Reg.make[Int]
-        def matching(p: Parsley[_]) = forP[Int](r1.get, pure(_ != 0), pure(_ - 1)) {
+        def matching[A](p: Parsley[A]) = forYieldP[Int, A](r1.get, pure(_ != 0), pure(_ - 1)) {
             p
         }
         val abc = r1.put(0) *>
                   many('a' *> r1.modify(_ + 1)) *>
                   matching('b') *>
                   matching('c')
-        abc.parse("aaabbbccc") should be (Success(()))
+        abc.parse("aaabbbccc") should be (Success(List('c', 'c', 'c')))
+        abc.parse("aaaabc") shouldBe a [Failure[_]]
+    }
+
+    "forYieldP_" should "be able to parse context-sensitive grammars" in {
+        val r1 = Reg.make[Int]
+        def matching[A](p: Parsley[A]) = forYieldP_[Int, A](r1.get, pure(_ != 0), pure(_ - 1)) { _ =>
+            p
+        }
+        val abc = r1.put(0) *>
+                  many('a' *> r1.modify(_ + 1)) *>
+                  matching('b') *>
+                  matching('c')
+        abc.parse("aaabbbccc") should be (Success(List('c', 'c', 'c')))
         abc.parse("aaaabc") shouldBe a [Failure[_]]
     }
 }
