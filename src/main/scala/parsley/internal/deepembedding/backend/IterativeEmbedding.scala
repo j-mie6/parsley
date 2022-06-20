@@ -7,6 +7,8 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.higherKinds
 
+import parsley.exceptions.NonProductiveIterationException
+
 import parsley.internal.deepembedding.ContOps, ContOps.{ContAdapter, result, suspend}
 import parsley.internal.deepembedding.singletons._
 import parsley.internal.machine.instructions
@@ -17,7 +19,7 @@ private [backend] sealed abstract class ManyLike[A, B](name: String, unit: B) ex
     def instr(label: Int): instructions.Instr
     def preamble(instrs: InstrBuffer): Unit
     final override def optimise: StrictParsley[B] = p match {
-        case _: Pure[_] => throw new Exception(s"$name given parser which consumes no input") // scalastyle:ignore throw
+        case _: Pure[_] => throw new NonProductiveIterationException(name) // scalastyle:ignore throw
         case _: MZero   => new Pure(unit)
         case _          => this
     }
@@ -50,7 +52,7 @@ private [deepembedding] final class SkipMany[A](val p: StrictParsley[A]) extends
 private [backend] sealed abstract class ChainLike[A](p: StrictParsley[A], op: StrictParsley[A => A]) extends StrictParsley[A] {
     def inlinable: Boolean = false
     override def optimise: StrictParsley[A] = op match {
-        case _: Pure[_] => throw new Exception("chain given parser which consumes no input") // scalastyle:ignore throw
+        case _: Pure[_] => throw new NonProductiveIterationException("chain") // scalastyle:ignore throw
         case _: MZero   => p
         case _          => this
     }

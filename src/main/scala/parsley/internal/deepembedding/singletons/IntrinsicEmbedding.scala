@@ -3,6 +3,7 @@
  */
 package parsley.internal.deepembedding.singletons
 
+import parsley.exceptions.EmptyStringException
 import parsley.registers.Reg
 
 import parsley.internal.deepembedding.backend.StrictParsley
@@ -22,7 +23,7 @@ private [parsley] final class StringTok(private [StringTok] val s: String, val e
     // $COVERAGE-ON$
     override def instr: instructions.Instr = instructions.StringTok(s, expected)
     override def optimise: StrictParsley[String] = s match {
-        case "" => new Pure("")
+        case "" => throw new EmptyStringException // scalastyle:ignore throw
         case _ => this
     }
 }

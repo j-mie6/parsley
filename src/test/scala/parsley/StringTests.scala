@@ -11,7 +11,7 @@ import scala.language.implicitConversions
 
 class StringTests extends ParsleyTest {
     private def stringPositionCheck(initialCol: Int, str: String) = {
-        (string("." * initialCol) *> string(str) *> pos).parse("." * initialCol + str)
+        ((if (initialCol == 0) pure("") else string("." * initialCol)) *> string(str) *> pos).parse("." * initialCol + str)
     }
 
     /*private def badStrings(str0: String, strs: String*) = {

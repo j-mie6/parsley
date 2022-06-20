@@ -7,7 +7,6 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.{higherKinds, implicitConversions}
 
-import parsley.BadLazinessException
 import parsley.registers.Reg
 
 import parsley.internal.collection.mutable.ResizableArray
