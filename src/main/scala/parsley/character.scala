@@ -416,7 +416,7 @@ object character
       * val res4 = Failure(..)
       * }}}
       *
-      * @param str0 the first string to try parse.
+      * @param str0 the first string to try to parse.
       * @param strs the remaining strings to try to parse.
       * @return a parser that tries to parse all the given strings returning the longest one that matches.
       * @since 4.0.0
@@ -424,15 +424,46 @@ object character
       */
     def strings(str0: String, strs: String*): Parsley[String] = strings(str0 -> pure(str0), strs.map(s => s -> pure(s)): _*)
 
-    // TODO: Publish to parsley-4.0.0!
-    // Assumes that the correct parsing of the string commits to the branch, i.e. there are no duplicates
-    // As a result the backtracking that is performed is minimised to the scope of the string itself
-    private def strings[A](str0: (String, Parsley[A]), strs: (String, Parsley[A])*): Parsley[A] = {
+    /** This combinator tries to parse each of the key-value pairs `kvs` (and `kv0`), until one of them succeeds.
+      *
+      * Each argument to this combinator is a pair of a string and a parser to perform if that string can be parsed.
+      * `strings(s0 -> p0, ...)` can be thought of as `attemptChoice(string(s0) *> p0, ...)`, however, the given
+      * ordering of key-value pairs does not dictate the order in which the parses are tried. In particular, it
+      * will favour keys that are the prefix of another key first, so that it has ''Longest Match'' semantics.
+      * it will try to minimise backtracking too, making it a much more efficient option than `attemptChoice`.
+      *
+      * @example {{{
+      * scala> import parsley.character.strings
+      * scala> val p = strings("hell" -> pure(4), "hello" -> pure(5), "goodbye" -> pure(7), "g" -> pure(1), "abc" -> pure(3))
+      * scala> p.parse("hell")
+      * val res0 = Success(4)
+      * scala> p.parse("hello")
+      * val res1 = Success(5)
+      * scala> p.parse("good")
+      * val res2 = Success(1)
+      * scala> p.parse("goodbye")
+      * val res3 = Success(7)
+      * scala> p.parse("a")
+      * val res4 = Failure(..)
+      * }}}
+      *
+      * @note the scope of any backtracking performed is isolated to the key itself, as it is assumed that once a
+      * key parses correctly, the branch has been committed to. Putting an `attempt` around the values will not affect
+      * this behaviour.
+      *
+      * @param kv0 the first key-value pair to try to parse.
+      * @param kvs the remaining key-value pairs to try to parse.
+      * @return a parser that tries to parse all the given key-value pairs, returning the (possibly failing) result
+      *         of the value that corresponds to the longest matching key.
+        @since 4.0.0
+        @group string
+      */
+    def strings[A](kv0: (String, Parsley[A]), kvs: (String, Parsley[A])*): Parsley[A] = {
         // this isn't the best we could do: it's possible to eliminate backtracking with a Trie...
         // can this be done in a semantic preserving way without resorting to a new instruction?
         // I don't think it's worth it. Down the line a general Trie-backed optimisation would be
         // more effective.
-        val ss = str0 +: strs
+        val ss = kv0 +: kvs
         choice(ss.groupBy(_._1.head).toList.sortBy(_._1).view.map(_._2).flatMap { s =>
             val (sLast, pLast) :: rest = s.toList.sortBy(_._1.length)
             ((string(sLast) *> pLast) :: rest.map { case (s, p) => attempt(string(s)) *> p }).reverse
