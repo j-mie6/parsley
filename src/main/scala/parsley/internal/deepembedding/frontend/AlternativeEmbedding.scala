@@ -7,9 +7,17 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.language.higherKinds
 
+import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 import parsley.internal.errors.{Desc, ErrorItem, Raw}
 
-private [parsley] final class <|>[A](p: LazyParsley[A], q: =>LazyParsley[A]) extends Binary[A, A, A](p, q) {
-    override def make(p: StrictParsley[A], q: StrictParsley[A]): StrictParsley[A] = backend.<|>(p, q)
+private [parsley] final class <|>[A](p: LazyParsley[A], q: LazyParsley[A]) extends LazyParsley[A] {
+    final override def findLetsAux[Cont[_, +_]: ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): Cont[R,Unit] = {
+        suspend(p.findLets[Cont, R](seen)) >> suspend(q.findLets(seen))
+    }
+    final override def preprocess[Cont[_, +_]: ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): Cont[R, StrictParsley[A_]] =
+        for {
+            p <- suspend(p.optimised[Cont, R, A])
+            q <- suspend(q.optimised[Cont, R, A])
+        } yield backend.<|>(p, q)
 }

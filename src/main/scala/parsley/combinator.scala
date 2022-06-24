@@ -56,10 +56,10 @@ import parsley.internal.deepembedding.{frontend, singletons}
   *
   *     In such a case where laziness is desired without resorting to the other lazier combinators, there
   *     is a neat trick: unroll the first iteration of the combinator, and use the corresponding regular combinator
-  *     to do that (i.e. `<::>`, `<|>` (with or without `attempt`), or `*>`): since these will have a lazy
+  *     to do that (i.e. `<::>` or `*>`): since these will have a lazy
   *     right-hand side, the remaining variadic arguments will be kept lazily suspended until later. Alternatively,
   *     it is possible to use the [[parsley.Parsley.LazyParsley.unary_~ prefix `~`]] combinator to make any individual
-  *     arguments lazy as required, for example `choice(p, ~q, r)`.
+  *     arguments lazy as required, for example `skip(p, ~q, r)`.
   *
   * @groupprio cond 75
   * @groupname cond Conditional Combinators
@@ -98,7 +98,6 @@ object combinator {
       * @return a parser that tries to parse one of `ps`.
       * @group multi
       * @see [[parsley.Parsley.<|> `<|>`]]
-      * @note $strict
       */
     def choice[A](ps: Parsley[A]*): Parsley[A] = ps.reduceRightOption(_ <|> _).getOrElse(empty)
 
@@ -128,7 +127,6 @@ object combinator {
       * @group multi
       * @see [[parsley.Parsley.<|> `<|>`]]
       * @see [[parsley.Parsley$.attempt `attempt`]]
-      * @note $strict
       * @note this combinator is not particularly efficient, because it may unnecessarily backtrack for each alternative.
       */
     def attemptChoice[A](ps: Parsley[A]*): Parsley[A] = ps.reduceRightOption((p, q) => attempt(p) <|> q).getOrElse(empty)
