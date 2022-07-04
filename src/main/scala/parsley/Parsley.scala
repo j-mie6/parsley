@@ -613,7 +613,33 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @since 2.0.0
       * @group filter
       */
-    def collect[B](pf: PartialFunction[A, B]): Parsley[B] = this.filter(pf.isDefinedAt).map(pf)
+    def collect[B](pf: PartialFunction[A, B]): Parsley[B] = this.filterMap(pf.lift)
+    /** This combinator applies a function `f` to the result of this parser: if it returns a
+      * `Some(y)`, `y` is returned, otherwise the parser fails.
+      *
+      * First, parse this parser. If it succeeds, apply the function `f` to the result `x`. If
+      * `f(x)` returns `Some(y)`, return `y`. If `f(x)` returns `None`, or this parser failed
+      * then this combinator fails. Is a more efficient way of performing a `filter` and `map`
+      * at the same time.
+      *
+      * @example {{{
+      * scala> val int: Parsley[Int] = ..
+      * scala> val safeDiv: Parsley[Int] = (int <~> char(' ') *> int).collect {
+      *   case (x, y) if y != 0 => Some(x / y)
+      *   case _ => None
+      * }
+      * scala> safeDiv.parse("7 0")
+      * val res0 = Failure(..) // y cannot be 0!
+      * scala> safeDiv.parse("10 2")
+      * val res1 = Success(5)
+      * }}}
+      *
+      * @param f the function used to both filter the result of this parser and transform it.
+      * @return a parser that returns the result of this parser applied to `f`, if it yields a value.
+      * @since 4.0.0
+      * @group filter
+      */
+    def filterMap[B](f: A => Option[B]): Parsley[B] = new Parsley(new frontend.FilterMap(this.internal, f))
 
     // FOLDING COMBINATORS
     /** This combinator will parse this parser '''zero''' or more times combining the results with the function `f` and base value `k` from the right.

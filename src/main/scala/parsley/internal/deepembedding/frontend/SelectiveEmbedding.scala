@@ -26,6 +26,9 @@ private [parsley] final class FastUnexpected[A](p: LazyParsley[A], msggen: A => 
 private [parsley] final class Filter[A](p: LazyParsley[A], pred: A => Boolean) extends Unary[A, A](p) {
     override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.Filter(p, pred)
 }
+private [parsley] final class FilterMap[A, B](p: LazyParsley[A], f: A => Option[B]) extends Unary[A, B](p) {
+    override def make(p: StrictParsley[A]): StrictParsley[B] = new backend.FilterMap(p, f)
+}
 private [parsley] final class FilterOut[A](p: LazyParsley[A], pred: PartialFunction[A, String]) extends Unary[A, A](p) {
     override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.FilterOut(p, pred)
 }
