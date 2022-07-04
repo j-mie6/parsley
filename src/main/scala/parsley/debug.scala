@@ -117,6 +117,10 @@ object debug {
         def debug(name: String, break: Breakpoint = NoBreak, coloured: Boolean = true): Parsley[A] = {
             new Parsley(new frontend.Debug[A](con(p).internal, name, !coloured, break))
         }
+
+        def debugError(name: String): Parsley[A] = {
+            new Parsley(new frontend.DebugError[A](con(p).internal, name))
+        }
     }
 }
 // $COVERAGE-ON$

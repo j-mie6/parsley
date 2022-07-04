@@ -113,9 +113,18 @@ private [deepembedding] final class Debug[A](val p: StrictParsley[A], name: Stri
             instrs += new instructions.LogEnd(name, ascii, (break eq ExitBreak) || (break eq FullBreak))
         }
     }
-    // $COVERAGE-OFF$
     final override def pretty(p: String): String = p
-    // $COVERAGE-ON$
+}
+private [deepembedding] final class DebugError[A](val p: StrictParsley[A], name: String) extends Unary[A, A] {
+    override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+        val handler = state.freshLabel()
+        instrs += new instructions.LogErrBegin(handler, name)
+        suspend(p.codeGen[Cont, R]) |> {
+            instrs += new instructions.Label(handler)
+            instrs += new instructions.LogErrEnd(name)
+        }
+    }
+    final override def pretty(p: String): String = p
 }
 // $COVERAGE-ON$
 
