@@ -613,7 +613,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @since 2.0.0
       * @group filter
       */
-    def collect[B](pf: PartialFunction[A, B]): Parsley[B] = this.filterMap(pf.lift)
+    def collect[B](pf: PartialFunction[A, B]): Parsley[B] = this.mapFilter(pf.lift)
     /** This combinator applies a function `f` to the result of this parser: if it returns a
       * `Some(y)`, `y` is returned, otherwise the parser fails.
       *
@@ -639,7 +639,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @since 4.0.0
       * @group filter
       */
-    def filterMap[B](f: A => Option[B]): Parsley[B] = new Parsley(new frontend.FilterMap(this.internal, f))
+    def mapFilter[B](f: A => Option[B]): Parsley[B] = new Parsley(new frontend.MapFilter(this.internal, f))
 
     // FOLDING COMBINATORS
     /** This combinator will parse this parser '''zero''' or more times combining the results with the function `f` and base value `k` from the right.

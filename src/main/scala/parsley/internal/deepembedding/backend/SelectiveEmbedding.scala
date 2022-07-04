@@ -118,7 +118,7 @@ private [deepembedding] final class Filter[A](val p: StrictParsley[A], pred: A =
     final override def pretty(p: String): String = s"$p.filter(?)"
     // $COVERAGE-ON$
 }
-private [deepembedding] final class FilterMap[A, B](val p: StrictParsley[A], f: A => Option[B]) extends Unary[A, B] {
+private [deepembedding] final class MapFilter[A, B](val p: StrictParsley[A], f: A => Option[B]) extends Unary[A, B] {
     final override def optimise: StrictParsley[B] = p match {
         case Pure(x) => f(x).map(new Pure(_)).getOrElse(Empty)
         case z: MZero => z
@@ -126,11 +126,11 @@ private [deepembedding] final class FilterMap[A, B](val p: StrictParsley[A], f: 
     }
 
     final override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
-        suspend(p.codeGen[Cont, R]) |> (instrs += new instructions.FilterMap(f))
+        suspend(p.codeGen[Cont, R]) |> (instrs += new instructions.MapFilter(f))
     }
 
     // $COVERAGE-OFF$
-    final override def pretty(p: String): String = s"$p.filterMap(?)"
+    final override def pretty(p: String): String = s"$p.mapFilter(?)"
     // $COVERAGE-ON$
 }
 private [deepembedding] final class FilterOut[A](val p: StrictParsley[A], pred: PartialFunction[A, String])

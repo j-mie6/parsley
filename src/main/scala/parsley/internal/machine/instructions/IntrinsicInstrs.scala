@@ -131,14 +131,14 @@ private [internal] final class Filter[A](_pred: A => Boolean) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class FilterMap[A, B](_f: A => Option[B]) extends Instr {
+private [internal] final class MapFilter[A, B](_f: A => Option[B]) extends Instr {
     private [this] val f = _f.asInstanceOf[Any => Option[Any]]
     override def apply(ctx: Context): Unit = f(ctx.stack.upeek) match {
         case Some(x) => ctx.exchangeAndContinue(x)
         case None => ctx.fail(new EmptyError(ctx.offset, ctx.line, ctx.col))
     }
     // $COVERAGE-OFF$
-    override def toString: String = "FilterMap(?)"
+    override def toString: String = "MapFilter(?)"
     // $COVERAGE-ON$
 }
 
