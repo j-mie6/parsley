@@ -227,7 +227,7 @@ private [internal] final class SwapAndPut(reg: Int) extends Instr {
         ctx.inc()
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"SwapAndPut($reg)"
+    override def toString: String = s"SwapAndPut(r$reg)"
     // $COVERAGE-ON$
 }
 

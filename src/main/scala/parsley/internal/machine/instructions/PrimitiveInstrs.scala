@@ -70,7 +70,7 @@ private [internal] object Col extends Instr {
 private [internal] final class Get(reg: Int) extends Instr {
     override def apply(ctx: Context): Unit = ctx.pushAndContinue(ctx.regs(reg))
     // $COVERAGE-OFF$
-    override def toString: String = s"Get($reg)"
+    override def toString: String = s"Get(r$reg)"
     // $COVERAGE-ON$
 }
 
@@ -80,7 +80,7 @@ private [internal] final class Put(reg: Int) extends Instr {
         ctx.inc()
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"Put($reg)"
+    override def toString: String = s"Put(r$reg)"
     // $COVERAGE-ON$
 }
 
@@ -90,7 +90,7 @@ private [internal] final class PutAndFail(reg: Int) extends Instr {
         ctx.fail()
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"PutAndFail($reg)"
+    override def toString: String = s"PutAndFail(r$reg)"
     // $COVERAGE-ON$
 }
 
@@ -151,6 +151,6 @@ private [parsley] final class CalleeSave(var label: Int, reqSize: Int, slots: Li
     }
 
     // $COVERAGE-OFF$
-    override def toString: String = s"CalleeSave($label)"
+    override def toString: String = s"CalleeSave($label, newSz = $reqSize, slotsToSave = $slots)"
     // $COVERAGE-ON$
 }

@@ -75,10 +75,11 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     }
 
     final private def computeInstrs(ops: GenOps): (Array[Instr], Int) = pipeline(ops)
-
-    final private [parsley] lazy val (instrs: Array[Instr], numRegs: Int) = {
+    final private [deepembedding] def computeInstrs: (Array[Instr], Int) = {
         if (cps) computeInstrs(Cont.ops.asInstanceOf[GenOps]) else safeCall(computeInstrs(_))
     }
+
+    final private [parsley] lazy val (instrs: Array[Instr], numRegs: Int) = computeInstrs
 
     // $COVERAGE-OFF$
     final private [internal] def prettyAST: String = {

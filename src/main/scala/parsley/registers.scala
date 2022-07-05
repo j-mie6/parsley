@@ -288,13 +288,16 @@ object registers {
       * @group reg
       */
     object Reg {
-        /** This function creates a new register of a given type.
+        /** This function creates a new (global) register of a given type.
           *
           * The register created by this function is not allocated to any specific parser until it has been
-          * used by a parser.
+          * used by a parser. It should not be used with multiple different parsers.
           *
           * @tparam A the type to be contained in this register during runtime
           * @return a new register which can contain the given type.
+          * @note registers created in this manner ''must'' be initialised in the top-level parser and not
+          *       inside a `flatMap`, as this may make them corrupt other registers. They should be used with
+          *       caution. It is recommended to use `makeReg` and `fillReg` where possible.
           * @since 2.2.0
           */
         def make[A]: Reg[A] = new Reg
