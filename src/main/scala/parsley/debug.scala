@@ -118,8 +118,8 @@ object debug {
             new Parsley(new frontend.Debug[A](con(p).internal, name, !coloured, break))
         }
 
-        def debugError(name: String): Parsley[A] = {
-            new Parsley(new frontend.DebugError[A](con(p).internal, name))
+        def debugError(name: String, coloured: Boolean = true): Parsley[A] = {
+            new Parsley(new frontend.DebugError[A](con(p).internal, name, !coloured))
         }
     }
 }

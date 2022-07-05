@@ -33,7 +33,7 @@ private [parsley] final class NewReg[S, A](val reg: Reg[S], init: LazyParsley[S]
 private [parsley] final class Debug[A](p: LazyParsley[A], name: String, ascii: Boolean, break: Breakpoint) extends Unary[A, A](p) {
     override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.Debug(p, name, ascii, break)
 }
-private [parsley] final class DebugError[A](p: LazyParsley[A], name: String) extends Unary[A, A](p) {
-    override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.DebugError(p, name)
+private [parsley] final class DebugError[A](p: LazyParsley[A], name: String, ascii: Boolean) extends Unary[A, A](p) {
+    override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.DebugError(p, name, ascii)
 }
 // $COVERAGE-ON$
