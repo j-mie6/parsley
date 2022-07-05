@@ -8,7 +8,7 @@ import parsley.internal.errors.{Desc, ErrorItem}
 import parsley.internal.machine.{Context, Failed, Finished, Good, Recover}
 import parsley.internal.machine.errors.EmptyError
 
-import Indenter.IndentWidth
+import Indenter.indentAndUnlines
 import InputSlicer.Pad
 import PrettyPortal.{Direction, Enter, Exit}
 
@@ -45,16 +45,13 @@ private [instructions] object PrettyPortal {
     }
 }
 
-private [instructions] trait Indenter {
-    final private def indent(ctx: Context) = " " * (ctx.debuglvl * 2)
-    final protected def indentAndUnlines(ctx: Context, lines: String*): String = {
+private [instructions] object Indenter {
+    val IndentWidth: Int = 2
+    private def indent(ctx: Context) = " " * (ctx.debuglvl * 2)
+    def indentAndUnlines(ctx: Context, lines: String*): String = {
         lines.map(line => s"${indent(ctx)}$line").mkString("\n")
     }
 }
-private [instructions] object Indenter {
-    val IndentWidth: Int = 2
-}
-
 
 private [instructions] trait InputSlicer { this: Colours =>
     private def start(ctx: Context): Int = Math.max(ctx.offset - Pad, 0)
@@ -73,7 +70,7 @@ private [instructions] object InputSlicer {
     val Pad: Int = 5
 }
 
-private [instructions] trait Logger extends PrettyPortal with InputSlicer with Indenter { this: Colours =>
+private [instructions] trait Logger extends PrettyPortal with InputSlicer { this: Colours =>
     final protected def preludeString(dir: Direction, ctx: Context, ends: String = "") = {
         val input = this.slice(ctx)
         val prelude = s"${portal(dir, ctx)} (${ctx.line}, ${ctx.col}): "
