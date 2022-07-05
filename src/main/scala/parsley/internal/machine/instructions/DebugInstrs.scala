@@ -70,7 +70,7 @@ private [instructions] object InputSlicer {
     val Pad: Int = 5
 }
 
-private [instructions] trait Logger extends PrettyPortal with InputSlicer { this: Colours =>
+private [instructions] trait Logger extends PrettyPortal with InputSlicer with Colours {
     final protected def preludeString(dir: Direction, ctx: Context, ends: String = "") = {
         val input = this.slice(ctx)
         val prelude = s"${portal(dir, ctx)} (${ctx.line}, ${ctx.col}): "
@@ -86,7 +86,7 @@ private [instructions] trait Logger extends PrettyPortal with InputSlicer { this
     }
 }
 
-private [internal] final class LogBegin(var label: Int, val name: String, val ascii: Boolean, break: Boolean) extends InstrWithLabel with Logger with Colours {
+private [internal] final class LogBegin(var label: Int, val name: String, val ascii: Boolean, break: Boolean) extends InstrWithLabel with Logger {
     override def apply(ctx: Context): Unit = {
         println(preludeString(Enter, ctx))
         if (break) doBreak(ctx)
@@ -97,7 +97,7 @@ private [internal] final class LogBegin(var label: Int, val name: String, val as
     override def toString: String = s"LogBegin($label, $name)"
 }
 
-private [internal] final class LogEnd(val name: String, val ascii: Boolean, break: Boolean) extends Instr with Logger with Colours {
+private [internal] final class LogEnd(val name: String, val ascii: Boolean, break: Boolean) extends Instr with Logger {
     override def apply(ctx: Context): Unit = {
         ctx.debuglvl -= 1
         val end = " " + (ctx.status match {
@@ -116,7 +116,25 @@ private [internal] final class LogEnd(val name: String, val ascii: Boolean, brea
     override def toString: String = s"LogEnd($name)"
 }
 
-private [internal] final class LogErrBegin(var label: Int, val name: String, val ascii: Boolean) extends InstrWithLabel with Colours {
+private [instructions] trait ErrLogger extends Colours {
+    /*
+    final protected def preludeString(dir: Direction, ctx: Context, ends: String = "") = {
+        val input = this.slice(ctx)
+        val prelude = s"${portal(dir, ctx)} (${ctx.line}, ${ctx.col}): "
+        val caret = (" " * prelude.length) + this.caret(ctx)
+        indentAndUnlines(ctx, s"$prelude$input$ends", caret)
+    }
+    final protected def doBreak(ctx: Context): Unit = {
+        print(indentAndUnlines(ctx,
+                s"{stack: ${ctx.stack.mkString(", ")}}",
+                s"{registers: ${ctx.regs.zipWithIndex.map{case (x, i) => s"r$i: $x"}.mkString("[", ", ", "])}")}}",
+                "..."))
+        Console.in.read()
+    }
+    */
+}
+
+private [internal] final class LogErrBegin(var label: Int, val name: String, val ascii: Boolean) extends InstrWithLabel with ErrLogger {
     override def apply(ctx: Context): Unit = {
         ctx.debuglvl += 1
         // This should print out a classic opening line, followed by the currently in-flight hints
@@ -126,7 +144,7 @@ private [internal] final class LogErrBegin(var label: Int, val name: String, val
     override def toString: String = s"LogErrBegin($label, $name)"
 }
 
-private [internal] final class LogErrEnd(val name: String, val ascii: Boolean) extends Instr with Colours {
+private [internal] final class LogErrEnd(val name: String, val ascii: Boolean) extends Instr with ErrLogger {
     override def apply(ctx: Context): Unit = {
         ctx.debuglvl -= 1
         ctx.status match {
