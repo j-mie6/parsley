@@ -24,7 +24,7 @@ import stacks.{ArrayStack, CallStack, CheckStack, ErrorStack, HandlerStack, Hint
 private [parsley] final class Context(private [machine] var instrs: Array[Instr],
                                       private [machine] var input: String,
                                       numRegs: Int,
-                                      private val sourceFile: Option[String] = None) {
+                                      private val sourceFile: Option[String]) {
     /** This is the operand stack, where results go to live  */
     private [machine] val stack: ArrayStack[Any] = new ArrayStack()
     /** Current offset into the input */
@@ -73,6 +73,11 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     private [machine] def commitHints(): Unit = {
         this.hintStack = this.hintStack.tail
     }
+
+    /* Error Debugging Info */
+    private [machine] def inFlightHints: DefuncHints = hints
+    private [machine] def inFlightError: DefuncError = errs.error
+    private [machine] def currentHintsValidOffset: Int = hintsValidOffset
 
     /* ERROR RELABELLING BEGIN */
     private [machine] def mergeHints(): Unit = {

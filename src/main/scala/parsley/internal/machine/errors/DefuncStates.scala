@@ -25,18 +25,21 @@ private [errors] final class TrivialState(offset: Int, outOfRange: Boolean) {
     def updateUnexpected(size: Int): Unit = if (outOfRange) updateUnexpected(Other(EndOfInput)) else updateUnexpected(Raw(size))
     def updateUnexpected(item: ErrorItem): Unit = updateUnexpected(Other(item))
     private def updateUnexpected(other: UnexpectItem): Unit = this.unexpected = unexpected.pickHigher(other)
-    def +=(expected: Option[ErrorItem]): Unit = if (acceptingExpected) (for (e <- expected) this.expecteds += e)
+    def +=(expected: Option[ErrorItem]): Unit = this ++= expected
     def +=(expected: ErrorItem): Unit = if (acceptingExpected) this.expecteds += expected
     def ++=(expecteds: Iterable[ErrorItem]): Unit = if (acceptingExpected) this.expecteds ++= expecteds
     def +=(reason: String): Unit = this.reasons += reason
     def mkError(implicit builder: ErrorItemBuilder): TrivialError = {
         new TrivialError(offset, line, col, unexpected.toErrorItem(offset), expecteds.toSet, reasons.toSet)
     }
+    def whenAcceptingExpected(action: =>Unit): Unit = if (acceptingExpected) action
     def ignoreExpected(action: =>Unit): Unit = {
         _acceptingExpected += 1
         action
         _acceptingExpected -= 1
     }
+
+    def asHintState: HintState = new HintState(expecteds)
 }
 private [errors] object TrivialState {
     private [TrivialState] sealed trait UnexpectItem {
@@ -77,12 +80,13 @@ private [errors] final class FancyState(offset: Int) {
     }
 }
 
-private [errors] final class HintState {
-    private val hints = mutable.Set.empty[ErrorItem]
+private [errors] final class HintState(hints: mutable.Set[ErrorItem]) {
+    def this() = this(mutable.Set.empty)
+
     private var _unexpectSize = 0
 
     def +=(hint: ErrorItem): Unit = this.hints += hint
-    def ++=(hints: Set[ErrorItem]): Unit = this.hints ++= hints
+    def ++=(hints: Iterable[ErrorItem]): Unit = this.hints ++= hints
 
     def unexpectSize: Int = _unexpectSize
     def updateSize(sz: Int): Unit = _unexpectSize = Math.max(_unexpectSize, sz)

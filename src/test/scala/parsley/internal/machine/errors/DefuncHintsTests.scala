@@ -14,7 +14,7 @@ import scala.annotation.nowarn
 class DefuncHintsTests extends ParsleyTest {
     def mkErr(labels: String*): DefuncError = {
         assert(labels.nonEmpty)
-        MultiExpectedError(0, 0, 0, labels.map(Desc(_)).toSet, 1)
+        new MultiExpectedError(0, 0, 0, labels.map(Desc(_)).toSet, 1)
     }
 
     "EmptyHints" should "have size 0" in {

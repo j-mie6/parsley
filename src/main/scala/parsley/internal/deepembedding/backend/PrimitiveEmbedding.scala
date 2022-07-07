@@ -120,6 +120,7 @@ private [deepembedding] final class DebugError[A](val p: StrictParsley[A], name:
         val handler = state.freshLabel()
         instrs += new instructions.LogErrBegin(handler, name, ascii)
         suspend(p.codeGen[Cont, R]) |> {
+            instrs += instructions.Swap
             instrs += new instructions.Label(handler)
             instrs += new instructions.LogErrEnd(name, ascii)
         }

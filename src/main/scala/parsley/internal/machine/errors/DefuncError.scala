@@ -3,9 +3,6 @@
  */
 package parsley.internal.machine.errors
 
-import scala.annotation.tailrec
-import scala.collection.mutable
-
 import parsley.internal.errors.{Desc, ErrorItem, FancyError, ParseError, TrivialError}
 
 /* This file contains the defunctionalised forms of the error messages.
@@ -42,52 +39,48 @@ private [machine] sealed abstract class DefuncError {
         case terr: MakesTrivial if terr.isTrivialError => terr.makeTrivial
         case ferr: MakesFancy                          => ferr.makeFancy
     }
-    @tailrec private [errors] final def collectHints()(implicit state: HintState): Unit = (this: @unchecked) match {
-        case BaseError(expected)      =>
-            for (item <- expected) state += item
-            state.updateSize(1)
-        case self: TokenError         =>
-            for (item <- self.expected) state += item
+    private [errors] final def collectHints(state: HintState): Unit = (this: @unchecked) match {
+        case self: BaseError          =>
+            state ++= self.expectedIterable
             state.updateSize(self.size)
-        case self: MultiExpectedError =>
-            state.updateSize(self.size)
-            state ++= self.expected
         case self: WithLabel          => if (self.label.nonEmpty) state += Desc(self.label)
-        case self: WithReason         => self.err.collectHints()
+        case self: WithReason         => self.err.collectHints(state)
         case self: WithHints          =>
-            self.hints.collect(0)
-            self.err.collectHints()
+            self.hints.collect(0, state)
+            self.err.collectHints(state)
         case self: MergedErrors       =>
-            self.err1.collectHintsNonTail()
-            self.err2.collectHints()
-        case self: Amended            => self.err.collectHints()
-        case self: Entrenched         => self.err.collectHints()
-    }
-    final private def collectHintsNonTail()(implicit state: HintState): Unit = collectHints()
-}
-
-private [errors] object BaseError {
-    def unapply(err: DefuncError): Option[Option[ErrorItem]] = err match {
-        case err: ClassicExpectedError           => Some(err.expected)
-        case err: ClassicExpectedErrorWithReason => Some(err.expected)
-        case err: ClassicUnexpectedError         => Some(err.expected)
-        case err: EmptyError                     => Some(None)
-        case err: EmptyErrorWithReason           => Some(None)
-        case _                                   => None
+            self.err1.collectHints(state)
+            self.err2.collectHints(state)
+        case self: Amended            => self.err.collectHints(state)
+        case self: Entrenched         => self.err.collectHints(state)
     }
 }
 
-private [machine] case class ClassicExpectedError(offset: Int, line: Int, col: Int, expected: Option[ErrorItem]) extends DefuncError with MakesTrivial {
+/** This is the common supertype of all "regular" trivial errors: those that result from failures as opposed to operations on errors.
+  */
+private [errors] sealed abstract class BaseError extends DefuncError with MakesTrivial {
+    /** The size of the unexpected token demanded by this error */
+    def size: Int
+    // def expected: IterableOnce[ErrorItem] // when 2.12 is dropped this will work better
+    /** The error items produced by this error */
+    def expectedIterable: Iterable[ErrorItem]
+}
+
+private [machine] final class ClassicExpectedError(val offset: Int, val line: Int, val col: Int, val expected: Option[ErrorItem]) extends BaseError {
     val isExpectedEmpty: Boolean = expected.isEmpty
+    override def size = 1
+    override def expectedIterable: Iterable[ErrorItem] = expected
     override def makeTrivial(state: TrivialState): Unit = {
         state.pos_=(line, col)
-        state += expected
+        state ++= expected
         state.updateUnexpected(1)
     }
 }
-private [machine] case class ClassicExpectedErrorWithReason(offset: Int, line: Int, col: Int, expected: Option[ErrorItem], reason: String)
-    extends DefuncError with MakesTrivial  {
+private [machine] final class ClassicExpectedErrorWithReason(val offset: Int, val line: Int, val col: Int, val expected: Option[ErrorItem], val reason: String)
+    extends BaseError {
     val isExpectedEmpty: Boolean = expected.isEmpty
+    override def size = 1
+    override def expectedIterable: Iterable[ErrorItem] = expected
     override def makeTrivial(state: TrivialState): Unit = {
         state.pos_=(line, col)
         state += expected
@@ -95,43 +88,50 @@ private [machine] case class ClassicExpectedErrorWithReason(offset: Int, line: I
         state.updateUnexpected(1)
     }
 }
-private [machine] case class ClassicUnexpectedError(offset: Int, line: Int, col: Int, expected: Option[ErrorItem], unexpected: ErrorItem)
-    extends DefuncError with MakesTrivial {
+private [machine] final class ClassicUnexpectedError(val offset: Int, val line: Int, val col: Int, val expected: Option[ErrorItem], val unexpected: ErrorItem)
+    extends BaseError {
     val isExpectedEmpty: Boolean = expected.isEmpty
+    override def size = 1
+    override def expectedIterable: Iterable[ErrorItem] = expected
     override def makeTrivial(state: TrivialState): Unit = {
         state.pos_=(line, col)
         state += expected
         state.updateUnexpected(unexpected)
     }
 }
-private [machine] case class ClassicFancyError(offset: Int, line: Int, col: Int, msgs: String*) extends DefuncError with MakesFancy {
+private [machine] final class ClassicFancyError(val offset: Int, val line: Int, val col: Int, val msgs: String*) extends DefuncError with MakesFancy {
     override def makeFancy(state: FancyState): Unit = {
         state.pos_=(line, col)
         state ++= msgs
     }
 }
-private [machine] case class EmptyError(offset: Int, line: Int, col: Int) extends DefuncError with MakesTrivial  {
+private [machine] final class EmptyError(val offset: Int, val line: Int, val col: Int) extends BaseError {
     val isExpectedEmpty: Boolean = true
+    override def size = 1
+    override def expectedIterable: Iterable[ErrorItem] = None
     override def makeTrivial(state: TrivialState): Unit = state.pos_=(line, col)
 }
-private [machine] case class TokenError(offset: Int, line: Int, col: Int, expected: Option[ErrorItem], size: Int) extends DefuncError with MakesTrivial  {
+private [machine] final class TokenError(val offset: Int, val line: Int, val col: Int, val expected: Option[ErrorItem], val size: Int) extends BaseError {
     val isExpectedEmpty: Boolean = expected.isEmpty
+    override def expectedIterable: Iterable[ErrorItem] = expected
     override def makeTrivial(state: TrivialState): Unit = {
         state.pos_=(line, col)
         state += expected
         state.updateUnexpected(size)
     }
 }
-private [machine] case class EmptyErrorWithReason(offset: Int, line: Int, col: Int, reason: String)
-    extends DefuncError with MakesTrivial  {
+private [machine] final class EmptyErrorWithReason(val offset: Int, val line: Int, val col: Int, val reason: String) extends BaseError {
     val isExpectedEmpty: Boolean = true
+    override def size = 1
+    override def expectedIterable: Iterable[ErrorItem] = None
     override def makeTrivial(state: TrivialState): Unit = {
         state.pos_=(line, col)
         state += reason
     }
 }
-private [machine] case class MultiExpectedError(offset: Int, line: Int, col: Int, expected: Set[ErrorItem], size: Int) extends DefuncError with MakesTrivial {
+private [machine] final class MultiExpectedError(val offset: Int, val line: Int, val col: Int, val expected: Set[ErrorItem], val size: Int) extends BaseError {
     val isExpectedEmpty: Boolean = expected.isEmpty
+    override def expectedIterable: Iterable[ErrorItem] = expected
     override def makeTrivial(state: TrivialState): Unit = {
         state.pos_=(line, col)
         state ++= expected
@@ -139,7 +139,7 @@ private [machine] case class MultiExpectedError(offset: Int, line: Int, col: Int
     }
 }
 
-private [errors] case class MergedErrors private (err1: DefuncError, err2: DefuncError) extends DefuncError with MakesTrivial with MakesFancy {
+private [errors] final class MergedErrors private (val err1: DefuncError, val err2: DefuncError) extends DefuncError with MakesTrivial with MakesFancy {
     // So long as the MergedErrors factory checks for parity and offset checks this is fine
     override val isTrivialError: Boolean = err1.isTrivialError
     override val isExpectedEmpty: Boolean = !isTrivialError || err1.isExpectedEmpty && err2.isExpectedEmpty
@@ -165,62 +165,62 @@ private [machine] object MergedErrors {
     }
 }
 
-private [errors] case class WithHints private (err: DefuncError, hints: DefuncHints) extends DefuncError with MakesTrivial {
+private [errors] final class WithHints private (val err: DefuncError with MakesTrivial, val hints: DefuncHints) extends DefuncError with MakesTrivial {
     // So long as the WithHints factory ensures hints is nonEmpty this is false
     val isExpectedEmpty: Boolean = false //err.isExpectedEmpty && hints.isEmpty
     val offset = err.offset
     override val entrenched: Boolean = err.entrenched
     override def makeTrivial(state: TrivialState): Unit = {
-        err.asInstanceOf[MakesTrivial].makeTrivial(state)
-        val (expecteds, size) = hints.toExpectedsAndSize
-        state ++= expecteds
-        state.updateUnexpected(size)
+        err.makeTrivial(state)
+        state.whenAcceptingExpected {
+            val size = hints.updateExpectedsAndGetSize(state)
+            state.updateUnexpected(size)
+        }
     }
 }
-
 private [machine] object WithHints {
     def apply(err: DefuncError, hints: DefuncHints): DefuncError = {
         if (hints.isEmpty || !err.isTrivialError) err
-        else new WithHints(err, hints)
+        else new WithHints(err.asInstanceOf[DefuncError with MakesTrivial], hints)
     }
 }
 
-private [errors] case class WithReason private (err: DefuncError, reason: String) extends DefuncError with MakesTrivial {
-    override val isTrivialError: Boolean = err.isTrivialError
+private [errors] final class WithReason private (val err: DefuncError with MakesTrivial, val reason: String) extends DefuncError with MakesTrivial {
     override val isExpectedEmpty: Boolean = err.isExpectedEmpty
     override val entrenched: Boolean = err.entrenched
     val offset = err.offset
     override def makeTrivial(state: TrivialState): Unit = {
-        err.asInstanceOf[MakesTrivial].makeTrivial(state)
+        err.makeTrivial(state)
         state += reason
     }
 }
 private [machine] object WithReason {
     def apply(err: DefuncError, reason: String): DefuncError = {
-        if (err.isTrivialError) new WithReason(err, reason)
+        if (err.isTrivialError) new WithReason(err.asInstanceOf[DefuncError with MakesTrivial], reason)
         else err
     }
 }
 
-private [errors] case class WithLabel private (err: DefuncError, label: String) extends DefuncError with MakesTrivial {
+private [errors] final class WithLabel private (val err: DefuncError with MakesTrivial, val label: String) extends DefuncError with MakesTrivial {
     val isExpectedEmpty: Boolean = label.isEmpty
     override val entrenched: Boolean = err.entrenched
     val offset = err.offset
     override def makeTrivial(state: TrivialState): Unit = {
         state.ignoreExpected {
-            err.asInstanceOf[MakesTrivial].makeTrivial(state)
+            err.makeTrivial(state)
         }
         if (label.nonEmpty) state += Desc(label)
     }
 }
 private [machine] object WithLabel {
     def apply(err: DefuncError, label: String): DefuncError = {
-        if (err.isTrivialError) new WithLabel(err, label)
+        if (err.isTrivialError) new WithLabel(err.asInstanceOf[DefuncError with MakesTrivial], label)
         else err
     }
 }
 
-private [errors] case class Amended private (offset: Int, line: Int, col: Int, err: DefuncError) extends DefuncError with MakesTrivial with MakesFancy {
+private [errors] final class Amended private (val offset: Int, val line: Int, val col: Int, val err: DefuncError)
+    extends DefuncError with MakesTrivial with MakesFancy {
     override val isTrivialError: Boolean = err.isTrivialError
     override val isExpectedEmpty: Boolean = err.isExpectedEmpty
     override def makeTrivial(state: TrivialState): Unit = {
@@ -239,7 +239,7 @@ private [machine] object Amended {
     }
 }
 
-private [errors] case class Entrenched private (err: DefuncError) extends DefuncError with MakesTrivial with MakesFancy {
+private [errors] final class Entrenched private (val err: DefuncError) extends DefuncError with MakesTrivial with MakesFancy {
     override val isTrivialError: Boolean = err.isTrivialError
     override val isExpectedEmpty: Boolean = err.isExpectedEmpty
     override val entrenched: Boolean = true
