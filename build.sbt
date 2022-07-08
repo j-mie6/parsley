@@ -113,8 +113,7 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     Test / unmanagedSourceDirectories ++= extraSources(baseDirectory.value.getParentFile, "test", scalaVersion.value),
     Test / unmanagedSourceDirectories ++= extraSources(baseDirectory.value, "test", scalaVersion.value),
 
-    // TODO: Ideally, we need to figure out how to enable optimisation flags and assertion disable on publish _only_!
-    scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature"/*, "-Xdisable-assertions"*/),
+    scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature"),
     scalacOptions ++= {
         if (scalaBinaryVersion.value == "3") Seq("-source:3.0-migration")
         // optimisation flags are not available on scala 3
@@ -123,7 +122,6 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     },
     // linters
     //scalacOptions ++= Seq("-Xlint:unused", "-Xlint:doc-detached"),
-    //Test / scalacOptions ~= { _.filterNot(_ == "-Xdisable-assertions") },
 
     Compile / doc / scalacOptions ++= Seq("-groups", "-doc-root-content", s"${baseDirectory.value.getParentFile.getPath}/rootdoc.md"),
     Compile / doc / scalacOptions ++= {

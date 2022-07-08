@@ -87,11 +87,17 @@ private [machine] sealed abstract class DefuncError {
       * @return either the merged error, or one of the two originals
       */
     private [machine] final def merge(err: DefuncError): DefuncError = {
-        if (this.offset > err.offset) this
-        else if (err.offset > this.offset) err
-        else if (!this.isTrivialError && err.isTrivialError) this
-        else if (this.isTrivialError && !err.isTrivialError) err
-        else new MergedErrors(this, err)
+        val thisOffset = this.offset
+        val otherOffset = err.offset
+        if (thisOffset > otherOffset) this
+        else if (otherOffset > thisOffset) err
+        else {
+            val thisTrivial = this.isTrivialError
+            val otherTrivial = err.isTrivialError
+            if (!thisTrivial && otherTrivial) this
+            else if (thisTrivial && !otherTrivial) err
+            else new MergedErrors(this, err)
+        }
     }
     private [machine] final def withHints(hints: DefuncHints): DefuncError = {
         if (hints.isEmpty || !this.isTrivialError) this
@@ -198,11 +204,12 @@ private [machine] final class MultiExpectedError(val offset: Int, val line: Int,
 }
 
 private [errors] final class MergedErrors private [errors] (val err1: DefuncError, val err2: DefuncError) extends DefuncError with MakesTrivial with MakesFancy {
-    // So long as the MergedErrors factory checks for parity and offset checks this is fine
+    assume(err1.isTrivialError == err2.isTrivialError, "two errors only merge when they have the same kind")
     override val isTrivialError: Boolean = err1.isTrivialError
+    assume(!(!isTrivialError) || err1.isExpectedEmpty && err2.isExpectedEmpty, "being a fancy error implies that your expected is empty")
     override val isExpectedEmpty: Boolean = /*!isTrivialError || */err1.isExpectedEmpty && err2.isExpectedEmpty
     override val entrenched: Boolean = err1.entrenched && err2.entrenched
-    // So long as the MergedErrors factory checks that they are equal we can pick arbitrarily
+    assume(err1.offset == err2.offset, "two errors only merge when they have matching offsets")
     val offset = err1.offset //Math.max(err1.offset, err2.offset)
     override def makeTrivial(state: TrivialState): Unit = {
         err1.asInstanceOf[MakesTrivial].makeTrivial(state)
@@ -215,7 +222,7 @@ private [errors] final class MergedErrors private [errors] (val err1: DefuncErro
 }
 
 private [errors] final class WithHints private [errors] (val err: DefuncError with MakesTrivial, val hints: DefuncHints) extends DefuncError with MakesTrivial {
-    // So long as the WithHints factory ensures hints is nonEmpty this is false
+    assume(!hints.isEmpty, "WithHints will always have non-empty hints")
     val isExpectedEmpty: Boolean = false //err.isExpectedEmpty && hints.isEmpty
     val offset = err.offset
     override val entrenched: Boolean = err.entrenched

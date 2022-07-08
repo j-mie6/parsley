@@ -90,7 +90,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
 
     private def addErrorToHints(): Unit = {
         val err = errs.error
-        // !err.isExpectedEmpty -> isTrivialError
+        assume(!(!err.isExpectedEmpty) || err.isTrivialError, "not having an empty expected implies you are a trivial error")
         if (/*err.isTrivialError*/ !err.isExpectedEmpty && err.offset == offset) {
             // If our new hints have taken place further in the input stream, then they must invalidate the old ones
             if (hintsValidOffset < offset) {
@@ -133,12 +133,27 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
 
     @tailrec private [parsley] def runParser[Err: ErrorBuilder, A](): Result[Err, A] = {
         //println(pretty)
-        if (status eq Failed) Failure(errs.error.asParseError.format(sourceFile))
+        if (status eq Failed) {
+            assert(!errs.isEmpty && errs.tail.isEmpty, "there should be exactly 1 parse error remaining at end of parse")
+            assert(handlers.isEmpty, "there must be no more handlers on end of parse")
+            assert(checkStack.isEmpty, "there must be no residual check remaining on end of parse")
+            assert(states.isEmpty, "there must be no residual states left at end of parse")
+            assert(hintStack.isEmpty, "there should be no hints remaining at end of parse")
+            Failure(errs.error.asParseError.format(sourceFile))
+        }
         else if (status ne Finished) {
             instrs(pc)(this)
             runParser[Err, A]()
         }
-        else if (calls.isEmpty) Success(stack.peek[A])
+        else if (calls.isEmpty) {
+            assert(stack.size == 1, "stack must end a parse with exactly one item")
+            assert(handlers.isEmpty, "there must be no more handlers on end of parse")
+            assert(checkStack.isEmpty, "there must be no residual check remaining on end of parse")
+            assert(states.isEmpty, "there must be no residual states left at end of parse")
+            assert(errs.isEmpty, "there should be no parse errors remaining at end of parse")
+            assert(hintStack.isEmpty, "there should be no hints remaining at end of parse")
+            Success(stack.peek[A])
+        }
         else {
             status = Good
             ret()

@@ -48,7 +48,7 @@ jobs:
         run: sbt versionCheck
 
       - name: Publish JVM
-        run: sbt ci-release
+        run: sbt 'set scalacOptions += "-Xdisable-assertions"' ci-release
         env:
           CI_RELEASE:          +publishSigned
           CI_SNAPSHOT_RELEASE: +publishSigned
@@ -58,7 +58,7 @@ jobs:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
 
       - name: Publish JS
-        run: sbt ci-release
+        run: sbt 'set scalacOptions += "-Xdisable-assertions"' ci-release
         env:
           CI_RELEASE:          +parsleyJS/publishSigned
           CI_SNAPSHOT_RELEASE: +parsleyJS/publishSigned
@@ -68,7 +68,7 @@ jobs:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
 
       - name: Publish Native
-        run: sbt ci-release
+        run: sbt 'set scalacOptions += "-Xdisable-assertions"' ci-release
         env:
           CI_RELEASE:          +parsleyNative/publishSigned
           CI_SNAPSHOT_RELEASE: +parsleyNative/publishSigned
