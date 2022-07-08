@@ -54,6 +54,36 @@ private [machine] sealed abstract class DefuncError {
         case self: Amended            => self.err.collectHints(state)
         case self: Entrenched         => self.err.collectHints(state)
     }
+
+    // Operations: these are the smart constructors for the hint operations, which will reduce the number of objects in the binary
+    // they all perform some form of simplification step to avoid unnecesary allocations
+    private [machine] final def merge(err: DefuncError): DefuncError = {
+        if (this.offset > err.offset) this
+        else if (err.offset > this.offset) err
+        else if (!this.isTrivialError && err.isTrivialError) this
+        else if (this.isTrivialError && !err.isTrivialError) err
+        else new MergedErrors(this, err)
+    }
+    private [machine] final def withHints(hints: DefuncHints): DefuncError = {
+        if (hints.isEmpty || !this.isTrivialError) this
+        else new WithHints(this.asInstanceOf[DefuncError with MakesTrivial], hints)
+    }
+    private [machine] final def withReason(reason: String): DefuncError = {
+        if (this.isTrivialError) new WithReason(this.asInstanceOf[DefuncError with MakesTrivial], reason)
+        else this
+    }
+    private [machine] final def label(label: String): DefuncError = {
+        if (this.isTrivialError) new WithLabel(this.asInstanceOf[DefuncError with MakesTrivial], label)
+        else this
+    }
+    private [machine] final def amend(offset: Int, line: Int, col: Int): DefuncError = {
+        if (!this.entrenched) new Amended(offset, line, col, this)
+        else this
+    }
+    private [machine] final def entrench: DefuncError = {
+        if (!this.entrenched) new Entrenched(this)
+        else this
+    }
 }
 
 /** This is the common supertype of all "regular" trivial errors: those that result from failures as opposed to operations on errors.
@@ -139,7 +169,7 @@ private [machine] final class MultiExpectedError(val offset: Int, val line: Int,
     }
 }
 
-private [errors] final class MergedErrors private (val err1: DefuncError, val err2: DefuncError) extends DefuncError with MakesTrivial with MakesFancy {
+private [errors] final class MergedErrors private [errors] (val err1: DefuncError, val err2: DefuncError) extends DefuncError with MakesTrivial with MakesFancy {
     // So long as the MergedErrors factory checks for parity and offset checks this is fine
     override val isTrivialError: Boolean = err1.isTrivialError
     override val isExpectedEmpty: Boolean = !isTrivialError || err1.isExpectedEmpty && err2.isExpectedEmpty
@@ -155,17 +185,8 @@ private [errors] final class MergedErrors private (val err1: DefuncError, val er
         err2.asInstanceOf[MakesFancy].makeFancy(state)
     }
 }
-private [machine] object MergedErrors {
-    def apply(err1: DefuncError, err2: DefuncError): DefuncError = {
-        if (err1.offset > err2.offset) err1
-        else if (err2.offset > err1.offset) err2
-        else if (!err1.isTrivialError && err2.isTrivialError) err1
-        else if (err1.isTrivialError && !err2.isTrivialError) err2
-        else new MergedErrors(err1, err2)
-    }
-}
 
-private [errors] final class WithHints private (val err: DefuncError with MakesTrivial, val hints: DefuncHints) extends DefuncError with MakesTrivial {
+private [errors] final class WithHints private [errors] (val err: DefuncError with MakesTrivial, val hints: DefuncHints) extends DefuncError with MakesTrivial {
     // So long as the WithHints factory ensures hints is nonEmpty this is false
     val isExpectedEmpty: Boolean = false //err.isExpectedEmpty && hints.isEmpty
     val offset = err.offset
@@ -178,14 +199,8 @@ private [errors] final class WithHints private (val err: DefuncError with MakesT
         }
     }
 }
-private [machine] object WithHints {
-    def apply(err: DefuncError, hints: DefuncHints): DefuncError = {
-        if (hints.isEmpty || !err.isTrivialError) err
-        else new WithHints(err.asInstanceOf[DefuncError with MakesTrivial], hints)
-    }
-}
 
-private [errors] final class WithReason private (val err: DefuncError with MakesTrivial, val reason: String) extends DefuncError with MakesTrivial {
+private [errors] final class WithReason private [errors] (val err: DefuncError with MakesTrivial, val reason: String) extends DefuncError with MakesTrivial {
     override val isExpectedEmpty: Boolean = err.isExpectedEmpty
     override val entrenched: Boolean = err.entrenched
     val offset = err.offset
@@ -194,14 +209,8 @@ private [errors] final class WithReason private (val err: DefuncError with Makes
         state += reason
     }
 }
-private [machine] object WithReason {
-    def apply(err: DefuncError, reason: String): DefuncError = {
-        if (err.isTrivialError) new WithReason(err.asInstanceOf[DefuncError with MakesTrivial], reason)
-        else err
-    }
-}
 
-private [errors] final class WithLabel private (val err: DefuncError with MakesTrivial, val label: String) extends DefuncError with MakesTrivial {
+private [errors] final class WithLabel private [errors] (val err: DefuncError with MakesTrivial, val label: String) extends DefuncError with MakesTrivial {
     val isExpectedEmpty: Boolean = label.isEmpty
     override val entrenched: Boolean = err.entrenched
     val offset = err.offset
@@ -212,14 +221,8 @@ private [errors] final class WithLabel private (val err: DefuncError with MakesT
         if (label.nonEmpty) state += Desc(label)
     }
 }
-private [machine] object WithLabel {
-    def apply(err: DefuncError, label: String): DefuncError = {
-        if (err.isTrivialError) new WithLabel(err.asInstanceOf[DefuncError with MakesTrivial], label)
-        else err
-    }
-}
 
-private [errors] final class Amended private (val offset: Int, val line: Int, val col: Int, val err: DefuncError)
+private [errors] final class Amended private [errors] (val offset: Int, val line: Int, val col: Int, val err: DefuncError)
     extends DefuncError with MakesTrivial with MakesFancy {
     override val isTrivialError: Boolean = err.isTrivialError
     override val isExpectedEmpty: Boolean = err.isExpectedEmpty
@@ -232,24 +235,12 @@ private [errors] final class Amended private (val offset: Int, val line: Int, va
         state.pos_=(line, col)
     }
 }
-private [machine] object Amended {
-    def apply(offset: Int, line: Int, col: Int, err: DefuncError): DefuncError = {
-        if (!err.entrenched) new Amended(offset, line, col, err)
-        else err
-    }
-}
 
-private [errors] final class Entrenched private (val err: DefuncError) extends DefuncError with MakesTrivial with MakesFancy {
+private [errors] final class Entrenched private [errors] (val err: DefuncError) extends DefuncError with MakesTrivial with MakesFancy {
     override val isTrivialError: Boolean = err.isTrivialError
     override val isExpectedEmpty: Boolean = err.isExpectedEmpty
     override val entrenched: Boolean = true
     val offset = err.offset
     override def makeTrivial(state: TrivialState): Unit = err.asInstanceOf[MakesTrivial].makeTrivial(state)
     override def makeFancy(state: FancyState): Unit = err.asInstanceOf[MakesFancy].makeFancy(state)
-}
-private [machine] object Entrenched {
-    def apply(err: DefuncError): DefuncError = {
-        if (!err.entrenched) new Entrenched(err)
-        else err
-    }
 }

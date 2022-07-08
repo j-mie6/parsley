@@ -25,43 +25,43 @@ class DefuncHintsTests extends ParsleyTest {
     }
 
     "AddError" should "should increase the size" in {
-        AddError(EmptyHints, mkErr("a")) should have size 1
+        EmptyHints.addError(mkErr("a")) should have size 1
     }
 
     "PopHints" should "have minimum size 0" in {
-        PopHints(EmptyHints) should have size 0
+        EmptyHints.pop should have size 0
     }
     it should "otherwise ensure it is smaller than before" in {
-        val hints = AddError(AddError(EmptyHints, mkErr("a")), mkErr("b"))
-        val hints_ = PopHints(hints)
+        val hints = EmptyHints.addError(mkErr("a")).addError(mkErr("b"))
+        val hints_ = hints.pop
         hints should have size 2
         hints_ should have size 1
         hints_.toSet should contain only (Desc("b"))
-        PopHints(hints_) shouldBe empty
+        hints_.pop shouldBe empty
     }
 
     "ReplaceHint" should "do nothing on empty" in {
-        ReplaceHint("hi", EmptyHints) shouldBe empty
+        EmptyHints.rename("hi") shouldBe empty
     }
     it should "replace the first set otherwise" in {
-        val hints = ReplaceHint("hi", AddError(AddError(EmptyHints, mkErr("a", "c")), mkErr("b")))
+        val hints = EmptyHints.addError(mkErr("a", "c")).addError(mkErr("b")).rename("hi")
         hints.toSet should contain only (Desc("hi"), Desc("b"))
     }
 
     "MergeHints" should "ensure all elements from both hints" in {
-        val hints1 = AddError(AddError(EmptyHints, mkErr("a")), mkErr("b"))
-        val hints2 = AddError(AddError(EmptyHints, mkErr("c")), mkErr("d"))
-        MergeHints(hints1, hints2).toSet should contain only (Desc("a"), Desc("b"), Desc("c"), Desc("d"))
+        val hints1 = EmptyHints.addError(mkErr("a")).addError(mkErr("b"))
+        val hints2 = EmptyHints.addError(mkErr("c")).addError(mkErr("d"))
+        hints1.merge(hints2).toSet should contain only (Desc("a"), Desc("b"), Desc("c"), Desc("d"))
     }
     it should "ensure pops on the right do not impact the left" in {
-        val hints1 = AddError(AddError(EmptyHints, mkErr("a")), mkErr("b"))
-        val hints2 = PopHints(AddError(AddError(EmptyHints, mkErr("c")), mkErr("d")))
-        MergeHints(hints1, hints2).toSet should contain only (Desc("a"), Desc("b"), Desc("d"))
+        val hints1 = EmptyHints.addError(mkErr("a")).addError(mkErr("b"))
+        val hints2 = EmptyHints.addError(mkErr("c")).addError(mkErr("d")).pop
+        hints1.merge(hints2).toSet should contain only (Desc("a"), Desc("b"), Desc("d"))
     }
     it should "ensure that if the left needs complete popping that is ok" in {
-        def hints1 = AddError(AddError(EmptyHints, mkErr("a")), mkErr("b"))
-        def hints2 = AddError(AddError(EmptyHints, mkErr("c")), mkErr("d"))
-        PopHints(PopHints(PopHints(MergeHints(hints1, hints2)))).toSet should contain only (Desc("d"))
-        PopHints(PopHints(MergeHints(PopHints(hints1), hints2))).toSet should contain only (Desc("d"))
+        def hints1 = EmptyHints.addError(mkErr("a")).addError(mkErr("b"))
+        def hints2 = EmptyHints.addError(mkErr("c")).addError(mkErr("d"))
+        hints1.merge(hints2).pop.pop.pop.toSet should contain only (Desc("d"))
+        hints1.pop.merge(hints2).pop.pop.toSet should contain only (Desc("d"))
     }
 }

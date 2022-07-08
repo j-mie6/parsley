@@ -82,22 +82,23 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     /* ERROR RELABELLING BEGIN */
     private [machine] def mergeHints(): Unit = {
         val hintFrame = this.hintStack
-        if (hintFrame.validOffset == offset) this.hints = MergeHints(hintFrame.hints, this.hints)
+        if (hintFrame.validOffset == offset) this.hints = hintFrame.hints.merge(this.hints)
         commitHints()
     }
-    private [machine] def replaceHint(label: String): Unit = hints = ReplaceHint(label, hints)
-    private [machine] def popHints: Unit = hints = PopHints(hints)
+    private [machine] def replaceHint(label: String): Unit = hints = hints.rename(label)
+    private [machine] def popHints: Unit = hints = hints.pop
     /* ERROR RELABELLING END */
 
     private def addErrorToHints(): Unit = {
         val err = errs.error
-        if (err.isTrivialError && err.offset == offset && !err.isExpectedEmpty) {
+        // !err.isExpectedEmpty -> isTrivialError
+        if (/*err.isTrivialError*/ !err.isExpectedEmpty && err.offset == offset) {
             // If our new hints have taken place further in the input stream, then they must invalidate the old ones
             if (hintsValidOffset < offset) {
                 hints = EmptyHints
                 hintsValidOffset = offset
             }
-            hints = new AddError(hints, err)
+            hints = hints.addError(err)
         }
     }
     private [machine] def addErrorToHintsAndPop(): Unit = {
@@ -126,7 +127,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
            |  checks    = ${checkStack.mkString(", ")}
            |  registers = ${regs.zipWithIndex.map{case (r, i) => s"r$i = $r"}.mkString("\n              ")}
            |  errors    = ${errs.mkString(", ")}
-           |  hints     = ($hintsValidOffset, ${hints/*.toSet*/}):${hintStack.mkString(", ")}
+           |  hints     = ($hintsValidOffset, ${hints.toSet}):${hintStack.mkString(", ")}
            |]""".stripMargin
     }
     // $COVERAGE-ON$
@@ -194,7 +195,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
 
     private [machine] def pushError(err: DefuncError): Unit = this.errs = new ErrorStack(this.useHints(err), this.errs)
     private [machine] def useHints(err: DefuncError): DefuncError = {
-        if (hintsValidOffset == err.offset) WithHints(err, hints)
+        if (hintsValidOffset == err.offset) err.withHints(hints)
         else {
             hintsValidOffset = err.offset
             hints = EmptyHints

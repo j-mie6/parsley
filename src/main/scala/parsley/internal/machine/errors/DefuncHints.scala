@@ -74,6 +74,17 @@ private [machine] sealed abstract class DefuncHints(private [errors] val size: I
                 self.hints.collect(skipNext, state)
         }
     }
+
+    // Operations: these are the smart constructors for the hint operations, which will reduce the number of objects in the binary
+    // they all perform some form of simplification step to avoid unnecesary allocations
+    private [machine] final def pop: DefuncHints = if (size > 1) new PopHints(this) else EmptyHints
+    private [machine] final def rename(label: String): DefuncHints = if (nonEmpty) new ReplaceHint(label, this) else this
+    private [machine] final def merge(newHints: DefuncHints): DefuncHints = {
+        if (this.isEmpty) newHints
+        else if (newHints.isEmpty) this
+        else new MergeHints(this, newHints)
+    }
+    private [machine] final def addError(err: DefuncError): DefuncHints = new AddError(this, err)
 }
 
 /** Represents no hints at all.
@@ -86,10 +97,7 @@ private [machine] object EmptyHints extends DefuncHints(size = 0)
   *
   * @param hints the hints that should have an element removed
   */
-private [machine] final class PopHints private (val hints: DefuncHints) extends DefuncHints(size = hints.size - 1)
-private [machine] object PopHints {
-    def apply(hints: DefuncHints): DefuncHints = if (hints.size > 1) new PopHints(hints) else EmptyHints
-}
+private [machine] final class PopHints private [errors] (val hints: DefuncHints) extends DefuncHints(size = hints.size - 1)
 
 /** This operation is used by the `label` combinator to rename the first
   * set of hints currently in-flight. This is explicitly following the
@@ -98,10 +106,7 @@ private [machine] object PopHints {
   * @param label the name to replace the first set of hints with
   * @param hints the hints that should have part of it replaced
   */
-private [errors] final class ReplaceHint private (val label: String, val hints: DefuncHints) extends DefuncHints(size = hints.size)
-private [machine] object ReplaceHint {
-    def apply(label: String, hints: DefuncHints): DefuncHints = if (hints.nonEmpty) new ReplaceHint(label, hints) else hints
-}
+private [errors] final class ReplaceHint private [errors] (val label: String, val hints: DefuncHints) extends DefuncHints(size = hints.size)
 
 /** This operation merges two sets of hints together. This used by `label`
   * to combine the saved hints with those that may have been generated and
@@ -111,14 +116,7 @@ private [machine] object ReplaceHint {
   * @param oldHints
   * @param newHints
   */
-private [errors] final class MergeHints private (val oldHints: DefuncHints, val newHints: DefuncHints) extends DefuncHints(size = oldHints.size + newHints.size)
-private [machine] object MergeHints {
-    def apply(oldHints: DefuncHints, newHints: DefuncHints): DefuncHints = {
-        if (oldHints.isEmpty) newHints
-        else if (newHints.isEmpty) oldHints
-        else new MergeHints(oldHints, newHints)
-    }
-}
+private [errors] final class MergeHints private [errors] (val oldHints: DefuncHints, val newHints: DefuncHints) extends DefuncHints(size = oldHints.size + newHints.size)
 
 /** This represents the snocing of a new set of hints onto the existing list of
   * sets. This is used whenever an error message is discarded by a parser succeeding
@@ -127,8 +125,4 @@ private [machine] object MergeHints {
   * @param hints the initial list of sets of error items, as represented by `DefuncHints`
   * @param err the set of error items to incorporate, represented in uncomputed form as `DefuncError`
   */
-private [machine] final class AddError(val hints: DefuncHints, val err: DefuncError) extends DefuncHints(size = hints.size + 1)
-private [machine] object AddError {
-    // for use in tests
-    def apply(hints: DefuncHints, err: DefuncError): AddError = new AddError(hints, err)
-}
+private [machine] final class AddError private [errors] (val hints: DefuncHints, val err: DefuncError) extends DefuncHints(size = hints.size + 1)

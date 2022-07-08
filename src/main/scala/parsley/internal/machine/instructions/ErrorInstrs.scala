@@ -34,7 +34,7 @@ private [internal] final class RelabelErrorAndFail(label: String) extends Instr 
         ctx.errs.error = ctx.useHints {
             // EERR
             // the top of the error stack is adjusted:
-            if (ctx.errs.error.offset == ctx.checkStack.offset) WithLabel(ctx.errs.error, label)
+            if (ctx.errs.error.offset == ctx.checkStack.offset) ctx.errs.error.label(label)
             // CERR
             // do nothing
             else ctx.errs.error
@@ -63,7 +63,7 @@ private [internal] object MergeErrorsAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
         val err2 = ctx.errs.error
         ctx.errs = ctx.errs.tail
-        ctx.errs.error = MergedErrors(ctx.errs.error, err2)
+        ctx.errs.error = ctx.errs.error.merge(err2)
         ctx.fail()
     }
 
@@ -74,7 +74,7 @@ private [internal] object MergeErrorsAndFail extends Instr {
 
 private [internal] class ApplyReasonAndFail(reason: String) extends Instr {
     override def apply(ctx: Context): Unit = {
-        if (ctx.errs.error.offset == ctx.checkStack.offset) ctx.errs.error = WithReason(ctx.errs.error, reason)
+        if (ctx.errs.error.offset == ctx.checkStack.offset) ctx.errs.error = ctx.errs.error.withReason(reason)
         ctx.checkStack = ctx.checkStack.tail
         ctx.fail()
     }
@@ -86,7 +86,7 @@ private [internal] class ApplyReasonAndFail(reason: String) extends Instr {
 
 private [internal] object AmendAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
-        ctx.errs.error = Amended(ctx.states.offset, ctx.states.line, ctx.states.col, ctx.errs.error)
+        ctx.errs.error = ctx.errs.error.amend(ctx.states.offset, ctx.states.line, ctx.states.col)
         ctx.states = ctx.states.tail
         ctx.fail()
     }
@@ -98,7 +98,7 @@ private [internal] object AmendAndFail extends Instr {
 
 private [internal] object EntrenchAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
-        ctx.errs.error = Entrenched(ctx.errs.error)
+        ctx.errs.error = ctx.errs.error.entrench
         ctx.fail()
     }
 
