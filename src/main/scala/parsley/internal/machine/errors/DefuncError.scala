@@ -3,6 +3,8 @@
  */
 package parsley.internal.machine.errors
 
+import parsley.XAssert._
+
 import parsley.internal.errors.{Desc, ErrorItem, FancyError, ParseError, TrivialError}
 
 // This file contains the defunctionalised forms of the error messages.

@@ -6,7 +6,8 @@ import sbtcrossproject.Platform
 import org.scalajs.linker.interface.ESVersion
 
 val projectName = "parsley"
-val scala2Opt = false
+
+val releaseFlags = settingKey[Seq[String]]("The flags to enable for release")
 
 inThisBuild(List(
   organization := "com.github.j-mie6",
@@ -26,7 +27,8 @@ inThisBuild(List(
   dynver := {
       val d = new java.util.Date
       sbtdynver.DynVer.getGitDescribeOutput(d).mkVersion(determineVersion(dynver.value, versionPolicyIntention.value, _), dynver.value)
-  }
+  },
+  releaseFlags := Seq("-Xdisable-assertions", "-opt:l:method,inline", "-opt-inline-from", "parsley.**", "-opt-warnings:at-inline-failed")
 ))
 
 def parseVersion(version: String): (Int, Int, Int, String) = {
@@ -115,10 +117,7 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
 
     scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature"),
     scalacOptions ++= {
-        if (scalaBinaryVersion.value == "3") Seq("-source:3.0-migration")
-        // optimisation flags are not available on scala 3
-        else if (scala2Opt) Seq("-opt:l:method,inline", "-opt-inline-from", "parsley.**", "-opt-warnings:at-inline-failed")
-        else                Seq.empty
+        if (scalaBinaryVersion.value == "3") Seq("-source:3.0-migration") else Seq.empty
     },
     // linters
     //scalacOptions ++= Seq("-Xlint:unused", "-Xlint:doc-detached"),
