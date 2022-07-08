@@ -3,7 +3,6 @@
  */
 package parsley.internal.collection.mutable
 
-import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 // This is designed to be a lighter-weight wrapper around Array to make it resizeable

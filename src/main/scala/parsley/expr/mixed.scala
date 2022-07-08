@@ -9,8 +9,6 @@ import parsley.Parsley, Parsley._
 import parsley.implicits.zipped.Zipped2
 import parsley.lift.lift4
 
-import parsley.internal.deepembedding
-
 /** This module contains specialist combinators for mixing unary and binary operators
   * on the same level. This is only sensible when mixing infix-left and postfix
   * or infix-right and prefix.

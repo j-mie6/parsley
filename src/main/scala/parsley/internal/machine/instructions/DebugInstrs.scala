@@ -4,9 +4,7 @@
 // $COVERAGE-OFF$
 package parsley.internal.machine.instructions
 
-import parsley.internal.errors.{Desc, ErrorItem}
 import parsley.internal.machine.{Context, Failed, Finished, Good, Recover}
-import parsley.internal.machine.errors.EmptyError
 
 import Indenter.indentAndUnlines
 import InputSlicer.Pad

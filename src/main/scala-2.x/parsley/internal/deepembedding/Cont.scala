@@ -4,7 +4,6 @@
 package parsley.internal.deepembedding
 
 import scala.annotation.tailrec
-import scala.language.{higherKinds, reflectiveCalls}
 
 // Trampoline for CPS
 private [deepembedding] sealed abstract class Bounce[A] {

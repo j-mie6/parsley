@@ -8,7 +8,7 @@ import scala.annotation.tailrec
 import parsley.character
 
 import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
-import parsley.internal.errors.{Desc, ErrorItem}
+import parsley.internal.errors.Desc
 import parsley.internal.machine.Context
 
 private [internal] final class TokenSign(ty: SignType) extends Instr {

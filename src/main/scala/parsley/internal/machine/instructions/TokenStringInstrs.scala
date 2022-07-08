@@ -6,7 +6,7 @@ package parsley.internal.machine.instructions
 import scala.annotation.tailrec
 
 import parsley.internal.collection.mutable
-import parsley.internal.errors.{Desc, ErrorItem}
+import parsley.internal.errors.Desc
 import parsley.internal.machine.Context
 
 private [internal] class TokenEscape extends Instr with NumericReader {

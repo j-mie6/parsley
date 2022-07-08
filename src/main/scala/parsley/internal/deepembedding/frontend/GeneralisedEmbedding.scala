@@ -3,9 +3,7 @@
  */
 package parsley.internal.deepembedding.frontend
 
-import scala.language.higherKinds
-
-import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
+import parsley.internal.deepembedding.ContOps, ContOps.{suspend, ContAdapter}
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 
 // Core Embedding

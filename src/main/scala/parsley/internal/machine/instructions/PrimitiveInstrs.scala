@@ -3,7 +3,7 @@
  */
 package parsley.internal.machine.instructions
 
-import parsley.internal.errors.{Desc, ErrorItem}
+import parsley.internal.errors.Desc
 import parsley.internal.machine.{Context, Good}
 
 private [internal] final class Satisfies(f: Char => Boolean, _expected: Option[String]) extends Instr {

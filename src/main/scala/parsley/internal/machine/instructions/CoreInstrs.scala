@@ -3,7 +3,6 @@
  */
 package parsley.internal.machine.instructions
 
-import parsley.internal.errors.{Desc, ErrorItem}
 import parsley.internal.machine.{Context, Finished, Good}
 import parsley.internal.machine.errors.EmptyError
 

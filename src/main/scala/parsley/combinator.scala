@@ -3,10 +3,9 @@
  */
 package parsley
 
-import scala.annotation.{implicitNotFound, tailrec}
+import scala.annotation.tailrec
 
 import parsley.Parsley.{attempt, empty, notFollowedBy, pure, select, unit}
-import parsley.expr.chain
 import parsley.implicits.zipped.{Zipped2, Zipped3}
 
 import parsley.internal.deepembedding.{frontend, singletons}

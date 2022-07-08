@@ -3,15 +3,10 @@
  */
 package parsley.internal.deepembedding.frontend
 
-import scala.annotation.tailrec
-import scala.collection.mutable
-import scala.language.higherKinds
-
-import parsley.debug.{Breakpoint, EntryBreak, ExitBreak, FullBreak}
+import parsley.debug.Breakpoint
 import parsley.registers.Reg
 
 import parsley.internal.deepembedding.backend, backend.StrictParsley
-import parsley.internal.machine.instructions
 
 private [parsley] final class Attempt[A](p: LazyParsley[A]) extends Unary[A, A](p) {
     override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.Attempt(p)

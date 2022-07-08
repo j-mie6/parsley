@@ -3,8 +3,6 @@
  */
 package parsley.token
 
-import scala.language.higherKinds
-
 import parsley.Parsley
 
 /**

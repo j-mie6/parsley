@@ -3,8 +3,6 @@
  */
 package parsley.internal.machine.stacks
 
-import scala.annotation.tailrec
-
 import parsley.internal.machine.instructions.Instr
 
 private [machine] final class CallStack(val ret: Int, val instrs: Array[Instr], val callId: Int, val tail: CallStack)

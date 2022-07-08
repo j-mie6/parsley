@@ -3,16 +3,14 @@
  */
 package parsley.internal.deepembedding.frontend
 
-import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.language.{higherKinds, implicitConversions}
 
 import parsley.exceptions.BadLazinessException
 import parsley.registers.Reg
 
 import parsley.internal.deepembedding.{Cont, ContOps}, ContOps.{safeCall, GenOps, perform, result, ContAdapter}
 import parsley.internal.deepembedding.backend, backend.StrictParsley
-import parsley.internal.machine.instructions, instructions.{Instr, JumpTable, Label}
+import parsley.internal.machine.instructions, instructions.Instr
 
 private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     // $COVERAGE-OFF$
@@ -64,7 +62,6 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
         (perform[Cont, Array[Instr]] {
             findLets(Set.empty) >> {
                 val usedRegs: Set[Reg[_]] = letFinderState.usedRegs
-                implicit val seenSet: Set[LazyParsley[_]] = letFinderState.recs
                 implicit val state: backend.CodeGenState = new backend.CodeGenState(letFinderState.numRegs)
                 implicit val recMap: RecMap = RecMap(letFinderState.recs)
                 implicit val letMap: LetMap = LetMap(letFinderState.lets)
@@ -87,7 +84,6 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
         implicit val letFinderState: LetFinderState = new LetFinderState
         perform[Cont, String] {
             findLets(Set.empty) >> {
-                implicit val seenSet: Set[LazyParsley[_]] = letFinderState.recs
                 implicit val state: backend.CodeGenState = new backend.CodeGenState(0)
                 implicit val recMap: RecMap = RecMap(letFinderState.recs)
                 implicit val letMap: LetMap = LetMap(letFinderState.lets)

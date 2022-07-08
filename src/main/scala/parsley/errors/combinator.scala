@@ -4,7 +4,6 @@
 package parsley.errors
 
 import parsley.Parsley
-import parsley.combinator.choice
 
 import parsley.internal.deepembedding.{frontend, singletons}
 

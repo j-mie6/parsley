@@ -3,11 +3,7 @@
  */
 package parsley.internal.deepembedding.frontend
 
-import scala.annotation.tailrec
-import scala.collection.mutable
-import scala.language.higherKinds
-
-import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
+import parsley.internal.deepembedding.ContOps, ContOps.{suspend, ContAdapter}
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 
 private [parsley] final class Many[A](p: LazyParsley[A]) extends Unary[A, List[A]](p) {

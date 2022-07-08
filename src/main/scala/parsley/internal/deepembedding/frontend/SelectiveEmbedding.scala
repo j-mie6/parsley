@@ -3,8 +3,6 @@
  */
 package parsley.internal.deepembedding.frontend
 
-import scala.language.higherKinds
-
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 
 private [parsley] final class Branch[A, B, C](b: LazyParsley[Either[A, B]], p: =>LazyParsley[A => C], q: =>LazyParsley[B => C])

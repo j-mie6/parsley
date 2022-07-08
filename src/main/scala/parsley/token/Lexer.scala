@@ -3,12 +3,10 @@
  */
 package parsley.token
 
-import scala.language.implicitConversions
-
 import parsley.Parsley, Parsley.{attempt, empty, notFollowedBy, pure, unit}
 import parsley.character.{char, digit, hexDigit, octDigit, satisfy, string}
-import parsley.combinator.{between, many, sepBy, sepBy1, skipMany, skipSome, some}
-import parsley.errors.combinator.{amend, entrench, fail, unexpected, ErrorMethods}
+import parsley.combinator.{between, many, sepBy, sepBy1, skipMany, skipSome}
+import parsley.errors.combinator.{amend, entrench, unexpected, ErrorMethods}
 import parsley.implicits.character.charLift
 import parsley.lift.lift2
 

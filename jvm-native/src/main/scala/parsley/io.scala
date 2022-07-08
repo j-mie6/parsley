@@ -6,7 +6,6 @@ package parsley
 import java.io.File
 
 import scala.io.{Codec, Source}
-import scala.language.{higherKinds, implicitConversions}
 import scala.util.Try
 
 import parsley.errors.ErrorBuilder

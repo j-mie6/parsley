@@ -5,13 +5,12 @@ package parsley.internal.deepembedding.backend
 
 import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.language.{higherKinds, implicitConversions}
 
 import parsley.registers.Reg
 
 import parsley.internal.collection.mutable.ResizableArray
-import parsley.internal.deepembedding.ContOps, ContOps.{safeCall, GenOps, perform, result, ContAdapter}
-import parsley.internal.machine.instructions, instructions.{Instr, JumpTable, Label}
+import parsley.internal.deepembedding.ContOps, ContOps.{perform, result, ContAdapter}
+import parsley.internal.machine.instructions, instructions.{Instr, Label}
 
 import StrictParsley._
 
@@ -122,7 +121,6 @@ private [deepembedding] object StrictParsley {
     // Applies tail-call optimisation
     private def tco(instrs: Array[Instr], labels: Array[Int], bindings: List[Binding])(implicit state: CodeGenState): Unit = if (bindings.nonEmpty) {
         val bindingsWithReturns = bindings.zip(bindings.tail.map(_.location(labels) - 1) :+ (instrs.size-1))
-        lazy val locToBinding = bindings.map(b => b.location(labels) -> b).toMap
         for ((binding, retLoc) <- bindingsWithReturns) instrs(retLoc-1) match {
             case instr: instructions.Call => instrs(retLoc-1) = new instructions.Jump(instr.label)
             case _ =>

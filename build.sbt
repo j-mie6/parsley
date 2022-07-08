@@ -6,6 +6,7 @@ import sbtcrossproject.Platform
 import org.scalajs.linker.interface.ESVersion
 
 val projectName = "parsley"
+val scala2Opt = false
 
 inThisBuild(List(
   organization := "com.github.j-mie6",
@@ -112,10 +113,17 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     Test / unmanagedSourceDirectories ++= extraSources(baseDirectory.value.getParentFile, "test", scalaVersion.value),
     Test / unmanagedSourceDirectories ++= extraSources(baseDirectory.value, "test", scalaVersion.value),
 
-    scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature"),
+    // TODO: Ideally, we need to figure out how to enable optimisation flags and assertion disable on publish _only_!
+    scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature"/*, "-Xdisable-assertions"*/),
     scalacOptions ++= {
-        if (scalaBinaryVersion.value == "3") Seq("-source:3.0-migration") else Seq.empty
+        if (scalaBinaryVersion.value == "3") Seq("-source:3.0-migration")
+        // optimisation flags are not available on scala 3
+        else if (scala2Opt) Seq("-opt:l:method,inline", "-opt-inline-from", "parsley.**", "-opt-warnings:at-inline-failed")
+        else                Seq.empty
     },
+    // linters
+    //scalacOptions ++= Seq("-Xlint:unused", "-Xlint:doc-detached"),
+    //Test / scalacOptions ~= { _.filterNot(_ == "-Xdisable-assertions") },
 
     Compile / doc / scalacOptions ++= Seq("-groups", "-doc-root-content", s"${baseDirectory.value.getParentFile.getPath}/rootdoc.md"),
     Compile / doc / scalacOptions ++= {

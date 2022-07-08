@@ -3,11 +3,6 @@
  */
 package parsley
 
-import scala.annotation.tailrec
-import scala.collection.mutable
-import scala.language.{higherKinds, implicitConversions}
-import scala.reflect.ClassTag
-
 import parsley.combinator.{option, some}
 import parsley.errors.ErrorBuilder
 import parsley.expr.{chain, infix}

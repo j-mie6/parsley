@@ -5,11 +5,14 @@ package parsley.internal.machine.errors
 
 import parsley.internal.errors.{Desc, ErrorItem, FancyError, ParseError, TrivialError}
 
-/* This file contains the defunctionalised forms of the error messages.
- * Essentially, whenever an error is created in the machine, it should make use of one of
- * these case classes. This means that every error message created will be done in a single
- * O(1) allocation, avoiding anything to do with the underlying sets, options etc.
- */
+// This file contains the defunctionalised forms of the error messages.
+// Essentially, whenever an error is created in the machine, it should make use of one of
+// these case classes. This means that every error message created will be done in a single
+// O(1) allocation, avoiding anything to do with the underlying sets, options etc.
+
+// TODO: We could improve the memory footprint and the performance of this potentially by breaking the operations into fully trivial and fully fancy
+// variants, removing the traits, mixins, and the `isTrivialError` values (and the `expectedEmpty` on fancy errors)
+// this would also remove the unchecked matches and make everything fully total.
 private [errors] sealed trait MakesTrivial { this: DefuncError =>
     val isTrivialError = true
     final def makeTrivial(implicit builder: ErrorItemBuilder): TrivialError = {
@@ -30,15 +33,30 @@ private [errors] sealed trait MakesFancy { this: DefuncError =>
     def makeFancy(state: FancyState): Unit
 }
 
+/** This structure represents a collection of operations that build up a
+  * `ParseError`. This is done to allow for the operations to be performed
+  * lazily, or potentially not at all if the error message is discarded
+  * or a merge occurs with a different error kind. It also allows for the
+  * conversion to `ParseError` to make use of mutable collections, which
+  * would otherwise be unsound.
+  */
 private [machine] sealed abstract class DefuncError {
+    /** Is this error a trivial error, or is it fancy? */
     private [machine] val isTrivialError: Boolean
+    /** Does this error, if its trivial, have any expected items? */
     private [machine] val isExpectedEmpty: Boolean
+    /** Is this error protected from amendment via the `amend` combinator? */
     private [machine] val entrenched: Boolean = false
+    /** The offset at which this error occured */
     private [machine] val offset: Int
+    /** This function forced the lazy defunctionalised structure into a final `ParseError` value */
     private [machine] final def asParseError(implicit builder: ErrorItemBuilder): ParseError = (this: @unchecked) match {
         case terr: MakesTrivial if terr.isTrivialError => terr.makeTrivial
         case ferr: MakesFancy                          => ferr.makeFancy
     }
+    // This is used by `DefuncHints` to turn any labels that would occur in this error message
+    // into hints. This is done like this to allow for other parts of the error building process
+    // to be ignored. This is only valid for trivial errors
     private [errors] final def collectHints(state: HintState): Unit = (this: @unchecked) match {
         case self: BaseError          =>
             state ++= self.expectedIterable
@@ -57,6 +75,17 @@ private [machine] sealed abstract class DefuncError {
 
     // Operations: these are the smart constructors for the hint operations, which will reduce the number of objects in the binary
     // they all perform some form of simplification step to avoid unnecesary allocations
+
+    /** This operation merges two errors.
+      *
+      * The errors must have the same offset, with the deeper of the two
+      * taking precedence if not. Otherwise, if they are equal offset, errors
+      * can only be merged when they are both the same kind: if they are not,
+      * fancy errors take precedence over trivial errors.
+      *
+      * @param err the error to merge with this one
+      * @return either the merged error, or one of the two originals
+      */
     private [machine] final def merge(err: DefuncError): DefuncError = {
         if (this.offset > err.offset) this
         else if (err.offset > this.offset) err
@@ -86,8 +115,7 @@ private [machine] sealed abstract class DefuncError {
     }
 }
 
-/** This is the common supertype of all "regular" trivial errors: those that result from failures as opposed to operations on errors.
-  */
+/** This is the common supertype of all "regular" trivial errors: those that result from failures as opposed to operations on errors. */
 private [errors] sealed abstract class BaseError extends DefuncError with MakesTrivial {
     /** The size of the unexpected token demanded by this error */
     def size: Int
@@ -172,7 +200,7 @@ private [machine] final class MultiExpectedError(val offset: Int, val line: Int,
 private [errors] final class MergedErrors private [errors] (val err1: DefuncError, val err2: DefuncError) extends DefuncError with MakesTrivial with MakesFancy {
     // So long as the MergedErrors factory checks for parity and offset checks this is fine
     override val isTrivialError: Boolean = err1.isTrivialError
-    override val isExpectedEmpty: Boolean = !isTrivialError || err1.isExpectedEmpty && err2.isExpectedEmpty
+    override val isExpectedEmpty: Boolean = /*!isTrivialError || */err1.isExpectedEmpty && err2.isExpectedEmpty
     override val entrenched: Boolean = err1.entrenched && err2.entrenched
     // So long as the MergedErrors factory checks that they are equal we can pick arbitrarily
     val offset = err1.offset //Math.max(err1.offset, err2.offset)

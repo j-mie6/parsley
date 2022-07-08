@@ -3,8 +3,6 @@
  */
 package parsley
 
-import scala.language.implicitConversions
-
 import parsley.internal.deepembedding.frontend
 
 /** This module contains the very useful debugging combinator, as well as breakpoints.

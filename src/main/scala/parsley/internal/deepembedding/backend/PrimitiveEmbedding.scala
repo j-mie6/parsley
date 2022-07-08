@@ -3,10 +3,6 @@
  */
 package parsley.internal.deepembedding.backend
 
-import scala.annotation.tailrec
-import scala.collection.mutable
-import scala.language.higherKinds
-
 import parsley.debug.{Breakpoint, EntryBreak, ExitBreak, FullBreak}
 import parsley.registers.Reg
 

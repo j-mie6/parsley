@@ -5,9 +5,8 @@ package parsley.internal.machine.instructions
 
 import scala.collection.mutable
 
-import parsley.internal.deepembedding
 import parsley.internal.machine.{Context, Good}
-import parsley.internal.machine.stacks.{HandlerStack, Stack}, Stack.StackExt
+import parsley.internal.machine.stacks.Stack, Stack.StackExt
 
 private [internal] final class Many(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {

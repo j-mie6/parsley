@@ -5,7 +5,6 @@ package parsley.internal.collection.mutable
 
 import scala.annotation.tailrec
 import scala.collection.{mutable, BufferedIterator}
-import scala.language.implicitConversions
 
 import Radix.{Entry, IteratorHelpers, StringHelpers}
 

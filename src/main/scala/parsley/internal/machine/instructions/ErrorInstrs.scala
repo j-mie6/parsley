@@ -3,9 +3,8 @@
  */
 package parsley.internal.machine.instructions
 
-import parsley.internal.errors.{Desc, ErrorItem}
-import parsley.internal.machine.{Context, Good}
-import parsley.internal.machine.errors.{Amended, Entrenched, MergedErrors, WithLabel, WithReason}
+import parsley.internal.errors.Desc
+import parsley.internal.machine.Context
 
 private [internal] final class RelabelHints(label: String) extends Instr {
     val isHide: Boolean = label.isEmpty

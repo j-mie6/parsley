@@ -3,13 +3,11 @@
  */
 package parsley.internal.deepembedding.backend
 
-import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.language.higherKinds
 
 import parsley.exceptions.NonProductiveIterationException
 
-import parsley.internal.deepembedding.ContOps, ContOps.{ContAdapter, result, suspend}
+import parsley.internal.deepembedding.ContOps, ContOps.{ContAdapter, suspend}
 import parsley.internal.deepembedding.singletons._
 import parsley.internal.machine.instructions
 

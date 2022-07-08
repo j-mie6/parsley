@@ -5,12 +5,10 @@ package parsley
 
 import scala.annotation.switch
 import scala.collection.immutable.NumericRange
-import scala.language.implicitConversions
 
 import parsley.Parsley.{attempt, empty, fresh, pure}
 import parsley.combinator.{choice, skipMany}
 import parsley.errors.combinator.ErrorMethods
-import parsley.implicits.character.charLift
 
 import parsley.internal.deepembedding.{frontend, singletons}
 

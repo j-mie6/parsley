@@ -77,6 +77,8 @@ private [machine] sealed abstract class DefuncHints(private [errors] val size: I
 
     // Operations: these are the smart constructors for the hint operations, which will reduce the number of objects in the binary
     // they all perform some form of simplification step to avoid unnecesary allocations
+
+    
     private [machine] final def pop: DefuncHints = if (size > 1) new PopHints(this) else EmptyHints
     private [machine] final def rename(label: String): DefuncHints = if (nonEmpty) new ReplaceHint(label, this) else this
     private [machine] final def merge(newHints: DefuncHints): DefuncHints = {

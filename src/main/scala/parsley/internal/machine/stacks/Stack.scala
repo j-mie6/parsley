@@ -3,8 +3,6 @@
  */
 package parsley.internal.machine.stacks
 
-import scala.annotation.tailrec
-
 private [machine] abstract class Stack[T] {
     protected type ElemTy
     final def isEmpty(xs: T): Boolean = xs == null

@@ -3,8 +3,6 @@
  */
 package parsley.expr
 
-import scala.annotation.implicitNotFound
-
 import parsley.Parsley
 
 import parsley.internal.deepembedding.frontend

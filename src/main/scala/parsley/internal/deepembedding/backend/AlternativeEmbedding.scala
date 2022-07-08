@@ -5,7 +5,6 @@ package parsley.internal.deepembedding.backend
 
 import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.language.higherKinds
 
 import parsley.internal.collection.mutable.SinglyLinkedList, SinglyLinkedList.LinkedListIterator
 import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}

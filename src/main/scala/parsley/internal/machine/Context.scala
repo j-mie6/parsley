@@ -4,7 +4,6 @@
 package parsley.internal.machine
 
 import scala.annotation.tailrec
-import scala.collection.mutable
 
 //import parsley.{Failure, Result, Success} // not sure why this fails scalacheck, but I guess we'll leave it until I can submit a bug report
 import parsley.Failure
@@ -14,8 +13,8 @@ import parsley.errors.ErrorBuilder
 
 import parsley.internal.errors.{ErrorItem, LineBuilder}
 import parsley.internal.machine.errors.{
-    AddError, ClassicExpectedError, ClassicExpectedErrorWithReason, ClassicFancyError, ClassicUnexpectedError, DefuncError,
-    DefuncHints, EmptyHints, ErrorItemBuilder, MergeHints, PopHints, ReplaceHint, TokenError, WithHints
+    ClassicExpectedError, ClassicExpectedErrorWithReason, ClassicFancyError, ClassicUnexpectedError, DefuncError,
+    DefuncHints, EmptyHints, ErrorItemBuilder, TokenError
 }
 
 import instructions.Instr

@@ -3,13 +3,8 @@
  */
 package parsley.internal.deepembedding.frontend
 
-import scala.annotation.tailrec
-import scala.collection.mutable
-import scala.language.higherKinds
-
-import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
+import parsley.internal.deepembedding.ContOps, ContOps.{suspend, ContAdapter}
 import parsley.internal.deepembedding.backend, backend.StrictParsley
-import parsley.internal.errors.{Desc, ErrorItem, Raw}
 
 private [parsley] final class <|>[A](p: LazyParsley[A], q: LazyParsley[A]) extends LazyParsley[A] {
     final override def findLetsAux[Cont[_, +_]: ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): Cont[R,Unit] = {

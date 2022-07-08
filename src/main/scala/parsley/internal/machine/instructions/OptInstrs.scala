@@ -3,9 +3,7 @@
  */
 package parsley.internal.machine.instructions
 
-import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.language.implicitConversions
 
 import parsley.XCompat._
 

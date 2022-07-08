@@ -3,7 +3,6 @@
  */
 package parsley.internal.deepembedding.singletons
 
-import parsley.internal.deepembedding.frontend
 import parsley.internal.machine.instructions
 
 // Core Embedding

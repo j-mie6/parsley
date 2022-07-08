@@ -6,8 +6,7 @@ package parsley.internal.machine.instructions
 import scala.annotation.tailrec
 
 import parsley.internal.collection.mutable.Radix, Radix.RadixSet
-import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
-import parsley.internal.errors.{Desc, ErrorItem}
+import parsley.internal.errors.Desc
 import parsley.internal.machine.Context
 
 private [instructions] abstract class CommentLexer(start: String, end: String, line: String, nested: Boolean) extends Instr {
