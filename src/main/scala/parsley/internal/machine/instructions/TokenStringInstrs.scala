@@ -8,13 +8,17 @@ import scala.annotation.tailrec
 import parsley.internal.collection.mutable
 import parsley.internal.errors.Desc
 import parsley.internal.machine.Context
+import parsley.internal.machine.XAssert._
 
 private [internal] class TokenEscape extends Instr with NumericReader {
     private [this] final val expected = Some(Desc("escape code"))
-    override def apply(ctx: Context): Unit = escape(ctx) match {
-        case TokenEscape.EscapeChar(escapeChar)=> ctx.pushAndContinue(escapeChar)
-        case TokenEscape.BadCode               => ctx.expectedFail(expected, reason = "invalid escape sequence")
-        case TokenEscape.NoParse               => ctx.expectedTokenFail(expected, 3)
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        escape(ctx) match {
+            case TokenEscape.EscapeChar(escapeChar)=> ctx.pushAndContinue(escapeChar)
+            case TokenEscape.BadCode               => ctx.expectedFail(expected, reason = "invalid escape sequence")
+            case TokenEscape.NoParse               => ctx.expectedTokenFail(expected, 3)
+        }
     }
 
     private final def consumeAndReturn(ctx: Context, n: Int, c: Char) = {
@@ -151,6 +155,7 @@ private [instructions] sealed trait TokenStringLike extends Instr {
             else ctx.expectedFail(expectedEos)
     }
     final override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
         if (ctx.moreInput && ctx.nextChar == '"') {
             ctx.fastUncheckedConsumeChars(1)
             restOfString(ctx, new StringBuilder)

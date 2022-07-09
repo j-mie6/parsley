@@ -31,5 +31,5 @@ private [internal] final class ResizableArray[A: ClassTag](initialSize: Int = Re
     }
 }
 private [internal] object ResizableArray {
-    val InitialSize = 16
+    final val InitialSize = 16
 }

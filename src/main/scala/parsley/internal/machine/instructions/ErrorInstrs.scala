@@ -5,10 +5,12 @@ package parsley.internal.machine.instructions
 
 import parsley.internal.errors.Desc
 import parsley.internal.machine.Context
+import parsley.internal.machine.XAssert._
 
 private [internal] final class RelabelHints(label: String) extends Instr {
     val isHide: Boolean = label.isEmpty
     override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
         // if this was a hide, pop the hints if possible
         if (isHide) ctx.popHints
         // EOK
@@ -29,6 +31,7 @@ private [internal] final class RelabelHints(label: String) extends Instr {
 private [internal] final class RelabelErrorAndFail(label: String) extends Instr {
     val isHide: Boolean = label.isEmpty
     override def apply(ctx: Context): Unit = {
+        ensureHandlerInstruction(ctx)
         ctx.restoreHints()
         ctx.errs.error = ctx.useHints {
             // EERR
@@ -48,6 +51,7 @@ private [internal] final class RelabelErrorAndFail(label: String) extends Instr 
 
 private [internal] object ErrorToHints extends Instr {
     override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
         ctx.handlers = ctx.handlers.tail
         ctx.addErrorToHintsAndPop()
         ctx.inc()
@@ -60,6 +64,7 @@ private [internal] object ErrorToHints extends Instr {
 
 private [internal] object MergeErrorsAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
+        ensureHandlerInstruction(ctx)
         val err2 = ctx.errs.error
         ctx.errs = ctx.errs.tail
         ctx.errs.error = ctx.errs.error.merge(err2)
@@ -73,6 +78,7 @@ private [internal] object MergeErrorsAndFail extends Instr {
 
 private [internal] class ApplyReasonAndFail(reason: String) extends Instr {
     override def apply(ctx: Context): Unit = {
+        ensureHandlerInstruction(ctx)
         if (ctx.errs.error.offset == ctx.checkStack.offset) ctx.errs.error = ctx.errs.error.withReason(reason)
         ctx.checkStack = ctx.checkStack.tail
         ctx.fail()
@@ -85,6 +91,7 @@ private [internal] class ApplyReasonAndFail(reason: String) extends Instr {
 
 private [internal] object AmendAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
+        ensureHandlerInstruction(ctx)
         ctx.errs.error = ctx.errs.error.amend(ctx.states.offset, ctx.states.line, ctx.states.col)
         ctx.states = ctx.states.tail
         ctx.fail()
@@ -97,6 +104,7 @@ private [internal] object AmendAndFail extends Instr {
 
 private [internal] object EntrenchAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
+        ensureHandlerInstruction(ctx)
         ctx.errs.error = ctx.errs.error.entrench
         ctx.fail()
     }
@@ -107,7 +115,10 @@ private [internal] object EntrenchAndFail extends Instr {
 }
 
 private [internal] final class Fail(msgs: String*) extends Instr {
-    override def apply(ctx: Context): Unit = ctx.failWithMessage(msgs: _*)
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        ctx.failWithMessage(msgs: _*)
+    }
     // $COVERAGE-OFF$
     override def toString: String = s"Fail(${msgs.mkString(", ")})"
     // $COVERAGE-ON$
@@ -115,14 +126,20 @@ private [internal] final class Fail(msgs: String*) extends Instr {
 
 private [internal] final class Unexpected(msg: String) extends Instr {
     private [this] val unexpected = Desc(msg)
-    override def apply(ctx: Context): Unit = ctx.unexpectedFail(None, unexpected)
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        ctx.unexpectedFail(None, unexpected)
+    }
     // $COVERAGE-OFF$
     override def toString: String = s"Unexpected($msg)"
     // $COVERAGE-ON$
 }
 
 private [internal] final class FastFail(msggen: Any => String) extends Instr {
-    override def apply(ctx: Context): Unit = ctx.failWithMessage(msggen(ctx.stack.upop()))
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        ctx.failWithMessage(msggen(ctx.stack.upop()))
+    }
     // $COVERAGE-OFF$
     override def toString: String = "FastFail(?)"
     // $COVERAGE-ON$
@@ -133,7 +150,10 @@ private [internal] object FastFail {
 
 private [internal] final class FastUnexpected[A](_msggen: A=>String) extends Instr {
     private [this] def msggen(x: Any) = new Desc(_msggen(x.asInstanceOf[A]))
-    override def apply(ctx: Context): Unit = ctx.unexpectedFail(expected = None, unexpected = msggen(ctx.stack.upop()))
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        ctx.unexpectedFail(expected = None, unexpected = msggen(ctx.stack.upop()))
+    }
     // $COVERAGE-OFF$
     override def toString: String = "FastUnexpected(?)"
     // $COVERAGE-ON$

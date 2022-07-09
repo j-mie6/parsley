@@ -45,6 +45,11 @@ private [machine] sealed abstract class DefuncError {
       * @return either the merged error, or one of the two originals
       */
     private [machine] def merge(err: DefuncError): DefuncError
+    /** This operation adds the currently available hints
+      *
+      * @param hints
+      * @return
+      */
     private [machine] def withHints(hints: DefuncHints): DefuncError
     private [machine] def withReason(reason: String): DefuncError
     private [machine] def label(label: String): DefuncError

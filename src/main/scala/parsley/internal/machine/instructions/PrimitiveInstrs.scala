@@ -5,10 +5,12 @@ package parsley.internal.machine.instructions
 
 import parsley.internal.errors.Desc
 import parsley.internal.machine.{Context, Good}
+import parsley.internal.machine.XAssert._
 
 private [internal] final class Satisfies(f: Char => Boolean, _expected: Option[String]) extends Instr {
     private [this] final val expected = _expected.map(Desc(_))
     override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
         if (ctx.moreInput && f(ctx.nextChar)) ctx.pushAndContinue(ctx.consumeChar())
         else ctx.expectedFail(expected)
     }
@@ -19,6 +21,7 @@ private [internal] final class Satisfies(f: Char => Boolean, _expected: Option[S
 
 private [internal] object RestoreAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
+        ensureHandlerInstruction(ctx)
         // Pop input off head then fail to next handler
         ctx.restoreState()
         ctx.fail()
@@ -30,6 +33,7 @@ private [internal] object RestoreAndFail extends Instr {
 
 private [internal] object RestoreHintsAndState extends Instr {
     override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
         ctx.restoreHints()
         ctx.restoreState()
         ctx.handlers = ctx.handlers.tail
@@ -42,6 +46,7 @@ private [internal] object RestoreHintsAndState extends Instr {
 
 private [internal] object PopStateAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
+        ensureHandlerInstruction(ctx)
         ctx.restoreHints()
         ctx.states = ctx.states.tail
         ctx.fail()
@@ -53,14 +58,20 @@ private [internal] object PopStateAndFail extends Instr {
 
 // Position Extractors
 private [internal] object Line extends Instr {
-    override def apply(ctx: Context): Unit = ctx.pushAndContinue(ctx.line)
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        ctx.pushAndContinue(ctx.line)
+    }
     // $COVERAGE-OFF$
     override def toString: String = "Line"
     // $COVERAGE-ON$
 }
 
 private [internal] object Col extends Instr {
-    override def apply(ctx: Context): Unit = ctx.pushAndContinue(ctx.col)
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        ctx.pushAndContinue(ctx.col)
+    }
     // $COVERAGE-OFF$
     override def toString: String = "Col"
     // $COVERAGE-ON$
@@ -68,7 +79,10 @@ private [internal] object Col extends Instr {
 
 // Register-Manipulators
 private [internal] final class Get(reg: Int) extends Instr {
-    override def apply(ctx: Context): Unit = ctx.pushAndContinue(ctx.regs(reg))
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        ctx.pushAndContinue(ctx.regs(reg))
+    }
     // $COVERAGE-OFF$
     override def toString: String = s"Get(r$reg)"
     // $COVERAGE-ON$
@@ -76,6 +90,7 @@ private [internal] final class Get(reg: Int) extends Instr {
 
 private [internal] final class Put(reg: Int) extends Instr {
     override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
         ctx.writeReg(reg, ctx.stack.peekAndExchange(()))
         ctx.inc()
     }
@@ -86,6 +101,7 @@ private [internal] final class Put(reg: Int) extends Instr {
 
 private [internal] final class PutAndFail(reg: Int) extends Instr {
     override def apply(ctx: Context): Unit = {
+        ensureHandlerInstruction(ctx)
         ctx.writeReg(reg, ctx.stack.upeek)
         ctx.fail()
     }
@@ -143,6 +159,7 @@ private [parsley] final class CalleeSave(var label: Int, reqSize: Int, slots: Li
         }
         // Entry for the first time, register as a handle, callee-save and inc
         else {
+            ensureRegularInstruction(ctx)
             save(ctx)
             inUse = true
             ctx.pushHandler(ctx.pc)

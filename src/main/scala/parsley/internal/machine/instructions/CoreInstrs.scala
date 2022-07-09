@@ -4,18 +4,25 @@
 package parsley.internal.machine.instructions
 
 import parsley.internal.machine.{Context, Finished, Good}
+import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.EmptyError
 
 // Stack Manipulators
 private [internal] final class Push[A](x: A) extends Instr {
-    override def apply(ctx: Context): Unit = ctx.pushAndContinue(x)
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        ctx.pushAndContinue(x)
+    }
     // $COVERAGE-OFF$
     override def toString: String = s"Push($x)"
     // $COVERAGE-ON$
 }
 
 private [internal] final class Fresh[A](x: =>A) extends Instr {
-    override def apply(ctx: Context): Unit = ctx.pushAndContinue(x)
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        ctx.pushAndContinue(x)
+    }
     // $COVERAGE-OFF$
     override def toString: String = s"Fresh($x)"
     // $COVERAGE-ON$
@@ -23,6 +30,7 @@ private [internal] final class Fresh[A](x: =>A) extends Instr {
 
 private [internal] object Pop extends Instr {
     override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
         ctx.stack.pop_()
         ctx.inc()
     }
@@ -33,6 +41,7 @@ private [internal] object Pop extends Instr {
 
 private [internal] object Swap extends Instr {
     override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
         val y = ctx.stack.upop()
         val x = ctx.stack.peekAndExchange(y)
         ctx.unsafePushAndContinue(x)
@@ -45,6 +54,7 @@ private [internal] object Swap extends Instr {
 // Applicative Functors
 private [internal] object Apply extends Instr {
     override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
         val x = ctx.stack.upop()
         val f = ctx.stack.peek[Any => Any]
         ctx.exchangeAndContinue(f(x))
@@ -56,7 +66,10 @@ private [internal] object Apply extends Instr {
 
 // Monadic
 private [internal] final class DynCall(f: Any => Array[Instr]) extends Instr {
-    override def apply(ctx: Context): Unit = ctx.call(f(ctx.stack.upop()))
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        ctx.call(f(ctx.stack.upop()))
+    }
     // $COVERAGE-OFF$
     override def toString: String = "DynCall(?)"
     // $COVERAGE-ON$
@@ -67,7 +80,10 @@ private [internal] object DynCall {
 
 // Control Flow
 private [internal] object Halt extends Instr {
-    override def apply(ctx: Context): Unit = ctx.status = Finished
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        ctx.status = Finished
+    }
     // $COVERAGE-OFF$
     override def toString: String = "Halt"
     // $COVERAGE-ON$
@@ -83,21 +99,30 @@ private [internal] final class Call(var label: Int) extends InstrWithLabel {
         this
     }
 
-    override def apply(ctx: Context): Unit = ctx.call(label)
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        ctx.call(label)
+    }
     // $COVERAGE-OFF$
     override def toString: String = s"Call($label)"
     // $COVERAGE-ON$
 }
 
 private [internal] object Return extends Instr {
-    override def apply(ctx: Context): Unit = ctx.ret()
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        ctx.ret()
+    }
     // $COVERAGE-OFF$
     override def toString: String = "Return"
     // $COVERAGE-ON$
 }
 
 private [internal] object Empty extends Instr {
-    override def apply(ctx: Context): Unit = ctx.fail(new EmptyError(ctx.offset, ctx.line, ctx.col))
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        ctx.fail(new EmptyError(ctx.offset, ctx.line, ctx.col))
+    }
     // $COVERAGE-OFF$
     override def toString: String = "Empty"
     // $COVERAGE-ON$
@@ -105,6 +130,7 @@ private [internal] object Empty extends Instr {
 
 private [internal] final class PushHandler(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
         ctx.pushHandler(label)
         ctx.inc()
     }
@@ -115,6 +141,7 @@ private [internal] final class PushHandler(var label: Int) extends InstrWithLabe
 
 private [internal] object PopHandler extends Instr {
     override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
         ctx.handlers = ctx.handlers.tail
         ctx.inc()
     }
@@ -125,6 +152,7 @@ private [internal] object PopHandler extends Instr {
 
 private [internal] final class PushHandlerAndState(var label: Int, saveHints: Boolean, hideHints: Boolean) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
         ctx.pushHandler(label)
         ctx.saveState()
         if (saveHints) ctx.saveHints(shadow = hideHints)
@@ -137,6 +165,7 @@ private [internal] final class PushHandlerAndState(var label: Int, saveHints: Bo
 
 private [internal] object PopHandlerAndState extends Instr {
     override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
         ctx.states = ctx.states.tail
         ctx.handlers = ctx.handlers.tail
         ctx.inc()
@@ -148,6 +177,7 @@ private [internal] object PopHandlerAndState extends Instr {
 
 private [internal] final class PushHandlerAndCheck(var label: Int, saveHints: Boolean) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
         ctx.pushCheck()
         ctx.pushHandler(label)
         if (saveHints) ctx.saveHints(false)
@@ -160,6 +190,7 @@ private [internal] final class PushHandlerAndCheck(var label: Int, saveHints: Bo
 
 private [internal] object PopHandlerAndCheck extends Instr {
     override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
         ctx.checkStack = ctx.checkStack.tail
         ctx.handlers = ctx.handlers.tail
         ctx.inc()
@@ -170,7 +201,10 @@ private [internal] object PopHandlerAndCheck extends Instr {
 }
 
 private [internal] final class Jump(var label: Int) extends InstrWithLabel {
-    override def apply(ctx: Context): Unit = ctx.pc = label
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        ctx.pc = label
+    }
     // $COVERAGE-OFF$
     override def toString: String = s"Jump($label)"
     // $COVERAGE-ON$
@@ -178,6 +212,7 @@ private [internal] final class Jump(var label: Int) extends InstrWithLabel {
 
 private [internal] final class JumpAndPopCheck(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
         ctx.handlers = ctx.handlers.tail
         ctx.checkStack = ctx.checkStack.tail
         ctx.commitHints()
@@ -190,6 +225,7 @@ private [internal] final class JumpAndPopCheck(var label: Int) extends InstrWith
 
 private [internal] final class JumpAndPopState(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
         ctx.handlers = ctx.handlers.tail
         ctx.states = ctx.states.tail
         ctx.commitHints()
@@ -202,6 +238,7 @@ private [internal] final class JumpAndPopState(var label: Int) extends InstrWith
 
 private [internal] final class Catch(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
+        ensureHandlerInstruction(ctx)
         ctx.restoreHints()
         ctx.catchNoConsumed {
             ctx.pushHandler(label)
@@ -215,6 +252,7 @@ private [internal] final class Catch(var label: Int) extends InstrWithLabel {
 
 private [internal] final class RestoreAndPushHandler(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
+        ensureHandlerInstruction(ctx)
         ctx.restoreState()
         ctx.restoreHints()
         ctx.status = Good

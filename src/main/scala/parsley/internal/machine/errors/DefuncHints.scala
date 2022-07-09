@@ -3,6 +3,8 @@
  */
 package parsley.internal.machine.errors
 
+import parsley.XAssert._
+
 import parsley.internal.errors.{Desc, ErrorItem}
 
 /** This structure represents a collection of operations that can be performed
@@ -85,9 +87,9 @@ private [machine] sealed abstract class DefuncHints(private [errors] val size: I
         else if (newHints.isEmpty) this
         else new MergeHints(this, newHints)
     }
-    private [machine] final def addError(err: DefuncError): DefuncHints = err match {
-        case err: TrivialDefuncError => new AddError(this, err)
-        case _ => this
+    private [machine] final def addError(err: DefuncError): DefuncHints = {
+        assume(err.isTrivialError, "only trivial errors will get added to the hints")
+        new AddError(this, err.asInstanceOf[TrivialDefuncError])
     }
 }
 

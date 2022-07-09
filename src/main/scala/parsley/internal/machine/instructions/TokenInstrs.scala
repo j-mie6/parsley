@@ -8,6 +8,7 @@ import scala.annotation.tailrec
 import parsley.internal.collection.mutable.Radix, Radix.RadixSet
 import parsley.internal.errors.Desc
 import parsley.internal.machine.Context
+import parsley.internal.machine.XAssert._
 
 private [instructions] abstract class CommentLexer(start: String, end: String, line: String, nested: Boolean) extends Instr {
     protected final val lineAllowed = line.nonEmpty
@@ -92,7 +93,10 @@ private [instructions] abstract class WhiteSpaceLike(start: String, end: String,
         else singlesAndMultis(_)
     }
 
-    override final def apply(ctx: Context): Unit = impl(ctx)
+    override final def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        impl(ctx)
+    }
     protected def spaces(ctx: Context): Unit
 }
 
@@ -103,6 +107,7 @@ private [internal] final class TokenComment(start: String, end: String, line: St
     // PRE: one of the comments is supported
     // PRE: Multi-line comments may not prefix single-line, but single-line may prefix multi-line
     override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
         val startsMulti = multiAllowed && ctx.input.startsWith(start, ctx.offset)
         // If neither comment is available we fail
         if (!ctx.moreInput || (!lineAllowed || !ctx.input.startsWith(line, ctx.offset)) && !startsMulti) ctx.expectedTokenFail(expected = comment, openingSize)
@@ -145,6 +150,7 @@ private [internal] final class TokenNonSpecific(name: String, illegalName: Strin
     private [this] final val expected = Some(Desc(name))
 
     override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
         if (ctx.moreInput && start(ctx.nextChar)) {
             val initialOffset = ctx.offset
             ctx.offset += 1

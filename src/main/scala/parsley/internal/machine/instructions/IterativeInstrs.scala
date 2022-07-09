@@ -17,11 +17,9 @@ private [internal] final class Many(var label: Int) extends InstrWithLabel {
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else {
-            ctx.catchNoConsumed {
-                ctx.addErrorToHintsAndPop()
-                ctx.exchangeAndContinue(ctx.stack.peek[mutable.ListBuffer[Any]].toList)
-            }
+        else ctx.catchNoConsumed {
+            ctx.addErrorToHintsAndPop()
+            ctx.exchangeAndContinue(ctx.stack.peek[mutable.ListBuffer[Any]].toList)
         }
     }
     // $COVERAGE-OFF$
@@ -56,11 +54,9 @@ private [internal] final class ChainPost(var label: Int) extends InstrWithLabel 
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else {
-            ctx.catchNoConsumed {
-                ctx.addErrorToHintsAndPop()
-                ctx.inc()
-            }
+        else ctx.catchNoConsumed {
+            ctx.addErrorToHintsAndPop()
+            ctx.inc()
         }
     }
     // $COVERAGE-OFF$
@@ -77,11 +73,9 @@ private [internal] final class ChainPre(var label: Int) extends InstrWithLabel {
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else {
-            ctx.catchNoConsumed {
-                ctx.addErrorToHintsAndPop()
-                ctx.inc()
-            }
+        else ctx.catchNoConsumed {
+            ctx.addErrorToHintsAndPop()
+            ctx.inc()
         }
     }
     // $COVERAGE-OFF$
@@ -98,11 +92,9 @@ private [internal] final class Chainl(var label: Int) extends InstrWithLabel {
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else {
-            ctx.catchNoConsumed {
-                ctx.addErrorToHintsAndPop()
-                ctx.inc()
-            }
+        else ctx.catchNoConsumed {
+            ctx.addErrorToHintsAndPop()
+            ctx.inc()
         }
     }
     // $COVERAGE-OFF$

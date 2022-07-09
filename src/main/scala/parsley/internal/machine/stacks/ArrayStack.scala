@@ -52,5 +52,5 @@ private [machine] final class ArrayStack[A](initialSize: Int = ArrayStack.Defaul
     // $COVERAGE-ON$
 }
 private [machine] object ArrayStack {
-    val DefaultSize = 8
+    final val DefaultSize = 8
 }

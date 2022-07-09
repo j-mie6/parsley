@@ -173,6 +173,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     }
 
     private [machine] def ret(): Unit = {
+        assert(depth >= 1, "cannot return when no calls are made")
         instrs = calls.instrs
         pc = calls.ret
         calls = calls.tail
@@ -187,6 +188,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         if (n == 1) ret()
         else {
             var m = n - 1 // scalastyle:ignore var.local
+            assert(depth >= m, "cannot return when no calls are made")
             depth -= m
             // the rollback can safely discard n-1 frames immediately, as stateful instructions are no longer a thing!
             while (m > 0) {
@@ -199,6 +201,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     }
 
     private [machine] def catchNoConsumed(handler: =>Unit): Unit = {
+        assert(status eq Recover, "catching can only be performed in a handler")
         if (offset != checkStack.offset) fail()
         else {
             status = Good

@@ -10,6 +10,7 @@ import parsley.character
 import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
 import parsley.internal.errors.Desc
 import parsley.internal.machine.Context
+import parsley.internal.machine.XAssert._
 
 private [internal] final class TokenSign(ty: SignType) extends Instr {
     val neg: Any => Any = ty match {
@@ -19,6 +20,7 @@ private [internal] final class TokenSign(ty: SignType) extends Instr {
     val pos = (x: Any) => x
 
     override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
         if (ctx.moreInput && ctx.nextChar == '-') {
             ctx.fastUncheckedConsumeChars(1)
             ctx.stack.push(neg)
@@ -57,6 +59,7 @@ private [instructions] trait NumericReader {
 private [internal] object TokenNatural extends Instr with NumericReader {
     private [this] final val expected = Some(Desc("natural"))
     override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
         if (ctx.moreInput && ctx.nextChar == '0') {
             ctx.fastUncheckedConsumeChars(1)
             lazy val hexa = ctx.nextChar == 'x' || ctx.nextChar == 'X'
@@ -84,6 +87,7 @@ private [internal] object TokenNatural extends Instr with NumericReader {
 private [internal] object TokenFloat extends Instr {
     private [this] final val expected = Some(Desc("unsigned float"))
     override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
         val initialOffset = ctx.offset
         if (decimal(ctx)) {
             lexFraction(ctx, initialOffset)
