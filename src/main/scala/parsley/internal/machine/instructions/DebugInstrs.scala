@@ -4,6 +4,8 @@
 // $COVERAGE-OFF$
 package parsley.internal.machine.instructions
 
+import parsley.errors.ErrorBuilder
+
 import parsley.internal.machine.{Context, Failed, Finished, Good, Recover}
 import parsley.internal.machine.XAssert._
 
@@ -85,7 +87,8 @@ private [instructions] trait Logger extends PrettyPortal with InputSlicer with C
     }
 }
 
-private [internal] final class LogBegin(var label: Int, val name: String, val ascii: Boolean, break: Boolean) extends InstrWithLabel with Logger {
+private [internal] final class LogBegin(var label: Int, override val name: String, override val ascii: Boolean, break: Boolean)
+    extends InstrWithLabel with Logger {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         println(preludeString(Enter, ctx, ""))
@@ -97,7 +100,7 @@ private [internal] final class LogBegin(var label: Int, val name: String, val as
     override def toString: String = s"LogBegin($label, $name)"
 }
 
-private [internal] final class LogEnd(val name: String, val ascii: Boolean, break: Boolean) extends Instr with Logger {
+private [internal] final class LogEnd(val name: String, override val ascii: Boolean, break: Boolean) extends Instr with Logger {
     override def apply(ctx: Context): Unit = {
         ctx.debuglvl -= 1
         val end = " " + (ctx.status match {
@@ -133,13 +136,14 @@ private [instructions] trait ErrLogger extends PrettyPortal with Colours {
     */
 }
 
-private [internal] final class LogErrBegin(var label: Int, val name: String, val ascii: Boolean) extends InstrWithLabel with ErrLogger {
+private [internal] final class LogErrBegin(var label: Int, override val name: String, override val ascii: Boolean)(implicit errBuilder: ErrorBuilder[_])
+    extends InstrWithLabel with ErrLogger {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         println(preludeString(Enter, ctx, ""))
         ctx.debuglvl += 1
         // This should print out a classic opening line, followed by the currently in-flight hints
-        println(ctx.inFlightHints.toSet)
+        println(ctx.inFlightHints.toSet.map(_.format))
         ctx.stack.push(ctx.currentHintsValidOffset)
         ctx.pushHandler(label)
         ctx.inc()
@@ -147,7 +151,7 @@ private [internal] final class LogErrBegin(var label: Int, val name: String, val
     override def toString: String = s"LogErrBegin($label, $name)"
 }
 
-private [internal] final class LogErrEnd(val name: String, val ascii: Boolean) extends Instr with ErrLogger {
+private [internal] final class LogErrEnd(override val name: String, override val ascii: Boolean)(implicit errBuilder: ErrorBuilder[_]) extends Instr with ErrLogger {
     override def apply(ctx: Context): Unit = {
         ctx.debuglvl -= 1
         val currentHintsValidOffset = ctx.currentHintsValidOffset
@@ -157,7 +161,7 @@ private [internal] final class LogErrEnd(val name: String, val ascii: Boolean) e
                 val entryHintsValidOffset = ctx.stack.pop[Int]()
                 ctx.handlers = ctx.handlers.tail
                 println(preludeString(Exit, ctx, green(": Good")))
-                println(ctx.inFlightHints.toSet)
+                println(ctx.inFlightHints.toSet.map(_.format))
                 println(s"$entryHintsValidOffset -> $currentHintsValidOffset")
                 ctx.inc()
             case Recover =>

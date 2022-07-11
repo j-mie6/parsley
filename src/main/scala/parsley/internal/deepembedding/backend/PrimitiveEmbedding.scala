@@ -4,6 +4,7 @@
 package parsley.internal.deepembedding.backend
 
 import parsley.debug.{Breakpoint, EntryBreak, ExitBreak, FullBreak}
+import parsley.errors.ErrorBuilder
 import parsley.registers.Reg
 
 import parsley.internal.deepembedding.ContOps, ContOps.{ContAdapter, result, suspend}
@@ -111,14 +112,14 @@ private [deepembedding] final class Debug[A](val p: StrictParsley[A], name: Stri
     }
     final override def pretty(p: String): String = p
 }
-private [deepembedding] final class DebugError[A](val p: StrictParsley[A], name: String, ascii: Boolean) extends Unary[A, A] {
+private [deepembedding] final class DebugError[A](val p: StrictParsley[A], name: String, ascii: Boolean, errBuilder: ErrorBuilder[_]) extends Unary[A, A] {
     override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val handler = state.freshLabel()
-        instrs += new instructions.LogErrBegin(handler, name, ascii)
+        instrs += new instructions.LogErrBegin(handler, name, ascii)(errBuilder)
         suspend(p.codeGen[Cont, R]) |> {
             instrs += instructions.Swap
             instrs += new instructions.Label(handler)
-            instrs += new instructions.LogErrEnd(name, ascii)
+            instrs += new instructions.LogErrEnd(name, ascii)(errBuilder)
         }
     }
     final override def pretty(p: String): String = p

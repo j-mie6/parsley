@@ -3,6 +3,8 @@
  */
 package parsley
 
+import parsley.errors.ErrorBuilder
+
 import parsley.internal.deepembedding.frontend
 
 /** This module contains the very useful debugging combinator, as well as breakpoints.
@@ -116,8 +118,8 @@ object debug {
             new Parsley(new frontend.Debug[A](con(p).internal, name, !coloured, break))
         }
 
-        def debugError(name: String, coloured: Boolean = true): Parsley[A] = {
-            new Parsley(new frontend.DebugError[A](con(p).internal, name, !coloured))
+        def debugError(name: String, coloured: Boolean = true)(implicit errBuilder: ErrorBuilder[_]): Parsley[A] = {
+            new Parsley(new frontend.DebugError[A](con(p).internal, name, !coloured, errBuilder))
         }
     }
 }

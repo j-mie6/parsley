@@ -4,6 +4,7 @@
 package parsley.internal.deepembedding.frontend
 
 import parsley.debug.Breakpoint
+import parsley.errors.ErrorBuilder
 import parsley.registers.Reg
 
 import parsley.internal.deepembedding.backend, backend.StrictParsley
@@ -28,7 +29,7 @@ private [parsley] final class NewReg[S, A](val reg: Reg[S], init: LazyParsley[S]
 private [parsley] final class Debug[A](p: LazyParsley[A], name: String, ascii: Boolean, break: Breakpoint) extends Unary[A, A](p) {
     override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.Debug(p, name, ascii, break)
 }
-private [parsley] final class DebugError[A](p: LazyParsley[A], name: String, ascii: Boolean) extends Unary[A, A](p) {
-    override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.DebugError(p, name, ascii)
+private [parsley] final class DebugError[A](p: LazyParsley[A], name: String, ascii: Boolean, errBuilder: ErrorBuilder[_]) extends Unary[A, A](p) {
+    override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.DebugError(p, name, ascii, errBuilder)
 }
 // $COVERAGE-ON$
