@@ -45,18 +45,55 @@ private [machine] sealed abstract class DefuncError {
       * @return either the merged error, or one of the two originals
       */
     private [machine] def merge(err: DefuncError): DefuncError
-    /** This operation adds the currently available hints
+    /** This operation adds the currently available hints as expected
+      * items into an error message. This is only applicable for trivial
+      * errors.
       *
-      * @param hints
-      * @return
+      * @param hints the hints to add to the message
+      * @return the new error with hints
+      * @note hints should only be incorporated when they are at the same offset
       */
     private [machine] def withHints(hints: DefuncHints): DefuncError
+    /** This operation adds a reason to a trivial error.
+      *
+      * @param reason the reason to add to the message
+      * @return the error with the reason incorporated
+      * @note reasons are kept in-order
+      */
     private [machine] def withReason(reason: String): DefuncError
-    private [machine] def label(label: String): DefuncError
+    /** This operation replaces the expected labels in this error message
+      * by the given label. This can only happen when the offset of
+      * this error message matches the given offset: this should be the
+      * offset on entry to the `label` ''combinator'''.
+      *
+      * If the label given is `""`, then this label is not emitted into
+      * the error message, having the effect of removing the underlying
+      * labels.
+      *
+      * @param label the name to replace the expected labels with
+      * @param offset the offset that the label is applicable at
+      * @return an error message that incorporates the relevant errors
+      */
+    private [machine] def label(label: String, offset: Int): DefuncError
+    /** This operation changes the offset, line, and column number that
+      * an error appears to occur at. The effect of this operation is
+      * suppressed by `entrench`, however.
+      *
+      * @param offset the new offset of the error
+      * @param line the new line of the error
+      * @param col the new column of the error
+      * @return a new error that has been amended
+      */
     private [machine] def amend(offset: Int, line: Int, col: Int): DefuncError
+    /** This operation resists the changes attempted by an `amend` operation
+      * ''above'' it, without affecting the messages below.
+      *
+      * @return an entrenched error message
+      */
     private [machine] def entrench: DefuncError
 }
 
+/** Represents partially evaluated trivial errors */
 private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
     private [machine] final override def asParseError(implicit builder: ErrorItemBuilder): TrivialError = {
         val state = new TrivialState(offset, !builder.inRange(offset))
@@ -65,13 +102,19 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
     }
     private [errors] def makeTrivial(state: TrivialState): Unit
 
-    // This is used by `DefuncHints` to turn any labels that would occur in this error message
-    // into hints. This is done like this to allow for other parts of the error building process
-    // to be ignored. This is only valid for trivial errors
+    /** This method collects up the error labels of this error message into the given `HintState`.
+      *
+      * This is important for `DefuncHints`, which generates a hints set for previously recovered
+      * errors. This is a more efficient way of computing this information as it ignores the other
+      * data processed during the formation of a regular error message.
+      *
+      * @param state the hint state that is collecting up the expected items
+      * @note this function should be tail-recursive!
+      */
     private [errors] final def collectHints(state: HintState): Unit = this match {
         case self: BaseError          =>
             state ++= self.expectedIterable
-            state.updateSize(self.size)
+            state.updateSize(self.unexpectedWidth)
         case self: WithLabel          => if (self.label.nonEmpty) state += Desc(self.label)
         case self: WithReason         => self.err.collectHints(state)
         case self: WithHints          =>
@@ -100,7 +143,10 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
         else this
     }
     private [machine] final override def withReason(reason: String): TrivialDefuncError = new WithReason(this, reason)
-    private [machine] final override def label(label: String): TrivialDefuncError = new WithLabel(this, label)
+    private [machine] final override def label(label: String, offset: Int): TrivialDefuncError = {
+        if (this.offset == offset) new WithLabel(this, label)
+        else this
+    }
     private [machine] final override def amend(offset: Int, line: Int, col: Int): TrivialDefuncError = {
         if (!this.entrenched) new TrivialAmended(offset, line, col, this)
         else this
@@ -111,7 +157,9 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
     }
 }
 
+/** Represents partially evaluated fancy errors */
 private [errors] sealed abstract class FancyDefuncError extends DefuncError {
+    // fancy errors don't have expected messages
     private [machine] final override def isExpectedEmpty = true
     private [machine] final override def asParseError(implicit builder: ErrorItemBuilder): FancyError = {
         val state = new FancyState(offset)
@@ -133,7 +181,7 @@ private [errors] sealed abstract class FancyDefuncError extends DefuncError {
 
     private [machine] final override def withHints(hints: DefuncHints): FancyDefuncError = this
     private [machine] final override def withReason(reason: String): FancyDefuncError = this
-    private [machine] final override def label(label: String): FancyDefuncError = this
+    private [machine] final override def label(label: String, offset: Int): FancyDefuncError = this
     private [machine] final override def amend(offset: Int, line: Int, col: Int): FancyDefuncError = {
         if (!this.entrenched) new FancyAmended(offset, line, col, this)
         else this
@@ -146,42 +194,57 @@ private [errors] sealed abstract class FancyDefuncError extends DefuncError {
 
 /** This is the common supertype of all "regular" trivial errors: those that result from failures as opposed to operations on errors. */
 private [errors] sealed abstract class BaseError extends TrivialDefuncError {
+    /** The line number the error occurred at */
+    private [errors] val line: Int
+    /** The column number the error occurred at */
+    private [errors] val col: Int
     /** The size of the unexpected token demanded by this error */
-    def size: Int
+    private [errors] def unexpectedWidth: Int
     // def expected: IterableOnce[ErrorItem] // when 2.12 is dropped this will work better
     /** The error items produced by this error */
-    def expectedIterable: Iterable[ErrorItem]
+    private [errors] def expectedIterable: Iterable[ErrorItem]
+
+    /** Adds the reasons and errors (or any other work) after the position and unexpected updates.
+      * By default, this will just add the expected messages found in the `expectedIterable`.
+      *
+      * @note the default can, and should, be overriden for efficiency or to add more information
+      */
+    private [errors] def addLabelsAndReasons(state: TrivialState): Unit = state ++= expectedIterable
+
+    /** Default implementation of `makeTrivial`, which updates the position of the error, and the
+      * size of the unexpected token. This calls `addLabelsAndReasons` to complete any work.
+      *
+      * @note the default implementation should be overriden for EmptyErrors, which must not update the unexpected!
+      */
+    private [errors] override def makeTrivial(state: TrivialState): Unit = {
+        state.pos_=(line, col)
+        state.updateUnexpected(unexpectedWidth)
+        addLabelsAndReasons(state)
+    }
 }
 
 private [machine] final class ClassicExpectedError(val offset: Int, val line: Int, val col: Int, val expected: Option[ErrorItem]) extends BaseError {
     override def isExpectedEmpty: Boolean = expected.isEmpty
-    override def size = 1
+    override def unexpectedWidth = 1
     override def expectedIterable: Iterable[ErrorItem] = expected
-    override def makeTrivial(state: TrivialState): Unit = {
-        state.pos_=(line, col)
-        state ++= expected
-        state.updateUnexpected(1)
-    }
+    //override def addLabelsAndReasons(state: TrivialState): Unit = state += expected
 }
 private [machine] final class ClassicExpectedErrorWithReason(val offset: Int, val line: Int, val col: Int, val expected: Option[ErrorItem], val reason: String)
     extends BaseError {
     override def isExpectedEmpty: Boolean = expected.isEmpty
-    override def size = 1
+    override def unexpectedWidth = 1
     override def expectedIterable: Iterable[ErrorItem] = expected
-    override def makeTrivial(state: TrivialState): Unit = {
-        state.pos_=(line, col)
+    override def addLabelsAndReasons(state: TrivialState): Unit = {
         state += expected
         state += reason
-        state.updateUnexpected(1)
     }
 }
 private [machine] final class ClassicUnexpectedError(val offset: Int, val line: Int, val col: Int, val expected: Option[ErrorItem], val unexpected: ErrorItem)
     extends BaseError {
     override def isExpectedEmpty: Boolean = expected.isEmpty
-    override def size = 1
+    override def unexpectedWidth = 1
     override def expectedIterable: Iterable[ErrorItem] = expected
-    override def makeTrivial(state: TrivialState): Unit = {
-        state.pos_=(line, col)
+    override def addLabelsAndReasons(state: TrivialState): Unit = {
         state += expected
         state.updateUnexpected(unexpected)
     }
@@ -194,36 +257,29 @@ private [machine] final class ClassicFancyError(val offset: Int, val line: Int, 
 }
 private [machine] final class EmptyError(val offset: Int, val line: Int, val col: Int) extends BaseError {
     override def isExpectedEmpty: Boolean = true
-    override def size = 1
+    override def unexpectedWidth = 0
     override def expectedIterable: Iterable[ErrorItem] = None
     override def makeTrivial(state: TrivialState): Unit = state.pos_=(line, col)
 }
-private [machine] final class TokenError(val offset: Int, val line: Int, val col: Int, val expected: Option[ErrorItem], val size: Int) extends BaseError {
+private [machine] final class TokenError(val offset: Int, val line: Int, val col: Int, val expected: Option[ErrorItem], val unexpectedWidth: Int)
+    extends BaseError {
     override def isExpectedEmpty: Boolean = expected.isEmpty
     override def expectedIterable: Iterable[ErrorItem] = expected
-    override def makeTrivial(state: TrivialState): Unit = {
-        state.pos_=(line, col)
-        state += expected
-        state.updateUnexpected(size)
-    }
+    //override def addLabelsAndReasons(state: TrivialState): Unit = state += expected
 }
 private [machine] final class EmptyErrorWithReason(val offset: Int, val line: Int, val col: Int, val reason: String) extends BaseError {
     override def isExpectedEmpty: Boolean = true
-    override def size = 1
+    override def unexpectedWidth = 0
     override def expectedIterable: Iterable[ErrorItem] = None
     override def makeTrivial(state: TrivialState): Unit = {
         state.pos_=(line, col)
         state += reason
     }
 }
-private [machine] final class MultiExpectedError(val offset: Int, val line: Int, val col: Int, val expected: Set[ErrorItem], val size: Int) extends BaseError {
+private [machine] final class MultiExpectedError(val offset: Int, val line: Int, val col: Int, val expected: Set[ErrorItem], val unexpectedWidth: Int)
+    extends BaseError {
     override def isExpectedEmpty: Boolean = expected.isEmpty
     override def expectedIterable: Iterable[ErrorItem] = expected
-    override def makeTrivial(state: TrivialState): Unit = {
-        state.pos_=(line, col)
-        state ++= expected
-        state.updateUnexpected(size)
-    }
 }
 
 private [errors] final class TrivialMergedErrors private [errors] (val err1: TrivialDefuncError, val err2: TrivialDefuncError) extends TrivialDefuncError {
@@ -288,6 +344,7 @@ private [errors] final class TrivialAmended private [errors] (val offset: Int, v
     override val isExpectedEmpty: Boolean = err.isExpectedEmpty
     override def makeTrivial(state: TrivialState): Unit = {
         err.makeTrivial(state)
+        assume(!err.entrenched, "an amendment will only occur on unentrenched errors")
         state.pos_=(line, col)
     }
 }
@@ -295,6 +352,7 @@ private [errors] final class TrivialAmended private [errors] (val offset: Int, v
 private [errors] final class FancyAmended private [errors] (val offset: Int, val line: Int, val col: Int, val err: FancyDefuncError) extends FancyDefuncError {
     override def makeFancy(state: FancyState): Unit = {
         err.makeFancy(state)
+        assume(!err.entrenched, "an amendment will only occur on unentrenched errors")
         state.pos_=(line, col)
     }
 }

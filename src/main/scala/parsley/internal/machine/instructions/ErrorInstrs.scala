@@ -34,12 +34,9 @@ private [internal] final class RelabelErrorAndFail(label: String) extends Instr 
         ensureHandlerInstruction(ctx)
         ctx.restoreHints()
         ctx.errs.error = ctx.useHints {
-            // EERR
-            // the top of the error stack is adjusted:
-            if (ctx.errs.error.offset == ctx.checkStack.offset) ctx.errs.error.label(label)
-            // CERR
-            // do nothing
-            else ctx.errs.error
+            // only use the label if the error message is generated at the same offset
+            // as the check stack saved for the start of the `label` combinator.
+            ctx.errs.error.label(label, ctx.checkStack.offset)
         }
         ctx.checkStack = ctx.checkStack.tail
         ctx.fail()

@@ -163,24 +163,24 @@ class DefuncErrorTests extends ParsleyTest {
     }
 
     "WithLabel" should "be trivial if its child is" in {
-        val err = new ClassicExpectedError(0, 0, 0, None).label("")
+        val err = new ClassicExpectedError(0, 0, 0, None).label("", 0)
         err.isTrivialError shouldBe true
         err.asParseError shouldBe a [TrivialError]
     }
     it should "support fancy errors as not trivial" in {
-        val err = new ClassicFancyError(0, 0, 0, "").label("")
+        val err = new ClassicFancyError(0, 0, 0, "").label("", 0)
         err.isTrivialError shouldBe false
         err.asParseError shouldBe a [FancyError]
     }
     it should "be empty if the label is empty and not otherwise" in {
-        new EmptyError(0, 0, 0).label("").isExpectedEmpty shouldBe true
-        new EmptyError(0, 0, 0).label("a").isExpectedEmpty shouldBe false
-        new ClassicExpectedError(0, 0, 0, Some(Desc("x"))).label("").isExpectedEmpty shouldBe true
-        new ClassicExpectedError(0, 0, 0, Some(Desc("x"))).label("a").isExpectedEmpty shouldBe false
+        new EmptyError(0, 0, 0).label("", 0).isExpectedEmpty shouldBe true
+        new EmptyError(0, 0, 0).label("a", 0).isExpectedEmpty shouldBe false
+        new ClassicExpectedError(0, 0, 0, Some(Desc("x"))).label("", 0).isExpectedEmpty shouldBe true
+        new ClassicExpectedError(0, 0, 0, Some(Desc("x"))).label("a", 0).isExpectedEmpty shouldBe false
     }
     it should "replace all expected" in {
-        val errShow = new MultiExpectedError(0, 0, 0, Set(Raw("a"), Raw("b")), 1).label("x")
-        val errHide = new MultiExpectedError(0, 0, 0, Set(Raw("a"), Raw("b")), 1).label("")
+        val errShow = new MultiExpectedError(0, 0, 0, Set(Raw("a"), Raw("b")), 1).label("x", 0)
+        val errHide = new MultiExpectedError(0, 0, 0, Set(Raw("a"), Raw("b")), 1).label("", 0)
         errShow.asParseError.asInstanceOf[TrivialError].expecteds should contain only (Desc("x"))
         errHide.asParseError.asInstanceOf[TrivialError].expecteds shouldBe empty
     }
