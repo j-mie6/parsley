@@ -27,44 +27,44 @@ private [machine] sealed abstract class DefuncHints(private [errors] val size: I
     private [errors] def nonEmpty: Boolean = size != 0
     private [errors] def isEmpty: Boolean = size == 0
     /** This function evaluates this `DefuncHints` structure into the actual set of
-      * error items it represents and adds this directly into the provided `TrivialState`
+      * error items it represents and adds this directly into the provided `TrivialErrorBuilder`
       *
       * @note this function is ''impure'' and changes properties of the hints themselves
       */
-    private [machine] def updateExpectedsAndGetSize(state: TrivialState): Int = {
-        val hintState = state.asHintState
-        collect(0, hintState)
-        hintState.unexpectSize
+    private [machine] def updateExpectedsAndGetSize(builder: TrivialErrorBuilder): Int = {
+        val hintCollector = builder.makeHintCollector
+        collect(0, hintCollector)
+        hintCollector.unexpectSize
     }
     private [machine] def toSet: Set[ErrorItem] = {
-        val state: HintState = new HintState
+        val state: HintCollector = new HintCollector
         collect(0, state)
         // this /must/ be set to ensure that this function is pure, as `collect` can alter this value.
         incorporatedAfter = size
         state.mkSet
     }
-    final private [errors] def collect(skipNext: Int, state: HintState): Unit = if (skipNext < incorporatedAfter) {
+    final private [errors] def collect(skipNext: Int, collector: HintCollector): Unit = if (skipNext < incorporatedAfter) {
         // This error only needs to provide the first `skipNext` elements if we encounter it again
         incorporatedAfter = skipNext
         this match {
             case EmptyHints =>
             // Popping and replacing are both achieved by skipping the next hint to be processed
-            case self: PopHints => self.hints.collect(skipNext + 1, state)
+            case self: PopHints => self.hints.collect(skipNext + 1, collector)
             case self: ReplaceHint =>
                 // replacing a hint already skips on its own anyway, so this is like skipNext - 1 + 1 == skipNext
-                if (skipNext > 0) self.hints.collect(skipNext, state)
+                if (skipNext > 0) self.hints.collect(skipNext, collector)
                 else {
-                    state += Desc(self.label)
-                    self.hints.collect(skipNext + 1, state)
+                    collector += Desc(self.label)
+                    self.hints.collect(skipNext + 1, collector)
                 }
             case self: MergeHints =>
                 // if there are less hints in the first set than we want to skip, then it can be hopped over
-                if (self.oldHints.size <= skipNext) self.newHints.collect(skipNext - self.oldHints.size, state)
+                if (self.oldHints.size <= skipNext) self.newHints.collect(skipNext - self.oldHints.size, collector)
                 else {
                     // otherwise, we know that all the hints to skip are in the first set (with some which are needed!),
                     // and we can travese the second from the beginning
-                    self.oldHints.collect(skipNext, state)
-                    self.newHints.collect(0, state)
+                    self.oldHints.collect(skipNext, collector)
+                    self.newHints.collect(0, collector)
                 }
             case self: AddError =>
                 // skipping happens inside out here: the hints structure is a snoc-list
@@ -72,8 +72,8 @@ private [machine] sealed abstract class DefuncHints(private [errors] val size: I
                 // Good news is that the order the hints are /contributed/ in doesn't matter, because it's a set
                 // so the order can be reversed.
                 // We incorporate this error only when self.hints absorbed all the skips (skipNext <= self.hints.size)
-                if (skipNext < self.size) self.err.collectHints(state)
-                self.hints.collect(skipNext, state)
+                if (skipNext < self.size) self.err.collectHints(collector)
+                self.hints.collect(skipNext, collector)
         }
     }
 

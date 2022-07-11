@@ -29,7 +29,7 @@ private [machine] sealed abstract class DefuncError {
     /** The offset at which this error occured */
     private [machine] val offset: Int
     /** This function forced the lazy defunctionalised structure into a final `ParseError` value */
-    private [machine] def asParseError(implicit builder: ErrorItemBuilder): ParseError
+    private [machine] def asParseError(implicit itemBuilder: ErrorItemBuilder): ParseError
 
     // Operations: these are the smart constructors for the hint operations, which will reduce the number of objects in the binary
     // they all perform some form of simplification step to avoid unnecesary allocations
@@ -95,12 +95,12 @@ private [machine] sealed abstract class DefuncError {
 
 /** Represents partially evaluated trivial errors */
 private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
-    private [machine] final override def asParseError(implicit builder: ErrorItemBuilder): TrivialError = {
-        val state = new TrivialState(offset, !builder.inRange(offset))
-        makeTrivial(state)
-        state.mkError
+    private [machine] final override def asParseError(implicit itemBuilder: ErrorItemBuilder): TrivialError = {
+        val errorBuilder = new TrivialErrorBuilder(offset, !itemBuilder.inRange(offset))
+        makeTrivial(errorBuilder)
+        errorBuilder.mkError
     }
-    private [errors] def makeTrivial(state: TrivialState): Unit
+    private [errors] def makeTrivial(builder: TrivialErrorBuilder): Unit
 
     /** This method collects up the error labels of this error message into the given `HintState`.
       *
@@ -111,20 +111,20 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
       * @param state the hint state that is collecting up the expected items
       * @note this function should be tail-recursive!
       */
-    private [errors] final def collectHints(state: HintState): Unit = this match {
+    private [errors] final def collectHints(collector: HintCollector): Unit = this match {
         case self: BaseError          =>
-            state ++= self.expectedIterable
-            state.updateSize(self.unexpectedWidth)
-        case self: WithLabel          => if (self.label.nonEmpty) state += Desc(self.label)
-        case self: WithReason         => self.err.collectHints(state)
+            collector ++= self.expectedIterable
+            collector.updateSize(self.unexpectedWidth)
+        case self: WithLabel          => if (self.label.nonEmpty) collector += Desc(self.label)
+        case self: WithReason         => self.err.collectHints(collector)
         case self: WithHints          =>
-            self.hints.collect(0, state)
-            self.err.collectHints(state)
+            self.hints.collect(0, collector)
+            self.err.collectHints(collector)
         case self: TrivialMergedErrors =>
-            self.err1.collectHints(state)
-            self.err2.collectHints(state)
-        case self: TrivialAmended     => self.err.collectHints(state)
-        case self: TrivialEntrenched  => self.err.collectHints(state)
+            self.err1.collectHints(collector)
+            self.err2.collectHints(collector)
+        case self: TrivialAmended     => self.err.collectHints(collector)
+        case self: TrivialEntrenched  => self.err.collectHints(collector)
     }
 
     private [machine] final override def merge(err: DefuncError): DefuncError = {
@@ -161,12 +161,12 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
 private [errors] sealed abstract class FancyDefuncError extends DefuncError {
     // fancy errors don't have expected messages
     private [machine] final override def isExpectedEmpty = true
-    private [machine] final override def asParseError(implicit builder: ErrorItemBuilder): FancyError = {
-        val state = new FancyState(offset)
-        makeFancy(state)
-        state.mkError
+    private [machine] final override def asParseError(implicit itemBuilder: ErrorItemBuilder): FancyError = {
+        val builder = new FancyErrorBuilder(offset)
+        makeFancy(builder)
+        builder.mkError
     }
-    private [errors] def makeFancy(state: FancyState): Unit
+    private [errors] def makeFancy(builder: FancyErrorBuilder): Unit
 
     private [machine] final override def merge(err: DefuncError): DefuncError = {
         val thisOffset = this.offset
@@ -209,17 +209,17 @@ private [errors] sealed abstract class BaseError extends TrivialDefuncError {
       *
       * @note the default can, and should, be overriden for efficiency or to add more information
       */
-    private [errors] def addLabelsAndReasons(state: TrivialState): Unit = state ++= expectedIterable
+    private [errors] def addLabelsAndReasons(builder: TrivialErrorBuilder): Unit = builder ++= expectedIterable
 
     /** Default implementation of `makeTrivial`, which updates the position of the error, and the
       * size of the unexpected token. This calls `addLabelsAndReasons` to complete any work.
       *
       * @note the default implementation should be overriden for EmptyErrors, which must not update the unexpected!
       */
-    private [errors] override def makeTrivial(state: TrivialState): Unit = {
-        state.pos_=(line, col)
-        state.updateUnexpected(unexpectedWidth)
-        addLabelsAndReasons(state)
+    private [errors] override def makeTrivial(builder: TrivialErrorBuilder): Unit = {
+        builder.pos_=(line, col)
+        builder.updateUnexpected(unexpectedWidth)
+        addLabelsAndReasons(builder)
     }
 }
 
@@ -234,9 +234,9 @@ private [machine] final class ClassicExpectedErrorWithReason(val offset: Int, va
     override def isExpectedEmpty: Boolean = expected.isEmpty
     override def unexpectedWidth = 1
     override def expectedIterable: Iterable[ErrorItem] = expected
-    override def addLabelsAndReasons(state: TrivialState): Unit = {
-        state += expected
-        state += reason
+    override def addLabelsAndReasons(builder: TrivialErrorBuilder): Unit = {
+        builder += expected
+        builder += reason
     }
 }
 private [machine] final class ClassicUnexpectedError(val offset: Int, val line: Int, val col: Int, val expected: Option[ErrorItem], val unexpected: ErrorItem)
@@ -244,22 +244,22 @@ private [machine] final class ClassicUnexpectedError(val offset: Int, val line: 
     override def isExpectedEmpty: Boolean = expected.isEmpty
     override def unexpectedWidth = 1
     override def expectedIterable: Iterable[ErrorItem] = expected
-    override def addLabelsAndReasons(state: TrivialState): Unit = {
-        state += expected
-        state.updateUnexpected(unexpected)
+    override def addLabelsAndReasons(builder: TrivialErrorBuilder): Unit = {
+        builder += expected
+        builder.updateUnexpected(unexpected)
     }
 }
 private [machine] final class ClassicFancyError(val offset: Int, val line: Int, val col: Int, val msgs: String*) extends FancyDefuncError {
-    override def makeFancy(state: FancyState): Unit = {
-        state.pos_=(line, col)
-        state ++= msgs
+    override def makeFancy(builder: FancyErrorBuilder): Unit = {
+        builder.pos_=(line, col)
+        builder ++= msgs
     }
 }
 private [machine] final class EmptyError(val offset: Int, val line: Int, val col: Int) extends BaseError {
     override def isExpectedEmpty: Boolean = true
     override def unexpectedWidth = 0
     override def expectedIterable: Iterable[ErrorItem] = None
-    override def makeTrivial(state: TrivialState): Unit = state.pos_=(line, col)
+    override def makeTrivial(builder: TrivialErrorBuilder): Unit = builder.pos_=(line, col)
 }
 private [machine] final class TokenError(val offset: Int, val line: Int, val col: Int, val expected: Option[ErrorItem], val unexpectedWidth: Int)
     extends BaseError {
@@ -271,9 +271,9 @@ private [machine] final class EmptyErrorWithReason(val offset: Int, val line: In
     override def isExpectedEmpty: Boolean = true
     override def unexpectedWidth = 0
     override def expectedIterable: Iterable[ErrorItem] = None
-    override def makeTrivial(state: TrivialState): Unit = {
-        state.pos_=(line, col)
-        state += reason
+    override def makeTrivial(builder: TrivialErrorBuilder): Unit = {
+        builder.pos_=(line, col)
+        builder += reason
     }
 }
 private [machine] final class MultiExpectedError(val offset: Int, val line: Int, val col: Int, val expected: Set[ErrorItem], val unexpectedWidth: Int)
@@ -287,9 +287,9 @@ private [errors] final class TrivialMergedErrors private [errors] (val err1: Tri
     override val entrenched: Boolean = err1.entrenched && err2.entrenched
     assume(err1.offset == err2.offset, "two errors only merge when they have matching offsets")
     val offset = err1.offset //Math.max(err1.offset, err2.offset)
-    override def makeTrivial(state: TrivialState): Unit = {
-        err1.makeTrivial(state)
-        err2.makeTrivial(state)
+    override def makeTrivial(builder: TrivialErrorBuilder): Unit = {
+        err1.makeTrivial(builder)
+        err2.makeTrivial(builder)
     }
 }
 
@@ -297,9 +297,9 @@ private [errors] final class FancyMergedErrors private [errors] (val err1: Fancy
     override val entrenched: Boolean = err1.entrenched && err2.entrenched
     assume(err1.offset == err2.offset, "two errors only merge when they have matching offsets")
     override val offset = err1.offset //Math.max(err1.offset, err2.offset)
-    override def makeFancy(state: FancyState): Unit = {
-        err1.makeFancy(state)
-        err2.makeFancy(state)
+    override def makeFancy(builder: FancyErrorBuilder): Unit = {
+        err1.makeFancy(builder)
+        err2.makeFancy(builder)
     }
 }
 
@@ -308,11 +308,11 @@ private [errors] final class WithHints private [errors] (val err: TrivialDefuncE
     override def isExpectedEmpty: Boolean = false //err.isExpectedEmpty && hints.isEmpty
     override val offset = err.offset
     override val entrenched: Boolean = err.entrenched
-    override def makeTrivial(state: TrivialState): Unit = {
-        err.makeTrivial(state)
-        state.whenAcceptingExpected {
-            val size = hints.updateExpectedsAndGetSize(state)
-            state.updateUnexpected(size)
+    override def makeTrivial(builder: TrivialErrorBuilder): Unit = {
+        err.makeTrivial(builder)
+        builder.whenAcceptingExpected {
+            val size = hints.updateExpectedsAndGetSize(builder)
+            builder.updateUnexpected(size)
         }
     }
 }
@@ -321,9 +321,9 @@ private [errors] final class WithReason private [errors] (val err: TrivialDefunc
     override val isExpectedEmpty: Boolean = err.isExpectedEmpty
     override val entrenched: Boolean = err.entrenched
     val offset = err.offset
-    override def makeTrivial(state: TrivialState): Unit = {
-        err.makeTrivial(state)
-        state += reason
+    override def makeTrivial(builder: TrivialErrorBuilder): Unit = {
+        err.makeTrivial(builder)
+        builder += reason
     }
 }
 
@@ -331,29 +331,29 @@ private [errors] final class WithLabel private [errors] (val err: TrivialDefuncE
     override def isExpectedEmpty: Boolean = label.isEmpty
     override val entrenched: Boolean = err.entrenched
     val offset = err.offset
-    override def makeTrivial(state: TrivialState): Unit = {
-        state.ignoreExpected {
-            err.makeTrivial(state)
+    override def makeTrivial(builder: TrivialErrorBuilder): Unit = {
+        builder.ignoreExpected {
+            err.makeTrivial(builder)
         }
-        if (label.nonEmpty) state += Desc(label)
+        if (label.nonEmpty) builder += Desc(label)
     }
 }
 
 private [errors] final class TrivialAmended private [errors] (val offset: Int, val line: Int, val col: Int, val err: TrivialDefuncError)
     extends TrivialDefuncError {
     override val isExpectedEmpty: Boolean = err.isExpectedEmpty
-    override def makeTrivial(state: TrivialState): Unit = {
-        err.makeTrivial(state)
+    override def makeTrivial(builder: TrivialErrorBuilder): Unit = {
+        err.makeTrivial(builder)
         assume(!err.entrenched, "an amendment will only occur on unentrenched errors")
-        state.pos_=(line, col)
+        builder.pos_=(line, col)
     }
 }
 
 private [errors] final class FancyAmended private [errors] (val offset: Int, val line: Int, val col: Int, val err: FancyDefuncError) extends FancyDefuncError {
-    override def makeFancy(state: FancyState): Unit = {
-        err.makeFancy(state)
+    override def makeFancy(builder: FancyErrorBuilder): Unit = {
+        err.makeFancy(builder)
         assume(!err.entrenched, "an amendment will only occur on unentrenched errors")
-        state.pos_=(line, col)
+        builder.pos_=(line, col)
     }
 }
 
@@ -361,11 +361,11 @@ private [errors] final class TrivialEntrenched private [errors] (val err: Trivia
     override val isExpectedEmpty: Boolean = err.isExpectedEmpty
     override val entrenched: Boolean = true
     override val offset = err.offset
-    override def makeTrivial(state: TrivialState): Unit = err.makeTrivial(state)
+    override def makeTrivial(builder: TrivialErrorBuilder): Unit = err.makeTrivial(builder)
 }
 
 private [errors] final class FancyEntrenched private [errors] (val err: FancyDefuncError) extends FancyDefuncError {
     override val entrenched: Boolean = true
     override val offset = err.offset
-    override def makeFancy(state: FancyState): Unit = err.makeFancy(state)
+    override def makeFancy(builder: FancyErrorBuilder): Unit = err.makeFancy(builder)
 }
