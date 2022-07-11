@@ -114,7 +114,7 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
     private [errors] final def collectHints(collector: HintCollector): Unit = this match {
         case self: BaseError          =>
             collector ++= self.expectedIterable
-            collector.updateSize(self.unexpectedWidth)
+            collector.updateWidth(self.unexpectedWidth)
         case self: WithLabel          => if (self.label.nonEmpty) collector += Desc(self.label)
         case self: WithReason         => self.err.collectHints(collector)
         case self: WithHints          =>
@@ -227,7 +227,6 @@ private [machine] final class ClassicExpectedError(val offset: Int, val line: In
     override def isExpectedEmpty: Boolean = expected.isEmpty
     override def unexpectedWidth = 1
     override def expectedIterable: Iterable[ErrorItem] = expected
-    //override def addLabelsAndReasons(state: TrivialState): Unit = state += expected
 }
 private [machine] final class ClassicExpectedErrorWithReason(val offset: Int, val line: Int, val col: Int, val expected: Option[ErrorItem], val reason: String)
     extends BaseError {
@@ -265,7 +264,6 @@ private [machine] final class TokenError(val offset: Int, val line: Int, val col
     extends BaseError {
     override def isExpectedEmpty: Boolean = expected.isEmpty
     override def expectedIterable: Iterable[ErrorItem] = expected
-    //override def addLabelsAndReasons(state: TrivialState): Unit = state += expected
 }
 private [machine] final class EmptyErrorWithReason(val offset: Int, val line: Int, val col: Int, val reason: String) extends BaseError {
     override def isExpectedEmpty: Boolean = true
@@ -344,6 +342,7 @@ private [errors] final class TrivialAmended private [errors] (val offset: Int, v
     override val isExpectedEmpty: Boolean = err.isExpectedEmpty
     override def makeTrivial(builder: TrivialErrorBuilder): Unit = {
         err.makeTrivial(builder)
+        // this should happen after the sub-error has been proceeded
         assume(!err.entrenched, "an amendment will only occur on unentrenched errors")
         builder.pos_=(line, col)
     }

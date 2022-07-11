@@ -34,7 +34,7 @@ private [machine] sealed abstract class DefuncHints(private [errors] val size: I
     private [machine] def updateExpectedsAndGetSize(builder: TrivialErrorBuilder): Int = {
         val hintCollector = builder.makeHintCollector
         collect(0, hintCollector)
-        hintCollector.unexpectSize
+        hintCollector.unexpectWidth
     }
     private [machine] def toSet: Set[ErrorItem] = {
         val state: HintCollector = new HintCollector
