@@ -8,8 +8,8 @@ import parsley.errors.ErrorBuilder
 private [internal] sealed abstract class ErrorItem {
     def format(implicit builder: ErrorBuilder[_]): builder.Item
     def higherPriority(other: ErrorItem): Boolean
-    private [errors] def lowerThanRaw(other: Raw): Boolean
-    private [errors] def lowerThanDesc: Boolean
+    protected [errors] def lowerThanRaw(other: Raw): Boolean
+    protected [errors] def lowerThanDesc: Boolean
 }
 /*
 private [internal] object ErrorItem {

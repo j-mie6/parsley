@@ -36,13 +36,27 @@ private [machine] sealed abstract class DefuncHints(private [errors] val size: I
         collect(0, hintCollector)
         hintCollector.unexpectWidth
     }
+    /** This function evaulates this `DefuncHints` structure into an actual set of
+      * error items independently of any error messages.
+      *
+      * @note this function is ''pure'' and can be used at will
+      */
     private [machine] def toSet: Set[ErrorItem] = {
         val state: HintCollector = new HintCollector
         collect(0, state)
-        // this /must/ be set to ensure that this function is pure, as `collect` can alter this value.
-        incorporatedAfter = size
+        // this /must/ be done to ensure that this function is pure, as `collect` can alter this value.
+        reset()
         state.mkSet
     }
+    /** This function undoes the mutation that is performed by `updateExpectedsAndGetSize` allowing
+      * this hint to be used again.
+      */
+    private [machine] def reset(): Unit = {
+        resetDeep()
+        resetThis()
+    }
+    private def resetThis(): Unit = incorporatedAfter = size
+    protected def resetDeep(): Unit
     final private [errors] def collect(skipNext: Int, collector: HintCollector): Unit = if (skipNext < incorporatedAfter) {
         // This error only needs to provide the first `skipNext` elements if we encounter it again
         incorporatedAfter = skipNext
@@ -95,7 +109,9 @@ private [machine] sealed abstract class DefuncHints(private [errors] val size: I
 
 /** Represents no hints at all.
   */
-private [machine] object EmptyHints extends DefuncHints(size = 0)
+private [machine] object EmptyHints extends DefuncHints(size = 0) {
+    def resetDeep(): Unit = ()
+}
 
 /** This operation is used by the `hide` combinator to remove the first
   * set of hints currently in-flight. This is explicitly following the
@@ -103,7 +119,9 @@ private [machine] object EmptyHints extends DefuncHints(size = 0)
   *
   * @param hints the hints that should have an element removed
   */
-private [machine] final class PopHints private [errors] (val hints: DefuncHints) extends DefuncHints(size = hints.size - 1)
+private [machine] final class PopHints private [errors] (val hints: DefuncHints) extends DefuncHints(size = hints.size - 1) {
+    def resetDeep(): Unit = hints.reset()
+}
 
 /** This operation is used by the `label` combinator to rename the first
   * set of hints currently in-flight. This is explicitly following the
@@ -112,7 +130,9 @@ private [machine] final class PopHints private [errors] (val hints: DefuncHints)
   * @param label the name to replace the first set of hints with
   * @param hints the hints that should have part of it replaced
   */
-private [errors] final class ReplaceHint private [errors] (val label: String, val hints: DefuncHints) extends DefuncHints(size = hints.size)
+private [errors] final class ReplaceHint private [errors] (val label: String, val hints: DefuncHints) extends DefuncHints(size = hints.size) {
+    def resetDeep(): Unit = hints.reset()
+}
 
 /** This operation merges two sets of hints together. This used by `label`
   * to combine the saved hints with those that may have been generated and
@@ -123,7 +143,12 @@ private [errors] final class ReplaceHint private [errors] (val label: String, va
   * @param newHints
   */
 private [errors] final class MergeHints private [errors] (val oldHints: DefuncHints, val newHints: DefuncHints)
-    extends DefuncHints(size = oldHints.size + newHints.size)
+    extends DefuncHints(size = oldHints.size + newHints.size) {
+    def resetDeep(): Unit = {
+        oldHints.reset()
+        newHints.reset()
+    }
+}
 
 /** This represents the snocing of a new set of hints onto the existing list of
   * sets. This is used whenever an error message is discarded by a parser succeeding
@@ -132,4 +157,9 @@ private [errors] final class MergeHints private [errors] (val oldHints: DefuncHi
   * @param hints the initial list of sets of error items, as represented by `DefuncHints`
   * @param err the set of error items to incorporate, represented in uncomputed form as `DefuncError`
   */
-private [machine] final class AddError private [errors] (val hints: DefuncHints, val err: TrivialDefuncError) extends DefuncHints(size = hints.size + 1)
+private [machine] final class AddError private [errors] (val hints: DefuncHints, val err: TrivialDefuncError) extends DefuncHints(size = hints.size + 1) {
+    def resetDeep(): Unit = {
+        hints.reset()
+        err.resetHints()
+    }
+}

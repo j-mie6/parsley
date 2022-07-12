@@ -6,6 +6,8 @@ package parsley.internal.machine.instructions
 
 import parsley.errors.ErrorBuilder
 
+import parsley.internal.errors.{ErrorItem, ParseError, TrivialError, FancyError}
+
 import parsley.internal.machine.{Context, Failed, Finished, Good, Recover}
 import parsley.internal.machine.XAssert._
 
@@ -121,7 +123,7 @@ private [internal] final class LogEnd(val name: String, override val ascii: Bool
 
 private [instructions] trait ErrLogger extends PrettyPortal with Colours {
     final protected def preludeString(dir: Direction, ctx: Context, ends: String) = {
-        val prelude = s"${portal(dir, ctx)} (${ctx.line}, ${ctx.col})"
+        val prelude = s"${portal(dir, ctx)} (offset ${ctx.offset}, line ${ctx.line}, col ${ctx.col})"
         indentAndUnlines(ctx, s"$prelude$ends")
     }
     /*
@@ -136,47 +138,82 @@ private [instructions] trait ErrLogger extends PrettyPortal with Colours {
     */
 }
 
+private [instructions] final case class ErrLogData(hintsOffset: Int, hints: Set[ErrorItem]) {
+    def newHints(newHintsOffset: Int, newHints: Set[ErrorItem]): Set[ErrorItem] = {
+        if (stillValid(newHintsOffset)) newHints &~ hints
+        else newHints
+    }
+    def stillValid(newHintsOffset: Int): Boolean = hintsOffset == newHintsOffset
+}
+
 private [internal] final class LogErrBegin(var label: Int, override val name: String, override val ascii: Boolean)(implicit errBuilder: ErrorBuilder[_])
     extends InstrWithLabel with ErrLogger {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        println(preludeString(Enter, ctx, ""))
-        ctx.debuglvl += 1
+        val inFlightHints = ctx.inFlightHints.toSet
         // This should print out a classic opening line, followed by the currently in-flight hints
-        println(ctx.inFlightHints.toSet.map(_.format))
-        ctx.stack.push(ctx.currentHintsValidOffset)
+        println(preludeString(Enter, ctx, s": current hints are ${inFlightHints.map(_.format)} (valid at offset ${ctx.currentHintsValidOffset})"))
+        ctx.debuglvl += 1
+        ctx.stack.push(ErrLogData(ctx.currentHintsValidOffset, inFlightHints))
         ctx.pushHandler(label)
         ctx.inc()
     }
     override def toString: String = s"LogErrBegin($label, $name)"
 }
 
-private [internal] final class LogErrEnd(override val name: String, override val ascii: Boolean)(implicit errBuilder: ErrorBuilder[_]) extends Instr with ErrLogger {
+private [internal] final class LogErrEnd(override val name: String, override val ascii: Boolean)(implicit errBuilder: ErrorBuilder[_])
+    extends Instr with ErrLogger {
     override def apply(ctx: Context): Unit = {
         ctx.debuglvl -= 1
         val currentHintsValidOffset = ctx.currentHintsValidOffset
         ctx.status match {
             case Good =>
                 // In this case, the currently in-flight hints should be reported
-                val entryHintsValidOffset = ctx.stack.pop[Int]()
+                val oldData = ctx.stack.pop[ErrLogData]()
+                val inFlightHints = ctx.inFlightHints.toSet
+                val formattedInFlight = inFlightHints.map(_.format)
+                val msgInit = s": ${green("Good")}, current hints are $formattedInFlight with"
                 ctx.handlers = ctx.handlers.tail
-                println(preludeString(Exit, ctx, green(": Good")))
-                println(ctx.inFlightHints.toSet.map(_.format))
-                println(s"$entryHintsValidOffset -> $currentHintsValidOffset")
+                if (!oldData.stillValid(ctx.currentHintsValidOffset)) {
+                    println(preludeString(Exit, ctx, s"$msgInit old hints discarded (valid at offset ${ctx.currentHintsValidOffset})"))
+                }
+                else {
+                    val newHints = oldData.newHints(ctx.currentHintsValidOffset, inFlightHints)
+                    if (newHints.size == inFlightHints.size) {
+                        println(preludeString(Exit, ctx, s"$msgInit all added since entry to debug (valid at offset ${ctx.currentHintsValidOffset})"))
+                    }
+                    else {
+                        val formattedNewHints = oldData.newHints(ctx.currentHintsValidOffset, inFlightHints).map(_.format)
+                        println(preludeString(Exit, ctx, s"$msgInit $formattedNewHints added since entry to debug (valid at offset ${ctx.currentHintsValidOffset})"))
+                    }
+                }
                 ctx.inc()
             case Recover =>
                 // In this case, the current top of stack error message is reported
                 // For this, there needs to be a verbose mode that prints out the composite error
                 // as opposed to the simplified error (post-merge)
                 // there should be different levels of verbose flags, such that we can also display the expecteds _under_ a label
-                val entryHintsValidOffset = ctx.stack.peek[Int]
-                println(preludeString(Exit, ctx, red(": Fail")))
-                println(ctx.inFlightError)
-                println(s"$entryHintsValidOffset -> $currentHintsValidOffset")
+                val oldData = ctx.stack.peek[ErrLogData]
+                val defuncErr = ctx.inFlightError
+                val err = defuncErr.asParseErrorSlow(ctx.errorItemBuilder)
+                println(preludeString(Exit, ctx, s": ${red("Fail")}"))
+                println(Indenter.indentAndUnlines(ctx, LogErrEnd.format(err): _*))
                 ctx.fail()
             case Finished | Failed => throw new Exception("debug cannot wrap a halt?!") // scalastyle:ignore throw
         }
     }
     override def toString: String = s"LogErrEnd($name)"
+}
+private [instructions] object LogErrEnd {
+    def format(err: ParseError): Seq[String] = err match {
+        case FancyError(offset, line, col, msgs) => s"generated specialised error  (offset $offset, line $line, col $col) {" +: msgs :+ "}"
+        case TrivialError(offset, line, col, unexpected, expecteds, reasons) =>
+            Seq(s"generated vanilla error (offset $offset, line $line, col $col) {",
+                s"  unexpected item = ${unexpected.fold("missing")(_.format.toString)}",
+                s"  expected item(s) = ${expecteds.map(_.format)}",
+                s"  reasons =${if (reasons.isEmpty) " no reasons given" else ""}") ++
+                reasons.map("  " + _) :+
+                "}"
+    }
 }
 // $COVERAGE-ON$

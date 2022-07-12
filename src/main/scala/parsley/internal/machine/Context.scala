@@ -139,7 +139,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
             assert(checkStack.isEmpty, "there must be no residual check remaining on end of parse")
             assert(states.isEmpty, "there must be no residual states left at end of parse")
             assert(hintStack.isEmpty, "there should be no hints remaining at end of parse")
-            Failure(errs.error.asParseError.format(sourceFile))
+            Failure(errs.error.asParseError().format(sourceFile))
         }
         else if (status ne Finished) {
             instrs(pc)(this)
@@ -311,7 +311,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         }
     }
 
-    private implicit val errorItemBuilder: ErrorItemBuilder = new ErrorItemBuilder {
+    private [machine] implicit val errorItemBuilder: ErrorItemBuilder = new ErrorItemBuilder {
         def inRange(offset: Int): Boolean = offset < Context.this.inputsz
         def charAt(offset: Int): Char = Context.this.input.charAt(offset)
         def substring(offset: Int, size: Int): String = Context.this.input.substring(offset, Math.min(offset + size, Context.this.inputsz))

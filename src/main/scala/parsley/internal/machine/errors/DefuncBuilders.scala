@@ -102,26 +102,26 @@ private [errors] final class TrivialErrorBuilder(offset: Int, outOfRange: Boolea
 private [errors] object TrivialErrorBuilder {
     private [TrivialErrorBuilder] sealed abstract class UnexpectItem {
         def pickHigher(other: UnexpectItem): UnexpectItem
-        private [TrivialErrorBuilder] def pickRaw(other: Raw): UnexpectItem
-        private [TrivialErrorBuilder] def pickOther(other: Other): UnexpectItem
+        protected [TrivialErrorBuilder] def pickRaw(other: Raw): UnexpectItem
+        protected [TrivialErrorBuilder] def pickOther(other: Other): UnexpectItem
         def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Option[ErrorItem]
     }
     private [TrivialErrorBuilder] final class Raw(val size: Int) extends UnexpectItem {
         final def pickHigher(other: UnexpectItem): UnexpectItem = other.pickRaw(this)
-        private [TrivialErrorBuilder] final override def pickRaw(other: Raw) = if (this.size > other.size) this else other
-        private [TrivialErrorBuilder] final override def pickOther(other: Other) = other
+        final override def pickRaw(other: Raw) = if (this.size > other.size) this else other
+        final override def pickOther(other: Other) = other
         def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Option[ErrorItem] = Some(builder(offset, size))
     }
     private [TrivialErrorBuilder] final class Other(val underlying: ErrorItem) extends UnexpectItem {
         final def pickHigher(other: UnexpectItem): UnexpectItem = other.pickOther(this)
-        private [TrivialErrorBuilder] final override def pickRaw(other: Raw) = this
-        private [TrivialErrorBuilder] final override def pickOther(other: Other) = if (this.underlying.higherPriority(other.underlying)) this else other
+        final override def pickRaw(other: Raw) = this
+        final override def pickOther(other: Other) = if (this.underlying.higherPriority(other.underlying)) this else other
         def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Option[ErrorItem] = Some(underlying)
     }
     private [TrivialErrorBuilder] object NoItem extends UnexpectItem {
         final def pickHigher(other: UnexpectItem): UnexpectItem = other
-        private [TrivialErrorBuilder] final override def pickRaw(other: Raw) = other
-        private [TrivialErrorBuilder] final override def pickOther(other: Other) = other
+        final override def pickRaw(other: Raw) = other
+        final override def pickOther(other: Other) = other
         def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Option[ErrorItem] = None
     }
 }
