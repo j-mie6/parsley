@@ -44,12 +44,10 @@ private [deepembedding] trait StrictParsley[+A] {
         }
     }
 
-    // This is a trick to get tail-calls to fire even in the presence of a legimate recursion
-    @inline final protected def optimiseDefinitelyNotTailRec: StrictParsley[A] = optimise
-    protected  [deepembedding] def optimise: StrictParsley[A] = this
+    protected [deepembedding] def optimise: StrictParsley[A] = this
 
     // Peephole optimisation and code generation - Top-down
-    private [backend] def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit]
+    protected [backend] def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit]
 
     // $COVERAGE-OFF$
     private [deepembedding] def pretty[Cont[_, +_]: ContOps, R]: Cont[R, String]

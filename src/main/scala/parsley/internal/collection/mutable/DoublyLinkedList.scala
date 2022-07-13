@@ -3,17 +3,20 @@
  */
 package parsley.internal.collection.mutable
 
-import DoublyLinkedList.Node
 import scala.collection.AbstractIterator
 
-private [internal] class DoublyLinkedList[A] private [DoublyLinkedList]
-    (private [DoublyLinkedList] var start: Node[A],
-     private [DoublyLinkedList] var end: Node[A]) extends Iterable[A] {
+import parsley.XAssert._
 
-    private [DoublyLinkedList] def this() = this(null, null)
+import DoublyLinkedList.Node
 
-    // This method assumes that this list is non-empty
-    private [DoublyLinkedList] def unsafeAddOne(x: A): this.type = {
+private [internal] class DoublyLinkedList[A] private
+    (private var start: Node[A],
+     private var end: Node[A]) extends Iterable[A] {
+
+    private def this() = this(null, null)
+
+    private def unsafeAddOne(x: A): this.type = {
+        assume(this.nonEmpty, "list is empty when unsafely adding an element")
         val next = new Node(x, null, this.end)
         this.end.next = next
         this.end = next
@@ -93,7 +96,7 @@ private [internal] class DoublyLinkedList[A] private [DoublyLinkedList]
 }
 
 private [internal] object DoublyLinkedList {
-    private [DoublyLinkedList] class Node[A](val x: A, var next: Node[A], var prev: Node[A])
+    private class Node[A](val x: A, var next: Node[A], var prev: Node[A])
     def empty[A]: DoublyLinkedList[A] = new DoublyLinkedList[A]
     def apply[A](x: A, xs: A*): DoublyLinkedList[A] = {
         val list = new DoublyLinkedList[A]

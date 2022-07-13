@@ -3,16 +3,18 @@
  */
 package parsley.internal.collection.mutable
 
+import parsley.XAssert._
+
 import SinglyLinkedList.{LinkedListIterator, Node}
 
-private [internal] class SinglyLinkedList[A] private [SinglyLinkedList]
-    (private [SinglyLinkedList] var start: Node[A],
-     private [SinglyLinkedList] var end: Node[A]) extends Iterable[A] {
+private [internal] class SinglyLinkedList[A] private
+    (private var start: Node[A],
+     private var end: Node[A]) extends Iterable[A] {
 
-    private [SinglyLinkedList] def this() = this(null, null)
+    private def this() = this(null, null)
 
-    // This method assumes that this list is non-empty
-    private [SinglyLinkedList] def unsafeAddOne(x: A): this.type = {
+    private def unsafeAddOne(x: A): this.type = {
+        assume(this.nonEmpty, "list is empty when unsafely adding an element")
         val next = new Node(x, null)
         if (this.end != null) this.end.next = next
         this.end = next
@@ -69,7 +71,7 @@ private [internal] class SinglyLinkedList[A] private [SinglyLinkedList]
 }
 
 private [internal] object SinglyLinkedList {
-    private [SinglyLinkedList] class Node[A](val x: A, var next: Node[A])
+    private class Node[A](val x: A, var next: Node[A])
     def empty[A]: SinglyLinkedList[A] = new SinglyLinkedList[A]
     def apply[A](x: A, xs: A*): SinglyLinkedList[A] = {
         val list = new SinglyLinkedList[A]
@@ -79,8 +81,8 @@ private [internal] object SinglyLinkedList {
     }
 
     abstract class LinkedListIterator[A] extends Iterator[A] {
-        protected var current: Node[A]
-        protected val end: Node[A]
+        protected [SinglyLinkedList] var current: Node[A]
+        protected [SinglyLinkedList] val end: Node[A]
         def hasNext: Boolean = current != null
         def next(): A = { val r = current.x; current = current.next; r }
         def remaining: SinglyLinkedList[A] = {

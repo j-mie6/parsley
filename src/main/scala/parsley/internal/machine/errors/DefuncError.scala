@@ -234,7 +234,7 @@ private [errors] sealed abstract class BaseError extends TrivialDefuncError {
     private [errors] val col: Int
     /** The size of the unexpected token demanded by this error */
     private [errors] def unexpectedWidth: Int
-    // def expected: IterableOnce[ErrorItem] // when 2.12 is dropped this will work better
+    // def expected: IterableOnce[ErrorItem] // TODO: when 2.12 is dropped this will work better
     /** The error items produced by this error */
     private [errors] def expectedIterable: Iterable[ErrorItem]
 

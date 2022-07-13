@@ -9,7 +9,7 @@ import scala.collection.{mutable, BufferedIterator}
 import Radix.{Entry, IteratorHelpers, StringHelpers}
 
 private [internal] class Radix[A] {
-    private var x = Option.empty[A]
+    private [this] var x = Option.empty[A]
     private val m = mutable.Map.empty[Char, Entry[A]]
 
     def get(key: String): Option[A] = {

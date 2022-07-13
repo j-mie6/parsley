@@ -94,54 +94,55 @@ private [machine] sealed abstract class DefuncHints(private [errors] val size: I
     // Operations: these are the smart constructors for the hint operations, which will reduce the number of objects in the binary
     // they all perform some form of simplification step to avoid unnecesary allocations
 
+    /** This operation is used by the `hide` combinator to remove the first
+      * set of hints currently in-flight. This is explicitly following the
+      * behaviour of megaparsec.
+      */
     private [machine] final def pop: DefuncHints = if (size > 1) new PopHints(this) else EmptyHints
+    /** This operation is used by the `label` combinator to rename the first
+      * set of hints currently in-flight. This is explicitly following the
+      * behaviour of megaparsec.
+      *
+      * @param label the name to replace the first set of hints with
+      */
     private [machine] final def rename(label: String): DefuncHints = if (nonEmpty) new ReplaceHint(label, this) else this
+    /** This operation merges two sets of hints together. This used by `label`
+      * to combine the saved hints with those that may have been generated and
+      * affected by the label. This is not like a set-union, however, and is
+      * more like a `++` on the list of sets from each error.
+      *
+      * @param newHints the hints to merge into these ones
+      */
     private [machine] final def merge(newHints: DefuncHints): DefuncHints = {
         if (this.isEmpty) newHints
         else if (newHints.isEmpty) this
         else new MergeHints(this, newHints)
     }
+    /** This represents the snocing of a new set of hints onto the existing list of
+      * sets. This is used whenever an error message is discarded by a parser succeeding
+      * again.
+      *
+      * @param err the set of error items to incorporate, represented in uncomputed form as `DefuncError`
+      */
     private [machine] final def addError(err: DefuncError): DefuncHints = {
         assume(err.isTrivialError, "only trivial errors will get added to the hints")
         new AddError(this, err.asInstanceOf[TrivialDefuncError])
     }
 }
 
-/** Represents no hints at all.
-  */
+/** Represents no hints at all. */
 private [machine] object EmptyHints extends DefuncHints(size = 0) {
     def resetDeep(): Unit = ()
 }
 
-/** This operation is used by the `hide` combinator to remove the first
-  * set of hints currently in-flight. This is explicitly following the
-  * behaviour of megaparsec.
-  *
-  * @param hints the hints that should have an element removed
-  */
 private [machine] final class PopHints private [errors] (val hints: DefuncHints) extends DefuncHints(size = hints.size - 1) {
     def resetDeep(): Unit = hints.reset()
 }
 
-/** This operation is used by the `label` combinator to rename the first
-  * set of hints currently in-flight. This is explicitly following the
-  * behaviour of megaparsec.
-  *
-  * @param label the name to replace the first set of hints with
-  * @param hints the hints that should have part of it replaced
-  */
 private [errors] final class ReplaceHint private [errors] (val label: String, val hints: DefuncHints) extends DefuncHints(size = hints.size) {
     def resetDeep(): Unit = hints.reset()
 }
 
-/** This operation merges two sets of hints together. This used by `label`
-  * to combine the saved hints with those that may have been generated and
-  * affected by the label. This is not like a set-union, however, and is
-  * more like a `++` on the list of sets from each error.
-  *
-  * @param oldHints
-  * @param newHints
-  */
 private [errors] final class MergeHints private [errors] (val oldHints: DefuncHints, val newHints: DefuncHints)
     extends DefuncHints(size = oldHints.size + newHints.size) {
     def resetDeep(): Unit = {
@@ -150,13 +151,6 @@ private [errors] final class MergeHints private [errors] (val oldHints: DefuncHi
     }
 }
 
-/** This represents the snocing of a new set of hints onto the existing list of
-  * sets. This is used whenever an error message is discarded by a parser succeeding
-  * again.
-  *
-  * @param hints the initial list of sets of error items, as represented by `DefuncHints`
-  * @param err the set of error items to incorporate, represented in uncomputed form as `DefuncError`
-  */
 private [machine] final class AddError private [errors] (val hints: DefuncHints, val err: TrivialDefuncError) extends DefuncHints(size = hints.size + 1) {
     def resetDeep(): Unit = {
         hints.reset()
