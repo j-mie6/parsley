@@ -101,14 +101,14 @@ private [internal] final class LogEnd(val name: String, val ascii: Boolean, brea
     override def apply(ctx: Context): Unit = {
         ctx.debuglvl -= 1
         val end = " " + (ctx.status match {
-            case Good             =>
+            case Good =>
                 ctx.handlers = ctx.handlers.tail
                 ctx.inc()
                 green("Good")
-            case Recover | Failed =>
+            case Recover =>
                 ctx.fail()
                 red("Fail")
-            case Finished         => throw new Exception("debug cannot wrap a halt?!") // scalastyle:ignore throw
+            case Finished | Failed => throw new Exception("debug cannot wrap a halt?!") // scalastyle:ignore throw
         })
         println(preludeString(Exit, ctx, end))
         if (break) doBreak(ctx)
@@ -139,7 +139,7 @@ private [internal] final class LogErrBegin(var label: Int, val name: String, val
         println(preludeString(Enter, ctx, ""))
         ctx.debuglvl += 1
         // This should print out a classic opening line, followed by the currently in-flight hints
-        println(ctx.inFlightHints)
+        println(ctx.inFlightHints.toSet)
         ctx.stack.push(ctx.currentHintsValidOffset)
         ctx.pushHandler(label)
         ctx.inc()
@@ -152,7 +152,7 @@ private [internal] final class LogErrEnd(val name: String, val ascii: Boolean) e
         ctx.debuglvl -= 1
         val currentHintsValidOffset = ctx.currentHintsValidOffset
         ctx.status match {
-            case Good             =>
+            case Good =>
                 // In this case, the currently in-flight hints should be reported
                 val entryHintsValidOffset = ctx.stack.pop[Int]()
                 ctx.handlers = ctx.handlers.tail
@@ -160,7 +160,7 @@ private [internal] final class LogErrEnd(val name: String, val ascii: Boolean) e
                 println(ctx.inFlightHints.toSet)
                 println(s"$entryHintsValidOffset -> $currentHintsValidOffset")
                 ctx.inc()
-            case Recover | Failed =>
+            case Recover =>
                 // In this case, the current top of stack error message is reported
                 // For this, there needs to be a verbose mode that prints out the composite error
                 // as opposed to the simplified error (post-merge)
@@ -170,7 +170,7 @@ private [internal] final class LogErrEnd(val name: String, val ascii: Boolean) e
                 println(ctx.inFlightError)
                 println(s"$entryHintsValidOffset -> $currentHintsValidOffset")
                 ctx.fail()
-            case Finished         => throw new Exception("debug cannot wrap a halt?!") // scalastyle:ignore throw
+            case Finished | Failed => throw new Exception("debug cannot wrap a halt?!") // scalastyle:ignore throw
         }
     }
     override def toString: String = s"LogErrEnd($name)"
