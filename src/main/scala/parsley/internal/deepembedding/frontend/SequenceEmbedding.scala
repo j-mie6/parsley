@@ -5,7 +5,6 @@ package parsley.internal.deepembedding.frontend
 
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 
-// Core Embedding
 private [parsley] final class <*>[A, B](pf: LazyParsley[A => B], px: =>LazyParsley[A]) extends Binary[A => B, A, B](pf, px) {
     override def make(pf: StrictParsley[A => B], px: StrictParsley[A]): StrictParsley[B] = new backend.<*>(pf, px)
 }

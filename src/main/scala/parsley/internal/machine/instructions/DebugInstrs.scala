@@ -205,8 +205,14 @@ private [internal] final class LogErrEnd(override val name: String, override val
     override def toString: String = s"LogErrEnd($name)"
 }
 private [instructions] object LogErrEnd {
+    // TODO: We want to mark errors that are behind the current context offsets as amended in some way
+    // ideally we can provide meta-information about merges and so on too: this needs to be extracted by
+    // analysing the DefuncError itself! (Note that StringTok does not amend its error via operation,
+    // it does so by direct manipulation. It should be treated as an amend regardless here).
+    // Surpressed labels can be presumably captured by calling asParseErrorSlow under a label node
+    // again, requiring a deeper traversal of the tree
     def format(err: ParseError): Seq[String] = err match {
-        case FancyError(offset, line, col, msgs) => s"generated specialised error  (offset $offset, line $line, col $col) {" +: msgs :+ "}"
+        case FancyError(offset, line, col, msgs) => s"generated specialised error (offset $offset, line $line, col $col) {" +: msgs :+ "}"
         case TrivialError(offset, line, col, unexpected, expecteds, reasons) =>
             Seq(s"generated vanilla error (offset $offset, line $line, col $col) {",
                 s"  unexpected item = ${unexpected.fold("missing")(_.format.toString)}",

@@ -6,7 +6,8 @@ package parsley.internal.deepembedding.frontend
 import parsley.internal.deepembedding.ContOps, ContOps.{suspend, ContAdapter}
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 
-// Core Embedding
+// These all capture the general structures of combinators to factor out the common patterns for `findLetsAux` and `preprocess`.
+
 private [frontend] abstract class Unary[A, B](p: LazyParsley[A]) extends LazyParsley[B] {
     def make(p: StrictParsley[A]): StrictParsley[B]
 

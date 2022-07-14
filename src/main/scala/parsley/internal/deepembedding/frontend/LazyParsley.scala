@@ -15,7 +15,7 @@ import parsley.internal.machine.instructions, instructions.Instr
 
 /** This is the root type of the parsley "frontend": it represents a combinator tree
   * where the join-points in the tree (recursive or otherwise) have not been identified
-  * or factored. As such, it is a potentially infinite tree, and must be handled with
+  * or factored. As such, it is a potentially cyclic graph (though finite), and must be handled with
   * caution.
   *
   * @note objects of this type may be shared across parsers or threads and, as such,

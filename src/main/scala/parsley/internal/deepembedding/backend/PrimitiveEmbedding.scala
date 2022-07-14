@@ -53,19 +53,27 @@ private [deepembedding] final class NotFollowedBy[A](val p: StrictParsley[A]) ex
     // $COVERAGE-ON$
 }
 
-private [deepembedding] final class Rec[A](val call: instructions.Call) extends StrictParsley[A] with Binding {
-    // Must be a def, since call.label can change!
+private [deepembedding] final class Rec[A](val call: instructions.Call) extends StrictParsley[A] {
     def inlinable: Boolean = true
+    // Must be a def, since call.label can change!
     def label: Int = call.label
 
     final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = result(instrs += call)
+
+    // $COVERAGE-OFF$
+    def pretty[Cont[_, +_]: ContOps, R]: Cont[R, String] = result(this.toString())
+    // $COVERAGE-ON$
 }
-private [deepembedding] final class Let[A](val p: StrictParsley[A]) extends StrictParsley[A] with Binding {
+private [deepembedding] final class Let[A](val p: StrictParsley[A]) extends StrictParsley[A] {
     def inlinable: Boolean = true
     def label(implicit state: CodeGenState): Int = state.getLabel(this)
     override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         result(instrs += new instructions.Call(label))
     }
+
+    // $COVERAGE-OFF$
+    def pretty[Cont[_, +_]: ContOps, R]: Cont[R, String] = result(this.toString())
+    // $COVERAGE-ON$
 }
 private [deepembedding] final class Put[S](reg: Reg[S], val p: StrictParsley[S]) extends Unary[S, Unit] {
     override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
