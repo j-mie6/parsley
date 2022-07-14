@@ -3,9 +3,9 @@
  */
 package parsley.internal.machine
 
-import parsley.XAssert._
-
 import scala.annotation.elidable, elidable.ASSERTION
+
+import parsley.XAssert._
 
 // $COVERAGE-OFF$
 private [machine] object XAssert {

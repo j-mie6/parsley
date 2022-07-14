@@ -3,7 +3,6 @@
  */
 package parsley.internal.deepembedding.backend
 
-
 import parsley.internal.deepembedding.ContOps, ContOps.{suspend, ContAdapter}
 import parsley.internal.machine.instructions
 

@@ -3,6 +3,8 @@
  */
 package parsley.internal.deepembedding.backend
 
+import parsley.XAssert._
+
 import parsley.internal.collection.mutable.DoublyLinkedList
 import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
 import parsley.internal.deepembedding.frontend
@@ -22,12 +24,14 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
             // first position fusion
             case Pure(f) => new Pure(f(x))
             // second position fusion
-            case Pure(f: Function1[t, A => B]) <*> (uy/*: StrictParsley[t]*/) =>
+            case Pure(f: Function1[t, A => B]) <*> (uy/*: StrictParsley[t]*/) => // scalastyle:ignore disallow.space.before.token
                 left = new Pure((y: t) => f(y)(x)).asInstanceOf[StrictParsley[A => B]]
                 right = uy.asInstanceOf[StrictParsley[A]]
                 this
             // third position fusion
-            case Pure(f: Function1[t, Function1[u, A => B]]) <*> (uy/*: StrictParsley[t]*/) <*> (uz/*: StrictParsley[u]*/) =>
+            case Pure(f: Function1[t, Function1[u, A => B]]) <*>
+                 (uy/*: StrictParsley[t]*/) <*> // scalastyle:ignore disallow.space.before.token
+                 (uz/*: StrictParsley[u]*/) => // scalastyle:ignore disallow.space.before.token
                 left = <*>(new Pure((y: t) => (z: u) => f(y)(z)(x)), uy.asInstanceOf[StrictParsley[t]]).asInstanceOf[StrictParsley[A => B]]
                 right = uz.asInstanceOf[StrictParsley[A]]
                 this
@@ -38,7 +42,7 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
                 this
         }
         // functor law: fmap f (fmap g p) == fmap (f . g) p where fmap f p = pure f <*> p from applicative
-        case (Pure(f), Pure(g: Function[t, A]) <*> (u/*: StrictParsley[t]*/)) =>
+        case (Pure(f), Pure(g: Function[t, A]) <*> (u/*: StrictParsley[t]*/)) => // scalastyle:ignore disallow.space.before.token
             left = new Pure(f.compose(g)).asInstanceOf[StrictParsley[A => B]]
             right = u.asInstanceOf[StrictParsley[A]]
             this
@@ -123,7 +127,7 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
     private def mergeIntoRight(p: StrictParsley[A]): this.type = p match {
         case Seq(rs1, rr, rs2) =>
             before.stealAll(rs1)
-            // if rr is pure, then rs2 is empty, which retains normalisation
+            assume(!rr.isInstanceOf[Pure[_]] || rs2.isEmpty, "if rr is pure, then rs2 is empty, which retains normalisation")
             after = rs2
             res = rr
             this
@@ -131,7 +135,8 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
     }
 
     private def mergeFromRight(p: Seq[_], into: DoublyLinkedList[StrictParsley[_]]): this.type = {
-        after.clear() // after contains just p, which is going to get flattened
+        assume(after.isEmpty || after.size == 1 && (after.head eq p), "after can only contain just p, which is going to get flattened")
+        after.clear()
         into.stealAll(p.before)
         Seq.whenNonPure(p.res, into.addOne(_))
         into.stealAll(p.after)
@@ -165,7 +170,8 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
                 case _ =>
                     before = rs1
                     res = rr
-                    after = rs2 /*empty when rr is Pure*/
+                    assume(!rr.isInstanceOf[Pure[_]] || rs2.isEmpty, "rs2 is empty when rr is Pure")
+                    after = rs2
                     val into = chooseInto(rr)
                     p match {
                         case p: Seq[_] => mergeFromRight(p, into)
@@ -177,9 +183,10 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
         case r <** (p: Seq[_]) => mergeFromRight(p, chooseInto(r))
         // shift pure to the right by swapping before and after (before is empty linked list!)
         case (_: Pure[_]) <** _ =>
-            val tmp = before /*empty*/
+            assume(before.isEmpty, "empty can reuse before instead of allocating a new list because before is empty")
+            val empty = before
             before = after
-            after = tmp /*empty*/
+            after = empty
             this
         case _ => this
     }
@@ -187,10 +194,8 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
     override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = res match {
         case Pure(x) =>
             // peephole here involves CharTokFastPerform, StringTokFastPerform, and Exchange
-            // The pure in question is normalised to the end: if result is pure, after is empty.
-            if (before.isEmpty) {
-                println(this)
-            }
+            assume(after.isEmpty, "The pure in question is normalised to the end: if result is pure, after is empty.")
+            assume(before.nonEmpty, "before cannot be empty because after is empty")
             val last = before.last
             before.initInPlace()
             suspend(Seq.codeGenMany[Cont, R](before.iterator)) >> {

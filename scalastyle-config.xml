@@ -138,7 +138,7 @@
             <parameter name="ignoreRegex">^\&quot;\&quot;$</parameter>
         </parameters>
     </check>
-    <!-- We use quite a lot of these, and I', not sure I want to change the styling over right now. -->
+    <!-- We use quite a lot of these, and I'm not sure I want to change the styling over right now. -->
     <check enabled="false" class="org.scalastyle.scalariform.NamedArgumentChecker" level="warning">
         <parameters>
             <parameter name="checkString">false</parameter>

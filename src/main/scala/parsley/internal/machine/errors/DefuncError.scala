@@ -259,13 +259,13 @@ private [errors] sealed abstract class BaseError extends TrivialDefuncError {
 
 private [machine] final class ClassicExpectedError(val offset: Int, val line: Int, val col: Int, val expected: Option[ErrorItem]) extends BaseError {
     override def isExpectedEmpty: Boolean = expected.isEmpty
-    override def unexpectedWidth = 1
+    override def unexpectedWidth: Int = 1
     override def expectedIterable: Iterable[ErrorItem] = expected
 }
 private [machine] final class ClassicExpectedErrorWithReason(val offset: Int, val line: Int, val col: Int, val expected: Option[ErrorItem], val reason: String)
     extends BaseError {
     override def isExpectedEmpty: Boolean = expected.isEmpty
-    override def unexpectedWidth = 1
+    override def unexpectedWidth: Int = 1
     override def expectedIterable: Iterable[ErrorItem] = expected
     override def addLabelsAndReasons(builder: TrivialErrorBuilder): Unit = {
         builder += expected
@@ -275,7 +275,7 @@ private [machine] final class ClassicExpectedErrorWithReason(val offset: Int, va
 private [machine] final class ClassicUnexpectedError(val offset: Int, val line: Int, val col: Int, val expected: Option[ErrorItem], val unexpected: ErrorItem)
     extends BaseError {
     override def isExpectedEmpty: Boolean = expected.isEmpty
-    override def unexpectedWidth = 1
+    override def unexpectedWidth: Int = 1
     override def expectedIterable: Iterable[ErrorItem] = expected
     override def addLabelsAndReasons(builder: TrivialErrorBuilder): Unit = {
         builder += expected
@@ -290,7 +290,7 @@ private [machine] final class ClassicFancyError(val offset: Int, val line: Int, 
 }
 private [machine] final class EmptyError(val offset: Int, val line: Int, val col: Int) extends BaseError {
     override def isExpectedEmpty: Boolean = true
-    override def unexpectedWidth = 0
+    override def unexpectedWidth: Int = 0
     override def expectedIterable: Iterable[ErrorItem] = None
     override def makeTrivial(builder: TrivialErrorBuilder): Unit = builder.pos_=(line, col)
 }
@@ -301,7 +301,7 @@ private [machine] final class TokenError(val offset: Int, val line: Int, val col
 }
 private [machine] final class EmptyErrorWithReason(val offset: Int, val line: Int, val col: Int, val reason: String) extends BaseError {
     override def isExpectedEmpty: Boolean = true
-    override def unexpectedWidth = 0
+    override def unexpectedWidth: Int = 0
     override def expectedIterable: Iterable[ErrorItem] = None
     override def makeTrivial(builder: TrivialErrorBuilder): Unit = {
         builder.pos_=(line, col)

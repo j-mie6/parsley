@@ -6,8 +6,8 @@ package parsley.internal.deepembedding.backend
 import scala.annotation.tailrec
 import scala.collection.mutable
 
-import parsley.registers.Reg
 import parsley.XAssert._
+import parsley.registers.Reg
 
 import parsley.internal.collection.mutable.ResizableArray
 import parsley.internal.deepembedding.ContOps, ContOps.{perform, result, ContAdapter}

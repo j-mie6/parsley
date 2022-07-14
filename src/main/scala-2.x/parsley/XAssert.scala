@@ -42,7 +42,7 @@ private [parsley] object XAssert {
      */
     @elidable(ASSERTION) @inline
     final def assume(assumption: Boolean): Unit = Predef.assume(assumption)
-  
+
     /** Tests an expression, throwing an `AssertionError` if false.
      *  This method differs from assert only in the intent expressed:
      *  assert contains a predicate which needs to be proven, while

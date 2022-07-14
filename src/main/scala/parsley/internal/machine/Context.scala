@@ -91,7 +91,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     private def addErrorToHints(): Unit = {
         val err = errs.error
         assume(!(!err.isExpectedEmpty) || err.isTrivialError, "not having an empty expected implies you are a trivial error")
-        if (/*err.isTrivialError*/ !err.isExpectedEmpty && err.offset == offset) {
+        if (/*err.isTrivialError && */ !err.isExpectedEmpty && err.offset == offset) { // scalastyle:ignore disallow.space.after.token
             // If our new hints have taken place further in the input stream, then they must invalidate the old ones
             if (hintsValidOffset < offset) {
                 hints = EmptyHints

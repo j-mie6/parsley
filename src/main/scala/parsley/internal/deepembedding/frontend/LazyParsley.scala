@@ -5,9 +5,9 @@ package parsley.internal.deepembedding.frontend
 
 import scala.collection.mutable
 
+import parsley.XAssert._
 import parsley.exceptions.BadLazinessException
 import parsley.registers.Reg
-import parsley.XAssert._
 
 import parsley.internal.deepembedding.{Cont, ContOps}, ContOps.{safeCall, GenOps, perform, result, ContAdapter}
 import parsley.internal.deepembedding.backend, backend.StrictParsley

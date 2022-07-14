@@ -6,8 +6,7 @@ package parsley.internal.machine.instructions
 
 import parsley.errors.ErrorBuilder
 
-import parsley.internal.errors.{ErrorItem, ParseError, TrivialError, FancyError}
-
+import parsley.internal.errors.{ErrorItem, FancyError, ParseError, TrivialError}
 import parsley.internal.machine.{Context, Failed, Finished, Good, Recover}
 import parsley.internal.machine.XAssert._
 
@@ -184,7 +183,8 @@ private [internal] final class LogErrEnd(override val name: String, override val
                     }
                     else {
                         val formattedNewHints = oldData.newHints(ctx.currentHintsValidOffset, inFlightHints).map(_.format)
-                        println(preludeString(Exit, ctx, s"$msgInit $formattedNewHints added since entry to debug (valid at offset ${ctx.currentHintsValidOffset})"))
+                        val msg = s"$msgInit $formattedNewHints added since entry to debug (valid at offset ${ctx.currentHintsValidOffset})"
+                        println(preludeString(Exit, ctx, msg))
                     }
                 }
                 ctx.inc()
