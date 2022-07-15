@@ -6,6 +6,8 @@ package parsley.internal.deepembedding.backend
 import scala.annotation.tailrec
 import scala.collection.mutable
 
+import parsley.XAssert._
+
 import parsley.internal.collection.mutable.SinglyLinkedList, SinglyLinkedList.LinkedListIterator
 import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
 import parsley.internal.deepembedding.singletons._
@@ -25,20 +27,26 @@ private [deepembedding] final class Choice[A](private [backend] val alt1: Strict
         case (u: Pure[_]) <|> _ => u
         case Empty <|> q => q
         case p <|> Empty => p
-        // Assume that alts can never contain Choice
         case Choice(ret@Choice(lalt1, lalt2, lalts: SinglyLinkedList[StrictParsley[A]]),
                     Choice(ralt1, ralt2, ralts: SinglyLinkedList[StrictParsley[A]]),
                     alts) =>
+            assume(!alts.exists(_.isInstanceOf[Choice[_]]), "alts can never contain a choice")
+            assume(!lalts.exists(_.isInstanceOf[Choice[_]]), "ralts can never contain a choice")
+            assume(!ralts.exists(_.isInstanceOf[Choice[_]]), "lalts can never contain a choice")
             lalts.addOne(ralt1)
             lalts.addOne(ralt2)
             lalts.stealAll(ralts)
             lalts.stealAll(alts)
             ret
         case Choice(ret@Choice(alt1, alt2, alts: SinglyLinkedList[StrictParsley[A]]), p, alts_) =>
+            assume(!alts.exists(_.isInstanceOf[Choice[_]]), "alts can never contain a choice")
+            assume(!alts_.exists(_.isInstanceOf[Choice[_]]), "alts_ can never contain a choice")
             alts.addOne(p)
             alts.stealAll(alts_)
             ret
         case Choice(p, Choice(alt1, alt2, alts: SinglyLinkedList[StrictParsley[A]]), alts_) =>
+            assume(!alts.exists(_.isInstanceOf[Choice[_]]), "alts can never contain a choice")
+            assume(!alts_.exists(_.isInstanceOf[Choice[_]]), "alts_ can never contain a choice")
             this.alt2 = alt1
             this.alts = alts
             alts.prependOne(alt2)
