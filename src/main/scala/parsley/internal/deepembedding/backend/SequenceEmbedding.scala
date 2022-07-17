@@ -100,7 +100,7 @@ private [deepembedding] final class >>=[A, B](val p: StrictParsley[A], private [
         //case p@CharTok(c) => *>(p, new Rec(() => f(c.asInstanceOf[A]), expected))
         //case p@StringTok(s) => *>(p, new Rec(() => f(s.asInstanceOf[A]), expected))
         // (q *> p) >>= f = q *> (p >>= f)
-        case u *> v => *>(u, >>=(v, f).optimise)
+        //case u *> v => *>(u, >>=(v, f).optimise)
         // monad law 3: (m >>= g) >>= f = m >>= (\x -> g x >>= f) Note: this *could* help if g x ended with a pure, since this would be optimised out!
         //case (m: Parsley[T] @unchecked) >>= (g: (T => A) @unchecked) =>
         //    p = m.asInstanceOf[Parsley[A]]
@@ -111,8 +111,9 @@ private [deepembedding] final class >>=[A, B](val p: StrictParsley[A], private [
         case _ => this
     }
     override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
-        suspend(p.codeGen[Cont, R]) |>
-        (instrs += instructions.DynCall[A](x => f(x).demandCalleeSave(state.numRegs).instrs))
+        suspend(p.codeGen[Cont, R]) |> {
+            instrs += instructions.DynCall[A](x => f(x).demandCalleeSave(state.numRegs).instrs)
+        }
     }
     // $COVERAGE-OFF$
     final override def pretty(p: String): String = s"$p.flatMap(?)"

@@ -47,7 +47,8 @@ private [deepembedding] trait StrictParsley[+A] {
         implicit val instrs: InstrBuffer = newInstrBuffer
         perform {
             generateCalleeSave[Cont, Array[Instr]](numRegsUsedByParent, this.codeGen, usedRegs.size, allocateRegisters(usedRegs)) |> {
-                instrs += instructions.Halt
+                // When `numRegsUsedByParent` is -1 this is top level, otherwise it is a flatMap
+                instrs += (if (numRegsUsedByParent >= 0) instructions.Return else instructions.Halt)
                 val recRets = finaliseRecs(recs)
                 val letRets = finaliseLets()
                 generateHandlers(state.handlers)

@@ -21,7 +21,7 @@ import instructions.Instr
 import stacks.{ArrayStack, CallStack, CheckStack, ErrorStack, HandlerStack, HintStack, Stack, StateStack}, Stack.StackExt
 
 private [parsley] final class Context(private [machine] var instrs: Array[Instr],
-                                      private [machine] var input: String,
+                                      private [machine] val input: String,
                                       numRegs: Int,
                                       private val sourceFile: Option[String]) {
     /** This is the operand stack, where results go to live  */
@@ -29,7 +29,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     /** Current offset into the input */
     private [machine] var offset: Int = 0
     /** The length of the input, stored for whatever reason */
-    private [machine] var inputsz: Int = input.length
+    private [machine] val inputsz: Int = input.length
     /** Call stack consisting of Frames that track the return position and the old instructions */
     private var calls: CallStack = Stack.empty
     /** State stack consisting of offsets and positions that can be rolled back */
@@ -37,6 +37,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     /** Stack consisting of offsets at previous checkpoints, which may query to test for consumed input */
     private [machine] var checkStack: CheckStack = Stack.empty
     /** Current operational status of the machine */
+    // TODO: turn into two bools? would make the runParser loop tighter
     private [machine] var status: Status = Good
     /** Stack of handlers, which track the call depth, program counter and stack size of error handlers */
     private [machine] var handlers: HandlerStack = Stack.empty
@@ -145,19 +146,15 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
             instrs(pc)(this)
             runParser[Err, A]()
         }
-        else if (calls.isEmpty) {
+        else {
             assert(stack.size == 1, "stack must end a parse with exactly one item")
+            assert(calls.isEmpty, "there must be no more calls to unwind on end of parser")
             assert(handlers.isEmpty, "there must be no more handlers on end of parse")
             assert(checkStack.isEmpty, "there must be no residual check remaining on end of parse")
             assert(states.isEmpty, "there must be no residual states left at end of parse")
             assert(errs.isEmpty, "there should be no parse errors remaining at end of parse")
             assert(hintStack.isEmpty, "there should be no hints remaining at end of parse")
             Success(stack.peek[A])
-        }
-        else {
-            status = Good
-            ret()
-            runParser[Err, A]()
         }
     }
 
