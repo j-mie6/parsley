@@ -139,8 +139,7 @@ class Lexer(lang: LanguageDef)
      * deals correctly with escape sequences and gaps. The literal string is parsed according to
      * the grammar rules defined in the Haskell report (which matches most programming languages
      * quite closely).*/
-    lazy val stringLiteral_ : Parsley[String] = lang.space match
-    {
+    lazy val stringLiteral_ : Parsley[String] = lang.space match {
         case BitSetImpl(ws) => new Parsley(new deepembedding.StringLiteral(ws))
         case Predicate(ws) => new Parsley(new deepembedding.StringLiteral(ws))
         case NotRequired => new Parsley(new deepembedding.StringLiteral(_ => false))
@@ -162,8 +161,7 @@ class Lexer(lang: LanguageDef)
     private val escapeEmpty = '&'
     private lazy val escapeGap = skipSome(space.label("string gap")) *> '\\'.label("end of string gap")
     private lazy val stringLetter = letter('"')
-    private lazy val stringEscape: Parsley[Option[Char]] =
-    {
+    private lazy val stringEscape: Parsley[Option[Char]] = {
         '\\' *> (escapeGap #> None
              <|> escapeEmpty #> None
              <|> (escapeCode.map(Some(_))).explain("invalid escape sequence"))
@@ -262,8 +260,7 @@ class Lexer(lang: LanguageDef)
      * provided by the parameter), a line comment or a block (multi-line) comment. Block
      * comments may be nested. How comments are started and ended is defined in the `LanguageDef`
      * that is provided to the lexer.*/
-    val whiteSpace_ : Impl => Parsley[Unit] =
-    {
+    val whiteSpace_ : Impl => Parsley[Unit] = {
         case BitSetImpl(ws) =>
             new Parsley(new deepembedding.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
         case Predicate(ws) =>
@@ -330,8 +327,7 @@ class Lexer(lang: LanguageDef)
      * Returns a list of values returned by `p`.*/
     def commaSep1[A](p: =>Parsley[A]): Parsley[List[A]] = sepBy1(p, comma)
 
-    private def toParser(e: Impl) = e match
-    {
+    private def toParser(e: Impl) = e match {
         case BitSetImpl(cs) => satisfy(cs(_))
         case Parser(p) => p.asInstanceOf[Parsley[Char]]
         case Predicate(f) => satisfy(f)
