@@ -73,6 +73,7 @@ private [instructions] abstract class WhiteSpaceLike(start: String, end: String,
                 singleLineComment(ctx)
                 singlesAndMultis(ctx)
             }
+            else ctx.pushAndContinue(())
         }
         else ctx.pushAndContinue(())
     }
