@@ -21,8 +21,7 @@ import parsley.internal.deepembedding.singletons
   * @param lang The rules that govern the language we are tokenising
   * @since 2.2.0
   */
-class Lexer(lang: LanguageDef)
-{
+class Lexer(lang: LanguageDef) {
     private def keyOrOp(startImpl: Impl, letterImpl: Impl, parser: Parsley[String], illegal: String => Boolean,
                         combinatorName: String, name: String, illegalName: String) = {
         val builder = (start: Char => Boolean, letter: Char => Boolean) =>
@@ -133,8 +132,7 @@ class Lexer(lang: LanguageDef)
      * deals correctly with escape sequences and gaps. The literal string is parsed according to
      * the grammar rules defined in the Haskell report (which matches most programming languages
      * quite closely).*/
-    lazy val stringLiteral_ : Parsley[String] = lang.space match
-    {
+    lazy val stringLiteral_ : Parsley[String] = lang.space match {
         case Static(ws) => new Parsley(new singletons.StringLiteral(ws))
         case _ => between('"'.label("string"), '"'.label("end of string"), many(stringChar)).map(_.flatten.mkString)
     }
@@ -154,8 +152,7 @@ class Lexer(lang: LanguageDef)
     private val escapeEmpty = '&'
     private lazy val escapeGap = skipSome(space.label("string gap")) *> '\\'.label("end of string gap")
     private lazy val stringLetter = letter('"')
-    private lazy val stringEscape: Parsley[Option[Char]] =
-    {
+    private lazy val stringEscape: Parsley[Option[Char]] = {
         '\\' *> (escapeGap #> None
              <|> escapeEmpty #> None
              <|> (escapeCode.map(Some(_))).explain("invalid escape sequence"))
@@ -254,8 +251,7 @@ class Lexer(lang: LanguageDef)
      * provided by the parameter), a line comment or a block (multi-line) comment. Block
      * comments may be nested. How comments are started and ended is defined in the `LanguageDef`
      * that is provided to the lexer.*/
-    val whiteSpace_ : Impl => Parsley[Unit] =
-    {
+    val whiteSpace_ : Impl => Parsley[Unit] = {
         case NotRequired => skipComments
         case Static(ws) => new Parsley(new singletons.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
         case Parser(space_) if lang.supportsComments =>
@@ -322,8 +318,7 @@ class Lexer(lang: LanguageDef)
      * Returns a list of values returned by `p`.*/
     def commaSep1[A](p: =>Parsley[A]): Parsley[List[A]] = sepBy1(p, comma)
 
-    private def toParser(e: Impl) = e match
-    {
+    private def toParser(e: Impl) = e match {
         case NotRequired => empty
         case Static(f)   => satisfy(f)
         case Parser(p)   => p.asInstanceOf[Parsley[Char]]

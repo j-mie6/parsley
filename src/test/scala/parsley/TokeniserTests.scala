@@ -370,6 +370,17 @@ class TokeniserTests extends ParsleyTest {
         (tokeniser_.skipComments <* eof).parse("/*/*hello world*/ this /*comment*/ is nested*/") shouldBe a [Failure[_]]
         (tokeniser_.skipComments <* eof).parse("/*/*hello world this /*comment is nested*/") should be (Success(()))
     }
+    it should "do nothing with no comments" in {
+        (tokeniser.skipComments).parse("aaa") should be (Success(()))
+        (tokeniser_.skipComments).parse("aaa") should be (Success(()))
+        val lang = token.LanguageDef.plain.copy(
+            commentLine = "--",
+            commentStart = "{-", // no shared prefix with the single line
+            commentEnd = "-}"
+            )
+        val tokeniser__ = new token.Lexer(lang)
+        tokeniser__.skipComments.parse("aaa") should be (Success(()))
+    }
 
     "whiteSpace" should "parse all whitespace" in {
         (tokeniser.whiteSpace <* eof).parse(" \n\t \r\n ") should not be a [Failure[_]]
