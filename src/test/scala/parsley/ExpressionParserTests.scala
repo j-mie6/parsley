@@ -3,12 +3,13 @@
  */
 package parsley
 
+import parsley._
 import parsley.character.digit
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.expr.{chain, infix, mixed}
 import parsley.expr.{precedence, Ops, GOps, SOps, InfixL, InfixR, Prefix, Postfix, InfixN, Atoms}
 import parsley.Parsley._
-import parsley._
+import parsley.genericbridges._
 
 import scala.language.implicitConversions
 
@@ -90,7 +91,8 @@ class ExpressionParserTests extends ParsleyTest {
         sealed trait Expr
         case class Add(x: Int, y: Expr) extends Expr
         case class Num(x: Int) extends Expr
-        val p = infix.right1("1" #> 1, "+" #> ((x: Int, y: Expr) => Add(x, y)))(Num)
+        object Add extends ParserBridge2[Int, Expr, Expr]
+        val p = infix.right1("1" #> 1, Add <# "+")(Num)
         p.parse("1+1+1") should be (Success(Add(1, Add(1, Num(1)))))
         p.parse("1") should be (Success(Num(1)))
     }
@@ -123,7 +125,8 @@ class ExpressionParserTests extends ParsleyTest {
         sealed trait Expr
         case class Add(x: Expr, y: Int) extends Expr
         case class Num(x: Int) extends Expr
-        infix.left1("1" #> 1, "+".#>[(Expr, Int) => Expr](Add.apply))(Num).parse("1+1+1") should be (Success(Add(Add(Num(1), 1), 1)))
+        object Add extends ParserBridge2[Expr, Int, Expr]
+        infix.left1("1" #> 1, Add <# "+")(Num).parse("1+1+1") should be (Success(Add(Add(Num(1), 1), 1)))
     }
     "chain.left" must "allow for no initial value" in {
         chain.left("11" #> 1, '+' #> ((x: Int, y: Int) => x + y), 0).parse("11") should be (Success(1))
@@ -188,18 +191,23 @@ class ExpressionParserTests extends ParsleyTest {
         case class Mul(x: Factor, y: Term) extends Term
         sealed trait Factor extends Term
         case class Neg(x: Factor) extends Factor
-        object Neg {
-            val mk: Factor => Factor = Neg(_)
-        }
         sealed trait Atom extends Factor
         case class Parens(x: Comp) extends Atom
         case class Num(x: Int) extends Atom
+
+        object Less extends ParserBridge2[Expr, Expr, Comp]
+        object Add extends ParserBridge2[Expr, Term, Expr]
+        object Mul extends ParserBridge2[Factor, Term, Term]
+        object Neg extends ParserBridge1[Factor, Factor]
+        object Parens extends ParserBridge1[Comp, Atom]
+        object Num extends ParserBridge1[Int, Atom]
+
         lazy val expr: Parsley[Comp] = precedence(
-            SOps(InfixN)('<' #> Less) +:
-            SOps(InfixL)('+' #> Add) +:
-            SOps(InfixR)('*' #> Mul) +:
-            SOps(Prefix)('-' #> Neg.mk) +:
-            Atoms(digit.map(_.asDigit).map(Num), '(' *> expr.map(Parens) <* ')'))
+            SOps(InfixN)(Less <# '<') +:
+            SOps(InfixL)(Add <# '+') +:
+            SOps(InfixR)(Mul <# '*') +:
+            SOps(Prefix)(Neg <# '-') +:
+            Atoms(Num(digit.map(_.asDigit)), Parens('(' *> expr <* ')')))
         expr.parse("(7+8)*2+3+6*2") should be (Success(Add(Add(Mul(Parens(Add(Num(7), Num(8))), Num(2)), Num(3)), Mul(Num(6), Num(2)))))
     }
     they should "generalise to non-monolithic structures" in {
@@ -215,12 +223,19 @@ class ExpressionParserTests extends ParsleyTest {
         sealed trait Atom
         case class Parens(x: Comp) extends Atom
         case class Num(x: Int) extends Atom
+
+        object Less extends ParserBridge2[Expr, Expr, Comp]
+        object Add extends ParserBridge2[Expr, Term, Expr]
+        object Mul extends ParserBridge2[Atom, Term, Term]
+        object Parens extends ParserBridge1[Comp, Atom]
+        object Num extends ParserBridge1[Int, Atom]
+
         lazy val expr: Parsley[Comp] = precedence(
             // The type ascriptions are unneeded for Scala 3
-            GOps[Expr, Comp](InfixN)('<' #> Less)(CompOf) +:
-            GOps[Term, Expr](InfixL)('+' #> Add)(ExprOf) +:
-            GOps[Atom, Term](InfixR)('*' #> Mul)(TermOf) +:
-            Atoms(digit.map(_.asDigit).map(Num), '(' *> expr.map(Parens) <* ')'))
+            GOps(InfixN)(Less <# '<')(CompOf) +:
+            GOps(InfixL)(Add <# '+')(ExprOf) +:
+            GOps(InfixR)(Mul <# '*')(TermOf) +:
+            Atoms(Num(digit.map(_.asDigit)), Parens('(' *> expr <* ')')))
         expr.parse("(7+8)*2+3+6*2<4") should be {
             Success(Less(
                 Add(
@@ -244,10 +259,16 @@ class ExpressionParserTests extends ParsleyTest {
         sealed trait Atom
         case class Parens(x: Expr) extends Atom
         case class Num(x: Int) extends Atom
+
+        object Add extends ParserBridge2[Expr, Term, Expr]
+        object Mul extends ParserBridge2[Term, Atom, Term]
+        object Parens extends ParserBridge1[Expr, Atom]
+        object Num extends ParserBridge1[Int, Atom]
+
         lazy val expr: Parsley[Expr] = precedence(
-            Atoms(digit.map(_.asDigit).map(Num), '(' *> expr.map(Parens) <* ')') :+
-            GOps[Atom, Term](InfixL)('*' #> Mul)(TermOf) :+
-            GOps[Term, Expr](InfixL)('+' #> Add)(ExprOf))
+            Atoms(Num(digit.map(_.asDigit)), Parens('(' *> expr <* ')')) :+
+            GOps[Atom, Term](InfixL)(Mul <# '*')(TermOf) :+
+            GOps[Term, Expr](InfixL)(Add <# '+')(ExprOf))
         expr.parse("1*(2+3)") shouldBe a [Success[_]]
     }
 
@@ -262,16 +283,24 @@ class ExpressionParserTests extends ParsleyTest {
         case class Unary(c: Expr) extends Expr
         case class Constant(x: String) extends Expr
 
+        object Binary extends ParserBridge2[Expr, Expr, Expr]
+        object Unary extends ParserBridge1[Expr, Expr]
+        object Constant extends ParserBridge1[String, Expr]
+
+        object Call extends ParserBridge1[Expr, Expr => Expr] {
+            def apply(x1: Expr): Expr => Expr = Binary(_, x1)
+        }
+
         val tok = new token.Lexer(lang)
 
         lazy val (op +: ops): Seq[Ops[Expr, Expr]] = Seq(
-            Ops(InfixR)(',' #> Binary),
-            Ops(InfixR)(".=" #> Binary),
-            Ops(InfixL)('.' #> Binary),
-            Ops(Postfix)(tok.parens(expr </> Constant("")).map(e1 => Binary(_, e1)))
+            Ops(InfixR)(Binary <# ','),
+            Ops(InfixR)(Binary <# ".="),
+            Ops(InfixL)(Binary <# '.'),
+            Ops(Postfix)(Call(tok.parens(expr </> Constant(""))))
         )
 
-        lazy val atom: Parsley[Expr] = tok.identifier.map(Constant)
+        lazy val atom: Parsley[Expr] = Constant(tok.identifier)
         lazy val expr: Parsley[Expr] = precedence(op, ops: _*)(atom)
 
         expr.parse("o.f()") shouldBe a [Success[_]]
@@ -284,7 +313,11 @@ class ExpressionParserTests extends ParsleyTest {
         case class Unary(c: Expr) extends Expr
         case class Constant(x: Char) extends Expr
 
-        val p = mixed.right1(digit.map(Constant), '-' #> Unary, '+' #> Binary)
+        object Binary extends ParserBridge2[Constant, Expr, Expr]
+        object Unary extends ParserBridge1[Expr, Expr]
+        object Constant extends ParserBridge1[Char, Constant]
+
+        val p = mixed.right1(Constant(digit), Unary <# '-', Binary <# '+')
         p.parse("-1+-2+-3") shouldBe Success(Unary(Binary(Constant('1'), Unary(Binary(Constant('2'), Unary(Constant('3')))))))
     }
 
@@ -294,7 +327,11 @@ class ExpressionParserTests extends ParsleyTest {
         case class Unary(c: Expr) extends Expr
         case class Constant(x: Char) extends Expr
 
-        val p = mixed.left1(digit.map(Constant), '?' #> Unary, '+' #> Binary)
+        object Binary extends ParserBridge2[Expr, Constant, Expr]
+        object Unary extends ParserBridge1[Expr, Expr]
+        object Constant extends ParserBridge1[Char, Constant]
+
+        val p = mixed.left1(Constant(digit), Unary <# '?', Binary <# '+')
         p.parse("1?+2?+3?") shouldBe Success(Unary(Binary(Unary(Binary(Unary(Constant('1')), Constant('2'))), Constant('3'))))
     }
 }
