@@ -13,7 +13,7 @@ import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.MultiExpectedError
 import parsley.internal.machine.stacks.ErrorStack
 
-private [internal] final class Perform(f: Any => Any) extends Instr {
+private [internal] final class Lift1(f: Any => Any) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         ctx.exchangeAndContinue(f(ctx.stack.upeek))
@@ -22,8 +22,8 @@ private [internal] final class Perform(f: Any => Any) extends Instr {
     override def toString: String = "Perform(?)"
     // $COVERAGE-ON$
 }
-private [internal] object Perform {
-    def apply[A, B](f: A => B): Perform = new Perform(f.asInstanceOf[Any => Any])
+private [internal] object Lift1 {
+    def apply[A, B](f: A => B): Lift1 = new Lift1(f.asInstanceOf[Any => Any])
 }
 
 private [internal] final class Exchange[A](private [Exchange] val x: A) extends Instr {

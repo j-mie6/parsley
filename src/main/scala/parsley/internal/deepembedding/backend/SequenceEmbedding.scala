@@ -76,7 +76,7 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
             case st@StringTok(s) => result(instrs += instructions.StringTokFastPerform(s, f.asInstanceOf[String => B], st.expected))
             case _ =>
                 suspend(right.codeGen[Cont, R]) |>
-                (instrs += instructions.Perform(f))
+                (instrs += instructions.Lift1(f))
         }
         case _ =>
             suspend(left.codeGen[Cont, R]) >>
