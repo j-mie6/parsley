@@ -15,6 +15,7 @@ exclude_patterns:
 - ".gitignore"
 - "*.pdf"
 - "LICENSE"
+- "**/ap.scala"
 - "**/lift.scala"
 - "**/genericbridges.scala"
 - "**/implicits/zipped.scala"
