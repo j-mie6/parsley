@@ -71,19 +71,21 @@ object debug {
       * @param con a conversion that allows values convertible to parsers to be used.
       * @tparam P the type of base value that this class is used on (the conversion to `Parsley`) is summoned automatically.
       * @group comb
+      *
+      * @define debug This combinator allows this parser to be debugged by providing a trace through the execution.
+      *
+      * When this combinator is entered, it will print the name assigned to the parser,
+      * as well as the current currenting input context for a few characters on either side.
+      * This parser is then executed. If it succeeded, this combinator again reports the
+      * name along with "`Good`" and the input context. If it failed, it reports the name
+      * along with "`Bad`" and the input context.
+      *
+      * When breakpoints are used, the execution of the combinator will pause on either entry,
+      * exit, or both. The parse is resumed by entering a newline on standard input. Breakpoints
+      * will cause additional information about the internal state of the parser to be reported.
       */
     implicit class DebugCombinators[P, A](p: P)(implicit con: P => Parsley[A]) {
-        /** This combinator allows this parser to be debugged by providing a trace through the execution.
-          *
-          * When this combinator is entered, it will print the name assigned to the parser,
-          * as well as the current currenting input context for a few characters on either side.
-          * This parser is then executed. If it succeeded, this combinator again reports the
-          * name along with "`Good`" and the input context. If it failed, it reports the name
-          * along with "`Bad`" and the input context.
-          *
-          * When breakpoints are used, the execution of the combinator will pause on either entry,
-          * exit, or both. The parse is resumed by entering a newline on standard input. Breakpoints
-          * will cause additional information about the internal state of the parser to be reported.
+        /** $debug
           *
           * @example {{{
           * scala> import parsley.debug.DebugCombinators, parsley.character.string, parsley.Parsley.attempt
@@ -114,13 +116,116 @@ object debug {
           * @param break The breakpoint properties of this parser, defaults to NoBreak
           * @param coloured Whether to render with colour (default true: render colours)
           */
-        def debug(name: String, break: Breakpoint = NoBreak, coloured: Boolean = true): Parsley[A] = {
+        def debug(name: String, break: Breakpoint, coloured: Boolean): Parsley[A] = {
             new Parsley(new frontend.Debug[A](con(p).internal, name, !coloured, break))
         }
 
-        def debugError(name: String, coloured: Boolean = true)(implicit errBuilder: ErrorBuilder[_]): Parsley[A] = {
+        /** $debug
+          *
+          * @example {{{
+          * scala> import parsley.debug.DebugCombinators, parsley.character.string, parsley.Parsley.attempt
+          * scala> val abc = attempt(string("abc").debug("string abc")).debug("attempt")
+          * scala> val abd = string("abd").debug("string abd")
+          * scala> val p = (abc <|> abd).debug("or")
+          * scala> p.parse("abd")
+          * >or> (1, 1): abd•
+          *              ^
+          *   >attempt> (1, 1): abd•
+          *                     ^
+          *     >string abc> (1, 1): abd•
+          *                          ^
+          *     <string abc< (1, 3): abd• Fail
+          *                            ^
+          *   <attempt< (1, 1): abd• Fail
+          *                     ^
+          *   >string abd> (1, 1): abd•
+          *                        ^
+          *   <string abd< (1, 4): abd• Good
+          *                           ^
+          * <or< (1, 4): abd• Good
+          *                 ^
+          * val res0 = Success("abd")
+          * }}}
+          *
+          * Renders in colour.
+          *
+          * @param name The name to be assigned to this parser
+          * @param break The breakpoint properties of this parser, defaults to NoBreak
+          */
+        def debug(name: String, break: Breakpoint): Parsley[A] = debug(name, break, coloured = true)
+
+        /** $debug
+          *
+          * @example {{{
+          * scala> import parsley.debug.DebugCombinators, parsley.character.string, parsley.Parsley.attempt
+          * scala> val abc = attempt(string("abc").debug("string abc")).debug("attempt")
+          * scala> val abd = string("abd").debug("string abd")
+          * scala> val p = (abc <|> abd).debug("or")
+          * scala> p.parse("abd")
+          * >or> (1, 1): abd•
+          *              ^
+          *   >attempt> (1, 1): abd•
+          *                     ^
+          *     >string abc> (1, 1): abd•
+          *                          ^
+          *     <string abc< (1, 3): abd• Fail
+          *                            ^
+          *   <attempt< (1, 1): abd• Fail
+          *                     ^
+          *   >string abd> (1, 1): abd•
+          *                        ^
+          *   <string abd< (1, 4): abd• Good
+          *                           ^
+          * <or< (1, 4): abd• Good
+          *                 ^
+          * val res0 = Success("abd")
+          * }}}
+          *
+          * No break-points.
+          *
+          * @param name The name to be assigned to this parser
+          * @param coloured Whether to render with colour
+          */
+        def debug(name: String, coloured: Boolean): Parsley[A] = debug(name, break = NoBreak, coloured)
+
+        /** $debug
+          *
+          * @example {{{
+          * scala> import parsley.debug.DebugCombinators, parsley.character.string, parsley.Parsley.attempt
+          * scala> val abc = attempt(string("abc").debug("string abc")).debug("attempt")
+          * scala> val abd = string("abd").debug("string abd")
+          * scala> val p = (abc <|> abd).debug("or")
+          * scala> p.parse("abd")
+          * >or> (1, 1): abd•
+          *              ^
+          *   >attempt> (1, 1): abd•
+          *                     ^
+          *     >string abc> (1, 1): abd•
+          *                          ^
+          *     <string abc< (1, 3): abd• Fail
+          *                            ^
+          *   <attempt< (1, 1): abd• Fail
+          *                     ^
+          *   >string abd> (1, 1): abd•
+          *                        ^
+          *   <string abd< (1, 4): abd• Good
+          *                           ^
+          * <or< (1, 4): abd• Good
+          *                 ^
+          * val res0 = Success("abd")
+          * }}}
+          *
+          * Renders in colour with no break-point.
+          *
+          * @param name The name to be assigned to this parser
+          */
+        def debug(name: String): Parsley[A] = debug(name, break = NoBreak, coloured = true)
+
+        def debugError(name: String, coloured: Boolean)(implicit errBuilder: ErrorBuilder[_]): Parsley[A] = {
             new Parsley(new frontend.DebugError[A](con(p).internal, name, !coloured, errBuilder))
         }
+
+        def debugError(name: String)(implicit errBuilder: ErrorBuilder[_]): Parsley[A] = debugError(name, coloured = true)
     }
 }
 // $COVERAGE-ON$
