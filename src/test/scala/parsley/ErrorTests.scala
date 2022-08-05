@@ -89,6 +89,7 @@ class ErrorTests extends ParsleyTest {
                 rs shouldBe empty
         }
     }
+    import parsley.debug._
     it should "replace the first instance" in {
         val s = (optional('a') *> optional('b')).label("hi") *> 'c'
         inside(s.parse("e")) {

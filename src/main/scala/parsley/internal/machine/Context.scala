@@ -207,7 +207,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         checkStack = checkStack.tail
     }
 
-    private [machine] def pushError(err: DefuncError): Unit = this.errs = new ErrorStack(this.useHints(err), this.errs)
+    private def pushError(err: DefuncError): Unit = this.errs = new ErrorStack(this.useHints(err), this.errs)
     private [machine] def useHints(err: DefuncError): DefuncError = {
         if (hintsValidOffset == err.offset) err.withHints(hints)
         else {

@@ -6,6 +6,8 @@ package parsley.internal.deepembedding.backend
 import parsley.internal.deepembedding.singletons._
 import parsley.internal.machine.instructions
 private [deepembedding] final class ErrorLabel[A](val p: StrictParsley[A], private [ErrorLabel] val label: String) extends ScopedUnary[A, A] {
+    // This needs to save the hints because error label will relabel the first hint, which because the list is ordered would be the hints that came _before_
+    // entering labels context. Instead label should relabel the first hint generated _within_ its context, then merge with the originals after
     override def setup(label: Int): instructions.Instr = new instructions.PushHandlerAndCheck(label, saveHints = true)
     override def instr: instructions.Instr = new instructions.RelabelHints(label)
     override def instrNeedsLabel: Boolean = false
@@ -14,7 +16,7 @@ private [deepembedding] final class ErrorLabel[A](val p: StrictParsley[A], priva
         case ct@CharTok(c) if !ct.expected.contains("") => new CharTok(c, Some(label)).asInstanceOf[StrictParsley[A]]
         case st@StringTok(s) if !st.expected.contains("") => new StringTok(s, Some(label)).asInstanceOf[StrictParsley[A]]
         case sat@Satisfy(f) if !sat.expected.contains("") => new Satisfy(f, Some(label)).asInstanceOf[StrictParsley[A]]
-        // TOOD: The hide property is required to be checked, but there is no test for it
+        // TODO: The hide property is required to be checked, but there is no test for it
         case ErrorLabel(p, label2) if label2 != "" => ErrorLabel(p, label)
         case _ => this
     }
