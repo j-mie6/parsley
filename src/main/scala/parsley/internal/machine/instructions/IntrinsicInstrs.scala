@@ -5,7 +5,7 @@ package parsley.internal.machine.instructions
 
 import scala.annotation.tailrec
 
-import parsley.internal.errors.{Desc, EndOfInput, ErrorItem, Raw}
+import parsley.internal.errors.{Desc, EndOfInput, ExpectItem, ExpectRaw}
 import parsley.internal.machine.{Context, Good}
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.{EmptyError, EmptyErrorWithReason}
@@ -39,7 +39,7 @@ private [internal] object Lift3 {
     def apply[A, B, C, D](f: (A, B, C) => D): Lift3 = new Lift3(f.asInstanceOf[(Any, Any, Any) => Any])
 }
 
-private [internal] class CharTok(c: Char, x: Any, errorItem: Option[ErrorItem]) extends Instr {
+private [internal] class CharTok(c: Char, x: Any, errorItem: Option[ExpectItem]) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         if (ctx.moreInput && ctx.nextChar == c) {
@@ -53,7 +53,7 @@ private [internal] class CharTok(c: Char, x: Any, errorItem: Option[ErrorItem]) 
     // $COVERAGE-ON$
 }
 
-private [internal] final class StringTok(s: String, x: Any, errorItem: Option[ErrorItem]) extends Instr {
+private [internal] final class StringTok(s: String, x: Any, errorItem: Option[ExpectItem]) extends Instr {
     private [this] val cs = s.toCharArray
     private [this] val sz = cs.length
 
@@ -258,7 +258,7 @@ private [internal] object CharTok {
     def apply(c: Char, expected: Option[String]): CharTok = apply(c, c, expected)
     def apply(c: Char, x: Any, expected: Option[String]): CharTok = new CharTok(c, x, Some(expected match {
         case Some(e) => Desc(e)
-        case None    => Raw(c)
+        case None    => ExpectRaw(c)
     }))
 }
 
@@ -266,7 +266,7 @@ private [internal] object StringTok {
     def apply(s: String, expected: Option[String]): StringTok = apply(s, s, expected)
     def apply(s: String, x: Any, expected: Option[String]): StringTok = new StringTok(s, x, Some(expected match {
         case Some(e) => Desc(e)
-        case None    => Raw(s)
+        case None    => ExpectRaw(s)
     }))
 
     private [StringTok] abstract class Adjust {

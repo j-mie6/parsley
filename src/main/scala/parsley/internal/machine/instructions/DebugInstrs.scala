@@ -6,7 +6,7 @@ package parsley.internal.machine.instructions
 
 import parsley.errors.ErrorBuilder
 
-import parsley.internal.errors.{ErrorItem, FancyError, ParseError, TrivialError}
+import parsley.internal.errors.{ExpectItem, FancyError, ParseError, TrivialError}
 import parsley.internal.machine.{Context, Failed, Finished, Good, Recover}
 import parsley.internal.machine.XAssert._
 
@@ -137,8 +137,8 @@ private [instructions] trait ErrLogger extends PrettyPortal with Colours {
     */
 }
 
-private [instructions] final case class ErrLogData(hintsOffset: Int, hints: Set[ErrorItem]) {
-    def newHints(newHintsOffset: Int, newHints: Set[ErrorItem]): Set[ErrorItem] = {
+private [instructions] final case class ErrLogData(hintsOffset: Int, hints: Set[ExpectItem]) {
+    def newHints(newHintsOffset: Int, newHints: Set[ExpectItem]): Set[ExpectItem] = {
         if (stillValid(newHintsOffset)) newHints &~ hints
         else newHints
     }

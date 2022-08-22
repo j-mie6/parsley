@@ -5,7 +5,7 @@ package parsley.internal.machine.errors
 
 import parsley.XAssert._
 
-import parsley.internal.errors.{Desc, ErrorItem}
+import parsley.internal.errors.{Desc, ExpectItem}
 
 /** This structure represents a collection of operations that can be performed
   * between `List[Set[ErrorItem]]`, which are known as `Hints`. Each set in the
@@ -41,7 +41,7 @@ private [machine] sealed abstract class DefuncHints(private [errors] val size: I
       *
       * @note this function is ''pure'' and can be used at will
       */
-    private [machine] def toSet: Set[ErrorItem] = {
+    private [machine] def toSet: Set[ExpectItem] = {
         val state: HintCollector = new HintCollector
         collect(0, state)
         // this /must/ be done to ensure that this function is pure, as `collect` can alter this value.

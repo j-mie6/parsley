@@ -7,39 +7,47 @@ import parsley.errors.ErrorBuilder
 
 private [internal] sealed abstract class ErrorItem {
     def format(implicit builder: ErrorBuilder[_]): builder.Item
-    def higherPriority(other: ErrorItem): Boolean
-    protected [errors] def lowerThanRaw(other: Raw): Boolean
     protected [errors] def lowerThanDesc: Boolean
 }
-/*
-private [internal] object ErrorItem {
-    def higherPriority(e1: ErrorItem, e2: ErrorItem): ErrorItem = (e1, e2) match {
-        case (EndOfInput, _) => EndOfInput
-        case (_, EndOfInput) => EndOfInput
-        case (e: Desc, _) => e
-        case (_, e: Desc) => e
-        case (Raw(r1), Raw(r2)) => if (r1.length >= r2.length) e1 else e2
-    }
-}*/
 
-private [internal] final case class Raw(cs: String) extends ErrorItem {
+private [internal] sealed trait UnexpectItem extends ErrorItem {
+    def higherPriority(other: UnexpectItem): Boolean
+    protected [errors] def lowerThanRaw(other: UnexpectRaw): Boolean
+}
+private [internal] sealed trait ExpectItem extends ErrorItem {
+    def higherPriority(other: ExpectItem): Boolean
+    protected [errors] def lowerThanRaw(other: ExpectRaw): Boolean
+}
+
+private [internal] final case class UnexpectRaw(cs: Iterable[Char], knownConsumedWidth: Int) extends UnexpectItem {
+    def format(implicit builder: ErrorBuilder[_]): builder.Item = builder.raw(builder.unexpectedToken(cs, knownConsumedWidth))
+    override def higherPriority(other: UnexpectItem): Boolean = other.lowerThanRaw(this)
+    override def lowerThanRaw(other: UnexpectRaw): Boolean = this.knownConsumedWidth < other.knownConsumedWidth
+    override def lowerThanDesc: Boolean = true
+}
+
+private [internal] final case class ExpectRaw(cs: String) extends ExpectItem {
     def format(implicit builder: ErrorBuilder[_]): builder.Item = builder.raw(cs)
-    override def higherPriority(other: ErrorItem): Boolean = other.lowerThanRaw(this)
-    override def lowerThanRaw(other: Raw): Boolean = this.cs.length < other.cs.length
+    override def higherPriority(other: ExpectItem): Boolean = other.lowerThanRaw(this)
+    override def lowerThanRaw(other: ExpectRaw): Boolean = this.cs.length < other.cs.length
     override def lowerThanDesc: Boolean = true
 }
-private [internal] object Raw {
-    def apply(c: Char): Raw = new Raw(s"$c")
+private [internal] object ExpectRaw {
+    def apply(c: Char): ExpectRaw = new ExpectRaw(s"$c")
 }
-private [internal] final case class Desc(msg: String) extends ErrorItem {
+private [internal] final case class Desc(msg: String) extends UnexpectItem with ExpectItem {
     def format(implicit builder: ErrorBuilder[_]): builder.Item = builder.named(msg)
-    override def higherPriority(other: ErrorItem): Boolean = other.lowerThanDesc
-    override def lowerThanRaw(other: Raw): Boolean = false
+    override def higherPriority(other: ExpectItem): Boolean = other.lowerThanDesc
+    override def higherPriority(other: UnexpectItem): Boolean = other.lowerThanDesc
+    override def lowerThanRaw(other: ExpectRaw): Boolean = false
+    override def lowerThanRaw(other: UnexpectRaw): Boolean = false
     override def lowerThanDesc: Boolean = true
 }
-private [internal] case object EndOfInput extends ErrorItem {
+private [internal] case object EndOfInput extends UnexpectItem with ExpectItem {
     def format(implicit builder: ErrorBuilder[_]): builder.Item = builder.endOfInput
-    override def higherPriority(other: ErrorItem): Boolean = true
-    override def lowerThanRaw(other: Raw): Boolean = false
+    override def higherPriority(other: ExpectItem): Boolean = true
+    override def higherPriority(other: UnexpectItem): Boolean = true
+    override def lowerThanRaw(other: ExpectRaw): Boolean = false
+    override def lowerThanRaw(other: UnexpectRaw): Boolean = false
     override def lowerThanDesc: Boolean = false
 }

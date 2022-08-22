@@ -22,7 +22,7 @@ private [internal] sealed trait ParseError {
 }
 // The reasons here are lightweight, two errors can merge their messages, but messages do not get converted to hints
 private [internal] case class TrivialError(offset: Int, line: Int, col: Int,
-                                           unexpected: Option[ErrorItem], expecteds: Set[ErrorItem], reasons: Set[String])
+                                           unexpected: Option[UnexpectItem], expecteds: Set[ExpectItem], reasons: Set[String])
     extends ParseError {
     def format(line: String, beforeLines: List[String], afterLines: List[String], caret: Int)(implicit builder: ErrorBuilder[_]): builder.ErrorInfoLines = {
         builder.vanillaError(

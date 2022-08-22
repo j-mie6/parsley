@@ -17,7 +17,7 @@ private [parsley] object helpers {
             case _                   => "whitespace character"
         }
         case Unprintable(up) => f"unprintable character (\\u${up.head.toInt}%04X)"
-        // Do we want this only in unexpecteds?
+        // Do we want this only in unexpecteds? TODO: This complicates things, honestly...
         case cs              => "\"" + cs.takeWhile(!_.isWhitespace) + "\""
     }
 

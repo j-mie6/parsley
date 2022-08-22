@@ -11,7 +11,7 @@ import parsley.Result
 import parsley.Success
 import parsley.errors.ErrorBuilder
 
-import parsley.internal.errors.{ErrorItem, LineBuilder}
+import parsley.internal.errors.{ExpectItem, Desc, LineBuilder}
 import parsley.internal.machine.errors.{
     ClassicExpectedError, ClassicExpectedErrorWithReason, ClassicFancyError, ClassicUnexpectedError, DefuncError,
     DefuncHints, EmptyHints, ErrorItemBuilder, TokenError
@@ -218,14 +218,14 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     }
 
     private [machine] def failWithMessage(msgs: String*): Unit = this.fail(new ClassicFancyError(offset, line, col, msgs: _*))
-    private [machine] def unexpectedFail(expected: Option[ErrorItem], unexpected: ErrorItem): Unit = {
+    private [machine] def unexpectedFail(expected: Option[ExpectItem], unexpected: Desc): Unit = {
         this.fail(new ClassicUnexpectedError(offset, line, col, expected, unexpected))
     }
-    private [machine] def expectedFail(expected: Option[ErrorItem]): Unit = this.fail(new ClassicExpectedError(offset, line, col, expected))
-    private [machine] def expectedFail(expected: Option[ErrorItem], reason: String): Unit = {
+    private [machine] def expectedFail(expected: Option[ExpectItem]): Unit = this.fail(new ClassicExpectedError(offset, line, col, expected))
+    private [machine] def expectedFail(expected: Option[ExpectItem], reason: String): Unit = {
         this.fail(new ClassicExpectedErrorWithReason(offset, line, col, expected, reason))
     }
-    private [machine] def expectedTokenFail(expected: Option[ErrorItem], size: Int): Unit = this.fail(new TokenError(offset, line, col, expected, size))
+    private [machine] def expectedTokenFail(expected: Option[ExpectItem], size: Int): Unit = this.fail(new TokenError(offset, line, col, expected, size))
 
     private [machine] def fail(error: DefuncError): Unit = {
         this.pushError(error)
@@ -311,6 +311,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     private [machine] implicit val errorItemBuilder: ErrorItemBuilder = new ErrorItemBuilder {
         def inRange(offset: Int): Boolean = offset < Context.this.inputsz
         def charAt(offset: Int): Char = Context.this.input.charAt(offset)
-        def substring(offset: Int, size: Int): String = Context.this.input.substring(offset, Math.min(offset + size, Context.this.inputsz))
+        //def substring(offset: Int, size: Int): String = Context.this.input.substring(offset, Math.min(offset + size, Context.this.inputsz))
+        def iterableFrom(offset: Int): Iterable[Char] = Context.this.input.substring(offset)
     }
 }

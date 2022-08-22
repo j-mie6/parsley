@@ -7,6 +7,7 @@ object MockedBuilders {
     implicit val mockedErrorItemBuilder: ErrorItemBuilder = new ErrorItemBuilder {
       override def inRange(offset: Int): Boolean = true
       override def charAt(offset: Int): Char = 'x'
-      override def substring(offset: Int, size: Int): String = "x" * size
+      //override def substring(offset: Int, size: Int): String = "x" * size
+      override protected def iterableFrom(offset: Int): Iterable[Char] = Stream.continually('x')
     }
 }

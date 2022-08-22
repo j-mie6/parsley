@@ -11,7 +11,7 @@ import parsley.XAssert._
 import parsley.internal.collection.mutable.SinglyLinkedList, SinglyLinkedList.LinkedListIterator
 import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
 import parsley.internal.deepembedding.singletons._
-import parsley.internal.errors.{Desc, ErrorItem, Raw}
+import parsley.internal.errors.{Desc, ExpectItem, ExpectRaw}
 import parsley.internal.machine.instructions
 
 import Choice._
@@ -63,16 +63,16 @@ private [deepembedding] final class Choice[A](private [backend] val alt1: Strict
         }
     }
 
-    private def tablify: List[(StrictParsley[_], Option[(Char, ErrorItem, Int, Boolean)])] = {
+    private def tablify: List[(StrictParsley[_], Option[(Char, ExpectItem, Int, Boolean)])] = {
         tablify((alt1::alt2::alts).iterator, mutable.ListBuffer.empty, mutable.Set.empty, None)
     }
 
     @tailrec private def tablify(
             it: LinkedListIterator[StrictParsley[A]],
-            acc: mutable.ListBuffer[(StrictParsley[_], Option[(Char, ErrorItem, Int, Boolean)])],
+            acc: mutable.ListBuffer[(StrictParsley[_], Option[(Char, ExpectItem, Int, Boolean)])],
             seen: mutable.Set[Char],
             lastSeen: Option[Char]
-        ): List[(StrictParsley[_], Option[(Char, ErrorItem, Int, Boolean)])] = it.next() match {
+        ): List[(StrictParsley[_], Option[(Char, ExpectItem, Int, Boolean)])] = it.next() match {
         case u if it.hasNext =>
             val leadingInfo = tablable(u, backtracks = false)
             leadingInfo match {
@@ -170,8 +170,8 @@ private [backend] object Choice {
 
     }
 
-    @tailrec private def propagateExpecteds(expectedss: List[(Set[ErrorItem], Boolean)], all: Set[ErrorItem], corrected: List[Set[ErrorItem]]):
-        List[Set[ErrorItem]] = expectedss match {
+    @tailrec private def propagateExpecteds(expectedss: List[(Set[ExpectItem], Boolean)], all: Set[ExpectItem], corrected: List[Set[ExpectItem]]):
+        List[Set[ExpectItem]] = expectedss match {
         case (expecteds, backtrack) :: expectedss => propagateExpecteds(expectedss, all, (if (backtrack) all else expecteds) :: corrected)
         case Nil => corrected
     }
@@ -194,17 +194,17 @@ private [backend] object Choice {
         case alt::alts_ => codeGenAlt(alt, suspend(codeGenAlternatives[Cont, R](alts_)))
     }
     // TODO: Refactor
-    @tailrec private def foldTablified(tablified: List[(StrictParsley[_], (Char, ErrorItem, Int, Boolean))], // scalastyle:ignore parameter.number
+    @tailrec private def foldTablified(tablified: List[(StrictParsley[_], (Char, ExpectItem, Int, Boolean))], // scalastyle:ignore parameter.number
                                        labelGen: CodeGenState,
                                        roots: mutable.Map[Char, mutable.ListBuffer[StrictParsley[_]]],
                                        backtracking: mutable.Map[Char, Boolean],
                                        leads: mutable.ListBuffer[Char],
                                        labels: mutable.ListBuffer[Int],
                                        size: Int,
-                                       expecteds: Set[ErrorItem],
+                                       expecteds: Set[ExpectItem],
                                        // build in reverse!
-                                       expectedss: List[Set[ErrorItem]]):
-        (List[List[StrictParsley[_]]], List[Char], List[Int], Int, Set[ErrorItem], List[(Set[ErrorItem], Boolean)]) = tablified match {
+                                       expectedss: List[Set[ExpectItem]]):
+        (List[List[StrictParsley[_]]], List[Char], List[Int], Int, Set[ExpectItem], List[(Set[ExpectItem], Boolean)]) = tablified match {
         case (root, (c, expected, _size, backtracks))::tablified_ =>
             if (roots.contains(c)) {
                 roots(c) += root
@@ -222,10 +222,10 @@ private [backend] object Choice {
                      expecteds, expectedss.zip(leads.toList.reverseIterator.map(backtracking(_)).toList))
     }
 
-    @tailrec private def tablable(p: StrictParsley[_], backtracks: Boolean): Option[(Char, ErrorItem, Int, Boolean)] = p match {
+    @tailrec private def tablable(p: StrictParsley[_], backtracks: Boolean): Option[(Char, ExpectItem, Int, Boolean)] = p match {
         // CODO: Numeric parsers by leading digit (This one would require changing the foldTablified function a bit)
-        case ct@CharTok(d)                       => Some((d, ct.expected.fold[ErrorItem](Raw(d))(Desc(_)), 1, backtracks))
-        case st@StringTok(s)                     => Some((s.head, st.expected.fold[ErrorItem](Raw(s))(Desc(_)), s.size, backtracks))
+        case ct@CharTok(d)                       => Some((d, ct.expected.fold[ExpectItem](ExpectRaw(d))(Desc(_)), 1, backtracks))
+        case st@StringTok(s)                     => Some((s.head, st.expected.fold[ExpectItem](ExpectRaw(s))(Desc(_)), s.size, backtracks))
         case op@MaxOp(o)                         => Some((o.head, Desc(o), o.size, backtracks))
         case _: StringLiteral | RawStringLiteral => Some(('"', Desc("string"), 1, backtracks))
         // TODO: This can be done for case insensitive things too, but with duplicated branching
@@ -239,7 +239,7 @@ private [backend] object Choice {
         case _                                   => None
     }
 
-    private def codeGenJumpTable[Cont[_, +_]: ContOps, R, A](tablified: List[(StrictParsley[_], Option[(Char, ErrorItem, Int, Boolean)])])
+    private def codeGenJumpTable[Cont[_, +_]: ContOps, R, A](tablified: List[(StrictParsley[_], Option[(Char, ExpectItem, Int, Boolean)])])
                                                     (implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val needsDefault = tablified.last._2.isDefined
         val end = state.freshLabel()

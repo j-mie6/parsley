@@ -5,7 +5,7 @@ package parsley.internal.machine.errors
 
 import parsley.XAssert._
 
-import parsley.internal.errors.{Desc, ErrorItem, FancyError, ParseError, TrivialError}
+import parsley.internal.errors.{Desc, ErrorItem, ExpectItem, UnexpectItem, FancyError, ParseError, TrivialError}
 
 // This file contains the defunctionalised forms of the error messages.
 // Essentially, whenever an error is created in the machine, it should make use of one of
@@ -236,7 +236,7 @@ private [errors] sealed abstract class BaseError extends TrivialDefuncError {
     private [errors] def unexpectedWidth: Int
     // def expected: IterableOnce[ErrorItem] // TODO: when 2.12 is dropped this will work better
     /** The error items produced by this error */
-    private [errors] def expectedIterable: Iterable[ErrorItem]
+    private [errors] def expectedIterable: Iterable[ExpectItem]
 
     /** Adds the reasons and errors (or any other work) after the position and unexpected updates.
       * By default, this will just add the expected messages found in the `expectedIterable`.
@@ -257,26 +257,26 @@ private [errors] sealed abstract class BaseError extends TrivialDefuncError {
     }
 }
 
-private [machine] final class ClassicExpectedError(val offset: Int, val line: Int, val col: Int, val expected: Option[ErrorItem]) extends BaseError {
+private [machine] final class ClassicExpectedError(val offset: Int, val line: Int, val col: Int, val expected: Option[ExpectItem]) extends BaseError {
     override def isExpectedEmpty: Boolean = expected.isEmpty
     override def unexpectedWidth: Int = 1
-    override def expectedIterable: Iterable[ErrorItem] = expected
+    override def expectedIterable: Iterable[ExpectItem] = expected
 }
-private [machine] final class ClassicExpectedErrorWithReason(val offset: Int, val line: Int, val col: Int, val expected: Option[ErrorItem], val reason: String)
+private [machine] final class ClassicExpectedErrorWithReason(val offset: Int, val line: Int, val col: Int, val expected: Option[ExpectItem], val reason: String)
     extends BaseError {
     override def isExpectedEmpty: Boolean = expected.isEmpty
     override def unexpectedWidth: Int = 1
-    override def expectedIterable: Iterable[ErrorItem] = expected
+    override def expectedIterable: Iterable[ExpectItem] = expected
     override def addLabelsAndReasons(builder: TrivialErrorBuilder): Unit = {
         builder += expected
         builder += reason
     }
 }
-private [machine] final class ClassicUnexpectedError(val offset: Int, val line: Int, val col: Int, val expected: Option[ErrorItem], val unexpected: ErrorItem)
+private [machine] final class ClassicUnexpectedError(val offset: Int, val line: Int, val col: Int, val expected: Option[ExpectItem], val unexpected: Desc)
     extends BaseError {
     override def isExpectedEmpty: Boolean = expected.isEmpty
     override def unexpectedWidth: Int = 1
-    override def expectedIterable: Iterable[ErrorItem] = expected
+    override def expectedIterable: Iterable[ExpectItem] = expected
     override def addLabelsAndReasons(builder: TrivialErrorBuilder): Unit = {
         builder += expected
         builder.updateUnexpected(unexpected)
@@ -291,27 +291,27 @@ private [machine] final class ClassicFancyError(val offset: Int, val line: Int, 
 private [machine] final class EmptyError(val offset: Int, val line: Int, val col: Int) extends BaseError {
     override def isExpectedEmpty: Boolean = true
     override def unexpectedWidth: Int = 0
-    override def expectedIterable: Iterable[ErrorItem] = None
+    override def expectedIterable: Iterable[ExpectItem] = None
     override def makeTrivial(builder: TrivialErrorBuilder): Unit = builder.pos_=(line, col)
 }
-private [machine] final class TokenError(val offset: Int, val line: Int, val col: Int, val expected: Option[ErrorItem], val unexpectedWidth: Int)
+private [machine] final class TokenError(val offset: Int, val line: Int, val col: Int, val expected: Option[ExpectItem], val unexpectedWidth: Int)
     extends BaseError {
     override def isExpectedEmpty: Boolean = expected.isEmpty
-    override def expectedIterable: Iterable[ErrorItem] = expected
+    override def expectedIterable: Iterable[ExpectItem] = expected
 }
 private [machine] final class EmptyErrorWithReason(val offset: Int, val line: Int, val col: Int, val reason: String) extends BaseError {
     override def isExpectedEmpty: Boolean = true
     override def unexpectedWidth: Int = 0
-    override def expectedIterable: Iterable[ErrorItem] = None
+    override def expectedIterable: Iterable[ExpectItem] = None
     override def makeTrivial(builder: TrivialErrorBuilder): Unit = {
         builder.pos_=(line, col)
         builder += reason
     }
 }
-private [machine] final class MultiExpectedError(val offset: Int, val line: Int, val col: Int, val expected: Set[ErrorItem], val unexpectedWidth: Int)
+private [machine] final class MultiExpectedError(val offset: Int, val line: Int, val col: Int, val expected: Set[ExpectItem], val unexpectedWidth: Int)
     extends BaseError {
     override def isExpectedEmpty: Boolean = expected.isEmpty
-    override def expectedIterable: Iterable[ErrorItem] = expected
+    override def expectedIterable: Iterable[ExpectItem] = expected
 }
 
 private [errors] final class TrivialMergedErrors private [errors] (val err1: TrivialDefuncError, val err2: TrivialDefuncError) extends TrivialDefuncError {

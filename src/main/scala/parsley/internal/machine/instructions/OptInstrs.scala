@@ -7,7 +7,7 @@ import scala.collection.mutable
 
 import parsley.XCompat._
 
-import parsley.internal.errors.{Desc, ErrorItem}
+import parsley.internal.errors.{Desc, ExpectItem}
 import parsley.internal.machine.{Context, Good}
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.MultiExpectedError
@@ -79,13 +79,13 @@ private [internal] final class AlwaysRecoverWith[A](x: A) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class JumpTable(jumpTable: mutable.LongMap[(Int, Set[ErrorItem])],
+private [internal] final class JumpTable(jumpTable: mutable.LongMap[(Int, Set[ExpectItem])],
         private [this] var default: Int,
         private [this] var merge: Int,
         size: Int,
-        allErrorItems: Set[ErrorItem]) extends Instr {
+        allErrorItems: Set[ExpectItem]) extends Instr {
     def this(prefixes: List[Char], labels: List[Int], default: Int, merge: Int,
-              size: Int, allErrorItems: Set[ErrorItem], errorItemss: List[Set[ErrorItem]]) = {
+              size: Int, allErrorItems: Set[ExpectItem], errorItemss: List[Set[ExpectItem]]) = {
         this(mutable.LongMap(prefixes.view.map(_.toLong).zip(labels.zip(errorItemss)).toSeq: _*), default, merge, size, allErrorItems)
     }
     private [this] var defaultPreamble: Int = _
@@ -108,7 +108,7 @@ private [internal] final class JumpTable(jumpTable: mutable.LongMap[(Int, Set[Er
         }
     }
 
-    private def addErrors(ctx: Context, errorItems: Set[ErrorItem]): Unit = {
+    private def addErrors(ctx: Context, errorItems: Set[ExpectItem]): Unit = {
         ctx.errs = new ErrorStack(new MultiExpectedError(ctx.offset, ctx.line, ctx.col, errorItems, size), ctx.errs)
         ctx.pushHandler(merge)
     }

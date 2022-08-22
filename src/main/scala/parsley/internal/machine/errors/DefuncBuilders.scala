@@ -5,9 +5,9 @@ package parsley.internal.machine.errors
 
 import scala.collection.mutable
 
-import parsley.internal.errors.{EndOfInput, ErrorItem, FancyError, TrivialError}
+import parsley.internal.errors.{EndOfInput, ErrorItem, FancyError, TrivialError, UnexpectItem, ExpectItem}
 
-import TrivialErrorBuilder.{NoItem, Other, Raw, UnexpectItem}
+import TrivialErrorBuilder.{NoItem, Other, Raw, BuilderUnexpectItem}
 
 /** When building a true `TrivialError` from a `TrivialDefuncError`, this builder is used to keep track of the
   * components that will make up the final error. This allows for more efficient construction of the object,
@@ -19,8 +19,8 @@ import TrivialErrorBuilder.{NoItem, Other, Raw, UnexpectItem}
 private [errors] final class TrivialErrorBuilder(offset: Int, outOfRange: Boolean) {
     private var line: Int = _
     private var col: Int = _
-    private val expecteds = mutable.Set.empty[ErrorItem]
-    private var unexpected: UnexpectItem = NoItem
+    private val expecteds = mutable.Set.empty[ExpectItem]
+    private var unexpected: BuilderUnexpectItem = NoItem
     private val reasons = mutable.Set.empty[String]
     private var _acceptingExpected = 0
     private def acceptingExpected = _acceptingExpected == 0
@@ -48,23 +48,23 @@ private [errors] final class TrivialErrorBuilder(offset: Int, outOfRange: Boolea
       *
       * @param item
       */
-    def updateUnexpected(item: ErrorItem): Unit = updateUnexpected(new Other(item))
-    private def updateUnexpected(other: UnexpectItem): Unit = this.unexpected = unexpected.pickHigher(other)
+    def updateUnexpected(item: UnexpectItem): Unit = updateUnexpected(new Other(item))
+    private def updateUnexpected(other: BuilderUnexpectItem): Unit = this.unexpected = unexpected.pickHigher(other)
     /** If this error is accepting new expected items, adds the given item into the error, should one exist.
       *
       * @param expected the possible item to add
       */
-    def +=(expected: Option[ErrorItem]): Unit = this ++= expected
+    def +=(expected: Option[ExpectItem]): Unit = this ++= expected
     /** If this error is accepting new expected items, adds the given item into the error
       *
       * @param expected the item to add
       */
-    def +=(expected: ErrorItem): Unit = if (acceptingExpected) this.expecteds += expected
+    def +=(expected: ExpectItem): Unit = if (acceptingExpected) this.expecteds += expected
     /** If this error is accepting new expected items, adds all the given items into the error
       *
       * @param expecteds the items to add
       */
-    def ++=(expecteds: Iterable[ErrorItem]): Unit = if (acceptingExpected) this.expecteds ++= expecteds
+    def ++=(expecteds: Iterable[ExpectItem]): Unit = if (acceptingExpected) this.expecteds ++= expecteds
     /** Adds the given reason onto the end of the errors reasons.
       *
       * @param reason the reason to add
@@ -100,29 +100,29 @@ private [errors] final class TrivialErrorBuilder(offset: Int, outOfRange: Boolea
     def makeHintCollector: HintCollector = new HintCollector(expecteds)
 }
 private [errors] object TrivialErrorBuilder {
-    private [TrivialErrorBuilder] sealed abstract class UnexpectItem {
-        def pickHigher(other: UnexpectItem): UnexpectItem
-        protected [TrivialErrorBuilder] def pickRaw(other: Raw): UnexpectItem
+    private [TrivialErrorBuilder] sealed abstract class BuilderUnexpectItem {
+        def pickHigher(other: BuilderUnexpectItem): BuilderUnexpectItem
+        protected [TrivialErrorBuilder] def pickRaw(other: Raw): BuilderUnexpectItem
         protected [TrivialErrorBuilder] def pickOther(other: Other): Other
-        def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Option[ErrorItem]
+        def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Option[UnexpectItem]
     }
-    private [TrivialErrorBuilder] final class Raw(val size: Int) extends UnexpectItem {
-        final def pickHigher(other: UnexpectItem): UnexpectItem = other.pickRaw(this)
+    private [TrivialErrorBuilder] final class Raw(val size: Int) extends BuilderUnexpectItem {
+        final def pickHigher(other: BuilderUnexpectItem): BuilderUnexpectItem = other.pickRaw(this)
         final override def pickRaw(other: Raw): Raw = if (this.size > other.size) this else other
         final override def pickOther(other: Other): Other = other
-        def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Option[ErrorItem] = Some(builder(offset, size))
+        def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Option[UnexpectItem] = Some(builder(offset, size))
     }
-    private [TrivialErrorBuilder] final class Other(val underlying: ErrorItem) extends UnexpectItem {
-        final def pickHigher(other: UnexpectItem): UnexpectItem = other.pickOther(this)
+    private [TrivialErrorBuilder] final class Other(val underlying: UnexpectItem) extends BuilderUnexpectItem {
+        final def pickHigher(other: BuilderUnexpectItem): BuilderUnexpectItem = other.pickOther(this)
         final override def pickRaw(other: Raw): Other = this
         final override def pickOther(other: Other): Other = if (this.underlying.higherPriority(other.underlying)) this else other
-        def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Option[ErrorItem] = Some(underlying)
+        def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Option[UnexpectItem] = Some(underlying)
     }
-    private [TrivialErrorBuilder] object NoItem extends UnexpectItem {
-        final def pickHigher(other: UnexpectItem): UnexpectItem = other
+    private [TrivialErrorBuilder] object NoItem extends BuilderUnexpectItem {
+        final def pickHigher(other: BuilderUnexpectItem): BuilderUnexpectItem = other
         final override def pickRaw(other: Raw): Raw = other
         final override def pickOther(other: Other): Other = other
-        def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Option[ErrorItem] = None
+        def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Option[UnexpectItem] = None
     }
 }
 
@@ -163,16 +163,16 @@ private [errors] final class FancyErrorBuilder(offset: Int) {
   *
   * @param hints the place to collect the items into
   */
-private [errors] final class HintCollector(hints: mutable.Set[ErrorItem]) {
+private [errors] final class HintCollector(hints: mutable.Set[ExpectItem]) {
     /** Creates a new collector that starts empty */
     def this() = this(mutable.Set.empty)
 
     private var width = 0
 
     /** Adds a new hint into the collector. */
-    def +=(hint: ErrorItem): Unit = this.hints += hint
+    def +=(hint: ExpectItem): Unit = this.hints += hint
     /** Adds several hints into the collector. */
-    def ++=(hints: Iterable[ErrorItem]): Unit = this.hints ++= hints
+    def ++=(hints: Iterable[ExpectItem]): Unit = this.hints ++= hints
 
     /** Gets the width of the unexpected token that may have accompanied the original hints */
     def unexpectWidth: Int = width
@@ -182,5 +182,5 @@ private [errors] final class HintCollector(hints: mutable.Set[ErrorItem]) {
     def updateWidth(sz: Int): Unit = width = Math.max(width, sz)
 
     /** Generates an immutable snapshot of this collector */
-    def mkSet: Set[ErrorItem] = this.hints.toSet
+    def mkSet: Set[ExpectItem] = this.hints.toSet
 }
