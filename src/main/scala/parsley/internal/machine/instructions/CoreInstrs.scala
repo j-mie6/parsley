@@ -155,6 +155,7 @@ private [internal] final class PushHandlerAndState(var label: Int, saveHints: Bo
         ensureRegularInstruction(ctx)
         ctx.pushHandler(label)
         ctx.saveState()
+        // FIXME: shadow = !hide so why is it like this?
         if (saveHints) ctx.saveHints(shadow = hideHints)
         ctx.inc()
     }

@@ -140,6 +140,7 @@ private [machine] final class PopHints private [errors] (val hints: DefuncHints)
 }
 
 private [errors] final class ReplaceHint private [errors] (val label: String, val hints: DefuncHints) extends DefuncHints(size = hints.size) {
+    assume(label.nonEmpty)
     def resetDeep(): Unit = hints.reset()
 }
 

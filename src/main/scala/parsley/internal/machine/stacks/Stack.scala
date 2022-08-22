@@ -28,6 +28,15 @@ private [machine] object Stack {
             str ++= "]"
             str.result()
         }
+        def size(implicit inst: Stack[T]): Int = {
+            var ys = xs
+            var sz = 0
+            while (!inst.isEmpty(ys)) {
+                sz += 1
+                ys = inst.tail(ys)
+            }
+            sz
+        }
         // $COVERAGE-ON$
         @inline def isEmpty(implicit inst: Stack[T]): Boolean = inst.isEmpty(xs)
     }
