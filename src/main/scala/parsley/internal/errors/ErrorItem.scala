@@ -19,10 +19,10 @@ private [internal] sealed trait ExpectItem extends ErrorItem {
     protected [errors] def lowerThanRaw(other: ExpectRaw): Boolean
 }
 
-private [internal] final case class UnexpectRaw(cs: Iterable[Char], knownConsumedWidth: Int) extends UnexpectItem {
-    def format(implicit builder: ErrorBuilder[_]): builder.Item = builder.raw(builder.unexpectedToken(cs, knownConsumedWidth))
+private [internal] final case class UnexpectRaw(cs: Iterable[Char], amountOfInputParserWanted: Int) extends UnexpectItem {
+    def format(implicit builder: ErrorBuilder[_]): builder.Item = builder.raw(builder.unexpectedToken(cs, amountOfInputParserWanted))
     override def higherPriority(other: UnexpectItem): Boolean = other.lowerThanRaw(this)
-    override def lowerThanRaw(other: UnexpectRaw): Boolean = this.knownConsumedWidth < other.knownConsumedWidth
+    override def lowerThanRaw(other: UnexpectRaw): Boolean = this.amountOfInputParserWanted < other.amountOfInputParserWanted
     override def lowerThanDesc: Boolean = true
 }
 

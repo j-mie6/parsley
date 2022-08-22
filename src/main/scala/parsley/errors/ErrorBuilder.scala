@@ -422,17 +422,17 @@ trait ErrorBuilder[+Err] {
     val endOfInput: EndOfInput
 
     // For doc, the iterable is guaranteed to be non-empty (end of input is handled separately)
-    // It is not guaranteed to be more than charactersConsumedFromHead (somehow lol)
+    // It is not guaranteed to be more than amountOfInputParserWanted
     // We want to do the whitespace trimming in here, but need to be careful, because
     // `raw` will need to witness pure spaces
     // FIXME: This can't be the type: if we do this then we can't "recover" from the raw state
     //        (this would be the case if we can resort to Desc instead!)
-    def unexpectedToken(cs: Iterable[Char], charactersConsumedFromHeadBeforeError: Int): String = {
+    def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int): String = {
       cs match {
         // the default case will build a new string, if the underlying was already a string
         // this is redundant.
-        case cs: WrappedString => cs.slice(0, charactersConsumedFromHeadBeforeError).toString
-        case _                 => cs.take(charactersConsumedFromHeadBeforeError).mkString
+        case cs: WrappedString => cs.slice(0, amountOfInputParserWanted).toString
+        case _                 => cs.take(amountOfInputParserWanted).mkString
       }
     }
 }
