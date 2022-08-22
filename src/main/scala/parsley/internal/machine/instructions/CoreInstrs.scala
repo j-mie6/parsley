@@ -215,7 +215,7 @@ private [internal] final class JumpAndPopCheck(var label: Int) extends InstrWith
         ensureRegularInstruction(ctx)
         ctx.handlers = ctx.handlers.tail
         ctx.checkStack = ctx.checkStack.tail
-        ctx.commitHints()
+        ctx.commitHints() // TODO: should this be mergeHints?
         ctx.pc = label
     }
     // $COVERAGE-OFF$
