@@ -37,6 +37,7 @@ trait LexToken { this: ErrorBuilder[_] =>
                 case cs => cs.mkString
             }
         }
-        selectToken(rawToken.length, rawToken, matchedToks)
+        if (rawToken.isEmpty) Named("whitespace", 1)
+        else selectToken(rawToken.length, rawToken, matchedToks)
     }
 }
