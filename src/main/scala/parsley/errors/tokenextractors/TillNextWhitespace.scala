@@ -14,12 +14,12 @@ trait TillNextWhitespace { this: ErrorBuilder[_] =>
             // These do not require allocation on the string
             val idx = cs.indexWhere(_.isWhitespace)
             val tok = if (idx != -1) cs.slice(0, idx) else cs
-            trim(tok.toString, amountOfInputParserWanted)
-        case cs => trim(cs.takeWhile(!_.isWhitespace).mkString, amountOfInputParserWanted)
+            Raw(trim(tok.toString, amountOfInputParserWanted))
+        case cs => Raw(trim(cs.takeWhile(!_.isWhitespace).mkString, amountOfInputParserWanted))
       }
     }
 
-    private def trim(s: String, amountOfInputParserWanted: Int): Token = Raw {
+    private def trim(s: String, amountOfInputParserWanted: Int): String = {
         if (trimToParserDemand) s.slice(0, amountOfInputParserWanted)
         else s
     }
