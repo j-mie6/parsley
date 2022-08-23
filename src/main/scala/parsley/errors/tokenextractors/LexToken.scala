@@ -31,7 +31,7 @@ trait LexToken { this: ErrorBuilder[_] =>
 
     def selectToken(maxWidth: Int, rawToken: String, matchedToks: List[(String, Int)]): Token = {
         val toks = matchedToks.sortBy(_._2).map {
-            case (name, width) => Named(name, Math.max(width, maxWidth))
+            case (name, width) => Named(name, Math.min(width, maxWidth))
         }
         toks.lastOption.getOrElse(Raw(rawToken))
     }
