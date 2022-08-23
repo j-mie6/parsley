@@ -367,7 +367,7 @@ trait ErrorBuilder[+Err] {
       * @since 3.1.0
       * @group contextlines
       */
-    def lineInfo(line: String, linesBefore: Seq[String], linesAfter: Seq[String], errorPointsAt: Int): LineInfo
+    def lineInfo(line: String, linesBefore: Seq[String], linesAfter: Seq[String], errorPointsAt: Int, errorWidth: Int): LineInfo
 
     /** The number of lines of input to request before an error occured.
       * @since 3.1.0

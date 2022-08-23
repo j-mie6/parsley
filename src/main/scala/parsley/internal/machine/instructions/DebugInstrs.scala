@@ -151,7 +151,7 @@ private [internal] final class LogErrBegin(var label: Int, override val name: St
         ensureRegularInstruction(ctx)
         val inFlightHints = ctx.inFlightHints.toSet
         // This should print out a classic opening line, followed by the currently in-flight hints
-        println(preludeString(Enter, ctx, s": current hints are ${inFlightHints.map(_.format)} (valid at offset ${ctx.currentHintsValidOffset})"))
+        println(preludeString(Enter, ctx, s": current hints are ${inFlightHints.map(_.formatExpect)} (valid at offset ${ctx.currentHintsValidOffset})"))
         ctx.debuglvl += 1
         ctx.stack.push(ErrLogData(ctx.currentHintsValidOffset, inFlightHints))
         ctx.pushHandler(label)
@@ -170,7 +170,7 @@ private [internal] final class LogErrEnd(override val name: String, override val
                 // In this case, the currently in-flight hints should be reported
                 val oldData = ctx.stack.pop[ErrLogData]()
                 val inFlightHints = ctx.inFlightHints.toSet
-                val formattedInFlight = inFlightHints.map(_.format)
+                val formattedInFlight = inFlightHints.map(_.formatExpect)
                 val msgInit = s": ${green("Good")}, current hints are $formattedInFlight with"
                 ctx.handlers = ctx.handlers.tail
                 if (!oldData.stillValid(ctx.currentHintsValidOffset)) {
@@ -182,7 +182,7 @@ private [internal] final class LogErrEnd(override val name: String, override val
                         println(preludeString(Exit, ctx, s"$msgInit all added since entry to debug (valid at offset ${ctx.currentHintsValidOffset})"))
                     }
                     else {
-                        val formattedNewHints = oldData.newHints(ctx.currentHintsValidOffset, inFlightHints).map(_.format)
+                        val formattedNewHints = oldData.newHints(ctx.currentHintsValidOffset, inFlightHints).map(_.formatExpect)
                         val msg = s"$msgInit $formattedNewHints added since entry to debug (valid at offset ${ctx.currentHintsValidOffset})"
                         println(preludeString(Exit, ctx, msg))
                     }
@@ -215,8 +215,8 @@ private [instructions] object LogErrEnd {
         case FancyError(offset, line, col, msgs) => s"generated specialised error (offset $offset, line $line, col $col) {" +: msgs :+ "}"
         case TrivialError(offset, line, col, unexpected, expecteds, reasons) =>
             Seq(s"generated vanilla error (offset $offset, line $line, col $col) {",
-                s"  unexpected item = ${unexpected.fold("missing")(_.format.toString)}",
-                s"  expected item(s) = ${expecteds.map(_.format)}",
+                s"  unexpected item = ${unexpected.fold("missing")(_.formatUnexpect._1.toString)}",
+                s"  expected item(s) = ${expecteds.map(_.formatExpect)}",
                 s"  reasons =${if (reasons.isEmpty) " no reasons given" else ""}") ++
                 reasons.map("  " + _) :+
                 "}"

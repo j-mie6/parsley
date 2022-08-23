@@ -14,6 +14,8 @@ import scala.collection.immutable.WrappedString
 // Turn coverage off, because the tests have their own error builder
 // We might want to test this on its own though
 // $COVERAGE-OFF$
+// TODO: The problem with this is that it shouldn't apply the heuristics to lexing errors, only parsing errors
+// We'd need a way of signalling that from the lexer itself?
 trait LexToken { this: ErrorBuilder[_] =>
 
     def tokens: Seq[Parsley[String]]

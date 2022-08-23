@@ -101,14 +101,14 @@ class DefaultErrorBuilder extends ErrorBuilder[String] with tokenextractors.Matc
     /** @inheritdoc */
     override val numLinesAfter = 1
     /** @inheritdoc */
-    override def lineInfo(line: String, linesBefore: Seq[String], linesAfter: Seq[String], errorPointsAt: Int): LineInfo = {
+    override def lineInfo(line: String, linesBefore: Seq[String], linesAfter: Seq[String], errorPointsAt: Int, errorWidth: Int): LineInfo = {
         linesBefore.map(line => s"$errorLineStart$line") ++:
-        Seq(s"$errorLineStart$line", s"${" " * errorLineStart.length}${errorPointer(errorPointsAt)}") ++:
+        Seq(s"$errorLineStart$line", s"${" " * errorLineStart.length}${errorPointer(errorPointsAt, errorWidth)}") ++:
         linesAfter.map(line => s"$errorLineStart$line")
     }
 
     private val errorLineStart = ">"
-    private def errorPointer(caretAt: Int) = s"${" " * caretAt}^"
+    private def errorPointer(caretAt: Int, caretWidth: Int) = s"${" " * caretAt}${"^" * caretWidth}"
 
     /** @inheritdoc */
     type Item = String

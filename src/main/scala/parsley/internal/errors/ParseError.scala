@@ -25,17 +25,18 @@ private [internal] case class TrivialError(offset: Int, line: Int, col: Int,
                                            unexpected: Option[UnexpectItem], expecteds: Set[ExpectItem], reasons: Set[String])
     extends ParseError {
     def format(line: String, beforeLines: List[String], afterLines: List[String], caret: Int)(implicit builder: ErrorBuilder[_]): builder.ErrorInfoLines = {
+        val unexpectedTok = unexpected.map(_.formatUnexpect)
         builder.vanillaError(
-            builder.unexpected(unexpected.map(_.format)),
-            builder.expected(builder.combineExpectedItems(expecteds.map(_.format))),
+            builder.unexpected(unexpectedTok.map(_._1)),
+            builder.expected(builder.combineExpectedItems(expecteds.map(_.formatExpect))),
             builder.combineMessages(reasons.map(builder.reason(_)).toSeq),
-            builder.lineInfo(line, beforeLines, afterLines, caret))
+            builder.lineInfo(line, beforeLines, afterLines, caret, unexpectedTok.fold(1)(_._2)))
     }
 }
 private [internal] case class FancyError(offset: Int, line: Int, col: Int, msgs: List[String]) extends ParseError {
     def format(line: String, beforeLines: List[String], afterLines: List[String], caret: Int)(implicit builder: ErrorBuilder[_]): builder.ErrorInfoLines = {
         builder.specialisedError(
             builder.combineMessages(msgs.map(builder.message(_))),
-            builder.lineInfo(line, beforeLines, afterLines, caret))
+            builder.lineInfo(line, beforeLines, afterLines, caret, 1))
     }
 }

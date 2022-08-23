@@ -52,7 +52,7 @@ class TestErrorBuilder extends ErrorBuilder[TestError] with tokenextractors.Matc
     override def message(msg: String): Message = msg
 
     type LineInfo = Unit
-    override def lineInfo(line: String, linesBefore: Seq[String], linesAfter: Seq[String], errorPointsAt: Int): Unit = ()
+    override def lineInfo(line: String, linesBefore: Seq[String], linesAfter: Seq[String], errorPointsAt: Int, errorWidth: Int): Unit = ()
 
     override val numLinesBefore: Int = 2
     override val numLinesAfter: Int = 2
