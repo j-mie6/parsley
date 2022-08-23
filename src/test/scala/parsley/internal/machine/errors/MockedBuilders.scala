@@ -8,6 +8,8 @@ object MockedBuilders {
       override def inRange(offset: Int): Boolean = true
       override def charAt(offset: Int): Char = 'x'
       //override def substring(offset: Int, size: Int): String = "x" * size
-      override protected def iterableFrom(offset: Int): Iterable[Char] = Stream.continually('x')
+      override protected def iterableFrom(offset: Int): Iterable[Char] = /*LazyList.continually('x')*/new Iterable[Char] {
+        override def iterator: Iterator[Char] = Iterator.continually('x')
+      }
     }
 }

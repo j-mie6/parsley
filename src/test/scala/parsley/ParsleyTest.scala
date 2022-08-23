@@ -7,7 +7,7 @@ import org.scalatest.Assertions
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-import parsley.errors.{DefaultErrorBuilder, ErrorBuilder}
+import parsley.errors.{DefaultErrorBuilder, ErrorBuilder, tokenextractors}
 import org.scalatest.Inside
 
 case class TestError(pos: (Int, Int), lines: TestErrorLines)
@@ -21,7 +21,7 @@ case class Raw(item: String) extends TestErrorItem
 case class Named(item: String) extends TestErrorItem
 case object EndOfInput extends TestErrorItem
 
-class TestErrorBuilder extends ErrorBuilder[TestError] {
+class TestErrorBuilder extends ErrorBuilder[TestError] with tokenextractors.MatchParserDemand {
     override def format(pos: Position, source: Source, lines: ErrorInfoLines): TestError = TestError(pos, lines)
 
     type Position = (Int, Int)

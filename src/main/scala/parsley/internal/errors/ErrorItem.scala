@@ -3,7 +3,7 @@
  */
 package parsley.internal.errors
 
-import parsley.errors.ErrorBuilder
+import parsley.errors, errors.ErrorBuilder
 
 private [internal] sealed abstract class ErrorItem {
     def format(implicit builder: ErrorBuilder[_]): builder.Item
@@ -20,7 +20,11 @@ private [internal] sealed trait ExpectItem extends ErrorItem {
 }
 
 private [internal] final case class UnexpectRaw(cs: Iterable[Char], amountOfInputParserWanted: Int) extends UnexpectItem {
-    def format(implicit builder: ErrorBuilder[_]): builder.Item = builder.raw(builder.unexpectedToken(cs, amountOfInputParserWanted))
+    def format(implicit builder: ErrorBuilder[_]): builder.Item = builder.unexpectedToken(cs, amountOfInputParserWanted) match {
+        case errors.Raw(tok) => builder.raw(tok)
+        case errors.Named(name) => builder.named(name)
+        case errors.EndOfInput => builder.endOfInput
+    }
     override def higherPriority(other: UnexpectItem): Boolean = other.lowerThanRaw(this)
     override def lowerThanRaw(other: UnexpectRaw): Boolean = this.amountOfInputParserWanted < other.amountOfInputParserWanted
     override def lowerThanDesc: Boolean = true

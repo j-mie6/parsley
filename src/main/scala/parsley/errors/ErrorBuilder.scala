@@ -425,16 +425,7 @@ trait ErrorBuilder[+Err] {
     // It is not guaranteed to be more than amountOfInputParserWanted
     // We want to do the whitespace trimming in here, but need to be careful, because
     // `raw` will need to witness pure spaces
-    // FIXME: This can't be the type: if we do this then we can't "recover" from the raw state
-    //        (this would be the case if we can resort to Desc instead!)
-    def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int): String = {
-      cs match {
-        // the default case will build a new string, if the underlying was already a string
-        // this is redundant.
-        case cs: WrappedString => cs.slice(0, amountOfInputParserWanted).toString
-        case _                 => cs.take(amountOfInputParserWanted).mkString
-      }
-    }
+    def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int): Token
 }
 
 /** Contains the default instance for the `ErrorBuilder` typeclass, which will be automatically available without import.

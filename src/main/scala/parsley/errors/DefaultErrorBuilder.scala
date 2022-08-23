@@ -15,7 +15,7 @@ package parsley.errors
   * @since 3.0.0
   * @group formatting
   */
-class DefaultErrorBuilder extends ErrorBuilder[String] {
+class DefaultErrorBuilder extends ErrorBuilder[String] with tokenextractors.MatchParserDemand {
     /** @inheritdoc */
     override def format(pos: Position, source: Source, lines: ErrorInfoLines): String = {
         s"${source.fold("")(name => s"In $name ")}$pos:\n${lines.mkString("  ", "\n  ", "")}"
