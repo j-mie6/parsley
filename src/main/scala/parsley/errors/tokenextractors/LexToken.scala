@@ -19,7 +19,7 @@ trait LexToken { this: ErrorBuilder[_] =>
         // cannot fail
         val tokWidth = manyUntil(noneOf('\n'), whitespace <|> eof <|> newline).map(_.mkString)
         tokWidth <~> sequence(tokens.map {
-            case p -> name => option(attempt(lookAhead(p #> name <~> trueCol)))
+            case (p, name) => option(attempt(lookAhead(p #> name <~> trueCol)))
         }: _*).map(_.flatten)
     }
 
