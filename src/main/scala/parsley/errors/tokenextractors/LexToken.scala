@@ -1,3 +1,6 @@
+/* SPDX-FileCopyrightText: © 2022 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package parsley.errors.tokenextractors
 
 import parsley.Parsley, Parsley.{attempt, col, lookAhead}
@@ -8,6 +11,9 @@ import parsley.errors.{ErrorBuilder, helpers, Named, Raw, Token}
 
 import scala.collection.immutable.WrappedString
 
+// Turn coverage off, because the tests have their own error builder
+// We might want to test this on its own though
+// $COVERAGE-OFF$
 trait LexToken { this: ErrorBuilder[_] =>
 
     def tokens: Seq[Parsley[String]]
@@ -46,3 +52,4 @@ object LexToken {
         case (p, n) => p #> n
     }
 }
+// $COVERAGE-ON$
