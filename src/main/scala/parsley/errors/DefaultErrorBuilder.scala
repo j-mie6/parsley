@@ -15,7 +15,7 @@ package parsley.errors
   * @since 3.0.0
   * @group formatting
   */
-class DefaultErrorBuilder extends ErrorBuilder[String] with tokenextractors.MatchParserDemand {
+class DefaultErrorBuilder extends ErrorBuilder[String] with tokenextractors.TillNextWhitespace {
     /** @inheritdoc */
     override def format(pos: Position, source: Source, lines: ErrorInfoLines): String = {
         s"${source.fold("")(name => s"In $name ")}$pos:\n${lines.mkString("  ", "\n  ", "")}"
@@ -124,6 +124,8 @@ class DefaultErrorBuilder extends ErrorBuilder[String] with tokenextractors.Matc
     override def named(item: String): Named = item
     /** @inheritdoc */
     override val endOfInput: EndOfInput = "end of input"
+
+    override val trimToParserDemand = true
 }
 private object DefaultErrorBuilder {
     private val Unknown = "unknown parse error"
