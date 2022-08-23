@@ -22,7 +22,7 @@ private [internal] sealed trait ExpectItem extends ErrorItem {
 private [internal] final case class UnexpectRaw(cs: Iterable[Char], amountOfInputParserWanted: Int) extends UnexpectItem {
     def format(implicit builder: ErrorBuilder[_]): builder.Item = builder.unexpectedToken(cs, amountOfInputParserWanted) match {
         case errors.Raw(tok) => builder.raw(tok)
-        case errors.Named(name) => builder.named(name)
+        case errors.Named(name, _) => builder.named(name)
         case errors.EndOfInput => builder.endOfInput
     }
     override def higherPriority(other: UnexpectItem): Boolean = other.lowerThanRaw(this)

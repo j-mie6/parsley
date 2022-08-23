@@ -10,15 +10,8 @@ import scala.util.matching.Regex
 // $COVERAGE-OFF$
 private [parsley] object helpers {
     def renderRawString(s: String): String = s match {
-        case cs if cs.head.isWhitespace => cs.head match {
-            case c if c.isSpaceChar  => "space"
-            case '\n'                => "newline"
-            case '\t'                => "tab"
-            case _                   => "whitespace character"
-        }
-        case Unprintable(up) => f"unprintable character (\\u${up.head.toInt}%04X)"
-        // Do we want this only in unexpecteds? TODO: This complicates things, honestly...
-        case cs              => "\"" + cs.takeWhile(!_.isWhitespace) + "\""
+        case WhitespaceOrUnprintable(name) => name
+        case cs                            => "\"" + cs + "\""
     }
 
     def combineAsList(elems: List[String]): Option[String] = elems.sorted.reverse match {
@@ -31,5 +24,18 @@ private [parsley] object helpers {
     }
 
     private val Unprintable: Regex = "(\\p{C})".r
+
+    object WhitespaceOrUnprintable {
+        def unapply(cs: Iterable[Char]): Option[String] = unapply(cs.head)
+        def unapply(s: String): Option[String] = unapply(s.charAt(0))
+        def unapply(c: Char): Option[String] = c match {
+            case '\n' => Some("newline")
+            case '\t' => Some("tab")
+            case c if c.isSpaceChar => Some("space")
+            case c if c.isWhitespace => Some("whitespace character")
+            case Unprintable(up) => Some(f"unprintable character (\\u${up.toInt}%04X)")
+            case _ => None
+        }
+    }
 }
 // $COVERAGE-ON$
