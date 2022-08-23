@@ -15,9 +15,9 @@ class ErrorTests extends ParsleyTest {
     "mzero parsers" should "always fail" in {
         (Parsley.empty ~> 'a').parse("a") shouldBe a [Failure[_]]
         (pfail("") ~> 'a').parse("a") shouldBe a [Failure[_]]
-        (unexpected("") *> 'a').parse("a") shouldBe a [Failure[_]]
+        (unexpected("x") *> 'a').parse("a") shouldBe a [Failure[_]]
         (('a' ! (_ => "")) *> 'b').parse("ab") shouldBe a [Failure[_]]
-        ('a'.unexpected(_ => "") *> 'b').parse("ab") shouldBe a [Failure[_]]
+        ('a'.unexpected(_ => "x") *> 'b').parse("ab") shouldBe a [Failure[_]]
     }
 
     "filtering parsers" should "function correctly" in {
@@ -138,6 +138,21 @@ class ErrorTests extends ParsleyTest {
                 unex should contain (Raw("e"))
                 exs should contain only (Named("bee"), Raw("c"))
                 rs shouldBe empty
+        }
+    }
+
+    "hide" should "not produce any visible output" in {
+        inside('a'.hide.parse("")) {
+            case Failure(TestError((1, 1), VanillaError(_, exs, _))) =>
+                exs shouldBe empty
+        }
+        inside("a".hide.parse("")) {
+            case Failure(TestError((1, 1), VanillaError(_, exs, _))) =>
+                exs shouldBe empty
+        }
+        inside(digit.hide.parse("")) {
+            case Failure(TestError((1, 1), VanillaError(_, exs, _))) =>
+                exs shouldBe empty
         }
     }
 

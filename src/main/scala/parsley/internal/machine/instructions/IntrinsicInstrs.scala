@@ -256,18 +256,20 @@ private [internal] final class SwapAndPut(reg: Int) extends Instr {
 // Companion Objects
 private [internal] object CharTok {
     def apply(c: Char, expected: Option[String]): CharTok = apply(c, c, expected)
-    def apply(c: Char, x: Any, expected: Option[String]): CharTok = new CharTok(c, x, Some(expected match {
-        case Some(e) => Desc(e)
-        case None    => ExpectRaw(c)
-    }))
+    def apply(c: Char, x: Any, expected: Option[String]): CharTok = new CharTok(c, x, expected match {
+        case Some("") => None
+        case Some(e)  => Some(Desc(e))
+        case None     => Some(ExpectRaw(c))
+    })
 }
 
 private [internal] object StringTok {
     def apply(s: String, expected: Option[String]): StringTok = apply(s, s, expected)
-    def apply(s: String, x: Any, expected: Option[String]): StringTok = new StringTok(s, x, Some(expected match {
-        case Some(e) => Desc(e)
-        case None    => ExpectRaw(s)
-    }))
+    def apply(s: String, x: Any, expected: Option[String]): StringTok = new StringTok(s, x, expected match {
+        case Some("") => None
+        case Some(e)  => Some(Desc(e))
+        case None     => Some(ExpectRaw(s))
+    })
 
     private [StringTok] abstract class Adjust {
         private [StringTok] def tab: Adjust

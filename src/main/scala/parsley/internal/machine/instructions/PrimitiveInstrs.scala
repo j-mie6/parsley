@@ -8,7 +8,7 @@ import parsley.internal.machine.{Context, Good}
 import parsley.internal.machine.XAssert._
 
 private [internal] final class Satisfies(f: Char => Boolean, _expected: Option[String]) extends Instr {
-    private [this] final val expected = _expected.map(Desc(_))
+    private [this] final val expected = _expected.flatMap(label => if (label.isEmpty) None else Some(Desc(label)))
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         if (ctx.moreInput && f(ctx.nextChar)) ctx.pushAndContinue(ctx.consumeChar())

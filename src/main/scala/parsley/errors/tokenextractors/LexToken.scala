@@ -10,17 +10,15 @@ import scala.collection.immutable.WrappedString
 
 trait LexToken { this: ErrorBuilder[_] =>
 
-    def tokens: Seq[(Parsley[_], String)]
+    def tokens: Seq[Parsley[String]]
     def whitespace: Parsley[_]
 
     private def makeParser: Parsley[(String, List[(String, Int)])] = {
         // we start at column 1 anyway
         val trueCol = col.map(_ - 1)
         // cannot fail
-        val tokWidth = manyUntil(noneOf('\n'), whitespace <|> eof <|> newline).map(_.mkString)
-        tokWidth <~> sequence(tokens.map {
-            case (p, name) => option(attempt(lookAhead(p #> name <~> trueCol)))
-        }: _*).map(_.flatten)
+        val tokWidth = lookAhead(manyUntil(noneOf('\n'), whitespace <|> eof <|> newline).map(_.mkString))
+        tokWidth <~> sequence(tokens.map(p => option(attempt(lookAhead(p <~> trueCol)))): _*).map(_.flatten)
     }
 
     def selectToken(maxWidth: Int, rawToken: String, matchedToks: List[(String, Int)]): Token = {
@@ -37,7 +35,14 @@ trait LexToken { this: ErrorBuilder[_] =>
                 case cs => cs.mkString
             }
         }
+        // TODO: not really ideal, what about parsing comments etc?
         if (rawToken.isEmpty) Named("whitespace", 1)
         else selectToken(rawToken.length, rawToken, matchedToks)
+    }
+}
+
+object LexToken {
+    def constantNames(ps: (Parsley[_], String)*): Seq[Parsley[String]] = ps.map {
+        case (p, n) => p #> n
     }
 }

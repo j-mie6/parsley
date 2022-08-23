@@ -3,6 +3,8 @@
  */
 package parsley.internal.errors
 
+import parsley.XAssert._
+
 import parsley.errors, errors.ErrorBuilder
 
 private [internal] sealed abstract class ErrorItem {
@@ -40,6 +42,7 @@ private [internal] object ExpectRaw {
     def apply(c: Char): ExpectRaw = new ExpectRaw(s"$c")
 }
 private [internal] final case class Desc(msg: String) extends UnexpectItem with ExpectItem {
+    assume(msg.nonEmpty, "Desc cannot contain empty things!")
     def format(implicit builder: ErrorBuilder[_]): builder.Item = builder.named(msg)
     override def higherPriority(other: ExpectItem): Boolean = other.lowerThanDesc
     override def higherPriority(other: UnexpectItem): Boolean = other.lowerThanDesc
