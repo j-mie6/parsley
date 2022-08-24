@@ -6,7 +6,7 @@ package parsley.errors.tokenextractors
 import parsley.Parsley, Parsley.{attempt, lookAhead}
 import parsley.Success
 import parsley.character.{noneOf, newline, item}
-import parsley.combinator.{eof, manyUntil, option, sequence}
+import parsley.combinator.{eof, manyUntil, someUntil, option, sequence, choice}
 import parsley.errors.{ErrorBuilder, helpers, Named, Raw, Token, UntilPos, Width}
 
 import scala.collection.immutable.WrappedString
@@ -21,38 +21,61 @@ trait LexToken { this: ErrorBuilder[_] =>
     def tokens: Seq[Parsley[String]]
     def whitespace: Parsley[_]
 
-    private def makeParser: Parsley[((String, (Int, Int)), List[(String, (Int, Int))])] = {
-        // we start at column 1 anyway
-        //val trueCol = col.map(_ - 1)
-        // cannot fail
-        val tokWidth = lookAhead(manyUntil(item <~> Parsley.pos, whitespace <|> eof)).map {
+    // cannot fail
+    /*private lazy val makeParser: Parsley[(Option[(String, (Int, Int))], List[(String, (Int, Int))])] = {
+        val toks = tokens.map(p => attempt(lookAhead(p <~> Parsley.pos)))
+        val rawTok = lookAhead(manyUntil(item <~> Parsley.pos, whitespace <|> eof)).map {
             case csAndPs =>
                 val (cs, ps) = csAndPs.unzip
-                (cs.mkString, ps.last)
+                ps.lastOption.map(p => (cs.mkString, p))
         }
-        tokWidth <~> sequence(tokens.map(p => option(attempt(lookAhead(p <~> Parsley.pos)))): _*).map(_.flatten)
+        rawTok <~> sequence(toks.map(option): _*).map(_.flatten)
+    }*/
+
+    // cannot fail
+    private lazy val makeParser2: Parsley[Either[String, List[(String, (Int, Int))]]] = {
+        val toks = (whitespace #> "whitespace" +: tokens).map(p => attempt(p <~> Parsley.pos))
+        val rawTok = lookAhead(someUntil(item, eof <|> choice(toks: _*))).map(_.mkString)
+        rawTok <+> sequence(toks.map(p => option(lookAhead(p))): _*).map(_.flatten)
     }
 
-    def selectToken(maxLine: Int, maxCol: Int, rawToken: String, matchedToks: List[(String, (Int, Int))]): Token = {
+    /*def selectToken(maxLine: Int, maxCol: Int, rawToken: String, matchedToks: List[(String, (Int, Int))]): Token = {
         val toks = matchedToks.sortBy(_._2).map {
-            // FIXME: this is wrong, because the token's width might be 0 if it ate a newline!
-            // For now, we can just guard against 0 carets
-            case (name, (line, col)) => //Named(name, Width(Math.max(1, Math.min(width, maxWidth))))
+            case (name, (line, col)) =>
                 Named(name, UntilPos(Math.min(line, maxLine), if (line < maxLine) col else if (maxLine < line) maxCol else Math.min(col, maxCol)))
         }
         toks.lastOption.getOrElse(Raw(rawToken))
+    }*/
+
+    def selectToken(matchedToks: List[(String, (Int, Int))]): Token = {
+        val toks = matchedToks.sortBy(_._2).map {
+            case (name, (line, col)) => Named(name, UntilPos(line, col))
+        }
+        toks.last
     }
 
     override def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int): Token = {
-        val Success(((rawToken, (rawLine, rawCol)), matchedToks)) = makeParser.parse {
+        /*val Success((rawTokOpt, matchedToks)) = makeParser.parse {
             cs match {
                 case cs: WrappedString => cs.toString
                 case cs => cs.mkString
             }
         }
-        // TODO: not really ideal, what about parsing comments etc?
-        if (rawToken.isEmpty) Named("whitespace", Width(1))
-        else selectToken(rawLine, rawCol, rawToken, matchedToks)
+        // not really ideal, what about parsing comments etc?
+        rawTokOpt match {
+            case None => Named("whitespace", Width(1))
+            case Some((rawTok, (rawLine, rawCol))) => selectToken(rawLine, rawCol, rawTok, matchedToks)
+        }*/
+        // This is better, but does mean that the tokens provided should not consume terminal whitespace
+        // One way of mitigating this would be to cap off the token to the next whitespace, but that's
+        // a bit dodgy from the users perspective
+        val Success(rawOrToks) = makeParser2.parse {
+            cs match {
+                case cs: WrappedString => cs.toString
+                case cs => cs.mkString
+            }
+        }
+        rawOrToks.fold(Raw, selectToken)
     }
 }
 
