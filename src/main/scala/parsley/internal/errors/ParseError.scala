@@ -26,11 +26,12 @@ private [internal] case class TrivialError(offset: Int, line: Int, col: Int,
     extends ParseError {
     def format(line: String, beforeLines: List[String], afterLines: List[String], caret: Int)(implicit builder: ErrorBuilder[_]): builder.ErrorInfoLines = {
         val unexpectedTok = unexpected.map(_.formatUnexpect)
+        val caretSize = unexpectedTok.fold(1)(_._2.toCaretLength(this.line, this.col, line.length, afterLines.map(_.length)))
         builder.vanillaError(
             builder.unexpected(unexpectedTok.map(_._1)),
             builder.expected(builder.combineExpectedItems(expecteds.map(_.formatExpect))),
             builder.combineMessages(reasons.map(builder.reason(_)).toSeq),
-            builder.lineInfo(line, beforeLines, afterLines, caret, unexpectedTok.fold(1)(_._2)))
+            builder.lineInfo(line, beforeLines, afterLines, caret, caretSize))
     }
 }
 private [internal] case class FancyError(offset: Int, line: Int, col: Int, msgs: List[String]) extends ParseError {

@@ -3,11 +3,11 @@
  */
 package parsley.errors.tokenextractors
 
-import parsley.Parsley, Parsley.{attempt, col, lookAhead}
+import parsley.Parsley, Parsley.{attempt, lookAhead}
 import parsley.Success
-import parsley.character.{noneOf, newline}
+import parsley.character.{noneOf, newline, item}
 import parsley.combinator.{eof, manyUntil, option, sequence}
-import parsley.errors.{ErrorBuilder, helpers, Named, Raw, Token}
+import parsley.errors.{ErrorBuilder, helpers, Named, Raw, Token, UntilPos, Width}
 
 import scala.collection.immutable.WrappedString
 
@@ -21,33 +21,38 @@ trait LexToken { this: ErrorBuilder[_] =>
     def tokens: Seq[Parsley[String]]
     def whitespace: Parsley[_]
 
-    private def makeParser: Parsley[(String, List[(String, Int)])] = {
+    private def makeParser: Parsley[((String, (Int, Int)), List[(String, (Int, Int))])] = {
         // we start at column 1 anyway
-        val trueCol = col.map(_ - 1)
+        //val trueCol = col.map(_ - 1)
         // cannot fail
-        val tokWidth = lookAhead(manyUntil(noneOf('\n'), whitespace <|> eof <|> newline).map(_.mkString))
-        tokWidth <~> sequence(tokens.map(p => option(attempt(lookAhead(p <~> trueCol)))): _*).map(_.flatten)
+        val tokWidth = lookAhead(manyUntil(item <~> Parsley.pos, whitespace <|> eof)).map {
+            case csAndPs =>
+                val (cs, ps) = csAndPs.unzip
+                (cs.mkString, ps.last)
+        }
+        tokWidth <~> sequence(tokens.map(p => option(attempt(lookAhead(p <~> Parsley.pos)))): _*).map(_.flatten)
     }
 
-    def selectToken(maxWidth: Int, rawToken: String, matchedToks: List[(String, Int)]): Token = {
+    def selectToken(maxLine: Int, maxCol: Int, rawToken: String, matchedToks: List[(String, (Int, Int))]): Token = {
         val toks = matchedToks.sortBy(_._2).map {
             // FIXME: this is wrong, because the token's width might be 0 if it ate a newline!
             // For now, we can just guard against 0 carets
-            case (name, width) => Named(name, Math.max(1, Math.min(width, maxWidth)))
+            case (name, (line, col)) => //Named(name, Width(Math.max(1, Math.min(width, maxWidth))))
+                Named(name, UntilPos(Math.min(line, maxLine), if (line < maxLine) col else if (maxLine < line) maxCol else Math.min(col, maxCol)))
         }
         toks.lastOption.getOrElse(Raw(rawToken))
     }
 
     override def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int): Token = {
-        val Success((rawToken, matchedToks)) = makeParser.parse {
+        val Success(((rawToken, (rawLine, rawCol)), matchedToks)) = makeParser.parse {
             cs match {
                 case cs: WrappedString => cs.toString
                 case cs => cs.mkString
             }
         }
         // TODO: not really ideal, what about parsing comments etc?
-        if (rawToken.isEmpty) Named("whitespace", 1)
-        else selectToken(rawToken.length, rawToken, matchedToks)
+        if (rawToken.isEmpty) Named("whitespace", Width(1))
+        else selectToken(rawLine, rawCol, rawToken, matchedToks)
     }
 }
 

@@ -3,7 +3,7 @@
  */
 package parsley.errors.tokenextractors
 
-import parsley.errors.{ErrorBuilder, helpers, Named, Raw, Token}
+import parsley.errors.{ErrorBuilder, helpers, Named, Raw, Token, Width}
 
 import scala.collection.immutable.WrappedString
 
@@ -15,7 +15,7 @@ trait TillNextWhitespace { this: ErrorBuilder[_] =>
 
     override def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int): Token = {
       cs match {
-        case helpers.WhitespaceOrUnprintable(name) => Named(name, 1)
+        case helpers.WhitespaceOrUnprintable(name) => Named(name, Width(1))
         case cs: WrappedString =>
             // These do not require allocation on the string
             val idx = cs.indexWhere(_.isWhitespace)
