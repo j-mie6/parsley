@@ -297,10 +297,10 @@ class ExpressionParserTests extends ParsleyTest {
             Ops(InfixR)(Binary <# ','),
             Ops(InfixR)(Binary <# ".="),
             Ops(InfixL)(Binary <# '.'),
-            Ops(Postfix)(Call(tok.parens(expr </> Constant(""))))
+            Ops(Postfix)(Call(tok.lexemes.parens(expr </> Constant(""))))
         )
 
-        lazy val atom: Parsley[Expr] = Constant(tok.identifier)
+        lazy val atom: Parsley[Expr] = Constant(tok.lexemes.identifier)
         lazy val expr: Parsley[Expr] = precedence(op, ops: _*)(atom)
 
         expr.parse("o.f()") shouldBe a [Success[_]]
