@@ -50,6 +50,21 @@ case class LanguageDef (commentStart: String,
         }
         on
     }
+
+    private [token] def toDesc: descriptions.LanguageDesc =
+        descriptions.LanguageDesc (identStart,
+                                   identLetter,
+                                   opStart,
+                                   opLetter,
+                                   keywords,
+                                   operators,
+                                   caseSensitive,
+                                   descriptions.WhitespaceDesc (commentStart,
+                                                                commentEnd,
+                                                                commentLine,
+                                                                true,
+                                                                nestedComments,
+                                                                space))
 }
 /** This object contains any preconfigured language definitions
   * @since 2.2.0

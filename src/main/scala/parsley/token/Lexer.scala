@@ -21,7 +21,8 @@ import parsley.internal.deepembedding.singletons
   * @param lang The rules that govern the language we are tokenising
   * @since 2.2.0
   */
-class Lexer(lang: LanguageDef) {
+class Lexer private (lang: descriptions.LanguageDesc) {
+    def this(lang: LanguageDef) = this(lang.toDesc)
     private def keyOrOp(startImpl: Impl, letterImpl: Impl, parser: Parsley[String], illegal: String => Boolean,
                         combinatorName: String, name: String, illegalName: String) = {
         val builder = (start: Char => Boolean, letter: Char => Boolean) =>
@@ -132,7 +133,7 @@ class Lexer(lang: LanguageDef) {
      * deals correctly with escape sequences and gaps. The literal string is parsed according to
      * the grammar rules defined in the Haskell report (which matches most programming languages
      * quite closely).*/
-    lazy val stringLiteral_ : Parsley[String] = lang.space match {
+    lazy val stringLiteral_ : Parsley[String] = lang.whitespaceDesc.space match {
         case Static(ws) => new Parsley(new singletons.StringLiteral(ws))
         case _ => between('"'.label("string"), '"'.label("end of string"), many(stringChar)).map(_.flatten.mkString)
     }
@@ -239,13 +240,13 @@ class Lexer(lang: LanguageDef) {
      * explicitly is the start of the main parser in order to skip any leading white space.*/
     def lexeme[A](p: =>Parsley[A]): Parsley[A] = p <* whiteSpace
 
-    private lazy val space = toParser(lang.space)
+    private lazy val space = toParser(lang.whitespaceDesc.space)
 
     /**Parses any white space. White space consists of zero or more occurrences of a `space` (as
      * provided by the `LanguageDef`), a line comment or a block (multi-line) comment. Block
      * comments may be nested. How comments are started and ended is defined in the `LanguageDef`
      * that is provided to the lexer.*/
-    lazy val whiteSpace: Parsley[Unit] = whiteSpace_(lang.space).hide
+    lazy val whiteSpace: Parsley[Unit] = whiteSpace_(lang.whitespaceDesc.space).hide
 
     /**Parses any white space. White space consists of zero or more occurrences of a `space` (as
      * provided by the parameter), a line comment or a block (multi-line) comment. Block
@@ -253,9 +254,13 @@ class Lexer(lang: LanguageDef) {
      * that is provided to the lexer.*/
     val whiteSpace_ : Impl => Parsley[Unit] = {
         case NotRequired => skipComments
-        case Static(ws) => new Parsley(new singletons.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
-        case Parser(space_) if lang.supportsComments =>
-            skipMany(attempt(new Parsley(new singletons.Comment(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))) <|> space_)
+        case Static(ws) => new Parsley(new singletons.WhiteSpace(ws, lang.whitespaceDesc.commentStart, lang.whitespaceDesc.commentEnd,
+                                                                     lang.whitespaceDesc.commentLine, lang.whitespaceDesc.nestedComments))
+        case Parser(space_) if lang.whitespaceDesc.supportsComments =>
+            skipMany(attempt(new Parsley(new singletons.Comment(lang.whitespaceDesc.commentStart,
+                                                                lang.whitespaceDesc.commentEnd,
+                                                                lang.whitespaceDesc.commentLine,
+                                                                lang.whitespaceDesc.nestedComments))) <|> space_)
         case Parser(space_) => skipMany(space_)
         // $COVERAGE-OFF$
         case _ => ??? // scalastyle:ignore not.implemented.error.usage
@@ -264,9 +269,10 @@ class Lexer(lang: LanguageDef) {
 
     /**Parses any comments and skips them, this includes both line comments and block comments.*/
     lazy val skipComments: Parsley[Unit] = {
-        if (!lang.supportsComments) unit
+        if (!lang.whitespaceDesc.supportsComments) unit
         else {
-            new Parsley(new singletons.SkipComments(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
+            new Parsley(new singletons.SkipComments(lang.whitespaceDesc.commentStart, lang.whitespaceDesc.commentEnd,
+                                                    lang.whitespaceDesc.commentLine,  lang.whitespaceDesc.nestedComments))
         }
     }
 
