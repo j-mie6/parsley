@@ -52,24 +52,23 @@ case class LanguageDef (commentStart: String,
     }
 
     private [token] def toDesc: descriptions.LanguageDesc =
-        descriptions.LanguageDesc (identStart,
-                                   identLetter,
+        descriptions.LanguageDesc (descriptions.IdentDesc(identStart,
+                                                          identLetter,
+                                                          keywords,
+                                                          caseSensitive),
                                    opStart,
                                    opLetter,
-                                   keywords,
                                    operators,
-                                   caseSensitive,
-                                   descriptions.WhitespaceDesc (commentStart,
-                                                                commentEnd,
-                                                                commentLine,
-                                                                true,
-                                                                nestedComments,
-                                                                space))
+                                   descriptions.SpaceDesc (commentStart,
+                                                           commentEnd,
+                                                           commentLine,
+                                                           true,
+                                                           nestedComments,
+                                                           space))
 }
 /** This object contains any preconfigured language definitions
   * @since 2.2.0
   */
-object LanguageDef
-{
+object LanguageDef {
     val plain = LanguageDef("", "", "", false, NotRequired, NotRequired, NotRequired, NotRequired, Set.empty, Set.empty, true, NotRequired)
 }

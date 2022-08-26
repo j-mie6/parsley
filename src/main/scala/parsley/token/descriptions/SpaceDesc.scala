@@ -2,13 +2,15 @@ package parsley.token.descriptions
 
 import parsley.token.{Impl, NotRequired}
 
+// TODO: These shouldn't just be fixed strings, ideally
+// In a /perfect/ world, the commendEnd would depend on the comment start
 private [token]
-case class WhitespaceDesc (commentStart: String,
-                           commentEnd: String,
-                           commentLine: String,
-                           commentLineAllowsEOF: Boolean,
-                           nestedComments: Boolean,
-                           space: Impl) {
+case class SpaceDesc (commentStart: String,
+                      commentEnd: String,
+                      commentLine: String,
+                      commentLineAllowsEOF: Boolean,
+                      nestedComments: Boolean,
+                      space: Impl) {
     private [token] lazy val supportsComments = {
         val on = (commentStart.nonEmpty && commentEnd.nonEmpty) || commentLine.nonEmpty
         if (on && commentStart.nonEmpty && commentLine.startsWith(commentStart)) {
@@ -21,6 +23,6 @@ case class WhitespaceDesc (commentStart: String,
 }
 
 private [token]
-object WhitespaceDesc {
-    val plain = WhitespaceDesc("", "", "", true, false, NotRequired)
+object SpaceDesc {
+    val plain = SpaceDesc("", "", "", true, false, NotRequired)
 }

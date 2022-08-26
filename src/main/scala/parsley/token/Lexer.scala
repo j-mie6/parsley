@@ -3,8 +3,10 @@
  */
 package parsley.token
 
+import scala.language.implicitConversions
+
 import parsley.Parsley, Parsley.{attempt, empty, notFollowedBy, pure, unit}
-import parsley.character.{char, digit, hexDigit, octDigit, satisfy, string}
+import parsley.character.{char, digit, hexDigit, octDigit, satisfy, string, stringOfMany}
 import parsley.combinator.{between, many, sepBy, sepBy1, skipMany, skipSome}
 import parsley.errors.combinator.{amend, entrench, unexpected, ErrorMethods}
 import parsley.implicits.character.charLift
@@ -71,17 +73,17 @@ class Lexer private (lang: descriptions.LanguageDesc) {
     }
 
     object nonlexemes {
-        lazy val identifier: Parsley[String] = keyOrOp(lang.identStart, lang.identLetter, ident, isReservedName(_),  "identifier", "identifier", "keyword")
-        def keyword(name: String): Parsley[Unit] = lang.identLetter match {
-            case Static(letter) => new Parsley(new singletons.Specific("keyword", name, letter, lang.caseSensitive))
-            case _ => attempt(caseString(name) *> notFollowedBy(identLetter).label("end of " + name))
+        lazy val identifier: Parsley[String] = keyOrOp(lang.identDesc.identStart, lang.identDesc.identLetter, ident, lang.identDesc.isReservedName(_),  "identifier", "identifier", "keyword")
+        def keyword(name: String): Parsley[Unit] = lang.identDesc.identLetter match {
+            case Static(letter) => new Parsley(new singletons.Specific("keyword", name, letter, lang.identDesc.caseSensitive))
+            case _ => attempt(caseString(name) *> notFollowedBy(identLetter).label(s"end of $name"))
         }
 
-        lazy val userOp: Parsley[String] = keyOrOp(lang.opStart, lang.opLetter, oper, isReservedOp(_), "userOp", "operator", "reserved operator")
-        lazy val reservedOp: Parsley[String] = keyOrOp(lang.opStart, lang.opLetter, oper, !isReservedOp(_), "reservedOp", "operator", "non-reserved operator")
+        lazy val userOp: Parsley[String] = keyOrOp(lang.opStart, lang.opLetter, oper, lang.isReservedOp(_), "userOp", "operator", "reserved operator")
+        lazy val reservedOp: Parsley[String] = keyOrOp(lang.opStart, lang.opLetter, oper, !lang.isReservedOp(_), "reservedOp", "operator", "non-reserved operator")
         def operator(name: String): Parsley[Unit] = lang.opLetter match {
             case Static(letter) => new Parsley(new singletons.Specific("operator", name, letter, true))
-            case _ => attempt(string(name) *> notFollowedBy(opLetter).label("end of " + name))
+            case _ => attempt(string(name) *> notFollowedBy(opLetter).label(s"end of $name"))
         }
         def maxOp(name: String): Parsley[Unit] = new Parsley(new singletons.MaxOp(name, lang.operators))
 
@@ -106,8 +108,14 @@ class Lexer private (lang: descriptions.LanguageDesc) {
         lazy val octal: Parsley[Int] = '0' *> prefixedNumber('o', 8, octDigit)
     }
 
-    object implicits {
-
+    // TODO: Exposing this to the external API is a pain, because it's a path-dependent type, and violates private...
+    // perhaps we make an interface for this?
+    object implicits /*extends something?*/ {
+        implicit def implicitLexeme(s: String): Parsley[Unit] = {
+            if (lang.identDesc.keywords(s))       lexemes.keyword(s)
+            else if (lang.operators(s))           lexemes.maxOp(s)
+            else                                  lexemes.symbol_(s).void
+        }
     }
 
     /**`lexeme(p)` first applies parser `p` and then the `whiteSpace` parser, returning the value of
@@ -359,6 +367,7 @@ class Lexer private (lang: descriptions.LanguageDesc) {
             case _ =>
                 attempt {
                     amend {
+                        // TODO: Ideally, we'd make a combinator that eliminates this flatMap
                         entrench(parser).flatMap {
                             case x if illegal(x) => unexpected(s"$illegalName $x")
                             case x => pure(x)
@@ -371,20 +380,17 @@ class Lexer private (lang: descriptions.LanguageDesc) {
     // Identifiers & Reserved words
     private def caseString(name: String): Parsley[String] = {
         def caseChar(c: Char): Parsley[Char] = if (c.isLetter) c.toLower <|> c.toUpper else c
-        if (lang.caseSensitive) string(name)
+        if (lang.identDesc.caseSensitive) string(name)
         else name.foldLeft(pure(name))((p, c) => p <* caseChar(c)).label(name)
     }
-    private def isReservedName(name: String): Boolean = theReservedNames.contains(if (lang.caseSensitive) name else name.toLowerCase)
-    private val theReservedNames =  if (lang.caseSensitive) lang.keywords else lang.keywords.map(_.toLowerCase)
-    private lazy val identStart = toParser(lang.identStart)
-    private lazy val identLetter = toParser(lang.identLetter)
-    private lazy val ident = lift2((c: Char, cs: List[Char]) => (c::cs).mkString, identStart, many(identLetter))
+    private lazy val identStart = toParser(lang.identDesc.identStart)
+    private lazy val identLetter = toParser(lang.identDesc.identLetter)
+    private lazy val ident = lift2((c: Char, cs: String) => s"$c$cs", identStart, stringOfMany(identLetter))
 
     // Operators & Reserved ops
-    private def isReservedOp(op: String): Boolean = lang.operators.contains(op)
     private lazy val opStart = toParser(lang.opStart)
     private lazy val opLetter = toParser(lang.opLetter)
-    private lazy val oper = lift2((c: Char, cs: List[Char]) => (c::cs).mkString, opStart, many(opLetter))
+    private lazy val oper = lift2((c: Char, cs: String) => s"$c$cs", opStart, stringOfMany(opLetter))
 
     // Chars & Strings
     private def letter(terminal: Char): Parsley[Char] = satisfy(c => c != terminal && c != '\\' && c > '\u0016')
