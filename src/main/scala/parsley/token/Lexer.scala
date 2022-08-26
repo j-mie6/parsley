@@ -14,6 +14,7 @@ import parsley.lift.lift2
 
 import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
 import parsley.internal.deepembedding.singletons
+import scala.annotation.implicitNotFound
 
 /**
   * When provided with a `LanguageDef`, this class will produce a large variety of parsers that can be used for
@@ -40,15 +41,15 @@ class Lexer private (lang: descriptions.LanguageDesc) {
         lazy val stringLiteral: Parsley[String] = lexeme(nonlexemes.stringLiteral)
         lazy val rawStringLiteral: Parsley[String] = lexeme(nonlexemes.rawStringLiteral)
 
-        lazy val natural: Parsley[Int] = lexeme(nonlexemes.natural)
-        lazy val integer: Parsley[Int] = lexeme(nonlexemes.integer)
-        lazy val unsignedFloat: Parsley[Double] = lexeme(nonlexemes.unsignedFloat)
-        lazy val float: Parsley[Double] = lexeme(nonlexemes.float)
-        lazy val naturalOrFloat: Parsley[Either[Int, Double]] = lexeme(nonlexemes.naturalOrFloat)
-        lazy val number: Parsley[Either[Int, Double]] = lexeme(nonlexemes.number)
-        lazy val decimal: Parsley[Int] = lexeme(nonlexemes.decimal)
-        lazy val hexadecimal: Parsley[Int] = lexeme(nonlexemes.hexadecimal)
-        lazy val octal: Parsley[Int] = lexeme(nonlexemes.octal)
+        lazy val natural: Parsley[BigInt] = lexeme(nonlexemes.natural)
+        lazy val integer: Parsley[BigInt] = lexeme(nonlexemes.integer)
+        lazy val unsignedFloat: Parsley[BigDecimal] = lexeme(nonlexemes.unsignedFloat)
+        lazy val float: Parsley[BigDecimal] = lexeme(nonlexemes.float)
+        lazy val naturalOrFloat: Parsley[Either[BigInt, BigDecimal]] = lexeme(nonlexemes.naturalOrFloat)
+        lazy val number: Parsley[Either[BigInt, BigDecimal]] = lexeme(nonlexemes.number)
+        lazy val decimal: Parsley[BigInt] = lexeme(nonlexemes.decimal)
+        lazy val hexadecimal: Parsley[BigInt] = lexeme(nonlexemes.hexadecimal)
+        lazy val octal: Parsley[BigInt] = lexeme(nonlexemes.octal)
 
         def symbol(name: String): Parsley[String] = lexeme(string(name))
         def symbol(name: Char): Parsley[Char] = lexeme(char(name))
@@ -94,18 +95,91 @@ class Lexer private (lang: descriptions.LanguageDesc) {
         }
         lazy val rawStringLiteral: Parsley[String] = new Parsley(singletons.RawStringLiteral)
 
-        lazy val natural: Parsley[Int] = new Parsley(singletons.Natural)
-        lazy val integer: Parsley[Int] = sign(IntType) <*> natural
-        lazy val unsignedFloat: Parsley[Double] = new Parsley(singletons.Float)
-        lazy val float: Parsley[Double] = (sign(DoubleType) <*> unsignedFloat).label("float")
-        lazy val naturalOrFloat: Parsley[Either[Int, Double]] = attempt(unsignedFloat.map(Right(_))) <|> natural.map(Left(_)).label("unsigned number")
-        lazy val number: Parsley[Either[Int, Double]] =
+        /* OLD NUMERIC API START */
+        lazy val natural: Parsley[BigInt] = new Parsley(singletons.Natural)
+        lazy val integer: Parsley[BigInt] = sign(IntType) <*> natural
+        lazy val unsignedFloat: Parsley[BigDecimal] = new Parsley(singletons.Float)
+        lazy val float: Parsley[BigDecimal] = (sign(DoubleType) <*> unsignedFloat).label("float")
+        lazy val naturalOrFloat: Parsley[Either[BigInt, BigDecimal]] = attempt(unsignedFloat.map(Right(_))) <|> natural.map(Left(_)).label("unsigned number")
+        lazy val number: Parsley[Either[BigInt, BigDecimal]] =
                 ('+' *> naturalOrFloat
             <|> '-' *> naturalOrFloat.map{ case Left(n) => Left(-n); case Right(f) => Right(-f) }
             <|> naturalOrFloat).label("number")
-        lazy val decimal: Parsley[Int] = Lexer.this.number(base = 10, digit)
-        lazy val hexadecimal: Parsley[Int] = '0' *> prefixedNumber('x', 16, hexDigit)
-        lazy val octal: Parsley[Int] = '0' *> prefixedNumber('o', 8, octDigit)
+        lazy val decimal: Parsley[BigInt] = Lexer.this.number(base = 10, digit)
+        lazy val hexadecimal: Parsley[BigInt] = '0' *> prefixedNumber('x', 16, hexDigit)
+        lazy val octal: Parsley[BigInt] = '0' *> prefixedNumber('o', 8, octDigit)
+        /* OLD NUMERIC API END */
+
+        /* NEW NUMERIC API START */
+        object numeric {
+            // There are three categories of finite numeric literals: naturals, integers, and rationals
+            // These are not particularly intuitive names for programmers and could be written as unsigned, signed, and floating
+            // each of these categories has the option for:
+            //   precisions
+            //   decimal/hexadecimal/octal/binary
+            //   a grouping of the above
+            // Naturals
+            def unsigned = natural
+            object natural {
+                private def ofRadix(radix: Int, digit: Parsley[Char]) = digit.foldLeft1[BigInt](0)((x, d) => x*radix + d.asDigit)
+
+                val number: Parsley[BigInt] = ???
+                val decimal: Parsley[BigInt] = ofRadix(10, digit)
+                val hexadecimal: Parsley[BigInt] = ???
+                val octal: Parsley[BigInt] = ???
+                val binary: Parsley[BigInt] = ???
+
+                def number8[T: CanHold.can_hold_8_bits]: Parsley[T] = number(_8)
+                def decimal8[T: CanHold.can_hold_8_bits]: Parsley[T] = decimal(_8)
+                def hexadecimal8[T: CanHold.can_hold_8_bits]: Parsley[T] = hexadecimal(_8)
+                def octal8[T: CanHold.can_hold_8_bits]: Parsley[T] = octal(_8)
+                def binary8[T: CanHold.can_hold_8_bits]: Parsley[T] = binary(_8)
+
+                def number16[T: CanHold.can_hold_16_bits]: Parsley[T] = number(_16)
+                def decimal16[T: CanHold.can_hold_16_bits]: Parsley[T] = decimal(_16)
+                def hexadecimal16[T: CanHold.can_hold_16_bits]: Parsley[T] = hexadecimal(_16)
+                def octal16[T: CanHold.can_hold_16_bits]: Parsley[T] = octal(_16)
+                def binary16[T: CanHold.can_hold_16_bits]: Parsley[T] = binary(_16)
+
+                def number32[T: CanHold.can_hold_32_bits]: Parsley[T] = number(_32)
+                def decimal32[T: CanHold.can_hold_32_bits]: Parsley[T] = decimal(_32)
+                def hexadecimal32[T: CanHold.can_hold_32_bits]: Parsley[T] = hexadecimal(_32)
+                def octal32[T: CanHold.can_hold_32_bits]: Parsley[T] = octal(_32)
+                def binary32[T: CanHold.can_hold_32_bits]: Parsley[T] = binary(_32)
+
+                def number64[T: CanHold.can_hold_64_bits]: Parsley[T] = number(_64)
+                def decimal64[T: CanHold.can_hold_64_bits]: Parsley[T] = decimal(_64)
+                def hexadecimal64[T: CanHold.can_hold_64_bits]: Parsley[T] = hexadecimal(_64)
+                def octal64[T: CanHold.can_hold_64_bits]: Parsley[T] = octal(_64)
+                def binary64[T: CanHold.can_hold_64_bits]: Parsley[T] = binary(_64)
+
+                private def number[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = ???
+                private def decimal[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = ???
+                private def hexadecimal[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = ???
+                private def octal[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = ???
+                private def binary[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = ???
+
+                val foo = binary32[BigInt]
+            }
+
+            // Integers
+            def signed = integer
+            object integer {
+
+            }
+
+            // Rationals
+            // TODO: We are going to support hexadecimal, binary, and octal floating point literals
+            // decimal is 0[.6875][(e|E)[-|+]0] (configuration for whether + is allowed/mandatory in exponent) as well as e/E or other char and if that's enabled
+            // hexadecimal is 0x0[.B][(p|P)[-|+]0] with the final part in decimal and pn is 2^n (configuration for whether the exponent is required and + and epEP)
+            // binary is 0b0[.1011][(p|e|P|E)[-|+]0] with the final part in decimal and pn is 2^n (configuration for whether the exponent is required and + and epEP)
+            // octal is 0o0[.54][(p|e|P|E)[-|+]0]
+            def floating = rational
+            object rational {
+
+            }
+        }
+        /* NEW NUMERIC API END */
     }
 
     // TODO: Exposing this to the external API is a pain, because it's a path-dependent type, and violates private...
@@ -245,51 +319,51 @@ class Lexer private (lang: descriptions.LanguageDesc) {
      * the number. The number can specified in `decimal`, `hexadecimal` or `octal`. The number is
      * parsed according to the grammar rules in the Haskell report.*/
     @deprecated
-    def natural: Parsley[Int] = lexemes.natural
+    def natural: Parsley[Int] = lexemes.natural.map(_.toInt)
 
     /**This lexeme parser parses an integer (a whole number). This parser is like `natural` except
      * that it can be prefixed with a sign (i.e '-' or '+'). Returns the value of the number. The
      * number can be specified in `decimal`, `hexadecimal` or `octal`. The number is parsed
      * according to the grammar rules in the haskell report.*/
     @deprecated
-    def integer: Parsley[Int] = lexemes.integer
+    def integer: Parsley[Int] = lexemes.integer.map(_.toInt)
 
     /**This lexeme parser parses a floating point value. Returns the value of the number. The number
      * is parsed according to the grammar rules defined in the Haskell report.*/
     @deprecated
-    def unsignedFloat: Parsley[Double] = lexemes.unsignedFloat
+    def unsignedFloat: Parsley[Double] = lexemes.unsignedFloat.map(_.toDouble)
 
     /**This lexeme parser parses a floating point value. Returns the value of the number. The number
      * is parsed according to the grammar rules defined in the Haskell report. Accepts an optional
      * '+' or '-' sign.*/
     @deprecated
-    def float: Parsley[Double] = lexemes.float
+    def float: Parsley[Double] = lexemes.float.map(_.toDouble)
 
     /**This lexeme parser parses either `integer` or `float`. Returns the value of the number. This
      * parser deals with any overlap in the grammar rules for naturals and floats. The number is
      * parsed according to the grammar rules defined in the Haskell report.*/
     @deprecated
-    def number: Parsley[Either[Int, Double]] = lexemes.number
+    def number: Parsley[Either[Int, Double]] = lexemes.number.map(_.fold(x => Left(x.toInt), y => Right(y.toDouble)))
 
     /**This lexeme parser parses either `natural` or `unsigned float`. Returns the value of the number. This
       * parser deals with any overlap in the grammar rules for naturals and floats. The number is
       * parsed according to the grammar rules defined in the Haskell report.*/
     @deprecated
-    def naturalOrFloat: Parsley[Either[Int, Double]] = lexemes.naturalOrFloat
+    def naturalOrFloat: Parsley[Either[Int, Double]] = lexemes.naturalOrFloat.map(_.fold(x => Left(x.toInt), y => Right(y.toDouble)))
 
     /**Parses a positive whole number in the decimal system. Returns the value of the number.*/
     @deprecated
-    def decimal: Parsley[Int] = lexemes.decimal
+    def decimal: Parsley[Int] = lexemes.decimal.map(_.toInt)
 
     /**Parses a positive whole number in the hexadecimal system. The number should be prefixed with
      * "0x" or "0X". Returns the value of the number.*/
     @deprecated
-    def hexadecimal: Parsley[Int] = lexemes.hexadecimal
+    def hexadecimal: Parsley[Int] = lexemes.hexadecimal.map(_.toInt)
 
     /**Parses a positive whole number in the octal system. The number should be prefixed with "0o"
      * or "0O". Returns the value of the number.*/
     @deprecated
-    def octal: Parsley[Int] = lexemes.octal
+    def octal: Parsley[Int] = lexemes.octal.map(_.toInt)
 
     /**Lexeme parser `symbol(s)` parses `string(s)` and skips trailing white space.*/
     @deprecated
@@ -412,7 +486,7 @@ class Lexer private (lang: descriptions.LanguageDesc) {
 
     // Numbers
     private def sign(ty: SignType) = new Parsley(new singletons.Sign[ty.resultType](ty))
-    private def number(base: Int, baseDigit: Parsley[Char]): Parsley[Int] = baseDigit.foldLeft1(0)((x, d) => base*x + d.asDigit)
+    private def number(base: Int, baseDigit: Parsley[Char]): Parsley[BigInt] = baseDigit.foldLeft1[BigInt](0)((x, d) => x*base + d.asDigit)
     private def prefixedNumber(prefix: Char, base: Int, digit: Parsley[Char]) = satisfy(c => c.toLower == prefix.toLower) *> number(base, digit)
 
     // White space & symbols

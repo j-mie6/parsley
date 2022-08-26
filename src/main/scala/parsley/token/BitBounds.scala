@@ -2,15 +2,21 @@ package parsley.token
 
 import scala.annotation.implicitNotFound
 
-private [token] sealed trait Signedness
-private [token] final class Signed extends Signedness
-private [token] final class Unsigned extends Signedness
-
-private [token] sealed trait Bits
-private [token] final class _8 extends Bits
-private [token] final class _16 extends Bits
-private [token] final class _32 extends Bits
-private [token] final class _64 extends Bits
+private [token] sealed trait Bits {
+    type self <: Bits
+}
+private [token] final object _8 extends Bits {
+    type self = _8.type
+}
+private [token] final object _16 extends Bits {
+    type self = _16.type
+}
+private [token] final object _32 extends Bits {
+    type self = _32.type
+}
+private [token] final object _64 extends Bits {
+    type self = _64.type
+}
 
 /*sealed trait SafeConvertInt[T] {
     def fromBigInt(x: BigInt): T
@@ -49,35 +55,26 @@ object SafeConvertInt {
     }
 }*/
 
-final class CanFitAll[T, S <: Signedness, N <: Bits] private[CanFitAll] {}
-object CanFitAll {
-  @implicitNotFound("The type ${T} cannot hold an signed 8-bit number without loss")
-  type s8[T] = CanFitAll[T, Signed, _8]
-  @implicitNotFound("The type ${T} cannot hold an unsigned 8-bit number without loss")
-  type u8[T] = CanFitAll[T, Unsigned, _8]
-  @implicitNotFound("The type ${T} cannot hold an signed 16-bit number without loss")
-  type s16[T] = CanFitAll[T, Signed, _16]
-  @implicitNotFound("The type ${T} cannot hold an unsigned 16-bit number without loss")
-  type u16[T] = CanFitAll[T, Unsigned, _16]
-  @implicitNotFound("The type ${T} cannot hold an signed 32-bit number without loss")
-  type s32[T] = CanFitAll[T, Signed, _32]
-  @implicitNotFound("The type ${T} cannot hold an unsigned 32-bit number without loss")
-  type u32[T] = CanFitAll[T, Unsigned, _32]
-  @implicitNotFound("The type ${T} cannot hold an signed 64-bit number without loss")
-  type s64[T] = CanFitAll[T, Signed, _64]
-  @implicitNotFound("The type ${T} cannot hold an unsigned 64-bit number without loss")
-  type u64[T] = CanFitAll[T, Unsigned, _64]
+final class CanHold[N <: Bits, T] private[CanHold]
+object CanHold {
+  @implicitNotFound("The type ${T} cannot hold an 8-bit number without loss")
+  type can_hold_8_bits[T] = CanHold[_8.type, T]
+  @implicitNotFound("The type ${T} cannot hold a 16-bit number without loss")
+  type can_hold_16_bits[T] = CanHold[_16.type, T]
+  @implicitNotFound("The type ${T} cannot hold a 32-bit number without loss")
+  type can_hold_32_bits[T] = CanHold[_32.type, T]
+  @implicitNotFound("The type ${T} cannot hold a 64-bit number without loss")
+  type can_hold_64_bits[T] = CanHold[_64.type, T]
 
-  implicit def fits_8_16[T, S <: Signedness](implicit ev: CanFitAll[T, _, _16]): CanFitAll[T, S, _8] = new CanFitAll
-  implicit def fits_16_32[T, S <: Signedness](implicit ev: CanFitAll[T, _, _32]): CanFitAll[T, S, _16] = new CanFitAll
-  implicit def fits_32_64[T, S <: Signedness](implicit ev: CanFitAll[T, _, _64]): CanFitAll[T, S, _32] = new CanFitAll
+  implicit def fits_8_16[T: can_hold_16_bits]: can_hold_8_bits[T] = new CanHold
+  implicit def fits_16_32[T: can_hold_32_bits]: can_hold_16_bits[T] = new CanHold
+  implicit def fits_32_64[T: can_hold_64_bits]: can_hold_32_bits[T] = new CanHold
 
-  implicit val byte_s8: CanFitAll[Byte, Signed, _8] = new CanFitAll
-  implicit val short_s16: CanFitAll[Short, Signed, _16] = new CanFitAll
-  implicit val int_s32: CanFitAll[Int, Signed, _32] = new CanFitAll
-  implicit val long_s64: CanFitAll[Long, Signed, _64] = new CanFitAll
-  implicit val big_s64: CanFitAll[BigInt, Signed, _64] = new CanFitAll
-  implicit val big_u64: CanFitAll[BigInt, Unsigned, _64] = new CanFitAll
+  implicit val byte_8: can_hold_8_bits[Byte] = new CanHold
+  implicit val short_16: can_hold_16_bits[Short] = new CanHold
+  implicit val int_32: can_hold_32_bits[Int] = new CanHold
+  implicit val long_64: can_hold_64_bits[Long] = new CanHold
+  implicit val big_64: can_hold_64_bits[BigInt] = new CanHold
 }
 
 private [token] sealed trait Precision
@@ -86,7 +83,7 @@ object Precision {
     private [token] final class Double extends Precision
 }
 
-final class AsPreciseAs[T, P <: Precision] private[AsPreciseAs] {}
+final class AsPreciseAs[T, P <: Precision] private[AsPreciseAs]
 object AsPreciseAs {
     @implicitNotFound("The type ${T} is not precise enough to contain the full range of an IEEE 754 single-precision float")
     type f32[T] = AsPreciseAs[T, Precision.Single]

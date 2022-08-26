@@ -14,8 +14,8 @@ import parsley.internal.machine.XAssert._
 
 private [internal] final class TokenSign(ty: SignType) extends Instr {
     val neg: Any => Any = ty match {
-        case IntType => ((x: Int) => -x).asInstanceOf[Any => Any]
-        case DoubleType => ((x: Double) => -x).asInstanceOf[Any => Any]
+        case IntType => ((x: BigInt) => -x).asInstanceOf[Any => Any]
+        case DoubleType => ((x: BigDecimal) => -x).asInstanceOf[Any => Any]
     }
     val pos = (x: Any) => x
 
@@ -39,8 +39,8 @@ private [internal] final class TokenSign(ty: SignType) extends Instr {
 }
 
 private [instructions] trait NumericReader {
-    private final def subDecimal(base: Int, isDigit: Char => Boolean): (Context, Int, Boolean) => Option[Int] = {
-        @tailrec def go(ctx: Context, x: Int, first: Boolean): Option[Int] = {
+    private final def subDecimal(base: Int, isDigit: Char => Boolean): (Context, BigInt, Boolean) => Option[BigInt] = {
+        @tailrec def go(ctx: Context, x: BigInt, first: Boolean): Option[BigInt] = {
             if (ctx.moreInput && isDigit(ctx.nextChar)) {
                 val d = ctx.nextChar.asDigit
                 ctx.fastUncheckedConsumeChars(1)
@@ -113,7 +113,7 @@ private [internal] object TokenFloat extends Instr {
     }
 
     private final def attemptCastAndContinue(ctx: Context, initialOffset: Int): Unit = {
-        try ctx.pushAndContinue(ctx.input.substring(initialOffset, ctx.offset).toDouble)
+        try ctx.pushAndContinue(BigDecimal(ctx.input.substring(initialOffset, ctx.offset)))
         catch {
             case _: NumberFormatException => ctx.expectedFail(expected)
         }

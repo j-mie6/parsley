@@ -38,6 +38,7 @@ trait LexToken { this: ErrorBuilder[_] =>
         val rawTok = lookAhead(someUntil(item, eof <|> choice(toks: _*))).map(_.mkString)
         rawTok <+> sequence(toks.map(p => option(lookAhead(p))): _*).map(_.flatten)
     }
+    
 
     /*def selectToken(maxLine: Int, maxCol: Int, rawToken: String, matchedToks: List[(String, (Int, Int))]): Token = {
         val toks = matchedToks.sortBy(_._2).map {

@@ -30,13 +30,13 @@ private [parsley] final class Sign[A](ty: SignType) extends Singleton[A => A] {
     override def instr: instructions.Instr = new instructions.TokenSign(ty)
 }
 
-private [parsley] object Natural extends Singleton[Int] {
+private [parsley] object Natural extends Singleton[BigInt] {
     // $COVERAGE-OFF$
     override val pretty: String = "natural"
     override val instr: instructions.Instr = instructions.TokenNatural
 }
 
-private [parsley] object Float extends Singleton[Double] {
+private [parsley] object Float extends Singleton[BigDecimal] {
     // $COVERAGE-OFF$
     override val pretty: String = "float"
     override val instr: instructions.Instr = instructions.TokenFloat

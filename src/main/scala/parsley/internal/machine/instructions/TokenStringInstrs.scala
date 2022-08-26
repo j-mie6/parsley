@@ -26,12 +26,12 @@ private [internal] class TokenEscape extends Instr with NumericReader {
         new TokenEscape.EscapeChar(c)
     }
 
-    private final def numericEscape(ctx: Context, escapeCode: Int) = {
+    private final def numericEscape(ctx: Context, escapeCode: BigInt) = {
         if (escapeCode <= 0x10FFFF) new TokenEscape.EscapeChar(escapeCode.toChar)
         else TokenEscape.BadCode
     }
 
-    private final def nonDecimalNumericEscape(ctx: Context, lexer: (Context, Int, Boolean) => Option[Int]) = {
+    private final def nonDecimalNumericEscape(ctx: Context, lexer: (Context, BigInt, Boolean) => Option[BigInt]) = {
         ctx.fastUncheckedConsumeChars(1)
         lexer(ctx, 0, true) match {
             case Some(x) => numericEscape(ctx, x)
