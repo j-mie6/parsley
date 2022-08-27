@@ -10,26 +10,26 @@ private [token] sealed abstract class Bits {
 }
 private [token] object _8 extends Bits {
     private [token] type self = _8.type
-    private [token] val upperSigned = 0xfe
-    private [token] val lowerSigned = -0xff
+    private [token] val upperSigned = Byte.MaxValue
+    private [token] val lowerSigned = Byte.MinValue
     private [token] val upperUnsigned = 0xff
 }
 private [token] object _16 extends Bits {
     private [token] type self = _16.type
-    private [token] val upperSigned = 0xfffe
-    private [token] val lowerSigned = -0xffff
+    private [token] val upperSigned = Short.MaxValue
+    private [token] val lowerSigned = Short.MaxValue
     private [token] val upperUnsigned = 0xffff
 }
 private [token] object _32 extends Bits {
     private [token] type self = _32.type
-    private [token] val upperSigned = 0xfffffffeL
-    private [token] val lowerSigned = -0xffffffffL
+    private [token] val upperSigned = Int.MaxValue
+    private [token] val lowerSigned = Int.MinValue
     private [token] val upperUnsigned = 0xffffffffL
 }
 private [token] object _64 extends Bits {
     private [token] type self = _64.type
-    private [token] val upperSigned = BigInt("fffffffffffffffe", 16)
-    private [token] val lowerSigned = BigInt("-ffffffffffffffff", 16)
+    private [token] val upperSigned = Long.MaxValue
+    private [token] val lowerSigned = Long.MinValue
     private [token] val upperUnsigned = BigInt("ffffffffffffffff", 16)
 }
 
@@ -70,25 +70,4 @@ object CanHold extends LowPriorityImplicits {
     implicit val long_64: can_hold_64_bits[Long] = new CanHold[_64.type, Long] {
         def fromBigInt(x: BigInt): Long = x.toLong
     }
-}
-
-private [token] sealed trait Precision
-object Precision {
-    private [token] final class Single extends Precision
-    private [token] final class Double extends Precision
-}
-
-final class AsPreciseAs[T, P <: Precision] private[AsPreciseAs] /*for scala 3...*/ {}
-object AsPreciseAs {
-    @implicitNotFound("The type ${T} is not precise enough to contain the full range of an IEEE 754 single-precision float")
-    type f32[T] = AsPreciseAs[T, Precision.Single]
-    @implicitNotFound("The type ${T} is not precise enough to contain the full range of an IEEE 754 double-precision float")
-    type f64[T] = AsPreciseAs[T, Precision.Double]
-
-    implicit def as_precise_32_64[T](implicit ev: AsPreciseAs[T, Precision.Double]): AsPreciseAs[T, Precision.Single] = new AsPreciseAs
-
-    implicit val float_f32: AsPreciseAs[Float, Precision.Single] = new AsPreciseAs
-    implicit val double_f64: AsPreciseAs[Double, Precision.Double] = new AsPreciseAs
-    implicit val big_f64: AsPreciseAs[BigDecimal, Precision.Double] = new AsPreciseAs
-
 }
