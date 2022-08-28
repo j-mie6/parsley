@@ -42,15 +42,15 @@ class Lexer private (lang: descriptions.LanguageDesc) {
         lazy val stringLiteral: Parsley[String] = lexeme(nonlexemes.stringLiteral)
         lazy val rawStringLiteral: Parsley[String] = lexeme(nonlexemes.rawStringLiteral)
 
-        lazy val natural: Parsley[BigInt] = lexeme(nonlexemes.natural)
-        lazy val integer: Parsley[BigInt] = lexeme(nonlexemes.integer)
-        lazy val unsignedFloat: Parsley[BigDecimal] = lexeme(nonlexemes.unsignedFloat)
-        lazy val float: Parsley[BigDecimal] = lexeme(nonlexemes.float)
+        lazy val natural: Parsley[BigInt] = numeric.natural.number
+        lazy val integer: Parsley[BigInt] = numeric.integer.number
+        lazy val unsignedFloat: Parsley[BigDecimal] = numeric.unsignedRational.decimal
+        lazy val float: Parsley[BigDecimal] = numeric.rational.decimal
         lazy val naturalOrFloat: Parsley[Either[BigInt, BigDecimal]] = lexeme(nonlexemes.naturalOrFloat)
         lazy val number: Parsley[Either[BigInt, BigDecimal]] = lexeme(nonlexemes.number)
-        lazy val decimal: Parsley[BigInt] = lexeme(nonlexemes.decimal)
-        lazy val hexadecimal: Parsley[BigInt] = lexeme(nonlexemes.hexadecimal)
-        lazy val octal: Parsley[BigInt] = lexeme(nonlexemes.octal)
+        lazy val decimal: Parsley[BigInt] = numeric.natural.decimal
+        lazy val hexadecimal: Parsley[BigInt] = numeric.natural.hexadecimal
+        lazy val octal: Parsley[BigInt] = numeric.natural.octal
 
         object numeric {
             def unsigned: parsley.token.numeric.Integer = natural
@@ -60,6 +60,7 @@ class Lexer private (lang: descriptions.LanguageDesc) {
             val integer: parsley.token.numeric.Integer = new LexemeInteger(nonlexemes.numeric.integer, whiteSpace)
 
             def floating: parsley.token.numeric.Rational = rational
+            private [Lexer] val unsignedRational = new LexemeRational(nonlexemes.numeric.unsignedRational, whiteSpace)
             val rational: parsley.token.numeric.Rational = new LexemeRational(nonlexemes.numeric.rational, whiteSpace)
         }
 
@@ -110,7 +111,7 @@ class Lexer private (lang: descriptions.LanguageDesc) {
         /* OLD NUMERIC API START */
         lazy val natural: Parsley[BigInt] = numeric.natural.number
         lazy val integer: Parsley[BigInt] = numeric.integer.number
-        lazy val unsignedFloat: Parsley[BigDecimal] = new Parsley(singletons.Float)
+        lazy val unsignedFloat: Parsley[BigDecimal] = numeric.unsignedRational.decimal//new Parsley(singletons.Float)
         lazy val float: Parsley[BigDecimal] = numeric.rational.decimal//(numeric.rational.sign <*> unsignedFloat).label("float")
         lazy val naturalOrFloat: Parsley[Either[BigInt, BigDecimal]] = attempt(unsignedFloat.map(Right(_))) <|> natural.map(Left(_)).label("unsigned number")
         lazy val number: Parsley[Either[BigInt, BigDecimal]] =
@@ -150,7 +151,8 @@ class Lexer private (lang: descriptions.LanguageDesc) {
 
             // Rationals
             def floating: parsley.token.numeric.Rational = rational
-            val rational: parsley.token.numeric.Rational = new SignedRational(new UnsignedRational(integer))
+            private [Lexer] val unsignedRational = new UnsignedRational(integer)
+            val rational: parsley.token.numeric.Rational = new SignedRational(unsignedRational)
         }
         /* NEW NUMERIC API END */
     }

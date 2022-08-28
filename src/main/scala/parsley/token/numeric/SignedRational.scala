@@ -12,9 +12,9 @@ import parsley.internal.deepembedding.Sign.DoubleType
 private [token] final class SignedRational(unsigned: Rational) extends Rational {
     private val sign = new Parsley(new singletons.Sign[DoubleType.resultType](DoubleType))
 
-    override def decimal: Parsley[BigDecimal] = attempt(sign <*> unsigned.decimal)
-    override def hexadecimal: Parsley[BigDecimal] = attempt(sign <*> unsigned.hexadecimal)
-    override def octal: Parsley[BigDecimal] = attempt(sign <*> unsigned.octal)
-    override def binary: Parsley[BigDecimal] = attempt(sign <*> unsigned.binary)
-    override def number: Parsley[BigDecimal] = attempt(sign <*> unsigned.number)
+    override lazy val decimal: Parsley[BigDecimal] = attempt(sign <*> unsigned.decimal)
+    override lazy val hexadecimal: Parsley[BigDecimal] = attempt(sign <*> unsigned.hexadecimal)
+    override lazy val octal: Parsley[BigDecimal] = attempt(sign <*> unsigned.octal)
+    override lazy val binary: Parsley[BigDecimal] = attempt(sign <*> unsigned.binary)
+    override lazy val number: Parsley[BigDecimal] = attempt(sign <*> unsigned.number)
 }

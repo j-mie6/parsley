@@ -17,7 +17,7 @@ private [token] final class UnsignedInteger extends Integer {
     override lazy val number: Parsley[BigInt] = hexadecimal <|> octal <|> binary <|> decimal
 
     // TODO: render in the "native" radix
-    override private[numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int)(implicit ev: CanHold[bits.self,T]): Parsley[T] = {
+    override protected [numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int)(implicit ev: CanHold[bits.self,T]): Parsley[T] = {
         number.collectMsg(x => Seq(s"literal $x is larger than the max value of ${bits.upperUnsigned}")) {
             case x if x <= bits.upperUnsigned => ev.fromBigInt(x)
         }
