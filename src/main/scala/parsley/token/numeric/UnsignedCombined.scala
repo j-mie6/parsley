@@ -5,7 +5,7 @@ package parsley.token.numeric
 
 import parsley.Parsley, Parsley.{attempt, pure}
 import parsley.character.{digit, hexDigit, octDigit, oneOf}
-import parsley.combinator.option
+import parsley.combinator.{choice, option}
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 import parsley.implicits.character.charLift
 import parsley.implicits.zipped.{Zipped2, Zipped3}
@@ -28,9 +28,11 @@ private [token] final class UnsignedCombined(integer: Integer, desc: NumericDesc
         attempt(zeroLead <|> decimal)
     }
 
-    private lazy val noZeroHexadecimal = oneOf('x', 'X') *> ofRadix(16, 2, hexDigit, oneOf('p', 'P'))
-    private lazy val noZeroOctal = oneOf('o', 'O') *> ofRadix(8, 8, octDigit, oneOf('p', 'P'))
-    private lazy val noZeroBinary = oneOf('b', 'B') *> ofRadix(2, 2, oneOf('0', '1'), oneOf('p', 'P'))
+    // TODO: Using choice here will generate a jump table, which will be nicer for `number` (this requires enhancements to the jumptable optimisation)
+    // TODO: Leave these as defs so they get inlined into number for the jumptable optimisation
+    private val noZeroHexadecimal = oneOf('x', 'X') *> ofRadix(16, 2, hexDigit, oneOf('p', 'P'))
+    private val noZeroOctal = oneOf('o', 'O') *> ofRadix(8, 8, octDigit, oneOf('p', 'P'))
+    private val noZeroBinary = oneOf('b', 'B') *> ofRadix(2, 2, oneOf('0', '1'), oneOf('p', 'P'))
 
     // TODO: render in the "native" radix
     override protected [numeric] def bounded[T](number: Parsley[Either[BigInt, BigDecimal]], bits: Bits, radix: Int)
