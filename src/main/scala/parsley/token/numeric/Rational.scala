@@ -4,7 +4,7 @@
 package parsley.token.numeric
 
 import parsley.Parsley
-import parsley.errors.combinator.ErrorMethods
+import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 import parsley.token._
 
 abstract class Rational private[token] {
@@ -38,15 +38,17 @@ abstract class Rational private[token] {
     lazy val binaryDouble: Parsley[Double] = ensureDouble(_binary)
     lazy val double: Parsley[Double] = ensureDouble(_number)
 
-    protected [numeric] def ensureFloat(number: Parsley[BigDecimal]): Parsley[Float] =
-        number.collectMsg(n => Seq(s"$n cannot be represented exactly as a IEEE 754 single-precision float")) {
+    protected [numeric] def ensureFloat(number: Parsley[BigDecimal]): Parsley[Float] = amend {
+        entrench(number).collectMsg(n => Seq(s"$n cannot be represented exactly as a IEEE 754 single-precision float")) {
             case n if n.isBinaryFloat || n.isDecimalFloat || n.isExactFloat => n.toFloat
         }
+    }
 
-    protected [numeric] def ensureDouble(number: Parsley[BigDecimal]): Parsley[Double] =
-        number.collectMsg(n => Seq(s"$n cannot be represented exactly as a IEEE 754 double-precision float")) {
+    protected [numeric] def ensureDouble(number: Parsley[BigDecimal]): Parsley[Double] = amend {
+        entrench(number).collectMsg(n => Seq(s"$n cannot be represented exactly as a IEEE 754 double-precision float")) {
             case n if n.isBinaryDouble || n.isDecimalDouble || n.isExactDouble => n.toDouble
         }
+    }
 
     protected [numeric] def _decimal: Parsley[BigDecimal] = decimal
     protected [numeric] def _hexadecimal: Parsley[BigDecimal] = hexadecimal

@@ -4,7 +4,7 @@
 package parsley.token.numeric
 
 import parsley.Parsley, Parsley.attempt
-import parsley.errors.combinator.ErrorMethods
+import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 import parsley.token.{Bits, CanHold}
 
 import parsley.internal.deepembedding.singletons
@@ -19,9 +19,9 @@ private [token] final class SignedInteger(unsigned: Integer) extends Integer {
     override lazy val number: Parsley[BigInt] = attempt(sign <*> unsigned.number)
 
     // TODO: render in the "native" radix
-    override protected [numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int)(implicit ev: CanHold[bits.self,T]): Parsley[T] = {
-        number.collectMsg(x => Seq(if (x > bits.upperSigned) s"literal $x is larger than the max value of ${bits.upperSigned}"
-                                   else                      s"literal $x is less than the min value of ${bits.lowerSigned}")) {
+    override protected [numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int)(implicit ev: CanHold[bits.self,T]): Parsley[T] = amend {
+        entrench(number).collectMsg(x => Seq(if (x > bits.upperSigned) s"literal $x is larger than the max value of ${bits.upperSigned}"
+                                             else                      s"literal $x is less than the min value of ${bits.lowerSigned}")) {
             case x if bits.lowerSigned <= x && x <= bits.upperSigned => ev.fromBigInt(x)
         }
     }
