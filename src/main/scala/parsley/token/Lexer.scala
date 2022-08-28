@@ -15,6 +15,9 @@ import parsley.lift.{lift2, lift3}
 import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
 import parsley.internal.deepembedding.singletons
 import scala.annotation.implicitNotFound
+import parsley.token.numeric.UnsignedInteger
+import parsley.token.numeric.SignedInteger
+import parsley.token.numeric.LexemeInteger
 
 /**
   * When provided with a `LanguageDef`, this class will produce a large variety of parsers that can be used for
@@ -52,71 +55,11 @@ class Lexer private (lang: descriptions.LanguageDesc) {
         lazy val octal: Parsley[BigInt] = lexeme(nonlexemes.octal)
 
         object numeric {
-            def unsigned = natural
-            object natural {
-                val decimal: Parsley[BigInt] = lexeme(lexemes.numeric.natural.decimal)
-                val hexadecimal: Parsley[BigInt] = lexeme(lexemes.numeric.natural.hexadecimal)
-                val octal: Parsley[BigInt] = lexeme(lexemes.numeric.natural.octal)
-                val binary: Parsley[BigInt] = lexeme(lexemes.numeric.natural.binary)
-                val number: Parsley[BigInt] = lexeme(lexemes.numeric.natural.number)
+            def unsigned: parsley.token.numeric.Integer = natural
+            val natural: parsley.token.numeric.Integer = new LexemeInteger(nonlexemes.numeric.natural, whiteSpace)
 
-                def number8[T: CanHold.can_hold_8_bits]: Parsley[T] = lexeme(lexemes.numeric.natural.number8)
-                def decimal8[T: CanHold.can_hold_8_bits]: Parsley[T] = lexeme(lexemes.numeric.natural.decimal8)
-                def hexadecimal8[T: CanHold.can_hold_8_bits]: Parsley[T] = lexeme(lexemes.numeric.natural.hexadecimal8)
-                def octal8[T: CanHold.can_hold_8_bits]: Parsley[T] = lexeme(lexemes.numeric.natural.octal8)
-                def binary8[T: CanHold.can_hold_8_bits]: Parsley[T] = lexeme(lexemes.numeric.natural.binary8)
-
-                def number16[T: CanHold.can_hold_16_bits]: Parsley[T] = lexeme(lexemes.numeric.natural.number16)
-                def decimal16[T: CanHold.can_hold_16_bits]: Parsley[T] = lexeme(lexemes.numeric.natural.decimal16)
-                def hexadecimal16[T: CanHold.can_hold_16_bits]: Parsley[T] = lexeme(lexemes.numeric.natural.hexadecimal16)
-                def octal16[T: CanHold.can_hold_16_bits]: Parsley[T] = lexeme(lexemes.numeric.natural.octal16)
-                def binary16[T: CanHold.can_hold_16_bits]: Parsley[T] = lexeme(lexemes.numeric.natural.binary16)
-
-                def number32[T: CanHold.can_hold_32_bits]: Parsley[T] = lexeme(lexemes.numeric.natural.number32)
-                def decimal32[T: CanHold.can_hold_32_bits]: Parsley[T] = lexeme(lexemes.numeric.natural.decimal32)
-                def hexadecimal32[T: CanHold.can_hold_32_bits]: Parsley[T] = lexeme(lexemes.numeric.natural.hexadecimal32)
-                def octal32[T: CanHold.can_hold_32_bits]: Parsley[T] = lexeme(lexemes.numeric.natural.octal32)
-                def binary32[T: CanHold.can_hold_32_bits]: Parsley[T] = lexeme(lexemes.numeric.natural.binary32)
-
-                def number64[T: CanHold.can_hold_64_bits]: Parsley[T] = lexeme(lexemes.numeric.natural.number64)
-                def decimal64[T: CanHold.can_hold_64_bits]: Parsley[T] = lexeme(lexemes.numeric.natural.decimal64)
-                def hexadecimal64[T: CanHold.can_hold_64_bits]: Parsley[T] = lexeme(lexemes.numeric.natural.hexadecimal64)
-                def octal64[T: CanHold.can_hold_64_bits]: Parsley[T] = lexeme(lexemes.numeric.natural.octal64)
-                def binary64[T: CanHold.can_hold_64_bits]: Parsley[T] = lexeme(lexemes.numeric.natural.binary64)
-            }
-
-            def signed = integer
-            object integer {
-                val decimal: Parsley[BigInt] = lexeme(lexemes.numeric.integer.decimal)
-                val hexadecimal: Parsley[BigInt] = lexeme(lexemes.numeric.integer.hexadecimal)
-                val octal: Parsley[BigInt] = lexeme(lexemes.numeric.integer.octal)
-                val binary: Parsley[BigInt] = lexeme(lexemes.numeric.integer.binary)
-                val number: Parsley[BigInt] = lexeme(lexemes.numeric.integer.number)
-
-                def number8[T: CanHold.can_hold_8_bits]: Parsley[T] = lexeme(lexemes.numeric.integer.number8)
-                def decimal8[T: CanHold.can_hold_8_bits]: Parsley[T] = lexeme(lexemes.numeric.integer.decimal8)
-                def hexadecimal8[T: CanHold.can_hold_8_bits]: Parsley[T] = lexeme(lexemes.numeric.integer.hexadecimal8)
-                def octal8[T: CanHold.can_hold_8_bits]: Parsley[T] = lexeme(lexemes.numeric.integer.octal8)
-                def binary8[T: CanHold.can_hold_8_bits]: Parsley[T] = lexeme(lexemes.numeric.integer.binary8)
-
-                def number16[T: CanHold.can_hold_16_bits]: Parsley[T] = lexeme(lexemes.numeric.integer.number16)
-                def decimal16[T: CanHold.can_hold_16_bits]: Parsley[T] = lexeme(lexemes.numeric.integer.decimal16)
-                def hexadecimal16[T: CanHold.can_hold_16_bits]: Parsley[T] = lexeme(lexemes.numeric.integer.hexadecimal16)
-                def octal16[T: CanHold.can_hold_16_bits]: Parsley[T] = lexeme(lexemes.numeric.integer.octal16)
-                def binary16[T: CanHold.can_hold_16_bits]: Parsley[T] = lexeme(lexemes.numeric.integer.binary16)
-
-                def number32[T: CanHold.can_hold_32_bits]: Parsley[T] = lexeme(lexemes.numeric.integer.number32)
-                def decimal32[T: CanHold.can_hold_32_bits]: Parsley[T] = lexeme(lexemes.numeric.integer.decimal32)
-                def hexadecimal32[T: CanHold.can_hold_32_bits]: Parsley[T] = lexeme(lexemes.numeric.integer.hexadecimal32)
-                def octal32[T: CanHold.can_hold_32_bits]: Parsley[T] = lexeme(lexemes.numeric.integer.octal32)
-                def binary32[T: CanHold.can_hold_32_bits]: Parsley[T] = lexeme(lexemes.numeric.integer.binary32)
-
-                def number64[T: CanHold.can_hold_64_bits]: Parsley[T] = lexeme(lexemes.numeric.integer.number64)
-                def decimal64[T: CanHold.can_hold_64_bits]: Parsley[T] = lexeme(lexemes.numeric.integer.decimal64)
-                def hexadecimal64[T: CanHold.can_hold_64_bits]: Parsley[T] = lexeme(lexemes.numeric.integer.hexadecimal64)
-                def octal64[T: CanHold.can_hold_64_bits]: Parsley[T] = lexeme(lexemes.numeric.integer.octal64)
-                def binary64[T: CanHold.can_hold_64_bits]: Parsley[T] = lexeme(lexemes.numeric.integer.binary64)
-            }
+            def signed: parsley.token.numeric.Integer = integer
+            val integer: parsley.token.numeric.Integer = new LexemeInteger(nonlexemes.numeric.integer, whiteSpace)
 
             def floating = rational
             object rational {
@@ -185,7 +128,6 @@ class Lexer private (lang: descriptions.LanguageDesc) {
 
         /* NEW NUMERIC API START */
         object numeric {
-
             /*val naturalOrFloat: Parsley[Either[BigInt, BigDecimal]] = {
                 val whole = digit.foldLeft1[BigDecimal](0)((x, d) => x*radix + d.asDigit)
                 val fractional = '.' *> digit.foldRight1[BigDecimal](0)((d, x) => x/radix + d.asDigit)
@@ -203,103 +145,12 @@ class Lexer private (lang: descriptions.LanguageDesc) {
             //   decimal/hexadecimal/octal/binary
             //   a grouping of the above
             // Naturals
-            def unsigned = natural
-            object natural {
-                private def ofRadix(radix: Int, digit: Parsley[Char]) = digit.foldLeft1[BigInt](0)((x, d) => x*radix + d.asDigit)
-
-                lazy val decimal: Parsley[BigInt] = ofRadix(10, digit)
-                lazy val hexadecimal: Parsley[BigInt] = attempt('0' *> oneOf('x', 'X') *> ofRadix(16, hexDigit))
-                lazy val octal: Parsley[BigInt] = attempt('0' *> oneOf('o', 'O') *> ofRadix(8, octDigit))
-                lazy val binary: Parsley[BigInt] = attempt('0' *> oneOf('b', 'B') *> ofRadix(2, oneOf('0', '1')))
-                lazy val number: Parsley[BigInt] = hexadecimal <|> octal <|> binary <|> decimal
-
-                def number8[T: CanHold.can_hold_8_bits]: Parsley[T] = numberBounded(_8)
-                def decimal8[T: CanHold.can_hold_8_bits]: Parsley[T] = decimalBounded(_8)
-                def hexadecimal8[T: CanHold.can_hold_8_bits]: Parsley[T] = hexadecimalBounded(_8)
-                def octal8[T: CanHold.can_hold_8_bits]: Parsley[T] = octalBounded(_8)
-                def binary8[T: CanHold.can_hold_8_bits]: Parsley[T] = binaryBounded(_8)
-
-                def number16[T: CanHold.can_hold_16_bits]: Parsley[T] = numberBounded(_16)
-                def decimal16[T: CanHold.can_hold_16_bits]: Parsley[T] = decimalBounded(_16)
-                def hexadecimal16[T: CanHold.can_hold_16_bits]: Parsley[T] = hexadecimalBounded(_16)
-                def octal16[T: CanHold.can_hold_16_bits]: Parsley[T] = octalBounded(_16)
-                def binary16[T: CanHold.can_hold_16_bits]: Parsley[T] = binaryBounded(_16)
-
-                def number32[T: CanHold.can_hold_32_bits]: Parsley[T] = numberBounded(_32)
-                def decimal32[T: CanHold.can_hold_32_bits]: Parsley[T] = decimalBounded(_32)
-                def hexadecimal32[T: CanHold.can_hold_32_bits]: Parsley[T] = hexadecimalBounded(_32)
-                def octal32[T: CanHold.can_hold_32_bits]: Parsley[T] = octalBounded(_32)
-                def binary32[T: CanHold.can_hold_32_bits]: Parsley[T] = binaryBounded(_32)
-
-                def number64[T: CanHold.can_hold_64_bits]: Parsley[T] = numberBounded(_64)
-                def decimal64[T: CanHold.can_hold_64_bits]: Parsley[T] = decimalBounded(_64)
-                def hexadecimal64[T: CanHold.can_hold_64_bits]: Parsley[T] = hexadecimalBounded(_64)
-                def octal64[T: CanHold.can_hold_64_bits]: Parsley[T] = octalBounded(_64)
-                def binary64[T: CanHold.can_hold_64_bits]: Parsley[T] = binaryBounded(_64)
-
-                // TODO: render in the "native" radix
-                private def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int)(implicit ev: CanHold[bits.self, T]): Parsley[T] = {
-                    number.collectMsg(x => Seq(s"literal $x is larger than the max value of ${bits.upperUnsigned}")) {
-                        case x if x <= bits.upperUnsigned => ev.fromBigInt(x)
-                    }
-                }
-
-                private def numberBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = bounded(number, bits, 10)
-                private def decimalBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = bounded(decimal, bits, 10)
-                private def hexadecimalBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = bounded(hexadecimal, bits, 16)
-                private def octalBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = bounded(octal, bits, 8)
-                private def binaryBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = bounded(binary, bits, 2)
-            }
+            def unsigned: parsley.token.numeric.Integer = natural
+            val natural: parsley.token.numeric.Integer = new UnsignedInteger
 
             // Integers
-            def signed = integer
-            object integer {
-                private [Lexer] val sign = new Parsley(new singletons.Sign[IntType.resultType](IntType))
-
-                lazy val decimal: Parsley[BigInt] = attempt(sign <*> natural.number)
-                lazy val hexadecimal: Parsley[BigInt] = attempt(sign <*> natural.hexadecimal)
-                lazy val octal: Parsley[BigInt] = attempt(sign <*> natural.octal)
-                lazy val binary: Parsley[BigInt] = attempt(sign <*> natural.binary)
-                lazy val number: Parsley[BigInt] = attempt(sign <*> natural.number)
-
-                def number8[T: CanHold.can_hold_8_bits]: Parsley[T] = numberBounded(_8)
-                def decimal8[T: CanHold.can_hold_8_bits]: Parsley[T] = decimalBounded(_8)
-                def hexadecimal8[T: CanHold.can_hold_8_bits]: Parsley[T] = hexadecimalBounded(_8)
-                def octal8[T: CanHold.can_hold_8_bits]: Parsley[T] = octalBounded(_8)
-                def binary8[T: CanHold.can_hold_8_bits]: Parsley[T] = binaryBounded(_8)
-
-                def number16[T: CanHold.can_hold_16_bits]: Parsley[T] = numberBounded(_16)
-                def decimal16[T: CanHold.can_hold_16_bits]: Parsley[T] = decimalBounded(_16)
-                def hexadecimal16[T: CanHold.can_hold_16_bits]: Parsley[T] = hexadecimalBounded(_16)
-                def octal16[T: CanHold.can_hold_16_bits]: Parsley[T] = octalBounded(_16)
-                def binary16[T: CanHold.can_hold_16_bits]: Parsley[T] = binaryBounded(_16)
-
-                def number32[T: CanHold.can_hold_32_bits]: Parsley[T] = numberBounded(_32)
-                def decimal32[T: CanHold.can_hold_32_bits]: Parsley[T] = decimalBounded(_32)
-                def hexadecimal32[T: CanHold.can_hold_32_bits]: Parsley[T] = hexadecimalBounded(_32)
-                def octal32[T: CanHold.can_hold_32_bits]: Parsley[T] = octalBounded(_32)
-                def binary32[T: CanHold.can_hold_32_bits]: Parsley[T] = binaryBounded(_32)
-
-                def number64[T: CanHold.can_hold_64_bits]: Parsley[T] = numberBounded(_64)
-                def decimal64[T: CanHold.can_hold_64_bits]: Parsley[T] = decimalBounded(_64)
-                def hexadecimal64[T: CanHold.can_hold_64_bits]: Parsley[T] = hexadecimalBounded(_64)
-                def octal64[T: CanHold.can_hold_64_bits]: Parsley[T] = octalBounded(_64)
-                def binary64[T: CanHold.can_hold_64_bits]: Parsley[T] = binaryBounded(_64)
-
-                // TODO: render in the "native" radix
-                private def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int)(implicit ev: CanHold[bits.self, T]): Parsley[T] = {
-                    number.collectMsg(x => Seq(if (x > bits.upperSigned) s"literal $x is larger than the max value of ${bits.upperSigned}"
-                                               else                      s"literal $x is less than the min value of ${bits.lowerSigned}")) {
-                        case x if bits.lowerSigned <= x && x <= bits.upperSigned => ev.fromBigInt(x)
-                    }
-                }
-
-                private def numberBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = bounded(number, bits, 10)
-                private def decimalBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = bounded(decimal, bits, 10)
-                private def hexadecimalBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = bounded(hexadecimal, bits, 16)
-                private def octalBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = bounded(octal, bits, 8)
-                private def binaryBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = bounded(binary, bits, 2)
-            }
+            def signed: parsley.token.numeric.Integer = integer
+            val integer: parsley.token.numeric.Integer = new SignedInteger(natural)
 
             // Rationals
             // TODO: We are going to support hexadecimal, binary, and octal floating point literals
