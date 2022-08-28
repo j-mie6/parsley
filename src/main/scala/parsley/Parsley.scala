@@ -374,7 +374,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * First, this parser is ran, yielding `x` on success, then `q` is ran, yielding `y` on success. If both
       * are successful then `y` is returned and `x` is ignored. If either fail then the entire combinator fails.
       *
-      * ''Identical to `~>`: `*>` is more common in Haskell, wheras `~>` is more common in Scala.''
+      * ''Identical to `~>`: `*>` is more common in Haskell, whereas `~>` is more common in Scala.''
       *
       * @example {{{
       * scala> import parsley.character.char
@@ -393,7 +393,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * First, this parser is ran, yielding `x` on success, then `q` is ran, yielding `y` on success. If both
       * are successful then `x` is returned and `y` is ignored. If either fail then the entire combinator fails.
       *
-      * ''Identical to `<~`: `<*` is more common in Haskell, wheras `<~` is more common in Scala.''
+      * ''Identical to `<~`: `<*` is more common in Haskell, whereas `<~` is more common in Scala.''
       *
       * @example {{{
       * scala> import parsley.character.char
@@ -412,7 +412,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * First, this parser is ran, yielding `x` on success, then `q` is ran, yielding `y` on success. If both
       * are successful then `y` is returned and `x` is ignored. If either fail then the entire combinator fails.
       *
-      * ''Identical to `*>`: `*>` is more common in Haskell, wheras `~>` is more common in Scala.''
+      * ''Identical to `*>`: `*>` is more common in Haskell, whereas `~>` is more common in Scala.''
       *
       * @example {{{
       * scala> import parsley.character.char
@@ -432,7 +432,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * First, this parser is ran, yielding `x` on success, then `q` is ran, yielding `y` on success. If both
       * are successful then `x` is returned and `y` is ignored. If either fail then the entire combinator fails.
       *
-      * ''Identical to `<*`: `<*` is more common in Haskell, wheras `<~` is more common in Scala.''
+      * ''Identical to `<*`: `<*` is more common in Haskell, whereas `<~` is more common in Scala.''
       *
       * @example {{{
       * scala> import parsley.character.char

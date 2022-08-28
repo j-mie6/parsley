@@ -7,15 +7,16 @@ import scala.annotation.tailrec
 
 import parsley.character
 
-import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
+import parsley.internal.deepembedding.Sign.{CombinedType, DoubleType, IntType, SignType}
 import parsley.internal.errors.Desc
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 
 private [internal] final class TokenSign(ty: SignType) extends Instr {
     val neg: Any => Any = ty match {
-        case IntType => ((x: BigInt) => -x).asInstanceOf[Any => Any]
-        case DoubleType => ((x: BigDecimal) => -x).asInstanceOf[Any => Any]
+        case IntType => ((x: IntType.resultType) => -x).asInstanceOf[Any => Any]
+        case DoubleType => ((x: DoubleType.resultType) => -x).asInstanceOf[Any => Any]
+        case CombinedType => ((x: CombinedType.resultType) => x.fold(n => Left(-n), n => Right(-n))).asInstanceOf[Any => Any]
     }
     val pos = (x: Any) => x
 

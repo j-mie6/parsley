@@ -13,4 +13,7 @@ private [parsley] object Sign {
     private [parsley] case object IntType extends SignType {
         override type resultType = BigInt
     }
+    private [parsley] case object CombinedType extends SignType {
+        override type resultType = Either[BigInt, BigDecimal]
+    }
 }
