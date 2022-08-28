@@ -46,7 +46,13 @@ private [token] final class UnsignedCombined(integer: Integer, desc: NumericDesc
     // This isn't quite accurate: for non decimal floats the exponent is required, but for wholes it is not
     private def ofRadix(radix: Int, base: Int, digit: Parsley[Char], exp: Parsley[Char]) = {
         // could allow for foldLeft and foldRight here!
-        val whole = digit.foldLeft1[BigInt](0)((x, d) => x*radix + d.asDigit)
+        // this reuses components of natural numbers, which will prevent duplication in a larger parser
+        val whole = radix match {
+            case 10 => integer.plainDecimal
+            case 16 => integer.plainHexadecimal
+            case 8 => integer.plainOctal
+            case 2 => integer.plainBinary
+        }
         val fractional = '.' *> digit.foldRight1[BigDecimal](0)((d, x) => x/radix + d.asDigit)
         val exponent = exp *> integer.decimal32
         //(whole, (fractional <~> exponent) <+> fractional

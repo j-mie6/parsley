@@ -4,6 +4,7 @@
 package parsley.token.numeric
 
 import parsley.Parsley
+import parsley.character.{digit, hexDigit, octDigit, oneOf}
 import parsley.token._
 
 abstract class Integer private[token] {
@@ -49,4 +50,11 @@ abstract class Integer private[token] {
     private def hexadecimalBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = bounded(_hexadecimal, bits, 16)
     private def octalBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = bounded(_octal, bits, 8)
     private def binaryBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = bounded(_binary, bits, 2)
+
+    // TODO: These should live in some shared configured numeric object, but they need to be accessible in Combined etc
+    private [numeric] def ofRadix(radix: Int, digit: Parsley[Char]) = digit.foldLeft1[BigInt](0)((x, d) => x*radix + d.asDigit)
+    private [numeric] lazy val plainDecimal = ofRadix(10, digit)
+    private [numeric] lazy val plainHexadecimal = ofRadix(16, hexDigit)
+    private [numeric] lazy val plainOctal = ofRadix(8, octDigit)
+    private [numeric] lazy val plainBinary = ofRadix(2, oneOf('0', '1'))
 }

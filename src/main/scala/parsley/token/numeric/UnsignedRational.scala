@@ -21,15 +21,21 @@ private [token] final class UnsignedRational(integer: Integer, desc: NumericDesc
     // could allow integers to be parsed here according to configuration, the intOrFloat captures that case anyway
     private def ofRadix(radix: Int, base: Int, digit: Parsley[Char], exp: Parsley[Char]) = {
         // could allow for foldLeft and foldRight here!
-        val whole = digit.foldLeft1[BigDecimal](0)((x, d) => x*radix + d.asDigit)
+        // this reuses components of generic numbers, which will prevent duplication in a larger parser
+        val whole = radix match {
+            case 10 => integer.plainDecimal
+            case 16 => integer.plainHexadecimal
+            case 8 => integer.plainOctal
+            case 2 => integer.plainBinary
+        }
         val fractional = '.' *> digit.foldRight1[BigDecimal](0)((d, x) => x/radix + d.asDigit)
         val exponent = exp *> integer.decimal32
         val fractExponent =
-                (lift2((f: BigDecimal, e: Int) => (w: BigDecimal) => (w + f / radix) * BigDecimal(base).pow(e),
+                (lift2((f: BigDecimal, e: Int) => (w: BigInt) => (BigDecimal(w) + f / radix) * BigDecimal(base).pow(e),
                        fractional,
                        // non-decimal floats require an exponent
                        if (radix == 10) exponent <|> pure(0) else exponent)
-            <|> exponent.map(e => (w: BigDecimal) => w * BigDecimal(base).pow(e)))
+            <|> exponent.map(e => (w: BigInt) => BigDecimal(w) * BigDecimal(base).pow(e)))
         whole <**> fractExponent
     }
 }

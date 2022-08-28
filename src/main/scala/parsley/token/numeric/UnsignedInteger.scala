@@ -12,7 +12,7 @@ import parsley.token.{Bits, CanHold}
 import parsley.token.descriptions.NumericDesc
 
 private [token] final class UnsignedInteger(desc: NumericDesc) extends Integer {
-    override lazy val decimal: Parsley[BigInt] = ofRadix(10, digit)
+    override lazy val decimal: Parsley[BigInt] = plainDecimal
     override lazy val hexadecimal: Parsley[BigInt] = attempt('0' *> noZeroHexadecimal)
     override lazy val octal: Parsley[BigInt] = attempt('0' *> noZeroOctal)
     override lazy val binary: Parsley[BigInt] = attempt('0' *> noZeroBinary)
@@ -23,9 +23,9 @@ private [token] final class UnsignedInteger(desc: NumericDesc) extends Integer {
 
     // TODO: Using choice here will generate a jump table, which will be nicer for `number` (this requires enhancements to the jumptable optimisation)
     // TODO: Leave these as defs so they get inlined into number for the jumptable optimisation
-    private val noZeroHexadecimal = oneOf('x', 'X') *> ofRadix(16, hexDigit)
-    private val noZeroOctal = oneOf('o', 'O') *> ofRadix(8, octDigit)
-    private val noZeroBinary = oneOf('b', 'B') *> ofRadix(2, oneOf('0', '1'))
+    private val noZeroHexadecimal = oneOf('x', 'X') *> plainHexadecimal
+    private val noZeroOctal = oneOf('o', 'O') *> plainOctal
+    private val noZeroBinary = oneOf('b', 'B') *> plainBinary
 
     // TODO: render in the "native" radix
     override protected [numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int)(implicit ev: CanHold[bits.self,T]): Parsley[T] = amend {
@@ -33,6 +33,4 @@ private [token] final class UnsignedInteger(desc: NumericDesc) extends Integer {
             case x if x <= bits.upperUnsigned => ev.fromBigInt(x)
         }
     }
-
-    private def ofRadix(radix: Int, digit: Parsley[Char]) = digit.foldLeft1[BigInt](0)((x, d) => x*radix + d.asDigit)
 }
