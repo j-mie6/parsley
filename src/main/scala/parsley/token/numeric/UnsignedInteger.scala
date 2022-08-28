@@ -3,7 +3,7 @@
  */
 package parsley.token.numeric
 
-import parsley.Parsley, Parsley.attempt
+import parsley.Parsley, Parsley.{attempt, pure}
 import parsley.character.{digit, hexDigit, octDigit, oneOf}
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 import parsley.implicits.character.charLift
@@ -12,10 +12,17 @@ import parsley.token.descriptions.NumericDesc
 
 private [token] final class UnsignedInteger(desc: NumericDesc) extends Integer {
     override lazy val decimal: Parsley[BigInt] = ofRadix(10, digit)
-    override lazy val hexadecimal: Parsley[BigInt] = attempt('0' *> oneOf('x', 'X') *> ofRadix(16, hexDigit))
-    override lazy val octal: Parsley[BigInt] = attempt('0' *> oneOf('o', 'O') *> ofRadix(8, octDigit))
-    override lazy val binary: Parsley[BigInt] = attempt('0' *> oneOf('b', 'B') *> ofRadix(2, oneOf('0', '1')))
-    override lazy val number: Parsley[BigInt] = hexadecimal <|> octal <|> binary <|> decimal
+    override lazy val hexadecimal: Parsley[BigInt] = attempt('0' *> noZeroHexadecimal)
+    override lazy val octal: Parsley[BigInt] = attempt('0' *> noZeroOctal)
+    override lazy val binary: Parsley[BigInt] = attempt('0' *> noZeroBinary)
+    override lazy val number: Parsley[BigInt] = {
+        val zeroLead = '0' *> (noZeroHexadecimal <|> noZeroOctal <|> noZeroBinary <|> decimal <|> pure(BigInt(0)))
+        attempt(zeroLead <|> decimal)
+    }
+
+    private lazy val noZeroHexadecimal = oneOf('x', 'X') *> ofRadix(16, hexDigit)
+    private lazy val noZeroOctal = oneOf('o', 'O') *> ofRadix(8, octDigit)
+    private lazy val noZeroBinary = oneOf('b', 'B') *> ofRadix(2, oneOf('0', '1'))
 
     // TODO: render in the "native" radix
     override protected [numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int)(implicit ev: CanHold[bits.self,T]): Parsley[T] = amend {

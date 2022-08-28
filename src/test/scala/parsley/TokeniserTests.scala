@@ -332,12 +332,12 @@ class TokeniserTests extends ParsleyTest {
         tokeniser.lexemes.naturalOrFloat.parse("0o201 //ooh, octal") should be (Success(Left(129)))
     }
     // Now they do :)
-    /*it should "not allow hexadecimal floats" in {
+    it should "not allow hexadecimal floats" in {
         (tokeniser.lexemes.naturalOrFloat <* eof).parse("0x340.0") shouldBe a [Failure[_]]
     }
     it should "not allow octal floats" in {
         (tokeniser.lexemes.naturalOrFloat <* eof).parse("0o201.0") shouldBe a [Failure[_]]
-    }*/
+    }
 
     "number" should "parse integers or floats" in {
         tokeniser.lexemes.number.parse("3.142  /*what a sick number am I right*/") should be (Success(Right(3.142)))
