@@ -15,6 +15,12 @@ private [token] final class LexemeInteger(integer: Integer, ws: Parsley[_]) exte
 
     override private[numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int)(implicit ev: CanHold[bits.self,T]): Parsley[T] =
         lexeme(integer.bounded(number, bits, radix))
+        
+    override protected def _decimal: Parsley[BigInt] = integer.decimal
+    override protected def _hexadecimal: Parsley[BigInt] = integer.hexadecimal
+    override protected def _octal: Parsley[BigInt] = integer.octal
+    override protected def _binary: Parsley[BigInt] = integer.binary
+    override protected def _number: Parsley[BigInt] = integer.number
 
     private def lexeme[A](p: Parsley[A]) = p <* ws
 }

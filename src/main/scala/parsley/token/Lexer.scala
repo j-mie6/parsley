@@ -11,13 +11,11 @@ import parsley.combinator.{between, many, sepBy, sepBy1, skipMany, skipSome}
 import parsley.errors.combinator.{amend, entrench, unexpected, ErrorMethods}
 import parsley.implicits.character.charLift
 import parsley.lift.{lift2, lift3}
+import parsley.token.numeric._
 
 import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
 import parsley.internal.deepembedding.singletons
 import scala.annotation.implicitNotFound
-import parsley.token.numeric.UnsignedInteger
-import parsley.token.numeric.SignedInteger
-import parsley.token.numeric.LexemeInteger
 
 /**
   * When provided with a `LanguageDef`, this class will produce a large variety of parsers that can be used for
@@ -61,10 +59,8 @@ class Lexer private (lang: descriptions.LanguageDesc) {
             def signed: parsley.token.numeric.Integer = integer
             val integer: parsley.token.numeric.Integer = new LexemeInteger(nonlexemes.numeric.integer, whiteSpace)
 
-            def floating = rational
-            object rational {
-
-            }
+            def floating: parsley.token.numeric.Rational = rational
+            val rational: parsley.token.numeric.Rational = new LexemeRational(nonlexemes.numeric.rational, whiteSpace)
         }
 
         def symbol(name: String): Parsley[String] = lexeme(string(name))
@@ -153,66 +149,8 @@ class Lexer private (lang: descriptions.LanguageDesc) {
             val integer: parsley.token.numeric.Integer = new SignedInteger(natural)
 
             // Rationals
-            // TODO: We are going to support hexadecimal, binary, and octal floating point literals
-            // decimal is 0[.6875][(e|E)[-|+]0] (configuration for whether + is allowed/mandatory in exponent) as well as e/E or other char and if that's enabled
-            // hexadecimal is 0x0[.B][(p|P)[-|+]0] with the final part in decimal and pn is 2^n (configuration for whether the exponent is required and + and epEP)
-            // binary is 0b0[.1011][(p|e|P|E)[-|+]0] with the final part in decimal and pn is 2^n (configuration for whether the exponent is required and + and epEP)
-            // octal is 0o0[.54][(p|e|P|E)[-|+]0]
-            def floating = rational
-            object rational {
-                private [Lexer] val sign = new Parsley(new singletons.Sign[DoubleType.resultType](DoubleType))
-
-                private def ofRadix(radix: Int, base: Int, digit: Parsley[Char], exp: Parsley[Char]) = {
-                    // could allow for foldLeft and foldRight here!
-                    val whole = digit.foldLeft1[BigDecimal](0)((x, d) => x*radix + d.asDigit)
-                    val fractional = '.' *> digit.foldRight1[BigDecimal](0)((d, x) => x/radix + d.asDigit)
-                    val exponent = exp *> integer.decimal32
-                    val fractExponent =
-                           (lift2((f: BigDecimal, e: Int) => (w: BigDecimal) => (w + f / radix) * BigDecimal(base).pow(e), fractional, exponent <|> pure(0))
-                        <|> exponent.map(e => (w: BigDecimal) => w * BigDecimal(base).pow(e)))
-                    whole <**> fractExponent
-                }
-
-                lazy val decimal: Parsley[BigDecimal] = sign <*> ofRadix(10, 10, digit, oneOf('e', 'E'))
-                lazy val hexadecimal: Parsley[BigDecimal] =  attempt(sign <*> ('0' *> oneOf('x', 'X') *> ofRadix(16, 2, hexDigit, oneOf('p', 'P'))))
-                lazy val octal: Parsley[BigDecimal] = attempt(sign <*> ('0' *> oneOf('o', 'O') *> ofRadix(8, 8, octDigit, oneOf('p', 'P'))))
-                lazy val binary: Parsley[BigDecimal] = attempt(sign <*> ('0' *> oneOf('b', 'B') *> ofRadix(2, 2, oneOf('0', '1'), oneOf('p', 'P'))))
-                lazy val number: Parsley[BigDecimal] = hexadecimal <|> octal <|> binary <|> decimal
-
-                lazy val decimalFloatRounded: Parsley[Float] = decimal.map(_.toFloat)
-                lazy val hexadecimalFloatRounded: Parsley[Float] = hexadecimal.map(_.toFloat)
-                lazy val octalFloatRounded: Parsley[Float] = octal.map(_.toFloat)
-                lazy val binaryFloatRounded: Parsley[Float] = binary.map(_.toFloat)
-                lazy val floatRounded: Parsley[Float] = number.map(_.toFloat)
-
-                lazy val decimalDoubleRounded: Parsley[Double] = decimal.map(_.toDouble)
-                lazy val hexadecimalDoubleRounded: Parsley[Double] = hexadecimal.map(_.toDouble)
-                lazy val octalDoubleRounded: Parsley[Double] = octal.map(_.toDouble)
-                lazy val binaryDoubleRounded: Parsley[Double] = binary.map(_.toDouble)
-                lazy val doubleRounded: Parsley[Double] = number.map(_.toDouble)
-
-                lazy val decimalFloat: Parsley[Float] = ensureFloat(decimal)
-                lazy val hexadecimalFloat: Parsley[Float] = ensureFloat(hexadecimal)
-                lazy val octalFloat: Parsley[Float] = ensureFloat(octal)
-                lazy val binaryFloat: Parsley[Float] = ensureFloat(binary)
-                lazy val float: Parsley[Float] = ensureFloat(number)
-
-                lazy val decimalDouble: Parsley[Double] = ensureDouble(decimal)
-                lazy val hexadecimalDouble: Parsley[Double] = ensureDouble(hexadecimal)
-                lazy val octalDouble: Parsley[Double] = ensureDouble(octal)
-                lazy val binaryDouble: Parsley[Double] = ensureDouble(binary)
-                lazy val double: Parsley[Double] = ensureDouble(number)
-
-                private def ensureFloat(number: Parsley[BigDecimal]): Parsley[Float] =
-                    number.collectMsg(n => Seq(s"$n cannot be represented exactly as a IEEE 754 single-precision float")) {
-                        case n if n.isBinaryFloat || n.isDecimalFloat || n.isExactFloat => n.toFloat
-                    }
-
-                private def ensureDouble(number: Parsley[BigDecimal]): Parsley[Double] =
-                    number.collectMsg(n => Seq(s"$n cannot be represented exactly as a IEEE 754 double-precision float")) {
-                        case n if n.isBinaryDouble || n.isDecimalDouble || n.isExactDouble => n.toDouble
-                    }
-            }
+            def floating: parsley.token.numeric.Rational = rational
+            val rational: parsley.token.numeric.Rational = new SignedRational(new UnsignedRational(integer))
         }
         /* NEW NUMERIC API END */
     }
