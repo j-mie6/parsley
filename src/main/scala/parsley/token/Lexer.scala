@@ -42,16 +42,6 @@ class Lexer private (lang: descriptions.LanguageDesc) {
         lazy val stringLiteral: Parsley[String] = lexeme(nonlexemes.stringLiteral)
         lazy val rawStringLiteral: Parsley[String] = lexeme(nonlexemes.rawStringLiteral)
 
-        lazy val natural: Parsley[BigInt] = numeric.natural.number
-        lazy val integer: Parsley[BigInt] = numeric.integer.number
-        lazy val unsignedFloat: Parsley[BigDecimal] = numeric.unsignedRational.decimal
-        lazy val float: Parsley[BigDecimal] = numeric.rational.decimal
-        lazy val naturalOrFloat: Parsley[Either[BigInt, BigDecimal]] = numeric.unsignedCombined.number
-        lazy val number: Parsley[Either[BigInt, BigDecimal]] = numeric.signedCombined.number
-        lazy val decimal: Parsley[BigInt] = numeric.natural.decimal
-        lazy val hexadecimal: Parsley[BigInt] = numeric.natural.hexadecimal
-        lazy val octal: Parsley[BigInt] = numeric.natural.octal
-
         object numeric {
             def unsigned: parsley.token.numeric.Integer = natural
             val natural: parsley.token.numeric.Integer = new LexemeInteger(nonlexemes.numeric.natural, whiteSpace)
@@ -70,23 +60,26 @@ class Lexer private (lang: descriptions.LanguageDesc) {
         def symbol(name: String): Parsley[String] = lexeme(string(name))
         def symbol(name: Char): Parsley[Char] = lexeme(char(name))
         def symbol_(name: String): Parsley[String] = lexeme(attempt(string(name)))
-        def parens[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, '(', ')', "parenthesis", "parentheses")
-        def braces[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, '{', '}', "brace", "braces")
-        def angles[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, '<', '>', "angle bracket", "angle brackets")
-        def brackets[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, '[', ']', "square bracket", "square brackets")
-        lazy val semi: Parsley[Char] = lexeme(';'.label("semicolon"))
-        lazy val comma: Parsley[Char] = lexeme(','.label("comma"))
-        lazy val colon: Parsley[Char] = lexeme(':'.label("colon"))
-        lazy val dot: Parsley[Char] = lexeme('.'.label("dot"))
+
+        lazy val semi: Parsley[Char] = symbol(';').label("semicolon")
+        lazy val comma: Parsley[Char] = symbol(',').label("comma")
+        lazy val colon: Parsley[Char] = symbol(':').label("colon")
+        lazy val dot: Parsley[Char] = symbol('.').label("dot")
         def semiSep[A](p: Parsley[A]): Parsley[List[A]] = sepBy(p, semi)
         def semiSep1[A](p: Parsley[A]): Parsley[List[A]] = sepBy1(p, semi)
         def commaSep[A](p: Parsley[A]): Parsley[List[A]] = sepBy(p, comma)
         def commaSep1[A](p: Parsley[A]): Parsley[List[A]] = sepBy1(p, comma)
 
+        def parens[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, '(', ')', "parenthesis", "parentheses")
+        def braces[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, '{', '}', "brace", "braces")
+        def angles[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, '<', '>', "angle bracket", "angle brackets")
+        def brackets[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, '[', ']', "square bracket", "square brackets")
+
         private def enclosing[A](p: =>Parsley[A], open: Char, close: Char, singular: String, plural: String) =
-            between(lexeme(open.label(s"open $singular")),
-                    lexeme(close.label(s"matching closing $singular").explain(s"unclosed $plural")),
+            between(symbol(open).label(s"open $singular"),
+                    symbol(close).label(s"matching closing $singular").explain(s"unclosed $plural"),
                     p)
+
     }
 
     object nonlexemes {
@@ -111,41 +104,20 @@ class Lexer private (lang: descriptions.LanguageDesc) {
         }
         lazy val rawStringLiteral: Parsley[String] = new Parsley(singletons.RawStringLiteral)
 
-        /* OLD NUMERIC API START */
-        lazy val natural: Parsley[BigInt] = numeric.natural.number
-        lazy val integer: Parsley[BigInt] = numeric.integer.number
-        lazy val unsignedFloat: Parsley[BigDecimal] = numeric.unsignedRational.decimal//new Parsley(singletons.Float)
-        lazy val float: Parsley[BigDecimal] = numeric.rational.decimal//(numeric.rational.sign <*> unsignedFloat).label("float")
-        lazy val naturalOrFloat: Parsley[Either[BigInt, BigDecimal]] = numeric.unsignedCombined.number//attempt(unsignedFloat <+> natural).map(_.swap).label("unsigned number")
-        lazy val number: Parsley[Either[BigInt, BigDecimal]] = numeric.signedCombined.number
-                /*('+' *> naturalOrFloat
-            <|> '-' *> naturalOrFloat.map{ case Left(n) => Left(-n); case Right(f) => Right(-f) }
-            <|> naturalOrFloat).label("number")*/
-        lazy val decimal: Parsley[BigInt] = numeric.natural.decimal
-        lazy val hexadecimal: Parsley[BigInt] = numeric.natural.hexadecimal
-        lazy val octal: Parsley[BigInt] = numeric.natural.octal
-        /* OLD NUMERIC API END */
-
-        /* NEW NUMERIC API START */
         object numeric {
-            // Naturals
             def unsigned: parsley.token.numeric.Integer = natural
             val natural: parsley.token.numeric.Integer = new UnsignedInteger(lang.numericDesc)
 
-            // Integers
             def signed: parsley.token.numeric.Integer = integer
             val integer: parsley.token.numeric.Integer = new SignedInteger(natural)
 
-            // Rationals
             def floating: parsley.token.numeric.Rational = rational
             private [Lexer] val unsignedRational = new UnsignedRational(integer, lang.numericDesc)
             val rational: parsley.token.numeric.Rational = new SignedRational(unsignedRational)
 
-            // Combined
             val unsignedCombined: parsley.token.numeric.Combined = new UnsignedCombined(integer, lang.numericDesc)
             val signedCombined: parsley.token.numeric.Combined = new SignedCombined(unsignedCombined)
         }
-        /* NEW NUMERIC API END */
     }
 
     // TODO: Exposing this to the external API is a pain, because it's a path-dependent type, and violates private...
@@ -285,51 +257,51 @@ class Lexer private (lang: descriptions.LanguageDesc) {
      * the number. The number can specified in `decimal`, `hexadecimal` or `octal`. The number is
      * parsed according to the grammar rules in the Haskell report.*/
     @deprecated
-    def natural: Parsley[Int] = lexemes.natural.map(_.toInt)
+    def natural: Parsley[Int] = lexemes.numeric.natural.number.map(_.toInt)
 
     /**This lexeme parser parses an integer (a whole number). This parser is like `natural` except
      * that it can be prefixed with a sign (i.e '-' or '+'). Returns the value of the number. The
      * number can be specified in `decimal`, `hexadecimal` or `octal`. The number is parsed
      * according to the grammar rules in the haskell report.*/
     @deprecated
-    def integer: Parsley[Int] = lexemes.integer.map(_.toInt)
+    def integer: Parsley[Int] = lexemes.numeric.integer.number.map(_.toInt)
 
     /**This lexeme parser parses a floating point value. Returns the value of the number. The number
      * is parsed according to the grammar rules defined in the Haskell report.*/
     @deprecated
-    def unsignedFloat: Parsley[Double] = lexemes.unsignedFloat.map(_.toDouble)
+    def unsignedFloat: Parsley[Double] = lexemes.numeric.unsignedRational.decimal.map(_.toDouble)
 
     /**This lexeme parser parses a floating point value. Returns the value of the number. The number
      * is parsed according to the grammar rules defined in the Haskell report. Accepts an optional
      * '+' or '-' sign.*/
     @deprecated
-    def float: Parsley[Double] = lexemes.float.map(_.toDouble)
+    def float: Parsley[Double] = lexemes.numeric.rational.decimal.map(_.toDouble)
 
     /**This lexeme parser parses either `integer` or `float`. Returns the value of the number. This
      * parser deals with any overlap in the grammar rules for naturals and floats. The number is
      * parsed according to the grammar rules defined in the Haskell report.*/
     @deprecated
-    def number: Parsley[Either[Int, Double]] = lexemes.number.map(_.fold(x => Left(x.toInt), y => Right(y.toDouble)))
+    def number: Parsley[Either[Int, Double]] = lexemes.numeric.signedCombined.number.map(_.fold(x => Left(x.toInt), y => Right(y.toDouble)))
 
     /**This lexeme parser parses either `natural` or `unsigned float`. Returns the value of the number. This
       * parser deals with any overlap in the grammar rules for naturals and floats. The number is
       * parsed according to the grammar rules defined in the Haskell report.*/
     @deprecated
-    def naturalOrFloat: Parsley[Either[Int, Double]] = lexemes.naturalOrFloat.map(_.fold(x => Left(x.toInt), y => Right(y.toDouble)))
+    def naturalOrFloat: Parsley[Either[Int, Double]] = lexemes.numeric.unsignedCombined.number.map(_.fold(x => Left(x.toInt), y => Right(y.toDouble)))
 
     /**Parses a positive whole number in the decimal system. Returns the value of the number.*/
     @deprecated
-    def decimal: Parsley[Int] = lexemes.decimal.map(_.toInt)
+    def decimal: Parsley[Int] = lexemes.numeric.natural.decimal.map(_.toInt)
 
     /**Parses a positive whole number in the hexadecimal system. The number should be prefixed with
      * "0x" or "0X". Returns the value of the number.*/
     @deprecated
-    def hexadecimal: Parsley[Int] = lexemes.hexadecimal.map(_.toInt)
+    def hexadecimal: Parsley[Int] = lexemes.numeric.natural.hexadecimal.map(_.toInt)
 
     /**Parses a positive whole number in the octal system. The number should be prefixed with "0o"
      * or "0O". Returns the value of the number.*/
     @deprecated
-    def octal: Parsley[Int] = lexemes.octal.map(_.toInt)
+    def octal: Parsley[Int] = lexemes.numeric.natural.octal.map(_.toInt)
 
     /**Lexeme parser `symbol(s)` parses `string(s)` and skips trailing white space.*/
     @deprecated
@@ -449,9 +421,6 @@ class Lexer private (lang: descriptions.LanguageDesc) {
              <|> (escapeCode.map(Some(_))).explain("invalid escape sequence"))
     }
     private lazy val stringChar: Parsley[Option[Char]] = ((stringLetter.map(Some(_))) <|> stringEscape).label("string character")
-
-    // Numbers
-
 
     // White space & symbols
     private lazy val space = toParser(lang.whitespaceDesc.space)
