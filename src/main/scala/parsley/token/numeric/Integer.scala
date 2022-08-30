@@ -4,8 +4,10 @@
 package parsley.token.numeric
 
 import parsley.Parsley, Parsley.pure
-import parsley.character.{char, digit, hexDigit, octDigit, oneOf}
+import parsley.character.{digit, hexDigit, octDigit, oneOf}
 import parsley.combinator.optional
+import parsley.extension.OperatorSugar
+import parsley.implicits.character.charLift
 import parsley.token._
 import parsley.token.descriptions.NumericDesc
 
@@ -56,15 +58,24 @@ abstract class Integer private[token] {
     private def binaryBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = bounded(_binary, bits, 2)
 
     // TODO: These should live in some shared configured numeric object, but they need to be accessible in Combined etc
-    private [numeric] def ofRadix(radix: Int, digit: Parsley[Char]) = {
-        val f = (x: BigInt, d: Char) => x*radix + d.asDigit
+    private [numeric] def ofRadix(radix: Int, startDigit: Parsley[Char], digit: Parsley[Char]) = {
+        val pf = pure((x: BigInt, d: Char) => x*radix + d.asDigit)
         desc.literalBreakChar match {
-            case None => digit.foldLeft1[BigInt](0)(f)
-            case Some(c) => parsley.expr.infix.secretLeft1(digit.map(d => BigInt(d.asDigit)), optional(char(c)) *> digit, pure(f))
+            case None    => parsley.expr.infix.secretLeft1(startDigit.map(d => BigInt(d.asDigit)), digit, pf)
+            case Some(c) => parsley.expr.infix.secretLeft1(startDigit.map(d => BigInt(d.asDigit)), optional(c) *> digit, pf)
         }
     }
-    private [numeric] lazy val plainDecimal = ofRadix(10, digit)
-    private [numeric] lazy val plainHexadecimal = ofRadix(16, hexDigit)
-    private [numeric] lazy val plainOctal = ofRadix(8, octDigit)
-    private [numeric] lazy val plainBinary = ofRadix(2, oneOf('0', '1'))
+    // TODO: these could improve by not using `-`
+    private [numeric] lazy val plainDecimal =
+        if (desc.leadingZerosAllowed) ofRadix(10, digit, digit)
+        else                          ofRadix(10, digit - '0', digit) <|> ('0' #>[BigInt] 0)
+    private [numeric] lazy val plainHexadecimal =
+        if (desc.leadingZerosAllowed) ofRadix(16, hexDigit, hexDigit)
+        else                          ofRadix(16, hexDigit - '0', hexDigit) <|> ('0' #>[BigInt] 0)
+    private [numeric] lazy val plainOctal =
+        if (desc.leadingZerosAllowed) ofRadix(8, octDigit, octDigit)
+        else                          ofRadix(8, octDigit - '0', octDigit) <|> ('0' #>[BigInt] 0)
+    private [numeric] lazy val plainBinary =
+        if (desc.leadingZerosAllowed) ofRadix(2, oneOf('0', '1'), oneOf('0', '1'))
+        else                          ofRadix(2, '1', oneOf('0', '1')) <|> ('0' #>[BigInt] 0)
 }

@@ -31,7 +31,7 @@ private [token] // TODO: Remove
 case class NumericDesc (literalBreakChar: Option[Char],
                         leadingDotAllowed: Boolean,
                         trailingDotAllowed: Boolean,
-                        leadingZerosAllowed: Boolean, //TODO:
+                        leadingZerosAllowed: Boolean,
                         positiveSign: Presence,
                         // generic number
                         integerNumbersCanBeHexadecimal: Boolean,
