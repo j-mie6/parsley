@@ -19,15 +19,15 @@ private [token] final class UnsignedRational(desc: NumericDesc, integer: Integer
         if (desc.decimalRationalsOnly) decimal
         else {
             def addHex(p: Parsley[BigDecimal]) = {
-                if (desc.rationalNumbersCanBeHexadecimal) hexadecimal <|> p
+                if (desc.rationalNumbersCanBeHexadecimal) noZeroHexadecimal <|> p
                 else p
             }
             def addOct(p: Parsley[BigDecimal]) = {
-                if (desc.rationalNumbersCanBeOctal) octal <|> p
+                if (desc.rationalNumbersCanBeOctal) noZeroOctal <|> p
                 else p
             }
             def addBin(p: Parsley[BigDecimal]) = {
-                if (desc.rationalNumbersCanBeBinary) binary <|> p
+                if (desc.rationalNumbersCanBeBinary) noZeroBinary <|> p
                 else p
             }
             // this promotes sharing when the definitions would be otherwise equal
