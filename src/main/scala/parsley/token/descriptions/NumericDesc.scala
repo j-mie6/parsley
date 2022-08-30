@@ -20,17 +20,17 @@ sealed abstract class ExponentDesc
 private [token] // TODO: Remove
 object ExponentDesc {
     case object NoExponents extends ExponentDesc
-    case class Supported(compulsory: Boolean, //TODO:
-                         chars: Set[Char], //TODO:
-                         base: Int, //TODO:
+    case class Supported(compulsory: Boolean,
+                         chars: Set[Char],
+                         base: Int,
                          positiveSign: Presence //TODO:
                         ) extends ExponentDesc
 }
 
 private [token] // TODO: Remove
 case class NumericDesc (literalBreakChar: Option[Char], //TODO:
-                        leadingDotAllowed: Boolean, //TODO:
-                        trailingDotAllowed: Boolean, //TODO:
+                        leadingDotAllowed: Boolean,
+                        trailingDotAllowed: Boolean,
                         leadingZerosAllowed: Boolean, //TODO:
                         positiveSign: Presence,
                         // generic number

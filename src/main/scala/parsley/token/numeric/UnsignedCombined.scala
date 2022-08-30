@@ -12,14 +12,18 @@ import parsley.implicits.zipped.{Zipped2, Zipped3}
 import parsley.token.{Bits, CanHold}
 import parsley.token.descriptions.NumericDesc
 
-// FIXME: This doesn't respect the number requirements on hex oct bin for both integer and rational
-private [token] final class UnsignedCombined(desc: NumericDesc, integer: Integer) extends Combined {
-    override lazy val decimal: Parsley[Either[BigInt, BigDecimal]] = ofRadix(10, 10, digit, oneOf('e', 'E'))
-    override lazy val hexadecimal: Parsley[Either[BigInt, BigDecimal]] = attempt('0' *> noZeroHexadecimal)
-    override lazy val octal: Parsley[Either[BigInt, BigDecimal]] = attempt('0' *> noZeroOctal)
-    override lazy val binary: Parsley[Either[BigInt, BigDecimal]] = attempt('0' *> noZeroBinary)
+private [token] final class UnsignedCombined(desc: NumericDesc, integer: Integer, rational: Rational) extends Combined {
+    override lazy val decimal: Parsley[Either[BigInt, BigDecimal]] = (attempt(rational.decimal) <+> integer.decimal).map(_.swap)//ofRadix(10, 10, digit, oneOf('e', 'E'))
+    override lazy val hexadecimal: Parsley[Either[BigInt, BigDecimal]] = (attempt(rational.hexadecimal) <+> integer.hexadecimal).map(_.swap)//attempt('0' *> noZeroHexadecimal)
+    override lazy val octal: Parsley[Either[BigInt, BigDecimal]] = (attempt(rational.octal) <+> integer.octal).map(_.swap)//attempt('0' *> noZeroOctal)
+    override lazy val binary: Parsley[Either[BigInt, BigDecimal]] = (attempt(rational.binary) <+> integer.binary).map(_.swap)//attempt('0' *> noZeroBinary)
+    override lazy val number: Parsley[Either[BigInt, BigDecimal]] = (attempt(rational.number) <+> integer.number).map(_.swap)
+
     // FIXME: gross :( we should restructure this to be more reusable friendly
-    override lazy val number: Parsley[Either[BigInt, BigDecimal]] = {
+    // FIXME: This doesn't respect the number requirements on hex oct bin for both integer and rational
+    // FIXME: It also doesn't account for the trailing and leading dot
+    // FIXME: It also doesn't respect exponent descriptions
+        /*{
         val decFractional = '.' *> digit.foldRight1[BigDecimal](0)((d, x) => x/10 + d.asDigit)
         // TODO: This integer needs to have the description altered to account for the sign presence
         val decExponent = oneOf('e', 'E') *> integer.decimal32
@@ -28,13 +32,13 @@ private [token] final class UnsignedCombined(desc: NumericDesc, integer: Integer
         } <|> decExponent #> Right(BigDecimal(0))
         val zeroLead = '0' *> (noZeroHexadecimal <|> noZeroOctal <|> noZeroBinary <|> zeroPoint <|> decimal <|> pure(Left(BigInt(0))))
         attempt(zeroLead <|> decimal)
-    }
+    }*/
 
     // TODO: Using choice here will generate a jump table, which will be nicer for `number` (this requires enhancements to the jumptable optimisation)
     // TODO: Leave these as defs so they get inlined into number for the jumptable optimisation
-    private val noZeroHexadecimal = oneOf(desc.hexadecimalLeads) *> ofRadix(16, 2, hexDigit, oneOf('p', 'P'))
-    private val noZeroOctal = oneOf(desc.octalLeads) *> ofRadix(8, 8, octDigit, oneOf('p', 'P'))
-    private val noZeroBinary = oneOf(desc.binaryLeads) *> ofRadix(2, 2, oneOf('0', '1'), oneOf('p', 'P'))
+    //private val noZeroHexadecimal = oneOf(desc.hexadecimalLeads) *> ofRadix(16, 2, hexDigit, oneOf('p', 'P'))
+    //private val noZeroOctal = oneOf(desc.octalLeads) *> ofRadix(8, 8, octDigit, oneOf('p', 'P'))
+    //private val noZeroBinary = oneOf(desc.binaryLeads) *> ofRadix(2, 2, oneOf('0', '1'), oneOf('p', 'P'))
 
     // TODO: render in the "native" radix
     override protected [numeric] def bounded[T](number: Parsley[Either[BigInt, BigDecimal]], bits: Bits, radix: Int)
@@ -46,7 +50,7 @@ private [token] final class UnsignedCombined(desc: NumericDesc, integer: Integer
     }
 
     // This isn't quite accurate: for non decimal floats the exponent is required, but for wholes it is not
-    private def ofRadix(radix: Int, base: Int, digit: Parsley[Char], exp: Parsley[Char]) = {
+    /*private def ofRadix(radix: Int, base: Int, digit: Parsley[Char], exp: Parsley[Char]) = {
         // could allow for foldLeft and foldRight here!
         // this reuses components of natural numbers, which will prevent duplication in a larger parser
         val whole = radix match {
@@ -73,5 +77,5 @@ private [token] final class UnsignedCombined(desc: NumericDesc, integer: Integer
                 case (w, Some(Right(e)))     => Right(BigDecimal(w) * BigDecimal(base).pow(e))
             }
         }
-    }
+    }*/
 }
