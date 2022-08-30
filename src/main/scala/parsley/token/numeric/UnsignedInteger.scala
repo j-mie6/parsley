@@ -17,15 +17,30 @@ private [token] final class UnsignedInteger(desc: NumericDesc) extends Integer {
     override lazy val octal: Parsley[BigInt] = attempt('0' *> noZeroOctal)
     override lazy val binary: Parsley[BigInt] = attempt('0' *> noZeroBinary)
     override lazy val number: Parsley[BigInt] = {
-        val zeroLead = '0' *> (noZeroHexadecimal <|> noZeroOctal <|> noZeroBinary <|> decimal <|> pure(BigInt(0)))
-        attempt(zeroLead <|> decimal)
+        if (desc.decimalIntegersOnly) decimal
+        else {
+            def addHex(p: Parsley[BigInt]) = {
+                if (desc.integerNumbersCanBeHexadecimal) noZeroHexadecimal <|> p
+                else p
+            }
+            def addOct(p: Parsley[BigInt]) = {
+                if (desc.integerNumbersCanBeOctal) noZeroOctal <|> p
+                else p
+            }
+            def addBin(p: Parsley[BigInt]) = {
+                if (desc.integerNumbersCanBeBinary) noZeroBinary <|> p
+                else p
+            }
+            val zeroLead = '0' *> (addHex(addOct(addBin(decimal <|> pure(BigInt(0))))))
+            attempt(zeroLead <|> decimal)
+        }
     }
 
     // TODO: Using choice here will generate a jump table, which will be nicer for `number` (this requires enhancements to the jumptable optimisation)
     // TODO: Leave these as defs so they get inlined into number for the jumptable optimisation
-    private val noZeroHexadecimal = oneOf('x', 'X') *> plainHexadecimal
-    private val noZeroOctal = oneOf('o', 'O') *> plainOctal
-    private val noZeroBinary = oneOf('b', 'B') *> plainBinary
+    private val noZeroHexadecimal = oneOf(desc.hexadecimalLeads) *> plainHexadecimal
+    private val noZeroOctal = oneOf(desc.octalLeads) *> plainOctal
+    private val noZeroBinary = oneOf(desc.binaryLeads) *> plainBinary
 
     // TODO: render in the "native" radix
     override protected [numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int)(implicit ev: CanHold[bits.self,T]): Parsley[T] = amend {

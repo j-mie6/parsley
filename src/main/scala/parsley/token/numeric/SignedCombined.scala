@@ -3,12 +3,13 @@ package parsley.token.numeric
 import parsley.Parsley, Parsley.attempt
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 import parsley.token.{Bits, CanHold}
+import parsley.token.descriptions.NumericDesc
 
 import parsley.internal.deepembedding.singletons
 import parsley.internal.deepembedding.Sign.CombinedType
 
-private [token] final class SignedCombined(unsigned: Combined) extends Combined {
-    private val sign = new Parsley(new singletons.Sign[CombinedType.resultType](CombinedType))
+private [token] final class SignedCombined(desc: NumericDesc, unsigned: Combined) extends Combined {
+    private val sign = new Parsley(new singletons.Sign[CombinedType.resultType](CombinedType, desc.positiveSign))
 
     override def decimal: Parsley[Either[BigInt,BigDecimal]] = attempt(sign <*> unsigned.decimal)
     override def hexadecimal: Parsley[Either[BigInt,BigDecimal]] = attempt(sign <*> unsigned.hexadecimal)

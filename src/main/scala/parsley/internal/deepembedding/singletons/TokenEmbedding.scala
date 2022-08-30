@@ -3,6 +3,8 @@
  */
 package parsley.internal.deepembedding.singletons
 
+import parsley.token.descriptions.Presence
+
 import parsley.internal.deepembedding.Sign.SignType
 import parsley.internal.machine.instructions
 
@@ -24,10 +26,10 @@ private [parsley] final class Comment(start: String, end: String, line: String, 
     override def instr: instructions.Instr = new instructions.TokenComment(start, end, line, nested)
 }
 
-private [parsley] final class Sign[A](ty: SignType) extends Singleton[A => A] {
+private [parsley] final class Sign[A](ty: SignType, signPresence: Presence) extends Singleton[A => A] {
     // $COVERAGE-OFF$
     override val pretty: String = "sign"
-    override def instr: instructions.Instr = new instructions.TokenSign(ty)
+    override def instr: instructions.Instr = new instructions.TokenSign(ty, signPresence)
 }
 
 private [parsley] object Natural extends Singleton[BigInt] {

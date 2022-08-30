@@ -109,14 +109,14 @@ class Lexer private (lang: descriptions.LanguageDesc) {
             val natural: parsley.token.numeric.Integer = new UnsignedInteger(lang.numericDesc)
 
             def signed: parsley.token.numeric.Integer = integer
-            val integer: parsley.token.numeric.Integer = new SignedInteger(natural)
+            val integer: parsley.token.numeric.Integer = new SignedInteger(lang.numericDesc, natural)
 
             def floating: parsley.token.numeric.Rational = rational
-            private [Lexer] val unsignedRational = new UnsignedRational(integer, lang.numericDesc)
-            val rational: parsley.token.numeric.Rational = new SignedRational(unsignedRational)
+            private [Lexer] val unsignedRational = new UnsignedRational(lang.numericDesc, integer)
+            val rational: parsley.token.numeric.Rational = new SignedRational(lang.numericDesc, unsignedRational)
 
-            val unsignedCombined: parsley.token.numeric.Combined = new UnsignedCombined(integer, lang.numericDesc)
-            val signedCombined: parsley.token.numeric.Combined = new SignedCombined(unsignedCombined)
+            val unsignedCombined: parsley.token.numeric.Combined = new UnsignedCombined(lang.numericDesc, integer)
+            val signedCombined: parsley.token.numeric.Combined = new SignedCombined(lang.numericDesc, unsignedCombined)
         }
     }
 

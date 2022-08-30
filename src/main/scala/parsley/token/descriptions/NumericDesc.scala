@@ -6,9 +6,9 @@ package parsley.token.descriptions
 import parsley.token.{Impl, NotRequired}
 import parsley.token.numeric.Rational
 
-private [token] // TODO: Remove
+private [parsley] // TODO: Remove
 sealed abstract class Presence
-private [token] // TODO: Remove
+private [parsley] // TODO: Remove
 object Presence {
     case object Required extends Presence
     case object Optional extends Presence
@@ -20,14 +20,18 @@ sealed abstract class ExponentDesc
 private [token] // TODO: Remove
 object ExponentDesc {
     case object NoExponents extends ExponentDesc
-    case class Supported(compulsory: Boolean, chars: Set[Char], base: Int, positiveSign: Presence) extends ExponentDesc
+    case class Supported(compulsory: Boolean, //TODO:
+                         chars: Set[Char], //TODO:
+                         base: Int, //TODO:
+                         positiveSign: Presence //TODO:
+                        ) extends ExponentDesc
 }
 
 private [token] // TODO: Remove
-case class NumericDesc (literalBreakChar: Option[Char],
-                        leadingDotAllowed: Boolean,
-                        trailingDotAllowed: Boolean,
-                        leadingZerosAllowed: Boolean,
+case class NumericDesc (literalBreakChar: Option[Char], //TODO:
+                        leadingDotAllowed: Boolean, //TODO:
+                        trailingDotAllowed: Boolean, //TODO:
+                        leadingZerosAllowed: Boolean, //TODO:
                         positiveSign: Presence,
                         // generic number
                         integerNumbersCanBeHexadecimal: Boolean,
@@ -41,10 +45,10 @@ case class NumericDesc (literalBreakChar: Option[Char],
                         octalLeads: Set[Char],
                         binaryLeads: Set[Char],
                         // exponents
-                        decimalExponentDesc: ExponentDesc,
-                        hexadecimalExponentDesc: ExponentDesc,
-                        octalExponentDesc: ExponentDesc,
-                        binaryExponentDesc: ExponentDesc
+                        decimalExponentDesc: ExponentDesc, //TODO:
+                        hexadecimalExponentDesc: ExponentDesc, //TODO:
+                        octalExponentDesc: ExponentDesc, //TODO:
+                        binaryExponentDesc: ExponentDesc //TODO:
                        ) {
     private [token] def leadsForRadix(x: Int): Set[Char] = (x: @unchecked) match {
         case 10 => Set.empty
@@ -60,19 +64,22 @@ case class NumericDesc (literalBreakChar: Option[Char],
         case 2 => binaryExponentDesc
     }
 
-    private [token] def radixAllowedForInteger(x: Int): Boolean = (x: @unchecked) match {
+    /*private [token] def radixAllowedForInteger(x: Int): Boolean = (x: @unchecked) match {
         case 10 => true
         case 16 => integerNumbersCanBeHexadecimal
         case 8 => integerNumbersCanBeOctal
         case 2 => integerNumbersCanBeBinary
-    }
+    }*/
 
-    private [token] def radixAllowedForRational(x: Int): Boolean = (x: @unchecked) match {
+    /*private [token] def radixAllowedForRational(x: Int): Boolean = (x: @unchecked) match {
         case 10 => true
         case 16 => rationalNumbersCanBeHexadecimal
         case 8 => rationalNumbersCanBeOctal
         case 2 => rationalNumbersCanBeBinary
-    }
+    }*/
+
+    private [token] def decimalIntegersOnly: Boolean = !(integerNumbersCanBeBinary || integerNumbersCanBeHexadecimal || integerNumbersCanBeOctal)
+    private [token] def decimalRationalsOnly: Boolean = !(rationalNumbersCanBeBinary || rationalNumbersCanBeHexadecimal || rationalNumbersCanBeOctal)
 }
 
 private [token] // TODO: Remove

@@ -6,12 +6,13 @@ package parsley.token.numeric
 import parsley.Parsley, Parsley.attempt
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 import parsley.token.{Bits, CanHold}
+import parsley.token.descriptions.NumericDesc
 
 import parsley.internal.deepembedding.singletons
 import parsley.internal.deepembedding.Sign.IntType
 
-private [token] final class SignedInteger(unsigned: Integer) extends Integer {
-    private val sign = new Parsley(new singletons.Sign[IntType.resultType](IntType))
+private [token] final class SignedInteger(desc: NumericDesc, unsigned: Integer) extends Integer {
+    private val sign = new Parsley(new singletons.Sign[IntType.resultType](IntType, desc.positiveSign))
     override lazy val decimal: Parsley[BigInt] = attempt(sign <*> unsigned.decimal)
     override lazy val hexadecimal: Parsley[BigInt] = attempt(sign <*> unsigned.hexadecimal)
     override lazy val octal: Parsley[BigInt] = attempt(sign <*> unsigned.octal)

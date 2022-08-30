@@ -6,13 +6,15 @@ package parsley.internal.machine.instructions
 import scala.annotation.tailrec
 
 import parsley.character
+import parsley.token.descriptions.Presence
 
 import parsley.internal.deepembedding.Sign.{CombinedType, DoubleType, IntType, SignType}
-import parsley.internal.errors.Desc
+import parsley.internal.errors.{Desc, ExpectItem, ExpectRaw}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
+import parsley.internal.machine.errors.MultiExpectedError
 
-private [internal] final class TokenSign(ty: SignType) extends Instr {
+private [internal] final class TokenSign(ty: SignType, plusPresence: Presence) extends Instr {
     val neg: Any => Any = ty match {
         case IntType => ((x: IntType.resultType) => -x).asInstanceOf[Any => Any]
         case DoubleType => ((x: DoubleType.resultType) => -x).asInstanceOf[Any => Any]
@@ -20,18 +22,29 @@ private [internal] final class TokenSign(ty: SignType) extends Instr {
     }
     val pos = (x: Any) => x
 
+    private [this] val expecteds: Set[ExpectItem] =
+        if (plusPresence ne Presence.Illegal) Set(new ExpectRaw("+"), new ExpectRaw("-"))
+        else                                  Set(new ExpectRaw("-"))
+
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
+        // This could be simplified, but the "fail" branches need to be duplicated...
         if (ctx.moreInput && ctx.nextChar == '-') {
             ctx.fastUncheckedConsumeChars(1)
-            ctx.stack.push(neg)
+            ctx.pushAndContinue(neg)
         }
-        else if (ctx.moreInput && ctx.nextChar == '+') {
+        else if ((plusPresence ne Presence.Illegal) && ctx.moreInput && ctx.nextChar == '+') {
             ctx.fastUncheckedConsumeChars(1)
-            ctx.stack.push(pos)
+            ctx.pushAndContinue(pos)
         }
-        else ctx.stack.push(pos)
-        ctx.inc()
+        else if (plusPresence eq Presence.Required) {
+            ctx.fail(new MultiExpectedError(ctx.offset, ctx.line, ctx.col, expecteds, 1))
+        }
+        else {
+            ctx.pushError(new MultiExpectedError(ctx.offset, ctx.line, ctx.col, expecteds, 1))
+            ctx.addErrorToHintsAndPop()
+            ctx.pushAndContinue(pos)
+        }
     }
 
     // $COVERAGE-OFF$

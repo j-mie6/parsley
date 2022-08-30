@@ -5,12 +5,13 @@ import parsley.character.{digit, hexDigit, octDigit, oneOf}
 import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.character.charLift
 import parsley.lift.lift2
+import parsley.token.descriptions.NumericDesc
 
 import parsley.internal.deepembedding.singletons
 import parsley.internal.deepembedding.Sign.DoubleType
 
-private [token] final class SignedRational(unsigned: Rational) extends Rational {
-    private val sign = new Parsley(new singletons.Sign[DoubleType.resultType](DoubleType))
+private [token] final class SignedRational(desc: NumericDesc, unsigned: Rational) extends Rational {
+    private val sign = new Parsley(new singletons.Sign[DoubleType.resultType](DoubleType, desc.positiveSign))
 
     override lazy val decimal: Parsley[BigDecimal] = attempt(sign <*> unsigned.decimal)
     override lazy val hexadecimal: Parsley[BigDecimal] = attempt(sign <*> unsigned.hexadecimal)

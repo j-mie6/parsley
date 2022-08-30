@@ -12,7 +12,8 @@ import parsley.implicits.zipped.{Zipped2, Zipped3}
 import parsley.token.{Bits, CanHold}
 import parsley.token.descriptions.NumericDesc
 
-private [token] final class UnsignedCombined(integer: Integer, desc: NumericDesc) extends Combined {
+// FIXME: This doesn't respect the number requirements on hex oct bin for both integer and rational
+private [token] final class UnsignedCombined(desc: NumericDesc, integer: Integer) extends Combined {
     override lazy val decimal: Parsley[Either[BigInt, BigDecimal]] = ofRadix(10, 10, digit, oneOf('e', 'E'))
     override lazy val hexadecimal: Parsley[Either[BigInt, BigDecimal]] = attempt('0' *> noZeroHexadecimal)
     override lazy val octal: Parsley[Either[BigInt, BigDecimal]] = attempt('0' *> noZeroOctal)
@@ -20,6 +21,7 @@ private [token] final class UnsignedCombined(integer: Integer, desc: NumericDesc
     // FIXME: gross :( we should restructure this to be more reusable friendly
     override lazy val number: Parsley[Either[BigInt, BigDecimal]] = {
         val decFractional = '.' *> digit.foldRight1[BigDecimal](0)((d, x) => x/10 + d.asDigit)
+        // TODO: This integer needs to have the description altered to account for the sign presence
         val decExponent = oneOf('e', 'E') *> integer.decimal32
         val zeroPoint = (decFractional, decExponent <|> pure(0)).zipped[Either[BigInt, BigDecimal]] {
             case (f, e) => Right(f / 10 * BigDecimal(10).pow(e))
@@ -30,9 +32,9 @@ private [token] final class UnsignedCombined(integer: Integer, desc: NumericDesc
 
     // TODO: Using choice here will generate a jump table, which will be nicer for `number` (this requires enhancements to the jumptable optimisation)
     // TODO: Leave these as defs so they get inlined into number for the jumptable optimisation
-    private val noZeroHexadecimal = oneOf('x', 'X') *> ofRadix(16, 2, hexDigit, oneOf('p', 'P'))
-    private val noZeroOctal = oneOf('o', 'O') *> ofRadix(8, 8, octDigit, oneOf('p', 'P'))
-    private val noZeroBinary = oneOf('b', 'B') *> ofRadix(2, 2, oneOf('0', '1'), oneOf('p', 'P'))
+    private val noZeroHexadecimal = oneOf(desc.hexadecimalLeads) *> ofRadix(16, 2, hexDigit, oneOf('p', 'P'))
+    private val noZeroOctal = oneOf(desc.octalLeads) *> ofRadix(8, 8, octDigit, oneOf('p', 'P'))
+    private val noZeroBinary = oneOf(desc.binaryLeads) *> ofRadix(2, 2, oneOf('0', '1'), oneOf('p', 'P'))
 
     // TODO: render in the "native" radix
     override protected [numeric] def bounded[T](number: Parsley[Either[BigInt, BigDecimal]], bits: Bits, radix: Int)
