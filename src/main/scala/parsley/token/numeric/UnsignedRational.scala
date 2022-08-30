@@ -30,8 +30,10 @@ private [token] final class UnsignedRational(desc: NumericDesc, integer: Integer
                 if (desc.rationalNumbersCanBeBinary) binary <|> p
                 else p
             }
+            // this promotes sharing when the definitions would be otherwise equal
+            val leadingDotAllowedDecimal = if (desc.leadingDotAllowed) decimal else ofRadix(10, digit, leadingDotAllowed = true)
             // not even accounting for the leading and trailing dot being allowed!
-            val zeroLead = '0' *> (addHex(addOct(addBin(ofRadix(10, digit, leadingDotAllowed = true) <|> pure(BigDecimal(0))))))
+            val zeroLead = '0' *> (addHex(addOct(addBin(leadingDotAllowedDecimal <|> pure(BigDecimal(0))))))
             attempt(zeroLead <|> decimal)
         }
     }
