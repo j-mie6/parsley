@@ -68,14 +68,14 @@ abstract class Integer private[token] {
     // TODO: these could improve by not using `-`
     private [numeric] lazy val plainDecimal =
         if (desc.leadingZerosAllowed) ofRadix(10, digit, digit)
-        else                          ofRadix(10, digit - '0', digit) <|> ('0' #>[BigInt] 0)
+        else                          ofRadix(10, digit - '0', digit) <|> ('0' #> BigInt(0))
     private [numeric] lazy val plainHexadecimal =
         if (desc.leadingZerosAllowed) ofRadix(16, hexDigit, hexDigit)
-        else                          ofRadix(16, hexDigit - '0', hexDigit) <|> ('0' #>[BigInt] 0)
+        else                          ofRadix(16, hexDigit - '0', hexDigit) <|> ('0' #> BigInt(0))
     private [numeric] lazy val plainOctal =
         if (desc.leadingZerosAllowed) ofRadix(8, octDigit, octDigit)
-        else                          ofRadix(8, octDigit - '0', octDigit) <|> ('0' #>[BigInt] 0)
+        else                          ofRadix(8, octDigit - '0', octDigit) <|> ('0' #> BigInt(0))
     private [numeric] lazy val plainBinary =
         if (desc.leadingZerosAllowed) ofRadix(2, oneOf('0', '1'), oneOf('0', '1'))
-        else                          ofRadix(2, '1', oneOf('0', '1')) <|> ('0' #>[BigInt] 0)
+        else                          ofRadix(2, '1', oneOf('0', '1')) <|> ('0' #> BigInt(0))
 }
