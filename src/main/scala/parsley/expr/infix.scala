@@ -92,7 +92,11 @@ object infix {
     def left1[A, B, C >: B](p: Parsley[A], op: =>Parsley[(C, A) => B])
             (implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${C}") wrap: A => C): Parsley[C] = {
         // a sneaky sneaky trick :) If we know that A =:= B because refl was provided, then we can skip the wrapping
-        new Parsley(new frontend.Chainl(parsley.XCompat.applyWrap(wrap)(p).internal, p.internal, op.internal))
+        secretLeft1(parsley.XCompat.applyWrap(wrap)(p), p, op)
+    }
+
+    private [parsley] def secretLeft1[A, B, C >: B](p0: Parsley[C], p: =>Parsley[A], op: =>Parsley[(C, A) => B]): Parsley[C] = {
+        new Parsley(new frontend.Chainl(p0.internal, p.internal, op.internal))
     }
 
     /** This combinator handles right-associative parsing, and application of, '''zero''' or more binary operators between '''zero''' or more values.

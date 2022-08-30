@@ -360,7 +360,7 @@ object character
     def stringOfMany(pc: Parsley[Char]): Parsley[String] = {
         val pf = pure[(StringBuilder, Char) => StringBuilder](_ += _)
         // Can't use the regular foldLeft here, because we need a fresh StringBuilder each time.
-        new Parsley(new frontend.Chainl(fresh(new StringBuilder).internal, pc.internal, pf.internal)).map(_.toString)
+        expr.infix.secretLeft1(fresh(new StringBuilder), pc, pf).map(_.toString)
     }
 
     /** This combinator parses `pc` '''one''' or more times, collecting its results into a string.
@@ -387,7 +387,7 @@ object character
     def stringOfSome(pc: Parsley[Char]): Parsley[String] = {
         val pf = pure[(StringBuilder, Char) => StringBuilder](_ += _)
         // Can't use the regular foldLeft1 here, because we need a fresh StringBuilder each time.
-        new Parsley(new frontend.Chainl(pc.map(new StringBuilder += _).internal, pc.internal, pf.internal)).map(_.toString)
+        expr.infix.secretLeft1(pc.map(new StringBuilder += _), pc, pf).map(_.toString)
     }
 
     /** This combinator tries to parse each of the strings `strs` (and `str0`), until one of them succeeds.
