@@ -3,11 +3,15 @@
  */
 package parsley.token.numeric
 
-import parsley.Parsley
-import parsley.character.{digit, hexDigit, octDigit, oneOf}
+import parsley.Parsley, Parsley.pure
+import parsley.character.{char, digit, hexDigit, octDigit, oneOf}
+import parsley.combinator.optional
 import parsley.token._
+import parsley.token.descriptions.NumericDesc
 
 abstract class Integer private[token] {
+    private [numeric] val desc: NumericDesc
+
     def decimal: Parsley[BigInt]
     def hexadecimal: Parsley[BigInt]
     def octal: Parsley[BigInt]
@@ -52,7 +56,13 @@ abstract class Integer private[token] {
     private def binaryBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = bounded(_binary, bits, 2)
 
     // TODO: These should live in some shared configured numeric object, but they need to be accessible in Combined etc
-    private [numeric] def ofRadix(radix: Int, digit: Parsley[Char]) = digit.foldLeft1[BigInt](0)((x, d) => x*radix + d.asDigit)
+    private [numeric] def ofRadix(radix: Int, digit: Parsley[Char]) = {
+        val f = (x: BigInt, d: Char) => x*radix + d.asDigit
+        desc.literalBreakChar match {
+            case None => digit.foldLeft1[BigInt](0)(f)
+            case Some(c) => parsley.expr.infix.secretLeft1(digit.map(d => BigInt(d.asDigit)), optional(char(c)) *> digit, pure(f))
+        }
+    }
     private [numeric] lazy val plainDecimal = ofRadix(10, digit)
     private [numeric] lazy val plainHexadecimal = ofRadix(16, hexDigit)
     private [numeric] lazy val plainOctal = ofRadix(8, octDigit)

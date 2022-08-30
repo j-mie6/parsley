@@ -28,7 +28,7 @@ object ExponentDesc {
 }
 
 private [token] // TODO: Remove
-case class NumericDesc (literalBreakChar: Option[Char], //TODO:
+case class NumericDesc (literalBreakChar: Option[Char],
                         leadingDotAllowed: Boolean,
                         trailingDotAllowed: Boolean,
                         leadingZerosAllowed: Boolean, //TODO:
@@ -45,10 +45,10 @@ case class NumericDesc (literalBreakChar: Option[Char], //TODO:
                         octalLeads: Set[Char],
                         binaryLeads: Set[Char],
                         // exponents
-                        decimalExponentDesc: ExponentDesc, //TODO:
-                        hexadecimalExponentDesc: ExponentDesc, //TODO:
-                        octalExponentDesc: ExponentDesc, //TODO:
-                        binaryExponentDesc: ExponentDesc //TODO:
+                        decimalExponentDesc: ExponentDesc,
+                        hexadecimalExponentDesc: ExponentDesc,
+                        octalExponentDesc: ExponentDesc,
+                        binaryExponentDesc: ExponentDesc
                        ) {
     private [token] def leadsForRadix(x: Int): Set[Char] = (x: @unchecked) match {
         case 10 => Set.empty
@@ -63,20 +63,6 @@ case class NumericDesc (literalBreakChar: Option[Char], //TODO:
         case 8 => octalExponentDesc
         case 2 => binaryExponentDesc
     }
-
-    /*private [token] def radixAllowedForInteger(x: Int): Boolean = (x: @unchecked) match {
-        case 10 => true
-        case 16 => integerNumbersCanBeHexadecimal
-        case 8 => integerNumbersCanBeOctal
-        case 2 => integerNumbersCanBeBinary
-    }*/
-
-    /*private [token] def radixAllowedForRational(x: Int): Boolean = (x: @unchecked) match {
-        case 10 => true
-        case 16 => rationalNumbersCanBeHexadecimal
-        case 8 => rationalNumbersCanBeOctal
-        case 2 => rationalNumbersCanBeBinary
-    }*/
 
     private [token] def decimalIntegersOnly: Boolean = !(integerNumbersCanBeBinary || integerNumbersCanBeHexadecimal || integerNumbersCanBeOctal)
     private [token] def decimalRationalsOnly: Boolean = !(rationalNumbersCanBeBinary || rationalNumbersCanBeHexadecimal || rationalNumbersCanBeOctal)

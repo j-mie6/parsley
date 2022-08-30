@@ -7,6 +7,7 @@ import parsley.Parsley
 import parsley.token.{Bits, CanHold}
 
 private [token] final class LexemeInteger(integer: Integer, ws: Parsley[_]) extends Integer {
+    override private [numeric]  val desc = integer.desc
     override lazy val decimal: Parsley[BigInt] = lexeme(integer.decimal)
     override lazy val hexadecimal: Parsley[BigInt] = lexeme(integer.hexadecimal)
     override lazy val octal: Parsley[BigInt] = lexeme(integer.octal)

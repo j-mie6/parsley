@@ -11,7 +11,7 @@ import parsley.token.descriptions.NumericDesc
 import parsley.internal.deepembedding.singletons
 import parsley.internal.deepembedding.Sign.IntType
 
-private [token] final class SignedInteger(desc: NumericDesc, unsigned: Integer) extends Integer {
+private [token] final class SignedInteger(override private [numeric] val desc: NumericDesc, unsigned: Integer) extends Integer {
     private val sign = new Parsley(new singletons.Sign[IntType.resultType](IntType, desc.positiveSign))
     override lazy val decimal: Parsley[BigInt] = attempt(sign <*> unsigned.decimal)
     override lazy val hexadecimal: Parsley[BigInt] = attempt(sign <*> unsigned.hexadecimal)

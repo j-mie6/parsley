@@ -2,6 +2,7 @@ package parsley.token.numeric
 
 import parsley.Parsley, Parsley.{attempt, empty, pure}
 import parsley.character.{digit, hexDigit, octDigit, oneOf}
+import parsley.combinator.optional
 import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.character.charLift
 import parsley.lift.lift2
@@ -48,7 +49,6 @@ private [token] final class UnsignedRational(desc: NumericDesc, integer: Integer
     private def ofRadix(radix: Int, digit: Parsley[Char]): Parsley[BigDecimal] = ofRadix(radix, digit, desc.leadingDotAllowed)
     private def ofRadix(radix: Int, digit: Parsley[Char], leadingDotAllowed: Boolean): Parsley[BigDecimal] = {
         val expDesc = desc.exponentDescForRadix(radix)
-        // could allow for foldLeft and foldRight here!
         // this reuses components of generic numbers, which will prevent duplication in a larger parser
         val whole = radix match {
             case 10 => integer.plainDecimal
@@ -56,11 +56,15 @@ private [token] final class UnsignedRational(desc: NumericDesc, integer: Integer
             case 8 => integer.plainOctal
             case 2 => integer.plainBinary
         }
-        val fractional = {
-            if (desc.trailingDotAllowed) {
-                '.' *> digit.foldRight[BigDecimal](0)((d, x) => x/radix + d.asDigit)
+        val f = (d: Char, x: BigDecimal) => x/radix + d.asDigit
+        def broken(c: Char) = lift2(f, digit, (optional(c) *> digit).foldRight[BigDecimal](0)(f))
+        val fractional = '.' *> {
+            desc.literalBreakChar match {
+                case None if desc.trailingDotAllowed    => digit.foldRight[BigDecimal](0)(f)
+                case None                               => digit.foldRight1[BigDecimal](0)(f)
+                case Some(c) if desc.trailingDotAllowed => broken(c) <|> pure[BigDecimal](0)
+                case Some(c)                            => broken(c)
             }
-            else '.' *> digit.foldRight1[BigDecimal](0)((d, x) => x/radix + d.asDigit)
         }
         val (requiredExponent, exponent, base) = expDesc match {
             case ExponentDesc.Supported(compulsory, exp, base, sign) =>
