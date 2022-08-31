@@ -12,7 +12,7 @@ import parsley.implicits.zipped.{Zipped2, Zipped3}
 import parsley.token.{Bits, CanHold}
 import parsley.token.descriptions.NumericDesc
 
-private [token] final class UnsignedCombined(desc: NumericDesc, integer: Integer, rational: Rational) extends Combined {
+private [token] final class UnsignedCombined(desc: NumericDesc, integer: Integer, rational: Real) extends Combined {
     override lazy val decimal: Parsley[Either[BigInt, BigDecimal]] = (attempt(rational.decimal) <+> integer.decimal).map(_.swap)//ofRadix(10, 10, digit, oneOf('e', 'E'))
     override lazy val hexadecimal: Parsley[Either[BigInt, BigDecimal]] = (attempt(rational.hexadecimal) <+> integer.hexadecimal).map(_.swap)//attempt('0' *> noZeroHexadecimal)
     override lazy val octal: Parsley[Either[BigInt, BigDecimal]] = (attempt(rational.octal) <+> integer.octal).map(_.swap)//attempt('0' *> noZeroOctal)

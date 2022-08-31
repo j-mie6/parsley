@@ -11,24 +11,24 @@ import parsley.token.descriptions.{NumericDesc, ExponentDesc}
 import parsley.internal.deepembedding.singletons
 import parsley.internal.deepembedding.Sign.DoubleType
 
-private [token] final class UnsignedRational(desc: NumericDesc, natural: Integer) extends Rational {
+private [token] final class UnsignedReal(desc: NumericDesc, natural: Integer) extends Real {
     override lazy val decimal: Parsley[BigDecimal] = attempt(ofRadix(10, digit))
     override lazy val hexadecimal: Parsley[BigDecimal] = attempt('0' *> noZeroHexadecimal)
     override lazy val octal: Parsley[BigDecimal] = attempt('0' *> noZeroOctal)
     override lazy val binary: Parsley[BigDecimal] = attempt('0' *> noZeroBinary)
     override lazy val number: Parsley[BigDecimal] = {
-        if (desc.decimalRationalsOnly) decimal
+        if (desc.decimalRealsOnly) decimal
         else {
             def addHex(p: Parsley[BigDecimal]) = {
-                if (desc.rationalNumbersCanBeHexadecimal) noZeroHexadecimal <|> p
+                if (desc.realNumbersCanBeHexadecimal) noZeroHexadecimal <|> p
                 else p
             }
             def addOct(p: Parsley[BigDecimal]) = {
-                if (desc.rationalNumbersCanBeOctal) noZeroOctal <|> p
+                if (desc.realNumbersCanBeOctal) noZeroOctal <|> p
                 else p
             }
             def addBin(p: Parsley[BigDecimal]) = {
-                if (desc.rationalNumbersCanBeBinary) noZeroBinary <|> p
+                if (desc.realNumbersCanBeBinary) noZeroBinary <|> p
                 else p
             }
             // this promotes sharing when the definitions would be otherwise equal

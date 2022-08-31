@@ -4,7 +4,7 @@
 package parsley.token.descriptions
 
 import parsley.token.{Impl, NotRequired}
-import parsley.token.numeric.Rational
+import parsley.token.numeric.Real
 
 private [parsley] // TODO: Remove
 sealed abstract class Presence
@@ -39,9 +39,9 @@ case class NumericDesc (literalBreakChar: Option[Char], //TODO: We should allow 
                         integerNumbersCanBeHexadecimal: Boolean,
                         integerNumbersCanBeOctal: Boolean,
                         integerNumbersCanBeBinary: Boolean,
-                        rationalNumbersCanBeHexadecimal: Boolean,
-                        rationalNumbersCanBeOctal: Boolean,
-                        rationalNumbersCanBeBinary: Boolean,
+                        realNumbersCanBeHexadecimal: Boolean,
+                        realNumbersCanBeOctal: Boolean,
+                        realNumbersCanBeBinary: Boolean,
                         // special literals
                         hexadecimalLeads: Set[Char],
                         octalLeads: Set[Char],
@@ -64,7 +64,7 @@ case class NumericDesc (literalBreakChar: Option[Char], //TODO: We should allow 
     }
 
     private [token] def decimalIntegersOnly: Boolean = !(integerNumbersCanBeBinary || integerNumbersCanBeHexadecimal || integerNumbersCanBeOctal)
-    private [token] def decimalRationalsOnly: Boolean = !(rationalNumbersCanBeBinary || rationalNumbersCanBeHexadecimal || rationalNumbersCanBeOctal)
+    private [token] def decimalRealsOnly: Boolean = !(realNumbersCanBeBinary || realNumbersCanBeHexadecimal || realNumbersCanBeOctal)
 }
 
 private [token] // TODO: Remove
@@ -79,9 +79,9 @@ object NumericDesc {
         integerNumbersCanBeHexadecimal = true,
         integerNumbersCanBeOctal = true,
         integerNumbersCanBeBinary = false,
-        rationalNumbersCanBeHexadecimal = false,
-        rationalNumbersCanBeOctal = false,
-        rationalNumbersCanBeBinary = false,
+        realNumbersCanBeHexadecimal = false,
+        realNumbersCanBeOctal = false,
+        realNumbersCanBeBinary = false,
         // special literals
         hexadecimalLeads = Set('x', 'X'),
         octalLeads = Set('o', 'O'),

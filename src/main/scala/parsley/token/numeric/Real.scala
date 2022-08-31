@@ -7,7 +7,7 @@ import parsley.Parsley
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 import parsley.token._
 
-abstract class Rational private[token] {
+abstract class Real private[token] {
     def decimal: Parsley[BigDecimal]
     def hexadecimal: Parsley[BigDecimal]
     def octal: Parsley[BigDecimal]

@@ -317,11 +317,11 @@ class TokeniserTests extends ParsleyTest {
     }*/
 
     "double" should "parse signed doubles" in {
-        tokeniser.lexemes.numeric.rational.double.parse("-3.142") should be (Success(-3.142))
-        tokeniser.lexemes.numeric.rational.double.parse("-3e-4") should be (Success(-3e-4))
-        tokeniser.lexemes.numeric.rational.double.parse("+1.2e2") should be (Success(1.2e2))
-        tokeniser.lexemes.numeric.rational.double.parse("1.2") should be (Success(1.2))
-        tokeniser.lexemes.numeric.rational.double.parse("0.2") should be (Success(0.2))
+        tokeniser.lexemes.numeric.real.double.parse("-3.142") should be (Success(-3.142))
+        tokeniser.lexemes.numeric.real.double.parse("-3e-4") should be (Success(-3e-4))
+        tokeniser.lexemes.numeric.real.double.parse("+1.2e2") should be (Success(1.2e2))
+        tokeniser.lexemes.numeric.real.double.parse("1.2") should be (Success(1.2))
+        tokeniser.lexemes.numeric.real.double.parse("0.2") should be (Success(0.2))
     }
 
     "naturalOrFloat" should "parse either naturals or unsigned floats" in {

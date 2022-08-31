@@ -6,7 +6,7 @@ package parsley.token.numeric
 import parsley.Parsley
 import parsley.token.{Bits, CanHold}
 
-private [token] final class LexemeRational(rational: Rational, ws: Parsley[_]) extends Rational {
+private [token] final class LexemeReal(rational: Real, ws: Parsley[_]) extends Real {
     override def decimal: Parsley[BigDecimal] = lexeme(rational.decimal)
     override def hexadecimal: Parsley[BigDecimal] = lexeme(rational.hexadecimal)
     override def octal: Parsley[BigDecimal] = lexeme(rational.octal)

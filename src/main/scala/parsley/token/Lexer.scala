@@ -45,9 +45,9 @@ class Lexer private (lang: descriptions.LanguageDesc) {
             def signed: parsley.token.numeric.Integer = integer
             val integer: parsley.token.numeric.Integer = new LexemeInteger(nonlexemes.numeric.integer, whiteSpace)
 
-            def floating: parsley.token.numeric.Rational = rational
-            private [Lexer] val unsignedRational = new LexemeRational(nonlexemes.numeric.unsignedRational, whiteSpace)
-            val rational: parsley.token.numeric.Rational = new LexemeRational(nonlexemes.numeric.rational, whiteSpace)
+            def floating: parsley.token.numeric.Real = real
+            private [Lexer] val positiveReal = new LexemeReal(nonlexemes.numeric.positiveReal, whiteSpace)
+            val real: parsley.token.numeric.Real = new LexemeReal(nonlexemes.numeric.real, whiteSpace)
 
             val unsignedCombined: parsley.token.numeric.Combined = new LexemeCombined(nonlexemes.numeric.unsignedCombined, whiteSpace)
             val signedCombined: parsley.token.numeric.Combined = new LexemeCombined(nonlexemes.numeric.signedCombined, whiteSpace)
@@ -106,11 +106,11 @@ class Lexer private (lang: descriptions.LanguageDesc) {
             def signed: parsley.token.numeric.Integer = integer
             val integer: parsley.token.numeric.Integer = new SignedInteger(lang.numericDesc, natural)
 
-            def floating: parsley.token.numeric.Rational = rational
-            private [Lexer] val unsignedRational = new UnsignedRational(lang.numericDesc, natural)
-            val rational: parsley.token.numeric.Rational = new SignedRational(lang.numericDesc, unsignedRational)
+            def floating: parsley.token.numeric.Real = real
+            private [Lexer] val positiveReal = new UnsignedReal(lang.numericDesc, natural)
+            val real: parsley.token.numeric.Real = new SignedReal(lang.numericDesc, positiveReal)
 
-            val unsignedCombined: parsley.token.numeric.Combined = new UnsignedCombined(lang.numericDesc, integer, unsignedRational)
+            val unsignedCombined: parsley.token.numeric.Combined = new UnsignedCombined(lang.numericDesc, integer, positiveReal)
             val signedCombined: parsley.token.numeric.Combined = new SignedCombined(lang.numericDesc, unsignedCombined)
         }
 
@@ -130,7 +130,7 @@ class Lexer private (lang: descriptions.LanguageDesc) {
             private lazy val charEscape = '\\' *> escapeCode
             private lazy val charLetter = letter('\'')
             private lazy val characterChar = (charLetter <|> charEscape).label("literal character")
-        
+
             private val escapeEmpty = '&'
             private lazy val escapeGap = skipSome(space.label("string gap")) *> '\\'.label("end of string gap")
             private lazy val stringLetter = letter('"')
@@ -299,13 +299,13 @@ class Lexer private (lang: descriptions.LanguageDesc) {
     /**This lexeme parser parses a floating point value. Returns the value of the number. The number
      * is parsed according to the grammar rules defined in the Haskell report.*/
     @deprecated
-    def unsignedFloat: Parsley[Double] = lexemes.numeric.unsignedRational.decimal.map(_.toDouble)
+    def unsignedFloat: Parsley[Double] = lexemes.numeric.positiveReal.decimal.map(_.toDouble)
 
     /**This lexeme parser parses a floating point value. Returns the value of the number. The number
      * is parsed according to the grammar rules defined in the Haskell report. Accepts an optional
      * '+' or '-' sign.*/
     @deprecated
-    def float: Parsley[Double] = lexemes.numeric.rational.decimal.map(_.toDouble)
+    def float: Parsley[Double] = lexemes.numeric.real.decimal.map(_.toDouble)
 
     /**This lexeme parser parses either `integer` or `float`. Returns the value of the number. This
      * parser deals with any overlap in the grammar rules for naturals and floats. The number is
