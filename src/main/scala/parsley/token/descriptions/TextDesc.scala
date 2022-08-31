@@ -16,7 +16,7 @@ object CtrlEscape {
     case object Illegal extends CtrlEscape
 }
 
-private [token] // TODO: remove
+private [parsley] // TODO: remove
 case class EscapeDesc (escBegin: Char,
                        literals: Set[Char],
                        singleMap: Map[Char, Char],
@@ -90,10 +90,11 @@ object EscapeDesc {
 }
 
 private [token] // TODO: remove
-case class TextDesc (escapeChars: EscapeDesc) {
+case class TextDesc (escapeChars: EscapeDesc,
+                     literalEnds: Set[Char]) {
 }
 
 private [token]
 object TextDesc {
-    val plain = TextDesc(escapeChars = EscapeDesc.haskell)
+    val plain = TextDesc(escapeChars = EscapeDesc.haskell, literalEnds = Set('"'))
 }

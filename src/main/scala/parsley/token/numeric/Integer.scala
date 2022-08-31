@@ -11,9 +11,7 @@ import parsley.implicits.character.charLift
 import parsley.token._
 import parsley.token.descriptions.NumericDesc
 
-abstract class Integer private[token] {
-    private [numeric] val desc: NumericDesc
-
+abstract class Integer private[token] (private [numeric] val desc: NumericDesc) {
     def decimal: Parsley[BigInt]
     def hexadecimal: Parsley[BigInt]
     def octal: Parsley[BigInt]

@@ -11,7 +11,7 @@ import parsley.implicits.character.charLift
 import parsley.token.{Bits, CanHold}
 import parsley.token.descriptions.NumericDesc
 
-private [token] final class UnsignedInteger(override private [numeric] val desc: NumericDesc) extends Integer {
+private [token] final class UnsignedInteger(desc: NumericDesc) extends Integer(desc) {
     override lazy val decimal: Parsley[BigInt] = plainDecimal
     override lazy val hexadecimal: Parsley[BigInt] = attempt('0' *> noZeroHexadecimal)
     override lazy val octal: Parsley[BigInt] = attempt('0' *> noZeroOctal)
