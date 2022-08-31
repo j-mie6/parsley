@@ -24,7 +24,9 @@ object ExponentDesc {
                          chars: Set[Char],
                          base: Int,
                          positiveSign: Presence
-                        ) extends ExponentDesc
+                        ) extends ExponentDesc {
+        if (chars.isEmpty) throw new IllegalArgumentException("The characters used for floating point exponents must not be empty")
+    }
 }
 
 private [token] // TODO: Remove
@@ -50,6 +52,10 @@ case class NumericDesc (literalBreakChar: Option[Char],
                         octalExponentDesc: ExponentDesc,
                         binaryExponentDesc: ExponentDesc
                        ) {
+    if (hexadecimalLeads.isEmpty) throw new IllegalArgumentException("The leading characters of hexadecimal literals must not be empty")
+    if (octalLeads.isEmpty) throw new IllegalArgumentException("The leading characters of octal literals must not be empty")
+    if (binaryLeads.isEmpty) throw new IllegalArgumentException("The leading characters of binary literals must not be empty")
+
     private [token] def leadsForRadix(x: Int): Set[Char] = (x: @unchecked) match {
         case 10 => Set.empty
         case 16 => hexadecimalLeads
