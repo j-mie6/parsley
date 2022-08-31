@@ -21,7 +21,7 @@ private [token] // TODO: Remove
 object ExponentDesc {
     case object NoExponents extends ExponentDesc
     case class Supported(compulsory: Boolean,
-                         chars: Set[Char],
+                         chars: Set[Char], //TODO: well, in C an octal is not 0o10 it would be 010, so this _can_ be empty
                          base: Int,
                          positiveSign: Presence
                         ) extends ExponentDesc {
@@ -30,7 +30,7 @@ object ExponentDesc {
 }
 
 private [token] // TODO: Remove
-case class NumericDesc (literalBreakChar: Option[Char],
+case class NumericDesc (literalBreakChar: Option[Char], //TODO: We should allow for literalBreakChar after a hex/oct/bin prefix
                         leadingDotAllowed: Boolean,
                         trailingDotAllowed: Boolean,
                         leadingZerosAllowed: Boolean,

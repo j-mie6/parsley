@@ -5,7 +5,7 @@ package parsley.token.descriptions
 
 import parsley.token.{Impl, NotRequired}
 
-private [token]
+private [token] // TODO: remove
 case class IdentDesc (identStart: Impl,
                       identLetter: Impl,
                       keywords: Set[String],
@@ -15,7 +15,7 @@ case class IdentDesc (identStart: Impl,
     private lazy val theReservedNames =  if (caseSensitive) keywords else keywords.map(_.toLowerCase)
 }
 
-private [token]
+private [token] // TODO: remove
 object IdentDesc {
     val plain = IdentDesc(NotRequired, NotRequired, Set.empty, true)
 }

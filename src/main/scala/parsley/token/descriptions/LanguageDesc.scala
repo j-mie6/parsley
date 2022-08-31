@@ -5,12 +5,13 @@ package parsley.token.descriptions
 
 import parsley.token.{Impl, NotRequired}
 
-private [token]
+private [token] // TODO: remove
 case class LanguageDesc (identDesc: IdentDesc,
                          opStart: Impl,
                          opLetter: Impl,
                          operators: Set[String],
                          numericDesc: NumericDesc,
+                         textDesc: TextDesc,
                          whitespaceDesc: SpaceDesc) {
     private [parsley] def isReservedOp(op: String): Boolean = operators.contains(op)
 }
@@ -18,7 +19,7 @@ case class LanguageDesc (identDesc: IdentDesc,
 /** This object contains any preconfigured language definitions
   * @since 4.0.0
   */
-private [token]
+private [token] // TODO: remove
 object LanguageDesc {
-    val plain = LanguageDesc(IdentDesc.plain, NotRequired, NotRequired, Set.empty, NumericDesc.plain, SpaceDesc.plain)
+    val plain = LanguageDesc(IdentDesc.plain, NotRequired, NotRequired, Set.empty, NumericDesc.plain, TextDesc.plain, SpaceDesc.plain)
 }

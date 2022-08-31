@@ -38,10 +38,6 @@ class Lexer private (lang: descriptions.LanguageDesc) {
         def operator(name: String): Parsley[Unit] = lexeme(nonlexemes.operator(name))
         def maxOp(name: String): Parsley[Unit] = lexeme(nonlexemes.maxOp(name))
 
-        lazy val charLiteral: Parsley[Char] = lexeme(nonlexemes.charLiteral)
-        lazy val stringLiteral: Parsley[String] = lexeme(nonlexemes.stringLiteral)
-        lazy val rawStringLiteral: Parsley[String] = lexeme(nonlexemes.rawStringLiteral)
-
         object numeric {
             def unsigned: parsley.token.numeric.Integer = natural
             val natural: parsley.token.numeric.Integer = new LexemeInteger(nonlexemes.numeric.natural, whiteSpace)
@@ -55,6 +51,12 @@ class Lexer private (lang: descriptions.LanguageDesc) {
 
             val unsignedCombined: parsley.token.numeric.Combined = new LexemeCombined(nonlexemes.numeric.unsignedCombined, whiteSpace)
             val signedCombined: parsley.token.numeric.Combined = new LexemeCombined(nonlexemes.numeric.signedCombined, whiteSpace)
+        }
+
+        object text {
+            lazy val charLiteral: Parsley[Char] = lexeme(nonlexemes.text.charLiteral)
+            lazy val stringLiteral: Parsley[String] = lexeme(nonlexemes.text.stringLiteral)
+            lazy val rawStringLiteral: Parsley[String] = lexeme(nonlexemes.text.rawStringLiteral)
         }
 
         def symbol(name: String): Parsley[String] = lexeme(string(name))
@@ -97,13 +99,6 @@ class Lexer private (lang: descriptions.LanguageDesc) {
         }
         def maxOp(name: String): Parsley[Unit] = new Parsley(new singletons.MaxOp(name, lang.operators))
 
-        lazy val charLiteral: Parsley[Char] = between('\''.label("character"), '\''.label("end of character"), characterChar)
-        lazy val stringLiteral: Parsley[String] = lang.whitespaceDesc.space match {
-            case Static(ws) => new Parsley(new singletons.StringLiteral(ws))
-            case _ => between('"'.label("string"), '"'.label("end of string"), many(stringChar)).map(_.flatten.mkString)
-        }
-        lazy val rawStringLiteral: Parsley[String] = new Parsley(singletons.RawStringLiteral)
-
         object numeric {
             def unsigned: parsley.token.numeric.Integer = natural
             val natural: parsley.token.numeric.Integer = new UnsignedInteger(lang.numericDesc)
@@ -117,6 +112,41 @@ class Lexer private (lang: descriptions.LanguageDesc) {
 
             val unsignedCombined: parsley.token.numeric.Combined = new UnsignedCombined(lang.numericDesc, integer, unsignedRational)
             val signedCombined: parsley.token.numeric.Combined = new SignedCombined(lang.numericDesc, unsignedCombined)
+        }
+
+        object text {
+            // we want 4 kinds of thing here:
+            //  character literals
+            //  string literals
+            //  multi-line string literals
+            //  raw string literals (and multi-line-raw too?)
+            // but I'm not sure about the last one, it is in some sense useful because the user would otherwise
+            // have to make that logic, and the parser can do less work to achieve that overall. But it is an
+            // odd special case to have. I guess we could easily do it by composing a char reader into a string reader
+            // a raw char does not do escapes.
+            private def letter(terminal: Char): Parsley[Char] = satisfy(c => c != terminal && c != '\\' && c > '\u0016')
+
+            private lazy val escapeCode = new Parsley(singletons.Escape)
+            private lazy val charEscape = '\\' *> escapeCode
+            private lazy val charLetter = letter('\'')
+            private lazy val characterChar = (charLetter <|> charEscape).label("literal character")
+        
+            private val escapeEmpty = '&'
+            private lazy val escapeGap = skipSome(space.label("string gap")) *> '\\'.label("end of string gap")
+            private lazy val stringLetter = letter('"')
+            private lazy val stringEscape: Parsley[Option[Char]] = {
+                '\\' *> (escapeGap #> None
+                     <|> escapeEmpty #> None
+                     <|> (escapeCode.map(Some(_))).explain("invalid escape sequence"))
+            }
+            private lazy val stringChar: Parsley[Option[Char]] = ((stringLetter.map(Some(_))) <|> stringEscape).label("string character")
+
+            lazy val charLiteral: Parsley[Char] = between('\''.label("character"), '\''.label("end of character"), characterChar)
+            lazy val stringLiteral: Parsley[String] = lang.whitespaceDesc.space match {
+                case Static(ws) => new Parsley(new singletons.StringLiteral(ws))
+                case _ => between('"'.label("string"), '"'.label("end of string"), many(stringChar)).map(_.flatten.mkString)
+            }
+            lazy val rawStringLiteral: Parsley[String] = new Parsley(singletons.RawStringLiteral)
         }
     }
 
@@ -231,27 +261,27 @@ class Lexer private (lang: descriptions.LanguageDesc) {
      * to the grammar rules defined in the Haskell report (which matches most programming languages
      * quite closely).*/
     @deprecated
-    def charLiteral: Parsley[Char] = lexemes.charLiteral
+    def charLiteral: Parsley[Char] = lexemes.text.charLiteral
 
     /**This lexeme parser parses a literal string. Returns the literal string value. This parser
      * deals correctly with escape sequences and gaps. The literal string is parsed according to
      * the grammar rules defined in the Haskell report (which matches most programming languages
      * quite closely).*/
     @deprecated
-    def stringLiteral: Parsley[String] = lexemes.stringLiteral
+    def stringLiteral: Parsley[String] = lexemes.text.stringLiteral
 
     /**This non-lexeme parser parses a literal string. Returns the literal string value. This parser
      * deals correctly with escape sequences and gaps. The literal string is parsed according to
      * the grammar rules defined in the Haskell report (which matches most programming languages
      * quite closely).*/
     @deprecated
-    def stringLiteral_ : Parsley[String] = nonlexemes.stringLiteral
+    def stringLiteral_ : Parsley[String] = nonlexemes.text.stringLiteral
 
     /**This non-lexeme parser parses a string in a raw fashion. The escape characters in the string
      * remain untouched. While escaped quotes do not end the string, they remain as \" in the result
      * instead of becoming a quote character. Does not support string gaps. */
     @deprecated
-    def rawStringLiteral: Parsley[String] = nonlexemes.rawStringLiteral
+    def rawStringLiteral: Parsley[String] = nonlexemes.text.rawStringLiteral
 
     /**This lexeme parser parses a natural number (a positive whole number). Returns the value of
      * the number. The number can specified in `decimal`, `hexadecimal` or `octal`. The number is
@@ -403,24 +433,6 @@ class Lexer private (lang: descriptions.LanguageDesc) {
     private lazy val opStart = toParser(lang.opStart)
     private lazy val opLetter = toParser(lang.opLetter)
     private lazy val oper = lift2((c: Char, cs: String) => s"$c$cs", opStart, stringOfMany(opLetter))
-
-    // Chars & Strings
-    private def letter(terminal: Char): Parsley[Char] = satisfy(c => c != terminal && c != '\\' && c > '\u0016')
-
-    private lazy val escapeCode = new Parsley(singletons.Escape)
-    private lazy val charEscape = '\\' *> escapeCode
-    private lazy val charLetter = letter('\'')
-    private lazy val characterChar = (charLetter <|> charEscape).label("literal character")
-
-    private val escapeEmpty = '&'
-    private lazy val escapeGap = skipSome(space.label("string gap")) *> '\\'.label("end of string gap")
-    private lazy val stringLetter = letter('"')
-    private lazy val stringEscape: Parsley[Option[Char]] = {
-        '\\' *> (escapeGap #> None
-             <|> escapeEmpty #> None
-             <|> (escapeCode.map(Some(_))).explain("invalid escape sequence"))
-    }
-    private lazy val stringChar: Parsley[Option[Char]] = ((stringLetter.map(Some(_))) <|> stringEscape).label("string character")
 
     // White space & symbols
     private lazy val space = toParser(lang.whitespaceDesc.space)
