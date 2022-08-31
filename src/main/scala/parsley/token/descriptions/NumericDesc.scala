@@ -23,7 +23,7 @@ object ExponentDesc {
     case class Supported(compulsory: Boolean,
                          chars: Set[Char],
                          base: Int,
-                         positiveSign: Presence //TODO:
+                         positiveSign: Presence
                         ) extends ExponentDesc
 }
 

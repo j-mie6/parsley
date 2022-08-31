@@ -11,7 +11,7 @@ import parsley.token.descriptions.{NumericDesc, ExponentDesc}
 import parsley.internal.deepembedding.singletons
 import parsley.internal.deepembedding.Sign.DoubleType
 
-private [token] final class UnsignedRational(desc: NumericDesc, integer: Integer) extends Rational {
+private [token] final class UnsignedRational(desc: NumericDesc, natural: Integer) extends Rational {
     override lazy val decimal: Parsley[BigDecimal] = attempt(ofRadix(10, digit))
     override lazy val hexadecimal: Parsley[BigDecimal] = attempt('0' *> noZeroHexadecimal)
     override lazy val octal: Parsley[BigDecimal] = attempt('0' *> noZeroOctal)
@@ -51,10 +51,10 @@ private [token] final class UnsignedRational(desc: NumericDesc, integer: Integer
         val expDesc = desc.exponentDescForRadix(radix)
         // this reuses components of generic numbers, which will prevent duplication in a larger parser
         val whole = radix match {
-            case 10 => integer.plainDecimal
-            case 16 => integer.plainHexadecimal
-            case 8 => integer.plainOctal
-            case 2 => integer.plainBinary
+            case 10 => natural.plainDecimal
+            case 16 => natural.plainHexadecimal
+            case 8 => natural.plainOctal
+            case 2 => natural.plainBinary
         }
         val f = (d: Char, x: BigDecimal) => x/radix + d.asDigit
         def broken(c: Char) = lift2(f, digit, (optional(c) *> digit).foldRight[BigDecimal](0)(f))
@@ -68,7 +68,7 @@ private [token] final class UnsignedRational(desc: NumericDesc, integer: Integer
         }
         val (requiredExponent, exponent, base) = expDesc match {
             case ExponentDesc.Supported(compulsory, exp, base, sign) =>
-                // TODO: This integer needs to have the description altered to account for the sign presence
+                val integer = new SignedInteger(desc.copy(positiveSign = sign), natural)
                 val exponent = oneOf(exp) *> integer.decimal32
                 if (compulsory) (exponent, exponent, base)
                 else (exponent, exponent <|> pure(0), base)
