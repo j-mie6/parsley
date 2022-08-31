@@ -56,13 +56,6 @@ case class NumericDesc (literalBreakChar: Option[Char],
     if (octalLeads.isEmpty) throw new IllegalArgumentException("The leading characters of octal literals must not be empty")
     if (binaryLeads.isEmpty) throw new IllegalArgumentException("The leading characters of binary literals must not be empty")
 
-    private [token] def leadsForRadix(x: Int): Set[Char] = (x: @unchecked) match {
-        case 10 => Set.empty
-        case 16 => hexadecimalLeads
-        case 8 => octalLeads
-        case 2 => binaryLeads
-    }
-
     private [token] def exponentDescForRadix(x: Int): ExponentDesc = (x: @unchecked) match {
         case 10 => decimalExponentDesc
         case 16 => hexadecimalExponentDesc
