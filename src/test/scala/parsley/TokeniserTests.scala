@@ -205,6 +205,9 @@ class TokeniserTests extends ParsleyTest {
         tokeniser.lexemes.text.charLiteral.parse("'\\&'") shouldBe a [Failure[_]]
         tokeniser_.lexemes.text.charLiteral.parse("'\\&'") shouldBe a [Failure[_]]
     }
+    /*it should be "able to handle unicode characters" in {
+
+    }*/
 
     "stringLiteral" should "parse valid haskell strings" in {
         tokeniser.lexemes.text.stringLiteral.parse(""""This string should have correct\t\xa whitespace properties!\8\^@."""") should be {
@@ -238,6 +241,14 @@ class TokeniserTests extends ParsleyTest {
         }
         (tokeniser_.lexemes.text.stringLiteral <~> col).parse(""""\49\&0"""") should be {
             Success(("10", 9))
+        }
+    }
+    it must "handle unicode characters in the literal properly" in {
+        tokeniser.lexemes.text.stringLiteral.parse("\"\\x1F642\"") should be {
+            Success("🙂")
+        }
+        tokeniser_.lexemes.text.stringLiteral.parse("\"\\x1F642\"") should be {
+            Success("🙂")
         }
     }
 

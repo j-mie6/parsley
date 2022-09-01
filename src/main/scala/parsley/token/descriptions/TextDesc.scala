@@ -12,15 +12,15 @@ private [token] // TODO: remove
 sealed abstract class CtrlEscape
 private [token] // TODO: remove
 object CtrlEscape {
-    case class Supported(prefix: Option[Char], mapping: Map[Char, Char]) extends CtrlEscape
+    case class Supported(prefix: Char, mapping: Map[Char, Int]) extends CtrlEscape
     case object Illegal extends CtrlEscape
 }
 
 private [parsley] // TODO: remove
 case class EscapeDesc (escBegin: Char,
                        literals: Set[Char],
-                       singleMap: Map[Char, Char],
-                       multiMap: Map[String, Char],
+                       singleMap: Map[Char, Int],
+                       multiMap: Map[String, Int],
                        decimalEscape: NumericEscape,
                        hexadecimalEscape: NumericEscape,
                        octalEscape: NumericEscape,
@@ -30,63 +30,63 @@ case class EscapeDesc (escBegin: Char,
                        ctrlEscape: CtrlEscape,
                       ) {
     // TODO: this needs to be a Radix, I think we'll need parsley.collection.immutable.Radix too
-    private [token] val escMap = multiMap ++ literals.map(c => s"c" -> c) ++ singleMap.map {
-        case (k, v) => s"k" -> v
+    private [token] val escMap = multiMap ++ literals.map(c => s"$c" -> c.toInt) ++ singleMap.map {
+        case (k, v) => s"$k" -> v
     }
 }
 private [token] // TODO: remove
 object EscapeDesc {
     val haskell = EscapeDesc(escBegin = '\\',
                              literals = Set('\'', '\"', '\\'),
-                             singleMap = Map('0' -> '\u0000',
-                                             'a' -> '\u0007',
-                                             'b' -> '\u0008',
-                                             'f' -> '\u000c',
-                                             'n' -> '\u000a',
-                                             'r' -> '\u000d',
-                                             't' -> '\u0009',
-                                             'v' -> '\u000b'),
-                             multiMap = Map("NUL" -> '\u0000',
-                                            "SOH" -> '\u0001',
-                                            "STX" -> '\u0002',
-                                            "ETX" -> '\u0003',
-                                            "EOT" -> '\u0004',
-                                            "ENQ" -> '\u0005',
-                                            "ACK" -> '\u0006',
-                                            "BEL" -> '\u0007',
-                                            "BS"  -> '\u0008',
-                                            "HT"  -> '\u0009',
-                                            "LF"  -> '\u000a',
-                                            "VT"  -> '\u000b',
-                                            "FF"  -> '\u000c',
-                                            "CR"  -> '\u000d',
-                                            "SO"  -> '\u000e',
-                                            "SI"  -> '\u000f',
-                                            "DLE" -> '\u0010',
-                                            "DC1" -> '\u0011',
-                                            "DC2" -> '\u0012',
-                                            "DC3" -> '\u0013',
-                                            "DC4" -> '\u0014',
-                                            "NAK" -> '\u0015',
-                                            "SYN" -> '\u0016',
-                                            "ETB" -> '\u0017',
-                                            "CAN" -> '\u0018',
-                                            "EM"  -> '\u0019',
-                                            "SUB" -> '\u001a',
-                                            "ESC" -> '\u001b',
-                                            "FS"  -> '\u001c',
-                                            "GS"  -> '\u001d',
-                                            "RS"  -> '\u001e',
-                                            "US"  -> '\u001f',
-                                            "SP"  -> '\u0020',
-                                            "DEL" -> '\u007f'),
+                             singleMap = Map('0' -> 0x0000,
+                                             'a' -> 0x0007,
+                                             'b' -> 0x0008,
+                                             'f' -> 0x000c,
+                                             'n' -> 0x000a,
+                                             'r' -> 0x000d,
+                                             't' -> 0x0009,
+                                             'v' -> 0x000b),
+                             multiMap = Map("NUL" -> 0x0000,
+                                            "SOH" -> 0x0001,
+                                            "STX" -> 0x0002,
+                                            "ETX" -> 0x0003,
+                                            "EOT" -> 0x0004,
+                                            "ENQ" -> 0x0005,
+                                            "ACK" -> 0x0006,
+                                            "BEL" -> 0x0007,
+                                            "BS"  -> 0x0008,
+                                            "HT"  -> 0x0009,
+                                            "LF"  -> 0x000a,
+                                            "VT"  -> 0x000b,
+                                            "FF"  -> 0x000c,
+                                            "CR"  -> 0x000d,
+                                            "SO"  -> 0x000e,
+                                            "SI"  -> 0x000f,
+                                            "DLE" -> 0x0010,
+                                            "DC1" -> 0x0011,
+                                            "DC2" -> 0x0012,
+                                            "DC3" -> 0x0013,
+                                            "DC4" -> 0x0014,
+                                            "NAK" -> 0x0015,
+                                            "SYN" -> 0x0016,
+                                            "ETB" -> 0x0017,
+                                            "CAN" -> 0x0018,
+                                            "EM"  -> 0x0019,
+                                            "SUB" -> 0x001a,
+                                            "ESC" -> 0x001b,
+                                            "FS"  -> 0x001c,
+                                            "GS"  -> 0x001d,
+                                            "RS"  -> 0x001e,
+                                            "US"  -> 0x001f,
+                                            "SP"  -> 0x0020,
+                                            "DEL" -> 0x007f),
                              decimalEscape = NumericEscape.Supported(prefix = None, maxValue = 0x10ffff),
                              hexadecimalEscape = NumericEscape.Supported(prefix = Some('x'), maxValue = 0x10ffff),
                              octalEscape = NumericEscape.Supported(prefix = Some('o'), maxValue = 0x10ffff),
                              binaryEscape = NumericEscape.Illegal,
                              emptyEscape = Some('&'),
                              gapsSupported = true,
-                             ctrlEscape = CtrlEscape.Supported(prefix = Some('^'), mapping = ('@' to '_').map(c => c -> (c - '@').toChar).toMap))
+                             ctrlEscape = CtrlEscape.Supported(prefix = '^', mapping = ('@' to '_').map(c => c -> (c - '@')).toMap))
 }
 
 private [token] // TODO: remove

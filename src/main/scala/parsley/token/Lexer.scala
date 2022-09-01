@@ -5,13 +5,16 @@ package parsley.token
 
 import scala.language.implicitConversions
 
-import parsley.Parsley, Parsley.{attempt, empty, notFollowedBy, pure, unit}
+import parsley.Parsley, Parsley.{attempt, empty, fresh, notFollowedBy, pure, unit}
 import parsley.character.{char, digit, hexDigit, octDigit, satisfy, string, stringOfMany, oneOf}
 import parsley.combinator.{between, many, sepBy, sepBy1, skipMany, skipSome}
 import parsley.errors.combinator.{amend, entrench, unexpected, ErrorMethods}
 import parsley.implicits.character.charLift
 import parsley.lift.{lift2, lift3}
 import parsley.token.numeric._
+import parsley.token.text._
+
+import parsley.XAssert._
 
 import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
 import parsley.internal.deepembedding.singletons
@@ -25,7 +28,7 @@ import scala.annotation.implicitNotFound
   * @param lang The rules that govern the language we are tokenising
   * @since 2.2.0
   */
-class Lexer private (lang: descriptions.LanguageDesc) {
+class Lexer private (lang: descriptions.LanguageDesc) { lexer =>
     def this(lang: LanguageDef) = this(lang.toDesc)
 
     // public API
@@ -124,27 +127,48 @@ class Lexer private (lang: descriptions.LanguageDesc) {
             // have to make that logic, and the parser can do less work to achieve that overall. But it is an
             // odd special case to have. I guess we could easily do it by composing a char reader into a string reader
             // a raw char does not do escapes.
-            private def letter(terminal: Char): Parsley[Char] = satisfy(c => c != terminal && c != '\\' && c > '\u0016')
+            // NEW API
+            private val escapes = new Escape(lang.textDesc.escapeChars, lexer.nonlexemes.numeric.natural)
 
-            private lazy val escapeCode = new Parsley(singletons.Escape)
-            private lazy val charEscape = '\\' *> escapeCode
+            private def letter(terminal: Char): Parsley[Char] = satisfy(c => c != terminal && c != '\\' && c > '\u0016') // 0x16 is arbitrary, configure
             private lazy val charLetter = letter('\'')
-            private lazy val characterChar = (charLetter <|> charEscape).label("literal character")
 
-            private val escapeEmpty = '&'
+            // the new way of handling characters is to treat them as integer code points unless otherwise specified
+            private val charLitUni = {
+                assume(!'\''.isLowSurrogate, "quotes are not low surrogates")
+                '\'' *> ((escapes.escapeChar <* '\'') <|> (charLetter <~> (charLetter <* '\'' <|> '\'')).collect {
+                    case (c, '\'') => c.toInt
+                    case (high, low) if Character.isSurrogatePair(high, low) => Character.toCodePoint(high, low)
+                })
+            }
+
+            def nonSurrogate(p: Parsley[Int]): Parsley[Char] = {
+                p.collectMsg("non BMP character") {
+                    case n if Character.isBmpCodePoint(n) => n.toChar
+                }
+            }
+
+            // OLD API
+            private val escapeEmpty = lang.textDesc.escapeChars.emptyEscape.fold[Parsley[Char]](empty)(char)
             private lazy val escapeGap = skipSome(space.label("string gap")) *> '\\'.label("end of string gap")
             private lazy val stringLetter = letter('"')
-            private lazy val stringEscape: Parsley[Option[Char]] = {
+            private lazy val stringEscape: Parsley[Option[Int]] = {
                 '\\' *> (escapeGap #> None
                      <|> escapeEmpty #> None
-                     <|> (escapeCode.map(Some(_))).explain("invalid escape sequence"))
+                     <|> (escapes.escapeCode.map(Some(_))).explain("invalid escape sequence"))
             }
-            private lazy val stringChar: Parsley[Option[Char]] = ((stringLetter.map(Some(_))) <|> stringEscape).label("string character")
+            private lazy val stringChar: Parsley[Option[Int]] = ((stringLetter.map(c => Some(c.toInt))) <|> stringEscape).label("string character")
 
-            lazy val charLiteral: Parsley[Char] = between('\''.label("character"), '\''.label("end of character"), characterChar)
+            lazy val charLiteral: Parsley[Char] = nonSurrogate(charLitUni)
             lazy val stringLiteral: Parsley[String] = lang.whitespaceDesc.space match {
-                case Static(ws) => new Parsley(new singletons.StringLiteral(ws))
-                case _ => between('"'.label("string"), '"'.label("end of string"), many(stringChar)).map(_.flatten.mkString)
+                //case Static(ws) => new Parsley(new singletons.StringLiteral(ws))
+                case _ =>
+                    val pf = pure[(StringBuilder, Option[Int]) => StringBuilder] { (sb, cpo) =>
+                        for (cp <- cpo) sb ++= Character.toChars(cp)
+                        sb
+                    }
+                    val content = parsley.expr.infix.secretLeft1(fresh(new StringBuilder), stringChar, pf).map(_.toString)
+                    between('"'.label("string"), '"'.label("end of string"), content)
             }
             lazy val rawStringLiteral: Parsley[String] = new Parsley(singletons.RawStringLiteral)
         }
