@@ -57,7 +57,9 @@ class Lexer private (lang: descriptions.LanguageDesc) { lexer =>
         }
 
         object text {
-            lazy val charLiteral: Parsley[Char] = lexeme(nonlexemes.text.charLiteral)
+            val character: parsley.token.text.Character = new LexemeCharacter(nonlexemes.text.character, whiteSpace)
+
+            lazy val charLiteral: Parsley[Char] = character.basicMultilingualPlane
             lazy val stringLiteral: Parsley[String] = lexeme(nonlexemes.text.stringLiteral)
             lazy val rawStringLiteral: Parsley[String] = lexeme(nonlexemes.text.rawStringLiteral)
         }
@@ -130,17 +132,10 @@ class Lexer private (lang: descriptions.LanguageDesc) { lexer =>
             // NEW API
             private val escapes = new Escape(lang.textDesc.escapeChars, lexer.nonlexemes.numeric.natural)
 
-            private def letter(terminal: Char): Parsley[Char] = satisfy(c => c != terminal && c != '\\' && c > '\u0016') // 0x16 is arbitrary, configure
-            private lazy val charLetter = letter('\'')
+            val character: parsley.token.text.Character = new ConcreteCharacter(lang.textDesc, escapes)
 
-            // the new way of handling characters is to treat them as integer code points unless otherwise specified
-            private val charLitUni = {
-                assume(!'\''.isLowSurrogate, "quotes are not low surrogates")
-                '\'' *> ((escapes.escapeChar <* '\'') <|> (charLetter <~> (charLetter <* '\'' <|> '\'')).collect {
-                    case (c, '\'') => c.toInt
-                    case (high, low) if Character.isSurrogatePair(high, low) => Character.toCodePoint(high, low)
-                })
-            }
+            // OLD API
+            private def letter(terminal: Char): Parsley[Char] = satisfy(c => c != terminal && c != '\\' && c > '\u0016') // 0x16 is arbitrary, configure
 
             def nonSurrogate(p: Parsley[Int]): Parsley[Char] = {
                 p.collectMsg("non BMP character") {
@@ -148,18 +143,20 @@ class Lexer private (lang: descriptions.LanguageDesc) { lexer =>
                 }
             }
 
-            // OLD API
             private val escapeEmpty = lang.textDesc.escapeChars.emptyEscape.fold[Parsley[Char]](empty)(char)
-            private lazy val escapeGap = skipSome(space.label("string gap")) *> '\\'.label("end of string gap")
+            private lazy val escapeGap = {
+                if (lang.textDesc.escapeChars.gapsSupported) skipSome(space.label("string gap")) *> '\\'.label("end of string gap")
+                else empty
+            }
             private lazy val stringLetter = letter('"')
             private lazy val stringEscape: Parsley[Option[Int]] = {
                 '\\' *> (escapeGap #> None
                      <|> escapeEmpty #> None
-                     <|> (escapes.escapeCode.map(Some(_))).explain("invalid escape sequence"))
+                     <|> escapes.escapeCode.map(Some(_)).explain("invalid escape sequence"))
             }
             private lazy val stringChar: Parsley[Option[Int]] = ((stringLetter.map(c => Some(c.toInt))) <|> stringEscape).label("string character")
 
-            lazy val charLiteral: Parsley[Char] = nonSurrogate(charLitUni)
+            lazy val charLiteral: Parsley[Char] = character.basicMultilingualPlane
             lazy val stringLiteral: Parsley[String] = lang.whitespaceDesc.space match {
                 //case Static(ws) => new Parsley(new singletons.StringLiteral(ws))
                 case _ =>
