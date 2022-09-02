@@ -10,8 +10,7 @@ import parsley.implicits.character.charLift
 import parsley.token.descriptions.TextDesc
 
 private [token] final class ConcreteCharacter(desc: TextDesc, escapes: Escape) extends Character {
-    private def letter(terminal: Char): Parsley[Char] = satisfy(c => c != terminal && c != '\\' && c > '\u0016') // 0x16 is arbitrary, configure
-    private lazy val charLetter = letter('\'')
+    private lazy val charLetter = Character.letter('\'', desc.escapeChars.escBegin, allowsAllSpace = false, desc.graphicCharacter)
 
     override lazy val unicode: Parsley[Int] = {
         assume(!'\''.isLowSurrogate, "quotes are not low surrogates")

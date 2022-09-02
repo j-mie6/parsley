@@ -4,6 +4,7 @@
 package parsley.token.text
 
 import parsley.Parsley
+import parsley.character.satisfy
 
 abstract class Character private[token] {
     def unicode: Parsley[Int]
@@ -15,6 +16,16 @@ abstract class Character private[token] {
 private [text] object Character {
     final val MaxAscii: Int = 0x7f
     final val MaxExtendedAscii: Int = 0xff
+
+    def letter(terminal: Char, allowsAllSpace: Boolean, isGraphic: Char => Boolean): Parsley[Char] = satisfy {
+        if (allowsAllSpace) c => c != terminal && (isGraphic(c) || parsley.character.isWhitespace(c))
+        else                c => c != terminal && isGraphic(c)
+    }
+
+    def letter(terminal: Char, escapeLead: Char, allowsAllSpace: Boolean, isGraphic: Char => Boolean): Parsley[Char] = satisfy {
+        if (allowsAllSpace) c => c != terminal && c != escapeLead && (isGraphic(c) || parsley.character.isWhitespace(c))
+        else                c => c != terminal && c != escapeLead && isGraphic(c)
+    }
 
     @inline def isSurrogatePair(high: Char, low: Char): Boolean = java.lang.Character.isSurrogatePair(high, low)
     @inline def isBmpCodePoint(codepoint: Int): Boolean = java.lang.Character.isBmpCodePoint(codepoint)

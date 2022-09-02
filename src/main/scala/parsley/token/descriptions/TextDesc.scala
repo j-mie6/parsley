@@ -91,10 +91,13 @@ object EscapeDesc {
 
 private [token] // TODO: remove
 case class TextDesc (escapeChars: EscapeDesc,
-                     literalEnds: Set[Char]) {
+                     literalEnds: Set[Char],
+                     graphicCharacter: Char => Boolean) {
 }
 
 private [token]
 object TextDesc {
-    val plain = TextDesc(escapeChars = EscapeDesc.haskell, literalEnds = Set('"'))
+    val plain = TextDesc(escapeChars = EscapeDesc.haskell,
+                         literalEnds = Set('"'),
+                         graphicCharacter = _ >= ' ')
 }

@@ -121,7 +121,7 @@ class Lexer private (lang: descriptions.LanguageDesc) { lexer =>
             private val escapes = new Escape(lang.textDesc.escapeChars)
 
             val character: parsley.token.text.Character = new ConcreteCharacter(lang.textDesc, escapes)
-            val string: parsley.token.text.String = new ConcreteString(lang.textDesc, escapes, space)
+            val string: parsley.token.text.String = new ConcreteString(lang.textDesc, new EscapableCharacter(lang.textDesc, escapes, space))
             val rawString: parsley.token.text.String = new RawString(lang.textDesc)
         }
     }
