@@ -6,6 +6,7 @@ package parsley.token.text
 import scala.Predef.{String => ScalaString, _}
 
 import parsley.Parsley
+import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 
 abstract class String private[token] {
     def unicode: Parsley[ScalaString]
@@ -17,4 +18,16 @@ private [text] object String {
     private def allCharsWithin(str: ScalaString, bound: Int) = str.codePoints().allMatch(_ <= bound)
     def isAscii(str: ScalaString): Boolean = allCharsWithin(str, Character.MaxAscii)
     def isExtendedAscii(str: ScalaString): Boolean = allCharsWithin(str, Character.MaxExtendedAscii)
+
+    def ensureAscii(p: Parsley[ScalaString]): Parsley[ScalaString] = amend {
+        entrench(p).guardAgainst {
+            case str if !isAscii(str) => Seq("non-ascii characters in string literal, this is not allowed")
+       }
+    }
+
+    def ensureExtendedAscii(p: Parsley[ScalaString]): Parsley[ScalaString] = amend {
+        entrench(p).guardAgainst {
+            case str if !isExtendedAscii(str) => Seq("non-extended-ascii characters in string literal, this is not allowed")
+       }
+    }
 }

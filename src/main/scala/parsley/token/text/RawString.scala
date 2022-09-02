@@ -16,14 +16,6 @@ import parsley.internal.deepembedding.singletons
 
 private [token] final class RawString(desc: TextDesc) extends String {
     override lazy val unicode: Parsley[ScalaString] = new Parsley(singletons.RawStringLiteral)
-    override lazy val ascii: Parsley[ScalaString] = amend {
-        entrench(unicode).guardAgainst {
-            case str if !String.isAscii(str) => Seq("non-ascii characters in string literal, this is not allowed")
-       }
-    }
-    override lazy val extendedAscii: Parsley[ScalaString] = amend {
-        entrench(unicode).guardAgainst {
-            case str if !String.isExtendedAscii(str) => Seq("non-extended-ascii characters in string literal, this is not allowed")
-       }
-    }
+    override lazy val ascii: Parsley[ScalaString] = String.ensureAscii(unicode)
+    override lazy val extendedAscii: Parsley[ScalaString] = String.ensureExtendedAscii(unicode)
 }

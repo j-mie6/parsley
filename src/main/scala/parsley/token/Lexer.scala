@@ -118,16 +118,6 @@ class Lexer private (lang: descriptions.LanguageDesc) { lexer =>
         }
 
         object text {
-            // we want 4 kinds of thing here:
-            //  character literals
-            //  string literals
-            //  multi-line string literals
-            //  raw string literals (and multi-line-raw too?)
-            // but I'm not sure about the last one, it is in some sense useful because the user would otherwise
-            // have to make that logic, and the parser can do less work to achieve that overall. But it is an
-            // odd special case to have. I guess we could easily do it by composing a char reader into a string reader
-            // a raw char does not do escapes.
-            // NEW API
             private val escapes = new Escape(lang.textDesc.escapeChars)
 
             val character: parsley.token.text.Character = new ConcreteCharacter(lang.textDesc, escapes)
@@ -140,9 +130,9 @@ class Lexer private (lang: descriptions.LanguageDesc) { lexer =>
     // perhaps we make an interface for this?
     object implicits /*extends something?*/ {
         implicit def implicitLexeme(s: String): Parsley[Unit] = {
-            if (lang.identDesc.keywords(s))       lexemes.keyword(s)
-            else if (lang.operators(s))           lexemes.maxOp(s)
-            else                                  lexemes.symbol_(s).void
+            if (lang.identDesc.keywords(s)) lexemes.keyword(s)
+            else if (lang.operators(s))     lexemes.maxOp(s)
+            else                            lexemes.symbol_(s).void
         }
     }
 
@@ -411,24 +401,15 @@ class Lexer private (lang: descriptions.LanguageDesc) { lexer =>
         if (lang.identDesc.caseSensitive) string(name)
         else name.foldLeft(pure(name))((p, c) => p <* caseChar(c)).label(name)
     }
-    private lazy val identStart = toParser(lang.identDesc.identStart)
-    private lazy val identLetter = toParser(lang.identDesc.identLetter)
+    private lazy val identStart = lang.identDesc.identStart.toParser
+    private lazy val identLetter = lang.identDesc.identLetter.toParser
     private lazy val ident = lift2((c: Char, cs: String) => s"$c$cs", identStart, stringOfMany(identLetter))
 
     // Operators & Reserved ops
-    private lazy val opStart = toParser(lang.opStart)
-    private lazy val opLetter = toParser(lang.opLetter)
+    private lazy val opStart = lang.opStart.toParser
+    private lazy val opLetter = lang.opLetter.toParser
     private lazy val oper = lift2((c: Char, cs: String) => s"$c$cs", opStart, stringOfMany(opLetter))
 
     // White space & symbols
-    private lazy val space = toParser(lang.whitespaceDesc.space)
-
-    private def toParser(e: Impl) = e match {
-        case NotRequired => empty
-        case Static(f)   => satisfy(f)
-        case Parser(p)   => p.asInstanceOf[Parsley[Char]]
-        // $COVERAGE-OFF$
-        case _ => ??? // scalastyle:ignore not.implemented.error.usage
-        // $COVERAGE-ON$
-    }
+    private lazy val space = lang.whitespaceDesc.space.toParser
 }

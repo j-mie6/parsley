@@ -21,16 +21,8 @@ private [token] final class ConcreteString(desc: TextDesc, escapes: Escape, spac
         val content = parsley.expr.infix.secretLeft1(fresh(new StringBuilder), stringChar, pf).map(_.toString)
         between('"'.label("string"), '"'.label("end of string"), content)
     }
-    override lazy val ascii: Parsley[ScalaString] = amend {
-        entrench(unicode).guardAgainst {
-            case str if !String.isAscii(str) => Seq("non-ascii characters in string literal, this is not allowed")
-       }
-    }
-    override lazy val extendedAscii: Parsley[ScalaString] = amend {
-        entrench(unicode).guardAgainst {
-            case str if !String.isExtendedAscii(str) => Seq("non-extended-ascii characters in string literal, this is not allowed")
-       }
-    }
+    override lazy val ascii: Parsley[ScalaString] = String.ensureAscii(unicode)
+    override lazy val extendedAscii: Parsley[ScalaString] = String.ensureExtendedAscii(unicode)
 
     private def letter(terminal: Char): Parsley[Char] = satisfy(c => c != terminal && c != '\\' && c > '\u0016') // 0x16 is arbitrary, configure
 
@@ -42,8 +34,8 @@ private [token] final class ConcreteString(desc: TextDesc, escapes: Escape, spac
     private lazy val stringLetter = letter('"')
     private lazy val stringEscape: Parsley[Option[Int]] = {
         '\\' *> (escapeGap #> None
-                <|> escapeEmpty #> None
-                <|> escapes.escapeCode.map(Some(_)).explain("invalid escape sequence"))
+             <|> escapeEmpty #> None
+             <|> escapes.escapeCode.map(Some(_)).explain("invalid escape sequence"))
     }
     private lazy val stringChar: Parsley[Option[Int]] = ((stringLetter.map(c => Some(c.toInt))) <|> stringEscape).label("string character")
 }
