@@ -10,12 +10,13 @@ import parsley.implicits.character.charLift
 import parsley.token.descriptions.TextDesc
 
 private [token] final class ConcreteCharacter(desc: TextDesc, escapes: Escape) extends Character {
-    private lazy val charLetter = Character.letter('\'', desc.escapeChars.escBegin, allowsAllSpace = false, desc.graphicCharacter)
+    private val quote = desc.characterLiteralEnd
+    private lazy val charLetter = Character.letter(quote, desc.escapeChars.escBegin, allowsAllSpace = false, desc.graphicCharacter)
 
     override lazy val unicode: Parsley[Int] = {
-        assume(!'\''.isLowSurrogate, "quotes are not low surrogates")
-        '\'' *> ((escapes.escapeChar <* '\'') <|> (charLetter <~> (charLetter <* '\'' <|> '\'')).collect {
-            case (c, '\'') => c.toInt
+        assume(!quote.isLowSurrogate, "quotes are not low surrogates")
+        quote *> ((escapes.escapeChar <* quote) <|> (charLetter <~> (charLetter <* quote <|> quote)).collect {
+            case (c, `quote`) => c.toInt
             case (high, low) if Character.isSurrogatePair(high, low) => Character.toCodePoint(high, low)
         })
     }

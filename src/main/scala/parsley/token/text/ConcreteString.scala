@@ -5,16 +5,15 @@ package parsley.token.text
 
 import scala.Predef.{String => ScalaString, _}
 
-import parsley.Parsley, Parsley.{empty, fresh, pure}
-import parsley.character.{satisfy, char}
-import parsley.combinator.{between, skipSome}
+import parsley.Parsley, Parsley.{fresh, pure}
+import parsley.combinator.between
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 import parsley.implicits.character.charLift
 import parsley.token.descriptions.TextDesc
 
 private [token] final class ConcreteString(desc: TextDesc, stringChar: StringCharacter) extends String {
     override lazy val unicode: Parsley[ScalaString] = {
-        val pf = pure[(StringBuilder, Option[Int]) => StringBuilder] { (sb, cpo) =>
+        val pf = pure { (sb: StringBuilder, cpo: Option[Int]) =>
             for (cp <- cpo) sb ++= Character.toChars(cp)
             sb
         }

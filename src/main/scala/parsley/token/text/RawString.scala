@@ -5,9 +5,8 @@ package parsley.token.text
 
 import scala.Predef.{String => ScalaString, _}
 
-import parsley.Parsley, Parsley.{empty, fresh, pure}
-import parsley.character.{satisfy, char}
-import parsley.combinator.{between, skipSome}
+import parsley.Parsley, Parsley.{fresh, pure}
+import parsley.combinator.between
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 import parsley.implicits.character.charLift
 import parsley.token.descriptions.TextDesc
