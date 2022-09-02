@@ -34,16 +34,16 @@ private [token] final class ConcreteString(desc: TextDesc, escapes: Escape, spac
 
     private def letter(terminal: Char): Parsley[Char] = satisfy(c => c != terminal && c != '\\' && c > '\u0016') // 0x16 is arbitrary, configure
 
-        private val escapeEmpty = desc.escapeChars.emptyEscape.fold[Parsley[Char]](empty)(char)
-        private lazy val escapeGap = {
-            if (desc.escapeChars.gapsSupported) skipSome(space.label("string gap")) *> '\\'.label("end of string gap")
-            else empty
-        }
-        private lazy val stringLetter = letter('"')
-        private lazy val stringEscape: Parsley[Option[Int]] = {
-            '\\' *> (escapeGap #> None
-                    <|> escapeEmpty #> None
-                    <|> escapes.escapeCode.map(Some(_)).explain("invalid escape sequence"))
-        }
-        private lazy val stringChar: Parsley[Option[Int]] = ((stringLetter.map(c => Some(c.toInt))) <|> stringEscape).label("string character")
+    private val escapeEmpty = desc.escapeChars.emptyEscape.fold[Parsley[Char]](empty)(char)
+    private lazy val escapeGap = {
+        if (desc.escapeChars.gapsSupported) skipSome(space.label("string gap")) *> '\\'.label("end of string gap")
+        else empty
+    }
+    private lazy val stringLetter = letter('"')
+    private lazy val stringEscape: Parsley[Option[Int]] = {
+        '\\' *> (escapeGap #> None
+                <|> escapeEmpty #> None
+                <|> escapes.escapeCode.map(Some(_)).explain("invalid escape sequence"))
+    }
+    private lazy val stringChar: Parsley[Option[Int]] = ((stringLetter.map(c => Some(c.toInt))) <|> stringEscape).label("string character")
 }
