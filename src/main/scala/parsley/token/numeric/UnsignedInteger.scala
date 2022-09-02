@@ -8,7 +8,6 @@ import parsley.character.{digit, hexDigit, octDigit, oneOf}
 import parsley.combinator.choice
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 import parsley.implicits.character.charLift
-import parsley.token.{Bits, CanHold}
 import parsley.token.descriptions.NumericDesc
 
 private [token] final class UnsignedInteger(desc: NumericDesc) extends Integer(desc) {

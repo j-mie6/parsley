@@ -10,15 +10,17 @@ import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 import parsley.token.descriptions.{CtrlEscape, EscapeDesc, NumericEscape}
 import parsley.token.numeric
 
-class Escape private[token] (desc: EscapeDesc) {
+private [token] class Escape(desc: EscapeDesc) {
     // NOTE: `strings`, while nice, is not perfect as it doesn't leverage a trie-based folding
     //       on the possibilities. We'll want trie-based folding here, or at least a specialised
     //       instruction that has the trie lookup logic baked in.
-    val (x::xs) = desc.escMap.view.map {
-        case (e, c) => e -> pure(c)
-    }.toList
     // We do need to backtrack out of this if things go wrong, it's possible another escape sequence might share a lead
-    private val escMapped = attempt(strings(x, xs: _*))
+    private val escMapped = {
+        val (x::xs) = desc.escMap.view.map {
+            case (e, c) => e -> pure(c)
+        }.toList
+        attempt(strings(x, xs: _*))
+    }
     private val ctrlEscape = desc.ctrlEscape match {
         case CtrlEscape.Illegal => empty
         case CtrlEscape.Supported(prefix, mapping) => char(prefix) *> choice(mapping.view.map {

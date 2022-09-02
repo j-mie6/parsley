@@ -4,7 +4,6 @@
 package parsley.token.numeric
 
 import parsley.Parsley
-import parsley.token.{Bits, CanHold}
 
 private [token] final class LexemeCombined(combined: Combined, ws: Parsley[_]) extends Combined {
     override lazy val decimal: Parsley[Either[BigInt,BigDecimal]] = lexeme(combined.decimal)

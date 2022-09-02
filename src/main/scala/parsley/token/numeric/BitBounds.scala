@@ -1,42 +1,42 @@
-package parsley.token
+package parsley.token.numeric
 
 import scala.annotation.implicitNotFound
 
-private [token] sealed abstract class Bits {
-    private [token] type self <: Bits
-    private [token] def upperSigned: BigInt
-    private [token] def lowerSigned: BigInt
-    private [token] def upperUnsigned: BigInt
+private [numeric] sealed abstract class Bits {
+    private [numeric] type self <: Bits
+    private [numeric] def upperSigned: BigInt
+    private [numeric] def lowerSigned: BigInt
+    private [numeric] def upperUnsigned: BigInt
 }
-private [token] object _8 extends Bits {
-    private [token] type self = _8.type
-    private [token] val upperSigned = Byte.MaxValue
-    private [token] val lowerSigned = Byte.MinValue
-    private [token] val upperUnsigned = 0xff
+private [numeric] object _8 extends Bits {
+    private [numeric] type self = _8.type
+    private [numeric] val upperSigned = Byte.MaxValue
+    private [numeric] val lowerSigned = Byte.MinValue
+    private [numeric] val upperUnsigned = 0xff
 }
-private [token] object _16 extends Bits {
-    private [token] type self = _16.type
-    private [token] val upperSigned = Short.MaxValue
-    private [token] val lowerSigned = Short.MaxValue
-    private [token] val upperUnsigned = 0xffff
+private [numeric] object _16 extends Bits {
+    private [numeric] type self = _16.type
+    private [numeric] val upperSigned = Short.MaxValue
+    private [numeric] val lowerSigned = Short.MaxValue
+    private [numeric] val upperUnsigned = 0xffff
 }
-private [token] object _32 extends Bits {
-    private [token] type self = _32.type
-    private [token] val upperSigned = Int.MaxValue
-    private [token] val lowerSigned = Int.MinValue
-    private [token] val upperUnsigned = 0xffffffffL
+private [numeric] object _32 extends Bits {
+    private [numeric] type self = _32.type
+    private [numeric] val upperSigned = Int.MaxValue
+    private [numeric] val lowerSigned = Int.MinValue
+    private [numeric] val upperUnsigned = 0xffffffffL
 }
-private [token] object _64 extends Bits {
-    private [token] type self = _64.type
-    private [token] val upperSigned = Long.MaxValue
-    private [token] val lowerSigned = Long.MinValue
-    private [token] val upperUnsigned = BigInt("ffffffffffffffff", 16)
+private [numeric] object _64 extends Bits {
+    private [numeric] type self = _64.type
+    private [numeric] val upperSigned = Long.MaxValue
+    private [numeric] val lowerSigned = Long.MinValue
+    private [numeric] val upperUnsigned = BigInt("ffffffffffffffff", 16)
 }
 
-sealed abstract class CanHold[N <: Bits, T] private[token] {
-    def fromBigInt(x: BigInt): T
+sealed abstract class CanHold[N <: Bits, T] private[numeric] {
+    private [numeric] def fromBigInt(x: BigInt): T
 }
-abstract class LowPriorityImplicits {
+abstract class LowPriorityImplicits private[numeric] {
     import CanHold.can_hold_64_bits
     // this being here means that Scala will look for it last, which allows default to Long for 64-bit
     implicit val big_64: can_hold_64_bits[BigInt] = new CanHold[_64.type, BigInt] {

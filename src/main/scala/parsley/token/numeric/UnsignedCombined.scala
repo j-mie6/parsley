@@ -9,7 +9,6 @@ import parsley.combinator.{choice, option}
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 import parsley.implicits.character.charLift
 import parsley.implicits.zipped.{Zipped2, Zipped3}
-import parsley.token.{Bits, CanHold}
 import parsley.token.descriptions.NumericDesc
 
 private [token] final class UnsignedCombined(desc: NumericDesc, integer: Integer, rational: Real) extends Combined {

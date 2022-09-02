@@ -4,7 +4,6 @@
 package parsley.token.text
 
 import parsley.Parsley
-import parsley.token.{Bits, CanHold}
 
 private [token] final class LexemeCharacter(character: Character, ws: Parsley[_]) extends Character {
     override lazy val unicode: Parsley[Int] = lexeme(character.unicode)
