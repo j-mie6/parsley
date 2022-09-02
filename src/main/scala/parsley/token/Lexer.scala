@@ -12,7 +12,7 @@ import parsley.errors.combinator.{amend, entrench, unexpected, ErrorMethods}
 import parsley.implicits.character.charLift
 import parsley.lift.{lift2, lift3}
 import parsley.token.numeric._
-import parsley.token.text._
+import parsley.token.text.{String => _, _}
 
 import parsley.XAssert._
 
@@ -58,10 +58,8 @@ class Lexer private (lang: descriptions.LanguageDesc) { lexer =>
 
         object text {
             val character: parsley.token.text.Character = new LexemeCharacter(nonlexemes.text.character, whiteSpace)
-
-            lazy val charLiteral: Parsley[Char] = character.basicMultilingualPlane
-            lazy val stringLiteral: Parsley[String] = lexeme(nonlexemes.text.stringLiteral)
-            lazy val rawStringLiteral: Parsley[String] = lexeme(nonlexemes.text.rawStringLiteral)
+            val string: parsley.token.text.String = new LexemeString(nonlexemes.text.string, whiteSpace)
+            val rawString: parsley.token.text.String = new LexemeString(nonlexemes.text.rawString, whiteSpace)
         }
 
         def symbol(name: String): Parsley[String] = lexeme(string(name))
@@ -133,41 +131,8 @@ class Lexer private (lang: descriptions.LanguageDesc) { lexer =>
             private val escapes = new Escape(lang.textDesc.escapeChars)
 
             val character: parsley.token.text.Character = new ConcreteCharacter(lang.textDesc, escapes)
-
-            // OLD API
-            private def letter(terminal: Char): Parsley[Char] = satisfy(c => c != terminal && c != '\\' && c > '\u0016') // 0x16 is arbitrary, configure
-
-            def nonSurrogate(p: Parsley[Int]): Parsley[Char] = {
-                p.collectMsg("non BMP character") {
-                    case n if Character.isBmpCodePoint(n) => n.toChar
-                }
-            }
-
-            private val escapeEmpty = lang.textDesc.escapeChars.emptyEscape.fold[Parsley[Char]](empty)(char)
-            private lazy val escapeGap = {
-                if (lang.textDesc.escapeChars.gapsSupported) skipSome(space.label("string gap")) *> '\\'.label("end of string gap")
-                else empty
-            }
-            private lazy val stringLetter = letter('"')
-            private lazy val stringEscape: Parsley[Option[Int]] = {
-                '\\' *> (escapeGap #> None
-                     <|> escapeEmpty #> None
-                     <|> escapes.escapeCode.map(Some(_)).explain("invalid escape sequence"))
-            }
-            private lazy val stringChar: Parsley[Option[Int]] = ((stringLetter.map(c => Some(c.toInt))) <|> stringEscape).label("string character")
-
-            lazy val charLiteral: Parsley[Char] = character.basicMultilingualPlane
-            lazy val stringLiteral: Parsley[String] = lang.whitespaceDesc.space match {
-                //case Static(ws) => new Parsley(new singletons.StringLiteral(ws))
-                case _ =>
-                    val pf = pure[(StringBuilder, Option[Int]) => StringBuilder] { (sb, cpo) =>
-                        for (cp <- cpo) sb ++= Character.toChars(cp)
-                        sb
-                    }
-                    val content = parsley.expr.infix.secretLeft1(fresh(new StringBuilder), stringChar, pf).map(_.toString)
-                    between('"'.label("string"), '"'.label("end of string"), content)
-            }
-            lazy val rawStringLiteral: Parsley[String] = new Parsley(singletons.RawStringLiteral)
+            val string: parsley.token.text.String = new ConcreteString(lang.textDesc, escapes, space)
+            val rawString: parsley.token.text.String = new RawString(lang.textDesc)
         }
     }
 
@@ -282,27 +247,27 @@ class Lexer private (lang: descriptions.LanguageDesc) { lexer =>
      * to the grammar rules defined in the Haskell report (which matches most programming languages
      * quite closely).*/
     @deprecated
-    def charLiteral: Parsley[Char] = lexemes.text.charLiteral
+    def charLiteral: Parsley[Char] = lexemes.text.character.basicMultilingualPlane
 
     /**This lexeme parser parses a literal string. Returns the literal string value. This parser
      * deals correctly with escape sequences and gaps. The literal string is parsed according to
      * the grammar rules defined in the Haskell report (which matches most programming languages
      * quite closely).*/
     @deprecated
-    def stringLiteral: Parsley[String] = lexemes.text.stringLiteral
+    def stringLiteral: Parsley[String] = lexemes.text.string.unicode
 
     /**This non-lexeme parser parses a literal string. Returns the literal string value. This parser
      * deals correctly with escape sequences and gaps. The literal string is parsed according to
      * the grammar rules defined in the Haskell report (which matches most programming languages
      * quite closely).*/
     @deprecated
-    def stringLiteral_ : Parsley[String] = nonlexemes.text.stringLiteral
+    def stringLiteral_ : Parsley[String] = nonlexemes.text.string.unicode
 
     /**This non-lexeme parser parses a string in a raw fashion. The escape characters in the string
      * remain untouched. While escaped quotes do not end the string, they remain as \" in the result
      * instead of becoming a quote character. Does not support string gaps. */
     @deprecated
-    def rawStringLiteral: Parsley[String] = nonlexemes.text.rawStringLiteral
+    def rawStringLiteral: Parsley[String] = nonlexemes.text.rawString.unicode
 
     /**This lexeme parser parses a natural number (a positive whole number). Returns the value of
      * the number. The number can specified in `decimal`, `hexadecimal` or `octal`. The number is

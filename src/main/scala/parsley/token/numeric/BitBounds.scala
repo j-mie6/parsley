@@ -33,7 +33,7 @@ private [numeric] object _64 extends Bits {
     private [numeric] val upperUnsigned = BigInt("ffffffffffffffff", 16)
 }
 
-sealed abstract class CanHold[N <: Bits, T] private[numeric] {
+private [numeric] sealed abstract class CanHold[N <: Bits, T] {
     private [numeric] def fromBigInt(x: BigInt): T
 }
 abstract class LowPriorityImplicits private[numeric] {

@@ -26,10 +26,10 @@ private [token] final class ConcreteCharacter(desc: TextDesc, escapes: Escape) e
     }
 
     override lazy val ascii: Parsley[Char] = unicode.collectMsg("non-ascii character") {
-            case n if n <= 0x7f => n.toChar
+            case n if n <= Character.MaxAscii => n.toChar
     }
 
     override lazy val extendedAscii: Parsley[Char] = unicode.collectMsg("non-ascii character (extended)") {
-            case n if n <= 0xff => n.toChar
+            case n if n <= Character.MaxExtendedAscii => n.toChar
     }
 }

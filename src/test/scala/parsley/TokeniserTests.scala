@@ -186,80 +186,80 @@ class TokeniserTests extends ParsleyTest {
     }
 
     "charLiteral" should "parse valid haskell characters" in {
-        tokeniser.lexemes.text.charLiteral.parse("'a'") should be (Success('a'))
-        tokeniser.lexemes.text.charLiteral.parse("'\\n'") should be (Success('\n'))
-        tokeniser.lexemes.text.charLiteral.parse("'\\xa'") should be (Success('\n'))
-        tokeniser.lexemes.text.charLiteral.parse("'\\^J'") should be (Success('\n'))
+        tokeniser.lexemes.text.character.basicMultilingualPlane.parse("'a'") should be (Success('a'))
+        tokeniser.lexemes.text.character.basicMultilingualPlane.parse("'\\n'") should be (Success('\n'))
+        tokeniser.lexemes.text.character.basicMultilingualPlane.parse("'\\xa'") should be (Success('\n'))
+        tokeniser.lexemes.text.character.basicMultilingualPlane.parse("'\\^J'") should be (Success('\n'))
     }
     it must "be the same regardless of the intrinsic" in {
-        tokeniser_.lexemes.text.charLiteral.parse("'a'") should be (Success('a'))
-        tokeniser_.lexemes.text.charLiteral.parse("'\\n'") should be (Success('\n'))
-        tokeniser_.lexemes.text.charLiteral.parse("'\\xa'") should be (Success('\n'))
-        tokeniser_.lexemes.text.charLiteral.parse("'\\^J'") should be (Success('\n'))
+        tokeniser_.lexemes.text.character.basicMultilingualPlane.parse("'a'") should be (Success('a'))
+        tokeniser_.lexemes.text.character.basicMultilingualPlane.parse("'\\n'") should be (Success('\n'))
+        tokeniser_.lexemes.text.character.basicMultilingualPlane.parse("'\\xa'") should be (Success('\n'))
+        tokeniser_.lexemes.text.character.basicMultilingualPlane.parse("'\\^J'") should be (Success('\n'))
     }
     it must "fail gracefully if there is no closing quote" in {
-        tokeniser_.lexemes.text.charLiteral.parse("\'") shouldBe a [Failure[_]]
-        tokeniser_.lexemes.text.charLiteral.parse("\'\\") shouldBe a [Failure[_]]
+        tokeniser_.lexemes.text.character.basicMultilingualPlane.parse("\'") shouldBe a [Failure[_]]
+        tokeniser_.lexemes.text.character.basicMultilingualPlane.parse("\'\\") shouldBe a [Failure[_]]
     }
     it must "fail if given the zero-width char" in {
-        tokeniser.lexemes.text.charLiteral.parse("'\\&'") shouldBe a [Failure[_]]
-        tokeniser_.lexemes.text.charLiteral.parse("'\\&'") shouldBe a [Failure[_]]
+        tokeniser.lexemes.text.character.basicMultilingualPlane.parse("'\\&'") shouldBe a [Failure[_]]
+        tokeniser_.lexemes.text.character.basicMultilingualPlane.parse("'\\&'") shouldBe a [Failure[_]]
     }
     /*it should be "able to handle unicode characters" in {
 
     }*/
 
     "stringLiteral" should "parse valid haskell strings" in {
-        tokeniser.lexemes.text.stringLiteral.parse(""""This string should have correct\t\xa whitespace properties!\8\^@."""") should be {
+        tokeniser.lexemes.text.string.unicode.parse(""""This string should have correct\t\xa whitespace properties!\8\^@."""") should be {
             Success("This string should have correct\t\n whitespace properties!\b\u0000.")
         }
-        tokeniser.lexemes.text.stringLiteral.parse(""""\73\32\99\97\x6e\x20\x77\x72\o151\o164\o145\o40\116\104\101\109\x20\x6c\x69\x6b\o145\o40\o164\o150is!\^J\LF\49\&0"""") should be {
+        tokeniser.lexemes.text.string.unicode.parse(""""\73\32\99\97\x6e\x20\x77\x72\o151\o164\o145\o40\116\104\101\109\x20\x6c\x69\x6b\o145\o40\o164\o150is!\^J\LF\49\&0"""") should be {
             Success("I can write them like this!\n\n10")
         }
-        tokeniser.lexemes.text.stringLiteral.parse(""""Here we test a string with a break in it \                  \which shouldn't show up in the end!"""") should be {
+        tokeniser.lexemes.text.string.unicode.parse(""""Here we test a string with a break in it \                  \which shouldn't show up in the end!"""") should be {
             Success("Here we test a string with a break in it which shouldn't show up in the end!")
         }
-        tokeniser.lexemes.text.stringLiteral.parse("\"Breaks can also contain newline\\   \n \\s, but we still don't notice them\"") should be {
+        tokeniser.lexemes.text.string.unicode.parse("\"Breaks can also contain newline\\   \n \\s, but we still don't notice them\"") should be {
             Success("Breaks can also contain newlines, but we still don't notice them")
         }
-        (tokeniser.lexemes.text.stringLiteral <~> col).parse(""""\49\&0"""") should be {
+        (tokeniser.lexemes.text.string.unicode <~> col).parse(""""\49\&0"""") should be {
             Success(("10", 9))
         }
     }
     it must "be the same regardless of the intrinsic" in {
-        tokeniser_.lexemes.text.stringLiteral.parse(""""This string should have correct\t\xa whitespace properties!\8\^@."""") should be {
+        tokeniser_.lexemes.text.string.unicode.parse(""""This string should have correct\t\xa whitespace properties!\8\^@."""") should be {
             Success("This string should have correct\t\n whitespace properties!\b\u0000.")
         }
-        tokeniser_.lexemes.text.stringLiteral.parse(""""\73\32\99\97\x6e\x20\x77\x72\o151\o164\o145\o40\116\104\101\109\x20\x6c\x69\x6b\o145\o40\o164\o150is!\^J\LF\49\&0"""") should be {
+        tokeniser_.lexemes.text.string.unicode.parse(""""\73\32\99\97\x6e\x20\x77\x72\o151\o164\o145\o40\116\104\101\109\x20\x6c\x69\x6b\o145\o40\o164\o150is!\^J\LF\49\&0"""") should be {
             Success("I can write them like this!\n\n10")
         }
-        tokeniser_.lexemes.text.stringLiteral.parse(""""Here we test a string with a break in it \                  \which shouldn't show up in the end!"""") should be {
+        tokeniser_.lexemes.text.string.unicode.parse(""""Here we test a string with a break in it \                  \which shouldn't show up in the end!"""") should be {
             Success("Here we test a string with a break in it which shouldn't show up in the end!")
         }
-        tokeniser_.lexemes.text.stringLiteral.parse("\"Breaks can also contain newline\\   \n \\s, but we still don't notice them\"") should be {
+        tokeniser_.lexemes.text.string.unicode.parse("\"Breaks can also contain newline\\   \n \\s, but we still don't notice them\"") should be {
             Success("Breaks can also contain newlines, but we still don't notice them")
         }
-        (tokeniser_.lexemes.text.stringLiteral <~> col).parse(""""\49\&0"""") should be {
+        (tokeniser_.lexemes.text.string.unicode <~> col).parse(""""\49\&0"""") should be {
             Success(("10", 9))
         }
     }
     it must "handle unicode characters in the literal properly" in {
-        tokeniser.lexemes.text.stringLiteral.parse("\"\\x1F642\"") should be {
+        tokeniser.lexemes.text.string.unicode.parse("\"\\x1F642\"") should be {
             Success("🙂")
         }
-        tokeniser_.lexemes.text.stringLiteral.parse("\"\\x1F642\"") should be {
+        tokeniser_.lexemes.text.string.unicode.parse("\"\\x1F642\"") should be {
             Success("🙂")
         }
     }
 
     "rawStringLiteral" should "parse valid strings, without processing them" in {
-        tokeniser.nonlexemes.text.rawStringLiteral.parse(""""this string is completely raw\n, nothing should be \xa changed!"""") should be {
+        tokeniser.nonlexemes.text.rawString.unicode.parse(""""this string is completely raw\n, nothing should be \xa changed!"""") should be {
             Success("""this string is completely raw\n, nothing should be \xa changed!""")
         }
-        tokeniser.nonlexemes.text.rawStringLiteral.parse(""""Not even \\\n\\n\n\n\n\n\\\j\joijs\\jsj this"""") should be {
+        tokeniser.nonlexemes.text.rawString.unicode.parse(""""Not even \\\n\\n\n\n\n\n\\\j\joijs\\jsj this"""") should be {
             Success("""Not even \\\n\\n\n\n\n\n\\\j\joijs\\jsj this""")
         }
-        tokeniser.nonlexemes.text.rawStringLiteral.parse(""""But we should be able to escape \", but it should remain like that!"""") should be {
+        tokeniser.nonlexemes.text.rawString.unicode.parse(""""But we should be able to escape \", but it should remain like that!"""") should be {
             Success("""But we should be able to escape \", but it should remain like that!""")
         }
     }
