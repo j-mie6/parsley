@@ -130,7 +130,7 @@ class Lexer private (lang: descriptions.LanguageDesc) { lexer =>
             // odd special case to have. I guess we could easily do it by composing a char reader into a string reader
             // a raw char does not do escapes.
             // NEW API
-            private val escapes = new Escape(lang.textDesc.escapeChars, lexer.nonlexemes.numeric.natural)
+            private val escapes = new Escape(lang.textDesc.escapeChars)
 
             val character: parsley.token.text.Character = new ConcreteCharacter(lang.textDesc, escapes)
 

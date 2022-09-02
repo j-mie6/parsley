@@ -637,6 +637,14 @@ object character
       */
     val octDigit: Parsley[Char] = satisfy(isOctDigit).label("octal digit")
 
+    /** This parser tries to parse a bit and returns it if successful.
+      *
+      * A bit (binary digit) is either `'0'` or `'1'`.
+      *
+      * @group spec
+      */
+    val bit: Parsley[Char] = oneOf('0', '1').label("bit")
+
     // Functions
     /** This function returns true if a character is a whitespace character.
       *

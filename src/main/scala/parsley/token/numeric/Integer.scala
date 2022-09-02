@@ -54,26 +54,4 @@ abstract class Integer private[token] (private [numeric] val desc: NumericDesc) 
     private def hexadecimalBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = bounded(_hexadecimal, bits, 16)
     private def octalBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = bounded(_octal, bits, 8)
     private def binaryBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = bounded(_binary, bits, 2)
-
-    // TODO: These should live in some shared configured numeric object, but they need to be accessible in Combined etc
-    private [numeric] def ofRadix(radix: Int, startDigit: Parsley[Char], digit: Parsley[Char]) = {
-        val pf = pure((x: BigInt, d: Char) => x*radix + d.asDigit)
-        desc.literalBreakChar match {
-            case None    => parsley.expr.infix.secretLeft1(startDigit.map(d => BigInt(d.asDigit)), digit, pf)
-            case Some(c) => parsley.expr.infix.secretLeft1(startDigit.map(d => BigInt(d.asDigit)), optional(c) *> digit, pf)
-        }
-    }
-    // TODO: these could improve by not using `-`
-    private [token] lazy val plainDecimal =
-        if (desc.leadingZerosAllowed) ofRadix(10, digit, digit)
-        else                          ofRadix(10, digit - '0', digit) <|> ('0' #> BigInt(0))
-    private [token] lazy val plainHexadecimal =
-        if (desc.leadingZerosAllowed) ofRadix(16, hexDigit, hexDigit)
-        else                          ofRadix(16, hexDigit - '0', hexDigit) <|> ('0' #> BigInt(0))
-    private [token] lazy val plainOctal =
-        if (desc.leadingZerosAllowed) ofRadix(8, octDigit, octDigit)
-        else                          ofRadix(8, octDigit - '0', octDigit) <|> ('0' #> BigInt(0))
-    private [token] lazy val plainBinary =
-        if (desc.leadingZerosAllowed) ofRadix(2, oneOf('0', '1'), oneOf('0', '1'))
-        else                          ofRadix(2, '1', oneOf('0', '1')) <|> ('0' #> BigInt(0))
 }

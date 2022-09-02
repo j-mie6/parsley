@@ -49,12 +49,13 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: Integer) ex
     private def ofRadix(radix: Int, digit: Parsley[Char]): Parsley[BigDecimal] = ofRadix(radix, digit, desc.leadingDotAllowed)
     private def ofRadix(radix: Int, digit: Parsley[Char], leadingDotAllowed: Boolean): Parsley[BigDecimal] = {
         val expDesc = desc.exponentDescForRadix(radix)
-        // this reuses components of generic numbers, which will prevent duplication in a larger parser
+        // TODO: this should reuse components of unsigned generic numbers, which will prevent duplication in a larger parser
+        // At the moment, a break character will prevent reuse
         val whole = radix match {
-            case 10 => natural.plainDecimal
-            case 16 => natural.plainHexadecimal
-            case 8 => natural.plainOctal
-            case 2 => natural.plainBinary
+            case 10 => Generic.plainDecimal(desc)
+            case 16 => Generic.plainHexadecimal(desc)
+            case 8 => Generic.plainOctal(desc)
+            case 2 => Generic.plainBinary(desc)
         }
         val f = (d: Char, x: BigDecimal) => x/radix + d.asDigit
         def broken(c: Char) = lift2(f, digit, (optional(c) *> digit).foldRight[BigDecimal](0)(f))

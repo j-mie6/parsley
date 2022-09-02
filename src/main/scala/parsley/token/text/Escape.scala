@@ -8,9 +8,9 @@ import parsley.character.{char, strings}
 import parsley.combinator.choice
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 import parsley.token.descriptions.{CtrlEscape, EscapeDesc, NumericEscape}
-import parsley.token.numeric.Integer
+import parsley.token.numeric
 
-class Escape private[token] (desc: EscapeDesc, integer: Integer) {
+class Escape private[token] (desc: EscapeDesc) {
     // NOTE: `strings`, while nice, is not perfect as it doesn't leverage a trie-based folding
     //       on the possibilities. We'll want trie-based folding here, or at least a specialised
     //       instruction that has the trie lookup logic baked in.
@@ -42,10 +42,11 @@ class Escape private[token] (desc: EscapeDesc, integer: Integer) {
         case NumericEscape.Supported(prefix, maxValue) => boundedChar(integer, maxValue, prefix, radix)
     }
 
-    private val decimalEscape = fromDesc(radix = 10, desc.decimalEscape, integer.plainDecimal)
-    private val hexadecimalEscape = fromDesc(radix = 16, desc.hexadecimalEscape, integer.plainHexadecimal)
-    private val octalEscape = fromDesc(radix = 8, desc.octalEscape, integer.plainOctal)
-    private val binaryEscape = fromDesc(radix = 2, desc.binaryEscape, integer.plainBinary)
+    // TODO: These actually might have a fixed number of digits, we should add configuration for that
+    private val decimalEscape = fromDesc(radix = 10, desc.decimalEscape, numeric.Generic.zeroAllowedDecimal)
+    private val hexadecimalEscape = fromDesc(radix = 16, desc.hexadecimalEscape, numeric.Generic.zeroAllowedHexadecimal)
+    private val octalEscape = fromDesc(radix = 8, desc.octalEscape, numeric.Generic.zeroAllowedOctal)
+    private val binaryEscape = fromDesc(radix = 2, desc.binaryEscape, numeric.Generic.zeroAllowedBinary)
     private val numericEscape = decimalEscape <|> hexadecimalEscape <|> octalEscape <|> binaryEscape
     val escapeCode = escMapped <|> ctrlEscape <|> numericEscape
     val escapeChar = char(desc.escBegin) *> escapeCode
