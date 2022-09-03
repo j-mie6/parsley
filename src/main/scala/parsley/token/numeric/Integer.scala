@@ -9,7 +9,7 @@ import parsley.combinator.optional
 import parsley.extension.OperatorSugar
 import parsley.implicits.character.charLift
 import parsley.token._
-import parsley.token.descriptions.NumericDesc
+import parsley.token.descriptions.numeric.NumericDesc
 
 abstract class Integer private[token] (private [numeric] val desc: NumericDesc) {
     def decimal: Parsley[BigInt]

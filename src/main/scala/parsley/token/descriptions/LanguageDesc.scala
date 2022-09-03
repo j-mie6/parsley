@@ -10,8 +10,8 @@ case class LanguageDesc (identDesc: IdentDesc,
                          opStart: Impl,
                          opLetter: Impl,
                          operators: Set[String],
-                         numericDesc: NumericDesc,
-                         textDesc: TextDesc,
+                         numericDesc: numeric.NumericDesc,
+                         textDesc: text.TextDesc,
                          whitespaceDesc: SpaceDesc) {
     private [parsley] def isReservedOp(op: String): Boolean = operators.contains(op)
 }
@@ -21,5 +21,5 @@ case class LanguageDesc (identDesc: IdentDesc,
   */
 private [parsley] // TODO: remove
 object LanguageDesc {
-    val plain = LanguageDesc(IdentDesc.plain, NotRequired, NotRequired, Set.empty, NumericDesc.plain, TextDesc.plain, SpaceDesc.plain)
+    val plain = LanguageDesc(IdentDesc.plain, NotRequired, NotRequired, Set.empty, numeric.NumericDesc.plain, text.TextDesc.plain, SpaceDesc.plain)
 }

@@ -227,8 +227,8 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
     // $COVERAGE-ON$
 }
 
-object Seq {
-    private [backend] def unapply[A](self: Seq[A]): Some[(DoublyLinkedList[StrictParsley[_]], StrictParsley[A], DoublyLinkedList[StrictParsley[_]])] = {
+private [backend] object Seq {
+    def unapply[A](self: Seq[A]): Some[(DoublyLinkedList[StrictParsley[_]], StrictParsley[A], DoublyLinkedList[StrictParsley[_]])] = {
         Some((self.before, self.res, self.after))
     }
 

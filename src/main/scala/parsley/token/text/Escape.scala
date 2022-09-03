@@ -7,7 +7,7 @@ import parsley.Parsley, Parsley.{attempt, empty, pure, unit}
 import parsley.character.{char, strings}
 import parsley.combinator.choice
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
-import parsley.token.descriptions.{CtrlEscape, EscapeDesc, NumericEscape}
+import parsley.token.descriptions.text.{CtrlEscape, EscapeDesc, NumericEscape}
 import parsley.token.numeric
 
 private [token] class Escape(desc: EscapeDesc) {

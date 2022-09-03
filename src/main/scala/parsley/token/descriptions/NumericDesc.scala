@@ -1,16 +1,16 @@
 /* SPDX-FileCopyrightText: © 2022 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package parsley.token.descriptions
+package parsley.token.descriptions.numeric
 
 import parsley.token.{Impl, NotRequired}
 import parsley.token.numeric.Real
 
-sealed abstract class Presence
-object Presence {
-    case object Required extends Presence
-    case object Optional extends Presence
-    case object Illegal extends Presence
+sealed abstract class PlusSignPresence
+object PlusSignPresence {
+    case object Required extends PlusSignPresence
+    case object Optional extends PlusSignPresence
+    case object Illegal extends PlusSignPresence
 }
 
 sealed abstract class ExponentDesc
@@ -19,7 +19,7 @@ object ExponentDesc {
     case class Supported(compulsory: Boolean,
                          chars: Set[Char],
                          base: Int,
-                         positiveSign: Presence
+                         positiveSign: PlusSignPresence
                         ) extends ExponentDesc {
         if (chars.isEmpty) throw new IllegalArgumentException("The characters used for floating point exponents must not be empty")
     }
@@ -35,7 +35,7 @@ case class NumericDesc (literalBreakChar: BreakCharDesc,
                         leadingDotAllowed: Boolean,
                         trailingDotAllowed: Boolean,
                         leadingZerosAllowed: Boolean,
-                        positiveSign: Presence,
+                        positiveSign: PlusSignPresence,
                         // generic number
                         integerNumbersCanBeHexadecimal: Boolean,
                         integerNumbersCanBeOctal: Boolean,
@@ -75,7 +75,7 @@ object NumericDesc {
         leadingDotAllowed = false,
         trailingDotAllowed = false,
         leadingZerosAllowed = true,
-        positiveSign = Presence.Optional,
+        positiveSign = PlusSignPresence.Optional,
         // generic number
         integerNumbersCanBeHexadecimal = true,
         integerNumbersCanBeOctal = true,
@@ -88,9 +88,9 @@ object NumericDesc {
         octalLeads = Set('o', 'O'),
         binaryLeads = Set('b', 'B'),
         // exponents
-        decimalExponentDesc = ExponentDesc.Supported(compulsory = false, chars = Set('e', 'E'), base = 10, positiveSign = Presence.Optional),
-        hexadecimalExponentDesc = ExponentDesc.Supported(compulsory = true, chars = Set('p', 'P'), base = 2, positiveSign = Presence.Optional),
-        octalExponentDesc = ExponentDesc.Supported(compulsory = true, chars = Set('e', 'E', 'p', 'P'), base = 2, positiveSign = Presence.Optional),
-        binaryExponentDesc = ExponentDesc.Supported(compulsory = true, chars = Set('e', 'E', 'p', 'P'), base = 2, positiveSign = Presence.Optional)
+        decimalExponentDesc = ExponentDesc.Supported(compulsory = false, chars = Set('e', 'E'), base = 10, positiveSign = PlusSignPresence.Optional),
+        hexadecimalExponentDesc = ExponentDesc.Supported(compulsory = true, chars = Set('p', 'P'), base = 2, positiveSign = PlusSignPresence.Optional),
+        octalExponentDesc = ExponentDesc.Supported(compulsory = true, chars = Set('e', 'E', 'p', 'P'), base = 2, positiveSign = PlusSignPresence.Optional),
+        binaryExponentDesc = ExponentDesc.Supported(compulsory = true, chars = Set('e', 'E', 'p', 'P'), base = 2, positiveSign = PlusSignPresence.Optional)
     )
 }

@@ -6,7 +6,7 @@ import parsley.combinator.optional
 import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.character.charLift
 import parsley.lift.lift2
-import parsley.token.descriptions.{NumericDesc, ExponentDesc, BreakCharDesc}
+import parsley.token.descriptions.numeric.{NumericDesc, ExponentDesc, BreakCharDesc}
 
 import parsley.internal.deepembedding.singletons
 import parsley.internal.deepembedding.Sign.DoubleType

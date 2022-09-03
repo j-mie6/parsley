@@ -9,7 +9,7 @@ import parsley.combinator.{choice, option}
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 import parsley.implicits.character.charLift
 import parsley.implicits.zipped.{Zipped2, Zipped3}
-import parsley.token.descriptions.NumericDesc
+import parsley.token.descriptions.numeric.NumericDesc
 
 private [token] final class UnsignedCombined(desc: NumericDesc, integer: Integer, rational: Real) extends Combined {
     override lazy val decimal: Parsley[Either[BigInt, BigDecimal]] = (attempt(rational.decimal) <+> integer.decimal).map(_.swap)//ofRadix(10, 10, digit, oneOf('e', 'E'))

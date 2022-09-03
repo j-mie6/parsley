@@ -9,7 +9,7 @@ import parsley.combinator.optional
 import parsley.extension.OperatorSugar
 import parsley.implicits.character.charLift
 import parsley.token._
-import parsley.token.descriptions.{NumericDesc, BreakCharDesc}
+import parsley.token.descriptions.numeric.{NumericDesc, BreakCharDesc}
 
 private [token] object Generic {
     private def ofRadix(radix: Int, digit: Parsley[Char]): Parsley[BigInt] = ofRadix(radix, digit, digit)

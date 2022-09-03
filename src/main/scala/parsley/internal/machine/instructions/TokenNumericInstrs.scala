@@ -6,7 +6,7 @@ package parsley.internal.machine.instructions
 import scala.annotation.tailrec
 
 import parsley.character
-import parsley.token.descriptions.Presence
+import parsley.token.descriptions.numeric.PlusSignPresence
 
 import parsley.internal.deepembedding.Sign.{CombinedType, DoubleType, IntType, SignType}
 import parsley.internal.errors.{Desc, ExpectItem, ExpectRaw}
@@ -14,7 +14,7 @@ import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.MultiExpectedError
 
-private [internal] final class TokenSign(ty: SignType, plusPresence: Presence) extends Instr {
+private [internal] final class TokenSign(ty: SignType, plusPresence: PlusSignPresence) extends Instr {
     val neg: Any => Any = ty match {
         case IntType => ((x: IntType.resultType) => -x).asInstanceOf[Any => Any]
         case DoubleType => ((x: DoubleType.resultType) => -x).asInstanceOf[Any => Any]
@@ -23,8 +23,8 @@ private [internal] final class TokenSign(ty: SignType, plusPresence: Presence) e
     val pos = (x: Any) => x
 
     private [this] val expecteds: Set[ExpectItem] =
-        if (plusPresence ne Presence.Illegal) Set(new ExpectRaw("+"), new ExpectRaw("-"))
-        else                                  Set(new ExpectRaw("-"))
+        if (plusPresence ne PlusSignPresence.Illegal) Set(new ExpectRaw("+"), new ExpectRaw("-"))
+        else                                          Set(new ExpectRaw("-"))
 
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
@@ -33,11 +33,11 @@ private [internal] final class TokenSign(ty: SignType, plusPresence: Presence) e
             ctx.fastUncheckedConsumeChars(1)
             ctx.pushAndContinue(neg)
         }
-        else if ((plusPresence ne Presence.Illegal) && ctx.moreInput && ctx.nextChar == '+') {
+        else if ((plusPresence ne PlusSignPresence.Illegal) && ctx.moreInput && ctx.nextChar == '+') {
             ctx.fastUncheckedConsumeChars(1)
             ctx.pushAndContinue(pos)
         }
-        else if (plusPresence eq Presence.Required) {
+        else if (plusPresence eq PlusSignPresence.Required) {
             ctx.fail(new MultiExpectedError(ctx.offset, ctx.line, ctx.col, expecteds, 1))
         }
         else {

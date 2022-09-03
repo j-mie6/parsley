@@ -9,7 +9,7 @@ import parsley.Parsley, Parsley.{fresh, pure}
 import parsley.combinator.between
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 import parsley.implicits.character.charLift
-import parsley.token.descriptions.TextDesc
+import parsley.token.descriptions.text.TextDesc
 
 private [token] final class ConcreteString(desc: TextDesc, stringChar: StringCharacter) extends String {
     override lazy val unicode: Parsley[ScalaString] = {

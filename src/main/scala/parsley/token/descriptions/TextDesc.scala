@@ -1,4 +1,4 @@
-package parsley.token.descriptions
+package parsley.token.descriptions.text
 
 private [parsley] // TODO: remove
 sealed abstract class NumericEscape

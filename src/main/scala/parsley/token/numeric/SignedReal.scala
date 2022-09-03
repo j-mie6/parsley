@@ -5,7 +5,7 @@ import parsley.character.{digit, hexDigit, octDigit, oneOf}
 import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.character.charLift
 import parsley.lift.lift2
-import parsley.token.descriptions.NumericDesc
+import parsley.token.descriptions.numeric.NumericDesc
 
 import parsley.internal.deepembedding.singletons
 import parsley.internal.deepembedding.Sign.DoubleType

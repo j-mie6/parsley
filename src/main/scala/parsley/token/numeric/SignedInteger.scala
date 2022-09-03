@@ -5,7 +5,7 @@ package parsley.token.numeric
 
 import parsley.Parsley, Parsley.attempt
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
-import parsley.token.descriptions.NumericDesc
+import parsley.token.descriptions.numeric.NumericDesc
 
 import parsley.internal.deepembedding.singletons
 import parsley.internal.deepembedding.Sign.IntType

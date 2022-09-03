@@ -7,7 +7,7 @@ import parsley.Parsley
 import parsley.character.satisfy
 import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.character.charLift
-import parsley.token.descriptions.TextDesc
+import parsley.token.descriptions.text.TextDesc
 
 private [token] final class ConcreteCharacter(desc: TextDesc, escapes: Escape) extends Character {
     private val quote = desc.characterLiteralEnd

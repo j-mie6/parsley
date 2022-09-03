@@ -8,7 +8,7 @@ import parsley.character.char
 import parsley.combinator.skipSome
 import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.character.charLift
-import parsley.token.descriptions.TextDesc
+import parsley.token.descriptions.text.TextDesc
 
 // TODO: this should probably take the isGraphic predicate in instead
 // this way, the rawness of the character can be handled at the application site and not need a RawString class.
