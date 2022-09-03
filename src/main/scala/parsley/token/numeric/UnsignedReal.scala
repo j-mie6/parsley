@@ -1,12 +1,12 @@
 package parsley.token.numeric
 
-import parsley.Parsley, Parsley.{attempt, empty, pure}
+import parsley.Parsley, Parsley.{attempt, empty, pure, unit}
 import parsley.character.{digit, hexDigit, octDigit, oneOf}
 import parsley.combinator.optional
 import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.character.charLift
 import parsley.lift.lift2
-import parsley.token.descriptions.{NumericDesc, ExponentDesc}
+import parsley.token.descriptions.{NumericDesc, ExponentDesc, BreakCharDesc}
 
 import parsley.internal.deepembedding.singletons
 import parsley.internal.deepembedding.Sign.DoubleType
@@ -39,11 +39,18 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: Integer) ex
         }
     }
 
+    private def when(b: Boolean, p: Parsley[_]): Parsley[_] = if (b) p else unit
+
+    val leadingBreakChar = desc.literalBreakChar match {
+        case BreakCharDesc.NoBreakChar => unit
+        case BreakCharDesc.Supported(breakChar, allowedAfterNonDecimalPrefix) => when(allowedAfterNonDecimalPrefix, breakChar)
+    }
+
     // TODO: Using choice here will generate a jump table, which will be nicer for `number` (this requires enhancements to the jumptable optimisation)
     // TODO: Leave these as defs so they get inlined into number for the jumptable optimisation
-    private val noZeroHexadecimal = oneOf(desc.hexadecimalLeads) *> ofRadix(16, hexDigit)
-    private val noZeroOctal = oneOf(desc.octalLeads) *> ofRadix(8, octDigit)
-    private val noZeroBinary = oneOf(desc.binaryLeads) *> ofRadix(2, oneOf('0', '1'))
+    private val noZeroHexadecimal = when(desc.hexadecimalLeads.nonEmpty, oneOf(desc.hexadecimalLeads)) *> leadingBreakChar *> ofRadix(16, hexDigit)
+    private val noZeroOctal = when(desc.octalLeads.nonEmpty, oneOf(desc.octalLeads)) *> leadingBreakChar *> ofRadix(8, octDigit)
+    private val noZeroBinary = when(desc.binaryLeads.nonEmpty, oneOf(desc.binaryLeads)) *> leadingBreakChar *> ofRadix(2, oneOf('0', '1'))
 
     // could allow integers to be parsed here according to configuration, the intOrFloat captures that case anyway
     private def ofRadix(radix: Int, digit: Parsley[Char]): Parsley[BigDecimal] = ofRadix(radix, digit, desc.leadingDotAllowed)
@@ -61,10 +68,10 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: Integer) ex
         def broken(c: Char) = lift2(f, digit, (optional(c) *> digit).foldRight[BigDecimal](0)(f))
         val fractional = '.' *> {
             desc.literalBreakChar match {
-                case None if desc.trailingDotAllowed    => digit.foldRight[BigDecimal](0)(f)
-                case None                               => digit.foldRight1[BigDecimal](0)(f)
-                case Some(c) if desc.trailingDotAllowed => broken(c) <|> pure[BigDecimal](0)
-                case Some(c)                            => broken(c)
+                case BreakCharDesc.NoBreakChar if desc.trailingDotAllowed     => digit.foldRight[BigDecimal](0)(f)
+                case BreakCharDesc.NoBreakChar                                => digit.foldRight1[BigDecimal](0)(f)
+                case BreakCharDesc.Supported(c, _) if desc.trailingDotAllowed => broken(c) <|> pure[BigDecimal](0)
+                case BreakCharDesc.Supported(c, _)                            => broken(c)
             }
         }
         val (requiredExponent, exponent, base) = expDesc match {

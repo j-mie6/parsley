@@ -28,7 +28,7 @@ import scala.annotation.implicitNotFound
   * @param lang The rules that govern the language we are tokenising
   * @since 2.2.0
   */
-class Lexer private (lang: descriptions.LanguageDesc) { lexer =>
+class Lexer private [parsley] (lang: descriptions.LanguageDesc) { lexer =>
     def this(lang: LanguageDef) = this(lang.toDesc)
 
     // public API

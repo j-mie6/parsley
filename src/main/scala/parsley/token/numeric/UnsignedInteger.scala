@@ -3,12 +3,12 @@
  */
 package parsley.token.numeric
 
-import parsley.Parsley, Parsley.{attempt, pure}
+import parsley.Parsley, Parsley.{attempt, pure, unit}
 import parsley.character.{digit, hexDigit, octDigit, oneOf}
-import parsley.combinator.choice
+import parsley.combinator.{choice, optional}
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 import parsley.implicits.character.charLift
-import parsley.token.descriptions.NumericDesc
+import parsley.token.descriptions.{NumericDesc, BreakCharDesc}
 
 private [token] final class UnsignedInteger(desc: NumericDesc) extends Integer(desc) {
     override lazy val decimal: Parsley[BigInt] = Generic.plainDecimal(desc)
@@ -35,11 +35,18 @@ private [token] final class UnsignedInteger(desc: NumericDesc) extends Integer(d
         }
     }
 
+    private def when(b: Boolean, p: Parsley[_]): Parsley[_] = if (b) p else unit
+
+    val leadingBreakChar = desc.literalBreakChar match {
+        case BreakCharDesc.NoBreakChar => unit
+        case BreakCharDesc.Supported(breakChar, allowedAfterNonDecimalPrefix) => when(allowedAfterNonDecimalPrefix, breakChar)
+    }
+
     // TODO: Using choice here will generate a jump table, which will be nicer for `number` (this requires enhancements to the jumptable optimisation)
     // TODO: Leave these as defs so they get inlined into number for the jumptable optimisation
-    private val noZeroHexadecimal = oneOf(desc.hexadecimalLeads) *> Generic.plainHexadecimal(desc)
-    private val noZeroOctal = oneOf(desc.octalLeads) *> Generic.plainOctal(desc)
-    private val noZeroBinary = oneOf(desc.binaryLeads) *> Generic.plainBinary(desc)
+    private val noZeroHexadecimal = when(desc.hexadecimalLeads.nonEmpty, oneOf(desc.hexadecimalLeads)) *> leadingBreakChar *> Generic.plainHexadecimal(desc)
+    private val noZeroOctal = when(desc.octalLeads.nonEmpty, oneOf(desc.octalLeads)) *> leadingBreakChar *> Generic.plainOctal(desc)
+    private val noZeroBinary = when(desc.binaryLeads.nonEmpty, oneOf(desc.binaryLeads)) *> leadingBreakChar *> Generic.plainBinary(desc)
 
     // TODO: render in the "native" radix
     override protected [numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int)(implicit ev: CanHold[bits.self,T]): Parsley[T] = amend {

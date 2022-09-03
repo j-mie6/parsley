@@ -6,22 +6,18 @@ package parsley.token.descriptions
 import parsley.token.{Impl, NotRequired}
 import parsley.token.numeric.Real
 
-private [parsley] // TODO: Remove
 sealed abstract class Presence
-private [parsley] // TODO: Remove
 object Presence {
     case object Required extends Presence
     case object Optional extends Presence
     case object Illegal extends Presence
 }
 
-private [token] // TODO: Remove
 sealed abstract class ExponentDesc
-private [token] // TODO: Remove
 object ExponentDesc {
     case object NoExponents extends ExponentDesc
     case class Supported(compulsory: Boolean,
-                         chars: Set[Char], //TODO: well, in C an octal is not 0o10 it would be 010, so this _can_ be empty
+                         chars: Set[Char],
                          base: Int,
                          positiveSign: Presence
                         ) extends ExponentDesc {
@@ -29,8 +25,13 @@ object ExponentDesc {
     }
 }
 
-private [token] // TODO: Remove
-case class NumericDesc (literalBreakChar: Option[Char], //TODO: We should allow for literalBreakChar after a hex/oct/bin prefix
+sealed abstract class BreakCharDesc
+object BreakCharDesc {
+    case object NoBreakChar extends BreakCharDesc
+    case class Supported(breakChar: Char, allowedAfterNonDecimalPrefix: Boolean) extends BreakCharDesc
+}
+
+case class NumericDesc (literalBreakChar: BreakCharDesc,
                         leadingDotAllowed: Boolean,
                         trailingDotAllowed: Boolean,
                         leadingZerosAllowed: Boolean,
@@ -52,9 +53,10 @@ case class NumericDesc (literalBreakChar: Option[Char], //TODO: We should allow 
                         octalExponentDesc: ExponentDesc,
                         binaryExponentDesc: ExponentDesc
                        ) {
-    if (hexadecimalLeads.isEmpty) throw new IllegalArgumentException("The leading characters of hexadecimal literals must not be empty")
-    if (octalLeads.isEmpty) throw new IllegalArgumentException("The leading characters of octal literals must not be empty")
-    if (binaryLeads.isEmpty) throw new IllegalArgumentException("The leading characters of binary literals must not be empty")
+    // These aren't necessarily the case, C octals, for instance, are of the form 010!
+    //if (hexadecimalLeads.isEmpty) throw new IllegalArgumentException("The leading characters of hexadecimal literals must not be empty")
+    //if (octalLeads.isEmpty) throw new IllegalArgumentException("The leading characters of octal literals must not be empty")
+    //if (binaryLeads.isEmpty) throw new IllegalArgumentException("The leading characters of binary literals must not be empty")
 
     private [token] def exponentDescForRadix(x: Int): ExponentDesc = (x: @unchecked) match {
         case 10 => decimalExponentDesc
@@ -67,10 +69,9 @@ case class NumericDesc (literalBreakChar: Option[Char], //TODO: We should allow 
     private [token] def decimalRealsOnly: Boolean = !(realNumbersCanBeBinary || realNumbersCanBeHexadecimal || realNumbersCanBeOctal)
 }
 
-private [token] // TODO: Remove
 object NumericDesc {
     val plain: NumericDesc = NumericDesc(
-        literalBreakChar = None,
+        literalBreakChar = BreakCharDesc.NoBreakChar,
         leadingDotAllowed = false,
         trailingDotAllowed = false,
         leadingZerosAllowed = true,

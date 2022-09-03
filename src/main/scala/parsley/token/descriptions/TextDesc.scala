@@ -1,16 +1,16 @@
 package parsley.token.descriptions
 
-private [token] // TODO: remove
+private [parsley] // TODO: remove
 sealed abstract class NumericEscape
-private [token] // TODO: remove
+private [parsley] // TODO: remove
 object NumericEscape {
     case class Supported(prefix: Option[Char], maxValue: Int) extends NumericEscape
     case object Illegal extends NumericEscape
 }
 
-private [token] // TODO: remove
+private [parsley] // TODO: remove
 sealed abstract class CtrlEscape
-private [token] // TODO: remove
+private [parsley] // TODO: remove
 object CtrlEscape {
     case class Supported(prefix: Char, mapping: Map[Char, Int]) extends CtrlEscape
     case object Illegal extends CtrlEscape
@@ -34,7 +34,7 @@ case class EscapeDesc (escBegin: Char,
         case (k, v) => s"$k" -> v
     }
 }
-private [token] // TODO: remove
+private [parsley] // TODO: remove
 object EscapeDesc {
     val haskell = EscapeDesc(escBegin = '\\',
                              literals = Set('\'', '\"', '\\'),
@@ -89,14 +89,14 @@ object EscapeDesc {
                              ctrlEscape = CtrlEscape.Supported(prefix = '^', mapping = ('@' to '_').map(c => c -> (c - '@')).toMap))
 }
 
-private [token] // TODO: remove
+private [parsley] // TODO: remove
 case class TextDesc (escapeChars: EscapeDesc,
                      characterLiteralEnd: Char,
                      stringLiteralEnds: Set[Char],
                      graphicCharacter: Char => Boolean) {
 }
 
-private [token]
+private [parsley]
 object TextDesc {
     val plain = TextDesc(escapeChars = EscapeDesc.haskell,
                          characterLiteralEnd = '\'',

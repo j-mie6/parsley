@@ -9,7 +9,7 @@ import parsley.combinator.optional
 import parsley.extension.OperatorSugar
 import parsley.implicits.character.charLift
 import parsley.token._
-import parsley.token.descriptions.NumericDesc
+import parsley.token.descriptions.{NumericDesc, BreakCharDesc}
 
 private [token] object Generic {
     private def ofRadix(radix: Int, digit: Parsley[Char]): Parsley[BigInt] = ofRadix(radix, digit, digit)
@@ -36,34 +36,34 @@ private [token] object Generic {
     lazy val zeroNotAllowedBinary = ofRadix(2, '1', bit) <|> ('0' #> BigInt(0))
 
     def plainDecimal(desc: NumericDesc): Parsley[BigInt] = plainDecimal(desc.leadingZerosAllowed, desc.literalBreakChar)
-    def plainDecimal(leadingZerosAllowed: Boolean, literalBreakChar: Option[Char]): Parsley[BigInt] = literalBreakChar match {
-        case None if leadingZerosAllowed    => zeroAllowedDecimal
-        case None                           => zeroNotAllowedDecimal
-        case Some(c) if leadingZerosAllowed => ofRadix(10, digit, c)
-        case Some(c)                        => ofRadix(10, digit - '0', digit, c)
+    def plainDecimal(leadingZerosAllowed: Boolean, literalBreakChar: BreakCharDesc): Parsley[BigInt] = literalBreakChar match {
+        case BreakCharDesc.NoBreakChar if leadingZerosAllowed     => zeroAllowedDecimal
+        case BreakCharDesc.NoBreakChar                            => zeroNotAllowedDecimal
+        case BreakCharDesc.Supported(c, _) if leadingZerosAllowed => ofRadix(10, digit, c)
+        case BreakCharDesc.Supported(c, _)                        => ofRadix(10, digit - '0', digit, c)
     }
 
     def plainHexadecimal(desc: NumericDesc): Parsley[BigInt] = plainHexadecimal(desc.leadingZerosAllowed, desc.literalBreakChar)
-    def plainHexadecimal(leadingZerosAllowed: Boolean, literalBreakChar: Option[Char]): Parsley[BigInt] = literalBreakChar match {
-        case None if leadingZerosAllowed    => zeroAllowedHexadecimal
-        case None                           => zeroNotAllowedHexadecimal
-        case Some(c) if leadingZerosAllowed => ofRadix(16, hexDigit, c)
-        case Some(c)                        => ofRadix(16, hexDigit - '0', hexDigit, c)
+    def plainHexadecimal(leadingZerosAllowed: Boolean, literalBreakChar: BreakCharDesc): Parsley[BigInt] = literalBreakChar match {
+        case BreakCharDesc.NoBreakChar if leadingZerosAllowed     => zeroAllowedHexadecimal
+        case BreakCharDesc.NoBreakChar                            => zeroNotAllowedHexadecimal
+        case BreakCharDesc.Supported(c, _) if leadingZerosAllowed => ofRadix(16, hexDigit, c)
+        case BreakCharDesc.Supported(c, _)                        => ofRadix(16, hexDigit - '0', hexDigit, c)
     }
 
     def plainOctal(desc: NumericDesc): Parsley[BigInt] = plainOctal(desc.leadingZerosAllowed, desc.literalBreakChar)
-    def plainOctal(leadingZerosAllowed: Boolean, literalBreakChar: Option[Char]): Parsley[BigInt] = literalBreakChar match {
-        case None if leadingZerosAllowed    => zeroAllowedOctal
-        case None                           => zeroNotAllowedOctal
-        case Some(c) if leadingZerosAllowed => ofRadix(8, octDigit, c)
-        case Some(c)                        => ofRadix(8, octDigit - '0', octDigit, c)
+    def plainOctal(leadingZerosAllowed: Boolean, literalBreakChar: BreakCharDesc): Parsley[BigInt] = literalBreakChar match {
+        case BreakCharDesc.NoBreakChar if leadingZerosAllowed     => zeroAllowedOctal
+        case BreakCharDesc.NoBreakChar                            => zeroNotAllowedOctal
+        case BreakCharDesc.Supported(c, _) if leadingZerosAllowed => ofRadix(8, octDigit, c)
+        case BreakCharDesc.Supported(c, _)                        => ofRadix(8, octDigit - '0', octDigit, c)
     }
 
     def plainBinary(desc: NumericDesc): Parsley[BigInt] = plainBinary(desc.leadingZerosAllowed, desc.literalBreakChar)
-    def plainBinary(leadingZerosAllowed: Boolean, literalBreakChar: Option[Char]): Parsley[BigInt] = literalBreakChar match {
-        case None if leadingZerosAllowed    => zeroAllowedBinary
-        case None                           => zeroNotAllowedBinary
-        case Some(c) if leadingZerosAllowed => ofRadix(2, bit, c)
-        case Some(c)                        => ofRadix(2, '1', bit, c)
+    def plainBinary(leadingZerosAllowed: Boolean, literalBreakChar: BreakCharDesc): Parsley[BigInt] = literalBreakChar match {
+        case BreakCharDesc.NoBreakChar if leadingZerosAllowed     => zeroAllowedBinary
+        case BreakCharDesc.NoBreakChar                            => zeroNotAllowedBinary
+        case BreakCharDesc.Supported(c, _) if leadingZerosAllowed => ofRadix(2, bit, c)
+        case BreakCharDesc.Supported(c, _)                        => ofRadix(2, '1', bit, c)
     }
 }

@@ -5,7 +5,7 @@ package parsley.token.descriptions
 
 import parsley.token.{Impl, NotRequired}
 
-private [token] // TODO: remove
+private [parsley] // TODO: remove
 case class LanguageDesc (identDesc: IdentDesc,
                          opStart: Impl,
                          opLetter: Impl,
@@ -19,7 +19,7 @@ case class LanguageDesc (identDesc: IdentDesc,
 /** This object contains any preconfigured language definitions
   * @since 4.0.0
   */
-private [token] // TODO: remove
+private [parsley] // TODO: remove
 object LanguageDesc {
     val plain = LanguageDesc(IdentDesc.plain, NotRequired, NotRequired, Set.empty, NumericDesc.plain, TextDesc.plain, SpaceDesc.plain)
 }
