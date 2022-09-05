@@ -39,3 +39,6 @@ private [parsley] final class SepEndBy1[A, B](p: LazyParsley[A], sep: =>LazyPars
 private [parsley] final class ManyUntil[A](body: LazyParsley[Any]) extends Unary[Any, List[A]](body) {
     override def make(p: StrictParsley[Any]): StrictParsley[List[A]] = new backend.ManyUntil(p)
 }
+private [parsley] final class SkipManyUntil(body: LazyParsley[Any]) extends Unary[Any, Unit](body) {
+    override def make(p: StrictParsley[Any]): StrictParsley[Unit] = new backend.SkipManyUntil(p)
+}

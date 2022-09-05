@@ -5,24 +5,31 @@ package parsley.token.text
 
 import scala.Predef.{String => ScalaString, _}
 
-import parsley.Parsley, Parsley.{fresh, pure}
-import parsley.combinator.between
+import parsley.Parsley, Parsley.{fresh, pure, notFollowedBy}
+import parsley.combinator.{choice, between, skipMany, skipManyUntil}
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
-import parsley.implicits.character.charLift
+import parsley.implicits.character.{charLift, stringLift}
 import parsley.token.descriptions.text.StringDesc
 
 private [token] final class ConcreteString(desc: StringDesc, stringChar: StringCharacter, isGraphic: Char => Boolean, allowsAllSpace: Boolean) extends String {
-    override lazy val unicode: Parsley[ScalaString] = {
+    override lazy val unicode: Parsley[ScalaString] = choice(desc.literalEnds.view.map(makeStringParser).toSeq: _*) *> sbReg.gets(_.toString)
+    override lazy val ascii: Parsley[ScalaString] = String.ensureAscii(unicode)
+    override lazy val extendedAscii: Parsley[ScalaString] = String.ensureExtendedAscii(unicode)
+
+    val sbReg = parsley.registers.Reg.make[StringBuilder]
+
+    def makeStringParser(terminal: ScalaString): Parsley[_] = {
+        val terminalInit = terminal.charAt(0)
+        val strChar = stringChar(Character.letter(terminalInit, allowsAllSpace, isGraphic))
         val pf = pure { (sb: StringBuilder, cpo: Option[Int]) =>
             for (cp <- cpo) sb ++= Character.toChars(cp)
             sb
         }
-        val content = parsley.expr.infix.secretLeft1(fresh(new StringBuilder), strChar, pf).map(_.toString)
-        between('"'.label("string"), '"'.label("end of string"), content)
+        val content = parsley.expr.infix.secretLeft1(sbReg.get, strChar, pf)
+        // terminal should be first, to allow for a jump table on the main choice
+        terminal *>
+        // then only one string builder needs allocation
+        sbReg.put(fresh(new StringBuilder)) *>
+        skipManyUntil(sbReg.modify(terminalInit #> ((sb: StringBuilder) => sb += terminalInit)) <|> content, terminal)
     }
-    override lazy val ascii: Parsley[ScalaString] = String.ensureAscii(unicode)
-    override lazy val extendedAscii: Parsley[ScalaString] = String.ensureExtendedAscii(unicode)
-
-    private lazy val strChar: Parsley[Option[Int]] =
-        stringChar(Character.letter('"', allowsAllSpace, isGraphic))
 }
