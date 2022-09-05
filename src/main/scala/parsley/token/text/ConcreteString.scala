@@ -9,9 +9,9 @@ import parsley.Parsley, Parsley.{fresh, pure}
 import parsley.combinator.between
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 import parsley.implicits.character.charLift
-import parsley.token.descriptions.text.TextDesc
+import parsley.token.descriptions.text.StringDesc
 
-private [token] final class ConcreteString(desc: TextDesc, stringChar: StringCharacter) extends String {
+private [token] final class ConcreteString(desc: StringDesc, stringChar: StringCharacter, isGraphic: Char => Boolean, allowsAllSpace: Boolean) extends String {
     override lazy val unicode: Parsley[ScalaString] = {
         val pf = pure { (sb: StringBuilder, cpo: Option[Int]) =>
             for (cp <- cpo) sb ++= Character.toChars(cp)
@@ -24,5 +24,5 @@ private [token] final class ConcreteString(desc: TextDesc, stringChar: StringCha
     override lazy val extendedAscii: Parsley[ScalaString] = String.ensureExtendedAscii(unicode)
 
     private lazy val strChar: Parsley[Option[Int]] =
-        stringChar(Character.letter('"', desc.escapeChars.escBegin, allowsAllSpace = false, desc.graphicCharacter))
+        stringChar(Character.letter('"', allowsAllSpace, isGraphic))
 }

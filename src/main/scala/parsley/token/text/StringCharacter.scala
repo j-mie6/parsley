@@ -4,26 +4,27 @@
 package parsley.token.text
 
 import parsley.Parsley, Parsley.empty
-import parsley.character.char
+import parsley.character.{satisfy, char}
 import parsley.combinator.skipSome
 import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.character.charLift
-import parsley.token.descriptions.text.TextDesc
+import parsley.token.descriptions.text.{EscapeDesc, StringDesc}
 
 // TODO: this should probably take the isGraphic predicate in instead
 // this way, the rawness of the character can be handled at the application site and not need a RawString class.
 private [token] abstract class StringCharacter {
-    def apply(letter: Parsley[Char]): Parsley[Option[Int]]
+    def apply(isLetter: Char => Boolean): Parsley[Option[Int]]
 }
 
-private [token] object RawCharacter extends StringCharacter {
-    override def apply(letter: Parsley[Char]): Parsley[Option[Int]] = letter.map(c => Some(c.toInt))
+// TODO: This needs logic to check the desc.rawEscape
+private [token] class RawCharacter(desc: StringDesc) extends StringCharacter {
+    override def apply(isLetter: Char => Boolean): Parsley[Option[Int]] = satisfy(isLetter).map(c => Some(c.toInt)).label("string character")
 }
 
-private [token] class EscapableCharacter(desc: TextDesc, escapes: Escape, space: Parsley[_]) extends StringCharacter {
-    private val escapeEmpty = desc.escapeChars.emptyEscape.fold[Parsley[Char]](empty)(char)
+private [token] class EscapableCharacter(desc: EscapeDesc, escapes: Escape, space: Parsley[_]) extends StringCharacter {
+    private val escapeEmpty = desc.emptyEscape.fold[Parsley[Char]](empty)(char)
     private lazy val escapeGap = {
-        if (desc.escapeChars.gapsSupported) skipSome(space.label("string gap")) *> '\\'.label("end of string gap")
+        if (desc.gapsSupported) skipSome(space.label("string gap")) *> '\\'.label("end of string gap")
         else empty
     }
     private lazy val stringEscape: Parsley[Option[Int]] = {
@@ -32,6 +33,6 @@ private [token] class EscapableCharacter(desc: TextDesc, escapes: Escape, space:
              <|> escapes.escapeCode.map(Some(_)).explain("invalid escape sequence"))
     }
 
-    override def apply(letter: Parsley[Char]): Parsley[Option[Int]] =
-        (letter.map(c => Some(c.toInt)) <|> stringEscape).label("string character")
+    override def apply(isLetter: Char => Boolean): Parsley[Option[Int]] =
+        (satisfy(c => isLetter(c) && c != desc.escBegin).map(c => Some(c.toInt)) <|> stringEscape).label("string character")
 }

@@ -17,14 +17,14 @@ private [text] object Character {
     final val MaxAscii: Int = 0x7f
     final val MaxExtendedAscii: Int = 0xff
 
-    def letter(terminal: Char, allowsAllSpace: Boolean, isGraphic: Char => Boolean): Parsley[Char] = satisfy {
-        if (allowsAllSpace) c => c != terminal && (isGraphic(c) || parsley.character.isWhitespace(c))
-        else                c => c != terminal && isGraphic(c)
+    def letter(terminalLead: Char, allowsAllSpace: Boolean, isGraphic: Char => Boolean): Char => Boolean = {
+        if (allowsAllSpace) c => c != terminalLead && (isGraphic(c) || parsley.character.isWhitespace(c))
+        else                c => c != terminalLead && isGraphic(c)
     }
 
-    def letter(terminal: Char, escapeLead: Char, allowsAllSpace: Boolean, isGraphic: Char => Boolean): Parsley[Char] = satisfy {
-        if (allowsAllSpace) c => c != terminal && c != escapeLead && (isGraphic(c) || parsley.character.isWhitespace(c))
-        else                c => c != terminal && c != escapeLead && isGraphic(c)
+    def letter(terminalLead: Char, escapeLead: Char, allowsAllSpace: Boolean, isGraphic: Char => Boolean): Char => Boolean = {
+        if (allowsAllSpace) c => c != terminalLead && c != escapeLead && (isGraphic(c) || parsley.character.isWhitespace(c))
+        else                c => c != terminalLead && c != escapeLead && isGraphic(c)
     }
 
     @inline def isSurrogatePair(high: Char, low: Char): Boolean = java.lang.Character.isSurrogatePair(high, low)

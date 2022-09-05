@@ -60,6 +60,8 @@ class Lexer private [parsley] (lang: descriptions.LanguageDesc) { lexer =>
             val character: parsley.token.text.Character = new LexemeCharacter(nonlexemes.text.character, whiteSpace)
             val string: parsley.token.text.String = new LexemeString(nonlexemes.text.string, whiteSpace)
             val rawString: parsley.token.text.String = new LexemeString(nonlexemes.text.rawString, whiteSpace)
+            val multiString: parsley.token.text.String = new LexemeString(nonlexemes.text.multiString, whiteSpace)
+            val rawMultiString: parsley.token.text.String = new LexemeString(nonlexemes.text.rawMultiString, whiteSpace)
         }
 
         def symbol(name: String): Parsley[String] = lexeme(string(name))
@@ -119,10 +121,17 @@ class Lexer private [parsley] (lang: descriptions.LanguageDesc) { lexer =>
 
         object text {
             private val escapes = new Escape(lang.textDesc.escapeChars)
+            private val escapeChar = new EscapableCharacter(lang.textDesc.escapeChars, escapes, space)
 
             val character: parsley.token.text.Character = new ConcreteCharacter(lang.textDesc, escapes)
-            val string: parsley.token.text.String = new ConcreteString(lang.textDesc, new EscapableCharacter(lang.textDesc, escapes, space))
+            val string: parsley.token.text.String =
+                new ConcreteString(lang.textDesc.string, escapeChar, lang.textDesc.graphicCharacter, false)
             val rawString: parsley.token.text.String = new RawString(lang.textDesc)
+                //new ConcreteString(lang.textDesc.string, new RawCharacter(lang.textDesc.string), lang.textDesc.graphicCharacter, false)
+            val multiString: parsley.token.text.String =
+                new ConcreteString(lang.textDesc.multiString, escapeChar, lang.textDesc.graphicCharacter, true)
+            val rawMultiString: parsley.token.text.String =
+                new ConcreteString(lang.textDesc.multiString, new RawCharacter(lang.textDesc.multiString), lang.textDesc.graphicCharacter, true)
         }
     }
 

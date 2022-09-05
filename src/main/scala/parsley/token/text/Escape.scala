@@ -7,7 +7,7 @@ import parsley.Parsley, Parsley.{attempt, empty, pure, unit}
 import parsley.character.{char, strings}
 import parsley.combinator.choice
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
-import parsley.token.descriptions.text.{CtrlEscape, EscapeDesc, NumericEscape}
+import parsley.token.descriptions.text.{CtrlEscape, EscapeDesc, NumericEscape, NumberOfDigits}
 import parsley.token.numeric
 
 private [token] class Escape(desc: EscapeDesc) {
@@ -41,10 +41,13 @@ private [token] class Escape(desc: EscapeDesc) {
 
     def fromDesc(radix: Int, desc: NumericEscape, integer: Parsley[BigInt]): Parsley[Int] = desc match {
         case NumericEscape.Illegal => empty
-        case NumericEscape.Supported(prefix, maxValue) => boundedChar(integer, maxValue, prefix, radix)
+        case NumericEscape.Supported(prefix, numberOfDigits, maxValue) => numberOfDigits match {
+            case NumberOfDigits.Unbounded   => boundedChar(integer, maxValue, prefix, radix)
+            case NumberOfDigits.AtMost(n)   => ??? // TODO:
+            case NumberOfDigits.Exactly(ns) => ??? // TODO:
+        }
     }
 
-    // TODO: These actually might have a fixed number of digits, we should add configuration for that
     private val decimalEscape = fromDesc(radix = 10, desc.decimalEscape, numeric.Generic.zeroAllowedDecimal)
     private val hexadecimalEscape = fromDesc(radix = 16, desc.hexadecimalEscape, numeric.Generic.zeroAllowedHexadecimal)
     private val octalEscape = fromDesc(radix = 8, desc.octalEscape, numeric.Generic.zeroAllowedOctal)

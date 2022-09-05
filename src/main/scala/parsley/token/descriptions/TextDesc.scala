@@ -1,10 +1,19 @@
 package parsley.token.descriptions.text
 
 private [parsley] // TODO: remove
+sealed abstract class NumberOfDigits
+private [parsley] // TODO: remove
+object NumberOfDigits {
+    case class AtMost(n: Int) extends NumberOfDigits
+    case class Exactly(ns: Set[Int]) extends NumberOfDigits
+    case object Unbounded extends NumberOfDigits
+}
+
+private [parsley] // TODO: remove
 sealed abstract class NumericEscape
 private [parsley] // TODO: remove
 object NumericEscape {
-    case class Supported(prefix: Option[Char], maxValue: Int) extends NumericEscape
+    case class Supported(prefix: Option[Char], numDigits: NumberOfDigits, maxValue: Int) extends NumericEscape
     case object Illegal extends NumericEscape
 }
 
@@ -80,9 +89,9 @@ object EscapeDesc {
                                             "US"  -> 0x001f,
                                             "SP"  -> 0x0020,
                                             "DEL" -> 0x007f),
-                             decimalEscape = NumericEscape.Supported(prefix = None, maxValue = 0x10ffff),
-                             hexadecimalEscape = NumericEscape.Supported(prefix = Some('x'), maxValue = 0x10ffff),
-                             octalEscape = NumericEscape.Supported(prefix = Some('o'), maxValue = 0x10ffff),
+                             decimalEscape = NumericEscape.Supported(prefix = None, NumberOfDigits.Unbounded, maxValue = 0x10ffff),
+                             hexadecimalEscape = NumericEscape.Supported(prefix = Some('x'), NumberOfDigits.Unbounded, maxValue = 0x10ffff),
+                             octalEscape = NumericEscape.Supported(prefix = Some('o'), NumberOfDigits.Unbounded, maxValue = 0x10ffff),
                              binaryEscape = NumericEscape.Illegal,
                              emptyEscape = Some('&'),
                              gapsSupported = true,
@@ -90,9 +99,22 @@ object EscapeDesc {
 }
 
 private [parsley] // TODO: remove
+sealed abstract class RawEscape
+private [parsley] // TODO: remove
+object RawEscape {
+    case object EscapeBackslashAndTerminatorButKeepRaw extends RawEscape
+    case object EscapeBackslashAndTerminatorNormally extends RawEscape
+    case object EscapeNothing extends RawEscape
+}
+
+private [parsley] // TODO: remove
+case class StringDesc (literalEnds: Set[String], rawEscape: RawEscape)
+
+private [parsley] // TODO: remove
 case class TextDesc (escapeChars: EscapeDesc,
                      characterLiteralEnd: Char,
-                     stringLiteralEnds: Set[Char],
+                     string: StringDesc,
+                     multiString: StringDesc,
                      graphicCharacter: Char => Boolean) {
 }
 
@@ -100,6 +122,7 @@ private [parsley]
 object TextDesc {
     val plain = TextDesc(escapeChars = EscapeDesc.haskell,
                          characterLiteralEnd = '\'',
-                         stringLiteralEnds = Set('"'),
+                         string = StringDesc(Set("\""), RawEscape.EscapeNothing),
+                         multiString = StringDesc(Set.empty, RawEscape.EscapeNothing),
                          graphicCharacter = _ >= ' ')
 }
