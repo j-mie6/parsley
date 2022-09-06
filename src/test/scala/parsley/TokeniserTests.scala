@@ -259,8 +259,8 @@ class TokeniserTests extends ParsleyTest {
         tokeniser.nonlexemes.text.rawString.unicode.parse(""""Not even \\\n\\n\n\n\n\n\\\j\joijs\\jsj this"""") should be {
             Success("""Not even \\\n\\n\n\n\n\n\\\j\joijs\\jsj this""")
         }
-        tokeniser.nonlexemes.text.rawString.unicode.parse(""""But we should be able to escape \", but it should remain like that!"""") should be {
-            Success("""But we should be able to escape \", but it should remain like that!""")
+        tokeniser.nonlexemes.text.rawString.unicode.parse(""""And we shouldn't be able to escape \", sorry!"""") should be {
+            Success("""And we shouldn't be able to escape \""")
         }
     }
 

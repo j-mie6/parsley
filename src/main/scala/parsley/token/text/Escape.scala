@@ -40,7 +40,7 @@ private [token] class Escape(desc: EscapeDesc) {
             }
         }
 
-    // This is a really neat trick :)
+    // this is a really neat trick :)
     private lazy val atMostReg = parsley.registers.Reg.make[Int]
     private def atMost(n: Int, radix: Int, digit: Parsley[Char]): Parsley[BigInt] = {
         atMostReg.put(n) *> ensure(atMostReg.gets(_ > 0),

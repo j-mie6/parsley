@@ -104,16 +104,7 @@ object EscapeDesc {
 }
 
 private [parsley] // TODO: remove
-sealed abstract class RawEscape
-private [parsley] // TODO: remove
-object RawEscape {
-    case object EscapeBackslashAndTerminatorButKeepRaw extends RawEscape
-    case object EscapeBackslashAndTerminatorNormally extends RawEscape
-    case object EscapeNothing extends RawEscape
-}
-
-private [parsley] // TODO: remove
-case class StringDesc (literalEnds: Set[String], rawEscape: RawEscape)
+case class StringDesc (literalEnds: Set[String])
 
 private [parsley] // TODO: remove
 case class TextDesc (escapeChars: EscapeDesc,
@@ -127,7 +118,7 @@ private [parsley]
 object TextDesc {
     val plain = TextDesc(escapeChars = EscapeDesc.haskell,
                          characterLiteralEnd = '\'',
-                         string = StringDesc(Set("\""), RawEscape.EscapeNothing),
-                         multiString = StringDesc(Set.empty, RawEscape.EscapeNothing),
+                         string = StringDesc(Set("\"")),
+                         multiString = StringDesc(Set.empty),
                          graphicCharacter = _ >= ' ')
 }

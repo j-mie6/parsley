@@ -10,27 +10,24 @@ import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.character.charLift
 import parsley.token.descriptions.text.{EscapeDesc, StringDesc}
 
-// TODO: this should probably take the isGraphic predicate in instead
-// this way, the rawness of the character can be handled at the application site and not need a RawString class.
 private [token] abstract class StringCharacter {
     def apply(isLetter: Char => Boolean): Parsley[Option[Int]]
 }
 
-// TODO: This needs logic to check the desc.rawEscape
 private [token] class RawCharacter(desc: StringDesc) extends StringCharacter {
     override def apply(isLetter: Char => Boolean): Parsley[Option[Int]] = satisfy(isLetter).map(c => Some(c.toInt)).label("string character")
 }
 
 private [token] class EscapableCharacter(desc: EscapeDesc, escapes: Escape, space: Parsley[_]) extends StringCharacter {
-    private val escapeEmpty = desc.emptyEscape.fold[Parsley[Char]](empty)(char)
+    private lazy val escapeEmpty = desc.emptyEscape.fold[Parsley[Char]](empty)(char)
     private lazy val escapeGap = {
-        if (desc.gapsSupported) skipSome(space.label("string gap")) *> '\\'.label("end of string gap")
+        if (desc.gapsSupported) skipSome(space.label("string gap")) *> desc.escBegin.label("end of string gap")
         else empty
     }
     private lazy val stringEscape: Parsley[Option[Int]] = {
-        '\\' *> (escapeGap #> None
-             <|> escapeEmpty #> None
-             <|> escapes.escapeCode.map(Some(_)).explain("invalid escape sequence"))
+        desc.escBegin *> (escapeGap #> None
+                      <|> escapeEmpty #> None
+                      <|> escapes.escapeCode.map(Some(_)).explain("invalid escape sequence"))
     }
 
     override def apply(isLetter: Char => Boolean): Parsley[Option[Int]] =
