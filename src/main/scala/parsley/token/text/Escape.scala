@@ -47,16 +47,16 @@ private [token] class Escape(desc: EscapeDesc) {
                                    digit <* atMostReg.modify(_ - 1)).foldLeft1[BigInt](0)((n, d) => n * radix + d.asDigit)
     }
 
-    private def exactly(n: Int, radix: Int, digit: Parsley[Char]): Parsley[BigInt] = {
+    private def exactly(n: Int, full: Int, radix: Int, digit: Parsley[Char]): Parsley[BigInt] = {
         atMost(n, radix, digit) <* atMostReg.get.guardAgainst {
-            case x if x > 0 => Seq(s"literal required $n digits, but only got ${n-x}")
+            case x if x > 0 => Seq(s"literal required $full digits, but only got ${full-x}")
         }
     }
 
     private def oneOfExactly(n: Int, ns: List[Int], radix: Int, digit: Parsley[Char]): Parsley[BigInt] = {
         def go(prev: Int, m: Int, ns: List[Int]): Parsley[BigInt] = ns match {
-            case Nil => exactly(m-prev, radix, digit)
-            case n :: ns  => (exactly(m-prev, radix, digit), option(attempt(go(m, n, ns)))).zipped[BigInt] {
+            case Nil => exactly(m-prev, m, radix, digit)
+            case n :: ns  => (exactly(m-prev, m, radix, digit), option(attempt(go(m, n, ns)))).zipped[BigInt] {
                 case (x, None) => x
                 case (x, Some(y)) => x * BigInt(radix).pow(n - m) + y
             }
