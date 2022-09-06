@@ -4,8 +4,10 @@ private [parsley] // TODO: remove
 sealed abstract class NumberOfDigits
 private [parsley] // TODO: remove
 object NumberOfDigits {
-    case class AtMost(n: Int) extends NumberOfDigits
-    case class Exactly(ns: Set[Int]) extends NumberOfDigits
+    case class AtMost(n: Int) extends NumberOfDigits {
+        //TODO: require n > 0
+    }
+    case class Exactly(n0: Int, ns: Int*) extends NumberOfDigits
     case object Unbounded extends NumberOfDigits
 }
 

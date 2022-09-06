@@ -834,6 +834,10 @@ object combinator {
       */
     def when(condP: Parsley[Boolean], thenP: =>Parsley[Unit]): Parsley[Unit] = ifP(condP, thenP, unit)
 
+    def ensure[A](condP: Parsley[Boolean], beforeP: =>Parsley[A]): Parsley[A] =
+        //ifP(condP, beforeP, empty)
+        condP.filter(identity) *> beforeP
+
     /** This combinator repeatedly parses `p` so long as it returns `true`.
       *
       * This is a lifted `while`-loop. First, parse `p`: if it is successful and
