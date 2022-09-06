@@ -8,13 +8,13 @@ import parsley.character.{satisfy, char}
 import parsley.combinator.skipSome
 import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.character.charLift
-import parsley.token.descriptions.text.{EscapeDesc, StringDesc}
+import parsley.token.descriptions.text.EscapeDesc
 
 private [token] abstract class StringCharacter {
     def apply(isLetter: Char => Boolean): Parsley[Option[Int]]
 }
 
-private [token] class RawCharacter(desc: StringDesc) extends StringCharacter {
+private [token] object RawCharacter extends StringCharacter {
     override def apply(isLetter: Char => Boolean): Parsley[Option[Int]] = satisfy(isLetter).map(c => Some(c.toInt)).label("string character")
 }
 

@@ -125,13 +125,13 @@ class Lexer private [parsley] (lang: descriptions.LanguageDesc) { lexer =>
 
             val character: parsley.token.text.Character = new ConcreteCharacter(lang.textDesc, escapes)
             val string: parsley.token.text.String =
-                new ConcreteString(lang.textDesc.string, escapeChar, lang.textDesc.graphicCharacter, false)
+                new ConcreteString(lang.textDesc.stringEnds, escapeChar, lang.textDesc.graphicCharacter, false)
             val rawString: parsley.token.text.String =
-                new ConcreteString(lang.textDesc.string, new RawCharacter(lang.textDesc.string), lang.textDesc.graphicCharacter, false)
+                new ConcreteString(lang.textDesc.stringEnds, RawCharacter, lang.textDesc.graphicCharacter, false)
             val multiString: parsley.token.text.String =
-                new ConcreteString(lang.textDesc.multiString, escapeChar, lang.textDesc.graphicCharacter, true)
+                new ConcreteString(lang.textDesc.multiStringEnds, escapeChar, lang.textDesc.graphicCharacter, true)
             val rawMultiString: parsley.token.text.String =
-                new ConcreteString(lang.textDesc.multiString, new RawCharacter(lang.textDesc.multiString), lang.textDesc.graphicCharacter, true)
+                new ConcreteString(lang.textDesc.multiStringEnds, RawCharacter, lang.textDesc.graphicCharacter, true)
         }
     }
 

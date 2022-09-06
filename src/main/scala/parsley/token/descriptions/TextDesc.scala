@@ -1,8 +1,6 @@
 package parsley.token.descriptions.text
 
-private [parsley] // TODO: remove
 sealed abstract class NumberOfDigits
-private [parsley] // TODO: remove
 object NumberOfDigits {
     case class AtMost(n: Int) extends NumberOfDigits {
         if (n <= 0) throw new IllegalArgumentException("AtMost may only be passed a number of digits greater than 0")
@@ -14,23 +12,18 @@ object NumberOfDigits {
     case object Unbounded extends NumberOfDigits
 }
 
-private [parsley] // TODO: remove
 sealed abstract class NumericEscape
-private [parsley] // TODO: remove
 object NumericEscape {
     case class Supported(prefix: Option[Char], numDigits: NumberOfDigits, maxValue: Int) extends NumericEscape
     case object Illegal extends NumericEscape
 }
 
-private [parsley] // TODO: remove
 sealed abstract class CtrlEscape
-private [parsley] // TODO: remove
 object CtrlEscape {
     case class Supported(prefix: Char, mapping: Map[Char, Int]) extends CtrlEscape
     case object Illegal extends CtrlEscape
 }
 
-private [parsley] // TODO: remove
 case class EscapeDesc (escBegin: Char,
                        literals: Set[Char],
                        singleMap: Map[Char, Int],
@@ -48,7 +41,6 @@ case class EscapeDesc (escBegin: Char,
         case (k, v) => s"$k" -> v
     }
 }
-private [parsley] // TODO: remove
 object EscapeDesc {
     val haskell = EscapeDesc(escBegin = '\\',
                              literals = Set('\'', '\"', '\\'),
@@ -103,22 +95,17 @@ object EscapeDesc {
                              ctrlEscape = CtrlEscape.Supported(prefix = '^', mapping = ('@' to '_').map(c => c -> (c - '@')).toMap))
 }
 
-private [parsley] // TODO: remove
-case class StringDesc (literalEnds: Set[String])
-
-private [parsley] // TODO: remove
 case class TextDesc (escapeChars: EscapeDesc,
                      characterLiteralEnd: Char,
-                     string: StringDesc,
-                     multiString: StringDesc,
+                     stringEnds: Set[String],
+                     multiStringEnds: Set[String],
                      graphicCharacter: Char => Boolean) {
 }
 
-private [parsley]
 object TextDesc {
     val plain = TextDesc(escapeChars = EscapeDesc.haskell,
                          characterLiteralEnd = '\'',
-                         string = StringDesc(Set("\"")),
-                         multiString = StringDesc(Set.empty),
+                         stringEnds = Set("\""),
+                         multiStringEnds = Set.empty,
                          graphicCharacter = _ >= ' ')
 }

@@ -9,10 +9,9 @@ import parsley.Parsley, Parsley.{fresh, pure, notFollowedBy}
 import parsley.combinator.{choice, between, skipMany, skipManyUntil}
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 import parsley.implicits.character.{charLift, stringLift}
-import parsley.token.descriptions.text.StringDesc
 
-private [token] final class ConcreteString(desc: StringDesc, stringChar: StringCharacter, isGraphic: Char => Boolean, allowsAllSpace: Boolean) extends String {
-    override lazy val unicode: Parsley[ScalaString] = choice(desc.literalEnds.view.map(makeStringParser).toSeq: _*) *> sbReg.gets(_.toString)
+private [token] final class ConcreteString(ends: Set[ScalaString], stringChar: StringCharacter, isGraphic: Char => Boolean, allowsAllSpace: Boolean) extends String {
+    override lazy val unicode: Parsley[ScalaString] = choice(ends.view.map(makeStringParser).toSeq: _*) *> sbReg.gets(_.toString)
     override lazy val ascii: Parsley[ScalaString] = String.ensureAscii(unicode)
     override lazy val extendedAscii: Parsley[ScalaString] = String.ensureExtendedAscii(unicode)
 
