@@ -20,6 +20,10 @@ import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
 import parsley.internal.deepembedding.singletons
 import scala.annotation.implicitNotFound
 
+abstract class ImplicitLexeme private [token] {
+    implicit def implicitLexeme(s: String): Parsley[Unit]
+}
+
 /**
   * When provided with a `LanguageDef`, this class will produce a large variety of parsers that can be used for
   * tokenisation of a language. This includes parsing numbers and strings in their various formats and ensuring that
@@ -135,9 +139,7 @@ class Lexer private [parsley] (lang: descriptions.LanguageDesc) { lexer =>
         }
     }
 
-    // TODO: Exposing this to the external API is a pain, because it's a path-dependent type, and violates private...
-    // perhaps we make an interface for this?
-    object implicits /*extends something?*/ {
+    val implicits: ImplicitLexeme = new ImplicitLexeme {
         implicit def implicitLexeme(s: String): Parsley[Unit] = {
             if (lang.identDesc.keywords(s)) lexemes.keyword(s)
             else if (lang.operators(s))     lexemes.maxOp(s)
