@@ -230,7 +230,7 @@ private [backend] object Choice {
         case st@StringTok(s)                     =>
             Some((s.head, st.expected.fold[Option[ExpectItem]](Some(ExpectRaw(s)))(n => if (n.nonEmpty) Some(Desc(n)) else None), s.size, backtracks))
         case op@MaxOp(o)                         => Some((o.head, Some(Desc(o)), o.size, backtracks))
-        case _: StringLiteral | RawStringLiteral => Some(('"', Some(Desc("string")), 1, backtracks))
+        //case _: StringLiteral | RawStringLiteral => Some(('"', Some(Desc("string")), 1, backtracks))
         // TODO: This can be done for case insensitive things too, but with duplicated branching
         case t@Specific(s) if t.caseSensitive    => Some((s.head, Some(Desc(s)), s.size, backtracks))
         case Attempt(t)                          => tablable(t, backtracks = true)

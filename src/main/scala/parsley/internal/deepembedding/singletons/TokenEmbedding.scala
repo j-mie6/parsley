@@ -32,36 +32,6 @@ private [parsley] final class Sign[A](ty: SignType, signPresence: PlusSignPresen
     override def instr: instructions.Instr = new instructions.TokenSign(ty, signPresence)
 }
 
-private [parsley] object Natural extends Singleton[BigInt] {
-    // $COVERAGE-OFF$
-    override val pretty: String = "natural"
-    override val instr: instructions.Instr = instructions.TokenNatural
-}
-
-private [parsley] object Float extends Singleton[BigDecimal] {
-    // $COVERAGE-OFF$
-    override val pretty: String = "float"
-    override val instr: instructions.Instr = instructions.TokenFloat
-}
-
-private [parsley] object Escape extends Singleton[Char] {
-    // $COVERAGE-OFF$
-    override val pretty: String = "escape"
-    override def instr: instructions.Instr = new instructions.TokenEscape
-}
-
-private [parsley] final class StringLiteral(ws: Char => Boolean) extends Singleton[String] {
-    // $COVERAGE-OFF$
-    override val pretty: String = "stringLiteral"
-    override def instr: instructions.Instr = new instructions.TokenString(ws)
-}
-
-private [parsley] object RawStringLiteral extends Singleton[String] {
-    // $COVERAGE-OFF$
-    override val pretty: String = "rawStringLiteral"
-    override val instr: instructions.Instr = instructions.TokenRawString
-}
-
 private [parsley] class NonSpecific(override val pretty: String, name: String, illegalName: String,
                                     start: Char => Boolean, letter: Char => Boolean, illegal: String => Boolean) extends Singleton[String] {
     override def instr: instructions.Instr = new instructions.TokenNonSpecific(name, illegalName)(start, letter, illegal)
