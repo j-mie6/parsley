@@ -20,13 +20,24 @@ import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
 import parsley.internal.deepembedding.singletons
 import scala.annotation.implicitNotFound
 
-/** TODO:
+/** This class provides implicit functionality to promote string
+  * literals into tokens.
   *
-  * @param lang TODO:
   * @since 4.0.0
   */
 abstract class ImplicitLexeme private [token] {
-    /** TODO:
+    /** This method takes the given string and turns it
+      * into a parser for that token.
+      *
+      * This method can be brought into scope in a parser to
+      * allow string literals to naturally serve as tokens.
+      * In particular, it will correctly deal with known keywords
+      * and operators, and otherwise handle other strings at
+      * face-value.
+      *
+      * @note it is assumed that
+      * the token's content is irrelevant, since it is
+      * already known what it is, so `Unit` is returned.
       *
       * @since 4.0.0
       */
@@ -56,6 +67,43 @@ abstract class ImplicitLexeme private [token] {
   * performance: care '''will''' have been taken to ensure these
   * implementations precisely match the semantics of the originals.
   *
+  * @define numeric
+  *     This object contains lexing functionality relevant to the parsing
+  *     of numbers. This is sub-divided into different categories:
+  *
+  *       - integers (both signed and unsigned)
+  *       - reals    (signed only)
+  *       - a combination of the two (signed and unsigned)
+  *
+  *     These contain relevant functionality for the processing of
+  *     decimal, hexadecimal, octal, and binary literals; or some
+  *     mixed combination thereof (as specified by `lang.numericDesc`).
+  *     Additionally, it is possible to ensure literals represent known
+  *     sizes or precisions.
+  *
+  * @define text
+  *     This object contains lexing functionality relevant to the parsing
+  *     of text. This is sub-divided into different categories:
+  *
+  *       - string literals (both with escapes and raw)
+  *       - multi-line string literals (both with escapes and raw)
+  *       - character literals
+  *
+  *     These contain the relevant functionality required to specify the
+  *     degree of unicode support for the underlying language, from
+  *     ASCII to full UTF-16.
+  *
+  * @define natural TODO:
+  * @define integer TODO:
+  * @define real TODO:
+  * @define unsignedCombined TODO:
+  * @define signedCombined TODO:
+  *
+  * @define character TODO:
+  * @define string TODO:
+  * @define multiString TODO:
+  * @define raw TODO:
+  *
   * @param lang the configuration for the lexer, specifying the lexing
   *             rules of the grammar/language being parsed.
   * @since 4.0.0
@@ -63,8 +111,20 @@ abstract class ImplicitLexeme private [token] {
 class Lexer private [parsley] (lang: descriptions.LanguageDesc) { lexer =>
     def this(lang: LanguageDef) = this(lang.toDesc)
 
-    // public API
-    /** TODO:
+    /** This object is concerned with ''lexemes'': these are tokens that are
+      * treated as "words", such that whitespace will be consumed after each
+      * has been parsed.
+      *
+      * Ideally, a wider parser should not be concerned with
+      * handling whitespace, as it is responsible for dealing with a stream
+      * of tokens. With parser combinators, however, it is usually not the
+      * case that there is a separate distinction between the parsing phase
+      * and the lexing phase. That said, it is good practice to establish
+      * a logical separation between the two worlds. As such, this object
+      * contains parsers that parse tokens, and these are whitespace-aware.
+      * This means that whitespace will be consumed '''after''' any of these
+      * parsers are parsed. It is not, however, required that whitespace be
+      * present.
       *
       * @since 4.0.0
       */
@@ -77,34 +137,91 @@ class Lexer private [parsley] (lang: descriptions.LanguageDesc) { lexer =>
         def operator(name: String): Parsley[Unit] = lexeme(nonlexemes.operator(name))
         def maxOp(name: String): Parsley[Unit] = lexeme(nonlexemes.maxOp(name))
 
-        /** TODO:
+        /** $numeric
           *
           * @since 4.0.0
           */
         object numeric {
+            /** $natural
+              *
+              * @since 4.0.0
+              * @note Alias for [[natural `natural`]].
+              */
             def unsigned: parsley.token.numeric.Integer = natural
+            /** $natural
+              *
+              * @since 4.0.0
+              */
             val natural: parsley.token.numeric.Integer = new LexemeInteger(nonlexemes.numeric.natural, whiteSpace)
 
+            /** $integer
+              *
+              * @since 4.0.0
+              * @note Alias for [[integer `integer`]]
+              */
             def signed: parsley.token.numeric.Integer = integer
+            /** $integer
+              *
+              * @since 4.0.0
+              */
             val integer: parsley.token.numeric.Integer = new LexemeInteger(nonlexemes.numeric.integer, whiteSpace)
 
+            /** $real
+              *
+              * @since 4.0.0
+              * @note Alias for [[real `real`]]
+              */
             def floating: parsley.token.numeric.Real = real
             private [Lexer] val positiveReal = new LexemeReal(nonlexemes.numeric.positiveReal, whiteSpace)
+            /** $real
+              *
+              * @since 4.0.0
+              */
             val real: parsley.token.numeric.Real = new LexemeReal(nonlexemes.numeric.real, whiteSpace)
 
+            /** $unsignedCombined
+              *
+              * @since 4.0.0
+              */
             val unsignedCombined: parsley.token.numeric.Combined = new LexemeCombined(nonlexemes.numeric.unsignedCombined, whiteSpace)
+            /** $signedCombined
+              *
+              * @since 4.0.0
+              */
             val signedCombined: parsley.token.numeric.Combined = new LexemeCombined(nonlexemes.numeric.signedCombined, whiteSpace)
         }
 
-        /** TODO:
+        /** $text
           *
           * @since 4.0.0
           */
         object text {
+            /** $character
+              *
+              * @since 4.0.0
+              */
             val character: parsley.token.text.Character = new LexemeCharacter(nonlexemes.text.character, whiteSpace)
+            /** $string
+              *
+              * @since 4.0.0
+              */
             val string: parsley.token.text.String = new LexemeString(nonlexemes.text.string, whiteSpace)
+            /** $string
+              *
+              * @note $raw
+              * @since 4.0.0
+              */
             val rawString: parsley.token.text.String = new LexemeString(nonlexemes.text.rawString, whiteSpace)
+            /** $multiString
+              *
+              * @since 4.0.0
+              */
             val multiString: parsley.token.text.String = new LexemeString(nonlexemes.text.multiString, whiteSpace)
+            /** $multiString
+              *
+              * @note $raw
+              * @since 4.0.0
+              */
             val rawMultiString: parsley.token.text.String = new LexemeString(nonlexemes.text.rawMultiString, whiteSpace)
         }
 
@@ -133,7 +250,20 @@ class Lexer private [parsley] (lang: descriptions.LanguageDesc) { lexer =>
 
     }
 
-    /** TODO:
+    /** This object is concerned with ''non-lexemes'': these are tokens that
+      * do not give any special treatment to whitespace.
+      *
+      * Whilst the functionality in `lexeme` is ''strongly'' recommended for
+      * wider use in a parser, the functionality here may be useful for more
+      * specialised use-cases. In particular, these may for the building blocks
+      * for more complex tokens (where whitespace is not allowed between them, say),
+      * in which case these compound tokens can be turned into lexemes manually.
+      * Alternatively, these tokens can be used for ''lexical extraction'', which
+      * can be performed by the [[parsley.errors.ErrorBuilder `ErrorBuilder`]]
+      * typeclass: this can be used to try and extract tokens from the input stream
+      * when an error happens, to provide a more informative error. In this case,
+      * it is desirable to ''not'' consume whitespace after the token to keep the
+      * error tight and precise.
       *
       * @since 4.0.0
       */
@@ -152,26 +282,61 @@ class Lexer private [parsley] (lang: descriptions.LanguageDesc) { lexer =>
         }
         def maxOp(name: String): Parsley[Unit] = new Parsley(new singletons.MaxOp(name, lang.operators))
 
-        /** TODO:
+        /** $numeric
           *
           * @since 4.0.0
           */
         object numeric {
+            /** $natural
+              *
+              * @since 4.0.0
+              * @note Alias for [[natural `natural`]].
+              */
             def unsigned: parsley.token.numeric.Integer = natural
+            /** $natural
+              *
+              * @since 4.0.0
+              */
             val natural: parsley.token.numeric.Integer = new UnsignedInteger(lang.numericDesc)
 
+            /** $integer
+              *
+              * @since 4.0.0
+              * @note Alias for [[integer `integer`]]
+              */
             def signed: parsley.token.numeric.Integer = integer
+            /** $integer
+              *
+              * @since 4.0.0
+              */
             val integer: parsley.token.numeric.Integer = new SignedInteger(lang.numericDesc, natural)
 
+            /** $real
+              *
+              * @since 4.0.0
+              * @note Alias for [[real `real`]]
+              */
             def floating: parsley.token.numeric.Real = real
             private [Lexer] val positiveReal = new UnsignedReal(lang.numericDesc, natural)
+            /** $real
+              *
+              * @since 4.0.0
+              */
             val real: parsley.token.numeric.Real = new SignedReal(lang.numericDesc, positiveReal)
 
+            /** $unsignedCombined
+              *
+              * @since 4.0.0
+              */
             val unsignedCombined: parsley.token.numeric.Combined = new UnsignedCombined(lang.numericDesc, integer, positiveReal)
+            /** $signedCombined
+              *
+              * @since 4.0.0
+              */
             val signedCombined: parsley.token.numeric.Combined = new SignedCombined(lang.numericDesc, unsignedCombined)
         }
 
-        /** TODO:
+        /** $text
           *
           * @since 4.0.0
           */
@@ -179,19 +344,42 @@ class Lexer private [parsley] (lang: descriptions.LanguageDesc) { lexer =>
             private val escapes = new Escape(lang.textDesc.escapeChars)
             private val escapeChar = new EscapableCharacter(lang.textDesc.escapeChars, escapes, space)
 
+            /** $character
+              *
+              * @since 4.0.0
+              */
             val character: parsley.token.text.Character = new ConcreteCharacter(lang.textDesc, escapes)
+            /** $string
+              *
+              * @since 4.0.0
+              */
             val string: parsley.token.text.String =
                 new ConcreteString(lang.textDesc.stringEnds, escapeChar, lang.textDesc.graphicCharacter, false)
+            /** $string
+              *
+              * @note $raw
+              * @since 4.0.0
+              */
             val rawString: parsley.token.text.String =
                 new ConcreteString(lang.textDesc.stringEnds, RawCharacter, lang.textDesc.graphicCharacter, false)
+            /** $multiString
+              *
+              * @since 4.0.0
+              */
             val multiString: parsley.token.text.String =
                 new ConcreteString(lang.textDesc.multiStringEnds, escapeChar, lang.textDesc.graphicCharacter, true)
+            /** $multiString
+              *
+              * @note $raw
+              * @since 4.0.0
+              */
             val rawMultiString: parsley.token.text.String =
                 new ConcreteString(lang.textDesc.multiStringEnds, RawCharacter, lang.textDesc.graphicCharacter, true)
         }
     }
 
-    /** TODO:
+    /** This object can be imported from to expose a way of converting raw Scala string literals
+      * into a parser for that specific token.
       *
       * @since 4.0.0
       */
