@@ -33,9 +33,31 @@ abstract class ImplicitLexeme private [token] {
     implicit def implicitLexeme(s: String): Parsley[Unit]
 }
 
-/** TODO:
+/** This class provides a large selection of functionality concerned
+  * with lexing.
   *
-  * @param lang TODO:
+  * This class provides lexing functionality to `parsley`, however
+  * it is guaranteed that nothing in this class is not implementable
+  * purely using `parsley`'s pre-existing functionality. These are
+  * regular parsers, but constructed in such a way that they create
+  * a clear and logical separation from the rest of the parser.
+  *
+  * The class is broken up into several internal "modules" that group
+  * together similar kinds of functionality. Importantly, the `lexemes`
+  * and `nonlexemes` objects separate the underlying token implementations
+  * based on whether or not they consume whitespace or not. Functionality
+  * is broadly duplicated across both of these modules: `lexemes` should
+  * be used by a wider parser, to ensure whitespace is handled uniformly;
+  * and `nonlexemes` should be used to define further composite tokens or
+  * in special circumstances where whitespace should not be consumed.
+  *
+  * It is possible that some of the implementations of
+  * parsers found within this class may have been hand-optimised for
+  * performance: care '''will''' have been taken to ensure these
+  * implementations precisely match the semantics of the originals.
+  *
+  * @param lang the configuration for the lexer, specifying the lexing
+  *             rules of the grammar/language being parsed.
   * @since 4.0.0
   */
 class Lexer private [parsley] (lang: descriptions.LanguageDesc) { lexer =>
@@ -182,22 +204,22 @@ class Lexer private [parsley] (lang: descriptions.LanguageDesc) { lexer =>
         }
     }
 
-    /**`lexeme(p)` first applies parser `p` and then the `whiteSpace` parser, returning the value of
-     * `p`. Every lexical token (lexeme) is defined using `lexeme`, this way every parse starts at a
-     * point without white space. The only point where the `whiteSpace` parser should be called
-     * explicitly is the start of the main parser in order to skip any leading white space.*/
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     def lexeme[A](p: =>Parsley[A]): Parsley[A] = p <* whiteSpace
 
-    /**Parses any white space. White space consists of zero or more occurrences of a `space` (as
-     * provided by the `LanguageDef`), a line comment or a block (multi-line) comment. Block
-     * comments may be nested. How comments are started and ended is defined in the `LanguageDef`
-     * that is provided to the lexer.*/
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     lazy val whiteSpace: Parsley[Unit] = whiteSpace_(lang.whitespaceDesc.space).hide
 
-    /**Parses any white space. White space consists of zero or more occurrences of a `space` (as
-     * provided by the parameter), a line comment or a block (multi-line) comment. Block
-     * comments may be nested. How comments are started and ended is defined in the `LanguageDef`
-     * that is provided to the lexer.*/
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     val whiteSpace_ : Impl => Parsley[Unit] = {
         case NotRequired => skipComments
         case Static(ws) => new Parsley(new singletons.WhiteSpace(ws, lang.whitespaceDesc.commentStart, lang.whitespaceDesc.commentEnd,
@@ -213,7 +235,10 @@ class Lexer private [parsley] (lang: descriptions.LanguageDesc) { lexer =>
         // $COVERAGE-ON$
     }
 
-    /**Parses any comments and skips them, this includes both line comments and block comments.*/
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     lazy val skipComments: Parsley[Unit] = {
         if (!lang.whitespaceDesc.supportsComments) unit
         else {
@@ -223,203 +248,44 @@ class Lexer private [parsley] (lang: descriptions.LanguageDesc) { lexer =>
     }
 
     // legacy API
-    /**This lexeme parser parses a legal identifier. Returns the identifier string. This parser will
-     * fail on identifiers that are reserved words (i.e. keywords). Legal identifier characters and
-     * keywords are defined in the `LanguageDef` provided to the lexer. An identifier is treated
-     * as a single token using `attempt`.*/
-    @deprecated
-    def identifier: Parsley[String] = lexemes.identifier
-
-    /**The lexeme parser `keyword(name)` parses the symbol `name`, but it also checks that the `name`
-     * is not a prefix of a valid identifier. A `keyword` is treated as a single token using `attempt`.*/
-    @deprecated
-    def keyword(name: String): Parsley[Unit] = lexemes.keyword(name)
-
-    /**This lexeme parser parses a legal operator. Returns the name of the operator. This parser
-     * will fail on any operators that are reserved operators. Legal operator characters and
-     * reserved operators are defined in the `LanguageDef` provided to the lexer. A
-     * `userOp` is treated as a single token using `attempt`.*/
-    @deprecated
-    def userOp: Parsley[String] = lexemes.userOp
-
-    /**This non-lexeme parser parses a reserved operator. Returns the name of the operator.
-     * Legal operator characters and reserved operators are defined in the `LanguageDef`
-     * provided to the lexer. A `reservedOp_` is treated as a single token using `attempt`.*/
-    @deprecated
-    def reservedOp_ : Parsley[String] = nonlexemes.reservedOp
-
-    /**This lexeme parser parses a reserved operator. Returns the name of the operator. Legal
-     * operator characters and reserved operators are defined in the `LanguageDef` provided
-     * to the lexer. A `reservedOp` is treated as a single token using `attempt`.*/
-    @deprecated
-    def reservedOp: Parsley[String] = lexemes.reservedOp
-
-    /**The lexeme parser `operator(name)` parses the symbol `name`, but also checks that the `name`
-     * is not the prefix of a valid operator. An `operator` is treated as a single token using
-     * `attempt`.*/
-    @deprecated
-    def operator(name: String): Parsley[Unit] = lexemes.operator(name)
-
-    /**The non-lexeme parser `operator_(name)` parses the symbol `name`, but also checks that the `name`
-     * is not the prefix of a valid operator. An `operator` is treated as a single token using
-     * `attempt`.*/
-    @deprecated
-    def operator_(name: String): Parsley[Unit] = nonlexemes.operator(name)
-
-    /**The lexeme parser `maxOp(name)` parses the symbol `name`, but also checks that the `name`
-      * is not part of a larger reserved operator. An `operator` is treated as a single token using
-      * `attempt`.*/
-    @deprecated
-    def maxOp(name: String): Parsley[Unit] = lexemes.maxOp(name)
-
-    /**The non-lexeme parser `maxOp_(name)` parses the symbol `name`, but also checks that the `name`
-      * is not part of a larger reserved operator. An `operator` is treated as a single token using
-      * `attempt`.*/
-    @deprecated
-    def maxOp_(name: String): Parsley[Unit] = nonlexemes.maxOp(name)
-
-    /**This lexeme parser parses a single literal character. Returns the literal character value.
-     * This parser deals correctly with escape sequences. The literal character is parsed according
-     * to the grammar rules defined in the Haskell report (which matches most programming languages
-     * quite closely).*/
-    @deprecated
-    def charLiteral: Parsley[Char] = lexemes.text.character.basicMultilingualPlane
-
-    /**This lexeme parser parses a literal string. Returns the literal string value. This parser
-     * deals correctly with escape sequences and gaps. The literal string is parsed according to
-     * the grammar rules defined in the Haskell report (which matches most programming languages
-     * quite closely).*/
-    @deprecated
-    def stringLiteral: Parsley[String] = lexemes.text.string.unicode
-
-    /**This non-lexeme parser parses a literal string. Returns the literal string value. This parser
-     * deals correctly with escape sequences and gaps. The literal string is parsed according to
-     * the grammar rules defined in the Haskell report (which matches most programming languages
-     * quite closely).*/
-    @deprecated
-    def stringLiteral_ : Parsley[String] = nonlexemes.text.string.unicode
-
-    /**This non-lexeme parser parses a string in a raw fashion. The escape characters in the string
-     * remain untouched. While escaped quotes do not end the string, they remain as \" in the result
-     * instead of becoming a quote character. Does not support string gaps. */
-    @deprecated
-    def rawStringLiteral: Parsley[String] = nonlexemes.text.rawString.unicode
-
-    /**This lexeme parser parses a natural number (a positive whole number). Returns the value of
-     * the number. The number can specified in `decimal`, `hexadecimal` or `octal`. The number is
-     * parsed according to the grammar rules in the Haskell report.*/
-    @deprecated
-    def natural: Parsley[Int] = lexemes.numeric.natural.number.map(_.toInt)
-
-    /**This lexeme parser parses an integer (a whole number). This parser is like `natural` except
-     * that it can be prefixed with a sign (i.e '-' or '+'). Returns the value of the number. The
-     * number can be specified in `decimal`, `hexadecimal` or `octal`. The number is parsed
-     * according to the grammar rules in the haskell report.*/
-    @deprecated
-    def integer: Parsley[Int] = lexemes.numeric.integer.number.map(_.toInt)
-
-    /**This lexeme parser parses a floating point value. Returns the value of the number. The number
-     * is parsed according to the grammar rules defined in the Haskell report.*/
-    @deprecated
-    def unsignedFloat: Parsley[Double] = lexemes.numeric.positiveReal.decimal.map(_.toDouble)
-
-    /**This lexeme parser parses a floating point value. Returns the value of the number. The number
-     * is parsed according to the grammar rules defined in the Haskell report. Accepts an optional
-     * '+' or '-' sign.*/
-    @deprecated
-    def float: Parsley[Double] = lexemes.numeric.real.decimal.map(_.toDouble)
-
-    /**This lexeme parser parses either `integer` or `float`. Returns the value of the number. This
-     * parser deals with any overlap in the grammar rules for naturals and floats. The number is
-     * parsed according to the grammar rules defined in the Haskell report.*/
-    @deprecated
-    def number: Parsley[Either[Int, Double]] = lexemes.numeric.signedCombined.number.map(_.fold(x => Left(x.toInt), y => Right(y.toDouble)))
-
-    /**This lexeme parser parses either `natural` or `unsigned float`. Returns the value of the number. This
-      * parser deals with any overlap in the grammar rules for naturals and floats. The number is
-      * parsed according to the grammar rules defined in the Haskell report.*/
-    @deprecated
-    def naturalOrFloat: Parsley[Either[Int, Double]] = lexemes.numeric.unsignedCombined.number.map(_.fold(x => Left(x.toInt), y => Right(y.toDouble)))
-
-    /**Parses a positive whole number in the decimal system. Returns the value of the number.*/
-    @deprecated
-    def decimal: Parsley[Int] = lexemes.numeric.natural.decimal.map(_.toInt)
-
-    /**Parses a positive whole number in the hexadecimal system. The number should be prefixed with
-     * "0x" or "0X". Returns the value of the number.*/
-    @deprecated
-    def hexadecimal: Parsley[Int] = lexemes.numeric.natural.hexadecimal.map(_.toInt)
-
-    /**Parses a positive whole number in the octal system. The number should be prefixed with "0o"
-     * or "0O". Returns the value of the number.*/
-    @deprecated
-    def octal: Parsley[Int] = lexemes.numeric.natural.octal.map(_.toInt)
-
-    /**Lexeme parser `symbol(s)` parses `string(s)` and skips trailing white space.*/
-    @deprecated
-    def symbol(name: String): Parsley[String] = lexemes.symbol(name)
-    /**Lexeme parser `symbol(c)` parses `char(c)` and skips trailing white space.*/
-    @deprecated
-    def symbol(name: Char): Parsley[Char] = lexemes.symbol(name)
-
-    /**Like `symbol`, but treats it as a single token using `attempt`. Only useful for
-     * strings, since characters are already single token.*/
-    @deprecated
-    def symbol_(name: String): Parsley[String] = lexemes.symbol_(name)
-
-    /**Lexeme parser `parens(p)` parses `p` enclosed in parenthesis, returning the value of `p`.*/
-    @deprecated
-    def parens[A](p: =>Parsley[A]): Parsley[A] = lexemes.parens(p)
-
-    /**Lexeme parser `braces(p)` parses `p` enclosed in braces ('{', '}'), returning the value of 'p'*/
-    @deprecated
-    def braces[A](p: =>Parsley[A]): Parsley[A] = lexemes.braces(p)
-
-    /**Lexeme parser `angles(p)` parses `p` enclosed in angle brackets ('<', '>'), returning the
-     * value of `p`.*/
-    @deprecated
-    def angles[A](p: =>Parsley[A]): Parsley[A] = lexemes.angles(p)
-
-    /**Lexeme parser `brackets(p)` parses `p` enclosed in brackets ('[', ']'), returning the value
-     * of `p`.*/
-    @deprecated
-    def brackets[A](p: =>Parsley[A]): Parsley[A] = lexemes.brackets(p)
-
-    /**Lexeme parser `semi` parses the character ';' and skips any trailing white space. Returns ";"*/
-    @deprecated
-    def semi: Parsley[Char] = lexemes.semi
-
-    /**Lexeme parser `comma` parses the character ',' and skips any trailing white space. Returns ","*/
-    @deprecated
-    def comma: Parsley[Char] = lexemes.comma
-
-    /**Lexeme parser `colon` parses the character ':' and skips any trailing white space. Returns ":"*/
-    @deprecated
-    def colon: Parsley[Char] = lexemes.colon
-
-    /**Lexeme parser `dot` parses the character '.' and skips any trailing white space. Returns "."*/
-    @deprecated
-    def dot: Parsley[Char] = lexemes.dot
-
-    /**Lexeme parser `semiSep(p)` parses zero or more occurrences of `p` separated by `semi`. Returns
-     * a list of values returned by `p`.*/
-    @deprecated
-    def semiSep[A](p: Parsley[A]): Parsley[List[A]] = lexemes.semiSep(p)
-
-    /**Lexeme parser `semiSep1(p)` parses one or more occurrences of `p` separated by `semi`. Returns
-     * a list of values returned by `p`.*/
-    @deprecated
-    def semiSep1[A](p: Parsley[A]): Parsley[List[A]] = lexemes.semiSep1(p)
-
-    /**Lexeme parser `commaSep(p)` parses zero or more occurrences of `p` separated by `comma`.
-     * Returns a list of values returned by `p`.*/
-    @deprecated
-    def commaSep[A](p: Parsley[A]): Parsley[List[A]] = lexemes.commaSep(p)
-
-    /**Lexeme parser `commaSep1(p)` parses one or more occurrences of `p` separated by `comma`.
-     * Returns a list of values returned by `p`.*/
-    @deprecated
-    def commaSep1[A](p: Parsley[A]): Parsley[List[A]] = lexemes.commaSep1(p)
+    @deprecated def identifier: Parsley[String] = lexemes.identifier
+    @deprecated def keyword(name: String): Parsley[Unit] = lexemes.keyword(name)
+    @deprecated def userOp: Parsley[String] = lexemes.userOp
+    @deprecated def reservedOp_ : Parsley[String] = nonlexemes.reservedOp
+    @deprecated def reservedOp: Parsley[String] = lexemes.reservedOp
+    @deprecated def operator(name: String): Parsley[Unit] = lexemes.operator(name)
+    @deprecated def operator_(name: String): Parsley[Unit] = nonlexemes.operator(name)
+    @deprecated def maxOp(name: String): Parsley[Unit] = lexemes.maxOp(name)
+    @deprecated def maxOp_(name: String): Parsley[Unit] = nonlexemes.maxOp(name)
+    @deprecated def charLiteral: Parsley[Char] = lexemes.text.character.basicMultilingualPlane
+    @deprecated def stringLiteral: Parsley[String] = lexemes.text.string.unicode
+    @deprecated def stringLiteral_ : Parsley[String] = nonlexemes.text.string.unicode
+    @deprecated def rawStringLiteral: Parsley[String] = nonlexemes.text.rawString.unicode
+    @deprecated def natural: Parsley[Int] = lexemes.numeric.natural.number.map(_.toInt)
+    @deprecated def integer: Parsley[Int] = lexemes.numeric.integer.number.map(_.toInt)
+    @deprecated def unsignedFloat: Parsley[Double] = lexemes.numeric.positiveReal.decimal.map(_.toDouble)
+    @deprecated def float: Parsley[Double] = lexemes.numeric.real.decimal.map(_.toDouble)
+    @deprecated def number: Parsley[Either[Int, Double]] = lexemes.numeric.signedCombined.number.map(_.fold(x => Left(x.toInt), y => Right(y.toDouble)))
+    @deprecated def naturalOrFloat: Parsley[Either[Int, Double]] =
+        lexemes.numeric.unsignedCombined.number.map(_.fold(x => Left(x.toInt), y => Right(y.toDouble)))
+    @deprecated def decimal: Parsley[Int] = lexemes.numeric.natural.decimal.map(_.toInt)
+    @deprecated def hexadecimal: Parsley[Int] = lexemes.numeric.natural.hexadecimal.map(_.toInt)
+    @deprecated def octal: Parsley[Int] = lexemes.numeric.natural.octal.map(_.toInt)
+    @deprecated def symbol(name: String): Parsley[String] = lexemes.symbol(name)
+    @deprecated def symbol(name: Char): Parsley[Char] = lexemes.symbol(name)
+    @deprecated def symbol_(name: String): Parsley[String] = lexemes.symbol_(name)
+    @deprecated def parens[A](p: =>Parsley[A]): Parsley[A] = lexemes.parens(p)
+    @deprecated def braces[A](p: =>Parsley[A]): Parsley[A] = lexemes.braces(p)
+    @deprecated def angles[A](p: =>Parsley[A]): Parsley[A] = lexemes.angles(p)
+    @deprecated def brackets[A](p: =>Parsley[A]): Parsley[A] = lexemes.brackets(p)
+    @deprecated def semi: Parsley[Char] = lexemes.semi
+    @deprecated def comma: Parsley[Char] = lexemes.comma
+    @deprecated def colon: Parsley[Char] = lexemes.colon
+    @deprecated def dot: Parsley[Char] = lexemes.dot
+    @deprecated def semiSep[A](p: Parsley[A]): Parsley[List[A]] = lexemes.semiSep(p)
+    @deprecated def semiSep1[A](p: Parsley[A]): Parsley[List[A]] = lexemes.semiSep1(p)
+    @deprecated def commaSep[A](p: Parsley[A]): Parsley[List[A]] = lexemes.commaSep(p)
+    @deprecated def commaSep1[A](p: Parsley[A]): Parsley[List[A]] = lexemes.commaSep1(p)
 
     // private API
     private def keyOrOp(startImpl: Impl, letterImpl: Impl, parser: Parsley[String], illegal: String => Boolean,
