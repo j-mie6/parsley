@@ -36,37 +36,94 @@ private [numeric] object _64 extends Bits {
 private [numeric] sealed abstract class CanHold[N <: Bits, T] {
     private [numeric] def fromBigInt(x: BigInt): T
 }
+
+/** TODO:
+  *
+  * @since 4.0.0
+  */
 abstract class LowPriorityImplicits private[numeric] {
     import CanHold.can_hold_64_bits
     // this being here means that Scala will look for it last, which allows default to Long for 64-bit
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     implicit val big_64: can_hold_64_bits[BigInt] = new CanHold[_64.type, BigInt] {
         def fromBigInt(x: BigInt): BigInt = x
     }
 }
 
+/** TODO:
+  *
+  * @since 4.0.0
+  */
 object CanHold extends LowPriorityImplicits {
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     @implicitNotFound("The type ${T} cannot hold an 8-bit number without loss")
     type can_hold_8_bits[T] = CanHold[_8.type, T]
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     @implicitNotFound("The type ${T} cannot hold a 16-bit number without loss")
     type can_hold_16_bits[T] = CanHold[_16.type, T]
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     @implicitNotFound("The type ${T} cannot hold a 32-bit number without loss")
     type can_hold_32_bits[T] = CanHold[_32.type, T]
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     @implicitNotFound("The type ${T} cannot hold a 64-bit number without loss")
     type can_hold_64_bits[T] = CanHold[_64.type, T]
 
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     implicit def fits_8_16[T: can_hold_16_bits]: can_hold_8_bits[T] = implicitly[can_hold_16_bits[T]].asInstanceOf[can_hold_8_bits[T]]
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     implicit def fits_16_32[T: can_hold_32_bits]: can_hold_16_bits[T] = implicitly[can_hold_32_bits[T]].asInstanceOf[can_hold_16_bits[T]]
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     implicit def fits_32_64[T: can_hold_64_bits]: can_hold_32_bits[T] = implicitly[can_hold_64_bits[T]].asInstanceOf[can_hold_32_bits[T]]
 
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     implicit val byte_8: can_hold_8_bits[Byte] = new CanHold[_8.type, Byte] {
         def fromBigInt(x: BigInt): Byte = x.toByte
     }
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     implicit val short_16: can_hold_16_bits[Short] = new CanHold[_16.type, Short] {
         def fromBigInt(x: BigInt): Short = x.toShort
     }
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     implicit val int_32: can_hold_32_bits[Int] = new CanHold[_32.type, Int] {
         def fromBigInt(x: BigInt): Int = x.toInt
     }
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     implicit val long_64: can_hold_64_bits[Long] = new CanHold[_64.type, Long] {
         def fromBigInt(x: BigInt): Long = x.toLong
     }

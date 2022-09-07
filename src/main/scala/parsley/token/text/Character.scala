@@ -6,10 +6,30 @@ package parsley.token.text
 import parsley.Parsley
 import parsley.character.satisfy
 
+/** TODO:
+  *
+  * @since 4.0.0
+  */
 abstract class Character private[token] {
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     def unicode: Parsley[Int]
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     def basicMultilingualPlane: Parsley[Char]
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     def ascii: Parsley[Char]
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     def extendedAscii: Parsley[Char]
 }
 

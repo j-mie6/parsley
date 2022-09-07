@@ -11,36 +11,141 @@ import parsley.implicits.character.charLift
 import parsley.token._
 import parsley.token.descriptions.numeric.NumericDesc
 
+/** TODO:
+  *
+  * @since 4.0.0
+  */
 abstract class Integer private[token] (private [numeric] val desc: NumericDesc) {
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     def decimal: Parsley[BigInt]
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     def hexadecimal: Parsley[BigInt]
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     def octal: Parsley[BigInt]
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     def binary: Parsley[BigInt]
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     def number: Parsley[BigInt]
 
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     final def number8[T: CanHold.can_hold_8_bits]: Parsley[T] = numberBounded(_8)
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     final def decimal8[T: CanHold.can_hold_8_bits]: Parsley[T] = decimalBounded(_8)
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     final def hexadecimal8[T: CanHold.can_hold_8_bits]: Parsley[T] = hexadecimalBounded(_8)
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     final def octal8[T: CanHold.can_hold_8_bits]: Parsley[T] = octalBounded(_8)
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     final def binary8[T: CanHold.can_hold_8_bits]: Parsley[T] = binaryBounded(_8)
 
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     final def number16[T: CanHold.can_hold_16_bits]: Parsley[T] = numberBounded(_16)
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     final def decimal16[T: CanHold.can_hold_16_bits]: Parsley[T] = decimalBounded(_16)
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     final def hexadecimal16[T: CanHold.can_hold_16_bits]: Parsley[T] = hexadecimalBounded(_16)
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     final def octal16[T: CanHold.can_hold_16_bits]: Parsley[T] = octalBounded(_16)
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     final def binary16[T: CanHold.can_hold_16_bits]: Parsley[T] = binaryBounded(_16)
 
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     final def number32[T: CanHold.can_hold_32_bits]: Parsley[T] = numberBounded(_32)
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     final def decimal32[T: CanHold.can_hold_32_bits]: Parsley[T] = decimalBounded(_32)
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     final def hexadecimal32[T: CanHold.can_hold_32_bits]: Parsley[T] = hexadecimalBounded(_32)
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     final def octal32[T: CanHold.can_hold_32_bits]: Parsley[T] = octalBounded(_32)
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     final def binary32[T: CanHold.can_hold_32_bits]: Parsley[T] = binaryBounded(_32)
 
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     final def number64[T: CanHold.can_hold_64_bits]: Parsley[T] = numberBounded(_64)
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     final def decimal64[T: CanHold.can_hold_64_bits]: Parsley[T] = decimalBounded(_64)
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     final def hexadecimal64[T: CanHold.can_hold_64_bits]: Parsley[T] = hexadecimalBounded(_64)
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     final def octal64[T: CanHold.can_hold_64_bits]: Parsley[T] = octalBounded(_64)
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     final def binary64[T: CanHold.can_hold_64_bits]: Parsley[T] = binaryBounded(_64)
+
 
     protected [numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int)(implicit ev: CanHold[bits.self, T]): Parsley[T]
     protected [numeric] def _decimal: Parsley[BigInt] = decimal

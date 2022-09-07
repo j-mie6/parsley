@@ -8,9 +8,25 @@ import scala.Predef.{String => ScalaString, _}
 import parsley.Parsley
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 
+/** TODO:
+  *
+  * @since 4.0.0
+  */
 abstract class String private[token] {
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     def unicode: Parsley[ScalaString]
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     def extendedAscii: Parsley[ScalaString]
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     def ascii: Parsley[ScalaString]
 }
 

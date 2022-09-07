@@ -20,22 +20,32 @@ import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
 import parsley.internal.deepembedding.singletons
 import scala.annotation.implicitNotFound
 
+/** TODO:
+  *
+  * @param lang TODO:
+  * @since 4.0.0
+  */
 abstract class ImplicitLexeme private [token] {
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     implicit def implicitLexeme(s: String): Parsley[Unit]
 }
 
-/**
-  * When provided with a `LanguageDef`, this class will produce a large variety of parsers that can be used for
-  * tokenisation of a language. This includes parsing numbers and strings in their various formats and ensuring that
-  * all operations consume whitespace after them (so-called lexeme parsers). These are very useful in parsing
-  * programming languages. This class also has a large number of hand-optimised intrinsic parsers to improve performance!
-  * @param lang The rules that govern the language we are tokenising
-  * @since 2.2.0
+/** TODO:
+  *
+  * @param lang TODO:
+  * @since 4.0.0
   */
 class Lexer private [parsley] (lang: descriptions.LanguageDesc) { lexer =>
     def this(lang: LanguageDef) = this(lang.toDesc)
 
     // public API
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     object lexemes {
         lazy val identifier: Parsley[String] = lexeme(nonlexemes.identifier)
         def keyword(name: String): Parsley[Unit] = lexeme(nonlexemes.keyword(name))
@@ -45,6 +55,10 @@ class Lexer private [parsley] (lang: descriptions.LanguageDesc) { lexer =>
         def operator(name: String): Parsley[Unit] = lexeme(nonlexemes.operator(name))
         def maxOp(name: String): Parsley[Unit] = lexeme(nonlexemes.maxOp(name))
 
+        /** TODO:
+          *
+          * @since 4.0.0
+          */
         object numeric {
             def unsigned: parsley.token.numeric.Integer = natural
             val natural: parsley.token.numeric.Integer = new LexemeInteger(nonlexemes.numeric.natural, whiteSpace)
@@ -60,6 +74,10 @@ class Lexer private [parsley] (lang: descriptions.LanguageDesc) { lexer =>
             val signedCombined: parsley.token.numeric.Combined = new LexemeCombined(nonlexemes.numeric.signedCombined, whiteSpace)
         }
 
+        /** TODO:
+          *
+          * @since 4.0.0
+          */
         object text {
             val character: parsley.token.text.Character = new LexemeCharacter(nonlexemes.text.character, whiteSpace)
             val string: parsley.token.text.String = new LexemeString(nonlexemes.text.string, whiteSpace)
@@ -93,6 +111,10 @@ class Lexer private [parsley] (lang: descriptions.LanguageDesc) { lexer =>
 
     }
 
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     object nonlexemes {
         lazy val identifier: Parsley[String] = keyOrOp(lang.identDesc.identStart, lang.identDesc.identLetter, ident, lang.identDesc.isReservedName(_),  "identifier", "identifier", "keyword")
         def keyword(name: String): Parsley[Unit] = lang.identDesc.identLetter match {
@@ -108,6 +130,10 @@ class Lexer private [parsley] (lang: descriptions.LanguageDesc) { lexer =>
         }
         def maxOp(name: String): Parsley[Unit] = new Parsley(new singletons.MaxOp(name, lang.operators))
 
+        /** TODO:
+          *
+          * @since 4.0.0
+          */
         object numeric {
             def unsigned: parsley.token.numeric.Integer = natural
             val natural: parsley.token.numeric.Integer = new UnsignedInteger(lang.numericDesc)
@@ -123,6 +149,10 @@ class Lexer private [parsley] (lang: descriptions.LanguageDesc) { lexer =>
             val signedCombined: parsley.token.numeric.Combined = new SignedCombined(lang.numericDesc, unsignedCombined)
         }
 
+        /** TODO:
+          *
+          * @since 4.0.0
+          */
         object text {
             private val escapes = new Escape(lang.textDesc.escapeChars)
             private val escapeChar = new EscapableCharacter(lang.textDesc.escapeChars, escapes, space)
@@ -139,7 +169,12 @@ class Lexer private [parsley] (lang: descriptions.LanguageDesc) { lexer =>
         }
     }
 
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     val implicits: ImplicitLexeme = new ImplicitLexeme {
+        /** @inheritdoc */
         implicit def implicitLexeme(s: String): Parsley[Unit] = {
             if (lang.identDesc.keywords(s)) lexemes.keyword(s)
             else if (lang.operators(s))     lexemes.maxOp(s)
