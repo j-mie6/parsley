@@ -99,10 +99,31 @@ abstract class ImplicitLexeme private [token] {
   * @define unsignedCombined TODO:
   * @define signedCombined TODO:
   *
-  * @define character TODO:
-  * @define string TODO:
+  * @define character
+  *     This is a collection of parsers concerned with handling character literals.
+  *
+  *     Character literals are described generally as follows:
+  *       - '''`lang.textDesc.characterLiteralEnd`''': the character that starts and ends
+  *         the literal (for example in many languages this is `'`)
+  *       - '''`lang.textDesc.graphicCharacter`''': describes the legal characters that may appear
+  *         in the literal directly. Usually, this excludes control characters and newlines,
+  *         but permits most other things. Escape sequences can represent non-graphic
+  *         characters
+  *       - '''`lang.textDesc.escapeSequences`''': describes the legal escape sequences that
+  *         that can appear in a character literal (for example `\n` or `\u000a`)
+  *
+  *     Aside from the generic configuration, characters can be parsed in accordance with
+  *     varying levels of unicode support, from ASCII-only to full UTF-16 characters. Parsers
+  *     for each of four different vareties are exposed by this object.
+  * @define string
+  *     This is a collection of parsers concerned with handling single-line string literals.
+  *
+  *     String literals are described generally as follows:
+  *       - '''`lang.textDesc.stringEnds`''': 
   * @define multiString TODO:
-  * @define raw TODO:
+  * @define raw this will be parsed without handling any escape sequences,
+  *         this includes literal end characters and the escape prefix
+  *         (often `"` and `\` respectively)
   *
   * @param lang the configuration for the lexer, specifying the lexing
   *             rules of the grammar/language being parsed.
@@ -341,8 +362,8 @@ class Lexer private [parsley] (lang: descriptions.LanguageDesc) { lexer =>
           * @since 4.0.0
           */
         object text {
-            private val escapes = new Escape(lang.textDesc.escapeChars)
-            private val escapeChar = new EscapableCharacter(lang.textDesc.escapeChars, escapes, space)
+            private val escapes = new Escape(lang.textDesc.escapeSequences)
+            private val escapeChar = new EscapableCharacter(lang.textDesc.escapeSequences, escapes, space)
 
             /** $character
               *

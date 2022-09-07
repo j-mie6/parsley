@@ -95,7 +95,7 @@ object EscapeDesc {
                              ctrlEscape = CtrlEscape.Supported(prefix = '^', mapping = ('@' to '_').map(c => c -> (c - '@')).toMap))
 }
 
-case class TextDesc (escapeChars: EscapeDesc,
+case class TextDesc (escapeSequences: EscapeDesc,
                      characterLiteralEnd: Char,
                      stringEnds: Set[String],
                      multiStringEnds: Set[String],
@@ -103,7 +103,7 @@ case class TextDesc (escapeChars: EscapeDesc,
 }
 
 object TextDesc {
-    val plain = TextDesc(escapeChars = EscapeDesc.haskell,
+    val plain = TextDesc(escapeSequences = EscapeDesc.haskell,
                          characterLiteralEnd = '\'',
                          stringEnds = Set("\""),
                          multiStringEnds = Set.empty,

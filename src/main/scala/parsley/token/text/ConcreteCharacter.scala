@@ -11,7 +11,7 @@ import parsley.token.descriptions.text.TextDesc
 
 private [token] final class ConcreteCharacter(desc: TextDesc, escapes: Escape) extends Character {
     private val quote = desc.characterLiteralEnd
-    private lazy val charLetter = satisfy(Character.letter(quote, desc.escapeChars.escBegin, allowsAllSpace = false, desc.graphicCharacter))
+    private lazy val charLetter = satisfy(Character.letter(quote, desc.escapeSequences.escBegin, allowsAllSpace = false, desc.graphicCharacter))
 
     override lazy val unicode: Parsley[Int] = {
         assume(!quote.isLowSurrogate, "quotes are not low surrogates")
