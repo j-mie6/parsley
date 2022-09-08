@@ -8,24 +8,49 @@ import scala.Predef.{String => ScalaString, _}
 import parsley.Parsley
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 
-/** TODO:
+/** This class defines a uniform interface for defining parsers for string
+  * literals, independent of whether the string is raw, multi-line, or should
+  * consume whitespace after the literal.
   *
   * @since 4.0.0
+  * @note implementations of this class found within `Lexer` may employ sharing
+  *       and refine the `def`s in this class into `val` or `lazy val` when overriding.
+  *
+  * @define disclaimer
+  *   the exact behaviour of this parser is decided by the implementations given in
+  *   `Lexer`, which will depend on user-defined configuration. Please see the
+  *   relevant documentation of these specific objects.
   */
 abstract class String private[token] {
-    /** TODO:
+    /** This parser will parse a single string literal, which may contain any
+      * number of graphical UTF-16 unicode characters; including those that span multiple
+      * 32 bit codepoints. It may contain escape sequences, and potentially
+      * support string gaps and zero-width characters depending on the
+      * configuration.
       *
+      * @todo TODO: examples
       * @since 4.0.0
+      * @note $disclaimer
       */
     def unicode: Parsley[ScalaString]
-    /** TODO:
+    /** This parser will parse a single string literal, which may contain any
+      * number of graphic extended ascii characters. It may contain escape
+      * sequences, and potentially support string gaps and zero-width characters
+      * depending on the configuration.
       *
+      * @todo TODO: examples
       * @since 4.0.0
+      * @note $disclaimer
       */
     def extendedAscii: Parsley[ScalaString]
-    /** TODO:
+    /** This parser will parse a single string literal, which may contain any
+      * number of graphic ascii characters. It may contain escape
+      * sequences, and potentially support string gaps and zero-width characters
+      * depending on the configuration.
       *
+      * @todo TODO: examples
       * @since 4.0.0
+      * @note $disclaimer
       */
     def ascii: Parsley[ScalaString]
 }

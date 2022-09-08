@@ -130,8 +130,8 @@ abstract class ImplicitLexeme private [token] {
   *     or an exponential component.
   *
   *     Real numbers are an extension of signed integers with the following additional configuration:
-  *       - '''`desc.numericDesc.leadingDotAllowed`''': Determines whether a literal like `.0` would be considered legal
-  *       - '''`desc.numericDesc.trailingDotAllowed`''': Determines whether a literal like `0.` would be considered legal
+  *       - '''`desc.numericDesc.leadingDotAllowed`''': determines whether a literal like `.0` would be considered legal
+  *       - '''`desc.numericDesc.trailingDotAllowed`''': determines whether a literal like `0.` would be considered legal
   *       - '''`desc.numericDesc.realNumbersCanBe{Hexadecimal/Octal/Binary}`''': these flags control
   *         what kind of literals can appear within the `number` parser. Each type of literal
   *         may still be individually parsed with its corresponding parser, regardless of the value of
@@ -146,7 +146,7 @@ abstract class ImplicitLexeme private [token] {
   *   Additional to the parsing of decimal, hexadecimal, octal, and binary floating literals, each
   *   parser can be given a precision of IEEE 754 float or double. This can either be achieved by
   *   rounding to the nearest representable value, or by ensuring that the literal must be precisely
-  *   representable as one of these numbers (which is defined as being one of binary, decimal,
+  *   representable as one of these numbers (which is defined as being one of binary, decimal
   *   or exact `float` and `double` values as described by Java)
   *
   * @define unsignedCombined

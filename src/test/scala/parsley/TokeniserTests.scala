@@ -250,6 +250,12 @@ class TokeniserTests extends ParsleyTest {
         tokeniser_.lexemes.text.string.unicode.parse("\"\\x1F642\"") should be {
             Success("🙂")
         }
+        tokeniser.lexemes.text.string.unicode.parse("\"🙂\"") should be {
+            Success("🙂")
+        }
+        tokeniser_.lexemes.text.string.unicode.parse("\"🙂\"") should be {
+            Success("🙂")
+        }
     }
 
     "rawStringLiteral" should "parse valid strings, without processing them" in {

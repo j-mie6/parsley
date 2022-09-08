@@ -6,16 +6,56 @@ package parsley.token.descriptions.numeric
 import parsley.token.{Impl, NotRequired}
 import parsley.token.numeric.Real
 
+/** TODO:
+  *
+  * @since 4.0.0
+  */
 sealed abstract class PlusSignPresence
+/** TODO:
+  *
+  * @since 4.0.0
+  */
 object PlusSignPresence {
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     case object Required extends PlusSignPresence
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     case object Optional extends PlusSignPresence
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     case object Illegal extends PlusSignPresence
 }
 
+/** TODO:
+  *
+  * @since 4.0.0
+  */
 sealed abstract class ExponentDesc
+/** TODO:
+  *
+  * @since 4.0.0
+  */
 object ExponentDesc {
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     case object NoExponents extends ExponentDesc
+    /** TODO:
+      *
+      * @param compulsory
+      * @param chars
+      * @param base
+      * @param positiveSign
+      * @since 4.0.0
+      */
     case class Supported(compulsory: Boolean,
                          chars: Set[Char],
                          base: Int,
@@ -25,12 +65,52 @@ object ExponentDesc {
     }
 }
 
+/** TODO:
+  *
+  * @since 4.0.0
+  */
 sealed abstract class BreakCharDesc
+/** TODO:
+  *
+  * @since 4.0.0
+  */
 object BreakCharDesc {
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     case object NoBreakChar extends BreakCharDesc
+    /** TODO:
+      *
+      * @param breakChar
+      * @param allowedAfterNonDecimalPrefix
+      * @since 4.0.0
+      */
     case class Supported(breakChar: Char, allowedAfterNonDecimalPrefix: Boolean) extends BreakCharDesc
 }
 
+/** TODO:
+  *
+  * @param literalBreakChar
+  * @param leadingDotAllowed
+  * @param trailingDotAllowed
+  * @param leadingZerosAllowed
+  * @param positiveSign
+  * @param integerNumbersCanBeHexadecimal
+  * @param integerNumbersCanBeOctal
+  * @param integerNumbersCanBeBinary
+  * @param realNumbersCanBeHexadecimal
+  * @param realNumbersCanBeOctal
+  * @param realNumbersCanBeBinary
+  * @param hexadecimalLeads
+  * @param octalLeads
+  * @param binaryLeads
+  * @param decimalExponentDesc
+  * @param hexadecimalExponentDesc
+  * @param octalExponentDesc
+  * @param binaryExponentDesc
+  * @since 4.0.0
+  */
 case class NumericDesc (literalBreakChar: BreakCharDesc,
                         leadingDotAllowed: Boolean,
                         trailingDotAllowed: Boolean,
@@ -53,11 +133,6 @@ case class NumericDesc (literalBreakChar: BreakCharDesc,
                         octalExponentDesc: ExponentDesc,
                         binaryExponentDesc: ExponentDesc
                        ) {
-    // These aren't necessarily the case, C octals, for instance, are of the form 010!
-    //if (hexadecimalLeads.isEmpty) throw new IllegalArgumentException("The leading characters of hexadecimal literals must not be empty")
-    //if (octalLeads.isEmpty) throw new IllegalArgumentException("The leading characters of octal literals must not be empty")
-    //if (binaryLeads.isEmpty) throw new IllegalArgumentException("The leading characters of binary literals must not be empty")
-
     private [token] def exponentDescForRadix(x: Int): ExponentDesc = (x: @unchecked) match {
         case 10 => decimalExponentDesc
         case 16 => hexadecimalExponentDesc
@@ -69,7 +144,15 @@ case class NumericDesc (literalBreakChar: BreakCharDesc,
     private [token] def decimalRealsOnly: Boolean = !(realNumbersCanBeBinary || realNumbersCanBeHexadecimal || realNumbersCanBeOctal)
 }
 
+/** TODO:
+  *
+  * @since 4.0.0
+  */
 object NumericDesc {
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     val plain: NumericDesc = NumericDesc(
         literalBreakChar = BreakCharDesc.NoBreakChar,
         leadingDotAllowed = false,

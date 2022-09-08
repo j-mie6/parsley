@@ -1,29 +1,104 @@
 package parsley.token.descriptions.text
 
+/** TODO:
+  *
+  * @since 4.0.0
+  */
 sealed abstract class NumberOfDigits
+/** TODO:
+  *
+  * @since 4.0.0
+  */
 object NumberOfDigits {
+    /** TODO:
+      *
+      * @param n
+      * @since 4.0.0
+      */
     case class AtMost(n: Int) extends NumberOfDigits {
         if (n <= 0) throw new IllegalArgumentException("AtMost may only be passed a number of digits greater than 0")
     }
+    /** TODO:
+      *
+      * @param n0
+      * @param ns
+      * @since 4.0.0
+      */
     case class Exactly(n0: Int, ns: Int*) extends NumberOfDigits {
         if (n0 <= 0) throw new IllegalArgumentException("Exactly may only be passed a number of digits greater than 0")
         if (ns.exists(_ <= 0)) throw new IllegalArgumentException("Exactly may only be passed a number of digits greater than 0")
     }
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     case object Unbounded extends NumberOfDigits
 }
 
+/** TODO:
+  *
+  * @since 4.0.0
+  */
 sealed abstract class NumericEscape
+/** TODO:
+  *
+  * @since 4.0.0
+  */
 object NumericEscape {
+    /** TODO:
+      *
+      * @param prefix
+      * @param numDigits
+      * @param maxValue
+      * @since 4.0.0
+      */
     case class Supported(prefix: Option[Char], numDigits: NumberOfDigits, maxValue: Int) extends NumericEscape
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     case object Illegal extends NumericEscape
 }
 
+/** TODO:
+  *
+  * @since 4.0.0
+  */
 sealed abstract class CtrlEscape
+/** TODO:
+  *
+  * @since 4.0.0
+  */
 object CtrlEscape {
+    /** TODO:
+      *
+      * @param prefix
+      * @param mapping
+      * @since 4.0.0
+      */
     case class Supported(prefix: Char, mapping: Map[Char, Int]) extends CtrlEscape
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     case object Illegal extends CtrlEscape
 }
 
+/** TODO:
+  *
+  * @param escBegin
+  * @param literals
+  * @param singleMap
+  * @param multiMap
+  * @param decimalEscape
+  * @param hexadecimalEscape
+  * @param octalEscape
+  * @param binaryEscape
+  * @param emptyEscape
+  * @param gapsSupported
+  * @param ctrlEscape
+  * @since 4.0.0
+  */
 case class EscapeDesc (escBegin: Char,
                        literals: Set[Char],
                        singleMap: Map[Char, Int],
@@ -41,7 +116,15 @@ case class EscapeDesc (escBegin: Char,
         case (k, v) => s"$k" -> v
     }
 }
+/** TODO:
+  *
+  * @since 4.0.0
+  */
 object EscapeDesc {
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     val haskell = EscapeDesc(escBegin = '\\',
                              literals = Set('\'', '\"', '\\'),
                              singleMap = Map('0' -> 0x0000,
@@ -95,6 +178,15 @@ object EscapeDesc {
                              ctrlEscape = CtrlEscape.Supported(prefix = '^', mapping = ('@' to '_').map(c => c -> (c - '@')).toMap))
 }
 
+/** TODO:
+  *
+  * @param escapeSequences
+  * @param characterLiteralEnd
+  * @param stringEnds
+  * @param multiStringEnds
+  * @param graphicCharacter
+  * @since 4.0.0
+  */
 case class TextDesc (escapeSequences: EscapeDesc,
                      characterLiteralEnd: Char,
                      stringEnds: Set[String],
@@ -102,7 +194,15 @@ case class TextDesc (escapeSequences: EscapeDesc,
                      graphicCharacter: Char => Boolean) {
 }
 
+/** TODO:
+  *
+  * @since 4.0.0
+  */
 object TextDesc {
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     val plain = TextDesc(escapeSequences = EscapeDesc.haskell,
                          characterLiteralEnd = '\'',
                          stringEnds = Set("\""),
