@@ -51,8 +51,8 @@ case class LanguageDef (commentStart: String,
         on
     }
 
-    private [token] def toDesc: descriptions.LanguageDesc =
-        descriptions.LanguageDesc (descriptions.IdentDesc(identStart,
+    private [token] def toDesc: descriptions.LexicalDesc =
+        descriptions.LexicalDesc (descriptions.IdentDesc(identStart,
                                                           identLetter,
                                                           keywords,
                                                           caseSensitive),

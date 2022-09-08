@@ -6,7 +6,7 @@ package parsley.token.descriptions
 import parsley.token.{Impl, NotRequired}
 
 private [parsley] // TODO: remove
-case class LanguageDesc (identDesc: IdentDesc,
+case class LexicalDesc (identDesc: IdentDesc,
                          opStart: Impl,
                          opLetter: Impl,
                          operators: Set[String],
@@ -20,6 +20,6 @@ case class LanguageDesc (identDesc: IdentDesc,
   * @since 4.0.0
   */
 private [parsley] // TODO: remove
-object LanguageDesc {
-    val plain = LanguageDesc(IdentDesc.plain, NotRequired, NotRequired, Set.empty, numeric.NumericDesc.plain, text.TextDesc.plain, SpaceDesc.plain)
+object LexicalDesc {
+    val plain = LexicalDesc(IdentDesc.plain, NotRequired, NotRequired, Set.empty, numeric.NumericDesc.plain, text.TextDesc.plain, SpaceDesc.plain)
 }

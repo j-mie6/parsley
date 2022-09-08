@@ -87,6 +87,7 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: Integer) ex
                        fractional,
                        exponent)
             <|> requiredExponent.map(e => (w: BigInt) => BigDecimal(w) * BigDecimal(base).pow(e)))
+        // FIXME: if a leading dot occurred, then a trailing dot cannot occur, otherwise . is a legal number
         (if (leadingDotAllowed) (whole <|> pure(BigInt(0))) else whole) <**> fractExponent
     }
 }
