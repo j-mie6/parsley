@@ -84,19 +84,26 @@ object CtrlEscape {
     case object Illegal extends CtrlEscape
 }
 
-/** TODO:
+/** This class describes the valid escape sequences within character and string literals.
   *
-  * @param escBegin
-  * @param literals
-  * @param singleMap
-  * @param multiMap
-  * @param decimalEscape
-  * @param hexadecimalEscape
-  * @param octalEscape
-  * @param binaryEscape
-  * @param emptyEscape
-  * @param gapsSupported
-  * @param ctrlEscape
+  * This allows for the definition of different escape sequences as direct literals, mapping
+  * from single or multiple characters to specific values, numeric escape sequences with different
+  * bases, as well as supporting zero-width escapes and line continuations via string gaps.
+  *
+  * @param escBegin the character that starts an escape sequence, very often this is `'\\'`.
+  * @param literals the characters that can be directly escaped, but still represent themselves, for instance `'"'`, or `'\\'`.
+  * @param singleMap the possible single-character escape sequences and the (full UTF-16) character they map to, for instance `'n' -> 0xa`.
+  * @param multiMap the possible multi-character escape sequences and the (full UTF-16) character they map to.
+  * @param decimalEscape TODO:
+  * @param hexadecimalEscape TODO:
+  * @param octalEscape TODO:
+  * @param binaryEscape TODO:
+  * @param emptyEscape if one should exist, the character which has no effect on the string but can be used to disambiguate other
+                       escape sequences: in Haskell this would be `\&`.
+  * @param gapsSupported specifies whether or not ''string gaps'' are supported: this is where whitespace can be injected between two
+  *                      `escBegin` characters and this will all be ignored in the final string, such that `"hello \      \world"` is `"hello world"`.
+  * @param ctrlEscape describes possible escapes that take an additional prefix character, used to represent old control-key combinations:
+  *                   in Haskell, these are of the form `\^x` where `x` is some character.
   * @since 4.0.0
   */
 case class EscapeDesc (escBegin: Char,
