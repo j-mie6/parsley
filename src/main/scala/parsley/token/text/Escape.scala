@@ -8,7 +8,7 @@ import parsley.character.{char, strings, digit, hexDigit, octDigit, bit}
 import parsley.combinator.{choice, ensure, option}
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 import parsley.implicits.zipped.Zipped2
-import parsley.token.descriptions.text.{CtrlEscape, EscapeDesc, NumericEscape, NumberOfDigits}
+import parsley.token.descriptions.text.{EscapeDesc, NumericEscape, NumberOfDigits}
 import parsley.token.numeric
 
 private [token] class Escape(desc: EscapeDesc) {
@@ -21,12 +21,6 @@ private [token] class Escape(desc: EscapeDesc) {
             case (e, c) => e -> pure(c)
         }.toList
         attempt(strings(x, xs: _*))
-    }
-    private val ctrlEscape = desc.ctrlEscape match {
-        case CtrlEscape.Illegal => empty
-        case CtrlEscape.Supported(prefix, mapping) => char(prefix) *> choice(mapping.view.map {
-            case (e, c) => char(e) #> c.toInt
-        }.toSeq: _*)
     }
 
     private def boundedChar(p: Parsley[BigInt], maxValue: Int, prefix: Option[Char], radix: Int): Parsley[Int] =
@@ -79,6 +73,6 @@ private [token] class Escape(desc: EscapeDesc) {
     private val octalEscape = fromDesc(radix = 8, desc.octalEscape, numeric.Generic.zeroAllowedOctal, octDigit)
     private val binaryEscape = fromDesc(radix = 2, desc.binaryEscape, numeric.Generic.zeroAllowedBinary, bit)
     private val numericEscape = decimalEscape <|> hexadecimalEscape <|> octalEscape <|> binaryEscape
-    val escapeCode = escMapped <|> ctrlEscape <|> numericEscape
+    val escapeCode = escMapped <|> numericEscape
     val escapeChar = char(desc.escBegin) *> escapeCode
 }

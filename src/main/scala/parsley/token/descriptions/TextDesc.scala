@@ -1,87 +1,63 @@
 package parsley.token.descriptions.text
 
-/** TODO:
+/** This class, and its subtypes, describe how many digits a numeric escape sequence is allowed.
   *
   * @since 4.0.0
   */
 sealed abstract class NumberOfDigits
-/** TODO:
+/** This object contains the concrete subtypes of `NumberOfDigits`.
   *
   * @since 4.0.0
   */
 object NumberOfDigits {
-    /** TODO:
+    /** There must be at most `n` digits in the numeric escape literal, up to and including the value given.
       *
-      * @param n
+      * @param n the maximum (inclusive) number of digits allowed in the literal.
       * @since 4.0.0
       */
     case class AtMost(n: Int) extends NumberOfDigits {
         if (n <= 0) throw new IllegalArgumentException("AtMost may only be passed a number of digits greater than 0")
     }
-    /** TODO:
+    /** The number of digits in the literal must be one of the given values.
       *
-      * @param n0
-      * @param ns
+      * @param n0 the first possible digit width.
+      * @param ns the other possible digit widths.
       * @since 4.0.0
       */
     case class Exactly(n0: Int, ns: Int*) extends NumberOfDigits {
         if (n0 <= 0) throw new IllegalArgumentException("Exactly may only be passed a number of digits greater than 0")
         if (ns.exists(_ <= 0)) throw new IllegalArgumentException("Exactly may only be passed a number of digits greater than 0")
     }
-    /** TODO:
+    /** There is no limit on the number of digits that may appear in this sequence.
       *
       * @since 4.0.0
       */
     case object Unbounded extends NumberOfDigits
 }
 
-/** TODO:
+/** This class, and its subtypes, describe how numeric escape sequences should work for a specific base.
   *
   * @since 4.0.0
   */
 sealed abstract class NumericEscape
-/** TODO:
+/** This object contains the concrete subtypes of `NumericEscape`.
   *
   * @since 4.0.0
   */
 object NumericEscape {
-    /** TODO:
+    /** Numeric literals are supported for this specific base.
       *
-      * @param prefix
-      * @param numDigits
-      * @param maxValue
+      * @param prefix the character, if any, that is required to start the literal (like `x` for hexadecimal escapes in some languages).
+      * @param numDigits the number of digits required for this literal: this may be unbounded, an exact number, or up to a specific number.
+      * @param maxValue the largest character value that can be expressed by this numeric escape.
       * @since 4.0.0
       */
     case class Supported(prefix: Option[Char], numDigits: NumberOfDigits, maxValue: Int) extends NumericEscape
-    /** TODO:
+    /** Numeric literals are disallowed for this specific base.
       *
       * @since 4.0.0
       */
     case object Illegal extends NumericEscape
-}
-
-/** TODO:
-  *
-  * @since 4.0.0
-  */
-sealed abstract class CtrlEscape
-/** TODO:
-  *
-  * @since 4.0.0
-  */
-object CtrlEscape {
-    /** TODO:
-      *
-      * @param prefix
-      * @param mapping
-      * @since 4.0.0
-      */
-    case class Supported(prefix: Char, mapping: Map[Char, Int]) extends CtrlEscape
-    /** TODO:
-      *
-      * @since 4.0.0
-      */
-    case object Illegal extends CtrlEscape
 }
 
 /** This class describes the valid escape sequences within character and string literals.
@@ -90,20 +66,20 @@ object CtrlEscape {
   * from single or multiple characters to specific values, numeric escape sequences with different
   * bases, as well as supporting zero-width escapes and line continuations via string gaps.
   *
+  * @define numericEscape if allowed, the description of how numeric escape seqeunces work for base
+  *
   * @param escBegin the character that starts an escape sequence, very often this is `'\\'`.
   * @param literals the characters that can be directly escaped, but still represent themselves, for instance `'"'`, or `'\\'`.
   * @param singleMap the possible single-character escape sequences and the (full UTF-16) character they map to, for instance `'n' -> 0xa`.
   * @param multiMap the possible multi-character escape sequences and the (full UTF-16) character they map to.
-  * @param decimalEscape TODO:
-  * @param hexadecimalEscape TODO:
-  * @param octalEscape TODO:
-  * @param binaryEscape TODO:
+  * @param decimalEscape $numericEscape 10.
+  * @param hexadecimalEscape $numericEscape 16.
+  * @param octalEscape $numericEscape 8.
+  * @param binaryEscape $numericEscape 2.
   * @param emptyEscape if one should exist, the character which has no effect on the string but can be used to disambiguate other
                        escape sequences: in Haskell this would be `\&`.
   * @param gapsSupported specifies whether or not ''string gaps'' are supported: this is where whitespace can be injected between two
   *                      `escBegin` characters and this will all be ignored in the final string, such that `"hello \      \world"` is `"hello world"`.
-  * @param ctrlEscape describes possible escapes that take an additional prefix character, used to represent old control-key combinations:
-  *                   in Haskell, these are of the form `\^x` where `x` is some character.
   * @since 4.0.0
   */
 case class EscapeDesc (escBegin: Char,
@@ -116,19 +92,34 @@ case class EscapeDesc (escBegin: Char,
                        binaryEscape: NumericEscape,
                        emptyEscape: Option[Char],
                        gapsSupported: Boolean,
-                       ctrlEscape: CtrlEscape,
                       ) {
     // TODO: this needs to be a Radix, I think we'll need parsley.collection.immutable.Radix too
     private [token] val escMap = multiMap ++ literals.map(c => s"$c" -> c.toInt) ++ singleMap.map {
         case (k, v) => s"$k" -> v
     }
 }
-/** TODO:
+/** This object contains default implementations of the `EscapeDesc` class, which align with
+  * different languages or styles.
   *
   * @since 4.0.0
   */
 object EscapeDesc {
-    /** TODO:
+    /** This is a minimal description of escape characters with the only supported sequence as `\\`.
+      *
+      * @since 4.0.0
+      */
+    val plain = EscapeDesc(escBegin = '\\',
+                           literals = Set('\\'),
+                           singleMap = Map.empty,
+                           multiMap = Map.empty,
+                           decimalEscape = NumericEscape.Illegal,
+                           hexadecimalEscape = NumericEscape.Illegal,
+                           octalEscape = NumericEscape.Illegal,
+                           binaryEscape = NumericEscape.Illegal,
+                           emptyEscape = None,
+                           gapsSupported = false)
+
+    /** This description of escape sequences is compliant with the Haskell Report.
       *
       * @since 4.0.0
       */
@@ -175,23 +166,25 @@ object EscapeDesc {
                                             "RS"  -> 0x001e,
                                             "US"  -> 0x001f,
                                             "SP"  -> 0x0020,
-                                            "DEL" -> 0x007f),
+                                            "DEL" -> 0x007f) ++
+                                            // Control escape sequences
+                                            ('@' to '_').map(c => s"^$c" -> (c - '@')).toMap,
                              decimalEscape = NumericEscape.Supported(prefix = None, NumberOfDigits.Unbounded, maxValue = 0x10ffff),
                              hexadecimalEscape = NumericEscape.Supported(prefix = Some('x'), NumberOfDigits.Unbounded, maxValue = 0x10ffff),
                              octalEscape = NumericEscape.Supported(prefix = Some('o'), NumberOfDigits.Unbounded, maxValue = 0x10ffff),
                              binaryEscape = NumericEscape.Illegal,
                              emptyEscape = Some('&'),
-                             gapsSupported = true,
-                             ctrlEscape = CtrlEscape.Supported(prefix = '^', mapping = ('@' to '_').map(c => c -> (c - '@')).toMap))
+                             gapsSupported = true)
 }
 
-/** TODO:
+/** This class describes how textual literals like strings and characters
+  * should be processed lexically.
   *
-  * @param escapeSequences
-  * @param characterLiteralEnd
-  * @param stringEnds
-  * @param multiStringEnds
-  * @param graphicCharacter
+  * @param escapeSequences the description of how escape sequences in literals.
+  * @param characterLiteralEnd what character starts and ends a character literal.
+  * @param stringEnds what sequences may begin and end a string literal.
+  * @param multiStringEnds what sequences may begin and end a multi-line string literal.
+  * @param graphicCharacter what characters can be written verbatim into a character or string literal.
   * @since 4.0.0
   */
 case class TextDesc (escapeSequences: EscapeDesc,
@@ -201,12 +194,12 @@ case class TextDesc (escapeSequences: EscapeDesc,
                      graphicCharacter: Char => Boolean) {
 }
 
-/** TODO:
+/** This object contains any preconfigured text definitions.
   *
   * @since 4.0.0
   */
 object TextDesc {
-    /** TODO:
+    /** Plain definition of text (current matching the rules in the Haskell report).
       *
       * @since 4.0.0
       */

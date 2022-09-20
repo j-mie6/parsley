@@ -16,7 +16,7 @@ case class LexicalDesc (identDesc: IdentDesc,
     private [parsley] def isReservedOp(op: String): Boolean = operators.contains(op)
 }
 
-/** This object contains any preconfigured language definitions
+/** This object contains any preconfigured lexical definitions.
   * @since 4.0.0
   */
 private [parsley] // TODO: remove
