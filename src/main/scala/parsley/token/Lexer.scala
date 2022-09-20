@@ -347,29 +347,151 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
             val rawMultiString: parsley.token.text.String = new LexemeString(nonlexemes.text.rawMultiString, whiteSpace)
         }
 
-        def symbol(name: String): Parsley[String] = lexeme(string(name))
-        def symbol(name: Char): Parsley[Char] = lexeme(char(name))
-        def symbol_(name: String): Parsley[String] = lexeme(attempt(string(name)))
+        /** TODO:
+          *
+          * @since 4.0.0
+          */
+        object symbol {
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            def apply(name: String, label: String): Parsley[Unit] = apply(name).label(label)
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            def apply(name: String): Parsley[Unit] = lexeme(attempt(string(name))).void
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            def apply(name: Char, label: String): Parsley[Unit] = apply(name).label(label)
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            def apply(name: Char): Parsley[Unit] = lexeme(char(name)).void
 
-        lazy val semi: Parsley[Char] = symbol(';').label("semicolon")
-        lazy val comma: Parsley[Char] = symbol(',').label("comma")
-        lazy val colon: Parsley[Char] = symbol(':').label("colon")
-        lazy val dot: Parsley[Char] = symbol('.').label("dot")
-        def semiSep[A](p: Parsley[A]): Parsley[List[A]] = sepBy(p, semi)
-        def semiSep1[A](p: Parsley[A]): Parsley[List[A]] = sepBy1(p, semi)
-        def commaSep[A](p: Parsley[A]): Parsley[List[A]] = sepBy(p, comma)
-        def commaSep1[A](p: Parsley[A]): Parsley[List[A]] = sepBy1(p, comma)
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            lazy val semi: Parsley[Unit] = apply(';', "semicolon")
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            lazy val comma: Parsley[Unit] = apply(',', "comma")
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            lazy val colon: Parsley[Unit] = apply(':', "colon")
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            lazy val dot: Parsley[Unit] = apply('.', "dot")
 
-        def parens[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, '(', ')', "parenthesis", "parentheses")
-        def braces[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, '{', '}', "brace", "braces")
-        def angles[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, '<', '>', "angle bracket", "angle brackets")
-        def brackets[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, '[', ']', "square bracket", "square brackets")
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            lazy val openParen: Parsley[Unit] = apply('(', "open parenthesis")
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            lazy val openBrace: Parsley[Unit] = apply('{', "open brace")
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            lazy val openSquare: Parsley[Unit] = apply('[', "open square bracket")
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            lazy val openAngle: Parsley[Unit] = apply('<', "open angle bracket")
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            lazy val closingParen: Parsley[Unit] = apply(')', "closing parenthesis")
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            lazy val closingBrace: Parsley[Unit] = apply('}', "closing brace")
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            lazy val closingSquare: Parsley[Unit] = apply(']', "closing square bracket")
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            lazy val closingAngle: Parsley[Unit] = apply('>', "closing angle bracket")
+        }
 
-        private def enclosing[A](p: =>Parsley[A], open: Char, close: Char, singular: String, plural: String) =
-            between(symbol(open).label(s"open $singular"),
-                    symbol(close).label(s"matching closing $singular").explain(s"unclosed $plural"),
-                    p)
+        /** TODO:
+          *
+          * @since 4.0.0
+          */
+        object separators {
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            def semiSep[A](p: Parsley[A]): Parsley[List[A]] = sepBy(p, symbol.semi)
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            def semiSep1[A](p: Parsley[A]): Parsley[List[A]] = sepBy1(p, symbol.semi)
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            def commaSep[A](p: Parsley[A]): Parsley[List[A]] = sepBy(p, symbol.comma)
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            def commaSep1[A](p: Parsley[A]): Parsley[List[A]] = sepBy1(p, symbol.comma)
+        }
 
+        /** TODO:
+          *
+          * @since 4.0.0
+          */
+        object enclosing {
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            def parens[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, symbol.openParen, symbol.closingParen, "parentheses")
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            def braces[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, symbol.openBrace, symbol.closingBrace, "braces")
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            def angles[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, symbol.openAngle, symbol.closingAngle, "angle brackets")
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            def brackets[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, symbol.openSquare, symbol.closingSquare, "square brackets")
+
+            private def enclosing[A](p: =>Parsley[A], open: Parsley[Unit], close: Parsley[Unit], plural: String) =
+                between(open, close.explain(s"unclosed $plural"), p)
+        }
     }
 
     /** This object is concerned with ''non-lexemes'': these are tokens that
@@ -519,7 +641,7 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
         implicit def implicitLexeme(s: String): Parsley[Unit] = {
             if (desc.identDesc.keywords(s)) lexemes.keyword(s)
             else if (desc.operators(s))     lexemes.maxOp(s)
-            else                            lexemes.symbol_(s).void
+            else                            lexemes.symbol(s)
         }
     }
 
@@ -590,21 +712,21 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
     @deprecated def decimal: Parsley[Int] = lexemes.numeric.natural.decimal.map(_.toInt)
     @deprecated def hexadecimal: Parsley[Int] = lexemes.numeric.natural.hexadecimal.map(_.toInt)
     @deprecated def octal: Parsley[Int] = lexemes.numeric.natural.octal.map(_.toInt)
-    @deprecated def symbol(name: String): Parsley[String] = lexemes.symbol(name)
-    @deprecated def symbol(name: Char): Parsley[Char] = lexemes.symbol(name)
-    @deprecated def symbol_(name: String): Parsley[String] = lexemes.symbol_(name)
-    @deprecated def parens[A](p: =>Parsley[A]): Parsley[A] = lexemes.parens(p)
-    @deprecated def braces[A](p: =>Parsley[A]): Parsley[A] = lexemes.braces(p)
-    @deprecated def angles[A](p: =>Parsley[A]): Parsley[A] = lexemes.angles(p)
-    @deprecated def brackets[A](p: =>Parsley[A]): Parsley[A] = lexemes.brackets(p)
-    @deprecated def semi: Parsley[Char] = lexemes.semi
-    @deprecated def comma: Parsley[Char] = lexemes.comma
-    @deprecated def colon: Parsley[Char] = lexemes.colon
-    @deprecated def dot: Parsley[Char] = lexemes.dot
-    @deprecated def semiSep[A](p: Parsley[A]): Parsley[List[A]] = lexemes.semiSep(p)
-    @deprecated def semiSep1[A](p: Parsley[A]): Parsley[List[A]] = lexemes.semiSep1(p)
-    @deprecated def commaSep[A](p: Parsley[A]): Parsley[List[A]] = lexemes.commaSep(p)
-    @deprecated def commaSep1[A](p: Parsley[A]): Parsley[List[A]] = lexemes.commaSep1(p)
+    @deprecated def symbol(name: String): Parsley[String] = lexeme(string(name))
+    @deprecated def symbol(name: Char): Parsley[Char] = lexemes.symbol(name) #> name
+    @deprecated def symbol_(name: String): Parsley[String] = lexemes.symbol(name) #> name
+    @deprecated def parens[A](p: =>Parsley[A]): Parsley[A] = lexemes.enclosing.parens(p)
+    @deprecated def braces[A](p: =>Parsley[A]): Parsley[A] = lexemes.enclosing.braces(p)
+    @deprecated def angles[A](p: =>Parsley[A]): Parsley[A] = lexemes.enclosing.angles(p)
+    @deprecated def brackets[A](p: =>Parsley[A]): Parsley[A] = lexemes.enclosing.brackets(p)
+    @deprecated def semi: Parsley[Char] = lexemes.symbol.semi #> ';'
+    @deprecated def comma: Parsley[Char] = lexemes.symbol.comma #> ','
+    @deprecated def colon: Parsley[Char] = lexemes.symbol.colon #> ':'
+    @deprecated def dot: Parsley[Char] = lexemes.symbol.dot #> '.'
+    @deprecated def semiSep[A](p: Parsley[A]): Parsley[List[A]] = lexemes.separators.semiSep(p)
+    @deprecated def semiSep1[A](p: Parsley[A]): Parsley[List[A]] = lexemes.separators.semiSep1(p)
+    @deprecated def commaSep[A](p: Parsley[A]): Parsley[List[A]] = lexemes.separators.commaSep(p)
+    @deprecated def commaSep1[A](p: Parsley[A]): Parsley[List[A]] = lexemes.separators.commaSep1(p)
 
     // private API
     private def keyOrOp(startImpl: Impl, letterImpl: Impl, parser: Parsley[String], illegal: String => Boolean,
