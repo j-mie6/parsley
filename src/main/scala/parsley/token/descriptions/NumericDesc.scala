@@ -6,54 +6,56 @@ package parsley.token.descriptions.numeric
 import parsley.token.{Impl, NotRequired}
 import parsley.token.numeric.Real
 
-/** TODO:
+/** This class, and its subtypes, describe whether or not the plus sign (`+`) is allowed
+  * in a specific position.
   *
   * @since 4.0.0
   */
 sealed abstract class PlusSignPresence
-/** TODO:
+/** This object contains the concrete subtypes for `PlusSignPresence`.
   *
   * @since 4.0.0
   */
 object PlusSignPresence {
-    /** TODO:
+    /** When writing a non-negative literal, a `+` is mandatory before the literal.
       *
       * @since 4.0.0
       */
     case object Required extends PlusSignPresence
-    /** TODO:
+    /** When writing a non-negative literal, a `+` can be added, but is not required.
       *
       * @since 4.0.0
       */
     case object Optional extends PlusSignPresence
-    /** TODO:
+    /** Positive literals must not be prefixed by a `+`.
       *
       * @since 4.0.0
       */
     case object Illegal extends PlusSignPresence
 }
 
-/** TODO:
+/** This class, and its subtypes, describe how scientific exponent notation can be used within real literals.
   *
   * @since 4.0.0
   */
 sealed abstract class ExponentDesc
-/** TODO:
+/** This object contains the concrete subtypes of `ExponentDesc`.
   *
   * @since 4.0.0
   */
 object ExponentDesc {
-    /** TODO:
+    /** Exponents are not supported.
       *
       * @since 4.0.0
       */
     case object NoExponents extends ExponentDesc
-    /** TODO:
+    /** Exponents are supported, which may be compulsory. The base of the exponent can vary, as can whether a positive (`+`) sign
+      * is allowed before the exponent.
       *
-      * @param compulsory
-      * @param chars
-      * @param base
-      * @param positiveSign
+      * @param compulsory is an exponent ''required'' for the literal (at a specific base) to be valid?
+      * @param chars the set of possible characters that can start an exponent part of a literal.
+      * @param base the base of the exponent: for instance `e3` with `base = 10` would represent multiplication by 1000.
+      * @param positiveSign are positive (`+`) signs allowed, required, or illegal in front of the exponent?
       * @since 4.0.0
       */
     case class Supported(compulsory: Boolean,
@@ -65,50 +67,55 @@ object ExponentDesc {
     }
 }
 
-/** TODO:
+/** This class, and its subtypes, describe how break characters are supported within literals.
   *
   * @since 4.0.0
   */
 sealed abstract class BreakCharDesc
-/** TODO:
+/** This object contains the concrete subtypes of `BreakCharDesc`.
   *
   * @since 4.0.0
   */
 object BreakCharDesc {
-    /** TODO:
+    /** Literals cannot be broken.
       *
       * @since 4.0.0
       */
     case object NoBreakChar extends BreakCharDesc
-    /** TODO:
+    /** Literals may be broken, and this break may be legal after a non-decimal literal prefix
       *
-      * @param breakChar
-      * @param allowedAfterNonDecimalPrefix
+      * @param breakChar the character allowed to break a literal (often `_`).
+      * @param allowedAfterNonDecimalPrefix is it possible to write, say, `0x_300`?
       * @since 4.0.0
       */
     case class Supported(breakChar: Char, allowedAfterNonDecimalPrefix: Boolean) extends BreakCharDesc
 }
 
-/** TODO:
+/** This class describes how numeric literals, in different bases, should be processed lexically.
   *
-  * @param literalBreakChar
-  * @param leadingDotAllowed
-  * @param trailingDotAllowed
-  * @param leadingZerosAllowed
-  * @param positiveSign
-  * @param integerNumbersCanBeHexadecimal
-  * @param integerNumbersCanBeOctal
-  * @param integerNumbersCanBeBinary
-  * @param realNumbersCanBeHexadecimal
-  * @param realNumbersCanBeOctal
-  * @param realNumbersCanBeBinary
-  * @param hexadecimalLeads
-  * @param octalLeads
-  * @param binaryLeads
-  * @param decimalExponentDesc
-  * @param hexadecimalExponentDesc
-  * @param octalExponentDesc
-  * @param binaryExponentDesc
+  * @define generic is it possible for generic
+  * @define genericInt $generic "integer numbers" to be
+  * @define genericReal $generic "real numbers" to be
+  * @define genericExp Describes how scientific exponent notation should work for
+  *
+  * @param literalBreakChar describes if breaks can be found within numeric literals.
+  * @param leadingDotAllowed can a real number omit a leading 0 before the point?
+  * @param trailingDotAllowed can a real number omit a trailing 0 after the point?
+  * @param leadingZerosAllowed are extraneous zeros allowed at the start of decimal numbers?
+  * @param positiveSign describes if positive (`+`) signs are allowed, compulsory, or illegal.
+  * @param integerNumbersCanBeHexadecimal $genericInt hexadecimal?
+  * @param integerNumbersCanBeOctal $genericInt octal?
+  * @param integerNumbersCanBeBinary $genericInt binary?
+  * @param realNumbersCanBeHexadecimal $genericReal hexadecimal?
+  * @param realNumbersCanBeOctal $genericReal octal?
+  * @param realNumbersCanBeBinary $genericReal binary?
+  * @param hexadecimalLeads what characters begin a hexadecimal literal following a `0` (may be empty).
+  * @param octalLeads what characters begin an octal literal following a `0` (may be empty).
+  * @param binaryLeads what characters begin a binary literal following a `0` (may be empty).
+  * @param decimalExponentDesc $genericExp decimal literals.
+  * @param hexadecimalExponentDesc $genericExp hexadecimal literals.
+  * @param octalExponentDesc $genericExp octal literals.
+  * @param binaryExponentDesc $genericExp binary literals.
   * @since 4.0.0
   */
 case class NumericDesc (literalBreakChar: BreakCharDesc,
@@ -144,12 +151,12 @@ case class NumericDesc (literalBreakChar: BreakCharDesc,
     private [token] def decimalRealsOnly: Boolean = !(realNumbersCanBeBinary || realNumbersCanBeHexadecimal || realNumbersCanBeOctal)
 }
 
-/** TODO:
+/** This object contains any preconfigured text definitions.
   *
   * @since 4.0.0
   */
 object NumericDesc {
-    /** TODO:
+    /** Plain definition of text (current matching the rules in the Haskell report).
       *
       * @since 4.0.0
       */
