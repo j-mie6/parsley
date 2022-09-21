@@ -3,9 +3,8 @@
  */
 package parsley.token.symbol
 
-//import java.util.concurrent.ConcurrentHashMap
-
-import scala.collection.concurrent
+// TODO: This can be enabled later, when finalised: js-native will need to not use this
+//import scala.collection.concurrent
 
 import parsley.Parsley, Parsley.{attempt, notFollowedBy, pure}
 import parsley.character.{char, string}
@@ -32,19 +31,19 @@ private [token] class ConcreteSymbol(desc: LexicalDesc, identLetter: Parsley[Cha
         else name.foldLeft(pure(name))((p, c) => p <* caseChar(c)).label(name)
     }
 
-    private val keywordMemo = concurrent.TrieMap.empty[String, Parsley[Unit]]
-    override def softKeyword(name: String): Parsley[Unit] = keywordMemo.getOrElseUpdate(name, desc.identDesc.identLetter match {
+    //private val keywordMemo = concurrent.TrieMap.empty[String, Parsley[Unit]]
+    override def softKeyword(name: String): Parsley[Unit] = /*keywordMemo.getOrElseUpdate(name, */desc.identDesc.identLetter match {
         case Static(letter) => new Parsley(new singletons.Specific("keyword", name, letter, desc.identDesc.caseSensitive))
         case _ => attempt(caseString(name) *> notFollowedBy(identLetter).label(s"end of $name"))
-    })
+    }//)
 
-    private val operatorMemo = concurrent.TrieMap.empty[String, Parsley[Unit]]
+    //private val operatorMemo = concurrent.TrieMap.empty[String, Parsley[Unit]]
     // TODO: I think operator and maxOp's behaviours should be merged, for consistency
     // This can be done with the `strings` combinator for now, we will want to optimise
     // it
-    override def operator(name: String): Parsley[Unit] = operatorMemo.getOrElseUpdate(name, desc.opLetter match {
+    override def operator(name: String): Parsley[Unit] = /*operatorMemo.getOrElseUpdate(name, */desc.opLetter match {
         case Static(letter) => new Parsley(new singletons.Specific("operator", name, letter, true))
         case _ => attempt(string(name) *> notFollowedBy(opLetter).label(s"end of $name"))
-    })
+    }//)
     override def maxOp(name: String): Parsley[Unit] = new Parsley(new singletons.MaxOp(name, desc.operators))
 }
