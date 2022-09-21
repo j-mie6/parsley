@@ -8,11 +8,11 @@ import parsley.token.{Impl, NotRequired}
 private [parsley] // TODO: remove
 case class IdentDesc (identStart: Impl,
                       identLetter: Impl,
-                      keywords: Set[String],
+                      hardKeywords: Set[String],
                       caseSensitive: Boolean) {
     private [parsley] def isReservedName(name: String): Boolean =
         theReservedNames.contains(if (caseSensitive) name else name.toLowerCase)
-    private lazy val theReservedNames =  if (caseSensitive) keywords else keywords.map(_.toLowerCase)
+    private lazy val theReservedNames =  if (caseSensitive) hardKeywords else hardKeywords.map(_.toLowerCase)
 }
 
 private [parsley] // TODO: remove

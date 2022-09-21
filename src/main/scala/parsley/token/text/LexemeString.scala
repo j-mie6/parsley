@@ -7,7 +7,7 @@ import scala.Predef.{String => ScalaString, _}
 
 import parsley.Parsley
 
-private [token] final class LexemeString(string: String , ws: Parsley[_]) extends String {
+private [token] final class LexemeString(string: String, ws: Parsley[_]) extends String {
     override lazy val unicode: Parsley[ScalaString] = lexeme(string.unicode)
     override lazy val ascii: Parsley[ScalaString] = lexeme(string.ascii)
     override lazy val extendedAscii: Parsley[ScalaString] = lexeme(string.extendedAscii)

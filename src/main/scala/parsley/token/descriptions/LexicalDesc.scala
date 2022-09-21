@@ -7,12 +7,12 @@ import parsley.token.{Impl, NotRequired}
 
 private [parsley] // TODO: remove
 case class LexicalDesc (identDesc: IdentDesc,
-                         opStart: Impl,
-                         opLetter: Impl,
-                         operators: Set[String],
-                         numericDesc: numeric.NumericDesc,
-                         textDesc: text.TextDesc,
-                         whitespaceDesc: SpaceDesc) {
+                        opStart: Impl,
+                        opLetter: Impl,
+                        operators: Set[String],
+                        numericDesc: numeric.NumericDesc,
+                        textDesc: text.TextDesc,
+                        whitespaceDesc: SpaceDesc) {
     private [parsley] def isReservedOp(op: String): Boolean = operators.contains(op)
 }
 

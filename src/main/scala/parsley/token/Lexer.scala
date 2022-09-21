@@ -3,7 +3,10 @@
  */
 package parsley.token
 
+import java.util.concurrent.ConcurrentHashMap
+
 import scala.language.implicitConversions
+import scala.annotation.implicitNotFound
 
 import parsley.Parsley, Parsley.{attempt, empty, fresh, notFollowedBy, pure, unit}
 import parsley.character.{char, digit, hexDigit, octDigit, satisfy, string, stringOfMany, oneOf}
@@ -11,38 +14,15 @@ import parsley.combinator.{between, many, sepBy, sepBy1, skipMany, skipSome}
 import parsley.errors.combinator.{amend, entrench, unexpected, ErrorMethods}
 import parsley.implicits.character.charLift
 import parsley.lift.{lift2, lift3}
+import parsley.token.names._
 import parsley.token.numeric._
 import parsley.token.text.{String => _, _}
+import parsley.token.symbol._
 
 import parsley.XAssert._
 
 import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
 import parsley.internal.deepembedding.singletons
-import scala.annotation.implicitNotFound
-
-/** This class provides implicit functionality to promote string
-  * literals into tokens.
-  *
-  * @since 4.0.0
-  */
-abstract class ImplicitLexeme private [token] {
-    /** This method takes the given string and turns it
-      * into a parser for that token.
-      *
-      * This method can be brought into scope in a parser to
-      * allow string literals to naturally serve as tokens.
-      * In particular, it will correctly deal with known keywords
-      * and operators, and otherwise handle other strings at
-      * face-value.
-      *
-      * @note it is assumed that
-      * the token's content is irrelevant, since it is
-      * already known what it is, so `Unit` is returned.
-      *
-      * @since 4.0.0
-      */
-    implicit def implicitLexeme(s: String): Parsley[Unit]
-}
 
 /** This class provides a large selection of functionality concerned
   * with lexing.
@@ -247,13 +227,11 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
       * @since 4.0.0
       */
     object lexemes {
-        lazy val identifier: Parsley[String] = lexeme(nonlexemes.identifier)
-        def keyword(name: String): Parsley[Unit] = lexeme(nonlexemes.keyword(name))
-
-        lazy val userOp: Parsley[String] = lexeme(nonlexemes.userOp)
-        lazy val reservedOp: Parsley[String] = lexeme(nonlexemes.reservedOp)
-        def operator(name: String): Parsley[Unit] = lexeme(nonlexemes.operator(name))
-        def maxOp(name: String): Parsley[Unit] = lexeme(nonlexemes.maxOp(name))
+        /** TODO:
+          *
+          * @since 4.0.0
+          */
+        val names: parsley.token.names.Names = new LexemeNames(nonlexemes.names, whiteSpace)
 
         /** $numeric
           *
@@ -351,90 +329,7 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
           *
           * @since 4.0.0
           */
-        object symbol {
-            /** TODO:
-              *
-              * @since 4.0.0
-              */
-            def apply(name: String, label: String): Parsley[Unit] = apply(name).label(label)
-            /** TODO:
-              *
-              * @since 4.0.0
-              */
-            def apply(name: String): Parsley[Unit] = lexeme(attempt(string(name))).void
-            /** TODO:
-              *
-              * @since 4.0.0
-              */
-            def apply(name: Char, label: String): Parsley[Unit] = apply(name).label(label)
-            /** TODO:
-              *
-              * @since 4.0.0
-              */
-            def apply(name: Char): Parsley[Unit] = lexeme(char(name)).void
-
-            /** TODO:
-              *
-              * @since 4.0.0
-              */
-            lazy val semi: Parsley[Unit] = apply(';', "semicolon")
-            /** TODO:
-              *
-              * @since 4.0.0
-              */
-            lazy val comma: Parsley[Unit] = apply(',', "comma")
-            /** TODO:
-              *
-              * @since 4.0.0
-              */
-            lazy val colon: Parsley[Unit] = apply(':', "colon")
-            /** TODO:
-              *
-              * @since 4.0.0
-              */
-            lazy val dot: Parsley[Unit] = apply('.', "dot")
-
-            /** TODO:
-              *
-              * @since 4.0.0
-              */
-            lazy val openParen: Parsley[Unit] = apply('(', "open parenthesis")
-            /** TODO:
-              *
-              * @since 4.0.0
-              */
-            lazy val openBrace: Parsley[Unit] = apply('{', "open brace")
-            /** TODO:
-              *
-              * @since 4.0.0
-              */
-            lazy val openSquare: Parsley[Unit] = apply('[', "open square bracket")
-            /** TODO:
-              *
-              * @since 4.0.0
-              */
-            lazy val openAngle: Parsley[Unit] = apply('<', "open angle bracket")
-            /** TODO:
-              *
-              * @since 4.0.0
-              */
-            lazy val closingParen: Parsley[Unit] = apply(')', "closing parenthesis")
-            /** TODO:
-              *
-              * @since 4.0.0
-              */
-            lazy val closingBrace: Parsley[Unit] = apply('}', "closing brace")
-            /** TODO:
-              *
-              * @since 4.0.0
-              */
-            lazy val closingSquare: Parsley[Unit] = apply(']', "closing square bracket")
-            /** TODO:
-              *
-              * @since 4.0.0
-              */
-            lazy val closingAngle: Parsley[Unit] = apply('>', "closing angle bracket")
-        }
+        val symbol: parsley.token.symbol.Symbol = new LexemeSymbol(nonlexemes.symbol, whiteSpace)
 
         /** TODO:
           *
@@ -517,19 +412,11 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
       * @since 4.0.0
       */
     object nonlexemes {
-        lazy val identifier: Parsley[String] = keyOrOp(desc.identDesc.identStart, desc.identDesc.identLetter, ident, desc.identDesc.isReservedName(_),  "identifier", "identifier", "keyword")
-        def keyword(name: String): Parsley[Unit] = desc.identDesc.identLetter match {
-            case Static(letter) => new Parsley(new singletons.Specific("keyword", name, letter, desc.identDesc.caseSensitive))
-            case _ => attempt(caseString(name) *> notFollowedBy(identLetter).label(s"end of $name"))
-        }
-
-        lazy val userOp: Parsley[String] = keyOrOp(desc.opStart, desc.opLetter, oper, desc.isReservedOp(_), "userOp", "operator", "reserved operator")
-        lazy val reservedOp: Parsley[String] = keyOrOp(desc.opStart, desc.opLetter, oper, !desc.isReservedOp(_), "reservedOp", "operator", "non-reserved operator")
-        def operator(name: String): Parsley[Unit] = desc.opLetter match {
-            case Static(letter) => new Parsley(new singletons.Specific("operator", name, letter, true))
-            case _ => attempt(string(name) *> notFollowedBy(opLetter).label(s"end of $name"))
-        }
-        def maxOp(name: String): Parsley[Unit] = new Parsley(new singletons.MaxOp(name, desc.operators))
+        /** TODO:
+          *
+          * @since 4.0.0
+          */
+        val names: parsley.token.names.Names = new ConcreteNames(desc, identStart, identLetter, opStart, opLetter)
 
         /** $numeric
           *
@@ -629,20 +516,12 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
             val rawMultiString: parsley.token.text.String =
                 new ConcreteString(desc.textDesc.multiStringEnds, RawCharacter, desc.textDesc.graphicCharacter, true)
         }
-    }
 
-    /** This object can be imported from to expose a way of converting raw Scala string literals
-      * into a parser for that specific token.
-      *
-      * @since 4.0.0
-      */
-    val implicits: ImplicitLexeme = new ImplicitLexeme {
-        /** @inheritdoc */
-        implicit def implicitLexeme(s: String): Parsley[Unit] = {
-            if (desc.identDesc.keywords(s)) lexemes.keyword(s)
-            else if (desc.operators(s))     lexemes.maxOp(s)
-            else                            lexemes.symbol(s)
-        }
+        /** TODO:
+          *
+          * @since 4.0.0
+          */
+        val symbol: parsley.token.symbol.Symbol = new ConcreteSymbol(desc, identLetter, opLetter)
     }
 
     /** TODO:
@@ -689,15 +568,15 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
     }
 
     // legacy API
-    @deprecated def identifier: Parsley[String] = lexemes.identifier
-    @deprecated def keyword(name: String): Parsley[Unit] = lexemes.keyword(name)
-    @deprecated def userOp: Parsley[String] = lexemes.userOp
-    @deprecated def reservedOp_ : Parsley[String] = nonlexemes.reservedOp
-    @deprecated def reservedOp: Parsley[String] = lexemes.reservedOp
-    @deprecated def operator(name: String): Parsley[Unit] = lexemes.operator(name)
-    @deprecated def operator_(name: String): Parsley[Unit] = nonlexemes.operator(name)
-    @deprecated def maxOp(name: String): Parsley[Unit] = lexemes.maxOp(name)
-    @deprecated def maxOp_(name: String): Parsley[Unit] = nonlexemes.maxOp(name)
+    @deprecated def identifier: Parsley[String] = lexemes.names.identifier
+    @deprecated def keyword(name: String): Parsley[Unit] = lexemes.symbol.softKeyword(name)
+    @deprecated def userOp: Parsley[String] = lexemes.names.userOp
+    @deprecated def reservedOp_ : Parsley[String] = nonlexemes.names.reservedOp
+    @deprecated def reservedOp: Parsley[String] = lexemes.names.reservedOp
+    @deprecated def operator(name: String): Parsley[Unit] = lexemes.symbol.operator(name)
+    @deprecated def operator_(name: String): Parsley[Unit] = nonlexemes.symbol.operator(name)
+    @deprecated def maxOp(name: String): Parsley[Unit] = lexemes.symbol.maxOp(name)
+    @deprecated def maxOp_(name: String): Parsley[Unit] = nonlexemes.symbol.maxOp(name)
     @deprecated def charLiteral: Parsley[Char] = lexemes.text.character.basicMultilingualPlane
     @deprecated def stringLiteral: Parsley[String] = lexemes.text.string.unicode
     @deprecated def stringLiteral_ : Parsley[String] = nonlexemes.text.string.unicode
@@ -729,39 +608,14 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
     @deprecated def commaSep1[A](p: Parsley[A]): Parsley[List[A]] = lexemes.separators.commaSep1(p)
 
     // private API
-    private def keyOrOp(startImpl: Impl, letterImpl: Impl, parser: Parsley[String], illegal: String => Boolean,
-                        combinatorName: String, name: String, illegalName: String) = {
-        val builder = (start: Char => Boolean, letter: Char => Boolean) =>
-            new Parsley(new singletons.NonSpecific(combinatorName, name, illegalName, start, letter, illegal))
-        (startImpl, letterImpl) match {
-            case (Static(start), Static(letter)) => builder(start, letter)
-            case _ =>
-                attempt {
-                    amend {
-                        // TODO: Ideally, we'd make a combinator that eliminates this flatMap
-                        entrench(parser).flatMap {
-                            case x if illegal(x) => unexpected(s"$illegalName $x")
-                            case x => pure(x)
-                        }
-                    }
-                }.label(name)
-        }
-    }
-
     // Identifiers & Reserved words
-    private def caseString(name: String): Parsley[String] = {
-        def caseChar(c: Char): Parsley[Char] = if (c.isLetter) c.toLower <|> c.toUpper else c
-        if (desc.identDesc.caseSensitive) string(name)
-        else name.foldLeft(pure(name))((p, c) => p <* caseChar(c)).label(name)
-    }
     private lazy val identStart = desc.identDesc.identStart.toParser
     private lazy val identLetter = desc.identDesc.identLetter.toParser
-    private lazy val ident = lift2((c: Char, cs: String) => s"$c$cs", identStart, stringOfMany(identLetter))
+
 
     // Operators & Reserved ops
     private lazy val opStart = desc.opStart.toParser
     private lazy val opLetter = desc.opLetter.toParser
-    private lazy val oper = lift2((c: Char, cs: String) => s"$c$cs", opStart, stringOfMany(opLetter))
 
     // White space & symbols
     private lazy val space = desc.whitespaceDesc.space.toParser

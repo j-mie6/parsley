@@ -49,21 +49,21 @@ class TokeniserTests extends ParsleyTest {
     val tokeniser_ = new token.Lexer(scala_)
 
     "identifier" should "read valid identifiers" in {
-        (tokeniser.lexemes.identifier <* eof).parse("foo123 ") should be (Success("foo123"))
-        (tokeniser.lexemes.identifier <* eof).parse("_bar") should be (Success("_bar"))
-        (tokeniser.lexemes.identifier <* eof).parse("iffy") should be (Success("iffy"))
-        (tokeniser.lexemes.identifier <* eof).parse("1_bar") shouldBe a [Failure[_]]
+        (tokeniser.lexemes.names.identifier <* eof).parse("foo123 ") should be (Success("foo123"))
+        (tokeniser.lexemes.names.identifier <* eof).parse("_bar") should be (Success("_bar"))
+        (tokeniser.lexemes.names.identifier <* eof).parse("iffy") should be (Success("iffy"))
+        (tokeniser.lexemes.names.identifier <* eof).parse("1_bar") shouldBe a [Failure[_]]
     }
     it should "fail if the result is a keyword" in {
-        (tokeniser.lexemes.identifier <* eof).parse("class") shouldBe a [Failure[_]]
+        (tokeniser.lexemes.names.identifier <* eof).parse("class") shouldBe a [Failure[_]]
     }
     it should "point at the correct place for the error" in {
-        (tokeniser.lexemes.identifier <* eof).parse("class") should matchPattern {
+        (tokeniser.lexemes.names.identifier <* eof).parse("class") should matchPattern {
             case Failure(TestError((1, 1), _)) =>
         }
     }
     it should "report the correct labels" in {
-        inside((tokeniser.lexemes.identifier <* eof).parse("class")) {
+        inside((tokeniser.lexemes.names.identifier <* eof).parse("class")) {
             case Failure(TestError(_, VanillaError(unexpected, expecteds, reasons))) =>
                 unexpected should contain (Named("keyword class"))
                 expecteds should contain only (Named("identifier"))
@@ -71,17 +71,17 @@ class TokeniserTests extends ParsleyTest {
         }
     }
     it must "be the same regardless of the intrinsic" in {
-        (tokeniser_.lexemes.identifier <* eof).parse("foo123 ") should be (Success("foo123"))
-        (tokeniser_.lexemes.identifier <* eof).parse("_bar") should be (Success("_bar"))
-        (tokeniser_.lexemes.identifier <* eof).parse("iffy") should be (Success("iffy"))
-        (tokeniser_.lexemes.identifier <* eof).parse("1_bar") should equal {
-            (tokeniser.lexemes.identifier <* eof).parse("1_bar")
+        (tokeniser_.lexemes.names.identifier <* eof).parse("foo123 ") should be (Success("foo123"))
+        (tokeniser_.lexemes.names.identifier <* eof).parse("_bar") should be (Success("_bar"))
+        (tokeniser_.lexemes.names.identifier <* eof).parse("iffy") should be (Success("iffy"))
+        (tokeniser_.lexemes.names.identifier <* eof).parse("1_bar") should equal {
+            (tokeniser.lexemes.names.identifier <* eof).parse("1_bar")
         }
-        (tokeniser_.lexemes.identifier <* eof).parse("class") shouldBe a [Failure[_]]
-        (tokeniser_.lexemes.identifier <* eof).parse("class") should matchPattern {
+        (tokeniser_.lexemes.names.identifier <* eof).parse("class") shouldBe a [Failure[_]]
+        (tokeniser_.lexemes.names.identifier <* eof).parse("class") should matchPattern {
             case Failure(TestError((1, 1), _)) =>
         }
-        inside((tokeniser_.lexemes.identifier <* eof).parse("class")) {
+        inside((tokeniser_.lexemes.names.identifier <* eof).parse("class")) {
             case Failure(TestError(_, VanillaError(unexpected, expecteds, reasons))) =>
                 unexpected should contain (Named("keyword class"))
                 expecteds should contain only (Named("identifier"))
@@ -90,99 +90,99 @@ class TokeniserTests extends ParsleyTest {
     }
 
     "keyword" should "match valid keywords" in {
-        tokeniser.lexemes.keyword("if").parse("if then") should be (Success(()))
-        tokeniser.lexemes.keyword("volatile").parse("volatile") should be (Success(()))
+        tokeniser.lexemes.symbol.softKeyword("if").parse("if then") should be (Success(()))
+        tokeniser.lexemes.symbol.softKeyword("volatile").parse("volatile") should be (Success(()))
     }
     it should "fail if the input has more identifier letters" in {
-        tokeniser.lexemes.keyword("if").parse("ifthen") shouldBe a [Failure[_]]
-        tokeniser.lexemes.keyword("volatile").parse("volatilev") shouldBe a [Failure[_]]
+        tokeniser.lexemes.symbol.softKeyword("if").parse("ifthen") shouldBe a [Failure[_]]
+        tokeniser.lexemes.symbol.softKeyword("volatile").parse("volatilev") shouldBe a [Failure[_]]
     }
     it must "be the same regardless of the intrinsic" in {
-        tokeniser_.lexemes.keyword("if").parse("if then") should be (Success(()))
-        tokeniser_.lexemes.keyword("volatile").parse("volatile") should be (Success(()))
-        tokeniser_.lexemes.keyword("if").parse("ifthen") should equal {
-            tokeniser.lexemes.keyword("if").parse("ifthen")
+        tokeniser_.lexemes.symbol.softKeyword("if").parse("if then") should be (Success(()))
+        tokeniser_.lexemes.symbol.softKeyword("volatile").parse("volatile") should be (Success(()))
+        tokeniser_.lexemes.symbol.softKeyword("if").parse("ifthen") should equal {
+            tokeniser.lexemes.symbol.softKeyword("if").parse("ifthen")
         }
-        tokeniser_.lexemes.keyword("volatile").parse("volatilev") should equal {
-            tokeniser.lexemes.keyword("volatile").parse("volatilev")
+        tokeniser_.lexemes.symbol.softKeyword("volatile").parse("volatilev") should equal {
+            tokeniser.lexemes.symbol.softKeyword("volatile").parse("volatilev")
         }
     }
     it must "not consume input on failure" in {
-        (tokeniser.lexemes.keyword("if") <|> tokeniser.lexemes.identifier).parse("id") should be (Success("id"))
+        (tokeniser.lexemes.symbol.softKeyword("if") <|> tokeniser.lexemes.names.identifier).parse("id") should be (Success("id"))
     }
 
     "userOp" should "read valid operator" in {
-        (tokeniser.lexemes.userOp <* eof).parse(":+:") should be (Success(":+:"))
-        (tokeniser.lexemes.userOp <* eof).parse(":+:h") shouldBe a [Failure[_]]
+        (tokeniser.lexemes.names.userOp <* eof).parse(":+:") should be (Success(":+:"))
+        (tokeniser.lexemes.names.userOp <* eof).parse(":+:h") shouldBe a [Failure[_]]
     }
     it should "fail if the result is reserved" in {
-        (tokeniser.lexemes.userOp <* eof).parse(":") shouldBe a [Failure[_]]
+        (tokeniser.lexemes.names.userOp <* eof).parse(":") shouldBe a [Failure[_]]
     }
     it must "be the same regardless of the intrinsic" in {
-        (tokeniser_.lexemes.userOp <* eof).parse(":+:") should be (Success(":+:"))
-        (tokeniser_.lexemes.userOp <* eof).parse(":+:h") shouldBe a [Failure[_]]
-        (tokeniser_.lexemes.userOp <* eof).parse(":") shouldBe a [Failure[_]]
+        (tokeniser_.lexemes.names.userOp <* eof).parse(":+:") should be (Success(":+:"))
+        (tokeniser_.lexemes.names.userOp <* eof).parse(":+:h") shouldBe a [Failure[_]]
+        (tokeniser_.lexemes.names.userOp <* eof).parse(":") shouldBe a [Failure[_]]
     }
 
     "reservedOp" should "match valid reserved operators" in {
-        (tokeniser.lexemes.reservedOp <* eof).parse("=") should be (Success("="))
-        (tokeniser.lexemes.reservedOp <* eof).parse(":") should be (Success(":"))
+        (tokeniser.lexemes.names.reservedOp <* eof).parse("=") should be (Success("="))
+        (tokeniser.lexemes.names.reservedOp <* eof).parse(":") should be (Success(":"))
     }
     it should "fail if the result isn't reserved" in {
-        (tokeniser.lexemes.reservedOp <* eof).parse("+") shouldBe a [Failure[_]]
-        (tokeniser.lexemes.reservedOp <* eof).parse("::=") shouldBe a [Failure[_]]
+        (tokeniser.lexemes.names.reservedOp <* eof).parse("+") shouldBe a [Failure[_]]
+        (tokeniser.lexemes.names.reservedOp <* eof).parse("::=") shouldBe a [Failure[_]]
     }
     it must "be the same regardless of the intrinsic" in {
-        (tokeniser_.lexemes.reservedOp <* eof).parse("=") should be (Success("="))
-        (tokeniser_.lexemes.reservedOp <* eof).parse(":") should be (Success(":"))
-        (tokeniser_.lexemes.reservedOp <* eof).parse("+") shouldBe a [Failure[_]]
-        (tokeniser_.lexemes.reservedOp <* eof).parse("::=") shouldBe a [Failure[_]]
+        (tokeniser_.lexemes.names.reservedOp <* eof).parse("=") should be (Success("="))
+        (tokeniser_.lexemes.names.reservedOp <* eof).parse(":") should be (Success(":"))
+        (tokeniser_.lexemes.names.reservedOp <* eof).parse("+") shouldBe a [Failure[_]]
+        (tokeniser_.lexemes.names.reservedOp <* eof).parse("::=") shouldBe a [Failure[_]]
     }
 
     "operator" should "match valid operators" in {
-        (tokeniser.lexemes.operator("=") <* eof).parse("=") should be (Success(()))
-        (tokeniser.lexemes.operator(":") <* eof).parse(":") should be (Success(()))
-        (tokeniser.lexemes.operator("++") <* eof).parse("++") should be (Success(()))
+        (tokeniser.lexemes.symbol.operator("=") <* eof).parse("=") should be (Success(()))
+        (tokeniser.lexemes.symbol.operator(":") <* eof).parse(":") should be (Success(()))
+        (tokeniser.lexemes.symbol.operator("++") <* eof).parse("++") should be (Success(()))
     }
     it should "fail if the input has more operator letters" in {
-        (tokeniser.lexemes.operator("=") <* eof).parse("=+") shouldBe a [Failure[_]]
-        (tokeniser.lexemes.operator(":") <* eof).parse("::") shouldBe a [Failure[_]]
-        (tokeniser.lexemes.operator("++") <* eof).parse("++=") shouldBe a [Failure[_]]
+        (tokeniser.lexemes.symbol.operator("=") <* eof).parse("=+") shouldBe a [Failure[_]]
+        (tokeniser.lexemes.symbol.operator(":") <* eof).parse("::") shouldBe a [Failure[_]]
+        (tokeniser.lexemes.symbol.operator("++") <* eof).parse("++=") shouldBe a [Failure[_]]
     }
     it must "be the same regardless of the intrinsic" in {
-        (tokeniser_.lexemes.operator("=") <* eof).parse("=") should equal {
-            (tokeniser.lexemes.operator("=") <* eof).parse("=")
+        (tokeniser_.lexemes.symbol.operator("=") <* eof).parse("=") should equal {
+            (tokeniser.lexemes.symbol.operator("=") <* eof).parse("=")
         }
-        (tokeniser_.lexemes.operator(":") <* eof).parse(":") should equal {
-            (tokeniser.lexemes.operator(":") <* eof).parse(":")
+        (tokeniser_.lexemes.symbol.operator(":") <* eof).parse(":") should equal {
+            (tokeniser.lexemes.symbol.operator(":") <* eof).parse(":")
         }
-        (tokeniser_.lexemes.operator("++") <* eof).parse("++") should equal {
-            (tokeniser.lexemes.operator("++") <* eof).parse("++")
+        (tokeniser_.lexemes.symbol.operator("++") <* eof).parse("++") should equal {
+            (tokeniser.lexemes.symbol.operator("++") <* eof).parse("++")
         }
-        (tokeniser_.lexemes.operator("=") <* eof).parse("=+") should equal {
-            (tokeniser.lexemes.operator("=") <* eof).parse("=+")
+        (tokeniser_.lexemes.symbol.operator("=") <* eof).parse("=+") should equal {
+            (tokeniser.lexemes.symbol.operator("=") <* eof).parse("=+")
         }
-        (tokeniser_.lexemes.operator(":") <* eof).parse("::") should equal {
-            (tokeniser.lexemes.operator(":") <* eof).parse("::")
+        (tokeniser_.lexemes.symbol.operator(":") <* eof).parse("::") should equal {
+            (tokeniser.lexemes.symbol.operator(":") <* eof).parse("::")
         }
-        (tokeniser_.lexemes.operator("++") <* eof).parse("++=") should equal {
-            (tokeniser.lexemes.operator("++") <* eof).parse("++=")
+        (tokeniser_.lexemes.symbol.operator("++") <* eof).parse("++=") should equal {
+            (tokeniser.lexemes.symbol.operator("++") <* eof).parse("++=")
         }
-        (tokeniser_.lexemes.operator("+") <|> tokeniser_.lexemes.operator("++") <* eof).parse("++") should equal {
-            (tokeniser.lexemes.operator("+") <|> tokeniser.lexemes.operator("++") <* eof).parse("++")
+        (tokeniser_.lexemes.symbol.operator("+") <|> tokeniser_.lexemes.symbol.operator("++") <* eof).parse("++") should equal {
+            (tokeniser.lexemes.symbol.operator("+") <|> tokeniser.lexemes.symbol.operator("++") <* eof).parse("++")
         }
     }
 
     "maxOp" should "match valid operators" in {
-        (tokeniser_.lexemes.maxOp("=") <* eof).parse("=") should be (Success(()))
-        (tokeniser_.lexemes.maxOp(":") <* eof).parse(":") should be (Success(()))
-        (tokeniser_.lexemes.maxOp("++") <* eof).parse("++") should be (Success(()))
-        (tokeniser_.lexemes.maxOp("+:") <* ':' <* eof).parse("+::") should be (Success(()))
-        (tokeniser_.lexemes.maxOp("=") <* '=' <* eof).parse("==") should be (Success(()))
+        (tokeniser_.lexemes.symbol.maxOp("=") <* eof).parse("=") should be (Success(()))
+        (tokeniser_.lexemes.symbol.maxOp(":") <* eof).parse(":") should be (Success(()))
+        (tokeniser_.lexemes.symbol.maxOp("++") <* eof).parse("++") should be (Success(()))
+        (tokeniser_.lexemes.symbol.maxOp("+:") <* ':' <* eof).parse("+::") should be (Success(()))
+        (tokeniser_.lexemes.symbol.maxOp("=") <* '=' <* eof).parse("==") should be (Success(()))
     }
     it must "fail if the operator is a valid prefix of another operator and that operator is parsable" in {
-        (tokeniser_.lexemes.maxOp(":") <* '=' <* eof).parse(":=") shouldBe a [Failure[_]]
-        (tokeniser_.lexemes.maxOp(":") <* ':' <* eof).parse("::") shouldBe a [Failure[_]]
+        (tokeniser_.lexemes.symbol.maxOp(":") <* '=' <* eof).parse(":=") shouldBe a [Failure[_]]
+        (tokeniser_.lexemes.symbol.maxOp(":") <* ':' <* eof).parse("::") shouldBe a [Failure[_]]
     }
 
     "charLiteral" should "parse valid haskell characters" in {
@@ -433,21 +433,21 @@ class TokeniserTests extends ParsleyTest {
 
     "case sensitivity" should "work for both lowercase and uppercase specified keywords" in {
         val lexer = new token.Lexer(token.LanguageDef.plain.copy(caseSensitive = false, keywords = Set("hi", "HELLo", "BYE")))
-        lexer.lexemes.identifier.parse("hi") shouldBe a [Failure[_]]
-        lexer.lexemes.identifier.parse("hello") shouldBe a [Failure[_]]
-        lexer.lexemes.identifier.parse("bye") shouldBe a [Failure[_]]
-        lexer.lexemes.identifier.parse("hI") shouldBe a [Failure[_]]
-        lexer.lexemes.identifier.parse("hELLo") shouldBe a [Failure[_]]
-        lexer.lexemes.identifier.parse("bYe") shouldBe a [Failure[_]]
-        lexer.lexemes.keyword("HELLO").parse("HELLO") shouldBe a [Success[_]]
-        lexer.lexemes.keyword("HELLO").parse("hello") shouldBe a [Success[_]]
-        lexer.lexemes.keyword("BYE").parse("bye") shouldBe a [Success[_]]
-        lexer.lexemes.keyword("hi").parse("HI") shouldBe a [Success[_]]
+        lexer.lexemes.names.identifier.parse("hi") shouldBe a [Failure[_]]
+        lexer.lexemes.names.identifier.parse("hello") shouldBe a [Failure[_]]
+        lexer.lexemes.names.identifier.parse("bye") shouldBe a [Failure[_]]
+        lexer.lexemes.names.identifier.parse("hI") shouldBe a [Failure[_]]
+        lexer.lexemes.names.identifier.parse("hELLo") shouldBe a [Failure[_]]
+        lexer.lexemes.names.identifier.parse("bYe") shouldBe a [Failure[_]]
+        lexer.lexemes.symbol.softKeyword("HELLO").parse("HELLO") shouldBe a [Success[_]]
+        lexer.lexemes.symbol.softKeyword("HELLO").parse("hello") shouldBe a [Success[_]]
+        lexer.lexemes.symbol.softKeyword("BYE").parse("bye") shouldBe a [Success[_]]
+        lexer.lexemes.symbol.softKeyword("hi").parse("HI") shouldBe a [Success[_]]
     }
 
     it should "not be affected by tablification optimisation" in {
         val lexer = new token.Lexer(token.LanguageDef.plain.copy(caseSensitive = false, keywords = Set("hi", "HELLo", "BYE")))
-        val p = lexer.lexemes.keyword("hi") <|> lexer.lexemes.keyword("HELLo") <|> lexer.lexemes.keyword("BYE")
+        val p = lexer.lexemes.symbol.softKeyword("hi") <|> lexer.lexemes.symbol.softKeyword("HELLo") <|> lexer.lexemes.symbol.softKeyword("BYE")
         p.parse("bye") shouldBe a [Success[_]]
         p.parse("Bye") shouldBe a [Success[_]]
     }
