@@ -3,25 +3,14 @@
  */
 package parsley.token
 
-import java.util.concurrent.ConcurrentHashMap
-
-import scala.language.implicitConversions
-import scala.annotation.implicitNotFound
-
-import parsley.Parsley, Parsley.{attempt, empty, fresh, notFollowedBy, pure, unit}
-import parsley.character.{char, digit, hexDigit, octDigit, satisfy, string, stringOfMany, oneOf}
-import parsley.combinator.{between, many, sepBy, sepBy1, skipMany, skipSome}
-import parsley.errors.combinator.{amend, entrench, unexpected, ErrorMethods}
-import parsley.implicits.character.charLift
-import parsley.lift.{lift2, lift3}
+import parsley.Parsley, Parsley.{attempt, unit}
+import parsley.combinator.{between, sepBy, sepBy1, skipMany}
+import parsley.errors.combinator.ErrorMethods
 import parsley.token.names._
 import parsley.token.numeric._
 import parsley.token.text.{String => _, _}
 import parsley.token.symbol._
 
-import parsley.XAssert._
-
-import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
 import parsley.internal.deepembedding.singletons
 
 /** This class provides a large selection of functionality concerned
@@ -591,7 +580,7 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
     @deprecated def decimal: Parsley[Int] = lexemes.numeric.natural.decimal.map(_.toInt)
     @deprecated def hexadecimal: Parsley[Int] = lexemes.numeric.natural.hexadecimal.map(_.toInt)
     @deprecated def octal: Parsley[Int] = lexemes.numeric.natural.octal.map(_.toInt)
-    @deprecated def symbol(name: String): Parsley[String] = lexeme(string(name))
+    @deprecated def symbol(name: String): Parsley[String] = lexeme(parsley.character.string(name))
     @deprecated def symbol(name: Char): Parsley[Char] = lexemes.symbol(name) #> name
     @deprecated def symbol_(name: String): Parsley[String] = lexemes.symbol(name) #> name
     @deprecated def parens[A](p: =>Parsley[A]): Parsley[A] = lexemes.enclosing.parens(p)

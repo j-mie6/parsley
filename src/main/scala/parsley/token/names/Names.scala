@@ -7,6 +7,9 @@ import parsley.Parsley
 
 abstract class Names private[token] {
     def identifier: Parsley[String]
-    def userOp: Parsley[String]
-    def reservedOp: Parsley[String]
+    def userOp: Parsley[String] // TODO: rename to operator
+    def reservedOp: Parsley[String] // TODO: remove?
+
+    // TODO: we want to add functionality for operator starting with a given character
+    //       ending with given character, and starting and ending with given character
 }
