@@ -13,7 +13,8 @@ case class SpaceDesc (commentStart: String,
                       commentLine: String,
                       commentLineAllowsEOF: Boolean,
                       nestedComments: Boolean,
-                      space: Impl) {
+                      space: Impl,
+                      whitespaceIsContextDependent: Boolean) {
     private [token] lazy val supportsComments = {
         val on = (commentStart.nonEmpty && commentEnd.nonEmpty) || commentLine.nonEmpty
         if (on && commentStart.nonEmpty && commentLine.startsWith(commentStart)) {
@@ -27,5 +28,5 @@ case class SpaceDesc (commentStart: String,
 
 private [parsley] // TODO: remove
 object SpaceDesc {
-    val plain = SpaceDesc("", "", "", true, false, NotRequired)
+    val plain = SpaceDesc("", "", "", true, false, NotRequired, false)
 }

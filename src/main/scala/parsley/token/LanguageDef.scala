@@ -66,7 +66,8 @@ case class LanguageDef (commentStart: String,
                                                            commentLine,
                                                            true,
                                                            nestedComments,
-                                                           space))
+                                                           space,
+                                                           false))
 }
 /** This object contains any preconfigured language definitions
   * @since 2.2.0

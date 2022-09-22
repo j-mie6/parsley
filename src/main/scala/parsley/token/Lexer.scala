@@ -4,8 +4,9 @@
 package parsley.token
 
 import parsley.Parsley, Parsley.{attempt, unit}
-import parsley.combinator.{between, sepBy, sepBy1, skipMany}
+import parsley.combinator.{between, eof, sepBy, sepBy1, skipMany}
 import parsley.errors.combinator.ErrorMethods
+import parsley.registers.Reg
 import parsley.token.names._
 import parsley.token.numeric._
 import parsley.token.text.{String => _, _}
@@ -215,12 +216,18 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
       *
       * @since 4.0.0
       */
-    object lexemes {
+    object lexeme {
         /** TODO:
           *
           * @since 4.0.0
           */
-        val names: parsley.token.names.Names = new LexemeNames(nonlexemes.names, whiteSpace)
+        def apply[A](p: Parsley[A]): Parsley[A] = p <* space.whiteSpace
+
+        /** TODO:
+          *
+          * @since 4.0.0
+          */
+        val names: parsley.token.names.Names = new LexemeNames(nonlexeme.names, space.whiteSpace)
 
         /** $numeric
           *
@@ -237,7 +244,7 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
               *
               * @since 4.0.0
               */
-            val natural: parsley.token.numeric.Integer = new LexemeInteger(nonlexemes.numeric.natural, whiteSpace)
+            val natural: parsley.token.numeric.Integer = new LexemeInteger(nonlexeme.numeric.natural, space.whiteSpace)
 
             /** $integer
               *
@@ -251,7 +258,7 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
               * @since 4.0.0
               * @see [[natural `natural`]] for a full description of integer configuration
               */
-            val integer: parsley.token.numeric.Integer = new LexemeInteger(nonlexemes.numeric.integer, whiteSpace)
+            val integer: parsley.token.numeric.Integer = new LexemeInteger(nonlexeme.numeric.integer, space.whiteSpace)
 
             /** $real
               *
@@ -260,24 +267,24 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
               * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
               */
             def floating: parsley.token.numeric.Real = real
-            private [Lexer] val positiveReal = new LexemeReal(nonlexemes.numeric.positiveReal, whiteSpace)
+            private [Lexer] val positiveReal = new LexemeReal(nonlexeme.numeric.positiveReal, space.whiteSpace)
             /** $real
               *
               * @since 4.0.0
               * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
               */
-            val real: parsley.token.numeric.Real = new LexemeReal(nonlexemes.numeric.real, whiteSpace)
+            val real: parsley.token.numeric.Real = new LexemeReal(nonlexeme.numeric.real, space.whiteSpace)
 
             /** $unsignedCombined
               *
               * @since 4.0.0
               */
-            val unsignedCombined: parsley.token.numeric.Combined = new LexemeCombined(nonlexemes.numeric.unsignedCombined, whiteSpace)
+            val unsignedCombined: parsley.token.numeric.Combined = new LexemeCombined(nonlexeme.numeric.unsignedCombined, space.whiteSpace)
             /** $signedCombined
               *
               * @since 4.0.0
               */
-            val signedCombined: parsley.token.numeric.Combined = new LexemeCombined(nonlexemes.numeric.signedCombined, whiteSpace)
+            val signedCombined: parsley.token.numeric.Combined = new LexemeCombined(nonlexeme.numeric.signedCombined, space.whiteSpace)
         }
 
         /** $text
@@ -289,36 +296,36 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
               *
               * @since 4.0.0
               */
-            val character: parsley.token.text.Character = new LexemeCharacter(nonlexemes.text.character, whiteSpace)
+            val character: parsley.token.text.Character = new LexemeCharacter(nonlexeme.text.character, space.whiteSpace)
             /** $string
               *
               * @since 4.0.0
               */
-            val string: parsley.token.text.String = new LexemeString(nonlexemes.text.string, whiteSpace)
+            val string: parsley.token.text.String = new LexemeString(nonlexeme.text.string, space.whiteSpace)
             /** $string
               *
               * @note $raw
               * @since 4.0.0
               */
-            val rawString: parsley.token.text.String = new LexemeString(nonlexemes.text.rawString, whiteSpace)
+            val rawString: parsley.token.text.String = new LexemeString(nonlexeme.text.rawString, space.whiteSpace)
             /** $multiString
               *
               * @since 4.0.0
               */
-            val multiString: parsley.token.text.String = new LexemeString(nonlexemes.text.multiString, whiteSpace)
+            val multiString: parsley.token.text.String = new LexemeString(nonlexeme.text.multiString, space.whiteSpace)
             /** $multiString
               *
               * @note $raw
               * @since 4.0.0
               */
-            val rawMultiString: parsley.token.text.String = new LexemeString(nonlexemes.text.rawMultiString, whiteSpace)
+            val rawMultiString: parsley.token.text.String = new LexemeString(nonlexeme.text.rawMultiString, space.whiteSpace)
         }
 
         /** TODO:
           *
           * @since 4.0.0
           */
-        val symbol: parsley.token.symbol.Symbol = new LexemeSymbol(nonlexemes.symbol, whiteSpace)
+        val symbol: parsley.token.symbol.Symbol = new LexemeSymbol(nonlexeme.symbol, space.whiteSpace)
 
         /** TODO:
           *
@@ -400,7 +407,7 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
       *
       * @since 4.0.0
       */
-    object nonlexemes {
+    object nonlexeme {
         /** TODO:
           *
           * @since 4.0.0
@@ -471,7 +478,7 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
           */
         object text {
             private val escapes = new Escape(desc.textDesc.escapeSequences)
-            private val escapeChar = new EscapableCharacter(desc.textDesc.escapeSequences, escapes, space)
+            private val escapeChar = new EscapableCharacter(desc.textDesc.escapeSequences, escapes, space.space)
 
             /** $character
               *
@@ -517,95 +524,125 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
       *
       * @since 4.0.0
       */
-    def lexeme[A](p: =>Parsley[A]): Parsley[A] = p <* whiteSpace
-
-    /** TODO:
-      *
-      * @since 4.0.0
-      */
-    lazy val whiteSpace: Parsley[Unit] = whiteSpace_(desc.whitespaceDesc.space).hide
-
-    /** TODO:
-      *
-      * @since 4.0.0
-      */
-    val whiteSpace_ : Impl => Parsley[Unit] = {
-        case NotRequired => skipComments
-        case Static(ws) => new Parsley(new singletons.WhiteSpace(ws, desc.whitespaceDesc.commentStart, desc.whitespaceDesc.commentEnd,
-                                                                     desc.whitespaceDesc.commentLine, desc.whitespaceDesc.nestedComments))
-        case Parser(space_) if desc.whitespaceDesc.supportsComments =>
-            skipMany(attempt(new Parsley(new singletons.Comment(desc.whitespaceDesc.commentStart,
-                                                                desc.whitespaceDesc.commentEnd,
-                                                                desc.whitespaceDesc.commentLine,
-                                                                desc.whitespaceDesc.nestedComments))) <|> space_)
-        case Parser(space_) => skipMany(space_)
-        // $COVERAGE-OFF$
-        case _ => ??? // scalastyle:ignore not.implemented.error.usage
-        // $COVERAGE-ON$
+    def fully[A](p: =>Parsley[A]): Parsley[A] = {
+        val init = if (desc.whitespaceDesc.whitespaceIsContextDependent) space.init else unit
+        init *> space.whiteSpace *> p <* eof
     }
 
     /** TODO:
       *
       * @since 4.0.0
       */
-    lazy val skipComments: Parsley[Unit] = {
-        if (!desc.whitespaceDesc.supportsComments) unit
-        else {
-            new Parsley(new singletons.SkipComments(desc.whitespaceDesc.commentStart, desc.whitespaceDesc.commentEnd,
-                                                    desc.whitespaceDesc.commentLine,  desc.whitespaceDesc.nestedComments))
+    object space {
+        private [Lexer] lazy val space = desc.whitespaceDesc.space.toParser
+        private lazy val wsImpl = Reg.make[Parsley[Unit]]
+
+        /** TODO:
+          *
+          * @since 4.0.0
+          */
+        def init: Parsley[Unit] = {
+            if (!desc.whitespaceDesc.whitespaceIsContextDependent) {
+                throw new UnsupportedOperationException("Whitespace cannot be initialised unless `spaceDesc.whitespaceIsContextDependent` is true")
+            }
+            wsImpl.put(_whiteSpace)
+        }
+
+        /** TODO:
+          *
+          * @since 4.0.0
+          */
+        def alter[A](newSpace: Impl)(within: =>Parsley[A]): Parsley[A] = {
+            if (!desc.whitespaceDesc.whitespaceIsContextDependent) {
+                throw new UnsupportedOperationException("Whitespace cannot be altered unless `spaceDesc.whitespaceIsContextDependent` is true")
+            }
+            wsImpl.rollback(wsImpl.local(whiteSpace(newSpace))(within))
+        }
+
+        private def _whiteSpace: Parsley[Unit] = whiteSpace(desc.whitespaceDesc.space)
+
+        /** TODO:
+          *
+          * @since 4.0.0
+          */
+        val whiteSpace: Parsley[Unit] = {
+            if (desc.whitespaceDesc.whitespaceIsContextDependent) wsImpl.get.flatten
+            else _whiteSpace
+        }
+
+        private [Lexer] def whiteSpace(impl: Impl): Parsley[Unit] = impl match {
+            case NotRequired => skipComments
+            case Predicate(ws) => new Parsley(new singletons.WhiteSpace(ws, desc.whitespaceDesc.commentStart, desc.whitespaceDesc.commentEnd,
+                                                                        desc.whitespaceDesc.commentLine, desc.whitespaceDesc.nestedComments)).hide
+            case Parser(space_) if desc.whitespaceDesc.supportsComments =>
+                skipMany(attempt(new Parsley(new singletons.Comment(desc.whitespaceDesc.commentStart,
+                                                                    desc.whitespaceDesc.commentEnd,
+                                                                    desc.whitespaceDesc.commentLine,
+                                                                    desc.whitespaceDesc.nestedComments))) <|> space_).hide
+            case Parser(space_) => skipMany(space_).hide
+        }
+
+        /** TODO:
+          *
+          * @since 4.0.0
+          */
+        lazy val skipComments: Parsley[Unit] = {
+            if (!desc.whitespaceDesc.supportsComments) unit
+            else {
+                new Parsley(new singletons.SkipComments(desc.whitespaceDesc.commentStart, desc.whitespaceDesc.commentEnd,
+                                                        desc.whitespaceDesc.commentLine,  desc.whitespaceDesc.nestedComments)).hide
+            }
         }
     }
 
     // legacy API
-    @deprecated def identifier: Parsley[String] = lexemes.names.identifier
-    @deprecated def keyword(name: String): Parsley[Unit] = lexemes.symbol.softKeyword(name)
-    @deprecated def userOp: Parsley[String] = lexemes.names.userOp
-    @deprecated def reservedOp_ : Parsley[String] = nonlexemes.names.reservedOp
-    @deprecated def reservedOp: Parsley[String] = lexemes.names.reservedOp
-    @deprecated def operator(name: String): Parsley[Unit] = lexemes.symbol.operator(name)
-    @deprecated def operator_(name: String): Parsley[Unit] = nonlexemes.symbol.operator(name)
-    @deprecated def maxOp(name: String): Parsley[Unit] = lexemes.symbol.maxOp(name)
-    @deprecated def maxOp_(name: String): Parsley[Unit] = nonlexemes.symbol.maxOp(name)
-    @deprecated def charLiteral: Parsley[Char] = lexemes.text.character.basicMultilingualPlane
-    @deprecated def stringLiteral: Parsley[String] = lexemes.text.string.unicode
-    @deprecated def stringLiteral_ : Parsley[String] = nonlexemes.text.string.unicode
-    @deprecated def rawStringLiteral: Parsley[String] = nonlexemes.text.rawString.unicode
-    @deprecated def natural: Parsley[Int] = lexemes.numeric.natural.number.map(_.toInt)
-    @deprecated def integer: Parsley[Int] = lexemes.numeric.integer.number.map(_.toInt)
-    @deprecated def unsignedFloat: Parsley[Double] = lexemes.numeric.positiveReal.decimal.map(_.toDouble)
-    @deprecated def float: Parsley[Double] = lexemes.numeric.real.decimal.map(_.toDouble)
-    @deprecated def number: Parsley[Either[Int, Double]] = lexemes.numeric.signedCombined.number.map(_.fold(x => Left(x.toInt), y => Right(y.toDouble)))
+    @deprecated def whiteSpace: Parsley[Unit] = space.whiteSpace
+    @deprecated def skipComments: Parsley[Unit] = space.skipComments
+    @deprecated def identifier: Parsley[String] = lexeme.names.identifier
+    @deprecated def keyword(name: String): Parsley[Unit] = lexeme.symbol.softKeyword(name)
+    @deprecated def userOp: Parsley[String] = lexeme.names.userOp
+    @deprecated def reservedOp_ : Parsley[String] = nonlexeme.names.reservedOp
+    @deprecated def reservedOp: Parsley[String] = lexeme.names.reservedOp
+    @deprecated def operator(name: String): Parsley[Unit] = lexeme.symbol.operator(name)
+    @deprecated def operator_(name: String): Parsley[Unit] = nonlexeme.symbol.operator(name)
+    @deprecated def maxOp(name: String): Parsley[Unit] = lexeme.symbol.maxOp(name)
+    @deprecated def maxOp_(name: String): Parsley[Unit] = nonlexeme.symbol.maxOp(name)
+    @deprecated def charLiteral: Parsley[Char] = lexeme.text.character.basicMultilingualPlane
+    @deprecated def stringLiteral: Parsley[String] = lexeme.text.string.unicode
+    @deprecated def stringLiteral_ : Parsley[String] = nonlexeme.text.string.unicode
+    @deprecated def rawStringLiteral: Parsley[String] = nonlexeme.text.rawString.unicode
+    @deprecated def natural: Parsley[Int] = lexeme.numeric.natural.number.map(_.toInt)
+    @deprecated def integer: Parsley[Int] = lexeme.numeric.integer.number.map(_.toInt)
+    @deprecated def unsignedFloat: Parsley[Double] = lexeme.numeric.positiveReal.decimal.map(_.toDouble)
+    @deprecated def float: Parsley[Double] = lexeme.numeric.real.decimal.map(_.toDouble)
+    @deprecated def number: Parsley[Either[Int, Double]] = lexeme.numeric.signedCombined.number.map(_.fold(x => Left(x.toInt), y => Right(y.toDouble)))
     @deprecated def naturalOrFloat: Parsley[Either[Int, Double]] =
-        lexemes.numeric.unsignedCombined.number.map(_.fold(x => Left(x.toInt), y => Right(y.toDouble)))
-    @deprecated def decimal: Parsley[Int] = lexemes.numeric.natural.decimal.map(_.toInt)
-    @deprecated def hexadecimal: Parsley[Int] = lexemes.numeric.natural.hexadecimal.map(_.toInt)
-    @deprecated def octal: Parsley[Int] = lexemes.numeric.natural.octal.map(_.toInt)
+        lexeme.numeric.unsignedCombined.number.map(_.fold(x => Left(x.toInt), y => Right(y.toDouble)))
+    @deprecated def decimal: Parsley[Int] = lexeme.numeric.natural.decimal.map(_.toInt)
+    @deprecated def hexadecimal: Parsley[Int] = lexeme.numeric.natural.hexadecimal.map(_.toInt)
+    @deprecated def octal: Parsley[Int] = lexeme.numeric.natural.octal.map(_.toInt)
     @deprecated def symbol(name: String): Parsley[String] = lexeme(parsley.character.string(name))
-    @deprecated def symbol(name: Char): Parsley[Char] = lexemes.symbol(name) #> name
-    @deprecated def symbol_(name: String): Parsley[String] = lexemes.symbol(name) #> name
-    @deprecated def parens[A](p: =>Parsley[A]): Parsley[A] = lexemes.enclosing.parens(p)
-    @deprecated def braces[A](p: =>Parsley[A]): Parsley[A] = lexemes.enclosing.braces(p)
-    @deprecated def angles[A](p: =>Parsley[A]): Parsley[A] = lexemes.enclosing.angles(p)
-    @deprecated def brackets[A](p: =>Parsley[A]): Parsley[A] = lexemes.enclosing.brackets(p)
-    @deprecated def semi: Parsley[Char] = lexemes.symbol.semi #> ';'
-    @deprecated def comma: Parsley[Char] = lexemes.symbol.comma #> ','
-    @deprecated def colon: Parsley[Char] = lexemes.symbol.colon #> ':'
-    @deprecated def dot: Parsley[Char] = lexemes.symbol.dot #> '.'
-    @deprecated def semiSep[A](p: Parsley[A]): Parsley[List[A]] = lexemes.separators.semiSep(p)
-    @deprecated def semiSep1[A](p: Parsley[A]): Parsley[List[A]] = lexemes.separators.semiSep1(p)
-    @deprecated def commaSep[A](p: Parsley[A]): Parsley[List[A]] = lexemes.separators.commaSep(p)
-    @deprecated def commaSep1[A](p: Parsley[A]): Parsley[List[A]] = lexemes.separators.commaSep1(p)
+    @deprecated def symbol(name: Char): Parsley[Char] = lexeme.symbol(name) #> name
+    @deprecated def symbol_(name: String): Parsley[String] = lexeme.symbol(name) #> name
+    @deprecated def parens[A](p: =>Parsley[A]): Parsley[A] = lexeme.enclosing.parens(p)
+    @deprecated def braces[A](p: =>Parsley[A]): Parsley[A] = lexeme.enclosing.braces(p)
+    @deprecated def angles[A](p: =>Parsley[A]): Parsley[A] = lexeme.enclosing.angles(p)
+    @deprecated def brackets[A](p: =>Parsley[A]): Parsley[A] = lexeme.enclosing.brackets(p)
+    @deprecated def semi: Parsley[Char] = lexeme.symbol.semi #> ';'
+    @deprecated def comma: Parsley[Char] = lexeme.symbol.comma #> ','
+    @deprecated def colon: Parsley[Char] = lexeme.symbol.colon #> ':'
+    @deprecated def dot: Parsley[Char] = lexeme.symbol.dot #> '.'
+    @deprecated def semiSep[A](p: Parsley[A]): Parsley[List[A]] = lexeme.separators.semiSep(p)
+    @deprecated def semiSep1[A](p: Parsley[A]): Parsley[List[A]] = lexeme.separators.semiSep1(p)
+    @deprecated def commaSep[A](p: Parsley[A]): Parsley[List[A]] = lexeme.separators.commaSep(p)
+    @deprecated def commaSep1[A](p: Parsley[A]): Parsley[List[A]] = lexeme.separators.commaSep1(p)
 
     // private API
     // Identifiers & Reserved words
     private lazy val identStart = desc.identDesc.identStart.toParser
     private lazy val identLetter = desc.identDesc.identLetter.toParser
 
-
     // Operators & Reserved ops
     private lazy val opStart = desc.opStart.toParser
     private lazy val opLetter = desc.opLetter.toParser
-
-    // White space & symbols
-    private lazy val space = desc.whitespaceDesc.space.toParser
 }

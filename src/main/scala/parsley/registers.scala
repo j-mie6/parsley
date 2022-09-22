@@ -7,6 +7,7 @@ import scala.collection.mutable
 
 import parsley.Parsley.{empty, fresh, pure}
 import parsley.combinator.{when, whileP}
+import parsley.exceptions.UnfilledRegisterException
 import parsley.implicits.zipped.Zipped2
 
 import parsley.internal.deepembedding.{frontend, singletons}
@@ -274,7 +275,8 @@ object registers {
 
         private [this] var _v: Int = -1
         private [parsley] def addr: Int = {
-            assert(allocated)
+            //assert(allocated)
+            if (!allocated) throw new UnfilledRegisterException
             _v
         }
         private [parsley] def allocated: Boolean = _v != -1

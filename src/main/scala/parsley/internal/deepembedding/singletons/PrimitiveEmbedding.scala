@@ -6,6 +6,7 @@ package parsley.internal.deepembedding.singletons
 import parsley.registers.Reg
 
 import parsley.internal.machine.instructions
+import parsley.internal.deepembedding.frontend.UsesRegister
 
 private [parsley] final class Satisfy(private [Satisfy] val f: Char => Boolean, val expected: Option[String]) extends Singleton[Char] {
     // $COVERAGE-OFF$
@@ -26,7 +27,9 @@ private [parsley] object Col extends Singleton[Int] {
     // $COVERAGE-ON$
     override val instr: instructions.Instr = instructions.Col
 }
-private [parsley] final class Get[S](reg: Reg[S]) extends Singleton[S] {
+// This should really have UsesRegister, however, if it doesn't, this has the nice effect of catching
+// registers that have never been filled in some way!
+private [parsley] final class Get[S](/*val */reg: Reg[S]) extends Singleton[S]/* with UsesRegister*/ {
     // $COVERAGE-OFF$
     override def pretty: String = s"get($reg)"
     // $COVERAGE-ON$

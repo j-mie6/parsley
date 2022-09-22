@@ -7,11 +7,11 @@ import parsley.Parsley, Parsley.empty
 import parsley.character.satisfy
 
 /**
-  * The Impl trait is used to provide implementation of the parser requirements from `LanguageDef`
+  * The Impl class is used to provide implementation of the parser requirements from `LanguageDef`
   * @since 2.2.0
   */
-sealed trait Impl {
-    def toParser: Parsley[Char]
+sealed abstract class Impl {
+    private [token] def toParser: Parsley[Char]
 }
 
 /**
@@ -20,7 +20,7 @@ sealed trait Impl {
   * @since 2.2.0
   */
 final case class Parser(p: Parsley[Char]) extends Impl {
-    override def toParser: Parsley[Char] = p
+    private [token] override def toParser: Parsley[Char] = p
 }
 
 /**
@@ -29,7 +29,7 @@ final case class Parser(p: Parsley[Char]) extends Impl {
   * @since 2.2.0
   */
 final case class Predicate(f: Char => Boolean) extends Impl {
-    override def toParser: Parsley[Char] = satisfy(f)
+    private [token] override def toParser: Parsley[Char] = satisfy(f)
 }
 
 /**
@@ -38,15 +38,14 @@ final case class Predicate(f: Char => Boolean) extends Impl {
   * @since 2.2.0
   */
 case object NotRequired extends Impl {
-    override def toParser: Parsley[Char] = empty
+    private [token] override def toParser: Parsley[Char] = empty
 }
 
 /**
   * This implementation uses a set of valid tokens. It is converted to a high-performance BitSet.
   * @since 2.2.0
   */
-object CharSet
-{
+object CharSet {
     /**
       * @param cs The set to convert
       * @since 2.2.0
