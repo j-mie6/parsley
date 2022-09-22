@@ -35,8 +35,6 @@ private [token] class ConcreteNames(desc: LexicalDesc, identStart: Parsley[Char]
     private lazy val oper = lift2((c: Char, cs: String) => s"$c$cs", opStart, stringOfMany(opLetter))
     override lazy val identifier: Parsley[String] =
         keyOrOp(desc.identDesc.identStart, desc.identDesc.identLetter, ident, desc.identDesc.isReservedName(_),  "identifier", "identifier", "keyword")
-    override lazy val userOp: Parsley[String] =
+    override lazy val userDefinedOperator: Parsley[String] =
         keyOrOp(desc.opStart, desc.opLetter, oper, desc.isReservedOp(_), "userOp", "operator", "reserved operator")
-    override lazy val reservedOp: Parsley[String] =
-        keyOrOp(desc.opStart, desc.opLetter, oper, !desc.isReservedOp(_), "reservedOp", "operator", "non-reserved operator")
 }

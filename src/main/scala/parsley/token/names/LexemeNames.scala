@@ -7,8 +7,7 @@ import parsley.Parsley
 
 private [token] class LexemeNames(names: Names, ws: Parsley[_]) extends Names {
     override lazy val identifier: Parsley[String] = lexeme(names.identifier)
-    override lazy val userOp: Parsley[String] = lexeme(names.userOp)
-    override lazy val reservedOp: Parsley[String] = lexeme(names.reservedOp)
+    override lazy val userDefinedOperator: Parsley[String] = lexeme(names.userDefinedOperator)
 
     private def lexeme[A](p: Parsley[A]) = p <* ws
 }

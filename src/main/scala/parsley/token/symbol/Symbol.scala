@@ -61,13 +61,14 @@ abstract class Symbol private[token] {
       *
       * Additionally applies the given label as the name of the symbol.
       *
-      * @param name
-      * @param label
+      * @param name the symbol to parse.
+      * @param label the name to give to the symbol in error messages.
       * @since 4.0.0
       */
     final def apply(name: String, label: String): Parsley[Unit] = apply(name).label(label)
     /** $stringApply
       *
+      * @param name the symbol to parse.
       * @since 4.0.0
       */
     def apply(name: String): Parsley[Unit]
@@ -75,11 +76,14 @@ abstract class Symbol private[token] {
       *
       * Additionally applies the given label as the name of the symbol.
       *
+      * @param name the symbol to parse.
+      * @param label the name to give to the symbol in error messages.
       * @since 4.0.0
       */
     final def apply(name: Char, label: String): Parsley[Unit] = apply(name).label(label)
     /** $charApply
       *
+      * @param name the symbol to parse.
       * @since 4.0.0
       */
     def apply(name: Char): Parsley[Unit]

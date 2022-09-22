@@ -83,6 +83,8 @@ import parsley.internal.deepembedding.singletons
   *     valid name that is not a reserved name, such as a hard keyword or
   *     a special operator.
   *
+  *    TODO: describe the configuration effects.
+  *
   * @define natural
   *     This is a collection of parsers concerned with handling unsigned (positive) integer literals.
   *
@@ -666,9 +668,7 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
     @deprecated def skipComments: Parsley[Unit] = space.skipComments
     @deprecated def identifier: Parsley[String] = lexeme.names.identifier
     @deprecated def keyword(name: String): Parsley[Unit] = lexeme.symbol.softKeyword(name)
-    @deprecated def userOp: Parsley[String] = lexeme.names.userOp
-    @deprecated def reservedOp_ : Parsley[String] = nonlexeme.names.reservedOp
-    @deprecated def reservedOp: Parsley[String] = lexeme.names.reservedOp
+    @deprecated def userOp: Parsley[String] = lexeme.names.userDefinedOperator
     @deprecated def operator(name: String): Parsley[Unit] = lexeme.symbol.softOperator(name)
     @deprecated def operator_(name: String): Parsley[Unit] = nonlexeme.symbol.softOperator(name)
     @deprecated def maxOp(name: String): Parsley[Unit] = lexeme.symbol.softOperator(name)

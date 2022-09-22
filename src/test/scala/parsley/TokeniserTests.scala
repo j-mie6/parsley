@@ -112,31 +112,16 @@ class TokeniserTests extends ParsleyTest {
     }
 
     "userOp" should "read valid operator" in {
-        (tokeniser.lexeme.names.userOp <* eof).parse(":++") should be (Success(":++"))
-        (tokeniser.lexeme.names.userOp <* eof).parse(":++h") shouldBe a [Failure[_]]
+        (tokeniser.lexeme.names.userDefinedOperator <* eof).parse(":++") should be (Success(":++"))
+        (tokeniser.lexeme.names.userDefinedOperator <* eof).parse(":++h") shouldBe a [Failure[_]]
     }
     it should "fail if the result is reserved" in {
-        (tokeniser.lexeme.names.userOp <* eof).parse(":") shouldBe a [Failure[_]]
+        (tokeniser.lexeme.names.userDefinedOperator <* eof).parse(":") shouldBe a [Failure[_]]
     }
     it must "be the same regardless of the intrinsic" in {
-        (tokeniser_.lexeme.names.userOp <* eof).parse(":++") should be (Success(":++"))
-        (tokeniser_.lexeme.names.userOp <* eof).parse(":++h") shouldBe a [Failure[_]]
-        (tokeniser_.lexeme.names.userOp <* eof).parse(":") shouldBe a [Failure[_]]
-    }
-
-    "reservedOp" should "match valid reserved operators" in {
-        (tokeniser.lexeme.names.reservedOp <* eof).parse("=") should be (Success("="))
-        (tokeniser.lexeme.names.reservedOp <* eof).parse(":") should be (Success(":"))
-    }
-    it should "fail if the result isn't reserved" in {
-        (tokeniser.lexeme.names.reservedOp <* eof).parse("+") shouldBe a [Failure[_]]
-        (tokeniser.lexeme.names.reservedOp <* eof).parse("::=") shouldBe a [Failure[_]]
-    }
-    it must "be the same regardless of the intrinsic" in {
-        (tokeniser_.lexeme.names.reservedOp <* eof).parse("=") should be (Success("="))
-        (tokeniser_.lexeme.names.reservedOp <* eof).parse(":") should be (Success(":"))
-        (tokeniser_.lexeme.names.reservedOp <* eof).parse("+") shouldBe a [Failure[_]]
-        (tokeniser_.lexeme.names.reservedOp <* eof).parse("::=") shouldBe a [Failure[_]]
+        (tokeniser_.lexeme.names.userDefinedOperator <* eof).parse(":++") should be (Success(":++"))
+        (tokeniser_.lexeme.names.userDefinedOperator <* eof).parse(":++h") shouldBe a [Failure[_]]
+        (tokeniser_.lexeme.names.userDefinedOperator <* eof).parse(":") shouldBe a [Failure[_]]
     }
 
     "operator" should "match valid operators" in {
