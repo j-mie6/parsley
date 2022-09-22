@@ -9,6 +9,6 @@ private [token] class LexemeSymbol(symbol: Symbol, ws: Parsley[_]) extends Symbo
     override def apply(name: String): Parsley[Unit] = lexeme(symbol.apply(name))
     override def apply(name: Char): Parsley[Unit] = lexeme(symbol.apply(name))
     override def softKeyword(name: String): Parsley[Unit] = lexeme(symbol.softKeyword(name))
-    override def operator(name: String): Parsley[Unit] = lexeme(symbol.operator(name))
+    override def softOperator(name: String): Parsley[Unit] = lexeme(symbol.softOperator(name))
     private def lexeme[A](p: Parsley[A]) = p <* ws
 }

@@ -669,10 +669,10 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
     @deprecated def userOp: Parsley[String] = lexeme.names.userOp
     @deprecated def reservedOp_ : Parsley[String] = nonlexeme.names.reservedOp
     @deprecated def reservedOp: Parsley[String] = lexeme.names.reservedOp
-    @deprecated def operator(name: String): Parsley[Unit] = lexeme.symbol.operator(name)
-    @deprecated def operator_(name: String): Parsley[Unit] = nonlexeme.symbol.operator(name)
-    @deprecated def maxOp(name: String): Parsley[Unit] = lexeme.symbol.operator(name)
-    @deprecated def maxOp_(name: String): Parsley[Unit] = nonlexeme.symbol.operator(name)
+    @deprecated def operator(name: String): Parsley[Unit] = lexeme.symbol.softOperator(name)
+    @deprecated def operator_(name: String): Parsley[Unit] = nonlexeme.symbol.softOperator(name)
+    @deprecated def maxOp(name: String): Parsley[Unit] = lexeme.symbol.softOperator(name)
+    @deprecated def maxOp_(name: String): Parsley[Unit] = nonlexeme.symbol.softOperator(name)
     @deprecated def charLiteral: Parsley[Char] = lexeme.text.character.basicMultilingualPlane
     @deprecated def stringLiteral: Parsley[String] = lexeme.text.string.unicode
     @deprecated def stringLiteral_ : Parsley[String] = nonlexeme.text.string.unicode

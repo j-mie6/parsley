@@ -140,49 +140,49 @@ class TokeniserTests extends ParsleyTest {
     }
 
     "operator" should "match valid operators" in {
-        (tokeniser.lexeme.symbol.operator("=") <* eof).parse("=") should be (Success(()))
-        (tokeniser.lexeme.symbol.operator(":") <* eof).parse(":") should be (Success(()))
-        (tokeniser.lexeme.symbol.operator("++") <* eof).parse("++") should be (Success(()))
+        (tokeniser.lexeme.symbol.softOperator("=") <* eof).parse("=") should be (Success(()))
+        (tokeniser.lexeme.symbol.softOperator(":") <* eof).parse(":") should be (Success(()))
+        (tokeniser.lexeme.symbol.softOperator("++") <* eof).parse("++") should be (Success(()))
     }
     it should "fail if the input has more operator letters" in {
-        (tokeniser.lexeme.symbol.operator("=") <* eof).parse("=+") shouldBe a [Failure[_]]
-        (tokeniser.lexeme.symbol.operator(":") <* eof).parse("::") shouldBe a [Failure[_]]
-        (tokeniser.lexeme.symbol.operator("++") <* eof).parse("++=") shouldBe a [Failure[_]]
+        (tokeniser.lexeme.symbol.softOperator("=") <* eof).parse("=+") shouldBe a [Failure[_]]
+        (tokeniser.lexeme.symbol.softOperator(":") <* eof).parse("::") shouldBe a [Failure[_]]
+        (tokeniser.lexeme.symbol.softOperator("++") <* eof).parse("++=") shouldBe a [Failure[_]]
     }
     it must "be the same regardless of the intrinsic" in {
-        (tokeniser_.lexeme.symbol.operator("=") <* eof).parse("=") should equal {
-            (tokeniser.lexeme.symbol.operator("=") <* eof).parse("=")
+        (tokeniser_.lexeme.symbol.softOperator("=") <* eof).parse("=") should equal {
+            (tokeniser.lexeme.symbol.softOperator("=") <* eof).parse("=")
         }
-        (tokeniser_.lexeme.symbol.operator(":") <* eof).parse(":") should equal {
-            (tokeniser.lexeme.symbol.operator(":") <* eof).parse(":")
+        (tokeniser_.lexeme.symbol.softOperator(":") <* eof).parse(":") should equal {
+            (tokeniser.lexeme.symbol.softOperator(":") <* eof).parse(":")
         }
-        (tokeniser_.lexeme.symbol.operator("++") <* eof).parse("++") should equal {
-            (tokeniser.lexeme.symbol.operator("++") <* eof).parse("++")
+        (tokeniser_.lexeme.symbol.softOperator("++") <* eof).parse("++") should equal {
+            (tokeniser.lexeme.symbol.softOperator("++") <* eof).parse("++")
         }
-        (tokeniser_.lexeme.symbol.operator("=") <* eof).parse("=+") should equal {
-            (tokeniser.lexeme.symbol.operator("=") <* eof).parse("=+")
+        (tokeniser_.lexeme.symbol.softOperator("=") <* eof).parse("=+") should equal {
+            (tokeniser.lexeme.symbol.softOperator("=") <* eof).parse("=+")
         }
-        (tokeniser_.lexeme.symbol.operator(":") <* eof).parse("::") should equal {
-            (tokeniser.lexeme.symbol.operator(":") <* eof).parse("::")
+        (tokeniser_.lexeme.symbol.softOperator(":") <* eof).parse("::") should equal {
+            (tokeniser.lexeme.symbol.softOperator(":") <* eof).parse("::")
         }
-        (tokeniser_.lexeme.symbol.operator("++") <* eof).parse("++=") should equal {
-            (tokeniser.lexeme.symbol.operator("++") <* eof).parse("++=")
+        (tokeniser_.lexeme.symbol.softOperator("++") <* eof).parse("++=") should equal {
+            (tokeniser.lexeme.symbol.softOperator("++") <* eof).parse("++=")
         }
-        (tokeniser_.lexeme.symbol.operator("+") <|> tokeniser_.lexeme.symbol.operator("++") <* eof).parse("++") should equal {
-            (tokeniser.lexeme.symbol.operator("+") <|> tokeniser.lexeme.symbol.operator("++") <* eof).parse("++")
+        (tokeniser_.lexeme.symbol.softOperator("+") <|> tokeniser_.lexeme.symbol.softOperator("++") <* eof).parse("++") should equal {
+            (tokeniser.lexeme.symbol.softOperator("+") <|> tokeniser.lexeme.symbol.softOperator("++") <* eof).parse("++")
         }
     }
 
     "maxOp" should "match valid operators" in {
-        (tokeniser_.lexeme.symbol.operator("=") <* eof).parse("=") should be (Success(()))
-        (tokeniser_.lexeme.symbol.operator(":") <* eof).parse(":") should be (Success(()))
-        (tokeniser_.lexeme.symbol.operator("++") <* eof).parse("++") should be (Success(()))
-        (tokeniser_.lexeme.symbol.operator("+:") <* ':' <* eof).parse("+::") should be (Success(()))
-        (tokeniser_.lexeme.symbol.operator("=") <* '=' <* eof).parse("==") should be (Success(()))
+        (tokeniser_.lexeme.symbol.softOperator("=") <* eof).parse("=") should be (Success(()))
+        (tokeniser_.lexeme.symbol.softOperator(":") <* eof).parse(":") should be (Success(()))
+        (tokeniser_.lexeme.symbol.softOperator("++") <* eof).parse("++") should be (Success(()))
+        (tokeniser_.lexeme.symbol.softOperator("+:") <* ':' <* eof).parse("+::") should be (Success(()))
+        (tokeniser_.lexeme.symbol.softOperator("=") <* '=' <* eof).parse("==") should be (Success(()))
     }
     it must "fail if the operator is a valid prefix of another operator and that operator is parsable" in {
-        (tokeniser_.lexeme.symbol.operator(":") <* '=' <* eof).parse(":=") shouldBe a [Failure[_]]
-        (tokeniser_.lexeme.symbol.operator(":") <* ':' <* eof).parse("::") shouldBe a [Failure[_]]
+        (tokeniser_.lexeme.symbol.softOperator(":") <* '=' <* eof).parse(":=") shouldBe a [Failure[_]]
+        (tokeniser_.lexeme.symbol.softOperator(":") <* ':' <* eof).parse("::") shouldBe a [Failure[_]]
     }
 
     "charLiteral" should "parse valid haskell characters" in {

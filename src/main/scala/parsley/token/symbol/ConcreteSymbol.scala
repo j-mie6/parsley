@@ -17,7 +17,7 @@ import parsley.internal.deepembedding.singletons
 private [token] class ConcreteSymbol(desc: LexicalDesc, identLetter: Parsley[Char], opLetter: Parsley[Char]) extends Symbol {
     override def apply(name: String): Parsley[Unit] = {
         if (desc.identDesc.hardKeywords(name)) softKeyword(name)
-        else if (desc.operators(name))         operator(name)
+        else if (desc.operators(name))         softOperator(name)
         else                                   attempt(string(name)).void
     }
 
@@ -37,7 +37,7 @@ private [token] class ConcreteSymbol(desc: LexicalDesc, identLetter: Parsley[Cha
     }//)
 
     //private val operatorMemo = concurrent.TrieMap.empty[String, Parsley[Unit]]
-    override def operator(name: String): Parsley[Unit] = /*operatorMemo.getOrElseUpdate(name, */desc.opLetter match {
+    override def softOperator(name: String): Parsley[Unit] = /*operatorMemo.getOrElseUpdate(name, */desc.opLetter match {
         // TODO: this needs optimising
         //case Static(letter) => new Parsley(new singletons.Specific("operator", name, letter, true))
         case _ =>
