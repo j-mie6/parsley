@@ -63,6 +63,26 @@ import parsley.internal.deepembedding.singletons
   *     degree of unicode support for the underlying language, from
   *     ASCII to full UTF-16.
   *
+  * @define symbol
+  *     This object contains lexing functionality relevant to the parsing
+  *     of atomic symbols.
+  *
+  *     Symbols are characterised by their "unitness", that is, every parser
+  *     inside returns `Unit`. This is because they all parse a specific
+  *     known entity, and, as such, the result of the parse is irrelevant.
+  *     These can be things such as reserved names, or small symbols like
+  *     parentheses. This object also contains a means of creating new symbols
+  *     as well as implicit conversions to allow for Scala's string literals to serve
+  *     as symbols within a parser.
+  *
+  * @define names
+  *     This object contains lexing functionality relevant to the parsing
+  *     of names, which include operators or identifiers.
+  *
+  *     The parsing of names is mostly concerned with finding the longest
+  *     valid name that is not a reserved name, such as a hard keyword or
+  *     a special operator.
+  *
   * @define natural
   *     This is a collection of parsers concerned with handling unsigned (positive) integer literals.
   *
@@ -189,7 +209,7 @@ import parsley.internal.deepembedding.singletons
   *                  the lexer.
   * @since 4.0.0
   */
-class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) { lexer =>
+class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) { //lexer =>
     /** TODO:
       *
       * @param desc the configuration for the lexer, specifying the lexical
@@ -217,13 +237,24 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
       * @since 4.0.0
       */
     object lexeme {
-        /** TODO:
+        /** This combinator turns a non-lexeme parser into a lexeme one by
+          * ensuring whitespace is consumed after the parser.
           *
+          * When using parser combinators, it is important to establish a
+          * consistent whitespace consumption scheme: ideally, there is no
+          * wasteful parsing, and whitespace consumption should not impact
+          * backtracking. This leads to a convention that whitespace must
+          * only be consumed ''after'' a token, and only once at the very
+          * start of the parser (see [[fully `fully`]]). When manually
+          * constructing tokens that are not supported by this lexer, use
+          * this combinator to ensure it also follows the whitespace convention.
+          *
+          * @param p the token parser to ensure consumes trailing whitespace.
           * @since 4.0.0
           */
         def apply[A](p: Parsley[A]): Parsley[A] = p <* space.whiteSpace
 
-        /** TODO:
+        /** $names
           *
           * @since 4.0.0
           */
@@ -321,13 +352,14 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
             val rawMultiString: parsley.token.text.String = new LexemeString(nonlexeme.text.rawMultiString, space.whiteSpace)
         }
 
-        /** TODO:
+        /** $symbol
           *
           * @since 4.0.0
           */
         val symbol: parsley.token.symbol.Symbol = new LexemeSymbol(nonlexeme.symbol, space.whiteSpace)
 
-        /** TODO:
+        /** This object contains helper combinators for parsing terms separated by
+          * common symbols.
           *
           * @since 4.0.0
           */
@@ -354,7 +386,8 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
             def commaSep1[A](p: Parsley[A]): Parsley[List[A]] = sepBy1(p, symbol.comma)
         }
 
-        /** TODO:
+        /** This object contains helper combinators for parsing terms enclosed by
+          * common symbols.
           *
           * @since 4.0.0
           */
@@ -408,7 +441,7 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
       * @since 4.0.0
       */
     object nonlexeme {
-        /** TODO:
+        /** $names
           *
           * @since 4.0.0
           */
@@ -513,72 +546,105 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
                 new ConcreteString(desc.textDesc.multiStringEnds, RawCharacter, desc.textDesc.graphicCharacter, true)
         }
 
-        /** TODO:
+        /** $symbol
           *
           * @since 4.0.0
           */
         val symbol: parsley.token.symbol.Symbol = new ConcreteSymbol(desc, identLetter, opLetter)
     }
 
-    /** TODO:
+    /** This combinator ensures a parser fully parses all available input, and consumes whitespace
+      * at the start.
+      *
+      * This combinator should be used ''once'' as the outermost combinator in a parser. It is the
+      * only combinator that should consume ''leading'' whitespace, and this must be the first
+      * thing a parser does. It will ensure that, after the parser is complete, the end of the
+      * input stream has been reached.
       *
       * @since 4.0.0
       */
     def fully[A](p: =>Parsley[A]): Parsley[A] = {
-        val init = if (desc.whitespaceDesc.whitespaceIsContextDependent) space.init else unit
+        val init = if (desc.spaceDesc.whitespaceIsContextDependent) space.init else unit
         init *> space.whiteSpace *> p <* eof
     }
 
-    /** TODO:
+    /** This object is concerned with special treatment of whitespace.
+      *
+      * For the vast majority of cases, the functionality within this
+      * object shouldn't be needed, as whitespace is consistently handled
+      * by `lexeme` and `fully`. However, for grammars where whitespace
+      * is significant (like indentation-sensitive languages), this object
+      * provides some more fine-grained control over how whitespace is
+      * consumed by the parsers within `lexeme`.
       *
       * @since 4.0.0
       */
     object space {
-        private [Lexer] lazy val space = desc.whitespaceDesc.space.toParser
+        private [Lexer] lazy val space = desc.spaceDesc.space.toParser
         private lazy val wsImpl = Reg.make[Parsley[Unit]]
 
-        /** TODO:
+        /** This parser initialises the whitespace used by the lexer when
+          * `spaceDesc.whiteSpaceIsContextDependent` is set to `true`.
           *
+          * The whitespace is set to the implementation given by the lexical description.
+          * This parser '''must''' be used, by `fully` or otherwise, as the first thing
+          * the global parser does or an `UnfilledRegisterException` will occur.
+          *
+          * @note this parser is automatically invoked by the [[fully `fully`]] combinator when applicable.
+          * @see [[alter `alter`]] for how to change whitespace during a parse.
           * @since 4.0.0
           */
         def init: Parsley[Unit] = {
-            if (!desc.whitespaceDesc.whitespaceIsContextDependent) {
+            if (!desc.spaceDesc.whitespaceIsContextDependent) {
                 throw new UnsupportedOperationException("Whitespace cannot be initialised unless `spaceDesc.whitespaceIsContextDependent` is true")
             }
             wsImpl.put(_whiteSpace)
         }
 
-        /** TODO:
+        /** This combinator changes how whitespace is parsed by lexemes for the duration of
+          * a given parser.
           *
+          * So long as `spaceDesc.whiteSpaceIsContextDependent` is set to `true`, this combinator
+          * will be able to locally change the definition of whitespace during the given parser.
+          *
+          * @example
+          *  In indentation sensitive languages, the indentation sensitivity is often ignored
+          *  within parentheses or braces. In these cases `lexeme.enclosing.parens(space.alter(withNewline)(p))`
+          *  would allow unrestricted newlines within parentheses.
+          *
+          * @param newSpace the new implementation of whitespace to be used during the execution of `within`.
+          * @param within the parser that should be parsed using the updated whitespace.
+          * @note the whitespace will not be restored to its original implementation if the
+          *       given parser fails having consumed input.
           * @since 4.0.0
           */
         def alter[A](newSpace: Impl)(within: =>Parsley[A]): Parsley[A] = {
-            if (!desc.whitespaceDesc.whitespaceIsContextDependent) {
+            if (!desc.spaceDesc.whitespaceIsContextDependent) {
                 throw new UnsupportedOperationException("Whitespace cannot be altered unless `spaceDesc.whitespaceIsContextDependent` is true")
             }
             wsImpl.rollback(wsImpl.local(whiteSpace(newSpace))(within))
         }
 
-        private def _whiteSpace: Parsley[Unit] = whiteSpace(desc.whitespaceDesc.space)
+        private def _whiteSpace: Parsley[Unit] = whiteSpace(desc.spaceDesc.space)
 
         /** TODO:
           *
           * @since 4.0.0
           */
         val whiteSpace: Parsley[Unit] = {
-            if (desc.whitespaceDesc.whitespaceIsContextDependent) wsImpl.get.flatten
+            if (desc.spaceDesc.whitespaceIsContextDependent) wsImpl.get.flatten
             else _whiteSpace
         }
 
         private [Lexer] def whiteSpace(impl: Impl): Parsley[Unit] = impl match {
             case NotRequired => skipComments
-            case Predicate(ws) => new Parsley(new singletons.WhiteSpace(ws, desc.whitespaceDesc.commentStart, desc.whitespaceDesc.commentEnd,
-                                                                        desc.whitespaceDesc.commentLine, desc.whitespaceDesc.nestedComments)).hide
-            case Parser(space_) if desc.whitespaceDesc.supportsComments =>
-                skipMany(attempt(new Parsley(new singletons.Comment(desc.whitespaceDesc.commentStart,
-                                                                    desc.whitespaceDesc.commentEnd,
-                                                                    desc.whitespaceDesc.commentLine,
-                                                                    desc.whitespaceDesc.nestedComments))) <|> space_).hide
+            case Predicate(ws) => new Parsley(new singletons.WhiteSpace(ws, desc.spaceDesc.commentStart, desc.spaceDesc.commentEnd,
+                                                                        desc.spaceDesc.commentLine, desc.spaceDesc.nestedComments)).hide
+            case Parser(space_) if desc.spaceDesc.supportsComments =>
+                skipMany(attempt(new Parsley(new singletons.Comment(desc.spaceDesc.commentStart,
+                                                                    desc.spaceDesc.commentEnd,
+                                                                    desc.spaceDesc.commentLine,
+                                                                    desc.spaceDesc.nestedComments))) <|> space_).hide
             case Parser(space_) => skipMany(space_).hide
         }
 
@@ -587,10 +653,10 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
           * @since 4.0.0
           */
         lazy val skipComments: Parsley[Unit] = {
-            if (!desc.whitespaceDesc.supportsComments) unit
+            if (!desc.spaceDesc.supportsComments) unit
             else {
-                new Parsley(new singletons.SkipComments(desc.whitespaceDesc.commentStart, desc.whitespaceDesc.commentEnd,
-                                                        desc.whitespaceDesc.commentLine,  desc.whitespaceDesc.nestedComments)).hide
+                new Parsley(new singletons.SkipComments(desc.spaceDesc.commentStart, desc.spaceDesc.commentEnd,
+                                                        desc.spaceDesc.commentLine,  desc.spaceDesc.nestedComments)).hide
             }
         }
     }
@@ -605,8 +671,8 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
     @deprecated def reservedOp: Parsley[String] = lexeme.names.reservedOp
     @deprecated def operator(name: String): Parsley[Unit] = lexeme.symbol.operator(name)
     @deprecated def operator_(name: String): Parsley[Unit] = nonlexeme.symbol.operator(name)
-    @deprecated def maxOp(name: String): Parsley[Unit] = lexeme.symbol.maxOp(name)
-    @deprecated def maxOp_(name: String): Parsley[Unit] = nonlexeme.symbol.maxOp(name)
+    @deprecated def maxOp(name: String): Parsley[Unit] = lexeme.symbol.operator(name)
+    @deprecated def maxOp_(name: String): Parsley[Unit] = nonlexeme.symbol.operator(name)
     @deprecated def charLiteral: Parsley[Char] = lexeme.text.character.basicMultilingualPlane
     @deprecated def stringLiteral: Parsley[String] = lexeme.text.string.unicode
     @deprecated def stringLiteral_ : Parsley[String] = nonlexeme.text.string.unicode

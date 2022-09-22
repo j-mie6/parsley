@@ -12,7 +12,7 @@ case class LexicalDesc (identDesc: IdentDesc,
                         operators: Set[String],
                         numericDesc: numeric.NumericDesc,
                         textDesc: text.TextDesc,
-                        whitespaceDesc: SpaceDesc) {
+                        spaceDesc: SpaceDesc) {
     private [parsley] def isReservedOp(op: String): Boolean = operators.contains(op)
 }
 

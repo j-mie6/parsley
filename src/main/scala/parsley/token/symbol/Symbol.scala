@@ -56,9 +56,16 @@ abstract class Symbol private[token] {
       */
     def apply(name: Char): Parsley[Unit]
 
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     def softKeyword(name: String): Parsley[Unit]
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     def operator(name: String): Parsley[Unit]
-    def maxOp(name: String): Parsley[Unit]
 
     /** This object can be imported from to expose a way of converting raw Scala string literals
       * into a parser for that specific token.

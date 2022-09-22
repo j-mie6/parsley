@@ -21,7 +21,7 @@ class TokeniserTests extends ParsleyTest {
             token.Parser(letter <|> '_'),
             token.Parser(letterOrDigit <|> '_'),
             token.Parser(inSet('+', '-', ':', '/', '*', '=')),
-            token.Parser(inSet('+', '-', ':', '/', '*', '=')),
+            token.Parser(inSet('+', '-', '/', '*')),
             Set("if", "else", "for", "yield", "while", "def", "class",
                 "trait", "abstract", "override"),
             Set(":", "=", "::", ":="),
@@ -39,7 +39,7 @@ class TokeniserTests extends ParsleyTest {
                        ++ ('A' to 'Z').toSet
                        ++ ('0' to '9').toSet + '_'),
             token.CharSet('+', '-', ':', '/', '*', '='),
-            token.CharSet('+', '-', ':', '/', '*', '='),
+            token.CharSet('+', '-', '/', '*'),
             Set("if", "else", "for", "yield", "while", "def", "class",
                 "trait", "abstract", "override"),
             Set(":", "=", "::", ":="),
@@ -112,15 +112,15 @@ class TokeniserTests extends ParsleyTest {
     }
 
     "userOp" should "read valid operator" in {
-        (tokeniser.lexeme.names.userOp <* eof).parse(":+:") should be (Success(":+:"))
-        (tokeniser.lexeme.names.userOp <* eof).parse(":+:h") shouldBe a [Failure[_]]
+        (tokeniser.lexeme.names.userOp <* eof).parse(":++") should be (Success(":++"))
+        (tokeniser.lexeme.names.userOp <* eof).parse(":++h") shouldBe a [Failure[_]]
     }
     it should "fail if the result is reserved" in {
         (tokeniser.lexeme.names.userOp <* eof).parse(":") shouldBe a [Failure[_]]
     }
     it must "be the same regardless of the intrinsic" in {
-        (tokeniser_.lexeme.names.userOp <* eof).parse(":+:") should be (Success(":+:"))
-        (tokeniser_.lexeme.names.userOp <* eof).parse(":+:h") shouldBe a [Failure[_]]
+        (tokeniser_.lexeme.names.userOp <* eof).parse(":++") should be (Success(":++"))
+        (tokeniser_.lexeme.names.userOp <* eof).parse(":++h") shouldBe a [Failure[_]]
         (tokeniser_.lexeme.names.userOp <* eof).parse(":") shouldBe a [Failure[_]]
     }
 
@@ -174,15 +174,15 @@ class TokeniserTests extends ParsleyTest {
     }
 
     "maxOp" should "match valid operators" in {
-        (tokeniser_.lexeme.symbol.maxOp("=") <* eof).parse("=") should be (Success(()))
-        (tokeniser_.lexeme.symbol.maxOp(":") <* eof).parse(":") should be (Success(()))
-        (tokeniser_.lexeme.symbol.maxOp("++") <* eof).parse("++") should be (Success(()))
-        (tokeniser_.lexeme.symbol.maxOp("+:") <* ':' <* eof).parse("+::") should be (Success(()))
-        (tokeniser_.lexeme.symbol.maxOp("=") <* '=' <* eof).parse("==") should be (Success(()))
+        (tokeniser_.lexeme.symbol.operator("=") <* eof).parse("=") should be (Success(()))
+        (tokeniser_.lexeme.symbol.operator(":") <* eof).parse(":") should be (Success(()))
+        (tokeniser_.lexeme.symbol.operator("++") <* eof).parse("++") should be (Success(()))
+        (tokeniser_.lexeme.symbol.operator("+:") <* ':' <* eof).parse("+::") should be (Success(()))
+        (tokeniser_.lexeme.symbol.operator("=") <* '=' <* eof).parse("==") should be (Success(()))
     }
     it must "fail if the operator is a valid prefix of another operator and that operator is parsable" in {
-        (tokeniser_.lexeme.symbol.maxOp(":") <* '=' <* eof).parse(":=") shouldBe a [Failure[_]]
-        (tokeniser_.lexeme.symbol.maxOp(":") <* ':' <* eof).parse("::") shouldBe a [Failure[_]]
+        (tokeniser_.lexeme.symbol.operator(":") <* '=' <* eof).parse(":=") shouldBe a [Failure[_]]
+        (tokeniser_.lexeme.symbol.operator(":") <* ':' <* eof).parse("::") shouldBe a [Failure[_]]
     }
 
     "charLiteral" should "parse valid haskell characters" in {
