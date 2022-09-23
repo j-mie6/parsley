@@ -705,10 +705,10 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) { //l
 
     // private API
     // Identifiers & Reserved words
-    private lazy val identStart = desc.nameDesc.identStart.toParser
-    private lazy val identLetter = desc.nameDesc.identLetter.toParser
+    private lazy val identStart = desc.nameDesc.identifierStart.toParser
+    private lazy val identLetter = desc.nameDesc.identifierLetter.toParser
 
     // Operators & Reserved ops
-    private lazy val opStart = desc.nameDesc.opStart.toParser
-    private lazy val opLetter = desc.nameDesc.opLetter.toParser
+    private lazy val opStart = desc.nameDesc.operatorStart.toParser
+    private lazy val opLetter = desc.nameDesc.operatorLetter.toParser
 }

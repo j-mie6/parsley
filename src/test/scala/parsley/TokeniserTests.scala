@@ -16,10 +16,10 @@ import scala.language.implicitConversions
 class TokeniserTests extends ParsleyTest {
     val scala =
         desc.LexicalDesc(
-            desc.NameDesc(identStart = token.Parser(letter <|> '_'),
-                          identLetter = token.Parser(letterOrDigit <|> '_'),
-                          opStart = token.Parser(inSet('+', '-', ':', '/', '*', '=')),
-                          opLetter = token.Parser(inSet('+', '-', '/', '*'))),
+            desc.NameDesc(identifierStart = token.Parser(letter <|> '_'),
+                          identifierLetter = token.Parser(letterOrDigit <|> '_'),
+                          operatorStart = token.Parser(inSet('+', '-', ':', '/', '*', '=')),
+                          operatorLetter = token.Parser(inSet('+', '-', '/', '*'))),
             desc.SymbolDesc(hardKeywords = Set("if", "else", "for", "yield", "while", "def", "class",
                                                "trait", "abstract", "override", "val", "var", "lazy"),
                             hardOperators = Set(":", "=", "::", ":="),
@@ -35,10 +35,10 @@ class TokeniserTests extends ParsleyTest {
                            whitespaceIsContextDependent = false))
     val scala_ =
         scala.copy(
-            nameDesc = desc.NameDesc(identStart = token.CharSet(('a' to 'z').toSet ++ ('A' to 'Z').toSet + '_'),
-                                     identLetter = token.CharSet(('a' to 'z').toSet ++ ('A' to 'Z').toSet ++ ('0' to '9').toSet + '_'),
-                                     opStart = token.CharSet('+', '-', ':', '/', '*', '='),
-                                     opLetter = token.CharSet('+', '-', '/', '*')),
+            nameDesc = desc.NameDesc(identifierStart = token.CharSet(('a' to 'z').toSet ++ ('A' to 'Z').toSet + '_'),
+                                     identifierLetter = token.CharSet(('a' to 'z').toSet ++ ('A' to 'Z').toSet ++ ('0' to '9').toSet + '_'),
+                                     operatorStart = token.CharSet('+', '-', ':', '/', '*', '='),
+                                     operatorLetter = token.CharSet('+', '-', '/', '*')),
             spaceDesc = scala.spaceDesc.copy(space = token.Predicate(character.isWhitespace), nestedComments = false)
         )
     val tokeniser = new token.Lexer(scala)

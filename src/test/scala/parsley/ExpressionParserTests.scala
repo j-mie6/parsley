@@ -275,8 +275,8 @@ class ExpressionParserTests extends ParsleyTest {
 
     "mixed expressions" should "also be parsable" in {
         val lang = desc.LexicalDesc.plain.copy(
-            nameDesc = desc.NameDesc.plain.copy(identStart = token.Predicate(_.isLetter),
-                                                identLetter = token.Predicate(_.isLetter))
+            nameDesc = desc.NameDesc.plain.copy(identifierStart = token.Predicate(_.isLetter),
+                                                identifierLetter = token.Predicate(_.isLetter))
         )
 
         sealed trait Expr

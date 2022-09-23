@@ -5,8 +5,6 @@ package parsley.token.descriptions
 
 import parsley.token.{Impl, NotRequired}
 
-// TODO: These shouldn't just be fixed strings, ideally
-// In a /perfect/ world, the commendEnd would depend on the comment start
 case class SpaceDesc (commentStart: String,
                       commentEnd: String,
                       commentLine: String,
