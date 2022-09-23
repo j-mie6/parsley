@@ -9,42 +9,38 @@ import parsley.character.{letterOrDigit, letter, whitespace, oneOf => inSet}
 import parsley.implicits.character.charLift
 import parsley.combinator.eof
 
+import token.{descriptions => desc}
+
 import scala.language.implicitConversions
 
 class TokeniserTests extends ParsleyTest {
     val scala =
-        token.LanguageDef(
-            "/*",
-            "*/",
-            "//",
-            true,
-            token.Parser(letter <|> '_'),
-            token.Parser(letterOrDigit <|> '_'),
-            token.Parser(inSet('+', '-', ':', '/', '*', '=')),
-            token.Parser(inSet('+', '-', '/', '*')),
-            Set("if", "else", "for", "yield", "while", "def", "class",
-                "trait", "abstract", "override"),
-            Set(":", "=", "::", ":="),
-            true,
-            token.Parser(whitespace))
+        desc.LexicalDesc(
+            desc.NameDesc(identStart = token.Parser(letter <|> '_'),
+                          identLetter = token.Parser(letterOrDigit <|> '_'),
+                          opStart = token.Parser(inSet('+', '-', ':', '/', '*', '=')),
+                          opLetter = token.Parser(inSet('+', '-', '/', '*'))),
+            desc.SymbolDesc(hardKeywords = Set("if", "else", "for", "yield", "while", "def", "class",
+                                               "trait", "abstract", "override", "val", "var", "lazy"),
+                            hardOperators = Set(":", "=", "::", ":="),
+                            caseSensitive = true),
+            desc.numeric.NumericDesc.plain,
+            desc.text.TextDesc.plain,
+            desc.SpaceDesc(commentStart = "/*",
+                           commentEnd = "*/",
+                           commentLine = "//",
+                           commentLineAllowsEOF = true,
+                           nestedComments = true,
+                           space = token.Parser(whitespace),
+                           whitespaceIsContextDependent = false))
     val scala_ =
-        token.LanguageDef(
-            "/*",
-            "*/",
-            "//",
-            false,
-            token.CharSet(('a' to 'z').toSet
-                       ++ ('A' to 'Z').toSet + '_'),
-            token.CharSet(('a' to 'z').toSet
-                       ++ ('A' to 'Z').toSet
-                       ++ ('0' to '9').toSet + '_'),
-            token.CharSet('+', '-', ':', '/', '*', '='),
-            token.CharSet('+', '-', '/', '*'),
-            Set("if", "else", "for", "yield", "while", "def", "class",
-                "trait", "abstract", "override"),
-            Set(":", "=", "::", ":="),
-            true,
-            token.Predicate(character.isWhitespace))
+        scala.copy(
+            nameDesc = desc.NameDesc(identStart = token.CharSet(('a' to 'z').toSet ++ ('A' to 'Z').toSet + '_'),
+                                     identLetter = token.CharSet(('a' to 'z').toSet ++ ('A' to 'Z').toSet ++ ('0' to '9').toSet + '_'),
+                                     opStart = token.CharSet('+', '-', ':', '/', '*', '='),
+                                     opLetter = token.CharSet('+', '-', '/', '*')),
+            spaceDesc = scala.spaceDesc.copy(space = token.Predicate(character.isWhitespace), nestedComments = false)
+        )
     val tokeniser = new token.Lexer(scala)
     val tokeniser_ = new token.Lexer(scala_)
 
@@ -383,11 +379,11 @@ class TokeniserTests extends ParsleyTest {
     it should "do nothing with no comments" in {
         (tokeniser.space.skipComments).parse("aaa") should be (Success(()))
         (tokeniser_.space.skipComments).parse("aaa") should be (Success(()))
-        val lang = token.LanguageDef.plain.copy(
-            commentLine = "--",
-            commentStart = "{-", // no shared prefix with the single line
-            commentEnd = "-}"
-            )
+        val lang = desc.LexicalDesc.plain.copy(spaceDesc = desc.SpaceDesc.plain.copy(
+                commentLine = "--",
+                commentStart = "{-", // no shared prefix with the single line
+                commentEnd = "-}"
+            ))
         val tokeniser__ = new token.Lexer(lang)
         tokeniser__.space.skipComments.parse("aaa") should be (Success(()))
     }
@@ -408,16 +404,16 @@ class TokeniserTests extends ParsleyTest {
     }
 
     "comments" should "not aggressively eat everything" in {
-        val lexer1 = new token.Lexer(token.LanguageDef.plain.copy(commentLine = "//", space = token.Parser(Parsley.empty)))
-        val lexer2 = new token.Lexer(token.LanguageDef.plain.copy(commentStart = "/*", commentEnd = "*/", space = token.Parser(Parsley.empty)))
-        val lexer3 = new token.Lexer(token.LanguageDef.plain.copy(commentLine = "//", commentStart = "/*", commentEnd = "*/", space = token.Parser(Parsley.empty)))
+        val lexer1 = new token.Lexer(desc.LexicalDesc.plain.copy(spaceDesc = desc.SpaceDesc.plain.copy(commentLine = "//", space = token.Parser(Parsley.empty))))
+        val lexer2 = new token.Lexer(desc.LexicalDesc.plain.copy(spaceDesc = desc.SpaceDesc.plain.copy(commentStart = "/*", commentEnd = "*/", space = token.Parser(Parsley.empty))))
+        val lexer3 = new token.Lexer(desc.LexicalDesc.plain.copy(spaceDesc = desc.SpaceDesc.plain.copy(commentLine = "//", commentStart = "/*", commentEnd = "*/", space = token.Parser(Parsley.empty))))
         (lexer1.space.whiteSpace *> 'a').parse("a") shouldBe a [Success[_]]
         (lexer2.space.whiteSpace *> 'a').parse("a") shouldBe a [Success[_]]
         (lexer3.space.whiteSpace *> 'a').parse("a") shouldBe a [Success[_]]
     }
 
     "case sensitivity" should "work for both lowercase and uppercase specified keywords" in {
-        val lexer = new token.Lexer(token.LanguageDef.plain.copy(caseSensitive = false, keywords = Set("hi", "HELLo", "BYE")))
+        val lexer = new token.Lexer(desc.LexicalDesc.plain.copy(symbolDesc = desc.SymbolDesc.plain.copy(caseSensitive = false, hardKeywords = Set("hi", "HELLo", "BYE"))))
         lexer.lexeme.names.identifier.parse("hi") shouldBe a [Failure[_]]
         lexer.lexeme.names.identifier.parse("hello") shouldBe a [Failure[_]]
         lexer.lexeme.names.identifier.parse("bye") shouldBe a [Failure[_]]
@@ -431,14 +427,14 @@ class TokeniserTests extends ParsleyTest {
     }
 
     it should "not be affected by tablification optimisation" in {
-        val lexer = new token.Lexer(token.LanguageDef.plain.copy(caseSensitive = false, keywords = Set("hi", "HELLo", "BYE")))
+        val lexer = new token.Lexer(desc.LexicalDesc.plain.copy(symbolDesc = desc.SymbolDesc.plain.copy(caseSensitive = false, hardKeywords = Set("hi", "HELLo", "BYE"))))
         val p = lexer.lexeme.symbol.softKeyword("hi") <|> lexer.lexeme.symbol.softKeyword("HELLo") <|> lexer.lexeme.symbol.softKeyword("BYE")
         p.parse("bye") shouldBe a [Success[_]]
         p.parse("Bye") shouldBe a [Success[_]]
     }
 
     "issue #199" should "not regress: whitespace should work without comments defined" in {
-        val lang = token.LanguageDef.plain.copy(space = token.Predicate(_.isWhitespace))
+        val lang = desc.LexicalDesc.plain.copy(spaceDesc = desc.SpaceDesc.plain.copy(space = token.Predicate(_.isWhitespace)))
         val lexer = new token.Lexer(lang)
         lexer.space.whiteSpace.parse("[") shouldBe a [Success[_]]
     }

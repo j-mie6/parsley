@@ -10,15 +10,18 @@ import parsley.Parsley, Parsley.{attempt, notFollowedBy, pure, unit}
 import parsley.character.{char, string, strings}
 import parsley.errors.combinator.ErrorMethods
 import parsley.token.Static
-import parsley.token.descriptions.LexicalDesc
+import parsley.token.descriptions.{NameDesc, SymbolDesc}
 
 import parsley.internal.deepembedding.singletons
 
-private [token] class ConcreteSymbol(desc: LexicalDesc, identLetter: Parsley[Char], opLetter: Parsley[Char]) extends Symbol {
+private [token] class ConcreteSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc, _identLetter: =>Parsley[Char], _opLetter: =>Parsley[Char]) extends Symbol {
+    private lazy val identLetter = _identLetter
+    private lazy val opLetter = _opLetter
+
     override def apply(name: String): Parsley[Unit] = {
-        if (desc.identDesc.hardKeywords(name)) softKeyword(name)
-        else if (desc.operators(name))         softOperator(name)
-        else                                   attempt(string(name)).void
+        if (symbolDesc.hardKeywords(name))       softKeyword(name)
+        else if (symbolDesc.hardOperators(name)) softOperator(name)
+        else                                     attempt(string(name)).void
     }
 
     override def apply(name: Char): Parsley[Unit] = char(name).void
@@ -26,22 +29,22 @@ private [token] class ConcreteSymbol(desc: LexicalDesc, identLetter: Parsley[Cha
 
     private def caseString(name: String): Parsley[Unit] = {
         def caseChar(c: Char): Parsley[Char] = if (c.isLetter) char(c.toLower) <|> char(c.toUpper) else char(c)
-        if (desc.identDesc.caseSensitive) string(name).void
+        if (symbolDesc.caseSensitive) string(name).void
         else name.foldLeft(unit)((p, c) => p <* caseChar(c)).label(name)
     }
 
     //private val keywordMemo = concurrent.TrieMap.empty[String, Parsley[Unit]]
-    override def softKeyword(name: String): Parsley[Unit] = /*keywordMemo.getOrElseUpdate(name, */desc.identDesc.identLetter match {
-        case Static(letter) => new Parsley(new singletons.Specific("keyword", name, letter, desc.identDesc.caseSensitive))
+    override def softKeyword(name: String): Parsley[Unit] = /*keywordMemo.getOrElseUpdate(name, */nameDesc.identLetter match {
+        case Static(letter) => new Parsley(new singletons.Specific("keyword", name, letter, symbolDesc.caseSensitive))
         case _ => attempt(caseString(name) *> notFollowedBy(identLetter).label(s"end of $name"))
     }//)
 
     //private val operatorMemo = concurrent.TrieMap.empty[String, Parsley[Unit]]
-    override def softOperator(name: String): Parsley[Unit] = /*operatorMemo.getOrElseUpdate(name, */desc.opLetter match {
+    override def softOperator(name: String): Parsley[Unit] = /*operatorMemo.getOrElseUpdate(name, */nameDesc.opLetter match {
         // TODO: this needs optimising
         //case Static(letter) => new Parsley(new singletons.Specific("operator", name, letter, true))
         case _ =>
-            val ends = desc.operators.collect {
+            val ends = symbolDesc.hardOperators.collect {
                 case op if op.startsWith(name) && op != name => op.substring(name.length)
             }.toList
             ends match {

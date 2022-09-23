@@ -7,7 +7,6 @@ import parsley.token.{Impl, NotRequired}
 
 // TODO: These shouldn't just be fixed strings, ideally
 // In a /perfect/ world, the commendEnd would depend on the comment start
-private [parsley] // TODO: remove
 case class SpaceDesc (commentStart: String,
                       commentEnd: String,
                       commentLine: String,
@@ -26,7 +25,6 @@ case class SpaceDesc (commentStart: String,
     }
 }
 
-private [parsley] // TODO: remove
 object SpaceDesc {
     val plain = SpaceDesc("", "", "", true, false, NotRequired, false)
 }

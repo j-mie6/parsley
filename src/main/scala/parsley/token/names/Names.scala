@@ -3,8 +3,7 @@
  */
 package parsley.token.names
 
-import parsley.Parsley, Parsley.pure
-import parsley.errors.combinator.{amend, entrench, ErrorMethods, unexpected}
+import parsley.Parsley
 
 /** TODO:
   *
@@ -29,29 +28,11 @@ abstract class Names private[token] {
       * @note $disclaimer
       * @since 4.0.0
       */
-    def userDefinedOperator: Parsley[String] // TODO: rename to operator
-
-    // TODO: definitely want a new combinator for this now
-    // TODO: should the explain be here, I could see it making a mess of a precedence table...
-    def userDefinedOperator(startChar: Char): Parsley[String] =
-        amend {
-            entrench(userDefinedOperator).flatMap {
-                case x if x.head != startChar => unexpected(s"operator $x")
-                case x => pure(x)
-            }
-        }.explain(s"operator must start with $startChar")
-    def userDefinedOperatorEndingIn(endChar: Char): Parsley[String] =
-        amend {
-            entrench(userDefinedOperator).flatMap {
-                case x if x.last != endChar => unexpected(s"operator $x")
-                case x => pure(x)
-            }
-        }.explain(s"operator must end with $endChar")
-    def userDefinedOperator(startChar: Char, endChar: Char): Parsley[String] =
-        amend {
-            entrench(userDefinedOperator).flatMap {
-                case x if x.head != startChar && x.last != endChar => unexpected(s"operator $x")
-                case x => pure(x)
-            }
-        }.explain(s"operator must start with $startChar and end with $endChar")
+    def userDefinedOperator: Parsley[String]
+    /** TODO:
+      *
+      * @note $disclaimer
+      * @since 4.0.0
+      */
+    def userDefinedOperator(startChar: Option[Char], endChar: Option[Char]): Parsley[String]
 }

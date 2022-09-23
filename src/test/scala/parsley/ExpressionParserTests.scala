@@ -4,6 +4,7 @@
 package parsley
 
 import parsley._
+import token.{descriptions => desc}
 import parsley.character.digit
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.expr.{chain, infix, mixed}
@@ -273,9 +274,9 @@ class ExpressionParserTests extends ParsleyTest {
     }
 
     "mixed expressions" should "also be parsable" in {
-        val lang = token.LanguageDef.plain.copy(
-            identStart = token.Predicate(_.isLetter),
-            identLetter = token.Predicate(_.isLetter)
+        val lang = desc.LexicalDesc.plain.copy(
+            nameDesc = desc.NameDesc.plain.copy(identStart = token.Predicate(_.isLetter),
+                                                identLetter = token.Predicate(_.isLetter))
         )
 
         sealed trait Expr

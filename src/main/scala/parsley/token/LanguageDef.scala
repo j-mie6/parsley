@@ -29,6 +29,7 @@ package parsley.token
   * @param space What characters count as whitespace in the language?
   * @since 2.2.0
   */
+@deprecated
 case class LanguageDef (commentStart: String,
                         commentEnd: String,
                         commentLine: String,
@@ -52,26 +53,27 @@ case class LanguageDef (commentStart: String,
     }
 
     private [token] def toDesc: descriptions.LexicalDesc =
-        descriptions.LexicalDesc (descriptions.IdentDesc(identStart,
-                                                          identLetter,
-                                                          keywords,
-                                                          caseSensitive),
-                                   opStart,
-                                   opLetter,
-                                   operators,
-                                   descriptions.numeric.NumericDesc.plain,
-                                   descriptions.text.TextDesc.plain,
-                                   descriptions.SpaceDesc (commentStart,
-                                                           commentEnd,
-                                                           commentLine,
-                                                           true,
-                                                           nestedComments,
-                                                           space,
-                                                           false))
+        descriptions.LexicalDesc(descriptions.NameDesc(identStart,
+                                                       identLetter,
+                                                       opStart,
+                                                       opLetter),
+                                descriptions.SymbolDesc(keywords,
+                                                        operators,
+                                                        caseSensitive),
+                                descriptions.numeric.NumericDesc.plain,
+                                descriptions.text.TextDesc.plain,
+                                descriptions.SpaceDesc (commentStart,
+                                                        commentEnd,
+                                                        commentLine,
+                                                        true,
+                                                        nestedComments,
+                                                        space,
+                                                        false))
 }
 /** This object contains any preconfigured language definitions
   * @since 2.2.0
   */
+@deprecated
 object LanguageDef {
     val plain = LanguageDef("", "", "", false, NotRequired, NotRequired, NotRequired, NotRequired, Set.empty, Set.empty, true, NotRequired)
 }

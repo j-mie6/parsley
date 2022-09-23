@@ -211,15 +211,15 @@ import parsley.internal.deepembedding.singletons
   *                  the lexer.
   * @since 4.0.0
   */
-class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) { //lexer =>
+class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) { //lexer =>
     /** TODO:
       *
       * @param desc the configuration for the lexer, specifying the lexical
       *             rules of the grammar/language being parsed.
       * @since 4.0.0
       */
-    private [parsley] def this(desc: descriptions.LexicalDesc) = this(desc, errors.ErrorConfig.default)
-    def this(lang: LanguageDef) = this(lang.toDesc)
+    def this(desc: descriptions.LexicalDesc) = this(desc, errors.ErrorConfig.default)
+    @deprecated def this(lang: LanguageDef) = this(lang.toDesc)
 
     /** This object is concerned with ''lexemes'': these are tokens that are
       * treated as "words", such that whitespace will be consumed after each
@@ -447,7 +447,7 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
           *
           * @since 4.0.0
           */
-        val names: parsley.token.names.Names = new ConcreteNames(desc, identStart, identLetter, opStart, opLetter)
+        val names: parsley.token.names.Names = new ConcreteNames(desc.nameDesc, desc.symbolDesc, identStart, identLetter, opStart, opLetter)
 
         /** $numeric
           *
@@ -552,7 +552,7 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
           *
           * @since 4.0.0
           */
-        val symbol: parsley.token.symbol.Symbol = new ConcreteSymbol(desc, identLetter, opLetter)
+        val symbol: parsley.token.symbol.Symbol = new ConcreteSymbol(desc.nameDesc, desc.symbolDesc, identLetter, opLetter)
     }
 
     /** This combinator ensures a parser fully parses all available input, and consumes whitespace
@@ -705,10 +705,10 @@ class Lexer private [parsley] (desc: descriptions.LexicalDesc, errConfig: errors
 
     // private API
     // Identifiers & Reserved words
-    private lazy val identStart = desc.identDesc.identStart.toParser
-    private lazy val identLetter = desc.identDesc.identLetter.toParser
+    private lazy val identStart = desc.nameDesc.identStart.toParser
+    private lazy val identLetter = desc.nameDesc.identLetter.toParser
 
     // Operators & Reserved ops
-    private lazy val opStart = desc.opStart.toParser
-    private lazy val opLetter = desc.opLetter.toParser
+    private lazy val opStart = desc.nameDesc.opStart.toParser
+    private lazy val opLetter = desc.nameDesc.opLetter.toParser
 }

@@ -5,21 +5,15 @@ package parsley.token.descriptions
 
 import parsley.token.{Impl, NotRequired}
 
-private [parsley] // TODO: remove
-case class LexicalDesc (identDesc: IdentDesc,
-                        opStart: Impl,
-                        opLetter: Impl,
-                        operators: Set[String],
+case class LexicalDesc (nameDesc: NameDesc,
+                        symbolDesc: SymbolDesc,
                         numericDesc: numeric.NumericDesc,
                         textDesc: text.TextDesc,
-                        spaceDesc: SpaceDesc) {
-    private [parsley] def isReservedOp(op: String): Boolean = operators.contains(op)
-}
+                        spaceDesc: SpaceDesc)
 
 /** This object contains any preconfigured lexical definitions.
   * @since 4.0.0
   */
-private [parsley] // TODO: remove
 object LexicalDesc {
-    val plain = LexicalDesc(IdentDesc.plain, NotRequired, NotRequired, Set.empty, numeric.NumericDesc.plain, text.TextDesc.plain, SpaceDesc.plain)
+    val plain = LexicalDesc(NameDesc.plain, SymbolDesc.plain, numeric.NumericDesc.plain, text.TextDesc.plain, SpaceDesc.plain)
 }
