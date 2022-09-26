@@ -4,7 +4,8 @@
 package parsley.token
 
 import parsley.Parsley, Parsley.empty
-import parsley.character.satisfy
+import parsley.character.{satisfy, satisfyUTF16}
+import parsley.exceptions.ParsleyException
 
 // TODO: Impl is outdated: there is very little reason to support parsers as configuration, and it
 //       degrades performance. Instead, I want to move to an ad-hoc `Char => Boolean` or `Int => Boolean`
@@ -16,16 +17,15 @@ import parsley.character.satisfy
   * @since 2.2.0
   */
 sealed abstract class Impl {
-    private [token] def toParser: Parsley[Char]
+    private [token] def toBmp: Parsley[Char]
+    private [token] def toUnicode: Parsley[Int]
+    private [token] def toNative: Parsley[Unit]
 }
 
-/**
-  * The implementation provided is a parser which parses the required token.
-  * @param p The parser which will parse the token
-  * @since 2.2.0
-  */
-final case class Parser(p: Parsley[Char]) extends Impl {
-    private [token] override def toParser: Parsley[Char] = p
+final case class Unicode(pf: Int => Boolean) extends Impl {
+    private [token] override def toBmp: Parsley[Char] = satisfy(c => pf(c.toInt) && !c.isHighSurrogate)
+    private [token] override def toUnicode: Parsley[Int] = satisfyUTF16(pf)
+    private [token] override def toNative: Parsley[Unit] = toUnicode.void
 }
 
 /**
@@ -33,8 +33,10 @@ final case class Parser(p: Parsley[Char]) extends Impl {
   * @param f The predicate that input tokens are tested against
   * @since 2.2.0
   */
-final case class Predicate(f: Char => Boolean) extends Impl {
-    private [token] override def toParser: Parsley[Char] = satisfy(f)
+final case class Basic(pf: Char => Boolean) extends Impl {
+    private [token] override def toBmp: Parsley[Char] = satisfy(pf)
+    private [token] override def toUnicode: Parsley[Int] = throw new ParsleyException("Cannot parse unicode with a `Basic` `Char => Boolean` predicate")
+    private [token] override def toNative: Parsley[Unit] = toBmp.void
 }
 
 /**
@@ -43,7 +45,9 @@ final case class Predicate(f: Char => Boolean) extends Impl {
   * @since 2.2.0
   */
 case object NotRequired extends Impl {
-    private [token] override def toParser: Parsley[Char] = empty
+    private [token] override def toBmp: Parsley[Char] = empty
+    private [token] override def toUnicode: Parsley[Int] = empty
+    private [token] override def toNative: Parsley[Unit] = empty
 }
 
 /**
@@ -56,14 +60,6 @@ object CharSet {
       * @param cs The set to convert
       * @since 2.2.0
       */
-    def apply(cs: Set[Char]): Impl = Predicate(new BitSet(cs))
+    def apply(cs: Set[Char]): Impl = Basic(new BitSet(cs))
     def apply(cs: Char*): Impl = apply(Set(cs: _*))
-}
-
-private [token] object Static {
-    def unapply(impl: Impl): Option[Char => Boolean] = impl match {
-        case Predicate(f)   => Some(f)
-        case NotRequired    => Some(_ => false)
-        case _              => None
-    }
 }

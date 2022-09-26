@@ -447,7 +447,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) { //l
           *
           * @since 4.0.0
           */
-        val names: parsley.token.names.Names = new ConcreteNames(desc.nameDesc, desc.symbolDesc, identStart, identLetter, opStart, opLetter)
+        val names: parsley.token.names.Names = new ConcreteNames(desc.nameDesc, desc.symbolDesc)
 
         /** $numeric
           *
@@ -552,7 +552,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) { //l
           *
           * @since 4.0.0
           */
-        val symbol: parsley.token.symbol.Symbol = new ConcreteSymbol(desc.nameDesc, desc.symbolDesc, identLetter, opLetter)
+        val symbol: parsley.token.symbol.Symbol = new ConcreteSymbol(desc.nameDesc, desc.symbolDesc)
     }
 
     /** This combinator ensures a parser fully parses all available input, and consumes whitespace
@@ -582,7 +582,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) { //l
       * @since 4.0.0
       */
     object space {
-        private [Lexer] lazy val space = desc.spaceDesc.space.toParser
+        private [Lexer] lazy val space = desc.spaceDesc.space.toNative
         private lazy val wsImpl = Reg.make[Parsley[Unit]]
 
         /** This parser initialises the whitespace used by the lexer when
@@ -640,14 +640,15 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) { //l
 
         private [Lexer] def whiteSpace(impl: Impl): Parsley[Unit] = impl match {
             case NotRequired => skipComments
-            case Predicate(ws) => new Parsley(new singletons.WhiteSpace(ws, desc.spaceDesc.commentStart, desc.spaceDesc.commentEnd,
+            case Basic(ws) => new Parsley(new singletons.WhiteSpace(ws, desc.spaceDesc.commentStart, desc.spaceDesc.commentEnd,
                                                                         desc.spaceDesc.commentLine, desc.spaceDesc.nestedComments)).hide
-            case Parser(space_) if desc.spaceDesc.supportsComments =>
+            case Unicode(ws) => ???
+            /*case Parser(space_) if desc.spaceDesc.supportsComments =>
                 skipMany(attempt(new Parsley(new singletons.Comment(desc.spaceDesc.commentStart,
                                                                     desc.spaceDesc.commentEnd,
                                                                     desc.spaceDesc.commentLine,
                                                                     desc.spaceDesc.nestedComments))) <|> space_).hide
-            case Parser(space_) => skipMany(space_).hide
+            case Parser(space_) => skipMany(space_).hide*/
         }
 
         /** TODO:
@@ -702,13 +703,4 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) { //l
     @deprecated def semiSep1[A](p: Parsley[A]): Parsley[List[A]] = lexeme.separators.semiSep1(p)
     @deprecated def commaSep[A](p: Parsley[A]): Parsley[List[A]] = lexeme.separators.commaSep(p)
     @deprecated def commaSep1[A](p: Parsley[A]): Parsley[List[A]] = lexeme.separators.commaSep1(p)
-
-    // private API
-    // Identifiers & Reserved words
-    private lazy val identStart = desc.nameDesc.identifierStart.toParser
-    private lazy val identLetter = desc.nameDesc.identifierLetter.toParser
-
-    // Operators & Reserved ops
-    private lazy val opStart = desc.nameDesc.operatorStart.toParser
-    private lazy val opLetter = desc.nameDesc.operatorLetter.toParser
 }

@@ -7,19 +7,15 @@ import parsley.Parsley, Parsley.{attempt, pure}
 import parsley.character.stringOfMany
 import parsley.errors.combinator.{amend, entrench, ErrorMethods, unexpected}
 import parsley.lift.lift2
-import parsley.token.{Impl, Static}
+import parsley.token.{Impl, Basic}
 import parsley.token.descriptions.{NameDesc, SymbolDesc}
 import parsley.internal.deepembedding.singletons
 
-private [token] class ConcreteNames(nameDesc: NameDesc, symbolDesc: SymbolDesc,
-                                    identStart: =>Parsley[Char], identLetter: =>Parsley[Char],
-                                    opStart: =>Parsley[Char], opLetter: =>Parsley[Char]) extends Names {
+private [token] class ConcreteNames(nameDesc: NameDesc, symbolDesc: SymbolDesc) extends Names {
     private def keyOrOp(startImpl: Impl, letterImpl: Impl, parser: =>Parsley[String], illegal: String => Boolean,
                         combinatorName: String, name: String, illegalName: String) = {
-        val builder = (start: Char => Boolean, letter: Char => Boolean) =>
-            new Parsley(new singletons.NonSpecific(combinatorName, name, illegalName, start, letter, illegal))
         (startImpl, letterImpl) match {
-            case (Static(start), Static(letter)) => builder(start, letter)
+            case (Basic(start), Basic(letter)) => new Parsley(new singletons.NonSpecific(combinatorName, name, illegalName, start, letter, illegal))
             case _ =>
                 attempt {
                     amend {
@@ -30,7 +26,12 @@ private [token] class ConcreteNames(nameDesc: NameDesc, symbolDesc: SymbolDesc,
                 }.label(name)
         }
     }
+    // FIXME: These need to account for unicodeness, not just BMP
+    private lazy val identStart = nameDesc.identifierStart.toBmp
+    private lazy val identLetter = nameDesc.identifierLetter.toBmp
     private lazy val ident = lift2((c: Char, cs: String) => s"$c$cs", identStart, stringOfMany(identLetter))
+    private lazy val opStart = nameDesc.operatorStart.toBmp
+    private lazy val opLetter = nameDesc.operatorLetter.toBmp
     private lazy val oper = lift2((c: Char, cs: String) => s"$c$cs", opStart, stringOfMany(opLetter))
     override lazy val identifier: Parsley[String] =
         keyOrOp(nameDesc.identifierStart, nameDesc.identifierLetter, ident, symbolDesc.isReservedName(_),  "identifier", "identifier", "keyword")

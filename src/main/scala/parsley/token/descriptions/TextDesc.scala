@@ -1,5 +1,7 @@
 package parsley.token.descriptions.text
 
+import parsley.token.{Impl, Unicode}
+
 /** This class, and its subtypes, describe how many digits a numeric escape sequence is allowed.
   *
   * @since 4.0.0
@@ -191,7 +193,7 @@ case class TextDesc (escapeSequences: EscapeDesc,
                      characterLiteralEnd: Char,
                      stringEnds: Set[String],
                      multiStringEnds: Set[String],
-                     graphicCharacter: Char => Boolean) {
+                     graphicCharacter: Impl) {
 }
 
 /** This object contains any preconfigured text definitions.
@@ -207,5 +209,5 @@ object TextDesc {
                          characterLiteralEnd = '\'',
                          stringEnds = Set("\""),
                          multiStringEnds = Set.empty,
-                         graphicCharacter = _ >= ' ')
+                         graphicCharacter = Unicode(_ >= ' '.toInt))
 }

@@ -4,18 +4,23 @@
 package parsley.token.text
 
 import parsley.Parsley, Parsley.empty
-import parsley.character.{satisfy, char}
+import parsley.character.{satisfy, char, satisfyUTF16}
 import parsley.combinator.skipSome
 import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.character.charLift
+import parsley.token.{Impl, Basic, Unicode, NotRequired}
 import parsley.token.descriptions.text.EscapeDesc
 
 private [token] abstract class StringCharacter {
-    def apply(isLetter: Char => Boolean): Parsley[Option[Int]]
+    def apply(isLetter: Impl): Parsley[Option[Int]]
 }
 
 private [token] object RawCharacter extends StringCharacter {
-    override def apply(isLetter: Char => Boolean): Parsley[Option[Int]] = satisfy(isLetter).map(c => Some(c.toInt)).label("string character")
+    override def apply(isLetter: Impl): Parsley[Option[Int]] = isLetter match {
+        case Basic(isLetter) => satisfy(isLetter).map(c => Some(c.toInt)).label("string character")
+        case Unicode(isLetter) => satisfyUTF16(isLetter).map(Some(_)).label("string character")
+        case NotRequired => empty
+    }
 }
 
 private [token] class EscapableCharacter(desc: EscapeDesc, escapes: Escape, space: Parsley[_]) extends StringCharacter {
@@ -30,6 +35,9 @@ private [token] class EscapableCharacter(desc: EscapeDesc, escapes: Escape, spac
                       <|> escapes.escapeCode.map(Some(_)).explain("invalid escape sequence"))
     }
 
-    override def apply(isLetter: Char => Boolean): Parsley[Option[Int]] =
-        (satisfy(c => isLetter(c) && c != desc.escBegin).map(c => Some(c.toInt)) <|> stringEscape).label("string character")
+    override def apply(isLetter: Impl): Parsley[Option[Int]] = isLetter match {
+        case Basic(isLetter) => (satisfy(c => isLetter(c) && c != desc.escBegin).map(c => Some(c.toInt)) <|> stringEscape).label("string character")
+        case Unicode(isLetter) => (satisfyUTF16(c => isLetter(c) && c != desc.escBegin.toInt).map(Some(_)) <|> stringEscape).label("string character")
+        case NotRequired => empty
+    }
 }

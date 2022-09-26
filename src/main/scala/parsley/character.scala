@@ -7,7 +7,7 @@ import scala.annotation.switch
 import scala.collection.immutable.NumericRange
 
 import parsley.Parsley.{attempt, empty, fresh, pure}
-import parsley.combinator.{choice, skipMany}
+import parsley.combinator.{choice, skipMany, skip}
 import parsley.errors.combinator.ErrorMethods
 
 import parsley.internal.deepembedding.{frontend, singletons}
@@ -76,8 +76,7 @@ import parsley.internal.deepembedding.{frontend, singletons}
   *     ''The full list of codepoints found in a category can be found in the
   *     [[https://www.unicode.org/Public/13.0.0/ucd/extracted/DerivedGeneralCategory.txt Unicode Character Database]]''.
   */
-object character
-{
+object character {
     /** This combinator tries parses a single specific character `c` from the input.
       *
       * Attempts to read the given character `c` from the input stream at the current
@@ -124,6 +123,16 @@ object character
       * @group core
       */
     def satisfy(pred: Char => Boolean): Parsley[Char] = new Parsley(new singletons.Satisfy(pred, None))
+
+    def satisfyUTF16(pred: Int => Boolean): Parsley[Int] = attempt {
+        item.flatMap {
+            case h if h.isHighSurrogate => item.collect {
+                case l if Character.isSurrogatePair(h, l) && pred(Character.toCodePoint(h, l)) => Character.toCodePoint(h, l)
+            }
+            case c if pred(c.toInt) => pure(c.toInt)
+            case _ => empty
+        }
+    }
 
     /** This combinator attempts to parse a given string from the input, and fails otherwise.
       *

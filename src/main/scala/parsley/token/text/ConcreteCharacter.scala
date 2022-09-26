@@ -11,25 +11,21 @@ import parsley.token.descriptions.text.TextDesc
 
 private [token] final class ConcreteCharacter(desc: TextDesc, escapes: Escape) extends Character {
     private val quote = desc.characterLiteralEnd
-    private lazy val charLetter = satisfy(Character.letter(quote, desc.escapeSequences.escBegin, allowsAllSpace = false, desc.graphicCharacter))
+    private lazy val charLetter = Character.letter(quote, desc.escapeSequences.escBegin, allowsAllSpace = false, desc.graphicCharacter)
 
     override lazy val unicode: Parsley[Int] = {
-        assume(!quote.isLowSurrogate, "quotes are not low surrogates")
-        quote *> ((escapes.escapeChar <* quote) <|> (charLetter <~> (charLetter <* quote <|> quote)).collect {
-            case (c, `quote`) => c.toInt
-            case (high, low) if Character.isSurrogatePair(high, low) => Character.toCodePoint(high, low)
-        })
+        quote *> (escapes.escapeChar <|> charLetter.toUnicode) <* quote
     }
 
-    override lazy val basicMultilingualPlane: Parsley[Char] = unicode.collectMsg("non-BMP character") {
+    override lazy val basicMultilingualPlane: Parsley[Char] = quote *> (escapes.escapeChar.collectMsg("non-BMP character") {
         case n if Character.isBmpCodePoint(n) => n.toChar
-    }
+    } <|> charLetter.toBmp) <* quote
 
-    override lazy val ascii: Parsley[Char] = unicode.collectMsg("non-ascii character") {
-            case n if n <= Character.MaxAscii => n.toChar
+    // FIXME: These are going to be a dodgy because of the double check here, may reference BMP
+    override lazy val ascii: Parsley[Char] = basicMultilingualPlane.filterOut {
+        case n if n > Character.MaxAscii => "non-ascii character"
     }
-
-    override lazy val extendedAscii: Parsley[Char] = unicode.collectMsg("non-ascii character (extended)") {
-            case n if n <= Character.MaxExtendedAscii => n.toChar
+    override lazy val extendedAscii: Parsley[Char] = basicMultilingualPlane.filterOut {
+        case n if n > Character.MaxExtendedAscii => "non-ascii character (extended)"
     }
 }

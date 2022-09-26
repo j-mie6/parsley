@@ -16,10 +16,10 @@ import scala.language.implicitConversions
 class TokeniserTests extends ParsleyTest {
     val scala =
         desc.LexicalDesc(
-            desc.NameDesc(identifierStart = token.Parser(letter <|> '_'),
-                          identifierLetter = token.Parser(letterOrDigit <|> '_'),
-                          operatorStart = token.Parser(inSet('+', '-', ':', '/', '*', '=')),
-                          operatorLetter = token.Parser(inSet('+', '-', '/', '*'))),
+            desc.NameDesc(identifierStart = token.CharSet(('a' to 'z').toSet ++ ('A' to 'Z').toSet + '_'),
+                          identifierLetter = token.CharSet(('a' to 'z').toSet ++ ('A' to 'Z').toSet ++ ('0' to '9').toSet + '_'),
+                          operatorStart = token.CharSet('+', '-', ':', '/', '*', '='),
+                          operatorLetter = token.CharSet('+', '-', '/', '*')),
             desc.SymbolDesc(hardKeywords = Set("if", "else", "for", "yield", "while", "def", "class",
                                                "trait", "abstract", "override", "val", "var", "lazy"),
                             hardOperators = Set(":", "=", "::", ":="),
@@ -31,15 +31,11 @@ class TokeniserTests extends ParsleyTest {
                            commentLine = "//",
                            commentLineAllowsEOF = true,
                            nestedComments = true,
-                           space = token.Parser(whitespace),
+                           space = token.Basic(character.isWhitespace),
                            whitespaceIsContextDependent = false))
     val scala_ =
         scala.copy(
-            nameDesc = desc.NameDesc(identifierStart = token.CharSet(('a' to 'z').toSet ++ ('A' to 'Z').toSet + '_'),
-                                     identifierLetter = token.CharSet(('a' to 'z').toSet ++ ('A' to 'Z').toSet ++ ('0' to '9').toSet + '_'),
-                                     operatorStart = token.CharSet('+', '-', ':', '/', '*', '='),
-                                     operatorLetter = token.CharSet('+', '-', '/', '*')),
-            spaceDesc = scala.spaceDesc.copy(space = token.Predicate(character.isWhitespace), nestedComments = false)
+            spaceDesc = scala.spaceDesc.copy(nestedComments = false)
         )
     val tokeniser = new token.Lexer(scala)
     val tokeniser_ = new token.Lexer(scala_)
@@ -404,9 +400,9 @@ class TokeniserTests extends ParsleyTest {
     }
 
     "comments" should "not aggressively eat everything" in {
-        val lexer1 = new token.Lexer(desc.LexicalDesc.plain.copy(spaceDesc = desc.SpaceDesc.plain.copy(commentLine = "//", space = token.Parser(Parsley.empty))))
-        val lexer2 = new token.Lexer(desc.LexicalDesc.plain.copy(spaceDesc = desc.SpaceDesc.plain.copy(commentStart = "/*", commentEnd = "*/", space = token.Parser(Parsley.empty))))
-        val lexer3 = new token.Lexer(desc.LexicalDesc.plain.copy(spaceDesc = desc.SpaceDesc.plain.copy(commentLine = "//", commentStart = "/*", commentEnd = "*/", space = token.Parser(Parsley.empty))))
+        val lexer1 = new token.Lexer(desc.LexicalDesc.plain.copy(spaceDesc = desc.SpaceDesc.plain.copy(commentLine = "//", space = token.NotRequired)))
+        val lexer2 = new token.Lexer(desc.LexicalDesc.plain.copy(spaceDesc = desc.SpaceDesc.plain.copy(commentStart = "/*", commentEnd = "*/", space = token.NotRequired)))
+        val lexer3 = new token.Lexer(desc.LexicalDesc.plain.copy(spaceDesc = desc.SpaceDesc.plain.copy(commentLine = "//", commentStart = "/*", commentEnd = "*/", space = token.NotRequired)))
         (lexer1.space.whiteSpace *> 'a').parse("a") shouldBe a [Success[_]]
         (lexer2.space.whiteSpace *> 'a').parse("a") shouldBe a [Success[_]]
         (lexer3.space.whiteSpace *> 'a').parse("a") shouldBe a [Success[_]]
@@ -434,7 +430,7 @@ class TokeniserTests extends ParsleyTest {
     }
 
     "issue #199" should "not regress: whitespace should work without comments defined" in {
-        val lang = desc.LexicalDesc.plain.copy(spaceDesc = desc.SpaceDesc.plain.copy(space = token.Predicate(_.isWhitespace)))
+        val lang = desc.LexicalDesc.plain.copy(spaceDesc = desc.SpaceDesc.plain.copy(space = token.Basic(_.isWhitespace)))
         val lexer = new token.Lexer(lang)
         lexer.space.whiteSpace.parse("[") shouldBe a [Success[_]]
     }

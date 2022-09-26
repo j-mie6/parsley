@@ -9,14 +9,14 @@ package parsley.token.symbol
 import parsley.Parsley, Parsley.{attempt, notFollowedBy, pure, unit}
 import parsley.character.{char, string, strings}
 import parsley.errors.combinator.ErrorMethods
-import parsley.token.Static
+import parsley.token.Basic
 import parsley.token.descriptions.{NameDesc, SymbolDesc}
 
 import parsley.internal.deepembedding.singletons
 
-private [token] class ConcreteSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc, _identLetter: =>Parsley[Char], _opLetter: =>Parsley[Char]) extends Symbol {
-    private lazy val identLetter = _identLetter
-    private lazy val opLetter = _opLetter
+private [token] class ConcreteSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc) extends Symbol {
+    private lazy val identLetter = nameDesc.identifierLetter.toNative
+    private lazy val opLetter = nameDesc.operatorLetter.toNative
 
     override def apply(name: String): Parsley[Unit] = {
         if (symbolDesc.hardKeywords(name))       softKeyword(name)
@@ -35,8 +35,8 @@ private [token] class ConcreteSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc,
 
     //private val keywordMemo = concurrent.TrieMap.empty[String, Parsley[Unit]]
     override def softKeyword(name: String): Parsley[Unit] = /*keywordMemo.getOrElseUpdate(name, */nameDesc.identifierLetter match {
-        case Static(letter) => new Parsley(new singletons.Specific("keyword", name, letter, symbolDesc.caseSensitive))
-        case _ => attempt(caseString(name) *> notFollowedBy(identLetter).label(s"end of $name"))
+        case Basic(letter) => new Parsley(new singletons.Specific("keyword", name, letter, symbolDesc.caseSensitive))
+        case letter => attempt(caseString(name) *> notFollowedBy(identLetter).label(s"end of $name"))
     }//)
 
     //private val operatorMemo = concurrent.TrieMap.empty[String, Parsley[Unit]]

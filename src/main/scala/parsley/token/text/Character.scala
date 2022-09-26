@@ -5,6 +5,7 @@ package parsley.token.text
 
 import parsley.Parsley
 import parsley.character.satisfy
+import parsley.token.{Impl, Basic, Unicode, NotRequired}
 
 /** This class defines a uniform interface for defining parsers for character
   * literals, independent of how whitespace should be handled after the literal.
@@ -105,14 +106,17 @@ private [text] object Character {
     final val MaxAscii: Int = 0x7f
     final val MaxExtendedAscii: Int = 0xff
 
-    def letter(terminalLead: Char, allowsAllSpace: Boolean, isGraphic: Char => Boolean): Char => Boolean = {
-        if (allowsAllSpace) c => c != terminalLead && (isGraphic(c) || parsley.character.isWhitespace(c))
-        else                c => c != terminalLead && isGraphic(c)
+    // FIXME: These need to be done properly!
+    def letter(terminalLead: Char, allowsAllSpace: Boolean, isGraphic: Impl): Impl = {
+        val Unicode(g) = isGraphic
+        if (allowsAllSpace) Unicode(c => c != terminalLead && (g(c) || parsley.character.isWhitespace(c.toChar)))
+        else                Unicode(c => c != terminalLead && g(c))
     }
 
-    def letter(terminalLead: Char, escapeLead: Char, allowsAllSpace: Boolean, isGraphic: Char => Boolean): Char => Boolean = {
-        if (allowsAllSpace) c => c != terminalLead && c != escapeLead && (isGraphic(c) || parsley.character.isWhitespace(c))
-        else                c => c != terminalLead && c != escapeLead && isGraphic(c)
+    def letter(terminalLead: Char, escapeLead: Char, allowsAllSpace: Boolean, isGraphic: Impl): Impl = {
+        val Unicode(g) = isGraphic
+        if (allowsAllSpace) Unicode(c => c != terminalLead && c != escapeLead && (g(c) || parsley.character.isWhitespace(c.toChar)))
+        else                Unicode(c => c != terminalLead && c != escapeLead && g(c))
     }
 
     @inline def isSurrogatePair(high: Char, low: Char): Boolean = java.lang.Character.isSurrogatePair(high, low)
