@@ -214,7 +214,8 @@ import parsley.internal.deepembedding.singletons
   *                  the lexer.
   * @since 4.0.0
   */
-class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) { //lexer =>
+// TODO: remove
+class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
     /** TODO:
       *
       * @param desc the configuration for the lexer, specifying the lexical

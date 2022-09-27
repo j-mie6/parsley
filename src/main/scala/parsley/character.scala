@@ -124,6 +124,7 @@ object character {
       */
     def satisfy(pred: Char => Boolean): Parsley[Char] = new Parsley(new singletons.Satisfy(pred, None))
 
+    // TODO: document and optimise
     def satisfyUtf16(pred: Int => Boolean): Parsley[Int] = attempt {
         item.flatMap {
             case h if h.isHighSurrogate => item.collect {
@@ -372,6 +373,7 @@ object character {
         expr.infix.secretLeft1(fresh(new StringBuilder), pc, pf).map(_.toString)
     }
 
+    // TODO: document
     def stringOfManyUtf16(pc: Parsley[Int]): Parsley[String] = {
         val pf = pure(addCodepoint(_, _))
         // Can't use the regular foldLeft here, because we need a fresh StringBuilder each time.
@@ -405,6 +407,7 @@ object character {
         expr.infix.secretLeft1(pc.map(new StringBuilder += _), pc, pf).map(_.toString)
     }
 
+    // TODO: document
     def stringOfSomeUtf16(pc: Parsley[Int]): Parsley[String] = {
         val pf = pure(addCodepoint(_, _))
         // Can't use the regular foldLeft1 here, because we need a fresh StringBuilder each time.
