@@ -87,7 +87,7 @@ val PureVisible: CrossType = new CrossType {
 
     override def partiallySharedSrcDir(projectBase: File, platforms: Seq[Platform], conf: String): Option[File] = platforms match {
         case Seq(JVMPlatform, NativePlatform) => Some(projectBase.getParentFile / "jvm-native" / "src" / conf / "scala")
-        case Seq(JSPlatform, NativePlatform) => Some(projectBase.getParentFile / "js-native" / "src" / conf / "scala")
+        case Seq(JSPlatform, JVMPlatform) => Some(projectBase.getParentFile / "jvm-js" / "src" / conf / "scala")
         case _ => None
     }
   }

@@ -723,8 +723,8 @@ object character {
 
     private [parsley] def addCodepoint(sb: StringBuilder, codepoint: Int): StringBuilder = {
         if (Character.isSupplementaryCodePoint(codepoint)) {
-            sb += Character.highSurrogate(codepoint)
-            sb += Character.lowSurrogate(codepoint)
+            sb += XCharCompat.highSurrogate(codepoint)
+            sb += XCharCompat.lowSurrogate(codepoint)
         }
         else sb += codepoint.toChar
     }
