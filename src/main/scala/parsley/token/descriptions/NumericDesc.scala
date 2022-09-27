@@ -3,7 +3,7 @@
  */
 package parsley.token.descriptions.numeric
 
-import parsley.token.{Impl, NotRequired}
+import parsley.token.predicate.{CharPredicate, NotRequired}
 import parsley.token.numeric.Real
 
 /** This class, and its subtypes, describe whether or not the plus sign (`+`) is allowed

@@ -12,6 +12,7 @@ import parsley.token.names._
 import parsley.token.numeric._
 import parsley.token.text.{String => _, _}
 import parsley.token.symbol._
+import parsley.token.predicate._
 
 import parsley.internal.deepembedding.singletons
 
@@ -621,7 +622,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) { //l
           *       given parser fails having consumed input.
           * @since 4.0.0
           */
-        def alter[A](newSpace: Impl)(within: =>Parsley[A]): Parsley[A] = {
+        def alter[A](newSpace: CharPredicate)(within: =>Parsley[A]): Parsley[A] = {
             if (!desc.spaceDesc.whitespaceIsContextDependent) {
                 throw new UnsupportedOperationException("Whitespace cannot be altered unless `spaceDesc.whitespaceIsContextDependent` is true")
             }
@@ -639,7 +640,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) { //l
             else _whiteSpace
         }
 
-        private [Lexer] def whiteSpace(impl: Impl): Parsley[Unit] = impl match {
+        private [Lexer] def whiteSpace(impl: CharPredicate): Parsley[Unit] = impl match {
             case NotRequired => skipComments
             case Basic(ws) => new Parsley(new singletons.WhiteSpace(ws, desc.spaceDesc.commentStart, desc.spaceDesc.commentEnd,
                                                                         desc.spaceDesc.commentLine, desc.spaceDesc.nestedComments)).hide

@@ -9,7 +9,7 @@ package parsley.token.symbol
 import parsley.Parsley, Parsley.{attempt, notFollowedBy, pure, unit}
 import parsley.character.{char, string, strings}
 import parsley.errors.combinator.ErrorMethods
-import parsley.token.Basic
+import parsley.token.predicate.Basic
 import parsley.token.descriptions.{NameDesc, SymbolDesc}
 
 import parsley.internal.deepembedding.singletons

@@ -3,15 +3,12 @@
  */
 package parsley.token.descriptions
 
-import parsley.token.{Impl, NotRequired}
+import parsley.token.predicate.{CharPredicate, NotRequired}
 
-// TODO: I think it's important to move to proper unicode handling of these
-//       We'll want `Int => Boolean` functions instead of `Impl`, which should
-//       go.
-case class NameDesc (identifierStart: Impl,
-                     identifierLetter: Impl,
-                     operatorStart: Impl,
-                     operatorLetter: Impl)
+case class NameDesc (identifierStart: CharPredicate,
+                     identifierLetter: CharPredicate,
+                     operatorStart: CharPredicate,
+                     operatorLetter: CharPredicate)
 
 object NameDesc {
     val plain = NameDesc(NotRequired, NotRequired, NotRequired, NotRequired)

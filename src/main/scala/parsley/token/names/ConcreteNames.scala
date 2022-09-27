@@ -6,14 +6,13 @@ package parsley.token.names
 import parsley.Parsley, Parsley.{attempt, empty, pure}
 import parsley.character.{satisfy, satisfyUtf16, stringOfMany, stringOfManyUtf16}
 import parsley.errors.combinator.{amend, entrench, ErrorMethods, unexpected}
-import parsley.token.{Impl, Basic, Unicode, NotRequired}
+import parsley.token.predicate.{CharPredicate, Basic, Unicode, NotRequired}
 import parsley.token.descriptions.{NameDesc, SymbolDesc}
 import parsley.internal.deepembedding.singletons
 import parsley.implicits.zipped.Zipped2
-import parsley.token.NotRequired
 
 private [token] class ConcreteNames(nameDesc: NameDesc, symbolDesc: SymbolDesc) extends Names {
-    private def keyOrOp(startImpl: Impl, letterImpl: Impl, parser: =>Parsley[String], illegal: String => Boolean,
+    private def keyOrOp(startImpl: CharPredicate, letterImpl: CharPredicate, parser: =>Parsley[String], illegal: String => Boolean,
                         combinatorName: String, name: String, illegalName: String) = {
         (startImpl, letterImpl) match {
             case (Basic(start), Basic(letter)) => new Parsley(new singletons.NonSpecific(combinatorName, name, illegalName, start, letter, illegal))
@@ -27,12 +26,12 @@ private [token] class ConcreteNames(nameDesc: NameDesc, symbolDesc: SymbolDesc) 
                 }.label(name)
         }
     }
-    private def trailer(impl: Impl) = impl match {
+    private def trailer(impl: CharPredicate) = impl match {
         case Basic(letter) => stringOfMany(satisfy(letter))
         case Unicode(letter) => stringOfManyUtf16(satisfyUtf16(letter))
         case NotRequired => pure("")
     }
-    private def complete(start: Impl, letter: Impl) = start match {
+    private def complete(start: CharPredicate, letter: CharPredicate) = start match {
         case Basic(start) => (satisfy(start), trailer(letter)).zipped((c, cs) => s"$c$cs")
         case Unicode(start) => (satisfyUtf16(start), trailer(letter)).zipped { (c, cs) =>
             if (Character.isSupplementaryCodePoint(c)) s"${Character.highSurrogate(c)}${Character.lowSurrogate(c)}$cs"

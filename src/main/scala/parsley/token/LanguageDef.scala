@@ -3,6 +3,8 @@
  */
 package parsley.token
 
+import predicate._
+
 /**
   * This class is required to construct a TokenParser. It defines the various characteristics of the language to be
   * tokenised. Where a parameter can be either a `Set[Char]` or a `Parsley` object, prefer the `Set` where possible.
@@ -34,14 +36,14 @@ case class LanguageDef (commentStart: String,
                         commentEnd: String,
                         commentLine: String,
                         nestedComments: Boolean,
-                        identStart: Impl,
-                        identLetter: Impl,
-                        opStart: Impl,
-                        opLetter: Impl,
+                        identStart: CharPredicate,
+                        identLetter: CharPredicate,
+                        opStart: CharPredicate,
+                        opLetter: CharPredicate,
                         keywords: Set[String],
                         operators: Set[String],
                         caseSensitive: Boolean,
-                        space: Impl) {
+                        space: CharPredicate) {
     private [token] lazy val supportsComments = {
         val on = (commentStart.nonEmpty && commentEnd.nonEmpty) || commentLine.nonEmpty
         if (on && commentStart.nonEmpty && commentLine.startsWith(commentStart)) {

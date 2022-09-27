@@ -3,8 +3,6 @@
  */
 package parsley.token.descriptions
 
-import parsley.token.{Impl, NotRequired}
-
 case class LexicalDesc (nameDesc: NameDesc,
                         symbolDesc: SymbolDesc,
                         numericDesc: numeric.NumericDesc,

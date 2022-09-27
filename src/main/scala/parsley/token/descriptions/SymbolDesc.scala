@@ -3,8 +3,6 @@
  */
 package parsley.token.descriptions
 
-import parsley.token.{Impl, NotRequired}
-
 case class SymbolDesc (hardKeywords: Set[String],
                        hardOperators: Set[String],
                        caseSensitive: Boolean) {

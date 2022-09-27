@@ -5,7 +5,7 @@ package parsley.token.text
 
 import parsley.Parsley
 import parsley.character.satisfy
-import parsley.token.{Impl, Basic, Unicode, NotRequired}
+import parsley.token.predicate.{CharPredicate, Basic, Unicode, NotRequired}
 
 /** This class defines a uniform interface for defining parsers for character
   * literals, independent of how whitespace should be handled after the literal.
@@ -106,7 +106,7 @@ private [text] object Character {
     final val MaxAscii: Int = 0x7f
     final val MaxExtendedAscii: Int = 0xff
 
-    def letter(terminalLead: Char, allowsAllSpace: Boolean, isGraphic: Impl): Impl = isGraphic match {
+    def letter(terminalLead: Char, allowsAllSpace: Boolean, isGraphic: CharPredicate): CharPredicate = isGraphic match {
         case Unicode(g) if allowsAllSpace => Unicode(c => c != terminalLead.toInt && (g(c) || parsley.character.isWhitespace(c.toChar)))
         case Unicode(g)                   => Unicode(c => c != terminalLead.toInt && g(c))
         case Basic(g) if allowsAllSpace   => Basic(c => c != terminalLead && (g(c) || parsley.character.isWhitespace(c)))
@@ -114,7 +114,7 @@ private [text] object Character {
         case NotRequired                  => NotRequired
     }
 
-    def letter(terminalLead: Char, escapeLead: Char, allowsAllSpace: Boolean, isGraphic: Impl): Impl = letter(terminalLead, allowsAllSpace, isGraphic) match {
+    def letter(terminalLead: Char, escapeLead: Char, allowsAllSpace: Boolean, isGraphic: CharPredicate): CharPredicate = letter(terminalLead, allowsAllSpace, isGraphic) match {
         case Unicode(g)  => Unicode(c => c != escapeLead.toInt && g(c))
         case Basic(g)    => Basic(c => c != escapeLead && g(c))
         case NotRequired => NotRequired
@@ -125,7 +125,4 @@ private [text] object Character {
     @inline def toCodePoint(high: Char, low: Char): Int = java.lang.Character.toCodePoint(high, low)
     @inline def toChars(codepoint: Int): Array[Char] = java.lang.Character.toChars(codepoint)
     @inline def isValidCodePoint(codepoint: Int): Boolean = java.lang.Character.isValidCodePoint(codepoint)
-    @inline def isSupplementaryCodePoint(codepoint: Int): Boolean = java.lang.Character.isSupplementaryCodePoint(codepoint)
-    @inline def highSurrogate(codepoint: Int): Char = java.lang.Character.highSurrogate(codepoint)
-    @inline def lowSurrogate(codepoint: Int): Char = java.lang.Character.lowSurrogate(codepoint)
 }
