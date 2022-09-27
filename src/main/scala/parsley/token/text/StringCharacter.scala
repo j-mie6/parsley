@@ -4,12 +4,12 @@
 package parsley.token.text
 
 import parsley.Parsley, Parsley.empty
-import parsley.character.{satisfy, char, satisfyUtf16}
+import parsley.character.{char, satisfy, satisfyUtf16}
 import parsley.combinator.skipSome
 import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.character.charLift
-import parsley.token.predicate.{CharPredicate, Basic, Unicode, NotRequired}
 import parsley.token.descriptions.text.EscapeDesc
+import parsley.token.predicate.{Basic, CharPredicate, NotRequired, Unicode}
 
 private [token] abstract class StringCharacter {
     def apply(isLetter: CharPredicate): Parsley[Option[Int]]

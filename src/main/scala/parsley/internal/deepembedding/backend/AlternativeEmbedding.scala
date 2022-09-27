@@ -14,7 +14,7 @@ import parsley.internal.deepembedding.singletons._
 import parsley.internal.errors.{Desc, ExpectItem, ExpectRaw}
 import parsley.internal.machine.instructions
 
-import Choice._
+import Choice._ // scalastyle:ignore underscore.import
 import StrictParsley.InstrBuffer
 
 private [deepembedding] final class Choice[A](private [backend] val alt1: StrictParsley[A],

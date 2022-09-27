@@ -8,7 +8,6 @@ import parsley.character.{digit, hexDigit, octDigit, oneOf}
 import parsley.combinator.optional
 import parsley.extension.OperatorSugar
 import parsley.implicits.character.charLift
-import parsley.token._
 import parsley.token.descriptions.numeric.NumericDesc
 
 /** This class defines a uniform interface for defining parsers for integer

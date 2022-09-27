@@ -7,8 +7,8 @@ import parsley.Parsley, Parsley.attempt
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 import parsley.token.descriptions.numeric.NumericDesc
 
-import parsley.internal.deepembedding.singletons
 import parsley.internal.deepembedding.Sign.IntType
+import parsley.internal.deepembedding.singletons
 
 private [token] final class SignedInteger(desc: NumericDesc, unsigned: Integer) extends Integer(desc) {
     private val sign = new Parsley(new singletons.Sign[IntType.resultType](IntType, desc.positiveSign))

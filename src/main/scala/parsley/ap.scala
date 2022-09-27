@@ -1,3 +1,6 @@
+/* SPDX-FileCopyrightText: © 2021 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package parsley
 
 /** This module contains `ap1` through `ap22`, which allow for the application of a parser returning a function of arity `N` to `N` parsers.

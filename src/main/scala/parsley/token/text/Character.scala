@@ -5,7 +5,7 @@ package parsley.token.text
 
 import parsley.Parsley
 import parsley.character.satisfy
-import parsley.token.predicate.{CharPredicate, Basic, Unicode, NotRequired}
+import parsley.token.predicate.{Basic, CharPredicate, NotRequired, Unicode}
 
 /** This class defines a uniform interface for defining parsers for character
   * literals, independent of how whitespace should be handled after the literal.
@@ -114,10 +114,12 @@ private [text] object Character {
         case NotRequired                  => NotRequired
     }
 
-    def letter(terminalLead: Char, escapeLead: Char, allowsAllSpace: Boolean, isGraphic: CharPredicate): CharPredicate = letter(terminalLead, allowsAllSpace, isGraphic) match {
-        case Unicode(g)  => Unicode(c => c != escapeLead.toInt && g(c))
-        case Basic(g)    => Basic(c => c != escapeLead && g(c))
-        case NotRequired => NotRequired
+    def letter(terminalLead: Char, escapeLead: Char, allowsAllSpace: Boolean, isGraphic: CharPredicate): CharPredicate = {
+        letter(terminalLead, allowsAllSpace, isGraphic) match {
+            case Unicode(g)  => Unicode(c => c != escapeLead.toInt && g(c))
+            case Basic(g)    => Basic(c => c != escapeLead && g(c))
+            case NotRequired => NotRequired
+        }
     }
 
     @inline def isSurrogatePair(high: Char, low: Char): Boolean = java.lang.Character.isSurrogatePair(high, low)

@@ -12,10 +12,10 @@ import parsley.implicits.zipped.{Zipped2, Zipped3}
 import parsley.token.descriptions.numeric.NumericDesc
 
 private [token] final class UnsignedCombined(desc: NumericDesc, integer: Integer, rational: Real) extends Combined {
-    override lazy val decimal: Parsley[Either[BigInt, BigDecimal]] = (attempt(rational.decimal) <+> integer.decimal).map(_.swap)//ofRadix(10, 10, digit, oneOf('e', 'E'))
-    override lazy val hexadecimal: Parsley[Either[BigInt, BigDecimal]] = (attempt(rational.hexadecimal) <+> integer.hexadecimal).map(_.swap)//attempt('0' *> noZeroHexadecimal)
-    override lazy val octal: Parsley[Either[BigInt, BigDecimal]] = (attempt(rational.octal) <+> integer.octal).map(_.swap)//attempt('0' *> noZeroOctal)
-    override lazy val binary: Parsley[Either[BigInt, BigDecimal]] = (attempt(rational.binary) <+> integer.binary).map(_.swap)//attempt('0' *> noZeroBinary)
+    override lazy val decimal: Parsley[Either[BigInt, BigDecimal]] = (attempt(rational.decimal) <+> integer.decimal).map(_.swap)
+    override lazy val hexadecimal: Parsley[Either[BigInt, BigDecimal]] = (attempt(rational.hexadecimal) <+> integer.hexadecimal).map(_.swap)
+    override lazy val octal: Parsley[Either[BigInt, BigDecimal]] = (attempt(rational.octal) <+> integer.octal).map(_.swap)
+    override lazy val binary: Parsley[Either[BigInt, BigDecimal]] = (attempt(rational.binary) <+> integer.binary).map(_.swap)
     override lazy val number: Parsley[Either[BigInt, BigDecimal]] = (attempt(rational.number) <+> integer.number).map(_.swap)
 
     // FIXME: gross :( we should restructure this to be more reusable friendly

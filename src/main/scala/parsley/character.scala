@@ -7,7 +7,7 @@ import scala.annotation.switch
 import scala.collection.immutable.NumericRange
 
 import parsley.Parsley.{attempt, empty, fresh, pure}
-import parsley.combinator.{choice, skipMany, skip}
+import parsley.combinator.{choice, skip, skipMany}
 import parsley.errors.combinator.ErrorMethods
 
 import parsley.internal.deepembedding.{frontend, singletons}

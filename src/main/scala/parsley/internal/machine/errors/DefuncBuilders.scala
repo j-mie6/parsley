@@ -5,9 +5,9 @@ package parsley.internal.machine.errors
 
 import scala.collection.mutable
 
-import parsley.internal.errors.{EndOfInput, ErrorItem, FancyError, TrivialError, UnexpectItem, ExpectItem}
+import parsley.internal.errors.{EndOfInput, ErrorItem, ExpectItem, FancyError, TrivialError, UnexpectItem}
 
-import TrivialErrorBuilder.{NoItem, Other, Raw, BuilderUnexpectItem}
+import TrivialErrorBuilder.{BuilderUnexpectItem, NoItem, Other, Raw}
 
 /** When building a true `TrivialError` from a `TrivialDefuncError`, this builder is used to keep track of the
   * components that will make up the final error. This allows for more efficient construction of the object,

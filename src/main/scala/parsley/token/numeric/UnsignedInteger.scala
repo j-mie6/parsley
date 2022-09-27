@@ -8,7 +8,7 @@ import parsley.character.{digit, hexDigit, octDigit, oneOf}
 import parsley.combinator.{choice, optional}
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 import parsley.implicits.character.charLift
-import parsley.token.descriptions.numeric.{NumericDesc, BreakCharDesc}
+import parsley.token.descriptions.numeric.{BreakCharDesc, NumericDesc}
 
 private [token] final class UnsignedInteger(desc: NumericDesc) extends Integer(desc) {
     override lazy val decimal: Parsley[BigInt] = Generic.plainDecimal(desc)

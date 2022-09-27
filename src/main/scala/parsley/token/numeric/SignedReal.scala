@@ -1,3 +1,6 @@
+/* SPDX-FileCopyrightText: © 2022 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package parsley.token.numeric
 
 import parsley.Parsley, Parsley.attempt
@@ -7,8 +10,8 @@ import parsley.implicits.character.charLift
 import parsley.lift.lift2
 import parsley.token.descriptions.numeric.NumericDesc
 
-import parsley.internal.deepembedding.singletons
 import parsley.internal.deepembedding.Sign.DoubleType
+import parsley.internal.deepembedding.singletons
 
 private [token] final class SignedReal(desc: NumericDesc, unsigned: Real) extends Real {
     private val sign = new Parsley(new singletons.Sign[DoubleType.resultType](DoubleType, desc.positiveSign))

@@ -4,11 +4,11 @@
 package parsley.token.text
 
 import parsley.Parsley, Parsley.{attempt, empty, pure, unit}
-import parsley.character.{char, strings, digit, hexDigit, octDigit, bit}
+import parsley.character.{bit, char, digit, hexDigit, octDigit, strings}
 import parsley.combinator.{choice, ensure, option}
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 import parsley.implicits.zipped.Zipped2
-import parsley.token.descriptions.text.{EscapeDesc, NumericEscape, NumberOfDigits}
+import parsley.token.descriptions.text.{EscapeDesc, NumberOfDigits, NumericEscape}
 import parsley.token.numeric
 
 private [token] class Escape(desc: EscapeDesc) {
@@ -25,10 +25,11 @@ private [token] class Escape(desc: EscapeDesc) {
 
     private def boundedChar(p: Parsley[BigInt], maxValue: Int, prefix: Option[Char], radix: Int): Parsley[Int] =
         prefix.fold(unit)(c => char(c).void) *> amend {
-            val prefixString = prefix.fold("")(c => s"c")
+            val prefixString = prefix.fold("")(c => s"$c")
             entrench(p).collectMsg(n => Seq(
-                if (n > maxValue)
+                if (n > maxValue) {
                     s"\\$prefixString${n.toString(radix)} is greater than the maximum character of \\$prefixString${BigInt(maxValue).toString(radix)}"
+                }
                 else s"illegal unicode codepoint: \\$prefixString${n.toString(radix)}")) {
                 case n if n <= maxValue && Character.isValidCodePoint(n.toInt) => n.toInt
             }

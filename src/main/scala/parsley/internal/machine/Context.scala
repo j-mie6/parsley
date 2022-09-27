@@ -11,7 +11,7 @@ import parsley.Result
 import parsley.Success
 import parsley.errors.ErrorBuilder
 
-import parsley.internal.errors.{ExpectItem, Desc, LineBuilder}
+import parsley.internal.errors.{Desc, ExpectItem, LineBuilder}
 import parsley.internal.machine.errors.{
     ClassicExpectedError, ClassicExpectedErrorWithReason, ClassicFancyError, ClassicUnexpectedError, DefuncError,
     DefuncHints, EmptyHints, ErrorItemBuilder, TokenError

@@ -3,9 +3,9 @@
  */
 package parsley.errors.tokenextractors
 
-import parsley.errors.{ErrorBuilder, helpers, Named, Raw, Token, Width}
-
 import scala.collection.immutable.WrappedString
+
+import parsley.errors.{helpers, ErrorBuilder, Named, Raw, Token, Width}
 
 // Turn coverage off, because the tests have their own error builder
 // We might want to test this on its own though

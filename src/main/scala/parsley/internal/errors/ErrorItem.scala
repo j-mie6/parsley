@@ -4,7 +4,6 @@
 package parsley.internal.errors
 
 import parsley.XAssert._
-
 import parsley.errors, errors.ErrorBuilder
 
 private [internal] sealed abstract class ErrorItem {

@@ -6,12 +6,13 @@ package parsley.token.text
 import scala.Predef.{String => ScalaString, _}
 
 import parsley.Parsley, Parsley.{fresh, pure, notFollowedBy}
-import parsley.combinator.{choice, between, skipMany, skipManyUntil}
+import parsley.combinator.{between, choice, skipMany, skipManyUntil}
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.token.predicate.CharPredicate
 
-private [token] final class ConcreteString(ends: Set[ScalaString], stringChar: StringCharacter, isGraphic: CharPredicate, allowsAllSpace: Boolean) extends String {
+private [token] final class ConcreteString(ends: Set[ScalaString], stringChar: StringCharacter, isGraphic: CharPredicate, allowsAllSpace: Boolean)
+    extends String {
     override lazy val unicode: Parsley[ScalaString] = choice(ends.view.map(makeStringParser).toSeq: _*) *> sbReg.gets(_.toString)
     override lazy val ascii: Parsley[ScalaString] = String.ensureAscii(unicode)
     override lazy val extendedAscii: Parsley[ScalaString] = String.ensureExtendedAscii(unicode)

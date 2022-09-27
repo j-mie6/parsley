@@ -3,13 +3,13 @@
  */
 package parsley.errors.tokenextractors
 
+import scala.collection.immutable.WrappedString
+
 import parsley.Parsley, Parsley.{attempt, lookAhead}
 import parsley.Success
-import parsley.character.{noneOf, newline, item}
-import parsley.combinator.{eof, manyUntil, someUntil, option, sequence, choice}
-import parsley.errors.{ErrorBuilder, helpers, Named, Raw, Token, UntilPos, Width}
-
-import scala.collection.immutable.WrappedString
+import parsley.character.{item, newline, noneOf}
+import parsley.combinator.{choice, eof, manyUntil, option, sequence, someUntil}
+import parsley.errors.{helpers, ErrorBuilder, Named, Raw, Token, UntilPos, Width}
 
 // Turn coverage off, because the tests have their own error builder
 // We might want to test this on its own though
@@ -38,7 +38,6 @@ trait LexToken { this: ErrorBuilder[_] =>
         val rawTok = lookAhead(someUntil(item, eof <|> choice(toks: _*))).map(_.mkString)
         rawTok <+> sequence(toks.map(p => option(lookAhead(p))): _*).map(_.flatten)
     }
-    
 
     /*def selectToken(maxLine: Int, maxCol: Int, rawToken: String, matchedToks: List[(String, (Int, Int))]): Token = {
         val toks = matchedToks.sortBy(_._2).map {

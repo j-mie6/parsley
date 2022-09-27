@@ -1,3 +1,6 @@
+/* SPDX-FileCopyrightText: © 2022 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package parsley.token.numeric
 
 import scala.annotation.implicitNotFound
@@ -47,14 +50,14 @@ private [numeric] sealed abstract class CanHold[N <: Bits, T] {
   * @since 4.0.0
   */
 abstract class LowPriorityImplicits private[numeric] {
-    import CanHold.can_hold_64_bits
+    import CanHold.can_hold_64_bits // scalastyle:ignore import.grouping
     // this being here means that Scala will look for it last, which allows default to Long for 64-bit
     /** Evidence that `BigInt` can store (at least) 64 bits of data.
       *
       * @note [[CanHold$.long_64 `long_64`]] is prioritised for implicit selection over this.
       * @since 4.0.0
       */
-    implicit val big_64: can_hold_64_bits[BigInt] = new CanHold[_64.type, BigInt] {
+    implicit val big_64: can_hold_64_bits[BigInt] = new CanHold[_64.type, BigInt] { // scalastyle:ignore field.name
         def fromBigInt(x: BigInt): BigInt = x
     }
 }
@@ -78,7 +81,7 @@ object CanHold extends LowPriorityImplicits {
       * @since 4.0.0
       */
     @implicitNotFound("The type ${T} cannot hold an 8-bit number without loss")
-    type can_hold_8_bits[T] = CanHold[_8.type, T]
+    type can_hold_8_bits[T] = CanHold[_8.type, T] // scalastyle:ignore field.name
     /** This type-constraint requires that the given type has enough bit-width
       * to store 16 bits of data.
       *
@@ -86,7 +89,7 @@ object CanHold extends LowPriorityImplicits {
       * @since 4.0.0
       */
     @implicitNotFound("The type ${T} cannot hold a 16-bit number without loss")
-    type can_hold_16_bits[T] = CanHold[_16.type, T]
+    type can_hold_16_bits[T] = CanHold[_16.type, T] // scalastyle:ignore field.name
     /** This type-constraint requires that the given type has enough bit-width
       * to store 32 bits of data.
       *
@@ -94,7 +97,7 @@ object CanHold extends LowPriorityImplicits {
       * @since 4.0.0
       */
     @implicitNotFound("The type ${T} cannot hold a 32-bit number without loss")
-    type can_hold_32_bits[T] = CanHold[_32.type, T]
+    type can_hold_32_bits[T] = CanHold[_32.type, T] // scalastyle:ignore field.name
     /** This type-constraint requires that the given type has enough bit-width
       * to store 64 bits of data.
       *
@@ -102,50 +105,53 @@ object CanHold extends LowPriorityImplicits {
       * @since 4.0.0
       */
     @implicitNotFound("The type ${T} cannot hold a 64-bit number without loss")
-    type can_hold_64_bits[T] = CanHold[_64.type, T]
+    type can_hold_64_bits[T] = CanHold[_64.type, T] // scalastyle:ignore field.name
 
     /** Provides evidence that a type that can store 16 bits can also store 8 bits.
       *
       * @since 4.0.0
       */
-    implicit def fits_8_16[T: can_hold_16_bits]: can_hold_8_bits[T] = implicitly[can_hold_16_bits[T]].asInstanceOf[can_hold_8_bits[T]]
+    implicit def fits_8_16[T: can_hold_16_bits]: can_hold_8_bits[T] = // scalastyle:ignore field.name
+        implicitly[can_hold_16_bits[T]].asInstanceOf[can_hold_8_bits[T]]
     /** Provides evidence that a type that can store 32 bits can also store 16 bits.
       *
       * @since 4.0.0
       */
-    implicit def fits_16_32[T: can_hold_32_bits]: can_hold_16_bits[T] = implicitly[can_hold_32_bits[T]].asInstanceOf[can_hold_16_bits[T]]
+    implicit def fits_16_32[T: can_hold_32_bits]: can_hold_16_bits[T] = // scalastyle:ignore field.name
+        implicitly[can_hold_32_bits[T]].asInstanceOf[can_hold_16_bits[T]]
     /** Provides evidence that a type that can store 64 bits can also store 32 bits.
       *
       * @since 4.0.0
       */
-    implicit def fits_32_64[T: can_hold_64_bits]: can_hold_32_bits[T] = implicitly[can_hold_64_bits[T]].asInstanceOf[can_hold_32_bits[T]]
+    implicit def fits_32_64[T: can_hold_64_bits]: can_hold_32_bits[T] = // scalastyle:ignore field.name
+        implicitly[can_hold_64_bits[T]].asInstanceOf[can_hold_32_bits[T]]
 
     /** Evidence that `Byte` can store 8 bits of data.
       *
       * @since 4.0.0
       */
-    implicit val byte_8: can_hold_8_bits[Byte] = new CanHold[_8.type, Byte] {
+    implicit val byte_8: can_hold_8_bits[Byte] = new CanHold[_8.type, Byte] { // scalastyle:ignore field.name
         def fromBigInt(x: BigInt): Byte = x.toByte
     }
     /** Evidence that `Short` can store 16 bits of data.
       *
       * @since 4.0.0
       */
-    implicit val short_16: can_hold_16_bits[Short] = new CanHold[_16.type, Short] {
+    implicit val short_16: can_hold_16_bits[Short] = new CanHold[_16.type, Short] { // scalastyle:ignore field.name
         def fromBigInt(x: BigInt): Short = x.toShort
     }
     /** Evidence that `Int` can store 32 bits of data.
       *
       * @since 4.0.0
       */
-    implicit val int_32: can_hold_32_bits[Int] = new CanHold[_32.type, Int] {
+    implicit val int_32: can_hold_32_bits[Int] = new CanHold[_32.type, Int] { // scalastyle:ignore field.name
         def fromBigInt(x: BigInt): Int = x.toInt
     }
     /** Evidence that `Long` can store 64 bits of data.
       *
       * @since 4.0.0
       */
-    implicit val long_64: can_hold_64_bits[Long] = new CanHold[_64.type, Long] {
+    implicit val long_64: can_hold_64_bits[Long] = new CanHold[_64.type, Long] { // scalastyle:ignore field.name
         def fromBigInt(x: BigInt): Long = x.toLong
     }
 }

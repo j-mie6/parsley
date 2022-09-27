@@ -3,8 +3,8 @@
  */
 package parsley.token.descriptions.numeric
 
-import parsley.token.predicate.{CharPredicate, NotRequired}
 import parsley.token.numeric.Real
+import parsley.token.predicate.{CharPredicate, NotRequired}
 
 /** This class, and its subtypes, describe whether or not the plus sign (`+`) is allowed
   * in a specific position.
@@ -63,7 +63,7 @@ object ExponentDesc {
                          base: Int,
                          positiveSign: PlusSignPresence
                         ) extends ExponentDesc {
-        if (chars.isEmpty) throw new IllegalArgumentException("The characters used for floating point exponents must not be empty")
+        if (chars.isEmpty) throw new IllegalArgumentException("The characters used for floating point exponents must not be empty") // scalastyle:ignore throw
     }
 }
 

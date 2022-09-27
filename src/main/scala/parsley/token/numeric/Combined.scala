@@ -5,7 +5,6 @@ package parsley.token.numeric
 
 import parsley.Parsley
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
-import parsley.token._
 
 /** This class defines a uniform interface for defining parsers for mixed kind
   * numeric literals, independent of how whitespace should be handled after the literal

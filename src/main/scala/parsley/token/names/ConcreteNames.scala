@@ -4,13 +4,14 @@
 package parsley.token.names
 
 import parsley.Parsley, Parsley.{attempt, empty, pure}
-import parsley.character.{satisfy, satisfyUtf16, stringOfMany, stringOfManyUtf16}
-import parsley.errors.combinator.{amend, entrench, ErrorMethods, unexpected}
-import parsley.token.predicate.{CharPredicate, Basic, Unicode, NotRequired}
-import parsley.token.descriptions.{NameDesc, SymbolDesc}
 import parsley.XCharCompat
-import parsley.internal.deepembedding.singletons
+import parsley.character.{satisfy, satisfyUtf16, stringOfMany, stringOfManyUtf16}
+import parsley.errors.combinator.{amend, entrench, unexpected, ErrorMethods}
 import parsley.implicits.zipped.Zipped2
+import parsley.token.descriptions.{NameDesc, SymbolDesc}
+import parsley.token.predicate.{Basic, CharPredicate, NotRequired, Unicode}
+
+import parsley.internal.deepembedding.singletons
 
 private [token] class ConcreteNames(nameDesc: NameDesc, symbolDesc: SymbolDesc) extends Names {
     private def keyOrOp(startImpl: CharPredicate, letterImpl: CharPredicate, parser: =>Parsley[String], illegal: String => Boolean,

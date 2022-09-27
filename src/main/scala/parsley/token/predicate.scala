@@ -25,7 +25,8 @@ object predicate {
 
     final case class Basic(predicate: Char => Boolean) extends CharPredicate {
         private [token] override def toBmp: Parsley[Char] = satisfy(predicate)
-        private [token] override def toUnicode: Parsley[Int] = throw new ParsleyException("Cannot parse unicode with a `Basic` `Char => Boolean` predicate")
+        private [token] override def toUnicode: Parsley[Int] =
+            throw new ParsleyException("Cannot parse unicode with a `Basic` `Char => Boolean` predicate") // scalastyle:ignore throw
         private [token] override def toNative: Parsley[Unit] = toBmp.void
     }
 

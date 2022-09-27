@@ -3,7 +3,7 @@
  */
 package parsley.token
 
-import predicate._
+import predicate.{CharPredicate, NotRequired}
 
 /**
   * This class is required to construct a TokenParser. It defines the various characteristics of the language to be

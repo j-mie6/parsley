@@ -1,3 +1,6 @@
+/* SPDX-FileCopyrightText: © 2022 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package parsley.token.descriptions.text
 
 import parsley.token.predicate.{CharPredicate, Unicode}
@@ -18,7 +21,7 @@ object NumberOfDigits {
       * @since 4.0.0
       */
     case class AtMost(n: Int) extends NumberOfDigits {
-        if (n <= 0) throw new IllegalArgumentException("AtMost may only be passed a number of digits greater than 0")
+        if (n <= 0) throw new IllegalArgumentException("AtMost may only be passed a number of digits greater than 0") // scalastyle:ignore throw
     }
     /** The number of digits in the literal must be one of the given values.
       *
@@ -27,8 +30,8 @@ object NumberOfDigits {
       * @since 4.0.0
       */
     case class Exactly(n0: Int, ns: Int*) extends NumberOfDigits {
-        if (n0 <= 0) throw new IllegalArgumentException("Exactly may only be passed a number of digits greater than 0")
-        if (ns.exists(_ <= 0)) throw new IllegalArgumentException("Exactly may only be passed a number of digits greater than 0")
+        if (n0 <= 0) throw new IllegalArgumentException("Exactly may only be passed a number of digits greater than 0") // scalastyle:ignore throw
+        if (ns.exists(_ <= 0)) throw new IllegalArgumentException("Exactly may only be passed a number of digits greater than 0") // scalastyle:ignore throw
     }
     /** There is no limit on the number of digits that may appear in this sequence.
       *
@@ -171,9 +174,9 @@ object EscapeDesc {
                                             "DEL" -> 0x007f) ++
                                             // Control escape sequences
                                             ('@' to '_').map(c => s"^$c" -> (c - '@')).toMap,
-                             decimalEscape = NumericEscape.Supported(prefix = None, NumberOfDigits.Unbounded, maxValue = 0x10ffff),
-                             hexadecimalEscape = NumericEscape.Supported(prefix = Some('x'), NumberOfDigits.Unbounded, maxValue = 0x10ffff),
-                             octalEscape = NumericEscape.Supported(prefix = Some('o'), NumberOfDigits.Unbounded, maxValue = 0x10ffff),
+                             decimalEscape = NumericEscape.Supported(prefix = None, NumberOfDigits.Unbounded, maxValue = Character.MAX_CODE_POINT),
+                             hexadecimalEscape = NumericEscape.Supported(prefix = Some('x'), NumberOfDigits.Unbounded, maxValue = Character.MAX_CODE_POINT),
+                             octalEscape = NumericEscape.Supported(prefix = Some('o'), NumberOfDigits.Unbounded, maxValue = Character.MAX_CODE_POINT),
                              binaryEscape = NumericEscape.Illegal,
                              emptyEscape = Some('&'),
                              gapsSupported = true)
@@ -193,8 +196,7 @@ case class TextDesc (escapeSequences: EscapeDesc,
                      characterLiteralEnd: Char,
                      stringEnds: Set[String],
                      multiStringEnds: Set[String],
-                     graphicCharacter: CharPredicate) {
-}
+                     graphicCharacter: CharPredicate)
 
 /** This object contains any preconfigured text definitions.
   *

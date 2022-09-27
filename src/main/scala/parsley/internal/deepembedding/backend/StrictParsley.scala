@@ -13,7 +13,7 @@ import parsley.internal.collection.mutable.ResizableArray
 import parsley.internal.deepembedding.ContOps, ContOps.{perform, result, ContAdapter}
 import parsley.internal.machine.instructions, instructions.{Instr, Label}
 
-import StrictParsley._
+import StrictParsley._ // scalastyle:ignore underscore.import
 
 /** This is the root type of the parsley "backend": it represents a combinator tree
   * where the join-points in the tree (recursive or otherwise) have been factored into

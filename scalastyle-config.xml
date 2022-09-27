@@ -227,7 +227,7 @@
     </check>
     <check enabled="true"  class="org.scalastyle.scalariform.UnderscoreImportChecker" level="warning">
         <parameters>
-            <parameter name="ignoreRegex">X(\w)*Compat|XAssert|singletons|lift</parameter>
+            <parameter name="ignoreRegex">X(\w)*Compat|XAssert|Predef|singletons|lift</parameter>
         </parameters>
     </check>
     <check enabled="true"  class="org.scalastyle.scalariform.UppercaseLChecker" level="warning"/>

@@ -8,11 +8,12 @@ import parsley.character.satisfyUtf16
 import parsley.combinator.{between, eof, sepBy, sepBy1, skipMany}
 import parsley.errors.combinator.ErrorMethods
 import parsley.registers.Reg
-import parsley.token.names._
-import parsley.token.numeric._
-import parsley.token.text.{String => _, _}
-import parsley.token.symbol._
-import parsley.token.predicate._
+import parsley.token.names.{ConcreteNames, LexemeNames, Names}
+import parsley.token.numeric.{Combined, Integer, LexemeCombined, LexemeInteger, LexemeReal, Real,
+                              SignedCombined, SignedInteger, SignedReal, UnsignedCombined, UnsignedInteger, UnsignedReal}
+import parsley.token.predicate.{Basic, CharPredicate, NotRequired, Unicode}
+import parsley.token.symbol.{ConcreteSymbol, LexemeSymbol, Symbol}
+import parsley.token.text.{Character, ConcreteCharacter, ConcreteString, EscapableCharacter, Escape, LexemeCharacter, LexemeString, RawCharacter}
 
 import parsley.internal.deepembedding.singletons
 
@@ -600,7 +601,9 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) { //l
           */
         def init: Parsley[Unit] = {
             if (!desc.spaceDesc.whitespaceIsContextDependent) {
-                throw new UnsupportedOperationException("Whitespace cannot be initialised unless `spaceDesc.whitespaceIsContextDependent` is true")
+                throw new UnsupportedOperationException( // scalastyle:ignore throw
+                    "Whitespace cannot be initialised unless `spaceDesc.whitespaceIsContextDependent` is true"
+                )
             }
             wsImpl.put(_whiteSpace)
         }
@@ -624,7 +627,9 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) { //l
           */
         def alter[A](newSpace: CharPredicate)(within: =>Parsley[A]): Parsley[A] = {
             if (!desc.spaceDesc.whitespaceIsContextDependent) {
-                throw new UnsupportedOperationException("Whitespace cannot be altered unless `spaceDesc.whitespaceIsContextDependent` is true")
+                throw new UnsupportedOperationException( // scalastyle:ignore throw
+                    "Whitespace cannot be altered unless `spaceDesc.whitespaceIsContextDependent` is true"
+                )
             }
             wsImpl.rollback(wsImpl.local(whiteSpace(newSpace))(within))
         }

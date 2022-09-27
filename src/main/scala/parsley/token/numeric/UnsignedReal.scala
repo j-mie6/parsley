@@ -1,3 +1,6 @@
+/* SPDX-FileCopyrightText: © 2021 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package parsley.token.numeric
 
 import parsley.Parsley, Parsley.{attempt, empty, pure, unit}
@@ -6,10 +9,10 @@ import parsley.combinator.optional
 import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.character.charLift
 import parsley.lift.lift2
-import parsley.token.descriptions.numeric.{NumericDesc, ExponentDesc, BreakCharDesc}
+import parsley.token.descriptions.numeric.{BreakCharDesc, ExponentDesc, NumericDesc}
 
-import parsley.internal.deepembedding.singletons
 import parsley.internal.deepembedding.Sign.DoubleType
+import parsley.internal.deepembedding.singletons
 
 private [token] final class UnsignedReal(desc: NumericDesc, natural: Integer) extends Real {
     override lazy val decimal: Parsley[BigDecimal] = attempt(ofRadix(10, digit))

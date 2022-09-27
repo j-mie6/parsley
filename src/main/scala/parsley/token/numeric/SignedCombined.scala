@@ -1,11 +1,14 @@
+/* SPDX-FileCopyrightText: © 2022 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package parsley.token.numeric
 
 import parsley.Parsley, Parsley.attempt
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 import parsley.token.descriptions.numeric.NumericDesc
 
-import parsley.internal.deepembedding.singletons
 import parsley.internal.deepembedding.Sign.CombinedType
+import parsley.internal.deepembedding.singletons
 
 private [token] final class SignedCombined(desc: NumericDesc, unsigned: Combined) extends Combined {
     private val sign = new Parsley(new singletons.Sign[CombinedType.resultType](CombinedType, desc.positiveSign))
