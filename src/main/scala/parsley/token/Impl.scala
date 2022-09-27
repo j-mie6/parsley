@@ -4,7 +4,7 @@
 package parsley.token
 
 import parsley.Parsley, Parsley.empty
-import parsley.character.{satisfy, satisfyUTF16}
+import parsley.character.{satisfy, satisfyUtf16}
 import parsley.exceptions.ParsleyException
 
 // TODO: Impl is outdated: there is very little reason to support parsers as configuration, and it
@@ -24,7 +24,7 @@ sealed abstract class Impl {
 
 final case class Unicode(pf: Int => Boolean) extends Impl {
     private [token] override def toBmp: Parsley[Char] = satisfy(c => pf(c.toInt) && !c.isHighSurrogate)
-    private [token] override def toUnicode: Parsley[Int] = satisfyUTF16(pf)
+    private [token] override def toUnicode: Parsley[Int] = satisfyUtf16(pf)
     private [token] override def toNative: Parsley[Unit] = toUnicode.void
 }
 

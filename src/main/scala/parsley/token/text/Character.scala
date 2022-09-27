@@ -106,17 +106,18 @@ private [text] object Character {
     final val MaxAscii: Int = 0x7f
     final val MaxExtendedAscii: Int = 0xff
 
-    // FIXME: These need to be done properly!
-    def letter(terminalLead: Char, allowsAllSpace: Boolean, isGraphic: Impl): Impl = {
-        val Unicode(g) = isGraphic
-        if (allowsAllSpace) Unicode(c => c != terminalLead && (g(c) || parsley.character.isWhitespace(c.toChar)))
-        else                Unicode(c => c != terminalLead && g(c))
+    def letter(terminalLead: Char, allowsAllSpace: Boolean, isGraphic: Impl): Impl = isGraphic match {
+        case Unicode(g) if allowsAllSpace => Unicode(c => c != terminalLead.toInt && (g(c) || parsley.character.isWhitespace(c.toChar)))
+        case Unicode(g)                   => Unicode(c => c != terminalLead.toInt && g(c))
+        case Basic(g) if allowsAllSpace   => Basic(c => c != terminalLead && (g(c) || parsley.character.isWhitespace(c)))
+        case Basic(g)                     => Basic(c => c != terminalLead && g(c))
+        case NotRequired                  => NotRequired
     }
 
-    def letter(terminalLead: Char, escapeLead: Char, allowsAllSpace: Boolean, isGraphic: Impl): Impl = {
-        val Unicode(g) = isGraphic
-        if (allowsAllSpace) Unicode(c => c != terminalLead && c != escapeLead && (g(c) || parsley.character.isWhitespace(c.toChar)))
-        else                Unicode(c => c != terminalLead && c != escapeLead && g(c))
+    def letter(terminalLead: Char, escapeLead: Char, allowsAllSpace: Boolean, isGraphic: Impl): Impl = letter(terminalLead, allowsAllSpace, isGraphic) match {
+        case Unicode(g)  => Unicode(c => c != escapeLead.toInt && g(c))
+        case Basic(g)    => Basic(c => c != escapeLead && g(c))
+        case NotRequired => NotRequired
     }
 
     @inline def isSurrogatePair(high: Char, low: Char): Boolean = java.lang.Character.isSurrogatePair(high, low)
@@ -124,4 +125,7 @@ private [text] object Character {
     @inline def toCodePoint(high: Char, low: Char): Int = java.lang.Character.toCodePoint(high, low)
     @inline def toChars(codepoint: Int): Array[Char] = java.lang.Character.toChars(codepoint)
     @inline def isValidCodePoint(codepoint: Int): Boolean = java.lang.Character.isValidCodePoint(codepoint)
+    @inline def isSupplementaryCodePoint(codepoint: Int): Boolean = java.lang.Character.isSupplementaryCodePoint(codepoint)
+    @inline def highSurrogate(codepoint: Int): Char = java.lang.Character.highSurrogate(codepoint)
+    @inline def lowSurrogate(codepoint: Int): Char = java.lang.Character.lowSurrogate(codepoint)
 }

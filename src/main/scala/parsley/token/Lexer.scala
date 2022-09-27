@@ -4,6 +4,7 @@
 package parsley.token
 
 import parsley.Parsley, Parsley.{attempt, unit}
+import parsley.character.satisfyUtf16
 import parsley.combinator.{between, eof, sepBy, sepBy1, skipMany}
 import parsley.errors.combinator.ErrorMethods
 import parsley.registers.Reg
@@ -642,13 +643,12 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) { //l
             case NotRequired => skipComments
             case Basic(ws) => new Parsley(new singletons.WhiteSpace(ws, desc.spaceDesc.commentStart, desc.spaceDesc.commentEnd,
                                                                         desc.spaceDesc.commentLine, desc.spaceDesc.nestedComments)).hide
-            case Unicode(ws) => ???
-            /*case Parser(space_) if desc.spaceDesc.supportsComments =>
+            case Unicode(ws) if desc.spaceDesc.supportsComments =>
                 skipMany(attempt(new Parsley(new singletons.Comment(desc.spaceDesc.commentStart,
                                                                     desc.spaceDesc.commentEnd,
                                                                     desc.spaceDesc.commentLine,
-                                                                    desc.spaceDesc.nestedComments))) <|> space_).hide
-            case Parser(space_) => skipMany(space_).hide*/
+                                                                    desc.spaceDesc.nestedComments))) <|> satisfyUtf16(ws)).hide
+            case Unicode(ws) => skipMany(satisfyUtf16(ws)).hide
         }
 
         /** TODO:

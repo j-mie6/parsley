@@ -35,6 +35,7 @@ private [token] class ConcreteSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc)
 
     //private val keywordMemo = concurrent.TrieMap.empty[String, Parsley[Unit]]
     override def softKeyword(name: String): Parsley[Unit] = /*keywordMemo.getOrElseUpdate(name, */nameDesc.identifierLetter match {
+        // TODO: this needs optimising for Unicode
         case Basic(letter) => new Parsley(new singletons.Specific("keyword", name, letter, symbolDesc.caseSensitive))
         case letter => attempt(caseString(name) *> notFollowedBy(identLetter).label(s"end of $name"))
     }//)

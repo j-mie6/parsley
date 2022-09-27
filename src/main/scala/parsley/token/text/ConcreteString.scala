@@ -22,7 +22,7 @@ private [token] final class ConcreteString(ends: Set[ScalaString], stringChar: S
         val terminalInit = terminal.charAt(0)
         val strChar = stringChar(Character.letter(terminalInit, allowsAllSpace, isGraphic))
         val pf = pure { (sb: StringBuilder, cpo: Option[Int]) =>
-            for (cp <- cpo) sb ++= Character.toChars(cp)
+            for (cp <- cpo) parsley.character.addCodepoint(sb, cp)
             sb
         }
         val content = parsley.expr.infix.secretLeft1(sbReg.get, strChar, pf)

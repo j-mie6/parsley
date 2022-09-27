@@ -3,13 +3,14 @@
  */
 package parsley.token.names
 
-import parsley.Parsley, Parsley.{attempt, pure}
-import parsley.character.stringOfMany
+import parsley.Parsley, Parsley.{attempt, empty, pure}
+import parsley.character.{satisfy, satisfyUtf16, stringOfMany, stringOfManyUtf16}
 import parsley.errors.combinator.{amend, entrench, ErrorMethods, unexpected}
-import parsley.lift.lift2
-import parsley.token.{Impl, Basic}
+import parsley.token.{Impl, Basic, Unicode, NotRequired}
 import parsley.token.descriptions.{NameDesc, SymbolDesc}
 import parsley.internal.deepembedding.singletons
+import parsley.implicits.zipped.Zipped2
+import parsley.token.NotRequired
 
 private [token] class ConcreteNames(nameDesc: NameDesc, symbolDesc: SymbolDesc) extends Names {
     private def keyOrOp(startImpl: Impl, letterImpl: Impl, parser: =>Parsley[String], illegal: String => Boolean,
@@ -26,13 +27,21 @@ private [token] class ConcreteNames(nameDesc: NameDesc, symbolDesc: SymbolDesc) 
                 }.label(name)
         }
     }
-    // FIXME: These need to account for unicodeness, not just BMP
-    private lazy val identStart = nameDesc.identifierStart.toBmp
-    private lazy val identLetter = nameDesc.identifierLetter.toBmp
-    private lazy val ident = lift2((c: Char, cs: String) => s"$c$cs", identStart, stringOfMany(identLetter))
-    private lazy val opStart = nameDesc.operatorStart.toBmp
-    private lazy val opLetter = nameDesc.operatorLetter.toBmp
-    private lazy val oper = lift2((c: Char, cs: String) => s"$c$cs", opStart, stringOfMany(opLetter))
+    private def trailer(impl: Impl) = impl match {
+        case Basic(letter) => stringOfMany(satisfy(letter))
+        case Unicode(letter) => stringOfManyUtf16(satisfyUtf16(letter))
+        case NotRequired => pure("")
+    }
+    private def complete(start: Impl, letter: Impl) = start match {
+        case Basic(start) => (satisfy(start), trailer(letter)).zipped((c, cs) => s"$c$cs")
+        case Unicode(start) => (satisfyUtf16(start), trailer(letter)).zipped { (c, cs) =>
+            if (Character.isSupplementaryCodePoint(c)) s"${Character.highSurrogate(c)}${Character.lowSurrogate(c)}$cs"
+            else s"${c.toChar}$cs"
+        }
+        case NotRequired => empty
+    }
+    private lazy val ident = complete(nameDesc.identifierStart, nameDesc.identifierLetter)
+    private lazy val oper = complete(nameDesc.operatorStart, nameDesc.operatorLetter)
     override lazy val identifier: Parsley[String] =
         keyOrOp(nameDesc.identifierStart, nameDesc.identifierLetter, ident, symbolDesc.isReservedName(_),  "identifier", "identifier", "keyword")
     override lazy val userDefinedOperator: Parsley[String] =

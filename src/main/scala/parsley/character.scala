@@ -124,7 +124,7 @@ object character {
       */
     def satisfy(pred: Char => Boolean): Parsley[Char] = new Parsley(new singletons.Satisfy(pred, None))
 
-    def satisfyUTF16(pred: Int => Boolean): Parsley[Int] = attempt {
+    def satisfyUtf16(pred: Int => Boolean): Parsley[Int] = attempt {
         item.flatMap {
             case h if h.isHighSurrogate => item.collect {
                 case l if Character.isSurrogatePair(h, l) && pred(Character.toCodePoint(h, l)) => Character.toCodePoint(h, l)
@@ -372,6 +372,12 @@ object character {
         expr.infix.secretLeft1(fresh(new StringBuilder), pc, pf).map(_.toString)
     }
 
+    def stringOfManyUtf16(pc: Parsley[Int]): Parsley[String] = {
+        val pf = pure(addCodepoint(_, _))
+        // Can't use the regular foldLeft here, because we need a fresh StringBuilder each time.
+        expr.infix.secretLeft1(fresh(new StringBuilder), pc, pf).map(_.toString)
+    }
+
     /** This combinator parses `pc` '''one''' or more times, collecting its results into a string.
       *
       * Parses `pc` repeatedly until it fails. The resulting characters are placed into a string,
@@ -397,6 +403,12 @@ object character {
         val pf = pure[(StringBuilder, Char) => StringBuilder](_ += _)
         // Can't use the regular foldLeft1 here, because we need a fresh StringBuilder each time.
         expr.infix.secretLeft1(pc.map(new StringBuilder += _), pc, pf).map(_.toString)
+    }
+
+    def stringOfSomeUtf16(pc: Parsley[Int]): Parsley[String] = {
+        val pf = pure(addCodepoint(_, _))
+        // Can't use the regular foldLeft1 here, because we need a fresh StringBuilder each time.
+        expr.infix.secretLeft1(pc.map(addCodepoint(new StringBuilder, _)), pc, pf).map(_.toString)
     }
 
     /** This combinator tries to parse each of the strings `strs` (and `str0`), until one of them succeeds.
@@ -708,4 +720,12 @@ object character {
 
     // Sue me.
     private def renderChar(c: Char): String = parsley.errors.helpers.renderRawString(s"$c")
+
+    private [parsley] def addCodepoint(sb: StringBuilder, codepoint: Int): StringBuilder = {
+        if (Character.isSupplementaryCodePoint(codepoint)) {
+            sb += Character.highSurrogate(codepoint)
+            sb += Character.lowSurrogate(codepoint)
+        }
+        else sb += codepoint.toChar
+    }
 }

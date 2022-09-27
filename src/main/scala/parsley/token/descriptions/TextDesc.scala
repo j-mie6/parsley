@@ -1,6 +1,6 @@
 package parsley.token.descriptions.text
 
-import parsley.token.{Impl, Unicode}
+import parsley.token.{Impl, Unicode, Basic}
 
 /** This class, and its subtypes, describe how many digits a numeric escape sequence is allowed.
   *
