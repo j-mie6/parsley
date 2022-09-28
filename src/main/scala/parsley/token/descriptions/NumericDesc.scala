@@ -63,7 +63,9 @@ object ExponentDesc {
                          base: Int,
                          positiveSign: PlusSignPresence
                         ) extends ExponentDesc {
+        // $COVERAGE-OFF$
         if (chars.isEmpty) throw new IllegalArgumentException("The characters used for floating point exponents must not be empty") // scalastyle:ignore throw
+        // $COVERAGE-ON$
     }
 }
 

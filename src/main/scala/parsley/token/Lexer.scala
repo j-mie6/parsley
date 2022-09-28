@@ -223,7 +223,9 @@ class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.
       * @since 4.0.0
       */
     def this(desc: descriptions.LexicalDesc) = this(desc, errors.ErrorConfig.default)
+    // $COVERAGE-OFF$
     @deprecated def this(lang: LanguageDef) = this(lang.toDesc)
+    // $COVERAGE-ON$
 
     /** This object is concerned with ''lexemes'': these are tokens that are
       * treated as "words", such that whitespace will be consumed after each
@@ -276,7 +278,9 @@ class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.
               * @since 4.0.0
               * @note alias for [[natural `natural`]].
               */
+            // $COVERAGE-OFF$
             def unsigned: parsley.token.numeric.Integer = natural
+            // $COVERAGE-ON$
             /** $natural
               *
               * @since 4.0.0
@@ -289,7 +293,9 @@ class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.
               * @note alias for [[integer `integer`]]
               * @see [[unsigned `unsigned`]] for a full description of signed integer configuration
               */
+            // $COVERAGE-OFF$
             def signed: parsley.token.numeric.Integer = integer
+            // $COVERAGE-ON$
             /** $integer
               *
               * @since 4.0.0
@@ -303,7 +309,9 @@ class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.
               * @note alias for [[real `real`]]
               * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
               */
+            // $COVERAGE-OFF$
             def floating: parsley.token.numeric.Real = real
+            // $COVERAGE-ON$
             private [Lexer] val positiveReal = new LexemeReal(nonlexeme.numeric.positiveReal, space.whiteSpace)
             /** $real
               *
@@ -463,7 +471,9 @@ class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.
               * @since 4.0.0
               * @note alias for [[natural `natural`]].
               */
+            // $COVERAGE-OFF$
             def unsigned: parsley.token.numeric.Integer = natural
+            // $COVERAGE-ON$
             /** $natural
               *
               * @since 4.0.0
@@ -476,7 +486,9 @@ class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.
               * @note alias for [[integer `integer`]]
               * @see [[unsigned `unsigned`]] for a full description of signed integer configuration
               */
+            // $COVERAGE-OFF$
             def signed: parsley.token.numeric.Integer = integer
+            // $COVERAGE-ON$
             /** $integer
               *
               * @since 4.0.0
@@ -490,7 +502,9 @@ class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.
               * @note alias for [[real `real`]]
               * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
               */
+            // $COVERAGE-OFF$
             def floating: parsley.token.numeric.Real = real
+            // $COVERAGE-ON$
             private [Lexer] val positiveReal = new UnsignedReal(desc.numericDesc, natural)
             /** $real
               *
@@ -602,9 +616,11 @@ class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.
           */
         def init: Parsley[Unit] = {
             if (!desc.spaceDesc.whitespaceIsContextDependent) {
+                // $COVERAGE-OFF$
                 throw new UnsupportedOperationException( // scalastyle:ignore throw
                     "Whitespace cannot be initialised unless `spaceDesc.whitespaceIsContextDependent` is true"
                 )
+                // $COVERAGE-ON$
             }
             wsImpl.put(_whiteSpace)
         }
@@ -628,9 +644,11 @@ class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.
           */
         def alter[A](newSpace: CharPredicate)(within: =>Parsley[A]): Parsley[A] = {
             if (!desc.spaceDesc.whitespaceIsContextDependent) {
+                // $COVERAGE-OFF$
                 throw new UnsupportedOperationException( // scalastyle:ignore throw
                     "Whitespace cannot be altered unless `spaceDesc.whitespaceIsContextDependent` is true"
                 )
+                // $COVERAGE-ON$
             }
             wsImpl.rollback(wsImpl.local(whiteSpace(newSpace))(within))
         }
@@ -672,6 +690,7 @@ class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.
     }
 
     // legacy API
+    // $COVERAGE-OFF$
     @deprecated("use `space.whiteSpace` instead")
     def whiteSpace: Parsley[Unit] = space.whiteSpace
     @deprecated("use `space.skipComments` instead")
@@ -746,4 +765,5 @@ class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.
     def commaSep[A](p: Parsley[A]): Parsley[List[A]] = lexeme.separators.commaSep(p)
     @deprecated("use `lexeme.separators.commaSep1` instead")
     def commaSep1[A](p: Parsley[A]): Parsley[List[A]] = lexeme.separators.commaSep1(p)
+    // $COVERAGE-ON$
 }
