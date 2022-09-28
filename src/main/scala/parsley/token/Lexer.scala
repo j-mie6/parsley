@@ -672,42 +672,78 @@ class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.
     }
 
     // legacy API
-    @deprecated def whiteSpace: Parsley[Unit] = space.whiteSpace
-    @deprecated def skipComments: Parsley[Unit] = space.skipComments
-    @deprecated def identifier: Parsley[String] = lexeme.names.identifier
-    @deprecated def keyword(name: String): Parsley[Unit] = lexeme.symbol.softKeyword(name)
-    @deprecated def userOp: Parsley[String] = lexeme.names.userDefinedOperator
-    @deprecated def operator(name: String): Parsley[Unit] = lexeme.symbol.softOperator(name)
-    @deprecated def operator_(name: String): Parsley[Unit] = nonlexeme.symbol.softOperator(name)
-    @deprecated def maxOp(name: String): Parsley[Unit] = lexeme.symbol.softOperator(name)
-    @deprecated def maxOp_(name: String): Parsley[Unit] = nonlexeme.symbol.softOperator(name)
-    @deprecated def charLiteral: Parsley[Char] = lexeme.text.character.basicMultilingualPlane
-    @deprecated def stringLiteral: Parsley[String] = lexeme.text.string.unicode
-    @deprecated def stringLiteral_ : Parsley[String] = nonlexeme.text.string.unicode
-    @deprecated def rawStringLiteral: Parsley[String] = nonlexeme.text.rawString.unicode
-    @deprecated def natural: Parsley[Int] = lexeme.numeric.natural.number.map(_.toInt)
-    @deprecated def integer: Parsley[Int] = lexeme.numeric.integer.number.map(_.toInt)
-    @deprecated def unsignedFloat: Parsley[Double] = lexeme.numeric.positiveReal.decimal.map(_.toDouble)
-    @deprecated def float: Parsley[Double] = lexeme.numeric.real.decimal.map(_.toDouble)
-    @deprecated def number: Parsley[Either[Int, Double]] = lexeme.numeric.signedCombined.number.map(_.fold(x => Left(x.toInt), y => Right(y.toDouble)))
-    @deprecated def naturalOrFloat: Parsley[Either[Int, Double]] =
-        lexeme.numeric.unsignedCombined.number.map(_.fold(x => Left(x.toInt), y => Right(y.toDouble)))
-    @deprecated def decimal: Parsley[Int] = lexeme.numeric.natural.decimal.map(_.toInt)
-    @deprecated def hexadecimal: Parsley[Int] = lexeme.numeric.natural.hexadecimal.map(_.toInt)
-    @deprecated def octal: Parsley[Int] = lexeme.numeric.natural.octal.map(_.toInt)
-    @deprecated def symbol(name: String): Parsley[String] = lexeme(parsley.character.string(name))
-    @deprecated def symbol(name: Char): Parsley[Char] = lexeme.symbol(name) #> name
-    @deprecated def symbol_(name: String): Parsley[String] = lexeme.symbol(name) #> name
-    @deprecated def parens[A](p: =>Parsley[A]): Parsley[A] = lexeme.enclosing.parens(p)
-    @deprecated def braces[A](p: =>Parsley[A]): Parsley[A] = lexeme.enclosing.braces(p)
-    @deprecated def angles[A](p: =>Parsley[A]): Parsley[A] = lexeme.enclosing.angles(p)
-    @deprecated def brackets[A](p: =>Parsley[A]): Parsley[A] = lexeme.enclosing.brackets(p)
-    @deprecated def semi: Parsley[Char] = lexeme.symbol.semi #> ';'
-    @deprecated def comma: Parsley[Char] = lexeme.symbol.comma #> ','
-    @deprecated def colon: Parsley[Char] = lexeme.symbol.colon #> ':'
-    @deprecated def dot: Parsley[Char] = lexeme.symbol.dot #> '.'
-    @deprecated def semiSep[A](p: Parsley[A]): Parsley[List[A]] = lexeme.separators.semiSep(p)
-    @deprecated def semiSep1[A](p: Parsley[A]): Parsley[List[A]] = lexeme.separators.semiSep1(p)
-    @deprecated def commaSep[A](p: Parsley[A]): Parsley[List[A]] = lexeme.separators.commaSep(p)
-    @deprecated def commaSep1[A](p: Parsley[A]): Parsley[List[A]] = lexeme.separators.commaSep1(p)
+    @deprecated("use `space.whiteSpace` instead")
+    def whiteSpace: Parsley[Unit] = space.whiteSpace
+    @deprecated("use `space.skipComments` instead")
+    def skipComments: Parsley[Unit] = space.skipComments
+    @deprecated("use `lexeme.names.identifier` instead")
+    def identifier: Parsley[String] = lexeme.names.identifier
+    @deprecated("use `lexeme.symbol.softKeyword` instead")
+    def keyword(name: String): Parsley[Unit] = lexeme.symbol.softKeyword(name)
+    @deprecated("use `lexeme.names.userDefinedOperator` instead")
+    def userOp: Parsley[String] = lexeme.names.userDefinedOperator
+    @deprecated("use `lexeme.symbol.softOperator` instead")
+    def operator(name: String): Parsley[Unit] = lexeme.symbol.softOperator(name)
+    @deprecated("use `nonlexeme.symbol.softOperator` instead")
+    def operator_(name: String): Parsley[Unit] = nonlexeme.symbol.softOperator(name)
+    @deprecated("use `lexeme.symbol.softOperator` instead")
+    def maxOp(name: String): Parsley[Unit] = lexeme.symbol.softOperator(name)
+    @deprecated("use `nonlexeme.symbol.softOperator` instead")
+    def maxOp_(name: String): Parsley[Unit] = nonlexeme.symbol.softOperator(name)
+    @deprecated("use `lexeme.text.character.basicMultilingualPlane` instead")
+    def charLiteral: Parsley[Char] = lexeme.text.character.basicMultilingualPlane
+    @deprecated("use `lexeme.text.string.unicode` instead")
+    def stringLiteral: Parsley[String] = lexeme.text.string.unicode
+    @deprecated("use `nonlexeme.text.string.unicode` instead")
+    def stringLiteral_ : Parsley[String] = nonlexeme.text.string.unicode
+    @deprecated("use `nonlexeme.text.rawString.unicode` instead")
+    def rawStringLiteral: Parsley[String] = nonlexeme.text.rawString.unicode
+    @deprecated("use `lexeme.numeric.natural.number.map(_.toInt)` instead")
+    def natural: Parsley[Int] = lexeme.numeric.natural.number.map(_.toInt)
+    @deprecated("use `lexeme.numeric.integer.numer.map(_.toInt)` instead")
+    def integer: Parsley[Int] = lexeme.numeric.integer.number.map(_.toInt)
+    @deprecated("use `lexeme.numeric.positiveReal.decimal.map(_.toDouble)` instead")
+    def unsignedFloat: Parsley[Double] = lexeme.numeric.positiveReal.decimal.map(_.toDouble)
+    @deprecated("use `lexeme.numeric.real.decimal.map(_.toDouble)` instead")
+    def float: Parsley[Double] = lexeme.numeric.real.decimal.map(_.toDouble)
+    @deprecated("use `lexeme.numeric.signedCombined.number.map(...)` instead")
+    def number: Parsley[Either[Int, Double]] = lexeme.numeric.signedCombined.number.map(_.fold(x => Left(x.toInt), y => Right(y.toDouble)))
+    @deprecated("use `lexeme.numeric.unsignedCombined.number.map(...)` instead")
+    def naturalOrFloat: Parsley[Either[Int, Double]] = lexeme.numeric.unsignedCombined.number.map(_.fold(x => Left(x.toInt), y => Right(y.toDouble)))
+    @deprecated("use `lexeme.numeric.natural.decimal.map(_.toInt)` instead")
+    def decimal: Parsley[Int] = lexeme.numeric.natural.decimal.map(_.toInt)
+    @deprecated("use `lexeme.numeric.natural.hexadecimal.map(_.toInt)` instead")
+    def hexadecimal: Parsley[Int] = lexeme.numeric.natural.hexadecimal.map(_.toInt)
+    @deprecated("use `lexeme.numeric.natural.octal.map(_.toInt)` instead")
+    def octal: Parsley[Int] = lexeme.numeric.natural.octal.map(_.toInt)
+    @deprecated("use `lexeme(parsley.character.string(name))` instead")
+    def symbol(name: String): Parsley[String] = lexeme(parsley.character.string(name))
+    @deprecated("use `lexeme.symbol(name) #> name` instead")
+    def symbol(name: Char): Parsley[Char] = lexeme.symbol(name) #> name
+    @deprecated("use `lexeme.symbol(name) #> name` instead")
+    def symbol_(name: String): Parsley[String] = lexeme.symbol(name) #> name
+    @deprecated("use `lexeme.enclosing.parens` instead")
+    def parens[A](p: =>Parsley[A]): Parsley[A] = lexeme.enclosing.parens(p)
+    @deprecated("use `lexeme.enclosing.braces` instead")
+    def braces[A](p: =>Parsley[A]): Parsley[A] = lexeme.enclosing.braces(p)
+    @deprecated("use `lexeme.enclosing.angles` instead")
+    def angles[A](p: =>Parsley[A]): Parsley[A] = lexeme.enclosing.angles(p)
+    @deprecated("use `lexeme.enclosing.brackets` instead")
+    def brackets[A](p: =>Parsley[A]): Parsley[A] = lexeme.enclosing.brackets(p)
+    @deprecated("use `lexeme.symbol.semi #> ';'` instead")
+    def semi: Parsley[Char] = lexeme.symbol.semi #> ';'
+    @deprecated("use `lexeme.symbol.comma #> ','` instead")
+    def comma: Parsley[Char] = lexeme.symbol.comma #> ','
+    @deprecated("use `lexeme.symbol.colon #> ':'` instead")
+    def colon: Parsley[Char] = lexeme.symbol.colon #> ':'
+    @deprecated("use `lexeme.symbol.dot #> '.'` instead")
+    def dot: Parsley[Char] = lexeme.symbol.dot #> '.'
+    @deprecated("use `lexeme.separators.semiSep` instead")
+    def semiSep[A](p: Parsley[A]): Parsley[List[A]] = lexeme.separators.semiSep(p)
+    @deprecated("use `lexeme.separators.semiSep1` instead")
+    def semiSep1[A](p: Parsley[A]): Parsley[List[A]] = lexeme.separators.semiSep1(p)
+    @deprecated("use `lexeme.separators.commaSep` instead")
+    def commaSep[A](p: Parsley[A]): Parsley[List[A]] = lexeme.separators.commaSep(p)
+    @deprecated("use `lexeme.separators.commaSep1` instead")
+    def commaSep1[A](p: Parsley[A]): Parsley[List[A]] = lexeme.separators.commaSep1(p)
 }
