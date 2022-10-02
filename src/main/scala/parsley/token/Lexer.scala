@@ -3,10 +3,12 @@
  */
 package parsley.token
 
+import scala.language.implicitConversions
+
 import parsley.Parsley, Parsley.{attempt, unit}
 import parsley.character.satisfyUtf16
 import parsley.combinator.{between, eof, sepBy, sepBy1, skipMany}
-import parsley.errors.combinator.ErrorMethods
+import parsley.errors.combinator.{ErrorMethods, markAsToken}
 import parsley.registers.Reg
 import parsley.token.names.{ConcreteNames, LexemeNames, Names}
 import parsley.token.numeric.{Combined, Integer, LexemeCombined, LexemeInteger, LexemeReal, Real,
@@ -16,6 +18,25 @@ import parsley.token.symbol.{ConcreteSymbol, LexemeSymbol, Symbol}
 import parsley.token.text.{Character, ConcreteCharacter, ConcreteString, EscapableCharacter, Escape, LexemeCharacter, LexemeString, RawCharacter}
 
 import parsley.internal.deepembedding.singletons
+
+/** This class is just to allow for a polymorphic apply for the lexeme versions of each lexing category
+  *
+  * It is designed to be extended by `Lexer#lexeme` only (or within the tests!)
+  */
+private [token] sealed abstract class Lexeme {
+    def apply[A](p: Parsley[A]): Parsley[A]
+}
+// $COVERAGE-OFF$
+// This is used for the unit testing only!
+private [token] object Lexeme {
+    implicit def fromSpace(spaces: Parsley[_]): Lexeme = new Lexeme {
+        def apply[A](p: Parsley[A]): Parsley[A] = markAsToken(p) <* spaces
+    }
+    val empty = new Lexeme {
+        def apply[A](p: Parsley[A]): Parsley[A] = markAsToken(p)
+    }
+}
+// $COVERAGE-ON$
 
 /** This class provides a large selection of functionality concerned
   * with lexing.
@@ -244,7 +265,7 @@ class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.
       *
       * @since 4.0.0
       */
-    object lexeme {
+    object lexeme extends Lexeme {
         /** This combinator turns a non-lexeme parser into a lexeme one by
           * ensuring whitespace is consumed after the parser.
           *
@@ -260,13 +281,13 @@ class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.
           * @param p the token parser to ensure consumes trailing whitespace.
           * @since 4.0.0
           */
-        def apply[A](p: Parsley[A]): Parsley[A] = p <* space.whiteSpace
+        def apply[A](p: Parsley[A]): Parsley[A] = markAsToken(p) <* space.whiteSpace
 
         /** $names
           *
           * @since 4.0.0
           */
-        val names: parsley.token.names.Names = new LexemeNames(nonlexeme.names, space.whiteSpace)
+        val names: parsley.token.names.Names = new LexemeNames(nonlexeme.names, this)
 
         /** $numeric
           *
@@ -285,7 +306,7 @@ class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.
               *
               * @since 4.0.0
               */
-            val natural: parsley.token.numeric.Integer = new LexemeInteger(nonlexeme.numeric.natural, space.whiteSpace)
+            val natural: parsley.token.numeric.Integer = new LexemeInteger(nonlexeme.numeric.natural, lexeme)
 
             /** $integer
               *
@@ -301,7 +322,7 @@ class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.
               * @since 4.0.0
               * @see [[natural `natural`]] for a full description of integer configuration
               */
-            val integer: parsley.token.numeric.Integer = new LexemeInteger(nonlexeme.numeric.integer, space.whiteSpace)
+            val integer: parsley.token.numeric.Integer = new LexemeInteger(nonlexeme.numeric.integer, lexeme)
 
             /** $real
               *
@@ -312,24 +333,24 @@ class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.
             // $COVERAGE-OFF$
             def floating: parsley.token.numeric.Real = real
             // $COVERAGE-ON$
-            private [Lexer] val positiveReal = new LexemeReal(nonlexeme.numeric.positiveReal, space.whiteSpace)
+            private [Lexer] val positiveReal = new LexemeReal(nonlexeme.numeric.positiveReal, lexeme)
             /** $real
               *
               * @since 4.0.0
               * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
               */
-            val real: parsley.token.numeric.Real = new LexemeReal(nonlexeme.numeric.real, space.whiteSpace)
+            val real: parsley.token.numeric.Real = new LexemeReal(nonlexeme.numeric.real, lexeme)
 
             /** $unsignedCombined
               *
               * @since 4.0.0
               */
-            val unsignedCombined: parsley.token.numeric.Combined = new LexemeCombined(nonlexeme.numeric.unsignedCombined, space.whiteSpace)
+            val unsignedCombined: parsley.token.numeric.Combined = new LexemeCombined(nonlexeme.numeric.unsignedCombined, lexeme)
             /** $signedCombined
               *
               * @since 4.0.0
               */
-            val signedCombined: parsley.token.numeric.Combined = new LexemeCombined(nonlexeme.numeric.signedCombined, space.whiteSpace)
+            val signedCombined: parsley.token.numeric.Combined = new LexemeCombined(nonlexeme.numeric.signedCombined, lexeme)
         }
 
         /** $text
@@ -341,36 +362,36 @@ class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.
               *
               * @since 4.0.0
               */
-            val character: parsley.token.text.Character = new LexemeCharacter(nonlexeme.text.character, space.whiteSpace)
+            val character: parsley.token.text.Character = new LexemeCharacter(nonlexeme.text.character, lexeme)
             /** $string
               *
               * @since 4.0.0
               */
-            val string: parsley.token.text.String = new LexemeString(nonlexeme.text.string, space.whiteSpace)
+            val string: parsley.token.text.String = new LexemeString(nonlexeme.text.string, lexeme)
             /** $string
               *
               * @note $raw
               * @since 4.0.0
               */
-            val rawString: parsley.token.text.String = new LexemeString(nonlexeme.text.rawString, space.whiteSpace)
+            val rawString: parsley.token.text.String = new LexemeString(nonlexeme.text.rawString, lexeme)
             /** $multiString
               *
               * @since 4.0.0
               */
-            val multiString: parsley.token.text.String = new LexemeString(nonlexeme.text.multiString, space.whiteSpace)
+            val multiString: parsley.token.text.String = new LexemeString(nonlexeme.text.multiString, lexeme)
             /** $multiString
               *
               * @note $raw
               * @since 4.0.0
               */
-            val rawMultiString: parsley.token.text.String = new LexemeString(nonlexeme.text.rawMultiString, space.whiteSpace)
+            val rawMultiString: parsley.token.text.String = new LexemeString(nonlexeme.text.rawMultiString, lexeme)
         }
 
         /** $symbol
           *
           * @since 4.0.0
           */
-        val symbol: parsley.token.symbol.Symbol = new LexemeSymbol(nonlexeme.symbol, space.whiteSpace)
+        val symbol: parsley.token.symbol.Symbol = new LexemeSymbol(nonlexeme.symbol, this)
 
         /** This object contains helper combinators for parsing terms separated by
           * common symbols.

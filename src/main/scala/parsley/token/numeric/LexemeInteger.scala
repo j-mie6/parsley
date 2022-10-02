@@ -4,8 +4,9 @@
 package parsley.token.numeric
 
 import parsley.Parsley
+import parsley.token.Lexeme
 
-private [token] final class LexemeInteger(integer: Integer, ws: Parsley[_]) extends Integer(integer.desc) {
+private [token] final class LexemeInteger(integer: Integer, lexeme: Lexeme) extends Integer(integer.desc) {
     override lazy val decimal: Parsley[BigInt] = lexeme(integer.decimal)
     override lazy val hexadecimal: Parsley[BigInt] = lexeme(integer.hexadecimal)
     override lazy val octal: Parsley[BigInt] = lexeme(integer.octal)
@@ -20,6 +21,4 @@ private [token] final class LexemeInteger(integer: Integer, ws: Parsley[_]) exte
     override protected [numeric] def _octal: Parsley[BigInt] = integer.octal
     override protected [numeric] def _binary: Parsley[BigInt] = integer.binary
     override protected [numeric] def _number: Parsley[BigInt] = integer.number
-
-    private def lexeme[A](p: Parsley[A]) = p <* ws
 }

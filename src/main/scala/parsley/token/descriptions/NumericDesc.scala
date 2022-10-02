@@ -58,11 +58,11 @@ object ExponentDesc {
       * @param positiveSign are positive (`+`) signs allowed, required, or illegal in front of the exponent?
       * @since 4.0.0
       */
-    case class Supported(compulsory: Boolean,
-                         chars: Set[Char],
-                         base: Int,
-                         positiveSign: PlusSignPresence
-                        ) extends ExponentDesc {
+    final case class Supported(compulsory: Boolean,
+                               chars: Set[Char],
+                               base: Int,
+                               positiveSign: PlusSignPresence
+                              ) extends ExponentDesc {
         // $COVERAGE-OFF$
         if (chars.isEmpty) throw new IllegalArgumentException("The characters used for floating point exponents must not be empty") // scalastyle:ignore throw
         // $COVERAGE-ON$
@@ -90,7 +90,7 @@ object BreakCharDesc {
       * @param allowedAfterNonDecimalPrefix is it possible to write, say, `0x_300`?
       * @since 4.0.0
       */
-    case class Supported(breakChar: Char, allowedAfterNonDecimalPrefix: Boolean) extends BreakCharDesc
+    final case class Supported(breakChar: Char, allowedAfterNonDecimalPrefix: Boolean) extends BreakCharDesc
 }
 
 /** This class describes how numeric literals, in different bases, should be processed lexically.
@@ -120,28 +120,57 @@ object BreakCharDesc {
   * @param binaryExponentDesc $genericExp binary literals.
   * @since 4.0.0
   */
-case class NumericDesc (literalBreakChar: BreakCharDesc,
-                        leadingDotAllowed: Boolean,
-                        trailingDotAllowed: Boolean,
-                        leadingZerosAllowed: Boolean,
-                        positiveSign: PlusSignPresence,
-                        // generic number
-                        integerNumbersCanBeHexadecimal: Boolean,
-                        integerNumbersCanBeOctal: Boolean,
-                        integerNumbersCanBeBinary: Boolean,
-                        realNumbersCanBeHexadecimal: Boolean,
-                        realNumbersCanBeOctal: Boolean,
-                        realNumbersCanBeBinary: Boolean,
-                        // special literals
-                        hexadecimalLeads: Set[Char],
-                        octalLeads: Set[Char],
-                        binaryLeads: Set[Char],
-                        // exponents
-                        decimalExponentDesc: ExponentDesc,
-                        hexadecimalExponentDesc: ExponentDesc,
-                        octalExponentDesc: ExponentDesc,
-                        binaryExponentDesc: ExponentDesc
-                       ) {
+final case class NumericDesc (literalBreakChar: BreakCharDesc,
+                              leadingDotAllowed: Boolean,
+                              trailingDotAllowed: Boolean,
+                              leadingZerosAllowed: Boolean,
+                              positiveSign: PlusSignPresence,
+                              // generic number
+                              integerNumbersCanBeHexadecimal: Boolean,
+                              integerNumbersCanBeOctal: Boolean,
+                              integerNumbersCanBeBinary: Boolean,
+                              realNumbersCanBeHexadecimal: Boolean,
+                              realNumbersCanBeOctal: Boolean,
+                              realNumbersCanBeBinary: Boolean,
+                              // special literals
+                              hexadecimalLeads: Set[Char],
+                              octalLeads: Set[Char],
+                              binaryLeads: Set[Char],
+                              // exponents
+                              decimalExponentDesc: ExponentDesc,
+                              hexadecimalExponentDesc: ExponentDesc,
+                              octalExponentDesc: ExponentDesc,
+                              binaryExponentDesc: ExponentDesc
+                             ) {
+    private def boolToInt(x: Boolean): Int = if (x) 1 else 0
+
+    // $COVERAGE-OFF$
+    locally {
+        val intHex = boolToInt(integerNumbersCanBeHexadecimal)
+        val intOct = boolToInt(integerNumbersCanBeOctal)
+        val intBin = boolToInt(integerNumbersCanBeBinary)
+        val realHex = boolToInt(realNumbersCanBeHexadecimal)
+        val realOct = boolToInt(realNumbersCanBeOctal)
+        val realBin = boolToInt(realNumbersCanBeBinary)
+        // There can, for either ints or real /number/s be at most 1 empty prefix special
+        // they can all not require prefixes when they are used explicitly
+        val emptyHex = boolToInt(hexadecimalLeads.isEmpty)
+        val emptyOct = boolToInt(octalLeads.isEmpty)
+        val emptyBin = boolToInt(binaryLeads.isEmpty)
+        val numEmptyInt = intHex * emptyHex + intOct * emptyOct + intBin * emptyBin
+        val numEmptyReal =  realHex * emptyHex + realOct * emptyOct + realBin * emptyBin
+        if (numEmptyInt > 1 || numEmptyReal > 1) {
+            val msg = "More than one of hexadecimal, octal, or binary do not use a prefix in integer or real numbers, this is not allowed as it is ambiguous"
+            throw new IllegalArgumentException(msg) // scalastyle:ignore throw
+        }
+
+        if (numEmptyInt + numEmptyReal > 0 && leadingZerosAllowed) {
+            val msg = "One of hexadecimal, octal, or binary do not use a prefix, so decimal numbers must not allow for leading zeros as it is ambiguous"
+            throw new IllegalArgumentException(msg) // scalastyle:ignore throw
+        }
+    }
+    // $COVERAGE-ON$
+
     private [token] def exponentDescForRadix(x: Int): ExponentDesc = (x: @unchecked) match {
         case 10 => decimalExponentDesc
         case 16 => hexadecimalExponentDesc

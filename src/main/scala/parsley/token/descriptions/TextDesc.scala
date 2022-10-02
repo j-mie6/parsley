@@ -20,7 +20,7 @@ object NumberOfDigits {
       * @param n the maximum (inclusive) number of digits allowed in the literal.
       * @since 4.0.0
       */
-    case class AtMost(n: Int) extends NumberOfDigits {
+    final case class AtMost(n: Int) extends NumberOfDigits {
         // $COVERAGE-OFF$
         if (n <= 0) throw new IllegalArgumentException("AtMost may only be passed a number of digits greater than 0") // scalastyle:ignore throw
         // $COVERAGE-ON$
@@ -31,7 +31,7 @@ object NumberOfDigits {
       * @param ns the other possible digit widths.
       * @since 4.0.0
       */
-    case class Exactly(n0: Int, ns: Int*) extends NumberOfDigits {
+    final case class Exactly(n0: Int, ns: Int*) extends NumberOfDigits {
         // $COVERAGE-OFF$
         if (n0 <= 0) throw new IllegalArgumentException("Exactly may only be passed a number of digits greater than 0") // scalastyle:ignore throw
         if (ns.exists(_ <= 0)) throw new IllegalArgumentException("Exactly may only be passed a number of digits greater than 0") // scalastyle:ignore throw
@@ -61,7 +61,7 @@ object NumericEscape {
       * @param maxValue the largest character value that can be expressed by this numeric escape.
       * @since 4.0.0
       */
-    case class Supported(prefix: Option[Char], numDigits: NumberOfDigits, maxValue: Int) extends NumericEscape
+    final case class Supported(prefix: Option[Char], numDigits: NumberOfDigits, maxValue: Int) extends NumericEscape
     /** Numeric literals are disallowed for this specific base.
       *
       * @since 4.0.0
@@ -91,17 +91,17 @@ object NumericEscape {
   *                      `escBegin` characters and this will all be ignored in the final string, such that `"hello \      \world"` is `"hello world"`.
   * @since 4.0.0
   */
-case class EscapeDesc (escBegin: Char,
-                       literals: Set[Char],
-                       singleMap: Map[Char, Int],
-                       multiMap: Map[String, Int],
-                       decimalEscape: NumericEscape,
-                       hexadecimalEscape: NumericEscape,
-                       octalEscape: NumericEscape,
-                       binaryEscape: NumericEscape,
-                       emptyEscape: Option[Char],
-                       gapsSupported: Boolean,
-                      ) {
+final case class EscapeDesc (escBegin: Char,
+                             literals: Set[Char],
+                             singleMap: Map[Char, Int],
+                             multiMap: Map[String, Int],
+                             decimalEscape: NumericEscape,
+                             hexadecimalEscape: NumericEscape,
+                             octalEscape: NumericEscape,
+                             binaryEscape: NumericEscape,
+                             emptyEscape: Option[Char],
+                             gapsSupported: Boolean,
+                            ) {
     // TODO: this needs to be a Radix, I think we'll need parsley.collection.immutable.Radix too
     private [token] val escMap = multiMap ++ literals.map(c => s"$c" -> c.toInt) ++ singleMap.map {
         case (k, v) => s"$k" -> v
@@ -196,11 +196,11 @@ object EscapeDesc {
   * @param graphicCharacter what characters can be written verbatim into a character or string literal.
   * @since 4.0.0
   */
-case class TextDesc (escapeSequences: EscapeDesc,
-                     characterLiteralEnd: Char,
-                     stringEnds: Set[String],
-                     multiStringEnds: Set[String],
-                     graphicCharacter: CharPredicate)
+final case class TextDesc (escapeSequences: EscapeDesc,
+                           characterLiteralEnd: Char,
+                           stringEnds: Set[String],
+                           multiStringEnds: Set[String],
+                           graphicCharacter: CharPredicate)
 
 /** This object contains any preconfigured text definitions.
   *

@@ -4,11 +4,12 @@
 package parsley.token.names
 
 import parsley.Parsley
+import parsley.token.Lexeme
+import parsley.token.predicate.CharPredicate
 
-private [token] class LexemeNames(names: Names, ws: Parsley[_]) extends Names {
+private [token] class LexemeNames(names: Names, lexeme: Lexeme) extends Names {
     override lazy val identifier: Parsley[String] = lexeme(names.identifier)
+    override def identifier(startChar: CharPredicate): Parsley[String] = lexeme(names.identifier(startChar))
     override lazy val userDefinedOperator: Parsley[String] = lexeme(names.userDefinedOperator)
-    override def userDefinedOperator(startChar: Option[Char], endChar: Option[Char]): Parsley[String] = lexeme(names.userDefinedOperator(startChar, endChar))
-
-    private def lexeme[A](p: Parsley[A]) = p <* ws
+    override def userDefinedOperator(startChar: CharPredicate, endChar: CharPredicate): Parsley[String] = lexeme(names.userDefinedOperator(startChar, endChar))
 }

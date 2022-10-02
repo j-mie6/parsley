@@ -1,7 +1,7 @@
 /* SPDX-FileCopyrightText: © 2020 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package parsley
+package parsley.token
 
 import parsley._
 import Parsley.col
@@ -247,48 +247,13 @@ class TokeniserTests extends ParsleyTest {
         }
     }
 
-    "natural" should "parse unsigned decimal numbers" in {
-        tokeniser.lexeme.numeric.natural.decimal.parse("0") should be (Success(0))
-        tokeniser.lexeme.numeric.natural.decimal.parse("1024") should be (Success(1024))
-        tokeniser.lexeme.numeric.natural.decimal.parse("1024  ") should be (Success(1024))
-        tokeniser.lexeme.numeric.natural.number.parse("0") should be (Success(0))
-        tokeniser.lexeme.numeric.natural.number.parse("1024") should be (Success(1024))
-        tokeniser.lexeme.numeric.natural.number.parse("1024  ") should be (Success(1024))
-    }
-    it should "parse unsigned hexadecimal numbers" in {
-        tokeniser.lexeme.numeric.natural.hexadecimal.parse("0x340") should be (Success(0x340))
-        tokeniser.lexeme.numeric.natural.hexadecimal.parse("0xFF") should be (Success(0xFF))
-        tokeniser.lexeme.numeric.natural.number.parse("0x340") should be (Success(0x340))
-        tokeniser.lexeme.numeric.natural.number.parse("0xFF") should be (Success(0xFF))
-    }
-    it should "parse unsigned octal numbers" in {
-        tokeniser.lexeme.numeric.natural.octal.parse("0o201") should be (Success(129))
-        tokeniser.lexeme.numeric.natural.number.parse("0o201") should be (Success(129))
-    }
-
-    "integer" should "parse signed naturals" in {
+    /*"integer" should "parse signed naturals" in {
         tokeniser.lexeme.numeric.integer.number.parse("10") should be (Success(10))
         tokeniser.lexeme.numeric.integer.number.parse("+10") should be (Success(10))
         tokeniser.lexeme.numeric.integer.number.parse("-0xb") should be (Success(-0xb))
     }
 
-    "decimal" should "parse unsigned integers in the decimal system" in {
-        tokeniser.lexeme.numeric.unsigned.decimal.parse("123") should be (Success(123))
-    }
-    it should "not succeed when given no input" in {
-        tokeniser.lexeme.numeric.unsigned.decimal.parse("") shouldBe a [Failure[_]]
-    }
-
-    "hexadecimal" should "parse unsigned hexadecimal integers" in {
-        tokeniser.lexeme.numeric.unsigned.hexadecimal.parse("0xff") should be (Success(255))
-    }
-    it should "require at least one digit" in {
-        tokeniser.lexeme.numeric.unsigned.hexadecimal.parse("") shouldBe a [Failure[_]]
-        tokeniser.lexeme.numeric.unsigned.hexadecimal.parse("0") shouldBe a [Failure[_]]
-        tokeniser.lexeme.numeric.unsigned.hexadecimal.parse("0x") shouldBe a [Failure[_]]
-    }
-
-    /*"unsignedFloat" should "parse unsigned fractional floats" in {
+    "unsignedFloat" should "parse unsigned fractional floats" in {
         tokeniser.lexemes.unsignedFloat.parse("3.142") should be (Success(3.142))
         tokeniser.lexemes.unsignedFloat.parse("0.23") should be (Success(0.23))
         tokeniser.lexemes.unsignedFloat.parse("10.0") should be (Success(10.0))
@@ -310,7 +275,7 @@ class TokeniserTests extends ParsleyTest {
         tokeniser.lexemes.unsignedFloat.parse("0.") shouldBe a [Failure[_]]
     }*/
 
-    "double" should "parse signed doubles" in {
+    /*"double" should "parse signed doubles" in {
         tokeniser.lexeme.numeric.real.double.parse("-3.142") should be (Success(-3.142))
         tokeniser.lexeme.numeric.real.double.parse("-3e-4") should be (Success(-3e-4))
         tokeniser.lexeme.numeric.real.double.parse("+1.2e2") should be (Success(1.2e2))
@@ -353,7 +318,7 @@ class TokeniserTests extends ParsleyTest {
         tokeniser.lexeme.numeric.signedCombined.number.parse("0x340") should be (Success(Left(0x340)))
         tokeniser.lexeme.numeric.signedCombined.number.parse("0xFF") should be (Success(Left(0xFF)))
         tokeniser.lexeme.numeric.signedCombined.number.parse("0o201 //ooh, octal") should be (Success(Left(129)))
-    }
+    }*/
 
     "skipComments" should "parse single-line comments" in {
         (tokeniser.space.skipComments <* eof).parse("// hello world!") should be (Success(()))

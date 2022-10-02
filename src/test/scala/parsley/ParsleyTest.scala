@@ -7,6 +7,8 @@ import org.scalatest.Assertions
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
+import parsley.combinator.eof
+import parsley.Result
 import parsley.errors.{DefaultErrorBuilder, ErrorBuilder, tokenextractors}
 import org.scalatest.Inside
 
@@ -71,4 +73,8 @@ abstract class ParsleyTest extends AnyFlatSpec with Matchers with Assertions wit
     val expectedEmpty = Symbol("expectedEmpty")
 
     implicit val eb: ErrorBuilder[TestError] = new TestErrorBuilder
+
+    implicit class FullParse[A](val p: Parsley[A]) {
+        def parseAll[Err: ErrorBuilder](input: String): Result[Err, A] = (p <* eof).parse(input)
+    }
 }

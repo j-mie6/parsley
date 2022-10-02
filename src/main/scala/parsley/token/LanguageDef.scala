@@ -4,7 +4,7 @@
 package parsley.token
 
 import predicate.{CharPredicate, NotRequired}
-
+// $COVERAGE-OFF$
 /**
   * This class is required to construct a TokenParser. It defines the various characteristics of the language to be
   * tokenised. Where a parameter can be either a `Set[Char]` or a `Parsley` object, prefer the `Set` where possible.
@@ -79,3 +79,4 @@ case class LanguageDef (commentStart: String,
 object LanguageDef {
     val plain = LanguageDef("", "", "", false, NotRequired, NotRequired, NotRequired, NotRequired, Set.empty, Set.empty, true, NotRequired)
 }
+// $COVERAGE-ON$

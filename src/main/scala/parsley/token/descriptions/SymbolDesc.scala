@@ -3,9 +3,9 @@
  */
 package parsley.token.descriptions
 
-case class SymbolDesc (hardKeywords: Set[String],
-                       hardOperators: Set[String],
-                       caseSensitive: Boolean) {
+final case class SymbolDesc (hardKeywords: Set[String],
+                             hardOperators: Set[String],
+                             caseSensitive: Boolean) {
     private [parsley] def isReservedName(name: String): Boolean =
         theReservedNames.contains(if (caseSensitive) name else name.toLowerCase)
     private lazy val theReservedNames =  if (caseSensitive) hardKeywords else hardKeywords.map(_.toLowerCase)

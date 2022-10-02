@@ -6,11 +6,10 @@ package parsley.token.text
 import scala.Predef.{String => ScalaString, _}
 
 import parsley.Parsley
+import parsley.token.Lexeme
 
-private [token] final class LexemeString(string: String, ws: Parsley[_]) extends String {
+private [token] final class LexemeString(string: String, lexeme: Lexeme) extends String {
     override lazy val unicode: Parsley[ScalaString] = lexeme(string.unicode)
     override lazy val ascii: Parsley[ScalaString] = lexeme(string.ascii)
     override lazy val extendedAscii: Parsley[ScalaString] = lexeme(string.extendedAscii)
-
-    private def lexeme[A](p: Parsley[A]) = p <* ws
 }

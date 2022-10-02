@@ -425,7 +425,7 @@ trait ErrorBuilder[+Err] {
     // It is not guaranteed to be more than amountOfInputParserWanted
     // We want to do the whitespace trimming in here, but need to be careful, because
     // `raw` will need to witness pure spaces
-    def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int): Token
+    def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token
 }
 
 /** Contains the default instance for the `ErrorBuilder` typeclass, which will be automatically available without import.

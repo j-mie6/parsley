@@ -74,6 +74,6 @@ private [token] class Escape(desc: EscapeDesc) {
     private val octalEscape = fromDesc(radix = 8, desc.octalEscape, numeric.Generic.zeroAllowedOctal, octDigit)
     private val binaryEscape = fromDesc(radix = 2, desc.binaryEscape, numeric.Generic.zeroAllowedBinary, bit)
     private val numericEscape = decimalEscape <|> hexadecimalEscape <|> octalEscape <|> binaryEscape
-    val escapeCode = escMapped <|> numericEscape
+    val escapeCode = (escMapped <|> numericEscape).label("end of escape sequence")
     val escapeChar = char(desc.escBegin) *> escapeCode
 }

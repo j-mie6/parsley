@@ -50,67 +50,69 @@ abstract class Real private[token] {
       */
     def number: Parsley[BigDecimal]
 
+    // $COVERAGE-OFF$
+    // It's not so important these are tested, they are just wrappers around the bottom ones
     /** TODO:
       *
       * @since 4.0.0
       * @note $disclaimer
       */
-    final def decimalFloatRounded: Parsley[Float] = decimal.map(_.toFloat)
+    @inline final def decimalFloatRounded: Parsley[Float] = decimal.map(_.toFloat)
     /** TODO:
       *
       * @since 4.0.0
       * @note $disclaimer
       */
-    final def hexadecimalFloatRounded: Parsley[Float] = hexadecimal.map(_.toFloat)
+    @inline final def hexadecimalFloatRounded: Parsley[Float] = hexadecimal.map(_.toFloat)
     /** TODO:
       *
       * @since 4.0.0
       * @note $disclaimer
       */
-    final def octalFloatRounded: Parsley[Float] = octal.map(_.toFloat)
+    @inline final def octalFloatRounded: Parsley[Float] = octal.map(_.toFloat)
     /** TODO:
       *
       * @since 4.0.0
       * @note $disclaimer
       */
-    final def binaryFloatRounded: Parsley[Float] = binary.map(_.toFloat)
+    @inline final def binaryFloatRounded: Parsley[Float] = binary.map(_.toFloat)
     /** TODO:
       *
       * @since 4.0.0
       * @note $disclaimer
       */
-    final def floatRounded: Parsley[Float] = number.map(_.toFloat)
+    @inline final def floatRounded: Parsley[Float] = number.map(_.toFloat)
 
     /** TODO:
       *
       * @since 4.0.0
       * @note $disclaimer
       */
-    final def decimalDoubleRounded: Parsley[Double] = decimal.map(_.toDouble)
+    @inline final def decimalDoubleRounded: Parsley[Double] = decimal.map(_.toDouble)
     /** TODO:
       *
       * @since 4.0.0
       * @note $disclaimer
       */
-    final def hexadecimalDoubleRounded: Parsley[Double] = hexadecimal.map(_.toDouble)
+    @inline final def hexadecimalDoubleRounded: Parsley[Double] = hexadecimal.map(_.toDouble)
     /** TODO:
       *
       * @since 4.0.0
       * @note $disclaimer
       */
-    final def octalDoubleRounded: Parsley[Double] = octal.map(_.toDouble)
+    @inline final def octalDoubleRounded: Parsley[Double] = octal.map(_.toDouble)
     /** TODO:
       *
       * @since 4.0.0
       * @note $disclaimer
       */
-    final def binaryDoubleRounded: Parsley[Double] = binary.map(_.toDouble)
+    @inline final def binaryDoubleRounded: Parsley[Double] = binary.map(_.toDouble)
     /** TODO:
       *
       * @since 4.0.0
       * @note $disclaimer
       */
-    final def doubleRounded: Parsley[Double] = number.map(_.toDouble)
+    @inline final def doubleRounded: Parsley[Double] = number.map(_.toDouble)
 
     /** TODO:
       *
@@ -173,6 +175,7 @@ abstract class Real private[token] {
       * @note $disclaimer
       */
     lazy val double: Parsley[Double] = ensureDouble(_number)
+    // $COVERAGE-ON$
 
     protected [numeric] def ensureFloat(number: Parsley[BigDecimal]): Parsley[Float] = amend {
         entrench(number).collectMsg(n => Seq(s"$n cannot be represented exactly as a IEEE 754 single-precision float")) {
@@ -186,9 +189,11 @@ abstract class Real private[token] {
         }
     }
 
+    // $COVERAGE-OFF$
     protected [numeric] def _decimal: Parsley[BigDecimal] = decimal
     protected [numeric] def _hexadecimal: Parsley[BigDecimal] = hexadecimal
     protected [numeric] def _octal: Parsley[BigDecimal] = octal
     protected [numeric] def _binary: Parsley[BigDecimal] = binary
     protected [numeric] def _number: Parsley[BigDecimal] = number
+    // $COVERAGE-ON$
 }

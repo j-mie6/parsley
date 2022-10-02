@@ -109,6 +109,20 @@ object combinator {
       */
     def entrench[A](p: Parsley[A]): Parsley[A] = new Parsley(new frontend.ErrorEntrench(p.internal))
 
+    /** This combinator marks any errors within the given parser as being ''lexical errors''.
+      *
+      * When an error is marked as a ''lexical error'', it sets a flag within the error that is
+      * passed to [[parsley.ErrorBuilder.unexpectedToken `ErrorBuilder.unexpectedToken`]]: this
+      * should be used to prevent `Lexer`-based token extraction from being performed on an error,
+      * since lexing errors cannot be the result of unexpected tokens.
+      *
+      * @param p the parser that serves as a token.
+      * @return a parser that parses `p` but ensures any error messages are marked as lexical errors.
+      * @since 4.0.0
+      * @group adj
+      */
+    private [parsley] def markAsToken[A](p: Parsley[A]): Parsley[A] = p
+
     /** This class exposes helpful combinators that are specialised for generating more helpful errors messages.
       *
       * This extension class operates on values that are convertible to parsers. It enables the use of

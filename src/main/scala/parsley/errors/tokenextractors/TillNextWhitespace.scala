@@ -13,7 +13,7 @@ import parsley.errors.{helpers, ErrorBuilder, Named, Raw, Token, Width}
 trait TillNextWhitespace { this: ErrorBuilder[_] =>
     def trimToParserDemand: Boolean
 
-    override def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int): Token = {
+    override def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token = {
       cs match {
         case helpers.WhitespaceOrUnprintable(name) => Named(name, Width(1))
         case cs: WrappedString =>

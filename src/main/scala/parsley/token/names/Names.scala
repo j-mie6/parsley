@@ -4,6 +4,7 @@
 package parsley.token.names
 
 import parsley.Parsley
+import parsley.token.predicate.CharPredicate
 
 /** TODO:
   *
@@ -28,11 +29,17 @@ abstract class Names private[token] {
       * @note $disclaimer
       * @since 4.0.0
       */
+    def identifier(startChar: CharPredicate): Parsley[String]
+    /** TODO:
+      *
+      * @note $disclaimer
+      * @since 4.0.0
+      */
     def userDefinedOperator: Parsley[String]
     /** TODO:
       *
       * @note $disclaimer
       * @since 4.0.0
       */
-    def userDefinedOperator(startChar: Option[Char], endChar: Option[Char]): Parsley[String]
+    def userDefinedOperator(startChar: CharPredicate, endChar: CharPredicate): Parsley[String]
 }

@@ -54,7 +54,7 @@ trait LexToken { this: ErrorBuilder[_] =>
         toks.last
     }
 
-    override def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int): Token = {
+    override def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token = {
         /*val Success((rawTokOpt, matchedToks)) = makeParser.parse {
             cs match {
                 case cs: WrappedString => cs.toString

@@ -5,13 +5,13 @@ package parsley.token.descriptions
 
 import parsley.token.predicate.{CharPredicate, NotRequired}
 
-case class SpaceDesc (commentStart: String,
-                      commentEnd: String,
-                      commentLine: String,
-                      commentLineAllowsEOF: Boolean,
-                      nestedComments: Boolean,
-                      space: CharPredicate,
-                      whitespaceIsContextDependent: Boolean) {
+final case class SpaceDesc (commentStart: String,
+                            commentEnd: String,
+                            commentLine: String,
+                            commentLineAllowsEOF: Boolean,
+                            nestedComments: Boolean,
+                            space: CharPredicate,
+                            whitespaceIsContextDependent: Boolean) {
     private [token] lazy val supportsComments = {
         val on = (commentStart.nonEmpty && commentEnd.nonEmpty) || commentLine.nonEmpty
         if (on && commentStart.nonEmpty && commentLine.startsWith(commentStart)) {

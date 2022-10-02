@@ -45,13 +45,21 @@ private [token] class ConcreteNames(nameDesc: NameDesc, symbolDesc: SymbolDesc) 
     private lazy val oper = complete(nameDesc.operatorStart, nameDesc.operatorLetter)
     override lazy val identifier: Parsley[String] =
         keyOrOp(nameDesc.identifierStart, nameDesc.identifierLetter, ident, symbolDesc.isReservedName(_),  "identifier", "identifier", "keyword")
+    override def identifier(startChar: CharPredicate): Parsley[String] = attempt {
+        amend {
+            entrench(identifier).unexpectedWhen {
+                case x if !startChar.startsWith(x) => s"identifier $x"
+            }
+        }
+    }
+
     override lazy val userDefinedOperator: Parsley[String] =
         keyOrOp(nameDesc.operatorStart, nameDesc.operatorLetter, oper, symbolDesc.isReservedOp(_), "userOp", "operator", "reserved operator")
 
-    def userDefinedOperator(startChar: Option[Char], endChar: Option[Char]): Parsley[String] = attempt {
+    def userDefinedOperator(startChar: CharPredicate, endChar: CharPredicate): Parsley[String] = attempt {
         amend {
             entrench(userDefinedOperator).unexpectedWhen {
-                case x if startChar.forall(x.head != _) && endChar.forall(x.last != _) => s"operator $x"
+                case x if !startChar.startsWith(x) || !endChar.endsWith(x) => s"operator $x"
             }
         }
     }

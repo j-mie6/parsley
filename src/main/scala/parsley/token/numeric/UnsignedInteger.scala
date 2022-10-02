@@ -39,7 +39,7 @@ private [token] final class UnsignedInteger(desc: NumericDesc) extends Integer(d
 
     val leadingBreakChar = desc.literalBreakChar match {
         case BreakCharDesc.NoBreakChar => unit
-        case BreakCharDesc.Supported(breakChar, allowedAfterNonDecimalPrefix) => when(allowedAfterNonDecimalPrefix, breakChar)
+        case BreakCharDesc.Supported(breakChar, allowedAfterNonDecimalPrefix) => when(allowedAfterNonDecimalPrefix, optional(breakChar))
     }
 
     // TODO: Using choice here will generate a jump table, which will be nicer for `number` (this requires enhancements to the jumptable optimisation)

@@ -11,7 +11,7 @@ import parsley.errors.{helpers, ErrorBuilder, Named, Raw, Token, Width}
 // We might want to test this on its own though
 // $COVERAGE-OFF$
 trait MatchParserDemand { this: ErrorBuilder[_] =>
-    override def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int): Token = {
+    override def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token = {
       cs match {
         case helpers.WhitespaceOrUnprintable(name) => Named(name, Width(1))
         // the default case will build a new string, if the underlying was already a string

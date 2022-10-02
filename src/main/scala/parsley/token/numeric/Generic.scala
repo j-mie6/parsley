@@ -39,7 +39,7 @@ private [token] object Generic {
         case BreakCharDesc.NoBreakChar if leadingZerosAllowed     => zeroAllowedDecimal
         case BreakCharDesc.NoBreakChar                            => zeroNotAllowedDecimal
         case BreakCharDesc.Supported(c, _) if leadingZerosAllowed => ofRadix(10, digit, c)
-        case BreakCharDesc.Supported(c, _)                        => ofRadix(10, digit - '0', digit, c)
+        case BreakCharDesc.Supported(c, _)                        => ofRadix(10, digit - '0', digit, c) <|> ('0' #> BigInt(0))
     }
 
     def plainHexadecimal(desc: NumericDesc): Parsley[BigInt] = plainHexadecimal(desc.leadingZerosAllowed, desc.literalBreakChar)
@@ -47,7 +47,7 @@ private [token] object Generic {
         case BreakCharDesc.NoBreakChar if leadingZerosAllowed     => zeroAllowedHexadecimal
         case BreakCharDesc.NoBreakChar                            => zeroNotAllowedHexadecimal
         case BreakCharDesc.Supported(c, _) if leadingZerosAllowed => ofRadix(16, hexDigit, c)
-        case BreakCharDesc.Supported(c, _)                        => ofRadix(16, hexDigit - '0', hexDigit, c)
+        case BreakCharDesc.Supported(c, _)                        => ofRadix(16, hexDigit - '0', hexDigit, c) <|> ('0' #> BigInt(0))
     }
 
     def plainOctal(desc: NumericDesc): Parsley[BigInt] = plainOctal(desc.leadingZerosAllowed, desc.literalBreakChar)
@@ -55,7 +55,7 @@ private [token] object Generic {
         case BreakCharDesc.NoBreakChar if leadingZerosAllowed     => zeroAllowedOctal
         case BreakCharDesc.NoBreakChar                            => zeroNotAllowedOctal
         case BreakCharDesc.Supported(c, _) if leadingZerosAllowed => ofRadix(8, octDigit, c)
-        case BreakCharDesc.Supported(c, _)                        => ofRadix(8, octDigit - '0', octDigit, c)
+        case BreakCharDesc.Supported(c, _)                        => ofRadix(8, octDigit - '0', octDigit, c) <|> ('0' #> BigInt(0))
     }
 
     def plainBinary(desc: NumericDesc): Parsley[BigInt] = plainBinary(desc.leadingZerosAllowed, desc.literalBreakChar)
@@ -63,6 +63,6 @@ private [token] object Generic {
         case BreakCharDesc.NoBreakChar if leadingZerosAllowed     => zeroAllowedBinary
         case BreakCharDesc.NoBreakChar                            => zeroNotAllowedBinary
         case BreakCharDesc.Supported(c, _) if leadingZerosAllowed => ofRadix(2, bit, c)
-        case BreakCharDesc.Supported(c, _)                        => ofRadix(2, '1', bit, c)
+        case BreakCharDesc.Supported(c, _)                        => ofRadix(2, '1', bit, c) <|> ('0' #> BigInt(0))
     }
 }

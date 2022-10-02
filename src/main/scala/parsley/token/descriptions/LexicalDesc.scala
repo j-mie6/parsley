@@ -3,11 +3,11 @@
  */
 package parsley.token.descriptions
 
-case class LexicalDesc (nameDesc: NameDesc,
-                        symbolDesc: SymbolDesc,
-                        numericDesc: numeric.NumericDesc,
-                        textDesc: text.TextDesc,
-                        spaceDesc: SpaceDesc)
+final case class LexicalDesc (nameDesc: NameDesc,
+                              symbolDesc: SymbolDesc,
+                              numericDesc: numeric.NumericDesc,
+                              textDesc: text.TextDesc,
+                              spaceDesc: SpaceDesc)
 
 /** This object contains any preconfigured lexical definitions.
   * @since 4.0.0
