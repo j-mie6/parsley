@@ -20,7 +20,7 @@ private [numeric] object _8 extends Bits {
 private [numeric] object _16 extends Bits {
     private [numeric] type self = _16.type
     private [numeric] val upperSigned = Short.MaxValue
-    private [numeric] val lowerSigned = Short.MaxValue
+    private [numeric] val lowerSigned = Short.MinValue
     private [numeric] val upperUnsigned = 0xffff
 }
 private [numeric] object _32 extends Bits {

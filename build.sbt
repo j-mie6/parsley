@@ -115,6 +115,8 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     Test / unmanagedSourceDirectories ++= extraSources(baseDirectory.value.getParentFile, "test", scalaVersion.value),
     Test / unmanagedSourceDirectories ++= extraSources(baseDirectory.value, "test", scalaVersion.value),
 
+    Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oI"),
+
     scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature"),
     scalacOptions ++= {
         if (scalaBinaryVersion.value == "3") Seq("-source:3.0-migration") else Seq.empty

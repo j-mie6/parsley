@@ -232,6 +232,7 @@ class Failure[Err] private [parsley] (_msg: =>Err) extends Result[Err, Nothing] 
     }
     override def equals(x: Any): Boolean = x != null && (x match {
         case x: Failure[_] => x.msg == msg
+        case _ => false
     })
     def copy(msg: =>Err = this.msg): Failure[Err] = new Failure(msg)
     // $COVERAGE-ON$

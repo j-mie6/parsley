@@ -247,13 +247,7 @@ class TokeniserTests extends ParsleyTest {
         }
     }
 
-    /*"integer" should "parse signed naturals" in {
-        tokeniser.lexeme.numeric.integer.number.parse("10") should be (Success(10))
-        tokeniser.lexeme.numeric.integer.number.parse("+10") should be (Success(10))
-        tokeniser.lexeme.numeric.integer.number.parse("-0xb") should be (Success(-0xb))
-    }
-
-    "unsignedFloat" should "parse unsigned fractional floats" in {
+    /*"unsignedFloat" should "parse unsigned fractional floats" in {
         tokeniser.lexemes.unsignedFloat.parse("3.142") should be (Success(3.142))
         tokeniser.lexemes.unsignedFloat.parse("0.23") should be (Success(0.23))
         tokeniser.lexemes.unsignedFloat.parse("10.0") should be (Success(10.0))
