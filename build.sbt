@@ -124,7 +124,7 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
 
     Compile / doc / scalacOptions ++= Seq("-groups", "-doc-root-content", s"${baseDirectory.value.getParentFile.getPath}/rootdoc.md"),
     Compile / doc / scalacOptions ++= {
-        if (scalaBinaryVersion.value == "3") Seq("-comment-syntax", "wiki") else Seq.empty
+        if (scalaBinaryVersion.value == "3") Seq("-comment-syntax:wiki") else Seq.empty
     },
   )
   .jvmSettings(
