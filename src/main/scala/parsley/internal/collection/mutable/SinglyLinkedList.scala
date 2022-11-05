@@ -65,7 +65,7 @@ private [internal] class SinglyLinkedList[A] private
     override def headOption: Option[A] = if (start != null) Some(start.x) else None
 
     override def iterator: LinkedListIterator[A] = new LinkedListIterator[A] {
-        override var current = start
+        var current = start
         override val end = SinglyLinkedList.this.end
     }
 }
