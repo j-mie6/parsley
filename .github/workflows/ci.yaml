@@ -35,7 +35,7 @@ jobs:
       fail-fast: false
       matrix:
         java: [adopt@1.8, adopt@1.11, openjdk@1.17]
-        scala: [2.12.15, 2.13.8, 3.1.2]
+        scala: [2.12.17, 2.13.10, 3.2.1]
         experimental: [false]
 
     steps:
@@ -91,7 +91,7 @@ jobs:
       fail-fast: false
       matrix:
         node: [16, 17]
-        scala: [2.12.15, 2.13.8, 3.1.2]
+        scala: [2.12.17, 2.13.10, 3.2.1]
 
     steps:
       - name: Checkout repository
@@ -148,7 +148,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        scala: [2.12.15, 2.13.8, 3.1.2]
+        scala: [2.12.17, 2.13.10, 3.2.1]
 
     steps:
       - name: Checkout repository
@@ -213,7 +213,7 @@ jobs:
       github.event_name == 'pull_request' && (needs.validate.result == 'success' || needs.validate.result == 'skipped'))
 
     env:
-      SCALA_VERSION: 2.13.8
+      SCALA_VERSION: 2.13.10
 
     steps:
       - name: Checkout repository
@@ -261,7 +261,7 @@ jobs:
        github.event_name == 'pull_request' && (needs.validate.result == 'success' || needs.validate.result == 'skipped'))
 
     env:
-      SCALA_VERSION: 2.13.7
+      SCALA_VERSION: 2.13.10
 
     steps:
       - name: Checkout repository
