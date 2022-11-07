@@ -5,11 +5,12 @@ package parsley.token.numeric
 
 import parsley.Parsley, Parsley.{attempt, empty, pure, unit}
 import parsley.character.{digit, hexDigit, octDigit, oneOf}
-import parsley.combinator.optional
-import parsley.errors.combinator.ErrorMethods
+import parsley.combinator, combinator.optional
+import parsley.errors.combinator.{ErrorMethods, amend, entrench}
 import parsley.implicits.character.charLift
 import parsley.lift.lift2
 import parsley.token.descriptions.numeric.{BreakCharDesc, ExponentDesc, NumericDesc}
+import parsley.registers.Reg
 
 import parsley.internal.deepembedding.Sign.DoubleType
 import parsley.internal.deepembedding.singletons
@@ -58,6 +59,10 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: Integer) ex
     // could allow integers to be parsed here according to configuration, the intOrFloat captures that case anyway
     private def ofRadix(radix: Int, digit: Parsley[Char]): Parsley[BigDecimal] = ofRadix(radix, digit, desc.leadingDotAllowed)
     private def ofRadix(radix: Int, digit: Parsley[Char], leadingDotAllowed: Boolean): Parsley[BigDecimal] = {
+        lazy val leadingHappened = Reg.make[Boolean]
+        lazy val _noDoubleDroppedZero = leadingHappened.get.filterOut {
+            case true => "a real number cannot drop both a leading and trailing zero"
+        }
         val expDesc = desc.exponentDescForRadix(radix)
         // TODO: this should reuse components of unsigned generic numbers, which will prevent duplication in a larger parser
         // At the moment, a break character will prevent reuse
@@ -69,12 +74,16 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: Integer) ex
         }
         val f = (d: Char, x: BigDecimal) => x/radix + d.asDigit
         def broken(c: Char) = lift2(f, digit, (optional(c) *> digit).foldRight[BigDecimal](0)(f))
-        val fractional = '.' *> {
-            desc.literalBreakChar match {
-                case BreakCharDesc.NoBreakChar if desc.trailingDotAllowed     => digit.foldRight[BigDecimal](0)(f)
-                case BreakCharDesc.NoBreakChar                                => digit.foldRight1[BigDecimal](0)(f)
-                case BreakCharDesc.Supported(c, _) if desc.trailingDotAllowed => broken(c) <|> pure[BigDecimal](0)
-                case BreakCharDesc.Supported(c, _)                            => broken(c)
+        val fractional = amend {
+            '.' *> {
+                desc.literalBreakChar match {
+                    case BreakCharDesc.NoBreakChar if desc.trailingDotAllowed     =>
+                        if (!leadingDotAllowed) entrench(digit.foldRight[BigDecimal](0)(f))
+                        else entrench(digit.foldRight1[BigDecimal](0)(f)) <|> _noDoubleDroppedZero *> pure[BigDecimal](0)
+                    case BreakCharDesc.NoBreakChar                                => entrench(digit.foldRight1[BigDecimal](0)(f))
+                    case BreakCharDesc.Supported(c, _) if desc.trailingDotAllowed => entrench(broken(c)) <|> when(leadingDotAllowed, _noDoubleDroppedZero) *> pure[BigDecimal](0)
+                    case BreakCharDesc.Supported(c, _)                            => entrench(broken(c))
+                }
             }
         }
         val (requiredExponent, exponent, base) = expDesc match {
@@ -83,14 +92,20 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: Integer) ex
                 val exponent = oneOf(exp) *> integer.decimal32
                 if (compulsory) (exponent, exponent, base)
                 else (exponent, exponent <|> pure(0), base)
-            case ExponentDesc.NoExponents => (empty, empty, 0)
+            // this can't fail, it has to be the identity exponent
+            case ExponentDesc.NoExponents => (pure(0), pure(0), 1)
         }
         val fractExponent =
                 (lift2((f: BigDecimal, e: Int) => (w: BigInt) => (BigDecimal(w) + f / radix) * BigDecimal(base).pow(e),
                        fractional,
                        exponent)
             <|> requiredExponent.map(e => (w: BigInt) => BigDecimal(w) * BigDecimal(base).pow(e)))
-        // FIXME: if a leading dot occurred, then a trailing dot cannot occur, otherwise . is a legal number
-        (if (leadingDotAllowed) (whole <|> pure(BigInt(0))) else whole) <**> fractExponent
+        val configuredWhole =
+            if (leadingDotAllowed) (
+                    when(desc.trailingDotAllowed, leadingHappened.put(false)) *> whole
+                <|> when(desc.trailingDotAllowed, leadingHappened.put(true)) *> pure(BigInt(0))
+            )
+            else whole
+        configuredWhole <**> fractExponent
     }
 }

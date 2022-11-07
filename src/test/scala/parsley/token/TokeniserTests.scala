@@ -247,37 +247,7 @@ class TokeniserTests extends ParsleyTest {
         }
     }
 
-    /*"unsignedFloat" should "parse unsigned fractional floats" in {
-        tokeniser.lexemes.unsignedFloat.parse("3.142") should be (Success(3.142))
-        tokeniser.lexemes.unsignedFloat.parse("0.23") should be (Success(0.23))
-        tokeniser.lexemes.unsignedFloat.parse("10.0") should be (Success(10.0))
-    }
-    it should "parse unsigned exponential floats" in {
-        tokeniser.lexemes.unsignedFloat.parse("3e10") should be (Success(3e10))
-        tokeniser.lexemes.unsignedFloat.parse("5E-4") should be (Success(5e-4))
-    }
-    it should "parse unsigned fractional exponential floats" in {
-        tokeniser.lexemes.unsignedFloat.parse("3.142e2") should be (Success(3.142e2))
-        tokeniser.lexemes.unsignedFloat.parse("0.23e1") should be (Success(0.23e1))
-        tokeniser.lexemes.unsignedFloat.parse("10.0e-5") should be (Success(10.0e-5))
-    }
-    it should "not parse integers" in {
-        tokeniser.lexemes.unsignedFloat.parse("3") shouldBe a [Failure[_]]
-    }
-    it should "not allow .1 or 1." in {
-        tokeniser.lexemes.unsignedFloat.parse(".0") shouldBe a [Failure[_]]
-        tokeniser.lexemes.unsignedFloat.parse("0.") shouldBe a [Failure[_]]
-    }*/
-
-    /*"double" should "parse signed doubles" in {
-        tokeniser.lexeme.numeric.real.double.parse("-3.142") should be (Success(-3.142))
-        tokeniser.lexeme.numeric.real.double.parse("-3e-4") should be (Success(-3e-4))
-        tokeniser.lexeme.numeric.real.double.parse("+1.2e2") should be (Success(1.2e2))
-        tokeniser.lexeme.numeric.real.double.parse("1.2") should be (Success(1.2))
-        tokeniser.lexeme.numeric.real.double.parse("0.2") should be (Success(0.2))
-    }
-
-    "naturalOrFloat" should "parse either naturals or unsigned floats" in {
+    /*"naturalOrFloat" should "parse either naturals or unsigned floats" in {
         tokeniser.lexeme.numeric.unsignedCombined.number.parse("3.142  /*what a sick number am I right*/") should be (Success(Right(3.142)))
         tokeniser.lexeme.numeric.unsignedCombined.number.parse("0.23") should be (Success(Right(0.23)))
         tokeniser.lexeme.numeric.unsignedCombined.number.parse("10.0\n") should be (Success(Right(10.0)))
