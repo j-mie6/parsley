@@ -72,6 +72,15 @@ abstract class ParsleyTest extends AnyFlatSpec with Matchers with Assertions wit
     val trivialError = Symbol("trivialError")
     val expectedEmpty = Symbol("expectedEmpty")
 
+    final def cases[A](p: Parsley[A], noEof: Boolean = false)(tests: (String, Option[A])*): Unit = {
+        for ((input, res) <- tests) res match {
+            case None if noEof => p.parse(input) shouldBe a [Failure[_]]
+            case None => p.parseAll(input) shouldBe a [Failure[_]]
+            case Some(x) if noEof => p.parse(input) shouldBe Success(x)
+            case Some(x)=> p.parseAll(input) shouldBe Success(x)
+        }
+    }
+
     implicit val eb: ErrorBuilder[TestError] = new TestErrorBuilder
 
     implicit class FullParse[A](val p: Parsley[A]) {

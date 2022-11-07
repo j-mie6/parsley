@@ -16,232 +16,215 @@ class UnsignedIntegerTests extends ParsleyTest {
     val withLeadingZeroAndBreakNotAfterPrefix = makeInteger(plain.copy(literalBreakChar = BreakCharDesc.Supported('_', false)))
     val withoutLeadingZeroAndBreakNotAfterPrefix = makeInteger(plain.copy(leadingZerosAllowed = false, literalBreakChar = BreakCharDesc.Supported('_', false)))
 
-    "unsigned decimal" should "parse valid decimal numbers of any size" in {
-        withLeadingZero.decimal.parseAll("0") shouldBe Success(0)
-        withLeadingZero.decimal.parseAll("0123") shouldBe Success(123)
-        withLeadingZero.decimal.parseAll("1230980485029") shouldBe Success(1230980485029L)
-        withLeadingZero.decimal.parseAll("123098048502992634339") shouldBe Success(BigInt("123098048502992634339"))
+    private def decimalCases(int: Integer)(tests: (String, Option[BigInt])*): Unit = cases(int.decimal)(tests: _*)
+    private def hexadecimalCases(int: Integer)(tests: (String, Option[BigInt])*): Unit = cases(int.hexadecimal)(tests: _*)
+    private def octalCases(int: Integer)(tests: (String, Option[BigInt])*): Unit = cases(int.octal)(tests: _*)
+    private def binaryCases(int: Integer)(tests: (String, Option[BigInt])*): Unit = cases(int.binary)(tests: _*)
+    private def numberCases(int: Integer)(tests: (String, Option[BigInt])*): Unit = cases(int.number)(tests: _*)
+
+    private def decimalCases(desc: NumericDesc)(tests: (String, Option[BigInt])*): Unit = decimalCases(makeInteger(desc))(tests: _*)
+    private def hexadecimalCases(desc: NumericDesc)(tests: (String, Option[BigInt])*): Unit = hexadecimalCases(makeInteger(desc))(tests: _*)
+    private def octalCases(desc: NumericDesc)(tests: (String, Option[BigInt])*): Unit = octalCases(makeInteger(desc))(tests: _*)
+    private def binaryCases(desc: NumericDesc)(tests: (String, Option[BigInt])*): Unit = binaryCases(makeInteger(desc))(tests: _*)
+    private def numberCases(desc: NumericDesc)(tests: (String, Option[BigInt])*): Unit = numberCases(makeInteger(desc))(tests: _*)
+
+    "unsigned decimal" should "parse valid decimal numbers of any size" in decimalCases(withLeadingZero)(
+        "0" -> Some(0),
+        "0123" -> Some(123),
+        "1230980485029" -> Some(1230980485029L),
+        "123098048502992634339" -> Some(BigInt("123098048502992634339")),
+    )
+
+    it should "not allow for leading zeros when configured" in decimalCases(withoutLeadingZero)(
+        "0" -> Some(0),
+        "01" -> None,
+        "1230980485029" -> Some(1230980485029L),
+    )
+
+    it should "allow for literal break characters when configured" in decimalCases(withLeadingZeroAndBreak)(
+        "0" -> Some(0),
+        "0123" -> Some(123),
+        "1230980485029" -> Some(1230980485029L),
+        "0_123" -> Some(123),
+        "123_0_980_485029" -> Some(1230980485029L),
+        "0_" -> None,
+        "_9" -> None,
+        "123_0_980__485029" -> None,
+    )
+
+    it should "allow for literal breaks without leading zeros when configured" in decimalCases(withoutLeadingZeroAndBreak)(
+        "0" -> Some(0),
+        "0123" -> None,
+        "1230980485029" -> Some(1230980485029L),
+        "0_123" -> None,
+        "1_123" -> Some(1123),
+        "123_0_980_485029" -> Some(1230980485029L),
+        "1_" -> None,
+        "_9" -> None,
+        "123_0_980__485029" -> None,
+    )
+
+    it should "require at least one digit" in decimalCases(withoutLeadingZeroAndBreak)("" -> None)
+
+    "unsigned hexadecimal" should "parse valid decimal numbers of any size" in hexadecimalCases(withLeadingZero)(
+        "0x0" -> Some(0),
+        "0x0123" -> Some(0x123),
+        "0x1230980485029" -> Some(0x1230980485029L),
+        "0x1230f8048502992634339" -> Some(BigInt("1230f8048502992634339", 16)),
+    )
+
+    it should "not allow for leading zeros when configured" in hexadecimalCases(withoutLeadingZero)(
+        "0x0" -> Some(0),
+        "0x01" -> None,
+        "0x12f0980485029" -> Some(0x12f0980485029L),
+    )
+
+    it should "allow for literal break characters when configured" in hexadecimalCases(withLeadingZeroAndBreak)(
+        "0x0" -> Some(0),
+        "0x0123" -> Some(0x123),
+        "0x1230980485029" -> Some(0x1230980485029L),
+        "0x0_123" -> Some(0x123),
+        "0x123_0_980_485029" -> Some(0x1230980485029L),
+        "0x0_" -> None,
+        "0_x9" -> None,
+        "0x_9" -> Some(9),
+        "0x123_0_980__485029" -> None,
+    )
+
+    it should "allow for literal breaks without leading zeros when configured" in hexadecimalCases(withoutLeadingZeroAndBreak)(
+        "0x0" -> Some(0),
+        "0x0123" -> None,
+        "0x1230980485029" -> Some(0x1230980485029L),
+        "0x0_123" -> None,
+        "0x1_123" -> Some(0x1123),
+        "0x123_0_980_485029" -> Some(0x1230980485029L),
+        "0x1_" -> None,
+        "0_x9" -> None,
+        "0x_9" -> Some(9),
+        "0x123_0_980__485029" -> None,
+    )
+
+    it should "not allow for literal break cases after prefix when configured" in {
+        hexadecimalCases(withLeadingZeroAndBreakNotAfterPrefix)("0x_9" -> None)
+        hexadecimalCases(withoutLeadingZeroAndBreakNotAfterPrefix)("0x_9" -> None)
     }
 
-    it should "not allow for leading zeros when configured" in {
-        withoutLeadingZero.decimal.parseAll("0") shouldBe Success(0)
-        withoutLeadingZero.decimal.parseAll("01") shouldBe a [Failure[_]]
-        withoutLeadingZero.decimal.parseAll("1230980485029") shouldBe Success(1230980485029L)
+    it should "require at least one digit" in hexadecimalCases(withoutLeadingZeroAndBreak)("0x" -> None)
+
+    "unsigned octal" should "parse valid decimal numbers of any size" in octalCases(withLeadingZero)(
+        "0o0" -> Some(0),
+        "0o0123" -> Some(BigInt("123", 8)),
+        "0o1230760465027" -> Some(BigInt("1230760465027", 8)),
+        "0o123036046502772634337" -> Some(BigInt("123036046502772634337", 8)),
+    )
+
+    it should "not allow for leading zeros when configured" in octalCases(withoutLeadingZero)(
+        "0o0" -> Some(0),
+        "0o01" -> None,
+        "0o1230760465027" -> Some(BigInt("1230760465027", 8)),
+    )
+
+    it should "allow for literal break characters when configured" in octalCases(withLeadingZeroAndBreak)(
+        "0o0" -> Some(0),
+        "0o0123" -> Some(BigInt("123", 8)),
+        "0o1230760465027" -> Some(BigInt("1230760465027", 8)),
+        "0o0_123" -> Some(BigInt("123", 8)),
+        "0o123_0_760_465027" -> Some(BigInt("1230760465027", 8)),
+        "0o0_" -> None,
+        "0_o7" -> None,
+        "0o_7" -> Some(7),
+        "0o123_0_760__465027" -> None,
+    )
+
+    it should "allow for literal breaks without leading zeros when configured" in octalCases(withoutLeadingZeroAndBreak)(
+        "0o0" -> Some(0),
+        "0o0123" -> None,
+        "0o1230760465027" -> Some(BigInt("1230760465027", 8)),
+        "0o0_123" -> None,
+        "0o1_123" -> Some(BigInt("1123", 8)),
+        "0o123_0_760_465027" -> Some(BigInt("1230760465027", 8)),
+        "0o1_" -> None,
+        "0_o7" -> None,
+        "0o_7" -> Some(7),
+        "0o123_0_760__465027" -> None,
+    )
+
+    it should "not allow for literal break cases after prefix when configured" in {
+        octalCases(withLeadingZeroAndBreakNotAfterPrefix)("0o_7" -> None)
+        octalCases(withoutLeadingZeroAndBreakNotAfterPrefix)("0o_7" -> None)
     }
 
-    it should "allow for literal break characters when configured" in {
-        withLeadingZeroAndBreak.decimal.parseAll("0") shouldBe Success(0)
-        withLeadingZeroAndBreak.decimal.parseAll("0123") shouldBe Success(123)
-        withLeadingZeroAndBreak.decimal.parseAll("1230980485029") shouldBe Success(1230980485029L)
-        withLeadingZeroAndBreak.decimal.parseAll("0_123") shouldBe Success(123)
-        withLeadingZeroAndBreak.decimal.parseAll("123_0_980_485029") shouldBe Success(1230980485029L)
-        info("a trailing break should not be permitted")
-        withLeadingZeroAndBreak.decimal.parseAll("0_") shouldBe a [Failure[_]]
-        info("a leading break should not be permitted")
-        withLeadingZeroAndBreak.decimal.parseAll("_9") shouldBe a [Failure[_]]
-        info("it should not allow for double breaks, however")
-        withLeadingZeroAndBreak.decimal.parseAll("123_0_980__485029") shouldBe a [Failure[_]]
+    it should "require at least one digit" in octalCases(withoutLeadingZeroAndBreak)("0o" -> None)
+
+    "unsigned binary" should "parse valid decimal numbers of any size" in binaryCases(withLeadingZero)(
+        "0b0" -> Some(0),
+        "0b01010" -> Some(BigInt("1010", 2)),
+        "0b10111" -> Some(BigInt("10111", 2)),
+    )
+
+    it should "not allow for leading zeros when configured" in binaryCases(withoutLeadingZero)(
+        "0b0" -> Some(0),
+        "0b01" -> None,
+        "0b10111" -> Some(BigInt("10111", 2)),
+    )
+
+    it should "allow for literal break characters when configured" in binaryCases(withLeadingZeroAndBreak)(
+        "0b0" -> Some(0),
+        "0b01010" -> Some(BigInt("1010", 2)),
+        "0b10111" -> Some(BigInt("10111", 2)),
+        "0b0_101" -> Some(BigInt("101", 2)),
+        "0b1010_0101_0001_1111" -> Some(0xa51f),
+        "0b0_" -> None,
+        "0_b1" -> None,
+        "0b_1" -> Some(1),
+        "0b1010_0101__0001_1111" -> None,
+    )
+
+    it should "allow for literal breaks without leading zeros when configured" in binaryCases(withoutLeadingZeroAndBreak)(
+        "0b0" -> Some(0),
+        "0b01010" -> None,
+        "0b10111" -> Some(BigInt("10111", 2)),
+        "0b0_101" -> None,
+        "0b1_101" -> Some(BigInt("1101", 2)),
+        "0b1010_0101_0001_1111" -> Some(0xa51f),
+        "0b1_" -> None,
+        "0_b1" -> None,
+        "0b_1" -> Some(1),
+        "0b1010_0101__0001_1111" -> None,
+    )
+
+    it should "not allow for literal break cases after prefix when configured" in {
+        binaryCases(withLeadingZeroAndBreakNotAfterPrefix)("0b_1" -> None)
+        binaryCases(withoutLeadingZeroAndBreakNotAfterPrefix)("0b_1" -> None)
     }
 
-    it should "allow for literal breaks without leading zeros when configured" in {
-        withoutLeadingZeroAndBreak.decimal.parseAll("0") shouldBe Success(0)
-        withoutLeadingZeroAndBreak.decimal.parseAll("0123") shouldBe a [Failure[_]]
-        withoutLeadingZeroAndBreak.decimal.parseAll("1230980485029") shouldBe Success(1230980485029L)
-        withoutLeadingZeroAndBreak.decimal.parseAll("0_123") shouldBe a [Failure[_]]
-        withoutLeadingZeroAndBreak.decimal.parseAll("1_123") shouldBe Success(1123)
-        withoutLeadingZeroAndBreak.decimal.parseAll("123_0_980_485029") shouldBe Success(1230980485029L)
-        info("a trailing break should not be permitted")
-        withoutLeadingZeroAndBreak.decimal.parseAll("1_") shouldBe a [Failure[_]]
-        info("a leading break should not be permitted")
-        withoutLeadingZeroAndBreak.decimal.parseAll("_9") shouldBe a [Failure[_]]
-        info("it should not allow for double breaks, however")
-        withoutLeadingZeroAndBreak.decimal.parseAll("123_0_980__485029") shouldBe a [Failure[_]]
-    }
-
-    it should "require at least one digit" in {
-        withoutLeadingZeroAndBreak.decimal.parseAll("") shouldBe a [Failure[_]]
-    }
-
-    "unsigned hexadecimal" should "parse valid decimal numbers of any size" in {
-        withLeadingZero.hexadecimal.parseAll("0x0") shouldBe Success(0)
-        withLeadingZero.hexadecimal.parseAll("0x0123") shouldBe Success(0x123)
-        withLeadingZero.hexadecimal.parseAll("0x1230980485029") shouldBe Success(0x1230980485029L)
-        withLeadingZero.hexadecimal.parseAll("0x1230f8048502992634339") shouldBe Success(BigInt("1230f8048502992634339", 16))
-    }
-
-    it should "not allow for leading zeros when configured" in {
-        withoutLeadingZero.hexadecimal.parseAll("0x0") shouldBe Success(0)
-        withoutLeadingZero.hexadecimal.parseAll("0x01") shouldBe a [Failure[_]]
-        withoutLeadingZero.hexadecimal.parseAll("0x12f0980485029") shouldBe Success(0x12f0980485029L)
-    }
-
-    it should "allow for literal break characters when configured" in {
-        withLeadingZeroAndBreak.hexadecimal.parseAll("0x0") shouldBe Success(0)
-        withLeadingZeroAndBreak.hexadecimal.parseAll("0x0123") shouldBe Success(0x123)
-        withLeadingZeroAndBreak.hexadecimal.parseAll("0x1230980485029") shouldBe Success(0x1230980485029L)
-        withLeadingZeroAndBreak.hexadecimal.parseAll("0x0_123") shouldBe Success(0x123)
-        withLeadingZeroAndBreak.hexadecimal.parseAll("0x123_0_980_485029") shouldBe Success(0x1230980485029L)
-        info("a trailing break should not be permitted")
-        withLeadingZeroAndBreak.hexadecimal.parseAll("0x0_") shouldBe a [Failure[_]]
-        info("a leading break should not be permitted")
-        withLeadingZeroAndBreak.hexadecimal.parseAll("0_x9") shouldBe a [Failure[_]]
-        info("not after the prefix when configured")
-        withLeadingZeroAndBreak.hexadecimal.parseAll("0x_9") shouldBe Success(9)
-        withLeadingZeroAndBreakNotAfterPrefix.hexadecimal.parseAll("0x_9") shouldBe a [Failure[_]]
-        info("it should not allow for double breaks, however")
-        withLeadingZeroAndBreak.hexadecimal.parseAll("0x123_0_980__485029") shouldBe a [Failure[_]]
-    }
-
-    it should "allow for literal breaks without leading zeros when configured" in {
-        withoutLeadingZeroAndBreak.hexadecimal.parseAll("0x0") shouldBe Success(0)
-        withoutLeadingZeroAndBreak.hexadecimal.parseAll("0x0123") shouldBe a [Failure[_]]
-        withoutLeadingZeroAndBreak.hexadecimal.parseAll("0x1230980485029") shouldBe Success(0x1230980485029L)
-        withoutLeadingZeroAndBreak.hexadecimal.parseAll("0x0_123") shouldBe a [Failure[_]]
-        withoutLeadingZeroAndBreak.hexadecimal.parseAll("0x1_123") shouldBe Success(0x1123)
-        withoutLeadingZeroAndBreak.hexadecimal.parseAll("0x123_0_980_485029") shouldBe Success(0x1230980485029L)
-        info("a trailing break should not be permitted")
-        withoutLeadingZeroAndBreak.hexadecimal.parseAll("0x1_") shouldBe a [Failure[_]]
-        info("a leading break should not be permitted")
-        withoutLeadingZeroAndBreak.hexadecimal.parseAll("0_x9") shouldBe a [Failure[_]]
-        info("not after the prefix when configured")
-        withoutLeadingZeroAndBreak.hexadecimal.parseAll("0x_9") shouldBe Success(9)
-        withoutLeadingZeroAndBreakNotAfterPrefix.hexadecimal.parseAll("0x_9") shouldBe a [Failure[_]]
-        info("it should not allow for double breaks, however")
-        withoutLeadingZeroAndBreak.hexadecimal.parseAll("0x123_0_980__485029") shouldBe a [Failure[_]]
-    }
-
-    it should "require at least one digit" in {
-        withoutLeadingZeroAndBreak.hexadecimal.parseAll("0x") shouldBe a [Failure[_]]
-    }
-
-    "unsigned octal" should "parse valid decimal numbers of any size" in {
-        withLeadingZero.octal.parseAll("0o0") shouldBe Success(0)
-        withLeadingZero.octal.parseAll("0o0123") shouldBe Success(BigInt("123", 8))
-        withLeadingZero.octal.parseAll("0o1230760465027") shouldBe Success(BigInt("1230760465027", 8))
-        withLeadingZero.octal.parseAll("0o123036046502772634337") shouldBe Success(BigInt("123036046502772634337", 8))
-    }
-
-    it should "not allow for leading zeros when configured" in {
-        withoutLeadingZero.octal.parseAll("0o0") shouldBe Success(0)
-        withoutLeadingZero.octal.parseAll("0o01") shouldBe a [Failure[_]]
-        withoutLeadingZero.octal.parseAll("0o1230760465027") shouldBe Success(BigInt("1230760465027", 8))
-    }
-
-    it should "allow for literal break characters when configured" in {
-        withLeadingZeroAndBreak.octal.parseAll("0o0") shouldBe Success(0)
-        withLeadingZeroAndBreak.octal.parseAll("0o0123") shouldBe Success(BigInt("123", 8))
-        withLeadingZeroAndBreak.octal.parseAll("0o1230760465027") shouldBe Success(BigInt("1230760465027", 8))
-        withLeadingZeroAndBreak.octal.parseAll("0o0_123") shouldBe Success(BigInt("123", 8))
-        withLeadingZeroAndBreak.octal.parseAll("0o123_0_760_465027") shouldBe Success(BigInt("1230760465027", 8))
-        info("a trailing break should not be permitted")
-        withLeadingZeroAndBreak.octal.parseAll("0o0_") shouldBe a [Failure[_]]
-        info("a leading break should not be permitted")
-        withLeadingZeroAndBreak.octal.parseAll("0_o7") shouldBe a [Failure[_]]
-        info("not after the prefix when configured")
-        withLeadingZeroAndBreak.octal.parseAll("0o_7") shouldBe Success(7)
-        withLeadingZeroAndBreakNotAfterPrefix.octal.parseAll("0o_7") shouldBe a [Failure[_]]
-        info("it should not allow for double breaks, however")
-        withLeadingZeroAndBreak.octal.parseAll("0o123_0_760__465027") shouldBe a [Failure[_]]
-    }
-
-    it should "allow for literal breaks without leading zeros when configured" in {
-        withoutLeadingZeroAndBreak.octal.parseAll("0o0") shouldBe Success(0)
-        withoutLeadingZeroAndBreak.octal.parseAll("0o0123") shouldBe a [Failure[_]]
-        withoutLeadingZeroAndBreak.octal.parseAll("0o1230760465027") shouldBe Success(BigInt("1230760465027", 8))
-        withoutLeadingZeroAndBreak.octal.parseAll("0o0_123") shouldBe a [Failure[_]]
-        withoutLeadingZeroAndBreak.octal.parseAll("0o1_123") shouldBe Success(BigInt("1123", 8))
-        withoutLeadingZeroAndBreak.octal.parseAll("0o123_0_760_465027") shouldBe Success(BigInt("1230760465027", 8))
-        info("a trailing break should not be permitted")
-        withoutLeadingZeroAndBreak.octal.parseAll("0o1_") shouldBe a [Failure[_]]
-        info("a leading break should not be permitted")
-        withoutLeadingZeroAndBreak.octal.parseAll("0_o7") shouldBe a [Failure[_]]
-        info("not after the prefix when configured")
-        withoutLeadingZeroAndBreak.octal.parseAll("0o_7") shouldBe Success(7)
-        withoutLeadingZeroAndBreakNotAfterPrefix.octal.parseAll("0o_7") shouldBe a [Failure[_]]
-        info("it should not allow for double breaks, however")
-        withoutLeadingZeroAndBreak.octal.parseAll("0o123_0_760__465027") shouldBe a [Failure[_]]
-    }
-
-    it should "require at least one digit" in {
-        withoutLeadingZeroAndBreak.octal.parseAll("0o") shouldBe a [Failure[_]]
-    }
-
-    "unsigned binary" should "parse valid decimal numbers of any size" in {
-        withLeadingZero.binary.parseAll("0b0") shouldBe Success(0)
-        withLeadingZero.binary.parseAll("0b01010") shouldBe Success(BigInt("1010", 2))
-        withLeadingZero.binary.parseAll("0b10111") shouldBe Success(BigInt("10111", 2))
-    }
-
-    it should "not allow for leading zeros when configured" in {
-        withoutLeadingZero.binary.parseAll("0b0") shouldBe Success(0)
-        withoutLeadingZero.binary.parseAll("0b01") shouldBe a [Failure[_]]
-        withoutLeadingZero.binary.parseAll("0b10111") shouldBe Success(BigInt("10111", 2))
-    }
-
-    it should "allow for literal break characters when configured" in {
-        withLeadingZeroAndBreak.binary.parseAll("0b0") shouldBe Success(0)
-        withLeadingZeroAndBreak.binary.parseAll("0b01010") shouldBe Success(BigInt("1010", 2))
-        withLeadingZeroAndBreak.binary.parseAll("0b10111") shouldBe Success(BigInt("10111", 2))
-        withLeadingZeroAndBreak.binary.parseAll("0b0_101") shouldBe Success(BigInt("101", 2))
-        withLeadingZeroAndBreak.binary.parseAll("0b1010_0101_0001_1111") shouldBe Success(0xa51f)
-        info("a trailing break should not be permitted")
-        withLeadingZeroAndBreak.binary.parseAll("0b0_") shouldBe a [Failure[_]]
-        info("a leading break should not be permitted")
-        withLeadingZeroAndBreak.binary.parseAll("0_b1") shouldBe a [Failure[_]]
-        info("not after the prefix when configured")
-        withLeadingZeroAndBreak.binary.parseAll("0b_1") shouldBe Success(1)
-        withLeadingZeroAndBreakNotAfterPrefix.binary.parseAll("0b_1") shouldBe a [Failure[_]]
-        info("it should not allow for double breaks, however")
-        withLeadingZeroAndBreak.binary.parseAll("0b1010_0101__0001_1111") shouldBe a [Failure[_]]
-    }
-
-    it should "allow for literal breaks without leading zeros when configured" in {
-        withoutLeadingZeroAndBreak.binary.parseAll("0b0") shouldBe Success(0)
-        withoutLeadingZeroAndBreak.binary.parseAll("0b01010") shouldBe a [Failure[_]]
-        withoutLeadingZeroAndBreak.binary.parseAll("0b10111") shouldBe Success(BigInt("10111", 2))
-        withoutLeadingZeroAndBreak.binary.parseAll("0b0_101") shouldBe a [Failure[_]]
-        withoutLeadingZeroAndBreak.binary.parseAll("0b1_101") shouldBe Success(BigInt("1101", 2))
-        withoutLeadingZeroAndBreak.binary.parseAll("0b1010_0101_0001_1111") shouldBe Success(0xa51f)
-        info("a trailing break should not be permitted")
-        withoutLeadingZeroAndBreak.binary.parseAll("0b1_") shouldBe a [Failure[_]]
-        info("a leading break should not be permitted")
-        withoutLeadingZeroAndBreak.binary.parseAll("0_b1") shouldBe a [Failure[_]]
-        info("not after the prefix when configured")
-        withoutLeadingZeroAndBreak.binary.parseAll("0b_1") shouldBe Success(1)
-        withoutLeadingZeroAndBreakNotAfterPrefix.binary.parseAll("0b_1") shouldBe a [Failure[_]]
-        info("it should not allow for double breaks, however")
-        withoutLeadingZeroAndBreak.binary.parseAll("0b1010_0101__0001_1111") shouldBe a [Failure[_]]
-    }
-
-    it should "require at least one digit" in {
-        withoutLeadingZeroAndBreak.binary.parseAll("0b") shouldBe a [Failure[_]]
-    }
+    it should "require at least one digit" in binaryCases(withoutLeadingZeroAndBreak)("0b" -> None)
 
     "prefixless numbers" should "be supported with a leading 0" in {
         val lex = makeInteger(plain.copy(leadingZerosAllowed = false, octalLeads = Set.empty))
-        lex.octal.parseAll("012") shouldBe Success(BigInt("12", 8))
-        lex.number.parseAll("130") shouldBe Success(130)
-        lex.number.parseAll("012") shouldBe Success(BigInt("12", 8))
+        octalCases(lex)("012" -> Some(BigInt("12", 8)))
+        numberCases(lex)("130" -> Some(130), "012" -> Some(BigInt("12", 8)))
     }
 
-    "number" should "support any of the different bases" in {
-        withoutLeadingZero.number.parseAll("123") shouldBe Success(123)
-        withoutLeadingZero.number.parseAll("0xff") shouldBe Success(0xff)
-        withoutLeadingZero.number.parseAll("0") shouldBe Success(0)
-        withoutLeadingZero.number.parseAll("0o17") shouldBe Success(15)
-        withoutLeadingZero.number.parseAll("0b1010") shouldBe Success(10)
-    }
+    "number" should "support any of the different bases" in numberCases(withoutLeadingZero)(
+        "123" -> Some(123),
+        "0xff" -> Some(0xff),
+        "0" -> Some(0),
+        "0o17" -> Some(15),
+        "0b1010" -> Some(10),
+    )
 
     "bounded numbers" should "also work across any different base" in {
-        withoutLeadingZero.binary8.parseAll("0b11010") shouldBe Success(26)
-        withoutLeadingZeroAndBreak.binary8[Long].parseAll("0b1_0000_0000") shouldBe a [Failure[_]]
-        withoutLeadingZero.octal16.parseAll("0o404") shouldBe Success(260)
-        withoutLeadingZero.octal16.parseAll("0o303240") shouldBe a [Failure[_]]
-        withoutLeadingZero.decimal32.parseAll("1239874") shouldBe Success(1239874)
-        withoutLeadingZero.number32.parseAll("0xffffffff") shouldBe Success(0xffffffff)
-        withoutLeadingZeroAndBreak.number32.parseAll("0x1_0000_0000") shouldBe a [Failure[_]]
-        withoutLeadingZeroAndBreak.hexadecimal64.parseAll("0x1_0000_0000") shouldBe Success(0x100000000L)
-        withoutLeadingZeroAndBreak.hexadecimal64.parseAll("0xffff_ffff_ffff_ffff") shouldBe Success(0xffffffffffffffffL)
-        withoutLeadingZeroAndBreak.hexadecimal64.parseAll("0x1_0000_0000_0000_0000") shouldBe a [Failure[_]]
+        cases(withoutLeadingZero.binary8)("0b11010" -> Some(26))
+        cases(withoutLeadingZeroAndBreak.binary8[Long])("0b1_0000_0000" -> None)
+        cases(withoutLeadingZero.octal16)("0o404" -> Some(260), "0o303240" -> None)
+        cases(withoutLeadingZero.decimal32)("1239874" -> Some(1239874))
+        cases(withoutLeadingZero.number32)("0xffffffff" -> Some(0xffffffff))
+        cases(withoutLeadingZeroAndBreak.number32)("0x1_0000_0000" -> None)
+        cases(withoutLeadingZeroAndBreak.hexadecimal64)(
+            "0x1_0000_0000" -> Some(0x100000000L),
+            "0xffff_ffff_ffff_ffff" -> Some(0xffffffffffffffffL),
+            "0x1_0000_0000_0000_0000" -> None
+        )
     }
 }

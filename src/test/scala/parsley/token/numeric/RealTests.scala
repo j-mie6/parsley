@@ -27,34 +27,44 @@ class RealTests extends ParsleyTest {
     val withTrailingDotBreak = makeReal(withTrailingDotBreakDesc)
     val withExtremeDotBreak = makeReal(withExtremeDotBreakDesc)
 
+    private def decimalCases(real: Real)(tests: (String, Option[BigDecimal])*): Unit = cases(real.decimal)(tests: _*)
+    private def hexadecimalCases(real: Real)(tests: (String, Option[BigDecimal])*): Unit = cases(real.hexadecimal)(tests: _*)
+    private def octalCases(real: Real)(tests: (String, Option[BigDecimal])*): Unit = cases(real.octal)(tests: _*)
+    private def binaryCases(real: Real)(tests: (String, Option[BigDecimal])*): Unit = cases(real.binary)(tests: _*)
+    private def numberCases(real: Real)(tests: (String, Option[BigDecimal])*): Unit = cases(real.number)(tests: _*)
+
+    private def decimalCases(desc: NumericDesc)(tests: (String, Option[BigDecimal])*): Unit = decimalCases(makeReal(desc))(tests: _*)
+    private def hexadecimalCases(desc: NumericDesc)(tests: (String, Option[BigDecimal])*): Unit = hexadecimalCases(makeReal(desc))(tests: _*)
+    private def octalCases(desc: NumericDesc)(tests: (String, Option[BigDecimal])*): Unit = octalCases(makeReal(desc))(tests: _*)
+    private def binaryCases(desc: NumericDesc)(tests: (String, Option[BigDecimal])*): Unit = binaryCases(makeReal(desc))(tests: _*)
+    private def numberCases(desc: NumericDesc)(tests: (String, Option[BigDecimal])*): Unit = numberCases(makeReal(desc))(tests: _*)
+
     "decimal reals" should "parse unbounded real numbers" in {
-        withoutExtremeDot.decimal.parseAll("0.0") shouldBe Success(BigDecimal("0"))
-        withoutExtremeDot.decimal.parseAll("0.123") shouldBe Success(BigDecimal("0.123"))
-        withoutExtremeDot.decimal.parseAll("123456789.987654321") shouldBe Success(BigDecimal("123456789.987654321"))
-        withoutExtremeDot.decimal.parseAll("-3.142") shouldBe Success(BigDecimal("-3.142"))
-        withoutExtremeDotBreak.decimal.parseAll("0.0") shouldBe Success(BigDecimal("0"))
-        withoutExtremeDotBreak.decimal.parseAll("0.1_23") shouldBe Success(BigDecimal("0.123"))
-        withoutExtremeDotBreak.decimal.parseAll("123456789.98_7654321") shouldBe Success(BigDecimal("123456789.987654321"))
-        withoutExtremeDotBreak.decimal.parseAll("-3.1_42") shouldBe Success(BigDecimal("-3.142"))
+        decimalCases(withoutExtremeDot)(
+            "0.0" -> Some(BigDecimal("0")),
+            "0.123" -> Some(BigDecimal("0.123")),
+            "123456789.987654321" -> Some(BigDecimal("123456789.987654321")),
+            "-3.142" -> Some(BigDecimal("-3.142")),
+        )
+        decimalCases(withoutExtremeDotBreak)(
+            "0.0" -> Some(BigDecimal("0")),
+            "0.1_23" -> Some(BigDecimal("0.123")),
+            "123456789.98_7654321" -> Some(BigDecimal("123456789.987654321")),
+            "-3.1_42" -> Some(BigDecimal("-3.142")),
+        )
     }
     it should "permit leading and trailing dots when applicable" in {
-        withoutExtremeDot.decimal.parseAll("1.") shouldBe a [Failure[_]]
-        withoutExtremeDot.decimal.parseAll(".234") shouldBe a [Failure[_]]
-        withLeadingDot.decimal.parseAll("1.") shouldBe a [Failure[_]]
-        withLeadingDot.decimal.parseAll(".234") shouldBe Success(BigDecimal("0.234"))
-        withTrailingDot.decimal.parseAll("1.") shouldBe Success(BigDecimal("1.0"))
-        withTrailingDot.decimal.parseAll(".234") shouldBe a [Failure[_]]
-        withExtremeDot.decimal.parseAll("0.") shouldBe Success(BigDecimal("0"))
-        withExtremeDot.decimal.parseAll(".0") shouldBe Success(BigDecimal("0"))
+        decimalCases(withoutExtremeDot)("1." -> None, ".234" -> None)
+        decimalCases(withLeadingDot)("1." -> None, ".234" -> Some(BigDecimal("0.234")))
+        decimalCases(withTrailingDot)("1." -> Some(BigDecimal("1.0")), ".234" -> None)
+        decimalCases(withExtremeDot)("0." -> Some(BigDecimal("0")), ".0" -> Some(BigDecimal("0")))
     }
-    it should "not allow for both leading and trailing dots" in {
-        withExtremeDot.decimal.parseAll(".") shouldBe a [Failure[_]]
-    }
+    it should "not allow for both leading and trailing dots" in decimalCases(withExtremeDot)("." -> None)
     it should "not allow for a break past a dot" in {
-        withoutExtremeDotBreak.decimal.parseAll("0._1") shouldBe a [Failure[_]]
-        withExtremeDotBreak.decimal.parseAll("0._1") shouldBe a [Failure[_]]
-        withLeadingDotBreak.decimal.parseAll("0._1") shouldBe a [Failure[_]]
-        withTrailingDotBreak.decimal.parseAll("0._1") shouldBe a [Failure[_]]
+        decimalCases(withoutExtremeDotBreak)("0._1" -> None)
+        decimalCases(withExtremeDotBreak)("0._1" -> None)
+        decimalCases(withLeadingDotBreak)("0._1" -> None)
+        decimalCases(withTrailingDotBreak)("0._1" -> None)
     }
     it should "allow for scientific notation when configured" in {
         val plainExp = plain

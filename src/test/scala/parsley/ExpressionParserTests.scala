@@ -16,16 +16,16 @@ import scala.language.implicitConversions
 
 class ExpressionParserTests extends ParsleyTest {
     "chain.postfix" must "require an initial value" in {
-        chain.postfix('1' #> 1, '+' #> ((x: Int) => x + 1)).parse("1") should be (Success(1))
+        chain.postfix('1' #> 1, '+' #> ((x: Int) => x + 1)).parseAll("1") should be (Success(1))
     }
     it must "parse all operators that follow" in {
-        chain.postfix('1' #> 1, '+' #> ((x: Int) => x + 1)).parse("1++++++++++++++") should not be a [Failure[_]]
+        chain.postfix('1' #> 1, '+' #> ((x: Int) => x + 1)).parseAll("1++++++++++++++") should not be a [Failure[_]]
     }
     it must "apply the functions" in {
-        chain.postfix('1' #> 1, '+' #> ((x: Int) => x + 1)).parse("1++++++++++++++") should be (Success(15))
+        chain.postfix('1' #> 1, '+' #> ((x: Int) => x + 1)).parseAll("1++++++++++++++") should be (Success(15))
     }
     it must "fail if an operator fails after consuming input" in {
-        chain.postfix('1' #> 1, "++" #> ((x: Int) => x + 1)).parse("1+++++++++++++") shouldBe a [Failure[_]]
+        chain.postfix('1' #> 1, "++" #> ((x: Int) => x + 1)).parseAll("1+++++++++++++") shouldBe a [Failure[_]]
     }
     it must "not leave the stack in an inconsistent state on failure" in {
         val p = chain.postfix[Int]('1' #> 1, (col.#>[Int => Int](_ + 1)) <* '+')
@@ -34,8 +34,10 @@ class ExpressionParserTests extends ParsleyTest {
     }
 
     "chain.postfix1" must "require and initial value AND an initial operator" in {
-        chain.postfix1('1' #> 1, '+' #> ((x: Int) => x + 1)).parse("1") shouldBe a [Failure[_]]
-        chain.postfix1('1' #> 1, '+' #> ((x: Int) => x + 1)).parse("1+") shouldBe Success(2)
+        cases(chain.postfix1('1' #> 1, '+' #> ((x: Int) => x + 1)))(
+            "1" -> None,
+            "1+" -> Some(2),
+        )
     }
     it must "parse all operators that follow" in {
         chain.postfix1('1' #> 1, '+' #> ((x: Int) => x + 1)).parse("1++++++++++++++") should not be a [Failure[_]]
@@ -70,87 +72,85 @@ class ExpressionParserTests extends ParsleyTest {
         chain.prefix1('+' #> ((x: Int) => x + 1), '1' #> 1).parse("+++++++++++") shouldBe a [Failure[_]]
     }
     it must "apply the functions" in {
-        chain.prefix1('+' #> ((x: Int) => x + 1), '1' #> 1).parse("+++++++++++1") should be (Success(12))
+        chain.prefix1('+' #> ((x: Int) => x + 1), '1' #> 1).parse("+++++++++++1") shouldBe Success(12)
     }
 
     "chain.right1" must "require an initial value" in {
-        chain.right1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)).parse("11") should be (Success(1))
-        chain.right1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)).parse("1") shouldBe a [Failure[_]]
-        chain.right1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)).parse("2") shouldBe a [Failure[_]]
+        cases(chain.right1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)))(
+            "11" -> Some(1),
+            "1"  -> None,
+            "2"  -> None,
+        )
     }
     it must "parse all operators and values that follow" in {
-        chain.right1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)).parse("11+11+11+11+11") should be (Success(5))
+        chain.right1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)).parse("11+11+11+11+11") shouldBe Success(5)
     }
     it must "apply the functions with correct associativity" in {
-        chain.right1(digit.map(_.asDigit), '%' #> ((x: Int, y: Int) => x % y)).parse("6%5%2%7") should be (Success(0))
+        chain.right1(digit.map(_.asDigit), '%' #> ((x: Int, y: Int) => x % y)).parse("6%5%2%7") shouldBe Success(0)
     }
     it must "fail if an operator or p fails after consuming input" in {
-        chain.right1("11" #> 1, "++" #> ((x: Int, y: Int) => x + y)).parse("11+11+11+11+11") shouldBe a [Failure[_]]
-        chain.right1("11" #> 1, "++" #> ((x: Int, y: Int) => x + y)).parse("11++11++11++1++11") shouldBe a [Failure[_]]
+        cases(chain.right1("11" #> 1, "++" #> ((x: Int, y: Int) => x + y)))(
+            "11+11+11+11+11" -> None,
+            "11++11++11++1++11" -> None,
+        )
     }
     it must "correctly accept the use of a wrapping function" in {
         sealed trait Expr
         case class Add(x: Int, y: Expr) extends Expr
         case class Num(x: Int) extends Expr
         object Add extends ParserBridge2[Int, Expr, Expr]
-        val p = infix.right1("1" #> 1, Add <# "+")(Num)
-        p.parse("1+1+1") should be (Success(Add(1, Add(1, Num(1)))))
-        p.parse("1") should be (Success(Num(1)))
+        cases(infix.right1("1" #> 1, Add <# "+")(Num))(
+            "1+1+1" -> Some(Add(1, Add(1, Num(1)))),
+            "1" -> Some(Num(1)),
+        )
     }
     "chain.right" must "allow for no initial value" in {
-        chain.right("11" #> 1, '+' #> ((x: Int, y: Int) => x + y), 0).parse("2") shouldBe Success(0)
-        chain.right("11" #> 1, '+' #> ((x: Int, y: Int) => x + y), 0).parse("1") shouldBe a [Failure[_]]
+        cases(chain.right("11" #> 1, '+' #> ((x: Int, y: Int) => x + y), 0))("" -> Some(0), "1" -> None)
     }
 
     "chain.left1" must "require an initial value" in {
-        chain.left1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)).parse("11") should be (Success(1))
-        chain.left1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)).parse("1") shouldBe a [Failure[_]]
-        chain.left1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)).parse("2") shouldBe a [Failure[_]]
+        cases(chain.left1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)))("11" -> Some(1), "1" -> None, "2" -> None)
     }
     it must "parse all operators and values that follow" in {
-        chain.left1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)).parse("11+11+11+11+11") should be (Success(5))
+        cases(chain.left1("11" #> 1, '+' #> ((x: Int, y: Int) => x + y)))("11+11+11+11+11" -> Some(5))
     }
     it must "apply the functions with correct associativity" in {
-        chain.left1(digit.map(_.asDigit), '%' #> ((x: Int, y: Int) => x % y)).parse("6%5%2%7") should be (Success(1))
+        cases(chain.left1(digit.map(_.asDigit), '%' #> ((x: Int, y: Int) => x % y)))("6%5%2%7" -> Some(1))
     }
     it must "fail if an operator fails after consuming input" in {
-        chain.left1("11" #> 1, "++" #> ((x: Int, y: Int) => x + y)).parse("11+11+11+11+11") shouldBe a [Failure[_]]
-        chain.left1("11" #> 1, "++" #> ((x: Int, y: Int) => x + y)).parse("11++11++11++1++11") shouldBe a [Failure[_]]
+        cases(chain.left1("11" #> 1, "++" #> ((x: Int, y: Int) => x + y)))("11+11+11+11+11" -> None, "11++11++11++1++11" -> None)
     }
     it must "not leave the stack in an inconsistent state on failure" in {
         val p = chain.left1('1' #> 1, (col.#>[(Int, Int) => Int](_ + _)) <* '+')
         val q = chain.left1(p, '*'.#>[(Int, Int) => Int](_ * _))
-        noException should be thrownBy q.parse("1+1*1+1")
+        noException shouldBe thrownBy (q.parse("1+1*1+1"))
     }
     it must "correctly accept the use of a wrapping function" in {
         sealed trait Expr
         case class Add(x: Expr, y: Int) extends Expr
         case class Num(x: Int) extends Expr
         object Add extends ParserBridge2[Expr, Int, Expr]
-        infix.left1("1" #> 1, Add <# "+")(Num).parse("1+1+1") should be (Success(Add(Add(Num(1), 1), 1)))
+        cases(infix.left1("1" #> 1, Add <# "+")(Num))("1+1+1" -> Some(Add(Add(Num(1), 1), 1)))
     }
     "chain.left" must "allow for no initial value" in {
-        chain.left("11" #> 1, '+' #> ((x: Int, y: Int) => x + y), 0).parse("11") should be (Success(1))
-        chain.left("11" #> 1, '+' #> ((x: Int, y: Int) => x + y), 0).parse("1") shouldBe a [Failure[_]]
-        chain.left("11" #> 1, '+' #> ((x: Int, y: Int) => x + y), 0).parse("2") shouldBe Success(0)
+        val p =chain.left("11" #> 1, '+' #> ((x: Int, y: Int) => x + y), 0)
+        cases(p)("11" -> Some(1), "1" -> None)
+        p.parse("2") shouldBe Success(0)
     }
 
     "expression parsers" should "result in correct precedence" in {
         val expr = precedence[Int](digit.map(_.asDigit))(Ops(InfixL)('*' #> (_*_)),
                                                          Ops(InfixL)('+' #> (_+_)))
-        expr.parse("1+2*3+4") should be (Success(11))
-        expr.parse("1*2+3*4") should be (Success(14))
+        cases(expr)("1+2*3+4" -> Some(11), "1*2+3*4" -> Some(14))
     }
     they should "work for multiple operators at the same level" in {
         val expr = precedence[Int](digit.map(_.asDigit))(Ops(InfixL)('+' #> (_+_), '-' #> (_-_)))
-        expr.parse("1+2-3+4") should be (Success(4))
-        expr.parse("1-2+3-4") should be (Success(-2))
+        cases(expr)("1+2-3+4" -> Some(4), "1-2+3-4" -> Some(-2))
     }
     they should "work for mixed associativity operators" in {
         val expr = precedence[Int](digit.map(_.asDigit))(Ops(InfixL)('*' #> (_*_)),
                                                          Ops(InfixR)('+' #> (_+_)))
-        expr.parse("1+2*3+4") should be (Success(11))
-        expr.parse("1*2+3*4") should be (Success(14))
+        cases(expr)("1+2*3+4" -> Some(11), "1*2+3*4" -> Some(14))
     }
     they should "parse mathematical expressions" in {
         lazy val expr: Parsley[Int] = precedence[Int](atom)(
@@ -159,20 +159,24 @@ class ExpressionParserTests extends ParsleyTest {
             Ops(InfixR)('*' #> (_*_)),
             Ops(InfixL)('+' #> (_+_), '-' #> (_-_)))
         lazy val atom: Parsley[Int] = digit.map(_.asDigit) <|> ('(' *> expr <* ')')
-        expr.parse("(2+3)*8") should be (Success(40))
-        expr.parse("-3+4") should be (Success(1))
-        expr.parse("-(3+4)") should be (Success(-7))
-        expr.parse("(3+-7)*(-2--4)/2") should be (Success(-4))
+        cases(expr)(
+            "(2+3)*8" -> Some(40),
+            "-3+4" -> Some(1),
+            "-(3+4)" -> Some(-7),
+            "(3+-7)*(-2--4)/2" -> Some(-4),
+        )
     }
     they should "parse prefix operators mixed with infix operators" in {
         lazy val expr = precedence[Int](atom)(Ops(Prefix)('-' #> (x => -x)),
                                               Ops(InfixL)('-' #> (_-_)))
         lazy val atom: Parsley[Int] = digit.map(_.asDigit) <|> ('(' *> expr <* ')')
-        expr.parse("-1") should be (Success(-1))
-        expr.parse("2-1") should be (Success(1))
-        expr.parse("-2-1") should be (Success(-3))
-        expr.parse("-(2-1)") should be (Success(-1))
-        expr.parse("(-0)-1") should be (Success(-1))
+        cases(expr)(
+            "-1" -> Some(-1),
+            "2-1" -> Some(1),
+            "-2-1" -> Some(-3),
+            "-(2-1)" -> Some(-1),
+            "(-0)-1" -> Some(-1),
+        )
     }
     they should "be able to parse prefix operators weaker than an infix" in {
         sealed trait Expr
@@ -181,7 +185,7 @@ class ExpressionParserTests extends ParsleyTest {
         case class Num(x: Int) extends Expr
         val expr = precedence[Expr](digit.map(_.asDigit).map(Num))(Ops(InfixL)('<' #> Lt),
                                                                    Ops(Prefix)("++" #> Inc))
-        expr.parse("++1<2") should be (Success(Inc(Lt(Num(1), Num(2)))))
+        expr.parse("++1<2") shouldBe Success(Inc(Lt(Num(1), Num(2))))
     }
     they should "generalise to sub-typed structures" in {
         sealed trait Comp
@@ -209,7 +213,7 @@ class ExpressionParserTests extends ParsleyTest {
             SOps(InfixR)(Mul <# '*') +:
             SOps(Prefix)(Neg <# '-') +:
             Atoms(Num(digit.map(_.asDigit)), Parens('(' *> expr <* ')')))
-        expr.parse("(7+8)*2+3+6*2") should be (Success(Add(Add(Mul(Parens(Add(Num(7), Num(8))), Num(2)), Num(3)), Mul(Num(6), Num(2)))))
+        expr.parse("(7+8)*2+3+6*2") shouldBe Success(Add(Add(Mul(Parens(Add(Num(7), Num(8))), Num(2)), Num(3)), Mul(Num(6), Num(2))))
     }
     they should "generalise to non-monolithic structures" in {
         sealed trait Comp
@@ -237,7 +241,7 @@ class ExpressionParserTests extends ParsleyTest {
             GOps(InfixL)(Add <# '+')(ExprOf) +:
             GOps(InfixR)(Mul <# '*')(TermOf) +:
             Atoms(Num(digit.map(_.asDigit)), Parens('(' *> expr <* ')')))
-        expr.parse("(7+8)*2+3+6*2<4") should be {
+        expr.parse("(7+8)*2+3+6*2<4") shouldBe {
             Success(Less(
                 Add(
                     Add(

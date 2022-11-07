@@ -22,20 +22,20 @@ class CharTests extends ParsleyTest {
         }
     }
 
-    "space" should "consume ' ' or '\t'" in {
-        space.parse(" ") should not be a [Failure[_]]
-        space.parse("\t") should not be a [Failure[_]]
-    }
+    "space" should "consume ' ' or '\t'" in cases(space)(
+        " " -> Some(' '),
+        "\t" -> Some('\t'),
+    )
     it should "expect space/tab otherwise" in {
         for (i <- 0 to 65535; if i != ' ' && i != '\t') space.parse(i.toChar.toString) shouldBe a [Failure[_]]
     }
 
-    "spaces" should "consume lots of spaces" in {
-        (spaces *> 'a').parse(" \t" * 100 + 'a') should not be a [Failure[_]]
-    }
-    it should "never fail" in {
-        (spaces *> 'a').parse("a") should not be a [Failure[_]]
-    }
+    "spaces" should "consume lots of spaces" in cases(spaces *> 'a')(
+        (" \t" * 100 + 'a') -> Some('a')
+    )
+    it should "never fail" in cases(spaces *> 'a')(
+        "a" -> Some('a')
+    )
 
     "whitespace" should "consume any whitespace chars" in {
         (whitespaces *> 'a').parse(" \t\n\r\f\u000b" * 100 + 'a') should not be a [Failure[_]]
@@ -45,23 +45,23 @@ class CharTests extends ParsleyTest {
         for (i <- 0 to 65535; if !cs.contains(i.toChar)) whitespace.parse(i.toChar.toString) shouldBe a [Failure[_]]
     }
 
-    "endOfLine" should "consume windows or unix line endings" in {
-        endOfLine.parse("\n") should not be a [Failure[_]]
-        endOfLine.parse("\r\n") should not be a [Failure[_]]
-    }
+    "endOfLine" should "consume windows or unix line endings" in cases(endOfLine)(
+        "\n" -> Some('\n'),
+        "\r\n" -> Some('\n'),
+    )
     it should "fail otherwise" in {
         for (i <- 0 to 65535; if i != 10) endOfLine.parse(i.toChar.toString) shouldBe a [Failure[_]]
     }
 
     "upper" should "only accept uppercase characters" in {
-        for (c <- 'A' to 'Z') upper.parse(c.toString) should not be a [Failure[_]]
+        for (c <- 'A' to 'Z') upper.parse(c.toString) shouldBe Success(c)
     }
     it should "fail otherwise" in {
         for (c <- 'a' to 'z') upper.parse(c.toString) shouldBe a [Failure[_]]
     }
 
     "lower" should "only accept lowercase characters" in {
-        for (c <- 'a' to 'z') lower.parse(c.toString) should not be a [Failure[_]]
+        for (c <- 'a' to 'z') lower.parse(c.toString) shouldBe Success(c)
     }
     it should "fail otherwise" in {
         for (c <- 'A' to 'Z') lower.parse(c.toString) shouldBe a [Failure[_]]
@@ -69,12 +69,12 @@ class CharTests extends ParsleyTest {
 
     "digit parsers" should "accept the appropriate characters" in {
         for (c <- '0' to '9') {
-            digit.parse(c.toString) should not be a [Failure[_]]
-            hexDigit.parse(c.toString) should not be a [Failure[_]]
-            if (c < '8') octDigit.parse(c.toString) should not be a [Failure[_]]
+            digit.parse(c.toString) shouldBe Success(c)
+            hexDigit.parse(c.toString) shouldBe Success(c)
+            if (c < '8') octDigit.parse(c.toString) shouldBe Success(c)
         }
-        for (c <- 'a' to 'f') hexDigit.parse(c.toString) should not be a [Failure[_]]
-        for (c <- 'A' to 'F') hexDigit.parse(c.toString) should not be a [Failure[_]]
+        for (c <- 'a' to 'f') hexDigit.parse(c.toString) shouldBe Success(c)
+        for (c <- 'A' to 'F') hexDigit.parse(c.toString) shouldBe Success(c)
     }
     they should "fail otherwise" in {
         for (c <- 'a' to 'f') {
@@ -90,78 +90,30 @@ class CharTests extends ParsleyTest {
     }
 
     "oneOf" should "match any of the characters provided" in {
-        val p = character.oneOf('a', 'b', 'c')
-        val q = character.oneOf('a' to 'c')
-        val r = character.oneOf('a' to 'd' by 2)
-        p.parse("a") should not be a [Failure[_]]
-        p.parse("b") should not be a [Failure[_]]
-        p.parse("c") should not be a [Failure[_]]
-        p.parse("d") shouldBe a [Failure[_]]
-        q.parse("a") should not be a [Failure[_]]
-        q.parse("b") should not be a [Failure[_]]
-        q.parse("c") should not be a [Failure[_]]
-        q.parse("d") shouldBe a [Failure[_]]
-        r.parse("a") should not be a [Failure[_]]
-        r.parse("b") shouldBe a [Failure[_]]
-        r.parse("c") should not be a [Failure[_]]
-        r.parse("d") shouldBe a [Failure[_]]
+        cases(character.oneOf('a', 'b', 'c'))  ("a" -> Some('a'), "b" -> Some('b'), "c" -> Some('c'), "d" -> None)
+        cases(character.oneOf('a' to 'c'))     ("a" -> Some('a'), "b" -> Some('b'), "c" -> Some('c'), "d" -> None)
+        cases(character.oneOf('a' to 'd' by 2))("a" -> Some('a'), "b" -> None, "c" -> Some('c'), "d" -> None)
     }
     it should "always fail if provided no characters" in {
-        val p = character.oneOf()
-        val q = character.oneOf('0' until '0')
-        p.parse("a") shouldBe a [Failure[_]]
-        p.parse("\n") shouldBe a [Failure[_]]
-        p.parse("0") shouldBe a [Failure[_]]
-        q.parse("a") shouldBe a [Failure[_]]
-        q.parse("\n") shouldBe a [Failure[_]]
-        q.parse("0") shouldBe a [Failure[_]]
+        cases(character.oneOf())             ("a" -> None, "\n" -> None, "0" -> None)
+        cases(character.oneOf('0' until '0'))("a" -> None, "\n" -> None, "0" -> None)
     }
     it should "work for single character ranges too" in {
-        val p = character.oneOf('a')
-        val q = character.oneOf('a' to 'a')
-        p.parse("a") shouldBe a [Success[_]]
-        p.parse("\n") shouldBe a [Failure[_]]
-        p.parse("b") shouldBe a [Failure[_]]
-        q.parse("a") shouldBe a [Success[_]]
-        q.parse("\n") shouldBe a [Failure[_]]
-        q.parse("b") shouldBe a [Failure[_]]
+        cases(character.oneOf('a'))       ("a" -> Some('a'), "\n" -> None, "b" -> None)
+        cases(character.oneOf('a' to 'a'))("a" -> Some('a'), "\n" -> None, "b" -> None)
     }
 
     "noneOf" should "match none of the characters provided" in {
-        val p = character.noneOf('a', 'b', 'c')
-        val q = character.noneOf('a' to 'c')
-        val r = character.noneOf('a' to 'd' by 2)
-        p.parse("a") shouldBe a [Failure[_]]
-        p.parse("b") shouldBe a [Failure[_]]
-        p.parse("c") shouldBe a [Failure[_]]
-        p.parse("d") should not be a [Failure[_]]
-        q.parse("a") shouldBe a [Failure[_]]
-        q.parse("b") shouldBe a [Failure[_]]
-        q.parse("c") shouldBe a [Failure[_]]
-        q.parse("d") should not be a [Failure[_]]
-        r.parse("a") shouldBe a [Failure[_]]
-        r.parse("b") should not be a [Failure[_]]
-        r.parse("c") shouldBe a [Failure[_]]
-        r.parse("d") should not be a [Failure[_]]
+        cases(character.noneOf('a', 'b', 'c'))  ("a" -> None, "b" -> None, "c" -> None, "d" -> Some('d'))
+        cases(character.noneOf('a' to 'c'))     ("a" -> None, "b" -> None, "c" -> None, "d" -> Some('d'))
+        cases(character.noneOf('a' to 'd' by 2))("a" -> None, "b" -> Some('b'), "c" -> None, "d" -> Some('d'))
     }
     it should "match anything if provided no characters" in {
-        val p = character.noneOf()
-        val q = character.noneOf('0' until '0')
-        p.parse("a") shouldBe a [Success[_]]
-        p.parse("\n") shouldBe a [Success[_]]
-        p.parse("0") shouldBe a [Success[_]]
-        q.parse("a") shouldBe a [Success[_]]
-        q.parse("\n") shouldBe a [Success[_]]
-        q.parse("0") shouldBe a [Success[_]]
+        cases(character.noneOf())             ("a" -> Some('a'), "\n" -> Some('\n'), "0" -> Some('0'))
+        cases(character.noneOf('0' until '0'))("a" -> Some('a'), "\n" -> Some('\n'), "0" -> Some('0'))
     }
     it should "work for single character ranges too" in {
-        val p = character.noneOf('a')
-        val q = character.noneOf('a' to 'a')
-        p.parse("a") shouldBe a [Failure[_]]
-        p.parse("\n") shouldBe a [Success[_]]
-        p.parse("b") shouldBe a [Success[_]]
-        q.parse("a") shouldBe a [Failure[_]]
-        q.parse("\n") shouldBe a [Success[_]]
-        q.parse("b") shouldBe a [Success[_]]
+        cases(character.noneOf('a'))       ("a" -> None, "\n" -> Some('\n'), "b" -> Some('b'))
+        cases(character.noneOf('a' to 'a'))("a" -> None, "\n" -> Some('\n'), "b" -> Some('b'))
     }
 }
