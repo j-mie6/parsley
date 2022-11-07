@@ -35,7 +35,7 @@ private [token] final class UnsignedInteger(desc: NumericDesc) extends Integer(d
         }
     }
 
-    private def when(b: Boolean, p: Parsley[_]): Parsley[_] = if (b) p else unit
+    private def when(b: Boolean, p: Parsley[_]): Parsley[Unit] = if (b) p.void else unit
 
     val leadingBreakChar = desc.literalBreakChar match {
         case BreakCharDesc.NoBreakChar => unit

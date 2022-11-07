@@ -43,11 +43,11 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: Integer) ex
         }
     }
 
-    private def when(b: Boolean, p: Parsley[_]): Parsley[_] = if (b) p else unit
+    private def when(b: Boolean, p: Parsley[_]): Parsley[Unit] = if (b) p.void else unit
 
     val leadingBreakChar = desc.literalBreakChar match {
         case BreakCharDesc.NoBreakChar => unit
-        case BreakCharDesc.Supported(breakChar, allowedAfterNonDecimalPrefix) => when(allowedAfterNonDecimalPrefix, breakChar)
+        case BreakCharDesc.Supported(breakChar, allowedAfterNonDecimalPrefix) => when(allowedAfterNonDecimalPrefix, optional(breakChar))
     }
 
     // TODO: Using choice here will generate a jump table, which will be nicer for `number` (this requires enhancements to the jumptable optimisation)
@@ -92,8 +92,8 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: Integer) ex
                 val exponent = oneOf(exp) *> integer.decimal32
                 if (compulsory) (exponent, exponent, base)
                 else (exponent, exponent <|> pure(0), base)
-            // this can't fail, it has to be the identity exponent
-            case ExponentDesc.NoExponents => (pure(0), pure(0), 1)
+            // this can't fail for non-required, it has to be the identity exponent
+            case ExponentDesc.NoExponents => (empty, pure(0), 1)
         }
         val fractExponent =
                 (lift2((f: BigDecimal, e: Int) => (w: BigInt) => (BigDecimal(w) + f / radix) * BigDecimal(base).pow(e),
