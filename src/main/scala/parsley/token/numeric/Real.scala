@@ -248,7 +248,7 @@ abstract class Real private[token] {
     private def isFloat(n: BigDecimal): Boolean = {
         n == 0.0 || n == -0.0 || {
             val x = n.toFloat
-            x.isFinite && x != 0.0 && x != -0.0
+            !x.isInfinity && x != 0.0 && x != -0.0
         }
     }
 
@@ -262,7 +262,7 @@ abstract class Real private[token] {
     private def isDouble(n: BigDecimal): Boolean = {
         n == 0.0 || n == -0.0 || {
             val x = n.toDouble
-            x.isFinite && x != 0.0 && x != -0.0
+            !x.isInfinity && x != 0.0 && x != -0.0
         }
     }
 
