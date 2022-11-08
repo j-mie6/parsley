@@ -199,7 +199,15 @@ class RealTests extends ParsleyTest {
     }
 
     // number
-    "generic reals" should "parse in any base" in pending
+    "generic reals" should "parse in any base" in {
+        val plainAll = plain.copy(realNumbersCanBeHexadecimal = true, realNumbersCanBeOctal = true, realNumbersCanBeBinary = true)
+        numberCases(plainAll)(
+            "0.4" -> Some(BigDecimal("0.4")),
+            "0xf.8" -> Some(BigDecimal("15.5")),
+            "0o0.4" -> Some(BigDecimal("0.5")),
+            "0b1.11" -> Some(BigDecimal("1.75")),
+        )
+    }
 
     // bounded things (only decimal)
     "bounded reals" should "not permit illegal numbers" in {
@@ -248,6 +256,10 @@ class RealTests extends ParsleyTest {
             //        not safe to roundtrip via double though, so I'm not sure what the best option is?
             //"+0x1.65ab0f00e0809p-0456" -> Some(double(0, 0x65ab0f00e0809L, -456)),
             "-0x1.1111000000000p+0002" -> Some(double(1, 0x1111000000000L, 2)),
+            "+0x1.0000000000000p-1023" -> None, // 0
+            "-0x1.0000000000000p-1023" -> None, // -0
+            "+0x1.0000000000000p+1024" -> None, // inf
+            "-0x1.0000000000000p+1024" -> None, // -inf
         )
         info("trying known valid and invalid exact floats")
         // these can each have 23 bits after the dot and between -126 and +127 as the exponent
@@ -257,9 +269,9 @@ class RealTests extends ParsleyTest {
             "-0b1.11110000000000000000000p+002" -> Some(float(1, 0x00780000, 2)),
             "+0b1.00000000000000000000000p-127" -> None, // 0
             "-0b1.00000000000000000000000p-127" -> None, // -0
-            "+0b1.00000000000000000000000p+128" -> None, // inf!
-            "-0b1.00000000000000000000000p+128" -> None, // -inf!
-            "+0b1.00000000001110000000000p+128" -> None, // NaN!
+            "+0b1.00000000000000000000000p+128" -> None, // inf
+            "-0b1.00000000000000000000000p+128" -> None, // -inf
+            "+0b1.00000000001110000000000p+128" -> None, // NaN
         )
     }
 
