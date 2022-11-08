@@ -213,6 +213,8 @@ class RealTests extends ParsleyTest {
             "-1.0" -> Some(-1.0),
             "1e-5000" -> None,
             "1e5000" -> None,
+            "0.0" -> Some(0.0),
+            "-0.0" -> Some(-0.0),
             Double.MaxValue.toString -> Some(Double.MaxValue),
             Double.MinPositiveValue.toString -> Some(Double.MinPositiveValue),
             Double.MinValue.toString -> Some(Double.MinValue)
@@ -226,10 +228,11 @@ class RealTests extends ParsleyTest {
             "-4.5" -> Some(-4.5f),
             "1e300" -> None,
             "1e-300" -> None,
-            // FIXME: These are failing! Is there some way around this, I think it is because of sending to string representation?
-            //Float.MaxValue.toString -> Some(Float.MaxValue),
-            //Float.MinPositiveValue.toString -> Some(Float.MinPositiveValue),
-            //Float.MinValue.toString -> Some(Float.MinValue)
+            "0.0" -> Some(0.0f),
+            "-0.0" -> Some(-0.0f),
+            Float.MaxValue.toString -> Some(Float.MaxValue),
+            Float.MinPositiveValue.toString -> Some(Float.MinPositiveValue),
+            Float.MinValue.toString -> Some(Float.MinValue)
         )
         cases(represent.octalDouble)(
             "0o0.6" -> Some(0.75),

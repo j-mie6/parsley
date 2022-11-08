@@ -241,16 +241,28 @@ abstract class Real private[token] {
     protected [numeric] def ensureFloat(number: Parsley[BigDecimal]): Parsley[Float] = amend {
         entrench(number).collectMsg(n => Seq(if (n > BigDecimal(Float.MaxValue) || n < BigDecimal(Float.MinValue)) s"literal $n is too large to be an IEEE 754 single-precision float"
                                              else                                                                  s"literal $n is too small to be an IEEE 754 single-precision float")) {
-            case n if BigDecimal(Float.MinPositiveValue) <= n && n <= BigDecimal(Float.MaxValue)
-                   || BigDecimal(-Float.MinPositiveValue) >= n && n >= BigDecimal(Float.MinValue) => n.toFloat
+            case n if isFloat(n) => n.toFloat
+        }
+    }
+
+    private def isFloat(n: BigDecimal): Boolean = {
+        n == 0.0 || n == -0.0 || {
+            val x = n.toFloat
+            x.isFinite && x != 0.0 && x != -0.0
         }
     }
 
     protected [numeric] def ensureDouble(number: Parsley[BigDecimal]): Parsley[Double] = amend {
         entrench(number).collectMsg(n => Seq(if (n > BigDecimal(Double.MaxValue) || n < BigDecimal(Double.MinValue)) s"literal $n is too large to be an IEEE 754 double-precision float"
                                              else                                                                    s"literal $n is too small to be an IEEE 754 double-precision float")) {
-            case n if BigDecimal(Double.MinPositiveValue) <= n && n <= BigDecimal(Double.MaxValue)
-                   || BigDecimal(-Double.MinPositiveValue) >= n && n >= BigDecimal(Double.MinValue) => n.toDouble
+            case n if isDouble(n) => n.toDouble
+        }
+    }
+
+    private def isDouble(n: BigDecimal): Boolean = {
+        n == 0.0 || n == -0.0 || {
+            val x = n.toDouble
+            x.isFinite && x != 0.0 && x != -0.0
         }
     }
 
