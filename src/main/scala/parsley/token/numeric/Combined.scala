@@ -441,6 +441,7 @@ abstract class Combined private[token] {
     private def octalBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[Either[T, BigDecimal]] = bounded(_octal, bits, 8)
     private def binaryBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[Either[T, BigDecimal]] = bounded(_binary, bits, 2)
 
+    // FIXME: this should use the rounding definition from Real
     protected [numeric] def ensureFloat[T](number: Parsley[Either[T, BigDecimal]]): Parsley[Either[T, Float]] = amend {
         entrench(number).collectMsg(n => Seq(s"$n cannot be represented exactly as a IEEE 754 single-precision float")) {
             case Left(n) => Left(n)
@@ -448,6 +449,7 @@ abstract class Combined private[token] {
         }
     }
 
+    // FIXME: this should use the rounding definition from Real
     protected [numeric] def ensureDouble[T](number: Parsley[Either[T, BigDecimal]]): Parsley[Either[T, Double]] = amend {
         entrench(number).collectMsg(n => Seq(s"$n cannot be represented exactly as a IEEE 754 double-precision float")) {
             case Left(n) => Left(n)

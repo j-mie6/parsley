@@ -21,4 +21,6 @@ private [token] final class LexemeReal(rational: Real, lexeme: Lexeme) extends R
 
     override protected [numeric] def ensureFloat(number: Parsley[BigDecimal]): Parsley[Float] = lexeme(super.ensureFloat(number))
     override protected [numeric] def ensureDouble(number: Parsley[BigDecimal]): Parsley[Double] = lexeme(super.ensureDouble(number))
+    override protected [numeric] def ensureExactFloat(number: Parsley[BigDecimal]): Parsley[Float] = lexeme(super.ensureExactFloat(number))
+    override protected [numeric] def ensureExactDouble(number: Parsley[BigDecimal]): Parsley[Double] = lexeme(super.ensureExactDouble(number))
 }

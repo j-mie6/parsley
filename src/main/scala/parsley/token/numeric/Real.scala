@@ -175,27 +175,94 @@ abstract class Real private[token] {
       * @note $disclaimer
       */
     lazy val double: Parsley[Double] = ensureDouble(_number)
+    /** TODO:
+      *
+      * @since 4.0.0
+      * @note $disclaimer
+      */
+    lazy val decimalExactFloat: Parsley[Float] = ensureExactFloat(_decimal)
+    /** TODO:
+      *
+      * @since 4.0.0
+      * @note $disclaimer
+      */
+    lazy val hexadecimalExactFloat: Parsley[Float] = ensureExactFloat(_hexadecimal)
+    /** TODO:
+      *
+      * @since 4.0.0
+      * @note $disclaimer
+      */
+    lazy val octalExactFloat: Parsley[Float] = ensureExactFloat(_octal)
+    /** TODO:
+      *
+      * @since 4.0.0
+      * @note $disclaimer
+      */
+    lazy val binaryExactFloat: Parsley[Float] = ensureExactFloat(_binary)
+    /** TODO:
+      *
+      * @since 4.0.0
+      * @note $disclaimer
+      */
+    lazy val exactFloat: Parsley[Float] = ensureExactFloat(_number)
+
+    /** TODO:
+      *
+      * @since 4.0.0
+      * @note $disclaimer
+      */
+    lazy val decimalExactDouble: Parsley[Double] = ensureExactDouble(_decimal)
+    /** TODO:
+      *
+      * @since 4.0.0
+      * @note $disclaimer
+      */
+    lazy val hexadecimalExactDouble: Parsley[Double] = ensureExactDouble(_hexadecimal)
+    /** TODO:
+      *
+      * @since 4.0.0
+      * @note $disclaimer
+      */
+    lazy val octalExactDouble: Parsley[Double] = ensureExactDouble(_octal)
+    /** TODO:
+      *
+      * @since 4.0.0
+      * @note $disclaimer
+      */
+    lazy val binaryExactDouble: Parsley[Double] = ensureExactDouble(_binary)
+    /** TODO:
+      *
+      * @since 4.0.0
+      * @note $disclaimer
+      */
+    lazy val exactDouble: Parsley[Double] = ensureExactDouble(_number)
     // $COVERAGE-ON$
 
     protected [numeric] def ensureFloat(number: Parsley[BigDecimal]): Parsley[Float] = amend {
-        entrench(number).collectMsg(n => Seq(s"$n cannot be represented exactly as a IEEE 754 single-precision float")) {
-            case n if n.isDecimalFloat
-                   || n.isBinaryFloat
-                   // $COVERAGE-OFF$
-                   || n.isExactFloat // doesn't ever seem to fire?
-                   // $COVERAGE-ON$
-                   => n.toFloat
+        entrench(number).collectMsg(n => Seq(if (n > BigDecimal(Float.MaxValue) || n < BigDecimal(Float.MinValue)) s"literal $n is too large to be an IEEE 754 single-precision float"
+                                             else                                                                  s"literal $n is too small to be an IEEE 754 single-precision float")) {
+            case n if BigDecimal(Float.MinPositiveValue) <= n && n <= BigDecimal(Float.MaxValue)
+                   || BigDecimal(-Float.MinPositiveValue) >= n && n >= BigDecimal(Float.MinValue) => n.toFloat
         }
     }
 
     protected [numeric] def ensureDouble(number: Parsley[BigDecimal]): Parsley[Double] = amend {
+        entrench(number).collectMsg(n => Seq(if (n > BigDecimal(Double.MaxValue) || n < BigDecimal(Double.MinValue)) s"literal $n is too large to be an IEEE 754 double-precision float"
+                                             else                                                                    s"literal $n is too small to be an IEEE 754 double-precision float")) {
+            case n if BigDecimal(Double.MinPositiveValue) <= n && n <= BigDecimal(Double.MaxValue)
+                   || BigDecimal(-Double.MinPositiveValue) >= n && n >= BigDecimal(Double.MinValue) => n.toDouble
+        }
+    }
+
+    protected [numeric] def ensureExactFloat(number: Parsley[BigDecimal]): Parsley[Float] = amend {
+        entrench(number).collectMsg(n => Seq(s"$n cannot be represented exactly as a IEEE 754 single-precision float")) {
+            case n if n.isExactFloat => n.toFloat
+        }
+    }
+
+    protected [numeric] def ensureExactDouble(number: Parsley[BigDecimal]): Parsley[Double] = amend {
         entrench(number).collectMsg(n => Seq(s"$n cannot be represented exactly as a IEEE 754 double-precision float")) {
-            case n if n.isDecimalDouble
-                   || n.isBinaryDouble
-                   // $COVERAGE-OFF$
-                   || n.isExactDouble // doesn't ever seem to fire?
-                   // $COVERAGE-ON$
-                   => n.toDouble
+            case n if n.isExactDouble => n.toDouble
         }
     }
 
