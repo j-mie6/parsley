@@ -124,11 +124,34 @@ class RealTests extends ParsleyTest {
         hexadecimalCases(withExtremeDotBreak)("0x1" -> None, "0x0" -> None)
     }
 
-    "octal reals" should "parse unbounded real numbers" in pending
+    "octal reals" should "parse unbounded real numbers" in {
+        octalCases(withoutExtremeDot)(
+            "0o0.0" -> Some(BigDecimal("0")),
+            "0o0.6" -> Some(BigDecimal("0.75")),
+            "-0o5.42" -> Some(BigDecimal("-5.53125")),
+        )
+        octalCases(withoutExtremeDotBreak)(
+            "0o_0.0" -> Some(BigDecimal("0")),
+            "0o0.6" -> Some(BigDecimal("0.75")),
+            "-0o5.4_2" -> Some(BigDecimal("-5.53125")),
+        )
+    }
     it should "allow for scientific notation when configured" in {
-        val plainExp = plain.copy(hexadecimalExponentDesc = ExponentDesc.Supported(true, Set('e', 'E'), 10, PlusSignPresence.Required))
+        val plainExp = plain.copy(octalExponentDesc = ExponentDesc.Supported(true, Set('e', 'E'), 10, PlusSignPresence.Required))
         val withExtremeDotExpDesc = plainExp.copy(leadingDotAllowed = true, trailingDotAllowed = true)
-        pending
+        octalCases(plainExp)(
+            "0o0.6" -> None,
+            "0o0.4e+0" -> Some(BigDecimal("0.5")),
+            "0o0.4E+1" -> Some(BigDecimal("5.0")),
+            "0o5.42e-2" -> Some(BigDecimal("5.53125")/100),
+        )
+        octalCases(withExtremeDotExpDesc)(
+            "0o.4" -> None,
+            "0o0.4e+0" -> Some(BigDecimal("0.5")),
+            "0o0.4E+1" -> Some(BigDecimal("5.0")),
+            "0o5.42e-2" -> Some(BigDecimal("5.53125")/100),
+            "0o5.e+1" -> Some(BigDecimal("50")),
+        )
     }
     it should "not allow for integer numbers" in {
         octalCases(withoutExtremeDot)("0o1" -> None, "0o0" -> None)
@@ -203,19 +226,27 @@ class RealTests extends ParsleyTest {
             "-4.5" -> Some(-4.5f),
             "1e300" -> None,
             "1e-300" -> None,
-            // FIXME: these are failing! Is there some way around this, I think it is because of sending to string representation?
+            // FIXME: These are failing! Is there some way around this, I think it is because of sending to string representation?
             //Float.MaxValue.toString -> Some(Float.MaxValue),
             //Float.MinPositiveValue.toString -> Some(Float.MinPositiveValue),
             //Float.MinValue.toString -> Some(Float.MinValue)
         )
-        info("trying known valid and invalid doubles")
+        cases(represent.octalDouble)(
+            "0o0.6" -> Some(0.75),
+        )
+
+        info("trying known valid and invalid exact doubles")
         // these can each have 13 hexdigits after the dot and between -1022 and +1023 as the exponent
         cases(represent.hexadecimalExactDouble)(
             "+0x1.0000000000000p+0000" -> Some(double(0, 0x0000000000000L, 0)),
-            //"+0x1.65ab0f00e0809p-0456" -> Some(double(0, 0x65ab0f00e0809L, -456)), // Not sure why this isn't exact?
+            // FIXME: Not sure why this isn't exact? (I think we need to write our own exactness check)
+            //        This is because BigDecimal.exact(x.toDouble) != x as it has way more numbers, but
+            //        using toDouble on the exact one reveals they have the same binary. It's probably
+            //        not safe to roundtrip via double though, so I'm not sure what the best option is?
+            //"+0x1.65ab0f00e0809p-0456" -> Some(double(0, 0x65ab0f00e0809L, -456)),
             "-0x1.1111000000000p+0002" -> Some(double(1, 0x1111000000000L, 2)),
         )
-        info("trying known valid and invalid floats")
+        info("trying known valid and invalid exact floats")
         // these can each have 23 bits after the dot and between -126 and +127 as the exponent
         cases(represent.binaryExactFloat)(
             "+0b1.00000000000000000000000p+000" -> Some(float(0, 0x00000000, 0)),
