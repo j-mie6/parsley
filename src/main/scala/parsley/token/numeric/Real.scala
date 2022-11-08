@@ -179,13 +179,23 @@ abstract class Real private[token] {
 
     protected [numeric] def ensureFloat(number: Parsley[BigDecimal]): Parsley[Float] = amend {
         entrench(number).collectMsg(n => Seq(s"$n cannot be represented exactly as a IEEE 754 single-precision float")) {
-            case n if n.isBinaryFloat || n.isDecimalFloat || n.isExactFloat => n.toFloat
+            case n if n.isDecimalFloat
+                   || n.isBinaryFloat
+                   // $COVERAGE-OFF$
+                   || n.isExactFloat // doesn't ever seem to fire?
+                   // $COVERAGE-ON$
+                   => n.toFloat
         }
     }
 
     protected [numeric] def ensureDouble(number: Parsley[BigDecimal]): Parsley[Double] = amend {
         entrench(number).collectMsg(n => Seq(s"$n cannot be represented exactly as a IEEE 754 double-precision float")) {
-            case n if n.isBinaryDouble || n.isDecimalDouble || n.isExactDouble => n.toDouble
+            case n if n.isDecimalDouble
+                   || n.isBinaryDouble
+                   // $COVERAGE-OFF$
+                   || n.isExactDouble // doesn't ever seem to fire?
+                   // $COVERAGE-ON$
+                   => n.toDouble
         }
     }
 

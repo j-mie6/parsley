@@ -44,13 +44,13 @@ class RealTests extends ParsleyTest {
             "0.0" -> Some(BigDecimal("0")),
             "0.123" -> Some(BigDecimal("0.123")),
             "123456789.987654321" -> Some(BigDecimal("123456789.987654321")),
-            "-3.142" -> Some(BigDecimal("-3.142"))
+            "-3.142" -> Some(BigDecimal("-3.142")),
         )
         decimalCases(withoutExtremeDotBreak)(
             "0.0" -> Some(BigDecimal("0")),
             "0.1_23" -> Some(BigDecimal("0.123")),
             "123456789.98_7654321" -> Some(BigDecimal("123456789.987654321")),
-            "-3.1_42" -> Some(BigDecimal("-3.142"))
+            "-3.1_42" -> Some(BigDecimal("-3.142")),
         )
     }
     it should "permit leading and trailing dots when applicable" in {
@@ -114,7 +114,7 @@ class RealTests extends ParsleyTest {
             "0x0.fp0" -> Some(BigDecimal("0.9375")),
             "0x0.fP1" -> Some(BigDecimal("1.875")),
             "0xa.c7p-2" -> Some(BigDecimal("10.77734375")/4),
-            "0xf.p+1" -> Some(BigDecimal("30"))
+            "0xf.p+1" -> Some(BigDecimal("30")),
         )
     }
     it should "not allow for integer numbers" in {
@@ -165,7 +165,7 @@ class RealTests extends ParsleyTest {
             "0b0000.1111P1" -> Some(BigDecimal("1.875")),
             "0b1010.1100_0111p-2" -> Some(BigDecimal("10.77734375")/4),
             "0b1111.p1" -> Some(BigDecimal("30")),
-            "0b1111.p+1" -> None
+            "0b1111.p+1" -> None,
         )
     }
     it should "not allow for integer numbers" in {
@@ -185,5 +185,45 @@ class RealTests extends ParsleyTest {
             "0.33333333333333333333333" -> None,
             "0.3333333333333333" -> Some(0.3333333333333333)
         )
+        cases(withoutExtremeDot.float)(
+            "0.4" -> Some(0.4f),
+            "0.3333333333333333" -> None,
+            // TODO: is it possible to have 0.33333334 be parsable?
+            //"0.33333334" -> Some(0.33333334f),
+            "0.3333333432674407958984375" -> Some(0.33333334f),
+            "0.3333333" -> Some(0.3333333f)
+        )
+
+        val represent = makeReal(plain.copy(hexadecimalExponentDesc = ExponentDesc.Supported(true, Set('p'), 2, PlusSignPresence.Required),
+                                            binaryExponentDesc = ExponentDesc.Supported(true, Set('p'), 2, PlusSignPresence.Required)))
+        // these can each have 13 hexdigits after the dot and between -1022 and +1023 as the exponent
+        cases(represent.hexadecimalDouble)(
+            "+0x1.0000000000000p+0000" -> Some(double(0, 0x0000000000000L, 0)),
+            "+0x1.65ab0f00e0809p-0456" -> Some(double(0, 0x65ab0f00e0809L, -456)),
+            "-0x1.1111000000000p+0002" -> Some(double(1, 0x1111000000000L, 2)),
+        )
+        // these can each have 23 bits after the dot and between -126 and +127 as the exponent
+        cases(represent.binaryFloat)(
+            "+0b1.00000000000000000000000p+000" -> Some(float(0, 0x0000_0000, 0)),
+            "+0b1.01000000000000000000000p-003" -> Some(float(0, 0x0020_0000, -3)),
+            "-0b1.11110000000000000000000p+002" -> Some(float(1, 0x0078_0000, 2)),
+            "+0b1.00000000000000000000000p+128" -> None, // inf!
+            "-0b1.00000000000000000000000p+128" -> None, // -inf!
+            "+0b1.00000000001110000000000p+128" -> None, // NaN!
+        )
+    }
+
+    private def double(sign: Long, mantissa: Long, exponent: Long) = {
+        val e = (exponent + 1023) << 52
+        val s = sign << 63
+        val x = s | e | mantissa
+        java.lang.Double.longBitsToDouble(x)
+    }
+
+    private def float(sign: Int, mantissa: Int, exponent: Int) = {
+        val e = (exponent + 127) << 23
+        val s = sign << 31
+        val x = s | e | mantissa
+        java.lang.Float.intBitsToFloat(x)
     }
 }
