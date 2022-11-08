@@ -205,9 +205,9 @@ class RealTests extends ParsleyTest {
         // these can each have 23 bits after the dot and between -126 and +127 as the exponent
         println(represent.binary.parse("+0b1.00000000000000000000000p-127"))
         cases(represent.binaryFloat)(
-            "+0b1.00000000000000000000000p+000" -> Some(float(0, 0x0000_0000, 0)),
-            "+0b1.01000000000000000000000p-003" -> Some(float(0, 0x0020_0000, -3)),
-            "-0b1.11110000000000000000000p+002" -> Some(float(1, 0x0078_0000, 2)),
+            "+0b1.00000000000000000000000p+000" -> Some(float(0, 0x00000000, 0)),
+            "+0b1.01000000000000000000000p-003" -> Some(float(0, 0x00200000, -3)),
+            "-0b1.11110000000000000000000p+002" -> Some(float(1, 0x00780000, 2)),
             // TODO: these work, but they aren't exact... BigDecimal allows it though?
             //"+0b1.00000000000000000000000p-127" -> None, // 0
             //"-0b1.00000000000000000000000p-127" -> None, // -0
