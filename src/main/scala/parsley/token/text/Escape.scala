@@ -7,7 +7,7 @@ import parsley.Parsley, Parsley.{attempt, empty, pure, unit}
 import parsley.character.{bit, char, digit, hexDigit, octDigit, strings}
 import parsley.combinator.{choice, ensure, option}
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
-import parsley.implicits.zipped.Zipped2
+import parsley.implicits.zipped.Zipped3
 import parsley.token.descriptions.text.{EscapeDesc, NumberOfDigits, NumericEscape}
 import parsley.token.numeric
 
@@ -48,16 +48,23 @@ private [token] class Escape(desc: EscapeDesc) {
         }
     }
 
+    private lazy val digitsParsed = parsley.registers.Reg.make[Int]
     private def oneOfExactly(n: Int, ns: List[Int], radix: Int, digit: Parsley[Char]): Parsley[BigInt] = {
-        def go(prev: Int, m: Int, ns: List[Int]): Parsley[BigInt] = ns match {
-            case Nil => exactly(m-prev, m, radix, digit)
-            case n :: ns  => (exactly(m-prev, m, radix, digit), option(attempt(go(m, n, ns)))).zipped[BigInt] {
-                case (x, None) => x
-                case (x, Some(y)) => x * BigInt(radix).pow(n - m) + y // FIXME: this equation is wrong!
-            }
+        def go(digits: Int, m: Int, ns: List[Int]): (Parsley[BigInt]) = ns match {
+            case Nil => exactly(digits, m, radix, digit) <* digitsParsed.put(digits)
+            case n :: ns  =>
+                val theseDigits = exactly(digits, m, radix, digit)
+                val restDigits = (
+                        (attempt(go(n-m, n, ns).map(Some(_)) <* digitsParsed.modify(_ + digits)))
+                    <|> (digitsParsed.put(digits) #> None)
+                )
+                (theseDigits, restDigits, digitsParsed.get).zipped[BigInt] {
+                    case (x, None, _) => x
+                    case (x, Some(y), exp) => (x * BigInt(radix).pow(exp - digits) + y) // digits is removed here, because it's been added before the get
+                }
         }
         val (m :: ms) = (n :: ns).sorted
-        go(0, m, ms)
+        go(m, m, ms)
     }
 
     private def fromDesc(radix: Int, desc: NumericEscape, integer: =>Parsley[BigInt], digit: Parsley[Char]): Parsley[Int] = desc match {
