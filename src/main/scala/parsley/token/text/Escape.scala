@@ -53,7 +53,7 @@ private [token] class Escape(desc: EscapeDesc) {
             case Nil => exactly(m-prev, m, radix, digit)
             case n :: ns  => (exactly(m-prev, m, radix, digit), option(attempt(go(m, n, ns)))).zipped[BigInt] {
                 case (x, None) => x
-                case (x, Some(y)) => x * BigInt(radix).pow(n - m) + y
+                case (x, Some(y)) => x * BigInt(radix).pow(n - m) + y // FIXME: this equation is wrong!
             }
         }
         val (m :: ms) = (n :: ns).sorted
