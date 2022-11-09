@@ -45,21 +45,36 @@ class StringTests extends ParsleyTest {
         "hello" -> None,
         "\"" -> None,
         "\"🙂🙂\"" -> Some("🙂🙂"),
+        "\"🇬🇧\"" -> Some("🇬🇧"),
     )
 
     they should "allow for escape sequences" in unicodeCases(plainStr)(
         "\"\\smilea\"" -> Some("🙂a"),
     )
 
-    they should "allow for different graphic characters" in asciiCases(makeString(plain.copy(graphicCharacter = Basic(Set('a', 'b')))))(
+    /*they should "allow for different graphic characters" in asciiCases(makeString(plain.copy(graphicCharacter = Basic(Set('a', 'b')))))(
         "\"aab\"" -> Some("aab"),
         "\"abc\"" -> None,
-    )
+    )*/
 
     they should "allow for change in literal end" in unicodeCases(makeString(plain.copy(stringEnds = Set("@@"))))(
         "@@@@" -> Some(""),
         "@@abc@@" -> Some("abc"),
         "@@" -> None,
         "\"\"" -> None,
+    )
+
+    they should "allow for string gaps when configured" in unicodeCases(makeString(plain.copy(escapeSequences = plain.escapeSequences.copy(gapsSupported = true))))(
+        "\"hello \\          \\world!\"" -> Some("hello world!"),
+        "\"hello \\ world!\"" -> None,
+    )
+
+    they should "allow for empty characters when configured" in unicodeCases(makeString(plain.copy(escapeSequences = plain.escapeSequences.copy(emptyEscape = Some('&')))))(
+        "\"hello\\& world!\"" -> Some("hello world!"),
+    )
+
+    they should "allow for no graphical character" in unicodeCases(makeString(plain.copy(graphicCharacter = NotRequired)))(
+        "\"a\"" -> None,
+        "\"\\smile\\lf\"" -> Some("🙂\n"),
     )
 }

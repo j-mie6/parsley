@@ -33,11 +33,13 @@ private [token] class EscapableCharacter(desc: EscapeDesc, escapes: Escape, spac
         desc.escBegin *> (escapeGap #> None
                       <|> escapeEmpty #> None
                       <|> escapes.escapeCode.map(Some(_)).explain("invalid escape sequence"))
-    }
+    }.label("escape sequence")
 
     override def apply(isLetter: CharPredicate): Parsley[Option[Int]] = isLetter match {
-        case Basic(isLetter) => (satisfy(c => isLetter(c) && c != desc.escBegin).map(c => Some(c.toInt)) <|> stringEscape).label("string character")
-        case Unicode(isLetter) => (satisfyUtf16(c => isLetter(c) && c != desc.escBegin.toInt).map(Some(_)) <|> stringEscape).label("string character")
-        case NotRequired => empty
+        case Basic(isLetter) =>
+            (satisfy(c => isLetter(c) && c != desc.escBegin).map(c => Some(c.toInt)).label("graphic character") <|> stringEscape).label("string character")
+        case Unicode(isLetter) =>
+            (satisfyUtf16(c => isLetter(c) && c != desc.escBegin.toInt).map(Some(_)).label("graphic character") <|> stringEscape).label("string character")
+        case NotRequired => stringEscape
     }
 }
