@@ -162,92 +162,7 @@ class TokeniserTests extends ParsleyTest {
         (tokeniser_.lexeme.symbol.softOperator(":") <* ':' <* eof).parse("::") shouldBe a [Failure[_]]
     }
 
-    /*"charLiteral" should "parse valid haskell characters" in {
-        tokeniser.lexeme.text.character.basicMultilingualPlane.parse("'a'") should be (Success('a'))
-        tokeniser.lexeme.text.character.basicMultilingualPlane.parse("'\\n'") should be (Success('\n'))
-        tokeniser.lexeme.text.character.basicMultilingualPlane.parse("'\\xa'") should be (Success('\n'))
-        tokeniser.lexeme.text.character.basicMultilingualPlane.parse("'\\^J'") should be (Success('\n'))
-    }
-    it must "be the same regardless of the intrinsic" in {
-        tokeniser_.lexeme.text.character.basicMultilingualPlane.parse("'a'") should be (Success('a'))
-        tokeniser_.lexeme.text.character.basicMultilingualPlane.parse("'\\n'") should be (Success('\n'))
-        tokeniser_.lexeme.text.character.basicMultilingualPlane.parse("'\\xa'") should be (Success('\n'))
-        tokeniser_.lexeme.text.character.basicMultilingualPlane.parse("'\\^J'") should be (Success('\n'))
-    }
-    it must "fail gracefully if there is no closing quote" in {
-        tokeniser_.lexeme.text.character.basicMultilingualPlane.parse("\'") shouldBe a [Failure[_]]
-        tokeniser_.lexeme.text.character.basicMultilingualPlane.parse("\'\\") shouldBe a [Failure[_]]
-    }
-    it must "fail if given the zero-width char" in {
-        tokeniser.lexeme.text.character.basicMultilingualPlane.parse("'\\&'") shouldBe a [Failure[_]]
-        tokeniser_.lexeme.text.character.basicMultilingualPlane.parse("'\\&'") shouldBe a [Failure[_]]
-    }*/
-    /*it should be "able to handle unicode characters" in {
-
-    }*/
-
-    "stringLiteral" should "parse valid haskell strings" in {
-        tokeniser.lexeme.text.string.unicode.parse(""""This string should have correct\t\xa whitespace properties!\8\^@."""") should be {
-            Success("This string should have correct\t\n whitespace properties!\b\u0000.")
-        }
-        tokeniser.lexeme.text.string.unicode.parse(""""\73\32\99\97\x6e\x20\x77\x72\o151\o164\o145\o40\116\104\101\109\x20\x6c\x69\x6b\o145\o40\o164\o150is!\^J\LF\49\&0"""") should be {
-            Success("I can write them like this!\n\n10")
-        }
-        tokeniser.lexeme.text.string.unicode.parse(""""Here we test a string with a break in it \                  \which shouldn't show up in the end!"""") should be {
-            Success("Here we test a string with a break in it which shouldn't show up in the end!")
-        }
-        tokeniser.lexeme.text.string.unicode.parse("\"Breaks can also contain newline\\   \n \\s, but we still don't notice them\"") should be {
-            Success("Breaks can also contain newlines, but we still don't notice them")
-        }
-        (tokeniser.lexeme.text.string.unicode <~> col).parse(""""\49\&0"""") should be {
-            Success(("10", 9))
-        }
-    }
-    it must "be the same regardless of the intrinsic" in {
-        tokeniser_.lexeme.text.string.unicode.parse(""""This string should have correct\t\xa whitespace properties!\8\^@."""") should be {
-            Success("This string should have correct\t\n whitespace properties!\b\u0000.")
-        }
-        tokeniser_.lexeme.text.string.unicode.parse(""""\73\32\99\97\x6e\x20\x77\x72\o151\o164\o145\o40\116\104\101\109\x20\x6c\x69\x6b\o145\o40\o164\o150is!\^J\LF\49\&0"""") should be {
-            Success("I can write them like this!\n\n10")
-        }
-        tokeniser_.lexeme.text.string.unicode.parse(""""Here we test a string with a break in it \                  \which shouldn't show up in the end!"""") should be {
-            Success("Here we test a string with a break in it which shouldn't show up in the end!")
-        }
-        tokeniser_.lexeme.text.string.unicode.parse("\"Breaks can also contain newline\\   \n \\s, but we still don't notice them\"") should be {
-            Success("Breaks can also contain newlines, but we still don't notice them")
-        }
-        (tokeniser_.lexeme.text.string.unicode <~> col).parse(""""\49\&0"""") should be {
-            Success(("10", 9))
-        }
-    }
-    it must "handle unicode characters in the literal properly" in {
-        tokeniser.lexeme.text.string.unicode.parse("\"\\x1F642\"") should be {
-            Success("🙂")
-        }
-        tokeniser_.lexeme.text.string.unicode.parse("\"\\x1F642\"") should be {
-            Success("🙂")
-        }
-        tokeniser.lexeme.text.string.unicode.parse("\"🙂\"") should be {
-            Success("🙂")
-        }
-        tokeniser_.lexeme.text.string.unicode.parse("\"🙂\"") should be {
-            Success("🙂")
-        }
-    }
-
-    "rawStringLiteral" should "parse valid strings, without processing them" in {
-        tokeniser.nonlexeme.text.rawString.unicode.parse(""""this string is completely raw\n, nothing should be \xa changed!"""") should be {
-            Success("""this string is completely raw\n, nothing should be \xa changed!""")
-        }
-        tokeniser.nonlexeme.text.rawString.unicode.parse(""""Not even \\\n\\n\n\n\n\n\\\j\joijs\\jsj this"""") should be {
-            Success("""Not even \\\n\\n\n\n\n\n\\\j\joijs\\jsj this""")
-        }
-        tokeniser.nonlexeme.text.rawString.unicode.parse(""""And we shouldn't be able to escape \", sorry!"""") should be {
-            Success("""And we shouldn't be able to escape \""")
-        }
-    }
-
-    /*"naturalOrFloat" should "parse either naturals or unsigned floats" in {
+    "naturalOrFloat" should "parse either naturals or unsigned floats" in {
         tokeniser.lexeme.numeric.unsignedCombined.number.parse("3.142  /*what a sick number am I right*/") should be (Success(Right(3.142)))
         tokeniser.lexeme.numeric.unsignedCombined.number.parse("0.23") should be (Success(Right(0.23)))
         tokeniser.lexeme.numeric.unsignedCombined.number.parse("10.0\n") should be (Success(Right(10.0)))
@@ -282,7 +197,7 @@ class TokeniserTests extends ParsleyTest {
         tokeniser.lexeme.numeric.signedCombined.number.parse("0x340") should be (Success(Left(0x340)))
         tokeniser.lexeme.numeric.signedCombined.number.parse("0xFF") should be (Success(Left(0xFF)))
         tokeniser.lexeme.numeric.signedCombined.number.parse("0o201 //ooh, octal") should be (Success(Left(129)))
-    }*/
+    }
 
     "skipComments" should "parse single-line comments" in {
         (tokeniser.space.skipComments <* eof).parse("// hello world!") should be (Success(()))

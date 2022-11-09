@@ -9,6 +9,7 @@ import parsley.Parsley, Parsley.{fresh, pure, notFollowedBy}
 import parsley.combinator.{between, choice, skipMany, skipManyUntil}
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 import parsley.implicits.character.{charLift, stringLift}
+import parsley.implicits.zipped.Zipped2
 import parsley.token.predicate.CharPredicate
 
 private [token] final class ConcreteString(ends: Set[ScalaString], stringChar: StringCharacter, isGraphic: CharPredicate, allowsAllSpace: Boolean)
@@ -17,16 +18,16 @@ private [token] final class ConcreteString(ends: Set[ScalaString], stringChar: S
     override lazy val ascii: Parsley[ScalaString] = String.ensureAscii(unicode)
     override lazy val extendedAscii: Parsley[ScalaString] = String.ensureExtendedAscii(unicode)
 
-    val sbReg = parsley.registers.Reg.make[StringBuilder]
+    private val sbReg = parsley.registers.Reg.make[StringBuilder]
 
-    def makeStringParser(terminal: ScalaString): Parsley[_] = {
+    private def makeStringParser(terminal: ScalaString): Parsley[_] = {
         val terminalInit = terminal.charAt(0)
         val strChar = stringChar(Character.letter(terminalInit, allowsAllSpace, isGraphic))
-        val pf = pure { (sb: StringBuilder, cpo: Option[Int]) =>
+        val pf = (sb: StringBuilder, cpo: Option[Int]) => {
             for (cp <- cpo) parsley.character.addCodepoint(sb, cp)
             sb
         }
-        val content = parsley.expr.infix.secretLeft1(sbReg.get, strChar, pf)
+        val content = parsley.expr.infix.secretLeft1((sbReg.get, strChar).zipped(pf), strChar, pure(pf))
         // terminal should be first, to allow for a jump table on the main choice
         terminal *>
         // then only one string builder needs allocation
