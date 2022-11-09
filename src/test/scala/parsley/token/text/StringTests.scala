@@ -52,10 +52,10 @@ class StringTests extends ParsleyTest {
         "\"\\smilea\"" -> Some("🙂a"),
     )
 
-    /*they should "allow for different graphic characters" in asciiCases(makeString(plain.copy(graphicCharacter = Basic(Set('a', 'b')))))(
+    they should "allow for different graphic characters" in asciiCases(makeString(plain.copy(graphicCharacter = Basic(Set('a', 'b')))))(
         "\"aab\"" -> Some("aab"),
         "\"abc\"" -> None,
-    )*/
+    )
 
     they should "allow for change in literal end" in unicodeCases(makeString(plain.copy(stringEnds = Set("@@"))))(
         "@@@@" -> Some(""),

@@ -32,6 +32,7 @@ abstract class String private[token] {
       * @since 4.0.0
       * @note $disclaimer
       */
+    // TODO: this should be utf16
     def unicode: Parsley[ScalaString]
     /** This parser will parse a single string literal, which may contain any
       * number of graphic extended ascii characters. It may contain escape
@@ -42,6 +43,7 @@ abstract class String private[token] {
       * @since 4.0.0
       * @note $disclaimer
       */
+    // TODO: should this be called latin?
     def extendedAscii: Parsley[ScalaString]
     /** This parser will parse a single string literal, which may contain any
       * number of graphic ascii characters. It may contain escape
@@ -56,7 +58,7 @@ abstract class String private[token] {
 }
 
 private [text] object String {
-    private def allCharsWithin(str: ScalaString, bound: Int) = str.codePoints().allMatch(_ <= bound)
+    private def allCharsWithin(str: ScalaString, bound: Int) = str.codePointStepper.iterator.forall(_ <= bound)
     def isAscii(str: ScalaString): Boolean = allCharsWithin(str, Character.MaxAscii)
     def isExtendedAscii(str: ScalaString): Boolean = allCharsWithin(str, Character.MaxExtendedAscii)
 
