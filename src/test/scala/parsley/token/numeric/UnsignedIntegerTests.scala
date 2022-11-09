@@ -6,7 +6,6 @@ package parsley.token.numeric
 import parsley.{Parsley, ParsleyTest, Success, Failure}
 import parsley.token.Lexeme
 import parsley.token.descriptions.numeric._
-import parsley.character.spaces
 
 class UnsignedIntegerTests extends ParsleyTest {
     private def makeInteger(desc: NumericDesc) = new LexemeInteger(new UnsignedInteger(desc), Lexeme.empty)

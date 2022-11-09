@@ -95,10 +95,16 @@ object character {
       *
       * @param c the character to parse
       * @return a parser that tries to read a single `c`, or fails.
-      * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[string `string`]].
+      * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[string `string`]] or [[charUtf16 `charUtf16`]].
       * @group core
       */
     def char(c: Char): Parsley[Char] = new Parsley(new singletons.CharTok(c, None))
+
+    // TODO: document and optimise
+    def charUtf16(c: Int): Parsley[Int] = {
+        if (Character.isBmpCodePoint(c)) char(c.toChar).map(identity[Char])
+        else string(Character.toChars(c).mkString) #> c
+    }
 
     /** This combinator tries to parse a single character from the input that matches the given predicate.
       *

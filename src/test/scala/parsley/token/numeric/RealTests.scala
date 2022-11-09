@@ -6,7 +6,6 @@ package parsley.token.numeric
 import parsley.{Parsley, ParsleyTest, Success, Failure}
 import parsley.token.Lexeme
 import parsley.token.descriptions.numeric._, ExponentDesc.NoExponents
-import parsley.character.spaces
 
 class RealTests extends ParsleyTest {
     private def makeReal(desc: NumericDesc) = new LexemeReal(new SignedReal(desc, new UnsignedReal(desc, new UnsignedInteger(desc))), Lexeme.empty)
