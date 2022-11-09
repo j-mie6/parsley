@@ -7,6 +7,7 @@ import scala.Predef.{String => ScalaString, _}
 
 import parsley.Parsley
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
+import parsley.XCompat
 
 /** This class defines a uniform interface for defining parsers for string
   * literals, independent of whether the string is raw, multi-line, or should
@@ -58,7 +59,7 @@ abstract class String private[token] {
 }
 
 private [text] object String {
-    private def allCharsWithin(str: ScalaString, bound: Int) = str.codePointStepper.iterator.forall(_ <= bound)
+    private def allCharsWithin(str: ScalaString, bound: Int) = XCompat.codePoints(str).forall(_ <= bound)
     def isAscii(str: ScalaString): Boolean = allCharsWithin(str, Character.MaxAscii)
     def isExtendedAscii(str: ScalaString): Boolean = allCharsWithin(str, Character.MaxExtendedAscii)
 

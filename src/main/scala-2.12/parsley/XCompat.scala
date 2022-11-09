@@ -24,4 +24,14 @@ private [parsley] object XCompat {
     implicit class MapValuesInPlace[K, V](m: mutable.Map[K, V]) {
         def mapValuesInPlace(f: (K, V) => V): mutable.Map[K, V] = m.transform(f)
     }
+
+    def codePoints(str: String): Iterator[Int] = new Iterator[Int] {
+        var idx = 0
+        def hasNext: Boolean = idx < str.length
+        def next(): Int = {
+            val c = str.codePointAt(idx)
+            idx += Character.charCount(c)
+            c
+        }
+    }
 }
