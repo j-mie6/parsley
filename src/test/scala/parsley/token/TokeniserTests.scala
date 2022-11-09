@@ -162,7 +162,7 @@ class TokeniserTests extends ParsleyTest {
         (tokeniser_.lexeme.symbol.softOperator(":") <* ':' <* eof).parse("::") shouldBe a [Failure[_]]
     }
 
-    "charLiteral" should "parse valid haskell characters" in {
+    /*"charLiteral" should "parse valid haskell characters" in {
         tokeniser.lexeme.text.character.basicMultilingualPlane.parse("'a'") should be (Success('a'))
         tokeniser.lexeme.text.character.basicMultilingualPlane.parse("'\\n'") should be (Success('\n'))
         tokeniser.lexeme.text.character.basicMultilingualPlane.parse("'\\xa'") should be (Success('\n'))
@@ -181,7 +181,7 @@ class TokeniserTests extends ParsleyTest {
     it must "fail if given the zero-width char" in {
         tokeniser.lexeme.text.character.basicMultilingualPlane.parse("'\\&'") shouldBe a [Failure[_]]
         tokeniser_.lexeme.text.character.basicMultilingualPlane.parse("'\\&'") shouldBe a [Failure[_]]
-    }
+    }*/
     /*it should be "able to handle unicode characters" in {
 
     }*/
