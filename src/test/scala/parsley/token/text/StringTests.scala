@@ -30,11 +30,12 @@ class StringTests extends ParsleyTest {
     val plain = TextDesc.plain.copy(
         graphicCharacter = Unicode(_ >= ' '),
         escapeSequences = EscapeDesc.plain.copy(multiMap = Map("lf" -> '\n', "lam" -> 'λ', "pound" -> '£', "smile" -> 0x1F642 /*🙂*/)),
+        multiStringEnds = Set("\""),
     )
     val plainStr = makeString(plain)
     val plainMultiStr = makeMultiString(plain)
-    val plainRawStr = makeRawString(plain)
-    val plainRawMultiStr = makeRawMultiString(plain)
+    val rawStr = makeRawString(plain)
+    val rawMultiStr = makeRawMultiString(plain)
 
     "string literals" should "be allowed to be empty" in unicodeCases(plainStr)(
         "\"\"" -> Some(""),
@@ -76,5 +77,81 @@ class StringTests extends ParsleyTest {
     they should "allow for no graphical character" in unicodeCases(makeString(plain.copy(graphicCharacter = NotRequired)))(
         "\"a\"" -> None,
         "\"\\smile\\lf\"" -> Some("🙂\n"),
+    )
+
+    "plain string literals" should "not allow for newlines in the string" in unicodeCases(plainStr)(
+        "\"hello \n world\"" -> None,
+    )
+
+    "plain utf-16 string literals" should "parse valid utf-16 strings, even with multiple codepoints" in unicodeCases(plainStr)(
+        "\"\"" -> Some(""),
+        "\"hello world!\"" -> Some("hello world!"),
+        "\"🙂🙂\"" -> Some("🙂🙂"),
+        "\"🇬🇧\"" -> Some("🇬🇧"),
+    )
+
+    "plain latin string literals" should "parse valid latin" in extAsciiCases(plainStr)(
+        "\"hello world\"" -> Some("hello world"),
+        "\"£\\pound\"" -> Some("££"),
+        "\"\"" -> Some(""),
+    )
+
+    they should "not accept bmp or other unicode, including in escapes" in extAsciiCases(plainStr)(
+        "\"λ\"" -> None,
+        "\"\\lam\"" -> None,
+        "\"🙂\"" -> None,
+        "\"\\smile\"" -> None,
+    )
+
+    "plain ascii string literals" should "parse only valid ascii" in asciiCases(plainStr)(
+        "\"Hey\"" -> Some("Hey"),
+        "\"$$$\"" -> Some("$$$"),
+        "\"\\lf\"" -> Some("\n"),
+    )
+
+    they should "not accept latin or unicode, including from escapes" in asciiCases(plainStr)(
+        "\"£\"" -> None,
+        "\"\\pound\"" -> None,
+        "\"\\smile\"" -> None,
+    )
+
+    "plain multi-line string literals" should "parse regular strings" in unicodeCases(plainMultiStr)(
+        "\"hello world\"" -> Some("hello world"),
+        "\"\\smile\"" -> Some("🙂"),
+    )
+
+    they should "also allow (and preserve) line breaks in the string" in unicodeCases(plainMultiStr)(
+        "\"hello \n world\"" -> Some("hello \n world"),
+    )
+
+    "raw string literals" should "parse regular strings without escapes" in unicodeCases(rawStr)(
+        "\"hello world\"" -> Some("hello world"),
+        "\"hello \\n world\"" -> Some("hello \\n world"),
+    )
+
+    they should "not allow for escaped string ends" in unicodeCases(rawStr)(
+        "\"\\\"\"" -> None,
+    )
+
+    they should "not allow for line breaks" in unicodeCases(rawStr)(
+        "\"hello \n world\"" -> None,
+    )
+
+    they should "allow only for a empty-string when no graphic character allowed" in asciiCases(makeRawString(plain.copy(graphicCharacter = NotRequired)))(
+        "\"\"" -> Some(""),
+        "\"h\"" -> None,
+        "\"\\n\"" -> None,
+        "\"\n\"" -> None,
+    )
+
+    "raw multi-line string literals" should "preserve line breaks in text and not admit escapes" in asciiCases(rawMultiStr)(
+        "\"hello \n world\"" -> Some("hello \n world"),
+        "\"hello \\lam\n\"" -> Some("hello \\lam\n"),
+    )
+
+    they should "allow for the graphic char to be swapped" in asciiCases(makeRawMultiString(plain.copy(graphicCharacter = Basic(Set('a', 'b', 'c')))))(
+        "\"abc\"" -> Some("abc"),
+        "\"abc\nc\"" -> Some("abc\nc"),
+        "\"d\"" -> None,
     )
 }

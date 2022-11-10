@@ -122,9 +122,6 @@ private [text] object Character {
         }
     }
 
-    @inline def isSurrogatePair(high: Char, low: Char): Boolean = java.lang.Character.isSurrogatePair(high, low)
     @inline def isBmpCodePoint(codepoint: Int): Boolean = java.lang.Character.isBmpCodePoint(codepoint)
-    @inline def toCodePoint(high: Char, low: Char): Int = java.lang.Character.toCodePoint(high, low)
-    @inline def toChars(codepoint: Int): Array[Char] = java.lang.Character.toChars(codepoint)
     @inline def isValidCodePoint(codepoint: Int): Boolean = java.lang.Character.isValidCodePoint(codepoint)
 }

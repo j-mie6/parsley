@@ -120,6 +120,7 @@ object BreakCharDesc {
   * @param binaryExponentDesc $genericExp binary literals.
   * @since 4.0.0
   */
+// TODO: configurable dot?
 final case class NumericDesc (literalBreakChar: BreakCharDesc,
                               leadingDotAllowed: Boolean,
                               trailingDotAllowed: Boolean,
