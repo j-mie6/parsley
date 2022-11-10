@@ -1,5 +1,6 @@
 libraryDependencySchemes ++= Seq(
-  "org.scala-native" % "sbt-scala-native" % VersionScheme.Always
+  "org.scala-native" % "sbt-scala-native" % VersionScheme.Always,
+  "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always,
 )
 
 // CI Stuff
@@ -13,7 +14,7 @@ addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.4.8")
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.2.0")
 addSbtPlugin("org.portable-scala" % "sbt-scala-native-crossproject" % "1.2.0")
 // Other
-//addSbtPlugin("com.beautiful-scala" % "sbt-scalastyle" % "1.5.1") // This can only be enabled when both scoverage and dependency-updates are turned off
+addSbtPlugin("com.beautiful-scala" % "sbt-scalastyle" % "1.5.1")
 addSbtPlugin("org.jmotor.sbt" % "sbt-dependency-updates" % "1.2.7")
 // This is here purely to enable the niceness settings
 addSbtPlugin("ch.epfl.scala" % "sbt-bloop" % "1.4.8")
