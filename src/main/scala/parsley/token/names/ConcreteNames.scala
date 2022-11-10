@@ -4,7 +4,6 @@
 package parsley.token.names
 
 import parsley.Parsley, Parsley.{attempt, empty, pure}
-import parsley.XCharCompat
 import parsley.character.{satisfy, satisfyUtf16, stringOfMany, stringOfManyUtf16}
 import parsley.errors.combinator.{amend, entrench, unexpected, ErrorMethods}
 import parsley.implicits.zipped.Zipped2
@@ -36,7 +35,7 @@ private [token] class ConcreteNames(nameDesc: NameDesc, symbolDesc: SymbolDesc) 
     private def complete(start: CharPredicate, letter: CharPredicate) = start match {
         case Basic(start) => (satisfy(start), trailer(letter)).zipped((c, cs) => s"$c$cs")
         case Unicode(start) => (satisfyUtf16(start), trailer(letter)).zipped { (c, cs) =>
-            if (Character.isSupplementaryCodePoint(c)) s"${XCharCompat.highSurrogate(c)}${XCharCompat.lowSurrogate(c)}$cs"
+            if (Character.isSupplementaryCodePoint(c)) s"${Character.highSurrogate(c)}${Character.lowSurrogate(c)}$cs"
             else s"${c.toChar}$cs"
         }
         case NotRequired => empty
