@@ -40,61 +40,6 @@ class TokeniserTests extends ParsleyTest {
     val tokeniser = new token.Lexer(scala)
     val tokeniser_ = new token.Lexer(scala_)
 
-    "identifier" should "read valid identifiers" in {
-        (tokeniser.lexeme.names.identifier <* eof).parse("foo123 ") should be (Success("foo123"))
-        (tokeniser.lexeme.names.identifier <* eof).parse("_bar") should be (Success("_bar"))
-        (tokeniser.lexeme.names.identifier <* eof).parse("iffy") should be (Success("iffy"))
-        (tokeniser.lexeme.names.identifier <* eof).parse("1_bar") shouldBe a [Failure[_]]
-    }
-    it should "fail if the result is a keyword" in {
-        (tokeniser.lexeme.names.identifier <* eof).parse("class") shouldBe a [Failure[_]]
-    }
-    it should "point at the correct place for the error" in {
-        (tokeniser.lexeme.names.identifier <* eof).parse("class") should matchPattern {
-            case Failure(TestError((1, 1), _)) =>
-        }
-    }
-    it should "report the correct labels" in {
-        inside((tokeniser.lexeme.names.identifier <* eof).parse("class")) {
-            case Failure(TestError(_, VanillaError(unexpected, expecteds, reasons))) =>
-                unexpected should contain (Named("keyword class"))
-                expecteds should contain only (Named("identifier"))
-                reasons shouldBe empty
-        }
-    }
-    it must "be the same regardless of the intrinsic" in {
-        (tokeniser_.lexeme.names.identifier <* eof).parse("foo123 ") should be (Success("foo123"))
-        (tokeniser_.lexeme.names.identifier <* eof).parse("_bar") should be (Success("_bar"))
-        (tokeniser_.lexeme.names.identifier <* eof).parse("iffy") should be (Success("iffy"))
-        (tokeniser_.lexeme.names.identifier <* eof).parse("1_bar") should equal {
-            (tokeniser.lexeme.names.identifier <* eof).parse("1_bar")
-        }
-        (tokeniser_.lexeme.names.identifier <* eof).parse("class") shouldBe a [Failure[_]]
-        (tokeniser_.lexeme.names.identifier <* eof).parse("class") should matchPattern {
-            case Failure(TestError((1, 1), _)) =>
-        }
-        inside((tokeniser_.lexeme.names.identifier <* eof).parse("class")) {
-            case Failure(TestError(_, VanillaError(unexpected, expecteds, reasons))) =>
-                unexpected should contain (Named("keyword class"))
-                expecteds should contain only (Named("identifier"))
-                reasons shouldBe empty
-        }
-    }
-
-    /*
-    "userOp" should "read valid operator" in {
-        (tokeniser.lexeme.names.userDefinedOperator <* eof).parse(":++") should be (Success(":++"))
-        (tokeniser.lexeme.names.userDefinedOperator <* eof).parse(":++h") shouldBe a [Failure[_]]
-    }
-    it should "fail if the result is reserved" in {
-        (tokeniser.lexeme.names.userDefinedOperator <* eof).parse(":") shouldBe a [Failure[_]]
-    }
-    it must "be the same regardless of the intrinsic" in {
-        (tokeniser_.lexeme.names.userDefinedOperator <* eof).parse(":++") should be (Success(":++"))
-        (tokeniser_.lexeme.names.userDefinedOperator <* eof).parse(":++h") shouldBe a [Failure[_]]
-        (tokeniser_.lexeme.names.userDefinedOperator <* eof).parse(":") shouldBe a [Failure[_]]
-    }*/
-
     "naturalOrFloat" should "parse either naturals or unsigned floats" in {
         tokeniser.lexeme.numeric.unsignedCombined.number.parse("3.142  /*what a sick number am I right*/") should be (Success(Right(3.142)))
         tokeniser.lexeme.numeric.unsignedCombined.number.parse("0.23") should be (Success(Right(0.23)))
@@ -183,16 +128,6 @@ class TokeniserTests extends ParsleyTest {
         (lexer1.space.whiteSpace *> 'a').parse("a") shouldBe a [Success[_]]
         (lexer2.space.whiteSpace *> 'a').parse("a") shouldBe a [Success[_]]
         (lexer3.space.whiteSpace *> 'a').parse("a") shouldBe a [Success[_]]
-    }
-
-    "case sensitivity" should "work for both lowercase and uppercase specified keywords" in {
-        val lexer = new token.Lexer(desc.LexicalDesc.plain.copy(symbolDesc = desc.SymbolDesc.plain.copy(caseSensitive = false, hardKeywords = Set("hi", "HELLo", "BYE"))))
-        lexer.lexeme.names.identifier.parse("hi") shouldBe a [Failure[_]]
-        lexer.lexeme.names.identifier.parse("hello") shouldBe a [Failure[_]]
-        lexer.lexeme.names.identifier.parse("bye") shouldBe a [Failure[_]]
-        lexer.lexeme.names.identifier.parse("hI") shouldBe a [Failure[_]]
-        lexer.lexeme.names.identifier.parse("hELLo") shouldBe a [Failure[_]]
-        lexer.lexeme.names.identifier.parse("bYe") shouldBe a [Failure[_]]
     }
 
     "issue #199" should "not regress: whitespace should work without comments defined" in {

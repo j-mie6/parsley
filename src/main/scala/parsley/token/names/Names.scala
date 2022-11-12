@@ -23,6 +23,7 @@ abstract class Names private[token] {
       * @note $disclaimer
       * @since 4.0.0
       */
+    // TODO: use other identifier method? disadvantage of this is that we lose out on specialised error message
     def identifier: Parsley[String]
     /** TODO:
       *
