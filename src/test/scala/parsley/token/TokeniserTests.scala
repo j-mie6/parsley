@@ -81,28 +81,7 @@ class TokeniserTests extends ParsleyTest {
         }
     }
 
-    "keyword" should "match valid keywords" in {
-        tokeniser.lexeme.symbol.softKeyword("if").parse("if then") should be (Success(()))
-        tokeniser.lexeme.symbol.softKeyword("volatile").parse("volatile") should be (Success(()))
-    }
-    it should "fail if the input has more identifier letters" in {
-        tokeniser.lexeme.symbol.softKeyword("if").parse("ifthen") shouldBe a [Failure[_]]
-        tokeniser.lexeme.symbol.softKeyword("volatile").parse("volatilev") shouldBe a [Failure[_]]
-    }
-    it must "be the same regardless of the intrinsic" in {
-        tokeniser_.lexeme.symbol.softKeyword("if").parse("if then") should be (Success(()))
-        tokeniser_.lexeme.symbol.softKeyword("volatile").parse("volatile") should be (Success(()))
-        tokeniser_.lexeme.symbol.softKeyword("if").parse("ifthen") should equal {
-            tokeniser.lexeme.symbol.softKeyword("if").parse("ifthen")
-        }
-        tokeniser_.lexeme.symbol.softKeyword("volatile").parse("volatilev") should equal {
-            tokeniser.lexeme.symbol.softKeyword("volatile").parse("volatilev")
-        }
-    }
-    it must "not consume input on failure" in {
-        (tokeniser.lexeme.symbol.softKeyword("if") <|> tokeniser.lexeme.names.identifier).parse("id") should be (Success("id"))
-    }
-
+    /*
     "userOp" should "read valid operator" in {
         (tokeniser.lexeme.names.userDefinedOperator <* eof).parse(":++") should be (Success(":++"))
         (tokeniser.lexeme.names.userDefinedOperator <* eof).parse(":++h") shouldBe a [Failure[_]]
@@ -114,53 +93,7 @@ class TokeniserTests extends ParsleyTest {
         (tokeniser_.lexeme.names.userDefinedOperator <* eof).parse(":++") should be (Success(":++"))
         (tokeniser_.lexeme.names.userDefinedOperator <* eof).parse(":++h") shouldBe a [Failure[_]]
         (tokeniser_.lexeme.names.userDefinedOperator <* eof).parse(":") shouldBe a [Failure[_]]
-    }
-
-    "operator" should "match valid operators" in {
-        (tokeniser.lexeme.symbol.softOperator("=") <* eof).parse("=") should be (Success(()))
-        (tokeniser.lexeme.symbol.softOperator(":") <* eof).parse(":") should be (Success(()))
-        (tokeniser.lexeme.symbol.softOperator("++") <* eof).parse("++") should be (Success(()))
-    }
-    it should "fail if the input has more operator letters" in {
-        (tokeniser.lexeme.symbol.softOperator("=") <* eof).parse("=+") shouldBe a [Failure[_]]
-        (tokeniser.lexeme.symbol.softOperator(":") <* eof).parse("::") shouldBe a [Failure[_]]
-        (tokeniser.lexeme.symbol.softOperator("++") <* eof).parse("++=") shouldBe a [Failure[_]]
-    }
-    it must "be the same regardless of the intrinsic" in {
-        (tokeniser_.lexeme.symbol.softOperator("=") <* eof).parse("=") should equal {
-            (tokeniser.lexeme.symbol.softOperator("=") <* eof).parse("=")
-        }
-        (tokeniser_.lexeme.symbol.softOperator(":") <* eof).parse(":") should equal {
-            (tokeniser.lexeme.symbol.softOperator(":") <* eof).parse(":")
-        }
-        (tokeniser_.lexeme.symbol.softOperator("++") <* eof).parse("++") should equal {
-            (tokeniser.lexeme.symbol.softOperator("++") <* eof).parse("++")
-        }
-        (tokeniser_.lexeme.symbol.softOperator("=") <* eof).parse("=+") should equal {
-            (tokeniser.lexeme.symbol.softOperator("=") <* eof).parse("=+")
-        }
-        (tokeniser_.lexeme.symbol.softOperator(":") <* eof).parse("::") should equal {
-            (tokeniser.lexeme.symbol.softOperator(":") <* eof).parse("::")
-        }
-        (tokeniser_.lexeme.symbol.softOperator("++") <* eof).parse("++=") should equal {
-            (tokeniser.lexeme.symbol.softOperator("++") <* eof).parse("++=")
-        }
-        (tokeniser_.lexeme.symbol.softOperator("+") <|> tokeniser_.lexeme.symbol.softOperator("++") <* eof).parse("++") should equal {
-            (tokeniser.lexeme.symbol.softOperator("+") <|> tokeniser.lexeme.symbol.softOperator("++") <* eof).parse("++")
-        }
-    }
-
-    "maxOp" should "match valid operators" in {
-        (tokeniser_.lexeme.symbol.softOperator("=") <* eof).parse("=") should be (Success(()))
-        (tokeniser_.lexeme.symbol.softOperator(":") <* eof).parse(":") should be (Success(()))
-        (tokeniser_.lexeme.symbol.softOperator("++") <* eof).parse("++") should be (Success(()))
-        (tokeniser_.lexeme.symbol.softOperator("+:") <* ':' <* eof).parse("+::") should be (Success(()))
-        (tokeniser_.lexeme.symbol.softOperator("=") <* '=' <* eof).parse("==") should be (Success(()))
-    }
-    it must "fail if the operator is a valid prefix of another operator and that operator is parsable" in {
-        (tokeniser_.lexeme.symbol.softOperator(":") <* '=' <* eof).parse(":=") shouldBe a [Failure[_]]
-        (tokeniser_.lexeme.symbol.softOperator(":") <* ':' <* eof).parse("::") shouldBe a [Failure[_]]
-    }
+    }*/
 
     "naturalOrFloat" should "parse either naturals or unsigned floats" in {
         tokeniser.lexeme.numeric.unsignedCombined.number.parse("3.142  /*what a sick number am I right*/") should be (Success(Right(3.142)))
@@ -260,17 +193,6 @@ class TokeniserTests extends ParsleyTest {
         lexer.lexeme.names.identifier.parse("hI") shouldBe a [Failure[_]]
         lexer.lexeme.names.identifier.parse("hELLo") shouldBe a [Failure[_]]
         lexer.lexeme.names.identifier.parse("bYe") shouldBe a [Failure[_]]
-        lexer.lexeme.symbol.softKeyword("HELLO").parse("HELLO") shouldBe a [Success[_]]
-        lexer.lexeme.symbol.softKeyword("HELLO").parse("hello") shouldBe a [Success[_]]
-        lexer.lexeme.symbol.softKeyword("BYE").parse("bye") shouldBe a [Success[_]]
-        lexer.lexeme.symbol.softKeyword("hi").parse("HI") shouldBe a [Success[_]]
-    }
-
-    it should "not be affected by tablification optimisation" in {
-        val lexer = new token.Lexer(desc.LexicalDesc.plain.copy(symbolDesc = desc.SymbolDesc.plain.copy(caseSensitive = false, hardKeywords = Set("hi", "HELLo", "BYE"))))
-        val p = lexer.lexeme.symbol.softKeyword("hi") <|> lexer.lexeme.symbol.softKeyword("HELLo") <|> lexer.lexeme.symbol.softKeyword("BYE")
-        p.parse("bye") shouldBe a [Success[_]]
-        p.parse("Bye") shouldBe a [Success[_]]
     }
 
     "issue #199" should "not regress: whitespace should work without comments defined" in {

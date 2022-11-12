@@ -29,8 +29,10 @@ object predicate {
 
     final case class Basic(predicate: Char => Boolean) extends CharPredicate {
         private [token] override def toBmp = satisfy(predicate)
+        // $COVERAGE-OFF$
         private [token] override def toUnicode =
             throw new ParsleyException("Cannot parse unicode with a `Basic` `Char => Boolean` predicate") // scalastyle:ignore throw
+        // $COVERAGE-ON$
         private [token] override def toNative = toBmp.void
         private [token] def startsWith(s: String) = s.headOption.exists(predicate)
         private [token] def endsWith(s: String) = s.lastOption.exists(predicate)

@@ -26,7 +26,6 @@ private [token] class ConcreteSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc)
 
     override def apply(name: Char): Parsley[Unit] = char(name).void
 
-
     private def caseString(name: String): Parsley[Unit] = {
         def caseChar(c: Char): Parsley[Char] = if (c.isLetter) char(c.toLower) <|> char(c.toUpper) else char(c)
         if (symbolDesc.caseSensitive) string(name).void

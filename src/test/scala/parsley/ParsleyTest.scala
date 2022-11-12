@@ -86,4 +86,8 @@ abstract class ParsleyTest extends AnyFlatSpec with Matchers with Assertions wit
     implicit class FullParse[A](val p: Parsley[A]) {
         def parseAll[Err: ErrorBuilder](input: String): Result[Err, A] = (p <* eof).parse(input)
     }
+
+    implicit class MultiPair[A](val x: A) {
+        def -->[B](xs: B*): (A, Seq[B]) = (x, xs)
+    }
 }

@@ -133,6 +133,8 @@ abstract class Symbol private[token] {
         implicit def implicitSymbol(s: String): Parsley[Unit] = apply(s)
     }
 
+    // $COVERAGE-OFF$
+    // These really don't need testing
     /** This parser parses a semicolon `;` as a symbol.
       *
       * @since 4.0.0
@@ -194,4 +196,5 @@ abstract class Symbol private[token] {
       * @since 4.0.0
       */
     final lazy val closingAngle: Parsley[Unit] = apply('>', "closing angle bracket")
+    // $COVERAGE-ON$
 }
