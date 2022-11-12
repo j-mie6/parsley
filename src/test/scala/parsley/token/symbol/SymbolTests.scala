@@ -22,7 +22,7 @@ class SymbolTests extends ParsleyTest {
     val caseInsensitive = makeSymbol(plainName, plainSym.copy(caseSensitive = false))
     val caseInsensitiveUni = makeSymbol(plainName.copy(identifierLetter = Unicode(Character.isAlphabetic)), plainSym.copy(caseSensitive = false))
 
-    def boolCases(p: Parsley[Unit])(tests: (String, Boolean)*): Unit = cases(p, noEof = true)(tests.map { case (i, r) => i -> Option.when(r)(()) }: _*)
+    def boolCases(p: Parsley[Unit])(tests: (String, Boolean)*): Unit = cases(p, noEof = true)(tests.map { case (i, r) => i -> (if (r) Some(()) else None) }: _*)
     def namedCases(sym: String => Parsley[Unit])(ktests: (String, Seq[(String, Boolean)])*): Unit = {
         for ((key, tests) <- ktests) boolCases(sym(key))(tests: _*)
     }
