@@ -33,10 +33,9 @@ abstract class String private[token] {
       * @since 4.0.0
       * @note $disclaimer
       */
-    // TODO: this should be utf16
-    def unicode: Parsley[ScalaString]
+    def fullUtf16: Parsley[ScalaString]
     /** This parser will parse a single string literal, which may contain any
-      * number of graphic extended ascii characters. It may contain escape
+      * number of graphic extended ascii characters (known as latin1). It may contain escape
       * sequences, and potentially support string gaps and zero-width characters
       * depending on the configuration.
       *
@@ -44,8 +43,7 @@ abstract class String private[token] {
       * @since 4.0.0
       * @note $disclaimer
       */
-    // TODO: should this be called latin?
-    def extendedAscii: Parsley[ScalaString]
+    def latin1: Parsley[ScalaString]
     /** This parser will parse a single string literal, which may contain any
       * number of graphic ascii characters. It may contain escape
       * sequences, and potentially support string gaps and zero-width characters
@@ -61,7 +59,7 @@ abstract class String private[token] {
 private [text] object String {
     private def allCharsWithin(str: ScalaString, bound: Int) = XCompat.codePoints(str).forall(_ <= bound)
     def isAscii(str: ScalaString): Boolean = allCharsWithin(str, Character.MaxAscii)
-    def isExtendedAscii(str: ScalaString): Boolean = allCharsWithin(str, Character.MaxExtendedAscii)
+    def isExtendedAscii(str: ScalaString): Boolean = allCharsWithin(str, Character.MaxLatin1)
 
     def ensureAscii(p: Parsley[ScalaString]): Parsley[ScalaString] = amend {
         entrench(p).guardAgainst {

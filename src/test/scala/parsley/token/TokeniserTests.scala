@@ -40,6 +40,8 @@ class TokeniserTests extends ParsleyTest {
     val tokeniser = new token.Lexer(scala)
     val tokeniser_ = new token.Lexer(scala_)
 
+    // TODO: separators, enclosing, space, fully
+
     "naturalOrFloat" should "parse either naturals or unsigned floats" in {
         tokeniser.lexeme.numeric.unsignedCombined.number.parse("3.142  /*what a sick number am I right*/") should be (Success(Right(3.142)))
         tokeniser.lexeme.numeric.unsignedCombined.number.parse("0.23") should be (Success(Right(0.23)))

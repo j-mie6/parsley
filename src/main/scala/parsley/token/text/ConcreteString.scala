@@ -14,9 +14,9 @@ import parsley.token.predicate.CharPredicate
 
 private [token] final class ConcreteString(ends: Set[ScalaString], stringChar: StringCharacter, isGraphic: CharPredicate, allowsAllSpace: Boolean)
     extends String {
-    override lazy val unicode: Parsley[ScalaString] = choice(ends.view.map(makeStringParser).toSeq: _*) *> sbReg.gets(_.toString)
-    override lazy val ascii: Parsley[ScalaString] = String.ensureAscii(unicode)
-    override lazy val extendedAscii: Parsley[ScalaString] = String.ensureExtendedAscii(unicode)
+    override lazy val fullUtf16: Parsley[ScalaString] = choice(ends.view.map(makeStringParser).toSeq: _*) *> sbReg.gets(_.toString)
+    override lazy val ascii: Parsley[ScalaString] = String.ensureAscii(fullUtf16)
+    override lazy val latin1: Parsley[ScalaString] = String.ensureExtendedAscii(fullUtf16)
 
     private val sbReg = parsley.registers.Reg.make[StringBuilder]
 

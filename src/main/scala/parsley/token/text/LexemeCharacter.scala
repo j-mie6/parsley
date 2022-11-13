@@ -7,8 +7,8 @@ import parsley.Parsley
 import parsley.token.Lexeme
 
 private [token] final class LexemeCharacter(character: Character, lexeme: Lexeme) extends Character {
-    override lazy val unicode: Parsley[Int] = lexeme(character.unicode)
+    override lazy val fullUtf16: Parsley[Int] = lexeme(character.fullUtf16)
     override lazy val basicMultilingualPlane: Parsley[Char] = lexeme(character.basicMultilingualPlane)
     override lazy val ascii: Parsley[Char] = lexeme(character.ascii)
-    override lazy val extendedAscii: Parsley[Char] = lexeme(character.extendedAscii)
+    override lazy val latin1: Parsley[Char] = lexeme(character.latin1)
 }

@@ -25,20 +25,20 @@ abstract class Character private[token] {
       * It may also contain escape sequences.
       *
       * @example {{{
-      * scala> unicode.parse("'a'")
+      * scala> fullUtf16.parse("'a'")
       * val res0 = Success(97)
-      * scala> unicode.parse("'£'")
+      * scala> fullUtf16.parse("'£'")
       * val res1 = Success(163)
-      * scala> unicode.parse("'λ'")
+      * scala> fullUtf16.parse("'λ'")
       * val res2 = Success(0x03BB)
-      * scala> unicode.parse("'🙂'")
+      * scala> fullUtf16.parse("'🙂'")
       * val res3 = Success(0x1F642)
       * }}}
       *
       * @since 4.0.0
       * @note $disclaimer
       */
-    def unicode: Parsley[Int]
+    def fullUtf16: Parsley[Int]
     /** This parser will parse a single character literal, which may contain
       * any graphic character that falls within the "Basic Multilingual Plane" (BMP).
       * This is defined as any UTF-16 character that fits into 16 bits. A Scala `Char`
@@ -86,25 +86,25 @@ abstract class Character private[token] {
       * those which result in extended ASCII characters.
       *
       * @example {{{
-      * scala> extendedAscii.parse("'a'")
+      * scala> latin1.parse("'a'")
       * val res0 = Success('a')
-      * scala> extendedAscii.parse("'£'")
+      * scala> latin1.parse("'£'")
       * val res1 = Success('£')
-      * scala> extendedAscii.parse("'λ'")
+      * scala> latin1.parse("'λ'")
       * val res2 = Failure(...) // λ's ordinal is not less than 255
-      * scala> extendedAscii.parse("'🙂'")
+      * scala> latin1.parse("'🙂'")
       * val res3 = Failure(...) // 🙂's ordinal is not less than 255
       * }}}
       *
       * @since 4.0.0
       * @note $disclaimer
       */
-    def extendedAscii: Parsley[Char]
+    def latin1: Parsley[Char]
 }
 
 private [text] object Character {
     final val MaxAscii: Int = 0x7f
-    final val MaxExtendedAscii: Int = 0xff
+    final val MaxLatin1: Int = 0xff
 
     def letter(terminalLead: Char, allowsAllSpace: Boolean, isGraphic: CharPredicate): CharPredicate = isGraphic match {
         case Unicode(g) if allowsAllSpace => Unicode(c => c != terminalLead.toInt && (g(c) || parsley.character.isWhitespace(c.toChar)))

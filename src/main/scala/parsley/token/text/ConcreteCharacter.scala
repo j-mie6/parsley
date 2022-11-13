@@ -13,7 +13,7 @@ private [token] final class ConcreteCharacter(desc: TextDesc, escapes: Escape) e
     private val quote = desc.characterLiteralEnd
     private lazy val charLetter = Character.letter(quote, desc.escapeSequences.escBegin, allowsAllSpace = false, desc.graphicCharacter)
 
-    override lazy val unicode: Parsley[Int] = {
+    override lazy val fullUtf16: Parsley[Int] = {
         quote *> (escapes.escapeChar <|> charLetter.toUnicode) <* quote
     }
 
@@ -25,7 +25,7 @@ private [token] final class ConcreteCharacter(desc: TextDesc, escapes: Escape) e
     override lazy val ascii: Parsley[Char] = basicMultilingualPlane.filterOut {
         case n if n > Character.MaxAscii => "non-ascii character"
     }
-    override lazy val extendedAscii: Parsley[Char] = basicMultilingualPlane.filterOut {
-        case n if n > Character.MaxExtendedAscii => "non-ascii character (extended)"
+    override lazy val latin1: Parsley[Char] = basicMultilingualPlane.filterOut {
+        case n if n > Character.MaxLatin1 => "non-ascii character (extended)"
     }
 }

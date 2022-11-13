@@ -8,6 +8,8 @@ import scala.collection.{mutable, BufferedIterator}
 
 import Radix.{Entry, IteratorHelpers, StringHelpers}
 
+@deprecated("Radix is currently not being unit tested, if it is used again remove test coverage lines")
+// $COVERAGE-OFF$
 private [internal] class Radix[A] {
     private [this] var x = Option.empty[A]
     private val m = mutable.Map.empty[Char, Entry[A]]
@@ -117,3 +119,4 @@ private [internal] object Radix {
         def next() = ()
     }
 }
+// $COVERAGE-ON$

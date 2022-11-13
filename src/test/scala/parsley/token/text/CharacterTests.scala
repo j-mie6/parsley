@@ -13,10 +13,10 @@ import parsley.token.predicate._
 class CharacterTests extends ParsleyTest {
     def makeChar(desc: TextDesc): Character = new LexemeCharacter(new ConcreteCharacter(desc, new Escape(desc.escapeSequences)), Lexeme.empty)
 
-    def unicodeCases(char: Character)(tests: (SString, Option[Int])*): Unit = cases(char.unicode)(tests: _*)
+    def unicodeCases(char: Character)(tests: (SString, Option[Int])*): Unit = cases(char.fullUtf16)(tests: _*)
     def bmpCases(char: Character)(tests: (SString, Option[Char])*): Unit = cases(char.basicMultilingualPlane)(tests: _*)
     def asciiCases(char: Character)(tests: (SString, Option[Char])*): Unit = cases(char.ascii)(tests: _*)
-    def extAsciiCases(char: Character)(tests: (SString, Option[Char])*): Unit = cases(char.extendedAscii)(tests: _*)
+    def extAsciiCases(char: Character)(tests: (SString, Option[Char])*): Unit = cases(char.latin1)(tests: _*)
 
     def unicodeCases(desc: TextDesc)(tests: (SString, Option[Int])*): Unit = unicodeCases(makeChar(desc))(tests: _*)
     def bmpCases(desc: TextDesc)(tests: (SString, Option[Char])*): Unit = bmpCases(makeChar(desc))(tests: _*)

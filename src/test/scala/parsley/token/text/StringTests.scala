@@ -23,9 +23,9 @@ class StringTests extends ParsleyTest {
     private def makeRawMultiString(desc: TextDesc): String =
         makeString(desc, RawCharacter, true)
 
-    def unicodeCases(str: String)(tests: (SString, Option[SString])*): Unit = cases(str.unicode)(tests: _*)
+    def unicodeCases(str: String)(tests: (SString, Option[SString])*): Unit = cases(str.fullUtf16)(tests: _*)
     def asciiCases(str: String)(tests: (SString, Option[SString])*): Unit = cases(str.ascii)(tests: _*)
-    def extAsciiCases(str: String)(tests: (SString, Option[SString])*): Unit = cases(str.extendedAscii)(tests: _*)
+    def extAsciiCases(str: String)(tests: (SString, Option[SString])*): Unit = cases(str.latin1)(tests: _*)
 
     val plain = TextDesc.plain.copy(
         graphicCharacter = Unicode(_ >= ' '),

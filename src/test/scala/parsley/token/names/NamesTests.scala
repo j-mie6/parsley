@@ -156,7 +156,7 @@ class NamesTests extends ParsleyTest {
         "-''" -> Some("-''"),
     )
 
-    it should "be able to constrain both ends" in opCases(Basic(Set('+', '-', '<')), Basic(Set('=', '\'')), Basic(Set('+')), Basic(Set('\''))) (
+    it should "be able to constrain both ends" in opCases(Unicode(Set('+', '-', '<')), Unicode(Set('=', '\'')), Unicode(Set('+')), Unicode(Set('\''))) (
         "+'" -> Some("+'"),
         "-" -> None,
         "'" -> None,

@@ -732,12 +732,12 @@ class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.
     def maxOp_(name: String): Parsley[Unit] = nonlexeme.symbol.softOperator(name)
     @deprecated("use `lexeme.text.character.basicMultilingualPlane` instead")
     def charLiteral: Parsley[Char] = lexeme.text.character.basicMultilingualPlane
-    @deprecated("use `lexeme.text.string.unicode` instead")
-    def stringLiteral: Parsley[String] = lexeme.text.string.unicode
-    @deprecated("use `nonlexeme.text.string.unicode` instead")
-    def stringLiteral_ : Parsley[String] = nonlexeme.text.string.unicode
-    @deprecated("use `nonlexeme.text.rawString.unicode` instead")
-    def rawStringLiteral: Parsley[String] = nonlexeme.text.rawString.unicode
+    @deprecated("use `lexeme.text.string.fullUtf16` instead")
+    def stringLiteral: Parsley[String] = lexeme.text.string.fullUtf16
+    @deprecated("use `nonlexeme.text.string.fullUtf16` instead")
+    def stringLiteral_ : Parsley[String] = nonlexeme.text.string.fullUtf16
+    @deprecated("use `nonlexeme.text.rawString.fullUtf16` instead")
+    def rawStringLiteral: Parsley[String] = nonlexeme.text.rawString.fullUtf16
     @deprecated("use `lexeme.numeric.natural.number.map(_.toInt)` instead")
     def natural: Parsley[Int] = lexeme.numeric.natural.number.map(_.toInt)
     @deprecated("use `lexeme.numeric.integer.numer.map(_.toInt)` instead")
