@@ -6,8 +6,8 @@ package parsley.token.text
 import scala.Predef.{String => ScalaString, _}
 
 import parsley.Parsley
-import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 import parsley.XCompat
+import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 
 /** This class defines a uniform interface for defining parsers for string
   * literals, independent of whether the string is raw, multi-line, or should

@@ -19,7 +19,7 @@ import parsley.errors.combinator.{amend, entrench, ErrorMethods}
   *   `Lexer`, which will depend on user-defined configuration. Please see the
   *   relevant documentation of these specific objects.
   */
-abstract class Combined private[token] {
+abstract class Combined private[token] { // scalastyle:ignore number.of.methods
     /** TODO:
       *
       * @since 4.0.0

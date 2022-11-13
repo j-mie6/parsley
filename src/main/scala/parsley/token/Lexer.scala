@@ -8,7 +8,7 @@ import scala.language.implicitConversions
 import parsley.Parsley, Parsley.{attempt, unit}
 import parsley.character.satisfyUtf16
 import parsley.combinator.{between, eof, sepBy, sepBy1, skipMany}
-import parsley.errors.combinator.{ErrorMethods, markAsToken}
+import parsley.errors.combinator.{markAsToken, ErrorMethods}
 import parsley.registers.Reg
 import parsley.token.names.{ConcreteNames, LexemeNames, Names}
 import parsley.token.numeric.{Combined, Integer, LexemeCombined, LexemeInteger, LexemeReal, Real,

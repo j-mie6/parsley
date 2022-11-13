@@ -239,8 +239,9 @@ abstract class Real private[token] {
     // $COVERAGE-ON$
 
     protected [numeric] def ensureFloat(number: Parsley[BigDecimal]): Parsley[Float] = amend {
-        entrench(number).collectMsg(n => Seq(if (n > BigDecimal(Float.MaxValue) || n < BigDecimal(Float.MinValue)) s"literal $n is too large to be an IEEE 754 single-precision float"
-                                             else                                                                  s"literal $n is too small to be an IEEE 754 single-precision float")) {
+        entrench(number).collectMsg(n => Seq(
+                if (n > BigDecimal(Float.MaxValue) || n < BigDecimal(Float.MinValue)) s"literal $n is too large to be an IEEE 754 single-precision float"
+                else                                                                  s"literal $n is too small to be an IEEE 754 single-precision float")) {
             case n if isFloat(n) => n.toFloat
         }
     }
@@ -253,8 +254,9 @@ abstract class Real private[token] {
     }
 
     protected [numeric] def ensureDouble(number: Parsley[BigDecimal]): Parsley[Double] = amend {
-        entrench(number).collectMsg(n => Seq(if (n > BigDecimal(Double.MaxValue) || n < BigDecimal(Double.MinValue)) s"literal $n is too large to be an IEEE 754 double-precision float"
-                                             else                                                                    s"literal $n is too small to be an IEEE 754 double-precision float")) {
+        entrench(number).collectMsg(n => Seq(
+                if (n > BigDecimal(Double.MaxValue) || n < BigDecimal(Double.MinValue)) s"literal $n is too large to be an IEEE 754 double-precision float"
+                else                                                                    s"literal $n is too small to be an IEEE 754 double-precision float")) {
             case n if isDouble(n) => n.toDouble
         }
     }

@@ -6,11 +6,11 @@ package parsley.token.numeric
 import parsley.Parsley, Parsley.{attempt, empty, pure, unit}
 import parsley.character.{digit, hexDigit, octDigit, oneOf}
 import parsley.combinator, combinator.optional
-import parsley.errors.combinator.{ErrorMethods, amend, entrench}
+import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 import parsley.implicits.character.charLift
 import parsley.lift.lift2
-import parsley.token.descriptions.numeric.{BreakCharDesc, ExponentDesc, NumericDesc}
 import parsley.registers.Reg
+import parsley.token.descriptions.numeric.{BreakCharDesc, ExponentDesc, NumericDesc}
 
 import parsley.internal.deepembedding.Sign.DoubleType
 import parsley.internal.deepembedding.singletons
@@ -81,7 +81,8 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: Integer) ex
                         if (!leadingDotAllowed) entrench(digit.foldRight[BigDecimal](0)(f))
                         else entrench(digit.foldRight1[BigDecimal](0)(f)) <|> _noDoubleDroppedZero *> pure[BigDecimal](0)
                     case BreakCharDesc.NoBreakChar                                => entrench(digit.foldRight1[BigDecimal](0)(f))
-                    case BreakCharDesc.Supported(c, _) if desc.trailingDotAllowed => entrench(broken(c)) <|> when(leadingDotAllowed, _noDoubleDroppedZero) *> pure[BigDecimal](0)
+                    case BreakCharDesc.Supported(c, _) if desc.trailingDotAllowed =>
+                        entrench(broken(c)) <|> when(leadingDotAllowed, _noDoubleDroppedZero) *> pure[BigDecimal](0)
                     case BreakCharDesc.Supported(c, _)                            => entrench(broken(c))
                 }
             }
