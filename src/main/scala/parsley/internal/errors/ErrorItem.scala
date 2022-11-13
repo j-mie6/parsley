@@ -4,7 +4,6 @@
 package parsley.internal.errors
 
 import parsley.XAssert._
-
 import parsley.errors, errors.ErrorBuilder
 
 private [internal] sealed abstract class ErrorItem {
@@ -23,10 +22,12 @@ private [internal] sealed trait ExpectItem extends ErrorItem {
 }
 
 private [internal] final case class UnexpectRaw(cs: Iterable[Char], amountOfInputParserWanted: Int) extends UnexpectItem {
-    def formatUnexpect(implicit builder: ErrorBuilder[_]): (builder.Item, errors.TokenSpan) = builder.unexpectedToken(cs, amountOfInputParserWanted) match {
-        case t@errors.Raw(tok) => (builder.raw(tok), t.span)
-        case errors.Named(name, span) => (builder.named(name), span)
-        case t@errors.EndOfInput => (builder.endOfInput, t.span)
+    def formatUnexpect(implicit builder: ErrorBuilder[_]): (builder.Item, errors.TokenSpan) = {
+        builder.unexpectedToken(cs, amountOfInputParserWanted, false) match {
+            case t@errors.Raw(tok) => (builder.raw(tok), t.span)
+            case errors.Named(name, span) => (builder.named(name), span)
+            case t@errors.EndOfInput => (builder.endOfInput, t.span)
+        }
     }
     override def higherPriority(other: UnexpectItem): Boolean = other.lowerThanRaw(this)
     override def lowerThanRaw(other: UnexpectRaw): Boolean = this.amountOfInputParserWanted < other.amountOfInputParserWanted

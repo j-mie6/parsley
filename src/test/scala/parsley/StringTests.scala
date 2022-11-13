@@ -14,10 +14,6 @@ class StringTests extends ParsleyTest {
         ((if (initialCol == 0) pure("") else string("." * initialCol)) *> string(str) *> pos).parse("." * initialCol + str)
     }
 
-    /*private def badStrings(str0: String, strs: String*) = {
-        attemptChoice((str0 +: strs).sorted(implicitly[Ordering[String]].reverse).map(string): _*)
-    }*/
-
     "string" should "consume succeed if it is found at head" in {
         "abc".parse("abc") should not be a [Failure[_]]
     }
@@ -49,12 +45,11 @@ class StringTests extends ParsleyTest {
         stringPositionCheck(2, "aa\t") shouldBe Success((1, 9))
     }
 
-    "strings" should "have longest match behaviour" in {
-        val p = strings("hell", "hello", "h")
-        p.parse("hello") shouldBe Success("hello")
-        p.parse("hell") shouldBe Success("hell")
-        p.parse("he") shouldBe Success("h")
-    }
+    "strings" should "have longest match behaviour" in cases(strings("hell", "hello", "h"), noEof = true)(
+        "hello" -> Some("hello"),
+        "hell"  -> Some("hell"),
+        "he"    -> Some("h"),
+    )
     it should "be extrinsically the same as a manual equivalent" in {
         val p = strings("hell", "hello", "abc", "g", "goodbye")
         val q = string("abc") <|> attempt("goodbye") <|> string("g") <|> attempt(string("hello")) <|> string("hell")
@@ -70,33 +65,23 @@ class StringTests extends ParsleyTest {
         p.parse("b") shouldBe q.parse("b")
     }
 
-    "stringOfMany" should "allow for no letters" in {
-        val p = stringOfMany(letter)
-        p.parse("") shouldBe Success("")
-    }
-    it should "consume as many letters as it can" in {
-        val p = stringOfMany(letter)
-        p.parse("abc") shouldBe Success("abc")
-        p.parse("ab4c") shouldBe Success("ab")
-    }
-    it should "fail if pc fails having consumed input" in {
-        val p = stringOfMany(string("ab") #> 'a')
-        p.parse("ababab") shouldBe Success("aaa")
-        p.parse("aba") shouldBe a [Failure[_]]
-    }
+    "stringOfMany" should "allow for no letters" in cases(stringOfMany(letter))("" -> Some(""))
+    it should "consume as many letters as it can" in cases(stringOfMany(letter), noEof = true)(
+        "abc" -> Some("abc"),
+        "ab4c" -> Some("ab"),
+    )
+    it should "fail if pc fails having consumed input" in cases(stringOfMany(string("ab") #> 'a'))(
+        "ababab" -> Some("aaa"),
+        "aba" -> None,
+    )
 
-    "stringOfSome" should "not allow for no letters" in {
-        val p = stringOfSome(letter)
-        p.parse("") shouldBe a [Failure[_]]
-    }
-    it should "consume as many letters as it can" in {
-        val p = stringOfSome(letter)
-        p.parse("abc") shouldBe Success("abc")
-        p.parse("ab4c") shouldBe Success("ab")
-    }
-    it should "fail if pc fails having consumed input" in {
-        val p = stringOfSome(string("ab") #> 'a')
-        p.parse("ababab") shouldBe Success("aaa")
-        p.parse("aba") shouldBe a [Failure[_]]
-    }
+    "stringOfSome" should "not allow for no letters" in cases(stringOfSome(letter))("" -> None)
+    it should "consume as many letters as it can" in cases(stringOfSome(letter), noEof = true)(
+        "abc" -> Some("abc"),
+        "ab4c" -> Some("ab"),
+    )
+    it should "fail if pc fails having consumed input" in cases(stringOfSome(string("ab") #> 'a'))(
+        "ababab" -> Some("aaa"),
+        "aba" -> None,
+    )
 }

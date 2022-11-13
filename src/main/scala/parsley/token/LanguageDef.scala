@@ -3,6 +3,8 @@
  */
 package parsley.token
 
+import predicate.{CharPredicate, NotRequired}
+// $COVERAGE-OFF$
 /**
   * This class is required to construct a TokenParser. It defines the various characteristics of the language to be
   * tokenised. Where a parameter can be either a `Set[Char]` or a `Parsley` object, prefer the `Set` where possible.
@@ -29,18 +31,19 @@ package parsley.token
   * @param space What characters count as whitespace in the language?
   * @since 2.2.0
   */
+@deprecated
 case class LanguageDef (commentStart: String,
                         commentEnd: String,
                         commentLine: String,
                         nestedComments: Boolean,
-                        identStart: Impl,
-                        identLetter: Impl,
-                        opStart: Impl,
-                        opLetter: Impl,
+                        identStart: CharPredicate,
+                        identLetter: CharPredicate,
+                        opStart: CharPredicate,
+                        opLetter: CharPredicate,
                         keywords: Set[String],
                         operators: Set[String],
                         caseSensitive: Boolean,
-                        space: Impl) {
+                        space: CharPredicate) {
     private [token] lazy val supportsComments = {
         val on = (commentStart.nonEmpty && commentEnd.nonEmpty) || commentLine.nonEmpty
         if (on && commentStart.nonEmpty && commentLine.startsWith(commentStart)) {
@@ -50,11 +53,30 @@ case class LanguageDef (commentStart: String,
         }
         on
     }
+
+    private [token] def toDesc: descriptions.LexicalDesc =
+        descriptions.LexicalDesc(descriptions.NameDesc(identStart,
+                                                       identLetter,
+                                                       opStart,
+                                                       opLetter),
+                                descriptions.SymbolDesc(keywords,
+                                                        operators,
+                                                        caseSensitive),
+                                descriptions.numeric.NumericDesc.plain,
+                                descriptions.text.TextDesc.plain,
+                                descriptions.SpaceDesc (commentStart,
+                                                        commentEnd,
+                                                        commentLine,
+                                                        true,
+                                                        nestedComments,
+                                                        space,
+                                                        false))
 }
 /** This object contains any preconfigured language definitions
   * @since 2.2.0
   */
-object LanguageDef
-{
+@deprecated
+object LanguageDef {
     val plain = LanguageDef("", "", "", false, NotRequired, NotRequired, NotRequired, NotRequired, Set.empty, Set.empty, true, NotRequired)
 }
+// $COVERAGE-ON$

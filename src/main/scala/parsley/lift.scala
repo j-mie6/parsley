@@ -3,9 +3,10 @@
  */
 package parsley
 
-import parsley.ap._
-import parsley.internal.deepembedding.frontend
 import parsley.Parsley.pure
+import parsley.ap._ // scalastyle:ignore underscore.import
+
+import parsley.internal.deepembedding.frontend
 
 /** This module contains `lift1` through `lift22`, which allow for the application of a function of arity `N` to `N` parsers.
   *

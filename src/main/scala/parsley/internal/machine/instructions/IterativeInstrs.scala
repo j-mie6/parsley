@@ -198,3 +198,23 @@ private [internal] final class ManyUntil(var label: Int) extends InstrWithLabel 
     override def toString: String = s"ManyUntil($label)"
     // $COVERAGE-ON$
 }
+
+private [internal] final class SkipManyUntil(var label: Int) extends InstrWithLabel {
+    override def apply(ctx: Context): Unit = {
+        if (ctx.status eq Good) {
+            ctx.stack.upeek match {
+                case parsley.combinator.ManyUntil.Stop =>
+                    ctx.handlers = ctx.handlers.tail
+                    ctx.exchangeAndContinue(())
+                case x =>
+                    ctx.pc = label
+                    ctx.stack.pop_()
+            }
+        }
+        // ManyUntil is a fallthrough handler, it must be visited during failure, but does nothing to the external state
+        else ctx.fail()
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = s"ManyUntil($label)"
+    // $COVERAGE-ON$
+}

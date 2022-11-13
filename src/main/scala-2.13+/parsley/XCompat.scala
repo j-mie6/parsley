@@ -8,4 +8,6 @@ private [parsley] object XCompat {
         case refl: (A <:< B) => refl.substituteCo[Parsley](p)
         case wrap            => p.map(wrap)
     }
+
+    def codePoints(str: String): Iterator[Int] = str.codePointStepper.iterator
 }

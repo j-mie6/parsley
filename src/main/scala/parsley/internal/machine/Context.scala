@@ -11,7 +11,7 @@ import parsley.Result
 import parsley.Success
 import parsley.errors.ErrorBuilder
 
-import parsley.internal.errors.{ExpectItem, Desc, LineBuilder}
+import parsley.internal.errors.{Desc, ExpectItem, LineBuilder}
 import parsley.internal.machine.errors.{
     ClassicExpectedError, ClassicExpectedErrorWithReason, ClassicFancyError, ClassicUnexpectedError, DefuncError,
     DefuncHints, EmptyHints, ErrorItemBuilder, TokenError
@@ -207,7 +207,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         checkStack = checkStack.tail
     }
 
-    private def pushError(err: DefuncError): Unit = this.errs = new ErrorStack(this.useHints(err), this.errs)
+    private [machine] def pushError(err: DefuncError): Unit = this.errs = new ErrorStack(this.useHints(err), this.errs)
     private [machine] def useHints(err: DefuncError): DefuncError = {
         if (hintsValidOffset == err.offset) err.withHints(hints)
         else {

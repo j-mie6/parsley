@@ -3,6 +3,8 @@
  */
 package parsley.internal.deepembedding.singletons
 
+import parsley.token.descriptions.numeric.PlusSignPresence
+
 import parsley.internal.deepembedding.Sign.SignType
 import parsley.internal.machine.instructions
 
@@ -24,40 +26,10 @@ private [parsley] final class Comment(start: String, end: String, line: String, 
     override def instr: instructions.Instr = new instructions.TokenComment(start, end, line, nested)
 }
 
-private [parsley] final class Sign[A](ty: SignType) extends Singleton[A => A] {
+private [parsley] final class Sign[A](ty: SignType, signPresence: PlusSignPresence) extends Singleton[A => A] {
     // $COVERAGE-OFF$
     override val pretty: String = "sign"
-    override def instr: instructions.Instr = new instructions.TokenSign(ty)
-}
-
-private [parsley] object Natural extends Singleton[Int] {
-    // $COVERAGE-OFF$
-    override val pretty: String = "natural"
-    override val instr: instructions.Instr = instructions.TokenNatural
-}
-
-private [parsley] object Float extends Singleton[Double] {
-    // $COVERAGE-OFF$
-    override val pretty: String = "float"
-    override val instr: instructions.Instr = instructions.TokenFloat
-}
-
-private [parsley] object Escape extends Singleton[Char] {
-    // $COVERAGE-OFF$
-    override val pretty: String = "escape"
-    override def instr: instructions.Instr = new instructions.TokenEscape
-}
-
-private [parsley] final class StringLiteral(ws: Char => Boolean) extends Singleton[String] {
-    // $COVERAGE-OFF$
-    override val pretty: String = "stringLiteral"
-    override def instr: instructions.Instr = new instructions.TokenString(ws)
-}
-
-private [parsley] object RawStringLiteral extends Singleton[String] {
-    // $COVERAGE-OFF$
-    override val pretty: String = "rawStringLiteral"
-    override val instr: instructions.Instr = instructions.TokenRawString
+    override def instr: instructions.Instr = new instructions.TokenSign(ty, signPresence)
 }
 
 private [parsley] class NonSpecific(override val pretty: String, name: String, illegalName: String,

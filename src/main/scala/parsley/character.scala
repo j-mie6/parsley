@@ -7,7 +7,7 @@ import scala.annotation.switch
 import scala.collection.immutable.NumericRange
 
 import parsley.Parsley.{attempt, empty, fresh, pure}
-import parsley.combinator.{choice, skipMany}
+import parsley.combinator.{choice, skip, skipMany}
 import parsley.errors.combinator.ErrorMethods
 
 import parsley.internal.deepembedding.{frontend, singletons}
@@ -76,8 +76,7 @@ import parsley.internal.deepembedding.{frontend, singletons}
   *     ''The full list of codepoints found in a category can be found in the
   *     [[https://www.unicode.org/Public/13.0.0/ucd/extracted/DerivedGeneralCategory.txt Unicode Character Database]]''.
   */
-object character
-{
+object character {
     /** This combinator tries parses a single specific character `c` from the input.
       *
       * Attempts to read the given character `c` from the input stream at the current
@@ -96,10 +95,16 @@ object character
       *
       * @param c the character to parse
       * @return a parser that tries to read a single `c`, or fails.
-      * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[string `string`]].
+      * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[string `string`]] or [[charUtf16 `charUtf16`]].
       * @group core
       */
     def char(c: Char): Parsley[Char] = new Parsley(new singletons.CharTok(c, None))
+
+    // TODO: document and optimise
+    def charUtf16(c: Int): Parsley[Int] = {
+        if (Character.isBmpCodePoint(c)) char(c.toChar).map(identity[Char])
+        else string(Character.toChars(c).mkString) #> c
+    }
 
     /** This combinator tries to parse a single character from the input that matches the given predicate.
       *
@@ -124,6 +129,17 @@ object character
       * @group core
       */
     def satisfy(pred: Char => Boolean): Parsley[Char] = new Parsley(new singletons.Satisfy(pred, None))
+
+    // TODO: document and optimise
+    def satisfyUtf16(pred: Int => Boolean): Parsley[Int] = attempt {
+        item.flatMap {
+            case h if h.isHighSurrogate => item.collect {
+                case l if Character.isSurrogatePair(h, l) && pred(Character.toCodePoint(h, l)) => Character.toCodePoint(h, l)
+            }
+            case c if pred(c.toInt) => pure(c.toInt)
+            case _ => empty
+        }
+    }
 
     /** This combinator attempts to parse a given string from the input, and fails otherwise.
       *
@@ -360,7 +376,14 @@ object character
     def stringOfMany(pc: Parsley[Char]): Parsley[String] = {
         val pf = pure[(StringBuilder, Char) => StringBuilder](_ += _)
         // Can't use the regular foldLeft here, because we need a fresh StringBuilder each time.
-        new Parsley(new frontend.Chainl(fresh(new StringBuilder).internal, pc.internal, pf.internal)).map(_.toString)
+        expr.infix.secretLeft1(fresh(new StringBuilder), pc, pf).map(_.toString)
+    }
+
+    // TODO: document
+    def stringOfManyUtf16(pc: Parsley[Int]): Parsley[String] = {
+        val pf = pure(addCodepoint(_, _))
+        // Can't use the regular foldLeft here, because we need a fresh StringBuilder each time.
+        expr.infix.secretLeft1(fresh(new StringBuilder), pc, pf).map(_.toString)
     }
 
     /** This combinator parses `pc` '''one''' or more times, collecting its results into a string.
@@ -387,7 +410,14 @@ object character
     def stringOfSome(pc: Parsley[Char]): Parsley[String] = {
         val pf = pure[(StringBuilder, Char) => StringBuilder](_ += _)
         // Can't use the regular foldLeft1 here, because we need a fresh StringBuilder each time.
-        new Parsley(new frontend.Chainl(pc.map(new StringBuilder += _).internal, pc.internal, pf.internal)).map(_.toString)
+        expr.infix.secretLeft1(pc.map(new StringBuilder += _), pc, pf).map(_.toString)
+    }
+
+    // TODO: document
+    def stringOfSomeUtf16(pc: Parsley[Int]): Parsley[String] = {
+        val pf = pure(addCodepoint(_, _))
+        // Can't use the regular foldLeft1 here, because we need a fresh StringBuilder each time.
+        expr.infix.secretLeft1(pc.map(addCodepoint(new StringBuilder, _)), pc, pf).map(_.toString)
     }
 
     /** This combinator tries to parse each of the strings `strs` (and `str0`), until one of them succeeds.
@@ -637,6 +667,14 @@ object character
       */
     val octDigit: Parsley[Char] = satisfy(isOctDigit).label("octal digit")
 
+    /** This parser tries to parse a bit and returns it if successful.
+      *
+      * A bit (binary digit) is either `'0'` or `'1'`.
+      *
+      * @group spec
+      */
+    val bit: Parsley[Char] = oneOf('0', '1').label("bit")
+
     // Functions
     /** This function returns true if a character is a whitespace character.
       *
@@ -691,4 +729,12 @@ object character
 
     // Sue me.
     private def renderChar(c: Char): String = parsley.errors.helpers.renderRawString(s"$c")
+
+    private [parsley] def addCodepoint(sb: StringBuilder, codepoint: Int): StringBuilder = {
+        if (Character.isSupplementaryCodePoint(codepoint)) {
+            sb += Character.highSurrogate(codepoint)
+            sb += Character.lowSurrogate(codepoint)
+        }
+        else sb += codepoint.toChar
+    }
 }

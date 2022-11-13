@@ -183,3 +183,18 @@ private [deepembedding] final class ManyUntil[A](val p: StrictParsley[Any]) exte
     final override def pretty(p: String): String = s"manyUntil($p)"
     // $COVERAGE-ON$
 }
+private [deepembedding] final class SkipManyUntil(val p: StrictParsley[Any]) extends Unary[Any, Unit] {
+    override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+        val start = state.freshLabel()
+        val loop = state.freshLabel()
+        instrs += new instructions.PushHandler(loop)
+        instrs += new instructions.Label(start)
+        suspend(p.codeGen[Cont, R]) |> {
+            instrs += new instructions.Label(loop)
+            instrs += new instructions.SkipManyUntil(start)
+        }
+    }
+    // $COVERAGE-OFF$
+    final override def pretty(p: String): String = s"manyUntil($p)"
+    // $COVERAGE-ON$
+}

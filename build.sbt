@@ -51,9 +51,9 @@ def determineVersion(currentVersion: String, compat: Compatibility, out: GitDesc
     }
 }
 
-val scala212Version = "2.12.15"
-val scala213Version = "2.13.8"
-val scala3Version = "3.1.2"
+val scala212Version = "2.12.17"
+val scala213Version = "2.13.10"
+val scala3Version = "3.2.1"
 
 def usesLib213(major: Long, minor: Long): Boolean = major > 2 || minor >= 13
 def extraSources(rootSrcFile: File, base: String, major: Long, minor: Long): Seq[File] = {
@@ -70,7 +70,7 @@ def extraSources(rootSrcFile: File, base: String, version: String): Seq[File] = 
 
 def scalaTestDependency(version: String): String =
     Map()
-    .getOrElse(version, "3.2.12")
+    .getOrElse(version, "3.2.14")
 
 val PureVisible: CrossType = new CrossType {
     def projectDir(crossBase: File, projectType: String): File = {
@@ -87,7 +87,7 @@ val PureVisible: CrossType = new CrossType {
 
     override def partiallySharedSrcDir(projectBase: File, platforms: Seq[Platform], conf: String): Option[File] = platforms match {
         case Seq(JVMPlatform, NativePlatform) => Some(projectBase.getParentFile / "jvm-native" / "src" / conf / "scala")
-        case Seq(JSPlatform, NativePlatform) => Some(projectBase.getParentFile / "js-native" / "src" / conf / "scala")
+        case Seq(JSPlatform, JVMPlatform) => Some(projectBase.getParentFile / "jvm-js" / "src" / conf / "scala")
         case _ => None
     }
   }
@@ -115,6 +115,8 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     Test / unmanagedSourceDirectories ++= extraSources(baseDirectory.value.getParentFile, "test", scalaVersion.value),
     Test / unmanagedSourceDirectories ++= extraSources(baseDirectory.value, "test", scalaVersion.value),
 
+    Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oI"),
+
     scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature"),
     scalacOptions ++= {
         if (scalaBinaryVersion.value == "3") Seq("-source:3.0-migration") else Seq.empty
@@ -124,7 +126,7 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
 
     Compile / doc / scalacOptions ++= Seq("-groups", "-doc-root-content", s"${baseDirectory.value.getParentFile.getPath}/rootdoc.md"),
     Compile / doc / scalacOptions ++= {
-        if (scalaBinaryVersion.value == "3") Seq("-comment-syntax", "wiki") else Seq.empty
+        if (scalaBinaryVersion.value == "3") Seq("-comment-syntax:wiki") else Seq.empty
     },
   )
   .jvmSettings(

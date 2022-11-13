@@ -128,10 +128,12 @@ class CoreTests extends ParsleyTest {
     "branch" must "work correctly for non-pure components" in {
         val p = ('a' #> 7) <+> ('b' #> 6)
         val q = ('+'.#>[Int => Int](_ + 1) <|> '-'.#>[Int => Int](_ - 1))
-        branch[Int, Int, Int](p, q, q).parse("a+") shouldBe Success(8)
-        branch[Int, Int, Int](p, q, q).parse("b+") shouldBe Success(7)
-        branch[Int, Int, Int](p, q, q).parse("a-") shouldBe Success(6)
-        branch[Int, Int, Int](p, q, q).parse("b-") shouldBe Success(5)
+        cases(branch[Int, Int, Int](p, q, q))(
+            "a+" -> Some(8),
+            "b+" -> Some(7),
+            "a-" -> Some(6),
+            "b-" -> Some(5),
+        )
     }
 
     "<|>" should "not try the second alternative if the first succeeded" in {

@@ -374,7 +374,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * First, this parser is ran, yielding `x` on success, then `q` is ran, yielding `y` on success. If both
       * are successful then `y` is returned and `x` is ignored. If either fail then the entire combinator fails.
       *
-      * ''Identical to `~>`: `*>` is more common in Haskell, wheras `~>` is more common in Scala.''
+      * ''Identical to `~>`: `*>` is more common in Haskell, whereas `~>` is more common in Scala.''
       *
       * @example {{{
       * scala> import parsley.character.char
@@ -393,7 +393,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * First, this parser is ran, yielding `x` on success, then `q` is ran, yielding `y` on success. If both
       * are successful then `x` is returned and `y` is ignored. If either fail then the entire combinator fails.
       *
-      * ''Identical to `<~`: `<*` is more common in Haskell, wheras `<~` is more common in Scala.''
+      * ''Identical to `<~`: `<*` is more common in Haskell, whereas `<~` is more common in Scala.''
       *
       * @example {{{
       * scala> import parsley.character.char
@@ -412,7 +412,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * First, this parser is ran, yielding `x` on success, then `q` is ran, yielding `y` on success. If both
       * are successful then `y` is returned and `x` is ignored. If either fail then the entire combinator fails.
       *
-      * ''Identical to `*>`: `*>` is more common in Haskell, wheras `~>` is more common in Scala.''
+      * ''Identical to `*>`: `*>` is more common in Haskell, whereas `~>` is more common in Scala.''
       *
       * @example {{{
       * scala> import parsley.character.char
@@ -432,7 +432,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * First, this parser is ran, yielding `x` on success, then `q` is ran, yielding `y` on success. If both
       * are successful then `x` is returned and `y` is ignored. If either fail then the entire combinator fails.
       *
-      * ''Identical to `<*`: `<*` is more common in Haskell, wheras `<~` is more common in Scala.''
+      * ''Identical to `<*`: `<*` is more common in Haskell, whereas `<~` is more common in Scala.''
       *
       * @example {{{
       * scala> import parsley.character.char
@@ -676,7 +676,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @return a parser which parses this parser many times and folds the results together with `f` and `k` left-associatively.
       * @group fold
       */
-    def foldLeft[B](k: B)(f: (B, A) => B): Parsley[B] = new Parsley(new frontend.Chainl(pure(k).internal, this.internal, pure(f).internal))
+    def foldLeft[B](k: B)(f: (B, A) => B): Parsley[B] = expr.infix.secretLeft1(pure(k), this, pure(f))
     /** This combinator will parse this parser '''one''' or more times combining the results with the function `f` and base value `k` from the right.
       *
       * This parser will continue to be parsed until it fails having '''not consumed''' input.
@@ -717,9 +717,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @since 2.1.0
       * @group fold
       */
-    def foldLeft1[B](k: B)(f: (B, A) => B): Parsley[B] = {
-        new Parsley(new frontend.Chainl(this.map(f(k, _)).internal, this.internal, pure(f).internal))
-    }
+    def foldLeft1[B](k: B)(f: (B, A) => B): Parsley[B] = expr.infix.secretLeft1(this.map(f(k, _)), this, pure(f))
     /** This combinator will parse this parser '''one''' or more times combining the results right-associatively with the function `op`.
       *
       * This parser will continue to be parsed until it fails having '''not consumed''' input.

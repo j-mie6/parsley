@@ -8,9 +8,12 @@ private [parsley] object Sign {
         type resultType
     }
     private [parsley] case object DoubleType extends SignType {
-        override type resultType = Double
+        override type resultType = BigDecimal
     }
     private [parsley] case object IntType extends SignType {
-        override type resultType = Int
+        override type resultType = BigInt
+    }
+    private [parsley] case object CombinedType extends SignType {
+        override type resultType = Either[BigInt, BigDecimal]
     }
 }

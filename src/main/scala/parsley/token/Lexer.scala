@@ -3,327 +3,788 @@
  */
 package parsley.token
 
-import parsley.Parsley, Parsley.{attempt, empty, notFollowedBy, pure, unit}
-import parsley.character.{char, digit, hexDigit, octDigit, satisfy, string}
-import parsley.combinator.{between, many, sepBy, sepBy1, skipMany, skipSome}
-import parsley.errors.combinator.{amend, entrench, unexpected, ErrorMethods}
-import parsley.implicits.character.charLift
-import parsley.lift.lift2
+import scala.language.implicitConversions
 
-import parsley.internal.deepembedding.Sign.{DoubleType, IntType, SignType}
+import parsley.Parsley, Parsley.{attempt, unit}
+import parsley.character.satisfyUtf16
+import parsley.combinator.{between, eof, sepBy, sepBy1, skipMany}
+import parsley.errors.combinator.{ErrorMethods, markAsToken}
+import parsley.registers.Reg
+import parsley.token.names.{ConcreteNames, LexemeNames, Names}
+import parsley.token.numeric.{Combined, Integer, LexemeCombined, LexemeInteger, LexemeReal, Real,
+                              SignedCombined, SignedInteger, SignedReal, UnsignedCombined, UnsignedInteger, UnsignedReal}
+import parsley.token.predicate.{Basic, CharPredicate, NotRequired, Unicode}
+import parsley.token.symbol.{ConcreteSymbol, LexemeSymbol, Symbol}
+import parsley.token.text.{Character, ConcreteCharacter, ConcreteString, EscapableCharacter, Escape, LexemeCharacter, LexemeString, RawCharacter}
+
 import parsley.internal.deepembedding.singletons
 
-/**
-  * When provided with a `LanguageDef`, this class will produce a large variety of parsers that can be used for
-  * tokenisation of a language. This includes parsing numbers and strings in their various formats and ensuring that
-  * all operations consume whitespace after them (so-called lexeme parsers). These are very useful in parsing
-  * programming languages. This class also has a large number of hand-optimised intrinsic parsers to improve performance!
-  * @param lang The rules that govern the language we are tokenising
-  * @since 2.2.0
+/** This class is just to allow for a polymorphic apply for the lexeme versions of each lexing category
+  *
+  * It is designed to be extended by `Lexer#lexeme` only (or within the tests!)
   */
-class Lexer(lang: LanguageDef) {
-    private def keyOrOp(startImpl: Impl, letterImpl: Impl, parser: Parsley[String], illegal: String => Boolean,
-                        combinatorName: String, name: String, illegalName: String) = {
-        val builder = (start: Char => Boolean, letter: Char => Boolean) =>
-            new Parsley(new singletons.NonSpecific(combinatorName, name, illegalName, start, letter, illegal))
-        lexeme {
-            (startImpl, letterImpl) match {
-                case (Static(start), Static(letter)) => builder(start, letter)
-                case _ =>
-                    attempt {
-                        amend {
-                            entrench(parser).flatMap {
-                                case x if illegal(x) => unexpected(s"$illegalName $x")
-                                case x => pure(x)
-                            }
-                        }
-                    }.label(name)
+private [token] sealed abstract class Lexeme {
+    def apply[A](p: Parsley[A]): Parsley[A]
+}
+// $COVERAGE-OFF$
+// This is used for the unit testing only!
+private [token] object Lexeme {
+    implicit def fromSpace(spaces: Parsley[_]): Lexeme = new Lexeme {
+        def apply[A](p: Parsley[A]): Parsley[A] = markAsToken(p) <* spaces
+    }
+    val empty = new Lexeme {
+        def apply[A](p: Parsley[A]): Parsley[A] = markAsToken(p)
+    }
+}
+// $COVERAGE-ON$
+
+/** This class provides a large selection of functionality concerned
+  * with lexing.
+  *
+  * This class provides lexing functionality to `parsley`, however
+  * it is guaranteed that nothing in this class is not implementable
+  * purely using `parsley`'s pre-existing functionality. These are
+  * regular parsers, but constructed in such a way that they create
+  * a clear and logical separation from the rest of the parser.
+  *
+  * The class is broken up into several internal "modules" that group
+  * together similar kinds of functionality. Importantly, the `lexemes`
+  * and `nonlexemes` objects separate the underlying token implementations
+  * based on whether or not they consume whitespace or not. Functionality
+  * is broadly duplicated across both of these modules: `lexemes` should
+  * be used by a wider parser, to ensure whitespace is handled uniformly;
+  * and `nonlexemes` should be used to define further composite tokens or
+  * in special circumstances where whitespace should not be consumed.
+  *
+  * It is possible that some of the implementations of
+  * parsers found within this class may have been hand-optimised for
+  * performance: care '''will''' have been taken to ensure these
+  * implementations precisely match the semantics of the originals.
+  *
+  * @define numeric
+  *     This object contains lexing functionality relevant to the parsing
+  *     of numbers. This is sub-divided into different categories:
+  *
+  *       - integers (both signed and unsigned)
+  *       - reals    (signed only)
+  *       - a combination of the two (signed and unsigned)
+  *
+  *     These contain relevant functionality for the processing of
+  *     decimal, hexadecimal, octal, and binary literals; or some
+  *     mixed combination thereof (as specified by `desc.numericDesc`).
+  *     Additionally, it is possible to ensure literals represent known
+  *     sizes or precisions.
+  *
+  * @define text
+  *     This object contains lexing functionality relevant to the parsing
+  *     of text. This is sub-divided into different categories:
+  *
+  *       - string literals (both with escapes and raw)
+  *       - multi-line string literals (both with escapes and raw)
+  *       - character literals
+  *
+  *     These contain the relevant functionality required to specify the
+  *     degree of unicode support for the underlying language, from
+  *     ASCII to full UTF-16.
+  *
+  * @define symbol
+  *     This object contains lexing functionality relevant to the parsing
+  *     of atomic symbols.
+  *
+  *     Symbols are characterised by their "unitness", that is, every parser
+  *     inside returns `Unit`. This is because they all parse a specific
+  *     known entity, and, as such, the result of the parse is irrelevant.
+  *     These can be things such as reserved names, or small symbols like
+  *     parentheses. This object also contains a means of creating new symbols
+  *     as well as implicit conversions to allow for Scala's string literals to serve
+  *     as symbols within a parser.
+  *
+  * @define names
+  *     This object contains lexing functionality relevant to the parsing
+  *     of names, which include operators or identifiers.
+  *
+  *     The parsing of names is mostly concerned with finding the longest
+  *     valid name that is not a reserved name, such as a hard keyword or
+  *     a special operator.
+  *
+  *    TODO: describe the configuration effects.
+  *
+  * @define natural
+  *     This is a collection of parsers concerned with handling unsigned (positive) integer literals.
+  *
+  *     Natural numbers are described generally as follows:
+  *       - '''`desc.numericDesc.literalBreakChar`''': determines whether or not it
+  *         is legal to "break up" the digits within a literal, for example: is `1_000_000` allowed?
+  *         If this is legal, describes what the break character is, and whether it can appear after
+  *         a hexadecimal/octal/binary prefix
+  *       - '''`desc.numericDesc.leadingZerosAllowed`''': determines whether or not it is
+  *         possible to add extraneous zero digits onto the front of a number or not. In some languages,
+  *         like C, this is disallowed, as numbers starting with `0` are octal numbers.
+  *       - '''`desc.numericDesc.integerNumbersCanBe{Hexadecimal/Octal/Binary}`''': these flags
+  *         control what kind of literals can appear within the `number` parser. Each type of literal
+  *         can be individually parsed with its corresponding parser, regardless of the value of the
+  *         flag
+  *       - '''`desc.numericDesc.{hexadecimal/octal/binary}Leads`''': controls what character must
+  *         follow a `0` when starting a number to change it from decimal into another base. This
+  *         set may be empty, in which case the literal is described purely with leading zero (C style
+  *         octals would set `octalLeads` to `Set.empty`)
+  *
+  *     Additional to the parsing of decimal, hexadecimal, octal, and binary literals, each parser can
+  *     be given a bit-width from 8- to 64-bit: this will check the parsed literal to ensure it is
+  *     a legal literal of that size.
+  * @define integer
+  *     This is a collection of parsers concerned with handling signed integer literals.
+  *
+  *     Signed integer literals are an extension of unsigned integer literals with the following
+  *     extra configuration:
+  *       - '''`desc.numericDesc.positiveSign`''': describes whether or not literals are
+  *         allowed to omit `+` for positive literals, must write a `+`, or can never write a `+`.
+  * @define real
+  *     This is a collection of parsers concerned with handling signed real numbers (like floats and doubles).
+  *
+  *     These literals consist of a (possibly optional) integer prefix, with at least one of a fractional component (with `.`)
+  *     or an exponential component.
+  *
+  *     Real numbers are an extension of signed integers with the following additional configuration:
+  *       - '''`desc.numericDesc.leadingDotAllowed`''': determines whether a literal like `.0` would be considered legal
+  *       - '''`desc.numericDesc.trailingDotAllowed`''': determines whether a literal like `0.` would be considered legal
+  *       - '''`desc.numericDesc.realNumbersCanBe{Hexadecimal/Octal/Binary}`''': these flags control
+  *         what kind of literals can appear within the `number` parser. Each type of literal
+  *         may still be individually parsed with its corresponding parser, regardless of the value of
+  *         the flag
+  *       - '''`desc.numericDesc.{decimal/hexadecimal/octal/binary}ExponentDesc`''': describes how the
+  *         exponential syntax works for each kind of base. If the syntax is legal, then this describes:
+  *         which characters start it (classically, this would be `e` or `E` for decimals); whether or
+  *         not it is compulsory for the literal (in Java and C, hexadecimal floats are ''only'' valid
+  *         when they have an exponent attached); and whether or not a `+` sign is mandatory, optional,
+  *         or illegal for positive exponents
+  *
+  *   Additional to the parsing of decimal, hexadecimal, octal, and binary floating literals, each
+  *   parser can be given a precision of IEEE 754 float or double. This can either be achieved by
+  *   rounding to the nearest representable value, or by ensuring that the literal must be precisely
+  *   representable as one of these numbers (which is defined as being one of binary, decimal
+  *   or exact `float` and `double` values as described by Java)
+  *
+  * @define unsignedCombined
+  *     This is a collection of parsers concerned with handling numeric literals that may either be
+  *     unsigned integers ''or'' unsigned reals.
+  *
+  *     There is no additional configuration offered over that found in `natural` or `real`.
+  *
+  *     the bit-bounds and precision of the integer or real parts of the result can be specified
+  *     in any pairing.
+  * @define signedCombined
+  *     This is a collection of parsers concerned with handling numeric literals that may either be
+  *     signed integers ''or'' signed reals.
+  *
+  *     There is no additional configuration offered over that found in `integer` or `real`.
+  *
+  *     the bit-bounds and precision of the integer or real parts of the result can be specified
+  *     in any pairing.
+  *
+  * @define character
+  *     This is a collection of parsers concerned with handling character literals.
+  *
+  *     Character literals are described generally as follows:
+  *       - '''`desc.textDesc.characterLiteralEnd`''': the character that starts and ends
+  *         the literal (for example in many languages this is `'`)
+  *       - '''`desc.textDesc.graphicCharacter`''': describes the legal characters that may appear
+  *         in the literal directly. Usually, this excludes control characters and newlines,
+  *         but permits most other things. Escape sequences can represent non-graphic
+  *         characters
+  *       - '''`desc.textDesc.escapeSequences`''': describes the legal escape sequences that
+  *         that can appear in a character literal (for example `\n` or `\u000a`)
+  *
+  *     Aside from the generic configuration, characters can be parsed in accordance with
+  *     varying levels of unicode support, from ASCII-only to full UTF-16 characters. Parsers
+  *     for each of four different vareties are exposed by this object.
+  * @define string
+  *     This is a collection of parsers concerned with handling single-line string literals.
+  *
+  *     String literals are described generally as follows:
+  *       - '''`desc.textDesc.stringEnds`''':  the sequence of characters that can begin or
+  *         end a string literal. Regardless of which of these is used for a specific literal,
+  *         the end of the literal ''must'' use the same sequence
+  *       - '''`desc.textDesc.graphicCharacter`''': describes the legal characters that may appear
+  *         in the literal directly. Usually, this excludes control characters and newlines,
+  *         but permits most other things. Escape sequences can represent non-graphic
+  *         characters for non-raw strings
+  *       - '''`desc.textDesc.escapeSequences`''': describes the legal escape sequences that
+  *         that can appear in a string literal (for example `\n` or `\u000a`)
+  * @define multiString
+  *    This is a collection of parsers concerned with handling multi-line string literals.
+  *
+  *     String literals are described generally as follows:
+  *       - '''`desc.textDesc.multiStringEnds`''':  the sequence of characters that can begin or
+  *         end a multi-line string literal. Regardless of which of these is used for a specific literal,
+  *         the end of the literal ''must'' use the same sequence
+  *       - '''`desc.textDesc.graphicCharacter`''': describes the legal characters that may appear
+  *         in the literal directly. Usually, this excludes control characters and newlines,
+  *         but permits most other things. Escape sequences can represent non-graphic
+  *         characters for non-raw strings
+  *       - '''`desc.textDesc.escapeSequences`''': describes the legal escape sequences that
+  *         that can appear in a string literal (for example `\n` or `\u000a`)
+  * @define raw this will be parsed without handling any escape sequences,
+  *         this includes literal-end characters and the escape prefix
+  *         (often `"` and `\` respectively)
+  *
+  * @constructor TODO:
+  * @param desc the configuration for the lexer, specifying the lexical
+  *             rules of the grammar being parsed.
+  * @param errConfig the configuration for error messages generated within
+  *                  the lexer.
+  * @since 4.0.0
+  */
+// TODO: remove
+class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
+    /** TODO:
+      *
+      * @param desc the configuration for the lexer, specifying the lexical
+      *             rules of the grammar/language being parsed.
+      * @since 4.0.0
+      */
+    def this(desc: descriptions.LexicalDesc) = this(desc, errors.ErrorConfig.default)
+    // $COVERAGE-OFF$
+    @deprecated def this(lang: LanguageDef) = this(lang.toDesc)
+    // $COVERAGE-ON$
+
+    /** This object is concerned with ''lexemes'': these are tokens that are
+      * treated as "words", such that whitespace will be consumed after each
+      * has been parsed.
+      *
+      * Ideally, a wider parser should not be concerned with
+      * handling whitespace, as it is responsible for dealing with a stream
+      * of tokens. With parser combinators, however, it is usually not the
+      * case that there is a separate distinction between the parsing phase
+      * and the lexing phase. That said, it is good practice to establish
+      * a logical separation between the two worlds. As such, this object
+      * contains parsers that parse tokens, and these are whitespace-aware.
+      * This means that whitespace will be consumed '''after''' any of these
+      * parsers are parsed. It is not, however, required that whitespace be
+      * present.
+      *
+      * @since 4.0.0
+      */
+    object lexeme extends Lexeme {
+        /** This combinator turns a non-lexeme parser into a lexeme one by
+          * ensuring whitespace is consumed after the parser.
+          *
+          * When using parser combinators, it is important to establish a
+          * consistent whitespace consumption scheme: ideally, there is no
+          * wasteful parsing, and whitespace consumption should not impact
+          * backtracking. This leads to a convention that whitespace must
+          * only be consumed ''after'' a token, and only once at the very
+          * start of the parser (see [[fully `fully`]]). When manually
+          * constructing tokens that are not supported by this lexer, use
+          * this combinator to ensure it also follows the whitespace convention.
+          *
+          * @param p the token parser to ensure consumes trailing whitespace.
+          * @since 4.0.0
+          */
+        def apply[A](p: Parsley[A]): Parsley[A] = markAsToken(p) <* space.whiteSpace
+
+        /** $names
+          *
+          * @since 4.0.0
+          */
+        val names: parsley.token.names.Names = new LexemeNames(nonlexeme.names, this)
+
+        /** $numeric
+          *
+          * @since 4.0.0
+          */
+        object numeric {
+            /** $natural
+              *
+              * @since 4.0.0
+              * @note alias for [[natural `natural`]].
+              */
+            // $COVERAGE-OFF$
+            def unsigned: parsley.token.numeric.Integer = natural
+            // $COVERAGE-ON$
+            /** $natural
+              *
+              * @since 4.0.0
+              */
+            val natural: parsley.token.numeric.Integer = new LexemeInteger(nonlexeme.numeric.natural, lexeme)
+
+            /** $integer
+              *
+              * @since 4.0.0
+              * @note alias for [[integer `integer`]]
+              * @see [[unsigned `unsigned`]] for a full description of signed integer configuration
+              */
+            // $COVERAGE-OFF$
+            def signed: parsley.token.numeric.Integer = integer
+            // $COVERAGE-ON$
+            /** $integer
+              *
+              * @since 4.0.0
+              * @see [[natural `natural`]] for a full description of integer configuration
+              */
+            val integer: parsley.token.numeric.Integer = new LexemeInteger(nonlexeme.numeric.integer, lexeme)
+
+            /** $real
+              *
+              * @since 4.0.0
+              * @note alias for [[real `real`]]
+              * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
+              */
+            // $COVERAGE-OFF$
+            def floating: parsley.token.numeric.Real = real
+            // $COVERAGE-ON$
+            private [Lexer] val positiveReal = new LexemeReal(nonlexeme.numeric.positiveReal, lexeme)
+            /** $real
+              *
+              * @since 4.0.0
+              * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
+              */
+            val real: parsley.token.numeric.Real = new LexemeReal(nonlexeme.numeric.real, lexeme)
+
+            /** $unsignedCombined
+              *
+              * @since 4.0.0
+              */
+            val unsignedCombined: parsley.token.numeric.Combined = new LexemeCombined(nonlexeme.numeric.unsignedCombined, lexeme)
+            /** $signedCombined
+              *
+              * @since 4.0.0
+              */
+            val signedCombined: parsley.token.numeric.Combined = new LexemeCombined(nonlexeme.numeric.signedCombined, lexeme)
+        }
+
+        /** $text
+          *
+          * @since 4.0.0
+          */
+        object text {
+            /** $character
+              *
+              * @since 4.0.0
+              */
+            val character: parsley.token.text.Character = new LexemeCharacter(nonlexeme.text.character, lexeme)
+            /** $string
+              *
+              * @since 4.0.0
+              */
+            val string: parsley.token.text.String = new LexemeString(nonlexeme.text.string, lexeme)
+            /** $string
+              *
+              * @note $raw
+              * @since 4.0.0
+              */
+            val rawString: parsley.token.text.String = new LexemeString(nonlexeme.text.rawString, lexeme)
+            /** $multiString
+              *
+              * @since 4.0.0
+              */
+            val multiString: parsley.token.text.String = new LexemeString(nonlexeme.text.multiString, lexeme)
+            /** $multiString
+              *
+              * @note $raw
+              * @since 4.0.0
+              */
+            val rawMultiString: parsley.token.text.String = new LexemeString(nonlexeme.text.rawMultiString, lexeme)
+        }
+
+        /** $symbol
+          *
+          * @since 4.0.0
+          */
+        val symbol: parsley.token.symbol.Symbol = new LexemeSymbol(nonlexeme.symbol, this)
+
+        /** This object contains helper combinators for parsing terms separated by
+          * common symbols.
+          *
+          * @since 4.0.0
+          */
+        object separators {
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            def semiSep[A](p: Parsley[A]): Parsley[List[A]] = sepBy(p, symbol.semi)
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            def semiSep1[A](p: Parsley[A]): Parsley[List[A]] = sepBy1(p, symbol.semi)
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            def commaSep[A](p: Parsley[A]): Parsley[List[A]] = sepBy(p, symbol.comma)
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            def commaSep1[A](p: Parsley[A]): Parsley[List[A]] = sepBy1(p, symbol.comma)
+        }
+
+        /** This object contains helper combinators for parsing terms enclosed by
+          * common symbols.
+          *
+          * @since 4.0.0
+          */
+        object enclosing {
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            def parens[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, symbol.openParen, symbol.closingParen, "parentheses")
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            def braces[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, symbol.openBrace, symbol.closingBrace, "braces")
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            def angles[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, symbol.openAngle, symbol.closingAngle, "angle brackets")
+            /** TODO:
+              *
+              * @since 4.0.0
+              */
+            def brackets[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, symbol.openSquare, symbol.closingSquare, "square brackets")
+
+            private def enclosing[A](p: =>Parsley[A], open: Parsley[Unit], close: Parsley[Unit], plural: String) =
+                between(open, close.explain(s"unclosed $plural"), p)
+        }
+    }
+
+    /** This object is concerned with ''non-lexemes'': these are tokens that
+      * do not give any special treatment to whitespace.
+      *
+      * Whilst the functionality in `lexeme` is ''strongly'' recommended for
+      * wider use in a parser, the functionality here may be useful for more
+      * specialised use-cases. In particular, these may for the building blocks
+      * for more complex tokens (where whitespace is not allowed between them, say),
+      * in which case these compound tokens can be turned into lexemes manually.
+      * For example, the lexer does not have configuration for trailing specifiers
+      * on numeric literals (like, `1024L` in Scala, say): the desired numeric
+      * literal parser could be extended with this functionality ''before'' whitespace
+      * is consumed by using the variant found in this object.
+      *
+      * Alternatively, these tokens can be used for ''lexical extraction'', which
+      * can be performed by the [[parsley.errors.ErrorBuilder `ErrorBuilder`]]
+      * typeclass: this can be used to try and extract tokens from the input stream
+      * when an error happens, to provide a more informative error. In this case,
+      * it is desirable to ''not'' consume whitespace after the token to keep the
+      * error tight and precise.
+      *
+      * @since 4.0.0
+      */
+    object nonlexeme {
+        /** $names
+          *
+          * @since 4.0.0
+          */
+        val names: parsley.token.names.Names = new ConcreteNames(desc.nameDesc, desc.symbolDesc)
+
+        /** $numeric
+          *
+          * @since 4.0.0
+          */
+        object numeric {
+            /** $natural
+              *
+              * @since 4.0.0
+              * @note alias for [[natural `natural`]].
+              */
+            // $COVERAGE-OFF$
+            def unsigned: parsley.token.numeric.Integer = natural
+            // $COVERAGE-ON$
+            /** $natural
+              *
+              * @since 4.0.0
+              */
+            val natural: parsley.token.numeric.Integer = new UnsignedInteger(desc.numericDesc)
+
+            /** $integer
+              *
+              * @since 4.0.0
+              * @note alias for [[integer `integer`]]
+              * @see [[unsigned `unsigned`]] for a full description of signed integer configuration
+              */
+            // $COVERAGE-OFF$
+            def signed: parsley.token.numeric.Integer = integer
+            // $COVERAGE-ON$
+            /** $integer
+              *
+              * @since 4.0.0
+              * @see [[natural `natural`]] for a full description of integer configuration
+              */
+            val integer: parsley.token.numeric.Integer = new SignedInteger(desc.numericDesc, natural)
+
+            /** $real
+              *
+              * @since 4.0.0
+              * @note alias for [[real `real`]]
+              * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
+              */
+            // $COVERAGE-OFF$
+            def floating: parsley.token.numeric.Real = real
+            // $COVERAGE-ON$
+            private [Lexer] val positiveReal = new UnsignedReal(desc.numericDesc, natural)
+            /** $real
+              *
+              * @since 4.0.0
+              * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
+              */
+            val real: parsley.token.numeric.Real = new SignedReal(desc.numericDesc, positiveReal)
+
+            /** $unsignedCombined
+              *
+              * @since 4.0.0
+              */
+            val unsignedCombined: parsley.token.numeric.Combined = new UnsignedCombined(desc.numericDesc, integer, positiveReal)
+            /** $signedCombined
+              *
+              * @since 4.0.0
+              */
+            val signedCombined: parsley.token.numeric.Combined = new SignedCombined(desc.numericDesc, unsignedCombined)
+        }
+
+        /** $text
+          *
+          * @since 4.0.0
+          */
+        object text {
+            private val escapes = new Escape(desc.textDesc.escapeSequences)
+            private val escapeChar = new EscapableCharacter(desc.textDesc.escapeSequences, escapes, space.space)
+
+            /** $character
+              *
+              * @since 4.0.0
+              */
+            val character: parsley.token.text.Character = new ConcreteCharacter(desc.textDesc, escapes)
+            /** $string
+              *
+              * @since 4.0.0
+              */
+            val string: parsley.token.text.String =
+                new ConcreteString(desc.textDesc.stringEnds, escapeChar, desc.textDesc.graphicCharacter, false)
+            /** $string
+              *
+              * @note $raw
+              * @since 4.0.0
+              */
+            val rawString: parsley.token.text.String =
+                new ConcreteString(desc.textDesc.stringEnds, RawCharacter, desc.textDesc.graphicCharacter, false)
+            /** $multiString
+              *
+              * @since 4.0.0
+              */
+            val multiString: parsley.token.text.String =
+                new ConcreteString(desc.textDesc.multiStringEnds, escapeChar, desc.textDesc.graphicCharacter, true)
+            /** $multiString
+              *
+              * @note $raw
+              * @since 4.0.0
+              */
+            val rawMultiString: parsley.token.text.String =
+                new ConcreteString(desc.textDesc.multiStringEnds, RawCharacter, desc.textDesc.graphicCharacter, true)
+        }
+
+        /** $symbol
+          *
+          * @since 4.0.0
+          */
+        val symbol: parsley.token.symbol.Symbol = new ConcreteSymbol(desc.nameDesc, desc.symbolDesc)
+    }
+
+    /** This combinator ensures a parser fully parses all available input, and consumes whitespace
+      * at the start.
+      *
+      * This combinator should be used ''once'' as the outermost combinator in a parser. It is the
+      * only combinator that should consume ''leading'' whitespace, and this must be the first
+      * thing a parser does. It will ensure that, after the parser is complete, the end of the
+      * input stream has been reached.
+      *
+      * @since 4.0.0
+      */
+    def fully[A](p: =>Parsley[A]): Parsley[A] = {
+        val init = if (desc.spaceDesc.whitespaceIsContextDependent) space.init else unit
+        init *> space.whiteSpace *> p <* eof
+    }
+
+    /** This object is concerned with special treatment of whitespace.
+      *
+      * For the vast majority of cases, the functionality within this
+      * object shouldn't be needed, as whitespace is consistently handled
+      * by `lexeme` and `fully`. However, for grammars where whitespace
+      * is significant (like indentation-sensitive languages), this object
+      * provides some more fine-grained control over how whitespace is
+      * consumed by the parsers within `lexeme`.
+      *
+      * @since 4.0.0
+      */
+    object space {
+        private [Lexer] lazy val space = desc.spaceDesc.space.toNative
+        private lazy val wsImpl = Reg.make[Parsley[Unit]]
+
+        /** This parser initialises the whitespace used by the lexer when
+          * `spaceDesc.whiteSpaceIsContextDependent` is set to `true`.
+          *
+          * The whitespace is set to the implementation given by the lexical description.
+          * This parser '''must''' be used, by `fully` or otherwise, as the first thing
+          * the global parser does or an `UnfilledRegisterException` will occur.
+          *
+          * @note this parser is automatically invoked by the [[fully `fully`]] combinator when applicable.
+          * @see [[alter `alter`]] for how to change whitespace during a parse.
+          * @since 4.0.0
+          */
+        def init: Parsley[Unit] = {
+            if (!desc.spaceDesc.whitespaceIsContextDependent) {
+                // $COVERAGE-OFF$
+                throw new UnsupportedOperationException( // scalastyle:ignore throw
+                    "Whitespace cannot be initialised unless `spaceDesc.whitespaceIsContextDependent` is true"
+                )
+                // $COVERAGE-ON$
+            }
+            wsImpl.put(_whiteSpace)
+        }
+
+        /** This combinator changes how whitespace is parsed by lexemes for the duration of
+          * a given parser.
+          *
+          * So long as `spaceDesc.whiteSpaceIsContextDependent` is set to `true`, this combinator
+          * will be able to locally change the definition of whitespace during the given parser.
+          *
+          * @example
+          *  In indentation sensitive languages, the indentation sensitivity is often ignored
+          *  within parentheses or braces. In these cases `lexeme.enclosing.parens(space.alter(withNewline)(p))`
+          *  would allow unrestricted newlines within parentheses.
+          *
+          * @param newSpace the new implementation of whitespace to be used during the execution of `within`.
+          * @param within the parser that should be parsed using the updated whitespace.
+          * @note the whitespace will not be restored to its original implementation if the
+          *       given parser fails having consumed input.
+          * @since 4.0.0
+          */
+        def alter[A](newSpace: CharPredicate)(within: =>Parsley[A]): Parsley[A] = {
+            if (!desc.spaceDesc.whitespaceIsContextDependent) {
+                // $COVERAGE-OFF$
+                throw new UnsupportedOperationException( // scalastyle:ignore throw
+                    "Whitespace cannot be altered unless `spaceDesc.whitespaceIsContextDependent` is true"
+                )
+                // $COVERAGE-ON$
+            }
+            wsImpl.rollback(wsImpl.local(whiteSpace(newSpace))(within))
+        }
+
+        private def _whiteSpace: Parsley[Unit] = whiteSpace(desc.spaceDesc.space)
+
+        /** TODO:
+          *
+          * @since 4.0.0
+          */
+        val whiteSpace: Parsley[Unit] = {
+            if (desc.spaceDesc.whitespaceIsContextDependent) wsImpl.get.flatten
+            else _whiteSpace
+        }
+
+        private [Lexer] def whiteSpace(impl: CharPredicate): Parsley[Unit] = impl match {
+            case NotRequired => skipComments
+            case Basic(ws) => new Parsley(new singletons.WhiteSpace(ws, desc.spaceDesc.commentStart, desc.spaceDesc.commentEnd,
+                                                                        desc.spaceDesc.commentLine, desc.spaceDesc.nestedComments)).hide
+            case Unicode(ws) if desc.spaceDesc.supportsComments =>
+                skipMany(attempt(new Parsley(new singletons.Comment(desc.spaceDesc.commentStart,
+                                                                    desc.spaceDesc.commentEnd,
+                                                                    desc.spaceDesc.commentLine,
+                                                                    desc.spaceDesc.nestedComments))) <|> satisfyUtf16(ws)).hide
+            case Unicode(ws) => skipMany(satisfyUtf16(ws)).hide
+        }
+
+        /** TODO:
+          *
+          * @since 4.0.0
+          */
+        lazy val skipComments: Parsley[Unit] = {
+            if (!desc.spaceDesc.supportsComments) unit
+            else {
+                new Parsley(new singletons.SkipComments(desc.spaceDesc.commentStart, desc.spaceDesc.commentEnd,
+                                                        desc.spaceDesc.commentLine,  desc.spaceDesc.nestedComments)).hide
             }
         }
     }
 
-    // Identifiers & Reserved words
-    /**This lexeme parser parses a legal identifier. Returns the identifier string. This parser will
-     * fail on identifiers that are reserved words (i.e. keywords). Legal identifier characters and
-     * keywords are defined in the `LanguageDef` provided to the lexer. An identifier is treated
-     * as a single token using `attempt`.*/
-    lazy val identifier: Parsley[String] = keyOrOp(lang.identStart, lang.identLetter, ident, isReservedName(_),  "identifier", "identifier", "keyword")
-
-    /**The lexeme parser `keyword(name)` parses the symbol `name`, but it also checks that the `name`
-     * is not a prefix of a valid identifier. A `keyword` is treated as a single token using `attempt`.*/
-    def keyword(name: String): Parsley[Unit] = lang.identLetter match
-    {
-        case Static(letter) => lexeme(new Parsley(new singletons.Specific("keyword", name, letter, lang.caseSensitive)))
-        case _ => lexeme(attempt(caseString(name) *> notFollowedBy(identLetter).label("end of " + name)))
-    }
-
-    private def caseString(name: String): Parsley[String] =
-    {
-        def caseChar(c: Char): Parsley[Char] = if (c.isLetter) c.toLower <|> c.toUpper else c
-        if (lang.caseSensitive) string(name)
-        else name.foldLeft(pure(name))((p, c) => p <* caseChar(c)).label(name)
-    }
-    private def isReservedName(name: String): Boolean = theReservedNames.contains(if (lang.caseSensitive) name else name.toLowerCase)
-    private val theReservedNames =  if (lang.caseSensitive) lang.keywords else lang.keywords.map(_.toLowerCase)
-    private lazy val identStart = toParser(lang.identStart)
-    private lazy val identLetter = toParser(lang.identLetter)
-    private lazy val ident = lift2((c: Char, cs: List[Char]) => (c::cs).mkString, identStart, many(identLetter))
-
-    // Operators & Reserved ops
-    /**This lexeme parser parses a legal operator. Returns the name of the operator. This parser
-     * will fail on any operators that are reserved operators. Legal operator characters and
-     * reserved operators are defined in the `LanguageDef` provided to the lexer. A
-     * `userOp` is treated as a single token using `attempt`.*/
-    lazy val userOp: Parsley[String] = keyOrOp(lang.opStart, lang.opLetter, oper, isReservedOp(_), "userOp", "operator", "reserved operator")
-
-    /**This non-lexeme parser parses a reserved operator. Returns the name of the operator.
-     * Legal operator characters and reserved operators are defined in the `LanguageDef`
-     * provided to the lexer. A `reservedOp_` is treated as a single token using `attempt`.*/
-    lazy val reservedOp_ : Parsley[String] = keyOrOp(lang.opStart, lang.opLetter, oper, !isReservedOp(_), "reservedOp", "operator", "non-reserved operator")
-
-    /**This lexeme parser parses a reserved operator. Returns the name of the operator. Legal
-     * operator characters and reserved operators are defined in the `LanguageDef` provided
-     * to the lexer. A `reservedOp` is treated as a single token using `attempt`.*/
-    lazy val reservedOp: Parsley[String] = lexeme(reservedOp_)
-
-    /**The lexeme parser `operator(name)` parses the symbol `name`, but also checks that the `name`
-     * is not the prefix of a valid operator. An `operator` is treated as a single token using
-     * `attempt`.*/
-    def operator(name: String): Parsley[Unit] = lexeme(operator_(name))
-
-    /**The non-lexeme parser `operator_(name)` parses the symbol `name`, but also checks that the `name`
-     * is not the prefix of a valid operator. An `operator` is treated as a single token using
-     * `attempt`.*/
-    def operator_(name: String): Parsley[Unit] = lang.opLetter match
-    {
-        case Static(letter) => new Parsley(new singletons.Specific("operator", name, letter, true))
-        case _ => attempt(string(name) *> notFollowedBy(opLetter).label("end of " + name))
-    }
-
-    /**The lexeme parser `maxOp(name)` parses the symbol `name`, but also checks that the `name`
-      * is not part of a larger reserved operator. An `operator` is treated as a single token using
-      * `attempt`.*/
-    def maxOp(name: String): Parsley[Unit] = lexeme(maxOp_(name))
-
-    /**The non-lexeme parser `maxOp_(name)` parses the symbol `name`, but also checks that the `name`
-      * is not part of a larger reserved operator. An `operator` is treated as a single token using
-      * `attempt`.*/
-    def maxOp_(name: String): Parsley[Unit] = new Parsley(new singletons.MaxOp(name, lang.operators))
-
-    private def isReservedOp(op: String): Boolean = lang.operators.contains(op)
-    private lazy val opStart = toParser(lang.opStart)
-    private lazy val opLetter = toParser(lang.opLetter)
-    private lazy val oper = lift2((c: Char, cs: List[Char]) => (c::cs).mkString, opStart, many(opLetter))
-
-    // Chars & Strings
-    /**This lexeme parser parses a single literal character. Returns the literal character value.
-     * This parser deals correctly with escape sequences. The literal character is parsed according
-     * to the grammar rules defined in the Haskell report (which matches most programming languages
-     * quite closely).*/
-    lazy val charLiteral: Parsley[Char] = lexeme(between('\''.label("character"), '\''.label("end of character"), characterChar))
-
-    /**This lexeme parser parses a literal string. Returns the literal string value. This parser
-     * deals correctly with escape sequences and gaps. The literal string is parsed according to
-     * the grammar rules defined in the Haskell report (which matches most programming languages
-     * quite closely).*/
-    lazy val stringLiteral: Parsley[String] = lexeme(stringLiteral_)
-
-    /**This non-lexeme parser parses a literal string. Returns the literal string value. This parser
-     * deals correctly with escape sequences and gaps. The literal string is parsed according to
-     * the grammar rules defined in the Haskell report (which matches most programming languages
-     * quite closely).*/
-    lazy val stringLiteral_ : Parsley[String] = lang.space match {
-        case Static(ws) => new Parsley(new singletons.StringLiteral(ws))
-        case _ => between('"'.label("string"), '"'.label("end of string"), many(stringChar)).map(_.flatten.mkString)
-    }
-
-    /**This non-lexeme parser parses a string in a raw fashion. The escape characters in the string
-     * remain untouched. While escaped quotes do not end the string, they remain as \" in the result
-     * instead of becoming a quote character. Does not support string gaps. */
-    lazy val rawStringLiteral: Parsley[String] = new Parsley(singletons.RawStringLiteral)
-
-    private def letter(terminal: Char): Parsley[Char] = satisfy(c => c != terminal && c != '\\' && c > '\u0016')
-
-    private lazy val escapeCode = new Parsley(singletons.Escape)
-    private lazy val charEscape = '\\' *> escapeCode
-    private lazy val charLetter = letter('\'')
-    private lazy val characterChar = (charLetter <|> charEscape).label("literal character")
-
-    private val escapeEmpty = '&'
-    private lazy val escapeGap = skipSome(space.label("string gap")) *> '\\'.label("end of string gap")
-    private lazy val stringLetter = letter('"')
-    private lazy val stringEscape: Parsley[Option[Char]] = {
-        '\\' *> (escapeGap #> None
-             <|> escapeEmpty #> None
-             <|> (escapeCode.map(Some(_))).explain("invalid escape sequence"))
-    }
-    private lazy val stringChar: Parsley[Option[Char]] = ((stringLetter.map(Some(_))) <|> stringEscape).label("string character")
-
-    // Numbers
-    /**This lexeme parser parses a natural number (a positive whole number). Returns the value of
-     * the number. The number can specified in `decimal`, `hexadecimal` or `octal`. The number is
-     * parsed according to the grammar rules in the Haskell report.*/
-    lazy val natural: Parsley[Int] = lexeme(nat)
-
-    /**This lexeme parser parses an integer (a whole number). This parser is like `natural` except
-     * that it can be prefixed with a sign (i.e '-' or '+'). Returns the value of the number. The
-     * number can be specified in `decimal`, `hexadecimal` or `octal`. The number is parsed
-     * according to the grammar rules in the haskell report.*/
-    lazy val integer: Parsley[Int] = lexeme(int.label("integer"))
-
-    /**This lexeme parser parses a floating point value. Returns the value of the number. The number
-     * is parsed according to the grammar rules defined in the Haskell report.*/
-    lazy val unsignedFloat: Parsley[Double] = lexeme(floating)
-
-    /**This lexeme parser parses a floating point value. Returns the value of the number. The number
-     * is parsed according to the grammar rules defined in the Haskell report. Accepts an optional
-     * '+' or '-' sign.*/
-    lazy val float: Parsley[Double] = lexeme(signedFloating.label("float"))
-
-    /**This lexeme parser parses either `integer` or `float`. Returns the value of the number. This
-     * parser deals with any overlap in the grammar rules for naturals and floats. The number is
-     * parsed according to the grammar rules defined in the Haskell report.*/
-    lazy val number: Parsley[Either[Int, Double]] = lexeme(number_.label("number"))
-
-    /**This lexeme parser parses either `natural` or `unsigned float`. Returns the value of the number. This
-      * parser deals with any overlap in the grammar rules for naturals and floats. The number is
-      * parsed according to the grammar rules defined in the Haskell report.*/
-    lazy val naturalOrFloat: Parsley[Either[Int, Double]] = lexeme(natFloat.label("unsigned number"))
-
-    private lazy val decimal_ = number(base = 10, digit)
-
-    private def prefixedNumber(prefix: Char, base: Int, digit: Parsley[Char]) = satisfy(c => c.toLower == prefix.toLower) *> number(base, digit)
-    private lazy val hexadecimal_ = prefixedNumber('x', 16, hexDigit)
-    private lazy val octal_ = prefixedNumber('o', 8, octDigit)
-
-    // Floats
-    private def sign(ty: SignType) = new Parsley(new singletons.Sign[ty.resultType](ty))
-    private lazy val floating = new Parsley(singletons.Float)
-    private lazy val signedFloating = sign(DoubleType) <*> floating
-    private lazy val natFloat = attempt(floating.map(Right(_))) <|> nat.map(Left(_))
-    private lazy val number_ =
-        ('+' *> natFloat
-     <|> '-' *> natFloat.map{ case Left(n) => Left(-n); case Right(f) => Right(-f) }
-     <|> natFloat)
-
-    // Integers and Naturals
-    private lazy val nat = new Parsley(singletons.Natural)
-    private lazy val int = sign(IntType) <*> nat
-
-    /**Parses a positive whole number in the decimal system. Returns the value of the number.*/
-    lazy val decimal: Parsley[Int] = lexeme(decimal_)
-
-    /**Parses a positive whole number in the hexadecimal system. The number should be prefixed with
-     * "0x" or "0X". Returns the value of the number.*/
-    lazy val hexadecimal: Parsley[Int] = lexeme('0' *> hexadecimal_)
-
-    /**Parses a positive whole number in the octal system. The number should be prefixed with "0o"
-     * or "0O". Returns the value of the number.*/
-    lazy val octal: Parsley[Int] = lexeme('0' *> octal_)
-
-    private def number(base: Int, baseDigit: Parsley[Char]): Parsley[Int] = baseDigit.foldLeft1(0)((x, d) => base*x + d.asDigit)
-
-    // White space & symbols
-    /**Lexeme parser `symbol(s)` parses `string(s)` and skips trailing white space.*/
-    def symbol(name: String): Parsley[String] = lexeme(string(name))
-    /**Lexeme parser `symbol(c)` parses `char(c)` and skips trailing white space.*/
-    def symbol(name: Char): Parsley[Char] = lexeme(char(name))
-
-    /**Like `symbol`, but treats it as a single token using `attempt`. Only useful for
-     * strings, since characters are already single token.*/
-    def symbol_(name: String): Parsley[String] = lexeme(attempt(string(name)))
-
-    /**`lexeme(p)` first applies parser `p` and then the `whiteSpace` parser, returning the value of
-     * `p`. Every lexical token (lexeme) is defined using `lexeme`, this way every parse starts at a
-     * point without white space. The only point where the `whiteSpace` parser should be called
-     * explicitly is the start of the main parser in order to skip any leading white space.*/
-    def lexeme[A](p: =>Parsley[A]): Parsley[A] = p <* whiteSpace
-
-    private lazy val space = toParser(lang.space)
-
-    /**Parses any white space. White space consists of zero or more occurrences of a `space` (as
-     * provided by the `LanguageDef`), a line comment or a block (multi-line) comment. Block
-     * comments may be nested. How comments are started and ended is defined in the `LanguageDef`
-     * that is provided to the lexer.*/
-    lazy val whiteSpace: Parsley[Unit] = whiteSpace_(lang.space).hide
-
-    /**Parses any white space. White space consists of zero or more occurrences of a `space` (as
-     * provided by the parameter), a line comment or a block (multi-line) comment. Block
-     * comments may be nested. How comments are started and ended is defined in the `LanguageDef`
-     * that is provided to the lexer.*/
-    val whiteSpace_ : Impl => Parsley[Unit] = {
-        case NotRequired => skipComments
-        case Static(ws) => new Parsley(new singletons.WhiteSpace(ws, lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
-        case Parser(space_) if lang.supportsComments =>
-            skipMany(attempt(new Parsley(new singletons.Comment(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))) <|> space_)
-        case Parser(space_) => skipMany(space_)
-        // $COVERAGE-OFF$
-        case _ => ??? // scalastyle:ignore not.implemented.error.usage
-        // $COVERAGE-ON$
-    }
-
-    /**Parses any comments and skips them, this includes both line comments and block comments.*/
-    lazy val skipComments: Parsley[Unit] = {
-        if (!lang.supportsComments) unit
-        else {
-            new Parsley(new singletons.SkipComments(lang.commentStart, lang.commentEnd, lang.commentLine, lang.nestedComments))
-        }
-    }
-
-    private def enclosing[A](p: =>Parsley[A], open: Char, close: Char, singular: String, plural: String) =
-        between(lexeme(open.label(s"open $singular")),
-                lexeme(close.label(s"matching closing $singular").explain(s"unclosed $plural")),
-                p)
-
-    // Bracketing
-    /**Lexeme parser `parens(p)` parses `p` enclosed in parenthesis, returning the value of `p`.*/
-    def parens[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, '(', ')', "parenthesis", "parentheses")
-
-    /**Lexeme parser `braces(p)` parses `p` enclosed in braces ('{', '}'), returning the value of 'p'*/
-    def braces[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, '{', '}', "brace", "braces")
-
-    /**Lexeme parser `angles(p)` parses `p` enclosed in angle brackets ('<', '>'), returning the
-     * value of `p`.*/
-    def angles[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, '<', '>', "angle bracket", "angle brackets")
-
-    /**Lexeme parser `brackets(p)` parses `p` enclosed in brackets ('[', ']'), returning the value
-     * of `p`.*/
-    def brackets[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, '[', ']', "square bracket", "square brackets")
-
-    /**Lexeme parser `semi` parses the character ';' and skips any trailing white space. Returns ";"*/
-    val semi: Parsley[Char] = lexeme(';'.label("semicolon"))
-
-    /**Lexeme parser `comma` parses the character ',' and skips any trailing white space. Returns ","*/
-    val comma: Parsley[Char] = lexeme(','.label("comma"))
-
-    /**Lexeme parser `colon` parses the character ':' and skips any trailing white space. Returns ":"*/
-    val colon: Parsley[Char] = lexeme(':'.label("colon"))
-
-    /**Lexeme parser `dot` parses the character '.' and skips any trailing white space. Returns "."*/
-    val dot: Parsley[Char] = lexeme('.'.label("dot"))
-
-    /**Lexeme parser `semiSep(p)` parses zero or more occurrences of `p` separated by `semi`. Returns
-     * a list of values returned by `p`.*/
-    def semiSep[A](p: =>Parsley[A]): Parsley[List[A]] = sepBy(p, semi)
-
-    /**Lexeme parser `semiSep1(p)` parses one or more occurrences of `p` separated by `semi`. Returns
-     * a list of values returned by `p`.*/
-    def semiSep1[A](p: =>Parsley[A]): Parsley[List[A]] = sepBy1(p, semi)
-
-    /**Lexeme parser `commaSep(p)` parses zero or more occurrences of `p` separated by `comma`.
-     * Returns a list of values returned by `p`.*/
-    def commaSep[A](p: =>Parsley[A]): Parsley[List[A]] = sepBy(p, comma)
-
-    /**Lexeme parser `commaSep1(p)` parses one or more occurrences of `p` separated by `comma`.
-     * Returns a list of values returned by `p`.*/
-    def commaSep1[A](p: =>Parsley[A]): Parsley[List[A]] = sepBy1(p, comma)
-
-    private def toParser(e: Impl) = e match {
-        case NotRequired => empty
-        case Static(f)   => satisfy(f)
-        case Parser(p)   => p.asInstanceOf[Parsley[Char]]
-        // $COVERAGE-OFF$
-        case _ => ??? // scalastyle:ignore not.implemented.error.usage
-        // $COVERAGE-ON$
-    }
+    // legacy API
+    // $COVERAGE-OFF$
+    @deprecated("use `space.whiteSpace` instead")
+    def whiteSpace: Parsley[Unit] = space.whiteSpace
+    @deprecated("use `space.skipComments` instead")
+    def skipComments: Parsley[Unit] = space.skipComments
+    @deprecated("use `lexeme.names.identifier` instead")
+    def identifier: Parsley[String] = lexeme.names.identifier
+    @deprecated("use `lexeme.symbol.softKeyword` instead")
+    def keyword(name: String): Parsley[Unit] = lexeme.symbol.softKeyword(name)
+    @deprecated("use `lexeme.names.userDefinedOperator` instead")
+    def userOp: Parsley[String] = lexeme.names.userDefinedOperator
+    @deprecated("use `lexeme.symbol.softOperator` instead")
+    def operator(name: String): Parsley[Unit] = lexeme.symbol.softOperator(name)
+    @deprecated("use `nonlexeme.symbol.softOperator` instead")
+    def operator_(name: String): Parsley[Unit] = nonlexeme.symbol.softOperator(name)
+    @deprecated("use `lexeme.symbol.softOperator` instead")
+    def maxOp(name: String): Parsley[Unit] = lexeme.symbol.softOperator(name)
+    @deprecated("use `nonlexeme.symbol.softOperator` instead")
+    def maxOp_(name: String): Parsley[Unit] = nonlexeme.symbol.softOperator(name)
+    @deprecated("use `lexeme.text.character.basicMultilingualPlane` instead")
+    def charLiteral: Parsley[Char] = lexeme.text.character.basicMultilingualPlane
+    @deprecated("use `lexeme.text.string.fullUtf16` instead")
+    def stringLiteral: Parsley[String] = lexeme.text.string.fullUtf16
+    @deprecated("use `nonlexeme.text.string.fullUtf16` instead")
+    def stringLiteral_ : Parsley[String] = nonlexeme.text.string.fullUtf16
+    @deprecated("use `nonlexeme.text.rawString.fullUtf16` instead")
+    def rawStringLiteral: Parsley[String] = nonlexeme.text.rawString.fullUtf16
+    @deprecated("use `lexeme.numeric.natural.number.map(_.toInt)` instead")
+    def natural: Parsley[Int] = lexeme.numeric.natural.number.map(_.toInt)
+    @deprecated("use `lexeme.numeric.integer.numer.map(_.toInt)` instead")
+    def integer: Parsley[Int] = lexeme.numeric.integer.number.map(_.toInt)
+    @deprecated("use `lexeme.numeric.positiveReal.decimal.map(_.toDouble)` instead")
+    def unsignedFloat: Parsley[Double] = lexeme.numeric.positiveReal.decimal.map(_.toDouble)
+    @deprecated("use `lexeme.numeric.real.decimal.map(_.toDouble)` instead")
+    def float: Parsley[Double] = lexeme.numeric.real.decimal.map(_.toDouble)
+    @deprecated("use `lexeme.numeric.signedCombined.number.map(...)` instead")
+    def number: Parsley[Either[Int, Double]] = lexeme.numeric.signedCombined.number.map(_.fold(x => Left(x.toInt), y => Right(y.toDouble)))
+    @deprecated("use `lexeme.numeric.unsignedCombined.number.map(...)` instead")
+    def naturalOrFloat: Parsley[Either[Int, Double]] = lexeme.numeric.unsignedCombined.number.map(_.fold(x => Left(x.toInt), y => Right(y.toDouble)))
+    @deprecated("use `lexeme.numeric.natural.decimal.map(_.toInt)` instead")
+    def decimal: Parsley[Int] = lexeme.numeric.natural.decimal.map(_.toInt)
+    @deprecated("use `lexeme.numeric.natural.hexadecimal.map(_.toInt)` instead")
+    def hexadecimal: Parsley[Int] = lexeme.numeric.natural.hexadecimal.map(_.toInt)
+    @deprecated("use `lexeme.numeric.natural.octal.map(_.toInt)` instead")
+    def octal: Parsley[Int] = lexeme.numeric.natural.octal.map(_.toInt)
+    @deprecated("use `lexeme(parsley.character.string(name))` instead")
+    def symbol(name: String): Parsley[String] = lexeme(parsley.character.string(name))
+    @deprecated("use `lexeme.symbol(name) #> name` instead")
+    def symbol(name: Char): Parsley[Char] = lexeme.symbol(name) #> name
+    @deprecated("use `lexeme.symbol(name) #> name` instead")
+    def symbol_(name: String): Parsley[String] = lexeme.symbol(name) #> name
+    @deprecated("use `lexeme.enclosing.parens` instead")
+    def parens[A](p: =>Parsley[A]): Parsley[A] = lexeme.enclosing.parens(p)
+    @deprecated("use `lexeme.enclosing.braces` instead")
+    def braces[A](p: =>Parsley[A]): Parsley[A] = lexeme.enclosing.braces(p)
+    @deprecated("use `lexeme.enclosing.angles` instead")
+    def angles[A](p: =>Parsley[A]): Parsley[A] = lexeme.enclosing.angles(p)
+    @deprecated("use `lexeme.enclosing.brackets` instead")
+    def brackets[A](p: =>Parsley[A]): Parsley[A] = lexeme.enclosing.brackets(p)
+    @deprecated("use `lexeme.symbol.semi #> ';'` instead")
+    def semi: Parsley[Char] = lexeme.symbol.semi #> ';'
+    @deprecated("use `lexeme.symbol.comma #> ','` instead")
+    def comma: Parsley[Char] = lexeme.symbol.comma #> ','
+    @deprecated("use `lexeme.symbol.colon #> ':'` instead")
+    def colon: Parsley[Char] = lexeme.symbol.colon #> ':'
+    @deprecated("use `lexeme.symbol.dot #> '.'` instead")
+    def dot: Parsley[Char] = lexeme.symbol.dot #> '.'
+    @deprecated("use `lexeme.separators.semiSep` instead")
+    def semiSep[A](p: Parsley[A]): Parsley[List[A]] = lexeme.separators.semiSep(p)
+    @deprecated("use `lexeme.separators.semiSep1` instead")
+    def semiSep1[A](p: Parsley[A]): Parsley[List[A]] = lexeme.separators.semiSep1(p)
+    @deprecated("use `lexeme.separators.commaSep` instead")
+    def commaSep[A](p: Parsley[A]): Parsley[List[A]] = lexeme.separators.commaSep(p)
+    @deprecated("use `lexeme.separators.commaSep1` instead")
+    def commaSep1[A](p: Parsley[A]): Parsley[List[A]] = lexeme.separators.commaSep1(p)
+    // $COVERAGE-ON$
 }
