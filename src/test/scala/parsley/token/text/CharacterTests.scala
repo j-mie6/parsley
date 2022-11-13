@@ -5,13 +5,13 @@ package parsley.token.text
 
 import scala.Predef.{String => SString, _}
 import parsley.{Parsley, ParsleyTest, Success, Failure}
-import parsley.token.Lexeme
+import parsley.token.LexemeImpl
 
 import parsley.token.descriptions.text._
 import parsley.token.predicate._
 
 class CharacterTests extends ParsleyTest {
-    def makeChar(desc: TextDesc): Character = new LexemeCharacter(new ConcreteCharacter(desc, new Escape(desc.escapeSequences)), Lexeme.empty)
+    def makeChar(desc: TextDesc): Character = new LexemeCharacter(new ConcreteCharacter(desc, new Escape(desc.escapeSequences)), LexemeImpl.empty)
 
     def unicodeCases(char: Character)(tests: (SString, Option[Int])*): Unit = cases(char.fullUtf16)(tests: _*)
     def bmpCases(char: Character)(tests: (SString, Option[Char])*): Unit = cases(char.basicMultilingualPlane)(tests: _*)

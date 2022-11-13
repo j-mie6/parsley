@@ -207,11 +207,11 @@ final case class TextDesc (escapeSequences: EscapeDesc,
   * @since 4.0.0
   */
 object TextDesc {
-    /** Plain definition of text (current matching the rules in the Haskell report).
+    /** Plain definition of text.
       *
       * @since 4.0.0
       */
-    val plain = TextDesc(escapeSequences = EscapeDesc.haskell,
+    val plain = TextDesc(escapeSequences = EscapeDesc.plain,
                          characterLiteralEnd = '\'',
                          stringEnds = Set("\""),
                          multiStringEnds = Set.empty,

@@ -5,7 +5,7 @@ package parsley.token.text
 
 import scala.Predef.{String => SString, _}
 import parsley.{Parsley, ParsleyTest, Success, Failure}
-import parsley.token.Lexeme
+import parsley.token.LexemeImpl
 
 import parsley.token.descriptions.text._
 import parsley.token.predicate._
@@ -13,7 +13,7 @@ import parsley.character.space
 
 class StringTests extends ParsleyTest {
     private def makeString(desc: TextDesc, char: StringCharacter, spaceAllowed: Boolean) =
-        new LexemeString(new ConcreteString(desc.stringEnds, char, desc.graphicCharacter, spaceAllowed),Lexeme.empty)
+        new LexemeString(new ConcreteString(desc.stringEnds, char, desc.graphicCharacter, spaceAllowed), LexemeImpl.empty)
     private def makeString(desc: TextDesc): String =
         makeString(desc, new EscapableCharacter(desc.escapeSequences, new Escape(desc.escapeSequences), space), false)
     private def makeMultiString(desc: TextDesc): String =

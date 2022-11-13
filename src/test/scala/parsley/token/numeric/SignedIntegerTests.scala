@@ -4,11 +4,11 @@
 package parsley.token.numeric
 
 import parsley.{Parsley, ParsleyTest, Success, Failure}
-import parsley.token.Lexeme
+import parsley.token.LexemeImpl
 import parsley.token.descriptions.numeric._
 
 class SignedIntegerTests extends ParsleyTest {
-    private def makeInteger(desc: NumericDesc) = new LexemeInteger(new SignedInteger(desc, new UnsignedInteger(desc)), Lexeme.empty)
+    private def makeInteger(desc: NumericDesc) = new LexemeInteger(new SignedInteger(desc, new UnsignedInteger(desc)), LexemeImpl.empty)
 
     val plain = NumericDesc.plain.copy(integerNumbersCanBeBinary = true, literalBreakChar = BreakCharDesc.Supported('_', false))
     val optionalPlus = makeInteger(plain.copy(positiveSign = PlusSignPresence.Optional))

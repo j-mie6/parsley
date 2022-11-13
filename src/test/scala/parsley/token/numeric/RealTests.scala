@@ -4,11 +4,11 @@
 package parsley.token.numeric
 
 import parsley.{Parsley, ParsleyTest, Success, Failure}
-import parsley.token.Lexeme
+import parsley.token.LexemeImpl
 import parsley.token.descriptions.numeric._, ExponentDesc.NoExponents
 
 class RealTests extends ParsleyTest {
-    private def makeReal(desc: NumericDesc) = new LexemeReal(new SignedReal(desc, new UnsignedReal(desc, new UnsignedInteger(desc))), Lexeme.empty)
+    private def makeReal(desc: NumericDesc) = new LexemeReal(new SignedReal(desc, new UnsignedReal(desc, new UnsignedInteger(desc))), LexemeImpl.empty)
 
     val plain = NumericDesc.plain.copy(decimalExponentDesc = NoExponents, hexadecimalExponentDesc = NoExponents,
                                        octalExponentDesc = NoExponents, binaryExponentDesc = NoExponents)

@@ -4,7 +4,7 @@
 package parsley.token.names
 
 import parsley.{Parsley, ParsleyTest, Success, Failure}
-import parsley.token.Lexeme
+import parsley.token.LexemeImpl._
 
 import parsley.token.descriptions._
 import parsley.token.predicate._
