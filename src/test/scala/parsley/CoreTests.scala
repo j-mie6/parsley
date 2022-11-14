@@ -348,11 +348,19 @@ class CoreTests extends ParsleyTest {
         noException should be thrownBy uhoh.parse("a")
     }
 
+    // TODO: not sure why this test is commented out?
     /*they should "not occur with very large parsers either" in {
-        import parsley.combinator.repeat
-        val p = repeat(11000, 'a')
+        import parsley.combinator
+        val p = combinator.exactly(12000, 'a')
         noException should be thrownBy p.force()
     }*/
+
+    "overflows" should "allow for forwarding via the Cont monad" in {
+        import parsley.combinator
+        val p = combinator.exactly(100, 'a')
+        p.overflows()
+        p.parse("a" * 100) shouldBe Success(List.fill(100)('a'))
+    }
 
     "failures through call boundary" should "ensure that stateful instructions are restored correctly" in {
         import parsley.combinator.{whileP, some, eof}

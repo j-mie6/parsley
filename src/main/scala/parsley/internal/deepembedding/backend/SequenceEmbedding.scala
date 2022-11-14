@@ -252,10 +252,6 @@ private [backend] object <*> {
     def apply[A, B](left: StrictParsley[A=>B], right: StrictParsley[A]): <*>[A, B] = new <*>[A, B](left, right)
     def unapply[A, B](self: <*>[A, B]): Some[(StrictParsley[A=>B], StrictParsley[A])] = Some((self.left, self.right))
 }
-private [backend] object >>= {
-    def apply[A, B](p: StrictParsley[A], f: A => frontend.LazyParsley[B]): >>=[A, B] = new >>=(p, f)
-    def unapply[A, B](self: >>=[A, B]): Some[(StrictParsley[A], A => frontend.LazyParsley[B])] = Some((self.p, self.f))
-}
 private [deepembedding] object *> {
     def apply[A](left: StrictParsley[_], right: StrictParsley[A]): Seq[A] = {
         val before = DoublyLinkedList.empty[StrictParsley[_]]
