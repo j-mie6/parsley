@@ -13,9 +13,10 @@ import parsley.errors.{helpers, ErrorBuilder, Named, Raw, Token, Width}
 trait TillNextWhitespace { this: ErrorBuilder[_] =>
     def trimToParserDemand: Boolean
 
-    override def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token = {
+    override def unexpectedToken(cs: IndexedSeq[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token = {
       cs match {
         case helpers.WhitespaceOrUnprintable(name) => Named(name, Width(1))
+        // these cases automatically handle the utf-16 surrogate pairs
         case cs: WrappedString =>
             // These do not require allocation on the string
             val idx = cs.indexWhere(_.isWhitespace)

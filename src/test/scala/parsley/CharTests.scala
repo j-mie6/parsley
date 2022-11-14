@@ -116,4 +116,17 @@ class CharTests extends ParsleyTest {
         cases(character.noneOf('a'))       ("a" -> None, "\n" -> Some('\n'), "b" -> Some('b'))
         cases(character.noneOf('a' to 'a'))("a" -> None, "\n" -> Some('\n'), "b" -> Some('b'))
     }
+
+    "charUtf16" should "handle BMP characters" in {
+        cases(charUtf16('a'))("a" -> Some('a'))
+        cases(charUtf16('λ'))("λ" -> Some('λ'))
+    }
+
+    it should "handle multi-character codepoints" in {
+        cases(charUtf16(0x1F642))("🙂" -> Some(0x1F642))
+    }
+
+    it should "handle multi-character codepoints atomically on fail" in {
+        cases(charUtf16(0x1F642) <|> charUtf16(0x1F643))("🙃" -> Some(0x1F643))
+    }
 }

@@ -21,7 +21,7 @@ private [internal] sealed trait ExpectItem extends ErrorItem {
     protected [errors] def lowerThanRaw(other: ExpectRaw): Boolean
 }
 
-private [internal] final case class UnexpectRaw(cs: Iterable[Char], amountOfInputParserWanted: Int) extends UnexpectItem {
+private [internal] final case class UnexpectRaw(cs: IndexedSeq[Char], amountOfInputParserWanted: Int) extends UnexpectItem {
     def formatUnexpect(implicit builder: ErrorBuilder[_]): (builder.Item, errors.TokenSpan) = {
         builder.unexpectedToken(cs, amountOfInputParserWanted, false) match {
             case t@errors.Raw(tok) => (builder.raw(tok), t.span)

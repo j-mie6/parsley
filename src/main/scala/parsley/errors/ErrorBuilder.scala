@@ -421,11 +421,11 @@ trait ErrorBuilder[+Err] {
       */
     val endOfInput: EndOfInput
 
-    // For doc, the iterable is guaranteed to be non-empty (end of input is handled separately)
+    // For doc, the indexed sequence is guaranteed to be non-empty (end of input is handled separately)
     // It is not guaranteed to be more than amountOfInputParserWanted
     // We want to do the whitespace trimming in here, but need to be careful, because
     // `raw` will need to witness pure spaces
-    def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token
+    def unexpectedToken(cs: IndexedSeq[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token
 }
 
 /** Contains the default instance for the `ErrorBuilder` typeclass, which will be automatically available without import.

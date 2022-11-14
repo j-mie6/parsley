@@ -11,6 +11,7 @@ import scala.util.matching.Regex
 private [parsley] object helpers {
     def renderRawString(s: String): String = s match {
         case WhitespaceOrUnprintable(name) => name
+        // this will handle utf-16 surrogate pairs properly
         case cs                            => "\"" + cs + "\""
     }
 
@@ -33,6 +34,7 @@ private [parsley] object helpers {
             case '\t' => Some("tab")
             case c if c.isSpaceChar => Some("space")
             case c if c.isWhitespace => Some("whitespace character")
+            case c if c.isHighSurrogate => None
             case Unprintable(up) => Some(f"unprintable character (\\u${up.toInt}%04X)")
             case _ => None
         }

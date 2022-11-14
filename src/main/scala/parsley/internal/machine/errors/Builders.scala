@@ -6,11 +6,11 @@ package parsley.internal.machine.errors
 import parsley.internal.errors.{UnexpectItem, UnexpectRaw}
 
 private [machine] abstract class ErrorItemBuilder {
-    final private [errors] def apply(offset: Int, size: Int): UnexpectItem = UnexpectRaw(iterableFrom(offset), size)
+    final private [errors] def apply(offset: Int, size: Int): UnexpectItem = UnexpectRaw(indexedSeqFrom(offset), size)
 
     private [errors] def inRange(offset: Int): Boolean
 
-    protected def charAt(offset: Int): Char
+    protected def codePointAt(offset: Int): Int
     //protected def substring(offset: Int, size: Int): String
-    protected def iterableFrom(offset: Int): Iterable[Char]
+    protected def indexedSeqFrom(offset: Int): IndexedSeq[Char]
 }

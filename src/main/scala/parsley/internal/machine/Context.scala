@@ -310,8 +310,8 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
 
     private [machine] implicit val errorItemBuilder: ErrorItemBuilder = new ErrorItemBuilder {
         def inRange(offset: Int): Boolean = offset < Context.this.inputsz
-        def charAt(offset: Int): Char = Context.this.input.charAt(offset)
+        def codePointAt(offset: Int): Int = Context.this.input.codePointAt(offset)
         //def substring(offset: Int, size: Int): String = Context.this.input.substring(offset, Math.min(offset + size, Context.this.inputsz))
-        def iterableFrom(offset: Int): Iterable[Char] = Context.this.input.substring(offset)
+        def indexedSeqFrom(offset: Int): IndexedSeq[Char] = Context.this.input.substring(offset)
     }
 }

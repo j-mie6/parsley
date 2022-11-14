@@ -22,7 +22,7 @@ import parsley.internal.deepembedding.{frontend, singletons}
   * @groupprio pred 100
   * @groupname pred Character Predicates
   * @groupdesc pred
-  *     These are useful for providing to a [[token.LanguageDef]] to specify behaviour for the lexer.
+  *     These are useful for providing to the sub-descriptions of a [[token.descriptions.LexicalDesc]] to specify behaviour for the lexer.
   *     Other than that, they aren't ''particularly'' useful.
   *
   * @groupprio core 0
@@ -58,7 +58,7 @@ import parsley.internal.deepembedding.{frontend, singletons}
   *
   *     These parsers are only able to parse unicode characters in the range `'\u0000'` to `'\uFFFF'`, known as
   *     the ''Basic Multilingual Plane (BMP)''. Unicode characters wider than a single 16-bit character should be
-  *     parsed using multi-character combinators such as `string`.
+  *     parsed using multi-character combinators such as `string`, or, alternatively, `satisfyUtf16` or `charUtf16`.
   *
   * @groupprio string 22
   * @groupname string String Combinators
@@ -77,7 +77,7 @@ import parsley.internal.deepembedding.{frontend, singletons}
   *     [[https://www.unicode.org/Public/13.0.0/ucd/extracted/DerivedGeneralCategory.txt Unicode Character Database]]''.
   */
 object character {
-    /** This combinator tries parses a single specific character `c` from the input.
+    /** This combinator tries to parse a single specific character `c` from the input.
       *
       * Attempts to read the given character `c` from the input stream at the current
       * position. If this character can be found, it is consumed and returned. Otherwise,
@@ -100,10 +100,30 @@ object character {
       */
     def char(c: Char): Parsley[Char] = new Parsley(new singletons.CharTok(c, None))
 
-    // TODO: document and optimise
+    /** This combinator tries to parse a single specific codepoint `c` from the input.
+      *
+      * Like [[char `char`]], except it may consume two characters from the input,
+      * in the case where the codepoint is greater than `0xffff`. This is parsed ''atomically''
+      * so that no input is consumed if the first half of the codepoint is parsed and the second
+      * is not.
+      *
+      * @example {{{
+      * scala> import parsley.character.charUtf16
+      * scala> char(0x1F643).parse("")
+      * val res0 = Failure(..)
+      * scala> char(0x1F643).parse("🙂")
+      * val res1 = Success(0x1F643)
+      * scala> char(0x1F643).parse("b🙂")
+      * val res2 = Failure(..)
+      * }}}
+      *
+      * @param c the codepoint to parse
+      * @return
+      * @group core
+      */
     def charUtf16(c: Int): Parsley[Int] = {
         if (Character.isBmpCodePoint(c)) char(c.toChar).map(identity[Char])
-        else string(Character.toChars(c).mkString) #> c
+        else attempt(string(Character.toChars(c).mkString)) #> c
     }
 
     /** This combinator tries to parse a single character from the input that matches the given predicate.
