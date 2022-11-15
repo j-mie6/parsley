@@ -40,10 +40,8 @@ private [token] class ConcreteSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc)
     }//)
 
     //private val operatorMemo = concurrent.TrieMap.empty[String, Parsley[Unit]]
-    override def softOperator(name: String): Parsley[Unit] = /*operatorMemo.getOrElseUpdate(name, */nameDesc.operatorLetter match {
-        // TODO: this needs optimising
-        //case Static(letter) => new Parsley(new singletons.Specific("operator", name, letter, true))
-        case _ =>
+    override def softOperator(name: String): Parsley[Unit] = /*operatorMemo.getOrElseUpdate(name, *//*nameDesc.operatorLetter match*/ {
+        //case _ =>
             val ends = symbolDesc.hardOperators.collect {
                 case op if op.startsWith(name) && op != name => op.substring(name.length)
             }.toList

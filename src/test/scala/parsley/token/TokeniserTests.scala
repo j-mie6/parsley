@@ -122,6 +122,19 @@ class TokeniserTests extends ParsleyTest {
             (tokeniser_.space.whiteSpace <* eof).parse("/*this comment*/ /*is spaced out*/\n//by whitespace!\n ")
         }
     }
+    it should "work correctly with unicode definition of space" in {
+        val spaceP = token.predicate.Unicode(Character.isWhitespace)
+        val lexer3 = new token.Lexer(desc.LexicalDesc.plain.copy(spaceDesc = desc.SpaceDesc.plain.copy(commentLine = "//", commentStart = "/*", commentEnd = "*/", space = spaceP)))
+        cases(lexer3.space.whiteSpace *> 'a')(
+            "a" -> Some('a'),
+            "   a" -> Some('a'),
+            "/*hello*/ a" -> Some('a'),
+            "// hello a" -> None,
+            "// hello\na" -> Some('a'),
+            "// hello\n// hi\n/*hey*/  a" -> Some('a'),
+            "/*a" -> None,
+        )
+    }
 
     "comments" should "not aggressively eat everything" in {
         val lexer1 = new token.Lexer(desc.LexicalDesc.plain.copy(spaceDesc = desc.SpaceDesc.plain.copy(commentLine = "//", space = token.predicate.NotRequired)))

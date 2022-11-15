@@ -230,6 +230,7 @@ private [internal] final class TokenSpecific(_specific: String, letter: Char => 
     // $COVERAGE-ON$
 }
 
+/*
 private [internal] final class TokenMaxOp(operator: String, _ops: Set[String]) extends TokenSpecificAllowTrailing(operator, true) {
     private val ops = Radix.makeSet(_ops.collect {
         case op if op.length > operator.length && op.startsWith(operator) => op.substring(operator.length)
@@ -255,3 +256,4 @@ private [internal] final class TokenMaxOp(operator: String, _ops: Set[String]) e
     override def toString: String = s"TokenMaxOp(${operator})"
     // $COVERAGE-ON$
 }
+*/

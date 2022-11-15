@@ -45,18 +45,20 @@ private [parsley] final class Specific(name: String, private [Specific] val spec
     override def instr: instructions.Instr = new instructions.TokenSpecific(specific, letter, caseSensitive)
 }
 
+/*
 private [parsley] final class MaxOp(private [MaxOp] val operator: String, ops: Set[String]) extends Singleton[Unit] {
     // $COVERAGE-OFF$
     override def pretty: String = s"maxOp($operator)"
     // $COVERAGE-ON$
     override def instr: instructions.Instr = new instructions.TokenMaxOp(operator, ops)
 }
+*/
 
 // $COVERAGE-OFF$
 private [deepembedding] object Specific {
     def unapply(self: Specific): Some[String] = Some(self.specific)
 }
-private [deepembedding] object MaxOp {
+/*private [deepembedding] object MaxOp {
     def unapply(self: MaxOp): Some[String] = Some(self.operator)
-}
+}*/
 // $COVERAGE-ON$
