@@ -871,6 +871,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
     def flatten[B](implicit ev: A <:< Parsley[B]): Parsley[B] = this.flatMap[B](ev)
 
     // SPECIAL METHODS
+    // $COVERAGE-OFF$
     /**
       * Forces the compilation of a parser as opposed to the regular lazy evaluation.
       *
@@ -878,14 +879,12 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       */
     def force(): Unit = internal.force()
 
-    // $COVERAGE-OFF$
     /**
       * Provides an indicator that this parser is likely to stack-overflow
       *
       * @group special
       */
     def overflows(): Unit = internal.overflows()
-    // $COVERAGE-ON$
 
     /**
       * Using this method signifies that the parser it is invoked on is impure and any optimisations which assume purity
@@ -897,6 +896,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
         internal.unsafe()
         this
     }
+    // $COVERAGE-ON$
 
     // $COVERAGE-OFF$
     /**

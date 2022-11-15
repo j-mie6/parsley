@@ -200,13 +200,14 @@ object combinator {
       * val res1 = Failure(..)
       * }}}
       *
+      * @param p first parser to be sequenced
       * @param ps parsers to be sequenced.
       * @return a parser that parses each of `ps`, returning `()`.
       * @group multi
       * @see [[parsley.Parsley.*> `*>`]]
       * @note $strict
       */
-    def skip(ps: Parsley[_]*): Parsley[Unit] = ps.foldLeft(unit)(_ <* _)
+    def skip(p: Parsley[_], ps: Parsley[_]*): Parsley[Unit] = ps.foldLeft(p.void)(_ <* _)
 
     /** This combinator parses exactly `n` occurrences of `p`, returning these `n` results in a list.
       *

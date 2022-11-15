@@ -348,6 +348,13 @@ class CoreTests extends ParsleyTest {
         noException should be thrownBy uhoh.parse("a")
     }
 
+    "lazy parsley" should "be able to prevent overly strict combinators" in {
+        import parsley.combinator.{skip, optional}
+        // without the ~, this would loop forever as skip is strict in position 2
+        lazy val fishySkipMany: Parsley[Unit] = optional(skip('a', ~fishySkipMany))
+        (fishySkipMany *> 'b').parse("aaaaaab") shouldBe Success('b')
+    }
+
     // TODO: not sure why this test is commented out?
     /*they should "not occur with very large parsers either" in {
         import parsley.combinator
