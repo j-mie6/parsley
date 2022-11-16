@@ -121,7 +121,7 @@ object combinator {
       * @since 4.0.0
       * @group adj
       */
-    private [parsley] def markAsToken[A](p: Parsley[A]): Parsley[A] = p
+    private [parsley] def markAsToken[A](p: Parsley[A]): Parsley[A] = new Parsley(new frontend.ErrorLexical(p.internal))
 
     /** This class exposes helpful combinators that are specialised for generating more helpful errors messages.
       *

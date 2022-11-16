@@ -106,6 +106,17 @@ private [machine] sealed abstract class DefuncError {
       * @return an entrenched error message
       */
     private [machine] def entrench: DefuncError
+    /** This operation sets this error message to be considered as a lexical
+      * error message, which means that it will not perform lexical extraction
+      * within the builder, instead opting to extract a token via raw input.
+      * This only happens if the error occured at an offset ''greater'' than
+      * the provided offset (which is the beginning of where the token started
+      * parsing).
+      *
+      * @param offset the offset the error must have occured deeper than
+      * @return a lexical error message
+      */
+    private [machine] def markAsLexical(offset: Int): DefuncError
 }
 object DefuncError {
     private [errors] final val TrivialErrorMask: Byte = 1 << 0
@@ -121,11 +132,13 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
         makeTrivial(errorBuilder)
         errorBuilder.mkError
     }
+    // $COVERAGE-OFF$
     private [machine] final override def asParseErrorSlow(implicit itemBuilder: ErrorItemBuilder): TrivialError = {
         val err = this.asParseError()
         this.resetHints()
         err
     }
+    // $COVERAGE-ON$
     private [errors] def makeTrivial(builder: TrivialErrorBuilder): Unit
 
     /** This method collects up the error labels of this error message into the given `HintState`.
@@ -151,13 +164,13 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
             self.err2.collectHints(collector)
         case self: TrivialAmended     => self.err.collectHints(collector)
         case self: TrivialEntrenched  => self.err.collectHints(collector)
+        case self: TrivialLexical     => self.err.collectHints(collector)
     }
 
     private [machine] final override def merge(err: DefuncError): DefuncError = {
-        val thisOffset = this.offset
-        val otherOffset = err.offset
-        if (thisOffset > otherOffset) this
-        else if (otherOffset > thisOffset) err
+        val cmp = Integer.compareUnsigned(this.offset, err.offset)
+        if (cmp > 0) this
+        else if (cmp < 0) err
         else err match {
             case err: TrivialDefuncError => new TrivialMergedErrors(this, err)
             case err                     => err
@@ -167,6 +180,7 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
     /** This function should reset any hints within the structure to their natural state, undoing
       * any mutation caused by a call to `asParseError`.
       */
+    // $COVERAGE-OFF$
     private [errors] final def resetHints(): Unit = this match {
         case self: BaseError          =>
         case self: WithLabel          =>
@@ -179,7 +193,9 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
             self.err2.resetHints()
         case self: TrivialAmended     => self.err.resetHints()
         case self: TrivialEntrenched  => self.err.resetHints()
+        case self: TrivialLexical     => self.err.resetHints()
     }
+    // $COVERAGE-ON$
 
     private [machine] final override def withHints(hints: DefuncHints): TrivialDefuncError = {
         if (hints.nonEmpty) new WithHints(this, hints)
@@ -198,6 +214,10 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
         if (!this.entrenched) new TrivialEntrenched(this)
         else this
     }
+    private [machine] final override def markAsLexical(offset: Int): TrivialDefuncError = {
+        if (Integer.compareUnsigned(this.offset, offset) > 0) new TrivialLexical(this)
+        else this
+    }
 }
 
 /** Represents partially evaluated fancy errors */
@@ -207,14 +227,15 @@ private [errors] sealed abstract class FancyDefuncError extends DefuncError {
         makeFancy(builder)
         builder.mkError
     }
+    // $COVERAGE-OFF$
     private [machine] final override def asParseErrorSlow(implicit itemBuilder: ErrorItemBuilder): FancyError = this.asParseError()
+    // $COVERAGE-ON$
     private [errors] def makeFancy(builder: FancyErrorBuilder): Unit
 
     private [machine] final override def merge(err: DefuncError): DefuncError = {
-        val thisOffset = this.offset
-        val otherOffset = err.offset
-        if (thisOffset > otherOffset) this
-        else if (otherOffset > thisOffset) err
+        val cmp = Integer.compareUnsigned(this.offset, err.offset)
+        if (cmp > 0) this
+        else if (cmp < 0) err
         else err match {
             case err: FancyDefuncError => new FancyMergedErrors(this, err)
             case _                     => this
@@ -230,6 +251,10 @@ private [errors] sealed abstract class FancyDefuncError extends DefuncError {
     }
     private [machine] final override def entrench: FancyDefuncError = {
         if (!this.entrenched) new FancyEntrenched(this)
+        else this
+    }
+    private [machine] final override def markAsLexical(offset: Int): FancyDefuncError = {
+        if (Integer.compareUnsigned(this.offset, offset) > 0) new FancyLexical(this)
         else this
     }
 }
@@ -407,6 +432,18 @@ private [errors] final class TrivialEntrenched private [errors] (val err: Trivia
 
 private [errors] final class FancyEntrenched private [errors] (val err: FancyDefuncError) extends FancyDefuncError {
     override final val flags = (err.flags | DefuncError.EntrenchedMask).toByte
+    override val offset = err.offset
+    override def makeFancy(builder: FancyErrorBuilder): Unit = err.makeFancy(builder)
+}
+
+private [errors] final class TrivialLexical private [errors] (val err: TrivialDefuncError) extends TrivialDefuncError {
+    override final val flags = (err.flags | DefuncError.LexicalErrorMask).toByte
+    override val offset = err.offset
+    override def makeTrivial(builder: TrivialErrorBuilder): Unit = err.makeTrivial(builder)
+}
+
+private [errors] final class FancyLexical private [errors] (val err: FancyDefuncError) extends FancyDefuncError {
+    override final val flags = (err.flags | DefuncError.LexicalErrorMask).toByte
     override val offset = err.offset
     override def makeFancy(builder: FancyErrorBuilder): Unit = err.makeFancy(builder)
 }

@@ -53,6 +53,19 @@ private [deepembedding] final class ErrorEntrench[A](val p: StrictParsley[A]) ex
     // $COVERAGE-ON$
 }
 
+private [deepembedding] final class ErrorLexical[A](val p: StrictParsley[A]) extends ScopedUnary[A, A] {
+    // This needs to save the hints because error label will relabel the first hint, which because the list is ordered would be the hints that came _before_
+    // entering labels context. Instead label should relabel the first hint generated _within_ its context, then merge with the originals after
+    override def setup(label: Int): instructions.Instr = new instructions.PushHandlerAndCheck(label, saveHints = false)
+    override def instr: instructions.Instr = instructions.PopHandlerAndCheck
+    override def instrNeedsLabel: Boolean = false
+    override def handlerLabel(state: CodeGenState): Int = state.getLabel(instructions.SetLexicalAndFail)
+
+    // $COVERAGE-OFF$
+    final override def pretty(p: String): String = s"$p.markAsToken"
+    // $COVERAGE-ON$
+}
+
 private [backend] object ErrorLabel {
     def apply[A](p: StrictParsley[A], label: String): ErrorLabel[A] = new ErrorLabel(p, label)
     def unapply[A](self: ErrorLabel[A]): Some[(StrictParsley[A], String)] = Some((self.p, self.label))

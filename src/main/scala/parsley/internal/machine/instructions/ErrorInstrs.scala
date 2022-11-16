@@ -111,6 +111,19 @@ private [internal] object EntrenchAndFail extends Instr {
     // $COVERAGE-ON$
 }
 
+private [internal] object SetLexicalAndFail extends Instr {
+    override def apply(ctx: Context): Unit = {
+        ensureHandlerInstruction(ctx)
+        ctx.errs.error = ctx.errs.error.markAsLexical(ctx.checkStack.offset)
+        ctx.checkStack = ctx.checkStack.tail
+        ctx.fail()
+    }
+
+    // $COVERAGE-OFF$
+    override def toString: String = "SetLexicalAndFail"
+    // $COVERAGE-ON$
+}
+
 private [internal] final class Fail(msgs: String*) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
