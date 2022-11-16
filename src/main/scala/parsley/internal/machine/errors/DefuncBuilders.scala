@@ -16,7 +16,7 @@ import TrivialErrorBuilder.{BuilderUnexpectItem, NoItem, Other, Raw}
   * @param offset the offset that the error being built occured at
   * @param outOfRange whether or not this error occured at the end of the input or not
   */
-private [errors] final class TrivialErrorBuilder(offset: Int, outOfRange: Boolean) {
+private [errors] final class TrivialErrorBuilder(offset: Int, outOfRange: Boolean, lexicalError: Boolean) {
     private var line: Int = _
     private var col: Int = _
     private val expecteds = mutable.Set.empty[ExpectItem]
@@ -76,7 +76,7 @@ private [errors] final class TrivialErrorBuilder(offset: Int, outOfRange: Boolea
       * @return the final error message
       */
     def mkError(implicit itemBuilder: ErrorItemBuilder): TrivialError = {
-        new TrivialError(offset, line, col, unexpected.toErrorItem(offset), expecteds.toSet, reasons.toSet)
+        new TrivialError(offset, line, col, unexpected.toErrorItem(offset), expecteds.toSet, reasons.toSet, lexicalError)
     }
     /** Performs some given action only when this builder is currently accepting new expected items
       *
@@ -132,7 +132,7 @@ private [errors] object TrivialErrorBuilder {
   *
   * @param offset the offset that the error being built occured at
   */
-private [errors] final class FancyErrorBuilder(offset: Int) {
+private [errors] final class FancyErrorBuilder(offset: Int, lexicalError: Boolean) {
     private var line: Int = _
     private var col: Int = _
     private val msgs = mutable.ListBuffer.empty[String]
@@ -154,7 +154,7 @@ private [errors] final class FancyErrorBuilder(offset: Int) {
     def ++=(msgs: Seq[String]): Unit = this.msgs ++= msgs
     /** Builds the final error. */
     def mkError: FancyError = {
-        new FancyError(offset, line, col, msgs.toList.distinct)
+        new FancyError(offset, line, col, msgs.toList.distinct, lexicalError)
     }
 }
 

@@ -11,7 +11,7 @@ private [internal] sealed abstract class ErrorItem {
 }
 
 private [internal] sealed trait UnexpectItem extends ErrorItem {
-    def formatUnexpect(implicit builder: ErrorBuilder[_]): (builder.Item, errors.TokenSpan)
+    def formatUnexpect(lexicalError: Boolean)(implicit builder: ErrorBuilder[_]): (builder.Item, errors.TokenSpan)
     def higherPriority(other: UnexpectItem): Boolean
     protected [errors] def lowerThanRaw(other: UnexpectRaw): Boolean
 }
@@ -22,8 +22,8 @@ private [internal] sealed trait ExpectItem extends ErrorItem {
 }
 
 private [internal] final case class UnexpectRaw(cs: IndexedSeq[Char], amountOfInputParserWanted: Int) extends UnexpectItem {
-    def formatUnexpect(implicit builder: ErrorBuilder[_]): (builder.Item, errors.TokenSpan) = {
-        builder.unexpectedToken(cs, amountOfInputParserWanted, false) match {
+    def formatUnexpect(lexicalError: Boolean)(implicit builder: ErrorBuilder[_]): (builder.Item, errors.TokenSpan) = {
+        builder.unexpectedToken(cs, amountOfInputParserWanted, lexicalError) match {
             case t@errors.Raw(tok) => (builder.raw(tok), t.span)
             case errors.Named(name, span) => (builder.named(name), span)
             case t@errors.EndOfInput => (builder.endOfInput, t.span)
@@ -46,7 +46,7 @@ private [internal] object ExpectRaw {
 private [internal] final case class Desc(msg: String) extends UnexpectItem with ExpectItem {
     assume(msg.nonEmpty, "Desc cannot contain empty things!")
     def formatExpect(implicit builder: ErrorBuilder[_]): builder.Item = builder.named(msg)
-    def formatUnexpect(implicit builder: ErrorBuilder[_]): (builder.Item, errors.TokenSpan) = (builder.named(msg), errors.Width(1))
+    def formatUnexpect(lexicalError: Boolean)(implicit builder: ErrorBuilder[_]): (builder.Item, errors.TokenSpan) = (builder.named(msg), errors.Width(1))
     override def higherPriority(other: ExpectItem): Boolean = other.lowerThanDesc
     override def higherPriority(other: UnexpectItem): Boolean = other.lowerThanDesc
     override def lowerThanRaw(other: ExpectRaw): Boolean = false
@@ -55,7 +55,7 @@ private [internal] final case class Desc(msg: String) extends UnexpectItem with 
 }
 private [internal] case object EndOfInput extends UnexpectItem with ExpectItem {
     def formatExpect(implicit builder: ErrorBuilder[_]): builder.Item = builder.endOfInput
-    def formatUnexpect(implicit builder: ErrorBuilder[_]): (builder.Item, errors.TokenSpan) = (builder.endOfInput, errors.Width(1))
+    def formatUnexpect(lexicalError: Boolean)(implicit builder: ErrorBuilder[_]): (builder.Item, errors.TokenSpan) = (builder.endOfInput, errors.Width(1))
     override def higherPriority(other: ExpectItem): Boolean = true
     override def higherPriority(other: UnexpectItem): Boolean = true
     override def lowerThanRaw(other: ExpectRaw): Boolean = false

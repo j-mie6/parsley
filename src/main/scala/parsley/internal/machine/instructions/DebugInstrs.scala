@@ -212,10 +212,10 @@ private [instructions] object LogErrEnd {
     // Surpressed labels can be presumably captured by calling asParseErrorSlow under a label node
     // again, requiring a deeper traversal of the tree
     def format(err: ParseError): Seq[String] = err match {
-        case FancyError(offset, line, col, msgs) => s"generated specialised error (offset $offset, line $line, col $col) {" +: msgs :+ "}"
-        case TrivialError(offset, line, col, unexpected, expecteds, reasons) =>
+        case FancyError(offset, line, col, msgs, _) => s"generated specialised error (offset $offset, line $line, col $col) {" +: msgs :+ "}"
+        case TrivialError(offset, line, col, unexpected, expecteds, reasons, lexicalError) =>
             Seq(s"generated vanilla error (offset $offset, line $line, col $col) {",
-                s"  unexpected item = ${unexpected.fold("missing")(_.formatUnexpect._1.toString)}",
+                s"  unexpected item = ${unexpected.fold("missing")(_.formatUnexpect(lexicalError)._1.toString)}",
                 s"  expected item(s) = ${expecteds.map(_.formatExpect)}",
                 s"  reasons =${if (reasons.isEmpty) " no reasons given" else ""}") ++
                 reasons.map("  " + _) :+

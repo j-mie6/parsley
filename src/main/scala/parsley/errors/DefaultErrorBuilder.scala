@@ -38,7 +38,7 @@ class DefaultErrorBuilder extends ErrorBuilder[String] with tokenextractors.Till
     type Source = Option[String]
     //type Context = Option[String]
     /** @inheritdoc */
-    override def pos(line: Int, col: Int): Position = s"(line $line, column $col)"
+    override def pos(line: Int, col: Int): Position = s"(line ${Integer.toUnsignedString(line)}, column ${Integer.toUnsignedString(col)})"
     /** @inheritdoc */
     override def source(sourceName: Option[String]): Source = sourceName.map(name => s"file '$name'")
     //override def contexualScope(context: String): Context = Some(context)
