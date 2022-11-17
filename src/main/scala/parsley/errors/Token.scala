@@ -37,7 +37,7 @@ sealed abstract class Token {
 case class Raw(tok: String) extends Token {
     override def span: TokenSpan = {
         val idx = tok.indexOf('\n')
-        Width(if (idx != -1) idx + 1 else tok.length)
+        Width(tok.codePointCount(0, if (idx != -1) idx + 1 else tok.length))
     }
 }
 case class Named(name: String, span: TokenSpan) extends Token

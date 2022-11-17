@@ -4,6 +4,7 @@
 package parsley.errors.tokenextractors
 
 import scala.collection.immutable.WrappedString
+import scala.annotation.tailrec
 
 import parsley.errors.{helpers, ErrorBuilder, Named, Raw, Token, Width}
 
@@ -11,24 +12,16 @@ import parsley.errors.{helpers, ErrorBuilder, Named, Raw, Token, Width}
 // We might want to test this on its own though
 // $COVERAGE-OFF$
 trait MatchParserDemand { this: ErrorBuilder[_] =>
-    override def unexpectedToken(cs: IndexedSeq[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token = {
-      cs match {
+    override def unexpectedToken(cs: IndexedSeq[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token = cs match {
         case helpers.WhitespaceOrUnprintable(name) => Named(name, Width(1))
-        case _ =>
-            // needs to round to the nearest codepoint boundary
-            val n =
-                if (cs.lift(amountOfInputParserWanted).forall(_.isHighSurrogate)) amountOfInputParserWanted + 1
-                else amountOfInputParserWanted
-            Raw(substring(cs, n))
-      }
+        case _ => Raw(substring(cs, amountOfInputParserWanted))
     }
-
 
     // the default case will build a new string, if the underlying was already a string
     // this is redundant.
     private def substring(cs: IndexedSeq[Char], upto: Int): String = cs match {
-        case cs: WrappedString => cs.slice(0, upto).toString
-        case _                 => cs.take(upto).mkString
+        case cs: WrappedString => helpers.takeCodePoints(cs, upto)
+        case _ => helpers.takeCodePoints(cs, upto)
     }
 }
 // $COVERAGE-ON$

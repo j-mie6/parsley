@@ -13,21 +13,24 @@ import parsley.errors.{helpers, ErrorBuilder, Named, Raw, Token, Width}
 trait TillNextWhitespace { this: ErrorBuilder[_] =>
     def trimToParserDemand: Boolean
 
+    // TODO: we should take to minimum of parser demand and next whitespace, this would potentially be much much cheaper
     override def unexpectedToken(cs: IndexedSeq[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token = {
       cs match {
         case helpers.WhitespaceOrUnprintable(name) => Named(name, Width(1))
         // these cases automatically handle the utf-16 surrogate pairs
         case cs: WrappedString =>
             // These do not require allocation on the string
-            val idx = cs.indexWhere(_.isWhitespace)
-            val tok = if (idx != -1) cs.slice(0, idx) else cs
-            Raw(trim(tok.toString, amountOfInputParserWanted))
+            val idx = {
+                val idx = cs.indexWhere(_.isWhitespace)
+                if (idx != -1) idx+1 else cs.length
+            }
+            Raw(trim(cs.slice(0, idx).toString, amountOfInputParserWanted))
         case cs => Raw(trim(cs.takeWhile(!_.isWhitespace).mkString, amountOfInputParserWanted))
       }
     }
 
     private def trim(s: String, amountOfInputParserWanted: Int): String = {
-        if (trimToParserDemand) s.slice(0, amountOfInputParserWanted)
+        if (trimToParserDemand) helpers.takeCodePoints(s, amountOfInputParserWanted)
         else s
     }
 }

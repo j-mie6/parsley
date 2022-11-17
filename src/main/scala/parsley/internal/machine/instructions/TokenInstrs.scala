@@ -46,6 +46,7 @@ private [instructions] abstract class CommentLexer(start: String, end: String, l
 }
 
 private [instructions] abstract class WhiteSpaceLike(start: String, end: String, line: String, nested: Boolean) extends CommentLexer(start, end, line, nested) {
+    val numCodePointsEnd = end.codePointCount(0, end.length)
     @tailrec private final def singlesOnly(ctx: Context): Unit = {
         spaces(ctx)
         if (ctx.moreInput && ctx.input.startsWith(line, ctx.offset)) {
@@ -59,7 +60,7 @@ private [instructions] abstract class WhiteSpaceLike(start: String, end: String,
         spaces(ctx)
         val startsMulti = ctx.moreInput && ctx.input.startsWith(start, ctx.offset)
         if (startsMulti && multiLineComment(ctx)) multisOnly(ctx)
-        else if (startsMulti) ctx.expectedTokenFail(expected = endOfComment, end.length)
+        else if (startsMulti) ctx.expectedTokenFail(expected = endOfComment, numCodePointsEnd)
         else ctx.pushAndContinue(())
     }
 
@@ -72,7 +73,7 @@ private [instructions] abstract class WhiteSpaceLike(start: String, end: String,
         if (ctx.moreInput && ctx.input.startsWith(sharedPrefix, ctx.offset)) {
             val startsMulti = ctx.input.startsWith(factoredStart, ctx.offset + sharedPrefix.length)
             if (startsMulti && multiLineComment(ctx)) singlesAndMultis(ctx)
-            else if (startsMulti) ctx.expectedTokenFail(expected = endOfComment, end.length)
+            else if (startsMulti) ctx.expectedTokenFail(expected = endOfComment, numCodePointsEnd)
             else if (ctx.input.startsWith(factoredLine, ctx.offset + sharedPrefix.length)) {
                 singleLineComment(ctx)
                 singlesAndMultis(ctx)
@@ -103,7 +104,7 @@ private [instructions] abstract class WhiteSpaceLike(start: String, end: String,
 
 private [internal] final class TokenComment(start: String, end: String, line: String, nested: Boolean) extends CommentLexer(start, end, line, nested) {
     private [this] final val comment = Some(Desc("comment"))
-    private [this] final val openingSize = Math.max(start.size, line.size)
+    private [this] final val openingSize = Math.max(start.codePointCount(0, start.length), line.codePointCount(0, line.length))
 
     // PRE: one of the comments is supported
     // PRE: Multi-line comments may not prefix single-line, but single-line may prefix multi-line
@@ -187,8 +188,10 @@ private [internal] final class TokenNonSpecific(name: String, illegalName: Strin
 private [instructions] abstract class TokenSpecificAllowTrailing(_specific: String, caseSensitive: Boolean) extends Instr {
     private final val expected = Some(Desc(_specific))
     protected final val expectedEnd = Some(Desc(s"end of ${_specific}"))
-    private final val specific = (if (caseSensitive) _specific else _specific.toLowerCase).toCharArray
-    private final val strsz = specific.length
+    // TODO: is the array necessary?
+    private [this] final val specific = (if (caseSensitive) _specific else _specific.toLowerCase).toCharArray
+    private [this] final val strsz = specific.length
+    private [this] final val numCodePoints = _specific.codePointCount(0, _specific.length)
     protected def postprocess(ctx: Context, i: Int): Unit
 
     val readCharCaseHandled = {
@@ -198,7 +201,7 @@ private [instructions] abstract class TokenSpecificAllowTrailing(_specific: Stri
 
     @tailrec final private def readSpecific(ctx: Context, i: Int, j: Int): Unit = {
         if (j < strsz && readCharCaseHandled(ctx, i) == specific(j)) readSpecific(ctx, i + 1, j + 1)
-        else if (j < strsz) ctx.expectedTokenFail(expected, strsz)
+        else if (j < strsz) ctx.expectedTokenFail(expected, numCodePoints)
         else {
             ctx.saveState()
             ctx.fastUncheckedConsumeChars(strsz)
@@ -208,7 +211,7 @@ private [instructions] abstract class TokenSpecificAllowTrailing(_specific: Stri
 
     final override def apply(ctx: Context): Unit = {
         if (ctx.inputsz >= ctx.offset + strsz) readSpecific(ctx, ctx.offset, 0)
-        else ctx.expectedTokenFail(expected, strsz)
+        else ctx.expectedTokenFail(expected, numCodePoints)
     }
 }
 

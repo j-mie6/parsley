@@ -54,8 +54,10 @@ private [internal] class CharTok(c: Char, x: Any, errorItem: Option[ExpectItem])
 }
 
 private [internal] final class StringTok(s: String, x: Any, errorItem: Option[ExpectItem]) extends Instr {
+    // TODO: is there any point in this array?!
     private [this] val cs = s.toCharArray
     private [this] val sz = cs.length
+    private [this] val codePointLength = s.codePointCount(0, s.length)
 
     @tailrec private [this] def compute(i: Int, lineAdjust: Int, colAdjust: StringTok.Adjust): (Int => Int, Int => Int) = {
         if (i < cs.length) {
@@ -81,7 +83,7 @@ private [internal] final class StringTok(s: String, x: Any, errorItem: Option[Ex
         if (j < sz && i < ctx.inputsz && ctx.input.charAt(i) == cs(j)) go(ctx, i + 1, j + 1)
         else if (j < sz) {
             // The offset, line and column haven't been edited yet, so are in the right place
-            ctx.expectedTokenFail(errorItem, sz)
+            ctx.expectedTokenFail(errorItem, codePointLength)
             ctx.offset = i
             // These help maintain a consistent internal state, this makes the debuggers
             // output less confusing in the string case in particular.
