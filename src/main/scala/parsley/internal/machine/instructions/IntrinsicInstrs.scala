@@ -54,17 +54,15 @@ private [internal] class CharTok(c: Char, x: Any, errorItem: Option[ExpectItem])
 }
 
 private [internal] final class StringTok(s: String, x: Any, errorItem: Option[ExpectItem]) extends Instr {
-    // TODO: is there any point in this array?!
-    private [this] val cs = s.toCharArray
-    private [this] val sz = cs.length
-    private [this] val codePointLength = s.codePointCount(0, s.length)
+    private [this] val sz = s.length
+    private [this] val codePointLength = s.codePointCount(0, sz)
 
     @tailrec private [this] def compute(i: Int, lineAdjust: Int, colAdjust: StringTok.Adjust): (Int => Int, Int => Int) = {
-        if (i < cs.length) {
+        if (i < sz) {
             val (partialLineAdjust, partialColAdjust) = build(lineAdjust, colAdjust)
             partialLineAdjusters(i) = partialLineAdjust
             partialColAdjusters(i) = partialColAdjust
-            cs(i) match {
+            s.charAt(i) match {
                 case '\n' => compute(i + 1, lineAdjust + 1, new StringTok.Set)
                 case '\t' => compute(i + 1, lineAdjust, colAdjust.tab)
                 case _    => colAdjust.next; compute(i + 1, lineAdjust, colAdjust)
@@ -80,7 +78,7 @@ private [internal] final class StringTok(s: String, x: Any, errorItem: Option[Ex
     private [this] val (lineAdjust, colAdjust) = compute(0, 0, new StringTok.Offset)
 
     @tailrec private def go(ctx: Context, i: Int, j: Int): Unit = {
-        if (j < sz && i < ctx.inputsz && ctx.input.charAt(i) == cs(j)) go(ctx, i + 1, j + 1)
+        if (j < sz && i < ctx.inputsz && ctx.input.charAt(i) == s.charAt(j)) go(ctx, i + 1, j + 1)
         else if (j < sz) {
             // The offset, line and column haven't been edited yet, so are in the right place
             ctx.expectedTokenFail(errorItem, codePointLength)

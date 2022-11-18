@@ -11,9 +11,9 @@ import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 
 private [instructions] abstract class CommentLexer(start: String, end: String, line: String, nested: Boolean) extends Instr {
-    protected final val lineAllowed = line.nonEmpty
-    protected final val multiAllowed = start.nonEmpty && end.nonEmpty
-    protected final val endOfComment = Some(Desc("end of comment"))
+    protected [this] final val lineAllowed = line.nonEmpty
+    protected [this] final val multiAllowed = start.nonEmpty && end.nonEmpty
+    protected [this] final val endOfComment = Some(Desc("end of comment"))
 
     protected final def singleLineComment(ctx: Context): Unit = {
         ctx.fastUncheckedConsumeChars(line.length)
@@ -46,7 +46,7 @@ private [instructions] abstract class CommentLexer(start: String, end: String, l
 }
 
 private [instructions] abstract class WhiteSpaceLike(start: String, end: String, line: String, nested: Boolean) extends CommentLexer(start, end, line, nested) {
-    val numCodePointsEnd = end.codePointCount(0, end.length)
+    private [this] final val numCodePointsEnd = end.codePointCount(0, end.length)
     @tailrec private final def singlesOnly(ctx: Context): Unit = {
         spaces(ctx)
         if (ctx.moreInput && ctx.input.startsWith(line, ctx.offset)) {
@@ -64,9 +64,9 @@ private [instructions] abstract class WhiteSpaceLike(start: String, end: String,
         else ctx.pushAndContinue(())
     }
 
-    private val sharedPrefix = line.view.zip(start).takeWhile(Function.tupled(_ == _)).map(_._1).mkString
-    private val factoredStart = start.drop(sharedPrefix.length)
-    private val factoredLine = line.drop(sharedPrefix.length)
+    private [this] final val sharedPrefix = line.view.zip(start).takeWhile(Function.tupled(_ == _)).map(_._1).mkString
+    private [this] final val factoredStart = start.drop(sharedPrefix.length)
+    private [this] final val factoredLine = line.drop(sharedPrefix.length)
     // PRE: Multi-line comments may not prefix single-line, but single-line may prefix multi-line
     @tailrec final def singlesAndMultis(ctx: Context): Unit = {
         spaces(ctx)
@@ -88,7 +88,7 @@ private [instructions] abstract class WhiteSpaceLike(start: String, end: String,
         ctx.pushAndContinue(())
     }
 
-    private final val impl = {
+    private [this] final val impl = {
         if (!lineAllowed && !multiAllowed) spacesAndContinue(_)
         else if (!lineAllowed) multisOnly(_)
         else if (!multiAllowed) singlesOnly(_)
@@ -186,12 +186,11 @@ private [internal] final class TokenNonSpecific(name: String, illegalName: Strin
 }
 
 private [instructions] abstract class TokenSpecificAllowTrailing(_specific: String, caseSensitive: Boolean) extends Instr {
-    private final val expected = Some(Desc(_specific))
+    private [this] final val expected = Some(Desc(_specific))
     protected final val expectedEnd = Some(Desc(s"end of ${_specific}"))
-    // TODO: is the array necessary?
-    private [this] final val specific = (if (caseSensitive) _specific else _specific.toLowerCase).toCharArray
+    private [this] final val specific = (if (caseSensitive) _specific else _specific.toLowerCase)
     private [this] final val strsz = specific.length
-    private [this] final val numCodePoints = _specific.codePointCount(0, _specific.length)
+    private [this] final val numCodePoints = specific.codePointCount(0, strsz)
     protected def postprocess(ctx: Context, i: Int): Unit
 
     val readCharCaseHandled = {
@@ -200,7 +199,7 @@ private [instructions] abstract class TokenSpecificAllowTrailing(_specific: Stri
     }
 
     @tailrec final private def readSpecific(ctx: Context, i: Int, j: Int): Unit = {
-        if (j < strsz && readCharCaseHandled(ctx, i) == specific(j)) readSpecific(ctx, i + 1, j + 1)
+        if (j < strsz && readCharCaseHandled(ctx, i) == specific.charAt(j)) readSpecific(ctx, i + 1, j + 1)
         else if (j < strsz) ctx.expectedTokenFail(expected, numCodePoints)
         else {
             ctx.saveState()
