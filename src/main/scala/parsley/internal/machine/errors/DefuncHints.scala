@@ -8,32 +8,21 @@ import parsley.XAssert._
 import parsley.internal.errors.{Desc, ExpectItem}
 
 /** This structure represents a collection of operations that can be performed
-  * between `List[Set[ErrorItem]]`, which are known as `Hints`. Each set in the
-  * structure is sourced from an error message directly, and the list allows
-  * for these error messages to be kept independent. The collapsing of the
-  * hints structure will not yield this list, however, and will produce a
-  * final set of error items.
+  * between `Set[ErrorItem]`, which are known as `Hints`. Each set in the
+  * structure is sourced from an error message directly. The collapsing of the
+  * hints structure will produce a final set of error items.
   *
   * @param size the number of hint sets represented by this structure
   */
-private [machine] sealed abstract class DefuncHints(private [errors] val size: Int) {
-    // this is a neat trick to ensure that no reprocessing of hints needs to occur
-    // if they appear at a different point in the error message: if part of the hint-structure
-    // is skipped over, then this value tells us up to what point we need to provide the
-    // remaining elements. This obviously starts with all the elements; then if some
-    // is skipped over, we know the remaining ones are already incorporated and don't need
-    // to be handled again: this is ok, because hints cannot be duplicated as it is a Set.
-    private var incorporatedAfter: Int = size
-    private [errors] def nonEmpty: Boolean = size != 0
-    private [errors] def isEmpty: Boolean = size == 0
+private [machine] sealed abstract class DefuncHints {
+    private [errors] def isEmpty: Boolean
+    private [errors] def nonEmpty: Boolean = !isEmpty
     /** This function evaluates this `DefuncHints` structure into the actual set of
       * error items it represents and adds this directly into the provided `TrivialErrorBuilder`
-      *
-      * @note this function is ''impure'' and changes properties of the hints themselves
       */
     private [machine] def updateExpectedsAndGetSize(builder: TrivialErrorBuilder): Int = {
         val hintCollector = builder.makeHintCollector
-        collect(0, hintCollector)
+        collect(hintCollector)
         hintCollector.unexpectWidth
     }
     /** This function evaulates this `DefuncHints` structure into an actual set of
@@ -43,69 +32,37 @@ private [machine] sealed abstract class DefuncHints(private [errors] val size: I
       */
     private [machine] def toSet: Set[ExpectItem] = {
         val state: HintCollector = new HintCollector
-        collect(0, state)
-        // this /must/ be done to ensure that this function is pure, as `collect` can alter this value.
-        reset()
+        collect(state)
         state.mkSet
     }
-    /** This function undoes the mutation that is performed by `updateExpectedsAndGetSize` allowing
-      * this hint to be used again.
-      */
-    private [machine] def reset(): Unit = {
-        resetDeep()
-        resetThis()
-    }
-    private def resetThis(): Unit = incorporatedAfter = size
-    protected def resetDeep(): Unit
-    final private [errors] def collect(skipNext: Int, collector: HintCollector): Unit = if (skipNext < incorporatedAfter) {
-        // This error only needs to provide the first `skipNext` elements if we encounter it again
-        incorporatedAfter = skipNext
+    final private [errors] def collect(collector: HintCollector): Unit = {
         this match {
             case EmptyHints =>
-            // Popping and replacing are both achieved by skipping the next hint to be processed
-            case self: PopHints => self.hints.collect(skipNext + 1, collector)
-            case self: ReplaceHint =>
-                // replacing a hint already skips on its own anyway, so this is like skipNext - 1 + 1 == skipNext
-                if (skipNext > 0) self.hints.collect(skipNext, collector)
-                else {
-                    collector += Desc(self.label)
-                    self.hints.collect(skipNext + 1, collector)
-                }
+            case self: ReplaceHint => collector += Desc(self.label)
             case self: MergeHints =>
-                // if there are less hints in the first set than we want to skip, then it can be hopped over
-                if (self.oldHints.size <= skipNext) self.newHints.collect(skipNext - self.oldHints.size, collector)
-                else {
-                    // otherwise, we know that all the hints to skip are in the first set (with some which are needed!),
-                    // and we can travese the second from the beginning
-                    self.oldHints.collect(skipNext, collector)
-                    self.newHints.collect(0, collector)
-                }
+                self.oldHints.collect(collector)
+                self.newHints.collect(collector)
             case self: AddError =>
-                // skipping happens inside out here: the hints structure is a snoc-list
-                // so first self.hints should be processed /technically/, however that would make this non-tail recursive
-                // Good news is that the order the hints are /contributed/ in doesn't matter, because it's a set
-                // so the order can be reversed.
-                // We incorporate this error only when self.hints absorbed all the skips (skipNext <= self.hints.size)
-                if (skipNext < self.size) self.err.collectHints(collector)
-                self.hints.collect(skipNext, collector)
+                self.err.collectHints(collector)
+                self.hints.collect(collector)
         }
     }
 
     // Operations: these are the smart constructors for the hint operations, which will reduce the number of objects in the binary
     // they all perform some form of simplification step to avoid unnecesary allocations
 
-    /** This operation is used by the `hide` combinator to remove the first
-      * set of hints currently in-flight. This is explicitly following the
-      * behaviour of megaparsec.
-      */
-    private [machine] final def pop: DefuncHints = if (size > 1) new PopHints(this) else EmptyHints
-    /** This operation is used by the `label` combinator to rename the first
-      * set of hints currently in-flight. This is explicitly following the
-      * behaviour of megaparsec.
+    /** This operation is used by the `hide` combinator to remove all the hints currently in-flight.
+     *
+     * @note this behaviour was altered in 4.0.0, to match the changes in [[https://github.com/mrkkrp/megaparsec/issues/482 mrkkrp/megaparsec#482]]
+     */
+    private [machine] final def pop: DefuncHints = EmptyHints
+    /** This operation is used by the `label` combinator to replace the
+      * set of hints currently in-flight.
       *
       * @param label the name to replace the first set of hints with
+      * @note this behaviour was altered in 4.0.0, to match the changes in [[https://github.com/mrkkrp/megaparsec/issues/482 mrkkrp/megaparsec#482]]
       */
-    private [machine] final def rename(label: String): DefuncHints = if (nonEmpty) new ReplaceHint(label, this) else this
+    private [machine] final def rename(label: String): DefuncHints = if (nonEmpty) new ReplaceHint(label) else this
     /** This operation merges two sets of hints together. This used by `label`
       * to combine the saved hints with those that may have been generated and
       * affected by the label. This is not like a set-union, however, and is
@@ -131,30 +88,19 @@ private [machine] sealed abstract class DefuncHints(private [errors] val size: I
 }
 
 /** Represents no hints at all. */
-private [machine] object EmptyHints extends DefuncHints(size = 0) {
-    def resetDeep(): Unit = ()
+private [machine] object EmptyHints extends DefuncHints {
+    override private [errors] def isEmpty: Boolean = true
 }
-
-private [machine] final class PopHints private [errors] (val hints: DefuncHints) extends DefuncHints(size = hints.size - 1) {
-    def resetDeep(): Unit = hints.reset()
-}
-
-private [errors] final class ReplaceHint private [errors] (val label: String, val hints: DefuncHints) extends DefuncHints(size = hints.size) {
+private [errors] final class ReplaceHint private [errors] (val label: String) extends DefuncHints {
     assume(label.nonEmpty)
-    def resetDeep(): Unit = hints.reset()
+    override private [errors] def isEmpty: Boolean = false
 }
 
-private [errors] final class MergeHints private [errors] (val oldHints: DefuncHints, val newHints: DefuncHints)
-    extends DefuncHints(size = oldHints.size + newHints.size) {
-    def resetDeep(): Unit = {
-        oldHints.reset()
-        newHints.reset()
-    }
+private [errors] final class MergeHints private [errors] (val oldHints: DefuncHints, val newHints: DefuncHints) extends DefuncHints {
+    assume(oldHints.nonEmpty && newHints.nonEmpty)
+    override private [errors] def isEmpty: Boolean = false
 }
 
-private [machine] final class AddError private [errors] (val hints: DefuncHints, val err: TrivialDefuncError) extends DefuncHints(size = hints.size + 1) {
-    def resetDeep(): Unit = {
-        hints.reset()
-        err.resetHints()
-    }
+private [machine] final class AddError private [errors] (val hints: DefuncHints, val err: TrivialDefuncError) extends DefuncHints {
+    override private [errors] def isEmpty: Boolean = false
 }

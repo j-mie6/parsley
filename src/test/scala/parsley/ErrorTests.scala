@@ -90,19 +90,19 @@ class ErrorTests extends ParsleyTest {
         }
     }
 
-    it should "replace the first instance" in {
+    it should "replace everything under the label" in {
         val s = (optional('a') *> optional('b')).label("hi") *> 'c'
         inside(s.parse("e")) {
             case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
                 unex should contain (Raw("e"))
-                exs should contain only (Named("hi"), Raw("b"), Raw("c"))
+                exs should contain only (Named("hi"), /*Raw("b"),*/ Raw("c"))
                 rs shouldBe empty
         }
         val t = (optional('a') *> optional('b').label("bee")).label("hi") *> 'c'
         inside(t.parse("e")) {
             case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
                 unex should contain (Raw("e"))
-                exs should contain only (Named("hi"), Named("bee"), Raw("c"))
+                exs should contain only (Named("hi"), /*Named("bee"),*/ Raw("c"))
                 rs shouldBe empty
         }
         inside(t.parse("ae")) {

@@ -195,7 +195,7 @@ private [internal] final class LogErrEnd(override val name: String, override val
                 // there should be different levels of verbose flags, such that we can also display the expecteds _under_ a label
                 val oldData = ctx.stack.peek[ErrLogData]
                 val defuncErr = ctx.inFlightError
-                val err = defuncErr.asParseErrorSlow(ctx.errorItemBuilder)
+                val err = defuncErr.asParseError(ctx.errorItemBuilder)
                 println(preludeString(Exit, ctx, s": ${red("Fail")}"))
                 println(Indenter.indentAndUnlines(ctx, LogErrEnd.format(err): _*))
                 ctx.fail()

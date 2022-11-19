@@ -32,19 +32,8 @@ private [machine] sealed abstract class DefuncError {
     private [machine] final def lexicalError: Boolean = (flags & DefuncError.LexicalErrorMask) != 0
     /** The offset at which this error occured */
     private [machine] val offset: Int
-    /** This function forces the lazy defunctionalised structure into a final `ParseError` value.
-      *
-      * @note this is not a pure function as it may mutate parts of the defunctionalised structure to
-      * improve the performance of what might otherwise be considered as the final consumption
-      * of the value.
-      */
-    private [machine] def asParseError()(implicit itemBuilder: ErrorItemBuilder): ParseError
-    /** This function forces the lazy defunctionalised structure into a final `ParseError` value.
-      *
-      * @note this function is `pure` and ensures that the underlying structure is not observably
-      * mutated.
-      */
-    private [machine] def asParseErrorSlow(implicit itemBuilder: ErrorItemBuilder): ParseError
+    /** This function forces the lazy defunctionalised structure into a final `ParseError` value. */
+    private [machine] def asParseError(implicit itemBuilder: ErrorItemBuilder): ParseError
 
     // Operations: these are the smart constructors for the hint operations, which will reduce the number of objects in the binary
     // they all perform some form of simplification step to avoid unnecesary allocations
@@ -127,18 +116,11 @@ object DefuncError {
 
 /** Represents partially evaluated trivial errors */
 private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
-    private [machine] final override def asParseError()(implicit itemBuilder: ErrorItemBuilder): TrivialError = {
+    private [machine] final override def asParseError(implicit itemBuilder: ErrorItemBuilder): TrivialError = {
         val errorBuilder = new TrivialErrorBuilder(offset, !itemBuilder.inRange(offset), lexicalError)
         makeTrivial(errorBuilder)
         errorBuilder.mkError
     }
-    // $COVERAGE-OFF$
-    private [machine] final override def asParseErrorSlow(implicit itemBuilder: ErrorItemBuilder): TrivialError = {
-        val err = this.asParseError()
-        this.resetHints()
-        err
-    }
-    // $COVERAGE-ON$
     private [errors] def makeTrivial(builder: TrivialErrorBuilder): Unit
 
     /** This method collects up the error labels of this error message into the given `HintState`.
@@ -157,7 +139,7 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
         case self: WithLabel          => if (self.label.nonEmpty) collector += Desc(self.label)
         case self: WithReason         => self.err.collectHints(collector)
         case self: WithHints          =>
-            self.hints.collect(0, collector)
+            self.hints.collect(collector)
             self.err.collectHints(collector)
         case self: TrivialMergedErrors =>
             self.err1.collectHints(collector)
@@ -176,26 +158,6 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
             case err                     => err
         }
     }
-
-    /** This function should reset any hints within the structure to their natural state, undoing
-      * any mutation caused by a call to `asParseError`.
-      */
-    // $COVERAGE-OFF$
-    private [errors] final def resetHints(): Unit = this match {
-        case self: BaseError          =>
-        case self: WithLabel          =>
-        case self: WithReason         => self.err.resetHints()
-        case self: WithHints          =>
-            self.hints.reset()
-            self.err.resetHints()
-        case self: TrivialMergedErrors =>
-            self.err1.resetHints()
-            self.err2.resetHints()
-        case self: TrivialAmended     => self.err.resetHints()
-        case self: TrivialEntrenched  => self.err.resetHints()
-        case self: TrivialLexical     => self.err.resetHints()
-    }
-    // $COVERAGE-ON$
 
     private [machine] final override def withHints(hints: DefuncHints): TrivialDefuncError = {
         if (hints.nonEmpty) new WithHints(this, hints)
@@ -222,14 +184,11 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
 
 /** Represents partially evaluated fancy errors */
 private [errors] sealed abstract class FancyDefuncError extends DefuncError {
-    private [machine] final override def asParseError()(implicit itemBuilder: ErrorItemBuilder): FancyError = {
+    private [machine] final override def asParseError(implicit itemBuilder: ErrorItemBuilder): FancyError = {
         val builder = new FancyErrorBuilder(offset, lexicalError)
         makeFancy(builder)
         builder.mkError
     }
-    // $COVERAGE-OFF$
-    private [machine] final override def asParseErrorSlow(implicit itemBuilder: ErrorItemBuilder): FancyError = this.asParseError()
-    // $COVERAGE-ON$
     private [errors] def makeFancy(builder: FancyErrorBuilder): Unit
 
     private [machine] final override def merge(err: DefuncError): DefuncError = {

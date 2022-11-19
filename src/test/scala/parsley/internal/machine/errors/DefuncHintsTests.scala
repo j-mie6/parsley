@@ -25,43 +25,20 @@ class DefuncHintsTests extends ParsleyTest {
     }
 
     "AddError" should "should increase the size" in {
-        EmptyHints.addError(mkErr("a")) should have size 1
-    }
-
-    "PopHints" should "have minimum size 0" in {
-        EmptyHints.pop should have size 0
-    }
-    it should "otherwise ensure it is smaller than before" in {
-        val hints = EmptyHints.addError(mkErr("a")).addError(mkErr("b"))
-        val hints_ = hints.pop
-        hints should have size 2
-        hints_ should have size 1
-        hints_.toSet should contain only (Desc("b"))
-        hints_.pop shouldBe empty
+        EmptyHints.addError(mkErr("a")) should not be empty
     }
 
     "ReplaceHint" should "do nothing on empty" in {
         EmptyHints.rename("hi") shouldBe empty
     }
-    it should "replace the first set otherwise" in {
+    it should "replace the hints under it" in {
         val hints = EmptyHints.addError(mkErr("a", "c")).addError(mkErr("b")).rename("hi")
-        hints.toSet should contain only (Desc("hi"), Desc("b"))
+        hints.toSet should contain only (Desc("hi"))
     }
 
     "MergeHints" should "ensure all elements from both hints" in {
         val hints1 = EmptyHints.addError(mkErr("a")).addError(mkErr("b"))
         val hints2 = EmptyHints.addError(mkErr("c")).addError(mkErr("d"))
         hints1.merge(hints2).toSet should contain only (Desc("a"), Desc("b"), Desc("c"), Desc("d"))
-    }
-    it should "ensure pops on the right do not impact the left" in {
-        val hints1 = EmptyHints.addError(mkErr("a")).addError(mkErr("b"))
-        val hints2 = EmptyHints.addError(mkErr("c")).addError(mkErr("d")).pop
-        hints1.merge(hints2).toSet should contain only (Desc("a"), Desc("b"), Desc("d"))
-    }
-    it should "ensure that if the left needs complete popping that is ok" in {
-        def hints1 = EmptyHints.addError(mkErr("a")).addError(mkErr("b"))
-        def hints2 = EmptyHints.addError(mkErr("c")).addError(mkErr("d"))
-        hints1.merge(hints2).pop.pop.pop.toSet should contain only (Desc("d"))
-        hints1.pop.merge(hints2).pop.pop.toSet should contain only (Desc("d"))
     }
 }

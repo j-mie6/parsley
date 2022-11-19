@@ -140,7 +140,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
             assert(checkStack.isEmpty, "there must be no residual check remaining on end of parse")
             assert(states.isEmpty, "there must be no residual states left at end of parse")
             assert(hintStack.isEmpty, "there should be no hints remaining at end of parse")
-            Failure(errs.error.asParseError().format(sourceFile))
+            Failure(errs.error.asParseError.format(sourceFile))
         }
         else if (status ne Finished) {
             instrs(pc)(this)
