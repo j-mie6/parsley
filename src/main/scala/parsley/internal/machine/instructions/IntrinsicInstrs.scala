@@ -230,8 +230,7 @@ private [internal] object Eof extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class Modify[S](reg: Int, _f: S => S) extends Instr {
-    private [this] val f = _f.asInstanceOf[Any => Any]
+private [internal] final class Modify(reg: Int, f: Any => Any) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         ctx.writeReg(reg, f(ctx.regs(reg)))
@@ -240,6 +239,9 @@ private [internal] final class Modify[S](reg: Int, _f: S => S) extends Instr {
     // $COVERAGE-OFF$
     override def toString: String = s"Modify($reg, f)"
     // $COVERAGE-ON$
+}
+private [internal] object Modify {
+    def apply[S](reg: Int, f: S => S): Modify = new Modify(reg, f.asInstanceOf[Any => Any])
 }
 
 private [internal] final class SwapAndPut(reg: Int) extends Instr {

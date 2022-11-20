@@ -3,7 +3,7 @@
  */
 package parsley.internal.machine.instructions
 
-import parsley.internal.machine.{Context, Finished, Good}
+import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.EmptyError
 

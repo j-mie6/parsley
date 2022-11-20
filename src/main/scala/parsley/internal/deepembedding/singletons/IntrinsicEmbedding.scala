@@ -39,7 +39,7 @@ private [parsley] final class Modify[S](val reg: Reg[S], f: S => S) extends Sing
     // $COVERAGE-OFF$
     override def pretty: String = s"modify($reg, ?)"
     // $COVERAGE-ON$
-    override def instr: instructions.Instr = new instructions.Modify(reg.addr, f)
+    override def instr: instructions.Instr = instructions.Modify(reg.addr, f)
 }
 
 private [deepembedding] object CharTok {

@@ -123,15 +123,17 @@ private [deepembedding] final class Chainr[A, B](p: StrictParsley[A], op: Strict
     def inlinable: Boolean = false
     override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit]= {
         val body = state.freshLabel()
-        val handler = state.freshLabel()
+        val handler1 = state.getLabel(instructions.ChainrWholeHandler)
+        val handler2 = state.freshLabel()
         instrs += new instructions.Push(identity[Any] _)
-        instrs += new instructions.PushHandlerAndCheck(handler, saveHints = false)
+        instrs += new instructions.PushHandlerAndCheck(handler1, saveHints = false)
         instrs += new instructions.Label(body)
         suspend(p.codeGen[Cont, R]) >> {
-            instrs += new instructions.PushHandlerAndCheck(handler, saveHints = false)
+            instrs += new instructions.PushHandlerAndCheck(handler2, saveHints = false)
             suspend(op.codeGen[Cont, R]) |> {
-                instrs += new instructions.Label(handler)
-                instrs += instructions.Chainr(body, wrap)
+                instrs += new instructions.ChainrJump(body)
+                instrs += new instructions.Label(handler2)
+                instrs += instructions.ChainrOpHandler(wrap)
             }
         }
     }
@@ -147,15 +149,19 @@ private [deepembedding] final class SepEndBy1[A, B](p: StrictParsley[A], sep: St
     def inlinable: Boolean = false
     override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val body = state.freshLabel()
-        val handler = state.freshLabel()
+        val handler1 = state.freshLabel()
+        val handler2 = state.freshLabel()
         instrs += new instructions.Fresh(mutable.ListBuffer.empty[Any])
-        instrs += new instructions.PushHandlerAndCheck(handler, saveHints = false)
+        instrs += new instructions.PushHandlerAndCheck(handler1, saveHints = false)
         instrs += new instructions.Label(body)
         suspend(p.codeGen[Cont, R]) >> {
-            instrs += new instructions.PushHandlerAndCheck(handler, saveHints = false)
+            instrs += new instructions.PushHandlerAndCheck(handler2, saveHints = false)
             suspend(sep.codeGen[Cont, R]) |> {
-                instrs += new instructions.Label(handler)
-                instrs += new instructions.SepEndBy1(body)
+                instrs += new instructions.SepEndBy1Jump(body)
+                instrs += new instructions.Label(handler2)
+                instrs += instructions.SepEndBy1SepHandler
+                instrs += new instructions.Label(handler1)
+                instrs += instructions.SepEndBy1WholeHandler
             }
         }
     }

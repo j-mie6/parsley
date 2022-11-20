@@ -5,7 +5,8 @@ package parsley.internal.machine.instructions
 
 import scala.collection.mutable
 
-import parsley.internal.machine.{Context, Good}
+import parsley.internal.machine.Context
+import parsley.internal.machine.XAssert._
 import parsley.internal.machine.stacks.Stack, Stack.StackExt
 
 private [internal] final class Many(var label: Int) extends InstrWithLabel {
@@ -103,14 +104,6 @@ private [internal] final class Chainl(var label: Int) extends InstrWithLabel {
 }
 
 private [instructions] object DualHandler {
-    def checkForFirstHandlerAndPop(ctx: Context, otherwise: =>Unit)(action: =>Unit): Unit = {
-        if (!ctx.handlers.isEmpty && ctx.handlers.pc == ctx.pc) {
-            ctx.handlers = ctx.handlers.tail
-            action
-        }
-        else otherwise
-        ctx.checkStack = ctx.checkStack.tail
-    }
     def popSecondHandlerAndJump(ctx: Context, label: Int): Unit = {
         ctx.handlers = ctx.handlers.tail
         ctx.checkStack = ctx.checkStack.tail
@@ -118,64 +111,110 @@ private [instructions] object DualHandler {
         ctx.pc = label
     }
 }
-private [internal] final class Chainr[A, B](var label: Int, wrap: Any => Any) extends InstrWithLabel {
+
+private [internal] final class ChainrJump(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
-        if (ctx.good) {
-            val f = ctx.stack.pop[(Any, Any) => Any]()
-            val x = ctx.stack.upop()
-            val acc = ctx.stack.peek[Any => Any]
-            // We perform the acc after the tos function; the tos function is "closer" to the final p
-            ctx.stack.exchange((y: Any) => acc(f(x, y)))
-            DualHandler.popSecondHandlerAndJump(ctx, label)
-        }
-        // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else {
-            // presence of first handler indicates p succeeded and op didn't
-            DualHandler.checkForFirstHandlerAndPop(ctx, ctx.fail()) {
-                ctx.catchNoConsumed {
-                    ctx.addErrorToHintsAndPop()
-                    val y = ctx.stack.upop()
-                    ctx.exchangeAndContinue(ctx.stack.peek[Any => Any](wrap(y)))
-                }
-            }
-        }
+        ensureRegularInstruction(ctx)
+        val f = ctx.stack.pop[(Any, Any) => Any]()
+        val x = ctx.stack.upop()
+        val acc = ctx.stack.peek[Any => Any]
+        // We perform the acc after the tos function; the tos function is "closer" to the final p
+        ctx.stack.exchange((y: Any) => acc(f(x, y)))
+        DualHandler.popSecondHandlerAndJump(ctx, label)
     }
+
     // $COVERAGE-OFF$
-    override def toString: String = s"Chainr($label)"
+    override def toString: String = s"ChainrJump($label)"
     // $COVERAGE-ON$
 }
-private [internal] object Chainr {
-    def apply[A, B](label: Int, wrap: A => B): Chainr[A, B] = new Chainr(label, wrap.asInstanceOf[Any => Any])
+
+private [internal] final class ChainrOpHandler(wrap: Any => Any) extends Instr {
+    override def apply(ctx: Context): Unit = {
+        ensureHandlerInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
+        ctx.catchNoConsumed {
+            ctx.addErrorToHintsAndPop()
+            val y = ctx.stack.upop()
+            ctx.exchangeAndContinue(ctx.stack.peek[Any => Any](wrap(y)))
+        }
+        ctx.checkStack = ctx.checkStack.tail
+    }
+
+    // $COVERAGE-OFF$
+    override def toString: String = s"ChainrOpHandler"
+    // $COVERAGE-ON$
+}
+private [internal] object ChainrOpHandler  {
+    def apply[A, B](wrap: A => B): ChainrOpHandler = new ChainrOpHandler(wrap.asInstanceOf[Any => Any])
 }
 
-private [internal] final class SepEndBy1(var label: Int) extends InstrWithLabel {
+private [internal] object ChainrWholeHandler extends Instr {
     override def apply(ctx: Context): Unit = {
-        if (ctx.good) {
-            ctx.stack.pop_()
-            val x = ctx.stack.upop()
-            ctx.stack.peek[mutable.ListBuffer[Any]] += x
-            DualHandler.popSecondHandlerAndJump(ctx, label)
-        }
+        ensureHandlerInstruction(ctx)
+        ctx.checkStack = ctx.checkStack.tail
+        ctx.fail()
+    }
+
+    // $COVERAGE-OFF$
+    override def toString: String = s"ChainrWholeHandler"
+    // $COVERAGE-ON$
+}
+
+private [internal] final class SepEndBy1Jump(var label: Int) extends InstrWithLabel {
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        ctx.stack.pop_()
+        val x = ctx.stack.upop()
+        ctx.stack.peek[mutable.ListBuffer[Any]] += x
+        DualHandler.popSecondHandlerAndJump(ctx, label)
+    }
+
+    // $COVERAGE-OFF$
+    override def toString: String = s"SepEndBy1Jump($label)"
+    // $COVERAGE-ON$
+}
+
+private [instructions] object SepEndBy1Handlers {
+    def pushAccWhenCheckValidAndContinue(ctx: Context, acc: mutable.ListBuffer[Any]): Unit = {
+        if (ctx.offset != ctx.checkStack.offset || acc.isEmpty) ctx.fail()
         else {
-            val check = ctx.checkStack.offset
-            // this needs to be lazy, because `x` might need to be popped first in the branch below
-            lazy val acc = ctx.stack.peek[mutable.ListBuffer[Any]]
-            // presence of first handler indicates p succeeded and sep didn't
-            DualHandler.checkForFirstHandlerAndPop(ctx, ()) {
-                val x = ctx.stack.upop()
-                acc += x
-                ctx.checkStack = ctx.checkStack.tail
-            }
-            if (ctx.offset != check || acc.isEmpty) ctx.fail()
-            else {
-                ctx.addErrorToHintsAndPop()
-                ctx.good = true
-                ctx.exchangeAndContinue(acc.toList)
-            }
+            ctx.addErrorToHintsAndPop()
+            ctx.good = true
+            ctx.exchangeAndContinue(acc.toList)
         }
     }
+}
+
+private [internal] object SepEndBy1SepHandler extends Instr {
+    override def apply(ctx: Context): Unit = {
+        ensureHandlerInstruction(ctx)
+        // p succeeded and sep didn't, so push p and fall-through to the whole handler
+        val x = ctx.stack.upop()
+        val acc = ctx.stack.peek[mutable.ListBuffer[Any]]
+        acc += x
+        // discard the other handler and increment so that we are sat on the other handler
+        assert(ctx.instrs(ctx.pc+1) eq SepEndBy1WholeHandler, "the next instruction from the sep handler must be the whole handler")
+        assert(ctx.handlers.pc == ctx.pc+1, "the top-most handler must be the whole handler in the sep handler")
+        ctx.handlers = ctx.handlers.tail
+        ctx.inc()
+        SepEndBy1Handlers.pushAccWhenCheckValidAndContinue(ctx, acc)
+        ctx.checkStack = ctx.checkStack.tail.tail
+    }
+
     // $COVERAGE-OFF$
-    override def toString: String = s"SepEndBy1($label)"
+    override def toString: String = s"SepEndBy1SepHandler"
+    // $COVERAGE-ON$
+}
+
+private [internal] object SepEndBy1WholeHandler extends Instr {
+    override def apply(ctx: Context): Unit = {
+        ensureHandlerInstruction(ctx)
+        SepEndBy1Handlers.pushAccWhenCheckValidAndContinue(ctx, ctx.stack.peek[mutable.ListBuffer[Any]])
+        ctx.checkStack = ctx.checkStack.tail
+    }
+
+    // $COVERAGE-OFF$
+    override def toString: String = s"SepEndBy1WholeHandler"
     // $COVERAGE-ON$
 }
 

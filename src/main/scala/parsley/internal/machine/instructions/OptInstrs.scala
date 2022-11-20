@@ -8,7 +8,7 @@ import scala.collection.mutable
 import parsley.XCompat._
 
 import parsley.internal.errors.{Desc, ExpectItem}
-import parsley.internal.machine.{Context, Good}
+import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.MultiExpectedError
 import parsley.internal.machine.stacks.ErrorStack
