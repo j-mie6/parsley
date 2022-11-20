@@ -71,7 +71,7 @@ private [internal] final class AlwaysRecoverWith[A](x: A) extends Instr {
         ctx.restoreState()
         ctx.restoreHints() // This must be before adding the error to hints
         ctx.addErrorToHintsAndPop()
-        ctx.status = Good
+        ctx.good = true
         ctx.pushAndContinue(x)
     }
     // $COVERAGE-OFF$

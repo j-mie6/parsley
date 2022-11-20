@@ -4,6 +4,7 @@
 // $COVERAGE-OFF$
 package parsley.internal.machine.instructions
 
+import parsley.XAssert._
 import parsley.errors.ErrorBuilder
 
 import parsley.internal.errors.{ExpectItem, FancyError, ParseError, TrivialError}
@@ -103,17 +104,19 @@ private [internal] final class LogBegin(var label: Int, override val name: Strin
 
 private [internal] final class LogEnd(val name: String, override val ascii: Boolean, break: Boolean) extends Instr with Logger {
     override def apply(ctx: Context): Unit = {
+        assert(ctx.running, "cannot wrap a Halt with a debug")
         ctx.debuglvl -= 1
-        val end = " " + (ctx.status match {
-            case Good =>
+        val end = " " + {
+            if (ctx.good) {
                 ctx.handlers = ctx.handlers.tail
                 ctx.inc()
                 green("Good")
-            case Recover =>
+            }
+            else {
                 ctx.fail()
                 red("Fail")
-            case Finished | Failed => throw new Exception("debug cannot wrap a halt?!") // scalastyle:ignore throw
-        })
+            }
+        }
         println(preludeString(Exit, ctx, end))
         if (break) doBreak(ctx)
     }
@@ -163,43 +166,43 @@ private [internal] final class LogErrBegin(var label: Int, override val name: St
 private [internal] final class LogErrEnd(override val name: String, override val ascii: Boolean)(implicit errBuilder: ErrorBuilder[_])
     extends Instr with ErrLogger {
     override def apply(ctx: Context): Unit = {
+        assert(ctx.running, "cannot wrap a Halt with a debug")
         ctx.debuglvl -= 1
         val currentHintsValidOffset = ctx.currentHintsValidOffset
-        ctx.status match {
-            case Good =>
-                // In this case, the currently in-flight hints should be reported
-                val oldData = ctx.stack.pop[ErrLogData]()
-                val inFlightHints = ctx.inFlightHints.toSet
-                val formattedInFlight = inFlightHints.map(_.formatExpect)
-                val msgInit = s": ${green("Good")}, current hints are $formattedInFlight with"
-                ctx.handlers = ctx.handlers.tail
-                if (!oldData.stillValid(ctx.currentHintsValidOffset)) {
-                    println(preludeString(Exit, ctx, s"$msgInit old hints discarded (valid at offset ${ctx.currentHintsValidOffset})"))
+        if (ctx.good) {
+            // In this case, the currently in-flight hints should be reported
+            val oldData = ctx.stack.pop[ErrLogData]()
+            val inFlightHints = ctx.inFlightHints.toSet
+            val formattedInFlight = inFlightHints.map(_.formatExpect)
+            val msgInit = s": ${green("Good")}, current hints are $formattedInFlight with"
+            ctx.handlers = ctx.handlers.tail
+            if (!oldData.stillValid(ctx.currentHintsValidOffset)) {
+                println(preludeString(Exit, ctx, s"$msgInit old hints discarded (valid at offset ${ctx.currentHintsValidOffset})"))
+            }
+            else {
+                val newHints = oldData.newHints(ctx.currentHintsValidOffset, inFlightHints)
+                if (newHints.size == inFlightHints.size) {
+                    println(preludeString(Exit, ctx, s"$msgInit all added since entry to debug (valid at offset ${ctx.currentHintsValidOffset})"))
                 }
                 else {
-                    val newHints = oldData.newHints(ctx.currentHintsValidOffset, inFlightHints)
-                    if (newHints.size == inFlightHints.size) {
-                        println(preludeString(Exit, ctx, s"$msgInit all added since entry to debug (valid at offset ${ctx.currentHintsValidOffset})"))
-                    }
-                    else {
-                        val formattedNewHints = oldData.newHints(ctx.currentHintsValidOffset, inFlightHints).map(_.formatExpect)
-                        val msg = s"$msgInit $formattedNewHints added since entry to debug (valid at offset ${ctx.currentHintsValidOffset})"
-                        println(preludeString(Exit, ctx, msg))
-                    }
+                    val formattedNewHints = oldData.newHints(ctx.currentHintsValidOffset, inFlightHints).map(_.formatExpect)
+                    val msg = s"$msgInit $formattedNewHints added since entry to debug (valid at offset ${ctx.currentHintsValidOffset})"
+                    println(preludeString(Exit, ctx, msg))
                 }
-                ctx.inc()
-            case Recover =>
-                // In this case, the current top of stack error message is reported
-                // For this, there needs to be a verbose mode that prints out the composite error
-                // as opposed to the simplified error (post-merge)
-                // there should be different levels of verbose flags, such that we can also display the expecteds _under_ a label
-                val oldData = ctx.stack.peek[ErrLogData]
-                val defuncErr = ctx.inFlightError
-                val err = defuncErr.asParseError(ctx.errorItemBuilder)
-                println(preludeString(Exit, ctx, s": ${red("Fail")}"))
-                println(Indenter.indentAndUnlines(ctx, LogErrEnd.format(err): _*))
-                ctx.fail()
-            case Finished | Failed => throw new Exception("debug cannot wrap a halt?!") // scalastyle:ignore throw
+            }
+            ctx.inc()
+        }
+        else {
+            // In this case, the current top of stack error message is reported
+            // For this, there needs to be a verbose mode that prints out the composite error
+            // as opposed to the simplified error (post-merge)
+            // there should be different levels of verbose flags, such that we can also display the expecteds _under_ a label
+            val oldData = ctx.stack.peek[ErrLogData]
+            val defuncErr = ctx.inFlightError
+            val err = defuncErr.asParseError(ctx.errorItemBuilder)
+            println(preludeString(Exit, ctx, s": ${red("Fail")}"))
+            println(Indenter.indentAndUnlines(ctx, LogErrEnd.format(err): _*))
+            ctx.fail()
         }
     }
     override def toString: String = s"LogErrEnd($name)"

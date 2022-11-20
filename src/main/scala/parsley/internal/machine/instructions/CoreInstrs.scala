@@ -82,7 +82,7 @@ private [internal] object DynCall {
 private [internal] object Halt extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        ctx.status = Finished
+        ctx.running = false
     }
     // $COVERAGE-OFF$
     override def toString: String = "Halt"
@@ -256,7 +256,7 @@ private [internal] final class RestoreAndPushHandler(var label: Int) extends Ins
         ensureHandlerInstruction(ctx)
         ctx.restoreState()
         ctx.restoreHints()
-        ctx.status = Good
+        ctx.good = true
         ctx.pushHandler(label)
         ctx.inc()
     }

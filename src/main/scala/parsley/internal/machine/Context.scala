@@ -37,8 +37,8 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     /** Stack consisting of offsets at previous checkpoints, which may query to test for consumed input */
     private [machine] var checkStack: CheckStack = Stack.empty
     /** Current operational status of the machine */
-    // TODO: turn into two bools? would make the runParser loop tighter
-    private [machine] var status: Status = Good
+    private [machine] var good: Boolean = true
+    private [machine] var running: Boolean = true
     /** Stack of handlers, which track the call depth, program counter and stack size of error handlers */
     private [machine] var handlers: HandlerStack = Stack.empty
     /** Current size of the call stack */
@@ -132,21 +132,13 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     }
     // $COVERAGE-ON$
 
-    @tailrec private [parsley] def runParser[Err: ErrorBuilder, A](): Result[Err, A] = {
+    @tailrec private [parsley] def run[Err: ErrorBuilder, A](): Result[Err, A] = {
         //println(pretty)
-        if (status eq Failed) {
-            assert(!errs.isEmpty && errs.tail.isEmpty, "there should be exactly 1 parse error remaining at end of parse")
-            assert(handlers.isEmpty, "there must be no more handlers on end of parse")
-            assert(checkStack.isEmpty, "there must be no residual check remaining on end of parse")
-            assert(states.isEmpty, "there must be no residual states left at end of parse")
-            assert(hintStack.isEmpty, "there should be no hints remaining at end of parse")
-            Failure(errs.error.asParseError.format(sourceFile))
-        }
-        else if (status ne Finished) {
+        if (running) { // this is the likeliest branch, so should be executed with fewest comparisons
             instrs(pc)(this)
-            runParser[Err, A]()
+            run[Err, A]()
         }
-        else {
+        else if (good) {
             assert(stack.size == 1, "stack must end a parse with exactly one item")
             assert(calls.isEmpty, "there must be no more calls to unwind on end of parser")
             assert(handlers.isEmpty, "there must be no more handlers on end of parse")
@@ -155,6 +147,14 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
             assert(errs.isEmpty, "there should be no parse errors remaining at end of parse")
             assert(hintStack.isEmpty, "there should be no hints remaining at end of parse")
             Success(stack.peek[A])
+        }
+        else {
+            assert(!errs.isEmpty && errs.tail.isEmpty, "there should be exactly 1 parse error remaining at end of parse")
+            assert(handlers.isEmpty, "there must be no more handlers on end of parse")
+            assert(checkStack.isEmpty, "there must be no residual check remaining on end of parse")
+            assert(states.isEmpty, "there must be no residual states left at end of parse")
+            assert(hintStack.isEmpty, "there should be no hints remaining at end of parse")
+            Failure(errs.error.asParseError.format(sourceFile))
         }
     }
 
@@ -198,10 +198,10 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     }
 
     private [machine] def catchNoConsumed(handler: =>Unit): Unit = {
-        assert(status eq Recover, "catching can only be performed in a handler")
+        assert(!good, "catching can only be performed in a handler")
         if (offset != checkStack.offset) fail()
         else {
-            status = Good
+            good = true
             handler
         }
         checkStack = checkStack.tail
@@ -228,13 +228,14 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     private [machine] def expectedTokenFail(expected: Option[ExpectItem], size: Int): Unit = this.fail(new TokenError(offset, line, col, expected, size))
 
     private [machine] def fail(error: DefuncError): Unit = {
+        good = false
         this.pushError(error)
         this.fail()
     }
     private [machine] def fail(): Unit = {
-        if (handlers.isEmpty) status = Failed
+        assert(!good, "fail() may only be called in a failing context, use `fail(err)` or set `good = false`")
+        if (handlers.isEmpty) running = false
         else {
-            status = Recover
             val handler = handlers
             handlers = handlers.tail
             multiRet(depth - handler.depth)
@@ -286,6 +287,11 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     }
     private [machine] def writeReg(reg: Int, x: Any): Unit = {
         regs(reg) = x.asInstanceOf[AnyRef]
+    }
+
+    private [machine] def status: Status = {
+        if (running) if (good) Good else Recover
+        else if (good) Finished else Failed
     }
 
     private implicit val lineBuilder: LineBuilder = new LineBuilder {

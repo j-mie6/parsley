@@ -209,7 +209,7 @@ private [internal] object NegLookGood extends Instr {
         ctx.restoreState()
         ctx.restoreHints()
         // A failure is what we wanted
-        ctx.status = Good
+        ctx.good = true
         ctx.errs = ctx.errs.tail
         ctx.pushAndContinue(())
     }

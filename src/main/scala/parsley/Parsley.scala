@@ -119,7 +119,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @since 3.0.0
       * @group run
       */
-    def parse[Err: ErrorBuilder](input: String): Result[Err, A] = new Context(internal.instrs, input, internal.numRegs, None).runParser()
+    def parse[Err: ErrorBuilder](input: String): Result[Err, A] = new Context(internal.instrs, input, internal.numRegs, None).run()
 
     // RESULT CHANGING COMBINATORS
     /** This combinator allows the result of this parser to be changed using a given function.

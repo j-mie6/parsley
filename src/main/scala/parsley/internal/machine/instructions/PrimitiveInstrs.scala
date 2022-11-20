@@ -143,7 +143,7 @@ private [parsley] final class CalleeSave(var label: Int, reqSize: Int, slots: Li
     }
 
     private def continue(ctx: Context): Unit = {
-        if (ctx.status eq Good) {
+        if (ctx.good) {
             ctx.handlers = ctx.handlers.tail
             ctx.pc = label
         }
