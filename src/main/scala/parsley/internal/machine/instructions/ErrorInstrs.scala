@@ -6,6 +6,7 @@ package parsley.internal.machine.instructions
 import parsley.internal.errors.Desc
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
+import parsley.internal.machine.errors.{ClassicUnexpectedError, ClassicFancyError}
 
 private [internal] final class RelabelHints(label: String) extends Instr {
     val isHide: Boolean = label.isEmpty
@@ -124,21 +125,21 @@ private [internal] object SetLexicalAndFail extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class Fail(msgs: String*) extends Instr {
+private [internal] final class Fail(width: Int, msgs: String*) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        ctx.failWithMessage(msgs: _*)
+        ctx.failWithMessage(width, msgs: _*)
     }
     // $COVERAGE-OFF$
     override def toString: String = s"Fail(${msgs.mkString(", ")})"
     // $COVERAGE-ON$
 }
 
-private [internal] final class Unexpected(msg: String) extends Instr {
+private [internal] final class Unexpected(msg: String, width: Int) extends Instr {
     private [this] val unexpected = Desc(msg)
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        ctx.unexpectedFail(None, unexpected)
+        ctx.unexpectedFail(None, unexpected, unexpectedWidth = width)
     }
     // $COVERAGE-OFF$
     override def toString: String = s"Unexpected($msg)"
@@ -148,7 +149,11 @@ private [internal] final class Unexpected(msg: String) extends Instr {
 private [internal] final class FastFail(msggen: Any => String) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        ctx.failWithMessage(msggen(ctx.stack.upop()))
+        val x = ctx.stack.upop()
+        ctx.handlers = ctx.handlers.tail
+        val state = ctx.states
+        ctx.states = ctx.states.tail
+        ctx.fail(new ClassicFancyError(state.offset, state.line, state.col, ctx.offset - state.offset, msggen(x)))
     }
     // $COVERAGE-OFF$
     override def toString: String = "FastFail(?)"
@@ -158,11 +163,15 @@ private [internal] object FastFail {
     def apply[A](msggen: A => String): FastFail = new FastFail(msggen.asInstanceOf[Any => String])
 }
 
-private [internal] final class FastUnexpected[A](_msggen: A=>String) extends Instr {
-    private [this] def msggen(x: Any) = new Desc(_msggen(x.asInstanceOf[A]))
+private [internal] final class FastUnexpected[A](_namegen: A=>String) extends Instr {
+    private [this] def namegen(x: Any) = new Desc(_namegen(x.asInstanceOf[A]))
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        ctx.unexpectedFail(expected = None, unexpected = msggen(ctx.stack.upop()))
+        val x = ctx.stack.upop()
+        ctx.handlers = ctx.handlers.tail
+        val state = ctx.states
+        ctx.states = ctx.states.tail
+        ctx.fail(new ClassicUnexpectedError(state.offset, state.line, state.col, None, namegen(x), ctx.offset - state.offset))
     }
     // $COVERAGE-OFF$
     override def toString: String = "FastUnexpected(?)"

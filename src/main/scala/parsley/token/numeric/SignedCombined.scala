@@ -4,7 +4,7 @@
 package parsley.token.numeric
 
 import parsley.Parsley, Parsley.attempt
-import parsley.errors.combinator.{amend, entrench, ErrorMethods}
+import parsley.errors.combinator.ErrorMethods
 import parsley.token.descriptions.numeric.NumericDesc
 
 import parsley.internal.deepembedding.Sign.CombinedType
@@ -20,8 +20,8 @@ private [token] final class SignedCombined(desc: NumericDesc, unsigned: Combined
     override def number: Parsley[Either[BigInt,BigDecimal]] = attempt(sign <*> unsigned.number)
 
     override protected[numeric] def bounded[T](number: Parsley[Either[BigInt,BigDecimal]], bits: Bits, radix: Int)
-                                              (implicit ev: CanHold[bits.self,T]): Parsley[Either[T,BigDecimal]] = amend {
-        entrench(number).collectMsg(ex => {
+                                              (implicit ev: CanHold[bits.self,T]): Parsley[Either[T,BigDecimal]] = {
+        number.collectMsg(ex => {
             val Left(x) = ex
             Seq(if (x > bits.upperSigned) s"literal $x is larger than the max value of ${bits.upperSigned}"
                 else                      s"literal $x is less than the min value of ${bits.lowerSigned}")

@@ -4,7 +4,7 @@
 package parsley.token.numeric
 
 import parsley.Parsley
-import parsley.errors.combinator.{amend, entrench, ErrorMethods}
+import parsley.errors.combinator.ErrorMethods
 
 /** This class defines a uniform interface for defining parsers for floating
   * literals, independent of how whitespace should be handled after the literal.
@@ -238,8 +238,8 @@ abstract class Real private[token] {
     lazy val exactDouble: Parsley[Double] = ensureExactDouble(_number)
     // $COVERAGE-ON$
 
-    protected [numeric] def ensureFloat(number: Parsley[BigDecimal]): Parsley[Float] = amend {
-        entrench(number).collectMsg(n => Seq(
+    protected [numeric] def ensureFloat(number: Parsley[BigDecimal]): Parsley[Float] = {
+        number.collectMsg(n => Seq(
                 if (n > BigDecimal(Float.MaxValue.toDouble) || n < BigDecimal(Float.MinValue.toDouble))
                      s"literal $n is too large to be an IEEE 754 single-precision float"
                 else s"literal $n is too small to be an IEEE 754 single-precision float")) {
@@ -254,8 +254,8 @@ abstract class Real private[token] {
         }
     }
 
-    protected [numeric] def ensureDouble(number: Parsley[BigDecimal]): Parsley[Double] = amend {
-        entrench(number).collectMsg(n => Seq(
+    protected [numeric] def ensureDouble(number: Parsley[BigDecimal]): Parsley[Double] = {
+        number.collectMsg(n => Seq(
                 if (n > BigDecimal(Double.MaxValue) || n < BigDecimal(Double.MinValue)) s"literal $n is too large to be an IEEE 754 double-precision float"
                 else                                                                    s"literal $n is too small to be an IEEE 754 double-precision float")) {
             case n if isDouble(n) => n.toDouble
@@ -269,14 +269,14 @@ abstract class Real private[token] {
         }
     }
 
-    protected [numeric] def ensureExactFloat(number: Parsley[BigDecimal]): Parsley[Float] = amend {
-        entrench(number).collectMsg(n => Seq(s"$n cannot be represented exactly as a IEEE 754 single-precision float")) {
+    protected [numeric] def ensureExactFloat(number: Parsley[BigDecimal]): Parsley[Float] = {
+        number.collectMsg(n => Seq(s"$n cannot be represented exactly as a IEEE 754 single-precision float")) {
             case n if n.isExactFloat => n.toFloat
         }
     }
 
-    protected [numeric] def ensureExactDouble(number: Parsley[BigDecimal]): Parsley[Double] = amend {
-        entrench(number).collectMsg(n => Seq(s"$n cannot be represented exactly as a IEEE 754 double-precision float")) {
+    protected [numeric] def ensureExactDouble(number: Parsley[BigDecimal]): Parsley[Double] = {
+        number.collectMsg(n => Seq(s"$n cannot be represented exactly as a IEEE 754 double-precision float")) {
             case n if n.isExactDouble => n.toDouble
         }
     }

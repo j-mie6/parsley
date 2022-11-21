@@ -5,6 +5,8 @@ package parsley.internal.machine.instructions
 
 import scala.annotation.tailrec
 
+import parsley.XAssert._
+
 import parsley.internal.collection.mutable.Radix, Radix.RadixSet
 import parsley.internal.errors.Desc
 import parsley.internal.machine.Context
@@ -60,7 +62,7 @@ private [instructions] abstract class WhiteSpaceLike(start: String, end: String,
         spaces(ctx)
         val startsMulti = ctx.moreInput && ctx.input.startsWith(start, ctx.offset)
         if (startsMulti && multiLineComment(ctx)) multisOnly(ctx)
-        else if (startsMulti) ctx.expectedTokenFail(expected = endOfComment, numCodePointsEnd)
+        else if (startsMulti) ctx.expectedFail(expected = endOfComment, numCodePointsEnd)
         else ctx.pushAndContinue(())
     }
 
@@ -73,7 +75,7 @@ private [instructions] abstract class WhiteSpaceLike(start: String, end: String,
         if (ctx.moreInput && ctx.input.startsWith(sharedPrefix, ctx.offset)) {
             val startsMulti = ctx.input.startsWith(factoredStart, ctx.offset + sharedPrefix.length)
             if (startsMulti && multiLineComment(ctx)) singlesAndMultis(ctx)
-            else if (startsMulti) ctx.expectedTokenFail(expected = endOfComment, numCodePointsEnd)
+            else if (startsMulti) ctx.expectedFail(expected = endOfComment, numCodePointsEnd)
             else if (ctx.input.startsWith(factoredLine, ctx.offset + sharedPrefix.length)) {
                 singleLineComment(ctx)
                 singlesAndMultis(ctx)
@@ -106,16 +108,16 @@ private [internal] final class TokenComment(start: String, end: String, line: St
     private [this] final val comment = Some(Desc("comment"))
     private [this] final val openingSize = Math.max(start.codePointCount(0, start.length), line.codePointCount(0, line.length))
 
-    // PRE: one of the comments is supported
-    // PRE: Multi-line comments may not prefix single-line, but single-line may prefix multi-line
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
+        assume(multiAllowed || lineAllowed, "one of single- or multi-line must be enabled")
+        assert(!line.startsWith(start), "multi-line comments may not prefix single-line comments")
         val startsMulti = multiAllowed && ctx.input.startsWith(start, ctx.offset)
         // If neither comment is available we fail
-        if (!ctx.moreInput || (!lineAllowed || !ctx.input.startsWith(line, ctx.offset)) && !startsMulti) ctx.expectedTokenFail(expected = comment, openingSize)
+        if (!ctx.moreInput || (!lineAllowed || !ctx.input.startsWith(line, ctx.offset)) && !startsMulti) ctx.expectedFail(expected = comment, openingSize)
         // One of the comments must be available
         else if (startsMulti && multiLineComment(ctx)) ctx.pushAndContinue(())
-        else if (startsMulti) ctx.expectedFail(expected = endOfComment)
+        else if (startsMulti) ctx.expectedFail(expected = endOfComment, unexpectedWidth = 1)
         // It clearly wasn't the multi-line comment, so we are left with single line
         else {
             singleLineComment(ctx)
@@ -158,13 +160,13 @@ private [internal] final class TokenNonSpecific(name: String, illegalName: Strin
             ctx.offset += 1
             restOfToken(ctx, initialOffset)
         }
-        else ctx.expectedFail(expected)
+        else ctx.expectedFail(expected, unexpectedWidth = 1)
     }
 
     private def ensureLegal(ctx: Context, tok: String) = {
         if (illegal(tok)) {
             ctx.offset -= tok.length
-            ctx.unexpectedFail(expected = expected, unexpected = new Desc(s"$illegalName $tok"))
+            ctx.unexpectedFail(expected = expected, unexpected = new Desc(s"$illegalName $tok"), unexpectedWidth = tok.length)
         }
         else {
             ctx.col += tok.length
@@ -200,7 +202,7 @@ private [instructions] abstract class TokenSpecificAllowTrailing(_specific: Stri
 
     @tailrec final private def readSpecific(ctx: Context, i: Int, j: Int): Unit = {
         if (j < strsz && readCharCaseHandled(ctx, i) == specific.charAt(j)) readSpecific(ctx, i + 1, j + 1)
-        else if (j < strsz) ctx.expectedTokenFail(expected, numCodePoints)
+        else if (j < strsz) ctx.expectedFail(expected, numCodePoints)
         else {
             ctx.saveState()
             ctx.fastUncheckedConsumeChars(strsz)
@@ -210,7 +212,7 @@ private [instructions] abstract class TokenSpecificAllowTrailing(_specific: Stri
 
     final override def apply(ctx: Context): Unit = {
         if (ctx.inputsz >= ctx.offset + strsz) readSpecific(ctx, ctx.offset, 0)
-        else ctx.expectedTokenFail(expected, numCodePoints)
+        else ctx.expectedFail(expected, numCodePoints)
     }
 }
 
@@ -218,7 +220,7 @@ private [internal] final class TokenSpecific(_specific: String, letter: Char => 
     extends TokenSpecificAllowTrailing(_specific, caseSensitive) {
     override def postprocess(ctx: Context, i: Int): Unit = {
         if (i < ctx.inputsz && letter(ctx.input.charAt(i))) {
-            ctx.expectedFail(expectedEnd) //This should only report a single token
+            ctx.expectedFail(expectedEnd, unexpectedWidth = 1) //This should only report a single token
             ctx.restoreState()
         }
         else {

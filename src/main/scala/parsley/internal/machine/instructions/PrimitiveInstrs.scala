@@ -12,7 +12,7 @@ private [internal] final class Satisfies(f: Char => Boolean, _expected: Option[S
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         if (ctx.moreInput && f(ctx.nextChar)) ctx.pushAndContinue(ctx.consumeChar())
-        else ctx.expectedFail(expected)
+        else ctx.expectedFail(expected, unexpectedWidth = 1)
     }
     // $COVERAGE-OFF$
     override def toString: String = "Sat(?)"
@@ -47,12 +47,23 @@ private [internal] object RestoreHintsAndState extends Instr {
 private [internal] object PopStateAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
+        ctx.states = ctx.states.tail
+        ctx.fail()
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = "PopStateAndFail"
+    // $COVERAGE-ON$
+}
+
+private [internal] object PopStateRestoreHintsAndFail extends Instr {
+    override def apply(ctx: Context): Unit = {
+        ensureHandlerInstruction(ctx)
         ctx.restoreHints()
         ctx.states = ctx.states.tail
         ctx.fail()
     }
     // $COVERAGE-OFF$
-    override def toString: String = "Look"
+    override def toString: String = "PopStateRestoreHintsAndFail"
     // $COVERAGE-ON$
 }
 

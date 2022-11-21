@@ -14,7 +14,7 @@ import parsley.errors.ErrorBuilder
 import parsley.internal.errors.{Desc, ExpectItem, LineBuilder}
 import parsley.internal.machine.errors.{
     ClassicExpectedError, ClassicExpectedErrorWithReason, ClassicFancyError, ClassicUnexpectedError, DefuncError,
-    DefuncHints, EmptyHints, ErrorItemBuilder, TokenError
+    DefuncHints, EmptyHints, ErrorItemBuilder
 }
 
 import instructions.Instr
@@ -217,15 +217,16 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         }
     }
 
-    private [machine] def failWithMessage(msgs: String*): Unit = this.fail(new ClassicFancyError(offset, line, col, msgs: _*))
-    private [machine] def unexpectedFail(expected: Option[ExpectItem], unexpected: Desc): Unit = {
-        this.fail(new ClassicUnexpectedError(offset, line, col, expected, unexpected))
+    private [machine] def failWithMessage(caretWidth: Int, msgs: String*): Unit = this.fail(new ClassicFancyError(offset, line, col, caretWidth, msgs: _*))
+    private [machine] def unexpectedFail(expected: Option[ExpectItem], unexpected: Desc, unexpectedWidth: Int): Unit = {
+        this.fail(new ClassicUnexpectedError(offset, line, col, expected, unexpected, unexpectedWidth))
     }
-    private [machine] def expectedFail(expected: Option[ExpectItem]): Unit = this.fail(new ClassicExpectedError(offset, line, col, expected))
-    private [machine] def expectedFail(expected: Option[ExpectItem], reason: String): Unit = {
-        this.fail(new ClassicExpectedErrorWithReason(offset, line, col, expected, reason))
+    /*private [machine] def expectedFail(expected: Option[ExpectItem], reason: String, size: Int): Unit = {
+        this.fail(new ClassicExpectedErrorWithReason(offset, line, col, expected, reason, size))
+    }*/
+    private [machine] def expectedFail(expected: Option[ExpectItem], unexpectedWidth: Int): Unit = {
+        this.fail(new ClassicExpectedError(offset, line, col, expected, unexpectedWidth))
     }
-    private [machine] def expectedTokenFail(expected: Option[ExpectItem], size: Int): Unit = this.fail(new TokenError(offset, line, col, expected, size))
 
     private [machine] def fail(error: DefuncError): Unit = {
         good = false

@@ -29,7 +29,7 @@ private [deepembedding] final class Attempt[A](val p: StrictParsley[A]) extends 
 private [deepembedding] final class Look[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, A](true) {
     override val instr: instructions.Instr = instructions.RestoreHintsAndState
     override def instrNeedsLabel: Boolean = false
-    override def handlerLabel(state: CodeGenState): Int  = state.getLabel(instructions.PopStateAndFail)
+    override def handlerLabel(state: CodeGenState): Int  = state.getLabel(instructions.PopStateRestoreHintsAndFail)
     // $COVERAGE-OFF$
     final override def pretty(p: String): String = s"lookAhead($p)"
     // $COVERAGE-ON$

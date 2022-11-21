@@ -557,6 +557,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @see [[parsley.errors.combinator.ErrorMethods.guardAgainst `guardAgainst`]] for a version which can produce custom error messages on failure.
       * @group filter
       */
+    // FIXME: document error offset
     def filter(pred: A => Boolean): Parsley[A] = new Parsley(new frontend.Filter(this.internal, pred))
     /** This combinator filters the result of this parser using a given predicate, succeeding only if the predicate returns `false`.
       *
@@ -580,6 +581,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @see [[parsley.errors.combinator.ErrorMethods.guardAgainst `guardAgainst`]] for a version that can produce custom error messages on failure.
       * @group filter
       */
+    // FIXME: document error offset
     def filterNot(pred: A => Boolean): Parsley[A] = this.filter(!pred(_))
     /** This combinator applies a partial function `pf` to the result of this parser if its result
       * is defined for `pf`, failing if it is not.
@@ -608,6 +610,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @since 2.0.0
       * @group filter
       */
+    // FIXME: document error offset
     def collect[B](pf: PartialFunction[A, B]): Parsley[B] = this.mapFilter(pf.lift)
     /** This combinator applies a function `f` to the result of this parser: if it returns a
       * `Some(y)`, `y` is returned, otherwise the parser fails.
@@ -634,6 +637,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @since 4.0.0
       * @group filter
       */
+    // FIXME: document error offset
     def mapFilter[B](f: A => Option[B]): Parsley[B] = new Parsley(new frontend.MapFilter(this.internal, f))
 
     // FOLDING COMBINATORS

@@ -6,7 +6,7 @@ package parsley.token.numeric
 import parsley.Parsley, Parsley.{attempt, pure}
 import parsley.character.{digit, hexDigit, octDigit, oneOf}
 import parsley.combinator.{choice, option}
-import parsley.errors.combinator.{amend, entrench, ErrorMethods}
+import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.character.charLift
 import parsley.implicits.zipped.{Zipped2, Zipped3}
 import parsley.token.descriptions.numeric.NumericDesc
@@ -41,8 +41,8 @@ private [token] final class UnsignedCombined(desc: NumericDesc, integer: Integer
 
     // TODO: render in the "native" radix
     override protected [numeric] def bounded[T](number: Parsley[Either[BigInt, BigDecimal]], bits: Bits, radix: Int)
-                                               (implicit ev: CanHold[bits.self,T]): Parsley[Either[T, BigDecimal]] = amend {
-        entrench(number).collectMsg(x => Seq(s"literal ${x.asInstanceOf[Left[BigInt, Nothing]].value} is larger than the max value of ${bits.upperUnsigned}")) {
+                                               (implicit ev: CanHold[bits.self,T]): Parsley[Either[T, BigDecimal]] = {
+        number.collectMsg(x => Seq(s"literal ${x.asInstanceOf[Left[BigInt, Nothing]].value} is larger than the max value of ${bits.upperUnsigned}")) {
             case Left(x) if x <= bits.upperUnsigned => Left(ev.fromBigInt(x))
             case Right(x) => Right(x)
         }

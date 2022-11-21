@@ -4,7 +4,7 @@
 package parsley.token.numeric
 
 import parsley.Parsley
-import parsley.errors.combinator.{amend, entrench, ErrorMethods}
+import parsley.errors.combinator.ErrorMethods
 
 /** This class defines a uniform interface for defining parsers for mixed kind
   * numeric literals, independent of how whitespace should be handled after the literal
@@ -442,16 +442,16 @@ abstract class Combined private[token] { // scalastyle:ignore number.of.methods
     private def binaryBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[Either[T, BigDecimal]] = bounded(_binary, bits, 2)
 
     // FIXME: this should use the rounding definition from Real
-    protected [numeric] def ensureFloat[T](number: Parsley[Either[T, BigDecimal]]): Parsley[Either[T, Float]] = amend {
-        entrench(number).collectMsg(n => Seq(s"$n cannot be represented exactly as a IEEE 754 single-precision float")) {
+    protected [numeric] def ensureFloat[T](number: Parsley[Either[T, BigDecimal]]): Parsley[Either[T, Float]] = {
+        number.collectMsg(n => Seq(s"$n cannot be represented exactly as a IEEE 754 single-precision float")) {
             case Left(n) => Left(n)
             case Right(n) if n.isBinaryFloat || n.isDecimalFloat || n.isExactFloat => Right(n.toFloat)
         }
     }
 
     // FIXME: this should use the rounding definition from Real
-    protected [numeric] def ensureDouble[T](number: Parsley[Either[T, BigDecimal]]): Parsley[Either[T, Double]] = amend {
-        entrench(number).collectMsg(n => Seq(s"$n cannot be represented exactly as a IEEE 754 double-precision float")) {
+    protected [numeric] def ensureDouble[T](number: Parsley[Either[T, BigDecimal]]): Parsley[Either[T, Double]] = {
+        number.collectMsg(n => Seq(s"$n cannot be represented exactly as a IEEE 754 double-precision float")) {
             case Left(n) => Left(n)
             case Right(n) if n.isBinaryDouble || n.isDecimalDouble || n.isExactDouble => Right(n.toDouble)
         }

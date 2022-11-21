@@ -49,8 +49,8 @@ private [token] final class UnsignedInteger(desc: NumericDesc) extends Integer(d
     private val noZeroBinary = when(desc.binaryLeads.nonEmpty, oneOf(desc.binaryLeads)) *> leadingBreakChar *> Generic.plainBinary(desc)
 
     // TODO: render in the "native" radix
-    override protected [numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int)(implicit ev: CanHold[bits.self,T]): Parsley[T] = amend {
-        entrench(number).collectMsg(x => Seq(s"literal $x is larger than the max value of ${bits.upperUnsigned}")) {
+    override protected [numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int)(implicit ev: CanHold[bits.self,T]): Parsley[T] = {
+        number.collectMsg(x => Seq(s"literal $x is larger than the max value of ${bits.upperUnsigned}")) {
             case x if x <= bits.upperUnsigned => ev.fromBigInt(x)
         }
     }

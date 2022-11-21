@@ -44,7 +44,7 @@ private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, _exp
             ctx.consumeChar()
             ctx.pushAndContinue(x)
         }
-        else ctx.expectedFail(expected)
+        else ctx.expectedFail(expected, unexpectedWidth = 1)
     }
     // $COVERAGE-OFF$
     override def toString: String = s"SatEx(?, $x)"

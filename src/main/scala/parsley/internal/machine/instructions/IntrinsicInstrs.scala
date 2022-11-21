@@ -8,7 +8,7 @@ import scala.annotation.tailrec
 import parsley.internal.errors.{Desc, EndOfInput, ExpectItem, ExpectRaw}
 import parsley.internal.machine.{Context, Good}
 import parsley.internal.machine.XAssert._
-import parsley.internal.machine.errors.{EmptyError, EmptyErrorWithReason}
+import parsley.internal.machine.errors.{ClassicFancyError, EmptyError, EmptyErrorWithReason}
 
 private [internal] final class Lift2(f: (Any, Any) => Any) extends Instr {
     override def apply(ctx: Context): Unit = {
@@ -46,7 +46,7 @@ private [internal] class CharTok(c: Char, x: Any, errorItem: Option[ExpectItem])
             ctx.consumeChar()
             ctx.pushAndContinue(x)
         }
-        else ctx.expectedFail(errorItem)
+        else ctx.expectedFail(errorItem, unexpectedWidth = 1)
     }
     // $COVERAGE-OFF$
     override def toString: String = if (x == c) s"Chr($c)" else s"ChrPerform($c, $x)"
@@ -81,7 +81,7 @@ private [internal] final class StringTok(s: String, x: Any, errorItem: Option[Ex
         if (j < sz && i < ctx.inputsz && ctx.input.charAt(i) == s.charAt(j)) go(ctx, i + 1, j + 1)
         else if (j < sz) {
             // The offset, line and column haven't been edited yet, so are in the right place
-            ctx.expectedTokenFail(errorItem, codePointLength)
+            ctx.expectedFail(errorItem, codePointLength)
             ctx.offset = i
             // These help maintain a consistent internal state, this makes the debuggers
             // output less confusing in the string case in particular.
@@ -135,8 +135,13 @@ private [internal] final class Filter[A](_pred: A => Boolean) extends Instr {
     private [this] val pred = _pred.asInstanceOf[Any => Boolean]
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
         if (pred(ctx.stack.upeek)) ctx.inc()
-        else ctx.fail(new EmptyError(ctx.offset, ctx.line, ctx.col))
+        else {
+            val state = ctx.states
+            ctx.fail(new EmptyError(state.offset, state.line, state.col))
+        }
+        ctx.states = ctx.states.tail
     }
     // $COVERAGE-OFF$
     override def toString: String = "Filter(?)"
@@ -147,10 +152,14 @@ private [internal] final class MapFilter[A, B](_f: A => Option[B]) extends Instr
     private [this] val f = _f.asInstanceOf[Any => Option[Any]]
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
         f(ctx.stack.upeek) match {
             case Some(x) => ctx.exchangeAndContinue(x)
-            case None => ctx.fail(new EmptyError(ctx.offset, ctx.line, ctx.col))
+            case None =>
+                val state = ctx.states
+                ctx.fail(new EmptyError(state.offset, state.line, state.col))
         }
+        ctx.states = ctx.states.tail
     }
     // $COVERAGE-OFF$
     override def toString: String = "MapFilter(?)"
@@ -161,11 +170,14 @@ private [internal] final class FilterOut[A](_pred: PartialFunction[A, String]) e
     private [this] val pred = _pred.asInstanceOf[PartialFunction[Any, String]]
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
         if (pred.isDefinedAt(ctx.stack.upeek)) {
             val reason = pred(ctx.stack.upop())
-            ctx.fail(new EmptyErrorWithReason(ctx.offset, ctx.line, ctx.col, reason))
+            val state = ctx.states
+            ctx.fail(new EmptyErrorWithReason(state.offset, state.line, state.col, reason))
         }
         else ctx.inc()
+        ctx.states = ctx.states.tail
     }
     // $COVERAGE-OFF$
     override def toString: String = "FilterOut(?)"
@@ -175,8 +187,14 @@ private [internal] final class FilterOut[A](_pred: PartialFunction[A, String]) e
 private [internal] final class GuardAgainst(pred: PartialFunction[Any, Seq[String]]) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        if (pred.isDefinedAt(ctx.stack.upeek)) ctx.failWithMessage(pred(ctx.stack.upop()): _*)
+        ctx.handlers = ctx.handlers.tail
+        if (pred.isDefinedAt(ctx.stack.upeek)) {
+            val state = ctx.states
+            val caretWidth = ctx.offset - state.offset
+            ctx.fail(new ClassicFancyError(state.offset, state.line, state.col, caretWidth, pred(ctx.stack.upop()): _*))
+        }
         else ctx.inc()
+        ctx.states = ctx.states.tail
     }
     // $COVERAGE-OFF$
     override def toString: String = "GuardAgainst(?)"
@@ -195,7 +213,7 @@ private [internal] object NegLookFail extends Instr {
         ctx.restoreHints()
         // A previous success is a failure
         ctx.handlers = ctx.handlers.tail
-        ctx.expectedTokenFail(None, reached - ctx.offset)
+        ctx.expectedFail(None, reached - ctx.offset)
     }
     // $COVERAGE-OFF$
     override def toString: String = "NegLookFail"
@@ -223,7 +241,7 @@ private [internal] object Eof extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         if (ctx.offset == ctx.inputsz) ctx.pushAndContinue(())
-        else ctx.expectedFail(expected)
+        else ctx.expectedFail(expected, unexpectedWidth = 1)
     }
     // $COVERAGE-OFF$
     override final def toString: String = "Eof"

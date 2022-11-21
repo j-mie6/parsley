@@ -21,7 +21,7 @@ private [token] class ConcreteNames(nameDesc: NameDesc, symbolDesc: SymbolDesc) 
                 attempt {
                     amend {
                         entrench(parser).unexpectedWhen {
-                            case x if illegal(x) => s"$illegalName $x"
+                            case x if illegal(x) => (x.length, s"$illegalName $x")
                         }
                     }
                 }.label(name)
@@ -47,7 +47,7 @@ private [token] class ConcreteNames(nameDesc: NameDesc, symbolDesc: SymbolDesc) 
     override def identifier(startChar: CharPredicate): Parsley[String] = attempt {
         amend {
             entrench(identifier).unexpectedWhen {
-                case x if !startChar.startsWith(x) => s"identifier $x"
+                case x if !startChar.startsWith(x) => (x.length, s"identifier $x")
             }
         }
     }
@@ -58,7 +58,7 @@ private [token] class ConcreteNames(nameDesc: NameDesc, symbolDesc: SymbolDesc) 
     def userDefinedOperator(startChar: CharPredicate, endChar: CharPredicate): Parsley[String] = attempt {
         amend {
             entrench(userDefinedOperator).unexpectedWhen {
-                case x if !startChar.startsWith(x) || !endChar.endsWith(x) => s"operator $x"
+                case x if !startChar.startsWith(x) || !endChar.endsWith(x) => (x.length, s"operator $x")
             }
         }
     }

@@ -25,7 +25,7 @@ class ErrorTests extends ParsleyTest {
             case c if c.isLower => s"'$c' should have been uppercase"
         }
         inside(p.parse("a")) {
-            case Failure(TestError((1, 2), VanillaError(unex, exs, rs))) =>
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
                 unex shouldBe empty
                 exs shouldBe empty
                 rs should contain only ("'a' should have been uppercase")
@@ -35,7 +35,7 @@ class ErrorTests extends ParsleyTest {
         val q = item.guardAgainst {
             case c if c.isLower => Seq(s"'$c' is not uppercase")
         }
-        inside(q.parse("a")) { case Failure(TestError((1, 2), SpecialisedError(msgs))) => msgs should contain only ("'a' is not uppercase") }
+        inside(q.parse("a")) { case Failure(TestError((1, 1), SpecialisedError(msgs))) => msgs should contain only ("'a' is not uppercase") }
         q.parse("A") shouldBe Success('A')
     }
 
@@ -46,7 +46,7 @@ class ErrorTests extends ParsleyTest {
         }
         p.parse("+") shouldBe Success(0)
         p.parse("C") shouldBe Success(3)
-        inside(p.parse("a"))  { case Failure(TestError((1, 2), SpecialisedError(msgs))) => msgs should contain only ("oops") }
+        inside(p.parse("a"))  { case Failure(TestError((1, 1), SpecialisedError(msgs))) => msgs should contain only ("oops") }
 
         val q = item.collectMsg(c => Seq(s"$c is not appropriate")) {
             case '+' => 0
@@ -54,7 +54,7 @@ class ErrorTests extends ParsleyTest {
         }
         q.parse("+") shouldBe Success(0)
         q.parse("C") shouldBe Success(3)
-        inside(q.parse("a")) { case Failure(TestError((1, 2), SpecialisedError(msgs))) => msgs should contain only ("a is not appropriate") }
+        inside(q.parse("a")) { case Failure(TestError((1, 1), SpecialisedError(msgs))) => msgs should contain only ("a is not appropriate") }
     }
 
     // Issue #70
