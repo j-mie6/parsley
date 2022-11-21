@@ -3,6 +3,8 @@
  */
 package parsley.token.names
 
+import Predef.{ArrowAssoc => _, _}
+
 import parsley.{Parsley, ParsleyTest, Success, Failure}
 import parsley.token.LexemeImpl._
 
@@ -11,6 +13,7 @@ import parsley.token.predicate._
 import parsley.token.names._
 import parsley.character.{spaces, string}
 import parsley.{TestError, VanillaError, Named}
+import org.scalactic.source.Position
 
 class NamesTests extends ParsleyTest {
     def makeSymbol(nameDesc: NameDesc, symDesc: SymbolDesc): Names = new LexemeNames(new ConcreteNames(nameDesc, symDesc), spaces)
@@ -20,19 +23,19 @@ class NamesTests extends ParsleyTest {
 
     val plainNames = makeSymbol(plainName, plainSym)
 
-    def identCases(start: CharPredicate, letter: CharPredicate, sensitive: Boolean = true)(tests: (String, Option[String])*): Unit = {
+    def identCases(start: CharPredicate, letter: CharPredicate, sensitive: Boolean = true)(tests: (String, Option[String], Position)*): Unit = {
         cases(makeSymbol(plainName.copy(identifierStart = start, identifierLetter = letter), plainSym.copy(caseSensitive = sensitive)).identifier)(tests: _*)
     }
 
-    def opCases(start: CharPredicate, letter: CharPredicate)(tests: (String, Option[String])*): Unit = {
+    def opCases(start: CharPredicate, letter: CharPredicate)(tests: (String, Option[String], Position)*): Unit = {
         cases(makeSymbol(plainName.copy(operatorStart = start, operatorLetter = letter), plainSym).userDefinedOperator)(tests: _*)
     }
 
-    def identCases(start: CharPredicate, letter: CharPredicate, refStart: CharPredicate)(tests: (String, Option[String])*): Unit = {
+    def identCases(start: CharPredicate, letter: CharPredicate, refStart: CharPredicate)(tests: (String, Option[String], Position)*): Unit = {
         cases(makeSymbol(plainName.copy(identifierStart = start, identifierLetter = letter), plainSym).identifier(refStart))(tests: _*)
     }
 
-    def opCases(start: CharPredicate, letter: CharPredicate, refStart: CharPredicate, refEnd: CharPredicate)(tests: (String, Option[String])*): Unit = {
+    def opCases(start: CharPredicate, letter: CharPredicate, refStart: CharPredicate, refEnd: CharPredicate)(tests: (String, Option[String], Position)*): Unit = {
         cases(makeSymbol(plainName.copy(operatorStart = start, operatorLetter = letter), plainSym).userDefinedOperator(refStart, refEnd))(tests: _*)
     }
 

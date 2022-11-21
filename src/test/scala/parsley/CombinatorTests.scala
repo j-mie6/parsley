@@ -3,6 +3,8 @@
  */
 package parsley
 
+import Predef.{ArrowAssoc => _, _}
+
 import parsley.combinator.{exactly => repeat, _}
 import parsley.Parsley._
 import parsley.registers.{forYieldP, forYieldP_, Reg}
@@ -93,44 +95,44 @@ class CombinatorTests extends ParsleyTest {
         for (n <- 0 to 10) skipManyN(n/2, 'a').parse("a"*n) should be (Success(()))
     }
 
-    "sepBy" must "accept empty input" in {
-        sepBy('a', 'b').parse("") should be (Success(Nil))
-    }
-    it must "not allow sep at the end of chain" in {
-        sepBy('a', 'b').parse("ab") shouldBe a [Failure[_]]
-    }
-    it should "be able to parse 2 or more p" in {
-        sepBy('a', 'b').parse("aba") should be (Success(List('a', 'a')))
-        sepBy('a', 'b').parse("ababa") should be (Success(List('a', 'a', 'a')))
-        sepBy('a', 'b').parse("abababa") should be (Success(List('a', 'a', 'a', 'a')))
-    }
+    "sepBy" must "accept empty input" in cases(sepBy('a', 'b')) (
+        "" -> Some(Nil),
+    )
+    it must "not allow sep at the end of chain" in cases(sepBy('a', 'b')) (
+        "ab" -> None,
+    )
+    it should "be able to parse 2 or more p" in cases(sepBy('a', 'b')) (
+        "aba" -> Some(List('a', 'a')),
+        "ababa" -> Some(List('a', 'a', 'a')),
+        "abababa" -> Some(List('a', 'a', 'a', 'a')),
+    )
 
-    "sepBy1" must "require a p" in {
-        sepBy1('a', 'b').parse("a") should not be a [Failure[_]]
-        sepBy1('a', 'b').parse(input = "") shouldBe a [Failure[_]]
-    }
+    "sepBy1" must "require a p" in cases(sepBy1('a', 'b')) (
+        "a" -> Some(List('a')),
+        "" -> None,
+    )
 
-    "sepEndBy" must "accept empty input" in {
-        sepEndBy('a', 'b').parse("") should be (Success(Nil))
-    }
-    it should "not require sep at the end of chain" in {
-        sepEndBy('a', 'b').parse("a") should be (Success(List('a')))
-    }
-    it should "be able to parse 2 or more p" in {
-        sepEndBy('a', 'b').parse("aba") should be (Success(List('a', 'a')))
-        sepEndBy('a', 'b').parse("ababa") should be (Success(List('a', 'a', 'a')))
-    }
-    it should "be able to parse a final sep" in {
-        sepEndBy('a', 'b').parse("ab") should be (Success(List('a')))
-        sepEndBy('a', 'b').parse("abab") should be (Success(List('a', 'a')))
-        sepEndBy('a', 'b').parse("ababab") should be (Success(List('a', 'a', 'a')))
-    }
-    it should "fail if p fails after consuming input" in {
-        sepEndBy("aa", 'b').parse("ab") shouldBe a [Failure[_]]
-    }
-    it should "fail if sep fails after consuming input" in {
-        sepEndBy('a', "bb").parse("ab") shouldBe a [Failure[_]]
-    }
+    "sepEndBy" must "accept empty input" in cases(sepEndBy('a', 'b')) (
+        "" -> Some(Nil),
+    )
+    it should "not require sep at the end of chain" in cases(sepEndBy('a', 'b')) (
+        "a" -> Some(List('a'))
+    )
+    it should "be able to parse 2 or more p" in cases(sepEndBy('a', 'b'))(
+        "aba" -> Some(List('a', 'a')),
+        "ababa" -> Some(List('a', 'a', 'a')),
+    )
+    it should "be able to parse a final sep" in cases(sepEndBy('a', 'b'))(
+        "ab" -> Some(List('a')),
+        "abab" -> Some(List('a', 'a')),
+        "ababab" -> Some(List('a', 'a', 'a')),
+    )
+    it should "fail if p fails after consuming input" in cases(sepEndBy("aa", 'b')) (
+        "ab" -> None,
+    )
+    it should "fail if sep fails after consuming input" in cases(sepEndBy('a', "bb")) (
+        "ab" -> None,
+    )
     it must "not corrupt the stack on sep hard-fail" in {
         ('c' <::> attempt(sepEndBy('a', "bb")).getOrElse(List('d'))).parse("cab") should be (Success(List('c', 'd')))
     }

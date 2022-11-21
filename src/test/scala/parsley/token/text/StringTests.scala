@@ -3,13 +3,14 @@
  */
 package parsley.token.text
 
-import scala.Predef.{String => SString, _}
+import scala.Predef.{String => SString, ArrowAssoc => _, _}
 import parsley.{Parsley, ParsleyTest, Success, Failure}
 import parsley.token.LexemeImpl
 
 import parsley.token.descriptions.text._
 import parsley.token.predicate._
 import parsley.character.space
+import org.scalactic.source.Position
 
 class StringTests extends ParsleyTest {
     private def makeString(desc: TextDesc, char: StringCharacter, spaceAllowed: Boolean) =
@@ -23,13 +24,13 @@ class StringTests extends ParsleyTest {
     private def makeRawMultiString(desc: TextDesc): String =
         makeString(desc, RawCharacter, true)
 
-    def unicodeCases(str: String)(tests: (SString, Option[SString])*): Unit = cases(str.fullUtf16)(tests: _*)
-    def asciiCases(str: String)(tests: (SString, Option[SString])*): Unit = cases(str.ascii)(tests: _*)
-    def extAsciiCases(str: String)(tests: (SString, Option[SString])*): Unit = cases(str.latin1)(tests: _*)
+    def unicodeCases(str: String)(tests: (SString, Option[SString], Position)*): Unit = cases(str.fullUtf16)(tests: _*)
+    def asciiCases(str: String)(tests: (SString, Option[SString], Position)*): Unit = cases(str.ascii)(tests: _*)
+    def extAsciiCases(str: String)(tests: (SString, Option[SString], Position)*): Unit = cases(str.latin1)(tests: _*)
 
     val plain = TextDesc.plain.copy(
         graphicCharacter = Unicode(_ >= ' '),
-        escapeSequences = EscapeDesc.plain.copy(multiMap = Map("lf" -> '\n', "lam" -> 'λ', "pound" -> '£', "smile" -> 0x1F642 /*🙂*/)),
+        escapeSequences = EscapeDesc.plain.copy(multiMap = Map(("lf", '\n'), ("lam", 'λ'), ("pound", '£'), ("smile", 0x1F642 /*🙂*/))),
         multiStringEnds = Set("\""),
     )
     val plainStr = makeString(plain)

@@ -3,6 +3,8 @@
  */
 package parsley.token
 
+import Predef.{ArrowAssoc => _, _}
+
 import parsley._
 import Parsley.col
 import parsley.character.{letterOrDigit, letter, whitespace, oneOf => inSet}

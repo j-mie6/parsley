@@ -3,6 +3,8 @@
  */
 package parsley
 
+import Predef.{ArrowAssoc => _, _}
+
 import parsley._
 import token.{descriptions => desc}
 import parsley.character.digit

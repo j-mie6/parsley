@@ -3,6 +3,8 @@
  */
 package parsley
 
+import Predef.{ArrowAssoc => _, _}
+
 import parsley.character._
 import parsley.Parsley._
 import parsley.implicits.character.charLift

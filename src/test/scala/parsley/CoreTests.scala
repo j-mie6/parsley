@@ -3,6 +3,8 @@
  */
 package parsley
 
+import Predef.{ArrowAssoc => _, _}
+
 import parsley.Parsley._
 import parsley.combinator.{many, manyUntil, ifP}
 import parsley.lift._

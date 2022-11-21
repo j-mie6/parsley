@@ -3,9 +3,12 @@
  */
 package parsley.token.numeric
 
+import Predef.{ArrowAssoc => _, _}
+
 import parsley.{Parsley, ParsleyTest, Success, Failure}
 import parsley.token.LexemeImpl
 import parsley.token.descriptions.numeric._, ExponentDesc.NoExponents
+import org.scalactic.source.Position
 
 class RealTests extends ParsleyTest {
     private def makeReal(desc: NumericDesc) = new LexemeReal(new SignedReal(desc, new UnsignedReal(desc, new UnsignedInteger(desc))), LexemeImpl.empty)
@@ -29,17 +32,17 @@ class RealTests extends ParsleyTest {
     val withTrailingDotBreak = makeReal(withTrailingDotBreakDesc)
     val withExtremeDotBreak = makeReal(withExtremeDotBreakDesc)
 
-    private def decimalCases(real: Real)(tests: (String, Option[BigDecimal])*): Unit = cases(real.decimal)(tests: _*)
-    private def hexadecimalCases(real: Real)(tests: (String, Option[BigDecimal])*): Unit = cases(real.hexadecimal)(tests: _*)
-    private def octalCases(real: Real)(tests: (String, Option[BigDecimal])*): Unit = cases(real.octal)(tests: _*)
-    private def binaryCases(real: Real)(tests: (String, Option[BigDecimal])*): Unit = cases(real.binary)(tests: _*)
-    private def numberCases(real: Real)(tests: (String, Option[BigDecimal])*): Unit = cases(real.number)(tests: _*)
+    private def decimalCases(real: Real)(tests: (String, Option[BigDecimal], Position)*): Unit = cases(real.decimal)(tests: _*)
+    private def hexadecimalCases(real: Real)(tests: (String, Option[BigDecimal], Position)*): Unit = cases(real.hexadecimal)(tests: _*)
+    private def octalCases(real: Real)(tests: (String, Option[BigDecimal], Position)*): Unit = cases(real.octal)(tests: _*)
+    private def binaryCases(real: Real)(tests: (String, Option[BigDecimal], Position)*): Unit = cases(real.binary)(tests: _*)
+    private def numberCases(real: Real)(tests: (String, Option[BigDecimal], Position)*): Unit = cases(real.number)(tests: _*)
 
-    private def decimalCases(desc: NumericDesc)(tests: (String, Option[BigDecimal])*): Unit = decimalCases(makeReal(desc))(tests: _*)
-    private def hexadecimalCases(desc: NumericDesc)(tests: (String, Option[BigDecimal])*): Unit = hexadecimalCases(makeReal(desc))(tests: _*)
-    private def octalCases(desc: NumericDesc)(tests: (String, Option[BigDecimal])*): Unit = octalCases(makeReal(desc))(tests: _*)
-    private def binaryCases(desc: NumericDesc)(tests: (String, Option[BigDecimal])*): Unit = binaryCases(makeReal(desc))(tests: _*)
-    private def numberCases(desc: NumericDesc)(tests: (String, Option[BigDecimal])*): Unit = numberCases(makeReal(desc))(tests: _*)
+    private def decimalCases(desc: NumericDesc)(tests: (String, Option[BigDecimal], Position)*): Unit = decimalCases(makeReal(desc))(tests: _*)
+    private def hexadecimalCases(desc: NumericDesc)(tests: (String, Option[BigDecimal], Position)*): Unit = hexadecimalCases(makeReal(desc))(tests: _*)
+    private def octalCases(desc: NumericDesc)(tests: (String, Option[BigDecimal], Position)*): Unit = octalCases(makeReal(desc))(tests: _*)
+    private def binaryCases(desc: NumericDesc)(tests: (String, Option[BigDecimal], Position)*): Unit = binaryCases(makeReal(desc))(tests: _*)
+    private def numberCases(desc: NumericDesc)(tests: (String, Option[BigDecimal], Position)*): Unit = numberCases(makeReal(desc))(tests: _*)
 
     "decimal reals" should "parse unbounded real numbers" in {
         decimalCases(withoutExtremeDot)(

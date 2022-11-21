@@ -3,6 +3,8 @@
  */
 package parsley.token.symbol
 
+import Predef.{ArrowAssoc => _, _}
+
 import parsley.{Parsley, ParsleyTest, Success, Failure}
 import parsley.token.LexemeImpl._
 
@@ -10,6 +12,7 @@ import parsley.token.descriptions._
 import parsley.token.predicate._
 import parsley.token.symbol._
 import parsley.character.{spaces, string}
+import org.scalactic.source.Position
 
 class SymbolTests extends ParsleyTest {
     def makeSymbol(nameDesc: NameDesc, symDesc: SymbolDesc): Symbol = new LexemeSymbol(new ConcreteSymbol(nameDesc, symDesc), spaces)
@@ -22,13 +25,13 @@ class SymbolTests extends ParsleyTest {
     val caseInsensitive = makeSymbol(plainName, plainSym.copy(caseSensitive = false))
     val caseInsensitiveUni = makeSymbol(plainName.copy(identifierLetter = Unicode(Character.isAlphabetic)), plainSym.copy(caseSensitive = false))
 
-    def boolCases(p: Parsley[Unit])(tests: (String, Boolean)*): Unit = cases(p, noEof = true)(tests.map { case (i, r) => i -> (if (r) Some(()) else None) }: _*)
-    def namedCases(sym: String => Parsley[Unit])(ktests: (String, Seq[(String, Boolean)])*): Unit = {
+    def boolCases(p: Parsley[Unit])(tests: (String, Boolean, Position)*): Unit = cases(p, noEof = true)(tests.map { case (i, r, pos) => (i, if (r) Some(()) else None, pos) }: _*)
+    def namedCases(sym: String => Parsley[Unit])(ktests: (String, Seq[(String, Boolean, Position)])*): Unit = {
         for ((key, tests) <- ktests) boolCases(sym(key))(tests: _*)
     }
 
-    def keyCases(sym: Symbol)(ktests: (String, Seq[(String, Boolean)])*): Unit = namedCases(sym.softKeyword)(ktests: _*)
-    def opCases(sym: Symbol)(ktests: (String, Seq[(String, Boolean)])*): Unit = namedCases(sym.softOperator)(ktests: _*)
+    def keyCases(sym: Symbol)(ktests: (String, Seq[(String, Boolean, Position)])*): Unit = namedCases(sym.softKeyword)(ktests: _*)
+    def opCases(sym: Symbol)(ktests: (String, Seq[(String, Boolean, Position)])*): Unit = namedCases(sym.softOperator)(ktests: _*)
 
     // ident
     "soft keywords" should "parse even when not in the keyword set" in keyCases(plainSymbol)(
