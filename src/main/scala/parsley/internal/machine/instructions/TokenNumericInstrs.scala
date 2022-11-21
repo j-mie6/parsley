@@ -9,7 +9,7 @@ import parsley.character
 import parsley.token.descriptions.numeric.PlusSignPresence
 
 import parsley.internal.deepembedding.Sign.{CombinedType, DoubleType, IntType, SignType}
-import parsley.internal.errors.{Desc, ExpectItem, ExpectRaw}
+import parsley.internal.errors.{ExpectDesc, ExpectItem, ExpectRaw}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.MultiExpectedError

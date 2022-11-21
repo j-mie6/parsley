@@ -7,7 +7,7 @@ import scala.collection.mutable
 
 import parsley.XCompat._
 
-import parsley.internal.errors.{Desc, ExpectItem}
+import parsley.internal.errors.{ExpectDesc, ExpectItem}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.MultiExpectedError
@@ -37,7 +37,7 @@ private [internal] final class Exchange[A](private [Exchange] val x: A) extends 
 }
 
 private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, _expected: Option[String]) extends Instr {
-    private [this] final val expected = _expected.map(Desc(_))
+    private [this] final val expected = _expected.map(ExpectDesc(_))
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         if (ctx.moreInput && f(ctx.nextChar)) {

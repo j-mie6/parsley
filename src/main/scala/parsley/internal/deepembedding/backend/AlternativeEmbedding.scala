@@ -11,7 +11,7 @@ import parsley.XAssert._
 import parsley.internal.collection.mutable.SinglyLinkedList, SinglyLinkedList.LinkedListIterator
 import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
 import parsley.internal.deepembedding.singletons._
-import parsley.internal.errors.{Desc, ExpectItem, ExpectRaw}
+import parsley.internal.errors.{ExpectDesc, ExpectItem, ExpectRaw}
 import parsley.internal.machine.instructions
 
 import Choice._ // scalastyle:ignore underscore.import
@@ -226,13 +226,13 @@ private [backend] object Choice {
     @tailrec private def tablable(p: StrictParsley[_], backtracks: Boolean): Option[(Char, Option[ExpectItem], Int, Boolean)] = p match {
         // CODO: Numeric parsers by leading digit (This one would require changing the foldTablified function a bit)
         case ct@CharTok(d)                       =>
-            Some((d, ct.expected.fold[Option[ExpectItem]](Some(ExpectRaw(d)))(n => if (n.nonEmpty) Some(Desc(n)) else None), 1, backtracks))
+            Some((d, ct.expected.fold[Option[ExpectItem]](Some(ExpectRaw(d)))(n => if (n.nonEmpty) Some(ExpectDesc(n)) else None), 1, backtracks))
         case st@StringTok(s)                     =>
-            Some((s.head, st.expected.fold[Option[ExpectItem]](Some(ExpectRaw(s)))(n => if (n.nonEmpty) Some(Desc(n)) else None), s.size, backtracks))
+            Some((s.head, st.expected.fold[Option[ExpectItem]](Some(ExpectRaw(s)))(n => if (n.nonEmpty) Some(ExpectDesc(n)) else None), s.size, backtracks))
         //case op@MaxOp(o)                         => Some((o.head, Some(Desc(o)), o.size, backtracks))
         //case _: StringLiteral | RawStringLiteral => Some(('"', Some(Desc("string")), 1, backtracks))
         // TODO: This can be done for case insensitive things too, but with duplicated branching
-        case t@Specific(s) if t.caseSensitive    => Some((s.head, Some(Desc(s)), s.size, backtracks))
+        case t@Specific(s) if t.caseSensitive    => Some((s.head, Some(ExpectDesc(s)), s.size, backtracks))
         case Attempt(t)                          => tablable(t, backtracks = true)
         case (_: Pure[_]) <*> t                  => tablable(t, backtracks)
         case Lift2(_, t, _)                      => tablable(t, backtracks)

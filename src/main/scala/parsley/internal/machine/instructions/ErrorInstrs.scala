@@ -3,7 +3,7 @@
  */
 package parsley.internal.machine.instructions
 
-import parsley.internal.errors.Desc
+import parsley.internal.errors.UnexpectDesc
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.{ClassicUnexpectedError, ClassicFancyError}
@@ -136,10 +136,10 @@ private [internal] final class Fail(width: Int, msgs: String*) extends Instr {
 }
 
 private [internal] final class Unexpected(msg: String, width: Int) extends Instr {
-    private [this] val unexpected = Desc(msg)
+    private [this] val unexpected = UnexpectDesc(msg, width)
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        ctx.unexpectedFail(None, unexpected, unexpectedWidth = width)
+        ctx.unexpectedFail(None, unexpected)
     }
     // $COVERAGE-OFF$
     override def toString: String = s"Unexpected($msg)"
@@ -164,14 +164,14 @@ private [internal] object FastFail {
 }
 
 private [internal] final class FastUnexpected[A](_namegen: A=>String) extends Instr {
-    private [this] def namegen(x: Any) = new Desc(_namegen(x.asInstanceOf[A]))
+    private [this] def namegen(x: Any, width: Int) = new UnexpectDesc(_namegen(x.asInstanceOf[A]), width)
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         val x = ctx.stack.upop()
         ctx.handlers = ctx.handlers.tail
         val state = ctx.states
         ctx.states = ctx.states.tail
-        ctx.fail(new ClassicUnexpectedError(ctx.offset, state.line, state.col, None, namegen(x), ctx.offset - state.offset))
+        ctx.fail(new ClassicUnexpectedError(ctx.offset, state.line, state.col, None, namegen(x, ctx.offset - state.offset)))
     }
     // $COVERAGE-OFF$
     override def toString: String = "FastUnexpected(?)"

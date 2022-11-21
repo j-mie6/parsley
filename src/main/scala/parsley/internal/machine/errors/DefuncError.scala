@@ -5,7 +5,7 @@ package parsley.internal.machine.errors
 
 import parsley.XAssert._
 
-import parsley.internal.errors.{Desc, ErrorItem, ExpectItem, FancyError, ParseError, TrivialError, UnexpectItem}
+import parsley.internal.errors.{ExpectDesc, ErrorItem, ExpectItem, FancyError, ParseError, TrivialError, UnexpectDesc, UnexpectItem}
 
 // This file contains the defunctionalised forms of the error messages.
 // Essentially, whenever an error is created in the machine, it should make use of one of
@@ -136,7 +136,7 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
         case self: BaseError          =>
             collector ++= self.expectedIterable
             collector.updateWidth(self.unexpectedWidth)
-        case self: WithLabel          => if (self.label.nonEmpty) collector += Desc(self.label)
+        case self: WithLabel          => if (self.label.nonEmpty) collector += ExpectDesc(self.label)
         case self: WithReason         => self.err.collectHints(collector)
         case self: WithHints          =>
             self.hints.collect(collector)
@@ -264,9 +264,10 @@ private [machine] final class ClassicExpectedErrorWithReason(val offset: Int, va
     }
 }
 private [machine] final class ClassicUnexpectedError(val offset: Int, val line: Int, val col: Int, val expected: Option[ExpectItem],
-                                                     val unexpected: Desc, val unexpectedWidth: Int) extends BaseError {
+                                                     val unexpected: UnexpectDesc) extends BaseError {
     override final val flags = if (expected.isEmpty) (DefuncError.ExpectedEmptyMask | DefuncError.TrivialErrorMask).toByte else DefuncError.TrivialErrorMask
     override def expectedIterable: Iterable[ExpectItem] = expected
+    override private [errors] def unexpectedWidth: Int = unexpected.width
     override def addLabelsAndReasons(builder: TrivialErrorBuilder): Unit = {
         builder += expected
         builder.updateUnexpected(unexpected)
@@ -353,7 +354,7 @@ private [errors] final class WithLabel private [errors] (val err: TrivialDefuncE
         builder.ignoreExpected {
             err.makeTrivial(builder)
         }
-        if (label.nonEmpty) builder += Desc(label)
+        if (label.nonEmpty) builder += ExpectDesc(label)
     }
 }
 

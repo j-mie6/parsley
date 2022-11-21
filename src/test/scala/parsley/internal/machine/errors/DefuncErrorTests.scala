@@ -5,7 +5,7 @@ package parsley.internal.machine.errors
 
 import parsley.ParsleyTest
 
-import parsley.internal.errors.{TrivialError, FancyError, ExpectRaw, Desc, EndOfInput}
+import parsley.internal.errors.{TrivialError, FancyError, ExpectRaw, ExpectDesc, EndOfInput, UnexpectDesc}
 import scala.language.implicitConversions
 
 import MockedBuilders.mockedErrorItemBuilder
@@ -32,13 +32,13 @@ class DefuncErrorTests extends ParsleyTest {
     }
 
     "ClassicUnexpectedError" should "evaluate to TrivialError" in {
-        val err = new ClassicUnexpectedError(0, 0, 0, None, Desc("oops"), 1)
+        val err = new ClassicUnexpectedError(0, 0, 0, None, UnexpectDesc("oops", 1))
         err.isTrivialError shouldBe true
         err.asParseError shouldBe a [TrivialError]
     }
     it should "only be empty when its label is" in {
-        new ClassicUnexpectedError(0, 0, 0, None, Desc("oops"), 1).isExpectedEmpty shouldBe true
-        new ClassicUnexpectedError(0, 0, 0, Some(Desc("oops")), Desc("oops"), 1).isExpectedEmpty shouldBe false
+        new ClassicUnexpectedError(0, 0, 0, None, UnexpectDesc("oops", 1)).isExpectedEmpty shouldBe true
+        new ClassicUnexpectedError(0, 0, 0, Some(ExpectDesc("oops")), UnexpectDesc("oops", 1)).isExpectedEmpty shouldBe false
     }
 
     "ClassicFancyError" should "evaluate to FancyError" in {
@@ -165,13 +165,13 @@ class DefuncErrorTests extends ParsleyTest {
     it should "be empty if the label is empty and not otherwise" in {
         new EmptyError(0, 0, 0).label("", 0).isExpectedEmpty shouldBe true
         new EmptyError(0, 0, 0).label("a", 0).isExpectedEmpty shouldBe false
-        new ClassicExpectedError(0, 0, 0, Some(Desc("x")), 1).label("", 0).isExpectedEmpty shouldBe true
-        new ClassicExpectedError(0, 0, 0, Some(Desc("x")), 1).label("a", 0).isExpectedEmpty shouldBe false
+        new ClassicExpectedError(0, 0, 0, Some(ExpectDesc("x")), 1).label("", 0).isExpectedEmpty shouldBe true
+        new ClassicExpectedError(0, 0, 0, Some(ExpectDesc("x")), 1).label("a", 0).isExpectedEmpty shouldBe false
     }
     it should "replace all expected" in {
         val errShow = new MultiExpectedError(0, 0, 0, Set(ExpectRaw("a"), ExpectRaw("b")), 1).label("x", 0)
         val errHide = new MultiExpectedError(0, 0, 0, Set(ExpectRaw("a"), ExpectRaw("b")), 1).label("", 0)
-        errShow.asParseError.expecteds should contain only (Desc("x"))
+        errShow.asParseError.expecteds should contain only (ExpectDesc("x"))
         errHide.asParseError.expecteds shouldBe empty
     }
 

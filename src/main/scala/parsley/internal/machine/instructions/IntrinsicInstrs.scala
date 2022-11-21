@@ -5,7 +5,7 @@ package parsley.internal.machine.instructions
 
 import scala.annotation.tailrec
 
-import parsley.internal.errors.{Desc, EndOfInput, ExpectItem, ExpectRaw}
+import parsley.internal.errors.{ExpectDesc, EndOfInput, ExpectItem, ExpectRaw}
 import parsley.internal.machine.{Context, Good}
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.{ClassicFancyError, EmptyError, EmptyErrorWithReason}
@@ -278,7 +278,7 @@ private [internal] object CharTok {
     def apply(c: Char, expected: Option[String]): CharTok = apply(c, c, expected)
     def apply(c: Char, x: Any, expected: Option[String]): CharTok = new CharTok(c, x, expected match {
         case Some("") => None
-        case Some(e)  => Some(Desc(e))
+        case Some(e)  => Some(ExpectDesc(e))
         case None     => Some(ExpectRaw(c))
     })
 }
@@ -287,7 +287,7 @@ private [internal] object StringTok {
     def apply(s: String, expected: Option[String]): StringTok = apply(s, s, expected)
     def apply(s: String, x: Any, expected: Option[String]): StringTok = new StringTok(s, x, expected match {
         case Some("") => None
-        case Some(e)  => Some(Desc(e))
+        case Some(e)  => Some(ExpectDesc(e))
         case None     => Some(ExpectRaw(s))
     })
 

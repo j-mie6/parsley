@@ -5,7 +5,7 @@ package parsley.internal.machine.errors
 
 import parsley.XAssert._
 
-import parsley.internal.errors.{Desc, ExpectItem}
+import parsley.internal.errors.{ExpectDesc, ExpectItem}
 
 /** This structure represents a collection of operations that can be performed
   * between `Set[ErrorItem]`, which are known as `Hints`. Each set in the
@@ -38,7 +38,7 @@ private [machine] sealed abstract class DefuncHints {
     final private [errors] def collect(collector: HintCollector): Unit = {
         this match {
             case EmptyHints =>
-            case self: ReplaceHint => collector += Desc(self.label)
+            case self: ReplaceHint => collector += ExpectDesc(self.label)
             case self: MergeHints =>
                 self.oldHints.collect(collector)
                 self.newHints.collect(collector)

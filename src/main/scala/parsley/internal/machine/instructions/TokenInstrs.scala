@@ -8,14 +8,14 @@ import scala.annotation.tailrec
 import parsley.XAssert._
 
 import parsley.internal.collection.mutable.Radix, Radix.RadixSet
-import parsley.internal.errors.Desc
+import parsley.internal.errors.{ExpectDesc, UnexpectDesc}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 
 private [instructions] abstract class CommentLexer(start: String, end: String, line: String, nested: Boolean) extends Instr {
     protected [this] final val lineAllowed = line.nonEmpty
     protected [this] final val multiAllowed = start.nonEmpty && end.nonEmpty
-    protected [this] final val endOfComment = Some(Desc("end of comment"))
+    protected [this] final val endOfComment = Some(ExpectDesc("end of comment"))
 
     protected final def singleLineComment(ctx: Context): Unit = {
         ctx.fastUncheckedConsumeChars(line.length)
@@ -105,7 +105,7 @@ private [instructions] abstract class WhiteSpaceLike(start: String, end: String,
 }
 
 private [internal] final class TokenComment(start: String, end: String, line: String, nested: Boolean) extends CommentLexer(start, end, line, nested) {
-    private [this] final val comment = Some(Desc("comment"))
+    private [this] final val comment = Some(ExpectDesc("comment"))
     private [this] final val openingSize = Math.max(start.codePointCount(0, start.length), line.codePointCount(0, line.length))
 
     override def apply(ctx: Context): Unit = {
@@ -151,7 +151,7 @@ private [internal] final class TokenSkipComments(start: String, end: String, lin
 
 private [internal] final class TokenNonSpecific(name: String, illegalName: String)
                                                (start: Char => Boolean, letter: Char => Boolean, illegal: String => Boolean) extends Instr {
-    private [this] final val expected = Some(Desc(name))
+    private [this] final val expected = Some(ExpectDesc(name))
 
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
@@ -166,7 +166,7 @@ private [internal] final class TokenNonSpecific(name: String, illegalName: Strin
     private def ensureLegal(ctx: Context, tok: String) = {
         if (illegal(tok)) {
             ctx.offset -= tok.length
-            ctx.unexpectedFail(expected = expected, unexpected = new Desc(s"$illegalName $tok"), unexpectedWidth = tok.length)
+            ctx.unexpectedFail(expected = expected, unexpected = new UnexpectDesc(s"$illegalName $tok", tok.length))
         }
         else {
             ctx.col += tok.length
@@ -188,8 +188,8 @@ private [internal] final class TokenNonSpecific(name: String, illegalName: Strin
 }
 
 private [instructions] abstract class TokenSpecificAllowTrailing(_specific: String, caseSensitive: Boolean) extends Instr {
-    private [this] final val expected = Some(Desc(_specific))
-    protected final val expectedEnd = Some(Desc(s"end of ${_specific}"))
+    private [this] final val expected = Some(ExpectDesc(_specific))
+    protected final val expectedEnd = Some(ExpectDesc(s"end of ${_specific}"))
     private [this] final val specific = (if (caseSensitive) _specific else _specific.toLowerCase)
     private [this] final val strsz = specific.length
     private [this] final val numCodePoints = specific.codePointCount(0, strsz)
