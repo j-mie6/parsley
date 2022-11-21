@@ -9,7 +9,7 @@ import parsley.Parsley, Parsley.{attempt, lookAhead}
 import parsley.Success
 import parsley.character.{item, newline, noneOf}
 import parsley.combinator.{choice, eof, manyUntil, option, sequence, someUntil}
-import parsley.errors.{helpers, ErrorBuilder, Named, Raw, Token, UntilPos, Width}
+import parsley.errors.{helpers, ErrorBuilder, Named, Raw, Token, UntilPos}
 
 // Turn coverage off, because the tests have their own error builder
 // We might want to test this on its own though
