@@ -51,7 +51,7 @@ private [internal] final case class ExpectDesc(msg: String) extends ExpectItem {
 }
 private [internal] final case class UnexpectDesc(msg: String, width: Int) extends UnexpectItem {
     assume(msg.nonEmpty, "Desc cannot contain empty things!")
-    def formatUnexpect(lexicalError: Boolean)(implicit builder: ErrorBuilder[_]): (builder.Item, errors.TokenSpan) = (builder.named(msg), errors.Width(1))
+    def formatUnexpect(lexicalError: Boolean)(implicit builder: ErrorBuilder[_]): (builder.Item, errors.TokenSpan) = (builder.named(msg), errors.Width(width))
     override def higherPriority(other: UnexpectItem): Boolean = other.lowerThanDesc(this)
     override def lowerThanRaw(other: UnexpectRaw): Boolean = false
     override def lowerThanDesc(other: UnexpectDesc): Boolean = this.width < other.width

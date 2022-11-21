@@ -22,7 +22,7 @@ trait TillNextWhitespace { this: ErrorBuilder[_] =>
             // These do not require allocation on the string
             val idx = {
                 val idx = cs.indexWhere(_.isWhitespace)
-                if (idx != -1) idx+1 else cs.length
+                if (idx != -1) idx else cs.length
             }
             Raw(trim(cs.slice(0, idx).toString, amountOfInputParserWanted))
         case cs => Raw(trim(cs.takeWhile(!_.isWhitespace).mkString, amountOfInputParserWanted))
