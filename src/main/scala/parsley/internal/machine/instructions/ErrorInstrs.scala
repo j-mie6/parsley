@@ -153,7 +153,7 @@ private [internal] final class FastFail(msggen: Any => String) extends Instr {
         ctx.handlers = ctx.handlers.tail
         val state = ctx.states
         ctx.states = ctx.states.tail
-        ctx.fail(new ClassicFancyError(state.offset, state.line, state.col, ctx.offset - state.offset, msggen(x)))
+        ctx.fail(new ClassicFancyError(ctx.offset, state.line, state.col, ctx.offset - state.offset, msggen(x)))
     }
     // $COVERAGE-OFF$
     override def toString: String = "FastFail(?)"
@@ -171,7 +171,7 @@ private [internal] final class FastUnexpected[A](_namegen: A=>String) extends In
         ctx.handlers = ctx.handlers.tail
         val state = ctx.states
         ctx.states = ctx.states.tail
-        ctx.fail(new ClassicUnexpectedError(state.offset, state.line, state.col, None, namegen(x), ctx.offset - state.offset))
+        ctx.fail(new ClassicUnexpectedError(ctx.offset, state.line, state.col, None, namegen(x), ctx.offset - state.offset))
     }
     // $COVERAGE-OFF$
     override def toString: String = "FastUnexpected(?)"
