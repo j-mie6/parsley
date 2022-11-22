@@ -135,6 +135,7 @@ private [errors] object TrivialErrorBuilder {
 private [errors] final class FancyErrorBuilder(offset: Int, lexicalError: Boolean) {
     private var line: Int = _
     private var col: Int = _
+    private var caretWidth: Int = 0
     private val msgs = mutable.ListBuffer.empty[String]
 
     /** Updates the position of the error message.
@@ -147,6 +148,8 @@ private [errors] final class FancyErrorBuilder(offset: Int, lexicalError: Boolea
         this.col = col
     }
 
+    def updateCaretWidth(width: Int) = this.caretWidth = math.max(this.caretWidth, width)
+
     /** Adds a collection of new error message lines into this error.
       *
       * @param msgs the messages to add
@@ -154,7 +157,7 @@ private [errors] final class FancyErrorBuilder(offset: Int, lexicalError: Boolea
     def ++=(msgs: Seq[String]): Unit = this.msgs ++= msgs
     /** Builds the final error. */
     def mkError: FancyError = {
-        new FancyError(offset, line, col, msgs.toList.distinct, lexicalError)
+        new FancyError(offset, line, col, msgs.toList.distinct, caretWidth, lexicalError)
     }
 }
 

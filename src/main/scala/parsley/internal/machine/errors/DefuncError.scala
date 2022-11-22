@@ -279,6 +279,7 @@ private [machine] final class ClassicFancyError(val offset: Int, val line: Int, 
     override def makeFancy(builder: FancyErrorBuilder): Unit = {
         builder.pos_=(line, col)
         builder ++= msgs
+        builder.updateCaretWidth(caretWidth)
     }
 }
 private [machine] final class EmptyError(val offset: Int, val line: Int, val col: Int) extends BaseError {

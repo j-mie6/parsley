@@ -54,7 +54,7 @@ object combinator {
       */
     def fail(msg0: String, msgs: String*): Parsley[Nothing] = fail(1, msg0, msgs: _*)
 
-    private [parsley] // This can be removed when the logic is implemented
+    // TODO: document
     def fail(caretWidth: Int, msg0: String, msgs: String*): Parsley[Nothing] = new Parsley(new singletons.Fail(caretWidth, (msg0 +: msgs): _*))
 
     /** This combinator consumes no input and fails immediately, setting the unexpected component
