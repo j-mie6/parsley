@@ -19,10 +19,8 @@ private [token] class ConcreteNames(nameDesc: NameDesc, symbolDesc: SymbolDesc) 
             case (Basic(start), Basic(letter)) => new Parsley(new singletons.NonSpecific(combinatorName, name, illegalName, start, letter, illegal))
             case _ =>
                 attempt {
-                    amend {
-                        entrench(parser).unexpectedWhen {
-                            case x if illegal(x) => (x.length, s"$illegalName $x")
-                        }
+                    parser.unexpectedWhen {
+                        case x if illegal(x) => s"$illegalName $x"
                     }
                 }.label(name)
         }
@@ -45,10 +43,8 @@ private [token] class ConcreteNames(nameDesc: NameDesc, symbolDesc: SymbolDesc) 
     override lazy val identifier: Parsley[String] =
         keyOrOp(nameDesc.identifierStart, nameDesc.identifierLetter, ident, symbolDesc.isReservedName(_),  "identifier", "identifier", "keyword")
     override def identifier(startChar: CharPredicate): Parsley[String] = attempt {
-        amend {
-            entrench(identifier).unexpectedWhen {
-                case x if !startChar.startsWith(x) => (x.length, s"identifier $x")
-            }
+        identifier.unexpectedWhen {
+            case x if !startChar.startsWith(x) => s"identifier $x"
         }
     }
 
@@ -56,10 +52,8 @@ private [token] class ConcreteNames(nameDesc: NameDesc, symbolDesc: SymbolDesc) 
         keyOrOp(nameDesc.operatorStart, nameDesc.operatorLetter, oper, symbolDesc.isReservedOp(_), "userOp", "operator", "reserved operator")
 
     def userDefinedOperator(startChar: CharPredicate, endChar: CharPredicate): Parsley[String] = attempt {
-        amend {
-            entrench(userDefinedOperator).unexpectedWhen {
-                case x if !startChar.startsWith(x) || !endChar.endsWith(x) => (x.length, s"operator $x")
-            }
+        userDefinedOperator.unexpectedWhen {
+            case x if !startChar.startsWith(x) || !endChar.endsWith(x) => s"operator $x"
         }
     }
 }

@@ -3,8 +3,8 @@
  */
 package parsley.errors.tokenextractors
 
-import scala.collection.immutable.WrappedString
 import scala.annotation.tailrec
+import scala.collection.immutable.WrappedString
 
 import parsley.errors.{helpers, ErrorBuilder, Named, Raw, Token, Width}
 

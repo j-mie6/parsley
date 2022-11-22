@@ -141,7 +141,7 @@ private [internal] final class ChainrOpHandler(wrap: Any => Any) extends Instr {
     }
 
     // $COVERAGE-OFF$
-    override def toString: String = s"ChainrOpHandler"
+    override def toString: String = "ChainrOpHandler"
     // $COVERAGE-ON$
 }
 private [internal] object ChainrOpHandler  {
@@ -156,7 +156,7 @@ private [internal] object ChainrWholeHandler extends Instr {
     }
 
     // $COVERAGE-OFF$
-    override def toString: String = s"ChainrWholeHandler"
+    override def toString: String = "ChainrWholeHandler"
     // $COVERAGE-ON$
 }
 
@@ -193,8 +193,8 @@ private [internal] object SepEndBy1SepHandler extends Instr {
         val acc = ctx.stack.peek[mutable.ListBuffer[Any]]
         acc += x
         // discard the other handler and increment so that we are sat on the other handler
-        assert(ctx.instrs(ctx.pc+1) eq SepEndBy1WholeHandler, "the next instruction from the sep handler must be the whole handler")
-        assert(ctx.handlers.pc == ctx.pc+1, "the top-most handler must be the whole handler in the sep handler")
+        assert(ctx.instrs(ctx.pc + 1) eq SepEndBy1WholeHandler, "the next instruction from the sep handler must be the whole handler")
+        assert(ctx.handlers.pc == ctx.pc + 1, "the top-most handler must be the whole handler in the sep handler")
         ctx.handlers = ctx.handlers.tail
         ctx.inc()
         SepEndBy1Handlers.pushAccWhenCheckValidAndContinue(ctx, acc)
@@ -202,7 +202,7 @@ private [internal] object SepEndBy1SepHandler extends Instr {
     }
 
     // $COVERAGE-OFF$
-    override def toString: String = s"SepEndBy1SepHandler"
+    override def toString: String = "SepEndBy1SepHandler"
     // $COVERAGE-ON$
 }
 
@@ -214,7 +214,7 @@ private [internal] object SepEndBy1WholeHandler extends Instr {
     }
 
     // $COVERAGE-OFF$
-    override def toString: String = s"SepEndBy1WholeHandler"
+    override def toString: String = "SepEndBy1WholeHandler"
     // $COVERAGE-ON$
 }
 

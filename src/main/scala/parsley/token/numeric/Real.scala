@@ -240,8 +240,9 @@ abstract class Real private[token] {
 
     protected [numeric] def ensureFloat(number: Parsley[BigDecimal]): Parsley[Float] = {
         number.collectMsg(n => Seq(
-                if (n > BigDecimal(Float.MaxValue.toDouble) || n < BigDecimal(Float.MinValue.toDouble))
+                if (n > BigDecimal(Float.MaxValue.toDouble) || n < BigDecimal(Float.MinValue.toDouble)) {
                      s"literal $n is too large to be an IEEE 754 single-precision float"
+                }
                 else s"literal $n is too small to be an IEEE 754 single-precision float")) {
             case n if isFloat(n) => n.toFloat
         }

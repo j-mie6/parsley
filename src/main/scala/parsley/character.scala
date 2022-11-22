@@ -77,6 +77,7 @@ import parsley.internal.deepembedding.{frontend, singletons}
   *     [[https://www.unicode.org/Public/13.0.0/ucd/extracted/DerivedGeneralCategory.txt Unicode Character Database]]''.
   */
 object character {
+    // TODO: in @note: or [[charUtf16 `charUtf16`]]
     /** This combinator tries to parse a single specific character `c` from the input.
       *
       * Attempts to read the given character `c` from the input stream at the current
@@ -95,7 +96,7 @@ object character {
       *
       * @param c the character to parse
       * @return a parser that tries to read a single `c`, or fails.
-      * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[string `string`]] or [[charUtf16 `charUtf16`]].
+      * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[string `string`]].
       * @group core
       */
     def char(c: Char): Parsley[Char] = new Parsley(new singletons.CharTok(c, None))
@@ -121,7 +122,7 @@ object character {
       * @return
       * @group core
       */
-    def charUtf16(c: Int): Parsley[Int] = {
+    private [parsley] def charUtf16(c: Int): Parsley[Int] = { //TODO: release along with the utf combinators
         if (Character.isBmpCodePoint(c)) char(c.toChar).map(identity[Char])
         else attempt(string(Character.toChars(c).mkString)) #> c
     }
@@ -151,7 +152,7 @@ object character {
     def satisfy(pred: Char => Boolean): Parsley[Char] = new Parsley(new singletons.Satisfy(pred, None))
 
     // TODO: document and optimise
-    def satisfyUtf16(pred: Int => Boolean): Parsley[Int] = attempt {
+    private [parsley] def satisfyUtf16(pred: Int => Boolean): Parsley[Int] = attempt {
         item.flatMap {
             case h if h.isHighSurrogate => item.collect {
                 case l if Character.isSurrogatePair(h, l) && pred(Character.toCodePoint(h, l)) => Character.toCodePoint(h, l)
@@ -400,7 +401,7 @@ object character {
     }
 
     // TODO: document
-    def stringOfManyUtf16(pc: Parsley[Int]): Parsley[String] = {
+    private [parsley] def stringOfManyUtf16(pc: Parsley[Int]): Parsley[String] = {
         val pf = pure(addCodepoint(_, _))
         // Can't use the regular foldLeft here, because we need a fresh StringBuilder each time.
         expr.infix.secretLeft1(fresh(new StringBuilder), pc, pf).map(_.toString)
@@ -434,7 +435,7 @@ object character {
     }
 
     // TODO: document
-    def stringOfSomeUtf16(pc: Parsley[Int]): Parsley[String] = {
+    private [parsley] def stringOfSomeUtf16(pc: Parsley[Int]): Parsley[String] = {
         val pf = pure(addCodepoint(_, _))
         // Can't use the regular foldLeft1 here, because we need a fresh StringBuilder each time.
         expr.infix.secretLeft1(pc.map(addCodepoint(new StringBuilder, _)), pc, pf).map(_.toString)

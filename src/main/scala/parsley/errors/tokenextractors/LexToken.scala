@@ -43,7 +43,7 @@ trait LexToken { this: ErrorBuilder[_] =>
                     case cs => cs.mkString
                 }
             }
-            rawOrToks.fold(Raw, selectToken)
+            rawOrToks.fold(Raw.apply, selectToken)
         }
         // No lexical extraction should occur here!
         else {

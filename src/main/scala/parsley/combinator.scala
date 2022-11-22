@@ -747,7 +747,8 @@ object combinator {
         new Parsley(new frontend.ManyUntil((end #> ManyUntil.Stop <|> p).internal))
     }
 
-    def skipManyUntil(p: Parsley[_], end: Parsley[_]): Parsley[Unit] = {
+    // TODO: document and test before release
+    private [parsley] def skipManyUntil(p: Parsley[_], end: Parsley[_]): Parsley[Unit] = {
         new Parsley(new frontend.SkipManyUntil((end #> ManyUntil.Stop <|> p).internal))
     }
 
@@ -785,7 +786,8 @@ object combinator {
         notFollowedBy(end) *> (p <::> manyUntil(p, end))
     }
 
-    def skipSomeUntil(p: Parsley[_], end: Parsley[_]): Parsley[Unit] = {
+    // TODO: document and test before release
+    private [parsley] def skipSomeUntil(p: Parsley[_], end: Parsley[_]): Parsley[Unit] = {
         notFollowedBy(end) *> (p *> skipManyUntil(p, end))
     }
 
@@ -835,7 +837,8 @@ object combinator {
       */
     def when(condP: Parsley[Boolean], thenP: =>Parsley[Unit]): Parsley[Unit] = ifP(condP, thenP, unit)
 
-    def ensure[A](condP: Parsley[Boolean], beforeP: =>Parsley[A]): Parsley[A] =
+    // TODO: document and test before release
+    private [parsley] def ensure[A](condP: Parsley[Boolean], beforeP: =>Parsley[A]): Parsley[A] =
         //ifP(condP, beforeP, empty)
         condP.filter(identity) *> beforeP
 

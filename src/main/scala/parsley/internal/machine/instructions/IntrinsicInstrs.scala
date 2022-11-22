@@ -5,7 +5,7 @@ package parsley.internal.machine.instructions
 
 import scala.annotation.tailrec
 
-import parsley.internal.errors.{ExpectDesc, EndOfInput, ExpectItem, ExpectRaw}
+import parsley.internal.errors.{EndOfInput, ExpectDesc, ExpectItem, ExpectRaw}
 import parsley.internal.machine.{Context, Good}
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.{ClassicFancyError, EmptyError, EmptyErrorWithReason}
@@ -300,7 +300,7 @@ private [internal] object StringTok {
     private [StringTok] class Set extends Adjust {
         private [this] var at = 1
         // Round up to the nearest multiple of 4 /+1/
-        private [StringTok] def tab = { at = ((at + 3) & -4) | 1; this }
+        private [StringTok] def tab = { at = ((at + 3) & -4) | 1; this } // scalastyle:ignore magic.number
         private [StringTok] def next = at += 1
         private [StringTok] def toAdjuster = {
             val x = at // capture it now, so it doesn't need to hold the object later
@@ -327,7 +327,7 @@ private [internal] object StringTok {
         private [StringTok] def toAdjuster = {
             val x = firstBy // provide an indirection to the object
             val y = thenBy  // capture it now, so it doesn't need to hold the object later
-            col => (((col + x + 3) & -4) | 1) + y
+            col => (((col + x + 3) & -4) | 1) + y // scalastyle:ignore magic.number
         }
     }
 }

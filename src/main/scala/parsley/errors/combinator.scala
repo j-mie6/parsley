@@ -118,7 +118,7 @@ object combinator {
     /** This combinator marks any errors within the given parser as being ''lexical errors''.
       *
       * When an error is marked as a ''lexical error'', it sets a flag within the error that is
-      * passed to [[parsley.ErrorBuilder.unexpectedToken `ErrorBuilder.unexpectedToken`]]: this
+      * passed to [[parsley.errors.ErrorBuilder.unexpectedToken `ErrorBuilder.unexpectedToken`]]: this
       * should be used to prevent `Lexer`-based token extraction from being performed on an error,
       * since lexing errors cannot be the result of unexpected tokens.
       *
@@ -127,7 +127,7 @@ object combinator {
       * @since 4.0.0
       * @group adj
       */
-    private [parsley] def markAsToken[A](p: Parsley[A]): Parsley[A] = new Parsley(new frontend.ErrorLexical(p.internal))
+    def markAsToken[A](p: Parsley[A]): Parsley[A] = new Parsley(new frontend.ErrorLexical(p.internal))
 
     /** This class exposes helpful combinators that are specialised for generating more helpful errors messages.
       *
@@ -209,7 +209,7 @@ object combinator {
           *
           * First, parse this parser. If it succeeds then take its result `x` and test of `pred.isDefinedAt(x)` is true. If it is false,
           * the parser succeeds, returning `x`. Otherwise `pred(x)` will yield an error message `msg` and the parser will fail, producing
-          * a ''specialised'' error only consisting of the message `msg` à la [[fail `fail`]].
+          * a ''specialised'' error only consisting of the message `msg` à la [[fail(caretWidth:Int,msg0:String,msgs:String*)*  `fail`]].
           *
           * This is useful for performing data validation, but where failure is not tied to the grammar but some other property of
           * the results. For instance, with the identifier example given for `filterOut`, it is reasonable to suggest that an identifier
@@ -309,7 +309,7 @@ object combinator {
           *
           * First, parse this parser. If it succeeds then take its result `x` and test if `pred.isDefinedAt(x)` is true. If it is
           * false, the parser succeeds, returning `x`. Otherwise, `pred(x)` will yield a unexpected label and the parser will
-          * fail using [[combinator.unexpected `unexpected`]] and that label.
+          * fail using [[combinator.unexpected(caretWidth:Int,item:String)* `unexpected`]] and that label.
           *
           * This is useful for performing data validation, but where a the failure results in the entire token being unexpected. In this instance,
           * the rest of the error message is generated as normal, with the expected components still given, along with
@@ -336,13 +336,12 @@ object combinator {
           * @group filter
           */
         // TODO: Make this more efficient!
-        // FIXME: Documentation out of date
         // FIXME: document error offset
-        def unexpectedWhen(pred: PartialFunction[A, (Int, String)]): Parsley[A] = amend {
-            entrench(p).flatMap {
+        def unexpectedWhen(pred: PartialFunction[A, String]): Parsley[A] = amend {
+            entrench(con(p)).flatMap {
                 case x if pred.isDefinedAt(x) =>
-                    val (width, name) = pred(x)
-                    combinator.unexpected(width, name)
+                    val name = pred(x)
+                    combinator.unexpected(1, name)
                 case x => pure(x)
             }
         }

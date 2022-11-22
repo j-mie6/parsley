@@ -263,7 +263,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     private [machine] def moreInput: Boolean = offset < inputsz
     private [machine] def updatePos(c: Char) = c match {
         case '\n' => line += 1; col = 1
-        case '\t' => col = ((col + 3) & -4) | 1//((col - 1) | 3) + 2
+        case '\t' => col = ((col + 3) & -4) | 1//((col - 1) | 3) + 2 // scalastyle:ignore magic.number
         case _    => col += 1
     }
     private [machine] def consumeChar(): Char = {

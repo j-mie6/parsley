@@ -3,9 +3,9 @@
  */
 package parsley.errors
 
-import scala.util.matching.Regex
-import scala.collection.immutable.WrappedString
 import scala.annotation.tailrec
+import scala.collection.immutable.WrappedString
+import scala.util.matching.Regex
 
 // Turn coverage off, because the tests have their own error builder
 // We might want to test this on its own though

@@ -148,7 +148,7 @@ private [errors] final class FancyErrorBuilder(offset: Int, lexicalError: Boolea
         this.col = col
     }
 
-    def updateCaretWidth(width: Int) = this.caretWidth = math.max(this.caretWidth, width)
+    def updateCaretWidth(width: Int): Unit = this.caretWidth = math.max(this.caretWidth, width)
 
     /** Adds a collection of new error message lines into this error.
       *
