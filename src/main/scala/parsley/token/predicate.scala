@@ -7,10 +7,13 @@ import parsley.Parsley, Parsley.empty
 import parsley.character.{satisfy, satisfyUtf16}
 import parsley.exceptions.ParsleyException
 
-/**
+/** TODO:
   * @since 4.0.0
   */
 object predicate {
+    /** TODO:
+      * @since 4.0.0
+      */
     sealed abstract class CharPredicate {
         private [token] def toBmp: Parsley[Char]
         private [token] def toUnicode: Parsley[Int]
@@ -19,6 +22,9 @@ object predicate {
         private [token] def endsWith(s: String): Boolean
     }
 
+    /** TODO:
+      * @since 4.0.0
+      */
     final case class Unicode(predicate: Int => Boolean) extends CharPredicate {
         private [token] override def toBmp = satisfy(c => predicate(c) && !c.isHighSurrogate)
         private [token] override def toUnicode = satisfyUtf16(predicate)
@@ -27,6 +33,9 @@ object predicate {
         private [token] def endsWith(s: String) = s.nonEmpty && predicate(s.codePointBefore(s.length))
     }
 
+    /** TODO:
+      * @since 4.0.0
+      */
     final case class Basic(predicate: Char => Boolean) extends CharPredicate {
         private [token] override def toBmp = satisfy(predicate)
         // $COVERAGE-OFF$
@@ -38,6 +47,9 @@ object predicate {
         private [token] def endsWith(s: String) = s.lastOption.exists(predicate)
     }
 
+    /** TODO:
+      * @since 4.0.0
+      */
     case object NotRequired extends CharPredicate {
         private [token] override def toBmp = empty
         private [token] override def toUnicode = empty

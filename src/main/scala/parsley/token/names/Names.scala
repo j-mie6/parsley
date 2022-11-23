@@ -6,7 +6,9 @@ package parsley.token.names
 import parsley.Parsley
 import parsley.token.predicate.CharPredicate
 
-/** TODO:
+/** This class defines a uniform interface for defining parsers for user-defined
+  * names (identifiers and operators), independent of how whitespace should be
+  * handled after the name.
   *
   * @since 4.0.0
   * @note implementations of this class found within `Lexer` may employ sharing
@@ -23,7 +25,6 @@ abstract class Names private[token] {
       * @note $disclaimer
       * @since 4.0.0
       */
-    // TODO: use other identifier method? disadvantage of this is that we lose out on specialised error message
     def identifier: Parsley[String]
     /** TODO:
       *

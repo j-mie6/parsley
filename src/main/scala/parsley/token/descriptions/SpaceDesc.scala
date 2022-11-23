@@ -5,6 +5,18 @@ package parsley.token.descriptions
 
 import parsley.token.predicate.{CharPredicate, NotRequired}
 
+/** This class describes how whitespace should be handled lexically.
+  *
+  * @param commentStart how do multi-line comments start? (empty for no multi-line comments)
+  * @param commentEnd how do multi-line comments end? (empty for no multi-line comments)
+  * @param commentLine how do single-line comments start? (empty for no single-line comments)
+  * @param commentLineAllowsEOF can a single-line comment be terminated by the end-of-file, or '''must''' it ends with a newline
+  * @param nestedComments can multi-line comments be nested within each other?
+  * @param space what characters serve as whitespace within the language?
+  * @param whitespaceIsContextDependent can the definition of whitespace change depending on context? (in Python, say, newlines are valid whitespace
+  *                                     within parentheses, but are significant outside of them)
+  * @since 4.0.0
+  */
 final case class SpaceDesc (commentStart: String,
                             commentEnd: String,
                             commentLine: String,
@@ -25,6 +37,12 @@ final case class SpaceDesc (commentStart: String,
     }
 }
 
+/** This object contains any default configurations describing whitespace.
+  * @since 4.0.0
+  */
 object SpaceDesc {
+    /** The plain definition of space, with no comments, no nested comments, and no space.
+      * @since 4.0.0
+      */
     val plain = SpaceDesc("", "", "", true, false, NotRequired, false)
 }

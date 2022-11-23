@@ -97,8 +97,6 @@ private [token] abstract class Lexeme {
   *     valid name that is not a reserved name, such as a hard keyword or
   *     a special operator.
   *
-  *    TODO: describe the configuration effects.
-  *
   * @define natural
   *     This is a collection of parsers concerned with handling unsigned (positive) integer literals.
   *
@@ -218,16 +216,16 @@ private [token] abstract class Lexeme {
   *         this includes literal-end characters and the escape prefix
   *         (often `"` and `\` respectively)
   *
-  * @constructor TODO:
+  * @constructor Builds a new lexer with a given description for the lexical structure as
+  *              well as how error messages should be specialised.
   * @param desc the configuration for the lexer, specifying the lexical
   *             rules of the grammar being parsed.
   * @param errConfig the configuration for error messages generated within
   *                  the lexer.
   * @since 4.0.0
   */
-// TODO: remove
 class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
-    /** TODO:
+    /** Builds a new lexer with a given description for the lexical structure of the language.
       *
       * @param desc the configuration for the lexer, specifying the lexical
       *             rules of the grammar/language being parsed.

@@ -3,6 +3,14 @@
  */
 package parsley.token.descriptions
 
+/** This class describes how symbols (textual literals in a BNF) should be
+  * processed lexically.
+  *
+  * @param hardKeywords what keywords are ''always'' treated as keywords within the language.
+  * @param hardOperators what operators are ''always'' treated as reserved operators within the language.
+  * @param caseSensitive are the keywords case sensitive: when `false`, `IF == if`.
+  * @since 4.0.0
+  */
 final case class SymbolDesc (hardKeywords: Set[String],
                              hardOperators: Set[String],
                              caseSensitive: Boolean) {
@@ -13,6 +21,12 @@ final case class SymbolDesc (hardKeywords: Set[String],
     private [parsley] def isReservedOp(op: String): Boolean = hardOperators.contains(op)
 }
 
+/** This object contains any preconfigured symbol descriptions.
+  * @since 4.0.0
+  */
 object SymbolDesc {
+    /** Plain definition of symbols: case sensitive with no hard keywords or operators.
+      * @since 4.0.0
+      */
     val plain = SymbolDesc(Set.empty, Set.empty, true)
 }
