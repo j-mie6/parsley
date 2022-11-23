@@ -29,7 +29,17 @@ abstract class String private[token] {
       * support string gaps and zero-width characters depending on the
       * configuration.
       *
-      * @todo TODO: examples
+      * @example {{{
+      * scala> fullUtf16.parse("\"μαϊντανός!\"")
+      * val res0 = Success("μαϊντανός!")
+      * scala> fullUtf16.parse("\"hello world\"")
+      * val res1 = Success("hello world")
+      * scala> fullUtf16.parse("\"🙂\"")
+      * val res2 = Success("🙂")
+      * scala> fullUtf16.parse("\"£10\"")
+      * val res3 = Success("£10")
+      * }}}
+      *
       * @since 4.0.0
       * @note $disclaimer
       */
@@ -39,7 +49,17 @@ abstract class String private[token] {
       * sequences, and potentially support string gaps and zero-width characters
       * depending on the configuration.
       *
-      * @todo TODO: examples
+      * @example {{{
+      * scala> fullUtf16.parse("\"μαϊντανός!\"")
+      * val res0 = Failure(...) // Greek is not part of latin1
+      * scala> fullUtf16.parse("\"hello world\"")
+      * val res1 = Success("hello world")
+      * scala> fullUtf16.parse("\"🙂\"")
+      * val res2 = Failure(...) // Emoji are not part of latin1
+      * scala> fullUtf16.parse("\"£10\"")
+      * val res3 = Success("£10")
+      * }}}
+      *
       * @since 4.0.0
       * @note $disclaimer
       */
@@ -49,7 +69,17 @@ abstract class String private[token] {
       * sequences, and potentially support string gaps and zero-width characters
       * depending on the configuration.
       *
-      * @todo TODO: examples
+      * @example {{{
+      * scala> fullUtf16.parse("\"μαϊντανός!\"")
+      * val res0 = Failure(...) // Greek is not part of ascii
+      * scala> fullUtf16.parse("\"hello world\"")
+      * val res1 = Success("hello world")
+      * scala> fullUtf16.parse("\"🙂\"")
+      * val res2 = Failure(...) // Emoji are not part of ascii
+      * scala> fullUtf16.parse("\"£10\"")
+      * val res3 = Failure(...) // £ is not part of ascii
+      * }}}
+      *
       * @since 4.0.0
       * @note $disclaimer
       */

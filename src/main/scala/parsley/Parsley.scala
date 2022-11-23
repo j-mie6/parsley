@@ -110,6 +110,11 @@ import XCompat._
   *     the time) to use this for context-sensitive parsing. The idea is that it can make any form of
   *     decision based on the result of a parser, allowing it to perform a different parser for each
   *     possible output of another without exhaustively enumerating them all.
+  *
+  * @define autoAmend
+  *     when this combinator fails (and not this parser itself), it will generate errors rooted at the start of the
+  *     parse (as if [[parsley.errors.combinator$.amend `amend`]] had been used) and the caret will span the entire
+  *     successful parse of this parser.
   */
 final class Parsley[+A] private [parsley] (private [parsley] val internal: frontend.LazyParsley[A]) extends AnyVal {
     /** This method is responsible for actually executing parsers. Given an input
@@ -555,9 +560,9 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @return a parser that returns the result of this parser if it passes the predicate.
       * @see [[parsley.errors.combinator.ErrorMethods.filterOut `filterOut`]] for a version which can produce custom ''reasons'' on failure.
       * @see [[parsley.errors.combinator.ErrorMethods.guardAgainst `guardAgainst`]] for a version which can produce custom error messages on failure.
+      * @note $autoAmend
       * @group filter
       */
-    // FIXME: document error offset
     def filter(pred: A => Boolean): Parsley[A] = new Parsley(new frontend.Filter(this.internal, pred))
     /** This combinator filters the result of this parser using a given predicate, succeeding only if the predicate returns `false`.
       *
@@ -579,9 +584,9 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @return a parser that returns the result of this parser if it fails the predicate.
       * @see [[parsley.errors.combinator.ErrorMethods.filterOut `filterOut`]] for a version that can produce custom ''reasons'' on failure.
       * @see [[parsley.errors.combinator.ErrorMethods.guardAgainst `guardAgainst`]] for a version that can produce custom error messages on failure.
+      * @note $autoAmend
       * @group filter
       */
-    // FIXME: document error offset
     def filterNot(pred: A => Boolean): Parsley[A] = this.filter(!pred(_))
     /** This combinator applies a partial function `pf` to the result of this parser if its result
       * is defined for `pf`, failing if it is not.
@@ -608,9 +613,9 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *      and [[parsley.errors.combinator.ErrorMethods.collectMsg[B](msggen:A=>Seq[String])* `collectMsg(A => Seq[String])`]]
       *      for versions that can produce custom error messages on failure.
       * @since 2.0.0
+      * @note $autoAmend
       * @group filter
       */
-    // FIXME: document error offset
     def collect[B](pf: PartialFunction[A, B]): Parsley[B] = this.mapFilter(pf.lift)
     /** This combinator applies a function `f` to the result of this parser: if it returns a
       * `Some(y)`, `y` is returned, otherwise the parser fails.
@@ -635,9 +640,9 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @param f the function used to both filter the result of this parser and transform it.
       * @return a parser that returns the result of this parser applied to `f`, if it yields a value.
       * @since 4.0.0
+      * @note $autoAmend
       * @group filter
       */
-    // FIXME: document error offset
     def mapFilter[B](f: A => Option[B]): Parsley[B] = new Parsley(new frontend.MapFilter(this.internal, f))
 
     // FOLDING COMBINATORS

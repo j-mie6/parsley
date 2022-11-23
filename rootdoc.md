@@ -18,7 +18,7 @@ is defined as being an object which mocks a package):
     implicit classes.
   - [[parsley.io$ `parsley.io`]] contains extension methods to run parsers with input sourced from
     IO sources.
-  - [[parsley.expr `parsley.expr`]] contains the following sub modules:
+  - [[parsley.expr$ `parsley.expr`]] contains the following sub modules:
     - [[parsley.expr.chain$ `parsley.expr.chain`]] contains combinators used in expression parsing
     - [[parsley.expr.precedence$ `parsley.expr.precedence`]] is a builder for expression parsers built
       on a precedence table.
@@ -43,10 +43,21 @@ is defined as being an object which mocks a package):
     and generation.
      - [[parsley.errors.combinator$ `parsley.errors.combinator`]] provides combinators that can be
        used to either produce more detailed errors as well as refine existing errors.
+     - [[parsley.errors.tokenextractors `parsley.errors.tokenextractors`]] provides mixins for
+       common token extraction strategies during error message generation: these can be used to
+       avoid implementing [[parsley.errors.ErrorBuilder.unexpectedToken `unexpectedToken`]] in the
+       `ErrorBuilder`.
   - [[parsley.lift$ `parsley.lift`]] contains functions which lift functions that work on regular
     types to those which now combine the results of parsers returning those same types. these are
     ubiquitous.
+  - [[parsley.ap$ `parsley.ap`]] contains functions which allow for the application of a parser
+    returning a function to several parsers returning each of the argument types.
   - [[parsley.registers$ `parsley.registers`]] contains combinators that interact with the
     context-sensitive functionality in the form of registers.
   - [[parsley.token `parsley.token`]] contains the [[parsley.token.Lexer `Lexer`]] class that provides
     a host of helpful lexing combinators when provided with the description of a language.
+  - [[parsley.genericbridges$ `parsley.genericbridges`]] contains some basic implementations of
+    the ''Parser Bridge'' pattern (see
+    [[https://dl.acm.org/doi/10.1145/3550198.3550427 Design Patterns for Parser Combinators in Scala]],
+    or the parsley wiki): these can be used before more specialised generic bridge traits can be
+    constructed.

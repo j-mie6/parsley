@@ -22,9 +22,9 @@ object extension {
       *
       * @constructor This constructor should not be called manually, it is designed to be used via Scala's implicit resolution.
       * @param f the function that is used for the map.
-      * @version 1.0.0
+      * @version 4.0.0
       */
-    implicit final class HaskellStyleMap[-A, +B](val f: A => B) extends AnyVal {
+    implicit final class HaskellStyleMap[-A, +B](private [parsley] val f: A => B) extends AnyVal {
         /** This combinator maps this function over the given parser `p` to alter its result.
           *
           * @see [[Parsley.map `map`]]
@@ -43,7 +43,7 @@ object extension {
       * @param conQ a conversion that allows values convertible to parsers to be used.
       * @tparam P the type of left base value that this class is used on (the conversion to `Parsley`) is summoned automatically.
       * @tparam Q the type of right base value that this class is used on (the conversion to `Parsley`) is summoned automatically.
-      * @version 1.0.0
+      * @version 4.0.0
       */
     implicit final class LazyChooseParsley[P, Q, +A](pq: =>(P, Q))(implicit conP: P => Parsley[A], conQ: Q => Parsley[A]) {
         private lazy val (p, q) = pq

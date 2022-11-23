@@ -354,6 +354,13 @@ object registers {
         def persist[B](f: Parsley[A] => Parsley[B]): Parsley[B] = this.fillReg(reg => f(reg.get))
     }
 
+    /** This class, when in scope, enables a method to create and fill a register with a
+      * given value.
+      *
+      * @constructor This constructor should not be called manually, it is designed to be used via Scala's implicit resolution.
+      * @param x the value to initialise a register with.
+      * @group ext
+      */
     implicit final class RegisterMaker[A](x: A) {
         /** This combinator fills a fresh register with the this value.
           *
