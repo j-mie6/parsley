@@ -5,7 +5,7 @@ package parsley.errors.tokenextractors
 
 import scala.collection.immutable.WrappedString
 
-import parsley.errors.{helpers, ErrorBuilder, Named, Raw, Token, Width}
+import parsley.errors.{helpers, ErrorBuilder, Token, TokenSpan}
 
 // Turn coverage off, because the tests have their own error builder
 // We might want to test this on its own though
@@ -16,7 +16,7 @@ trait TillNextWhitespace { this: ErrorBuilder[_] =>
     // TODO: we should take to minimum of parser demand and next whitespace, this would potentially be much much cheaper
     override def unexpectedToken(cs: IndexedSeq[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token = {
       cs match {
-        case helpers.WhitespaceOrUnprintable(name) => Named(name, Width(1))
+        case helpers.WhitespaceOrUnprintable(name) => Token.Named(name, TokenSpan.Width(1))
         // these cases automatically handle the utf-16 surrogate pairs
         case cs: WrappedString =>
             // These do not require allocation on the string
@@ -24,8 +24,8 @@ trait TillNextWhitespace { this: ErrorBuilder[_] =>
                 val idx = cs.indexWhere(_.isWhitespace)
                 if (idx != -1) idx else cs.length
             }
-            Raw(trim(cs.slice(0, idx).toString, amountOfInputParserWanted))
-        case cs => Raw(trim(cs.takeWhile(!_.isWhitespace).mkString, amountOfInputParserWanted))
+            Token.Raw(trim(cs.slice(0, idx).toString, amountOfInputParserWanted))
+        case cs => Token.Raw(trim(cs.takeWhile(!_.isWhitespace).mkString, amountOfInputParserWanted))
       }
     }
 

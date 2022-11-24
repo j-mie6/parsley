@@ -8,8 +8,8 @@ import scala.collection.immutable.WrappedString
 import parsley.Parsley, Parsley.{attempt, lookAhead}
 import parsley.Success
 import parsley.character.{item, newline, noneOf}
-import parsley.combinator.{choice, eof, manyUntil, option, sequence, someUntil}
-import parsley.errors.{helpers, ErrorBuilder, Named, Raw, Token, UntilPos}
+import parsley.combinator.{choice, eof, option, sequence, someUntil}
+import parsley.errors.{helpers, ErrorBuilder, Token, TokenSpan}
 
 // Turn coverage off, because the tests have their own error builder
 // We might want to test this on its own though
@@ -27,7 +27,7 @@ trait LexToken { this: ErrorBuilder[_] =>
     }
     def selectToken(matchedToks: List[(String, (Int, Int))]): Token = {
         val toks = matchedToks.sortBy(_._2).map {
-            case (name, (line, col)) => Named(name, UntilPos(line, col))
+            case (name, (line, col)) => Token.Named(name, TokenSpan.UntilPos(line, col))
         }
         toks.last
     }
@@ -43,12 +43,12 @@ trait LexToken { this: ErrorBuilder[_] =>
                     case cs => cs.mkString
                 }
             }
-            rawOrToks.fold(Raw.apply, selectToken)
+            rawOrToks.fold(Token.Raw.apply, selectToken)
         }
         // No lexical extraction should occur here!
         else {
             // TODO: improve this!!!
-            Raw(s"${cs.head}")
+            Token.Raw(s"${cs.head}")
         }
     }
 }

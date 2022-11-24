@@ -4,11 +4,11 @@
 package parsley.internal.errors
 
 import parsley.XAssert._
-import parsley.errors, errors.ErrorBuilder
+import parsley.errors, errors.{ErrorBuilder, Token, TokenSpan}
 
 private [internal] sealed abstract class ErrorItem
 private [internal] sealed trait UnexpectItem extends ErrorItem {
-    def formatUnexpect(lexicalError: Boolean)(implicit builder: ErrorBuilder[_]): (builder.Item, errors.TokenSpan)
+    def formatUnexpect(lexicalError: Boolean)(implicit builder: ErrorBuilder[_]): (builder.Item, TokenSpan)
     def higherPriority(other: UnexpectItem): Boolean
     protected [errors] def lowerThanRaw(other: UnexpectRaw): Boolean
     protected [errors] def lowerThanDesc(other: UnexpectDesc): Boolean
@@ -21,11 +21,11 @@ private [internal] sealed trait ExpectItem extends ErrorItem {
 }
 
 private [internal] final case class UnexpectRaw(cs: IndexedSeq[Char], amountOfInputParserWanted: Int) extends UnexpectItem {
-    def formatUnexpect(lexicalError: Boolean)(implicit builder: ErrorBuilder[_]): (builder.Item, errors.TokenSpan) = {
+    def formatUnexpect(lexicalError: Boolean)(implicit builder: ErrorBuilder[_]): (builder.Item, TokenSpan) = {
         builder.unexpectedToken(cs, amountOfInputParserWanted, lexicalError) match {
-            case t@errors.Raw(tok) => (builder.raw(tok), t.span)
-            case errors.Named(name, span) => (builder.named(name), span)
-            case t@errors.EndOfInput => (builder.endOfInput, t.span)
+            case t@Token.Raw(tok) => (builder.raw(tok), t.span)
+            case Token.Named(name, span) => (builder.named(name), span)
+            case t@Token.EndOfInput => (builder.endOfInput, t.span)
         }
     }
     override def higherPriority(other: UnexpectItem): Boolean = other.lowerThanRaw(this)
@@ -52,14 +52,14 @@ private [internal] final case class ExpectDesc(msg: String) extends ExpectItem {
 private [internal] final case class UnexpectDesc(msg: String, width: Int) extends UnexpectItem {
     assume(msg.nonEmpty, "Desc cannot contain empty things!")
     // FIXME: When this is formatted, the width should really be normalised to the number of code points... this information is not readily available
-    def formatUnexpect(lexicalError: Boolean)(implicit builder: ErrorBuilder[_]): (builder.Item, errors.TokenSpan) = (builder.named(msg), errors.Width(width))
+    def formatUnexpect(lexicalError: Boolean)(implicit builder: ErrorBuilder[_]): (builder.Item, TokenSpan) = (builder.named(msg), TokenSpan.Width(width))
     override def higherPriority(other: UnexpectItem): Boolean = other.lowerThanDesc(this)
     override def lowerThanRaw(other: UnexpectRaw): Boolean = false
     override def lowerThanDesc(other: UnexpectDesc): Boolean = this.width < other.width
 }
 private [internal] case object EndOfInput extends UnexpectItem with ExpectItem {
     def formatExpect(implicit builder: ErrorBuilder[_]): builder.Item = builder.endOfInput
-    def formatUnexpect(lexicalError: Boolean)(implicit builder: ErrorBuilder[_]): (builder.Item, errors.TokenSpan) = (builder.endOfInput, errors.Width(1))
+    def formatUnexpect(lexicalError: Boolean)(implicit builder: ErrorBuilder[_]): (builder.Item, TokenSpan) = (builder.endOfInput, TokenSpan.Width(1))
     override def higherPriority(other: ExpectItem): Boolean = true
     override def higherPriority(other: UnexpectItem): Boolean = true
     override def lowerThanRaw(other: ExpectRaw): Boolean = false

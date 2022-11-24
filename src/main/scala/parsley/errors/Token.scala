@@ -8,13 +8,15 @@ package parsley.errors
 sealed abstract class Token {
     def span: TokenSpan
 }
-case class Raw(tok: String) extends Token {
-    override def span: TokenSpan = {
-        val idx = tok.indexOf('\n')
-        Width(tok.codePointCount(0, if (idx != -1) idx + 1 else tok.length))
+object Token {
+    case class Raw(tok: String) extends Token {
+        override def span: TokenSpan = {
+            val idx = tok.indexOf('\n')
+            TokenSpan.Width(tok.codePointCount(0, if (idx != -1) idx + 1 else tok.length))
+        }
     }
-}
-case class Named(name: String, span: TokenSpan) extends Token
-case object EndOfInput extends Token {
-    override def span: TokenSpan = Width(1)
+    case class Named(name: String, span: TokenSpan) extends Token
+    case object EndOfInput extends Token {
+        override def span: TokenSpan = TokenSpan.Width(1)
+    }
 }
