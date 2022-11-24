@@ -10,10 +10,24 @@ import parsley.errors.{helpers, ErrorBuilder, Token, TokenSpan}
 // Turn coverage off, because the tests have their own error builder
 // We might want to test this on its own though
 // $COVERAGE-OFF$
+/** This extractor mixin provides an implementation for
+  * [[parsley.errors.ErrorBuilder.unexpectedToken `ErrorBuilder.unexpectedToken`]] when mixed into
+  * an error builder: it will construct a token that extends to the next available whitespace
+  * in the remaining input. It can be configured to constrict this token to the minimum of the
+  * next whitespace or whatever the parser demanded (see [[MatchParserDemand `MatchParserDemand`]]).
+  * @since 4.0.0
+  * @note In the case of unprintable characters or whitespace, this extractor will favour reporting
+  *       a more meaningful name.
+  */
 trait TillNextWhitespace { this: ErrorBuilder[_] =>
+    /** Should tokens be trimed to only be as wide as ''either'' the next whitespace or the
+      * amount of input the parser tried to consumed, whichever is smaller?
+      * @since 4.0.0
+      */
     def trimToParserDemand: Boolean
 
     // TODO: we should take to minimum of parser demand and next whitespace, this would potentially be much much cheaper
+    /** @see [[parsley.errors.ErrorBuilder.unexpectedToken `ErrorBuilder.unexpectedToken`]] */
     override def unexpectedToken(cs: IndexedSeq[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token = {
       cs match {
         case helpers.WhitespaceOrUnprintable(name) => Token.Named(name, TokenSpan.Width(1))

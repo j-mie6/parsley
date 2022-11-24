@@ -3,20 +3,41 @@
  */
 package parsley.errors
 
-// TODO: I'd like to put these in modules to make them a little nicer
-
+/** TODO:
+  *
+  * @since 4.0.0
+  */
 sealed abstract class Token {
-    def span: TokenSpan
+    private [parsley] def span: TokenSpan
 }
+/** TODO:
+  *
+  * @since 4.0.0
+  */
 object Token {
-    case class Raw(tok: String) extends Token {
-        override def span: TokenSpan = {
+    /** TODO:
+      *
+      * @param tok
+      * @since 4.0.0
+      */
+    final case class Raw(tok: String) extends Token {
+        override private [parsley] def span: TokenSpan = {
             val idx = tok.indexOf('\n')
             TokenSpan.Width(tok.codePointCount(0, if (idx != -1) idx + 1 else tok.length))
         }
     }
-    case class Named(name: String, span: TokenSpan) extends Token
+    /** TODO:
+      *
+      * @param name
+      * @param span
+      * @since 4.0.0
+      */
+    final case class Named(name: String, span: TokenSpan) extends Token
+    /** TODO:
+      *
+      * @since 4.0.0
+      */
     case object EndOfInput extends Token {
-        override def span: TokenSpan = TokenSpan.Width(1)
+        override private [parsley] def span: TokenSpan = TokenSpan.Width(1)
     }
 }

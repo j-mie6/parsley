@@ -13,9 +13,11 @@ package parsley.errors
   * time and without notice. The API, however, will remain stable.
   *
   * @since 3.0.0
+  * @note this class is abstract as it does not implement `unexpectedToken`: when creating an instance mix-in an appropriate
+  *       token extractor from `parsley.errors.tokenextractors`.
   * @group formatting
   */
-class DefaultErrorBuilder extends ErrorBuilder[String] with tokenextractors.TillNextWhitespace {
+abstract class DefaultErrorBuilder extends ErrorBuilder[String] {
     /** @inheritdoc */
     override def format(pos: Position, source: Source, lines: ErrorInfoLines): String = {
         s"${source.fold("")(name => s"In $name ")}$pos:\n${lines.mkString("  ", "\n  ", "")}"
@@ -124,8 +126,6 @@ class DefaultErrorBuilder extends ErrorBuilder[String] with tokenextractors.Till
     override def named(item: String): Named = item
     /** @inheritdoc */
     override val endOfInput: EndOfInput = "end of input"
-
-    override val trimToParserDemand = true
 }
 private object DefaultErrorBuilder {
     private val Unknown = "unknown parse error"

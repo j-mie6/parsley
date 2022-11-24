@@ -11,7 +11,16 @@ import parsley.errors.{helpers, ErrorBuilder, Token, TokenSpan}
 // Turn coverage off, because the tests have their own error builder
 // We might want to test this on its own though
 // $COVERAGE-OFF$
+/** This extractor mixin provides an implementation for
+  * [[parsley.errors.ErrorBuilder.unexpectedToken `ErrorBuilder.unexpectedToken`]] when mixed into
+  * an error builder: it will make a token as wide as the amount of input the parser tried to
+  * consume when it failed.
+  * @since 4.0.0
+  * @note In the case of unprintable characters or whitespace, this extractor will favour reporting
+  *       a more meaningful name.
+  */
 trait MatchParserDemand { this: ErrorBuilder[_] =>
+    /** @see [[parsley.errors.ErrorBuilder.unexpectedToken `ErrorBuilder.unexpectedToken`]] */
     override def unexpectedToken(cs: IndexedSeq[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token = cs match {
         case helpers.WhitespaceOrUnprintable(name) => Token.Named(name, TokenSpan.Width(1))
         case _ => Token.Raw(substring(cs, amountOfInputParserWanted))

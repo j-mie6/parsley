@@ -14,24 +14,35 @@ import parsley.errors.{helpers, ErrorBuilder, Token, TokenSpan}
 // Turn coverage off, because the tests have their own error builder
 // We might want to test this on its own though
 // $COVERAGE-OFF$
+/** 
+  * @since 4.0.0
+  */
 trait LexToken { this: ErrorBuilder[_] =>
 
+    /**
+      * @since 4.0.0
+      */
     def tokens: Seq[Parsley[String]]
+    /**
+      * @since 4.0.0
+      */
     def whitespace: Parsley[_]
 
-    // cannot fail
+    // this parser cannot fail
     private lazy val makeParser: Parsley[Either[String, List[(String, (Int, Int))]]] = {
         val toks = (whitespace #> "whitespace" +: tokens).map(p => attempt(p <~> Parsley.pos))
         val rawTok = lookAhead(someUntil(item, eof <|> choice(toks: _*))).map(_.mkString)
         rawTok <+> sequence(toks.map(p => option(lookAhead(p))): _*).map(_.flatten)
     }
-    def selectToken(matchedToks: List[(String, (Int, Int))]): Token = {
+
+    private def selectToken(matchedToks: List[(String, (Int, Int))]): Token = {
         val toks = matchedToks.sortBy(_._2).map {
             case (name, (line, col)) => Token.Named(name, TokenSpan.UntilPos(line, col))
         }
         toks.last
     }
 
+    /** @see [[parsley.errors.ErrorBuilder.unexpectedToken `ErrorBuilder.unexpectedToken`]] */
     override def unexpectedToken(cs: IndexedSeq[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token = {
         if (!lexicalError) {
             // This is better, but does mean that the tokens provided should NOT consume terminal whitespace
@@ -53,7 +64,13 @@ trait LexToken { this: ErrorBuilder[_] =>
     }
 }
 
+/**
+  * @since 4.0.0
+  */
 object LexToken {
+    /**
+      * @since 4.0.0
+      */
     def constantNames(ps: (Parsley[_], String)*): Seq[Parsley[String]] = ps.map {
         case (p, n) => p #> n
     }

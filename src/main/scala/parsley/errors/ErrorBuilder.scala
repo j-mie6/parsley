@@ -3,8 +3,6 @@
  */
 package parsley.errors
 
-import scala.collection.immutable.WrappedString
-
 /** This typeclass specifies how to format an error from a parser
   * as a specified type.
   *
@@ -423,10 +421,24 @@ trait ErrorBuilder[+Err] {
       */
     val endOfInput: EndOfInput
 
-    // For doc, the indexed sequence is guaranteed to be non-empty (end of input is handled separately)
-    // It is not guaranteed to be more than amountOfInputParserWanted
-    // We want to do the whitespace trimming in here, but need to be careful, because
-    // `raw` will need to witness pure spaces
+    /** Extracts an unexpected token from the remaining input.
+      *
+      * When a parser fails, by default an error reports an unexpected token of a specific width.
+      * This works well for some parsers, but often it is nice to have the illusion of a dedicated
+      * lexing pass: instead of reporting the next few characters as unexpected, an unexpected token
+      * can be reported instead. This can take many forms, for instance trimming the token to the
+      * next whitespace, only taking one character, or even trying to lex a token out of the stream.
+      *
+      * This method can be easily implemented by mixing in an appropriate ''token extractor'' from
+      * `parsley.errors.tokenextractors` into this builder.
+      *
+      * @param cs the remaining input at point of failure (this is '''guaranteed to be non-empty''')
+      * @param amountOfInputParserWanted the input the parser tried to read when it failed
+      *                                  (this is '''not''' guaranteed to be smaller than the length of `cs`)
+      * @param lexicalError was this error generated as part of "lexing", or in a wider parser (see [[parsley.errors.combinator$.markAsToken `markAsToken`]])
+      * @return a token extracted from `cs` that will be used as part of the unexpected message.
+      * @since 4.0.0
+      */
     def unexpectedToken(cs: IndexedSeq[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token
 }
 
@@ -438,7 +450,12 @@ object ErrorBuilder {
     // $COVERAGE-OFF$
     /** The default error builder used by Parsley, which produces
       * an error as a String. An instance of `DefaultErrorBuilder`.
+      *
+      * It ''currently'' uses `TillNextWhitespace` as the token extractor, which
+      * is trimmed to parser demand. This can be changed without notice.
       */
-    implicit val stringError: ErrorBuilder[String] = new DefaultErrorBuilder
+    implicit val stringError: ErrorBuilder[String] = new DefaultErrorBuilder with tokenextractors.TillNextWhitespace {
+        override val trimToParserDemand = true
+    }
     // $COVERAGE-ON$
 }
