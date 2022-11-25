@@ -11,7 +11,7 @@ object MockedBuilders {
         override protected def indexedSeqFrom(offset: Int): IndexedSeq[Char] = /*LazyList.continually('x')*/new IndexedSeq[Char] {
             override def iterator: Iterator[Char] = Iterator.continually('x')
             override def apply(i: Int): Char = 'x'
-            override def length: Int = ???
+            override def length: Int = Int.MaxValue
         }
     }
 }
