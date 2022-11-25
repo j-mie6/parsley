@@ -26,7 +26,8 @@ private [internal] case class TrivialError(offset: Int, line: Int, col: Int,
     extends ParseError {
     def format(line: String, beforeLines: List[String], afterLines: List[String], caret: Int)(implicit builder: ErrorBuilder[_]): builder.ErrorInfoLines = {
         val unexpectedTok = unexpected.map(_.formatUnexpect(lexicalError))
-        val caretSize = unexpectedTok.fold(1)(_._2.toCaretLength(this.line, this.col, line.length, afterLines.map(_.length)))
+        // FIXME: This should probably use the number of codepoints and not length
+        val caretSize = unexpectedTok.fold(1)(_._2.toCaretLength(this.col, line.length, afterLines.map(_.length)))
         builder.vanillaError(
             builder.unexpected(unexpectedTok.map(_._1)),
             builder.expected(builder.combineExpectedItems(expecteds.map(_.formatExpect))),

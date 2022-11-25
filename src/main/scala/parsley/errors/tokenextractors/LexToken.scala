@@ -82,13 +82,10 @@ trait LexToken { this: ErrorBuilder[_] =>
     private final def selectTokenAndBuild(matchedToks: List[(String, (Int, Int))]): Token = {
         assert(matchedToks.nonEmpty)
         val (name, (line, col)) = selectToken(matchedToks)
-        Token.Named(name, TokenSpan.UntilPos(line, col))
+        Token.Named(name, TokenSpan.Spanning(line-1, col-1))
     }
 
     private final def extractToken(cs: IndexedSeq[Char]): Token = {
-        // This is better, but does mean that the tokens provided should NOT consume terminal whitespace
-        // One way of mitigating this would be to cap off the token to the next whitespace, but that's
-        // a bit dodgy from the users perspective
         val Success(rawOrToks) = makeParser.parse {
             cs match {
                 case cs: WrappedString => cs.toString

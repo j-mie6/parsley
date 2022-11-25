@@ -21,5 +21,11 @@ package parsley
   * @groupname combinators Error Combinators
   * @groupdesc combinators
   *     These are combinators associated with influencing how error messages are generated during a parse.
+  *
+  * @groupprio token 15
+  * @groupname token Unexpected Token Description
+  * @groupdesc token
+  *     These are classes used to describe unexpected tokens that are extracted from residual input after a
+  *     failed parse.
   */
 package object errors
