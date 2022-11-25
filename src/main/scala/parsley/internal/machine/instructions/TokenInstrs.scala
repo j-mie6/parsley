@@ -17,6 +17,8 @@ private [instructions] abstract class CommentLexer(start: String, end: String, l
     protected [this] final val multiAllowed = start.nonEmpty && end.nonEmpty
     protected [this] final val endOfComment = Some(ExpectDesc("end of comment"))
 
+    assert(!lineAllowed || !multiAllowed || !line.startsWith(start), "multi-line comments may not prefix single-line comments")
+
     protected final def singleLineComment(ctx: Context): Unit = {
         ctx.fastUncheckedConsumeChars(line.length)
         while (ctx.moreInput && ctx.nextChar != '\n') {
@@ -108,10 +110,10 @@ private [internal] final class TokenComment(start: String, end: String, line: St
     private [this] final val comment = Some(ExpectDesc("comment"))
     private [this] final val openingSize = Math.max(start.codePointCount(0, start.length), line.codePointCount(0, line.length))
 
+    assert(multiAllowed || lineAllowed, "one of single- or multi-line must be enabled")
+
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        assume(multiAllowed || lineAllowed, "one of single- or multi-line must be enabled")
-        assert(!line.startsWith(start), "multi-line comments may not prefix single-line comments")
         val startsMulti = multiAllowed && ctx.input.startsWith(start, ctx.offset)
         // If neither comment is available we fail
         if (!ctx.moreInput || (!lineAllowed || !ctx.input.startsWith(line, ctx.offset)) && !startsMulti) ctx.expectedFail(expected = comment, openingSize)

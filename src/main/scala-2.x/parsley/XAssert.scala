@@ -13,7 +13,6 @@ private [parsley] object XAssert {
     *
     *  @see [[scala.annotation.elidable elidable]]
     *  @param assertion   the expression to test
-    *  @group assertions
     */
     @elidable(ASSERTION) @inline
     final def assert(assertion: Boolean): Unit = Predef.assert(assertion)
@@ -25,7 +24,6 @@ private [parsley] object XAssert {
      *  @see [[scala.annotation.elidable elidable]]
      *  @param assertion   the expression to test
      *  @param message     a String to include in the failure message
-     *  @group assertions
      */
     @elidable(ASSERTION) @inline
     final def assert(assertion: Boolean, message: => Any): Unit = Predef.assert(assertion, message)
@@ -38,7 +36,6 @@ private [parsley] object XAssert {
      *
      *  @see [[scala.annotation.elidable elidable]]
      *  @param assumption   the expression to test
-     *  @group assertions
      */
     @elidable(ASSERTION) @inline
     final def assume(assumption: Boolean): Unit = Predef.assume(assumption)
@@ -52,7 +49,6 @@ private [parsley] object XAssert {
      *  @see [[scala.annotation.elidable elidable]]
      *  @param assumption   the expression to test
      *  @param message      a String to include in the failure message
-     *  @group assertions
      */
     @elidable(ASSERTION) @inline
     final def assume(assumption: Boolean, message: => Any): Unit = Predef.assume(assumption, message)

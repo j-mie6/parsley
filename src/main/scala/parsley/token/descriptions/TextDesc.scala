@@ -32,10 +32,8 @@ object NumberOfDigits {
       * @since 4.0.0
       */
     final case class Exactly(n0: Int, ns: Int*) extends NumberOfDigits {
-        // $COVERAGE-OFF$
-        if (n0 <= 0) throw new IllegalArgumentException("Exactly may only be passed a number of digits greater than 0") // scalastyle:ignore throw
-        if (ns.exists(_ <= 0)) throw new IllegalArgumentException("Exactly may only be passed a number of digits greater than 0") // scalastyle:ignore throw
-        // $COVERAGE-ON$
+        require(n0 > 0, "Exactly may only be passed a number of digits greater than 0")
+        require(ns.forall(_ > 0), "Exactly may only be passed a number of digits greater than 0") // scalastyle:ignore throw
     }
     /** There is no limit on the number of digits that may appear in this sequence.
       *

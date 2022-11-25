@@ -26,26 +26,52 @@ trait TillNextWhitespace { this: ErrorBuilder[_] =>
       */
     def trimToParserDemand: Boolean
 
-    // TODO: we should take to minimum of parser demand and next whitespace, this would potentially be much much cheaper
     /** @see [[parsley.errors.ErrorBuilder.unexpectedToken `ErrorBuilder.unexpectedToken`]] */
-    override def unexpectedToken(cs: IndexedSeq[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token = {
-      cs match {
+    override final def unexpectedToken(cs: IndexedSeq[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token = {
+        if (trimToParserDemand) TillNextWhitespace.unexpectedToken(cs, amountOfInputParserWanted)
+        else TillNextWhitespace.unexpectedToken(cs)
+    }
+}
+
+/** Contains the functionality of `TillNextWhitespace` as a function.
+  * @since 4.0.0
+  */
+object TillNextWhitespace {
+    // TODO: better factoring of this code
+    /** The implementation of `unexpectedToken` as done by `TillNextWhitespace`, with redundant arguments removed.
+      *
+      * This function will not trim the token to parser demand
+      *
+      * @since 4.0.0
+      */
+    def unexpectedToken(cs: IndexedSeq[Char]): Token = cs match {
         case helpers.WhitespaceOrUnprintable(name) => Token.Named(name, TokenSpan.Width(1))
         // these cases automatically handle the utf-16 surrogate pairs
+        case cs => Token.Raw(extractTillNextWhitespace(cs))
+    }
+
+    /** The implementation of `unexpectedToken` as done by `TillNextWhitespace`, with redundant arguments removed.
+      *
+      * This function will not trim the token to parser demand
+      *
+      * @since 4.0.0
+      */
+    def unexpectedToken(cs: IndexedSeq[Char], amountOfInputParserWanted: Int): Token = cs match {
+        case helpers.WhitespaceOrUnprintable(name) => Token.Named(name, TokenSpan.Width(1))
+        // these cases automatically handle the utf-16 surrogate pairs
+        case cs => Token.Raw(helpers.takeCodePoints(extractTillNextWhitespace(cs), amountOfInputParserWanted))
+    }
+
+    // TODO: we should take to minimum of parser demand and next whitespace, this would potentially be much much cheaper
+    private def extractTillNextWhitespace(cs: IndexedSeq[Char]): String = cs match {
         case cs: WrappedString =>
             // These do not require allocation on the string
             val idx = {
                 val idx = cs.indexWhere(_.isWhitespace)
                 if (idx != -1) idx else cs.length
             }
-            Token.Raw(trim(cs.slice(0, idx).toString, amountOfInputParserWanted))
-        case cs => Token.Raw(trim(cs.takeWhile(!_.isWhitespace).mkString, amountOfInputParserWanted))
-      }
-    }
-
-    private def trim(s: String, amountOfInputParserWanted: Int): String = {
-        if (trimToParserDemand) helpers.takeCodePoints(s, amountOfInputParserWanted)
-        else s
+            cs.slice(0, idx).toString
+        case cs => cs.takeWhile(!_.isWhitespace).mkString
     }
 }
 // $COVERAGE-ON$

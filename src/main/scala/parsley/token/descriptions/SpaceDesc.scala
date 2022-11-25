@@ -25,14 +25,10 @@ final case class SpaceDesc (commentStart: String,
                             space: CharPredicate,
                             whitespaceIsContextDependent: Boolean) {
     private [token] lazy val supportsComments = {
-        val on = (commentStart.nonEmpty && commentEnd.nonEmpty) || commentLine.nonEmpty
-        if (on && commentStart.nonEmpty && commentLine.startsWith(commentStart)) {
-            // $COVERAGE-OFF$
-            throw new IllegalArgumentException( // scalastyle:ignore throw
-                "multi-line comments which are a valid prefix of a single-line comment are not allowed as this causes ambiguity in the parser"
-            )
-            // $COVERAGE-ON$
-        }
+        require(commentStart.nonEmpty == commentEnd.nonEmpty, "multi-line comments must describe both start and end")
+        val on = commentStart.nonEmpty || commentLine.nonEmpty
+        require(commentStart.isEmpty || commentLine.isEmpty || !commentLine.startsWith(commentStart),
+                "multi-line comments which are a valid prefix of a single-line comment are not allowed as this causes ambiguity in the parser")
         on
     }
 }

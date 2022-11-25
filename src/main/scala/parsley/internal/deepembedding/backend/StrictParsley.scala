@@ -286,7 +286,7 @@ private [deepembedding] object StrictParsley {
     private def tco(instrs: Array[Instr], labelMapping: Array[Int], retLocs: List[RetLoc]): Unit = {
         for (label <- retLocs) {
             val retLoc = labelMapping(label)
-            assume(instrs(retLoc) eq instructions.Return, "return locations are actually `Return`s")
+            assert(instrs(retLoc) eq instructions.Return, "return locations are actually `Return`s")
             instrs(retLoc-1) match {
                 case instr: instructions.Call => instrs(retLoc-1) = new instructions.Jump(instr.label)
                 case _ =>

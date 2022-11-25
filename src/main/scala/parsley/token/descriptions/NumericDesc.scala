@@ -63,9 +63,7 @@ object ExponentDesc {
                                base: Int,
                                positiveSign: PlusSignPresence
                               ) extends ExponentDesc {
-        // $COVERAGE-OFF$
-        if (chars.isEmpty) throw new IllegalArgumentException("The characters used for floating point exponents must not be empty") // scalastyle:ignore throw
-        // $COVERAGE-ON$
+        require(chars.nonEmpty, "The characters used for floating point exponents must not be empty")
     }
 }
 
@@ -145,7 +143,6 @@ final case class NumericDesc (literalBreakChar: BreakCharDesc,
                              ) {
     private def boolToInt(x: Boolean): Int = if (x) 1 else 0
 
-    // $COVERAGE-OFF$
     locally {
         val intHex = boolToInt(integerNumbersCanBeHexadecimal)
         val intOct = boolToInt(integerNumbersCanBeOctal)
@@ -160,17 +157,14 @@ final case class NumericDesc (literalBreakChar: BreakCharDesc,
         val emptyBin = boolToInt(binaryLeads.isEmpty)
         val numEmptyInt = intHex * emptyHex + intOct * emptyOct + intBin * emptyBin
         val numEmptyReal =  realHex * emptyHex + realOct * emptyOct + realBin * emptyBin
-        if (numEmptyInt > 1 || numEmptyReal > 1) {
-            val msg = "More than one of hexadecimal, octal, or binary do not use a prefix in integer or real numbers, this is not allowed as it is ambiguous"
-            throw new IllegalArgumentException(msg) // scalastyle:ignore throw
-        }
 
-        if (numEmptyInt + numEmptyReal > 0 && leadingZerosAllowed) {
-            val msg = "One of hexadecimal, octal, or binary do not use a prefix, so decimal numbers must not allow for leading zeros as it is ambiguous"
-            throw new IllegalArgumentException(msg) // scalastyle:ignore throw
-        }
+        require(numEmptyInt <= 1 && numEmptyReal <= 1,
+                "More than one of hexadecimal, octal, or binary do not use a prefix in integer or real numbers, this is not allowed as it is ambiguous")
+
+        require(numEmptyInt + numEmptyReal == 0 || !leadingZerosAllowed,
+                "One of hexadecimal, octal, or binary do not use a prefix, so decimal numbers must not allow for leading zeros as it is ambiguous")
     }
-    // $COVERAGE-ON$
+
 
     private [token] def exponentDescForRadix(x: Int): ExponentDesc = (x: @unchecked) match {
         case 10 => decimalExponentDesc

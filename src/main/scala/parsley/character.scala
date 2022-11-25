@@ -187,7 +187,10 @@ object character {
       *       natural. However, input '''will''' still be consumed for purposes of backtracking.
       * @group string
       */
-    def string(s: String): Parsley[String] = new Parsley(new singletons.StringTok(s, None))
+    def string(s: String): Parsley[String] = {
+        require(s.nonEmpty, "`string` may not be passed the empty string (`string(\"\")` is meaningless, perhaps you meant `pure(\"\")`?)")
+        new Parsley(new singletons.StringTok(s, None))
+    }
 
     /** $oneOf
       *
