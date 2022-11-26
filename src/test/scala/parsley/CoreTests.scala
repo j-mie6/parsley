@@ -357,7 +357,7 @@ class CoreTests extends ParsleyTest {
         (fishySkipMany *> 'b').parse("aaaaaab") shouldBe Success('b')
     }
 
-    // TODO: not sure why this test is commented out?
+    // This is commented out because it was breaking on scala-js
     /*they should "not occur with very large parsers either" in {
         import parsley.combinator
         val p = combinator.exactly(12000, 'a')

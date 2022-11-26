@@ -273,7 +273,6 @@ private [machine] final class ClassicUnexpectedError(val offset: Int, val line: 
         builder.updateUnexpected(unexpected)
     }
 }
-// TODO: use caret width
 private [machine] final class ClassicFancyError(val offset: Int, val line: Int, val col: Int, caretWidth: Int, val msgs: String*) extends FancyDefuncError {
     override final val flags = DefuncError.ExpectedEmptyMask
     override def makeFancy(builder: FancyErrorBuilder): Unit = {
