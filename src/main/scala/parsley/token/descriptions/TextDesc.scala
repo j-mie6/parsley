@@ -100,6 +100,14 @@ final case class EscapeDesc (escBegin: Char,
                              emptyEscape: Option[Char],
                              gapsSupported: Boolean,
                             ) {
+    locally {
+        val multiKeys = multiMap.keySet
+        val singleKeys = singleMap.keySet
+        require(multiKeys.forall(_.nonEmpty), "empty strings cannot be escape sequences")
+        val litAndSingle = literals & singleKeys
+        val litSingleAndMulti = (literals | singleKeys).map(c => s"$c") & multiKeys
+        require(litAndSingle.isEmpty && litSingleAndMulti.isEmpty, "there can be no overlap between literals, singleMap, and multiMap")
+    }
     // TODO: this needs to be a Radix, I think we'll need parsley.collection.immutable.Radix too
     private [token] val escMap = multiMap ++ literals.map(c => s"$c" -> c.toInt) ++ singleMap.map {
         case (k, v) => s"$k" -> v
@@ -198,7 +206,10 @@ final case class TextDesc (escapeSequences: EscapeDesc,
                            characterLiteralEnd: Char,
                            stringEnds: Set[String],
                            multiStringEnds: Set[String],
-                           graphicCharacter: CharPredicate)
+                           graphicCharacter: CharPredicate) {
+    require(stringEnds.forall(_.nonEmpty), "string ends cannot be empty")
+    require(multiStringEnds.forall(_.nonEmpty), "multiline string ends cannot be empty")
+}
 
 /** This object contains any preconfigured text definitions.
   *

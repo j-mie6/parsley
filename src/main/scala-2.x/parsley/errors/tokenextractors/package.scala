@@ -11,5 +11,6 @@ package parsley.errors
   * that are wider than a single 16-bit character.
   *
   * @since 4.0.0
+  * @group token
   */
 package object tokenextractors

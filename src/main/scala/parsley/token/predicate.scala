@@ -7,11 +7,13 @@ import parsley.Parsley, Parsley.empty
 import parsley.character.{satisfy, satisfyUtf16}
 import parsley.exceptions.ParsleyException
 
-/** TODO:
+/** This module contains functionality to describe character predicates, which can
+  * be used to determine what characters are valid for different tokens.
+  *
   * @since 4.0.0
   */
 object predicate {
-    /** TODO:
+    /** Base class for character predicates.
       * @since 4.0.0
       */
     sealed abstract class CharPredicate {
@@ -22,7 +24,16 @@ object predicate {
         private [token] def endsWith(s: String): Boolean
     }
 
-    /** TODO:
+    /** More generic character predicate, which reads any unicode codepoint.
+      *
+      * Full unicode characters can be up to 24-bits, which is handled by a
+      * 32-bit number on the JVM. This predicate can be used, therefore, to
+      * handle any single unicode codepoint: this excludes multi-codepoint
+      * characters like flags, or modified emojis.
+      *
+      * In Scala, characters can be upcast to integers, so still can be used
+      * in the description of this predicate.
+      *
       * @since 4.0.0
       */
     final case class Unicode(predicate: Int => Boolean) extends CharPredicate {
@@ -33,7 +44,11 @@ object predicate {
         private [token] def endsWith(s: String) = s.nonEmpty && predicate(s.codePointBefore(s.length))
     }
 
-    /** TODO:
+    /** Basic character predicate, which reads regular Scala 16-bit characters.
+      *
+      * This predicate is only capable of recognising characters within the
+      * Basic Multilingual Plane.
+      *
       * @since 4.0.0
       */
     final case class Basic(predicate: Char => Boolean) extends CharPredicate {
@@ -47,7 +62,8 @@ object predicate {
         private [token] def endsWith(s: String) = s.lastOption.exists(predicate)
     }
 
-    /** TODO:
+    /** Character predicate that never succeeds.
+      *
       * @since 4.0.0
       */
     case object NotRequired extends CharPredicate {
