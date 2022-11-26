@@ -766,7 +766,7 @@ class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.
                 )
                 // $COVERAGE-ON$
             }
-            wsImpl.put(_whiteSpace)
+            wsImpl.put(configuredWhiteSpace)
         }
 
         /** This combinator changes how whitespace is parsed by lexemes for the duration of
@@ -797,30 +797,27 @@ class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.
             wsImpl.rollback(wsImpl.local(whiteSpace(newSpace))(within))
         }
 
-        private def _whiteSpace: Parsley[Unit] = whiteSpace(desc.spaceDesc.space)
-
-        /** TODO:
+        /** This parser skips '''zero''' or more (insignificant) whitespace characters as well as comments.
+          *
+          * The implementation of this parser depends on whether `whitespaceIsContextDependent` is
+          * set: when it is, this parser may change based on the use of the `alter` combinator.
+          * This parser will always use the `hide` combinator as to not appear as a valid alternative
+          * in an error message: it's likely always the case whitespace can be added at any given time,
+          * but that doesn't make it a ''useful'' suggestion unless it is significant.
           *
           * @since 4.0.0
           */
         val whiteSpace: Parsley[Unit] = {
-            if (desc.spaceDesc.whitespaceIsContextDependent) wsImpl.get.flatten
-            else _whiteSpace
+            if (desc.spaceDesc.whitespaceIsContextDependent) wsImpl.get.flatten.hide
+            else configuredWhiteSpace
         }
 
-        private [Lexer] def whiteSpace(impl: CharPredicate): Parsley[Unit] = impl match {
-            case NotRequired => skipComments
-            case Basic(ws) => new Parsley(new singletons.WhiteSpace(ws, desc.spaceDesc.commentStart, desc.spaceDesc.commentEnd,
-                                                                        desc.spaceDesc.commentLine, desc.spaceDesc.nestedComments)).hide
-            case Unicode(ws) if desc.spaceDesc.supportsComments =>
-                skipMany(attempt(new Parsley(new singletons.Comment(desc.spaceDesc.commentStart,
-                                                                    desc.spaceDesc.commentEnd,
-                                                                    desc.spaceDesc.commentLine,
-                                                                    desc.spaceDesc.nestedComments))) <|> satisfyUtf16(ws)).hide
-            case Unicode(ws) => skipMany(satisfyUtf16(ws)).hide
-        }
-
-        /** TODO:
+        /** This parser skips '''zero''' or more comments.
+          *
+          * The implementation of this combinator does not vary with `whitespaceIsContextDependent`.
+          * It will use the `hide` combinator as to not appear as a valid alternative in an error
+          * message: adding a comment is often legal, but not a ''useful'' solution for how to make
+          * the input syntactically valid.
           *
           * @since 4.0.0
           */
@@ -830,6 +827,19 @@ class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.
                 new Parsley(new singletons.SkipComments(desc.spaceDesc.commentStart, desc.spaceDesc.commentEnd,
                                                         desc.spaceDesc.commentLine,  desc.spaceDesc.nestedComments)).hide
             }
+        }
+
+        private def configuredWhiteSpace: Parsley[Unit] = whiteSpace(desc.spaceDesc.space)
+        private def whiteSpace(impl: CharPredicate): Parsley[Unit] = impl match {
+            case NotRequired => skipComments
+            case Basic(ws) => new Parsley(new singletons.WhiteSpace(ws, desc.spaceDesc.commentStart, desc.spaceDesc.commentEnd,
+                                                                        desc.spaceDesc.commentLine, desc.spaceDesc.nestedComments)).hide
+            case Unicode(ws) if desc.spaceDesc.supportsComments =>
+                skipMany(attempt(new Parsley(new singletons.Comment(desc.spaceDesc.commentStart,
+                                                                    desc.spaceDesc.commentEnd,
+                                                                    desc.spaceDesc.commentLine,
+                                                                    desc.spaceDesc.nestedComments))) <|> satisfyUtf16(ws)).hide
+            case Unicode(ws) => skipMany(satisfyUtf16(ws)).hide
         }
     }
 }
