@@ -486,23 +486,87 @@ class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.
           * @since 4.0.0
           */
         object enclosing {
-            /** TODO:
+            /** This combinator parses a `p` enclosed within parentheses.
               *
+              * First parse an open parenthesis, any whitespace, then parse, `p`, producing `x`. Finally, parse a closing parenthesis and any whitespace.
+              * If all three parts succeeded, then return `x`. If any of them failed, this combinator fails.
+              *
+              * @example {{{
+              * scala> ...
+              * scala> val p = lexer.nonlexeme.enclosing.parens(int)
+              * scala> p.parse("( 5)")
+              * val res0 = Success(5)
+              * scala> p.parse("(5")
+              * val res1 = Failure(...)
+              * scala> p.parse("5)")
+              * val res2 = Failure(...)
+              * }}}
+              *
+              * @param p the parser to parse between parentheses.
+              * @return a parser that reads an open parenthesis, then `p`, then a closing parenthesis and returns the result of `p`.
               * @since 4.0.0
               */
             def parens[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, symbol.openParen, symbol.closingParen, "parentheses")
-            /** TODO:
+            /** This combinator parses a `p` enclosed within braces.
               *
+              * First parse an open brace, any whitespace, then parse, `p`, producing `x`. Finally, parse a closing brace and any whitespace.
+              * If all three parts succeeded, then return `x`. If any of them failed, this combinator fails.
+              *
+              * @example {{{
+              * scala> ...
+              * scala> val p = lexer.nonlexeme.enclosing.braces(int)
+              * scala> p.parse("{ 5}")
+              * val res0 = Success(5)
+              * scala> p.parse("{5")
+              * val res1 = Failure(...)
+              * scala> p.parse("5}")
+              * val res2 = Failure(...)
+              * }}}
+              *
+              * @param p the parser to parse between parentheses.
+              * @return a parser that reads an open brace, then `p`, then a closing brace and returns the result of `p`.
               * @since 4.0.0
               */
             def braces[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, symbol.openBrace, symbol.closingBrace, "braces")
-            /** TODO:
+            /** This combinator parses a `p` enclosed within angle brackets.
               *
+              * First parse an open bracket, any whitespace, then parse, `p`, producing `x`. Finally, parse a closing bracket and any whitespace.
+              * If all three parts succeeded, then return `x`. If any of them failed, this combinator fails.
+              *
+              * @example {{{
+              * scala> ...
+              * scala> val p = lexer.nonlexeme.enclosing.brackets(int)
+              * scala> p.parse("< 5>")
+              * val res0 = Success(5)
+              * scala> p.parse("<5")
+              * val res1 = Failure(...)
+              * scala> p.parse("5>")
+              * val res2 = Failure(...)
+              * }}}
+              *
+              * @param p the parser to parse between parentheses.
+              * @return a parser that reads an open bracket, then `p`, then a closing bracket and returns the result of `p`.
               * @since 4.0.0
               */
             def angles[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, symbol.openAngle, symbol.closingAngle, "angle brackets")
-            /** TODO:
+            /** This combinator parses a `p` enclosed within square brackets.
               *
+              * First parse an open bracket, any whitespace, then parse, `p`, producing `x`. Finally, parse a closing bracket and any whitespace.
+              * If all three parts succeeded, then return `x`. If any of them failed, this combinator fails.
+              *
+              * @example {{{
+              * scala> ...
+              * scala> val p = lexer.nonlexeme.enclosing.brackets(int)
+              * scala> p.parse("[ 5]")
+              * val res0 = Success(5)
+              * scala> p.parse("[5")
+              * val res1 = Failure(...)
+              * scala> p.parse("5]")
+              * val res2 = Failure(...)
+              * }}}
+              *
+              * @param p the parser to parse between parentheses.
+              * @return a parser that reads an open bracket, then `p`, then a closing bracket and returns the result of `p`.
               * @since 4.0.0
               */
             def brackets[A](p: =>Parsley[A]): Parsley[A] = enclosing(p, symbol.openSquare, symbol.closingSquare, "square brackets")
