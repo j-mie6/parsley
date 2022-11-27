@@ -21,9 +21,7 @@ object NumberOfDigits {
       * @since 4.0.0
       */
     final case class AtMost(n: Int) extends NumberOfDigits {
-        // $COVERAGE-OFF$
-        if (n <= 0) throw new IllegalArgumentException("AtMost may only be passed a number of digits greater than 0") // scalastyle:ignore throw
-        // $COVERAGE-ON$
+        require(n > 0, "AtMost may only be passed a number of digits greater than 0")
     }
     /** The number of digits in the literal must be one of the given values.
       *
@@ -33,7 +31,7 @@ object NumberOfDigits {
       */
     final case class Exactly(n0: Int, ns: Int*) extends NumberOfDigits {
         require(n0 > 0, "Exactly may only be passed a number of digits greater than 0")
-        require(ns.forall(_ > 0), "Exactly may only be passed a number of digits greater than 0") // scalastyle:ignore throw
+        require(ns.forall(_ > 0), "Exactly may only be passed a number of digits greater than 0")
     }
     /** There is no limit on the number of digits that may appear in this sequence.
       *
@@ -112,6 +110,7 @@ final case class EscapeDesc (escBegin: Char,
     private [token] val escMap = multiMap ++ literals.map(c => s"$c" -> c.toInt) ++ singleMap.map {
         case (k, v) => s"$k" -> v
     }
+    require(escMap.forall(kv => Character.isValidCodePoint(kv._2)), "Escape characters cannot map to invalid characters")
 }
 /** This object contains default implementations of the `EscapeDesc` class, which align with
   * different languages or styles.

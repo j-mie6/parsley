@@ -28,6 +28,7 @@ abstract class Names private[token] {
     def identifier: Parsley[String]
     /** TODO:
       *
+      * @param startChar
       * @note $disclaimer
       * @since 4.0.0
       */
@@ -40,6 +41,8 @@ abstract class Names private[token] {
     def userDefinedOperator: Parsley[String]
     /** TODO:
       *
+      * @param startChar
+      * @param endChar
       * @note $disclaimer
       * @since 4.0.0
       */

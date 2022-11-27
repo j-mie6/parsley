@@ -63,7 +63,7 @@ private [token] class Escape(desc: EscapeDesc) {
                     case (x, Some(y), exp) => (x * BigInt(radix).pow(exp - digits) + y) // digits is removed here, because it's been added before the get
                 }
         }
-        val (m :: ms) = (n :: ns).sorted
+        val (m :: ms) = (n :: ns).sorted // make this a precondition of the description?
         go(m, m, ms)
     }
 
