@@ -101,14 +101,18 @@ class SpaceTests extends ParsleyTest {
 
     val basicLineEOF = basicLine.copy(commentLineAllowsEOF = true)
     val basicLineNoEOF = basicLine.copy(commentLineAllowsEOF = false)
-    
-    it should "allow for line comments to end in EOF" in cases(makeSpace(basicLineEOF).whiteSpace) (
-        "--hello world" -> Some(())
-    )
+    val basicMixedEOF = basicMixed.copy(commentLineAllowsEOF = true)
+    val basicMixedNoEOF = basicMixed.copy(commentLineAllowsEOF = false)
 
-    it should "or not allow EOF" in cases(makeSpace(basicLineNoEOF).whiteSpace) (
-        "--hello world" -> None
-    )
+    it should "allow for line comments to end in EOF" in {
+        cases(makeSpace(basicLineEOF).whiteSpace)("--hello world" -> Some(()))
+        cases(makeSpace(basicMixedEOF).whiteSpace)("#hello world" -> Some(()))
+    }
+
+    it should "or not allow EOF" in {
+        cases(makeSpace(basicLineNoEOF).whiteSpace)("--hello world" -> None)
+        cases(makeSpace(basicMixedNoEOF).whiteSpace)("--hello world" -> None)
+    }
 
     it should "parse nested comments when applicable" in pending
     it should "not parse nested comments when applicable" in pending
