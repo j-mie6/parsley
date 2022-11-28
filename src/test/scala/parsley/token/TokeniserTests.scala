@@ -7,7 +7,7 @@ import Predef.{ArrowAssoc => _, _}
 
 import parsley._
 import Parsley.col
-import parsley.character.{letterOrDigit, letter, whitespace, oneOf => inSet}
+import parsley.character.{letterOrDigit, letter, whitespace, string, oneOf => inSet}
 import parsley.implicits.character.charLift
 import parsley.combinator.eof
 
@@ -42,7 +42,73 @@ class TokeniserTests extends ParsleyTest {
     val tokeniser = new token.Lexer(scala)
     val tokeniser_ = new token.Lexer(scala_)
 
-    // TODO: separators, enclosing, space, fully
+    "semiSep" should "parse semi-colon separated values" in cases(tokeniser.lexeme.separators.semiSep(string("aa"))) (
+        "" -> Some(Nil),
+        "aa" -> Some(List("aa")),
+        "aa; aa;aa" -> Some(List("aa", "aa", "aa")),
+        "aa;" -> None,
+    )
+
+    "semiSep1" should "parse semi-colon separated values" in cases(tokeniser.lexeme.separators.semiSep1(string("aa"))) (
+        "" -> None,
+        "aa" -> Some(List("aa")),
+        "aa; aa;aa" -> Some(List("aa", "aa", "aa")),
+        "aa;" -> None,
+    )
+
+    "commaSep" should "parse comma separated values" in cases(tokeniser.lexeme.separators.commaSep(string("aa"))) (
+        "" -> Some(Nil),
+        "aa" -> Some(List("aa")),
+        "aa, aa,aa" -> Some(List("aa", "aa", "aa")),
+        "aa," -> None,
+    )
+
+    "commaSep1" should "parse comma separated values" in cases(tokeniser.lexeme.separators.commaSep1(string("aa"))) (
+        "" -> None,
+        "aa" -> Some(List("aa")),
+        "aa, aa,aa" -> Some(List("aa", "aa", "aa")),
+        "aa," -> None,
+    )
+
+    "parens" should "parse values within parentheses" in cases(tokeniser.lexeme.enclosing.parens(string("aa"))) (
+        "" -> None,
+        "( aa)" -> Some("aa"),
+        "(aa)  " -> Some("aa"),
+        "(aa" -> None,
+        "aa)" -> None,
+        "((aa)" -> None,
+        "{aa}" -> None,
+    )
+
+    "braces" should "parse values within braces" in cases(tokeniser.lexeme.enclosing.braces(string("aa"))) (
+        "" -> None,
+        "{ aa}" -> Some("aa"),
+        "{aa}  " -> Some("aa"),
+        "{aa" -> None,
+        "aa}" -> None,
+        "{{aa}" -> None,
+        "(aa)" -> None,
+    )
+
+    "angles" should "parse values within angle brackets" in cases(tokeniser.lexeme.enclosing.angles(string("aa"))) (
+        "" -> None,
+        "< aa>" -> Some("aa"),
+        "<aa>  " -> Some("aa"),
+        "<aa" -> None,
+        "aa>" -> None,
+        "<<aa>" -> None,
+        "(aa)" -> None,
+    )
+
+    "brackets" should "parse values within square brackets" in cases(tokeniser.lexeme.enclosing.brackets(string("aa"))) (
+        "" -> None,
+        "[ aa]" -> Some("aa"),
+        "[aa]  " -> Some("aa"),
+        "[aa" -> None,
+        "aa]" -> None,
+        "[[aa]" -> None,
+        "(aa)" -> None,
+    )
 
     "naturalOrFloat" should "parse either naturals or unsigned floats" in {
         tokeniser.lexeme.numeric.unsignedCombined.number.parse("3.142  /*what a sick number am I right*/") should be (Success(Right(3.142)))
@@ -79,77 +145,5 @@ class TokeniserTests extends ParsleyTest {
         tokeniser.lexeme.numeric.signedCombined.number.parse("0x340") should be (Success(Left(0x340)))
         tokeniser.lexeme.numeric.signedCombined.number.parse("0xFF") should be (Success(Left(0xFF)))
         tokeniser.lexeme.numeric.signedCombined.number.parse("0o201 //ooh, octal") should be (Success(Left(129)))
-    }
-
-    "skipComments" should "parse single-line comments" in {
-        (tokeniser.space.skipComments <* eof).parse("// hello world!") should be (Success(()))
-        (tokeniser.space.skipComments *> '\n' *> 'a').parse("// hello world!\na") should be (Success('a'))
-    }
-    it should "parse multi-line comments" in {
-        (tokeniser.space.skipComments <* eof).parse("/* hello *w/orld!*/") should be (Success(()))
-        (tokeniser.space.skipComments *> 'a').parse("/* hello *w/orld!*/a") should be (Success('a'))
-        (tokeniser.space.skipComments *> '\n' *> 'a').parse("/* hello world!*///another comment\na") should be (Success('a'))
-    }
-    it should "parse nested comments when applicable" in {
-        (tokeniser.space.skipComments <* eof).parse("/*/*hello world*/ this /*comment*/ is nested*/") should be (Success(()))
-        (tokeniser.space.skipComments <* eof).parse("/*/*hello world*/ this /*comment is nested*/") shouldBe a [Failure[_]]
-    }
-    it should "not parse nested comments when applicable" in {
-        (tokeniser_.space.skipComments <* eof).parse("/*/*hello world*/ this /*comment*/ is nested*/") shouldBe a [Failure[_]]
-        (tokeniser_.space.skipComments <* eof).parse("/*/*hello world this /*comment is nested*/") should be (Success(()))
-    }
-    it should "do nothing with no comments" in {
-        (tokeniser.space.skipComments).parse("aaa") should be (Success(()))
-        (tokeniser_.space.skipComments).parse("aaa") should be (Success(()))
-        val lang = desc.LexicalDesc.plain.copy(spaceDesc = desc.SpaceDesc.plain.copy(
-                commentLine = "--",
-                commentStart = "{-", // no shared prefix with the single line
-                commentEnd = "-}"
-            ))
-        val tokeniser__ = new token.Lexer(lang)
-        tokeniser__.space.skipComments.parse("aaa") should be (Success(()))
-    }
-
-    "whiteSpace" should "parse all whitespace" in {
-        (tokeniser.space.whiteSpace <* eof).parse(" \n\t \r\n ") should not be a [Failure[_]]
-    }
-    it should "parse comments interleaved with spaces" in {
-        (tokeniser.space.whiteSpace <* eof).parse("/*this comment*/ /*is spaced out*/\n//by whitespace!\n ") should not be a [Failure[_]]
-    }
-    it must "be the same regardless of the intrinsic" in {
-        (tokeniser.space.whiteSpace <* eof).parse(" \n\t \r\n ") should equal {
-            (tokeniser_.space.whiteSpace <* eof).parse(" \n\t \r\n ")
-        }
-        (tokeniser.space.whiteSpace <* eof).parse("/*this comment*/ /*is spaced out*/\n//by whitespace!\n ") should equal {
-            (tokeniser_.space.whiteSpace <* eof).parse("/*this comment*/ /*is spaced out*/\n//by whitespace!\n ")
-        }
-    }
-    it should "work correctly with unicode definition of space" in {
-        val spaceP = token.predicate.Unicode(Character.isWhitespace)
-        val lexer3 = new token.Lexer(desc.LexicalDesc.plain.copy(spaceDesc = desc.SpaceDesc.plain.copy(commentLine = "//", commentStart = "/*", commentEnd = "*/", space = spaceP)))
-        cases(lexer3.space.whiteSpace *> 'a')(
-            "a" -> Some('a'),
-            "   a" -> Some('a'),
-            "/*hello*/ a" -> Some('a'),
-            "// hello a" -> None,
-            "// hello\na" -> Some('a'),
-            "// hello\n// hi\n/*hey*/  a" -> Some('a'),
-            "/*a" -> None,
-        )
-    }
-
-    "comments" should "not aggressively eat everything" in {
-        val lexer1 = new token.Lexer(desc.LexicalDesc.plain.copy(spaceDesc = desc.SpaceDesc.plain.copy(commentLine = "//", space = token.predicate.NotRequired)))
-        val lexer2 = new token.Lexer(desc.LexicalDesc.plain.copy(spaceDesc = desc.SpaceDesc.plain.copy(commentStart = "/*", commentEnd = "*/", space = token.predicate.NotRequired)))
-        val lexer3 = new token.Lexer(desc.LexicalDesc.plain.copy(spaceDesc = desc.SpaceDesc.plain.copy(commentLine = "//", commentStart = "/*", commentEnd = "*/", space = token.predicate.NotRequired)))
-        (lexer1.space.whiteSpace *> 'a').parse("a") shouldBe a [Success[_]]
-        (lexer2.space.whiteSpace *> 'a').parse("a") shouldBe a [Success[_]]
-        (lexer3.space.whiteSpace *> 'a').parse("a") shouldBe a [Success[_]]
-    }
-
-    "issue #199" should "not regress: whitespace should work without comments defined" in {
-        val lang = desc.LexicalDesc.plain.copy(spaceDesc = desc.SpaceDesc.plain.copy(space = token.predicate.Basic(_.isWhitespace)))
-        val lexer = new token.Lexer(lang)
-        lexer.space.whiteSpace.parse("[") shouldBe a [Success[_]]
     }
 }

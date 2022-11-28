@@ -3,7 +3,7 @@
  */
 package parsley.token.descriptions
 
-import parsley.token.predicate.{CharPredicate, NotRequired}
+import parsley.token.predicate.{CharPredicate, Unicode}
 
 /** This class describes how whitespace should be handled lexically.
   *
@@ -37,8 +37,8 @@ final case class SpaceDesc (commentStart: String,
   * @since 4.0.0
   */
 object SpaceDesc {
-    /** The plain definition of space, with no comments, no nested comments, and no space.
+    /** The plain definition of space, with no comments, no nested comments, and any unicode space character.
       * @since 4.0.0
       */
-    val plain = SpaceDesc("", "", "", true, false, NotRequired, false)
+    val plain = SpaceDesc("", "", "", true, false, Unicode(Character.isWhitespace), false)
 }
