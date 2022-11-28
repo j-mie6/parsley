@@ -12,18 +12,28 @@ import parsley.internal.errors.{ExpectDesc, UnexpectDesc}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 
-private [instructions] abstract class CommentLexer(start: String, end: String, line: String, nested: Boolean) extends Instr {
+private [instructions] abstract class CommentLexer(start: String, end: String, line: String, nested: Boolean, eofAllowed: Boolean) 
+    extends Instr {
     protected [this] final val lineAllowed = line.nonEmpty
     protected [this] final val multiAllowed = start.nonEmpty && end.nonEmpty
     protected [this] final val endOfComment = Some(ExpectDesc("end of comment"))
 
     assert(!lineAllowed || !multiAllowed || !line.startsWith(start), "multi-line comments may not prefix single-line comments")
 
-    protected final def singleLineComment(ctx: Context): Unit = {
+    protected final def singleLineComment(ctx: Context): Boolean = {
         ctx.fastUncheckedConsumeChars(line.length)
-        while (ctx.moreInput && ctx.nextChar != '\n') {
-            ctx.consumeChar()
+        consumeSingle(ctx)
+    }
+
+    @tailrec private final def consumeSingle(ctx: Context): Boolean = {
+        if (ctx.moreInput) {
+            if (ctx.nextChar != '\n') {
+                ctx.consumeChar()
+                consumeSingle(ctx)
+            }
+            else true
         }
+        else eofAllowed
     }
 
     @tailrec private final def wellNested(ctx: Context, unmatched: Int): Boolean = {
@@ -49,13 +59,16 @@ private [instructions] abstract class CommentLexer(start: String, end: String, l
     }
 }
 
-private [instructions] abstract class WhiteSpaceLike(start: String, end: String, line: String, nested: Boolean) extends CommentLexer(start, end, line, nested) {
+private [instructions] abstract class WhiteSpaceLike(start: String, end: String, line: String, nested: Boolean, eofAllowed: Boolean) 
+    extends CommentLexer(start, end, line, nested, eofAllowed) {
     private [this] final val numCodePointsEnd = end.codePointCount(0, end.length)
     @tailrec private final def singlesOnly(ctx: Context): Unit = {
         spaces(ctx)
-        if (ctx.moreInput && ctx.input.startsWith(line, ctx.offset)) {
-            singleLineComment(ctx)
-            singlesOnly(ctx)
+        if (ctx.moreInput) {
+            val startsSingle = ctx.input.startsWith(line, ctx.offset)
+            if (startsSingle && singleLineComment(ctx)) singlesOnly(ctx)
+            else if (startsSingle) ctx.expectedFail(expected = endOfComment, unexpectedWidth = 1)
+            else ctx.pushAndContinue(())
         }
         else ctx.pushAndContinue(())
     }
@@ -78,11 +91,12 @@ private [instructions] abstract class WhiteSpaceLike(start: String, end: String,
             val startsMulti = ctx.input.startsWith(factoredStart, ctx.offset + sharedPrefix.length)
             if (startsMulti && multiLineComment(ctx)) singlesAndMultis(ctx)
             else if (startsMulti) ctx.expectedFail(expected = endOfComment, numCodePointsEnd)
-            else if (ctx.input.startsWith(factoredLine, ctx.offset + sharedPrefix.length)) {
-                singleLineComment(ctx)
-                singlesAndMultis(ctx)
+            else {
+                val startsLine = ctx.input.startsWith(factoredLine, ctx.offset + sharedPrefix.length)
+                if (startsLine && singleLineComment(ctx)) singlesAndMultis(ctx)
+                else if (startsLine) ctx.expectedFail(expected = endOfComment, unexpectedWidth = 1)
+                else ctx.pushAndContinue(())
             }
-            else ctx.pushAndContinue(())
         }
         else ctx.pushAndContinue(())
     }
@@ -106,7 +120,8 @@ private [instructions] abstract class WhiteSpaceLike(start: String, end: String,
     protected def spaces(ctx: Context): Unit
 }
 
-private [internal] final class TokenComment(start: String, end: String, line: String, nested: Boolean) extends CommentLexer(start, end, line, nested) {
+private [internal] final class TokenComment(start: String, end: String, line: String, nested: Boolean, eofAllowed: Boolean) 
+    extends CommentLexer(start, end, line, nested, eofAllowed) {
     private [this] final val comment = Some(ExpectDesc("comment"))
     private [this] final val openingSize = Math.max(start.codePointCount(0, start.length), line.codePointCount(0, line.length))
 
@@ -132,8 +147,8 @@ private [internal] final class TokenComment(start: String, end: String, line: St
     // $COVERAGE-ON$
 }
 
-private [internal] final class TokenWhiteSpace(ws: Char => Boolean, start: String, end: String, line: String, nested: Boolean)
-    extends WhiteSpaceLike(start, end, line, nested) {
+private [internal] final class TokenWhiteSpace(ws: Char => Boolean, start: String, end: String, line: String, nested: Boolean, eofAllowed: Boolean)
+    extends WhiteSpaceLike(start, end, line, nested, eofAllowed) {
     override def spaces(ctx: Context): Unit = {
         while (ctx.moreInput && ws(ctx.nextChar)) {
             ctx.consumeChar()
@@ -144,7 +159,8 @@ private [internal] final class TokenWhiteSpace(ws: Char => Boolean, start: Strin
     // $COVERAGE-ON$
 }
 
-private [internal] final class TokenSkipComments(start: String, end: String, line: String, nested: Boolean) extends WhiteSpaceLike(start, end, line, nested) {
+private [internal] final class TokenSkipComments(start: String, end: String, line: String, nested: Boolean, eofAllowed: Boolean) 
+    extends WhiteSpaceLike(start, end, line, nested, eofAllowed) {
     override def spaces(ctx: Context): Unit = ()
     // $COVERAGE-OFF$
     override def toString: String = "TokenSkipComments"

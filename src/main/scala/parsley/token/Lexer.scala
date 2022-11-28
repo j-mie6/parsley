@@ -825,7 +825,8 @@ class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.
             if (!desc.spaceDesc.supportsComments) unit
             else {
                 new Parsley(new singletons.SkipComments(desc.spaceDesc.commentStart, desc.spaceDesc.commentEnd,
-                                                        desc.spaceDesc.commentLine,  desc.spaceDesc.nestedComments)).hide
+                                                        desc.spaceDesc.commentLine,  desc.spaceDesc.nestedComments, 
+                                                        desc.spaceDesc.commentLineAllowsEOF)).hide
             }
         }
 
@@ -833,12 +834,14 @@ class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.
         private def whiteSpace(impl: CharPredicate): Parsley[Unit] = impl match {
             case NotRequired => skipComments
             case Basic(ws) => new Parsley(new singletons.WhiteSpace(ws, desc.spaceDesc.commentStart, desc.spaceDesc.commentEnd,
-                                                                        desc.spaceDesc.commentLine, desc.spaceDesc.nestedComments)).hide
+                                                                        desc.spaceDesc.commentLine, desc.spaceDesc.nestedComments, 
+                                                                        desc.spaceDesc.commentLineAllowsEOF)).hide
             case Unicode(ws) if desc.spaceDesc.supportsComments =>
                 skipMany(attempt(new Parsley(new singletons.Comment(desc.spaceDesc.commentStart,
                                                                     desc.spaceDesc.commentEnd,
                                                                     desc.spaceDesc.commentLine,
-                                                                    desc.spaceDesc.nestedComments))) <|> satisfyUtf16(ws)).hide
+                                                                    desc.spaceDesc.nestedComments,
+                                                                    desc.spaceDesc.commentLineAllowsEOF))) <|> satisfyUtf16(ws)).hide
             case Unicode(ws) => skipMany(satisfyUtf16(ws)).hide
         }
     }

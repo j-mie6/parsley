@@ -50,7 +50,7 @@ private [token] class Escape(desc: EscapeDesc) {
 
     private lazy val digitsParsed = parsley.registers.Reg.make[Int]
     private def oneOfExactly(n: Int, ns: List[Int], radix: Int, digit: Parsley[Char]): Parsley[BigInt] = {
-        def go(digits: Int, m: Int, ns: List[Int]): (Parsley[BigInt]) = ns match {
+        def go(digits: Int, m: Int, ns: List[Int]): Parsley[BigInt] = ns match {
             case Nil => exactly(digits, m, radix, digit) <* digitsParsed.put(digits)
             case n :: ns  =>
                 val theseDigits = exactly(digits, m, radix, digit)
