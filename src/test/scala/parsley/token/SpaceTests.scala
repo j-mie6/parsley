@@ -3,12 +3,15 @@ package parsley.token
 import Predef.{ArrowAssoc => _, _}
 
 import parsley.{Success, ParsleyTest}
+import parsley.Parsley.attempt
 
 import descriptions.{SpaceDesc, LexicalDesc}
 import parsley.character.{string, char}
+import parsley.exceptions.UnfilledRegisterException
 
 class SpaceTests extends ParsleyTest {
-    private def makeSpace(space: SpaceDesc) = new Lexer(LexicalDesc.plain.copy(spaceDesc = space)).space
+    private def makeLexer(space: SpaceDesc) = new Lexer(LexicalDesc.plain.copy(spaceDesc = space))
+    private def makeSpace(space: SpaceDesc) = makeLexer(space).space
 
     val basicNoComments = SpaceDesc.plain.copy(space = predicate.Basic(Character.isWhitespace))
     val unicodeNoComments = basicNoComments.copy(space = predicate.Unicode(Character.isWhitespace))
@@ -114,16 +117,98 @@ class SpaceTests extends ParsleyTest {
         cases(makeSpace(basicMixedNoEOF).whiteSpace)("--hello world" -> None)
     }
 
-    it should "parse nested comments when applicable" in pending
-    it should "not parse nested comments when applicable" in pending
+    val basicMultiNested = basicMulti.copy(nestedComments = true)
+    // having the same start and end makes this... weird
+    val basicMixedNested = basicMixed.copy(nestedComments = true, commentStart = "#-", commentEnd = "-#")
 
-    "skipComments" should "parse single-line comments" in pending
-    it should "parse multi-line comments" in pending
-    it should "parse nested comments when applicable" in pending
-    it should "not parse nested comments when applicable" in pending
-    it should "do nothing with no comments" in pending
-    it should "allow for line comments to end in EOF" in pending
-    it should "or not allow EOF" in pending
+    it should "parse nested comments when applicable" in {
+        cases(makeSpace(basicMultiNested).whiteSpace) (
+            "/*/**/" -> None,
+            "/*/**/*/" -> Some(()),
+            "/*/*hello*/world*/" -> Some(())
+        )
+        cases(makeSpace(basicMixedNested).whiteSpace) (
+            "#-#--#" -> None,
+            "#-#--#-#" -> Some(()),
+            "#-#-hello-#world-#" -> Some(())
+        )
+    }
+
+    val basicMultiNonNested = basicMulti.copy(nestedComments = false)
+    val basicMixedNonNested = basicMulti.copy(nestedComments = false)
+
+    it should "not parse nested comments when applicable" in {
+        cases(makeSpace(basicMultiNonNested).whiteSpace) (
+            "/*/**/*/" -> None,
+            "/*/**/" -> Some(()),
+        )
+    }
+
+    "skipComments" should "parse single-line comments" in {
+        cases(makeSpace(basicLine).skipComments <* char('\n')) (
+            "--hello\n" -> Some(()),
+            "--hello--hello" -> None,
+        )
+        cases(makeSpace(unicodeLine).skipComments <* char('\n')) (
+            "--hello\n" -> Some(()),
+            "--hello--hello" -> None,
+        )
+    }
+    it should "parse multi-line comments" in {
+        cases(makeSpace(basicMulti).skipComments) (
+            "/*hello*//*world*/" -> Some(()),
+            "/*hello*/j" -> None,
+            "/**/" -> Some(()),
+            "/*" -> None,
+            "*/" -> None,
+            "/**" -> None,
+        )
+        cases(makeSpace(unicodeMulti).skipComments) (
+            "/*hello*//*world*/" -> Some(()),
+            "/*hello*/j" -> None,
+            "/**/" -> Some(()),
+            "/*" -> None,
+            "*/" -> None,
+            "/**" -> None,
+        )
+    }
+    it should "parse mixed comments" in cases(makeSpace(basicMixed).skipComments *> string("\na")) (
+        "\na" -> Some("\na"),
+        "##ab###hi\na" -> Some("\na"),
+        "##ab\na" -> None,
+    )
+    it should "parse nested comments when applicable" in {
+        cases(makeSpace(basicMultiNested).skipComments) (
+            "/*/**/" -> None,
+            "/*/**/*/" -> Some(()),
+            "/*/*hello*/world*/" -> Some(())
+        )
+        cases(makeSpace(basicMixedNested).skipComments) (
+            "#-#--#" -> None,
+            "#-#--#-#" -> Some(()),
+            "#-#-hello-#world-#" -> Some(())
+        )
+    }
+    it should "not parse nested comments when applicable" in {
+        cases(makeSpace(basicMultiNonNested).skipComments) (
+            "/*/**/*/" -> None,
+            "/*/**/" -> Some(()),
+        )
+    }
+    it should "do nothing with no comments" in {
+        cases(makeSpace(basicMulti).skipComments)("" -> Some(()))
+        cases(makeSpace(basicMixed).skipComments)("" -> Some(()))
+    }
+
+    it should "allow for line comments to end in EOF" in {
+        cases(makeSpace(basicLineEOF).skipComments)("--hello world" -> Some(()))
+        cases(makeSpace(basicMixedEOF).skipComments)("#hello world" -> Some(()))
+    }
+
+    it should "or not allow EOF" in {
+        cases(makeSpace(basicLineNoEOF).skipComments)("--hello world" -> None)
+        cases(makeSpace(basicMixedNoEOF).skipComments)("--hello world" -> None)
+    }
 
     it should "not aggressively eat everything" in {
         val lexer1 = makeSpace(basicCommentsOnly.copy(commentStart = "", commentEnd = ""))
@@ -134,7 +219,75 @@ class SpaceTests extends ParsleyTest {
         (lexer3.skipComments *> char('a')).parse("a") shouldBe a [Success[_]]
     }
 
-    // TODO: alter, init
+    val basicDependent = basicMixed.copy(whitespaceIsContextDependent = true)
 
-    // TODO: fully
+    "context-dependent whitespace" must "be initialised" in {
+        a [UnfilledRegisterException] must be thrownBy {
+            makeSpace(basicDependent).whiteSpace.parse("     ")
+        }
+    }
+
+    "init" should "initialise the space so it can be used" in {
+        noException should be thrownBy {
+            val space = makeSpace(basicDependent)
+            (space.init *> space.whiteSpace).parse("    ")
+        }
+    }
+
+    it should "initialise space to the default space definition" in {
+        val space = makeSpace(basicDependent.copy(space = predicate.Basic(Set('a'))))
+        cases(space.init *> space.whiteSpace)(
+            "aaaaaa" -> Some(()),
+            "aaa##hello##" -> Some(()),
+        )
+    }
+
+    it should "not work if context-dependent whitespace is off" in {
+        an [UnsupportedOperationException] should be thrownBy {
+            makeSpace(basicMixed).init.parse("")
+        }
+    }
+
+    "alter" should "not work if context-dependent whitespace is off" in {
+        an [UnsupportedOperationException] should be thrownBy {
+            makeSpace(basicMixed).alter(predicate.NotRequired)(char('a')).parse("")
+        }
+    }
+
+    it should "temporarily alter how whitespace is parsed" in {
+        val space = makeSpace(basicDependent)
+        cases(space.init *> space.whiteSpace *> space.alter(predicate.Basic(Set('a'))) {
+            char('b') *> space.whiteSpace *> char('b')
+        } *> space.whiteSpace)(
+            "bb" -> Some(()),
+            "   bb   " -> Some(()),
+            "ab" -> None,
+            "  bba" -> None,
+            "  baaaab  " -> Some(()),
+        )
+    }
+
+    it should "not restore old whitespace if the given parser fails having consumed input" in {
+        val space = makeSpace(basicDependent)
+        val p = space.init *> (attempt(space.alter(predicate.Basic(Set('a')))(char('b') *> space.whiteSpace <* char('b'))) <|> char('b') *> space.whiteSpace)
+        cases(p)(
+            "baaab" -> Some(()),
+            "baaaa" -> Some(()),
+            "b    " -> None
+        )
+    }
+
+    "fully" should "parse leading whitespace and ensure eof" in {
+        cases(makeLexer(basicMixed).fully(char('a')), noEof = true)(
+            "    a" -> Some('a'),
+            "    ab" -> None,
+        )
+    }
+
+    it should "initialise dependent whitespace" in {
+        cases(makeLexer(basicDependent).fully(char('a')), noEof = true)(
+            "    a" -> Some('a'),
+            "    ab" -> None,
+        )
+    }
 }

@@ -760,11 +760,9 @@ class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.
           */
         def init: Parsley[Unit] = {
             if (!desc.spaceDesc.whitespaceIsContextDependent) {
-                // $COVERAGE-OFF$
                 throw new UnsupportedOperationException( // scalastyle:ignore throw
                     "Whitespace cannot be initialised unless `spaceDesc.whitespaceIsContextDependent` is true"
                 )
-                // $COVERAGE-ON$
             }
             wsImpl.put(configuredWhiteSpace)
         }
@@ -788,11 +786,9 @@ class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.
           */
         def alter[A](newSpace: CharPredicate)(within: =>Parsley[A]): Parsley[A] = {
             if (!desc.spaceDesc.whitespaceIsContextDependent) {
-                // $COVERAGE-OFF$
                 throw new UnsupportedOperationException( // scalastyle:ignore throw
                     "Whitespace cannot be altered unless `spaceDesc.whitespaceIsContextDependent` is true"
                 )
-                // $COVERAGE-ON$
             }
             wsImpl.rollback(wsImpl.local(whiteSpace(newSpace))(within))
         }
@@ -825,7 +821,7 @@ class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.
             if (!desc.spaceDesc.supportsComments) unit
             else {
                 new Parsley(new singletons.SkipComments(desc.spaceDesc.commentStart, desc.spaceDesc.commentEnd,
-                                                        desc.spaceDesc.commentLine,  desc.spaceDesc.nestedComments, 
+                                                        desc.spaceDesc.commentLine,  desc.spaceDesc.nestedComments,
                                                         desc.spaceDesc.commentLineAllowsEOF)).hide
             }
         }
@@ -834,7 +830,7 @@ class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.
         private def whiteSpace(impl: CharPredicate): Parsley[Unit] = impl match {
             case NotRequired => skipComments
             case Basic(ws) => new Parsley(new singletons.WhiteSpace(ws, desc.spaceDesc.commentStart, desc.spaceDesc.commentEnd,
-                                                                        desc.spaceDesc.commentLine, desc.spaceDesc.nestedComments, 
+                                                                        desc.spaceDesc.commentLine, desc.spaceDesc.nestedComments,
                                                                         desc.spaceDesc.commentLineAllowsEOF)).hide
             case Unicode(ws) if desc.spaceDesc.supportsComments =>
                 skipMany(attempt(new Parsley(new singletons.Comment(desc.spaceDesc.commentStart,

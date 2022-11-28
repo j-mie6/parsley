@@ -275,7 +275,6 @@ object registers {
 
         private [this] var _v: Int = -1
         private [parsley] def addr: Int = {
-            //assert(allocated)
             if (!allocated) throw new UnfilledRegisterException // scalastyle:ignore throw
             _v
         }
