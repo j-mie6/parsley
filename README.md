@@ -20,7 +20,7 @@ import parsley.Parsley, Parsley._
 import parsley.character.{char, string, digit}
 import parsley.implicits.character.{charLift, stringLift}
 
-val hello: Parsley[Unit] = void('h' *> ("ello" <|> "i") *> " world!")
+val hello: Parsley[Unit] = ('h' *> ("ello" <|> "i") *> " world!").void
 hello.parse("hello world!") // returns Success(())
 hello.parse("hi world!") // returns Success(())
 hello.parse("hey world!") // returns a Failure
@@ -35,7 +35,7 @@ For more see [the Wiki](https://github.com/j-mie6/Parsley/wiki)!
 ### What are the differences to Haskell's Parsec?
 Mostly, this library is quite similar. However, due to Scala's differences in operator characters a few operators are changed:
 
-* `(<$>)` is known as `<#>` or `map`
+* `(<$>)` is known as `map`
 * `try` is known as `attempt`
 * `(<$)` and `($>)` are `<#` and `#>` respectively.
 
@@ -59,3 +59,4 @@ If possible, make a self contained example: this will help me to identify the is
 ## References
 * This work is based on my Master's Thesis (2018) which can be found [**here**](https://github.com/J-mie6/Parsley/blob/master/parsley.pdf)
 * This work spawned a paper at the Scala Symposium at ICFP 2018: [**Garnishing Parsec with Parsley**](https://dl.acm.org/doi/abs/10.1145/3241653.3241656)
+* This work supports the patterns introduced at the Scala Symposium in 2022: [**Design Patterns for Parser Combinators in Scala**](https://dl.acm.org/doi/10.1145/3550198.3550427)
