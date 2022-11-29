@@ -22,6 +22,20 @@ import parsley.token.descriptions.numeric.NumericDesc
   *   the exact behaviour of this parser is decided by the implementations given in
   *   `Lexer`, which will depend on user-defined configuration. Please see the
   *   relevant documentation of these specific objects.
+  *
+  * @define bounded1
+  *   This parser will behave the same as
+  *
+  * @define bounded2
+  *   except it will ensure that the resulting `BigInt` is a valid
+  *
+  * @define bounded3
+  *   number. The resulting number will be converted to the given
+  *   type `T`, which must be able to losslessly store the parsed
+  *   value; this is enforced by the constraint on the type. This
+  *   accounts for unsignedness when necessary.
+  *
+  * @define bounded4 the desired type of the result, defaulting to
   */
 abstract class Integer private[token] (private [numeric] val desc: NumericDesc) {
     /** TODO:
@@ -57,125 +71,145 @@ abstract class Integer private[token] (private [numeric] val desc: NumericDesc) 
 
     // $COVERAGE-OFF$
     // It's not so important these are tested, they are just wrappers around the bottom ones
-    /** TODO:
+    /** $bounded1 [[number `number`]] $bounded2 8-bit $bounded3
       *
+      * @tparam T $bounded4 `Byte`
       * @since 4.0.0
       * @note $disclaimer
       */
     @inline final def number8[T: CanHold.can_hold_8_bits]: Parsley[T] = numberBounded(_8)
-    /** TODO:
+    /** $bounded1 [[decimal `decimal`]] $bounded2 8-bit $bounded3
       *
+      * @tparam T $bounded4 `Byte`
       * @since 4.0.0
       * @note $disclaimer
       */
     @inline final def decimal8[T: CanHold.can_hold_8_bits]: Parsley[T] = decimalBounded(_8)
-    /** TODO:
+    /** $bounded1 [[hexadecimal `hexadecimal`]] $bounded2 8-bit $bounded3
       *
+      * @tparam T $bounded4 `Byte`
       * @since 4.0.0
       * @note $disclaimer
       */
     @inline final def hexadecimal8[T: CanHold.can_hold_8_bits]: Parsley[T] = hexadecimalBounded(_8)
-    /** TODO:
+    /** $bounded1 [[octal `octal`]] $bounded2 8-bit $bounded3
       *
+      * @tparam T $bounded4 `Byte`
       * @since 4.0.0
       * @note $disclaimer
       */
     @inline final def octal8[T: CanHold.can_hold_8_bits]: Parsley[T] = octalBounded(_8)
-    /** TODO:
+    /** $bounded1 [[binary `binary`]] $bounded2 8-bit $bounded3
       *
+      * @tparam T $bounded4 `Byte`
       * @since 4.0.0
       * @note $disclaimer
       */
     @inline final def binary8[T: CanHold.can_hold_8_bits]: Parsley[T] = binaryBounded(_8)
 
-    /** TODO:
+    /** $bounded1 [[number `number`]] $bounded2 16-bit $bounded3
       *
+      * @tparam T $bounded4 `Short`
       * @since 4.0.0
       * @note $disclaimer
       */
     @inline final def number16[T: CanHold.can_hold_16_bits]: Parsley[T] = numberBounded(_16)
-    /** TODO:
+    /** $bounded1 [[decimal `decimal`]] $bounded2 16-bit $bounded3
       *
+      * @tparam T $bounded4 `Short`
       * @since 4.0.0
       * @note $disclaimer
       */
     @inline final def decimal16[T: CanHold.can_hold_16_bits]: Parsley[T] = decimalBounded(_16)
-    /** TODO:
+    /** $bounded1 [[hexadecimal `hexadecimal`]] $bounded2 16-bit $bounded3
       *
+      * @tparam T $bounded4 `Short`
       * @since 4.0.0
       * @note $disclaimer
       */
     @inline final def hexadecimal16[T: CanHold.can_hold_16_bits]: Parsley[T] = hexadecimalBounded(_16)
-    /** TODO:
+    /** $bounded1 [[octal `octal`]] $bounded2 16-bit $bounded3
       *
+      * @tparam T $bounded4 `Short`
       * @since 4.0.0
       * @note $disclaimer
       */
     @inline final def octal16[T: CanHold.can_hold_16_bits]: Parsley[T] = octalBounded(_16)
-    /** TODO:
+    /** $bounded1 [[binary `binary`]] $bounded2 16-bit $bounded3
       *
+      * @tparam T $bounded4 `Short`
       * @since 4.0.0
       * @note $disclaimer
       */
     @inline final def binary16[T: CanHold.can_hold_16_bits]: Parsley[T] = binaryBounded(_16)
 
-    /** TODO:
+    /** $bounded1 [[number `number`]] $bounded2 32-bit $bounded3
       *
+      * @tparam T $bounded4 `Int`
       * @since 4.0.0
       * @note $disclaimer
       */
     @inline final def number32[T: CanHold.can_hold_32_bits]: Parsley[T] = numberBounded(_32)
-    /** TODO:
+    /** $bounded1 [[decimal `decimal`]] $bounded2 32-bit $bounded3
       *
+      * @tparam T $bounded4 `Int`
       * @since 4.0.0
       * @note $disclaimer
       */
     @inline final def decimal32[T: CanHold.can_hold_32_bits]: Parsley[T] = decimalBounded(_32)
-    /** TODO:
+    /** $bounded1 [[hexadecimal `hexadecimal`]] $bounded2 32-bit $bounded3
       *
+      * @tparam T $bounded4 `Int`
       * @since 4.0.0
       * @note $disclaimer
       */
     @inline final def hexadecimal32[T: CanHold.can_hold_32_bits]: Parsley[T] = hexadecimalBounded(_32)
-    /** TODO:
+    /** $bounded1 [[octal `octal`]] $bounded2 32-bit $bounded3
       *
+      * @tparam T $bounded4 `Int`
       * @since 4.0.0
       * @note $disclaimer
       */
     @inline final def octal32[T: CanHold.can_hold_32_bits]: Parsley[T] = octalBounded(_32)
-    /** TODO:
+    /** $bounded1 [[binary `binary`]] $bounded2 32-bit $bounded3
       *
+      * @tparam T $bounded4 `Int`
       * @since 4.0.0
       * @note $disclaimer
       */
     @inline final def binary32[T: CanHold.can_hold_32_bits]: Parsley[T] = binaryBounded(_32)
 
-    /** TODO:
+    /** $bounded1 [[number `number`]] $bounded2 64-bit $bounded3
       *
+      * @tparam T $bounded4 `Long`
       * @since 4.0.0
       * @note $disclaimer
       */
     @inline final def number64[T: CanHold.can_hold_64_bits]: Parsley[T] = numberBounded(_64)
-    /** TODO:
+    /** $bounded1 [[decimal `decimal`]] $bounded2 64-bit $bounded3
       *
+      * @tparam T $bounded4 `Long`
       * @since 4.0.0
       * @note $disclaimer
       */
     @inline final def decimal64[T: CanHold.can_hold_64_bits]: Parsley[T] = decimalBounded(_64)
-    /** TODO:
+    /** $bounded1 [[hexadecimal `hexadecimal`]] $bounded2 64-bit $bounded3
       *
+      * @tparam T $bounded4 `Long`
       * @since 4.0.0
       * @note $disclaimer
       */
     @inline final def hexadecimal64[T: CanHold.can_hold_64_bits]: Parsley[T] = hexadecimalBounded(_64)
-    /** TODO:
+    /** $bounded1 [[octal `octal`]] $bounded2 64-bit $bounded3
       *
+      * @tparam T $bounded4 `Long`
       * @since 4.0.0
       * @note $disclaimer
       */
     @inline final def octal64[T: CanHold.can_hold_64_bits]: Parsley[T] = octalBounded(_64)
-    /** TODO:
+    /** $bounded1 [[binary `binary`]] $bounded2 64-bit $bounded3
       *
+      * @tparam T $bounded4 `Long`
       * @since 4.0.0
       * @note $disclaimer
       */

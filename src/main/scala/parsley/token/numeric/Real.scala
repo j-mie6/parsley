@@ -17,6 +17,37 @@ import parsley.errors.combinator.ErrorMethods
   *   the exact behaviour of this parser is decided by the implementations given in
   *   `Lexer`, which will depend on user-defined configuration. Please see the
   *   relevant documentation of these specific objects.
+  *
+  * @define bounded1
+  *   This parser will behave the same as
+  *
+  * @define bounded2Rounded
+  *   except it will round the result to the nearest valid
+  *
+  * @define bounded2Exact
+  *   except it will ensure that the resulting `BigDecimal` is
+  *   an ''exactly'' represented
+  *
+  * @define bounded2Plausible
+  *   except it will ensure that the resulting `BigDecimal` is
+  *   within the maximum bounds of a
+  *
+  * @define bounded3
+  *   IEEE 754 floating point value. The result is then converted
+  *   to a
+  *
+  * @define exact
+  *   the number is considered exact when it can be losslessly
+  *   represented in binary.
+  *
+  * @define plausible
+  *   the validation is performed when the value is within the
+  *   precision range, and rounding to the nearest exact value
+  *   will still occur.
+  *
+  * @define rounded
+  *   if the values are too big or too negatively big, they will
+  *   be rounded to the corresponding infinity.
   */
 abstract class Real private[token] {
     /** TODO:
@@ -52,221 +83,238 @@ abstract class Real private[token] {
 
     // $COVERAGE-OFF$
     // It's not so important these are tested, they are just wrappers around the bottom ones
-    /** TODO:
+    /** $bounded1 [[decimal `decimal`]] $bounded2Rounded `Float`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $rounded
       */
     @inline final def decimalFloatRounded: Parsley[Float] = decimal.map(_.toFloat)
-    /** TODO:
+    /** $bounded1 [[hexadecimal `hexadecimal`]] $bounded2Rounded `Float`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $rounded
       */
     @inline final def hexadecimalFloatRounded: Parsley[Float] = hexadecimal.map(_.toFloat)
-    /** TODO:
+    /** $bounded1 [[octal `octal`]] $bounded2Rounded `Float`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $rounded
       */
     @inline final def octalFloatRounded: Parsley[Float] = octal.map(_.toFloat)
-    /** TODO:
+    /** $bounded1 [[binary `binary`]] $bounded2Rounded `Float`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $rounded
       */
     @inline final def binaryFloatRounded: Parsley[Float] = binary.map(_.toFloat)
-    /** TODO:
+    /** $bounded1 [[number `number`]] $bounded2Rounded `Float`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $rounded
       */
     @inline final def floatRounded: Parsley[Float] = number.map(_.toFloat)
 
-    /** TODO:
+    /** $bounded1 [[decimal `decimal`]] $bounded2Rounded `Double`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $rounded
       */
     @inline final def decimalDoubleRounded: Parsley[Double] = decimal.map(_.toDouble)
-    /** TODO:
+    /** $bounded1 [[hexadecimal `hexadecimal`]] $bounded2Rounded `Double`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $rounded
       */
     @inline final def hexadecimalDoubleRounded: Parsley[Double] = hexadecimal.map(_.toDouble)
-    /** TODO:
+    /** $bounded1 [[octal `octal`]] $bounded2Rounded `Double`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $rounded
       */
     @inline final def octalDoubleRounded: Parsley[Double] = octal.map(_.toDouble)
-    /** TODO:
+    /** $bounded1 [[binary `binary`]] $bounded2Rounded `Double`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $rounded
       */
     @inline final def binaryDoubleRounded: Parsley[Double] = binary.map(_.toDouble)
-    /** TODO:
+    /** $bounded1 [[number `number`]] $bounded2Rounded `Double`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $rounded
       */
     @inline final def doubleRounded: Parsley[Double] = number.map(_.toDouble)
 
-    /** TODO:
+    /** $bounded1 [[decimal `decimal`]] $bounded2Plausible single-precision $bounded3 `Float`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $plausible
       */
     lazy val decimalFloat: Parsley[Float] = ensureFloat(_decimal)
-    /** TODO:
+    /** $bounded1 [[hexadecimal `hexadecimal`]] $bounded2Plausible single-precision $bounded3 `Float`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $plausible
       */
     lazy val hexadecimalFloat: Parsley[Float] = ensureFloat(_hexadecimal)
-    /** TODO:
+    /** $bounded1 [[octal `octal`]] $bounded2Plausible single-precision $bounded3 `Float`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $plausible
       */
     lazy val octalFloat: Parsley[Float] = ensureFloat(_octal)
-    /** TODO:
+    /** $bounded1 [[binary `binary`]] $bounded2Plausible single-precision $bounded3 `Float`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $plausible
       */
     lazy val binaryFloat: Parsley[Float] = ensureFloat(_binary)
-    /** TODO:
+    /** $bounded1 [[number `number`]] $bounded2Plausible single-precision $bounded3 `Float`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $plausible
       */
     lazy val float: Parsley[Float] = ensureFloat(_number)
 
-    /** TODO:
+    /** $bounded1 [[decimal `decimal`]] $bounded2Plausible double-precision $bounded3 `Double`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $plausible
       */
     lazy val decimalDouble: Parsley[Double] = ensureDouble(_decimal)
-    /** TODO:
+    /** $bounded1 [[hexadecimal `hexadecimal`]] $bounded2Plausible double-precision $bounded3 `Double`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $plausible
       */
     lazy val hexadecimalDouble: Parsley[Double] = ensureDouble(_hexadecimal)
-    /** TODO:
+    /** $bounded1 [[octal `octal`]] $bounded2Plausible double-precision $bounded3 `Double`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $plausible
       */
     lazy val octalDouble: Parsley[Double] = ensureDouble(_octal)
-    /** TODO:
+    /** $bounded1 [[binary `binary`]] $bounded2Plausible double-precision $bounded3 `Double`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $plausible
       */
     lazy val binaryDouble: Parsley[Double] = ensureDouble(_binary)
-    /** TODO:
+    /** $bounded1 [[number `number`]] $bounded2Plausible double-precision $bounded3 `Double`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $plausible
       */
     lazy val double: Parsley[Double] = ensureDouble(_number)
-    /** TODO:
+    /** $bounded1 [[decimal `decimal`]] $bounded2Plausible single-precision $bounded3 `Float`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $exact
       */
     lazy val decimalExactFloat: Parsley[Float] = ensureExactFloat(_decimal)
-    /** TODO:
+    /** $bounded1 [[hexadecimal `hexadecimal`]] $bounded2Exact single-precision $bounded3 `Float`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $exact
       */
     lazy val hexadecimalExactFloat: Parsley[Float] = ensureExactFloat(_hexadecimal)
-    /** TODO:
+    /** $bounded1 [[octal `octal`]] $bounded2Exact single-precision $bounded3 `Float`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $exact
       */
     lazy val octalExactFloat: Parsley[Float] = ensureExactFloat(_octal)
-    /** TODO:
+    /** $bounded1 [[binary `binary`]] $bounded2Exact single-precision $bounded3 `Float`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $exact
       */
     lazy val binaryExactFloat: Parsley[Float] = ensureExactFloat(_binary)
-    /** TODO:
+    /** $bounded1 [[number `number`]] $bounded2Exact single-precision $bounded3 `Float`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $exact
       */
     lazy val exactFloat: Parsley[Float] = ensureExactFloat(_number)
 
-    /** TODO:
+    /** $bounded1 [[decimal `decimal`]] $bounded2Exact double-precision $bounded3 `Double`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $exact
       */
     lazy val decimalExactDouble: Parsley[Double] = ensureExactDouble(_decimal)
-    /** TODO:
+    /** $bounded1 [[hexadecimal `hexadecimal`]] $bounded2Exact double-precision $bounded3 `Double`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $exact
       */
     lazy val hexadecimalExactDouble: Parsley[Double] = ensureExactDouble(_hexadecimal)
-    /** TODO:
+    /** $bounded1 [[octal `octal`]] $bounded2Exact double-precision $bounded3 `Double`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $exact
       */
     lazy val octalExactDouble: Parsley[Double] = ensureExactDouble(_octal)
-    /** TODO:
+    /** $bounded1 [[binary `binary`]] $bounded2Exact double-precision $bounded3 `Double`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $exact
       */
     lazy val binaryExactDouble: Parsley[Double] = ensureExactDouble(_binary)
-    /** TODO:
+    /** $bounded1 [[number `number`]] $bounded2Exact double-precision $bounded3 `Double`.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @note $exact
       */
     lazy val exactDouble: Parsley[Double] = ensureExactDouble(_number)
     // $COVERAGE-ON$
 
-    protected [numeric] def ensureFloat(number: Parsley[BigDecimal]): Parsley[Float] = {
-        number.collectMsg(n => Seq(
-                if (n > BigDecimal(Float.MaxValue.toDouble) || n < BigDecimal(Float.MinValue.toDouble)) {
-                     s"literal $n is too large to be an IEEE 754 single-precision float"
-                }
-                else s"literal $n is too small to be an IEEE 754 single-precision float")) {
-            case n if isFloat(n) => n.toFloat
+    private def bad(min: Double, max: Double, precision: String)(n: BigDecimal): Seq[String] = {
+        if (n > BigDecimal(max) || n < BigDecimal(min)) {
+            Seq(s"literal $n is too large to be an IEEE 754 $precision-precision float")
         }
+        else Seq(s"literal $n is too small to be an IEEE 754 $precision-precision float")
     }
 
-    private def isFloat(n: BigDecimal): Boolean = {
-        n == 0.0 || n == -0.0 || {
-            val x = n.toFloat
-            !x.isInfinity && x != 0.0 && x != -0.0
+    protected [numeric] def ensureFloat(number: Parsley[BigDecimal]): Parsley[Float] = {
+        number.collectMsg(bad(Float.MinValue.toDouble, Float.MaxValue.toDouble, "single")(_)) {
+            case n if Real.isFloat(n) => n.toFloat
         }
     }
 
     protected [numeric] def ensureDouble(number: Parsley[BigDecimal]): Parsley[Double] = {
-        number.collectMsg(n => Seq(
-                if (n > BigDecimal(Double.MaxValue) || n < BigDecimal(Double.MinValue)) s"literal $n is too large to be an IEEE 754 double-precision float"
-                else                                                                    s"literal $n is too small to be an IEEE 754 double-precision float")) {
-            case n if isDouble(n) => n.toDouble
-        }
-    }
-
-    private def isDouble(n: BigDecimal): Boolean = {
-        n == 0.0 || n == -0.0 || {
-            val x = n.toDouble
-            !x.isInfinity && x != 0.0 && x != -0.0
+        number.collectMsg(bad(Double.MinValue, Double.MaxValue, "double")(_)) {
+            case n if Real.isDouble(n) => n.toDouble
         }
     }
 
@@ -289,4 +337,20 @@ abstract class Real private[token] {
     protected [numeric] def _binary: Parsley[BigDecimal] = binary
     protected [numeric] def _number: Parsley[BigDecimal] = number
     // $COVERAGE-ON$
+}
+
+private [numeric] object Real {
+    def isDouble(n: BigDecimal): Boolean = {
+        n == 0.0 || n == -0.0 || {
+            val x = n.toDouble
+            !x.isInfinity && x != 0.0 && x != -0.0
+        }
+    }
+
+    def isFloat(n: BigDecimal): Boolean = {
+        n == 0.0 || n == -0.0 || {
+            val x = n.toFloat
+            !x.isInfinity && x != 0.0 && x != -0.0
+        }
+    }
 }
