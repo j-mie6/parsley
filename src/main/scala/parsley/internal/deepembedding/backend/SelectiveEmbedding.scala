@@ -158,6 +158,13 @@ private [deepembedding] final class GuardAgainst[A](val p: StrictParsley[A], pre
     // $COVERAGE-ON$
 }
 
+private [deepembedding] final class UnexpectedWhen[A](val p: StrictParsley[A], pred: PartialFunction[A, String])
+    extends FilterLike[A](x => new Unexpected(pred(x), 0), instructions.UnexpectedWhen(pred), pred.isDefinedAt(_)) {
+    // $COVERAGE-OFF$
+    final override def pretty(p: String): String = s"$p.unexpectedWhen(?)"
+    // $COVERAGE-ON$
+}
+
 private [backend] object Branch {
     val FlipApp = instructions.Lift2[Any, Any => Any, Any]((x, f) => f(x))
 }

@@ -5,10 +5,11 @@ package parsley.internal.machine.instructions
 
 import scala.annotation.tailrec
 
-import parsley.internal.errors.{EndOfInput, ExpectDesc, ExpectItem, ExpectRaw}
+import parsley.internal.errors.{EndOfInput, ExpectDesc, ExpectItem, ExpectRaw, UnexpectDesc}
 import parsley.internal.machine.{Context, Good}
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.{ClassicFancyError, EmptyError, EmptyErrorWithReason}
+import parsley.internal.machine.errors.ClassicUnexpectedError
 
 private [internal] final class Lift2(f: (Any, Any) => Any) extends Instr {
     override def apply(ctx: Context): Unit = {
@@ -202,6 +203,27 @@ private [internal] final class GuardAgainst(pred: PartialFunction[Any, Seq[Strin
 }
 private [internal] object GuardAgainst {
     def apply[A](pred: PartialFunction[A, Seq[String]]): GuardAgainst = new GuardAgainst(pred.asInstanceOf[PartialFunction[Any, Seq[String]]])
+}
+
+private [internal] final class UnexpectedWhen(pred: PartialFunction[Any, String]) extends Instr {
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
+        if (pred.isDefinedAt(ctx.stack.upeek)) {
+            val state = ctx.states
+            val caretWidth = ctx.offset - state.offset
+            ctx.fail(new ClassicUnexpectedError(state.offset, state.line, state.col, None, new UnexpectDesc(pred(ctx.stack.upop()), caretWidth)))
+        }
+        else ctx.inc()
+        ctx.states = ctx.states.tail
+    }
+
+    // $COVERAGE-OFF$
+    override def toString: String = "UnexpectedWhen(?)"
+    // $COVERAGE-ON$
+}
+private [internal] object UnexpectedWhen {
+    def apply[A](pred: PartialFunction[A, String]): UnexpectedWhen = new UnexpectedWhen(pred.asInstanceOf[PartialFunction[Any, String]])
 }
 
 private [internal] object NegLookFail extends Instr {

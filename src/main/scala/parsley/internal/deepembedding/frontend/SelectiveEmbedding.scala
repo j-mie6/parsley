@@ -33,3 +33,6 @@ private [parsley] final class FilterOut[A](p: LazyParsley[A], pred: PartialFunct
 private [parsley] final class GuardAgainst[A](p: LazyParsley[A], pred: PartialFunction[A, Seq[String]]) extends Unary[A, A](p) {
     override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.GuardAgainst(p, pred)
 }
+private [parsley] final class UnexpectedWhen[A](p: LazyParsley[A], pred: PartialFunction[A, String]) extends Unary[A, A](p) {
+    override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.UnexpectedWhen(p, pred)
+}
