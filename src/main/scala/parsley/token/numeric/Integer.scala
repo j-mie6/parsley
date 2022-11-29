@@ -23,46 +23,98 @@ import parsley.token.descriptions.numeric.NumericDesc
   *   `Lexer`, which will depend on user-defined configuration. Please see the
   *   relevant documentation of these specific objects.
   *
-  * @define bounded1
-  *   This parser will behave the same as
-  *
-  * @define bounded2
-  *   except it will ensure that the resulting `BigInt` is a valid
-  *
+  * @define bounded1 This parser will behave the same as
+  * @define bounded2 except it will ensure that the resulting `BigInt` is a valid
   * @define bounded3
   *   number. The resulting number will be converted to the given
   *   type `T`, which must be able to losslessly store the parsed
   *   value; this is enforced by the constraint on the type. This
   *   accounts for unsignedness when necessary.
-  *
   * @define bounded4 the desired type of the result, defaulting to
   */
 abstract class Integer private[token] (private [numeric] val desc: NumericDesc) {
-    /** TODO:
+    /** This parser will parse a single integer literal, which is in decimal form (base 10).
+      *
+      * @example {{{
+      * // using signed integers and standard numeric prefixes
+      * scala> decimal.parse("103")
+      * val res0 = Success(BigInt(103))
+      * scala> decimal.parse("9999999999999999999999999999999999")
+      * val res1 = Success(BigInt(9999999999999999999999999999999999))
+      * scala> decimal.parse("1f")
+      * val res2 = Failure(..) // no hexadecimal digits supported
+      * scala> decimal.parse("0xff")
+      * val res3 = Failure(..) // no hexadecimal literals either
+      * }}}
       *
       * @since 4.0.0
       * @note $disclaimer
       */
     def decimal: Parsley[BigInt]
-    /** TODO:
+    /** This parser will parse a single integer literal, which is in hexadecimal form (base 16).
+      *
+      * @example {{{
+      * // using signed integers and standard numeric prefixes
+      * scala> hexadecimal.parse("0x103")
+      * val res0 = Success(BigInt(259))
+      * scala> hexadecimal.parse("0x9999999999999999999999999999999999")
+      * val res1 = Success(BigInt(0x9999999999999999999999999999999999))
+      * scala> hexadecimal.parse("1f")
+      * val res2 = Failure(..) // no hexadecimal prefix
+      * scala> hexadecimal.parse("0xff")
+      * val res3 = Success(BigInt(0xff))
+      * }}}
       *
       * @since 4.0.0
       * @note $disclaimer
       */
     def hexadecimal: Parsley[BigInt]
-    /** TODO:
+    /** This parser will parse a single integer literal, which is in octal form (base 8).
+      *
+      * @example {{{
+      * // using signed integers and standard numeric prefixes
+      * scala> octal.parse("0o103")
+      * val res0 = Success(BigInt(43))
+      * scala> octal.parse("1f")
+      * val res2 = Failure(..) // no hexadecimal digits supported
+      * scala> octal.parse("0xff")
+      * val res3 = Failure(..) // no hexadecimal literals either
+      * }}}
       *
       * @since 4.0.0
       * @note $disclaimer
       */
     def octal: Parsley[BigInt]
-    /** TODO:
+    /** This parser will parse a single integer literal, which is in binary form (base 2).
+      *
+      * @example {{{
+      * // using signed integers and standard numeric prefixes
+      * scala> binary.parse("0b1011")
+      * val res0 = Success(BigInt(11))
+      * scala> binary.parse("10")
+      * val res2 = Failure(..) // no binary prefix
+      * scala> binary.parse("0b22")
+      * val res3 = Failure(..) // no other digits
+      * }}}
       *
       * @since 4.0.0
       * @note $disclaimer
       */
     def binary: Parsley[BigInt]
-    /** TODO:
+    /** This parser will parse a single integer literal, which can be in many forms and bases
+      * depending on the configuration.
+      *
+      * @example {{{
+      * // using signed integers and standard numeric prefixes (and octal, binary, and decimal on)
+      * scala> number.parse("0b1011")
+      * val res0 = Success(BigInt(11))
+      * scala> number.parse("0o103")
+      * val res1 = Success(BigInt(43))
+      * scala> number.parse("10")
+      * val res2 = Success(10)
+      * scala> number.parse("0xff")
+      * val res1 = Failure(..) // configuration specified above does not support hex
+      * }}}
       *
       * @since 4.0.0
       * @note $disclaimer

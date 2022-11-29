@@ -18,66 +18,55 @@ import parsley.errors.combinator.ErrorMethods
   *   `Lexer`, which will depend on user-defined configuration. Please see the
   *   relevant documentation of these specific objects.
   *
-  * @define bounded1
-  *   This parser will behave the same as
-  *
-  * @define bounded2Rounded
-  *   except it will round the result to the nearest valid
-  *
-  * @define bounded2Exact
-  *   except it will ensure that the resulting `BigDecimal` is
-  *   an ''exactly'' represented
-  *
-  * @define bounded2Plausible
-  *   except it will ensure that the resulting `BigDecimal` is
-  *   within the maximum bounds of a
-  *
-  * @define bounded3
-  *   IEEE 754 floating point value. The result is then converted
-  *   to a
-  *
-  * @define exact
-  *   the number is considered exact when it can be losslessly
-  *   represented in binary.
-  *
+  * @define bounded1 This parser will behave the same as
+  * @define bounded2Rounded except it will round the result to the nearest valid
+  * @define bounded2Exact except it will ensure that the resulting `BigDecimal` is an ''exactly'' represented
+  * @define bounded2Plausible except it will ensure that the resulting `BigDecimal` is within the maximum bounds of a
+  * @define bounded3 IEEE 754 floating point value. The result is then converted to a
+  * @define exact the number is considered exact when it can be losslessly represented in binary.
   * @define plausible
   *   the validation is performed when the value is within the
   *   precision range, and rounding to the nearest exact value
   *   will still occur.
-  *
   * @define rounded
   *   if the values are too big or too negatively big, they will
   *   be rounded to the corresponding infinity.
   */
 abstract class Real private[token] {
-    /** TODO:
+    /** This parser will parse a single real number literal, which is in decimal form (base 10).
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @todo examples
       */
     def decimal: Parsley[BigDecimal]
-    /** TODO:
+    /** This parser will parse a single real number literal, which is in hexadecimal form (base 16).
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @todo examples
       */
     def hexadecimal: Parsley[BigDecimal]
-    /** TODO:
+    /** This parser will parse a single real number literal, which is in octal form (base 8).
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @todo examples
       */
     def octal: Parsley[BigDecimal]
-    /** TODO:
+    /** This parser will parse a single real number literal, which is in binary form (base 2).
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @todo examples
       */
     def binary: Parsley[BigDecimal]
-    /** TODO:
+    /** This parser will parse a single number literal, which may be in many different forms/bases
+      * depending on the configuration provided.
       *
       * @since 4.0.0
       * @note $disclaimer
+      * @todo examples
       */
     def number: Parsley[BigDecimal]
 

@@ -7,7 +7,7 @@ import scala.Predef.{String => ScalaString, _}
 
 import parsley.Parsley
 import parsley.XCompat
-import parsley.errors.combinator.{amend, entrench, ErrorMethods}
+import parsley.errors.combinator.ErrorMethods
 
 /** This class defines a uniform interface for defining parsers for string
   * literals, independent of whether the string is raw, multi-line, or should
@@ -25,7 +25,7 @@ import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 abstract class String private[token] {
     /** This parser will parse a single string literal, which may contain any
       * number of graphical UTF-16 unicode characters; including those that span multiple
-      * 32 bit codepoints. It may contain escape sequences, and potentially
+      * 32-bit codepoints. It may contain escape sequences, and potentially
       * support string gaps and zero-width characters depending on the
       * configuration.
       *
@@ -50,13 +50,13 @@ abstract class String private[token] {
       * depending on the configuration.
       *
       * @example {{{
-      * scala> fullUtf16.parse("\"μαϊντανός!\"")
+      * scala> latin1.parse("\"μαϊντανός!\"")
       * val res0 = Failure(...) // Greek is not part of latin1
-      * scala> fullUtf16.parse("\"hello world\"")
+      * scala> latin1.parse("\"hello world\"")
       * val res1 = Success("hello world")
-      * scala> fullUtf16.parse("\"🙂\"")
+      * scala> latin1.parse("\"🙂\"")
       * val res2 = Failure(...) // Emoji are not part of latin1
-      * scala> fullUtf16.parse("\"£10\"")
+      * scala> latin1.parse("\"£10\"")
       * val res3 = Success("£10")
       * }}}
       *
@@ -70,13 +70,13 @@ abstract class String private[token] {
       * depending on the configuration.
       *
       * @example {{{
-      * scala> fullUtf16.parse("\"μαϊντανός!\"")
+      * scala> ascii.parse("\"μαϊντανός!\"")
       * val res0 = Failure(...) // Greek is not part of ascii
-      * scala> fullUtf16.parse("\"hello world\"")
+      * scala> ascii.parse("\"hello world\"")
       * val res1 = Success("hello world")
-      * scala> fullUtf16.parse("\"🙂\"")
+      * scala> ascii.parse("\"🙂\"")
       * val res2 = Failure(...) // Emoji are not part of ascii
-      * scala> fullUtf16.parse("\"£10\"")
+      * scala> ascii.parse("\"£10\"")
       * val res3 = Failure(...) // £ is not part of ascii
       * }}}
       *
@@ -91,15 +91,11 @@ private [text] object String {
     def isAscii(str: ScalaString): Boolean = allCharsWithin(str, Character.MaxAscii)
     def isExtendedAscii(str: ScalaString): Boolean = allCharsWithin(str, Character.MaxLatin1)
 
-    def ensureAscii(p: Parsley[ScalaString]): Parsley[ScalaString] = amend {
-        entrench(p).guardAgainst {
-            case str if !isAscii(str) => Seq("non-ascii characters in string literal, this is not allowed")
-       }
+    def ensureAscii(p: Parsley[ScalaString]): Parsley[ScalaString] = p.guardAgainst {
+        case str if !isAscii(str) => Seq("non-ascii characters in string literal, this is not allowed")
     }
 
-    def ensureExtendedAscii(p: Parsley[ScalaString]): Parsley[ScalaString] = amend {
-        entrench(p).guardAgainst {
-            case str if !isExtendedAscii(str) => Seq("non-extended-ascii characters in string literal, this is not allowed")
-       }
+    def ensureExtendedAscii(p: Parsley[ScalaString]): Parsley[ScalaString] = p.guardAgainst {
+        case str if !isExtendedAscii(str) => Seq("non-extended-ascii characters in string literal, this is not allowed")
     }
 }
