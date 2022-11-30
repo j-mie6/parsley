@@ -27,7 +27,7 @@ trait TillNextWhitespace { this: ErrorBuilder[_] =>
     def trimToParserDemand: Boolean
 
     /** @see [[parsley.errors.ErrorBuilder.unexpectedToken `ErrorBuilder.unexpectedToken`]] */
-    override final def unexpectedToken(cs: IndexedSeq[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token = {
+    override final def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token = {
         if (trimToParserDemand) TillNextWhitespace.unexpectedToken(cs, amountOfInputParserWanted)
         else TillNextWhitespace.unexpectedToken(cs)
     }
@@ -44,7 +44,7 @@ object TillNextWhitespace {
       *
       * @since 4.0.0
       */
-    def unexpectedToken(cs: IndexedSeq[Char]): Token = cs match {
+    def unexpectedToken(cs: Iterable[Char]): Token = cs match {
         case helpers.WhitespaceOrUnprintable(name) => Token.Named(name, TokenSpan.Width(1))
         // these cases automatically handle the utf-16 surrogate pairs
         case cs => Token.Raw(extractTillNextWhitespace(cs))
@@ -56,14 +56,14 @@ object TillNextWhitespace {
       *
       * @since 4.0.0
       */
-    def unexpectedToken(cs: IndexedSeq[Char], amountOfInputParserWanted: Int): Token = cs match {
+    def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int): Token = cs match {
         case helpers.WhitespaceOrUnprintable(name) => Token.Named(name, TokenSpan.Width(1))
         // these cases automatically handle the utf-16 surrogate pairs
         case cs => Token.Raw(helpers.takeCodePoints(extractTillNextWhitespace(cs), amountOfInputParserWanted))
     }
 
     // TODO: we should take to minimum of parser demand and next whitespace, this would potentially be much much cheaper
-    private def extractTillNextWhitespace(cs: IndexedSeq[Char]): String = cs match {
+    private def extractTillNextWhitespace(cs: Iterable[Char]): String = cs match {
         case cs: WrappedString =>
             // These do not require allocation on the string
             val idx = {

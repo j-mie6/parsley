@@ -169,13 +169,11 @@ trait ErrorBuilder[+Err] {
       * @param ctxs this is the representation of any addition contextual information in the error (see the [[nestedContexts `nestedContexts`]] method).
       * @param lines this is the main body of the error message (see [[vanillaError `vanillaError`]] or [[specialisedError `specialisedError`]] methods).
       * @return The final assembled error message
-      * @since 3.0.0
+      * @since 5.0.0
       * @inheritdoc
       */
     //def format(pos: Position, source: Source, ctxs: NestedContexts, lines: ErrorInfoLines): Err
 
-    // When contextual information is added, remove the comments: this MUST then be marked for deletion for parsley-5.0.0
-    //@deprecated("This method is due to be removed in parsley-5.0.0", "???")
     /** This is the top level function, which finally compiles all the formatted
       * sub-parts into a finished value of type `Err`.
       *
@@ -186,7 +184,7 @@ trait ErrorBuilder[+Err] {
       * @since 3.0.0
       * @group outer
       */
-    /*private [parsley]*/ def format(pos: Position, source: Source, lines: ErrorInfoLines): Err// = format(pos, source, nestContexts(Nil), lines)
+    def format(pos: Position, source: Source, lines: ErrorInfoLines): Err
 
     /** The representation type of position information within the generated message.
       *
@@ -202,7 +200,7 @@ trait ErrorBuilder[+Err] {
     type Source
     /* The representation of contextual information, including the file and additional
       * context
-      * @since ???
+      * @since 5.0.0
       * @group preamble
       */
     //type Context
@@ -227,13 +225,13 @@ trait ErrorBuilder[+Err] {
       *
       * @param context the context information produced by the parser.
       * @return a representation of the context.
-      * @since ???
+      * @since 5.0.0
       * @group preamble
       */
     //def contexualScope(context: String): Context
 
     /* The representation of collapsed nested contextual information.
-      * @since ???
+      * @since 5.0.0
       * @group preamble
       */
     //type NestedContexts
@@ -242,7 +240,7 @@ trait ErrorBuilder[+Err] {
       * about the source file.
       *
       * @param contexts the nested contexts to be collapsed, most general first (produced by [[contextualScope `contextualScope`]]).
-      * @since ???
+      * @since 5.0.0
       * @group preamble
       */
     //def nestContexts(contexts: List[Context]): NestedContexts
@@ -439,7 +437,7 @@ trait ErrorBuilder[+Err] {
       * @return a token extracted from `cs` that will be used as part of the unexpected message.
       * @since 4.0.0
       */
-    def unexpectedToken(cs: IndexedSeq[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token
+    def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token
 }
 
 /** Contains the default instance for the `ErrorBuilder` typeclass, which will be automatically available without import.

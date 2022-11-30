@@ -21,7 +21,7 @@ import parsley.errors.{helpers, ErrorBuilder, Token, TokenSpan}
   */
 trait MatchParserDemand { this: ErrorBuilder[_] =>
     /** @see [[parsley.errors.ErrorBuilder.unexpectedToken `ErrorBuilder.unexpectedToken`]] */
-    override final def unexpectedToken(cs: IndexedSeq[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token = {
+    override final def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token = {
         MatchParserDemand.unexpectedToken(cs, amountOfInputParserWanted)
     }
 }
@@ -33,14 +33,14 @@ object MatchParserDemand {
     /** The implementation of `unexpectedToken` as done by `MatchParserDemand`, with redundant arguments removed.
       * @since 4.0.0
       */
-    def unexpectedToken(cs: IndexedSeq[Char], amountOfInputParserWanted: Int): Token = cs match {
+    def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int): Token = cs match {
         case helpers.WhitespaceOrUnprintable(name) => Token.Named(name, TokenSpan.Width(1))
         case _ => Token.Raw(substring(cs, amountOfInputParserWanted))
     }
 
     // the default case will build a new string, if the underlying was already a string
     // this is redundant.
-    private def substring(cs: IndexedSeq[Char], upto: Int): String = cs match {
+    private def substring(cs: Iterable[Char], upto: Int): String = cs match {
         case cs: WrappedString => helpers.takeCodePoints(cs, upto)
         case _ => helpers.takeCodePoints(cs, upto)
     }

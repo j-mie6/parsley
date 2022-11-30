@@ -85,7 +85,7 @@ trait LexToken { this: ErrorBuilder[_] =>
         Token.Named(name, TokenSpan.Spanning(line-1, col-1))
     }
 
-    private final def extractToken(cs: IndexedSeq[Char]): Token = {
+    private final def extractToken(cs: Iterable[Char]): Token = {
         val Success(rawOrToks) = makeParser.parse {
             cs match {
                 case cs: WrappedString => cs.toString
@@ -102,10 +102,10 @@ trait LexToken { this: ErrorBuilder[_] =>
       *
       * @since 4.0.0
       */
-    def extractItem(cs: IndexedSeq[Char], amountOfInputParserWanted: Int): Token = SingleChar.unexpectedToken(cs)
+    def extractItem(cs: Iterable[Char], amountOfInputParserWanted: Int): Token = SingleChar.unexpectedToken(cs)
 
     /** @see [[parsley.errors.ErrorBuilder.unexpectedToken `ErrorBuilder.unexpectedToken`]] */
-    override final def unexpectedToken(cs: IndexedSeq[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token = {
+    override final def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token = {
         if (!lexicalError) extractToken(cs)
         // No lexical extraction should occur here!
         else extractItem(cs, amountOfInputParserWanted)
