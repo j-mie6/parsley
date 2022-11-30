@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - parsley-4
     tags:
       - '*'
 
