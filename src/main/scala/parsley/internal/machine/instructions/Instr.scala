@@ -1,3 +1,6 @@
+/* SPDX-FileCopyrightText: © 2020 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package parsley.internal.machine.instructions
 
 import parsley.internal.machine.Context
@@ -8,8 +11,6 @@ private [internal] abstract class Instr {
     // Instructions should override this if they have mutable state inside!
     def copy: Instr = this
 }
-
-private [internal] trait Stateful
 
 private [internal] abstract class InstrWithLabel extends Instr {
     var label: Int
@@ -22,6 +23,6 @@ private [internal] abstract class InstrWithLabel extends Instr {
 // It's 2018 and Labels are making a come-back, along with 2 pass assembly
 private [internal] final class Label(val i: Int) extends Instr {
     // $COVERAGE-OFF$
-    def apply(ctx: Context): Unit = throw new Exception("Cannot execute label")
+    def apply(ctx: Context): Unit = throw new Exception("Cannot execute label") // scalastyle:ignore throw
     // $COVERAGE-ON$
 }

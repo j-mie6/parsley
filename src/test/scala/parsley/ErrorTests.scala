@@ -1,10 +1,12 @@
+/* SPDX-FileCopyrightText: © 2021 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package parsley
 
 import parsley.combinator.{eof, optional}
 import parsley.Parsley._
 import parsley.implicits.character.{charLift, stringLift}
-import parsley.character, character.{anyChar, digit}
-import parsley.unsafe.ErrorLabel
+import parsley.character.{item, digit}
 import parsley.errors.combinator.{fail => pfail, unexpected, amend, entrench, ErrorMethods}
 
 import scala.language.implicitConversions
@@ -13,51 +15,51 @@ class ErrorTests extends ParsleyTest {
     "mzero parsers" should "always fail" in {
         (Parsley.empty ~> 'a').parse("a") shouldBe a [Failure[_]]
         (pfail("") ~> 'a').parse("a") shouldBe a [Failure[_]]
-        (unexpected("") *> 'a').parse("a") shouldBe a [Failure[_]]
+        (unexpected("x") *> 'a').parse("a") shouldBe a [Failure[_]]
         (('a' ! (_ => "")) *> 'b').parse("ab") shouldBe a [Failure[_]]
-        ('a'.unexpected(_ => "") *> 'b').parse("ab") shouldBe a [Failure[_]]
+        ('a'.unexpected(_ => "x") *> 'b').parse("ab") shouldBe a [Failure[_]]
     }
 
     "filtering parsers" should "function correctly" in {
-        val p = anyChar.filterOut {
+        val p = item.filterOut {
             case c if c.isLower => s"'$c' should have been uppercase"
         }
         inside(p.parse("a")) {
-            case Failure(TestError((1, 2), VanillaError(unex, exs, rs))) =>
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
                 unex shouldBe empty
                 exs shouldBe empty
                 rs should contain only ("'a' should have been uppercase")
         }
         p.parse("A") shouldBe Success('A')
 
-        val q = anyChar.guardAgainst {
-            case c if c.isLower => s"'$c' is not uppercase"
+        val q = item.guardAgainst {
+            case c if c.isLower => Seq(s"'$c' is not uppercase")
         }
-        inside(q.parse("a")) { case Failure(TestError((1, 2), SpecialisedError(msgs))) => msgs should contain only ("'a' is not uppercase") }
+        inside(q.parse("a")) { case Failure(TestError((1, 1), SpecialisedError(msgs))) => msgs should contain only ("'a' is not uppercase") }
         q.parse("A") shouldBe Success('A')
     }
 
     "the collectMsg combinator" should "act like a filter then a map" in {
-        val p = anyChar.collectMsg("oops") {
+        val p = item.collectMsg("oops") {
             case '+' => 0
             case c if c.isUpper => c - 'A' + 1
         }
         p.parse("+") shouldBe Success(0)
         p.parse("C") shouldBe Success(3)
-        inside(p.parse("a"))  { case Failure(TestError((1, 2), SpecialisedError(msgs))) => msgs should contain only ("oops") }
+        inside(p.parse("a"))  { case Failure(TestError((1, 1), SpecialisedError(msgs))) => msgs should contain only ("oops") }
 
-        val q = anyChar.collectMsg(c => s"$c is not appropriate") {
+        val q = item.collectMsg(c => Seq(s"$c is not appropriate")) {
             case '+' => 0
             case c if c.isUpper => c - 'A' + 1
         }
         q.parse("+") shouldBe Success(0)
         q.parse("C") shouldBe Success(3)
-        inside(q.parse("a")) { case Failure(TestError((1, 2), SpecialisedError(msgs))) => msgs should contain only ("a is not appropriate") }
+        inside(q.parse("a")) { case Failure(TestError((1, 1), SpecialisedError(msgs))) => msgs should contain only ("a is not appropriate") }
     }
 
     // Issue #70
     "filterOut" should "not corrupt the stack under a handler" in {
-        val p = attempt(anyChar.filterOut {
+        val p = attempt(item.filterOut {
             case c if c.isLower => "no lowercase!"
         })
         p.parse("a") shouldBe a [Failure[_]]
@@ -87,19 +89,20 @@ class ErrorTests extends ParsleyTest {
                 rs shouldBe empty
         }
     }
-    it should "replace the first instance" in {
+
+    it should "replace everything under the label" in {
         val s = (optional('a') *> optional('b')).label("hi") *> 'c'
         inside(s.parse("e")) {
             case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
                 unex should contain (Raw("e"))
-                exs should contain only (Named("hi"), Raw("b"), Raw("c"))
+                exs should contain only (Named("hi"), /*Raw("b"),*/ Raw("c"))
                 rs shouldBe empty
         }
         val t = (optional('a') *> optional('b').label("bee")).label("hi") *> 'c'
         inside(t.parse("e")) {
             case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
                 unex should contain (Raw("e"))
-                exs should contain only (Named("hi"), Named("bee"), Raw("c"))
+                exs should contain only (Named("hi"), /*Named("bee"),*/ Raw("c"))
                 rs shouldBe empty
         }
         inside(t.parse("ae")) {
@@ -135,6 +138,21 @@ class ErrorTests extends ParsleyTest {
                 unex should contain (Raw("e"))
                 exs should contain only (Named("bee"), Raw("c"))
                 rs shouldBe empty
+        }
+    }
+
+    "hide" should "not produce any visible output" in {
+        inside('a'.hide.parse("")) {
+            case Failure(TestError((1, 1), VanillaError(_, exs, _))) =>
+                exs shouldBe empty
+        }
+        inside("a".hide.parse("")) {
+            case Failure(TestError((1, 1), VanillaError(_, exs, _))) =>
+                exs shouldBe empty
+        }
+        inside(digit.hide.parse("")) {
+            case Failure(TestError((1, 1), VanillaError(_, exs, _))) =>
+                exs shouldBe empty
         }
     }
 

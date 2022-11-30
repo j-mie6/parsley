@@ -1,6 +1,7 @@
+/* SPDX-FileCopyrightText: © 2021 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package parsley.internal.machine.stacks
-
-import scala.annotation.tailrec
 
 private [machine] abstract class Stack[T] {
     protected type ElemTy
@@ -16,16 +17,25 @@ private [machine] object Stack {
     implicit class StackExt[T](val xs: T) extends AnyVal {
         // $COVERAGE-OFF$
         def mkString(sep: String)(implicit inst: Stack[T]): String = {
-            var ys = xs
+            var ys = xs // scalastyle:ignore var.local
             val str = new StringBuilder
             str ++= "["
             while (!inst.isEmpty(ys)) {
-                str ++= inst.show(inst.head(xs))
+                str ++= inst.show(inst.head(ys))
                 ys = inst.tail(ys)
                 if (!inst.isEmpty(ys)) str ++= sep
             }
             str ++= "]"
             str.result()
+        }
+        def size(implicit inst: Stack[T]): Int = {
+            var ys = xs
+            var sz = 0
+            while (!inst.isEmpty(ys)) {
+                sz += 1
+                ys = inst.tail(ys)
+            }
+            sz
         }
         // $COVERAGE-ON$
         @inline def isEmpty(implicit inst: Stack[T]): Boolean = inst.isEmpty(xs)

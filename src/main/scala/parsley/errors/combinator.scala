@@ -1,119 +1,467 @@
+/* SPDX-FileCopyrightText: © 2021 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package parsley.errors
 
-import parsley.Parsley
-import parsley.internal.deepembedding
+import parsley.Parsley, Parsley.pure
 
-import parsley.combinator.choice
+import parsley.internal.deepembedding.{frontend, singletons}
 
 /** This module contains combinators that can be used to directly influence error messages of parsers.
+  *
+  * Error messages are, by default, not ''particularly'' descriptive. However, the combinators in this
+  * module can be used to improve the generation of error messages by providing labels for expected
+  * items, explanations for why things went wrong, custom error messages, custom unexpected error messages,
+  * as well as correcting the offsets that error messages actually occurred at.
+  *
   * @since 3.0.0
+  *
+  * @group combinators
+  *
+  * @groupprio fail 0
+  * @groupname fail Failure Combinators
+  * @groupdesc fail
+  *     These combinator immediately fail the parser, with a more bespoke message.
+  *
+  * @groupprio adj 10
+  * @groupname adj Error Adjustment Combinators
+  * @groupdesc adj
+  *     These combinators can affect at what position an error is caused at. They are
+  *     opposites: where `amend` will ensure an error message is said to have generated
+  *     at the position on entry to the combinator, `entrench` will resist these changes.
+  *
+  * @groupprio ext 5
+  * @groupname ext Error Extension Combinators
+  * @groupdesc ext
+  *     These are implicit classes that, when in scope, enable additional combinators on
+  *     parsers that interact with the error system in some way.
   */
 object combinator {
-    /**
-      * The `fail(msgs)` parser consumes no input and fails with `msg` as the error message
-      * @since 3.0.0
-      */
-    def fail(msgs: String*): Parsley[Nothing] = new Parsley(new deepembedding.Fail(msgs: _*))
-
-    /**
-      * The `unexpected(msg)` parser consumes no input and fails with `msg` as an unexpected error
-      * @since 3.0.0
-      */
-    def unexpected(msg: String): Parsley[Nothing] = new Parsley(new deepembedding.Unexpected(msg))
-
-    /**
-      * This combinator adjusts the error messages that are generated within its scope so that they
-      * happen at the position on entry to the combinator. This is useful if validation work is done
-      * on the output of a parser that may render it invalid, but the error should point to the
-      * beginning of the structure. This combinators effect can be cancelled with `[[entrench]]`
+    /** This combinator consumes no input and fails immediately with the given error messages.
       *
-      * @param p A parser whose error messages should be adjusted
-      * @since 3.1.0
+      * Produces a ''specialised'' error message where all the lines of the error are the
+      * given `msgs` in order of appearance.
+      *
+      * @example {{{
+      * val failing = fail("hello,", "this is an error message", "broken across multiple lines")
+      * }}}
+      *
+      * @param msg0 the first message in the error message.
+      * @param msgs the remaining messages that will make up the error message.
+      * @return a parser that fails producing an error message consisting of all the given messages.
+      * @since 3.0.0
+      * @group fail
       */
-    def amend[A](p: =>Parsley[A]): Parsley[A] = new Parsley(new deepembedding.ErrorAmend(p.internal))
+    def fail(msg0: String, msgs: String*): Parsley[Nothing] = fail(1, msg0, msgs: _*)
 
-    /**
-      * Sometimes, the error adjustments performed by `[[amend]]` should only affect errors generated
-      * within a certain part of a parser and not the whole thing. In this case, `entrench` can be used
+    /** This combinator consumes no input and fails immediately with the given error messages.
+      *
+      * Produces a ''specialised'' error message where all the lines of the error are the
+      * given `msgs` in order of appearance.
+      *
+      * @example {{{
+      * val failing = fail("hello,", "this is an error message", "broken across multiple lines")
+      * }}}
+      *
+      * @param caretWidth the size of the caret for this error: should ideally match the width of the cause of the error.
+      * @param msg0 the first message in the error message.
+      * @param msgs the remaining messages that will make up the error message.
+      * @return a parser that fails producing an error message consisting of all the given messages.
+      * @since 4.0.0
+      * @group fail
+      */
+    def fail(caretWidth: Int, msg0: String, msgs: String*): Parsley[Nothing] = new Parsley(new singletons.Fail(caretWidth, (msg0 +: msgs): _*))
+
+    /** This combinator consumes no input and fails immediately, setting the unexpected component
+      * to the given item.
+      *
+      * Produces a ''trivial'' error message where the unexpected component of the error is
+      * replaced with the given item `item`.
+      *
+      * @since 3.0.0
+      * @param item the unexpected message for the error generated.
+      * @return a parser that fails producing an error with `item` as the unexpected token.
+      * @group fail
+      */
+    def unexpected(item: String): Parsley[Nothing] = unexpected(1, item)
+
+    /** This combinator consumes no input and fails immediately, setting the unexpected component
+      * to the given item.
+      *
+      * Produces a ''trivial'' error message where the unexpected component of the error is
+      * replaced with the given item `item`.
+      *
+      * @since 4.0.0
+      * @param caretWidth the size of the caret for this error: should ideally match the width of the cause of the error (the unexpected item).
+      * @param item the unexpected message for the error generated.
+      * @return a parser that fails producing an error with `item` as the unexpected token.
+      * @group fail
+      */
+    def unexpected(caretWidth: Int, item: String): Parsley[Nothing] = new Parsley(new singletons.Unexpected(item, caretWidth))
+
+    /** This combinator adjusts any error messages generated by the given parser so that they
+      * occur at the position recorded on entry to this combinator (effectively as if no
+      * input were consumed).
+      *
+      * This is useful if validation work is done
+      * on the output of a parser that may render it invalid, but the error should point to the
+      * beginning of the structure. This combinators effect can be cancelled with [[entrench `entrench`]].
+      *
+      * @param p a parser whose error messages should be adjusted.
+      * @return a parser that parses `p` but ensures any errors generated occur as if no input were consumed.
+      * @since 3.1.0
+      * @group adj
+      */
+    def amend[A](p: Parsley[A]): Parsley[A] = new Parsley(new frontend.ErrorAmend(p.internal))
+
+    /** This combinator prevents the action of any enclosing `amend` on the errors generated by the given
+      * parser.
+      *
+      * Sometimes, the error adjustments performed by [[amend `amend`]] should only affect errors generated
+      * within a certain part of a parser and not the whole thing; in this case, `entrench` can be used
       * to protect sub-parsers from having their errors adjusted, providing a much more fine-grained
       * scope for error adjustment.
       *
-      * @param p A parser whose error messages should not be adjusted by any surrounding `[[amend]]`
-      * @since 3.1.0
-      */
-    def entrench[A](p: =>Parsley[A]): Parsley[A] = new Parsley(new deepembedding.ErrorEntrench(p.internal))
-
-    /**
-      * This class exposes helpful combinators that are specialised for generating more helpful errors messages.
-      * For a description of why the library is designed in this way,
-      * see: [[https://github.com/j-mie6/Parsley/wiki/Understanding-the-API the Parsley wiki]]
+      * @example In this example, the `ident` parser should not allow keywords, and these error messages
+      * should be generated from the start of the identifier, not the end. However any errors generated
+      * ''within'' the identifier itself should remain at their regular offsets.
       *
-      * @param p The parser which serves as the method receiver
-      * @param con A conversion (if required) to turn `p` into a parser
-      * @version 3.0.0
+      * {{{
+      * val ident = amend {
+      *     entrench(stringOfSome(letter)).filterOut {
+      *         case v if keywords.contains(v) => s"keyword &#36;v cannot be an identifier"
+      *     }
+      * }
+      * }}}
+      *
+      * @param p a parser whose error messages should not be adjusted by any surrounding [[amend `amend`]].
+      * @return a parser that parses `p` but ensures any error messages are generated normally.
+      * @since 3.1.0
+      * @group adj
       */
-    implicit final class ErrorMethods[P, +A](p: =>P)(implicit con: P => Parsley[A]) {
-        /** Filter the value of a parser; if the value returned by the parser is defined for the given partial function, then
-          * the `filterOut` fails, using the result of the function as the ''reason'' (see [[explain]]), otherwise the parser
-          * succeeds
-          * @param pred The predicate that is tested against the parser result
-          * @return The result of the invokee if the value failed the predicate
+    def entrench[A](p: Parsley[A]): Parsley[A] = new Parsley(new frontend.ErrorEntrench(p.internal))
+
+    /** This combinator marks any errors within the given parser as being ''lexical errors''.
+      *
+      * When an error is marked as a ''lexical error'', it sets a flag within the error that is
+      * passed to [[parsley.errors.ErrorBuilder.unexpectedToken `ErrorBuilder.unexpectedToken`]]: this
+      * should be used to prevent `Lexer`-based token extraction from being performed on an error,
+      * since lexing errors cannot be the result of unexpected tokens.
+      *
+      * @param p the parser that serves as a token.
+      * @return a parser that parses `p` but ensures any error messages are marked as lexical errors.
+      * @since 4.0.0
+      * @group adj
+      */
+    def markAsToken[A](p: Parsley[A]): Parsley[A] = new Parsley(new frontend.ErrorLexical(p.internal))
+
+    /** This class exposes helpful combinators that are specialised for generating more helpful errors messages.
+      *
+      * This extension class operates on values that are convertible to parsers. It enables the use of
+      * error combinators, which can be used for data validation, error annotation, or immediate failing.
+      *
+      * @constructor This constructor should not be called manually, it is designed to be used via Scala's implicit resolution.
+      * @param p the value that this class is enabling methods on.
+      * @param con a conversion that allows values convertible to parsers to be used.
+      * @tparam P the type of base value that this class is used on (the conversion to `Parsley`) is summoned automatically.
+      * @version 3.0.0
+      * @group ext
+      *
+      * @groupprio rich 0
+      * @groupname rich Error Enrichment Combinators
+      * @groupdesc rich
+      *     These combinators add additional information - or refine the existing information within - to
+      *     an error message that has been generated within the scope of the parser they have been called on.
+      *     These are a very basic, but effective, way of improving the quality of error messages generated
+      *     by Parsley.
+      *
+      * @groupprio filter 10
+      * @groupname filter Filtering Combinators
+      * @groupdesc filter
+      *     These combinators perform filtering on a parser, with particular emphasis on generating meaningful
+      *     error messages if the filtering fails. This is particularly useful for data validation within the
+      *     parser, as very instructive error messages describing what went wrong can be generated. These combinators
+      *     often filter using a `PartialFunction`: this may be because they combine filtering with mapping (in which
+      *     case, the error message is provided separately), or the function may produce a `String`.
+      *
+      *     In these cases, the partial function is producing the error messages: if the input to the function is
+      *     defined, this means that it is invalid and the filtering will fail using the message obtained from the
+      *     succesful partial function invocation.
+      *
+      * @groupprio fail 20
+      *
+      * @define observably
+      *     *a parser is said to ''observably'' consume input when error messages generated by a parser `p` occur at a deeper
+      *     offset than `p` originally started at. While this sounds like it is the same as "having consumed input" for the
+      *     purposes of backtracking, they are disjoint concepts:
+      *
+      *       1. in `attempt(p)`, `p` can ''observably'' consume input even though the wider parser does not consume input due to the `attempt`.
+      *       1. in `amend(p)`, `p` can consume input and may not backtrack even though the consumption is not ''observable'' in the error
+      *          message due to the `amend`.
+      *
+      * @define autoAmend
+      *     when this combinator fails (and not this parser itself), it will generate errors rooted at the start of the
+      *     parse (as if [[parsley.errors.combinator$.amend `amend`]] had been used) and the caret will span the entire
+      *     successful parse of this parser.
+      *
+      * @define partialAmend
+      *     this combinator will generate error messages rooted at the start of the previously successful parse of this
+      *     parser, but only in terms of their position: the actual error is generated at the end of the parse, which
+      *     means it takes priority over sibling errors. This is because the error concerns the whole parse (for caret)
+      *     and morally starts where this parser started (as it caused the failure), however, if it had full `amend`-like
+      *     behaviour these errors would often disappear.
+      */
+    implicit final class ErrorMethods[P, +A](p: P)(implicit con: P => Parsley[A]) {
+        /** This combinator filters the result of this parser using the given partial-predicate, succeeding only when the predicate is undefined.
+          *
+          * First, parse this parser. If it succeeds then take its result `x` and test if `pred.isDefinedAt(x)` is true. If it is
+          * false, the parser succeeds, returning `x`. Otherwise, `pred(x)` will yield a reason `reason` and the parser will
+          * fail with `reason` provided to the generated error message à la [[explain `explain`]].
+          *
+          * This is useful for performing data validation, but where a definitive reason can be given for the failure. In this instance,
+          * the rest of the error message is generated as normal, with the expected and unexpected components still given, along with
+          * any other generated reasons.
+          *
+          * @example {{{
+          * scala> import parsley.character.letter
+          * scala> val keywords = Set("if", "then", "else")
+          * scala> val ident = stringOfSome(letter).filterOut {
+          *     case v if keywords.contains(v) => s"keyword &#36;v cannot be an identifier"
+          * }
+          * scala> ident.parse("hello")
+          * val res0 = Success("hello")
+          * scala> ident.parse("if")
+          * val res1 = Failure(..)
+          * }}}
+          *
           * @since 3.0.0
+          * @param pred the predicate that is tested against the parser result, which also generates errors.
+          * @return a parser that returns the result of this parser if it fails the predicate.
+          * @see [[parsley.Parsley.filterNot `filterNot`]], which is a basic version of this same combinator with no customised reason.
+          * @see [[guardAgainst `guardAgainst`]], which is similar to `filterOut`, except it generates a ''specialised'' error as opposed to just a reason.
+          * @note $autoAmend
+          * @group filter
           */
-        def filterOut(pred: PartialFunction[A, String]): Parsley[A] = new Parsley(new deepembedding.FilterOut(con(p).internal, pred))
-        /** Attempts to first filter the parser to ensure that `pf` is defined over it. If it is, then the function `pf`
-          * is mapped over its result. Roughly the same as a `guard` then a `map`.
-          * @param pf The partial function
-          * @param msg The message used for the error if the input failed the check
-          * @return The result of applying `pf` to this parsers value (if possible), or fails
+        def filterOut(pred: PartialFunction[A, String]): Parsley[A] = new Parsley(new frontend.FilterOut(con(p).internal, pred))
+
+        /** This combinator filters the result of this parser using the given partial-predicate, succeeding only when the predicate is undefined.
+          *
+          * First, parse this parser. If it succeeds then take its result `x` and test of `pred.isDefinedAt(x)` is true. If it is false,
+          * the parser succeeds, returning `x`. Otherwise `pred(x)` will yield an error message `msg` and the parser will fail, producing
+          * a ''specialised'' error only consisting of the message `msg` à la [[fail(caretWidth:Int,msg0:String,msgs:String*)*  `fail`]].
+          *
+          * This is useful for performing data validation, but where failure is not tied to the grammar but some other property of
+          * the results. For instance, with the identifier example given for `filterOut`, it is reasonable to suggest that an identifier
+          * was expected, and a keyword is not a valid identifier: i.e. these components still make sense. Where `guardAgainst` shines,
+          * however, is in scenarios where the expected alternatives, or the unexpected component itself distract from the cause of the
+          * error, or are irrelevant in some way. This might be because `guardAgainst` is checking some property of the data that is
+          * ''possible'' to encode in the grammar, but otherwise ''impractical'', either because it is hard to maintain or generates
+          * poor error messages for the user.
+          *
+          * @example Suppose we are parsing a data-format for graphs, and a restriction has been placed that ensures that the
+          *          numeric identifiers of each declared node must be ordered. This has, for whatever reason, been specified
+          *          as a syntactic property of the data. This is possible to encode using context-sensitive parsing (since each
+          *          new node can only be parsed according to the previous one), but is fairly difficult and impractical. Instead,
+          *          when all the declarations have been read, a `guardAgainst` can be used to prevent mis-ordering:
+          * {{{
+          * val node = integer
+          * val nodes = many(node).guardAgainst {
+          *     case ns if ns.nonEmpty
+          *             && ns.zip(ns.tail).exists { case (x, y) => x == y } =>
+          *         val Some((x, _)) = ns.zip(ns.tail).find { case (x, y) => x == y }
+          *         Seq(s"node &#36;x has been declared twice")
+          *     case ns if ns.nonEmpty
+          *             && ns.zip(ns.tail).exists { case (x, y) => x > y } =>
+          *         val Some((x, y)) = ns.zip(ns.tail).find { case (x, y) => x > y }
+          *         Seq(s"nodes &#36;x and &#36;y are declared in the wrong order", "all nodes should be ordered")
+          * }
+          * }}}
+          *
+          * @since 4.0.0
+          * @param pred the predicate that is tested against the parser result, which also generates errors.
+          * @return a parser that returns the result of this parser if it fails the predicate.
+          * @see [[parsley.Parsley.filterNot `filterNot`]], which is a basic version of this same combinator with no customised error message.
+          * @see [[filterOut `filterOut`]], which is similar to `guardAgainst`, except it generates a reason for failure and not a ''specialised'' error.
+          * @see [[[collectMsg[B](msggen:A=>Seq[String])*  `collectMsg`]]], which is similar to `guardAgainst`, but can also transform the data on success.
+          * @note $autoAmend
+          * @group filter
+          */
+        def guardAgainst(pred: PartialFunction[A, Seq[String]]): Parsley[A] = new Parsley(new frontend.GuardAgainst(con(p).internal, pred))
+
+        /** This combinator applies a partial function `pf` to the result of this parser if its result is defined for `pf`, failing if it is not.
+          *
+          * First, parse this parser. If it succeeds, test whether its result `x` is in the domain of the partial function `pf`. If it is defined for
+          * `pf`, return `pf(x)`. Otherwise, if the result was undefined then fail producing a ''specialised'' error message with `msg`. Equivalent
+          * to a `guardAgainst` (whose `msggen` ignores its argument) followed by a `map`.
+          *
+          * @example A good example of this combinator in use is for handling overflow in numeric literals.
+          * {{{
+          * val integer: Parsley[BigInt] = ...
+          * // this should be amended/entrenched for best results
+          * val int16: Parsley[Short] =
+          *     integer.collectMsg("integer literal should within the range -2^16 to +2^16-1") {
+          *         case x if x >= Short.MinValue
+          *                && x <= Short.MaxValue => x.toShort
+          *     }
+          * }}}
+          *
           * @since 3.0.0
+          * @param msg0 the first error message to use if the filtering fails.
+          * @param msgs the remaining error messages to use if the filtering fails.
+          * @param pf the partial function used to both filter the result of this parser and transform it.
+          * @return a parser which returns the result of this parser applied to pf, if possible.
+          * @see [[parsley.Parsley.collect `collect`]], which is a basic version of this same combinator with no customised error message.
+          * @see [[guardAgainst `guardAgainst`]], which is similar to `collectMsg`, except it does not transform the data.
+          * @note $autoAmend
+          * @group filter
           */
-        def collectMsg[B](msg: String)(pf: PartialFunction[A, B]): Parsley[B] = this.guardAgainst{case x if !pf.isDefinedAt(x) => msg}.map(pf)
-        /** Attempts to first filter the parser to ensure that `pf` is defined over it. If it is, then the function `pf`
-          * is mapped over its result. Roughly the same as a `guard` then a `map`.
-          * @param pf The partial function
-          * @param msggen Generator function for error message, generating a message based on the result of the parser
-          * @return The result of applying `pf` to this parsers value (if possible), or fails
+        def collectMsg[B](msg0: String, msgs: String*)(pf: PartialFunction[A, B]): Parsley[B] = this.collectMsg(_ => msg0 +: msgs)(pf)
+
+        /** This combinator applies a partial function `pf` to the result of this parser if its result is defined for `pf`, failing if it is not.
+          *
+          * First, parse this parser. If it succeeds, test whether its result `x` is in the domain of the partial function `pf`. If it is defined for
+          * `pf`, return `pf(x)`. Otherwise, if the result was undefined then fail producing a ''specialised'' error message with `msggen(x)`. Equivalent
+          * to a `guardAgainst` followed by a `map`.
+          *
+          * @example A good example of this combinator in use is for handling overflow in numeric literals.
+          * {{{
+          * val integer: Parsley[BigInt] = ...
+          * // this should be amended/entrenched for best results
+          * val int16: Parsley[Short] =
+          *     integer.collectMsg(n => Seq(s"integer literal &#36;n is not within the range -2^16 to +2^16-1")) {
+          *         case x if x >= Short.MinValue
+          *                && x <= Short.MaxValue => x.toShort
+          *     }
+          * }}}
+          *
+          * @since 4.0.0
+          * @param msggen a function that generates the error messages to use if the filtering fails.
+          * @param pf the partial function used to both filter the result of this parser and transform it.
+          * @return a parser which returns the result of this parser applied to pf, if possible.
+          * @see [[parsley.Parsley.collect `collect`]], which is a basic version of this same combinator with no customised error message.
+          * @see [[guardAgainst `guardAgainst`]], which is similar to `collectMsg`, except it does not transform the data.
+          * @note $autoAmend
+          * @group filter
+          */
+        def collectMsg[B](msggen: A => Seq[String])(pf: PartialFunction[A, B]): Parsley[B] = {
+            this.guardAgainst{case x if !pf.isDefinedAt(x) => msggen(x)}.map(pf)
+        }
+
+        /** This combinator filters the result of this parser using the given partial-predicate, succeeding only when the predicate is undefined.
+          *
+          * First, parse this parser. If it succeeds then take its result `x` and test if `pred.isDefinedAt(x)` is true. If it is
+          * false, the parser succeeds, returning `x`. Otherwise, `pred(x)` will yield a unexpected label and the parser will
+          * fail using [[combinator.unexpected(caretWidth:Int,item:String)* `unexpected`]] and that label.
+          *
+          * This is useful for performing data validation, but where a the failure results in the entire token being unexpected. In this instance,
+          * the rest of the error message is generated as normal, with the expected components still given, along with
+          * any generated reasons.
+          *
+          * @example {{{
+          * scala> import parsley.character.letter
+          * scala> val keywords = Set("if", "then", "else")
+          * scala> val ident = stringOfSome(letter).unexpectedWhen {
+          *     case v if keywords.contains(v) => s"keyword &#36;v"
+          * }
+          * scala> ident.parse("hello")
+          * val res0 = Success("hello")
+          * scala> ident.parse("if")
+          * val res1 = Failure(..)
+          * }}}
+          *
           * @since 3.0.0
+          * @param pred the predicate that is tested against the parser result, which also generates errors.
+          * @return a parser that returns the result of this parser if it fails the predicate.
+          * @see [[parsley.Parsley.filterNot `filterNot`]], which is a basic version of this same combinator with no unexpected message.
+          * @see [[filterOut `filterOut`]], which is a variant that produces a reason for failure as opposed to an unexpected message.
+          * @see [[guardAgainst `guardAgainst`]], which is similar to `unexpectedWhen`, except it generates a ''specialised'' error as opposed to just a reason.
+          * @note $autoAmend
+          * @group filter
           */
-        def collectMsg[B](msggen: A => String)(pf: PartialFunction[A, B]): Parsley[B] = this.guardAgainst{case x if !pf.isDefinedAt(x) => msggen(x)}.map(pf)
-        /** Similar to `filterOut`, except the error message generated yields a ''true failure''. This means that it will
-          * uses the same mechanism as [[fail]], as opposed to the reason provided by [[filterOut]]
-          * @param pred The predicate that is tested against the parser result and produces error messages
-          * @return The result of the invokee if it fails the predicate
-          * @since 2.8.0
-          */
-        def guardAgainst(pred: PartialFunction[A, String]): Parsley[A] = new Parsley(new deepembedding.GuardAgainst(con(p).internal, pred))
-        /** Alias for `label`
-          * @since 3.0.0 */
-        def ?(msg: String): Parsley[A] = this.label(msg)
-        /** Sets the expected message for a parser. If the parser fails then `expected msg` will added to the error.
-          * The label is only applied if the error message does not observe any consumption of input.
-          * @since 3.0.0 */
-        def label(msg: String): Parsley[A] = new Parsley(new deepembedding.ErrorLabel(con(p).internal, msg))
-        /** Similar to `label`, except instead of providing an expected message replacing the original tag, this combinator
-          * adds a ''reason'' that the error occurred. This is in complement to the label. The `reason` is only added when
-          * the parser fails, and will disappear if any further progress in the parser is made (unlike labels, which may
-          * reappear as "hints").
-          * @param reason The reason why a parser failed
+        def unexpectedWhen(pred: PartialFunction[A, String]): Parsley[A] = new Parsley(new frontend.UnexpectedWhen(con(p).internal, pred))
+
+        /** This combinator changes the expected component of any errors generated by this parser.
+          *
+          * When this parser fails having not ''observably''* consumed input, the expected component of the generated
+          * error message is set to be the given `item`.
+          *
+          * $observably
+          * @param item the name to give to the expected component of any qualifying errors.
+          * @return a parser that expects `item` on failure.
           * @since 3.0.0
+          * @group rich
           */
-        def explain(reason: String): Parsley[A] = new Parsley(new deepembedding.ErrorExplain(con(p).internal, reason))
-        /** Hides the "expected" error message for a parser.
-          * @since 3.0.0 */
+        def label(item: String): Parsley[A] = new Parsley(new frontend.ErrorLabel(con(p).internal, item))
+
+        /** This combinator changes the expected component of any errors generated by this parser.
+          *
+          * This is just an alias for the `label` combinator.
+          *
+          * ''Known as `&lt;?&gt;` in Haskell.''
+          *
+          * @since 3.0.0
+          * @see [[label `label`]]
+          * @group rich
+          */
+        def ?(item: String): Parsley[A] = this.label(item)
+
+        /** This combinator adds a reason to error messages generated by this parser.
+          *
+          * When this parser fails having not ''observably''* consumed input, this combinator adds
+          * `reason` to the error message, which should justify why the error occured. Unlike error
+          * labels, which may persist if more progress is made having not consumed input, reasons
+          * are not carried forward in the error message, and are lost.
+          *
+          * $observably
+          * @param reason the reason why a parser failed.
+          * @return a parser that produces the given reason for failure if it fails.
+          * @since 3.0.0
+          * @group rich
+          */
+        def explain(reason: String): Parsley[A] = new Parsley(new frontend.ErrorExplain(con(p).internal, reason))
+
+        /** This combinator hides the expected component of errors generated by this parser.
+          *
+          * When this parser fails having not ''observably''* consumed input, this combinator
+          * hides any error labels assigned to the expected item by any `label` combinators,
+          * or indeed the base raw labels produced by the input consuming combinators themselves.
+          *
+          * This can be useful, say, for hiding whitespace labels, which are not normally useful
+          * information to include in an error message for whitespace insensitive grammars.
+          *
+          * $observably
+          * @since 3.0.0
+          * @return a parser that does not produce an expected component on failure.
+          * @see [[label `label`]]
+          * @group rich
+          */
         def hide: Parsley[A] = this.label("")
-        /** Same as `fail`, except allows for a message generated from the result of the failed parser. In essence, this
-          * is equivalent to `p >>= (x => fail(msggen(x))` but requires no expensive computations from the use of `>>=`.
-          * @param msggen The generator function for error message, creating a message based on the result of invokee
-          * @return A parser that fails if it succeeds, with the given generator used to produce the error message
+        
+        /** This combinator parses this parser and then fails, using the result of this parser to customise the error message.
+          *
+          * Similar to `fail`, but first parses this parser: if it succeeded, then its result `x` is used to form the error
+          * message for the `fail` combinator by calling `msggen(x)`. If this parser fails, however, its error message will
+          * be generated instead.
+          *
+          * @param msggen the generator function for error message, creating a message based on the result of this parser.
+          * @return a parser that always fails, with the given generator used to produce the error message if this parser succeeded.
+          * @note $partialAmend
+          * @group fail
           */
-        def !(msggen: A => String): Parsley[Nothing] = new Parsley(new deepembedding.FastFail(con(p).internal, msggen))
-        /** Same as `unexpected`, except allows for a message generated from the result of the failed parser. In essence,
-          * this is equivalent to `p >>= (x => unexpected(x))` but requires no expensive computations from the use of
-          * `>>=`
-          * @param msggen The generator function for error message, creating a message based on the result of invokee
-          * @return A parser that fails if it succeeds, with the given generator used to produce an unexpected message
+        def !(msggen: A => String): Parsley[Nothing] = new Parsley(new frontend.FastFail(con(p).internal, msggen))
+
+        /** This combinator parses this parser and then fails, using the result of this parser to customise the unexpected component
+          * of the error message.
+          *
+          * Similar to `unexpected`, but first parses this parser: if it succeeded, then its result `x` is used to form
+          * the unexpected component of the generated error by calling `msggen(x)`. If this parser fails, however,
+          * its error message will be returned untouched.
+          *
+          * @param msggen the generator function for error message, creating a message based on the result of this parser.
+          * @return a parser that always fails, with the given generator used to produce an unexpected message if this parser succeeded.
+          * @note $partialAmend
+          * @group fail
           */
-        def unexpected(msggen: A => String): Parsley[Nothing] = new Parsley(new deepembedding.FastUnexpected(con(p).internal, msggen))
+        def unexpected(msggen: A => String): Parsley[Nothing] = new Parsley(new frontend.FastUnexpected(con(p).internal, msggen))
     }
 }

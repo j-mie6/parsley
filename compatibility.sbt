@@ -1,0 +1,1 @@
+ThisBuild / versionPolicyIntention := Compatibility.None

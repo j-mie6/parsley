@@ -1,67 +1,88 @@
+/* SPDX-FileCopyrightText: © 2020 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package parsley.internal.machine.instructions
 
-import parsley.internal.machine.{Context, Good}
-import parsley.internal.ResizableArray
-import parsley.internal.errors.{ErrorItem, Desc}
+import parsley.internal.errors.ExpectDesc
+import parsley.internal.machine.Context
+import parsley.internal.machine.XAssert._
 
 private [internal] final class Satisfies(f: Char => Boolean, _expected: Option[String]) extends Instr {
-    private [this] final val expected = _expected.map(Desc(_))
+    private [this] final val expected = _expected.flatMap(label => if (label.isEmpty) None else Some(ExpectDesc(label)))
     override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
         if (ctx.moreInput && f(ctx.nextChar)) ctx.pushAndContinue(ctx.consumeChar())
-        else ctx.expectedFail(expected)
+        else ctx.expectedFail(expected, unexpectedWidth = 1)
     }
     // $COVERAGE-OFF$
     override def toString: String = "Sat(?)"
     // $COVERAGE-ON$
 }
 
-private [internal] object Attempt extends Instr {
+private [internal] object RestoreAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
-        // Remove the recovery input from the stack, it isn't needed anymore
-        if (ctx.status eq Good) {
-            ctx.states = ctx.states.tail
-            ctx.handlers = ctx.handlers.tail
-            ctx.inc()
-        }
+        ensureHandlerInstruction(ctx)
         // Pop input off head then fail to next handler
-        else {
-            ctx.restoreState()
-            ctx.fail()
-        }
+        ctx.restoreState()
+        ctx.fail()
     }
     // $COVERAGE-OFF$
-    override def toString: String = "Attempt"
+    override def toString: String = "RestoreAndFail"
     // $COVERAGE-ON$
 }
 
-private [internal] object Look extends Instr {
+private [internal] object RestoreHintsAndState extends Instr {
     override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
         ctx.restoreHints()
-        if (ctx.status eq Good) {
-            ctx.restoreState()
-            ctx.handlers = ctx.handlers.tail
-            ctx.inc()
-        }
-        else {
-            ctx.states = ctx.states.tail
-            ctx.fail()
-        }
+        ctx.restoreState()
+        ctx.handlers = ctx.handlers.tail
+        ctx.inc()
     }
     // $COVERAGE-OFF$
-    override def toString: String = "Look"
+    override def toString: String = "RestoreHintsAndState"
+    // $COVERAGE-ON$
+}
+
+private [internal] object PopStateAndFail extends Instr {
+    override def apply(ctx: Context): Unit = {
+        ensureHandlerInstruction(ctx)
+        ctx.states = ctx.states.tail
+        ctx.fail()
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = "PopStateAndFail"
+    // $COVERAGE-ON$
+}
+
+private [internal] object PopStateRestoreHintsAndFail extends Instr {
+    override def apply(ctx: Context): Unit = {
+        ensureHandlerInstruction(ctx)
+        ctx.restoreHints()
+        ctx.states = ctx.states.tail
+        ctx.fail()
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = "PopStateRestoreHintsAndFail"
     // $COVERAGE-ON$
 }
 
 // Position Extractors
 private [internal] object Line extends Instr {
-    override def apply(ctx: Context): Unit = ctx.pushAndContinue(ctx.line)
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        ctx.pushAndContinue(ctx.line)
+    }
     // $COVERAGE-OFF$
     override def toString: String = "Line"
     // $COVERAGE-ON$
 }
 
 private [internal] object Col extends Instr {
-    override def apply(ctx: Context): Unit = ctx.pushAndContinue(ctx.col)
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        ctx.pushAndContinue(ctx.col)
+    }
     // $COVERAGE-OFF$
     override def toString: String = "Col"
     // $COVERAGE-ON$
@@ -69,34 +90,63 @@ private [internal] object Col extends Instr {
 
 // Register-Manipulators
 private [internal] final class Get(reg: Int) extends Instr {
-    override def apply(ctx: Context): Unit = ctx.pushAndContinue(ctx.regs(reg))
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        ctx.pushAndContinue(ctx.regs(reg))
+    }
     // $COVERAGE-OFF$
-    override def toString: String = s"Get($reg)"
+    override def toString: String = s"Get(r$reg)"
     // $COVERAGE-ON$
 }
 
 private [internal] final class Put(reg: Int) extends Instr {
     override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
         ctx.writeReg(reg, ctx.stack.peekAndExchange(()))
         ctx.inc()
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"Put($reg)"
+    override def toString: String = s"Put(r$reg)"
     // $COVERAGE-ON$
 }
 
-private [parsley] final class CalleeSave(var label: Int, _slots: List[Int]) extends InstrWithLabel with Stateful {
-    private val saveArray = new Array[AnyRef](_slots.length)
-    private val slots = _slots.zipWithIndex
+private [internal] final class PutAndFail(reg: Int) extends Instr {
+    override def apply(ctx: Context): Unit = {
+        ensureHandlerInstruction(ctx)
+        ctx.writeReg(reg, ctx.stack.upeek)
+        ctx.fail()
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = s"PutAndFail(r$reg)"
+    // $COVERAGE-ON$
+}
+
+// This instruction holds mutate state, but it is safe to do so, because it's always the first instruction of a DynCall.
+private [parsley] final class CalleeSave(var label: Int, reqSize: Int, slots: List[(Int, Int)], saveArray: Array[AnyRef]) extends InstrWithLabel {
+    private def this(label: Int, reqSize: Int, slots: List[Int]) = this(label, reqSize, slots.zipWithIndex, new Array[AnyRef](slots.length))
+    // this filters out the slots to ensure we only do callee-save on registers that might exist in the parent
+    def this(label: Int, reqSize: Int, slots: List[Int], numRegsInContext: Int) = this(label, reqSize, slots.takeWhile(_ < numRegsInContext))
     private var inUse = false
+    private var oldRegs: Array[AnyRef] = null
 
     private def save(ctx: Context): Unit = {
         for ((slot, idx) <- slots) {
             saveArray(idx) = ctx.regs(slot)
+            ctx.regs(slot) = null
+        }
+        // If this is known to increase the size of the register pool, then we need to keep the old array to the side
+        if (reqSize > ctx.regs.size) {
+            oldRegs = ctx.regs
+            ctx.regs = java.util.Arrays.copyOf(oldRegs, reqSize)
         }
     }
 
     private def restore(ctx: Context): Unit = {
+        if (oldRegs != null) {
+            java.lang.System.arraycopy(ctx.regs, 0, oldRegs, 0, oldRegs.size)
+            ctx.regs = oldRegs
+            oldRegs = null
+        }
         for ((slot, idx) <- slots) {
             ctx.regs(slot) = saveArray(idx)
             saveArray(idx) = null
@@ -104,7 +154,7 @@ private [parsley] final class CalleeSave(var label: Int, _slots: List[Int]) exte
     }
 
     private def continue(ctx: Context): Unit = {
-        if (ctx.status eq Good) {
+        if (ctx.good) {
             ctx.handlers = ctx.handlers.tail
             ctx.pc = label
         }
@@ -120,6 +170,7 @@ private [parsley] final class CalleeSave(var label: Int, _slots: List[Int]) exte
         }
         // Entry for the first time, register as a handle, callee-save and inc
         else {
+            ensureRegularInstruction(ctx)
             save(ctx)
             inUse = true
             ctx.pushHandler(ctx.pc)
@@ -128,7 +179,6 @@ private [parsley] final class CalleeSave(var label: Int, _slots: List[Int]) exte
     }
 
     // $COVERAGE-OFF$
-    override def toString: String = s"CalleeSave($label)"
+    override def toString: String = s"CalleeSave($label, newSz = $reqSize, slotsToSave = $slots)"
     // $COVERAGE-ON$
-    override def copy: CalleeSave = new CalleeSave(label, _slots)
 }

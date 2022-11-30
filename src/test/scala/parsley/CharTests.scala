@@ -1,52 +1,22 @@
+/* SPDX-FileCopyrightText: © 2020 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package parsley
+
+import Predef.{ArrowAssoc => _, _}
 
 import parsley.character._
 import parsley.Parsley._
-import parsley.implicits.character.{charLift, stringLift}
+import parsley.implicits.character.charLift
 
 import scala.language.implicitConversions
 
 class CharTests extends ParsleyTest {
-    def stringPositionCheck(initialCol: Int, str: String) =
-        (string("." * initialCol) *> string(str) *> pos).parse("." * initialCol + str)
-
-    "string" should "consume succeed if it is found at head" in {
-        "abc".parse("abc") should not be a [Failure[_]]
-    }
-    it should "not consume input if it fails on first character" in {
-        ("abc" <|> 'b').parse("b") should not be a [Failure[_]]
-    }
-    it should "consume input if it fails mid-string" in {
-        ("abc" <|> "ab").parse("ab") shouldBe a [Failure[_]]
-    }
-    it should "not consume input if it fails mid-string when combined with attempt" in {
-        (attempt("abc") <|> "ab").parse("ab") should not be a [Failure[_]]
-    }
-    it should "update positions correctly" in {
-        stringPositionCheck(0, "abc") shouldBe Success((1, 4))
-        stringPositionCheck(1, "\na") shouldBe Success((2, 2))
-        stringPositionCheck(0, "a\t") shouldBe Success((1, 5))
-        stringPositionCheck(0, "ab\t") shouldBe Success((1, 5))
-        stringPositionCheck(0, "abc\t") shouldBe Success((1, 5))
-        stringPositionCheck(0, "abcd\t") shouldBe Success((1, 9))
-        stringPositionCheck(0, "\na\tb") shouldBe (Success((2, 6)))
-        stringPositionCheck(2, "\t") shouldBe (Success((1, 5)))
-    }
-    it should "respect multiple tabs" in {
-        stringPositionCheck(2, "\t\t") shouldBe (Success((1, 9)))
-        stringPositionCheck(2, "\t\t\t") shouldBe (Success((1, 13)))
-        stringPositionCheck(2, "\taaa\t") shouldBe (Success((1, 9)))
-        stringPositionCheck(2, "\taa\taaa\t") shouldBe (Success((1, 13)))
-        stringPositionCheck(2, "a\t\t") shouldBe (Success((1, 9)))
-        stringPositionCheck(2, "aa\t") shouldBe (Success((1, 9)))
-    }
-    "anyChar" should "accept any character" in {
-        val p = void(anyChar)
-        p.force()
-        for (i <- 0 to 65535) p.parse(i.toChar.toString) should not be a [Failure[_]]
+    "item" should "accept any character" in {
+        for (i <- 0 to 65535) item.parse(i.toChar.toString) should not be a [Failure[_]]
     }
     it should "fail if the input has run out, expecting any character" in {
-        inside(anyChar.parse("")) {
+        inside(item.parse("")) {
             case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
                 unex should contain (EndOfInput)
                 exs should contain only (Named("any character"))
@@ -54,20 +24,20 @@ class CharTests extends ParsleyTest {
         }
     }
 
-    "space" should "consume ' ' or '\t'" in {
-        space.parse(" ") should not be a [Failure[_]]
-        space.parse("\t") should not be a [Failure[_]]
-    }
+    "space" should "consume ' ' or '\t'" in cases(space)(
+        " " -> Some(' '),
+        "\t" -> Some('\t'),
+    )
     it should "expect space/tab otherwise" in {
         for (i <- 0 to 65535; if i != ' ' && i != '\t') space.parse(i.toChar.toString) shouldBe a [Failure[_]]
     }
 
-    "spaces" should "consume lots of spaces" in {
-        (spaces *> 'a').parse(" \t" * 100 + 'a') should not be a [Failure[_]]
-    }
-    it should "never fail" in {
-        (spaces *> 'a').parse("a") should not be a [Failure[_]]
-    }
+    "spaces" should "consume lots of spaces" in cases(spaces *> 'a')(
+        (" \t" * 100 + 'a') -> Some('a')
+    )
+    it should "never fail" in cases(spaces *> 'a')(
+        "a" -> Some('a')
+    )
 
     "whitespace" should "consume any whitespace chars" in {
         (whitespaces *> 'a').parse(" \t\n\r\f\u000b" * 100 + 'a') should not be a [Failure[_]]
@@ -77,23 +47,23 @@ class CharTests extends ParsleyTest {
         for (i <- 0 to 65535; if !cs.contains(i.toChar)) whitespace.parse(i.toChar.toString) shouldBe a [Failure[_]]
     }
 
-    "endOfLine" should "consume windows or unix line endings" in {
-        endOfLine.parse("\n") should not be a [Failure[_]]
-        endOfLine.parse("\r\n") should not be a [Failure[_]]
-    }
+    "endOfLine" should "consume windows or unix line endings" in cases(endOfLine)(
+        "\n" -> Some('\n'),
+        "\r\n" -> Some('\n'),
+    )
     it should "fail otherwise" in {
         for (i <- 0 to 65535; if i != 10) endOfLine.parse(i.toChar.toString) shouldBe a [Failure[_]]
     }
 
     "upper" should "only accept uppercase characters" in {
-        for (c <- 'A' to 'Z') upper.parse(c.toString) should not be a [Failure[_]]
+        for (c <- 'A' to 'Z') upper.parse(c.toString) shouldBe Success(c)
     }
     it should "fail otherwise" in {
         for (c <- 'a' to 'z') upper.parse(c.toString) shouldBe a [Failure[_]]
     }
 
     "lower" should "only accept lowercase characters" in {
-        for (c <- 'a' to 'z') lower.parse(c.toString) should not be a [Failure[_]]
+        for (c <- 'a' to 'z') lower.parse(c.toString) shouldBe Success(c)
     }
     it should "fail otherwise" in {
         for (c <- 'A' to 'Z') lower.parse(c.toString) shouldBe a [Failure[_]]
@@ -101,12 +71,12 @@ class CharTests extends ParsleyTest {
 
     "digit parsers" should "accept the appropriate characters" in {
         for (c <- '0' to '9') {
-            digit.parse(c.toString) should not be a [Failure[_]]
-            hexDigit.parse(c.toString) should not be a [Failure[_]]
-            if (c < '8') octDigit.parse(c.toString) should not be a [Failure[_]]
+            digit.parse(c.toString) shouldBe Success(c)
+            hexDigit.parse(c.toString) shouldBe Success(c)
+            if (c < '8') octDigit.parse(c.toString) shouldBe Success(c)
         }
-        for (c <- 'a' to 'f') hexDigit.parse(c.toString) should not be a [Failure[_]]
-        for (c <- 'A' to 'F') hexDigit.parse(c.toString) should not be a [Failure[_]]
+        for (c <- 'a' to 'f') hexDigit.parse(c.toString) shouldBe Success(c)
+        for (c <- 'A' to 'F') hexDigit.parse(c.toString) shouldBe Success(c)
     }
     they should "fail otherwise" in {
         for (c <- 'a' to 'f') {
@@ -122,78 +92,43 @@ class CharTests extends ParsleyTest {
     }
 
     "oneOf" should "match any of the characters provided" in {
-        val p = character.oneOf('a', 'b', 'c')
-        val q = character.oneOf('a' to 'c')
-        val r = character.oneOf('a' to 'd' by 2)
-        p.parse("a") should not be a [Failure[_]]
-        p.parse("b") should not be a [Failure[_]]
-        p.parse("c") should not be a [Failure[_]]
-        p.parse("d") shouldBe a [Failure[_]]
-        q.parse("a") should not be a [Failure[_]]
-        q.parse("b") should not be a [Failure[_]]
-        q.parse("c") should not be a [Failure[_]]
-        q.parse("d") shouldBe a [Failure[_]]
-        r.parse("a") should not be a [Failure[_]]
-        r.parse("b") shouldBe a [Failure[_]]
-        r.parse("c") should not be a [Failure[_]]
-        r.parse("d") shouldBe a [Failure[_]]
+        cases(character.oneOf('a', 'b', 'c'))  ("a" -> Some('a'), "b" -> Some('b'), "c" -> Some('c'), "d" -> None)
+        cases(character.oneOf('a' to 'c'))     ("a" -> Some('a'), "b" -> Some('b'), "c" -> Some('c'), "d" -> None)
+        cases(character.oneOf('a' to 'd' by 2))("a" -> Some('a'), "b" -> None, "c" -> Some('c'), "d" -> None)
     }
     it should "always fail if provided no characters" in {
-        val p = character.oneOf()
-        val q = character.oneOf('0' until '0')
-        p.parse("a") shouldBe a [Failure[_]]
-        p.parse("\n") shouldBe a [Failure[_]]
-        p.parse("0") shouldBe a [Failure[_]]
-        q.parse("a") shouldBe a [Failure[_]]
-        q.parse("\n") shouldBe a [Failure[_]]
-        q.parse("0") shouldBe a [Failure[_]]
+        cases(character.oneOf())             ("a" -> None, "\n" -> None, "0" -> None)
+        cases(character.oneOf('0' until '0'))("a" -> None, "\n" -> None, "0" -> None)
     }
     it should "work for single character ranges too" in {
-        val p = character.oneOf('a')
-        val q = character.oneOf('a' to 'a')
-        p.parse("a") shouldBe a [Success[_]]
-        p.parse("\n") shouldBe a [Failure[_]]
-        p.parse("b") shouldBe a [Failure[_]]
-        q.parse("a") shouldBe a [Success[_]]
-        q.parse("\n") shouldBe a [Failure[_]]
-        q.parse("b") shouldBe a [Failure[_]]
+        cases(character.oneOf('a'))       ("a" -> Some('a'), "\n" -> None, "b" -> None)
+        cases(character.oneOf('a' to 'a'))("a" -> Some('a'), "\n" -> None, "b" -> None)
     }
 
     "noneOf" should "match none of the characters provided" in {
-        val p = character.noneOf('a', 'b', 'c')
-        val q = character.noneOf('a' to 'c')
-        val r = character.noneOf('a' to 'd' by 2)
-        p.parse("a") shouldBe a [Failure[_]]
-        p.parse("b") shouldBe a [Failure[_]]
-        p.parse("c") shouldBe a [Failure[_]]
-        p.parse("d") should not be a [Failure[_]]
-        q.parse("a") shouldBe a [Failure[_]]
-        q.parse("b") shouldBe a [Failure[_]]
-        q.parse("c") shouldBe a [Failure[_]]
-        q.parse("d") should not be a [Failure[_]]
-        r.parse("a") shouldBe a [Failure[_]]
-        r.parse("b") should not be a [Failure[_]]
-        r.parse("c") shouldBe a [Failure[_]]
-        r.parse("d") should not be a [Failure[_]]
+        cases(character.noneOf('a', 'b', 'c'))  ("a" -> None, "b" -> None, "c" -> None, "d" -> Some('d'))
+        cases(character.noneOf('a' to 'c'))     ("a" -> None, "b" -> None, "c" -> None, "d" -> Some('d'))
+        cases(character.noneOf('a' to 'd' by 2))("a" -> None, "b" -> Some('b'), "c" -> None, "d" -> Some('d'))
     }
     it should "match anything if provided no characters" in {
-        val p = character.noneOf()
-        val q = character.noneOf('0' until '0')
-        p.parse("a") shouldBe a [Success[_]]
-        p.parse("\n") shouldBe a [Success[_]]
-        p.parse("0") shouldBe a [Success[_]]
-        q.parse("a") shouldBe a [Success[_]]
-        q.parse("\n") shouldBe a [Success[_]]
-        q.parse("0") shouldBe a [Success[_]]
+        cases(character.noneOf())             ("a" -> Some('a'), "\n" -> Some('\n'), "0" -> Some('0'))
+        cases(character.noneOf('0' until '0'))("a" -> Some('a'), "\n" -> Some('\n'), "0" -> Some('0'))
     }
     it should "work for single character ranges too" in {
-        val p = character.noneOf('a')
-        val q = character.noneOf('a' to 'a')
-        p.parse("a") shouldBe a [Failure[_]]
-        p.parse("\n") shouldBe a [Success[_]]
-        p.parse("b") shouldBe a [Success[_]]
-        q.parse("a") shouldBe a [Failure[_]]
-        q.parse("\n") shouldBe a [Success[_]]
-        q.parse("b") shouldBe a [Success[_]]
+        cases(character.noneOf('a'))       ("a" -> None, "\n" -> Some('\n'), "b" -> Some('b'))
+        cases(character.noneOf('a' to 'a'))("a" -> None, "\n" -> Some('\n'), "b" -> Some('b'))
+    }
+
+    "charUtf16" should "handle BMP characters" in {
+        cases(charUtf16('a'))("a" -> Some('a'))
+        cases(charUtf16('λ'))("λ" -> Some('λ'))
+    }
+
+    it should "handle multi-character codepoints" in {
+        cases(charUtf16(0x1F642))("🙂" -> Some(0x1F642))
+    }
+
+    it should "handle multi-character codepoints atomically on fail" in {
+        cases(charUtf16(0x1F642) <|> charUtf16(0x1F643))("🙃" -> Some(0x1F643))
     }
 }

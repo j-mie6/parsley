@@ -4,9 +4,9 @@ on:
   push:
     branches:
       - master
+      - parsley-4
     tags:
       - '*'
-  workflow_dispatch:
 
 jobs:
   release:
@@ -41,8 +41,14 @@ jobs:
           path: ~/.sbt
           key: sbt-${{ hashFiles('**/build.sbt') }}
 
+      - name: Check version computed
+        run: sbt dynverAssertVersion
+
+      - name: Check Version
+        run: sbt versionCheck
+
       - name: Publish JVM
-        run: sbt ci-release
+        run: sbt 'set scalacOptions ++= releaseFlags.value' ci-release
         env:
           CI_RELEASE:          +publishSigned
           CI_SNAPSHOT_RELEASE: +publishSigned
@@ -52,7 +58,7 @@ jobs:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
 
       - name: Publish JS
-        run: sbt ci-release
+        run: sbt 'set scalacOptions ++= releaseFlags.value' ci-release
         env:
           CI_RELEASE:          +parsleyJS/publishSigned
           CI_SNAPSHOT_RELEASE: +parsleyJS/publishSigned
@@ -62,7 +68,7 @@ jobs:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
 
       - name: Publish Native
-        run: sbt ci-release
+        run: sbt 'set scalacOptions ++= releaseFlags.value' ci-release
         env:
           CI_RELEASE:          +parsleyNative/publishSigned
           CI_SNAPSHOT_RELEASE: +parsleyNative/publishSigned

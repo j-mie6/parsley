@@ -1,11 +1,17 @@
+/* SPDX-FileCopyrightText: © 2020 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package parsley
 
+import Predef.{ArrowAssoc => _, _}
+
 import parsley.Parsley._
-import parsley.combinator.{many, manyUntil}
+import parsley.combinator.{many, manyUntil, ifP}
 import parsley.lift._
-import parsley.character.{char, satisfy, digit, anyChar, string}
+import parsley.character.{char, satisfy, digit, item, string}
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.implicits.lift.Lift1
+import parsley.implicits.zipped.Zipped2
 import parsley.registers._
 import parsley.errors.combinator.{fail => pfail, unexpected}
 
@@ -50,6 +56,11 @@ class CoreTests extends ParsleyTest {
         (pure('a') <~ 'a').parse("a") should be (Success('a'))
     }
 
+    "Fresh parsers" should "generate unique objects on every run" in {
+        val p = fresh(new Object)
+        p.parse("") should not be p.parse("")
+    }
+
     // APPLICATIVE LAWS
     they must "obey the homomorphism law: pure f <*> pure x = pure (f x)" in {
         (pure(add1) <*> pure(42)).parse("") should be (Success(43))
@@ -58,14 +69,14 @@ class CoreTests extends ParsleyTest {
 
     they must "obey the fmap law: pure f <*> p = f <$> p" in {
         (pure(toUpper) <*> 'a').parse("a") should equal ((toUpper.lift('a')).parse("a"))
-        (pure(toUpper) <*> ('a' <|> 'b')).parse("a") should equal ((toUpper <#> ('a' <|> 'b')).parse("a"))
-        (pure(toUpper) <*> ('a' <|> 'b')).parse("b") should equal ((toUpper <#> ('a' <|> 'b')).parse("b"))
+        (pure(toUpper) <*> ('a' <|> 'b')).parse("a") should equal (('a' <|> 'b').map(toUpper).parse("a"))
+        (pure(toUpper) <*> ('a' <|> 'b')).parse("b") should equal (('a' <|> 'b').map(toUpper).parse("b"))
     }
 
     they must "obey the interchange law: u <*> pure x = ($x) <$> u" in {
-        (('a' #> add1) <*> pure(41)).parse("a") should equal ((((f: Int => Int) => f(41)) <#> ('a' #> add1)).parse("a"))
-        ((('a' <|> 'b') #> add1) <*> pure(41)).parse("a") should equal ((((f: Int => Int) => f(41)) <#> (('a' <|> 'b') #> add1)).parse("a"))
-        ((('a' <|> 'b') #> add1) <*> pure(41)).parse("b") should equal ((((f: Int => Int) => f(41)) <#> (('a' <|> 'b') #> add1)).parse("b"))
+        (('a' #> add1) <*> pure(41)).parse("a") should equal (('a' #> add1).map(_(41)).parse("a"))
+        ((('a' <|> 'b') #> add1) <*> pure(41)).parse("a") should equal ((('a' <|> 'b') #> add1).map(_(41)).parse("a"))
+        ((('a' <|> 'b') #> add1) <*> pure(41)).parse("b") should equal ((('a' <|> 'b') #> add1).map(_(41)).parse("b"))
     }
 
     they must "obey the composition law: pure (.) <*> u <*> v <*> w = u <*> (v <*> w)" in {
@@ -80,8 +91,8 @@ class CoreTests extends ParsleyTest {
         val p = lift.lift22[Char, Char, Char, Char, Char, Char, Char, Char, Char, Char, Char,
                             Char, Char, Char, Char, Char, Char, Char, Char, Char, Char, Char, String](
             (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v) => s"$a$b$c$d$e$f$g$h$i$j$k$l$m$n$o$p$q$r$s$t$u$v",
-            anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar,
-            anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar, anyChar)
+            item, item, item, item, item, item, item, item, item, item, item,
+            item, item, item, item, item, item, item, item, item, item, item)
         p.parse("abcdefghijklmnopqrstuv") shouldBe Success("abcdefghijklmnopqrstuv")
     }
 
@@ -119,20 +130,22 @@ class CoreTests extends ParsleyTest {
     "branch" must "work correctly for non-pure components" in {
         val p = ('a' #> 7) <+> ('b' #> 6)
         val q = ('+'.#>[Int => Int](_ + 1) <|> '-'.#>[Int => Int](_ - 1))
-        branch[Int, Int, Int](p, q, q).parse("a+") shouldBe Success(8)
-        branch[Int, Int, Int](p, q, q).parse("b+") shouldBe Success(7)
-        branch[Int, Int, Int](p, q, q).parse("a-") shouldBe Success(6)
-        branch[Int, Int, Int](p, q, q).parse("b-") shouldBe Success(5)
+        cases(branch[Int, Int, Int](p, q, q))(
+            "a+" -> Some(8),
+            "b+" -> Some(7),
+            "a-" -> Some(6),
+            "b-" -> Some(5),
+        )
     }
 
     "<|>" should "not try the second alternative if the first succeeded" in {
-        ('a' <|> pfail("wrong!")).parse("a") shouldBe Success('a')
+        ('a' | pfail("wrong!")).parse("a") shouldBe Success('a')
     }
     it should "only try second alternative if the first failed without consuming input" in {
         ('a' <+> 'b').parse("b") shouldBe Success(Right('b'))
     }
     it should "not try the second alternative if the first failed after consuming input" in {
-        ("ab" <|> "ac").parse("ac") shouldBe a [Failure[_]]
+        ("ab" | "ac").parse("ac") shouldBe a [Failure[_]]
     }
     it should "not be affected by an empty on the left" in {
         inside((Parsley.empty <|> 'a').parse("b")) {
@@ -173,22 +186,12 @@ class CoreTests extends ParsleyTest {
        an [Exception] should be thrownBy many(pure(5)).parse("")
     }
 
-    implicit final class RegisterMaker[A](x: A) {
-        def makeReg[B](body: Reg[A] => Parsley[B]): Parsley[B] = pure(x).fillReg(body)
-    }
-
-    implicit final class RegisterMethods[P, A](p: =>P)(implicit con: P => Parsley[A]) {
-        def fillReg[B](body: Reg[A] => Parsley[B]): Parsley[B] = {
-            val reg = Reg.make[A]
-            reg.put(con(p)) *> body(reg)
-        }
-    }
-
     "stateful parsers" should "allow for persistent state" in {
-        val p = 5.makeReg(r1 =>
-                7.makeReg(r2 =>
-                 r1.put(lift2[Int, Int, Int](_+_, r1.get, r2.get))
-              *> (r1.get zip r2.gets(_+1))))
+        val p = 5.makeReg { r1 =>
+            7.makeReg { r2 =>
+                r1.put(lift2[Int, Int, Int](_+_, r1.get, r2.get)) *> (r1.get zip r2.gets(_+1))
+            }
+        }
         p.parse("") should be (Success((12, 8)))
     }
     they should "be modifiable" in {
@@ -244,40 +247,54 @@ class CoreTests extends ParsleyTest {
         val p = 3.makeReg(r1 => r1.rollback(r1.put(2)) *> r1.get)
         p.parse("") shouldBe Success(2)
     }
+    they should "support more than 4 registers" in {
+        def loop(n: Int): Parsley[List[Char]] = {
+            if (n == 0) pure(Nil)
+            else item.fillReg { c => c.get <::> loop(n-1) }
+        }
+        val p = loop(16)
+        p.parse("abcdefghijklmnop") shouldBe Success(List('a', 'b', 'c','d', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p'))
+    }
+
+    "fillReg" should "appear to create a fresh register every time its invoked" in {
+        def inc(reg: Reg[Int]): Parsley[Int] = reg.get <* reg.modify(_ + 1)
+        val p = 0.makeReg { i =>
+            // the register j is static, however, each recursive call should save its value, making it appear dynamic
+            lazy val p: Parsley[List[Int]] = char('a') *> inc(i).fillReg(j => (p, j.get).zipped(_ :+ _) <* char('b')) <|> pure(Nil)
+            p
+        }
+        p.parse("aaabbb") shouldBe Success(List(2, 1, 0))
+    }
+
+    it should "also appear to create a fresh register even in the presence of a hard failure" in {
+        lazy val p: Parsley[Char] = item.fillReg(c => item *> (attempt(p) <|> c.get))
+        p.parse("abc") shouldBe Success('a')
+    }
 
     "ternary parsers" should "function correctly" in {
-        val p = pure(true) ?: ('a', 'b')
+        val p = ifP(pure(true), 'a', 'b')
         p.parse("a") should be (Success('a'))
-        val q = pure(false) ?: ('a', 'b')
+        val q = ifP(pure(false), 'a', 'b')
         q.parse("b") should be (Success('b'))
-        val r = anyChar.map(_.isLower) ?: ('a', 'b')
+        val r = ifP(item.map(_.isLower), 'a', 'b')
         r.parse("aa") should be (Success('a'))
         r.parse("Ab") should be (Success('b'))
     }
 
     "filtered parsers" should "function correctly" in {
-        val p = anyChar.filterNot(_.isLower)
+        val p = item.filterNot(_.isLower)
         p.parse("a") shouldBe a [Failure[_]]
         p.parse("A") shouldBe Success('A')
     }
 
     "the collect combinator" should "act like a filter then a map" in {
-        val p = anyChar.collect[Int] {
+        val p = item.collect[Int] {
             case '+' => 0
             case c if c.isUpper => c - 'A' + 1
         }
         p.parse("+") shouldBe Success(0)
         p.parse("C") shouldBe Success(3)
         p.parse("a") shouldBe a [Failure[_]]
-    }
-
-    "the cast combinator" should "allow for casts to valid types" in {
-        val p = pure[Any](7)
-        p.cast[Int].parse("") shouldBe Success(7)
-    }
-    it should "reject invalid casts by failing" in {
-        val p = pure[Any](7)
-        p.cast[String].parse("") shouldBe a [Failure[_]]
     }
 
     "foldRight" should "work correctly" in {
@@ -321,7 +338,7 @@ class CoreTests extends ParsleyTest {
     }
 
     "stack overflows" should "not be thrown by recursive parsers" in {
-        lazy val p: Parsley[Int] = p.map((x: Int) => x+1)
+        lazy val p: Parsley[Int] = 'b' *> p
         def many_[A](p: Parsley[A]): Parsley[List[A]] = {
             lazy val manyp: Parsley[List[A]] = (p <::> manyp) </> Nil
             manyp
@@ -333,11 +350,32 @@ class CoreTests extends ParsleyTest {
         noException should be thrownBy uhoh.parse("a")
     }
 
+    "lazy parsley" should "be able to prevent overly strict combinators" in {
+        import parsley.combinator.{skip, optional}
+        // without the ~, this would loop forever as skip is strict in position 2
+        lazy val fishySkipMany: Parsley[Unit] = optional(skip('a', ~fishySkipMany))
+        (fishySkipMany *> 'b').parse("aaaaaab") shouldBe Success('b')
+    }
+
+    // This is commented out because it was breaking on scala-js
+    /*they should "not occur with very large parsers either" in {
+        import parsley.combinator
+        val p = combinator.exactly(12000, 'a')
+        noException should be thrownBy p.force()
+    }*/
+
+    "overflows" should "allow for forwarding via the Cont monad" in {
+        import parsley.combinator
+        val p = combinator.exactly(100, 'a')
+        p.overflows()
+        p.parse("a" * 100) shouldBe Success(List.fill(100)('a'))
+    }
+
     "failures through call boundary" should "ensure that stateful instructions are restored correctly" in {
         import parsley.combinator.{whileP, some, eof}
         val n = registers.Reg.make[Int]
-        lazy val p: Parsley[Unit] = whileP(n.gets(_ % 2 == 0) ?: (some('a'), some('b')) *> n.modify(_ - 1) *> n.gets(_ != 0))
-        val q = attempt(n.put(4) *> p <* eof) <|> (n.put(2) *> p <* eof)
+        lazy val p: Parsley[Unit] = whileP(ifP(n.gets(_ % 2 == 0), some('a'), some('b')) *> n.modify(_ - 1) *> n.gets(_ != 0))
+        val q = attempt(n.put(4) *> p <* eof) | n.put(2) *> p <* eof
         q.parse("aaaabbb") shouldBe a [Success[_]]
     }
 }

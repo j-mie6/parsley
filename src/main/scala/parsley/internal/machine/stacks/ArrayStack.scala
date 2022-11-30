@@ -1,3 +1,6 @@
+/* SPDX-FileCopyrightText: © 2021 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package parsley.internal.machine.stacks
 
 // Designed to replace the operational stack
@@ -14,6 +17,11 @@ private [machine] final class ArrayStack[A](initialSize: Int = ArrayStack.Defaul
             java.lang.System.arraycopy(array, 0, newArray, 0, sp)
             array = newArray
         }
+        array(sp) = x
+    }
+
+    def upush(x: A): Unit = {
+        sp += 1
         array(sp) = x
     }
 
@@ -41,16 +49,8 @@ private [machine] final class ArrayStack[A](initialSize: Int = ArrayStack.Defaul
     def size: Int = usize + 1
     def isEmpty: Boolean = sp == -1
     def mkString(sep: String): String = array.take(sp + 1).reverse.mkString(sep)
-    def clear(): Unit = {
-        sp = -1
-        var i = array.length-1
-        while (i >= 0) {
-            array(i) = null
-            i -= 1
-        }
-    }
     // $COVERAGE-ON$
 }
 private [machine] object ArrayStack {
-    val DefaultSize = 8
+    final val DefaultSize = 8
 }

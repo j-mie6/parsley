@@ -1,5 +1,10 @@
+/* SPDX-FileCopyrightText: © 2022 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package parsley.errors
 
+import scala.annotation.tailrec
+import scala.collection.immutable.WrappedString
 import scala.util.matching.Regex
 
 // Turn coverage off, because the tests have their own error builder
@@ -7,15 +12,9 @@ import scala.util.matching.Regex
 // $COVERAGE-OFF$
 private [parsley] object helpers {
     def renderRawString(s: String): String = s match {
-        case cs if cs.head.isWhitespace => cs.head match {
-            case c if c.isSpaceChar  => "space"
-            case '\n'                => "newline"
-            case '\t'                => "tab"
-            case _                   => "whitespace character"
-        }
-        case Unprintable(up) => f"unprintable character (\\u${up.head.toInt}%04X)"
-        // Do we want this only in unexpecteds?
-        case cs              => "\"" + cs.takeWhile(!_.isWhitespace) + "\""
+        case WhitespaceOrUnprintable(name) => name
+        // this will handle utf-16 surrogate pairs properly
+        case cs                            => "\"" + cs + "\""
     }
 
     def combineAsList(elems: List[String]): Option[String] = elems.sorted.reverse match {
@@ -28,5 +27,30 @@ private [parsley] object helpers {
     }
 
     private val Unprintable: Regex = "(\\p{C})".r
+
+    object WhitespaceOrUnprintable {
+        def unapply(cs: Iterable[Char]): Option[String] = unapply(cs.head)
+        def unapply(s: String): Option[String] = unapply(s.charAt(0))
+        def unapply(c: Char): Option[String] = c match {
+            case '\n' => Some("newline")
+            case '\t' => Some("tab")
+            case c if c.isSpaceChar => Some("space")
+            case c if c.isWhitespace => Some("whitespace character")
+            case c if c.isHighSurrogate => None
+            case Unprintable(up) => Some(f"unprintable character (\\u${up.toInt}%04X)")
+            case _ => None
+        }
+    }
+
+    def takeCodePoints(s: WrappedString, n: Int): String = takeCodePoints(s.iterator, n, new StringBuilder)
+    def takeCodePoints(s: Iterable[Char], n: Int): String = takeCodePoints(s.iterator, n, new StringBuilder)
+
+    @tailrec private def takeCodePoints(it: Iterator[Char], n: Int, sb: StringBuilder): String = {
+        if (n == 0 || !it.hasNext) sb.toString
+        else {
+            val c = it.next()
+            takeCodePoints(it, if (c.isHighSurrogate) n else n - 1, sb += c)
+        }
+    }
 }
 // $COVERAGE-ON$

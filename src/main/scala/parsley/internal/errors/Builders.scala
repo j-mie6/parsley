@@ -1,3 +1,6 @@
+/* SPDX-FileCopyrightText: © 2021 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package parsley.internal.errors
 
 import scala.annotation.tailrec
@@ -26,7 +29,7 @@ private [parsley] abstract class LineBuilder {
 
     final def getLinesBefore(offset: Int, n: Int): List[String] = {
         val lines = mutable.ListBuffer.empty[String]
-        for (startOffset <- nearestNewlineBefore(offset)) getLinesBefore(startOffset-1, n-1, lines)
+        for (startOffset <- nearestNewlineBefore(offset)) getLinesBefore(startOffset - 1, n - 1, lines)
         lines.toList
     }
 
@@ -39,7 +42,7 @@ private [parsley] abstract class LineBuilder {
 
     final def getLinesAfter(offset: Int, n: Int): List[String] = {
         val lines = mutable.ListBuffer.empty[String]
-        for (endOffset <- nearestNewlineAfter(offset)) getLinesAfter(endOffset+1, n-1, lines)
+        for (endOffset <- nearestNewlineAfter(offset)) getLinesAfter(endOffset + 1, n - 1, lines)
         lines.toList
     }
 
