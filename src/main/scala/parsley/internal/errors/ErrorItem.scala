@@ -20,7 +20,7 @@ private [internal] sealed trait ExpectItem extends ErrorItem {
     protected [errors] def lowerThanDesc: Boolean
 }
 
-private [internal] final case class UnexpectRaw(cs: IndexedSeq[Char], amountOfInputParserWanted: Int) extends UnexpectItem {
+private [internal] final case class UnexpectRaw(cs: Iterable[Char], amountOfInputParserWanted: Int) extends UnexpectItem {
     assert(cs.nonEmpty, "we promise that unexpectedToken never receives empty input")
     def formatUnexpect(lexicalError: Boolean)(implicit builder: ErrorBuilder[_]): (builder.Item, TokenSpan) = {
         builder.unexpectedToken(cs, amountOfInputParserWanted, lexicalError) match {
