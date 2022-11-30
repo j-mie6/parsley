@@ -7,6 +7,11 @@ object MockedBuilders {
     implicit val mockedErrorItemBuilder: ErrorItemBuilder = new ErrorItemBuilder {
         override def inRange(offset: Int): Boolean = true
         override def codePointAt(offset: Int): Int = 'x'
-        override protected def iterableFrom(offset: Int): Iterable[Char] = LazyList.continually('x')
+        override protected def iterableFrom(offset: Int): Iterable[Char] = new Iterable[Char] {
+            override def iterator: Iterator[Char] = new Iterator[Char] {
+                override def hasNext: Boolean = true
+                override def next(): Char = 'x'
+            }
+        }
     }
 }
