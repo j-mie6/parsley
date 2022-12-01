@@ -107,7 +107,7 @@ private [machine] sealed abstract class DefuncError {
       */
     private [machine] def markAsLexical(offset: Int): DefuncError
 }
-object DefuncError {
+private [errors] object DefuncError {
     private [errors] final val TrivialErrorMask: Byte = 1 << 0
     private [errors] final val ExpectedEmptyMask: Byte = 1 << 1
     private [errors] final val EntrenchedMask: Byte = 1 << 2
