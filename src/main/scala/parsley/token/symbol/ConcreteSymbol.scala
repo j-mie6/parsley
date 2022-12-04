@@ -36,7 +36,7 @@ private [token] class ConcreteSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc)
     override def softKeyword(name: String): Parsley[Unit] = /*keywordMemo.getOrElseUpdate(name, */nameDesc.identifierLetter match {
         // TODO: this needs optimising for Unicode
         case Basic(letter) => new Parsley(new singletons.Specific("keyword", name, letter, symbolDesc.caseSensitive))
-        case letter => attempt(caseString(name) *> notFollowedBy(identLetter).label(s"end of $name"))
+        case letter => attempt(caseString(name).label(name) *> notFollowedBy(identLetter).label(s"end of $name"))
     }//)
 
     //private val operatorMemo = concurrent.TrieMap.empty[String, Parsley[Unit]]
@@ -46,8 +46,8 @@ private [token] class ConcreteSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc)
                 case op if op.startsWith(name) && op != name => op.substring(name.length)
             }.toList
             ends match {
-                case Nil => attempt(string(name) *> notFollowedBy(opLetter).label(s"end of $name"))
-                case end::ends => attempt(string(name) *> notFollowedBy(opLetter <|> strings(end, ends: _*)).label(s"end of $name"))
+                case Nil => attempt(string(name).label(name) *> notFollowedBy(opLetter).label(s"end of $name"))
+                case end::ends => attempt(string(name).label(name) *> notFollowedBy(opLetter <|> strings(end, ends: _*)).label(s"end of $name"))
             }
 
     }//)
