@@ -436,6 +436,7 @@ trait ErrorBuilder[+Err] {
       * @param lexicalError was this error generated as part of "lexing", or in a wider parser (see [[parsley.errors.combinator$.markAsToken `markAsToken`]])
       * @return a token extracted from `cs` that will be used as part of the unexpected message.
       * @since 4.0.0
+      * @group item
       */
     def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token
 }
