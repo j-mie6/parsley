@@ -182,7 +182,9 @@ final case class NumericDesc (literalBreakChar: BreakCharDesc,
   * @since 4.0.0
   */
 object NumericDesc {
-    /** Plain definition of text (current matching the rules in the Haskell report).
+    /** Plain definition of numeric literals. Supports leading zeros; hexadecimal, octal, and binary notation;
+      * and exponent notation for all four bases too. Only hexadecimal and octal are enabled for integer numbers,
+      * and only decimal for real numbers.
       *
       * @since 4.0.0
       */
