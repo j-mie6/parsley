@@ -131,6 +131,8 @@ private [internal] final class Case(var label: Int) extends InstrWithLabel {
     // $COVERAGE-ON$
 }
 
+// TODO: I think all three of these _shouldn't_ generate the
+//       unexpected item, but should generate a caret, fix this!
 private [internal] final class Filter[A](_pred: A => Boolean) extends Instr {
     private [this] val pred = _pred.asInstanceOf[Any => Boolean]
     override def apply(ctx: Context): Unit = {
