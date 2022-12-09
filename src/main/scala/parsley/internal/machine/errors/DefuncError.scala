@@ -289,7 +289,7 @@ private [machine] final class EmptyError(val offset: Int, val line: Int, val col
         builder.updateEmptyUnexpected(unexpectedWidth)
     }
 }
-private [machine] final class EmptyErrorWithReason(val offset: Int, val line: Int, val col: Int, val reason: String, val unexpectedWidth: Int) 
+private [machine] final class EmptyErrorWithReason(val offset: Int, val line: Int, val col: Int, val reason: String, val unexpectedWidth: Int)
     extends BaseError {
     override final val flags: Byte = (DefuncError.ExpectedEmptyMask | DefuncError.TrivialErrorMask).toByte
     override def expectedIterable: Iterable[ExpectItem] = None

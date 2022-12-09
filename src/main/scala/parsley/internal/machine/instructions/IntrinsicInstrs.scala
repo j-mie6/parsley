@@ -8,7 +8,7 @@ import scala.annotation.tailrec
 import parsley.internal.errors.{EndOfInput, ExpectDesc, ExpectItem, ExpectRaw, UnexpectDesc}
 import parsley.internal.machine.{Context, Good}
 import parsley.internal.machine.XAssert._
-import parsley.internal.machine.errors.{EmptyError, EmptyErrorWithReason, ClassicFancyError, ClassicUnexpectedError}
+import parsley.internal.machine.errors.{ClassicFancyError, ClassicUnexpectedError, EmptyError, EmptyErrorWithReason}
 
 private [internal] final class Lift2(f: (Any, Any) => Any) extends Instr {
     override def apply(ctx: Context): Unit = {
