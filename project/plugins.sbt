@@ -6,7 +6,7 @@ libraryDependencySchemes ++= Seq(
 // CI Stuff
 addSbtPlugin("com.github.sbt" % "sbt-ci-release" % "1.5.11")
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.0.5")
-addSbtPlugin("ch.epfl.scala" % "sbt-version-policy" % "2.0.1")
+addSbtPlugin("ch.epfl.scala" % "sbt-version-policy" % "2.1.0")
 // Cross Building
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.11.0")
 addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.4.8")
