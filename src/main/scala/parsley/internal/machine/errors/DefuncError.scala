@@ -281,18 +281,21 @@ private [machine] final class ClassicFancyError(val offset: Int, val line: Int, 
         builder.updateCaretWidth(caretWidth)
     }
 }
-private [machine] final class EmptyError(val offset: Int, val line: Int, val col: Int) extends BaseError {
+private [machine] final class EmptyError(val offset: Int, val line: Int, val col: Int, val unexpectedWidth: Int) extends BaseError {
     override final val flags = (DefuncError.ExpectedEmptyMask | DefuncError.TrivialErrorMask).toByte
-    override def unexpectedWidth: Int = 0
-    override def expectedIterable: Iterable[ExpectItem] = None
-    override def makeTrivial(builder: TrivialErrorBuilder): Unit = builder.pos_=(line, col)
-}
-private [machine] final class EmptyErrorWithReason(val offset: Int, val line: Int, val col: Int, val reason: String) extends BaseError {
-    override final val flags: Byte = (DefuncError.ExpectedEmptyMask | DefuncError.TrivialErrorMask).toByte
-    override def unexpectedWidth: Int = 0
     override def expectedIterable: Iterable[ExpectItem] = None
     override def makeTrivial(builder: TrivialErrorBuilder): Unit = {
         builder.pos_=(line, col)
+        builder.updateEmptyUnexpected(unexpectedWidth)
+    }
+}
+private [machine] final class EmptyErrorWithReason(val offset: Int, val line: Int, val col: Int, val reason: String, val unexpectedWidth: Int) 
+    extends BaseError {
+    override final val flags: Byte = (DefuncError.ExpectedEmptyMask | DefuncError.TrivialErrorMask).toByte
+    override def expectedIterable: Iterable[ExpectItem] = None
+    override def makeTrivial(builder: TrivialErrorBuilder): Unit = {
+        builder.pos_=(line, col)
+        builder.updateEmptyUnexpected(unexpectedWidth)
         builder += reason
     }
 }

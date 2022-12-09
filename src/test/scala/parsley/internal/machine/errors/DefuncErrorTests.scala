@@ -51,13 +51,13 @@ class DefuncErrorTests extends ParsleyTest {
     }
 
     "EmptyError" should "evaluate to TrivialError" in {
-        val err = new EmptyError(0, 0, 0)
+        val err = new EmptyError(0, 0, 0, 0)
         err.isTrivialError shouldBe true
         err.asParseError shouldBe a [TrivialError]
     }
 
     "EmptyErrorWithReason" should "evaluate to TrivialError" in {
-        val err = new EmptyErrorWithReason(0, 0, 0, "")
+        val err = new EmptyErrorWithReason(0, 0, 0, "", 0)
         err.isTrivialError shouldBe true
         err.asParseError shouldBe a [TrivialError]
     }
@@ -73,33 +73,33 @@ class DefuncErrorTests extends ParsleyTest {
     }
 
     "MergedErrors" should "be trivial if both children are" in {
-        val err = new EmptyError(0, 0, 0).merge(new MultiExpectedError(0, 0, 0, Set.empty, 1))
+        val err = new EmptyError(0, 0, 0, 0).merge(new MultiExpectedError(0, 0, 0, Set.empty, 1))
         err.isTrivialError shouldBe true
         err.asParseError shouldBe a [TrivialError]
     }
     they should "be a trivial error if one trivial child is further than the other fancy child" in {
-        val err1 = new EmptyError(1, 0, 0).merge(new ClassicFancyError(0, 0, 0, 1, ""))
+        val err1 = new EmptyError(1, 0, 0, 0).merge(new ClassicFancyError(0, 0, 0, 1, ""))
         err1.isTrivialError shouldBe true
         err1.asParseError shouldBe a [TrivialError]
 
-        val err2 = new ClassicFancyError(0, 0, 0, 1, "").merge(new EmptyError(1, 0, 0))
+        val err2 = new ClassicFancyError(0, 0, 0, 1, "").merge(new EmptyError(1, 0, 0, 0))
         err2.isTrivialError shouldBe true
         err2.asParseError shouldBe a [TrivialError]
     }
     they should "be a fancy error in any other case" in {
-        val err1 = new EmptyError(0, 0, 0).merge(new ClassicFancyError(0, 0, 0, 1, ""))
+        val err1 = new EmptyError(0, 0, 0, 0).merge(new ClassicFancyError(0, 0, 0, 1, ""))
         err1.isTrivialError shouldBe false
         err1.asParseError shouldBe a [FancyError]
 
-        val err2 = new ClassicFancyError(0, 0, 0, 1, "").merge(new EmptyError(0, 0, 0))
+        val err2 = new ClassicFancyError(0, 0, 0, 1, "").merge(new EmptyError(0, 0, 0, 0))
         err2.isTrivialError shouldBe false
         err2.asParseError shouldBe a [FancyError]
 
-        val err3 = new EmptyError(0, 0, 0).merge(new ClassicFancyError(1, 0, 0, 1, ""))
+        val err3 = new EmptyError(0, 0, 0, 0).merge(new ClassicFancyError(1, 0, 0, 1, ""))
         err3.isTrivialError shouldBe false
         err3.asParseError shouldBe a [FancyError]
 
-        val err4 = new ClassicFancyError(1, 0, 0, 1, "").merge(new EmptyError(0, 0, 0))
+        val err4 = new ClassicFancyError(1, 0, 0, 1, "").merge(new EmptyError(0, 0, 0, 0))
         err4.isTrivialError shouldBe false
         err4.asParseError shouldBe a [FancyError]
 
@@ -112,9 +112,9 @@ class DefuncErrorTests extends ParsleyTest {
         err6.asParseError shouldBe a [FancyError]
     }
     they should "be empty when trivial and same offset only when both children are empty" in {
-        new EmptyError(0, 0, 0).merge(new EmptyError(0, 0, 0)).isExpectedEmpty shouldBe true
-        new EmptyError(0, 0, 0).merge(new ClassicExpectedError(0, 0, 0, Some(EndOfInput), 1)).isExpectedEmpty shouldBe false
-        new ClassicExpectedError(0, 0, 0, Some(EndOfInput), 1).merge(new EmptyError(0, 0, 0)).isExpectedEmpty shouldBe false
+        new EmptyError(0, 0, 0, 0).merge(new EmptyError(0, 0, 0, 0)).isExpectedEmpty shouldBe true
+        new EmptyError(0, 0, 0, 0).merge(new ClassicExpectedError(0, 0, 0, Some(EndOfInput), 1)).isExpectedEmpty shouldBe false
+        new ClassicExpectedError(0, 0, 0, Some(EndOfInput), 1).merge(new EmptyError(0, 0, 0, 0)).isExpectedEmpty shouldBe false
         new ClassicExpectedError(0, 0, 0, Some(EndOfInput), 1).merge(new ClassicExpectedError(0, 0, 0, Some(EndOfInput), 1)).isExpectedEmpty shouldBe false
     }
     they should "contain all the expecteds from both branches when appropriate" in {
@@ -133,7 +133,7 @@ class DefuncErrorTests extends ParsleyTest {
         err.asParseError shouldBe a [FancyError]
     }
     it should "only be empty when its label is" in {
-        new EmptyError(0, 0, 0).withHints(EmptyHints).isExpectedEmpty shouldBe true
+        new EmptyError(0, 0, 0, 0).withHints(EmptyHints).isExpectedEmpty shouldBe true
         new ClassicExpectedError(0, 0, 0, Some(EndOfInput), 1).withHints(EmptyHints).isExpectedEmpty shouldBe false
     }
 
@@ -148,7 +148,7 @@ class DefuncErrorTests extends ParsleyTest {
         err.asParseError shouldBe a [FancyError]
     }
     it should "only be empty when its label is" in {
-        new EmptyError(0, 0, 0).withReason("").isExpectedEmpty shouldBe true
+        new EmptyError(0, 0, 0, 0).withReason("").isExpectedEmpty shouldBe true
         new ClassicExpectedError(0, 0, 0, Some(EndOfInput), 1).withReason("").isExpectedEmpty shouldBe false
     }
 
@@ -163,8 +163,8 @@ class DefuncErrorTests extends ParsleyTest {
         err.asParseError shouldBe a [FancyError]
     }
     it should "be empty if the label is empty and not otherwise" in {
-        new EmptyError(0, 0, 0).label("", 0).isExpectedEmpty shouldBe true
-        new EmptyError(0, 0, 0).label("a", 0).isExpectedEmpty shouldBe false
+        new EmptyError(0, 0, 0, 0).label("", 0).isExpectedEmpty shouldBe true
+        new EmptyError(0, 0, 0, 0).label("a", 0).isExpectedEmpty shouldBe false
         new ClassicExpectedError(0, 0, 0, Some(ExpectDesc("x")), 1).label("", 0).isExpectedEmpty shouldBe true
         new ClassicExpectedError(0, 0, 0, Some(ExpectDesc("x")), 1).label("a", 0).isExpectedEmpty shouldBe false
     }
@@ -176,7 +176,7 @@ class DefuncErrorTests extends ParsleyTest {
     }
 
     "Amended" should "Change the error position information" in {
-        val err =  new EmptyError(0, 0, 0).amend(10, 10, 10)
+        val err =  new EmptyError(0, 0, 0, 0).amend(10, 10, 10)
         val errOut = err.asParseError
         errOut.col shouldBe 10
         errOut.line shouldBe 10
@@ -191,7 +191,7 @@ class DefuncErrorTests extends ParsleyTest {
     }
 
     "Entrenched" should "guard against amendment" in {
-        val err = new EmptyError(0, 0, 0).entrench.amend(10, 10, 10)
+        val err = new EmptyError(0, 0, 0, 0).entrench.amend(10, 10, 10)
         val errOut = err.asParseError
         errOut.col shouldBe 0
         errOut.line shouldBe 0
