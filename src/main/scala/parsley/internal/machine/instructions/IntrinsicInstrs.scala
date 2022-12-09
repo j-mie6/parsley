@@ -8,7 +8,7 @@ import scala.annotation.tailrec
 import parsley.internal.errors.{EndOfInput, ExpectDesc, ExpectItem, ExpectRaw, UnexpectDesc}
 import parsley.internal.machine.{Context, Good}
 import parsley.internal.machine.XAssert._
-import parsley.internal.machine.errors.{ClassicExpectedError, ClassicExpectedErrorWithReason, ClassicFancyError, ClassicUnexpectedError}
+import parsley.internal.machine.errors.{ClassicFancyError, ClassicUnexpectedError, EmptyError, EmptyErrorWithReason}
 
 private [internal] final class Lift2(f: (Any, Any) => Any) extends Instr {
     override def apply(ctx: Context): Unit = {
@@ -142,7 +142,7 @@ private [internal] final class Filter[A](_pred: A => Boolean) extends Instr {
         else {
             val state = ctx.states
             val caretWidth = ctx.offset - state.offset
-            ctx.fail(new ClassicExpectedError(state.offset, state.line, state.col, None, caretWidth))
+            ctx.fail(new EmptyError(state.offset, state.line, state.col, caretWidth))
         }
         ctx.states = ctx.states.tail
     }
@@ -161,7 +161,7 @@ private [internal] final class MapFilter[A, B](_f: A => Option[B]) extends Instr
             case None =>
                 val state = ctx.states
                 val caretWidth = ctx.offset - state.offset
-                ctx.fail(new ClassicExpectedError(state.offset, state.line, state.col, None, caretWidth))
+                ctx.fail(new EmptyError(state.offset, state.line, state.col, caretWidth))
         }
         ctx.states = ctx.states.tail
     }
@@ -179,7 +179,7 @@ private [internal] final class FilterOut[A](_pred: PartialFunction[A, String]) e
             val reason = pred(ctx.stack.upop())
             val state = ctx.states
             val caretWidth = ctx.offset - state.offset
-            ctx.fail(new ClassicExpectedErrorWithReason(state.offset, state.line, state.col, None, reason, caretWidth))
+            ctx.fail(new EmptyErrorWithReason(state.offset, state.line, state.col, reason, caretWidth))
         }
         else ctx.inc()
         ctx.states = ctx.states.tail
