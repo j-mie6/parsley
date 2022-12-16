@@ -26,7 +26,7 @@ class ErrorTests extends ParsleyTest {
         }
         inside(p.parse("a")) {
             case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
-                unex shouldBe Some(Raw("a"))
+                unex shouldBe empty
                 exs shouldBe empty
                 rs should contain only ("'a' should have been uppercase")
         }

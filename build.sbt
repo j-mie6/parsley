@@ -4,6 +4,7 @@ import sbtdynver.GitDescribeOutput
 import scala.collection.mutable
 import sbtcrossproject.Platform
 import org.scalajs.linker.interface.ESVersion
+import com.typesafe.tools.mima.core._
 
 val projectName = "parsley"
 
@@ -128,6 +129,10 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     Compile / doc / scalacOptions ++= {
         if (scalaBinaryVersion.value == "3") Seq("-comment-syntax:wiki") else Seq.empty
     },
+
+    mimaBinaryIssueFilters ++= Seq(
+        ProblemFilters.exclude[Problem]("parsley.internal.*"),
+    ),
   )
   .jvmSettings(
     crossScalaVersions := List(scala212Version, scala213Version, scala3Version),
