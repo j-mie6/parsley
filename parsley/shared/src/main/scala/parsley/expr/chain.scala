@@ -109,7 +109,7 @@ object chain {
       * @since 4.0.0
       * @group binary
       */
-    def right[A](p: Parsley[A], op: =>Parsley[(A, A) => A], x: A): Parsley[A] = infix.right(p, op, x)
+    def right[A](p: Parsley[A], op: =>Parsley[(A, A) => A], x: A): Parsley[A] = infix.right(p, op, x) // TODO: right(x)(p, op)?
 
     /** This combinator handles left-associative parsing, and application of, '''zero''' or more binary operators between '''zero''' or more values.
       *
@@ -140,7 +140,7 @@ object chain {
       * @since 4.0.0
       * @group binary
       */
-    def left[A](p: Parsley[A], op: =>Parsley[(A, A) => A], x: A): Parsley[A] = infix.left(p, op, x)
+    def left[A](p: Parsley[A], op: =>Parsley[(A, A) => A], x: A): Parsley[A] = infix.left(p, op, x) // TODO: left(x)(p, op)?
 
     /** This combinator handles right-assocative parsing, and application of, '''zero''' or more prefix unary operators to a single value.
       *

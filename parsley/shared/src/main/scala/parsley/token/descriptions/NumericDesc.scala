@@ -3,9 +3,6 @@
  */
 package parsley.token.descriptions.numeric
 
-import parsley.token.numeric.Real
-import parsley.token.predicate.{CharPredicate, NotRequired}
-
 /** This class, and its subtypes, describe whether or not the plus sign (`+`) is allowed
   * in a specific position.
   *
