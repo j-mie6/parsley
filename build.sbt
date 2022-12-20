@@ -89,7 +89,7 @@ def testCoverageJob(cacheSteps: List[WorkflowStep]) = WorkflowJob(
                 name = Some("Upload coverage to Code Climate"),
                 ref = UseRef.Public(owner = "paambaati", repo = "codeclimate-action", ref = "v2.7.5"),
                 env = Map("CC_TEST_REPORTER_ID" -> "d2376ef4077556821a44dd82803411deea8fd904d5008713754dda5f3ab42875"),
-                params = Map("coverageLocations" -> "${{github.workspace}}/jvm/target/scala-2.13/coverage-report/cobertura.xml:cobertura"),
+                params = Map("coverageLocations" -> "${{github.workspace}}/parsley/jvm/target/scala-2.13/coverage-report/cobertura.xml:cobertura"),
             )
         )
 )

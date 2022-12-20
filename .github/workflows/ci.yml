@@ -267,4 +267,4 @@ jobs:
           CC_TEST_REPORTER_ID: d2376ef4077556821a44dd82803411deea8fd904d5008713754dda5f3ab42875
         uses: paambaati/codeclimate-action@v2.7.5
         with:
-          coverageLocations: '${{github.workspace}}/jvm/target/scala-2.13/coverage-report/cobertura.xml:cobertura'
+          coverageLocations: '${{github.workspace}}/parsley/jvm/target/scala-2.13/coverage-report/cobertura.xml:cobertura'
