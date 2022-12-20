@@ -6,16 +6,14 @@ package parsley
 import Predef.{ArrowAssoc => _, _}
 
 import parsley.Parsley._
-import parsley.combinator.{many, manyUntil, ifP}
+import parsley.combinator.{many, ifP}
 import parsley.lift._
 import parsley.character.{char, satisfy, digit, item, string}
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.implicits.lift.Lift1
 import parsley.implicits.zipped.Zipped2
 import parsley.registers._
-import parsley.errors.combinator.{fail => pfail, unexpected}
-
-import scala.language.implicitConversions
+import parsley.errors.combinator.{fail => pfail}
 
 class CoreTests extends ParsleyTest {
     private val add: (Int, Int) => Int = _+_

@@ -14,8 +14,6 @@ import parsley.expr.{precedence, Ops, GOps, SOps, InfixL, InfixR, Prefix, Postfi
 import parsley.Parsley._
 import parsley.genericbridges._
 
-import scala.language.implicitConversions
-
 class ExpressionParserTests extends ParsleyTest {
     "chain.postfix" must "require an initial value" in {
         chain.postfix('1' #> 1, '+' #> ((x: Int) => x + 1)).parseAll("1") should be (Success(1))
@@ -291,7 +289,6 @@ class ExpressionParserTests extends ParsleyTest {
         case class Constant(x: String) extends Expr
 
         object Binary extends ParserBridge2[Expr, Expr, Expr]
-        object Unary extends ParserBridge1[Expr, Expr]
         object Constant extends ParserBridge1[String, Expr]
 
         object Call extends ParserBridge1[Expr, Expr => Expr] {

@@ -3,8 +3,6 @@
  */
 package parsley.implicits
 
-import scala.language.implicitConversions
-
 import parsley.Parsley
 import parsley.character.{char, string}
 

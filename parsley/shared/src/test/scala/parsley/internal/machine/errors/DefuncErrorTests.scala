@@ -6,7 +6,6 @@ package parsley.internal.machine.errors
 import parsley.ParsleyTest
 
 import parsley.internal.errors.{TrivialError, FancyError, ExpectRaw, ExpectDesc, EndOfInput, UnexpectDesc}
-import scala.language.implicitConversions
 
 import MockedBuilders.mockedErrorItemBuilder
 

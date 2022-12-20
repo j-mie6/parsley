@@ -3,19 +3,20 @@
  */
 package parsley.token
 
-import scala.language.implicitConversions
+import parsley.XCompat.unused
 
 import parsley.Parsley, Parsley.{attempt, unit}
 import parsley.character.satisfyUtf16
 import parsley.combinator.{between, eof, sepBy, sepBy1, skipMany}
 import parsley.errors.combinator.{markAsToken, ErrorMethods}
 import parsley.registers.Reg
-import parsley.token.names.{ConcreteNames, LexemeNames, Names}
-import parsley.token.numeric.{Combined, Integer, LexemeCombined, LexemeInteger, LexemeReal, Real,
-                              SignedCombined, SignedInteger, SignedReal, UnsignedCombined, UnsignedInteger, UnsignedReal}
+import parsley.token.names.{ConcreteNames, LexemeNames}
+import parsley.token.numeric.{LexemeCombined, LexemeInteger, LexemeReal,
+                              SignedCombined, SignedInteger, SignedReal,
+                              UnsignedCombined, UnsignedInteger, UnsignedReal}
 import parsley.token.predicate.{Basic, CharPredicate, NotRequired, Unicode}
-import parsley.token.symbol.{ConcreteSymbol, LexemeSymbol, Symbol}
-import parsley.token.text.{Character, ConcreteCharacter, ConcreteString, EscapableCharacter, Escape, LexemeCharacter, LexemeString, RawCharacter}
+import parsley.token.symbol.{ConcreteSymbol, LexemeSymbol}
+import parsley.token.text.{ConcreteCharacter, ConcreteString, EscapableCharacter, Escape, LexemeCharacter, LexemeString, RawCharacter}
 
 import parsley.internal.deepembedding.singletons
 
@@ -224,7 +225,7 @@ private [token] abstract class Lexeme {
   *                  the lexer.
   * @since 4.0.0
   */
-class Lexer private[parsley] (desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
+class Lexer private[parsley] (desc: descriptions.LexicalDesc, @unused errConfig: errors.ErrorConfig) {
     /** Builds a new lexer with a given description for the lexical structure of the language.
       *
       * @param desc the configuration for the lexer, specifying the lexical

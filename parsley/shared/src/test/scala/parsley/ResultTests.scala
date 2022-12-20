@@ -3,7 +3,7 @@
  */
 package parsley
 
-import scala.language.implicitConversions
+import scala.annotation.nowarn
 
 class ResultTests extends ParsleyTest {
     "Success" should "return true for isSuccess" in {
@@ -39,21 +39,21 @@ class ResultTests extends ParsleyTest {
     }
     it should "behave like Either[String, A] on failure" in {
         val rx = for {
-            y <- Failure("oops")
+            y <- Failure("oops"): Result[String, Int]
             x <- Success((y: Int) + 4)
         } yield x
         val ex = for {
-            y <- Left("oops")
+            y <- Left("oops"): Either[String, Int]
             x <- Right((y: Int) + 4)
         } yield x
         rx.toEither should equal (ex)
         val rx2 = for {
-            y <- Success(5)
-            x <- Failure("oops")
+            _ <- Success(5)
+            x <- Failure("oops"): Result[Any, Any]
         } yield x
         val ex2 = for {
-            y <- Right(5)
-            x <- Left("oops")
+            _ <- Right(5)
+            x <- Left("oops"): Either[Any, Any]
         } yield x
         rx2.toEither should equal (ex2)
     }
@@ -83,7 +83,7 @@ class ResultTests extends ParsleyTest {
     }
     it should "support foreach" in {
         var x = 0
-        for (y <- Failure("msg")) x = y
+        Failure("msg").foreach(y => x = y): @nowarn
         x shouldBe 0
         for (y <- Success(3)) x = y
         x shouldBe 3
@@ -96,10 +96,10 @@ class ResultTests extends ParsleyTest {
     it should "be filterable" in {
         Success(5).filterOrElse(_ == 5, "???") shouldBe Success(5)
         Success(5).filterOrElse(_ == 4, "should be 4!") shouldBe Failure("should be 4!")
-        Failure("oops").filterOrElse(_ == 4, "should be 4!") shouldBe Failure("oops")
+        Failure("oops").filterOrElse(_ == 4: @nowarn, "should be 4!") shouldBe Failure("oops")
     }
     it should "be foldable" in {
-        Success(4).fold(_ => 0, _+1) shouldBe 5
+        (Success(4).fold(_ => 0, _+1): @nowarn) shouldBe 5
         Failure("oops").fold(_ => 0, (x: Int) => x + 1) shouldBe 0
     }
 }

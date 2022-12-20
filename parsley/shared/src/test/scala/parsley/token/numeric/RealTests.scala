@@ -5,7 +5,7 @@ package parsley.token.numeric
 
 import Predef.{ArrowAssoc => _, _}
 
-import parsley.{Parsley, ParsleyTest, Success, Failure}
+import parsley.ParsleyTest
 import parsley.token.LexemeImpl
 import parsley.token.descriptions.numeric._, ExponentDesc.NoExponents
 import org.scalactic.source.Position

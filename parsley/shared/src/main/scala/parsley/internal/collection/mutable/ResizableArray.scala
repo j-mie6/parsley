@@ -13,7 +13,7 @@ private [internal] final class ResizableArray[A: ClassTag](initialSize: Int) {
     def this() = this(initialSize = ResizableArray.InitialSize)
 
     def +=(x: A): Unit = {
-        val arrayLength: Long = array.length
+        val arrayLength: Long = array.length.toLong
         if (arrayLength == size) {
             val newSize: Long = Math.min(arrayLength * 2, Int.MaxValue)
             val newArray: Array[A] = new Array(newSize.toInt)

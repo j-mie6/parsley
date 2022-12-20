@@ -10,7 +10,7 @@ import parsley.XAssert._
 import parsley.registers.Reg
 
 import parsley.internal.collection.mutable.ResizableArray
-import parsley.internal.deepembedding.ContOps, ContOps.{perform, result, ContAdapter}
+import parsley.internal.deepembedding.ContOps, ContOps.{perform, ContAdapter}
 import parsley.internal.machine.instructions, instructions.{Instr, Label}
 
 import StrictParsley._ // scalastyle:ignore underscore.import

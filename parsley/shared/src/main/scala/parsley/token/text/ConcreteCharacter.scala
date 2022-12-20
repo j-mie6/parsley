@@ -4,7 +4,6 @@
 package parsley.token.text
 
 import parsley.Parsley
-import parsley.character.satisfy
 import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.character.charLift
 import parsley.token.descriptions.text.TextDesc

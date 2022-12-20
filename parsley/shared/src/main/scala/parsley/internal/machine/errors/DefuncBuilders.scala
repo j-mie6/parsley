@@ -5,7 +5,7 @@ package parsley.internal.machine.errors
 
 import scala.collection.mutable
 
-import parsley.internal.errors.{EndOfInput, ErrorItem, ExpectItem, FancyError, TrivialError, UnexpectItem}
+import parsley.internal.errors.{EndOfInput, ExpectItem, FancyError, TrivialError, UnexpectItem}
 
 import TrivialErrorBuilder.{BuilderUnexpectItem, NoItem, Other, Raw}
 

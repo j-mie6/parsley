@@ -4,9 +4,9 @@
 package parsley.token.numeric
 
 import parsley.Parsley, Parsley.{attempt, pure, unit}
-import parsley.character.{digit, hexDigit, octDigit, oneOf}
-import parsley.combinator.{choice, optional}
-import parsley.errors.combinator.{amend, entrench, ErrorMethods}
+import parsley.character.oneOf
+import parsley.combinator.optional
+import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.character.charLift
 import parsley.token.descriptions.numeric.{BreakCharDesc, NumericDesc}
 

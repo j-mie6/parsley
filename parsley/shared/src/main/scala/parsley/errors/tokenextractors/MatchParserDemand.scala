@@ -3,9 +3,9 @@
  */
 package parsley.errors.tokenextractors
 
-import scala.annotation.tailrec
 import scala.collection.immutable.WrappedString
 
+import parsley.XCompat.unused
 import parsley.errors.{helpers, ErrorBuilder, Token, TokenSpan}
 
 // Turn coverage off, because the tests have their own error builder
@@ -21,7 +21,7 @@ import parsley.errors.{helpers, ErrorBuilder, Token, TokenSpan}
   */
 trait MatchParserDemand { this: ErrorBuilder[_] =>
     /** @see [[parsley.errors.ErrorBuilder.unexpectedToken `ErrorBuilder.unexpectedToken`]] */
-    override final def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token = {
+    override final def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int, @unused lexicalError: Boolean): Token = {
         MatchParserDemand.unexpectedToken(cs, amountOfInputParserWanted)
     }
 }

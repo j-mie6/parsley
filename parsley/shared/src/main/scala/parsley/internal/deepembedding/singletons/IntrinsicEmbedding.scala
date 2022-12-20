@@ -5,7 +5,6 @@ package parsley.internal.deepembedding.singletons
 
 import parsley.registers.Reg
 
-import parsley.internal.deepembedding.backend.StrictParsley
 import parsley.internal.deepembedding.frontend.UsesRegister
 import parsley.internal.machine.instructions
 

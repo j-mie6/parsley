@@ -3,6 +3,7 @@
  */
 package parsley
 
+import scala.annotation.nowarn
 import scala.util.{Failure => TFailure, Success => TSuccess, Try}
 import scala.util.hashing.MurmurHash3
 
@@ -39,7 +40,7 @@ sealed abstract class Result[+Err, +A] {
       * @since 1.7.0
       */
     def foreach[U](f: A => U): Unit = this match {
-        case Success(x) => f(x)
+        case Success(x) => f(x): @nowarn
         case _          => ()
     }
 

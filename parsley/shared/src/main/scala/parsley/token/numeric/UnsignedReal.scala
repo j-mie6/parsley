@@ -12,9 +12,6 @@ import parsley.lift.lift2
 import parsley.registers.Reg
 import parsley.token.descriptions.numeric.{BreakCharDesc, ExponentDesc, NumericDesc}
 
-import parsley.internal.deepembedding.Sign.DoubleType
-import parsley.internal.deepembedding.singletons
-
 private [token] final class UnsignedReal(desc: NumericDesc, natural: Integer) extends Real {
     override lazy val decimal: Parsley[BigDecimal] = attempt(ofRadix(10, digit))
     override lazy val hexadecimal: Parsley[BigDecimal] = attempt('0' *> noZeroHexadecimal)

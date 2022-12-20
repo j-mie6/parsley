@@ -1,7 +1,5 @@
 package parsley.token
 
-import scala.language.implicitConversions
-
 import parsley.Parsley
 import parsley.errors.combinator.markAsToken
 

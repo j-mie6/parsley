@@ -3,7 +3,7 @@
  */
 package parsley.internal
 
-import parsley.{ParsleyTest, Success, Failure, TestError, VanillaError, Raw, Named}
+import parsley.{ParsleyTest, Success, Failure, TestError, VanillaError}
 import parsley.Parsley, Parsley._
 import parsley.character.{char, satisfy, digit, string, stringOfSome}
 import parsley.combinator.{attemptChoice, choice, some, optional}
@@ -13,8 +13,6 @@ import parsley.errors.combinator.ErrorMethods
 import parsley.registers.Reg
 
 import machine.instructions
-
-import scala.language.implicitConversions
 
 class InternalTests extends ParsleyTest {
     "subroutines" should "function correctly and be picked up" in {

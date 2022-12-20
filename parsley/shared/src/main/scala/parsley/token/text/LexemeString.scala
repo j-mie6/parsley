@@ -3,7 +3,7 @@
  */
 package parsley.token.text
 
-import scala.Predef.{String => ScalaString, _}
+import scala.Predef.{String => ScalaString}
 
 import parsley.Parsley
 import parsley.token.Lexeme

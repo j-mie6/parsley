@@ -5,6 +5,7 @@ package parsley.errors.tokenextractors
 
 import scala.collection.immutable.WrappedString
 
+import parsley.XCompat.unused
 import parsley.errors.{helpers, ErrorBuilder, Token, TokenSpan}
 
 // Turn coverage off, because the tests have their own error builder
@@ -27,7 +28,7 @@ trait TillNextWhitespace { this: ErrorBuilder[_] =>
     def trimToParserDemand: Boolean
 
     /** @see [[parsley.errors.ErrorBuilder.unexpectedToken `ErrorBuilder.unexpectedToken`]] */
-    override final def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token = {
+    override final def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int, @unused lexicalError: Boolean): Token = {
         if (trimToParserDemand) TillNextWhitespace.unexpectedToken(cs, amountOfInputParserWanted)
         else TillNextWhitespace.unexpectedToken(cs)
     }

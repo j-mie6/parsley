@@ -9,7 +9,7 @@ import org.scalatest.matchers.should.Matchers
 
 import parsley.combinator.eof
 import parsley.Result
-import parsley.errors.{DefaultErrorBuilder, ErrorBuilder, tokenextractors}
+import parsley.errors.{ErrorBuilder, tokenextractors}
 import org.scalatest.Inside
 import org.scalactic.source.Position
 

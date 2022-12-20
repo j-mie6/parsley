@@ -6,10 +6,6 @@ package parsley.internal.machine.errors
 import parsley.ParsleyTest
 
 import parsley.internal.errors.ExpectDesc
-import scala.language.implicitConversions
-
-import MockedBuilders.mockedErrorItemBuilder
-import scala.annotation.nowarn
 
 class DefuncHintsTests extends ParsleyTest {
     def mkErr(labels: String*): DefuncError = {

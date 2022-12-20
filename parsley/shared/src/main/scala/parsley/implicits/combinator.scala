@@ -3,8 +3,6 @@
  */
 package parsley.implicits
 
-import scala.language.implicitConversions
-
 import parsley.Parsley
 
 /** Provides implicit conversions for parsers into unit parsers, and other implicits involving combinators.

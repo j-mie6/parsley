@@ -7,7 +7,7 @@ package object instructions {
     // $COVERAGE-OFF$
     final private [parsley] def pretty(instrs: Array[Instr]): String = {
         val n = instrs.length
-        val digits = if (n != 0) Math.log10(n).toInt + 1 else 0
+        val digits = if (n != 0) Math.log10(n.toDouble).toInt + 1 else 0
         instrs.zipWithIndex.map {
             case (instr, idx) =>
                 val paddedIdx = {

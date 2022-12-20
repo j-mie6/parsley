@@ -4,11 +4,9 @@
 package parsley
 
 import parsley.combinator.manyUntil
-import parsley.character.{item, string}
-import parsley.implicits.character.{charLift, stringLift}
+import parsley.character.item
+import parsley.implicits.character.stringLift
 import parsley.io._
-
-import scala.language.implicitConversions
 
 import java.io.File
 

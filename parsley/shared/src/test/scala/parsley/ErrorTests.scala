@@ -9,8 +9,6 @@ import parsley.implicits.character.{charLift, stringLift}
 import parsley.character.{item, digit}
 import parsley.errors.combinator.{fail => pfail, unexpected, amend, entrench, ErrorMethods}
 
-import scala.language.implicitConversions
-
 class ErrorTests extends ParsleyTest {
     "mzero parsers" should "always fail" in {
         (Parsley.empty ~> 'a').parse("a") shouldBe a [Failure[_]]

@@ -3,7 +3,7 @@
  */
 package parsley.errors
 
-import parsley.Parsley, Parsley.pure
+import parsley.Parsley
 
 import parsley.internal.deepembedding.{frontend, singletons}
 
@@ -436,7 +436,7 @@ object combinator {
           * @group rich
           */
         def hide: Parsley[A] = this.label("")
-        
+
         /** This combinator parses this parser and then fails, using the result of this parser to customise the error message.
           *
           * Similar to `fail`, but first parses this parser: if it succeeded, then its result `x` is used to form the error

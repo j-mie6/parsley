@@ -9,8 +9,6 @@ import parsley.character.{letter, string, strings, stringOfMany, stringOfSome}
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.Parsley._
 
-import scala.language.implicitConversions
-
 class StringTests extends ParsleyTest {
     private def stringPositionCheck(initialCol: Int, str: String) = {
         ((if (initialCol == 0) pure("") else string("." * initialCol)) *> string(str) *> pos).parse("." * initialCol + str)

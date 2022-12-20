@@ -3,6 +3,7 @@
  */
 package parsley.internal.deepembedding.frontend
 
+import scala.annotation.nowarn
 import scala.collection.mutable
 
 import parsley.XAssert._
@@ -27,7 +28,7 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     /** Denotes this parser is unsafe, which will disable certain law-based optimisations that assume purity. */
     private [parsley] final def unsafe(): Unit = sSafe = false
     /** Force the parser, which eagerly computes its instructions immediately */
-    private [parsley] final def force(): Unit = instrs
+    private [parsley] final def force(): Unit = instrs: @nowarn
     /** Denote that this parser is large enough that it might stack-overflow during
       * compilation: this allows for the slow path using `Cont` to be used immediately
       * instead of going through the (likely failing) `Id` path.
@@ -153,7 +154,7 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
             try findLetsAux(seen + this)
             catch {
                 // $COVERAGE-OFF$
-                case npe: NullPointerException => throw new BadLazinessException // scalastyle:ignore throw
+                case _: NullPointerException => throw new BadLazinessException // scalastyle:ignore throw
                 // $COVERAGE-ON$
             }
         }

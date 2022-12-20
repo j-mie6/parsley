@@ -7,10 +7,10 @@ import scala.annotation.switch
 import scala.collection.immutable.NumericRange
 
 import parsley.Parsley.{attempt, empty, fresh, pure}
-import parsley.combinator.{choice, skip, skipMany}
+import parsley.combinator.{choice, skipMany}
 import parsley.errors.combinator.ErrorMethods
 
-import parsley.internal.deepembedding.{frontend, singletons}
+import parsley.internal.deepembedding.singletons
 
 /** This module contains many parsers to do with reading one or more characters. Almost every parser will need something from this module.
   *
@@ -123,7 +123,7 @@ object character {
       * @group core
       */
     private [parsley] def charUtf16(c: Int): Parsley[Int] = { //TODO: release along with the utf combinators
-        if (Character.isBmpCodePoint(c)) char(c.toChar).map(identity[Char])
+        if (Character.isBmpCodePoint(c)) char(c.toChar).map(_.toInt)
         else attempt(string(Character.toChars(c).mkString)) #> c
     }
 

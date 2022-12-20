@@ -5,7 +5,7 @@ package parsley.token.names
 
 import parsley.Parsley, Parsley.{attempt, empty, pure}
 import parsley.character.{satisfy, satisfyUtf16, stringOfMany, stringOfManyUtf16}
-import parsley.errors.combinator.{amend, entrench, unexpected, ErrorMethods}
+import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.zipped.Zipped2
 import parsley.token.descriptions.{NameDesc, SymbolDesc}
 import parsley.token.predicate.{Basic, CharPredicate, NotRequired, Unicode}

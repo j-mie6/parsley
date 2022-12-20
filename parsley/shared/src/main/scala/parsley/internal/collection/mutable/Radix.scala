@@ -8,7 +8,7 @@ import scala.collection.{mutable, BufferedIterator}
 
 import Radix.{Entry, IteratorHelpers, StringHelpers}
 
-@deprecated("Radix is currently not being unit tested, if it is used again remove test coverage lines")
+@deprecated("Radix is currently not being unit tested, if it is used again remove test coverage lines", "4.0.0")
 // $COVERAGE-OFF$
 private [internal] class Radix[A] {
     private [this] var x = Option.empty[A]

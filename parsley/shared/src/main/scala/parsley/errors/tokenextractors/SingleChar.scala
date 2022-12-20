@@ -3,6 +3,7 @@
  */
 package parsley.errors.tokenextractors
 
+import parsley.XCompat.unused
 import parsley.errors.{helpers, ErrorBuilder, Token, TokenSpan}
 
 // Turn coverage off, because the tests have their own error builder
@@ -18,7 +19,9 @@ import parsley.errors.{helpers, ErrorBuilder, Token, TokenSpan}
   */
 trait SingleChar { this: ErrorBuilder[_] =>
     /** @see [[parsley.errors.ErrorBuilder.unexpectedToken `ErrorBuilder.unexpectedToken`]] */
-    override final def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token = SingleChar.unexpectedToken(cs)
+    override final def unexpectedToken(cs: Iterable[Char], @unused amountOfInputParserWanted: Int, @unused lexicalError: Boolean): Token = {
+        SingleChar.unexpectedToken(cs)
+    }
 }
 
 /** Contains the functionality of `SingleChar` as a function.

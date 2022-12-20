@@ -6,7 +6,7 @@ package parsley.token.symbol
 // TODO: This can be enabled later, when finalised: js-native will need to not use this
 //import scala.collection.concurrent
 
-import parsley.Parsley, Parsley.{attempt, notFollowedBy, pure, unit}
+import parsley.Parsley, Parsley.{attempt, notFollowedBy, unit}
 import parsley.character.{char, string, strings}
 import parsley.errors.combinator.ErrorMethods
 import parsley.token.descriptions.{NameDesc, SymbolDesc}
@@ -36,7 +36,7 @@ private [token] class ConcreteSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc)
     override def softKeyword(name: String): Parsley[Unit] = /*keywordMemo.getOrElseUpdate(name, */nameDesc.identifierLetter match {
         // TODO: this needs optimising for Unicode
         case Basic(letter) => new Parsley(new singletons.Specific("keyword", name, letter, symbolDesc.caseSensitive))
-        case letter => attempt(caseString(name).label(name) *> notFollowedBy(identLetter).label(s"end of $name"))
+        case _ => attempt(caseString(name).label(name) *> notFollowedBy(identLetter).label(s"end of $name"))
     }//)
 
     //private val operatorMemo = concurrent.TrieMap.empty[String, Parsley[Unit]]

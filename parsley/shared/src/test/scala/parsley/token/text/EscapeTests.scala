@@ -4,7 +4,7 @@
 package parsley.token.text
 
 import scala.Predef.{String => SString, ArrowAssoc => _, _}
-import parsley.{Parsley, ParsleyTest, Success, Failure}
+import parsley.ParsleyTest
 
 import parsley.token.descriptions.text._
 import org.scalactic.source.Position

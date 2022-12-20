@@ -13,7 +13,7 @@ import parsley.errors.ErrorBuilder
 
 import parsley.internal.errors.{ExpectItem, LineBuilder, UnexpectDesc}
 import parsley.internal.machine.errors.{
-    ClassicExpectedError, ClassicExpectedErrorWithReason, ClassicFancyError, ClassicUnexpectedError, DefuncError,
+    ClassicExpectedError, ClassicFancyError, ClassicUnexpectedError, DefuncError,
     DefuncHints, EmptyHints, ErrorItemBuilder
 }
 

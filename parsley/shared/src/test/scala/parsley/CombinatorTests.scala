@@ -10,8 +10,6 @@ import parsley.Parsley._
 import parsley.registers.{forYieldP, forYieldP_, Reg}
 import parsley.implicits.character.{charLift, stringLift}
 
-import scala.language.implicitConversions
-
 class CombinatorTests extends ParsleyTest {
     "choice" should "fail if given the empty list" in {
         choice().parse("") shouldBe a [Failure[_]]

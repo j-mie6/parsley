@@ -7,7 +7,6 @@ import scala.collection.mutable
 
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
-import parsley.internal.machine.stacks.Stack, Stack.StackExt
 
 private [internal] final class Many(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
@@ -88,7 +87,7 @@ private [internal] final class Chainl(var label: Int) extends InstrWithLabel {
         if (ctx.good) {
             val y = ctx.stack.upop()
             val op = ctx.stack.pop[(Any, Any) => Any]()
-            ctx.stack.exchange(op(ctx.stack.peek, y))
+            ctx.stack.exchange(op(ctx.stack.peek[Any], y))
             ctx.updateCheckOffsetAndHints()
             ctx.pc = label
         }
@@ -245,7 +244,7 @@ private [internal] final class SkipManyUntil(var label: Int) extends InstrWithLa
                 case parsley.combinator.ManyUntil.Stop =>
                     ctx.handlers = ctx.handlers.tail
                     ctx.exchangeAndContinue(())
-                case x =>
+                case _ =>
                     ctx.pc = label
                     ctx.stack.pop_()
             }

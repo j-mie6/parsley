@@ -6,10 +6,7 @@ package parsley
 import Predef.{ArrowAssoc => _, _}
 
 import parsley.character._
-import parsley.Parsley._
 import parsley.implicits.character.charLift
-
-import scala.language.implicitConversions
 
 class CharTests extends ParsleyTest {
     "item" should "accept any character" in {

@@ -6,14 +6,10 @@ package parsley.token
 import Predef.{ArrowAssoc => _, _}
 
 import parsley._
-import Parsley.col
-import parsley.character.{letterOrDigit, letter, whitespace, string, oneOf => inSet}
-import parsley.implicits.character.charLift
+import parsley.character.string
 import parsley.combinator.eof
 
 import token.{descriptions => desc}
-
-import scala.language.implicitConversions
 
 class TokeniserTests extends ParsleyTest {
     val scala =

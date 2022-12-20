@@ -5,7 +5,7 @@ package parsley.internal.machine.errors
 
 import parsley.XAssert._
 
-import parsley.internal.errors.{ErrorItem, ExpectDesc, ExpectItem, FancyError, ParseError, TrivialError, UnexpectDesc, UnexpectItem}
+import parsley.internal.errors.{ExpectDesc, ExpectItem, FancyError, ParseError, TrivialError, UnexpectDesc}
 
 // This file contains the defunctionalised forms of the error messages.
 // Essentially, whenever an error is created in the machine, it should make use of one of

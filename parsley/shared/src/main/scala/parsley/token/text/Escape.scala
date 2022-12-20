@@ -5,7 +5,7 @@ package parsley.token.text
 
 import parsley.Parsley, Parsley.{attempt, empty, pure, unit}
 import parsley.character.{bit, char, digit, hexDigit, octDigit, strings}
-import parsley.combinator.{choice, ensure, option}
+import parsley.combinator.ensure
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 import parsley.implicits.zipped.Zipped3
 import parsley.token.descriptions.text.{EscapeDesc, NumberOfDigits, NumericEscape}

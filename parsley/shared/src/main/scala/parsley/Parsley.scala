@@ -11,7 +11,7 @@ import parsley.internal.deepembedding.{frontend, singletons}
 import parsley.internal.machine.Context
 
 import Parsley.pure
-import XCompat._
+import XCompat._ // substituteCo
 
 /**
   * This is the class that encapsulates the act of parsing and running an object of this class with `parse` will
@@ -176,7 +176,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @return a new parser that behaves the same as this parser, but always returns `()` on success.
       * @group map
       */
-    def void: Parsley[Unit] = this #> ()
+    def void: Parsley[Unit] = this #> (())
 
     // BRANCHING COMBINATORS
     /** This combinator, pronounced "or", $or
@@ -347,7 +347,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @group seq
       */
     def <*>[B, C](px: =>Parsley[B])
-                 (implicit ev: A <:< (B=>C)): Parsley[C] = new Parsley(new frontend.<*>[B, C](ev.substituteCo(this).internal, px.internal))
+                 (implicit ev: A <:< (B=>C)): Parsley[C] = new Parsley(new frontend.<*>[B, C](ev.substituteParsley(this).internal, px.internal))
     /** This combinator, pronounced "reverse ap", first parses this parser then parses `pf`: if both succeed then the value
       * returned by this parser is applied to the function returned by `pf`.
       *

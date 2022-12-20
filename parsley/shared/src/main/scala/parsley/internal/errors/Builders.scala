@@ -17,7 +17,7 @@ private [parsley] abstract class LineBuilder {
         startOffset <- nearestNewlineBefore(offset)
         endOffset <- nearestNewlineAfter(offset)
         segment = segmentBetween(startOffset, endOffset)
-        caretAt = offset - startOffset
+        //caretAt = offset - startOffset
     } yield (segment.replace('\t', ' '), startOffset, endOffset)
 
     @tailrec private final def getLinesBefore(offset: Int, i: Int, lines: mutable.ListBuffer[String]): Unit = if (i >= 0) getLineWithEndPoints(offset) match {

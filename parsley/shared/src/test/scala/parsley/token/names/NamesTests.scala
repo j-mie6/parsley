@@ -5,13 +5,13 @@ package parsley.token.names
 
 import Predef.{ArrowAssoc => _, _}
 
-import parsley.{Parsley, ParsleyTest, Success, Failure}
+import parsley.{ParsleyTest, Failure}
 import parsley.token.LexemeImpl._
 
 import parsley.token.descriptions._
 import parsley.token.predicate._
 import parsley.token.names._
-import parsley.character.{spaces, string}
+import parsley.character.spaces
 import parsley.{TestError, VanillaError, Named}
 import org.scalactic.source.Position
 

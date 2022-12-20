@@ -7,12 +7,11 @@ import scala.annotation.tailrec
 
 import parsley.XAssert._
 
-import parsley.internal.collection.mutable.Radix, Radix.RadixSet
 import parsley.internal.errors.{ExpectDesc, UnexpectDesc}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 
-private [instructions] abstract class CommentLexer(start: String, end: String, line: String, nested: Boolean, eofAllowed: Boolean) 
+private [instructions] abstract class CommentLexer(start: String, end: String, line: String, nested: Boolean, eofAllowed: Boolean)
     extends Instr {
     protected [this] final val lineAllowed = line.nonEmpty
     protected [this] final val multiAllowed = start.nonEmpty && end.nonEmpty
@@ -59,7 +58,7 @@ private [instructions] abstract class CommentLexer(start: String, end: String, l
     }
 }
 
-private [instructions] abstract class WhiteSpaceLike(start: String, end: String, line: String, nested: Boolean, eofAllowed: Boolean) 
+private [instructions] abstract class WhiteSpaceLike(start: String, end: String, line: String, nested: Boolean, eofAllowed: Boolean)
     extends CommentLexer(start, end, line, nested, eofAllowed) {
     private [this] final val numCodePointsEnd = end.codePointCount(0, end.length)
     @tailrec private final def singlesOnly(ctx: Context): Unit = {
@@ -120,7 +119,7 @@ private [instructions] abstract class WhiteSpaceLike(start: String, end: String,
     protected def spaces(ctx: Context): Unit
 }
 
-private [internal] final class TokenComment(start: String, end: String, line: String, nested: Boolean, eofAllowed: Boolean) 
+private [internal] final class TokenComment(start: String, end: String, line: String, nested: Boolean, eofAllowed: Boolean)
     extends CommentLexer(start, end, line, nested, eofAllowed) {
     private [this] final val comment = Some(ExpectDesc("comment"))
     private [this] final val openingSize = Math.max(start.codePointCount(0, start.length), line.codePointCount(0, line.length))
@@ -159,7 +158,7 @@ private [internal] final class TokenWhiteSpace(ws: Char => Boolean, start: Strin
     // $COVERAGE-ON$
 }
 
-private [internal] final class TokenSkipComments(start: String, end: String, line: String, nested: Boolean, eofAllowed: Boolean) 
+private [internal] final class TokenSkipComments(start: String, end: String, line: String, nested: Boolean, eofAllowed: Boolean)
     extends WhiteSpaceLike(start, end, line, nested, eofAllowed) {
     override def spaces(ctx: Context): Unit = ()
     // $COVERAGE-OFF$

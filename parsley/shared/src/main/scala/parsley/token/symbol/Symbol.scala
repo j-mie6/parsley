@@ -3,8 +3,6 @@
  */
 package parsley.token.symbol
 
-import scala.language.implicitConversions
-
 import parsley.Parsley
 import parsley.errors.combinator.ErrorMethods
 

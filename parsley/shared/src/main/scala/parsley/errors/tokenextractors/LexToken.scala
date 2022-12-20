@@ -7,10 +7,11 @@ import scala.collection.immutable.WrappedString
 
 import parsley.Parsley, Parsley.{attempt, lookAhead}
 import parsley.Success
+import parsley.XCompat.unused
 import parsley.XAssert.assert
-import parsley.character.{item, newline, noneOf}
+import parsley.character.item
 import parsley.combinator.{choice, eof, option, sequence, someUntil}
-import parsley.errors.{helpers, ErrorBuilder, Token, TokenSpan}
+import parsley.errors.{ErrorBuilder, Token, TokenSpan}
 
 // Turn coverage off, because the tests have their own error builder
 // TODO: We might want to test this on its own though
@@ -102,7 +103,7 @@ trait LexToken { this: ErrorBuilder[_] =>
       *
       * @since 4.0.0
       */
-    def extractItem(cs: Iterable[Char], amountOfInputParserWanted: Int): Token = SingleChar.unexpectedToken(cs)
+    def extractItem(cs: Iterable[Char], @unused amountOfInputParserWanted: Int): Token = SingleChar.unexpectedToken(cs)
 
     /** @see [[parsley.errors.ErrorBuilder.unexpectedToken `ErrorBuilder.unexpectedToken`]] */
     override final def unexpectedToken(cs: Iterable[Char], amountOfInputParserWanted: Int, lexicalError: Boolean): Token = {

@@ -4,11 +4,14 @@
 // $COVERAGE-OFF$
 package parsley.internal.machine.instructions
 
+import scala.annotation.nowarn
+
+import parsley.XCompat.unused
 import parsley.XAssert._
 import parsley.errors.ErrorBuilder
 
 import parsley.internal.errors.{ExpectItem, FancyError, ParseError, TrivialError}
-import parsley.internal.machine.{Context, Failed, Finished, Good, Recover}
+import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 
 import Indenter.indentAndUnlines
@@ -34,7 +37,7 @@ private [instructions] trait Colours {
 private [instructions] trait PrettyPortal {
     val name: String
 
-    final protected def portal(dir: Direction, ctx: Context) = s"${dir.render}$name${dir.render}"
+    final protected def portal(dir: Direction, @unused ctx: Context) = s"${dir.render}$name${dir.render}"
 }
 private [instructions] object PrettyPortal {
     sealed abstract class Direction {
@@ -85,7 +88,7 @@ private [instructions] trait Logger extends PrettyPortal with InputSlicer with C
                 s"{stack: ${ctx.stack.mkString(", ")}}",
                 s"{registers: ${ctx.regs.zipWithIndex.map{case (x, i) => s"r$i: $x"}.mkString("[", ", ", "])}")}}",
                 "..."))
-        Console.in.read()
+        Console.in.read(): @nowarn
     }
 }
 
@@ -168,7 +171,7 @@ private [internal] final class LogErrEnd(override val name: String, override val
     override def apply(ctx: Context): Unit = {
         assert(ctx.running, "cannot wrap a Halt with a debug")
         ctx.debuglvl -= 1
-        val currentHintsValidOffset = ctx.currentHintsValidOffset
+        @unused val currentHintsValidOffset = ctx.currentHintsValidOffset
         if (ctx.good) {
             // In this case, the currently in-flight hints should be reported
             val oldData = ctx.stack.pop[ErrLogData]()
@@ -197,7 +200,7 @@ private [internal] final class LogErrEnd(override val name: String, override val
             // For this, there needs to be a verbose mode that prints out the composite error
             // as opposed to the simplified error (post-merge)
             // there should be different levels of verbose flags, such that we can also display the expecteds _under_ a label
-            val oldData = ctx.stack.peek[ErrLogData]
+            @unused val oldData = ctx.stack.peek[ErrLogData]
             val defuncErr = ctx.inFlightError
             val err = defuncErr.asParseError(ctx.errorItemBuilder)
             println(preludeString(Exit, ctx, s": ${red("Fail")}"))

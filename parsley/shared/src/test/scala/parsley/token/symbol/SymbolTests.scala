@@ -5,7 +5,7 @@ package parsley.token.symbol
 
 import Predef.{ArrowAssoc => _, _}
 
-import parsley.{Parsley, ParsleyTest, Success, Failure}
+import parsley.{Parsley, ParsleyTest}
 import parsley.token.LexemeImpl._
 
 import parsley.token.descriptions._

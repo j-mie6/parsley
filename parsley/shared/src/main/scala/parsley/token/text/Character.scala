@@ -4,7 +4,6 @@
 package parsley.token.text
 
 import parsley.Parsley
-import parsley.character.satisfy
 import parsley.token.predicate.{Basic, CharPredicate, NotRequired, Unicode}
 
 /** This class defines a uniform interface for defining parsers for character

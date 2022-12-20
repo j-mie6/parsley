@@ -4,7 +4,7 @@
 package parsley.token.numeric
 
 import parsley.Parsley, Parsley.pure
-import parsley.character.{bit, digit, hexDigit, octDigit, oneOf}
+import parsley.character.{bit, digit, hexDigit, octDigit}
 import parsley.combinator.optional
 import parsley.extension.OperatorSugar
 import parsley.implicits.character.charLift

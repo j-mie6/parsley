@@ -6,7 +6,7 @@ package parsley.internal.machine.instructions
 import scala.annotation.tailrec
 
 import parsley.internal.errors.{EndOfInput, ExpectDesc, ExpectItem, ExpectRaw, UnexpectDesc}
-import parsley.internal.machine.{Context, Good}
+import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.{ClassicFancyError, ClassicUnexpectedError, EmptyError, EmptyErrorWithReason}
 
@@ -14,7 +14,7 @@ private [internal] final class Lift2(f: (Any, Any) => Any) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         val y = ctx.stack.upop()
-        ctx.exchangeAndContinue(f(ctx.stack.peek, y))
+        ctx.exchangeAndContinue(f(ctx.stack.upeek, y))
     }
     // $COVERAGE-OFF$
     override def toString: String = "Lift2(f)"
@@ -29,7 +29,7 @@ private [internal] final class Lift3(f: (Any, Any, Any) => Any) extends Instr {
         ensureRegularInstruction(ctx)
         val z = ctx.stack.upop()
         val y = ctx.stack.upop()
-        ctx.exchangeAndContinue(f(ctx.stack.peek, y, z))
+        ctx.exchangeAndContinue(f(ctx.stack.upeek, y, z))
     }
     // $COVERAGE-OFF$
     override def toString: String = "Lift3(f)"
@@ -65,7 +65,7 @@ private [internal] final class StringTok(s: String, x: Any, errorItem: Option[Ex
             s.charAt(i) match {
                 case '\n' => compute(i + 1, lineAdjust + 1, new StringTok.Set)
                 case '\t' => compute(i + 1, lineAdjust, colAdjust.tab)
-                case _    => colAdjust.next; compute(i + 1, lineAdjust, colAdjust)
+                case _    => colAdjust.next(); compute(i + 1, lineAdjust, colAdjust)
             }
         }
         else build(lineAdjust, colAdjust)
@@ -108,7 +108,7 @@ private [internal] final class StringTok(s: String, x: Any, errorItem: Option[Ex
 private [internal] final class If(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        if (ctx.stack.pop()) ctx.pc = label
+        if (ctx.stack.pop[Boolean]()) ctx.pc = label
         else ctx.inc()
     }
     // $COVERAGE-OFF$
@@ -319,7 +319,7 @@ private [internal] object StringTok {
 
     private [StringTok] abstract class Adjust {
         private [StringTok] def tab: Adjust
-        private [StringTok] def next: Unit
+        private [StringTok] def next(): Unit
         private [StringTok] def toAdjuster: Int => Int
     }
     // A line has been read, so any updates are fixed
@@ -327,7 +327,7 @@ private [internal] object StringTok {
         private [this] var at = 1
         // Round up to the nearest multiple of 4 /+1/
         private [StringTok] def tab = { at = ((at + 3) & -4) | 1; this } // scalastyle:ignore magic.number
-        private [StringTok] def next = at += 1
+        private [StringTok] def next() = at += 1
         private [StringTok] def toAdjuster = {
             val x = at // capture it now, so it doesn't need to hold the object later
             _ => x
@@ -337,7 +337,7 @@ private [internal] object StringTok {
     private [StringTok] class Offset extends Adjust {
         private [this] var by = 0
         private [StringTok] def tab = new OffsetAlignOffset(by)
-        private [StringTok] def next = by += 1
+        private [StringTok] def next() = by += 1
         private [StringTok] def toAdjuster = {
             val x = by // capture it now, so it doesn't need to hold the object later
             if (x == 0) col => col else _ + x
@@ -348,7 +348,7 @@ private [internal] object StringTok {
         private [this] var thenBy = 0
         // Round up to nearest multiple of /4/ (offset from aligned, not real value)
         private [StringTok] def tab = { thenBy = (thenBy | 3) + 1; this }
-        private [StringTok] def next = thenBy += 1
+        private [StringTok] def next() = thenBy += 1
         // Round up to the nearest multiple of 4 /+1/
         private [StringTok] def toAdjuster = {
             val x = firstBy // provide an indirection to the object

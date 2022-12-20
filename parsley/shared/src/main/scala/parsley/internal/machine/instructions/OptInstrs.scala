@@ -5,7 +5,7 @@ package parsley.internal.machine.instructions
 
 import scala.collection.mutable
 
-import parsley.XCompat._
+import parsley.XCompat._ //mapValuesInPlace
 
 import parsley.internal.errors.{ExpectDesc, ExpectItem}
 import parsley.internal.machine.Context
@@ -93,7 +93,7 @@ private [internal] final class JumpTable(jumpTable: mutable.LongMap[(Int, Set[Ex
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         if (ctx.moreInput) {
-            val (dest, errorItems) = jumpTable.getOrElse(ctx.nextChar, (default, allErrorItems))
+            val (dest, errorItems) = jumpTable.getOrElse(ctx.nextChar.toLong, (default, allErrorItems))
             ctx.pc = dest
             if (dest != default) {
                 ctx.pushCheck()
@@ -114,7 +114,9 @@ private [internal] final class JumpTable(jumpTable: mutable.LongMap[(Int, Set[Ex
     }
 
     override def relabel(labels: Array[Int]): this.type = {
-        jumpTable.mapValuesInPlace((_, v) => (labels(v._1), v._2))
+        jumpTable.mapValuesInPlaceCompat {
+            case (_, (i, errs)) => (labels(i), errs)
+        }
         default = labels(default)
         merge = labels(merge)
         defaultPreamble = default - 1

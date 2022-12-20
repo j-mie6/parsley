@@ -36,7 +36,7 @@ private [deepembedding] final class Look[A](val p: StrictParsley[A]) extends Sco
 }
 private [deepembedding] final class NotFollowedBy[A](val p: StrictParsley[A]) extends Unary[A, Unit] {
     override def optimise: StrictParsley[Unit] = p match {
-        case z: MZero => new Pure(())
+        case _: MZero => new Pure(())
         case _        => this
     }
     final override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
