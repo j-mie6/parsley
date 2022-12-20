@@ -28,6 +28,7 @@ inThisBuild(List(
   scalaVersion := Scala213,
   mimaBinaryIssueFilters ++= Seq(
     ProblemFilters.exclude[Problem]("parsley.internal.*"),
+    ProblemFilters.exclude[Problem]("parsley.XCompat*"),
   ),
   tlVersionIntroduced := Map(
     "2.13" -> "1.5.0",
