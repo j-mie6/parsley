@@ -1,151 +1,95 @@
-import sbtversionpolicy.Compatibility.BinaryCompatible
-import sbtversionpolicy.Compatibility.BinaryAndSourceCompatible
-import sbtdynver.GitDescribeOutput
-import scala.collection.mutable
-import sbtcrossproject.Platform
 import org.scalajs.linker.interface.ESVersion
 import com.typesafe.tools.mima.core._
 
 val projectName = "parsley"
-
-val releaseFlags = settingKey[Seq[String]]("The flags to enable for release")
-
-inThisBuild(List(
-  organization := "com.github.j-mie6",
-  homepage := Some(url("https://github.com/j-mie6/parsley")),
-  licenses := List("BSD 3-Clause" -> url("https://opensource.org/licenses/BSD-3-Clause")),
-  developers := List(
-    Developer(
-      "j-mie6",
-      "Jamie Willis",
-      "j.willis19@imperial.ac.uk",
-      url("https://github.com/j-mie6")
-    )
-  ),
-  versionScheme := Some("early-semver"),
-  versionPolicyIgnoredInternalDependencyVersions := Some("^\\d+\\.\\d+\\.\\d+\\+\\d+".r),
-  version := dynverGitDescribeOutput.value.mkVersion(determineVersion(version.value, versionPolicyIntention.value, _), version.value),
-  dynver := {
-      val d = new java.util.Date
-      sbtdynver.DynVer.getGitDescribeOutput(d).mkVersion(determineVersion(dynver.value, versionPolicyIntention.value, _), dynver.value)
-  },
-  releaseFlags := Seq("-Xdisable-assertions", "-opt:l:method,inline", "-opt-inline-from", "parsley.**", "-opt-warnings:at-inline-failed")
-))
-
-def parseVersion(version: String): (Int, Int, Int, String) = {
-    val (ver, postfix) = version.splitAt(version.indexOf('+'))
-    val Array(majorBin, majorSrc, patch) = ver.split('.').map(_.toInt)
-    (majorBin, majorSrc, patch, postfix)
-}
-
-def determineVersion(currentVersion: String, compat: Compatibility, out: GitDescribeOutput): String = {
-    if (!out.isSnapshot) currentVersion
-    else {
-        // The new SNAPSHOT version must be set accounting for the versionPolicyIntention
-        val (majorBin, majorSrc, patch, postfix) = parseVersion(currentVersion)
-        val (newMajorBin, newMajorSrc, newPatch) = compat match {
-            case Compatibility.BinaryAndSourceCompatible => (majorBin,     majorSrc,     patch + 1)
-            case Compatibility.BinaryCompatible          => (majorBin,     majorSrc + 1, 0        )
-            case Compatibility.None                      => (majorBin + 1, 0,            0        )
-        }
-        s"$newMajorBin.$newMajorSrc.$newPatch$postfix"
-    }
-}
-
-val scala212Version = "2.12.17"
-val scala213Version = "2.13.10"
-val scala3Version = "3.2.1"
-
-def usesLib213(major: Long, minor: Long): Boolean = major > 2 || minor >= 13
-def extraSources(rootSrcFile: File, base: String, major: Long, minor: Long): Seq[File] = {
-    val rootSrc = rootSrcFile.getPath
-    val srcs = mutable.ListBuffer.empty[File]
-    srcs += file(s"$rootSrc/src/$base/scala-$major.x")
-    srcs += file(s"$rootSrc/src/$base/scala-2.${if (usesLib213(major, minor)) "13+" else "12"}")
-    srcs.toList
-}
-def extraSources(rootSrcFile: File, base: String, version: String): Seq[File] = CrossVersion.partialVersion(version) match {
-    case Some((major, minor)) => extraSources(rootSrcFile, base, major, minor)
-    case None => Seq.empty
-}
-
-def scalaTestDependency(version: String): String =
-    Map()
-    .getOrElse(version, "3.2.14")
-
-val PureVisible: CrossType = new CrossType {
-    def projectDir(crossBase: File, projectType: String): File = {
-      crossBase / projectType
-    }
-
-    def projectDir(crossBase: File, platform: Platform): File = {
-      crossBase / platform.identifier
-    }
-
-    def sharedSrcDir(projectBase: File, conf: String): Option[File] = {
-      Some(projectBase.getParentFile / "src" / conf / "scala")
-    }
-
-    override def partiallySharedSrcDir(projectBase: File, platforms: Seq[Platform], conf: String): Option[File] = platforms match {
-        case Seq(JVMPlatform, NativePlatform) => Some(projectBase.getParentFile / "jvm-native" / "src" / conf / "scala")
-        case Seq(JSPlatform, JVMPlatform) => Some(projectBase.getParentFile / "jvm-js" / "src" / conf / "scala")
-        case _ => None
-    }
-  }
+val Scala213 = "2.13.10"
+val Scala212 = "2.12.17"
+val Scala3 = "3.2.1"
+val Java8 = JavaSpec.temurin("8")
+val JavaLTS = JavaSpec.temurin("11")
+val JavaLatest = JavaSpec.temurin("17")
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
-// See https://github.com/sbt/sbt/issues/1224
-Global / onLoad ~= (_ andThen ("project parsley" :: _))
+val isInPublish = Option(System.getenv("GITHUB_JOB")).contains("publish")
+val releaseFlags = Seq("-Xdisable-assertions", "-opt:l:method,inline", "-opt-inline-from", "parsley.**", "-opt-warnings:at-inline-failed")
 
-Compile / bloopGenerate := None
-Test / bloopGenerate := None
+inThisBuild(List(
+  tlBaseVersion := "4.0",
+  organization := "com.github.j-mie6",
+  startYear := Some(2018),
+  homepage := Some(url("https://github.com/j-mie6/parsley")),
+  licenses := List("BSD-3-Clause" -> url("https://opensource.org/licenses/BSD-3-Clause")),
+  developers := List(
+    tlGitHubDev("j-mie6", "Jamie Willis")
+  ),
+  versionScheme := Some("early-semver"),
+  crossScalaVersions := Seq(Scala213, Scala212, Scala3),
+  scalaVersion := Scala213,
+  mimaBinaryIssueFilters ++= Seq(
+    ProblemFilters.exclude[Problem]("parsley.internal.*"),
+    ProblemFilters.exclude[Problem]("parsley.X*"),
+  ),
+  tlVersionIntroduced := Map(
+    "2.13" -> "1.5.0",
+    "2.12" -> "1.5.0",
+    "3"    -> "3.1.2",
+  ),
+  // CI Configuration
+  tlCiReleaseBranches := Seq("master"),
+  tlSonatypeUseLegacyHost := true, // this needs to be switched off after migration
+  githubWorkflowJavaVersions := Seq(Java8, JavaLTS, JavaLatest),
+  // We need this because our release uses different flags
+  githubWorkflowArtifactUpload := false,
+  githubWorkflowAddedJobs += testCoverageJob(githubWorkflowGeneratedCacheSteps.value.toList),
+))
+
+lazy val root = tlCrossRootProject.aggregate(parsley)
 
 lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .withoutSuffixFor(JVMPlatform)
-  .crossType(PureVisible)
-  .in(file("."))
+  .crossType(CrossType.Full)
+  .in(file("parsley"))
   .settings(
     name := projectName,
-    scalaVersion := scala213Version,
 
-    libraryDependencies += "org.scalatest" %%% "scalatest" % scalaTestDependency(scalaVersion.value) % Test,
-
-    Compile / unmanagedSourceDirectories ++= extraSources(baseDirectory.value.getParentFile, "main", scalaVersion.value),
-    Compile / unmanagedSourceDirectories ++= extraSources(baseDirectory.value, "main", scalaVersion.value),
-    Test / unmanagedSourceDirectories ++= extraSources(baseDirectory.value.getParentFile, "test", scalaVersion.value),
-    Test / unmanagedSourceDirectories ++= extraSources(baseDirectory.value, "test", scalaVersion.value),
+    libraryDependencies ++= Seq(
+        "org.scalatest" %%% "scalatest" % "3.2.14" % Test,
+    ),
 
     Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oI"),
 
-    scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature"),
-    scalacOptions ++= {
-        if (scalaBinaryVersion.value == "3") Seq("-source:3.0-migration") else Seq.empty
-    },
-    // linters
-    //scalacOptions ++= Seq("-Xlint:unused", "-Xlint:doc-detached"),
+    scalacOptions ++= (if (isInPublish) releaseFlags else Seq.empty),
 
     Compile / doc / scalacOptions ++= Seq("-groups", "-doc-root-content", s"${baseDirectory.value.getParentFile.getPath}/rootdoc.md"),
     Compile / doc / scalacOptions ++= {
         if (scalaBinaryVersion.value == "3") Seq("-comment-syntax:wiki") else Seq.empty
     },
-
-    mimaBinaryIssueFilters ++= Seq(
-        ProblemFilters.exclude[Problem]("parsley.internal.*"),
-    ),
-  )
-  .jvmSettings(
-    crossScalaVersions := List(scala212Version, scala213Version, scala3Version),
-    versionPolicyPreviousVersions := previousStableVersion.value.toSeq           // This needs to be set to ensure that sbt-version-policy doesn't try handling the new SNAPSHOT versions.
   )
   .jsSettings(
-    crossScalaVersions := List(scala212Version, scala213Version, scala3Version),
+    Test / scalaJSLinkerConfig := scalaJSLinkerConfig.value.withESFeatures(_.withESVersion(ESVersion.ES2018)),
     Compile / bloopGenerate := None,
     Test / bloopGenerate := None,
-    Test / scalaJSLinkerConfig := scalaJSLinkerConfig.value.withESFeatures(_.withESVersion(ESVersion.ES2018))
   )
   .nativeSettings(
-    crossScalaVersions := List(scala212Version, scala213Version, scala3Version),
     Compile / bloopGenerate := None,
-    Test / bloopGenerate := None
+    Test / bloopGenerate := None,
   )
+
+def testCoverageJob(cacheSteps: List[WorkflowStep]) = WorkflowJob(
+    id = "coverage",
+    name = "Run Test Coverage and Upload",
+    scalas = List(Scala213),
+    steps =
+        WorkflowStep.Checkout ::
+        WorkflowStep.SetupJava(List(JavaLTS)) :::
+        cacheSteps ::: List(
+            WorkflowStep.Sbt(name = Some("Generate coverage report"), commands = List("coverage", "parsley / test", "coverageReport")),
+            WorkflowStep.Use(
+                name = Some("Upload coverage to Code Climate"),
+                ref = UseRef.Public(owner = "paambaati", repo = "codeclimate-action", ref = "v3.2.0"),
+                env = Map("CC_TEST_REPORTER_ID" -> "${{secrets.CC_TEST_REPORTER_ID}}"),
+                params = Map("coverageLocations" -> "${{github.workspace}}/parsley/jvm/target/scala-2.13/coverage-report/cobertura.xml:cobertura"),
+            )
+        )
+)

@@ -1,1 +1,0 @@
-ThisBuild / versionPolicyIntention := Compatibility.BinaryAndSourceCompatible
