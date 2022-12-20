@@ -3,9 +3,8 @@
  */
 package parsley.token.numeric
 
-import parsley.XCompat.unused
-
 import parsley.Parsley, Parsley.attempt
+import parsley.XCompat.unused
 import parsley.errors.combinator.ErrorMethods
 import parsley.token.descriptions.numeric.NumericDesc
 

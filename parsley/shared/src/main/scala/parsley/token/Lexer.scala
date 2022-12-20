@@ -3,9 +3,8 @@
  */
 package parsley.token
 
-import parsley.XCompat.unused
-
 import parsley.Parsley, Parsley.{attempt, unit}
+import parsley.XCompat.unused
 import parsley.character.satisfyUtf16
 import parsley.combinator.{between, eof, sepBy, sepBy1, skipMany}
 import parsley.errors.combinator.{markAsToken, ErrorMethods}

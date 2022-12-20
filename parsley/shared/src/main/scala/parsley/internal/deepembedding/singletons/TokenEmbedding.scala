@@ -8,7 +8,7 @@ import parsley.token.descriptions.numeric.PlusSignPresence
 import parsley.internal.deepembedding.Sign.SignType
 import parsley.internal.machine.instructions
 
-private [parsley] final class WhiteSpace(ws: Char => Boolean, start: String, end: String, line: String, nested: Boolean, eofAllowed: Boolean) 
+private [parsley] final class WhiteSpace(ws: Char => Boolean, start: String, end: String, line: String, nested: Boolean, eofAllowed: Boolean)
     extends Singleton[Unit] {
     // $COVERAGE-OFF$
     override val pretty: String = "whiteSpace"
@@ -59,7 +59,4 @@ private [parsley] final class MaxOp(private [MaxOp] val operator: String, ops: S
 private [deepembedding] object Specific {
     def unapply(self: Specific): Some[String] = Some(self.specific)
 }
-/*private [deepembedding] object MaxOp {
-    def unapply(self: MaxOp): Some[String] = Some(self.operator)
-}*/
 // $COVERAGE-ON$

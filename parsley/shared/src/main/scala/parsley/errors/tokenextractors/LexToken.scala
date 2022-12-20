@@ -7,8 +7,8 @@ import scala.collection.immutable.WrappedString
 
 import parsley.Parsley, Parsley.{attempt, lookAhead}
 import parsley.Success
-import parsley.XCompat.unused
 import parsley.XAssert.assert
+import parsley.XCompat.unused
 import parsley.character.item
 import parsley.combinator.{choice, eof, option, sequence, someUntil}
 import parsley.errors.{ErrorBuilder, Token, TokenSpan}

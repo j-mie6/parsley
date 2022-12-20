@@ -1,6 +1,6 @@
 version: "2"
 exclude_patterns:
-- "**/scala-3.x"
+- "**/scala-3"
 - "**/scala-2.12"
 - "**/native"
 - "**/js"
@@ -9,7 +9,6 @@ exclude_patterns:
 - ".github"
 - "project"
 - "build.sbt"
-- "compatibility.sbt"
 - "*.md"
 - ".codeclimate.yml"
 - ".gitignore"

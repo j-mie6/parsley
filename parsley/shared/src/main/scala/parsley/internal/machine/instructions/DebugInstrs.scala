@@ -6,8 +6,8 @@ package parsley.internal.machine.instructions
 
 import scala.annotation.nowarn
 
-import parsley.XCompat.unused
 import parsley.XAssert._
+import parsley.XCompat.unused
 import parsley.errors.ErrorBuilder
 
 import parsley.internal.errors.{ExpectItem, FancyError, ParseError, TrivialError}
