@@ -1,8 +1,7 @@
-# Parsley ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/j-mie6/parsley/ci.yaml?branch=master) ![GitHub release](https://img.shields.io/github/v/release/j-mie6/parsley?include_prereleases&sort=semver) [![GitHub license](https://img.shields.io/github/license/j-mie6/parsley.svg)](https://github.com/j-mie6/parsley/blob/master/LICENSE) ![GitHub commits since latest release (by SemVer)](https://img.shields.io/github/commits-since/j-mie6/parsley/latest) [![Badge-Scaladoc]][Link-Scaladoc]
-
+# Parsley ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/j-mie6/parsley/ci.yml?branch=master) ![GitHub release](https://img.shields.io/github/v/release/j-mie6/parsley?include_prereleases&sort=semver) [![GitHub license](https://img.shields.io/github/license/j-mie6/parsley.svg)](https://github.com/j-mie6/parsley/blob/master/LICENSE) ![GitHub commits since latest release (by SemVer)](https://img.shields.io/github/commits-since/j-mie6/parsley/latest) [![Badge-Scaladoc]][Link-Scaladoc]
 
 ## What is Parsley?
-Parsley is a very fast parser combinator library for Scala based on a Haskell-style Parsec API.
+Parsley is a fast and modern parser combinator library for Scala based loosely on a Haskell-style `parsec` API.
 
 ## How do I use it? [![parsley Scala version support](https://index.scala-lang.org/j-mie6/parsley/parsley/latest-by-scala-version.svg?platform=jvm)](https://index.scala-lang.org/j-mie6/parsley/parsley) [![parsley Scala version support](https://index.scala-lang.org/j-mie6/parsley/parsley/latest-by-scala-version.svg?platform=sjs1)](https://index.scala-lang.org/j-mie6/parsley/parsley) [![parsley Scala version support](https://index.scala-lang.org/j-mie6/parsley/parsley/latest-by-scala-version.svg?platform=native0.4)](https://index.scala-lang.org/j-mie6/parsley/parsley)
 
@@ -14,26 +13,43 @@ libraryDependencies += "com.github.j-mie6" %% "parsley" % "4.0.1"
 
 Documentation can be found [**here**](https://javadoc.io/doc/com.github.j-mie6/parsley_2.13/latest/index.html)
 
+If you're a `cats` user, you may also be interested in using [`parsley-cats`](https://github.com/j-mie6/parsley-cats)
+to augment `parsley` with instances for various `cats` typeclasses:
+
+```scala
+libraryDependencies += "com.github.j-mie6" %% "parsley-cats" % "0.1.0"
+```
+
 ### Examples
 
 ```scala
-import parsley.Parsley, Parsley._
-import parsley.character.{char, string, digit}
-import parsley.implicits.character.{charLift, stringLift}
+scala> import parsley.Parsley
+scala> import parsley.implicits.character.{charLift, stringLift}
 
-val hello: Parsley[Unit] = ('h' *> ("ello" <|> "i") *> " world!").void
-hello.parse("hello world!") // returns Success(())
-hello.parse("hi world!") // returns Success(())
-hello.parse("hey world!") // returns a Failure
+scala> val hello: Parsley[Unit] = ('h' *> ("ello" <|> "i") *> " world!").void
+scala> hello.parse("hello world!")
+val res0: parsley.Result[String,Unit] = Success(())
+scala> hello.parse("hi world!")
+val res1: parsley.Result[String,Unit] = Success(())
+scala> hello.parse("hey world!")
+val res2: parsley.Result[String,Unit] =
+Failure((line 1, column 2):
+  unexpected "ey"
+  expected "ello"
+  >hey world!
+    ^^)
 
-val natural: Parsley[Int] = digit.foldLeft1(0)((n, d) => n * 10 + d.asDigit)
-natural.parse("0") // returns Success(0)
-natural.parse("123") // returns Success(123)
+scala> import parsley.character.digit
+scala> val natural: Parsley[Int] = digit.foldLeft1(0)((n, d) => n * 10 + d.asDigit)
+scala> natural.parse("0")
+val res3: parsley.Result[String,Int] = Success(0)
+scala> natural.parse("123")
+val res4: parsley.Result[String,Int] = Success(123)
 ```
 
 For more see [the Wiki](https://github.com/j-mie6/Parsley/wiki)!
 
-### What are the differences to Haskell's Parsec?
+### What are the differences to Haskell's `parsec`?
 Mostly, this library is quite similar. However, due to Scala's differences in operator characters a few operators are changed:
 
 * `(<$>)` is known as `map`
