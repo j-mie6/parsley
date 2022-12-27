@@ -13,7 +13,7 @@ libraryDependencies += "com.github.j-mie6" %% "parsley" % "4.0.1"
 
 Documentation can be found [**here**](https://javadoc.io/doc/com.github.j-mie6/parsley_2.13/latest/index.html)
 
-If you're a `cats` user, you may also be interested in using [`parsley-cats`](https://github.com/j-mie6/parsley-cats)
+If you're a `cats` user, you may also be interested in using [`parsley-cats`](https://github.com/j-mie6/parsley-cats)<a href="https://typelevel.org/cats/"><img src="https://typelevel.org/cats/img/cats-badge.svg" height="40px" align="right" alt="Cats friendly" /></a>
 to augment `parsley` with instances for various `cats` typeclasses:
 
 ```scala
