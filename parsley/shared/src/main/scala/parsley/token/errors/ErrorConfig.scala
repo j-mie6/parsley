@@ -3,7 +3,7 @@
  */
 package parsley.token.errors // TODO: move out of this package?
 
-import scala.annotation.unused
+import parsley.XCompat.unused
 
 import parsley.Parsley
 import parsley.errors.combinator.ErrorMethods
