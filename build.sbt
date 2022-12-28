@@ -37,7 +37,7 @@ inThisBuild(List(
   ),
   // CI Configuration
   tlCiReleaseBranches := Seq("master"),
-  tlSonatypeUseLegacyHost := true, // this needs to be switched off after migration
+  tlSonatypeUseLegacyHost := false,
   githubWorkflowJavaVersions := Seq(Java8, JavaLTS, JavaLatest),
   // We need this because our release uses different flags
   githubWorkflowArtifactUpload := false,
