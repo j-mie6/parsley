@@ -9,9 +9,10 @@ import parsley.combinator.ensure
 import parsley.errors.combinator.{amend, entrench, ErrorMethods}
 import parsley.implicits.zipped.Zipped3
 import parsley.token.descriptions.text.{EscapeDesc, NumberOfDigits, NumericEscape}
+import parsley.token.errors.ErrorConfig
 import parsley.token.numeric
 
-private [token] class Escape(desc: EscapeDesc) {
+private [token] class Escape(desc: EscapeDesc, err: ErrorConfig) {
     // NOTE: `strings`, while nice, is not perfect as it doesn't leverage a trie-based folding
     //       on the possibilities. We'll want trie-based folding here, or at least a specialised
     //       instruction that has the trie lookup logic baked in.
@@ -81,6 +82,6 @@ private [token] class Escape(desc: EscapeDesc) {
     private val octalEscape = fromDesc(radix = 8, desc.octalEscape, numeric.Generic.zeroAllowedOctal, octDigit)
     private val binaryEscape = fromDesc(radix = 2, desc.binaryEscape, numeric.Generic.zeroAllowedBinary, bit)
     private val numericEscape = decimalEscape <|> hexadecimalEscape <|> octalEscape <|> binaryEscape
-    val escapeCode = (escMapped <|> numericEscape).label("end of escape sequence")
+    val escapeCode = ErrorConfig.label(err.labelEscapeEnd)(escMapped <|> numericEscape)
     val escapeChar = char(desc.escBegin) *> escapeCode
 }

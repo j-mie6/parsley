@@ -8,6 +8,7 @@ import scala.Predef.{String => ScalaString, _}
 import parsley.Parsley
 import parsley.XCompat
 import parsley.errors.combinator.ErrorMethods
+import parsley.token.errors.ErrorConfig
 
 /** This class defines a uniform interface for defining parsers for string
   * literals, independent of whether the string is raw, multi-line, or should
@@ -22,7 +23,7 @@ import parsley.errors.combinator.ErrorMethods
   *   `Lexer`, which will depend on user-defined configuration. Please see the
   *   relevant documentation of these specific objects.
   */
-abstract class String private[token] {
+abstract class String private[text] {
     /** This parser will parse a single string literal, which may contain any
       * number of graphical UTF-16 unicode characters; including those that span multiple
       * 32-bit codepoints. It may contain escape sequences, and potentially
@@ -91,11 +92,11 @@ private [text] object String {
     def isAscii(str: ScalaString): Boolean = allCharsWithin(str, Character.MaxAscii)
     def isExtendedAscii(str: ScalaString): Boolean = allCharsWithin(str, Character.MaxLatin1)
 
-    def ensureAscii(p: Parsley[ScalaString]): Parsley[ScalaString] = p.guardAgainst {
-        case str if !isAscii(str) => Seq("non-ascii characters in string literal, this is not allowed")
+    def ensureAscii(err: ErrorConfig)(p: Parsley[ScalaString]): Parsley[ScalaString] = p.guardAgainst {
+        case str if !isAscii(str) => err.messageStringNonAscii(str)
     }
 
-    def ensureExtendedAscii(p: Parsley[ScalaString]): Parsley[ScalaString] = p.guardAgainst {
-        case str if !isExtendedAscii(str) => Seq("non-extended-ascii characters in string literal, this is not allowed")
+    def ensureExtendedAscii(err: ErrorConfig)(p: Parsley[ScalaString]): Parsley[ScalaString] = p.guardAgainst {
+        case str if !isExtendedAscii(str) => err.messageStringNonLatin1(str)
     }
 }

@@ -11,8 +11,9 @@ import parsley.implicits.character.charLift
 import parsley.lift.lift2
 import parsley.registers.Reg
 import parsley.token.descriptions.numeric.{BreakCharDesc, ExponentDesc, NumericDesc}
+import parsley.token.errors.ErrorConfig
 
-private [token] final class UnsignedReal(desc: NumericDesc, natural: Integer) extends Real {
+private [token] final class UnsignedReal(desc: NumericDesc, natural: Integer, err: ErrorConfig) extends Real(err) {
     override lazy val decimal: Parsley[BigDecimal] = attempt(ofRadix(10, digit))
     override lazy val hexadecimal: Parsley[BigDecimal] = attempt('0' *> noZeroHexadecimal)
     override lazy val octal: Parsley[BigDecimal] = attempt('0' *> noZeroOctal)
@@ -58,7 +59,7 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: Integer) ex
     private def ofRadix(radix: Int, digit: Parsley[Char], leadingDotAllowed: Boolean): Parsley[BigDecimal] = {
         lazy val leadingHappened = Reg.make[Boolean]
         lazy val _noDoubleDroppedZero = leadingHappened.get.filterOut {
-            case true => "a real number cannot drop both a leading and trailing zero"
+            case true => err.explainRealNoDoubleDroppedZero
         }
         val expDesc = desc.exponentDescForRadix(radix)
         // TODO: this should reuse components of unsigned generic numbers, which will prevent duplication in a larger parser
@@ -86,7 +87,7 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: Integer) ex
         }
         val (requiredExponent, exponent, base) = expDesc match {
             case ExponentDesc.Supported(compulsory, exp, base, sign) =>
-                val integer = new SignedInteger(desc.copy(positiveSign = sign), natural)
+                val integer = new SignedInteger(desc.copy(positiveSign = sign), natural, err)
                 val exponent = oneOf(exp) *> integer.decimal32
                 if (compulsory) (exponent, exponent, base)
                 else (exponent, exponent <|> pure(0), base)

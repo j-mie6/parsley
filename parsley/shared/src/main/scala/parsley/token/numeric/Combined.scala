@@ -5,6 +5,7 @@ package parsley.token.numeric
 
 import parsley.Parsley
 import parsley.errors.combinator.ErrorMethods
+import parsley.token.errors.ErrorConfig
 
 /** This class defines a uniform interface for defining parsers for mixed kind
   * numeric literals, independent of how whitespace should be handled after the literal
@@ -31,7 +32,7 @@ import parsley.errors.combinator.ErrorMethods
   * @define multibase
   *   Depending on the configuration this may be able to handle different bases for each type of number.
   */
-abstract class Combined private[token] { // scalastyle:ignore number.of.methods
+abstract class Combined private[numeric] (err: ErrorConfig) { // scalastyle:ignore number.of.methods
     /** $base1 decimal number, $base2.
       *
       * @since 4.0.0
@@ -519,23 +520,21 @@ abstract class Combined private[token] { // scalastyle:ignore number.of.methods
     private def binaryBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[Either[T, BigDecimal]] = bounded(_binary, bits, 2)
 
     // TODO: basically shared with Real...
-    private def bad(min: Double, max: Double, precision: String)(rn: Either[_, BigDecimal]): Seq[String] = {
+    private def bad(min: Double, max: Double, name: String)(rn: Either[_, BigDecimal]): Seq[String] = {
         val Right(n) = rn
-        if (n > BigDecimal(max) || n < BigDecimal(min)) {
-            Seq(s"literal $n is too large to be an IEEE 754 $precision-precision float")
-        }
-        else Seq(s"literal $n is too small to be an IEEE 754 $precision-precision float")
+        if (n > BigDecimal(max) || n < BigDecimal(min)) err.messageRealTooLarge(n, name)
+        else err.messageRealTooSmall(n, name)
     }
 
     protected [numeric] def ensureFloat[T](number: Parsley[Either[T, BigDecimal]]): Parsley[Either[T, Float]] = {
-        number.collectMsg(bad(Float.MinValue.toDouble, Float.MaxValue.toDouble, "single")(_)) {
+        number.collectMsg(bad(Float.MinValue.toDouble, Float.MaxValue.toDouble, err.floatName)(_)) {
             case Left(n) => Left(n)
             case Right(n) if Real.isFloat(n) => Right(n.toFloat)
         }
     }
 
     protected [numeric] def ensureDouble[T](number: Parsley[Either[T, BigDecimal]]): Parsley[Either[T, Double]] = {
-        number.collectMsg(bad(Double.MinValue, Double.MaxValue, "double")(_)) {
+        number.collectMsg(bad(Double.MinValue, Double.MaxValue, err.doubleName)(_)) {
             case Left(n) => Left(n)
             case Right(n) if Real.isDouble(n) => Right(n.toDouble)
         }

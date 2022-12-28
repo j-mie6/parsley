@@ -5,6 +5,7 @@ package parsley.token.numeric
 
 import parsley.Parsley
 import parsley.errors.combinator.ErrorMethods
+import parsley.token.errors.ErrorConfig
 
 /** This class defines a uniform interface for defining parsers for floating
   * literals, independent of how whitespace should be handled after the literal.
@@ -32,7 +33,7 @@ import parsley.errors.combinator.ErrorMethods
   *   if the values are too big or too negatively big, they will
   *   be rounded to the corresponding infinity.
   */
-abstract class Real private[token] {
+abstract class Real private[numeric](err: ErrorConfig) {
     /** This parser will parse a single real number literal, which is in decimal form (base 10).
       *
       * @since 4.0.0
@@ -288,33 +289,31 @@ abstract class Real private[token] {
     lazy val exactDouble: Parsley[Double] = ensureExactDouble(_number)
     // $COVERAGE-ON$
 
-    private def bad(min: Double, max: Double, precision: String)(n: BigDecimal): Seq[String] = {
-        if (n > BigDecimal(max) || n < BigDecimal(min)) {
-            Seq(s"literal $n is too large to be an IEEE 754 $precision-precision float")
-        }
-        else Seq(s"literal $n is too small to be an IEEE 754 $precision-precision float")
+    private def bad(min: Double, max: Double, name: String)(n: BigDecimal): Seq[String] = {
+        if (n > BigDecimal(max) || n < BigDecimal(min)) err.messageRealTooLarge(n, name)
+        else err.messageRealTooSmall(n, name)
     }
 
     protected [numeric] def ensureFloat(number: Parsley[BigDecimal]): Parsley[Float] = {
-        number.collectMsg(bad(Float.MinValue.toDouble, Float.MaxValue.toDouble, "single")(_)) {
+        number.collectMsg(bad(Float.MinValue.toDouble, Float.MaxValue.toDouble, err.floatName)(_)) {
             case n if Real.isFloat(n) => n.toFloat
         }
     }
 
     protected [numeric] def ensureDouble(number: Parsley[BigDecimal]): Parsley[Double] = {
-        number.collectMsg(bad(Double.MinValue, Double.MaxValue, "double")(_)) {
+        number.collectMsg(bad(Double.MinValue, Double.MaxValue, err.doubleName)(_)) {
             case n if Real.isDouble(n) => n.toDouble
         }
     }
 
     protected [numeric] def ensureExactFloat(number: Parsley[BigDecimal]): Parsley[Float] = {
-        number.collectMsg(n => Seq(s"$n cannot be represented exactly as a IEEE 754 single-precision float")) {
+        number.collectMsg(err.messageRealNotExact(_, err.floatName)) {
             case n if n.isExactFloat => n.toFloat
         }
     }
 
     protected [numeric] def ensureExactDouble(number: Parsley[BigDecimal]): Parsley[Double] = {
-        number.collectMsg(n => Seq(s"$n cannot be represented exactly as a IEEE 754 double-precision float")) {
+        number.collectMsg(err.messageRealNotExact(_, err.doubleName)) {
             case n if n.isExactDouble => n.toDouble
         }
     }

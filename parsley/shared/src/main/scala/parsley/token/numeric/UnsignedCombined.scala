@@ -7,8 +7,9 @@ import parsley.Parsley, Parsley.attempt
 import parsley.XCompat.unused
 import parsley.errors.combinator.ErrorMethods
 import parsley.token.descriptions.numeric.NumericDesc
+import parsley.token.errors.ErrorConfig
 
-private [token] final class UnsignedCombined(@unused desc: NumericDesc, integer: Integer, rational: Real) extends Combined {
+private [token] final class UnsignedCombined(@unused desc: NumericDesc, integer: Integer, rational: Real, err: ErrorConfig) extends Combined(err) {
     override lazy val decimal: Parsley[Either[BigInt, BigDecimal]] = (attempt(rational.decimal) <+> integer.decimal).map(_.swap)
     override lazy val hexadecimal: Parsley[Either[BigInt, BigDecimal]] = (attempt(rational.hexadecimal) <+> integer.hexadecimal).map(_.swap)
     override lazy val octal: Parsley[Either[BigInt, BigDecimal]] = (attempt(rational.octal) <+> integer.octal).map(_.swap)
@@ -36,10 +37,9 @@ private [token] final class UnsignedCombined(@unused desc: NumericDesc, integer:
     //private val noZeroOctal = oneOf(desc.octalLeads) *> ofRadix(8, 8, octDigit, oneOf('p', 'P'))
     //private val noZeroBinary = oneOf(desc.binaryLeads) *> ofRadix(2, 2, oneOf('0', '1'), oneOf('p', 'P'))
 
-    // TODO: render in the "native" radix
     override protected [numeric] def bounded[T](number: Parsley[Either[BigInt, BigDecimal]], bits: Bits, radix: Int)
                                                (implicit ev: CanHold[bits.self,T]): Parsley[Either[T, BigDecimal]] = {
-        number.collectMsg(x => Seq(s"literal ${x.asInstanceOf[Left[BigInt, Nothing]].value} is larger than the max value of ${bits.upperUnsigned}")) {
+        number.collectMsg(x => err.messageIntTooLarge(x.asInstanceOf[Left[BigInt, Nothing]].value, bits.upperUnsigned, radix)) {
             case Left(x) if x <= bits.upperUnsigned => Left(ev.fromBigInt(x))
             case Right(x) => Right(x)
         }

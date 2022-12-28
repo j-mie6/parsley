@@ -9,13 +9,14 @@ import parsley.Parsley, Parsley.{fresh, pure}
 import parsley.combinator.{choice, skipManyUntil}
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.implicits.zipped.Zipped2
+import parsley.token.errors.ErrorConfig
 import parsley.token.predicate.CharPredicate
 
-private [token] final class ConcreteString(ends: Set[ScalaString], stringChar: StringCharacter, isGraphic: CharPredicate, allowsAllSpace: Boolean)
-    extends String {
+private [token] final class ConcreteString(ends: Set[ScalaString], stringChar: StringCharacter, isGraphic: CharPredicate,
+                                           allowsAllSpace: Boolean, err: ErrorConfig) extends String {
     override lazy val fullUtf16: Parsley[ScalaString] = choice(ends.view.map(makeStringParser).toSeq: _*) *> sbReg.gets(_.toString)
-    override lazy val ascii: Parsley[ScalaString] = String.ensureAscii(fullUtf16)
-    override lazy val latin1: Parsley[ScalaString] = String.ensureExtendedAscii(fullUtf16)
+    override lazy val ascii: Parsley[ScalaString] = String.ensureAscii(err)(fullUtf16)
+    override lazy val latin1: Parsley[ScalaString] = String.ensureExtendedAscii(err)(fullUtf16)
 
     private val sbReg = parsley.registers.Reg.make[StringBuilder]
 

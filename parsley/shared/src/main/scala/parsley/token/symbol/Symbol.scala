@@ -54,7 +54,7 @@ abstract class ImplicitSymbol private [symbol] {
   *
   * @since 4.0.0
   */
-abstract class Symbol private[token] {
+abstract class Symbol private[symbol] {
     /** $stringApply
       *
       * Additionally applies the given label as the name of the symbol.

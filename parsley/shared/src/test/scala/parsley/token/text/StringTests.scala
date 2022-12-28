@@ -8,21 +8,22 @@ import parsley.ParsleyTest
 import parsley.token.LexemeImpl
 
 import parsley.token.descriptions.text._
+import parsley.token.errors.ErrorConfig
 import parsley.token.predicate._
 import parsley.character.space
 import org.scalactic.source.Position
 
 class StringTests extends ParsleyTest {
     private def makeString(desc: TextDesc, char: StringCharacter, spaceAllowed: Boolean) =
-        new LexemeString(new ConcreteString(desc.stringEnds, char, desc.graphicCharacter, spaceAllowed), LexemeImpl.empty)
+        new LexemeString(new ConcreteString(desc.stringEnds, char, desc.graphicCharacter, spaceAllowed, ErrorConfig.default), LexemeImpl.empty)
     private def makeString(desc: TextDesc): String =
-        makeString(desc, new EscapableCharacter(desc.escapeSequences, new Escape(desc.escapeSequences), space), false)
+        makeString(desc, new EscapableCharacter(desc.escapeSequences, new Escape(desc.escapeSequences, ErrorConfig.default), space, ErrorConfig.default), false)
     private def makeMultiString(desc: TextDesc): String =
-        makeString(desc, new EscapableCharacter(desc.escapeSequences, new Escape(desc.escapeSequences), space), true)
+        makeString(desc, new EscapableCharacter(desc.escapeSequences, new Escape(desc.escapeSequences, ErrorConfig.default), space, ErrorConfig.default), true)
     private def makeRawString(desc: TextDesc): String =
-        makeString(desc, RawCharacter, false)
+        makeString(desc, new RawCharacter(ErrorConfig.default), false)
     private def makeRawMultiString(desc: TextDesc): String =
-        makeString(desc, RawCharacter, true)
+        makeString(desc, new RawCharacter(ErrorConfig.default), true)
 
     def unicodeCases(str: String)(tests: (SString, Option[SString], Position)*): Unit = cases(str.fullUtf16)(tests: _*)
     def asciiCases(str: String)(tests: (SString, Option[SString], Position)*): Unit = cases(str.ascii)(tests: _*)

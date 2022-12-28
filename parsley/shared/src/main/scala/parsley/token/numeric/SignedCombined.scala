@@ -6,11 +6,12 @@ package parsley.token.numeric
 import parsley.Parsley, Parsley.attempt
 import parsley.errors.combinator.ErrorMethods
 import parsley.token.descriptions.numeric.NumericDesc
+import parsley.token.errors.ErrorConfig
 
 import parsley.internal.deepembedding.Sign.CombinedType
 import parsley.internal.deepembedding.singletons
 
-private [token] final class SignedCombined(desc: NumericDesc, unsigned: Combined) extends Combined {
+private [token] final class SignedCombined(desc: NumericDesc, unsigned: Combined, err: ErrorConfig) extends Combined(err) {
     private val sign = new Parsley(new singletons.Sign[CombinedType.resultType](CombinedType, desc.positiveSign))
 
     override def decimal: Parsley[Either[BigInt,BigDecimal]] = attempt(sign <*> unsigned.decimal)
@@ -23,8 +24,8 @@ private [token] final class SignedCombined(desc: NumericDesc, unsigned: Combined
                                               (implicit ev: CanHold[bits.self,T]): Parsley[Either[T,BigDecimal]] = {
         number.collectMsg(ex => {
             val Left(x) = ex
-            Seq(if (x > bits.upperSigned) s"literal $x is larger than the max value of ${bits.upperSigned}"
-                else                      s"literal $x is less than the min value of ${bits.lowerSigned}")
+            if (x > bits.upperSigned) err.messageIntTooLarge(x, bits.upperSigned, radix)
+            else                      err.messageIntTooSmall(x, bits.lowerSigned, radix)
         }) {
             case Left(x) if bits.lowerSigned <= x && x <= bits.upperSigned => Left(ev.fromBigInt(x))
             case Right(y) => Right(y)

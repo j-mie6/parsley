@@ -9,37 +9,40 @@ import parsley.combinator.skipSome
 import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.character.charLift
 import parsley.token.descriptions.text.EscapeDesc
+import parsley.token.errors.ErrorConfig
 import parsley.token.predicate.{Basic, CharPredicate, NotRequired, Unicode}
 
 private [token] abstract class StringCharacter {
     def apply(isLetter: CharPredicate): Parsley[Option[Int]]
 }
 
-private [token] object RawCharacter extends StringCharacter {
+private [token] class RawCharacter(err: ErrorConfig) extends StringCharacter {
     override def apply(isLetter: CharPredicate): Parsley[Option[Int]] = isLetter match {
-        case Basic(isLetter) => satisfy(isLetter).map(c => Some(c.toInt)).label("string character")
-        case Unicode(isLetter) => satisfyUtf16(isLetter).map(Some(_)).label("string character")
+        case Basic(isLetter) => ErrorConfig.label(err.labelStringCharacter)(satisfy(isLetter).map(c => Some(c.toInt)))
+        case Unicode(isLetter) => ErrorConfig.label(err.labelStringCharacter)(satisfyUtf16(isLetter).map(Some(_)))
         case NotRequired => empty
     }
 }
 
-private [token] class EscapableCharacter(desc: EscapeDesc, escapes: Escape, space: Parsley[_]) extends StringCharacter {
+private [token] class EscapableCharacter(desc: EscapeDesc, escapes: Escape, space: Parsley[_], err: ErrorConfig) extends StringCharacter {
     private lazy val escapeEmpty = desc.emptyEscape.fold[Parsley[Char]](empty)(char)
     private lazy val escapeGap = {
-        if (desc.gapsSupported) skipSome(space.label("string gap")) *> desc.escBegin.label("end of string gap")
+        if (desc.gapsSupported) skipSome(ErrorConfig.label(err.labelEscapeStringGap)(space)) *> ErrorConfig.label(err.labelEscapeStringGapEnd)(desc.escBegin)
         else empty
     }
-    private lazy val stringEscape: Parsley[Option[Int]] = {
+    private lazy val stringEscape: Parsley[Option[Int]] = ErrorConfig.label(err.labelEscapeSequnce) {
         desc.escBegin *> (escapeGap #> None
                       <|> escapeEmpty #> None
-                      <|> escapes.escapeCode.map(Some(_)).explain("invalid escape sequence"))
-    }.label("escape sequence")
+                      <|> escapes.escapeCode.map(Some(_)).explain(err.explainEscapeInvalid))
+    }
 
     override def apply(isLetter: CharPredicate): Parsley[Option[Int]] = isLetter match {
-        case Basic(isLetter) =>
-            (satisfy(c => isLetter(c) && c != desc.escBegin).map(c => Some(c.toInt)).label("graphic character") <|> stringEscape).label("string character")
-        case Unicode(isLetter) =>
-            (satisfyUtf16(c => isLetter(c) && c != desc.escBegin.toInt).map(Some(_)).label("graphic character") <|> stringEscape).label("string character")
+        case Basic(isLetter) => ErrorConfig.label(err.labelStringCharacter) {
+            ErrorConfig.label(err.labelStringCharacterGraphic)(satisfy(c => isLetter(c) && c != desc.escBegin).map(c => Some(c.toInt))) <|> stringEscape
+        }
+        case Unicode(isLetter) => ErrorConfig.label(err.labelStringCharacter) {
+            ErrorConfig.label(err.labelStringCharacterGraphic)(satisfyUtf16(c => isLetter(c) && c != desc.escBegin.toInt).map(Some(_))) <|> stringEscape
+        }
         case NotRequired => stringEscape
     }
 }

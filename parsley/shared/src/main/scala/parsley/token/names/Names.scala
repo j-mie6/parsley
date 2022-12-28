@@ -19,7 +19,7 @@ import parsley.token.predicate.CharPredicate
   *   `Lexer`, which will depend on user-defined configuration. Please see the
   *   relevant documentation of these specific objects.
   */
-abstract class Names private[token] {
+abstract class Names private[names] {
     /** This parser will parse an identifier based on the
       * defined identifier start and identifier letter. It
       * is capable of handling unicode characters if the

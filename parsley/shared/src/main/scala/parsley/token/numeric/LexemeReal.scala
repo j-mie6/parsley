@@ -5,8 +5,9 @@ package parsley.token.numeric
 
 import parsley.Parsley
 import parsley.token.Lexeme
+import parsley.token.errors.ErrorConfig
 
-private [token] final class LexemeReal(rational: Real, lexeme: Lexeme) extends Real {
+private [token] final class LexemeReal(rational: Real, lexeme: Lexeme, err: ErrorConfig) extends Real(err) {
     override lazy val decimal: Parsley[BigDecimal] = lexeme(rational.decimal)
     override lazy val hexadecimal: Parsley[BigDecimal] = lexeme(rational.hexadecimal)
     override lazy val octal: Parsley[BigDecimal] = lexeme(rational.octal)

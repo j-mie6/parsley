@@ -9,8 +9,9 @@ import parsley.combinator.optional
 import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.character.charLift
 import parsley.token.descriptions.numeric.{BreakCharDesc, NumericDesc}
+import parsley.token.errors.ErrorConfig
 
-private [token] final class UnsignedInteger(desc: NumericDesc) extends Integer(desc) {
+private [token] final class UnsignedInteger(desc: NumericDesc, err: ErrorConfig) extends Integer(desc) {
     override lazy val decimal: Parsley[BigInt] = Generic.plainDecimal(desc)
     override lazy val hexadecimal: Parsley[BigInt] = attempt('0' *> noZeroHexadecimal)
     override lazy val octal: Parsley[BigInt] = attempt('0' *> noZeroOctal)
@@ -50,7 +51,7 @@ private [token] final class UnsignedInteger(desc: NumericDesc) extends Integer(d
 
     // TODO: render in the "native" radix
     override protected [numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int)(implicit ev: CanHold[bits.self,T]): Parsley[T] = {
-        number.collectMsg(x => Seq(s"literal $x is larger than the max value of ${bits.upperUnsigned}")) {
+        number.collectMsg(err.messageIntTooLarge(_, bits.upperUnsigned, radix)) {
             case x if x <= bits.upperUnsigned => ev.fromBigInt(x)
         }
     }

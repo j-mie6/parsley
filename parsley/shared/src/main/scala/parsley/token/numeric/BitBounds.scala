@@ -49,7 +49,7 @@ private [numeric] sealed abstract class CanHold[N <: Bits, T] {
   *
   * @since 4.0.0
   */
-abstract class LowPriorityImplicits private[numeric] {
+sealed class LowPriorityImplicits private[numeric] {
     import CanHold.can_hold_64_bits // scalastyle:ignore import.grouping
     // this being here means that Scala will look for it last, which allows default to Long for 64-bit
     /** Evidence that `BigInt` can store (at least) 64 bits of data.
