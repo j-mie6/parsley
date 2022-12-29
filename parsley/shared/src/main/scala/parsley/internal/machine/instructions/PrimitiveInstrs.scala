@@ -88,6 +88,16 @@ private [internal] object Col extends Instr {
     // $COVERAGE-ON$
 }
 
+private [internal] object Offset extends Instr {
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        ctx.pushAndContinue(ctx.offset)
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = "Offset"
+    // $COVERAGE-ON$
+}
+
 // Register-Manipulators
 private [internal] final class Get(reg: Int) extends Instr {
     override def apply(ctx: Context): Unit = {

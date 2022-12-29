@@ -1240,7 +1240,7 @@ object Parsley {
       * @return a parser that returns the line number the parser is currently at.
       * @group pos
       */
-    val line: Parsley[Int] = new Parsley(singletons.Line)
+    def line: Parsley[Int] = position.line
     /** This parser returns the current column number of the input without having any other effect.
       *
       * When this combinator is ran, no input is required, nor consumed, and
@@ -1261,7 +1261,7 @@ object Parsley {
       * @note in the presence of wide unicode characters, the value returned may be inaccurate.
       * @group pos
       */
-    val col: Parsley[Int] = new Parsley(singletons.Col)
+    def col: Parsley[Int] = position.col
     /** This parser returns the current line and column numbers of the input without having any other effect.
       *
       * When this combinator is ran, no input is required, nor consumed, and
@@ -1282,5 +1282,5 @@ object Parsley {
       * @note in the presence of wide unicode characters, the column value returned may be inaccurate.
       * @group pos
       */
-    val pos: Parsley[(Int, Int)] = line <~> col
+    def pos: Parsley[(Int, Int)] = position.pos
 }

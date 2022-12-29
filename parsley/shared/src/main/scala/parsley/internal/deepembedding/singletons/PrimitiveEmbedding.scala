@@ -26,6 +26,13 @@ private [parsley] object Col extends Singleton[Int] {
     // $COVERAGE-ON$
     override val instr: instructions.Instr = instructions.Col
 }
+private [parsley] object Offset extends Singleton[Int] {
+    // $COVERAGE-OFF$
+    override val pretty: String = "offset"
+    // $COVERAGE-ON$
+    override val instr: instructions.Instr = instructions.Offset
+}
+
 // This should really have UsesRegister, however, if it doesn't, this has the nice effect of catching
 // registers that have never been filled in some way!
 private [parsley] final class Get[S](reg: Reg[S]) extends Singleton[S] {
