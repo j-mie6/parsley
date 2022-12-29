@@ -27,11 +27,13 @@ private [token] class Escape(desc: EscapeDesc, err: ErrorConfig) {
     private def boundedChar(p: Parsley[BigInt], maxValue: Int, prefix: Option[Char], radix: Int): Parsley[Int] =
         prefix.fold(unit)(c => char(c).void) *> amend {
             val prefixString = prefix.fold("")(c => s"$c")
-            entrench(p).collectMsg(n => Seq(
+            entrench(p).collectMsg{n =>
+                val esc = err.renderCharEscapeNumericSequence(desc.escBegin, prefixString, n, radix)
                 if (n > maxValue) {
-                    s"\\$prefixString${n.toString(radix)} is greater than the maximum character of \\$prefixString${BigInt(maxValue).toString(radix)}"
+                    val maxEscape = err.renderCharEscapeNumericSequence(desc.escBegin, prefixString, BigInt(maxValue), radix)
+                    err.messageCharEscapeNumericSequenceTooBig(esc, maxEscape)
                 }
-                else s"illegal unicode codepoint: \\$prefixString${n.toString(radix)}")) {
+                else err.messageCharEscapeNumericSequenceIllegal(esc)} {
                 case n if n <= maxValue && Character.isValidCodePoint(n.toInt) => n.toInt
             }
         }
@@ -43,18 +45,19 @@ private [token] class Escape(desc: EscapeDesc, err: ErrorConfig) {
                                    digit <* atMostReg.modify(_ - 1)).foldLeft1[BigInt](0)((n, d) => n * radix + d.asDigit)
     }
 
-    private def exactly(n: Int, full: Int, radix: Int, digit: Parsley[Char]): Parsley[BigInt] = {
+    private def exactly(n: Int, full: Int, radix: Int, digit: Parsley[Char], reqDigits: Seq[Int]): Parsley[BigInt] = {
         atMost(n, radix, digit) <* atMostReg.get.guardAgainst {
-            case x if x > 0 => Seq(s"literal required $full digits, but only got ${full-x}")
+            case x if x > 0 => err.messageCharEscapeRequiresExactDigits(radix, full - x, reqDigits)
         }
     }
 
     private lazy val digitsParsed = parsley.registers.Reg.make[Int]
     private def oneOfExactly(n: Int, ns: List[Int], radix: Int, digit: Parsley[Char]): Parsley[BigInt] = {
+        val reqDigits@(m :: ms) = (n :: ns).sorted // make this a precondition of the description?
         def go(digits: Int, m: Int, ns: List[Int]): Parsley[BigInt] = ns match {
-            case Nil => exactly(digits, m, radix, digit) <* digitsParsed.put(digits)
+            case Nil => exactly(digits, m, radix, digit, reqDigits) <* digitsParsed.put(digits)
             case n :: ns  =>
-                val theseDigits = exactly(digits, m, radix, digit)
+                val theseDigits = exactly(digits, m, radix, digit, reqDigits)
                 val restDigits = (
                         (attempt(go(n-m, n, ns).map(Some(_)) <* digitsParsed.modify(_ + digits)))
                     <|> (digitsParsed.put(digits) #> None)
@@ -64,7 +67,6 @@ private [token] class Escape(desc: EscapeDesc, err: ErrorConfig) {
                     case (x, Some(y), exp) => (x * BigInt(radix).pow(exp - digits) + y) // digits is removed here, because it's been added before the get
                 }
         }
-        val (m :: ms) = (n :: ns).sorted // make this a precondition of the description?
         go(m, m, ms)
     }
 

@@ -74,6 +74,18 @@ class ErrorConfig {
     private [token] def messageStringNonLatin1(@unused s: String): Seq[String] =
         Seq("non-latin1 characters in string literal, this is not allowed")
 
+    private [token] def messageCharEscapeRequiresExactDigits(@unused radix: Int, got: Int, needed: Seq[Int]): Seq[String] =
+        Seq(s"numeric escape requires ${parsley.errors.helpers.combineAsList(needed.toList.map(_.toString))} digits, but only got $got")
+
+    private [token] def messageCharEscapeNumericSequenceTooBig(escapeSequence: String, maxEscape: String): Seq[String] =
+        Seq(s"$escapeSequence is greater than the maximum character $maxEscape")
+
+    private [token] def messageCharEscapeNumericSequenceIllegal(escapeSequence: String): Seq[String] =
+        Seq(s"illegal unicode codepoint: $escapeSequence")
+
+    private [token] def renderCharEscapeNumericSequence(escBegin: Char, prefix: String, n: BigInt, radix: Int): String =
+        s"$escBegin$prefix${n.toString(radix)}"
+
     // symbol
     private [token] def labelSymbolSemi: Option[String] = Some("semicolon")
     private [token] def labelSymbolComma: Option[String] = Some("comma")
