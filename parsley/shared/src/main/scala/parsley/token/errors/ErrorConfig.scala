@@ -75,6 +75,23 @@ class ErrorConfig {
         Seq("non-latin1 characters in string literal, this is not allowed")
 
     // symbol
+    private [token] def labelSymbolSemi: Option[String] = Some("semicolon")
+    private [token] def labelSymbolComma: Option[String] = Some("comma")
+    private [token] def labelSymbolColon: Option[String] = Some("colon")
+    private [token] def labelSymbolDot: Option[String] = Some("dot")
+    private [token] def labelSymbolOpenParen: Option[String] = Some("open parenthesis")
+    private [token] def labelSymbolOpenBrace: Option[String] = Some("open brace")
+    private [token] def labelSymbolOpenSquare: Option[String] = Some("open square bracket")
+    private [token] def labelSymbolOpenAngle: Option[String] = Some("open angle bracket")
+    private [token] def labelSymbolClosingParen: Option[String] = Some("closing parenthesis")
+    private [token] def labelSymbolClosingBrace: Option[String] = Some("closing brace")
+    private [token] def labelSymbolClosingSquare: Option[String] = Some("closing square bracket")
+    private [token] def labelSymbolClosingAngle: Option[String] = Some("closing angle bracket")
+    private [token] def labelSymbolKeyword(symbol: String): Option[String] = Some(symbol)
+    private [token] def labelSymbolOperator(symbol: String): Option[String] = Some(symbol)
+    // TODO: check if this error message should be conditional
+    private [token] def labelSymbolEndOfKeyword(symbol: String): Option[String] = Some(s"end of $symbol")
+    private [token] def labelSymbolEndOfOperator(symbol: String): Option[String] = Some(s"end of $symbol")
 
     // space
 }

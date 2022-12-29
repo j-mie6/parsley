@@ -32,6 +32,7 @@ inThisBuild(List(
     // Until 5.0 (these are all misreported package private members)
     ProblemFilters.exclude[DirectMissingMethodProblem]("parsley.token.numeric.Combined.this"),
     ProblemFilters.exclude[MissingClassProblem]("parsley.token.text.RawCharacter$"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("parsley.token.symbol.Symbol.this"),
   ),
   tlVersionIntroduced := Map(
     "2.13" -> "1.5.0",

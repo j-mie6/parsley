@@ -3,18 +3,16 @@
  */
 package parsley.token.symbol
 
-// TODO: This can be enabled later, when finalised: js-native will need to not use this
-//import scala.collection.concurrent
-
 import parsley.Parsley, Parsley.{attempt, notFollowedBy, unit}
 import parsley.character.{char, string, strings}
 import parsley.errors.combinator.ErrorMethods
 import parsley.token.descriptions.{NameDesc, SymbolDesc}
 import parsley.token.predicate.Basic
+import parsley.token.errors.ErrorConfig
 
 import parsley.internal.deepembedding.singletons
 
-private [token] class ConcreteSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc) extends Symbol {
+private [token] class ConcreteSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc, err: ErrorConfig) extends Symbol(err) {
     private lazy val identLetter = nameDesc.identifierLetter.toNative
     private lazy val opLetter = nameDesc.operatorLetter.toNative
 
@@ -32,23 +30,31 @@ private [token] class ConcreteSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc)
         else name.foldLeft(unit)((p, c) => p <* caseChar(c)).label(name)
     }
 
-    //private val keywordMemo = concurrent.TrieMap.empty[String, Parsley[Unit]]
-    override def softKeyword(name: String): Parsley[Unit] = /*keywordMemo.getOrElseUpdate(name, */nameDesc.identifierLetter match {
+    // TODO: We might want to memoise this, but it must be done thread-safely: synchronising on the maps should be enough
+    override def softKeyword(name: String): Parsley[Unit] = nameDesc.identifierLetter match {
         // TODO: this needs optimising for Unicode
-        case Basic(letter) => new Parsley(new singletons.Specific("keyword", name, letter, symbolDesc.caseSensitive))
-        case _ => attempt(caseString(name).label(name) *> notFollowedBy(identLetter).label(s"end of $name"))
-    }//)
+        case Basic(letter) => new Parsley(new singletons.Specific(name, letter, symbolDesc.caseSensitive)) // FIXME: needs err
+        case _ => attempt {
+            ErrorConfig.label(err.labelSymbolKeyword(name))(caseString(name)) *>
+            ErrorConfig.label(err.labelSymbolEndOfKeyword(name))(notFollowedBy(identLetter))
+        }
+    }
 
-    //private val operatorMemo = concurrent.TrieMap.empty[String, Parsley[Unit]]
-    override def softOperator(name: String): Parsley[Unit] = /*operatorMemo.getOrElseUpdate(name, *//*nameDesc.operatorLetter match*/ {
+    override def softOperator(name: String): Parsley[Unit] = /*nameDesc.operatorLetter match*/ {
         //case _ =>
             val ends = symbolDesc.hardOperators.collect {
                 case op if op.startsWith(name) && op != name => op.substring(name.length)
             }.toList
             ends match {
-                case Nil => attempt(string(name).label(name) *> notFollowedBy(opLetter).label(s"end of $name"))
-                case end::ends => attempt(string(name).label(name) *> notFollowedBy(opLetter <|> strings(end, ends: _*)).label(s"end of $name"))
+                case Nil => attempt {
+                    ErrorConfig.label(err.labelSymbolOperator(name))(string(name)) *>
+                    ErrorConfig.label(err.labelSymbolEndOfOperator(name))(notFollowedBy(opLetter))
+                }
+                case end::ends => attempt {
+                    ErrorConfig.label(err.labelSymbolOperator(name))(string(name)) *>
+                    ErrorConfig.label(err.labelSymbolEndOfOperator(name))(notFollowedBy(opLetter <|> strings(end, ends: _*)))
+                }
             }
 
-    }//)
+    }
 }

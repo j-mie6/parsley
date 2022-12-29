@@ -376,7 +376,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
           *
           * @since 4.0.0
           */
-        val symbol: parsley.token.symbol.Symbol = new LexemeSymbol(nonlexeme.symbol, this)
+        val symbol: parsley.token.symbol.Symbol = new LexemeSymbol(nonlexeme.symbol, this, errConfig)
 
         /** This object contains helper combinators for parsing terms separated by
           * common symbols.
@@ -715,7 +715,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
           *
           * @since 4.0.0
           */
-        val symbol: parsley.token.symbol.Symbol = new ConcreteSymbol(desc.nameDesc, desc.symbolDesc)
+        val symbol: parsley.token.symbol.Symbol = new ConcreteSymbol(desc.nameDesc, desc.symbolDesc, errConfig)
     }
 
     /** This combinator ensures a parser fully parses all available input, and consumes whitespace

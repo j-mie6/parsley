@@ -9,13 +9,14 @@ import parsley.{Parsley, ParsleyTest}
 import parsley.token.LexemeImpl._
 
 import parsley.token.descriptions._
+import parsley.token.errors.ErrorConfig
 import parsley.token.predicate._
 import parsley.token.symbol._
 import parsley.character.{spaces, string}
 import org.scalactic.source.Position
 
 class SymbolTests extends ParsleyTest {
-    def makeSymbol(nameDesc: NameDesc, symDesc: SymbolDesc): Symbol = new LexemeSymbol(new ConcreteSymbol(nameDesc, symDesc), spaces)
+    def makeSymbol(nameDesc: NameDesc, symDesc: SymbolDesc): Symbol = new LexemeSymbol(new ConcreteSymbol(nameDesc, symDesc, ErrorConfig.default), spaces, ErrorConfig.default)
 
     val plainName = NameDesc.plain.copy(identifierLetter = Basic(_.isLetter), operatorLetter = Basic(Set(':')))
     val plainSym = SymbolDesc.plain.copy(hardKeywords = Set("keyword", "hard"), hardOperators = Set("+", "<", "<="))
