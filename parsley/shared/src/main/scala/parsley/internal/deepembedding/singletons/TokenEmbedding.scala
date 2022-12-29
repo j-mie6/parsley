@@ -33,9 +33,12 @@ private [parsley] final class Sign[A](ty: SignType, signPresence: PlusSignPresen
     override def instr: instructions.Instr = new instructions.TokenSign(ty, signPresence)
 }
 
-private [parsley] class NonSpecific(override val pretty: String, name: String, illegalName: String,
+private [parsley] class NonSpecific(name: String, unexpectedIllegal: String => String,
                                     start: Char => Boolean, letter: Char => Boolean, illegal: String => Boolean) extends Singleton[String] {
-    override def instr: instructions.Instr = new instructions.TokenNonSpecific(name, illegalName)(start, letter, illegal)
+    // $COVERAGE-OFF$
+    override def pretty: String = s"nonspecificName"
+    // $COVERAGE-ON$
+    override def instr: instructions.Instr = new instructions.TokenNonSpecific(name, unexpectedIllegal)(start, letter, illegal)
 }
 
 private [parsley] final class Specific(private [Specific] val specific: String, letter: Char => Boolean, val caseSensitive: Boolean)

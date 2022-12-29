@@ -7,8 +7,7 @@ import parsley.internal.errors.ExpectDesc
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 
-private [internal] final class Satisfies(f: Char => Boolean, _expected: Option[String]) extends Instr {
-    private [this] final val expected = _expected.flatMap(label => if (label.isEmpty) None else Some(ExpectDesc(label)))
+private [internal] final class Satisfies(f: Char => Boolean, expected: Option[ExpectDesc]) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         if (ctx.moreInput && f(ctx.nextChar)) ctx.pushAndContinue(ctx.consumeChar())
@@ -17,6 +16,11 @@ private [internal] final class Satisfies(f: Char => Boolean, _expected: Option[S
     // $COVERAGE-OFF$
     override def toString: String = "Sat(?)"
     // $COVERAGE-ON$
+}
+private [internal] object Satisfies {
+    def apply(f: Char => Boolean, expected: Option[String]) = {
+        new Satisfies(f, expected.collect { case label if label.nonEmpty => ExpectDesc(label) })
+    }
 }
 
 private [internal] object RestoreAndFail extends Instr {

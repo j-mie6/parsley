@@ -38,6 +38,12 @@ class ErrorConfig {
     private [token] def floatName: String = "IEEE 754 single-precision float"
 
     // names
+    private [token] def labelNameIdentifier: String = "identifier"
+    private [token] def labelNameOperator: String = "operator"
+    private [token] def unexpectedNameIllegalIdentifier(v: String): String = s"keyword $v"
+    private [token] def unexpectedNameIllegalOperator(v: String): String = s"reserved operator $v"
+    private [token] def unexpectedNameIllFormedIdentifier: Option[String => String] = Some(v => s"identifer $v")
+    private [token] def unexpectedNameIllFormedOperator: Option[String => String] = Some(v => s"operator $v")
 
     // text
     //private [token] def labelCharAscii: Option[String] = None

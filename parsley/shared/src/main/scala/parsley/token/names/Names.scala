@@ -151,4 +151,7 @@ abstract class Names private[names] {
       * @since 4.0.0
       */
     def userDefinedOperator(startChar: CharPredicate, endChar: CharPredicate): Parsley[String]
+
+    // TODO: Two variants of the above that also have reasons that describe
+    //       the requirements of the identifier/operator
 }

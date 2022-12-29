@@ -8,21 +8,21 @@ import parsley.character.{satisfy, satisfyUtf16, stringOfMany, stringOfManyUtf16
 import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.zipped.Zipped2
 import parsley.token.descriptions.{NameDesc, SymbolDesc}
+import parsley.token.errors.ErrorConfig
 import parsley.token.predicate.{Basic, CharPredicate, NotRequired, Unicode}
 
 import parsley.internal.deepembedding.singletons
 
-private [token] class ConcreteNames(nameDesc: NameDesc, symbolDesc: SymbolDesc) extends Names {
-    private def keyOrOp(startImpl: CharPredicate, letterImpl: CharPredicate, parser: =>Parsley[String], illegal: String => Boolean,
-                        combinatorName: String, name: String, illegalName: String) = {
+private [token] class ConcreteNames(nameDesc: NameDesc, symbolDesc: SymbolDesc, err: ErrorConfig) extends Names {
+    private def keyOrOp(startImpl: CharPredicate, letterImpl: CharPredicate, illegal: String => Boolean,
+                        name: String, unexpectedIllegal: String => String) = {
         (startImpl, letterImpl) match {
-            case (Basic(start), Basic(letter)) => new Parsley(new singletons.NonSpecific(combinatorName, name, illegalName, start, letter, illegal))
-            case _ =>
-                attempt {
-                    parser.unexpectedWhen {
-                        case x if illegal(x) => s"$illegalName $x"
-                    }
-                }.label(name)
+            case (Basic(start), Basic(letter)) => new Parsley(new singletons.NonSpecific(name, unexpectedIllegal, start, letter, illegal))
+            case _ => attempt {
+                complete(startImpl, letterImpl).unexpectedWhen {
+                    case x if illegal(x) => unexpectedIllegal(x)
+                }
+            }.label(name)
         }
     }
     private def trailer(impl: CharPredicate) = impl match {
@@ -38,22 +38,27 @@ private [token] class ConcreteNames(nameDesc: NameDesc, symbolDesc: SymbolDesc) 
         }
         case NotRequired => empty
     }
-    private lazy val ident = complete(nameDesc.identifierStart, nameDesc.identifierLetter)
-    private lazy val oper = complete(nameDesc.operatorStart, nameDesc.operatorLetter)
     override lazy val identifier: Parsley[String] =
-        keyOrOp(nameDesc.identifierStart, nameDesc.identifierLetter, ident, symbolDesc.isReservedName(_),  "identifier", "identifier", "keyword")
+        keyOrOp(nameDesc.identifierStart, nameDesc.identifierLetter, symbolDesc.isReservedName(_),
+                err.labelNameIdentifier, err.unexpectedNameIllegalIdentifier)
     override def identifier(startChar: CharPredicate): Parsley[String] = attempt {
-        identifier.unexpectedWhen {
-            case x if !startChar.startsWith(x) => s"identifier $x"
+        err.unexpectedNameIllFormedIdentifier match {
+            case Some(msggen) => identifier.unexpectedWhen {
+                case x if !startChar.startsWith(x) => msggen(x)
+            }
+            case None => identifier.filter(startChar.startsWith(_))
         }
     }
 
     override lazy val userDefinedOperator: Parsley[String] =
-        keyOrOp(nameDesc.operatorStart, nameDesc.operatorLetter, oper, symbolDesc.isReservedOp(_), "userOp", "operator", "reserved operator")
+        keyOrOp(nameDesc.operatorStart, nameDesc.operatorLetter, symbolDesc.isReservedOp(_), err.labelNameOperator, err.unexpectedNameIllegalOperator)
 
     def userDefinedOperator(startChar: CharPredicate, endChar: CharPredicate): Parsley[String] = attempt {
-        userDefinedOperator.unexpectedWhen {
-            case x if !startChar.startsWith(x) || !endChar.endsWith(x) => s"operator $x"
+        err.unexpectedNameIllFormedOperator match {
+            case Some(msggen) => userDefinedOperator.unexpectedWhen {
+                case x if !startChar.startsWith(x) || !endChar.endsWith(x) => msggen(x)
+            }
+            case None => userDefinedOperator.filter(x => startChar.startsWith(x) && endChar.endsWith(x))
         }
     }
 }

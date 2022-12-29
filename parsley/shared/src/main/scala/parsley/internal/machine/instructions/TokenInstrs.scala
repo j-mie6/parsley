@@ -166,7 +166,7 @@ private [internal] final class TokenSkipComments(start: String, end: String, lin
     // $COVERAGE-ON$
 }
 
-private [internal] final class TokenNonSpecific(name: String, illegalName: String)
+private [internal] final class TokenNonSpecific(name: String, unexpectedIllegal: String => String)
                                                (start: Char => Boolean, letter: Char => Boolean, illegal: String => Boolean) extends Instr {
     private [this] final val expected = Some(ExpectDesc(name))
 
@@ -183,7 +183,7 @@ private [internal] final class TokenNonSpecific(name: String, illegalName: Strin
     private def ensureLegal(ctx: Context, tok: String) = {
         if (illegal(tok)) {
             ctx.offset -= tok.length
-            ctx.unexpectedFail(expected = expected, unexpected = new UnexpectDesc(s"$illegalName $tok", tok.length))
+            ctx.unexpectedFail(expected = expected, unexpected = new UnexpectDesc(unexpectedIllegal(tok), tok.length))
         }
         else {
             ctx.col += tok.length

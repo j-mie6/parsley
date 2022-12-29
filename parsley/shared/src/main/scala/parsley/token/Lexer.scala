@@ -603,7 +603,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
           *
           * @since 4.0.0
           */
-        val names: parsley.token.names.Names = new ConcreteNames(desc.nameDesc, desc.symbolDesc)
+        val names: parsley.token.names.Names = new ConcreteNames(desc.nameDesc, desc.symbolDesc, errConfig)
 
         /** $numeric
           *
