@@ -118,6 +118,44 @@ the `parsley.internal` package is _not_ adherent to `early-semver` and may be
 removed or changed at will with no impact to_ regular/intended _use of the
 library._
 
+### Release Candidates and Milestones
+Occasionally, a minor (source) release will contain either a significant body of
+new work, or a significant rework of some internal machinery. In these cases
+additional versioning may be employed:
+
+* Experimental (and volatile) new functionality may be iterated with `a.b.0-Mn`
+  versions: these are (hopefully) _working_ pre-release versions of the
+  functionality, subject to even binary incompatible changes between `M`
+  versions. When the new API and behaviour becomes stable, the release
+  graduates to the `a.b.0-RC1` release candidate.
+* Release candidates are used to iron-out any lingering issues with a minor
+  release and _potentially_ alter the finer-points of the new functionality's
+  behaviour. Binary compatiblity will be preserved between `RCx` and `RCy` with
+  `y > x` except within truly exceptional circumstances.
+* Finally, the release makes it to `a.b.0` and is _hopefully_ truely stable.
+
+### Version EoL (End of Life) Policy
+Old versions of the library may still be given important bug-fixes after it
+has be obsoleted by a new release. In exceptional circumstances, performance
+problems may be addressed for old versions. The lifetime policy is as follows:
+
+* Major (binary) versions reach EoL a minimum of 6 months after its successor
+  was released, unless an extension to its life is requested by a issue.
+* Minor (source) versions reach EoL immediately on the release of its
+  successor, _unless_ deprecations were issued by its successor, in which case
+  it will reach EoL after a minimum of 3 months.
+
+Some more minor bugfixes may not be ported to previous versions if they (a) do
+not appear in that version or (b) the code has changed too much internally to
+make porting feasible.
+
+_An exception to this policy is made for any version `3.x.y`, which reaches EoL effective immediately (December 2022) excluding exceptional circumstances._
+
+| Version | Released On        | EoL Status                  |
+|:-------:|:-------------------|:----------------------------|
+| `3.3.0` | January 7th 2022   | EoL reached                 |
+| `4.0.0` | November 30th 2022 | Enjoying indefinite support |
+
 ## Bug Reports [![Percentage of issues still open](https://isitmaintained.com/badge/open/j-mie6/Parsley.svg)](https://isitmaintained.com/project/j-mie6/Parsley "Percentage of issues still open") [![Maintainability](https://img.shields.io/codeclimate/maintainability/j-mie6/Parsley)](https://codeclimate.com/github/j-mie6/Parsley) [![Test Coverage](https://img.shields.io/codeclimate/coverage-letter/j-mie6/Parsley)](https://codeclimate.com/github/j-mie6/Parsley)
 
 If you encounter a bug when using Parsley, try and minimise the example of the parser (and the input) that triggers the bug.
