@@ -17,7 +17,7 @@ If you're a `cats` user, you may also be interested in using [`parsley-cats`](ht
 to augment `parsley` with instances for various `cats` typeclasses:
 
 ```scala
-libraryDependencies += "com.github.j-mie6" %% "parsley-cats" % "0.2.0"
+libraryDependencies += "com.github.j-mie6" %% "parsley-cats" % "1.0.0"
 ```
 
 ### Examples
