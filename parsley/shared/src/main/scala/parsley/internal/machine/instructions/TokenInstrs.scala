@@ -101,8 +101,8 @@ private [internal] final class TokenComment private (
 
 private [instructions] abstract class WhiteSpaceLike extends CommentLexer {
     private [this] final val numCodePointsEnd = end.codePointCount(0, end.length)
-    protected [this] val endOfSingleComment: Option[ExpectDesc]// = Some(ExpectDesc("end of comment")) //FIXME:
-    protected [this] val endOfMultiComment: Option[ExpectItem]// = Some(ExpectDesc("end of comment")) //FIXME:
+    protected [this] val endOfSingleComment: Option[ExpectDesc]
+    protected [this] val endOfMultiComment: Option[ExpectItem]
     @tailrec private final def singlesOnly(ctx: Context): Unit = {
         spaces(ctx)
         if (ctx.moreInput) {

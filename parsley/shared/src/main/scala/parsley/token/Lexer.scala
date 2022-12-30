@@ -805,7 +805,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
           * @since 4.0.0
           */
         val whiteSpace: Parsley[Unit] = {
-            if (desc.spaceDesc.whitespaceIsContextDependent) wsImpl.get.flatten.hide
+            if (desc.spaceDesc.whitespaceIsContextDependent) wsImpl.get.flatten
             else configuredWhiteSpace
         }
 
@@ -820,16 +820,17 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
           */
         lazy val skipComments: Parsley[Unit] = {
             if (!desc.spaceDesc.supportsComments) unit
-            else new Parsley(new singletons.SkipComments(desc.spaceDesc, errConfig)).hide
+            else new Parsley(new singletons.SkipComments(desc.spaceDesc, errConfig))
         }
 
         private def configuredWhiteSpace: Parsley[Unit] = whiteSpace(desc.spaceDesc.space)
         private def whiteSpace(impl: CharPredicate): Parsley[Unit] = impl match {
             case NotRequired => skipComments
-            case Basic(ws) => new Parsley(new singletons.WhiteSpace(ws, desc.spaceDesc, errConfig)).hide
+            case Basic(ws) => new Parsley(new singletons.WhiteSpace(ws, desc.spaceDesc, errConfig))
+            // satisfyUtf16 is effectively hidden, and so is Comment
             case Unicode(ws) if desc.spaceDesc.supportsComments =>
-                skipMany(attempt(new Parsley(new singletons.Comment(desc.spaceDesc, errConfig))) <|> satisfyUtf16(ws)).hide
-            case Unicode(ws) => skipMany(satisfyUtf16(ws)).hide
+                skipMany(attempt(new Parsley(new singletons.Comment(desc.spaceDesc, errConfig))) <|> satisfyUtf16(ws))//.hide
+            case Unicode(ws) => skipMany(satisfyUtf16(ws))//.hide
         }
     }
 }

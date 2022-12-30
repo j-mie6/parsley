@@ -153,7 +153,7 @@ object character {
 
     // TODO: document and optimise
     private [parsley] def satisfyUtf16(pred: Int => Boolean): Parsley[Int] = attempt {
-        item.flatMap {
+        item.hide.flatMap {
             case h if h.isHighSurrogate => item.collect {
                 case l if Character.isSurrogatePair(h, l) && pred(Character.toCodePoint(h, l)) => Character.toCodePoint(h, l)
             }
