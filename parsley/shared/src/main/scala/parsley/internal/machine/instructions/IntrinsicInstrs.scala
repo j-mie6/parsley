@@ -5,7 +5,7 @@ package parsley.internal.machine.instructions
 
 import scala.annotation.tailrec
 
-import parsley.internal.errors.{EndOfInput, ExpectDesc, ExpectItem, ExpectRaw, UnexpectDesc}
+import parsley.internal.errors.{EndOfInput, ExpectItem, UnexpectDesc}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.{ClassicFancyError, ClassicUnexpectedError, EmptyError, EmptyErrorWithReason}
@@ -131,8 +131,6 @@ private [internal] final class Case(var label: Int) extends InstrWithLabel {
     // $COVERAGE-ON$
 }
 
-// TODO: I think all three of these _shouldn't_ generate the
-//       unexpected item, but should generate a caret, fix this!
 private [internal] final class Filter[A](_pred: A => Boolean) extends Instr {
     private [this] val pred = _pred.asInstanceOf[Any => Boolean]
     override def apply(ctx: Context): Unit = {
@@ -302,20 +300,12 @@ private [internal] final class SwapAndPut(reg: Int) extends Instr {
 // Companion Objects
 private [internal] object CharTok {
     def apply(c: Char, expected: Option[String]): CharTok = apply(c, c, expected)
-    def apply(c: Char, x: Any, expected: Option[String]): CharTok = new CharTok(c, x, expected match {
-        case Some("") => None
-        case Some(e)  => Some(ExpectDesc(e))
-        case None     => Some(ExpectRaw(c))
-    })
+    def apply(c: Char, x: Any, expected: Option[String]): CharTok = new CharTok(c, x, ExpectItem(expected, s"$c"))
 }
 
 private [internal] object StringTok {
     def apply(s: String, expected: Option[String]): StringTok = apply(s, s, expected)
-    def apply(s: String, x: Any, expected: Option[String]): StringTok = new StringTok(s, x, expected match {
-        case Some("") => None
-        case Some(e)  => Some(ExpectDesc(e))
-        case None     => Some(ExpectRaw(s))
-    })
+    def apply(s: String, x: Any, expected: Option[String]): StringTok = new StringTok(s, x,  ExpectItem(expected, s))
 
     private [StringTok] abstract class Adjust {
         private [StringTok] def tab: Adjust

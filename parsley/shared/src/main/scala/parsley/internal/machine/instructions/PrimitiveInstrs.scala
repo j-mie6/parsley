@@ -18,9 +18,7 @@ private [internal] final class Satisfies(f: Char => Boolean, expected: Option[Ex
     // $COVERAGE-ON$
 }
 private [internal] object Satisfies {
-    def apply(f: Char => Boolean, expected: Option[String]) = {
-        new Satisfies(f, expected.collect { case label if label.nonEmpty => ExpectDesc(label) })
-    }
+    def apply(f: Char => Boolean, expected: Option[String]) = new Satisfies(f, ExpectDesc(expected))
 }
 
 private [internal] object RestoreAndFail extends Instr {

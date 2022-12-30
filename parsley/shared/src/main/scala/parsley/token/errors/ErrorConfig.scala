@@ -111,6 +111,10 @@ class ErrorConfig {
     private [token] def labelSymbolEndOfOperator(symbol: String): String = s"end of $symbol"
 
     // space
+    //private [parsley] def labelSpaceComment: Option[String] = Some("comment")
+    private [parsley] def labelSpaceEndOfLineComment: Option[String] = Some("end of comment")
+    private [parsley] def labelSpaceEndOfMultiComment: Option[String] = Some("end of comment")
+    // TODO: reasonSpaceUnclosedComment?
 }
 
 object ErrorConfig {

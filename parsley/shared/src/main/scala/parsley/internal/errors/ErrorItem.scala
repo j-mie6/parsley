@@ -19,6 +19,13 @@ private [internal] sealed trait ExpectItem extends ErrorItem {
     protected [errors] def lowerThanRaw(other: ExpectRaw): Boolean
     protected [errors] def lowerThanDesc: Boolean
 }
+private [internal] object ExpectItem {
+    def apply(label: Option[String], raw: String): Option[ExpectItem] = label match {
+        case Some("") => None
+        case Some(e)  => Some(ExpectDesc(e))
+        case None     => Some(ExpectRaw(raw))
+    }
+}
 
 private [internal] final case class UnexpectRaw(cs: Iterable[Char], amountOfInputParserWanted: Int) extends UnexpectItem {
     assert(cs.nonEmpty, "we promise that unexpectedToken never receives empty input")
@@ -49,6 +56,17 @@ private [internal] final case class ExpectDesc(msg: String) extends ExpectItem {
     override def lowerThanRaw(other: ExpectRaw): Boolean = false
     override def lowerThanDesc: Boolean = true
 }
+private [internal] object ExpectDesc {
+    def apply(expected: Option[String]): Option[ExpectDesc] = expected.collect {
+        case label if label.nonEmpty => ExpectDesc(label)
+    }
+    def apply(expected: Option[String], otherwise: String): Option[ExpectDesc] = expected match {
+        case Some("") => None
+        case Some(e)  => Some(ExpectDesc(e))
+        case None     => Some(ExpectDesc(otherwise))
+    }
+}
+
 private [internal] final case class UnexpectDesc(msg: String, width: Int) extends UnexpectItem {
     assert(msg.nonEmpty, "Desc cannot contain empty things!")
     // FIXME: When this is formatted, the width should really be normalised to the number of code points... this information is not readily available

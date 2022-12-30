@@ -9,7 +9,7 @@ import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.{ClassicFancyError, ClassicUnexpectedError}
 
 private [internal] final class RelabelHints(label: String) extends Instr {
-    val isHide: Boolean = label.isEmpty
+    private [this] val isHide: Boolean = label.isEmpty
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         // if this was a hide, pop the hints if possible
@@ -30,7 +30,6 @@ private [internal] final class RelabelHints(label: String) extends Instr {
 }
 
 private [internal] final class RelabelErrorAndFail(label: String) extends Instr {
-    val isHide: Boolean = label.isEmpty
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
         ctx.restoreHints()

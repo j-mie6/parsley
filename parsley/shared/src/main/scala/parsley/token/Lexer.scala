@@ -820,25 +820,15 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
           */
         lazy val skipComments: Parsley[Unit] = {
             if (!desc.spaceDesc.supportsComments) unit
-            else {
-                new Parsley(new singletons.SkipComments(desc.spaceDesc.commentStart, desc.spaceDesc.commentEnd,
-                                                        desc.spaceDesc.commentLine,  desc.spaceDesc.nestedComments,
-                                                        desc.spaceDesc.commentLineAllowsEOF)).hide
-            }
+            else new Parsley(new singletons.SkipComments(desc.spaceDesc, errConfig)).hide
         }
 
         private def configuredWhiteSpace: Parsley[Unit] = whiteSpace(desc.spaceDesc.space)
         private def whiteSpace(impl: CharPredicate): Parsley[Unit] = impl match {
             case NotRequired => skipComments
-            case Basic(ws) => new Parsley(new singletons.WhiteSpace(ws, desc.spaceDesc.commentStart, desc.spaceDesc.commentEnd,
-                                                                        desc.spaceDesc.commentLine, desc.spaceDesc.nestedComments,
-                                                                        desc.spaceDesc.commentLineAllowsEOF)).hide
+            case Basic(ws) => new Parsley(new singletons.WhiteSpace(ws, desc.spaceDesc, errConfig)).hide
             case Unicode(ws) if desc.spaceDesc.supportsComments =>
-                skipMany(attempt(new Parsley(new singletons.Comment(desc.spaceDesc.commentStart,
-                                                                    desc.spaceDesc.commentEnd,
-                                                                    desc.spaceDesc.commentLine,
-                                                                    desc.spaceDesc.nestedComments,
-                                                                    desc.spaceDesc.commentLineAllowsEOF))) <|> satisfyUtf16(ws)).hide
+                skipMany(attempt(new Parsley(new singletons.Comment(desc.spaceDesc, errConfig))) <|> satisfyUtf16(ws)).hide
             case Unicode(ws) => skipMany(satisfyUtf16(ws)).hide
         }
     }
