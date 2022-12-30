@@ -132,7 +132,7 @@ additional versioning may be employed:
   release and _potentially_ alter the finer-points of the new functionality's
   behaviour. Binary compatiblity will be preserved between `RCx` and `RCy` with
   `y > x` except within truly exceptional circumstances.
-* Finally, the release makes it to `a.b.0` and is _hopefully_ truely stable.
+* Finally, the release makes it to `a.b.0` and is _hopefully_ truly stable.
 
 ### Version EoL (End of Life) Policy
 Old versions of the library may still be given important bug-fixes after it
