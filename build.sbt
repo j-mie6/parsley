@@ -40,7 +40,7 @@ inThisBuild(List(
     "3"    -> "3.1.2",
   ),
   // CI Configuration
-  tlCiReleaseBranches := Seq("master"),
+  tlCiReleaseBranches := Seq("master", "error-config"),
   tlSonatypeUseLegacyHost := true, // this needs to be switched off after migration
   githubWorkflowJavaVersions := Seq(Java8, JavaLTS, JavaLatest),
   // We need this because our release uses different flags
