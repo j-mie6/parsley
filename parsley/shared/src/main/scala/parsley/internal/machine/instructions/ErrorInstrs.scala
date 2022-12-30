@@ -13,7 +13,7 @@ private [internal] final class RelabelHints(label: String) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         // if this was a hide, pop the hints if possible
-        if (isHide) ctx.popHints
+        if (isHide) ctx.popHints()
         // EOK
         // replace the head of the hints with the singleton for our label
         else if (ctx.offset == ctx.checkStack.offset) ctx.replaceHint(label)

@@ -86,7 +86,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         commitHints()
     }
     private [machine] def replaceHint(label: String): Unit = hints = hints.rename(label)
-    private [machine] def popHints: Unit = hints = hints.pop
+    private [machine] def popHints(): Unit = hints = hints.pop
     /* ERROR RELABELLING END */
 
     private def addErrorToHints(): Unit = {
