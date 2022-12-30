@@ -234,8 +234,8 @@ private [instructions] abstract class TokenSpecificAllowTrailing(
     }
 }
 
-private [internal] final class TokenSpecific(specific: String, expected: Option[String], expectedEnd: String, letter: Char => Boolean, caseSensitive: Boolean)
-    extends TokenSpecificAllowTrailing(specific, expected, expectedEnd, caseSensitive) {
+private [internal] final class TokenSpecific(specific: String, expected: Option[String], _expectedEnd: String, letter: Char => Boolean, caseSensitive: Boolean)
+    extends TokenSpecificAllowTrailing(specific, expected, _expectedEnd, caseSensitive) {
     override def postprocess(ctx: Context, i: Int): Unit = {
         if (i < ctx.inputsz && letter(ctx.input.charAt(i))) {
             ctx.expectedFail(expectedEnd, unexpectedWidth = 1) //This should only report a single token
