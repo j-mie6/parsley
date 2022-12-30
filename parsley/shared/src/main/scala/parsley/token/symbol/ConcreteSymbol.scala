@@ -33,10 +33,11 @@ private [token] class ConcreteSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc,
     // TODO: We might want to memoise this, but it must be done thread-safely: synchronising on the maps should be enough
     override def softKeyword(name: String): Parsley[Unit] = nameDesc.identifierLetter match {
         // TODO: this needs optimising for Unicode
-        case Basic(letter) => new Parsley(new singletons.Specific(name, letter, symbolDesc.caseSensitive)) // FIXME: needs err
+        case Basic(letter) =>
+            new Parsley(new singletons.Specific(name, err.labelSymbolKeyword(name), err.labelSymbolEndOfKeyword(name), letter, symbolDesc.caseSensitive))
         case _ => attempt {
             ErrorConfig.label(err.labelSymbolKeyword(name))(caseString(name)) *>
-            ErrorConfig.label(err.labelSymbolEndOfKeyword(name))(notFollowedBy(identLetter))
+            notFollowedBy(identLetter).label(err.labelSymbolEndOfKeyword(name))
         }
     }
 
@@ -48,11 +49,11 @@ private [token] class ConcreteSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc,
             ends match {
                 case Nil => attempt {
                     ErrorConfig.label(err.labelSymbolOperator(name))(string(name)) *>
-                    ErrorConfig.label(err.labelSymbolEndOfOperator(name))(notFollowedBy(opLetter))
+                    notFollowedBy(opLetter).label(err.labelSymbolEndOfOperator(name))
                 }
                 case end::ends => attempt {
                     ErrorConfig.label(err.labelSymbolOperator(name))(string(name)) *>
-                    ErrorConfig.label(err.labelSymbolEndOfOperator(name))(notFollowedBy(opLetter <|> strings(end, ends: _*)))
+                    notFollowedBy(opLetter <|> strings(end, ends: _*)).label(err.labelSymbolEndOfOperator(name))
                 }
             }
 

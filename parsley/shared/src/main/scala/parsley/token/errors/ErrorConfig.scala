@@ -107,9 +107,8 @@ class ErrorConfig {
     private [token] def labelSymbolClosingAngle: Option[String] = Some("closing angle bracket")
     private [token] def labelSymbolKeyword(symbol: String): Option[String] = Some(symbol)
     private [token] def labelSymbolOperator(symbol: String): Option[String] = Some(symbol)
-    // TODO: check if this error message should be conditional
-    private [token] def labelSymbolEndOfKeyword(symbol: String): Option[String] = Some(s"end of $symbol")
-    private [token] def labelSymbolEndOfOperator(symbol: String): Option[String] = Some(s"end of $symbol")
+    private [token] def labelSymbolEndOfKeyword(symbol: String): String = s"end of $symbol"
+    private [token] def labelSymbolEndOfOperator(symbol: String): String = s"end of $symbol"
 
     // space
 }

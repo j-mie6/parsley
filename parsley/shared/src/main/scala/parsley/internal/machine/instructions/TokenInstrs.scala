@@ -204,10 +204,11 @@ private [internal] final class TokenNonSpecific(name: String, unexpectedIllegal:
     // $COVERAGE-ON$
 }
 
-private [instructions] abstract class TokenSpecificAllowTrailing(_specific: String, caseSensitive: Boolean) extends Instr {
-    private [this] final val expected = Some(ExpectDesc(_specific))
-    protected final val expectedEnd = Some(ExpectDesc(s"end of ${_specific}"))
-    private [this] final val specific = (if (caseSensitive) _specific else _specific.toLowerCase)
+private [instructions] abstract class TokenSpecificAllowTrailing(
+        specific: String, expected: Option[ExpectDesc], protected final val expectedEnd: Option[ExpectDesc], caseSensitive: Boolean) extends Instr {
+    def this(specific: String, expected: Option[String], expectedEnd: String, caseSensitive: Boolean) = {
+        this(if (caseSensitive) specific else specific.toLowerCase, expected.map(ExpectDesc(_)), Some(ExpectDesc(expectedEnd)), caseSensitive)
+    }
     private [this] final val strsz = specific.length
     private [this] final val numCodePoints = specific.codePointCount(0, strsz)
     protected def postprocess(ctx: Context, i: Int): Unit
@@ -233,8 +234,8 @@ private [instructions] abstract class TokenSpecificAllowTrailing(_specific: Stri
     }
 }
 
-private [internal] final class TokenSpecific(_specific: String, letter: Char => Boolean, caseSensitive: Boolean)
-    extends TokenSpecificAllowTrailing(_specific, caseSensitive) {
+private [internal] final class TokenSpecific(specific: String, expected: Option[String], expectedEnd: String, letter: Char => Boolean, caseSensitive: Boolean)
+    extends TokenSpecificAllowTrailing(specific, expected, expectedEnd, caseSensitive) {
     override def postprocess(ctx: Context, i: Int): Unit = {
         if (i < ctx.inputsz && letter(ctx.input.charAt(i))) {
             ctx.expectedFail(expectedEnd, unexpectedWidth = 1) //This should only report a single token
@@ -247,7 +248,7 @@ private [internal] final class TokenSpecific(_specific: String, letter: Char => 
     }
 
     // $COVERAGE-OFF$
-    override def toString: String = s"TokenSpecific(${_specific})"
+    override def toString: String = s"TokenSpecific($specific)"
     // $COVERAGE-ON$
 }
 

@@ -41,12 +41,12 @@ private [parsley] class NonSpecific(name: String, unexpectedIllegal: String => S
     override def instr: instructions.Instr = new instructions.TokenNonSpecific(name, unexpectedIllegal)(start, letter, illegal)
 }
 
-private [parsley] final class Specific(private [Specific] val specific: String, letter: Char => Boolean, val caseSensitive: Boolean)
-    extends Singleton[Unit] {
+private [parsley] final class Specific(private [Specific] val specific: String, expected: Option[String],
+                                       expectedEnd: String, letter: Char => Boolean, val caseSensitive: Boolean) extends Singleton[Unit] {
     // $COVERAGE-OFF$
     override def pretty: String = s"specific($specific)"
     // $COVERAGE-ON$
-    override def instr: instructions.Instr = new instructions.TokenSpecific(specific, letter, caseSensitive)
+    override def instr: instructions.Instr = new instructions.TokenSpecific(specific, expected, expectedEnd, letter, caseSensitive)
 }
 
 /*
