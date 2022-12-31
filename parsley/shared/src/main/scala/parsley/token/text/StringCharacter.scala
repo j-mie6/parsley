@@ -30,7 +30,7 @@ private [token] class EscapableCharacter(desc: EscapeDesc, escapes: Escape, spac
         if (desc.gapsSupported) skipSome(ErrorConfig.label(err.labelEscapeStringGap)(space)) *> ErrorConfig.label(err.labelEscapeStringGapEnd)(desc.escBegin)
         else empty
     }
-    private lazy val stringEscape: Parsley[Option[Int]] = ErrorConfig.label(err.labelEscapeSequnce) {
+    private lazy val stringEscape: Parsley[Option[Int]] = ErrorConfig.label(err.labelEscapeSequence) {
         desc.escBegin *> (escapeGap #> None
                       <|> escapeEmpty #> None
                       <|> escapes.escapeCode.map(Some(_)).explain(err.explainEscapeInvalid))

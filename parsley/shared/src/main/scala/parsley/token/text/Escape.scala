@@ -6,7 +6,7 @@ package parsley.token.text
 import parsley.Parsley, Parsley.{attempt, empty, pure, unit}
 import parsley.character.{bit, char, digit, hexDigit, octDigit, strings}
 import parsley.combinator.ensure
-import parsley.errors.combinator.{amend, entrench, ErrorMethods}
+import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.zipped.Zipped3
 import parsley.token.descriptions.text.{EscapeDesc, NumberOfDigits, NumericEscape}
 import parsley.token.errors.ErrorConfig
@@ -24,10 +24,10 @@ private [token] class Escape(desc: EscapeDesc, err: ErrorConfig) {
         attempt(strings(x, xs: _*))
     }
 
-    private def boundedChar(p: Parsley[BigInt], maxValue: Int, prefix: Option[Char], radix: Int): Parsley[Int] =
-        prefix.fold(unit)(c => char(c).void) *> amend {
+    private def boundedChar(p: Parsley[BigInt], maxValue: Int, prefix: Option[Char], radix: Int): Parsley[Int] = ErrorConfig.label(err.labelEscapeNumeric) {
+        prefix.fold(unit)(c => char(c).void) *> {
             val prefixString = prefix.fold("")(c => s"$c")
-            entrench(p).collectMsg{n =>
+            p.collectMsg{n =>
                 val esc = err.renderCharEscapeNumericSequence(desc.escBegin, prefixString, n, radix)
                 if (n > maxValue) {
                     val maxEscape = err.renderCharEscapeNumericSequence(desc.escBegin, prefixString, BigInt(maxValue), radix)
@@ -37,6 +37,7 @@ private [token] class Escape(desc: EscapeDesc, err: ErrorConfig) {
                 case n if n <= maxValue && Character.isValidCodePoint(n.toInt) => n.toInt
             }
         }
+    }
 
     // this is a really neat trick :)
     private lazy val atMostReg = parsley.registers.Reg.make[Int]
@@ -85,5 +86,5 @@ private [token] class Escape(desc: EscapeDesc, err: ErrorConfig) {
     private val binaryEscape = fromDesc(radix = 2, desc.binaryEscape, numeric.Generic.zeroAllowedBinary, bit)
     private val numericEscape = decimalEscape <|> hexadecimalEscape <|> octalEscape <|> binaryEscape
     val escapeCode = ErrorConfig.label(err.labelEscapeEnd)(escMapped <|> numericEscape)
-    val escapeChar = char(desc.escBegin) *> escapeCode
+    val escapeChar = ErrorConfig.label(err.labelEscapeSequence)(char(desc.escBegin)) *> ErrorConfig.explain(err.explainEscapeEnd)(escapeCode)
 }

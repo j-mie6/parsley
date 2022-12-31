@@ -48,7 +48,8 @@ class ErrorConfig {
     //def labelCharAscii: Option[String] = None
     def labelStringCharacter: Option[String] = Some("string character")
     def labelStringCharacterGraphic: Option[String] = Some("graphic character")
-    def labelEscapeSequnce: Option[String] = Some("escape sequence")
+    def labelEscapeSequence: Option[String] = Some("escape sequence")
+    def labelEscapeNumeric: Option[String] = None
     def labelEscapeEnd: Option[String] = Some("end of escape sequence")
     def labelEscapeStringGap: Option[String] = Some("string gap")
     def labelEscapeStringGapEnd: Option[String] = Some("end of string gap")
@@ -60,6 +61,8 @@ class ErrorConfig {
         "non-latin1 character"
     def explainEscapeInvalid: String =
         "invalid escape sequence"
+
+    def explainEscapeEnd: Option[String] = None
 
     //def explainCharNonBasicMultilingualPlane(@unused c: Int): String =
     //    "non-BMP character"
@@ -122,5 +125,10 @@ object ErrorConfig {
     private [token] def label[A](label: Option[String])(p: Parsley[A]): Parsley[A] = label match {
         case None => p
         case Some(name) => p.label(name)
+    }
+
+    private [token] def explain[A](reason: Option[String])(p: Parsley[A]): Parsley[A] = reason match {
+        case None => p
+        case Some(reason) => p.explain(reason)
     }
 }
