@@ -4,14 +4,14 @@
 package parsley.token.text
 
 import parsley.Parsley
+import parsley.character.char
 import parsley.errors.combinator.ErrorMethods
-import parsley.implicits.character.charLift
 import parsley.token.descriptions.text.TextDesc
 import parsley.token.errors.ErrorConfig
 
 private [token] final class ConcreteCharacter(desc: TextDesc, escapes: Escape, err: ErrorConfig) extends Character {
-    private val quote = desc.characterLiteralEnd
-    private lazy val charLetter = Character.letter(quote, desc.escapeSequences.escBegin, allowsAllSpace = false, desc.graphicCharacter)
+    private val quote = char(desc.characterLiteralEnd)
+    private lazy val charLetter = Character.letter(desc.characterLiteralEnd, desc.escapeSequences.escBegin, allowsAllSpace = false, desc.graphicCharacter)
 
     override lazy val fullUtf16: Parsley[Int] = {
         quote *> (escapes.escapeChar <|> ErrorConfig.label(err.labelGraphicCharacter)(charLetter.toUnicode)) <* quote
