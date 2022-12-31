@@ -49,22 +49,23 @@ class ErrorConfig {
     def labelStringCharacter: Option[String] = Some("string character")
     def labelGraphicCharacter: Option[String] = Some("graphic character")
     def labelEscapeSequence: Option[String] = Some("escape sequence")
-    def labelEscapeNumeric: Option[String] = None
+    def labelEscapeNumeric(radix: Int): Option[String] = None
+    def labelEscapeNumericEnd(radix: Int): Option[String] = None
     def labelEscapeEnd: Option[String] = Some("end of escape sequence")
-    def labelEscapeStringGap: Option[String] = Some("string gap")
-    def labelEscapeStringGapEnd: Option[String] = Some("end of string gap")
+    def labelStringEscapeEmpty: Option[String] = None
+    def labelStringEscapeGap: Option[String] = Some("string gap")
+    def labelStringEscapeGapEnd: Option[String] = Some("end of string gap")
 
     // TODO: premption flag for checking for leading character with explain
 
     def explainCharNonAscii(@unused c: Int): String =
         "non-ascii character"
-
     def explainCharNonLatin1(@unused c: Int): String =
         "non-latin1 character"
+
     def explainEscapeInvalid: Option[String] =
         Some("invalid escape sequence")
-
-    def explainEscapeEnd: Option[String] = None
+    def explainEscapeNumericPostPrefix(prefix: Char, radix: Int): Option[String] = None
 
     //def explainCharNonBasicMultilingualPlane(@unused c: Int): String =
     //    "non-BMP character"
@@ -118,7 +119,7 @@ class ErrorConfig {
     //def labelSpaceComment: Option[String] = Some("comment")
     def labelSpaceEndOfLineComment: Option[String] = Some("end of comment")
     def labelSpaceEndOfMultiComment: Option[String] = Some("end of comment")
-    // TODO: reasonSpaceUnclosedComment?
+    // TODO: explainSpaceUnclosedComment?
 }
 
 object ErrorConfig {

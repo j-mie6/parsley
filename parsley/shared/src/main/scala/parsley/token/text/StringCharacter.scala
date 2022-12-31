@@ -24,16 +24,15 @@ private [token] class RawCharacter(err: ErrorConfig) extends StringCharacter {
 }
 
 private [token] class EscapableCharacter(desc: EscapeDesc, escapes: Escape, space: Parsley[_], err: ErrorConfig) extends StringCharacter {
-    private lazy val escapeEmpty = desc.emptyEscape.fold[Parsley[Char]](empty)(char)
+    private lazy val escapeEmpty = ErrorConfig.label(err.labelStringEscapeEmpty)(desc.emptyEscape.fold[Parsley[Char]](empty)(char))
     private lazy val escapeGap = {
-        if (desc.gapsSupported) skipSome(ErrorConfig.label(err.labelEscapeStringGap)(space)) *> ErrorConfig.label(err.labelEscapeStringGapEnd)(desc.escBegin)
+        if (desc.gapsSupported) skipSome(ErrorConfig.label(err.labelStringEscapeGap)(space)) *> ErrorConfig.label(err.labelStringEscapeGapEnd)(desc.escBegin)
         else empty
     }
-    private lazy val stringEscape: Parsley[Option[Int]] = ErrorConfig.label(err.labelEscapeSequence) {
-        desc.escBegin *> (escapeGap #> None
-                      <|> escapeEmpty #> None
-                      <|> ErrorConfig.explain(err.explainEscapeInvalid)(escapes.escapeCode.map(Some(_))))
-    }
+    private lazy val stringEscape: Parsley[Option[Int]] =
+        escapes.escapeBegin *> (escapeGap #> None
+                            <|> escapeEmpty #> None
+                            <|> escapes.escapeCode.map(Some(_)))
 
     override def apply(isLetter: CharPredicate): Parsley[Option[Int]] = isLetter match {
         case Basic(isLetter) => ErrorConfig.label(err.labelStringCharacter) {

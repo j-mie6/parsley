@@ -8,7 +8,7 @@ Parsley is a fast and modern parser combinator library for Scala based loosely o
 Parsley is distributed on Maven Central, and can be added to your project via:
 
 ```scala
-libraryDependencies += "com.github.j-mie6" %% "parsley" % "4.1.0-M1"
+libraryDependencies += "com.github.j-mie6" %% "parsley" % "4.1.0-M2"
 ```
 
 Documentation can be found [**here**](https://javadoc.io/doc/com.github.j-mie6/parsley_2.13/latest/index.html)

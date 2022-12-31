@@ -3,7 +3,7 @@
  */
 package parsley.token.text
 
-import parsley.Parsley, Parsley.{attempt, empty, pure, unit}
+import parsley.Parsley, Parsley.{attempt, empty, pure}
 import parsley.character.{bit, char, digit, hexDigit, octDigit, strings}
 import parsley.combinator.ensure
 import parsley.errors.combinator.ErrorMethods
@@ -24,18 +24,21 @@ private [token] class Escape(desc: EscapeDesc, err: ErrorConfig) {
         attempt(strings(x, xs: _*))
     }
 
-    private def boundedChar(p: Parsley[BigInt], maxValue: Int, prefix: Option[Char], radix: Int): Parsley[Int] = ErrorConfig.label(err.labelEscapeNumeric) {
-        prefix.fold(unit)(c => char(c).void) *> {
-            val prefixString = prefix.fold("")(c => s"$c")
-            p.collectMsg{n =>
-                val esc = err.renderCharEscapeNumericSequence(desc.escBegin, prefixString, n, radix)
-                if (n > maxValue) {
-                    val maxEscape = err.renderCharEscapeNumericSequence(desc.escBegin, prefixString, BigInt(maxValue), radix)
-                    err.messageCharEscapeNumericSequenceTooBig(esc, maxEscape)
-                }
-                else err.messageCharEscapeNumericSequenceIllegal(esc)} {
-                case n if n <= maxValue && Character.isValidCodePoint(n.toInt) => n.toInt
+    private def boundedChar(p: Parsley[BigInt], maxValue: Int, prefix: Option[Char], radix: Int) = ErrorConfig.label(err.labelEscapeNumeric(radix)) {
+        val prefixString = prefix.fold("")(c => s"$c")
+        val numericTail = p.collectMsg { n =>
+            val esc = err.renderCharEscapeNumericSequence(desc.escBegin, prefixString, n, radix)
+            if (n > maxValue) {
+                val maxEscape = err.renderCharEscapeNumericSequence(desc.escBegin, prefixString, BigInt(maxValue), radix)
+                err.messageCharEscapeNumericSequenceTooBig(esc, maxEscape)
             }
+            else err.messageCharEscapeNumericSequenceIllegal(esc)} {
+            case n if n <= maxValue && Character.isValidCodePoint(n.toInt) => n.toInt
+        }
+        prefix match {
+            case None => numericTail
+            case Some(c) => char(c) *>
+                            ErrorConfig.explain(err.explainEscapeNumericPostPrefix(c, radix))(ErrorConfig.label(err.labelEscapeNumericEnd(radix))(numericTail))
         }
     }
 
@@ -85,7 +88,7 @@ private [token] class Escape(desc: EscapeDesc, err: ErrorConfig) {
     private val octalEscape = fromDesc(radix = 8, desc.octalEscape, numeric.Generic.zeroAllowedOctal, octDigit)
     private val binaryEscape = fromDesc(radix = 2, desc.binaryEscape, numeric.Generic.zeroAllowedBinary, bit)
     private val numericEscape = decimalEscape <|> hexadecimalEscape <|> octalEscape <|> binaryEscape
-    val escapeCode = ErrorConfig.label(err.labelEscapeEnd)(escMapped <|> numericEscape)
-    val escapeChar = ErrorConfig.explain(err.explainEscapeInvalid)(ErrorConfig.label(err.labelEscapeSequence)(char(desc.escBegin))) *>
-                     ErrorConfig.explain(err.explainEscapeEnd)(escapeCode)
+    val escapeCode = ErrorConfig.explain(err.explainEscapeInvalid)(ErrorConfig.label(err.labelEscapeEnd)(escMapped <|> numericEscape))
+    val escapeBegin = ErrorConfig.label(err.labelEscapeSequence)(char(desc.escBegin))
+    val escapeChar = escapeBegin *> escapeCode
 }
