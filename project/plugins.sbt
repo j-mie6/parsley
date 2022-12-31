@@ -12,11 +12,11 @@ addSbtPlugin("org.typelevel" % "sbt-typelevel-ci-release" % sbtTypelevelVersion)
 // CI Stuff
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.2.0")
 addSbtPlugin("org.portable-scala" % "sbt-scala-native-crossproject" % "1.2.0")
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.11.0")
-addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.4.8")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.12.0")
+addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.4.9")
 
 // This is here purely to enable the niceness settings
-addSbtPlugin("ch.epfl.scala" % "sbt-bloop" % "1.4.8")
+addSbtPlugin("ch.epfl.scala" % "sbt-bloop" % "1.5.6")
 addSbtPlugin("com.beautiful-scala" % "sbt-scalastyle" % "1.5.1")
 addSbtPlugin("org.jmotor.sbt" % "sbt-dependency-updates" % "1.2.7")
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.0.5")
