@@ -47,20 +47,22 @@ class ErrorConfig {
     // text
     //def labelCharAscii: Option[String] = None
     def labelStringCharacter: Option[String] = Some("string character")
-    def labelStringCharacterGraphic: Option[String] = Some("graphic character")
+    def labelGraphicCharacter: Option[String] = Some("graphic character")
     def labelEscapeSequence: Option[String] = Some("escape sequence")
     def labelEscapeNumeric: Option[String] = None
     def labelEscapeEnd: Option[String] = Some("end of escape sequence")
     def labelEscapeStringGap: Option[String] = Some("string gap")
     def labelEscapeStringGapEnd: Option[String] = Some("end of string gap")
 
+    // TODO: premption flag for checking for leading character with explain
+
     def explainCharNonAscii(@unused c: Int): String =
         "non-ascii character"
 
     def explainCharNonLatin1(@unused c: Int): String =
         "non-latin1 character"
-    def explainEscapeInvalid: String =
-        "invalid escape sequence"
+    def explainEscapeInvalid: Option[String] =
+        Some("invalid escape sequence")
 
     def explainEscapeEnd: Option[String] = None
 

@@ -14,13 +14,13 @@ private [token] final class ConcreteCharacter(desc: TextDesc, escapes: Escape, e
     private lazy val charLetter = Character.letter(quote, desc.escapeSequences.escBegin, allowsAllSpace = false, desc.graphicCharacter)
 
     override lazy val fullUtf16: Parsley[Int] = {
-        quote *> (escapes.escapeChar <|> charLetter.toUnicode) <* quote
+        quote *> (escapes.escapeChar <|> ErrorConfig.label(err.labelGraphicCharacter)(charLetter.toUnicode)) <* quote
     }
 
     override lazy val basicMultilingualPlane: Parsley[Char] = {
         quote *> (escapes.escapeChar.collectMsg(err.messageCharEscapeNonBasicMultilingualPlane(_)) {
             case n if Character.isBmpCodePoint(n) => n.toChar
-        } <|> charLetter.toBmp) <* quote
+        } <|> ErrorConfig.label(err.labelGraphicCharacter)(charLetter.toBmp)) <* quote
     }
 
     // FIXME: These are going to be a dodgy because of the double check here, may reference BMP

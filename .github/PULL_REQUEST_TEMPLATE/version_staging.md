@@ -40,7 +40,7 @@ None.
 * [ ] documentation checked to ensure no leakage of `private [parsley]` members or `parsley.internal`.
 
 ## Milestone Migration Guide
-As each milestone release may choose to make binary incompatible changes, any necessary migration requires to get from one milestone to the next will be tracked here.
+As each milestone release may choose to make binary incompatible changes, any necessary migration required to get from one milestone to the next will be tracked here.
 
 <!-- Remove this when the first milestone is ready: if this is a MAJOR release then provide migration from latest-release, and "No changes required" for MINOR releases. -->
 _Nothing to see here!_
