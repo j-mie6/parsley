@@ -6,7 +6,7 @@ package parsley.token.text
 import scala.Predef.{String => ScalaString, _}
 
 import parsley.Parsley, Parsley.empty
-import parsley.character.{char, satisfyUtf16}
+import parsley.character.{char, charUtf16}
 import parsley.errors.combinator.ErrorMethods
 import parsley.token.descriptions.text.TextDesc
 import parsley.token.errors.ErrorConfig
@@ -16,10 +16,8 @@ private [token] final class ConcreteCharacter(desc: TextDesc, escapes: Escape, e
     private lazy val graphic = Character.letter(desc.characterLiteralEnd, desc.escapeSequences.escBegin, allowsAllSpace = false, desc.graphicCharacter)
 
     private def charLetter(graphicLetter: Parsley[Int]) = {
-        // time for pre-emption widget!
-        val _checkNoBadChar = err.preemptCharBadCharsUsedInLiteral match {
-            case Some((cs, reason)) => satisfyUtf16(cs).unexpected(reason)
-            case None => empty
+        val _checkNoBadChar = err.preemptCharBadCharsUsedInLiteral.foldLeft(empty) {
+            case (w, (c, reason)) => w <|> charUtf16(c).unexpected(reason)
         }
         escapes.escapeChar <|> ErrorConfig.label(err.labelGraphicCharacter)(graphicLetter) <|> _checkNoBadChar
     }

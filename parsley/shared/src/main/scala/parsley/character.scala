@@ -123,7 +123,7 @@ object character {
       * @group core
       */
     private [parsley] def charUtf16(c: Int): Parsley[Int] = { //TODO: release along with the utf combinators
-        if (Character.isBmpCodePoint(c)) char(c.toChar).map(_.toInt)
+        if (Character.isBmpCodePoint(c)) char(c.toChar) #> c
         else attempt(string(Character.toChars(c).mkString)) #> c
     }
 
