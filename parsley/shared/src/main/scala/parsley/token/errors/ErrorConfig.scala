@@ -47,10 +47,16 @@ class ErrorConfig {
     def unexpectedNameIllFormedOperator: Option[String => String] = Some(v => s"operator $v")
 
     // text
-    def labelCharAscii: Option[String] = Some("character literal")
-    def labelCharLatin1: Option[String] = Some("character literal")
-    def labelCharBasicMultilingualPlane: Option[String] = Some("character literal")
-    def labelCharUtf16: Option[String] = Some("character literal")
+    def labelCharAscii: Option[String] = None
+    def labelCharLatin1: Option[String] = None
+    def labelCharBasicMultilingualPlane: Option[String] = None
+    def labelCharUtf16: Option[String] = None
+
+    def labelCharAsciiEnd: Option[String] = None
+    def labelCharLatin1End: Option[String] = None
+    def labelCharBasicMultilingualPlaneEnd: Option[String] = None
+    def labelCharUtf16End: Option[String] = None
+
     def labelStringCharacter: Option[String] = Some("string character")
     def labelGraphicCharacter: Option[String] = Some("graphic character")
     def labelEscapeSequence: Option[String] = Some("escape sequence")
@@ -65,7 +71,6 @@ class ErrorConfig {
     def unexpectedCharNonAscii: Option[Int => String] = None
     def unexpectedCharNonLatin1: Option[Int => String] = None
 
-    // TODO: premption flag for checking for leading character with explain
     def explainCharNonBasicMultilingualPlane: Option[Int => String] = Some(_ => "non-BMP character")
     def explainCharNonAscii: Option[Int => String] = Some(_ => "non-ascii character")
     def explainCharNonLatin1: Option[Int => String] = Some(_ => "non-latin1 character")
@@ -91,6 +96,10 @@ class ErrorConfig {
 
     private [parsley] def renderCharEscapeNumericSequence(escBegin: Char, prefix: String, n: BigInt, radix: Int): String =
         s"$escBegin$prefix${n.toString(radix)}"
+
+    // expensive ;)
+    def preemptCharBadCharsUsedInLiteral: Option[(Set[Int], String)] =
+        Some(Set('\''), "ahahah!")
 
     // symbol
     def labelSymbolSemi: Option[String] = Some("semicolon")
