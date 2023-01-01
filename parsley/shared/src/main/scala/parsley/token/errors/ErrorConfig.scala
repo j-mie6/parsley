@@ -12,6 +12,7 @@ import parsley.position
 /** TODO:
   * @since 4.1.0
   */
+// TODO: We could make these groupings into merged ADTs? Must be careful with binary-lock-in though...
 class ErrorConfig {
     // numeric
     def explainRealNoDoubleDroppedZero: String =
@@ -46,7 +47,10 @@ class ErrorConfig {
     def unexpectedNameIllFormedOperator: Option[String => String] = Some(v => s"operator $v")
 
     // text
-    //def labelCharAscii: Option[String] = None
+    def labelCharAscii: Option[String] = Some("character literal")
+    def labelCharLatin1: Option[String] = Some("character literal")
+    def labelCharBasicMultilingualPlane: Option[String] = Some("character literal")
+    def labelCharUtf16: Option[String] = Some("character literal")
     def labelStringCharacter: Option[String] = Some("string character")
     def labelGraphicCharacter: Option[String] = Some("graphic character")
     def labelEscapeSequence: Option[String] = Some("escape sequence")
@@ -57,11 +61,11 @@ class ErrorConfig {
     def labelStringEscapeGap: Option[String] = Some("string gap")
     def labelStringEscapeGapEnd: Option[String] = Some("end of string gap")
 
-    // TODO: premption flag for checking for leading character with explain
     def unexpectedCharNonBasicMultilingualPlane: Option[Int => String] = None
     def unexpectedCharNonAscii: Option[Int => String] = None
     def unexpectedCharNonLatin1: Option[Int => String] = None
 
+    // TODO: premption flag for checking for leading character with explain
     def explainCharNonBasicMultilingualPlane: Option[Int => String] = Some(_ => "non-BMP character")
     def explainCharNonAscii: Option[Int => String] = Some(_ => "non-ascii character")
     def explainCharNonLatin1: Option[Int => String] = Some(_ => "non-latin1 character")

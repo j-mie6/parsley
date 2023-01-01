@@ -17,18 +17,21 @@ private [token] final class ConcreteCharacter(desc: TextDesc, escapes: Escape, e
     private def charLetter(graphicLetter: Parsley[Int]) = escapes.escapeChar <|> ErrorConfig.label(err.labelGraphicCharacter)(graphicLetter)
     private def charLiteral[A](letter: Parsley[A]) = quote *> letter <* quote
 
-    override lazy val fullUtf16: Parsley[Int] = charLiteral(charLetter(graphic.toUnicode))
+    override lazy val fullUtf16: Parsley[Int] = ErrorConfig.label(err.labelCharUtf16)(charLiteral(charLetter(graphic.toUnicode)))
     // this is a bit inefficient, converting to int and then back to char, but it makes it consistent, and can be optimised anyway
     private lazy val uncheckedBmpLetter = charLetter(graphic.toBmp.map(_.toInt))
 
-    private def constrainedBmp(illegal: Int => Boolean, unex: Option[Int => ScalaString], reason: Option[Int => ScalaString]) = {
-        charLiteral(ErrorConfig.unexpectedWhenWithReason(illegal, unex, reason)(uncheckedBmpLetter).map(_.toChar))
+    private def constrainedBmp(illegal: Int => Boolean, label: Option[ScalaString], unex: Option[Int => ScalaString], reason: Option[Int => ScalaString]) = {
+        ErrorConfig.label(label) {
+            charLiteral(ErrorConfig.unexpectedWhenWithReason(illegal, unex, reason)(uncheckedBmpLetter).map(_.toChar))
+        }
     }
 
     override lazy val basicMultilingualPlane: Parsley[Char] =
-        constrainedBmp(!Character.isBmpCodePoint(_), err.unexpectedCharNonBasicMultilingualPlane, err.explainCharNonBasicMultilingualPlane)
+        constrainedBmp(!Character.isBmpCodePoint(_), err.labelCharBasicMultilingualPlane,
+                       err.unexpectedCharNonBasicMultilingualPlane, err.explainCharNonBasicMultilingualPlane)
     override lazy val ascii: Parsley[Char] =
-        constrainedBmp(_ > Character.MaxAscii, err.unexpectedCharNonAscii, err.explainCharNonAscii)
+        constrainedBmp(_ > Character.MaxAscii, err.labelCharAscii, err.unexpectedCharNonAscii, err.explainCharNonAscii)
     override lazy val latin1: Parsley[Char] =
-        constrainedBmp(_ > Character.MaxLatin1, err.unexpectedCharNonLatin1, err.explainCharNonLatin1)
+        constrainedBmp(_ > Character.MaxLatin1, err.labelCharLatin1, err.unexpectedCharNonLatin1, err.explainCharNonLatin1)
 }
