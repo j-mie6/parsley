@@ -5,8 +5,9 @@ package parsley.token.errors // TODO: move out of this package?
 
 import parsley.XCompat.unused
 
-import parsley.Parsley
-import parsley.errors.combinator.ErrorMethods
+import parsley.Parsley, Parsley.pure
+import parsley.errors.combinator.{amendThenDislodge, entrench, unexpected, ErrorMethods}
+import parsley.position
 
 /** TODO:
   * @since 4.1.0
@@ -57,13 +58,13 @@ class ErrorConfig {
     def labelStringEscapeGapEnd: Option[String] = Some("end of string gap")
 
     // TODO: premption flag for checking for leading character with explain
+    def unexpectedCharNonBasicMultilingualPlane: Option[Int => String] = None
+    def unexpectedCharNonAscii: Option[Int => String] = None
+    def unexpectedCharNonLatin1: Option[Int => String] = None
 
-    def explainCharNonBasicMultilingualPlane(@unused c: Int): String =
-        "non-BMP character"
-    def explainCharNonAscii(@unused c: Int): String =
-        "non-ascii character"
-    def explainCharNonLatin1(@unused c: Int): String =
-        "non-latin1 character"
+    def explainCharNonBasicMultilingualPlane: Option[Int => String] = Some(_ => "non-BMP character")
+    def explainCharNonAscii: Option[Int => String] = Some(_ => "non-ascii character")
+    def explainCharNonLatin1: Option[Int => String] = Some(_ => "non-latin1 character")
 
     def explainEscapeInvalid: Option[String] =
         Some("invalid escape sequence")
@@ -123,5 +124,23 @@ object ErrorConfig {
     private [token] def explain[A](reason: Option[String])(p: Parsley[A]): Parsley[A] = reason match {
         case None => p
         case Some(reason) => p.explain(reason)
+    }
+
+    private [token] def unexpectedWhenWithReason[A](pred: A => Boolean, unexGen: Option[A => String], reasonGen: Option[A => String])(p: Parsley[A]) = {
+        unexGen match {
+            case None => reasonGen match {
+                case None => p.filterNot(pred)
+                case Some(g) => p.filterOut { case x if pred(x) => g(x) }
+            }
+            case Some(g1) => reasonGen match {
+                case None => p.unexpectedWhen { case x if pred(x) => g1(x) }
+                case Some(g2) => amendThenDislodge {
+                    position.internalOffsetSpan(entrench(p)).flatMap { case (os, x, oe) =>
+                        if (pred(x)) unexpected(oe - os, g1(x)).explain(g2(x))
+                        else pure(x)
+                    }
+                }
+            }
+        }
     }
 }

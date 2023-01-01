@@ -141,8 +141,8 @@ object combinator {
       */
     def entrench[A](p: Parsley[A]): Parsley[A] = new Parsley(new frontend.ErrorEntrench(p.internal))
 
+    // TODO: Documentation and testing ahead of future release
     private [parsley] def dislodge[A](p: Parsley[A]): Parsley[A] = new Parsley(new frontend.ErrorDislodge(p.internal))
-
     private [parsley] def amendThenDislodge[A](p: Parsley[A]): Parsley[A] = dislodge(amend(p))
 
     /** This combinator marks any errors within the given parser as being ''lexical errors''.

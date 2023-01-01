@@ -3,11 +3,10 @@
  */
 package parsley.token.text
 
-import scala.Predef.{String => ScalaString, _}
+import scala.Predef.{String => ScalaString}
 
 import parsley.Parsley
 import parsley.character.char
-import parsley.errors.combinator.ErrorMethods
 import parsley.token.descriptions.text.TextDesc
 import parsley.token.errors.ErrorConfig
 
@@ -22,15 +21,14 @@ private [token] final class ConcreteCharacter(desc: TextDesc, escapes: Escape, e
     // this is a bit inefficient, converting to int and then back to char, but it makes it consistent, and can be optimised anyway
     private lazy val uncheckedBmpLetter = charLetter(graphic.toBmp.map(_.toInt))
 
-    private def constrainedBmp(illegal: PartialFunction[Int, ScalaString]) = charLiteral(uncheckedBmpLetter.filterOut(illegal).map(_.toChar))
+    private def constrainedBmp(illegal: Int => Boolean, unex: Option[Int => ScalaString], reason: Option[Int => ScalaString]) = {
+        charLiteral(ErrorConfig.unexpectedWhenWithReason(illegal, unex, reason)(uncheckedBmpLetter).map(_.toChar))
+    }
 
-    override lazy val basicMultilingualPlane: Parsley[Char] = constrainedBmp {
-        case n if !Character.isBmpCodePoint(n) => err.explainCharNonBasicMultilingualPlane(n)
-    }
-    override lazy val ascii: Parsley[Char] = constrainedBmp {
-        case n if n > Character.MaxAscii => err.explainCharNonAscii(n)
-    }
-    override lazy val latin1: Parsley[Char] = constrainedBmp {
-        case n if n > Character.MaxLatin1 => err.explainCharNonLatin1(n)
-    }
+    override lazy val basicMultilingualPlane: Parsley[Char] =
+        constrainedBmp(!Character.isBmpCodePoint(_), err.unexpectedCharNonBasicMultilingualPlane, err.explainCharNonBasicMultilingualPlane)
+    override lazy val ascii: Parsley[Char] =
+        constrainedBmp(_ > Character.MaxAscii, err.unexpectedCharNonAscii, err.explainCharNonAscii)
+    override lazy val latin1: Parsley[Char] =
+        constrainedBmp(_ > Character.MaxLatin1, err.unexpectedCharNonLatin1, err.explainCharNonLatin1)
 }
