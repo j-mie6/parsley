@@ -52,6 +52,15 @@ private [deepembedding] final class ErrorEntrench[A](val p: StrictParsley[A]) ex
     final override def pretty(p: String): String = s"entrench($p)"
     // $COVERAGE-ON$
 }
+private [deepembedding] final class ErrorDislodge[A](val p: StrictParsley[A]) extends ScopedUnary[A, A] {
+    override def setup(label: Int): instructions.Instr = new instructions.PushHandler(label)
+    override val instr: instructions.Instr = instructions.PopHandler
+    override def instrNeedsLabel: Boolean = false
+    override def handlerLabel(state: CodeGenState): Int  = state.getLabel(instructions.DislodgeAndFail)
+    // $COVERAGE-OFF$
+    final override def pretty(p: String): String = s"dislodge($p)"
+    // $COVERAGE-ON$
+}
 
 private [deepembedding] final class ErrorLexical[A](val p: StrictParsley[A]) extends ScopedUnary[A, A] {
     // This needs to save the hints because error label will relabel the first hint, which because the list is ordered would be the hints that came _before_

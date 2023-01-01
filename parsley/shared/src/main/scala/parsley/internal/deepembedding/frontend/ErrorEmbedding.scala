@@ -18,6 +18,9 @@ private [parsley] final class ErrorAmend[A](p: LazyParsley[A]) extends Unary[A, 
 private [parsley] final class ErrorEntrench[A](p: LazyParsley[A]) extends Unary[A, A](p) {
     override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.ErrorEntrench(p)
 }
+private [parsley] final class ErrorDislodge[A](p: LazyParsley[A]) extends Unary[A, A](p) {
+    override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.ErrorDislodge(p)
+}
 
 private [parsley] final class ErrorLexical[A](p: LazyParsley[A]) extends Unary[A, A](p) {
     override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.ErrorLexical(p)

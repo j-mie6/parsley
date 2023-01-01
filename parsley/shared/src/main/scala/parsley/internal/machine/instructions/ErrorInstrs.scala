@@ -111,6 +111,18 @@ private [internal] object EntrenchAndFail extends Instr {
     // $COVERAGE-ON$
 }
 
+private [internal] object DislodgeAndFail extends Instr {
+    override def apply(ctx: Context): Unit = {
+        ensureHandlerInstruction(ctx)
+        ctx.errs.error = ctx.errs.error.dislodge
+        ctx.fail()
+    }
+
+    // $COVERAGE-OFF$
+    override def toString: String = "DislodgeAndFail"
+    // $COVERAGE-ON$
+}
+
 private [internal] object SetLexicalAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)

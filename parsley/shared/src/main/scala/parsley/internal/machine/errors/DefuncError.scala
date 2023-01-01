@@ -95,6 +95,11 @@ private [machine] sealed abstract class DefuncError {
       * @return an entrenched error message
       */
     private [machine] def entrench: DefuncError
+    /** This operation undoes the `amend` protection provided by an underlying entrenched error.
+      *
+      * @return a non-entrenched error message
+      */
+    private [machine] def dislodge: DefuncError
     /** This operation sets this error message to be considered as a lexical
       * error message, which means that it will not perform lexical extraction
       * within the builder, instead opting to extract a token via raw input.
@@ -132,6 +137,7 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
       * @param state the hint state that is collecting up the expected items
       * @note this function should be tail-recursive!
       */
+    // TODO: Factor all the duplicated cases out?
     private [errors] final def collectHints(collector: HintCollector): Unit = this match {
         case self: BaseError          =>
             collector ++= self.expectedIterable
@@ -146,6 +152,7 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
             self.err2.collectHints(collector)
         case self: TrivialAmended     => self.err.collectHints(collector)
         case self: TrivialEntrenched  => self.err.collectHints(collector)
+        case self: TrivialDislodged   => self.err.collectHints(collector)
         case self: TrivialLexical     => self.err.collectHints(collector)
     }
 
@@ -174,6 +181,10 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
     }
     private [machine] final override def entrench: TrivialDefuncError = {
         if (!this.entrenched) new TrivialEntrenched(this)
+        else this
+    }
+    private [machine] final override def dislodge: TrivialDefuncError = {
+        if (this.entrenched) new TrivialDislodged(this)
         else this
     }
     private [machine] final override def markAsLexical(offset: Int): TrivialDefuncError = {
@@ -210,6 +221,10 @@ private [errors] sealed abstract class FancyDefuncError extends DefuncError {
     }
     private [machine] final override def entrench: FancyDefuncError = {
         if (!this.entrenched) new FancyEntrenched(this)
+        else this
+    }
+    private [machine] final override def dislodge: FancyDefuncError = {
+        if (this.entrenched) new FancyDislodged(this)
         else this
     }
     private [machine] final override def markAsLexical(offset: Int): FancyDefuncError = {
@@ -387,8 +402,20 @@ private [errors] final class TrivialEntrenched private [errors] (val err: Trivia
     override def makeTrivial(builder: TrivialErrorBuilder): Unit = err.makeTrivial(builder)
 }
 
+private [errors] final class TrivialDislodged private [errors] (val err: TrivialDefuncError) extends TrivialDefuncError {
+    override final val flags = (err.flags & ~DefuncError.EntrenchedMask).toByte
+    override val offset = err.offset
+    override def makeTrivial(builder: TrivialErrorBuilder): Unit = err.makeTrivial(builder)
+}
+
 private [errors] final class FancyEntrenched private [errors] (val err: FancyDefuncError) extends FancyDefuncError {
     override final val flags = (err.flags | DefuncError.EntrenchedMask).toByte
+    override val offset = err.offset
+    override def makeFancy(builder: FancyErrorBuilder): Unit = err.makeFancy(builder)
+}
+
+private [errors] final class FancyDislodged private [errors] (val err: FancyDefuncError) extends FancyDefuncError {
+    override final val flags = (err.flags & ~DefuncError.EntrenchedMask).toByte
     override val offset = err.offset
     override def makeFancy(builder: FancyErrorBuilder): Unit = err.makeFancy(builder)
 }
