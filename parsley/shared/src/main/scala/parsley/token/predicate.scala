@@ -37,7 +37,7 @@ object predicate {
       * @since 4.0.0
       */
     final case class Unicode(predicate: Int => Boolean) extends CharPredicate {
-        private [token] override def toBmp = satisfy(c => predicate(c.toInt) && !c.isHighSurrogate)
+        private [token] override def toBmp = satisfy(c => predicate(c.toInt))
         private [token] override def toUnicode = satisfyUtf16(predicate)
         private [token] override def toNative = toUnicode.void
         private [token] def startsWith(s: String) = s.nonEmpty && predicate(s.codePointAt(0))

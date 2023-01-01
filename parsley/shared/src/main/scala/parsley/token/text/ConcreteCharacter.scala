@@ -3,6 +3,8 @@
  */
 package parsley.token.text
 
+import scala.Predef.{String => ScalaString, _}
+
 import parsley.Parsley
 import parsley.character.char
 import parsley.errors.combinator.ErrorMethods
@@ -13,21 +15,23 @@ private [token] final class ConcreteCharacter(desc: TextDesc, escapes: Escape, e
     private val quote = char(desc.characterLiteralEnd)
     private lazy val charLetter = Character.letter(desc.characterLiteralEnd, desc.escapeSequences.escBegin, allowsAllSpace = false, desc.graphicCharacter)
 
-    override lazy val fullUtf16: Parsley[Int] = {
-        quote *> (escapes.escapeChar <|> ErrorConfig.label(err.labelGraphicCharacter)(charLetter.toUnicode)) <* quote
+    private def characterLiteral(graphicLetter: Parsley[Int]) = {
+        quote *> (escapes.escapeChar <|> ErrorConfig.label(err.labelGraphicCharacter)(graphicLetter)) <* quote
     }
 
-    override lazy val basicMultilingualPlane: Parsley[Char] = {
-        quote *> (escapes.escapeChar.collectMsg(err.messageCharEscapeNonBasicMultilingualPlane(_)) {
-            case n if Character.isBmpCodePoint(n) => n.toChar
-        } <|> ErrorConfig.label(err.labelGraphicCharacter)(charLetter.toBmp)) <* quote
-    }
+    override lazy val fullUtf16: Parsley[Int] = characterLiteral(charLetter.toUnicode)
+    // this is a bit inefficient, converting to int and then back to char, but it makes it consistent, and can be optimised anyway
+    private lazy val uncheckedBmp = characterLiteral(charLetter.toBmp.map(_.toInt))
 
-    // FIXME: These are going to be a dodgy because of the double check here, may reference BMP
-    override lazy val ascii: Parsley[Char] = basicMultilingualPlane.filterOut {
-        case n if n > Character.MaxAscii => err.explainCharNonAscii(n.toInt)
+    private def constrainedBmp(illegal: PartialFunction[Int, ScalaString]) = uncheckedBmp.filterOut(illegal).map(_.toChar)
+
+    override lazy val basicMultilingualPlane: Parsley[Char] = constrainedBmp {
+        case n if !Character.isBmpCodePoint(n) => err.explainCharNonBasicMultilingualPlane(n)
     }
-    override lazy val latin1: Parsley[Char] = basicMultilingualPlane.filterOut {
-        case n if n > Character.MaxLatin1 => err.explainCharNonLatin1(n.toInt)
+    override lazy val ascii: Parsley[Char] = constrainedBmp {
+        case n if n > Character.MaxAscii => err.explainCharNonAscii(n)
+    }
+    override lazy val latin1: Parsley[Char] = constrainedBmp {
+        case n if n > Character.MaxLatin1 => err.explainCharNonLatin1(n)
     }
 }

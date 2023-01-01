@@ -58,6 +58,8 @@ class ErrorConfig {
 
     // TODO: premption flag for checking for leading character with explain
 
+    def explainCharNonBasicMultilingualPlane(@unused c: Int): String =
+        "non-BMP character"
     def explainCharNonAscii(@unused c: Int): String =
         "non-ascii character"
     def explainCharNonLatin1(@unused c: Int): String =
@@ -66,18 +68,6 @@ class ErrorConfig {
     def explainEscapeInvalid: Option[String] =
         Some("invalid escape sequence")
     def explainEscapeNumericPostPrefix(prefix: Char, radix: Int): Option[String] = None
-
-    //def explainCharNonBasicMultilingualPlane(@unused c: Int): String =
-    //    "non-BMP character"
-
-    //def messageCharEscapeNonAscii(@unused c: Int): Seq[String] =
-    //    Seq("non-ascii character")
-
-    //def messageCharEscapeNonLatin1(@unused c: Int): Seq[String] =
-    //    Seq("non-latin1 character")
-
-    def messageCharEscapeNonBasicMultilingualPlane(@unused c: Int): Seq[String] =
-        Seq("non-BMP character")
 
     def messageStringNonAscii(@unused s: String): Seq[String] =
         Seq("non-ascii characters in string literal, this is not allowed")

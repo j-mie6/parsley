@@ -79,9 +79,24 @@ class CharacterTests extends ParsleyTest {
         "'a'" -> Some('a'),
         "'\\lf'" -> Some('\n'),
         "'\\lam'" -> Some('λ'),
+        "'\ud800'" -> Some('\ud800'), // high surrogates are legal on their own
+        "'\udbff'" -> Some('\udbff'), // high surrogates are legal on their own
     )
 
     they should "not parse wider unicode, including from escape characters" in bmpCases(plainChar)(
+        "'\\oops'" -> None,
+        "'🙂'" -> None,
+        "'🇬🇧'" -> None,
+    )
+
+    they should "also behave similarly when given a non-unicode predicate" in bmpCases(plain.copy(graphicCharacter = Basic(_ >= ' ')))(
+        "'λ'" -> Some('λ'),
+        "' '" -> Some(' '),
+        "'a'" -> Some('a'),
+        "'\\lf'" -> Some('\n'),
+        "'\\lam'" -> Some('λ'),
+        "'\ud800'" -> Some('\ud800'), // high surrogates are legal on their own
+        "'\udbff'" -> Some('\udbff'), // high surrogates are legal on their own
         "'\\oops'" -> None,
         "'🙂'" -> None,
         "'🇬🇧'" -> None,
