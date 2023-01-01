@@ -13,17 +13,16 @@ import parsley.token.errors.ErrorConfig
 
 private [token] final class ConcreteCharacter(desc: TextDesc, escapes: Escape, err: ErrorConfig) extends Character {
     private val quote = char(desc.characterLiteralEnd)
-    private lazy val charLetter = Character.letter(desc.characterLiteralEnd, desc.escapeSequences.escBegin, allowsAllSpace = false, desc.graphicCharacter)
+    private lazy val graphic = Character.letter(desc.characterLiteralEnd, desc.escapeSequences.escBegin, allowsAllSpace = false, desc.graphicCharacter)
 
-    private def characterLiteral(graphicLetter: Parsley[Int]) = {
-        quote *> (escapes.escapeChar <|> ErrorConfig.label(err.labelGraphicCharacter)(graphicLetter)) <* quote
-    }
+    private def charLetter(graphicLetter: Parsley[Int]) = escapes.escapeChar <|> ErrorConfig.label(err.labelGraphicCharacter)(graphicLetter)
+    private def charLiteral[A](letter: Parsley[A]) = quote *> letter <* quote
 
-    override lazy val fullUtf16: Parsley[Int] = characterLiteral(charLetter.toUnicode)
+    override lazy val fullUtf16: Parsley[Int] = charLiteral(charLetter(graphic.toUnicode))
     // this is a bit inefficient, converting to int and then back to char, but it makes it consistent, and can be optimised anyway
-    private lazy val uncheckedBmp = characterLiteral(charLetter.toBmp.map(_.toInt))
+    private lazy val uncheckedBmpLetter = charLetter(graphic.toBmp.map(_.toInt))
 
-    private def constrainedBmp(illegal: PartialFunction[Int, ScalaString]) = uncheckedBmp.filterOut(illegal).map(_.toChar)
+    private def constrainedBmp(illegal: PartialFunction[Int, ScalaString]) = charLiteral(uncheckedBmpLetter.filterOut(illegal).map(_.toChar))
 
     override lazy val basicMultilingualPlane: Parsley[Char] = constrainedBmp {
         case n if !Character.isBmpCodePoint(n) => err.explainCharNonBasicMultilingualPlane(n)
