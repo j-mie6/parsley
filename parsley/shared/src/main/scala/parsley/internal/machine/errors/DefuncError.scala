@@ -179,13 +179,15 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
         if (!this.entrenched) new TrivialAmended(offset, line, col, this)
         else this
     }
-    private [machine] final override def entrench: TrivialDefuncError = {
-        if (!this.entrenched) new TrivialEntrenched(this)
-        else this
+    private [machine] final override def entrench: TrivialDefuncError = this match {
+        case self: TrivialDislodged => new TrivialEntrenched(self.err)
+        case self if !self.entrenched => new TrivialEntrenched(this)
+        case self => self
     }
-    private [machine] final override def dislodge: TrivialDefuncError = {
-        if (this.entrenched) new TrivialDislodged(this)
-        else this
+    private [machine] final override def dislodge: TrivialDefuncError = this match {
+        case self: TrivialEntrenched => self.err
+        case self if self.entrenched => new TrivialDislodged(this)
+        case self => self
     }
     private [machine] final override def markAsLexical(offset: Int): TrivialDefuncError = {
         if (Integer.compareUnsigned(this.offset, offset) > 0) new TrivialLexical(this)
@@ -219,13 +221,15 @@ private [errors] sealed abstract class FancyDefuncError extends DefuncError {
         if (!this.entrenched) new FancyAmended(offset, line, col, this)
         else this
     }
-    private [machine] final override def entrench: FancyDefuncError = {
-        if (!this.entrenched) new FancyEntrenched(this)
-        else this
+    private [machine] final override def entrench: FancyDefuncError = this match {
+        case self: FancyDislodged => new FancyEntrenched(self.err)
+        case self if !self.entrenched => new FancyEntrenched(this)
+        case self => self
     }
-    private [machine] final override def dislodge: FancyDefuncError = {
-        if (this.entrenched) new FancyDislodged(this)
-        else this
+    private [machine] final override def dislodge: FancyDefuncError = this match {
+        case self: FancyEntrenched => self.err
+        case self if self.entrenched => new FancyDislodged(this)
+        case self => self
     }
     private [machine] final override def markAsLexical(offset: Int): FancyDefuncError = {
         if (Integer.compareUnsigned(this.offset, offset) > 0) new FancyLexical(this)
