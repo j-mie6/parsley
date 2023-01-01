@@ -441,7 +441,10 @@ object combinator {
           */
         def hide: Parsley[A] = this.label("")
 
-        // TODO: I think this can probably be deprecated for future removal soon...
+        // TODO: move all of these to a `VerifiedErrorWidgets` class?
+        //def fail(msg: String, msgs: String*): Parsley[Nothing]
+
+        // TODO: rename to fail, add hide combinator to `p`
         /** This combinator parses this parser and then fails, using the result of this parser to customise the error message.
           *
           * Similar to `fail`, but first parses this parser: if it succeeded, then its result `x` is used to form the error
@@ -456,6 +459,7 @@ object combinator {
         def !(msggen: A => String): Parsley[Nothing] = new Parsley(new frontend.FastFail(con(p).internal, msggen))
 
         // TODO: I think this can probably be deprecated for future removal soon...
+        // It will be replaced by one that generates reasons too!
         /** This combinator parses this parser and then fails, using the result of this parser to customise the unexpected component
           * of the error message.
           *

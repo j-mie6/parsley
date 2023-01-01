@@ -16,10 +16,10 @@ private [token] final class ConcreteCharacter(desc: TextDesc, escapes: Escape, e
     private lazy val graphic = Character.letter(desc.characterLiteralEnd, desc.escapeSequences.escBegin, allowsAllSpace = false, desc.graphicCharacter)
 
     private def charLetter(graphicLetter: Parsley[Int]) = {
-        val _checkNoBadChar = err.preemptCharBadCharsUsedInLiteral.foldLeft(empty) {
+        val _checkBadChar = err.verifiedCharBadCharsUsedInLiteral.foldLeft(empty) {
             case (w, (c, reason)) => w <|> charUtf16(c).unexpected(reason)
         }
-        escapes.escapeChar <|> ErrorConfig.label(err.labelGraphicCharacter)(graphicLetter) <|> _checkNoBadChar
+        escapes.escapeChar <|> ErrorConfig.label(err.labelGraphicCharacter)(graphicLetter) <|> _checkBadChar
     }
     private def charLiteral[A](letter: Parsley[A], end: Option[ScalaString]) = quote *> letter <* ErrorConfig.label(end)(quote)
 

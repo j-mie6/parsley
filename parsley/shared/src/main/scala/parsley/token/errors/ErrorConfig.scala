@@ -98,7 +98,7 @@ class ErrorConfig {
         s"$escBegin$prefix${n.toString(radix)}"
 
     // expensive ;)
-    def preemptCharBadCharsUsedInLiteral: Map[Int, String] = Map.empty
+    def verifiedCharBadCharsUsedInLiteral: Map[Int, String] = Map.empty
 
     // symbol
     def labelSymbolSemi: Option[String] = Some("semicolon")

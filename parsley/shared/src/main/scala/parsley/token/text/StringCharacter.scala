@@ -34,6 +34,7 @@ private [token] class EscapableCharacter(desc: EscapeDesc, escapes: Escape, spac
                             <|> escapeEmpty #> None
                             <|> escapes.escapeCode.map(Some(_)))
 
+    // TODO: literal pre-emption (multi excluded?)
     override def apply(isLetter: CharPredicate): Parsley[Option[Int]] = isLetter match {
         case Basic(isLetter) => ErrorConfig.label(err.labelStringCharacter) {
             ErrorConfig.label(err.labelGraphicCharacter)(satisfy(c => isLetter(c) && c != desc.escBegin).map(c => Some(c.toInt))) <|> stringEscape
