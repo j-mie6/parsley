@@ -441,6 +441,7 @@ object combinator {
           */
         def hide: Parsley[A] = this.label("")
 
+        // TODO: I think this can probably be deprecated for future removal soon...
         /** This combinator parses this parser and then fails, using the result of this parser to customise the error message.
           *
           * Similar to `fail`, but first parses this parser: if it succeeded, then its result `x` is used to form the error
@@ -454,6 +455,7 @@ object combinator {
           */
         def !(msggen: A => String): Parsley[Nothing] = new Parsley(new frontend.FastFail(con(p).internal, msggen))
 
+        // TODO: I think this can probably be deprecated for future removal soon...
         /** This combinator parses this parser and then fails, using the result of this parser to customise the unexpected component
           * of the error message.
           *
@@ -467,5 +469,14 @@ object combinator {
           * @group fail
           */
         def unexpected(msggen: A => String): Parsley[Nothing] = new Parsley(new frontend.FastUnexpected(con(p).internal, msggen))
+
+        // TODO: Documentation and testing ahead of future release
+        // like notFollowedBy, but does consume input on "success" and always fails (FIXME: this needs intrinsic support to get right)
+        private def unexpected(reason: Option[String]) = {
+            val fails = Parsley.notFollowedBy(this.hide)
+            reason.fold(fails)(fails.explain(_)) *> Parsley.empty
+        }
+        private [parsley] def unexpected: Parsley[Nothing] = this.unexpected(None)
+        private [parsley] def unexpected(reason: String): Parsley[Nothing] = this.unexpected(Some(reason))
     }
 }
