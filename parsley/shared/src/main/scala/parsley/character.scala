@@ -154,9 +154,15 @@ object character {
     // TODO: document and optimise
     private [parsley] def satisfyUtf16(pred: Int => Boolean): Parsley[Int] = attempt {
         item.hide.flatMap {
-            case h if h.isHighSurrogate => item.collect {
-                case l if Character.isSurrogatePair(h, l) && pred(Character.toCodePoint(h, l)) => Character.toCodePoint(h, l)
-            }
+            case h if h.isHighSurrogate =>
+                // Our policy is that the user can parse high-surrogates if they wish, it's just evil
+                /*item.collect {
+                    case l if Character.isSurrogatePair(h, l) && pred(Character.toCodePoint(h, l)) => Character.toCodePoint(h, l)
+                }*/
+                satisfy(l => Character.isSurrogatePair(h, l) && pred(Character.toCodePoint(h, l))).map(Character.toCodePoint(h, _)) <|> {
+                    val c = h.toInt
+                    if (pred(c)) pure(c) else empty
+                }
             case c if pred(c.toInt) => pure(c.toInt)
             case _ => empty
         }
