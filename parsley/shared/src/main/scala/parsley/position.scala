@@ -1,5 +1,7 @@
 package parsley
 
+import parsley.implicits.zipped.Zipped3
+
 import parsley.internal.deepembedding.singletons
 
 // TODO: In future, the contents of this object will be made public, and the old versions
@@ -74,4 +76,8 @@ private [parsley] object position {
     //            for offset in the deepest internals
     // We could use `BigInt` as an arbiter here, and just declare it's expensive?
     private [parsley] val offset: Parsley[BigInt] = internalOffset.map(BigInt(_))
+
+    def spanWith[A, S](end: Parsley[S])(p: Parsley[A]): Parsley[(S, A, S)] = (end, p, end).zipped
+    // this is subject to change at the slightest notice, do NOT expose
+    private [parsley] def internalOffsetSpan[A](p: Parsley[A]): Parsley[(Int, A, Int)] = spanWith(internalOffset)(p)
 }
