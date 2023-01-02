@@ -5,33 +5,42 @@ package parsley.token.text
 
 import scala.Predef.{String => ScalaString, _}
 
-import parsley.Parsley, Parsley.{fresh, pure}
+import parsley.Parsley, Parsley.{attempt, fresh, pure}
+import parsley.character.{char, string}
 import parsley.combinator.{choice, skipManyUntil}
-import parsley.implicits.character.{charLift, stringLift}
 import parsley.implicits.zipped.Zipped2
 import parsley.token.errors.ErrorConfig
 import parsley.token.predicate.CharPredicate
 
 private [token] final class ConcreteString(ends: Set[ScalaString], stringChar: StringCharacter, isGraphic: CharPredicate,
                                            allowsAllSpace: Boolean, err: ErrorConfig) extends String {
-    override lazy val fullUtf16: Parsley[ScalaString] = choice(ends.view.map(makeStringParser).toSeq: _*) *> sbReg.gets(_.toString)
-    override lazy val ascii: Parsley[ScalaString] = String.ensureAscii(err)(fullUtf16)
-    override lazy val latin1: Parsley[ScalaString] = String.ensureExtendedAscii(err)(fullUtf16)
+
+    private def stringLiteral(valid: Parsley[StringBuilder] => Parsley[StringBuilder],
+                              openLabel: (Boolean, Boolean) => Option[ScalaString], closeLabel: (Boolean, Boolean) => Option[ScalaString]) = {
+        choice(ends.view.map(makeStringParser(valid, openLabel, closeLabel)).toSeq: _*) *> sbReg.gets(_.toString)
+    }
+    override lazy val fullUtf16: Parsley[ScalaString] = stringLiteral(identity, err.labelStringUtf16, err.labelStringUtf16End)
+    override lazy val ascii: Parsley[ScalaString] = stringLiteral(String.ensureAscii(err), err.labelStringAscii, err.labelStringAsciiEnd)
+    override lazy val latin1: Parsley[ScalaString] = stringLiteral(String.ensureExtendedAscii(err), err.labelStringLatin1, err.labelStringLatin1End)
 
     private val sbReg = parsley.registers.Reg.make[StringBuilder]
 
-    private def makeStringParser(terminal: ScalaString): Parsley[_] = {
-        val terminalInit = terminal.charAt(0)
+    private def makeStringParser(valid: Parsley[StringBuilder] => Parsley[StringBuilder],
+                                 openLabel: (Boolean, Boolean) => Option[ScalaString], closeLabel: (Boolean, Boolean) => Option[ScalaString])
+                                (terminalStr: ScalaString) = {
+        val terminalInit = terminalStr.charAt(0)
         val strChar = stringChar(Character.letter(terminalInit, allowsAllSpace, isGraphic))
         val pf = (sb: StringBuilder, cpo: Option[Int]) => {
             for (cp <- cpo) parsley.character.addCodepoint(sb, cp)
             sb
         }
-        val content = parsley.expr.infix.secretLeft1((sbReg.get, strChar).zipped(pf), strChar, pure(pf))
+        val content = valid(parsley.expr.infix.secretLeft1((sbReg.get, strChar).zipped(pf), strChar, pure(pf)))
+        val terminal = string(terminalStr)
         // terminal should be first, to allow for a jump table on the main choice
-        terminal *>
+        ErrorConfig.label(openLabel(allowsAllSpace, stringChar.isRaw))(terminal) *>
         // then only one string builder needs allocation
         sbReg.put(fresh(new StringBuilder)) *>
-        skipManyUntil(sbReg.modify(terminalInit #> ((sb: StringBuilder) => sb += terminalInit)) <|> content, terminal)
+        skipManyUntil(sbReg.modify(char(terminalInit) #> ((sb: StringBuilder) => sb += terminalInit)) <|> content,
+                      ErrorConfig.label(closeLabel(allowsAllSpace, stringChar.isRaw))(attempt(terminal))) //is the attempt needed here? not sure
     }
 }

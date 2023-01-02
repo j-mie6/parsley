@@ -57,6 +57,14 @@ class ErrorConfig {
     def labelCharBasicMultilingualPlaneEnd: Option[String] = None
     def labelCharUtf16End: Option[String] = None
 
+    def labelStringAscii(multi: Boolean, raw: Boolean): Option[String] = None
+    def labelStringLatin1(multi: Boolean, raw: Boolean): Option[String] = None
+    def labelStringUtf16(multi: Boolean, raw: Boolean): Option[String] = None
+
+    def labelStringAsciiEnd(multi: Boolean, raw: Boolean): Option[String] = None
+    def labelStringLatin1End(multi: Boolean, raw: Boolean): Option[String] = None
+    def labelStringUtf16End(multi: Boolean, raw: Boolean): Option[String] = None
+
     def labelStringCharacter: Option[String] = Some("string character")
     def labelGraphicCharacter: Option[String] = Some("graphic character")
     def labelEscapeSequence: Option[String] = Some("escape sequence")
@@ -99,6 +107,7 @@ class ErrorConfig {
 
     // expensive ;)
     def verifiedCharBadCharsUsedInLiteral: Map[Int, String] = Map.empty
+    def verifiedStringBadCharsUsedInLiteral: Map[Int, String] = Map.empty
 
     // symbol
     def labelSymbolSemi: Option[String] = Some("semicolon")

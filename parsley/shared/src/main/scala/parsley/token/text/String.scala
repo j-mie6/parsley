@@ -6,7 +6,6 @@ package parsley.token.text
 import scala.Predef.{String => ScalaString, _}
 
 import parsley.Parsley
-import parsley.XCompat
 import parsley.errors.combinator.ErrorMethods
 import parsley.token.errors.ErrorConfig
 
@@ -88,15 +87,16 @@ abstract class String private[text] {
 }
 
 private [text] object String {
-    private def allCharsWithin(str: ScalaString, bound: Int) = XCompat.codePoints(str).forall(_ <= bound)
-    def isAscii(str: ScalaString): Boolean = allCharsWithin(str, Character.MaxAscii)
-    def isExtendedAscii(str: ScalaString): Boolean = allCharsWithin(str, Character.MaxLatin1)
+    // don't need to use code points, high-surrogates are already out of range
+    private def allCharsWithin(str: StringBuilder, bound: Int) = str.forall(_ <= bound)
+    private def isAscii(str: StringBuilder): Boolean = allCharsWithin(str, Character.MaxAscii)
+    private def isExtendedAscii(str: StringBuilder): Boolean = allCharsWithin(str, Character.MaxLatin1)
 
-    def ensureAscii(err: ErrorConfig)(p: Parsley[ScalaString]): Parsley[ScalaString] = p.guardAgainst {
-        case str if !isAscii(str) => err.messageStringNonAscii(str)
+    def ensureAscii(err: ErrorConfig)(p: Parsley[StringBuilder]): Parsley[StringBuilder] = p.guardAgainst {
+        case str if !isAscii(str) => err.messageStringNonAscii(str.toString)
     }
 
-    def ensureExtendedAscii(err: ErrorConfig)(p: Parsley[ScalaString]): Parsley[ScalaString] = p.guardAgainst {
-        case str if !isExtendedAscii(str) => err.messageStringNonLatin1(str)
+    def ensureExtendedAscii(err: ErrorConfig)(p: Parsley[StringBuilder]): Parsley[StringBuilder] = p.guardAgainst {
+        case str if !isExtendedAscii(str) => err.messageStringNonLatin1(str.toString)
     }
 }
