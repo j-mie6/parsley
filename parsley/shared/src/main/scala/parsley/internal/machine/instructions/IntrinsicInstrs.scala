@@ -81,7 +81,8 @@ private [internal] final class StringTok(s: String, x: Any, errorItem: Option[Ex
         if (j < sz && i < ctx.inputsz && ctx.input.charAt(i) == s.charAt(j)) go(ctx, i + 1, j + 1)
         else if (j < sz) {
             // The offset, line and column haven't been edited yet, so are in the right place
-            ctx.expectedFail(errorItem, codePointLength)
+            // FIXME: this might be a more appropriate way of capping off the demand for the error?
+            ctx.expectedFail(errorItem, /*s.codePointCount(0, j+1)*/codePointLength)
             ctx.offset = i
             // These help maintain a consistent internal state, this makes the debuggers
             // output less confusing in the string case in particular.

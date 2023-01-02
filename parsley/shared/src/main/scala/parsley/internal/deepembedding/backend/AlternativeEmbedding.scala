@@ -230,11 +230,14 @@ private [backend] object Choice {
         case ct@CharTok(d)                       =>
             Some((d, ct.expected.fold[Option[ExpectItem]](Some(ExpectRaw(d)))(n => if (n.nonEmpty) Some(ExpectDesc(n)) else None), 1, backtracks))
         case st@StringTok(s)                     =>
-            Some((s.head, st.expected.fold[Option[ExpectItem]](Some(ExpectRaw(s)))(n => if (n.nonEmpty) Some(ExpectDesc(n)) else None), s.size, backtracks))
+            Some((s.head,
+                  st.expected.fold[Option[ExpectItem]](Some(ExpectRaw(s)))(n => if (n.nonEmpty) Some(ExpectDesc(n)) else None),
+                  s.codePointCount(0, s.length),
+                  backtracks))
         //case op@MaxOp(o)                         => Some((o.head, Some(Desc(o)), o.size, backtracks))
         //case _: StringLiteral | RawStringLiteral => Some(('"', Some(Desc("string")), 1, backtracks))
         // TODO: This can be done for case insensitive things too, but with duplicated branching
-        case t@Specific(s) if t.caseSensitive    => Some((s.head, Some(ExpectDesc(s)), s.size, backtracks))
+        case t@Specific(s) if t.caseSensitive    => Some((s.head, Some(ExpectDesc(s)), s.codePointCount(0, s.length), backtracks))
         case Attempt(t)                          => tablable(t, backtracks = true)
         case (_: Pure[_]) <*> t                  => tablable(t, backtracks)
         case Lift2(_, t, _)                      => tablable(t, backtracks)

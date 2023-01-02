@@ -15,9 +15,6 @@ private [internal] sealed trait UnexpectItem extends ErrorItem {
 }
 private [internal] sealed trait ExpectItem extends ErrorItem {
     def formatExpect(implicit builder: ErrorBuilder[_]): builder.Item
-    def higherPriority(other: ExpectItem): Boolean
-    protected [errors] def lowerThanRaw(other: ExpectRaw): Boolean
-    protected [errors] def lowerThanDesc: Boolean
 }
 private [internal] object ExpectItem {
     def apply(label: Option[String], raw: String): Option[ExpectItem] = label match {
@@ -42,9 +39,6 @@ private [internal] final case class UnexpectRaw(cs: Iterable[Char], amountOfInpu
 
 private [internal] final case class ExpectRaw(cs: String) extends ExpectItem {
     def formatExpect(implicit builder: ErrorBuilder[_]): builder.Item = builder.raw(cs)
-    override def higherPriority(other: ExpectItem): Boolean = other.lowerThanRaw(this)
-    override def lowerThanRaw(other: ExpectRaw): Boolean = this.cs.length < other.cs.length
-    override def lowerThanDesc: Boolean = true
 }
 private [internal] object ExpectRaw {
     def apply(c: Char): ExpectRaw = new ExpectRaw(s"$c")
@@ -52,9 +46,6 @@ private [internal] object ExpectRaw {
 private [internal] final case class ExpectDesc(msg: String) extends ExpectItem {
     assert(msg.nonEmpty, "Desc cannot contain empty things!")
     def formatExpect(implicit builder: ErrorBuilder[_]): builder.Item = builder.named(msg)
-    override def higherPriority(other: ExpectItem): Boolean = other.lowerThanDesc
-    override def lowerThanRaw(other: ExpectRaw): Boolean = false
-    override def lowerThanDesc: Boolean = true
 }
 private [internal] object ExpectDesc {
     def apply(expected: Option[String]): Option[ExpectDesc] = expected.collect {
@@ -78,10 +69,7 @@ private [internal] final case class UnexpectDesc(msg: String, width: Int) extend
 private [internal] case object EndOfInput extends UnexpectItem with ExpectItem {
     def formatExpect(implicit builder: ErrorBuilder[_]): builder.Item = builder.endOfInput
     def formatUnexpect(lexicalError: Boolean)(implicit builder: ErrorBuilder[_]): (builder.Item, TokenSpan) = (builder.endOfInput, TokenSpan.Width(1))
-    override def higherPriority(other: ExpectItem): Boolean = true
     override def higherPriority(other: UnexpectItem): Boolean = true
-    override def lowerThanRaw(other: ExpectRaw): Boolean = false
     override def lowerThanRaw(other: UnexpectRaw): Boolean = false
-    override def lowerThanDesc: Boolean = false
     override def lowerThanDesc(other: UnexpectDesc): Boolean = false
 }

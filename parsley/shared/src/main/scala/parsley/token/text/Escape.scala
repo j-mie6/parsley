@@ -18,10 +18,12 @@ private [token] class Escape(desc: EscapeDesc, err: ErrorConfig) {
     //       instruction that has the trie lookup logic baked in.
     // We do need to backtrack out of this if things go wrong, it's possible another escape sequence might share a lead
     private val escMapped = {
-        val (x::xs) = desc.escMap.view.map {
+        desc.escMap.view.map {
             case (e, c) => e -> pure(c)
-        }.toList
-        attempt(strings(x, xs: _*))
+        }.toList match {
+            case Nil => empty
+            case x::xs => attempt(strings(x, xs: _*))
+        }
     }
 
     private def boundedChar(p: Parsley[BigInt], maxValue: Int, prefix: Option[Char], radix: Int) = ErrorConfig.label(err.labelEscapeNumeric(radix)) {

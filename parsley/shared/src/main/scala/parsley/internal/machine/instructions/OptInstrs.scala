@@ -109,7 +109,8 @@ private [internal] final class JumpTable(jumpTable: mutable.LongMap[(Int, Set[Ex
     }
 
     private def addErrors(ctx: Context, errorItems: Set[ExpectItem]): Unit = {
-        ctx.errs = new ErrorStack(new MultiExpectedError(ctx.offset, ctx.line, ctx.col, errorItems, size), ctx.errs)
+        // FIXME: the more appropriate way of demanding input may be to pick 1 character, for same rationale with StringTok
+        ctx.errs = new ErrorStack(new MultiExpectedError(ctx.offset, ctx.line, ctx.col, errorItems, unexpectedWidth = size), ctx.errs)
         ctx.pushHandler(merge)
     }
 
