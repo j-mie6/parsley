@@ -33,6 +33,7 @@ inThisBuild(List(
     ProblemFilters.exclude[DirectMissingMethodProblem]("parsley.token.numeric.Combined.this"),
     ProblemFilters.exclude[MissingClassProblem]("parsley.token.text.RawCharacter$"),
     ProblemFilters.exclude[DirectMissingMethodProblem]("parsley.token.symbol.Symbol.this"),
+    ProblemFilters.exclude[ReversedMissingMethodProblem]("parsley.token.numeric.Integer.bounded"),
   ),
   tlVersionIntroduced := Map(
     "2.13" -> "1.5.0",
