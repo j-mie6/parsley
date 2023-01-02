@@ -167,7 +167,7 @@ object character {
                 case c if pred(c.toInt) => pure(c.toInt)
                 case _ => empty
             }
-        } 
+        }
     } <|> (satisfy(_ => false) *> empty) // I need an unexpected width of 1, and this is the only way I know how... sad times
 
     /** This combinator attempts to parse a given string from the input, and fails otherwise.
@@ -688,7 +688,7 @@ object character {
       * @see [[isHexDigit ``isHexDigit``]]
       * @group spec
       */
-    val hexDigit: Parsley[Char] = satisfy(isHexDigit)
+    val hexDigit: Parsley[Char] = satisfy(isHexDigit).label("hexdecimal digit")
 
     /** This parser tries to parse an octal digit, and returns it if successful.
       *

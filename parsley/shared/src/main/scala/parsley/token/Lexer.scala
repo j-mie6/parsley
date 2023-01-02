@@ -279,6 +279,13 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
           * @since 4.0.0
           */
         object numeric {
+            private [Lexer] val _natural = new LexemeInteger(nonlexeme.numeric.natural, lexeme)
+            private [Lexer] val _integer = new LexemeInteger(nonlexeme.numeric.integer, lexeme)
+            private [Lexer] val _positiveReal = new LexemeReal(nonlexeme.numeric._positiveReal, lexeme, errConfig)
+            private [Lexer] val _real = new LexemeReal(nonlexeme.numeric.real, lexeme, errConfig)
+            private [Lexer] val _unsignedCombined = new LexemeCombined(nonlexeme.numeric.unsignedCombined, lexeme, errConfig)
+            private [Lexer] val _signedCombined = new LexemeCombined(nonlexeme.numeric.signedCombined, lexeme, errConfig)
+
             /** $natural
               *
               * @since 4.0.0
@@ -291,7 +298,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
               *
               * @since 4.0.0
               */
-            val natural: parsley.token.numeric.Integer = new LexemeInteger(nonlexeme.numeric.natural, lexeme)
+            def natural: parsley.token.numeric.Integer = _natural
 
             /** $integer
               *
@@ -307,7 +314,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
               * @since 4.0.0
               * @see [[natural `natural`]] for a full description of integer configuration
               */
-            val integer: parsley.token.numeric.Integer = new LexemeInteger(nonlexeme.numeric.integer, lexeme)
+            def integer: parsley.token.numeric.Integer = _integer
 
             /** $real
               *
@@ -318,24 +325,23 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
             // $COVERAGE-OFF$
             def floating: parsley.token.numeric.Real = real
             // $COVERAGE-ON$
-            private [Lexer] val positiveReal = new LexemeReal(nonlexeme.numeric.positiveReal, lexeme, errConfig)
             /** $real
               *
               * @since 4.0.0
               * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
               */
-            val real: parsley.token.numeric.Real = new LexemeReal(nonlexeme.numeric.real, lexeme, errConfig)
+            def real: parsley.token.numeric.Real = _real
 
             /** $unsignedCombined
               *
               * @since 4.0.0
               */
-            val unsignedCombined: parsley.token.numeric.Combined = new LexemeCombined(nonlexeme.numeric.unsignedCombined, lexeme, errConfig)
+            def unsignedCombined: parsley.token.numeric.Combined = _unsignedCombined
             /** $signedCombined
               *
               * @since 4.0.0
               */
-            val signedCombined: parsley.token.numeric.Combined = new LexemeCombined(nonlexeme.numeric.signedCombined, lexeme, errConfig)
+            def signedCombined: parsley.token.numeric.Combined = _signedCombined
         }
 
         /** $text
@@ -343,33 +349,39 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
           * @since 4.0.0
           */
         object text {
+            private [Lexer] val _character = new LexemeCharacter(nonlexeme.text._character, lexeme)
+            private [Lexer] val _string = new LexemeString(nonlexeme.text._string, lexeme)
+            private [Lexer] val _rawString = new LexemeString(nonlexeme.text._rawString, lexeme)
+            private [Lexer] val _multiString = new LexemeString(nonlexeme.text._multiString, lexeme)
+            private [Lexer] val _rawMultiString = new LexemeString(nonlexeme.text._rawMultiString, lexeme)
+
             /** $character
               *
               * @since 4.0.0
               */
-            val character: parsley.token.text.Character = new LexemeCharacter(nonlexeme.text.character, lexeme)
+            def character: parsley.token.text.Character = _character
             /** $string
               *
               * @since 4.0.0
               */
-            val string: parsley.token.text.String = new LexemeString(nonlexeme.text.string, lexeme)
+            def string: parsley.token.text.String = _string
             /** $string
               *
               * @note $raw
               * @since 4.0.0
               */
-            val rawString: parsley.token.text.String = new LexemeString(nonlexeme.text.rawString, lexeme)
+            def rawString: parsley.token.text.String = _rawString
             /** $multiString
               *
               * @since 4.0.0
               */
-            val multiString: parsley.token.text.String = new LexemeString(nonlexeme.text.multiString, lexeme)
+            def multiString: parsley.token.text.String = _multiString
             /** $multiString
               *
               * @note $raw
               * @since 4.0.0
               */
-            val rawMultiString: parsley.token.text.String = new LexemeString(nonlexeme.text.rawMultiString, lexeme)
+            def rawMultiString: parsley.token.text.String = _rawMultiString
         }
 
         /** $symbol
@@ -610,19 +622,27 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
           * @since 4.0.0
           */
         object numeric {
+            private [Lexer] val _natural = new UnsignedInteger(desc.numericDesc, errConfig)
+            private [Lexer] val _integer = new SignedInteger(desc.numericDesc, _natural, errConfig)
+            private [Lexer] val _positiveReal = new UnsignedReal(desc.numericDesc, _natural, errConfig)
+            private [Lexer] val _real = new SignedReal(desc.numericDesc, _positiveReal, errConfig)
+            private [Lexer] val _unsignedCombined = new UnsignedCombined(desc.numericDesc, _integer, _positiveReal, errConfig)
+            private [Lexer] val _signedCombined = new SignedCombined(desc.numericDesc, _unsignedCombined, errConfig)
+
             /** $natural
               *
               * @since 4.0.0
               * @note alias for [[natural `natural`]].
               */
             // $COVERAGE-OFF$
-            def unsigned: parsley.token.numeric.Integer = natural
+            def unsigned: parsley.token.numeric.Integer = _natural
             // $COVERAGE-ON$
+
             /** $natural
               *
               * @since 4.0.0
               */
-            val natural: parsley.token.numeric.Integer = new UnsignedInteger(desc.numericDesc, errConfig)
+            def natural: parsley.token.numeric.Integer = _natural
 
             /** $integer
               *
@@ -631,14 +651,14 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
               * @see [[unsigned `unsigned`]] for a full description of signed integer configuration
               */
             // $COVERAGE-OFF$
-            def signed: parsley.token.numeric.Integer = integer
+            def signed: parsley.token.numeric.Integer = _integer
             // $COVERAGE-ON$
             /** $integer
               *
               * @since 4.0.0
               * @see [[natural `natural`]] for a full description of integer configuration
               */
-            val integer: parsley.token.numeric.Integer = new SignedInteger(desc.numericDesc, natural, errConfig)
+            def integer: parsley.token.numeric.Integer = _integer
 
             /** $real
               *
@@ -649,24 +669,24 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
             // $COVERAGE-OFF$
             def floating: parsley.token.numeric.Real = real
             // $COVERAGE-ON$
-            private [Lexer] val positiveReal = new UnsignedReal(desc.numericDesc, natural, errConfig)
+
             /** $real
               *
               * @since 4.0.0
               * @see [[natural `natural`]] and [[integer `integer`]] for a full description of the configuration for the start of a real number
               */
-            val real: parsley.token.numeric.Real = new SignedReal(desc.numericDesc, positiveReal, errConfig)
+            def real: parsley.token.numeric.Real = _real
 
             /** $unsignedCombined
               *
               * @since 4.0.0
               */
-            val unsignedCombined: parsley.token.numeric.Combined = new UnsignedCombined(desc.numericDesc, integer, positiveReal, errConfig)
+            def unsignedCombined: parsley.token.numeric.Combined = _unsignedCombined
             /** $signedCombined
               *
               * @since 4.0.0
               */
-            val signedCombined: parsley.token.numeric.Combined = new SignedCombined(desc.numericDesc, unsignedCombined, errConfig)
+            def signedCombined: parsley.token.numeric.Combined = _signedCombined
         }
 
         /** $text
@@ -677,38 +697,39 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
             private val escapes = new Escape(desc.textDesc.escapeSequences, errConfig)
             private val escapeChar = new EscapableCharacter(desc.textDesc.escapeSequences, escapes, space.space, errConfig)
             private val rawChar = new RawCharacter(errConfig)
+            private [Lexer] val _character: parsley.token.text.Character = new ConcreteCharacter(desc.textDesc, escapes, errConfig)
+            private [Lexer] val _string = new ConcreteString(desc.textDesc.stringEnds, escapeChar, desc.textDesc.graphicCharacter, false, errConfig)
+            private [Lexer] val _rawString = new ConcreteString(desc.textDesc.stringEnds, rawChar, desc.textDesc.graphicCharacter, false, errConfig)
+            private [Lexer] val _multiString = new ConcreteString(desc.textDesc.multiStringEnds, escapeChar, desc.textDesc.graphicCharacter, true, errConfig)
+            private [Lexer] val _rawMultiString = new ConcreteString(desc.textDesc.multiStringEnds, rawChar, desc.textDesc.graphicCharacter, true, errConfig)
 
             /** $character
               *
               * @since 4.0.0
               */
-            val character: parsley.token.text.Character = new ConcreteCharacter(desc.textDesc, escapes, errConfig)
+            def character: parsley.token.text.Character = _character
             /** $string
               *
               * @since 4.0.0
               */
-            val string: parsley.token.text.String =
-                new ConcreteString(desc.textDesc.stringEnds, escapeChar, desc.textDesc.graphicCharacter, false, errConfig)
+            def string: parsley.token.text.String = _string
             /** $string
               *
               * @note $raw
               * @since 4.0.0
               */
-            val rawString: parsley.token.text.String =
-                new ConcreteString(desc.textDesc.stringEnds, rawChar, desc.textDesc.graphicCharacter, false, errConfig)
+            def rawString: parsley.token.text.String = _rawString
             /** $multiString
               *
               * @since 4.0.0
               */
-            val multiString: parsley.token.text.String =
-                new ConcreteString(desc.textDesc.multiStringEnds, escapeChar, desc.textDesc.graphicCharacter, true, errConfig)
+            def multiString: parsley.token.text.String = _multiString
             /** $multiString
               *
               * @note $raw
               * @since 4.0.0
               */
-            val rawMultiString: parsley.token.text.String =
-                new ConcreteString(desc.textDesc.multiStringEnds, rawChar, desc.textDesc.graphicCharacter, true, errConfig)
+            def rawMultiString: parsley.token.text.String = _rawMultiString
         }
 
         /** $symbol

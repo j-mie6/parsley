@@ -13,7 +13,7 @@ import parsley.registers.Reg
 import parsley.token.descriptions.numeric.{BreakCharDesc, ExponentDesc, NumericDesc}
 import parsley.token.errors.ErrorConfig
 
-private [token] final class UnsignedReal(desc: NumericDesc, natural: Integer, err: ErrorConfig) extends Real(err) {
+private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInteger, err: ErrorConfig) extends Real(err) {
     override lazy val decimal: Parsley[BigDecimal] = attempt(ofRadix(10, digit))
     override lazy val hexadecimal: Parsley[BigDecimal] = attempt('0' *> noZeroHexadecimal)
     override lazy val octal: Parsley[BigDecimal] = attempt('0' *> noZeroOctal)

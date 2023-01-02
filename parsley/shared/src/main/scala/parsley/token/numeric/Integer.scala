@@ -5,6 +5,7 @@ package parsley.token.numeric
 
 import parsley.Parsley
 import parsley.token.descriptions.numeric.NumericDesc
+import parsley.token.errors.ErrorConfig
 
 /** This class defines a uniform interface for defining parsers for integer
   * literals, independent of how whitespace should be handled after the literal
@@ -264,7 +265,8 @@ abstract class Integer private[numeric] (private [numeric] val desc: NumericDesc
     @inline final def binary64[T: CanHold.can_hold_64_bits]: Parsley[T] = binaryBounded(_64)
 
 
-    protected [numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int)(implicit ev: CanHold[bits.self, T]): Parsley[T]
+    protected [numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int, label: (ErrorConfig, Boolean) => Option[String])
+                                      (implicit ev: CanHold[bits.self, T]): Parsley[T]
     protected [numeric] def _decimal: Parsley[BigInt] = decimal
     protected [numeric] def _hexadecimal: Parsley[BigInt] = hexadecimal
     protected [numeric] def _octal: Parsley[BigInt] = octal
@@ -272,9 +274,10 @@ abstract class Integer private[numeric] (private [numeric] val desc: NumericDesc
     protected [numeric] def _number: Parsley[BigInt] = number
     // $COVERAGE-ON$
 
-    private def numberBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = bounded(_number, bits, 10)
-    private def decimalBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = bounded(_decimal, bits, 10)
-    private def hexadecimalBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = bounded(_hexadecimal, bits, 16)
-    private def octalBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = bounded(_octal, bits, 8)
-    private def binaryBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = bounded(_binary, bits, 2)
+    private def numberBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = bounded(_number, bits, 10, _.labelNumber(bits.bits, _))
+    private def decimalBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = bounded(_decimal, bits, 10, _.labelDecimal(bits.bits, _))
+    private def hexadecimalBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] =
+        bounded(_hexadecimal, bits, 16, _.labelHexadecimal(bits.bits, _))
+    private def octalBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = bounded(_octal, bits, 8, _.labelOctal(bits.bits, _))
+    private def binaryBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[T] = bounded(_binary, bits, 2, _.labelBinary(bits.bits, _))
 }

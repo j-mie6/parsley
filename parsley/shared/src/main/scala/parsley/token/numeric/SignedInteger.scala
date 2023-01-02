@@ -11,14 +11,15 @@ import parsley.token.errors.ErrorConfig
 import parsley.internal.deepembedding.Sign.IntType
 import parsley.internal.deepembedding.singletons
 
-private [token] final class SignedInteger(desc: NumericDesc, unsigned: Integer, err: ErrorConfig) extends Integer(desc) {
+private [token] final class SignedInteger(desc: NumericDesc, unsigned: UnsignedInteger, err: ErrorConfig) extends Integer(desc) {
     private val sign = new Parsley(new singletons.Sign[IntType.resultType](IntType, desc.positiveSign))
-    override lazy val decimal: Parsley[BigInt] = attempt(sign <*> unsigned.decimal)
-    override lazy val hexadecimal: Parsley[BigInt] = attempt(sign <*> unsigned.hexadecimal)
-    override lazy val octal: Parsley[BigInt] = attempt(sign <*> unsigned.octal)
-    override lazy val binary: Parsley[BigInt] = attempt(sign <*> unsigned.binary)
-    override lazy val number: Parsley[BigInt] = attempt(sign <*> unsigned.number)
-    override protected [numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int)(implicit ev: CanHold[bits.self,T]): Parsley[T] = {
+    override lazy val decimal: Parsley[BigInt] = ErrorConfig.label(err.labelUnsignedDecimal)(attempt(sign <*> unsigned.decimalNoLabel))
+    override lazy val hexadecimal: Parsley[BigInt] = ErrorConfig.label(err.labelUnsignedHexadecimal)(attempt(sign <*> unsigned.hexadecimalNoLabel))
+    override lazy val octal: Parsley[BigInt] = ErrorConfig.label(err.labelUnsignedOctal)(attempt(sign <*> unsigned.octalNoLabel))
+    override lazy val binary: Parsley[BigInt] = ErrorConfig.label(err.labelUnsignedBinary)(attempt(sign <*> unsigned.binaryNoLabel))
+    override lazy val number: Parsley[BigInt] = ErrorConfig.label(err.labelUnsignedNumber)(attempt(sign <*> unsigned.numberNoLabel))
+    override protected [numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int, label: (ErrorConfig, Boolean) => Option[String])
+                                               (implicit ev: CanHold[bits.self,T]): Parsley[T] = ErrorConfig.label(label(err, false)) {
         number.collectMsg(x => if (x > bits.upperSigned) err.messageIntTooLarge(x, bits.upperSigned, radix)
                                else                      err.messageIntTooSmall(x, bits.lowerSigned, radix)) {
             case x if bits.lowerSigned <= x && x <= bits.upperSigned => ev.fromBigInt(x)

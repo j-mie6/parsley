@@ -15,6 +15,36 @@ import parsley.position
 // TODO: We could make these groupings into merged ADTs? Must be careful with binary-lock-in though...
 class ErrorConfig {
     // numeric
+    def labelUnsignedDecimal: Option[String] = None
+    def labelUnsignedHexadecimal: Option[String] = None
+    def labelUnsignedOctal: Option[String] = None
+    def labelUnsignedBinary: Option[String] = None
+    def labelUnsignedNumber: Option[String] = None
+    def labelUnsignedDecimal(@unused bits: Int): Option[String] = None
+    def labelUnsignedHexadecimal(@unused bits: Int): Option[String] = None
+    def labelUnsignedOctal(@unused bits: Int): Option[String] = None
+    def labelUnsignedBinary(@unused bits: Int): Option[String] = None
+    def labelUnsignedNumber(@unused bits: Int): Option[String] = None
+
+    def labelSignedDecimal: Option[String] = None
+    def labelSignedHexadecimal: Option[String] = None
+    def labelSignedOctal: Option[String] = None
+    def labelSignedBinary: Option[String] = None
+    def labelSignedNumber: Option[String] = None
+    def labelSignedDecimal(@unused bits: Int): Option[String] = None
+    def labelSignedHexadecimal(@unused bits: Int): Option[String] = None
+    def labelSignedOctal(@unused bits: Int): Option[String] = None
+    def labelSignedBinary(@unused bits: Int): Option[String] = None
+    def labelSignedNumber(@unused bits: Int): Option[String] = None
+
+    private [token] def labelDecimal(bits: Int, signed: Boolean): Option[String] = if (signed) labelSignedDecimal(bits) else labelUnsignedDecimal(bits)
+    private [token] def labelHexadecimal(bits: Int, signed: Boolean): Option[String] = {
+        if (signed) labelSignedHexadecimal(bits) else labelUnsignedHexadecimal(bits)
+    }
+    private [token] def labelOctal(bits: Int, signed: Boolean): Option[String] = if (signed) labelSignedOctal(bits) else labelUnsignedOctal(bits)
+    private [token] def labelBinary(bits: Int, signed: Boolean): Option[String] = if (signed) labelSignedBinary(bits) else labelUnsignedBinary(bits)
+    private [token] def labelNumber(bits: Int, signed: Boolean): Option[String] = if (signed) labelSignedNumber(bits) else labelUnsignedNumber(bits)
+
     def explainRealNoDoubleDroppedZero: String =
         "a real number cannot drop both a leading and trailing zero"
 
