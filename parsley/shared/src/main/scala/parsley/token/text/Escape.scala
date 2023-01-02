@@ -29,12 +29,12 @@ private [token] class Escape(desc: EscapeDesc, err: ErrorConfig) {
     private def boundedChar(p: Parsley[BigInt], maxValue: Int, prefix: Option[Char], radix: Int) = ErrorConfig.label(err.labelEscapeNumeric(radix)) {
         val prefixString = prefix.fold("")(c => s"$c")
         val numericTail = p.collectMsg { n =>
-            val esc = err.renderCharEscapeNumericSequence(desc.escBegin, prefixString, n, radix)
+            val esc = err.renderEscapeNumericSequence(desc.escBegin, prefixString, n, radix)
             if (n > maxValue) {
-                val maxEscape = err.renderCharEscapeNumericSequence(desc.escBegin, prefixString, BigInt(maxValue), radix)
-                err.messageCharEscapeNumericSequenceTooBig(esc, maxEscape)
+                val maxEscape = err.renderEscapeNumericSequence(desc.escBegin, prefixString, BigInt(maxValue), radix)
+                err.messageEscapeCharNumericSequenceTooBig(esc, maxEscape)
             }
-            else err.messageCharEscapeNumericSequenceIllegal(esc)} {
+            else err.messageEscapeCharNumericSequenceIllegal(esc)} {
             case n if n <= maxValue && Character.isValidCodePoint(n.toInt) => n.toInt
         }
         prefix match {
@@ -53,7 +53,7 @@ private [token] class Escape(desc: EscapeDesc, err: ErrorConfig) {
 
     private def exactly(n: Int, full: Int, radix: Int, digit: Parsley[Char], reqDigits: Seq[Int]): Parsley[BigInt] = {
         atMost(n, radix, digit) <* atMostReg.get.guardAgainst {
-            case x if x > 0 => err.messageCharEscapeRequiresExactDigits(radix, full - x, reqDigits)
+            case x if x > 0 => err.messageEscapeCharRequiresExactDigits(radix, full - x, reqDigits)
         }
     }
 

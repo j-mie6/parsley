@@ -93,16 +93,16 @@ class ErrorConfig {
     def messageStringNonLatin1(@unused s: String): Seq[String] =
         Seq("non-latin1 characters in string literal, this is not allowed")
 
-    def messageCharEscapeRequiresExactDigits(@unused radix: Int, got: Int, needed: Seq[Int]): Seq[String] =
+    def messageEscapeCharRequiresExactDigits(@unused radix: Int, got: Int, needed: Seq[Int]): Seq[String] =
         Seq(s"numeric escape requires ${parsley.errors.helpers.combineAsList(needed.toList.map(_.toString))} digits, but only got $got")
 
-    def messageCharEscapeNumericSequenceTooBig(escapeSequence: String, maxEscape: String): Seq[String] =
+    def messageEscapeCharNumericSequenceTooBig(escapeSequence: String, maxEscape: String): Seq[String] =
         Seq(s"$escapeSequence is greater than the maximum character $maxEscape")
 
-    def messageCharEscapeNumericSequenceIllegal(escapeSequence: String): Seq[String] =
+    def messageEscapeCharNumericSequenceIllegal(escapeSequence: String): Seq[String] =
         Seq(s"illegal unicode codepoint: $escapeSequence")
 
-    private [parsley] def renderCharEscapeNumericSequence(escBegin: Char, prefix: String, n: BigInt, radix: Int): String =
+    private [parsley] def renderEscapeNumericSequence(escBegin: Char, prefix: String, n: BigInt, radix: Int): String =
         s"$escBegin$prefix${n.toString(radix)}"
 
     // expensive ;)
