@@ -26,7 +26,7 @@ private [token] abstract class Lexeme {
     def apply[A](p: Parsley[A]): Parsley[A]
 }
 
-
+// TODO: flatten out `numeric` and `text` for 5.0.0? wouldn't do much damage, we can use documentation tags to group them in the high-level docs again :)
 /** This class provides a large selection of functionality concerned
   * with lexing.
   *

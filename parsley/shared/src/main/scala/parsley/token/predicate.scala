@@ -7,6 +7,7 @@ import parsley.Parsley, Parsley.empty
 import parsley.character.{satisfy, satisfyUtf16}
 import parsley.exceptions.ParsleyException
 
+// TODO: add an `implicits` module here, for some useful implicit conversions
 /** This module contains functionality to describe character predicates, which can
   * be used to determine what characters are valid for different tokens.
   *
