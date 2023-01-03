@@ -3,7 +3,7 @@
  */
 package parsley.errors
 
-import parsley.Parsley
+import parsley.Parsley, Parsley.attempt
 
 import parsley.internal.deepembedding.{frontend, singletons}
 
@@ -442,9 +442,20 @@ object combinator {
         def hide: Parsley[A] = this.label("")
 
         // TODO: move all of these to a `VerifiedErrorWidgets` class?
-        //def fail(msg: String, msgs: String*): Parsley[Nothing]
+        // TODO: it should have the partial amend semantics, because `amendAndDislodge` can restore the other semantics anyway
+        // Document that `attempt` may be used when this is an informative but not terminal error.
+        private [parsley] def fail(msggen: A => Seq[String]): Parsley[Nothing] = {
+            // holy hell, the hoops I jump through to be able to implement things
+            val r = parsley.registers.Reg.make[(Int, A, Int)]
+            val fails = Parsley.notFollowedBy(r.put(parsley.position.internalOffsetSpan(this.hide)))
+            (fails <|> r.get.flatMap { case (os, x, oe) =>
+                val msg0 +: msgs = msggen(x)
+                combinator.fail(oe - os, msg0, msgs: _*)
+            }) *> Parsley.empty
+        }
+        private [parsley] def fail(msg: String, msgs: String*): Parsley[Nothing] = attempt(this.hide).fail(_ => msg +: msgs)
 
-        // TODO: rename to fail, add hide combinator to `p`
+        // TODO: deprecate, and stress there is no _direct_ equivalent available moving forward
         /** This combinator parses this parser and then fails, using the result of this parser to customise the error message.
           *
           * Similar to `fail`, but first parses this parser: if it succeeded, then its result `x` is used to form the error
@@ -476,11 +487,16 @@ object combinator {
 
         // TODO: Documentation and testing ahead of future release
         // like notFollowedBy, but does consume input on "success" and always fails (FIXME: this needs intrinsic support to get right)
-        private def unexpected(reason: Option[String]) = {
-            val fails = Parsley.notFollowedBy(this.hide)
-            reason.fold(fails)(fails.explain(_)) *> Parsley.empty
+        // it should also have the partial amend semantics, because `amendAndDislodge` can restore the other semantics anyway
+        // Document that `attempt` may be used when this is an informative but not terminal error.
+        private def unexpected(reason: Option[A => String]) = {
+            // holy hell, the hoops I jump through to be able to implement things
+            val r = parsley.registers.Reg.make[A]
+            val fails = Parsley.notFollowedBy(r.put(this.hide))
+            reason.fold(fails)(rgen => fails <|> r.get.flatMap(x => Parsley.empty.explain(rgen(x)))) *> Parsley.empty
         }
         private [parsley] def unexpected: Parsley[Nothing] = this.unexpected(None)
-        private [parsley] def unexpected(reason: String): Parsley[Nothing] = this.unexpected(Some(reason))
+        private [parsley] def unexpected(reason: String): Parsley[Nothing] = this._unexpected(_ => reason)
+        private [parsley] def _unexpected(reason: A => String): Parsley[Nothing] = this.unexpected(Some(reason))
     }
 }
