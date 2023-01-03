@@ -15,35 +15,48 @@ import parsley.position
 // TODO: We could make these groupings into merged ADTs? Must be careful with binary-lock-in though...
 class ErrorConfig {
     // numeric
-    def labelUnsignedDecimal: Option[String] = None
-    def labelUnsignedHexadecimal: Option[String] = None
-    def labelUnsignedOctal: Option[String] = None
-    def labelUnsignedBinary: Option[String] = None
-    def labelUnsignedNumber: Option[String] = None
-    def labelUnsignedDecimal(@unused bits: Int): Option[String] = None
-    def labelUnsignedHexadecimal(@unused bits: Int): Option[String] = None
-    def labelUnsignedOctal(@unused bits: Int): Option[String] = None
-    def labelUnsignedBinary(@unused bits: Int): Option[String] = None
-    def labelUnsignedNumber(@unused bits: Int): Option[String] = None
+    def labelIntegerUnsignedDecimal: Option[String] = None
+    def labelIntegerUnsignedHexadecimal: Option[String] = None
+    def labelIntegerUnsignedOctal: Option[String] = None
+    def labelIntegerUnsignedBinary: Option[String] = None
+    def labelIntegerUnsignedNumber: Option[String] = None
+    def labelIntegerUnsignedDecimal(@unused bits: Int): Option[String] = None
+    def labelIntegerUnsignedHexadecimal(@unused bits: Int): Option[String] = None
+    def labelIntegerUnsignedOctal(@unused bits: Int): Option[String] = None
+    def labelIntegerUnsignedBinary(@unused bits: Int): Option[String] = None
+    def labelIntegerUnsignedNumber(@unused bits: Int): Option[String] = None
 
-    def labelSignedDecimal: Option[String] = None
-    def labelSignedHexadecimal: Option[String] = None
-    def labelSignedOctal: Option[String] = None
-    def labelSignedBinary: Option[String] = None
-    def labelSignedNumber: Option[String] = None
-    def labelSignedDecimal(@unused bits: Int): Option[String] = None
-    def labelSignedHexadecimal(@unused bits: Int): Option[String] = None
-    def labelSignedOctal(@unused bits: Int): Option[String] = None
-    def labelSignedBinary(@unused bits: Int): Option[String] = None
-    def labelSignedNumber(@unused bits: Int): Option[String] = None
+    def labelIntegerSignedDecimal: Option[String] = None
+    def labelIntegerSignedHexadecimal: Option[String] = None
+    def labelIntegerSignedOctal: Option[String] = None
+    def labelIntegerSignedBinary: Option[String] = None
+    def labelIntegerSignedNumber: Option[String] = None
+    def labelIntegerSignedDecimal(@unused bits: Int): Option[String] = None
+    def labelIntegerSignedHexadecimal(@unused bits: Int): Option[String] = None
+    def labelIntegerSignedOctal(@unused bits: Int): Option[String] = None
+    def labelIntegerSignedBinary(@unused bits: Int): Option[String] = None
+    def labelIntegerSignedNumber(@unused bits: Int): Option[String] = None
 
-    private [token] def labelDecimal(bits: Int, signed: Boolean): Option[String] = if (signed) labelSignedDecimal(bits) else labelUnsignedDecimal(bits)
-    private [token] def labelHexadecimal(bits: Int, signed: Boolean): Option[String] = {
-        if (signed) labelSignedHexadecimal(bits) else labelUnsignedHexadecimal(bits)
+    def labelIntegerDecimalEnd: Option[String] = Some("end of number")
+    def labelIntegerHexadecimalEnd: Option[String] = Some("end of number")
+    def labelIntegerOctalEnd: Option[String] = Some("end of number")
+    def labelIntegerBinaryEnd: Option[String] = Some("end of number")
+
+    private [token] def labelDecimal(bits: Int, signed: Boolean): Option[String] = {
+        if (signed) labelIntegerSignedDecimal(bits) else labelIntegerUnsignedDecimal(bits)
     }
-    private [token] def labelOctal(bits: Int, signed: Boolean): Option[String] = if (signed) labelSignedOctal(bits) else labelUnsignedOctal(bits)
-    private [token] def labelBinary(bits: Int, signed: Boolean): Option[String] = if (signed) labelSignedBinary(bits) else labelUnsignedBinary(bits)
-    private [token] def labelNumber(bits: Int, signed: Boolean): Option[String] = if (signed) labelSignedNumber(bits) else labelUnsignedNumber(bits)
+    private [token] def labelHexadecimal(bits: Int, signed: Boolean): Option[String] = {
+        if (signed) labelIntegerSignedHexadecimal(bits) else labelIntegerUnsignedHexadecimal(bits)
+    }
+    private [token] def labelOctal(bits: Int, signed: Boolean): Option[String] = {
+        if (signed) labelIntegerSignedOctal(bits) else labelIntegerUnsignedOctal(bits)
+    }
+    private [token] def labelBinary(bits: Int, signed: Boolean): Option[String] = {
+        if (signed) labelIntegerSignedBinary(bits) else labelIntegerUnsignedBinary(bits)
+    }
+    private [token] def labelNumber(bits: Int, signed: Boolean): Option[String] = {
+        if (signed) labelIntegerSignedNumber(bits) else labelIntegerUnsignedNumber(bits)
+    }
 
     def explainRealNoDoubleDroppedZero: String =
         "a real number cannot drop both a leading and trailing zero"

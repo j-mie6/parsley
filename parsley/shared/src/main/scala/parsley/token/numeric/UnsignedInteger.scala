@@ -39,11 +39,11 @@ private [token] final class UnsignedInteger(desc: NumericDesc, err: ErrorConfig)
         }
     }
 
-    override def decimal: Parsley[BigInt] = ErrorConfig.label(err.labelSignedDecimal)(decimalNoLabel)
-    override def hexadecimal: Parsley[BigInt] = ErrorConfig.label(err.labelSignedHexadecimal)(hexadecimalNoLabel)
-    override def octal: Parsley[BigInt] = ErrorConfig.label(err.labelSignedOctal)(octalNoLabel)
-    override def binary: Parsley[BigInt] = ErrorConfig.label(err.labelSignedBinary)(binaryNoLabel)
-    override def number: Parsley[BigInt] = ErrorConfig.label(err.labelSignedNumber)(numberNoLabel)
+    override def decimal: Parsley[BigInt] = ErrorConfig.label(err.labelIntegerUnsignedDecimal)(decimalNoLabel)
+    override def hexadecimal: Parsley[BigInt] = ErrorConfig.label(err.labelIntegerUnsignedHexadecimal)(hexadecimalNoLabel)
+    override def octal: Parsley[BigInt] = ErrorConfig.label(err.labelIntegerUnsignedOctal)(octalNoLabel)
+    override def binary: Parsley[BigInt] = ErrorConfig.label(err.labelIntegerUnsignedBinary)(binaryNoLabel)
+    override def number: Parsley[BigInt] = ErrorConfig.label(err.labelIntegerUnsignedNumber)(numberNoLabel)
 
     private def when(b: Boolean, p: Parsley[_]): Parsley[_] = if (b) p else unit
 

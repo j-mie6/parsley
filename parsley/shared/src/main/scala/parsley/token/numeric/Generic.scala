@@ -4,13 +4,15 @@
 package parsley.token.numeric
 
 import parsley.Parsley, Parsley.pure
-import parsley.character.{bit, digit, hexDigit, isHexDigit, isOctDigit, octDigit, satisfy}
+import parsley.character, character.{isHexDigit, isOctDigit, satisfy}
 import parsley.combinator.optional
 import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.character.charLift
 import parsley.token.descriptions.numeric.{BreakCharDesc, NumericDesc}
 
 // These methods should not have labels on the leads, because that can interfere with their various uses
+// ^ this is tricky, because we should mark the first digit with the "end of literal"... I guess we can mark the tail digit? bit sad
+// TODO: incorporate end of literal (we need ErrorConfig parameterisation here)
 private [token] object Generic {
     private def ofRadix(radix: Int, digit: Parsley[Char]): Parsley[BigInt] = ofRadix(radix, digit, digit)
     private def ofRadix(radix: Int, startDigit: Parsley[Char], digit: Parsley[Char]): Parsley[BigInt] = {
@@ -24,17 +26,23 @@ private [token] object Generic {
         parsley.expr.infix.secretLeft1(startDigit.map(d => BigInt(d.asDigit)), optional(breakChar) *> digit, pf)
     }
 
-    lazy val zeroAllowedDecimal = ofRadix(10, digit)
-    lazy val zeroAllowedHexadecimal = ofRadix(16, hexDigit)
-    lazy val zeroAllowedOctal = ofRadix(8, octDigit)
-    lazy val zeroAllowedBinary = ofRadix(2, bit)
-
+    // Digits
     private def nonZeroDigit = satisfy(c => c.isDigit && c != '0').label("digit")
     private def nonZeroHexDigit = satisfy(c => isHexDigit(c) && c != '0').label("hexadecimal digit")
     private def nonZeroOctDigit = satisfy(c => isOctDigit(c) && c != '0').label("octal digit")
     private def nonZeroBit = '1'.label("bit")
     // why secret? so that the above digits can be marked as digits without "non-zero or zero digit" nonsense
     private def secretZero = '0'.hide #> BigInt(0)
+
+    private def digit = character.digit
+    private def hexDigit = character.hexDigit
+    private def octDigit = character.octDigit
+    private def bit = character.bit
+
+    lazy val zeroAllowedDecimal = ofRadix(10, digit)
+    lazy val zeroAllowedHexadecimal = ofRadix(16, hexDigit)
+    lazy val zeroAllowedOctal = ofRadix(8, octDigit)
+    lazy val zeroAllowedBinary = ofRadix(2, bit)
 
     lazy val zeroNotAllowedDecimal = ofRadix(10, nonZeroDigit, digit) <|> secretZero
     lazy val zeroNotAllowedHexadecimal = ofRadix(16, nonZeroHexDigit, hexDigit) <|> secretZero
