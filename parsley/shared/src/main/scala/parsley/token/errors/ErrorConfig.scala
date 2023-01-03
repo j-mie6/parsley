@@ -58,6 +58,8 @@ class ErrorConfig {
         if (signed) labelIntegerSignedNumber(bits) else labelIntegerUnsignedNumber(bits)
     }
 
+    def explainBreakChar: Option[String] = None
+
     def explainRealNoDoubleDroppedZero: String =
         "a real number cannot drop both a leading and trailing zero"
 
