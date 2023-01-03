@@ -41,6 +41,7 @@ class ErrorConfig {
     def labelIntegerHexadecimalEnd: Option[String] = Some("end of number")
     def labelIntegerOctalEnd: Option[String] = Some("end of number")
     def labelIntegerBinaryEnd: Option[String] = Some("end of number")
+    def labelIntegerNumberEnd: Option[String] = Some("end of number")
 
     private [token] def labelDecimal(bits: Int, signed: Boolean): Option[String] = {
         if (signed) labelIntegerSignedDecimal(bits) else labelIntegerUnsignedDecimal(bits)
@@ -79,6 +80,12 @@ class ErrorConfig {
 
     def messageRealTooSmall(n: BigDecimal, name: String): Seq[String] =
         Seq(s"literal $n is too small to be an $name")
+
+    // expensive ;)
+    // this is not as effective as it may seem, because reasons cannot be hints
+    // it's possible a preventative error could be more effective?
+    /*def verifiedIntegerBadCharsUsedInLiteral: Option[(predicate.CharPredicate, Int => String)] =
+        None*/
 
     def doubleName: String = "IEEE 754 double-precision float"
     def floatName: String = "IEEE 754 single-precision float"
