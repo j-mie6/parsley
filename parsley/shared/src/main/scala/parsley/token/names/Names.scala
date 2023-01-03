@@ -4,7 +4,7 @@
 package parsley.token.names
 
 import parsley.Parsley
-import parsley.token.predicate.CharPredicate
+import parsley.token.predicate.{CharPredicate, NotRequired}
 
 /** This class defines a uniform interface for defining parsers for user-defined
   * names (identifiers and operators), independent of how whitespace should be
@@ -95,17 +95,17 @@ abstract class Names private[names] {
       * // operatorStart = Basic(Set('+', '-'))
       * // operatorLetter = Basic(Set('+', '-', ':'))
       * // hardKeywords = Set("+", "+:", ...)
-      * scala> userDefinedOperator(NotRequired, Basic(Set(':'))).parse("-:")
+      * scala> userDefinedOperator.parse("-:")
       * val res0 = Success("-:")
-      * scala> userDefinedOperator(NotRequired, Basic(Set(':'))).parse("*:")
+      * scala> userDefinedOperator.parse("*:")
       * val res1 = Failure(...)
-      * scala> userDefinedOperator(NotRequired, Basic(Set(':'))).parse("")
+      * scala> userDefinedOperator.parse("")
       * val res2 = Failure(...)
-      * scala> userDefinedOperator(NotRequired, Basic(Set(':'))).parse("++")
-      * val res3 = Failure(...)
-      * scala> userDefinedOperator(NotRequired, Basic(Set(':'))).parse("+:")
+      * scala> userDefinedOperator.parse("++")
+      * val res3 = Success("++")
+      * scala> userDefinedOperator.parse("+:")
       * val res4 = Failure(...)
-      * scala> userDefinedOperator(NotRequired, Basic(Set(':'))).parse("++:")
+      * scala> userDefinedOperator.parse("++:")
       * val res5 = Success("++:")
       * }}}
       *
@@ -133,16 +133,18 @@ abstract class Names private[names] {
       * // operatorStart = Basic(Set('+', '-'))
       * // operatorLetter = Basic(Set('+', '-', ':'))
       * // hardKeywords = Set("+", "+:", ...)
-      * scala> identifier.parse("-")
-      * val res0 = Success("-")
-      * scala> identifier.parse("*")
+      * scala> userDefinedOperator(NotRequired, Basic(Set(':'))).parse("-:")
+      * val res0 = Success("-:")
+      * scala> userDefinedOperator(NotRequired, Basic(Set(':'))).parse("*:")
       * val res1 = Failure(...)
-      * scala> identifier.parse("")
+      * scala> userDefinedOperator(NotRequired, Basic(Set(':'))).parse("")
       * val res2 = Failure(...)
-      * scala> identifier.parse("++")
-      * val res3 = Success("++")
-      * scala> identifier.parse("+:")
+      * scala> userDefinedOperator(NotRequired, Basic(Set(':'))).parse("++")
+      * val res3 = Failure(...)
+      * scala> userDefinedOperator(NotRequired, Basic(Set(':'))).parse("+:")
       * val res4 = Failure(...)
+      * scala> userDefinedOperator(NotRequired, Basic(Set(':'))).parse("++:")
+      * val res5 = Success("++:")
       * }}}
       *
       * @param startChar describes what the starting character must be
@@ -151,6 +153,43 @@ abstract class Names private[names] {
       * @since 4.0.0
       */
     def userDefinedOperator(startChar: CharPredicate, endChar: CharPredicate): Parsley[String]
+    /** This combinator will parse a user-defined operator based on the
+      * defined operator start and operator letter, refined by the
+      * provided `startChar`. It is capable of handling unicode characters if the
+      * configuration permits.
+      *
+      * After parsing a valid operator as in `userDefinedOperator`,
+      * this combinator will verify that the first character
+      * matches the given parameter. If `NotRequired` is passed it
+      * will be equivalent to `userDefinedOperator`.
+      *
+      * If hard operators are specified
+      * by the configuration, this parser is not permitted
+      * to parse them.
+      *
+      * @example {{{
+      * // operatorStart = Basic(Set('+', '-'))
+      * // operatorLetter = Basic(Set('+', '-', ':'))
+      * // hardKeywords = Set("+", "+:", ...)
+      * scala> userDefinedOperator(Basic(Set('+'))).parse("-:")
+      * val res0 = Failure(...)
+      * scala> userDefinedOperator(Basic(Set('+'))).parse("*:")
+      * val res1 = Failure(...)
+      * scala> userDefinedOperator(Basic(Set('+'))).parse("")
+      * val res2 = Failure(...)
+      * scala> userDefinedOperator(Basic(Set('+'))).parse("++")
+      * val res3 = Success("++")
+      * scala> userDefinedOperator(Basic(Set('+'))).parse("+:")
+      * val res4 = Failure(...)
+      * scala> userDefinedOperator(Basic(Set('+'))).parse("++:")
+      * val res5 = Success("++:")
+      * }}}
+      *
+      * @param startChar describes what the starting character must be
+      * @note $disclaimer
+      * @since 4.1.0
+      */
+    def userDefinedOperator(startChar: CharPredicate): Parsley[String] = userDefinedOperator(startChar, NotRequired)
 
     // TODO: Two variants of the above that also have reasons that describe
     //       the requirements of the identifier/operator
