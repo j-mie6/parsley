@@ -233,6 +233,8 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
       */
     def this(desc: descriptions.LexicalDesc) = this(desc, errors.ErrorConfig.default)
 
+    private val generic = new numeric.Generic(errConfig)
+
     /** This object is concerned with ''lexemes'': these are tokens that are
       * treated as "words", such that whitespace will be consumed after each
       * has been parsed.
@@ -622,9 +624,9 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
           * @since 4.0.0
           */
         object numeric {
-            private [Lexer] val _natural = new UnsignedInteger(desc.numericDesc, errConfig)
+            private [Lexer] val _natural = new UnsignedInteger(desc.numericDesc, errConfig, generic)
             private [Lexer] val _integer = new SignedInteger(desc.numericDesc, _natural, errConfig)
-            private [Lexer] val _positiveReal = new UnsignedReal(desc.numericDesc, _natural, errConfig)
+            private [Lexer] val _positiveReal = new UnsignedReal(desc.numericDesc, _natural, errConfig, generic)
             private [Lexer] val _real = new SignedReal(desc.numericDesc, _positiveReal, errConfig)
             private [Lexer] val _unsignedCombined = new UnsignedCombined(desc.numericDesc, _integer, _positiveReal, errConfig)
             private [Lexer] val _signedCombined = new SignedCombined(desc.numericDesc, _unsignedCombined, errConfig)
@@ -694,7 +696,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
           * @since 4.0.0
           */
         object text {
-            private val escapes = new Escape(desc.textDesc.escapeSequences, errConfig)
+            private val escapes = new Escape(desc.textDesc.escapeSequences, errConfig, generic)
             private val escapeChar = new EscapableCharacter(desc.textDesc.escapeSequences, escapes, space.space, errConfig)
             private val rawChar = new RawCharacter(errConfig)
             private [Lexer] val _character: parsley.token.text.Character = new ConcreteCharacter(desc.textDesc, escapes, errConfig)

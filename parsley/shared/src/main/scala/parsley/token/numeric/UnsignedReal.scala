@@ -13,7 +13,7 @@ import parsley.registers.Reg
 import parsley.token.descriptions.numeric.{BreakCharDesc, ExponentDesc, NumericDesc}
 import parsley.token.errors.ErrorConfig
 
-private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInteger, err: ErrorConfig) extends Real(err) {
+private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInteger, err: ErrorConfig, generic: Generic) extends Real(err) {
     override lazy val decimal: Parsley[BigDecimal] = attempt(ofRadix(10, digit))
     override lazy val hexadecimal: Parsley[BigDecimal] = attempt('0' *> noZeroHexadecimal)
     override lazy val octal: Parsley[BigDecimal] = attempt('0' *> noZeroOctal)
@@ -65,10 +65,10 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInt
         // TODO: this should reuse components of unsigned generic numbers, which will prevent duplication in a larger parser
         // At the moment, a break character will prevent reuse
         val whole = radix match {
-            case 10 => Generic.plainDecimal(desc)
-            case 16 => Generic.plainHexadecimal(desc)
-            case 8 => Generic.plainOctal(desc)
-            case 2 => Generic.plainBinary(desc)
+            case 10 => generic.plainDecimal(desc)
+            case 16 => generic.plainHexadecimal(desc)
+            case 8 => generic.plainOctal(desc)
+            case 2 => generic.plainBinary(desc)
         }
         val f = (d: Char, x: BigDecimal) => x/radix + d.asDigit
         def broken(c: Char) = lift2(f, digit, (optional(c) *> digit).foldRight[BigDecimal](0)(f))

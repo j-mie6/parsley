@@ -12,7 +12,8 @@ import parsley.token.errors.ErrorConfig
 import org.scalactic.source.Position
 
 class UnsignedIntegerTests extends ParsleyTest {
-    private def makeInteger(desc: NumericDesc) = new LexemeInteger(new UnsignedInteger(desc, ErrorConfig.default), LexemeImpl.empty)
+    val generic = new Generic(ErrorConfig.default)
+    private def makeInteger(desc: NumericDesc) = new LexemeInteger(new UnsignedInteger(desc, ErrorConfig.default, generic), LexemeImpl.empty)
 
     val plain = NumericDesc.plain
     val withLeadingZero = makeInteger(plain)

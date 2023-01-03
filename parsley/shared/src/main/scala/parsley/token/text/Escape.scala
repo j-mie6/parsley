@@ -12,7 +12,7 @@ import parsley.token.descriptions.text.{EscapeDesc, NumberOfDigits, NumericEscap
 import parsley.token.errors.ErrorConfig
 import parsley.token.numeric
 
-private [token] class Escape(desc: EscapeDesc, err: ErrorConfig) {
+private [token] class Escape(desc: EscapeDesc, err: ErrorConfig, generic: numeric.Generic) {
     // NOTE: `strings`, while nice, is not perfect as it doesn't leverage a trie-based folding
     //       on the possibilities. We'll want trie-based folding here, or at least a specialised
     //       instruction that has the trie lookup logic baked in.
@@ -85,10 +85,10 @@ private [token] class Escape(desc: EscapeDesc, err: ErrorConfig) {
         }
     }
 
-    private val decimalEscape = fromDesc(radix = 10, desc.decimalEscape, numeric.Generic.zeroAllowedDecimal, digit)
-    private val hexadecimalEscape = fromDesc(radix = 16, desc.hexadecimalEscape, numeric.Generic.zeroAllowedHexadecimal, hexDigit)
-    private val octalEscape = fromDesc(radix = 8, desc.octalEscape, numeric.Generic.zeroAllowedOctal, octDigit)
-    private val binaryEscape = fromDesc(radix = 2, desc.binaryEscape, numeric.Generic.zeroAllowedBinary, bit)
+    private val decimalEscape = fromDesc(radix = 10, desc.decimalEscape, generic.zeroAllowedDecimal, digit)
+    private val hexadecimalEscape = fromDesc(radix = 16, desc.hexadecimalEscape, generic.zeroAllowedHexadecimal, hexDigit)
+    private val octalEscape = fromDesc(radix = 8, desc.octalEscape, generic.zeroAllowedOctal, octDigit)
+    private val binaryEscape = fromDesc(radix = 2, desc.binaryEscape, generic.zeroAllowedBinary, bit)
     private val numericEscape = decimalEscape <|> hexadecimalEscape <|> octalEscape <|> binaryEscape
     val escapeCode = ErrorConfig.explain(err.explainEscapeInvalid)(ErrorConfig.label(err.labelEscapeEnd)(escMapped <|> numericEscape))
     val escapeBegin = ErrorConfig.label(err.labelEscapeSequence)(char(desc.escBegin))

@@ -11,11 +11,11 @@ import parsley.implicits.character.charLift
 import parsley.token.descriptions.numeric.{BreakCharDesc, NumericDesc}
 import parsley.token.errors.ErrorConfig
 
-private [token] final class UnsignedInteger(desc: NumericDesc, err: ErrorConfig) extends Integer(desc) {
+private [token] final class UnsignedInteger(desc: NumericDesc, err: ErrorConfig, generic: Generic) extends Integer(desc) {
 
     // labelless versions
     // TODO: should these override the _ variants, what are the consequences? Would remove double label in bounded, which is nice
-    private [numeric] lazy val decimalNoLabel: Parsley[BigInt] = Generic.plainDecimal(desc)
+    private [numeric] lazy val decimalNoLabel: Parsley[BigInt] = generic.plainDecimal(desc)
     private [numeric] lazy val hexadecimalNoLabel: Parsley[BigInt] = attempt('0' *> noZeroHexadecimal)
     private [numeric] lazy val octalNoLabel: Parsley[BigInt] = attempt('0' *> noZeroOctal)
     private [numeric] lazy val binaryNoLabel: Parsley[BigInt] = attempt('0' *> noZeroBinary)
@@ -52,9 +52,9 @@ private [token] final class UnsignedInteger(desc: NumericDesc, err: ErrorConfig)
         case BreakCharDesc.Supported(breakChar, allowedAfterNonDecimalPrefix) => when(allowedAfterNonDecimalPrefix, optional(breakChar))
     }
 
-    private val noZeroHexadecimal = when(desc.hexadecimalLeads.nonEmpty, oneOf(desc.hexadecimalLeads)) *> leadingBreakChar *> Generic.plainHexadecimal(desc)
-    private val noZeroOctal = when(desc.octalLeads.nonEmpty, oneOf(desc.octalLeads)) *> leadingBreakChar *> Generic.plainOctal(desc)
-    private val noZeroBinary = when(desc.binaryLeads.nonEmpty, oneOf(desc.binaryLeads)) *> leadingBreakChar *> Generic.plainBinary(desc)
+    private val noZeroHexadecimal = when(desc.hexadecimalLeads.nonEmpty, oneOf(desc.hexadecimalLeads)) *> leadingBreakChar *> generic.plainHexadecimal(desc)
+    private val noZeroOctal = when(desc.octalLeads.nonEmpty, oneOf(desc.octalLeads)) *> leadingBreakChar *> generic.plainOctal(desc)
+    private val noZeroBinary = when(desc.binaryLeads.nonEmpty, oneOf(desc.binaryLeads)) *> leadingBreakChar *> generic.plainBinary(desc)
 
     override protected [numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int, label: (ErrorConfig, Boolean) => Option[String])
                                                (implicit ev: CanHold[bits.self,T]): Parsley[T] = ErrorConfig.label(label(err, false)) {

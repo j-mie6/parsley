@@ -12,7 +12,8 @@ import parsley.token.errors.ErrorConfig
 import org.scalactic.source.Position
 
 class RealTests extends ParsleyTest {
-    private def makeReal(desc: NumericDesc) = new LexemeReal(new SignedReal(desc, new UnsignedReal(desc, new UnsignedInteger(desc, ErrorConfig.default), ErrorConfig.default), ErrorConfig.default), LexemeImpl.empty, ErrorConfig.default)
+    val generic = new Generic(ErrorConfig.default)
+    private def makeReal(desc: NumericDesc) = new LexemeReal(new SignedReal(desc, new UnsignedReal(desc, new UnsignedInteger(desc, ErrorConfig.default, generic), ErrorConfig.default, generic), ErrorConfig.default), LexemeImpl.empty, ErrorConfig.default)
 
     val plain = NumericDesc.plain.copy(decimalExponentDesc = NoExponents, hexadecimalExponentDesc = NoExponents,
                                        octalExponentDesc = NoExponents, binaryExponentDesc = NoExponents)

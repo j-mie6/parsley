@@ -9,11 +9,12 @@ import parsley.combinator.optional
 import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.character.charLift
 import parsley.token.descriptions.numeric.{BreakCharDesc, NumericDesc}
+import parsley.token.errors.ErrorConfig
 
 // These methods should not have labels on the leads, because that can interfere with their various uses
 // ^ this is tricky, because we should mark the first digit with the "end of literal"... I guess we can mark the tail digit? bit sad
 // TODO: incorporate end of literal (we need ErrorConfig parameterisation here)
-private [token] object Generic {
+private [token] class Generic(err: ErrorConfig) {
     private def ofRadix(radix: Int, digit: Parsley[Char]): Parsley[BigInt] = ofRadix(radix, digit, digit)
     private def ofRadix(radix: Int, startDigit: Parsley[Char], digit: Parsley[Char]): Parsley[BigInt] = {
         val pf = pure((x: BigInt, d: Char) => x*radix + d.asDigit)

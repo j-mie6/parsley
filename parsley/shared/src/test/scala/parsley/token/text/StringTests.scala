@@ -14,12 +14,13 @@ import parsley.character.space
 import org.scalactic.source.Position
 
 class StringTests extends ParsleyTest {
+    val generic = new parsley.token.numeric.Generic(ErrorConfig.default)
     private def makeString(desc: TextDesc, char: StringCharacter, spaceAllowed: Boolean) =
         new LexemeString(new ConcreteString(desc.stringEnds, char, desc.graphicCharacter, spaceAllowed, ErrorConfig.default), LexemeImpl.empty)
     private def makeString(desc: TextDesc): String =
-        makeString(desc, new EscapableCharacter(desc.escapeSequences, new Escape(desc.escapeSequences, ErrorConfig.default), space, ErrorConfig.default), false)
+        makeString(desc, new EscapableCharacter(desc.escapeSequences, new Escape(desc.escapeSequences, ErrorConfig.default, generic), space, ErrorConfig.default), false)
     private def makeMultiString(desc: TextDesc): String =
-        makeString(desc, new EscapableCharacter(desc.escapeSequences, new Escape(desc.escapeSequences, ErrorConfig.default), space, ErrorConfig.default), true)
+        makeString(desc, new EscapableCharacter(desc.escapeSequences, new Escape(desc.escapeSequences, ErrorConfig.default, generic), space, ErrorConfig.default), true)
     private def makeRawString(desc: TextDesc): String =
         makeString(desc, new RawCharacter(ErrorConfig.default), false)
     private def makeRawMultiString(desc: TextDesc): String =
