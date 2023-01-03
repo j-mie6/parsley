@@ -189,7 +189,7 @@ abstract class Names private[names] {
       * @note $disclaimer
       * @since 4.1.0
       */
-    def userDefinedOperator(startChar: CharPredicate): Parsley[String] = userDefinedOperator(startChar, NotRequired)
+    final def userDefinedOperator(startChar: CharPredicate): Parsley[String] = userDefinedOperator(startChar, NotRequired)
 
     // TODO: Two variants of the above that also have reasons that describe
     //       the requirements of the identifier/operator
