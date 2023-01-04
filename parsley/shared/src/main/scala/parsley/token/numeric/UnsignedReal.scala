@@ -41,15 +41,13 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInt
         }
     }
 
-    private def when(b: Boolean, p: Parsley[_]): Parsley[Unit] = if (b) p.void else unit
+    private def when(b: Boolean, p: Parsley[_]): Parsley[_] = if (b) p else unit
 
     val leadingBreakChar = desc.literalBreakChar match {
         case BreakCharDesc.NoBreakChar => unit
         case BreakCharDesc.Supported(breakChar, allowedAfterNonDecimalPrefix) => when(allowedAfterNonDecimalPrefix, optional(breakChar))
     }
 
-    // TODO: Using choice here will generate a jump table, which will be nicer for `number` (this requires enhancements to the jumptable optimisation)
-    // TODO: Leave these as defs so they get inlined into number for the jumptable optimisation
     private val noZeroHexadecimal = when(desc.hexadecimalLeads.nonEmpty, oneOf(desc.hexadecimalLeads)) *> leadingBreakChar *> ofRadix(16, hexDigit)
     private val noZeroOctal = when(desc.octalLeads.nonEmpty, oneOf(desc.octalLeads)) *> leadingBreakChar *> ofRadix(8, octDigit)
     private val noZeroBinary = when(desc.binaryLeads.nonEmpty, oneOf(desc.binaryLeads)) *> leadingBreakChar *> ofRadix(2, oneOf('0', '1'))
@@ -62,8 +60,6 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInt
             case true => err.explainRealNoDoubleDroppedZero
         }
         val expDesc = desc.exponentDescForRadix(radix)
-        // TODO: this should reuse components of unsigned generic numbers, which will prevent duplication in a larger parser
-        // At the moment, a break character will prevent reuse
         val whole = radix match {
             case 10 => generic.plainDecimal(desc, None)
             case 16 => generic.plainHexadecimal(desc, None)
@@ -87,7 +83,12 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInt
         }
         val (requiredExponent, exponent, base) = expDesc match {
             case ExponentDesc.Supported(compulsory, exp, base, sign) =>
-                val integer = new SignedInteger(desc.copy(positiveSign = sign), natural, err)
+                val expErr = new ErrorConfig {
+                    override def pleaseDontValidateConfig: Boolean = true
+                    override def labelIntegerSignedDecimal(bits: Int): Option[String] = None
+                    override def labelIntegerBinaryEnd: Option[String] = None
+                }
+                val integer = new SignedInteger(desc.copy(positiveSign = sign), natural, expErr)
                 val exponent = oneOf(exp) *> integer.decimal32
                 if (compulsory) (exponent, exponent, base)
                 else (exponent, exponent <|> pure(0), base)

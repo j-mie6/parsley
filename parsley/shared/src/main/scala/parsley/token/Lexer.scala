@@ -234,7 +234,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
       */
     def this(desc: descriptions.LexicalDesc) = this(desc, errors.ErrorConfig.default)
 
-    if (!errConfig.pleaseDontValidConfig) errConfig.validateConfig()
+    if (!errConfig.pleaseDontValidateConfig) errConfig.validateConfig()
 
     private val generic = new numeric.Generic(errConfig)
 

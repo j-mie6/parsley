@@ -16,7 +16,7 @@ import parsley.position
 class ErrorConfig {
     // Right, I give up. Some of the interactions between these configurations are absurd, so I need
     // to guard against stuff that's just plain odd:
-    def pleaseDontValidConfig = false
+    def pleaseDontValidateConfig = false
     private [token] final def validateConfig(): Unit = {
         val bits = List(8, 16, 32, 64)
         def badEnd(ty: String) = s"cannot specify the end of a $ty integer literal without specifying the start or unsigned and signed $ty literals"
