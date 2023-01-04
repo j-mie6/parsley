@@ -85,10 +85,10 @@ private [token] class Escape(desc: EscapeDesc, err: ErrorConfig, generic: numeri
         }
     }
 
-    private val decimalEscape = fromDesc(radix = 10, desc.decimalEscape, generic.zeroAllowedDecimal, digit)
-    private val hexadecimalEscape = fromDesc(radix = 16, desc.hexadecimalEscape, generic.zeroAllowedHexadecimal, hexDigit)
-    private val octalEscape = fromDesc(radix = 8, desc.octalEscape, generic.zeroAllowedOctal, octDigit)
-    private val binaryEscape = fromDesc(radix = 2, desc.binaryEscape, generic.zeroAllowedBinary, bit)
+    private val decimalEscape = fromDesc(radix = 10, desc.decimalEscape, generic.zeroAllowedDecimal(None), digit)
+    private val hexadecimalEscape = fromDesc(radix = 16, desc.hexadecimalEscape, generic.zeroAllowedHexadecimal(None), hexDigit)
+    private val octalEscape = fromDesc(radix = 8, desc.octalEscape, generic.zeroAllowedOctal(None), octDigit)
+    private val binaryEscape = fromDesc(radix = 2, desc.binaryEscape, generic.zeroAllowedBinary(None), bit)
     private val numericEscape = decimalEscape <|> hexadecimalEscape <|> octalEscape <|> binaryEscape
     val escapeCode = ErrorConfig.explain(err.explainEscapeInvalid)(ErrorConfig.label(err.labelEscapeEnd)(escMapped <|> numericEscape))
     val escapeBegin = ErrorConfig.label(err.labelEscapeSequence)(char(desc.escBegin))

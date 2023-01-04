@@ -234,6 +234,8 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
       */
     def this(desc: descriptions.LexicalDesc) = this(desc, errors.ErrorConfig.default)
 
+    if (!errConfig.pleaseDontValidConfig) errConfig.validateConfig()
+
     private val generic = new numeric.Generic(errConfig)
 
     /** This object is concerned with ''lexemes'': these are tokens that are

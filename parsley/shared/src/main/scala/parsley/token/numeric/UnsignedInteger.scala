@@ -14,7 +14,7 @@ import parsley.token.errors.ErrorConfig
 private [token] final class UnsignedInteger(desc: NumericDesc, err: ErrorConfig, generic: Generic) extends Integer(desc) {
 
     // labelless versions
-    protected [numeric] override lazy val _decimal: Parsley[BigInt] = generic.plainDecimal(desc)
+    protected [numeric] override lazy val _decimal: Parsley[BigInt] = generic.plainDecimal(desc, err.labelIntegerDecimalEnd)
     protected [numeric] override lazy val _hexadecimal: Parsley[BigInt] = attempt('0' *> noZeroHexadecimal)
     protected [numeric] override lazy val _octal: Parsley[BigInt] = attempt('0' *> noZeroOctal)
     protected [numeric] override lazy val _binary: Parsley[BigInt] = attempt('0' *> noZeroBinary)
@@ -53,13 +53,13 @@ private [token] final class UnsignedInteger(desc: NumericDesc, err: ErrorConfig,
 
     private val noZeroHexadecimal =
         when(desc.hexadecimalLeads.nonEmpty, oneOf(desc.hexadecimalLeads)) *> leadingBreakChar *>
-        ErrorConfig.label(err.labelIntegerHexadecimalEnd)(generic.plainHexadecimal(desc))
+        ErrorConfig.label(err.labelIntegerHexadecimalEnd)(generic.plainHexadecimal(desc, err.labelIntegerHexadecimalEnd))
     private val noZeroOctal =
         when(desc.octalLeads.nonEmpty, oneOf(desc.octalLeads)) *> leadingBreakChar *>
-        ErrorConfig.label(err.labelIntegerOctalEnd)(generic.plainOctal(desc))
+        ErrorConfig.label(err.labelIntegerOctalEnd)(generic.plainOctal(desc, err.labelIntegerOctalEnd))
     private val noZeroBinary =
         when(desc.binaryLeads.nonEmpty, oneOf(desc.binaryLeads)) *> leadingBreakChar *>
-        ErrorConfig.label(err.labelIntegerBinaryEnd)(generic.plainBinary(desc))
+        ErrorConfig.label(err.labelIntegerBinaryEnd)(generic.plainBinary(desc, err.labelIntegerBinaryEnd))
 
     override protected [numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int, label: (ErrorConfig, Boolean) => Option[String])
                                                (implicit ev: CanHold[bits.self,T]): Parsley[T] = ErrorConfig.label(label(err, false)) {
