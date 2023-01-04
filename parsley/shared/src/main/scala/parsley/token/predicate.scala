@@ -3,11 +3,13 @@
  */
 package parsley.token
 
+import scala.collection.immutable.NumericRange
+
 import parsley.Parsley, Parsley.empty
 import parsley.character.{satisfy, satisfyUtf16}
 import parsley.exceptions.ParsleyException
 
-// TODO: add an `implicits` module here, for some useful implicit conversions
+// TODO: for parsley 5.0.0, make this a package?
 /** This module contains functionality to describe character predicates, which can
   * be used to determine what characters are valid for different tokens.
   *
@@ -62,6 +64,11 @@ object predicate {
         private [token] def startsWith(s: String) = s.headOption.exists(predicate)
         private [token] def endsWith(s: String) = s.lastOption.exists(predicate)
     }
+    // this runs the ability to pass functions in as it creates an overloading ambiguity
+    /*object Basic {
+        // TODO: expose
+        private [parsley] def apply(cs: Char*) = new Basic(Set(cs: _*))
+    }*/
 
     /** Character predicate that never succeeds.
       *
@@ -75,10 +82,26 @@ object predicate {
         private [token] def endsWith(s: String) = true
     }
 
-    // This has been deprecated, but is still used in the tests, we'll replace it with something else down the line
-    // but this is free to remove without affecting bin-compat
-    private [parsley] object _CharSet {
-        def apply(cs: Set[Char]): CharPredicate = Basic(cs)
-        def apply(cs: Char*): CharPredicate = apply(Set(cs: _*))
+    // TODO: documentation!
+    object implicits {
+        object Basic {
+            // $COVERAGE-OFF$
+            implicit def funToBasic(pred: Char => Boolean): CharPredicate = predicate.Basic(pred)
+            implicit def charToBasic(c: Char): CharPredicate = predicate.Basic(_ == c)
+            implicit def rangeToBasic(cs: NumericRange[Char]): CharPredicate = predicate.Basic(cs.contains)
+            // $COVERAGE-ON$
+        }
+
+        object Unicode {
+            // $COVERAGE-OFF$
+            implicit def funToUnicode(pred: Int => Boolean): CharPredicate = predicate.Unicode(pred)
+            implicit def charFunToUnicode(pred: Char => Boolean): CharPredicate = predicate.Unicode(c => c.isValidChar && pred(c.toChar))
+            implicit def charToUnicode(c: Char): CharPredicate = predicate.Unicode(_ == c.toInt)
+            implicit def intToUnicode(c: Int): CharPredicate = predicate.Unicode(_ == c)
+            implicit def charRangeToUnicode(cs: NumericRange[Char]): CharPredicate = predicate.Unicode(cs.contains)
+            implicit def intRangeToUnicode(cs: NumericRange[Int]): CharPredicate = predicate.Unicode(cs.contains)
+            implicit def rangeToUnicode(cs: Range): CharPredicate = predicate.Unicode(cs.contains)
+            // $COVERAGE-ON$
+        }
     }
 }

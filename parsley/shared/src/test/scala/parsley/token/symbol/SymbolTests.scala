@@ -10,7 +10,7 @@ import parsley.token.LexemeImpl._
 
 import parsley.token.descriptions._
 import parsley.token.errors.ErrorConfig
-import parsley.token.predicate._
+import parsley.token.predicate._, implicits.Basic.charToBasic, implicits.Unicode.funToUnicode
 import parsley.token.symbol._
 import parsley.character.{spaces, string}
 import org.scalactic.source.Position
@@ -18,13 +18,13 @@ import org.scalactic.source.Position
 class SymbolTests extends ParsleyTest {
     def makeSymbol(nameDesc: NameDesc, symDesc: SymbolDesc): Symbol = new LexemeSymbol(new ConcreteSymbol(nameDesc, symDesc, ErrorConfig.default), spaces, ErrorConfig.default)
 
-    val plainName = NameDesc.plain.copy(identifierLetter = Basic(_.isLetter), operatorLetter = Basic(Set(':')))
+    val plainName = NameDesc.plain.copy(identifierLetter = Basic(_.isLetter), operatorLetter = ':')
     val plainSym = SymbolDesc.plain.copy(hardKeywords = Set("keyword", "hard"), hardOperators = Set("+", "<", "<="))
 
     val plainSymbol = makeSymbol(plainName, plainSym)
-    val unicodeSymbol = makeSymbol(plainName.copy(identifierLetter = Unicode(Character.isAlphabetic)), plainSym)
+    val unicodeSymbol = makeSymbol(plainName.copy(identifierLetter = Character.isAlphabetic(_)), plainSym)
     val caseInsensitive = makeSymbol(plainName, plainSym.copy(caseSensitive = false))
-    val caseInsensitiveUni = makeSymbol(plainName.copy(identifierLetter = Unicode(Character.isAlphabetic)), plainSym.copy(caseSensitive = false))
+    val caseInsensitiveUni = makeSymbol(plainName.copy(identifierLetter = Character.isAlphabetic(_)), plainSym.copy(caseSensitive = false))
 
     def boolCases(p: Parsley[Unit])(tests: (String, Boolean, Position)*): Unit = cases(p, noEof = true)(tests.map { case (i, r, pos) => (i, if (r) Some(()) else None, pos) }: _*)
     def namedCases(sym: String => Parsley[Unit])(ktests: (String, Seq[(String, Boolean, Position)])*): Unit = {
