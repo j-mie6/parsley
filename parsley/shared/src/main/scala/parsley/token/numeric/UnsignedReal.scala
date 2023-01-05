@@ -66,16 +66,22 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInt
             case true => err.explainRealNoDoubleDroppedZero
         }
         val expDesc = desc.exponentDescForRadix(radix)
+        val endLabel = radix match {
+            case 10 => err.labelRealDecimalEnd
+            case 16 => err.labelRealHexadecimalEnd
+            case 8 => err.labelRealOctalEnd
+            case 2 => err.labelRealBinaryEnd
+        }
         val whole = radix match {
-            case 10 => generic.plainDecimal(desc, None)
-            case 16 => generic.plainHexadecimal(desc, None)
-            case 8 => generic.plainOctal(desc, None)
-            case 2 => generic.plainBinary(desc, None)
+            case 10 => generic.plainDecimal(desc, endLabel)
+            case 16 => generic.plainHexadecimal(desc, endLabel)
+            case 8 => generic.plainOctal(desc, endLabel)
+            case 2 => generic.plainBinary(desc, endLabel)
         }
         val f = (d: Char, x: BigDecimal) => x/radix + d.asDigit
         def broken(c: Char) = lift2(f, digit, (optional(c) *> digit).foldRight[BigDecimal](0)(f))
         val fractional = amend {
-            '.' *> {
+            ErrorConfig.label(err.labelRealDot.orElse(endLabel))('.') *> {
                 desc.literalBreakChar match {
                     case BreakCharDesc.NoBreakChar if desc.trailingDotAllowed     =>
                         if (!leadingDotAllowed) entrench(digit.foldRight[BigDecimal](0)(f))
@@ -91,11 +97,11 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInt
             case ExponentDesc.Supported(compulsory, exp, base, sign) =>
                 val expErr = new ErrorConfig {
                     override def pleaseDontValidateConfig: Boolean = true
-                    override def labelIntegerSignedDecimal(bits: Int): Option[String] = None
-                    override def labelIntegerBinaryEnd: Option[String] = None
+                    override def labelIntegerSignedDecimal(bits: Int): Option[String] = err.labelRealExponentEnd.orElse(endLabel)
+                    override def labelIntegerDecimalEnd: Option[String] = err.labelRealExponentEnd.orElse(endLabel)
                 }
                 val integer = new SignedInteger(desc.copy(positiveSign = sign), natural, expErr)
-                val exponent = oneOf(exp) *> integer.decimal32
+                val exponent = ErrorConfig.label(err.labelRealExponent.orElse(endLabel))(oneOf(exp)) *> integer.decimal32
                 if (compulsory) (exponent, exponent, base)
                 else (exponent, exponent <|> pure(0), base)
             // this can't fail for non-required, it has to be the identity exponent

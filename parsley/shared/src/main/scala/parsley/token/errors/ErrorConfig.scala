@@ -101,6 +101,8 @@ class ErrorConfig {
     def labelRealNumberEnd: Option[String] = None
 
     def labelRealDot = None
+    def labelRealExponent = None
+    def labelRealExponentEnd = None
 
     private [token] def labelDecimal(bits: Int, signed: Boolean): Option[String] = {
         if (signed) labelIntegerSignedDecimal(bits) else labelIntegerUnsignedDecimal(bits)

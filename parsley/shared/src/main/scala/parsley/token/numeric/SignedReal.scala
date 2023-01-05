@@ -13,11 +13,11 @@ import parsley.internal.deepembedding.singletons
 private [token] final class SignedReal(desc: NumericDesc, unsigned: Real, err: ErrorConfig) extends Real(err) {
     private val sign = new Parsley(new singletons.Sign[DoubleType.resultType](DoubleType, desc.positiveSign))
 
-    override lazy val _decimal: Parsley[BigDecimal] = attempt(sign <*> unsigned._decimal)
-    override lazy val _hexadecimal: Parsley[BigDecimal] = attempt(sign <*> unsigned._hexadecimal)
-    override lazy val _octal: Parsley[BigDecimal] = attempt(sign <*> unsigned._octal)
-    override lazy val _binary: Parsley[BigDecimal] = attempt(sign <*> unsigned._binary)
-    override lazy val _number: Parsley[BigDecimal] = attempt(sign <*> unsigned._number)
+    override lazy val _decimal: Parsley[BigDecimal] = attempt(sign <*> ErrorConfig.label(err.labelRealDecimalEnd)(unsigned._decimal))
+    override lazy val _hexadecimal: Parsley[BigDecimal] = attempt(sign <*> ErrorConfig.label(err.labelRealHexadecimalEnd)(unsigned._hexadecimal))
+    override lazy val _octal: Parsley[BigDecimal] = attempt(sign <*> ErrorConfig.label(err.labelRealOctalEnd)(unsigned._octal))
+    override lazy val _binary: Parsley[BigDecimal] = attempt(sign <*> ErrorConfig.label(err.labelRealBinaryEnd)(unsigned._binary))
+    override lazy val _number: Parsley[BigDecimal] = attempt(sign <*> ErrorConfig.label(err.labelRealNumberEnd)(unsigned._number))
 
     override def decimal: Parsley[BigDecimal] = ErrorConfig.label(err.labelRealDecimal)(_decimal)
     override def hexadecimal: Parsley[BigDecimal] = ErrorConfig.label(err.labelRealHexadecimal)(_hexadecimal)
