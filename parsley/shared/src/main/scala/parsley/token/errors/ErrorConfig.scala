@@ -1,7 +1,7 @@
 /* SPDX-FileCopyrightText: © 2022 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package parsley.token.errors // TODO: move out of this package?
+package parsley.token.errors
 
 import parsley.XCompat.unused
 
@@ -48,6 +48,8 @@ class ErrorConfig {
     }
 
     // numeric
+    def labelNumericBreakChar: Option[String] = None
+
     def labelIntegerUnsignedDecimal: Option[String] = labelIntegerUnsignedNumber
     def labelIntegerUnsignedHexadecimal: Option[String] = labelIntegerUnsignedNumber
     def labelIntegerUnsignedOctal: Option[String] = labelIntegerUnsignedNumber
@@ -75,6 +77,30 @@ class ErrorConfig {
     def labelIntegerOctalEnd: Option[String] = labelIntegerNumberEnd
     def labelIntegerBinaryEnd: Option[String] = labelIntegerNumberEnd
     def labelIntegerNumberEnd: Option[String] = None
+
+    def labelRealDecimal: Option[String] = labelRealNumber
+    def labelRealHexadecimal: Option[String] = labelRealNumber
+    def labelRealOctal: Option[String] = labelRealNumber
+    def labelRealBinary: Option[String] = labelRealNumber
+    def labelRealNumber: Option[String] = None
+    def labelRealFloatDecimal: Option[String] = labelRealDecimal
+    def labelRealFloatHexadecimal: Option[String] = labelRealHexadecimal
+    def labelRealFloatOctal: Option[String] = labelRealOctal
+    def labelRealFloatBinary: Option[String] = labelRealBinary
+    def labelRealFloatNumber: Option[String] = labelRealNumber
+    def labelRealDoubleDecimal: Option[String] = labelRealDecimal
+    def labelRealDoubleHexadecimal: Option[String] = labelRealHexadecimal
+    def labelRealDoubleOctal: Option[String] = labelRealOctal
+    def labelRealDoubleBinary: Option[String] = labelRealBinary
+    def labelRealDoubleNumber: Option[String] = labelRealNumber
+
+    def labelRealDecimalEnd: Option[String] = labelRealNumberEnd
+    def labelRealHexadecimalEnd: Option[String] = labelRealNumberEnd
+    def labelRealOctalEnd: Option[String] = labelRealNumberEnd
+    def labelRealBinaryEnd: Option[String] = labelRealNumberEnd
+    def labelRealNumberEnd: Option[String] = None
+
+    def labelRealDot = None
 
     private [token] def labelDecimal(bits: Int, signed: Boolean): Option[String] = {
         if (signed) labelIntegerSignedDecimal(bits) else labelIntegerUnsignedDecimal(bits)

@@ -24,7 +24,8 @@ private [token] class Generic(err: ErrorConfig) {
     }
     private def ofRadix(radix: Int, startDigit: Parsley[Char], digit: Parsley[Char], breakChar: Char, label: Option[String]): Parsley[BigInt] = {
         val pf = pure((x: BigInt, d: Char) => x*radix + d.asDigit)
-        val trailingDigit = ErrorConfig.label(label)(optional(ErrorConfig.explain(err.explainBreakChar)(breakChar)) *> digit)
+        val trailingDigit =
+            ErrorConfig.label(label)(optional(ErrorConfig.explain(err.explainBreakChar)(ErrorConfig.label(err.labelNumericBreakChar)(breakChar))) *> digit)
         parsley.expr.infix.secretLeft1(startDigit.map(d => BigInt(d.asDigit)), trailingDigit , pf)
     }
 

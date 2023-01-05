@@ -14,11 +14,11 @@ import parsley.token.descriptions.numeric.{BreakCharDesc, ExponentDesc, NumericD
 import parsley.token.errors.ErrorConfig
 
 private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInteger, err: ErrorConfig, generic: Generic) extends Real(err) {
-    override lazy val decimal: Parsley[BigDecimal] = attempt(ofRadix(10, digit))
-    override lazy val hexadecimal: Parsley[BigDecimal] = attempt('0' *> noZeroHexadecimal)
-    override lazy val octal: Parsley[BigDecimal] = attempt('0' *> noZeroOctal)
-    override lazy val binary: Parsley[BigDecimal] = attempt('0' *> noZeroBinary)
-    override lazy val number: Parsley[BigDecimal] = {
+    override lazy val _decimal: Parsley[BigDecimal] = attempt(ofRadix(10, digit))
+    override lazy val _hexadecimal: Parsley[BigDecimal] = attempt('0' *> noZeroHexadecimal)
+    override lazy val _octal: Parsley[BigDecimal] = attempt('0' *> noZeroOctal)
+    override lazy val _binary: Parsley[BigDecimal] = attempt('0' *> noZeroBinary)
+    override lazy val _number: Parsley[BigDecimal] = {
         if (desc.decimalRealsOnly) decimal
         else {
             def addHex(p: Parsley[BigDecimal]) = {
@@ -40,6 +40,12 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInt
             attempt(zeroLead <|> decimal)
         }
     }
+
+    override def decimal: Parsley[BigDecimal] = ErrorConfig.label(err.labelRealDecimal)(_decimal)
+    override def hexadecimal: Parsley[BigDecimal] = ErrorConfig.label(err.labelRealHexadecimal)(_hexadecimal)
+    override def octal: Parsley[BigDecimal] = ErrorConfig.label(err.labelRealOctal)(_octal)
+    override def binary: Parsley[BigDecimal] = ErrorConfig.label(err.labelRealBinary)(_binary)
+    override def number: Parsley[BigDecimal] = ErrorConfig.label(err.labelRealNumber)(_number)
 
     private def when(b: Boolean, p: Parsley[_]): Parsley[_] = if (b) p else unit
 
