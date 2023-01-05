@@ -71,19 +71,19 @@ class ErrorConfig {
     def labelRealExponent = None
     def labelRealExponentEnd = None
 
-    private [token] def labelDecimal(bits: Int, signed: Boolean): Option[String] = {
+    private [token] final def labelDecimal(bits: Int, signed: Boolean): Option[String] = {
         if (signed) labelIntegerSignedDecimal(bits) else labelIntegerUnsignedDecimal(bits)
     }
-    private [token] def labelHexadecimal(bits: Int, signed: Boolean): Option[String] = {
+    private [token] final def labelHexadecimal(bits: Int, signed: Boolean): Option[String] = {
         if (signed) labelIntegerSignedHexadecimal(bits) else labelIntegerUnsignedHexadecimal(bits)
     }
-    private [token] def labelOctal(bits: Int, signed: Boolean): Option[String] = {
+    private [token] final def labelOctal(bits: Int, signed: Boolean): Option[String] = {
         if (signed) labelIntegerSignedOctal(bits) else labelIntegerUnsignedOctal(bits)
     }
-    private [token] def labelBinary(bits: Int, signed: Boolean): Option[String] = {
+    private [token] final def labelBinary(bits: Int, signed: Boolean): Option[String] = {
         if (signed) labelIntegerSignedBinary(bits) else labelIntegerUnsignedBinary(bits)
     }
-    private [token] def labelNumber(bits: Int, signed: Boolean): Option[String] = {
+    private [token] final def labelNumber(bits: Int, signed: Boolean): Option[String] = {
         if (signed) labelIntegerSignedNumber(bits) else labelIntegerUnsignedNumber(bits)
     }
 
