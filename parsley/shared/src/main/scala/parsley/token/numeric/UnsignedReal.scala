@@ -96,7 +96,6 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInt
         val (requiredExponent, exponent, base) = expDesc match {
             case ExponentDesc.Supported(compulsory, exp, base, sign) =>
                 val expErr = new ErrorConfig {
-                    override def pleaseDontValidateConfig: Boolean = true
                     override def labelIntegerSignedDecimal(bits: Int): Option[String] = err.labelRealExponentEnd.orElse(endLabel)
                     override def labelIntegerDecimalEnd: Option[String] = err.labelRealExponentEnd.orElse(endLabel)
                 }

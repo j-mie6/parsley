@@ -14,39 +14,6 @@ import parsley.position
   */
 // TODO: We could make these groupings into merged ADTs? Must be careful with binary-lock-in though...
 class ErrorConfig {
-    // Right, I give up. Some of the interactions between these configurations are absurd, so I need
-    // to guard against stuff that's just plain odd:
-    def pleaseDontValidateConfig = false
-    private [token] final def validateConfig(): Unit = {
-        val bits = List(8, 16, 32, 64)
-        def badEnd(ty: String) = s"cannot specify the end of a $ty integer literal without specifying the start or unsigned and signed $ty literals"
-        require(labelIntegerBinaryEnd.isEmpty ||
-                    (labelIntegerSignedBinary ::
-                     labelIntegerUnsignedBinary ::
-                     bits.map(labelIntegerSignedBinary) :::
-                     bits.map(labelIntegerUnsignedBinary)).forall(_.nonEmpty), badEnd("binary"))
-        require(labelIntegerDecimalEnd.isEmpty ||
-                    (labelIntegerSignedDecimal ::
-                     labelIntegerUnsignedDecimal ::
-                     bits.map(labelIntegerSignedDecimal) :::
-                     bits.map(labelIntegerUnsignedDecimal)).forall(_.nonEmpty), badEnd("decimal"))
-        require(labelIntegerHexadecimalEnd.isEmpty ||
-                    (labelIntegerSignedHexadecimal ::
-                     labelIntegerUnsignedHexadecimal ::
-                     bits.map(labelIntegerSignedHexadecimal) :::
-                     bits.map(labelIntegerUnsignedHexadecimal)).forall(_.nonEmpty), badEnd("hexadecimal"))
-        require(labelIntegerOctalEnd.isEmpty ||
-                    (labelIntegerSignedOctal ::
-                     labelIntegerUnsignedOctal ::
-                     bits.map(labelIntegerSignedOctal) :::
-                     bits.map(labelIntegerUnsignedOctal)).forall(_.nonEmpty), badEnd("octal"))
-        require(labelIntegerNumberEnd.isEmpty ||
-                    (labelIntegerSignedNumber ::
-                     labelIntegerUnsignedNumber ::
-                     bits.map(labelIntegerSignedNumber) :::
-                     bits.map(labelIntegerUnsignedNumber)).forall(_.nonEmpty), badEnd("number"))
-    }
-
     // numeric
     def labelNumericBreakChar: Option[String] = None
 
