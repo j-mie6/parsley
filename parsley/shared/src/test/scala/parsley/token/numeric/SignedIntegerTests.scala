@@ -12,8 +12,9 @@ import parsley.token.errors.ErrorConfig
 import org.scalactic.source.Position
 
 class SignedIntegerTests extends ParsleyTest {
-    val generic = new Generic(ErrorConfig.default)
-    private def makeInteger(desc: NumericDesc) = new LexemeInteger(new SignedInteger(desc, new UnsignedInteger(desc, ErrorConfig.default, generic), ErrorConfig.default), LexemeImpl.empty)
+    val errConfig = new ErrorConfig
+    val generic = new Generic(errConfig)
+    private def makeInteger(desc: NumericDesc) = new LexemeInteger(new SignedInteger(desc, new UnsignedInteger(desc, errConfig, generic), errConfig), LexemeImpl.empty)
 
     val plain = NumericDesc.plain.copy(integerNumbersCanBeBinary = true, literalBreakChar = BreakCharDesc.Supported('_', false))
     val optionalPlus = makeInteger(plain.copy(positiveSign = PlusSignPresence.Optional))

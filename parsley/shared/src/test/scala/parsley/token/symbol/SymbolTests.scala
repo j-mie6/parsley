@@ -16,7 +16,8 @@ import parsley.character.{spaces, string}
 import org.scalactic.source.Position
 
 class SymbolTests extends ParsleyTest {
-    def makeSymbol(nameDesc: NameDesc, symDesc: SymbolDesc): Symbol = new LexemeSymbol(new ConcreteSymbol(nameDesc, symDesc, ErrorConfig.default), spaces, ErrorConfig.default)
+    val errConfig = new ErrorConfig
+    def makeSymbol(nameDesc: NameDesc, symDesc: SymbolDesc): Symbol = new LexemeSymbol(new ConcreteSymbol(nameDesc, symDesc, errConfig), spaces, errConfig)
 
     val plainName = NameDesc.plain.copy(identifierLetter = Basic(_.isLetter), operatorLetter = ':')
     val plainSym = SymbolDesc.plain.copy(hardKeywords = Set("keyword", "hard"), hardOperators = Set("+", "<", "<="))

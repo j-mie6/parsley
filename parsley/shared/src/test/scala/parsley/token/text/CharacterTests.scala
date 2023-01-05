@@ -13,8 +13,9 @@ import parsley.token.predicate._
 import org.scalactic.source.Position
 
 class CharacterTests extends ParsleyTest {
-    val generic = new parsley.token.numeric.Generic(ErrorConfig.default)
-    def makeChar(desc: TextDesc): Character = new LexemeCharacter(new ConcreteCharacter(desc, new Escape(desc.escapeSequences, ErrorConfig.default, generic), ErrorConfig.default), LexemeImpl.empty)
+    val errConfig = new ErrorConfig
+    val generic = new parsley.token.numeric.Generic(errConfig)
+    def makeChar(desc: TextDesc): Character = new LexemeCharacter(new ConcreteCharacter(desc, new Escape(desc.escapeSequences, errConfig, generic), errConfig), LexemeImpl.empty)
 
     def unicodeCases(char: Character)(tests: (SString, Option[Int], Position)*): Unit = cases(char.fullUtf16)(tests: _*)
     def bmpCases(char: Character)(tests: (SString, Option[Char], Position)*): Unit = cases(char.basicMultilingualPlane)(tests: _*)

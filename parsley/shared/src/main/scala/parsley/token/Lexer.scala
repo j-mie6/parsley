@@ -232,7 +232,7 @@ class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
       *             rules of the grammar/language being parsed.
       * @since 4.0.0
       */
-    def this(desc: descriptions.LexicalDesc) = this(desc, errors.ErrorConfig.default)
+    def this(desc: descriptions.LexicalDesc) = this(desc, new errors.ErrorConfig)
 
     private val generic = new numeric.Generic(errConfig)
 

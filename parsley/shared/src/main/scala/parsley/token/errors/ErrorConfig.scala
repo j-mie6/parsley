@@ -208,15 +208,11 @@ class ErrorConfig {
     def labelSymbolEndOfOperator(symbol: String): String = s"end of $symbol"
 
     // space
-    //def labelSpaceComment: Option[String] = Some("comment")
     def labelSpaceEndOfLineComment: Option[String] = Some("end of comment")
     def labelSpaceEndOfMultiComment: Option[String] = Some("end of comment")
-    // TODO: explainSpaceUnclosedComment?
 }
 
-object ErrorConfig {
-    val default = new ErrorConfig
-
+private [token] object ErrorConfig {
     private [token] def label[A](label: Option[String])(p: Parsley[A]): Parsley[A] = label match {
         case None => p
         case Some(name) => p.label(name)
