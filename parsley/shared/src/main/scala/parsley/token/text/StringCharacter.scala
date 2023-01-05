@@ -45,11 +45,13 @@ private [token] class EscapableCharacter(desc: EscapeDesc, escapes: Escape, spac
     override def apply(isLetter: CharPredicate): Parsley[Option[Int]] = {
         isLetter match {
             case Basic(isLetter) => ErrorConfig.label(err.labelStringCharacter)(
-                stringEscape <|> ErrorConfig.label(err.labelGraphicCharacter)(satisfy(c => isLetter(c) && c != desc.escBegin).map(c => Some(c.toInt)))
+                stringEscape <|> ErrorConfig.explain(err.labelStringCharacter.flatMap(_ => err.explainGraphicCharacter))(
+                                     ErrorConfig.label(err.labelGraphicCharacter)(satisfy(c => isLetter(c) && c != desc.escBegin).map(c => Some(c.toInt))))
                              <|> _checkBadChar(err)
             )
             case Unicode(isLetter) => ErrorConfig.label(err.labelStringCharacter)(
-                stringEscape <|> ErrorConfig.label(err.labelGraphicCharacter)(satisfyUtf16(c => isLetter(c) && c != desc.escBegin.toInt).map(Some(_)))
+                stringEscape <|> ErrorConfig.explain(err.labelStringCharacter.flatMap(_ => err.explainGraphicCharacter))(
+                                     ErrorConfig.label(err.labelGraphicCharacter)(satisfyUtf16(c => isLetter(c) && c != desc.escBegin.toInt).map(Some(_))))
                              <|> _checkBadChar(err)
             )
             case NotRequired => stringEscape

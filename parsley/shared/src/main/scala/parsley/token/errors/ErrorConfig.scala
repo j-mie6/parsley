@@ -162,6 +162,7 @@ class ErrorConfig {
     def explainCharNonBasicMultilingualPlane: Option[Int => String] = Some(_ => "non-BMP character")
     def explainCharNonAscii: Option[Int => String] = Some(_ => "non-ascii character")
     def explainCharNonLatin1: Option[Int => String] = Some(_ => "non-latin1 character")
+    def explainGraphicCharacter: Option[String] = None
 
     def explainEscapeInvalid: Option[String] =
         Some("invalid escape sequence")

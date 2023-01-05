@@ -19,7 +19,7 @@ private [token] final class ConcreteCharacter(desc: TextDesc, escapes: Escape, e
         val _checkBadChar = err.verifiedCharBadCharsUsedInLiteral.foldLeft(empty) {
             case (w, (c, reason)) => w <|> charUtf16(c).unexpected(reason)
         }
-        escapes.escapeChar <|> ErrorConfig.label(err.labelGraphicCharacter)(graphicLetter) <|> _checkBadChar
+        escapes.escapeChar <|> ErrorConfig.label(err.explainGraphicCharacter)(ErrorConfig.label(err.labelGraphicCharacter)(graphicLetter)) <|> _checkBadChar
     }
     private def charLiteral[A](letter: Parsley[A], end: Option[ScalaString]) = quote *> letter <* ErrorConfig.label(end)(quote)
 
