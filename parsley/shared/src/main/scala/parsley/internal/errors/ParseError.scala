@@ -22,14 +22,14 @@ private [internal] sealed trait ParseError {
 }
 // The reasons here are lightweight, two errors can merge their messages, but messages do not get converted to hints
 private [internal] case class TrivialError(offset: Int, line: Int, col: Int,
-                                           unexpected: Option[UnexpectItem], expecteds: Set[ExpectItem], reasons: Set[String], lexicalError: Boolean)
+                                           unexpected: Either[Int, UnexpectItem], expecteds: Set[ExpectItem], reasons: Set[String], lexicalError: Boolean)
     extends ParseError {
     def format(line: String, beforeLines: List[String], afterLines: List[String], caret: Int)(implicit builder: ErrorBuilder[_]): builder.ErrorInfoLines = {
         val unexpectedTok = unexpected.map(_.formatUnexpect(lexicalError))
         // FIXME: This should probably use the number of codepoints and not length
-        val caretSize = unexpectedTok.fold(1)(_._2.toCaretLength(this.col, line.length, afterLines.map(_.length)))
+        val caretSize = unexpectedTok.fold(identity[Int], _._2.toCaretLength(this.col, line.length, afterLines.map(_.length)))
         builder.vanillaError(
-            builder.unexpected(unexpectedTok.map(_._1)),
+            builder.unexpected(unexpectedTok.toOption.map(_._1)),
             builder.expected(builder.combineExpectedItems(expecteds.map(_.formatExpect))),
             builder.combineMessages(reasons.map(builder.reason(_)).toSeq),
             builder.lineInfo(line, beforeLines, afterLines, caret, caretSize))
