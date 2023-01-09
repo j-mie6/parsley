@@ -110,28 +110,28 @@ private [errors] object TrivialErrorBuilder {
         protected [TrivialErrorBuilder] def pickRaw(other: Raw): BuilderUnexpectItem
         protected [TrivialErrorBuilder] def pickOther(other: Other): Other
         protected [TrivialErrorBuilder] def pickNoItem(other: NoItem): BuilderUnexpectItem
-        def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Option[UnexpectItem]
+        def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Either[Int, UnexpectItem]
     }
     private [TrivialErrorBuilder] final class Raw(val size: Int) extends BuilderUnexpectItem {
         final def pickHigher(other: BuilderUnexpectItem): BuilderUnexpectItem = other.pickRaw(this)
         final override def pickRaw(other: Raw): Raw = if (this.size > other.size) this else other
         final override def pickOther(other: Other): Other = other
         final override def pickNoItem(other: NoItem): Raw = this
-        def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Option[UnexpectItem] = Some(builder(offset, size))
+        def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Either[Int, UnexpectItem] = Right(builder(offset, size))
     }
     private [TrivialErrorBuilder] final class Other(val underlying: UnexpectItem) extends BuilderUnexpectItem {
         final def pickHigher(other: BuilderUnexpectItem): BuilderUnexpectItem = other.pickOther(this)
         final override def pickRaw(other: Raw): Other = this
         final override def pickOther(other: Other): Other = if (this.underlying.higherPriority(other.underlying)) this else other
         final override def pickNoItem(other: NoItem): Other = this
-        def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Option[UnexpectItem] = Some(underlying)
+        def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Either[Int, UnexpectItem] = Right(underlying)
     }
     private [TrivialErrorBuilder] class NoItem(val width: Int) extends BuilderUnexpectItem {
         final def pickHigher(other: BuilderUnexpectItem): BuilderUnexpectItem = other.pickNoItem(this)
         final override def pickRaw(other: Raw): Raw = other
         final override def pickOther(other: Other): Other = other
         final override def pickNoItem(other: NoItem): NoItem = if (this.width > other.width) this else other
-        def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Option[UnexpectItem] = None
+        def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Either[Int, UnexpectItem] = Left(width)
     }
 }
 
