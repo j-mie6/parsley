@@ -5,7 +5,7 @@ package parsley.token.numeric
 
 import parsley.Parsley
 import parsley.token.Lexeme
-import parsley.token.errors.ErrorConfig
+import parsley.token.errors.{ErrorConfig, LabelConfig}
 
 private [token] final class LexemeReal(real: Real, lexeme: Lexeme, err: ErrorConfig) extends Real(err) {
     override lazy val decimal: Parsley[BigDecimal] = lexeme(real.decimal)
@@ -20,12 +20,12 @@ private [token] final class LexemeReal(real: Real, lexeme: Lexeme, err: ErrorCon
     override protected [numeric] def _binary: Parsley[BigDecimal] = real.binary
     override protected [numeric] def _number: Parsley[BigDecimal] = real.number
 
-    override protected [numeric] def ensureFloat(number: Parsley[BigDecimal], label: Option[String]): Parsley[Float] =
+    override protected [numeric] def ensureFloat(number: Parsley[BigDecimal], label: LabelConfig): Parsley[Float] =
         lexeme(super.ensureFloat(number,  label))
-    override protected [numeric] def ensureDouble(number: Parsley[BigDecimal], label: Option[String]): Parsley[Double] =
+    override protected [numeric] def ensureDouble(number: Parsley[BigDecimal], label: LabelConfig): Parsley[Double] =
         lexeme(super.ensureDouble(number,  label))
-    override protected [numeric] def ensureExactFloat(number: Parsley[BigDecimal], label: Option[String]): Parsley[Float] =
+    override protected [numeric] def ensureExactFloat(number: Parsley[BigDecimal], label: LabelConfig): Parsley[Float] =
         lexeme(super.ensureExactFloat(number,  label))
-    override protected [numeric] def ensureExactDouble(number: Parsley[BigDecimal], label: Option[String]): Parsley[Double] =
+    override protected [numeric] def ensureExactDouble(number: Parsley[BigDecimal], label: LabelConfig): Parsley[Double] =
         lexeme(super.ensureExactDouble(number,  label))
 }

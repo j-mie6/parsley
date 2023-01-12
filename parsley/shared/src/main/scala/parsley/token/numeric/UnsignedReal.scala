@@ -11,7 +11,7 @@ import parsley.implicits.character.charLift
 import parsley.lift.lift2
 import parsley.registers.Reg
 import parsley.token.descriptions.numeric.{BreakCharDesc, ExponentDesc, NumericDesc}
-import parsley.token.errors.ErrorConfig
+import parsley.token.errors.{ErrorConfig, LabelConfig}
 
 private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInteger, err: ErrorConfig, generic: Generic) extends Real(err) {
     override lazy val _decimal: Parsley[BigDecimal] = attempt(ofRadix(10, digit, err.labelRealDecimalEnd))
@@ -49,7 +49,7 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInt
 
     private def when(b: Boolean, p: Parsley[_]): Parsley[_] = if (b) p else unit
 
-    def leadingBreakChar(label: Option[String]) = desc.literalBreakChar match {
+    def leadingBreakChar(label: LabelConfig) = desc.literalBreakChar match {
         case BreakCharDesc.NoBreakChar => unit
         case BreakCharDesc.Supported(breakChar, allowedAfterNonDecimalPrefix) =>
             when(allowedAfterNonDecimalPrefix,
@@ -70,10 +70,10 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInt
         ofRadix(2, bit, err.labelRealBinaryEnd)
 
     // could allow integers to be parsed here according to configuration, the intOrFloat captures that case anyway
-    private def ofRadix(radix: Int, digit: Parsley[Char], endLabel: Option[String]): Parsley[BigDecimal] = {
+    private def ofRadix(radix: Int, digit: Parsley[Char], endLabel: LabelConfig): Parsley[BigDecimal] = {
         ofRadix(radix, digit, desc.leadingDotAllowed, endLabel)
     }
-    private def ofRadix(radix: Int, digit: Parsley[Char], leadingDotAllowed: Boolean, endLabel: Option[String]): Parsley[BigDecimal] = {
+    private def ofRadix(radix: Int, digit: Parsley[Char], leadingDotAllowed: Boolean, endLabel: LabelConfig): Parsley[BigDecimal] = {
         lazy val leadingHappened = Reg.make[Boolean]
         lazy val _noDoubleDroppedZero = leadingHappened.get.filterOut {
             case true => err.explainRealNoDoubleDroppedZero
@@ -107,8 +107,8 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInt
         val (requiredExponent, exponent, base) = expDesc match {
             case ExponentDesc.Supported(compulsory, exp, base, sign) =>
                 val expErr = new ErrorConfig {
-                    override def labelIntegerSignedDecimal(bits: Int): Option[String] = err.labelRealExponentEnd.orElse(endLabel)
-                    override def labelIntegerDecimalEnd: Option[String] = err.labelRealExponentEnd.orElse(endLabel)
+                    override def labelIntegerSignedDecimal(bits: Int): LabelConfig = err.labelRealExponentEnd.orElse(endLabel)
+                    override def labelIntegerDecimalEnd: LabelConfig = err.labelRealExponentEnd.orElse(endLabel)
                 }
                 val integer = new SignedInteger(desc.copy(positiveSign = sign), natural, expErr)
                 val exponent = ErrorConfig.label(err.labelRealExponent.orElse(endLabel))(oneOf(exp)) *> integer.decimal32

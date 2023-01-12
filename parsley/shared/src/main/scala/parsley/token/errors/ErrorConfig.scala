@@ -15,75 +15,75 @@ import parsley.position
 // TODO: We could make these groupings into merged ADTs? Must be careful with binary-lock-in though...
 class ErrorConfig {
     // numeric
-    def labelNumericBreakChar: Option[String] = None
+    def labelNumericBreakChar: LabelConfig = NotConfigured
 
-    def labelIntegerUnsignedDecimal: Option[String] = labelIntegerUnsignedNumber
-    def labelIntegerUnsignedHexadecimal: Option[String] = labelIntegerUnsignedNumber
-    def labelIntegerUnsignedOctal: Option[String] = labelIntegerUnsignedNumber
-    def labelIntegerUnsignedBinary: Option[String] = labelIntegerUnsignedNumber
-    def labelIntegerUnsignedNumber: Option[String] = None
-    def labelIntegerUnsignedDecimal(@unused bits: Int): Option[String] = labelIntegerUnsignedDecimal
-    def labelIntegerUnsignedHexadecimal(@unused bits: Int): Option[String] = labelIntegerUnsignedHexadecimal
-    def labelIntegerUnsignedOctal(@unused bits: Int): Option[String] = labelIntegerUnsignedOctal
-    def labelIntegerUnsignedBinary(@unused bits: Int): Option[String] = labelIntegerUnsignedBinary
-    def labelIntegerUnsignedNumber(@unused bits: Int): Option[String] = labelIntegerUnsignedNumber
+    def labelIntegerUnsignedDecimal: LabelConfig = labelIntegerUnsignedNumber
+    def labelIntegerUnsignedHexadecimal: LabelConfig = labelIntegerUnsignedNumber
+    def labelIntegerUnsignedOctal: LabelConfig = labelIntegerUnsignedNumber
+    def labelIntegerUnsignedBinary: LabelConfig = labelIntegerUnsignedNumber
+    def labelIntegerUnsignedNumber: LabelConfig = NotConfigured
+    def labelIntegerUnsignedDecimal(@unused bits: Int): LabelConfig = labelIntegerUnsignedDecimal
+    def labelIntegerUnsignedHexadecimal(@unused bits: Int): LabelConfig = labelIntegerUnsignedHexadecimal
+    def labelIntegerUnsignedOctal(@unused bits: Int): LabelConfig = labelIntegerUnsignedOctal
+    def labelIntegerUnsignedBinary(@unused bits: Int): LabelConfig = labelIntegerUnsignedBinary
+    def labelIntegerUnsignedNumber(@unused bits: Int): LabelConfig = labelIntegerUnsignedNumber
 
-    def labelIntegerSignedDecimal: Option[String] = labelIntegerSignedNumber
-    def labelIntegerSignedHexadecimal: Option[String] = labelIntegerSignedNumber
-    def labelIntegerSignedOctal: Option[String] = labelIntegerSignedNumber
-    def labelIntegerSignedBinary: Option[String] = labelIntegerSignedNumber
-    def labelIntegerSignedNumber: Option[String] = None
-    def labelIntegerSignedDecimal(@unused bits: Int): Option[String] = labelIntegerSignedDecimal
-    def labelIntegerSignedHexadecimal(@unused bits: Int): Option[String] = labelIntegerSignedHexadecimal
-    def labelIntegerSignedOctal(@unused bits: Int): Option[String] = labelIntegerSignedOctal
-    def labelIntegerSignedBinary(@unused bits: Int): Option[String] = labelIntegerSignedBinary
-    def labelIntegerSignedNumber(@unused bits: Int): Option[String] = labelIntegerSignedNumber
+    def labelIntegerSignedDecimal: LabelConfig = labelIntegerSignedNumber
+    def labelIntegerSignedHexadecimal: LabelConfig = labelIntegerSignedNumber
+    def labelIntegerSignedOctal: LabelConfig = labelIntegerSignedNumber
+    def labelIntegerSignedBinary: LabelConfig = labelIntegerSignedNumber
+    def labelIntegerSignedNumber: LabelConfig = NotConfigured
+    def labelIntegerSignedDecimal(@unused bits: Int): LabelConfig = labelIntegerSignedDecimal
+    def labelIntegerSignedHexadecimal(@unused bits: Int): LabelConfig = labelIntegerSignedHexadecimal
+    def labelIntegerSignedOctal(@unused bits: Int): LabelConfig = labelIntegerSignedOctal
+    def labelIntegerSignedBinary(@unused bits: Int): LabelConfig = labelIntegerSignedBinary
+    def labelIntegerSignedNumber(@unused bits: Int): LabelConfig = labelIntegerSignedNumber
 
-    def labelIntegerDecimalEnd: Option[String] = labelIntegerNumberEnd
-    def labelIntegerHexadecimalEnd: Option[String] = labelIntegerNumberEnd
-    def labelIntegerOctalEnd: Option[String] = labelIntegerNumberEnd
-    def labelIntegerBinaryEnd: Option[String] = labelIntegerNumberEnd
-    def labelIntegerNumberEnd: Option[String] = None
+    def labelIntegerDecimalEnd: LabelConfig = labelIntegerNumberEnd
+    def labelIntegerHexadecimalEnd: LabelConfig = labelIntegerNumberEnd
+    def labelIntegerOctalEnd: LabelConfig = labelIntegerNumberEnd
+    def labelIntegerBinaryEnd: LabelConfig = labelIntegerNumberEnd
+    def labelIntegerNumberEnd: LabelConfig = NotConfigured
 
-    def labelRealDecimal: Option[String] = labelRealNumber
-    def labelRealHexadecimal: Option[String] = labelRealNumber
-    def labelRealOctal: Option[String] = labelRealNumber
-    def labelRealBinary: Option[String] = labelRealNumber
-    def labelRealNumber: Option[String] = None
-    def labelRealFloatDecimal: Option[String] = labelRealDecimal
-    def labelRealFloatHexadecimal: Option[String] = labelRealHexadecimal
-    def labelRealFloatOctal: Option[String] = labelRealOctal
-    def labelRealFloatBinary: Option[String] = labelRealBinary
-    def labelRealFloatNumber: Option[String] = labelRealNumber
-    def labelRealDoubleDecimal: Option[String] = labelRealDecimal
-    def labelRealDoubleHexadecimal: Option[String] = labelRealHexadecimal
-    def labelRealDoubleOctal: Option[String] = labelRealOctal
-    def labelRealDoubleBinary: Option[String] = labelRealBinary
-    def labelRealDoubleNumber: Option[String] = labelRealNumber
+    def labelRealDecimal: LabelConfig = labelRealNumber
+    def labelRealHexadecimal: LabelConfig = labelRealNumber
+    def labelRealOctal: LabelConfig = labelRealNumber
+    def labelRealBinary: LabelConfig = labelRealNumber
+    def labelRealNumber: LabelConfig = NotConfigured
+    def labelRealFloatDecimal: LabelConfig = labelRealDecimal
+    def labelRealFloatHexadecimal: LabelConfig = labelRealHexadecimal
+    def labelRealFloatOctal: LabelConfig = labelRealOctal
+    def labelRealFloatBinary: LabelConfig = labelRealBinary
+    def labelRealFloatNumber: LabelConfig = labelRealNumber
+    def labelRealDoubleDecimal: LabelConfig = labelRealDecimal
+    def labelRealDoubleHexadecimal: LabelConfig = labelRealHexadecimal
+    def labelRealDoubleOctal: LabelConfig = labelRealOctal
+    def labelRealDoubleBinary: LabelConfig = labelRealBinary
+    def labelRealDoubleNumber: LabelConfig = labelRealNumber
 
-    def labelRealDecimalEnd: Option[String] = labelRealNumberEnd
-    def labelRealHexadecimalEnd: Option[String] = labelRealNumberEnd
-    def labelRealOctalEnd: Option[String] = labelRealNumberEnd
-    def labelRealBinaryEnd: Option[String] = labelRealNumberEnd
-    def labelRealNumberEnd: Option[String] = None
+    def labelRealDecimalEnd: LabelConfig = labelRealNumberEnd
+    def labelRealHexadecimalEnd: LabelConfig = labelRealNumberEnd
+    def labelRealOctalEnd: LabelConfig = labelRealNumberEnd
+    def labelRealBinaryEnd: LabelConfig = labelRealNumberEnd
+    def labelRealNumberEnd: LabelConfig = NotConfigured
 
-    def labelRealDot = None
-    def labelRealExponent = None
-    def labelRealExponentEnd = None
+    def labelRealDot: LabelConfig = NotConfigured
+    def labelRealExponent: LabelConfig = NotConfigured
+    def labelRealExponentEnd: LabelConfig = NotConfigured
 
-    private [token] final def labelDecimal(bits: Int, signed: Boolean): Option[String] = {
+    private [token] final def labelDecimal(bits: Int, signed: Boolean): LabelConfig = {
         if (signed) labelIntegerSignedDecimal(bits) else labelIntegerUnsignedDecimal(bits)
     }
-    private [token] final def labelHexadecimal(bits: Int, signed: Boolean): Option[String] = {
+    private [token] final def labelHexadecimal(bits: Int, signed: Boolean): LabelConfig = {
         if (signed) labelIntegerSignedHexadecimal(bits) else labelIntegerUnsignedHexadecimal(bits)
     }
-    private [token] final def labelOctal(bits: Int, signed: Boolean): Option[String] = {
+    private [token] final def labelOctal(bits: Int, signed: Boolean): LabelConfig = {
         if (signed) labelIntegerSignedOctal(bits) else labelIntegerUnsignedOctal(bits)
     }
-    private [token] final def labelBinary(bits: Int, signed: Boolean): Option[String] = {
+    private [token] final def labelBinary(bits: Int, signed: Boolean): LabelConfig = {
         if (signed) labelIntegerSignedBinary(bits) else labelIntegerUnsignedBinary(bits)
     }
-    private [token] final def labelNumber(bits: Int, signed: Boolean): Option[String] = {
+    private [token] final def labelNumber(bits: Int, signed: Boolean): LabelConfig = {
         if (signed) labelIntegerSignedNumber(bits) else labelIntegerUnsignedNumber(bits)
     }
 
@@ -127,33 +127,33 @@ class ErrorConfig {
     def unexpectedNameIllFormedOperator: Option[String => String] = Some(v => s"operator $v")
 
     // text
-    def labelCharAscii: Option[String] = None
-    def labelCharLatin1: Option[String] = None
-    def labelCharBasicMultilingualPlane: Option[String] = None
-    def labelCharUtf16: Option[String] = None
+    def labelCharAscii: LabelConfig = NotConfigured
+    def labelCharLatin1: LabelConfig = NotConfigured
+    def labelCharBasicMultilingualPlane: LabelConfig = NotConfigured
+    def labelCharUtf16: LabelConfig = NotConfigured
 
-    def labelCharAsciiEnd: Option[String] = None
-    def labelCharLatin1End: Option[String] = None
-    def labelCharBasicMultilingualPlaneEnd: Option[String] = None
-    def labelCharUtf16End: Option[String] = None
+    def labelCharAsciiEnd: LabelConfig = NotConfigured
+    def labelCharLatin1End: LabelConfig = NotConfigured
+    def labelCharBasicMultilingualPlaneEnd: LabelConfig = NotConfigured
+    def labelCharUtf16End: LabelConfig = NotConfigured
 
-    def labelStringAscii(multi: Boolean, raw: Boolean): Option[String] = None
-    def labelStringLatin1(multi: Boolean, raw: Boolean): Option[String] = None
-    def labelStringUtf16(multi: Boolean, raw: Boolean): Option[String] = None
+    def labelStringAscii(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
+    def labelStringLatin1(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
+    def labelStringUtf16(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
 
-    def labelStringAsciiEnd(multi: Boolean, raw: Boolean): Option[String] = None
-    def labelStringLatin1End(multi: Boolean, raw: Boolean): Option[String] = None
-    def labelStringUtf16End(multi: Boolean, raw: Boolean): Option[String] = None
+    def labelStringAsciiEnd(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
+    def labelStringLatin1End(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
+    def labelStringUtf16End(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
 
-    def labelStringCharacter: Option[String] = Some("string character")
-    def labelGraphicCharacter: Option[String] = Some("graphic character")
-    def labelEscapeSequence: Option[String] = Some("escape sequence")
-    def labelEscapeNumeric(radix: Int): Option[String] = None
-    def labelEscapeNumericEnd(radix: Int): Option[String] = None
-    def labelEscapeEnd: Option[String] = Some("end of escape sequence")
-    def labelStringEscapeEmpty: Option[String] = None
-    def labelStringEscapeGap: Option[String] = Some("string gap")
-    def labelStringEscapeGapEnd: Option[String] = Some("end of string gap")
+    def labelStringCharacter: LabelConfig = Label("string character")
+    def labelGraphicCharacter: LabelConfig = Label("graphic character")
+    def labelEscapeSequence: LabelConfig = Label("escape sequence")
+    def labelEscapeNumeric(radix: Int): LabelConfig = NotConfigured
+    def labelEscapeNumericEnd(radix: Int): LabelConfig = NotConfigured
+    def labelEscapeEnd: LabelConfig = Label("end of escape sequence")
+    def labelStringEscapeEmpty: LabelConfig = NotConfigured
+    def labelStringEscapeGap: LabelConfig = Label("string gap")
+    def labelStringEscapeGapEnd: LabelConfig = Label("end of string gap")
 
     def unexpectedCharNonBasicMultilingualPlane: Option[Int => String] = None
     def unexpectedCharNonAscii: Option[Int => String] = None
@@ -191,33 +191,30 @@ class ErrorConfig {
     def verifiedStringBadCharsUsedInLiteral: Map[Int, String] = Map.empty
 
     // symbol
-    def labelSymbolSemi: Option[String] = Some("semicolon")
-    def labelSymbolComma: Option[String] = Some("comma")
-    def labelSymbolColon: Option[String] = Some("colon")
-    def labelSymbolDot: Option[String] = Some("dot")
-    def labelSymbolOpenParen: Option[String] = Some("open parenthesis")
-    def labelSymbolOpenBrace: Option[String] = Some("open brace")
-    def labelSymbolOpenSquare: Option[String] = Some("open square bracket")
-    def labelSymbolOpenAngle: Option[String] = Some("open angle bracket")
-    def labelSymbolClosingParen: Option[String] = Some("closing parenthesis")
-    def labelSymbolClosingBrace: Option[String] = Some("closing brace")
-    def labelSymbolClosingSquare: Option[String] = Some("closing square bracket")
-    def labelSymbolClosingAngle: Option[String] = Some("closing angle bracket")
-    def labelSymbolKeyword(symbol: String): Option[String] = Some(symbol)
-    def labelSymbolOperator(symbol: String): Option[String] = Some(symbol)
+    def labelSymbolSemi: LabelConfig = Label("semicolon")
+    def labelSymbolComma: LabelConfig = Label("comma")
+    def labelSymbolColon: LabelConfig = Label("colon")
+    def labelSymbolDot: LabelConfig = Label("dot")
+    def labelSymbolOpenParen: LabelConfig = Label("open parenthesis")
+    def labelSymbolOpenBrace: LabelConfig = Label("open brace")
+    def labelSymbolOpenSquare: LabelConfig = Label("open square bracket")
+    def labelSymbolOpenAngle: LabelConfig = Label("open angle bracket")
+    def labelSymbolClosingParen: LabelConfig = Label("closing parenthesis")
+    def labelSymbolClosingBrace: LabelConfig = Label("closing brace")
+    def labelSymbolClosingSquare: LabelConfig = Label("closing square bracket")
+    def labelSymbolClosingAngle: LabelConfig = Label("closing angle bracket")
+    def labelSymbolKeyword(symbol: String): LabelConfig = Label(symbol)
+    def labelSymbolOperator(symbol: String): LabelConfig = Label(symbol)
     def labelSymbolEndOfKeyword(symbol: String): String = s"end of $symbol"
     def labelSymbolEndOfOperator(symbol: String): String = s"end of $symbol"
 
     // space
-    def labelSpaceEndOfLineComment: Option[String] = Some("end of comment")
-    def labelSpaceEndOfMultiComment: Option[String] = Some("end of comment")
+    def labelSpaceEndOfLineComment: LabelConfig = Label("end of comment")
+    def labelSpaceEndOfMultiComment: LabelConfig = Label("end of comment")
 }
 
 private [token] object ErrorConfig {
-    private [token] def label[A](label: Option[String])(p: Parsley[A]): Parsley[A] = label match {
-        case None => p
-        case Some(name) => p.label(name)
-    }
+    private [token] def label[A](label: ConfigImplUntyped)(p: Parsley[A]): Parsley[A] = label(p)
 
     private [token] def explain[A](reason: Option[String])(p: Parsley[A]): Parsley[A] = reason match {
         case None => p

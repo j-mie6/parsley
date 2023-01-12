@@ -5,7 +5,7 @@ package parsley.token.symbol
 
 import parsley.Parsley
 import parsley.errors.combinator.ErrorMethods
-import parsley.token.errors.ErrorConfig
+import parsley.token.errors.{LabelConfig, ErrorConfig}
 
 /** This class provides implicit functionality to promote string
   * literals into tokens.
@@ -134,7 +134,7 @@ abstract class Symbol private[symbol] (err: ErrorConfig) {
 
     // $COVERAGE-OFF$
     // These really don't need testing
-    private final def apply(name: Char, label: Option[String]): Parsley[Unit] = ErrorConfig.label(label)(apply(name))
+    private final def apply(name: Char, label: LabelConfig): Parsley[Unit] = ErrorConfig.label(label)(apply(name))
     /** This parser parses a semicolon `;` as a symbol.
       *
       * @since 4.0.0

@@ -9,14 +9,14 @@ import parsley.Parsley, Parsley.{attempt, fresh, pure}
 import parsley.character.{char, string}
 import parsley.combinator.{choice, skipManyUntil}
 import parsley.implicits.zipped.Zipped2
-import parsley.token.errors.ErrorConfig
+import parsley.token.errors.{LabelConfig, ErrorConfig}
 import parsley.token.predicate.CharPredicate
 
 private [token] final class ConcreteString(ends: Set[ScalaString], stringChar: StringCharacter, isGraphic: CharPredicate,
                                            allowsAllSpace: Boolean, err: ErrorConfig) extends String {
 
     private def stringLiteral(valid: Parsley[StringBuilder] => Parsley[StringBuilder],
-                              openLabel: (Boolean, Boolean) => Option[ScalaString], closeLabel: (Boolean, Boolean) => Option[ScalaString]) = {
+                              openLabel: (Boolean, Boolean) => LabelConfig, closeLabel: (Boolean, Boolean) => LabelConfig) = {
         choice(ends.view.map(makeStringParser(valid, openLabel, closeLabel)).toSeq: _*) *> sbReg.gets(_.toString)
     }
     override lazy val fullUtf16: Parsley[ScalaString] = stringLiteral(identity, err.labelStringUtf16, err.labelStringUtf16End)
@@ -26,7 +26,7 @@ private [token] final class ConcreteString(ends: Set[ScalaString], stringChar: S
     private val sbReg = parsley.registers.Reg.make[StringBuilder]
 
     private def makeStringParser(valid: Parsley[StringBuilder] => Parsley[StringBuilder],
-                                 openLabel: (Boolean, Boolean) => Option[ScalaString], closeLabel: (Boolean, Boolean) => Option[ScalaString])
+                                 openLabel: (Boolean, Boolean) => LabelConfig, closeLabel: (Boolean, Boolean) => LabelConfig)
                                 (terminalStr: ScalaString) = {
         val terminalInit = terminalStr.charAt(0)
         val strChar = stringChar(Character.letter(terminalInit, allowsAllSpace, isGraphic))

@@ -9,7 +9,7 @@ import parsley.combinator.ensure
 import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.zipped.Zipped3
 import parsley.token.descriptions.text.{EscapeDesc, NumberOfDigits, NumericEscape}
-import parsley.token.errors.ErrorConfig
+import parsley.token.errors.{ErrorConfig, NotConfigured}
 import parsley.token.numeric
 
 private [token] class Escape(desc: EscapeDesc, err: ErrorConfig, generic: numeric.Generic) {
@@ -85,10 +85,10 @@ private [token] class Escape(desc: EscapeDesc, err: ErrorConfig, generic: numeri
         }
     }
 
-    private val decimalEscape = fromDesc(radix = 10, desc.decimalEscape, generic.zeroAllowedDecimal(None), digit)
-    private val hexadecimalEscape = fromDesc(radix = 16, desc.hexadecimalEscape, generic.zeroAllowedHexadecimal(None), hexDigit)
-    private val octalEscape = fromDesc(radix = 8, desc.octalEscape, generic.zeroAllowedOctal(None), octDigit)
-    private val binaryEscape = fromDesc(radix = 2, desc.binaryEscape, generic.zeroAllowedBinary(None), bit)
+    private val decimalEscape = fromDesc(radix = 10, desc.decimalEscape, generic.zeroAllowedDecimal(NotConfigured), digit)
+    private val hexadecimalEscape = fromDesc(radix = 16, desc.hexadecimalEscape, generic.zeroAllowedHexadecimal(NotConfigured), hexDigit)
+    private val octalEscape = fromDesc(radix = 8, desc.octalEscape, generic.zeroAllowedOctal(NotConfigured), octDigit)
+    private val binaryEscape = fromDesc(radix = 2, desc.binaryEscape, generic.zeroAllowedBinary(NotConfigured), bit)
     private val numericEscape = decimalEscape <|> hexadecimalEscape <|> octalEscape <|> binaryEscape
     val escapeCode = ErrorConfig.explain(err.explainEscapeInvalid)(ErrorConfig.label(err.labelEscapeEnd)(escMapped <|> numericEscape))
     val escapeBegin = ErrorConfig.label(err.labelEscapeSequence)(char(desc.escBegin))

@@ -7,7 +7,7 @@ import scala.annotation.tailrec
 
 import parsley.XAssert._
 import parsley.token.descriptions.SpaceDesc
-import parsley.token.errors.ErrorConfig
+import parsley.token.errors.{ErrorConfig, LabelConfig}
 
 import parsley.internal.errors.{ExpectDesc, ExpectItem, UnexpectDesc}
 import parsley.internal.machine.Context
@@ -74,8 +74,8 @@ private [internal] final class TokenComment private (
     ) extends CommentLexer {
     def this(desc: SpaceDesc, errConfig: ErrorConfig) = {
         this(desc.commentStart, desc.commentEnd, desc.commentLine, desc.nestedComments, desc.commentLineAllowsEOF,
-             ExpectItem(errConfig.labelSpaceEndOfMultiComment, desc.commentEnd),
-             ExpectDesc(errConfig.labelSpaceEndOfLineComment, "end of line"))
+             errConfig.labelSpaceEndOfMultiComment.asExpectItem(desc.commentEnd),
+             errConfig.labelSpaceEndOfLineComment.asExpectDesc("end of line"))
     }
     private [this] final val openingSize = Math.max(start.codePointCount(0, start.length), line.codePointCount(0, line.length))
 
@@ -172,8 +172,8 @@ private [internal] final class TokenWhiteSpace private (
     protected [this] val endOfSingleComment: Option[ExpectDesc]) extends WhiteSpaceLike {
     def this(ws: Char => Boolean, desc: SpaceDesc, errConfig: ErrorConfig) = {
         this(ws, desc.commentStart, desc.commentEnd, desc.commentLine, desc.nestedComments, desc.commentLineAllowsEOF,
-             ExpectItem(errConfig.labelSpaceEndOfMultiComment, desc.commentEnd),
-             ExpectDesc(errConfig.labelSpaceEndOfLineComment, "end of line"))
+             errConfig.labelSpaceEndOfMultiComment.asExpectItem(desc.commentEnd),
+             errConfig.labelSpaceEndOfLineComment.asExpectDesc("end of line"))
     }
     override def spaces(ctx: Context): Unit = {
         while (ctx.moreInput && ws(ctx.nextChar)) {
@@ -195,8 +195,8 @@ private [internal] final class TokenSkipComments private (
     protected [this] val endOfSingleComment: Option[ExpectDesc]) extends WhiteSpaceLike {
     def this(desc: SpaceDesc, errConfig: ErrorConfig) = {
         this(desc.commentStart, desc.commentEnd, desc.commentLine, desc.nestedComments, desc.commentLineAllowsEOF,
-             ExpectItem(errConfig.labelSpaceEndOfMultiComment, desc.commentEnd),
-             ExpectDesc(errConfig.labelSpaceEndOfLineComment, "end of line"))
+             errConfig.labelSpaceEndOfMultiComment.asExpectItem(desc.commentEnd),
+             errConfig.labelSpaceEndOfLineComment.asExpectDesc("end of line"))
     }
     override def spaces(ctx: Context): Unit = ()
     // $COVERAGE-OFF$
@@ -244,8 +244,8 @@ private [internal] final class TokenNonSpecific(name: String, unexpectedIllegal:
 
 private [instructions] abstract class TokenSpecificAllowTrailing(
         specific: String, expected: Option[ExpectDesc], protected final val expectedEnd: Option[ExpectDesc], caseSensitive: Boolean) extends Instr {
-    def this(specific: String, expected: Option[String], expectedEnd: String, caseSensitive: Boolean) = {
-        this(if (caseSensitive) specific else specific.toLowerCase, ExpectDesc(expected), Some(new ExpectDesc(expectedEnd)), caseSensitive)
+    def this(specific: String, expected: LabelConfig, expectedEnd: String, caseSensitive: Boolean) = {
+        this(if (caseSensitive) specific else specific.toLowerCase, expected.asExpectDesc, Some(new ExpectDesc(expectedEnd)), caseSensitive)
     }
     private [this] final val strsz = specific.length
     private [this] final val numCodePoints = specific.codePointCount(0, strsz)
@@ -272,7 +272,7 @@ private [instructions] abstract class TokenSpecificAllowTrailing(
     }
 }
 
-private [internal] final class TokenSpecific(specific: String, expected: Option[String], _expectedEnd: String, letter: Char => Boolean, caseSensitive: Boolean)
+private [internal] final class TokenSpecific(specific: String, expected: LabelConfig, _expectedEnd: String, letter: Char => Boolean, caseSensitive: Boolean)
     extends TokenSpecificAllowTrailing(specific, expected, _expectedEnd, caseSensitive) {
     override def postprocess(ctx: Context, i: Int): Unit = {
         if (i < ctx.inputsz && letter(ctx.input.charAt(i))) {

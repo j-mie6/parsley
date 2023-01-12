@@ -9,7 +9,7 @@ import parsley.Parsley, Parsley.empty
 import parsley.character.{char, charUtf16}
 import parsley.errors.combinator.ErrorMethods
 import parsley.token.descriptions.text.TextDesc
-import parsley.token.errors.ErrorConfig
+import parsley.token.errors.{LabelConfig, ErrorConfig}
 
 private [token] final class ConcreteCharacter(desc: TextDesc, escapes: Escape, err: ErrorConfig) extends Character {
     private val quote = char(desc.characterLiteralEnd)
@@ -19,15 +19,15 @@ private [token] final class ConcreteCharacter(desc: TextDesc, escapes: Escape, e
         val _checkBadChar = err.verifiedCharBadCharsUsedInLiteral.foldLeft(empty) {
             case (w, (c, reason)) => w <|> charUtf16(c).unexpected(reason)
         }
-        escapes.escapeChar <|> ErrorConfig.label(err.explainGraphicCharacter)(ErrorConfig.label(err.labelGraphicCharacter)(graphicLetter)) <|> _checkBadChar
+        escapes.escapeChar <|> ErrorConfig.explain(err.explainGraphicCharacter)(ErrorConfig.label(err.labelGraphicCharacter)(graphicLetter)) <|> _checkBadChar
     }
-    private def charLiteral[A](letter: Parsley[A], end: Option[ScalaString]) = quote *> letter <* ErrorConfig.label(end)(quote)
+    private def charLiteral[A](letter: Parsley[A], end: LabelConfig) = quote *> letter <* ErrorConfig.label(end)(quote)
 
     override lazy val fullUtf16: Parsley[Int] = ErrorConfig.label(err.labelCharUtf16)(charLiteral(charLetter(graphic.toUnicode), err.labelCharUtf16End))
     // this is a bit inefficient, converting to int and then back to char, but it makes it consistent, and can be optimised anyway
     private lazy val uncheckedBmpLetter = charLetter(graphic.toBmp.map(_.toInt))
 
-    private def constrainedBmp(illegal: Int => Boolean, label: Option[ScalaString], endLabel: Option[ScalaString],
+    private def constrainedBmp(illegal: Int => Boolean, label: LabelConfig, endLabel: LabelConfig,
                                unex: Option[Int => ScalaString], reason: Option[Int => ScalaString]) = {
         ErrorConfig.label(label) {
             charLiteral(ErrorConfig.unexpectedWhenWithReason(illegal, unex, reason)(uncheckedBmpLetter).map(_.toChar), endLabel)

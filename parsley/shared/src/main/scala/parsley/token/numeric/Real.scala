@@ -5,7 +5,7 @@ package parsley.token.numeric
 
 import parsley.Parsley
 import parsley.errors.combinator.ErrorMethods
-import parsley.token.errors.ErrorConfig
+import parsley.token.errors.{ErrorConfig, LabelConfig}
 
 /** This class defines a uniform interface for defining parsers for floating
   * literals, independent of how whitespace should be handled after the literal.
@@ -294,25 +294,25 @@ abstract class Real private[numeric](err: ErrorConfig) {
         else err.messageRealTooSmall(n, name)
     }
 
-    protected [numeric] def ensureFloat(number: Parsley[BigDecimal], label: Option[String]): Parsley[Float] = {
+    protected [numeric] def ensureFloat(number: Parsley[BigDecimal], label: LabelConfig): Parsley[Float] = {
         ErrorConfig.label(label)(number).collectMsg(bad(Float.MinValue.toDouble, Float.MaxValue.toDouble, err.floatName)(_)) {
             case n if Real.isFloat(n) => n.toFloat
         }
     }
 
-    protected [numeric] def ensureDouble(number: Parsley[BigDecimal], label: Option[String]): Parsley[Double] = {
+    protected [numeric] def ensureDouble(number: Parsley[BigDecimal], label: LabelConfig): Parsley[Double] = {
         ErrorConfig.label(label)(number).collectMsg(bad(Double.MinValue, Double.MaxValue, err.doubleName)(_)) {
             case n if Real.isDouble(n) => n.toDouble
         }
     }
 
-    protected [numeric] def ensureExactFloat(number: Parsley[BigDecimal], label: Option[String]): Parsley[Float] = {
+    protected [numeric] def ensureExactFloat(number: Parsley[BigDecimal], label: LabelConfig): Parsley[Float] = {
         ErrorConfig.label(label)(number).collectMsg(err.messageRealNotExact(_, err.floatName)) {
             case n if n.isExactFloat => n.toFloat
         }
     }
 
-    protected [numeric] def ensureExactDouble(number: Parsley[BigDecimal], label: Option[String]): Parsley[Double] = {
+    protected [numeric] def ensureExactDouble(number: Parsley[BigDecimal], label: LabelConfig): Parsley[Double] = {
         ErrorConfig.label(label)(number).collectMsg(err.messageRealNotExact(_, err.doubleName)) {
             case n if n.isExactDouble => n.toDouble
         }

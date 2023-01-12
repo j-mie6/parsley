@@ -6,7 +6,7 @@ package parsley.token.numeric
 import parsley.Parsley, Parsley.attempt
 import parsley.errors.combinator.ErrorMethods
 import parsley.token.descriptions.numeric.NumericDesc
-import parsley.token.errors.ErrorConfig
+import parsley.token.errors.{ErrorConfig, LabelConfig}
 
 import parsley.internal.deepembedding.Sign.IntType
 import parsley.internal.deepembedding.singletons
@@ -25,8 +25,8 @@ private [token] final class SignedInteger(desc: NumericDesc, unsigned: UnsignedI
     override def octal: Parsley[BigInt] = ErrorConfig.label(err.labelIntegerSignedOctal)(_octal)
     override def binary: Parsley[BigInt] = ErrorConfig.label(err.labelIntegerSignedBinary)(_binary)
     override def number: Parsley[BigInt] = ErrorConfig.label(err.labelIntegerSignedNumber)(_number)
-    
-    override protected [numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int, label: (ErrorConfig, Boolean) => Option[String])
+
+    override protected [numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int, label: (ErrorConfig, Boolean) => LabelConfig)
                                                (implicit ev: CanHold[bits.self,T]): Parsley[T] = ErrorConfig.label(label(err, false)) {
         number.collectMsg(x => if (x > bits.upperSigned) err.messageIntTooLarge(x, bits.upperSigned, radix)
                                else                      err.messageIntTooSmall(x, bits.lowerSigned, radix)) {

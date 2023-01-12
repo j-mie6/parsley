@@ -9,7 +9,7 @@ import parsley.combinator.optional
 import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.character.charLift
 import parsley.token.descriptions.numeric.{BreakCharDesc, NumericDesc}
-import parsley.token.errors.ErrorConfig
+import parsley.token.errors.{ErrorConfig, LabelConfig}
 
 private [token] final class UnsignedInteger(desc: NumericDesc, err: ErrorConfig, generic: Generic) extends Integer(desc) {
 
@@ -61,7 +61,7 @@ private [token] final class UnsignedInteger(desc: NumericDesc, err: ErrorConfig,
         when(desc.binaryLeads.nonEmpty, oneOf(desc.binaryLeads)) *> leadingBreakChar *>
         ErrorConfig.label(err.labelIntegerBinaryEnd)(generic.plainBinary(desc, err.labelIntegerBinaryEnd))
 
-    override protected [numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int, label: (ErrorConfig, Boolean) => Option[String])
+    override protected [numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int, label: (ErrorConfig, Boolean) => LabelConfig)
                                                (implicit ev: CanHold[bits.self,T]): Parsley[T] = ErrorConfig.label(label(err, false)) {
         number.collectMsg(err.messageIntTooLarge(_, bits.upperUnsigned, radix)) {
             case x if x <= bits.upperUnsigned => ev.fromBigInt(x)

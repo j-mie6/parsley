@@ -5,7 +5,7 @@ package parsley.internal.deepembedding.singletons
 
 import parsley.token.descriptions.SpaceDesc
 import parsley.token.descriptions.numeric.PlusSignPresence
-import parsley.token.errors.ErrorConfig
+import parsley.token.errors.{ErrorConfig, LabelConfig}
 
 import parsley.internal.deepembedding.Sign.SignType
 import parsley.internal.machine.instructions
@@ -43,7 +43,7 @@ private [parsley] class NonSpecific(name: String, unexpectedIllegal: String => S
     override def instr: instructions.Instr = new instructions.TokenNonSpecific(name, unexpectedIllegal)(start, letter, illegal)
 }
 
-private [parsley] final class Specific(private [Specific] val specific: String, expected: Option[String],
+private [parsley] final class Specific(private [Specific] val specific: String, expected: LabelConfig,
                                        expectedEnd: String, letter: Char => Boolean, val caseSensitive: Boolean) extends Singleton[Unit] {
     // $COVERAGE-OFF$
     override def pretty: String = s"specific($specific)"
