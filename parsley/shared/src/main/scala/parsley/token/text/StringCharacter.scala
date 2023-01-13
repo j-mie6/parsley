@@ -24,17 +24,17 @@ private [token] abstract class StringCharacter {
 private [token] class RawCharacter(err: ErrorConfig) extends StringCharacter {
     override def isRaw = true
     override def apply(isLetter: CharPredicate): Parsley[Option[Int]] = isLetter match {
-        case Basic(isLetter) => ErrorConfig.label(err.labelStringCharacter)(satisfy(isLetter).map(c => Some(c.toInt))) <|> _checkBadChar(err)
-        case Unicode(isLetter) => ErrorConfig.label(err.labelStringCharacter)(satisfyUtf16(isLetter).map(Some(_))) <|> _checkBadChar(err)
+        case Basic(isLetter) => err.labelStringCharacter(satisfy(isLetter).map(c => Some(c.toInt))) <|> _checkBadChar(err)
+        case Unicode(isLetter) => err.labelStringCharacter(satisfyUtf16(isLetter).map(Some(_))) <|> _checkBadChar(err)
         case NotRequired => empty
     }
 }
 
 private [token] class EscapableCharacter(desc: EscapeDesc, escapes: Escape, space: Parsley[_], err: ErrorConfig) extends StringCharacter {
     override def isRaw = false
-    private lazy val escapeEmpty = ErrorConfig.label(err.labelStringEscapeEmpty)(desc.emptyEscape.fold[Parsley[Char]](empty)(char))
+    private lazy val escapeEmpty = err.labelStringEscapeEmpty(desc.emptyEscape.fold[Parsley[Char]](empty)(char))
     private lazy val escapeGap = {
-        if (desc.gapsSupported) skipSome(ErrorConfig.label(err.labelStringEscapeGap)(space)) *> ErrorConfig.label(err.labelStringEscapeGapEnd)(desc.escBegin)
+        if (desc.gapsSupported) skipSome(err.labelStringEscapeGap(space)) *> err.labelStringEscapeGapEnd(desc.escBegin)
         else empty
     }
     private lazy val stringEscape: Parsley[Option[Int]] =
@@ -44,14 +44,14 @@ private [token] class EscapableCharacter(desc: EscapeDesc, escapes: Escape, spac
 
     override def apply(isLetter: CharPredicate): Parsley[Option[Int]] = {
         isLetter match {
-            case Basic(isLetter) => ErrorConfig.label(err.labelStringCharacter)(
+            case Basic(isLetter) => err.labelStringCharacter(
                 stringEscape <|> ErrorConfig.explain(err.explainGraphicCharacter)(
-                                     ErrorConfig.label(err.labelGraphicCharacter)(satisfy(c => isLetter(c) && c != desc.escBegin).map(c => Some(c.toInt))))
+                                     err.labelGraphicCharacter(satisfy(c => isLetter(c) && c != desc.escBegin).map(c => Some(c.toInt))))
                              <|> _checkBadChar(err)
             )
-            case Unicode(isLetter) => ErrorConfig.label(err.labelStringCharacter)(
+            case Unicode(isLetter) => err.labelStringCharacter(
                 stringEscape <|> ErrorConfig.explain(err.explainGraphicCharacter)(
-                                     ErrorConfig.label(err.labelGraphicCharacter)(satisfyUtf16(c => isLetter(c) && c != desc.escBegin.toInt).map(Some(_))))
+                                     err.labelGraphicCharacter(satisfyUtf16(c => isLetter(c) && c != desc.escBegin.toInt).map(Some(_))))
                              <|> _checkBadChar(err)
             )
             case NotRequired => stringEscape

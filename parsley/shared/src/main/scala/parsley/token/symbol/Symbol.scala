@@ -134,7 +134,7 @@ abstract class Symbol private[symbol] (err: ErrorConfig) {
 
     // $COVERAGE-OFF$
     // These really don't need testing
-    private final def apply(name: Char, label: LabelConfig): Parsley[Unit] = ErrorConfig.label(label)(apply(name))
+    private final def apply(name: Char, label: LabelConfig): Parsley[Unit] = label(apply(name))
     /** This parser parses a semicolon `;` as a symbol.
       *
       * @since 4.0.0

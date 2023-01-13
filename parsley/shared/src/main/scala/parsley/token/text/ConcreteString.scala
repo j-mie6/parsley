@@ -37,10 +37,10 @@ private [token] final class ConcreteString(ends: Set[ScalaString], stringChar: S
         val content = valid(parsley.expr.infix.secretLeft1((sbReg.get, strChar).zipped(pf), strChar, pure(pf)))
         val terminal = string(terminalStr)
         // terminal should be first, to allow for a jump table on the main choice
-        ErrorConfig.label(openLabel(allowsAllSpace, stringChar.isRaw))(terminal) *>
+        openLabel(allowsAllSpace, stringChar.isRaw)(terminal) *>
         // then only one string builder needs allocation
         sbReg.put(fresh(new StringBuilder)) *>
         skipManyUntil(sbReg.modify(char(terminalInit) #> ((sb: StringBuilder) => sb += terminalInit)) <|> content,
-                      ErrorConfig.label(closeLabel(allowsAllSpace, stringChar.isRaw))(attempt(terminal))) //is the attempt needed here? not sure
+                      closeLabel(allowsAllSpace, stringChar.isRaw)(attempt(terminal))) //is the attempt needed here? not sure
     }
 }

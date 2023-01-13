@@ -41,11 +41,11 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInt
         }
     }
 
-    override def decimal: Parsley[BigDecimal] = ErrorConfig.label(err.labelRealDecimal)(_decimal)
-    override def hexadecimal: Parsley[BigDecimal] = ErrorConfig.label(err.labelRealHexadecimal)(_hexadecimal)
-    override def octal: Parsley[BigDecimal] = ErrorConfig.label(err.labelRealOctal)(_octal)
-    override def binary: Parsley[BigDecimal] = ErrorConfig.label(err.labelRealBinary)(_binary)
-    override def number: Parsley[BigDecimal] = ErrorConfig.label(err.labelRealNumber)(_number)
+    override def decimal: Parsley[BigDecimal] = err.labelRealDecimal(_decimal)
+    override def hexadecimal: Parsley[BigDecimal] = err.labelRealHexadecimal(_hexadecimal)
+    override def octal: Parsley[BigDecimal] = err.labelRealOctal(_octal)
+    override def binary: Parsley[BigDecimal] = err.labelRealBinary(_binary)
+    override def number: Parsley[BigDecimal] = err.labelRealNumber(_number)
 
     private def when(b: Boolean, p: Parsley[_]): Parsley[_] = if (b) p else unit
 
@@ -53,7 +53,7 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInt
         case BreakCharDesc.NoBreakChar => unit
         case BreakCharDesc.Supported(breakChar, allowedAfterNonDecimalPrefix) =>
             when(allowedAfterNonDecimalPrefix,
-                ErrorConfig.explain(err.explainNumericBreakChar)(ErrorConfig.label(err.labelNumericBreakChar.orElse(label))(optional(breakChar))))
+                ErrorConfig.explain(err.explainNumericBreakChar)(err.labelNumericBreakChar.orElse(label)(optional(breakChar))))
     }
 
     private val noZeroHexadecimal =
@@ -88,11 +88,11 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInt
         val f = (d: Char, x: BigDecimal) => x/radix + d.asDigit
         def broken(c: Char) =
             lift2(f,
-                ErrorConfig.label(endLabel)(digit),
-                (ErrorConfig.explain(err.explainNumericBreakChar)(ErrorConfig.label(err.labelNumericBreakChar.orElse(endLabel))(optional(c))) *>
-                 ErrorConfig.label(endLabel)(digit)).foldRight[BigDecimal](0)(f))
+                endLabel(digit),
+                (ErrorConfig.explain(err.explainNumericBreakChar)(err.labelNumericBreakChar.orElse(endLabel)(optional(c))) *>
+                 endLabel(digit)).foldRight[BigDecimal](0)(f))
         val fractional = amend {
-            ErrorConfig.label(err.labelRealDot.orElse(endLabel))('.') *> {
+            err.labelRealDot.orElse(endLabel)('.') *> {
                 desc.literalBreakChar match {
                     case BreakCharDesc.NoBreakChar if desc.trailingDotAllowed     =>
                         if (!leadingDotAllowed) entrench(digit.foldRight[BigDecimal](0)(f))
@@ -111,7 +111,7 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInt
                     override def labelIntegerDecimalEnd: LabelConfig = err.labelRealExponentEnd.orElse(endLabel)
                 }
                 val integer = new SignedInteger(desc.copy(positiveSign = sign), natural, expErr)
-                val exponent = ErrorConfig.label(err.labelRealExponent.orElse(endLabel))(oneOf(exp)) *> integer.decimal32
+                val exponent = err.labelRealExponent.orElse(endLabel)(oneOf(exp)) *> integer.decimal32
                 if (compulsory) (exponent, exponent, base)
                 else (exponent, exponent <|> pure(0), base)
             // this can't fail for non-required, it has to be the identity exponent

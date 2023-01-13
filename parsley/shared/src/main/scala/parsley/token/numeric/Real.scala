@@ -295,25 +295,25 @@ abstract class Real private[numeric](err: ErrorConfig) {
     }
 
     protected [numeric] def ensureFloat(number: Parsley[BigDecimal], label: LabelConfig): Parsley[Float] = {
-        ErrorConfig.label(label)(number).collectMsg(bad(Float.MinValue.toDouble, Float.MaxValue.toDouble, err.floatName)(_)) {
+        label(number).collectMsg(bad(Float.MinValue.toDouble, Float.MaxValue.toDouble, err.floatName)(_)) {
             case n if Real.isFloat(n) => n.toFloat
         }
     }
 
     protected [numeric] def ensureDouble(number: Parsley[BigDecimal], label: LabelConfig): Parsley[Double] = {
-        ErrorConfig.label(label)(number).collectMsg(bad(Double.MinValue, Double.MaxValue, err.doubleName)(_)) {
+        label(number).collectMsg(bad(Double.MinValue, Double.MaxValue, err.doubleName)(_)) {
             case n if Real.isDouble(n) => n.toDouble
         }
     }
 
     protected [numeric] def ensureExactFloat(number: Parsley[BigDecimal], label: LabelConfig): Parsley[Float] = {
-        ErrorConfig.label(label)(number).collectMsg(err.messageRealNotExact(_, err.floatName)) {
+        label(number).collectMsg(err.messageRealNotExact(_, err.floatName)) {
             case n if n.isExactFloat => n.toFloat
         }
     }
 
     protected [numeric] def ensureExactDouble(number: Parsley[BigDecimal], label: LabelConfig): Parsley[Double] = {
-        ErrorConfig.label(label)(number).collectMsg(err.messageRealNotExact(_, err.doubleName)) {
+        label(number).collectMsg(err.messageRealNotExact(_, err.doubleName)) {
             case n if n.isExactDouble => n.toDouble
         }
     }

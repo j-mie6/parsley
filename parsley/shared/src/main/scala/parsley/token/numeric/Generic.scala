@@ -15,7 +15,7 @@ private [token] class Generic(err: ErrorConfig) {
     private def ofRadix(radix: Int, digit: Parsley[Char], label: LabelConfig): Parsley[BigInt] = ofRadix(radix, digit, digit, label)
     private def ofRadix(radix: Int, startDigit: Parsley[Char], digit: Parsley[Char], label: LabelConfig): Parsley[BigInt] = {
         val pf = pure((x: BigInt, d: Char) => x*radix + d.asDigit)
-        val trailingDigit = ErrorConfig.label(label)(digit)
+        val trailingDigit = label(digit)
         parsley.expr.infix.secretLeft1(startDigit.map(d => BigInt(d.asDigit)), trailingDigit, pf)
     }
 
@@ -25,8 +25,8 @@ private [token] class Generic(err: ErrorConfig) {
     private def ofRadix(radix: Int, startDigit: Parsley[Char], digit: Parsley[Char], breakChar: Char, label: LabelConfig): Parsley[BigInt] = {
         val pf = pure((x: BigInt, d: Char) => x*radix + d.asDigit)
         val trailingDigit =
-            optional(ErrorConfig.explain(err.explainNumericBreakChar)(ErrorConfig.label(err.labelNumericBreakChar.orElse(label))(breakChar))) *>
-            ErrorConfig.label(label)(digit)
+            optional(ErrorConfig.explain(err.explainNumericBreakChar)(err.labelNumericBreakChar.orElse(label)(breakChar))) *>
+            label(digit)
         parsley.expr.infix.secretLeft1(startDigit.map(d => BigInt(d.asDigit)), trailingDigit , pf)
     }
 

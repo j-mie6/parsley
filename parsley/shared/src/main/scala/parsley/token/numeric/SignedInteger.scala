@@ -14,20 +14,20 @@ import parsley.internal.deepembedding.singletons
 private [token] final class SignedInteger(desc: NumericDesc, unsigned: UnsignedInteger, err: ErrorConfig) extends Integer(desc) {
     private val sign = new Parsley(new singletons.Sign[IntType.resultType](IntType, desc.positiveSign))
 
-    override lazy val _decimal: Parsley[BigInt] = attempt(sign <*> ErrorConfig.label(err.labelIntegerDecimalEnd)(unsigned._decimal))
-    override lazy val _hexadecimal: Parsley[BigInt] = attempt(sign <*> ErrorConfig.label(err.labelIntegerHexadecimalEnd)(unsigned._hexadecimal))
-    override lazy val _octal: Parsley[BigInt] = attempt(sign <*> ErrorConfig.label(err.labelIntegerOctalEnd)(unsigned._octal))
-    override lazy val _binary: Parsley[BigInt] = attempt(sign <*> ErrorConfig.label(err.labelIntegerBinaryEnd)(unsigned._binary))
-    override lazy val _number: Parsley[BigInt] = attempt(sign <*> ErrorConfig.label(err.labelIntegerNumberEnd)(unsigned._number))
+    override lazy val _decimal: Parsley[BigInt] = attempt(sign <*> err.labelIntegerDecimalEnd(unsigned._decimal))
+    override lazy val _hexadecimal: Parsley[BigInt] = attempt(sign <*> err.labelIntegerHexadecimalEnd(unsigned._hexadecimal))
+    override lazy val _octal: Parsley[BigInt] = attempt(sign <*> err.labelIntegerOctalEnd(unsigned._octal))
+    override lazy val _binary: Parsley[BigInt] = attempt(sign <*> err.labelIntegerBinaryEnd(unsigned._binary))
+    override lazy val _number: Parsley[BigInt] = attempt(sign <*> err.labelIntegerNumberEnd(unsigned._number))
 
-    override def decimal: Parsley[BigInt] = ErrorConfig.label(err.labelIntegerSignedDecimal)(_decimal)
-    override def hexadecimal: Parsley[BigInt] = ErrorConfig.label(err.labelIntegerSignedHexadecimal)(_hexadecimal)
-    override def octal: Parsley[BigInt] = ErrorConfig.label(err.labelIntegerSignedOctal)(_octal)
-    override def binary: Parsley[BigInt] = ErrorConfig.label(err.labelIntegerSignedBinary)(_binary)
-    override def number: Parsley[BigInt] = ErrorConfig.label(err.labelIntegerSignedNumber)(_number)
+    override def decimal: Parsley[BigInt] = err.labelIntegerSignedDecimal.apply(_decimal)
+    override def hexadecimal: Parsley[BigInt] = err.labelIntegerSignedHexadecimal.apply(_hexadecimal)
+    override def octal: Parsley[BigInt] = err.labelIntegerSignedOctal.apply(_octal)
+    override def binary: Parsley[BigInt] = err.labelIntegerSignedBinary.apply(_binary)
+    override def number: Parsley[BigInt] = err.labelIntegerSignedNumber.apply(_number)
 
     override protected [numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int, label: (ErrorConfig, Boolean) => LabelConfig)
-                                               (implicit ev: CanHold[bits.self,T]): Parsley[T] = ErrorConfig.label(label(err, false)) {
+                                               (implicit ev: CanHold[bits.self,T]): Parsley[T] = label(err, false) {
         number.collectMsg(x => if (x > bits.upperSigned) err.messageIntTooLarge(x, bits.upperSigned, radix)
                                else                      err.messageIntTooSmall(x, bits.lowerSigned, radix)) {
             case x if bits.lowerSigned <= x && x <= bits.upperSigned => ev.fromBigInt(x)

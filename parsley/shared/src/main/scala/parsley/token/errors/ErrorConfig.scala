@@ -214,8 +214,6 @@ class ErrorConfig {
 }
 
 private [token] object ErrorConfig {
-    private [token] def label[A](label: ConfigImplUntyped)(p: Parsley[A]): Parsley[A] = label(p)
-
     private [token] def explain[A](reason: Option[String])(p: Parsley[A]): Parsley[A] = reason match {
         case None => p
         case Some(reason) => p.explain(reason)

@@ -36,7 +36,7 @@ private [token] class ConcreteSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc,
         case Basic(letter) =>
             new Parsley(new singletons.Specific(name, err.labelSymbolKeyword(name), err.labelSymbolEndOfKeyword(name), letter, symbolDesc.caseSensitive))
         case _ => attempt {
-            ErrorConfig.label(err.labelSymbolKeyword(name))(caseString(name)) *>
+            err.labelSymbolKeyword(name)(caseString(name)) *>
             notFollowedBy(identLetter).label(err.labelSymbolEndOfKeyword(name))
         }
     }
@@ -48,11 +48,11 @@ private [token] class ConcreteSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc,
             }.toList
             ends match {
                 case Nil => attempt {
-                    ErrorConfig.label(err.labelSymbolOperator(name))(string(name)) *>
+                    err.labelSymbolOperator(name)(string(name)) *>
                     notFollowedBy(opLetter).label(err.labelSymbolEndOfOperator(name))
                 }
                 case end::ends => attempt {
-                    ErrorConfig.label(err.labelSymbolOperator(name))(string(name)) *>
+                    err.labelSymbolOperator(name)(string(name)) *>
                     notFollowedBy(opLetter <|> strings(end, ends: _*)).label(err.labelSymbolEndOfOperator(name))
                 }
             }
