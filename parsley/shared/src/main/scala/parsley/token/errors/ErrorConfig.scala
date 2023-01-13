@@ -12,11 +12,9 @@ import parsley.position
 /** TODO:
   * @since 4.1.0
   */
-// TODO: We could make these groupings into merged ADTs? Must be careful with binary-lock-in though...
 class ErrorConfig {
     // numeric
-    def labelNumericBreakChar: LabelConfig = NotConfigured // TODO: explain
-    def explainNumericBreakChar: Option[String] = None //FIXME: remove
+    def labelNumericBreakChar: LabelWithExplainConfig = NotConfigured
 
     def labelIntegerUnsignedDecimal: LabelWithExplainConfig = labelIntegerUnsignedNumber
     def labelIntegerUnsignedHexadecimal: LabelWithExplainConfig = labelIntegerUnsignedNumber
@@ -68,8 +66,8 @@ class ErrorConfig {
     def labelRealBinaryEnd: LabelConfig = labelRealNumberEnd
     def labelRealNumberEnd: LabelConfig = NotConfigured
 
-    def labelRealDot: LabelConfig = NotConfigured // TODO: explain
-    def labelRealExponent: LabelConfig = NotConfigured // TODO: explain
+    def labelRealDot: LabelWithExplainConfig = NotConfigured
+    def labelRealExponent: LabelWithExplainConfig = NotConfigured
     def labelRealExponentEnd: LabelConfig = NotConfigured
 
     private [token] final def labelDecimal(bits: Int, signed: Boolean): LabelWithExplainConfig = {
@@ -148,7 +146,7 @@ class ErrorConfig {
     def labelGraphicCharacter: LabelWithExplainConfig = Label("graphic character")
     def labelEscapeSequence: LabelWithExplainConfig = Label("escape sequence") //different to "invalid escape sequence"!
     def labelEscapeNumeric(radix: Int): LabelConfig = NotConfigured
-    def labelEscapeNumericEnd(radix: Int): LabelConfig = NotConfigured
+    def labelEscapeNumericEnd(prefix: Char, radix: Int): LabelWithExplainConfig = NotConfigured
     def labelEscapeEnd: LabelWithExplainConfig = LabelAndReason("end of escape sequence", "invalid escape sequence")
     def labelStringEscapeEmpty: LabelConfig = NotConfigured
     def labelStringEscapeGap: LabelConfig = Label("string gap")
@@ -161,8 +159,6 @@ class ErrorConfig {
     def explainCharNonBasicMultilingualPlane: Option[Int => String] = Some(_ => "non-BMP character")
     def explainCharNonAscii: Option[Int => String] = Some(_ => "non-ascii character")
     def explainCharNonLatin1: Option[Int => String] = Some(_ => "non-latin1 character")
-
-    def explainEscapeNumericPostPrefix(prefix: Char, radix: Int): Option[String] = None
 
     def messageStringNonAscii(@unused s: String): Seq[String] =
         Seq("non-ascii characters in string literal, this is not allowed")
@@ -210,11 +206,6 @@ class ErrorConfig {
 }
 
 private [token] object ErrorConfig {
-    private [token] def explain[A](reason: Option[String])(p: Parsley[A]): Parsley[A] = reason match {
-        case None => p
-        case Some(reason) => p.explain(reason)
-    }
-
     private [token] def unexpectedWhenWithReason[A](pred: A => Boolean, unexGen: Option[A => String], reasonGen: Option[A => String])(p: Parsley[A]) = {
         unexGen match {
             case None => reasonGen match {

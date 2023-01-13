@@ -52,8 +52,7 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInt
     def leadingBreakChar(label: LabelConfig) = desc.literalBreakChar match {
         case BreakCharDesc.NoBreakChar => unit
         case BreakCharDesc.Supported(breakChar, allowedAfterNonDecimalPrefix) =>
-            when(allowedAfterNonDecimalPrefix,
-                ErrorConfig.explain(err.explainNumericBreakChar)(err.labelNumericBreakChar.orElse(label)(optional(breakChar))))
+            when(allowedAfterNonDecimalPrefix, err.labelNumericBreakChar.orElse(label)(optional(breakChar)))
     }
 
     private val noZeroHexadecimal =
@@ -89,7 +88,7 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInt
         def broken(c: Char) =
             lift2(f,
                 endLabel(digit),
-                (ErrorConfig.explain(err.explainNumericBreakChar)(err.labelNumericBreakChar.orElse(endLabel)(optional(c))) *>
+                (err.labelNumericBreakChar.orElse(endLabel)(optional(c)) *>
                  endLabel(digit)).foldRight[BigDecimal](0)(f))
         val fractional = amend {
             err.labelRealDot.orElse(endLabel)('.') *> {

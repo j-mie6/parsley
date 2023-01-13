@@ -39,8 +39,7 @@ private [token] class Escape(desc: EscapeDesc, err: ErrorConfig, generic: numeri
         }
         prefix match {
             case None => numericTail
-            case Some(c) => char(c) *>
-                            ErrorConfig.explain(err.explainEscapeNumericPostPrefix(c, radix))(err.labelEscapeNumericEnd(radix)(numericTail))
+            case Some(c) => char(c) *> err.labelEscapeNumericEnd(c, radix)(numericTail)
         }
     }
 
