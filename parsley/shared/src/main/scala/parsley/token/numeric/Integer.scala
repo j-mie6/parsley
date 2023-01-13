@@ -5,7 +5,7 @@ package parsley.token.numeric
 
 import parsley.Parsley
 import parsley.token.descriptions.numeric.NumericDesc
-import parsley.token.errors.{ErrorConfig, LabelConfig}
+import parsley.token.errors.{ErrorConfig, LabelWithExplainConfig}
 
 /** This class defines a uniform interface for defining parsers for integer
   * literals, independent of how whitespace should be handled after the literal
@@ -265,7 +265,7 @@ abstract class Integer private[numeric] (private [numeric] val desc: NumericDesc
     @inline final def binary64[T: CanHold.can_hold_64_bits]: Parsley[T] = binaryBounded(_64)
 
 
-    protected [numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int, label: (ErrorConfig, Boolean) => LabelConfig)
+    protected [numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int, label: (ErrorConfig, Boolean) => LabelWithExplainConfig)
                                       (implicit ev: CanHold[bits.self, T]): Parsley[T]
     protected [numeric] def _decimal: Parsley[BigInt] = decimal
     protected [numeric] def _hexadecimal: Parsley[BigInt] = hexadecimal

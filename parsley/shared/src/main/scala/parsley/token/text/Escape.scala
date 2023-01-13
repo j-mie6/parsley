@@ -90,7 +90,7 @@ private [token] class Escape(desc: EscapeDesc, err: ErrorConfig, generic: numeri
     private val octalEscape = fromDesc(radix = 8, desc.octalEscape, generic.zeroAllowedOctal(NotConfigured), octDigit)
     private val binaryEscape = fromDesc(radix = 2, desc.binaryEscape, generic.zeroAllowedBinary(NotConfigured), bit)
     private val numericEscape = decimalEscape <|> hexadecimalEscape <|> octalEscape <|> binaryEscape
-    val escapeCode = ErrorConfig.explain(err.explainEscapeInvalid)(err.labelEscapeEnd(escMapped <|> numericEscape))
+    val escapeCode = err.labelEscapeEnd(escMapped <|> numericEscape)
     val escapeBegin = err.labelEscapeSequence(char(desc.escBegin))
     val escapeChar = escapeBegin *> escapeCode
 }

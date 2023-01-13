@@ -15,29 +15,30 @@ import parsley.position
 // TODO: We could make these groupings into merged ADTs? Must be careful with binary-lock-in though...
 class ErrorConfig {
     // numeric
-    def labelNumericBreakChar: LabelConfig = NotConfigured
+    def labelNumericBreakChar: LabelConfig = NotConfigured // TODO: explain
+    def explainNumericBreakChar: Option[String] = None //FIXME: remove
 
-    def labelIntegerUnsignedDecimal: LabelConfig = labelIntegerUnsignedNumber
-    def labelIntegerUnsignedHexadecimal: LabelConfig = labelIntegerUnsignedNumber
-    def labelIntegerUnsignedOctal: LabelConfig = labelIntegerUnsignedNumber
-    def labelIntegerUnsignedBinary: LabelConfig = labelIntegerUnsignedNumber
-    def labelIntegerUnsignedNumber: LabelConfig = NotConfigured
-    def labelIntegerUnsignedDecimal(@unused bits: Int): LabelConfig = labelIntegerUnsignedDecimal
-    def labelIntegerUnsignedHexadecimal(@unused bits: Int): LabelConfig = labelIntegerUnsignedHexadecimal
-    def labelIntegerUnsignedOctal(@unused bits: Int): LabelConfig = labelIntegerUnsignedOctal
-    def labelIntegerUnsignedBinary(@unused bits: Int): LabelConfig = labelIntegerUnsignedBinary
-    def labelIntegerUnsignedNumber(@unused bits: Int): LabelConfig = labelIntegerUnsignedNumber
+    def labelIntegerUnsignedDecimal: LabelWithExplainConfig = labelIntegerUnsignedNumber
+    def labelIntegerUnsignedHexadecimal: LabelWithExplainConfig = labelIntegerUnsignedNumber
+    def labelIntegerUnsignedOctal: LabelWithExplainConfig = labelIntegerUnsignedNumber
+    def labelIntegerUnsignedBinary: LabelWithExplainConfig = labelIntegerUnsignedNumber
+    def labelIntegerUnsignedNumber: LabelWithExplainConfig = NotConfigured
+    def labelIntegerUnsignedDecimal(@unused bits: Int): LabelWithExplainConfig = labelIntegerUnsignedDecimal
+    def labelIntegerUnsignedHexadecimal(@unused bits: Int): LabelWithExplainConfig = labelIntegerUnsignedHexadecimal
+    def labelIntegerUnsignedOctal(@unused bits: Int): LabelWithExplainConfig = labelIntegerUnsignedOctal
+    def labelIntegerUnsignedBinary(@unused bits: Int): LabelWithExplainConfig = labelIntegerUnsignedBinary
+    def labelIntegerUnsignedNumber(@unused bits: Int): LabelWithExplainConfig = labelIntegerUnsignedNumber
 
-    def labelIntegerSignedDecimal: LabelConfig = labelIntegerSignedNumber
-    def labelIntegerSignedHexadecimal: LabelConfig = labelIntegerSignedNumber
-    def labelIntegerSignedOctal: LabelConfig = labelIntegerSignedNumber
-    def labelIntegerSignedBinary: LabelConfig = labelIntegerSignedNumber
-    def labelIntegerSignedNumber: LabelConfig = NotConfigured
-    def labelIntegerSignedDecimal(@unused bits: Int): LabelConfig = labelIntegerSignedDecimal
-    def labelIntegerSignedHexadecimal(@unused bits: Int): LabelConfig = labelIntegerSignedHexadecimal
-    def labelIntegerSignedOctal(@unused bits: Int): LabelConfig = labelIntegerSignedOctal
-    def labelIntegerSignedBinary(@unused bits: Int): LabelConfig = labelIntegerSignedBinary
-    def labelIntegerSignedNumber(@unused bits: Int): LabelConfig = labelIntegerSignedNumber
+    def labelIntegerSignedDecimal: LabelWithExplainConfig = labelIntegerSignedNumber
+    def labelIntegerSignedHexadecimal: LabelWithExplainConfig = labelIntegerSignedNumber
+    def labelIntegerSignedOctal: LabelWithExplainConfig = labelIntegerSignedNumber
+    def labelIntegerSignedBinary: LabelWithExplainConfig = labelIntegerSignedNumber
+    def labelIntegerSignedNumber: LabelWithExplainConfig = NotConfigured
+    def labelIntegerSignedDecimal(@unused bits: Int): LabelWithExplainConfig = labelIntegerSignedDecimal
+    def labelIntegerSignedHexadecimal(@unused bits: Int): LabelWithExplainConfig = labelIntegerSignedHexadecimal
+    def labelIntegerSignedOctal(@unused bits: Int): LabelWithExplainConfig = labelIntegerSignedOctal
+    def labelIntegerSignedBinary(@unused bits: Int): LabelWithExplainConfig = labelIntegerSignedBinary
+    def labelIntegerSignedNumber(@unused bits: Int): LabelWithExplainConfig = labelIntegerSignedNumber
 
     def labelIntegerDecimalEnd: LabelConfig = labelIntegerNumberEnd
     def labelIntegerHexadecimalEnd: LabelConfig = labelIntegerNumberEnd
@@ -45,21 +46,21 @@ class ErrorConfig {
     def labelIntegerBinaryEnd: LabelConfig = labelIntegerNumberEnd
     def labelIntegerNumberEnd: LabelConfig = NotConfigured
 
-    def labelRealDecimal: LabelConfig = labelRealNumber
-    def labelRealHexadecimal: LabelConfig = labelRealNumber
-    def labelRealOctal: LabelConfig = labelRealNumber
-    def labelRealBinary: LabelConfig = labelRealNumber
-    def labelRealNumber: LabelConfig = NotConfigured
-    def labelRealFloatDecimal: LabelConfig = labelRealDecimal
-    def labelRealFloatHexadecimal: LabelConfig = labelRealHexadecimal
-    def labelRealFloatOctal: LabelConfig = labelRealOctal
-    def labelRealFloatBinary: LabelConfig = labelRealBinary
-    def labelRealFloatNumber: LabelConfig = labelRealNumber
-    def labelRealDoubleDecimal: LabelConfig = labelRealDecimal
-    def labelRealDoubleHexadecimal: LabelConfig = labelRealHexadecimal
-    def labelRealDoubleOctal: LabelConfig = labelRealOctal
-    def labelRealDoubleBinary: LabelConfig = labelRealBinary
-    def labelRealDoubleNumber: LabelConfig = labelRealNumber
+    def labelRealDecimal: LabelWithExplainConfig = labelRealNumber
+    def labelRealHexadecimal: LabelWithExplainConfig = labelRealNumber
+    def labelRealOctal: LabelWithExplainConfig = labelRealNumber
+    def labelRealBinary: LabelWithExplainConfig = labelRealNumber
+    def labelRealNumber: LabelWithExplainConfig = NotConfigured
+    def labelRealFloatDecimal: LabelWithExplainConfig = labelRealDecimal
+    def labelRealFloatHexadecimal: LabelWithExplainConfig = labelRealHexadecimal
+    def labelRealFloatOctal: LabelWithExplainConfig = labelRealOctal
+    def labelRealFloatBinary: LabelWithExplainConfig = labelRealBinary
+    def labelRealFloatNumber: LabelWithExplainConfig = labelRealNumber
+    def labelRealDoubleDecimal: LabelWithExplainConfig = labelRealDecimal
+    def labelRealDoubleHexadecimal: LabelWithExplainConfig = labelRealHexadecimal
+    def labelRealDoubleOctal: LabelWithExplainConfig = labelRealOctal
+    def labelRealDoubleBinary: LabelWithExplainConfig = labelRealBinary
+    def labelRealDoubleNumber: LabelWithExplainConfig = labelRealNumber
 
     def labelRealDecimalEnd: LabelConfig = labelRealNumberEnd
     def labelRealHexadecimalEnd: LabelConfig = labelRealNumberEnd
@@ -67,27 +68,25 @@ class ErrorConfig {
     def labelRealBinaryEnd: LabelConfig = labelRealNumberEnd
     def labelRealNumberEnd: LabelConfig = NotConfigured
 
-    def labelRealDot: LabelConfig = NotConfigured
-    def labelRealExponent: LabelConfig = NotConfigured
+    def labelRealDot: LabelConfig = NotConfigured // TODO: explain
+    def labelRealExponent: LabelConfig = NotConfigured // TODO: explain
     def labelRealExponentEnd: LabelConfig = NotConfigured
 
-    private [token] final def labelDecimal(bits: Int, signed: Boolean): LabelConfig = {
+    private [token] final def labelDecimal(bits: Int, signed: Boolean): LabelWithExplainConfig = {
         if (signed) labelIntegerSignedDecimal(bits) else labelIntegerUnsignedDecimal(bits)
     }
-    private [token] final def labelHexadecimal(bits: Int, signed: Boolean): LabelConfig = {
+    private [token] final def labelHexadecimal(bits: Int, signed: Boolean): LabelWithExplainConfig = {
         if (signed) labelIntegerSignedHexadecimal(bits) else labelIntegerUnsignedHexadecimal(bits)
     }
-    private [token] final def labelOctal(bits: Int, signed: Boolean): LabelConfig = {
+    private [token] final def labelOctal(bits: Int, signed: Boolean): LabelWithExplainConfig = {
         if (signed) labelIntegerSignedOctal(bits) else labelIntegerUnsignedOctal(bits)
     }
-    private [token] final def labelBinary(bits: Int, signed: Boolean): LabelConfig = {
+    private [token] final def labelBinary(bits: Int, signed: Boolean): LabelWithExplainConfig = {
         if (signed) labelIntegerSignedBinary(bits) else labelIntegerUnsignedBinary(bits)
     }
-    private [token] final def labelNumber(bits: Int, signed: Boolean): LabelConfig = {
+    private [token] final def labelNumber(bits: Int, signed: Boolean): LabelWithExplainConfig = {
         if (signed) labelIntegerSignedNumber(bits) else labelIntegerUnsignedNumber(bits)
     }
-
-    def explainNumericBreakChar: Option[String] = None
 
     def explainRealNoDoubleDroppedZero: String =
         "a real number cannot drop both a leading and trailing zero"
@@ -127,30 +126,30 @@ class ErrorConfig {
     def unexpectedNameIllFormedOperator: Option[String => String] = Some(v => s"operator $v")
 
     // text
-    def labelCharAscii: LabelConfig = NotConfigured
-    def labelCharLatin1: LabelConfig = NotConfigured
-    def labelCharBasicMultilingualPlane: LabelConfig = NotConfigured
-    def labelCharUtf16: LabelConfig = NotConfigured
+    def labelCharAscii: LabelWithExplainConfig = NotConfigured
+    def labelCharLatin1: LabelWithExplainConfig = NotConfigured
+    def labelCharBasicMultilingualPlane: LabelWithExplainConfig = NotConfigured
+    def labelCharUtf16: LabelWithExplainConfig = NotConfigured
 
     def labelCharAsciiEnd: LabelConfig = NotConfigured
     def labelCharLatin1End: LabelConfig = NotConfigured
     def labelCharBasicMultilingualPlaneEnd: LabelConfig = NotConfigured
     def labelCharUtf16End: LabelConfig = NotConfigured
 
-    def labelStringAscii(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
-    def labelStringLatin1(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
-    def labelStringUtf16(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
+    def labelStringAscii(multi: Boolean, raw: Boolean): LabelWithExplainConfig = NotConfigured
+    def labelStringLatin1(multi: Boolean, raw: Boolean): LabelWithExplainConfig = NotConfigured
+    def labelStringUtf16(multi: Boolean, raw: Boolean): LabelWithExplainConfig = NotConfigured
 
     def labelStringAsciiEnd(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
     def labelStringLatin1End(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
     def labelStringUtf16End(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
 
     def labelStringCharacter: LabelConfig = Label("string character")
-    def labelGraphicCharacter: LabelConfig = Label("graphic character")
-    def labelEscapeSequence: LabelConfig = Label("escape sequence")
+    def labelGraphicCharacter: LabelWithExplainConfig = Label("graphic character")
+    def labelEscapeSequence: LabelWithExplainConfig = Label("escape sequence") //different to "invalid escape sequence"!
     def labelEscapeNumeric(radix: Int): LabelConfig = NotConfigured
     def labelEscapeNumericEnd(radix: Int): LabelConfig = NotConfigured
-    def labelEscapeEnd: LabelConfig = Label("end of escape sequence")
+    def labelEscapeEnd: LabelWithExplainConfig = LabelAndReason("end of escape sequence", "invalid escape sequence")
     def labelStringEscapeEmpty: LabelConfig = NotConfigured
     def labelStringEscapeGap: LabelConfig = Label("string gap")
     def labelStringEscapeGapEnd: LabelConfig = Label("end of string gap")
@@ -162,10 +161,7 @@ class ErrorConfig {
     def explainCharNonBasicMultilingualPlane: Option[Int => String] = Some(_ => "non-BMP character")
     def explainCharNonAscii: Option[Int => String] = Some(_ => "non-ascii character")
     def explainCharNonLatin1: Option[Int => String] = Some(_ => "non-latin1 character")
-    def explainGraphicCharacter: Option[String] = None
 
-    def explainEscapeInvalid: Option[String] =
-        Some("invalid escape sequence")
     def explainEscapeNumericPostPrefix(prefix: Char, radix: Int): Option[String] = None
 
     def messageStringNonAscii(@unused s: String): Seq[String] =
@@ -209,8 +205,8 @@ class ErrorConfig {
     def labelSymbolEndOfOperator(symbol: String): String = s"end of $symbol"
 
     // space
-    def labelSpaceEndOfLineComment: LabelConfig = Label("end of comment")
-    def labelSpaceEndOfMultiComment: LabelConfig = Label("end of comment")
+    def labelSpaceEndOfLineComment: LabelWithExplainConfig = Label("end of comment")
+    def labelSpaceEndOfMultiComment: LabelWithExplainConfig = Label("end of comment")
 }
 
 private [token] object ErrorConfig {

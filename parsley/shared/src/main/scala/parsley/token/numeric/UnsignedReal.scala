@@ -107,8 +107,8 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInt
         val (requiredExponent, exponent, base) = expDesc match {
             case ExponentDesc.Supported(compulsory, exp, base, sign) =>
                 val expErr = new ErrorConfig {
-                    override def labelIntegerSignedDecimal(bits: Int): LabelConfig = err.labelRealExponentEnd.orElse(endLabel)
-                    override def labelIntegerDecimalEnd: LabelConfig = err.labelRealExponentEnd.orElse(endLabel)
+                    override def labelIntegerSignedDecimal(bits: Int) = err.labelRealExponentEnd.orElse(endLabel)
+                    override def labelIntegerDecimalEnd = err.labelRealExponentEnd.orElse(endLabel)
                 }
                 val integer = new SignedInteger(desc.copy(positiveSign = sign), natural, expErr)
                 val exponent = err.labelRealExponent.orElse(endLabel)(oneOf(exp)) *> integer.decimal32

@@ -5,7 +5,7 @@ package parsley.token.numeric
 
 import parsley.Parsley
 import parsley.token.Lexeme
-import parsley.token.errors.{ErrorConfig, LabelConfig}
+import parsley.token.errors.{ErrorConfig, LabelWithExplainConfig}
 
 private [token] final class LexemeInteger(integer: Integer, lexeme: Lexeme) extends Integer(integer.desc) {
     override lazy val decimal: Parsley[BigInt] = lexeme(integer.decimal)
@@ -14,7 +14,7 @@ private [token] final class LexemeInteger(integer: Integer, lexeme: Lexeme) exte
     override lazy val binary: Parsley[BigInt] = lexeme(integer.binary)
     override lazy val  number: Parsley[BigInt] = lexeme(integer.number)
 
-    override protected[numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int, label: (ErrorConfig, Boolean) => LabelConfig)
+    override protected[numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int, label: (ErrorConfig, Boolean) => LabelWithExplainConfig)
                                               (implicit ev: CanHold[bits.self,T]): Parsley[T] =
         lexeme(integer.bounded(number, bits, radix, label))
 

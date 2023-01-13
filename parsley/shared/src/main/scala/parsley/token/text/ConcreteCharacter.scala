@@ -9,7 +9,7 @@ import parsley.Parsley, Parsley.empty
 import parsley.character.{char, charUtf16}
 import parsley.errors.combinator.ErrorMethods
 import parsley.token.descriptions.text.TextDesc
-import parsley.token.errors.{LabelConfig, ErrorConfig}
+import parsley.token.errors.{LabelConfig, LabelWithExplainConfig, ErrorConfig}
 
 private [token] final class ConcreteCharacter(desc: TextDesc, escapes: Escape, err: ErrorConfig) extends Character {
     private val quote = char(desc.characterLiteralEnd)
@@ -19,7 +19,7 @@ private [token] final class ConcreteCharacter(desc: TextDesc, escapes: Escape, e
         val _checkBadChar = err.verifiedCharBadCharsUsedInLiteral.foldLeft(empty) {
             case (w, (c, reason)) => w <|> charUtf16(c).unexpected(reason)
         }
-        escapes.escapeChar <|> ErrorConfig.explain(err.explainGraphicCharacter)(err.labelGraphicCharacter(graphicLetter)) <|> _checkBadChar
+        escapes.escapeChar <|> err.labelGraphicCharacter(graphicLetter) <|> _checkBadChar
     }
     private def charLiteral[A](letter: Parsley[A], end: LabelConfig) = quote *> letter <* end(quote)
 
@@ -27,7 +27,7 @@ private [token] final class ConcreteCharacter(desc: TextDesc, escapes: Escape, e
     // this is a bit inefficient, converting to int and then back to char, but it makes it consistent, and can be optimised anyway
     private lazy val uncheckedBmpLetter = charLetter(graphic.toBmp.map(_.toInt))
 
-    private def constrainedBmp(illegal: Int => Boolean, label: LabelConfig, endLabel: LabelConfig,
+    private def constrainedBmp(illegal: Int => Boolean, label: LabelWithExplainConfig, endLabel: LabelConfig,
                                unex: Option[Int => ScalaString], reason: Option[Int => ScalaString]) = {
         label {
             charLiteral(ErrorConfig.unexpectedWhenWithReason(illegal, unex, reason)(uncheckedBmpLetter).map(_.toChar), endLabel)
