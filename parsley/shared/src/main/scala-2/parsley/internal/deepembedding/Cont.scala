@@ -38,11 +38,6 @@ private [deepembedding] object ContOps {
     @inline def result[R, A, Cont[_, +_]](x: A)(implicit canWrap: ContOps[Cont]): Cont[R, A] = canWrap.wrap(x)
     @inline def perform[Cont[_, +_], R](wrapped: Cont[R, R])(implicit canUnwrap: ContOps[Cont]): R = canUnwrap.unwrap(wrapped)
     @inline def suspend[Cont[_, +_], R, A](x: =>Cont[R, A])(implicit ops: ContOps[Cont]): Cont[R, A] = ops.suspend(x)
-    type GenOps = ContOps[({type C[_, +_]})#C] // scalastyle:ignore structural.type
-    def safeCall[A](task: GenOps => A): A = {
-        try task(Id.ops.asInstanceOf[GenOps])
-        catch { case _: StackOverflowError => task(Cont.ops.asInstanceOf[GenOps]) }
-    }
     // $COVERAGE-OFF$
     def sequence[Cont[_, +_]: ContOps, R, A](mxs: List[Cont[R, A]]): Cont[R, List[A]] = mxs match {
         case Nil => result(Nil)
