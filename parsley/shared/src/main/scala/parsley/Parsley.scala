@@ -881,22 +881,20 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
 
     // SPECIAL METHODS
     // $COVERAGE-OFF$
-    /**
-      * Forces the compilation of a parser as opposed to the regular lazy evaluation.
+    /** Forces the compilation of a parser as opposed to the regular lazy evaluation.
       *
       * @group special
       */
     def force(): Unit = internal.force()
 
-    /**
-      * Provides an indicator that this parser is likely to stack-overflow
+    /** Provides an indicator that this parser will likely stack-overflow and so a stack-safe
+      * construction should be used when "compiling" this parser.
       *
       * @group special
       */
     def overflows(): Unit = internal.overflows()
 
-    /**
-      * Using this method signifies that the parser it is invoked on is impure and any optimisations which assume purity
+    /** Using this method signifies that the parser it is invoked on is impure and any optimisations which assume purity
       * are disabled.
       *
       * @group special
@@ -908,8 +906,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
     // $COVERAGE-ON$
 
     // $COVERAGE-OFF$
-    /**
-      * This is an alias for `p.filter(pred)`. It is needed to support for-comprehension syntax with `if`s.
+    /** This is an alias for `p.filter(pred)`. It is needed to support for-comprehension syntax with `if`s.
       *
       * @since 4.0.0
       * @see [[parsley.Parsley.filter `filter`]] for more information.

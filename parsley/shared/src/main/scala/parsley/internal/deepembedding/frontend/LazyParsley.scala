@@ -10,7 +10,7 @@ import parsley.XAssert._
 import parsley.exceptions.BadLazinessException
 import parsley.registers.Reg
 
-import parsley.internal.deepembedding.{Cont, ContOps}, ContOps.{safeCall, GenOps, perform, result, ContAdapter}
+import parsley.internal.deepembedding.{Cont, ContOps, Id}, ContOps.{perform, result, ContAdapter}
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 import parsley.internal.machine.instructions, instructions.Instr
 
@@ -91,17 +91,17 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     final private var numRegsUsedByParent = -1
 
     /** Computes the instructions associated with this parser as well as the number of
-      * registers it requires in a stack-safe way.
+      * registers it requires in a (possibly) stack-safe way.
       */
     final private def computeInstrs: (Array[Instr], Int) = {
-        if (cps) computeInstrs(Cont.ops.asInstanceOf[GenOps]) else safeCall(computeInstrs(_))
+        if (cps) computeInstrs(Cont.ops) else computeInstrs(Id.ops)
     }
     /** Computes the instructions associated with this parser as well as the number of
       * registers it requires within the context of a specific (unknown) monad.
       *
       * @param ops the instance for the monad to evaluate with
       */
-    final private def computeInstrs(ops: GenOps): (Array[Instr], Int) = pipeline(ops)
+    final private def computeInstrs[Cont[_, +_]](ops: ContOps[Cont]): (Array[Instr], Int) = pipeline(ops)
 
     /** Performs the full end-to-end pipeline through both the frontend and the backend.
       *
