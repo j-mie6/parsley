@@ -29,7 +29,7 @@ class Label(label: String) extends LabelConfig {
     private [parsley] final override def orElse(config: LabelConfig) = this
 }
 object Label {
-    def apply(label: String): LabelConfig = new Label(label)
+    def apply(label: String): LabelConfig = if (label.isEmpty) Hidden else new Label(label)
 }
 
 object Hidden extends LabelConfig {
