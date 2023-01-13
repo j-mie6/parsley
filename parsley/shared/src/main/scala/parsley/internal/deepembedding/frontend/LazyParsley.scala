@@ -10,7 +10,7 @@ import parsley.XAssert._
 import parsley.exceptions.BadLazinessException
 import parsley.registers.Reg
 
-import parsley.internal.deepembedding.{Cont, Id, ContOps}, ContOps.{perform, result, ContAdapter}
+import parsley.internal.deepembedding.{Cont, ContOps, Id}, ContOps.{perform, result, ContAdapter}
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 import parsley.internal.machine.instructions, instructions.Instr
 
