@@ -7,15 +7,16 @@ import parsley.registers.Reg
 
 import parsley.internal.deepembedding.frontend.UsesRegister
 import parsley.internal.machine.instructions
+import parsley.token.errors.LabelConfig
 
-private [parsley] final class CharTok(private [CharTok] val c: Char, val expected: Option[String]) extends Singleton[Char] {
+private [parsley] final class CharTok(private [CharTok] val c: Char, val expected: LabelConfig) extends Singleton[Char] {
     // $COVERAGE-OFF$
     override def pretty: String = s"char($c)"
     // $COVERAGE-ON$
     override def instr: instructions.Instr = instructions.CharTok(c, expected)
 }
 
-private [parsley] final class StringTok(private [StringTok] val s: String, val expected: Option[String]) extends Singleton[String] {
+private [parsley] final class StringTok(private [StringTok] val s: String, val expected: LabelConfig) extends Singleton[String] {
     // $COVERAGE-OFF$
     override def pretty: String = s"string($s)"
     // $COVERAGE-ON$

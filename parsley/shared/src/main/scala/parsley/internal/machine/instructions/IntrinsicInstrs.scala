@@ -9,6 +9,7 @@ import parsley.internal.errors.{EndOfInput, ExpectItem, UnexpectDesc}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.{ClassicFancyError, ClassicUnexpectedError, EmptyError, EmptyErrorWithReason}
+import parsley.token.errors.LabelConfig
 
 private [internal] final class Lift2(f: (Any, Any) => Any) extends Instr {
     override def apply(ctx: Context): Unit = {
@@ -300,13 +301,13 @@ private [internal] final class SwapAndPut(reg: Int) extends Instr {
 
 // Companion Objects
 private [internal] object CharTok {
-    def apply(c: Char, expected: Option[String]): CharTok = apply(c, c, expected)
-    def apply(c: Char, x: Any, expected: Option[String]): CharTok = new CharTok(c, x, ExpectItem(expected, s"$c"))
+    def apply(c: Char, expected: LabelConfig): CharTok = apply(c, c, expected)
+    def apply(c: Char, x: Any, expected: LabelConfig): CharTok = new CharTok(c, x, expected.asExpectItem(s"$c"))
 }
 
 private [internal] object StringTok {
-    def apply(s: String, expected: Option[String]): StringTok = apply(s, s, expected)
-    def apply(s: String, x: Any, expected: Option[String]): StringTok = new StringTok(s, x,  ExpectItem(expected, s))
+    def apply(s: String, expected: LabelConfig): StringTok = apply(s, s, expected)
+    def apply(s: String, x: Any, expected: LabelConfig): StringTok = new StringTok(s, x,  expected.asExpectItem(s))
 
     private [StringTok] abstract class Adjust {
         private [StringTok] def tab: Adjust
@@ -350,9 +351,9 @@ private [internal] object StringTok {
 }
 
 private [internal] object CharTokFastPerform {
-    def apply[A >: Char, B](c: Char, f: A => B, expected: Option[String]): CharTok = CharTok(c, f(c), expected)
+    def apply[A >: Char, B](c: Char, f: A => B, expected: LabelConfig): CharTok = CharTok(c, f(c), expected)
 }
 
 private [internal] object StringTokFastPerform {
-    def apply(s: String, f: String => Any, expected: Option[String]): StringTok = StringTok(s, f(s), expected)
+    def apply(s: String, f: String => Any, expected: LabelConfig): StringTok = StringTok(s, f(s), expected)
 }

@@ -11,6 +11,7 @@ import parsley.combinator.{choice, skipMany}
 import parsley.errors.combinator.{amend, ErrorMethods}
 
 import parsley.internal.deepembedding.singletons
+import parsley.token.errors.NotConfigured
 
 /** This module contains many parsers to do with reading one or more characters. Almost every parser will need something from this module.
   *
@@ -99,7 +100,7 @@ object character {
       * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[string `string`]].
       * @group core
       */
-    def char(c: Char): Parsley[Char] = new Parsley(new singletons.CharTok(c, None))
+    def char(c: Char): Parsley[Char] = new Parsley(new singletons.CharTok(c, NotConfigured))
 
     /** This combinator tries to parse a single specific codepoint `c` from the input.
       *
@@ -149,7 +150,7 @@ object character {
       * @note this combinator can only handle 16-bit characters.
       * @group core
       */
-    def satisfy(pred: Char => Boolean): Parsley[Char] = new Parsley(new singletons.Satisfy(pred, None))
+    def satisfy(pred: Char => Boolean): Parsley[Char] = new Parsley(new singletons.Satisfy(pred, NotConfigured))
 
     // TODO: document and optimise
     private [parsley] def satisfyUtf16(pred: Int => Boolean): Parsley[Int] = amend {
@@ -197,7 +198,7 @@ object character {
       */
     def string(s: String): Parsley[String] = {
         require(s.nonEmpty, "`string` may not be passed the empty string (`string(\"\")` is meaningless, perhaps you meant `pure(\"\")`?)")
-        new Parsley(new singletons.StringTok(s, None))
+        new Parsley(new singletons.StringTok(s, NotConfigured))
     }
 
     /** $oneOf

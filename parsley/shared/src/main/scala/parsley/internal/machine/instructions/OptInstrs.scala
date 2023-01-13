@@ -7,11 +7,12 @@ import scala.collection.mutable
 
 import parsley.XCompat._ //mapValuesInPlace
 
-import parsley.internal.errors.{ExpectDesc, ExpectItem}
+import parsley.internal.errors.ExpectItem
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.MultiExpectedError
 import parsley.internal.machine.stacks.ErrorStack
+import parsley.token.errors.LabelConfig
 
 private [internal] final class Lift1(f: Any => Any) extends Instr {
     override def apply(ctx: Context): Unit = {
@@ -36,8 +37,8 @@ private [internal] final class Exchange[A](private [Exchange] val x: A) extends 
     // $COVERAGE-ON$
 }
 
-private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, _expected: Option[String]) extends Instr {
-    private [this] final val expected = _expected.map(ExpectDesc(_))
+private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, _expected: LabelConfig) extends Instr {
+    private [this] final val expected = _expected.asExpectDesc
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         if (ctx.moreInput && f(ctx.nextChar)) {

@@ -16,13 +16,6 @@ private [internal] sealed trait UnexpectItem extends ErrorItem {
 private [parsley] sealed trait ExpectItem extends ErrorItem {
     private [internal] def formatExpect(implicit builder: ErrorBuilder[_]): builder.Item
 }
-private [parsley] object ExpectItem {
-    def apply(label: Option[String], raw: String): Option[ExpectItem] = label match {
-        case Some("") => None
-        case Some(e)  => Some(ExpectDesc(e))
-        case None     => Some(ExpectRaw(raw))
-    }
-}
 
 private [internal] final case class UnexpectRaw(cs: Iterable[Char], amountOfInputParserWanted: Int) extends UnexpectItem {
     assert(cs.nonEmpty, "we promise that unexpectedToken never receives empty input")
@@ -46,11 +39,6 @@ private [parsley] object ExpectRaw {
 private [parsley] final case class ExpectDesc(msg: String) extends ExpectItem {
     assert(msg.nonEmpty, "Desc cannot contain empty things!")
     private [internal] def formatExpect(implicit builder: ErrorBuilder[_]): builder.Item = builder.named(msg)
-}
-private [parsley] object ExpectDesc {
-    def apply(expected: Option[String]): Option[ExpectDesc] = expected.collect {
-        case label if label.nonEmpty => ExpectDesc(label)
-    }
 }
 
 private [internal] final case class UnexpectDesc(msg: String, width: Int) extends UnexpectItem {
