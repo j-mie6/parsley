@@ -39,26 +39,16 @@ private [token] class ConcreteNames(nameDesc: NameDesc, symbolDesc: SymbolDesc, 
         case NotRequired => empty
     }
     override lazy val identifier: Parsley[String] =
-        keyOrOp(nameDesc.identifierStart, nameDesc.identifierLetter, symbolDesc.isReservedName(_),
+        keyOrOp(nameDesc.identifierStart, nameDesc.identifierLetter, symbolDesc.isReservedName,
                 err.labelNameIdentifier, err.unexpectedNameIllegalIdentifier)
     override def identifier(startChar: CharPredicate): Parsley[String] = attempt {
-        err.unexpectedNameIllFormedIdentifier match {
-            case Some(msggen) => identifier.unexpectedWhen {
-                case x if !startChar.startsWith(x) => msggen(x)
-            }
-            case None => identifier.filter(startChar.startsWith(_))
-        }
+        err.unexpectedNameIllFormedIdentifier.filter(identifier)(startChar.startsWith)
     }
 
     override lazy val userDefinedOperator: Parsley[String] =
-        keyOrOp(nameDesc.operatorStart, nameDesc.operatorLetter, symbolDesc.isReservedOp(_), err.labelNameOperator, err.unexpectedNameIllegalOperator)
+        keyOrOp(nameDesc.operatorStart, nameDesc.operatorLetter, symbolDesc.isReservedOp, err.labelNameOperator, err.unexpectedNameIllegalOperator)
 
     def userDefinedOperator(startChar: CharPredicate, endChar: CharPredicate): Parsley[String] = attempt {
-        err.unexpectedNameIllFormedOperator match {
-            case Some(msggen) => userDefinedOperator.unexpectedWhen {
-                case x if !startChar.startsWith(x) || !endChar.endsWith(x) => msggen(x)
-            }
-            case None => userDefinedOperator.filter(x => startChar.startsWith(x) && endChar.endsWith(x))
-        }
+        err.unexpectedNameIllFormedOperator.filter(userDefinedOperator)(x => startChar.startsWith(x) && endChar.endsWith(x))
     }
 }

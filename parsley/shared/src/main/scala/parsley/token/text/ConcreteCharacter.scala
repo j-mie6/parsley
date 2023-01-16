@@ -3,13 +3,12 @@
  */
 package parsley.token.text
 
-import scala.Predef.{String => ScalaString, _}
-
 import parsley.Parsley, Parsley.empty
 import parsley.character.{char, charUtf16}
 import parsley.errors.combinator.ErrorMethods
 import parsley.token.descriptions.text.TextDesc
 import parsley.token.errors.{LabelConfig, LabelWithExplainConfig, ErrorConfig}
+import parsley.token.errors.FilterConfig
 
 private [token] final class ConcreteCharacter(desc: TextDesc, escapes: Escape, err: ErrorConfig) extends Character {
     private val quote = char(desc.characterLiteralEnd)
@@ -27,18 +26,15 @@ private [token] final class ConcreteCharacter(desc: TextDesc, escapes: Escape, e
     // this is a bit inefficient, converting to int and then back to char, but it makes it consistent, and can be optimised anyway
     private lazy val uncheckedBmpLetter = charLetter(graphic.toBmp.map(_.toInt))
 
-    private def constrainedBmp(illegal: Int => Boolean, label: LabelWithExplainConfig, endLabel: LabelConfig,
-                               unex: Option[Int => ScalaString], reason: Option[Int => ScalaString]) = {
-        label {
-            charLiteral(ErrorConfig.unexpectedWhenWithReason(illegal, unex, reason)(uncheckedBmpLetter).map(_.toChar), endLabel)
-        }
+    private def constrainedBmp(illegal: Int => Boolean, label: LabelWithExplainConfig, endLabel: LabelConfig, bad: FilterConfig[Int]) = {
+        label(charLiteral(bad.collect(uncheckedBmpLetter) { case x if !illegal(x) => x.toChar }, endLabel))
     }
 
     override lazy val basicMultilingualPlane: Parsley[Char] =
         constrainedBmp(!Character.isBmpCodePoint(_), err.labelCharBasicMultilingualPlane, err.labelCharBasicMultilingualPlaneEnd,
-                       err.unexpectedCharNonBasicMultilingualPlane, err.explainCharNonBasicMultilingualPlane)
+                       err.unexpectedCharNonBasicMultilingualPlane)
     override lazy val ascii: Parsley[Char] =
-        constrainedBmp(_ > Character.MaxAscii, err.labelCharAscii, err.labelCharAsciiEnd, err.unexpectedCharNonAscii, err.explainCharNonAscii)
+        constrainedBmp(_ > Character.MaxAscii, err.labelCharAscii, err.labelCharAsciiEnd, err.unexpectedCharNonAscii)
     override lazy val latin1: Parsley[Char] =
-        constrainedBmp(_ > Character.MaxLatin1, err.labelCharLatin1, err.labelCharLatin1End, err.unexpectedCharNonLatin1, err.explainCharNonLatin1)
+        constrainedBmp(_ > Character.MaxLatin1, err.labelCharLatin1, err.labelCharLatin1End, err.unexpectedCharNonLatin1)
 }

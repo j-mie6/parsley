@@ -5,10 +5,6 @@ package parsley.token.errors
 
 import parsley.XCompat.unused
 
-import parsley.Parsley, Parsley.pure
-import parsley.errors.combinator.{amendThenDislodge, entrench, unexpected, ErrorMethods}
-import parsley.position
-
 /** TODO:
   * @since 4.1.0
   */
@@ -92,18 +88,18 @@ class ErrorConfig {
 
     def messageIntOutOfBounds(min: BigInt, max: BigInt, nativeRadix: Int): SpecialisedFilterConfig[BigInt] =
         new SpecialisedMessage[BigInt](fullAmend = false) {
-            def apply(n: BigInt) = Seq(
+            def message(n: BigInt) = Seq(
                 if (n < min) s"literal ${n.toString(nativeRadix)} is less than min value of ${min.toString(nativeRadix)}"
                 else s"literal ${n.toString(nativeRadix)} is larger than max value of ${max.toString(nativeRadix)}"
             )
         }
 
     def messageRealNotExact(name: String): SpecialisedFilterConfig[BigDecimal] = new SpecialisedMessage[BigDecimal](fullAmend = false) {
-        def apply(n: BigDecimal) = Seq(s"literal $n cannot be represented exactly as an $name")
+        def message(n: BigDecimal) = Seq(s"literal $n cannot be represented exactly as an $name")
     }
 
     def messageRealOutOfBounds(name: String, min: BigDecimal, @unused max: BigDecimal): SpecialisedFilterConfig[BigDecimal] = new SpecialisedMessage[BigDecimal](fullAmend = false) {
-        def apply(n: BigDecimal) = Seq(
+        def message(n: BigDecimal) = Seq(
             if (n < min) s"literal $n is too small to be an $name"
             else s"literal $n is too large to be an $name"
         )
@@ -121,14 +117,14 @@ class ErrorConfig {
     // names
     def labelNameIdentifier: String = "identifier"
     def labelNameOperator: String = "operator"
-    // FIXME: Assign this to a general hierarchy, otherwise we can't alter it!
     def unexpectedNameIllegalIdentifier(v: String): String = s"keyword $v"
-    // FIXME: Assign this to a general hierarchy, otherwise we can't alter it!
     def unexpectedNameIllegalOperator(v: String): String = s"reserved operator $v"
-    // FIXME: Assign this to a general hierarchy, otherwise we can't alter it!
-    def unexpectedNameIllFormedIdentifier: Option[String => String] = Some(v => s"identifer $v")
-    // FIXME: Assign this to a general hierarchy, otherwise we can't alter it!
-    def unexpectedNameIllFormedOperator: Option[String => String] = Some(v => s"operator $v")
+    def unexpectedNameIllFormedIdentifier: VanillaFilterConfig[String] = new Unexpected[String](fullAmend = false) {
+        def unexpected(v: String) = s"identifer $v"
+    }
+    def unexpectedNameIllFormedOperator: VanillaFilterConfig[String] = new Unexpected[String](fullAmend = false) {
+        def unexpected(v: String) = s"operator $v"
+    }
 
     // text
     def labelCharAscii: LabelWithExplainConfig = NotConfigured
@@ -159,34 +155,30 @@ class ErrorConfig {
     def labelStringEscapeGap: LabelConfig = Label("string gap")
     def labelStringEscapeGapEnd: LabelConfig = Label("end of string gap")
 
-    // FIXME: Assign this to a general hierarchy, otherwise we can't alter it!
-    def unexpectedCharNonBasicMultilingualPlane: Option[Int => String] = None
-    // FIXME: Assign this to a general hierarchy, otherwise we can't alter it!
-    def unexpectedCharNonAscii: Option[Int => String] = None
-    // FIXME: Assign this to a general hierarchy, otherwise we can't alter it!
-    def unexpectedCharNonLatin1: Option[Int => String] = None
-
-    // FIXME: Assign this to a general hierarchy, otherwise we can't alter it!
-    def explainCharNonBasicMultilingualPlane: Option[Int => String] = Some(_ => "non-BMP character")
-    // FIXME: Assign this to a general hierarchy, otherwise we can't alter it!
-    def explainCharNonAscii: Option[Int => String] = Some(_ => "non-ascii character")
-    // FIXME: Assign this to a general hierarchy, otherwise we can't alter it!
-    def explainCharNonLatin1: Option[Int => String] = Some(_ => "non-latin1 character")
+    def unexpectedCharNonBasicMultilingualPlane: VanillaFilterConfig[Int] = new Because[Int](fullAmend = false) {
+        def reason(@unused x: Int) = "non-BMP character"
+    }
+    def unexpectedCharNonAscii: VanillaFilterConfig[Int] = new Because[Int](fullAmend = false) {
+        def reason(@unused x: Int) = "non-ascii character"
+    }
+    def unexpectedCharNonLatin1: VanillaFilterConfig[Int] = new Because[Int](fullAmend = false) {
+        def reason(@unused x: Int) = "non-latin1 character"
+    }
 
     def messageStringNonAscii: SpecialisedFilterConfig[StringBuilder] = new SpecialisedMessage[StringBuilder](fullAmend = false) {
-        def apply(@unused s: StringBuilder) = Seq("non-ascii characters in string literal, this is not allowed")
+        def message(@unused s: StringBuilder) = Seq("non-ascii characters in string literal, this is not allowed")
     }
 
     def messageStringNonLatin1: SpecialisedFilterConfig[StringBuilder] = new SpecialisedMessage[StringBuilder](fullAmend = false) {
-        def apply(@unused s: StringBuilder) = Seq("non-latin1 characters in string literal, this is not allowed")
+        def message(@unused s: StringBuilder) = Seq("non-latin1 characters in string literal, this is not allowed")
     }
 
     def messageEscapeCharRequiresExactDigits(@unused radix: Int, needed: Seq[Int]): SpecialisedFilterConfig[Int] = new SpecialisedMessage[Int](fullAmend = false) {
-        def apply(got: Int) = Seq(s"numeric escape requires ${parsley.errors.helpers.combineAsList(needed.toList.map(_.toString))} digits, but only got $got")
+        def message(got: Int) = Seq(s"numeric escape requires ${parsley.errors.helpers.combineAsList(needed.toList.map(_.toString))} digits, but only got $got")
     }
 
     def messageEscapeCharNumericSequenceIllegal(maxEscape: Int, radix: Int): SpecialisedFilterConfig[BigInt] = new SpecialisedMessage[BigInt](fullAmend = false) {
-        def apply(escapeChar: BigInt) = Seq(
+        def message(escapeChar: BigInt) = Seq(
             if (escapeChar > BigInt(maxEscape)) s"${escapeChar.toString(radix)} is greater than the maximum character value of ${BigInt(maxEscape).toString(radix)}"
             else s"illegal unicode codepoint: ${escapeChar.toString(radix)}")
     }
@@ -218,24 +210,4 @@ class ErrorConfig {
     // space
     def labelSpaceEndOfLineComment: LabelWithExplainConfig = Label("end of comment")
     def labelSpaceEndOfMultiComment: LabelWithExplainConfig = Label("end of comment")
-}
-
-private [token] object ErrorConfig {
-    private [token] def unexpectedWhenWithReason[A](pred: A => Boolean, unexGen: Option[A => String], reasonGen: Option[A => String])(p: Parsley[A]) = {
-        unexGen match {
-            case None => reasonGen match {
-                case None => p.filterNot(pred)
-                case Some(g) => p.filterOut { case x if pred(x) => g(x) }
-            }
-            case Some(g1) => reasonGen match {
-                case None => p.unexpectedWhen { case x if pred(x) => g1(x) }
-                case Some(g2) => amendThenDislodge {
-                    position.internalOffsetSpan(entrench(p)).flatMap { case (os, x, oe) =>
-                        if (pred(x)) unexpected(oe - os, g1(x)).explain(g2(x))
-                        else pure(x)
-                    }
-                }
-            }
-        }
-    }
 }
