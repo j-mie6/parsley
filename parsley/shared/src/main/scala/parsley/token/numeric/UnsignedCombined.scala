@@ -5,7 +5,6 @@ package parsley.token.numeric
 
 import parsley.Parsley, Parsley.attempt
 import parsley.XCompat.unused
-import parsley.errors.combinator.ErrorMethods
 import parsley.token.descriptions.numeric.NumericDesc
 import parsley.token.errors.ErrorConfig
 
@@ -39,7 +38,7 @@ private [token] final class UnsignedCombined(@unused desc: NumericDesc, integer:
 
     override protected [numeric] def bounded[T](number: Parsley[Either[BigInt, BigDecimal]], bits: Bits, radix: Int)
                                                (implicit ev: CanHold[bits.self,T]): Parsley[Either[T, BigDecimal]] = {
-        number.collectMsg(x => err.messageIntTooLarge(x.asInstanceOf[Left[BigInt, Nothing]].value, bits.upperUnsigned, radix)) {
+        err.messageIntOutOfBounds(min = 0, bits.upperUnsigned, radix).injectLeft.collect(number) {
             case Left(x) if x <= bits.upperUnsigned => Left(ev.fromBigInt(x))
             case Right(x) => Right(x)
         }

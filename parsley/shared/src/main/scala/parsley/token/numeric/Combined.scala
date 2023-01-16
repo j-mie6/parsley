@@ -4,7 +4,6 @@
 package parsley.token.numeric
 
 import parsley.Parsley
-import parsley.errors.combinator.ErrorMethods
 import parsley.token.errors.ErrorConfig
 
 /** This class defines a uniform interface for defining parsers for mixed kind
@@ -519,22 +518,15 @@ abstract class Combined private[numeric] (err: ErrorConfig) { // scalastyle:igno
     private def octalBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[Either[T, BigDecimal]] = bounded(_octal, bits, 8)
     private def binaryBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[Either[T, BigDecimal]] = bounded(_binary, bits, 2)
 
-    // TODO: basically shared with Real...
-    private def bad(min: Double, max: Double, name: String)(rn: Either[_, BigDecimal]): Seq[String] = {
-        val Right(n) = rn
-        if (n > BigDecimal(max) || n < BigDecimal(min)) err.messageRealTooLarge(n, name)
-        else err.messageRealTooSmall(n, name)
-    }
-
     protected [numeric] def ensureFloat[T](number: Parsley[Either[T, BigDecimal]]): Parsley[Either[T, Float]] = {
-        number.collectMsg(bad(Float.MinValue.toDouble, Float.MaxValue.toDouble, err.floatName)(_)) {
+        err.messageRealOutOfBounds(err.floatName, BigDecimal(Float.MinValue.toDouble), BigDecimal(Float.MaxValue.toDouble)).injectRight.collect(number) {
             case Left(n) => Left(n)
             case Right(n) if Real.isFloat(n) => Right(n.toFloat)
         }
     }
 
     protected [numeric] def ensureDouble[T](number: Parsley[Either[T, BigDecimal]]): Parsley[Either[T, Double]] = {
-        number.collectMsg(bad(Double.MinValue, Double.MaxValue, err.doubleName)(_)) {
+        err.messageRealOutOfBounds(err.doubleName, BigDecimal(Double.MinValue), BigDecimal(Double.MaxValue)).injectRight.collect(number) {
             case Left(n) => Left(n)
             case Right(n) if Real.isDouble(n) => Right(n.toDouble)
         }

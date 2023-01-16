@@ -6,7 +6,6 @@ package parsley.token.text
 import parsley.Parsley, Parsley.{attempt, empty, pure}
 import parsley.character.{bit, char, digit, hexDigit, octDigit, strings}
 import parsley.combinator.ensure
-import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.zipped.Zipped3
 import parsley.token.descriptions.text.{EscapeDesc, NumberOfDigits, NumericEscape}
 import parsley.token.errors.{ErrorConfig, NotConfigured}
@@ -27,14 +26,7 @@ private [token] class Escape(desc: EscapeDesc, err: ErrorConfig, generic: numeri
     }
 
     private def boundedChar(p: Parsley[BigInt], maxValue: Int, prefix: Option[Char], radix: Int) = err.labelEscapeNumeric(radix) {
-        val prefixString = prefix.fold("")(c => s"$c")
-        val numericTail = p.collectMsg { n =>
-            val esc = err.renderEscapeNumericSequence(desc.escBegin, prefixString, n, radix)
-            if (n > maxValue) {
-                val maxEscape = err.renderEscapeNumericSequence(desc.escBegin, prefixString, BigInt(maxValue), radix)
-                err.messageEscapeCharNumericSequenceTooBig(esc, maxEscape)
-            }
-            else err.messageEscapeCharNumericSequenceIllegal(esc)} {
+        val numericTail = err.messageEscapeCharNumericSequenceIllegal(maxValue, radix).collect(p) {
             case n if n <= maxValue && Character.isValidCodePoint(n.toInt) => n.toInt
         }
         prefix match {
@@ -51,9 +43,7 @@ private [token] class Escape(desc: EscapeDesc, err: ErrorConfig, generic: numeri
     }
 
     private def exactly(n: Int, full: Int, radix: Int, digit: Parsley[Char], reqDigits: Seq[Int]): Parsley[BigInt] = {
-        atMost(n, radix, digit) <* atMostReg.get.guardAgainst {
-            case x if x > 0 => err.messageEscapeCharRequiresExactDigits(radix, full - x, reqDigits)
-        }
+        atMost(n, radix, digit) <* err.messageEscapeCharRequiresExactDigits(radix, reqDigits).filter(atMostReg.gets(full - _))(_ == full)
     }
 
     private lazy val digitsParsed = parsley.registers.Reg.make[Int]

@@ -4,7 +4,6 @@
 package parsley.token.numeric
 
 import parsley.Parsley, Parsley.attempt
-import parsley.errors.combinator.ErrorMethods
 import parsley.token.descriptions.numeric.NumericDesc
 import parsley.token.errors.ErrorConfig
 
@@ -22,11 +21,7 @@ private [token] final class SignedCombined(desc: NumericDesc, unsigned: Combined
 
     override protected[numeric] def bounded[T](number: Parsley[Either[BigInt,BigDecimal]], bits: Bits, radix: Int)
                                               (implicit ev: CanHold[bits.self,T]): Parsley[Either[T,BigDecimal]] = {
-        number.collectMsg(ex => {
-            val Left(x) = ex
-            if (x > bits.upperSigned) err.messageIntTooLarge(x, bits.upperSigned, radix)
-            else                      err.messageIntTooSmall(x, bits.lowerSigned, radix)
-        }) {
+        err.messageIntOutOfBounds(bits.lowerSigned, bits.upperSigned, radix).injectLeft.collect(number) {
             case Left(x) if bits.lowerSigned <= x && x <= bits.upperSigned => Left(ev.fromBigInt(x))
             case Right(y) => Right(y)
         }

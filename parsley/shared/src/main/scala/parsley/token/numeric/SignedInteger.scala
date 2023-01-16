@@ -4,7 +4,6 @@
 package parsley.token.numeric
 
 import parsley.Parsley, Parsley.attempt
-import parsley.errors.combinator.ErrorMethods
 import parsley.token.descriptions.numeric.NumericDesc
 import parsley.token.errors.{ErrorConfig, LabelWithExplainConfig}
 
@@ -28,8 +27,7 @@ private [token] final class SignedInteger(desc: NumericDesc, unsigned: UnsignedI
 
     override protected [numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int, label: (ErrorConfig, Boolean) => LabelWithExplainConfig)
                                                (implicit ev: CanHold[bits.self,T]): Parsley[T] = label(err, false) {
-        number.collectMsg(x => if (x > bits.upperSigned) err.messageIntTooLarge(x, bits.upperSigned, radix)
-                               else                      err.messageIntTooSmall(x, bits.lowerSigned, radix)) {
+        err.messageIntOutOfBounds(bits.lowerSigned, bits.upperSigned, radix).collect(number) {
             case x if bits.lowerSigned <= x && x <= bits.upperSigned => ev.fromBigInt(x)
         }
     }

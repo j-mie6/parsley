@@ -63,8 +63,8 @@ private [token] final class UnsignedInteger(desc: NumericDesc, err: ErrorConfig,
 
     override protected [numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int, label: (ErrorConfig, Boolean) => LabelWithExplainConfig)
                                                (implicit ev: CanHold[bits.self,T]): Parsley[T] = label(err, false) {
-        number.collectMsg(err.messageIntTooLarge(_, bits.upperUnsigned, radix)) {
-            case x if x <= bits.upperUnsigned => ev.fromBigInt(x)
+        err.messageIntOutOfBounds(min = 0, bits.upperUnsigned, radix).collect(number) {
+            case x if 0 <= x && x <= bits.upperUnsigned => ev.fromBigInt(x)
         }
     }
 }

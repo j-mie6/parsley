@@ -6,7 +6,7 @@ package parsley.token.numeric
 import parsley.Parsley, Parsley.{attempt, empty, pure, unit}
 import parsley.character.{digit, hexDigit, octDigit, bit, oneOf}
 import parsley.combinator, combinator.optional
-import parsley.errors.combinator.{amend, entrench, ErrorMethods}
+import parsley.errors.combinator.{amendThenDislodge, entrench, ErrorMethods}
 import parsley.implicits.character.charLift
 import parsley.lift.lift2
 import parsley.registers.Reg
@@ -90,7 +90,7 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInt
                 endLabel(digit),
                 (err.labelNumericBreakChar.orElse(endLabel)(optional(c)) *>
                  endLabel(digit)).foldRight[BigDecimal](0)(f))
-        val fractional = amend {
+        val fractional = amendThenDislodge {
             err.labelRealDot.orElse(endLabel)('.') *> {
                 desc.literalBreakChar match {
                     case BreakCharDesc.NoBreakChar if desc.trailingDotAllowed     =>

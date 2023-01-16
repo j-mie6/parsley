@@ -3,10 +3,9 @@
  */
 package parsley.token.text
 
-import scala.Predef.{String => ScalaString, _}
+import scala.Predef.{String => ScalaString}
 
 import parsley.Parsley
-import parsley.errors.combinator.ErrorMethods
 import parsley.token.errors.ErrorConfig
 
 /** This class defines a uniform interface for defining parsers for string
@@ -92,11 +91,6 @@ private [text] object String {
     private def isAscii(str: StringBuilder): Boolean = allCharsWithin(str, Character.MaxAscii)
     private def isExtendedAscii(str: StringBuilder): Boolean = allCharsWithin(str, Character.MaxLatin1)
 
-    def ensureAscii(err: ErrorConfig)(p: Parsley[StringBuilder]): Parsley[StringBuilder] = p.guardAgainst {
-        case str if !isAscii(str) => err.messageStringNonAscii(str.toString)
-    }
-
-    def ensureExtendedAscii(err: ErrorConfig)(p: Parsley[StringBuilder]): Parsley[StringBuilder] = p.guardAgainst {
-        case str if !isExtendedAscii(str) => err.messageStringNonLatin1(str.toString)
-    }
+    def ensureAscii(err: ErrorConfig)(p: Parsley[StringBuilder]): Parsley[StringBuilder] = err.messageStringNonAscii.filter(p)(isAscii(_))
+    def ensureExtendedAscii(err: ErrorConfig)(p: Parsley[StringBuilder]): Parsley[StringBuilder] = err.messageStringNonLatin1.filter(p)(isExtendedAscii(_))
 }

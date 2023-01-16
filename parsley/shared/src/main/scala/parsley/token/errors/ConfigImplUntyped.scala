@@ -23,7 +23,6 @@ private [parsley] trait LabelOps {
 
 private [parsley] trait ExplainOps {
     // TODO: reason extraction, maybe tie into errors?
-    //private [parsley] def orElse(config: ExplainConfig): ExplainConfig
 }
 
 // Constraining Types

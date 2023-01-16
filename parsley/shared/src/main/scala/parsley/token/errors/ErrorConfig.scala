@@ -86,25 +86,28 @@ class ErrorConfig {
         if (signed) labelIntegerSignedNumber(bits) else labelIntegerUnsignedNumber(bits)
     }
 
+    // FIXME: this feels less like an explain and more like a verified error (unexpected/fail versions needed)
     def explainRealNoDoubleDroppedZero: String =
         "a real number cannot drop both a leading and trailing zero"
 
-    // TODO: render in the "native" radix
-    def messageIntTooLarge(n: BigInt, max: BigInt, @unused nativeRadix: Int): Seq[String] =
-        Seq(s"literal $n is larger than max value of $max")
+    def messageIntOutOfBounds(min: BigInt, max: BigInt, nativeRadix: Int): SpecialisedFilterConfig[BigInt] =
+        new SpecialisedMessage[BigInt](fullAmend = false) {
+            def apply(n: BigInt) = Seq(
+                if (n < min) s"literal ${n.toString(nativeRadix)} is less than min value of ${min.toString(nativeRadix)}"
+                else s"literal ${n.toString(nativeRadix)} is larger than max value of ${max.toString(nativeRadix)}"
+            )
+        }
 
-    // TODO: render in the "native" radix
-    def messageIntTooSmall(n: BigInt, min: BigInt, @unused nativeRadix: Int): Seq[String] =
-        Seq(s"literal $n is less than min value of $min")
+    def messageRealNotExact(name: String): SpecialisedFilterConfig[BigDecimal] = new SpecialisedMessage[BigDecimal](fullAmend = false) {
+        def apply(n: BigDecimal) = Seq(s"literal $n cannot be represented exactly as an $name")
+    }
 
-    def messageRealNotExact(n: BigDecimal, name: String): Seq[String] =
-        Seq(s"literal $n cannot be represented exactly as an $name")
-
-    def messageRealTooLarge(n: BigDecimal, name: String): Seq[String] =
-        Seq(s"literal $n is too large to be an $name")
-
-    def messageRealTooSmall(n: BigDecimal, name: String): Seq[String] =
-        Seq(s"literal $n is too small to be an $name")
+    def messageRealOutOfBounds(name: String, min: BigDecimal, @unused max: BigDecimal): SpecialisedFilterConfig[BigDecimal] = new SpecialisedMessage[BigDecimal](fullAmend = false) {
+        def apply(n: BigDecimal) = Seq(
+            if (n < min) s"literal $n is too small to be an $name"
+            else s"literal $n is too large to be an $name"
+        )
+    }
 
     // expensive ;)
     // this is not as effective as it may seem, because reasons cannot be hints
@@ -118,9 +121,13 @@ class ErrorConfig {
     // names
     def labelNameIdentifier: String = "identifier"
     def labelNameOperator: String = "operator"
+    // FIXME: Assign this to a general hierarchy, otherwise we can't alter it!
     def unexpectedNameIllegalIdentifier(v: String): String = s"keyword $v"
+    // FIXME: Assign this to a general hierarchy, otherwise we can't alter it!
     def unexpectedNameIllegalOperator(v: String): String = s"reserved operator $v"
+    // FIXME: Assign this to a general hierarchy, otherwise we can't alter it!
     def unexpectedNameIllFormedIdentifier: Option[String => String] = Some(v => s"identifer $v")
+    // FIXME: Assign this to a general hierarchy, otherwise we can't alter it!
     def unexpectedNameIllFormedOperator: Option[String => String] = Some(v => s"operator $v")
 
     // text
@@ -152,34 +159,42 @@ class ErrorConfig {
     def labelStringEscapeGap: LabelConfig = Label("string gap")
     def labelStringEscapeGapEnd: LabelConfig = Label("end of string gap")
 
+    // FIXME: Assign this to a general hierarchy, otherwise we can't alter it!
     def unexpectedCharNonBasicMultilingualPlane: Option[Int => String] = None
+    // FIXME: Assign this to a general hierarchy, otherwise we can't alter it!
     def unexpectedCharNonAscii: Option[Int => String] = None
+    // FIXME: Assign this to a general hierarchy, otherwise we can't alter it!
     def unexpectedCharNonLatin1: Option[Int => String] = None
 
+    // FIXME: Assign this to a general hierarchy, otherwise we can't alter it!
     def explainCharNonBasicMultilingualPlane: Option[Int => String] = Some(_ => "non-BMP character")
+    // FIXME: Assign this to a general hierarchy, otherwise we can't alter it!
     def explainCharNonAscii: Option[Int => String] = Some(_ => "non-ascii character")
+    // FIXME: Assign this to a general hierarchy, otherwise we can't alter it!
     def explainCharNonLatin1: Option[Int => String] = Some(_ => "non-latin1 character")
 
-    def messageStringNonAscii(@unused s: String): Seq[String] =
-        Seq("non-ascii characters in string literal, this is not allowed")
+    def messageStringNonAscii: SpecialisedFilterConfig[StringBuilder] = new SpecialisedMessage[StringBuilder](fullAmend = false) {
+        def apply(@unused s: StringBuilder) = Seq("non-ascii characters in string literal, this is not allowed")
+    }
 
-    def messageStringNonLatin1(@unused s: String): Seq[String] =
-        Seq("non-latin1 characters in string literal, this is not allowed")
+    def messageStringNonLatin1: SpecialisedFilterConfig[StringBuilder] = new SpecialisedMessage[StringBuilder](fullAmend = false) {
+        def apply(@unused s: StringBuilder) = Seq("non-latin1 characters in string literal, this is not allowed")
+    }
 
-    def messageEscapeCharRequiresExactDigits(@unused radix: Int, got: Int, needed: Seq[Int]): Seq[String] =
-        Seq(s"numeric escape requires ${parsley.errors.helpers.combineAsList(needed.toList.map(_.toString))} digits, but only got $got")
+    def messageEscapeCharRequiresExactDigits(@unused radix: Int, needed: Seq[Int]): SpecialisedFilterConfig[Int] = new SpecialisedMessage[Int](fullAmend = false) {
+        def apply(got: Int) = Seq(s"numeric escape requires ${parsley.errors.helpers.combineAsList(needed.toList.map(_.toString))} digits, but only got $got")
+    }
 
-    def messageEscapeCharNumericSequenceTooBig(escapeSequence: String, maxEscape: String): Seq[String] =
-        Seq(s"$escapeSequence is greater than the maximum character $maxEscape")
-
-    def messageEscapeCharNumericSequenceIllegal(escapeSequence: String): Seq[String] =
-        Seq(s"illegal unicode codepoint: $escapeSequence")
-
-    private [parsley] def renderEscapeNumericSequence(escBegin: Char, prefix: String, n: BigInt, radix: Int): String =
-        s"$escBegin$prefix${n.toString(radix)}"
+    def messageEscapeCharNumericSequenceIllegal(maxEscape: Int, radix: Int): SpecialisedFilterConfig[BigInt] = new SpecialisedMessage[BigInt](fullAmend = false) {
+        def apply(escapeChar: BigInt) = Seq(
+            if (escapeChar > BigInt(maxEscape)) s"${escapeChar.toString(radix)} is greater than the maximum character value of ${BigInt(maxEscape).toString(radix)}"
+            else s"illegal unicode codepoint: ${escapeChar.toString(radix)}")
+    }
 
     // expensive ;)
+    // FIXME: Assign this to a general hierarchy, otherwise we can't alter it!
     def verifiedCharBadCharsUsedInLiteral: Map[Int, String] = Map.empty
+    // FIXME: Assign this to a general hierarchy, otherwise we can't alter it!
     def verifiedStringBadCharsUsedInLiteral: Map[Int, String] = Map.empty
 
     // symbol

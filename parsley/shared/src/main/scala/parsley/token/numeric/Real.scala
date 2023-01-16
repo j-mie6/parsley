@@ -4,7 +4,6 @@
 package parsley.token.numeric
 
 import parsley.Parsley
-import parsley.errors.combinator.ErrorMethods
 import parsley.token.errors.{ErrorConfig, LabelWithExplainConfig}
 
 /** This class defines a uniform interface for defining parsers for floating
@@ -289,31 +288,26 @@ abstract class Real private[numeric](err: ErrorConfig) {
     lazy val exactDouble: Parsley[Double] = ensureExactDouble(_number, err.labelRealDoubleNumber)
     // $COVERAGE-ON$
 
-    private def bad(min: Double, max: Double, name: String)(n: BigDecimal): Seq[String] = {
-        if (n > BigDecimal(max) || n < BigDecimal(min)) err.messageRealTooLarge(n, name)
-        else err.messageRealTooSmall(n, name)
-    }
-
     protected [numeric] def ensureFloat(number: Parsley[BigDecimal], label: LabelWithExplainConfig): Parsley[Float] = {
-        label(number).collectMsg(bad(Float.MinValue.toDouble, Float.MaxValue.toDouble, err.floatName)(_)) {
+        err.messageRealOutOfBounds(err.floatName, BigDecimal(Float.MinValue.toDouble), BigDecimal(Float.MaxValue.toDouble)).collect(label(number)) {
             case n if Real.isFloat(n) => n.toFloat
         }
     }
 
     protected [numeric] def ensureDouble(number: Parsley[BigDecimal], label: LabelWithExplainConfig): Parsley[Double] = {
-        label(number).collectMsg(bad(Double.MinValue, Double.MaxValue, err.doubleName)(_)) {
+        err.messageRealOutOfBounds(err.doubleName, BigDecimal(Double.MinValue), BigDecimal(Double.MaxValue)).collect(label(number)) {
             case n if Real.isDouble(n) => n.toDouble
         }
     }
 
     protected [numeric] def ensureExactFloat(number: Parsley[BigDecimal], label: LabelWithExplainConfig): Parsley[Float] = {
-        label(number).collectMsg(err.messageRealNotExact(_, err.floatName)) {
+        err.messageRealNotExact(err.floatName).collect(label(number)) {
             case n if n.isExactFloat => n.toFloat
         }
     }
 
     protected [numeric] def ensureExactDouble(number: Parsley[BigDecimal], label: LabelWithExplainConfig): Parsley[Double] = {
-        label(number).collectMsg(err.messageRealNotExact(_, err.doubleName)) {
+        err.messageRealNotExact(err.doubleName).collect(label(number)) {
             case n if n.isExactDouble => n.toDouble
         }
     }
