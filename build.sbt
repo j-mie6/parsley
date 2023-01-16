@@ -37,6 +37,7 @@ inThisBuild(List(
     ProblemFilters.exclude[MissingClassProblem]("parsley.token.numeric.Generic$"),
     ProblemFilters.exclude[MissingClassProblem]("parsley.token.predicate$_CharSet$"),
     ProblemFilters.exclude[MissingFieldProblem]("parsley.token.predicate._CharSet"),
+    ProblemFilters.exclude[MissingClassProblem]("parsley.token.errors.ErrorConfig$"),
   ),
   tlVersionIntroduced := Map(
     "2.13" -> "1.5.0",
