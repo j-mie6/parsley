@@ -42,13 +42,13 @@ private [token] class ConcreteNames(nameDesc: NameDesc, symbolDesc: SymbolDesc, 
         keyOrOp(nameDesc.identifierStart, nameDesc.identifierLetter, symbolDesc.isReservedName,
                 err.labelNameIdentifier, err.unexpectedNameIllegalIdentifier)
     override def identifier(startChar: CharPredicate): Parsley[String] = attempt {
-        err.unexpectedNameIllFormedIdentifier.filter(identifier)(startChar.startsWith)
+        err.filterNameIllFormedIdentifier.filter(identifier)(startChar.startsWith)
     }
 
     override lazy val userDefinedOperator: Parsley[String] =
         keyOrOp(nameDesc.operatorStart, nameDesc.operatorLetter, symbolDesc.isReservedOp, err.labelNameOperator, err.unexpectedNameIllegalOperator)
 
     def userDefinedOperator(startChar: CharPredicate, endChar: CharPredicate): Parsley[String] = attempt {
-        err.unexpectedNameIllFormedOperator.filter(userDefinedOperator)(x => startChar.startsWith(x) && endChar.endsWith(x))
+        err.filterNameIllFormedOperator.filter(userDefinedOperator)(x => startChar.startsWith(x) && endChar.endsWith(x))
     }
 }

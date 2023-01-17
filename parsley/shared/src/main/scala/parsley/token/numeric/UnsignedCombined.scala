@@ -38,7 +38,7 @@ private [token] final class UnsignedCombined(@unused desc: NumericDesc, integer:
 
     override protected [numeric] def bounded[T](number: Parsley[Either[BigInt, BigDecimal]], bits: Bits, radix: Int)
                                                (implicit ev: CanHold[bits.self,T]): Parsley[Either[T, BigDecimal]] = {
-        err.messageIntOutOfBounds(min = 0, bits.upperUnsigned, radix).injectLeft.collect(number) {
+        err.filterIntOutOfBounds(min = 0, bits.upperUnsigned, radix).injectLeft.collect(number) {
             case Left(x) if x <= bits.upperUnsigned => Left(ev.fromBigInt(x))
             case Right(x) => Right(x)
         }

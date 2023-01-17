@@ -84,7 +84,7 @@ class ErrorConfig {
 
     def preventRealDoubleDroppedZero: PreventDotIsZeroConfig = ZeroDotReason("a real number cannot drop both a leading and trailing zero")
 
-    def messageIntOutOfBounds(min: BigInt, max: BigInt, nativeRadix: Int): SpecialisedFilterConfig[BigInt] =
+    def filterIntOutOfBounds(min: BigInt, max: BigInt, nativeRadix: Int): SpecialisedFilterConfig[BigInt] =
         new SpecialisedMessage[BigInt](fullAmend = false) {
             def message(n: BigInt) = Seq(
                 if (n < min) s"literal ${n.toString(nativeRadix)} is less than min value of ${min.toString(nativeRadix)}"
@@ -92,11 +92,11 @@ class ErrorConfig {
             )
         }
 
-    def messageRealNotExact(name: String): SpecialisedFilterConfig[BigDecimal] = new SpecialisedMessage[BigDecimal](fullAmend = false) {
+    def filterRealNotExact(name: String): SpecialisedFilterConfig[BigDecimal] = new SpecialisedMessage[BigDecimal](fullAmend = false) {
         def message(n: BigDecimal) = Seq(s"literal $n cannot be represented exactly as an $name")
     }
 
-    def messageRealOutOfBounds(name: String, min: BigDecimal, @unused max: BigDecimal): SpecialisedFilterConfig[BigDecimal] = new SpecialisedMessage[BigDecimal](fullAmend = false) {
+    def filterRealOutOfBounds(name: String, min: BigDecimal, @unused max: BigDecimal): SpecialisedFilterConfig[BigDecimal] = new SpecialisedMessage[BigDecimal](fullAmend = false) {
         def message(n: BigDecimal) = Seq(
             if (n < min) s"literal $n is too small to be an $name"
             else s"literal $n is too large to be an $name"
@@ -117,10 +117,10 @@ class ErrorConfig {
     def labelNameOperator: String = "operator"
     def unexpectedNameIllegalIdentifier(v: String): String = s"keyword $v"
     def unexpectedNameIllegalOperator(v: String): String = s"reserved operator $v"
-    def unexpectedNameIllFormedIdentifier: FilterConfig[String] = new Unexpected[String](fullAmend = false) {
+    def filterNameIllFormedIdentifier: FilterConfig[String] = new Unexpected[String](fullAmend = false) {
         def unexpected(v: String) = s"identifer $v"
     }
-    def unexpectedNameIllFormedOperator: FilterConfig[String] = new Unexpected[String](fullAmend = false) {
+    def filterNameIllFormedOperator: FilterConfig[String] = new Unexpected[String](fullAmend = false) {
         def unexpected(v: String) = s"operator $v"
     }
 
@@ -153,29 +153,29 @@ class ErrorConfig {
     def labelStringEscapeGap: LabelConfig = Label("string gap")
     def labelStringEscapeGapEnd: LabelConfig = Label("end of string gap")
 
-    def unexpectedCharNonBasicMultilingualPlane: VanillaFilterConfig[Int] = new Because[Int](fullAmend = false) {
+    def filterCharNonBasicMultilingualPlane: VanillaFilterConfig[Int] = new Because[Int](fullAmend = false) {
         def reason(@unused x: Int) = "non-BMP character"
     }
-    def unexpectedCharNonAscii: VanillaFilterConfig[Int] = new Because[Int](fullAmend = false) {
+    def filterCharNonAscii: VanillaFilterConfig[Int] = new Because[Int](fullAmend = false) {
         def reason(@unused x: Int) = "non-ascii character"
     }
-    def unexpectedCharNonLatin1: VanillaFilterConfig[Int] = new Because[Int](fullAmend = false) {
+    def filterCharNonLatin1: VanillaFilterConfig[Int] = new Because[Int](fullAmend = false) {
         def reason(@unused x: Int) = "non-latin1 character"
     }
 
-    def messageStringNonAscii: SpecialisedFilterConfig[StringBuilder] = new SpecialisedMessage[StringBuilder](fullAmend = false) {
+    def filterStringNonAscii: SpecialisedFilterConfig[StringBuilder] = new SpecialisedMessage[StringBuilder](fullAmend = false) {
         def message(@unused s: StringBuilder) = Seq("non-ascii characters in string literal, this is not allowed")
     }
 
-    def messageStringNonLatin1: SpecialisedFilterConfig[StringBuilder] = new SpecialisedMessage[StringBuilder](fullAmend = false) {
+    def filterStringNonLatin1: SpecialisedFilterConfig[StringBuilder] = new SpecialisedMessage[StringBuilder](fullAmend = false) {
         def message(@unused s: StringBuilder) = Seq("non-latin1 characters in string literal, this is not allowed")
     }
 
-    def messageEscapeCharRequiresExactDigits(@unused radix: Int, needed: Seq[Int]): SpecialisedFilterConfig[Int] = new SpecialisedMessage[Int](fullAmend = false) {
+    def filterEscapeCharRequiresExactDigits(@unused radix: Int, needed: Seq[Int]): SpecialisedFilterConfig[Int] = new SpecialisedMessage[Int](fullAmend = false) {
         def message(got: Int) = Seq(s"numeric escape requires ${parsley.errors.helpers.combineAsList(needed.toList.map(_.toString))} digits, but only got $got")
     }
 
-    def messageEscapeCharNumericSequenceIllegal(maxEscape: Int, radix: Int): SpecialisedFilterConfig[BigInt] = new SpecialisedMessage[BigInt](fullAmend = false) {
+    def filterEscapeCharNumericSequenceIllegal(maxEscape: Int, radix: Int): SpecialisedFilterConfig[BigInt] = new SpecialisedMessage[BigInt](fullAmend = false) {
         def message(escapeChar: BigInt) = Seq(
             if (escapeChar > BigInt(maxEscape)) s"${escapeChar.toString(radix)} is greater than the maximum character value of ${BigInt(maxEscape).toString(radix)}"
             else s"illegal unicode codepoint: ${escapeChar.toString(radix)}")

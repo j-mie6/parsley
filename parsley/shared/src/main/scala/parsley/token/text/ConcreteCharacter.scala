@@ -28,9 +28,9 @@ private [token] final class ConcreteCharacter(desc: TextDesc, escapes: Escape, e
 
     override lazy val basicMultilingualPlane: Parsley[Char] =
         constrainedBmp(!Character.isBmpCodePoint(_), err.labelCharBasicMultilingualPlane, err.labelCharBasicMultilingualPlaneEnd,
-                       err.unexpectedCharNonBasicMultilingualPlane)
+                       err.filterCharNonBasicMultilingualPlane)
     override lazy val ascii: Parsley[Char] =
-        constrainedBmp(_ > Character.MaxAscii, err.labelCharAscii, err.labelCharAsciiEnd, err.unexpectedCharNonAscii)
+        constrainedBmp(_ > Character.MaxAscii, err.labelCharAscii, err.labelCharAsciiEnd, err.filterCharNonAscii)
     override lazy val latin1: Parsley[Char] =
-        constrainedBmp(_ > Character.MaxLatin1, err.labelCharLatin1, err.labelCharLatin1End, err.unexpectedCharNonLatin1)
+        constrainedBmp(_ > Character.MaxLatin1, err.labelCharLatin1, err.labelCharLatin1End, err.filterCharNonLatin1)
 }

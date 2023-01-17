@@ -289,25 +289,25 @@ abstract class Real private[numeric](err: ErrorConfig) {
     // $COVERAGE-ON$
 
     protected [numeric] def ensureFloat(number: Parsley[BigDecimal], label: LabelWithExplainConfig): Parsley[Float] = {
-        err.messageRealOutOfBounds(err.floatName, BigDecimal(Float.MinValue.toDouble), BigDecimal(Float.MaxValue.toDouble)).collect(label(number)) {
+        err.filterRealOutOfBounds(err.floatName, BigDecimal(Float.MinValue.toDouble), BigDecimal(Float.MaxValue.toDouble)).collect(label(number)) {
             case n if Real.isFloat(n) => n.toFloat
         }
     }
 
     protected [numeric] def ensureDouble(number: Parsley[BigDecimal], label: LabelWithExplainConfig): Parsley[Double] = {
-        err.messageRealOutOfBounds(err.doubleName, BigDecimal(Double.MinValue), BigDecimal(Double.MaxValue)).collect(label(number)) {
+        err.filterRealOutOfBounds(err.doubleName, BigDecimal(Double.MinValue), BigDecimal(Double.MaxValue)).collect(label(number)) {
             case n if Real.isDouble(n) => n.toDouble
         }
     }
 
     protected [numeric] def ensureExactFloat(number: Parsley[BigDecimal], label: LabelWithExplainConfig): Parsley[Float] = {
-        err.messageRealNotExact(err.floatName).collect(label(number)) {
+        err.filterRealNotExact(err.floatName).collect(label(number)) {
             case n if n.isExactFloat => n.toFloat
         }
     }
 
     protected [numeric] def ensureExactDouble(number: Parsley[BigDecimal], label: LabelWithExplainConfig): Parsley[Double] = {
-        err.messageRealNotExact(err.doubleName).collect(label(number)) {
+        err.filterRealNotExact(err.doubleName).collect(label(number)) {
             case n if n.isExactDouble => n.toDouble
         }
     }

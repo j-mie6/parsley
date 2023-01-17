@@ -27,7 +27,7 @@ private [token] final class SignedInteger(desc: NumericDesc, unsigned: UnsignedI
 
     override protected [numeric] def bounded[T](number: Parsley[BigInt], bits: Bits, radix: Int, label: (ErrorConfig, Boolean) => LabelWithExplainConfig)
                                                (implicit ev: CanHold[bits.self,T]): Parsley[T] = label(err, false) {
-        err.messageIntOutOfBounds(bits.lowerSigned, bits.upperSigned, radix).collect(number) {
+        err.filterIntOutOfBounds(bits.lowerSigned, bits.upperSigned, radix).collect(number) {
             case x if bits.lowerSigned <= x && x <= bits.upperSigned => ev.fromBigInt(x)
         }
     }

@@ -519,14 +519,14 @@ abstract class Combined private[numeric] (err: ErrorConfig) { // scalastyle:igno
     private def binaryBounded[T](bits: Bits)(implicit ev: CanHold[bits.self, T]): Parsley[Either[T, BigDecimal]] = bounded(_binary, bits, 2)
 
     protected [numeric] def ensureFloat[T](number: Parsley[Either[T, BigDecimal]]): Parsley[Either[T, Float]] = {
-        err.messageRealOutOfBounds(err.floatName, BigDecimal(Float.MinValue.toDouble), BigDecimal(Float.MaxValue.toDouble)).injectRight.collect(number) {
+        err.filterRealOutOfBounds(err.floatName, BigDecimal(Float.MinValue.toDouble), BigDecimal(Float.MaxValue.toDouble)).injectRight.collect(number) {
             case Left(n) => Left(n)
             case Right(n) if Real.isFloat(n) => Right(n.toFloat)
         }
     }
 
     protected [numeric] def ensureDouble[T](number: Parsley[Either[T, BigDecimal]]): Parsley[Either[T, Double]] = {
-        err.messageRealOutOfBounds(err.doubleName, BigDecimal(Double.MinValue), BigDecimal(Double.MaxValue)).injectRight.collect(number) {
+        err.filterRealOutOfBounds(err.doubleName, BigDecimal(Double.MinValue), BigDecimal(Double.MaxValue)).injectRight.collect(number) {
             case Left(n) => Left(n)
             case Right(n) if Real.isDouble(n) => Right(n.toDouble)
         }
