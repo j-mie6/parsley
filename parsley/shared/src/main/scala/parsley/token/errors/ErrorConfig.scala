@@ -7,63 +7,280 @@ import parsley.XCompat.unused
 
 /** TODO:
   * @since 4.1.0
+  *
+  * @groupprio numeric 0
+  * @groupname numeric Numeric Errors
+  * @groupdesc numeric
+  *
+  * @groupprio text 0
+  * @groupname text Text Errors
+  * @groupdesc text
+  *
+  * @groupprio names 0
+  * @groupname names Name Errors
+  * @groupdesc names
+  *
+  * @groupprio symbol 0
+  * @groupname symbol Symbol Errors
+  * @groupdesc symbol
+  *
+  * @groupprio space 0
+  * @groupname space Space Errors
+  * @groupdesc space
+  *
   */
 class ErrorConfig {
     // numeric
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelNumericBreakChar: LabelWithExplainConfig = NotConfigured
 
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelIntegerUnsignedDecimal: LabelWithExplainConfig = labelIntegerUnsignedNumber
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelIntegerUnsignedHexadecimal: LabelWithExplainConfig = labelIntegerUnsignedNumber
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelIntegerUnsignedOctal: LabelWithExplainConfig = labelIntegerUnsignedNumber
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelIntegerUnsignedBinary: LabelWithExplainConfig = labelIntegerUnsignedNumber
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelIntegerUnsignedNumber: LabelWithExplainConfig = NotConfigured
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelIntegerUnsignedDecimal(@unused bits: Int): LabelWithExplainConfig = labelIntegerUnsignedDecimal
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelIntegerUnsignedHexadecimal(@unused bits: Int): LabelWithExplainConfig = labelIntegerUnsignedHexadecimal
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelIntegerUnsignedOctal(@unused bits: Int): LabelWithExplainConfig = labelIntegerUnsignedOctal
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelIntegerUnsignedBinary(@unused bits: Int): LabelWithExplainConfig = labelIntegerUnsignedBinary
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelIntegerUnsignedNumber(@unused bits: Int): LabelWithExplainConfig = labelIntegerUnsignedNumber
 
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelIntegerSignedDecimal: LabelWithExplainConfig = labelIntegerSignedNumber
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelIntegerSignedHexadecimal: LabelWithExplainConfig = labelIntegerSignedNumber
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelIntegerSignedOctal: LabelWithExplainConfig = labelIntegerSignedNumber
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelIntegerSignedBinary: LabelWithExplainConfig = labelIntegerSignedNumber
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelIntegerSignedNumber: LabelWithExplainConfig = NotConfigured
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelIntegerSignedDecimal(@unused bits: Int): LabelWithExplainConfig = labelIntegerSignedDecimal
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelIntegerSignedHexadecimal(@unused bits: Int): LabelWithExplainConfig = labelIntegerSignedHexadecimal
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelIntegerSignedOctal(@unused bits: Int): LabelWithExplainConfig = labelIntegerSignedOctal
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelIntegerSignedBinary(@unused bits: Int): LabelWithExplainConfig = labelIntegerSignedBinary
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelIntegerSignedNumber(@unused bits: Int): LabelWithExplainConfig = labelIntegerSignedNumber
 
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelIntegerDecimalEnd: LabelConfig = labelIntegerNumberEnd
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelIntegerHexadecimalEnd: LabelConfig = labelIntegerNumberEnd
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelIntegerOctalEnd: LabelConfig = labelIntegerNumberEnd
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelIntegerBinaryEnd: LabelConfig = labelIntegerNumberEnd
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelIntegerNumberEnd: LabelConfig = NotConfigured
 
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelRealDecimal: LabelWithExplainConfig = labelRealNumber
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelRealHexadecimal: LabelWithExplainConfig = labelRealNumber
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelRealOctal: LabelWithExplainConfig = labelRealNumber
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelRealBinary: LabelWithExplainConfig = labelRealNumber
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelRealNumber: LabelWithExplainConfig = NotConfigured
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelRealFloatDecimal: LabelWithExplainConfig = labelRealDecimal
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelRealFloatHexadecimal: LabelWithExplainConfig = labelRealHexadecimal
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelRealFloatOctal: LabelWithExplainConfig = labelRealOctal
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelRealFloatBinary: LabelWithExplainConfig = labelRealBinary
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelRealFloatNumber: LabelWithExplainConfig = labelRealNumber
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelRealDoubleDecimal: LabelWithExplainConfig = labelRealDecimal
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelRealDoubleHexadecimal: LabelWithExplainConfig = labelRealHexadecimal
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelRealDoubleOctal: LabelWithExplainConfig = labelRealOctal
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelRealDoubleBinary: LabelWithExplainConfig = labelRealBinary
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelRealDoubleNumber: LabelWithExplainConfig = labelRealNumber
 
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelRealDecimalEnd: LabelConfig = labelRealNumberEnd
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelRealHexadecimalEnd: LabelConfig = labelRealNumberEnd
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelRealOctalEnd: LabelConfig = labelRealNumberEnd
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelRealBinaryEnd: LabelConfig = labelRealNumberEnd
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelRealNumberEnd: LabelConfig = NotConfigured
 
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelRealDot: LabelWithExplainConfig = NotConfigured
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelRealExponent: LabelWithExplainConfig = NotConfigured
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def labelRealExponentEnd: LabelConfig = NotConfigured
 
     private [token] final def labelDecimal(bits: Int, signed: Boolean): LabelWithExplainConfig = {
@@ -82,8 +299,16 @@ class ErrorConfig {
         if (signed) labelIntegerSignedNumber(bits) else labelIntegerUnsignedNumber(bits)
     }
 
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def preventRealDoubleDroppedZero: PreventDotIsZeroConfig = ZeroDotReason("a real number cannot drop both a leading and trailing zero")
 
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def filterIntOutOfBounds(min: BigInt, max: BigInt, nativeRadix: Int): SpecialisedFilterConfig[BigInt] =
         new SpecialisedMessage[BigInt](fullAmend = false) {
             def message(n: BigInt) = Seq(
@@ -92,10 +317,18 @@ class ErrorConfig {
             )
         }
 
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def filterRealNotExact(name: String): SpecialisedFilterConfig[BigDecimal] = new SpecialisedMessage[BigDecimal](fullAmend = false) {
         def message(n: BigDecimal) = Seq(s"literal $n cannot be represented exactly as an $name")
     }
 
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def filterRealOutOfBounds(name: String, min: BigDecimal, @unused max: BigDecimal): SpecialisedFilterConfig[BigDecimal] = new SpecialisedMessage[BigDecimal](fullAmend = false) {
         def message(n: BigDecimal) = Seq(
             if (n < min) s"literal $n is too small to be an $name"
@@ -109,101 +342,328 @@ class ErrorConfig {
     /*def verifiedIntegerBadCharsUsedInLiteral: Option[(predicate.CharPredicate, Int => String)] =
         None*/
 
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def doubleName: String = "IEEE 754 double-precision float"
+    /** @todo
+      * @since 4.1.0
+      * @group numeric
+      */
     def floatName: String = "IEEE 754 single-precision float"
 
-    // names
+    /** @todo
+      * @since 4.1.0
+      * @group names
+      */
     def labelNameIdentifier: String = "identifier"
+    /** @todo
+      * @since 4.1.0
+      * @group names
+      */
     def labelNameOperator: String = "operator"
+    /** @todo
+      * @since 4.1.0
+      * @group names
+      */
     def unexpectedNameIllegalIdentifier(v: String): String = s"keyword $v"
+    /** @todo
+      * @since 4.1.0
+      * @group names
+      */
     def unexpectedNameIllegalOperator(v: String): String = s"reserved operator $v"
+    /** @todo
+      * @since 4.1.0
+      * @group names
+      */
     def filterNameIllFormedIdentifier: FilterConfig[String] = new Unexpected[String](fullAmend = false) {
         def unexpected(v: String) = s"identifer $v"
     }
+    /** @todo
+      * @since 4.1.0
+      * @group names
+      */
     def filterNameIllFormedOperator: FilterConfig[String] = new Unexpected[String](fullAmend = false) {
         def unexpected(v: String) = s"operator $v"
     }
 
-    // text
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def labelCharAscii: LabelWithExplainConfig = NotConfigured
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def labelCharLatin1: LabelWithExplainConfig = NotConfigured
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def labelCharBasicMultilingualPlane: LabelWithExplainConfig = NotConfigured
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def labelCharUtf16: LabelWithExplainConfig = NotConfigured
 
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def labelCharAsciiEnd: LabelConfig = NotConfigured
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def labelCharLatin1End: LabelConfig = NotConfigured
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def labelCharBasicMultilingualPlaneEnd: LabelConfig = NotConfigured
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def labelCharUtf16End: LabelConfig = NotConfigured
 
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def labelStringAscii(multi: Boolean, raw: Boolean): LabelWithExplainConfig = NotConfigured
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def labelStringLatin1(multi: Boolean, raw: Boolean): LabelWithExplainConfig = NotConfigured
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def labelStringUtf16(multi: Boolean, raw: Boolean): LabelWithExplainConfig = NotConfigured
 
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def labelStringAsciiEnd(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def labelStringLatin1End(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def labelStringUtf16End(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
 
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def labelStringCharacter: LabelConfig = Label("string character")
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def labelGraphicCharacter: LabelWithExplainConfig = Label("graphic character")
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def labelEscapeSequence: LabelWithExplainConfig = Label("escape sequence") //different to "invalid escape sequence"!
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def labelEscapeNumeric(radix: Int): LabelConfig = NotConfigured
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def labelEscapeNumericEnd(prefix: Char, radix: Int): LabelWithExplainConfig = NotConfigured
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def labelEscapeEnd: LabelWithExplainConfig = LabelAndReason("end of escape sequence", "invalid escape sequence")
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def labelStringEscapeEmpty: LabelConfig = NotConfigured
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def labelStringEscapeGap: LabelConfig = Label("string gap")
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def labelStringEscapeGapEnd: LabelConfig = Label("end of string gap")
 
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def filterCharNonBasicMultilingualPlane: VanillaFilterConfig[Int] = new Because[Int](fullAmend = false) {
         def reason(@unused x: Int) = "non-BMP character"
     }
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def filterCharNonAscii: VanillaFilterConfig[Int] = new Because[Int](fullAmend = false) {
         def reason(@unused x: Int) = "non-ascii character"
     }
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def filterCharNonLatin1: VanillaFilterConfig[Int] = new Because[Int](fullAmend = false) {
         def reason(@unused x: Int) = "non-latin1 character"
     }
 
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def filterStringNonAscii: SpecialisedFilterConfig[StringBuilder] = new SpecialisedMessage[StringBuilder](fullAmend = false) {
         def message(@unused s: StringBuilder) = Seq("non-ascii characters in string literal, this is not allowed")
     }
 
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def filterStringNonLatin1: SpecialisedFilterConfig[StringBuilder] = new SpecialisedMessage[StringBuilder](fullAmend = false) {
         def message(@unused s: StringBuilder) = Seq("non-latin1 characters in string literal, this is not allowed")
     }
 
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def filterEscapeCharRequiresExactDigits(@unused radix: Int, needed: Seq[Int]): SpecialisedFilterConfig[Int] = new SpecialisedMessage[Int](fullAmend = false) {
         def message(got: Int) = Seq(s"numeric escape requires ${parsley.errors.helpers.combineAsList(needed.toList.map(_.toString))} digits, but only got $got")
     }
 
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def filterEscapeCharNumericSequenceIllegal(maxEscape: Int, radix: Int): SpecialisedFilterConfig[BigInt] = new SpecialisedMessage[BigInt](fullAmend = false) {
         def message(escapeChar: BigInt) = Seq(
             if (escapeChar > BigInt(maxEscape)) s"${escapeChar.toString(radix)} is greater than the maximum character value of ${BigInt(maxEscape).toString(radix)}"
             else s"illegal unicode codepoint: ${escapeChar.toString(radix)}")
     }
 
-    // expensive ;)
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def verifiedCharBadCharsUsedInLiteral: VerifiedBadChars = Unverified
+    /** @todo
+      * @since 4.1.0
+      * @group text
+      */
     def verifiedStringBadCharsUsedInLiteral: VerifiedBadChars = Unverified
 
-    // symbol
+    /** @todo
+      * @since 4.1.0
+      * @group symbol
+      */
     def labelSymbolSemi: LabelConfig = Label("semicolon")
+    /** @todo
+      * @since 4.1.0
+      * @group symbol
+      */
     def labelSymbolComma: LabelConfig = Label("comma")
+    /** @todo
+      * @since 4.1.0
+      * @group symbol
+      */
     def labelSymbolColon: LabelConfig = Label("colon")
+    /** @todo
+      * @since 4.1.0
+      * @group symbol
+      */
     def labelSymbolDot: LabelConfig = Label("dot")
+    /** @todo
+      * @since 4.1.0
+      * @group symbol
+      */
     def labelSymbolOpenParen: LabelConfig = Label("open parenthesis")
+    /** @todo
+      * @since 4.1.0
+      * @group symbol
+      */
     def labelSymbolOpenBrace: LabelConfig = Label("open brace")
+    /** @todo
+      * @since 4.1.0
+      * @group symbol
+      */
     def labelSymbolOpenSquare: LabelConfig = Label("open square bracket")
+    /** @todo
+      * @since 4.1.0
+      * @group symbol
+      */
     def labelSymbolOpenAngle: LabelConfig = Label("open angle bracket")
+    /** @todo
+      * @since 4.1.0
+      * @group symbol
+      */
     def labelSymbolClosingParen: LabelConfig = Label("closing parenthesis")
+    /** @todo
+      * @since 4.1.0
+      * @group symbol
+      */
     def labelSymbolClosingBrace: LabelConfig = Label("closing brace")
+    /** @todo
+      * @since 4.1.0
+      * @group symbol
+      */
     def labelSymbolClosingSquare: LabelConfig = Label("closing square bracket")
+    /** @todo
+      * @since 4.1.0
+      * @group symbol
+      */
     def labelSymbolClosingAngle: LabelConfig = Label("closing angle bracket")
+    /** @todo
+      * @since 4.1.0
+      * @group symbol
+      */
     def labelSymbolKeyword(symbol: String): LabelConfig = Label(symbol)
+    /** @todo
+      * @since 4.1.0
+      * @group symbol
+      */
     def labelSymbolOperator(symbol: String): LabelConfig = Label(symbol)
+    /** @todo
+      * @since 4.1.0
+      * @group symbol
+      */
     def labelSymbolEndOfKeyword(symbol: String): String = s"end of $symbol"
+    /** @todo
+      * @since 4.1.0
+      * @group symbol
+      */
     def labelSymbolEndOfOperator(symbol: String): String = s"end of $symbol"
 
-    // space
+    /** @todo
+      * @since 4.1.0
+      * @group space
+      */
     def labelSpaceEndOfLineComment: LabelWithExplainConfig = Label("end of comment")
+    /** @todo
+      * @since 4.1.0
+      * @group space
+      */
     def labelSpaceEndOfMultiComment: LabelWithExplainConfig = Label("end of comment")
 }
