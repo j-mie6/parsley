@@ -4,9 +4,8 @@
 package parsley.token.text
 
 import parsley.Parsley, Parsley.empty
-import parsley.character.{char, satisfy, charUtf16, satisfyUtf16}
+import parsley.character.{char, satisfy, satisfyUtf16}
 import parsley.combinator.skipSome
-import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.character.charLift
 import parsley.token.descriptions.text.EscapeDesc
 import parsley.token.errors.ErrorConfig
@@ -16,9 +15,7 @@ private [token] abstract class StringCharacter {
     def apply(isLetter: CharPredicate): Parsley[Option[Int]]
     def isRaw: Boolean
 
-    protected def _checkBadChar(err: ErrorConfig) = err.verifiedStringBadCharsUsedInLiteral.foldLeft(empty) {
-        case (w, (c, reason)) => w <|> charUtf16(c).unexpected(reason)
-    }
+    protected def _checkBadChar(err: ErrorConfig) = err.verifiedStringBadCharsUsedInLiteral.checkBadChar
 }
 
 private [token] class RawCharacter(err: ErrorConfig) extends StringCharacter {

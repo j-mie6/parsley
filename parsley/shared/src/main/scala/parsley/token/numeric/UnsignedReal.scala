@@ -6,7 +6,7 @@ package parsley.token.numeric
 import parsley.Parsley, Parsley.{attempt, empty, pure, unit}
 import parsley.character.{digit, hexDigit, octDigit, bit, oneOf}
 import parsley.combinator, combinator.optional
-import parsley.errors.combinator.{amendThenDislodge, entrench, ErrorMethods}
+import parsley.errors.combinator.{amendThenDislodge, entrench}
 import parsley.implicits.character.charLift
 import parsley.lift.lift2
 import parsley.registers.Reg
@@ -74,9 +74,7 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInt
     }
     private def ofRadix(radix: Int, digit: Parsley[Char], leadingDotAllowed: Boolean, endLabel: LabelConfig): Parsley[BigDecimal] = {
         lazy val leadingHappened = Reg.make[Boolean]
-        lazy val _noDoubleDroppedZero = leadingHappened.get.filterOut {
-            case true => err.explainRealNoDoubleDroppedZero
-        }
+        lazy val _noDoubleDroppedZero = err.preventRealDoubleDroppedZero(leadingHappened.get)
         val expDesc = desc.exponentDescForRadix(radix)
         val whole = radix match {
             case 10 => generic.plainDecimal(desc, endLabel)

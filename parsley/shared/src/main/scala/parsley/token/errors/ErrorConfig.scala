@@ -82,9 +82,7 @@ class ErrorConfig {
         if (signed) labelIntegerSignedNumber(bits) else labelIntegerUnsignedNumber(bits)
     }
 
-    // FIXME: this feels less like an explain and more like a verified error (unexpected/fail versions needed)
-    def explainRealNoDoubleDroppedZero: String =
-        "a real number cannot drop both a leading and trailing zero"
+    def preventRealDoubleDroppedZero: PreventDotIsZeroConfig = ZeroDotReason("a real number cannot drop both a leading and trailing zero")
 
     def messageIntOutOfBounds(min: BigInt, max: BigInt, nativeRadix: Int): SpecialisedFilterConfig[BigInt] =
         new SpecialisedMessage[BigInt](fullAmend = false) {
@@ -119,10 +117,10 @@ class ErrorConfig {
     def labelNameOperator: String = "operator"
     def unexpectedNameIllegalIdentifier(v: String): String = s"keyword $v"
     def unexpectedNameIllegalOperator(v: String): String = s"reserved operator $v"
-    def unexpectedNameIllFormedIdentifier: VanillaFilterConfig[String] = new Unexpected[String](fullAmend = false) {
+    def unexpectedNameIllFormedIdentifier: FilterConfig[String] = new Unexpected[String](fullAmend = false) {
         def unexpected(v: String) = s"identifer $v"
     }
-    def unexpectedNameIllFormedOperator: VanillaFilterConfig[String] = new Unexpected[String](fullAmend = false) {
+    def unexpectedNameIllFormedOperator: FilterConfig[String] = new Unexpected[String](fullAmend = false) {
         def unexpected(v: String) = s"operator $v"
     }
 
@@ -184,10 +182,8 @@ class ErrorConfig {
     }
 
     // expensive ;)
-    // FIXME: Assign this to a general hierarchy, otherwise we can't alter it!
-    def verifiedCharBadCharsUsedInLiteral: Map[Int, String] = Map.empty
-    // FIXME: Assign this to a general hierarchy, otherwise we can't alter it!
-    def verifiedStringBadCharsUsedInLiteral: Map[Int, String] = Map.empty
+    def verifiedCharBadCharsUsedInLiteral: VerifiedBadChars = Unverified
+    def verifiedStringBadCharsUsedInLiteral: VerifiedBadChars = Unverified
 
     // symbol
     def labelSymbolSemi: LabelConfig = Label("semicolon")

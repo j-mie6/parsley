@@ -4,22 +4,20 @@ import parsley.Parsley, Parsley.pure
 import parsley.errors.combinator, combinator.ErrorMethods
 import parsley.position
 
-private [parsley] sealed trait ConfigImplTyped[A]
-private [parsley] object ConfigImplTyped {
-    def amendThenDislodge[A](full: Boolean)(p: Parsley[A]): Parsley[A] = {
-        if (full) combinator.amendThenDislodge(p)
-        else p
-    }
-}
-
 trait FilterOps[A] {
     private [parsley] def filter(p: Parsley[A])(f: A => Boolean): Parsley[A]
     private [parsley] def collect[B](p: Parsley[A])(f: PartialFunction[A, B]): Parsley[B] = this.filter(p)(f.isDefinedAt).map(f)
     private [parsley] def injectLeft[B]: FilterOps[Either[A, B]]
     private [parsley] def injectRight[B]: FilterOps[Either[B, A]]
 }
+private [parsley] object FilterOps {
+    def amendThenDislodge[A](full: Boolean)(p: Parsley[A]): Parsley[A] = {
+        if (full) combinator.amendThenDislodge(p)
+        else p
+    }
+}
 
-trait FilterConfig[A] extends ConfigImplTyped[A] with FilterOps[A]
+trait FilterConfig[A] extends FilterOps[A]
 
 trait SpecialisedFilterConfig[A] extends FilterConfig[A]
 trait VanillaFilterConfig[A] extends FilterConfig[A]
@@ -27,12 +25,12 @@ trait VanillaFilterConfig[A] extends FilterConfig[A]
 abstract class SpecialisedMessage[A](fullAmend: Boolean) extends SpecialisedFilterConfig[A] { self =>
     def message(x: A): Seq[String]
 
-    private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = ConfigImplTyped.amendThenDislodge(fullAmend) {
+    private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = FilterOps.amendThenDislodge(fullAmend) {
         p.guardAgainst {
             case x if !f(x) => message(x)
         }
     }
-    private [parsley] final override def collect[B](p: Parsley[A])(f: PartialFunction[A, B]) =  ConfigImplTyped.amendThenDislodge(fullAmend) {
+    private [parsley] final override def collect[B](p: Parsley[A])(f: PartialFunction[A, B]) =  FilterOps.amendThenDislodge(fullAmend) {
         p.collectMsg(message(_))(f)
     }
     private [parsley] final override def injectLeft[B] = new SpecialisedMessage[Either[A, B]](fullAmend) {
@@ -52,7 +50,7 @@ abstract class SpecialisedMessage[A](fullAmend: Boolean) extends SpecialisedFilt
 abstract class Unexpected[A](fullAmend: Boolean) extends VanillaFilterConfig[A] { self =>
     def unexpected(x: A): String
 
-    private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = ConfigImplTyped.amendThenDislodge(fullAmend) {
+    private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = FilterOps.amendThenDislodge(fullAmend) {
         p.unexpectedWhen {
             case x if !f(x) => unexpected(x)
         }
@@ -74,7 +72,7 @@ abstract class Unexpected[A](fullAmend: Boolean) extends VanillaFilterConfig[A] 
 abstract class Because[A](fullAmend: Boolean) extends VanillaFilterConfig[A] { self =>
     def reason(x: A): String
 
-    private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = ConfigImplTyped.amendThenDislodge(fullAmend) {
+    private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = FilterOps.amendThenDislodge(fullAmend) {
         p.filterOut {
             case x if !f(x) => reason(x)
         }
@@ -97,7 +95,7 @@ abstract class UnexpectedBecause[A](fullAmend: Boolean) extends VanillaFilterCon
     def unexpected(x: A): String
     def reason(x: A): String
 
-    private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = ConfigImplTyped.amendThenDislodge(fullAmend) {
+    private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = FilterOps.amendThenDislodge(fullAmend) {
         combinator.amendThenDislodge {
             position.internalOffsetSpan(combinator.entrench(p)).flatMap { case (os, x, oe) =>
                 if (f(x)) combinator.unexpected(oe - os, this.unexpected(x)).explain(reason(x))

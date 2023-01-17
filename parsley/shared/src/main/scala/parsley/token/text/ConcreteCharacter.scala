@@ -3,9 +3,8 @@
  */
 package parsley.token.text
 
-import parsley.Parsley, Parsley.empty
-import parsley.character.{char, charUtf16}
-import parsley.errors.combinator.ErrorMethods
+import parsley.Parsley
+import parsley.character.char
 import parsley.token.descriptions.text.TextDesc
 import parsley.token.errors.{LabelConfig, LabelWithExplainConfig, ErrorConfig}
 import parsley.token.errors.FilterConfig
@@ -15,10 +14,7 @@ private [token] final class ConcreteCharacter(desc: TextDesc, escapes: Escape, e
     private lazy val graphic = Character.letter(desc.characterLiteralEnd, desc.escapeSequences.escBegin, allowsAllSpace = false, desc.graphicCharacter)
 
     private def charLetter(graphicLetter: Parsley[Int]) = {
-        val _checkBadChar = err.verifiedCharBadCharsUsedInLiteral.foldLeft(empty) {
-            case (w, (c, reason)) => w <|> charUtf16(c).unexpected(reason)
-        }
-        escapes.escapeChar <|> err.labelGraphicCharacter(graphicLetter) <|> _checkBadChar
+        escapes.escapeChar <|> err.labelGraphicCharacter(graphicLetter) <|> err.verifiedCharBadCharsUsedInLiteral.checkBadChar
     }
     private def charLiteral[A](letter: Parsley[A], end: LabelConfig) = quote *> letter <* end(quote)
 
