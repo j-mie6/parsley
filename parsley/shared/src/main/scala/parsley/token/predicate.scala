@@ -82,24 +82,62 @@ object predicate {
         private [token] def endsWith(s: String) = true
     }
 
-    // TODO: documentation!
+    /** This object provides implicit functionality for constructing `CharPredicate` values.
+      * @since 4.1.0
+      */
     object implicits {
+        /** Implicit conversions to make `Basic` values.
+          * @since 4.1.0
+          */
         object Basic {
             // $COVERAGE-OFF$
+            /** Lifts a regular character predicate.
+              * @since 4.1.0
+              */
             implicit def funToBasic(pred: Char => Boolean): CharPredicate = predicate.Basic(pred)
+            /** Constructs a predicate for the specific given character.
+              * @since 4.1.0
+              */
             implicit def charToBasic(c: Char): CharPredicate = predicate.Basic(_ == c)
+            /** Constructs a predicate for anything in a range of specific characters.
+              * @since 4.1.0
+              */
             implicit def rangeToBasic(cs: NumericRange[Char]): CharPredicate = predicate.Basic(cs.contains)
             // $COVERAGE-ON$
         }
 
+        /** Implicit conversions to make `Unicode` values.
+          * @since 4.1.0
+          */
         object Unicode {
             // $COVERAGE-OFF$
+            /** Lifts a regular full-width character predicate.
+              * @since 4.1.0
+              */
             implicit def funToUnicode(pred: Int => Boolean): CharPredicate = predicate.Unicode(pred)
+            /** Lifts a regular character predicate.
+              * @since 4.1.0
+              */
             implicit def charFunToUnicode(pred: Char => Boolean): CharPredicate = predicate.Unicode(c => c.isValidChar && pred(c.toChar))
+            /** Constructs a predicate for the specific given character.
+              * @since 4.1.0
+              */
             implicit def charToUnicode(c: Char): CharPredicate = predicate.Unicode(_ == c.toInt)
+            /** Constructs a predicate for the specific given unicode codepoint.
+              * @since 4.1.0
+              */
             implicit def intToUnicode(c: Int): CharPredicate = predicate.Unicode(_ == c)
+            /** Constructs a predicate for anything in a range of specific characters.
+              * @since 4.1.0
+              */
             implicit def charRangeToUnicode(cs: NumericRange[Char]): CharPredicate = predicate.Unicode(cs.contains)
+            /** Constructs a predicate for anything in a range of specific unicode codepoints.
+              * @since 4.1.0
+              */
             implicit def intRangeToUnicode(cs: NumericRange[Int]): CharPredicate = predicate.Unicode(cs.contains)
+            /** Constructs a predicate for anything in a range of specific unicode codepoints.
+              * @since 4.1.0
+              */
             implicit def rangeToUnicode(cs: Range): CharPredicate = predicate.Unicode(cs.contains)
             // $COVERAGE-ON$
         }
