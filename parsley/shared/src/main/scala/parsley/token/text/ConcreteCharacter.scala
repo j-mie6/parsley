@@ -6,8 +6,7 @@ package parsley.token.text
 import parsley.Parsley
 import parsley.character.char
 import parsley.token.descriptions.text.TextDesc
-import parsley.token.errors.{LabelConfig, LabelWithExplainConfig, ErrorConfig}
-import parsley.token.errors.FilterConfig
+import parsley.token.errors.{ErrorConfig, FilterConfig, LabelConfig, LabelWithExplainConfig}
 
 private [token] final class ConcreteCharacter(desc: TextDesc, escapes: Escape, err: ErrorConfig) extends Character {
     private val quote = char(desc.characterLiteralEnd)

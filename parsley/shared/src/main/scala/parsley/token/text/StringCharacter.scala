@@ -19,7 +19,7 @@ private [token] abstract class StringCharacter {
 }
 
 private [token] class RawCharacter(err: ErrorConfig) extends StringCharacter {
-    override def isRaw = true
+    override def isRaw: Boolean = true
     override def apply(isLetter: CharPredicate): Parsley[Option[Int]] = isLetter match {
         case Basic(isLetter) => err.labelStringCharacter(satisfy(isLetter).map(c => Some(c.toInt))) <|> _checkBadChar(err)
         case Unicode(isLetter) => err.labelStringCharacter(satisfyUtf16(isLetter).map(Some(_))) <|> _checkBadChar(err)
@@ -28,7 +28,7 @@ private [token] class RawCharacter(err: ErrorConfig) extends StringCharacter {
 }
 
 private [token] class EscapableCharacter(desc: EscapeDesc, escapes: Escape, space: Parsley[_], err: ErrorConfig) extends StringCharacter {
-    override def isRaw = false
+    override def isRaw: Boolean = false
     private lazy val escapeEmpty = err.labelStringEscapeEmpty(desc.emptyEscape.fold[Parsley[Char]](empty)(char))
     private lazy val escapeGap = {
         if (desc.gapsSupported) skipSome(err.labelStringEscapeGap(space)) *> err.labelStringEscapeGapEnd(desc.escBegin)

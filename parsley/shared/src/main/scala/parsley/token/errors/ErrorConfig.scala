@@ -678,9 +678,12 @@ class ErrorConfig {
       * @note defaults to a ''specialised'' message describing how many digits are required but how many were present.
       * @group text
       */
-    def filterEscapeCharRequiresExactDigits(@unused radix: Int, needed: Seq[Int]): SpecialisedFilterConfig[Int] = new SpecialisedMessage[Int](fullAmend = false) {
-        def message(got: Int) = Seq(s"numeric escape requires ${parsley.errors.helpers.combineAsList(needed.toList.map(_.toString))} digits, but only got $got")
-    }
+    def filterEscapeCharRequiresExactDigits(@unused radix: Int, needed: Seq[Int]): SpecialisedFilterConfig[Int] =
+        new SpecialisedMessage[Int](fullAmend = false) {
+            def message(got: Int) = Seq(
+                s"numeric escape requires ${parsley.errors.helpers.combineAsList(needed.toList.map(_.toString))} digits, but only got $got"
+            )
+        }
 
     /** When a numeric escape sequence is not legal, this describes how to report that error, given the original illegal character.
       * @since 4.1.0
@@ -689,11 +692,15 @@ class ErrorConfig {
       * @note defaults to a ''specialised'' message stating if the character is larger than the given maximum, or just an illegal codepoint otherwise.
       * @group text
       */
-    def filterEscapeCharNumericSequenceIllegal(maxEscape: Int, radix: Int): SpecialisedFilterConfig[BigInt] = new SpecialisedMessage[BigInt](fullAmend = false) {
-        def message(escapeChar: BigInt) = Seq(
-            if (escapeChar > BigInt(maxEscape)) s"${escapeChar.toString(radix)} is greater than the maximum character value of ${BigInt(maxEscape).toString(radix)}"
-            else s"illegal unicode codepoint: ${escapeChar.toString(radix)}")
-    }
+    def filterEscapeCharNumericSequenceIllegal(maxEscape: Int, radix: Int): SpecialisedFilterConfig[BigInt] =
+        new SpecialisedMessage[BigInt](fullAmend = false) {
+            def message(escapeChar: BigInt) = Seq(
+                if (escapeChar > BigInt(maxEscape)) {
+                    s"${escapeChar.toString(radix)} is greater than the maximum character value of ${BigInt(maxEscape).toString(radix)}"
+                }
+                else s"illegal unicode codepoint: ${escapeChar.toString(radix)}"
+            )
+        }
 
     /** Character literals parse either graphic characters or escape characters. This configuration allows for individual errors when a character ''not'' part
       * of either graphic characters or escape characters is encountered.

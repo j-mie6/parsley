@@ -7,8 +7,8 @@ import parsley.Parsley, Parsley.{attempt, notFollowedBy, unit}
 import parsley.character.{char, string, strings}
 import parsley.errors.combinator.ErrorMethods
 import parsley.token.descriptions.{NameDesc, SymbolDesc}
-import parsley.token.predicate.Basic
 import parsley.token.errors.ErrorConfig
+import parsley.token.predicate.Basic
 
 import parsley.internal.deepembedding.singletons
 

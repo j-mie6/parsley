@@ -75,7 +75,7 @@
             <parameter name="regex">^_?[a-z][A-Za-z0-9]*_?$</parameter>
             <!-- In principle, we want this, but the parsers in character and Parsley are lowercase leading... -->
             <!--<parameter name="objectFieldRegex">^[A-Z][A-Za-z0-9]*$</parameter>-->
-            <parameter name="objectFieldRegex">^[a-zA-Z][A-Za-z0-9]*$</parameter>
+            <parameter name="objectFieldRegex">^_?[a-zA-Z][A-Za-z0-9]*$</parameter>
         </parameters>
     </check>
     <check enabled="true"  class="org.scalastyle.scalariform.ForBraceChecker" level="warning">

@@ -3,10 +3,11 @@
  */
 package parsley.internal.machine.instructions
 
+import parsley.token.errors.LabelConfig
+
 import parsley.internal.errors.ExpectDesc
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
-import parsley.token.errors.LabelConfig
 
 private [internal] final class Satisfies(f: Char => Boolean, expected: Option[ExpectDesc]) extends Instr {
     override def apply(ctx: Context): Unit = {
@@ -19,7 +20,7 @@ private [internal] final class Satisfies(f: Char => Boolean, expected: Option[Ex
     // $COVERAGE-ON$
 }
 private [internal] object Satisfies {
-    def apply(f: Char => Boolean, expected: LabelConfig) = new Satisfies(f, expected.asExpectDesc)
+    def apply(f: Char => Boolean, expected: LabelConfig): Satisfies = new Satisfies(f, expected.asExpectDesc)
 }
 
 private [internal] object RestoreAndFail extends Instr {

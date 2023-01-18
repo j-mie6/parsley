@@ -5,11 +5,12 @@ package parsley.internal.machine.instructions
 
 import scala.annotation.tailrec
 
+import parsley.token.errors.LabelConfig
+
 import parsley.internal.errors.{EndOfInput, ExpectItem, UnexpectDesc}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.{ClassicFancyError, ClassicUnexpectedError, EmptyError, EmptyErrorWithReason}
-import parsley.token.errors.LabelConfig
 
 private [internal] final class Lift2(f: (Any, Any) => Any) extends Instr {
     override def apply(ctx: Context): Unit = {

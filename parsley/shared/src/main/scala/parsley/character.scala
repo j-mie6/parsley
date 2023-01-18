@@ -9,9 +9,9 @@ import scala.collection.immutable.NumericRange
 import parsley.Parsley.{attempt, empty, fresh, pure}
 import parsley.combinator.{choice, skipMany}
 import parsley.errors.combinator.{amend, ErrorMethods}
+import parsley.token.errors.NotConfigured
 
 import parsley.internal.deepembedding.singletons
-import parsley.token.errors.NotConfigured
 
 /** This module contains many parsers to do with reading one or more characters. Almost every parser will need something from this module.
   *

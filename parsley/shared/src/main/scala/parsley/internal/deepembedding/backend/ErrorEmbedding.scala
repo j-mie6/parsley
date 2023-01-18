@@ -3,9 +3,10 @@
  */
 package parsley.internal.deepembedding.backend
 
+import parsley.token.errors.{Label, Hidden}
+
 import parsley.internal.deepembedding.singletons._
 import parsley.internal.machine.instructions
-import parsley.token.errors.{Label, Hidden}
 private [deepembedding] final class ErrorLabel[A](val p: StrictParsley[A], private [ErrorLabel] val label: String) extends ScopedUnary[A, A] {
     // This needs to save the hints because error label will relabel the first hint, which because the list is ordered would be the hints that came _before_
     // entering labels context. Instead label should relabel the first hint generated _within_ its context, then merge with the originals after

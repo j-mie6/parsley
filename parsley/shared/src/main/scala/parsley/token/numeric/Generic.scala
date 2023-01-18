@@ -27,7 +27,7 @@ private [token] class Generic(err: ErrorConfig) {
         val trailingDigit =
             optional(err.labelNumericBreakChar.orElse(label)(breakChar)) *>
             label(digit)
-        parsley.expr.infix.secretLeft1(startDigit.map(d => BigInt(d.asDigit)), trailingDigit , pf)
+        parsley.expr.infix.secretLeft1(startDigit.map(d => BigInt(d.asDigit)), trailingDigit, pf)
     }
 
     // Digits
@@ -43,15 +43,15 @@ private [token] class Generic(err: ErrorConfig) {
     private def octDigit = character.octDigit
     private def bit = character.bit
 
-    def zeroAllowedDecimal(endLabel: LabelConfig) = ofRadix(10, digit, endLabel)
-    def zeroAllowedHexadecimal(endLabel: LabelConfig) = ofRadix(16, hexDigit, endLabel)
-    def zeroAllowedOctal(endLabel: LabelConfig) = ofRadix(8, octDigit, endLabel)
-    def zeroAllowedBinary(endLabel: LabelConfig) = ofRadix(2, bit, endLabel)
+    def zeroAllowedDecimal(endLabel: LabelConfig): Parsley[BigInt] = ofRadix(10, digit, endLabel)
+    def zeroAllowedHexadecimal(endLabel: LabelConfig): Parsley[BigInt] = ofRadix(16, hexDigit, endLabel)
+    def zeroAllowedOctal(endLabel: LabelConfig): Parsley[BigInt] = ofRadix(8, octDigit, endLabel)
+    def zeroAllowedBinary(endLabel: LabelConfig): Parsley[BigInt] = ofRadix(2, bit, endLabel)
 
-    def zeroNotAllowedDecimal(endLabel: LabelConfig) = ofRadix(10, nonZeroDigit, digit, endLabel) <|> secretZero
-    def zeroNotAllowedHexadecimal(endLabel: LabelConfig) = ofRadix(16, nonZeroHexDigit, hexDigit, endLabel) <|> secretZero
-    def zeroNotAllowedOctal(endLabel: LabelConfig) = ofRadix(8, nonZeroOctDigit, octDigit, endLabel) <|> secretZero
-    def zeroNotAllowedBinary(endLabel: LabelConfig) = ofRadix(2, nonZeroBit, bit, endLabel) <|> secretZero
+    def zeroNotAllowedDecimal(endLabel: LabelConfig): Parsley[BigInt] = ofRadix(10, nonZeroDigit, digit, endLabel) <|> secretZero
+    def zeroNotAllowedHexadecimal(endLabel: LabelConfig): Parsley[BigInt] = ofRadix(16, nonZeroHexDigit, hexDigit, endLabel) <|> secretZero
+    def zeroNotAllowedOctal(endLabel: LabelConfig): Parsley[BigInt] = ofRadix(8, nonZeroOctDigit, octDigit, endLabel) <|> secretZero
+    def zeroNotAllowedBinary(endLabel: LabelConfig): Parsley[BigInt] = ofRadix(2, nonZeroBit, bit, endLabel) <|> secretZero
 
     def plainDecimal(desc: NumericDesc, endLabel: LabelConfig): Parsley[BigInt] = plainDecimal(desc.leadingZerosAllowed, desc.literalBreakChar, endLabel)
     private def plainDecimal(leadingZerosAllowed: Boolean, literalBreakChar: BreakCharDesc, endLabel: LabelConfig): Parsley[BigInt] = literalBreakChar match {
@@ -61,12 +61,16 @@ private [token] class Generic(err: ErrorConfig) {
         case BreakCharDesc.Supported(c, _)                        => ofRadix(10, nonZeroDigit, digit, c, endLabel) <|> secretZero
     }
 
-    def plainHexadecimal(desc: NumericDesc, endLabel: LabelConfig): Parsley[BigInt] = plainHexadecimal(desc.leadingZerosAllowed, desc.literalBreakChar, endLabel)
-    private def plainHexadecimal(leadingZerosAllowed: Boolean, literalBreakChar: BreakCharDesc, endLabel: LabelConfig): Parsley[BigInt] = literalBreakChar match {
-        case BreakCharDesc.NoBreakChar if leadingZerosAllowed     => zeroAllowedHexadecimal(endLabel)
-        case BreakCharDesc.NoBreakChar                            => zeroNotAllowedHexadecimal(endLabel)
-        case BreakCharDesc.Supported(c, _) if leadingZerosAllowed => ofRadix(16, hexDigit, c, endLabel)
-        case BreakCharDesc.Supported(c, _)                        => ofRadix(16, nonZeroHexDigit, hexDigit, c, endLabel) <|> secretZero
+    def plainHexadecimal(desc: NumericDesc, endLabel: LabelConfig): Parsley[BigInt] = {
+        plainHexadecimal(desc.leadingZerosAllowed, desc.literalBreakChar, endLabel)
+    }
+    private def plainHexadecimal(leadingZerosAllowed: Boolean, literalBreakChar: BreakCharDesc, endLabel: LabelConfig): Parsley[BigInt] = {
+        literalBreakChar match {
+            case BreakCharDesc.NoBreakChar if leadingZerosAllowed     => zeroAllowedHexadecimal(endLabel)
+            case BreakCharDesc.NoBreakChar                            => zeroNotAllowedHexadecimal(endLabel)
+            case BreakCharDesc.Supported(c, _) if leadingZerosAllowed => ofRadix(16, hexDigit, c, endLabel)
+            case BreakCharDesc.Supported(c, _)                        => ofRadix(16, nonZeroHexDigit, hexDigit, c, endLabel) <|> secretZero
+        }
     }
 
     def plainOctal(desc: NumericDesc, endLabel: LabelConfig): Parsley[BigInt] = plainOctal(desc.leadingZerosAllowed, desc.literalBreakChar, endLabel)

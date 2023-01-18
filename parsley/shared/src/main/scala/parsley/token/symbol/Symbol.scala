@@ -5,7 +5,7 @@ package parsley.token.symbol
 
 import parsley.Parsley
 import parsley.errors.combinator.ErrorMethods
-import parsley.token.errors.{LabelConfig, ErrorConfig}
+import parsley.token.errors.{ErrorConfig, LabelConfig}
 
 /** This class provides implicit functionality to promote string
   * literals into tokens.

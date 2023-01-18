@@ -1,8 +1,11 @@
+/* SPDX-FileCopyrightText: © 2023 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package parsley.token.errors
 
 import parsley.Parsley
 import parsley.XCompat.unused
-import parsley.errors.combinator._
+import parsley.errors.combinator.ErrorMethods
 
 // This feels wrong? perhaps token is the wrong package
 // Because this is now used for Char, Sat, String to encode the label config...
@@ -21,9 +24,9 @@ private [parsley] trait LabelOps {
     private [parsley] final def asExpectItem(raw: Char): Option[ExpectItem] = asExpectItem(s"$raw")
 }
 
-private [parsley] trait ExplainOps {
-    // TODO: reason extraction, maybe tie into errors?
-}
+// TODO: reason extraction, maybe tie into errors?
+private [parsley] trait ExplainOps
+
 
 // Constraining Types
 /** This type can be used to configure ''both'' errors that make labels and those that make reasons.

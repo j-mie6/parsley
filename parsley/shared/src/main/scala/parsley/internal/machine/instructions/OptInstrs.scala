@@ -6,13 +6,13 @@ package parsley.internal.machine.instructions
 import scala.collection.mutable
 
 import parsley.XCompat._ //mapValuesInPlace
+import parsley.token.errors.LabelConfig
 
 import parsley.internal.errors.ExpectItem
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.MultiExpectedError
 import parsley.internal.machine.stacks.ErrorStack
-import parsley.token.errors.LabelConfig
 
 private [internal] final class Lift1(f: Any => Any) extends Instr {
     override def apply(ctx: Context): Unit = {

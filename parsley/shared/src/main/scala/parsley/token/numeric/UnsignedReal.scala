@@ -4,7 +4,7 @@
 package parsley.token.numeric
 
 import parsley.Parsley, Parsley.{attempt, empty, pure, unit}
-import parsley.character.{digit, hexDigit, octDigit, bit, oneOf}
+import parsley.character.{bit, digit, hexDigit, octDigit, oneOf}
 import parsley.combinator, combinator.optional
 import parsley.errors.combinator.{amendThenDislodge, entrench}
 import parsley.implicits.character.charLift
@@ -49,7 +49,7 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInt
 
     private def when(b: Boolean, p: Parsley[_]): Parsley[_] = if (b) p else unit
 
-    def leadingBreakChar(label: LabelConfig) = desc.literalBreakChar match {
+    def leadingBreakChar(label: LabelConfig): Parsley[_] = desc.literalBreakChar match {
         case BreakCharDesc.NoBreakChar => unit
         case BreakCharDesc.Supported(breakChar, allowedAfterNonDecimalPrefix) =>
             when(allowedAfterNonDecimalPrefix, err.labelNumericBreakChar.orElse(label)(optional(breakChar)))

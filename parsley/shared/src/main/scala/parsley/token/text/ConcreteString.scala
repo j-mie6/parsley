@@ -9,7 +9,7 @@ import parsley.Parsley, Parsley.{attempt, fresh, pure}
 import parsley.character.{char, string}
 import parsley.combinator.{choice, skipManyUntil}
 import parsley.implicits.zipped.Zipped2
-import parsley.token.errors.{LabelConfig, LabelWithExplainConfig, ErrorConfig}
+import parsley.token.errors.{ErrorConfig, LabelConfig, LabelWithExplainConfig}
 import parsley.token.predicate.CharPredicate
 
 private [token] final class ConcreteString(ends: Set[ScalaString], stringChar: StringCharacter, isGraphic: CharPredicate,
