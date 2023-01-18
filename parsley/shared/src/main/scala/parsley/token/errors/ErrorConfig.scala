@@ -5,284 +5,405 @@ package parsley.token.errors
 
 import parsley.XCompat.unused
 
-/** TODO:
+/** This class is used to specify how errors should be produced by the
+  * [[parsley.token.Lexer `Lexer`]] class.
+  *
+  * The [[parsley.token.Lexer `Lexer`]] is set up to produce a variety of different
+  * errors via `label`-ing, `explain`-ing, and `filter`-ing, and some applications of
+  * the ''Verified'' and ''Preventative'' error patterns. The exact content of those
+  * errors can be configured here. Errors can be suppressed or specified with different
+  * levels of detail, or even switching between ''vanilla'' or ''specialised'' errors.
+  *
+  * This class should be used by extending it and overriding the relevant parts: all
+  * methods here are non-abstract and their default is documented inside.
+  *
   * @since 4.1.0
   * @group errconfig
   *
   * @groupprio numeric 0
   * @groupname numeric Numeric Errors
-  * @groupdesc numeric
+  * @groupdesc numeric These control the errors generated with the `numeric` component of the `Lexer`.
   *
   * @groupprio text 0
   * @groupname text Text Errors
-  * @groupdesc text
+  * @groupdesc text These control the errors generated with the `text` component of the `Lexer`.
   *
   * @groupprio names 0
   * @groupname names Name Errors
-  * @groupdesc names
+  * @groupdesc names These control the errors generated with the `names` component of the `Lexer`.
   *
   * @groupprio symbol 0
   * @groupname symbol Symbol Errors
-  * @groupdesc symbol
+  * @groupdesc symbol These control the errors generated with the `symbol` component of the `Lexer`.
   *
   * @groupprio space 0
   * @groupname space Space Errors
-  * @groupdesc space
-  *
+  * @groupdesc space These control the errors generated with the `space` component of the `Lexer`.
   */
 class ErrorConfig {
     // numeric
-    /** @todo Document
+    /** How should a numeric break character (like `_`) be referred to or explained within an error.
       * @since 4.1.0
       * @group numeric
       */
     def labelNumericBreakChar: LabelWithExplainConfig = NotConfigured
 
-    /** @todo Document
+    /** How should unsigned decimal integers be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerUnsignedNumber:* `labelIntegerUnsignedNumber`]]
       * @group numeric
       */
     def labelIntegerUnsignedDecimal: LabelWithExplainConfig = labelIntegerUnsignedNumber
-    /** @todo Document
+    /** How should unsigned hexadecimal integers be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerUnsignedNumber:* `labelIntegerUnsignedNumber`]]
       * @group numeric
       */
     def labelIntegerUnsignedHexadecimal: LabelWithExplainConfig = labelIntegerUnsignedNumber
-    /** @todo Document
+    /** How should unsigned octal integers be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerUnsignedNumber:* `labelIntegerUnsignedNumber`]]
       * @group numeric
       */
     def labelIntegerUnsignedOctal: LabelWithExplainConfig = labelIntegerUnsignedNumber
-    /** @todo Document
+    /** How should unsigned binary integers be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerUnsignedNumber:* `labelIntegerUnsignedNumber`]]
       * @group numeric
       */
     def labelIntegerUnsignedBinary: LabelWithExplainConfig = labelIntegerUnsignedNumber
-    /** @todo Document
+    /** How should generic unsigned integers be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group numeric
       */
     def labelIntegerUnsignedNumber: LabelWithExplainConfig = NotConfigured
-    /** @todo Document
+    /** How should unsigned decimal integers of a given bit-width be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerUnsignedNumber(bits:Int):* `labelIntegerUnsignedNumber`]]
       * @group numeric
       */
     def labelIntegerUnsignedDecimal(@unused bits: Int): LabelWithExplainConfig = labelIntegerUnsignedDecimal
-    /** @todo Document
+    /** How should unsigned hexadecimal integers of a given bit-width be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerUnsignedNumber(bits:Int):* `labelIntegerUnsignedNumber`]]
       * @group numeric
       */
     def labelIntegerUnsignedHexadecimal(@unused bits: Int): LabelWithExplainConfig = labelIntegerUnsignedHexadecimal
-    /** @todo Document
+    /** How should unsigned octal integers of a given bit-width be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerUnsignedNumber(bits:Int):* `labelIntegerUnsignedNumber`]]
       * @group numeric
       */
     def labelIntegerUnsignedOctal(@unused bits: Int): LabelWithExplainConfig = labelIntegerUnsignedOctal
-    /** @todo Document
+    /** How should unsigned binary integers of a given bit-width be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerUnsignedNumber(bits:Int):* `labelIntegerUnsignedNumber`]]
       * @group numeric
       */
     def labelIntegerUnsignedBinary(@unused bits: Int): LabelWithExplainConfig = labelIntegerUnsignedBinary
-    /** @todo Document
+    /** How should generic unsigned integers of a given bit-width be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group numeric
       */
     def labelIntegerUnsignedNumber(@unused bits: Int): LabelWithExplainConfig = labelIntegerUnsignedNumber
 
-    /** @todo Document
+    /** How should signed decimal integers be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerSignedNumber:* `labelIntegerSignedNumber`]]
       * @group numeric
       */
     def labelIntegerSignedDecimal: LabelWithExplainConfig = labelIntegerSignedNumber
-    /** @todo Document
+    /** How should signed hexadecimal integers be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerSignedNumber:* `labelIntegerSignedNumber`]]
       * @group numeric
       */
     def labelIntegerSignedHexadecimal: LabelWithExplainConfig = labelIntegerSignedNumber
-    /** @todo Document
+    /** How should signed octal integers be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerSignedNumber:* `labelIntegerSignedNumber`]]
       * @group numeric
       */
     def labelIntegerSignedOctal: LabelWithExplainConfig = labelIntegerSignedNumber
-    /** @todo Document
+    /** How should signed binary integers be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerSignedNumber:* `labelIntegerSignedNumber`]]
       * @group numeric
       */
     def labelIntegerSignedBinary: LabelWithExplainConfig = labelIntegerSignedNumber
-    /** @todo Document
+    /** How should generic signed integers be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group numeric
       */
     def labelIntegerSignedNumber: LabelWithExplainConfig = NotConfigured
-    /** @todo Document
+    /** How should signed decimal integers of a given bit-width be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerSignedDecimal(bits:Int):* `labelIntegerSignedDecimal`]]
       * @group numeric
       */
     def labelIntegerSignedDecimal(@unused bits: Int): LabelWithExplainConfig = labelIntegerSignedDecimal
-    /** @todo Document
+    /** How should signed hexadecimal integers of a given bit-width be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerSignedHexadecimal(bits:Int):* `labelIntegerSignedHexadecimal`]]
       * @group numeric
       */
     def labelIntegerSignedHexadecimal(@unused bits: Int): LabelWithExplainConfig = labelIntegerSignedHexadecimal
-    /** @todo Document
+    /** How should signed octal integers of a given bit-width be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerSignedOctal(bits:Int):* `labelIntegerSignedOctal`]]
       * @group numeric
       */
     def labelIntegerSignedOctal(@unused bits: Int): LabelWithExplainConfig = labelIntegerSignedOctal
-    /** @todo Document
+    /** How should signed binary integers of a given bit-width be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerSignedBinary(bits:Int):* `labelIntegerSignedBinary`]]
       * @group numeric
       */
     def labelIntegerSignedBinary(@unused bits: Int): LabelWithExplainConfig = labelIntegerSignedBinary
-    /** @todo Document
+    /** How should generic signed integers of a given bit-width be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group numeric
       */
     def labelIntegerSignedNumber(@unused bits: Int): LabelWithExplainConfig = labelIntegerSignedNumber
 
-    /** @todo Document
+    /** How should the fact that the end of a decimal integer literal is expected be referred to within an error.
       * @since 4.1.0
+      * @note defaults to [[labelIntegerNumberEnd `labelIntegerNumberEnd`]]
       * @group numeric
       */
     def labelIntegerDecimalEnd: LabelConfig = labelIntegerNumberEnd
-    /** @todo Document
+    /** How should the fact that the end of a hexadecimal integer literal is expected be referred to within an error.
       * @since 4.1.0
+      * @note defaults to [[labelIntegerNumberEnd `labelIntegerNumberEnd`]]
       * @group numeric
       */
     def labelIntegerHexadecimalEnd: LabelConfig = labelIntegerNumberEnd
-    /** @todo Document
+    /** How should the fact that the end of an octal integer literal is expected be referred to within an error.
       * @since 4.1.0
+      * @note defaults to [[labelIntegerNumberEnd `labelIntegerNumberEnd`]]
       * @group numeric
       */
     def labelIntegerOctalEnd: LabelConfig = labelIntegerNumberEnd
-    /** @todo Document
+    /** How should the fact that the end of a binary integer literal is expected be referred to within an error.
       * @since 4.1.0
+      * @note defaults to [[labelIntegerNumberEnd `labelIntegerNumberEnd`]]
       * @group numeric
       */
     def labelIntegerBinaryEnd: LabelConfig = labelIntegerNumberEnd
-    /** @todo Document
+    /** How should the fact that the end of a generic integer literal is expected be referred to within an error.
       * @since 4.1.0
+      * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group numeric
       */
     def labelIntegerNumberEnd: LabelConfig = NotConfigured
 
-    /** @todo Document
+    /** How should decimal reals should be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[labelRealNumber `labelRealNumber`]]
       * @group numeric
       */
     def labelRealDecimal: LabelWithExplainConfig = labelRealNumber
-    /** @todo Document
+    /** How should hexadecimal reals should be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[labelRealNumber `labelRealNumber`]]
       * @group numeric
       */
     def labelRealHexadecimal: LabelWithExplainConfig = labelRealNumber
-    /** @todo Document
+    /** How should octal reals should be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[labelRealNumber `labelRealNumber`]]
       * @group numeric
       */
     def labelRealOctal: LabelWithExplainConfig = labelRealNumber
-    /** @todo Document
+    /** How should binary reals should be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[labelRealNumber `labelRealNumber`]]
       * @group numeric
       */
     def labelRealBinary: LabelWithExplainConfig = labelRealNumber
-    /** @todo Document
+    /** How should generic reals should be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group numeric
       */
     def labelRealNumber: LabelWithExplainConfig = NotConfigured
-    /** @todo Document
+    /** How should decimal floats should be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[labelRealDecimal `labelRealDecimal`]]
       * @group numeric
       */
     def labelRealFloatDecimal: LabelWithExplainConfig = labelRealDecimal
-    /** @todo Document
+    /** How should hexadecimal floats should be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[labelRealHexadecimal `labelRealHexadecimal`]]
       * @group numeric
       */
     def labelRealFloatHexadecimal: LabelWithExplainConfig = labelRealHexadecimal
-    /** @todo Document
+    /** How should octal floats should be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[labelRealOctal `labelRealOctal`]]
       * @group numeric
       */
     def labelRealFloatOctal: LabelWithExplainConfig = labelRealOctal
-    /** @todo Document
+    /** How should binary floats should be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[labelRealBinary `labelRealBinary`]]
       * @group numeric
       */
     def labelRealFloatBinary: LabelWithExplainConfig = labelRealBinary
-    /** @todo Document
+    /** How should generic floats should be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[labelRealNumber `labelRealNumber`]]
       * @group numeric
       */
     def labelRealFloatNumber: LabelWithExplainConfig = labelRealNumber
-    /** @todo Document
+    /** How should decimal doubles should be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[labelRealDecimal `labelRealDecimal`]]
       * @group numeric
       */
     def labelRealDoubleDecimal: LabelWithExplainConfig = labelRealDecimal
-    /** @todo Document
+    /** How should hexadecimal doubles should be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[labelRealHexadecimal `labelRealHexadecimal`]]
       * @group numeric
       */
     def labelRealDoubleHexadecimal: LabelWithExplainConfig = labelRealHexadecimal
-    /** @todo Document
+    /** How should octal doubles should be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[labelRealOctal `labelRealOctal`]]
       * @group numeric
       */
     def labelRealDoubleOctal: LabelWithExplainConfig = labelRealOctal
-    /** @todo Document
+    /** How should binary doubles should be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[labelRealBinary `labelRealBinary`]]
       * @group numeric
       */
     def labelRealDoubleBinary: LabelWithExplainConfig = labelRealBinary
-    /** @todo Document
+    /** How should generic doubles should be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[labelRealNumber `labelRealNumber`]]
       * @group numeric
       */
     def labelRealDoubleNumber: LabelWithExplainConfig = labelRealNumber
 
-    /** @todo Document
+    /** How should the fact that the end of a decimal real literal is expected be referred to within an error.
       * @since 4.1.0
+      * @note defaults to [[labelRealNumberEnd `labelRealNumberEnd`]]
       * @group numeric
       */
     def labelRealDecimalEnd: LabelConfig = labelRealNumberEnd
-    /** @todo Document
+    /** How should the fact that the end of a hexadecimal real literal is expected be referred to within an error.
       * @since 4.1.0
+      * @note defaults to [[labelRealNumberEnd `labelRealNumberEnd`]]
       * @group numeric
       */
     def labelRealHexadecimalEnd: LabelConfig = labelRealNumberEnd
-    /** @todo Document
+    /** How should the fact that the end of an octal real literal is expected be referred to within an error.
       * @since 4.1.0
+      * @note defaults to [[labelRealNumberEnd `labelRealNumberEnd`]]
       * @group numeric
       */
     def labelRealOctalEnd: LabelConfig = labelRealNumberEnd
-    /** @todo Document
+    /** How should the fact that the end of a binary real literal is expected be referred to within an error.
       * @since 4.1.0
+      * @note defaults to [[labelRealNumberEnd `labelRealNumberEnd`]]
       * @group numeric
       */
     def labelRealBinaryEnd: LabelConfig = labelRealNumberEnd
-    /** @todo Document
+    /** How should the fact that the end of a generic real literal is expected be referred to within an error.
       * @since 4.1.0
+      * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group numeric
       */
     def labelRealNumberEnd: LabelConfig = NotConfigured
 
-    /** @todo Document
+    /** How should the "dot" that separates the integer and fractional part of a real number should be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group numeric
       */
     def labelRealDot: LabelWithExplainConfig = NotConfigured
-    /** @todo Document
+    /** How should the trailing exponents of a real number be referred to or explained within an error.
       * @since 4.1.0
+      * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group numeric
       */
     def labelRealExponent: LabelWithExplainConfig = NotConfigured
-    /** @todo Document
+    /** How should the fact that the end of an exponent part of a real literal is expected be referred to within an error.
       * @since 4.1.0
+      * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group numeric
       */
     def labelRealExponentEnd: LabelConfig = NotConfigured
+
+    /** Even if leading and trailing zeros can be dropped, `.` is not a valid real number: this
+      * method specifies how to report that to the user.
+      * @since 4.1.0
+      * @note defaults to a ''vanilla'' explain: "a real number cannot drop both a leading and trailing zero"
+      * @group numeric
+      */
+    def preventRealDoubleDroppedZero: PreventDotIsZeroConfig = ZeroDotReason("a real number cannot drop both a leading and trailing zero")
+
+    /** This method describes the content of the error when an integer literal is parsed and it is not within the
+      * required bit-width.
+      * @param min the smallest value the integer could have taken
+      * @param max the largest value the integer could have taken
+      * @param nativeRadix the radix that the integer was parsed using
+      * @since 4.1.0
+      * @note defaults to a ''specialised'' error describing what the min and max bounds are.
+      * @group numeric
+      */
+    def filterIntegerOutOfBounds(min: BigInt, max: BigInt, nativeRadix: Int): FilterConfig[BigInt] = new SpecialisedMessage[BigInt](fullAmend = false) {
+        def message(n: BigInt) = Seq(s"literal is not within the range ${min.toString(nativeRadix)} to ${max.toString(nativeRadix)}")
+    }
+
+    /** This method describes the content of the error when a real literal is parsed and it is not representable exactly as the required precision.
+      * @param name the name of the required precision (one of `doubleName` or `floatName`)
+      * @since 4.1.0
+      * @note defaults to a ''specialised'' error stating that the literal is not exactly representable.
+      * @group numeric
+      */
+    def filterRealNotExact(name: String): FilterConfig[BigDecimal] = new SpecialisedMessage[BigDecimal](fullAmend = false) {
+        def message(n: BigDecimal) = Seq(s"literal cannot be represented exactly as an $name")
+    }
+
+    /** This method describes the content of the error when a real literal is parsed and it is not within the bounds perscribed by the required precision.
+      * @param name the name of the required precision (one of `doubleName` or `floatName`)
+      * @param min the smallest value the real could have taken
+      * @param max the largest value the real could have taken
+      * @since 4.1.0
+      * @note defaults to a ''specialised'' error describing what the min and max bounds are.
+      * @group numeric
+      */
+    def filterRealOutOfBounds(name: String, min: BigDecimal, max: BigDecimal): FilterConfig[BigDecimal] =
+        new SpecialisedMessage[BigDecimal](fullAmend = false) {
+            def message(n: BigDecimal) = Seq(s"literal is not within the range $min to $max and is not an $name")
+        }
+
+    // expensive ;)
+    // this is not as effective as it may seem, because reasons cannot be hints
+    // it's possible a preventative error could be more effective?
+    /*def verifiedIntegerBadCharsUsedInLiteral: Option[(predicate.CharPredicate, Int => String)] =
+        None*/
+
+    /** What is the name given to doubles.
+      * @since 4.1.0
+      * @note defaults to "IEEE 754 double-precision float"
+      * @group numeric
+      */
+    def doubleName: String = "IEEE 754 double-precision float"
+    /** What is the name given to floats.
+      * @since 4.1.0
+      * @note defaults to "IEEE 754 single-precision float"
+      * @group numeric
+      */
+    def floatName: String = "IEEE 754 single-precision float"
 
     private [token] final def labelDecimal(bits: Int, signed: Boolean): LabelWithExplainConfig = {
         if (signed) labelIntegerSignedDecimal(bits) else labelIntegerUnsignedDecimal(bits)
@@ -300,88 +421,34 @@ class ErrorConfig {
         if (signed) labelIntegerSignedNumber(bits) else labelIntegerUnsignedNumber(bits)
     }
 
-    /** @todo Document
-      * @since 4.1.0
-      * @group numeric
-      */
-    def preventRealDoubleDroppedZero: PreventDotIsZeroConfig = ZeroDotReason("a real number cannot drop both a leading and trailing zero")
-
-    /** @todo Document
-      * @since 4.1.0
-      * @group numeric
-      */
-    def filterIntOutOfBounds(min: BigInt, max: BigInt, nativeRadix: Int): SpecialisedFilterConfig[BigInt] =
-        new SpecialisedMessage[BigInt](fullAmend = false) {
-            def message(n: BigInt) = Seq(
-                if (n < min) s"literal ${n.toString(nativeRadix)} is less than min value of ${min.toString(nativeRadix)}"
-                else s"literal ${n.toString(nativeRadix)} is larger than max value of ${max.toString(nativeRadix)}"
-            )
-        }
-
-    /** @todo Document
-      * @since 4.1.0
-      * @group numeric
-      */
-    def filterRealNotExact(name: String): SpecialisedFilterConfig[BigDecimal] = new SpecialisedMessage[BigDecimal](fullAmend = false) {
-        def message(n: BigDecimal) = Seq(s"literal $n cannot be represented exactly as an $name")
-    }
-
-    /** @todo Document
-      * @since 4.1.0
-      * @group numeric
-      */
-    def filterRealOutOfBounds(name: String, min: BigDecimal, @unused max: BigDecimal): SpecialisedFilterConfig[BigDecimal] = new SpecialisedMessage[BigDecimal](fullAmend = false) {
-        def message(n: BigDecimal) = Seq(
-            if (n < min) s"literal $n is too small to be an $name"
-            else s"literal $n is too large to be an $name"
-        )
-    }
-
-    // expensive ;)
-    // this is not as effective as it may seem, because reasons cannot be hints
-    // it's possible a preventative error could be more effective?
-    /*def verifiedIntegerBadCharsUsedInLiteral: Option[(predicate.CharPredicate, Int => String)] =
-        None*/
-
-    /** @todo Document
-      * @since 4.1.0
-      * @group numeric
-      */
-    def doubleName: String = "IEEE 754 double-precision float"
-    /** @todo Document
-      * @since 4.1.0
-      * @group numeric
-      */
-    def floatName: String = "IEEE 754 single-precision float"
-
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group names
       */
     def labelNameIdentifier: String = "identifier"
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group names
       */
     def labelNameOperator: String = "operator"
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group names
       */
     def unexpectedNameIllegalIdentifier(v: String): String = s"keyword $v"
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group names
       */
     def unexpectedNameIllegalOperator(v: String): String = s"reserved operator $v"
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group names
       */
     def filterNameIllFormedIdentifier: FilterConfig[String] = new Unexpected[String](fullAmend = false) {
         def unexpected(v: String) = s"identifer $v"
     }
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group names
       */
@@ -389,141 +456,141 @@ class ErrorConfig {
         def unexpected(v: String) = s"operator $v"
     }
 
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
     def labelCharAscii: LabelWithExplainConfig = NotConfigured
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
     def labelCharLatin1: LabelWithExplainConfig = NotConfigured
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
     def labelCharBasicMultilingualPlane: LabelWithExplainConfig = NotConfigured
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
     def labelCharUtf16: LabelWithExplainConfig = NotConfigured
 
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
     def labelCharAsciiEnd: LabelConfig = NotConfigured
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
     def labelCharLatin1End: LabelConfig = NotConfigured
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
     def labelCharBasicMultilingualPlaneEnd: LabelConfig = NotConfigured
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
     def labelCharUtf16End: LabelConfig = NotConfigured
 
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
     def labelStringAscii(multi: Boolean, raw: Boolean): LabelWithExplainConfig = NotConfigured
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
     def labelStringLatin1(multi: Boolean, raw: Boolean): LabelWithExplainConfig = NotConfigured
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
     def labelStringUtf16(multi: Boolean, raw: Boolean): LabelWithExplainConfig = NotConfigured
 
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
     def labelStringAsciiEnd(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
     def labelStringLatin1End(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
     def labelStringUtf16End(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
 
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
     def labelStringCharacter: LabelConfig = Label("string character")
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
     def labelGraphicCharacter: LabelWithExplainConfig = Label("graphic character")
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
     def labelEscapeSequence: LabelWithExplainConfig = Label("escape sequence") //different to "invalid escape sequence"!
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
     def labelEscapeNumeric(radix: Int): LabelConfig = NotConfigured
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
     def labelEscapeNumericEnd(prefix: Char, radix: Int): LabelWithExplainConfig = NotConfigured
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
     def labelEscapeEnd: LabelWithExplainConfig = LabelAndReason("end of escape sequence", "invalid escape sequence")
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
     def labelStringEscapeEmpty: LabelConfig = NotConfigured
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
     def labelStringEscapeGap: LabelConfig = Label("string gap")
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
     def labelStringEscapeGapEnd: LabelConfig = Label("end of string gap")
 
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
     def filterCharNonBasicMultilingualPlane: VanillaFilterConfig[Int] = new Because[Int](fullAmend = false) {
         def reason(@unused x: Int) = "non-BMP character"
     }
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
     def filterCharNonAscii: VanillaFilterConfig[Int] = new Because[Int](fullAmend = false) {
         def reason(@unused x: Int) = "non-ascii character"
     }
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
@@ -531,7 +598,7 @@ class ErrorConfig {
         def reason(@unused x: Int) = "non-latin1 character"
     }
 
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
@@ -539,7 +606,7 @@ class ErrorConfig {
         def message(@unused s: StringBuilder) = Seq("non-ascii characters in string literal, this is not allowed")
     }
 
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
@@ -547,7 +614,7 @@ class ErrorConfig {
         def message(@unused s: StringBuilder) = Seq("non-latin1 characters in string literal, this is not allowed")
     }
 
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
@@ -555,7 +622,7 @@ class ErrorConfig {
         def message(got: Int) = Seq(s"numeric escape requires ${parsley.errors.helpers.combineAsList(needed.toList.map(_.toString))} digits, but only got $got")
     }
 
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
@@ -565,104 +632,104 @@ class ErrorConfig {
             else s"illegal unicode codepoint: ${escapeChar.toString(radix)}")
     }
 
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
     def verifiedCharBadCharsUsedInLiteral: VerifiedBadChars = Unverified
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group text
       */
     def verifiedStringBadCharsUsedInLiteral: VerifiedBadChars = Unverified
 
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group symbol
       */
     def labelSymbolSemi: LabelConfig = Label("semicolon")
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group symbol
       */
     def labelSymbolComma: LabelConfig = Label("comma")
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group symbol
       */
     def labelSymbolColon: LabelConfig = Label("colon")
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group symbol
       */
     def labelSymbolDot: LabelConfig = Label("dot")
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group symbol
       */
     def labelSymbolOpenParen: LabelConfig = Label("open parenthesis")
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group symbol
       */
     def labelSymbolOpenBrace: LabelConfig = Label("open brace")
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group symbol
       */
     def labelSymbolOpenSquare: LabelConfig = Label("open square bracket")
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group symbol
       */
     def labelSymbolOpenAngle: LabelConfig = Label("open angle bracket")
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group symbol
       */
     def labelSymbolClosingParen: LabelConfig = Label("closing parenthesis")
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group symbol
       */
     def labelSymbolClosingBrace: LabelConfig = Label("closing brace")
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group symbol
       */
     def labelSymbolClosingSquare: LabelConfig = Label("closing square bracket")
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group symbol
       */
     def labelSymbolClosingAngle: LabelConfig = Label("closing angle bracket")
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group symbol
       */
     def labelSymbolKeyword(symbol: String): LabelConfig = Label(symbol)
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group symbol
       */
     def labelSymbolOperator(symbol: String): LabelConfig = Label(symbol)
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group symbol
       */
     def labelSymbolEndOfKeyword(symbol: String): String = s"end of $symbol"
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group symbol
       */
     def labelSymbolEndOfOperator(symbol: String): String = s"end of $symbol"
 
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group space
       */
     def labelSpaceEndOfLineComment: LabelWithExplainConfig = Label("end of comment")
-    /** @todo Document
+    /** TODO: Document
       * @since 4.1.0
       * @group space
       */
