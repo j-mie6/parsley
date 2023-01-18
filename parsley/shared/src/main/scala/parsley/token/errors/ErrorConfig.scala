@@ -421,35 +421,42 @@ class ErrorConfig {
         if (signed) labelIntegerSignedNumber(bits) else labelIntegerUnsignedNumber(bits)
     }
 
-    /** TODO: Document
+    /** How should an identifier be referred to in an error message.
       * @since 4.1.0
+      * @note defaults to "identifier"
       * @group names
       */
     def labelNameIdentifier: String = "identifier"
-    /** TODO: Document
+    /** How should a user-defined operator be referred to in an error message.
       * @since 4.1.0
+      * @note defaults to "operator"
       * @group names
       */
     def labelNameOperator: String = "operator"
-    /** TODO: Document
+    /** How should an illegally parsed hard keyword be referred to as an unexpected component.
+      * @param v the illegal identifier
       * @since 4.1.0
+      * @note defaults to "keyword v"
       * @group names
       */
     def unexpectedNameIllegalIdentifier(v: String): String = s"keyword $v"
-    /** TODO: Document
+    /** How should an illegally parsed hard operator be referred to as an unexpected component.
       * @since 4.1.0
+      * @note defaults to "reserved operator v"
       * @group names
       */
     def unexpectedNameIllegalOperator(v: String): String = s"reserved operator $v"
-    /** TODO: Document
+    /** When parsing identifiers that are required to have specific start characters, how should bad identifiers be reported.
       * @since 4.1.0
+      * @note defaults to unexpected "identifier v"
       * @group names
       */
     def filterNameIllFormedIdentifier: FilterConfig[String] = new Unexpected[String](fullAmend = false) {
         def unexpected(v: String) = s"identifer $v"
     }
-    /** TODO: Document
+    /** When parsing operators that are required to have specific start/end characters, how should bad operators be reported.
       * @since 4.1.0
+      * @note defaults to unexpected "operator v"
       * @group names
       */
     def filterNameIllFormedOperator: FilterConfig[String] = new Unexpected[String](fullAmend = false) {
