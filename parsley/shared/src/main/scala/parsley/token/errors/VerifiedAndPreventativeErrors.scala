@@ -62,7 +62,7 @@ object ZeroDotFail {
     def apply(msg0: String, msgs: String*): PreventDotIsZeroConfig = new ZeroDotFail(msg0, msgs: _*)
 }
 
-/** This class is used to configure what error should be generated wehn illegal characters in a string or character literal are parsable.
+/** This class is used to configure what error should be generated when illegal characters in a string or character literal are parsable.
   * @since 4.1.0
   * @group badchar
   */
