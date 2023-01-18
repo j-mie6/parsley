@@ -78,6 +78,8 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .jsSettings(
     Test / scalaJSLinkerConfig := scalaJSLinkerConfig.value.withESFeatures(_.withESVersion(ESVersion.ES2018)),
     Compile / bloopGenerate := None,
+    // JS lacks the IO module, so has its own rootdoc
+    Compile / doc / scalacOptions ++= Seq("-groups", "-doc-root-content", s"${baseDirectory.value.getPath}/rootdoc.md"),
     Test / bloopGenerate := None,
   )
   .nativeSettings(
