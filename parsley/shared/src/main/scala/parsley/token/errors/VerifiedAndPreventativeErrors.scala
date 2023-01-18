@@ -5,7 +5,7 @@ import parsley.character.satisfyUtf16
 import parsley.errors.combinator, combinator.ErrorMethods
 import parsley.position
 
-/** This class, and its subclasses, is used to configure what error is generated when `.` is parsed as a real number.
+/** This class is used to configure what error is generated when `.` is parsed as a real number.
   * @since 4.1.0
   * @group doubledot
   */
@@ -61,21 +61,17 @@ object ZeroDotFail {
     def apply(msg0: String, msgs: String*): PreventDotIsZeroConfig = new ZeroDotFail(msg0, msgs: _*)
 }
 
-/** TODO:
+/** This class is used to configure what error should be generated wehn illegal characters in a string or character literal are parsable.
   * @since 4.1.0
   * @group badchar
   */
 sealed abstract class VerifiedBadChars {
-    /** TODO:
-      * @since 4.1.0
-      * @group badchar
-      */
     private [token] def checkBadChar: Parsley[Nothing]
 }
 private final class BadCharsFail private (cs: Map[Int, Seq[String]]) extends VerifiedBadChars {
     private [token] def checkBadChar: Parsley[Nothing] = satisfyUtf16(cs.contains).fail(cs.apply(_))
 }
-/** TODO:
+/** This object makes "bad literal chars" generate a bunch of given messages in a ''specialised'' error. Requires a map from bad characters to their messages.
   * @since 4.1.0
   * @group badchar
   */
@@ -86,7 +82,7 @@ object BadCharsFail {
 private final class BadCharsReason private (cs: Map[Int, String]) extends VerifiedBadChars {
     private [token] def checkBadChar: Parsley[Nothing] = satisfyUtf16(cs.contains)._unexpected(cs.apply)
 }
-/** TODO:
+/** This object makes "bad literal chars" generate a reason in a ''vanilla'' error. Requires a map from bad characters to their reasons.
   * @since 4.1.0
   * @group badchar
   */
@@ -94,7 +90,7 @@ object BadCharsReason {
     def apply(cs: Map[Int, String]): VerifiedBadChars = if (cs.isEmpty) Unverified else new BadCharsReason(cs)
 }
 
-/** TODO:
+/** This object disables the verified error for bad characters: this may improve parsing performance slightly on the failure case.
   * @since 4.1.0
   * @group badchar
   */
