@@ -44,300 +44,300 @@ import parsley.XCompat.unused
   */
 class ErrorConfig {
     // numeric
-    /** How should a numeric break character (like `_`) be referred to or explained within an error.
+    /** How a numeric break character should (like `_`) be referred to or explained within an error.
       * @since 4.1.0
       * @group numeric
       */
     def labelNumericBreakChar: LabelWithExplainConfig = NotConfigured
 
-    /** How should unsigned decimal integers be referred to or explained within an error.
+    /** How unsigned decimal integers should be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerUnsignedNumber:* `labelIntegerUnsignedNumber`]]
       * @group numeric
       */
     def labelIntegerUnsignedDecimal: LabelWithExplainConfig = labelIntegerUnsignedNumber
-    /** How should unsigned hexadecimal integers be referred to or explained within an error.
+    /** How unsigned hexadecimal integers should be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerUnsignedNumber:* `labelIntegerUnsignedNumber`]]
       * @group numeric
       */
     def labelIntegerUnsignedHexadecimal: LabelWithExplainConfig = labelIntegerUnsignedNumber
-    /** How should unsigned octal integers be referred to or explained within an error.
+    /** How unsigned octal integers should be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerUnsignedNumber:* `labelIntegerUnsignedNumber`]]
       * @group numeric
       */
     def labelIntegerUnsignedOctal: LabelWithExplainConfig = labelIntegerUnsignedNumber
-    /** How should unsigned binary integers be referred to or explained within an error.
+    /** How unsigned binary integers should be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerUnsignedNumber:* `labelIntegerUnsignedNumber`]]
       * @group numeric
       */
     def labelIntegerUnsignedBinary: LabelWithExplainConfig = labelIntegerUnsignedNumber
-    /** How should generic unsigned integers be referred to or explained within an error.
+    /** How generic unsigned integers should be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group numeric
       */
     def labelIntegerUnsignedNumber: LabelWithExplainConfig = NotConfigured
-    /** How should unsigned decimal integers of a given bit-width be referred to or explained within an error.
+    /** How unsigned decimal integers should of a given bit-width be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerUnsignedNumber(bits:Int):* `labelIntegerUnsignedNumber`]]
       * @group numeric
       */
     def labelIntegerUnsignedDecimal(@unused bits: Int): LabelWithExplainConfig = labelIntegerUnsignedDecimal
-    /** How should unsigned hexadecimal integers of a given bit-width be referred to or explained within an error.
+    /** How unsigned hexadecimal integers should of a given bit-width be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerUnsignedNumber(bits:Int):* `labelIntegerUnsignedNumber`]]
       * @group numeric
       */
     def labelIntegerUnsignedHexadecimal(@unused bits: Int): LabelWithExplainConfig = labelIntegerUnsignedHexadecimal
-    /** How should unsigned octal integers of a given bit-width be referred to or explained within an error.
+    /** How unsigned octal integers should of a given bit-width be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerUnsignedNumber(bits:Int):* `labelIntegerUnsignedNumber`]]
       * @group numeric
       */
     def labelIntegerUnsignedOctal(@unused bits: Int): LabelWithExplainConfig = labelIntegerUnsignedOctal
-    /** How should unsigned binary integers of a given bit-width be referred to or explained within an error.
+    /** How unsigned binary integers should of a given bit-width be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerUnsignedNumber(bits:Int):* `labelIntegerUnsignedNumber`]]
       * @group numeric
       */
     def labelIntegerUnsignedBinary(@unused bits: Int): LabelWithExplainConfig = labelIntegerUnsignedBinary
-    /** How should generic unsigned integers of a given bit-width be referred to or explained within an error.
+    /** How generic unsigned integers should of a given bit-width be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group numeric
       */
     def labelIntegerUnsignedNumber(@unused bits: Int): LabelWithExplainConfig = labelIntegerUnsignedNumber
 
-    /** How should signed decimal integers be referred to or explained within an error.
+    /** How signed decimal integers should be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerSignedNumber:* `labelIntegerSignedNumber`]]
       * @group numeric
       */
     def labelIntegerSignedDecimal: LabelWithExplainConfig = labelIntegerSignedNumber
-    /** How should signed hexadecimal integers be referred to or explained within an error.
+    /** How signed hexadecimal integers should be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerSignedNumber:* `labelIntegerSignedNumber`]]
       * @group numeric
       */
     def labelIntegerSignedHexadecimal: LabelWithExplainConfig = labelIntegerSignedNumber
-    /** How should signed octal integers be referred to or explained within an error.
+    /** How signed octal integers should be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerSignedNumber:* `labelIntegerSignedNumber`]]
       * @group numeric
       */
     def labelIntegerSignedOctal: LabelWithExplainConfig = labelIntegerSignedNumber
-    /** How should signed binary integers be referred to or explained within an error.
+    /** How signed binary integers should be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerSignedNumber:* `labelIntegerSignedNumber`]]
       * @group numeric
       */
     def labelIntegerSignedBinary: LabelWithExplainConfig = labelIntegerSignedNumber
-    /** How should generic signed integers be referred to or explained within an error.
+    /** How generic signed integers should be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group numeric
       */
     def labelIntegerSignedNumber: LabelWithExplainConfig = NotConfigured
-    /** How should signed decimal integers of a given bit-width be referred to or explained within an error.
+    /** How signed decimal integers should of a given bit-width be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerSignedDecimal(bits:Int):* `labelIntegerSignedDecimal`]]
       * @group numeric
       */
     def labelIntegerSignedDecimal(@unused bits: Int): LabelWithExplainConfig = labelIntegerSignedDecimal
-    /** How should signed hexadecimal integers of a given bit-width be referred to or explained within an error.
+    /** How signed hexadecimal integers should of a given bit-width be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerSignedHexadecimal(bits:Int):* `labelIntegerSignedHexadecimal`]]
       * @group numeric
       */
     def labelIntegerSignedHexadecimal(@unused bits: Int): LabelWithExplainConfig = labelIntegerSignedHexadecimal
-    /** How should signed octal integers of a given bit-width be referred to or explained within an error.
+    /** How signed octal integers should of a given bit-width be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerSignedOctal(bits:Int):* `labelIntegerSignedOctal`]]
       * @group numeric
       */
     def labelIntegerSignedOctal(@unused bits: Int): LabelWithExplainConfig = labelIntegerSignedOctal
-    /** How should signed binary integers of a given bit-width be referred to or explained within an error.
+    /** How signed binary integers should of a given bit-width be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[parsley.token.errors.ErrorConfig.labelIntegerSignedBinary(bits:Int):* `labelIntegerSignedBinary`]]
       * @group numeric
       */
     def labelIntegerSignedBinary(@unused bits: Int): LabelWithExplainConfig = labelIntegerSignedBinary
-    /** How should generic signed integers of a given bit-width be referred to or explained within an error.
+    /** How generic signed integers should of a given bit-width be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group numeric
       */
     def labelIntegerSignedNumber(@unused bits: Int): LabelWithExplainConfig = labelIntegerSignedNumber
 
-    /** How should the fact that the end of a decimal integer literal is expected be referred to within an error.
+    /** How the fact that the end of a decimal integer literal is expected should be referred to within an error.
       * @since 4.1.0
       * @note defaults to [[labelIntegerNumberEnd `labelIntegerNumberEnd`]]
       * @group numeric
       */
     def labelIntegerDecimalEnd: LabelConfig = labelIntegerNumberEnd
-    /** How should the fact that the end of a hexadecimal integer literal is expected be referred to within an error.
+    /** How the fact that the end of a hexadecimal integer literal is expected should be referred to within an error.
       * @since 4.1.0
       * @note defaults to [[labelIntegerNumberEnd `labelIntegerNumberEnd`]]
       * @group numeric
       */
     def labelIntegerHexadecimalEnd: LabelConfig = labelIntegerNumberEnd
-    /** How should the fact that the end of an octal integer literal is expected be referred to within an error.
+    /** How the fact that the end of an octal integer literal is expected should be referred to within an error.
       * @since 4.1.0
       * @note defaults to [[labelIntegerNumberEnd `labelIntegerNumberEnd`]]
       * @group numeric
       */
     def labelIntegerOctalEnd: LabelConfig = labelIntegerNumberEnd
-    /** How should the fact that the end of a binary integer literal is expected be referred to within an error.
+    /** How the fact that the end of a binary integer literal is expected should be referred to within an error.
       * @since 4.1.0
       * @note defaults to [[labelIntegerNumberEnd `labelIntegerNumberEnd`]]
       * @group numeric
       */
     def labelIntegerBinaryEnd: LabelConfig = labelIntegerNumberEnd
-    /** How should the fact that the end of a generic integer literal is expected be referred to within an error.
+    /** How the fact that the end of a generic integer literal is expected should be referred to within an error.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group numeric
       */
     def labelIntegerNumberEnd: LabelConfig = NotConfigured
 
-    /** How should decimal reals should be referred to or explained within an error.
+    /** How decimal reals should be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[labelRealNumber `labelRealNumber`]]
       * @group numeric
       */
     def labelRealDecimal: LabelWithExplainConfig = labelRealNumber
-    /** How should hexadecimal reals should be referred to or explained within an error.
+    /** How hexadecimal reals should be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[labelRealNumber `labelRealNumber`]]
       * @group numeric
       */
     def labelRealHexadecimal: LabelWithExplainConfig = labelRealNumber
-    /** How should octal reals should be referred to or explained within an error.
+    /** How octal reals should be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[labelRealNumber `labelRealNumber`]]
       * @group numeric
       */
     def labelRealOctal: LabelWithExplainConfig = labelRealNumber
-    /** How should binary reals should be referred to or explained within an error.
+    /** How binary reals should be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[labelRealNumber `labelRealNumber`]]
       * @group numeric
       */
     def labelRealBinary: LabelWithExplainConfig = labelRealNumber
-    /** How should generic reals should be referred to or explained within an error.
+    /** How generic reals should be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group numeric
       */
     def labelRealNumber: LabelWithExplainConfig = NotConfigured
-    /** How should decimal floats should be referred to or explained within an error.
+    /** How decimal floats should be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[labelRealDecimal `labelRealDecimal`]]
       * @group numeric
       */
     def labelRealFloatDecimal: LabelWithExplainConfig = labelRealDecimal
-    /** How should hexadecimal floats should be referred to or explained within an error.
+    /** How hexadecimal floats should be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[labelRealHexadecimal `labelRealHexadecimal`]]
       * @group numeric
       */
     def labelRealFloatHexadecimal: LabelWithExplainConfig = labelRealHexadecimal
-    /** How should octal floats should be referred to or explained within an error.
+    /** How octal floats should be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[labelRealOctal `labelRealOctal`]]
       * @group numeric
       */
     def labelRealFloatOctal: LabelWithExplainConfig = labelRealOctal
-    /** How should binary floats should be referred to or explained within an error.
+    /** How binary floats should be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[labelRealBinary `labelRealBinary`]]
       * @group numeric
       */
     def labelRealFloatBinary: LabelWithExplainConfig = labelRealBinary
-    /** How should generic floats should be referred to or explained within an error.
+    /** How generic floats should be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[labelRealNumber `labelRealNumber`]]
       * @group numeric
       */
     def labelRealFloatNumber: LabelWithExplainConfig = labelRealNumber
-    /** How should decimal doubles should be referred to or explained within an error.
+    /** How decimal doubles should be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[labelRealDecimal `labelRealDecimal`]]
       * @group numeric
       */
     def labelRealDoubleDecimal: LabelWithExplainConfig = labelRealDecimal
-    /** How should hexadecimal doubles should be referred to or explained within an error.
+    /** How hexadecimal doubles should be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[labelRealHexadecimal `labelRealHexadecimal`]]
       * @group numeric
       */
     def labelRealDoubleHexadecimal: LabelWithExplainConfig = labelRealHexadecimal
-    /** How should octal doubles should be referred to or explained within an error.
+    /** How octal doubles should be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[labelRealOctal `labelRealOctal`]]
       * @group numeric
       */
     def labelRealDoubleOctal: LabelWithExplainConfig = labelRealOctal
-    /** How should binary doubles should be referred to or explained within an error.
+    /** How binary doubles should be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[labelRealBinary `labelRealBinary`]]
       * @group numeric
       */
     def labelRealDoubleBinary: LabelWithExplainConfig = labelRealBinary
-    /** How should generic doubles should be referred to or explained within an error.
+    /** How generic doubles should be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[labelRealNumber `labelRealNumber`]]
       * @group numeric
       */
     def labelRealDoubleNumber: LabelWithExplainConfig = labelRealNumber
 
-    /** How should the fact that the end of a decimal real literal is expected be referred to within an error.
+    /** How the fact that the end of a decimal real literal is expected should be referred to within an error.
       * @since 4.1.0
       * @note defaults to [[labelRealNumberEnd `labelRealNumberEnd`]]
       * @group numeric
       */
     def labelRealDecimalEnd: LabelConfig = labelRealNumberEnd
-    /** How should the fact that the end of a hexadecimal real literal is expected be referred to within an error.
+    /** How the fact that the end of a hexadecimal real literal is expected should be referred to within an error.
       * @since 4.1.0
       * @note defaults to [[labelRealNumberEnd `labelRealNumberEnd`]]
       * @group numeric
       */
     def labelRealHexadecimalEnd: LabelConfig = labelRealNumberEnd
-    /** How should the fact that the end of an octal real literal is expected be referred to within an error.
+    /** How the fact that the end of an octal real literal is expected should be referred to within an error.
       * @since 4.1.0
       * @note defaults to [[labelRealNumberEnd `labelRealNumberEnd`]]
       * @group numeric
       */
     def labelRealOctalEnd: LabelConfig = labelRealNumberEnd
-    /** How should the fact that the end of a binary real literal is expected be referred to within an error.
+    /** How the fact that the end of a binary real literal is expected should be referred to within an error.
       * @since 4.1.0
       * @note defaults to [[labelRealNumberEnd `labelRealNumberEnd`]]
       * @group numeric
       */
     def labelRealBinaryEnd: LabelConfig = labelRealNumberEnd
-    /** How should the fact that the end of a generic real literal is expected be referred to within an error.
+    /** How the fact that the end of a generic real literal is expected should be referred to within an error.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group numeric
       */
     def labelRealNumberEnd: LabelConfig = NotConfigured
 
-    /** How should the "dot" that separates the integer and fractional part of a real number should be referred to or explained within an error.
+    /** How the "dot" that separates the integer and fractional part of a real number should be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group numeric
       */
     def labelRealDot: LabelWithExplainConfig = NotConfigured
-    /** How should the trailing exponents of a real number be referred to or explained within an error.
+    /** How the trailing exponents of a real number should be referred to or explained within an error.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group numeric
       */
     def labelRealExponent: LabelWithExplainConfig = NotConfigured
-    /** How should the fact that the end of an exponent part of a real literal is expected be referred to within an error.
+    /** How the fact that the end of an exponent part of a real literal is expected should be referred to within an error.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group numeric
@@ -394,13 +394,13 @@ class ErrorConfig {
     /*def verifiedIntegerBadCharsUsedInLiteral: Option[(predicate.CharPredicate, Int => String)] =
         None*/
 
-    /** What is the name given to doubles.
+    /** The name given to doubles.
       * @since 4.1.0
       * @note defaults to "IEEE 754 double-precision float"
       * @group numeric
       */
     def doubleName: String = "IEEE 754 double-precision float"
-    /** What is the name given to floats.
+    /** The name given to floats.
       * @since 4.1.0
       * @note defaults to "IEEE 754 single-precision float"
       * @group numeric
@@ -423,32 +423,32 @@ class ErrorConfig {
         if (signed) labelIntegerSignedNumber(bits) else labelIntegerUnsignedNumber(bits)
     }
 
-    /** How should an identifier be referred to in an error message.
+    /** How an identifier should be referred to in an error message.
       * @since 4.1.0
       * @note defaults to "identifier"
       * @group names
       */
     def labelNameIdentifier: String = "identifier"
-    /** How should a user-defined operator be referred to in an error message.
+    /** How a user-defined operator should be referred to in an error message.
       * @since 4.1.0
       * @note defaults to "operator"
       * @group names
       */
     def labelNameOperator: String = "operator"
-    /** How should an illegally parsed hard keyword be referred to as an unexpected component.
+    /** How an illegally parsed hard keyword should be referred to as an unexpected component.
       * @param v the illegal identifier
       * @since 4.1.0
       * @note defaults to "keyword v"
       * @group names
       */
     def unexpectedNameIllegalIdentifier(v: String): String = s"keyword $v"
-    /** How should an illegally parsed hard operator be referred to as an unexpected component.
+    /** How an illegally parsed hard operator should be referred to as an unexpected component.
       * @since 4.1.0
       * @note defaults to "reserved operator v"
       * @group names
       */
     def unexpectedNameIllegalOperator(v: String): String = s"reserved operator $v"
-    /** When parsing identifiers that are required to have specific start characters, how should bad identifiers be reported.
+    /** When parsing identifiers that are required to have specific start characters, how bad identifiers should be reported.
       * @since 4.1.0
       * @note defaults to unexpected "identifier v"
       * @group names
@@ -456,7 +456,7 @@ class ErrorConfig {
     def filterNameIllFormedIdentifier: FilterConfig[String] = new Unexpected[String](fullAmend = false) {
         def unexpected(v: String) = s"identifer $v"
     }
-    /** When parsing operators that are required to have specific start/end characters, how should bad operators be reported.
+    /** When parsing operators that are required to have specific start/end characters, how bad operators should be reported.
       * @since 4.1.0
       * @note defaults to unexpected "operator v"
       * @group names
@@ -465,57 +465,57 @@ class ErrorConfig {
         def unexpected(v: String) = s"operator $v"
     }
 
-    /** How should a ASCII character literal be referred to or explained in error messages.
+    /** How a ASCII character literal should be referred to or explained in error messages.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelCharAscii: LabelWithExplainConfig = NotConfigured
-    /** How should a Latin1 (extended ASCII) character literal be referred to or explained in error messages.
+    /** How a Latin1 (extended ASCII) character literal should be referred to or explained in error messages.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelCharLatin1: LabelWithExplainConfig = NotConfigured
-    /** How should a BMP (Basic Multilingual Plane) character literal be referred to or explained in error messages.
+    /** How a BMP (Basic Multilingual Plane) character literal should be referred to or explained in error messages.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelCharBasicMultilingualPlane: LabelWithExplainConfig = NotConfigured
-    /** How should a UTF-16 character literal be referred to or explained in error messages.
+    /** How a UTF-16 character literal should be referred to or explained in error messages.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelCharUtf16: LabelWithExplainConfig = NotConfigured
 
-    /** How should the closing quote of an ASCII character literal be referred to in error messages.
+    /** How the closing quote of an ASCII character literal should be referred to in error messages.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelCharAsciiEnd: LabelConfig = NotConfigured
-    /** How should the closing quote of a Latin1 character literal be referred to in error messages.
+    /** How the closing quote of a Latin1 character literal should be referred to in error messages.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelCharLatin1End: LabelConfig = NotConfigured
-    /** How should the closing quote of a BMP character literal be referred to in error messages.
+    /** How the closing quote of a BMP character literal should be referred to in error messages.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelCharBasicMultilingualPlaneEnd: LabelConfig = NotConfigured
-    /** How should the closing quote of a UTF-16 character literal be referred to in error messages.
+    /** How the closing quote of a UTF-16 character literal should be referred to in error messages.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelCharUtf16End: LabelConfig = NotConfigured
 
-    /** How should a ASCII-only string literal be referred to or explained in error messages.
+    /** How a ASCII-only string literal should be referred to or explained in error messages.
       * @since 4.1.0
       * @param multi whether this is for multi-line strings
       * @param raw whether this is for raw strings
@@ -523,7 +523,7 @@ class ErrorConfig {
       * @group text
       */
     def labelStringAscii(multi: Boolean, raw: Boolean): LabelWithExplainConfig = NotConfigured
-    /** How should a Latin1-only string literal be referred to or explained in error messages.
+    /** How a Latin1-only string literal should be referred to or explained in error messages.
       * @since 4.1.0
       * @param multi whether this is for multi-line strings
       * @param raw whether this is for raw strings
@@ -531,7 +531,7 @@ class ErrorConfig {
       * @group text
       */
     def labelStringLatin1(multi: Boolean, raw: Boolean): LabelWithExplainConfig = NotConfigured
-    /** How should a UTF-16-only string literal be referred to or explained in error messages.
+    /** How a UTF-16-only string should literal be referred to or explained in error messages.
       * @since 4.1.0
       * @param multi whether this is for multi-line strings
       * @param raw whether this is for raw strings
@@ -540,7 +540,7 @@ class ErrorConfig {
       */
     def labelStringUtf16(multi: Boolean, raw: Boolean): LabelWithExplainConfig = NotConfigured
 
-    /** How should the closing quote(s) of an ASCII string literal be referred to in error messages.
+    /** How the closing quote(s) of an ASCII string literal should be referred to in error messages.
       * @since 4.1.0
       * @param multi whether this is for multi-line strings
       * @param raw whether this is for raw strings
@@ -548,7 +548,7 @@ class ErrorConfig {
       * @group text
       */
     def labelStringAsciiEnd(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
-    /** How should the closing quote(s) of a Latin1 string literal be referred to in error messages.
+    /** How the closing quote(s) of a Latin1 string literal should be referred to in error messages.
       * @since 4.1.0
       * @param multi whether this is for multi-line strings
       * @param raw whether this is for raw strings
@@ -556,7 +556,7 @@ class ErrorConfig {
       * @group text
       */
     def labelStringLatin1End(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
-    /**  How should the closing quote(s) of a UTF-16 string literal be referred to in error messages.
+    /**  How the closing quote(s) of a UTF-16 string literal should be referred to in error messages.
       * @since 4.1.0
       * @param multi whether this is for multi-line strings
       * @param raw whether this is for raw strings
@@ -565,21 +565,21 @@ class ErrorConfig {
       */
     def labelStringUtf16End(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
 
-    /** How should general string characters be referred to in error messages.
+    /** How general string characters should be referred to in error messages.
       * @since 4.1.0
       * @note defaults to label of "string character"
       * @note this superscedes [[labelGraphicCharacter `labelGraphicCharacter`]] and [[labelEscapeSequence `labelEscapeSequence`]] within string literals.
       * @group text
       */
     def labelStringCharacter: LabelConfig = Label("string character")
-    /** How should a graphic character (a regular character in the literal) be referred to or explained in error messages.
+    /** How a graphic character (a regular character in the literal) should be referred to or explained in error messages.
       * @since 4.1.0
       * @note defaults to a label of "graphic character"
       * @note explains for graphic characters do not work in string literals.
       * @group text
       */
     def labelGraphicCharacter: LabelWithExplainConfig = Label("graphic character")
-    /** How should an escape sequence be referred to or explained in error messages.
+    /** How an escape sequence should be referred to or explained in error messages.
       * @since 4.1.0
       * @note defaults to label of "escape sequence"
       * @note explains for escape characters do not work in string literals.
@@ -587,14 +587,14 @@ class ErrorConfig {
       * @group text
       */
     def labelEscapeSequence: LabelWithExplainConfig = Label("escape sequence") //different to "invalid escape sequence"!
-    /** How should a numeric escape sequence (after the opening character) be referred to or explained in error messages.
+    /** How a numeric escape sequence (after the opening character) should be referred to or explained in error messages.
       * @since 4.1.0
       * @param radix the radix this specific configuration applies to
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelEscapeNumeric(radix: Int): LabelWithExplainConfig = NotConfigured
-    /** How should the end of a numeric escape sequence (after a prefix) be referred to or explained in error messages.
+    /** How the end of a numeric escape sequence (after a prefix) should be referred to or explained in error messages.
       * @since 4.1.0
       * @param radix the radix this specific configuration applies to
       * @param prefix the character that started this sequence
@@ -602,25 +602,25 @@ class ErrorConfig {
       * @group text
       */
     def labelEscapeNumericEnd(prefix: Char, radix: Int): LabelWithExplainConfig = NotConfigured
-    /** How should the end of an escape sequence (anything past the opening character) be referred to or explained within an error message.
+    /** How the end of an escape sequence (anything past the opening character) should be referred to or explained within an error message.
       * @since 4.1.0
       * @note defaults to label of "end of escape sequence" with a reason of "invalid escape sequence"
       * @group text
       */
     def labelEscapeEnd: LabelWithExplainConfig = LabelAndReason("end of escape sequence", "invalid escape sequence")
-    /** How should zero-width escape characters be referred to within error messages.
+    /** How zero-width escape characters should be referred to within error messages.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelStringEscapeEmpty: LabelConfig = NotConfigured
-    /** How should string gaps be referred to within error messages.
+    /** How string gaps should be referred to within error messages.
       * @since 4.1.0
       * @note defaults to label of "string gap"
       * @group text
       */
     def labelStringEscapeGap: LabelConfig = Label("string gap")
-    /** How should the end of a string gap (the closing slash) be referred to within error messages.
+    /** How the end of a string gap (the closing slash) should be referred to within error messages.
       * @since 4.1.0
       * @note defaults to label of "end of string gap"
       * @group text
@@ -783,38 +783,38 @@ class ErrorConfig {
       */
     def labelSymbolClosingAngle: LabelConfig = Label("closing angle bracket")
     //TODO: In future, we want to add LabelWithExplain config here: to do that, introduce an explainSymbolKeyword and merge with a private verson
-    /** How should a given keyword be described in an error message.
+    /** How a given keyword should be described in an error message.
       * @since 4.1.0
       * @note defaults to labelling with the symbol itself
       * @group symbol
       */
     def labelSymbolKeyword(symbol: String): LabelConfig = Label(symbol)
-    /** How should a given operator be described in an error message.
+    /** How a given operator should be described in an error message.
       * @since 4.1.0
       * @note defaults to labelling with the symbol itself
       * @group symbol
       */
     def labelSymbolOperator(symbol: String): LabelConfig = Label(symbol)
-    /** How should the required end of a given keyword be specified in an error.
+    /** How the required end of a given keyword should be specified in an error.
       * @since 4.1.0
       * @note defaults to "end of symbol"
       * @group symbol
       */
     def labelSymbolEndOfKeyword(symbol: String): String = s"end of $symbol"
-    /** How should the required end of a given operator be specified in an error.
+    /** How the required end of a given operator should be specified in an error.
       * @since 4.1.0
       * @note defaults to "end of symbol"
       * @group symbol
       */
     def labelSymbolEndOfOperator(symbol: String): String = s"end of $symbol"
 
-    /** How should the end of a single-line comment be described or explained.
+    /** How the end of a single-line comment should be described or explained.
       * @since 4.1.0
       * @note defaults to "end of comment"
       * @group space
       */
     def labelSpaceEndOfLineComment: LabelWithExplainConfig = Label("end of comment")
-    /** How should the end of a multi-line comment be described or explained.
+    /** How the end of a multi-line comment should be described or explained.
       * @since 4.1.0
       * @note defaults to "end of comment"
       * @group space
