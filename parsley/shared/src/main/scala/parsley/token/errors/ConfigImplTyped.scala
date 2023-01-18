@@ -4,7 +4,7 @@ import parsley.Parsley, Parsley.pure
 import parsley.errors.combinator, combinator.ErrorMethods
 import parsley.position
 
-/**
+/** TODO:
   * @since 4.1.0
   * @group filters
   */
@@ -21,28 +21,32 @@ private [parsley] object FilterOps {
     }
 }
 
-/**
+/** TODO:
   * @since 4.1.0
   * @group filters
   */
 trait FilterConfig[A] extends FilterOps[A]
 
-/**
+/** TODO:
   * @since 4.1.0
   * @group filters
   */
 trait SpecialisedFilterConfig[A] extends FilterConfig[A]
-/**
+/** TODO:
   * @since 4.1.0
   * @group filters
   */
 trait VanillaFilterConfig[A] extends FilterConfig[A]
 
-/**
+/** TODO:
   * @since 4.1.0
   * @group filters
   */
 abstract class SpecialisedMessage[A](fullAmend: Boolean) extends SpecialisedFilterConfig[A] { self =>
+    /** TODO:
+      * @since 4.1.0
+      * @group badchar
+      */
     def message(x: A): Seq[String]
 
     private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = FilterOps.amendThenDislodge(fullAmend) {
@@ -67,11 +71,15 @@ abstract class SpecialisedMessage[A](fullAmend: Boolean) extends SpecialisedFilt
     }
 }
 
-/**
+/** TODO:
   * @since 4.1.0
   * @group filters
   */
 abstract class Unexpected[A](fullAmend: Boolean) extends VanillaFilterConfig[A] { self =>
+    /** TODO:
+      * @since 4.1.0
+      * @group badchar
+      */
     def unexpected(x: A): String
 
     private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = FilterOps.amendThenDislodge(fullAmend) {
@@ -93,11 +101,15 @@ abstract class Unexpected[A](fullAmend: Boolean) extends VanillaFilterConfig[A] 
     }
 }
 
-/**
+/** TODO:
   * @since 4.1.0
   * @group filters
   */
 abstract class Because[A](fullAmend: Boolean) extends VanillaFilterConfig[A] { self =>
+    /** TODO:
+      * @since 4.1.0
+      * @group badchar
+      */
     def reason(x: A): String
 
     private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = FilterOps.amendThenDislodge(fullAmend) {
@@ -119,12 +131,20 @@ abstract class Because[A](fullAmend: Boolean) extends VanillaFilterConfig[A] { s
     }
 }
 
-/**
+/** TODO:
   * @since 4.1.0
   * @group filters
   */
 abstract class UnexpectedBecause[A](fullAmend: Boolean) extends VanillaFilterConfig[A] { self =>
+    /** TODO:
+      * @since 4.1.0
+      * @group badchar
+      */
     def unexpected(x: A): String
+    /** TODO:
+      * @since 4.1.0
+      * @group badchar
+      */
     def reason(x: A): String
 
     private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = FilterOps.amendThenDislodge(fullAmend) {
@@ -157,7 +177,7 @@ abstract class UnexpectedBecause[A](fullAmend: Boolean) extends VanillaFilterCon
     }
 }
 
-/**
+/** TODO:
   * @since 4.1.0
   * @group filters
   */
