@@ -28,9 +28,11 @@ private [parsley] object FilterOps {
   */
 trait FilterConfig[A] {
     private [parsley] def filter(p: Parsley[A])(f: A => Boolean): Parsley[A]
+    // $COVERAGE-OFF$
     private [parsley] def collect[B](p: Parsley[A])(f: PartialFunction[A, B]): Parsley[B] = this.filter(p)(f.isDefinedAt).map(f)
     private [parsley] def injectLeft[B]: FilterConfig[Either[A, B]]
     private [parsley] def injectRight[B]: FilterConfig[Either[B, A]]
+    // $COVERAGE-ON$
 }
 
 /** This subtrait of `FilterConfig` specifies that only filters generating ''specialised'' errors may be used.
@@ -64,6 +66,7 @@ abstract class SpecialisedMessage[A](fullAmend: Boolean) extends SpecialisedFilt
     private [parsley] final override def collect[B](p: Parsley[A])(f: PartialFunction[A, B]) =  FilterOps.amendThenDislodge(fullAmend) {
         FilterOps.entrench(fullAmend)(p).collectMsg(message(_))(f)
     }
+    // $COVERAGE-OFF$
     private [parsley] final override def injectLeft[B] = new SpecialisedMessage[Either[A, B]](fullAmend) {
         def message(xy: Either[A, B]) = {
             val Left(x) = xy
@@ -76,6 +79,7 @@ abstract class SpecialisedMessage[A](fullAmend: Boolean) extends SpecialisedFilt
             self.message(y)
         }
     }
+    // $COVERAGE-ON$
 }
 
 /** This class ensures that the filter will generate a ''vanilla'' unexpected item for the given failing parse.
@@ -95,6 +99,7 @@ abstract class Unexpected[A](fullAmend: Boolean) extends VanillaFilterConfig[A] 
             case x if !f(x) => unexpected(x)
         }
     }
+    // $COVERAGE-OFF$
     private [parsley] final override def injectLeft[B] = new Unexpected[Either[A, B]](fullAmend) {
         def unexpected(xy: Either[A, B]) = {
             val Left(x) = xy
@@ -107,6 +112,7 @@ abstract class Unexpected[A](fullAmend: Boolean) extends VanillaFilterConfig[A] 
             self.unexpected(y)
         }
     }
+    // $COVERAGE-ON$
 }
 
 /** This class ensures that the filter will generate a ''vanilla'' reason for the given failing parse.
@@ -126,6 +132,7 @@ abstract class Because[A](fullAmend: Boolean) extends VanillaFilterConfig[A] { s
             case x if !f(x) => reason(x)
         }
     }
+    // $COVERAGE-OFF$
     private [parsley] final override def injectLeft[B] = new Because[Either[A, B]](fullAmend) {
         def reason(xy: Either[A, B]) = {
             val Left(x) = xy
@@ -138,6 +145,7 @@ abstract class Because[A](fullAmend: Boolean) extends VanillaFilterConfig[A] { s
             self.reason(y)
         }
     }
+    // $COVERAGE-ON$
 }
 
 /** This class ensures that the filter will generate a ''vanilla'' unexpected item and a reason for the given failing parse.
@@ -164,6 +172,7 @@ abstract class UnexpectedBecause[A](fullAmend: Boolean) extends VanillaFilterCon
             else pure(x)
         }
     }
+    // $COVERAGE-OFF$
     private [parsley] final override def injectLeft[B] = new UnexpectedBecause[Either[A, B]](fullAmend) {
         def unexpected(xy: Either[A, B]) = {
             val Left(x) = xy
@@ -184,6 +193,7 @@ abstract class UnexpectedBecause[A](fullAmend: Boolean) extends VanillaFilterCon
             self.reason(x)
         }
     }
+    // $COVERAGE-ON$
 }
 
 /** This class can be used to not specify an error configuration for the filter, a regular `filter` is used instead.
@@ -193,6 +203,8 @@ abstract class UnexpectedBecause[A](fullAmend: Boolean) extends VanillaFilterCon
 final class BasicFilter[A] extends SpecialisedFilterConfig[A] with VanillaFilterConfig[A] {
     private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = p.filter(f)
     private [parsley] final override def collect[B](p: Parsley[A])(f: PartialFunction[A, B]) = p.collect(f)
+    // $COVERAGE-OFF$
     private [parsley] final override def injectLeft[B] = new BasicFilter[Either[A, B]]
     private [parsley] final override def injectRight[B] = new BasicFilter[Either[B, A]]
+    // $COVERAGE-ON$
 }
