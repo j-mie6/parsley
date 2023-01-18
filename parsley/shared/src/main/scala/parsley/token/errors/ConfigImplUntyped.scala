@@ -26,14 +26,30 @@ private [parsley] trait ExplainOps {
 }
 
 // Constraining Types
+/**
+  * @since 4.1.0
+  * @group labels
+  */
 trait LabelWithExplainConfig extends ConfigImplUntyped with LabelOps with ExplainOps {
     private [parsley] def orElse(other: LabelWithExplainConfig): LabelWithExplainConfig
 }
+/**
+  * @since 4.1.0
+  * @group labels
+  */
 trait LabelConfig extends LabelWithExplainConfig {
     private [parsley] def orElse(other: LabelConfig): LabelConfig
 }
+/**
+  * @since 4.1.0
+  * @group labels
+  */
 trait ExplainConfig extends LabelWithExplainConfig
 
+/**
+  * @since 4.1.0
+  * @group labels
+  */
 final class Label private[errors]  (val label: String) extends LabelConfig {
     private [parsley] final override def apply[A](p: Parsley[A]) = p.label(label)
     private [parsley] final override def asExpectDesc = Some(ExpectDesc(label))
@@ -46,10 +62,18 @@ final class Label private[errors]  (val label: String) extends LabelConfig {
     }
     private [parsley] final override def orElse(config: LabelConfig) = this
 }
+/**
+  * @since 4.1.0
+  * @group labels
+  */
 object Label {
     def apply(label: String): LabelConfig = if (label.isEmpty) Hidden else new Label(label)
 }
 
+/**
+  * @since 4.1.0
+  * @group labels
+  */
 object Hidden extends LabelConfig {
     private [parsley] final override def apply[A](p: Parsley[A]) = p.hide
     private [parsley] final override def asExpectDesc = None
@@ -59,6 +83,10 @@ object Hidden extends LabelConfig {
     private [parsley] final override def orElse(config: LabelConfig) = this
 }
 
+/**
+  * @since 4.1.0
+  * @group labels
+  */
 final class Reason private[errors]  (val reason: String) extends ExplainConfig {
     require(reason.nonEmpty, "reason cannot be empty, use `Label` instead")
     private [parsley] final override def apply[A](p: Parsley[A]) = p.explain(reason)
@@ -71,10 +99,18 @@ final class Reason private[errors]  (val reason: String) extends ExplainConfig {
         case _ => this
     }
 }
+/**
+  * @since 4.1.0
+  * @group labels
+  */
 object Reason {
     def apply(reason: String): ExplainConfig = if (reason.nonEmpty) new Reason(reason) else NotConfigured
 }
 
+/**
+  * @since 4.1.0
+  * @group labels
+  */
 final class LabelAndReason private[errors] (val label: String, val reason: String) extends LabelWithExplainConfig {
     private [parsley] final override def apply[A](p: Parsley[A]) = p.label(label).explain(reason)
     private [parsley] final override def asExpectDesc = Some(ExpectDesc(label))
@@ -82,6 +118,10 @@ final class LabelAndReason private[errors] (val label: String, val reason: Strin
     private [parsley] final override def asExpectItem(@unused raw: String) = asExpectDesc
     private [parsley] final override def orElse(config: LabelWithExplainConfig) = this
 }
+/**
+  * @since 4.1.0
+  * @group labels
+  */
 object LabelAndReason {
     def apply(label: String, reason: String): LabelWithExplainConfig = {
         if (label.isEmpty) Hidden
@@ -90,6 +130,10 @@ object LabelAndReason {
     }
 }
 
+/**
+  * @since 4.1.0
+  * @group labels
+  */
 object NotConfigured extends LabelConfig with ExplainConfig with LabelWithExplainConfig {
     private [parsley] final override def apply[A](p: Parsley[A]) = p
     private [parsley] final override def asExpectDesc = None

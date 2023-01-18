@@ -4,6 +4,10 @@ import parsley.Parsley, Parsley.pure
 import parsley.errors.combinator, combinator.ErrorMethods
 import parsley.position
 
+/**
+  * @since 4.1.0
+  * @group filters
+  */
 trait FilterOps[A] {
     private [parsley] def filter(p: Parsley[A])(f: A => Boolean): Parsley[A]
     private [parsley] def collect[B](p: Parsley[A])(f: PartialFunction[A, B]): Parsley[B] = this.filter(p)(f.isDefinedAt).map(f)
@@ -17,11 +21,27 @@ private [parsley] object FilterOps {
     }
 }
 
+/**
+  * @since 4.1.0
+  * @group filters
+  */
 trait FilterConfig[A] extends FilterOps[A]
 
+/**
+  * @since 4.1.0
+  * @group filters
+  */
 trait SpecialisedFilterConfig[A] extends FilterConfig[A]
+/**
+  * @since 4.1.0
+  * @group filters
+  */
 trait VanillaFilterConfig[A] extends FilterConfig[A]
 
+/**
+  * @since 4.1.0
+  * @group filters
+  */
 abstract class SpecialisedMessage[A](fullAmend: Boolean) extends SpecialisedFilterConfig[A] { self =>
     def message(x: A): Seq[String]
 
@@ -47,6 +67,10 @@ abstract class SpecialisedMessage[A](fullAmend: Boolean) extends SpecialisedFilt
     }
 }
 
+/**
+  * @since 4.1.0
+  * @group filters
+  */
 abstract class Unexpected[A](fullAmend: Boolean) extends VanillaFilterConfig[A] { self =>
     def unexpected(x: A): String
 
@@ -69,6 +93,10 @@ abstract class Unexpected[A](fullAmend: Boolean) extends VanillaFilterConfig[A] 
     }
 }
 
+/**
+  * @since 4.1.0
+  * @group filters
+  */
 abstract class Because[A](fullAmend: Boolean) extends VanillaFilterConfig[A] { self =>
     def reason(x: A): String
 
@@ -91,6 +119,10 @@ abstract class Because[A](fullAmend: Boolean) extends VanillaFilterConfig[A] { s
     }
 }
 
+/**
+  * @since 4.1.0
+  * @group filters
+  */
 abstract class UnexpectedBecause[A](fullAmend: Boolean) extends VanillaFilterConfig[A] { self =>
     def unexpected(x: A): String
     def reason(x: A): String
@@ -125,6 +157,10 @@ abstract class UnexpectedBecause[A](fullAmend: Boolean) extends VanillaFilterCon
     }
 }
 
+/**
+  * @since 4.1.0
+  * @group filters
+  */
 final class BasicFilter[A] extends SpecialisedFilterConfig[A] with VanillaFilterConfig[A] {
     private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = p.filter(f)
     private [parsley] final override def collect[B](p: Parsley[A])(f: PartialFunction[A, B]) = p.collect(f)

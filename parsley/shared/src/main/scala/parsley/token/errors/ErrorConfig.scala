@@ -7,6 +7,7 @@ import parsley.XCompat.unused
 
 /** TODO:
   * @since 4.1.0
+  * @group errconfig
   *
   * @groupprio numeric 0
   * @groupname numeric Numeric Errors

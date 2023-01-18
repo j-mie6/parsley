@@ -1,7 +1,10 @@
 package parsley.token
 
-/**
-  * @groupprio labels 0
+/** @groupprio errconfig 5
+  * @groupname errconfig Error Configuration
+  * @groupdesc errconfig
+  *
+  * @groupprio labels 5
   * @groupname labels Labelling and Explain Configuration
   * @groupdesc labels
   *
