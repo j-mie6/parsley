@@ -650,63 +650,75 @@ class ErrorConfig {
       */
     def verifiedStringBadCharsUsedInLiteral: VerifiedBadChars = Unverified
 
-    /** TODO: Document
+    /** How to refer to a `;` symbol in an error message.
       * @since 4.1.0
+      * @note defaults to "semicolon"
       * @group symbol
       */
     def labelSymbolSemi: LabelConfig = Label("semicolon")
-    /** TODO: Document
+    /** How to refer to a `,` symbol in an error message.
       * @since 4.1.0
+      * @note defaults to "comma"
       * @group symbol
       */
     def labelSymbolComma: LabelConfig = Label("comma")
-    /** TODO: Document
+    /** How to refer to a `:` symbol in an error message.
       * @since 4.1.0
+      * @note defaults to "colon"
       * @group symbol
       */
     def labelSymbolColon: LabelConfig = Label("colon")
-    /** TODO: Document
+    /** How to refer to a `.` symbol in an error message.
       * @since 4.1.0
+      * @note defaults to "dot"
       * @group symbol
       */
     def labelSymbolDot: LabelConfig = Label("dot")
-    /** TODO: Document
+    /** How to refer to a `(` symbol in an error message.
       * @since 4.1.0
+      * @note defaults to "open parenthesis"
       * @group symbol
       */
     def labelSymbolOpenParen: LabelConfig = Label("open parenthesis")
-    /** TODO: Document
+    /** How to refer to a `{` symbol in an error message.
       * @since 4.1.0
+      * @note defaults to "open brace"
       * @group symbol
       */
     def labelSymbolOpenBrace: LabelConfig = Label("open brace")
-    /** TODO: Document
+    /** How to refer to a `[` symbol in an error message.
       * @since 4.1.0
+      * @note defaults to "open square bracket"
       * @group symbol
       */
     def labelSymbolOpenSquare: LabelConfig = Label("open square bracket")
-    /** TODO: Document
+    /** How to refer to a `<` symbol in an error message.
       * @since 4.1.0
+      * @note defaults to "open angle bracket"
       * @group symbol
       */
     def labelSymbolOpenAngle: LabelConfig = Label("open angle bracket")
-    /** TODO: Document
+    /** How to refer to a `)` symbol in an error message.
       * @since 4.1.0
+      * @note defaults to "closing parenthesis"
       * @group symbol
       */
     def labelSymbolClosingParen: LabelConfig = Label("closing parenthesis")
-    /** TODO: Document
+    /** How to refer to a `}` symbol in an error message.
       * @since 4.1.0
+      * @note defaults to "closing brace"
       * @group symbol
       */
     def labelSymbolClosingBrace: LabelConfig = Label("closing brace")
-    /** TODO: Document
+    /** How to refer to a `]` symbol in an error message.
       * @since 4.1.0
+      * @note defaults to "closing square bracket"
       * @group symbol
       */
     def labelSymbolClosingSquare: LabelConfig = Label("closing square bracket")
-    /** TODO: Document
+    /** How to refer to a `>` symbol in an error message.
       * @since 4.1.0
+      * @note defaults to "closing angle bracket"
       * @group symbol
       */
     def labelSymbolClosingAngle: LabelConfig = Label("closing angle bracket")
