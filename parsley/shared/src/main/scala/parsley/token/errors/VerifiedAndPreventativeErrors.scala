@@ -23,8 +23,9 @@ object UnexpectedZeroDot {
     def apply(unexpected: String): PreventDotIsZeroConfig = new UnexpectedZeroDot(unexpected)
 }
 
+// TODO: factor this combinator out with the "Great Move" in 4.2
 private final class UnexpectedZeroDotWithReason private (unexpected: String, reason: String) extends PreventDotIsZeroConfig {
-    private [token] override def apply(p: Parsley[Boolean]): Parsley[Boolean] = combinator.amendThenDislodge {
+    private [token] override def apply(p: Parsley[Boolean]): Parsley[Boolean] = combinator.partialAmendThenDislodge {
         position.internalOffsetSpan(combinator.entrench(p)).flatMap { case (os, x, oe) =>
             if (x) combinator.unexpected(oe - os, unexpected).explain(reason)
             else pure(x)

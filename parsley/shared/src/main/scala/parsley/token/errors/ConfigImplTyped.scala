@@ -9,6 +9,14 @@ private [parsley] object FilterOps {
         if (full) combinator.amendThenDislodge(p)
         else p
     }
+    def amendThenDislodgeOrPartial[A](full: Boolean)(p: Parsley[A]): Parsley[A] = {
+        if (full) combinator.amendThenDislodge(p)
+        else combinator.partialAmendThenDislodge(p)
+    }
+    def entrench[A](full: Boolean)(p: Parsley[A]): Parsley[A] = {
+        if (full) combinator.entrench(p)
+        else p
+    }
 }
 
 /** This trait, and its subclasses, can be used to configure how filters should be used within the `Lexer`.
@@ -46,12 +54,12 @@ abstract class SpecialisedMessage[A](fullAmend: Boolean) extends SpecialisedFilt
     def message(x: A): Seq[String]
 
     private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = FilterOps.amendThenDislodge(fullAmend) {
-        p.guardAgainst {
+        FilterOps.entrench(fullAmend)(p).guardAgainst {
             case x if !f(x) => message(x)
         }
     }
     private [parsley] final override def collect[B](p: Parsley[A])(f: PartialFunction[A, B]) =  FilterOps.amendThenDislodge(fullAmend) {
-        p.collectMsg(message(_))(f)
+        FilterOps.entrench(fullAmend)(p).collectMsg(message(_))(f)
     }
     private [parsley] final override def injectLeft[B] = new SpecialisedMessage[Either[A, B]](fullAmend) {
         def message(xy: Either[A, B]) = {
@@ -80,7 +88,7 @@ abstract class Unexpected[A](fullAmend: Boolean) extends VanillaFilterConfig[A] 
     def unexpected(x: A): String
 
     private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = FilterOps.amendThenDislodge(fullAmend) {
-        p.unexpectedWhen {
+        FilterOps.entrench(fullAmend)(p).unexpectedWhen {
             case x if !f(x) => unexpected(x)
         }
     }
@@ -111,7 +119,7 @@ abstract class Because[A](fullAmend: Boolean) extends VanillaFilterConfig[A] { s
     def reason(x: A): String
 
     private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = FilterOps.amendThenDislodge(fullAmend) {
-        p.filterOut {
+        FilterOps.entrench(fullAmend)(p).filterOut {
             case x if !f(x) => reason(x)
         }
     }
@@ -146,12 +154,11 @@ abstract class UnexpectedBecause[A](fullAmend: Boolean) extends VanillaFilterCon
       */
     def reason(x: A): String
 
-    private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = FilterOps.amendThenDislodge(fullAmend) {
-        combinator.amendThenDislodge {
-            position.internalOffsetSpan(combinator.entrench(p)).flatMap { case (os, x, oe) =>
-                if (f(x)) combinator.unexpected(oe - os, this.unexpected(x)).explain(reason(x))
-                else pure(x)
-            }
+    // TODO: factor this combinator out with the "Great Move" in 4.2
+    private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = FilterOps.amendThenDislodgeOrPartial(fullAmend) {
+        position.internalOffsetSpan(combinator.entrench(p)).flatMap { case (os, x, oe) =>
+            if (f(x)) combinator.unexpected(oe - os, this.unexpected(x)).explain(reason(x))
+            else pure(x)
         }
     }
     private [parsley] final override def injectLeft[B] = new UnexpectedBecause[Either[A, B]](fullAmend) {

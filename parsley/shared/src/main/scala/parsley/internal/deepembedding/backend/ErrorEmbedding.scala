@@ -36,10 +36,10 @@ private [deepembedding] final class ErrorExplain[A](val p: StrictParsley[A], rea
     // $COVERAGE-ON$
 }
 
-private [deepembedding] final class ErrorAmend[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, A](false) {
+private [deepembedding] final class ErrorAmend[A](val p: StrictParsley[A], partial: Boolean) extends ScopedUnaryWithState[A, A](false) {
     override val instr: instructions.Instr = instructions.PopHandlerAndState
     override def instrNeedsLabel: Boolean = false
-    override def handlerLabel(state: CodeGenState): Int  = state.getLabel(instructions.AmendAndFail)
+    override def handlerLabel(state: CodeGenState): Int  = state.getLabel(instructions.AmendAndFail(partial))
     // $COVERAGE-OFF$
     final override def pretty(p: String): String = s"amend($p)"
     // $COVERAGE-ON$

@@ -86,10 +86,10 @@ private [internal] class ApplyReasonAndFail(reason: String) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] object AmendAndFail extends Instr {
+private [internal] class AmendAndFail private (partial: Boolean) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
-        ctx.errs.error = ctx.errs.error.amend(ctx.states.offset, ctx.states.line, ctx.states.col)
+        ctx.errs.error = ctx.errs.error.amend(if (partial) ctx.offset else ctx.states.offset, ctx.states.line, ctx.states.col)
         ctx.states = ctx.states.tail
         ctx.fail()
     }
@@ -97,6 +97,11 @@ private [internal] object AmendAndFail extends Instr {
     // $COVERAGE-OFF$
     override def toString: String = "AmendAndFail"
     // $COVERAGE-ON$
+}
+private [internal] object AmendAndFail {
+    private [this] val partial = new AmendAndFail(partial = true)
+    private [this] val full = new AmendAndFail(partial = false)
+    def apply(partial: Boolean): AmendAndFail = if (partial) this.partial else this.full
 }
 
 private [internal] object EntrenchAndFail extends Instr {
