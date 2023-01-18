@@ -23,7 +23,15 @@ final case class NameDesc (identifierStart: CharPredicate,
   */
 object NameDesc {
     /** Plain description of names, where neither identifiers nor operators are required.
+      *
+      * {{{
+      * identifierStart = NotRequired
+      * identifierLetter = NotRequired
+      * operatorStart = NotRequired
+      * operatorLetter = NotRequired
+      * }}}
+      *
       * @since 4.0.0
       */
-    val plain = NameDesc(NotRequired, NotRequired, NotRequired, NotRequired)
+    val plain = NameDesc(identifierStart = NotRequired, identifierLetter = NotRequired, operatorStart = NotRequired, operatorLetter = NotRequired)
 }

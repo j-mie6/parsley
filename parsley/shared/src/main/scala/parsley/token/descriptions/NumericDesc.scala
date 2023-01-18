@@ -183,6 +183,27 @@ object NumericDesc {
       * and exponent notation for all four bases too. Only hexadecimal and octal are enabled for integer numbers,
       * and only decimal for real numbers.
       *
+      * {{{
+      * literalBreakChar = BreakCharDesc.NoBreakChar
+      * leadingDotAllowed = false
+      * trailingDotAllowed = false
+      * leadingZerosAllowed = true
+      * positiveSign = PlusSignPresence.Optional
+      * integerNumbersCanBeHexadecimal = true
+      * integerNumbersCanBeOctal = true
+      * integerNumbersCanBeBinary = false
+      * realNumbersCanBeHexadecimal = false
+      * realNumbersCanBeOctal = false
+      * realNumbersCanBeBinary = false
+      * hexadecimalLeads = Set('x', 'X')
+      * octalLeads = Set('o', 'O')
+      * binaryLeads = Set('b', 'B')
+      * decimalExponentDesc = ExponentDesc.Supported(compulsory = false, chars = Set('e', 'E'), base = 10, positiveSign = PlusSignPresence.Optional)
+      * hexadecimalExponentDesc = ExponentDesc.Supported(compulsory = true, chars = Set('p', 'P'), base = 2, positiveSign = PlusSignPresence.Optional)
+      * octalExponentDesc = ExponentDesc.Supported(compulsory = true, chars = Set('e', 'E', 'p', 'P'), base = 2, positiveSign = PlusSignPresence.Optional)
+      * binaryExponentDesc = ExponentDesc.Supported(compulsory = true, chars = Set('e', 'E', 'p', 'P'), base = 2, positiveSign = PlusSignPresence.Optional)
+      * }}}
+      *
       * @since 4.0.0
       */
     val plain: NumericDesc = NumericDesc(

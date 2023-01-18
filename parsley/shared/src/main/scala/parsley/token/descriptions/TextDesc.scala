@@ -120,6 +120,19 @@ final case class EscapeDesc (escBegin: Char,
 object EscapeDesc {
     /** This is a minimal description of escape characters with the only supported sequence as `\\`.
       *
+      * {{{
+      * escBegin = '\\'
+      * literals = Set('\\')
+      * singleMap = Map.empty
+      * multiMap = Map.empty
+      * decimalEscape = NumericEscape.Illegal
+      * hexadecimalEscape = NumericEscape.Illegal
+      * octalEscape = NumericEscape.Illegal
+      * binaryEscape = NumericEscape.Illegal
+      * emptyEscape = None
+      * gapsSupported = false
+      * }}}
+      *
       * @since 4.0.0
       */
     val plain = EscapeDesc(escBegin = '\\',
@@ -216,6 +229,14 @@ final case class TextDesc (escapeSequences: EscapeDesc,
   */
 object TextDesc {
     /** Plain definition of text.
+      *
+      * {{{
+      * escapeSequences = EscapeDesc.plain
+      * characterLiteralEnd = '\''
+      * stringEnds = Set("\"")
+      * multiStringEnds = Set.empty
+      * graphicCharacter = Unicode(_ >= ' '.toInt)
+      * }}}
       *
       * @since 4.0.0
       */

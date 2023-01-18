@@ -38,7 +38,26 @@ final case class SpaceDesc (commentStart: String,
   */
 object SpaceDesc {
     /** The plain definition of space, with no comments, no nested comments, and any unicode space character.
+      *
+      * {{{
+      * commentStart = ""
+      * commentEnd = ""
+      * commentLine = ""
+      * commentLineAllowsEOF = true
+      * nestedComments = false
+      * space = Unicode(Character.isWhitespace)
+      * whitespaceIsContextDependent = false
+      * }}}
+      *
       * @since 4.0.0
       */
-    val plain = SpaceDesc("", "", "", true, false, Unicode(Character.isWhitespace), false)
+    val plain = SpaceDesc(
+        commentStart = "",
+        commentEnd = "",
+        commentLine = "",
+        commentLineAllowsEOF = true,
+        nestedComments = false,
+        space = Unicode(Character.isWhitespace),
+        whitespaceIsContextDependent = false
+    )
 }

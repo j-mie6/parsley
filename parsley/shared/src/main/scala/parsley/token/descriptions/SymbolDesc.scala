@@ -27,7 +27,14 @@ final case class SymbolDesc (hardKeywords: Set[String],
   */
 object SymbolDesc {
     /** Plain definition of symbols: case sensitive with no hard keywords or operators.
+      *
+      * {{{
+      * hardKeywords = Set.empty
+      * hardOperators = Set.empty
+      * caseSensitive = true
+      * }}}
+      *
       * @since 4.0.0
       */
-    val plain = SymbolDesc(Set.empty, Set.empty, true)
+    val plain = SymbolDesc(hardKeywords = Set.empty, hardOperators = Set.empty, caseSensitive = true)
 }
