@@ -15,7 +15,9 @@ import parsley.XCompat.unused
   * levels of detail, or even switching between ''vanilla'' or ''specialised'' errors.
   *
   * This class should be used by extending it and overriding the relevant parts: all
-  * methods here are non-abstract and their default is documented inside.
+  * methods here are non-abstract and their default is documented inside. Not configuring
+  * something does not mean it will not appear in the message, but will mean it uses the
+  * underlying base errors.
   *
   * @since 4.1.0
   * @group errconfig
@@ -722,34 +724,40 @@ class ErrorConfig {
       * @group symbol
       */
     def labelSymbolClosingAngle: LabelConfig = Label("closing angle bracket")
-    /** TODO: Document
+    /** How should a given keyword be described or explained in an error message.
       * @since 4.1.0
+      * @note defaults to labelling with the symbol itself
       * @group symbol
       */
-    def labelSymbolKeyword(symbol: String): LabelConfig = Label(symbol)
-    /** TODO: Document
+    def labelSymbolKeyword(symbol: String): LabelWithExplainConfig = Label(symbol)
+    /** How should a given operator be described or explained in an error message.
       * @since 4.1.0
+      * @note defaults to labelling with the symbol itself
       * @group symbol
       */
-    def labelSymbolOperator(symbol: String): LabelConfig = Label(symbol)
-    /** TODO: Document
+    def labelSymbolOperator(symbol: String): LabelWithExplainConfig = Label(symbol)
+    /** How should the required end of a given keyword be specified in an error.
       * @since 4.1.0
+      * @note defaults to "end of symbol"
       * @group symbol
       */
     def labelSymbolEndOfKeyword(symbol: String): String = s"end of $symbol"
-    /** TODO: Document
+    /** How should the required end of a given operator be specified in an error.
       * @since 4.1.0
+      * @note defaults to "end of symbol"
       * @group symbol
       */
     def labelSymbolEndOfOperator(symbol: String): String = s"end of $symbol"
 
-    /** TODO: Document
+    /** How should the end of a single-line comment be described or explained.
       * @since 4.1.0
+      * @note defaults to "end of comment"
       * @group space
       */
     def labelSpaceEndOfLineComment: LabelWithExplainConfig = Label("end of comment")
-    /** TODO: Document
+    /** How should the end of a multi-line comment be described or explained.
       * @since 4.1.0
+      * @note defaults to "end of comment"
       * @group space
       */
     def labelSpaceEndOfMultiComment: LabelWithExplainConfig = Label("end of comment")
