@@ -467,126 +467,150 @@ class ErrorConfig {
 
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelCharAscii: LabelWithExplainConfig = NotConfigured
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelCharLatin1: LabelWithExplainConfig = NotConfigured
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelCharBasicMultilingualPlane: LabelWithExplainConfig = NotConfigured
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelCharUtf16: LabelWithExplainConfig = NotConfigured
 
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelCharAsciiEnd: LabelConfig = NotConfigured
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelCharLatin1End: LabelConfig = NotConfigured
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelCharBasicMultilingualPlaneEnd: LabelConfig = NotConfigured
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelCharUtf16End: LabelConfig = NotConfigured
 
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelStringAscii(multi: Boolean, raw: Boolean): LabelWithExplainConfig = NotConfigured
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelStringLatin1(multi: Boolean, raw: Boolean): LabelWithExplainConfig = NotConfigured
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelStringUtf16(multi: Boolean, raw: Boolean): LabelWithExplainConfig = NotConfigured
 
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelStringAsciiEnd(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelStringLatin1End(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelStringUtf16End(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
 
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to label of "string character"
       * @group text
       */
     def labelStringCharacter: LabelConfig = Label("string character")
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to a label of "graphic character"
       * @group text
       */
     def labelGraphicCharacter: LabelWithExplainConfig = Label("graphic character")
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to label of "escape sequence"
       * @group text
       */
     def labelEscapeSequence: LabelWithExplainConfig = Label("escape sequence") //different to "invalid escape sequence"!
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelEscapeNumeric(radix: Int): LabelConfig = NotConfigured
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelEscapeNumericEnd(prefix: Char, radix: Int): LabelWithExplainConfig = NotConfigured
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to label of "end of escape sequence" with a reason of "invalid escape sequence"
       * @group text
       */
     def labelEscapeEnd: LabelWithExplainConfig = LabelAndReason("end of escape sequence", "invalid escape sequence")
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelStringEscapeEmpty: LabelConfig = NotConfigured
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to label of "string gap"
       * @group text
       */
     def labelStringEscapeGap: LabelConfig = Label("string gap")
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to label of "end of string gap"
       * @group text
       */
     def labelStringEscapeGapEnd: LabelConfig = Label("end of string gap")
 
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to a filter generating the reason "non-BMP character"
       * @group text
       */
     def filterCharNonBasicMultilingualPlane: VanillaFilterConfig[Int] = new Because[Int](fullAmend = false) {
@@ -594,6 +618,7 @@ class ErrorConfig {
     }
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to a filter generating the reason "non-ascii character"
       * @group text
       */
     def filterCharNonAscii: VanillaFilterConfig[Int] = new Because[Int](fullAmend = false) {
@@ -601,6 +626,7 @@ class ErrorConfig {
     }
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to a filter generating the reason "non-latin1 character"
       * @group text
       */
     def filterCharNonLatin1: VanillaFilterConfig[Int] = new Because[Int](fullAmend = false) {
@@ -609,6 +635,7 @@ class ErrorConfig {
 
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to a filter generating a ''specialised'' message of "non-ascii characters in string literal, this is not allowed"
       * @group text
       */
     def filterStringNonAscii: SpecialisedFilterConfig[StringBuilder] = new SpecialisedMessage[StringBuilder](fullAmend = false) {
@@ -617,6 +644,7 @@ class ErrorConfig {
 
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to a filter generating a ''specialised'' message of "non-latin1 characters in string literal, this is not allowed"
       * @group text
       */
     def filterStringNonLatin1: SpecialisedFilterConfig[StringBuilder] = new SpecialisedMessage[StringBuilder](fullAmend = false) {
@@ -625,6 +653,7 @@ class ErrorConfig {
 
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to TODO:
       * @group text
       */
     def filterEscapeCharRequiresExactDigits(@unused radix: Int, needed: Seq[Int]): SpecialisedFilterConfig[Int] = new SpecialisedMessage[Int](fullAmend = false) {
@@ -633,6 +662,7 @@ class ErrorConfig {
 
     /** TODO: Document
       * @since 4.1.0
+      * @note defaults to TODO:
       * @group text
       */
     def filterEscapeCharNumericSequenceIllegal(maxEscape: Int, radix: Int): SpecialisedFilterConfig[BigInt] = new SpecialisedMessage[BigInt](fullAmend = false) {
@@ -641,13 +671,17 @@ class ErrorConfig {
             else s"illegal unicode codepoint: ${escapeChar.toString(radix)}")
     }
 
-    /** TODO: Document
+    /** Character literals parse either graphic characters or escape characters. This configuration allows for individual errors when a character ''not'' part
+      * of either graphic characters or escape characters is encountered.
       * @since 4.1.0
+      * @note defaults to [[Unverified `Unverified`]]
       * @group text
       */
     def verifiedCharBadCharsUsedInLiteral: VerifiedBadChars = Unverified
-    /** TODO: Document
+    /** String literals parse either graphic characters or escape characters. This configuration allows for individual errors when a character ''not'' part
+      * of either graphic characters or escape characters is encountered.
       * @since 4.1.0
+      * @note defaults to [[Unverified `Unverified`]]
       * @group text
       */
     def verifiedStringBadCharsUsedInLiteral: VerifiedBadChars = Unverified

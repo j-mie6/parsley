@@ -26,31 +26,27 @@ private [parsley] trait ExplainOps {
 }
 
 // Constraining Types
-/** TODO:
+/** This type can be used to configure ''both'' errors that make labels and those that make reasons.
   * @since 4.1.0
   * @group labels
   */
 trait LabelWithExplainConfig extends ConfigImplUntyped with LabelOps with ExplainOps {
     private [parsley] def orElse(other: LabelWithExplainConfig): LabelWithExplainConfig
 }
-/** TODO:
+/** This type can be used to configure errors that make labels.
   * @since 4.1.0
   * @group labels
   */
 trait LabelConfig extends LabelWithExplainConfig {
     private [parsley] def orElse(other: LabelConfig): LabelConfig
 }
-/** TODO:
+/** This type can be used to configure errors that make reasons.
   * @since 4.1.0
   * @group labels
   */
 trait ExplainConfig extends LabelWithExplainConfig
 
-/** TODO:
-  * @since 4.1.0
-  * @group labels
-  */
-final class Label private[errors]  (val label: String) extends LabelConfig {
+private final class Label private[errors]  (val label: String) extends LabelConfig {
     private [parsley] final override def apply[A](p: Parsley[A]) = p.label(label)
     private [parsley] final override def asExpectDesc = Some(ExpectDesc(label))
     private [parsley] final override def asExpectDesc(@unused otherwise: String) = asExpectDesc
@@ -62,7 +58,7 @@ final class Label private[errors]  (val label: String) extends LabelConfig {
     }
     private [parsley] final override def orElse(config: LabelConfig) = this
 }
-/** TODO:
+/** This object has a factory for configurations producing labels: if the empty string is provided, this equivalent to [[Hidden `Hidden`]].
   * @since 4.1.0
   * @group labels
   */
@@ -70,7 +66,7 @@ object Label {
     def apply(label: String): LabelConfig = if (label.isEmpty) Hidden else new Label(label)
 }
 
-/** TODO:
+/** This object configures labels by stating that it must be hidden.
   * @since 4.1.0
   * @group labels
   */
@@ -83,11 +79,7 @@ object Hidden extends LabelConfig {
     private [parsley] final override def orElse(config: LabelConfig) = this
 }
 
-/** TODO:
-  * @since 4.1.0
-  * @group labels
-  */
-final class Reason private[errors]  (val reason: String) extends ExplainConfig {
+private final class Reason private[errors]  (val reason: String) extends ExplainConfig {
     require(reason.nonEmpty, "reason cannot be empty, use `Label` instead")
     private [parsley] final override def apply[A](p: Parsley[A]) = p.explain(reason)
     private [parsley] final override def asExpectDesc = None
@@ -99,7 +91,7 @@ final class Reason private[errors]  (val reason: String) extends ExplainConfig {
         case _ => this
     }
 }
-/** TODO:
+/** This object has a factory for configurations producing reasons: if the empty string is provided, this equivalent to [[NotConfigured `NotConfigured`]].
   * @since 4.1.0
   * @group labels
   */
@@ -107,18 +99,15 @@ object Reason {
     def apply(reason: String): ExplainConfig = if (reason.nonEmpty) new Reason(reason) else NotConfigured
 }
 
-/** TODO:
-  * @since 4.1.0
-  * @group labels
-  */
-final class LabelAndReason private[errors] (val label: String, val reason: String) extends LabelWithExplainConfig {
+private final class LabelAndReason private[errors] (val label: String, val reason: String) extends LabelWithExplainConfig {
     private [parsley] final override def apply[A](p: Parsley[A]) = p.label(label).explain(reason)
     private [parsley] final override def asExpectDesc = Some(ExpectDesc(label))
     private [parsley] final override def asExpectDesc(@unused otherwise: String) = asExpectDesc
     private [parsley] final override def asExpectItem(@unused raw: String) = asExpectDesc
     private [parsley] final override def orElse(config: LabelWithExplainConfig) = this
 }
-/** TODO:
+/** This object has a factory for configurations producing labels and reasons: if the empty label is provided, this equivalent to [[Hidden `Hidden`]] with no
+  * reason; if the empty reason is provided this is equivalent to [[Label `Label`]].
   * @since 4.1.0
   * @group labels
   */
@@ -126,11 +115,11 @@ object LabelAndReason {
     def apply(label: String, reason: String): LabelWithExplainConfig = {
         if (label.isEmpty) Hidden
         else if (reason.nonEmpty) new LabelAndReason(label, reason)
-        else NotConfigured
+        else new Label(label)
     }
 }
 
-/** TODO:
+/** This object specifies that no special labels or reasons should be generated, and default errors should be used instead.
   * @since 4.1.0
   * @group labels
   */

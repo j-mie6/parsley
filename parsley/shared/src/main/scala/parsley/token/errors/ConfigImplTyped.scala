@@ -4,16 +4,6 @@ import parsley.Parsley, Parsley.pure
 import parsley.errors.combinator, combinator.ErrorMethods
 import parsley.position
 
-/** TODO:
-  * @since 4.1.0
-  * @group filters
-  */
-trait FilterOps[A] {
-    private [parsley] def filter(p: Parsley[A])(f: A => Boolean): Parsley[A]
-    private [parsley] def collect[B](p: Parsley[A])(f: PartialFunction[A, B]): Parsley[B] = this.filter(p)(f.isDefinedAt).map(f)
-    private [parsley] def injectLeft[B]: FilterOps[Either[A, B]]
-    private [parsley] def injectRight[B]: FilterOps[Either[B, A]]
-}
 private [parsley] object FilterOps {
     def amendThenDislodge[A](full: Boolean)(p: Parsley[A]): Parsley[A] = {
         if (full) combinator.amendThenDislodge(p)
@@ -21,29 +11,35 @@ private [parsley] object FilterOps {
     }
 }
 
-/** TODO:
+/** This trait, and its subclasses, can be used to configure how filters should be used within the `Lexer`.
   * @since 4.1.0
   * @group filters
   */
-trait FilterConfig[A] extends FilterOps[A]
+trait FilterConfig[A] {
+    private [parsley] def filter(p: Parsley[A])(f: A => Boolean): Parsley[A]
+    private [parsley] def collect[B](p: Parsley[A])(f: PartialFunction[A, B]): Parsley[B] = this.filter(p)(f.isDefinedAt).map(f)
+    private [parsley] def injectLeft[B]: FilterConfig[Either[A, B]]
+    private [parsley] def injectRight[B]: FilterConfig[Either[B, A]]
+}
 
-/** TODO:
+/** This subtrait of `FilterConfig` specifies that only filters generating ''specialised'' errors may be used.
   * @since 4.1.0
   * @group filters
   */
 trait SpecialisedFilterConfig[A] extends FilterConfig[A]
-/** TODO:
+/** This subtrait of `FilterConfig` specifies that only filters generating ''vanilla'' errors may be used.
   * @since 4.1.0
   * @group filters
   */
 trait VanillaFilterConfig[A] extends FilterConfig[A]
 
-/** TODO:
+/** This class ensures that the filter will generate ''specialised'' messages for the given failing parse.
   * @since 4.1.0
+  * @param fullAmend filters usually have partial amend semantics: should this instead do a full amend?
   * @group filters
   */
 abstract class SpecialisedMessage[A](fullAmend: Boolean) extends SpecialisedFilterConfig[A] { self =>
-    /** TODO:
+    /** This method produces the messages for the given value.
       * @since 4.1.0
       * @group badchar
       */
@@ -71,12 +67,13 @@ abstract class SpecialisedMessage[A](fullAmend: Boolean) extends SpecialisedFilt
     }
 }
 
-/** TODO:
+/** This class ensures that the filter will generate a ''vanilla'' unexpected item for the given failing parse.
   * @since 4.1.0
+  * @param fullAmend filters usually have partial amend semantics: should this instead do a full amend?
   * @group filters
   */
 abstract class Unexpected[A](fullAmend: Boolean) extends VanillaFilterConfig[A] { self =>
-    /** TODO:
+    /** This method produces the unexpected label for the given value.
       * @since 4.1.0
       * @group badchar
       */
@@ -101,12 +98,13 @@ abstract class Unexpected[A](fullAmend: Boolean) extends VanillaFilterConfig[A] 
     }
 }
 
-/** TODO:
+/** This class ensures that the filter will generate a ''vanilla'' reason for the given failing parse.
   * @since 4.1.0
+  * @param fullAmend filters usually have partial amend semantics: should this instead do a full amend?
   * @group filters
   */
 abstract class Because[A](fullAmend: Boolean) extends VanillaFilterConfig[A] { self =>
-    /** TODO:
+    /** This method produces the reason for the given value.
       * @since 4.1.0
       * @group badchar
       */
@@ -131,17 +129,18 @@ abstract class Because[A](fullAmend: Boolean) extends VanillaFilterConfig[A] { s
     }
 }
 
-/** TODO:
+/** This class ensures that the filter will generate a ''vanilla'' unexpected item and a reason for the given failing parse.
   * @since 4.1.0
+  * @param fullAmend filters usually have partial amend semantics: should this instead do a full amend?
   * @group filters
   */
 abstract class UnexpectedBecause[A](fullAmend: Boolean) extends VanillaFilterConfig[A] { self =>
-    /** TODO:
+    /** This method produces the unexpected label for the given value.
       * @since 4.1.0
       * @group badchar
       */
     def unexpected(x: A): String
-    /** TODO:
+    /** This method produces the reason for the given value.
       * @since 4.1.0
       * @group badchar
       */
@@ -177,7 +176,7 @@ abstract class UnexpectedBecause[A](fullAmend: Boolean) extends VanillaFilterCon
     }
 }
 
-/** TODO:
+/** This class can be used to not specify an error configuration for the filter, a regular `filter` is used instead.
   * @since 4.1.0
   * @group filters
   */
