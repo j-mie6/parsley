@@ -465,137 +465,156 @@ class ErrorConfig {
         def unexpected(v: String) = s"operator $v"
     }
 
-    /** TODO: Document
+    /** How should a ASCII character literal be referred to or explained in error messages.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelCharAscii: LabelWithExplainConfig = NotConfigured
-    /** TODO: Document
+    /** How should a Latin1 (extended ASCII) character literal be referred to or explained in error messages.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelCharLatin1: LabelWithExplainConfig = NotConfigured
-    /** TODO: Document
+    /** How should a BMP (Basic Multilingual Plane) character literal be referred to or explained in error messages.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelCharBasicMultilingualPlane: LabelWithExplainConfig = NotConfigured
-    /** TODO: Document
+    /** How should a UTF-16 character literal be referred to or explained in error messages.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelCharUtf16: LabelWithExplainConfig = NotConfigured
 
-    /** TODO: Document
+    /** How should the closing quote of an ASCII character literal be referred to in error messages.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelCharAsciiEnd: LabelConfig = NotConfigured
-    /** TODO: Document
+    /** How should the closing quote of a Latin1 character literal be referred to in error messages.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelCharLatin1End: LabelConfig = NotConfigured
-    /** TODO: Document
+    /** How should the closing quote of a BMP character literal be referred to in error messages.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelCharBasicMultilingualPlaneEnd: LabelConfig = NotConfigured
-    /** TODO: Document
+    /** How should the closing quote of a UTF-16 character literal be referred to in error messages.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelCharUtf16End: LabelConfig = NotConfigured
 
-    /** TODO: Document
+    /** How should a ASCII-only string literal be referred to or explained in error messages.
       * @since 4.1.0
+      * @param multi whether this is for multi-line strings
+      * @param raw whether this is for raw strings
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelStringAscii(multi: Boolean, raw: Boolean): LabelWithExplainConfig = NotConfigured
-    /** TODO: Document
+    /** How should a Latin1-only string literal be referred to or explained in error messages.
       * @since 4.1.0
+      * @param multi whether this is for multi-line strings
+      * @param raw whether this is for raw strings
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelStringLatin1(multi: Boolean, raw: Boolean): LabelWithExplainConfig = NotConfigured
-    /** TODO: Document
+    /** How should a UTF-16-only string literal be referred to or explained in error messages.
       * @since 4.1.0
+      * @param multi whether this is for multi-line strings
+      * @param raw whether this is for raw strings
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelStringUtf16(multi: Boolean, raw: Boolean): LabelWithExplainConfig = NotConfigured
 
-    /** TODO: Document
+    /** How should the closing quote(s) of an ASCII string literal be referred to in error messages.
       * @since 4.1.0
+      * @param multi whether this is for multi-line strings
+      * @param raw whether this is for raw strings
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelStringAsciiEnd(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
-    /** TODO: Document
+    /** How should the closing quote(s) of a Latin1 string literal be referred to in error messages.
       * @since 4.1.0
+      * @param multi whether this is for multi-line strings
+      * @param raw whether this is for raw strings
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelStringLatin1End(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
-    /** TODO: Document
+    /**  How should the closing quote(s) of a UTF-16 string literal be referred to in error messages.
       * @since 4.1.0
+      * @param multi whether this is for multi-line strings
+      * @param raw whether this is for raw strings
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelStringUtf16End(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
 
-    /** TODO: Document
+    /** How should general string characters be referred to in error messages.
       * @since 4.1.0
       * @note defaults to label of "string character"
+      * @note this superscedes [[labelGraphicCharacter `labelGraphicCharacter`]] and [[labelEscapeSequence `labelEscapeSequence`]] within string literals.
       * @group text
       */
     def labelStringCharacter: LabelConfig = Label("string character")
-    /** TODO: Document
+    /** How should a graphic character (a regular character in the literal) be referred to or explained in error messages.
       * @since 4.1.0
       * @note defaults to a label of "graphic character"
+      * @note explains for graphic characters do not work in string literals.
       * @group text
       */
     def labelGraphicCharacter: LabelWithExplainConfig = Label("graphic character")
-    /** TODO: Document
+    /** How should an escape sequence be referred to or explained in error messages.
       * @since 4.1.0
       * @note defaults to label of "escape sequence"
+      * @note explains for escape characters do not work in string literals.
+      * @see [[labelEscapeEnd `labelEscapeEnd`]] for how to explain what valid escape sequences may be when the lead character has been parsed.
       * @group text
       */
     def labelEscapeSequence: LabelWithExplainConfig = Label("escape sequence") //different to "invalid escape sequence"!
-    /** TODO: Document
+    /** How should a numeric escape sequence (after the opening character) be referred to or explained in error messages.
       * @since 4.1.0
+      * @param radix the radix this specific configuration applies to
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
-    def labelEscapeNumeric(radix: Int): LabelConfig = NotConfigured
-    /** TODO: Document
+    def labelEscapeNumeric(radix: Int): LabelWithExplainConfig = NotConfigured
+    /** How should the end of a numeric escape sequence (after a prefix) be referred to or explained in error messages.
       * @since 4.1.0
+      * @param radix the radix this specific configuration applies to
+      * @param prefix the character that started this sequence
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelEscapeNumericEnd(prefix: Char, radix: Int): LabelWithExplainConfig = NotConfigured
-    /** TODO: Document
+    /** How should the end of an escape sequence (anything past the opening character) be referred to or explained within an error message.
       * @since 4.1.0
       * @note defaults to label of "end of escape sequence" with a reason of "invalid escape sequence"
       * @group text
       */
     def labelEscapeEnd: LabelWithExplainConfig = LabelAndReason("end of escape sequence", "invalid escape sequence")
-    /** TODO: Document
+    /** How should zero-width escape characters be referred to within error messages.
       * @since 4.1.0
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
     def labelStringEscapeEmpty: LabelConfig = NotConfigured
-    /** TODO: Document
+    /** How should string gaps be referred to within error messages.
       * @since 4.1.0
       * @note defaults to label of "string gap"
       * @group text
