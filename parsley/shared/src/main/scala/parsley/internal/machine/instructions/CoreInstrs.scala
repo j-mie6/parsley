@@ -90,7 +90,7 @@ private [internal] object Halt extends Instr {
 }
 
 private [internal] final class Call(var label: Int) extends InstrWithLabel {
-    private var isSet: Boolean = false
+    private [this] var isSet: Boolean = false
     override def relabel(labels: Array[Int]): this.type = {
         if (!isSet) {
             label = labels(label)

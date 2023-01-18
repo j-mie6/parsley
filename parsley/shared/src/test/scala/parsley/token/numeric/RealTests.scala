@@ -8,10 +8,13 @@ import Predef.{ArrowAssoc => _, _}
 import parsley.ParsleyTest
 import parsley.token.LexemeImpl
 import parsley.token.descriptions.numeric._, ExponentDesc.NoExponents
+import parsley.token.errors.ErrorConfig
 import org.scalactic.source.Position
 
 class RealTests extends ParsleyTest {
-    private def makeReal(desc: NumericDesc) = new LexemeReal(new SignedReal(desc, new UnsignedReal(desc, new UnsignedInteger(desc))), LexemeImpl.empty)
+    val errConfig = new ErrorConfig
+    val generic = new Generic(errConfig)
+    private def makeReal(desc: NumericDesc) = new LexemeReal(new SignedReal(desc, new UnsignedReal(desc, new UnsignedInteger(desc, errConfig, generic), errConfig, generic), errConfig), LexemeImpl.empty, errConfig)
 
     val plain = NumericDesc.plain.copy(decimalExponentDesc = NoExponents, hexadecimalExponentDesc = NoExponents,
                                        octalExponentDesc = NoExponents, binaryExponentDesc = NoExponents)

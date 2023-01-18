@@ -4,20 +4,21 @@
 package parsley.token.numeric
 
 import parsley.Parsley, Parsley.{attempt, empty, pure, unit}
-import parsley.character.{digit, hexDigit, octDigit, oneOf}
+import parsley.character.{bit, digit, hexDigit, octDigit, oneOf}
 import parsley.combinator, combinator.optional
-import parsley.errors.combinator.{amend, entrench, ErrorMethods}
+import parsley.errors.combinator.{amendThenDislodge, entrench}
 import parsley.implicits.character.charLift
 import parsley.lift.lift2
 import parsley.registers.Reg
 import parsley.token.descriptions.numeric.{BreakCharDesc, ExponentDesc, NumericDesc}
+import parsley.token.errors.{ErrorConfig, LabelConfig}
 
-private [token] final class UnsignedReal(desc: NumericDesc, natural: Integer) extends Real {
-    override lazy val decimal: Parsley[BigDecimal] = attempt(ofRadix(10, digit))
-    override lazy val hexadecimal: Parsley[BigDecimal] = attempt('0' *> noZeroHexadecimal)
-    override lazy val octal: Parsley[BigDecimal] = attempt('0' *> noZeroOctal)
-    override lazy val binary: Parsley[BigDecimal] = attempt('0' *> noZeroBinary)
-    override lazy val number: Parsley[BigDecimal] = {
+private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInteger, err: ErrorConfig, generic: Generic) extends Real(err) {
+    override lazy val _decimal: Parsley[BigDecimal] = attempt(ofRadix(10, digit, err.labelRealDecimalEnd))
+    override lazy val _hexadecimal: Parsley[BigDecimal] = attempt('0' *> noZeroHexadecimal)
+    override lazy val _octal: Parsley[BigDecimal] = attempt('0' *> noZeroOctal)
+    override lazy val _binary: Parsley[BigDecimal] = attempt('0' *> noZeroBinary)
+    override lazy val _number: Parsley[BigDecimal] = {
         if (desc.decimalRealsOnly) decimal
         else {
             def addHex(p: Parsley[BigDecimal]) = {
@@ -33,46 +34,62 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: Integer) ex
                 else p
             }
             // this promotes sharing when the definitions would be otherwise equal
-            val leadingDotAllowedDecimal = if (desc.leadingDotAllowed) decimal else ofRadix(10, digit, leadingDotAllowed = true)
+            val leadingDotAllowedDecimal = if (desc.leadingDotAllowed) decimal else ofRadix(10, digit, leadingDotAllowed = true, err.labelRealNumberEnd)
             // not even accounting for the leading and trailing dot being allowed!
             val zeroLead = '0' *> (addHex(addOct(addBin(leadingDotAllowedDecimal <|> pure(BigDecimal(0))))))
             attempt(zeroLead <|> decimal)
         }
     }
 
-    private def when(b: Boolean, p: Parsley[_]): Parsley[Unit] = if (b) p.void else unit
+    override def decimal: Parsley[BigDecimal] = err.labelRealDecimal(_decimal)
+    override def hexadecimal: Parsley[BigDecimal] = err.labelRealHexadecimal(_hexadecimal)
+    override def octal: Parsley[BigDecimal] = err.labelRealOctal(_octal)
+    override def binary: Parsley[BigDecimal] = err.labelRealBinary(_binary)
+    override def number: Parsley[BigDecimal] = err.labelRealNumber(_number)
 
-    val leadingBreakChar = desc.literalBreakChar match {
+    private def when(b: Boolean, p: Parsley[_]): Parsley[_] = if (b) p else unit
+
+    def leadingBreakChar(label: LabelConfig): Parsley[_] = desc.literalBreakChar match {
         case BreakCharDesc.NoBreakChar => unit
-        case BreakCharDesc.Supported(breakChar, allowedAfterNonDecimalPrefix) => when(allowedAfterNonDecimalPrefix, optional(breakChar))
+        case BreakCharDesc.Supported(breakChar, allowedAfterNonDecimalPrefix) =>
+            when(allowedAfterNonDecimalPrefix, err.labelNumericBreakChar.orElse(label)(optional(breakChar)))
     }
 
-    // TODO: Using choice here will generate a jump table, which will be nicer for `number` (this requires enhancements to the jumptable optimisation)
-    // TODO: Leave these as defs so they get inlined into number for the jumptable optimisation
-    private val noZeroHexadecimal = when(desc.hexadecimalLeads.nonEmpty, oneOf(desc.hexadecimalLeads)) *> leadingBreakChar *> ofRadix(16, hexDigit)
-    private val noZeroOctal = when(desc.octalLeads.nonEmpty, oneOf(desc.octalLeads)) *> leadingBreakChar *> ofRadix(8, octDigit)
-    private val noZeroBinary = when(desc.binaryLeads.nonEmpty, oneOf(desc.binaryLeads)) *> leadingBreakChar *> ofRadix(2, oneOf('0', '1'))
+    private val noZeroHexadecimal =
+        when(desc.hexadecimalLeads.nonEmpty, oneOf(desc.hexadecimalLeads)) *>
+        leadingBreakChar(err.labelRealHexadecimalEnd) *>
+        ofRadix(16, hexDigit, err.labelRealHexadecimalEnd)
+    private val noZeroOctal =
+        when(desc.octalLeads.nonEmpty, oneOf(desc.octalLeads)) *>
+        leadingBreakChar(err.labelRealOctalEnd) *>
+        ofRadix(8, octDigit, err.labelRealOctalEnd)
+    private val noZeroBinary =
+        when(desc.binaryLeads.nonEmpty, oneOf(desc.binaryLeads)) *>
+        leadingBreakChar(err.labelRealBinaryEnd) *>
+        ofRadix(2, bit, err.labelRealBinaryEnd)
 
     // could allow integers to be parsed here according to configuration, the intOrFloat captures that case anyway
-    private def ofRadix(radix: Int, digit: Parsley[Char]): Parsley[BigDecimal] = ofRadix(radix, digit, desc.leadingDotAllowed)
-    private def ofRadix(radix: Int, digit: Parsley[Char], leadingDotAllowed: Boolean): Parsley[BigDecimal] = {
+    private def ofRadix(radix: Int, digit: Parsley[Char], endLabel: LabelConfig): Parsley[BigDecimal] = {
+        ofRadix(radix, digit, desc.leadingDotAllowed, endLabel)
+    }
+    private def ofRadix(radix: Int, digit: Parsley[Char], leadingDotAllowed: Boolean, endLabel: LabelConfig): Parsley[BigDecimal] = {
         lazy val leadingHappened = Reg.make[Boolean]
-        lazy val _noDoubleDroppedZero = leadingHappened.get.filterOut {
-            case true => "a real number cannot drop both a leading and trailing zero"
-        }
+        lazy val _noDoubleDroppedZero = err.preventRealDoubleDroppedZero(leadingHappened.get)
         val expDesc = desc.exponentDescForRadix(radix)
-        // TODO: this should reuse components of unsigned generic numbers, which will prevent duplication in a larger parser
-        // At the moment, a break character will prevent reuse
         val whole = radix match {
-            case 10 => Generic.plainDecimal(desc)
-            case 16 => Generic.plainHexadecimal(desc)
-            case 8 => Generic.plainOctal(desc)
-            case 2 => Generic.plainBinary(desc)
+            case 10 => generic.plainDecimal(desc, endLabel)
+            case 16 => generic.plainHexadecimal(desc, endLabel)
+            case 8 => generic.plainOctal(desc, endLabel)
+            case 2 => generic.plainBinary(desc, endLabel)
         }
         val f = (d: Char, x: BigDecimal) => x/radix + d.asDigit
-        def broken(c: Char) = lift2(f, digit, (optional(c) *> digit).foldRight[BigDecimal](0)(f))
-        val fractional = amend {
-            '.' *> {
+        def broken(c: Char) =
+            lift2(f,
+                endLabel(digit),
+                (err.labelNumericBreakChar.orElse(endLabel)(optional(c)) *>
+                 endLabel(digit)).foldRight[BigDecimal](0)(f))
+        val fractional = amendThenDislodge {
+            err.labelRealDot.orElse(endLabel)('.') *> {
                 desc.literalBreakChar match {
                     case BreakCharDesc.NoBreakChar if desc.trailingDotAllowed     =>
                         if (!leadingDotAllowed) entrench(digit.foldRight[BigDecimal](0)(f))
@@ -86,8 +103,12 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: Integer) ex
         }
         val (requiredExponent, exponent, base) = expDesc match {
             case ExponentDesc.Supported(compulsory, exp, base, sign) =>
-                val integer = new SignedInteger(desc.copy(positiveSign = sign), natural)
-                val exponent = oneOf(exp) *> integer.decimal32
+                val expErr = new ErrorConfig {
+                    override def labelIntegerSignedDecimal(bits: Int) = err.labelRealExponentEnd.orElse(endLabel)
+                    override def labelIntegerDecimalEnd = err.labelRealExponentEnd.orElse(endLabel)
+                }
+                val integer = new SignedInteger(desc.copy(positiveSign = sign), natural, expErr)
+                val exponent = err.labelRealExponent.orElse(endLabel)(oneOf(exp)) *> integer.decimal32
                 if (compulsory) (exponent, exponent, base)
                 else (exponent, exponent <|> pure(0), base)
             // this can't fail for non-required, it has to be the identity exponent

@@ -7,10 +7,13 @@ import scala.Predef.{String => SString, ArrowAssoc => _, _}
 import parsley.ParsleyTest
 
 import parsley.token.descriptions.text._
+import parsley.token.errors.ErrorConfig
 import org.scalactic.source.Position
 
 class EscapeTests extends ParsleyTest {
-    def cases(desc: EscapeDesc)(tests: (SString, Option[Int], Position)*): Unit = cases(new Escape(desc).escapeChar)(tests: _*)
+    val errConfig = new ErrorConfig
+    val generic = new parsley.token.numeric.Generic(errConfig)
+    def cases(desc: EscapeDesc)(tests: (SString, Option[Int], Position)*): Unit = cases(new Escape(desc, errConfig, generic).escapeChar)(tests: _*)
 
     val plain = EscapeDesc.plain
 

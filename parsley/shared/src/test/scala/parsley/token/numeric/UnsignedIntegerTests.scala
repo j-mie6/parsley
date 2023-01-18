@@ -8,10 +8,13 @@ import Predef.{ArrowAssoc => _, _}
 import parsley.ParsleyTest
 import parsley.token.LexemeImpl
 import parsley.token.descriptions.numeric._
+import parsley.token.errors.ErrorConfig
 import org.scalactic.source.Position
 
 class UnsignedIntegerTests extends ParsleyTest {
-    private def makeInteger(desc: NumericDesc) = new LexemeInteger(new UnsignedInteger(desc), LexemeImpl.empty)
+    val errConfig = new ErrorConfig
+    val generic = new Generic(errConfig)
+    private def makeInteger(desc: NumericDesc) = new LexemeInteger(new UnsignedInteger(desc, errConfig, generic), LexemeImpl.empty)
 
     val plain = NumericDesc.plain
     val withLeadingZero = makeInteger(plain)

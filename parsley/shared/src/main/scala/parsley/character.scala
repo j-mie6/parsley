@@ -8,7 +8,8 @@ import scala.collection.immutable.NumericRange
 
 import parsley.Parsley.{attempt, empty, fresh, pure}
 import parsley.combinator.{choice, skipMany}
-import parsley.errors.combinator.ErrorMethods
+import parsley.errors.combinator.{amend, ErrorMethods}
+import parsley.token.errors.NotConfigured
 
 import parsley.internal.deepembedding.singletons
 
@@ -99,7 +100,7 @@ object character {
       * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[string `string`]].
       * @group core
       */
-    def char(c: Char): Parsley[Char] = new Parsley(new singletons.CharTok(c, None))
+    def char(c: Char): Parsley[Char] = new Parsley(new singletons.CharTok(c, NotConfigured))
 
     /** This combinator tries to parse a single specific codepoint `c` from the input.
       *
@@ -123,7 +124,7 @@ object character {
       * @group core
       */
     private [parsley] def charUtf16(c: Int): Parsley[Int] = { //TODO: release along with the utf combinators
-        if (Character.isBmpCodePoint(c)) char(c.toChar).map(_.toInt)
+        if (Character.isBmpCodePoint(c)) char(c.toChar) #> c
         else attempt(string(Character.toChars(c).mkString)) #> c
     }
 
@@ -149,18 +150,26 @@ object character {
       * @note this combinator can only handle 16-bit characters.
       * @group core
       */
-    def satisfy(pred: Char => Boolean): Parsley[Char] = new Parsley(new singletons.Satisfy(pred, None))
+    def satisfy(pred: Char => Boolean): Parsley[Char] = new Parsley(new singletons.Satisfy(pred, NotConfigured))
 
     // TODO: document and optimise
-    private [parsley] def satisfyUtf16(pred: Int => Boolean): Parsley[Int] = attempt {
-        item.flatMap {
-            case h if h.isHighSurrogate => item.collect {
-                case l if Character.isSurrogatePair(h, l) && pred(Character.toCodePoint(h, l)) => Character.toCodePoint(h, l)
+    private [parsley] def satisfyUtf16(pred: Int => Boolean): Parsley[Int] = amend {
+        attempt {
+            item.hide.flatMap {
+                case h if h.isHighSurrogate =>
+                    // Our policy is that the user can parse high-surrogates if they wish, it's just evil
+                    /*item.collect {
+                        case l if Character.isSurrogatePair(h, l) && pred(Character.toCodePoint(h, l)) => Character.toCodePoint(h, l)
+                    }*/
+                    satisfy(l => Character.isSurrogatePair(h, l) && pred(Character.toCodePoint(h, l))).map(Character.toCodePoint(h, _)) <|> {
+                        val c = h.toInt
+                        if (pred(c)) pure(c) else empty
+                    }
+                case c if pred(c.toInt) => pure(c.toInt)
+                case _ => empty
             }
-            case c if pred(c.toInt) => pure(c.toInt)
-            case _ => empty
         }
-    }
+    } <|> (satisfy(_ => false) *> empty) // I need an unexpected width of 1, and this is the only way I know how... sad times
 
     /** This combinator attempts to parse a given string from the input, and fails otherwise.
       *
@@ -189,7 +198,7 @@ object character {
       */
     def string(s: String): Parsley[String] = {
         require(s.nonEmpty, "`string` may not be passed the empty string (`string(\"\")` is meaningless, perhaps you meant `pure(\"\")`?)")
-        new Parsley(new singletons.StringTok(s, None))
+        new Parsley(new singletons.StringTok(s, NotConfigured))
     }
 
     /** $oneOf
@@ -680,7 +689,7 @@ object character {
       * @see [[isHexDigit ``isHexDigit``]]
       * @group spec
       */
-    val hexDigit: Parsley[Char] = satisfy(isHexDigit)
+    val hexDigit: Parsley[Char] = satisfy(isHexDigit).label("hexdecimal digit")
 
     /** This parser tries to parse an octal digit, and returns it if successful.
       *

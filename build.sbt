@@ -15,7 +15,7 @@ val isInPublish = Option(System.getenv("GITHUB_JOB")).contains("publish")
 val releaseFlags = Seq("-Xdisable-assertions", "-opt:l:method,inline", "-opt-inline-from", "parsley.**", "-opt-warnings:at-inline-failed")
 
 inThisBuild(List(
-  tlBaseVersion := "4.0",
+  tlBaseVersion := "4.1",
   organization := "com.github.j-mie6",
   startYear := Some(2018),
   homepage := Some(url("https://github.com/j-mie6/parsley")),
@@ -29,6 +29,15 @@ inThisBuild(List(
   mimaBinaryIssueFilters ++= Seq(
     ProblemFilters.exclude[Problem]("parsley.internal.*"),
     ProblemFilters.exclude[Problem]("parsley.X*"),
+    // Until 5.0 (these are all misreported package private members)
+    ProblemFilters.exclude[DirectMissingMethodProblem]("parsley.token.numeric.Combined.this"),
+    ProblemFilters.exclude[MissingClassProblem]("parsley.token.text.RawCharacter$"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("parsley.token.symbol.Symbol.this"),
+    ProblemFilters.exclude[ReversedMissingMethodProblem]("parsley.token.numeric.Integer.bounded"),
+    ProblemFilters.exclude[MissingClassProblem]("parsley.token.numeric.Generic$"),
+    ProblemFilters.exclude[MissingClassProblem]("parsley.token.predicate$_CharSet$"),
+    ProblemFilters.exclude[MissingFieldProblem]("parsley.token.predicate._CharSet"),
+    ProblemFilters.exclude[MissingClassProblem]("parsley.token.errors.ErrorConfig$"),
   ),
   tlVersionIntroduced := Map(
     "2.13" -> "1.5.0",

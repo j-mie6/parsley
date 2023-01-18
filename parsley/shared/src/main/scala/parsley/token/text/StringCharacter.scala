@@ -6,40 +6,50 @@ package parsley.token.text
 import parsley.Parsley, Parsley.empty
 import parsley.character.{char, satisfy, satisfyUtf16}
 import parsley.combinator.skipSome
-import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.character.charLift
 import parsley.token.descriptions.text.EscapeDesc
+import parsley.token.errors.ErrorConfig
 import parsley.token.predicate.{Basic, CharPredicate, NotRequired, Unicode}
 
 private [token] abstract class StringCharacter {
     def apply(isLetter: CharPredicate): Parsley[Option[Int]]
+    def isRaw: Boolean
+
+    protected def _checkBadChar(err: ErrorConfig) = err.verifiedStringBadCharsUsedInLiteral.checkBadChar
 }
 
-private [token] object RawCharacter extends StringCharacter {
+private [token] class RawCharacter(err: ErrorConfig) extends StringCharacter {
+    override def isRaw: Boolean = true
     override def apply(isLetter: CharPredicate): Parsley[Option[Int]] = isLetter match {
-        case Basic(isLetter) => satisfy(isLetter).map(c => Some(c.toInt)).label("string character")
-        case Unicode(isLetter) => satisfyUtf16(isLetter).map(Some(_)).label("string character")
+        case Basic(isLetter) => err.labelStringCharacter(satisfy(isLetter).map(c => Some(c.toInt))) <|> _checkBadChar(err)
+        case Unicode(isLetter) => err.labelStringCharacter(satisfyUtf16(isLetter).map(Some(_))) <|> _checkBadChar(err)
         case NotRequired => empty
     }
 }
 
-private [token] class EscapableCharacter(desc: EscapeDesc, escapes: Escape, space: Parsley[_]) extends StringCharacter {
-    private lazy val escapeEmpty = desc.emptyEscape.fold[Parsley[Char]](empty)(char)
+private [token] class EscapableCharacter(desc: EscapeDesc, escapes: Escape, space: Parsley[_], err: ErrorConfig) extends StringCharacter {
+    override def isRaw: Boolean = false
+    private lazy val escapeEmpty = err.labelStringEscapeEmpty(desc.emptyEscape.fold[Parsley[Char]](empty)(char))
     private lazy val escapeGap = {
-        if (desc.gapsSupported) skipSome(space.label("string gap")) *> desc.escBegin.label("end of string gap")
+        if (desc.gapsSupported) skipSome(err.labelStringEscapeGap(space)) *> err.labelStringEscapeGapEnd(desc.escBegin)
         else empty
     }
-    private lazy val stringEscape: Parsley[Option[Int]] = {
-        desc.escBegin *> (escapeGap #> None
-                      <|> escapeEmpty #> None
-                      <|> escapes.escapeCode.map(Some(_)).explain("invalid escape sequence"))
-    }.label("escape sequence")
+    private lazy val stringEscape: Parsley[Option[Int]] =
+        escapes.escapeBegin *> (escapeGap #> None
+                            <|> escapeEmpty #> None
+                            <|> escapes.escapeCode.map(Some(_)))
 
-    override def apply(isLetter: CharPredicate): Parsley[Option[Int]] = isLetter match {
-        case Basic(isLetter) =>
-            (satisfy(c => isLetter(c) && c != desc.escBegin).map(c => Some(c.toInt)).label("graphic character") <|> stringEscape).label("string character")
-        case Unicode(isLetter) =>
-            (satisfyUtf16(c => isLetter(c) && c != desc.escBegin.toInt).map(Some(_)).label("graphic character") <|> stringEscape).label("string character")
-        case NotRequired => stringEscape
+    override def apply(isLetter: CharPredicate): Parsley[Option[Int]] = {
+        isLetter match {
+            case Basic(isLetter) => err.labelStringCharacter(
+                stringEscape <|> err.labelGraphicCharacter(satisfy(c => isLetter(c) && c != desc.escBegin).map(c => Some(c.toInt)))
+                             <|> _checkBadChar(err)
+            )
+            case Unicode(isLetter) => err.labelStringCharacter(
+                stringEscape <|> err.labelGraphicCharacter(satisfyUtf16(c => isLetter(c) && c != desc.escBegin.toInt).map(Some(_)))
+                             <|> _checkBadChar(err)
+            )
+            case NotRequired => stringEscape
+        }
     }
 }

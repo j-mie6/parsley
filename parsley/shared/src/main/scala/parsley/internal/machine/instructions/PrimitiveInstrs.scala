@@ -3,12 +3,13 @@
  */
 package parsley.internal.machine.instructions
 
+import parsley.token.errors.LabelConfig
+
 import parsley.internal.errors.ExpectDesc
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 
-private [internal] final class Satisfies(f: Char => Boolean, _expected: Option[String]) extends Instr {
-    private [this] final val expected = _expected.flatMap(label => if (label.isEmpty) None else Some(ExpectDesc(label)))
+private [internal] final class Satisfies(f: Char => Boolean, expected: Option[ExpectDesc]) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         if (ctx.moreInput && f(ctx.nextChar)) ctx.pushAndContinue(ctx.consumeChar())
@@ -17,6 +18,9 @@ private [internal] final class Satisfies(f: Char => Boolean, _expected: Option[S
     // $COVERAGE-OFF$
     override def toString: String = "Sat(?)"
     // $COVERAGE-ON$
+}
+private [internal] object Satisfies {
+    def apply(f: Char => Boolean, expected: LabelConfig): Satisfies = new Satisfies(f, expected.asExpectDesc)
 }
 
 private [internal] object RestoreAndFail extends Instr {
@@ -85,6 +89,16 @@ private [internal] object Col extends Instr {
     }
     // $COVERAGE-OFF$
     override def toString: String = "Col"
+    // $COVERAGE-ON$
+}
+
+private [internal] object Offset extends Instr {
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        ctx.pushAndContinue(ctx.offset)
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = "Offset"
     // $COVERAGE-ON$
 }
 

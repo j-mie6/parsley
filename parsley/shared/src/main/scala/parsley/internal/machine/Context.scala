@@ -41,8 +41,6 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     private [machine] var running: Boolean = true
     /** Stack of handlers, which track the call depth, program counter and stack size of error handlers */
     private [machine] var handlers: HandlerStack = Stack.empty
-    /** Current size of the call stack */
-    private var depth: Int = 0
     /** Current offset into program instruction buffer */
     private [machine] var pc: Int = 0
     /** Current line number */
@@ -86,7 +84,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         commitHints()
     }
     private [machine] def replaceHint(label: String): Unit = hints = hints.rename(label)
-    private [machine] def popHints: Unit = hints = hints.pop
+    private [machine] def popHints(): Unit = hints = hints.pop
     /* ERROR RELABELLING END */
 
     private def addErrorToHints(): Unit = {
@@ -120,7 +118,6 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
            |  pos       = ($line, $col)
            |  status    = $status
            |  pc        = $pc
-           |  depth     = $depth
            |  rets      = ${calls.mkString(", ")}
            |  handlers  = ${handlers.mkString(", ")}
            |  recstates = ${states.mkString(", ")}
@@ -166,35 +163,13 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     private [machine] def call(at: Int): Unit = {
         calls = new CallStack(pc + 1, instrs, at, calls)
         pc = at
-        depth += 1
     }
 
     private [machine] def ret(): Unit = {
-        assert(depth >= 1, "cannot return when no calls are made")
+        assert(calls != null, "cannot return when no calls are made")
         instrs = calls.instrs
         pc = calls.ret
         calls = calls.tail
-        depth -= 1
-    }
-
-    /** This method returns multiple times (in the case of a failure handler back many call-frames).
-      *
-      * @param n the number of frames to unwind.
-      */
-    private def multiRet(n: Int): Unit = if (n > 0) {
-        if (n == 1) ret()
-        else {
-            var m = n - 1 // scalastyle:ignore var.local
-            assert(depth >= m, "cannot return when no calls are made")
-            depth -= m
-            // the rollback can safely discard n-1 frames immediately, as stateful instructions are no longer a thing!
-            while (m > 0) {
-                calls = calls.tail
-                m -= 1
-            }
-            // this does the final, not shortcutted return
-            ret()
-        }
     }
 
     private [machine] def catchNoConsumed(handler: =>Unit): Unit = {
@@ -239,7 +214,8 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         else {
             val handler = handlers
             handlers = handlers.tail
-            multiRet(depth - handler.depth)
+            instrs = handler.instrs
+            calls = handler.calls
             pc = handler.pc
             val diffstack = stack.usize - handler.stacksz
             if (diffstack > 0) stack.drop(diffstack)
@@ -276,7 +252,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         offset += n
         col += n
     }
-    private [machine] def pushHandler(label: Int): Unit = handlers = new HandlerStack(depth, label, stack.usize, handlers)
+    private [machine] def pushHandler(label: Int): Unit = handlers = new HandlerStack(calls, instrs, label, stack.usize, handlers)
     private [machine] def pushCheck(): Unit = checkStack = new CheckStack(offset, checkStack)
     private [machine] def saveState(): Unit = states = new StateStack(offset, line, col, states)
     private [machine] def restoreState(): Unit = {

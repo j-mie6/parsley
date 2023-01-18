@@ -8,11 +8,14 @@ import parsley.ParsleyTest
 import parsley.token.LexemeImpl
 
 import parsley.token.descriptions.text._
+import parsley.token.errors.ErrorConfig
 import parsley.token.predicate._
 import org.scalactic.source.Position
 
 class CharacterTests extends ParsleyTest {
-    def makeChar(desc: TextDesc): Character = new LexemeCharacter(new ConcreteCharacter(desc, new Escape(desc.escapeSequences)), LexemeImpl.empty)
+    val errConfig = new ErrorConfig
+    val generic = new parsley.token.numeric.Generic(errConfig)
+    def makeChar(desc: TextDesc): Character = new LexemeCharacter(new ConcreteCharacter(desc, new Escape(desc.escapeSequences, errConfig, generic), errConfig), LexemeImpl.empty)
 
     def unicodeCases(char: Character)(tests: (SString, Option[Int], Position)*): Unit = cases(char.fullUtf16)(tests: _*)
     def bmpCases(char: Character)(tests: (SString, Option[Char], Position)*): Unit = cases(char.basicMultilingualPlane)(tests: _*)
@@ -78,9 +81,24 @@ class CharacterTests extends ParsleyTest {
         "'a'" -> Some('a'),
         "'\\lf'" -> Some('\n'),
         "'\\lam'" -> Some('λ'),
+        "'\ud800'" -> Some('\ud800'), // high surrogates are legal on their own
+        "'\udbff'" -> Some('\udbff'), // high surrogates are legal on their own
     )
 
     they should "not parse wider unicode, including from escape characters" in bmpCases(plainChar)(
+        "'\\oops'" -> None,
+        "'🙂'" -> None,
+        "'🇬🇧'" -> None,
+    )
+
+    they should "also behave similarly when given a non-unicode predicate" in bmpCases(plain.copy(graphicCharacter = Basic(_ >= ' ')))(
+        "'λ'" -> Some('λ'),
+        "' '" -> Some(' '),
+        "'a'" -> Some('a'),
+        "'\\lf'" -> Some('\n'),
+        "'\\lam'" -> Some('λ'),
+        "'\ud800'" -> Some('\ud800'), // high surrogates are legal on their own
+        "'\udbff'" -> Some('\udbff'), // high surrogates are legal on their own
         "'\\oops'" -> None,
         "'🙂'" -> None,
         "'🇬🇧'" -> None,

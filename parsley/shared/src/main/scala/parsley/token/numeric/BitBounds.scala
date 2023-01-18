@@ -10,30 +10,35 @@ private [numeric] sealed abstract class Bits {
     private [numeric] def upperSigned: BigInt
     private [numeric] def lowerSigned: BigInt
     private [numeric] def upperUnsigned: BigInt
+    private [numeric] def bits: Int
 }
 private [numeric] object _8 extends Bits {
     private [numeric] type self = _8.type
-    private [numeric] val upperSigned = Byte.MaxValue
-    private [numeric] val lowerSigned = Byte.MinValue
-    private [numeric] val upperUnsigned = 0xff
+    private [numeric] final val upperSigned = Byte.MaxValue
+    private [numeric] final val lowerSigned = Byte.MinValue
+    private [numeric] final val upperUnsigned = 0xff
+    private [numeric] final val bits = 8
 }
 private [numeric] object _16 extends Bits {
     private [numeric] type self = _16.type
-    private [numeric] val upperSigned = Short.MaxValue
-    private [numeric] val lowerSigned = Short.MinValue
-    private [numeric] val upperUnsigned = 0xffff
+    private [numeric] final val upperSigned = Short.MaxValue
+    private [numeric] final val lowerSigned = Short.MinValue
+    private [numeric] final val upperUnsigned = 0xffff
+    private [numeric] final val bits = 16
 }
 private [numeric] object _32 extends Bits {
     private [numeric] type self = _32.type
-    private [numeric] val upperSigned = Int.MaxValue
-    private [numeric] val lowerSigned = Int.MinValue
-    private [numeric] val upperUnsigned = 0xffffffffL
+    private [numeric] final val upperSigned = Int.MaxValue
+    private [numeric] final val lowerSigned = Int.MinValue
+    private [numeric] final val upperUnsigned = 0xffffffffL
+    private [numeric] final val bits = 32
 }
 private [numeric] object _64 extends Bits {
     private [numeric] type self = _64.type
-    private [numeric] val upperSigned = Long.MaxValue
-    private [numeric] val lowerSigned = Long.MinValue
-    private [numeric] val upperUnsigned = BigInt("ffffffffffffffff", 16)
+    private [numeric] final val upperSigned = Long.MaxValue
+    private [numeric] final val lowerSigned = Long.MinValue
+    private [numeric] final val upperUnsigned = BigInt("ffffffffffffffff", 16)
+    private [numeric] final val bits = 64
 }
 
 private [numeric] sealed abstract class CanHold[N <: Bits, T] {
@@ -49,7 +54,7 @@ private [numeric] sealed abstract class CanHold[N <: Bits, T] {
   *
   * @since 4.0.0
   */
-abstract class LowPriorityImplicits private[numeric] {
+sealed class LowPriorityImplicits private[numeric] {
     import CanHold.can_hold_64_bits // scalastyle:ignore import.grouping
     // this being here means that Scala will look for it last, which allows default to Long for 64-bit
     /** Evidence that `BigInt` can store (at least) 64 bits of data.

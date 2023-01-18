@@ -9,11 +9,11 @@ import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.{ClassicFancyError, ClassicUnexpectedError}
 
 private [internal] final class RelabelHints(label: String) extends Instr {
-    val isHide: Boolean = label.isEmpty
+    private [this] val isHide: Boolean = label.isEmpty
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         // if this was a hide, pop the hints if possible
-        if (isHide) ctx.popHints
+        if (isHide) ctx.popHints()
         // EOK
         // replace the head of the hints with the singleton for our label
         else if (ctx.offset == ctx.checkStack.offset) ctx.replaceHint(label)
@@ -30,7 +30,6 @@ private [internal] final class RelabelHints(label: String) extends Instr {
 }
 
 private [internal] final class RelabelErrorAndFail(label: String) extends Instr {
-    val isHide: Boolean = label.isEmpty
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
         ctx.restoreHints()
@@ -87,10 +86,10 @@ private [internal] class ApplyReasonAndFail(reason: String) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] object AmendAndFail extends Instr {
+private [internal] class AmendAndFail private (partial: Boolean) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
-        ctx.errs.error = ctx.errs.error.amend(ctx.states.offset, ctx.states.line, ctx.states.col)
+        ctx.errs.error = ctx.errs.error.amend(if (partial) ctx.offset else ctx.states.offset, ctx.states.line, ctx.states.col)
         ctx.states = ctx.states.tail
         ctx.fail()
     }
@@ -98,6 +97,11 @@ private [internal] object AmendAndFail extends Instr {
     // $COVERAGE-OFF$
     override def toString: String = "AmendAndFail"
     // $COVERAGE-ON$
+}
+private [internal] object AmendAndFail {
+    private [this] val partial = new AmendAndFail(partial = true)
+    private [this] val full = new AmendAndFail(partial = false)
+    def apply(partial: Boolean): AmendAndFail = if (partial) this.partial else this.full
 }
 
 private [internal] object EntrenchAndFail extends Instr {
@@ -109,6 +113,18 @@ private [internal] object EntrenchAndFail extends Instr {
 
     // $COVERAGE-OFF$
     override def toString: String = "EntrenchAndFail"
+    // $COVERAGE-ON$
+}
+
+private [internal] object DislodgeAndFail extends Instr {
+    override def apply(ctx: Context): Unit = {
+        ensureHandlerInstruction(ctx)
+        ctx.errs.error = ctx.errs.error.dislodge
+        ctx.fail()
+    }
+
+    // $COVERAGE-OFF$
+    override def toString: String = "DislodgeAndFail"
     // $COVERAGE-ON$
 }
 

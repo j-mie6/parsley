@@ -5,7 +5,9 @@ package parsley.internal.machine.instructions
 
 import scala.annotation.tailrec
 
-import parsley.internal.errors.{EndOfInput, ExpectDesc, ExpectItem, ExpectRaw, UnexpectDesc}
+import parsley.token.errors.LabelConfig
+
+import parsley.internal.errors.{EndOfInput, ExpectItem, UnexpectDesc}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.{ClassicFancyError, ClassicUnexpectedError, EmptyError, EmptyErrorWithReason}
@@ -81,7 +83,8 @@ private [internal] final class StringTok(s: String, x: Any, errorItem: Option[Ex
         if (j < sz && i < ctx.inputsz && ctx.input.charAt(i) == s.charAt(j)) go(ctx, i + 1, j + 1)
         else if (j < sz) {
             // The offset, line and column haven't been edited yet, so are in the right place
-            ctx.expectedFail(errorItem, codePointLength)
+            // FIXME: this might be a more appropriate way of capping off the demand for the error?
+            ctx.expectedFail(errorItem, /*s.codePointCount(0, j+1)*/codePointLength)
             ctx.offset = i
             // These help maintain a consistent internal state, this makes the debuggers
             // output less confusing in the string case in particular.
@@ -131,8 +134,6 @@ private [internal] final class Case(var label: Int) extends InstrWithLabel {
     // $COVERAGE-ON$
 }
 
-// TODO: I think all three of these _shouldn't_ generate the
-//       unexpected item, but should generate a caret, fix this!
 private [internal] final class Filter[A](_pred: A => Boolean) extends Instr {
     private [this] val pred = _pred.asInstanceOf[Any => Boolean]
     override def apply(ctx: Context): Unit = {
@@ -301,21 +302,13 @@ private [internal] final class SwapAndPut(reg: Int) extends Instr {
 
 // Companion Objects
 private [internal] object CharTok {
-    def apply(c: Char, expected: Option[String]): CharTok = apply(c, c, expected)
-    def apply(c: Char, x: Any, expected: Option[String]): CharTok = new CharTok(c, x, expected match {
-        case Some("") => None
-        case Some(e)  => Some(ExpectDesc(e))
-        case None     => Some(ExpectRaw(c))
-    })
+    def apply(c: Char, expected: LabelConfig): CharTok = apply(c, c, expected)
+    def apply(c: Char, x: Any, expected: LabelConfig): CharTok = new CharTok(c, x, expected.asExpectItem(s"$c"))
 }
 
 private [internal] object StringTok {
-    def apply(s: String, expected: Option[String]): StringTok = apply(s, s, expected)
-    def apply(s: String, x: Any, expected: Option[String]): StringTok = new StringTok(s, x, expected match {
-        case Some("") => None
-        case Some(e)  => Some(ExpectDesc(e))
-        case None     => Some(ExpectRaw(s))
-    })
+    def apply(s: String, expected: LabelConfig): StringTok = apply(s, s, expected)
+    def apply(s: String, x: Any, expected: LabelConfig): StringTok = new StringTok(s, x,  expected.asExpectItem(s))
 
     private [StringTok] abstract class Adjust {
         private [StringTok] def tab: Adjust
@@ -359,9 +352,9 @@ private [internal] object StringTok {
 }
 
 private [internal] object CharTokFastPerform {
-    def apply[A >: Char, B](c: Char, f: A => B, expected: Option[String]): CharTok = CharTok(c, f(c), expected)
+    def apply[A >: Char, B](c: Char, f: A => B, expected: LabelConfig): CharTok = CharTok(c, f(c), expected)
 }
 
 private [internal] object StringTokFastPerform {
-    def apply(s: String, f: String => Any, expected: Option[String]): StringTok = StringTok(s, f(s), expected)
+    def apply(s: String, f: String => Any, expected: LabelConfig): StringTok = StringTok(s, f(s), expected)
 }

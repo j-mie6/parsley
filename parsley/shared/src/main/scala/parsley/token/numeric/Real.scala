@@ -4,7 +4,7 @@
 package parsley.token.numeric
 
 import parsley.Parsley
-import parsley.errors.combinator.ErrorMethods
+import parsley.token.errors.{ErrorConfig, LabelWithExplainConfig}
 
 /** This class defines a uniform interface for defining parsers for floating
   * literals, independent of how whitespace should be handled after the literal.
@@ -32,7 +32,7 @@ import parsley.errors.combinator.ErrorMethods
   *   if the values are too big or too negatively big, they will
   *   be rounded to the corresponding infinity.
   */
-abstract class Real private[token] {
+abstract class Real private[numeric](err: ErrorConfig) {
     /** This parser will parse a single real number literal, which is in decimal form (base 10).
       *
       * @since 4.0.0
@@ -150,35 +150,35 @@ abstract class Real private[token] {
       * @note $disclaimer
       * @note $plausible
       */
-    lazy val decimalFloat: Parsley[Float] = ensureFloat(_decimal)
+    lazy val decimalFloat: Parsley[Float] = ensureFloat(_decimal, err.labelRealFloatDecimal)
     /** $bounded1 [[hexadecimal `hexadecimal`]] $bounded2Plausible single-precision $bounded3 `Float`.
       *
       * @since 4.0.0
       * @note $disclaimer
       * @note $plausible
       */
-    lazy val hexadecimalFloat: Parsley[Float] = ensureFloat(_hexadecimal)
+    lazy val hexadecimalFloat: Parsley[Float] = ensureFloat(_hexadecimal, err.labelRealFloatHexadecimal)
     /** $bounded1 [[octal `octal`]] $bounded2Plausible single-precision $bounded3 `Float`.
       *
       * @since 4.0.0
       * @note $disclaimer
       * @note $plausible
       */
-    lazy val octalFloat: Parsley[Float] = ensureFloat(_octal)
+    lazy val octalFloat: Parsley[Float] = ensureFloat(_octal, err.labelRealFloatOctal)
     /** $bounded1 [[binary `binary`]] $bounded2Plausible single-precision $bounded3 `Float`.
       *
       * @since 4.0.0
       * @note $disclaimer
       * @note $plausible
       */
-    lazy val binaryFloat: Parsley[Float] = ensureFloat(_binary)
+    lazy val binaryFloat: Parsley[Float] = ensureFloat(_binary, err.labelRealFloatBinary)
     /** $bounded1 [[number `number`]] $bounded2Plausible single-precision $bounded3 `Float`.
       *
       * @since 4.0.0
       * @note $disclaimer
       * @note $plausible
       */
-    lazy val float: Parsley[Float] = ensureFloat(_number)
+    lazy val float: Parsley[Float] = ensureFloat(_number, err.labelRealFloatNumber)
 
     /** $bounded1 [[decimal `decimal`]] $bounded2Plausible double-precision $bounded3 `Double`.
       *
@@ -186,70 +186,70 @@ abstract class Real private[token] {
       * @note $disclaimer
       * @note $plausible
       */
-    lazy val decimalDouble: Parsley[Double] = ensureDouble(_decimal)
+    lazy val decimalDouble: Parsley[Double] = ensureDouble(_decimal, err.labelRealDoubleDecimal)
     /** $bounded1 [[hexadecimal `hexadecimal`]] $bounded2Plausible double-precision $bounded3 `Double`.
       *
       * @since 4.0.0
       * @note $disclaimer
       * @note $plausible
       */
-    lazy val hexadecimalDouble: Parsley[Double] = ensureDouble(_hexadecimal)
+    lazy val hexadecimalDouble: Parsley[Double] = ensureDouble(_hexadecimal, err.labelRealDoubleHexadecimal)
     /** $bounded1 [[octal `octal`]] $bounded2Plausible double-precision $bounded3 `Double`.
       *
       * @since 4.0.0
       * @note $disclaimer
       * @note $plausible
       */
-    lazy val octalDouble: Parsley[Double] = ensureDouble(_octal)
+    lazy val octalDouble: Parsley[Double] = ensureDouble(_octal, err.labelRealDoubleOctal)
     /** $bounded1 [[binary `binary`]] $bounded2Plausible double-precision $bounded3 `Double`.
       *
       * @since 4.0.0
       * @note $disclaimer
       * @note $plausible
       */
-    lazy val binaryDouble: Parsley[Double] = ensureDouble(_binary)
+    lazy val binaryDouble: Parsley[Double] = ensureDouble(_binary, err.labelRealDoubleBinary)
     /** $bounded1 [[number `number`]] $bounded2Plausible double-precision $bounded3 `Double`.
       *
       * @since 4.0.0
       * @note $disclaimer
       * @note $plausible
       */
-    lazy val double: Parsley[Double] = ensureDouble(_number)
+    lazy val double: Parsley[Double] = ensureDouble(_number, err.labelRealDoubleNumber)
     /** $bounded1 [[decimal `decimal`]] $bounded2Plausible single-precision $bounded3 `Float`.
       *
       * @since 4.0.0
       * @note $disclaimer
       * @note $exact
       */
-    lazy val decimalExactFloat: Parsley[Float] = ensureExactFloat(_decimal)
+    lazy val decimalExactFloat: Parsley[Float] = ensureExactFloat(_decimal, err.labelRealFloatDecimal)
     /** $bounded1 [[hexadecimal `hexadecimal`]] $bounded2Exact single-precision $bounded3 `Float`.
       *
       * @since 4.0.0
       * @note $disclaimer
       * @note $exact
       */
-    lazy val hexadecimalExactFloat: Parsley[Float] = ensureExactFloat(_hexadecimal)
+    lazy val hexadecimalExactFloat: Parsley[Float] = ensureExactFloat(_hexadecimal, err.labelRealFloatHexadecimal)
     /** $bounded1 [[octal `octal`]] $bounded2Exact single-precision $bounded3 `Float`.
       *
       * @since 4.0.0
       * @note $disclaimer
       * @note $exact
       */
-    lazy val octalExactFloat: Parsley[Float] = ensureExactFloat(_octal)
+    lazy val octalExactFloat: Parsley[Float] = ensureExactFloat(_octal, err.labelRealFloatOctal)
     /** $bounded1 [[binary `binary`]] $bounded2Exact single-precision $bounded3 `Float`.
       *
       * @since 4.0.0
       * @note $disclaimer
       * @note $exact
       */
-    lazy val binaryExactFloat: Parsley[Float] = ensureExactFloat(_binary)
+    lazy val binaryExactFloat: Parsley[Float] = ensureExactFloat(_binary, err.labelRealFloatBinary)
     /** $bounded1 [[number `number`]] $bounded2Exact single-precision $bounded3 `Float`.
       *
       * @since 4.0.0
       * @note $disclaimer
       * @note $exact
       */
-    lazy val exactFloat: Parsley[Float] = ensureExactFloat(_number)
+    lazy val exactFloat: Parsley[Float] = ensureExactFloat(_number, err.labelRealFloatNumber)
 
     /** $bounded1 [[decimal `decimal`]] $bounded2Exact double-precision $bounded3 `Double`.
       *
@@ -257,64 +257,57 @@ abstract class Real private[token] {
       * @note $disclaimer
       * @note $exact
       */
-    lazy val decimalExactDouble: Parsley[Double] = ensureExactDouble(_decimal)
+    lazy val decimalExactDouble: Parsley[Double] = ensureExactDouble(_decimal, err.labelRealDoubleDecimal)
     /** $bounded1 [[hexadecimal `hexadecimal`]] $bounded2Exact double-precision $bounded3 `Double`.
       *
       * @since 4.0.0
       * @note $disclaimer
       * @note $exact
       */
-    lazy val hexadecimalExactDouble: Parsley[Double] = ensureExactDouble(_hexadecimal)
+    lazy val hexadecimalExactDouble: Parsley[Double] = ensureExactDouble(_hexadecimal, err.labelRealDoubleHexadecimal)
     /** $bounded1 [[octal `octal`]] $bounded2Exact double-precision $bounded3 `Double`.
       *
       * @since 4.0.0
       * @note $disclaimer
       * @note $exact
       */
-    lazy val octalExactDouble: Parsley[Double] = ensureExactDouble(_octal)
+    lazy val octalExactDouble: Parsley[Double] = ensureExactDouble(_octal, err.labelRealDoubleOctal)
     /** $bounded1 [[binary `binary`]] $bounded2Exact double-precision $bounded3 `Double`.
       *
       * @since 4.0.0
       * @note $disclaimer
       * @note $exact
       */
-    lazy val binaryExactDouble: Parsley[Double] = ensureExactDouble(_binary)
+    lazy val binaryExactDouble: Parsley[Double] = ensureExactDouble(_binary, err.labelRealDoubleBinary)
     /** $bounded1 [[number `number`]] $bounded2Exact double-precision $bounded3 `Double`.
       *
       * @since 4.0.0
       * @note $disclaimer
       * @note $exact
       */
-    lazy val exactDouble: Parsley[Double] = ensureExactDouble(_number)
+    lazy val exactDouble: Parsley[Double] = ensureExactDouble(_number, err.labelRealDoubleNumber)
     // $COVERAGE-ON$
 
-    private def bad(min: Double, max: Double, precision: String)(n: BigDecimal): Seq[String] = {
-        if (n > BigDecimal(max) || n < BigDecimal(min)) {
-            Seq(s"literal $n is too large to be an IEEE 754 $precision-precision float")
-        }
-        else Seq(s"literal $n is too small to be an IEEE 754 $precision-precision float")
-    }
-
-    protected [numeric] def ensureFloat(number: Parsley[BigDecimal]): Parsley[Float] = {
-        number.collectMsg(bad(Float.MinValue.toDouble, Float.MaxValue.toDouble, "single")(_)) {
+    protected [numeric] def ensureFloat(number: Parsley[BigDecimal], label: LabelWithExplainConfig): Parsley[Float] = {
+        err.filterRealOutOfBounds(err.floatName, BigDecimal(Float.MinValue.toDouble), BigDecimal(Float.MaxValue.toDouble)).collect(label(number)) {
             case n if Real.isFloat(n) => n.toFloat
         }
     }
 
-    protected [numeric] def ensureDouble(number: Parsley[BigDecimal]): Parsley[Double] = {
-        number.collectMsg(bad(Double.MinValue, Double.MaxValue, "double")(_)) {
+    protected [numeric] def ensureDouble(number: Parsley[BigDecimal], label: LabelWithExplainConfig): Parsley[Double] = {
+        err.filterRealOutOfBounds(err.doubleName, BigDecimal(Double.MinValue), BigDecimal(Double.MaxValue)).collect(label(number)) {
             case n if Real.isDouble(n) => n.toDouble
         }
     }
 
-    protected [numeric] def ensureExactFloat(number: Parsley[BigDecimal]): Parsley[Float] = {
-        number.collectMsg(n => Seq(s"$n cannot be represented exactly as a IEEE 754 single-precision float")) {
+    protected [numeric] def ensureExactFloat(number: Parsley[BigDecimal], label: LabelWithExplainConfig): Parsley[Float] = {
+        err.filterRealNotExact(err.floatName).collect(label(number)) {
             case n if n.isExactFloat => n.toFloat
         }
     }
 
-    protected [numeric] def ensureExactDouble(number: Parsley[BigDecimal]): Parsley[Double] = {
-        number.collectMsg(n => Seq(s"$n cannot be represented exactly as a IEEE 754 double-precision float")) {
+    protected [numeric] def ensureExactDouble(number: Parsley[BigDecimal], label: LabelWithExplainConfig): Parsley[Double] = {
+        err.filterRealNotExact(err.doubleName).collect(label(number)) {
             case n if n.isExactDouble => n.toDouble
         }
     }

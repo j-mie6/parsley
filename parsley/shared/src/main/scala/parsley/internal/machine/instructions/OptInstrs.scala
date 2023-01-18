@@ -5,9 +5,10 @@ package parsley.internal.machine.instructions
 
 import scala.collection.mutable
 
-import parsley.XCompat._ //mapValuesInPlace
+import parsley.XCompat._
+import parsley.token.errors.LabelConfig
 
-import parsley.internal.errors.{ExpectDesc, ExpectItem}
+import parsley.internal.errors.ExpectItem
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.MultiExpectedError
@@ -36,8 +37,8 @@ private [internal] final class Exchange[A](private [Exchange] val x: A) extends 
     // $COVERAGE-ON$
 }
 
-private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, _expected: Option[String]) extends Instr {
-    private [this] final val expected = _expected.map(ExpectDesc(_))
+private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, _expected: LabelConfig) extends Instr {
+    private [this] final val expected = _expected.asExpectDesc
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         if (ctx.moreInput && f(ctx.nextChar)) {
@@ -109,7 +110,8 @@ private [internal] final class JumpTable(jumpTable: mutable.LongMap[(Int, Set[Ex
     }
 
     private def addErrors(ctx: Context, errorItems: Set[ExpectItem]): Unit = {
-        ctx.errs = new ErrorStack(new MultiExpectedError(ctx.offset, ctx.line, ctx.col, errorItems, size), ctx.errs)
+        // FIXME: the more appropriate way of demanding input may be to pick 1 character, for same rationale with StringTok
+        ctx.errs = new ErrorStack(new MultiExpectedError(ctx.offset, ctx.line, ctx.col, errorItems, unexpectedWidth = size), ctx.errs)
         ctx.pushHandler(merge)
     }
 

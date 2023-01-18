@@ -18,7 +18,7 @@ import parsley.token.predicate.{Basic, CharPredicate, NotRequired, Unicode}
   *   `Lexer`, which will depend on user-defined configuration. Please see the
   *   relevant documentation of these specific objects.
   */
-abstract class Character private[token] {
+abstract class Character private[text] {
     /** This parser will parse a single character literal, which may contain
       * any unicode graphic character as defined by up to two UTF-16 codepoints.
       * It may also contain escape sequences.

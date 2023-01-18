@@ -5,6 +5,7 @@ package parsley.token.symbol
 
 import parsley.Parsley
 import parsley.errors.combinator.ErrorMethods
+import parsley.token.errors.{ErrorConfig, LabelConfig}
 
 /** This class provides implicit functionality to promote string
   * literals into tokens.
@@ -54,7 +55,7 @@ abstract class ImplicitSymbol private [symbol] {
   *
   * @since 4.0.0
   */
-abstract class Symbol private[token] {
+abstract class Symbol private[symbol] (err: ErrorConfig) {
     /** $stringApply
       *
       * Additionally applies the given label as the name of the symbol.
@@ -133,66 +134,67 @@ abstract class Symbol private[token] {
 
     // $COVERAGE-OFF$
     // These really don't need testing
+    private final def apply(name: Char, label: LabelConfig): Parsley[Unit] = label(apply(name))
     /** This parser parses a semicolon `;` as a symbol.
       *
       * @since 4.0.0
       */
-    final lazy val semi: Parsley[Unit] = apply(';', "semicolon")
+    final lazy val semi: Parsley[Unit] = apply(';', err.labelSymbolSemi)
     /** This parser parses a comma `,` as a symbol.
       *
       * @since 4.0.0
       */
-    final lazy val comma: Parsley[Unit] = apply(',', "comma")
+    final lazy val comma: Parsley[Unit] = apply(',', err.labelSymbolComma)
     /** This parser parses a colon `:` as a symbol.
       *
       * @since 4.0.0
       */
-    final lazy val colon: Parsley[Unit] = apply(':', "colon")
+    final lazy val colon: Parsley[Unit] = apply(':', err.labelSymbolColon)
     /** This parser parses a dot `.` as a symbol.
       *
       * @since 4.0.0
       */
-    final lazy val dot: Parsley[Unit] = apply('.', "dot")
+    final lazy val dot: Parsley[Unit] = apply('.', err.labelSymbolDot)
 
     /** This parser parses an open parenthesis `(` as a symbol.
       *
       * @since 4.0.0
       */
-    final lazy val openParen: Parsley[Unit] = apply('(', "open parenthesis")
+    final lazy val openParen: Parsley[Unit] = apply('(', err.labelSymbolOpenParen)
     /** This parser parses an open brace `{` as a symbol.
       *
       * @since 4.0.0
       */
-    final lazy val openBrace: Parsley[Unit] = apply('{', "open brace")
+    final lazy val openBrace: Parsley[Unit] = apply('{', err.labelSymbolOpenBrace)
     /** This parser parses an open square bracket `[` as a symbol.
       *
       * @since 4.0.0
       */
-    final lazy val openSquare: Parsley[Unit] = apply('[', "open square bracket")
+    final lazy val openSquare: Parsley[Unit] = apply('[', err.labelSymbolOpenSquare)
     /** This parser parses an open angle bracket `<` as a symbol.
       *
       * @since 4.0.0
       */
-    final lazy val openAngle: Parsley[Unit] = apply('<', "open angle bracket")
+    final lazy val openAngle: Parsley[Unit] = apply('<', err.labelSymbolOpenAngle)
     /** This parser parses a closing parenthesis `)` as a symbol.
       *
       * @since 4.0.0
       */
-    final lazy val closingParen: Parsley[Unit] = apply(')', "closing parenthesis")
+    final lazy val closingParen: Parsley[Unit] = apply(')', err.labelSymbolClosingParen)
     /** This parser parses a closing brace `}` as a symbol.
       *
       * @since 4.0.0
       */
-    final lazy val closingBrace: Parsley[Unit] = apply('}', "closing brace")
+    final lazy val closingBrace: Parsley[Unit] = apply('}', err.labelSymbolClosingBrace)
     /** This parser parses a closing square bracket `]` as a symbol.
       *
       * @since 4.0.0
       */
-    final lazy val closingSquare: Parsley[Unit] = apply(']', "closing square bracket")
+    final lazy val closingSquare: Parsley[Unit] = apply(']', err.labelSymbolClosingSquare)
     /** This parser parses a closing square bracket `>` as a symbol.
       *
       * @since 4.0.0
       */
-    final lazy val closingAngle: Parsley[Unit] = apply('>', "closing angle bracket")
+    final lazy val closingAngle: Parsley[Unit] = apply('>', err.labelSymbolClosingAngle)
     // $COVERAGE-ON$
 }

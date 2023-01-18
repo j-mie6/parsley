@@ -7,6 +7,7 @@ import Predef.{ArrowAssoc => _, _}
 
 import parsley.{ParsleyTest, Failure}
 import parsley.token.LexemeImpl._
+import parsley.token.errors.ErrorConfig
 
 import parsley.token.descriptions._
 import parsley.token.predicate._
@@ -16,7 +17,8 @@ import parsley.{TestError, VanillaError, Named}
 import org.scalactic.source.Position
 
 class NamesTests extends ParsleyTest {
-    def makeSymbol(nameDesc: NameDesc, symDesc: SymbolDesc): Names = new LexemeNames(new ConcreteNames(nameDesc, symDesc), spaces)
+    val errConfig = new ErrorConfig
+    def makeSymbol(nameDesc: NameDesc, symDesc: SymbolDesc): Names = new LexemeNames(new ConcreteNames(nameDesc, symDesc, errConfig), spaces)
 
     val plainName = NameDesc.plain.copy(identifierLetter = Basic(_.isLetterOrDigit), identifierStart = Basic(_.isLetter))
     val plainSym = SymbolDesc.plain.copy(hardKeywords = Set("keyword", "HARD"), hardOperators = Set("+", "<", "<="))

@@ -28,16 +28,6 @@ private [parsley] object XCompat {
         def mapValuesInPlaceCompat(f: (K, V) => V): mutable.Map[K, V] = m.transform(f)
     }
 
-    def codePoints(str: String): Iterator[Int] = new Iterator[Int] {
-        var idx = 0
-        def hasNext: Boolean = idx < str.length
-        def next(): Int = {
-            val c = str.codePointAt(idx)
-            idx += Character.charCount(c)
-            c
-        }
-    }
-
     @meta.getter @meta.setter
     class unused(message: String) extends scala.annotation.StaticAnnotation {
         def this() = this("")

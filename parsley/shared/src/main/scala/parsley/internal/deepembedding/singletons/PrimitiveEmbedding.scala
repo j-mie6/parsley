@@ -4,14 +4,15 @@
 package parsley.internal.deepembedding.singletons
 
 import parsley.registers.Reg
+import parsley.token.errors.LabelConfig
 
 import parsley.internal.machine.instructions
 
-private [parsley] final class Satisfy(private [Satisfy] val f: Char => Boolean, val expected: Option[String]) extends Singleton[Char] {
+private [parsley] final class Satisfy(private [Satisfy] val f: Char => Boolean, val expected: LabelConfig) extends Singleton[Char] {
     // $COVERAGE-OFF$
     override val pretty: String = "satisfy(f)"
     // $COVERAGE-ON$
-    override def instr: instructions.Instr = new instructions.Satisfies(f, expected)
+    override def instr: instructions.Instr = instructions.Satisfies(f, expected)
 }
 
 private [parsley] object Line extends Singleton[Int] {
@@ -26,6 +27,13 @@ private [parsley] object Col extends Singleton[Int] {
     // $COVERAGE-ON$
     override val instr: instructions.Instr = instructions.Col
 }
+private [parsley] object Offset extends Singleton[Int] {
+    // $COVERAGE-OFF$
+    override val pretty: String = "offset"
+    // $COVERAGE-ON$
+    override val instr: instructions.Instr = instructions.Offset
+}
+
 // This should really have UsesRegister, however, if it doesn't, this has the nice effect of catching
 // registers that have never been filled in some way!
 private [parsley] final class Get[S](reg: Reg[S]) extends Singleton[S] {

@@ -10,14 +10,15 @@ import parsley.character.string
 import parsley.combinator.eof
 
 import token.{descriptions => desc}
+import token.predicate.implicits.Basic._
 
 class TokeniserTests extends ParsleyTest {
     val scala =
         desc.LexicalDesc(
-            desc.NameDesc(identifierStart = token.predicate._CharSet(('a' to 'z').toSet ++ ('A' to 'Z').toSet + '_'),
-                          identifierLetter = token.predicate._CharSet(('a' to 'z').toSet ++ ('A' to 'Z').toSet ++ ('0' to '9').toSet + '_'),
-                          operatorStart = token.predicate._CharSet('+', '-', ':', '/', '*', '='),
-                          operatorLetter = token.predicate._CharSet('+', '-', '/', '*')),
+            desc.NameDesc(identifierStart = ('a' to 'z').toSet ++ ('A' to 'Z').toSet + '_',
+                          identifierLetter = ('a' to 'z').toSet ++ ('A' to 'Z').toSet ++ ('0' to '9').toSet + '_',
+                          operatorStart = Set('+', '-', ':', '/', '*', '='),
+                          operatorLetter = Set('+', '-', '/', '*')),
             desc.SymbolDesc(hardKeywords = Set("if", "else", "for", "yield", "while", "def", "class",
                                                "trait", "abstract", "override", "val", "var", "lazy"),
                             hardOperators = Set(":", "=", "::", ":="),

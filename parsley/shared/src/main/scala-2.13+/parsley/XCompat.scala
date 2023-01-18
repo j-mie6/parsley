@@ -19,7 +19,5 @@ private [parsley] object XCompat {
         def mapValuesInPlaceCompat(f: (K, V) => V): mutable.Map[K, V] = m.mapValuesInPlace(f)
     }
 
-    def codePoints(str: String): Iterator[Int] = str.codePointStepper.iterator
-
     type unused = scala.annotation.unused
 }
