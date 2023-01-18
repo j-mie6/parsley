@@ -15,7 +15,7 @@ val isInPublish = Option(System.getenv("GITHUB_JOB")).contains("publish")
 val releaseFlags = Seq("-Xdisable-assertions", "-opt:l:method,inline", "-opt-inline-from", "parsley.**", "-opt-warnings:at-inline-failed")
 
 inThisBuild(List(
-  tlBaseVersion := "4.1",
+  tlBaseVersion := "4.2",
   organization := "com.github.j-mie6",
   startYear := Some(2018),
   homepage := Some(url("https://github.com/j-mie6/parsley")),
@@ -45,7 +45,7 @@ inThisBuild(List(
     "3"    -> "3.1.2",
   ),
   // CI Configuration
-  tlCiReleaseBranches := Seq("master"),
+  tlCiReleaseBranches := Seq("master", "staging/4.2"),
   tlSonatypeUseLegacyHost := false,
   githubWorkflowJavaVersions := Seq(Java8, JavaLTS, JavaLatest),
   // We need this because our release uses different flags
