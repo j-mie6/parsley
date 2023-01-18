@@ -620,14 +620,14 @@ class ErrorConfig {
       * @group text
       */
     def labelStringEscapeGap: LabelConfig = Label("string gap")
-    /** TODO: Document
+    /** How should the end of a string gap (the closing slash) be referred to within error messages.
       * @since 4.1.0
       * @note defaults to label of "end of string gap"
       * @group text
       */
     def labelStringEscapeGapEnd: LabelConfig = Label("end of string gap")
 
-    /** TODO: Document
+    /** When a non-BMP character is found in a BMP-only character literal, specifies how this should be reported.
       * @since 4.1.0
       * @note defaults to a filter generating the reason "non-BMP character"
       * @group text
@@ -635,7 +635,7 @@ class ErrorConfig {
     def filterCharNonBasicMultilingualPlane: VanillaFilterConfig[Int] = new Because[Int](fullAmend = false) {
         def reason(@unused x: Int) = "non-BMP character"
     }
-    /** TODO: Document
+    /** When a non-ASCII character is found in a ASCII-only character literal, specifies how this should be reported.
       * @since 4.1.0
       * @note defaults to a filter generating the reason "non-ascii character"
       * @group text
@@ -643,7 +643,7 @@ class ErrorConfig {
     def filterCharNonAscii: VanillaFilterConfig[Int] = new Because[Int](fullAmend = false) {
         def reason(@unused x: Int) = "non-ascii character"
     }
-    /** TODO: Document
+    /** When a non-Latin1 character is found in a Latin1-only character literal, specifies how this should be reported.
       * @since 4.1.0
       * @note defaults to a filter generating the reason "non-latin1 character"
       * @group text
@@ -652,7 +652,7 @@ class ErrorConfig {
         def reason(@unused x: Int) = "non-latin1 character"
     }
 
-    /** TODO: Document
+    /** When a non-ASCII character is found in a ASCII-only string literal, specifies how this should be reported.
       * @since 4.1.0
       * @note defaults to a filter generating a ''specialised'' message of "non-ascii characters in string literal, this is not allowed"
       * @group text
@@ -661,7 +661,7 @@ class ErrorConfig {
         def message(@unused s: StringBuilder) = Seq("non-ascii characters in string literal, this is not allowed")
     }
 
-    /** TODO: Document
+    /** When a non-Latin1 character is found in a Latin1-only string literal, specifies how this should be reported.
       * @since 4.1.0
       * @note defaults to a filter generating a ''specialised'' message of "non-latin1 characters in string literal, this is not allowed"
       * @group text
@@ -670,18 +670,23 @@ class ErrorConfig {
         def message(@unused s: StringBuilder) = Seq("non-latin1 characters in string literal, this is not allowed")
     }
 
-    /** TODO: Document
+    /** When a numeric escape sequence requires a specific number of digits but this was not successfully parsed, this describes how to
+      * report that error given the number of successfully parsed digits up this point.
       * @since 4.1.0
-      * @note defaults to TODO:
+      * @param radix the radix used for this numeric escape sequence
+      * @param needed the possible numbers of digits required
+      * @note defaults to a ''specialised'' message describing how many digits are required but how many were present.
       * @group text
       */
     def filterEscapeCharRequiresExactDigits(@unused radix: Int, needed: Seq[Int]): SpecialisedFilterConfig[Int] = new SpecialisedMessage[Int](fullAmend = false) {
         def message(got: Int) = Seq(s"numeric escape requires ${parsley.errors.helpers.combineAsList(needed.toList.map(_.toString))} digits, but only got $got")
     }
 
-    /** TODO: Document
+    /** When a numeric escape sequence is not legal, this describes how to report that error, given the original illegal character.
       * @since 4.1.0
-      * @note defaults to TODO:
+      * @param maxEscape the largest legal escape character
+      * @param radix the radix used for this numeric escape sequence
+      * @note defaults to a ''specialised'' message stating if the character is larger than the given maximum, or just an illegal codepoint otherwise.
       * @group text
       */
     def filterEscapeCharNumericSequenceIllegal(maxEscape: Int, radix: Int): SpecialisedFilterConfig[BigInt] = new SpecialisedMessage[BigInt](fullAmend = false) {
