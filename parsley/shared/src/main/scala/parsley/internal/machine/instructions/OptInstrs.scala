@@ -5,7 +5,7 @@ package parsley.internal.machine.instructions
 
 import scala.collection.mutable
 
-import parsley.XCompat._ //mapValuesInPlace
+import parsley.XCompat._
 import parsley.token.errors.LabelConfig
 
 import parsley.internal.errors.ExpectItem

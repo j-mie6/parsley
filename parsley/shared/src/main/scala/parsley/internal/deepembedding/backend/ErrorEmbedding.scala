@@ -3,7 +3,7 @@
  */
 package parsley.internal.deepembedding.backend
 
-import parsley.token.errors.{Label, Hidden}
+import parsley.token.errors.{Hidden, Label}
 
 import parsley.internal.deepembedding.singletons._
 import parsley.internal.machine.instructions
