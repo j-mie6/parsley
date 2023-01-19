@@ -224,7 +224,6 @@ private [token] abstract class Lexeme {
   *                  the lexer.
   * @since 4.0.0
   */
-@deprecatedInheritance("this class will be made final in 5.0.0", since = "4.1.0")
 class Lexer(desc: descriptions.LexicalDesc, errConfig: errors.ErrorConfig) {
     /** Builds a new lexer with a given description for the lexical structure of the language.
       *
