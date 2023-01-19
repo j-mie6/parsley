@@ -7,9 +7,10 @@ import parsley.implicits.zipped.Zipped3
 
 import parsley.internal.deepembedding.singletons
 
-// TODO: In future, the contents of this object will be made public, and the old versions
-//       will be deprecated for removal in 5.0.0
-private [parsley] object position {
+/** TODO: Document
+  *
+  */
+object position {
     /** This parser returns the current line number of the input without having any other effect.
       *
       * When this combinator is ran, no input is required, nor consumed, and
@@ -75,12 +76,10 @@ private [parsley] object position {
 
     // this is subject to change at the slightest notice, do NOT expose
     private [parsley] val internalOffset: Parsley[Int] = new Parsley(singletons.Offset)
-    // IMPORTANT: this is NOT to be released until a Int/Long stance has been taken
-    //            for offset in the deepest internals
-    // We could use `BigInt` as an arbiter here, and just declare it's expensive?
-    private [parsley] val offset: Parsley[BigInt] = internalOffset.map(BigInt(_))
+    /** TODO: Document */
+    val offset: Parsley[Int] = internalOffset
 
-    def spanWith[A, S](end: Parsley[S])(p: Parsley[A]): Parsley[(S, A, S)] = (end, p, end).zipped
+    private [parsley] def spanWith[A, S](end: Parsley[S])(p: Parsley[A]): Parsley[(S, A, S)] = (end, p, end).zipped
     // this is subject to change at the slightest notice, do NOT expose
     private [parsley] def internalOffsetSpan[A](p: Parsley[A]): Parsley[(Int, A, Int)] = spanWith(internalOffset)(p)
 }
