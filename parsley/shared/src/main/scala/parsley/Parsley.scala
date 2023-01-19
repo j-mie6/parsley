@@ -944,13 +944,6 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
   *     useful; in particular, `pure` and `unit` can be put to good use in injecting results into a parser
   *     without needing to consume anything, or mapping another parser.
   *
-  * @groupprio pos 10
-  * @groupname pos Position-Tracking Parsers
-  * @groupdesc pos
-  *     These parsers provide a way to extract position information during a parse. This can be important
-  *     for when the final result of the parser needs to encode position information for later consumption:
-  *     this is particularly useful for abstract syntax trees.
-  *
   * @groupprio monad 100
   * @groupname monad Expensive Sequencing Combinators
   * @groupdesc monad
@@ -1218,66 +1211,26 @@ object Parsley {
       * @group basic
       */
     val unit: Parsley[Unit] = pure(())
+    // $COVERAGE-OFF$
     /** This parser returns the current line number of the input without having any other effect.
       *
-      * When this combinator is ran, no input is required, nor consumed, and
-      * the current line number will always be successfully returned. It has no other
-      * effect on the state of the parser.
-      *
-      * @example {{{
-      * scala> import parsley.Parsley.line, parsley.character.char
-      * scala> line.parse("")
-      * val res0 = Success(1)
-      * scala> (char('a') *> line).parse("a")
-      * val res0 = Success(1)
-      * scala> (char('\n') *> line).parse("\n")
-      * val res0 = Success(2)
-      * }}}
-      *
-      * @return a parser that returns the line number the parser is currently at.
-      * @group pos
+      * @deprecated Moved to [[position.line `position.line`]], due for removal in 5.0.0
       */
+    @deprecated("Position parsing functionality was moved to `parsley.position`; use `position.line` instead as this will be removed in 5.0.0", "4.2.0")
     def line: Parsley[Int] = position.line
     /** This parser returns the current column number of the input without having any other effect.
       *
-      * When this combinator is ran, no input is required, nor consumed, and
-      * the current column number will always be successfully returned. It has no other
-      * effect on the state of the parser.
-      *
-      * @example {{{
-      * scala> import parsley.Parsley.col, parsley.character.char
-      * scala> col.parse("")
-      * val res0 = Success(1)
-      * scala> (char('a') *> col).parse("a")
-      * val res0 = Success(2)
-      * scala> (char('\n') *> col).parse("\n")
-      * val res0 = Success(1)
-      * }}}
-      *
-      * @return a parser that returns the column number the parser is currently at.
-      * @note in the presence of wide unicode characters, the value returned may be inaccurate.
-      * @group pos
+      * @note in the presence of wide unicode characters, the column value returned may be inaccurate.
+      * @deprecated Moved to [[position.col `position.col`]], due for removal in 5.0.0
       */
+    @deprecated("Position parsing functionality was moved to `parsley.position`; use `position.line` instead as this will be removed in 5.0.0", "4.2.0")
     def col: Parsley[Int] = position.col
     /** This parser returns the current line and column numbers of the input without having any other effect.
       *
-      * When this combinator is ran, no input is required, nor consumed, and
-      * the current line and column number will always be successfully returned. It has no other
-      * effect on the state of the parser.
-      *
-      * @example {{{
-      * scala> import parsley.Parsley.pos, parsley.character.char
-      * scala> pos.parse("")
-      * val res0 = Success((1, 1))
-      * scala> (char('a') *> pos).parse("a")
-      * val res0 = Success((1, 2))
-      * scala> (char('\n') *> pos).parse("\n")
-      * val res0 = Success((2, 1))
-      * }}}
-      *
-      * @return a parser that returns the line and column number the parser is currently at.
       * @note in the presence of wide unicode characters, the column value returned may be inaccurate.
-      * @group pos
+      * @deprecated Moved to [[position.pos `position.pos`]], due for removal in 5.0.0
       */
+    @deprecated("Position parsing functionality was moved to `parsley.position`; use `position.line` instead as this will be removed in 5.0.0", "4.2.0")
     def pos: Parsley[(Int, Int)] = position.pos
+    // $COVERAGE-ON$
 }
