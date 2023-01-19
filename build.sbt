@@ -9,6 +9,8 @@ val Java8 = JavaSpec.temurin("8")
 val JavaLTS = JavaSpec.temurin("11")
 val JavaLatest = JavaSpec.temurin("17")
 
+val mainBranch = "master"
+
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 val isInPublish = Option(System.getenv("GITHUB_JOB")).contains("publish")
@@ -45,7 +47,7 @@ inThisBuild(List(
     "3"    -> "3.1.2",
   ),
   // CI Configuration
-  tlCiReleaseBranches := Seq("master", "staging/4.2"),
+  tlCiReleaseBranches := Seq(mainBranch, "staging/4.2"),
   tlSonatypeUseLegacyHost := false,
   githubWorkflowJavaVersions := Seq(Java8, JavaLTS, JavaLatest),
   // We need this because our release uses different flags
@@ -91,6 +93,7 @@ def testCoverageJob(cacheSteps: List[WorkflowStep]) = WorkflowJob(
     id = "coverage",
     name = "Run Test Coverage and Upload",
     scalas = List(Scala213),
+    cond = Some(s"github.ref == 'refs/heads/$mainBranch'"),
     steps =
         WorkflowStep.Checkout ::
         WorkflowStep.SetupJava(List(JavaLTS)) :::
