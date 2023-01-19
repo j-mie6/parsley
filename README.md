@@ -157,7 +157,7 @@ _An exception to this policy is made for any version `3.x.y`, which reaches EoL 
 | `4.0.0` | November 30th 2022 | EoL reached                 |
 | `4.1.0` | January 18th 2023  | Enjoying indefinite support |
 
-## Bug Reports [![Percentage of issues still open](https://isitmaintained.com/badge/open/j-mie6/Parsley.svg)](https://isitmaintained.com/project/j-mie6/Parsley "Percentage of issues still open") [![Maintainability](https://img.shields.io/codeclimate/maintainability/j-mie6/parsley)](https://codeclimate.com/github/j-mie6/Parsley) [![Test Coverage](https://img.shields.io/codeclimate/coverage-letter/j-mie6/parsley)](https://codeclimate.com/github/j-mie6/Parsley)
+## Bug Reports [![Percentage of issues still open](https://isitmaintained.com/badge/open/j-mie6/Parsley.svg)](https://isitmaintained.com/project/j-mie6/Parsley "Percentage of issues still open") [![Maintainability](https://img.shields.io/codeclimate/maintainability/j-mie6/parsley)](https://codeclimate.com/github/j-mie6/parsley) [![Test Coverage](https://img.shields.io/codeclimate/coverage-letter/j-mie6/parsley)](https://codeclimate.com/github/j-mie6/parsley)
 
 If you encounter a bug when using Parsley, try and minimise the example of the parser (and the input) that triggers the bug.
 If possible, make a self contained example: this will help to identify the issue without too much issue.
