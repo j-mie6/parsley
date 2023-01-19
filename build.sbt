@@ -93,7 +93,7 @@ def testCoverageJob(cacheSteps: List[WorkflowStep]) = WorkflowJob(
     id = "coverage",
     name = "Run Test Coverage and Upload",
     scalas = List(Scala213),
-    cond = Some(s"github.ref == 'refs/heads/$mainBranch' || (github.event_name == 'pull_request' && github.base_ref == 'refs/heads/$mainBranch')"),
+    cond = Some(s"github.ref == 'refs/heads/$mainBranch' || (github.event_name == 'pull_request' && github.base_ref == '$mainBranch')"),
     steps =
         WorkflowStep.Checkout ::
         WorkflowStep.SetupJava(List(JavaLTS)) :::
