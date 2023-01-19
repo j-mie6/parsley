@@ -11,7 +11,7 @@ import parsley.character.digit
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.expr.{chain, infix, mixed}
 import parsley.expr.{precedence, Ops, GOps, SOps, InfixL, InfixR, Prefix, Postfix, InfixN, Atoms}
-import parsley.Parsley._
+import parsley.position._
 import parsley.genericbridges._
 
 class ExpressionParserTests extends ParsleyTest {

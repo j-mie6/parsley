@@ -12,6 +12,7 @@ import parsley.XCompat.unused
 import parsley.character.item
 import parsley.combinator.{choice, eof, option, sequence, someUntil}
 import parsley.errors.{ErrorBuilder, Token, TokenSpan}
+import parsley.position
 
 // Turn coverage off, because the tests have their own error builder
 // TODO: We might want to test this on its own though
@@ -58,7 +59,7 @@ trait LexToken { this: ErrorBuilder[_] =>
 
     // this parser cannot fail
     private lazy val makeParser: Parsley[Either[String, List[(String, (Int, Int))]]] = {
-        val toks = tokens.map(p => attempt(p <~> Parsley.pos))
+        val toks = tokens.map(p => attempt(p <~> position.pos))
         // TODO: I think this can be improved to delay raw token till after we have established
         //       no valid tokens: this would be slightly more efficient.
         val rawTok = lookAhead(someUntil(item, eof <|> choice(toks: _*))).map(_.mkString)

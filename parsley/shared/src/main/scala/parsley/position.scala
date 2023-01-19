@@ -8,7 +8,9 @@ import parsley.implicits.zipped.Zipped3
 import parsley.internal.deepembedding.singletons
 
 /** TODO: Document
-  *
+  * These parsers provide a way to extract position information during a parse. This can be important
+  * for when the final result of the parser needs to encode position information for later consumption:
+  * this is particularly useful for abstract syntax trees.
   */
 object position {
     /** This parser returns the current line number of the input without having any other effect.
