@@ -5,7 +5,7 @@ package parsley.token.errors
 
 import parsley.Parsley, Parsley.{pure, empty}
 import parsley.character.satisfyUtf16
-import parsley.errors.combinator, combinator.ErrorMethods
+import parsley.errors.{combinator, patterns}, combinator.ErrorMethods, patterns.VerifiedErrors
 import parsley.position
 
 /** This class is used to configure what error is generated when `.` is parsed as a real number.
