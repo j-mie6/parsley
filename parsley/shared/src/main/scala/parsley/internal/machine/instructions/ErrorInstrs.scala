@@ -162,6 +162,7 @@ private [internal] final class Unexpected(msg: String, width: Int) extends Instr
     // $COVERAGE-ON$
 }
 
+// $COVERAGE-OFF$
 private [internal] final class FastFail(msggen: Any => String) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
@@ -193,3 +194,4 @@ private [internal] final class FastUnexpected[A](_namegen: A=>String) extends In
     override def toString: String = "FastUnexpected(?)"
     // $COVERAGE-ON$
 }
+// $COVERAGE-ON$

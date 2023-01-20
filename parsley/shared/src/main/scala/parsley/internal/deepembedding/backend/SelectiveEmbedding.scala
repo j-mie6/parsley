@@ -74,6 +74,7 @@ private [deepembedding] final class If[A](val b: StrictParsley[Boolean], val p: 
     // $COVERAGE-ON$
 }
 
+// $COVERAGE-OFF$
 // TODO: Code generation for FastZero and FilterLike is shared
 private [backend] sealed abstract class FastZero[A](fail: A => StrictParsley[Nothing], instr: instructions.Instr) extends Unary[A, Nothing] {
 
@@ -102,6 +103,7 @@ private [deepembedding] final class FastUnexpected[A](val p: StrictParsley[A], m
     final override def pretty(p: String): String = s"$p.unexpected(?)"
     // $COVERAGE-ON$
 }
+// $COVERAGE-ON$
 
 private [backend] sealed abstract class FilterLike[A](fail: A => StrictParsley[Nothing], instr: instructions.Instr, pred: A => Boolean)
     extends Unary[A, A] {
