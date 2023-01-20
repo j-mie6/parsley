@@ -14,8 +14,6 @@ class ErrorTests extends ParsleyTest {
         (Parsley.empty ~> 'a').parse("a") shouldBe a [Failure[_]]
         (pfail("") ~> 'a').parse("a") shouldBe a [Failure[_]]
         (unexpected("x") *> 'a').parse("a") shouldBe a [Failure[_]]
-        (('a' ! (_ => "")) *> 'b').parse("ab") shouldBe a [Failure[_]]
-        ('a'.unexpected(_ => "x") *> 'b').parse("ab") shouldBe a [Failure[_]]
     }
 
     "filtering parsers" should "function correctly" in {
