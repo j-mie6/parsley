@@ -457,7 +457,7 @@ object combinator {
         }
         private [parsley] def fail(msg: String, msgs: String*): Parsley[Nothing] = attempt(this.hide).fail(_ => msg +: msgs)
 
-        // TODO: deprecate, and stress there is no _direct_ equivalent available moving forward
+        // $COVERAGE-OFF$
         /** This combinator parses this parser and then fails, using the result of this parser to customise the error message.
           *
           * Similar to `fail`, but first parses this parser: if it succeeded, then its result `x` is used to form the error
@@ -468,11 +468,27 @@ object combinator {
           * @return a parser that always fails, with the given generator used to produce the error message if this parser succeeded.
           * @note $partialAmend
           * @group fail
+          * @deprecated this combinator has not proven to be particularly useful, and will be replaced by a more appropriate,
+          *             not exactly the same, `fail` combinator.
           */
+        @deprecated("This combinator will be removed in 5.0.0, without direct replacement", "4.2.0")
         def !(msggen: A => String): Parsley[Nothing] = new Parsley(new frontend.FastFail(con(p).internal, msggen))
 
         // TODO: I think this can probably be deprecated for future removal soon...
         // It will be replaced by one that generates reasons too!
+        /** This combinator parses this parser and then fails, using the result of this parser to customise the unexpected component
+          * of the error message.
+          *
+          * @group fail
+          * @see [[unexpectedLegacy `unexpectedLegacy`]]
+          * @deprecated this combinator has not proven to be particularly useful in its current state, and will be replaced by a more
+          *             appropriate, not exactly the same, `unexpected` combinator in 4.4.0. This will be removed from the source API in
+          *             4.3.0 to reduce risk of conflation with the new combinator, and legitimate uses of this combinator should switch
+          *             to `unexpectedLegacy` instead, which will be removed in 5.0.0.
+          */
+        @deprecated("This combinator will be binary removed in 5.0.0 and source removed in 4.3.0, use unexpectedLegacy until 5.0.0", "4.2.0")
+        def unexpected(msggen: A => String): Parsley[Nothing] = new Parsley(new frontend.FastUnexpected(con(p).internal, msggen))
+
         /** This combinator parses this parser and then fails, using the result of this parser to customise the unexpected component
           * of the error message.
           *
@@ -484,8 +500,12 @@ object combinator {
           * @return a parser that always fails, with the given generator used to produce an unexpected message if this parser succeeded.
           * @note $partialAmend
           * @group fail
+          * @deprecated this combinator has not proven to be particularly useful and will be removed in 5.0.0.
+          * @since 4.2.0
           */
-        def unexpected(msggen: A => String): Parsley[Nothing] = new Parsley(new frontend.FastUnexpected(con(p).internal, msggen))
+        @deprecated("This combinator will be removed in 5.0.0", "4.2.0")
+        def unexpectedLegacy(msggen: A => String): Parsley[Nothing] = new Parsley(new frontend.FastUnexpected(con(p).internal, msggen))
+        // $COVERAGE-ON$
 
         // TODO: Documentation and testing ahead of future release
         // like notFollowedBy, but does consume input on "success" and always fails (FIXME: this needs intrinsic support to get right)
