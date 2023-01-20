@@ -472,7 +472,10 @@ object combinator {
           *             not exactly the same, `fail` combinator.
           */
         @deprecated("This combinator will be removed in 5.0.0, without direct replacement", "4.2.0")
-        def !(msggen: A => String): Parsley[Nothing] = new Parsley(new frontend.FastFail(con(p).internal, msggen))
+        def !(msggen: A => String): Parsley[Nothing] = //new Parsley(new frontend.FastFail(con(p).internal, msggen))
+            parsley.position.internalOffsetSpan(p).flatMap { case (os, x, oe) =>
+                combinator.fail(oe - os, msggen(x))
+            }
 
         // TODO: I think this can probably be deprecated for future removal soon...
         // It will be replaced by one that generates reasons too!
@@ -487,7 +490,7 @@ object combinator {
           *             to `unexpectedLegacy` instead, which will be removed in 5.0.0.
           */
         @deprecated("This combinator will be binary removed in 5.0.0 and source removed in 4.3.0, use unexpectedLegacy until 5.0.0", "4.2.0")
-        def unexpected(msggen: A => String): Parsley[Nothing] = new Parsley(new frontend.FastUnexpected(con(p).internal, msggen))
+        def unexpected(msggen: A => String): Parsley[Nothing] = this.unexpectedLegacy(msggen)
 
         /** This combinator parses this parser and then fails, using the result of this parser to customise the unexpected component
           * of the error message.
@@ -504,7 +507,10 @@ object combinator {
           * @since 4.2.0
           */
         @deprecated("This combinator will be removed in 5.0.0", "4.2.0")
-        def unexpectedLegacy(msggen: A => String): Parsley[Nothing] = new Parsley(new frontend.FastUnexpected(con(p).internal, msggen))
+        def unexpectedLegacy(msggen: A => String): Parsley[Nothing] =
+            parsley.position.internalOffsetSpan(p).flatMap { case (os, x, oe) =>
+                combinator.unexpected(oe - os, msggen(x))
+            }
         // $COVERAGE-ON$
 
         // TODO: Documentation and testing ahead of future release

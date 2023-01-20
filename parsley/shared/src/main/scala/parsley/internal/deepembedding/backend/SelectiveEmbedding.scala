@@ -74,37 +74,6 @@ private [deepembedding] final class If[A](val b: StrictParsley[Boolean], val p: 
     // $COVERAGE-ON$
 }
 
-// $COVERAGE-OFF$
-// TODO: Code generation for FastZero and FilterLike is shared
-private [backend] sealed abstract class FastZero[A](fail: A => StrictParsley[Nothing], instr: instructions.Instr) extends Unary[A, Nothing] {
-
-    final override def optimise: StrictParsley[Nothing] = p match {
-        case Pure(x) => fail(x)
-        case z: MZero => z
-        case _ => this
-    }
-    final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
-        val handler = state.getLabel(instructions.PopStateAndFail)
-        instrs += new instructions.PushHandlerAndState(handler, saveHints = false, hideHints = false)
-        suspend(p.codeGen[Cont, R]) |> {
-            instrs += instr
-        }
-    }
-}
-private [deepembedding] final class FastFail[A](val p: StrictParsley[A], msggen: A => String)
-    extends FastZero[A](x => new Fail(0, msggen(x)), instructions.FastFail(msggen)) with MZero {
-    // $COVERAGE-OFF$
-    final override def pretty(p: String): String = s"$p.fail(?)"
-    // $COVERAGE-ON$
-}
-private [deepembedding] final class FastUnexpected[A](val p: StrictParsley[A], msggen: A => String)
-    extends FastZero[A](x => new Unexpected(msggen(x), 0), new instructions.FastUnexpected(msggen)) with MZero {
-    // $COVERAGE-OFF$
-    final override def pretty(p: String): String = s"$p.unexpected(?)"
-    // $COVERAGE-ON$
-}
-// $COVERAGE-ON$
-
 private [backend] sealed abstract class FilterLike[A](fail: A => StrictParsley[Nothing], instr: instructions.Instr, pred: A => Boolean)
     extends Unary[A, A] {
     final override def optimise: StrictParsley[A] = p match {

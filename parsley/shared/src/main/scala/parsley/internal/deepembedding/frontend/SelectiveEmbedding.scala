@@ -14,15 +14,6 @@ private [parsley] final class If[A](b: LazyParsley[Boolean], p: =>LazyParsley[A]
     override def make(b: StrictParsley[Boolean], p: StrictParsley[A], q: StrictParsley[A]): StrictParsley[A] = new backend.If(b, p, q)
 }
 
-// $COVERAGE-OFF$
-private [parsley] final class FastFail[A](p: LazyParsley[A], msggen: A => String) extends Unary[A, Nothing](p) {
-    override def make(p: StrictParsley[A]): StrictParsley[Nothing] = new backend.FastFail(p, msggen)
-}
-private [parsley] final class FastUnexpected[A](p: LazyParsley[A], msggen: A => String) extends Unary[A, Nothing](p) {
-    override def make(p: StrictParsley[A]): StrictParsley[Nothing] = new backend.FastUnexpected(p, msggen)
-}
-// $COVERAGE-ON$
-
 private [parsley] final class Filter[A](p: LazyParsley[A], pred: A => Boolean) extends Unary[A, A](p) {
     override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.Filter(p, pred)
 }
