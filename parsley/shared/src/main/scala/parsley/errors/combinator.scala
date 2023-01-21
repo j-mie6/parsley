@@ -458,10 +458,11 @@ object combinator {
           *             not exactly the same, `verifiedFail` combinator.
           */
         @deprecated("This combinator will be removed in 5.0.0, without direct replacement", "4.2.0")
-        def !(msggen: A => String): Parsley[Nothing] = //new Parsley(new frontend.FastFail(con(p).internal, msggen))
-            parsley.position.internalOffsetSpan(con(p)).flatMap { case (os, x, oe) =>
+        def !(msggen: A => String): Parsley[Nothing] = partialAmendThenDislodge {
+            parsley.position.internalOffsetSpan(entrench(con(p))).flatMap { case (os, x, oe) =>
                 combinator.fail(oe - os, msggen(x))
             }
+        }
 
         /** This combinator parses this parser and then fails, using the result of this parser to customise the unexpected component
           * of the error message.
@@ -479,10 +480,11 @@ object combinator {
           * @since 4.2.0
           */
         @deprecated("This combinator will be removed in 5.0.0, without direct replacement", "4.2.0")
-        def unexpected(msggen: A => String): Parsley[Nothing] =
-            parsley.position.internalOffsetSpan(con(p)).flatMap { case (os, x, oe) =>
+        def unexpected(msggen: A => String): Parsley[Nothing] = partialAmendThenDislodge {
+            parsley.position.internalOffsetSpan(entrench(con(p))).flatMap { case (os, x, oe) =>
                 combinator.unexpected(oe - os, msggen(x))
             }
+        }
         // $COVERAGE-ON$
     }
 }
