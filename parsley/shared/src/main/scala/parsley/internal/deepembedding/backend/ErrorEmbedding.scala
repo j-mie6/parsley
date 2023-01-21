@@ -7,6 +7,7 @@ import parsley.token.errors.{Hidden, Label}
 
 import parsley.internal.deepembedding.singletons._
 import parsley.internal.machine.instructions
+
 private [deepembedding] final class ErrorLabel[A](val p: StrictParsley[A], private [ErrorLabel] val label: String) extends ScopedUnary[A, A] {
     // This needs to save the hints because error label will relabel the first hint, which because the list is ordered would be the hints that came _before_
     // entering labels context. Instead label should relabel the first hint generated _within_ its context, then merge with the originals after
@@ -74,6 +75,18 @@ private [deepembedding] final class ErrorLexical[A](val p: StrictParsley[A]) ext
 
     // $COVERAGE-OFF$
     final override def pretty(p: String): String = s"$p.markAsToken"
+    // $COVERAGE-ON$
+}
+
+private [deepembedding] final class VerifiedError[A](val p: StrictParsley[A], msggen: Either[A => scala.Seq[String], Option[A => String]])
+    extends ScopedUnary[A, Nothing] {
+    override def setup(label: Int): instructions.Instr = new instructions.PushHandlerAndState(label, saveHints = true, hideHints = true)
+    override def instr: instructions.Instr = instructions.MakeVerifiedError(msggen)
+    override def instrNeedsLabel: Boolean = false
+    override def handlerLabel(state: CodeGenState): Int = state.getLabel(instructions.NoVerifiedError)
+
+    // $COVERAGE-OFF$
+    final override def pretty(p: String): String = s"verifiedError($p)"
     // $COVERAGE-ON$
 }
 

@@ -361,7 +361,7 @@ class ErrorConfig {
       * @note defaults to a ''specialised'' error describing what the min and max bounds are.
       * @group numeric
       */
-    def filterIntegerOutOfBounds(min: BigInt, max: BigInt, nativeRadix: Int): FilterConfig[BigInt] = new SpecialisedMessage[BigInt](fullAmend = false) {
+    def filterIntegerOutOfBounds(min: BigInt, max: BigInt, nativeRadix: Int): FilterConfig[BigInt] = new SpecialisedMessage[BigInt] {
         def message(n: BigInt) = Seq(s"literal is not within the range ${min.toString(nativeRadix)} to ${max.toString(nativeRadix)}")
     }
 
@@ -371,7 +371,7 @@ class ErrorConfig {
       * @note defaults to a ''specialised'' error stating that the literal is not exactly representable.
       * @group numeric
       */
-    def filterRealNotExact(name: String): FilterConfig[BigDecimal] = new SpecialisedMessage[BigDecimal](fullAmend = false) {
+    def filterRealNotExact(name: String): FilterConfig[BigDecimal] = new SpecialisedMessage[BigDecimal] {
         def message(n: BigDecimal) = Seq(s"literal cannot be represented exactly as an $name")
     }
 
@@ -384,7 +384,7 @@ class ErrorConfig {
       * @group numeric
       */
     def filterRealOutOfBounds(name: String, min: BigDecimal, max: BigDecimal): FilterConfig[BigDecimal] =
-        new SpecialisedMessage[BigDecimal](fullAmend = false) {
+        new SpecialisedMessage[BigDecimal] {
             def message(n: BigDecimal) = Seq(s"literal is not within the range $min to $max and is not an $name")
         }
 
@@ -453,7 +453,7 @@ class ErrorConfig {
       * @note defaults to unexpected "identifier v"
       * @group names
       */
-    def filterNameIllFormedIdentifier: FilterConfig[String] = new Unexpected[String](fullAmend = false) {
+    def filterNameIllFormedIdentifier: FilterConfig[String] = new Unexpected[String] {
         def unexpected(v: String) = s"identifer $v"
     }
     /** When parsing operators that are required to have specific start/end characters, how bad operators should be reported.
@@ -461,7 +461,7 @@ class ErrorConfig {
       * @note defaults to unexpected "operator v"
       * @group names
       */
-    def filterNameIllFormedOperator: FilterConfig[String] = new Unexpected[String](fullAmend = false) {
+    def filterNameIllFormedOperator: FilterConfig[String] = new Unexpected[String] {
         def unexpected(v: String) = s"operator $v"
     }
 
@@ -632,7 +632,7 @@ class ErrorConfig {
       * @note defaults to a filter generating the reason "non-BMP character"
       * @group text
       */
-    def filterCharNonBasicMultilingualPlane: VanillaFilterConfig[Int] = new Because[Int](fullAmend = false) {
+    def filterCharNonBasicMultilingualPlane: VanillaFilterConfig[Int] = new Because[Int] {
         def reason(@unused x: Int) = "non-BMP character"
     }
     /** When a non-ASCII character is found in a ASCII-only character literal, specifies how this should be reported.
@@ -640,7 +640,7 @@ class ErrorConfig {
       * @note defaults to a filter generating the reason "non-ascii character"
       * @group text
       */
-    def filterCharNonAscii: VanillaFilterConfig[Int] = new Because[Int](fullAmend = false) {
+    def filterCharNonAscii: VanillaFilterConfig[Int] = new Because[Int] {
         def reason(@unused x: Int) = "non-ascii character"
     }
     /** When a non-Latin1 character is found in a Latin1-only character literal, specifies how this should be reported.
@@ -648,7 +648,7 @@ class ErrorConfig {
       * @note defaults to a filter generating the reason "non-latin1 character"
       * @group text
       */
-    def filterCharNonLatin1: VanillaFilterConfig[Int] = new Because[Int](fullAmend = false) {
+    def filterCharNonLatin1: VanillaFilterConfig[Int] = new Because[Int] {
         def reason(@unused x: Int) = "non-latin1 character"
     }
 
@@ -657,7 +657,7 @@ class ErrorConfig {
       * @note defaults to a filter generating a ''specialised'' message of "non-ascii characters in string literal, this is not allowed"
       * @group text
       */
-    def filterStringNonAscii: SpecialisedFilterConfig[StringBuilder] = new SpecialisedMessage[StringBuilder](fullAmend = false) {
+    def filterStringNonAscii: SpecialisedFilterConfig[StringBuilder] = new SpecialisedMessage[StringBuilder] {
         def message(@unused s: StringBuilder) = Seq("non-ascii characters in string literal, this is not allowed")
     }
 
@@ -666,7 +666,7 @@ class ErrorConfig {
       * @note defaults to a filter generating a ''specialised'' message of "non-latin1 characters in string literal, this is not allowed"
       * @group text
       */
-    def filterStringNonLatin1: SpecialisedFilterConfig[StringBuilder] = new SpecialisedMessage[StringBuilder](fullAmend = false) {
+    def filterStringNonLatin1: SpecialisedFilterConfig[StringBuilder] = new SpecialisedMessage[StringBuilder] {
         def message(@unused s: StringBuilder) = Seq("non-latin1 characters in string literal, this is not allowed")
     }
 
@@ -679,7 +679,7 @@ class ErrorConfig {
       * @group text
       */
     def filterEscapeCharRequiresExactDigits(@unused radix: Int, needed: Seq[Int]): SpecialisedFilterConfig[Int] =
-        new SpecialisedMessage[Int](fullAmend = false) {
+        new SpecialisedMessage[Int] {
             def message(got: Int) = Seq(
                 s"numeric escape requires ${parsley.errors.helpers.combineAsList(needed.toList.map(_.toString))} digits, but only got $got"
             )
@@ -693,7 +693,7 @@ class ErrorConfig {
       * @group text
       */
     def filterEscapeCharNumericSequenceIllegal(maxEscape: Int, radix: Int): SpecialisedFilterConfig[BigInt] =
-        new SpecialisedMessage[BigInt](fullAmend = false) {
+        new SpecialisedMessage[BigInt] {
             def message(escapeChar: BigInt) = Seq(
                 if (escapeChar > BigInt(maxEscape)) {
                     s"${escapeChar.toString(radix)} is greater than the maximum character value of ${BigInt(maxEscape).toString(radix)}"

@@ -25,3 +25,7 @@ private [parsley] final class ErrorDislodge[A](p: LazyParsley[A]) extends Unary[
 private [parsley] final class ErrorLexical[A](p: LazyParsley[A]) extends Unary[A, A](p) {
     override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.ErrorLexical(p)
 }
+
+private [parsley] final class VerifiedError[A](p: LazyParsley[A], msggen: Either[A => Seq[String], Option[A => String]]) extends Unary[A, Nothing](p) {
+    override def make(p: StrictParsley[A]): StrictParsley[Nothing] = new backend.VerifiedError(p, msggen)
+}
