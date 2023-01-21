@@ -455,28 +455,13 @@ object combinator {
           * @note $partialAmend
           * @group fail
           * @deprecated this combinator has not proven to be particularly useful, and will be replaced by a more appropriate,
-          *             not exactly the same, `fail` combinator.
+          *             not exactly the same, `verifyFail` combinator.
           */
         @deprecated("This combinator will be removed in 5.0.0, without direct replacement", "4.2.0")
         def !(msggen: A => String): Parsley[Nothing] = //new Parsley(new frontend.FastFail(con(p).internal, msggen))
             parsley.position.internalOffsetSpan(con(p)).flatMap { case (os, x, oe) =>
                 combinator.fail(oe - os, msggen(x))
             }
-
-        // TODO: I think this can probably be deprecated for future removal soon...
-        // It will be replaced by one that generates reasons too!
-        /** This combinator parses this parser and then fails, using the result of this parser to customise the unexpected component
-          * of the error message.
-          *
-          * @group fail
-          * @see [[unexpectedLegacy `unexpectedLegacy`]]
-          * @deprecated this combinator has not proven to be particularly useful in its current state, and will be replaced by a more
-          *             appropriate, not exactly the same, `unexpected` combinator in 4.4.0. This will be removed from the source API in
-          *             4.3.0 to reduce risk of conflation with the new combinator, and legitimate uses of this combinator should switch
-          *             to `unexpectedLegacy` instead, which will be removed in 5.0.0.
-          */
-        @deprecated("This combinator will be binary removed in 5.0.0 and source removed in 4.3.0, use unexpectedLegacy until 5.0.0", "4.2.0")
-        def unexpected(msggen: A => String): Parsley[Nothing] = this.unexpectedLegacy(msggen)
 
         /** This combinator parses this parser and then fails, using the result of this parser to customise the unexpected component
           * of the error message.
@@ -489,11 +474,12 @@ object combinator {
           * @return a parser that always fails, with the given generator used to produce an unexpected message if this parser succeeded.
           * @note $partialAmend
           * @group fail
-          * @deprecated this combinator has not proven to be particularly useful and will be removed in 5.0.0.
+          * @deprecated this combinator has not proven to be particularly useful and will be removed in 5.0.0. There is a similar, but not
+          *             exact replacement called `verifyUnexpected`.
           * @since 4.2.0
           */
-        @deprecated("This combinator will be removed in 5.0.0", "4.2.0")
-        def unexpectedLegacy(msggen: A => String): Parsley[Nothing] =
+        @deprecated("This combinator will be removed in 5.0.0, without direct replacement", "4.2.0")
+        def unexpected(msggen: A => String): Parsley[Nothing] =
             parsley.position.internalOffsetSpan(con(p)).flatMap { case (os, x, oe) =>
                 combinator.unexpected(oe - os, msggen(x))
             }
