@@ -144,7 +144,11 @@ object combinator {
     // TODO: Documentation and testing ahead of future release
     private [parsley] def dislodge[A](p: Parsley[A]): Parsley[A] = new Parsley(new frontend.ErrorDislodge(p.internal))
     private [parsley] def amendThenDislodge[A](p: Parsley[A]): Parsley[A] = dislodge(amend(p))
+
+    // These aren't going to be exposed and should be removed in 5.0.0 as well!
+    @deprecated("this combinator is evil, because it renders the error at the wrong place unless it is amended!", "4.2.0")
     private [parsley] def partialAmend[A](p: Parsley[A]): Parsley[A] = new Parsley(new frontend.ErrorAmend(p.internal, partial = true))
+    @deprecated("this combinator is evil, because it renders the error at the wrong place unless it is amended!", "4.2.0")
     private [parsley] def partialAmendThenDislodge[A](p: Parsley[A]): Parsley[A] = dislodge(partialAmend(p))
 
     /** This combinator marks any errors within the given parser as being ''lexical errors''.

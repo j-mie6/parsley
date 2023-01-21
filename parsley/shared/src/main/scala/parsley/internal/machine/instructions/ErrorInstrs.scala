@@ -163,6 +163,7 @@ private [internal] final class Unexpected(msg: String, width: Int) extends Instr
     // $COVERAGE-ON$
 }
 
+// partial amend semantics are BAD: they render the error in the wrong position unless amended anyway
 private [internal] class MakeVerifiedError private (msggen: Either[Any => Seq[String], Option[Any => String]]) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
@@ -175,9 +176,9 @@ private [internal] class MakeVerifiedError private (msggen: Either[Any => Seq[St
         val caretWidth = ctx.offset - state.offset
         val x = ctx.stack.upeek
         val err = msggen match {
-            case Left(f) => new ClassicFancyError(ctx.offset, state.line, state.col, caretWidth, f(x): _*)
-            case Right(Some(f)) => new ClassicExpectedErrorWithReason(ctx.offset, state.line, state.col, None, f(x), caretWidth)
-            case Right(None) => new ClassicExpectedError(ctx.offset, state.line, state.col, None, caretWidth)
+            case Left(f) => new ClassicFancyError(state.offset, state.line, state.col, caretWidth, f(x): _*)
+            case Right(Some(f)) => new ClassicExpectedErrorWithReason(state.offset, state.line, state.col, None, f(x), caretWidth)
+            case Right(None) => new ClassicExpectedError(state.offset, state.line, state.col, None, caretWidth)
         }
         ctx.fail(err)
     }
