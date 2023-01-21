@@ -8,6 +8,7 @@ import scala.Predef.{String => ScalaString, _}
 import parsley.Parsley, Parsley.{attempt, fresh, pure}
 import parsley.character.{char, string}
 import parsley.combinator.{choice, skipManyUntil}
+import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.zipped.Zipped2
 import parsley.token.errors.{ErrorConfig, LabelConfig, LabelWithExplainConfig}
 import parsley.token.predicate.CharPredicate
@@ -40,7 +41,7 @@ private [token] final class ConcreteString(ends: Set[ScalaString], stringChar: S
         openLabel(allowsAllSpace, stringChar.isRaw)(terminal) *>
         // then only one string builder needs allocation
         sbReg.put(fresh(new StringBuilder)) *>
-        skipManyUntil(sbReg.modify(char(terminalInit) #> ((sb: StringBuilder) => sb += terminalInit)) <|> content,
+        skipManyUntil(sbReg.modify(char(terminalInit).hide #> ((sb: StringBuilder) => sb += terminalInit)) <|> content,
                       closeLabel(allowsAllSpace, stringChar.isRaw)(attempt(terminal))) //is the attempt needed here? not sure
     }
 }
