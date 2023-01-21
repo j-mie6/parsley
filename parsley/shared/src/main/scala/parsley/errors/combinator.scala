@@ -455,7 +455,7 @@ object combinator {
           * @note $partialAmend
           * @group fail
           * @deprecated this combinator has not proven to be particularly useful, and will be replaced by a more appropriate,
-          *             not exactly the same, `verifyFail` combinator.
+          *             not exactly the same, `verifiedFail` combinator.
           */
         @deprecated("This combinator will be removed in 5.0.0, without direct replacement", "4.2.0")
         def !(msggen: A => String): Parsley[Nothing] = //new Parsley(new frontend.FastFail(con(p).internal, msggen))
@@ -475,7 +475,7 @@ object combinator {
           * @note $partialAmend
           * @group fail
           * @deprecated this combinator has not proven to be particularly useful and will be removed in 5.0.0. There is a similar, but not
-          *             exact replacement called `verifyUnexpected`.
+          *             exact replacement called `verifiedUnexpected`.
           * @since 4.2.0
           */
         @deprecated("This combinator will be removed in 5.0.0, without direct replacement", "4.2.0")

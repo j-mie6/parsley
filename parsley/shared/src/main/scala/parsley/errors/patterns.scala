@@ -20,21 +20,21 @@ object patterns {
                 combinator.fail(oe - os, msg0, msgs: _*)
             }) *> Parsley.empty
         }
-        private [parsley] def verifyFail(msg: String, msgs: String*): Parsley[Nothing] = this.verifyFail(_ => msg +: msgs)
+        private [parsley] def verifiedFail(msg: String, msgs: String*): Parsley[Nothing] = this.verifyFail(_ => msg +: msgs)
 
 
         // TODO: Documentation and testing ahead of future release
         // like notFollowedBy, but does consume input on "success" and always fails (FIXME: this needs intrinsic support to get right)
         // it should also have the partial amend semantics, because `amendAndDislodge` can restore the other semantics anyway
         // Document that `attempt` may be used when this is an informative but not terminal error.
-        private def verifyUnexpected(reason: Option[A => String]) = partialAmend {
+        private def verifiedUnexpected(reason: Option[A => String]) = partialAmend {
             // holy hell, the hoops I jump through to be able to implement things
             val r = parsley.registers.Reg.make[A]
             val fails = Parsley.notFollowedBy(r.put(con(p).hide))
             reason.fold(fails)(rgen => fails <|> r.get.flatMap(x => Parsley.empty.explain(rgen(x)))) *> Parsley.empty
         }
-        private [parsley] def verifyUnexpected: Parsley[Nothing] = this.verifyUnexpected(None)
-        private [parsley] def verifyUnexpected(reason: String): Parsley[Nothing] = this.verifyUnexpected(_ => reason)
-        private [parsley] def verifyUnexpected(reason: A => String): Parsley[Nothing] = this.verifyUnexpected(Some(reason))
+        private [parsley] def verifiedUnexpected: Parsley[Nothing] = this.verifiedUnexpected(None)
+        private [parsley] def verifiedUnexpected(reason: String): Parsley[Nothing] = this.verifiedUnexpected(_ => reason)
+        private [parsley] def verifiedUnexpected(reason: A => String): Parsley[Nothing] = this.verifiedUnexpected(Some(reason))
     }
 }
