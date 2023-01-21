@@ -3,7 +3,7 @@
  */
 package parsley.errors
 
-import parsley.Parsley, Parsley.attempt
+import parsley.Parsley
 
 import parsley.internal.deepembedding.{frontend, singletons}
 
@@ -443,20 +443,6 @@ object combinator {
           */
         def hide: Parsley[A] = this.label("")
 
-        // TODO: move all of these to a `VerifiedErrorWidgets` class?
-        // TODO: it should have the partial amend semantics, because `amendAndDislodge` can restore the other semantics anyway
-        // Document that `attempt` may be used when this is an informative but not terminal error.
-        private [parsley] def fail(msggen: A => Seq[String]): Parsley[Nothing] = {
-            // holy hell, the hoops I jump through to be able to implement things
-            val r = parsley.registers.Reg.make[(Int, A, Int)]
-            val fails = Parsley.notFollowedBy(r.put(parsley.position.internalOffsetSpan(this.hide)))
-            (fails <|> r.get.flatMap { case (os, x, oe) =>
-                val msg0 +: msgs = msggen(x)
-                combinator.fail(oe - os, msg0, msgs: _*)
-            }) *> Parsley.empty
-        }
-        private [parsley] def fail(msg: String, msgs: String*): Parsley[Nothing] = attempt(this.hide).fail(_ => msg +: msgs)
-
         // $COVERAGE-OFF$
         /** This combinator parses this parser and then fails, using the result of this parser to customise the error message.
           *
@@ -469,28 +455,14 @@ object combinator {
           * @note $partialAmend
           * @group fail
           * @deprecated this combinator has not proven to be particularly useful, and will be replaced by a more appropriate,
-          *             not exactly the same, `fail` combinator.
+          *             not exactly the same, `verifiedFail` combinator.
           */
         @deprecated("This combinator will be removed in 5.0.0, without direct replacement", "4.2.0")
-        def !(msggen: A => String): Parsley[Nothing] = //new Parsley(new frontend.FastFail(con(p).internal, msggen))
-            parsley.position.internalOffsetSpan(p).flatMap { case (os, x, oe) =>
+        def !(msggen: A => String): Parsley[Nothing] = partialAmendThenDislodge {
+            parsley.position.internalOffsetSpan(entrench(con(p))).flatMap { case (os, x, oe) =>
                 combinator.fail(oe - os, msggen(x))
             }
-
-        // TODO: I think this can probably be deprecated for future removal soon...
-        // It will be replaced by one that generates reasons too!
-        /** This combinator parses this parser and then fails, using the result of this parser to customise the unexpected component
-          * of the error message.
-          *
-          * @group fail
-          * @see [[unexpectedLegacy `unexpectedLegacy`]]
-          * @deprecated this combinator has not proven to be particularly useful in its current state, and will be replaced by a more
-          *             appropriate, not exactly the same, `unexpected` combinator in 4.4.0. This will be removed from the source API in
-          *             4.3.0 to reduce risk of conflation with the new combinator, and legitimate uses of this combinator should switch
-          *             to `unexpectedLegacy` instead, which will be removed in 5.0.0.
-          */
-        @deprecated("This combinator will be binary removed in 5.0.0 and source removed in 4.3.0, use unexpectedLegacy until 5.0.0", "4.2.0")
-        def unexpected(msggen: A => String): Parsley[Nothing] = this.unexpectedLegacy(msggen)
+        }
 
         /** This combinator parses this parser and then fails, using the result of this parser to customise the unexpected component
           * of the error message.
@@ -503,28 +475,16 @@ object combinator {
           * @return a parser that always fails, with the given generator used to produce an unexpected message if this parser succeeded.
           * @note $partialAmend
           * @group fail
-          * @deprecated this combinator has not proven to be particularly useful and will be removed in 5.0.0.
+          * @deprecated this combinator has not proven to be particularly useful and will be removed in 5.0.0. There is a similar, but not
+          *             exact replacement called `verifiedUnexpected`.
           * @since 4.2.0
           */
-        @deprecated("This combinator will be removed in 5.0.0", "4.2.0")
-        def unexpectedLegacy(msggen: A => String): Parsley[Nothing] =
-            parsley.position.internalOffsetSpan(p).flatMap { case (os, x, oe) =>
+        @deprecated("This combinator will be removed in 5.0.0, without direct replacement", "4.2.0")
+        def unexpected(msggen: A => String): Parsley[Nothing] = partialAmendThenDislodge {
+            parsley.position.internalOffsetSpan(entrench(con(p))).flatMap { case (os, x, oe) =>
                 combinator.unexpected(oe - os, msggen(x))
             }
-        // $COVERAGE-ON$
-
-        // TODO: Documentation and testing ahead of future release
-        // like notFollowedBy, but does consume input on "success" and always fails (FIXME: this needs intrinsic support to get right)
-        // it should also have the partial amend semantics, because `amendAndDislodge` can restore the other semantics anyway
-        // Document that `attempt` may be used when this is an informative but not terminal error.
-        private def unexpected(reason: Option[A => String]) = {
-            // holy hell, the hoops I jump through to be able to implement things
-            val r = parsley.registers.Reg.make[A]
-            val fails = Parsley.notFollowedBy(r.put(this.hide))
-            reason.fold(fails)(rgen => fails <|> r.get.flatMap(x => Parsley.empty.explain(rgen(x)))) *> Parsley.empty
         }
-        private [parsley] def unexpected: Parsley[Nothing] = this.unexpected(None)
-        private [parsley] def unexpected(reason: String): Parsley[Nothing] = this._unexpected(_ => reason)
-        private [parsley] def _unexpected(reason: A => String): Parsley[Nothing] = this.unexpected(Some(reason))
+        // $COVERAGE-ON$
     }
 }
