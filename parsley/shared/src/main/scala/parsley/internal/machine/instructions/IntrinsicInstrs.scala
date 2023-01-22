@@ -10,7 +10,7 @@ import parsley.token.errors.LabelConfig
 import parsley.internal.errors.{EndOfInput, ExpectItem, UnexpectDesc}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
-import parsley.internal.machine.errors.{ClassicFancyError, ClassicUnexpectedError, EmptyError, EmptyErrorWithReason}
+import parsley.internal.machine.errors.{ClassicFancyError, ClassicUnexpectedError, DefuncError, EmptyError, EmptyErrorWithReason}
 
 private [internal] final class Lift2(f: (Any, Any) => Any) extends Instr {
     override def apply(ctx: Context): Unit = {
@@ -210,14 +210,16 @@ private [internal] object GuardAgainst {
     def apply[A](pred: PartialFunction[A, Seq[String]]): GuardAgainst = new GuardAgainst(pred.asInstanceOf[PartialFunction[Any, Seq[String]]])
 }
 
-private [internal] final class UnexpectedWhen(pred: PartialFunction[Any, String]) extends Instr {
+private [internal] final class UnexpectedWhen(pred: PartialFunction[Any, (String, Option[String])]) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         ctx.handlers = ctx.handlers.tail
         if (pred.isDefinedAt(ctx.stack.upeek)) {
             val state = ctx.states
             val caretWidth = ctx.offset - state.offset
-            ctx.fail(new ClassicUnexpectedError(state.offset, state.line, state.col, None, new UnexpectDesc(pred(ctx.stack.upop()), caretWidth)))
+            val (unex, reason) = pred(ctx.stack.upop())
+            val err = new ClassicUnexpectedError(state.offset, state.line, state.col, None, new UnexpectDesc(unex, caretWidth))
+            ctx.fail(reason.fold[DefuncError](err)(err.withReason(_)))
         }
         else ctx.inc()
         ctx.states = ctx.states.tail
@@ -228,7 +230,9 @@ private [internal] final class UnexpectedWhen(pred: PartialFunction[Any, String]
     // $COVERAGE-ON$
 }
 private [internal] object UnexpectedWhen {
-    def apply[A](pred: PartialFunction[A, String]): UnexpectedWhen = new UnexpectedWhen(pred.asInstanceOf[PartialFunction[Any, String]])
+    def apply[A](pred: PartialFunction[A, (String, Option[String])]): UnexpectedWhen = {
+        new UnexpectedWhen(pred.asInstanceOf[PartialFunction[Any, (String, Option[String])]])
+    }
 }
 
 private [internal] object NegLookFail extends Instr {
