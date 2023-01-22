@@ -81,6 +81,7 @@ object position {
     /** TODO: Document */
     val offset: Parsley[Int] = internalOffset
 
+    // These are useless at 5.0.0 I think
     private [parsley] def spanWith[A, S](end: Parsley[S])(p: Parsley[A]): Parsley[(S, A, S)] = (end, p, end).zipped
     // this is subject to change at the slightest notice, do NOT expose
     private [parsley] def internalOffsetSpan[A](p: Parsley[A]): Parsley[(Int, A, Int)] = spanWith(internalOffset)(p)
