@@ -171,7 +171,6 @@ private [internal] class MakeVerifiedError private (msggen: Either[Any => Seq[St
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         val state = ctx.states
-        //ctx.restoreState()
         ctx.states = ctx.states.tail
         ctx.restoreHints()
         // A previous success is a failure
@@ -186,7 +185,7 @@ private [internal] class MakeVerifiedError private (msggen: Either[Any => Seq[St
         ctx.fail(err)
     }
     // $COVERAGE-OFF$
-    override def toString: String = "VerifiedErrorHandler"
+    override def toString: String = "MakeVerifiedError"
     // $COVERAGE-ON$
 }
 private [internal] object MakeVerifiedError {
