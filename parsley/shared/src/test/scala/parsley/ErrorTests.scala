@@ -388,10 +388,51 @@ class ErrorTests extends ParsleyTest {
 
     // Verified Errors
     "verifiedFail" should "fail having consumed input on the parser success" in {
-        optional("abc".verifiedFail(x => Seq("no, no", s"absolutely not $x"))).parse("abc") shouldBe a [Failure[_]]
+        inside(optional("abc".verifiedFail(x => Seq("no, no", s"absolutely not $x"))).parse("abc")) {
+            case Failure(TestError((1, 1), SpecialisedError(msgs))) =>
+                msgs should contain only ("no, no", "absolutely not abc")
+        }
     }
     it should "not consume input if the parser did not succeed" in {
         optional("abc".verifiedFail("no, no", "absolutely not")).parse("ab") shouldBe Success(())
+    }
+    it should "not produce any labels" in {
+        inside("abc".verifiedFail("hi").parse("ab")) {
+            case Failure(TestError((1, 1), VanillaError(None, expecteds, _))) =>
+                expecteds shouldBe empty
+        }
+    }
+
+    "verifiedUnexpected" should "fail having consumed input on the parser success" in {
+        inside(optional("abc".verifiedUnexpected(x => s"$x is not allowed")).parse("abc")) {
+            case Failure(TestError((1, 1), VanillaError(unex, expecteds, reasons))) =>
+                expecteds shouldBe empty
+                unex should contain (Raw("abc"))
+                reasons should contain only ("abc is not allowed")
+        }
+        inside(optional("abc".verifiedUnexpected(s"abc is not allowed")).parse("abc")) {
+            case Failure(TestError((1, 1), VanillaError(unex, expecteds, reasons))) =>
+                expecteds shouldBe empty
+                unex should contain (Raw("abc"))
+                reasons should contain only ("abc is not allowed")
+        }
+        inside(optional("abc".verifiedUnexpected).parse("abc")) {
+            case Failure(TestError((1, 1), VanillaError(unex, expecteds, reasons))) =>
+                expecteds shouldBe empty
+                unex should contain (Raw("abc"))
+                reasons shouldBe empty
+        }
+    }
+    it should "not consume input if the parser did not succeed" in {
+        optional("abc".verifiedUnexpected(x => s"$x is not allowed")).parse("ab") shouldBe Success(())
+        optional("abc".verifiedUnexpected(s"abc is not allowed")).parse("ab") shouldBe Success(())
+        optional("abc".verifiedUnexpected).parse("ab") shouldBe Success(())
+    }
+    it should "not produce any labels" in {
+        inside("abc".verifiedUnexpected.parse("ab")) {
+            case Failure(TestError((1, 1), VanillaError(None, expecteds, _))) =>
+                expecteds shouldBe empty
+        }
     }
 
     // Issue 107
