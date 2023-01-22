@@ -7,10 +7,14 @@ import parsley.implicits.zipped.Zipped3
 
 import parsley.internal.deepembedding.singletons
 
-/** TODO: Document
-  * These parsers provide a way to extract position information during a parse. This can be important
+/** This module contains parsers that provide a way to extract position information during a parse.
+  *
+  * Position parsers can be important
   * for when the final result of the parser needs to encode position information for later consumption:
-  * this is particularly useful for abstract syntax trees.
+  * this is particularly useful for abstract syntax trees. Offset is also exposed by this interface, which
+  * may be useful for establishing a caret size in specialised error messages.
+  *
+  * @since 4.2.0
   */
 object position {
     /** This parser returns the current line number (starting at 1) of the input without having any other effect.
