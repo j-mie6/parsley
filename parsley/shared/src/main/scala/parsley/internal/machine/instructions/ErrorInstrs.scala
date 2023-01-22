@@ -6,8 +6,7 @@ package parsley.internal.machine.instructions
 import parsley.internal.errors.UnexpectDesc
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
-import parsley.internal.machine.errors.EmptyError
-import parsley.internal.machine.errors.{ClassicExpectedError, ClassicExpectedErrorWithReason, ClassicFancyError}
+import parsley.internal.machine.errors.{ClassicExpectedError, ClassicExpectedErrorWithReason, ClassicFancyError, EmptyError}
 
 private [internal] final class RelabelHints(label: String) extends Instr {
     private [this] val isHide: Boolean = label.isEmpty

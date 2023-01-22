@@ -3,8 +3,8 @@
  */
 package parsley.token.errors
 
-import parsley.XCompat.unused
 import parsley.Parsley
+import parsley.XCompat.unused
 import parsley.errors.combinator, combinator.ErrorMethods
 
 /** This trait, and its subclasses, can be used to configure how filters should be used within the `Lexer`.
