@@ -7,7 +7,7 @@ import parsley.combinator.{eof, optional}
 import parsley.Parsley._
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.character.{item, digit}
-import parsley.errors.combinator.{fail => pfail, unexpected, amend, entrench, ErrorMethods}
+import parsley.errors.combinator.{fail => pfail, unexpected, amend, entrench, dislodge, amendThenDislodge, ErrorMethods}
 
 class ErrorTests extends ParsleyTest {
     "mzero parsers" should "always fail" in {
@@ -308,7 +308,7 @@ class ErrorTests extends ParsleyTest {
         (amend('a' *> 'b') <|> 'a').parse("a") shouldBe a [Failure[_]]
     }
 
-    "amend" should "prevent the change of error messages under it" in {
+    "entrench" should "prevent the change of error messages under it" in {
         val p = 'a' *> amend('b' *> entrench('c') *> 'd')
         inside(p.parse("ab")) { case Failure(TestError((1, 3), _)) => }
         inside(p.parse("abc")) { case Failure(TestError((1, 2), _)) => }
@@ -322,6 +322,21 @@ class ErrorTests extends ParsleyTest {
         inside(p.parse("abc")) { case Failure(TestError((1, 3), _)) => }
         inside(p.parse("abcd")) { case Failure(TestError((1, 5), _)) => }
         inside(p.parse("abcde")) { case Failure(TestError((1, 2), _)) => }
+    }
+
+    "dislodge" should "undo an entrench so that amend works again" in {
+        val p = 'a' *> amend('b' *> dislodge(entrench('c')) *> 'd')
+        inside(p.parse("ab")) { case Failure(TestError((1, 2), _)) => }
+        inside(p.parse("abc")) { case Failure(TestError((1, 2), _)) => }
+    }
+    it should "not prevent another entrench from occurring" in {
+        val p = 'a' *> amend('b' *> entrench(dislodge(entrench('c'))))
+        inside(p.parse("ab")) { case Failure(TestError((1, 3), _)) => }
+    }
+
+    "amendThenDislodge" should "amend only non-entrenched messages and dislodge those that are" in {
+        val p = amend('a' *> amendThenDislodge('b' *> entrench('c')))
+        inside(p.parse("ab")) { case Failure(TestError((1, 1), _)) => }
     }
 
     "oneOf" should "incorporate range notation into the error" in {
