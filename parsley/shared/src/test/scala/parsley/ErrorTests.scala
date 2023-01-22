@@ -33,6 +33,24 @@ class ErrorTests extends ParsleyTest {
         }
         inside(q.parse("a")) { case Failure(TestError((1, 1), SpecialisedError(msgs))) => msgs should contain only ("'a' is not uppercase") }
         q.parse("A") shouldBe Success('A')
+
+        val r = item.unexpectedWhenWithReason {
+            case c if c.isLower => ("lowercase letter", s"'$c' should have been uppercase")
+        }
+        inside(r.parse("a")) { case Failure(TestError((1, 1), VanillaError(unex, exs, reasons))) =>
+            unex should contain (Named("lowercase letter"))
+            exs shouldBe empty
+            reasons should contain only ("'a' should have been uppercase")
+        }
+
+        val s = item.unexpectedWhen {
+            case c if c.isLower => "lowercase letter"
+        }
+        inside(s.parse("a")) { case Failure(TestError((1, 1), VanillaError(unex, exs, reasons))) =>
+            unex should contain (Named("lowercase letter"))
+            exs shouldBe empty
+            reasons shouldBe empty
+        }
     }
 
     "the collectMsg combinator" should "act like a filter then a map" in {
