@@ -408,7 +408,7 @@ object combinator {
           * @see [[parsley.Parsley.filterNot `filterNot`]], which is a basic version of this same combinator with no unexpected message.
           * @see [[filterOut `filterOut`]], which is a variant that produces a reason for failure as opposed to an unexpected message.
           * @see [[guardAgainst `guardAgainst`]], which is similar to `unexpectedWhen`, except it generates a ''specialised'' error instead.
-          * @see [[unexpectedWhenWithReason `unexpectedWhenWithReason`]], which is similar, but also has a reason associated.
+          * @see [[unexpectedWithReasonWhen `unexpectedWithReasonWhen`]], which is similar, but also has a reason associated.
           * @note $autoAmend
           * @group filter
           */
@@ -446,7 +446,7 @@ object combinator {
           * @see [[unexpectedWhen `unexpectedWhen`]], which is similar, but with no associated reason.
             @since 4.2.0
           */
-        def unexpectedWhenWithReason(pred: PartialFunction[A, (String, String)]): Parsley[A] = this._unexpectedWhen {
+        def unexpectedWithReasonWhen(pred: PartialFunction[A, (String, String)]): Parsley[A] = this._unexpectedWhen {
             case x if pred.isDefinedAt(x) =>
                 val (unex, reason) = pred(x)
                 (unex, Some(reason))

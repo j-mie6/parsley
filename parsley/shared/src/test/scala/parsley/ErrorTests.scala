@@ -34,7 +34,7 @@ class ErrorTests extends ParsleyTest {
         inside(q.parse("a")) { case Failure(TestError((1, 1), SpecialisedError(msgs))) => msgs should contain only ("'a' is not uppercase") }
         q.parse("A") shouldBe Success('A')
 
-        val r = item.unexpectedWhenWithReason {
+        val r = item.unexpectedWithReasonWhen {
             case c if c.isLower => ("lowercase letter", s"'$c' should have been uppercase")
         }
         inside(r.parse("a")) { case Failure(TestError((1, 1), VanillaError(unex, exs, reasons))) =>

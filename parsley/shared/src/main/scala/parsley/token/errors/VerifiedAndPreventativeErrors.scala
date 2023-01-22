@@ -26,7 +26,7 @@ object UnexpectedZeroDot {
 }
 
 private final class UnexpectedZeroDotWithReason private (unexpected: String, reason: String) extends PreventDotIsZeroConfig {
-    private [token] override def apply(p: Parsley[Boolean]): Parsley[Boolean] = p.unexpectedWhenWithReason {
+    private [token] override def apply(p: Parsley[Boolean]): Parsley[Boolean] = p.unexpectedWithReasonWhen {
         case true => (unexpected, reason)
     }
 }

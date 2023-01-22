@@ -144,7 +144,7 @@ abstract class UnexpectedBecause[A] extends VanillaFilterConfig[A] { self =>
     def reason(x: A): String
 
     // TODO: factor this combinator out with the "Great Move" in 4.2
-    private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = p.unexpectedWhenWithReason {
+    private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = p.unexpectedWithReasonWhen {
         case x if !f(x) => (unexpected(x), reason(x))
     }
     // $COVERAGE-OFF$
