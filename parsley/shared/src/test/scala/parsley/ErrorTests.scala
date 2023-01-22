@@ -8,6 +8,7 @@ import parsley.Parsley._
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.character.{item, digit}
 import parsley.errors.combinator.{fail => pfail, unexpected, amend, entrench, dislodge, amendThenDislodge, ErrorMethods}
+import parsley.errors.patterns._
 
 class ErrorTests extends ParsleyTest {
     "mzero parsers" should "always fail" in {
@@ -385,7 +386,13 @@ class ErrorTests extends ParsleyTest {
         }
     }
 
-    
+    // Verified Errors
+    "verifiedFail" should "fail having consumed input on the parser success" in {
+        optional("abc".verifiedFail(x => Seq("no, no", s"absolutely not $x"))).parse("abc") shouldBe a [Failure[_]]
+    }
+    it should "not consume input if the parser did not succeed" in {
+        optional("abc".verifiedFail("no, no", "absolutely not")).parse("ab") shouldBe Success(())
+    }
 
     // Issue 107
     "hints" should "incorporate only with errors at the same offset depth" in {
