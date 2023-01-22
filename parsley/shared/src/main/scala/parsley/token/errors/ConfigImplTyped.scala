@@ -4,9 +4,8 @@
 package parsley.token.errors
 
 import parsley.XCompat.unused
-import parsley.Parsley, Parsley.pure
+import parsley.Parsley
 import parsley.errors.combinator, combinator.ErrorMethods
-import parsley.position
 
 /** This trait, and its subclasses, can be used to configure how filters should be used within the `Lexer`.
   * @since 4.1.0
@@ -145,11 +144,8 @@ abstract class UnexpectedBecause[A] extends VanillaFilterConfig[A] { self =>
     def reason(x: A): String
 
     // TODO: factor this combinator out with the "Great Move" in 4.2
-    private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = combinator.amendThenDislodge {
-        position.internalOffsetSpan(combinator.entrench(p)).flatMap { case (os, x, oe) =>
-            if (f(x)) combinator.unexpected(oe - os, this.unexpected(x)).explain(reason(x))
-            else pure(x)
-        }
+    private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = p.unexpectedWhenWithReason {
+        case x if !f(x) => (unexpected(x), reason(x))
     }
     // $COVERAGE-OFF$
     private [parsley] final override def injectLeft[B] = new UnexpectedBecause[Either[A, B]] {

@@ -3,10 +3,9 @@
  */
 package parsley.token.errors
 
-import parsley.Parsley, Parsley.{pure, empty}
+import parsley.Parsley, Parsley.empty
 import parsley.character.satisfyUtf16
 import parsley.errors.{combinator, patterns}, combinator.ErrorMethods, patterns.VerifiedErrors
-import parsley.position
 
 /** This class is used to configure what error is generated when `.` is parsed as a real number.
   * @since 4.1.0
@@ -26,13 +25,9 @@ object UnexpectedZeroDot {
     def apply(unexpected: String): PreventDotIsZeroConfig = new UnexpectedZeroDot(unexpected)
 }
 
-// TODO: factor this combinator out with the "Great Move" in 4.2
 private final class UnexpectedZeroDotWithReason private (unexpected: String, reason: String) extends PreventDotIsZeroConfig {
-    private [token] override def apply(p: Parsley[Boolean]): Parsley[Boolean] = combinator.amendThenDislodge {
-        position.internalOffsetSpan(combinator.entrench(p)).flatMap { case (os, x, oe) =>
-            if (x) combinator.unexpected(oe - os, unexpected).explain(reason)
-            else pure(x)
-        }
+    private [token] override def apply(p: Parsley[Boolean]): Parsley[Boolean] = p.unexpectedWhenWithReason {
+        case true => (unexpected, reason)
     }
 }
 /** This object makes "dot is zero" generate a given unexpected message with a given reason in a ''vanilla'' error.
