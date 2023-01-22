@@ -164,6 +164,9 @@ private [internal] final class Unexpected(msg: String, width: Int) extends Instr
 }
 
 // partial amend semantics are BAD: they render the error in the wrong position unless amended anyway
+// But it would make sense for an error that occured physically deeper to be stronger: a distinction is
+// needed between occuredOffset and presentedOffset in the errors to make this work properly...
+// If we did it, I'm not sure how we'd change this over: either 5.0.0 or we make new methods and `amend` the old ones
 private [internal] class MakeVerifiedError private (msggen: Either[Any => Seq[String], Option[Any => String]]) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
