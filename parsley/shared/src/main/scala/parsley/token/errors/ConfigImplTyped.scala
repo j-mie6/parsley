@@ -3,24 +3,9 @@
  */
 package parsley.token.errors
 
-import parsley.Parsley, Parsley.pure
+import parsley.Parsley
+import parsley.XCompat.unused
 import parsley.errors.combinator, combinator.ErrorMethods
-import parsley.position
-
-private [parsley] object FilterOps {
-    def amendThenDislodge[A](full: Boolean)(p: Parsley[A]): Parsley[A] = {
-        if (full) combinator.amendThenDislodge(p)
-        else p
-    }
-    def amendThenDislodgeOrPartial[A](full: Boolean)(p: Parsley[A]): Parsley[A] = {
-        if (full) combinator.amendThenDislodge(p)
-        else combinator.partialAmendThenDislodge(p)
-    }
-    def entrench[A](full: Boolean)(p: Parsley[A]): Parsley[A] = {
-        if (full) combinator.entrench(p)
-        else p
-    }
-}
 
 /** This trait, and its subclasses, can be used to configure how filters should be used within the `Lexer`.
   * @since 4.1.0
@@ -48,32 +33,29 @@ trait VanillaFilterConfig[A] extends FilterConfig[A]
 
 /** This class ensures that the filter will generate ''specialised'' messages for the given failing parse.
   * @since 4.1.0
-  * @param fullAmend filters usually have partial amend semantics: should this instead do a full amend?
   * @group filters
   */
-abstract class SpecialisedMessage[A](fullAmend: Boolean) extends SpecialisedFilterConfig[A] { self =>
+abstract class SpecialisedMessage[A] extends SpecialisedFilterConfig[A] { self =>
+    @deprecated("filters do not have partial amend semantics, so this does nothing", "4.1.0")  def this(@unused fullAmend: Boolean) = this()
     /** This method produces the messages for the given value.
       * @since 4.1.0
       * @group badchar
       */
     def message(x: A): Seq[String]
 
-    private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = FilterOps.amendThenDislodge(fullAmend) {
-        FilterOps.entrench(fullAmend)(p).guardAgainst {
-            case x if !f(x) => message(x)
-        }
+    private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = p.guardAgainst {
+        case x if !f(x) => message(x)
     }
-    private [parsley] final override def collect[B](p: Parsley[A])(f: PartialFunction[A, B]) =  FilterOps.amendThenDislodge(fullAmend) {
-        FilterOps.entrench(fullAmend)(p).collectMsg(message(_))(f)
-    }
+
+    private [parsley] final override def collect[B](p: Parsley[A])(f: PartialFunction[A, B]) = p.collectMsg(message(_))(f)
     // $COVERAGE-OFF$
-    private [parsley] final override def injectLeft[B] = new SpecialisedMessage[Either[A, B]](fullAmend) {
+    private [parsley] final override def injectLeft[B] = new SpecialisedMessage[Either[A, B]] {
         def message(xy: Either[A, B]) = {
             val Left(x) = xy
             self.message(x)
         }
     }
-    private [parsley] final override def injectRight[B] = new SpecialisedMessage[Either[B, A]](fullAmend) {
+    private [parsley] final override def injectRight[B] = new SpecialisedMessage[Either[B, A]] {
         def message(xy: Either[B, A]) = {
             val Right(y) = xy
             self.message(y)
@@ -84,29 +66,27 @@ abstract class SpecialisedMessage[A](fullAmend: Boolean) extends SpecialisedFilt
 
 /** This class ensures that the filter will generate a ''vanilla'' unexpected item for the given failing parse.
   * @since 4.1.0
-  * @param fullAmend filters usually have partial amend semantics: should this instead do a full amend?
   * @group filters
   */
-abstract class Unexpected[A](fullAmend: Boolean) extends VanillaFilterConfig[A] { self =>
+abstract class Unexpected[A] extends VanillaFilterConfig[A] { self =>
+    @deprecated("filters do not have partial amend semantics, so this does nothing", "4.1.0")  def this(@unused fullAmend: Boolean) = this()
     /** This method produces the unexpected label for the given value.
       * @since 4.1.0
       * @group badchar
       */
     def unexpected(x: A): String
 
-    private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = FilterOps.amendThenDislodge(fullAmend) {
-        FilterOps.entrench(fullAmend)(p).unexpectedWhen {
-            case x if !f(x) => unexpected(x)
-        }
+    private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = p.unexpectedWhen {
+        case x if !f(x) => unexpected(x)
     }
     // $COVERAGE-OFF$
-    private [parsley] final override def injectLeft[B] = new Unexpected[Either[A, B]](fullAmend) {
+    private [parsley] final override def injectLeft[B] = new Unexpected[Either[A, B]] {
         def unexpected(xy: Either[A, B]) = {
             val Left(x) = xy
             self.unexpected(x)
         }
     }
-    private [parsley] final override def injectRight[B] = new Unexpected[Either[B, A]](fullAmend) {
+    private [parsley] final override def injectRight[B] = new Unexpected[Either[B, A]] {
         def unexpected(xy: Either[B, A]) = {
             val Right(y) = xy
             self.unexpected(y)
@@ -117,29 +97,27 @@ abstract class Unexpected[A](fullAmend: Boolean) extends VanillaFilterConfig[A] 
 
 /** This class ensures that the filter will generate a ''vanilla'' reason for the given failing parse.
   * @since 4.1.0
-  * @param fullAmend filters usually have partial amend semantics: should this instead do a full amend?
   * @group filters
   */
-abstract class Because[A](fullAmend: Boolean) extends VanillaFilterConfig[A] { self =>
+abstract class Because[A] extends VanillaFilterConfig[A] { self =>
+    @deprecated("filters do not have partial amend semantics, so this does nothing", "4.1.0")  def this(@unused fullAmend: Boolean) = this()
     /** This method produces the reason for the given value.
       * @since 4.1.0
       * @group badchar
       */
     def reason(x: A): String
 
-    private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = FilterOps.amendThenDislodge(fullAmend) {
-        FilterOps.entrench(fullAmend)(p).filterOut {
-            case x if !f(x) => reason(x)
-        }
+    private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = p.filterOut {
+        case x if !f(x) => reason(x)
     }
     // $COVERAGE-OFF$
-    private [parsley] final override def injectLeft[B] = new Because[Either[A, B]](fullAmend) {
+    private [parsley] final override def injectLeft[B] = new Because[Either[A, B]] {
         def reason(xy: Either[A, B]) = {
             val Left(x) = xy
             self.reason(x)
         }
     }
-    private [parsley] final override def injectRight[B] = new Because[Either[B, A]](fullAmend) {
+    private [parsley] final override def injectRight[B] = new Because[Either[B, A]] {
         def reason(xy: Either[B, A]) = {
             val Right(y) = xy
             self.reason(y)
@@ -150,10 +128,10 @@ abstract class Because[A](fullAmend: Boolean) extends VanillaFilterConfig[A] { s
 
 /** This class ensures that the filter will generate a ''vanilla'' unexpected item and a reason for the given failing parse.
   * @since 4.1.0
-  * @param fullAmend filters usually have partial amend semantics: should this instead do a full amend?
   * @group filters
   */
-abstract class UnexpectedBecause[A](fullAmend: Boolean) extends VanillaFilterConfig[A] { self =>
+abstract class UnexpectedBecause[A] extends VanillaFilterConfig[A] { self =>
+    @deprecated("filters do not have partial amend semantics, so this does nothing", "4.1.0")  def this(@unused fullAmend: Boolean) = this()
     /** This method produces the unexpected label for the given value.
       * @since 4.1.0
       * @group badchar
@@ -166,14 +144,11 @@ abstract class UnexpectedBecause[A](fullAmend: Boolean) extends VanillaFilterCon
     def reason(x: A): String
 
     // TODO: factor this combinator out with the "Great Move" in 4.2
-    private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = FilterOps.amendThenDislodgeOrPartial(fullAmend) {
-        position.internalOffsetSpan(combinator.entrench(p)).flatMap { case (os, x, oe) =>
-            if (f(x)) combinator.unexpected(oe - os, this.unexpected(x)).explain(reason(x))
-            else pure(x)
-        }
+    private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = p.unexpectedWithReasonWhen {
+        case x if !f(x) => (unexpected(x), reason(x))
     }
     // $COVERAGE-OFF$
-    private [parsley] final override def injectLeft[B] = new UnexpectedBecause[Either[A, B]](fullAmend) {
+    private [parsley] final override def injectLeft[B] = new UnexpectedBecause[Either[A, B]] {
         def unexpected(xy: Either[A, B]) = {
             val Left(x) = xy
             self.unexpected(x)
@@ -183,7 +158,7 @@ abstract class UnexpectedBecause[A](fullAmend: Boolean) extends VanillaFilterCon
             self.reason(x)
         }
     }
-    private [parsley] final override def injectRight[B] = new UnexpectedBecause[Either[B, A]](fullAmend) {
+    private [parsley] final override def injectRight[B] = new UnexpectedBecause[Either[B, A]] {
         def unexpected(xy: Either[B, A]) = {
             val Right(y) = xy
             self.unexpected(y)

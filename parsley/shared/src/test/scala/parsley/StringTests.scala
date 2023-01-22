@@ -7,7 +7,8 @@ import Predef.{ArrowAssoc => _, _}
 
 import parsley.character.{letter, string, strings, stringOfMany, stringOfSome}
 import parsley.implicits.character.{charLift, stringLift}
-import parsley.Parsley._
+import parsley.Parsley.{pos => _, _}
+import parsley.position.pos
 
 class StringTests extends ParsleyTest {
     private def stringPositionCheck(initialCol: Int, str: String) = {

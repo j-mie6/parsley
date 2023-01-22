@@ -7,15 +7,14 @@ import parsley.combinator.{eof, optional}
 import parsley.Parsley._
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.character.{item, digit}
-import parsley.errors.combinator.{fail => pfail, unexpected, amend, entrench, ErrorMethods}
+import parsley.errors.combinator.{fail => pfail, unexpected, amend, entrench, dislodge, amendThenDislodge, ErrorMethods}
+import parsley.errors.patterns._
 
 class ErrorTests extends ParsleyTest {
     "mzero parsers" should "always fail" in {
         (Parsley.empty ~> 'a').parse("a") shouldBe a [Failure[_]]
         (pfail("") ~> 'a').parse("a") shouldBe a [Failure[_]]
         (unexpected("x") *> 'a').parse("a") shouldBe a [Failure[_]]
-        (('a' ! (_ => "")) *> 'b').parse("ab") shouldBe a [Failure[_]]
-        ('a'.unexpected(_ => "x") *> 'b').parse("ab") shouldBe a [Failure[_]]
     }
 
     "filtering parsers" should "function correctly" in {
@@ -35,6 +34,24 @@ class ErrorTests extends ParsleyTest {
         }
         inside(q.parse("a")) { case Failure(TestError((1, 1), SpecialisedError(msgs))) => msgs should contain only ("'a' is not uppercase") }
         q.parse("A") shouldBe Success('A')
+
+        val r = item.unexpectedWithReasonWhen {
+            case c if c.isLower => ("lowercase letter", s"'$c' should have been uppercase")
+        }
+        inside(r.parse("a")) { case Failure(TestError((1, 1), VanillaError(unex, exs, reasons))) =>
+            unex should contain (Named("lowercase letter"))
+            exs shouldBe empty
+            reasons should contain only ("'a' should have been uppercase")
+        }
+
+        val s = item.unexpectedWhen {
+            case c if c.isLower => "lowercase letter"
+        }
+        inside(s.parse("a")) { case Failure(TestError((1, 1), VanillaError(unex, exs, reasons))) =>
+            unex should contain (Named("lowercase letter"))
+            exs shouldBe empty
+            reasons shouldBe empty
+        }
     }
 
     "the collectMsg combinator" should "act like a filter then a map" in {
@@ -310,7 +327,7 @@ class ErrorTests extends ParsleyTest {
         (amend('a' *> 'b') <|> 'a').parse("a") shouldBe a [Failure[_]]
     }
 
-    "amend" should "prevent the change of error messages under it" in {
+    "entrench" should "prevent the change of error messages under it" in {
         val p = 'a' *> amend('b' *> entrench('c') *> 'd')
         inside(p.parse("ab")) { case Failure(TestError((1, 3), _)) => }
         inside(p.parse("abc")) { case Failure(TestError((1, 2), _)) => }
@@ -324,6 +341,21 @@ class ErrorTests extends ParsleyTest {
         inside(p.parse("abc")) { case Failure(TestError((1, 3), _)) => }
         inside(p.parse("abcd")) { case Failure(TestError((1, 5), _)) => }
         inside(p.parse("abcde")) { case Failure(TestError((1, 2), _)) => }
+    }
+
+    "dislodge" should "undo an entrench so that amend works again" in {
+        val p = 'a' *> amend('b' *> dislodge(entrench('c')) *> 'd')
+        inside(p.parse("ab")) { case Failure(TestError((1, 2), _)) => }
+        inside(p.parse("abc")) { case Failure(TestError((1, 2), _)) => }
+    }
+    it should "not prevent another entrench from occurring" in {
+        val p = 'a' *> amend('b' *> entrench(dislodge(entrench('c'))))
+        inside(p.parse("ab")) { case Failure(TestError((1, 3), _)) => }
+    }
+
+    "amendThenDislodge" should "amend only non-entrenched messages and dislodge those that are" in {
+        val p = amend('a' *> amendThenDislodge('b' *> entrench('c')))
+        inside(p.parse("ab")) { case Failure(TestError((1, 1), _)) => }
     }
 
     "oneOf" should "incorporate range notation into the error" in {
@@ -351,6 +383,55 @@ class ErrorTests extends ParsleyTest {
         inside(character.noneOf(('0' to '9').toSet).parse("8")) {
             case Failure(TestError(_, VanillaError(_, expecteds, _))) =>
                 expecteds should contain only Named("anything except \"0\", \"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\", \"8\", or \"9\"")
+        }
+    }
+
+    // Verified Errors
+    "verifiedFail" should "fail having consumed input on the parser success" in {
+        inside(optional("abc".verifiedFail(x => Seq("no, no", s"absolutely not $x"))).parse("abc")) {
+            case Failure(TestError((1, 1), SpecialisedError(msgs))) =>
+                msgs should contain only ("no, no", "absolutely not abc")
+        }
+    }
+    it should "not consume input if the parser did not succeed" in {
+        optional("abc".verifiedFail("no, no", "absolutely not")).parse("ab") shouldBe Success(())
+    }
+    it should "not produce any labels" in {
+        inside("abc".verifiedFail("hi").parse("ab")) {
+            case Failure(TestError((1, 1), VanillaError(None, expecteds, _))) =>
+                expecteds shouldBe empty
+        }
+    }
+
+    "verifiedUnexpected" should "fail having consumed input on the parser success" in {
+        inside(optional("abc".verifiedUnexpected(x => s"$x is not allowed")).parse("abc")) {
+            case Failure(TestError((1, 1), VanillaError(unex, expecteds, reasons))) =>
+                expecteds shouldBe empty
+                unex should contain (Raw("abc"))
+                reasons should contain only ("abc is not allowed")
+        }
+        inside(optional("abc".verifiedUnexpected(s"abc is not allowed")).parse("abc")) {
+            case Failure(TestError((1, 1), VanillaError(unex, expecteds, reasons))) =>
+                expecteds shouldBe empty
+                unex should contain (Raw("abc"))
+                reasons should contain only ("abc is not allowed")
+        }
+        inside(optional("abc".verifiedUnexpected).parse("abc")) {
+            case Failure(TestError((1, 1), VanillaError(unex, expecteds, reasons))) =>
+                expecteds shouldBe empty
+                unex should contain (Raw("abc"))
+                reasons shouldBe empty
+        }
+    }
+    it should "not consume input if the parser did not succeed" in {
+        optional("abc".verifiedUnexpected(x => s"$x is not allowed")).parse("ab") shouldBe Success(())
+        optional("abc".verifiedUnexpected(s"abc is not allowed")).parse("ab") shouldBe Success(())
+        optional("abc".verifiedUnexpected).parse("ab") shouldBe Success(())
+    }
+    it should "not produce any labels" in {
+        inside("abc".verifiedUnexpected.parse("ab")) {
+            case Failure(TestError((1, 1), VanillaError(None, expecteds, _))) =>
+                expecteds shouldBe empty
         }
     }
 

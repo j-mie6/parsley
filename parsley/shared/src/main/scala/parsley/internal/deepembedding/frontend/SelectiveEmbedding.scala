@@ -14,13 +14,6 @@ private [parsley] final class If[A](b: LazyParsley[Boolean], p: =>LazyParsley[A]
     override def make(b: StrictParsley[Boolean], p: StrictParsley[A], q: StrictParsley[A]): StrictParsley[A] = new backend.If(b, p, q)
 }
 
-private [parsley] final class FastFail[A](p: LazyParsley[A], msggen: A => String) extends Unary[A, Nothing](p) {
-    override def make(p: StrictParsley[A]): StrictParsley[Nothing] = new backend.FastFail(p, msggen)
-}
-private [parsley] final class FastUnexpected[A](p: LazyParsley[A], msggen: A => String) extends Unary[A, Nothing](p) {
-    override def make(p: StrictParsley[A]): StrictParsley[Nothing] = new backend.FastUnexpected(p, msggen)
-}
-
 private [parsley] final class Filter[A](p: LazyParsley[A], pred: A => Boolean) extends Unary[A, A](p) {
     override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.Filter(p, pred)
 }
@@ -33,6 +26,6 @@ private [parsley] final class FilterOut[A](p: LazyParsley[A], pred: PartialFunct
 private [parsley] final class GuardAgainst[A](p: LazyParsley[A], pred: PartialFunction[A, Seq[String]]) extends Unary[A, A](p) {
     override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.GuardAgainst(p, pred)
 }
-private [parsley] final class UnexpectedWhen[A](p: LazyParsley[A], pred: PartialFunction[A, String]) extends Unary[A, A](p) {
+private [parsley] final class UnexpectedWhen[A](p: LazyParsley[A], pred: PartialFunction[A, (String, Option[String])]) extends Unary[A, A](p) {
     override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.UnexpectedWhen(p, pred)
 }

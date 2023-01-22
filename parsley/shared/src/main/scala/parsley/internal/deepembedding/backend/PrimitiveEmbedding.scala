@@ -35,10 +35,10 @@ private [deepembedding] final class Look[A](val p: StrictParsley[A]) extends Sco
     // $COVERAGE-ON$
 }
 private [deepembedding] final class NotFollowedBy[A](val p: StrictParsley[A]) extends Unary[A, Unit] {
-    override def optimise: StrictParsley[Unit] = p match {
+    /*override def optimise: StrictParsley[Unit] = p match {
         case _: MZero => new Pure(())
         case _        => this
-    }
+    }*/
     final override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val handler = state.freshLabel()
         instrs += new instructions.PushHandlerAndState(handler, saveHints = true, hideHints = true)

@@ -56,6 +56,7 @@ is defined as being an object which mocks a package):
     context-sensitive functionality in the form of registers.
   - [[parsley.token `parsley.token`]] contains the [[parsley.token.Lexer `Lexer`]] class that provides
     a host of helpful lexing combinators when provided with the description of a language.
+  - [[parsley.position `parsley.position`]] contains parsers for extracting position information.
   - [[parsley.genericbridges$ `parsley.genericbridges`]] contains some basic implementations of
     the ''Parser Bridge'' pattern (see
     [[https://dl.acm.org/doi/10.1145/3550198.3550427 Design Patterns for Parser Combinators in Scala]],

@@ -9,13 +9,15 @@ val Java8 = JavaSpec.temurin("8")
 val JavaLTS = JavaSpec.temurin("11")
 val JavaLatest = JavaSpec.temurin("17")
 
+val mainBranch = "master"
+
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 val isInPublish = Option(System.getenv("GITHUB_JOB")).contains("publish")
 val releaseFlags = Seq("-Xdisable-assertions", "-opt:l:method,inline", "-opt-inline-from", "parsley.**", "-opt-warnings:at-inline-failed")
 
 inThisBuild(List(
-  tlBaseVersion := "4.1",
+  tlBaseVersion := "4.2",
   organization := "com.github.j-mie6",
   startYear := Some(2018),
   homepage := Some(url("https://github.com/j-mie6/parsley")),
@@ -38,6 +40,9 @@ inThisBuild(List(
     ProblemFilters.exclude[MissingClassProblem]("parsley.token.predicate$_CharSet$"),
     ProblemFilters.exclude[MissingFieldProblem]("parsley.token.predicate._CharSet"),
     ProblemFilters.exclude[MissingClassProblem]("parsley.token.errors.ErrorConfig$"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("parsley.errors.combinator#ErrorMethods.unexpected"),
+    ProblemFilters.exclude[MissingClassProblem]("parsley.token.errors.FilterOps"),
+    ProblemFilters.exclude[MissingClassProblem]("parsley.token.errors.FilterOps$"),
   ),
   tlVersionIntroduced := Map(
     "2.13" -> "1.5.0",
@@ -45,7 +50,7 @@ inThisBuild(List(
     "3"    -> "3.1.2",
   ),
   // CI Configuration
-  tlCiReleaseBranches := Seq("master"),
+  tlCiReleaseBranches := Seq(mainBranch),
   tlSonatypeUseLegacyHost := false,
   githubWorkflowJavaVersions := Seq(Java8, JavaLTS, JavaLatest),
   // We need this because our release uses different flags
@@ -91,6 +96,7 @@ def testCoverageJob(cacheSteps: List[WorkflowStep]) = WorkflowJob(
     id = "coverage",
     name = "Run Test Coverage and Upload",
     scalas = List(Scala213),
+    cond = Some(s"github.ref == 'refs/heads/$mainBranch' || (github.event_name == 'pull_request' && github.base_ref == '$mainBranch')"),
     steps =
         WorkflowStep.Checkout ::
         WorkflowStep.SetupJava(List(JavaLTS)) :::

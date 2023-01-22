@@ -6,7 +6,7 @@ package parsley.internal.machine.instructions
 import parsley.internal.errors.UnexpectDesc
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
-import parsley.internal.machine.errors.{ClassicFancyError, ClassicUnexpectedError}
+import parsley.internal.machine.errors.{ClassicExpectedError, ClassicExpectedErrorWithReason, ClassicFancyError, EmptyError}
 
 private [internal] final class RelabelHints(label: String) extends Instr {
     private [this] val isHide: Boolean = label.isEmpty
@@ -162,34 +162,47 @@ private [internal] final class Unexpected(msg: String, width: Int) extends Instr
     // $COVERAGE-ON$
 }
 
-private [internal] final class FastFail(msggen: Any => String) extends Instr {
+// partial amend semantics are BAD: they render the error in the wrong position unless amended anyway
+// But it would make sense for an error that occured physically deeper to be stronger: a distinction is
+// needed between occuredOffset and presentedOffset in the errors to make this work properly...
+// If we did it, I'm not sure how we'd change this over: either 5.0.0 or we make new methods and `amend` the old ones
+private [internal] class MakeVerifiedError private (msggen: Either[Any => Seq[String], Option[Any => String]]) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        val x = ctx.stack.upop()
-        ctx.handlers = ctx.handlers.tail
         val state = ctx.states
         ctx.states = ctx.states.tail
-        ctx.fail(new ClassicFancyError(ctx.offset, state.line, state.col, ctx.offset - state.offset, msggen(x)))
+        ctx.restoreHints()
+        // A previous success is a failure
+        ctx.handlers = ctx.handlers.tail
+        val caretWidth = ctx.offset - state.offset
+        val x = ctx.stack.upeek
+        val err = msggen match {
+            case Left(f) => new ClassicFancyError(state.offset, state.line, state.col, caretWidth, f(x): _*)
+            case Right(Some(f)) => new ClassicExpectedErrorWithReason(state.offset, state.line, state.col, None, f(x), caretWidth)
+            case Right(None) => new ClassicExpectedError(state.offset, state.line, state.col, None, caretWidth)
+        }
+        ctx.fail(err)
     }
     // $COVERAGE-OFF$
-    override def toString: String = "FastFail(?)"
+    override def toString: String = "MakeVerifiedError"
     // $COVERAGE-ON$
 }
-private [internal] object FastFail {
-    def apply[A](msggen: A => String): FastFail = new FastFail(msggen.asInstanceOf[Any => String])
+private [internal] object MakeVerifiedError {
+    def apply[A](msggen: Either[A => Seq[String], Option[A => String]]): MakeVerifiedError = {
+        new MakeVerifiedError(msggen.asInstanceOf[Either[Any => Seq[String], Option[Any => String]]])
+    }
 }
 
-private [internal] final class FastUnexpected[A](_namegen: A=>String) extends Instr {
-    private [this] def namegen(x: Any, width: Int) = new UnexpectDesc(_namegen(x.asInstanceOf[A]), width)
+private [internal] object NoVerifiedError extends Instr {
     override def apply(ctx: Context): Unit = {
-        ensureRegularInstruction(ctx)
-        val x = ctx.stack.upop()
-        ctx.handlers = ctx.handlers.tail
-        val state = ctx.states
-        ctx.states = ctx.states.tail
-        ctx.fail(new ClassicUnexpectedError(ctx.offset, state.line, state.col, None, namegen(x, ctx.offset - state.offset)))
+        ensureHandlerInstruction(ctx)
+        // If a verified error goes wrong, then it should appear like nothing happened
+        ctx.restoreState()
+        ctx.restoreHints()
+        ctx.errs.error = new EmptyError(ctx.offset, ctx.line, ctx.col, unexpectedWidth = 0)
+        ctx.fail()
     }
     // $COVERAGE-OFF$
-    override def toString: String = "FastUnexpected(?)"
+    override def toString: String = "VerifiedErrorHandler"
     // $COVERAGE-ON$
 }

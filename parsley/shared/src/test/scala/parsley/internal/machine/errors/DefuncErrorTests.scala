@@ -192,6 +192,7 @@ class DefuncErrorTests extends ParsleyTest {
     "Entrenched" should "guard against amendment" in {
         val err = new EmptyError(0, 0, 0, 0).entrench.amend(10, 10, 10)
         val errOut = err.asParseError
+        err.entrenched shouldBe true
         errOut.col shouldBe 0
         errOut.line shouldBe 0
         errOut.offset shouldBe 0
@@ -199,8 +200,28 @@ class DefuncErrorTests extends ParsleyTest {
     it should "work for fancy errors too" in {
         val err = new ClassicFancyError(0, 0, 0, 1, "").entrench.amend(10, 10, 10)
         val errOut = err.asParseError
+        err.entrenched shouldBe true
         errOut.col shouldBe 0
         errOut.line shouldBe 0
         errOut.offset shouldBe 0
+    }
+
+    "Dislodged" should "remove an entrenchment" in {
+        val err = new EmptyError(0, 0, 0, 0).entrench
+        require(err.entrenched)
+        err.dislodge.entrenched shouldBe false
+        val err2 = err.dislodge.amend(10, 10, 10).asParseError
+        err2.col shouldBe 10
+        err2.line shouldBe 10
+        err2.offset shouldBe 10
+    }
+    it should "work for fancy errors too" in {
+        val err = new ClassicFancyError(0, 0, 0, 1, "").entrench
+        require(err.entrenched)
+        err.dislodge.entrenched shouldBe false
+        val err2 = err.dislodge.amend(10, 10, 10).asParseError
+        err2.col shouldBe 10
+        err2.line shouldBe 10
+        err2.offset shouldBe 10
     }
 }
