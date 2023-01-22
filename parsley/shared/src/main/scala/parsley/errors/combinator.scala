@@ -407,7 +407,8 @@ object combinator {
           * @return a parser that returns the result of this parser if it fails the predicate.
           * @see [[parsley.Parsley.filterNot `filterNot`]], which is a basic version of this same combinator with no unexpected message.
           * @see [[filterOut `filterOut`]], which is a variant that produces a reason for failure as opposed to an unexpected message.
-          * @see [[guardAgainst `guardAgainst`]], which is similar to `unexpectedWhen`, except it generates a ''specialised'' error as opposed to just a reason.
+          * @see [[guardAgainst `guardAgainst`]], which is similar to `unexpectedWhen`, except it generates a ''specialised'' error instead.
+          * @see [[unexpectedWhenWithReason `unexpectedWhenWithReason`]], which is similar, but also has a reason associated.
           * @note $autoAmend
           * @group filter
           */
@@ -415,10 +416,34 @@ object combinator {
             case x if pred.isDefinedAt(x) => (pred(x), None)
         }
 
-        /** TODO:
+        /** This combinator filters the result of this parser using the given partial-predicate, succeeding only when the predicate is undefined.
           *
-          * @param pred
-          * @return
+          * First, parse this parser. If it succeeds then take its result `x` and test if `pred.isDefinedAt(x)` is true. If it is
+          * false, the parser succeeds, returning `x`. Otherwise, `pred(x)` will yield a unexpected label and the parser will
+          * fail using [[combinator.unexpected(caretWidth:Int,item:String)* `unexpected`]] and that label as well as a reason.
+          *
+          * This is useful for performing data validation, but where a the failure results in the entire token being unexpected. In this instance,
+          * the rest of the error message is generated as normal, with the expected components still given, along with
+          * any generated reasons.
+          *
+          * @example {{{
+          * scala> import parsley.character.letter
+          * scala> val keywords = Set("if", "then", "else")
+          * scala> val ident = stringOfSome(letter).unexpectedWhenWithReason {
+          *     case v if keywords.contains(v) => (s"keyword &#36;v", "keywords cannot be identifiers")
+          * }
+          * scala> ident.parse("hello")
+          * val res0 = Success("hello")
+          * scala> ident.parse("if")
+          * val res1 = Failure(..)
+          * }}}
+          *
+          * @param pred the predicate that is tested against the parser result, which also generates errors.
+          * @return a parser that returns the result of this parser if it fails the predicate.
+          * @see [[parsley.Parsley.filterNot `filterNot`]], which is a basic version of this same combinator with no unexpected message or reason.
+          * @see [[filterOut `filterOut`]], which is a variant that just produces a reason for failure with no unexpected message.
+          * @see [[guardAgainst `guardAgainst`]], which is similar to `unexpectedWhen`, except it generates a ''specialised'' error instead.
+          * @see [[unexpectedWhen `unexpectedWhen`]], which is similar, but with no associated reason.
             @since 4.2.0
           */
         def unexpectedWhenWithReason(pred: PartialFunction[A, (String, String)]): Parsley[A] = this._unexpectedWhen {
