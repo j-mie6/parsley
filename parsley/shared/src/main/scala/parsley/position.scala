@@ -13,7 +13,7 @@ import parsley.internal.deepembedding.singletons
   * this is particularly useful for abstract syntax trees.
   */
 object position {
-    /** This parser returns the current line number of the input without having any other effect.
+    /** This parser returns the current line number (starting at 1) of the input without having any other effect.
       *
       * When this combinator is ran, no input is required, nor consumed, and
       * the current line number will always be successfully returned. It has no other
@@ -33,7 +33,7 @@ object position {
       * @group pos
       */
     val line: Parsley[Int] = new Parsley(singletons.Line)
-    /** This parser returns the current column number of the input without having any other effect.
+    /** This parser returns the current column number (starting at 1) of the input without having any other effect.
       *
       * When this combinator is ran, no input is required, nor consumed, and
       * the current column number will always be successfully returned. It has no other
@@ -54,7 +54,7 @@ object position {
       * @group pos
       */
     val col: Parsley[Int] = new Parsley(singletons.Col)
-    /** This parser returns the current line and column numbers of the input without having any other effect.
+    /** This parser returns the current line and column numbers (starting at 1) of the input without having any other effect.
       *
       * When this combinator is ran, no input is required, nor consumed, and
       * the current line and column number will always be successfully returned. It has no other
