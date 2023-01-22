@@ -8,7 +8,7 @@ Parsley is a fast and modern parser combinator library for Scala based loosely o
 Parsley is distributed on Maven Central, and can be added to your project via:
 
 ```scala
-libraryDependencies += "com.github.j-mie6" %% "parsley" % "4.1.1"
+libraryDependencies += "com.github.j-mie6" %% "parsley" % "4.2.0"
 ```
 
 Documentation can be found [**here**](https://javadoc.io/doc/com.github.j-mie6/parsley_2.13/latest/index.html)
@@ -151,11 +151,12 @@ make porting feasible.
 
 _An exception to this policy is made for any version `3.x.y`, which reaches EoL effective immediately (December 2022) excluding exceptional circumstances._
 
-| Version | Released On        | EoL Status                  |
-|:-------:|:-------------------|:----------------------------|
-| `3.3.0` | January 7th 2022   | EoL reached                 |
-| `4.0.0` | November 30th 2022 | EoL reached                 |
-| `4.1.0` | January 18th 2023  | Enjoying indefinite support |
+| Version | Released On        | EoL Status                     |
+|:-------:|:-------------------|:-------------------------------|
+| `3.3.0` | January 7th 2022   | EoL reached                    |
+| `4.0.0` | November 30th 2022 | EoL reached                    |
+| `4.1.0` | January 18th 2023  | Supported until 22nd July 2023 |
+| `4.2.0` | January 22th 2023  | Enjoying indefinite support    |
 
 ## Bug Reports [![Percentage of issues still open](https://isitmaintained.com/badge/open/j-mie6/Parsley.svg)](https://isitmaintained.com/project/j-mie6/Parsley "Percentage of issues still open") [![Maintainability](https://img.shields.io/codeclimate/maintainability/j-mie6/parsley)](https://codeclimate.com/github/j-mie6/parsley) [![Test Coverage](https://img.shields.io/codeclimate/coverage-letter/j-mie6/parsley)](https://codeclimate.com/github/j-mie6/parsley)
 

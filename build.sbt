@@ -50,7 +50,7 @@ inThisBuild(List(
     "3"    -> "3.1.2",
   ),
   // CI Configuration
-  tlCiReleaseBranches := Seq(mainBranch, "staging/4.2"),
+  tlCiReleaseBranches := Seq(mainBranch),
   tlSonatypeUseLegacyHost := false,
   githubWorkflowJavaVersions := Seq(Java8, JavaLTS, JavaLatest),
   // We need this because our release uses different flags
