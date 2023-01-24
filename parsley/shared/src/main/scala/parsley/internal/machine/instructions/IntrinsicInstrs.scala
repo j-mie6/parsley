@@ -112,38 +112,20 @@ private [internal] final class UniSat(f: Int => Boolean, expected: Option[Expect
     def this(f: Int => Boolean, expected: LabelConfig) = this(f, expected.asExpectDesc)
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        if (ctx.moreInput(2)) {
-            // The user can parse high-surrogates if they wish
-            val hc = ctx.peekChar(0)
-            val h = hc.toInt
-            if (hc.isHighSurrogate) {
-                val l = ctx.peekChar(1)
-                if (Character.isSurrogatePair(hc, l)) {
-                    val c = Character.toCodePoint(hc, l)
-                    if (f(c)) {
-                        ctx.fastUncheckedConsumeChars(2) // not going to be a tab or newline
-                        ctx.pushAndContinue(c)
-                    }
-                    else if (f(h)) {
-                        ctx.fastUncheckedConsumeChars(1)  // not going to be a tab or newline
-                        ctx.pushAndContinue(h)
-                    }
-                    else ctx.expectedFail(expected, unexpectedWidth = 1)
-                }
-                else if (f(h)) {
-                    ctx.fastUncheckedConsumeChars(1)  // not going to be a tab or newline
-                    ctx.pushAndContinue(h)
-                }
-                else ctx.expectedFail(expected, unexpectedWidth = 1)
-            }
-            else if (f(h)) {
-                ctx.fastUncheckedConsumeChars(1)  // not going to be a tab or newline
-                ctx.pushAndContinue(h)
-            }
-            else ctx.expectedFail(expected, unexpectedWidth = 1)
+        lazy val hc = ctx.peekChar(0)
+        lazy val h = hc.toInt
+        lazy val l = ctx.peekChar(1)
+        lazy val c = Character.toCodePoint(hc, l)
+        if (ctx.moreInput(2) && hc.isHighSurrogate && Character.isSurrogatePair(hc, l) && f(c)) {
+            // not going to be a tab or newline
+            ctx.offset += 2
+            ctx.col += 1
+            ctx.pushAndContinue(c)
         }
-        else if (ctx.moreInput && f(ctx.peekChar.toInt)) {
-            ctx.pushAndContinue(ctx.consumeChar().toInt)
+        else if (ctx.moreInput && f(h)) {
+            ctx.updatePos(hc)
+            ctx.offset += 1
+            ctx.pushAndContinue(h)
         }
         else ctx.expectedFail(expected, unexpectedWidth = 1)
     }
