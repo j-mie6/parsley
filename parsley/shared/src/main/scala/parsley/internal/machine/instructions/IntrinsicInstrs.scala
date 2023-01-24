@@ -7,7 +7,7 @@ import scala.annotation.tailrec
 
 import parsley.token.errors.LabelConfig
 
-import parsley.internal.errors.{EndOfInput, ExpectItem, UnexpectDesc}
+import parsley.internal.errors.{EndOfInput, ExpectDesc, ExpectItem, UnexpectDesc}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.{ClassicFancyError, ClassicUnexpectedError, DefuncError, EmptyError, EmptyErrorWithReason}
@@ -44,7 +44,7 @@ private [internal] object Lift3 {
 private [internal] class CharTok(c: Char, x: Any, errorItem: Option[ExpectItem]) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        if (ctx.moreInput && ctx.nextChar == c) {
+        if (ctx.moreInput && ctx.peekChar == c) {
             ctx.consumeChar()
             ctx.pushAndContinue(x)
         }
@@ -105,6 +105,50 @@ private [internal] final class StringTok(s: String, x: Any, errorItem: Option[Ex
     }
     // $COVERAGE-OFF$
     override def toString: String = if (x.isInstanceOf[String] && (s eq x.asInstanceOf[String])) s"Str($s)" else s"StrPerform($s, $x)"
+    // $COVERAGE-ON$
+}
+
+private [internal] final class UniSat(f: Int => Boolean, expected: Option[ExpectDesc]) extends Instr {
+    def this(f: Int => Boolean, expected: LabelConfig) = this(f, expected.asExpectDesc)
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        if (ctx.moreInput(2)) {
+            // The user can parse high-surrogates if they wish
+            val hc = ctx.peekChar(0)
+            val h = hc.toInt
+            if (hc.isHighSurrogate) {
+                val l = ctx.peekChar(1)
+                if (Character.isSurrogatePair(hc, l)) {
+                    val c = Character.toCodePoint(hc, l)
+                    if (f(c)) {
+                        ctx.fastUncheckedConsumeChars(2) // not going to be a tab or newline
+                        ctx.pushAndContinue(c)
+                    }
+                    else if (f(h)) {
+                        ctx.fastUncheckedConsumeChars(1)  // not going to be a tab or newline
+                        ctx.pushAndContinue(h)
+                    }
+                    else ctx.expectedFail(expected, unexpectedWidth = 1)
+                }
+                else if (f(h)) {
+                    ctx.fastUncheckedConsumeChars(1)  // not going to be a tab or newline
+                    ctx.pushAndContinue(h)
+                }
+                else ctx.expectedFail(expected, unexpectedWidth = 1)
+            }
+            else if (f(h)) {
+                ctx.fastUncheckedConsumeChars(1)  // not going to be a tab or newline
+                ctx.pushAndContinue(h)
+            }
+            else ctx.expectedFail(expected, unexpectedWidth = 1)
+        }
+        else if (ctx.moreInput && f(ctx.peekChar.toInt)) {
+            ctx.pushAndContinue(ctx.consumeChar().toInt)
+        }
+        else ctx.expectedFail(expected, unexpectedWidth = 1)
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = "UniSat(?)"
     // $COVERAGE-ON$
 }
 

@@ -8,7 +8,7 @@ import scala.collection.immutable.NumericRange
 
 import parsley.Parsley.{attempt, empty, fresh, pure}
 import parsley.combinator.{choice, skipMany}
-import parsley.errors.combinator.{amend, ErrorMethods}
+import parsley.errors.combinator.ErrorMethods
 import parsley.token.errors.NotConfigured
 
 import parsley.internal.deepembedding.singletons
@@ -152,24 +152,8 @@ object character {
       */
     def satisfy(pred: Char => Boolean): Parsley[Char] = new Parsley(new singletons.Satisfy(pred, NotConfigured))
 
-    // TODO: document and optimise
-    private [parsley] def satisfyUtf16(pred: Int => Boolean): Parsley[Int] = amend {
-        attempt {
-            item.hide.flatMap {
-                case h if h.isHighSurrogate =>
-                    // Our policy is that the user can parse high-surrogates if they wish, it's just evil
-                    /*item.collect {
-                        case l if Character.isSurrogatePair(h, l) && pred(Character.toCodePoint(h, l)) => Character.toCodePoint(h, l)
-                    }*/
-                    satisfy(l => Character.isSurrogatePair(h, l) && pred(Character.toCodePoint(h, l))).map(Character.toCodePoint(h, _)) <|> {
-                        val c = h.toInt
-                        if (pred(c)) pure(c) else empty
-                    }
-                case c if pred(c.toInt) => pure(c.toInt)
-                case _ => empty
-            }
-        }
-    } <|> (satisfy(_ => false) *> empty) // I need an unexpected width of 1, and this is the only way I know how... sad times
+    // TODO: document
+    private [parsley] def satisfyUtf16(pred: Int => Boolean): Parsley[Int] = new Parsley(new singletons.UniSatisfy(pred, NotConfigured))
 
     /** This combinator attempts to parse a given string from the input, and fails otherwise.
       *

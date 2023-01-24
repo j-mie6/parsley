@@ -235,15 +235,17 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         inc()
     }
     private [machine] def inc(): Unit = pc += 1
-    private [machine] def nextChar: Char = input.charAt(offset)
+    private [machine] def peekChar: Char = input.charAt(offset)
+    private [machine] def peekChar(lookAhead: Int): Char = input.charAt(offset + lookAhead)
     private [machine] def moreInput: Boolean = offset < inputsz
+    private [machine] def moreInput(n: Int): Boolean = offset + (n - 1) < inputsz
     private [machine] def updatePos(c: Char) = c match {
         case '\n' => line += 1; col = 1
         case '\t' => col = ((col + 3) & -4) | 1//((col - 1) | 3) + 2 // scalastyle:ignore magic.number
         case _    => col += 1
     }
     private [machine] def consumeChar(): Char = {
-        val c = nextChar
+        val c = peekChar
         updatePos(c)
         offset += 1
         c

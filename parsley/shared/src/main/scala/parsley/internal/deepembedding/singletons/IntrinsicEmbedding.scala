@@ -30,6 +30,13 @@ private [parsley] object Eof extends Singleton[Unit] {
     override val instr: instructions.Instr = instructions.Eof
 }
 
+private [parsley] final class UniSatisfy(private [UniSatisfy] val f: Int => Boolean, val expected: LabelConfig) extends Singleton[Int] {
+    // $COVERAGE-OFF$
+    override def pretty: String = "satisfyUnicode(?)"
+    // $COVERAGE-ON$
+    override def instr: instructions.Instr = new instructions.UniSat(f, expected)
+}
+
 private [parsley] final class Modify[S](val reg: Reg[S], f: S => S) extends Singleton[Unit] with UsesRegister {
     // $COVERAGE-OFF$
     override def pretty: String = s"modify($reg, ?)"
@@ -42,4 +49,7 @@ private [deepembedding] object CharTok {
 }
 private [deepembedding] object StringTok {
     def unapply(self: StringTok): Option[String] = Some(self.s)
+}
+private [deepembedding] object UniSatisfy {
+    def unapply(self: UniSatisfy): Option[Int => Boolean] = Some(self.f)
 }

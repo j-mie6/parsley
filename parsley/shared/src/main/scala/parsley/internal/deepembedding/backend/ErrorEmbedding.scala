@@ -19,6 +19,7 @@ private [deepembedding] final class ErrorLabel[A](val p: StrictParsley[A], priva
         case ct@CharTok(c) if ct.expected ne Hidden => new CharTok(c, Label(label)).asInstanceOf[StrictParsley[A]]
         case st@StringTok(s) if st.expected ne Hidden => new StringTok(s, Label(label)).asInstanceOf[StrictParsley[A]]
         case sat@Satisfy(f) if sat.expected ne Hidden => new Satisfy(f, Label(label)).asInstanceOf[StrictParsley[A]]
+        case sat@UniSatisfy(f) if sat.expected ne Hidden => new UniSatisfy(f, Label(label)).asInstanceOf[StrictParsley[A]]
         // TODO: The hide property is required to be checked, but there is no test for it
         case ErrorLabel(p, label2) if label2.nonEmpty => ErrorLabel(p, label)
         case _ => this
