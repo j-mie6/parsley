@@ -125,7 +125,7 @@ object character {
       */
     private [parsley] def charUtf16(c: Int): Parsley[Int] = { //TODO: release along with the utf combinators
         if (Character.isBmpCodePoint(c)) char(c.toChar) #> c
-        else attempt(string(Character.toChars(c).mkString)) #> c
+        else new Parsley(new singletons.SupplementaryCharTok(c, NotConfigured))
     }
 
     /** This combinator tries to parse a single character from the input that matches the given predicate.

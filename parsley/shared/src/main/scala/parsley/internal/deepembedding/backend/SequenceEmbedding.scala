@@ -73,6 +73,7 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
         // pure f <*> p = f <$> p
         case Pure(f) => right match {
             case ct@CharTok(c) => result(instrs += instructions.CharTokFastPerform[Char, B](c, f.asInstanceOf[Char => B], ct.expected))
+            case ct@SupplementaryCharTok(c) => result(instrs += instructions.SupplementaryCharTokFastPerform[Int, B](c, f.asInstanceOf[Int => B], ct.expected))
             case st@StringTok(s) => result(instrs += instructions.StringTokFastPerform(s, f.asInstanceOf[String => B], st.expected))
             case _ =>
                 suspend(right.codeGen[Cont, R]) |>
