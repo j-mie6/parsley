@@ -41,7 +41,7 @@ private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, _exp
     private [this] final val expected = _expected.asExpectDesc
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        if (ctx.moreInput && f(ctx.nextChar)) {
+        if (ctx.moreInput && f(ctx.peekChar)) {
             ctx.consumeChar()
             ctx.pushAndContinue(x)
         }
@@ -94,7 +94,7 @@ private [internal] final class JumpTable(jumpTable: mutable.LongMap[(Int, Set[Ex
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         if (ctx.moreInput) {
-            val (dest, errorItems) = jumpTable.getOrElse(ctx.nextChar.toLong, (default, allErrorItems))
+            val (dest, errorItems) = jumpTable.getOrElse(ctx.peekChar.toLong, (default, allErrorItems))
             ctx.pc = dest
             if (dest != default) {
                 ctx.pushCheck()

@@ -13,14 +13,21 @@ private [parsley] final class CharTok(private [CharTok] val c: Char, val expecte
     // $COVERAGE-OFF$
     override def pretty: String = s"char($c)"
     // $COVERAGE-ON$
-    override def instr: instructions.Instr = instructions.CharTok(c, expected)
+    override def instr: instructions.Instr = new instructions.CharTok(c, expected)
+}
+
+private [parsley] final class SupplementaryCharTok(private [SupplementaryCharTok] val codepoint: Int, val expected: LabelConfig) extends Singleton[Int] {
+    // $COVERAGE-OFF$
+    override def pretty: String = s"char(${Character.toChars(codepoint).mkString})"
+    // $COVERAGE-ON$
+    override def instr: instructions.Instr = new instructions.SupplementaryCharTok(codepoint, expected)
 }
 
 private [parsley] final class StringTok(private [StringTok] val s: String, val expected: LabelConfig) extends Singleton[String] {
     // $COVERAGE-OFF$
     override def pretty: String = s"string($s)"
     // $COVERAGE-ON$
-    override def instr: instructions.Instr = instructions.StringTok(s, expected)
+    override def instr: instructions.Instr = new instructions.StringTok(s, expected)
 }
 
 private [parsley] object Eof extends Singleton[Unit] {
@@ -28,6 +35,13 @@ private [parsley] object Eof extends Singleton[Unit] {
     override val pretty: String = "eof"
     // $COVERAGE-ON$
     override val instr: instructions.Instr = instructions.Eof
+}
+
+private [parsley] final class UniSatisfy(private [UniSatisfy] val f: Int => Boolean, val expected: LabelConfig) extends Singleton[Int] {
+    // $COVERAGE-OFF$
+    override def pretty: String = "satisfyUnicode(?)"
+    // $COVERAGE-ON$
+    override def instr: instructions.Instr = new instructions.UniSat(f, expected)
 }
 
 private [parsley] final class Modify[S](val reg: Reg[S], f: S => S) extends Singleton[Unit] with UsesRegister {
@@ -40,6 +54,12 @@ private [parsley] final class Modify[S](val reg: Reg[S], f: S => S) extends Sing
 private [deepembedding] object CharTok {
     def unapply(self: CharTok): Option[Char] = Some(self.c)
 }
+private [deepembedding] object SupplementaryCharTok {
+    def unapply(self: SupplementaryCharTok): Option[Int] = Some(self.codepoint)
+}
 private [deepembedding] object StringTok {
     def unapply(self: StringTok): Option[String] = Some(self.s)
+}
+private [deepembedding] object UniSatisfy {
+    def unapply(self: UniSatisfy): Option[Int => Boolean] = Some(self.f)
 }

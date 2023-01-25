@@ -12,7 +12,7 @@ private [parsley] final class Satisfy(private [Satisfy] val f: Char => Boolean, 
     // $COVERAGE-OFF$
     override val pretty: String = "satisfy(f)"
     // $COVERAGE-ON$
-    override def instr: instructions.Instr = instructions.Satisfies(f, expected)
+    override def instr: instructions.Instr = new instructions.Satisfies(f, expected)
 }
 
 private [parsley] object Line extends Singleton[Int] {

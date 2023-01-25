@@ -227,7 +227,8 @@ private [backend] object Choice {
 
     @tailrec private def tablable(p: StrictParsley[_], backtracks: Boolean): Option[(Char, Option[ExpectItem], Int, Boolean)] = p match {
         // CODO: Numeric parsers by leading digit (This one would require changing the foldTablified function a bit)
-        case ct@CharTok(d)                       => Some((d, ct.expected.asExpectItem(d), 1, backtracks))
+        case ct@CharTok(c)                       => Some((c, ct.expected.asExpectItem(c), 1, backtracks))
+        case ct@SupplementaryCharTok(c)          => Some((Character.highSurrogate(c), ct.expected.asExpectItem(Character.toChars(c).mkString), 1, backtracks))
         case st@StringTok(s)                     => Some((s.head, st.expected.asExpectItem(s), s.codePointCount(0, s.length), backtracks))
         //case op@MaxOp(o)                         => Some((o.head, Some(Desc(o)), o.size, backtracks))
         //case _: StringLiteral | RawStringLiteral => Some(('"', Some(Desc("string")), 1, backtracks))

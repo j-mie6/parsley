@@ -26,11 +26,11 @@ private [internal] final class TokenSign(ty: SignType, plusPresence: PlusSignPre
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         // This could be simplified, but the "fail" branches need to be duplicated...
-        if (ctx.moreInput && ctx.nextChar == '-') {
+        if (ctx.moreInput && ctx.peekChar == '-') {
             ctx.fastUncheckedConsumeChars(1)
             ctx.pushAndContinue(neg)
         }
-        else if ((plusPresence ne PlusSignPresence.Illegal) && ctx.moreInput && ctx.nextChar == '+') {
+        else if ((plusPresence ne PlusSignPresence.Illegal) && ctx.moreInput && ctx.peekChar == '+') {
             ctx.fastUncheckedConsumeChars(1)
             ctx.pushAndContinue(pos)
         }

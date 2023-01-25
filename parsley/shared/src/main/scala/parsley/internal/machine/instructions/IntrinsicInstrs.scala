@@ -7,7 +7,7 @@ import scala.annotation.tailrec
 
 import parsley.token.errors.LabelConfig
 
-import parsley.internal.errors.{EndOfInput, ExpectItem, UnexpectDesc}
+import parsley.internal.errors.{EndOfInput, ExpectDesc, ExpectItem, UnexpectDesc}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.{ClassicFancyError, ClassicUnexpectedError, DefuncError, EmptyError, EmptyErrorWithReason}
@@ -42,20 +42,49 @@ private [internal] object Lift3 {
 }
 
 private [internal] class CharTok(c: Char, x: Any, errorItem: Option[ExpectItem]) extends Instr {
+    def this(c: Char, x: Any, expected: LabelConfig) = this(c, x, expected.asExpectItem(s"$c"))
+    def this(c: Char, expected: LabelConfig) = this(c, c, expected)
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        if (ctx.moreInput && ctx.nextChar == c) {
+        if (ctx.moreInput && ctx.peekChar == c) {
             ctx.consumeChar()
             ctx.pushAndContinue(x)
         }
         else ctx.expectedFail(errorItem, unexpectedWidth = 1)
     }
     // $COVERAGE-OFF$
-    override def toString: String = if (x == c) s"Chr($c)" else s"ChrPerform($c, $x)"
+    override def toString: String = if (x == c) s"Chr($c)" else s"ChrExchange($c, $x)"
+    // $COVERAGE-ON$
+}
+
+private [internal] class SupplementaryCharTok(codepoint: Int, x: Any, errorItem: Option[ExpectItem]) extends Instr {
+    def this(codepoint: Int, x: Any, expected: LabelConfig) = this(codepoint, x, expected.asExpectItem(Character.toChars(codepoint).mkString))
+    def this(codepoint: Int, expected: LabelConfig) = this(codepoint, codepoint, expected)
+
+    assert(Character.isSupplementaryCodePoint(codepoint), "SupplementaryCharTok should only be used for supplementary code points")
+    val h = Character.highSurrogate(codepoint)
+    val l = Character.lowSurrogate(codepoint)
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        if (ctx.moreInput(2) && ctx.peekChar(0) == h && ctx.peekChar(1) == l) {
+            // not going to be a tab or newline
+            ctx.offset += 2
+            ctx.col += 1
+            ctx.pushAndContinue(x)
+        }
+        else ctx.expectedFail(errorItem, unexpectedWidth = 1)
+    }
+    // $COVERAGE-OFF$
+    override def toString: String =
+        if (x == codepoint) s"SupplementaryChr($h$l)"
+        else s"SupplementaryChrExchange($h$l, $x)"
     // $COVERAGE-ON$
 }
 
 private [internal] final class StringTok(s: String, x: Any, errorItem: Option[ExpectItem]) extends Instr {
+    def this(s: String, x: Any, expected: LabelConfig) = this(s, x,  expected.asExpectItem(s))
+    def this(s: String, expected: LabelConfig) = this(s, s, expected)
+
     private [this] val sz = s.length
     private [this] val codePointLength = s.codePointCount(0, sz)
 
@@ -105,6 +134,32 @@ private [internal] final class StringTok(s: String, x: Any, errorItem: Option[Ex
     }
     // $COVERAGE-OFF$
     override def toString: String = if (x.isInstanceOf[String] && (s eq x.asInstanceOf[String])) s"Str($s)" else s"StrPerform($s, $x)"
+    // $COVERAGE-ON$
+}
+
+private [internal] final class UniSat(f: Int => Boolean, expected: Option[ExpectDesc]) extends Instr {
+    def this(f: Int => Boolean, expected: LabelConfig) = this(f, expected.asExpectDesc)
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        lazy val hc = ctx.peekChar(0)
+        lazy val h = hc.toInt
+        lazy val l = ctx.peekChar(1)
+        lazy val c = Character.toCodePoint(hc, l)
+        if (ctx.moreInput(2) && hc.isHighSurrogate && Character.isSurrogatePair(hc, l) && f(c)) {
+            // not going to be a tab or newline
+            ctx.offset += 2
+            ctx.col += 1
+            ctx.pushAndContinue(c)
+        }
+        else if (ctx.moreInput && f(h)) {
+            ctx.updatePos(hc)
+            ctx.offset += 1
+            ctx.pushAndContinue(h)
+        }
+        else ctx.expectedFail(expected, unexpectedWidth = 1)
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = "UniSat(?)"
     // $COVERAGE-ON$
 }
 
@@ -305,15 +360,7 @@ private [internal] final class SwapAndPut(reg: Int) extends Instr {
 }
 
 // Companion Objects
-private [internal] object CharTok {
-    def apply(c: Char, expected: LabelConfig): CharTok = apply(c, c, expected)
-    def apply(c: Char, x: Any, expected: LabelConfig): CharTok = new CharTok(c, x, expected.asExpectItem(s"$c"))
-}
-
 private [internal] object StringTok {
-    def apply(s: String, expected: LabelConfig): StringTok = apply(s, s, expected)
-    def apply(s: String, x: Any, expected: LabelConfig): StringTok = new StringTok(s, x,  expected.asExpectItem(s))
-
     private [StringTok] abstract class Adjust {
         private [StringTok] def tab: Adjust
         private [StringTok] def next(): Unit
@@ -356,9 +403,13 @@ private [internal] object StringTok {
 }
 
 private [internal] object CharTokFastPerform {
-    def apply[A >: Char, B](c: Char, f: A => B, expected: LabelConfig): CharTok = CharTok(c, f(c), expected)
+    def apply[A >: Char, B](c: Char, f: A => B, expected: LabelConfig): CharTok = new CharTok(c, f(c), expected)
+}
+
+private [internal] object SupplementaryCharTokFastPerform {
+    def apply[A >: Int, B](c: Int, f: A => B, expected: LabelConfig): SupplementaryCharTok = new SupplementaryCharTok(c, f(c), expected)
 }
 
 private [internal] object StringTokFastPerform {
-    def apply(s: String, f: String => Any, expected: LabelConfig): StringTok = StringTok(s, f(s), expected)
+    def apply(s: String, f: String => Any, expected: LabelConfig): StringTok = new StringTok(s, f(s), expected)
 }

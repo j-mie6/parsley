@@ -10,17 +10,15 @@ import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 
 private [internal] final class Satisfies(f: Char => Boolean, expected: Option[ExpectDesc]) extends Instr {
+    def this(f: Char => Boolean, expected: LabelConfig) = this(f, expected.asExpectDesc)
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        if (ctx.moreInput && f(ctx.nextChar)) ctx.pushAndContinue(ctx.consumeChar())
+        if (ctx.moreInput && f(ctx.peekChar)) ctx.pushAndContinue(ctx.consumeChar())
         else ctx.expectedFail(expected, unexpectedWidth = 1)
     }
     // $COVERAGE-OFF$
     override def toString: String = "Sat(?)"
     // $COVERAGE-ON$
-}
-private [internal] object Satisfies {
-    def apply(f: Char => Boolean, expected: LabelConfig): Satisfies = new Satisfies(f, expected.asExpectDesc)
 }
 
 private [internal] object RestoreAndFail extends Instr {

@@ -31,7 +31,7 @@ private [instructions] abstract class CommentLexer extends Instr {
 
     @tailrec private final def consumeSingle(ctx: Context): Boolean = {
         if (ctx.moreInput) {
-            if (ctx.nextChar != '\n') {
+            if (ctx.peekChar != '\n') {
                 ctx.consumeChar()
                 consumeSingle(ctx)
             }
@@ -176,7 +176,7 @@ private [internal] final class TokenWhiteSpace private (
              errConfig.labelSpaceEndOfLineComment.asExpectDesc("end of line"))
     }
     override def spaces(ctx: Context): Unit = {
-        while (ctx.moreInput && ws(ctx.nextChar)) {
+        while (ctx.moreInput && ws(ctx.peekChar)) {
             ctx.consumeChar()
         }
     }
@@ -210,7 +210,7 @@ private [internal] final class TokenNonSpecific(name: String, unexpectedIllegal:
 
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        if (ctx.moreInput && start(ctx.nextChar)) {
+        if (ctx.moreInput && start(ctx.peekChar)) {
             val initialOffset = ctx.offset
             ctx.offset += 1
             restOfToken(ctx, initialOffset)
@@ -230,7 +230,7 @@ private [internal] final class TokenNonSpecific(name: String, unexpectedIllegal:
     }
 
     @tailrec private def restOfToken(ctx: Context, initialOffset: Int): Unit = {
-        if (ctx.moreInput && letter(ctx.nextChar)) {
+        if (ctx.moreInput && letter(ctx.peekChar)) {
             ctx.offset += 1
             restOfToken(ctx, initialOffset)
         }
