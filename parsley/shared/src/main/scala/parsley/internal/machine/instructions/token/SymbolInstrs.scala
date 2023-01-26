@@ -11,8 +11,8 @@ import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.instructions.Instr
 
-private [internal] final class SoftKeyword(specific: String, letter: CharPredicate, caseSensitive: Boolean, expected: Option[ExpectDesc], expectedEnd: Option[ExpectDesc])
-    extends Instr {
+private [internal] final class SoftKeyword(
+        specific: String, letter: CharPredicate, caseSensitive: Boolean, expected: Option[ExpectDesc], expectedEnd: Option[ExpectDesc]) extends Instr {
     def this(specific: String, letter: predicate.CharPredicate, caseSensitive: Boolean, expected: LabelConfig, expectedEnd: String) = {
         this(if (caseSensitive) specific else specific.toLowerCase,
              letter.asInternalPredicate,
@@ -23,7 +23,7 @@ private [internal] final class SoftKeyword(specific: String, letter: CharPredica
     private [this] final val strsz = specific.length
     private [this] final val numCodePoints = specific.codePointCount(0, strsz)
 
-    final override def apply(ctx: Context) = {
+    final override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         if (ctx.moreInput(strsz)) {
             ctx.saveState()
