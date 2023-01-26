@@ -54,7 +54,11 @@ class SymbolTests extends ParsleyTest {
         "Χαίρετε" --> (
             "Χαίρετε" -> true,
             "Χαίρετεα" -> false,
-        )
+        ),
+        "🙂🙂🙂" --> (
+            "🙂🙂🙂" -> true,
+            "🙂🙂🙂a" -> false
+        ),
     )
 
     they should "parse full utf-16" in {
@@ -99,6 +103,9 @@ class SymbolTests extends ParsleyTest {
             "HELLO" --> (
                 "hello" -> true,
                 "hallo" -> false,
+            ),
+            "🙂🙂🙂" --> (
+                "🙂🙂🙂" -> true
             ),
         )
         keyCases(caseInsensitiveUni)(
