@@ -43,6 +43,7 @@ inThisBuild(List(
     ProblemFilters.exclude[DirectMissingMethodProblem]("parsley.errors.combinator#ErrorMethods.unexpected"),
     ProblemFilters.exclude[MissingClassProblem]("parsley.token.errors.FilterOps"),
     ProblemFilters.exclude[MissingClassProblem]("parsley.token.errors.FilterOps$"),
+    ProblemFilters.exclude[ReversedMissingMethodProblem]("parsley.token.predicate#CharPredicate.asInternalPredicate")
   ),
   tlVersionIntroduced := Map(
     "2.13" -> "1.5.0",

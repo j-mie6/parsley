@@ -7,7 +7,7 @@ import scala.annotation.tailrec
 
 import parsley.XAssert._
 import parsley.token.descriptions.SpaceDesc
-import parsley.token.errors.{ErrorConfig, LabelConfig}
+import parsley.token.errors.ErrorConfig
 
 import parsley.internal.errors.{ExpectDesc, ExpectItem, UnexpectDesc}
 import parsley.internal.machine.Context
@@ -242,6 +242,7 @@ private [internal] final class TokenNonSpecific(name: String, unexpectedIllegal:
     // $COVERAGE-ON$
 }
 
+/*
 private [instructions] abstract class TokenSpecificAllowTrailing(
         specific: String, expected: Option[ExpectDesc], protected final val expectedEnd: Option[ExpectDesc], caseSensitive: Boolean) extends Instr {
     def this(specific: String, expected: LabelConfig, expectedEnd: String, caseSensitive: Boolean) = {
@@ -272,25 +273,6 @@ private [instructions] abstract class TokenSpecificAllowTrailing(
     }
 }
 
-private [internal] final class TokenSpecific(specific: String, expected: LabelConfig, _expectedEnd: String, letter: Char => Boolean, caseSensitive: Boolean)
-    extends TokenSpecificAllowTrailing(specific, expected, _expectedEnd, caseSensitive) {
-    override def postprocess(ctx: Context, i: Int): Unit = {
-        if (i < ctx.inputsz && letter(ctx.input.charAt(i))) {
-            ctx.expectedFail(expectedEnd, unexpectedWidth = 1) //This should only report a single token
-            ctx.restoreState()
-        }
-        else {
-            ctx.states = ctx.states.tail
-            ctx.pushAndContinue(())
-        }
-    }
-
-    // $COVERAGE-OFF$
-    override def toString: String = s"TokenSpecific($specific)"
-    // $COVERAGE-ON$
-}
-
-/*
 private [internal] final class TokenMaxOp(operator: String, _ops: Set[String]) extends TokenSpecificAllowTrailing(operator, true) {
     private val ops = Radix.makeSet(_ops.collect {
         case op if op.length > operator.length && op.startsWith(operator) => op.substring(operator.length)

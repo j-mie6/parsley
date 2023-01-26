@@ -250,7 +250,13 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         offset += 1
         c
     }
-    private [machine] def fastUncheckedConsumeChars(n: Int) = {
+    private [machine] def fastConsumeSupplementaryChar(): Unit = {
+        assert(this.peekChar.isHighSurrogate, "must have a high surrogate to consume supplementary")
+        // not going to be a tab or newline
+        offset += 2
+        col += 1
+    }
+    private [machine] def fastUncheckedConsumeChars(n: Int): Unit = {
         offset += n
         col += n
     }
