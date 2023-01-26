@@ -67,9 +67,7 @@ private [internal] class SupplementaryCharTok(codepoint: Int, x: Any, errorItem:
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         if (ctx.moreInput(2) && ctx.peekChar(0) == h && ctx.peekChar(1) == l) {
-            // not going to be a tab or newline
-            ctx.offset += 2
-            ctx.col += 1
+            ctx.fastConsumeSupplementaryChar()
             ctx.pushAndContinue(x)
         }
         else ctx.expectedFail(errorItem, unexpectedWidth = 1)
@@ -146,9 +144,7 @@ private [internal] final class UniSat(f: Int => Boolean, expected: Option[Expect
         lazy val l = ctx.peekChar(1)
         lazy val c = Character.toCodePoint(hc, l)
         if (ctx.moreInput(2) && hc.isHighSurrogate && Character.isSurrogatePair(hc, l) && f(c)) {
-            // not going to be a tab or newline
-            ctx.offset += 2
-            ctx.col += 1
+            ctx.fastConsumeSupplementaryChar()
             ctx.pushAndContinue(c)
         }
         else if (ctx.moreInput && f(h)) {
