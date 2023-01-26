@@ -20,5 +20,7 @@ private [parsley] class Unicode(f: Int => Boolean) extends CharPredicate {
     }
 }
 private [parsley] object NotRequired extends CharPredicate {
+    // $COVERAGE-OFF$
     def peek(ctx: Context): Boolean = false
+    // $COVERAGE-ON$
 }
