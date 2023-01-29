@@ -11,17 +11,14 @@ import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.instructions.Instr
 
-private [internal] final class SoftKeyword(
-        specific: String, letter: CharPredicate, caseSensitive: Boolean, expected: Option[ExpectDesc], expectedEnd: Option[ExpectDesc]) extends Instr {
-    def this(specific: String, letter: predicate.CharPredicate, caseSensitive: Boolean, expected: LabelConfig, expectedEnd: String) = {
-        this(if (caseSensitive) specific else specific.toLowerCase,
-             letter.asInternalPredicate,
-             caseSensitive,
-             expected.asExpectDesc, Some(new ExpectDesc(expectedEnd)))
-    }
-
+private [token] abstract class Specific extends Instr {
+    protected val specific: String
+    protected val caseSensitive: Boolean
+    protected val expected: Option[ExpectDesc]
     private [this] final val strsz = specific.length
     private [this] final val numCodePoints = specific.codePointCount(0, strsz)
+
+    protected def postprocess(ctx: Context): Unit
 
     final override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
@@ -32,23 +29,12 @@ private [internal] final class SoftKeyword(
         else ctx.expectedFail(expected, numCodePoints)
     }
 
-    private def postprocess(ctx: Context): Unit = {
-        if (letter.peek(ctx)) {
-            ctx.expectedFail(expectedEnd, unexpectedWidth = 1) //This should only report a single token
-            ctx.restoreState()
-        }
-        else {
-            ctx.states = ctx.states.tail
-            ctx.pushAndContinue(())
-        }
-    }
-
-    val readCharCaseHandledBMP = {
+    private val readCharCaseHandledBMP = {
         if (caseSensitive) (ctx: Context) => ctx.peekChar
         else (ctx: Context) => ctx.peekChar.toLower
     }
 
-    val readCharCaseHandledSupplementary = {
+    private val readCharCaseHandledSupplementary = {
         if (caseSensitive) (ctx: Context) => Character.toCodePoint(ctx.peekChar(0), ctx.peekChar(1))
         else (ctx: Context) => Character.toLowerCase(Character.toCodePoint(ctx.peekChar(0), ctx.peekChar(1)))
     }
@@ -71,8 +57,59 @@ private [internal] final class SoftKeyword(
         }
         else postprocess(ctx)
     }
+}
+
+private [internal] final class SoftKeyword(protected val specific: String, letter: CharPredicate, protected val caseSensitive: Boolean,
+                                           protected val expected: Option[ExpectDesc], expectedEnd: Option[ExpectDesc]) extends Specific {
+    def this(specific: String, letter: predicate.CharPredicate, caseSensitive: Boolean, expected: LabelConfig, expectedEnd: String) = {
+        this(if (caseSensitive) specific else specific.toLowerCase,
+             letter.asInternalPredicate,
+             caseSensitive,
+             expected.asExpectDesc, Some(new ExpectDesc(expectedEnd)))
+    }
+
+    protected def postprocess(ctx: Context): Unit = {
+        if (letter.peek(ctx)) {
+            ctx.expectedFail(expectedEnd, unexpectedWidth = 1) //This should only report a single token
+            ctx.restoreState()
+        }
+        else {
+            ctx.states = ctx.states.tail
+            ctx.pushAndContinue(())
+        }
+    }
 
     // $COVERAGE-OFF$
     override def toString: String = s"SoftKeyword($specific)"
+    // $COVERAGE-ON$
+}
+
+// I want a Trie here not a Set... We'll add a Trie back into the API, but I want it to be (outwardly) immutable.
+private [internal] final class SoftOperator(protected val specific: String, letter: CharPredicate, ends: Set[String], protected val expected: Option[ExpectDesc], expectedEnd: Option[ExpectDesc]) extends Specific {
+    protected val caseSensitive = true
+
+    protected def postprocess(ctx: Context): Unit = {
+        /*ends match {
+            case Nil => attempt {
+                err.labelSymbolOperator(name)(string(name)) *>
+                notFollowedBy(opLetter).label(err.labelSymbolEndOfOperator(name))
+            }
+            case end::ends => attempt {
+                err.labelSymbolOperator(name)(string(name)) *>
+                notFollowedBy(opLetter <|> strings(end, ends: _*)).label(err.labelSymbolEndOfOperator(name))
+            }
+        }*/
+        if (letter.peek(ctx)) {
+            ctx.expectedFail(expectedEnd, unexpectedWidth = 1) //This should only report a single token
+            ctx.restoreState()
+        }
+        else {
+            ctx.states = ctx.states.tail
+            ctx.pushAndContinue(())
+        }
+    }
+
+    // $COVERAGE-OFF$
+    override def toString: String = s"SoftOperator($specific)"
     // $COVERAGE-ON$
 }

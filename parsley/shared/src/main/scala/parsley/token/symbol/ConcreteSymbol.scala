@@ -49,6 +49,7 @@ private [token] class ConcreteSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc,
     */
 
     override def softKeyword(name: String): Parsley[Unit] = {
+        require(name.nonEmpty, "Keywords may not be empty strings")
         new Parsley(new token.SoftKeyword(name, nameDesc.identifierLetter, symbolDesc.caseSensitive,
                                           err.labelSymbolKeyword(name), err.labelSymbolEndOfKeyword(name)))
     }
