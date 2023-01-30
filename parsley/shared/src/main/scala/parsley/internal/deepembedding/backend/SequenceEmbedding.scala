@@ -180,7 +180,10 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
                             this
                     }
             }
-        case r <** (p: Seq[_]) => mergeFromRight(p, chooseInto(r))
+        case r <** (p: Seq[_]) =>
+            assume(after.size == 1 && (after.head eq p), "after can only contain just p, which is going to get flattened, so it can be dropped")
+            after.clear()
+            mergeFromRight(p, chooseInto(r))
         // shift pure to the right by swapping before and after (before is empty linked list!)
         case (_: Pure[_]) <** _ =>
             assume(before.isEmpty, "empty can reuse before instead of allocating a new list because before is empty")
