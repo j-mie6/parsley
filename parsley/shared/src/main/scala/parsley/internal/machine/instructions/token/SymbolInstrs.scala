@@ -8,11 +8,11 @@ import scala.annotation.tailrec
 import parsley.token.errors.LabelConfig
 import parsley.token.predicate
 
+import parsley.internal.collection.immutable.Trie
 import parsley.internal.errors.ExpectDesc
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.instructions.Instr
-import parsley.internal.collection.immutable.Trie
 
 private [token] abstract class Specific extends Instr {
     protected val specific: String
@@ -87,7 +87,8 @@ private [internal] final class SoftKeyword(protected val specific: String, lette
     // $COVERAGE-ON$
 }
 
-private [internal] final class SoftOperator(protected val specific: String, letter: CharPredicate, ops: Trie, protected val expected: Option[ExpectDesc], expectedEnd: Option[ExpectDesc]) extends Specific {
+private [internal] final class SoftOperator(protected val specific: String, letter: CharPredicate, ops: Trie,
+                                            protected val expected: Option[ExpectDesc], expectedEnd: Option[ExpectDesc]) extends Specific {
     def this(specific: String, letter: predicate.CharPredicate, ops: Trie, expected: LabelConfig, expectedEnd: String) = {
         this(specific, letter.asInternalPredicate, ops, expected.asExpectDesc, Some(new ExpectDesc(expectedEnd)))
     }
