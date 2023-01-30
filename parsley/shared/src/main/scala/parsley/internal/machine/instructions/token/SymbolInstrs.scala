@@ -3,6 +3,8 @@
  */
 package parsley.internal.machine.instructions.token
 
+import scala.annotation.tailrec
+
 import parsley.token.errors.LabelConfig
 import parsley.token.predicate
 
@@ -10,6 +12,7 @@ import parsley.internal.errors.ExpectDesc
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.instructions.Instr
+import parsley.internal.collection.immutable.Trie
 
 private [token] abstract class Specific extends Instr {
     protected val specific: String
@@ -84,22 +87,24 @@ private [internal] final class SoftKeyword(protected val specific: String, lette
     // $COVERAGE-ON$
 }
 
-// I want a Trie here not a Set... We'll add a Trie back into the API, but I want it to be (outwardly) immutable.
-private [internal] final class SoftOperator(protected val specific: String, letter: CharPredicate, ends: Set[String], protected val expected: Option[ExpectDesc], expectedEnd: Option[ExpectDesc]) extends Specific {
+private [internal] final class SoftOperator(protected val specific: String, letter: CharPredicate, ops: Trie, protected val expected: Option[ExpectDesc], expectedEnd: Option[ExpectDesc]) extends Specific {
+    def this(specific: String, letter: predicate.CharPredicate, ops: Trie, expected: LabelConfig, expectedEnd: String) = {
+        this(specific, letter.asInternalPredicate, ops, expected.asExpectDesc, Some(new ExpectDesc(expectedEnd)))
+    }
     protected val caseSensitive = true
+    private val ends = ops.suffixes(specific)
+
+    // returns true if an end could be parsed from this point
+    @tailrec private def checkEnds(ctx: Context, ends: Trie, off: Int): Boolean = {
+        if (ends.nonEmpty && ctx.moreInput(off + 1)) {
+            val endsOfNext = ends.suffixes(ctx.peekChar(off))
+            endsOfNext.contains("") || checkEnds(ctx, endsOfNext, off + 1)
+        }
+        else false
+    }
 
     protected def postprocess(ctx: Context): Unit = {
-        /*ends match {
-            case Nil => attempt {
-                err.labelSymbolOperator(name)(string(name)) *>
-                notFollowedBy(opLetter).label(err.labelSymbolEndOfOperator(name))
-            }
-            case end::ends => attempt {
-                err.labelSymbolOperator(name)(string(name)) *>
-                notFollowedBy(opLetter <|> strings(end, ends: _*)).label(err.labelSymbolEndOfOperator(name))
-            }
-        }*/
-        if (letter.peek(ctx)) {
+        if (letter.peek(ctx) || checkEnds(ctx, ends, off = 0)) {
             ctx.expectedFail(expectedEnd, unexpectedWidth = 1) //This should only report a single token
             ctx.restoreState()
         }

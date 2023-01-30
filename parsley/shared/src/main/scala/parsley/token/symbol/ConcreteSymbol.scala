@@ -3,9 +3,8 @@
  */
 package parsley.token.symbol
 
-import parsley.Parsley, Parsley.{attempt, notFollowedBy}
-import parsley.character.{char, string, strings}
-import parsley.errors.combinator.ErrorMethods
+import parsley.Parsley, Parsley.attempt
+import parsley.character.{char, string}
 import parsley.token.descriptions.{NameDesc, SymbolDesc}
 import parsley.token.errors.ErrorConfig
 
@@ -54,10 +53,12 @@ private [token] class ConcreteSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc,
                                           err.labelSymbolKeyword(name), err.labelSymbolEndOfKeyword(name)))
     }
 
-    private lazy val opLetter = nameDesc.operatorLetter.toNative
+    //private lazy val opLetter = nameDesc.operatorLetter.toNative
     override def softOperator(name: String): Parsley[Unit] = {
         require(name.nonEmpty, "Operators may not be empty strings")
-        val ends = symbolDesc.hardOperators.collect {
+        new Parsley(new token.SoftOperator(name, nameDesc.operatorLetter, symbolDesc.hardOperatorsTrie,
+                                           err.labelSymbolOperator(name), err.labelSymbolEndOfOperator(name)))
+        /*val ends = symbolDesc.hardOperators.collect {
             case op if op.startsWith(name) && op != name => op.substring(name.length)
         }.toList
         ends match {
@@ -69,6 +70,6 @@ private [token] class ConcreteSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc,
                 err.labelSymbolOperator(name)(string(name)) *>
                 notFollowedBy(opLetter <|> strings(end, ends: _*)).label(err.labelSymbolEndOfOperator(name))
             }
-        }
+        }*/
     }
 }
