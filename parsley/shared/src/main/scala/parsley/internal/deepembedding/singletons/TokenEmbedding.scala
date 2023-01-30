@@ -42,12 +42,3 @@ private [parsley] class NonSpecific(name: String, unexpectedIllegal: String => S
     // $COVERAGE-ON$
     override def instr: instructions.Instr = new instructions.TokenNonSpecific(name, unexpectedIllegal)(start, letter, illegal)
 }
-
-/*
-private [parsley] final class MaxOp(private [MaxOp] val operator: String, ops: Set[String]) extends Singleton[Unit] {
-    // $COVERAGE-OFF$
-    override def pretty: String = s"maxOp($operator)"
-    // $COVERAGE-ON$
-    override def instr: instructions.Instr = new instructions.TokenMaxOp(operator, ops)
-}
-*/

@@ -3,6 +3,8 @@
  */
 package parsley.token.descriptions
 
+import parsley.internal.collection.immutable.Trie
+
 /** This class describes how symbols (textual literals in a BNF) should be
   * processed lexically.
   *
@@ -15,6 +17,7 @@ final case class SymbolDesc (hardKeywords: Set[String],
                              hardOperators: Set[String],
                              caseSensitive: Boolean) {
     require((hardKeywords & hardOperators).isEmpty, "there cannot be an intersection between keywords and operators")
+    private [parsley] val hardOperatorsTrie = Trie(hardOperators)
     private [parsley] def isReservedName(name: String): Boolean =
         theReservedNames.contains(if (caseSensitive) name else name.toLowerCase)
     private lazy val theReservedNames =  if (caseSensitive) hardKeywords else hardKeywords.map(_.toLowerCase)
