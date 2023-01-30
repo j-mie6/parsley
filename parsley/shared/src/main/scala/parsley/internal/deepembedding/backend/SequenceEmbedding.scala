@@ -136,8 +136,6 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
     }
 
     private def mergeFromRight(p: Seq[_], into: DoublyLinkedList[StrictParsley[_]]): this.type = {
-        assume(after.isEmpty || after.size == 1 && (after.head eq p), "after can only contain just p, which is going to get flattened")
-        after.clear()
         into.stealAll(p.before)
         Seq.whenNonPure(p.res, into.addOne(_))
         into.stealAll(p.after)
@@ -172,6 +170,7 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
                     before = rs1
                     res = rr
                     assume(!rr.isInstanceOf[Pure[_]] || rs2.isEmpty, "rs2 is empty when rr is Pure")
+                    assume(after.size == 1 && (after.head eq p), "after can only contain just p, which is going to get flattened, so it can be dropped")
                     after = rs2
                     val into = chooseInto(rr)
                     p match {
