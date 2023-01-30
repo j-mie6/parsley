@@ -68,6 +68,7 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .settings(
     name := projectName,
 
+    resolvers ++= Opts.resolver.sonatypeOssReleases, // Will speed up MiMA during fast back-to-back releases
     libraryDependencies ++= Seq(
         "org.scalatest" %%% "scalatest" % "3.2.15" % Test,
         "org.scalatestplus" %%% "scalacheck-1-17" % "3.2.15.0" % Test,

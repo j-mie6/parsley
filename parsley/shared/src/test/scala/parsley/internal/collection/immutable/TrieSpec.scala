@@ -6,7 +6,7 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 class TrieSpec extends AnyPropSpec with ScalaCheckPropertyChecks with should.Matchers {
     property("a Trie constructed from a set should contain all of its elements") {
-        forAll { (set: Set[String]) =>
+        forAll { (set: List[String]) =>
             val t = Trie(set)
             set.forall(t.contains)
             for (key <- set) {
@@ -16,7 +16,7 @@ class TrieSpec extends AnyPropSpec with ScalaCheckPropertyChecks with should.Mat
     }
 
     property("a Trie constructed from a set should not contain extra keys") {
-        forAll { (set: Set[String]) =>
+        forAll { (set: List[String]) =>
             val t = Trie(set)
             forAll { (str: String) =>
                 whenever(!set.contains(str)) {
