@@ -88,12 +88,8 @@ object BreakCharDesc {
     final case class Supported(breakChar: Char, allowedAfterNonDecimalPrefix: Boolean) extends BreakCharDesc
 }
 
+// TODO: configurable dot?
 /** This class describes how numeric literals, in different bases, should be processed lexically.
-  *
-  * @define generic is it possible for generic
-  * @define genericInt $generic "integer numbers" to be
-  * @define genericReal $generic "real numbers" to be
-  * @define genericExp Describes how scientific exponent notation should work for
   *
   * @param literalBreakChar describes if breaks can be found within numeric literals.
   * @param leadingDotAllowed can a real number omit a leading 0 before the point?
@@ -114,8 +110,11 @@ object BreakCharDesc {
   * @param octalExponentDesc $genericExp octal literals.
   * @param binaryExponentDesc $genericExp binary literals.
   * @since 4.0.0
+  *
+  * @define genericInt is it possible for generic "integer numbers" to be
+  * @define genericReal is it possible for generic "real numbers" to be
+  * @define genericExp describes how scientific exponent notation should work for
   */
-// TODO: configurable dot?
 final case class NumericDesc (literalBreakChar: BreakCharDesc,
                               leadingDotAllowed: Boolean,
                               trailingDotAllowed: Boolean,

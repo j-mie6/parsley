@@ -71,8 +71,6 @@ object NumericEscape {
   * from single or multiple characters to specific values, numeric escape sequences with different
   * bases, as well as supporting zero-width escapes and line continuations via string gaps.
   *
-  * @define numericEscape if allowed, the description of how numeric escape seqeunces work for base
-  *
   * @param escBegin the character that starts an escape sequence, very often this is `'\\'`.
   * @param literals the characters that can be directly escaped, but still represent themselves, for instance `'"'`, or `'\\'`.
   * @param singleMap the possible single-character escape sequences and the (full UTF-16) character they map to, for instance `'n' -> 0xa`.
@@ -85,6 +83,8 @@ object NumericEscape {
                        escape sequences: in Haskell this would be `\&`.
   * @param gapsSupported specifies whether or not ''string gaps'' are supported: this is where whitespace can be injected between two
   *                      `escBegin` characters and this will all be ignored in the final string, such that `"hello \      \world"` is `"hello world"`.
+  *
+  * @define numericEscape if allowed, the description of how numeric escape sequences work for base
   * @since 4.0.0
   */
 final case class EscapeDesc (escBegin: Char,
