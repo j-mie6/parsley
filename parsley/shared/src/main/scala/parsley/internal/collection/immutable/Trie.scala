@@ -6,8 +6,8 @@ package parsley.internal.collection.immutable
 import scala.annotation.tailrec
 import scala.collection.immutable.IntMap
 
-private [parsley] class Trie(private val present: Boolean, children: IntMap[Trie]) {
-    def contains(key: String): Boolean = suffixes(key).present/*contains(key, 0, key.length)
+private [parsley] class Trie[+A](private val value: Option[A], children: IntMap[Trie[A]]) {
+    def contains(key: String): Boolean = get(key).nonEmpty/*contains(key, 0, key.length)
     @tailrec private def contains(key: String, idx: Int, sz: Int): Boolean = {
         if (idx == sz) present
         else childAt(key, idx) match {
@@ -15,37 +15,43 @@ private [parsley] class Trie(private val present: Boolean, children: IntMap[Trie
             case Some(t) => t.contains(key, idx + 1, sz)
         }
     }*/
+    def get(key: String): Option[A] = suffixes(key).value
+    //def apply(key: String): A = get(key).get
 
-    def isEmpty: Boolean = this eq Trie.empty
+    def isEmpty: Boolean = this eq Trie.emptyTrie
     def nonEmpty: Boolean = !isEmpty
 
-    def suffixes(key: Char): Trie = children.getOrElse(key.toInt, Trie.empty)
-    def suffixes(key: String): Trie = suffixes(key, 0, key.length)
-    @tailrec private def suffixes(key: String, idx: Int, sz: Int): Trie = {
+    def suffixes(key: Char): Trie[A] = children.getOrElse(key.toInt, Trie.emptyTrie)
+    def suffixes(key: String): Trie[A] = suffixes(key, 0, key.length)
+    @tailrec private def suffixes(key: String, idx: Int, sz: Int): Trie[A] = {
         if (idx == sz) this
         else childAt(key, idx) match {
-            case None => Trie.empty
+            case None => Trie.emptyTrie
             case Some(t) => t.suffixes(key, idx + 1, sz)
         }
     }
 
-    def incl(key: String): Trie = incl(key, 0, key.length)
-    private def incl(key: String, idx: Int, sz: Int): Trie = {
-        if (idx == sz && present) this
-        else if (idx == sz) new Trie(present = true, children)
+    def updated[B >: A](key: String, value: B): Trie[B] = updated(key, value, 0, key.length)
+    private def updated[B >: A](key: String, x: B, idx: Int, sz: Int): Trie[B] = {
+        if (idx == sz && value.nonEmpty) this
+        else if (idx == sz) new Trie(value = Some(x), children)
         else childAt(key, idx) match {
-            case None => new Trie(present, children.updated(key.charAt(idx).toInt, Trie.empty.incl(key, idx + 1, sz)))
+            case None => new Trie(value, children.updated(key.charAt(idx).toInt, Trie.emptyTrie.updated(key, x, idx + 1, sz)))
             case Some(t) =>
-                val newT = t.incl(key, idx + 1, sz)
+                val newT = t.updated(key, x, idx + 1, sz)
                 if (t eq newT) this
-                else new Trie(present, children.updated(key.charAt(idx).toInt, newT))
+                else new Trie(value, children.updated(key.charAt(idx).toInt, newT))
         }
     }
 
     private def childAt(key: String, idx: Int) = children.get(key.charAt(idx).toInt)
 }
 private [parsley] object Trie {
-    val empty = new Trie(present = false, IntMap.empty)
+    private val emptyTrie = new Trie[Nothing](value = None, IntMap.empty)
+    def empty[A]: Trie[A] = emptyTrie
 
-    def apply(strs: Iterable[String]): Trie = strs.foldLeft(empty)(_.incl(_))
+    def apply(strs: Iterable[String]): Trie[Unit] = strs.foldLeft(empty[Unit])(_.updated(_, ()))
+    def apply[A](kvs: Map[String, A]): Trie[A] = kvs.foldLeft(empty[A]) {
+        case (t, (k, v)) => t.updated(k, v)
+    }
 }

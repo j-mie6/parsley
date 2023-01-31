@@ -87,16 +87,16 @@ private [internal] final class SoftKeyword(protected val specific: String, lette
     // $COVERAGE-ON$
 }
 
-private [internal] final class SoftOperator(protected val specific: String, letter: CharPredicate, ops: Trie,
+private [internal] final class SoftOperator(protected val specific: String, letter: CharPredicate, ops: Trie[Unit],
                                             protected val expected: Option[ExpectDesc], expectedEnd: Option[ExpectDesc]) extends Specific {
-    def this(specific: String, letter: predicate.CharPredicate, ops: Trie, expected: LabelConfig, expectedEnd: String) = {
+    def this(specific: String, letter: predicate.CharPredicate, ops: Trie[Unit], expected: LabelConfig, expectedEnd: String) = {
         this(specific, letter.asInternalPredicate, ops, expected.asExpectDesc, Some(new ExpectDesc(expectedEnd)))
     }
     protected val caseSensitive = true
     private val ends = ops.suffixes(specific)
 
     // returns true if an end could be parsed from this point
-    @tailrec private def checkEnds(ctx: Context, ends: Trie, off: Int): Boolean = {
+    @tailrec private def checkEnds(ctx: Context, ends: Trie[Unit], off: Int): Boolean = {
         if (ends.nonEmpty && ctx.moreInput(off + 1)) {
             val endsOfNext = ends.suffixes(ctx.peekChar(off))
             endsOfNext.contains("") || checkEnds(ctx, endsOfNext, off + 1)
