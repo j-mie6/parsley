@@ -33,15 +33,13 @@ private [parsley] class Trie[+A](private val value: Option[A], children: IntMap[
 
     def updated[B >: A](key: String, value: B): Trie[B] = updated(key, value, 0, key.length)
     private def updated[B >: A](key: String, x: B, idx: Int, sz: Int): Trie[B] = {
-        if (idx == sz && value.nonEmpty) this
-        else if (idx == sz) new Trie(value = Some(x), children)
-        else childAt(key, idx) match {
-            case None => new Trie(value, children.updated(key.charAt(idx).toInt, Trie.emptyTrie.updated(key, x, idx + 1, sz)))
-            case Some(t) =>
-                val newT = t.updated(key, x, idx + 1, sz)
-                if (t eq newT) this
-                else new Trie(value, children.updated(key.charAt(idx).toInt, newT))
-        }
+        if (idx == sz) new Trie(value = Some(x), children)
+        else new Trie(value,
+            children.updated(
+                key.charAt(idx).toInt,
+                childAt(key, idx).getOrElse(Trie.emptyTrie).updated(key, x, idx + 1, sz)
+            )
+        )
     }
 
     private def childAt(key: String, idx: Int) = children.get(key.charAt(idx).toInt)
