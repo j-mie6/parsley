@@ -185,7 +185,7 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
             after.clear()
             mergeFromRight(p, chooseInto(r))
         // shift pure to the right by swapping before and after (before is empty linked list!)
-        case (_: Pure[_]) <** _ =>
+        case (_: Pure[_]) <* _ =>
             assume(before.isEmpty, "empty can reuse before instead of allocating a new list because before is empty")
             val empty = before
             before = after
