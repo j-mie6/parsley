@@ -151,6 +151,7 @@ object combinator {
       * @param p a parser that should no longer be under the affect of an `entrench` combinator
       * @return a parser that parses `p` and allows its error messages to be amended.
       * @since 4.2.0
+      * @group adj
       */
     def dislodge[A](p: Parsley[A]): Parsley[A] = new Parsley(new frontend.ErrorDislodge(p.internal))
 
@@ -161,6 +162,7 @@ object combinator {
       * @return a parser that parses `p` but ensures any errors generated occur as if no input were consumed.
       * @since 4.2.0
       * @see [[amend `amend`]] and `[[dislodge `dislodge`]]
+      * @group adj
       */
     def amendThenDislodge[A](p: Parsley[A]): Parsley[A] = dislodge(amend(p))
 
@@ -444,7 +446,8 @@ object combinator {
           * @see [[filterOut `filterOut`]], which is a variant that just produces a reason for failure with no unexpected message.
           * @see [[guardAgainst `guardAgainst`]], which is similar to `unexpectedWhen`, except it generates a ''specialised'' error instead.
           * @see [[unexpectedWhen `unexpectedWhen`]], which is similar, but with no associated reason.
-            @since 4.2.0
+          * @since 4.2.0
+          * @group filter
           */
         def unexpectedWithReasonWhen(pred: PartialFunction[A, (String, String)]): Parsley[A] = this._unexpectedWhen {
             case x if pred.isDefinedAt(x) =>
