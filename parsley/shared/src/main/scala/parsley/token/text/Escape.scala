@@ -18,14 +18,16 @@ private [token] class Escape(desc: EscapeDesc, err: ErrorConfig, generic: numeri
     //       on the possibilities. We'll want trie-based folding here, or at least a specialised
     //       instruction that has the trie lookup logic baked in.
     // We do need to backtrack out of this if things go wrong, it's possible another escape sequence might share a lead
-    private val escMapped = new Parsley(new token.EscapeMapped(desc.escTrie, desc.escs))/*{
-        desc.escMap.view.map {
+    private val escMapped = {
+        if (desc.escTrie.isEmpty) empty
+        else new Parsley(new token.EscapeMapped(desc.escTrie, desc.escs))
+        /*desc.escMap.view.map {
             case (e, c) => e -> pure(c)
         }.toList match {
             case Nil => empty
             case x::xs => attempt(strings(x, xs: _*))
-        }
-    }*/
+        }*/
+    }
 
     private def boundedChar(p: Parsley[BigInt], maxValue: Int, prefix: Option[Char], radix: Int) = err.labelEscapeNumeric(radix) {
         val numericTail = err.filterEscapeCharNumericSequenceIllegal(maxValue, radix).collect(p) {

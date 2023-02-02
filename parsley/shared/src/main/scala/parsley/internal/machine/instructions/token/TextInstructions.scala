@@ -28,8 +28,8 @@ class EscapeMapped(escTrie: Trie[Int], caretWidth: Int, expecteds: Set[ExpectIte
         lazy val escsNew = escs.suffixes(ctx.peekChar(off))
         if (ctx.moreInput(off+1) && escsNew.nonEmpty) findLongest(ctx, off+1, escsNew, nextLongestChar, nextLongestSz)
         else {
-            ctx.fastUncheckedConsumeChars(nextLongestChar)
-            ctx.pushAndContinue(nextLongestSz)
+            ctx.fastUncheckedConsumeChars(nextLongestSz)
+            ctx.pushAndContinue(nextLongestChar)
         }
     }
 
