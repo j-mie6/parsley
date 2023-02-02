@@ -20,6 +20,7 @@ class EscapeMapped(escTrie: Trie[Int], caretWidth: Int, expecteds: Set[ExpectIte
         go(ctx, 0, escTrie)
     }
 
+    // FIXME: needs maximal munch behaviour!
     @tailrec private def go(ctx: Context, off: Int, escs: Trie[Int]): Unit = {
         escs.get("") match {
             case Some(x) =>
@@ -33,4 +34,8 @@ class EscapeMapped(escTrie: Trie[Int], caretWidth: Int, expecteds: Set[ExpectIte
                 else ctx.fail(new MultiExpectedError(ctx.offset, ctx.line, ctx.col, expecteds, caretWidth))
         }
     }
+
+    // $COVERAGE-OFF$
+    override def toString: String = "EscapeMapped"
+    // $COVERAGE-ON$
 }

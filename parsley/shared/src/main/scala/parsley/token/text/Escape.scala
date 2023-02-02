@@ -3,27 +3,29 @@
  */
 package parsley.token.text
 
-import parsley.Parsley, Parsley.{attempt, empty, pure}
-import parsley.character.{bit, char, digit, hexDigit, octDigit, strings}
+import parsley.Parsley, Parsley.{attempt, empty}
+import parsley.character.{bit, char, digit, hexDigit, octDigit}
 import parsley.combinator.ensure
 import parsley.implicits.zipped.Zipped3
 import parsley.token.descriptions.text.{EscapeDesc, NumberOfDigits, NumericEscape}
 import parsley.token.errors.{ErrorConfig, NotConfigured}
 import parsley.token.numeric
 
+import parsley.internal.deepembedding.singletons.token
+
 private [token] class Escape(desc: EscapeDesc, err: ErrorConfig, generic: numeric.Generic) {
     // NOTE: `strings`, while nice, is not perfect as it doesn't leverage a trie-based folding
     //       on the possibilities. We'll want trie-based folding here, or at least a specialised
     //       instruction that has the trie lookup logic baked in.
     // We do need to backtrack out of this if things go wrong, it's possible another escape sequence might share a lead
-    private val escMapped = {
+    private val escMapped = new Parsley(new token.EscapeMapped(desc.escTrie, desc.escs))/*{
         desc.escMap.view.map {
             case (e, c) => e -> pure(c)
         }.toList match {
             case Nil => empty
             case x::xs => attempt(strings(x, xs: _*))
         }
-    }
+    }*/
 
     private def boundedChar(p: Parsley[BigInt], maxValue: Int, prefix: Option[Char], radix: Int) = err.labelEscapeNumeric(radix) {
         val numericTail = err.filterEscapeCharNumericSequenceIllegal(maxValue, radix).collect(p) {
