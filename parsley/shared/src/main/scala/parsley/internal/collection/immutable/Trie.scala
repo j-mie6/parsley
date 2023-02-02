@@ -16,7 +16,7 @@ private [parsley] class Trie[+A](private val value: Option[A], children: IntMap[
         }
     }*/
     def get(key: String): Option[A] = suffixes(key).value
-    //def apply(key: String): A = get(key).get
+    def apply(key: String): A = get(key).get
 
     def isEmpty: Boolean = this eq Trie.emptyTrie
     def nonEmpty: Boolean = !isEmpty

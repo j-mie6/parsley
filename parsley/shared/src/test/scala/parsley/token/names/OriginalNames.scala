@@ -1,4 +1,4 @@
-/* SPDX-FileCopyrightText: © 2022 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+/* SPDX-FileCopyrightText: © 2023 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
  * SPDX-License-Identifier: BSD-3-Clause
  */
 package parsley.token.names
@@ -11,25 +11,14 @@ import parsley.token.descriptions.{NameDesc, SymbolDesc}
 import parsley.token.errors.ErrorConfig
 import parsley.token.predicate.{Basic, CharPredicate, NotRequired, Unicode}
 
-import parsley.internal.deepembedding.singletons
-
-/** This class' implementation has been optimised for performance. If you've stumbled on
-  * this file hoping to learn about how it works, this is the wrong place. The original,
-  * unoptimised implementation is preserved for testing in the corresponding place in the
-  * "test" folder. This is because a requirement of optimisation is that the semantics can
-  * still be implemented by plain combinators. Go look there!
-  */
-private [token] class ConcreteNames(nameDesc: NameDesc, symbolDesc: SymbolDesc, err: ErrorConfig) extends Names {
+private [token] class OriginalNames(nameDesc: NameDesc, symbolDesc: SymbolDesc, err: ErrorConfig) extends Names {
     private def keyOrOp(startImpl: CharPredicate, letterImpl: CharPredicate, illegal: String => Boolean,
                         name: String, unexpectedIllegal: String => String) = {
-        (startImpl, letterImpl) match {
-            case (Basic(start), Basic(letter)) => new Parsley(new singletons.NonSpecific(name, unexpectedIllegal, start, letter, illegal))
-            case _ => attempt {
-                complete(startImpl, letterImpl).unexpectedWhen {
-                    case x if illegal(x) => unexpectedIllegal(x)
-                }
-            }.label(name)
-        }
+        attempt {
+            complete(startImpl, letterImpl).unexpectedWhen {
+                case x if illegal(x) => unexpectedIllegal(x)
+            }
+        }.label(name)
     }
     private def trailer(impl: CharPredicate) = impl match {
         case Basic(letter) => stringOfMany(satisfy(letter))
