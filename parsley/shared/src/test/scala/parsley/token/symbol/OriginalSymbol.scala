@@ -9,6 +9,7 @@ import parsley.errors.combinator.ErrorMethods
 import parsley.token.descriptions.{NameDesc, SymbolDesc}
 import parsley.token.errors.ErrorConfig
 
+// $COVERAGE-OFF$
 private [token] class OriginalSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc, err: ErrorConfig) extends Symbol(err) {
 
     override def apply(name: String): Parsley[Unit] = {
@@ -63,3 +64,4 @@ private [token] class OriginalSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc,
         }
     }
 }
+// $COVERAGE-ON$

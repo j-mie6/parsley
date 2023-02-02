@@ -11,6 +11,7 @@ import parsley.token.descriptions.text.{EscapeDesc, NumberOfDigits, NumericEscap
 import parsley.token.errors.{ErrorConfig, NotConfigured}
 import parsley.token.numeric
 
+// $COVERAGE-OFF$
 private [token] class OriginalEscape(desc: EscapeDesc, err: ErrorConfig, generic: numeric.Generic) {
     // NOTE: `strings`, while nice, is not perfect as it doesn't leverage a trie-based folding
     //       on the possibilities. We'll want trie-based folding here, or at least a specialised
@@ -83,3 +84,4 @@ private [token] class OriginalEscape(desc: EscapeDesc, err: ErrorConfig, generic
     val escapeBegin = err.labelEscapeSequence(char(desc.escBegin))
     val escapeChar = escapeBegin *> escapeCode
 }
+// $COVERAGE-ON$

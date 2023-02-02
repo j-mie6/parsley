@@ -11,6 +11,7 @@ import parsley.token.descriptions.{NameDesc, SymbolDesc}
 import parsley.token.errors.ErrorConfig
 import parsley.token.predicate.{Basic, CharPredicate, NotRequired, Unicode}
 
+// $COVERAGE-OFF$
 private [token] class OriginalNames(nameDesc: NameDesc, symbolDesc: SymbolDesc, err: ErrorConfig) extends Names {
     private def keyOrOp(startImpl: CharPredicate, letterImpl: CharPredicate, illegal: String => Boolean,
                         name: String, unexpectedIllegal: String => String) = {
@@ -47,3 +48,4 @@ private [token] class OriginalNames(nameDesc: NameDesc, symbolDesc: SymbolDesc, 
         err.filterNameIllFormedOperator.filter(userDefinedOperator)(x => startChar.startsWith(x) && endChar.endsWith(x))
     }
 }
+// $COVERAGE-ON$
