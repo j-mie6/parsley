@@ -6,15 +6,14 @@ package parsley.internal.machine.instructions.token
 import scala.annotation.tailrec
 
 import parsley.internal.collection.immutable.Trie
-import parsley.internal.errors.ExpectItem
+import parsley.internal.errors.{ExpectItem, ExpectRaw}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.instructions.Instr
 import parsley.internal.machine.errors.MultiExpectedError
 
-class EscapeMapped(escTrie: Trie[Int]) extends Instr {
-    private val caretWidth: Int = ???
-    private val expecteds: Set[ExpectItem] = ???
+class EscapeMapped(escTrie: Trie[Int], caretWidth: Int, expecteds: Set[ExpectItem]) extends Instr {
+    def this(escTrie: Trie[Int], escs: Set[String]) = this(escTrie, escs.view.map(_.length).max, escs.map(ExpectRaw(_)))
     // We do need to backtrack out of this if things go wrong, it's possible another escape sequence might share a lead
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
