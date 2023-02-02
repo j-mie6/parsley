@@ -17,19 +17,47 @@ class EscapeMapped(escTrie: Trie[Int], caretWidth: Int, expecteds: Set[ExpectIte
     // We do need to backtrack out of this if things go wrong, it's possible another escape sequence might share a lead
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        go(ctx, 0, escTrie)
+        findFirst(ctx, 0, escTrie)
     }
 
-    // FIXME: needs maximal munch behaviour!
-    @tailrec private def go(ctx: Context, off: Int, escs: Trie[Int]): Unit = {
+    @tailrec private def findLongest(ctx: Context, off: Int, escs: Trie[Int], bestGuess: Int, bestGuessSz: Int): Unit = {
         escs.get("") match {
             case Some(x) =>
-                ctx.fastUncheckedConsumeChars(off)
-                ctx.pushAndContinue(x)
+                lazy val escsNew = escs.suffixes(ctx.peekChar(off))
+                if (ctx.moreInput(off+1) && escsNew.nonEmpty) {
+                    findLongest(ctx, off+1, escsNew, x, off)
+                }
+                else {
+                    ctx.fastUncheckedConsumeChars(off)
+                    ctx.pushAndContinue(x)
+                }
             case None =>
                 lazy val escsNew = escs.suffixes(ctx.peekChar(off))
                 if (ctx.moreInput(off+1) && escsNew.nonEmpty) {
-                    go(ctx, off+1, escsNew)
+                    findLongest(ctx, off+1, escsNew, bestGuess, bestGuessSz)
+                }
+                else {
+                    ctx.fastUncheckedConsumeChars(bestGuessSz)
+                    ctx.pushAndContinue(bestGuess)
+                }
+        }
+    }
+
+    @tailrec private def findFirst(ctx: Context, off: Int, escs: Trie[Int]): Unit = {
+        escs.get("") match {
+            case Some(x) =>
+                lazy val escsNew = escs.suffixes(ctx.peekChar(off))
+                if (ctx.moreInput(off+1) && escsNew.nonEmpty) {
+                    findLongest(ctx, off+1, escsNew, x, off)
+                }
+                else {
+                    ctx.fastUncheckedConsumeChars(off)
+                    ctx.pushAndContinue(x)
+                }
+            case None =>
+                lazy val escsNew = escs.suffixes(ctx.peekChar(off))
+                if (ctx.moreInput(off+1) && escsNew.nonEmpty) {
+                    findFirst(ctx, off+1, escsNew)
                 }
                 else ctx.fail(new MultiExpectedError(ctx.offset, ctx.line, ctx.col, expecteds, caretWidth))
         }
