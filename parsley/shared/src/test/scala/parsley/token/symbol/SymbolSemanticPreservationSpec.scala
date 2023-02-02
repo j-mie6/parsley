@@ -55,7 +55,7 @@ class SymbolSemanticPreservationSpec extends AnyPropSpec with ScalaCheckProperty
         caseSensitive <- Arbitrary.arbitrary[Boolean]
     } yield SymbolDesc(ks, ops, caseSensitive)
 
-    implicit val config = new PropertyCheckConfiguration(minSuccessful = 50)
+    implicit val config: PropertyCheckConfiguration = new PropertyCheckConfiguration(minSuccessful = 50)
 
     def optAndUnOptAreSame(f: (Symbol, String) => Parsley[Unit])(nameDesc: NameDesc, symbolDesc: SymbolDesc, sym: String, input: String) =
         whenever (!input.contains('\u0000')) {
