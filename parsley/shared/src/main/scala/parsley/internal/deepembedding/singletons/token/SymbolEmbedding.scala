@@ -18,7 +18,7 @@ private [parsley] final class SoftKeyword(private [SoftKeyword] val specific: St
     override def instr: instructions.Instr = new instructions.token.SoftKeyword(specific, letter, caseSensitive, expected, expectedEnd)
 }
 
-private [parsley] final class SoftOperator(private [SoftOperator] val specific: String, letter: CharPredicate, ops: Trie,
+private [parsley] final class SoftOperator(private [SoftOperator] val specific: String, letter: CharPredicate, ops: Trie[Unit],
                                            val expected: LabelConfig, expectedEnd: String) extends Singleton[Unit] {
     // $COVERAGE-OFF$
     override def pretty: String = s"softOperator($specific)"

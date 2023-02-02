@@ -5,6 +5,8 @@ package parsley.token.descriptions.text
 
 import parsley.token.predicate.{CharPredicate, Unicode}
 
+import parsley.internal.collection.immutable.Trie
+
 /** This class, and its subtypes, describe how many digits a numeric escape sequence is allowed.
   *
   * @since 4.0.0
@@ -98,19 +100,24 @@ final case class EscapeDesc (escBegin: Char,
                              emptyEscape: Option[Char],
                              gapsSupported: Boolean,
                             ) {
-    locally {
+    val escs = locally {
         val multiKeys = multiMap.keySet
         val singleKeys = singleMap.keySet
         require(multiKeys.forall(_.nonEmpty), "empty strings cannot be escape sequences")
         val litAndSingle = literals & singleKeys
-        val litSingleAndMulti = (literals | singleKeys).map(c => s"$c") & multiKeys
+        val litOrSingle = (literals | singleKeys).map(c => s"$c")
+        val litSingleAndMulti = litOrSingle & multiKeys
         require(litAndSingle.isEmpty && litSingleAndMulti.isEmpty, "there can be no overlap between literals, singleMap, and multiMap")
+        litOrSingle | multiKeys
     }
-    // TODO: this needs to be a Radix, I think we'll need parsley.collection.immutable.Radix too
-    private [token] val escMap = multiMap ++ literals.map(c => s"$c" -> c.toInt) ++ singleMap.map {
-        case (k, v) => s"$k" -> v
+    private [token] val escTrie = {
+        val escMap = multiMap ++ literals.map(c => s"$c" -> c.toInt) ++ singleMap.map {
+           case (k, v) => s"$k" -> v
+        }
+        val badChar = escMap.find(kv => !Character.isValidCodePoint(kv._2))
+        require(badChar.isEmpty, s"Escape characters cannot map to invalid characters: ${badChar.get} is not a valid character")
+        Trie(escMap)
     }
-    require(escMap.forall(kv => Character.isValidCodePoint(kv._2)), "Escape characters cannot map to invalid characters")
 }
 /** This object contains default implementations of the `EscapeDesc` class, which align with
   * different languages or styles.
