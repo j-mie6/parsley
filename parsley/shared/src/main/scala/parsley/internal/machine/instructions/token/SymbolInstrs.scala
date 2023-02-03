@@ -105,18 +105,20 @@ private [internal] final class SoftOperator(protected val specific: String, lett
     }
 
     protected def postprocess(ctx: Context): Unit = {
-        val unexpectedWidth = checkEnds(ctx, ends, off = 0, unexpectedWidth = 0)
         if (letter.peek(ctx)) {
             ctx.expectedFail(expectedEnd, unexpectedWidth = 1) //This should only report a single token
             ctx.restoreState()
         }
-        else if (unexpectedWidth != 0) {
-            ctx.expectedFail(expectedEnd, unexpectedWidth)
-            ctx.restoreState()
-        }
         else {
-            ctx.states = ctx.states.tail
-            ctx.pushAndContinue(())
+            val unexpectedWidth = checkEnds(ctx, ends, off = 0, unexpectedWidth = 0)
+            if (unexpectedWidth != 0) {
+                ctx.expectedFail(expectedEnd, unexpectedWidth)
+                ctx.restoreState()
+            }
+            else {
+                ctx.states = ctx.states.tail
+                ctx.pushAndContinue(())
+            }
         }
     }
 
