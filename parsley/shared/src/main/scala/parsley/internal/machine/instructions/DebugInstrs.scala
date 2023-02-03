@@ -24,6 +24,7 @@ private [instructions] trait Colours {
     final val newline = green("↙")
     final val space = white("·")
     final val endOfInput = red("•")
+    final val carriageReturn = green("←")
 
     final private def colour(str: String, colour: String): String = {
         if (ascii || parsley.debug.renderAscii) str else s"$colour$str${Console.RESET}"
@@ -66,6 +67,7 @@ private [instructions] trait InputSlicer { this: Colours =>
         val end = this.end(ctx)
         val s = ctx.input.mkString.substring(start(ctx), end).replace("\n", newline)
                                                              .replace(" ", space)
+                                                             .replace("\r", carriageReturn)
         if (end == ctx.inputsz) s"$s$endOfInput" else s
     }
     protected final def caret(ctx: Context): String = {
