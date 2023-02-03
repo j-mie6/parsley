@@ -67,7 +67,7 @@ private [instructions] trait InputSlicer { this: Colours =>
         val end = this.end(ctx)
         val s = ctx.input.mkString.substring(start(ctx), end).replace("\n", newline)
                                                              .replace(" ", space)
-							     .replace("\r", carriageReturn)
+                                                             .replace("\r", carriageReturn)
         if (end == ctx.inputsz) s"$s$endOfInput" else s
     }
     protected final def caret(ctx: Context): String = {
