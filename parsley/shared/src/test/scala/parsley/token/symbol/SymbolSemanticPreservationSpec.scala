@@ -45,7 +45,7 @@ class SymbolSemanticPreservationSpec extends AnyPropSpec with ScalaCheckProperty
 
     property("reading operators should not vary based on optimisations") {
         forAll(nameDescGen -> "name description", symbolDescGen -> "symbol description",
-               operatorGen -> "operator", Arbitrary.arbString.arbitrary -> "input")(optAndUnOptAreSame(_.softOperator(_)))
+               operatorGen -> "operator", Arbitrary.arbitrary[String] -> "input")(optAndUnOptAreSame(_.softOperator(_)))
 
         forAll(nameDescGen -> "name description", symbolDescGen -> "symbol description",
                operatorGen -> "operator", operatorGen -> "input")(optAndUnOptAreSame(_.softOperator(_)))
