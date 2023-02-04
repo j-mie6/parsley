@@ -6,7 +6,7 @@ package parsley.internal.collection.immutable
 import scala.annotation.tailrec
 import scala.collection.immutable.IntMap
 
-private [parsley] class Trie[+A](private val value: Option[A], children: IntMap[Trie[A]]) {
+private [parsley] class Trie[+A] private (private val value: Option[A], children: IntMap[Trie[A]]) {
     def contains(key: String): Boolean = get(key).nonEmpty/*contains(key, 0, key.length)
     @tailrec private def contains(key: String, idx: Int, sz: Int): Boolean = {
         if (idx == sz) present

@@ -16,13 +16,10 @@ import org.scalacheck.Gen
 import org.scalacheck.Arbitrary
 
 class SymbolSemanticPreservationSpec extends AnyPropSpec with ScalaCheckPropertyChecks with should.Matchers {
+    implicit val config: PropertyCheckConfiguration = new PropertyCheckConfiguration(minSuccessful = 50)
     val errConfig = new ErrorConfig
     def makeOptSymbol(nameDesc: NameDesc, symDesc: SymbolDesc): Symbol = new LexemeSymbol(new ConcreteSymbol(nameDesc, symDesc, errConfig), spaces, errConfig)
     def makeUnoptSymbol(nameDesc: NameDesc, symDesc: SymbolDesc): Symbol = new LexemeSymbol(new OriginalSymbol(nameDesc, symDesc, errConfig), spaces, errConfig)
-
-    // Random testing time, we're going to create random valid configurations, and then test the
-    // parsers generated with random input. Doesn't matter what they do, so long as they say the
-    // same things. It is probably a good idea to provide some non-random input cases too.
 
     val identifierLetterGen = Gen.oneOf[CharPredicate](
         Basic(_.isLetter),
@@ -54,8 +51,6 @@ class SymbolSemanticPreservationSpec extends AnyPropSpec with ScalaCheckProperty
         ops <- operatorsGen
         caseSensitive <- Arbitrary.arbitrary[Boolean]
     } yield SymbolDesc(ks, ops, caseSensitive)
-
-    implicit val config: PropertyCheckConfiguration = new PropertyCheckConfiguration(minSuccessful = 50)
 
     def optAndUnOptAreSame(f: (Symbol, String) => Parsley[Unit])(nameDesc: NameDesc, symbolDesc: SymbolDesc, sym: String, input: String) =
         whenever (!input.contains('\u0000')) {
