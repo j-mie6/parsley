@@ -1,26 +1,30 @@
-/* SPDX-FileCopyrightText: © 2022 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+/* SPDX-FileCopyrightText: © 2023 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
  * SPDX-License-Identifier: BSD-3-Clause
  */
 package parsley.token.text
 
-import parsley.Parsley, Parsley.{attempt, empty}
-import parsley.character.{bit, char, digit, hexDigit, octDigit}
+import parsley.Parsley, Parsley.{attempt, empty, pure}
+import parsley.character.{bit, char, digit, hexDigit, octDigit, strings}
 import parsley.combinator.ensure
 import parsley.implicits.zipped.Zipped3
 import parsley.token.descriptions.text.{EscapeDesc, NumberOfDigits, NumericEscape}
 import parsley.token.errors.{ErrorConfig, NotConfigured}
 import parsley.token.numeric
 
-import parsley.internal.deepembedding.singletons.token
-
-/** This class' implementation has been optimised for performance. If you've stumbled on
-  * this file hoping to learn about how it works, this is the wrong place. The original,
-  * unoptimised implementation is preserved for testing in the corresponding place in the
-  * "test" folder. This is because a requirement of optimisation is that the semantics can
-  * still be implemented by plain combinators. Go look there!
-  */
-private [token] class Escape(desc: EscapeDesc, err: ErrorConfig, generic: numeric.Generic) {
-    private val escMapped = if (desc.escTrie.isEmpty) empty else new Parsley(new token.EscapeMapped(desc.escTrie, desc.escs))
+// $COVERAGE-OFF$
+private [token] class OriginalEscape(desc: EscapeDesc, err: ErrorConfig, generic: numeric.Generic) {
+    // NOTE: `strings`, while nice, is not perfect as it doesn't leverage a trie-based folding
+    //       on the possibilities. We'll want trie-based folding here, or at least a specialised
+    //       instruction that has the trie lookup logic baked in.
+    // We do need to backtrack out of this if things go wrong, it's possible another escape sequence might share a lead
+    private val escMapped = {
+        desc.escs.view.map {
+            case e => e -> pure(desc.escTrie(e))
+        }.toList match {
+            case Nil => empty
+            case x::xs => attempt(strings(x, xs: _*))
+        }
+    }
 
     private def boundedChar(p: Parsley[BigInt], maxValue: Int, prefix: Option[Char], radix: Int) = err.labelEscapeNumeric(radix) {
         val numericTail = err.filterEscapeCharNumericSequenceIllegal(maxValue, radix).collect(p) {
@@ -80,3 +84,4 @@ private [token] class Escape(desc: EscapeDesc, err: ErrorConfig, generic: numeri
     val escapeBegin = err.labelEscapeSequence(char(desc.escBegin))
     val escapeChar = escapeBegin *> escapeCode
 }
+// $COVERAGE-ON$

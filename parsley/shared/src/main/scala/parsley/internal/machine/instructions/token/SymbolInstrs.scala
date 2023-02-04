@@ -96,22 +96,29 @@ private [internal] final class SoftOperator(protected val specific: String, lett
     private val ends = ops.suffixes(specific)
 
     // returns true if an end could be parsed from this point
-    @tailrec private def checkEnds(ctx: Context, ends: Trie[Unit], off: Int): Boolean = {
+    @tailrec private def checkEnds(ctx: Context, ends: Trie[Unit], off: Int, unexpectedWidth: Int): Int = {
         if (ends.nonEmpty && ctx.moreInput(off + 1)) {
             val endsOfNext = ends.suffixes(ctx.peekChar(off))
-            endsOfNext.contains("") || checkEnds(ctx, endsOfNext, off + 1)
+            checkEnds(ctx, endsOfNext, off + 1, if (endsOfNext.contains("")) off + 1 else unexpectedWidth)
         }
-        else false
+        else unexpectedWidth
     }
 
     protected def postprocess(ctx: Context): Unit = {
-        if (letter.peek(ctx) || checkEnds(ctx, ends, off = 0)) {
+        if (letter.peek(ctx)) {
             ctx.expectedFail(expectedEnd, unexpectedWidth = 1) //This should only report a single token
             ctx.restoreState()
         }
         else {
-            ctx.states = ctx.states.tail
-            ctx.pushAndContinue(())
+            val unexpectedWidth = checkEnds(ctx, ends, off = 0, unexpectedWidth = 0)
+            if (unexpectedWidth != 0) {
+                ctx.expectedFail(expectedEnd, unexpectedWidth)
+                ctx.restoreState()
+            }
+            else {
+                ctx.states = ctx.states.tail
+                ctx.pushAndContinue(())
+            }
         }
     }
 
