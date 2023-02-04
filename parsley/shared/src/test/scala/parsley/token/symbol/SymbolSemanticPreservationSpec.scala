@@ -9,48 +9,19 @@ import parsley.token.LexemeImpl._
 import parsley.Parsley
 import parsley.token.descriptions._
 import parsley.token.errors.ErrorConfig
-import parsley.token.predicate._, implicits.Basic.charToBasic
-import parsley.token.symbol._
 import parsley.character.spaces
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary
+
+import parsley.token.descriptions.DescGen
+import DescGen._
+//import DescShrink._
 
 class SymbolSemanticPreservationSpec extends AnyPropSpec with ScalaCheckPropertyChecks with should.Matchers {
     implicit val config: PropertyCheckConfiguration = new PropertyCheckConfiguration(minSuccessful = 50)
     val errConfig = new ErrorConfig
     def makeOptSymbol(nameDesc: NameDesc, symDesc: SymbolDesc): Symbol = new LexemeSymbol(new ConcreteSymbol(nameDesc, symDesc, errConfig), spaces, errConfig)
     def makeUnoptSymbol(nameDesc: NameDesc, symDesc: SymbolDesc): Symbol = new LexemeSymbol(new OriginalSymbol(nameDesc, symDesc, errConfig), spaces, errConfig)
-
-    val identifierLetterGen = Gen.oneOf[CharPredicate](
-        Basic(_.isLetter),
-        Basic(_.isLetterOrDigit),
-        NotRequired,
-        Unicode(Character.isLetter(_)),
-        Unicode(Character.isLetterOrDigit(_)),
-        '$'
-    )
-    val opCharGen = Gen.nonEmptyContainerOf[Set, Char](Gen.oneOf('+', '*', '/', 'a'))
-    val opUniGen = Gen.nonEmptyContainerOf[Set, Int](Gen.oneOf(0x1F642, 0x1F643, '£', '$'))
-    val operatorLetterGen = Gen.frequency(
-        3 -> opCharGen.map(Basic),
-        3 -> Gen.oneOf(opCharGen.map(_.map(_.toInt)), opUniGen).map(Unicode),
-        1 -> Gen.const(NotRequired)
-    )
-    val keywordGen = Gen.oneOf("if", "foo", "while", "key", "a", "bar7")
-    val keywordsGen = Gen.containerOf[Set, String](keywordGen)
-    val operatorGen = Gen.oneOf("+", "*", "**", "***", "::", "*:*", "ba")
-    val operatorsGen = Gen.containerOf[Set, String](operatorGen)
-
-    val nameDescGen = for {
-        identifierLetter <- identifierLetterGen
-        operatorLetter <- operatorLetterGen
-    } yield NameDesc.plain.copy(identifierLetter = identifierLetter, operatorLetter = operatorLetter)
-
-    val symbolDescGen = for {
-        ks <- keywordsGen
-        ops <- operatorsGen
-        caseSensitive <- Arbitrary.arbitrary[Boolean]
-    } yield SymbolDesc(ks, ops, caseSensitive)
 
     def optAndUnOptAreSame(f: (Symbol, String) => Parsley[Unit])(nameDesc: NameDesc, symbolDesc: SymbolDesc, sym: String, input: String) =
         whenever (!input.contains('\u0000')) {
