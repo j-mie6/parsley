@@ -12,7 +12,7 @@ import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.MultiExpectedError
 import parsley.internal.machine.instructions.Instr
 
-class EscapeMapped(escTrie: Trie[Int], caretWidth: Int, expecteds: Set[ExpectItem]) extends Instr {
+private [internal] class EscapeMapped(escTrie: Trie[Int], caretWidth: Int, expecteds: Set[ExpectItem]) extends Instr {
     def this(escTrie: Trie[Int], escs: Set[String]) = this(escTrie, escs.view.map(_.length).max, escs.map(ExpectRaw(_)))
     // Do not consume input on failure, it's possible another escape sequence might share a lead
     override def apply(ctx: Context): Unit = {
