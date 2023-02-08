@@ -283,7 +283,7 @@ object registers {
         }
         // This must ONLY be used by CalleeSave in flatMap
         private [parsley] def deallocate(): Unit = _v = -1
-        override def toString: String = s"Reg(${if (allocated) addr else "unallocated"})"
+        //override def toString: String = s"Reg(${if (allocated) addr else "unallocated"})"
     }
     /** This object allows for the construction of a register via its `make` function.
       * @group reg
