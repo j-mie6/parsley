@@ -46,7 +46,7 @@ private [deepembedding] trait StrictParsley[+A] {
                                                                                 (implicit state: CodeGenState): Array[Instr] = {
         implicit val instrs: InstrBuffer = newInstrBuffer
         perform {
-            generateCalleeSave[Cont, Array[Instr]](numRegsUsedByParent, this.codeGen, usedRegs.size, allocateRegisters(usedRegs)) |> {
+            generateCalleeSave[Cont, Array[Instr]](numRegsUsedByParent, this.codeGen, usedRegs) |> {
                 // When `numRegsUsedByParent` is -1 this is top level, otherwise it is a flatMap
                 instrs += (if (numRegsUsedByParent >= 0) instructions.Return else instructions.Halt)
                 val recRets = finaliseRecs(recs)
@@ -101,13 +101,14 @@ private [deepembedding] object StrictParsley {
     /** Given a set of in-use registers, this function will allocate those that are currented
       * unallocated, giving them addresses not currently in use by the allocated registers
       *
+      * @param unallocatedRegs the set of registers that need allocating
       * @param regs the set of all registers used by a specific parser
       * @return the list of slots that have been freshly allocated to
       */
-    private def allocateRegisters(regs: Set[Reg[_]]): List[Int] = {
+    private def allocateRegisters(unallocatedRegs: Set[Reg[_]], regs: Set[Reg[_]]): List[Int] = {
         // Global registers cannot occupy the same slot as another global register
         // In a flatMap, that means a newly discovered global register must be allocated to a new slot: this may resize the register pool
-        val unallocatedRegs = regs.filterNot(_.allocated)
+        assert(unallocatedRegs == regs.filterNot(_.allocated))
         if (unallocatedRegs.nonEmpty) {
             val usedSlots = regs.collect {
                 case reg if reg.allocated => reg.addr
@@ -152,14 +153,17 @@ private [deepembedding] object StrictParsley {
       * @param instrs the instruction buffer
       * @param state the code generation state, for label generation
       */
-    private def generateCalleeSave[Cont[_, +_]: ContOps, R](numRegsUsedByParent: Int, bodyGen: =>Cont[R, Unit], reqRegs: Int, allocatedRegs: List[Int])
+    private def generateCalleeSave[Cont[_, +_]: ContOps, R](numRegsUsedByParent: Int, bodyGen: =>Cont[R, Unit], usedRegs: Set[Reg[_]])
                                                            (implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+        val reqRegs = usedRegs.size
+        val localRegs = usedRegs.filterNot(_.allocated)
+        val allocatedRegs = allocateRegisters(localRegs, usedRegs)
         val calleeSaveRequired = numRegsUsedByParent >= 0 // if this is -1, then we are the top level and have no parent, otherwise it needs to be done
-        if (calleeSaveRequired && allocatedRegs.nonEmpty) {
+        if (calleeSaveRequired && localRegs.nonEmpty) {
             val end = state.freshLabel()
             val calleeSave = state.freshLabel()
             instrs += new instructions.Label(calleeSave)
-            instrs += new instructions.CalleeSave(end, reqRegs, allocatedRegs, numRegsUsedByParent)
+            instrs += new instructions.CalleeSave(end, localRegs, reqRegs, allocatedRegs, numRegsUsedByParent)
             bodyGen |> {
                 instrs += new instructions.Jump(calleeSave)
                 instrs += new instructions.Label(end)
