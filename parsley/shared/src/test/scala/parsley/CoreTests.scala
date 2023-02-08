@@ -376,4 +376,13 @@ class CoreTests extends ParsleyTest {
         val q = attempt(n.put(4) *> p <* eof) | n.put(2) *> p <* eof
         q.parse("aaaabbb") shouldBe a [Success[_]]
     }
+
+    "flatMap" should "consistently generate a callee-save instruction if needed" ignore {
+        import parsley.registers._
+        val r = Reg.make[Int]
+        val p = pure(7).flatMap { _ =>
+            r.put(4) *> r.get
+        }
+        (p *> p).parse("") shouldBe Success(4)
+    }
 }
