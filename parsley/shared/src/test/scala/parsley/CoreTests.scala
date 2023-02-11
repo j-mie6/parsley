@@ -377,7 +377,7 @@ class CoreTests extends ParsleyTest {
         q.parse("aaaabbb") shouldBe a [Success[_]]
     }
 
-    "flatMap" should "consistently generate a callee-save instruction if needed" ignore {
+    "flatMap" should "consistently generate a callee-save instruction if needed" in {
         import parsley.registers._
         val r = Reg.make[Int]
         val p = pure(7).flatMap { _ =>
