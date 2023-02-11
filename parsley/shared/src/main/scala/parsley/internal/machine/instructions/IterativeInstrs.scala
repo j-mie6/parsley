@@ -18,7 +18,7 @@ private [internal] final class PushHandlerIterative(var label: Int) extends Inst
         ctx.inc()
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"PushHandlerAndCheck($label)"
+    override def toString: String = s"PushHandlerIterative($label)"
     // $COVERAGE-ON$
 }
 
