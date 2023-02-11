@@ -87,15 +87,19 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     private [machine] def popHints(): Unit = hints = hints.pop
     /* ERROR RELABELLING END */
 
+    def invalidateHints(): Unit = {
+        if (hintsValidOffset < offset) {
+            hints = EmptyHints
+            hintsValidOffset = offset
+        }
+    }
+
     private def addErrorToHints(): Unit = {
         val err = errs.error
         assume(!(!err.isExpectedEmpty) || err.isTrivialError, "not having an empty expected implies you are a trivial error")
         if (/*err.isTrivialError && */ !err.isExpectedEmpty && err.offset == offset) { // scalastyle:ignore disallow.space.after.token
             // If our new hints have taken place further in the input stream, then they must invalidate the old ones
-            if (hintsValidOffset < offset) {
-                hints = EmptyHints
-                hintsValidOffset = offset
-            }
+            invalidateHints()
             hints = hints.addError(err)
         }
     }
