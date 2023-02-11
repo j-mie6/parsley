@@ -8,10 +8,6 @@ import parsley.Parsley.attempt
 import descriptions.{SpaceDesc, LexicalDesc}
 import parsley.character.{string, char}
 import parsley.exceptions.UnfilledRegisterException
-import parsley.VanillaError
-import parsley.Failure
-import parsley.TestError
-import parsley.Raw
 
 class SpaceTests extends ParsleyTest {
     private def makeLexer(space: SpaceDesc) = new Lexer(LexicalDesc.plain.copy(spaceDesc = space))
@@ -293,17 +289,5 @@ class SpaceTests extends ParsleyTest {
             "    a" -> Some('a'),
             "    ab" -> None,
         )
-    }
-
-    "unicode spaces" should "not revive dead hints" ignore {
-        import parsley.combinator.{many, eof}
-        val lexer = makeLexer(unicodeNoComments)
-        val hintKiller = lexer.lexeme(string("!"))
-        val hintMaker = many(string("a"))
-        val p = hintMaker <* hintKiller <* eof
-        inside(p.parse("aaaa! :(")) {
-            case Failure(TestError(_, VanillaError(_, expecteds, _))) =>
-                expecteds shouldNot contain (Raw("a"))
-        }
     }
 }

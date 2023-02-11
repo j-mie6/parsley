@@ -9,6 +9,7 @@ import parsley.combinator.{exactly => repeat, _}
 import parsley.Parsley._
 import parsley.registers.{forYieldP, forYieldP_, Reg}
 import parsley.implicits.character.{charLift, stringLift}
+import parsley.character.char
 
 class CombinatorTests extends ParsleyTest {
     "choice" should "fail if given the empty list" in {
@@ -215,5 +216,16 @@ class CombinatorTests extends ParsleyTest {
                   matching('c')
         abc.parse("aaabbbccc") should be (Success(List('c', 'c', 'c')))
         abc.parse("aaaabc") shouldBe a [Failure[_]]
+    }
+
+    "iterative combinators" should "not revive dead hints" in {
+        import parsley.combinator.{many, eof}
+        val hintKiller = char('!') <* skipMany(char(' '))
+        val hintMaker = many(char('a'))
+        val p = hintMaker <* hintKiller <* eof
+        inside(p.parse("aaaa! :(")) {
+            case Failure(TestError(_, VanillaError(_, expecteds, _))) =>
+                expecteds shouldNot contain (Raw("a"))
+        }
     }
 }

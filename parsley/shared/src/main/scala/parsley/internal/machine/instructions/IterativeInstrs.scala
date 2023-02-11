@@ -8,6 +8,20 @@ import scala.collection.mutable
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 
+private [internal] final class PushHandlerIterative(var label: Int) extends InstrWithLabel {
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        // This is used for iterative parsers, which must ensure that invalidated hints are invalided _now_
+        ctx.invalidateHints()
+        ctx.pushCheck()
+        ctx.pushHandler(label)
+        ctx.inc()
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = s"PushHandlerIterative($label)"
+    // $COVERAGE-ON$
+}
+
 private [internal] final class Many(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         if (ctx.good) {
