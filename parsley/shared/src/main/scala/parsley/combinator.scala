@@ -442,6 +442,7 @@ object combinator {
       * @group iter
       */
     def manyN[A](n: Int, p: Parsley[A]): Parsley[List[A]] = {
+        require(n >= 0, "cannot pass negative integer to `manyN`")
         @tailrec def go(n: Int, acc: Parsley[List[A]] = many(p)): Parsley[List[A]] = {
             if (n == 0) acc
             else go(n-1, p <::> acc)
@@ -527,6 +528,7 @@ object combinator {
       * @group iter
       */
     def skipManyN(n: Int, p: Parsley[_]): Parsley[Unit] = {
+        require(n >= 0, "cannot pass negative integer to `skipManyN`")
         @tailrec def go(n: Int, acc: Parsley[Unit] = skipMany(p)): Parsley[Unit] = {
             if (n == 0) acc
             else go(n-1, p *> acc)
@@ -765,7 +767,7 @@ object combinator {
       *
       * @example This can be useful for scanning comments: {{{
       * scala> import parsley.character.{string, item, endOfLine}
-      * scala> import parsley.combinator.many
+      * scala> import parsley.combinator.someUntil
       * scala> val comment = string("//") *> someUntil(item, endOfLine)
       * scala> p.parse("//hello world")
       * val res0 = Failure(..)
