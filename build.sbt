@@ -46,7 +46,7 @@ inThisBuild(List(
   tlSiteApiUrl := Some(url("https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/latest/")),
 ))
 
-lazy val root = tlCrossRootProject.aggregate(parsley)
+lazy val root = tlCrossRootProject.aggregate(parsley, parsleyDebug)
 
 lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .withoutSuffixFor(JVMPlatform)
