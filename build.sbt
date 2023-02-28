@@ -76,9 +76,17 @@ inThisBuild(List(
   tlCiHeaderCheck := true,
   githubWorkflowJavaVersions := Seq(Java8, JavaLTS, JavaLatest),
   githubWorkflowAddedJobs += testCoverageJob(githubWorkflowGeneratedCacheSteps.value.toList),
+  // Website Configuration
+  tlSitePublishBranch := Some("wiki-migration"),
+  tlSiteApiUrl := Some(url("https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/latest")),
 ))
 
 lazy val root = tlCrossRootProject.aggregate(parsley)
+
+lazy val docs = project
+  .in(file("site"))
+  .dependsOn(parsley.jvm)
+  .enablePlugins(TypelevelSitePlugin)
 
 lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .withoutSuffixFor(JVMPlatform)
