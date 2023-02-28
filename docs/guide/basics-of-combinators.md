@@ -14,40 +14,43 @@ We'll start really basic: just reading a character or two and seeing how to comb
 using _combinators_. For a first look, we will just parse one of any character. If you are familar
 with regex, this would match the pattern `(.)`.
 
-```scala
+```scala mdoc:silent
 import parsley.Parsley
 import parsley.character.item
 
 val p: Parsley[Char] = item
-p.parse("a") // returns Success('a')
-p.parse("1") // returns Success('1')
-p.parse("")  // returns Failure(..)
+```
+```scala mdoc:height=2
+p.parse("a")
+p.parse("1")
+p.parse("")
 ```
 
-The `Parsley` type is the type of parsers. The type parameter `Char` here represents what type
+The @:api(parsley.Parsley) type is the type of parsers. The type parameter `Char` here represents what type
 the parser will return when it has been executed using `parse(input)`. Soon we will see an
-example with a different type. Parsers, when executed, return a `Result[Err, A]` for whatever `A` the
-parser returned: this is one of `Success` containing the value or `Failure` containing an error
+example with a different type. Parsers, when executed, return a @:api(parsley.Result)`[Err, A]` for whatever `A` the
+parser returned: this is one of @:api(parsley.Success) containing the value or @:api(parsley.Failure) containing an error
 message of type `Err` (by default this is `String`). This is the basic workflow when using parsers. The `item` parser will read any single
 character, no matter what (so long as there is one to read). It isn't particularly useful though,
 so lets match specific characters instead and parse _two_ of them this time. The regex for this
 would be `(ab)`.
 
-```scala
+```scala mdoc:silent
 import parsley.Parsley
 import parsley.character.char
 
 val ab: Parsley[(Char, Char)] = char('a') <~> char('b')
-
-ab.parse("ab") // returns Success(('a', 'b'))
-ab.parse("a") // returns Failure(..)
+```
+```scala mdoc:height=2
+ab.parse("ab")
+ab.parse("a")
 ```
 
 A few new things have appeared in this new example.
 The `char` combinator is new: given a specific character it will parse that character only.
 We'll see how you can define this and `item` in terms of another, more general, combinator soon.
 Notice that the type of `ab` is no longer just a `Parsley[Char]`, but a `Parsley[(Char, Char)]`:
-this is due to the `<~>` combinator with the following type (in a psuedo-syntax, for simplicity).
+this is due to the `<~>` combinator with the following type (in a pseudo-syntax, for simplicity).
 
 ```scala
 (_ <~> _): (p: Parsley[A], q: Parsley[B]) => Parsley[(A, B)]
@@ -86,14 +89,16 @@ The combinator `satisfy` takes a function, and will read a character when the pr
 be used to implement a wide range of functionality. For example, we can implement a parser that
 reads digits using `satisfy`:
 
-```scala
+```scala mdoc:silent
 import parsley.Parsley
 import parsley.character.satisfy
 
 val digit = satisfy(_.isDigit)
-digit.parse("1") // returns Success('1')
-digit.parse("2") // returns Success('2')
-digit.parse("a") // returns Failure(..)
+```
+```scala mdoc:height=2
+digit.parse("1")
+digit.parse("2")
+digit.parse("a")
 ```
 
 This is, however, already implemented by `parsley.character.digit`. Parsley is very rich in terms
@@ -112,12 +117,14 @@ This can be used to change the result of a parser `p` with the parser `f`, presu
 more useful. Let's see a couple of examples of this in action! Firstly, let's suppose we wanted
 our `digit` combinator from before to return an `Int` instead of a `Char`...
 
-```scala
+```scala mdoc:silent:nest
 import parsley.Parsley
 import parsley.character.satisfy
 
 val digit: Parsley[Int] = satisfy(_.isDigit).map(_.asDigit)
-digit.parse("1") // returns Success(1)
+```
+```scala mdoc:height=2
+digit.parse("1")
 ```
 
 Here we can see that the digit parser is no longer type `Parsley[Char]` but type `Parsley[Int]`.
@@ -156,36 +163,38 @@ Our new challenge is going to be making an implementation of the `string` combin
 this combinator already exists in the library, so we can play around with it first to see how it
 works:
 
-```scala
+```scala mdoc:silent
 import parsley.Parsley
 import parsley.character.string
 
 val abc = string("abc")
-abc.parse("abc") // returns Success("abc")
-abc.parse("abcd") // returns Success("abc")
-abc.parse("ab") // returns Failure(..)
-abc.parse("a bc") // returns Failure(..)
-abc.parse("dabc") // returns Failure(..)
+```
+```scala mdoc:height=2
+abc.parse("abc")
+abc.parse("abcd")
+abc.parse("ab")
+abc.parse("a bc")
+abc.parse("dabc")
 ```
 
 Notice how the result of the parser is a string. The `string` combinator reads a specific string
 exactly. Here are a couple more examples to help you get your head around everything we've seen so
 far:
 
-```scala
-import parsley.Parsley
+```scala mdoc:silent
 import parsley.character.{char, string}
-
-(string("abc") <* char('d')).parse("abcd") // returns Success("abc")
-(string("abc") ~> char('d')).parse("abcd") // returns Success('d')
-(string("abc") <~> char('d')).parse("abcd") // returns Success(("abc", 'd'))
+```
+```scala mdoc:height=2
+(string("abc") <* char('d')).parse("abcd")
+(string("abc") ~> char('d')).parse("abcd")
+(string("abc") <~> char('d')).parse("abcd")
 ```
 
 Now let's start building the `string` combinator from scratch! Bear in mind, that unlike in Haskell,
 a Scala string is not `List[Char]` but is the Java `String`. This makes it a little more annoying to
 implement, since we'll have to convert a `List[Char]` into a `String` at the end, with `map`.
 
-```scala
+```scala mdoc:nest
 import parsley.Parsley
 
 def string(str: String): Parsley[String] = {
@@ -201,11 +210,12 @@ method on lists to convert the result back into a string. Now we need to focus o
 The first step is to consider how to handle the empty string. For this we need another very handy
 combinator called `pure`, which reads no input and returns what's given to it:
 
-```scala
+```scala mdoc
 import parsley.Parsley, Parsley.pure
 
 // def pure[A](x: A): Parsley[A]
-// pure(7).parse("") returns Success(7)
+pure(7).parse("")
+
 def helper(cs: List[Char]): Parsley[List[Char]] = cs match {
     case Nil     => pure(Nil)
     case c :: cs => ???
@@ -216,7 +226,7 @@ Now the question is how to handle the recursive case? Well in the base case we t
 empty list into a parser that returns the empty list. We'll follow that same shape here and use
 `<::>`!
 
-```scala
+```scala mdoc:nest
 import parsley.Parsley, Parsley.pure
 import parsley.character.char
 
@@ -230,7 +240,7 @@ What happens here is that we take each character in the string, convert it to a 
 that specific character, and then add that onto the front of reading the rest of the characters. In
 full:
 
-```scala
+```scala mdoc
 import parsley.Parsley, Parsley._
 import parsley.character.char
 
@@ -269,15 +279,16 @@ could have been taken instead. Let's take a simple example again, say matching t
 From now on, I'm going to use some syntactic sugar from `parsley.implicits` so I don't have to
 write `char` or `string`.
 
-```scala
+```scala mdoc:silent
 import parsley.Parsley
 import parsley.implicits.character.charLift
 
 val aOrB = 'a' <|> 'b'
-
-aOrB.parse("a") // returns Success('a')
-aOrB.parse("b") // returns Success('b')
-aOrB.parse("c") // returns Failure(..)
+```
+```scala mdoc:height=2
+aOrB.parse("a")
+aOrB.parse("b")
+aOrB.parse("c")
 ```
 
 Here, the `<|>` combinator (pronounced "alt" or "or") allows the parser to try an alternative
@@ -288,7 +299,7 @@ For this specific usecase, `character.oneOf('a', 'b')` would probably have been 
 Let's carry on reinforcing the connections with what we've seen so far, and see how sequencing
 and branching interact:
 
-```scala
+```scala mdoc:silent
 import parsley.Parsley
 import parsley.implicits.character.{charLift, stringLift}
 
@@ -307,22 +318,23 @@ see if you're right: also check out the error messages from the failing ones! Re
 basically reads a bunch of characters in sequence, one after the other. Let's see what happens when
 we put longer strings inside the branches:
 
-```scala
+```scala mdoc:silent:nest
 import parsley.Parsley
 import parsley.implicits.character.stringLift
 
 val p = "abc" <|> "def" <|> "dead"
-
-p.parse("abc") // returns Success("abc")
-p.parse("def") // returns Success("def")
-p.parse("dead") // returns Failure(..)
+```
+```scala mdoc:height=2
+p.parse("abc")
+p.parse("def")
+p.parse("dead")
 ```
 
 Ah, we have a problem! The first two alternatives parse fine, but the last one does not? The answer
 to this is fairly simple, but I want to illustrate how we can make steps towards diagnosing this
 problem ourselves using the combinators found in `parsley.debug`:
 
-```scala
+```scala mdoc:silent:nest
 import parsley.Parsley
 import parsley.implicits.character.stringLift
 import parsley.debug._
@@ -331,10 +343,11 @@ val p = ("abc".debug("reading abc") <|>
             ("def".debug("reading def") <|> "dead".debug("reading dead")).debug("second branch")
         ).debug("first branch")
 
-p.parse("abc") // returns Success("abc")
-p.parse("def") // returns Success("def")
-p.parse("dead") // returns Failure(..)
+p.parse("abc")
+p.parse("def")
+p.parse("dead")
 ```
+@:todo(fix ansi escape code rendering issues, so we can unsilence the debug printouts)
 
 The `debug` combinator can be attached to any operation (by default Parsley associates `<|>` to the
 right, which is why I've bracketed them this way round). It will provide printouts when it enters
@@ -399,15 +412,16 @@ combinator will not work. The reason for this is to improve the quality of error
 as keeping parsers efficient. The "best" solution to this problem is to change our parser slightly
 to remove the common leading string of the last two alternatives like so:
 
-```scala
+```scala mdoc:silent:nest
 import parsley.Parsley
 import parsley.implicits.character.{charLift, stringLift}
 
 val p = "abc" <|> ("de" *> ('f' #> "def" <|> "ad" #> "dead"))
-
-p.parse("abc") // returns Success("abc")
-p.parse("def") // returns Success("def")
-p.parse("dead") // returns Success("dead")
+```
+```scala mdoc:height=2
+p.parse("abc")
+p.parse("def")
+p.parse("dead")
 ```
 
 In this version of the parser, the leading `"de"` has been factored out, leaving an alternative
@@ -425,7 +439,7 @@ In the last section, we saw that the `<|>` doesn't proceed with the second alter
 first consumed input before failing. That is to say it doesn't _backtrack_. There is, however, a
 combinator that permits backtracking to happen, called `attempt`. Let's see it in action:
 
-```scala
+```scala mdoc:silent:nest
 import parsley.Parsley, Parsley.attempt
 import parsley.implicits.character.stringLift
 import parsley.debug._
@@ -474,7 +488,7 @@ come (in either a positive or a negative way): for instance checking if there is
 with the `eof` combinator is an example of negative look-ahead. There are two combinators for doing
 this, which we'll explore now:
 
-```scala
+```scala mdoc:silent:nest
 import parsley.Parsley, Parsley.{notFollowedBy, lookAhead}
 import parsley.character.item
 import parsley.combinator.eof
@@ -550,11 +564,11 @@ also be introducing a couple of new ideas so we can complete the functionality w
 capture regex (namely the equivalents of optional `?`, zero-or-more `*` and one-or-more `+`). Let's
 start there:
 
-```scala
+```scala mdoc:silent
 // This is the regex *
 // it will perform `p` zero or more times (greedily) and collect all its results into a list
-def many[A](p: Parsley[A]): Parsley[List[A]]
-def skipMany(p: Parsley[_]): Parsley[Unit] = void(many(p)) // ideally, it wouldn't build the list
+def many[A](p: Parsley[A]): Parsley[List[A]] = ???
+def skipMany(p: Parsley[_]): Parsley[Unit] = many(p).void // ideally, it wouldn't build the list
 
 // This is the regex +
 // similar to many, except it requires at least 1 `p` to succeed
@@ -563,7 +577,7 @@ def skipSome(p: Parsley[_]): Parsley[Unit] = p *> skipMany(p)
 
 // This is the regex ?
 // it will either parse `p` or will return `x` otherwise
-def optionally[A](p: Parsley[A], x: A): Parsley[A] = p #> x <|> pure(x)
+def optionally[A](p: Parsley[_], x: A): Parsley[A] = p #> x <|> pure(x)
 def optional(p: Parsley[_]): Parsley[Unit] = optionally(p, ())
 def option[A](p: Parsley[A]): Parsley[Option[A]] = p.map(Some(_)) <|> pure(None)
 
@@ -576,7 +590,7 @@ With the exception of `many`, which we can't define just yet, all of these handy
 implemented with everything we've seen so far. You can find them all, and many more, in
 `parsley.combinator`.
 
-```scala
+```scala mdoc:silent:reset
 import parsley.Parsley, Parsley.attempt
 import parsley.combinator.{many, some, optional, eof}
 import parsley.implicits.character.{charLift, stringLift}
@@ -637,7 +651,7 @@ with regex:
 [here](https://stackoverflow.com/questions/1732348/regex-match-open-tags-except-xhtml-self-contained-tags)
 comes to mind...):
 
-```scala
+```scala mdoc:silent
 import parsley.Parsley
 import parsley.implicits.character.charLift
 import parsley.combinator.{skipMany, eof}
@@ -812,7 +826,7 @@ Now, this grammar can be parsed in linear time, even when translated directly. T
 However, I'll make the inefficient parser first, as it has the simpler translation (even if it's
 less efficient) and will give a sense of how the solution works out.
 
-```scala
+```scala mdoc:silent
 import parsley.Parsley, Parsley.attempt
 import parsley.implicits.character.stringLift
 import parsley.implicits.lift.Lift2
@@ -828,9 +842,10 @@ lazy val term: Parsley[Boolean] = attempt((not, "&&" *> term).zipped(_ && _)) <|
 lazy val not: Parsley[Boolean] = "!" *> not.map(!_) <|> atom
 // <atom> ::= 'true'          |  'false'           |   '('   <expr>   ')'
 val atom    = "true" #> true <|> "false" #> false <|> ("(" *> expr <* ")")
-
-expr.parse("!false") // returns Success(true)
-expr.parse("true&&!(false||true)") // returns Success(false)
+```
+```scala mdoc:height=2
+expr.parse("!false")
+expr.parse("true&&!(false||true)")
 ```
 
 Here I've introduced a tiny bit of sugar: by importing `implicits.lift.Lift2`, I've enabled the `lift`
@@ -853,7 +868,7 @@ allows me to use `atom` before it's defined in the lazy `not`. However, as I men
 is not ideal because of the heavy backtracking implied by the use of `attempt`. The solution, as I've
 said, is to implement the second grammar. This is, as we'll see, a little tricker:
 
-```scala
+```scala mdoc:silent:reset
 import parsley.Parsley
 import parsley.implicits.character.stringLift
 import parsley.implicits.lift.Lift2
@@ -872,9 +887,10 @@ lazy val term: Parsley[Boolean] =  not <**> ("&&" *> term.map(and) </> identity[
 lazy val not: Parsley[Boolean] = "!" *> not.map(!_) <|> atom
 // <atom> ::= 'true'          |  'false'           |   '('   <expr>   ')'
 val atom    = "true" #> true <|> "false" #> false <|> ("(" *> expr <* ")")
-
-expr.parse("!false") // returns Success(true)
-expr.parse("true&&!(false||true)") // returns Success(false)
+```
+```scala mdoc:height=2
+expr.parse("!false")
+expr.parse("true&&!(false||true)")
 ```
 
 The new example is the more efficient, linear time, form of the parser. Here I've employed two
@@ -918,7 +934,7 @@ use of `</>`, where we want to handle a failure by returning a known value. If a
 need to try reading yet more `p`s, so this is an indication of recursion creeping in. So, with this
 in mind, let's see the definition:
 
-```scala
+```scala mdoc:silent
 import parsley.Parsley
 
 // many p = p <:> many p <|> pure []
@@ -936,7 +952,7 @@ memoised). Then we can see the familar `lazy val` with explicit type signature t
 recursive parsers by now. What might seem a bit strange, however, is why I created the `go` value in
 the first place. You may be tempted to write something like this instead:
 
-```scala
+```scala mdoc:silent:nest
 import parsley.Parsley
 
 def many[A](p: =>Parsley[A]): Parsley[List[A]] = (p <::> many(p)) </> Nil
@@ -963,6 +979,6 @@ useful, but this is certainly out of scope for this page!
 ## What Next?
 The next logical step once you've digested this page, is to go and have a play around yourself! When
 you feel ready, you should take a look at the
-[Building Expression Parsers](https://github.com/j-mie6/Parsley/wiki/Building-Expression-Parsers)
+[Building Expression Parsers]
 page to start seeing how recursive parsers can go wrong, and what the typical strategies are of
 addressing this.

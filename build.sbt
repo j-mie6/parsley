@@ -78,13 +78,23 @@ inThisBuild(List(
   githubWorkflowAddedJobs += testCoverageJob(githubWorkflowGeneratedCacheSteps.value.toList),
   // Website Configuration
   tlSitePublishBranch := Some("wiki-migration"),
-  tlSiteApiUrl := Some(url("https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/latest")),
+  tlSiteApiUrl := Some(url("https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/latest/")),
 ))
 
 lazy val root = tlCrossRootProject.aggregate(parsley)
 
 lazy val docs = project
   .in(file("site"))
+  .settings(
+    laikaConfig := {
+      import laika.rewrite.link._
+
+      LaikaConfig.defaults
+      .withConfigValue(LinkConfig(apiLinks = Seq(
+          ApiLinks(baseUri = "https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/latest/")
+      )))
+    },
+  )
   .dependsOn(parsley.jvm)
   .enablePlugins(TypelevelSitePlugin)
 
