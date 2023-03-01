@@ -94,6 +94,47 @@ lazy val docs = project
           ApiLinks(baseUri = "https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/latest/")
       )))
     },
+    laikaTheme := {
+      import laika.theme.config._
+
+      val fontPath = "laika/helium/fonts/"
+
+      val fonts = Seq(
+        FontDefinition(
+          Font.embedResource(fontPath + "Lato/Lato-Regular.ttf").webCSS("https://fonts.googleapis.com/css?family=Lato:400,700"),
+          "Lato", FontWeight.Normal, FontStyle.Normal
+        ),
+        FontDefinition(
+          Font.embedResource(fontPath + "Lato/Lato-Italic.ttf"),
+          "Lato", FontWeight.Normal, FontStyle.Italic
+        ),
+        FontDefinition(
+          Font.embedResource(fontPath + "Lato/Lato-Bold.ttf"),
+          "Lato", FontWeight.Bold, FontStyle.Normal
+        ),
+        FontDefinition(
+          Font.embedResource(fontPath + "Lato/Lato-BoldItalic.ttf"),
+          "Lato", FontWeight.Bold, FontStyle.Italic
+        ),
+        FontDefinition(
+          Font.webCSS("https://fonts.googleapis.com/css?family=Fira+Mono:500"),
+          "Fira Mono", FontWeight.Normal, FontStyle.Normal
+        ),
+        FontDefinition(
+          Font.embedResource(fontPath + "icofont/fonts/icofont.ttf"),
+          "IcoFont", FontWeight.Normal, FontStyle.Normal
+        ),
+      )
+
+      tlSiteHeliumConfig.value
+        .site.fontResources(fonts: _*)
+        .site.fontFamilies(
+          body = "Lato",
+          headlines = "Lato",
+          code = "Fira Mono",
+        )
+        .build.extend(tlSiteHeliumExtensions.value)
+    }
   )
   .dependsOn(parsley.jvm)
   .enablePlugins(TypelevelSitePlugin)
