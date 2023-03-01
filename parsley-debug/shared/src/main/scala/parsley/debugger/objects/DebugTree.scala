@@ -37,10 +37,10 @@ sealed trait DebugTree {
   * @param children This debug tree node's children.
   */
 case class TransientDebugTree(
-  var name: String,
-  var input: String,
-  var successful: Boolean,
-  var children: List[_ <: DebugTree]
+  var name: String = "",
+  var input: String = "",
+  var successful: Boolean = true,
+  var children: List[_ <: DebugTree] = Nil
 ) extends DebugTree {
   override def parserName: String = name
 
