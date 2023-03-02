@@ -13,7 +13,7 @@ import parsley.Parsley
   */
 sealed trait Fixity {
     type Op[A, B]
-    private [expr] def makeOps[A, B](op: Parsley[Op[A, B]])(implicit wrap: A => B): Ops[A, B]
+    private [expr] def chain[A, B](p: Parsley[A], op: Parsley[Op[A, B]])(implicit wrap: A => B): Parsley[B]
 }
 
 /**
@@ -23,7 +23,7 @@ sealed trait Fixity {
   */
 case object InfixL extends Fixity {
     override type Op[-A, B] = (B, A) => B
-    private [expr] def makeOps[A, B](op: Parsley[Op[A, B]])(implicit wrap: A => B): Ops[A, B] = LeftOp(op)
+    private [expr] def chain[A, B](p: Parsley[A], op: Parsley[Op[A, B]])(implicit wrap: A => B): Parsley[B] = infix.left1(p, op)
 }
 
 /**
@@ -33,7 +33,7 @@ case object InfixL extends Fixity {
   */
 case object InfixR extends Fixity {
     override type Op[-A, B] = (A, B) => B
-    private [expr] def makeOps[A, B](op: Parsley[Op[A, B]])(implicit wrap: A => B): Ops[A, B] = RightOp(op)
+    private [expr] def chain[A, B](p: Parsley[A], op: Parsley[Op[A, B]])(implicit wrap: A => B): Parsley[B] = infix.right1(p, op)
 }
 
 /**
@@ -43,7 +43,7 @@ case object InfixR extends Fixity {
   */
 case object Prefix extends Fixity {
     override type Op[A, B] = B => B
-    private [expr] def makeOps[A, B](op: Parsley[Op[A, B]])(implicit wrap: A => B): Ops[A, B] = PrefixOp(op)
+    private [expr] def chain[A, B](p: Parsley[A], op: Parsley[Op[A, B]])(implicit wrap: A => B): Parsley[B] = infix.prefix(op, p)
 }
 
 /**
@@ -53,7 +53,7 @@ case object Prefix extends Fixity {
   */
 case object Postfix extends Fixity {
     override type Op[A, B] = B => B
-    private [expr] def makeOps[A, B](op: Parsley[Op[A, B]])(implicit wrap: A => B): Ops[A, B] = PostfixOp(op)
+    private [expr] def chain[A, B](p: Parsley[A], op: Parsley[Op[A, B]])(implicit wrap: A => B): Parsley[B] = infix.postfix(p, op)
 }
 
 /**
@@ -63,5 +63,5 @@ case object Postfix extends Fixity {
   */
 case object InfixN extends Fixity {
     override type Op[-A, +B] = (A, A) => B
-    private [expr] def makeOps[A, B](op: Parsley[Op[A, B]])(implicit wrap: A => B): Ops[A, B] = NonAssocOp(op)
+    private [expr] def chain[A, B](p: Parsley[A], op: Parsley[Op[A, B]])(implicit wrap: A => B): Parsley[B] = infix.nonassoc(p, op)
 }

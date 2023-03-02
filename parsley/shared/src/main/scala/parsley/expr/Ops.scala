@@ -17,13 +17,8 @@ import parsley.Parsley
   * @group Table
   */
 sealed abstract class Ops[-A, B] {
-    private [expr] val wrap: A => B
+    private [expr] def chain(p: Parsley[A]): Parsley[B]
 }
-private [expr] case class LeftOp[A, B](ops: Parsley[InfixL.Op[A, B]])(implicit override val wrap: A => B) extends Ops[A, B]
-private [expr] case class RightOp[A, B](ops: Parsley[InfixR.Op[A, B]])(implicit override val wrap: A => B) extends Ops[A, B]
-private [expr] case class PrefixOp[A, B](ops: Parsley[Prefix.Op[A, B]])(implicit override val wrap: A => B) extends Ops[A, B]
-private [expr] case class PostfixOp[A, B](ops: Parsley[Postfix.Op[A, B]])(implicit override val wrap: A => B) extends Ops[A, B]
-private [expr] case class NonAssocOp[A, B](ops: Parsley[InfixN.Op[A, B]])(implicit override val wrap: A => B) extends Ops[A, B]
 
 /** This helper object is used to build values of `Ops[A, A]`, for homogeneous precedence parsing.
   *
@@ -47,4 +42,8 @@ object Ops {
       * @since 2.2.0
       */
     def apply[A](fixity: Fixity)(ops: Parsley[fixity.Op[A, A]]*): Ops[A, A] = GOps[A, A](fixity)(ops: _*)
+
+    private [expr] def apply[A, B](fixity: Fixity)(op: Parsley[fixity.Op[A, B]])(implicit wrap: A => B): Ops[A, B] = new Ops[A, B] {
+        private [expr] def chain(p: Parsley[A]): Parsley[B] = fixity.chain(p, op)
+    }
 }

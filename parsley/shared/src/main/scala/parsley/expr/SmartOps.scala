@@ -32,7 +32,7 @@ object GOps {
       * @note currently a bug in scaladoc incorrect displays this functions type, it should be: `fixity.Op[A, B]`, NOT `Op[A, B]`.
       * @since 2.2.0
       */
-    def apply[A, B](fixity: Fixity)(ops: Parsley[fixity.Op[A, B]]*)(implicit wrap: A => B): Ops[A, B] = fixity.makeOps(choice(ops: _*))
+    def apply[A, B](fixity: Fixity)(ops: Parsley[fixity.Op[A, B]]*)(implicit wrap: A => B): Ops[A, B] = Ops[A, B](fixity)(choice(ops: _*))(wrap)
 }
 
 /** This helper object builds values of `Ops[A, B]` where `A <: B`, for subtyped heterogeneous precedence parsing.
