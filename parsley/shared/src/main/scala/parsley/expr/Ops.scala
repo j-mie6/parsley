@@ -19,11 +19,11 @@ import parsley.Parsley
 sealed abstract class Ops[-A, B] {
     private [expr] val wrap: A => B
 }
-private [expr] case class Lefts[A, B](ops: Parsley[InfixL.Op[A, B]]*)(implicit override val wrap: A => B) extends Ops[A, B]
-private [expr] case class Rights[A, B](ops: Parsley[InfixR.Op[A, B]]*)(implicit override val wrap: A => B) extends Ops[A, B]
-private [expr] case class Prefixes[A, B](ops: Parsley[Prefix.Op[A, B]]*)(implicit override val wrap: A => B) extends Ops[A, B]
-private [expr] case class Postfixes[A, B](ops: Parsley[Postfix.Op[A, B]]*)(implicit override val wrap: A => B) extends Ops[A, B]
-private [expr] case class NonAssocs[A, B](ops: Parsley[InfixN.Op[A, B]]*)(implicit override val wrap: A => B) extends Ops[A, B]
+private [expr] case class LeftOp[A, B](ops: Parsley[InfixL.Op[A, B]])(implicit override val wrap: A => B) extends Ops[A, B]
+private [expr] case class RightOp[A, B](ops: Parsley[InfixR.Op[A, B]])(implicit override val wrap: A => B) extends Ops[A, B]
+private [expr] case class PrefixOp[A, B](ops: Parsley[Prefix.Op[A, B]])(implicit override val wrap: A => B) extends Ops[A, B]
+private [expr] case class PostfixOp[A, B](ops: Parsley[Postfix.Op[A, B]])(implicit override val wrap: A => B) extends Ops[A, B]
+private [expr] case class NonAssocOp[A, B](ops: Parsley[InfixN.Op[A, B]])(implicit override val wrap: A => B) extends Ops[A, B]
 
 /** This helper object is used to build values of `Ops[A, A]`, for homogeneous precedence parsing.
   *

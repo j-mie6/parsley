@@ -3,6 +3,8 @@
  */
 package parsley.expr
 
+import parsley.Parsley
+
 /**
   * Denotes the fixity and associativity of an operator. Importantly, it also specifies the type of the
   * of the operations themselves.
@@ -11,6 +13,7 @@ package parsley.expr
   */
 sealed trait Fixity {
     type Op[A, B]
+    private [expr] def makeOps[A, B](op: Parsley[Op[A, B]])(implicit wrap: A => B): Ops[A, B]
 }
 
 /**
@@ -20,6 +23,7 @@ sealed trait Fixity {
   */
 case object InfixL extends Fixity {
     override type Op[-A, B] = (B, A) => B
+    private [expr] def makeOps[A, B](op: Parsley[Op[A, B]])(implicit wrap: A => B): Ops[A, B] = LeftOp(op)
 }
 
 /**
@@ -29,6 +33,7 @@ case object InfixL extends Fixity {
   */
 case object InfixR extends Fixity {
     override type Op[-A, B] = (A, B) => B
+    private [expr] def makeOps[A, B](op: Parsley[Op[A, B]])(implicit wrap: A => B): Ops[A, B] = RightOp(op)
 }
 
 /**
@@ -38,6 +43,7 @@ case object InfixR extends Fixity {
   */
 case object Prefix extends Fixity {
     override type Op[A, B] = B => B
+    private [expr] def makeOps[A, B](op: Parsley[Op[A, B]])(implicit wrap: A => B): Ops[A, B] = PrefixOp(op)
 }
 
 /**
@@ -47,6 +53,7 @@ case object Prefix extends Fixity {
   */
 case object Postfix extends Fixity {
     override type Op[A, B] = B => B
+    private [expr] def makeOps[A, B](op: Parsley[Op[A, B]])(implicit wrap: A => B): Ops[A, B] = PostfixOp(op)
 }
 
 /**
@@ -56,4 +63,5 @@ case object Postfix extends Fixity {
   */
 case object InfixN extends Fixity {
     override type Op[-A, +B] = (A, A) => B
+    private [expr] def makeOps[A, B](op: Parsley[Op[A, B]])(implicit wrap: A => B): Ops[A, B] = NonAssocOp(op)
 }
