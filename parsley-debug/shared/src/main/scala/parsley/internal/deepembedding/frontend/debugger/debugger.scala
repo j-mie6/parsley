@@ -10,7 +10,7 @@ import parsley.internal.deepembedding.frontend
 import scala.collection.mutable
 
 package object debugger {
-  private[parsley] def traverseDown[A](parser: LazyParsley[A])(implicit seen: mutable.Set[LazyParsley[_]]): (TransientDebugTree, LazyParsley[A]) =
+  private [parsley] def traverseDown[A](parser: LazyParsley[A])(implicit seen: mutable.Set[LazyParsley[_]]): (TransientDebugTree, LazyParsley[A]) =
   // This stops recursive parsers from causing an infinite recursion.
     if (seen.contains(parser)) {
       (TransientDebugTree(name = "RECUR"), parser)
@@ -19,10 +19,9 @@ package object debugger {
       seen.add(parser)
 
       // This tree will be populated as the parser is run.
-      // The name of the parser will either be the field it is assigned to, or a name if it
-      // cannot find such information.
-      // XXX: I have a sneaking suspicion that all the names will be "parser".
-      val currentTree = TransientDebugTree(name = parser.getClass().getName)
+      // The name of the parser will be the class name of the parser, translated into
+      // something more human-friendly.
+      val currentTree = TransientDebugTree(name = translate(parser.getClass.getSimpleName))
 
       // Function is buried in the frontend package to facilitate access to the GeneralisedEmbedding
       // abstract classes and their getters.
@@ -32,8 +31,34 @@ package object debugger {
       (currentTree, parser)
     }
 
+  // Translation table for Scala operator names.
+  private lazy val operatorTable: Map[String, Char] = Map(
+    ("times", '*'),
+    ("percent", '%'),
+    ("div", '/'),
+    ("plus", '+'),
+    ("minus", '-'),
+    ("colon", ':'),
+    ("less", '<'),
+    ("greater", '>'),
+    ("eq", '='),
+    ("bang", '!'),
+    ("amp", '&'),
+    ("up", '^'),
+    ("bar", '|'),
+    ("tilde", '~')
+  )
+
+  // Translate a fully-qualified class name into something more human-readable.
+  private def translate(name: String): String =
+    if (name.contains('$')) {
+      name.split('$').map(operatorTable.getOrElse(_, "")).mkString
+    } else {
+      name
+    }
+
   // Attempt to retrieve the child parsers.
-  private [parsley] def getChildren(parser: LazyParsley[_]): List[LazyParsley[_]] =
+  private def getChildren(parser: LazyParsley[_]): List[LazyParsley[_]] =
     parser match {
       case p: frontend.Unary[_, _]         => List(p.parser)
       case p: frontend.Binary[_, _, _]     => List(p.leftParser, p.rightParser)
