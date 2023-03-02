@@ -43,7 +43,15 @@ inThisBuild(List(
     ProblemFilters.exclude[DirectMissingMethodProblem]("parsley.errors.combinator#ErrorMethods.unexpected"),
     ProblemFilters.exclude[MissingClassProblem]("parsley.token.errors.FilterOps"),
     ProblemFilters.exclude[MissingClassProblem]("parsley.token.errors.FilterOps$"),
-    ProblemFilters.exclude[ReversedMissingMethodProblem]("parsley.token.predicate#CharPredicate.asInternalPredicate")
+    ProblemFilters.exclude[ReversedMissingMethodProblem]("parsley.token.predicate#CharPredicate.asInternalPredicate"),
+    // Expression refactor
+    ProblemFilters.exclude[ReversedMissingMethodProblem]("parsley.expr.Fixity.chain"),
+    ProblemFilters.exclude[ReversedMissingMethodProblem]("parsley.expr.Ops.chain"),
+    ProblemFilters.exclude[MissingClassProblem]("parsley.expr.Lefts*"),
+    ProblemFilters.exclude[MissingClassProblem]("parsley.expr.Rights*"),
+    ProblemFilters.exclude[MissingClassProblem]("parsley.expr.NonAssocs*"),
+    ProblemFilters.exclude[MissingClassProblem]("parsley.expr.Prefixes*"),
+    ProblemFilters.exclude[MissingClassProblem]("parsley.expr.Postfixes*"),
   ),
   tlVersionIntroduced := Map(
     "2.13" -> "1.5.0",

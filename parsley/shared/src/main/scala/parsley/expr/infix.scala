@@ -5,7 +5,9 @@ package parsley.expr
 
 import scala.annotation.implicitNotFound
 
-import parsley.Parsley
+import parsley.Parsley, Parsley.notFollowedBy
+import parsley.errors.combinator.ErrorMethods
+import parsley.implicits.zipped.Zipped2
 
 import parsley.internal.deepembedding.frontend
 
@@ -174,4 +176,14 @@ object infix {
       */
     def left[A, B, C >: B](p: Parsley[A], op: =>Parsley[(C, A) => B], x: C)
             (implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${C}") wrap: A => C): Parsley[C] = left1(p, op).getOrElse(x)
+
+    // Private Helpers (maybe expose these in future?)
+    private [expr] def prefix[A, B](op: Parsley[B => B], p: Parsley[A])(implicit wrap: A => B): Parsley[B] =
+        chain.prefix(op, parsley.XCompat.applyWrap(wrap)(p))
+    private [expr] def postfix[A, B](p: Parsley[A], op: Parsley[B => B])(implicit wrap: A => B): Parsley[B] =
+        chain.postfix(parsley.XCompat.applyWrap(wrap)(p), op)
+    private [expr] def nonassoc[A, B](p: Parsley[A], op: Parsley[(A, A) => B])(implicit wrap: A => B): Parsley[B] = {
+        val guardNonAssoc = notFollowedBy(op).explain("non-associative operators cannot be chained together")
+        p <**> ((op, p).zipped((f, y) => f(_, y)) </> wrap) <* guardNonAssoc
+    }
 }

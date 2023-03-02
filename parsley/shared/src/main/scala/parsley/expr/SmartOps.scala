@@ -4,6 +4,7 @@
 package parsley.expr
 
 import parsley.Parsley
+import parsley.combinator.choice
 
 /** This helper object builds values of `Ops[A, B]`, for fully heterogeneous precedence parsing.
   *
@@ -31,13 +32,7 @@ object GOps {
       * @note currently a bug in scaladoc incorrect displays this functions type, it should be: `fixity.Op[A, B]`, NOT `Op[A, B]`.
       * @since 2.2.0
       */
-    def apply[A, B](fixity: Fixity)(ops: Parsley[fixity.Op[A, B]]*)(implicit wrap: A => B): Ops[A, B] = fixity match {
-        case InfixL  => Lefts[A, B](ops.asInstanceOf[Seq[Parsley[InfixL.Op[A, B]]]]: _*)
-        case InfixR  => Rights[A, B](ops.asInstanceOf[Seq[Parsley[InfixR.Op[A, B]]]]: _*)
-        case Prefix  => Prefixes[A, B](ops.asInstanceOf[Seq[Parsley[Prefix.Op[A, B]]]]: _*)
-        case Postfix => Postfixes[A, B](ops.asInstanceOf[Seq[Parsley[Postfix.Op[A, B]]]]: _*)
-        case InfixN  => NonAssocs[A, B](ops.asInstanceOf[Seq[Parsley[InfixN.Op[A, B]]]]: _*)
-    }
+    def apply[A, B](fixity: Fixity)(ops: Parsley[fixity.Op[A, B]]*)(implicit wrap: A => B): Ops[A, B] = Ops[A, B](fixity)(choice(ops: _*))(wrap)
 }
 
 /** This helper object builds values of `Ops[A, B]` where `A <: B`, for subtyped heterogeneous precedence parsing.
