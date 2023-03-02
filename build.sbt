@@ -97,6 +97,9 @@ lazy val docs = project
     laikaTheme := {
       // Override default fonts to remove ligatures (using Fira Mono instead of Fira Code)
       // TODO: Remove font override once new release of sbt-typelevel-site is out
+      import laika.ast.Path.Root
+      import laika.ast.Styles
+      import laika.helium.config.{HeliumIcon, IconLink}
       import laika.theme.config._
 
       val fontPath = "laika/helium/fonts/"
@@ -134,6 +137,19 @@ lazy val docs = project
           body = "Lato",
           headlines = "Lato",
           code = "Fira Mono",
+        )
+        .site.topNavigationBar(
+          homeLink = IconLink.internal(Root / "index.md", HeliumIcon.home),
+          navLinks = tlSiteApiUrl.value.toList.map { url =>
+            IconLink.external(url.toString, HeliumIcon.api)
+          } ++ Seq(
+            IconLink.external("https://github.com/j-mie6/parsley", HeliumIcon.github),
+            // IconLink.internal(Root / "downloads.gen", HeliumIcon.download),
+          ),
+        )
+        .site.downloadPage(
+          title = "Documentation Downloads",
+          description = None,
         )
         .build.extend(tlSiteHeliumExtensions.value)
     },
