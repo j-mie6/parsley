@@ -319,7 +319,7 @@ a recipe for eliminating the boilerplate. This leverages another classic OOP des
 the _Template Method_ pattern:
 
 > Define the skeleton of an algorithm in an operation, deferring some steps to subclasses. _Template
-  Method_ lets subclassses redefine certain steps of an algorithm [called hooks] without changing
+  Method_ lets subclassses redefine certain steps of an algorithm (called hooks) without changing
   the algorithm's structure.
 
 Let's first desuguar these four objects a little to make the shared structure between `Let` and

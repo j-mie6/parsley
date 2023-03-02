@@ -1,7 +1,7 @@
 # Customising Error Messages
 
 Previously, in
-[Effective Whitespace Parsing](https://github.com/j-mie6/Parsley/wiki/Effective-Whitespace-Parsing)
+[Effective Whitespace Parsing]
 we saw how we could extend our parsers to handle whitespace. In this wiki post we'll finally address
 error messages. Thoughout all the other entries in this series I have neglected to talk about error
 messages at all, but they are a very important part of a parser. Recently, Parsley 2.6.1 overhauled

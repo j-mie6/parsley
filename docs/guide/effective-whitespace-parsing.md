@@ -1,8 +1,6 @@
 # Effective Whitespace Parsing
 
-Previously, in
-[Basics of Combinators](https://github.com/j-mie6/Parsley/wiki/Basics-of-Combinators) and
-[Building Expression Parsers](https://github.com/j-mie6/Parsley/wiki/Building-Expression-Parsers),
+Previously, in [Basics of Combinators] and [Building Expression Parsers],
 we've seen parsers for languages that do not account for whitespace. In this page I'll discuss
 the best practices for handling whitespace in your grammars.
 
@@ -63,8 +61,7 @@ provided string is a keyword, and if so, ensuring that it is not followed by ano
 alphabetical character. This is out of scope for this post, however.
 
 Now let's take the example
-from [Building Expression Parsers](https://github.com/j-mie6/Parsley/wiki/Building-Expression-Parsers)
-and see what needs to change to finish up recognising whitespace.
+from [Building Expression Parsers] and see what needs to change to finish up recognising whitespace.
 
 ```scala
 import parsley.Parsley, Parsley.attempt

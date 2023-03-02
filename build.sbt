@@ -95,6 +95,8 @@ lazy val docs = project
       )))
     },
     laikaTheme := {
+      // Override default fonts to remove ligatures (using Fira Mono instead of Fira Code)
+      // TODO: Remove font override once new release of sbt-typelevel-site is out
       import laika.theme.config._
 
       val fontPath = "laika/helium/fonts/"
@@ -134,7 +136,10 @@ lazy val docs = project
           code = "Fira Mono",
         )
         .build.extend(tlSiteHeliumExtensions.value)
-    }
+    },
+    tlSiteRelatedProjects := Seq(
+      "parsley-cats" -> url("https://github.com/j-mie6/parsley-cats"),
+    )
   )
   .dependsOn(parsley.jvm)
   .enablePlugins(TypelevelSitePlugin)
