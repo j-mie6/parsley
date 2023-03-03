@@ -93,6 +93,7 @@ lazy val docs = project
       .withConfigValue(LinkConfig(apiLinks = Seq(
           ApiLinks(baseUri = "https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/latest/")
       )))
+      .withConfigValue("showRelatedProjects", tlSiteRelatedProjects.value.nonEmpty)
     },
     laikaTheme := {
       // Override default fonts to remove ligatures (using Fira Mono instead of Fira Code)
@@ -143,19 +144,23 @@ lazy val docs = project
           navLinks = tlSiteApiUrl.value.toList.map { url =>
             IconLink.external(url.toString, HeliumIcon.api)
           } ++ Seq(
-            IconLink.external("https://github.com/j-mie6/parsley", HeliumIcon.github),
-            // IconLink.internal(Root / "downloads.gen", HeliumIcon.download),
+            IconLink.external(scmInfo.value.fold("https://github.com/j-mie6/parsley")(_.browseUrl.toString), HeliumIcon.github),
+            // IconLink.internal(Root / "downloads.gen", HeliumIcon.download), // TODO: why is this not vertically aligned?
           ),
         )
         .site.downloadPage(
           title = "Documentation Downloads",
           description = None,
         )
+        .site.markupEditLinks(
+          text = "Source for this page",
+          baseURL = s"${scmInfo.value.fold("https://github.com/j-mie6/parsley")(_.browseUrl.toString)}/docs",
+        )
         .build.extend(tlSiteHeliumExtensions.value)
     },
     tlSiteRelatedProjects := Seq(
       "parsley-cats" -> url("https://github.com/j-mie6/parsley-cats"),
-    )
+    ),
   )
   .dependsOn(parsley.jvm)
   .enablePlugins(TypelevelSitePlugin)

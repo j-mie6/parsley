@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="${?laika.site.metadata.language}">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="Laika 0.18.2 + Helium Theme" />
+    <title>${cursor.currentDocument.title}</title>
+    @:for(laika.site.metadata.authors)
+      <meta name="author" content="${_}"/>
+    @:@
+    @:for(laika.site.metadata.description)
+      <meta name="description" content="${_}"/>
+    @:@
+    @:for(helium.favIcons)
+      <link rel="icon" @:attribute(sizes, _.sizes) @:attribute(type, _.type) @:attribute(href, _.target)/>
+    @:@
+    @:for(helium.webFonts)
+      <link rel="stylesheet" href="${_}">
+    @:@
+    @:linkCSS { paths = ${helium.site.includeCSS} }
+    @:linkJS { paths = ${helium.site.includeJS} }
+    @:heliumInitVersions
+    @:heliumInitPreview(container)
+    <script> /* for avoiding page load transitions */ </script>
+  </head>
+
+  <body>
+
+    <header id="top-bar">
+
+      <div class="row">
+        <a id="nav-icon">
+          @:icon(navigationMenu)
+        </a>
+        @:for(laika.versions)
+        <div id="version-menu-container">
+          <a id="version-menu-toggle" class="text-link drop-down-toggle" href="#">
+            @:if(laika.versioned)
+            ${helium.topBar.versionPrefix} ${laika.versions.currentVersion.displayValue}
+            @:else
+            Documentation
+            @:@
+          </a>
+          <nav id="version-menu">
+            <ul id="version-list" class="nav-list">
+            </ul>
+          </nav>
+        </div>
+        @:@
+      </div>
+  
+      ${?helium.topBar.home}
+      
+      ${?helium.topBar.links}
+      
+    </header>
+
+    <nav id="sidebar">
+
+      ${?helium.topBar.phoneLinks}
+      
+      @:navigationTree {
+        entries = [ 
+          { target = "/", excludeRoot = true, excludeSections = true, depth = 2 } 
+        ]
+      }
+
+      @:if(showRelatedProjects)
+      <ul class="nav-list">
+        <li class="level1 nav-header">Related Projects</li>
+        @:for(typelevel.site.related)
+          <li class="level2"><a href="${_.url}">${_.name}</a></li>
+        @:@
+      </ul>
+      @:@
+      
+    </nav>
+
+    <div id="container">
+
+      <nav id="page-nav">
+        <p class="header"><a href="#">${cursor.currentDocument.title}</a></p>
+        
+        @:navigationTree {
+          entries = [
+           { target = "#", excludeRoot = true, depth = 2 }
+          ]
+        }
+        
+        <p class="footer">@:for(helium.markupEditLinks)<a href="${_.baseURL}${cursor.currentDocument.path}">${_.icon}${_.text}</a>@:@</p>
+      </nav>
+
+      <main class="content">
+
+        ${cursor.currentDocument.content}
+
+      </main>
+
+    </div>
+
+  </body>
+</html>
