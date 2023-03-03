@@ -5,7 +5,8 @@ package parsley.debugger
 
 import parsley.Parsley
 import parsley.Parsley.pure
-import parsley.debugger.objects.{DebugGUI, TransientDebugTree}
+
+import parsley.debugger.objects.{DebugContext, DebugGUI, DebugTree, DebugTreeBuilder, TransientDebugTree}
 
 import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.deepembedding.frontend.debugger.traverseDown
@@ -15,23 +16,35 @@ import scala.collection.mutable
 /** Package containing various helpers and debug combinators.
   */
 package object combinators {
-  /** Attaches a debugger to a parser, returning a reference to the mutable debug tree produced by
-    * the shape of the parser.
+  /** Attaches a debugger to a parser, returning a reference to the debug tree produced by
+    * the parser's parse tree formed as it runs.
     *
     * Ideally, this is called on the highest level parser that you want to debug, as this combinator
     * will cascade downwards and apply debugging as far down as it can.
     *
-    * Remember to freeze the debug tree after running the parser before analysis!
-    *
     * @param parser The parser to debug.
-    * @tparam A Output type of parser.
-    * @return Reference to the mutable debug tree. This is only populated after [[Parsley.parse]] is
-    *         executed for the parser being debugged.
+    * @tparam A Output type of original parser.
+    * @return A pair of the finalised tree, and the instrumented parser.
     */
-  def attachDebugger[A](parser: Parsley[A]): (TransientDebugTree, Parsley[A]) = {
-    implicit val seen: mutable.Set[LazyParsley[_]] = new mutable.HashSet[LazyParsley[_]]()
-    val (tree, lazyAttached) = traverseDown(parser.internal)
-    (tree, new Parsley[A](lazyAttached))
+  def attachDebugger[A](parser: Parsley[A]): (() => DebugTree, Parsley[A]) = {
+    implicit val seen: mutable.Set[LazyParsley[_]] = new mutable.LinkedHashSet()
+    implicit val context: DebugContext = new DebugContext()
+
+    val attached = traverseDown(parser.internal)
+    (() => rebuildMasterTree(parser.internal, context.getNodes), new Parsley(attached))
+  }
+
+  // Rebuild a full tree (with children, from scratch).
+  private def rebuildMasterTree(orig: LazyParsley[_], trees: Map[List[LazyParsley[_]], TransientDebugTree]): DebugTree = {
+    val asFlat = trees.toList.map { case (stk, t) => (stk.reverse, t) }
+    println(asFlat.toString)
+
+    val root = DebugTreeBuilder(TransientDebugTree(name = "ROOT"), Map.empty)
+
+    asFlat.foldLeft(root)((tree, lp) => lp match {
+      case (k, t) => tree.addNode(k, t)
+    }).reconstruct
+      .freeze
   }
 
   /** Attach a debugger and an implicitly-available GUI frontend in which the debug tree should be
@@ -48,6 +61,11 @@ package object combinators {
     */
   def attachDebuggerGUI[A](parser: Parsley[A])(implicit gui: DebugGUI): Parsley[A] = {
     val (tree, attached) = attachDebugger(parser)
-    attached <~ pure(gui.render(tree.freeze))
+
+    // Ideally, this should run 'attached', and render the tree regardless if 'attached' succeeds or
+    // not. However, Parsley.empty may not be a good idea as the error message from 'attached' will
+    // get lost into the ether.
+    // TODO: find a way to preserve the error message from 'attached' should it fail.
+    (attached <~ pure(gui.render(tree()))) <|> (pure(gui.render(tree())) ~> Parsley.empty)
   }
 }
