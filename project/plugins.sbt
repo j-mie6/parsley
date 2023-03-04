@@ -1,11 +1,11 @@
-val sbtTypelevelVersion = "0.4.17"
+val sbtTypelevelVersion = "0.4.19"
 
 libraryDependencySchemes ++= Seq(
   "org.scala-native" % "sbt-scala-native" % VersionScheme.Always,
   "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always,
 )
 
-//addSbtPlugin("org.typelevel" % "sbt-typelevel" % sbtTypelevelVersion)
+//addSbtPlugin("org.typelevel" % "sbt-typelevel" % sbtTypelevelVersion) // don't want header and formatting checks
 addSbtPlugin("org.typelevel" % "sbt-typelevel-settings" % sbtTypelevelVersion)
 addSbtPlugin("org.typelevel" % "sbt-typelevel-ci-release" % sbtTypelevelVersion)
 
