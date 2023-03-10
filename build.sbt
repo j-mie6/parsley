@@ -117,6 +117,18 @@ lazy val docs = project
       val HeliumOrange      = Color.hex("f1c47b")
       val OffWhite          = Color.hex("f3f3f3")
       val DarkRed           = Color.hex("980d0d")
+      val DarkPink          = Color.hex("8b2257")
+      val VeryDarkPink      = Color.hex("6c0b3c")
+      val ForestGreen       = ColorTints(
+        base    = Color.hex("009b55"),
+        light   = Color.hex("1caf6c"), lighter = Color.hex("3fba82"),
+        dark    = Color.hex("007d44"), darker  = Color.hex("006135"),
+      )
+      val ForestGreen2      = ColorTints(
+        base    = Color.hex("3ca43c"),
+        light   = Color.hex("63c263"), lighter = Color.hex("94db94"), //lighter could be a tad brighter
+        dark    = Color.hex("228b22"), darker  = Color.hex("0b6c0b"),
+      )
 
       // Mint Colour Wheel
       // Adjacents
@@ -129,6 +141,11 @@ lazy val docs = project
         base    = Color.hex("afed82"),
         light   = Color.hex("e7fcd8"), lighter = Color.hex("caf6ab"),
         dark    = Color.hex("95e35e"), darker  = Color.hex("76c93b"),
+      )
+      val AdjForestBlue = ColorTints(
+        base    = Color.hex("2d7b7b"),
+        light   = Color.hex("4a9292"), lighter = Color.hex("7cb7b7"),
+        dark    = Color.hex("1a6868"), darker  = Color.hex("085151"),
       )
       // Complementary
       val AntiMintSalmon = ColorTints(
@@ -156,6 +173,16 @@ lazy val docs = project
         light   = Color.hex("cb9ee5"), lighter = Color.hex("e9d1f7"),
         dark    = Color.hex("8c4cb2"), darker  = Color.hex("74309b"),
       )
+      val AntiForestOrange = ColorTints(
+        base    = Color.hex("cd864b"),
+        light   = Color.hex("f3b27c"), lighter = Color.hex("ffd2ad"),
+        dark    = Color.hex("ae662b"), darker  = Color.hex("87440d"),
+      )
+      val AntiForestRed = ColorTints(
+        base    = Color.hex("cd4b4b"),
+        light   = Color.hex("f37c7c"), lighter = Color.hex("ffadad"),
+        dark    = Color.hex("ae2b2b"), darker  = Color.hex("870d0d"),
+      )
 
       tlSiteHeliumConfig.value
         .site.topNavigationBar(
@@ -166,6 +193,32 @@ lazy val docs = project
             IconLink.external(scmInfo.value.fold("https://github.com/j-mie6/parsley")(_.browseUrl.toString), HeliumIcon.github),
             // IconLink.internal(Root / "downloads.gen", HeliumIcon.download), // TODO: why is this not vertically aligned?
           ),
+        )
+        .site.themeColors(
+          primary = ForestGreen2.darker,
+          secondary = DarkPink,
+          primaryMedium = ForestGreen2.base,
+          primaryLight = ForestGreen2.lighter,
+          text = CharcoalBlack,
+          background = MintCream,
+          bgGradient = (OffWhite, Color.hex("ffffff"))
+        )
+        .site.messageColors(
+          info = AdjForestBlue.base,
+          infoLight = AdjForestBlue.lighter,
+          warning = AntiForestOrange.base,
+          warningLight = AntiForestOrange.lighter,
+          error = AntiForestRed.base,
+          errorLight = AntiForestRed.lighter, //DarkRed
+        )
+        .site.syntaxHighlightingColors(
+          // TODO: make these the ones from "material" highlighting theme
+          base = ColorQuintet(
+            CharcoalLightGrey, Color.hex("8c878e"), Color.hex("b2adb4"), Color.hex("bddcee"), Color.hex("e8e8e8")
+          ),
+          wheel = ColorQuintet(
+            Color.hex("e28e93"), Color.hex("ef9725"), Color.hex("ffc66d"), Color.hex("7fb971"), Color.hex("4dbed4")
+          )
         )
         .site.darkMode.themeColors(
           primary = Mint.base,
