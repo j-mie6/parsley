@@ -97,7 +97,65 @@ lazy val docs = project
     },
     laikaTheme := {
       import laika.ast.Path.Root
-      import laika.helium.config.{HeliumIcon, IconLink}
+      import laika.helium.config.{HeliumIcon, IconLink, ColorQuintet}
+      import laika.theme.config.{Color}
+
+      case class ColorTints(base: Color, light: Color, lighter: Color, dark: Color, darker: Color)
+
+      val CharcoalLightGrey = Color.hex("2e2f30")
+      // something inbetween?
+      val CharcoalGrey      = Color.hex("242526")
+      val CharcoalDarkGrey  = Color.hex("202025")
+      val CharcoalBlack     = Color.hex("17171a")
+      val Mint              = ColorTints(
+        base    = Color.hex("96dec4"), //71ceac
+        light   = Color.hex("baeedb"), lighter = Color.hex("d4f7ea"), //light a0e5cb
+        dark    = Color.hex("4ab28a"), darker  = Color.hex("3d9a71"),
+      )
+      val MintCream         = Color.hex("f5fffa")
+      val HeliumGold        = Color.hex("d4c478")
+      val HeliumOrange      = Color.hex("f1c47b")
+      val OffWhite          = Color.hex("f3f3f3")
+      val DarkRed           = Color.hex("980d0d")
+
+      // Mint Colour Wheel
+      // Adjacents
+      val AdjBlue = ColorTints(
+        base    = Color.hex("75a2ca"),
+        light   = Color.hex("a3c5e3"), lighter = Color.hex("d5e7f6"),
+        dark    = Color.hex("4e7fab"), darker  = Color.hex("336693"),
+      )
+      val AdjLime = ColorTints(
+        base    = Color.hex("afed82"),
+        light   = Color.hex("e7fcd8"), lighter = Color.hex("caf6ab"),
+        dark    = Color.hex("95e35e"), darker  = Color.hex("76c93b"),
+      )
+      // Complementary
+      val AntiMintSalmon = ColorTints(
+        base    = Color.hex("ffb08c"),
+        light   = Color.hex("ffcab2"), lighter = Color.hex("ffe6da"),
+        dark    = Color.hex("ff986a"), darker  = Color.hex("e47543"),
+      )
+      val AntiMintPink = ColorTints(
+        base    = Color.hex("ce7194"),
+        light   = Color.hex("e5a0ba"), lighter = Color.hex("f2cbd9"),
+        dark    = Color.hex("ab4369"), darker  = Color.hex("8a2248"),
+      )
+      val AntiMintRed = ColorTints(
+        base    = Color.hex("dc798c"),
+        light   = Color.hex("f1a9b7"), lighter = Color.hex("f8d0d8"),
+        dark    = Color.hex("cc3c58"), darker  = Color.hex("93253a"),
+      )
+      val AntiMintPeach = ColorTints(
+        base    = Color.hex("ffcf8c"),
+        light   = Color.hex("ffdfb2"), lighter = Color.hex("fff0da"),
+        dark    = Color.hex("ffc16a"), darker  = Color.hex("d18f31"),
+      )
+      val AntiMintPurple = ColorTints(
+        base    = Color.hex("ab71ce"),
+        light   = Color.hex("cb9ee5"), lighter = Color.hex("e9d1f7"),
+        dark    = Color.hex("8c4cb2"), darker  = Color.hex("74309b"),
+      )
 
       tlSiteHeliumConfig.value
         .site.topNavigationBar(
@@ -108,6 +166,32 @@ lazy val docs = project
             IconLink.external(scmInfo.value.fold("https://github.com/j-mie6/parsley")(_.browseUrl.toString), HeliumIcon.github),
             // IconLink.internal(Root / "downloads.gen", HeliumIcon.download), // TODO: why is this not vertically aligned?
           ),
+        )
+        .site.darkMode.themeColors(
+          primary = Mint.base,
+          secondary = AntiMintPeach.base,
+          primaryMedium = CharcoalLightGrey, // was Mint.lighter
+          primaryLight = CharcoalDarkGrey,
+          text = OffWhite,
+          background = CharcoalGrey,
+          bgGradient = (CharcoalGrey, CharcoalLightGrey) // 007c99
+        )
+        .site.darkMode.messageColors(
+          info = AdjBlue.light, //Color.hex("ebf6f7")
+          infoLight = AdjBlue.dark, //Color.hex("007c99")
+          warning = AntiMintPeach.light, //Color.hex("fcfacd")
+          warningLight = AntiMintPeach.darker, //Color.hex("b1a400")
+          error = AntiMintRed.light, //Color.hex("ffe9e3")
+          errorLight = AntiMintRed.dark, //DarkRed
+        )
+        .site.darkMode.syntaxHighlightingColors(
+          // TODO: make these the ones from "material" highlighting theme
+          base = ColorQuintet(
+            CharcoalLightGrey, Color.hex("8c878e"), Color.hex("b2adb4"), Color.hex("bddcee"), Color.hex("e8e8e8")
+          ),
+          wheel = ColorQuintet(
+            Color.hex("e28e93"), Color.hex("ef9725"), Color.hex("ffc66d"), Color.hex("7fb971"), Color.hex("4dbed4")
+          )
         )
         .site.downloadPage(
           title = "Documentation Downloads",
