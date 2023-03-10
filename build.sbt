@@ -116,6 +116,7 @@ lazy val docs = project
       val HeliumGold        = Color.hex("d4c478")
       val HeliumOrange      = Color.hex("f1c47b")
       val OffWhite          = Color.hex("f3f3f3")
+      val LightYellow       = Color.hex("ffe562")
       val DarkRed           = Color.hex("980d0d")
       val DarkPink          = Color.hex("8b2257")
       val VeryDarkPink      = Color.hex("6c0b3c")
@@ -230,9 +231,9 @@ lazy val docs = project
           bgGradient = (CharcoalGrey, CharcoalLightGrey) // 007c99
         )
         .site.darkMode.messageColors(
-          info = AdjMintBlue.base,//AdjMintBlue.light,
+          info = Mint.dark,//AdjMintBlue.base,//AdjMintBlue.light,
           infoLight = CharcoalLightGrey,//AdjMintBlue.dark,
-          warning = AntiMintPeach.darker,//AntiMintPeach.light,
+          warning = LightYellow,//AntiMintPeach.darker,//AntiMintPeach.light,
           warningLight = CharcoalLightGrey,//AntiMintPeach.darker,
           error = AntiMintRed.dark,//AntiMintRed.light,
           errorLight = CharcoalLightGrey,//AntiMintRed.dark,

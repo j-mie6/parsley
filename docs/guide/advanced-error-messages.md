@@ -4,6 +4,14 @@
 _This page is out-of-date, and describes the situation in `parsley-3.x.y` and not `parsley-4.0.0`. Much of the content remains the same, but some individual things may be incorrect._
 @:@
 
+@:callout(info)
+_This page is out-of-date, and describes the situation in `parsley-3.x.y` and not `parsley-4.0.0`. Much of the content remains the same, but some individual things may be incorrect._
+@:@
+
+@:callout(error)
+_This page is out-of-date, and describes the situation in `parsley-3.x.y` and not `parsley-4.0.0`. Much of the content remains the same, but some individual things may be incorrect._
+@:@
+
 Previously, we saw the most basic approach to improving error messages: `.label` and `.explain`.
 However, the other tools I listed in the post are valuable in their own right, but can be slightly
 less common. I would like to demonstrate their use here, as well as some more advanced patterns.
