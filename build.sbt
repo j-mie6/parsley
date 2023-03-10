@@ -126,7 +126,7 @@ lazy val docs = project
       )
       val ForestGreen2      = ColorTints(
         base    = Color.hex("3ca43c"),
-        light   = Color.hex("63c263"), lighter = Color.hex("94db94"), //lighter could be a tad brighter
+        light   = Color.hex("63c263"), lighter = Color.hex("d7edd7"), // afdcaf, 94db94 lighter could be a tad brighter
         dark    = Color.hex("228b22"), darker  = Color.hex("0b6c0b"),
       )
 
@@ -143,9 +143,9 @@ lazy val docs = project
         dark    = Color.hex("95e35e"), darker  = Color.hex("76c93b"),
       )
       val AdjForestBlue = ColorTints(
-        base    = Color.hex("2d7b7b"),
-        light   = Color.hex("4a9292"), lighter = Color.hex("7cb7b7"),
-        dark    = Color.hex("1a6868"), darker  = Color.hex("085151"),
+        base    = Color.hex("1ea4bd"), //2d7b7b
+        light   = Color.hex("40b3c9"), lighter = Color.hex("69c7d8"), //4a9292 7cb7b7
+        dark    = Color.hex("0395b0"), darker  = Color.hex("026a7d"), //1a6868 085151
       )
       // Complementary
       val AntiMintSalmon = ColorTints(
@@ -174,13 +174,13 @@ lazy val docs = project
         dark    = Color.hex("8c4cb2"), darker  = Color.hex("74309b"),
       )
       val AntiForestOrange = ColorTints(
-        base    = Color.hex("cd864b"),
-        light   = Color.hex("f3b27c"), lighter = Color.hex("ffd2ad"),
-        dark    = Color.hex("ae662b"), darker  = Color.hex("87440d"),
+        base    = Color.hex("b38d4c"), //cd864b
+        light   = Color.hex("dab87f"), lighter = Color.hex("ffe6bc"), //f3b27c, ffd2ad
+        dark    = Color.hex("936c2b"), darker  = Color.hex("68460d"), //ae662b, 87440d
       )
       val AntiForestRed = ColorTints(
         base    = Color.hex("cd4b4b"),
-        light   = Color.hex("f37c7c"), lighter = Color.hex("ffadad"),
+        light   = Color.hex("f37c7c"), lighter = Color.hex("ffb5b5"), //ffadad
         dark    = Color.hex("ae2b2b"), darker  = Color.hex("870d0d"),
       )
 
@@ -204,12 +204,12 @@ lazy val docs = project
           bgGradient = (OffWhite, Color.hex("ffffff"))
         )
         .site.messageColors(
-          info = AdjForestBlue.base,
-          infoLight = AdjForestBlue.lighter,
-          warning = AntiForestOrange.base,
+          info = DarkPink,//ForestGreen2.darker,
+          infoLight = ForestGreen2.lighter,
+          warning = DarkPink,//AntiForestOrange.base,
           warningLight = AntiForestOrange.lighter,
-          error = AntiForestRed.base,
-          errorLight = AntiForestRed.lighter, //DarkRed
+          error = DarkPink,//AntiForestRed.base,
+          errorLight = AntiForestRed.lighter,
         )
         .site.syntaxHighlightingColors(
           // TODO: make these the ones from "material" highlighting theme
