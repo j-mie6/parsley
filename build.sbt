@@ -112,7 +112,7 @@ lazy val docs = project
         light   = Color.hex("baeedb"), lighter = Color.hex("d4f7ea"), //light a0e5cb
         dark    = Color.hex("4ab28a"), darker  = Color.hex("3d9a71"),
       )
-      val MintCream         = Color.hex("f5fffa")
+      val MintCream         = Color.hex("fafcfa")
       val HeliumGold        = Color.hex("d4c478")
       val HeliumOrange      = Color.hex("f1c47b")
       val OffWhite          = Color.hex("f3f3f3")
