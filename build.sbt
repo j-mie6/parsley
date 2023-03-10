@@ -120,12 +120,12 @@ lazy val docs = project
 
       // Mint Colour Wheel
       // Adjacents
-      val AdjBlue = ColorTints(
+      val AdjMintBlue = ColorTints(
         base    = Color.hex("75a2ca"),
         light   = Color.hex("a3c5e3"), lighter = Color.hex("d5e7f6"),
         dark    = Color.hex("4e7fab"), darker  = Color.hex("336693"),
       )
-      val AdjLime = ColorTints(
+      val AdjMintLime = ColorTints(
         base    = Color.hex("afed82"),
         light   = Color.hex("e7fcd8"), lighter = Color.hex("caf6ab"),
         dark    = Color.hex("95e35e"), darker  = Color.hex("76c93b"),
@@ -177,12 +177,12 @@ lazy val docs = project
           bgGradient = (CharcoalGrey, CharcoalLightGrey) // 007c99
         )
         .site.darkMode.messageColors(
-          info = AdjBlue.light,
-          infoLight = AdjBlue.dark,
-          warning = AntiMintPeach.light,
-          warningLight = AntiMintPeach.darker,
-          error = AntiMintRed.light,
-          errorLight = AntiMintRed.dark, //DarkRed
+          info = AdjMintBlue.base,//AdjMintBlue.light,
+          infoLight = CharcoalLightGrey,//AdjMintBlue.dark,
+          warning = AntiMintPeach.darker,//AntiMintPeach.light,
+          warningLight = CharcoalLightGrey,//AntiMintPeach.darker,
+          error = AntiMintRed.dark,//AntiMintRed.light,
+          errorLight = CharcoalLightGrey,//AntiMintRed.dark,
         )
         .site.darkMode.syntaxHighlightingColors(
           // TODO: make these the ones from "material" highlighting theme
