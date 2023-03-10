@@ -177,11 +177,11 @@ lazy val docs = project
           bgGradient = (CharcoalGrey, CharcoalLightGrey) // 007c99
         )
         .site.darkMode.messageColors(
-          info = AdjBlue.light, //Color.hex("ebf6f7")
-          infoLight = AdjBlue.dark, //Color.hex("007c99")
-          warning = AntiMintPeach.light, //Color.hex("fcfacd")
-          warningLight = AntiMintPeach.darker, //Color.hex("b1a400")
-          error = AntiMintRed.light, //Color.hex("ffe9e3")
+          info = AdjBlue.light,
+          infoLight = AdjBlue.dark,
+          warning = AntiMintPeach.light,
+          warningLight = AntiMintPeach.darker,
+          error = AntiMintRed.light,
           errorLight = AntiMintRed.dark, //DarkRed
         )
         .site.darkMode.syntaxHighlightingColors(
