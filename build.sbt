@@ -117,6 +117,7 @@ lazy val docs = project
       val HeliumOrange      = Color.hex("f1c47b")
       val OffWhite          = Color.hex("f3f3f3")
       val LightYellow       = Color.hex("ffe562")
+      val PaleYellow        = Color.hex("ffee97")
       val DarkRed           = Color.hex("980d0d")
       val DarkPink          = Color.hex("8b2257")
       val VeryDarkPink      = Color.hex("6c0b3c")
@@ -208,7 +209,7 @@ lazy val docs = project
           info = DarkPink,//ForestGreen2.darker,
           infoLight = ForestGreen2.lighter,
           warning = DarkPink,//AntiForestOrange.base,
-          warningLight = AntiForestOrange.lighter,
+          warningLight = PaleYellow,//AntiForestOrange.lighter,
           error = DarkPink,//AntiForestRed.base,
           errorLight = AntiForestRed.lighter,
         )
