@@ -129,7 +129,7 @@ lazy val docs = project
       val ForestGreen2      = ColorTints(
         base    = Color.hex("3ca43c"),
         light   = Color.hex("63c263"), lighter = Color.hex("d7edd7"), // afdcaf, 94db94 lighter could be a tad brighter
-        dark    = Color.hex("228b22"), darker  = Color.hex("0b6c0b"),
+        dark    = Color.hex("228b22"), darker  = Color.hex("095609"), // darker 0b6c0b
       )
 
       // Mint Colour Wheel
