@@ -113,79 +113,24 @@ lazy val docs = project
         dark    = Color.hex("4ab28a"), darker  = Color.hex("3d9a71"),
       )
       val MintCream         = Color.hex("fbfefb")
-      val HeliumGold        = Color.hex("d4c478")
-      val HeliumOrange      = Color.hex("f1c47b")
       val OffWhite          = Color.hex("f3f3f3")
       val LightYellow       = Color.hex("ffe562")
       val PaleYellow        = Color.hex("fff7d0") //ffee97
-      val DarkRed           = Color.hex("980d0d")
       val DarkPink          = Color.hex("8b2257")
-      val VeryDarkPink      = Color.hex("6c0b3c")
       val ForestGreen       = ColorTints(
-        base    = Color.hex("009b55"),
-        light   = Color.hex("1caf6c"), lighter = Color.hex("3fba82"),
-        dark    = Color.hex("007d44"), darker  = Color.hex("006135"),
-      )
-      val ForestGreen2      = ColorTints(
         base    = Color.hex("3ca43c"),
         light   = Color.hex("63c263"), lighter = Color.hex("e3f2e3"), // afdcaf, (d7edd7; 94db94) lighter
         dark    = Color.hex("228b22"), darker  = Color.hex("095609"), // darker 0b6c0b
       )
 
       // Mint Secondaries
-      val DesaturatedBlue = Color.hex("9395c8")
-      val DesaturatedLimeGreen = Color.hex("608e69")
-      val DesaturatedDarkCyan = Color.hex("5ca0a2")
-      val SlateBlue = Color.hex("9eadbd")
-      val SoftOrange = Color.hex("e79979")
+      val DarkGrayishBrown = Color.hex("ada39c") // 20% brightening of 998c83
+      val DarkGrayishMagenta = Color.hex("9f7e99")
 
-      // Mint Colour Wheel
-      // Adjacents
-      val AdjMintBlue = ColorTints(
-        base    = Color.hex("75a2ca"),
-        light   = Color.hex("a3c5e3"), lighter = Color.hex("d5e7f6"),
-        dark    = Color.hex("4e7fab"), darker  = Color.hex("336693"),
-      )
-      val AdjMintLime = ColorTints(
-        base    = Color.hex("afed82"),
-        light   = Color.hex("e7fcd8"), lighter = Color.hex("caf6ab"),
-        dark    = Color.hex("95e35e"), darker  = Color.hex("76c93b"),
-      )
-      val AdjForestBlue = ColorTints(
-        base    = Color.hex("1ea4bd"), //2d7b7b
-        light   = Color.hex("40b3c9"), lighter = Color.hex("69c7d8"), //4a9292 7cb7b7
-        dark    = Color.hex("0395b0"), darker  = Color.hex("026a7d"), //1a6868 085151
-      )
-      // Complementary
-      val AntiMintSalmon = ColorTints(
-        base    = Color.hex("ffb08c"),
-        light   = Color.hex("ffcab2"), lighter = Color.hex("ffe6da"),
-        dark    = Color.hex("ff986a"), darker  = Color.hex("e47543"),
-      )
-      val AntiMintPink = ColorTints(
-        base    = Color.hex("ce7194"),
-        light   = Color.hex("e5a0ba"), lighter = Color.hex("f2cbd9"),
-        dark    = Color.hex("ab4369"), darker  = Color.hex("8a2248"),
-      )
       val AntiMintRed = ColorTints(
         base    = Color.hex("dc798c"),
         light   = Color.hex("f1a9b7"), lighter = Color.hex("f8d0d8"),
         dark    = Color.hex("cc3c58"), darker  = Color.hex("93253a"),
-      )
-      val AntiMintPeach = ColorTints(
-        base    = Color.hex("ffcf8c"),
-        light   = Color.hex("ffdfb2"), lighter = Color.hex("fff0da"),
-        dark    = Color.hex("ffc16a"), darker  = Color.hex("d18f31"),
-      )
-      val AntiMintPurple = ColorTints(
-        base    = Color.hex("ab71ce"),
-        light   = Color.hex("cb9ee5"), lighter = Color.hex("e9d1f7"),
-        dark    = Color.hex("8c4cb2"), darker  = Color.hex("74309b"),
-      )
-      val AntiForestOrange = ColorTints(
-        base    = Color.hex("b38d4c"), //cd864b
-        light   = Color.hex("dab87f"), lighter = Color.hex("ffe6bc"), //f3b27c, ffd2ad
-        dark    = Color.hex("936c2b"), darker  = Color.hex("68460d"), //ae662b, 87440d
       )
       val AntiForestRed = ColorTints(
         base    = Color.hex("cd4b4b"),
@@ -213,19 +158,19 @@ lazy val docs = project
           ),
         )
         .site.themeColors(
-          primary = ForestGreen2.darker,
+          primary = ForestGreen.darker,
           secondary = DarkPink,
-          primaryMedium = ForestGreen2.base,
-          primaryLight = ForestGreen2.lighter,
+          primaryMedium = ForestGreen.base,
+          primaryLight = ForestGreen.lighter,
           text = CharcoalLightGrey,
           background = MintCream,
           bgGradient = (OffWhite, Color.hex("ffffff"))
         )
         .site.messageColors(
-          info = DarkPink,//ForestGreen2.darker,
-          infoLight = ForestGreen2.lighter,
-          warning = DarkPink,//AntiForestOrange.base,
-          warningLight = PaleYellow,//AntiForestOrange.lighter,
+          info = DarkPink,//ForestGreen.darker,
+          infoLight = ForestGreen.lighter,
+          warning = DarkPink,//LightYellow?
+          warningLight = PaleYellow,
           error = DarkPink,//AntiForestRed.base,
           errorLight = AntiForestRed.lighter,
         )
@@ -248,20 +193,20 @@ lazy val docs = project
         )
         .site.darkMode.themeColors(
           primary = Mint.base,
-          secondary = SoftOrange,//AntiMintPeach.base,
-          primaryMedium = CharcoalGrey, // was Mint.lighter
+          secondary = DarkGrayishBrown,
+          primaryMedium = CharcoalGrey,
           primaryLight = CharcoalBlack,
           text = OffWhite,
           background = CharcoalDarkGrey,
-          bgGradient = (CharcoalDarkGrey, CharcoalGrey) // 007c99
+          bgGradient = (CharcoalDarkGrey, CharcoalGrey)
         )
         .site.darkMode.messageColors(
-          info = Mint.dark,//AdjMintBlue.base,//AdjMintBlue.light,
-          infoLight = CharcoalGrey,//AdjMintBlue.dark,
-          warning = LightYellow,//AntiMintPeach.darker,//AntiMintPeach.light,
-          warningLight = CharcoalGrey,//AntiMintPeach.darker,
-          error = AntiMintRed.dark,//AntiMintRed.light,
-          errorLight = CharcoalGrey,//AntiMintRed.dark,
+          info = Mint.dark,
+          infoLight = CharcoalGrey,
+          warning = LightYellow,
+          warningLight = CharcoalGrey,
+          error = AntiMintRed.dark,
+          errorLight = CharcoalGrey,
         )
         .site.darkMode.syntaxHighlightingColors(
           // TODO: make these the ones from "material" highlighting theme
