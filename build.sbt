@@ -103,22 +103,21 @@ lazy val docs = project
 
       case class ColorTints(base: Color, light: Color, lighter: Color, dark: Color, darker: Color)
 
-      val CharcoalLightGrey = Color.hex("2e2f30")
-      // something inbetween?
-      val CharcoalGrey      = Color.hex("242526")
-      val CharcoalDarkGrey  = Color.hex("202025")
-      val CharcoalBlack     = Color.hex("17171a")
+      val CharcoalLightGrey = Color.hex("616365")
+      val CharcoalGrey      = Color.hex("2e2f30")
+      val CharcoalDarkGrey  = Color.hex("242526")
+      val CharcoalBlack     = Color.hex("202025")
       val Mint              = ColorTints(
         base    = Color.hex("96dec4"), //71ceac
         light   = Color.hex("baeedb"), lighter = Color.hex("d4f7ea"), //light a0e5cb
         dark    = Color.hex("4ab28a"), darker  = Color.hex("3d9a71"),
       )
-      val MintCream         = Color.hex("fafcfa")
+      val MintCream         = Color.hex("fbfefb")
       val HeliumGold        = Color.hex("d4c478")
       val HeliumOrange      = Color.hex("f1c47b")
       val OffWhite          = Color.hex("f3f3f3")
       val LightYellow       = Color.hex("ffe562")
-      val PaleYellow        = Color.hex("ffee97")
+      val PaleYellow        = Color.hex("fff7d0") //ffee97
       val DarkRed           = Color.hex("980d0d")
       val DarkPink          = Color.hex("8b2257")
       val VeryDarkPink      = Color.hex("6c0b3c")
@@ -129,7 +128,7 @@ lazy val docs = project
       )
       val ForestGreen2      = ColorTints(
         base    = Color.hex("3ca43c"),
-        light   = Color.hex("63c263"), lighter = Color.hex("d7edd7"), // afdcaf, 94db94 lighter could be a tad brighter
+        light   = Color.hex("63c263"), lighter = Color.hex("e3f2e3"), // afdcaf, (d7edd7; 94db94) lighter
         dark    = Color.hex("228b22"), darker  = Color.hex("095609"), // darker 0b6c0b
       )
 
@@ -190,7 +189,7 @@ lazy val docs = project
       )
       val AntiForestRed = ColorTints(
         base    = Color.hex("cd4b4b"),
-        light   = Color.hex("f37c7c"), lighter = Color.hex("ffb5b5"), //ffadad
+        light   = Color.hex("f37c7c"), lighter = Color.hex("ffcbcb"), //ffadad
         dark    = Color.hex("ae2b2b"), darker  = Color.hex("870d0d"),
       )
 
@@ -218,7 +217,7 @@ lazy val docs = project
           secondary = DarkPink,
           primaryMedium = ForestGreen2.base,
           primaryLight = ForestGreen2.lighter,
-          text = CharcoalBlack,
+          text = CharcoalLightGrey,
           background = MintCream,
           bgGradient = (OffWhite, Color.hex("ffffff"))
         )
@@ -233,33 +232,41 @@ lazy val docs = project
         .site.syntaxHighlightingColors(
           // TODO: make these the ones from "material" highlighting theme
           base = ColorQuintet(
-            CharcoalLightGrey, Color.hex("8c878e"), Color.hex("b2adb4"), Color.hex("bddcee"), Color.hex("e8e8e8")
+            CharcoalGrey,
+            Color.hex("8c878e"), // comments, xml-cdata, markup-quote
+            Color.hex("b2adb4"), // tag-punctuation
+            Color.hex("bddcee"), // identifier
+            Color.hex("e8e8e8")  // base colour
           ),
           wheel = ColorQuintet(
-            Color.hex("e28e93"), Color.hex("ef9725"), Color.hex("ffc66d"), Color.hex("7fb971"), Color.hex("4dbed4")
+            Color.hex("e28e93"), // substitution, xml-processing-instruction, markup-emphasized, annotation
+            Color.hex("ef9725"), // keyword, escape-sequence, markup-headline
+            Color.hex("ffc66d"), // attribute-name, markup-link-target, declaration-name
+            Color.hex("7fb971"), // number-literal, string-literal, literal-value, boolean-literal, char-literal, symbol-literal, regex-literal, markup-link-text
+            Color.hex("4dbed4")  // type-name, tag-name, xml-dtd-tagname, markup-fence
           )
         )
         .site.darkMode.themeColors(
           primary = Mint.base,
           secondary = SoftOrange,//AntiMintPeach.base,
-          primaryMedium = CharcoalLightGrey, // was Mint.lighter
-          primaryLight = CharcoalDarkGrey,
+          primaryMedium = CharcoalGrey, // was Mint.lighter
+          primaryLight = CharcoalBlack,
           text = OffWhite,
-          background = CharcoalGrey,
-          bgGradient = (CharcoalGrey, CharcoalLightGrey) // 007c99
+          background = CharcoalDarkGrey,
+          bgGradient = (CharcoalDarkGrey, CharcoalGrey) // 007c99
         )
         .site.darkMode.messageColors(
           info = Mint.dark,//AdjMintBlue.base,//AdjMintBlue.light,
-          infoLight = CharcoalLightGrey,//AdjMintBlue.dark,
+          infoLight = CharcoalGrey,//AdjMintBlue.dark,
           warning = LightYellow,//AntiMintPeach.darker,//AntiMintPeach.light,
-          warningLight = CharcoalLightGrey,//AntiMintPeach.darker,
+          warningLight = CharcoalGrey,//AntiMintPeach.darker,
           error = AntiMintRed.dark,//AntiMintRed.light,
-          errorLight = CharcoalLightGrey,//AntiMintRed.dark,
+          errorLight = CharcoalGrey,//AntiMintRed.dark,
         )
         .site.darkMode.syntaxHighlightingColors(
           // TODO: make these the ones from "material" highlighting theme
           base = ColorQuintet(
-            CharcoalLightGrey, Color.hex("8c878e"), Color.hex("b2adb4"), Color.hex("bddcee"), Color.hex("e8e8e8")
+            CharcoalGrey, Color.hex("8c878e"), Color.hex("b2adb4"), Color.hex("bddcee"), Color.hex("e8e8e8")
           ),
           wheel = ColorQuintet(
             Color.hex("e28e93"), Color.hex("ef9725"), Color.hex("ffc66d"), Color.hex("7fb971"), Color.hex("4dbed4")
