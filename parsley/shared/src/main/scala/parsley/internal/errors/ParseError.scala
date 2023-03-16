@@ -32,7 +32,7 @@ private [internal] case class TrivialError(offset: Int, line: Int, col: Int,
             builder.unexpected(unexpectedTok.toOption.map(_._1)),
             builder.expected(builder.combineExpectedItems(expecteds.map(_.formatExpect))),
             builder.combineMessages(reasons.map(builder.reason(_)).toSeq),
-            builder.lineInfo(line, beforeLines, afterLines, caret, caretSize))
+            builder.lineInfo(line, beforeLines, afterLines, caret, math.min(caretSize, line.length-caret)))
     }
 }
 private [internal] case class FancyError(offset: Int, line: Int, col: Int, msgs: List[String], caretWidth: Int, lexicalError: Boolean) extends ParseError {
