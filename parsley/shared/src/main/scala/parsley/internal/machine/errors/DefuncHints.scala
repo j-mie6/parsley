@@ -20,7 +20,7 @@ private [machine] sealed abstract class DefuncHints {
     /** This function evaluates this `DefuncHints` structure into the actual set of
       * error items it represents and adds this directly into the provided `TrivialErrorBuilder`
       */
-    private [machine] def updateExpectedsAndGetSize(builder: TrivialErrorBuilder): Int = {
+    private [machine] def updateExpectedsAndGetSize(builder: TrivialErrorBuilder): Option[Int] = {
         val hintCollector = builder.makeHintCollector
         collect(hintCollector)
         hintCollector.unexpectWidth
