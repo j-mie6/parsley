@@ -351,8 +351,7 @@ private [errors] final class WithHints private [errors] (val err: TrivialDefuncE
     override def makeTrivial(builder: TrivialErrorBuilder): Unit = {
         err.makeTrivial(builder)
         builder.whenAcceptingExpected {
-            val size = hints.updateExpectedsAndGetSize(builder)
-            builder.updateUnexpected(size)
+            for (size <- hints.updateExpectedsAndGetSize(builder)) builder.updateUnexpected(size)
         }
     }
 }
