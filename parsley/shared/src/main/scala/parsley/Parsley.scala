@@ -1223,14 +1223,14 @@ object Parsley {
       * @note in the presence of wide unicode characters, the column value returned may be inaccurate.
       * @deprecated Moved to [[position.col `position.col`]], due for removal in 5.0.0
       */
-    @deprecated("Position parsing functionality was moved to `parsley.position`; use `position.line` instead as this will be removed in 5.0.0", "4.2.0")
+    @deprecated("Position parsing functionality was moved to `parsley.position`; use `position.col` instead as this will be removed in 5.0.0", "4.2.0")
     def col: Parsley[Int] = position.col
     /** This parser returns the current line and column numbers of the input without having any other effect.
       *
       * @note in the presence of wide unicode characters, the column value returned may be inaccurate.
       * @deprecated Moved to [[position.pos `position.pos`]], due for removal in 5.0.0
       */
-    @deprecated("Position parsing functionality was moved to `parsley.position`; use `position.line` instead as this will be removed in 5.0.0", "4.2.0")
+    @deprecated("Position parsing functionality was moved to `parsley.position`; use `position.pos` instead as this will be removed in 5.0.0", "4.2.0")
     def pos: Parsley[(Int, Int)] = position.pos
     // $COVERAGE-ON$
 }
