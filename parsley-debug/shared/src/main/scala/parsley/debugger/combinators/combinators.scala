@@ -37,8 +37,6 @@ package object combinators {
   // Rebuild a full tree (with children, from scratch).
   private def rebuildMasterTree(orig: LazyParsley[_], trees: Map[List[LazyParsley[_]], TransientDebugTree]): DebugTree = {
     val asFlat = trees.toList.map { case (stk, t) => (stk.reverse, t) }
-    println(asFlat.toString)
-
     val root = DebugTreeBuilder(TransientDebugTree(name = "ROOT"), Map.empty)
 
     asFlat.foldLeft(root)((tree, lp) => lp match {
