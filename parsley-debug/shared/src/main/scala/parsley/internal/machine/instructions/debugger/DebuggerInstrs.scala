@@ -1,9 +1,11 @@
 package parsley.internal.machine.instructions.debugger
 
 import parsley.debugger.objects.DebugContext
+
 import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.machine.Context
 import parsley.internal.machine.instructions.{Instr, InstrWithLabel}
+import parsley.internal.machine.stacks.Stack
 
 // Instructions used by the debugger itself.
 private [internal] sealed trait DebuggerInstr extends Instr
@@ -35,6 +37,9 @@ private [internal] class LeaveParser(implicit dbgCtx: DebugContext) extends Debu
 // the compiler complaining.
 private [internal] class AddAttempt(implicit dbgCtx: DebugContext) extends DebuggerInstr {
   override def apply(ctx: Context): Unit = {
+    assert(dbgCtx.size > 0, "AddAttempt can only be called if we are within the scope of a parser being debugged")
+    assert(ctx.checkStack != Stack.empty, "check stack must not be empty when AddAttempt executes")
+
     val prevCheck = ctx.checkStack.offset
     val currentOff = ctx.offset
 
