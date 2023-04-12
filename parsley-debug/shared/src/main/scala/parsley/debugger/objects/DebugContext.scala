@@ -11,8 +11,6 @@ private [parsley] class DebugContext {
   // Tracks how many parsers deep we are.
   private var currentParserStack: List[LazyParsley[_]] = Nil
 
-  def size: Int = currentParserStack.size
-
   private val nodes: mutable.Map[List[LazyParsley[_]], TransientDebugTree] = new mutable.LinkedHashMap()
 
   // Get an immutable map of nodes.

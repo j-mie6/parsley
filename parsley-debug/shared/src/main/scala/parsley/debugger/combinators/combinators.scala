@@ -40,7 +40,7 @@ package object combinators {
     val root = DebugTreeBuilder(TransientDebugTree(name = "ROOT"), Map.empty)
 
     asFlat.foldLeft(root)((tree, lp) => lp match {
-      case (k, t) => tree.addNode(k.reverse, t)
+      case (k, t) => tree.addNode(k, t)
     }).reconstruct
       .freeze
   }
