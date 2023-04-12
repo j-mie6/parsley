@@ -36,7 +36,10 @@ package object combinators {
 
   // Rebuild a full tree (with children, from scratch).
   private def rebuildMasterTree(orig: LazyParsley[_], trees: Map[List[LazyParsley[_]], TransientDebugTree]): DebugTree = {
-    val asFlat = trees.toList.map { case (stk, t) => (stk.reverse, t) }.sortBy(_._1.size)
+    // Reverse is required for the overall list generated from the tree map as parsers are pushed into
+    // the linked map LIFO, but we want a FIFO ordering before length sort.
+    // Pre: the Scala implementation's sort method uses a stable sort.
+    val asFlat = trees.toList.reverse.map { case (stk, t) => (stk.reverse, t) }.sortBy(_._1.size)
     val root = DebugTreeBuilder(TransientDebugTree(name = "ROOT"), Map.empty)
 
     asFlat.foldLeft(root)((tree, lp) => lp match {
