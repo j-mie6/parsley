@@ -3,6 +3,7 @@
  */
 package parsley.debugger.objects
 
+import parsley.debugger.internal.Rename
 import parsley.internal.deepembedding.frontend.LazyParsley
 
 import scala.collection.mutable
@@ -106,7 +107,7 @@ private [parsley] case class DebugTreeBuilder(
   def reconstruct: TransientDebugTree = {
     node.children
       .addAll(
-        bChildren.map { case (lp, cs) => (DebugContext.translate(lp.getClass.getTypeName), cs.reconstruct) }
+        bChildren.map { case (lp, cs) => (Rename(lp), cs.reconstruct) }
       )
 
     node

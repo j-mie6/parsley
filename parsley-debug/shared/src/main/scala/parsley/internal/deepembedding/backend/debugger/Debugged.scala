@@ -13,7 +13,7 @@ import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.machine.instructions.Label
 import parsley.internal.machine.instructions.debugger.{AddAttemptAndLeave, EnterParser}
 
-private [deepembedding] final class Debugged[A]
+private [parsley] final class Debugged[A]
   (origin: LazyParsley[A], val p: StrictParsley[A])
   (implicit dbgCtx: DebugContext) extends Unary[A, A] {
   override protected[backend] def codeGen[Cont[_, +_] : ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {

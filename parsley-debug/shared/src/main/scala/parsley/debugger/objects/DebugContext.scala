@@ -3,10 +3,11 @@
  */
 package parsley.debugger.objects
 
-import parsley.internal.deepembedding.frontend.LazyParsley
-import parsley.internal.deepembedding.frontend.debugger.Debugged
-
 import scala.collection.mutable
+
+import parsley.debugger.internal.Rename
+
+import parsley.internal.deepembedding.frontend.LazyParsley
 
 // Class used to hold details about a parser being debugged.
 // This is normally held as a value inside a clozure.
@@ -31,11 +32,7 @@ private [parsley] class DebugContext {
         // something more human-friendly.
         val tree = nodes.getOrElseUpdate(currentParserStack, {
           val newTree = TransientDebugTree()
-          newTree.name = DebugContext.translate(p match {
-            case dbg: Debugged[_] => dbg.getTypeName
-            case _                => p.getClass.getTypeName
-          })
-
+          newTree.name = Rename(p)
           newTree
         })
 
@@ -56,38 +53,4 @@ private [parsley] class DebugContext {
       case _ :: rest =>
         rest
     }
-}
-
-private [parsley] object DebugContext {
-  // Translation table for Scala operator names.
-  private [this] lazy val operatorTable: Map[String, Char] = Map(
-    ("times", '*'),
-    ("percent", '%'),
-    ("div", '/'),
-    ("plus", '+'),
-    ("minus", '-'),
-    ("colon", ':'),
-    ("less", '<'),
-    ("greater", '>'),
-    ("eq", '='),
-    ("bang", '!'),
-    ("amp", '&'),
-    ("up", '^'),
-    ("bar", '|'),
-    ("tilde", '~')
-  )
-
-  // Translate a fully-qualified class name into something more human-readable.
-  private [parsley] def translate(name: String): String = {
-    val lastDot = name.lastIndexOf(".")
-    val uName =
-      if (lastDot == -1) name
-      else name.drop(lastDot + 1)
-
-    if (uName.contains('$')) {
-      uName.split('$').map(c => operatorTable.getOrElse(c, s"$c")).mkString
-    } else {
-      uName
-    }
-  }
 }

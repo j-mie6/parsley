@@ -9,7 +9,7 @@ import parsley.internal.deepembedding.backend
 
 // Wrapper class signifying debugged classes
 private [parsley] final class Debugged[A]
-  (par: LazyParsley[A])
+  (val par: LazyParsley[A])
   (implicit dbgCtx: DebugContext) extends Unary[A, A](par) {
   override def make(p: StrictParsley[A]): StrictParsley[A] =
     new backend.debugger.Debugged(par, p)
