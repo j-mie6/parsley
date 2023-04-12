@@ -34,7 +34,8 @@ package object utils {
     // Get all the getters for parser instances in a class.
     // We're using Parsley.unit as our dummy instance (type erasure at runtime saves us here).
     val methods = clazz.getDeclaredMethods.filter(m =>
-      m.getReturnType.isAssignableFrom(classOf[LazyParsley[_]])
+      (m.getReturnType.isAssignableFrom(classOf[LazyParsley[_]])
+        || m.getReturnType.isAssignableFrom(classOf[Parsley[_]]))
       && m.getParameterCount == 0
       && !m.getName.startsWith("copy"))
 
@@ -58,7 +59,9 @@ package object utils {
     }).toMap
 
     // Get all fields with a parser.
-    val fields = clazz.getDeclaredFields.filter(_.getClass.isAssignableFrom(classOf[LazyParsley[_]]))
+    val fields = clazz.getDeclaredFields.filter(f =>
+      f.getClass.isAssignableFrom(classOf[LazyParsley[_]])
+      || f.getClass.isAssignableFrom(classOf[Parsley[_]]))
 
     // Make a bunch of search functions from those fields.
     val asMapF = fields.flatMap(fld => {
