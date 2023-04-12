@@ -40,7 +40,8 @@ private [internal] class AddAttempt(implicit dbgCtx: DebugContext) extends Debug
 
     // Slice based on current offset to see what a parser has attempted to parse,
     // and the 'good' member should indicate whether the previous parser has succeeded or not.
-    val input = ctx.input.slice(prevCheck, currentOff)
+    // We add 1 to currentOff to see what character caused the parse failure.
+    val input = ctx.input.slice(prevCheck, currentOff + 1)
     val success = ctx.good
 
     dbgCtx.addParseAttempt(input, success)

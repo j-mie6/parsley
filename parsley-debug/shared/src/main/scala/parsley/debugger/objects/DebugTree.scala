@@ -95,7 +95,11 @@ private [parsley] case class DebugTreeBuilder(
   def addNode(path: List[LazyParsley[Any]], node: TransientDebugTree): DebugTreeBuilder =
     path match {
       case Nil      => DebugTreeBuilder(node, Map.empty)
-      case p :: ps  => DebugTreeBuilder(this.node, bChildren.+((p, addNode(ps, node))))
+      case p :: ps  =>
+        // Pre: The path to this node must fully exist.
+        // Tip: Add the shortest paths first!
+        val child = this.bChildren.getOrElse(p, DebugTreeBuilder(node))
+        DebugTreeBuilder(this.node, this.bChildren.+((p, child.addNode(ps, node))))
     }
 
   def reconstruct: TransientDebugTree = {

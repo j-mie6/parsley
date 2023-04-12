@@ -75,10 +75,16 @@ private [parsley] object DebugContext {
   )
 
   // Translate a fully-qualified class name into something more human-readable.
-  private [parsley] def translate(name: String): String =
-    if (name.contains('$')) {
-      name.split('$').map(operatorTable.getOrElse(_, "")).mkString
+  private [parsley] def translate(name: String): String = {
+    val lastDot = name.lastIndexOf(".")
+    val uName =
+      if (lastDot == -1) name
+      else name.drop(lastDot + 1)
+
+    if (uName.contains('$')) {
+      uName.split('$').map(operatorTable.getOrElse(_, "")).mkString
     } else {
-      name
+      uName
     }
+  }
 }
