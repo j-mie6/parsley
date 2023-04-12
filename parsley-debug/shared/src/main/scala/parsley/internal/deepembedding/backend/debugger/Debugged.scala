@@ -8,7 +8,7 @@ import parsley.internal.deepembedding.backend.{CodeGenState, StrictParsley, Unar
 import parsley.internal.deepembedding.backend.StrictParsley.InstrBuffer
 import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.machine.instructions.Label
-import parsley.internal.machine.instructions.debugger.{AddAttempt, EnterParser, LeaveParser}
+import parsley.internal.machine.instructions.debugger.{AddAttemptAndLeave, EnterParser}
 
 private [deepembedding] final class Debugged[A]
   (origin: LazyParsley[A], val p: StrictParsley[A])
@@ -19,8 +19,8 @@ private [deepembedding] final class Debugged[A]
     result(instrs += new EnterParser(handler, origin)) |>
     suspend(p.codeGen[Cont, R]) |>
     (instrs += new Label(handler)) |>
-    (instrs += new AddAttempt) |>
-    (instrs += new LeaveParser)
+    (instrs += new AddAttemptAndLeave)
+//    (instrs += new LeaveParser)
   }
 
   override protected def pretty(p: String): String = s"debugged($p)"

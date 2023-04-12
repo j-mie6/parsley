@@ -82,7 +82,7 @@ private [parsley] object DebugContext {
       else name.drop(lastDot + 1)
 
     if (uName.contains('$')) {
-      uName.split('$').map(operatorTable.getOrElse(_, "")).mkString
+      uName.split('$').map(c => operatorTable.getOrElse(c, s"$c")).mkString
     } else {
       uName
     }

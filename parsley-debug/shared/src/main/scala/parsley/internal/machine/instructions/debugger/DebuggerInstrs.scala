@@ -20,20 +20,21 @@ private [internal] class EnterParser
   }
 }
 
+// Leave the current parser's scope.
+@deprecated("Turns out having an explicit LeaveParser instruction causes weird things to happen.")
 private [internal] class LeaveParser(implicit dbgCtx: DebugContext) extends DebuggerInstr {
   override def apply(ctx: Context): Unit = {
-    // See above.
-    dbgCtx.pop()
-    ctx.checkStack = ctx.checkStack.tail // Manually pop off our debug checkpoint.
-
-    if (ctx.good) ctx.inc()
-    else ctx.fail()
+    if (ctx.good) {
+      ctx.inc()
+    } else {
+      ctx.fail()
+    }
   }
 }
 
 // Ideally we want to make this instruction extend InstrWithLabel, but I can't do that without
 // the compiler complaining.
-private [internal] class AddAttempt(implicit dbgCtx: DebugContext) extends DebuggerInstr {
+private [internal] class AddAttemptAndLeave(implicit dbgCtx: DebugContext) extends DebuggerInstr {
   override def apply(ctx: Context): Unit = {
     val prevCheck = ctx.checkStack.offset
     val currentOff = ctx.offset
@@ -45,6 +46,17 @@ private [internal] class AddAttempt(implicit dbgCtx: DebugContext) extends Debug
     val success = ctx.good
 
     dbgCtx.addParseAttempt(input, success)
-    ctx.inc()
+
+    // See above.
+    dbgCtx.pop()
+    ctx.checkStack = ctx.checkStack.tail // Manually pop off our debug checkpoint.
+
+    // Fail if the current context is not good.
+    if (ctx.good) {
+      ctx.handlers = ctx.handlers.tail
+      ctx.inc()
+    } else {
+      ctx.fail()
+    }
   }
 }

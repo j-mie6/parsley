@@ -24,7 +24,7 @@ package object debugger {
 
       // Function is buried in the frontend package to facilitate access to the GeneralisedEmbedding
       // abstract classes and their getters.
-      getChildren(parser).map(traverseDown(_))
+      implicit val attached: List[LazyParsley[Any]] = getChildren(parser).map(traverseDown(_))
 
       // Return a parser with a debugger attached.
       new Debugged(reconstruct(parser))
@@ -43,29 +43,33 @@ package object debugger {
         Nil
     }
 
+  // WARNING: very unsafe due to asInstanceOf call.
+  private def coerce[A](ix: Int)(implicit children: List[LazyParsley[Any]]): LazyParsley[A] =
+    children(ix).asInstanceOf[LazyParsley[A]]
+
   // Reconstruct the original parser with new components.
   // WARNING: very unsafe, use outside this object with caution.
   private def reconstruct[A, X, Y, Z]
     (parser: LazyParsley[A])
-    (implicit dbgCtx: DebugContext): LazyParsley[A] =
+    (implicit dbgCtx: DebugContext, children: List[LazyParsley[Any]]): LazyParsley[A] =
     parser match {
       case par: frontend.Unary[X, A]         =>
-        new frontend.Unary[X, A](new Debugged(par.parser)) {
+        new frontend.Unary[X, A](coerce[X](0)) {
           override def make(p: StrictParsley[X]): StrictParsley[A] = par.make(p)
         }
       case par: frontend.Binary[X, Y, A]     =>
-        new frontend.Binary[X, Y, A](new Debugged(par.leftParser), new Debugged(par.rightParser)) {
+        new frontend.Binary[X, Y, A](coerce[X](0), coerce[Y](1)) {
           override def make(p: StrictParsley[X], q: StrictParsley[Y]): StrictParsley[A] = par.make(p, q)
         }
       case par: frontend.Ternary[X, Y, Z, A] =>
-        new Ternary[X, Y, Z, A](new Debugged(par.firstParser), new Debugged(par.secondParser), new Debugged(par.thirdParser)) {
+        new Ternary[X, Y, Z, A](coerce[X](0), coerce[Y](1), coerce[Z](2)) {
           override def make(p: StrictParsley[X], q: StrictParsley[Y], r: StrictParsley[Z]): StrictParsley[A] =
             par.make(p, q, r)
         }
-      case par: frontend.<|>[A]              =>
-        new frontend.<|>[A](new Debugged(par.leftParser), new Debugged(par.rightParser))
-      case par: frontend.ChainPre[A]         =>
-        new frontend.ChainPre[A](new Debugged(par.itemParser), new Debugged(par.opParser))
+      case _: frontend.<|>[A]                =>
+        new frontend.<|>[A](coerce[A](0), coerce[A](1))
+      case _: frontend.ChainPre[A]           =>
+        new frontend.ChainPre[A](coerce[A](0), coerce[A => A](1))
       case _                                 => parser
     }
 }
