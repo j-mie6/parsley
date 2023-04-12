@@ -1,3 +1,6 @@
+/* SPDX-FileCopyrightText: © 2022 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package parsley.internal.machine.instructions.debugger
 
 import parsley.debugger.objects.DebugContext
@@ -17,18 +20,6 @@ private [internal] class EnterParser
     ctx.pushCheck() // Save our location for inputs.
     ctx.pushHandler(label) // Mark the AddAttempt instruction as an exit handler.
     ctx.inc()
-  }
-}
-
-// Leave the current parser's scope.
-@deprecated("Turns out having an explicit LeaveParser instruction causes weird things to happen.")
-private [internal] class LeaveParser(implicit dbgCtx: DebugContext) extends DebuggerInstr {
-  override def apply(ctx: Context): Unit = {
-    if (ctx.good) {
-      ctx.inc()
-    } else {
-      ctx.fail()
-    }
   }
 }
 

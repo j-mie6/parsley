@@ -3,6 +3,8 @@
  */
 package parsley.debugger
 
+import scala.collection.mutable
+
 import parsley.Parsley
 import parsley.Parsley.pure
 
@@ -10,8 +12,6 @@ import parsley.debugger.objects.{DebugContext, DebugGUI, DebugTree, DebugTreeBui
 
 import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.deepembedding.frontend.debugger.traverseDown
-
-import scala.collection.mutable
 
 /** Package containing various helpers and debug combinators.
   */
@@ -34,7 +34,7 @@ package object combinators {
     (() => rebuildMasterTree(parser.internal, context.getNodes), new Parsley(attached))
   }
 
-  // Rebuild a full tree (with children, from scratch).
+  // Helper for rebuilding full trees (with children, from scratch).
   private def rebuildMasterTree(orig: LazyParsley[_], trees: Map[List[LazyParsley[_]], TransientDebugTree]): DebugTree = {
     // Reverse is required for the overall list generated from the tree map as parsers are pushed into
     // the linked map LIFO, but we want a FIFO ordering before length sort.

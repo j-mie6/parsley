@@ -88,6 +88,7 @@ case class TransientDebugTree(
 }
 
 // Helper class for reconstructing a debug tree.
+// Not meant to be public.
 private [parsley] case class DebugTreeBuilder(
   node: TransientDebugTree,
   bChildren: Map[LazyParsley[Any], DebugTreeBuilder] = Map.empty,
