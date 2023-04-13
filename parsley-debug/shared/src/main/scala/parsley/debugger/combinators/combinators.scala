@@ -4,14 +4,11 @@
 package parsley.debugger
 
 import scala.collection.mutable
-
 import parsley.Parsley
 import parsley.Parsley.pure
-
 import parsley.debugger.objects.{DebugContext, DebugGUI, DebugTree, DebugTreeBuilder, TransientDebugTree}
-
 import parsley.internal.deepembedding.frontend.LazyParsley
-import parsley.internal.deepembedding.frontend.debugger.traverseDown
+import parsley.internal.deepembedding.frontend.debugger.{Debugged, traverseDown}
 
 /** Package containing various helpers and debug combinators.
   */
@@ -27,7 +24,7 @@ package object combinators {
     * @return A pair of the finalised tree, and the instrumented parser.
     */
   def attachDebugger[A](parser: Parsley[A]): (() => DebugTree, Parsley[A]) = {
-    implicit val seen: mutable.Set[LazyParsley[_]] = new mutable.LinkedHashSet()
+    implicit val seen: mutable.Map[LazyParsley[_], Debugged[_]] = new mutable.LinkedHashMap()
     implicit val context: DebugContext = new DebugContext()
 
     val attached = traverseDown(parser.internal)

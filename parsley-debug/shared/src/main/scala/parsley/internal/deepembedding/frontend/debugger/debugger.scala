@@ -13,21 +13,26 @@ import scala.collection.mutable
 package object debugger {
   private [parsley] def traverseDown[A]
     (parser: LazyParsley[A])
-    (implicit seen: mutable.Set[LazyParsley[_]], dbgCtx: DebugContext): LazyParsley[A] =
+    (implicit seen: mutable.Map[LazyParsley[_], Debugged[_]], dbgCtx: DebugContext): LazyParsley[A] =
   // This stops recursive parsers from causing an infinite recursion.
     if (seen.contains(parser)) {
       // Return a parser with a debugger attached.
-      new Debugged(parser)
+      seen(parser).asInstanceOf[Debugged[A]]
     } else {
+      val current = new Debugged[A](parser, None)
+
       // Without this, we could potentially have infinite recursion from lazy-initialised parsers.
-      seen.add(parser)
+      seen.put(parser, current)
 
       // Function is buried in the frontend package to facilitate access to the GeneralisedEmbedding
       // abstract classes and their getters.
       implicit val attached: List[LazyParsley[Any]] = getChildren(parser).map(traverseDown(_))
 
+      // Populate our parser with the new debugged children.
+      current.par = Some(reconstruct(parser))
+
       // Return a parser with a debugger attached.
-      new Debugged(reconstruct(parser))
+      seen(parser).asInstanceOf[Debugged[A]]
     }
 
   // Attempt to retrieve the child parsers.

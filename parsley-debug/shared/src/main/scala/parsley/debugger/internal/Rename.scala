@@ -30,7 +30,7 @@ private [parsley] object Rename {
 
     // This renames the parser if it is present, otherwise gives the default name found earlier.
     collected.getOrElse(p match {
-      case dbg: Debugged[_] => dbg.par
+      case dbg: Debugged[_] => dbg.par.get
       case _                => p
     }, defaultName)
   }

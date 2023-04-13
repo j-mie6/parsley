@@ -23,7 +23,6 @@ private [parsley] final class Debugged[A]
     suspend(p.codeGen[Cont, R]) |>
     (instrs += new Label(handler)) |>
     (instrs += new AddAttemptAndLeave)
-//    (instrs += new LeaveParser)
   }
 
   override protected def pretty(p: String): String = s"debugged($p)"
