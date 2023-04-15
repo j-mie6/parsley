@@ -1,6 +1,6 @@
 package parsley.debugger.frontend
 
-import parsley.debugger.objects.DebugTree
+import parsley.debugger.DebugTree
 
 /** Internal implementation for console printer child class. */
 class ConsoleGUI private () extends DebugGUI {
@@ -18,7 +18,7 @@ object ConsoleGUI {
   /** Create an instance of the console pretty-printer.
     *
     * It is recommended that you assign this to an implicit value before calling
-    * [[parsley.debugger.combinators.attachDebuggerGUI]].
+    * [[parsley.debugger.combinator.attachDebuggerGUI]].
     *
     * @return Console instance for pretty-printing debug trees.
     */

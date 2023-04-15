@@ -3,7 +3,7 @@
  */
 package parsley.internal.machine.instructions.debugger
 
-import parsley.debugger.objects.DebugContext
+import parsley.debugger.internal.DebugContext
 import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.machine.Context
 import parsley.internal.machine.instructions.{Instr, InstrWithLabel}
@@ -11,6 +11,7 @@ import parsley.internal.machine.instructions.{Instr, InstrWithLabel}
 // Instructions used by the debugger itself.
 private [internal] sealed trait DebuggerInstr extends Instr
 
+// Enter into the scope of a parser in the current context.
 private [internal] class EnterParser
   (var label: Int, origin: LazyParsley[_])
   (implicit dbgCtx: DebugContext) extends InstrWithLabel with DebuggerInstr {
@@ -23,10 +24,12 @@ private [internal] class EnterParser
   }
 }
 
-// Ideally we want to make this instruction extend InstrWithLabel, but I can't do that without
-// the compiler complaining.
+// Add a parse attempt to the current context at the current callstack point, and leave the current
+// parser's scope.
 private [internal] class AddAttemptAndLeave(implicit dbgCtx: DebugContext) extends DebuggerInstr {
   override def apply(ctx: Context): Unit = {
+    // These offsets will be needed to slice the specific part of the input that the parser has
+    // attempted to parse during its attempt.
     val prevCheck = ctx.checkStack.offset
     val currentOff = ctx.offset
 
@@ -42,7 +45,7 @@ private [internal] class AddAttemptAndLeave(implicit dbgCtx: DebugContext) exten
     dbgCtx.pop()
     ctx.checkStack = ctx.checkStack.tail // Manually pop off our debug checkpoint.
 
-    // Fail if the current context is not good.
+    // Fail if the current context is not good, as required by how Parsley's machine functions.
     if (ctx.good) {
       ctx.handlers = ctx.handlers.tail
       ctx.inc()

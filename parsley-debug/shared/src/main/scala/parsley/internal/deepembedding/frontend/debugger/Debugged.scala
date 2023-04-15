@@ -1,7 +1,6 @@
 package parsley.internal.deepembedding.frontend.debugger
 
-import parsley.debugger.objects.DebugContext
-
+import parsley.debugger.internal.DebugContext
 import parsley.internal.deepembedding.ContOps.{ContAdapter, suspend}
 import parsley.internal.deepembedding.backend.StrictParsley
 import parsley.internal.deepembedding.{backend, ContOps}

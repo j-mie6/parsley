@@ -3,8 +3,7 @@
  */
 package parsley.internal.deepembedding.backend.debugger
 
-import parsley.debugger.objects.DebugContext
-
+import parsley.debugger.internal.DebugContext
 import parsley.internal.deepembedding.ContOps
 import parsley.internal.deepembedding.ContOps.{result, suspend, ContAdapter}
 import parsley.internal.deepembedding.backend.{CodeGenState, StrictParsley, Unary}

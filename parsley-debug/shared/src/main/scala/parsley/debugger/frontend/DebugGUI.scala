@@ -3,7 +3,7 @@
  */
 package parsley.debugger.frontend
 
-import parsley.debugger.objects.DebugTree
+import parsley.debugger.DebugTree
 
 /** Trait representing a GUI frontend for a debugger to display things. */
 trait DebugGUI {

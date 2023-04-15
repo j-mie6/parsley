@@ -1,16 +1,14 @@
 /* SPDX-FileCopyrightText: © 2022 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
  * SPDX-License-Identifier: BSD-3-Clause
  */
-package parsley.debugger.objects
-
-import scala.collection.mutable
-
-import parsley.debugger.internal.Rename
+package parsley.debugger.internal
 
 import parsley.internal.deepembedding.frontend.LazyParsley
 
+import scala.collection.mutable
+
 // Class used to hold details about a parser being debugged.
-// This is normally held as a value inside a clozure.
+// This is normally held as a value inside an implicit variable.
 private [parsley] class DebugContext {
   // Tracks how many parsers deep we are.
   private var currentParserStack: List[LazyParsley[_]] = Nil
@@ -25,6 +23,8 @@ private [parsley] class DebugContext {
   def addParseAttempt(input: String, success: Boolean): Unit =
     currentParserStack match {
       case Nil    =>
+        // This shouldn't ever be reached unless something horribly wrong happened to the
+        // instruction generation or execution of the parser.
         println("WARNING: parser stack underflow when adding attempt.")
       case p :: _ =>
         // This tree will be populated as the parser is run.
@@ -38,6 +38,12 @@ private [parsley] class DebugContext {
 
         tree.parses.append((input, success))
     }
+
+  // Reset this context back to zero.
+  def reset(): Unit = {
+    currentParserStack = Nil
+    nodes.clear()
+  }
 
   // Push a new parser onto the parser callstack.
   def push(parser: LazyParsley[_]): Unit =

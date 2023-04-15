@@ -12,13 +12,14 @@ import parsley.internal.deepembedding.frontend.debugger.Debugged
 // debugged  parser's name in order to increase the clarity of the debugger's
 // results. By default, this does nothing other than invoke the name translation
 // utility that is used to make symbolic operators.
-// This is unsafe, as it assumes that "anon" is present somewhere in the
-// name of the parser before it attempts to rename them.
 // It also requires user interaction, as it needs to collect information from the
 // classes or objects that define their parser.
 private [parsley] object Rename {
   // This will attempt to match parsers referentially.
   // This also assumes that all parsers are present (lazy or otherwise) before debugging.
+  // Populating this map is only possible if the platform contains some form of implementation for
+  // parsley.debugger.utils.collectNames, which attempts to collect the name-in-code for a given
+  // reference to a parser.
   lazy private val collected: mutable.Map[LazyParsley[_], String] = new mutable.HashMap()
 
   // This method attempts the renaming of a parser.

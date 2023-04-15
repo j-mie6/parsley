@@ -10,7 +10,7 @@ import parsley.internal.deepembedding.frontend.LazyParsley
 /** Miscellaneous utilities for enhancing the debugger.
   * Using these utilities is optional.
   */
-package object utils {
+package object util {
   /** Attempt to collect all the fields in a class or object that contain a
     * parser of type [[Parsley]].
     *
