@@ -134,7 +134,7 @@ package object debugger {
     * rendered in.
     *
     * One would normally obtain a [[DebugGUI]] frontend from its respective package via a call to
-    * `newInstance` or similar.
+    * `newInstance` or similar. [[ConsoleGUI]] is included as a fallback option.
     *
     * The instrumented parser will automatically call the GUI to render the debug tree.
     *

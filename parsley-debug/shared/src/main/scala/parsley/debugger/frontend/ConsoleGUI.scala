@@ -2,25 +2,27 @@ package parsley.debugger.frontend
 
 import parsley.debugger.DebugTree
 
-/** Internal implementation for console printer child class. */
-class ConsoleGUI private () extends DebugGUI {
-  override def render(tree: => DebugTree): Unit =
-    println(tree)
-}
-
 /** A console pretty-printer for the debugger.
   *
   * Will automatically print the debug tree into the console after a parser has finished running.
   *
   * Technically not a GUI.
   */
-object ConsoleGUI {
-  /** Create an instance of the console pretty-printer.
+case object ConsoleGUI extends DebugGUI {
+  /** Get an instance of the console pretty-printer.
     *
     * It is recommended that you assign this to an implicit value before calling
-    * [[parsley.debugger.combinator.attachDebuggerGUI]].
+    * [[parsley.debugger.attachDebuggerGUI]].
     *
     * @return Console instance for pretty-printing debug trees.
     */
-  def newInstance: ConsoleGUI = new ConsoleGUI()
+  def newInstance: ConsoleGUI.type = {
+    // Other GUIs may not be singletons like this class as they may contain
+    // state information required to run them.
+    // This particular class can be a singleton as it is stateless.
+    this
+  }
+
+  override def render(tree: => DebugTree): Unit =
+    println(tree)
 }
