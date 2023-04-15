@@ -18,7 +18,7 @@ private [parsley] class DebugContext {
 
   // Get an immutable map of nodes.
   def getNodes: Map[List[LazyParsley[_]], TransientDebugTree] =
-    nodes.foldLeft[ListMap[List[LazyParsley[_]], TransientDebugTree]](ListMap())((acc, p) => acc + p)
+    nodes.foldRight[ListMap[List[LazyParsley[_]], TransientDebugTree]](ListMap())((p, acc) => acc + p)
 
   // Add an attempt of parsing at the current stack point.
   def addParseAttempt(input: String, success: Boolean): Unit =

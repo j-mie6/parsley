@@ -58,43 +58,43 @@ package object debugger {
     * |
     * +-[ Chainl ]: ("5 + 3 - 2", Success)
     * |
-    * +-[ *> ]: (" +", Success), (" -", Success), ("", Failure)
-    * | |
-    * | +-[ mainParser ]: ("+", Success), ("-", Success), ("", Failure)
-    * | | |
-    * | | +-[ *> ]: ("-", Success), ("", Failure)
-    * | | | |
-    * | | | +-[ Pure ]: ("", Success)
-    * | | | |
-    * | | | +-[ CharTok ]: ("-", Success), ("", Failure)
-    * | | |
-    * | | +-[ *> ]: ("+", Success), ("-", Failure), ("", Failure)
-    * | |   |
-    * | |   +-[ Pure ]: ("", Success)
-    * | |   |
-    * | |   +-[ CharTok ]: ("+", Success), ("-", Failure), ("", Failure)
-    * | |
-    * | +-[ SkipMany ]: (" ", Success), (" ", Success), ("", Success)
-    * |   |
-    * |   +-[ ErrorLabel ]: (" ", Success), ("+", Failure), (" ", Success), ("-", Failure), ("", Failure)
-    * |     |
-    * |     +-[ Satisfy ]: (" ", Success), ("+", Failure), (" ", Success), ("-", Failure), ("", Failure)
-    * |
     * +-[ *> ]: ("5", Success), (" 3", Success), (" 2", Success)
-    * |
-    * +-[ mainParser ]: ("5", Success), ("3", Success), ("2", Success)
     * | |
-    * | +-[ Many ]: ("5", Success), ("3", Success), ("2", Success)
+    * | +-[ SkipMany ]: ("", Success), (" ", Success), (" ", Success)
     * | | |
-    * | | +-[ Satisfy ]: ("5", Success), (" ", Failure), ("3", Success), (" ", Failure), ("2", Success), ("", Failure)
+    * | | +-[ ErrorLabel ]: ("5", Failure), (" ", Success), ("3", Failure), (" ", Success), ("2", Failure)
+    * | |   |
+    * | |   +-[ Satisfy ]: ("5", Failure), (" ", Success), ("3", Failure), (" ", Success), ("2", Failure)
     * | |
-    * | +-[ Pure ]: ("", Success), ("", Success), ("", Success)
+    * | +-[ positiveNum ]: ("5", Success), ("3", Success), ("2", Success)
+    * |   |
+    * |   +-[ Pure ]: ("", Success), ("", Success), ("", Success)
+    * |   |
+    * |   +-[ Many ]: ("5", Success), ("3", Success), ("2", Success)
+    * |     |
+    * |     +-[ Satisfy ]: ("5", Success), (" ", Failure), ("3", Success), (" ", Failure), ("2", Success), ("", Failure)
     * |
-    * +-[ SkipMany ]: ("", Success), (" ", Success), (" ", Success)
+    * +-[ *> ]: (" +", Success), (" -", Success), ("", Failure)
     * |
-    * +-[ ErrorLabel ]: ("5", Failure), (" ", Success), ("3", Failure), (" ", Success), ("2", Failure)
+    * +-[ SkipMany ]: (" ", Success), (" ", Success), ("", Success)
+    * | |
+    * | +-[ ErrorLabel ]: (" ", Success), ("+", Failure), (" ", Success), ("-", Failure), ("", Failure)
+    * |   |
+    * |   +-[ Satisfy ]: (" ", Success), ("+", Failure), (" ", Success), ("-", Failure), ("", Failure)
     * |
-    * +-[ Satisfy ]: ("5", Failure), (" ", Success), ("3", Failure), (" ", Success), ("2", Failure)
+    * +-[ mainParser ]: ("+", Success), ("-", Success), ("", Failure)
+    * |
+    * +-[ *> ]: ("+", Success), ("-", Failure), ("", Failure)
+    * | |
+    * | +-[ CharTok ]: ("+", Success), ("-", Failure), ("", Failure)
+    * | |
+    * | +-[ Pure ]: ("", Success)
+    * |
+    * +-[ *> ]: ("-", Success), ("", Failure)
+    * |
+    * +-[ CharTok ]: ("-", Success), ("", Failure)
+    * |
+    * +-[ Pure ]: ("", Success)
     * }}}
     * @param parser The parser to debug.
     * @tparam A Output type of original parser.

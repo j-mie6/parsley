@@ -26,7 +26,7 @@ private [parsley] case class TransientDebugTree(
   override def parseResults: List[(String, Boolean)] = parses.toList
 
   override def nodeChildren: Map[String, DebugTree] =
-    children.foldLeft[ListMap[String, DebugTree]](ListMap())((acc, p) => acc + p)
+    children.foldRight[ListMap[String, DebugTree]](ListMap())((p, acc) => acc + p)
 
   /** Freeze the current debug tree into an immutable copy.
     *
