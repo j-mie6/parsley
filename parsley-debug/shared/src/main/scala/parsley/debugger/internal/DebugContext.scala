@@ -3,9 +3,10 @@
  */
 package parsley.debugger.internal
 
-import parsley.internal.deepembedding.frontend.LazyParsley
-
+import scala.collection.immutable.ListMap
 import scala.collection.mutable
+
+import parsley.internal.deepembedding.frontend.LazyParsley
 
 // Class used to hold details about a parser being debugged.
 // This is normally held as a value inside an implicit variable.
@@ -17,7 +18,7 @@ private [parsley] class DebugContext {
 
   // Get an immutable map of nodes.
   def getNodes: Map[List[LazyParsley[_]], TransientDebugTree] =
-    nodes.toMap
+    nodes.foldLeft[ListMap[List[LazyParsley[_]], TransientDebugTree]](ListMap())((acc, p) => acc + p)
 
   // Add an attempt of parsing at the current stack point.
   def addParseAttempt(input: String, success: Boolean): Unit =

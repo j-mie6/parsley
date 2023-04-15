@@ -18,10 +18,11 @@ private [parsley] final class Debugged[A]
   override protected[backend] def codeGen[Cont[_, +_] : ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
     val handler = state.freshLabel()
 
-    result(instrs += new EnterParser(handler, origin)) |>
-    suspend(p.codeGen[Cont, R]) |>
-    (instrs += new Label(handler)) |>
-    (instrs += new AddAttemptAndLeave)
+    instrs += new EnterParser(handler, origin)
+    suspend(p.codeGen[Cont, R]) |> {
+      instrs += new Label(handler)
+      instrs += new AddAttemptAndLeave
+    }
   }
 
   override protected def pretty(p: String): String = s"debugged($p)"

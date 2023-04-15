@@ -1,7 +1,9 @@
 package parsley.debugger.internal
 
-import parsley.debugger.DebugTree
+import scala.collection.immutable.ListMap
 import scala.collection.mutable
+
+import parsley.debugger.DebugTree
 
 /** A mutable implementation of [[DebugTree]], used when constructing the tree as a parser is
   * running.
@@ -23,7 +25,8 @@ private [parsley] case class TransientDebugTree(
   // The pair stores the input the parser attempted to parse and its success.
   override def parseResults: List[(String, Boolean)] = parses.toList
 
-  override def nodeChildren: Map[String, DebugTree] = children.toMap
+  override def nodeChildren: Map[String, DebugTree] =
+    children.foldLeft[ListMap[String, DebugTree]](ListMap())((acc, p) => acc + p)
 
   /** Freeze the current debug tree into an immutable copy.
     *

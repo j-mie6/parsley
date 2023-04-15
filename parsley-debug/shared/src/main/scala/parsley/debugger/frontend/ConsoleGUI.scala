@@ -4,7 +4,7 @@ import parsley.debugger.DebugTree
 
 /** Internal implementation for console printer child class. */
 class ConsoleGUI private () extends DebugGUI {
-  override def render(tree: DebugTree): Unit =
+  override def render(tree: => DebugTree): Unit =
     println(tree)
 }
 

@@ -4,6 +4,7 @@
 package parsley.internal.machine.instructions.debugger
 
 import parsley.debugger.internal.DebugContext
+
 import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.machine.Context
 import parsley.internal.machine.instructions.{Instr, InstrWithLabel}
@@ -22,6 +23,8 @@ private [internal] class EnterParser
     ctx.pushHandler(label) // Mark the AddAttempt instruction as an exit handler.
     ctx.inc()
   }
+
+  override def toString: String = s"EnterParser(exit: $label)"
 }
 
 // Add a parse attempt to the current context at the current callstack point, and leave the current
@@ -53,4 +56,6 @@ private [internal] class AddAttemptAndLeave(implicit dbgCtx: DebugContext) exten
       ctx.fail()
     }
   }
+
+  override def toString: String = "AddAttemptAndLeave"
 }
