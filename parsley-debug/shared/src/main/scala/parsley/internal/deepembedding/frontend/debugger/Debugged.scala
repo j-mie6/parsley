@@ -13,8 +13,6 @@ private [parsley] final class Debugged[A]
   def make(p: StrictParsley[A]): StrictParsley[A] =
     new backend.debugger.Debugged(origin, p)
 
-  def parser: LazyParsley[A] = par.get
-
   override def findLetsAux[Cont[_, +_] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): Cont[R, Unit] =
     suspend(par.get.findLets(seen))
 
@@ -22,5 +20,5 @@ private [parsley] final class Debugged[A]
     for (p <- suspend(par.get.optimised[Cont, R, A])) yield make(p)
 
   // Shortcuts to the given parser's name instead.
-  def getTypeName: String = par.getClass.getTypeName
+  def getTypeName: String = origin.getClass.getTypeName
 }
