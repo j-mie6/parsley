@@ -26,10 +26,24 @@ trait DebugTree {
   /** What is the name of the parser that made this node. */
   def parserName: String
 
-  /** A map of parent debug trees to parse input and success pairs. */
+  /** A list of pairs representing the chronological parse attempts made by this parser, each
+    * including the attempt's input and whether the attempt was successful.
+    *
+    * The topmost root node of a debug tree will always contain exactly one parse attempt, which is
+    * the full input.
+    */
   def parseResults: List[(String, Boolean)]
 
-  /** What are the child debug nodes for this node? */
+  /** What are the child debug nodes for this node?
+    *
+    * The map provided by the implementation should be a linked map in order to preserve the
+    * order of child parser occurrences within each parser.
+    *
+    * Internally, child nodes are given an arbitrary numeric suffix to disambiguate them in the map
+    * if multiple child nodes have the same parser name.
+    *
+    * Those internal names are not represented if checking [[parserName]].
+    */
   def nodeChildren: Map[String, DebugTree]
 
   override def toString: String =
@@ -80,6 +94,7 @@ private case class PrettyPrintHelper(acc: mutable.StringBuilder, indents: Vector
   def addIndent(): PrettyPrintHelper =
     PrettyPrintHelper(acc, indents :+ "| ")
 
+  // Adds a two-blank-space indent instead for the last child of a node.
   def addBlankIndent(): PrettyPrintHelper =
     PrettyPrintHelper(acc, indents :+ "  ")
 }

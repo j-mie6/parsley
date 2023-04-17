@@ -153,6 +153,11 @@ package object debugger {
     val (tree, attached) = attachDebugger(parser)
 
     // Ideally, this should run 'attached', and render the tree regardless of the parser's success.
-    attached <* fresh(gui.render(tree()))
+    attached <* fresh {
+      val frozen = tree()
+      val input  = frozen.parseResults.head._1
+
+      gui.render(input, frozen)
+    }
   }
 }

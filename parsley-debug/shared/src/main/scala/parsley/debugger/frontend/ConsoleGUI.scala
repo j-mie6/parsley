@@ -23,6 +23,8 @@ case object ConsoleGUI extends DebugGUI {
     this
   }
 
-  override def render(tree: => DebugTree): Unit =
+  override def render(input: => String, tree: => DebugTree): Unit = {
+    println(s"${tree.parserName}'s parse tree for input:\n\n${input}\n")
     println(tree)
+  }
 }

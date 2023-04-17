@@ -11,5 +11,5 @@ trait DebugGUI {
     *
     * @param tree Debug tree to render.
     */
-  def render(tree: => DebugTree): Unit
+  def render(input: => String, tree: => DebugTree): Unit
 }
