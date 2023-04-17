@@ -1,3 +1,6 @@
+/* SPDX-FileCopyrightText: © 2022 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package parsley.internal.deepembedding
 
 import org.scalatest.flatspec.AnyFlatSpec
@@ -16,10 +19,10 @@ class RenameSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "rename a parser it is aware of" in {
-    val exampleParser2 = new DummyParser
-    Rename.addNames(Map(exampleParser2 -> "exampleParser2"))
+    val exampleParser = new DummyParser
+    Rename.addNames(Map(exampleParser -> "exampleParser"))
 
-    Rename(exampleParser2) shouldBe "exampleParser2"
+    Rename(exampleParser) shouldBe "exampleParser"
   }
 
   it should "translate a symbolic parser's name" in {
