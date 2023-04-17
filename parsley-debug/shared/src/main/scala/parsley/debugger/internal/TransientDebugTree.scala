@@ -2,8 +2,7 @@ package parsley.debugger.internal
 
 import scala.collection.immutable.ListMap
 import scala.collection.mutable
-
-import parsley.debugger.DebugTree
+import parsley.debugger.{DebugTree, ParseAttempt}
 
 /** A mutable implementation of [[DebugTree]], used when constructing the tree as a parser is
   * running.
@@ -17,13 +16,13 @@ import parsley.debugger.DebugTree
   */
 private [parsley] case class TransientDebugTree(
   var name: String = "",
-  parses: mutable.ListBuffer[(String, Boolean)] = new mutable.ListBuffer(),
+  parses: mutable.ListBuffer[ParseAttempt] = new mutable.ListBuffer(),
   children: mutable.Map[String, TransientDebugTree] = new mutable.LinkedHashMap()
 ) extends DebugTree {
   override def parserName: String = name
 
   // The pair stores the input the parser attempted to parse and its success.
-  override def parseResults: List[(String, Boolean)] = parses.toList
+  override def parseResults: List[ParseAttempt] = parses.toList
 
   override def nodeChildren: Map[String, DebugTree] =
     children.foldRight[ListMap[String, DebugTree]](ListMap())((p, acc) => acc + p)
@@ -51,7 +50,7 @@ private [parsley] case class TransientDebugTree(
     new DebugTree {
       override def parserName: String = immName
 
-      override def parseResults: List[(String, Boolean)] = immParses
+      override def parseResults: List[ParseAttempt] = immParses
 
       override def nodeChildren: Map[String, DebugTree] = immChildren
     }

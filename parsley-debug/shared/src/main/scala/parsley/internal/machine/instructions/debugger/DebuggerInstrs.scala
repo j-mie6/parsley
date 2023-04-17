@@ -3,6 +3,7 @@
  */
 package parsley.internal.machine.instructions.debugger
 
+import parsley.debugger.ParseAttempt
 import parsley.debugger.internal.DebugContext
 
 import parsley.internal.deepembedding.frontend.LazyParsley
@@ -42,7 +43,22 @@ private [internal] class AddAttemptAndLeave(implicit dbgCtx: DebugContext) exten
     val input = ctx.input.slice(prevCheck, if (ctx.good) currentOff else currentOff + 1)
     val success = ctx.good
 
-    dbgCtx.addParseAttempt(input, success)
+    val prevPos = {
+      val inpAsLines = ctx.input.slice(0, prevCheck + 1).split('\n')
+      (inpAsLines.length, inpAsLines.last.length)
+    }
+
+    // Construct a new parse attempt and add it in.
+    dbgCtx.addParseAttempt(
+      ParseAttempt(
+        input,
+        prevCheck,
+        if (ctx.good) currentOff else currentOff + 1,
+        prevPos,
+        (ctx.line, ctx.col),
+        success
+      )
+    )
 
     // See above.
     dbgCtx.pop()

@@ -13,10 +13,7 @@ import scala.collection.mutable
   * or a user-defined named parser if names are collected) as the parser itself runs on some input.
   *
   * Any tree node will store the input it has parsed (or attempted to parse) as well as its
-  * success state as a list of pairs representing the parse attempts the parser has tried.
-  *
-  * The pairs consist of the input that was attempted to be parsed, and a boolean representing
-  * if that particular parse was successful.
+  * success state as a list of [[ParseAttempt]] instances.
   *
   * Although this trait is unsealed, it is not useful to make a subtype of this trait, as this
   * trait's sole purpose is to provide safe methods into handling the frozen trees produced by
@@ -26,13 +23,13 @@ trait DebugTree {
   /** What is the name of the parser that made this node. */
   def parserName: String
 
-  /** A list of pairs representing the chronological parse attempts made by this parser, each
-    * including the attempt's input and whether the attempt was successful.
+  /** A list of [[ParseAttempt]] instances that represent the chronological parse attempts made by
+    * this parser.
     *
     * The topmost root node of a debug tree will always contain exactly one parse attempt, which is
     * the full input.
     */
-  def parseResults: List[(String, Boolean)]
+  def parseResults: List[ParseAttempt]
 
   /** What are the child debug nodes for this node?
     *
@@ -58,8 +55,8 @@ trait DebugTree {
   }
 
   // Print a parse attempt in a human-readable way.
-  private def printParseAttempt(attempt: (String, Boolean)): String =
-    s"(\"${attempt._1}\", ${if (attempt._2) "Success" else "Failure"})"
+  private def printParseAttempt(attempt: ParseAttempt): String =
+    s"(\"${attempt.rawInput}\" [${attempt.fromPos} -> ${attempt.toPos}], ${if (attempt.success) "Success" else "Failure"})"
 
   // Print all the children, remembering to add a blank indent for the last child.
   @tailrec private def printChildren

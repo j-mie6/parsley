@@ -3,9 +3,10 @@
  */
 package parsley.debugger.internal
 
+import parsley.debugger.ParseAttempt
+
 import scala.collection.immutable.ListMap
 import scala.collection.mutable
-
 import parsley.internal.deepembedding.frontend.LazyParsley
 
 // Class used to hold details about a parser being debugged.
@@ -21,7 +22,7 @@ private [parsley] class DebugContext {
     nodes.foldRight[ListMap[List[LazyParsley[_]], TransientDebugTree]](ListMap())((p, acc) => acc + p)
 
   // Add an attempt of parsing at the current stack point.
-  def addParseAttempt(input: String, success: Boolean): Unit =
+  def addParseAttempt(attempt: ParseAttempt): Unit =
     currentParserStack match {
       case Nil    =>
         // This shouldn't ever be reached unless something horribly wrong happened to the
@@ -37,7 +38,7 @@ private [parsley] class DebugContext {
           newTree
         })
 
-        tree.parses.append((input, success))
+        tree.parses.append(attempt)
     }
 
   // Reset this context back to zero.
