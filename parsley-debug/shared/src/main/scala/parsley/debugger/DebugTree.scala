@@ -43,6 +43,12 @@ trait DebugTree {
     */
   def nodeChildren: Map[String, DebugTree]
 
+  /** Get the full input that was attempted to be parsed by the debugged parser.
+    *
+    * This is the whole input, unaltered, even parts where the parser did not attempt to parse.
+    */
+  def fullInput: String
+
   override def toString: String =
     prettyPrint(PrettyPrintHelper(new StringBuilder, Vector.empty)).acc.dropRight(1).toString()
 

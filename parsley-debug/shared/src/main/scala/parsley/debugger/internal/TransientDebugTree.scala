@@ -16,6 +16,7 @@ import parsley.debugger.{DebugTree, ParseAttempt}
   */
 private [parsley] case class TransientDebugTree(
   var name: String = "",
+  fullInput: String,
   parses: mutable.ListBuffer[ParseAttempt] = new mutable.ListBuffer(),
   children: mutable.Map[String, TransientDebugTree] = new mutable.LinkedHashMap()
 ) extends DebugTree {
@@ -45,6 +46,8 @@ private [parsley] case class TransientDebugTree(
       case other                      => other
     }.toMap
 
+    val immInp = fullInput
+
     // There doesn't seem to be much of a point in making a whole new class for immutable trees
     // as pattern-matching is less of a worry.
     new DebugTree {
@@ -53,6 +56,8 @@ private [parsley] case class TransientDebugTree(
       override def parseResults: List[ParseAttempt] = immParses
 
       override def nodeChildren: Map[String, DebugTree] = immChildren
+
+      override def fullInput: String = immInp
     }
   }
 }

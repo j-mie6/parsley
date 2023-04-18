@@ -22,7 +22,7 @@ private [parsley] class DebugContext {
     nodes.foldRight[ListMap[List[LazyParsley[_]], TransientDebugTree]](ListMap())((p, acc) => acc + p)
 
   // Add an attempt of parsing at the current stack point.
-  def addParseAttempt(attempt: ParseAttempt): Unit =
+  def addParseAttempt(fullInput: String, attempt: ParseAttempt): Unit =
     currentParserStack match {
       case Nil    =>
         // This shouldn't ever be reached unless something horribly wrong happened to the
@@ -33,7 +33,7 @@ private [parsley] class DebugContext {
         // The name of the parser will be the class name of the parser, translated into
         // something more human-friendly.
         val tree = nodes.getOrElseUpdate(currentParserStack, {
-          val newTree = TransientDebugTree()
+          val newTree = TransientDebugTree(fullInput = fullInput)
           newTree.name = Rename(p)
           newTree
         })

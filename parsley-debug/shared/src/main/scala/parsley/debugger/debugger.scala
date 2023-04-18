@@ -105,7 +105,8 @@ package object debugger {
     implicit val context: DebugContext = new DebugContext()
 
     val attached = traverseDown(parser.internal)
-    (() => rebuildMasterTree(context.getNodes), fresh(context.reset()) *> new Parsley(attached))
+    (() => rebuildMasterTree(context.getNodes),
+      fresh(context.reset()) *> new Parsley(attached))
   }
 
   // Helper for rebuilding full trees (with children, from scratch).
@@ -117,7 +118,7 @@ package object debugger {
 
     // This root node is required as a sort of building block to build the rest of the tree off of,
     // and will be discarded later to return its sole child.
-    val root = DebugTreeBuilder(TransientDebugTree(name = "ROOT"), Map.empty)
+    val root = DebugTreeBuilder(TransientDebugTree(name = "ROOT", ""), Map.empty)
 
     // Construct the root tree, which will be stripped later.
     val frozen = asFlat.foldLeft(root)((tree, lp) => lp match {
@@ -155,7 +156,7 @@ package object debugger {
     // Ideally, this should run 'attached', and render the tree regardless of the parser's success.
     attached <* fresh {
       val frozen = tree()
-      val input  = frozen.parseResults.head.rawInput
+      val input  = frozen.fullInput
 
       gui.render(input, frozen)
     }

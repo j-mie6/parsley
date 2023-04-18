@@ -50,6 +50,7 @@ private [internal] class AddAttemptAndLeave(implicit dbgCtx: DebugContext) exten
 
     // Construct a new parse attempt and add it in.
     dbgCtx.addParseAttempt(
+      ctx.input,
       ParseAttempt(
         input,
         prevCheck,
