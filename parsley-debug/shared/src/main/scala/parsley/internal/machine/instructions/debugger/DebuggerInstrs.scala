@@ -56,7 +56,7 @@ private [internal] class AddAttemptAndLeave(implicit dbgCtx: DebugContext) exten
         prevCheck,
         if (ctx.good) currentOff else currentOff + 1,
         prevPos,
-        (ctx.line, ctx.col),
+        if (ctx.good) (ctx.line, ctx.col - 1) else (ctx.line, ctx.col),
         success
       )
     )
