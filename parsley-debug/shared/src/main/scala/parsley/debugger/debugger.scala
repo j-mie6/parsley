@@ -1,12 +1,13 @@
 package parsley
 
-import parsley.Parsley.fresh
+import scala.collection.mutable
+
+import parsley.Parsley.{attempt, empty, fresh}
 import parsley.debugger.frontend.{ConsoleGUI, DebugGUI}
 import parsley.debugger.internal.{DebugContext, DebugTreeBuilder, TransientDebugTree}
-import parsley.internal.deepembedding.frontend.LazyParsley
-import parsley.internal.deepembedding.frontend.debugger.{Debugged, traverseDown}
 
-import scala.collection.mutable
+import parsley.internal.deepembedding.frontend.LazyParsley
+import parsley.internal.deepembedding.frontend.debugger.{traverseDown, Debugged}
 
 /** This package contains the two main debug combinators, `attachDebugger` and `attachDebuggerGUI`. */
 package object debugger {
@@ -154,11 +155,13 @@ package object debugger {
     val (tree, attached) = attachDebugger(parser)
 
     // Ideally, this should run 'attached', and render the tree regardless of the parser's success.
-    attached <* fresh {
+    val renderer = fresh {
       val frozen = tree()
       val input  = frozen.fullInput
 
       gui.render(input, frozen)
     }
+
+    attempt(attached <* renderer) <|> (renderer *> empty)
   }
 }
