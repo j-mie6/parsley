@@ -40,23 +40,23 @@ package object util {
       && m.getParameterCount == 0
       && !m.getName.startsWith("copy"))
 
+    // Note that depending on the Java version, setAccessible may print a warning or throw
+    // an exception, so use with caution!
     val asMapM = methods.flatMap(mth => {
       // Try to make this method accessible if it is private.
-      if ({ mth.setAccessible(true); !mth.isAccessible }) List()
-      else {
-        // Extract our parser and add the method's name to our name map
-        val contents = tryExtract(mth.invoke(obj))
-        val name = if (mth.getName.contains("anonfun")) {
-          mth.getName.split("\\$")(2)
-        } else if (mth.getName.contains("lzycompute")) {
-          mth.getName.split("\\$")(0)
-        } else {
-          mth.getName
-        }
+      mth.setAccessible(true)
 
-//        println(s"found ${contents.hashCode()} at $name")
-        List((contents, name))
+      // Extract our parser and add the method's name to our name map
+      val contents = tryExtract(mth.invoke(obj))
+      val name = if (mth.getName.contains("anonfun")) {
+        mth.getName.split("\\$")(2)
+      } else if (mth.getName.contains("lzycompute")) {
+        mth.getName.split("\\$")(0)
+      } else {
+        mth.getName
       }
+
+      List((contents, name))
     }).toMap
 
     // Get all fields with a parser.
@@ -67,13 +67,11 @@ package object util {
     // Make a bunch of search functions from those fields.
     val asMapF = fields.flatMap(fld => {
       // Try to make this field accessible if it is private.
-      if ({ fld.setAccessible(true); !fld.isAccessible }) List()
-      else {
-        // Extract the internal parser and add its field name into our name map.
-        val contents = tryExtract(fld.get(obj))
-//        println(s"found ${contents.hashCode()} at ${fld.getName}")
-        List((contents, fld.getName))
-      }
+      fld.setAccessible(true)
+
+      // Extract the internal parser and add its field name into our name map.
+      val contents = tryExtract(fld.get(obj))
+      List((contents, fld.getName))
     }).toMap
 
     // Add our collected names into the global map.
