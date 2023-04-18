@@ -5,6 +5,7 @@ package parsley.debugger
 
 import parsley.Parsley
 import parsley.debugger.internal.Rename
+
 import parsley.internal.deepembedding.frontend.LazyParsley
 
 /** Miscellaneous utilities for enhancing the debugger.
@@ -41,7 +42,7 @@ package object util {
 
     val asMapM = methods.flatMap(mth => {
       // Try to make this method accessible if it is private.
-      if (!mth.trySetAccessible()) List()
+      if ({ mth.setAccessible(true); !mth.isAccessible }) List()
       else {
         // Extract our parser and add the method's name to our name map
         val contents = tryExtract(mth.invoke(obj))
@@ -66,7 +67,7 @@ package object util {
     // Make a bunch of search functions from those fields.
     val asMapF = fields.flatMap(fld => {
       // Try to make this field accessible if it is private.
-      if (!fld.trySetAccessible()) List()
+      if ({ fld.setAccessible(true); !fld.isAccessible }) List()
       else {
         // Extract the internal parser and add its field name into our name map.
         val contents = tryExtract(fld.get(obj))
