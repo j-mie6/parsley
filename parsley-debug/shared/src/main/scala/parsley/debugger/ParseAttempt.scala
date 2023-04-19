@@ -19,4 +19,10 @@ case class ParseAttempt
   , fromPos: (Int, Int)
   , toPos: (Int, Int)
   , success: Boolean
-  )
+  ) extends AnyRef {
+  // We want most of the benefits of a case class, but equals and hashCode are not what we want.
+  // This allows disambiguation of attempts in a list, as they are all supposed to be "unique".
+  override def equals(obj: Any): Boolean = super.equals(obj)
+
+  override def hashCode(): Int = super.hashCode()
+}
