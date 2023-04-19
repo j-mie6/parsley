@@ -9,7 +9,7 @@ import scala.collection.immutable.NumericRange
 import parsley.Parsley.{attempt, empty, fresh, pure}
 import parsley.combinator.{choice, skipMany}
 import parsley.errors.combinator.ErrorMethods
-import parsley.token.errors.NotConfigured
+import parsley.token.errors.{Label, LabelConfig, NotConfigured}
 
 import parsley.internal.deepembedding.singletons
 
@@ -100,7 +100,9 @@ object character {
       * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[string `string`]].
       * @group core
       */
-    def char(c: Char): Parsley[Char] = new Parsley(new singletons.CharTok(c, NotConfigured))
+    def char(c: Char): Parsley[Char] = char(c, NotConfigured)
+    private def char(c: Char, label: String): Parsley[Char] = char(c, Label(label))
+    private def char(c: Char, label: LabelConfig): Parsley[Char] = new Parsley(new singletons.CharTok(c, label))
 
     /** This combinator tries to parse a single specific codepoint `c` from the input.
       *
@@ -150,7 +152,9 @@ object character {
       * @note this combinator can only handle 16-bit characters.
       * @group core
       */
-    def satisfy(pred: Char => Boolean): Parsley[Char] = new Parsley(new singletons.Satisfy(pred, NotConfigured))
+    def satisfy(pred: Char => Boolean): Parsley[Char] = satisfy(pred, NotConfigured)
+    private def satisfy(pred: Char => Boolean, label: String): Parsley[Char] = satisfy(pred, Label(label))
+    private def satisfy(pred: Char => Boolean, label: LabelConfig) = new Parsley(new singletons.Satisfy(pred, label))
 
     // TODO: document
     private [parsley] def satisfyUtf16(pred: Int => Boolean): Parsley[Int] = new Parsley(new singletons.UniSatisfy(pred, NotConfigured))
@@ -180,9 +184,11 @@ object character {
       *       natural. However, input '''will''' still be consumed for purposes of backtracking.
       * @group string
       */
-    def string(s: String): Parsley[String] = {
+    def string(s: String): Parsley[String] = string(s, NotConfigured)
+    private def string(s: String, label: String): Parsley[String] = string(s, Label(label))
+    private def string(s: String, label: LabelConfig): Parsley[String] = {
         require(s.nonEmpty, "`string` may not be passed the empty string (`string(\"\")` is meaningless, perhaps you meant `pure(\"\")`?)")
-        new Parsley(new singletons.StringTok(s, NotConfigured))
+        new Parsley(new singletons.StringTok(s, label))
     }
 
     /** $oneOf
@@ -267,9 +273,9 @@ object character {
     def oneOf(cs: NumericRange[Char]): Parsley[Char] = cs.size match {
         case 0 => empty
         case 1 => char(cs.head)
-        case _ if Math.abs(cs(0).toInt - cs(1).toInt) == 1 => satisfy(cs.contains).label {
+        case _ if Math.abs(cs(0).toInt - cs(1).toInt) == 1 => satisfy(cs.contains(_),
             s"one of ${renderChar(cs.min)} to ${renderChar(cs.max)}"
-        }
+        )
         case _ => satisfy(cs.contains)
     }
 
@@ -299,11 +305,11 @@ object character {
       */
     def noneOf(cs: Set[Char]): Parsley[Char] = cs.size match {
         case 0 => item
-        case 1 => satisfy(cs.head != _).label(s"anything except ${renderChar(cs.head)}")
-        case _ => satisfy(!cs.contains(_)).label {
+        case 1 => satisfy(cs.head != _, s"anything except ${renderChar(cs.head)}")
+        case _ => satisfy(!cs.contains(_), {
             val Some(label) = parsley.errors.helpers.combineAsList(cs.map(renderChar).toList)
             s"anything except $label"
-        }
+        })
     }
 
     /** $noneOf
@@ -360,10 +366,10 @@ object character {
       */
     def noneOf(cs: NumericRange[Char]): Parsley[Char] = cs.size match {
         case 0 => item
-        case 1 => satisfy(cs.head != _).label(s"anything except ${renderChar(cs.head)}")
-        case _ if Math.abs(cs(0).toInt - cs(1).toInt) == 1 => satisfy(!cs.contains(_)).label {
+        case 1 => satisfy(cs.head != _, s"anything except ${renderChar(cs.head)}")
+        case _ if Math.abs(cs(0).toInt - cs(1).toInt) == 1 => satisfy(!cs.contains(_), {
             s"anything outside of ${renderChar(cs.min)} to ${renderChar(cs.max)}"
-        }
+        })
         case _ => satisfy(!cs.contains(_))
     }
 
@@ -520,14 +526,14 @@ object character {
       * @note this combinator can only handle 16-bit characters.
       * @group core
       */
-    val item: Parsley[Char] = satisfy(_ => true).label("any character")
+    val item: Parsley[Char] = satisfy(_ => true, "any character")
 
     /** This parser tries to parse a space or tab character, and returns it if successful
       *
       * @see [[isSpace `isSpace`]]
       * @group spec
       */
-    val space: Parsley[Char] = satisfy(isSpace).label("space/tab")
+    val space: Parsley[Char] = satisfy(isSpace(_), "space/tab")
 
     /** This parser skips zero or more space characters using [[space `space`]].
       *
@@ -549,7 +555,7 @@ object character {
       * @see [[isWhitespace `isWhitespace`]]
       * @group spec
       */
-    val whitespace: Parsley[Char] = satisfy(isWhitespace).label("whitespace")
+    val whitespace: Parsley[Char] = satisfy(isWhitespace(_), "whitespace")
 
     /** This parser skips zero or more space characters using [[whitespace `whitespace`]].
       *
@@ -564,7 +570,7 @@ object character {
       *
       * @group spec
       */
-    val newline: Parsley[Char] = char('\n').label("newline")
+    val newline: Parsley[Char] = char('\n', "newline")
 
     /** This parser tries to parse a `CRLF` newline character pair, returning `'\n'` if successful.
       *
@@ -573,7 +579,7 @@ object character {
       *
       * @group spec
       */
-    val crlf: Parsley[Char] = string("\r\n").label("end of crlf") #> '\n'
+    val crlf: Parsley[Char] = string("\r\n", "end of crlf") #> '\n'
 
     /** This parser will parse either a line feed (`LF`) or a `CRLF` newline, returning `'\n'` if successful.
       *
@@ -588,7 +594,7 @@ object character {
       *
       * @group spec
       */
-    val tab: Parsley[Char] = char('\t').label("tab")
+    val tab: Parsley[Char] = char('\t', "tab")
 
     /** This parser tries to parse an uppercase letter, and returns it if successful.
       *
@@ -604,7 +610,7 @@ object character {
       *
       * @group spec
       */
-    val upper: Parsley[Char] = satisfy(_.isUpper).label("uppercase letter")
+    val upper: Parsley[Char] = satisfy(_.isUpper, "uppercase letter")
 
     /** This parser tries to parse a lowercase letter, and returns it if successful.
       *
@@ -620,7 +626,7 @@ object character {
       *
       * @group spec
       */
-    val lower: Parsley[Char] = satisfy(_.isLower).label("lowercase letter")
+    val lower: Parsley[Char] = satisfy(_.isLower, "lowercase letter")
 
     /** This parser tries to parse either a letter or a digit, and returns it if successful.
       *
@@ -630,7 +636,7 @@ object character {
       * @see documentation for [[digit `digit`]].
       * @group spec
       */
-    val letterOrDigit: Parsley[Char] = satisfy(_.isLetterOrDigit).label("alpha-numeric character")
+    val letterOrDigit: Parsley[Char] = satisfy(_.isLetterOrDigit, "alpha-numeric character")
 
     /** This parser tries to parse a letter, and returns it if successful.
       *
@@ -645,7 +651,7 @@ object character {
       *
       * @group spec
       */
-    val letter: Parsley[Char] = satisfy(_.isLetter).label("letter")
+    val letter: Parsley[Char] = satisfy(_.isLetter, "letter")
 
     /** This parser tries to parse a digit, and returns it if successful.
       *
@@ -661,7 +667,7 @@ object character {
       *
       * @group spec
       */
-    val digit: Parsley[Char] = satisfy(_.isDigit).label("digit")
+    val digit: Parsley[Char] = satisfy(_.isDigit, "digit")
 
     /** This parser tries to parse a hexadecimal digit, and returns it if successful.
       *
@@ -673,7 +679,7 @@ object character {
       * @see [[isHexDigit ``isHexDigit``]]
       * @group spec
       */
-    val hexDigit: Parsley[Char] = satisfy(isHexDigit).label("hexdecimal digit")
+    val hexDigit: Parsley[Char] = satisfy(isHexDigit(_), "hexdecimal digit")
 
     /** This parser tries to parse an octal digit, and returns it if successful.
       *
@@ -682,7 +688,7 @@ object character {
       * @see [[isOctDigit ``isOctDigit``]]
       * @group spec
       */
-    val octDigit: Parsley[Char] = satisfy(isOctDigit).label("octal digit")
+    val octDigit: Parsley[Char] = satisfy(isOctDigit(_), "octal digit")
 
     /** This parser tries to parse a bit and returns it if successful.
       *
