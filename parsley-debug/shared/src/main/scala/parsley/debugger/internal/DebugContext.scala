@@ -35,6 +35,7 @@ private [parsley] class DebugContext {
         val tree = nodes.getOrElseUpdate(currentParserStack, {
           val newTree = TransientDebugTree(fullInput = fullInput)
           newTree.name = Rename(p)
+          newTree.internal = Rename.partial(p)
           newTree
         })
 

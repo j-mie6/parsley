@@ -119,7 +119,7 @@ package object debugger {
 
     // This root node is required as a sort of building block to build the rest of the tree off of,
     // and will be discarded later to return its sole child.
-    val root = DebugTreeBuilder(TransientDebugTree(name = "ROOT", ""), Map.empty)
+    val root = DebugTreeBuilder(TransientDebugTree(name = "ROOT", internal = "", ""), Map.empty)
 
     // Construct the root tree, which will be stripped later.
     val frozen = asFlat.foldLeft(root)((tree, lp) => lp match {

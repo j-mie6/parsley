@@ -16,11 +16,14 @@ import parsley.debugger.{DebugTree, ParseAttempt}
   */
 private [parsley] case class TransientDebugTree(
   var name: String = "",
+  var internal: String = "",
   fullInput: String,
   parses: mutable.ListBuffer[ParseAttempt] = new mutable.ListBuffer(),
   children: mutable.Map[String, TransientDebugTree] = new mutable.LinkedHashMap()
 ) extends DebugTree {
   override def parserName: String = name
+
+  override def internalName: String = internal
 
   // The pair stores the input the parser attempted to parse and its success.
   override def parseResults: List[ParseAttempt] = parses.toList
@@ -39,6 +42,8 @@ private [parsley] case class TransientDebugTree(
     // Also freeze all child trees because we don't want to have to manually freeze the whole tree.
     val immName = name
 
+    val immInternal = internal
+
     val immParses = parses.toList
 
     val immChildren = children.map {
@@ -52,6 +57,8 @@ private [parsley] case class TransientDebugTree(
     // as pattern-matching is less of a worry.
     new DebugTree {
       override def parserName: String = immName
+
+      override def internalName: String = immInternal
 
       override def parseResults: List[ParseAttempt] = immParses
 

@@ -24,10 +24,7 @@ private [parsley] object Rename {
 
   // This method attempts the renaming of a parser.
   def apply(p: LazyParsley[_]): String = {
-    val defaultName = translate(p match {
-      case dbg: Debugged[_] => dbg.getTypeName
-      case _                => p.getClass.getTypeName
-    })
+    val defaultName = partial(p)
 
     // This renames the parser if it is present, otherwise gives the default name found earlier.
     collected.getOrElse(p match {
@@ -35,6 +32,13 @@ private [parsley] object Rename {
       case _                => p
     }, defaultName)
   }
+
+  // Perform the first step of renaming, a partial rename where only the type name is exposed.
+  def partial(p: LazyParsley[_]): String =
+    translate(p match {
+      case dbg: Debugged[_] => dbg.getTypeName
+      case _ => p.getClass.getTypeName
+    })
 
   private [parsley] def addNames(names: Map[LazyParsley[_], String]): Unit =
     collected.addAll(names)

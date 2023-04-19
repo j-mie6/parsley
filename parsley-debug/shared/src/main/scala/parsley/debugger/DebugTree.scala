@@ -20,8 +20,11 @@ import scala.collection.mutable
   * the debugger.
   */
 trait DebugTree {
-  /** What is the name of the parser that made this node. */
+  /** The name of the parser that made this node. */
   def parserName: String
+
+  /** The type name of the parser that formed this node. */
+  def internalName: String
 
   /** A list of [[ParseAttempt]] instances that represent the chronological parse attempts made by
     * this parser.
