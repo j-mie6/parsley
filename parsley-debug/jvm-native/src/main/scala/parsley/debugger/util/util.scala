@@ -5,8 +5,8 @@ package parsley.debugger
 
 import parsley.Parsley
 import parsley.debugger.internal.Rename
-
 import parsley.internal.deepembedding.frontend.LazyParsley
+import parsley.token.Lexer
 
 /** Miscellaneous utilities for enhancing the debugger.
   * Using these utilities is optional.
@@ -84,6 +84,64 @@ package object util {
   collectNames(parsley.combinator)
   collectNames(parsley.Parsley)
   collectNames(parsley.position)
+
+  /** Attempt to collect names of parsers from a [[Lexer]] using repeated [[collectNames]] calls.
+    *
+    * This is useful if your parser makes heavy use of one.
+    *
+    * @param lexer
+    */
+  def collectLexer(lexer: Lexer): Unit = {
+    collectNames(lexer)
+    // TODO: Figure out why this fails miserably.
+    // collectNames(lexer.space)
+    collectNames(lexer.lexeme)
+    collectNames(lexer.lexeme.names)
+    collectNames(lexer.lexeme.text)
+    collectNames(lexer.lexeme.enclosing)
+    collectNames(lexer.lexeme.separators)
+    collectNames(lexer.lexeme.symbol)
+    collectNames(lexer.lexeme.numeric)
+    collectNames(lexer.nonlexeme)
+    collectNames(lexer.nonlexeme.names)
+    collectNames(lexer.nonlexeme.numeric)
+    collectNames(lexer.nonlexeme.symbol)
+    collectNames(lexer.nonlexeme.text)
+
+    val textPrivates = List(
+      "_string", "_rawString", "_multiString", "_rawMultiString", "_character")
+    val numericPrivates = List(
+      "_integer", "_natural", "_real", "_positiveReal", "_signedCombined", "_unsignedCombined")
+
+    { // Handle text private text members for lexeme
+      val getters = lexer.lexeme.text.getClass.getMethods.filter(mth => textPrivates.contains(mth.getName))
+      getters.foreach(_.setAccessible(true))
+      for (getter <- getters) {
+        collectNames(getter.invoke(lexer.lexeme.text))
+      }
+    }
+    { // Handle text private text members for nonlexeme
+      val getters = lexer.nonlexeme.text.getClass.getMethods.filter(mth => textPrivates.contains(mth.getName))
+      getters.foreach(_.setAccessible(true))
+      for (getter <- getters) {
+        collectNames(getter.invoke(lexer.nonlexeme.text))
+      }
+    }
+    { // Handle text private numeric members for lexeme
+      val getters = lexer.lexeme.numeric.getClass.getMethods.filter(mth => numericPrivates.contains(mth.getName))
+      getters.foreach(_.setAccessible(true))
+      for (getter <- getters) {
+        collectNames(getter.invoke(lexer.lexeme.numeric))
+      }
+    }
+    { // Handle text private numeric members for nonlexeme
+      val getters = lexer.nonlexeme.numeric.getClass.getMethods.filter(mth => numericPrivates.contains(mth.getName))
+      getters.foreach(_.setAccessible(true))
+      for (getter <- getters) {
+        collectNames(getter.invoke(lexer.nonlexeme.numeric))
+      }
+    }
+  }
 
   private def tryExtract(p: Any): LazyParsley[_] = {
     try {
