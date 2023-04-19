@@ -79,6 +79,12 @@ package object util {
     Rename.addNames(asMapF)
   }
 
+  // We want to automatically collect names for Parsley's internal parsers.
+  collectNames(parsley.character)
+  collectNames(parsley.combinator)
+  collectNames(parsley.Parsley)
+  collectNames(parsley.position)
+
   private def tryExtract(p: Any): LazyParsley[_] = {
     try {
       p.asInstanceOf[LazyParsley[_]]
