@@ -273,7 +273,7 @@ object character {
     def oneOf(cs: NumericRange[Char]): Parsley[Char] = cs.size match {
         case 0 => empty
         case 1 => char(cs.head)
-        case _ if Math.abs(cs(0).toInt - cs(1).toInt) == 1 => satisfy(cs.contains,
+        case _ if Math.abs(cs(0).toInt - cs(1).toInt) == 1 => satisfy(cs.contains(_),
             s"one of ${renderChar(cs.min)} to ${renderChar(cs.max)}"
         )
         case _ => satisfy(cs.contains)
@@ -533,7 +533,7 @@ object character {
       * @see [[isSpace `isSpace`]]
       * @group spec
       */
-    val space: Parsley[Char] = satisfy(isSpace, "space/tab")
+    val space: Parsley[Char] = satisfy(isSpace(_), "space/tab")
 
     /** This parser skips zero or more space characters using [[space `space`]].
       *
@@ -555,7 +555,7 @@ object character {
       * @see [[isWhitespace `isWhitespace`]]
       * @group spec
       */
-    val whitespace: Parsley[Char] = satisfy(isWhitespace, "whitespace")
+    val whitespace: Parsley[Char] = satisfy(isWhitespace(_), "whitespace")
 
     /** This parser skips zero or more space characters using [[whitespace `whitespace`]].
       *
@@ -679,7 +679,7 @@ object character {
       * @see [[isHexDigit ``isHexDigit``]]
       * @group spec
       */
-    val hexDigit: Parsley[Char] = satisfy(isHexDigit, "hexdecimal digit")
+    val hexDigit: Parsley[Char] = satisfy(isHexDigit(_), "hexdecimal digit")
 
     /** This parser tries to parse an octal digit, and returns it if successful.
       *
@@ -688,7 +688,7 @@ object character {
       * @see [[isOctDigit ``isOctDigit``]]
       * @group spec
       */
-    val octDigit: Parsley[Char] = satisfy(isOctDigit, "octal digit")
+    val octDigit: Parsley[Char] = satisfy(isOctDigit(_), "octal digit")
 
     /** This parser tries to parse a bit and returns it if successful.
       *
