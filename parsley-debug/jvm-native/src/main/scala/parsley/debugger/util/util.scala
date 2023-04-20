@@ -4,7 +4,7 @@
 package parsley.debugger
 
 import parsley.Parsley
-import parsley.debugger.internal.Rename
+import parsley.debugger.internal.{Found, Rename, ViaField, ViaMethod}
 import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.token.Lexer
 
@@ -56,8 +56,8 @@ package object util {
         mth.getName
       }
 
-      List((contents, name))
-    }).toMap
+      List((ViaMethod(contents), name))
+    }).toMap[Found[LazyParsley[_]], String]
 
     // Get all fields with a parser.
     val fields = clazz.getDeclaredFields.filter(f =>
@@ -71,8 +71,8 @@ package object util {
 
       // Extract the internal parser and add its field name into our name map.
       val contents = tryExtract(fld.get(obj))
-      List((contents, fld.getName))
-    }).toMap
+      List((ViaField(contents), fld.getName))
+    }).toMap[Found[LazyParsley[_]], String]
 
     // Add our collected names into the global map.
     Rename.addNames(asMapM)

@@ -8,6 +8,15 @@ import scala.collection.mutable
 import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.deepembedding.frontend.debugger.Debugged
 
+// Helps disambiguate parsers that come from fields or methods.
+private [parsley] sealed trait Found[A] {
+  def item: A
+}
+
+private [parsley] case class ViaField[A](item: A) extends Found[A]
+
+private [parsley] case class ViaMethod[A](item: A) extends Found[A]
+
 // An object with a single public apply method that allows the renaming of a
 // debugged  parser's name in order to increase the clarity of the debugger's
 // results. By default, this does nothing other than invoke the name translation
@@ -20,17 +29,19 @@ private [parsley] object Rename {
   // Populating this map is only possible if the platform contains some form of implementation for
   // parsley.debugger.utils.collectNames, which attempts to collect the name-in-code for a given
   // reference to a parser.
-  lazy private val collected: mutable.Map[LazyParsley[_], String] = new mutable.HashMap()
+  lazy private val collected: mutable.Map[Found[LazyParsley[_]], String] = new mutable.HashMap()
 
   // This method attempts the renaming of a parser.
   def apply(p: LazyParsley[_]): String = {
     val defaultName = partial(p)
 
+    val (ffld, fmth): (Found[LazyParsley[_]], Found[LazyParsley[_]]) = p match {
+      case dbg: Debugged[_] => (ViaField(dbg.origin), ViaMethod(dbg.origin))
+      case _                => (ViaField(p), ViaMethod(p))
+    }
+
     // This renames the parser if it is present, otherwise gives the default name found earlier.
-    collected.getOrElse(p match {
-      case dbg: Debugged[_] => dbg.origin
-      case _                => p
-    }, defaultName)
+    collected.get(ffld).orElse(collected.get(fmth)).getOrElse(defaultName)
   }
 
   // Perform the first step of renaming, a partial rename where only the type name is exposed.
@@ -40,7 +51,7 @@ private [parsley] object Rename {
       case _ => p.getClass.getTypeName
     })
 
-  private [parsley] def addNames(names: Map[LazyParsley[_], String]): Unit =
+  private [parsley] def addNames(names: Map[Found[LazyParsley[_]], String]): Unit =
     collected.addAll(names)
 
   // Translation table for Scala operator names.
