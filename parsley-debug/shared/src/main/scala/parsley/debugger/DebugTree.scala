@@ -13,7 +13,7 @@ import scala.collection.mutable
   * or a user-defined named parser if names are collected) as the parser itself runs on some input.
   *
   * Any tree node will store the input it has parsed (or attempted to parse) as well as its
-  * success state as a list of [[ParseAttempt]] instances.
+  * success state as an optional [[ParseAttempt]] instance.
   *
   * Although this trait is unsealed, it is not useful to make a subtype of this trait, as this
   * trait's sole purpose is to provide safe methods into handling the frozen trees produced by
@@ -26,13 +26,8 @@ trait DebugTree {
   /** The type name of the parser that formed this node. */
   def internalName: String
 
-  /** A list of [[ParseAttempt]] instances that represent the chronological parse attempts made by
-    * this parser.
-    *
-    * The topmost root node of a debug tree will always contain exactly one parse attempt, which is
-    * the full input.
-    */
-  def parseResults: List[ParseAttempt]
+  /** Get the potential parse attempt recorded for this particular parser. */
+  def parseResults: Option[ParseAttempt]
 
   /** What are the child debug nodes for this node?
     *
@@ -57,7 +52,7 @@ trait DebugTree {
 
   // Internal pretty-printer method.
   private def prettyPrint(helper: PrettyPrintHelper): PrettyPrintHelper = {
-    val results = parseResults.map(printParseAttempt).mkString(", ")
+    val results = parseResults.map(printParseAttempt).mkString
     helper.bury(s"[ $parserName ]: $results")
     printChildren(helper, nodeChildren.toList)
     helper

@@ -11,14 +11,14 @@ import parsley.debugger.{DebugTree, ParseAttempt}
   * [[TransientDebugTree#freeze]] to obtain a frozen, immutable version of the debug tree.
   *
   * @param name Name of parser.
-  * @param parses What attempts to parse have been made?
+  * @param parse What attempts to parse have been made?
   * @param children This debug tree node's children.
   */
 private [parsley] case class TransientDebugTree(
   var name: String = "",
   var internal: String = "",
   fullInput: String,
-  parses: mutable.ListBuffer[ParseAttempt] = new mutable.ListBuffer(),
+  var parse: Option[ParseAttempt] = None,
   children: mutable.Map[String, TransientDebugTree] = new mutable.LinkedHashMap()
 ) extends DebugTree {
   override def parserName: String = name
@@ -26,7 +26,7 @@ private [parsley] case class TransientDebugTree(
   override def internalName: String = internal
 
   // The pair stores the input the parser attempted to parse and its success.
-  override def parseResults: List[ParseAttempt] = parses.toList
+  override def parseResults: Option[ParseAttempt] = parse
 
   override def nodeChildren: Map[String, DebugTree] =
     children.foldRight[ListMap[String, DebugTree]](ListMap())((p, acc) => acc + p)
@@ -44,7 +44,7 @@ private [parsley] case class TransientDebugTree(
 
     val immInternal = internal
 
-    val immParses = parses.toList
+    val immParse = parse
 
     val immChildren = children.map {
       case (n, t: TransientDebugTree) => (n, t.freeze)
@@ -60,7 +60,7 @@ private [parsley] case class TransientDebugTree(
 
       override def internalName: String = immInternal
 
-      override def parseResults: List[ParseAttempt] = immParses
+      override def parseResults: Option[ParseAttempt] = immParse
 
       override def nodeChildren: Map[String, DebugTree] = immChildren
 

@@ -23,7 +23,7 @@ private [parsley] class DebugContext {
 
   // Add an attempt of parsing at the current stack point.
   def addParseAttempt(attempt: ParseAttempt): Unit =
-    builderStack.head.node.parses.append(attempt)
+    builderStack.head.node.parse = Some(attempt)
 
   // Reset this context back to zero.
   def reset(): Unit = {
@@ -37,11 +37,10 @@ private [parsley] class DebugContext {
 
   // Push a new parser onto the parser callstack.
   def push(fullInput: String, parser: LazyParsley[_], iterative: Boolean): Unit = {
-    lazy val eq: SometimesEquatable[LazyParsley[_]] = SometimesEquatable.equatable(parser)
-    lazy val ref: SometimesEquatable[LazyParsley[_]] = SometimesEquatable.referential(parser)
+    lazy val uniq: Unique[LazyParsley[_]] = Unique(parser)
 
-    if (builderStack.head.bChildren.contains(eq)) {
-      builderStack.prepend(builderStack.head.bChildren(eq))
+    if (builderStack.head.bChildren.contains(uniq)) {
+      builderStack.prepend(builderStack.head.bChildren(uniq))
     } else {
       val newTree = TransientDebugTree(fullInput = fullInput)
       newTree.name = Rename(parser)
@@ -49,7 +48,7 @@ private [parsley] class DebugContext {
 
       val dtb = DebugTreeBuilder(newTree)
 
-      builderStack.head.bChildren(if (iterative) ref else eq) = dtb
+      builderStack.head.bChildren(uniq) = dtb
       builderStack.prepend(dtb)
     }
   }

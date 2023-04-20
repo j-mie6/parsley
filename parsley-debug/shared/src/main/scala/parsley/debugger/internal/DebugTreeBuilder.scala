@@ -8,7 +8,7 @@ import parsley.internal.deepembedding.frontend.LazyParsley
 // Not meant to be public.
 private [parsley] case class DebugTreeBuilder(
   node: TransientDebugTree,
-  bChildren: mutable.Map[SometimesEquatable[LazyParsley[Any]], DebugTreeBuilder] = mutable.LinkedHashMap()
+  bChildren: mutable.Map[Unique[LazyParsley[Any]], DebugTreeBuilder] = mutable.LinkedHashMap()
 ) {
   private var uid = 0
 
