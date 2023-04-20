@@ -19,7 +19,7 @@ private [parsley] case class DebugTreeBuilder(
           val uuid = uid
           uid = uid + 1
           uuid
-        }}", cs.reconstruct) }
+        }}", cs.reconstruct) }.toList.reverse
       )
 
     node
