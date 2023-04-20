@@ -19,7 +19,7 @@ private [internal] class EnterParser
   (implicit dbgCtx: DebugContext) extends InstrWithLabel with DebuggerInstr {
   override def apply(ctx: Context): Unit = {
     // I think we can get away with executing this unconditionally.
-    dbgCtx.push(origin)
+    dbgCtx.push(ctx.input, origin)
     ctx.pushCheck() // Save our location for inputs.
     ctx.pushHandler(label) // Mark the AddAttempt instruction as an exit handler.
     ctx.inc()
@@ -50,7 +50,7 @@ private [internal] class AddAttemptAndLeave(implicit dbgCtx: DebugContext) exten
 
     // Construct a new parse attempt and add it in.
     dbgCtx.addParseAttempt(
-      ctx.input,
+//      ctx.input,
       ParseAttempt(
         input,
         prevCheck,

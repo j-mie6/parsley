@@ -106,30 +106,7 @@ package object debugger {
     implicit val context: DebugContext = new DebugContext()
 
     val attached = traverseDown(parser.internal)
-    (() => rebuildMasterTree(context.getNodes),
-      fresh(context.reset()) *> new Parsley(attached))
-  }
-
-  // Helper for rebuilding full trees (with children, from scratch).
-  private def rebuildMasterTree(trees: Map[List[LazyParsley[_]], TransientDebugTree]): DebugTree = {
-    // Reverse is required for the overall list generated from the tree map as parsers are pushed into
-    // the linked map LIFO, but we want a FIFO ordering before length sort.
-    // Pre: the Scala implementation's sort method uses a stable sort.
-    val asFlat = trees.toList.reverse.map { case (stk, t) => (stk.reverse, t) }.sortBy(_._1.size)
-
-    // This root node is required as a sort of building block to build the rest of the tree off of,
-    // and will be discarded later to return its sole child.
-    val root = DebugTreeBuilder(TransientDebugTree(name = "ROOT", internal = "", ""), Map.empty)
-
-    // Construct the root tree, which will be stripped later.
-    val frozen = asFlat.foldLeft(root)((tree, lp) => lp match {
-      case (k, t) => tree.addNode(k, t)
-    }).reconstruct
-      .freeze
-
-    // Extract the first node in the root tree, which should be the only node child of the
-    // root tree.
-    frozen.nodeChildren(frozen.nodeChildren.keys.collectFirst(s => s).get)
+    (() => context.getFinalBuilder.reconstruct, fresh(context.reset()) *> new Parsley(attached))
   }
 
   /** Attach a debugger and an implicitly-available GUI frontend in which the debug tree should be
