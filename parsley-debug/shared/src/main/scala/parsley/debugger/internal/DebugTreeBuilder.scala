@@ -1,6 +1,5 @@
 package parsley.debugger.internal
 
-import scala.collection.immutable.ListMap
 import scala.collection.mutable
 
 import parsley.internal.deepembedding.frontend.LazyParsley

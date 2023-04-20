@@ -65,7 +65,7 @@ trait DebugTree {
 
   // Print a parse attempt in a human-readable way.
   private def printParseAttempt(attempt: ParseAttempt): String =
-    s"(\"${attempt.rawInput}\" [${attempt.fromPos} -> ${attempt.toPos}], ${if (attempt.success) "Success" else "Failure"})"
+    s"(\"${attempt.rawInput}\" [${attempt.fromPos} -> ${attempt.toPos}], ${if (attempt.success) s"Success - [ ${attempt.result.get} ]" else "Failure"})"
 
   // Print all the children, remembering to add a blank indent for the last child.
   @tailrec private def printChildren
