@@ -1,16 +1,18 @@
-package parsley
+package parsley.debugger
 
 import scala.collection.mutable
 
+import parsley.Parsley
 import parsley.Parsley.{attempt, empty, fresh}
 import parsley.debugger.frontend.{ConsoleGUI, DebugGUI}
-import parsley.debugger.internal.{DebugContext, DebugTreeBuilder, TransientDebugTree}
+import parsley.debugger.internal.DebugContext
 
 import parsley.internal.deepembedding.frontend.LazyParsley
-import parsley.internal.deepembedding.frontend.debugger.{traverseDown, Debugged}
+import parsley.internal.deepembedding.frontend.debugger.Debugged
+import parsley.internal.deepembedding.frontend.debugger.helpers.traverseDown
 
-/** This package contains the two main debug combinators, `attachDebugger` and `attachDebuggerGUI`. */
-package object debugger {
+/** This object contains the two main debug combinators, `attachDebugger` and `attachDebuggerGUI`. */
+object combinators {
   /** Attaches a debugger to a parser, returning a reference to the debug tree produced by
     * the parser's parse tree formed as it runs.
     *
@@ -20,7 +22,7 @@ package object debugger {
     * parsers within your main parser, and rather to isolate their testing.
     *
     * Before running the parser, it may be advised to see if the current platform's implementation
-    * of the debugger supports [[parsley.debugger.util.collectNames]], which allows you to input an
+    * of the debugger supports [[parsley.debugger.util.CollectNames]], which allows you to input an
     * object or class instance containing parsers, in order to analyse it via reflection to assign
     * the names given to the parser fields / methods in that object to disambiguate the parser names
     * in the tree in a much easier manner.
@@ -123,7 +125,7 @@ package object debugger {
     * rendered by the implicitly given backend after parsing.
     *
     * @param parser The parser to debug.
-    * @param gui The GUI frontend instance to render with.
+    * @param gui    The GUI frontend instance to render with.
     * @tparam A Output type of parser.
     * @return A modified parser which will ask the frontend to render the produced debug tree after
     *         a call to [[Parsley.parse]] is made.
@@ -134,7 +136,7 @@ package object debugger {
     // Ideally, this should run 'attached', and render the tree regardless of the parser's success.
     val renderer = fresh {
       val frozen = tree()
-      val input  = frozen.fullInput
+      val input = frozen.fullInput
 
       gui.render(input, frozen)
     }

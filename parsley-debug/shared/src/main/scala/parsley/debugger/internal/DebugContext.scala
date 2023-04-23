@@ -3,12 +3,11 @@
  */
 package parsley.debugger.internal
 
-import scala.collection.immutable.ListMap
-import scala.collection.mutable
-import parsley.debugger.ParseAttempt
-import parsley.internal.deepembedding.frontend.LazyParsley
-
 import scala.collection.mutable.ListBuffer
+
+import parsley.debugger.ParseAttempt
+
+import parsley.internal.deepembedding.frontend.LazyParsley
 
 // Class used to hold details about a parser being debugged.
 // This is normally held as a value inside an implicit variable.
@@ -28,11 +27,6 @@ private [parsley] class DebugContext {
   // Reset this context back to zero.
   def reset(): Unit = {
     builderStack = ListBuffer(DebugTreeBuilder(TransientDebugTree("ROOT", "ROOT", "NIL")))
-  }
-
-  private def mapHead[A](f: A => A, xs: List[A]): List[A] = xs match {
-    case Nil => Nil
-    case y :: ys => f(y) :: ys
   }
 
   // Push a new parser onto the parser callstack.

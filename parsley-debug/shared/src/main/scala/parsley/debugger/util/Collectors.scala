@@ -15,23 +15,33 @@ import parsley.internal.deepembedding.frontend.LazyParsley
   * You only need to run this once per parser-holding object.
   */
 object CollectNames {
-  def apply(obj: Any)(implicit collector: CollectorImpl): Unit =
-    Rename.addNames(collector.collectNames(obj))
+  /** Collect names of parsers from an object. */
+  def apply(obj: Any): Unit =
+    Rename.addNames(XCollector.collectNames(obj))
+
+  /** Collect the names of Parsley's various default singleton parsers. */
+  def collectDefault(): Unit = {
+    apply(parsley.character)
+    apply(parsley.combinator)
+    apply(parsley.Parsley)
+    apply(parsley.position)
+  }
 }
 
 /** A [[CollectNames]] derivative designed specifically to work on [[Lexer]] instances
   * to collect all the automatically-derived parsers.
   */
 object CollectLexer {
-  def apply(lexer: Lexer)(implicit collector: CollectorImpl): Unit =
-    Rename.addNames(collector.collectLexer(lexer))
+  /** Collect names of parsers from a [[Lexer]]. */
+  def apply(lexer: Lexer): Unit =
+    Rename.addNames(XCollector.collectLexer(lexer))
 }
 
 /** A representation of the current implementation that [[CollectNames]] uses in order to
   * actually collect the names of parsers. This should be implicitly available should
-  * you import `parsley.debugger.util.CollectNamesImpl`.
+  * you import `parsley.debugger.util.CollectorImpl`.
   */
-abstract class CollectorImpl private [parsley] () {
+abstract class Collector private [parsley]() {
   /** Collect names of parsers from an object. */
   def collectNames(obj: Any): Map[LazyParsley[_], String]
 
@@ -39,7 +49,7 @@ abstract class CollectorImpl private [parsley] () {
   def collectLexer(lexer: Lexer): Map[LazyParsley[_], String]
 
   // Try grabbing a parser from a LazyParsley or Parsley instance.
-  private def tryExtract(p: Any): LazyParsley[_] = {
+  protected def tryExtract(p: Any): LazyParsley[_] = {
     try {
       p.asInstanceOf[LazyParsley[_]]
     } catch {
