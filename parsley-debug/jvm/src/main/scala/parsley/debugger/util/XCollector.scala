@@ -11,7 +11,7 @@ import parsley.token.Lexer
 
 import parsley.internal.deepembedding.frontend.LazyParsley
 
-private [parsley] object XCollector extends Collector {
+private [parsley] object XCollector extends CollectorImpl {
   // There should not be too many differences in the public API between 2.12 and 2.13's reflection
   // packages. However, results may vary. Scala 3 however, is a wild-west of compatibility.
   def collectNames(obj: Any): Map[LazyParsley[_], String] = {

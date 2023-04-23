@@ -7,41 +7,43 @@ import parsley.token.Lexer
 import parsley.internal.deepembedding.frontend.LazyParsley
 
 /** Attempt to collect all the fields in a class or object that contain a
-  * parser of type [[Parsley]].
+  * parser of type [[Parsley]], or from a [[Lexer]].
   *
   * This information is used later in the debug tree-building process to rename certain parsers
   * so that they do not end up being named things like "packageanon".
   *
   * You only need to run this once per parser-holding object.
   */
-object CollectNames {
+object Collectors {
   /** Collect names of parsers from an object. */
-  def apply(obj: Any): Unit =
+  def names(obj: Any): Unit = {
+    collectDefault() // Runs only once, ever, for a program execution.
     Rename.addNames(XCollector.collectNames(obj))
+  }
+
+  /** Collect names of parsers from a [[Lexer]]. */
+  def lexer(lexer: Lexer): Unit =
+    Rename.addNames(XCollector.collectLexer(lexer))
 
   /** Collect the names of Parsley's various default singleton parsers. */
-  def collectDefault(): Unit = {
-    apply(parsley.character)
-    apply(parsley.combinator)
-    apply(parsley.Parsley)
-    apply(parsley.position)
+  private var defaultCollected: Boolean = false
+  private def collectDefault(): Unit = this.synchronized {
+    if (!defaultCollected) {
+      names(parsley.character)
+      names(parsley.combinator)
+      names(parsley.Parsley)
+      names(parsley.position)
+
+      defaultCollected = true
+    }
   }
 }
 
-/** A [[CollectNames]] derivative designed specifically to work on [[Lexer]] instances
-  * to collect all the automatically-derived parsers.
-  */
-object CollectLexer {
-  /** Collect names of parsers from a [[Lexer]]. */
-  def apply(lexer: Lexer): Unit =
-    Rename.addNames(XCollector.collectLexer(lexer))
-}
-
-/** A representation of the current implementation that [[CollectNames]] uses in order to
+/** A representation of the current implementation that [[Collectors]] uses in order to
   * actually collect the names of parsers. This should be implicitly available should
   * you import `parsley.debugger.util.CollectorImpl`.
   */
-abstract class Collector private [parsley]() {
+abstract class CollectorImpl private [parsley]() {
   /** Collect names of parsers from an object. */
   def collectNames(obj: Any): Map[LazyParsley[_], String]
 

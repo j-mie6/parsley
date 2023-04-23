@@ -22,7 +22,7 @@ object combinators {
     * parsers within your main parser, and rather to isolate their testing.
     *
     * Before running the parser, it may be advised to see if the current platform's implementation
-    * of the debugger supports [[parsley.debugger.util.CollectNames]], which allows you to input an
+    * of the debugger supports [[parsley.debugger.util.Collectors]], which allows you to input an
     * object or class instance containing parsers, in order to analyse it via reflection to assign
     * the names given to the parser fields / methods in that object to disambiguate the parser names
     * in the tree in a much easier manner.
