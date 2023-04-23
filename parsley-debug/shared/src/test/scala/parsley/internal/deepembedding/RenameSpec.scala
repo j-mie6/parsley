@@ -5,7 +5,7 @@ package parsley.internal.deepembedding
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import parsley.debugger.internal.{DebugContext, Found, Rename, ViaField}
+import parsley.debugger.internal.{DebugContext, Rename}
 import parsley.internal.deepembedding.backend.StrictParsley
 import parsley.internal.deepembedding.frontend.{LazyParsley, LetFinderState, LetMap, RecMap}
 import parsley.internal.deepembedding.frontend.debugger.Debugged
@@ -20,8 +20,7 @@ class RenameSpec extends AnyFlatSpec with Matchers {
 
   it should "rename a parser it is aware of" in {
     val exampleParser: LazyParsley[_] = new DummyParser
-    val found: Found[LazyParsley[_]] = ViaField(exampleParser)
-    Rename.addNames(Map[Found[LazyParsley[_]], String](found -> "exampleParser"))
+    Rename.addNames(Map(exampleParser -> "exampleParser"))
 
     Rename(exampleParser) shouldBe "exampleParser"
   }
