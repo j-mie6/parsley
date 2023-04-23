@@ -29,12 +29,12 @@ object Collectors {
   private var defaultCollected: Boolean = false
   private def collectDefault(): Unit = this.synchronized {
     if (!defaultCollected) {
+      defaultCollected = true
+
       names(parsley.character)
       names(parsley.combinator)
       names(parsley.Parsley)
       names(parsley.position)
-
-      defaultCollected = true
     }
   }
 }
