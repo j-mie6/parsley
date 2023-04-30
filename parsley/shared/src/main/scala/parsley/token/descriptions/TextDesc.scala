@@ -34,6 +34,7 @@ object NumberOfDigits {
     final case class Exactly(n0: Int, ns: Int*) extends NumberOfDigits {
         require(n0 > 0, "Exactly may only be passed a number of digits greater than 0")
         require(ns.forall(_ > 0), "Exactly may only be passed a number of digits greater than 0")
+        require(ns.distinct.lengthCompare(ns) == 0 && !ns.contains(n0), "Exactly may only be provided unique elements")
     }
     /** There is no limit on the number of digits that may appear in this sequence.
       *
