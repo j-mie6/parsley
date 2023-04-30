@@ -179,7 +179,7 @@ private [errors] final class HintCollector(hints: mutable.Set[ExpectItem]) {
     /** Creates a new collector that starts empty */
     def this() = this(mutable.Set.empty)
 
-    private var width = 0
+    private var width = Option.empty[Int]
 
     /** Adds a new hint into the collector. */
     def +=(hint: ExpectItem): Unit = this.hints += hint
@@ -187,11 +187,11 @@ private [errors] final class HintCollector(hints: mutable.Set[ExpectItem]) {
     def ++=(hints: Iterable[ExpectItem]): Unit = this.hints ++= hints
 
     /** Gets the width of the unexpected token that may have accompanied the original hints */
-    def unexpectWidth: Int = width
+    def unexpectWidth: Option[Int] = width
     /** Updates the width of the unexpected token that may have accompanied these hints: this
       * can only get wider.
       */
-    def updateWidth(sz: Int): Unit = width = Math.max(width, sz)
+    def updateWidth(sz: Int): Unit = width = Some(Math.max(width.getOrElse(0), sz))
 
     /** Generates an immutable snapshot of this collector */
     def mkSet: Set[ExpectItem] = this.hints.toSet
