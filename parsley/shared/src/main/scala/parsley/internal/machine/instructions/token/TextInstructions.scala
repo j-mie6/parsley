@@ -5,11 +5,13 @@ package parsley.internal.machine.instructions.token
 
 import scala.annotation.tailrec
 
+import parsley.character.{isHexDigit, isOctDigit}
+
 import parsley.internal.collection.immutable.Trie
-import parsley.internal.errors.{ExpectItem, ExpectRaw}
+import parsley.internal.errors.{ExpectDesc, ExpectItem, ExpectRaw}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
-import parsley.internal.machine.errors.MultiExpectedError
+import parsley.internal.machine.errors.{EmptyError, MultiExpectedError}
 import parsley.internal.machine.instructions.Instr
 
 private [internal] class EscapeMapped(escTrie: Trie[Int], caretWidth: Int, expecteds: Set[ExpectItem]) extends Instr {
@@ -48,5 +50,63 @@ private [internal] class EscapeMapped(escTrie: Trie[Int], caretWidth: Int, expec
 
     // $COVERAGE-OFF$
     override def toString: String = "EscapeMapped"
+    // $COVERAGE-ON$
+}
+
+// TODO: clean up!
+private [internal] class EscapeAtMost(n: Int, radix: Int, atMostReg: Int) extends Instr {
+    override def apply(ctx: Context): Unit = {
+        ctx.writeReg(atMostReg, n)
+        if (ctx.regs(atMostReg).asInstanceOf[Int] > 0) {
+            if (ctx.moreInput && pred(ctx.peekChar)) {
+                ctx.writeReg(atMostReg, ctx.regs(atMostReg).asInstanceOf[Int] - 1)
+                go(ctx, ctx.consumeChar().asDigit)
+            }
+            else ctx.expectedFail(expected, unexpectedWidth = 1)
+        }
+        else {
+            ctx.fail(new EmptyError(ctx.offset, ctx.line, ctx.col, 0))
+        }
+    }
+
+    private def go(ctx: Context, num: BigInt): Unit = {
+        if (ctx.regs(atMostReg).asInstanceOf[Int] > 0) {
+            if (ctx.moreInput && pred(ctx.peekChar)) {
+                ctx.writeReg(atMostReg, ctx.regs(atMostReg).asInstanceOf[Int] - 1)
+                go(ctx, num * radix + ctx.consumeChar().asDigit)
+            }
+            else {
+                ctx.pushHandler(ctx.pc)
+                ctx.expectedFail(expected, unexpectedWidth = 1)
+                ctx.good = true
+                ctx.addErrorToHintsAndPop()
+                ctx.pushAndContinue(num)
+            }
+        }
+        else {
+            ctx.pushHandler(ctx.pc)
+            ctx.fail(new EmptyError(ctx.offset, ctx.line, ctx.col, 0))
+            ctx.good = true
+            ctx.addErrorToHintsAndPop()
+            ctx.pushAndContinue(num)
+        }
+    }
+
+    private val expected: Some[ExpectDesc] = radix match {
+        case 10 => Some(ExpectDesc("digit"))
+        case 16 => Some(ExpectDesc("hexadecimal digit"))
+        case 8 => Some(ExpectDesc("octal digit"))
+        case 2 => Some(ExpectDesc("bit"))
+    }
+
+    private val pred: Char => Boolean = radix match {
+        case 10 => _.isDigit
+        case 16 => isHexDigit(_)
+        case 8 => isOctDigit(_)
+        case 2 => c => c == '0' || c == '1'
+    }
+
+    // $COVERAGE-OFF$
+    override def toString: String = "EscapeAtMost"
     // $COVERAGE-ON$
 }
