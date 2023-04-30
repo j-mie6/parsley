@@ -56,26 +56,20 @@ private [internal] class EscapeMapped(escTrie: Trie[Int], caretWidth: Int, expec
 // TODO: clean up!
 private [internal] class EscapeAtMost(n: Int, radix: Int, atMostReg: Int) extends Instr {
     override def apply(ctx: Context): Unit = {
-        ctx.writeReg(atMostReg, n)
-        if (ctx.regs(atMostReg).asInstanceOf[Int] > 0) {
-            if (ctx.moreInput && pred(ctx.peekChar)) {
-                ctx.writeReg(atMostReg, ctx.regs(atMostReg).asInstanceOf[Int] - 1)
-                go(ctx, ctx.consumeChar().asDigit)
-            }
-            else ctx.expectedFail(expected, unexpectedWidth = 1)
-        }
+        if (ctx.moreInput && pred(ctx.peekChar)) go(ctx, n - 1, ctx.consumeChar().asDigit)
         else {
-            ctx.fail(new EmptyError(ctx.offset, ctx.line, ctx.col, 0))
+            ctx.writeReg(atMostReg, n)
+            ctx.expectedFail(expected, unexpectedWidth = 1)
         }
     }
 
-    private def go(ctx: Context, num: BigInt): Unit = {
-        if (ctx.regs(atMostReg).asInstanceOf[Int] > 0) {
+    private def go(ctx: Context, n: Int, num: BigInt): Unit = {
+        if (n > 0) {
             if (ctx.moreInput && pred(ctx.peekChar)) {
-                ctx.writeReg(atMostReg, ctx.regs(atMostReg).asInstanceOf[Int] - 1)
-                go(ctx, num * radix + ctx.consumeChar().asDigit)
+                go(ctx, n - 1, num * radix + ctx.consumeChar().asDigit)
             }
             else {
+                ctx.writeReg(atMostReg, n)
                 ctx.pushHandler(ctx.pc)
                 ctx.expectedFail(expected, unexpectedWidth = 1)
                 ctx.good = true
@@ -84,6 +78,7 @@ private [internal] class EscapeAtMost(n: Int, radix: Int, atMostReg: Int) extend
             }
         }
         else {
+            ctx.writeReg(atMostReg, 0)
             ctx.pushHandler(ctx.pc)
             ctx.fail(new EmptyError(ctx.offset, ctx.line, ctx.col, 0))
             ctx.good = true
