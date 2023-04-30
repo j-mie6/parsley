@@ -28,9 +28,11 @@ object DescGen {
     )
 
     val nameDescGen = for {
+        identifierStart <- identifierLetterGen
         identifierLetter <- identifierLetterGen
+        operatorStart <- operatorLetterGen
         operatorLetter <- operatorLetterGen
-    } yield NameDesc.plain.copy(identifierLetter = identifierLetter, operatorLetter = operatorLetter)
+    } yield NameDesc(identifierStart, identifierLetter, operatorStart, operatorLetter)
 
     // SYMBOL
     val keywordGen = Gen.oneOf("if", "foo", "while", "key", "a", "bar7")
