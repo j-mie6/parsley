@@ -28,7 +28,7 @@ private [internal] final class Many(var label: Int) extends InstrWithLabel {
         if (ctx.good) {
             val x = ctx.stack.upop()
             ctx.stack.peek[mutable.ListBuffer[Any]] += x
-            ctx.updateCheckOffsetAndHints()
+            ctx.updateCheckOffset()
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
@@ -46,7 +46,7 @@ private [internal] final class SkipMany(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         if (ctx.good) {
             ctx.stack.pop_()
-            ctx.updateCheckOffsetAndHints()
+            ctx.updateCheckOffset()
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
@@ -65,7 +65,7 @@ private [internal] final class ChainPost(var label: Int) extends InstrWithLabel 
         if (ctx.good) {
             val op = ctx.stack.pop[Any => Any]()
             ctx.stack.exchange(op(ctx.stack.upeek))
-            ctx.updateCheckOffsetAndHints()
+            ctx.updateCheckOffset()
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
@@ -84,7 +84,7 @@ private [internal] final class ChainPre(var label: Int) extends InstrWithLabel {
         if (ctx.good) {
             val f = ctx.stack.pop[Any => Any]()
             ctx.stack.exchange(f.andThen(ctx.stack.peek[Any => Any]))
-            ctx.updateCheckOffsetAndHints()
+            ctx.updateCheckOffset()
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
@@ -103,7 +103,7 @@ private [internal] final class Chainl(var label: Int) extends InstrWithLabel {
             val y = ctx.stack.upop()
             val op = ctx.stack.pop[(Any, Any) => Any]()
             ctx.stack.exchange(op(ctx.stack.peek[Any], y))
-            ctx.updateCheckOffsetAndHints()
+            ctx.updateCheckOffset()
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
@@ -121,7 +121,7 @@ private [instructions] object DualHandler {
     def popSecondHandlerAndJump(ctx: Context, label: Int): Unit = {
         ctx.handlers = ctx.handlers.tail
         ctx.checkStack = ctx.checkStack.tail
-        ctx.updateCheckOffsetAndHints()
+        ctx.updateCheckOffset()
         ctx.pc = label
     }
 }

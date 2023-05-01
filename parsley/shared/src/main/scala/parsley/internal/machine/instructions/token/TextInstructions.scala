@@ -56,6 +56,7 @@ private [internal] class EscapeMapped(escTrie: Trie[Int], caretWidth: Int, expec
 // TODO: clean up!
 private [internal] class EscapeAtMost(n: Int, radix: Int, atMostReg: Int) extends Instr {
     override def apply(ctx: Context): Unit = {
+        assume(n > 0, "n cannot be zero for EscapeAtMost")
         if (ctx.moreInput && pred(ctx.peekChar)) go(ctx, n - 1, ctx.consumeChar().asDigit)
         else {
             ctx.writeReg(atMostReg, n)

@@ -108,9 +108,8 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         this.errs = this.errs.tail
     }
 
-    private [machine] def updateCheckOffsetAndHints() = {
+    private [machine] def updateCheckOffset() = {
         this.checkStack.offset = this.offset
-        //this.hintsValidOffset = this.offset // FIXME: verify that this is ok to remove, it seems stupid now that I think about it
     }
 
     // $COVERAGE-OFF$
