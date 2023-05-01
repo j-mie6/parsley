@@ -11,7 +11,7 @@ import parsley.internal.collection.immutable.Trie
 import parsley.internal.errors.{ExpectDesc, ExpectItem, ExpectRaw}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
-import parsley.internal.machine.errors.{EmptyError, MultiExpectedError}
+import parsley.internal.machine.errors.{ClassicExpectedError, EmptyError, MultiExpectedError}
 import parsley.internal.machine.instructions.Instr
 
 private [internal] class EscapeMapped(escTrie: Trie[Int], caretWidth: Int, expecteds: Set[ExpectItem]) extends Instr {
@@ -71,19 +71,13 @@ private [internal] class EscapeAtMost(n: Int, radix: Int, atMostReg: Int) extend
             }
             else {
                 ctx.writeReg(atMostReg, n)
-                ctx.pushHandler(ctx.pc)
-                ctx.expectedFail(expected, unexpectedWidth = 1)
-                ctx.good = true
-                ctx.addErrorToHintsAndPop()
+                ctx.addErrorToHints(new ClassicExpectedError(ctx.offset, ctx.line, ctx.col, expected, unexpectedWidth = 1))
                 ctx.pushAndContinue(num)
             }
         }
         else {
             ctx.writeReg(atMostReg, 0)
-            ctx.pushHandler(ctx.pc)
-            ctx.fail(new EmptyError(ctx.offset, ctx.line, ctx.col, 0))
-            ctx.good = true
-            ctx.addErrorToHintsAndPop()
+            ctx.addErrorToHints(new EmptyError(ctx.offset, ctx.line, ctx.col, 0))
             ctx.pushAndContinue(num)
         }
     }
