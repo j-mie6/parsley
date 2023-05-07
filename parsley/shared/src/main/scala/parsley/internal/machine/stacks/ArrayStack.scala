@@ -13,7 +13,7 @@ private [machine] final class ArrayStack[A](initialSize: Int = ArrayStack.Defaul
     def push(x: A): Unit = {
         sp += 1
         if (array.length == sp) {
-            val newArray: Array[Any] = new Array(sp >> 1)
+            val newArray: Array[Any] = new Array(sp << 1)
             java.lang.System.arraycopy(array, 0, newArray, 0, sp)
             array = newArray
         }

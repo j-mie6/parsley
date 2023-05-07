@@ -18,14 +18,14 @@ import parsley.internal.machine.errors.{
 }
 
 import instructions.Instr
-import stacks.{LinkedArrayStack, CallStack, CheckStack, ErrorStack, HandlerStack, HintStack, Stack, StateStack}, Stack.StackExt
+import stacks.{ArrayStack, CallStack, CheckStack, ErrorStack, HandlerStack, HintStack, Stack, StateStack}, Stack.StackExt
 
 private [parsley] final class Context(private [machine] var instrs: Array[Instr],
                                       private [machine] val input: String,
                                       numRegs: Int,
                                       private val sourceFile: Option[String]) {
     /** This is the operand stack, where results go to live  */
-    private [machine] val stack: LinkedArrayStack[Any] = new LinkedArrayStack()
+    private [machine] val stack: ArrayStack[Any] = new ArrayStack()
     /** Current offset into the input */
     private [machine] var offset: Int = 0
     /** The length of the input, stored for whatever reason */
