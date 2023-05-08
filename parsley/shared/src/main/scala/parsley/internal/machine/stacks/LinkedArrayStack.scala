@@ -63,16 +63,16 @@ private [machine] final class LinkedArrayStack[A](initialSize: Int = LinkedArray
     def upeek: Any = array(sp)
     def peek[B <: A]: B = upeek.asInstanceOf[B]
 
-    @tailrec final def drop(x: Int): Unit = {
-        if (sp >= x || curCap == initialSize) sp -= x
+    @tailrec final def drop(n: Int): Unit = {
+        if (sp >= n || curCap == initialSize) sp -= n
         else {
-            val y = x - sp
+            val m = n - sp - 1
             // crossed a boundary
             array(curCap + 1) = null // clear the next array along, we've reached a quarter of that size
             array = array(curCap).asInstanceOf[Array[Any]]
             curCap >>= 1
             sp = curCap-1
-            drop(y)
+            drop(m)
         }
     }
 
@@ -85,10 +85,10 @@ private [machine] final class LinkedArrayStack[A](initialSize: Int = LinkedArray
         val xs = mutable.ListBuffer.empty[Any]
         var arr = array
         xs ++= arr.take(sp + 1).reverse
-        arr = arr(arr.length - 2).asInstanceOf[Array[Any]]
+        arr = arr(arr.length - LinkedArrayStack.ScratchSize).asInstanceOf[Array[Any]]
         while (arr != null) {
-            arr = arr(arr.length - 2).asInstanceOf[Array[Any]]
-            xs ++= arr.reverse.drop(2)
+            xs ++= arr.reverse.drop(LinkedArrayStack.ScratchSize)
+            arr = arr(arr.length - LinkedArrayStack.ScratchSize).asInstanceOf[Array[Any]]
         }
         xs.mkString(sep)
     }
