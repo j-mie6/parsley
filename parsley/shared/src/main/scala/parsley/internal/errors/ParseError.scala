@@ -40,6 +40,6 @@ private [internal] case class FancyError(offset: Int, line: Int, col: Int, msgs:
     def format(line: String, beforeLines: List[String], afterLines: List[String], caret: Int)(implicit builder: ErrorBuilder[_]): builder.ErrorInfoLines = {
         builder.specialisedError(
             builder.combineMessages(msgs.map(builder.message(_))),
-            builder.lineInfo(line, beforeLines, afterLines, caret, math.min(caretWidth, line.length-caret)))
+            builder.lineInfo(line, beforeLines, afterLines, caret, math.min(caretWidth, line.length - caret + 1)))
     }
 }
