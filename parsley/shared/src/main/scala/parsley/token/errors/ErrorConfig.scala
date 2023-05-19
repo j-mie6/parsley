@@ -680,9 +680,10 @@ class ErrorConfig {
       */
     def filterEscapeCharRequiresExactDigits(@unused radix: Int, needed: Seq[Int]): SpecialisedFilterConfig[Int] =
         new SpecialisedMessage[Int] {
-            def message(got: Int) = Seq(
-                s"numeric escape requires ${parsley.errors.helpers.combineAsList(needed.toList.map(_.toString))} digits, but only got $got"
-            )
+            def message(got: Int) = {
+                assume(needed.nonEmpty, "cannot be empty!")
+                Seq(s"numeric escape requires ${parsley.errors.helpers.combineAsList(needed.toList.map(_.toString)).get} digits, but only got $got")
+            }
         }
 
     /** When a numeric escape sequence is not legal, this describes how to report that error, given the original illegal character.

@@ -6,6 +6,12 @@ package parsley.token.errors
 import parsley.Parsley
 import parsley.XCompat.unused
 import parsley.errors.combinator, combinator.ErrorMethods
+import parsley.internal.errors.UnexpectDesc
+import parsley.internal.machine.errors.DefuncError
+import parsley.internal.machine.errors.ClassicFancyError
+import parsley.internal.machine.errors.ClassicUnexpectedError
+import parsley.internal.machine.errors.EmptyError
+import parsley.internal.machine.errors.EmptyErrorWithReason
 
 /** This trait, and its subclasses, can be used to configure how filters should be used within the `Lexer`.
   * @since 4.1.0
@@ -13,6 +19,7 @@ import parsley.errors.combinator, combinator.ErrorMethods
   */
 trait FilterConfig[A] {
     private [parsley] def filter(p: Parsley[A])(f: A => Boolean): Parsley[A]
+    private [parsley] def mkError(offset: Int, line: Int, col: Int, caretWidth: Int, x: A): DefuncError
     // $COVERAGE-OFF$
     private [parsley] def collect[B](p: Parsley[A])(f: PartialFunction[A, B]): Parsley[B] = this.filter(p)(f.isDefinedAt).map(f)
     private [parsley] def injectLeft[B]: FilterConfig[Either[A, B]]
@@ -46,8 +53,11 @@ abstract class SpecialisedMessage[A] extends SpecialisedFilterConfig[A] { self =
     private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = p.guardAgainst {
         case x if !f(x) => message(x)
     }
-
     private [parsley] final override def collect[B](p: Parsley[A])(f: PartialFunction[A, B]) = p.collectMsg(message(_))(f)
+    private [parsley] final override def mkError(offset: Int, line: Int, col: Int, caretWidth: Int, x: A): DefuncError = {
+        new ClassicFancyError(offset, line, col, caretWidth, message(x): _*)
+    }
+
     // $COVERAGE-OFF$
     private [parsley] final override def injectLeft[B] = new SpecialisedMessage[Either[A, B]] {
         def message(xy: Either[A, B]) = {
@@ -79,6 +89,10 @@ abstract class Unexpected[A] extends VanillaFilterConfig[A] { self =>
     private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = p.unexpectedWhen {
         case x if !f(x) => unexpected(x)
     }
+    private [parsley] final override def mkError(offset: Int, line: Int, col: Int, caretWidth: Int, x: A): DefuncError = {
+        new ClassicUnexpectedError(offset, line, col, None, new UnexpectDesc(unexpected(x), caretWidth))
+    }
+
     // $COVERAGE-OFF$
     private [parsley] final override def injectLeft[B] = new Unexpected[Either[A, B]] {
         def unexpected(xy: Either[A, B]) = {
@@ -110,6 +124,10 @@ abstract class Because[A] extends VanillaFilterConfig[A] { self =>
     private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = p.filterOut {
         case x if !f(x) => reason(x)
     }
+    private [parsley] final override def mkError(offset: Int, line: Int, col: Int, caretWidth: Int, x: A): DefuncError = {
+        new EmptyErrorWithReason(offset, line, col, reason(x), caretWidth)
+    }
+
     // $COVERAGE-OFF$
     private [parsley] final override def injectLeft[B] = new Because[Either[A, B]] {
         def reason(xy: Either[A, B]) = {
@@ -143,10 +161,13 @@ abstract class UnexpectedBecause[A] extends VanillaFilterConfig[A] { self =>
       */
     def reason(x: A): String
 
-    // TODO: factor this combinator out with the "Great Move" in 4.2
     private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = p.unexpectedWithReasonWhen {
         case x if !f(x) => (unexpected(x), reason(x))
     }
+    private [parsley] final override def mkError(offset: Int, line: Int, col: Int, caretWidth: Int, x: A): DefuncError = {
+        new ClassicUnexpectedError(offset, line, col, None, new UnexpectDesc(unexpected(x), caretWidth)).withReason(reason(x))
+    }
+
     // $COVERAGE-OFF$
     private [parsley] final override def injectLeft[B] = new UnexpectedBecause[Either[A, B]] {
         def unexpected(xy: Either[A, B]) = {
@@ -178,6 +199,10 @@ abstract class UnexpectedBecause[A] extends VanillaFilterConfig[A] { self =>
 final class BasicFilter[A] extends SpecialisedFilterConfig[A] with VanillaFilterConfig[A] {
     private [parsley] final override def filter(p: Parsley[A])(f: A => Boolean) = p.filter(f)
     private [parsley] final override def collect[B](p: Parsley[A])(f: PartialFunction[A, B]) = p.collect(f)
+    private [parsley] final override def mkError(offset: Int, line: Int, col: Int, caretWidth: Int, @unused x: A): DefuncError = {
+        new EmptyError(offset, line, col, caretWidth)
+    }
+
     // $COVERAGE-OFF$
     private [parsley] final override def injectLeft[B] = new BasicFilter[Either[A, B]]
     private [parsley] final override def injectRight[B] = new BasicFilter[Either[B, A]]

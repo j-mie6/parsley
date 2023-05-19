@@ -33,16 +33,19 @@ private [token] class Escape(desc: EscapeDesc, err: ErrorConfig, generic: numeri
     }
 
     // this is a really neat trick :)
-    private lazy val atMostReg = parsley.registers.Reg.make[Int]
-    private def atMost(n: Int, radix: Int): Parsley[BigInt] = new Parsley(new token.EscapeAtMost(n, radix, atMostReg))
+    //private lazy val atMostReg = parsley.registers.Reg.make[Int]
+    private def atMost(n: Int, radix: Int): Parsley[BigInt] = new Parsley(new token.EscapeAtMost(n, radix))
     /*private def atMost(n: Int, radix: Int, digit: Parsley[Char]): Parsley[BigInt] = atMost(n, radix){
         atMostReg.put(n) *> ensure(atMostReg.gets(_ > 0),
                                    digit <* atMostReg.modify(_ - 1)).foldLeft1[BigInt](0)((n, d) => n * radix + d.asDigit)
     }*/
 
-    private def exactly(n: Int, full: Int, radix: Int/*, digit: Parsley[Char]*/, reqDigits: Seq[Int]): Parsley[BigInt] = {
-        atMost(n, radix/*, digit*/) <* err.filterEscapeCharRequiresExactDigits(radix, reqDigits).filter(atMostReg.gets(full - _))(_ == full)
+    private def exactly(n: Int, full: Int, radix: Int, reqDigits: Seq[Int]): Parsley[BigInt] = {
+        new Parsley(new token.EscapeExactly(n, full, radix, err.filterEscapeCharRequiresExactDigits(radix, reqDigits)))
     }
+    /*private def exactly(n: Int, full: Int, radix: Int/*, digit: Parsley[Char]*/, reqDigits: Seq[Int]): Parsley[BigInt] = {
+        atMost(n, radix/*, digit*/) <* err.filterEscapeCharRequiresExactDigits(radix, reqDigits).filter(atMostReg.gets(full - _))(_ == full)
+    }*/
 
     private lazy val digitsParsed = parsley.registers.Reg.make[Int]
     private def oneOfExactly(n: Int, ns: List[Int], radix: Int/*, digit: Parsley[Char]*/): Parsley[BigInt] = {

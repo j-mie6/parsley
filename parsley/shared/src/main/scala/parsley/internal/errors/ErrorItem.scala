@@ -41,7 +41,7 @@ private [parsley] final case class ExpectDesc(msg: String) extends ExpectItem {
     private [internal] def formatExpect(implicit builder: ErrorBuilder[_]): builder.Item = builder.named(msg)
 }
 
-private [internal] final case class UnexpectDesc(msg: String, width: Int) extends UnexpectItem {
+private [parsley] final case class UnexpectDesc(msg: String, width: Int) extends UnexpectItem {
     assert(msg.nonEmpty, "Desc cannot contain empty things!")
     // FIXME: When this is formatted, the width should really be normalised to the number of code points... this information is not readily available
     private [internal] def formatUnexpect(lexicalError: Boolean)(implicit builder: ErrorBuilder[_]): (builder.Item, TokenSpan) =
