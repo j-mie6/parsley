@@ -57,20 +57,23 @@ private [internal] final class EscapeMapped(escTrie: Trie[Int], caretWidth: Int,
 // TODO: clean up!
 private [machine] abstract class EscapeSomeNumber(n: Int, radix: Int) extends Instr {
 
-    def noMoreDigits(ctx: Context, n: Int, num: BigInt): Unit
+    def noMoreDigits(ctx: Context, n: Int, num: BigInt, origOff: Int, origLine: Int, origCol: Int): Unit
 
     override def apply(ctx: Context): Unit = {
         assume(n > 0, "n cannot be zero for EscapeAtMost or EscapeExactly")
-        if (ctx.moreInput && pred(ctx.peekChar)) go(ctx, n - 1, ctx.consumeChar().asDigit)
+        val origOff = ctx.offset
+        val origLine = ctx.line
+        val origCol = ctx.col
+        if (ctx.moreInput && pred(ctx.peekChar)) go(ctx, n - 1, ctx.consumeChar().asDigit, origOff, origLine, origCol)
         else ctx.expectedFail(expected, unexpectedWidth = 1)
     }
 
-    private def go(ctx: Context, n: Int, num: BigInt): Unit = {
+    private def go(ctx: Context, n: Int, num: BigInt, origOff: Int, origLine: Int, origCol: Int): Unit = {
         if (n > 0) {
             if (ctx.moreInput && pred(ctx.peekChar)) {
-                go(ctx, n - 1, num * radix + ctx.consumeChar().asDigit)
+                go(ctx, n - 1, num * radix + ctx.consumeChar().asDigit, origOff, origLine, origCol)
             }
-            else noMoreDigits(ctx, n, num)
+            else noMoreDigits(ctx, n, num, origOff, origLine, origCol)
         }
         else {
             assume(new EmptyError(ctx.offset, ctx.line, ctx.col, 0).isExpectedEmpty, "empty errors don't have expecteds, so don't effect hints")
@@ -94,7 +97,7 @@ private [machine] abstract class EscapeSomeNumber(n: Int, radix: Int) extends In
 }
 
 private [internal] final class EscapeAtMost(n: Int, radix: Int) extends EscapeSomeNumber(n, radix) {
-    override def noMoreDigits(ctx: Context, n: Int, num: BigInt): Unit = {
+    override def noMoreDigits(ctx: Context, n: Int, num: BigInt, origOff: Int, origLine: Int, origCol: Int): Unit = {
         ctx.addHints(expected.toSet, unexpectedWidth = 1)
         ctx.pushAndContinue(num)
     }
@@ -105,13 +108,13 @@ private [internal] final class EscapeAtMost(n: Int, radix: Int) extends EscapeSo
 }
 
 private [internal] final class EscapeExactly(n: Int, full: Int, radix: Int, inexactErr: SpecialisedFilterConfig[Int]) extends EscapeSomeNumber(n, radix) {
-    override def noMoreDigits(ctx: Context, n: Int, num: BigInt): Unit = {
+    override def noMoreDigits(ctx: Context, n: Int, num: BigInt, origOff: Int, origLine: Int, origCol: Int): Unit = {
         if (n == 0) {
             ctx.addHints(expected.toSet, unexpectedWidth = 1)
             ctx.pushAndContinue(num)
         } else {
             // will need the original state
-            ctx.fail(inexactErr.mkError(ctx.offset, ctx.line, ctx.col, 0, full - n))
+            ctx.fail(inexactErr.mkError(origOff, origLine, origCol, ctx.offset - origOff, full - n))
         }
     }
 

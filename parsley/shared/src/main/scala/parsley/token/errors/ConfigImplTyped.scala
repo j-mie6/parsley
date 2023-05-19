@@ -24,6 +24,7 @@ trait FilterConfig[A] {
     private [parsley] def collect[B](p: Parsley[A])(f: PartialFunction[A, B]): Parsley[B] = this.filter(p)(f.isDefinedAt).map(f)
     private [parsley] def injectLeft[B]: FilterConfig[Either[A, B]]
     private [parsley] def injectRight[B]: FilterConfig[Either[B, A]]
+    private [parsley] def injectSnd[B]: FilterConfig[(B, A)]
     // $COVERAGE-ON$
 }
 
@@ -71,6 +72,9 @@ abstract class SpecialisedMessage[A] extends SpecialisedFilterConfig[A] { self =
             self.message(y)
         }
     }
+    private [parsley] final override def injectSnd[B] = new SpecialisedMessage[(B, A)] {
+        def message(xy: (B, A)) = self.message(xy._2)
+    }
     // $COVERAGE-ON$
 }
 
@@ -106,6 +110,9 @@ abstract class Unexpected[A] extends VanillaFilterConfig[A] { self =>
             self.unexpected(y)
         }
     }
+    private [parsley] final override def injectSnd[B] = new Unexpected[(B, A)] {
+        def unexpected(xy: (B, A)) = self.unexpected(xy._2)
+    }
     // $COVERAGE-ON$
 }
 
@@ -140,6 +147,9 @@ abstract class Because[A] extends VanillaFilterConfig[A] { self =>
             val Right(y) = xy
             self.reason(y)
         }
+    }
+    private [parsley] final override def injectSnd[B] = new Because[(B, A)] {
+        def reason(xy: (B, A)) = self.reason(xy._2)
     }
     // $COVERAGE-ON$
 }
@@ -185,9 +195,13 @@ abstract class UnexpectedBecause[A] extends VanillaFilterConfig[A] { self =>
             self.unexpected(y)
         }
         def reason(xy: Either[B, A]) = {
-            val Right(x) = xy
-            self.reason(x)
+            val Right(y) = xy
+            self.reason(y)
         }
+    }
+    private [parsley] final override def injectSnd[B] = new UnexpectedBecause[(B, A)] {
+        def unexpected(xy: (B, A)) = self.unexpected(xy._2)
+        def reason(xy: (B, A)) = self.reason(xy._2)
     }
     // $COVERAGE-ON$
 }
@@ -206,5 +220,6 @@ final class BasicFilter[A] extends SpecialisedFilterConfig[A] with VanillaFilter
     // $COVERAGE-OFF$
     private [parsley] final override def injectLeft[B] = new BasicFilter[Either[A, B]]
     private [parsley] final override def injectRight[B] = new BasicFilter[Either[B, A]]
+    private [parsley] final override def injectSnd[B] = new BasicFilter[(B, A)]
     // $COVERAGE-ON$
 }
