@@ -219,7 +219,7 @@ object character {
     def oneOf(cs: Set[Char]): Parsley[Char] = cs.size match {
         case 0 => empty
         case 1 => char(cs.head)
-        case _ => satisfy(cs.contains(_), {
+        case _ => satisfy(cs, {
             val Some(label) = parsley.errors.helpers.combineAsList(cs.map(renderChar).toList)
             s"one of $label"
         })
