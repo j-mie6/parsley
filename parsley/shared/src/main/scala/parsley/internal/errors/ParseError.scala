@@ -32,13 +32,14 @@ private [internal] case class TrivialError(offset: Int, line: Int, col: Int,
             builder.unexpected(unexpectedTok.toOption.map(_._1)),
             builder.expected(builder.combineExpectedItems(expecteds.map(_.formatExpect))),
             builder.combineMessages(reasons.map(builder.reason(_)).toSeq),
-            builder.lineInfo(line, beforeLines, afterLines, caret, math.min(caretSize, line.length-caret)))
+            // this was changed to +1 to allow EoF caret, does this need more nuance?
+            builder.lineInfo(line, beforeLines, afterLines, caret, math.min(caretSize, line.length - caret + 1)))
     }
 }
 private [internal] case class FancyError(offset: Int, line: Int, col: Int, msgs: List[String], caretWidth: Int, lexicalError: Boolean) extends ParseError {
     def format(line: String, beforeLines: List[String], afterLines: List[String], caret: Int)(implicit builder: ErrorBuilder[_]): builder.ErrorInfoLines = {
         builder.specialisedError(
             builder.combineMessages(msgs.map(builder.message(_))),
-            builder.lineInfo(line, beforeLines, afterLines, caret, math.min(caretWidth, line.length-caret)))
+            builder.lineInfo(line, beforeLines, afterLines, caret, math.min(caretWidth, line.length - caret + 1)))
     }
 }

@@ -156,6 +156,9 @@ object character {
     private def satisfy(pred: Char => Boolean, label: String): Parsley[Char] = satisfy(pred, Label(label))
     private def satisfy(pred: Char => Boolean, label: LabelConfig) = new Parsley(new singletons.Satisfy(pred, label))
 
+    // we want this down the line :)
+    //def satisfy[A](pred: PartialFunction[Char, A]): Parsley[A] = satisfy(pred.isDefinedAt(_)).map(pred)
+
     // TODO: document
     private [parsley] def satisfyUtf16(pred: Int => Boolean): Parsley[Int] = new Parsley(new singletons.UniSatisfy(pred, NotConfigured))
 
@@ -216,10 +219,10 @@ object character {
     def oneOf(cs: Set[Char]): Parsley[Char] = cs.size match {
         case 0 => empty
         case 1 => char(cs.head)
-        case _ => satisfy(cs.contains).label {
+        case _ => satisfy(cs, {
             val Some(label) = parsley.errors.helpers.combineAsList(cs.map(renderChar).toList)
             s"one of $label"
-        }
+        })
     }
 
     /** $oneOf
@@ -276,7 +279,7 @@ object character {
         case _ if Math.abs(cs(0).toInt - cs(1).toInt) == 1 => satisfy(cs.contains(_),
             s"one of ${renderChar(cs.min)} to ${renderChar(cs.max)}"
         )
-        case _ => satisfy(cs.contains)
+        case _ => satisfy(cs.contains(_))
     }
 
     /** $noneOf
