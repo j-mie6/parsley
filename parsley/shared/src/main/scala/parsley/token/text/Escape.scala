@@ -3,10 +3,10 @@
  */
 package parsley.token.text
 
-import parsley.Parsley, Parsley.{attempt, empty}
+import parsley.Parsley, Parsley.{/*attempt,*/ empty}
 import parsley.character.{/*bit, */char/*, digit, hexDigit, octDigit*/}
 //import parsley.combinator.ensure
-import parsley.implicits.zipped.Zipped3
+//import parsley.implicits.zipped.Zipped3
 import parsley.token.descriptions.text.{EscapeDesc, NumberOfDigits, NumericEscape}
 import parsley.token.errors.{ErrorConfig, NotConfigured}
 import parsley.token.numeric
@@ -32,29 +32,29 @@ private [token] class Escape(desc: EscapeDesc, err: ErrorConfig, generic: numeri
         }
     }
 
-
     private def atMost(n: Int, radix: Int): Parsley[BigInt] = new Parsley(new token.EscapeAtMost(n, radix))
-    private def exactly(n: Int, full: Int, radix: Int, reqDigits: Seq[Int]): Parsley[BigInt] = {
+    /*private def exactly(n: Int, full: Int, radix: Int, reqDigits: Seq[Int]): Parsley[BigInt] = {
         new Parsley(new token.EscapeExactly(n, full, radix, err.filterEscapeCharRequiresExactDigits(radix, reqDigits)))
-    }
+    }*/
 
-    private lazy val digitsParsed = parsley.registers.Reg.make[Int]
+    //private lazy val digitsParsed = parsley.registers.Reg.make[Int]
     private def oneOfExactly(n: Int, ns: List[Int], radix: Int): Parsley[BigInt] = {
-        val reqDigits@(m :: ms) = (n :: ns).sorted // make this a precondition of the description?
+        new Parsley(new token.EscapeOneOfExactly(radix, (n :: ns).sorted, err.filterEscapeCharRequiresExactDigits(radix, (n :: ns).sorted)))
+        /*val reqDigits@(m :: ms) = (n :: ns).sorted // make this a precondition of the description?
         def go(digits: Int, m: Int, ns: List[Int]): Parsley[BigInt] = ns match {
             case Nil => exactly(digits, m, radix, reqDigits) <* digitsParsed.put(digits)
             case n :: ns  =>
                 val theseDigits = exactly(digits, m, radix, reqDigits)
                 val restDigits = (
-                        (attempt(go(n-m, n, ns).map(Some(_)) <* digitsParsed.modify(_ + digits)))
-                    <|> (digitsParsed.put(digits) #> None)
+                        attempt(go(n-m, n, ns).map(Some(_)) <* digitsParsed.modify(_ + digits))
+                      | digitsParsed.put(digits) #> None
                 )
                 (theseDigits, restDigits, digitsParsed.get).zipped[BigInt] {
                     case (x, None, _) => x
                     case (x, Some(y), exp) => (x * BigInt(radix).pow(exp - digits) + y) // digits is removed here, because it's been added before the get
                 }
         }
-        go(m, m, ms)
+        go(m, m, ms)*/
     }
 
     private def fromDesc(radix: Int, desc: NumericEscape, integer: =>Parsley[BigInt]): Parsley[Int] = desc match {

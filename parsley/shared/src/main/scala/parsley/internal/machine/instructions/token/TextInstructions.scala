@@ -119,6 +119,53 @@ private [internal] final class EscapeExactly(n: Int, full: Int, radix: Int, inex
     }
 
     // $COVERAGE-OFF$
-    override def toString: String = "EscapeAtMost"
+    override def toString: String = "EscapeExactly"
+    // $COVERAGE-ON$
+}
+
+private [internal] final class EscapeOneOfExactly(radix: Int, ns: List[Int], inexactErr: SpecialisedFilterConfig[Int]) extends Instr {
+    private val (m :: ms) = ns
+    def apply(ctx: Context): Unit = {
+        val next = ctx.pc + 1
+        go(ctx, m, m, ms)
+        if (ctx.good) ctx.pc = next
+    }
+
+    def go(ctx: Context, digits: Int, m: Int, ns: List[Int]): Int = ns match {
+        case Nil =>
+            new EscapeExactly(digits, m, radix, inexactErr).apply(ctx)
+            if (ctx.good) digits
+            else 0
+        case n :: ns =>
+            new EscapeExactly(digits, m, radix, inexactErr).apply(ctx)
+            if (ctx.good) {
+                ctx.pushHandler(ctx.pc) //lol
+                ctx.saveState()
+                // FIXME: shadow = !hide so why is it like this?
+                ctx.saveHints(shadow = false)
+                val digitsParsed = go(ctx, n-m, n, ns)
+                if (ctx.good) {
+                    ctx.handlers = ctx.handlers.tail
+                    ctx.states = ctx.states.tail
+                    ctx.commitHints()
+                    val exp = digitsParsed + digits
+                    val y = ctx.stack.pop[BigInt]()
+                    val x = ctx.stack.peek[BigInt]
+                    ctx.stack.exchange(x * BigInt(radix).pow(exp - digits) + y) // digits is removed here, because it's been added before the get
+                    exp
+                }
+                else {
+                    ctx.restoreState()
+                    ctx.restoreHints()
+                    ctx.good = true
+                    ctx.addErrorToHintsAndPop()
+                    digits
+                }
+            }
+            else 0
+    }
+
+    // $COVERAGE-OFF$
+    override def toString: String = "EscapeOneOfExactly"
     // $COVERAGE-ON$
 }
