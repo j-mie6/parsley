@@ -54,7 +54,6 @@ private [internal] final class EscapeMapped(escTrie: Trie[Int], caretWidth: Int,
     // $COVERAGE-ON$
 }
 
-// TODO: clean up!
 private [machine] abstract class EscapeSomeNumber(radix: Int) extends Instr {
     final def someNumber(ctx: Context, n: Int): EscapeSomeNumber.Result = {
         assume(n > 0, "n cannot be zero for EscapeAtMost or EscapeExactly")
@@ -115,9 +114,7 @@ private [internal] final class EscapeOneOfExactly(radix: Int, ns: List[Int], ine
         someNumber(ctx, m) match {
             case EscapeSomeNumber.Good(num) =>
                 assume(new EmptyError(ctx.offset, ctx.line, ctx.col, 0).isExpectedEmpty, "empty errors don't have expecteds, so don't effect hints")
-                ctx.stack.push(num)
-                go(ctx, m, m, ms)
-                ctx.inc()
+                ctx.pushAndContinue(go(ctx, m, ms, num))
             case EscapeSomeNumber.NoDigits => ctx.expectedFail(expected, unexpectedWidth = 1)
             case EscapeSomeNumber.NoMoreDigits(remaining, _) =>
                 assume(remaining != 0, "cannot be left with 0 remaining digits and failed")
@@ -125,16 +122,15 @@ private [internal] final class EscapeOneOfExactly(radix: Int, ns: List[Int], ine
         }
     }
 
-    private def fail(ctx: Context, digits: Int, origOff: Int, origLine: Int, origCol: Int) = {
+    private def rollback(ctx: Context, origOff: Int, origLine: Int, origCol: Int) = {
         // To Cosmin: this can use the save point mechanism you have
         ctx.offset = origOff
         ctx.line = origLine
         ctx.col = origCol
-        digits
     }
 
-    def go(ctx: Context, digits: Int, m: Int, ns: List[Int]): Int = ns match {
-        case Nil => digits
+    @tailrec def go(ctx: Context, m: Int, ns: List[Int], acc: BigInt): BigInt = ns match {
+        case Nil => acc
         case n :: ns =>
             val origOff = ctx.offset
             val origLine = ctx.line
@@ -142,20 +138,17 @@ private [internal] final class EscapeOneOfExactly(radix: Int, ns: List[Int], ine
             someNumber(ctx, n-m) match { // this is the only place where the failure can actually happen: go never fails
                 case EscapeSomeNumber.Good(num) =>
                     assume(new EmptyError(ctx.offset, ctx.line, ctx.col, 0).isExpectedEmpty, "empty errors don't have expecteds, so don't effect hints")
-                    ctx.stack.push(num)
-                    val exp = go(ctx, n-m, n, ns)
-                    val y = ctx.stack.pop[BigInt]()
-                    val x = ctx.stack.peek[BigInt]
-                    ctx.stack.exchange(x * BigInt(radix).pow(exp) + y) // digits is removed here, because it's been added before the get
-                    exp + digits
+                    go(ctx, n, ns, acc * BigInt(radix).pow(n-m) + num)
                 case EscapeSomeNumber.NoDigits =>
                     ctx.addHints(expected.toSet, unexpectedWidth = 1)
-                    fail(ctx, digits, origOff, origLine, origCol)
+                    rollback(ctx, origOff, origLine, origCol)
+                    acc
                 case EscapeSomeNumber.NoMoreDigits(remaining, _) =>
                     assume(remaining != 0, "cannot be left with 0 remaining digits and failed")
                     assume(inexactErr.mkError(origOff, origLine, origCol, ctx.offset - origOff, n - remaining).isExpectedEmpty,
                            "filter errors don't have expecteds, so don't effect hints")
-                    fail(ctx, digits, origOff, origLine, origCol)
+                    rollback(ctx, origOff, origLine, origCol)
+                    acc
             }
     }
 
