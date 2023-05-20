@@ -3,10 +3,11 @@
  */
 package parsley.internal.deepembedding.singletons.token
 
+import parsley.token.errors.SpecialisedFilterConfig
+
 import parsley.internal.collection.immutable.Trie
 import parsley.internal.deepembedding.singletons.Singleton
 import parsley.internal.machine.instructions
-import parsley.token.errors.SpecialisedFilterConfig
 
 private [parsley] final class EscapeMapped(escTrie: Trie[Int], escs: Set[String]) extends Singleton[Int] {
     // $COVERAGE-OFF$

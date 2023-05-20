@@ -6,12 +6,9 @@ package parsley.token.errors
 import parsley.Parsley
 import parsley.XCompat.unused
 import parsley.errors.combinator, combinator.ErrorMethods
+
 import parsley.internal.errors.UnexpectDesc
-import parsley.internal.machine.errors.DefuncError
-import parsley.internal.machine.errors.ClassicFancyError
-import parsley.internal.machine.errors.ClassicUnexpectedError
-import parsley.internal.machine.errors.EmptyError
-import parsley.internal.machine.errors.EmptyErrorWithReason
+import parsley.internal.machine.errors.{ClassicFancyError, ClassicUnexpectedError, DefuncError, EmptyError, EmptyErrorWithReason}
 
 /** This trait, and its subclasses, can be used to configure how filters should be used within the `Lexer`.
   * @since 4.1.0

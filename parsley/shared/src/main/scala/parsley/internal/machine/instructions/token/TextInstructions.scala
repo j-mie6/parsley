@@ -6,6 +6,7 @@ package parsley.internal.machine.instructions.token
 import scala.annotation.tailrec
 
 import parsley.character.{isHexDigit, isOctDigit}
+import parsley.token.errors.SpecialisedFilterConfig
 
 import parsley.internal.collection.immutable.Trie
 import parsley.internal.errors.{ExpectDesc, ExpectItem, ExpectRaw}
@@ -13,7 +14,6 @@ import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.{EmptyError, MultiExpectedError}
 import parsley.internal.machine.instructions.Instr
-import parsley.token.errors.SpecialisedFilterConfig
 
 private [internal] final class EscapeMapped(escTrie: Trie[Int], caretWidth: Int, expecteds: Set[ExpectItem]) extends Instr {
     def this(escTrie: Trie[Int], escs: Set[String]) = this(escTrie, escs.view.map(_.length).max, escs.map(ExpectRaw(_)))
@@ -61,10 +61,8 @@ private [machine] abstract class EscapeSomeNumber(radix: Int) extends Instr {
     }
 
     private def go(ctx: Context, n: Int, num: BigInt): EscapeSomeNumber.Result = {
-        if (n > 0) {
-            if (ctx.moreInput && pred(ctx.peekChar)) go(ctx, n - 1, num * radix + ctx.consumeChar().asDigit)
-            else EscapeSomeNumber.NoMoreDigits(n, num)
-        }
+        if (n > 0 && ctx.moreInput && pred(ctx.peekChar)) go(ctx, n - 1, num * radix + ctx.consumeChar().asDigit)
+        else if (n > 0) EscapeSomeNumber.NoMoreDigits(n, num)
         else EscapeSomeNumber.Good(num)
     }
 
