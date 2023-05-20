@@ -125,13 +125,17 @@ private [internal] final class EscapeOneOfExactly(radix: Int, ns: List[Int], ine
         }
     }
 
+    private def fail(ctx: Context, digits: Int, origOff: Int, origLine: Int, origCol: Int) = {
+        // To Cosmin: this can use the save point mechanism you have
+        ctx.offset = origOff
+        ctx.line = origLine
+        ctx.col = origCol
+        digits
+    }
+
     def go(ctx: Context, digits: Int, m: Int, ns: List[Int]): Int = ns match {
         case Nil => digits
         case n :: ns =>
-            ctx.pushHandler(ctx.pc) //lol
-            ctx.saveState()
-            // FIXME: shadow = !hide so why is it like this?
-            ctx.saveHints(shadow = false)
             val origOff = ctx.offset
             val origLine = ctx.line
             val origCol = ctx.col
@@ -139,31 +143,19 @@ private [internal] final class EscapeOneOfExactly(radix: Int, ns: List[Int], ine
                 case EscapeSomeNumber.Good(num) =>
                     assume(new EmptyError(ctx.offset, ctx.line, ctx.col, 0).isExpectedEmpty, "empty errors don't have expecteds, so don't effect hints")
                     ctx.stack.push(num)
-                    val digitsParsed = go(ctx, n-m, n, ns)
-                    ctx.handlers = ctx.handlers.tail
-                    ctx.states = ctx.states.tail
-                    ctx.commitHints()
-                    val exp = digitsParsed + digits
+                    val exp = go(ctx, n-m, n, ns)
                     val y = ctx.stack.pop[BigInt]()
                     val x = ctx.stack.peek[BigInt]
-                    ctx.stack.exchange(x * BigInt(radix).pow(exp - digits) + y) // digits is removed here, because it's been added before the get
-                    exp
+                    ctx.stack.exchange(x * BigInt(radix).pow(exp) + y) // digits is removed here, because it's been added before the get
+                    exp + digits
                 case EscapeSomeNumber.NoDigits =>
-                    ctx.expectedFail(expected, unexpectedWidth = 1)
-                    ctx.restoreState()
-                    ctx.restoreHints()
-                    ctx.good = true
-                    ctx.addErrorToHintsAndPop()
-                    digits
+                    ctx.addHints(expected.toSet, unexpectedWidth = 1)
+                    fail(ctx, digits, origOff, origLine, origCol)
                 case EscapeSomeNumber.NoMoreDigits(remaining, _) =>
                     assume(remaining != 0, "cannot be left with 0 remaining digits and failed")
-                    // will need the original state
-                    ctx.fail(inexactErr.mkError(origOff, origLine, origCol, ctx.offset - origOff, n - remaining))
-                    ctx.restoreState()
-                    ctx.restoreHints()
-                    ctx.good = true
-                    ctx.addErrorToHintsAndPop()
-                    digits
+                    assume(inexactErr.mkError(origOff, origLine, origCol, ctx.offset - origOff, n - remaining).isExpectedEmpty,
+                           "filter errors don't have expecteds, so don't effect hints")
+                    fail(ctx, digits, origOff, origLine, origCol)
             }
     }
 
