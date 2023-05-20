@@ -22,13 +22,6 @@ private [parsley] final class EscapeAtMost(n: Int, radix: Int) extends Singleton
     // $COVERAGE-ON$
 }
 
-private [parsley] final class EscapeExactly(n: Int, full: Int, radix: Int, inexactErr: SpecialisedFilterConfig[Int]) extends Singleton[BigInt] {
-    override def instr: instructions.Instr = new instructions.token.EscapeExactly(n, full, radix, inexactErr)
-    // $COVERAGE-OFF$
-    override def pretty: String = "escapeExactly"
-    // $COVERAGE-ON$
-}
-
 private [parsley] final class EscapeOneOfExactly(radix: Int, ns: List[Int], inexactErr: SpecialisedFilterConfig[Int]) extends Singleton[BigInt] {
     override def instr: instructions.Instr = new instructions.token.EscapeOneOfExactly(radix, ns, inexactErr)
     // $COVERAGE-OFF$
