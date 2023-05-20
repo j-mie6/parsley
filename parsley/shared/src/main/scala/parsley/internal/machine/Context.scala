@@ -14,7 +14,7 @@ import parsley.errors.ErrorBuilder
 import parsley.internal.errors.{ExpectItem, LineBuilder, UnexpectDesc}
 import parsley.internal.machine.errors.{
     ClassicExpectedError, ClassicFancyError, ClassicUnexpectedError, DefuncError,
-    DefuncHints, EmptyHints, ErrorItemBuilder
+    DefuncHints, EmptyHints, ErrorItemBuilder, MultiExpectedError
 }
 
 import instructions.Instr
@@ -94,8 +94,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         }
     }
 
-    private def addErrorToHints(): Unit = {
-        val err = errs.error
+    private def addErrorToHints(err: DefuncError): Unit = {
         assume(!(!err.isExpectedEmpty) || err.isTrivialError, "not having an empty expected implies you are a trivial error")
         if (/*err.isTrivialError && */ !err.isExpectedEmpty && err.offset == offset) { // scalastyle:ignore disallow.space.after.token
             // If our new hints have taken place further in the input stream, then they must invalidate the old ones
@@ -104,13 +103,18 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         }
     }
     private [machine] def addErrorToHintsAndPop(): Unit = {
-        this.addErrorToHints()
+        this.addErrorToHints(errs.error)
         this.errs = this.errs.tail
     }
+    private [machine] def addHints(expecteds: Set[ExpectItem], unexpectedWidth: Int) = {
+        assume(expecteds.nonEmpty, "hints must always be non-empty")
+        invalidateHints()
+        // TODO: this can be optimised further
+        hints = hints.addError(new MultiExpectedError(this.offset, this.line, this.col, expecteds, unexpectedWidth))
+    }
 
-    private [machine] def updateCheckOffsetAndHints() = {
+    private [machine] def updateCheckOffset() = {
         this.checkStack.offset = this.offset
-        //this.hintsValidOffset = this.offset // FIXME: verify that this is ok to remove, it seems stupid now that I think about it
     }
 
     // $COVERAGE-OFF$

@@ -44,7 +44,9 @@ private [token] class OriginalEscape(desc: EscapeDesc, err: ErrorConfig, generic
     }
 
     private def exactly(n: Int, full: Int, radix: Int, digit: Parsley[Char], reqDigits: Seq[Int]): Parsley[BigInt] = {
-        atMost(n, radix, digit) <* err.filterEscapeCharRequiresExactDigits(radix, reqDigits).filter(atMostReg.gets(full - _))(_ == full)
+        err.filterEscapeCharRequiresExactDigits(radix, reqDigits).injectSnd.collect(atMost(n, radix, digit) <~> atMostReg.gets(full - _)) {
+            case (num, n) if n == full => num
+        }
     }
 
     private lazy val digitsParsed = parsley.registers.Reg.make[Int]

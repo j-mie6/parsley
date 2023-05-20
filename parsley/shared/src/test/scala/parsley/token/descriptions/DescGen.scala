@@ -28,9 +28,11 @@ object DescGen {
     )
 
     val nameDescGen = for {
+        identifierStart <- identifierLetterGen
         identifierLetter <- identifierLetterGen
+        operatorStart <- operatorLetterGen
         operatorLetter <- operatorLetterGen
-    } yield NameDesc.plain.copy(identifierLetter = identifierLetter, operatorLetter = operatorLetter)
+    } yield NameDesc(identifierStart, identifierLetter, operatorStart, operatorLetter)
 
     // SYMBOL
     val keywordGen = Gen.oneOf("if", "foo", "while", "key", "a", "bar7")
@@ -51,11 +53,32 @@ object DescGen {
     private val singleGen = Gen.mapOf(Gen.zip(Gen.alphaChar, codepointGen))
     private val multiGen = Gen.mapOf(Gen.zip(Gen.nonEmptyListOf(Gen.alphaChar).map(_.mkString), codepointGen))
 
-    //TODO: Expand with more configuration fields as more of the escape is optimised
+
+    def numericEscapeOf(prefix: Option[Char])(numDigits: NumberOfDigits): NumericEscape = {
+        NumericEscape.Supported(prefix, numDigits, java.lang.Character.MAX_CODE_POINT)
+    }
+
+    private val digitsRange = Gen.choose(1, 16)
+    private def numericEscapeGen(prefix: Option[Char]): Gen[NumericEscape] = Gen.oneOf(
+        Gen.const(NumericEscape.Illegal),
+        Gen.const(NumberOfDigits.Unbounded).map(numericEscapeOf(prefix)),
+        digitsRange.map(NumberOfDigits.AtMost(_)).map(numericEscapeOf(prefix)),
+        Gen.containerOfN[Set, Int](4, digitsRange).suchThat(_.nonEmpty).map { set =>
+            val x::xs = set.toList
+            numericEscapeOf(prefix)(NumberOfDigits.Exactly(x, xs: _*))
+        }
+    )
+
     val escDescGen = for {
         literals <- literalGen
         singles <- singleGen
         multis <- multiGen
         if !singles.keys.exists(c => multis.contains(s"$c"))
-    } yield EscapeDesc.plain.copy(literals = literals, singleMap = singles, multiMap = multis)
+        decimalEscape <- numericEscapeGen(None)
+        hexadecimalEscape <- numericEscapeGen(Some('x'))
+        octalEscape <- numericEscapeGen(Some('o'))
+        binaryEscape <- numericEscapeGen(Some('b'))
+        emptyEscape <- Gen.oneOf(None, Some('&'))
+        gapsSupported <- Arbitrary.arbitrary[Boolean]
+    } yield EscapeDesc('\\', literals, singles, multis, decimalEscape, hexadecimalEscape, octalEscape, binaryEscape, emptyEscape, gapsSupported)
 }

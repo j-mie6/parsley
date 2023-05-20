@@ -44,6 +44,8 @@ inThisBuild(List(
     ProblemFilters.exclude[MissingClassProblem]("parsley.token.errors.FilterOps"),
     ProblemFilters.exclude[MissingClassProblem]("parsley.token.errors.FilterOps$"),
     ProblemFilters.exclude[ReversedMissingMethodProblem]("parsley.token.predicate#CharPredicate.asInternalPredicate"),
+    ProblemFilters.exclude[ReversedMissingMethodProblem]("parsley.token.errors.FilterConfig.mkError"),
+    ProblemFilters.exclude[ReversedMissingMethodProblem]("parsley.token.errors.FilterConfig.injectSnd"),
     // Expression refactor
     ProblemFilters.exclude[ReversedMissingMethodProblem]("parsley.expr.Fixity.chain"),
     ProblemFilters.exclude[ReversedMissingMethodProblem]("parsley.expr.Ops.chain"),

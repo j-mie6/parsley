@@ -682,7 +682,7 @@ object character {
       * @see [[isHexDigit ``isHexDigit``]]
       * @group spec
       */
-    val hexDigit: Parsley[Char] = satisfy(isHexDigit(_), "hexdecimal digit")
+    val hexDigit: Parsley[Char] = satisfy(isHexDigit(_), "hexadecimal digit")
 
     /** This parser tries to parse an octal digit, and returns it if successful.
       *

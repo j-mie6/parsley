@@ -19,7 +19,7 @@ import parsley.internal.errors.{ExpectDesc, ExpectItem, FancyError, ParseError, 
   * conversion to `ParseError` to make use of mutable collections, which
   * would otherwise be unsound.
   */
-private [machine] sealed abstract class DefuncError {
+private [parsley] sealed abstract class DefuncError {
     // Stores the bit-packed flags below, starting from bit 0 upwards
     private [errors] val flags: Byte
     /** Is this error a trivial error, or is it fancy? */
@@ -64,7 +64,7 @@ private [machine] sealed abstract class DefuncError {
       * @return the error with the reason incorporated
       * @note reasons are kept in-order
       */
-    private [machine] def withReason(reason: String): DefuncError
+    private [parsley] def withReason(reason: String): DefuncError
     /** This operation replaces the expected labels in this error message
       * by the given label. This can only happen when the offset of
       * this error message matches the given offset: this should be the
@@ -170,7 +170,7 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
         if (hints.nonEmpty) new WithHints(this, hints)
         else this
     }
-    private [machine] final override def withReason(reason: String): TrivialDefuncError = new WithReason(this, reason)
+    private [parsley] final override def withReason(reason: String): TrivialDefuncError = new WithReason(this, reason)
     private [machine] final override def label(label: String, offset: Int): TrivialDefuncError = {
         if (this.offset == offset) new WithLabel(this, label)
         else this
@@ -215,7 +215,7 @@ private [errors] sealed abstract class FancyDefuncError extends DefuncError {
     }
 
     private [machine] final override def withHints(hints: DefuncHints): FancyDefuncError = this
-    private [machine] final override def withReason(reason: String): FancyDefuncError = this
+    private [parsley] final override def withReason(reason: String): FancyDefuncError = this
     private [machine] final override def label(label: String, offset: Int): FancyDefuncError = this
     private [machine] final override def amend(offset: Int, line: Int, col: Int): FancyDefuncError = {
         if (!this.entrenched) new FancyAmended(offset, line, col, this)
@@ -282,7 +282,7 @@ private [machine] final class ClassicExpectedErrorWithReason(val offset: Int, va
         builder += reason
     }
 }
-private [machine] final class ClassicUnexpectedError(val offset: Int, val line: Int, val col: Int, val expected: Option[ExpectItem],
+private [parsley] final class ClassicUnexpectedError(val offset: Int, val line: Int, val col: Int, val expected: Option[ExpectItem],
                                                      val unexpected: UnexpectDesc) extends BaseError {
     override final val flags = if (expected.isEmpty) (DefuncError.ExpectedEmptyMask | DefuncError.TrivialErrorMask).toByte else DefuncError.TrivialErrorMask
     override def expectedIterable: Iterable[ExpectItem] = expected
@@ -292,7 +292,7 @@ private [machine] final class ClassicUnexpectedError(val offset: Int, val line: 
         builder.updateUnexpected(unexpected)
     }
 }
-private [machine] final class ClassicFancyError(val offset: Int, val line: Int, val col: Int, caretWidth: Int, val msgs: String*) extends FancyDefuncError {
+private [parsley] final class ClassicFancyError(val offset: Int, val line: Int, val col: Int, caretWidth: Int, val msgs: String*) extends FancyDefuncError {
     override final val flags = DefuncError.ExpectedEmptyMask
     override def makeFancy(builder: FancyErrorBuilder): Unit = {
         builder.pos_=(line, col)
@@ -300,7 +300,7 @@ private [machine] final class ClassicFancyError(val offset: Int, val line: Int, 
         builder.updateCaretWidth(caretWidth)
     }
 }
-private [machine] final class EmptyError(val offset: Int, val line: Int, val col: Int, val unexpectedWidth: Int) extends BaseError {
+private [parsley] final class EmptyError(val offset: Int, val line: Int, val col: Int, val unexpectedWidth: Int) extends BaseError {
     override final val flags = (DefuncError.ExpectedEmptyMask | DefuncError.TrivialErrorMask).toByte
     override def expectedIterable: Iterable[ExpectItem] = None
     override def makeTrivial(builder: TrivialErrorBuilder): Unit = {
@@ -308,7 +308,7 @@ private [machine] final class EmptyError(val offset: Int, val line: Int, val col
         builder.updateEmptyUnexpected(unexpectedWidth)
     }
 }
-private [machine] final class EmptyErrorWithReason(val offset: Int, val line: Int, val col: Int, val reason: String, val unexpectedWidth: Int)
+private [parsley] final class EmptyErrorWithReason(val offset: Int, val line: Int, val col: Int, val reason: String, val unexpectedWidth: Int)
     extends BaseError {
     override final val flags: Byte = (DefuncError.ExpectedEmptyMask | DefuncError.TrivialErrorMask).toByte
     override def expectedIterable: Iterable[ExpectItem] = None

@@ -5,6 +5,7 @@ import org.scalacheck.Shrink
 import parsley.token.descriptions.text._
 
 object DescShrink {
+    // TODO: shrinking logic for new esc desc stuff
     implicit val escDescShrink: Shrink[EscapeDesc] = Shrink {
         case desc@EscapeDesc(_, literals, singles, multis, _, _, _, _, _, _) =>
             val shrinkLiterals = for (ls <- Shrink.shrink(literals)) yield desc.copy(literals = ls)

@@ -20,7 +20,13 @@ class EscapeSemanticPreservationSpec extends AnyPropSpec with ScalaCheckProperty
     def makeOptEscape(escDesc: EscapeDesc) = new Escape(escDesc, errConfig, generic)
     def makeUnoptEscape(escDesc: EscapeDesc) = new OriginalEscape(escDesc, errConfig, generic)
 
-    val escInputGen = Gen.alphaNumStr.map(s => s"\\$s")
+    val escInputGen = Gen.frequency(
+        4 -> Gen.alphaNumStr,
+        1 -> Gen.numStr,
+        1 -> Gen.hexStr.map(s => s"x$s"),
+        1 -> Gen.stringOf(Gen.choose('0', '7')).map(s => s"b$s"),
+        1 -> Gen.stringOf(Gen.oneOf('0', '1')).map(s => s"b$s"),
+    ).map(s => s"\\$s")
 
     property("reading escape characters should not vary based on optimisations") {
         forAll(escDescGen -> "escDesc", escInputGen -> "input") { (escDesc, input) =>
