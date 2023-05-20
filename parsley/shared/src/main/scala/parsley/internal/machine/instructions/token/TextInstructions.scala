@@ -56,7 +56,7 @@ private [internal] final class EscapeMapped(escTrie: Trie[Int], caretWidth: Int,
 
 // TODO: clean up!
 private [machine] abstract class EscapeSomeNumber(radix: Int) extends Instr {
-    final def someNumber(ctx: Context, n: Int) = {
+    final def someNumber(ctx: Context, n: Int): EscapeSomeNumber.Result = {
         assume(n > 0, "n cannot be zero for EscapeAtMost or EscapeExactly")
         if (ctx.moreInput && pred(ctx.peekChar)) go(ctx, n - 1, ctx.consumeChar().asDigit) else EscapeSomeNumber.NoDigits
     }
@@ -109,27 +109,19 @@ private [internal] final class EscapeAtMost(n: Int, radix: Int) extends EscapeSo
 private [internal] final class EscapeOneOfExactly(radix: Int, ns: List[Int], inexactErr: SpecialisedFilterConfig[Int]) extends EscapeSomeNumber(radix) {
     private val (m :: ms) = ns
     def apply(ctx: Context): Unit = {
-        val next = ctx.pc + 1
         val origOff = ctx.offset
         val origLine = ctx.line
         val origCol = ctx.col
         someNumber(ctx, m) match {
             case EscapeSomeNumber.Good(num) =>
                 assume(new EmptyError(ctx.offset, ctx.line, ctx.col, 0).isExpectedEmpty, "empty errors don't have expecteds, so don't effect hints")
-                ctx.pushAndContinue(num)
+                ctx.stack.push(num)
                 go(ctx, m, m, ms)
-                ctx.pc = next
+                ctx.inc()
             case EscapeSomeNumber.NoDigits => ctx.expectedFail(expected, unexpectedWidth = 1)
-            case EscapeSomeNumber.NoMoreDigits(remaining, num) =>
-                if (remaining == 0) {
-                    ctx.addHints(expected.toSet, unexpectedWidth = 1)
-                    ctx.pushAndContinue(num)
-                    go(ctx, m, m, ms)
-                    ctx.pc = next
-                } else {
-                    // will need the original state
-                    ctx.fail(inexactErr.mkError(origOff, origLine, origCol, ctx.offset - origOff, m - remaining))
-                }
+            case EscapeSomeNumber.NoMoreDigits(remaining, _) =>
+                assume(remaining != 0, "cannot be left with 0 remaining digits and failed")
+                ctx.fail(inexactErr.mkError(origOff, origLine, origCol, ctx.offset - origOff, m - remaining))
         }
     }
 
@@ -140,14 +132,13 @@ private [internal] final class EscapeOneOfExactly(radix: Int, ns: List[Int], ine
             ctx.saveState()
             // FIXME: shadow = !hide so why is it like this?
             ctx.saveHints(shadow = false)
-            //run(ctx, n-m, n) // this is the only place where the failure can actually happen: go never fails
             val origOff = ctx.offset
             val origLine = ctx.line
             val origCol = ctx.col
-            someNumber(ctx, n-m) match {
+            someNumber(ctx, n-m) match { // this is the only place where the failure can actually happen: go never fails
                 case EscapeSomeNumber.Good(num) =>
                     assume(new EmptyError(ctx.offset, ctx.line, ctx.col, 0).isExpectedEmpty, "empty errors don't have expecteds, so don't effect hints")
-                    ctx.pushAndContinue(num)
+                    ctx.stack.push(num)
                     val digitsParsed = go(ctx, n-m, n, ns)
                     ctx.handlers = ctx.handlers.tail
                     ctx.states = ctx.states.tail
@@ -164,28 +155,15 @@ private [internal] final class EscapeOneOfExactly(radix: Int, ns: List[Int], ine
                     ctx.good = true
                     ctx.addErrorToHintsAndPop()
                     digits
-                case EscapeSomeNumber.NoMoreDigits(remaining, num) =>
-                    if (remaining == 0) {
-                        ctx.addHints(expected.toSet, unexpectedWidth = 1)
-                        ctx.pushAndContinue(num)
-                        val digitsParsed = go(ctx, n-m, n, ns)
-                        ctx.handlers = ctx.handlers.tail
-                        ctx.states = ctx.states.tail
-                        ctx.commitHints()
-                        val exp = digitsParsed + digits
-                        val y = ctx.stack.pop[BigInt]()
-                        val x = ctx.stack.peek[BigInt]
-                        ctx.stack.exchange(x * BigInt(radix).pow(exp - digits) + y) // digits is removed here, because it's been added before the get
-                        exp
-                    } else {
-                        // will need the original state
-                        ctx.fail(inexactErr.mkError(origOff, origLine, origCol, ctx.offset - origOff, n - remaining))
-                        ctx.restoreState()
-                        ctx.restoreHints()
-                        ctx.good = true
-                        ctx.addErrorToHintsAndPop()
-                        digits
-                    }
+                case EscapeSomeNumber.NoMoreDigits(remaining, _) =>
+                    assume(remaining != 0, "cannot be left with 0 remaining digits and failed")
+                    // will need the original state
+                    ctx.fail(inexactErr.mkError(origOff, origLine, origCol, ctx.offset - origOff, n - remaining))
+                    ctx.restoreState()
+                    ctx.restoreHints()
+                    ctx.good = true
+                    ctx.addErrorToHintsAndPop()
+                    digits
             }
     }
 

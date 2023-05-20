@@ -93,5 +93,6 @@ class EscapeTests extends ParsleyTest {
         "\\b10000000" -> Some(128),
         "\\b10000001" -> None,
         "\\b01111111" -> Some(127),
+        "\\b011111110" -> None,
     )
 }
