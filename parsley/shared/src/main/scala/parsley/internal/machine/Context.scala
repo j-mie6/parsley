@@ -11,7 +11,7 @@ import parsley.Result
 import parsley.Success
 import parsley.errors.ErrorBuilder
 
-import parsley.internal.errors.{ExpectItem, LineBuilder, UnexpectDesc}
+import parsley.internal.errors.{CaretWidth, ExpectItem, LineBuilder, UnexpectDesc}
 import parsley.internal.machine.errors.{
     ClassicExpectedError, ClassicFancyError, ClassicUnexpectedError, DefuncError,
     DefuncHints, EmptyHints, ErrorItemBuilder, MultiExpectedError
@@ -200,7 +200,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         }
     }
 
-    private [machine] def failWithMessage(caretWidth: Int, msgs: String*): Unit = this.fail(new ClassicFancyError(offset, line, col, caretWidth, msgs: _*))
+    private [machine] def failWithMessage(caretWidth: CaretWidth, msgs: String*): Unit = this.fail(new ClassicFancyError(offset, line, col, caretWidth, msgs: _*))
     private [machine] def unexpectedFail(expected: Option[ExpectItem], unexpected: UnexpectDesc): Unit = {
         this.fail(new ClassicUnexpectedError(offset, line, col, expected, unexpected))
     }

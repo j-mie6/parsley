@@ -7,7 +7,7 @@ import parsley.Parsley
 import parsley.XCompat.unused
 import parsley.errors.combinator, combinator.ErrorMethods
 
-import parsley.internal.errors.UnexpectDesc
+import parsley.internal.errors.{RigidCaret, UnexpectDesc}
 import parsley.internal.machine.errors.{ClassicFancyError, ClassicUnexpectedError, DefuncError, EmptyError, EmptyErrorWithReason}
 
 /** This trait, and its subclasses, can be used to configure how filters should be used within the `Lexer`.
@@ -53,7 +53,7 @@ abstract class SpecialisedMessage[A] extends SpecialisedFilterConfig[A] { self =
     }
     private [parsley] final override def collect[B](p: Parsley[A])(f: PartialFunction[A, B]) = p.collectMsg(message(_))(f)
     private [parsley] final override def mkError(offset: Int, line: Int, col: Int, caretWidth: Int, x: A): DefuncError = {
-        new ClassicFancyError(offset, line, col, caretWidth, message(x): _*)
+        new ClassicFancyError(offset, line, col, new RigidCaret(caretWidth), message(x): _*)
     }
 
     // $COVERAGE-OFF$

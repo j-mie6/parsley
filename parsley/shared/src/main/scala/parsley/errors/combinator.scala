@@ -6,6 +6,7 @@ package parsley.errors
 import parsley.Parsley
 
 import parsley.internal.deepembedding.{frontend, singletons}
+import parsley.internal.errors.{CaretWidth, FlexibleCaret, RigidCaret}
 
 /** This module contains combinators that can be used to directly influence error messages of parsers.
   *
@@ -52,7 +53,7 @@ object combinator {
       * @since 3.0.0
       * @group fail
       */
-    def fail(msg0: String, msgs: String*): Parsley[Nothing] = fail(1, msg0, msgs: _*)
+    def fail(msg0: String, msgs: String*): Parsley[Nothing] = fail(new FlexibleCaret(1), msg0, msgs: _*)
 
     /** This combinator consumes no input and fails immediately with the given error messages.
       *
@@ -70,7 +71,8 @@ object combinator {
       * @since 4.0.0
       * @group fail
       */
-    def fail(caretWidth: Int, msg0: String, msgs: String*): Parsley[Nothing] = new Parsley(new singletons.Fail(caretWidth, (msg0 +: msgs): _*))
+    def fail(caretWidth: Int, msg0: String, msgs: String*): Parsley[Nothing] = fail(new RigidCaret(caretWidth), msg0, msgs: _*)
+    private def fail(caretWidth: CaretWidth, msg0: String, msgs: String*): Parsley[Nothing] = new Parsley(new singletons.Fail(caretWidth, (msg0 +: msgs): _*))
 
     /** This combinator consumes no input and fails immediately, setting the unexpected component
       * to the given item.

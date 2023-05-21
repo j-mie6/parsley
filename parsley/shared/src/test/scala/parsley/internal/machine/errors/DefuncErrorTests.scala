@@ -5,7 +5,7 @@ package parsley.internal.machine.errors
 
 import parsley.ParsleyTest
 
-import parsley.internal.errors.{TrivialError, FancyError, ExpectRaw, ExpectDesc, EndOfInput, UnexpectDesc}
+import parsley.internal.errors.{TrivialError, FancyError, ExpectRaw, ExpectDesc, EndOfInput, RigidCaret, UnexpectDesc}
 
 import MockedBuilders.mockedErrorItemBuilder
 
@@ -41,12 +41,12 @@ class DefuncErrorTests extends ParsleyTest {
     }
 
     "ClassicFancyError" should "evaluate to FancyError" in {
-        val err = new ClassicFancyError(0, 0, 0, 1, "")
+        val err = new ClassicFancyError(0, 0, 0, new RigidCaret(1), "")
         err.isTrivialError shouldBe false
         err.asParseError shouldBe a [FancyError]
     }
     it should "always be empty" in {
-        new ClassicFancyError(0, 0, 0, 1, "hi").isExpectedEmpty shouldBe true
+        new ClassicFancyError(0, 0, 0, new RigidCaret(1), "hi").isExpectedEmpty shouldBe true
     }
 
     "EmptyError" should "evaluate to TrivialError" in {
@@ -77,36 +77,37 @@ class DefuncErrorTests extends ParsleyTest {
         err.asParseError shouldBe a [TrivialError]
     }
     they should "be a trivial error if one trivial child is further than the other fancy child" in {
-        val err1 = new EmptyError(1, 0, 0, 0).merge(new ClassicFancyError(0, 0, 0, 1, ""))
+        val err1 = new EmptyError(1, 0, 0, 0).merge(new ClassicFancyError(0, 0, 0, new RigidCaret(1), ""))
         err1.isTrivialError shouldBe true
         err1.asParseError shouldBe a [TrivialError]
 
-        val err2 = new ClassicFancyError(0, 0, 0, 1, "").merge(new EmptyError(1, 0, 0, 0))
+        val err2 = new ClassicFancyError(0, 0, 0, new RigidCaret(1), "").merge(new EmptyError(1, 0, 0, 0))
         err2.isTrivialError shouldBe true
         err2.asParseError shouldBe a [TrivialError]
     }
+    // TODO: tests for flexible carets
     they should "be a fancy error in any other case" in {
-        val err1 = new EmptyError(0, 0, 0, 0).merge(new ClassicFancyError(0, 0, 0, 1, ""))
+        val err1 = new EmptyError(0, 0, 0, 0).merge(new ClassicFancyError(0, 0, 0, new RigidCaret(1), ""))
         err1.isTrivialError shouldBe false
         err1.asParseError shouldBe a [FancyError]
 
-        val err2 = new ClassicFancyError(0, 0, 0, 1, "").merge(new EmptyError(0, 0, 0, 0))
+        val err2 = new ClassicFancyError(0, 0, 0, new RigidCaret(1), "").merge(new EmptyError(0, 0, 0, 0))
         err2.isTrivialError shouldBe false
         err2.asParseError shouldBe a [FancyError]
 
-        val err3 = new EmptyError(0, 0, 0, 0).merge(new ClassicFancyError(1, 0, 0, 1, ""))
+        val err3 = new EmptyError(0, 0, 0, 0).merge(new ClassicFancyError(1, 0, 0, new RigidCaret(1), ""))
         err3.isTrivialError shouldBe false
         err3.asParseError shouldBe a [FancyError]
 
-        val err4 = new ClassicFancyError(1, 0, 0, 1, "").merge(new EmptyError(0, 0, 0, 0))
+        val err4 = new ClassicFancyError(1, 0, 0, new RigidCaret(1), "").merge(new EmptyError(0, 0, 0, 0))
         err4.isTrivialError shouldBe false
         err4.asParseError shouldBe a [FancyError]
 
-        val err5 = new ClassicFancyError(0, 0, 0, 1, "").merge(new ClassicFancyError(0, 0, 0, 1, ""))
+        val err5 = new ClassicFancyError(0, 0, 0, new RigidCaret(1), "").merge(new ClassicFancyError(0, 0, 0, new RigidCaret(1), ""))
         err5.isTrivialError shouldBe false
         err5.asParseError shouldBe a [FancyError]
 
-        val err6 = new ClassicFancyError(1, 0, 0, 1, "").merge(new ClassicFancyError(0, 0, 0, 1, ""))
+        val err6 = new ClassicFancyError(1, 0, 0, new RigidCaret(1), "").merge(new ClassicFancyError(0, 0, 0, new RigidCaret(1), ""))
         err6.isTrivialError shouldBe false
         err6.asParseError shouldBe a [FancyError]
     }
@@ -127,7 +128,7 @@ class DefuncErrorTests extends ParsleyTest {
         err.asParseError shouldBe a [TrivialError]
     }
     it should "support fancy errors as not trivial" in {
-        val err = new ClassicFancyError(0, 0, 0, 1, "").withHints(EmptyHints)
+        val err = new ClassicFancyError(0, 0, 0, new RigidCaret(1), "").withHints(EmptyHints)
         err.isTrivialError shouldBe false
         err.asParseError shouldBe a [FancyError]
     }
@@ -142,7 +143,7 @@ class DefuncErrorTests extends ParsleyTest {
         err.asParseError shouldBe a [TrivialError]
     }
     it should "support fancy errors as not trivial" in {
-        val err = new ClassicFancyError(0, 0, 0, 1, "").withReason("")
+        val err = new ClassicFancyError(0, 0, 0, new RigidCaret(1), "").withReason("")
         err.isTrivialError shouldBe false
         err.asParseError shouldBe a [FancyError]
     }
@@ -157,7 +158,7 @@ class DefuncErrorTests extends ParsleyTest {
         err.asParseError shouldBe a [TrivialError]
     }
     it should "support fancy errors as not trivial" in {
-        val err = new ClassicFancyError(0, 0, 0, 1, "").label("", 0)
+        val err = new ClassicFancyError(0, 0, 0, new RigidCaret(1), "").label("", 0)
         err.isTrivialError shouldBe false
         err.asParseError shouldBe a [FancyError]
     }
@@ -182,7 +183,7 @@ class DefuncErrorTests extends ParsleyTest {
         errOut.offset shouldBe 10
     }
     it should "work for fancy errors too" in {
-        val err = new ClassicFancyError(0, 0, 0, 1, "").amend(10, 10, 10)
+        val err = new ClassicFancyError(0, 0, 0, new RigidCaret(1), "").amend(10, 10, 10)
         val errOut = err.asParseError
         errOut.col shouldBe 10
         errOut.line shouldBe 10
@@ -198,7 +199,7 @@ class DefuncErrorTests extends ParsleyTest {
         errOut.offset shouldBe 0
     }
     it should "work for fancy errors too" in {
-        val err = new ClassicFancyError(0, 0, 0, 1, "").entrench.amend(10, 10, 10)
+        val err = new ClassicFancyError(0, 0, 0, new RigidCaret(1), "").entrench.amend(10, 10, 10)
         val errOut = err.asParseError
         err.entrenched shouldBe true
         errOut.col shouldBe 0
@@ -216,7 +217,7 @@ class DefuncErrorTests extends ParsleyTest {
         err2.offset shouldBe 10
     }
     it should "work for fancy errors too" in {
-        val err = new ClassicFancyError(0, 0, 0, 1, "").entrench
+        val err = new ClassicFancyError(0, 0, 0, new RigidCaret(1), "").entrench
         require(err.entrenched)
         err.dislodge.entrenched shouldBe false
         val err2 = err.dislodge.amend(10, 10, 10).asParseError

@@ -3,7 +3,7 @@
  */
 package parsley.internal.machine.instructions
 
-import parsley.internal.errors.UnexpectDesc
+import parsley.internal.errors.{CaretWidth, RigidCaret, UnexpectDesc}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.{ClassicExpectedError, ClassicExpectedErrorWithReason, ClassicFancyError, EmptyError}
@@ -141,7 +141,7 @@ private [internal] object SetLexicalAndFail extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class Fail(width: Int, msgs: String*) extends Instr {
+private [internal] final class Fail(width: CaretWidth, msgs: String*) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         ctx.failWithMessage(width, msgs: _*)
@@ -177,7 +177,7 @@ private [internal] class MakeVerifiedError private (msggen: Either[Any => Seq[St
         val caretWidth = ctx.offset - state.offset
         val x = ctx.stack.upeek
         val err = msggen match {
-            case Left(f) => new ClassicFancyError(state.offset, state.line, state.col, caretWidth, f(x): _*)
+            case Left(f) => new ClassicFancyError(state.offset, state.line, state.col, new RigidCaret(caretWidth), f(x): _*)
             case Right(Some(f)) => new ClassicExpectedErrorWithReason(state.offset, state.line, state.col, None, f(x), caretWidth)
             case Right(None) => new ClassicExpectedError(state.offset, state.line, state.col, None, caretWidth)
         }

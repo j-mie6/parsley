@@ -5,7 +5,7 @@ package parsley.internal.machine.errors
 
 import parsley.XAssert._
 
-import parsley.internal.errors.{ExpectDesc, ExpectItem, FancyError, ParseError, TrivialError, UnexpectDesc}
+import parsley.internal.errors.{CaretWidth, ExpectDesc, ExpectItem, FancyError, ParseError, TrivialError, UnexpectDesc}
 
 // This file contains the defunctionalised forms of the error messages.
 // Essentially, whenever an error is created in the machine, it should make use of one of
@@ -293,12 +293,13 @@ private [parsley] final class ClassicUnexpectedError(val offset: Int, val line: 
         builder.updateUnexpected(unexpected)
     }
 }
-private [parsley] final class ClassicFancyError(val offset: Int, val line: Int, val col: Int, caretWidth: Int, val msgs: String*) extends FancyDefuncError {
+
+private [parsley] final class ClassicFancyError(val offset: Int, val line: Int, val col: Int, caretWidth: CaretWidth, val msgs: String*) extends FancyDefuncError {
     override final val flags = DefuncError.ExpectedEmptyMask
     override def makeFancy(builder: FancyErrorBuilder): Unit = {
         builder.pos_=(line, col)
         builder ++= msgs
-        builder.updateCaretWidth(caretWidth)
+        builder.updateCaretWidth(caretWidth.width)
     }
 }
 private [parsley] final class EmptyError(val offset: Int, val line: Int, val col: Int, val unexpectedWidth: Int) extends BaseError {
