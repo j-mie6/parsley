@@ -5,7 +5,9 @@ package parsley.internal.machine.errors
 
 import scala.collection.mutable
 
-import parsley.internal.errors.{EndOfInput, ExpectItem, FancyError, TrivialError, UnexpectDesc, UnexpectItem}
+import parsley.XAssert._
+
+import parsley.internal.errors.{CaretWidth, EndOfInput, ExpectItem, FancyError, TrivialError, UnexpectDesc, UnexpectItem}
 
 import TrivialErrorBuilder.{BuilderUnexpectItem, NoItem, Other, Raw}
 
@@ -145,6 +147,7 @@ private [errors] final class FancyErrorBuilder(offset: Int, lexicalError: Boolea
     private var line: Int = _
     private var col: Int = _
     private var caretWidth: Int = 0
+    private var flexibleCaret: Boolean = true
     private val msgs = mutable.ListBuffer.empty[String]
 
     /** Updates the position of the error message.
@@ -157,7 +160,19 @@ private [errors] final class FancyErrorBuilder(offset: Int, lexicalError: Boolea
         this.col = col
     }
 
-    def updateCaretWidth(width: Int): Unit = this.caretWidth = math.max(this.caretWidth, width)
+    def updateCaretWidth(width: Int): Unit = {
+        assume(flexibleCaret, "if we are updating direct from a TrivialError, we better be flexible!")
+        this.caretWidth = math.max(this.caretWidth, width)
+    }
+    def updateCaretWidth(width: CaretWidth): Unit = {
+        // if they match, just take the max
+        if (width.isFlexible == this.flexibleCaret) this.caretWidth = math.max(this.caretWidth, width.width)
+        // if they don't match and we are rigid, then we override the flexible caret, otherwise do nothing
+        else if (!width.isFlexible) {
+            this.caretWidth = width.width
+            this.flexibleCaret = false
+        }
+    }
 
     /** Adds a collection of new error message lines into this error.
       *

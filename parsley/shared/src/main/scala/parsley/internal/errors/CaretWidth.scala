@@ -5,6 +5,11 @@ package parsley.internal.errors
 
 private [parsley] sealed abstract class CaretWidth {
     def width: Int
+    def isFlexible: Boolean
 }
-private [parsley] class FlexibleCaret(val width: Int) extends CaretWidth
-private [parsley] class RigidCaret(val width: Int) extends CaretWidth
+private [parsley] class FlexibleCaret(val width: Int) extends CaretWidth {
+    def isFlexible: Boolean = true
+}
+private [parsley] class RigidCaret(val width: Int) extends CaretWidth {
+    def isFlexible: Boolean = false
+}
