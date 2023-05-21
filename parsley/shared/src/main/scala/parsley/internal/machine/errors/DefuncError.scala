@@ -287,7 +287,8 @@ private [parsley] final class ClassicUnexpectedError(val offset: Int, val line: 
     override final val flags = if (expected.isEmpty) (DefuncError.ExpectedEmptyMask | DefuncError.TrivialErrorMask).toByte else DefuncError.TrivialErrorMask
     override def expectedIterable: Iterable[ExpectItem] = expected
     override private [errors] def unexpectedWidth: Int = unexpected.width
-    override def addLabelsAndReasons(builder: TrivialErrorBuilder): Unit = {
+    override def makeTrivial(builder: TrivialErrorBuilder): Unit = {
+        builder.pos_=(line, col)
         builder += expected
         builder.updateUnexpected(unexpected)
     }
