@@ -111,11 +111,12 @@ object combinators {
     (() => context.getFinalBuilder.reconstruct, fresh(context.reset()) *> new Parsley(attached))
   }
 
-  /** Attach a debugger and an implicitly-available GUI frontend in which the debug tree should be
+  /** Attach a debugger and an explicitly-available GUI frontend in which the debug tree should be
     * rendered in.
     *
-    * One would normally obtain a [[DebugGUI]] frontend from its respective package via a call to
-    * `newInstance` or similar. [[ConsoleGUI]] is included as a fallback option.
+    * One would normally obtain a [[DebugGUI]] frontend from its respective package as either a
+    * static object or an instance object depending on whether the renderer stores state. In the
+    * latter case, it is better to regenerate the GUI with every new debugged parser.
     *
     * The instrumented parser will automatically call the GUI to render the debug tree.
     *
@@ -130,7 +131,7 @@ object combinators {
     * @return A modified parser which will ask the frontend to render the produced debug tree after
     *         a call to [[Parsley.parse]] is made.
     */
-  def attachDebuggerGUI[A](parser: Parsley[A])(implicit gui: DebugGUI): Parsley[A] = {
+  def attachDebuggerGUI[A](parser: Parsley[A], gui: DebugGUI): Parsley[A] = {
     val (tree, attached) = attachDebugger(parser)
 
     // Ideally, this should run 'attached', and render the tree regardless of the parser's success.
@@ -143,4 +144,10 @@ object combinators {
 
     attempt(attached <* renderer) <|> (renderer *> empty)
   }
+
+  /** Attach a debugger and an implicitly-available GUI frontend in which the debug tree should be
+    * rendered in. See the explicit overload for more information.
+    */
+  def attachDebuggerGUI[A](parser: Parsley[A])(implicit gui: DebugGUI): Parsley[A] =
+    attachDebuggerGUI(parser, gui)
 }
