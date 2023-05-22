@@ -44,61 +44,6 @@ object combinators {
     *
     * See [[attachDebuggerGUI]] to automate the GUI rendering process after parsing.
     *
-    * @example {{{
-    * scala> // Assume ExprParser is an object that contains some named parsers that evaluate a
-    * simple addition or subtraction expression and return the result of the expression.
-    * scala> // Remember, collectNames is optional, but helps a lot when it is available.
-    * scala> import parsley.debugger.util.collectNames
-    * scala> import parsley.debugger.combinators.attachDebugger
-    * scala> collectNames(ExprParser)
-    * scala> val (tree, debugged) = attachDebugger(ExprParser.mainParser)
-    * val tree: () => parsley.debugger.objects.DebugTree = parsley.debugger.combinator.package$$$Lambda$8617/0x000000080227d020@aaa80a5
-    * val debugged: parsley.Parsley[Int] = parsley.Parsley@3c9e38eb
-    * scala> debugged.parse("5 + 3 - 2")
-    * val res1: parsley.Result[String,Int] = Success(6)
-    * scala> println(tree())
-    * [ mainParser ]: ("5 + 3 - 2", Success)
-    * |
-    * +-[ Chainl ]: ("5 + 3 - 2", Success)
-    * |
-    * +-[ *> ]: ("5", Success), (" 3", Success), (" 2", Success)
-    * | |
-    * | +-[ SkipMany ]: ("", Success), (" ", Success), (" ", Success)
-    * | | |
-    * | | +-[ ErrorLabel ]: ("5", Failure), (" ", Success), ("3", Failure), (" ", Success), ("2", Failure)
-    * | |   |
-    * | |   +-[ Satisfy ]: ("5", Failure), (" ", Success), ("3", Failure), (" ", Success), ("2", Failure)
-    * | |
-    * | +-[ positiveNum ]: ("5", Success), ("3", Success), ("2", Success)
-    * |   |
-    * |   +-[ Pure ]: ("", Success), ("", Success), ("", Success)
-    * |   |
-    * |   +-[ Many ]: ("5", Success), ("3", Success), ("2", Success)
-    * |     |
-    * |     +-[ Satisfy ]: ("5", Success), (" ", Failure), ("3", Success), (" ", Failure), ("2", Success), ("", Failure)
-    * |
-    * +-[ *> ]: (" +", Success), (" -", Success), ("", Failure)
-    * |
-    * +-[ SkipMany ]: (" ", Success), (" ", Success), ("", Success)
-    * | |
-    * | +-[ ErrorLabel ]: (" ", Success), ("+", Failure), (" ", Success), ("-", Failure), ("", Failure)
-    * |   |
-    * |   +-[ Satisfy ]: (" ", Success), ("+", Failure), (" ", Success), ("-", Failure), ("", Failure)
-    * |
-    * +-[ mainParser ]: ("+", Success), ("-", Success), ("", Failure)
-    * |
-    * +-[ *> ]: ("+", Success), ("-", Failure), ("", Failure)
-    * | |
-    * | +-[ CharTok ]: ("+", Success), ("-", Failure), ("", Failure)
-    * | |
-    * | +-[ Pure ]: ("", Success)
-    * |
-    * +-[ *> ]: ("-", Success), ("", Failure)
-    * |
-    * +-[ CharTok ]: ("-", Success), ("", Failure)
-    * |
-    * +-[ Pure ]: ("", Success)
-    * }}}
     * @param parser The parser to debug.
     * @tparam A Output type of original parser.
     * @return A pair of the finalised tree, and the instrumented parser.
@@ -121,9 +66,7 @@ object combinators {
     * The instrumented parser will automatically call the GUI to render the debug tree.
     *
     * See [[attachDebugger]] for more information on how attachment works and things you may want
-    * to do before using this debug combinator. The example there also mostly applies here, where
-    * the only differences are that the tree is not exposed to you, and will be automatically
-    * rendered by the implicitly given backend after parsing.
+    * to do before using this debug combinator.
     *
     * @param parser The parser to debug.
     * @param gui    The GUI frontend instance to render with.
@@ -146,8 +89,8 @@ object combinators {
   }
 
   /** Attach a debugger and an implicitly-available GUI frontend in which the debug tree should be
-    * rendered in. See the explicit overload for more information.
+    * rendered in. See [[attachDebuggerGUI]] for more information.
     */
-  def attachDebuggerGUI[A](parser: Parsley[A])(implicit gui: DebugGUI): Parsley[A] =
-    attachDebuggerGUI(parser, gui)
+  def attachDebuggerImplicitGUI[A](parser: Parsley[A])(implicit gui: DebugGUI): Parsley[A]
+    = attachDebuggerGUI(parser, gui)
 }
