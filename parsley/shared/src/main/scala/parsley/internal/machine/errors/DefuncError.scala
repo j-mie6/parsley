@@ -115,11 +115,11 @@ private [parsley] sealed abstract class DefuncError {
     private [machine] def markAsLexical(offset: Int): DefuncError
 }
 private [errors] object DefuncError {
-    private [errors] final val TrivialErrorMask: Byte = 1 << 0
-    private [errors] final val ExpectedEmptyMask: Byte = 1 << 1
-    private [errors] final val EntrenchedMask: Byte = 1 << 2
-    private [errors] final val LexicalErrorMask: Byte = 1 << 3
-    private [errors] final val FlexibleCaretMask: Byte = 1 << 4
+    private [errors] final val TrivialErrorMask = 1 << 0
+    private [errors] final val ExpectedEmptyMask = 1 << 1
+    private [errors] final val EntrenchedMask = 1 << 2
+    private [errors] final val LexicalErrorMask = 1 << 3
+    private [errors] final val FlexibleCaretMask = 1 << 4
 }
 
 /** Represents partially evaluated trivial errors */
