@@ -9,7 +9,7 @@ import parsley.XAssert._
 import parsley.token.descriptions.SpaceDesc
 import parsley.token.errors.ErrorConfig
 
-import parsley.internal.errors.{ExpectDesc, ExpectItem, UnexpectDesc}
+import parsley.internal.errors.{ExpectDesc, ExpectItem, RigidCaret, UnexpectDesc}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 
@@ -221,7 +221,7 @@ private [internal] final class TokenNonSpecific(name: String, unexpectedIllegal:
     private def ensureLegal(ctx: Context, tok: String) = {
         if (illegal(tok)) {
             ctx.offset -= tok.length
-            ctx.unexpectedFail(expected = expected, unexpected = new UnexpectDesc(unexpectedIllegal(tok), tok.length))
+            ctx.unexpectedFail(expected = expected, unexpected = new UnexpectDesc(unexpectedIllegal(tok), new RigidCaret(tok.length)))
         }
         else {
             ctx.col += tok.length

@@ -7,7 +7,7 @@ import scala.annotation.tailrec
 
 import parsley.token.errors.LabelConfig
 
-import parsley.internal.errors.{EndOfInput, ExpectDesc, ExpectItem, UnexpectDesc}
+import parsley.internal.errors.{EndOfInput, ExpectDesc, ExpectItem, RigidCaret, UnexpectDesc}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.{ClassicFancyError, ClassicUnexpectedError, DefuncError, EmptyError, EmptyErrorWithReason}
@@ -248,7 +248,7 @@ private [internal] final class GuardAgainst(pred: PartialFunction[Any, Seq[Strin
         if (pred.isDefinedAt(ctx.stack.upeek)) {
             val state = ctx.states
             val caretWidth = ctx.offset - state.offset
-            ctx.fail(new ClassicFancyError(state.offset, state.line, state.col, caretWidth, pred(ctx.stack.upop()): _*))
+            ctx.fail(new ClassicFancyError(state.offset, state.line, state.col, new RigidCaret(caretWidth), pred(ctx.stack.upop()): _*))
         }
         else ctx.inc()
         ctx.states = ctx.states.tail
@@ -269,7 +269,7 @@ private [internal] final class UnexpectedWhen(pred: PartialFunction[Any, (String
             val state = ctx.states
             val caretWidth = ctx.offset - state.offset
             val (unex, reason) = pred(ctx.stack.upop())
-            val err = new ClassicUnexpectedError(state.offset, state.line, state.col, None, new UnexpectDesc(unex, caretWidth))
+            val err = new ClassicUnexpectedError(state.offset, state.line, state.col, None, new UnexpectDesc(unex, new RigidCaret(caretWidth)))
             ctx.fail(reason.fold[DefuncError](err)(err.withReason(_)))
         }
         else ctx.inc()
