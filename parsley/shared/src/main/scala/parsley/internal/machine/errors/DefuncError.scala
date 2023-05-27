@@ -114,12 +114,15 @@ private [parsley] sealed abstract class DefuncError {
       */
     private [machine] def markAsLexical(offset: Int): DefuncError
 }
+// These are not covered by coverage because they are all inlined
 private [errors] object DefuncError {
+    // $COVERAGE-OFF$
     private [errors] final val TrivialErrorMask = 1 << 0
     private [errors] final val ExpectedEmptyMask = 1 << 1
     private [errors] final val EntrenchedMask = 1 << 2
     private [errors] final val LexicalErrorMask = 1 << 3
     private [errors] final val FlexibleCaretMask = 1 << 4
+    // $COVERAGE-ON$
 }
 
 /** Represents partially evaluated trivial errors */
@@ -304,7 +307,8 @@ private [parsley] final class ClassicUnexpectedError(val offset: Int, val line: 
     }
 }
 
-private [parsley] final class ClassicFancyError(val offset: Int, val line: Int, val col: Int, caretWidth: CaretWidth, val msgs: String*) extends FancyDefuncError {
+private [parsley] final class ClassicFancyError(val offset: Int, val line: Int, val col: Int, caretWidth: CaretWidth, val msgs: String*)
+    extends FancyDefuncError {
     override final val flags =
         if (caretWidth.isFlexible) (DefuncError.ExpectedEmptyMask | DefuncError.FlexibleCaretMask).toByte else DefuncError.ExpectedEmptyMask
     override def makeFancy(builder: FancyErrorBuilder): Unit = {
