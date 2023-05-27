@@ -14,7 +14,7 @@ private [parsley] final class Fail(width: CaretWidth, msgs: String*) extends Sin
     override def instr: instructions.Instr = new instructions.Fail(width, msgs: _*)
 }
 
-private [parsley] final class Unexpected(msg: String, width: Int) extends Singleton[Nothing] with MZero {
+private [parsley] final class Unexpected(msg: String, width: CaretWidth) extends Singleton[Nothing] with MZero {
     // $COVERAGE-OFF$
     override def pretty: String = s"unexpected($msg)"
     // $COVERAGE-ON$

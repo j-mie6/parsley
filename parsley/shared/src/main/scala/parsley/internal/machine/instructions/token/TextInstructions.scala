@@ -16,7 +16,7 @@ import parsley.internal.machine.errors.{EmptyError, MultiExpectedError}
 import parsley.internal.machine.instructions.Instr
 
 private [internal] final class EscapeMapped(escTrie: Trie[Int], caretWidth: Int, expecteds: Set[ExpectItem]) extends Instr {
-    def this(escTrie: Trie[Int], escs: Set[String]) = this(escTrie, escs.view.map(_.length).max, escs.map(ExpectRaw(_)))
+    def this(escTrie: Trie[Int], escs: Set[String]) = this(escTrie, escs.view.map(_.length).max, escs.map(new ExpectRaw(_)))
     // Do not consume input on failure, it's possible another escape sequence might share a lead
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
@@ -67,10 +67,10 @@ private [machine] abstract class EscapeSomeNumber(radix: Int) extends Instr {
     }
 
     protected val expected: Some[ExpectDesc] = radix match {
-        case 10 => Some(ExpectDesc("digit"))
-        case 16 => Some(ExpectDesc("hexadecimal digit"))
-        case 8 => Some(ExpectDesc("octal digit"))
-        case 2 => Some(ExpectDesc("bit"))
+        case 10 => Some(new ExpectDesc("digit"))
+        case 16 => Some(new ExpectDesc("hexadecimal digit"))
+        case 8 => Some(new ExpectDesc("octal digit"))
+        case 2 => Some(new ExpectDesc("bit"))
     }
 
     protected val pred: Char => Boolean = radix match {

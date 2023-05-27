@@ -144,7 +144,7 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
         case self: BaseError           =>
             collector ++= self.expectedIterable
             collector.updateWidth(self.unexpectedWidth)
-        case self: WithLabel           => if (self.label.nonEmpty) collector += ExpectDesc(self.label)
+        case self: WithLabel           => if (self.label.nonEmpty) collector += new ExpectDesc(self.label)
         case self: WithHints           =>
             self.hints.collect(collector)
             self.err.collectHints(collector)
@@ -296,7 +296,7 @@ private [parsley] final class ClassicUnexpectedError(val offset: Int, val line: 
                                                      val unexpected: UnexpectDesc) extends BaseError {
     override final val flags = if (expected.isEmpty) (DefuncError.ExpectedEmptyMask | DefuncError.TrivialErrorMask).toByte else DefuncError.TrivialErrorMask
     override def expectedIterable: Iterable[ExpectItem] = expected
-    override private [errors] def unexpectedWidth: Int = unexpected.width
+    override private [errors] def unexpectedWidth: Int = unexpected.width.width
     override def makeTrivial(builder: TrivialErrorBuilder): Unit = {
         builder.pos_=(line, col)
         builder += expected
@@ -398,7 +398,7 @@ private [errors] final class WithLabel private [errors] (val err: TrivialDefuncE
         builder.ignoreExpected {
             err.makeTrivial(builder)
         }
-        if (label.nonEmpty) builder += ExpectDesc(label)
+        if (label.nonEmpty) builder += new ExpectDesc(label)
     }
 }
 

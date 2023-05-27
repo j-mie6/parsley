@@ -151,8 +151,8 @@ private [internal] final class Fail(width: CaretWidth, msgs: String*) extends In
     // $COVERAGE-ON$
 }
 
-private [internal] final class Unexpected(msg: String, width: Int) extends Instr {
-    private [this] val unexpected = UnexpectDesc(msg, width)
+private [internal] final class Unexpected(msg: String, width: CaretWidth) extends Instr {
+    private [this] val unexpected = new UnexpectDesc(msg, width)
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         ctx.unexpectedFail(None, unexpected)

@@ -91,7 +91,7 @@ abstract class Unexpected[A] extends VanillaFilterConfig[A] { self =>
         case x if !f(x) => unexpected(x)
     }
     private [parsley] final override def mkError(offset: Int, line: Int, col: Int, caretWidth: Int, x: A): DefuncError = {
-        new ClassicUnexpectedError(offset, line, col, None, new UnexpectDesc(unexpected(x), caretWidth))
+        new ClassicUnexpectedError(offset, line, col, None, new UnexpectDesc(unexpected(x), new RigidCaret(caretWidth)))
     }
 
     // $COVERAGE-OFF$
@@ -172,7 +172,7 @@ abstract class UnexpectedBecause[A] extends VanillaFilterConfig[A] { self =>
         case x if !f(x) => (unexpected(x), reason(x))
     }
     private [parsley] final override def mkError(offset: Int, line: Int, col: Int, caretWidth: Int, x: A): DefuncError = {
-        new ClassicUnexpectedError(offset, line, col, None, new UnexpectDesc(unexpected(x), caretWidth)).withReason(reason(x))
+        new ClassicUnexpectedError(offset, line, col, None, new UnexpectDesc(unexpected(x), new RigidCaret(caretWidth))).withReason(reason(x))
     }
 
     // $COVERAGE-OFF$

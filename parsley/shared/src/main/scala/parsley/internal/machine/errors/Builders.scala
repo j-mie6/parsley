@@ -6,7 +6,7 @@ package parsley.internal.machine.errors
 import parsley.internal.errors.{UnexpectItem, UnexpectRaw}
 
 private [machine] abstract class ErrorItemBuilder {
-    final private [errors] def apply(offset: Int, size: Int): UnexpectItem = UnexpectRaw(iterableFrom(offset), size)
+    final private [errors] def apply(offset: Int, size: Int): UnexpectItem = new UnexpectRaw(iterableFrom(offset), size)
 
     private [errors] def inRange(offset: Int): Boolean
 

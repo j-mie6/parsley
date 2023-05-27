@@ -38,7 +38,7 @@ private [machine] sealed abstract class DefuncHints {
     final private [errors] def collect(collector: HintCollector): Unit = {
         this match {
             case EmptyHints =>
-            case self: ReplaceHint => collector += ExpectDesc(self.label)
+            case self: ReplaceHint => collector += new ExpectDesc(self.label)
             case self: MergeHints =>
                 self.oldHints.collect(collector)
                 self.newHints.collect(collector)
