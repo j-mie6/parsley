@@ -49,7 +49,7 @@ class DefuncErrorTests extends ParsleyTest {
         pRigid.asInstanceOf[TrivialError].unexpected.fold(identity, _.formatUnexpect(false)._2.toCaretLength(0, 10, Nil)) shouldBe 1
         val pFlex1 = errFlex1.merge(err).asParseError
         pFlex1 shouldBe a [TrivialError]
-        pFlex1.asInstanceOf[TrivialError].unexpected.fold(identity, _.formatUnexpect(false)._2.toCaretLength(0, 10, Nil)) shouldBe 1 // FIXME:
+        pFlex1.asInstanceOf[TrivialError].unexpected.fold(identity, _.formatUnexpect(false)._2.toCaretLength(0, 10, Nil)) shouldBe 5
         val pFlex2 = errFlex2.merge(err).asParseError
         pFlex2 shouldBe a [TrivialError]
         pFlex2.asInstanceOf[TrivialError].unexpected.fold(identity, _.formatUnexpect(false)._2.toCaretLength(0, 10, Nil)) shouldBe 6

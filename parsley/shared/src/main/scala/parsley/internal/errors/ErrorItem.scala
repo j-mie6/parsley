@@ -12,6 +12,8 @@ private [internal] sealed abstract class UnexpectItem extends ErrorItem {
     private [internal] def higherPriority(other: UnexpectItem): Boolean
     protected [errors] def lowerThanRaw(other: UnexpectRaw): Boolean
     protected [errors] def lowerThanDesc(other: UnexpectDesc): Boolean
+    private [internal] def isFlexible: Boolean
+    private [internal] def widen(caret: Int): UnexpectItem
 }
 private [parsley] sealed trait ExpectItem extends ErrorItem {
     private [internal] def formatExpect(implicit builder: ErrorBuilder[_]): builder.Item
@@ -28,6 +30,8 @@ private [internal] final case class UnexpectRaw(val cs: Iterable[Char], val amou
     private [internal] override def higherPriority(other: UnexpectItem): Boolean = other.lowerThanRaw(this)
     protected [errors] override def lowerThanRaw(other: UnexpectRaw): Boolean = this.amountOfInputParserWanted < other.amountOfInputParserWanted
     protected [errors] override def lowerThanDesc(other: UnexpectDesc): Boolean = true
+    private [internal] override def isFlexible: Boolean = true
+    private [internal] override def widen(caret: Int): UnexpectItem = this.copy(amountOfInputParserWanted = math.max(caret, amountOfInputParserWanted))
 }
 
 private [parsley] final case class ExpectRaw(cs: String) extends ExpectItem {
@@ -46,7 +50,15 @@ private [parsley] final case class UnexpectDesc(msg: String, val width: CaretWid
         (builder.named(msg), TokenSpan.Width(width.width))
     private [internal] override def higherPriority(other: UnexpectItem): Boolean = other.lowerThanDesc(this)
     protected [errors] override def lowerThanRaw(other: UnexpectRaw): Boolean = false
-    protected [errors] override def lowerThanDesc(other: UnexpectDesc): Boolean = this.width.width < other.width.width
+    protected [errors] override def lowerThanDesc(other: UnexpectDesc): Boolean = {
+        if (this.isFlexible != other.isFlexible) !other.isFlexible
+        else this.width.width < other.width.width
+    }
+    private [internal] override def isFlexible: Boolean = width.isFlexible
+    private [internal] override def widen(caret: Int): UnexpectItem = {
+        assert(width.isFlexible, "can only widen flexible carets!")
+        this.copy(width = new FlexibleCaret(math.max(width.width, caret)))
+    }
 }
 private [internal] object EndOfInput extends UnexpectItem with ExpectItem {
     private [internal] def formatExpect(implicit builder: ErrorBuilder[_]): builder.Item = builder.endOfInput
@@ -55,4 +67,6 @@ private [internal] object EndOfInput extends UnexpectItem with ExpectItem {
     private [internal] override def higherPriority(other: UnexpectItem): Boolean = true
     protected [errors] override def lowerThanRaw(other: UnexpectRaw): Boolean = false
     protected [errors] override def lowerThanDesc(other: UnexpectDesc): Boolean = false
+    private [internal] override def isFlexible: Boolean = false
+    private [internal] override def widen(caret: Int): UnexpectItem = this
 }

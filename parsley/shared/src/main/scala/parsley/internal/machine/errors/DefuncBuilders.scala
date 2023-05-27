@@ -117,13 +117,16 @@ private [errors] object TrivialErrorBuilder {
     private [TrivialErrorBuilder] final class Raw(val size: Int) extends BuilderUnexpectItem {
         final def pickHigher(other: BuilderUnexpectItem): BuilderUnexpectItem = other.pickRaw(this)
         final override def pickRaw(other: Raw): Raw = if (this.size > other.size) this else other
-        final override def pickOther(other: Other): Other = other
+        final override def pickOther(other: Other): Other = other.pickRaw(this)
         final override def pickNoItem(other: NoItem): Raw = this
         def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Either[Int, UnexpectItem] = Right(builder(offset, size))
     }
     private [TrivialErrorBuilder] final class Other(val underlying: UnexpectItem) extends BuilderUnexpectItem {
         final def pickHigher(other: BuilderUnexpectItem): BuilderUnexpectItem = other.pickOther(this)
-        final override def pickRaw(other: Raw): Other = this
+        final override def pickRaw(other: Raw): Other = {
+            if (underlying.isFlexible) new Other(underlying.widen(other.size))
+            else this
+        }
         final override def pickOther(other: Other): Other = if (this.underlying.higherPriority(other.underlying)) this else other
         final override def pickNoItem(other: NoItem): Other = this
         def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Either[Int, UnexpectItem] = Right(underlying)
