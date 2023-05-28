@@ -187,17 +187,17 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
         else this
     }
     private [machine] final override def amend(offset: Int, line: Int, col: Int): TrivialDefuncError = {
-        if (this.entrenchedBy == 0) new TrivialAmended(offset, line, col, this)
+        if (!this.entrenched) new TrivialAmended(offset, line, col, this)
         else this
     }
     private [machine] final override def entrench: TrivialDefuncError = this match {
-        case self: TrivialDislodged => new TrivialEntrenched(self.err)
-        case self if self.entrenchedBy == 0 => new TrivialEntrenched(this)
-        case self => self
+        //case self: TrivialDislodged => new TrivialEntrenched(self.err) //TODO: this is desirable, but would need to change the additive nature of the entrench
+        case self /*if self.entrenchedBy == 0*/ => new TrivialEntrenched(1, self)
+        //case self => self
     }
     private [machine] final override def dislodge: TrivialDefuncError = this match {
         case self: TrivialEntrenched => self.err
-        case self if self.entrenchedBy != 0 => new TrivialDislodged(this)
+        case self if self.entrenched => new TrivialDislodged(1, this)
         case self => self
     }
     private [machine] final override def markAsLexical(offset: Int): TrivialDefuncError = {
@@ -230,17 +230,17 @@ private [errors] sealed abstract class FancyDefuncError extends DefuncError {
     private [parsley] final override def withReason(reason: String): FancyDefuncError = this
     private [machine] final override def label(label: String, offset: Int): FancyDefuncError = this
     private [machine] final override def amend(offset: Int, line: Int, col: Int): FancyDefuncError = {
-        if (this.entrenchedBy == 0) new FancyAmended(offset, line, col, this)
+        if (!this.entrenched) new FancyAmended(offset, line, col, this)
         else this
     }
     private [machine] final override def entrench: FancyDefuncError = this match {
-        case self: FancyDislodged => new FancyEntrenched(self.err)
-        case self if self.entrenchedBy == 0 => new FancyEntrenched(this)
-        case self => self
+        //case self: FancyDislodged => new FancyEntrenched(1, self.err) //TODO: this is desirable, but would need to change the additive nature of the entrench
+        case self /*if self.entrenchedBy == 0*/ => new FancyEntrenched(1, self)
+        //case self => self
     }
     private [machine] final override def dislodge: FancyDefuncError = this match {
         case self: FancyEntrenched => self.err
-        case self if self.entrenchedBy != 0 => new FancyDislodged(this)
+        case self if self.entrenched => new FancyDislodged(1, this)
         case self => self
     }
     private [machine] final override def markAsLexical(offset: Int): FancyDefuncError = {
@@ -428,27 +428,36 @@ private [errors] final class FancyAmended private [errors] (val offset: Int, val
     }
 }
 
-private [errors] final class TrivialEntrenched private [errors] (val err: TrivialDefuncError) extends TrivialTransitive {
-    override final val flags = err.flags | DefuncError.EntrenchedMask
+private [errors] final class TrivialEntrenched private [errors] (by: Int, val err: TrivialDefuncError) extends TrivialTransitive {
+    assume((DefuncError.EntrenchedMask & 1) == 1, "the entrenchment is the least significant bits of the flag")
+    override final val flags = err.flags + by//| DefuncError.EntrenchedMask
+    assert((flags & ~DefuncError.EntrenchedMask) == (err.flags & ~DefuncError.EntrenchedMask), "entrench should not affect any other flags")
     override val offset = err.offset
     override def makeTrivial(builder: TrivialErrorBuilder): Unit = err.makeTrivial(builder)
 }
 
-private [errors] final class TrivialDislodged private [errors] (val err: TrivialDefuncError) extends TrivialTransitive {
+private [errors] final class TrivialDislodged private [errors] (val by: Int, val err: TrivialDefuncError) extends TrivialTransitive {
     assume(err.entrenched, "an dislodge will only occur on unentrenched errors")
-    override final val flags = err.flags & ~DefuncError.EntrenchedMask
+    assume((DefuncError.EntrenchedMask & 1) == 1, "the entrenchment is the least significant bits of the flag")
+    override final val flags = if (err.entrenchedBy > by) err.flags - by else err.flags & ~DefuncError.EntrenchedMask
+    assert((flags & ~DefuncError.EntrenchedMask) == (err.flags & ~DefuncError.EntrenchedMask), "dislodge should not affect any other flags")
     override val offset = err.offset
     override def makeTrivial(builder: TrivialErrorBuilder): Unit = err.makeTrivial(builder)
 }
 
-private [errors] final class FancyEntrenched private [errors] (val err: FancyDefuncError) extends FancyDefuncError {
-    override final val flags = err.flags | DefuncError.EntrenchedMask
+private [errors] final class FancyEntrenched private [errors] (by: Int, val err: FancyDefuncError) extends FancyDefuncError {
+    assume((DefuncError.EntrenchedMask & 1) == 1, "the entrenchment is the least significant bits of the flag")
+    override final val flags = err.flags + by//| DefuncError.EntrenchedMask
+    assert((flags & ~DefuncError.EntrenchedMask) == (err.flags & ~DefuncError.EntrenchedMask), "entrench should not affect any other flags")
     override val offset = err.offset
     override def makeFancy(builder: FancyErrorBuilder): Unit = err.makeFancy(builder)
 }
 
-private [errors] final class FancyDislodged private [errors] (val err: FancyDefuncError) extends FancyDefuncError {
-    override final val flags = err.flags & ~DefuncError.EntrenchedMask
+private [errors] final class FancyDislodged private [errors] (val by: Int, val err: FancyDefuncError) extends FancyDefuncError {
+    assume(err.entrenched, "an dislodge will only occur on unentrenched errors")
+    assume((DefuncError.EntrenchedMask & 1) == 1, "the entrenchment is the least significant bits of the flag")
+    override final val flags = if (err.entrenchedBy > by) err.flags - by else err.flags & ~DefuncError.EntrenchedMask
+    assert((flags & ~DefuncError.EntrenchedMask) == (err.flags & ~DefuncError.EntrenchedMask), "dislodge should not affect any other flags")
     override val offset = err.offset
     override def makeFancy(builder: FancyErrorBuilder): Unit = err.makeFancy(builder)
 }
