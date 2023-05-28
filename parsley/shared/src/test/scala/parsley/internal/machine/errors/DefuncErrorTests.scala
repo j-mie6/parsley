@@ -239,8 +239,8 @@ class DefuncErrorTests extends ParsleyTest {
     "Dislodged" should "remove an entrenchment" in {
         val err = new EmptyError(0, 0, 0, 0).entrench
         require(err.entrenched)
-        err.dislodge.entrenched shouldBe false
-        val err2 = err.dislodge.amend(10, 10, 10).asParseError
+        err.dislodge(Int.MaxValue).entrenched shouldBe false
+        val err2 = err.dislodge(Int.MaxValue).amend(10, 10, 10).asParseError
         err2.col shouldBe 10
         err2.line shouldBe 10
         err2.offset shouldBe 10
@@ -248,8 +248,8 @@ class DefuncErrorTests extends ParsleyTest {
     it should "work for fancy errors too" in {
         val err = new ClassicFancyError(0, 0, 0, new RigidCaret(1), "").entrench
         require(err.entrenched)
-        err.dislodge.entrenched shouldBe false
-        val err2 = err.dislodge.amend(10, 10, 10).asParseError
+        err.dislodge(Int.MaxValue).entrenched shouldBe false
+        val err2 = err.dislodge(Int.MaxValue).amend(10, 10, 10).asParseError
         err2.col shouldBe 10
         err2.line shouldBe 10
         err2.offset shouldBe 10

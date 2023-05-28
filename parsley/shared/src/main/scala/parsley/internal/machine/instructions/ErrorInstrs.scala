@@ -119,7 +119,7 @@ private [internal] object EntrenchAndFail extends Instr {
 private [internal] object DislodgeAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
-        ctx.errs.error = ctx.errs.error.dislodge
+        ctx.errs.error = ctx.errs.error.dislodge(Int.MaxValue) //TODO: real value
         ctx.fail()
     }
 

@@ -102,7 +102,7 @@ private [parsley] sealed abstract class DefuncError {
       *
       * @return a non-entrenched error message
       */
-    private [machine] def dislodge: DefuncError
+    private [machine] def dislodge(by: Int): DefuncError
     /** This operation sets this error message to be considered as a lexical
       * error message, which means that it will not perform lexical extraction
       * within the builder, instead opting to extract a token via raw input.
@@ -195,9 +195,9 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
         case self /*if self.entrenchedBy == 0*/ => new TrivialEntrenched(1, self)
         //case self => self
     }
-    private [machine] final override def dislodge: TrivialDefuncError = this match {
-        case self: TrivialEntrenched => self.err
-        case self if self.entrenched => new TrivialDislodged(1, this)
+    private [machine] final override def dislodge(by: Int): TrivialDefuncError = this match {
+        //case self: TrivialEntrenched => self.err
+        case self if self.entrenched => new TrivialDislodged(by, self)
         case self => self
     }
     private [machine] final override def markAsLexical(offset: Int): TrivialDefuncError = {
@@ -238,9 +238,9 @@ private [errors] sealed abstract class FancyDefuncError extends DefuncError {
         case self /*if self.entrenchedBy == 0*/ => new FancyEntrenched(1, self)
         //case self => self
     }
-    private [machine] final override def dislodge: FancyDefuncError = this match {
-        case self: FancyEntrenched => self.err
-        case self if self.entrenched => new FancyDislodged(1, this)
+    private [machine] final override def dislodge(by: Int): FancyDefuncError = this match {
+        //case self: FancyEntrenched => self.err
+        case self if self.entrenched => new FancyDislodged(by, self)
         case self => self
     }
     private [machine] final override def markAsLexical(offset: Int): FancyDefuncError = {
