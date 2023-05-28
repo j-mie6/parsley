@@ -11,6 +11,7 @@ import parsley.internal.deepembedding.frontend
   *
   * In particular, exposes an extension class `VerifiedErrors` that facilitates creating verified errors in many different formats.
   *
+  * @group combinators
   * @since 4.2.0
   */
 object patterns {
