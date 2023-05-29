@@ -196,8 +196,9 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
     }
     private [machine] final override def dislodge(by: Int): TrivialDefuncError = this match {
         case self: TrivialEntrenched if by == self.by => self.err
-        case self if self.entrenched => new TrivialDislodged(by, self)
-        case self => self
+        case self if !self.entrenched => self
+        case self: TrivialDislodged => new TrivialDislodged(self.by + by, self.err)
+        case self => new TrivialDislodged(by, self)
     }
     private [machine] final override def markAsLexical(offset: Int): TrivialDefuncError = {
         if (Integer.compareUnsigned(this.offset, offset) > 0) new TrivialLexical(this)
@@ -238,8 +239,9 @@ private [errors] sealed abstract class FancyDefuncError extends DefuncError {
     }
     private [machine] final override def dislodge(by: Int): FancyDefuncError = this match {
         case self: FancyEntrenched if by == self.by => self.err
-        case self if self.entrenched => new FancyDislodged(by, self)
-        case self => self
+        case self if !self.entrenched => self
+        case self: FancyDislodged => new FancyDislodged(self.by + by, self.err)
+        case self => new FancyDislodged(by, self)
     }
     private [machine] final override def markAsLexical(offset: Int): FancyDefuncError = {
         if (Integer.compareUnsigned(this.offset, offset) > 0) new FancyLexical(this)
