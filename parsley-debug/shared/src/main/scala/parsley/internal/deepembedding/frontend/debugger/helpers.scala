@@ -9,7 +9,7 @@ import parsley.internal.deepembedding.frontend
 import parsley.internal.deepembedding.frontend.LazyParsley
 
 object helpers {
-  private[parsley] def traverseDown[A]
+  private [parsley] def traverseDown[A]
   (parser: LazyParsley[A])
   (implicit seen: mutable.Map[LazyParsley[_], Debugged[_]], dbgCtx: DebugContext): LazyParsley[A] =
   // This stops recursive parsers from causing an infinite recursion.
@@ -34,7 +34,7 @@ object helpers {
     }
 
   // Attempt to retrieve the child parsers.
-  private def getChildren(parser: LazyParsley[_]): List[LazyParsley[_]] =
+  private [this] def getChildren(parser: LazyParsley[_]): List[LazyParsley[_]] =
     parser match {
       case p: frontend.Unary[_, _] => List(p.parser)
       case p: frontend.Binary[_, _, _] => List(p.leftParser, p.rightParser)
@@ -47,14 +47,14 @@ object helpers {
     }
 
   // WARNING: very unsafe due to asInstanceOf call.
-  private def coerce[A](ix: Int)(implicit children: List[LazyParsley[Any]]): LazyParsley[A] =
+  private [this] def coerce[A](ix: Int)(implicit children: List[LazyParsley[Any]]): LazyParsley[A] =
     children(ix).asInstanceOf[LazyParsley[A]]
 
   // Reconstruct the original parser with new components.
-  // WARNING: very unsafe, use outside this object with caution.
-  private def reconstruct[A, X, Y, Z]
+  // WARNING: very unsafe due to call to coerce.
+  private [this] def reconstruct[A, X, Y, Z]
   (parser: LazyParsley[A])
-  (implicit dbgCtx: DebugContext, children: List[LazyParsley[Any]]): LazyParsley[A] =
+  (implicit children: List[LazyParsley[Any]]): LazyParsley[A] =
     parser match {
       case par: frontend.Unary[X, A] =>
         new frontend.Unary[X, A](coerce[X](0)) {

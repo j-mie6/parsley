@@ -1,3 +1,6 @@
+/* SPDX-FileCopyrightText: © 2022 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package parsley.debugger.util
 
 import parsley.Parsley
@@ -43,7 +46,7 @@ object Collectors {
   * actually collect the names of parsers. This should be implicitly available should
   * you import `parsley.debugger.util.CollectorImpl`.
   */
-abstract class CollectorImpl private [parsley]() {
+abstract class CollectorImpl private [parsley] () {
   /** Collect names of parsers from an object. */
   def collectNames(obj: Any): Map[LazyParsley[_], String]
 

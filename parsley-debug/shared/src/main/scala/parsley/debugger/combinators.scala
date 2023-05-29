@@ -91,6 +91,6 @@ object combinators {
   /** Attach a debugger and an implicitly-available GUI frontend in which the debug tree should be
     * rendered in. See [[attachDebuggerGUI]] for more information.
     */
-  def attachDebuggerImplicitGUI[A](parser: Parsley[A])(implicit gui: DebugGUI): Parsley[A]
+  def attachDebuggerIGUI[A](parser: Parsley[A])(implicit gui: DebugGUI): Parsley[A]
     = attachDebuggerGUI(parser, gui)
 }
