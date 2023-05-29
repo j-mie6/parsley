@@ -191,12 +191,11 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
         else this
     }
     private [machine] final override def entrench: TrivialDefuncError = this match {
-        //case self: TrivialDislodged => new TrivialEntrenched(self.err) //TODO: this is desirable, but would need to change the additive nature of the entrench
-        case self /*if self.entrenchedBy == 0*/ => new TrivialEntrenched(1, self)
-        //case self => self
+        case self: TrivialEntrenched => new TrivialEntrenched(self.by + 1, self.err)
+        case self => new TrivialEntrenched(1, self)
     }
     private [machine] final override def dislodge(by: Int): TrivialDefuncError = this match {
-        //case self: TrivialEntrenched => self.err
+        case self: TrivialEntrenched if by == self.by => self.err
         case self if self.entrenched => new TrivialDislodged(by, self)
         case self => self
     }
@@ -234,12 +233,11 @@ private [errors] sealed abstract class FancyDefuncError extends DefuncError {
         else this
     }
     private [machine] final override def entrench: FancyDefuncError = this match {
-        //case self: FancyDislodged => new FancyEntrenched(1, self.err) //TODO: this is desirable, but would need to change the additive nature of the entrench
-        case self /*if self.entrenchedBy == 0*/ => new FancyEntrenched(1, self)
-        //case self => self
+        case self: FancyEntrenched => new FancyEntrenched(self.by + 1, self.err)
+        case self => new FancyEntrenched(1, self)
     }
     private [machine] final override def dislodge(by: Int): FancyDefuncError = this match {
-        //case self: FancyEntrenched => self.err
+        case self: FancyEntrenched if by == self.by => self.err
         case self if self.entrenched => new FancyDislodged(by, self)
         case self => self
     }
@@ -428,7 +426,7 @@ private [errors] final class FancyAmended private [errors] (val offset: Int, val
     }
 }
 
-private [errors] final class TrivialEntrenched private [errors] (by: Int, val err: TrivialDefuncError) extends TrivialTransitive {
+private [errors] final class TrivialEntrenched private [errors] (val by: Int, val err: TrivialDefuncError) extends TrivialTransitive {
     assume((DefuncError.EntrenchedMask & 1) == 1, "the entrenchment is the least significant bits of the flag")
     override final val flags = err.flags + by//| DefuncError.EntrenchedMask
     assert((flags & ~DefuncError.EntrenchedMask) == (err.flags & ~DefuncError.EntrenchedMask), "entrench should not affect any other flags")
@@ -445,7 +443,7 @@ private [errors] final class TrivialDislodged private [errors] (val by: Int, val
     override def makeTrivial(builder: TrivialErrorBuilder): Unit = err.makeTrivial(builder)
 }
 
-private [errors] final class FancyEntrenched private [errors] (by: Int, val err: FancyDefuncError) extends FancyDefuncError {
+private [errors] final class FancyEntrenched private [errors] (val by: Int, val err: FancyDefuncError) extends FancyDefuncError {
     assume((DefuncError.EntrenchedMask & 1) == 1, "the entrenchment is the least significant bits of the flag")
     override final val flags = err.flags + by//| DefuncError.EntrenchedMask
     assert((flags & ~DefuncError.EntrenchedMask) == (err.flags & ~DefuncError.EntrenchedMask), "entrench should not affect any other flags")
