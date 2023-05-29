@@ -57,11 +57,11 @@ private [deepembedding] final class ErrorEntrench[A](val p: StrictParsley[A]) ex
     final override def pretty(p: String): String = s"entrench($p)"
     // $COVERAGE-ON$
 }
-private [deepembedding] final class ErrorDislodge[A](val p: StrictParsley[A]) extends ScopedUnary[A, A] {
+private [deepembedding] final class ErrorDislodge[A](n: Int, val p: StrictParsley[A]) extends ScopedUnary[A, A] {
     override def setup(label: Int): instructions.Instr = new instructions.PushHandler(label)
     override val instr: instructions.Instr = instructions.PopHandler
     override def instrNeedsLabel: Boolean = false
-    override def handlerLabel(state: CodeGenState): Int  = state.getLabel(instructions.DislodgeAndFail)
+    override def handlerLabel(state: CodeGenState): Int  = state.getLabelForDislodgeAndFail(n)
     // $COVERAGE-OFF$
     final override def pretty(p: String): String = s"dislodge($p)"
     // $COVERAGE-ON$

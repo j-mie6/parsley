@@ -358,6 +358,8 @@ private [deepembedding] class CodeGenState(val numRegs: Int) {
     private val applyReasonMap = mutable.Map.empty[String, Int]
     /** A map of registers to the assigned jump-label to its instruction. */
     private val putAndFailMap = mutable.Map.empty[Reg[_], Int]
+    /** A map of dislodge amounts to the assigned jump-label to its instruction. */
+    private val dislodgeAndFailMap = mutable.Map.empty[Int, Int]
 
     /** Given a generic handler instruction, fetch the corresponding jump-label
       * that will represent it in the final instruction array.
@@ -375,6 +377,10 @@ private [deepembedding] class CodeGenState(val numRegs: Int) {
       * the `PutAndFail(reg)` instruction in the final instruction array.
       */
     def getLabelForPutAndFail(reg: Reg[_]): Int = putAndFailMap.getOrElseUpdate(reg, freshLabel())
+    /** Given an amount to dislodge, fetch the corresponding jump-label that will represent
+      * the `DislodgeAndFail(reg)` instruction in the final instruction array.
+      */
+    def getLabelForDislodgeAndFail(n: Int): Int = dislodgeAndFailMap.getOrElseUpdate(n, freshLabel())
 
     /** An iterator over all the handler instructions and their corresponding jump-labels that have
       * been demanded during the process of code-generation.
@@ -389,8 +395,11 @@ private [deepembedding] class CodeGenState(val numRegs: Int) {
         val putAndFail = putAndFailMap.view.map {
             case (reg, i) => new instructions.PutAndFail(reg.addr) -> i
         }
+        val dislodgeAndFail = dislodgeAndFailMap.view.map {
+            case (n, i) => new instructions.DislodgeAndFail(n) -> i
+        }
         new Iterator[(Instr, Int)] {
-            private var rest = List(relabelErrors.iterator, applyReasons.iterator, putAndFail.iterator)
+            private var rest = List(relabelErrors.iterator, applyReasons.iterator, putAndFail.iterator, dislodgeAndFail.iterator)
             private var cur = handlerMap.iterator
             override def hasNext: Boolean = {
                 cur.hasNext || (rest.nonEmpty && {

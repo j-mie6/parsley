@@ -116,15 +116,15 @@ private [internal] object EntrenchAndFail extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] object DislodgeAndFail extends Instr {
+private [internal] class DislodgeAndFail(n: Int) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
-        ctx.errs.error = ctx.errs.error.dislodge
+        ctx.errs.error = ctx.errs.error.dislodge(n)
         ctx.fail()
     }
 
     // $COVERAGE-OFF$
-    override def toString: String = "DislodgeAndFail"
+    override def toString: String = s"DislodgeAndFail($n)"
     // $COVERAGE-ON$
 }
 
