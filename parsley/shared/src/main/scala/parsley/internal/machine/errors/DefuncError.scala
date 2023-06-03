@@ -36,7 +36,7 @@ private [parsley] sealed abstract class DefuncError {
     /** The offset at which this error appears to occur */
     private [machine] val presentationOffset: Int
     /** The offset at which this error supposedly originated */
-    private [machine] def underlyingOffset: Int = presentationOffset
+    private [machine] val underlyingOffset: Int
     /** This function forces the lazy defunctionalised structure into a final `ParseError` value. */
     private [machine] def asParseError(implicit itemBuilder: ErrorItemBuilder): ParseError
 
@@ -90,12 +90,13 @@ private [parsley] sealed abstract class DefuncError {
       * an error appears to occur at. The effect of this operation is
       * suppressed by `entrench`, however.
       *
-      * @param offset the new offset of the error
+      * @param partial whether the amend leaves the underlying offset as is
+      * @param presentationOffset the new presentation offset of the error
       * @param line the new line of the error
       * @param col the new column of the error
       * @return a new error that has been amended
       */
-    private [machine] def amend(offset: Int, line: Int, col: Int): DefuncError
+    private [machine] def amend(partial: Boolean, presentationOffset: Int, line: Int, col: Int): DefuncError
     /** This operation resists the changes attempted by an `amend` operation
       * ''above'' it, without affecting the messages below.
       *
@@ -193,8 +194,8 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
         if (this.presentationOffset == offset) new WithLabel(this, label)
         else this
     }
-    private [machine] final override def amend(offset: Int, line: Int, col: Int): TrivialDefuncError = {
-        if (!this.entrenched) new TrivialAmended(offset, line, col, this)
+    private [machine] final override def amend(partial: Boolean, presentationOffset: Int, line: Int, col: Int): TrivialDefuncError = {
+        if (!this.entrenched) new TrivialAmended(presentationOffset, if (partial) this.underlyingOffset else presentationOffset, line, col, this)
         else this
     }
     private [machine] final override def entrench: TrivialDefuncError = this match {
@@ -236,8 +237,8 @@ private [errors] sealed abstract class FancyDefuncError extends DefuncError {
     private [machine] final override def withHints(hints: DefuncHints): FancyDefuncError = this
     private [parsley] final override def withReason(reason: String, offset: Int): FancyDefuncError = this
     private [machine] final override def label(label: String, offset: Int): FancyDefuncError = this
-    private [machine] final override def amend(offset: Int, line: Int, col: Int): FancyDefuncError = {
-        if (!this.entrenched) new FancyAmended(offset, line, col, this)
+    private [machine] final override def amend(partial: Boolean, presentationOffset: Int, line: Int, col: Int): FancyDefuncError = {
+        if (!this.entrenched) new FancyAmended(presentationOffset, if (partial) this.underlyingOffset else presentationOffset, line, col, this)
         else this
     }
     private [machine] final override def entrench: FancyDefuncError = this match {
@@ -250,10 +251,7 @@ private [errors] sealed abstract class FancyDefuncError extends DefuncError {
         case self: FancyDislodged => new FancyDislodged(self.by + by, self.err)
         case self => new FancyDislodged(by, self)
     }
-    private [machine] final override def markAsLexical(offset: Int): FancyDefuncError = {
-        if (Integer.compareUnsigned(this.presentationOffset, offset) > 0) new FancyLexical(this)
-        else this
-    }
+    private [machine] final override def markAsLexical(offset: Int): FancyDefuncError = this
 }
 
 private [errors] sealed abstract class TrivialTransitive extends TrivialDefuncError {
@@ -265,6 +263,7 @@ private [errors] sealed abstract class BaseError extends TrivialDefuncError {
     private [errors] val line: Int
     /** The column number the error occurred at */
     private [errors] val col: Int
+    val underlyingOffset: Int = presentationOffset
     /** The size of the unexpected token demanded by this error */
     private [errors] def unexpectedWidth: Int
     // private [errors] def expected: IterableOnce[ErrorItem] // TODO: when 2.12 is dropped this will work better
@@ -318,6 +317,7 @@ private [parsley] final class ClassicUnexpectedError(val presentationOffset: Int
 
 private [parsley] final class ClassicFancyError(val presentationOffset: Int, val line: Int, val col: Int, caretWidth: CaretWidth, val msgs: String*)
     extends FancyDefuncError {
+    val underlyingOffset: Int = presentationOffset
     override final val flags =
         if (caretWidth.isFlexible) DefuncError.ExpectedEmptyMask | DefuncError.FlexibleCaretMask else DefuncError.ExpectedEmptyMask
     override def makeFancy(builder: FancyErrorBuilder): Unit = {
@@ -353,7 +353,8 @@ private [machine] final class MultiExpectedError(val presentationOffset: Int, va
 private [errors] final class TrivialMergedErrors private [errors] (val err1: TrivialDefuncError, val err2: TrivialDefuncError) extends TrivialDefuncError {
     override final val flags = err1.flags & err2.flags
     assume(err1.presentationOffset == err2.presentationOffset, "two errors only merge when they have matching offsets")
-    val presentationOffset = err1.presentationOffset //Math.max(err1.offset, err2.offset)
+    override val presentationOffset = err1.presentationOffset //Math.max(err1.offset, err2.offset)
+    override val underlyingOffset = err1.underlyingOffset
     override def makeTrivial(builder: TrivialErrorBuilder): Unit = {
         err1.makeTrivial(builder)
         err2.makeTrivial(builder)
@@ -364,6 +365,7 @@ private [errors] final class FancyMergedErrors private [errors] (val err1: Fancy
     override final val flags = err1.flags & err2.flags
     assume(err1.presentationOffset == err2.presentationOffset, "two errors only merge when they have matching offsets")
     override val presentationOffset = err1.presentationOffset //Math.max(err1.offset, err2.offset)
+    override val underlyingOffset = err1.underlyingOffset
     override def makeFancy(builder: FancyErrorBuilder): Unit = {
         err1.makeFancy(builder)
         err2.makeFancy(builder)
@@ -374,6 +376,7 @@ private [errors] final class FancyAdjustCaret private [errors] (val err: FancyDe
     override final val flags = err.flags
     assume(err.presentationOffset == caretAdjuster.presentationOffset, "two errors only merge when they have matching offsets")
     override val presentationOffset = err.presentationOffset
+    override val underlyingOffset = err.underlyingOffset
     override def makeFancy(builder: FancyErrorBuilder): Unit = {
         err.makeFancy(builder)
         caretAdjuster.adjustCaret(builder)
@@ -384,6 +387,7 @@ private [errors] final class WithHints private [errors] (val err: TrivialDefuncE
     assume(!hints.isEmpty, "WithHints will always have non-empty hints")
     override final val flags = err.flags & ~DefuncError.ExpectedEmptyMask //err.isExpectedEmpty && hints.isEmpty
     override val presentationOffset = err.presentationOffset
+    override val underlyingOffset = err.underlyingOffset
     override def makeTrivial(builder: TrivialErrorBuilder): Unit = {
         err.makeTrivial(builder)
         builder.whenAcceptingExpected {
@@ -394,7 +398,8 @@ private [errors] final class WithHints private [errors] (val err: TrivialDefuncE
 
 private [errors] final class WithReason private [errors] (val err: TrivialDefuncError, val reason: String) extends TrivialTransitive {
     override final val flags = err.flags
-    val presentationOffset = err.presentationOffset
+    override val presentationOffset = err.presentationOffset
+    override val underlyingOffset = err.underlyingOffset
     override def makeTrivial(builder: TrivialErrorBuilder): Unit = {
         err.makeTrivial(builder)
         builder += reason
@@ -406,7 +411,8 @@ private [errors] final class WithLabel private [errors] (val err: TrivialDefuncE
         if (label.isEmpty) err.flags |  DefuncError.ExpectedEmptyMask
         else               err.flags & ~DefuncError.ExpectedEmptyMask
     }
-    val presentationOffset = err.presentationOffset
+    override val presentationOffset = err.presentationOffset
+    override val underlyingOffset = err.underlyingOffset
     override def makeTrivial(builder: TrivialErrorBuilder): Unit = {
         builder.ignoreExpected {
             err.makeTrivial(builder)
@@ -415,8 +421,8 @@ private [errors] final class WithLabel private [errors] (val err: TrivialDefuncE
     }
 }
 
-private [errors] final class TrivialAmended private [errors] (val presentationOffset: Int, val line: Int, val col: Int, val err: TrivialDefuncError)
-    extends TrivialTransitive {
+private [errors] final class TrivialAmended private [errors]
+    (val presentationOffset: Int, val underlyingOffset: Int, val line: Int, val col: Int, val err: TrivialDefuncError) extends TrivialTransitive {
     assume(!err.entrenched, "an amendment will only occur on unentrenched errors")
     override final val flags = err.flags
     override def makeTrivial(builder: TrivialErrorBuilder): Unit = {
@@ -426,7 +432,8 @@ private [errors] final class TrivialAmended private [errors] (val presentationOf
     }
 }
 
-private [errors] final class FancyAmended private [errors] (val presentationOffset: Int, val line: Int, val col: Int, val err: FancyDefuncError) extends FancyDefuncError {
+private [errors] final class FancyAmended private [errors]
+    (val presentationOffset: Int, val underlyingOffset: Int, val line: Int, val col: Int, val err: FancyDefuncError) extends FancyDefuncError {
     assume(!err.entrenched, "an amendment will only occur on unentrenched errors")
     override final val flags = err.flags
     override def makeFancy(builder: FancyErrorBuilder): Unit = {
@@ -440,6 +447,7 @@ private [errors] final class TrivialEntrenched private [errors] (val by: Int, va
     override final val flags = err.flags + by//| DefuncError.EntrenchedMask
     assert((flags & ~DefuncError.EntrenchedMask) == (err.flags & ~DefuncError.EntrenchedMask), "entrench should not affect any other flags")
     override val presentationOffset = err.presentationOffset
+    override val underlyingOffset = err.underlyingOffset
     override def makeTrivial(builder: TrivialErrorBuilder): Unit = err.makeTrivial(builder)
 }
 
@@ -449,6 +457,7 @@ private [errors] final class TrivialDislodged private [errors] (val by: Int, val
     override final val flags = if (err.entrenchedBy > by) err.flags - by else err.flags & ~DefuncError.EntrenchedMask
     assert((flags & ~DefuncError.EntrenchedMask) == (err.flags & ~DefuncError.EntrenchedMask), "dislodge should not affect any other flags")
     override val presentationOffset = err.presentationOffset
+    override val underlyingOffset = err.underlyingOffset
     override def makeTrivial(builder: TrivialErrorBuilder): Unit = err.makeTrivial(builder)
 }
 
@@ -457,6 +466,7 @@ private [errors] final class FancyEntrenched private [errors] (val by: Int, val 
     override final val flags = err.flags + by//| DefuncError.EntrenchedMask
     assert((flags & ~DefuncError.EntrenchedMask) == (err.flags & ~DefuncError.EntrenchedMask), "entrench should not affect any other flags")
     override val presentationOffset = err.presentationOffset
+    override val underlyingOffset = err.underlyingOffset
     override def makeFancy(builder: FancyErrorBuilder): Unit = err.makeFancy(builder)
 }
 
@@ -466,17 +476,13 @@ private [errors] final class FancyDislodged private [errors] (val by: Int, val e
     override final val flags = if (err.entrenchedBy > by) err.flags - by else err.flags & ~DefuncError.EntrenchedMask
     assert((flags & ~DefuncError.EntrenchedMask) == (err.flags & ~DefuncError.EntrenchedMask), "dislodge should not affect any other flags")
     override val presentationOffset = err.presentationOffset
+    override val underlyingOffset = err.underlyingOffset
     override def makeFancy(builder: FancyErrorBuilder): Unit = err.makeFancy(builder)
 }
 
 private [errors] final class TrivialLexical private [errors] (val err: TrivialDefuncError) extends TrivialTransitive {
     override final val flags = err.flags | DefuncError.LexicalErrorMask
     override val presentationOffset = err.presentationOffset
+    override val underlyingOffset = err.underlyingOffset
     override def makeTrivial(builder: TrivialErrorBuilder): Unit = err.makeTrivial(builder)
-}
-
-private [errors] final class FancyLexical private [errors] (val err: FancyDefuncError) extends FancyDefuncError {
-    override final val flags = err.flags | DefuncError.LexicalErrorMask
-    override val presentationOffset = err.presentationOffset
-    override def makeFancy(builder: FancyErrorBuilder): Unit = err.makeFancy(builder)
 }

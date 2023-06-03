@@ -205,14 +205,14 @@ class DefuncErrorTests extends ParsleyTest {
     }
 
     "Amended" should "Change the error position information" in {
-        val err =  new EmptyError(0, 0, 0, 0).amend(10, 10, 10)
+        val err =  new EmptyError(0, 0, 0, 0).amend(false, 10, 10, 10)
         val errOut = err.asParseError
         errOut.col shouldBe 10
         errOut.line shouldBe 10
         errOut.offset shouldBe 10
     }
     it should "work for fancy errors too" in {
-        val err = new ClassicFancyError(0, 0, 0, new RigidCaret(1), "").amend(10, 10, 10)
+        val err = new ClassicFancyError(0, 0, 0, new RigidCaret(1), "").amend(partial = false, 10, 10, 10)
         val errOut = err.asParseError
         errOut.col shouldBe 10
         errOut.line shouldBe 10
@@ -220,7 +220,7 @@ class DefuncErrorTests extends ParsleyTest {
     }
 
     "Entrenched" should "guard against amendment" in {
-        val err = new EmptyError(0, 0, 0, 0).entrench.amend(10, 10, 10)
+        val err = new EmptyError(0, 0, 0, 0).entrench.amend(partial = false, 10, 10, 10)
         val errOut = err.asParseError
         err.entrenched shouldBe true
         errOut.col shouldBe 0
@@ -228,7 +228,7 @@ class DefuncErrorTests extends ParsleyTest {
         errOut.offset shouldBe 0
     }
     it should "work for fancy errors too" in {
-        val err = new ClassicFancyError(0, 0, 0, new RigidCaret(1), "").entrench.amend(10, 10, 10)
+        val err = new ClassicFancyError(0, 0, 0, new RigidCaret(1), "").entrench.amend(partial = false, 10, 10, 10)
         val errOut = err.asParseError
         err.entrenched shouldBe true
         errOut.col shouldBe 0
@@ -240,7 +240,7 @@ class DefuncErrorTests extends ParsleyTest {
         val err = new EmptyError(0, 0, 0, 0).entrench
         require(err.entrenched)
         err.dislodge(Int.MaxValue).entrenched shouldBe false
-        val err2 = err.dislodge(Int.MaxValue).amend(10, 10, 10).asParseError
+        val err2 = err.dislodge(Int.MaxValue).amend(partial = false, 10, 10, 10).asParseError
         err2.col shouldBe 10
         err2.line shouldBe 10
         err2.offset shouldBe 10
@@ -249,7 +249,7 @@ class DefuncErrorTests extends ParsleyTest {
         val err = new ClassicFancyError(0, 0, 0, new RigidCaret(1), "").entrench
         require(err.entrenched)
         err.dislodge(Int.MaxValue).entrenched shouldBe false
-        val err2 = err.dislodge(Int.MaxValue).amend(10, 10, 10).asParseError
+        val err2 = err.dislodge(Int.MaxValue).amend(partial = false, 10, 10, 10).asParseError
         err2.col shouldBe 10
         err2.line shouldBe 10
         err2.offset shouldBe 10
