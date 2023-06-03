@@ -35,6 +35,8 @@ private [parsley] sealed abstract class DefuncError {
     private [machine] final def flexibleCaret: Boolean = (flags & DefuncError.FlexibleCaretMask) != 0
     /** The offset at which this error appears to occur */
     private [machine] val presentationOffset: Int
+    /** The offset at which this error supposedly originated */
+    private [machine] def underlyingOffset: Int = presentationOffset
     /** This function forces the lazy defunctionalised structure into a final `ParseError` value. */
     private [machine] def asParseError(implicit itemBuilder: ErrorItemBuilder): ParseError
 
@@ -170,7 +172,7 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
     }
 
     private [machine] final override def merge(err: DefuncError): DefuncError = {
-        val cmp = Integer.compareUnsigned(this.presentationOffset, err.presentationOffset)
+        val cmp = Integer.compareUnsigned(this.underlyingOffset, err.underlyingOffset)
         if (cmp > 0) this
         else if (cmp < 0) err
         else err match {
@@ -221,7 +223,7 @@ private [errors] sealed abstract class FancyDefuncError extends DefuncError {
     private [errors] def makeFancy(builder: FancyErrorBuilder): Unit
 
     private [machine] final override def merge(err: DefuncError): DefuncError = {
-        val cmp = Integer.compareUnsigned(this.presentationOffset, err.presentationOffset)
+        val cmp = Integer.compareUnsigned(this.underlyingOffset, err.underlyingOffset)
         if (cmp > 0) this
         else if (cmp < 0) err
         else err match {
