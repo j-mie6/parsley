@@ -64,10 +64,12 @@ private [parsley] sealed abstract class DefuncError {
     /** This operation adds a reason to a trivial error.
       *
       * @param reason the reason to add to the message
+      * @param offset the offset that the reason is applicable at
       * @return the error with the reason incorporated
       * @note reasons are kept in-order
       */
-    private [parsley] def withReason(reason: String): DefuncError
+    private [parsley] def withReason(reason: String, offset: Int): DefuncError
+    private [parsley] def withReason(reason: String): DefuncError = withReason(reason, offset)
     /** This operation replaces the expected labels in this error message
       * by the given label. This can only happen when the offset of
       * this error message matches the given offset: this should be the
@@ -181,7 +183,10 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
         if (hints.nonEmpty) new WithHints(this, hints)
         else this
     }
-    private [parsley] final override def withReason(reason: String): TrivialDefuncError = new WithReason(this, reason)
+    private [parsley] final override def withReason(reason: String, offset: Int): TrivialDefuncError = {
+        if (this.offset == offset) new WithReason(this, reason)
+        else this
+    }
     private [machine] final override def label(label: String, offset: Int): TrivialDefuncError = {
         if (this.offset == offset) new WithLabel(this, label)
         else this
@@ -227,7 +232,7 @@ private [errors] sealed abstract class FancyDefuncError extends DefuncError {
     }
 
     private [machine] final override def withHints(hints: DefuncHints): FancyDefuncError = this
-    private [parsley] final override def withReason(reason: String): FancyDefuncError = this
+    private [parsley] final override def withReason(reason: String, offset: Int): FancyDefuncError = this
     private [machine] final override def label(label: String, offset: Int): FancyDefuncError = this
     private [machine] final override def amend(offset: Int, line: Int, col: Int): FancyDefuncError = {
         if (!this.entrenched) new FancyAmended(offset, line, col, this)

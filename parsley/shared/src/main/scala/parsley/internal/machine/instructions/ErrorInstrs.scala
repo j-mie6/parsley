@@ -76,7 +76,7 @@ private [internal] object MergeErrorsAndFail extends Instr {
 private [internal] class ApplyReasonAndFail(reason: String) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
-        if (ctx.errs.error.offset == ctx.checkStack.offset) ctx.errs.error = ctx.errs.error.withReason(reason)
+        ctx.errs.error = ctx.errs.error.withReason(reason, ctx.checkStack.offset)
         ctx.checkStack = ctx.checkStack.tail
         ctx.fail()
     }
