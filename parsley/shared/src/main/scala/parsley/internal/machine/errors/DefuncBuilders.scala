@@ -18,7 +18,7 @@ import TrivialErrorBuilder.{BuilderUnexpectItem, NoItem, Other, Raw}
   * @param offset the offset that the error being built occured at
   * @param outOfRange whether or not this error occured at the end of the input or not
   */
-private [errors] final class TrivialErrorBuilder(offset: Int, outOfRange: Boolean, lexicalError: Boolean) {
+private [errors] final class TrivialErrorBuilder(presentationOffset: Int, outOfRange: Boolean, lexicalError: Boolean) {
     private var line: Int = _
     private var col: Int = _
     private val expecteds = mutable.Set.empty[ExpectItem]
@@ -83,7 +83,7 @@ private [errors] final class TrivialErrorBuilder(offset: Int, outOfRange: Boolea
       * @return the final error message
       */
     def mkError(implicit itemBuilder: ErrorItemBuilder): TrivialError = {
-        new TrivialError(offset, line, col, unexpected.toErrorItem(offset), expecteds.toSet, reasons.toSet, lexicalError)
+        new TrivialError(presentationOffset, line, col, unexpected.toErrorItem(presentationOffset), expecteds.toSet, reasons.toSet, lexicalError)
     }
     /** Performs some given action only when this builder is currently accepting new expected items
       *
@@ -146,7 +146,7 @@ private [errors] object TrivialErrorBuilder {
   *
   * @param offset the offset that the error being built occured at
   */
-private [errors] final class FancyErrorBuilder(offset: Int, lexicalError: Boolean) {
+private [errors] final class FancyErrorBuilder(presentationOffset: Int, lexicalError: Boolean) {
     private var line: Int = _
     private var col: Int = _
     private var caretWidth: Int = 0
@@ -184,7 +184,7 @@ private [errors] final class FancyErrorBuilder(offset: Int, lexicalError: Boolea
     def ++=(msgs: Seq[String]): Unit = this.msgs ++= msgs
     /** Builds the final error. */
     def mkError: FancyError = {
-        new FancyError(offset, line, col, msgs.toList.distinct, caretWidth, lexicalError)
+        new FancyError(presentationOffset, line, col, msgs.toList.distinct, caretWidth, lexicalError)
     }
 }
 

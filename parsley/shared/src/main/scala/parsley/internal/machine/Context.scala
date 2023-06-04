@@ -96,7 +96,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
 
     private def addErrorToHints(err: DefuncError): Unit = {
         assume(!(!err.isExpectedEmpty) || err.isTrivialError, "not having an empty expected implies you are a trivial error")
-        if (/*err.isTrivialError && */ !err.isExpectedEmpty && err.offset == offset) { // scalastyle:ignore disallow.space.after.token
+        if (/*err.isTrivialError && */ !err.isExpectedEmpty && err.presentationOffset == offset) { // scalastyle:ignore disallow.space.after.token
             // If our new hints have taken place further in the input stream, then they must invalidate the old ones
             invalidateHints()
             hints = hints.addError(err)
@@ -192,9 +192,9 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
 
     private [machine] def pushError(err: DefuncError): Unit = this.errs = new ErrorStack(this.useHints(err), this.errs)
     private [machine] def useHints(err: DefuncError): DefuncError = {
-        if (hintsValidOffset == err.offset) err.withHints(hints)
+        if (hintsValidOffset == err.presentationOffset) err.withHints(hints)
         else {
-            hintsValidOffset = err.offset
+            hintsValidOffset = err.presentationOffset
             hints = EmptyHints
             err
         }

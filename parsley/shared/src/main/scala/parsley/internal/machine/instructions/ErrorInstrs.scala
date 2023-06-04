@@ -89,7 +89,7 @@ private [internal] class ApplyReasonAndFail(reason: String) extends Instr {
 private [internal] class AmendAndFail private (partial: Boolean) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
-        ctx.errs.error = ctx.errs.error.amend(if (partial) ctx.offset else ctx.states.offset, ctx.states.line, ctx.states.col)
+        ctx.errs.error = ctx.errs.error.amend(partial, ctx.states.offset, ctx.states.line, ctx.states.col)
         ctx.states = ctx.states.tail
         ctx.fail()
     }
