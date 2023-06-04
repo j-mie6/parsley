@@ -432,7 +432,7 @@ trait ErrorBuilder[+Err] {
       *
       * @param cs the remaining input at point of failure (this is '''guaranteed to be non-empty''')
       * @param amountOfInputParserWanted the input the parser tried to read when it failed
-      *                                  (this is '''not''' guaranteed to be smaller than the length of `cs`)
+      *                                  (this is '''not''' guaranteed to be smaller than the length of `cs`, but is '''guaranteed to be greater than 0''')
       * @param lexicalError was this error generated as part of "lexing", or in a wider parser (see [[parsley.errors.combinator$.markAsToken `markAsToken`]])
       * @return a token extracted from `cs` that will be used as part of the unexpected message.
       * @since 4.0.0

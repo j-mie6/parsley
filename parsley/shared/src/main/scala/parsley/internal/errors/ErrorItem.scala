@@ -21,6 +21,7 @@ private [parsley] sealed trait ExpectItem extends ErrorItem {
 
 private [internal] final case class UnexpectRaw(val cs: Iterable[Char], val amountOfInputParserWanted: Int) extends UnexpectItem {
     assert(cs.nonEmpty, "we promise that unexpectedToken never receives empty input")
+    assert(amountOfInputParserWanted > 0, "we promise not to make the user format 0-width tokens, nor negative ones")
     private [internal] def formatUnexpect(lexicalError: Boolean)(implicit builder: ErrorBuilder[_]): (builder.Item, TokenSpan) = {
         builder.unexpectedToken(cs, amountOfInputParserWanted, lexicalError) match {
             case t@Token.Raw(tok) => (builder.raw(tok), t.span)
