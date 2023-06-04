@@ -5,7 +5,7 @@ package parsley
 
 import Predef.{ArrowAssoc => _, _}
 
-import parsley.Parsley._
+import parsley.Parsley.{empty => pempty, _}
 import parsley.combinator.{many, ifP}
 import parsley.lift._
 import parsley.character.{char, satisfy, digit, item, string}
@@ -166,6 +166,10 @@ class CoreTests extends ParsleyTest {
     }
     it must "fail if p succeeds" in {
         notFollowedBy('a').parse("a") shouldBe a [Failure[_]]
+    }
+    it must "behave like empty if provided a parser that consumes no input" in {
+        notFollowedBy(unit).parse("abc") shouldBe pempty.parse("abc")
+        notFollowedBy(unit).parse("") shouldBe pempty.parse("")
     }
 
     "lookAhead" should "consume no input on success" in {
