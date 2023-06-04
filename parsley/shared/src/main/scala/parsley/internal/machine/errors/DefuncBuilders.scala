@@ -22,7 +22,7 @@ private [errors] final class TrivialErrorBuilder(presentationOffset: Int, outOfR
     private var line: Int = _
     private var col: Int = _
     private val expecteds = mutable.Set.empty[ExpectItem]
-    private var unexpected: BuilderUnexpectItem = EmptyItem
+    private var unexpected = EmptyItem
     private val reasons = mutable.Set.empty[String]
     private var _acceptingExpected = 0
     private def acceptingExpected = _acceptingExpected == 0
@@ -114,7 +114,7 @@ private [errors] final class TrivialErrorBuilder(presentationOffset: Int, outOfR
     def makeHintCollector: HintCollector = new HintCollector(expecteds)
 }
 private [errors] object TrivialErrorBuilder {
-    final def EmptyItem = new NoItem(0)
+    final def EmptyItem: BuilderUnexpectItem = new NoItem(0)
     private [TrivialErrorBuilder] sealed abstract class BuilderUnexpectItem {
         def pickHigher(other: BuilderUnexpectItem): BuilderUnexpectItem
         protected [TrivialErrorBuilder] def pickRaw(other: Raw): BuilderUnexpectItem
