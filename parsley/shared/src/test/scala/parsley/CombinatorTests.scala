@@ -164,16 +164,6 @@ class CombinatorTests extends ParsleyTest {
         eof.parse("a") shouldBe a [Failure[_]]
     }
 
-    "notFollowedBy" must "succeed if p fails" in {
-        notFollowedBy('a').parse("") should be (Success(()))
-    }
-    it must "succeed even if p consumed input" in {
-        notFollowedBy("aa").parse("a") should be (Success(()))
-    }
-    it must "fail if p succeeds" in {
-        notFollowedBy('a').parse("a") shouldBe a [Failure[_]]
-    }
-
     "manyUntil" must "require an end" in {
         manyUntil('a', 'b').parse("aa") shouldBe a [Failure[_]]
         manyUntil('a', 'b').parse("ab") should be (Success(List('a')))

@@ -158,6 +158,16 @@ class CoreTests extends ParsleyTest {
         attempt("ab").orElse("ac").parse("ac") should not be a [Failure[_]]
     }
 
+    "notFollowedBy" must "succeed if p fails" in {
+        notFollowedBy('a').parse("") should be (Success(()))
+    }
+    it must "succeed even if p consumed input" in {
+        notFollowedBy("aa").parse("a") should be (Success(()))
+    }
+    it must "fail if p succeeds" in {
+        notFollowedBy('a').parse("a") shouldBe a [Failure[_]]
+    }
+
     "lookAhead" should "consume no input on success" in {
         lookAhead('a').parse("a") should not be a [Failure[_]]
         inside((lookAhead('a') *> 'b').parse("ab")) {
