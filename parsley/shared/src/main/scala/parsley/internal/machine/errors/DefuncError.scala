@@ -217,7 +217,7 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
 /** Represents partially evaluated fancy errors */
 private [errors] sealed abstract class FancyDefuncError extends DefuncError {
     private [machine] final override def asParseError(implicit itemBuilder: ErrorItemBuilder): FancyError = {
-        val builder = new FancyErrorBuilder(presentationOffset, lexicalError)
+        val builder = new FancyErrorBuilder(presentationOffset)
         makeFancy(builder)
         builder.mkError
     }
