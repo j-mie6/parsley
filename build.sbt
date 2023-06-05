@@ -46,6 +46,7 @@ inThisBuild(List(
     ProblemFilters.exclude[ReversedMissingMethodProblem]("parsley.token.predicate#CharPredicate.asInternalPredicate"),
     ProblemFilters.exclude[ReversedMissingMethodProblem]("parsley.token.errors.FilterConfig.mkError"),
     ProblemFilters.exclude[ReversedMissingMethodProblem]("parsley.token.errors.FilterConfig.injectSnd"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("parsley.token.errors.*.asExpectItem"),
     // Expression refactor
     ProblemFilters.exclude[ReversedMissingMethodProblem]("parsley.expr.Fixity.chain"),
     ProblemFilters.exclude[ReversedMissingMethodProblem]("parsley.expr.Ops.chain"),
