@@ -5,12 +5,12 @@ package parsley.internal.machine.errors
 
 import parsley.ParsleyTest
 
-import parsley.internal.errors.ExpectDesc
+import parsley.internal.errors.{ExpectDesc, ExpectItem}
 
 class DefuncHintsTests extends ParsleyTest {
     def mkErr(labels: String*): DefuncError = {
         assert(labels.nonEmpty)
-        new MultiExpectedError(0, 0, 0, labels.map(new ExpectDesc(_)).toSet, 1)
+        new ClassicExpectedError(0, 0, 0, labels.map[ExpectItem](new ExpectDesc(_)).toSet, 1)
     }
 
     "EmptyHints" should "have size 0" in {

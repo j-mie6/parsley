@@ -11,7 +11,7 @@ import parsley.token.errors.LabelConfig
 import parsley.internal.errors.ExpectItem
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
-import parsley.internal.machine.errors.MultiExpectedError
+import parsley.internal.machine.errors.ClassicExpectedError
 import parsley.internal.machine.stacks.ErrorStack
 
 private [internal] final class Lift1(f: Any => Any) extends Instr {
@@ -111,7 +111,7 @@ private [internal] final class JumpTable(jumpTable: mutable.LongMap[(Int, Set[Ex
 
     private def addErrors(ctx: Context, errorItems: Set[ExpectItem]): Unit = {
         // FIXME: the more appropriate way of demanding input may be to pick 1 character, for same rationale with StringTok
-        ctx.errs = new ErrorStack(new MultiExpectedError(ctx.offset, ctx.line, ctx.col, errorItems, unexpectedWidth = size), ctx.errs)
+        ctx.errs = new ErrorStack(new ClassicExpectedError(ctx.offset, ctx.line, ctx.col, errorItems, unexpectedWidth = size), ctx.errs)
         ctx.pushHandler(merge)
     }
 

@@ -348,12 +348,6 @@ private [parsley] final class EmptyErrorWithReason(val presentationOffset: Int, 
         builder += reason
     }
 }
-private [machine] final class MultiExpectedError(val presentationOffset: Int, val line: Int, val col: Int,
-                                                 val expected: Set[ExpectItem], val unexpectedWidth: Int)
-    extends BaseError {
-    override final val flags = if (expected.isEmpty) DefuncError.ExpectedEmptyMask | DefuncError.TrivialErrorMask else DefuncError.TrivialErrorMask
-    override def expectedIterable: Iterable[ExpectItem] = expected
-}
 
 private [errors] final class TrivialMergedErrors private [errors] (val err1: TrivialDefuncError, val err2: TrivialDefuncError) extends TrivialDefuncError {
     override final val flags = err1.flags & err2.flags

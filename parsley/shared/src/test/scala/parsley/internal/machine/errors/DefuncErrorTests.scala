@@ -5,7 +5,7 @@ package parsley.internal.machine.errors
 
 import parsley.ParsleyTest
 
-import parsley.internal.errors.{TrivialError, FancyError, FlexibleCaret, ExpectRaw, ExpectDesc, EndOfInput, RigidCaret, UnexpectDesc}
+import parsley.internal.errors.{TrivialError, FancyError, FlexibleCaret, ExpectItem, ExpectRaw, ExpectDesc, EndOfInput, RigidCaret, UnexpectDesc}
 
 import MockedBuilders.mockedErrorItemBuilder
 
@@ -82,18 +82,8 @@ class DefuncErrorTests extends ParsleyTest {
         err.asParseError shouldBe a [TrivialError]
     }
 
-    "MultiExpectedError" should "evaluate to TrivialError" in {
-        val err = new MultiExpectedError(0, 0, 0, Set.empty, 1)
-        err.isTrivialError shouldBe true
-        err.asParseError shouldBe a [TrivialError]
-    }
-    it should "only be empty when its label is" in {
-        new MultiExpectedError(0, 0, 0, Set.empty, 1).isExpectedEmpty shouldBe true
-        new MultiExpectedError(0, 0, 0, Set(EndOfInput), 1).isExpectedEmpty shouldBe false
-    }
-
     "MergedErrors" should "be trivial if both children are" in {
-        val err = new EmptyError(0, 0, 0, 0).merge(new MultiExpectedError(0, 0, 0, Set.empty, 1))
+        val err = new EmptyError(0, 0, 0, 0).merge(new ClassicExpectedError(0, 0, 0, Set.empty[ExpectItem], 1))
         err.isTrivialError shouldBe true
         err.asParseError shouldBe a [TrivialError]
     }
@@ -147,7 +137,7 @@ class DefuncErrorTests extends ParsleyTest {
         new ClassicExpectedError(0, 0, 0, Some(EndOfInput), 1).merge(new ClassicExpectedError(0, 0, 0, Some(EndOfInput), 1)).isExpectedEmpty shouldBe false
     }
     they should "contain all the expecteds from both branches when appropriate" in {
-        val err = new MultiExpectedError(0, 0, 0, Set(new ExpectRaw("a"), new ExpectRaw("b")), 1).merge(new MultiExpectedError(0, 0, 0, Set(new ExpectRaw("b"), new ExpectRaw("c")), 1))
+        val err = new ClassicExpectedError(0, 0, 0, Set[ExpectItem](new ExpectRaw("a"), new ExpectRaw("b")), 1).merge(new ClassicExpectedError(0, 0, 0, Set[ExpectItem](new ExpectRaw("b"), new ExpectRaw("c")), 1))
         err.asParseError.asInstanceOf[TrivialError].expecteds should contain only (new ExpectRaw("a"), new ExpectRaw("b"), new ExpectRaw("c"))
     }
 
@@ -198,8 +188,8 @@ class DefuncErrorTests extends ParsleyTest {
         new ClassicExpectedError(0, 0, 0, Some(new ExpectDesc("x")), 1).label("a", 0).isExpectedEmpty shouldBe false
     }
     it should "replace all expected" in {
-        val errShow = new MultiExpectedError(0, 0, 0, Set(new ExpectRaw("a"), new ExpectRaw("b")), 1).label("x", 0)
-        val errHide = new MultiExpectedError(0, 0, 0, Set(new ExpectRaw("a"), new ExpectRaw("b")), 1).label("", 0)
+        val errShow = new ClassicExpectedError(0, 0, 0, Set[ExpectItem](new ExpectRaw("a"), new ExpectRaw("b")), 1).label("x", 0)
+        val errHide = new ClassicExpectedError(0, 0, 0, Set[ExpectItem](new ExpectRaw("a"), new ExpectRaw("b")), 1).label("", 0)
         errShow.asParseError.expecteds should contain only (new ExpectDesc("x"))
         errHide.asParseError.expecteds shouldBe empty
     }
