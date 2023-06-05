@@ -64,11 +64,6 @@ private [errors] final class TrivialErrorBuilder(presentationOffset: Int, outOfR
       */
     def updateEmptyUnexpected(width: Int): Unit = updateUnexpected(new NoItem(width))
     private def updateUnexpected(item: BuilderUnexpectItem): Unit = this.unexpected = this.unexpected.pickHigher(item)
-    /** If this error is accepting new expected items, adds the given item into the error, should one exist.
-      *
-      * @param expected the possible item to add
-      */
-    def +=(expected: Option[ExpectItem]): Unit = this ++= expected
     /** If this error is accepting new expected items, adds the given item into the error
       *
       * @param expected the item to add

@@ -290,16 +290,20 @@ private [errors] sealed abstract class BaseError extends TrivialDefuncError {
 }
 
 private [machine] final class ClassicExpectedError(val presentationOffset: Int, val line: Int, val col: Int,
-                                                   val expected: Option[ExpectItem], val unexpectedWidth: Int) extends BaseError {
+                                                   val expected: Set[ExpectItem], val unexpectedWidth: Int) extends BaseError {
+    def this(presentationOffset: Int, line: Int, col: Int, expected: Option[ExpectItem], unexpectedWidth: Int) =
+        this(presentationOffset, line, col, expected.toSet, unexpectedWidth)
     override final val flags = if (expected.isEmpty) (DefuncError.ExpectedEmptyMask | DefuncError.TrivialErrorMask) else DefuncError.TrivialErrorMask
     override def expectedIterable: Iterable[ExpectItem] = expected
 }
 private [machine] final class ClassicExpectedErrorWithReason(val presentationOffset: Int, val line: Int, val col: Int,
-                                                             val expected: Option[ExpectItem], val reason: String, val unexpectedWidth: Int) extends BaseError {
+                                                             val expected: Set[ExpectItem], val reason: String, val unexpectedWidth: Int) extends BaseError {
+    def this(presentationOffset: Int, line: Int, col: Int, expected: Option[ExpectItem], reason: String, unexpectedWidth: Int) =
+        this(presentationOffset, line, col, expected.toSet, reason, unexpectedWidth)
     override final val flags = if (expected.isEmpty) (DefuncError.ExpectedEmptyMask | DefuncError.TrivialErrorMask) else DefuncError.TrivialErrorMask
     override def expectedIterable: Iterable[ExpectItem] = expected
     override def addLabelsAndReasons(builder: TrivialErrorBuilder): Unit = {
-        builder += expected
+        builder ++= expected
         builder += reason
     }
 }
@@ -310,7 +314,7 @@ private [parsley] final class ClassicUnexpectedError(val presentationOffset: Int
     override private [errors] def unexpectedWidth: Int = unexpected.width.width
     override def makeTrivial(builder: TrivialErrorBuilder): Unit = {
         builder.pos_=(line, col)
-        builder += expected
+        builder ++= expected
         builder.updateUnexpected(unexpected)
     }
 }
