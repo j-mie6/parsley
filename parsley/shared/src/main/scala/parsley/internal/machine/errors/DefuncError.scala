@@ -36,7 +36,7 @@ private [parsley] sealed abstract class DefuncError {
     /** The offset at which this error appears to occur */
     private [machine] val presentationOffset: Int
     /** The offset at which this error supposedly originated */
-    private [machine] val underlyingOffset: Int
+    private [machine] def underlyingOffset: Int
     /** This function forces the lazy defunctionalised structure into a final `ParseError` value. */
     private [machine] def asParseError(implicit itemBuilder: ErrorItemBuilder): ParseError
 
@@ -263,7 +263,7 @@ private [errors] sealed abstract class BaseError extends TrivialDefuncError {
     private [errors] val line: Int
     /** The column number the error occurred at */
     private [errors] val col: Int
-    val underlyingOffset: Int = presentationOffset
+    def underlyingOffset: Int = presentationOffset
     /** The size of the unexpected token demanded by this error */
     private [errors] def unexpectedWidth: Int
     // private [errors] def expected: IterableOnce[ErrorItem] // TODO: when 2.12 is dropped this will work better
@@ -317,7 +317,7 @@ private [parsley] final class ClassicUnexpectedError(val presentationOffset: Int
 
 private [parsley] final class ClassicFancyError(val presentationOffset: Int, val line: Int, val col: Int, caretWidth: CaretWidth, val msgs: String*)
     extends FancyDefuncError {
-    val underlyingOffset: Int = presentationOffset
+    def underlyingOffset: Int = presentationOffset
     override final val flags =
         if (caretWidth.isFlexible) DefuncError.ExpectedEmptyMask | DefuncError.FlexibleCaretMask else DefuncError.ExpectedEmptyMask
     override def makeFancy(builder: FancyErrorBuilder): Unit = {
