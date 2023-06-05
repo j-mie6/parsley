@@ -118,14 +118,17 @@ private [internal] object Return extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] object Empty extends Instr {
+private [internal] class Empty(width: Int) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        ctx.fail(new EmptyError(ctx.offset, ctx.line, ctx.col, unexpectedWidth = 0))
+        ctx.fail(new EmptyError(ctx.offset, ctx.line, ctx.col, unexpectedWidth = width))
     }
     // $COVERAGE-OFF$
     override def toString: String = "Empty"
     // $COVERAGE-ON$
+}
+private [internal] object Empty {
+    val zero = new Empty(0)
 }
 
 private [internal] final class PushHandler(var label: Int) extends InstrWithLabel {

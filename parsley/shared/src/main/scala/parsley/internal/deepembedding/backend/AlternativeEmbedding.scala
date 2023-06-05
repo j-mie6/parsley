@@ -260,7 +260,7 @@ private [backend] object Choice {
             instrs += new instructions.Catch(merge) //This instruction is reachable as default - 1
             instrs += new instructions.Label(default)
             if (needsDefault) {
-                instrs += instructions.Empty
+                instrs += instructions.Empty.zero
                 result(instrs += new instructions.Label(end))
             }
             else {

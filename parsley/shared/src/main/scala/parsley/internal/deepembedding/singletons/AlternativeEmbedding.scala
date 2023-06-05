@@ -10,5 +10,5 @@ private [parsley] object Empty extends Singleton[Nothing] with MZero {
     // $COVERAGE-OFF$
     override val pretty: String = "empty"
     // $COVERAGE-ON$
-    override val instr: instructions.Instr = instructions.Empty
+    override val instr: instructions.Instr = instructions.Empty.zero
 }
