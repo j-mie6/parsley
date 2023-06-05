@@ -172,24 +172,24 @@ class DefuncErrorTests extends ParsleyTest {
     }
 
     "WithLabel" should "be trivial if its child is" in {
-        val err = new ClassicExpectedError(0, 0, 0, Nil, 1).label("", 0)
+        val err = new ClassicExpectedError(0, 0, 0, Nil, 1).label(Nil, 0)
         err.isTrivialError shouldBe true
         err.asParseError shouldBe a [TrivialError]
     }
     it should "support fancy errors as not trivial" in {
-        val err = new ClassicFancyError(0, 0, 0, new RigidCaret(1), "").label("", 0)
+        val err = new ClassicFancyError(0, 0, 0, new RigidCaret(1), "").label(Nil, 0)
         err.isTrivialError shouldBe false
         err.asParseError shouldBe a [FancyError]
     }
     it should "be empty if the label is empty and not otherwise" in {
-        new EmptyError(0, 0, 0, 0).label("", 0).isExpectedEmpty shouldBe true
-        new EmptyError(0, 0, 0, 0).label("a", 0).isExpectedEmpty shouldBe false
-        new ClassicExpectedError(0, 0, 0, List(new ExpectDesc("x")), 1).label("", 0).isExpectedEmpty shouldBe true
-        new ClassicExpectedError(0, 0, 0, List(new ExpectDesc("x")), 1).label("a", 0).isExpectedEmpty shouldBe false
+        new EmptyError(0, 0, 0, 0).label(Nil, 0).isExpectedEmpty shouldBe true
+        new EmptyError(0, 0, 0, 0).label(Seq("a"), 0).isExpectedEmpty shouldBe false
+        new ClassicExpectedError(0, 0, 0, List(new ExpectDesc("x")), 1).label(Nil, 0).isExpectedEmpty shouldBe true
+        new ClassicExpectedError(0, 0, 0, List(new ExpectDesc("x")), 1).label(Seq("a"), 0).isExpectedEmpty shouldBe false
     }
     it should "replace all expected" in {
-        val errShow = new ClassicExpectedError(0, 0, 0, List(new ExpectRaw("a"), new ExpectRaw("b")), 1).label("x", 0)
-        val errHide = new ClassicExpectedError(0, 0, 0, List(new ExpectRaw("a"), new ExpectRaw("b")), 1).label("", 0)
+        val errShow = new ClassicExpectedError(0, 0, 0, List(new ExpectRaw("a"), new ExpectRaw("b")), 1).label(Seq("x"), 0)
+        val errHide = new ClassicExpectedError(0, 0, 0, List(new ExpectRaw("a"), new ExpectRaw("b")), 1).label(Nil, 0)
         errShow.asParseError.expecteds should contain only (new ExpectDesc("x"))
         errHide.asParseError.expecteds shouldBe empty
     }

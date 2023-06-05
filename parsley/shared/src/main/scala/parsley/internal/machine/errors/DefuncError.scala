@@ -85,7 +85,7 @@ private [parsley] sealed abstract class DefuncError {
       * @param offset the offset that the label is applicable at
       * @return an error message that incorporates the relevant errors
       */
-    private [machine] def label(label: String, offset: Int): DefuncError
+    private [machine] def label(labels: Iterable[String], offset: Int): DefuncError
     /** This operation changes the offset, line, and column number that
       * an error appears to occur at. The effect of this operation is
       * suppressed by `entrench`, however.
@@ -154,7 +154,7 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
         case self: BaseError           =>
             collector ++= self.expected
             collector.updateWidth(self.unexpectedWidth)
-        case self: WithLabel           => if (self.label.nonEmpty) collector += new ExpectDesc(self.label)
+        case self: WithLabel           => collector ++= self.labels.map(new ExpectDesc(_))
         case self: WithHints           =>
             self.hints.collect(collector)
             self.err.collectHints(collector)
@@ -190,8 +190,8 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
         if (this.presentationOffset == offset) new WithReason(this, reason)
         else this
     }
-    private [machine] final override def label(label: String, offset: Int): TrivialDefuncError = {
-        if (this.presentationOffset == offset) new WithLabel(this, label)
+    private [machine] final override def label(labels: Iterable[String], offset: Int): TrivialDefuncError = {
+        if (this.presentationOffset == offset) new WithLabel(this, labels)
         else this
     }
     private [machine] final override def amend(partial: Boolean, presentationOffset: Int, line: Int, col: Int): TrivialDefuncError = {
@@ -236,7 +236,7 @@ private [errors] sealed abstract class FancyDefuncError extends DefuncError {
 
     private [machine] final override def withHints(hints: DefuncHints): FancyDefuncError = this
     private [parsley] final override def withReason(reason: String, offset: Int): FancyDefuncError = this
-    private [machine] final override def label(label: String, offset: Int): FancyDefuncError = this
+    private [machine] final override def label(labels: Iterable[String], offset: Int): FancyDefuncError = this
     private [machine] final override def amend(partial: Boolean, presentationOffset: Int, line: Int, col: Int): FancyDefuncError = {
         if (!this.entrenched) new FancyAmended(presentationOffset, if (partial) this.underlyingOffset else presentationOffset, line, col, this)
         else this
@@ -398,10 +398,10 @@ private [errors] final class WithReason private [errors] (val err: TrivialDefunc
     }
 }
 
-private [errors] final class WithLabel private [errors] (val err: TrivialDefuncError, val label: String) extends TrivialTransitive {
+private [errors] final class WithLabel private [errors] (val err: TrivialDefuncError, val labels: Iterable[String]) extends TrivialTransitive {
     override final val flags = {
-        if (label.isEmpty) err.flags |  DefuncError.ExpectedEmptyMask
-        else               err.flags & ~DefuncError.ExpectedEmptyMask
+        if (labels.isEmpty) err.flags |  DefuncError.ExpectedEmptyMask
+        else                err.flags & ~DefuncError.ExpectedEmptyMask
     }
     override val presentationOffset = err.presentationOffset
     override val underlyingOffset = err.underlyingOffset
@@ -409,7 +409,7 @@ private [errors] final class WithLabel private [errors] (val err: TrivialDefuncE
         builder.ignoreExpected {
             err.makeTrivial(builder)
         }
-        if (label.nonEmpty) builder += new ExpectDesc(label)
+        builder ++= labels.map(new ExpectDesc(_))
     }
 }
 

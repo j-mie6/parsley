@@ -5,8 +5,8 @@ package parsley.internal.deepembedding.frontend
 
 import parsley.internal.deepembedding.backend, backend.StrictParsley
 
-private [parsley] final class ErrorLabel[A](p: LazyParsley[A], private [ErrorLabel] val label: String) extends Unary[A, A](p) {
-    override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.ErrorLabel(p, label)
+private [parsley] final class ErrorLabel[A](p: LazyParsley[A], private [ErrorLabel] val labels: Seq[String]) extends Unary[A, A](p) {
+    override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.ErrorLabel(p, labels)
 }
 private [parsley] final class ErrorExplain[A](p: LazyParsley[A], reason: String) extends Unary[A, A](p) {
     override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.ErrorExplain(p, reason)

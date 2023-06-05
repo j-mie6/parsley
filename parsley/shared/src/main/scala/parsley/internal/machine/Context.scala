@@ -83,7 +83,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         if (hintFrame.validOffset == offset) this.hints = hintFrame.hints.merge(this.hints)
         commitHints()
     }
-    private [machine] def replaceHint(label: String): Unit = hints = hints.rename(label)
+    private [machine] def replaceHint(labels: Iterable[String]): Unit = hints = hints.rename(labels)
     private [machine] def popHints(): Unit = hints = hints.pop
     /* ERROR RELABELLING END */
 

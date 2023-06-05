@@ -8,8 +8,8 @@ import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.{ClassicExpectedError, ClassicExpectedErrorWithReason, ClassicFancyError, EmptyError}
 
-private [internal] final class RelabelHints(label: String) extends Instr {
-    private [this] val isHide: Boolean = label.isEmpty
+private [internal] final class RelabelHints(labels: Iterable[String]) extends Instr {
+    private [this] val isHide: Boolean = labels.isEmpty
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         // if this was a hide, pop the hints if possible
@@ -18,7 +18,7 @@ private [internal] final class RelabelHints(label: String) extends Instr {
         if (isHide) ctx.popHints()
         // EOK
         // replace the head of the hints with the singleton for our label
-        else if (ctx.offset == ctx.checkStack.offset) ctx.replaceHint(label)
+        else if (ctx.offset == ctx.checkStack.offset) ctx.replaceHint(labels)
         // COK
         // do nothing
         ctx.mergeHints()
@@ -27,24 +27,24 @@ private [internal] final class RelabelHints(label: String) extends Instr {
         ctx.inc()
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"RelabelHints($label)"
+    override def toString: String = s"RelabelHints($labels)"
     // $COVERAGE-ON$
 }
 
-private [internal] final class RelabelErrorAndFail(label: String) extends Instr {
+private [internal] final class RelabelErrorAndFail(labels: Iterable[String]) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
         ctx.restoreHints()
         ctx.errs.error = ctx.useHints {
             // only use the label if the error message is generated at the same offset
             // as the check stack saved for the start of the `label` combinator.
-            ctx.errs.error.label(label, ctx.checkStack.offset)
+            ctx.errs.error.label(labels, ctx.checkStack.offset)
         }
         ctx.checkStack = ctx.checkStack.tail
         ctx.fail()
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"ApplyError($label)"
+    override def toString: String = s"ApplyError($labels)"
     // $COVERAGE-ON$
 }
 
