@@ -90,7 +90,7 @@ private [deepembedding] final class Filter[A](val p: StrictParsley[A], pred: A =
 }
 private [deepembedding] final class MapFilter[A, B](val p: StrictParsley[A], f: A => Option[B]) extends Unary[A, B] {
     final override def optimise: StrictParsley[B] = p match {
-        case Pure(x) => f(x).map(new Pure(_)).getOrElse(Empty)
+        case Pure(x) => f(x).map(new Pure(_)).getOrElse(Empty.Zero)
         case z: MZero => z
         case _ => this
     }

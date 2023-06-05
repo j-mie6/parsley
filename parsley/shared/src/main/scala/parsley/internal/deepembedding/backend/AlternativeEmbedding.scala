@@ -27,8 +27,8 @@ private [deepembedding] final class Choice[A](private [backend] val alt1: Strict
     override def optimise: StrictParsley[A] = this match {
         // Assume that this is eliminated first, so not other alts
         case (u: Pure[_]) <|> _ => u
-        case Empty <|> q => q
-        case p <|> Empty => p
+        case Empty.Zero <|> q => q
+        case p <|> Empty.Zero => p
         case Choice(ret@Choice(_, _, lalts: SinglyLinkedList[StrictParsley[A]]),
                     Choice(ralt1, ralt2, ralts: SinglyLinkedList[StrictParsley[A]]),
                     alts) =>
