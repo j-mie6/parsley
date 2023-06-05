@@ -50,7 +50,7 @@ inThisBuild(List(
     ProblemFilters.exclude[DirectMissingMethodProblem]("parsley.token.errors.*.asExpectItem"),
     ProblemFilters.exclude[DirectMissingMethodProblem]("parsley.token.errors.*.asExpectDesc"),
     ProblemFilters.exclude[DirectMissingMethodProblem]("parsley.token.errors.*.label"),
-    ProblemFilters.exclude[DirectMissingMethodProblem]("parsley.token.errors.*.this"),
+    ProblemFilters.exclude[IncompatibleMethTypeProblem]("parsley.token.errors.*.this"),
     // Expression refactor
     ProblemFilters.exclude[ReversedMissingMethodProblem]("parsley.expr.Fixity.chain"),
     ProblemFilters.exclude[ReversedMissingMethodProblem]("parsley.expr.Ops.chain"),
