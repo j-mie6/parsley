@@ -6,7 +6,7 @@ package parsley.internal.machine.instructions.debugger
 import parsley.debugger.ParseAttempt
 import parsley.debugger.internal.DebugContext
 
-import parsley.internal.deepembedding.frontend.{Iterative, LazyParsley}
+import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.machine.Context
 import parsley.internal.machine.instructions.{Instr, InstrWithLabel}
 
@@ -19,7 +19,7 @@ private [internal] class EnterParser
   (implicit dbgCtx: DebugContext) extends InstrWithLabel with DebuggerInstr {
   override def apply(ctx: Context): Unit = {
     // I think we can get away with executing this unconditionally.
-    dbgCtx.push(ctx.input, origin, origin.isInstanceOf[Iterative])
+    dbgCtx.push(ctx.input, origin)
     ctx.pushCheck() // Save our location for inputs.
     ctx.pushHandler(label) // Mark the AddAttempt instruction as an exit handler.
     ctx.inc()
@@ -49,6 +49,7 @@ private [internal] class AddAttemptAndLeave(implicit dbgCtx: DebugContext) exten
     }
 
     // Construct a new parse attempt and add it in.
+    // XXX: Cast to Any required as otherwise the Some creation is treated as dead code.
     dbgCtx.addParseAttempt(
       ParseAttempt(
         input,
@@ -57,7 +58,7 @@ private [internal] class AddAttemptAndLeave(implicit dbgCtx: DebugContext) exten
         prevPos,
         if (ctx.good) (ctx.line, ctx.col - 1) else (ctx.line, ctx.col),
         success,
-        if (success) Some(ctx.stack.peek) else None
+        if (success) Some(ctx.stack.peek.asInstanceOf[Any]) else None
       )
     )
 

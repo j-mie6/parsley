@@ -12,9 +12,15 @@ import parsley.internal.deepembedding.frontend.LazyParsley
 // Class used to hold details about a parser being debugged.
 // This is normally held as a value inside an implicit variable.
 private [parsley] class DebugContext {
+  // Create a new dummy root of the tree that will act as filler for the rest of the tree to build
+  // off of (as there is no "nil" representation for the tree... other than null, which should be
+  // avoided in Scala wherever possible).
+  private def dummyRoot: DebugTreeBuilder =
+    DebugTreeBuilder(TransientDebugTree("ROOT", "ROOT", "NIL"))
+
   // Tracks where we are in the parser callstack.
   private var builderStack: ListBuffer[DebugTreeBuilder] =
-    ListBuffer(DebugTreeBuilder(TransientDebugTree("ROOT", "ROOT", "NIL")))
+    ListBuffer(dummyRoot)
 
   // Get the final DebugTreeBuilder from this context.
   def getFinalBuilder: DebugTreeBuilder =
@@ -26,11 +32,11 @@ private [parsley] class DebugContext {
 
   // Reset this context back to zero.
   def reset(): Unit = {
-    builderStack = ListBuffer(DebugTreeBuilder(TransientDebugTree("ROOT", "ROOT", "NIL")))
+    builderStack = ListBuffer(dummyRoot)
   }
 
   // Push a new parser onto the parser callstack.
-  def push(fullInput: String, parser: LazyParsley[_], iterative: Boolean): Unit = {
+  def push(fullInput: String, parser: LazyParsley[_]): Unit = {
     lazy val uniq: Unique[LazyParsley[_]] = Unique(parser)
 
     if (builderStack.head.bChildren.contains(uniq)) {
@@ -51,9 +57,10 @@ private [parsley] class DebugContext {
   def pop(): Unit =
     if (builderStack.isEmpty) {
       // Shouldn't happen, but just in case.
-      println("WARNING: parser stack underflow on pop.")
+      println("WARNING: Parser stack underflow on pop. This should not have happened!")
     } else {
-      // Remove first item.
+      // Remove first parser off stack, as if returning from that parser.
       builderStack.remove(0)
+      () // XXX: Silences discarded non-unit value warning.
     }
 }

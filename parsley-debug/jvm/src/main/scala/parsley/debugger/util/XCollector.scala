@@ -3,6 +3,7 @@
  */
 package parsley.debugger.util
 
+import scala.annotation.nowarn
 import scala.collection.mutable
 import scala.reflect.runtime.{universe => ru}
 
@@ -14,7 +15,10 @@ import parsley.internal.deepembedding.frontend.LazyParsley
 private [parsley] object XCollector extends CollectorImpl {
   // There should not be too many differences in the public API between 2.12 and 2.13's reflection
   // packages. However, results may vary. Scala 3 however, is a wild-west of compatibility.
-  def collectNames(obj: Any): Map[LazyParsley[_], String] = {
+  // XXX: @nowarn is required as the Runtime Universe's MethodSymbol type is erased at runtime,
+  //      though it should be a safe type comparison if the version of scala-reflect remains
+  //      constant between compile-time and runtime.
+  @nowarn def collectNames(obj: Any): Map[LazyParsley[_], String] = {
     val accumulator: mutable.HashMap[LazyParsley[_], String] = new mutable.HashMap()
 
     val mirror = scala.reflect.runtime.currentMirror
@@ -43,7 +47,8 @@ private [parsley] object XCollector extends CollectorImpl {
     accumulator.toMap
   }
 
-  def collectLexer(lexer: Lexer): Map[LazyParsley[_], String] = {
+  // XXX: See collectNames' hack (XXX) message for more information.
+  @nowarn def collectLexer(lexer: Lexer): Map[LazyParsley[_], String] = {
     val accumulator: mutable.HashMap[LazyParsley[_], String] = new mutable.HashMap()
 
     val lexerObjects = List(

@@ -71,6 +71,7 @@ trait DebugTree {
       case (_, t) :: Nil =>
         helper.bury("|", withMark = false)
         t.prettyPrint(helper.addBlankIndent())
+        () // XXX: Silences discarded non-unit value warning.
       case (_, t) :: xs  =>
         helper.bury("|", withMark = false)
         t.prettyPrint(helper.addIndent())

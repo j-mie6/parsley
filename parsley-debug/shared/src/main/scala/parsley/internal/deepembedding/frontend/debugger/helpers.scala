@@ -1,5 +1,6 @@
 package parsley.internal.deepembedding.frontend.debugger
 
+import scala.annotation.nowarn
 import scala.collection.mutable
 
 import parsley.debugger.internal.DebugContext
@@ -46,13 +47,16 @@ object helpers {
         Nil
     }
 
-  // WARNING: very unsafe due to asInstanceOf call.
+  // XXX: Very unsafe due to asInstanceOf call.
   private [this] def coerce[A](ix: Int)(implicit children: List[LazyParsley[Any]]): LazyParsley[A] =
     children(ix).asInstanceOf[LazyParsley[A]]
 
   // Reconstruct the original parser with new components.
-  // WARNING: very unsafe due to call to coerce.
-  private [this] def reconstruct[A, X, Y, Z]
+  // XXX: Very unsafe due to call to coerce, and there is unsafe type matching on runtime-erased
+  //      types, but there should be no reason that a ClassCastException will occur as we are not
+  //      creating new type information, just using some from before that was erased in order to
+  //      make this method more generic.
+  @nowarn private [this] def reconstruct[A, X, Y, Z]
   (parser: LazyParsley[A])
   (implicit children: List[LazyParsley[Any]]): LazyParsley[A] =
     parser match {

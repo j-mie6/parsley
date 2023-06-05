@@ -15,7 +15,7 @@ private [parsley] case class DebugTreeBuilder(
   def reconstruct: TransientDebugTree = {
     node.children
       .addAll(
-        bChildren.map { case (lp, cs) => (Rename(lp.item) + s"-#${{
+        bChildren.map { case (lp, cs) => (Rename(lp()) + s"-#${{
           val uuid = uid
           uid = uid + 1
           uuid

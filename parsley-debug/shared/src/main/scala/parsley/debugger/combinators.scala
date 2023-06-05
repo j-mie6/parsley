@@ -4,7 +4,7 @@ import scala.collection.mutable
 
 import parsley.Parsley
 import parsley.Parsley.{attempt, empty, fresh}
-import parsley.debugger.frontend.{ConsoleGUI, DebugGUI}
+import parsley.debugger.frontend.DebugGUI
 import parsley.debugger.internal.DebugContext
 
 import parsley.internal.deepembedding.frontend.LazyParsley
@@ -37,10 +37,14 @@ object combinators {
     *
     * This tree can then be introspected manually in a (runtime) debugger, or passed over to one
     * of the GUI frontends in [[parsley.debugger.frontend]]. A console frontend is provided as
-    * [[ConsoleGUI]] should the current platform not provide a dedicated GUI renderer.
+    * [[parsley.debugger.frontend.ConsoleGUI]] should the current platform not provide a dedicated
+    * GUI renderer.
     *
     * It is recommended that you save the debug trees somewhere should you want to re-use the same
-    * debugged parser.
+    * debugged parser, or if you want to use the same debugged parser as a child parser on
+    * multiple parts of your main parser, make sure you use [[attachReusable]], as re-use of the
+    * same debugged parser across multiple parent parsers will cause the different parse trees to
+    * incorrectly merge in an undefined manner.
     *
     * See [[attachDebuggerGUI]] to automate the GUI rendering process after parsing.
     *
@@ -56,17 +60,32 @@ object combinators {
     (() => context.getFinalBuilder.reconstruct, fresh(context.reset()) *> new Parsley(attached))
   }
 
+  /** Create a closure that freshly attaches a debugger to a parser every time it is called.
+    * This is used for creating debugged parsers that can be used as children to multiple parent
+    * parsers, as using the same debugged parser as a child to multiple parsers is unsafe.
+    *
+    * See [[attachDebugger]] for more information.
+    *
+    * @return Generator closure for debugged versions of the input parser.
+    */
+  def attachReusable[A](parser: Parsley[A]): () => (() => DebugTree, Parsley[A]) =
+    () => attachDebugger(parser)
+
   /** Attach a debugger and an explicitly-available GUI frontend in which the debug tree should be
     * rendered in.
     *
-    * One would normally obtain a [[DebugGUI]] frontend from its respective package as either a
-    * static object or an instance object depending on whether the renderer stores state. In the
-    * latter case, it is better to regenerate the GUI with every new debugged parser.
+    * You would normally obtain a [[parsley.debugger.frontend.DebugGUI]] frontend from its
+    * respective package as either a static object or an instance object depending on whether the
+    * renderer stores state. In the latter case, it is better to regenerate the GUI with every new
+    * debugged parser.
     *
-    * The instrumented parser will automatically call the GUI to render the debug tree.
+    * The instrumented parser will automatically call the GUI to render the debug tree, so it may
+    * be recommended that you only use this with smaller parsers as large parsers may cause large
+    * amounts of memory to be used for rendering the tree.
     *
     * See [[attachDebugger]] for more information on how attachment works and things you may want
-    * to do before using this debug combinator.
+    * to do before using this debug combinator, as well as some warnings on what not to do when
+    * using this debugger (such as regarding re-use of debugged parsers).
     *
     * @param parser The parser to debug.
     * @param gui    The GUI frontend instance to render with.
@@ -87,6 +106,16 @@ object combinators {
 
     attempt(attached <* renderer) <|> (renderer *> empty)
   }
+
+  /** Create a closure that freshly attaches a debugger and a tree-rendering GUI to a parser every
+    * time it is called.
+    *
+    * See [[attachReusable]] for more information.
+    *
+    * @return Generator closure for GUI-debugged versions of the input parser.
+    */
+  def attachReusableGUI[A](parser: Parsley[A], gui: () => DebugGUI): () => Parsley[A] =
+    () => attachDebuggerGUI(parser, gui())
 
   /** Attach a debugger and an implicitly-available GUI frontend in which the debug tree should be
     * rendered in. See [[attachDebuggerGUI]] for more information.
