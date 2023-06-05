@@ -41,8 +41,8 @@ private [internal] object Lift3 {
     def apply[A, B, C, D](f: (A, B, C) => D): Lift3 = new Lift3(f.asInstanceOf[(Any, Any, Any) => Any])
 }
 
-private [internal] class CharTok(c: Char, x: Any, errorItem: Option[ExpectItem]) extends Instr {
-    def this(c: Char, x: Any, expected: LabelConfig) = this(c, x, expected.asExpectItem(s"$c"))
+private [internal] class CharTok(c: Char, x: Any, errorItem: Iterable[ExpectItem]) extends Instr {
+    def this(c: Char, x: Any, expected: LabelConfig) = this(c, x, expected.asExpectItems(s"$c"))
     def this(c: Char, expected: LabelConfig) = this(c, c, expected)
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
@@ -57,8 +57,8 @@ private [internal] class CharTok(c: Char, x: Any, errorItem: Option[ExpectItem])
     // $COVERAGE-ON$
 }
 
-private [internal] class SupplementaryCharTok(codepoint: Int, x: Any, errorItem: Option[ExpectItem]) extends Instr {
-    def this(codepoint: Int, x: Any, expected: LabelConfig) = this(codepoint, x, expected.asExpectItem(Character.toChars(codepoint).mkString))
+private [internal] class SupplementaryCharTok(codepoint: Int, x: Any, errorItem: Iterable[ExpectItem]) extends Instr {
+    def this(codepoint: Int, x: Any, expected: LabelConfig) = this(codepoint, x, expected.asExpectItems(Character.toChars(codepoint).mkString))
     def this(codepoint: Int, expected: LabelConfig) = this(codepoint, codepoint, expected)
 
     assert(Character.isSupplementaryCodePoint(codepoint), "SupplementaryCharTok should only be used for supplementary code points")
@@ -79,8 +79,8 @@ private [internal] class SupplementaryCharTok(codepoint: Int, x: Any, errorItem:
     // $COVERAGE-ON$
 }
 
-private [internal] final class StringTok(s: String, x: Any, errorItem: Option[ExpectItem]) extends Instr {
-    def this(s: String, x: Any, expected: LabelConfig) = this(s, x,  expected.asExpectItem(s))
+private [internal] final class StringTok(s: String, x: Any, errorItem: Iterable[ExpectItem]) extends Instr {
+    def this(s: String, x: Any, expected: LabelConfig) = this(s, x,  expected.asExpectItems(s))
     def this(s: String, expected: LabelConfig) = this(s, s, expected)
 
     private [this] val sz = s.length
@@ -135,8 +135,8 @@ private [internal] final class StringTok(s: String, x: Any, errorItem: Option[Ex
     // $COVERAGE-ON$
 }
 
-private [internal] final class UniSat(f: Int => Boolean, expected: Option[ExpectDesc]) extends Instr {
-    def this(f: Int => Boolean, expected: LabelConfig) = this(f, expected.asExpectDesc)
+private [internal] final class UniSat(f: Int => Boolean, expected: Iterable[ExpectDesc]) extends Instr {
+    def this(f: Int => Boolean, expected: LabelConfig) = this(f, expected.asExpectDescs)
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         lazy val hc = ctx.peekChar(0)
@@ -269,7 +269,7 @@ private [internal] final class UnexpectedWhen(pred: PartialFunction[Any, (String
             val state = ctx.states
             val caretWidth = ctx.offset - state.offset
             val (unex, reason) = pred(ctx.stack.upop())
-            val err = new ClassicUnexpectedError(state.offset, state.line, state.col, Set.empty, new UnexpectDesc(unex, new RigidCaret(caretWidth)))
+            val err = new ClassicUnexpectedError(state.offset, state.line, state.col, Nil, new UnexpectDesc(unex, new RigidCaret(caretWidth)))
             ctx.fail(reason.fold[DefuncError](err)(err.withReason(_)))
         }
         else ctx.inc()

@@ -65,16 +65,16 @@ private [deepembedding] final class Choice[A](private [backend] val alt1: Strict
         }
     }
 
-    private def tablify: List[(StrictParsley[_], Option[(Char, Option[ExpectItem], Int, Boolean)])] = {
+    private def tablify: List[(StrictParsley[_], Option[(Char, Iterable[ExpectItem], Int, Boolean)])] = {
         tablify((alt1::alt2::alts).iterator, mutable.ListBuffer.empty, mutable.Set.empty, None)
     }
 
     @tailrec private def tablify(
             it: LinkedListIterator[StrictParsley[A]],
-            acc: mutable.ListBuffer[(StrictParsley[_], Option[(Char, Option[ExpectItem], Int, Boolean)])],
+            acc: mutable.ListBuffer[(StrictParsley[_], Option[(Char, Iterable[ExpectItem], Int, Boolean)])],
             seen: mutable.Set[Char],
             lastSeen: Option[Char]
-        ): List[(StrictParsley[_], Option[(Char, Option[ExpectItem], Int, Boolean)])] = it.next() match {
+        ): List[(StrictParsley[_], Option[(Char, Iterable[ExpectItem], Int, Boolean)])] = it.next() match {
         case u if it.hasNext =>
             val leadingInfo = tablable(u, backtracks = false)
             leadingInfo match {
@@ -172,8 +172,8 @@ private [backend] object Choice {
 
     }
 
-    @tailrec private def propagateExpecteds(expectedss: List[(Set[ExpectItem], Boolean)], all: Set[ExpectItem], corrected: List[Set[ExpectItem]]):
-        List[Set[ExpectItem]] = expectedss match {
+    @tailrec private def propagateExpecteds(expectedss: List[(Iterable[ExpectItem], Boolean)], all: Iterable[ExpectItem],
+                                            corrected: List[Iterable[ExpectItem]]): List[Iterable[ExpectItem]] = expectedss match {
         case (expecteds, backtrack) :: expectedss => propagateExpecteds(expectedss, all, (if (backtrack) all else expecteds) :: corrected)
         case Nil => corrected
     }
@@ -196,45 +196,45 @@ private [backend] object Choice {
         case alt::alts_ => codeGenAlt(alt, suspend(codeGenAlternatives[Cont, R](alts_)))
     }
     // TODO: Refactor
-    @tailrec private def foldTablified(tablified: List[(StrictParsley[_], (Char, Option[ExpectItem], Int, Boolean))], // scalastyle:ignore parameter.number
+    @tailrec private def foldTablified(tablified: List[(StrictParsley[_], (Char, Iterable[ExpectItem], Int, Boolean))], // scalastyle:ignore parameter.number
                                        labelGen: CodeGenState,
                                        roots: mutable.Map[Char, mutable.ListBuffer[StrictParsley[_]]],
                                        backtracking: mutable.Map[Char, Boolean],
                                        leads: mutable.ListBuffer[Char],
                                        labels: mutable.ListBuffer[Int],
                                        size: Int,
-                                       expecteds: Set[ExpectItem],
+                                       expecteds: Vector[ExpectItem], // TODO: not sure what to make this... we have iterables to ++
                                        // build in reverse!
-                                       expectedss: List[Set[ExpectItem]]):
-        (List[List[StrictParsley[_]]], List[Char], List[Int], Int, Set[ExpectItem], List[(Set[ExpectItem], Boolean)]) = tablified match {
+                                       expectedss: List[Iterable[ExpectItem]]):
+        (List[List[StrictParsley[_]]], List[Char], List[Int], Int, Iterable[ExpectItem], List[(Iterable[ExpectItem], Boolean)]) = tablified match {
         case (root, (c, expected, _size, backtracks))::tablified_ =>
             if (roots.contains(c)) {
                 roots(c) += root
                 backtracking(c) = backtracking(c) && backtracks
                 foldTablified(tablified_, labelGen, roots, backtracking, leads, labels,
-                              Math.max(size, _size), expected.fold(expecteds)(expecteds + _), expectedss)
+                              Math.max(size, _size), expecteds ++ expected, expectedss)
             }
             else {
                 roots(c) = mutable.ListBuffer(root)
                 backtracking(c) = backtracks
                 foldTablified(tablified_, labelGen, roots, backtracking, leads += c, labels += labelGen.freshLabel(),
-                              Math.max(size, _size), expected.fold(expecteds)(expecteds + _), expecteds :: expectedss)
+                              Math.max(size, _size), expecteds ++ expected, expecteds :: expectedss)
             }
         case Nil => (leads.toList.map(roots(_).toList), leads.toList, labels.toList, size,
                     // When 2.12 is dropped, the final toList can go
                      expecteds, expectedss.zip(leads.toList.reverseIterator.map(backtracking(_)).toList))
     }
 
-    @tailrec private def tablable(p: StrictParsley[_], backtracks: Boolean): Option[(Char, Option[ExpectItem], Int, Boolean)] = p match {
+    @tailrec private def tablable(p: StrictParsley[_], backtracks: Boolean): Option[(Char, Iterable[ExpectItem], Int, Boolean)] = p match {
         // CODO: Numeric parsers by leading digit (This one would require changing the foldTablified function a bit)
-        case ct@CharTok(c)                       => Some((c, ct.expected.asExpectItem(c), 1, backtracks))
-        case ct@SupplementaryCharTok(c)          => Some((Character.highSurrogate(c), ct.expected.asExpectItem(Character.toChars(c).mkString), 1, backtracks))
-        case st@StringTok(s)                     => Some((s.head, st.expected.asExpectItem(s), s.codePointCount(0, s.length), backtracks))
+        case ct@CharTok(c)                       => Some((c, ct.expected.asExpectItems(c), 1, backtracks))
+        case ct@SupplementaryCharTok(c)          => Some((Character.highSurrogate(c), ct.expected.asExpectItems(Character.toChars(c).mkString), 1, backtracks))
+        case st@StringTok(s)                     => Some((s.head, st.expected.asExpectItems(s), s.codePointCount(0, s.length), backtracks))
         //case op@MaxOp(o)                         => Some((o.head, Some(Desc(o)), o.size, backtracks))
         //case _: StringLiteral | RawStringLiteral => Some(('"', Some(Desc("string")), 1, backtracks))
         // TODO: This can be done for case insensitive things too, but with duplicated branching
-        case t@token.SoftKeyword(s) if t.caseSensitive => Some((s.head, t.expected.asExpectDesc(s), s.codePointCount(0, s.length), backtracks))
-        case t@token.SoftOperator(s)             => Some((s.head, t.expected.asExpectDesc(s), s.codePointCount(0, s.length), backtracks))
+        case t@token.SoftKeyword(s) if t.caseSensitive => Some((s.head, t.expected.asExpectDescs(s), s.codePointCount(0, s.length), backtracks))
+        case t@token.SoftOperator(s)             => Some((s.head, t.expected.asExpectDescs(s), s.codePointCount(0, s.length), backtracks))
         case Attempt(t)                          => tablable(t, backtracks = true)
         case (_: Pure[_]) <*> t                  => tablable(t, backtracks)
         case Lift2(_, t, _)                      => tablable(t, backtracks)
@@ -244,9 +244,9 @@ private [backend] object Choice {
         case _                                   => None
     }
 
-    private def codeGenJumpTable[Cont[_, +_]: ContOps, R, A](tablified: List[(StrictParsley[_], Option[(Char, Option[ExpectItem], Int, Boolean)])])
+    private def codeGenJumpTable[Cont[_, +_]: ContOps, R, A](tablified: List[(StrictParsley[_], Option[(Char, Iterable[ExpectItem], Int, Boolean)])])
                                                     (implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
-        val needsDefault = tablified.last._2.isDefined
+        val needsDefault = tablified.last._2.nonEmpty
         val end = state.freshLabel()
         val default = state.freshLabel()
         val merge = state.getLabel(instructions.MergeErrorsAndFail)
@@ -254,7 +254,7 @@ private [backend] object Choice {
             case (root, Some(info)) => (root, info)
         }
         val (roots, leads, ls, size, expecteds, expectedss) = foldTablified(tablified_, state, mutable.Map.empty, mutable.Map.empty,
-                                                                            mutable.ListBuffer.empty, mutable.ListBuffer.empty, 0, Set.empty, Nil)
+                                                                            mutable.ListBuffer.empty, mutable.ListBuffer.empty, 0, Vector.empty, Nil)
         instrs += new instructions.JumpTable(leads, ls, default, merge, size, expecteds, propagateExpecteds(expectedss, expecteds, Nil))
         codeGenRoots(roots, ls, end) >> {
             instrs += new instructions.Catch(merge) //This instruction is reachable as default - 1

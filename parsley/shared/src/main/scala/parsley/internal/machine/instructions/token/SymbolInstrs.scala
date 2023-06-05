@@ -17,7 +17,7 @@ import parsley.internal.machine.instructions.Instr
 private [token] abstract class Specific extends Instr {
     protected val specific: String
     protected val caseSensitive: Boolean
-    protected val expected: Option[ExpectDesc]
+    protected val expected: Iterable[ExpectDesc]
     private [this] final val strsz = specific.length
     private [this] final val numCodePoints = specific.codePointCount(0, strsz)
 
@@ -63,12 +63,12 @@ private [token] abstract class Specific extends Instr {
 }
 
 private [internal] final class SoftKeyword(protected val specific: String, letter: CharPredicate, protected val caseSensitive: Boolean,
-                                           protected val expected: Option[ExpectDesc], expectedEnd: Option[ExpectDesc]) extends Specific {
+                                           protected val expected: Iterable[ExpectDesc], expectedEnd: Iterable[ExpectDesc]) extends Specific {
     def this(specific: String, letter: predicate.CharPredicate, caseSensitive: Boolean, expected: LabelConfig, expectedEnd: String) = {
         this(if (caseSensitive) specific else specific.toLowerCase,
              letter.asInternalPredicate,
              caseSensitive,
-             expected.asExpectDesc, Some(new ExpectDesc(expectedEnd)))
+             expected.asExpectDescs, Some(new ExpectDesc(expectedEnd)))
     }
 
     protected def postprocess(ctx: Context): Unit = {
@@ -88,9 +88,9 @@ private [internal] final class SoftKeyword(protected val specific: String, lette
 }
 
 private [internal] final class SoftOperator(protected val specific: String, letter: CharPredicate, ops: Trie[Unit],
-                                            protected val expected: Option[ExpectDesc], expectedEnd: Option[ExpectDesc]) extends Specific {
+                                            protected val expected: Iterable[ExpectDesc], expectedEnd: Iterable[ExpectDesc]) extends Specific {
     def this(specific: String, letter: predicate.CharPredicate, ops: Trie[Unit], expected: LabelConfig, expectedEnd: String) = {
-        this(specific, letter.asInternalPredicate, ops, expected.asExpectDesc, Some(new ExpectDesc(expectedEnd)))
+        this(specific, letter.asInternalPredicate, ops, expected.asExpectDescs, Some(new ExpectDesc(expectedEnd)))
     }
     protected val caseSensitive = true
     private val ends = ops.suffixes(specific)

@@ -69,13 +69,13 @@ private [internal] final class TokenComment private (
     protected [this] val line: String,
     protected [this] val nested: Boolean,
     protected [this] val eofAllowed: Boolean,
-    endOfMultiComment: Option[ExpectItem],
-    endOfSingleComment: Option[ExpectDesc],
+    endOfMultiComment: Iterable[ExpectItem],
+    endOfSingleComment: Iterable[ExpectDesc],
     ) extends CommentLexer {
     def this(desc: SpaceDesc, errConfig: ErrorConfig) = {
         this(desc.commentStart, desc.commentEnd, desc.commentLine, desc.nestedComments, desc.commentLineAllowsEOF,
-             errConfig.labelSpaceEndOfMultiComment.asExpectItem(desc.commentEnd),
-             errConfig.labelSpaceEndOfLineComment.asExpectDesc("end of line"))
+             errConfig.labelSpaceEndOfMultiComment.asExpectItems(desc.commentEnd),
+             errConfig.labelSpaceEndOfLineComment.asExpectDescs("end of line"))
     }
     private [this] final val openingSize = Math.max(start.codePointCount(0, start.length), line.codePointCount(0, line.length))
 
@@ -101,8 +101,8 @@ private [internal] final class TokenComment private (
 
 private [instructions] abstract class WhiteSpaceLike extends CommentLexer {
     private [this] final val numCodePointsEnd = end.codePointCount(0, end.length)
-    protected [this] val endOfSingleComment: Option[ExpectDesc]
-    protected [this] val endOfMultiComment: Option[ExpectItem]
+    protected [this] val endOfSingleComment: Iterable[ExpectDesc]
+    protected [this] val endOfMultiComment: Iterable[ExpectItem]
     @tailrec private final def singlesOnly(ctx: Context): Unit = {
         spaces(ctx)
         if (ctx.moreInput) {
@@ -168,12 +168,12 @@ private [internal] final class TokenWhiteSpace private (
     protected [this] val line: String,
     protected [this] val nested: Boolean,
     protected [this] val eofAllowed: Boolean,
-    protected [this] val endOfMultiComment: Option[ExpectItem],
-    protected [this] val endOfSingleComment: Option[ExpectDesc]) extends WhiteSpaceLike {
+    protected [this] val endOfMultiComment: Iterable[ExpectItem],
+    protected [this] val endOfSingleComment: Iterable[ExpectDesc]) extends WhiteSpaceLike {
     def this(ws: Char => Boolean, desc: SpaceDesc, errConfig: ErrorConfig) = {
         this(ws, desc.commentStart, desc.commentEnd, desc.commentLine, desc.nestedComments, desc.commentLineAllowsEOF,
-             errConfig.labelSpaceEndOfMultiComment.asExpectItem(desc.commentEnd),
-             errConfig.labelSpaceEndOfLineComment.asExpectDesc("end of line"))
+             errConfig.labelSpaceEndOfMultiComment.asExpectItems(desc.commentEnd),
+             errConfig.labelSpaceEndOfLineComment.asExpectDescs("end of line"))
     }
     override def spaces(ctx: Context): Unit = {
         while (ctx.moreInput && ws(ctx.peekChar)) {
@@ -191,12 +191,12 @@ private [internal] final class TokenSkipComments private (
     protected [this] val line: String,
     protected [this] val nested: Boolean,
     protected [this] val eofAllowed: Boolean,
-    protected [this] val endOfMultiComment: Option[ExpectItem],
-    protected [this] val endOfSingleComment: Option[ExpectDesc]) extends WhiteSpaceLike {
+    protected [this] val endOfMultiComment: Iterable[ExpectItem],
+    protected [this] val endOfSingleComment: Iterable[ExpectDesc]) extends WhiteSpaceLike {
     def this(desc: SpaceDesc, errConfig: ErrorConfig) = {
         this(desc.commentStart, desc.commentEnd, desc.commentLine, desc.nestedComments, desc.commentLineAllowsEOF,
-             errConfig.labelSpaceEndOfMultiComment.asExpectItem(desc.commentEnd),
-             errConfig.labelSpaceEndOfLineComment.asExpectDesc("end of line"))
+             errConfig.labelSpaceEndOfMultiComment.asExpectItems(desc.commentEnd),
+             errConfig.labelSpaceEndOfLineComment.asExpectDescs("end of line"))
     }
     override def spaces(ctx: Context): Unit = ()
     // $COVERAGE-OFF$
