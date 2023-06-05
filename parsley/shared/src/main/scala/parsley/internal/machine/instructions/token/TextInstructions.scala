@@ -12,7 +12,7 @@ import parsley.internal.collection.immutable.Trie
 import parsley.internal.errors.{ExpectDesc, ExpectItem, ExpectRaw}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
-import parsley.internal.machine.errors.{ExpectedError, EmptyError}
+import parsley.internal.machine.errors.{EmptyError, ExpectedError}
 import parsley.internal.machine.instructions.Instr
 
 private [internal] final class EscapeMapped(escTrie: Trie[Int], caretWidth: Int, expecteds: Set[ExpectItem]) extends Instr {
