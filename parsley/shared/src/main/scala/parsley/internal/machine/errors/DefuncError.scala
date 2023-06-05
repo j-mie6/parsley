@@ -296,8 +296,6 @@ private [machine] final class ClassicExpectedError(val presentationOffset: Int, 
 }
 private [machine] final class ClassicExpectedErrorWithReason(val presentationOffset: Int, val line: Int, val col: Int,
                                                              val expected: Set[ExpectItem], val reason: String, val unexpectedWidth: Int) extends BaseError {
-    def this(presentationOffset: Int, line: Int, col: Int, expected: Option[ExpectItem], reason: String, unexpectedWidth: Int) =
-        this(presentationOffset, line, col, expected.toSet, reason, unexpectedWidth)
     override final val flags = if (expected.isEmpty) (DefuncError.ExpectedEmptyMask | DefuncError.TrivialErrorMask) else DefuncError.TrivialErrorMask
     override def expectedIterable: Iterable[ExpectItem] = expected
     override def addLabelsAndReasons(builder: TrivialErrorBuilder): Unit = {

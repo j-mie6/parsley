@@ -21,13 +21,13 @@ class DefuncErrorTests extends ParsleyTest {
     }
 
     "ClassicExpectedErrorWithReason" should "evaluate to TrivialError" in {
-        val err = new ClassicExpectedErrorWithReason(0, 0, 0, None, "", 1)
+        val err = new ClassicExpectedErrorWithReason(0, 0, 0, Set.empty, "", 1)
         err.isTrivialError shouldBe true
         err.asParseError shouldBe a [TrivialError]
     }
     it should "only be empty when its label is" in {
-        new ClassicExpectedErrorWithReason(0, 0, 0, None, "", 1).isExpectedEmpty shouldBe true
-        new ClassicExpectedErrorWithReason(0, 0, 0, Some(EndOfInput), "", 1).isExpectedEmpty shouldBe false
+        new ClassicExpectedErrorWithReason(0, 0, 0, Set.empty, "", 1).isExpectedEmpty shouldBe true
+        new ClassicExpectedErrorWithReason(0, 0, 0, Set(EndOfInput), "", 1).isExpectedEmpty shouldBe false
     }
 
     "ClassicUnexpectedError" should "evaluate to TrivialError" in {
