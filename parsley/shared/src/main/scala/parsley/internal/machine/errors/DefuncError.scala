@@ -266,9 +266,9 @@ private [errors] sealed abstract class BaseError extends TrivialDefuncError {
     def underlyingOffset: Int = presentationOffset
     /** The size of the unexpected token demanded by this error */
     private [errors] def unexpectedWidth: Int
-    // private [errors] def expected: IterableOnce[ErrorItem] // TODO: when 2.12 is dropped this will work better
     /** The error items produced by this error */
     private [errors] def expected: Iterable[ExpectItem]
+    // private [errors] def expected: IterableOnce[ErrorItem] // TODO: when 2.12 is dropped this will work better
 
     /** Adds the reasons and errors (or any other work) after the position and unexpected updates.
       * By default, this will just add the expected messages found in the `expectedIterable`.
