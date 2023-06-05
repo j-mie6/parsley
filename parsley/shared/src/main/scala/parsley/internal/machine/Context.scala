@@ -12,10 +12,7 @@ import parsley.Success
 import parsley.errors.ErrorBuilder
 
 import parsley.internal.errors.{CaretWidth, ExpectItem, LineBuilder, UnexpectDesc}
-import parsley.internal.machine.errors.{
-    ClassicExpectedError, ClassicFancyError, ClassicUnexpectedError, DefuncError,
-    DefuncHints, EmptyHints, ErrorItemBuilder
-}
+import parsley.internal.machine.errors.{ClassicFancyError, DefuncError, DefuncHints, EmptyHints, ErrorItemBuilder, ExpectedError, UnexpectedError}
 
 import instructions.Instr
 import stacks.{ArrayStack, CallStack, CheckStack, ErrorStack, HandlerStack, HintStack, Stack, StateStack}, Stack.StackExt
@@ -110,7 +107,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         assume(expecteds.nonEmpty, "hints must always be non-empty")
         invalidateHints()
         // TODO: this can be optimised further
-        hints = hints.addError(new ClassicExpectedError(this.offset, this.line, this.col, expecteds, unexpectedWidth))
+        hints = hints.addError(new ExpectedError(this.offset, this.line, this.col, expecteds, unexpectedWidth))
     }
 
     private [machine] def updateCheckOffset() = {
@@ -204,10 +201,10 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         this.fail(new ClassicFancyError(offset, line, col, caretWidth, msgs: _*))
     }
     private [machine] def unexpectedFail(expected: Iterable[ExpectItem], unexpected: UnexpectDesc): Unit = {
-        this.fail(new ClassicUnexpectedError(offset, line, col, expected, unexpected))
+        this.fail(new UnexpectedError(offset, line, col, expected, unexpected))
     }
     private [machine] def expectedFail(expected: Iterable[ExpectItem], unexpectedWidth: Int): Unit = {
-        this.fail(new ClassicExpectedError(offset, line, col, expected, unexpectedWidth))
+        this.fail(new ExpectedError(offset, line, col, expected, unexpectedWidth))
     }
 
     private [machine] def fail(error: DefuncError): Unit = {

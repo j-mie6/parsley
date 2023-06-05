@@ -12,7 +12,7 @@ import parsley.internal.collection.immutable.Trie
 import parsley.internal.errors.{ExpectDesc, ExpectItem, ExpectRaw}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
-import parsley.internal.machine.errors.{ClassicExpectedError, EmptyError}
+import parsley.internal.machine.errors.{ExpectedError, EmptyError}
 import parsley.internal.machine.instructions.Instr
 
 private [internal] final class EscapeMapped(escTrie: Trie[Int], caretWidth: Int, expecteds: Set[ExpectItem]) extends Instr {
@@ -45,7 +45,7 @@ private [internal] final class EscapeMapped(escTrie: Trie[Int], caretWidth: Int,
                 ctx.fastUncheckedConsumeChars(off)
                 ctx.pushAndContinue(x)
             case None if couldTryMore => findFirst(ctx, off + 1, escsNew)
-            case None => ctx.fail(new ClassicExpectedError(ctx.offset, ctx.line, ctx.col, expecteds, caretWidth))
+            case None => ctx.fail(new ExpectedError(ctx.offset, ctx.line, ctx.col, expecteds, caretWidth))
         }
     }
 

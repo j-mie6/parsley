@@ -289,20 +289,20 @@ private [errors] sealed abstract class BaseError extends TrivialDefuncError {
     }
 }
 
-private [machine] final class ClassicExpectedError(val presentationOffset: Int, val line: Int, val col: Int,
-                                                   val expected: Iterable[ExpectItem], val unexpectedWidth: Int) extends BaseError {
+private [machine] final class ExpectedError(val presentationOffset: Int, val line: Int, val col: Int,
+                                            val expected: Iterable[ExpectItem], val unexpectedWidth: Int) extends BaseError {
     override final val flags = if (expected.isEmpty) (DefuncError.ExpectedEmptyMask | DefuncError.TrivialErrorMask) else DefuncError.TrivialErrorMask
 }
-private [machine] final class ClassicExpectedErrorWithReason(val presentationOffset: Int, val line: Int, val col: Int,
-                                                             val expected: Iterable[ExpectItem], val reason: String, val unexpectedWidth: Int) extends BaseError {
+private [machine] final class ExpectedErrorWithReason(val presentationOffset: Int, val line: Int, val col: Int,
+                                                      val expected: Iterable[ExpectItem], val reason: String, val unexpectedWidth: Int) extends BaseError {
     override final val flags = if (expected.isEmpty) (DefuncError.ExpectedEmptyMask | DefuncError.TrivialErrorMask) else DefuncError.TrivialErrorMask
     override def addLabelsAndReasons(builder: TrivialErrorBuilder): Unit = {
         builder ++= expected
         builder += reason
     }
 }
-private [parsley] final class ClassicUnexpectedError(val presentationOffset: Int, val line: Int, val col: Int, val expected: Iterable[ExpectItem],
-                                                     val unexpected: UnexpectDesc) extends BaseError {
+private [parsley] final class UnexpectedError(val presentationOffset: Int, val line: Int, val col: Int, val expected: Iterable[ExpectItem],
+                                              val unexpected: UnexpectDesc) extends BaseError {
     override final val flags = if (expected.isEmpty) (DefuncError.ExpectedEmptyMask | DefuncError.TrivialErrorMask) else DefuncError.TrivialErrorMask
     override private [errors] def unexpectedWidth: Int = unexpected.width.width
     override def makeTrivial(builder: TrivialErrorBuilder): Unit = {

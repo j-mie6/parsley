@@ -10,7 +10,7 @@ import parsley.token.errors.LabelConfig
 import parsley.internal.errors.{EndOfInput, ExpectDesc, ExpectItem, RigidCaret, UnexpectDesc}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
-import parsley.internal.machine.errors.{ClassicFancyError, ClassicUnexpectedError, DefuncError, EmptyError, EmptyErrorWithReason}
+import parsley.internal.machine.errors.{ClassicFancyError, DefuncError, EmptyError, EmptyErrorWithReason, UnexpectedError}
 
 private [internal] final class Lift2(f: (Any, Any) => Any) extends Instr {
     override def apply(ctx: Context): Unit = {
@@ -269,7 +269,7 @@ private [internal] final class UnexpectedWhen(pred: PartialFunction[Any, (String
             val state = ctx.states
             val caretWidth = ctx.offset - state.offset
             val (unex, reason) = pred(ctx.stack.upop())
-            val err = new ClassicUnexpectedError(state.offset, state.line, state.col, Nil, new UnexpectDesc(unex, new RigidCaret(caretWidth)))
+            val err = new UnexpectedError(state.offset, state.line, state.col, Nil, new UnexpectDesc(unex, new RigidCaret(caretWidth)))
             ctx.fail(reason.fold[DefuncError](err)(err.withReason(_)))
         }
         else ctx.inc()

@@ -6,7 +6,7 @@ package parsley.internal.machine.instructions
 import parsley.internal.errors.{CaretWidth, RigidCaret, UnexpectDesc}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
-import parsley.internal.machine.errors.{ClassicExpectedError, ClassicExpectedErrorWithReason, ClassicFancyError, EmptyError}
+import parsley.internal.machine.errors.{ClassicFancyError, EmptyError, ExpectedError, ExpectedErrorWithReason}
 
 private [internal] final class RelabelHints(labels: Iterable[String]) extends Instr {
     private [this] val isHide: Boolean = labels.isEmpty
@@ -176,8 +176,8 @@ private [internal] class MakeVerifiedError private (msggen: Either[Any => Seq[St
         val x = ctx.stack.upeek
         val err = msggen match {
             case Left(f) => new ClassicFancyError(state.offset, state.line, state.col, new RigidCaret(caretWidth), f(x): _*)
-            case Right(Some(f)) => new ClassicExpectedErrorWithReason(state.offset, state.line, state.col, None, f(x), caretWidth)
-            case Right(None) => new ClassicExpectedError(state.offset, state.line, state.col, None, caretWidth)
+            case Right(Some(f)) => new ExpectedErrorWithReason(state.offset, state.line, state.col, None, f(x), caretWidth)
+            case Right(None) => new ExpectedError(state.offset, state.line, state.col, None, caretWidth)
         }
         ctx.fail(err)
     }
