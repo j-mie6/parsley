@@ -179,7 +179,7 @@ private [internal] class MakeVerifiedError private (msggen: Either[Any => Seq[St
         val err = msggen match {
             case Left(f) => new ClassicFancyError(state.offset, state.line, state.col, new RigidCaret(caretWidth), f(x): _*)
             case Right(Some(f)) => new ClassicExpectedErrorWithReason(state.offset, state.line, state.col, None, f(x), caretWidth)
-            case Right(None) => new ClassicExpectedError(state.offset, state.line, state.col, None, caretWidth)
+            case Right(None) => new ClassicExpectedError(state.offset, state.line, state.col, Set.empty, caretWidth)
         }
         ctx.fail(err)
     }

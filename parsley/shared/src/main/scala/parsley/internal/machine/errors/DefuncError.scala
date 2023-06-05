@@ -291,8 +291,6 @@ private [errors] sealed abstract class BaseError extends TrivialDefuncError {
 
 private [machine] final class ClassicExpectedError(val presentationOffset: Int, val line: Int, val col: Int,
                                                    val expected: Set[ExpectItem], val unexpectedWidth: Int) extends BaseError {
-    def this(presentationOffset: Int, line: Int, col: Int, expected: Option[ExpectItem], unexpectedWidth: Int) =
-        this(presentationOffset, line, col, expected.toSet, unexpectedWidth)
     override final val flags = if (expected.isEmpty) (DefuncError.ExpectedEmptyMask | DefuncError.TrivialErrorMask) else DefuncError.TrivialErrorMask
     override def expectedIterable: Iterable[ExpectItem] = expected
 }

@@ -210,7 +210,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         this.fail(new ClassicExpectedErrorWithReason(offset, line, col, expected, reason, size))
     }*/
     private [machine] def expectedFail(expected: Option[ExpectItem], unexpectedWidth: Int): Unit = {
-        this.fail(new ClassicExpectedError(offset, line, col, expected, unexpectedWidth))
+        this.fail(new ClassicExpectedError(offset, line, col, expected.toSet, unexpectedWidth))
     }
 
     private [machine] def fail(error: DefuncError): Unit = {
