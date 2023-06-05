@@ -31,19 +31,19 @@ class DefuncErrorTests extends ParsleyTest {
     }
 
     "ClassicUnexpectedError" should "evaluate to TrivialError" in {
-        val err = new ClassicUnexpectedError(0, 0, 0, None, new UnexpectDesc("oops", new RigidCaret(1)))
+        val err = new ClassicUnexpectedError(0, 0, 0, Set.empty, new UnexpectDesc("oops", new RigidCaret(1)))
         err.isTrivialError shouldBe true
         err.asParseError shouldBe a [TrivialError]
     }
     it should "only be empty when its label is" in {
-        new ClassicUnexpectedError(0, 0, 0, None, new UnexpectDesc("oops", new RigidCaret(1))).isExpectedEmpty shouldBe true
-        new ClassicUnexpectedError(0, 0, 0, Some(new ExpectDesc("oops")), new UnexpectDesc("oops", new RigidCaret(1))).isExpectedEmpty shouldBe false
+        new ClassicUnexpectedError(0, 0, 0, Set.empty, new UnexpectDesc("oops", new RigidCaret(1))).isExpectedEmpty shouldBe true
+        new ClassicUnexpectedError(0, 0, 0, Set(new ExpectDesc("oops")), new UnexpectDesc("oops", new RigidCaret(1))).isExpectedEmpty shouldBe false
     }
     it should "allow for flexible and rigid carets" in {
         val err = new ClassicExpectedError(0, 0, 0, Set.empty, 5)
-        val errRigid = new ClassicUnexpectedError(0, 0, 0, None, new UnexpectDesc("oops", new RigidCaret(1)))
-        val errFlex1 = new ClassicUnexpectedError(0, 0, 0, None, new UnexpectDesc("oops", new FlexibleCaret(1)))
-        val errFlex2 = new ClassicUnexpectedError(0, 0, 0, None, new UnexpectDesc("oops", new FlexibleCaret(6)))
+        val errRigid = new ClassicUnexpectedError(0, 0, 0, Set.empty, new UnexpectDesc("oops", new RigidCaret(1)))
+        val errFlex1 = new ClassicUnexpectedError(0, 0, 0, Set.empty, new UnexpectDesc("oops", new FlexibleCaret(1)))
+        val errFlex2 = new ClassicUnexpectedError(0, 0, 0, Set.empty, new UnexpectDesc("oops", new FlexibleCaret(6)))
         val pRigid = errRigid.merge(err).asParseError
         pRigid shouldBe a [TrivialError]
         pRigid.asInstanceOf[TrivialError].unexpected.fold(identity, _.formatUnexpect(false)._2.toCaretLength(0, 10, Nil)) shouldBe 1

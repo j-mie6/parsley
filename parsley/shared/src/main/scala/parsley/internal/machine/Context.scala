@@ -204,11 +204,8 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         this.fail(new ClassicFancyError(offset, line, col, caretWidth, msgs: _*))
     }
     private [machine] def unexpectedFail(expected: Option[ExpectItem], unexpected: UnexpectDesc): Unit = {
-        this.fail(new ClassicUnexpectedError(offset, line, col, expected, unexpected))
+        this.fail(new ClassicUnexpectedError(offset, line, col, expected.toSet, unexpected))
     }
-    /*private [machine] def expectedFail(expected: Option[ExpectItem], reason: String, size: Int): Unit = {
-        this.fail(new ClassicExpectedErrorWithReason(offset, line, col, expected, reason, size))
-    }*/
     private [machine] def expectedFail(expected: Option[ExpectItem], unexpectedWidth: Int): Unit = {
         this.fail(new ClassicExpectedError(offset, line, col, expected.toSet, unexpectedWidth))
     }

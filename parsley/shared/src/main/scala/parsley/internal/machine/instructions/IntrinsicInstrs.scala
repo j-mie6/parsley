@@ -269,7 +269,7 @@ private [internal] final class UnexpectedWhen(pred: PartialFunction[Any, (String
             val state = ctx.states
             val caretWidth = ctx.offset - state.offset
             val (unex, reason) = pred(ctx.stack.upop())
-            val err = new ClassicUnexpectedError(state.offset, state.line, state.col, None, new UnexpectDesc(unex, new RigidCaret(caretWidth)))
+            val err = new ClassicUnexpectedError(state.offset, state.line, state.col, Set.empty, new UnexpectDesc(unex, new RigidCaret(caretWidth)))
             ctx.fail(reason.fold[DefuncError](err)(err.withReason(_)))
         }
         else ctx.inc()

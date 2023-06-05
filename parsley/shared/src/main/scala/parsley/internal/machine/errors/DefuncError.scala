@@ -303,7 +303,7 @@ private [machine] final class ClassicExpectedErrorWithReason(val presentationOff
         builder += reason
     }
 }
-private [parsley] final class ClassicUnexpectedError(val presentationOffset: Int, val line: Int, val col: Int, val expected: Option[ExpectItem],
+private [parsley] final class ClassicUnexpectedError(val presentationOffset: Int, val line: Int, val col: Int, val expected: Set[ExpectItem],
                                                      val unexpected: UnexpectDesc) extends BaseError {
     override final val flags = if (expected.isEmpty) (DefuncError.ExpectedEmptyMask | DefuncError.TrivialErrorMask) else DefuncError.TrivialErrorMask
     override def expectedIterable: Iterable[ExpectItem] = expected
