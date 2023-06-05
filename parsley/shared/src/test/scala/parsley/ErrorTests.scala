@@ -110,14 +110,14 @@ class ErrorTests extends ParsleyTest {
         inside(s.parse("e")) {
             case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
                 unex should contain (Raw("e"))
-                exs should contain only (Named("hi"), /*Raw("b"),*/ Raw("c"))
+                exs should contain only (Named("hi"), Raw("c"))
                 rs shouldBe empty
         }
         val t = (optional('a') *> optional('b').label("bee")).label("hi") *> 'c'
         inside(t.parse("e")) {
             case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
                 unex should contain (Raw("e"))
-                exs should contain only (Named("hi"), /*Named("bee"),*/ Raw("c"))
+                exs should contain only (Named("hi"), Raw("c"))
                 rs shouldBe empty
         }
         inside(t.parse("ae")) {
@@ -126,29 +126,27 @@ class ErrorTests extends ParsleyTest {
                 exs should contain only (Named("bee"), Raw("c"))
                 rs shouldBe empty
         }
-    }
-    it should "not relabel hidden things" in {
-        val s = (optional('a').hide *> optional('b')).label("hi") *> 'c'
-        inside(s.parse("e")) {
+        val u = (optional('a').hide *> optional('b')).label("hi") *> 'c'
+        inside(u.parse("e")) {
             case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
                 unex should contain (Raw("e"))
                 exs should contain only (Named("hi"), Raw("c"))
                 rs shouldBe empty
         }
-        inside(s.parse("ae")) {
+        inside(u.parse("ae")) {
             case Failure(TestError((1, 2), VanillaError(unex, exs, rs))) =>
                 unex should contain (Raw("e"))
                 exs should contain only (Raw("b"), Raw("c"))
                 rs shouldBe empty
         }
-        val t = (optional('a').hide *> optional('b').label("bee")).label("hi") *> 'c'
-        inside(t.parse("e")) {
+        val v = (optional('a').hide *> optional('b').label("bee")).label("hi") *> 'c'
+        inside(v.parse("e")) {
             case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
                 unex should contain (Raw("e"))
                 exs should contain only (Named("hi"), Raw("c"))
                 rs shouldBe empty
         }
-        inside(t.parse("ae")) {
+        inside(v.parse("ae")) {
             case Failure(TestError((1, 2), VanillaError(unex, exs, rs))) =>
                 unex should contain (Raw("e"))
                 exs should contain only (Named("bee"), Raw("c"))

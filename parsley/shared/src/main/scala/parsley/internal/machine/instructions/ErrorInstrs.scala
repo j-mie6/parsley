@@ -13,6 +13,8 @@ private [internal] final class RelabelHints(label: String) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         // if this was a hide, pop the hints if possible
+        // this is desirable so that hide is _very_ aggressive with labelling:
+        // whitespaces.hide should say nothing, but digits.label("integer") should give digit as a hint if one is parsed, not integer
         if (isHide) ctx.popHints()
         // EOK
         // replace the head of the hints with the singleton for our label
@@ -174,8 +176,8 @@ private [internal] class MakeVerifiedError private (msggen: Either[Any => Seq[St
         val x = ctx.stack.upeek
         val err = msggen match {
             case Left(f) => new ClassicFancyError(state.offset, state.line, state.col, new RigidCaret(caretWidth), f(x): _*)
-            case Right(Some(f)) => new ClassicExpectedErrorWithReason(state.offset, state.line, state.col, Nil, f(x), caretWidth)
-            case Right(None) => new ClassicExpectedError(state.offset, state.line, state.col, Nil, caretWidth)
+            case Right(Some(f)) => new ClassicExpectedErrorWithReason(state.offset, state.line, state.col, None, f(x), caretWidth)
+            case Right(None) => new ClassicExpectedError(state.offset, state.line, state.col, None, caretWidth)
         }
         ctx.fail(err)
     }

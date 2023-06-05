@@ -13,6 +13,7 @@ val mainBranch = "master"
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
+// TODO: is it possible to only enable these for full non-snapshot release?
 val isInPublish = Option(System.getenv("GITHUB_JOB")).contains("publish")
 val releaseFlags = Seq("-Xdisable-assertions", "-opt:l:method,inline", "-opt-inline-from", "parsley.**", "-opt-warnings:at-inline-failed")
 
