@@ -1190,7 +1190,7 @@ object Parsley {
       * @return a parser that fails.
       * @group basic
       */
-    val empty: Parsley[Nothing] = new Parsley(singletons.Empty.Zero)
+    val empty: Parsley[Nothing] = errors.combinator.empty(0)
     /** This combinator produces `()` without having any other effect.
       *
       * When this combinator is ran, no input is required, nor consumed, and
