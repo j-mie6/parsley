@@ -6,17 +6,19 @@ package parsley.internal.machine.instructions
 import parsley.internal.errors.{CaretWidth, RigidCaret, UnexpectDesc}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
-import parsley.internal.machine.errors.{ClassicExpectedError, ClassicExpectedErrorWithReason, ClassicFancyError, EmptyError}
+import parsley.internal.machine.errors.{ClassicFancyError, EmptyError, ExpectedError, ExpectedErrorWithReason}
 
-private [internal] final class RelabelHints(label: String) extends Instr {
-    private [this] val isHide: Boolean = label.isEmpty
+private [internal] final class RelabelHints(labels: Iterable[String]) extends Instr {
+    private [this] val isHide: Boolean = labels.isEmpty
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         // if this was a hide, pop the hints if possible
+        // this is desirable so that hide is _very_ aggressive with labelling:
+        // whitespaces.hide should say nothing, but digits.label("integer") should give digit as a hint if one is parsed, not integer
         if (isHide) ctx.popHints()
         // EOK
         // replace the head of the hints with the singleton for our label
-        else if (ctx.offset == ctx.checkStack.offset) ctx.replaceHint(label)
+        else if (ctx.offset == ctx.checkStack.offset) ctx.replaceHint(labels)
         // COK
         // do nothing
         ctx.mergeHints()
@@ -25,24 +27,24 @@ private [internal] final class RelabelHints(label: String) extends Instr {
         ctx.inc()
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"RelabelHints($label)"
+    override def toString: String = s"RelabelHints($labels)"
     // $COVERAGE-ON$
 }
 
-private [internal] final class RelabelErrorAndFail(label: String) extends Instr {
+private [internal] final class RelabelErrorAndFail(labels: Iterable[String]) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
         ctx.restoreHints()
         ctx.errs.error = ctx.useHints {
             // only use the label if the error message is generated at the same offset
             // as the check stack saved for the start of the `label` combinator.
-            ctx.errs.error.label(label, ctx.checkStack.offset)
+            ctx.errs.error.label(labels, ctx.checkStack.offset)
         }
         ctx.checkStack = ctx.checkStack.tail
         ctx.fail()
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"ApplyError($label)"
+    override def toString: String = s"ApplyError($labels)"
     // $COVERAGE-ON$
 }
 
@@ -162,10 +164,6 @@ private [internal] final class Unexpected(msg: String, width: CaretWidth) extend
     // $COVERAGE-ON$
 }
 
-// partial amend semantics are BAD: they render the error in the wrong position unless amended anyway
-// But it would make sense for an error that occured physically deeper to be stronger: a distinction is
-// needed between occuredOffset and presentedOffset in the errors to make this work properly...
-// If we did it, I'm not sure how we'd change this over: either 5.0.0 or we make new methods and `amend` the old ones
 private [internal] class MakeVerifiedError private (msggen: Either[Any => Seq[String], Option[Any => String]]) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
@@ -178,8 +176,8 @@ private [internal] class MakeVerifiedError private (msggen: Either[Any => Seq[St
         val x = ctx.stack.upeek
         val err = msggen match {
             case Left(f) => new ClassicFancyError(state.offset, state.line, state.col, new RigidCaret(caretWidth), f(x): _*)
-            case Right(Some(f)) => new ClassicExpectedErrorWithReason(state.offset, state.line, state.col, None, f(x), caretWidth)
-            case Right(None) => new ClassicExpectedError(state.offset, state.line, state.col, None, caretWidth)
+            case Right(Some(f)) => new ExpectedErrorWithReason(state.offset, state.line, state.col, None, f(x), caretWidth)
+            case Right(None) => new ExpectedError(state.offset, state.line, state.col, None, caretWidth)
         }
         ctx.fail(err)
     }

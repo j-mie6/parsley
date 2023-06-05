@@ -13,6 +13,7 @@ val mainBranch = "master"
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
+// TODO: is it possible to only enable these for full non-snapshot release?
 val isInPublish = Option(System.getenv("GITHUB_JOB")).contains("publish")
 val releaseFlags = Seq("-Xdisable-assertions", "-opt:l:method,inline", "-opt-inline-from", "parsley.**", "-opt-warnings:at-inline-failed")
 
@@ -46,6 +47,10 @@ inThisBuild(List(
     ProblemFilters.exclude[ReversedMissingMethodProblem]("parsley.token.predicate#CharPredicate.asInternalPredicate"),
     ProblemFilters.exclude[ReversedMissingMethodProblem]("parsley.token.errors.FilterConfig.mkError"),
     ProblemFilters.exclude[ReversedMissingMethodProblem]("parsley.token.errors.FilterConfig.injectSnd"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("parsley.token.errors.*.asExpectItem"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("parsley.token.errors.*.asExpectDesc"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("parsley.token.errors.*.label"),
+    ProblemFilters.exclude[IncompatibleMethTypeProblem]("parsley.token.errors.*.this"),
     // Expression refactor
     ProblemFilters.exclude[ReversedMissingMethodProblem]("parsley.expr.Fixity.chain"),
     ProblemFilters.exclude[ReversedMissingMethodProblem]("parsley.expr.Ops.chain"),

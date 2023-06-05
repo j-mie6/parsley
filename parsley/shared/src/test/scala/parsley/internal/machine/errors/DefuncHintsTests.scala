@@ -10,7 +10,7 @@ import parsley.internal.errors.ExpectDesc
 class DefuncHintsTests extends ParsleyTest {
     def mkErr(labels: String*): DefuncError = {
         assert(labels.nonEmpty)
-        new MultiExpectedError(0, 0, 0, labels.map(new ExpectDesc(_)).toSet, 1)
+        new ExpectedError(0, 0, 0, labels.map(new ExpectDesc(_)), 1)
     }
 
     "EmptyHints" should "have size 0" in {
@@ -25,10 +25,10 @@ class DefuncHintsTests extends ParsleyTest {
     }
 
     "ReplaceHint" should "do nothing on empty" in {
-        EmptyHints.rename("hi") shouldBe empty
+        EmptyHints.rename(Seq("hi")) shouldBe empty
     }
     it should "replace the hints under it" in {
-        val hints = EmptyHints.addError(mkErr("a", "c")).addError(mkErr("b")).rename("hi")
+        val hints = EmptyHints.addError(mkErr("a", "c")).addError(mkErr("b")).rename(Seq("hi"))
         hints.toSet should contain only (new ExpectDesc("hi"))
     }
 

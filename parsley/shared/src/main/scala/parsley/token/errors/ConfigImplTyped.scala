@@ -8,7 +8,7 @@ import parsley.XCompat.unused
 import parsley.errors.combinator, combinator.ErrorMethods
 
 import parsley.internal.errors.{RigidCaret, UnexpectDesc}
-import parsley.internal.machine.errors.{ClassicFancyError, ClassicUnexpectedError, DefuncError, EmptyError, EmptyErrorWithReason}
+import parsley.internal.machine.errors.{ClassicFancyError, DefuncError, EmptyError, EmptyErrorWithReason, UnexpectedError}
 
 /** This trait, and its subclasses, can be used to configure how filters should be used within the `Lexer`.
   * @since 4.1.0
@@ -91,7 +91,7 @@ abstract class Unexpected[A] extends VanillaFilterConfig[A] { self =>
         case x if !f(x) => unexpected(x)
     }
     private [parsley] final override def mkError(offset: Int, line: Int, col: Int, caretWidth: Int, x: A): DefuncError = {
-        new ClassicUnexpectedError(offset, line, col, None, new UnexpectDesc(unexpected(x), new RigidCaret(caretWidth)))
+        new UnexpectedError(offset, line, col, Set.empty, new UnexpectDesc(unexpected(x), new RigidCaret(caretWidth)))
     }
 
     // $COVERAGE-OFF$
@@ -172,7 +172,7 @@ abstract class UnexpectedBecause[A] extends VanillaFilterConfig[A] { self =>
         case x if !f(x) => (unexpected(x), reason(x))
     }
     private [parsley] final override def mkError(offset: Int, line: Int, col: Int, caretWidth: Int, x: A): DefuncError = {
-        new ClassicUnexpectedError(offset, line, col, None, new UnexpectDesc(unexpected(x), new RigidCaret(caretWidth))).withReason(reason(x))
+        new UnexpectedError(offset, line, col, Set.empty, new UnexpectDesc(unexpected(x), new RigidCaret(caretWidth))).withReason(reason(x))
     }
 
     // $COVERAGE-OFF$

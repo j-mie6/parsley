@@ -9,7 +9,7 @@ import parsley.internal.deepembedding.Sign.{CombinedType, DoubleType, IntType, S
 import parsley.internal.errors.{ExpectItem, ExpectRaw}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
-import parsley.internal.machine.errors.MultiExpectedError
+import parsley.internal.machine.errors.ExpectedError
 
 private [internal] final class TokenSign(ty: SignType, plusPresence: PlusSignPresence) extends Instr {
     val neg: Any => Any = ty match {
@@ -35,10 +35,10 @@ private [internal] final class TokenSign(ty: SignType, plusPresence: PlusSignPre
             ctx.pushAndContinue(pos)
         }
         else if (plusPresence eq PlusSignPresence.Required) {
-            ctx.fail(new MultiExpectedError(ctx.offset, ctx.line, ctx.col, expecteds, 1))
+            ctx.fail(new ExpectedError(ctx.offset, ctx.line, ctx.col, expecteds, 1))
         }
         else {
-            ctx.pushError(new MultiExpectedError(ctx.offset, ctx.line, ctx.col, expecteds, 1))
+            ctx.pushError(new ExpectedError(ctx.offset, ctx.line, ctx.col, expecteds, 1))
             ctx.addErrorToHintsAndPop()
             ctx.pushAndContinue(pos)
         }

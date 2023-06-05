@@ -10,8 +10,8 @@ import parsley.internal.errors.ExpectDesc
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 
-private [internal] final class Satisfies(f: Char => Boolean, expected: Option[ExpectDesc]) extends Instr {
-    def this(f: Char => Boolean, expected: LabelConfig) = this(f, expected.asExpectDesc)
+private [internal] final class Satisfies(f: Char => Boolean, expected: Iterable[ExpectDesc]) extends Instr {
+    def this(f: Char => Boolean, expected: LabelConfig) = this(f, expected.asExpectDescs)
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         if (ctx.moreInput && f(ctx.peekChar)) ctx.pushAndContinue(ctx.consumeChar())

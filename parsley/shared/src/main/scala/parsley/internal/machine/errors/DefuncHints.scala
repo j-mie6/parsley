@@ -38,7 +38,7 @@ private [machine] sealed abstract class DefuncHints {
     final private [errors] def collect(collector: HintCollector): Unit = {
         this match {
             case EmptyHints =>
-            case self: ReplaceHint => collector += new ExpectDesc(self.label)
+            case self: ReplaceHint => collector ++= self.labels.map(new ExpectDesc(_))
             case self: MergeHints =>
                 self.oldHints.collect(collector)
                 self.newHints.collect(collector)
@@ -62,7 +62,7 @@ private [machine] sealed abstract class DefuncHints {
       * @param label the name to replace the first set of hints with
       * @note this behaviour was altered in 4.0.0, to match the changes in [[https://github.com/mrkkrp/megaparsec/issues/482 mrkkrp/megaparsec#482]]
       */
-    private [machine] final def rename(label: String): DefuncHints = if (nonEmpty) new ReplaceHint(label) else this
+    private [machine] final def rename(labels: Iterable[String]): DefuncHints = if (nonEmpty) new ReplaceHint(labels) else this
     /** This operation merges two sets of hints together. This used by `label`
       * to combine the saved hints with those that may have been generated and
       * affected by the label. This is not like a set-union, however, and is
@@ -91,8 +91,8 @@ private [machine] sealed abstract class DefuncHints {
 private [machine] object EmptyHints extends DefuncHints {
     override private [errors] def isEmpty: Boolean = true
 }
-private [errors] final class ReplaceHint private [errors] (val label: String) extends DefuncHints {
-    assume(label.nonEmpty)
+private [errors] final class ReplaceHint private [errors] (val labels: Iterable[String]) extends DefuncHints {
+    assume(labels.nonEmpty)
     override private [errors] def isEmpty: Boolean = false
 }
 

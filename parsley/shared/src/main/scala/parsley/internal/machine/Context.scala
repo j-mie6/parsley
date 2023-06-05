@@ -12,10 +12,7 @@ import parsley.Success
 import parsley.errors.ErrorBuilder
 
 import parsley.internal.errors.{CaretWidth, ExpectItem, LineBuilder, UnexpectDesc}
-import parsley.internal.machine.errors.{
-    ClassicExpectedError, ClassicFancyError, ClassicUnexpectedError, DefuncError,
-    DefuncHints, EmptyHints, ErrorItemBuilder, MultiExpectedError
-}
+import parsley.internal.machine.errors.{ClassicFancyError, DefuncError, DefuncHints, EmptyHints, ErrorItemBuilder, ExpectedError, UnexpectedError}
 
 import instructions.Instr
 import stacks.{ArrayStack, CallStack, CheckStack, ErrorStack, HandlerStack, HintStack, Stack, StateStack}, Stack.StackExt
@@ -83,7 +80,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         if (hintFrame.validOffset == offset) this.hints = hintFrame.hints.merge(this.hints)
         commitHints()
     }
-    private [machine] def replaceHint(label: String): Unit = hints = hints.rename(label)
+    private [machine] def replaceHint(labels: Iterable[String]): Unit = hints = hints.rename(labels)
     private [machine] def popHints(): Unit = hints = hints.pop
     /* ERROR RELABELLING END */
 
@@ -110,7 +107,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         assume(expecteds.nonEmpty, "hints must always be non-empty")
         invalidateHints()
         // TODO: this can be optimised further
-        hints = hints.addError(new MultiExpectedError(this.offset, this.line, this.col, expecteds, unexpectedWidth))
+        hints = hints.addError(new ExpectedError(this.offset, this.line, this.col, expecteds, unexpectedWidth))
     }
 
     private [machine] def updateCheckOffset() = {
@@ -203,14 +200,11 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     private [machine] def failWithMessage(caretWidth: CaretWidth, msgs: String*): Unit = {
         this.fail(new ClassicFancyError(offset, line, col, caretWidth, msgs: _*))
     }
-    private [machine] def unexpectedFail(expected: Option[ExpectItem], unexpected: UnexpectDesc): Unit = {
-        this.fail(new ClassicUnexpectedError(offset, line, col, expected, unexpected))
+    private [machine] def unexpectedFail(expected: Iterable[ExpectItem], unexpected: UnexpectDesc): Unit = {
+        this.fail(new UnexpectedError(offset, line, col, expected, unexpected))
     }
-    /*private [machine] def expectedFail(expected: Option[ExpectItem], reason: String, size: Int): Unit = {
-        this.fail(new ClassicExpectedErrorWithReason(offset, line, col, expected, reason, size))
-    }*/
-    private [machine] def expectedFail(expected: Option[ExpectItem], unexpectedWidth: Int): Unit = {
-        this.fail(new ClassicExpectedError(offset, line, col, expected, unexpectedWidth))
+    private [machine] def expectedFail(expected: Iterable[ExpectItem], unexpectedWidth: Int): Unit = {
+        this.fail(new ExpectedError(offset, line, col, expected, unexpectedWidth))
     }
 
     private [machine] def fail(error: DefuncError): Unit = {

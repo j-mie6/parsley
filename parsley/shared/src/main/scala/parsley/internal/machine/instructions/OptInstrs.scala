@@ -11,7 +11,7 @@ import parsley.token.errors.LabelConfig
 import parsley.internal.errors.ExpectItem
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
-import parsley.internal.machine.errors.MultiExpectedError
+import parsley.internal.machine.errors.ExpectedError
 import parsley.internal.machine.stacks.ErrorStack
 
 private [internal] final class Lift1(f: Any => Any) extends Instr {
@@ -38,7 +38,7 @@ private [internal] final class Exchange[A](private [Exchange] val x: A) extends 
 }
 
 private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, _expected: LabelConfig) extends Instr {
-    private [this] final val expected = _expected.asExpectDesc
+    private [this] final val expected = _expected.asExpectDescs
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         if (ctx.moreInput && f(ctx.peekChar)) {
@@ -80,13 +80,13 @@ private [internal] final class AlwaysRecoverWith[A](x: A) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class JumpTable(jumpTable: mutable.LongMap[(Int, Set[ExpectItem])],
+private [internal] final class JumpTable(jumpTable: mutable.LongMap[(Int, Iterable[ExpectItem])],
         private [this] var default: Int,
         private [this] var merge: Int,
         size: Int,
-        allErrorItems: Set[ExpectItem]) extends Instr {
+        allErrorItems: Iterable[ExpectItem]) extends Instr {
     def this(prefixes: List[Char], labels: List[Int], default: Int, merge: Int,
-              size: Int, allErrorItems: Set[ExpectItem], errorItemss: List[Set[ExpectItem]]) = {
+              size: Int, allErrorItems: Iterable[ExpectItem], errorItemss: List[Iterable[ExpectItem]]) = {
         this(mutable.LongMap(prefixes.view.map(_.toLong).zip(labels.zip(errorItemss)).toSeq: _*), default, merge, size, allErrorItems)
     }
     private [this] var defaultPreamble: Int = _
@@ -109,9 +109,9 @@ private [internal] final class JumpTable(jumpTable: mutable.LongMap[(Int, Set[Ex
         }
     }
 
-    private def addErrors(ctx: Context, errorItems: Set[ExpectItem]): Unit = {
+    private def addErrors(ctx: Context, errorItems: Iterable[ExpectItem]): Unit = {
         // FIXME: the more appropriate way of demanding input may be to pick 1 character, for same rationale with StringTok
-        ctx.errs = new ErrorStack(new MultiExpectedError(ctx.offset, ctx.line, ctx.col, errorItems, unexpectedWidth = size), ctx.errs)
+        ctx.errs = new ErrorStack(new ExpectedError(ctx.offset, ctx.line, ctx.col, errorItems, unexpectedWidth = size), ctx.errs)
         ctx.pushHandler(merge)
     }
 

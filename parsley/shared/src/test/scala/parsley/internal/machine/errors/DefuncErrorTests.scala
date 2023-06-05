@@ -11,39 +11,39 @@ import MockedBuilders.mockedErrorItemBuilder
 
 class DefuncErrorTests extends ParsleyTest {
     "ClassicExpectedError" should "evaluate to TrivialError" in {
-        val err = new ClassicExpectedError(0, 0, 0, None, 1)
+        val err = new ExpectedError(0, 0, 0, Nil, 1)
         err.isTrivialError shouldBe true
         err.asParseError shouldBe a [TrivialError]
     }
     it should "only be empty when its label is" in {
-        new ClassicExpectedError(0, 0, 0, None, 1).isExpectedEmpty shouldBe true
-        new ClassicExpectedError(0, 0, 0, Some(EndOfInput), 1).isExpectedEmpty shouldBe false
+        new ExpectedError(0, 0, 0, Nil, 1).isExpectedEmpty shouldBe true
+        new ExpectedError(0, 0, 0, List(EndOfInput), 1).isExpectedEmpty shouldBe false
     }
 
     "ClassicExpectedErrorWithReason" should "evaluate to TrivialError" in {
-        val err = new ClassicExpectedErrorWithReason(0, 0, 0, None, "", 1)
+        val err = new ExpectedErrorWithReason(0, 0, 0, Nil, "", 1)
         err.isTrivialError shouldBe true
         err.asParseError shouldBe a [TrivialError]
     }
     it should "only be empty when its label is" in {
-        new ClassicExpectedErrorWithReason(0, 0, 0, None, "", 1).isExpectedEmpty shouldBe true
-        new ClassicExpectedErrorWithReason(0, 0, 0, Some(EndOfInput), "", 1).isExpectedEmpty shouldBe false
+        new ExpectedErrorWithReason(0, 0, 0, Nil, "", 1).isExpectedEmpty shouldBe true
+        new ExpectedErrorWithReason(0, 0, 0, List(EndOfInput), "", 1).isExpectedEmpty shouldBe false
     }
 
     "ClassicUnexpectedError" should "evaluate to TrivialError" in {
-        val err = new ClassicUnexpectedError(0, 0, 0, None, new UnexpectDesc("oops", new RigidCaret(1)))
+        val err = new UnexpectedError(0, 0, 0, Nil, new UnexpectDesc("oops", new RigidCaret(1)))
         err.isTrivialError shouldBe true
         err.asParseError shouldBe a [TrivialError]
     }
     it should "only be empty when its label is" in {
-        new ClassicUnexpectedError(0, 0, 0, None, new UnexpectDesc("oops", new RigidCaret(1))).isExpectedEmpty shouldBe true
-        new ClassicUnexpectedError(0, 0, 0, Some(new ExpectDesc("oops")), new UnexpectDesc("oops", new RigidCaret(1))).isExpectedEmpty shouldBe false
+        new UnexpectedError(0, 0, 0, Nil, new UnexpectDesc("oops", new RigidCaret(1))).isExpectedEmpty shouldBe true
+        new UnexpectedError(0, 0, 0, List(new ExpectDesc("oops")), new UnexpectDesc("oops", new RigidCaret(1))).isExpectedEmpty shouldBe false
     }
     it should "allow for flexible and rigid carets" in {
-        val err = new ClassicExpectedError(0, 0, 0, None, 5)
-        val errRigid = new ClassicUnexpectedError(0, 0, 0, None, new UnexpectDesc("oops", new RigidCaret(1)))
-        val errFlex1 = new ClassicUnexpectedError(0, 0, 0, None, new UnexpectDesc("oops", new FlexibleCaret(1)))
-        val errFlex2 = new ClassicUnexpectedError(0, 0, 0, None, new UnexpectDesc("oops", new FlexibleCaret(6)))
+        val err = new ExpectedError(0, 0, 0, Nil, 5)
+        val errRigid = new UnexpectedError(0, 0, 0, Nil, new UnexpectDesc("oops", new RigidCaret(1)))
+        val errFlex1 = new UnexpectedError(0, 0, 0, Nil, new UnexpectDesc("oops", new FlexibleCaret(1)))
+        val errFlex2 = new UnexpectedError(0, 0, 0, Nil, new UnexpectDesc("oops", new FlexibleCaret(6)))
         val pRigid = errRigid.merge(err).asParseError
         pRigid shouldBe a [TrivialError]
         pRigid.asInstanceOf[TrivialError].unexpected.fold(identity, _.formatUnexpect(false)._2.toCaretLength(0, 10, Nil)) shouldBe 1
@@ -82,18 +82,8 @@ class DefuncErrorTests extends ParsleyTest {
         err.asParseError shouldBe a [TrivialError]
     }
 
-    "MultiExpectedError" should "evaluate to TrivialError" in {
-        val err = new MultiExpectedError(0, 0, 0, Set.empty, 1)
-        err.isTrivialError shouldBe true
-        err.asParseError shouldBe a [TrivialError]
-    }
-    it should "only be empty when its label is" in {
-        new MultiExpectedError(0, 0, 0, Set.empty, 1).isExpectedEmpty shouldBe true
-        new MultiExpectedError(0, 0, 0, Set(EndOfInput), 1).isExpectedEmpty shouldBe false
-    }
-
     "MergedErrors" should "be trivial if both children are" in {
-        val err = new EmptyError(0, 0, 0, 0).merge(new MultiExpectedError(0, 0, 0, Set.empty, 1))
+        val err = new EmptyError(0, 0, 0, 0).merge(new ExpectedError(0, 0, 0, Nil, 1))
         err.isTrivialError shouldBe true
         err.asParseError shouldBe a [TrivialError]
     }
@@ -142,17 +132,17 @@ class DefuncErrorTests extends ParsleyTest {
     }
     they should "be empty when trivial and same offset only when both children are empty" in {
         new EmptyError(0, 0, 0, 0).merge(new EmptyError(0, 0, 0, 0)).isExpectedEmpty shouldBe true
-        new EmptyError(0, 0, 0, 0).merge(new ClassicExpectedError(0, 0, 0, Some(EndOfInput), 1)).isExpectedEmpty shouldBe false
-        new ClassicExpectedError(0, 0, 0, Some(EndOfInput), 1).merge(new EmptyError(0, 0, 0, 0)).isExpectedEmpty shouldBe false
-        new ClassicExpectedError(0, 0, 0, Some(EndOfInput), 1).merge(new ClassicExpectedError(0, 0, 0, Some(EndOfInput), 1)).isExpectedEmpty shouldBe false
+        new EmptyError(0, 0, 0, 0).merge(new ExpectedError(0, 0, 0, List(EndOfInput), 1)).isExpectedEmpty shouldBe false
+        new ExpectedError(0, 0, 0, List(EndOfInput), 1).merge(new EmptyError(0, 0, 0, 0)).isExpectedEmpty shouldBe false
+        new ExpectedError(0, 0, 0, List(EndOfInput), 1).merge(new ExpectedError(0, 0, 0, List(EndOfInput), 1)).isExpectedEmpty shouldBe false
     }
     they should "contain all the expecteds from both branches when appropriate" in {
-        val err = new MultiExpectedError(0, 0, 0, Set(new ExpectRaw("a"), new ExpectRaw("b")), 1).merge(new MultiExpectedError(0, 0, 0, Set(new ExpectRaw("b"), new ExpectRaw("c")), 1))
+        val err = new ExpectedError(0, 0, 0, List(new ExpectRaw("a"), new ExpectRaw("b")), 1).merge(new ExpectedError(0, 0, 0, List(new ExpectRaw("b"), new ExpectRaw("c")), 1))
         err.asParseError.asInstanceOf[TrivialError].expecteds should contain only (new ExpectRaw("a"), new ExpectRaw("b"), new ExpectRaw("c"))
     }
 
     "WithHints" should "be trivial if its child is" in {
-        val err = new ClassicExpectedError(0, 0, 0, None, 1).withHints(EmptyHints)
+        val err = new ExpectedError(0, 0, 0, Nil, 1).withHints(EmptyHints)
         err.isTrivialError shouldBe true
         err.asParseError shouldBe a [TrivialError]
     }
@@ -163,11 +153,11 @@ class DefuncErrorTests extends ParsleyTest {
     }
     it should "only be empty when its label is" in {
         new EmptyError(0, 0, 0, 0).withHints(EmptyHints).isExpectedEmpty shouldBe true
-        new ClassicExpectedError(0, 0, 0, Some(EndOfInput), 1).withHints(EmptyHints).isExpectedEmpty shouldBe false
+        new ExpectedError(0, 0, 0, List(EndOfInput), 1).withHints(EmptyHints).isExpectedEmpty shouldBe false
     }
 
     "WithReason" should "be trivial if its child is" in {
-        val err = new ClassicExpectedError(0, 0, 0, None, 1).withReason("")
+        val err = new ExpectedError(0, 0, 0, Nil, 1).withReason("")
         err.isTrivialError shouldBe true
         err.asParseError shouldBe a [TrivialError]
     }
@@ -178,28 +168,28 @@ class DefuncErrorTests extends ParsleyTest {
     }
     it should "only be empty when its label is" in {
         new EmptyError(0, 0, 0, 0).withReason("").isExpectedEmpty shouldBe true
-        new ClassicExpectedError(0, 0, 0, Some(EndOfInput), 1).withReason("").isExpectedEmpty shouldBe false
+        new ExpectedError(0, 0, 0, List(EndOfInput), 1).withReason("").isExpectedEmpty shouldBe false
     }
 
     "WithLabel" should "be trivial if its child is" in {
-        val err = new ClassicExpectedError(0, 0, 0, None, 1).label("", 0)
+        val err = new ExpectedError(0, 0, 0, Nil, 1).label(Nil, 0)
         err.isTrivialError shouldBe true
         err.asParseError shouldBe a [TrivialError]
     }
     it should "support fancy errors as not trivial" in {
-        val err = new ClassicFancyError(0, 0, 0, new RigidCaret(1), "").label("", 0)
+        val err = new ClassicFancyError(0, 0, 0, new RigidCaret(1), "").label(Nil, 0)
         err.isTrivialError shouldBe false
         err.asParseError shouldBe a [FancyError]
     }
     it should "be empty if the label is empty and not otherwise" in {
-        new EmptyError(0, 0, 0, 0).label("", 0).isExpectedEmpty shouldBe true
-        new EmptyError(0, 0, 0, 0).label("a", 0).isExpectedEmpty shouldBe false
-        new ClassicExpectedError(0, 0, 0, Some(new ExpectDesc("x")), 1).label("", 0).isExpectedEmpty shouldBe true
-        new ClassicExpectedError(0, 0, 0, Some(new ExpectDesc("x")), 1).label("a", 0).isExpectedEmpty shouldBe false
+        new EmptyError(0, 0, 0, 0).label(Nil, 0).isExpectedEmpty shouldBe true
+        new EmptyError(0, 0, 0, 0).label(Seq("a"), 0).isExpectedEmpty shouldBe false
+        new ExpectedError(0, 0, 0, List(new ExpectDesc("x")), 1).label(Nil, 0).isExpectedEmpty shouldBe true
+        new ExpectedError(0, 0, 0, List(new ExpectDesc("x")), 1).label(Seq("a"), 0).isExpectedEmpty shouldBe false
     }
     it should "replace all expected" in {
-        val errShow = new MultiExpectedError(0, 0, 0, Set(new ExpectRaw("a"), new ExpectRaw("b")), 1).label("x", 0)
-        val errHide = new MultiExpectedError(0, 0, 0, Set(new ExpectRaw("a"), new ExpectRaw("b")), 1).label("", 0)
+        val errShow = new ExpectedError(0, 0, 0, List(new ExpectRaw("a"), new ExpectRaw("b")), 1).label(Seq("x"), 0)
+        val errHide = new ExpectedError(0, 0, 0, List(new ExpectRaw("a"), new ExpectRaw("b")), 1).label(Nil, 0)
         errShow.asParseError.expecteds should contain only (new ExpectDesc("x"))
         errHide.asParseError.expecteds shouldBe empty
     }

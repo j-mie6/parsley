@@ -353,7 +353,7 @@ private [deepembedding] class CodeGenState(val numRegs: Int) {
     /** A map of generic handler instructions to some assigned jump-label. */
     private val handlerMap = mutable.Map.empty[Instr, Int]
     /** A map of error labels to the assigned jump-label to its instruction. */
-    private val relabelErrorMap = mutable.Map.empty[String, Int]
+    private val relabelErrorMap = mutable.Map.empty[scala.Seq[String], Int]
     /** A map of reasons to the assigned jump-label to its instruction. */
     private val applyReasonMap = mutable.Map.empty[String, Int]
     /** A map of registers to the assigned jump-label to its instruction. */
@@ -368,7 +368,7 @@ private [deepembedding] class CodeGenState(val numRegs: Int) {
     /** Given a error label, fetch the corresponding jump-label that will represent
       * the `RelabelError(label)` instruction in the final instruction array.
       */
-    def getLabelForRelabelError(label: String): Int = relabelErrorMap.getOrElseUpdate(label, freshLabel())
+    def getLabelForRelabelError(labels: scala.Seq[String]): Int = relabelErrorMap.getOrElseUpdate(labels, freshLabel())
     /** Given an error reason, fetch the corresponding jump-label that will represent
       * the `ApplyReason(reason)` instruction in the final instruction array.
       */
@@ -387,7 +387,7 @@ private [deepembedding] class CodeGenState(val numRegs: Int) {
       */
     def handlers: Iterator[(Instr, Int)] = {
         val relabelErrors = relabelErrorMap.view.map {
-            case (label, i) => new instructions.RelabelErrorAndFail(label) -> i
+            case (labels, i) => new instructions.RelabelErrorAndFail(labels) -> i
         }
         val applyReasons = applyReasonMap.view.map {
             case (reason, i) => new instructions.ApplyReasonAndFail(reason) -> i
