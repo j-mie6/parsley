@@ -203,7 +203,7 @@ private [backend] object Choice {
                                        leads: mutable.ListBuffer[Char],
                                        labels: mutable.ListBuffer[Int],
                                        size: Int,
-                                       expecteds: Vector[ExpectItem], // TODO: not sure what to make this... we have iterables to ++
+                                       expecteds: List[ExpectItem],
                                        // build in reverse!
                                        expectedss: List[Iterable[ExpectItem]]):
         (List[List[StrictParsley[_]]], List[Char], List[Int], Int, Iterable[ExpectItem], List[(Iterable[ExpectItem], Boolean)]) = tablified match {
@@ -212,13 +212,13 @@ private [backend] object Choice {
                 roots(c) += root
                 backtracking(c) = backtracking(c) && backtracks
                 foldTablified(tablified_, labelGen, roots, backtracking, leads, labels,
-                              Math.max(size, _size), expecteds ++ expected, expectedss)
+                              Math.max(size, _size), expected ++: expecteds, expectedss)
             }
             else {
                 roots(c) = mutable.ListBuffer(root)
                 backtracking(c) = backtracks
                 foldTablified(tablified_, labelGen, roots, backtracking, leads += c, labels += labelGen.freshLabel(),
-                              Math.max(size, _size), expecteds ++ expected, expecteds :: expectedss)
+                              Math.max(size, _size), expected ++: expecteds, expecteds :: expectedss)
             }
         case Nil => (leads.toList.map(roots(_).toList), leads.toList, labels.toList, size,
                     // When 2.12 is dropped, the final toList can go
@@ -254,7 +254,7 @@ private [backend] object Choice {
             case (root, Some(info)) => (root, info)
         }
         val (roots, leads, ls, size, expecteds, expectedss) = foldTablified(tablified_, state, mutable.Map.empty, mutable.Map.empty,
-                                                                            mutable.ListBuffer.empty, mutable.ListBuffer.empty, 0, Vector.empty, Nil)
+                                                                            mutable.ListBuffer.empty, mutable.ListBuffer.empty, 0, Nil, Nil)
         instrs += new instructions.JumpTable(leads, ls, default, merge, size, expecteds, propagateExpecteds(expectedss, expecteds, Nil))
         codeGenRoots(roots, ls, end) >> {
             instrs += new instructions.Catch(merge) //This instruction is reachable as default - 1
