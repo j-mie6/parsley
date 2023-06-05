@@ -12,7 +12,7 @@ package parsley.debugger
   * @param toPos      [[toOffset]] represented as a (line, column pair).
   * @param success    Was this parse attempt successful?
   * @param result     If this parse attempt was successful, what did it return?
-  *                   It is guaranteed that [[result.isDefined]] is true if and only if the attempt
+  *                   It is guaranteed that `result.isDefined` is true if and only if the attempt
   *                   is successful.
   */
 case class ParseAttempt

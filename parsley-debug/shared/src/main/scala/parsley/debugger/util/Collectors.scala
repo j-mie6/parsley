@@ -10,7 +10,7 @@ import parsley.token.Lexer
 import parsley.internal.deepembedding.frontend.LazyParsley
 
 /** Attempt to collect all the fields in a class or object that contain a
-  * parser of type [[Parsley]], or from a [[Lexer]].
+  * parser of type [[parsley.Parsley]], or from a [[parsley.token.Lexer]].
   *
   * This information is used later in the debug tree-building process to rename certain parsers
   * so that they do not end up being named things like "packageanon".
@@ -24,7 +24,7 @@ object Collectors {
     Rename.addNames(XCollector.collectNames(obj))
   }
 
-  /** Collect names of parsers from a [[Lexer]]. */
+  /** Collect names of parsers from a [[parsley.token.Lexer]]. */
   def lexer(lexer: Lexer): Unit =
     Rename.addNames(XCollector.collectLexer(lexer))
 
@@ -50,7 +50,7 @@ abstract class CollectorImpl private [parsley] () {
   /** Collect names of parsers from an object. */
   def collectNames(obj: Any): Map[LazyParsley[_], String]
 
-  /** Collect names of parsers from a [[Lexer]]. */
+  /** Collect names of parsers from a [[parsley.token.Lexer]]. */
   def collectLexer(lexer: Lexer): Map[LazyParsley[_], String]
 
   // Try grabbing a parser from a LazyParsley or Parsley instance.
