@@ -3,7 +3,7 @@
  */
 package parsley.internal.deepembedding.backend
 
-import parsley.token.errors.{Hidden, Label}
+import parsley.token.errors.Label
 
 import parsley.internal.deepembedding.singletons._
 import parsley.internal.machine.instructions
@@ -14,13 +14,13 @@ private [deepembedding] final class ErrorLabel[A](val p: StrictParsley[A], priva
     override def instr: instructions.Instr = new instructions.RelabelHints(label)
     override def instrNeedsLabel: Boolean = false
     override def handlerLabel(state: CodeGenState): Int = state.getLabelForRelabelError(label)
+    // don't need to be limited to not hidden when the thing can never internally generate hints
     final override def optimise: StrictParsley[A] = p match {
-        case ct@CharTok(c) if ct.expected ne Hidden => new CharTok(c, Label(label)).asInstanceOf[StrictParsley[A]]
-        case ct@SupplementaryCharTok(c) if ct.expected ne Hidden => new SupplementaryCharTok(c, Label(label)).asInstanceOf[StrictParsley[A]]
-        case st@StringTok(s) if st.expected ne Hidden => new StringTok(s, Label(label)).asInstanceOf[StrictParsley[A]]
-        case sat@Satisfy(f) if sat.expected ne Hidden => new Satisfy(f, Label(label)).asInstanceOf[StrictParsley[A]]
-        case sat@UniSatisfy(f) if sat.expected ne Hidden => new UniSatisfy(f, Label(label)).asInstanceOf[StrictParsley[A]]
-        // TODO: The hide property is required to be checked, but there is no test for it
+        case CharTok(c) /*if ct.expected ne Hidden */ => new CharTok(c, Label(label)).asInstanceOf[StrictParsley[A]]
+        case SupplementaryCharTok(c) /*if ct.expected ne Hidden */ => new SupplementaryCharTok(c, Label(label)).asInstanceOf[StrictParsley[A]]
+        case StringTok(s) /*if st.expected ne Hidden */ => new StringTok(s, Label(label)).asInstanceOf[StrictParsley[A]]
+        case Satisfy(f) /*if sat.expected ne Hidden */ => new Satisfy(f, Label(label)).asInstanceOf[StrictParsley[A]]
+        case UniSatisfy(f) /*if sat.expected ne Hidden */ => new UniSatisfy(f, Label(label)).asInstanceOf[StrictParsley[A]]
         case ErrorLabel(p, label2) if label2.nonEmpty => ErrorLabel(p, label)
         case _ => this
     }

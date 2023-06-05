@@ -3,7 +3,7 @@
  */
 package parsley
 
-import parsley.combinator.{eof, optional}
+import parsley.combinator.{eof, optional, many}
 import parsley.Parsley._
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.character.{item, digit}
@@ -154,6 +154,15 @@ class ErrorTests extends ParsleyTest {
         }
     }
 
+    it should "not replace hints if input is consumed" in {
+        inside((many(digit).label("number") <* eof).parse("1e")) {
+            case Failure(TestError((1, 2), VanillaError(unex, exs, rs))) =>
+                unex should contain (Raw("e"))
+                exs should contain only (Named("digit"), EndOfInput)
+                rs shouldBe empty
+        }
+    }
+
     "hide" should "not produce any visible output" in {
         inside('a'.hide.parse("")) {
             case Failure(TestError((1, 1), VanillaError(_, exs, _))) =>
@@ -166,6 +175,24 @@ class ErrorTests extends ParsleyTest {
         inside(digit.hide.parse("")) {
             case Failure(TestError((1, 1), VanillaError(_, exs, _))) =>
                 exs shouldBe empty
+        }
+    }
+
+    it should "not replace hints if input is consumed" in {
+        inside((many(digit).hide <* eof).parse("1e")) {
+            case Failure(TestError((1, 2), VanillaError(unex, exs, rs))) =>
+                unex should contain (Raw("e"))
+                exs should contain only EndOfInput
+                rs shouldBe empty
+        }
+    }
+
+    it should "not allow hints to be unsuppressed by another label" in {
+        inside((many(digit).hide.label("hey") <* eof).parse("1e")) {
+            case Failure(TestError((1, 2), VanillaError(unex, exs, rs))) =>
+                unex should contain (Raw("e"))
+                exs should contain only EndOfInput
+                rs shouldBe empty
         }
     }
 
