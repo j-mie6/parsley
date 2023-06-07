@@ -2,8 +2,8 @@ import org.scalajs.linker.interface.ESVersion
 import com.typesafe.tools.mima.core._
 
 val projectName = "parsley"
-val Scala213 = "2.13.11"
-val Scala212 = "2.12.18"
+val Scala213 = "2.13.10"
+val Scala212 = "2.12.17"
 val Scala3 = "3.2.1"
 val Java8 = JavaSpec.temurin("8")
 val JavaLTS = JavaSpec.temurin("11")
