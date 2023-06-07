@@ -1,4 +1,4 @@
-val sbtTypelevelVersion = "0.4.20"
+val sbtTypelevelVersion = "0.4.22"
 
 libraryDependencySchemes ++= Seq(
   "org.scala-native" % "sbt-scala-native" % VersionScheme.Always,
