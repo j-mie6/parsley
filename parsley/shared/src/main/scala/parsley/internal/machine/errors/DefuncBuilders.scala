@@ -45,7 +45,7 @@ private [errors] final class TrivialErrorBuilder(presentationOffset: Int, outOfR
       * @param width
       */
     def updateUnexpected(width: Int): Unit = {
-        assume(width != 0 || this.unexpected.pickHigher(EmptyItem) == this.unexpected, "trying to pick empty item never does anything")
+        assume(width != 0 || this.unexpected.pickHigher(EmptyItem) == this.unexpected, s"trying to pick empty item never does anything (${this.unexpected} becomes ${this.unexpected.pickHigher(EmptyItem)})")
         //if (width == 0) updateUnexpected(EmptyItem)
         if (width != 0) {
             if (outOfRange) updateUnexpected(new Other(EndOfInput))
@@ -117,7 +117,7 @@ private [errors] object TrivialErrorBuilder {
         final def pickHigher(other: BuilderUnexpectItem): BuilderUnexpectItem = other.pickRaw(this)
         final override def pickRaw(other: Raw): Raw = if (this.size > other.size) this else other
         final override def pickOther(other: Other): Other = other.pickRaw(this)
-        final override def pickNoItem(other: NoItem): Raw = this
+        final override def pickNoItem(other: NoItem): Raw = if (this.size >= other.width) this else new Raw(other.width)
         def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Either[Int, UnexpectItem] = Right(builder(offset, size))
     }
     private [TrivialErrorBuilder] final class Other(val underlying: UnexpectItem) extends BuilderUnexpectItem {
@@ -127,14 +127,17 @@ private [errors] object TrivialErrorBuilder {
             else this
         }
         final override def pickOther(other: Other): Other = if (this.underlying.higherPriority(other.underlying)) this else other
-        final override def pickNoItem(other: NoItem): Other = this
+        final override def pickNoItem(other: NoItem): Other = {
+            if (underlying.isFlexible) new Other(underlying.widen(other.width))
+            else this
+        }
         def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Either[Int, UnexpectItem] = Right(underlying)
     }
     private [TrivialErrorBuilder] class NoItem(val width: Int) extends BuilderUnexpectItem {
         assume(width >= 0, "NoItem should not try and represent negative tokens")
         final def pickHigher(other: BuilderUnexpectItem): BuilderUnexpectItem = other.pickNoItem(this)
-        final override def pickRaw(other: Raw): Raw = other
-        final override def pickOther(other: Other): Other = other
+        final override def pickRaw(other: Raw): Raw = other.pickNoItem(this)
+        final override def pickOther(other: Other): Other = other.pickNoItem(this)
         final override def pickNoItem(other: NoItem): NoItem = if (this.width > other.width) this else other
         def toErrorItem(offset: Int)(implicit builder: ErrorItemBuilder): Either[Int, UnexpectItem] = Left(width)
     }

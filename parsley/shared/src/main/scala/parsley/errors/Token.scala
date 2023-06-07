@@ -26,6 +26,7 @@ object Token {
       */
     final case class Raw(tok: String) extends Token {
         override private [parsley] def span: TokenSpan = {
+            // TODO: line trimming isn't needed if carets are handled properly with respect to the codepoints
             val idx = tok.indexOf('\n')
             TokenSpan.Width(tok.codePointCount(0, if (idx != -1) idx + 1 else tok.length))
         }

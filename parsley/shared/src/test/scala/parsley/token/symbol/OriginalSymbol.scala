@@ -3,9 +3,9 @@
  */
 package parsley.token.symbol
 
-import parsley.Parsley, Parsley.{attempt, empty, notFollowedBy, unit}
+import parsley.Parsley, Parsley.{attempt, notFollowedBy, unit}
 import parsley.character.{char, charUtf16, string, strings}
-import parsley.errors.combinator.ErrorMethods
+import parsley.errors.combinator.{ErrorMethods, empty, amend}
 import parsley.token.descriptions.{NameDesc, SymbolDesc}
 import parsley.token.errors.ErrorConfig
 
@@ -34,8 +34,7 @@ private [token] class OriginalSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc,
                 p <~= caseChar(codepoint)
                 offset += Character.charCount(codepoint)
             }
-            // the string here is to get the right caret width... sad times
-            attempt(p) <|> (string(name) *> empty)
+            attempt(amend(p)) <|> empty(name.codePointCount(0, name.length))
         }.label(name)
     }
     override def softKeyword(name: String): Parsley[Unit] = {

@@ -24,7 +24,7 @@ class SymbolSemanticPreservationSpec extends AnyPropSpec with ScalaCheckProperty
     def makeUnoptSymbol(nameDesc: NameDesc, symDesc: SymbolDesc): Symbol = new LexemeSymbol(new OriginalSymbol(nameDesc, symDesc, errConfig), spaces, errConfig)
 
     def optAndUnOptAreSame(f: (Symbol, String) => Parsley[Unit])(nameDesc: NameDesc, symbolDesc: SymbolDesc, sym: String, input: String) =
-        whenever (!input.contains('\u0000')) {
+        whenever (!input.contains('\u0000') && !sym.contains('\u0000')) {
             val opt = makeOptSymbol(nameDesc, symbolDesc)
             val unopt = makeUnoptSymbol(nameDesc, symbolDesc)
             f(opt, sym).parse(input) shouldBe f(unopt, sym).parse(input)

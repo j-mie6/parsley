@@ -26,6 +26,7 @@ private [internal] case class TrivialError(offset: Int, line: Int, col: Int,
     extends ParseError {
     def format(line: String, beforeLines: List[String], afterLines: List[String], caret: Int)(implicit builder: ErrorBuilder[_]): builder.ErrorInfoLines = {
         val unexpectedTok = unexpected.map(_.formatUnexpect(lexicalError))
+        // TODO: could we support multi-line carets?
         // FIXME: This should probably use the number of codepoints and not length
         val caretSize = unexpectedTok.fold(identity[Int], _._2.toCaretLength(this.col, line.length, afterLines.map(_.length)))
         builder.vanillaError(
@@ -33,6 +34,7 @@ private [internal] case class TrivialError(offset: Int, line: Int, col: Int,
             builder.expected(builder.combineExpectedItems(expecteds.map(_.formatExpect))),
             builder.combineMessages(reasons.map(builder.reason(_)).toSeq),
             // this was changed to +1 to allow EoF caret, does this need more nuance?
+            // FIXME: this should use the number of codepoints and not length
             builder.lineInfo(line, beforeLines, afterLines, caret, math.min(caretSize, line.length - caret + 1)))
     }
 }
