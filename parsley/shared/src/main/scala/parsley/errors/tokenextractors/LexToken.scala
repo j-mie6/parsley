@@ -14,9 +14,6 @@ import parsley.combinator.{choice, eof, option, sequence, someUntil}
 import parsley.errors.{ErrorBuilder, Token, TokenSpan}
 import parsley.position
 
-// Turn coverage off, because the tests have their own error builder
-// TODO: We might want to test this on its own though
-// $COVERAGE-OFF$
 /** This extractor mixin provides an implementation for
   * [[parsley.errors.ErrorBuilder.unexpectedToken `ErrorBuilder.unexpectedToken`]] when mixed into
   * an error builder: it will try and parse the residual input to identify a valid lexical token
@@ -126,4 +123,3 @@ object LexToken {
         case (p, n) => p #> n
     }
 }
-// $COVERAGE-ON$

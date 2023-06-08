@@ -6,9 +6,6 @@ package parsley.errors
 import scala.annotation.tailrec
 import scala.collection.immutable.WrappedString
 
-// Turn coverage off, because the tests have their own error builder
-// We might want to test this on its own though
-// $COVERAGE-OFF$
 private [parsley] object helpers {
     def renderRawString(s: String): String = s match {
         case WhitespaceOrUnprintable(name) => name
@@ -66,4 +63,3 @@ private [parsley] object helpers {
         }
     }
 }
-// $COVERAGE-ON$

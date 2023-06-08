@@ -6,9 +6,6 @@ package parsley.errors.tokenextractors
 import parsley.XCompat.unused
 import parsley.errors.{helpers, ErrorBuilder, Token, TokenSpan}
 
-// Turn coverage off, because the tests have their own error builder
-// We might want to test this on its own though
-// $COVERAGE-OFF$
 /** This extractor mixin provides an implementation for
   * [[parsley.errors.ErrorBuilder.unexpectedToken `ErrorBuilder.unexpectedToken`]] when mixed into
   * an error builder: it will unconditionally report the first character in the remaining input
@@ -40,4 +37,3 @@ object SingleChar {
         }
     }
 }
-// $COVERAGE-ON$
