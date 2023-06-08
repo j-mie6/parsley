@@ -5,7 +5,6 @@ package parsley.errors
 
 import scala.annotation.tailrec
 import scala.collection.immutable.WrappedString
-//import scala.util.matching.Regex
 
 // Turn coverage off, because the tests have their own error builder
 // We might want to test this on its own though
@@ -26,23 +25,9 @@ private [parsley] object helpers {
         case alt::alts => Some(s"${alts.reverse.mkString(", ")}, or $alt")
     }
 
-    //private val Unprintable: Regex = "(\\p{C})".r
-
     object WhitespaceOrUnprintable {
-        def unapply(cs: Iterable[Char]): Option[String] = unapply(cs.take(2).mkString) /*{
-            if (cs.head.isHighSurrogate && cs.size > 1) unapply(Character.toCodePoint(cs.head, cs.tail.head))
-            else unapply(cs.head.toInt)
-        }*/
+        def unapply(cs: Iterable[Char]): Option[String] = unapply(cs.take(2).mkString)
         def unapply(s: String): Option[String] = unapply(s.codePointAt(0))
-        /*def unapply(c: Char): Option[String] = c match {
-            case '\n' => Some("newline")
-            case '\t' => Some("tab")
-            case c if c.isSpaceChar => Some("space")
-            case c if c.isWhitespace => Some("whitespace character")
-            case c if c.isHighSurrogate => None
-            case Unprintable(up) => Some(f"unprintable character (\\u${up.toInt}%04X)")
-            case _ => None
-        }*/
         def unapply(cp: Int): Option[String] = {
             if (Character.isWhitespace(cp)) cp match {
                 case 0x000a => Some("newline")
