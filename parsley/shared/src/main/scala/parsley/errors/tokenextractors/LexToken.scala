@@ -79,7 +79,6 @@ trait LexToken { this: ErrorBuilder[_] =>
     def selectToken(matchedToks: List[(String, (Int, Int))]): (String, (Int, Int)) = matchedToks.maxBy(_._2)
 
     private final def selectTokenAndBuild(matchedToks: ::[(String, (Int, Int))]): Token = {
-        assert(matchedToks.nonEmpty)
         val (name, (line, col)) = selectToken(matchedToks)
         Token.Named(name, TokenSpan.Spanning(line-1, col-1))
     }
