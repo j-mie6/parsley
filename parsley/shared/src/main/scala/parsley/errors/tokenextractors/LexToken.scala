@@ -10,7 +10,7 @@ import parsley.Success
 import parsley.XAssert.assert
 import parsley.XCompat.unused
 import parsley.character.{item, stringOfSome}
-import parsley.combinator.{choice, option, traverse5}
+import parsley.combinator.{option, traverse5}
 import parsley.errors.{ErrorBuilder, Token, TokenSpan}
 import parsley.position
 
@@ -56,10 +56,10 @@ trait LexToken { this: ErrorBuilder[_] =>
 
     // this parser cannot and must not fail
     private lazy val makeParser: Parsley[Either[::[(String, (Int, Int))], String]] = {
-        val toks = tokens.map(p => attempt(p) <~> position.pos)
+        val toks = traverse5(tokens: _*)(p => option(lookAhead(attempt(p) <~> position.pos))).map(_.flatten).collect { case toks@(_::_) => toks }
         // this can only fail if either there is no input (which there must be), or there is a token at the front, in which case `rawTok` is not parsed anyway
-        val rawTok = stringOfSome(notFollowedBy(choice(toks: _*)) *> item)
-        traverse5(toks: _*)(p => option(lookAhead(p))).map(_.flatten).collect { case toks@(_::_) => toks } <+> rawTok
+        val rawTok = stringOfSome(traverse5(tokens: _*)(notFollowedBy) *> item)
+        toks <+> rawTok
     }
 
     /** If the extractor is successful in identifying tokens that can be parsed from
