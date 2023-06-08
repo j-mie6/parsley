@@ -34,7 +34,10 @@ private [parsley] object helpers {
         private final val Space    = 0x0020
         // $COVERAGE-ON$
 
-        def unapply(cs: Iterable[Char]): Option[String] = unapply(cs.take(2).mkString)
+        def unapply(cs: Iterable[Char]): Option[String] = cs match {
+            case ws: WrappedString => unapply(ws.toString)
+            case _                 => unapply(cs.take(2).mkString)
+        }
         def unapply(s: String): Option[String] = unapply(s.codePointAt(0))
         def unapply(cp: Int): Option[String] = {
             if (Character.isWhitespace(cp)) cp match {
