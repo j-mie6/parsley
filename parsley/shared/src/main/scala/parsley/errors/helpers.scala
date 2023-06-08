@@ -23,10 +23,13 @@ private [parsley] object helpers {
     }
 
     object WhitespaceOrUnprintable {
+        // These are all inlined, so aren't "tested"
+        // $COVERAGE-OFF$
         private final val Newline  = 0x000a
         private final val Carriage = 0x000d
         private final val Tab      = 0x0009
         private final val Space    = 0x0020
+        // $COVERAGE-ON$
 
         def unapply(cs: Iterable[Char]): Option[String] = unapply(cs.take(2).mkString)
         def unapply(s: String): Option[String] = unapply(s.codePointAt(0))
@@ -44,8 +47,8 @@ private [parsley] object helpers {
                    | Character.UNASSIGNED
                    | Character.CONTROL =>
                     Character.toChars(cp) match {
-                        case Array(h, l) => Some(f"non-printable codepoint (\\u${h.toInt}%04X\\u${l.toInt}%04X, or 0x$cp%08X)")
-                        case Array(c)    => Some(f"non-printable character (\\u${c.toInt}%04X)")
+                        case Array(h, l) => Some(f"non-printable codepoint (\\u${h.toInt}%04x\\u${l.toInt}%04x, or 0x$cp%06x)")
+                        case Array(c)    => Some(f"non-printable character (\\u${c.toInt}%04x)")
                     }
                 case _ => None
             }

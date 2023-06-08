@@ -24,7 +24,7 @@ case class Raw(item: String) extends TestErrorItem
 case class Named(item: String) extends TestErrorItem
 case object EndOfInput extends TestErrorItem
 
-class TestErrorBuilder extends ErrorBuilder[TestError] with tokenextractors.MatchParserDemand {
+abstract class TestErrorBuilder extends ErrorBuilder[TestError] {
     override def format(pos: Position, source: Source, lines: ErrorInfoLines): TestError = TestError(pos, lines)
 
     type Position = (Int, Int)
@@ -57,8 +57,8 @@ class TestErrorBuilder extends ErrorBuilder[TestError] with tokenextractors.Matc
     type LineInfo = Unit
     override def lineInfo(line: String, linesBefore: Seq[String], linesAfter: Seq[String], errorPointsAt: Int, errorWidth: Int): Unit = ()
 
-    override val numLinesBefore: Int = 2
-    override val numLinesAfter: Int = 2
+    override val numLinesBefore: Int = 0
+    override val numLinesAfter: Int = 0
 
     type Item = TestErrorItem
     type Raw = parsley.Raw
@@ -85,7 +85,7 @@ abstract class ParsleyTest extends AnyFlatSpec with Matchers with Assertions wit
         }
     }
 
-    implicit val eb: ErrorBuilder[TestError] = new TestErrorBuilder
+    implicit val eb: ErrorBuilder[TestError] = new TestErrorBuilder with tokenextractors.MatchParserDemand
 
     implicit class FullParse[A](val p: Parsley[A]) {
         def parseAll[Err: ErrorBuilder](input: String): Result[Err, A] = (p <* eof).parse(input)
