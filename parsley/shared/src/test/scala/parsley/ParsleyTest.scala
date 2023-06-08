@@ -57,8 +57,8 @@ abstract class TestErrorBuilder extends ErrorBuilder[TestError] {
     type LineInfo = Unit
     override def lineInfo(line: String, linesBefore: Seq[String], linesAfter: Seq[String], errorPointsAt: Int, errorWidth: Int): Unit = ()
 
-    override val numLinesBefore: Int = 0
-    override val numLinesAfter: Int = 0
+    override val numLinesBefore: Int = 2
+    override val numLinesAfter: Int = 2
 
     type Item = TestErrorItem
     type Raw = parsley.Raw

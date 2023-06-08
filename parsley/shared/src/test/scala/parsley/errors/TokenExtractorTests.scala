@@ -9,15 +9,6 @@ import parsley.errors.tokenextractors._
 
 class TokenExtractorTests extends ParsleyTest {
     val singleChar = new TestErrorBuilder with SingleChar
-    val matchParserDemand = new TestErrorBuilder with MatchParserDemand
-    val tillNextWhitespaceTrimmed = new TestErrorBuilder with TillNextWhitespace {
-        def trimToParserDemand: Boolean = true
-    }
-    val tillNextWhitespaceRaw = new TestErrorBuilder with TillNextWhitespace {
-        def trimToParserDemand: Boolean = false
-    }
-    // TODO: lexToken
-
     "SingleChar" should "return a single printable ascii character" in {
         singleChar.unexpectedToken("abc", 1, false) shouldBe Token.Raw("a")
         singleChar.unexpectedToken("1", 1, false) shouldBe Token.Raw("1")
@@ -43,4 +34,42 @@ class TokenExtractorTests extends ParsleyTest {
         singleChar.unexpectedToken(Character.toChars(0x0f0000), 1, true) shouldBe Token.Named("non-printable codepoint (\\udb80\\udc00, or 0x0f0000)", TokenSpan.Width(1))
         singleChar.unexpectedToken(Character.toChars(0x10ffff), 1, true) shouldBe Token.Named("non-printable codepoint (\\udbff\\udfff, or 0x10ffff)", TokenSpan.Width(1))
     }
+
+    val matchParserDemand = new TestErrorBuilder with MatchParserDemand
+    "MatchParserDemand" should "return a single printable ascii character" in {
+        matchParserDemand.unexpectedToken("abc", 1, false) shouldBe Token.Raw("a")
+        matchParserDemand.unexpectedToken("abc", 2, false) shouldBe Token.Raw("ab")
+        matchParserDemand.unexpectedToken("1", 4, false) shouldBe Token.Raw("1")
+        matchParserDemand.unexpectedToken(";", 2, true) shouldBe Token.Raw(";")
+        matchParserDemand.unexpectedToken(";.,", 3, true) shouldBe Token.Raw(";.,")
+    }
+    it should "handle supplementary unicode characters" in {
+        matchParserDemand.unexpectedToken("😀", 2, true) shouldBe Token.Raw("😀")
+        matchParserDemand.unexpectedToken("😀😀😀", 2, false) shouldBe Token.Raw("😀😀")
+    }
+    it should "deal with whitespace characters by naming them" in {
+        matchParserDemand.unexpectedToken(" aa", 2, true) shouldBe Token.Named("space", TokenSpan.Width(1))
+        matchParserDemand.unexpectedToken("\naa", 2, true) shouldBe Token.Named("newline", TokenSpan.Width(1))
+        matchParserDemand.unexpectedToken("\taa", 2, true) shouldBe Token.Named("tab", TokenSpan.Width(1))
+        matchParserDemand.unexpectedToken("\raa", 3, true) shouldBe Token.Named("carriage return", TokenSpan.Width(1))
+        matchParserDemand.unexpectedToken("\faa", 1, true) shouldBe Token.Named("whitespace character", TokenSpan.Width(1))
+    }
+    it should "refuse to print control characters" in {
+        matchParserDemand.unexpectedToken("\u0000aaa", 3, true) shouldBe Token.Named("non-printable character (\\u0000)", TokenSpan.Width(1))
+        matchParserDemand.unexpectedToken("\u0001aaa", 3, true) shouldBe Token.Named("non-printable character (\\u0001)", TokenSpan.Width(1))
+        matchParserDemand.unexpectedToken("\ud83daaa", 2, true) shouldBe Token.Named("non-printable character (\\ud83d)", TokenSpan.Width(1))
+    }
+    it should "refuse to print non-printable supplementary characters" in {
+        matchParserDemand.unexpectedToken(Character.toChars(0x0f0000), 1, true) shouldBe Token.Named("non-printable codepoint (\\udb80\\udc00, or 0x0f0000)", TokenSpan.Width(1))
+        matchParserDemand.unexpectedToken(Character.toChars(0x10ffff), 1, true) shouldBe Token.Named("non-printable codepoint (\\udbff\\udfff, or 0x10ffff)", TokenSpan.Width(1))
+    }
+
+
+    val tillNextWhitespaceTrimmed = new TestErrorBuilder with TillNextWhitespace {
+        def trimToParserDemand: Boolean = true
+    }
+    val tillNextWhitespaceRaw = new TestErrorBuilder with TillNextWhitespace {
+        def trimToParserDemand: Boolean = false
+    }
+    // TODO: lexToken
 }
