@@ -7,6 +7,8 @@ import scala.annotation.tailrec
 import scala.collection.immutable.WrappedString
 
 private [parsley] object helpers {
+    // These don't really need to be tested right now
+    // $COVERAGE-OFF$
     def renderRawString(s: String): String = s match {
         case WhitespaceOrUnprintable(name) => name
         // this will handle utf-16 surrogate pairs properly
@@ -21,6 +23,7 @@ private [parsley] object helpers {
         case any@(alt::alts) if any.exists(_.contains(",")) => Some(s"${alts.reverse.mkString("; ")}; or $alt")
         case alt::alts => Some(s"${alts.reverse.mkString(", ")}, or $alt")
     }
+    // $COVERAGE-ON$
 
     object WhitespaceOrUnprintable {
         // These are all inlined, so aren't "tested"
@@ -55,7 +58,8 @@ private [parsley] object helpers {
         }
     }
 
-    def takeCodePoints(s: WrappedString, n: Int): String = takeCodePoints(s.iterator, n, new StringBuilder)
+    // TODO: optimise this to avoid copy?
+    def takeCodePoints(s: WrappedString, n: Int): String = takeCodePoints(s: Iterable[Char], n)//takeCodePoints(s.iterator, n, new StringBuilder)
     def takeCodePoints(s: Iterable[Char], n: Int): String = takeCodePoints(s.iterator, n, new StringBuilder)
 
     @tailrec private def takeCodePoints(it: Iterator[Char], n: Int, sb: StringBuilder): String = {

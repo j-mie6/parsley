@@ -39,6 +39,6 @@ object MatchParserDemand {
     // this is redundant.
     private def substring(cs: Iterable[Char], upto: Int): String = cs match {
         case cs: WrappedString => helpers.takeCodePoints(cs, upto)
-        case _ => helpers.takeCodePoints(cs, upto)
+        case _ => helpers.takeCodePoints(cs, upto) // this will be relevant when Cosmin's work is merged
     }
 }
