@@ -67,7 +67,8 @@ trait LexToken { this: ErrorBuilder[_] =>
       * the residual input, this function will select ''one'' of them to report back.
       *
       * The default behaviour is to take the longest matched token (i.e. the one with
-      * the largest paired position).
+      * the largest paired position). In case of a tie, the first token is chosen:
+      * this means that more specific tokens should be put sooner in the `tokens` list.
       *
       * @param matchedToks the list of tokens successfully parsed, along with the position
       *                    at the end of that parse (careful: this position starts back at

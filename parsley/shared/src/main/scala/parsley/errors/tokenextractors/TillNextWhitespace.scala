@@ -70,6 +70,6 @@ object TillNextWhitespace {
                 if (idx != -1) idx else cs.length
             }
             cs.slice(0, idx).toString
-        case cs => cs.takeWhile(!_.isWhitespace).mkString // this will be relevant when Cosmin's work is merged
+        case cs => cs.takeWhile(!_.isWhitespace).mkString
     }
 }
