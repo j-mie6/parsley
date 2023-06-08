@@ -24,8 +24,8 @@ class TokenExtractorTests extends ParsleyTest {
         singleChar.unexpectedToken(";", 2, true) shouldBe Token.Raw(";")
     }
     it should "handle supplementary unicode characters" in {
-        singleChar.unexpectedToken("🙂", 1, true) shouldBe Token.Raw("🙂")
-        singleChar.unexpectedToken("🙂🙂🙂", 1, false) shouldBe Token.Raw("🙂")
+        singleChar.unexpectedToken("😀", 1, true) shouldBe Token.Raw("😀")
+        singleChar.unexpectedToken("😀😀😀", 1, false) shouldBe Token.Raw("😀")
     }
     it should "deal with whitespace characters by naming them" in {
         singleChar.unexpectedToken(" ", 1, true) shouldBe Token.Named("space", TokenSpan.Width(1))
