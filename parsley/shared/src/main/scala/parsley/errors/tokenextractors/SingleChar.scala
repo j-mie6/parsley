@@ -6,9 +6,6 @@ package parsley.errors.tokenextractors
 import parsley.XCompat.unused
 import parsley.errors.{helpers, ErrorBuilder, Token, TokenSpan}
 
-// Turn coverage off, because the tests have their own error builder
-// We might want to test this on its own though
-// $COVERAGE-OFF$
 /** This extractor mixin provides an implementation for
   * [[parsley.errors.ErrorBuilder.unexpectedToken `ErrorBuilder.unexpectedToken`]] when mixed into
   * an error builder: it will unconditionally report the first character in the remaining input
@@ -31,10 +28,12 @@ object SingleChar {
     /** The implementation of `unexpectedToken` as done by `SingleChar`, with redundant arguments removed.
       * @since 4.0.0
       */
-    def unexpectedToken(cs: Iterable[Char]): Token = cs.head match {
-        case helpers.WhitespaceOrUnprintable(name) => Token.Named(name, TokenSpan.Width(1))
-        case c if c.isHighSurrogate => Token.Raw(cs.take(2).mkString)
-        case c => Token.Raw(s"$c")
+    def unexpectedToken(cs: Iterable[Char]): Token = {
+        val s = cs.take(2).mkString
+        s.codePointAt(0) match {
+            case helpers.WhitespaceOrUnprintable(name) => Token.Named(name, TokenSpan.Width(1))
+            case cp if Character.isSupplementaryCodePoint(cp) => Token.Raw(s)
+            case cp => Token.Raw(s"${cp.toChar}")
+        }
     }
 }
-// $COVERAGE-ON$
