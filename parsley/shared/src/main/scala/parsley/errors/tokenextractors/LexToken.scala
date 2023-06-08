@@ -5,12 +5,12 @@ package parsley.errors.tokenextractors
 
 import scala.collection.immutable.WrappedString
 
-import parsley.Parsley, Parsley.{attempt, lookAhead}
+import parsley.Parsley, Parsley.{attempt, lookAhead, notFollowedBy}
 import parsley.Success
 import parsley.XAssert.assert
 import parsley.XCompat.unused
-import parsley.character.item
-import parsley.combinator.{choice, eof, option, sequence, someUntil}
+import parsley.character.{item, stringOfSome}
+import parsley.combinator.{choice, option, traverse5}
 import parsley.errors.{ErrorBuilder, Token, TokenSpan}
 import parsley.position
 
@@ -54,13 +54,12 @@ trait LexToken { this: ErrorBuilder[_] =>
       */
     def tokens: Seq[Parsley[String]]
 
-    // this parser cannot fail
-    private lazy val makeParser: Parsley[Either[String, List[(String, (Int, Int))]]] = {
-        val toks = tokens.map(p => attempt(p <~> position.pos))
-        // TODO: I think this can be improved to delay raw token till after we have established
-        //       no valid tokens: this would be slightly more efficient.
-        val rawTok = lookAhead(someUntil(item, eof <|> choice(toks: _*))).map(_.mkString)
-        rawTok <+> sequence(toks.map(p => option(lookAhead(p))): _*).map(_.flatten)
+    // this parser cannot and must not fail
+    private lazy val makeParser: Parsley[Either[::[(String, (Int, Int))], String]] = {
+        val toks = tokens.map(p => attempt(p) <~> position.pos)
+        // this can only fail if either there is no input (which there must be), or there is a token at the front, in which case `rawTok` is not parsed anyway
+        val rawTok = stringOfSome(notFollowedBy(choice(toks: _*)) *> item)
+        traverse5(toks: _*)(p => option(lookAhead(p))).map(_.flatten).collect { case toks@(_::_) => toks } <+> rawTok
     }
 
     /** If the extractor is successful in identifying tokens that can be parsed from
@@ -79,20 +78,21 @@ trait LexToken { this: ErrorBuilder[_] =>
       */
     def selectToken(matchedToks: List[(String, (Int, Int))]): (String, (Int, Int)) = matchedToks.maxBy(_._2)
 
-    private final def selectTokenAndBuild(matchedToks: List[(String, (Int, Int))]): Token = {
+    private final def selectTokenAndBuild(matchedToks: ::[(String, (Int, Int))]): Token = {
         assert(matchedToks.nonEmpty)
         val (name, (line, col)) = selectToken(matchedToks)
         Token.Named(name, TokenSpan.Spanning(line-1, col-1))
     }
 
     private final def extractToken(cs: Iterable[Char]): Token = {
+        assert(cs.nonEmpty, "we promised that the input is non-empty!")
         val Success(rawOrToks) = makeParser.parse {
             cs match {
                 case cs: WrappedString => cs.toString
                 case cs => cs.mkString
             }
         }
-        rawOrToks.fold(Token.Raw.apply, selectTokenAndBuild)
+        rawOrToks.fold(selectTokenAndBuild, Token.Raw.apply)
     }
 
     /** If the parser failed during the parsing of a token, this function extracts the problematic

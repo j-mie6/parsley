@@ -25,6 +25,7 @@ object Token {
       * @since 4.0.0
       */
     final case class Raw(tok: String) extends Token {
+        require(tok.nonEmpty, "raw tokens must always be non-empty")
         override private [parsley] def span: TokenSpan = {
             // TODO: line trimming isn't needed if carets are handled properly with respect to the codepoints
             val idx = tok.indexOf('\n')

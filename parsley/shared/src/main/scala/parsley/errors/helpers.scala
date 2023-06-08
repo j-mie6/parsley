@@ -62,7 +62,7 @@ private [parsley] object helpers {
     }
 
     // TODO: optimise this to avoid copy?
-    def takeCodePoints(s: WrappedString, n: Int): String = takeCodePoints(s: Iterable[Char], n)//takeCodePoints(s.iterator, n, new StringBuilder)
+    def takeCodePoints(s: WrappedString, n: Int): String = takeCodePoints(s: Iterable[Char], n)
     def takeCodePoints(s: Iterable[Char], n: Int): String = takeCodePoints(s.iterator, n, new StringBuilder)
 
     @tailrec private def takeCodePoints(it: Iterator[Char], n: Int, sb: StringBuilder): String = {

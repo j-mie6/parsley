@@ -183,6 +183,8 @@ object combinator {
       * @note $strict
       */
     def traverse[A, B](f: A => Parsley[B], xs: A*): Parsley[List[B]] = sequence(xs.map(f): _*)
+    // this will be used in future!
+    private [parsley] def traverse5[A, B](xs: A*)(f: A => Parsley[B]): Parsley[List[B]] = traverse(f, xs: _*)
 
     /** This combinator will parse each of `ps` in order, discarding the results.
       *
