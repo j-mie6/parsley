@@ -61,6 +61,7 @@ object TillNextWhitespace {
     }
 
     // TODO: we should take to minimum of parser demand and next whitespace, this would potentially be much much cheaper
+    // Assumption: there are no non-BMP whitespace characters
     private def extractTillNextWhitespace(cs: Iterable[Char]): String = cs match {
         case cs: WrappedString =>
             // These do not require allocation on the string
@@ -69,6 +70,6 @@ object TillNextWhitespace {
                 if (idx != -1) idx else cs.length
             }
             cs.slice(0, idx).toString
-        case cs => cs.takeWhile(!_.isWhitespace).mkString
+        case cs => cs.takeWhile(!_.isWhitespace).mkString // this will be relevant when Cosmin's work is merged
     }
 }
