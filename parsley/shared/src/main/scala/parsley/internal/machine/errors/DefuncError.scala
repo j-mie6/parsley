@@ -176,9 +176,15 @@ private [errors] sealed abstract class TrivialDefuncError extends DefuncError {
         val cmp = Integer.compareUnsigned(this.underlyingOffset, err.underlyingOffset)
         if (cmp > 0) this
         else if (cmp < 0) err
-        else err match {
-            case err: TrivialDefuncError => new TrivialMergedErrors(this, err)
-            case err                     => err
+        else {
+            val cmp = Integer.compareUnsigned(this.presentationOffset, err.presentationOffset)
+            if (cmp > 0) this
+            else if (cmp < 0) err
+            else err match {
+                case err: TrivialDefuncError                    => new TrivialMergedErrors(this, err)
+                case err: FancyDefuncError if err.flexibleCaret => new FancyAdjustCaret(err, this)
+                case err                                        => err
+            }
         }
     }
 
@@ -227,10 +233,15 @@ private [errors] sealed abstract class FancyDefuncError extends DefuncError {
         val cmp = Integer.compareUnsigned(this.underlyingOffset, err.underlyingOffset)
         if (cmp > 0) this
         else if (cmp < 0) err
-        else err match {
-            case err: FancyDefuncError                    => new FancyMergedErrors(this, err)
-            case err: TrivialDefuncError if flexibleCaret => new FancyAdjustCaret(this, err)
-            case _                                        => this
+        else {
+            val cmp = Integer.compareUnsigned(this.presentationOffset, err.presentationOffset)
+            if (cmp > 0) this
+            else if (cmp < 0) err
+            else err match {
+                case err: FancyDefuncError                    => new FancyMergedErrors(this, err)
+                case err: TrivialDefuncError if flexibleCaret => new FancyAdjustCaret(this, err)
+                case _                                        => this
+            }
         }
     }
 
@@ -344,9 +355,10 @@ private [parsley] final class EmptyErrorWithReason(val presentationOffset: Int, 
 
 private [errors] final class TrivialMergedErrors private [errors] (val err1: TrivialDefuncError, val err2: TrivialDefuncError) extends TrivialDefuncError {
     override final val flags = err1.flags & err2.flags
+    assume(err1.underlyingOffset == err2.underlyingOffset, "two errors only merge when they have matching offsets")
+    override val underlyingOffset = err1.underlyingOffset
     assume(err1.presentationOffset == err2.presentationOffset, "two errors only merge when they have matching offsets")
     override val presentationOffset = err1.presentationOffset //Math.max(err1.offset, err2.offset)
-    override val underlyingOffset = err1.underlyingOffset
     override def makeTrivial(builder: TrivialErrorBuilder): Unit = {
         err1.makeTrivial(builder)
         err2.makeTrivial(builder)
@@ -355,9 +367,10 @@ private [errors] final class TrivialMergedErrors private [errors] (val err1: Tri
 
 private [errors] final class FancyMergedErrors private [errors] (val err1: FancyDefuncError, val err2: FancyDefuncError) extends FancyDefuncError {
     override final val flags = err1.flags & err2.flags
+    assume(err1.underlyingOffset == err2.underlyingOffset, "two errors only merge when they have matching offsets")
+    override val underlyingOffset = err1.underlyingOffset
     assume(err1.presentationOffset == err2.presentationOffset, "two errors only merge when they have matching offsets")
     override val presentationOffset = err1.presentationOffset //Math.max(err1.offset, err2.offset)
-    override val underlyingOffset = err1.underlyingOffset
     override def makeFancy(builder: FancyErrorBuilder): Unit = {
         err1.makeFancy(builder)
         err2.makeFancy(builder)
