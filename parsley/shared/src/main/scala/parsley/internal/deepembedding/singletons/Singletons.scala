@@ -24,16 +24,16 @@ private [singletons] abstract class Singleton[A] extends LazyParsley[A] with Str
     def instr: instructions.Instr
 
     final override def inlinable: Boolean = true
-    final override def findLetsAux[Cont[_, +_]: ContOps, R](seen: Set[LazyParsley[_]])(implicit state: frontend.LetFinderState): Cont[R, Unit] = result(())
-    final override def preprocess[Cont[_, +_]: ContOps, R, A_ >: A](implicit lets: frontend.LetMap, recs: frontend.RecMap): Cont[R, StrictParsley[A_]] = {
+    final override def findLetsAux[Cont[_, _]: ContOps, R](seen: Set[LazyParsley[_]])(implicit state: frontend.LetFinderState): Cont[R, Unit] = result(())
+    final override def preprocess[Cont[_, _]: ContOps, R, A_ >: A](implicit lets: frontend.LetMap, recs: frontend.RecMap): Cont[R, StrictParsley[A_]] = {
         result(this)
     }
-    final override def codeGen[Cont[_, +_], R](implicit ops: ContOps[Cont], instrs: StrictParsley.InstrBuffer, state: backend.CodeGenState): Cont[R, Unit] = {
+    final override def codeGen[Cont[_, _], R](implicit ops: ContOps[Cont], instrs: StrictParsley.InstrBuffer, state: backend.CodeGenState): Cont[R, Unit] = {
         result(instrs += instr)
     }
 
     // $COVERAGE-OFF$
     def pretty: String
-    final override def pretty[Cont[_, +_]: ContOps, R]: Cont[R, String] = result(pretty)
+    final override def pretty[Cont[_, _]: ContOps, R]: Cont[R, String] = result(pretty)
     // $COVERAGE-ON$
 }

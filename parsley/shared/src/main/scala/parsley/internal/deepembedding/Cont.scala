@@ -15,7 +15,7 @@ private [deepembedding] sealed abstract class Bounce[A] {
 private [deepembedding] final class Chunk[A](val x: A) extends Bounce[A]
 private [deepembedding] final class Thunk[A](val cont: () => Bounce[A]) extends Bounce[A]
 
-private [deepembedding] abstract class ContOps[Cont[_, +_]] {
+private [deepembedding] abstract class ContOps[Cont[_, _]] {
     def wrap[R, A](x: A): Cont[R, A]
     def unwrap[R](wrapped: Cont[R, R]): R
     def map[R, A, B](c: Cont[R, A], f: A => B): Cont[R, B]
@@ -28,25 +28,25 @@ private [deepembedding] abstract class ContOps[Cont[_, +_]] {
     // $COVERAGE-ON$
 }
 private [deepembedding] object ContOps {
-    implicit class ContAdapter[R, A, Cont[_, +_]](val c: Cont[R, A]) extends AnyVal {
+    implicit class ContAdapter[R, A, Cont[_, _]](val c: Cont[R, A]) extends AnyVal {
         @inline def map[B](f: A => B)(implicit ops: ContOps[Cont]): Cont[R, B] = ops.map(c, f)
         @inline def flatMap[B](f: A => Cont[R, B])(implicit ops: ContOps[Cont]): Cont[R, B] = ops.flatMap(c, f)
         // This needs to be lazy, because I'm an idiot when I use it
         @inline def >>[B](k: =>Cont[R, B])(implicit ops: ContOps[Cont]): Cont[R, B] = ops.>>(c, k)
         @inline def |>[B](x: =>B)(implicit ops: ContOps[Cont]): Cont[R, B] = ops.|>(c, x)
     }
-    @inline def result[R, A, Cont[_, +_]](x: A)(implicit canWrap: ContOps[Cont]): Cont[R, A] = canWrap.wrap(x)
-    @inline def perform[Cont[_, +_], R](wrapped: Cont[R, R])(implicit canUnwrap: ContOps[Cont]): R = canUnwrap.unwrap(wrapped)
-    @inline def suspend[Cont[_, +_], R, A](x: =>Cont[R, A])(implicit ops: ContOps[Cont]): Cont[R, A] = ops.suspend(x)
+    @inline def result[R, A, Cont[_, _]](x: A)(implicit canWrap: ContOps[Cont]): Cont[R, A] = canWrap.wrap(x)
+    @inline def perform[Cont[_, _], R](wrapped: Cont[R, R])(implicit canUnwrap: ContOps[Cont]): R = canUnwrap.unwrap(wrapped)
+    @inline def suspend[Cont[_, _], R, A](x: =>Cont[R, A])(implicit ops: ContOps[Cont]): Cont[R, A] = ops.suspend(x)
     // $COVERAGE-OFF$
-    def sequence[Cont[_, +_]: ContOps, R, A](mxs: List[Cont[R, A]]): Cont[R, List[A]] = mxs match {
+    def sequence[Cont[_, _]: ContOps, R, A](mxs: List[Cont[R, A]]): Cont[R, List[A]] = mxs match {
         case Nil => result(Nil)
         case mx :: mxs => for { x <- mx; xs <- sequence(mxs) } yield x :: xs
     }
     // $COVERAGE-ON$
 }
 
-private [deepembedding] final class Cont[R, +A](val cont: (A => Bounce[R]) => Bounce[R]) extends AnyVal
+private [deepembedding] final class Cont[R, A](val cont: (A => Bounce[R]) => Bounce[R]) extends AnyVal
 private [deepembedding] object Cont {
     implicit val ops: ContOps[Cont] = new ContOps[Cont] {
         override def wrap[R, A](x: A): Cont[R, A] = new Cont(k => new Thunk(() => k(x)))
@@ -64,14 +64,14 @@ private [deepembedding] object Cont {
     }
 }
 
-private [deepembedding] final class Id[R, +A](val x: A) extends AnyVal
 private [deepembedding] object Id {
+    type Id[R, A] = A
     implicit val ops: ContOps[Id] = new ContOps[Id] {
-        override def wrap[R, A](x: A): Id[R, A] = new Id(x)
-        override def unwrap[R](wrapped: Id[R, R]): R = wrapped.x
-        override def map[R, A, B](c: Id[R, A], f: A => B): Id[R, B] = new Id(f(c.x))
-        override def flatMap[R, A, B](c: Id[R, A], f: A => Id[R, B]): Id[R, B] = f(c.x)
+        override def wrap[R, A](x: A): Id[R, A] = x
+        override def unwrap[R](wrapped: Id[R, R]): R = wrapped
+        override def map[R, A, B](c: Id[R, A], f: A => B): Id[R, B] = f(c)
+        override def flatMap[R, A, B](c: Id[R, A], f: A => Id[R, B]): Id[R, B] = f(c)
         override def suspend[R, A](x: =>Id[R, A]): Id[R, A] = x
-        override def |>[R, A, B](c: Id[R, A], x: =>B): Id[R, B] = new Id(x)
+        override def |>[R, A, B](c: Id[R, A], x: =>B): Id[R, B] = x
     }
 }

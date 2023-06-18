@@ -69,7 +69,7 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
             this
         case _ => this
     }
-    override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = left match {
+    override def codeGen[Cont[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = left match {
         // pure f <*> p = f <$> p
         case Pure(f) => right match {
             case ct@CharTok(c) => result(instrs += instructions.CharTokFastPerform[Char, B](c, f.asInstanceOf[Char => B], ct.expected))
@@ -85,7 +85,7 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
             (instrs += instructions.Apply)
     }
     // $COVERAGE-OFF$
-    final override def pretty[Cont[_, +_]: ContOps, R]: Cont[R,String] =
+    final override def pretty[Cont[_, _]: ContOps, R]: Cont[R,String] =
         for {
             s1 <- left.pretty
             s2 <- right.pretty
@@ -111,7 +111,7 @@ private [deepembedding] final class >>=[A, B](val p: StrictParsley[A], private [
         case z: MZero => z
         case _ => this
     }
-    override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    override def codeGen[Cont[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         suspend(p.codeGen[Cont, R]) |> {
             instrs += instructions.DynCall[A](x => f(x).demandCalleeSave(state.numRegs).instrs)
         }
@@ -195,7 +195,7 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
         case _ => this
     }
 
-    override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = res match {
+    override def codeGen[Cont[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = res match {
         case Pure(x) =>
             // peephole here involves CharTokFastPerform, StringTokFastPerform, and Exchange
             assume(after.isEmpty, "The pure in question is normalised to the end: if result is pure, after is empty.")
@@ -221,7 +221,7 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
             }
     }
     // $COVERAGE-OFF$
-    final override def pretty[Cont[_, +_]: ContOps, R]: Cont[R,String] =
+    final override def pretty[Cont[_, _]: ContOps, R]: Cont[R,String] =
         for {
             ss1 <- ContOps.sequence(before.map(_.pretty[Cont, R]).toList)
             rs <- res.pretty
@@ -235,7 +235,7 @@ private [backend] object Seq {
         Some((self.before, self.res, self.after))
     }
 
-    private [Seq] def codeGenMany[Cont[_, +_]: ContOps, R](it: Iterator[StrictParsley[_]])
+    private [Seq] def codeGenMany[Cont[_, _]: ContOps, R](it: Iterator[StrictParsley[_]])
                                                           (implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         if (it.hasNext) {
             suspend(it.next().codeGen[Cont, R]) >> {

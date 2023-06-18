@@ -17,7 +17,7 @@ private [backend] sealed abstract class BranchLike[A, B, C, D](finaliser: Option
     def instr(label: Int): instructions.Instr
 
     def inlinable: Boolean = false
-    final override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    final override def codeGen[Cont[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val toP = state.freshLabel()
         val end = state.freshLabel()
         suspend(b.codeGen[Cont, R]) >> {
@@ -47,7 +47,7 @@ private [deepembedding] final class Branch[A, B, C](val b: StrictParsley[Either[
         }
     }
     // $COVERAGE-OFF$
-    final override def pretty[Cont[_, +_]: ContOps, R]: Cont[R,String] =
+    final override def pretty[Cont[_, _]: ContOps, R]: Cont[R,String] =
         for {
             s1 <- b.pretty
             s2 <- p.pretty
@@ -65,7 +65,7 @@ private [deepembedding] final class If[A](val b: StrictParsley[Boolean], val p: 
         case _ => this
     }
     // $COVERAGE-OFF$
-    final override def pretty[Cont[_, +_]: ContOps, R]: Cont[R,String] =
+    final override def pretty[Cont[_, _]: ContOps, R]: Cont[R,String] =
         for {
             s1 <- b.pretty
             s2 <- p.pretty
@@ -75,7 +75,7 @@ private [deepembedding] final class If[A](val b: StrictParsley[Boolean], val p: 
 }
 
 private [backend] sealed abstract class FilterLike[A](instr: instructions.Instr) extends Unary[A, A] {
-    final override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    final override def codeGen[Cont[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val handler = state.getLabel(instructions.PopStateAndFail)
         instrs += new instructions.PushHandlerAndState(handler, saveHints = false, hideHints = false)
         suspend(p.codeGen[Cont, R]) |> {
@@ -95,7 +95,7 @@ private [deepembedding] final class MapFilter[A, B](val p: StrictParsley[A], f: 
         case _ => this
     }
 
-    final override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    final override def codeGen[Cont[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val handler = state.getLabel(instructions.PopStateAndFail)
         instrs += new instructions.PushHandlerAndState(handler, saveHints = false, hideHints = false)
         suspend(p.codeGen[Cont, R]) |> {
