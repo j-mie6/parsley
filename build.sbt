@@ -167,28 +167,27 @@ lazy val docs = project
           bgGradient = (OffWhite, Color.hex("ffffff"))
         )
         .site.messageColors(
-          info = DarkPink,//ForestGreen.darker,
+          info = DarkPink,
           infoLight = ForestGreen.lighter,
-          warning = DarkPink,//LightYellow?
+          warning = DarkPink,
           warningLight = PaleYellow,
-          error = DarkPink,//AntiForestRed.base,
+          error = DarkPink,
           errorLight = AntiForestRed.lighter,
         )
         .site.syntaxHighlightingColors(
-          // TODO: make these the ones from "material" highlighting theme
           base = ColorQuintet(
             CharcoalGrey,
             Color.hex("8c878e"), // comments, xml-cdata, markup-quote
             Color.hex("b2adb4"), // tag-punctuation
-            Color.hex("bddcee"), // identifier
+            Mint.light,          // identifier
             Color.hex("e8e8e8")  // base colour
           ),
           wheel = ColorQuintet(
-            Color.hex("e28e93"), // substitution, xml-processing-instruction, markup-emphasized, annotation
-            Color.hex("ef9725"), // keyword, escape-sequence, markup-headline
-            Color.hex("ffc66d"), // attribute-name, markup-link-target, declaration-name
-            Color.hex("7fb971"), // number-literal, string-literal, literal-value, boolean-literal, char-literal, symbol-literal, regex-literal, markup-link-text
-            Color.hex("4dbed4")  // type-name, tag-name, xml-dtd-tagname, markup-fence
+            Color.hex("7eacbf"), // substitution, xml-processing-instruction, markup-emphasized, annotation
+            Color.hex("dc799d"), // keyword, escape-sequence, markup-headline
+            Color.hex("e7a1bb"), // attribute-name, markup-link-target, declaration-name
+            Color.hex("b582c1"), // number-literal, string-literal, literal-value, boolean-literal, char-literal, symbol-literal, regex-literal, markup-link-text
+            Color.hex("7fb971")  // type-name, tag-name, xml-dtd-tagname, markup-fence
           )
         )
         .site.darkMode.themeColors(
@@ -208,15 +207,10 @@ lazy val docs = project
           error = AntiMintRed.dark,
           errorLight = CharcoalGrey,
         )
-        .site.darkMode.syntaxHighlightingColors(
-          // TODO: make these the ones from "material" highlighting theme
-          base = ColorQuintet(
-            CharcoalGrey, Color.hex("8c878e"), Color.hex("b2adb4"), Color.hex("bddcee"), Color.hex("e8e8e8")
-          ),
-          wheel = ColorQuintet(
-            Color.hex("e28e93"), Color.hex("ef9725"), Color.hex("ffc66d"), Color.hex("7fb971"), Color.hex("4dbed4")
-          )
-        )
+        /*.site.darkMode.syntaxHighlightingColors(
+          base = ColorQuintet(CharcoalGrey, Color.hex("8c878e"), Color.hex("b2adb4"), Color.hex("baeedb"), Color.hex("e8e8e8")),
+          wheel = ColorQuintet(Color.hex("7eacbf"), Color.hex("dc799d"), Color.hex("e7a1bb"), Color.hex("b582c1"), Color.hex("7fb971"))
+        )*/
         .site.downloadPage(
           title = "Documentation Downloads",
           description = None,
