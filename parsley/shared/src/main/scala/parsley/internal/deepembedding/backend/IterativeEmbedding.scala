@@ -55,7 +55,7 @@ private [backend] sealed abstract class ChainLike[A](p: StrictParsley[A], op: St
         case _          => this
     }
     // $COVERAGE-OFF$
-    final override def pretty[Cont[_, _]: ContOps, R]: Cont[R,String] = for {c1 <- p.pretty; c2 <- op.pretty} yield pretty(c1, c2)
+    final override def pretty :String = pretty(p.pretty, op.pretty)
     protected def pretty(p: String, op: String): String
     // $COVERAGE-ON$
 }
@@ -110,12 +110,7 @@ private [deepembedding] final class Chainl[A, B](init: StrictParsley[B], p: Stri
         }
     }
     // $COVERAGE-OFF$
-    final override def pretty[Cont[_, _]: ContOps, R]: Cont[R,String] =
-        for {
-            s1 <- init.pretty
-            s2 <- p.pretty
-            s3 <- op.pretty
-        } yield s"chainl1($s1, $s2, $s3)"
+    final override def pretty: String = s"chainl1(${init.pretty}, ${p.pretty}, ${op.pretty})"
     // $COVERAGE-ON$
 }
 private [deepembedding] final class Chainr[A, B](p: StrictParsley[A], op: StrictParsley[(A, B) => B], private [Chainr] val wrap: A => B)
@@ -138,11 +133,7 @@ private [deepembedding] final class Chainr[A, B](p: StrictParsley[A], op: Strict
         }
     }
     // $COVERAGE-OFF$
-    final override def pretty[Cont[_, _]: ContOps, R]: Cont[R,String] =
-        for {
-            s1 <- p.pretty
-            s2 <- op.pretty
-        } yield s"chainr1($s1, $s2)"
+    final override def pretty: String = s"chainr1(${p.pretty}, ${op.pretty})"
     // $COVERAGE-ON$
 }
 private [deepembedding] final class SepEndBy1[A, B](p: StrictParsley[A], sep: StrictParsley[B]) extends StrictParsley[List[A]] {
@@ -166,11 +157,7 @@ private [deepembedding] final class SepEndBy1[A, B](p: StrictParsley[A], sep: St
         }
     }
     // $COVERAGE-OFF$
-    final override def pretty[Cont[_, _]: ContOps, R]: Cont[R,String] =
-        for {
-            s1 <- p.pretty
-            s2 <- sep.pretty
-        } yield s"sepEndBy1($s1, $s2)"
+    final override def pretty: String = s"sepEndBy1(${p.pretty}, ${sep.pretty})"
     // $COVERAGE-ON$
 }
 private [deepembedding] final class ManyUntil[A](val p: StrictParsley[Any]) extends Unary[Any, List[A]] {

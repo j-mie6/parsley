@@ -61,7 +61,7 @@ private [deepembedding] final class Rec[A](val call: instructions.Call) extends 
     final override def codeGen[Cont[_, _], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = result(instrs += call)
 
     // $COVERAGE-OFF$
-    def pretty[Cont[_, _]: ContOps, R]: Cont[R, String] = result(this.toString())
+    def pretty: String = this.toString
     // $COVERAGE-ON$
 }
 private [deepembedding] final class Let[A](val p: StrictParsley[A]) extends StrictParsley[A] {
@@ -72,7 +72,7 @@ private [deepembedding] final class Let[A](val p: StrictParsley[A]) extends Stri
     }
 
     // $COVERAGE-OFF$
-    def pretty[Cont[_, _]: ContOps, R]: Cont[R, String] = result(this.toString())
+    def pretty: String = this.toString
     // $COVERAGE-ON$
 }
 private [deepembedding] final class Put[S](reg: Reg[S], val p: StrictParsley[S]) extends Unary[S, Unit] {
@@ -100,11 +100,7 @@ private [deepembedding] final class NewReg[S, A](reg: Reg[S], init: StrictParsle
         }
     }
     // $COVERAGE-OFF$
-    final override def pretty[Cont[_, _]: ContOps, R]: Cont[R,String] =
-        for {
-            s1 <- init.pretty
-            s2 <- body.pretty
-        } yield s"newreg(r${reg.addr}, $s1, $s2)"
+    final override def pretty: String = s"newreg(r${reg.addr}, ${init.pretty}, ${body.pretty})"
     // $COVERAGE-ON$
 }
 

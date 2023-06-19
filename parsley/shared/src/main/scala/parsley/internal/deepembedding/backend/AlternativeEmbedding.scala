@@ -89,12 +89,7 @@ private [deepembedding] final class Choice[A](private [backend] val alt1: Strict
     }
 
     // $COVERAGE-OFF$
-    final override def pretty[Cont[_, _]: ContOps, R]: Cont[R,String] =
-        for {
-            s1 <- alt1.pretty
-            s2 <- alt2.pretty
-            ss <- ContOps.sequence(alts.map(_.pretty[Cont, R]).toList)
-        } yield (s1::s2::ss).mkString("choice(", ", ", ")")
+    final override def pretty: String = (alt1.pretty::alt2.pretty::alts.map(_.pretty).toList).mkString("choice(", ", ", ")")
     // $COVERAGE-ON$
 }
 

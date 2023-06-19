@@ -85,11 +85,7 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
             (instrs += instructions.Apply)
     }
     // $COVERAGE-OFF$
-    final override def pretty[Cont[_, _]: ContOps, R]: Cont[R,String] =
-        for {
-            s1 <- left.pretty
-            s2 <- right.pretty
-        } yield s"($s1 <*> $s2)"
+    final override def pretty: String = s"(${left.pretty} <*> ${right.pretty})"
     // $COVERAGE-ON$
 }
 
@@ -221,12 +217,7 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
             }
     }
     // $COVERAGE-OFF$
-    final override def pretty[Cont[_, _]: ContOps, R]: Cont[R,String] =
-        for {
-            ss1 <- ContOps.sequence(before.map(_.pretty[Cont, R]).toList)
-            rs <- res.pretty
-            ss2 <- ContOps.sequence(after.map(_.pretty[Cont, R]).toList)
-        } yield (ss1 ::: rs :: ss2).mkString("seq(", ", ", ")")
+    final override def pretty: String = (before.map(_.pretty) ++ (res.pretty :: after.map(_.pretty).toList)).mkString("seq(", ", ", ")")
     // $COVERAGE-ON$
 }
 

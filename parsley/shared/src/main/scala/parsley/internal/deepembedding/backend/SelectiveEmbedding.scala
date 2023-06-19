@@ -47,12 +47,7 @@ private [deepembedding] final class Branch[A, B, C](val b: StrictParsley[Either[
         }
     }
     // $COVERAGE-OFF$
-    final override def pretty[Cont[_, _]: ContOps, R]: Cont[R,String] =
-        for {
-            s1 <- b.pretty
-            s2 <- p.pretty
-            s3 <- q.pretty
-        } yield s"branch($s1, $s2, $s3)"
+    final override def pretty: String = s"branch(${b.pretty}, ${p.pretty}, ${q.pretty})"
     // $COVERAGE-ON$
 }
 
@@ -65,12 +60,7 @@ private [deepembedding] final class If[A](val b: StrictParsley[Boolean], val p: 
         case _ => this
     }
     // $COVERAGE-OFF$
-    final override def pretty[Cont[_, _]: ContOps, R]: Cont[R,String] =
-        for {
-            s1 <- b.pretty
-            s2 <- p.pretty
-            s3 <- q.pretty
-        } yield s"if($s1, $s2, $s3)"
+    final override def pretty: String = s"if(${b.pretty}, ${p.pretty}, ${q.pretty})"
     // $COVERAGE-ON$
 }
 

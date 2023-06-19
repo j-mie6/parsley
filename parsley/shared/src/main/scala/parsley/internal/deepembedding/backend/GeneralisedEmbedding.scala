@@ -13,7 +13,7 @@ private [backend] abstract class Unary[A, B] extends StrictParsley[B] {
     protected val p: StrictParsley[A]
     def inlinable: Boolean = false
     // $COVERAGE-OFF$
-    final override def pretty[Cont[_, _]: ContOps, R]: Cont[R,String] = for (c <- p.pretty) yield pretty(c)
+    final override def pretty: String = pretty(p.pretty)
     protected def pretty(p: String): String
     // $COVERAGE-ON$
 }

@@ -85,7 +85,7 @@ private [deepembedding] trait StrictParsley[+A] {
 
     // $COVERAGE-OFF$
     /** Pretty-prints a combinator tree, for internal debugging purposes only. */
-    private [deepembedding] def pretty[Cont[_, _]: ContOps, R]: Cont[R, String]
+    private [deepembedding] def pretty: String
     // $COVERAGE-ON$
 }
 
