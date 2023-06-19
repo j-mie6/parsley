@@ -46,32 +46,26 @@ private [deepembedding] object ContOps {
     // $COVERAGE-ON$
 }
 
-private [deepembedding] final class Cont[R, A](val cont: (A => Bounce[R]) => Bounce[R]) extends AnyVal
 private [deepembedding] object Cont {
-    implicit val ops: ContOps[Cont] = new ContOps[Cont] {
-        override def wrap[R, A](x: A): Cont[R, A] = new Cont(k => new Thunk(() => k(x)))
-        override def unwrap[R](wrapped: Cont[R, R]): R = wrapped.cont(x => new Chunk(x)).run
-        override def map[R, A, B](mx: Cont[R, A], f: A => B): Cont[R, B] = {
-            new Cont(k => new Thunk(() => mx.cont(x => new Thunk(() => k(f(x))))))
-        }
-        override def flatMap[R, A, B](mx: Cont[R, A], f: A => Cont[R, B]): Cont[R, B] = {
-            new Cont(k => new Thunk(() => mx.cont(x => f(x).cont(k))))
-        }
-        override def suspend[R, A](x: =>Cont[R, A]): Cont[R, A] = new Cont(k => new Thunk(() => x.cont(k)))
-        override def >>[R, A, B](mx: Cont[R, A], my: =>Cont[R, B]): Cont[R, B] = {
-            new Cont(k => new Thunk(() => mx.cont(_ => my.cont(k))))
-        }
+    type Impl[R, A] = (A => Bounce[R]) => Bounce[R]
+    val ops: ContOps[Impl] = new ContOps[Impl] {
+        override def wrap[R, A](x: A): Impl[R, A] = k => new Thunk(() => k(x))
+        override def unwrap[R](wrapped: Impl[R, R]): R = wrapped(x => new Chunk(x)).run
+        override def map[R, A, B](mx: Impl[R, A], f: A => B): Impl[R, B] = k => new Thunk(() => mx(x => new Thunk(() => k(f(x)))))
+        override def flatMap[R, A, B](mx: Impl[R, A], f: A => Impl[R, B]): Impl[R, B] = k => new Thunk(() => mx(x => f(x)(k)))
+        override def suspend[R, A](x: =>Impl[R, A]): Impl[R, A] = k => new Thunk(() => x(k))
+        override def >>[R, A, B](mx: Impl[R, A], my: =>Impl[R, B]): Impl[R, B] = k => new Thunk(() => mx(_ => my(k)))
     }
 }
 
 private [deepembedding] object Id {
-    type Id[R, A] = A
-    implicit val ops: ContOps[Id] = new ContOps[Id] {
-        override def wrap[R, A](x: A): Id[R, A] = x
-        override def unwrap[R](wrapped: Id[R, R]): R = wrapped
-        override def map[R, A, B](c: Id[R, A], f: A => B): Id[R, B] = f(c)
-        override def flatMap[R, A, B](c: Id[R, A], f: A => Id[R, B]): Id[R, B] = f(c)
-        override def suspend[R, A](x: =>Id[R, A]): Id[R, A] = x
-        override def |>[R, A, B](c: Id[R, A], x: =>B): Id[R, B] = x
+    type Impl[R, A] = A
+    val ops: ContOps[Impl] = new ContOps[Impl] {
+        override def wrap[R, A](x: A): Impl[R, A] = x
+        override def unwrap[R](wrapped: Impl[R, R]): R = wrapped
+        override def map[R, A, B](c: Impl[R, A], f: A => B): Impl[R, B] = f(c)
+        override def flatMap[R, A, B](c: Impl[R, A], f: A => Impl[R, B]): Impl[R, B] = f(c)
+        override def suspend[R, A](x: =>Impl[R, A]): Impl[R, A] = x
+        override def |>[R, A, B](c: Impl[R, A], x: =>B): Impl[R, B] = x
     }
 }

@@ -191,29 +191,16 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     // $COVERAGE-OFF$
     /** Pretty-prints a combinator tree, for internal debugging purposes only. */
     final private [internal] def prettyAST: String = {
-        import Cont.ops // scalastyle:ignore import.grouping
+        implicit val ops = Id.ops
         implicit val letFinderState: LetFinderState = new LetFinderState
-        perform[Cont, String] {
-            findLets(Set.empty) >> {
-                implicit val state: backend.CodeGenState = new backend.CodeGenState(0)
-                implicit val recMap: RecMap = RecMap(letFinderState.recs)
-                implicit val letMap: LetMap = LetMap(letFinderState.lets)
-                val mrecs = for {
-                    (p, rec) <- recMap
-                } yield for {
-                    sp <- p.unsafeOptimised[Cont, String, Any]
-                    str <- sp.pretty
-                } yield s"${rec.label}: $str"
-
-                for {
-                    sp <- this.optimised
-                    str <- sp.pretty
-                    strs <- ContOps.sequence(mrecs.toList)
-                } yield {
-                    s"main body: $str\n${strs.mkString("\n")}"
-                }
-            }
-        }
+        findLets(Set.empty)
+        implicit val state: backend.CodeGenState = new backend.CodeGenState(0)
+        implicit val recMap: RecMap = RecMap(letFinderState.recs)
+        implicit val letMap: LetMap = LetMap(letFinderState.lets)
+        val mrecs = for {
+            (p, rec) <- recMap
+        } yield s"${rec.label}: ${p.unsafeOptimised[Id.Impl, String, Any].pretty}"
+        s"main body: ${this.optimised.pretty}\n${mrecs.mkString("\n")}"
     }
     // $COVERAGE-ON$
 }
