@@ -154,7 +154,7 @@ private [deepembedding] object StrictParsley {
       * @param state the code generation state, for label generation
       */
     private def generateCalleeSave[Cont[_, _]: ContOps, R](numRegsUsedByParent: Int, bodyGen: =>Cont[R, Unit], usedRegs: Set[Reg[_]])
-                                                           (implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+                                                          (implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val reqRegs = usedRegs.size
         val localRegs = usedRegs.filterNot(_.allocated)
         val allocatedRegs = allocateRegisters(localRegs, usedRegs)
@@ -182,7 +182,7 @@ private [deepembedding] object StrictParsley {
       * @return the list of return labels for each of the parsers (for TCO)
       */
     private def finaliseRecs[Cont[_, _]: ContOps](recs: Iterable[(Rec[_], Cont[Unit, StrictParsley[_]])])
-                                                  (implicit instrs: InstrBuffer, state: CodeGenState): List[RetLoc] = {
+                                                 (implicit instrs: InstrBuffer, state: CodeGenState): List[RetLoc] = {
         val retLocs = mutable.ListBuffer.empty[RetLoc]
         for ((rec, p) <- recs) {
             instrs += new instructions.Label(rec.label)

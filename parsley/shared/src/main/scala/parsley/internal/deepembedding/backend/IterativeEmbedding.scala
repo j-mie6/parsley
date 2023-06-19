@@ -55,7 +55,7 @@ private [backend] sealed abstract class ChainLike[A](p: StrictParsley[A], op: St
         case _          => this
     }
     // $COVERAGE-OFF$
-    final override def pretty :String = pretty(p.pretty, op.pretty)
+    final override def pretty: String = pretty(p.pretty, op.pretty)
     protected def pretty(p: String, op: String): String
     // $COVERAGE-ON$
 }
