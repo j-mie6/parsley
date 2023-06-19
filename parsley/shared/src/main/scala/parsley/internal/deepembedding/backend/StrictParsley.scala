@@ -41,7 +41,7 @@ private [deepembedding] trait StrictParsley[+A] {
       * @param state the code generator state
       * @return the final array of instructions for this parser
       */
-    final private [deepembedding] def generateInstructions[Cont[_, +_]: ContOps](numRegsUsedByParent: Int, usedRegs: Set[Reg[_]],
+    final private [deepembedding] def generateInstructions[Cont[_, _]: ContOps](numRegsUsedByParent: Int, usedRegs: Set[Reg[_]],
                                                                                  recs: Iterable[(Rec[_], Cont[Unit, StrictParsley[_]])])
                                                                                 (implicit state: CodeGenState): Array[Instr] = {
         implicit val instrs: InstrBuffer = newInstrBuffer
@@ -65,7 +65,7 @@ private [deepembedding] trait StrictParsley[+A] {
       * @param instrs the current buffer of instructions to generate into
       * @param state code generator state, for the generation of labels
       */
-    protected [backend] def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit]
+    protected [backend] def codeGen[Cont[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit]
 
     /** This method is directly called by the "frontend" and is used to perform domain-specific
       * optimisations on this parser (usually following the laws of the parser combinators).
@@ -85,7 +85,7 @@ private [deepembedding] trait StrictParsley[+A] {
 
     // $COVERAGE-OFF$
     /** Pretty-prints a combinator tree, for internal debugging purposes only. */
-    private [deepembedding] def pretty[Cont[_, +_]: ContOps, R]: Cont[R, String]
+    private [deepembedding] def pretty: String
     // $COVERAGE-ON$
 }
 
@@ -153,8 +153,8 @@ private [deepembedding] object StrictParsley {
       * @param instrs the instruction buffer
       * @param state the code generation state, for label generation
       */
-    private def generateCalleeSave[Cont[_, +_]: ContOps, R](numRegsUsedByParent: Int, bodyGen: =>Cont[R, Unit], usedRegs: Set[Reg[_]])
-                                                           (implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    private def generateCalleeSave[Cont[_, _]: ContOps, R](numRegsUsedByParent: Int, bodyGen: =>Cont[R, Unit], usedRegs: Set[Reg[_]])
+                                                          (implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         val reqRegs = usedRegs.size
         val localRegs = usedRegs.filterNot(_.allocated)
         val allocatedRegs = allocateRegisters(localRegs, usedRegs)
@@ -181,8 +181,8 @@ private [deepembedding] object StrictParsley {
       * @param state the code generation state, for label generation
       * @return the list of return labels for each of the parsers (for TCO)
       */
-    private def finaliseRecs[Cont[_, +_]: ContOps](recs: Iterable[(Rec[_], Cont[Unit, StrictParsley[_]])])
-                                                  (implicit instrs: InstrBuffer, state: CodeGenState): List[RetLoc] = {
+    private def finaliseRecs[Cont[_, _]: ContOps](recs: Iterable[(Rec[_], Cont[Unit, StrictParsley[_]])])
+                                                 (implicit instrs: InstrBuffer, state: CodeGenState): List[RetLoc] = {
         val retLocs = mutable.ListBuffer.empty[RetLoc]
         for ((rec, p) <- recs) {
             instrs += new instructions.Label(rec.label)
@@ -205,7 +205,7 @@ private [deepembedding] object StrictParsley {
       * @param state the code generation state, which contains the shared parsers
       * @return the list of return labels for each of the parsers (for TCO)
       */
-    private def finaliseLets[Cont[_, +_]: ContOps]()(implicit instrs: InstrBuffer, state: CodeGenState): List[RetLoc] = {
+    private def finaliseLets[Cont[_, _]: ContOps]()(implicit instrs: InstrBuffer, state: CodeGenState): List[RetLoc] = {
         val retLocs = mutable.ListBuffer.empty[RetLoc]
         while (state.more) {
             val let = state.nextLet()
