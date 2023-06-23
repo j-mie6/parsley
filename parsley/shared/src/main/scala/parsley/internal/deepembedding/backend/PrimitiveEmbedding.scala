@@ -39,10 +39,10 @@ private [deepembedding] final class NotFollowedBy[A](val p: StrictParsley[A]) ex
         case _: MZero => new Pure(())
         case _        => this
     }*/
-    final override def codeGen[Cont[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    final override def codeGen[M[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val handler = state.freshLabel()
         instrs += new instructions.PushHandlerAndState(handler, saveHints = true, hideHints = true)
-        suspend[Cont, R, Unit](p.codeGen) |> {
+        suspend[M, R, Unit](p.codeGen) |> {
             instrs += instructions.NegLookFail
             instrs += new instructions.Label(handler)
             instrs += instructions.NegLookGood
@@ -58,7 +58,7 @@ private [deepembedding] final class Rec[A](val call: instructions.Call) extends 
     // Must be a def, since call.label can change!
     def label: Int = call.label
 
-    final override def codeGen[Cont[_, _], R](implicit ops: ContOps[Cont], instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = result(instrs += call)
+    final override def codeGen[M[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = result(instrs += call)
 
     // $COVERAGE-OFF$
     def pretty: String = this.toString
@@ -67,7 +67,7 @@ private [deepembedding] final class Rec[A](val call: instructions.Call) extends 
 private [deepembedding] final class Let[A](val p: StrictParsley[A]) extends StrictParsley[A] {
     def inlinable: Boolean = true
     def label(implicit state: CodeGenState): Int = state.getLabel(this)
-    override def codeGen[Cont[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    override def codeGen[M[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         result(instrs += new instructions.Call(label))
     }
 
@@ -76,8 +76,8 @@ private [deepembedding] final class Let[A](val p: StrictParsley[A]) extends Stri
     // $COVERAGE-ON$
 }
 private [deepembedding] final class Put[S](reg: Reg[S], val p: StrictParsley[S]) extends Unary[S, Unit] {
-    override def codeGen[Cont[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
-        suspend(p.codeGen[Cont, R]) |>
+    override def codeGen[M[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
+        suspend(p.codeGen[M, R]) |>
         (instrs += new instructions.Put(reg.addr))
     }
     // $COVERAGE-OFF$
@@ -87,13 +87,13 @@ private [deepembedding] final class Put[S](reg: Reg[S], val p: StrictParsley[S])
 
 private [deepembedding] final class NewReg[S, A](reg: Reg[S], init: StrictParsley[S], body: StrictParsley[A]) extends StrictParsley[A] {
     def inlinable: Boolean = false
-    override def codeGen[Cont[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    override def codeGen[M[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val handler = state.getLabelForPutAndFail(reg)
-        suspend(init.codeGen[Cont, R]) >> {
+        suspend(init.codeGen[M, R]) >> {
             instrs += new instructions.Get(reg.addr)
             instrs += new instructions.SwapAndPut(reg.addr)
             instrs += new instructions.PushHandler(handler)
-            suspend(body.codeGen[Cont, R]) |> {
+            suspend(body.codeGen[M, R]) |> {
                 instrs += new instructions.SwapAndPut(reg.addr)
                 instrs += instructions.PopHandler
             }
@@ -106,10 +106,10 @@ private [deepembedding] final class NewReg[S, A](reg: Reg[S], init: StrictParsle
 
 // $COVERAGE-OFF$
 private [deepembedding] final class Debug[A](val p: StrictParsley[A], name: String, ascii: Boolean, break: Breakpoint) extends Unary[A, A] {
-    override def codeGen[Cont[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    override def codeGen[M[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val handler = state.freshLabel()
         instrs += new instructions.LogBegin(handler, name, ascii, (break eq EntryBreak) || (break eq FullBreak))
-        suspend(p.codeGen[Cont, R]) |> {
+        suspend(p.codeGen[M, R]) |> {
             instrs += new instructions.Label(handler)
             instrs += new instructions.LogEnd(name, ascii, (break eq ExitBreak) || (break eq FullBreak))
         }
@@ -117,10 +117,10 @@ private [deepembedding] final class Debug[A](val p: StrictParsley[A], name: Stri
     final override def pretty(p: String): String = p
 }
 private [deepembedding] final class DebugError[A](val p: StrictParsley[A], name: String, ascii: Boolean, errBuilder: ErrorBuilder[_]) extends Unary[A, A] {
-    override def codeGen[Cont[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    override def codeGen[M[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val handler = state.freshLabel()
         instrs += new instructions.LogErrBegin(handler, name, ascii)(errBuilder)
-        suspend(p.codeGen[Cont, R]) |> {
+        suspend(p.codeGen[M, R]) |> {
             instrs += instructions.Swap
             instrs += new instructions.Label(handler)
             instrs += new instructions.LogErrEnd(name, ascii)(errBuilder)

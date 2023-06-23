@@ -57,7 +57,7 @@ private [deepembedding] final class Choice[A](private [backend] val alt1: Strict
         case _ => this
     }
 
-    override def codeGen[Cont[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    override def codeGen[M[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         this.tablify match {
             // If the tablified list is single element (or the next is None), that implies that this should be generated as normal!
             case (_ :: Nil) | (_ :: (_, None) :: Nil) => codeGenChain(alt1, alt2, alts.iterator)
@@ -97,12 +97,12 @@ private [backend] object Choice {
     private def unapply[A](self: Choice[A]): Some[(StrictParsley[A], StrictParsley[A], SinglyLinkedList[StrictParsley[A]])] =
         Some((self.alt1, self.alt2, self.alts))
 
-    private def scopedState[A, Cont[_, _]: ContOps, R](p: StrictParsley[A])(generateHandler: =>Cont[R, Unit])
-                                                       (implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    private def scopedState[A, M[_, _]: ContOps, R](p: StrictParsley[A])(generateHandler: =>M[R, Unit])
+                                                   (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val handler = state.freshLabel()
         val skip = state.freshLabel()
         instrs += new instructions.PushHandlerAndState(handler, saveHints = true, hideHints = false)
-        suspend(p.codeGen[Cont, R]) >> {
+        suspend(p.codeGen[M, R]) >> {
             instrs += new instructions.JumpAndPopState(skip)
             instrs += new instructions.Label(handler)
             generateHandler |> {
@@ -111,12 +111,12 @@ private [backend] object Choice {
         }
     }
 
-    private def scopedCheck[A, Cont[_, _]: ContOps, R](p: StrictParsley[A])(generateHandler: =>Cont[R, Unit])
-                                                       (implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    private def scopedCheck[A, M[_, _]: ContOps, R](p: StrictParsley[A])(generateHandler: =>M[R, Unit])
+                                                   (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val handler = state.freshLabel()
         val skip = state.freshLabel()
         instrs += new instructions.PushHandlerAndCheck(handler, saveHints = true)
-        suspend(p.codeGen[Cont, R]) >> {
+        suspend(p.codeGen[M, R]) >> {
             instrs += new instructions.JumpAndPopCheck(skip)
             instrs += new instructions.Label(handler)
             generateHandler |> {
@@ -125,11 +125,11 @@ private [backend] object Choice {
         }
     }
 
-    private def codeGenChain[A, Cont[_, _]: ContOps, R](alt1: StrictParsley[A], alt2: StrictParsley[A], alts: Iterator[StrictParsley[A]])
-                                                        (implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    private def codeGenChain[A, M[_, _]: ContOps, R](alt1: StrictParsley[A], alt2: StrictParsley[A], alts: Iterator[StrictParsley[A]])
+                                                    (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         if (alts.hasNext) {
             val alt3 = alts.next()
-            codeGenAlt(alt1, suspend(codeGenChain[A, Cont, R](alt2, alt3, alts)))
+            codeGenAlt(alt1, suspend(codeGenChain[A, M, R](alt2, alt3, alts)))
         }
         else alt2 match {
             case Pure(x) => alt1 match {
@@ -142,13 +142,13 @@ private [backend] object Choice {
                     result(())
                 }
             }
-            case v => codeGenAlt(alt1, suspend(v.codeGen[Cont, R]))
+            case v => codeGenAlt(alt1, suspend(v.codeGen[M, R]))
         }
     }
 
     // Why is rest lazy? because Cont could be Id, and Id forces the argument immediately!
-    private def codeGenAlt[A, Cont[_, _]: ContOps, R](p: StrictParsley[A], rest: =>Cont[R, Unit])
-                                                      (implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    private def codeGenAlt[A, M[_, _]: ContOps, R](p: StrictParsley[A], rest: =>M[R, Unit])
+                                                      (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val merge = state.getLabel(instructions.MergeErrorsAndFail)
         p match {
             case Attempt(u) => scopedState(u) {
@@ -173,22 +173,22 @@ private [backend] object Choice {
         case Nil => corrected
     }
 
-    private def codeGenRoots[Cont[_, _]: ContOps, R](roots: List[List[StrictParsley[_]]], ls: List[Int], end: Int)
-                                                               (implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = roots match {
+    private def codeGenRoots[M[_, _]: ContOps, R](roots: List[List[StrictParsley[_]]], ls: List[Int], end: Int)
+                                                 (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = roots match {
         case root::roots_ =>
             instrs += new instructions.Label(ls.head)
             codeGenAlternatives(root) >> {
                 instrs += instructions.ErrorToHints
                 instrs += new instructions.JumpAndPopCheck(end)
-                suspend(codeGenRoots[Cont, R](roots_, ls.tail, end))
+                suspend(codeGenRoots[M, R](roots_, ls.tail, end))
             }
         case Nil => result(())
     }
-    private def codeGenAlternatives[Cont[_, _]: ContOps, R]
+    private def codeGenAlternatives[M[_, _]: ContOps, R]
             (alts: List[StrictParsley[_]])
-            (implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = (alts: @unchecked) match {
+            (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = (alts: @unchecked) match {
         case alt::Nil => alt.codeGen
-        case alt::alts_ => codeGenAlt(alt, suspend(codeGenAlternatives[Cont, R](alts_)))
+        case alt::alts_ => codeGenAlt(alt, suspend(codeGenAlternatives[M, R](alts_)))
     }
     // TODO: Refactor
     @tailrec private def foldTablified(tablified: List[(StrictParsley[_], (Char, Iterable[ExpectItem], Int, Boolean))], // scalastyle:ignore parameter.number
@@ -239,8 +239,8 @@ private [backend] object Choice {
         case _                                   => None
     }
 
-    private def codeGenJumpTable[Cont[_, _]: ContOps, R, A](tablified: List[(StrictParsley[_], Option[(Char, Iterable[ExpectItem], Int, Boolean)])])
-                                                    (implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    private def codeGenJumpTable[M[_, _]: ContOps, R, A](tablified: List[(StrictParsley[_], Option[(Char, Iterable[ExpectItem], Int, Boolean)])])
+                                                        (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val needsDefault = tablified.last._2.nonEmpty
         val end = state.freshLabel()
         val default = state.freshLabel()

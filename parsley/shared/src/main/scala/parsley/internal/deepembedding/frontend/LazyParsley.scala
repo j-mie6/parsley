@@ -72,7 +72,7 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
       * @param seen the set of all nodes that have previously been seen by the let-finding
       * @param state stores all the information of the let-finding process
       */
-    protected def findLetsAux[Cont[_, _]: ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): Cont[R, Unit]
+    protected def findLetsAux[M[_, _]: ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit]
 
     /** Describes how to recursively convert this combinator into a `StrictParsley` by
       * `optimise`ing its sub-trees.
@@ -81,7 +81,7 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
       * @param recs the known recursive parsers mapped to their corresponding join-point nodes
       * @return the strict, finite, version of this tree, with all shared parsers factored out into join-points
       */
-    protected def preprocess[Cont[_, _]: ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): Cont[R, StrictParsley[A_]]
+    protected def preprocess[M[_, _]: ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]]
 
     /** should the underlying strict tree be considered safe? */
     final private var sSafe = true
@@ -101,7 +101,7 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
       *
       * @param ops the instance for the monad to evaluate with
       */
-    final private def computeInstrs[Cont[_, _]](ops: ContOps[Cont]): (Array[Instr], Int) = pipeline(ops)
+    final private def computeInstrs[M[_, _]](ops: ContOps[M]): (Array[Instr], Int) = pipeline(ops)
 
     /** Performs the full end-to-end pipeline through both the frontend and the backend.
       *
@@ -113,15 +113,15 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
       * @return the instructions associates with this parser as well as the number of
       *         registers it requires
       */
-    final private def pipeline[Cont[_, _]: ContOps]: (Array[Instr], Int) = {
+    final private def pipeline[M[_, _]: ContOps]: (Array[Instr], Int) = {
         implicit val letFinderState: LetFinderState = new LetFinderState
-        (perform[Cont, Array[Instr]] {
+        (perform[M, Array[Instr]] {
             findLets(Set.empty) >> {
                 val usedRegs: Set[Reg[_]] = letFinderState.usedRegs
                 implicit val state: backend.CodeGenState = new backend.CodeGenState(letFinderState.numRegs)
                 implicit val recMap: RecMap = RecMap(letFinderState.recs)
                 implicit val letMap: LetMap = LetMap(letFinderState.lets)
-                val recs_ = recMap.map { case (p, rec) => (rec, p.unsafeOptimised[Cont, Unit, Any]) }
+                val recs_ = recMap.map { case (p, rec) => (rec, p.unsafeOptimised[M, Unit, Any]) }
                 for { sp <- this.optimised } yield sp.generateInstructions(numRegsUsedByParent, usedRegs, recs_)
             }
         }, letFinderState.numRegs)
@@ -142,7 +142,7 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
       * @param state stores all the information of the let-finding process
       */
     @throws[BadLazinessException]("if this parser references another parser before it has been initialised")
-    final protected [frontend] def findLets[Cont[_, _]: ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): Cont[R, Unit] = {
+    final protected [frontend] def findLets[M[_, _]: ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] = {
         state.addPred(this)
         if (seen.contains(this)) result(state.addRec(this))
         else if (state.notProcessedBefore(this)) {
@@ -169,19 +169,19 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
       * @param recs the known recursive parsers mapped to their corresponding join-point nodes
       * @return the strict, finite, version of this tree, with all shared parsers factored out into join-points
       */
-    final protected [frontend] def optimised[Cont[_, _]: ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): Cont[R, StrictParsley[A_]] = {
+    final protected [frontend] def optimised[M[_, _]: ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]] = {
         if (recs.contains(this)) result(recs(this))
         else if (lets.contains(this)) result(lets(this))
         else this.unsafeOptimised
     }
     /** Similar to `optimised` but should be '''only''' used on things known to be let-bindings (to avoid infinite expansion!). */
-    final private [frontend] def knownLetTopOptimised[Cont[_, _]: ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): Cont[R, StrictParsley[A_]] = {
+    final private [frontend] def knownLetTopOptimised[M[_, _]: ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]] = {
         assume(lets.contains(this), "the let check can only be skipped for known let-bindings")
         assume(!recs.contains(this), "rec membership can be skipped for known let-binding bodies")
         this.unsafeOptimised
     }
     /** Similar to `optimised` but does not check for inclusion in the `lets` or `recs` sets. */
-    private def unsafeOptimised[Cont[_, _]: ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): Cont[R, StrictParsley[A_]] = {
+    private def unsafeOptimised[M[_, _]: ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]] = {
         for {p <- this.preprocess} yield {
             p.safe = this.sSafe
             p.optimise
@@ -277,10 +277,10 @@ private [frontend] object LetMap {
       * @param lets the identified shared non-recursive parsers to include
       * @param recs the identified recursive parsers that may be required in the translation
       */
-    def apply[Cont[_, _]: ContOps](lets: Iterable[LazyParsley[_]])(implicit recs: RecMap): LetMap = {
+    def apply[M[_, _]: ContOps](lets: Iterable[LazyParsley[_]])(implicit recs: RecMap): LetMap = {
         new LetMap(lets.map(p => p -> ((_self: LetMap) => {
             implicit val self: LetMap = _self
-            perform[Cont, StrictParsley[_]](p.knownLetTopOptimised[Cont, StrictParsley[_], Any])
+            perform[M, StrictParsley[_]](p.knownLetTopOptimised[M, StrictParsley[_], Any])
         })).toMap)
     }
 }
