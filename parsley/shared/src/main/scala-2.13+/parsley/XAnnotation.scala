@@ -7,5 +7,5 @@ import scala.annotation.unused
 
 object XAnnotation {
     type implicitNotFound213 = scala.annotation.implicitNotFound
-    class implicitNotFound212(@unused msg: String) extends scala.annotation.StaticAnnotation
+    class implicitNotFound212(@unused msg: String) extends scala.annotation.StaticAnnotation // scalastyle:ignore class.name
 }

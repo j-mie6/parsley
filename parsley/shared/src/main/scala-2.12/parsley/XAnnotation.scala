@@ -5,5 +5,5 @@ package parsley
 
 object XAnnotation {
     type implicitNotFound212 = scala.annotation.implicitNotFound
-    class implicitNotFound213(msg: String) extends scala.annotation.StaticAnnotation
+    class implicitNotFound213(msg: String) extends scala.annotation.StaticAnnotation // scalastyle:ignore class.name
 }
