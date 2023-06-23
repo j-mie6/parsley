@@ -11,7 +11,6 @@ import parsley.token.errors.ErrorConfig
 
 import parsley.token.descriptions._
 import parsley.token.predicate._
-import parsley.token.names._
 import parsley.character.spaces
 import parsley.{TestError, VanillaError, Named}
 import org.scalactic.source.Position
