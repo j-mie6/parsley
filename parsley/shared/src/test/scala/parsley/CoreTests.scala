@@ -242,7 +242,7 @@ class CoreTests extends ParsleyTest {
         val p = "hello world".makeReg(r2 => {
             6.makeReg(r1 => {
                 combinator.optional(unit.flatMap(_ => r2.put("hi") *> 4.makeReg(_ => Parsley.empty))) *>
-               (r1.get zip r2.get)
+                (r1.get zip r2.get)
             })
         })
         p.parse("") shouldBe Success((6, "hi"))
@@ -377,7 +377,6 @@ class CoreTests extends ParsleyTest {
     }*/
 
     "overflows" should "allow for forwarding via the Cont monad" in {
-        import parsley.combinator
         val p = combinator.exactly(100, 'a')
         p.overflows()
         p.parse("a" * 100) shouldBe Success(List.fill(100)('a'))

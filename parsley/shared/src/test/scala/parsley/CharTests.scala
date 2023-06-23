@@ -70,7 +70,9 @@ class CharTests extends ParsleyTest {
         for (c <- '0' to '9') {
             digit.parse(c.toString) shouldBe Success(c)
             hexDigit.parse(c.toString) shouldBe Success(c)
-            if (c < '8') octDigit.parse(c.toString) shouldBe Success(c)
+            if (c < '8') {
+                val _ = octDigit.parse(c.toString) shouldBe Success(c)
+            }
         }
         for (c <- 'a' to 'f') hexDigit.parse(c.toString) shouldBe Success(c)
         for (c <- 'A' to 'F') hexDigit.parse(c.toString) shouldBe Success(c)

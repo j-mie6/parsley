@@ -7,6 +7,7 @@ import org.typelevel.scalaccompat.annotation._
 
 object DescShrink {
     // TODO: shrinking logic for new esc desc stuff
+    @nowarn3("cat=deprecation")
     implicit val escDescShrink: Shrink[EscapeDesc] = Shrink {
         case desc@EscapeDesc(_, literals, singles, multis, _, _, _, _, _, _) =>
             //@nowarn213("cat=deprecation")
