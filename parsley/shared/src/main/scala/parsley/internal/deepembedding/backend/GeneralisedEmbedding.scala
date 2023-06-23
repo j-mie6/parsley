@@ -23,10 +23,10 @@ private [backend] abstract class ScopedUnary[A, B] extends Unary[A, B] {
     def setup(label: Int): instructions.Instr
     def handlerLabel(state: CodeGenState): Int
     def instrNeedsLabel: Boolean
-    final override def codeGen[Cont[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    final override def codeGen[M[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val handler = handlerLabel(state)
         instrs += setup(handler)
-        suspend[Cont, R, Unit](p.codeGen) |> {
+        suspend[M, R, Unit](p.codeGen) |> {
             if (instrNeedsLabel) instrs += new instructions.Label(handler)
             instrs += instr
         }

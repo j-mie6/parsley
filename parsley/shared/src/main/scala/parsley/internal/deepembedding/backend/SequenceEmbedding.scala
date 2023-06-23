@@ -24,12 +24,12 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
             // first position fusion
             case Pure(f) => new Pure(f(x))
             // second position fusion
-            case Pure(f: Function1[t, A => B]) <*> (uy/*: StrictParsley[t]*/) => // scalastyle:ignore disallow.space.before.token
+            case Pure(f: Function1[t, A => B] @unchecked) <*> (uy/*: StrictParsley[t]*/) => // scalastyle:ignore disallow.space.before.token
                 left = new Pure((y: t) => f(y)(x)).asInstanceOf[StrictParsley[A => B]]
                 right = uy.asInstanceOf[StrictParsley[A]]
                 this
             // third position fusion
-            case Pure(f: Function1[t, Function1[u, A => B]]) <*>
+            case Pure(f: Function1[t, Function1[u, A => B] @unchecked]) <*>
                  (uy/*: StrictParsley[t]*/) <*> // scalastyle:ignore disallow.space.before.token
                  (uz/*: StrictParsley[u]*/) => // scalastyle:ignore disallow.space.before.token
                 left = <*>(new Pure((y: t) => (z: u) => f(y)(z)(x)), uy.asInstanceOf[StrictParsley[t]]).asInstanceOf[StrictParsley[A => B]]
@@ -42,7 +42,7 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
                 this
         }
         // functor law: fmap f (fmap g p) == fmap (f . g) p where fmap f p = pure f <*> p from applicative
-        case (Pure(f), Pure(g: Function[t, A]) <*> (u/*: StrictParsley[t]*/)) => // scalastyle:ignore disallow.space.before.token
+        case (Pure(f), Pure(g: Function[t, A] @unchecked) <*> (u/*: StrictParsley[t]*/)) => // scalastyle:ignore disallow.space.before.token
             left = new Pure(f.compose(g)).asInstanceOf[StrictParsley[A => B]]
             right = u.asInstanceOf[StrictParsley[A]]
             this
@@ -52,7 +52,7 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
         /* RE-ASSOCIATION LAWS */
         // re-association law 1: (q *> left) <*> right = q *> (left <*> right)
         case (q *> uf, ux) => *>(q, <*>(uf, ux).optimise)
-        case (uf, seq: Seq[A]) => seq match {
+        case (uf, seq: Seq[A] @unchecked) => seq match {
             // re-association law 2: left <*> (right <* q) = (left <*> right) <* q
             case ux <* v => <*(<*>(uf, ux).optimise, v).optimise
             // re-association law 3: p *> pure x = pure x <* p
@@ -69,19 +69,19 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
             this
         case _ => this
     }
-    override def codeGen[Cont[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = left match {
+    override def codeGen[M[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = left match {
         // pure f <*> p = f <$> p
         case Pure(f) => right match {
             case ct@CharTok(c) => result(instrs += instructions.CharTokFastPerform[Char, B](c, f.asInstanceOf[Char => B], ct.expected))
             case ct@SupplementaryCharTok(c) => result(instrs += instructions.SupplementaryCharTokFastPerform[Int, B](c, f.asInstanceOf[Int => B], ct.expected))
             case st@StringTok(s) => result(instrs += instructions.StringTokFastPerform(s, f.asInstanceOf[String => B], st.expected))
             case _ =>
-                suspend(right.codeGen[Cont, R]) |>
+                suspend(right.codeGen[M, R]) |>
                 (instrs += instructions.Lift1(f))
         }
         case _ =>
-            suspend(left.codeGen[Cont, R]) >>
-            suspend(right.codeGen[Cont, R]) |>
+            suspend(left.codeGen[M, R]) >>
+            suspend(right.codeGen[M, R]) |>
             (instrs += instructions.Apply)
     }
     // $COVERAGE-OFF$
@@ -107,8 +107,8 @@ private [deepembedding] final class >>=[A, B](val p: StrictParsley[A], private [
         case z: MZero => z
         case _ => this
     }
-    override def codeGen[Cont[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
-        suspend(p.codeGen[Cont, R]) |> {
+    override def codeGen[M[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
+        suspend(p.codeGen[M, R]) |> {
             instrs += instructions.DynCall[A](x => f(x).demandCalleeSave(state.numRegs).instrs)
         }
     }
@@ -191,27 +191,27 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
         case _ => this
     }
 
-    override def codeGen[Cont[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = res match {
+    override def codeGen[M[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = res match {
         case Pure(x) =>
             // peephole here involves CharTokFastPerform, StringTokFastPerform, and Exchange
             assume(after.isEmpty, "The pure in question is normalised to the end: if result is pure, after is empty.")
             assume(before.nonEmpty, "before cannot be empty because after is empty")
             val last = before.last
             before.initInPlace()
-            suspend(Seq.codeGenMany[Cont, R](before.iterator)) >> {
+            suspend(Seq.codeGenMany[M, R](before.iterator)) >> {
                 last match {
                     case ct@CharTok(c) => result(instrs += instructions.CharTokFastPerform[Char, A](c, _ => x, ct.expected))
                     case st@StringTok(s) => result(instrs += instructions.StringTokFastPerform(s, _ => x, st.expected))
                     case st@Satisfy(f) => result(instrs += new instructions.SatisfyExchange(f, x, st.expected))
                     case _ =>
-                        suspend(last.codeGen[Cont, R]) |> {
+                        suspend(last.codeGen[M, R]) |> {
                             instrs += new instructions.Exchange(x)
                         }
                 }
             }
         case _ =>
-            suspend(Seq.codeGenMany[Cont, R](before.iterator)) >> {
-                suspend(res.codeGen[Cont, R]) >> {
+            suspend(Seq.codeGenMany[M, R](before.iterator)) >> {
+                suspend(res.codeGen[M, R]) >> {
                     suspend(Seq.codeGenMany(after.iterator))
                 }
             }
@@ -226,10 +226,10 @@ private [backend] object Seq {
         Some((self.before, self.res, self.after))
     }
 
-    private [Seq] def codeGenMany[Cont[_, _]: ContOps, R](it: Iterator[StrictParsley[_]])
-                                                          (implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    private [Seq] def codeGenMany[M[_, _]: ContOps, R](it: Iterator[StrictParsley[_]])
+                                                      (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         if (it.hasNext) {
-            suspend(it.next().codeGen[Cont, R]) >> {
+            suspend(it.next().codeGen[M, R]) >> {
                 instrs += instructions.Pop
                 suspend(codeGenMany(it))
             }

@@ -16,13 +16,13 @@ private [parsley] final class ChainPost[A](p: LazyParsley[A], _op: =>LazyParsley
     override def make(p: StrictParsley[A], op: StrictParsley[A => A]): StrictParsley[A] = new backend.ChainPost(p, op)
 }
 private [parsley] final class ChainPre[A](p: LazyParsley[A], op: LazyParsley[A => A]) extends LazyParsley[A] {
-    final override def findLetsAux[Cont[_, _]: ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): Cont[R, Unit] = {
-        suspend(p.findLets[Cont, R](seen)) >> suspend(op.findLets(seen))
+    final override def findLetsAux[M[_, _]: ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] = {
+        suspend(p.findLets[M, R](seen)) >> suspend(op.findLets(seen))
     }
-    final override def preprocess[Cont[_, _]: ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): Cont[R, StrictParsley[A_]] =
+    final override def preprocess[M[_, _]: ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]] =
         for {
-            p <- suspend(p.optimised[Cont, R, A])
-            op <- suspend(op.optimised[Cont, R, A => A])
+            p <- suspend(p.optimised[M, R, A])
+            op <- suspend(op.optimised[M, R, A => A])
         } yield new backend.ChainPre(p, op)
 }
 private [parsley] final class Chainl[A, B](init: LazyParsley[B], p: =>LazyParsley[A], op: =>LazyParsley[(B, A) => B])

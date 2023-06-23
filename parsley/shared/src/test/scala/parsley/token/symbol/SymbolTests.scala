@@ -11,7 +11,6 @@ import parsley.token.LexemeImpl._
 import parsley.token.descriptions._
 import parsley.token.errors.ErrorConfig
 import parsley.token.predicate._, implicits.Basic.charToBasic, implicits.Unicode.funToUnicode
-import parsley.token.symbol._
 import parsley.character.{spaces, string}
 import org.scalactic.source.Position
 

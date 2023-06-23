@@ -749,12 +749,12 @@ object combinator {
       * @group iter
       */
     def manyUntil[A](p: Parsley[A], end: Parsley[_]): Parsley[List[A]] = {
-        new Parsley(new frontend.ManyUntil((end #> ManyUntil.Stop <|> p).internal))
+        new Parsley(new frontend.ManyUntil((end #> ManyUntil.Stop <|> p: Parsley[Any]).internal))
     }
 
     // TODO: document and test before release
     private [parsley] def skipManyUntil(p: Parsley[_], end: Parsley[_]): Parsley[Unit] = {
-        new Parsley(new frontend.SkipManyUntil((end #> ManyUntil.Stop <|> p).internal))
+        new Parsley(new frontend.SkipManyUntil((end #> ManyUntil.Stop <|> p: Parsley[Any]).internal))
     }
 
     private [parsley] object ManyUntil {

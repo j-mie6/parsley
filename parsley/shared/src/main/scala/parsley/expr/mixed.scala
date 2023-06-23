@@ -3,9 +3,8 @@
  */
 package parsley.expr
 
-import scala.annotation.implicitNotFound
-
 import parsley.Parsley, Parsley._
+import parsley.XAnnotation.{implicitNotFound212, implicitNotFound213}
 import parsley.implicits.zipped.Zipped2
 import parsley.lift.lift4
 
@@ -51,7 +50,8 @@ object mixed {
       * @since 4.0.0
       */
     def right1[A, B, C >: B](p: Parsley[A], uop: Parsley[C => C], bop: =>Parsley[(A, C) => B])
-            (implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${C}") wrap: A => C): Parsley[C] = {
+            (implicit @implicitNotFound213("Please provide a wrapper function from ${A} to ${C}")
+                      @implicitNotFound212("Please provide a wrapper function from A to C") wrap: A => C): Parsley[C] = {
         lazy val rest: Parsley[C] = (
                 uop <*> rest
             <|> (p <**> ((bop, rest).zipped(flip(_, _) _) <|> pure(wrap)))
@@ -91,7 +91,8 @@ object mixed {
       * @since 4.0.0
       */
     def left1[A, B, C >: B](p: Parsley[A], uop: =>Parsley[C => C], bop: =>Parsley[(C, A) => B])
-            (implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${C}") wrap: A => C): Parsley[C] = {
+            (implicit @implicitNotFound213("Please provide a wrapper function from ${A} to ${C}")
+                      @implicitNotFound212("Please provide a wrapper function from A to C") wrap: A => C): Parsley[C] = {
         lazy val _uop = uop
         lazy val uops = _uop.foldLeft(identity[C] _)(_ compose _)
         lazy val rest: Parsley[C => C] = (

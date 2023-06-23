@@ -6,7 +6,6 @@ package parsley.errors
 import parsley.{ParsleyTest, TestErrorBuilder}
 import parsley.combinator.{skipSome, skipMany}
 import parsley.character.{string, digit, letter, char, whitespace}
-import parsley.errors._
 import parsley.errors.tokenextractors._
 
 class TokenExtractorTests extends ParsleyTest {

@@ -3,9 +3,8 @@
  */
 package parsley.expr
 
-import scala.annotation.implicitNotFound
-
 import parsley.Parsley, Parsley.notFollowedBy
+import parsley.XAnnotation.{implicitNotFound212, implicitNotFound213}
 import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.zipped.Zipped2
 
@@ -55,7 +54,8 @@ object infix {
       * @since 4.0.0
       */
     def right1[A, B, C >: B](p: Parsley[A], op: =>Parsley[(A, C) => B])
-            (implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${C}") wrap: A => C): Parsley[C] = {
+            (implicit @implicitNotFound213("Please provide a wrapper function from ${A} to ${C}")
+                      @implicitNotFound212("Please provide a wrapper function from A to C") wrap: A => C): Parsley[C] = {
         new Parsley(new frontend.Chainr(p.internal, op.internal, wrap))
     }
 
@@ -92,7 +92,8 @@ object infix {
       * @since 4.0.0
       */
     def left1[A, B, C >: B](p: Parsley[A], op: =>Parsley[(C, A) => B])
-            (implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${C}") wrap: A => C): Parsley[C] = {
+            (implicit @implicitNotFound213("Please provide a wrapper function from ${A} to ${C}")
+                      @implicitNotFound212("Please provide a wrapper function from A to C") wrap: A => C): Parsley[C] = {
         // a sneaky sneaky trick :) If we know that A =:= B because refl was provided, then we can skip the wrapping
         secretLeft1(parsley.XCompat.applyWrap(wrap)(p), p, op)
     }
@@ -137,7 +138,8 @@ object infix {
       * @since 4.0.0
       */
     def right[A, B, C >: B](p: Parsley[A], op: =>Parsley[(A, C) => B], x: C)
-            (implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${C}") wrap: A => C): Parsley[C] = right1(p, op).getOrElse(x)
+            (implicit @implicitNotFound213("Please provide a wrapper function from ${A} to ${C}")
+                      @implicitNotFound212("Please provide a wrapper function from A to C") wrap: A => C): Parsley[C] = right1(p, op).getOrElse(x)
 
     /** This combinator handles left-associative parsing, and application of, '''zero''' or more binary operators between '''zero''' or more values.
       *
@@ -175,7 +177,8 @@ object infix {
       * @since 4.0.0
       */
     def left[A, B, C >: B](p: Parsley[A], op: =>Parsley[(C, A) => B], x: C)
-            (implicit @implicitNotFound("Please provide a wrapper function from ${A} to ${C}") wrap: A => C): Parsley[C] = left1(p, op).getOrElse(x)
+            (implicit @implicitNotFound213("Please provide a wrapper function from ${A} to ${C}")
+                      @implicitNotFound212("Please provide a wrapper function from A to C") wrap: A => C): Parsley[C] = left1(p, op).getOrElse(x)
 
     // Private Helpers (maybe expose these in future?)
     private [expr] def prefix[A, B](op: Parsley[B => B], p: Parsley[A])(implicit wrap: A => B): Parsley[B] =
