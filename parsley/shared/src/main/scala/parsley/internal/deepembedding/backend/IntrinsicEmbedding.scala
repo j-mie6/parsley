@@ -14,41 +14,32 @@ import StrictParsley.InstrBuffer
 private [deepembedding] final class Lift2[A, B, C](private [Lift2] val f: (A, B) => C, val left: StrictParsley[A], val right: StrictParsley[B])
     extends StrictParsley[C] {
     def inlinable: Boolean = false
-    override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    override def codeGen[Cont[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         suspend(left.codeGen[Cont, R]) >>
         suspend(right.codeGen[Cont, R]) |>
         (instrs += instructions.Lift2(f))
     }
     // $COVERAGE-OFF$
-    final override def pretty[Cont[_, +_]: ContOps, R]: Cont[R,String] =
-        for {
-            s1 <- left.pretty
-            s2 <- right.pretty
-        } yield s"lift2(?, $s1, $s2)"
+    final override def pretty: String = s"lift2(?, ${left.pretty}, ${right.pretty})"
     // $COVERAGE-ON$
 }
 private [deepembedding] final class Lift3[A, B, C, D](val f: (A, B, C) => D, val p: StrictParsley[A], val q: StrictParsley[B], val r: StrictParsley[C])
     extends StrictParsley[D] {
     def inlinable: Boolean = false
-    override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    override def codeGen[Cont[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         suspend(p.codeGen[Cont, R]) >>
         suspend(q.codeGen[Cont, R]) >>
         suspend(r.codeGen[Cont, R]) |>
         (instrs += instructions.Lift3(f))
     }
     // $COVERAGE-OFF$
-    final override def pretty[Cont[_, +_]: ContOps, R]: Cont[R,String] =
-        for {
-            s1 <- p.pretty
-            s2 <- q.pretty
-            s3 <- r.pretty
-        } yield s"lift3(?, $s1, $s2, $s3)"
+    final override def pretty: String = s"lift3(?, ${p.pretty}, ${q.pretty}, ${r.pretty})"
     // $COVERAGE-ON$
 }
 
 private [deepembedding] final class Local[S, A](reg: Reg[S], left: StrictParsley[S], right: StrictParsley[A]) extends StrictParsley[A] {
     def inlinable: Boolean = false
-    override def codeGen[Cont[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
+    override def codeGen[Cont[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): Cont[R, Unit] = {
         suspend(left.codeGen[Cont, R]) >> {
             instrs += new instructions.Get(reg.addr)
             instrs += new instructions.SwapAndPut(reg.addr)
@@ -58,11 +49,7 @@ private [deepembedding] final class Local[S, A](reg: Reg[S], left: StrictParsley
         }
     }
     // $COVERAGE-OFF$
-    final override def pretty[Cont[_, +_]: ContOps, R]: Cont[R,String] =
-        for {
-            s1 <- left.pretty
-            s2 <- right.pretty
-        } yield s"local(r${reg.addr}, $s1, $s2)"
+    final override def pretty: String = s"local(r${reg.addr}, ${left.pretty}, ${right.pretty})"
     // $COVERAGE-ON$
 }
 

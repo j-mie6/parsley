@@ -14,17 +14,17 @@ private [parsley] object XCompat {
         case wrap => p.map(wrap)
     }
 
-    private implicit class SubtitutionEq[A, B](ev: A =:= B) {
+    private implicit class SubtitutionEq[A, B](val ev: A =:= B) extends AnyVal {
         def substituteCo[F[_]](fa: F[A]): F[B] = fa.asInstanceOf[F[B]]
         def substituteParsley(p: Parsley[A]): Parsley[B] = substituteCo(p)
     }
 
-    implicit class SubtitutionSub[A, B](ev: A <:< B) {
+    implicit class SubtitutionSub[A, B](val ev: A <:< B) extends AnyVal {
         def substituteCo[F[_]](fa: F[A]): F[B] = fa.asInstanceOf[F[B]]
         def substituteParsley(p: Parsley[A]): Parsley[B] = substituteCo(p)
     }
 
-    implicit class MapValuesInPlace[K, V](m: mutable.Map[K, V]) {
+    implicit class MapValuesInPlace[K, V](val m: mutable.Map[K, V]) extends AnyVal {
         def mapValuesInPlaceCompat(f: (K, V) => V): mutable.Map[K, V] = m.transform(f)
     }
 
