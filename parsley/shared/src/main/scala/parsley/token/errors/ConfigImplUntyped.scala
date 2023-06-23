@@ -4,12 +4,13 @@
 package parsley.token.errors
 
 import parsley.Parsley
-import parsley.XCompat.unused
 import parsley.errors.combinator.ErrorMethods
 
 // This feels wrong? perhaps token is the wrong package
 // Because this is now used for Char, Sat, String to encode the label config...
 import parsley.internal.errors.{ExpectDesc, ExpectItem, ExpectRaw}
+
+import org.typelevel.scalaccompat.annotation.unused
 
 private [parsley] sealed trait ConfigImplUntyped {
     private [parsley] def apply[A](p: Parsley[A]): Parsley[A]

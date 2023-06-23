@@ -23,7 +23,7 @@ sealed abstract class Result[+Err, +A] {
       */
     def fold[B](ferr: Err => B, fa: A => B): B = this match {
         case Success(x)   => fa(x)
-        case Failure(msg) => ferr(msg)
+        case Failure(msg) => ferr(msg.asInstanceOf[Err]) //FIXME: remove in 5.0
     }
 
     /** Executes the procedure `f` if this is a `Success`. Otherwise, do nothing.
@@ -178,7 +178,7 @@ sealed abstract class Result[+Err, +A] {
       */
     def toEither: Either[Err, A] = this match {
         case Success(x)   => Right(x)
-        case Failure(msg) => Left(msg)
+        case Failure(msg) => Left(msg.asInstanceOf[Err]) // FIXME: remove in 5.0
     }
 
     /** Returns `true` if this is a `Success`, `false` otherwise.

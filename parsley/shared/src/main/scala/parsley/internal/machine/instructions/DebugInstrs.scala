@@ -4,10 +4,7 @@
 // $COVERAGE-OFF$
 package parsley.internal.machine.instructions
 
-import scala.annotation.nowarn
-
 import parsley.XAssert._
-import parsley.XCompat.unused
 import parsley.errors.ErrorBuilder
 
 import parsley.internal.errors.{ExpectItem, FancyError, ParseError, TrivialError}
@@ -17,6 +14,7 @@ import parsley.internal.machine.XAssert._
 import Indenter.indentAndUnlines
 import InputSlicer.Pad
 import PrettyPortal.{Direction, Enter, Exit}
+import org.typelevel.scalaccompat.annotation.{nowarn, unused}
 
 private [instructions] trait Colours {
     val ascii: Boolean

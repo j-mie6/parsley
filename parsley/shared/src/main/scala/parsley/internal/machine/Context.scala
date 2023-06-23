@@ -118,8 +118,8 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     private [machine] def pretty: String = {
         s"""[
            |  stack     = [${stack.mkString(", ")}]
-           |  instrs    = ${instrs.mkString("; ")}
-           |  input     = ${input.drop(offset).mkString}
+           |  instrs    = ${instrs.toList.mkString("; ")}
+           |  input     = ${input.drop(offset)}
            |  pos       = ($line, $col)
            |  status    = $status
            |  pc        = $pc
@@ -127,7 +127,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
            |  handlers  = ${handlers.mkString(", ")}
            |  recstates = ${states.mkString(", ")}
            |  checks    = ${checkStack.mkString(", ")}
-           |  registers = ${regs.zipWithIndex.map{case (r, i) => s"r$i = $r"}.mkString("\n              ")}
+           |  registers = ${regs.zipWithIndex.map{case (r, i) => s"r$i = $r"}.toList.mkString("\n              ")}
            |  errors    = ${errs.mkString(", ")}
            |  hints     = ($hintsValidOffset, ${hints.toSet}):${hintStack.mkString(", ")}
            |]""".stripMargin

@@ -8,11 +8,12 @@ import scala.collection.immutable.WrappedString
 import parsley.Parsley, Parsley.{attempt, lookAhead, notFollowedBy}
 import parsley.Success
 import parsley.XAssert.assert
-import parsley.XCompat.unused
 import parsley.character.{item, stringOfSome}
 import parsley.combinator.{option, traverse5, traverse_}
 import parsley.errors.{ErrorBuilder, Token, TokenSpan}
 import parsley.position
+
+import org.typelevel.scalaccompat.annotation.unused
 
 /** This extractor mixin provides an implementation for
   * [[parsley.errors.ErrorBuilder.unexpectedToken `ErrorBuilder.unexpectedToken`]] when mixed into

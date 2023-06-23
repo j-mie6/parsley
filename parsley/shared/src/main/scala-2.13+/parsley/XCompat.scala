@@ -18,6 +18,4 @@ private [parsley] object XCompat {
     implicit class MapValuesInPlace[K, V](m: mutable.Map[K, V]) {
         def mapValuesInPlaceCompat(f: (K, V) => V): mutable.Map[K, V] = m.mapValuesInPlace(f)
     }
-
-    type unused = scala.annotation.unused
 }

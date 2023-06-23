@@ -3,7 +3,7 @@
  */
 package parsley.token.errors
 
-import parsley.XCompat.unused
+import org.typelevel.scalaccompat.annotation.unused
 
 /** This class is used to specify how errors should be produced by the
   * [[parsley.token.Lexer `Lexer`]] class.

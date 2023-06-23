@@ -3,7 +3,6 @@
  */
 package parsley
 
-import scala.annotation.meta
 import scala.collection.mutable
 import scala.language.higherKinds
 
@@ -26,10 +25,5 @@ private [parsley] object XCompat {
 
     implicit class MapValuesInPlace[K, V](val m: mutable.Map[K, V]) extends AnyVal {
         def mapValuesInPlaceCompat(f: (K, V) => V): mutable.Map[K, V] = m.transform(f)
-    }
-
-    @meta.getter @meta.setter
-    class unused(message: String) extends scala.annotation.StaticAnnotation {
-        def this() = this("")
     }
 }

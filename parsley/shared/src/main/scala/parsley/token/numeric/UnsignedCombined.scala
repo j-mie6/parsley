@@ -4,9 +4,10 @@
 package parsley.token.numeric
 
 import parsley.Parsley, Parsley.attempt
-import parsley.XCompat.unused
 import parsley.token.descriptions.numeric.NumericDesc
 import parsley.token.errors.ErrorConfig
+
+import org.typelevel.scalaccompat.annotation.unused
 
 private [token] final class UnsignedCombined(@unused desc: NumericDesc, integer: Integer, rational: Real, err: ErrorConfig) extends Combined(err) {
     override lazy val decimal: Parsley[Either[BigInt, BigDecimal]] = (attempt(rational.decimal) <+> integer.decimal).map(_.swap)

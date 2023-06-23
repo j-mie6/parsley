@@ -3,8 +3,9 @@
  */
 package parsley.errors.tokenextractors
 
-import parsley.XCompat.unused
 import parsley.errors.{helpers, ErrorBuilder, Token, TokenSpan}
+
+import org.typelevel.scalaccompat.annotation.unused
 
 /** This extractor mixin provides an implementation for
   * [[parsley.errors.ErrorBuilder.unexpectedToken `ErrorBuilder.unexpectedToken`]] when mixed into

@@ -177,7 +177,7 @@ private [internal] final class TokenWhiteSpace private (
     }
     override def spaces(ctx: Context): Unit = {
         while (ctx.moreInput && ws(ctx.peekChar)) {
-            ctx.consumeChar()
+            val _ = ctx.consumeChar()
         }
     }
     // $COVERAGE-OFF$

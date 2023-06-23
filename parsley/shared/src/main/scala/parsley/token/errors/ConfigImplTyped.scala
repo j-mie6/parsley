@@ -4,11 +4,12 @@
 package parsley.token.errors
 
 import parsley.Parsley
-import parsley.XCompat.unused
 import parsley.errors.combinator, combinator.ErrorMethods
 
 import parsley.internal.errors.{RigidCaret, UnexpectDesc}
 import parsley.internal.machine.errors.{ClassicFancyError, DefuncError, EmptyError, EmptyErrorWithReason, UnexpectedError}
+
+import org.typelevel.scalaccompat.annotation.unused
 
 /** This trait, and its subclasses, can be used to configure how filters should be used within the `Lexer`.
   * @since 4.1.0
