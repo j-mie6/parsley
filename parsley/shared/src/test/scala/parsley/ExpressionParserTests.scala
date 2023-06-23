@@ -98,7 +98,7 @@ class ExpressionParserTests extends ParsleyTest {
         case class Add(x: Int, y: Expr) extends Expr
         case class Num(x: Int) extends Expr
         object Add extends ParserBridge2[Int, Expr, Expr]
-        cases(infix.right1("1" #> 1, Add <# "+")(Num))(
+        cases(infix.right1("1" #> 1, Add <# "+")(Num.apply))(
             "1+1+1" -> Some(Add(1, Add(1, Num(1)))),
             "1" -> Some(Num(1)),
         )
@@ -129,7 +129,7 @@ class ExpressionParserTests extends ParsleyTest {
         case class Add(x: Expr, y: Int) extends Expr
         case class Num(x: Int) extends Expr
         object Add extends ParserBridge2[Expr, Int, Expr]
-        cases(infix.left1("1" #> 1, Add <# "+")(Num))("1+1+1" -> Some(Add(Add(Num(1), 1), 1)))
+        cases(infix.left1("1" #> 1, Add <# "+")(Num.apply))("1+1+1" -> Some(Add(Add(Num(1), 1), 1)))
     }
     "chain.left" must "allow for no initial value" in {
         val p =chain.left("11" #> 1, '+' #> ((x: Int, y: Int) => x + y), 0)
@@ -182,8 +182,8 @@ class ExpressionParserTests extends ParsleyTest {
         case class Lt(x: Expr, y: Expr) extends Expr
         case class Inc(x: Expr) extends Expr
         case class Num(x: Int) extends Expr
-        val expr = precedence[Expr](digit.map(_.asDigit).map(Num))(Ops(InfixL)('<' #> Lt),
-                                                                   Ops(Prefix)("++" #> Inc))
+        val expr = precedence[Expr](digit.map(_.asDigit).map(Num.apply))(Ops(InfixL)('<' #> Lt.apply),
+                                                                         Ops(Prefix)("++" #> Inc.apply))
         expr.parse("++1<2") shouldBe Success(Inc(Lt(Num(1), Num(2))))
     }
     they should "generalise to sub-typed structures" in {
@@ -236,9 +236,9 @@ class ExpressionParserTests extends ParsleyTest {
 
         lazy val expr: Parsley[Comp] = precedence(
             // The type ascriptions are unneeded for Scala 3
-            GOps(InfixN)(Less <# '<')(CompOf) +:
-            GOps(InfixL)(Add <# '+')(ExprOf) +:
-            GOps(InfixR)(Mul <# '*')(TermOf) +:
+            GOps(InfixN)(Less <# '<')(CompOf.apply) +:
+            GOps(InfixL)(Add <# '+')(ExprOf.apply) +:
+            GOps(InfixR)(Mul <# '*')(TermOf.apply) +:
             Atoms(Num(digit.map(_.asDigit)), Parens('(' *> expr <* ')')))
         expr.parse("(7+8)*2+3+6*2<4") shouldBe {
             Success(Less(
@@ -271,8 +271,8 @@ class ExpressionParserTests extends ParsleyTest {
 
         lazy val expr: Parsley[Expr] = precedence(
             Atoms(Num(digit.map(_.asDigit)), Parens('(' *> expr <* ')')) :+
-            GOps[Atom, Term](InfixL)(Mul <# '*')(TermOf) :+
-            GOps[Term, Expr](InfixL)(Add <# '+')(ExprOf))
+            GOps[Atom, Term](InfixL)(Mul <# '*')(TermOf.apply) :+
+            GOps[Term, Expr](InfixL)(Add <# '+')(ExprOf.apply))
         expr.parse("1*(2+3)") shouldBe a [Success[_]]
     }
 

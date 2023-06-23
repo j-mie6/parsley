@@ -22,8 +22,8 @@ object DescGen {
     private val opCharGen = Gen.nonEmptyContainerOf[Set, Char](Gen.oneOf('+', '*', '/', 'a'))
     private val opUniGen = Gen.nonEmptyContainerOf[Set, Int](Gen.oneOf(0x1F642, 0x1F643, '£', '$'))
     val operatorLetterGen = Gen.frequency(
-        3 -> opCharGen.map(Basic),
-        3 -> Gen.oneOf(opCharGen.map(_.map(_.toInt)), opUniGen).map(Unicode),
+        3 -> opCharGen.map(Basic.apply),
+        3 -> Gen.oneOf(opCharGen.map(_.map(_.toInt)), opUniGen).map(Unicode.apply),
         1 -> Gen.const(NotRequired)
     )
 
