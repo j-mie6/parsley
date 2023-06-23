@@ -24,12 +24,12 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
             // first position fusion
             case Pure(f) => new Pure(f(x))
             // second position fusion
-            case Pure(f: Function1[t, A => B]) <*> (uy/*: StrictParsley[t]*/) => // scalastyle:ignore disallow.space.before.token
+            case Pure(f: Function1[t, A => B] @unchecked) <*> (uy/*: StrictParsley[t]*/) => // scalastyle:ignore disallow.space.before.token
                 left = new Pure((y: t) => f(y)(x)).asInstanceOf[StrictParsley[A => B]]
                 right = uy.asInstanceOf[StrictParsley[A]]
                 this
             // third position fusion
-            case Pure(f: Function1[t, Function1[u, A => B]]) <*>
+            case Pure(f: Function1[t, Function1[u, A => B] @unchecked]) <*>
                  (uy/*: StrictParsley[t]*/) <*> // scalastyle:ignore disallow.space.before.token
                  (uz/*: StrictParsley[u]*/) => // scalastyle:ignore disallow.space.before.token
                 left = <*>(new Pure((y: t) => (z: u) => f(y)(z)(x)), uy.asInstanceOf[StrictParsley[t]]).asInstanceOf[StrictParsley[A => B]]
@@ -42,7 +42,7 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
                 this
         }
         // functor law: fmap f (fmap g p) == fmap (f . g) p where fmap f p = pure f <*> p from applicative
-        case (Pure(f), Pure(g: Function[t, A]) <*> (u/*: StrictParsley[t]*/)) => // scalastyle:ignore disallow.space.before.token
+        case (Pure(f), Pure(g: Function[t, A] @unchecked) <*> (u/*: StrictParsley[t]*/)) => // scalastyle:ignore disallow.space.before.token
             left = new Pure(f.compose(g)).asInstanceOf[StrictParsley[A => B]]
             right = u.asInstanceOf[StrictParsley[A]]
             this
@@ -52,7 +52,7 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
         /* RE-ASSOCIATION LAWS */
         // re-association law 1: (q *> left) <*> right = q *> (left <*> right)
         case (q *> uf, ux) => *>(q, <*>(uf, ux).optimise)
-        case (uf, seq: Seq[A]) => seq match {
+        case (uf, seq: Seq[A] @unchecked) => seq match {
             // re-association law 2: left <*> (right <* q) = (left <*> right) <* q
             case ux <* v => <*(<*>(uf, ux).optimise, v).optimise
             // re-association law 3: p *> pure x = pure x <* p
