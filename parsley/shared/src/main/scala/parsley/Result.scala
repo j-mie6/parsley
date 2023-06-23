@@ -199,7 +199,7 @@ sealed abstract class Result[+Err, +A] {
   * @param x the result value of the successful parse.
   * @tparam A the type of expected success result.
   */
-case class Success[A] private [parsley] (x: A) extends Result[Nothing, A] {
+case class Success[A](x: A) extends Result[Nothing, A] {
     /** @inheritdoc */
     override def isSuccess: Boolean = true
     /** @inheritdoc */
