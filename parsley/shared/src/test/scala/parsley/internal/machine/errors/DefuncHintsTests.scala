@@ -35,6 +35,6 @@ class DefuncHintsTests extends ParsleyTest {
     "MergeHints" should "ensure all elements from both hints" in {
         val hints1 = EmptyHints.addError(mkErr("a")).addError(mkErr("b"))
         val hints2 = EmptyHints.addError(mkErr("c")).addError(mkErr("d"))
-        hints1.merge(hints2).toSet should contain only (new ExpectDesc("a"), new ExpectDesc("b"), new ExpectDesc("c"), new ExpectDesc("d"))
+        hints1.merge(hints2).toSet should contain.only(new ExpectDesc("a"), new ExpectDesc("b"), new ExpectDesc("c"), new ExpectDesc("d"))
     }
 }

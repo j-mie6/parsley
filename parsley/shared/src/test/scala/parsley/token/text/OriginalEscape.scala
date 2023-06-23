@@ -51,7 +51,7 @@ private [token] class OriginalEscape(desc: EscapeDesc, err: ErrorConfig, generic
 
     private lazy val digitsParsed = parsley.registers.Reg.make[Int]
     private def oneOfExactly(n: Int, ns: List[Int], radix: Int, digit: Parsley[Char]): Parsley[BigInt] = {
-        val reqDigits@(m :: ms) = (n :: ns).sorted // make this a precondition of the description?
+        val reqDigits@(m :: ms) = (n :: ns).sorted: @unchecked // make this a precondition of the description?
         def go(digits: Int, m: Int, ns: List[Int]): Parsley[BigInt] = ns match {
             case Nil => exactly(digits, m, radix, digit, reqDigits) <* digitsParsed.put(digits)
             case n :: ns  =>

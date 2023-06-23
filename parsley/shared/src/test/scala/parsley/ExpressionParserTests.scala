@@ -296,8 +296,8 @@ class ExpressionParserTests extends ParsleyTest {
 
         val tok = new token.Lexer(lang)
 
-        lazy val (op +: ops): Seq[Ops[Expr, Expr]] = Seq(
-            Ops(InfixR)(Binary <# ','),
+        lazy val op = Ops(InfixR)(Binary <# ',')
+        lazy val ops = Seq(
             Ops(InfixR)(Binary <# ".="),
             Ops(InfixL)(Binary <# '.'),
             Ops(Postfix)(Call(tok.lexeme.enclosing.parens(expr </> Constant(""))))

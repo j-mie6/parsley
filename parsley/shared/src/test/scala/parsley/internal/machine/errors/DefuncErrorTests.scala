@@ -138,7 +138,7 @@ class DefuncErrorTests extends ParsleyTest {
     }
     they should "contain all the expecteds from both branches when appropriate" in {
         val err = new ExpectedError(0, 0, 0, List(new ExpectRaw("a"), new ExpectRaw("b")), 1).merge(new ExpectedError(0, 0, 0, List(new ExpectRaw("b"), new ExpectRaw("c")), 1))
-        err.asParseError.asInstanceOf[TrivialError].expecteds should contain only (new ExpectRaw("a"), new ExpectRaw("b"), new ExpectRaw("c"))
+        err.asParseError.asInstanceOf[TrivialError].expecteds should contain.only(new ExpectRaw("a"), new ExpectRaw("b"), new ExpectRaw("c"))
     }
 
     "WithHints" should "be trivial if its child is" in {

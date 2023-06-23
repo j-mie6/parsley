@@ -3,8 +3,8 @@ import com.typesafe.tools.mima.core._
 
 val projectName = "parsley"
 val Scala213 = "2.13.11"
-val Scala212 = "2.12.17" // 2.12.18 requires bump to 0.4.10 native
-val Scala3 = "3.2.1"
+val Scala212 = "2.12.18" // 2.12.18 requires bump to 0.4.10 native
+val Scala3 = "3.3.0"
 val Java8 = JavaSpec.temurin("8")
 val JavaLTS = JavaSpec.temurin("11")
 val JavaLatest = JavaSpec.temurin("17")
@@ -18,7 +18,7 @@ val isInPublish = Option(System.getenv("GITHUB_JOB")).contains("publish")
 val releaseFlags = Seq("-Xdisable-assertions", "-opt:l:method,inline", "-opt-inline-from", "parsley.**", "-opt-warnings:at-inline-failed")
 
 inThisBuild(List(
-  tlBaseVersion := "4.2",
+  tlBaseVersion := "4.3",
   organization := "com.github.j-mie6",
   startYear := Some(2018),
   homepage := Some(url("https://github.com/j-mie6/parsley")),
@@ -68,6 +68,8 @@ inThisBuild(List(
   ),
   // CI Configuration
   tlCiReleaseBranches := Seq(mainBranch),
+  tlCiScalafmtCheck := false,
+  tlCiHeaderCheck := false, //FIXME: to be honest, we could turn off the scala-check for this and do it here instead (2020 year)
   tlSonatypeUseLegacyHost := false,
   githubWorkflowJavaVersions := Seq(Java8, JavaLTS, JavaLatest),
   // We need this because our release uses different flags
@@ -88,7 +90,8 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     libraryDependencies ++= Seq(
         "org.scalatest" %%% "scalatest" % "3.2.16" % Test,
         "org.scalacheck" %%% "scalacheck" % "1.17.0" % Test,
-        "org.scalatestplus" %%% "scalacheck-1-17" % "3.2.15.0" % Test
+        "org.scalatestplus" %%% "scalacheck-1-17" % "3.2.15.0" % Test,
+        "org.typelevel" %%% "scalac-compat-annotation" % "0.1.1" % Test,
     ),
 
     Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oI"),

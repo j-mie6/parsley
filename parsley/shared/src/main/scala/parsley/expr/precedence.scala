@@ -75,7 +75,7 @@ object precedence {
       * @since 4.0.0
       */
     def apply[A](lvlWeakest: Ops[A, A], lvls: Ops[A, A]*)(atom0: Parsley[A], atoms: Parsley[A]*): Parsley[A] = {
-        val (lvlTightest +: lvls_) = (lvlWeakest +: lvls).reverse
+        val (lvlTightest +: lvls_) = (lvlWeakest +: lvls).reverse: @unchecked
         apply(atom0, atoms: _*)(lvlTightest, lvls_ : _*)
     }
 

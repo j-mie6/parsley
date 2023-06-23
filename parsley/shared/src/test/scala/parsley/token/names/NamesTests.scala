@@ -114,7 +114,7 @@ class NamesTests extends ParsleyTest {
             "+==" -> Some("+=="),
             "*" -> None,
         )
-        opCases(Unicode(Set('+', '-')), Unicode(Set('=')))(
+        opCases(Unicode(Set('+'.toInt, '-'.toInt)), Unicode(Set('='.toInt)))(
             "+=" -> Some("+="),
             "-" -> Some("-"),
             "-=" -> Some("-="),
@@ -129,7 +129,7 @@ class NamesTests extends ParsleyTest {
             "<" -> None,
             "<=" -> None,
         )
-        opCases(Unicode(Set('+', '-', '<')), Unicode(Set('=')))(
+        opCases(Unicode(Set('+'.toInt, '-'.toInt, '<'.toInt)), Unicode(Set('='.toInt)))(
             "+" -> None,
             "<" -> None,
             "<=" -> None,
@@ -160,7 +160,7 @@ class NamesTests extends ParsleyTest {
         "-''" -> Some("-''"),
     )
 
-    it should "be able to constrain both ends" in opCases(Unicode(Set('+', '-', '<')), Unicode(Set('=', '\'')), Unicode(Set('+')), Unicode(Set('\''))) (
+    it should "be able to constrain both ends" in opCases(Unicode(Set('+'.toInt, '-'.toInt, '<'.toInt)), Unicode(Set('='.toInt, '\''.toInt)), Unicode(Set('+'.toInt)), Unicode(Set('\''.toInt))) (
         "+'" -> Some("+'"),
         "-" -> None,
         "'" -> None,

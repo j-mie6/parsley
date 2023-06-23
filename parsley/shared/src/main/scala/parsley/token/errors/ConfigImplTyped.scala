@@ -59,13 +59,13 @@ abstract class SpecialisedMessage[A] extends SpecialisedFilterConfig[A] { self =
     // $COVERAGE-OFF$
     private [parsley] final override def injectLeft[B] = new SpecialisedMessage[Either[A, B]] {
         def message(xy: Either[A, B]) = {
-            val Left(x) = xy
+            val Left(x) = xy: @unchecked
             self.message(x)
         }
     }
     private [parsley] final override def injectRight[B] = new SpecialisedMessage[Either[B, A]] {
         def message(xy: Either[B, A]) = {
-            val Right(y) = xy
+            val Right(y) = xy: @unchecked
             self.message(y)
         }
     }
@@ -97,13 +97,13 @@ abstract class Unexpected[A] extends VanillaFilterConfig[A] { self =>
     // $COVERAGE-OFF$
     private [parsley] final override def injectLeft[B] = new Unexpected[Either[A, B]] {
         def unexpected(xy: Either[A, B]) = {
-            val Left(x) = xy
+            val Left(x) = xy: @unchecked
             self.unexpected(x)
         }
     }
     private [parsley] final override def injectRight[B] = new Unexpected[Either[B, A]] {
         def unexpected(xy: Either[B, A]) = {
-            val Right(y) = xy
+            val Right(y) = xy: @unchecked
             self.unexpected(y)
         }
     }
@@ -135,13 +135,13 @@ abstract class Because[A] extends VanillaFilterConfig[A] { self =>
     // $COVERAGE-OFF$
     private [parsley] final override def injectLeft[B] = new Because[Either[A, B]] {
         def reason(xy: Either[A, B]) = {
-            val Left(x) = xy
+            val Left(x) = xy: @unchecked
             self.reason(x)
         }
     }
     private [parsley] final override def injectRight[B] = new Because[Either[B, A]] {
         def reason(xy: Either[B, A]) = {
-            val Right(y) = xy
+            val Right(y) = xy: @unchecked
             self.reason(y)
         }
     }
@@ -178,21 +178,21 @@ abstract class UnexpectedBecause[A] extends VanillaFilterConfig[A] { self =>
     // $COVERAGE-OFF$
     private [parsley] final override def injectLeft[B] = new UnexpectedBecause[Either[A, B]] {
         def unexpected(xy: Either[A, B]) = {
-            val Left(x) = xy
+            val Left(x) = xy: @unchecked
             self.unexpected(x)
         }
         def reason(xy: Either[A, B]) = {
-            val Left(x) = xy
+            val Left(x) = xy: @unchecked
             self.reason(x)
         }
     }
     private [parsley] final override def injectRight[B] = new UnexpectedBecause[Either[B, A]] {
         def unexpected(xy: Either[B, A]) = {
-            val Right(y) = xy
+            val Right(y) = xy: @unchecked
             self.unexpected(y)
         }
         def reason(xy: Either[B, A]) = {
-            val Right(y) = xy
+            val Right(y) = xy: @unchecked
             self.reason(y)
         }
     }

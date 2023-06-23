@@ -23,8 +23,8 @@ private [deepembedding] abstract class ContOps[Cont[_, _]] {
     def suspend[R, A](x: =>Cont[R, A]): Cont[R, A]
     // $COVERAGE-OFF$
     // This needs to be lazy, because I'm an idiot when I use it
-    def >>[R, A, B](c: Cont[R, A], k: =>Cont[R, B]): Cont[R, B] = flatMap[R, A, B](c, _ => k)
-    def |>[R, A, B](c: Cont[R, A], x: =>B): Cont[R, B] = map[R, A, B](c, _ => x)
+    def `then`[R, A, B](c: Cont[R, A], k: =>Cont[R, B]): Cont[R, B] = flatMap[R, A, B](c, _ => k)
+    def as[R, A, B](c: Cont[R, A], x: =>B): Cont[R, B] = map[R, A, B](c, _ => x)
     // $COVERAGE-ON$
 }
 private [deepembedding] object ContOps {
@@ -32,8 +32,8 @@ private [deepembedding] object ContOps {
         @inline def map[B](f: A => B)(implicit ops: ContOps[Cont]): Cont[R, B] = ops.map(c, f)
         @inline def flatMap[B](f: A => Cont[R, B])(implicit ops: ContOps[Cont]): Cont[R, B] = ops.flatMap(c, f)
         // This needs to be lazy, because I'm an idiot when I use it
-        @inline def >>[B](k: =>Cont[R, B])(implicit ops: ContOps[Cont]): Cont[R, B] = ops.>>(c, k)
-        @inline def |>[B](x: =>B)(implicit ops: ContOps[Cont]): Cont[R, B] = ops.|>(c, x)
+        @inline def >>[B](k: =>Cont[R, B])(implicit ops: ContOps[Cont]): Cont[R, B] = ops.`then`(c, k)
+        @inline def |>[B](x: =>B)(implicit ops: ContOps[Cont]): Cont[R, B] = ops.as(c, x)
     }
     @inline def result[R, A, Cont[_, _]](x: A)(implicit canWrap: ContOps[Cont]): Cont[R, A] = canWrap.wrap(x)
     @inline def perform[Cont[_, _], R](wrapped: Cont[R, R])(implicit canUnwrap: ContOps[Cont]): R = canUnwrap.unwrap(wrapped)
@@ -48,7 +48,7 @@ private [deepembedding] object Cont {
         override def map[R, A, B](mx: Impl[R, A], f: A => B): Impl[R, B] = k => new Thunk(() => mx(x => new Thunk(() => k(f(x)))))
         override def flatMap[R, A, B](mx: Impl[R, A], f: A => Impl[R, B]): Impl[R, B] = k => new Thunk(() => mx(x => f(x)(k)))
         override def suspend[R, A](x: =>Impl[R, A]): Impl[R, A] = k => new Thunk(() => x(k))
-        override def >>[R, A, B](mx: Impl[R, A], my: =>Impl[R, B]): Impl[R, B] = k => new Thunk(() => mx(_ => my(k)))
+        override def `then`[R, A, B](mx: Impl[R, A], my: =>Impl[R, B]): Impl[R, B] = k => new Thunk(() => mx(_ => my(k)))
     }
 }
 
@@ -60,6 +60,6 @@ private [deepembedding] object Id {
         override def map[R, A, B](c: Impl[R, A], f: A => B): Impl[R, B] = f(c)
         override def flatMap[R, A, B](c: Impl[R, A], f: A => Impl[R, B]): Impl[R, B] = f(c)
         override def suspend[R, A](x: =>Impl[R, A]): Impl[R, A] = x
-        override def |>[R, A, B](c: Impl[R, A], x: =>B): Impl[R, B] = x
+        override def as[R, A, B](c: Impl[R, A], x: =>B): Impl[R, B] = x
     }
 }

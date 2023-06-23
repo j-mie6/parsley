@@ -36,25 +36,25 @@ class SymbolTests extends ParsleyTest {
 
     // ident
     "soft keywords" should "parse even when not in the keyword set" in keyCases(plainSymbol)(
-        "hello" --> (
+        "hello".-->(
             "hello" -> true,
             "hello!" -> true,
             "hell" -> false,
             "helloworld" -> false,
             "Hello" -> false,
         ),
-        "hard" --> (
+        "hard".-->(
             "hard" -> true,
             "hard1" -> true,
             "hardy" -> false,
             "hard " -> true,
             "hard water" -> true,
         ),
-        "Χαίρετε" --> (
+        "Χαίρετε".-->(
             "Χαίρετε" -> true,
             "Χαίρετεα" -> false,
         ),
-        "🙂🙂🙂" --> (
+        "🙂🙂🙂".-->(
             "🙂🙂🙂" -> true,
             "🙂🙂🙂a" -> false
         ),
@@ -62,14 +62,14 @@ class SymbolTests extends ParsleyTest {
 
     they should "parse full utf-16" in {
         keyCases(unicodeSymbol)(
-            "hello" --> (
+            "hello".-->(
                 "hello" -> true,
                 "hello!" -> true,
                 "hell" -> false,
                 "helloworld" -> false,
                 "Hello" -> false,
             ),
-            "hard" --> (
+            "hard".-->(
                 "hard" -> true,
                 "hard1" -> true,
                 "hardy" -> false,
@@ -78,7 +78,7 @@ class SymbolTests extends ParsleyTest {
             ),
         )
         keyCases(makeSymbol(plainName.copy(identifierLetter = Unicode(Set(0x1F642))), plainSym))(
-            "hello" --> (
+            "hello".-->(
                 "hello🙂" -> false,
                 "hello 🙂" -> true,
                 "hello🙃" -> true,
@@ -88,38 +88,38 @@ class SymbolTests extends ParsleyTest {
 
     they should "be able to be case-insensitive" in {
         keyCases(caseInsensitive)(
-            "hello" --> (
+            "hello".-->(
                 "hello" -> true,
                 "Hello" -> true,
                 "heLLo" -> true,
                 "hell" -> false,
             ),
-            "hell0" --> (
+            "hell0".-->(
                 "hell0" -> true,
                 "hEll0" -> true,
                 "hel0" -> false,
             ),
-            "HELLO" --> (
+            "HELLO".-->(
                 "hello" -> true,
                 "hallo" -> false,
             ),
-            "🙂🙂🙂" --> (
+            "🙂🙂🙂".-->(
                 "🙂🙂🙂" -> true
             ),
         )
         keyCases(caseInsensitiveUni)(
-            "hello" --> (
+            "hello".-->(
                 "hello" -> true,
                 "Hello" -> true,
                 "heLLo" -> true,
                 "hell" -> false,
             ),
-            "hell0" --> (
+            "hell0".-->(
                 "hell0" -> true,
                 "hEll0" -> true,
                 "hel0" -> false,
             ),
-            "HELLO" --> (
+            "HELLO".-->(
                 "hello" -> true,
                 "hallo" -> false,
             ),
@@ -145,17 +145,17 @@ class SymbolTests extends ParsleyTest {
     }
 
     "soft operators" should "parse even when not in the operators set" in opCases(plainSymbol)(
-        "<" --> (
+        "<".-->(
             "<" -> true,
             "<=" -> false,
             "<+" -> true,
         ),
-        "+" --> (
+        "+".-->(
             "+" -> true,
             "+<" -> true,
             "+:" -> false,
         ),
-        "::" --> (
+        "::".-->(
             "::" -> true,
             ":" -> false,
             ":::" -> false,

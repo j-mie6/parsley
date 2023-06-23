@@ -90,7 +90,7 @@ trait LexToken { this: ErrorBuilder[_] =>
                 case cs: WrappedString => cs.toString
                 case cs => cs.mkString
             }
-        }
+        }: @unchecked
         rawOrToks.fold(selectTokenAndBuild, Token.Raw.apply)
     }
 

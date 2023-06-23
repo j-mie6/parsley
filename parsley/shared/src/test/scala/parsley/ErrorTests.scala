@@ -41,7 +41,7 @@ class ErrorTests extends ParsleyTest {
         inside(r.parse("a")) { case Failure(TestError((1, 1), VanillaError(unex, exs, reasons))) =>
             unex should contain (Named("lowercase letter"))
             exs shouldBe empty
-            reasons should contain only ("'a' should have been uppercase")
+            reasons should contain.only("'a' should have been uppercase")
         }
 
         val s = item.unexpectedWhen {
@@ -110,46 +110,46 @@ class ErrorTests extends ParsleyTest {
         inside(s.parse("e")) {
             case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
                 unex should contain (Raw("e"))
-                exs should contain only (Named("hi"), Raw("c"))
+                exs should contain.only(Named("hi"), Raw("c"))
                 rs shouldBe empty
         }
         val t = (optional('a') *> optional('b').label("bee")).label("hi") *> 'c'
         inside(t.parse("e")) {
             case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
                 unex should contain (Raw("e"))
-                exs should contain only (Named("hi"), Raw("c"))
+                exs should contain.only(Named("hi"), Raw("c"))
                 rs shouldBe empty
         }
         inside(t.parse("ae")) {
             case Failure(TestError((1, 2), VanillaError(unex, exs, rs))) =>
                 unex should contain (Raw("e"))
-                exs should contain only (Named("bee"), Raw("c"))
+                exs should contain.only(Named("bee"), Raw("c"))
                 rs shouldBe empty
         }
         val u = (optional('a').hide *> optional('b')).label("hi") *> 'c'
         inside(u.parse("e")) {
             case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
                 unex should contain (Raw("e"))
-                exs should contain only (Named("hi"), Raw("c"))
+                exs should contain.only(Named("hi"), Raw("c"))
                 rs shouldBe empty
         }
         inside(u.parse("ae")) {
             case Failure(TestError((1, 2), VanillaError(unex, exs, rs))) =>
                 unex should contain (Raw("e"))
-                exs should contain only (Raw("b"), Raw("c"))
+                exs should contain.only(Raw("b"), Raw("c"))
                 rs shouldBe empty
         }
         val v = (optional('a').hide *> optional('b').label("bee")).label("hi") *> 'c'
         inside(v.parse("e")) {
             case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
                 unex should contain (Raw("e"))
-                exs should contain only (Named("hi"), Raw("c"))
+                exs should contain.only(Named("hi"), Raw("c"))
                 rs shouldBe empty
         }
         inside(v.parse("ae")) {
             case Failure(TestError((1, 2), VanillaError(unex, exs, rs))) =>
                 unex should contain (Raw("e"))
-                exs should contain only (Named("bee"), Raw("c"))
+                exs should contain.only(Named("bee"), Raw("c"))
                 rs shouldBe empty
         }
     }
@@ -158,7 +158,7 @@ class ErrorTests extends ParsleyTest {
         inside((many(digit).label("number") <* eof).parse("1e")) {
             case Failure(TestError((1, 2), VanillaError(unex, exs, rs))) =>
                 unex should contain (Raw("e"))
-                exs should contain only (Named("digit"), EndOfInput)
+                exs should contain.only(Named("digit"), EndOfInput)
                 rs shouldBe empty
         }
     }
@@ -212,8 +212,8 @@ class ErrorTests extends ParsleyTest {
         inside(('a'.explain("an a") <|> 'b'.explain("a b")).parse("c")){
             case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
                 unex should contain (Raw("c"))
-                exs should contain only (Raw("a"), Raw("b"))
-                rs should contain only ("an a", "a b")
+                exs should contain.only(Raw("a"), Raw("b"))
+                rs should contain.only("an a", "a b")
         }
         inside(('a'.explain("should be absent") *> 'b').parse("a")) {
             case Failure(TestError((1, 2), VanillaError(unex, exs, rs))) =>
@@ -247,7 +247,7 @@ class ErrorTests extends ParsleyTest {
         inside(('a' <|> unexpected("bee") ? "something less cute").parse("b")) {
             case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
                 unex should contain (Named("bee"))
-                exs should contain only (Raw("a"), Named("something less cute"))
+                exs should contain.only(Raw("a"), Named("something less cute"))
                 rs shouldBe empty
         }
     }
@@ -257,21 +257,21 @@ class ErrorTests extends ParsleyTest {
         inside(p.parse("d")) {
             case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
                 unex should contain (Raw("d"))
-                exs should contain only (Raw("a"), Raw("c"), Raw("b"), Named("digit"))
+                exs should contain.only(Raw("a"), Raw("c"), Raw("b"), Named("digit"))
                 rs shouldBe empty
         }
         val q = 'a' <|> lookAhead(optional(digit)) *> 'c' <|> 'b'
         inside(q.parse("d")){
             case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
                 unex should contain (Raw("d"))
-                exs should contain only (Raw("a"), Raw("b"), Raw("c"))
+                exs should contain.only(Raw("a"), Raw("b"), Raw("c"))
                 rs shouldBe empty
         }
         val r = 'a' <|> lookAhead(digit) *> 'c' <|> 'b'
         inside(r.parse("d")) {
             case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
                 unex should contain (Raw("d"))
-                exs should contain only (Raw("a"), Raw("b"), Named("digit"))
+                exs should contain.only(Raw("a"), Raw("b"), Named("digit"))
                 rs shouldBe empty
         }
     }
@@ -281,14 +281,14 @@ class ErrorTests extends ParsleyTest {
         inside(p.parse("d")) {
             case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
                 unex should contain (Raw("d"))
-                exs should contain only (Raw("a"), Raw("b"))
+                exs should contain.only(Raw("a"), Raw("b"))
                 rs shouldBe empty
         }
         val q = 'a' <|> notFollowedBy(digit) *> 'c' <|> 'b'
         inside(q.parse("d")) {
             case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
                 unex should contain (Raw("d"))
-                exs should contain only (Raw("a"), Raw("c"), Raw("b"))
+                exs should contain.only(Raw("a"), Raw("c"), Raw("b"))
                 rs shouldBe empty
         }
     }
@@ -321,7 +321,7 @@ class ErrorTests extends ParsleyTest {
         inside(('a' <|> Parsley.empty ? "something, at least").parse("b")) {
             case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
                 unex should contain (Raw("b"))
-                exs should contain only (Named("something, at least"), Raw("a"))
+                exs should contain.only(Named("something, at least"), Raw("a"))
                 rs shouldBe empty
         }
     }
@@ -415,7 +415,7 @@ class ErrorTests extends ParsleyTest {
     "verifiedFail" should "fail having consumed input on the parser success" in {
         inside(optional("abc".verifiedFail(x => Seq("no, no", s"absolutely not $x"))).parse("abc")) {
             case Failure(TestError((1, 1), SpecialisedError(msgs))) =>
-                msgs should contain only ("no, no", "absolutely not abc")
+                msgs should contain.only("no, no", "absolutely not abc")
         }
     }
     it should "not consume input if the parser did not succeed" in {
@@ -473,7 +473,7 @@ class ErrorTests extends ParsleyTest {
         val qarser = optional('b'.label("b")) ~> q.label("foo")
         inside(qarser.parse("aa")) {
             case Failure(TestError(_, VanillaError(_, expected, _))) =>
-                expected should contain allOf (Named("foo"), Named("b"))
+                expected should contain.allOf(Named("foo"), Named("b"))
         }
     }
 }

@@ -104,7 +104,7 @@ private [internal] final class EscapeAtMost(n: Int, radix: Int) extends EscapeSo
 }
 
 private [internal] final class EscapeOneOfExactly(radix: Int, ns: List[Int], inexactErr: SpecialisedFilterConfig[Int]) extends EscapeSomeNumber(radix) {
-    private val (m :: ms) = ns
+    private val (m :: ms) = ns: @unchecked
     def apply(ctx: Context): Unit = {
         val origOff = ctx.offset
         val origLine = ctx.line

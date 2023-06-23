@@ -52,7 +52,7 @@ private [parsley] object helpers {
                    | Character.PRIVATE_USE
                    | Character.UNASSIGNED
                    | Character.CONTROL =>
-                    Character.toChars(cp) match {
+                    (Character.toChars(cp): @unchecked) match {
                         case Array(h, l) => Some(f"non-printable codepoint (\\u${h.toInt}%04x\\u${l.toInt}%04x, or 0x$cp%06x)")
                         case Array(c)    => Some(f"non-printable character (\\u${c.toInt}%04x)")
                     }

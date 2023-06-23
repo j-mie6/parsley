@@ -13,7 +13,7 @@ private [internal] sealed trait ParseError {
     protected def format(line: String, beforeLines: List[String], afterLines: List[String], caret: Int)
                         (implicit builder: ErrorBuilder[_]): builder.ErrorInfoLines
     private [internal] final def format[Err](sourceName: Option[String])(implicit helper: LineBuilder, builder: ErrorBuilder[Err]): Err = {
-        val Some((errLine, caret)) = helper.getLineWithCaret(offset)
+        val Some((errLine, caret)) = helper.getLineWithCaret(offset): @unchecked
         val beforeLines = helper.getLinesBefore(offset, builder.numLinesBefore)
         val afterLines = helper.getLinesAfter(offset, builder.numLinesAfter)
         val lines = format(errLine, beforeLines, afterLines, caret)

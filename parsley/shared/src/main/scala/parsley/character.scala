@@ -220,7 +220,7 @@ object character {
         case 0 => empty
         case 1 => char(cs.head)
         case _ => satisfy(cs, {
-            val Some(label) = parsley.errors.helpers.combineAsList(cs.map(renderChar).toList)
+            val Some(label) = parsley.errors.helpers.combineAsList(cs.map(renderChar).toList): @unchecked
             s"one of $label"
         })
     }
@@ -310,7 +310,7 @@ object character {
         case 0 => item
         case 1 => satisfy(cs.head != _, s"anything except ${renderChar(cs.head)}")
         case _ => satisfy(!cs.contains(_), {
-            val Some(label) = parsley.errors.helpers.combineAsList(cs.map(renderChar).toList)
+            val Some(label) = parsley.errors.helpers.combineAsList(cs.map(renderChar).toList): @unchecked
             s"anything except $label"
         })
     }
@@ -519,7 +519,7 @@ object character {
         // more effective.
         val ss = kv0 +: kvs
         choice(ss.groupBy(_._1.head).toList.sortBy(_._1).view.map(_._2).flatMap { s =>
-            val (sLast, pLast) :: rest = s.toList.sortBy(_._1.length)
+            val (sLast, pLast) :: rest = s.toList.sortBy(_._1.length): @unchecked
             ((string(sLast) *> pLast) :: rest.map { case (s, p) => attempt(string(s)) *> p }).reverse
         }.toSeq: _*)
     }

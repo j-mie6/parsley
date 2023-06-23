@@ -6,7 +6,7 @@ package parsley
 import Predef.{ArrowAssoc => _, _}
 
 import parsley.character.{letter, string, strings, stringOfMany, stringOfSome}
-import parsley.implicits.character.{charLift, stringLift}
+import parsley.implicits.character.stringLift
 import parsley.Parsley.{pos => _, _}
 import parsley.position.pos
 
@@ -19,7 +19,7 @@ class StringTests extends ParsleyTest {
         "abc".parse("abc") should not be a [Failure[_]]
     }
     it should "not consume input if it fails on first character" in {
-        ("abc" <|> 'b').parse("b") should not be a [Failure[_]]
+        ("abc" <|> "b").parse("b") should not be a [Failure[_]]
     }
     it should "consume input if it fails mid-string" in {
         ("abc" <|> "ab").parse("ab") shouldBe a [Failure[_]]
