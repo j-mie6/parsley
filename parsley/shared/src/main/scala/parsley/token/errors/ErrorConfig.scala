@@ -522,7 +522,7 @@ class ErrorConfig {
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
-    def labelStringAscii(multi: Boolean, raw: Boolean): LabelWithExplainConfig = NotConfigured
+    def labelStringAscii(@unused multi: Boolean, @unused raw: Boolean): LabelWithExplainConfig = NotConfigured
     /** How a Latin1-only string literal should be referred to or explained in error messages.
       * @since 4.1.0
       * @param multi whether this is for multi-line strings
@@ -530,7 +530,7 @@ class ErrorConfig {
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
-    def labelStringLatin1(multi: Boolean, raw: Boolean): LabelWithExplainConfig = NotConfigured
+    def labelStringLatin1(@unused multi: Boolean, @unused raw: Boolean): LabelWithExplainConfig = NotConfigured
     /** How a UTF-16-only string should literal be referred to or explained in error messages.
       * @since 4.1.0
       * @param multi whether this is for multi-line strings
@@ -538,7 +538,7 @@ class ErrorConfig {
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
-    def labelStringUtf16(multi: Boolean, raw: Boolean): LabelWithExplainConfig = NotConfigured
+    def labelStringUtf16(@unused multi: Boolean, @unused raw: Boolean): LabelWithExplainConfig = NotConfigured
 
     /** How the closing quote(s) of an ASCII string literal should be referred to in error messages.
       * @since 4.1.0
@@ -547,7 +547,7 @@ class ErrorConfig {
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
-    def labelStringAsciiEnd(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
+    def labelStringAsciiEnd(@unused multi: Boolean, @unused raw: Boolean): LabelConfig = NotConfigured
     /** How the closing quote(s) of a Latin1 string literal should be referred to in error messages.
       * @since 4.1.0
       * @param multi whether this is for multi-line strings
@@ -555,7 +555,7 @@ class ErrorConfig {
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
-    def labelStringLatin1End(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
+    def labelStringLatin1End(@unused multi: Boolean, @unused raw: Boolean): LabelConfig = NotConfigured
     /**  How the closing quote(s) of a UTF-16 string literal should be referred to in error messages.
       * @since 4.1.0
       * @param multi whether this is for multi-line strings
@@ -563,7 +563,7 @@ class ErrorConfig {
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
-    def labelStringUtf16End(multi: Boolean, raw: Boolean): LabelConfig = NotConfigured
+    def labelStringUtf16End(@unused multi: Boolean, @unused raw: Boolean): LabelConfig = NotConfigured
 
     /** How general string characters should be referred to in error messages.
       * @since 4.1.0
@@ -593,7 +593,7 @@ class ErrorConfig {
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
-    def labelEscapeNumeric(radix: Int): LabelWithExplainConfig = NotConfigured
+    def labelEscapeNumeric(@unused radix: Int): LabelWithExplainConfig = NotConfigured
     /** How the end of a numeric escape sequence (after a prefix) should be referred to or explained in error messages.
       * @since 4.1.0
       * @param radix the radix this specific configuration applies to
@@ -601,7 +601,7 @@ class ErrorConfig {
       * @note defaults to [[NotConfigured `NotConfigured`]]
       * @group text
       */
-    def labelEscapeNumericEnd(prefix: Char, radix: Int): LabelWithExplainConfig = NotConfigured
+    def labelEscapeNumericEnd(@unused prefix: Char, @unused radix: Int): LabelWithExplainConfig = NotConfigured
     /** How the end of an escape sequence (anything past the opening character) should be referred to or explained within an error message.
       * @since 4.1.0
       * @note defaults to label of "end of escape sequence" with a reason of "invalid escape sequence"

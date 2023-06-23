@@ -5,9 +5,11 @@ package parsley.internal.machine.instructions
 
 import parsley.internal.machine.Context
 
+import org.typelevel.scalaccompat.annotation.unused
+
 private [internal] abstract class Instr {
     def apply(ctx: Context): Unit
-    def relabel(labels: Array[Int]): this.type = this
+    def relabel(@unused labels: Array[Int]): this.type = this
     // Instructions should override this if they have mutable state inside!
     def copy: Instr = this
 }
