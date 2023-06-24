@@ -3,7 +3,7 @@ import com.typesafe.tools.mima.core._
 
 val projectName = "parsley"
 val Scala213 = "2.13.11"
-val Scala212 = "2.12.18" // 2.12.18 requires bump to 0.4.10 native
+val Scala212 = "2.12.18"
 val Scala3 = "3.3.0"
 val Java8 = JavaSpec.temurin("8")
 val JavaLTS = JavaSpec.temurin("11")
@@ -60,6 +60,9 @@ inThisBuild(List(
     ProblemFilters.exclude[MissingClassProblem]("parsley.expr.NonAssocs*"),
     ProblemFilters.exclude[MissingClassProblem]("parsley.expr.Prefixes*"),
     ProblemFilters.exclude[MissingClassProblem]("parsley.expr.Postfixes*"),
+    // sbt-typelevel 0.5 upgrade
+    ProblemFilters.exclude[DirectMissingMethodProblem]("parsley.token.errors.Label.asExpectItems"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("parsley.token.errors.LabelAndReason.asExpectItems")
   ),
   tlVersionIntroduced := Map(
     "2.13" -> "1.5.0",

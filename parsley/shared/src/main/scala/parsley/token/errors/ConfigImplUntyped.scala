@@ -50,10 +50,10 @@ trait LabelConfig extends LabelWithExplainConfig {
   */
 trait ExplainConfig extends LabelWithExplainConfig
 
-private final class Label private[errors] (val labels: Seq[String]) extends LabelConfig {
+private [errors] final class Label private[errors] (val labels: Seq[String]) extends LabelConfig {
     require(labels.forall(_.nonEmpty), "labels cannot be empty strings")
     private [parsley] final override def apply[A](p: Parsley[A]) = p.labels(labels: _*)
-    private [parsley] final override def asExpectDescs = labels.map(new ExpectDesc(_))
+    private [parsley] final override def asExpectDescs: Iterable[ExpectDesc] = labels.map(new ExpectDesc(_))
     private [parsley] final override def asExpectDescs(@unused otherwise: String) = asExpectDescs
     private [parsley] final override def asExpectItems(@unused raw: String) = asExpectDescs
     private [parsley] final override def orElse(config: LabelWithExplainConfig) = config match {
@@ -85,7 +85,7 @@ object Hidden extends LabelConfig {
     private [parsley] final override def orElse(config: LabelConfig) = this
 }
 
-private final class Reason private[errors]  (val reason: String) extends ExplainConfig {
+private [errors] final class Reason private[errors]  (val reason: String) extends ExplainConfig {
     require(reason.nonEmpty, "reasons cannot be empty strings")
     private [parsley] final override def apply[A](p: Parsley[A]) = p.explain(reason)
     private [parsley] final override def asExpectDescs = None
@@ -105,7 +105,7 @@ object Reason {
     def apply(reason: String): ExplainConfig = if (reason.nonEmpty) new Reason(reason) else NotConfigured
 }
 
-private final class LabelAndReason private[errors] (val labels: Seq[String], val reason: String) extends LabelWithExplainConfig {
+private [errors] final class LabelAndReason private[errors] (val labels: Seq[String], val reason: String) extends LabelWithExplainConfig {
     require(reason.nonEmpty, "reason cannot be empty strings, use `Label` instead")
     require(labels.forall(_.nonEmpty), "labels cannot be empty strings")
     private [parsley] final override def apply[A](p: Parsley[A]) = p.labels(labels: _*).explain(reason)
