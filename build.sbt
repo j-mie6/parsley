@@ -16,6 +16,7 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 // TODO: is it possible to only enable these for full non-snapshot release?
 val isInPublish = Option(System.getenv("GITHUB_JOB")).contains("publish")
 val releaseFlags = Seq("-Xdisable-assertions", "-opt:l:method,inline", "-opt-inline-from", "parsley.**", "-opt-warnings:at-inline-failed")
+val noReleaseFlagsScala3 = true // maybe some day this can be turned off...
 
 inThisBuild(List(
   tlBaseVersion := "4.3",
@@ -99,7 +100,7 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
 
     Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oI"),
 
-    scalacOptions ++= (if (isInPublish) releaseFlags else Seq.empty),
+    scalacOptions ++= (if (isInPublish && !(noReleaseFlagsScala3 && scalaBinaryVersion.value == "3")) releaseFlags else Seq.empty),
 
     Compile / doc / scalacOptions ++= Seq("-groups", "-doc-root-content", s"${baseDirectory.value.getParentFile.getPath}/rootdoc.md"),
     Compile / doc / scalacOptions ++= {
