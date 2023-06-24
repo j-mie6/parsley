@@ -128,6 +128,8 @@ object character {
         if (Character.isBmpCodePoint(c)) char(c.toChar) #> c
         else new Parsley(new singletons.SupplementaryCharTok(c, NotConfigured))
     }
+    @deprecated("this is an old naming, which I believe was never exposed but to be safe it'll remain till 5.0.0", "4.3.0")
+    private [parsley] def charUtf16(c: Int): Parsley[Int] = codePoint(c)
 
     /** This combinator tries to parse a single character from the input that matches the given predicate.
       *

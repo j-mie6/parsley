@@ -1,5 +1,4 @@
 import com.typesafe.tools.mima.core._
-import com.github.sbt.git.SbtGit.git
 
 val projectName = "parsley"
 val Scala213 = "2.13.11"
@@ -96,10 +95,7 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oI"),
 
     scalacOptions ++= {
-        if (!isSnapshot.value && !(noReleaseFlagsScala3 && scalaBinaryVersion.value == "3")) {
-            println("enabling the release flags!")
-            releaseFlags
-        } else Seq.empty
+        if (!isSnapshot.value && !(noReleaseFlagsScala3 && scalaBinaryVersion.value == "3")) releaseFlags else Seq.empty
     },
 
     Compile / doc / scalacOptions ++= Seq("-groups", "-doc-root-content", s"${baseDirectory.value.getParentFile.getPath}/rootdoc.md"),
