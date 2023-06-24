@@ -1,4 +1,5 @@
 import com.typesafe.tools.mima.core._
+import com.github.sbt.git.SbtGit.git
 
 val projectName = "parsley"
 val Scala213 = "2.13.11"
@@ -12,8 +13,6 @@ val mainBranch = "master"
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
-// TODO: is it possible to only enable these for full non-snapshot release?
-val isInPublish = Option(System.getenv("GITHUB_JOB")).contains("publish")
 val releaseFlags = Seq("-Xdisable-assertions", "-opt:l:method,inline", "-opt-inline-from", "parsley.**", "-opt-warnings:at-inline-failed")
 val noReleaseFlagsScala3 = true // maybe some day this can be turned off...
 
@@ -74,8 +73,6 @@ inThisBuild(List(
   tlCiScalafmtCheck := false,
   tlCiHeaderCheck := false, //FIXME: to be honest, we could turn off the scala-check for this and do it here instead (2020 year)
   githubWorkflowJavaVersions := Seq(Java8, JavaLTS, JavaLatest),
-  // We need this because our release uses different flags
-  githubWorkflowArtifactUpload := false,
   githubWorkflowAddedJobs += testCoverageJob(githubWorkflowGeneratedCacheSteps.value.toList),
 ))
 
@@ -98,7 +95,12 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
 
     Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oI"),
 
-    scalacOptions ++= (if (isInPublish && !(noReleaseFlagsScala3 && scalaBinaryVersion.value == "3")) releaseFlags else Seq.empty),
+    scalacOptions ++= {
+        if (!isSnapshot.value && !(noReleaseFlagsScala3 && scalaBinaryVersion.value == "3")) {
+            println("enabling the release flags!")
+            releaseFlags
+        } else Seq.empty
+    },
 
     Compile / doc / scalacOptions ++= Seq("-groups", "-doc-root-content", s"${baseDirectory.value.getParentFile.getPath}/rootdoc.md"),
   )
