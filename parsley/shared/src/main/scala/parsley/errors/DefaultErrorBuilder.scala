@@ -96,13 +96,11 @@ abstract class DefaultErrorBuilder extends ErrorBuilder[String] {
     override val numLinesAfter = 1
     /** @inheritdoc */
     override def lineInfo(line: String, linesBefore: Seq[String], linesAfter: Seq[String], errorPointsAt: Int, errorWidth: Int): LineInfo = {
-        linesBefore.map(line => s"$errorLineStart$line") ++:
-        Seq(s"$errorLineStart$line", s"${" " * errorLineStart.length}${errorPointer(errorPointsAt, errorWidth)}") ++:
-        linesAfter.map(line => s"$errorLineStart$line")
+        linesBefore.map(line => s"${DefaultErrorBuilder.ErrorLineStart}$line") ++:
+        Seq(s"${DefaultErrorBuilder.ErrorLineStart}$line",
+            s"${" " * DefaultErrorBuilder.ErrorLineStart.length}${DefaultErrorBuilder.errorPointer(errorPointsAt, errorWidth)}") ++:
+            linesAfter.map(line => s"${DefaultErrorBuilder.ErrorLineStart}$line")
     }
-
-    private val errorLineStart = ">"
-    private def errorPointer(caretAt: Int, caretWidth: Int) = s"${" " * caretAt}${"^" * caretWidth}"
 
     /** @inheritdoc */
     type Item = String
@@ -126,6 +124,7 @@ abstract class DefaultErrorBuilder extends ErrorBuilder[String] {
 object DefaultErrorBuilder {
     private final val Unknown = "unknown parse error"
     private final val EndOfInput = "end of input"
+    private final val ErrorLineStart = ">"
 
     private def disjunct(alts: Iterable[String]): Option[String] = disjunct(alts, oxfordComma = true)
     private def disjunct(alts: Iterable[String], oxfordComma: Boolean): Option[String] = helpers.disjunct(alts.toList.filter(_.nonEmpty), oxfordComma)
@@ -136,5 +135,7 @@ object DefaultErrorBuilder {
     }
 
     private def raw(item: String) = helpers.renderRawString(item)
+
+    private def errorPointer(caretAt: Int, caretWidth: Int) = s"${" " * caretAt}${"^" * caretWidth}"
 }
 // $COVERAGE-ON$
