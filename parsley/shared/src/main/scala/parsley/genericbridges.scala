@@ -23,7 +23,7 @@ import lift._
 object genericbridges {
     // $COVERAGE-OFF$
     // scalastyle:off parameter.number ensure.single.space.after.token
-    /** Generic bridge trait enabling the `<#` syntax on this type:
+    /** Generic bridge trait enabling the `<#`/`from` combinator on this type:
       * this is useful when the constructor is not applied immediately,
       * like when using `precedence`. It does not track any metadata.
       *
@@ -38,8 +38,15 @@ object genericbridges {
           * returns `con`.
           *
           * @param op the parser that should be parsed before returning `con`.
+          * @note equivalent to `from`.
           */
-        final def <#(op: Parsley[_]): Parsley[A] = op #> con
+        final def <#(op: Parsley[_]): Parsley[A] = this.from(op)
+        /** The combinator on this implementing type that performs the parser and
+          * returns `con`.
+          *
+          * @param op the parser that should be parsed before returning `con`.
+          */
+        final def from(op: Parsley[_]): Parsley[A] = op.as(con)
     }
 
     /** Generic bridge trait for singleton objects that simply return themselves
