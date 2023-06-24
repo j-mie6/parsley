@@ -19,20 +19,11 @@ package parsley.errors
   */
 abstract class DefaultErrorBuilder extends ErrorBuilder[String] {
     /** @inheritdoc */
-    override def format(pos: Position, source: Source, lines: ErrorInfoLines): String = {
-        s"${source.fold("")(name => s"In $name ")}$pos:\n${lines.mkString("  ", "\n  ", "")}"
-    }
+    override def format(pos: Position, source: Source, lines: ErrorInfoLines): String = DefaultErrorBuilder.format(pos, source, lines)
 
     //override def format(pos: Position, source: Source, ctxs: NestedContexts, lines: ErrorInfoLines): String = {
-    //    s"${mergeScopes(source, ctxs)}$pos:\n${lines.mkString("  ", "\n  ", "")}"
+    //    DefaultErrorBuilder.blockError(header = s"${DefaultErrorBuilder.mergeScopes(source, ctxs)}$pos", lines, indent = 2)"
     //}
-
-    /*protected def mergeScopes(source: Source, ctxs: NestedContexts): String = (source, ctxs) match {
-        case (None, None) => ""
-        case (Some(name), None) => s"In $name "
-        case (None, Some(ctxs)) => s"In $ctxs "
-        case (Some(name), Some(ctxs)) => s"In $name, $ctxs "
-    }*/
 
     /** @inheritdoc */
     type Position = String
@@ -40,9 +31,9 @@ abstract class DefaultErrorBuilder extends ErrorBuilder[String] {
     type Source = Option[String]
     //type Context = Option[String]
     /** @inheritdoc */
-    override def pos(line: Int, col: Int): Position = s"(line ${Integer.toUnsignedString(line)}, column ${Integer.toUnsignedString(col)})"
+    override def pos(line: Int, col: Int): Position = DefaultErrorBuilder.pos(line, col)
     /** @inheritdoc */
-    override def source(sourceName: Option[String]): Source = sourceName.map(name => s"file '$name'")
+    override def source(sourceName: Option[String]): Source = DefaultErrorBuilder.source(sourceName)
     //override def contexualScope(context: String): Context = Some(context)
 
     //type NestedContexts = Option[String]
@@ -56,13 +47,10 @@ abstract class DefaultErrorBuilder extends ErrorBuilder[String] {
     type ErrorInfoLines = Seq[String]
     /** @inheritdoc */
     override def vanillaError(unexpected: UnexpectedLine, expected: ExpectedLine, reasons: Messages, lines: LineInfo): ErrorInfoLines = {
-        val reasons_ = reasons.collect {
-            case reason if reason.nonEmpty => Some(reason)
-        }
-        DefaultErrorBuilder.combineInfoWithLines((unexpected +: expected +: reasons_).flatten, lines)
+        DefaultErrorBuilder.vanillaError(unexpected, expected, reasons, lines)
     }
     /** @inheritdoc */
-    override def specialisedError(msgs: Messages, lines: LineInfo): ErrorInfoLines = DefaultErrorBuilder.combineInfoWithLines(msgs, lines)
+    override def specialisedError(msgs: Messages, lines: LineInfo): ErrorInfoLines = DefaultErrorBuilder.specialisedError(msgs, lines)
 
     /** @inheritdoc */
     type ExpectedItems = Option[String]
@@ -71,7 +59,7 @@ abstract class DefaultErrorBuilder extends ErrorBuilder[String] {
     /** @inheritdoc */
     override def combineExpectedItems(alts: Set[Item]): ExpectedItems = DefaultErrorBuilder.disjunct(alts)
     /** @inheritdoc */
-    override def combineMessages(alts: Seq[Message]): Messages = alts.filter(_.nonEmpty)
+    override def combineMessages(alts: Seq[Message]): Messages = DefaultErrorBuilder.combineMessages(alts)
 
     /** @inheritdoc */
     type UnexpectedLine = Option[String]
@@ -82,24 +70,21 @@ abstract class DefaultErrorBuilder extends ErrorBuilder[String] {
     /** @inheritdoc */
     type LineInfo = Seq[String]
     /** @inheritdoc */
-    override def unexpected(item: Option[Item]): UnexpectedLine = item.map("unexpected " + _)
+    override def unexpected(item: Option[Item]): UnexpectedLine = DefaultErrorBuilder.unexpected(item)
     /** @inheritdoc */
-    override def expected(alts: ExpectedItems): ExpectedLine = alts.map("expected " + _)
+    override def expected(alts: ExpectedItems): ExpectedLine = DefaultErrorBuilder.expected(alts)
     /** @inheritdoc */
-    override def reason(reason: String): Message = reason
+    override def reason(reason: String): Message = DefaultErrorBuilder.reason(reason)
     /** @inheritdoc */
-    override def message(msg: String): Message = msg
+    override def message(msg: String): Message = DefaultErrorBuilder.message(msg)
 
     /** @inheritdoc */
-    override val numLinesBefore = 1
+    override val numLinesBefore = DefaultErrorBuilder.NumLinesBefore
     /** @inheritdoc */
-    override val numLinesAfter = 1
+    override val numLinesAfter = DefaultErrorBuilder.NumLinesAfter
     /** @inheritdoc */
     override def lineInfo(line: String, linesBefore: Seq[String], linesAfter: Seq[String], errorPointsAt: Int, errorWidth: Int): LineInfo = {
-        linesBefore.map(DefaultErrorBuilder.inputLine) ++:
-        Seq(DefaultErrorBuilder.inputLine(line),
-            s"${" " * DefaultErrorBuilder.ErrorLineStart.length}${DefaultErrorBuilder.errorPointer(errorPointsAt, errorWidth)}") ++:
-            linesAfter.map(DefaultErrorBuilder.inputLine)
+        DefaultErrorBuilder.lineInfo(line, linesBefore, linesAfter, errorPointsAt, errorWidth)
     }
 
     /** @inheritdoc */
@@ -113,7 +98,7 @@ abstract class DefaultErrorBuilder extends ErrorBuilder[String] {
     /** @inheritdoc */
     override def raw(item: String): Raw = DefaultErrorBuilder.raw(item)
     /** @inheritdoc */
-    override def named(item: String): Named = item
+    override def named(item: String): Named = DefaultErrorBuilder.named(item)
     /** @inheritdoc */
     override val endOfInput: EndOfInput = DefaultErrorBuilder.EndOfInput
 }
@@ -125,18 +110,54 @@ object DefaultErrorBuilder {
     private final val Unknown = "unknown parse error"
     private final val EndOfInput = "end of input"
     private final val ErrorLineStart = ">"
+    private final val NumLinesBefore = 1
+    private final val NumLinesAfter = 1
+
+    private def format(pos: String, source: Option[String], lines: Seq[String]): String = {
+        blockError(header = s"${source.fold("")(name => s"In $name ")}$pos", lines, indent = 2)
+    }
+    private def source(sourceName: Option[String]): Option[String] = sourceName.map(name => s"file '$name'")
+    private def vanillaError(unexpected: Option[String], expected: Option[String], reasons: Iterable[String], lines: Seq[String]) = {
+        DefaultErrorBuilder.combineInfoWithLines(Seq.concat(unexpected, expected, reasons), lines)
+    }
+    private def specialisedError(msgs: Seq[String], lines: Seq[String]): Seq[String] = DefaultErrorBuilder.combineInfoWithLines(msgs, lines)
+
+    private def blockError(header: String, lines: Iterable[String], indent: Int) = s"$header:\n${indentAndUnlines(lines, indent)}"
+    private def indentAndUnlines(lines: Iterable[String], indent: Int) = lines.mkString(" " * indent, "\n" + " " * indent, "")
+
+    private def pos(line: Int, col: Int) = s"(line ${Integer.toUnsignedString(line)}, column ${Integer.toUnsignedString(col)})"
 
     private def disjunct(alts: Iterable[String]): Option[String] = disjunct(alts, oxfordComma = true)
     private def disjunct(alts: Iterable[String], oxfordComma: Boolean): Option[String] = helpers.disjunct(alts.toList.filter(_.nonEmpty), oxfordComma)
+
+    private def combineMessages(alts: Seq[String]): Seq[String] = alts.filter(_.nonEmpty)
 
     private def combineInfoWithLines(info: Seq[String], lines: Seq[String]): Seq[String] = {
         if (info.isEmpty) Unknown +: lines
         else info ++: lines
     }
 
+    private def unexpected(item: Option[String]): Option[String] = item.map("unexpected " + _)
+    private def expected(alts: Option[String]): Option[String] = alts.map("expected " + _)
+    private def reason(reason: String): String = reason
+    private def message(msg: String): String = msg
+
     private def raw(item: String) = helpers.renderRawString(item)
+    private def named(item: String) = item
+
+    private def lineInfo(line: String, linesBefore: Seq[String], linesAfter: Seq[String], errorPointsAt: Int, errorWidth: Int): Seq[String] = {
+        Seq.concat(linesBefore.map(inputLine), Seq(inputLine(line), caretLine(errorPointsAt, errorWidth)), linesAfter.map(inputLine))
+    }
 
     private def inputLine(line: String) = s"${DefaultErrorBuilder.ErrorLineStart}$line"
     private def errorPointer(caretAt: Int, caretWidth: Int) = s"${" " * caretAt}${"^" * caretWidth}"
+    private def caretLine(caretAt: Int, caretWidth: Int) = s"${" " * ErrorLineStart.length}${errorPointer(caretAt, caretWidth)}"
+
+    /*def mergeScopes(source: Option[String], ctxs: Option[String]): String = (source, ctxs) match {
+        case (None, None) => ""
+        case (Some(name), None) => s"In $name "
+        case (None, Some(ctxs)) => s"In $ctxs "
+        case (Some(name), Some(ctxs)) => s"In $name, $ctxs "
+    }*/
 }
 // $COVERAGE-ON$
