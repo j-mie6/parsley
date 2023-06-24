@@ -115,7 +115,7 @@ private [errors] final class LabelAndReason private[errors] (val labels: Seq[Str
     private [parsley] final override def orElse(config: LabelWithExplainConfig) = this
 }
 /** This object has a factory for configurations producing labels and reasons: if the empty label is provided, this equivalent to [[Hidden `Hidden`]] with no
-  * reason; if the empty reason is provided this is equivalent to [[Label `Label`]].
+  * reason; if the empty reason is provided this is equivalent to [[Label$ `Label`]].
   * @since 4.1.0
   * @group labels
   */
