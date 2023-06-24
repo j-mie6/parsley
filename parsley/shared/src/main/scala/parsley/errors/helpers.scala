@@ -18,7 +18,7 @@ private [parsley] object helpers {
     private def junct(init: List[String], last: String, delim: String, junction: String, oxfordComma: Boolean): String = {
         init.mkString(start = "", sep = delim, end = if (oxfordComma) s"$delim$junction $last" else s" $junction $last")
     }
-    private def junct(elems: List[String], junction: String, oxfordComma: Boolean): Option[String] = elems.sorted(Ordering[String].reverse) match {
+    def junct(elems: List[String], junction: String, oxfordComma: Boolean): Option[String] = elems.sorted(Ordering[String].reverse) match {
         case Nil => None
         case List(alt) => Some(alt)
         case List(alt1, alt2) => Some(s"$alt2 $junction $alt1")

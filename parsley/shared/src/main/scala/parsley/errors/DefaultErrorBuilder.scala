@@ -34,14 +34,10 @@ abstract class DefaultErrorBuilder extends ErrorBuilder[String] {
     override def pos(line: Int, col: Int): Position = DefaultErrorBuilder.pos(line, col)
     /** @inheritdoc */
     override def source(sourceName: Option[String]): Source = DefaultErrorBuilder.source(sourceName)
-    //override def contexualScope(context: String): Context = Some(context)
+    //override def contexualScope(context: String): Context = ???
 
     //type NestedContexts = Option[String]
-    /*override def nestContexts(contexts: List[Context]): NestedContexts = {
-        val nonEmptyContexts = contexts.flatten
-        if (nonEmptyContexts.nonEmpty) Some(nonEmptyContexts.mkString(", "))
-        else None
-    }*/
+    /*override def nestContexts(contexts: List[Context]): NestedContexts = ???*/
 
     /** @inheritdoc */
     type ErrorInfoLines = Seq[String]
@@ -107,51 +103,50 @@ abstract class DefaultErrorBuilder extends ErrorBuilder[String] {
   * @since 4.3.0
   */
 object DefaultErrorBuilder {
-    private final val Unknown = "unknown parse error"
-    private final val EndOfInput = "end of input"
-    private final val ErrorLineStart = ">"
-    private final val NumLinesBefore = 1
-    private final val NumLinesAfter = 1
+    final val Unknown = "unknown parse error"
+    final val EndOfInput = "end of input"
+    final val ErrorLineStart = ">"
+    final val NumLinesBefore = 1
+    final val NumLinesAfter = 1
 
-    private def format(pos: String, source: Option[String], lines: Seq[String]): String = {
+    def format(pos: String, source: Option[String], lines: Seq[String]): String = {
         blockError(header = s"${source.fold("")(name => s"In $name ")}$pos", lines, indent = 2)
     }
-    private def source(sourceName: Option[String]): Option[String] = sourceName.map(name => s"file '$name'")
-    private def vanillaError(unexpected: Option[String], expected: Option[String], reasons: Iterable[String], lines: Seq[String]) = {
+    def source(sourceName: Option[String]): Option[String] = sourceName.map(name => s"file '$name'")
+    def vanillaError(unexpected: Option[String], expected: Option[String], reasons: Iterable[String], lines: Seq[String]) = {
         DefaultErrorBuilder.combineInfoWithLines(Seq.concat(unexpected, expected, reasons), lines)
     }
-    private def specialisedError(msgs: Seq[String], lines: Seq[String]): Seq[String] = DefaultErrorBuilder.combineInfoWithLines(msgs, lines)
+    def specialisedError(msgs: Seq[String], lines: Seq[String]): Seq[String] = DefaultErrorBuilder.combineInfoWithLines(msgs, lines)
 
-    private def blockError(header: String, lines: Iterable[String], indent: Int) = s"$header:\n${indentAndUnlines(lines, indent)}"
-    private def indentAndUnlines(lines: Iterable[String], indent: Int) = lines.mkString(" " * indent, "\n" + " " * indent, "")
+    def blockError(header: String, lines: Iterable[String], indent: Int) = s"$header:\n${indentAndUnlines(lines, indent)}"
+    def indentAndUnlines(lines: Iterable[String], indent: Int) = lines.mkString(" " * indent, "\n" + " " * indent, "")
 
-    private def pos(line: Int, col: Int) = s"(line ${Integer.toUnsignedString(line)}, column ${Integer.toUnsignedString(col)})"
+    def pos(line: Int, col: Int) = s"(line ${Integer.toUnsignedString(line)}, column ${Integer.toUnsignedString(col)})"
 
-    private def disjunct(alts: Iterable[String]): Option[String] = disjunct(alts, oxfordComma = true)
-    private def disjunct(alts: Iterable[String], oxfordComma: Boolean): Option[String] = helpers.disjunct(alts.toList.filter(_.nonEmpty), oxfordComma)
+    def disjunct(alts: Iterable[String]): Option[String] = disjunct(alts, oxfordComma = true)
+    def disjunct(alts: Iterable[String], oxfordComma: Boolean): Option[String] = helpers.disjunct(alts.toList.filter(_.nonEmpty), oxfordComma)
 
-    private def combineMessages(alts: Seq[String]): Seq[String] = alts.filter(_.nonEmpty)
+    def combineMessages(alts: Seq[String]): Seq[String] = alts.filter(_.nonEmpty)
 
-    private def combineInfoWithLines(info: Seq[String], lines: Seq[String]): Seq[String] = {
+    def combineInfoWithLines(info: Seq[String], lines: Seq[String]): Seq[String] = {
         if (info.isEmpty) Unknown +: lines
         else info ++: lines
     }
 
-    private def unexpected(item: Option[String]): Option[String] = item.map("unexpected " + _)
-    private def expected(alts: Option[String]): Option[String] = alts.map("expected " + _)
-    private def reason(reason: String): String = reason
-    private def message(msg: String): String = msg
+    def unexpected(item: Option[String]): Option[String] = item.map("unexpected " + _)
+    def expected(alts: Option[String]): Option[String] = alts.map("expected " + _)
+    def reason(reason: String): String = reason
+    def message(msg: String): String = msg
 
-    private def raw(item: String) = helpers.renderRawString(item)
-    private def named(item: String) = item
+    def raw(item: String) = helpers.renderRawString(item)
+    def named(item: String) = item
 
-    private def lineInfo(line: String, linesBefore: Seq[String], linesAfter: Seq[String], errorPointsAt: Int, errorWidth: Int): Seq[String] = {
+    def lineInfo(line: String, linesBefore: Seq[String], linesAfter: Seq[String], errorPointsAt: Int, errorWidth: Int): Seq[String] = {
         Seq.concat(linesBefore.map(inputLine), Seq(inputLine(line), caretLine(errorPointsAt, errorWidth)), linesAfter.map(inputLine))
     }
 
-    private def inputLine(line: String) = s"${DefaultErrorBuilder.ErrorLineStart}$line"
-    private def errorPointer(caretAt: Int, caretWidth: Int) = s"${" " * caretAt}${"^" * caretWidth}"
-    private def caretLine(caretAt: Int, caretWidth: Int) = s"${" " * ErrorLineStart.length}${errorPointer(caretAt, caretWidth)}"
+    def inputLine(line: String) = s"${DefaultErrorBuilder.ErrorLineStart}$line"
+    def caretLine(caretAt: Int, caretWidth: Int) = s"${" " * (ErrorLineStart.length + caretAt)}${"^" * caretWidth}"
 
     /*def mergeScopes(source: Option[String], ctxs: Option[String]): String = (source, ctxs) match {
         case (None, None) => ""
@@ -159,5 +154,12 @@ object DefaultErrorBuilder {
         case (None, Some(ctxs)) => s"In $ctxs "
         case (Some(name), Some(ctxs)) => s"In $name, $ctxs "
     }*/
+
+    /*def nestContexts(contexts: List[Option[String]]): Option[String] = {
+        val nonEmptyContexts = contexts.flatten
+        if (nonEmptyContexts.nonEmpty) Some(nonEmptyContexts.mkString(", "))
+        else None
+    }*/
+    /*def contexualScope(context: String): Option[String] = Some(context)*/
 }
 // $COVERAGE-ON$
