@@ -141,18 +141,18 @@ object DefaultErrorBuilder {
       *
       * @since 4.3.0
       */
-    def blockError(header: String, lines: Iterable[String], indent: Int) = s"$header:\n${indentAndUnlines(lines, indent)}"
+    def blockError(header: String, lines: Iterable[String], indent: Int): String = s"$header:\n${indentAndUnlines(lines, indent)}"
     /** Indents and concatenates the given lines by the given depth.
       *
       * @since 4.3.0
       */
-    def indentAndUnlines(lines: Iterable[String], indent: Int) = lines.mkString(" " * indent, "\n" + " " * indent, "")
+    def indentAndUnlines(lines: Iterable[String], indent: Int): String = lines.mkString(" " * indent, "\n" + " " * indent, "")
 
     /** Pairs the line and column up in the form `(line m, column n)`.
       *
       * @since 4.3.0
       */
-    def pos(line: Int, col: Int) = s"(line ${Integer.toUnsignedString(line)}, column ${Integer.toUnsignedString(col)})"
+    def pos(line: Int, col: Int): String = s"(line ${Integer.toUnsignedString(line)}, column ${Integer.toUnsignedString(col)})"
 
     /** Combines the alternatives, separated by commas/semicolons, with the final two separated
       * by "or". An '''Oxford comma''' is added if there are more than two elements, as this
@@ -214,12 +214,12 @@ object DefaultErrorBuilder {
       *
       * @since 4.3.0
       */
-    def raw(item: String) = helpers.renderRawString(item)
+    def raw(item: String): String = helpers.renderRawString(item)
     /** Returns the given item unchanged.
       *
       * @since 4.3.0
       */
-    def named(item: String) = item
+    def named(item: String): String = item
 
     /** Constructs error context by concatenating them together with a "caret line" underneath the
       * focus line, `line`, where the error occurs.
@@ -234,13 +234,13 @@ object DefaultErrorBuilder {
       *
       * @since 4.3.0
       */
-    def inputLine(line: String) = s"$ErrorLineStart$line"
+    def inputLine(line: String): String = s"$ErrorLineStart$line"
     /** Generates a line of `^` characters as wide as specified starting as seen in as the given
       * position, accounting for the length of the [[ErrorLineStart `ErrorLineStart`]] too.
       *
       * @since 4.3.0
       */
-    def caretLine(caretAt: Int, caretWidth: Int) = s"${" " * (ErrorLineStart.length + caretAt)}${"^" * caretWidth}"
+    def caretLine(caretAt: Int, caretWidth: Int): String = s"${" " * (ErrorLineStart.length + caretAt)}${"^" * caretWidth}"
 
     /*def mergeScopes(source: Option[String], ctxs: Option[String]): String = (source, ctxs) match {
         case (None, None) => ""
