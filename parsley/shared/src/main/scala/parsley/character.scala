@@ -78,7 +78,6 @@ import parsley.internal.deepembedding.singletons
   *     [[https://www.unicode.org/Public/13.0.0/ucd/extracted/DerivedGeneralCategory.txt Unicode Character Database]]''.
   */
 object character {
-    // TODO: in @note: or [[charUtf16 `charUtf16`]]
     /** This combinator tries to parse a single specific character `c` from the input.
       *
       * Attempts to read the given character `c` from the input stream at the current
@@ -97,7 +96,7 @@ object character {
       *
       * @param c the character to parse
       * @return a parser that tries to read a single `c`, or fails.
-      * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[string `string`]].
+      * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[string `string`]] or [[codePoint `codePoint`]].
       * @group core
       */
     def char(c: Char): Parsley[Char] = char(c, NotConfigured)
@@ -107,25 +106,25 @@ object character {
     /** This combinator tries to parse a single specific codepoint `c` from the input.
       *
       * Like [[char `char`]], except it may consume two characters from the input,
-      * in the case where the codepoint is greater than `0xffff`. This is parsed ''atomically''
+      * in the case where the code-point is greater than `0xffff`. This is parsed ''atomically''
       * so that no input is consumed if the first half of the codepoint is parsed and the second
       * is not.
       *
       * @example {{{
-      * scala> import parsley.character.charUtf16
-      * scala> char(0x1F643).parse("")
+      * scala> import parsley.character.codePoint
+      * scala> codePoint(0x1F643).parse("")
       * val res0 = Failure(..)
-      * scala> char(0x1F643).parse("🙂")
+      * scala> codePoint(0x1F643).parse("🙂")
       * val res1 = Success(0x1F643)
-      * scala> char(0x1F643).parse("b🙂")
+      * scala> codePoint(0x1F643).parse("b🙂")
       * val res2 = Failure(..)
       * }}}
       *
-      * @param c the codepoint to parse
+      * @param c the code-point to parse
       * @return
       * @group core
       */
-    private [parsley] def charUtf16(c: Int): Parsley[Int] = { //TODO: release along with the utf combinators
+    def codePoint(c: Int): Parsley[Int] = {
         if (Character.isBmpCodePoint(c)) char(c.toChar) #> c
         else new Parsley(new singletons.SupplementaryCharTok(c, NotConfigured))
     }

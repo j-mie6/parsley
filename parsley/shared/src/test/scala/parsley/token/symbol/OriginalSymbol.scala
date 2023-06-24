@@ -4,7 +4,7 @@
 package parsley.token.symbol
 
 import parsley.Parsley, Parsley.{attempt, notFollowedBy, unit}
-import parsley.character.{char, charUtf16, string, strings}
+import parsley.character.{char, codePoint, string, strings}
 import parsley.errors.combinator.{ErrorMethods, empty, amend}
 import parsley.token.descriptions.{NameDesc, SymbolDesc}
 import parsley.token.errors.ErrorConfig
@@ -22,7 +22,7 @@ private [token] class OriginalSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc,
     override def apply(name: Char): Parsley[Unit] = char(name).void
 
     private lazy val identLetter = nameDesc.identifierLetter.toNative
-    private def caseChar(c: Int) = if (Character.isLetter(c)) charUtf16(Character.toLowerCase(c)) <|> charUtf16(Character.toUpperCase(c)) else charUtf16(c)
+    private def caseChar(c: Int) = if (Character.isLetter(c)) codePoint(Character.toLowerCase(c)) <|> codePoint(Character.toUpperCase(c)) else codePoint(c)
     private def caseString(name: String): Parsley[Unit] = {
         if (symbolDesc.caseSensitive) string(name).void
         else {

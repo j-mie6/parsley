@@ -119,15 +119,15 @@ class CharTests extends ParsleyTest {
     }
 
     "charUtf16" should "handle BMP characters" in {
-        cases(charUtf16('a'))("a" -> Some('a'))
-        cases(charUtf16('λ'))("λ" -> Some('λ'))
+        cases(codePoint('a'))("a" -> Some('a'))
+        cases(codePoint('λ'))("λ" -> Some('λ'))
     }
 
     it should "handle multi-character codepoints" in {
-        cases(charUtf16(0x1F642))("🙂" -> Some(0x1F642))
+        cases(codePoint(0x1F642))("🙂" -> Some(0x1F642))
     }
 
     it should "handle multi-character codepoints atomically on fail" in {
-        cases(charUtf16(0x1F642) <|> charUtf16(0x1F643))("🙃" -> Some(0x1F643))
+        cases(codePoint(0x1F642) <|> codePoint(0x1F643))("🙃" -> Some(0x1F643))
     }
 }
