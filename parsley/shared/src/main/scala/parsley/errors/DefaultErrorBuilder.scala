@@ -96,10 +96,10 @@ abstract class DefaultErrorBuilder extends ErrorBuilder[String] {
     override val numLinesAfter = 1
     /** @inheritdoc */
     override def lineInfo(line: String, linesBefore: Seq[String], linesAfter: Seq[String], errorPointsAt: Int, errorWidth: Int): LineInfo = {
-        linesBefore.map(line => s"${DefaultErrorBuilder.ErrorLineStart}$line") ++:
-        Seq(s"${DefaultErrorBuilder.ErrorLineStart}$line",
+        linesBefore.map(DefaultErrorBuilder.inputLine) ++:
+        Seq(DefaultErrorBuilder.inputLine(line),
             s"${" " * DefaultErrorBuilder.ErrorLineStart.length}${DefaultErrorBuilder.errorPointer(errorPointsAt, errorWidth)}") ++:
-            linesAfter.map(line => s"${DefaultErrorBuilder.ErrorLineStart}$line")
+            linesAfter.map(DefaultErrorBuilder.inputLine)
     }
 
     /** @inheritdoc */
@@ -136,6 +136,7 @@ object DefaultErrorBuilder {
 
     private def raw(item: String) = helpers.renderRawString(item)
 
+    private def inputLine(line: String) = s"${DefaultErrorBuilder.ErrorLineStart}$line"
     private def errorPointer(caretAt: Int, caretWidth: Int) = s"${" " * caretAt}${"^" * caretWidth}"
 }
 // $COVERAGE-ON$
