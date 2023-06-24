@@ -165,9 +165,29 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *
       * @param x the new result of this parser.
       * @return a new parser that behaves the same as this parser, but always succeeds with `x` as the result.
+      * @note just an alias for `as`.
       * @group map
       */
-    def #>[B](x: B): Parsley[B] = this *> pure(x)
+    def #>[B](x: B): Parsley[B] = this.as(x)
+    /** This combinator replaces the result of this parser, ignoring the old result.
+      *
+      * Similar to `map`, except the old result of this parser is not required to
+      * compute the new result. This is useful when the result is a constant value (or function!).
+      * Functionally the same as `this *> pure(x)` or `this.map(_ => x)`.
+      *
+      * ''In Haskell, this combinator is known as `($>)`''.
+      *
+      * @example {{{
+      * scala> import parsley.character.string
+      * scala> (string("true").as(true)).parse("true")
+      * val res0 = Success(true)
+      * }}}
+      *
+      * @param x the new result of this parser.
+      * @return a new parser that behaves the same as this parser, but always succeeds with `x` as the result.
+      * @group map
+      */
+    def as[B](x: B): Parsley[B] = this *> pure(x)
     /** Replaces the result of this parser with `()`.
       *
       * This combinator is useful when the result of this parser is not required, and the
