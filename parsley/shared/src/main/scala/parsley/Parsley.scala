@@ -191,12 +191,12 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
     /** Replaces the result of this parser with `()`.
       *
       * This combinator is useful when the result of this parser is not required, and the
-      * type must be `Parsley[Unit]`. Functionally the same as `this #> ()`.
+      * type must be `Parsley[Unit]`. Functionally the same as `this.as(())`.
       *
       * @return a new parser that behaves the same as this parser, but always returns `()` on success.
       * @group map
       */
-    def void: Parsley[Unit] = this #> (())
+    def void: Parsley[Unit] = this.as(())
 
     // BRANCHING COMBINATORS
     /** This combinator, pronounced "or", $or

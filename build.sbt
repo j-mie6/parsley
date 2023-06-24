@@ -1,4 +1,3 @@
-import org.scalajs.linker.interface.ESVersion
 import com.typesafe.tools.mima.core._
 
 val projectName = "parsley"
@@ -74,7 +73,6 @@ inThisBuild(List(
   tlCiReleaseBranches := Seq(mainBranch),
   tlCiScalafmtCheck := false,
   tlCiHeaderCheck := false, //FIXME: to be honest, we could turn off the scala-check for this and do it here instead (2020 year)
-  tlSonatypeUseLegacyHost := false,
   githubWorkflowJavaVersions := Seq(Java8, JavaLTS, JavaLatest),
   // We need this because our release uses different flags
   githubWorkflowArtifactUpload := false,
@@ -105,14 +103,8 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     Compile / doc / scalacOptions ++= Seq("-groups", "-doc-root-content", s"${baseDirectory.value.getParentFile.getPath}/rootdoc.md"),
   )
   .jsSettings(
-    Compile / bloopGenerate := None,
     // JS lacks the IO module, so has its own rootdoc
     Compile / doc / scalacOptions ++= Seq("-groups", "-doc-root-content", s"${baseDirectory.value.getPath}/rootdoc.md"),
-    Test / bloopGenerate := None,
-  )
-  .nativeSettings(
-    Compile / bloopGenerate := None,
-    Test / bloopGenerate := None,
   )
 
 def testCoverageJob(cacheSteps: List[WorkflowStep]) = WorkflowJob(

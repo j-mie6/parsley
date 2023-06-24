@@ -220,7 +220,7 @@ object character {
         case 0 => empty
         case 1 => char(cs.head)
         case _ => satisfy(cs, {
-            val Some(label) = parsley.errors.helpers.combineAsList(cs.map(renderChar).toList): @unchecked
+            val Some(label) = parsley.errors.helpers.disjunct(cs.map(renderChar).toList, oxfordComma = true): @unchecked
             s"one of $label"
         })
     }
@@ -310,7 +310,7 @@ object character {
         case 0 => item
         case 1 => satisfy(cs.head != _, s"anything except ${renderChar(cs.head)}")
         case _ => satisfy(!cs.contains(_), {
-            val Some(label) = parsley.errors.helpers.combineAsList(cs.map(renderChar).toList): @unchecked
+            val Some(label) = parsley.errors.helpers.disjunct(cs.map(renderChar).toList, oxfordComma = true): @unchecked
             s"anything except $label"
         })
     }

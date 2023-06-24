@@ -682,7 +682,8 @@ class ErrorConfig {
         new SpecialisedMessage[Int] {
             def message(got: Int) = {
                 assume(needed.nonEmpty, "cannot be empty!")
-                Seq(s"numeric escape requires ${parsley.errors.helpers.combineAsList(needed.toList.map(_.toString)).get} digits, but only got $got")
+                val Some(formatted) = parsley.errors.helpers.disjunct(needed.toList.map(_.toString), oxfordComma = true): @unchecked
+                Seq(s"numeric escape requires $formatted digits, but only got $got")
             }
         }
 
