@@ -1,4 +1,6 @@
-val sbtTypelevelVersion = "0.5.0-RC3"
+val sbtTypelevelVersion = "0.5-686991f-SNAPSHOT"
+
+resolvers += "s01-oss-sonatype-org-snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots"
 
 libraryDependencySchemes ++= Seq(
   "org.scala-native" % "sbt-scala-native" % VersionScheme.Always,
