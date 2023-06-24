@@ -118,7 +118,6 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
 def testCoverageJob(cacheSteps: List[WorkflowStep]) = WorkflowJob(
     id = "coverage",
     name = "Run Test Coverage and Upload",
-    scalas = List(CrossVersion.binaryScalaVersion(Scala213)), // TODO: this can be dropped when https://github.com/typelevel/sbt-typelevel/pull/565 is merged
     cond = Some(s"github.ref == 'refs/heads/$mainBranch' || (github.event_name == 'pull_request' && github.base_ref == '$mainBranch')"),
     steps =
         WorkflowStep.Checkout ::

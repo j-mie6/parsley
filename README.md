@@ -35,7 +35,7 @@ libraryDependencies += "com.github.j-mie6" %% "parsley-cats" % "1.2.0"
 scala> import parsley.Parsley
 scala> import parsley.implicits.character.{charLift, stringLift}
 
-scala> val hello: Parsley[Unit] = ('h' *> ("ello" <|> "i") *> " world!").void
+scala> val hello: Parsley[Unit] = ('h' ~> ("ello" | "i") ~> " world!").void
 scala> hello.parse("hello world!")
 val res0: parsley.Result[String,Unit] = Success(())
 scala> hello.parse("hi world!")
@@ -63,7 +63,7 @@ Mostly, this library is quite similar. However, due to Scala's differences in op
 
 * `(<$>)` is known as `map`
 * `try` is known as `attempt`
-* `(<$)` and `($>)` are `<#` and `#>` respectively.
+* `($>)` is known as either `#>` or `as`
 
 In addition, `lift2` and `lift3` are uncurried in this library: this is to provide better performance and easier usage with
 Scala's traditionally uncurried functions. There are also a few new operators in general to be found here!
