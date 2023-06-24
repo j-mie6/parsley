@@ -1,4 +1,3 @@
-import org.scalajs.linker.interface.ESVersion
 import com.typesafe.tools.mima.core._
 
 val projectName = "parsley"

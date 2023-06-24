@@ -109,43 +109,137 @@ object DefaultErrorBuilder {
     final val NumLinesBefore = 1
     final val NumLinesAfter = 1
 
+    /** Forms an error message with `blockError`, with two spaces of indentation and
+      * incorporating the source file and position into the header.
+      *
+      * @since 4.3.0
+      */
     def format(pos: String, source: Option[String], lines: Seq[String]): String = {
         blockError(header = s"${source.fold("")(name => s"In $name ")}$pos", lines, indent = 2)
     }
+    /** If the `sourceName` exists, wraps it in quotes and adds `file` onto the front.
+      *
+      * @since 4.3.0
+      */
     def source(sourceName: Option[String]): Option[String] = sourceName.map(name => s"file '$name'")
-    def vanillaError(unexpected: Option[String], expected: Option[String], reasons: Iterable[String], lines: Seq[String]) = {
+    /** Forms a vanilla error by combining all the components in sequence, if there is no information
+      * other than the `lines`, [[Unknown `Unknown`]] is used instead.
+      *
+      * @since 4.3.0
+      */
+    def vanillaError(unexpected: Option[String], expected: Option[String], reasons: Iterable[String], lines: Seq[String]): Seq[String] = {
         DefaultErrorBuilder.combineInfoWithLines(Seq.concat(unexpected, expected, reasons), lines)
     }
+    /** Forms a specialised error by combining all components in sequence, if there are no `msgs`, then
+      * [[Unknown `Unknown`]] is used instead.
+      *
+      * @since 4.3.0
+      */
     def specialisedError(msgs: Seq[String], lines: Seq[String]): Seq[String] = DefaultErrorBuilder.combineInfoWithLines(msgs, lines)
 
+    /** Forms an error with the given `header` followed by a colon, a newline, then the remainder of the lines indented.
+      *
+      * @since 4.3.0
+      */
     def blockError(header: String, lines: Iterable[String], indent: Int) = s"$header:\n${indentAndUnlines(lines, indent)}"
+    /** Indents and concatenates the given lines by the given depth.
+      *
+      * @since 4.3.0
+      */
     def indentAndUnlines(lines: Iterable[String], indent: Int) = lines.mkString(" " * indent, "\n" + " " * indent, "")
 
+    /** Pairs the line and column up in the form `(line m, column n)`.
+      *
+      * @since 4.3.0
+      */
     def pos(line: Int, col: Int) = s"(line ${Integer.toUnsignedString(line)}, column ${Integer.toUnsignedString(col)})"
 
+    /** Combines the alternatives, separated by commas/semicolons, with the final two separated
+      * by "or". An '''Oxford comma''' is added if there are more than two elements, as this
+      * helps prevent ambiguity in the list. If the elements contain a comma, then semicolon
+      * is used as the list separator.
+      *
+      * @since 4.3.0
+      */
     def disjunct(alts: Iterable[String]): Option[String] = disjunct(alts, oxfordComma = true)
+    /** Combines the alternatives, separated by commas/semicolons, with the final two separated
+      * by "or". If the elements contain a comma, then semicolon
+      * is used as the list separator.
+      *
+      * @param oxfordComma decides whether or not to employ an '''Oxford comma''' when there
+      *                    more than two elements to join: this helps prevent ambiguity in the list.
+      * @since 4.3.0
+      */
     def disjunct(alts: Iterable[String], oxfordComma: Boolean): Option[String] = helpers.disjunct(alts.toList.filter(_.nonEmpty), oxfordComma)
 
+    /** Filters out any empty messages and returns the rest.
+      *
+      * @since 4.3.0
+      */
     def combineMessages(alts: Seq[String]): Seq[String] = alts.filter(_.nonEmpty)
 
+    /** Joins together the given sequences: if the first is empty, then [[Unknown `Unknown`]]
+      * is prepended onto `lines` instead.
+      *
+      * @since 4.3.0
+      */
     def combineInfoWithLines(info: Seq[String], lines: Seq[String]): Seq[String] = {
         if (info.isEmpty) Unknown +: lines
         else info ++: lines
     }
 
+    /** Adds "unexpected " before the given item should it exist.
+      *
+      * @since 4.3.0
+      */
     def unexpected(item: Option[String]): Option[String] = item.map("unexpected " + _)
+    /** Adds "expected " before the given alternatives should they exist.
+      *
+      * @since 4.3.0
+      */
     def expected(alts: Option[String]): Option[String] = alts.map("expected " + _)
+    /** Returns the given reason unchanged.
+      *
+      * @since 4.3.0
+      */
     def reason(reason: String): String = reason
+    /** Returns the given message unchanged.
+      *
+      * @since 4.3.0
+      */
     def message(msg: String): String = msg
 
+    /** If the given item is either a whitespace character or is otherwise "unprintable",
+      * a special name is given to it, otherwise the item is enclosed in double-quotes.
+      *
+      * @since 4.3.0
+      */
     def raw(item: String) = helpers.renderRawString(item)
+    /** Returns the given item unchanged.
+      *
+      * @since 4.3.0
+      */
     def named(item: String) = item
 
+    /** Constructs error context by concatenating them together with a "caret line" underneath the
+      * focus line, `line`, where the error occurs.
+      *
+      * @since 4.3.0
+      */
     def lineInfo(line: String, linesBefore: Seq[String], linesAfter: Seq[String], errorPointsAt: Int, errorWidth: Int): Seq[String] = {
         Seq.concat(linesBefore.map(inputLine), Seq(inputLine(line), caretLine(errorPointsAt, errorWidth)), linesAfter.map(inputLine))
     }
 
-    def inputLine(line: String) = s"${DefaultErrorBuilder.ErrorLineStart}$line"
+    /** Adds the [[ErrorLineStart `ErrorLineStart`]] character to the front of the given line.
+      *
+      * @since 4.3.0
+      */
+    def inputLine(line: String) = s"$ErrorLineStart$line"
+    /** Generates a line of `^` characters as wide as specified starting as seen in as the given
+      * position, accounting for the length of the [[ErrorLineStart `ErrorLineStart`]] too.
+      *
+      * @since 4.3.0
+      */
     def caretLine(caretAt: Int, caretWidth: Int) = s"${" " * (ErrorLineStart.length + caretAt)}${"^" * caretWidth}"
 
     /*def mergeScopes(source: Option[String], ctxs: Option[String]): String = (source, ctxs) match {
