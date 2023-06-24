@@ -15,14 +15,18 @@ private [parsley] object helpers {
         case cs                            => "\"" + cs + "\""
     }
 
-    def combineAsList(elems: List[String]): Option[String] = elems.sorted.reverse match {
+    private def junct(init: List[String], last: String, delim: String, junction: String, oxfordComma: Boolean): String = {
+        init.mkString(start = "", sep = delim, end = if (oxfordComma) s"$delim$junction $last" else s" $junction $last")
+    }
+    private def junct(elems: List[String], junction: String, oxfordComma: Boolean): Option[String] = elems.sorted(Ordering[String].reverse) match {
         case Nil => None
         case List(alt) => Some(alt)
-        case List(alt1, alt2) => Some(s"$alt2 or $alt1")
+        case List(alt1, alt2) => Some(s"$alt2 $junction $alt1")
         // If the result would contains "," then it's probably nicer to preserve any potential grouping using ";"
-        case any@(alt::alts) if any.exists(_.contains(",")) => Some(s"${alts.reverse.mkString("; ")}; or $alt")
-        case alt::alts => Some(s"${alts.reverse.mkString(", ")}, or $alt")
+        case any@(alt::alts) if any.exists(_.contains(",")) => Some(junct(alts.reverse, alt, delim = "; ", junction = junction, oxfordComma = oxfordComma))
+        case alt::alts => Some(junct(alts.reverse, alt, delim = ", ", junction = junction, oxfordComma = true))
     }
+    def disjunct(elems: List[String], oxfordComma: Boolean): Option[String] = junct(elems, junction = "or", oxfordComma)
     // $COVERAGE-ON$
 
     object WhitespaceOrUnprintable {

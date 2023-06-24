@@ -59,25 +59,17 @@ abstract class DefaultErrorBuilder extends ErrorBuilder[String] {
         val reasons_ = reasons.collect {
             case reason if reason.nonEmpty => Some(reason)
         }
-        combineOrUnknown((unexpected +: expected +: reasons_).flatten, lines)
+        DefaultErrorBuilder.combineInfoWithLines((unexpected +: expected +: reasons_).flatten, lines)
     }
     /** @inheritdoc */
-    override def specialisedError(msgs: Messages, lines: LineInfo): ErrorInfoLines = combineOrUnknown(msgs, lines)
-
-    /** @inheritdoc */
-    private def combineOrUnknown(info: Seq[String], lines: Seq[String]): ErrorInfoLines = {
-        if (info.isEmpty) DefaultErrorBuilder.Unknown +: lines
-        else info ++: lines
-    }
+    override def specialisedError(msgs: Messages, lines: LineInfo): ErrorInfoLines = DefaultErrorBuilder.combineInfoWithLines(msgs, lines)
 
     /** @inheritdoc */
     type ExpectedItems = Option[String]
     /** @inheritdoc */
     type Messages = Seq[Message]
     /** @inheritdoc */
-    override def combineExpectedItems(alts: Set[Item]): ExpectedItems = {
-        helpers.combineAsList(alts.toList.filter(_.nonEmpty))
-    }
+    override def combineExpectedItems(alts: Set[Item]): ExpectedItems = DefaultErrorBuilder.disjunct(alts)
     /** @inheritdoc */
     override def combineMessages(alts: Seq[Message]): Messages = alts.filter(_.nonEmpty)
 
@@ -121,13 +113,28 @@ abstract class DefaultErrorBuilder extends ErrorBuilder[String] {
     /** @inheritdoc */
     type EndOfInput = String
     /** @inheritdoc */
-    override def raw(item: String): Raw = helpers.renderRawString(item)
+    override def raw(item: String): Raw = DefaultErrorBuilder.raw(item)
     /** @inheritdoc */
     override def named(item: String): Named = item
     /** @inheritdoc */
-    override val endOfInput: EndOfInput = "end of input"
+    override val endOfInput: EndOfInput = DefaultErrorBuilder.EndOfInput
 }
-private object DefaultErrorBuilder {
-    private val Unknown = "unknown parse error"
+/** Helper functions used to build the `DefaultErrorBuilder` error messages.
+  *
+  * @since 4.3.0
+  */
+object DefaultErrorBuilder {
+    private final val Unknown = "unknown parse error"
+    private final val EndOfInput = "end of input"
+
+    private def disjunct(alts: Iterable[String]): Option[String] = disjunct(alts, oxfordComma = true)
+    private def disjunct(alts: Iterable[String], oxfordComma: Boolean): Option[String] = helpers.disjunct(alts.toList.filter(_.nonEmpty), oxfordComma)
+
+    private def combineInfoWithLines(info: Seq[String], lines: Seq[String]): Seq[String] = {
+        if (info.isEmpty) Unknown +: lines
+        else info ++: lines
+    }
+
+    private def raw(item: String) = helpers.renderRawString(item)
 }
 // $COVERAGE-ON$
