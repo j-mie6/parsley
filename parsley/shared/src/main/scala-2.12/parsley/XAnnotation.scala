@@ -5,7 +5,7 @@ package parsley
 
 import org.typelevel.scalaccompat.annotation.unused
 
-object XAnnotation {
+private [parsley] object XAnnotation {
     type implicitNotFound212 = scala.annotation.implicitNotFound
     class implicitNotFound213(@unused msg: String) extends scala.annotation.StaticAnnotation // scalastyle:ignore class.name
 }

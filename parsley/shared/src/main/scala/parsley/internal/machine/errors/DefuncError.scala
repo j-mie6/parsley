@@ -121,7 +121,7 @@ private [parsley] sealed abstract class DefuncError {
     private [machine] def markAsLexical(offset: Int): DefuncError
 }
 // These are not covered by coverage because they are all inlined
-object DefuncError {
+private [errors] object DefuncError {
     // $COVERAGE-OFF$
     private [errors] final val TrivialErrorMask = 1 << (java.lang.Integer.SIZE - 1)
     private [errors] final val ExpectedEmptyMask = 1 << (java.lang.Integer.SIZE - 2)

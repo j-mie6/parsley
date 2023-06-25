@@ -60,7 +60,9 @@ inThisBuild(List(
     ProblemFilters.exclude[MissingClassProblem]("parsley.expr.Postfixes*"),
     // sbt-typelevel 0.5 upgrade
     ProblemFilters.exclude[DirectMissingMethodProblem]("parsley.token.errors.Label.asExpectItems"),
-    ProblemFilters.exclude[DirectMissingMethodProblem]("parsley.token.errors.LabelAndReason.asExpectItems")
+    ProblemFilters.exclude[DirectMissingMethodProblem]("parsley.token.errors.LabelAndReason.asExpectItems"),
+    // accidental exposure
+    ProblemFilters.exclude[MissingClassProblem]("parsley.internal.machine.errors.DefuncError$"),
   ),
   tlVersionIntroduced := Map(
     "2.13" -> "1.5.0",
@@ -102,7 +104,7 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   )
   .jsSettings(
     // JS lacks the IO module, so has its own rootdoc
-    Compile / doc / scalacOptions ++= Seq("-groups", "-doc-root-content", s"${baseDirectory.value.getPath}/rootdoc.md"),
+    Compile / doc / scalacOptions ++= Seq("-doc-root-content", s"${baseDirectory.value.getPath}/rootdoc.md"),
   )
 
 def testCoverageJob(cacheSteps: List[WorkflowStep]) = WorkflowJob(

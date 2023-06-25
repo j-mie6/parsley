@@ -101,6 +101,7 @@ abstract class DefaultErrorBuilder extends ErrorBuilder[String] {
 /** Helper functions used to build the `DefaultErrorBuilder` error messages.
   *
   * @since 4.3.0
+  * @group formatting
   */
 object DefaultErrorBuilder {
     final val Unknown = "unknown parse error"
