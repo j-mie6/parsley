@@ -28,6 +28,15 @@ object Collectors {
   def lexer(lexer: Lexer): Unit =
     Rename.addNames(XCollector.collectLexer(lexer))
 
+  /** Manually add a name for a parser by reference.
+    *
+    * Can also be used if a more informative name for a parser is wanted.
+    * In this case, use this method after using [[names]] or [[lexer]] to override the automatically
+    * collected / found name.
+    */
+  def assignName(par: Parsley[_], name: String): Unit =
+    Rename.addNames(Map(par.internal -> name))
+
   /** Collect the names of Parsley's various default singleton parsers. */
   private var defaultCollected: Boolean = false
   private def collectDefault(): Unit = this.synchronized {
