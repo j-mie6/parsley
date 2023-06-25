@@ -156,7 +156,7 @@ object DefaultErrorBuilder {
     def pos(line: Int, col: Int): String = s"(line ${Integer.toUnsignedString(line)}, column ${Integer.toUnsignedString(col)})"
 
     /** Combines the alternatives, separated by commas/semicolons, with the final two separated
-      * by "or". An '''Oxford comma''' is added if there are more than two elements, as this
+      * by "or". An ''Oxford comma'' is added if there are more than two elements, as this
       * helps prevent ambiguity in the list. If the elements contain a comma, then semicolon
       * is used as the list separator.
       *
@@ -167,7 +167,7 @@ object DefaultErrorBuilder {
       * by "or". If the elements contain a comma, then semicolon
       * is used as the list separator.
       *
-      * @param oxfordComma decides whether or not to employ an '''Oxford comma''' when there
+      * @param oxfordComma decides whether or not to employ an ''Oxford comma'' when there
       *                    more than two elements to join: this helps prevent ambiguity in the list.
       * @since 4.3.0
       */
