@@ -7,6 +7,7 @@ import parsley.internal.deepembedding.frontend.LazyParsley
 // Helper class for reconstructing a debug tree.
 // Not meant to be public.
 private [parsley] case class DebugTreeBuilder(
+  foundName: Option[String],
   node: TransientDebugTree,
   bChildren: mutable.Map[Unique[LazyParsley[Any]], DebugTreeBuilder] = mutable.LinkedHashMap()
 ) {
@@ -15,7 +16,7 @@ private [parsley] case class DebugTreeBuilder(
   def reconstruct: TransientDebugTree = {
     node.children
       .addAll(
-        bChildren.map { case (lp, cs) => (Rename(lp()) + s"-#${{
+        bChildren.map { case (lp, cs) => (Rename(foundName, lp()) + s"-#${{
           val uuid = uid
           uid = uid + 1
           uuid

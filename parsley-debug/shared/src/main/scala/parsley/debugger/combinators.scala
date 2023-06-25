@@ -8,7 +8,7 @@ import parsley.debugger.frontend.DebugGUI
 import parsley.debugger.internal.DebugContext
 
 import parsley.internal.deepembedding.frontend.LazyParsley
-import parsley.internal.deepembedding.frontend.debugger.Debugged
+import parsley.internal.deepembedding.frontend.debugger.{Debugged, Named}
 import parsley.internal.deepembedding.frontend.debugger.helpers.traverseDown
 
 /** This object contains the two main debug combinators, `attachDebugger` and `attachDebuggerGUI`. */
@@ -36,9 +36,8 @@ object combinators {
     * order to acquire the debug tree.
     *
     * This tree can then be introspected manually in a (runtime) debugger, or passed over to one
-    * of the GUI frontends in [[parsley.debugger.frontend]]. A console frontend is provided as
-    * [[parsley.debugger.frontend.ConsoleGUI]] should the current platform not provide a dedicated
-    * GUI renderer.
+    * of the GUI frontends in [[parsley.debugger.frontend]] in one of the extra companion libraries
+    * for this debugger.
     *
     * It is recommended that you save the debug trees somewhere should you want to re-use the same
     * debugged parser, or if you want to use the same debugged parser as a child parser on
@@ -122,4 +121,37 @@ object combinators {
     */
   def attachDebuggerIGUI[A](parser: Parsley[A])(implicit gui: DebugGUI): Parsley[A]
     = attachDebuggerGUI(parser, gui)
+
+  /** Attach a name to a parser, for display within the debugger output.
+    * This name has a higher precedence than names collected with [[parsley.debugger.util.Collectors]].
+    */
+  def named[A](parser: Parsley[A], name: String): Parsley[A] =
+    new Parsley(Named(parser.internal, name))
+
+  /** Dot accessor versions of the combinators, in case that is your preference. */
+  implicit class DebuggerOps[A](par: Parsley[A]) {
+    /** Dot accessor version of [[combinators.attachDebugger]]. */
+    def attachDebugger: (() => DebugTree, Parsley[A]) =
+      combinators.attachDebugger(par)
+
+    /** Dot accessor version of [[combinators.attachReusable]]. */
+    def attachReusable: () => (() => DebugTree, Parsley[A]) =
+      combinators.attachReusable(par)
+
+    /** Dot accessor version of [[combinators.attachDebuggerGUI]]. */
+    def attachDebuggerGUI(gui: DebugGUI): Parsley[A] =
+      combinators.attachDebuggerGUI(par, gui)
+
+    /** Dot accessor version of [[combinators.attachReusableGUI]]. */
+    def attachReusableGUI(gui: () => DebugGUI): () => Parsley[A] =
+      combinators.attachReusableGUI(par, gui)
+
+    /** Dot accessor version of [[combinators.attachDebuggerIGUI]]. */
+    def attachDebuggerIGUI(implicit gui: DebugGUI): Parsley[A] =
+      combinators.attachDebuggerIGUI(par)
+
+    /** Dot accessor version of [[combinators.named]]. */
+    def named(name: String): Parsley[A] =
+      combinators.named(par, name)
+  }
 }

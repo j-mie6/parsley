@@ -16,7 +16,7 @@ private [parsley] class DebugContext {
   // off of (as there is no "nil" representation for the tree... other than null, which should be
   // avoided in Scala wherever possible).
   private def dummyRoot: DebugTreeBuilder =
-    DebugTreeBuilder(TransientDebugTree("ROOT", "ROOT", "NIL"))
+    DebugTreeBuilder(None, TransientDebugTree("ROOT", "ROOT", "NIL"))
 
   // Tracks where we are in the parser callstack.
   private var builderStack: ListBuffer[DebugTreeBuilder] =
@@ -36,17 +36,17 @@ private [parsley] class DebugContext {
   }
 
   // Push a new parser onto the parser callstack.
-  def push(fullInput: String, parser: LazyParsley[_]): Unit = {
+  def push(fullInput: String, parser: LazyParsley[_], optName: Option[String]): Unit = {
     lazy val uniq: Unique[LazyParsley[_]] = Unique(parser)
 
     if (builderStack.head.bChildren.contains(uniq)) {
       builderStack.prepend(builderStack.head.bChildren(uniq))
     } else {
       val newTree = TransientDebugTree(fullInput = fullInput)
-      newTree.name = Rename(parser)
+      newTree.name = Rename(optName, parser)
       newTree.internal = Rename.partial(parser)
 
-      val dtb = DebugTreeBuilder(newTree)
+      val dtb = DebugTreeBuilder(optName, newTree)
 
       builderStack.head.bChildren(uniq) = dtb
       builderStack.prepend(dtb)

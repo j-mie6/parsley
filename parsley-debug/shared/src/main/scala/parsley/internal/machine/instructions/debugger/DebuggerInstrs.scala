@@ -15,11 +15,11 @@ private [internal] sealed trait DebuggerInstr extends Instr
 
 // Enter into the scope of a parser in the current context.
 private [internal] class EnterParser
-  (var label: Int, origin: LazyParsley[_])
+  (var label: Int, origin: LazyParsley[_], optName: Option[String])
   (implicit dbgCtx: DebugContext) extends InstrWithLabel with DebuggerInstr {
   override def apply(ctx: Context): Unit = {
     // I think we can get away with executing this unconditionally.
-    dbgCtx.push(ctx.input, origin)
+    dbgCtx.push(ctx.input, origin, optName)
     ctx.pushCheck() // Save our location for inputs.
     ctx.pushHandler(label) // Mark the AddAttempt instruction as an exit handler.
     ctx.inc()

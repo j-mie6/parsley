@@ -12,27 +12,36 @@ import parsley.internal.deepembedding.frontend.LazyParsley
 object helpers {
   private [parsley] def traverseDown[A]
   (parser: LazyParsley[A])
-  (implicit seen: mutable.Map[LazyParsley[_], Debugged[_]], dbgCtx: DebugContext): LazyParsley[A] =
+  (implicit seen: mutable.Map[LazyParsley[_], Debugged[_]], dbgCtx: DebugContext): LazyParsley[A] = {
   // This stops recursive parsers from causing an infinite recursion.
-    if (seen.contains(parser)) {
+    val (usedParser, optName) = parser match {
+      case Named(par, name) => (par, Some(name))
+      case _                => (parser, None)
+    }
+
+    if (seen.contains(usedParser)) {
       // Return a parser with a debugger attached.
-      seen(parser).asInstanceOf[Debugged[A]]
+      seen(usedParser).asInstanceOf[Debugged[A]]
     } else {
-      val current = new Debugged[A](parser, None)
+      val current = new Debugged[A](usedParser, None, None)
 
       // Without this, we could potentially have infinite recursion from lazy-initialised parsers.
-      seen.put(parser, current)
+      seen.put(usedParser, current)
 
       // Function is buried in the frontend package to facilitate access to the GeneralisedEmbedding
       // abstract classes and their getters.
-      implicit val attached: List[LazyParsley[Any]] = getChildren(parser).map(traverseDown(_))
+      implicit val attached: List[LazyParsley[Any]] = getChildren(usedParser).map(traverseDown(_))
 
       // Populate our parser with the new debugged children.
-      current.par = Some(reconstruct(parser))
+      current.par = Some(reconstruct(usedParser))
 
       // Return a parser with a debugger attached.
-      seen(parser).asInstanceOf[Debugged[A]]
+      optName match {
+        case None       => seen(usedParser).asInstanceOf[Debugged[A]]
+        case Some(name) => seen(usedParser).asInstanceOf[Debugged[A]].withName(name)
+      }
     }
+  }
 
   // Attempt to retrieve the child parsers.
   private [this] def getChildren(parser: LazyParsley[_]): List[LazyParsley[_]] =

@@ -23,7 +23,7 @@ private [parsley] object Rename {
   lazy private val collected: mutable.Map[LazyParsley[_], String] = new mutable.HashMap()
 
   // This method attempts the renaming of a parser.
-  def apply(p: LazyParsley[_]): String = {
+  def apply(optName: Option[String], p: LazyParsley[_]): String = {
     val defaultName = partial(p)
 
     val extracted = p match {
@@ -32,7 +32,10 @@ private [parsley] object Rename {
     }
 
     // This renames the parser if it is present, otherwise gives the default name found earlier.
-    collected.getOrElse(extracted, defaultName)
+    optName match {
+      case Some(name) => name
+      case None       => collected.getOrElse(extracted, defaultName)
+    }
   }
 
   // Perform the first step of renaming, a partial rename where only the type name is exposed.
