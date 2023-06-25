@@ -18,6 +18,7 @@ val noReleaseFlagsScala3 = true // maybe some day this can be turned off...
 inThisBuild(List(
   tlBaseVersion := "4.3",
   organization := "com.github.j-mie6",
+  organizationName := organization.value,
   startYear := Some(2018),
   homepage := Some(url("https://github.com/j-mie6/parsley")),
   licenses := List("BSD-3-Clause" -> url("https://opensource.org/licenses/BSD-3-Clause")),
