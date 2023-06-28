@@ -17,10 +17,12 @@ object helpers {
   (parser: LazyParsley[A])
   (implicit seen: mutable.Map[LazyParsley[_], Debugged[_]], dbgCtx: DebugContext): LazyParsley[A] = {
   // This stops recursive parsers from causing an infinite recursion.
-    val (usedParser, optName) = parser match {
+    val (usedParser_, optName) = parser match {
       case Named(par, name) => (par, Some(name))
       case _                => (parser, None)
     }
+
+    val usedParser = usedParser_.asInstanceOf[LazyParsley[A]]
 
     if (seen.contains(usedParser)) {
       // Return a parser with a debugger attached.
