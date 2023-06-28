@@ -181,7 +181,7 @@ abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends LazyParsleyIVisito
   def visit(self: SoftOperator, context: T)(specific: String, letter: CharPredicate, ops: Trie[Unit], exp: LabelConfig, ee: String): U[Unit]
     = visitSingleton(self, context)
 
-  // Primitive parser visitors.
+  // Primitive overrides.
   override def visit[A](self: Attempt[A], context: T)(p: LazyParsley[A]): U[A]
     = visitUnary(self, context)(p)
   override def visit[A](self: Look[A], context: T)(p: LazyParsley[A]): U[A]
@@ -231,7 +231,7 @@ abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends LazyParsleyIVisito
   override def visit[A](self: <*[A], context: T)(p: LazyParsley[A], _q: => LazyParsley[_]): U[A]
     = visitBinary(self, context)(p, _q)
 
-  // Iterative parser visitors.
+  // Iterative overrides.
   override def visit[A](self: Many[A], context: T)(p: LazyParsley[A]): U[List[A]]
     = visitUnary(self, context)(p)
   override def visit[A](self: SkipMany[A], context: T)(p: LazyParsley[A]): U[Unit]
