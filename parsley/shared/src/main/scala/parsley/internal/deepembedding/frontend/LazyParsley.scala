@@ -188,6 +188,10 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
         }
     }
 
+    // Processing with visitors.
+    /** Use a visitor implementation to process this internal lazy parser. */
+    def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A]
+
     // $COVERAGE-OFF$
     /** Pretty-prints a combinator tree, for internal debugging purposes only. */
     final private [internal] def prettyAST: String = {
