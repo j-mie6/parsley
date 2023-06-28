@@ -27,7 +27,7 @@ import parsley.token.predicate.CharPredicate
   * @tparam U Return value wrapper for the results of visiting the parsers.
   */
 //noinspection ScalaStyle
-abstract class LazyParsleyIVisitor[-T, +U[+_]] {
+private [internal] abstract class LazyParsleyIVisitor[-T, +U[+_]] {
   // Singleton parser visitors.
   def visit[A](self: Pure[A], context: T)(x: A): U[A]
   def visit[A](self: Fresh[A], context: T)(x: => A): U[A]
@@ -119,7 +119,7 @@ abstract class LazyParsleyIVisitor[-T, +U[+_]] {
   * these six default implementations.
   */
 //noinspection ScalaStyle
-abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends LazyParsleyIVisitor[T, U] {
+private [internal] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends LazyParsleyIVisitor[T, U] {
   // Default methods for the four base parser types.
   // XXX: These names are different as otherwise some visit methods recurse in an unwanted manner.
   def visitSingleton[A](self: Singleton[A], context: T): U[A]
