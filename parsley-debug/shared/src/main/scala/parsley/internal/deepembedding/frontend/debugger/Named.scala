@@ -9,8 +9,8 @@ import parsley.internal.deepembedding.backend.StrictParsley
 import parsley.internal.deepembedding.frontend.{LazyParsley, LetFinderState, LetMap, RecMap}
 
 // Wrapper parser class indicating explicitly named parsers
-private [parsley] final case class Named[A]
-  (par: LazyParsley[A], name: String) extends LazyParsley[A] {
+private [parsley] final class Named[A]
+  (val par: LazyParsley[A], val name: String) extends LazyParsley[A] {
   def make(p: StrictParsley[A]): StrictParsley[A] = p
 
   override def findLetsAux[M[_, _] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] =
@@ -18,4 +18,15 @@ private [parsley] final case class Named[A]
 
   override def preprocess[M[_, _] : ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]] =
     for (p <- suspend(par.optimised[M, R, A])) yield make(p)
+}
+
+private [parsley] object Named {
+  def apply[A](par: LazyParsley[A], name: String): Named[A] =
+    new Named(par, name)
+
+  def unapply(p: LazyParsley[_]): Option[(LazyParsley[_], String)] =
+    p match {
+      case n: Named[_] => Some((n.par, n.name))
+      case _           => None
+    }
 }

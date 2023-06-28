@@ -45,6 +45,9 @@ object combinators {
     * same debugged parser across multiple parent parsers will cause the different parse trees to
     * incorrectly merge in an undefined manner.
     *
+    * A small warning: debugging an already debugged parser (via [[attachDebugger]] and friends) is
+    * an undefined behaviour.
+    *
     * See [[attachDebuggerGUI]] to automate the GUI rendering process after parsing.
     *
     * @param parser The parser to debug.
@@ -127,7 +130,7 @@ object combinators {
     */
   def named[A](parser: Parsley[A], name: String): Parsley[A] =
     parser.internal match {
-      case Named(i, _) => new Parsley(Named(i, name))
+      case Named(i, _) => new Parsley(Named(i.asInstanceOf[LazyParsley[A]], name))
       case _           => new Parsley(Named(parser.internal, name))
     }
 
