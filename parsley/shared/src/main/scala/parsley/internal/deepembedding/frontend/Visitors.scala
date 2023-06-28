@@ -170,15 +170,15 @@ private [internal] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
     = visitSingleton(self, context)
   override def visit(self: Unexpected, context: T)(msg: String, width: CaretWidth): U[Nothing]
     = visitSingleton(self, context)
-  def visit(self: EscapeMapped, context: T)(et: Trie[Int], escs: Set[String]): U[Int]
+  override def visit(self: EscapeMapped, context: T)(et: Trie[Int], escs: Set[String]): U[Int]
     = visitSingleton(self, context)
-  def visit(self: EscapeAtMost, context: T)(n: Int, radix: Int): U[BigInt]
+  override def visit(self: EscapeAtMost, context: T)(n: Int, radix: Int): U[BigInt]
     = visitSingleton(self, context)
-  def visit(self: EscapeOneOfExactly, context: T)(radix: Int, ns: List[Int], ie: SpecialisedFilterConfig[Int]): U[BigInt]
+  override def visit(self: EscapeOneOfExactly, context: T)(radix: Int, ns: List[Int], ie: SpecialisedFilterConfig[Int]): U[BigInt]
     = visitSingleton(self, context)
-  def visit(self: SoftKeyword, context: T)(specific: String, letter: CharPredicate, cs: Boolean, exp: LabelConfig, ee: String): U[Unit]
+  override def visit(self: SoftKeyword, context: T)(specific: String, letter: CharPredicate, cs: Boolean, exp: LabelConfig, ee: String): U[Unit]
     = visitSingleton(self, context)
-  def visit(self: SoftOperator, context: T)(specific: String, letter: CharPredicate, ops: Trie[Unit], exp: LabelConfig, ee: String): U[Unit]
+  override def visit(self: SoftOperator, context: T)(specific: String, letter: CharPredicate, ops: Trie[Unit], exp: LabelConfig, ee: String): U[Unit]
     = visitSingleton(self, context)
 
   // Primitive overrides.
