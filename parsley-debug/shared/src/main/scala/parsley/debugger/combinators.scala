@@ -126,7 +126,10 @@ object combinators {
     * This name has a higher precedence than names collected with [[parsley.debugger.util.Collectors]].
     */
   def named[A](parser: Parsley[A], name: String): Parsley[A] =
-    new Parsley(Named(parser.internal, name))
+    parser.internal match {
+      case Named(i, _) => new Parsley(Named(i, name))
+      case _           => new Parsley(Named(parser.internal, name))
+    }
 
   /** Dot accessor versions of the combinators, in case that is your preference. */
   implicit class DebuggerOps[A](par: Parsley[A]) {

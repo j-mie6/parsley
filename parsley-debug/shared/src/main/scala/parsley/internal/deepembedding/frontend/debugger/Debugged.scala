@@ -16,11 +16,11 @@ private [parsley] final class Debugged[A]
   def make(p: StrictParsley[A]): StrictParsley[A] =
     new backend.debugger.Debugged(origin, p, optName)
 
-  override def findLetsAux[Cont[_, +_] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): Cont[R, Unit] =
+  override def findLetsAux[M[_, _] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] =
     suspend(par.get.findLets(seen))
 
-  override def preprocess[Cont[_, +_] : ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): Cont[R, StrictParsley[A_]] =
-    for (p <- suspend(par.get.optimised[Cont, R, A])) yield make(p)
+  override def preprocess[M[_, _] : ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]] =
+    for (p <- suspend(par.get.optimised[M, R, A])) yield make(p)
 
   // Shortcuts to the given parser's name instead.
   def getTypeName: String = origin.getClass.getTypeName

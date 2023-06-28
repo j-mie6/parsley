@@ -20,3 +20,11 @@ private [parsley] final class <|>[A](p: LazyParsley[A], q: LazyParsley[A]) exten
 
     final override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this)(context, p, q)
 }
+
+private [parsley] object <|> {
+    def unapply[A](p: LazyParsley[_]): Option[(LazyParsley[_], LazyParsley[_])] =
+        p match {
+            case alt: <|>[_] => Some((alt.p, alt.q))
+            case _           => None
+        }
+}

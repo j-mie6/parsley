@@ -35,6 +35,13 @@ private [parsley] final class ChainPre[A](p: LazyParsley[A], op: LazyParsley[A =
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p, op)
 }
+private [parsley] object ChainPre {
+    def unapply(p: LazyParsley[_]): Option[(LazyParsley[_], LazyParsley[_])] =
+        p match {
+            case cp: ChainPre[_] => Some((cp.p, cp.op))
+            case _               => None
+        }
+}
 private [parsley] final class Chainl[A, B](init: LazyParsley[B], p: =>LazyParsley[A], op: =>LazyParsley[(B, A) => B])
     extends Ternary[B, A, (B, A) => B, B](init, p, op) {
     override def make(init: StrictParsley[B], p: StrictParsley[A], op: StrictParsley[(B, A) => B]): StrictParsley[B] = new backend.Chainl(init, p, op)

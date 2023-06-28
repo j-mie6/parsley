@@ -1,3 +1,6 @@
+/* SPDX-FileCopyrightText: © 2022 Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 package parsley.internal.deepembedding.frontend.debugger
 
 import scala.annotation.nowarn
@@ -46,11 +49,11 @@ object helpers {
   // Attempt to retrieve the child parsers.
   private [this] def getChildren(parser: LazyParsley[_]): List[LazyParsley[_]] =
     parser match {
-      case p: frontend.Unary[_, _] => List(p.parser)
-      case p: frontend.Binary[_, _, _] => List(p.leftParser, p.rightParser)
-      case p: frontend.Ternary[_, _, _, _] => List(p.firstParser, p.secondParser, p.thirdParser)
-      case p: frontend.<|>[_] => List(p.leftParser, p.rightParser)
-      case p: frontend.ChainPre[_] => List(p.itemParser, p.opParser)
+      case frontend.Unary(par)       => List(par)
+      case frontend.Binary(l, r)     => List(l, r)
+      case frontend.Ternary(f, s, t) => List(f, s, t)
+      case frontend.<|>(p, q)        => List(p, q)
+      case frontend.ChainPre(p, op)  => List(p, op)
       case _ =>
         // This catches all atomic parsers (e.g. satisfy parsers).
         Nil

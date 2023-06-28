@@ -74,7 +74,9 @@ private [parsley] object Rename {
       else name.drop(lastDot + 1)
 
     if (uName.contains('$')) {
-      uName.split('$').map(c => operatorTable.getOrElse(c, s"$c")).mkString
+      uName.split('$')
+        .map((seg: String) => operatorTable.get(seg).map(c => s"$c").getOrElse(seg))
+        .mkString
     } else {
       uName
     }
