@@ -104,21 +104,27 @@ class VisitorTests extends ParsleyTest {
   private def dummyRegister(): Reg[Unit] =
     Reg.make[Unit]
 
-  they should "maintain laziness of the parsers visited" in {
-    lazy val dontEval: Nothing = fail("Laziness was not maintained.")
+  def dontEval: Nothing = fail("Laziness was not maintained.")
+  val crash = new PartialFunction[Any, Nothing] {
+    def apply(x: Any) = dontEval
+    def isDefinedAt(x: Any): Boolean = false
+  }
+  def crash(x: Any, y: Any): Nothing = dontEval
+  def crash(x: Any, y: Any, z: Any): Nothing = dontEval
 
+  they should "maintain laziness of the parsers visited" in {
     new NewReg(dummyRegister(), dummyParser, dontEval).testV
     new Branch(dummyParser, dontEval, dontEval).testV
     new If(dummyParser, dontEval, dontEval).testV
-    new Lift2[Nothing, Nothing, Nothing]((_: Nothing, _: Nothing) => dontEval, dummyParser, dontEval).testV
-    new Lift3[Nothing, Nothing, Nothing, Nothing]((_: Nothing, _: Nothing, _: Nothing) => dontEval, dummyParser, dontEval, dontEval).testV
+    new Lift2[Nothing, Nothing, Nothing](crash, dummyParser, dontEval).testV
+    new Lift3[Nothing, Nothing, Nothing, Nothing](crash, dummyParser, dontEval, dontEval).testV
     new Local(dummyRegister(), dummyParser, dontEval).testV
     new <*>(dummyParser, dontEval).testV
     new *>(dummyParser, dontEval).testV
     new <*(dummyParser, dontEval).testV
     new ChainPost(dummyParser, dontEval).testV
     new Chainl(dummyParser, dontEval, dontEval).testV
-    new Chainr[Nothing, Nothing](dummyParser, dontEval, (_: Nothing) => dontEval).testV
+    new Chainr[Nothing, Nothing](dummyParser, dontEval, crash).testV
     new SepEndBy1(dummyParser, dontEval).testV
   }
 
@@ -156,13 +162,13 @@ class VisitorTests extends ParsleyTest {
     new Put(dummyRegister(), dummyParser).testV
     new Debug(dummyParser, "fred", false, FullBreak).testV
     new DebugError(dummyParser, "plugh", false, dummyErrorBuilder).testV
-    new Filter[Nothing](dummyParser, (_: Nothing) => true).testV
-    new MapFilter[Nothing, Nothing](dummyParser, (_: Nothing) => None).testV
-    new FilterOut[Nothing](dummyParser, { case _ => "xyzzy" }).testV
-    new GuardAgainst[Nothing](dummyParser, { case _ => Seq("thud") }).testV
-    new UnexpectedWhen[Nothing](dummyParser, { case _ => ("grunt", None) })
+    new Filter[Nothing](dummyParser, crash).testV
+    new MapFilter[Nothing, Nothing](dummyParser, crash).testV
+    new FilterOut[Nothing](dummyParser, crash).testV
+    new GuardAgainst[Nothing](dummyParser, crash).testV
+    new UnexpectedWhen[Nothing](dummyParser, crash)
     new <|>(dummyParser, dummyParser).testV
-    new >>=[Nothing, Nothing](dummyParser, (_: Nothing) => dummyParser).testV
+    new >>=[Nothing, Nothing](dummyParser, crash).testV
     new Many(dummyParser).testV
     new SkipMany(dummyParser).testV
     new ManyUntil(dummyParser).testV
@@ -173,6 +179,6 @@ class VisitorTests extends ParsleyTest {
     new ErrorEntrench(dummyParser).testV
     new ErrorDislodge(0, dummyParser).testV
     new ErrorLexical(dummyParser).testV
-    new VerifiedError[Nothing](dummyParser, Left((_: Nothing) => Seq("fum")))
+    new VerifiedError[Nothing](dummyParser, Left(crash))
   }
 }
