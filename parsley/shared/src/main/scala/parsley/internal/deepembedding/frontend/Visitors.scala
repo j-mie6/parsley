@@ -89,7 +89,7 @@ private [internal] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyl
   // Sequence parser visitors.
   def visit[A, B](self: A <*> B, context: T)(pf: LazyParsley[A => B], px: => LazyParsley[A]): U[B]
   def visit[A, B](self: A >>= B, context: T)(p: LazyParsley[A], f: A => LazyParsley[B]): U[B]
-  def visit[A](self: *>[A], context: T)(_p: LazyParsley[_], q: => LazyParsley[A]): U[A]
+  def visit[A](self: *>[A], context: T)(p: LazyParsley[_], _q: => LazyParsley[A]): U[A]
   def visit[A](self: <*[A], context: T)(p: LazyParsley[A], _q: => LazyParsley[_]): U[A]
 
   // Iterative parser visitors.
@@ -122,7 +122,7 @@ private [internal] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyl
   * Unless a specific override is needed, all other visitor methods are implemented relative to
   * these six default implementations.
   */
-private [internal] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends LazyParsleyIVisitor[T, U] { // scalastyle:ignore number.of.methods
+private [frontend] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends LazyParsleyIVisitor[T, U] { // scalastyle:ignore number.of.methods
   // Default methods for the four base parser types.
   // XXX: These names are different as otherwise some visit methods recurse in an unwanted manner.
   def visitSingleton[A](self: Singleton[A], context: T): U[A]
@@ -233,10 +233,10 @@ private [internal] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
     = visitBinary(self, context)(pf, px)
   override def visit[A, B](self: A >>= B, context: T)(p: LazyParsley[A], f: A => LazyParsley[B]): U[B]
     = visitUnary(self, context)(p)
-  override def visit[A](self: *>[A], context: T)(_p: LazyParsley[_], q: => LazyParsley[A]): U[A]
-    = visitBinary(self, context)(_p, q)
+  override def visit[A](self: *>[A], context: T)(p: LazyParsley[_], _q: => LazyParsley[A]): U[A]
+    = visitBinary[Any, A, A](self, context)(p, _q)
   override def visit[A](self: <*[A], context: T)(p: LazyParsley[A], _q: => LazyParsley[_]): U[A]
-    = visitBinary(self, context)(p, _q)
+    = visitBinary[A, Any, A](self, context)(p, _q)
 
   // Iterative overrides.
   override def visit[A](self: Many[A], context: T)(p: LazyParsley[A]): U[List[A]]
