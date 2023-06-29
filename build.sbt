@@ -92,7 +92,6 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
         "org.scalatest" %%% "scalatest" % "3.2.16" % Test,
         "org.scalacheck" %%% "scalacheck" % "1.17.0" % Test,
         "org.scalatestplus" %%% "scalacheck-1-17" % "3.2.15.0" % Test,
-        "org.typelevel" %% "scalac-compat-annotation" % "0.1.1" % Test,
     ),
 
     Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-oI"),
