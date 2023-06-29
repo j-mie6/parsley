@@ -1,6 +1,7 @@
 package parsley.internal.deepembedding.frontend
 
 import org.scalatest.Assertion
+import org.typelevel.scalaccompat.annotation.unused
 import parsley.{Parsley, ParsleyTest}
 import parsley.debug.FullBreak
 import parsley.errors.{DefaultErrorBuilder, ErrorBuilder, Token}
@@ -17,8 +18,6 @@ import parsley.token.descriptions.SpaceDesc
 import parsley.token.descriptions.numeric.PlusSignPresence
 import parsley.token.errors.{ErrorConfig, FilterConfig, LabelConfig, LabelWithExplainConfig, SpecialisedFilterConfig}
 import parsley.token.predicate.Basic
-
-import org.typelevel.scalaccompat.annotation.unused
 
 class VisitorTests extends ParsleyTest {
     sealed trait ConstUnit[+A]
