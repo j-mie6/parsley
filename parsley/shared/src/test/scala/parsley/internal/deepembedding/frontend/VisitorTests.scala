@@ -45,16 +45,16 @@ class VisitorTests extends ParsleyTest {
         fail("Should not execute.")
 
     private val dummyParser: LazyParsley[Nothing] =
-      new LazyParsley[Nothing] {
-          override protected def findLetsAux[M[_, _] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] =
-              dontExecute()
+        new LazyParsley[Nothing] {
+            override protected def findLetsAux[M[_, _] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] =
+                dontExecute()
 
-          override protected def preprocess[M[_, _] : ContOps, R, A_ >: Nothing](implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]] =
-              dontExecute()
+            override protected def preprocess[M[_, _] : ContOps, R, A_ >: Nothing](implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]] =
+                dontExecute()
 
-          override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Nothing] =
-              dontExecute()
-      }
+            override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Nothing] =
+                dontExecute()
+        }
 
 
     private val dummyLabelConfig: LabelConfig = new LabelConfig {
