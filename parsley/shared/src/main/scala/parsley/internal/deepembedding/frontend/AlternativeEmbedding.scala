@@ -20,5 +20,11 @@ private [parsley] final class <|>[A](p: LazyParsley[A], q: LazyParsley[A]) exten
 
     final override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p, q)
 
-    override private [parsley] def prettyName = "|"
+    // XXX: Subject to change, due to the following:
+    // - "<|>" is going out of style.
+    // - "|" looks odd on its own.
+    // - "orElse" is too wordy.
+    // - "or" does not exist as a combinator.
+    // We cannot think of any better options at the moment.
+    override private [parsley] def prettyName = "<|>"
 }

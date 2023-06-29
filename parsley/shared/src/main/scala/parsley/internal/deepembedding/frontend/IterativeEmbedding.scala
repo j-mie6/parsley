@@ -49,7 +49,7 @@ private [parsley] final class Chainl[A, B](init: LazyParsley[B], p: =>LazyParsle
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[B] = visitor.visit(this, context)(init, p, op)
 
-    override private [parsley] def prettyName = "chain.left"
+    override private [parsley] def prettyName = "infix.left1"
 }
 private [parsley] final class Chainr[A, B](p: LazyParsley[A], op: =>LazyParsley[(A, B) => B], private [Chainr] val wrap: A => B)
     extends Binary[A, (A, B) => B, B](p, op) {
@@ -57,7 +57,7 @@ private [parsley] final class Chainr[A, B](p: LazyParsley[A], op: =>LazyParsley[
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[B] = visitor.visit(this, context)(p, op, wrap)
 
-    override private [parsley] def prettyName = "chain.right"
+    override private [parsley] def prettyName = "infix.right1"
 }
 private [parsley] final class SepEndBy1[A, B](p: LazyParsley[A], sep: =>LazyParsley[B]) extends Binary[A, B, List[A]](p, sep) {
     override def make(p: StrictParsley[A], sep: StrictParsley[B]): StrictParsley[List[A]] = new backend.SepEndBy1(p, sep)
