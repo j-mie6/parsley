@@ -51,5 +51,7 @@ private [parsley] class NonSpecific(name: String, unexpectedIllegal: String => S
     // $COVERAGE-ON$
     override def instr: instructions.Instr = new instructions.TokenNonSpecific(name, unexpectedIllegal)(start, letter, illegal)
 
-    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[String] = visitor.visit(this, context)(name, unexpectedIllegal, start, letter, illegal)
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[String] = {
+        visitor.visit(this, context)(name, unexpectedIllegal, start, letter, illegal)
+    }
 }
