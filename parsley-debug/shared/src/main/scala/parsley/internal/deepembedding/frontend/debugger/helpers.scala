@@ -8,7 +8,8 @@ import scala.collection.mutable
 import parsley.debugger.internal.DebugContext
 
 import parsley.internal.deepembedding.backend.StrictParsley
-import parsley.internal.deepembedding.frontend.{<|>, Binary, ChainPre, GenericLazyParsley, GenericLazyParsleyIVisitor, LazyParsley, LazyParsleyIVisitor, Ternary, Unary}
+import parsley.internal.deepembedding.frontend.{<|>, Binary, ChainPre, GenericLazyParsley, GenericLazyParsleyIVisitor}
+import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor, Ternary, Unary}
 import parsley.internal.deepembedding.singletons
 
 object helpers {
@@ -68,7 +69,9 @@ object helpers {
         current
       }
 
-    override def visitTernary[A, B, C, D](self: Ternary[A, B, C, D], context: ParserTracker)(f: LazyParsley[A], s: => LazyParsley[B], t: => LazyParsley[C]): Debugged[D] = ???
+    override def visitTernary[A, B, C, D](self: Ternary[A, B, C, D], context: ParserTracker)(f: LazyParsley[A],
+                                                                                             s: => LazyParsley[B],
+                                                                                             t: => LazyParsley[C]): Debugged[D] = ???
 
     override def visit[A](self: <|>[A], context: ParserTracker)(p: LazyParsley[A], q: LazyParsley[A]): Debugged[A] =
       if (context.map.contains(self)) {
