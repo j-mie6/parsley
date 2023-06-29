@@ -5,16 +5,17 @@ package parsley.internal.deepembedding.frontend
 
 import parsley.debug.Breakpoint
 import parsley.errors.ErrorBuilder
-import parsley.internal.collection.immutable.Trie
-import parsley.internal.deepembedding.Sign.SignType
-import parsley.internal.deepembedding.singletons.*
-import parsley.internal.deepembedding.singletons.token.*
-import parsley.internal.errors.CaretWidth
 import parsley.registers.Reg
 import parsley.token.descriptions.SpaceDesc
 import parsley.token.descriptions.numeric.PlusSignPresence
 import parsley.token.errors.{ErrorConfig, LabelConfig, SpecialisedFilterConfig}
 import parsley.token.predicate.CharPredicate
+
+import parsley.internal.collection.immutable.Trie
+import parsley.internal.deepembedding.Sign.SignType
+import parsley.internal.deepembedding.singletons._
+import parsley.internal.deepembedding.singletons.token._
+import parsley.internal.errors.CaretWidth
 
 /** Visitor class template for the processing of parsers without fully explicit exhaustive pattern
   * matching.
@@ -26,8 +27,7 @@ import parsley.token.predicate.CharPredicate
   * @tparam T Context type for holding processing information as the visitor visits parsers.
   * @tparam U Return value wrapper for the results of visiting the parsers.
   */
-//noinspection ScalaStyle
-private [internal] abstract class LazyParsleyIVisitor[-T, +U[+_]] {
+private [internal] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle:ignore number.of.methods
   // Singleton parser visitors.
   def visit[A](self: Pure[A], context: T)(x: A): U[A]
   def visit[A](self: Fresh[A], context: T)(x: => A): U[A]
@@ -118,8 +118,7 @@ private [internal] abstract class LazyParsleyIVisitor[-T, +U[+_]] {
   * Unless a specific override is needed, all other visitor methods are implemented relative to
   * these six default implementations.
   */
-//noinspection ScalaStyle
-private [internal] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends LazyParsleyIVisitor[T, U] {
+private [internal] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends LazyParsleyIVisitor[T, U] { // scalastyle:ignore number.of.methods
   // Default methods for the four base parser types.
   // XXX: These names are different as otherwise some visit methods recurse in an unwanted manner.
   def visitSingleton[A](self: Singleton[A], context: T): U[A]
