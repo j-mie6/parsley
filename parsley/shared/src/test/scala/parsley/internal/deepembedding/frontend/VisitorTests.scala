@@ -158,9 +158,9 @@ class VisitorTests extends ParsleyTest {
     new DebugError(dummyParser, "plugh", false, dummyErrorBuilder).testV
     new Filter[Nothing](dummyParser, (_: Nothing) => true).testV
     new MapFilter[Nothing, Nothing](dummyParser, (_: Nothing) => None).testV
-    new FilterOut[Nothing](dummyParser, (_: Nothing) => "xyzzy").testV
-    new GuardAgainst[Nothing](dummyParser, (_: Nothing) => Seq("thud")).testV
-    new UnexpectedWhen[Nothing](dummyParser, (_: Nothing) => ("grunt", None))
+    new FilterOut[Nothing](dummyParser, { case _ => "xyzzy" }).testV
+    new GuardAgainst[Nothing](dummyParser, { case _ => Seq("thud") }).testV
+    new UnexpectedWhen[Nothing](dummyParser, { case _ => ("grunt", None) })
     new <|>(dummyParser, dummyParser).testV
     new >>=[Nothing, Nothing](dummyParser, (_: Nothing) => dummyParser).testV
     new Many(dummyParser).testV
