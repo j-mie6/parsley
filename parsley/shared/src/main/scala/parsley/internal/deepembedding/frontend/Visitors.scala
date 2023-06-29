@@ -27,7 +27,7 @@ import parsley.internal.errors.CaretWidth
   * @tparam T Context type for holding processing information as the visitor visits parsers.
   * @tparam U Return value wrapper for the results of visiting the parsers.
   */
-private [internal] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle:ignore number.of.methods
+private [parsley] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle:ignore number.of.methods
   // Singleton parser visitors.
   def visit[A](self: Pure[A], context: T)(x: A): U[A]
   def visit[A](self: Fresh[A], context: T)(x: => A): U[A]
