@@ -26,7 +26,7 @@ private [parsley] final class Debugged[A]
   def getTypeName: String = origin.getClass.getTypeName
 
   private [frontend] def withName(name: String): Debugged[A] =
-    new Debugged(origin, par, Some(name))
+    new Debugged(origin, par, Some(name))(dbgCtx)
 
   override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] =
     visitor.visitUnknown(this, context)
