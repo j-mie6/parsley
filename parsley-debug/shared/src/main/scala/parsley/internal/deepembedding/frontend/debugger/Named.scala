@@ -6,7 +6,7 @@ package parsley.internal.deepembedding.frontend.debugger
 import parsley.internal.deepembedding.ContOps
 import parsley.internal.deepembedding.ContOps.{ContAdapter, suspend}
 import parsley.internal.deepembedding.backend.StrictParsley
-import parsley.internal.deepembedding.frontend.{LazyParsley, LetFinderState, LetMap, RecMap}
+import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor, LetFinderState, LetMap, RecMap}
 
 // Wrapper parser class indicating explicitly named parsers
 private [parsley] final class Named[A]
@@ -18,6 +18,9 @@ private [parsley] final class Named[A]
 
   override def preprocess[M[_, _] : ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]] =
     for (p <- suspend(par.optimised[M, R, A])) yield make(p)
+
+  override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] =
+    visitor.visitUnknown(this, context)
 }
 
 private [parsley] object Named {

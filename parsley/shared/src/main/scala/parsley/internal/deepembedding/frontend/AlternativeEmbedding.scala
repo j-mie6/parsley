@@ -18,5 +18,5 @@ private [parsley] final class <|>[A](p: LazyParsley[A], q: LazyParsley[A]) exten
             q <- suspend(q.optimised[M, R, A])
         } yield backend.<|>(p, q)
 
-    final override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this)(context, p, q)
+    final override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p, q)
 }

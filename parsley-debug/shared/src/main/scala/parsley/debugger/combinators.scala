@@ -11,8 +11,8 @@ import parsley.debugger.frontend.DebugGUI
 import parsley.debugger.internal.DebugContext
 
 import parsley.internal.deepembedding.frontend.LazyParsley
-import parsley.internal.deepembedding.frontend.debugger.{Debugged, Named}
-import parsley.internal.deepembedding.frontend.debugger.helpers.traverseDown
+import parsley.internal.deepembedding.frontend.debugger.Named
+import parsley.internal.deepembedding.frontend.debugger.helpers.{DebugInjectingVisitor, ParserTracker}
 
 /** This object contains the two main debug combinators, `attachDebugger` and `attachDebuggerGUI`. */
 object combinators {
@@ -58,10 +58,11 @@ object combinators {
     * @return A pair of the finalised tree, and the instrumented parser.
     */
   def attachDebugger[A](parser: Parsley[A]): (() => DebugTree, Parsley[A]) = {
-    implicit val seen: mutable.Map[LazyParsley[_], Debugged[_]] = new mutable.LinkedHashMap()
-    implicit val context: DebugContext = new DebugContext()
+    val seen: ParserTracker = new ParserTracker(new mutable.LinkedHashMap())
+    val context: DebugContext = new DebugContext()
+    val visitor: DebugInjectingVisitor = new DebugInjectingVisitor(context)
 
-    val attached = traverseDown(parser.internal)
+    val attached: LazyParsley[A] = parser.internal.visit[ParserTracker, LazyParsley](visitor, seen)
     (() => context.getFinalBuilder.reconstruct, fresh(context.reset()) *> new Parsley(attached))
   }
 

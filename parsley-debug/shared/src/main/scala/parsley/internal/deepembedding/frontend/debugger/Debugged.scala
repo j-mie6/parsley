@@ -6,8 +6,8 @@ package parsley.internal.deepembedding.frontend.debugger
 import parsley.debugger.internal.DebugContext
 import parsley.internal.deepembedding.ContOps.{ContAdapter, suspend}
 import parsley.internal.deepembedding.backend.StrictParsley
-import parsley.internal.deepembedding.{backend, ContOps}
-import parsley.internal.deepembedding.frontend.{LazyParsley, LetFinderState, LetMap, RecMap}
+import parsley.internal.deepembedding.{ContOps, backend}
+import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor, LetFinderState, LetMap, RecMap}
 
 // Wrapper class signifying debugged classes
 private [parsley] final class Debugged[A]
@@ -27,4 +27,7 @@ private [parsley] final class Debugged[A]
 
   private [frontend] def withName(name: String): Debugged[A] =
     new Debugged(origin, par, Some(name))
+
+  override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] =
+    visitor.visitUnknown(this, context)
 }

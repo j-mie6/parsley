@@ -15,8 +15,8 @@ import parsley.token.predicate.CharPredicate
 
 import parsley.internal.collection.immutable.Trie
 import parsley.internal.deepembedding.Sign.SignType
-import parsley.internal.deepembedding.singletons._
-import parsley.internal.deepembedding.singletons.token._
+import parsley.internal.deepembedding.singletons.*
+import parsley.internal.deepembedding.singletons.token.*
 import parsley.internal.errors.CaretWidth
 
 /** Visitor class template for the processing of parsers without fully explicit exhaustive pattern
@@ -86,7 +86,7 @@ private [parsley] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle
     def visit[A, B](self: MapFilter[A, B], context: T)(p: LazyParsley[A], pred: A => Option[B], err: =>LazyParsley[((A, Int)) => Nothing]): U[B]
 
     // Alternative parser visitors.
-    def visit[A](self: <|>[A])(context: T, p: LazyParsley[A], q: LazyParsley[A]): U[A]
+    def visit[A](self: <|>[A], context: T)(p: LazyParsley[A], q: LazyParsley[A]): U[A]
 
     // Intrinsic parser visitors.
     def visit[A, B, C](self: Lift2[A, B, C], context: T)(f: (A, B) => C, p: LazyParsley[A], q: =>LazyParsley[B]): U[C]
@@ -117,13 +117,30 @@ private [parsley] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle
     def visit[A](self: ErrorEntrench[A], context: T)(p: LazyParsley[A]): U[A]
     def visit[A](self: ErrorDislodge[A], context: T)(n: Int, p: LazyParsley[A]): U[A]
     def visit[A](self: ErrorLexical[A], context: T)(p: LazyParsley[A]): U[A]
+    def visit[A](self: VerifiedError[A], context: T)(p: LazyParsley[A], msggen: Either[A => Seq[String], Option[A => String]]): U[Nothing]
+
+    // Fallback case for any unknown parser types defined outside Parsley's main project.
+    /** Specifically handles [[parsley.internal.deepembedding.frontend.Unary]],
+      * [[parsley.internal.deepembedding.frontend.Binary]], and
+      * [[parsley.internal.deepembedding.frontend.Ternary]] when the case is ambiguous.
+      */
+    def visitGeneric[A](self: GenericLazyParsley[A], context: T): U[A]
+
+    /** Handles all other parsers that are not of Parsley's main internal parser implementations nor
+      * uses the three generic 1-ary, 2-ary and 3-ary bases that Parsley provides.
+      *
+      * Assume all parsers passed into this method are black boxes.
+      *
+      * @note Implementations must account for any possible implementation with some default logic.
+      */
+    def visitUnknown[A](self: LazyParsley[A], context: T): U[A]
 }
 
 /** Generalised version of [[LazyParsleyIVisitor]] that allows you to define default implementations
   * for parser classes that live under a base trait (e.g. [[Unary]]).
   *
   * This visitor should only require implementations for [[Singleton]], [[Unary]], [[Binary]],
-  * [[Ternary]], [[<|>]], and [[ChainPre]].
+  * [[Ternary]], [[<|>]], [[ChainPre]], and [[LazyParsleyIVisitor.visitUnknown]].
   *
   * Unless a specific override is needed, all other visitor methods are implemented relative to
   * these six default implementations.
@@ -135,6 +152,12 @@ private [frontend] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
     def visitUnary[A, B](self: Unary[A, B], context: T)(p: LazyParsley[A]): U[B]
     def visitBinary[A, B, C](self: Binary[A, B, C], context: T)(l: LazyParsley[A], r: =>LazyParsley[B]): U[C]
     def visitTernary[A, B, C, D](self: Ternary[A, B, C, D], context: T)(f: LazyParsley[A], s: =>LazyParsley[B], t: =>LazyParsley[C]): U[D]
+
+    override def visitGeneric[A](self: GenericLazyParsley[A], context: T): U[A] = self match {
+        case u: Unary[_, A]         => visitUnary(u, context)(u.p)
+        case b: Binary[_, _, A]     => visitBinary(b, context)(b.left, b.right)
+        case t: Ternary[_, _, _, A] => visitTernary(t, context)(t.first, t.second, t.third)
+    }
 
     // Singleton overrides.
     override def visit[A](self: Pure[A], context: T)(x: A): U[A] = visitSingleton(self, context)

@@ -3,11 +3,12 @@
  */
 package parsley.internal.deepembedding
 
+import org.scalatest.Assertions.fail
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import parsley.debugger.internal.{DebugContext, Rename}
 import parsley.internal.deepembedding.backend.StrictParsley
-import parsley.internal.deepembedding.frontend.{LazyParsley, LetFinderState, LetMap, RecMap}
+import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor, LetFinderState, LetMap, RecMap}
 import parsley.internal.deepembedding.frontend.debugger.Debugged
 
 class RenameSpec extends AnyFlatSpec with Matchers {
@@ -32,7 +33,7 @@ class RenameSpec extends AnyFlatSpec with Matchers {
 
   it should "pass through Debugged parsers and get the inner parser's name" in {
     val symbolic = new <**>
-    val debugged = new Debugged(symbolic, Some(symbolic), None)(new DebugContext())
+    val debugged = new Debugged[Any](symbolic, Some(symbolic), None)(new DebugContext())
 
     Rename(None, debugged) shouldBe "<**>"
   }
@@ -45,24 +46,34 @@ class RenameSpec extends AnyFlatSpec with Matchers {
   }
 }
 
+object RenameSpec {
+  def crash(): Nothing = fail("Should not have been run.")
+}
+
 // These are dummy parsers used for the above tests.
 // We don't actually care that they don't implement anything.
 private class DummyParser extends LazyParsley[Any] {
   override protected def findLetsAux[M[_, _] : ContOps, R]
   (seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] =
-    ???
+    RenameSpec.crash()
 
   override protected def preprocess[M[_, _] : ContOps, R, A_ >: Any]
   (implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]] =
-    ???
+    RenameSpec.crash()
+
+  override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Any] =
+    visitor.visitUnknown(this, context)
 }
 
 private class <**> extends LazyParsley[Any] {
   override protected def findLetsAux[M[_, _] : ContOps, R]
   (seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] =
-    ???
+    RenameSpec.crash()
 
   override protected def preprocess[M[_, _] : ContOps, R, A_ >: Any]
   (implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]] =
-    ???
+    RenameSpec.crash()
+
+  override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Any] =
+    visitor.visitUnknown(this, context)
 }
