@@ -5,6 +5,7 @@ package parsley.internal.deepembedding.singletons
 
 import parsley.registers.Reg
 import parsley.token.errors.LabelConfig
+
 import parsley.internal.deepembedding.frontend.{LazyParsleyIVisitor, UsesRegister}
 import parsley.internal.machine.instructions
 

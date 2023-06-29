@@ -5,6 +5,7 @@ package parsley.internal.deepembedding.singletons.token
 
 import parsley.token.errors.LabelConfig
 import parsley.token.predicate.CharPredicate
+
 import parsley.internal.collection.immutable.Trie
 import parsley.internal.deepembedding.frontend.LazyParsleyIVisitor
 import parsley.internal.deepembedding.singletons.Singleton

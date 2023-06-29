@@ -4,6 +4,7 @@
 package parsley.internal.deepembedding.singletons.token
 
 import parsley.token.errors.SpecialisedFilterConfig
+
 import parsley.internal.collection.immutable.Trie
 import parsley.internal.deepembedding.frontend.LazyParsleyIVisitor
 import parsley.internal.deepembedding.singletons.Singleton
