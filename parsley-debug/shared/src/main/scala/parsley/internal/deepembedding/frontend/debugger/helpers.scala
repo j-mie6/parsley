@@ -71,7 +71,26 @@ object helpers {
 
     override def visitTernary[A, B, C, D](self: Ternary[A, B, C, D], context: ParserTracker)(f: LazyParsley[A],
                                                                                              s: => LazyParsley[B],
-                                                                                             t: => LazyParsley[C]): Debugged[D] = ???
+                                                                                             t: => LazyParsley[C]): Debugged[D] =
+      if (context.map.contains(self)) {
+        context.map(self).asInstanceOf[Debugged[D]]
+      } else {
+        val current = new Debugged[D](self, None, None)(dbgCtx)
+        context.map.put(self, current)
+
+        val dbgF = f.visit(this, context)
+        val dbgS = s.visit(this, context)
+        val dbgT = t.visit(this, context)
+
+        val reconstructed = new Ternary[A, B, C, D](dbgF, dbgS, dbgT) {
+          override def make(p: StrictParsley[A], q: StrictParsley[B], r: StrictParsley[C]): StrictParsley[D] = self.make(p, q, r)
+
+          override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[D] = visitor.visitGeneric(this, context)
+        }
+
+        current.par = Some(reconstructed)
+        current
+      }
 
     override def visit[A](self: <|>[A], context: ParserTracker)(p: LazyParsley[A], q: LazyParsley[A]): Debugged[A] =
       if (context.map.contains(self)) {
@@ -83,7 +102,7 @@ object helpers {
         val dbgL = p.visit(this, context)
         val dbgR = q.visit(this, context)
 
-        val reconstructed = new<|>[A](dbgL, dbgR)
+        val reconstructed = new <|>[A](dbgL, dbgR)
 
         current.par = Some(reconstructed)
         current
@@ -97,7 +116,7 @@ object helpers {
         context.map.put(self, current)
 
         val dbgP = p.visit(this, context)
-        lazy val dbgOP = op.visit(this, context)
+        val dbgOP = op.visit(this, context)
 
         val reconstructed = new ChainPre[A](dbgP, dbgOP)
 
