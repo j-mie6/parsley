@@ -10,7 +10,7 @@ import parsley.internal.deepembedding.backend, backend.StrictParsley
 
 // These all capture the general structures of combinators to factor out the common patterns for `findLetsAux` and `preprocess`.
 
-private [frontend] abstract class Unary[A, B](private [frontend] val p: LazyParsley[A]) extends LazyParsley[B] {
+private [frontend] abstract class Unary[A, B](p: LazyParsley[A]) extends LazyParsley[B] {
     def make(p: StrictParsley[A]): StrictParsley[B]
 
     final override def findLetsAux[M[_, +_]: ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R,Unit] =
@@ -19,14 +19,7 @@ private [frontend] abstract class Unary[A, B](private [frontend] val p: LazyPars
         for (p <- suspend(p.optimised[M, R, A])) yield make(p)
 }
 
-private [frontend] object Unary {
-    def unapply(p: LazyParsley[_]): Option[LazyParsley[_]] = p match {
-        case u: Unary[_, _] => Some(u.p)
-        case _              => None
-    }
-}
-
-private [frontend] abstract class Binary[A, B, C](private [frontend] val left: LazyParsley[A], _right: =>LazyParsley[B]) extends LazyParsley[C] {
+private [frontend] abstract class Binary[A, B, C](left: LazyParsley[A], _right: =>LazyParsley[B]) extends LazyParsley[C] {
     private lazy val right = _right
 
     def make(p: StrictParsley[A], q: StrictParsley[B]): StrictParsley[C]
@@ -41,14 +34,7 @@ private [frontend] abstract class Binary[A, B, C](private [frontend] val left: L
         } yield make(left, right)
 }
 
-private [frontend] object Binary {
-    def unapply(p: LazyParsley[_]): Option[(LazyParsley[_], LazyParsley[_])] = p match {
-        case b: Binary[_, _, _] => Some((b.left, b.right))
-        case _                  => None
-    }
-}
-
-private [frontend] abstract class Ternary[A, B, C, D](private [frontend] val first: LazyParsley[A], _second: =>LazyParsley[B], _third: =>LazyParsley[C]) extends LazyParsley[D] {
+private [frontend] abstract class Ternary[A, B, C, D](first: LazyParsley[A], _second: =>LazyParsley[B], _third: =>LazyParsley[C]) extends LazyParsley[D] {
     private lazy val second: LazyParsley[B] = _second
     private lazy val third: LazyParsley[C] = _third
 
@@ -63,11 +49,4 @@ private [frontend] abstract class Ternary[A, B, C, D](private [frontend] val fir
             second <- suspend(second.optimised[M, R, B])
             third <- suspend(third.optimised[M, R, C])
         } yield make(first, second, third)
-}
-
-private [frontend] object Ternary {
-    def unapply(p: LazyParsley[_]): Option[(LazyParsley[_], LazyParsley[_], LazyParsley[_])] = p match {
-        case t: Ternary[_, _, _, _] => Some((t.first, t.second, t.third))
-        case _                      => None
-    }
 }
