@@ -16,7 +16,7 @@ private [internal] sealed trait DebuggerInstr extends Instr
 // Enter into the scope of a parser in the current context.
 private [internal] class EnterParser
   (var label: Int, origin: LazyParsley[_], optName: Option[String])
-  (implicit dbgCtx: DebugContext) extends InstrWithLabel with DebuggerInstr {
+  (dbgCtx: DebugContext) extends InstrWithLabel with DebuggerInstr {
   override def apply(ctx: Context): Unit = {
     // I think we can get away with executing this unconditionally.
     dbgCtx.push(ctx.input, origin, optName)
@@ -30,7 +30,7 @@ private [internal] class EnterParser
 
 // Add a parse attempt to the current context at the current callstack point, and leave the current
 // parser's scope.
-private [internal] class AddAttemptAndLeave(implicit dbgCtx: DebugContext) extends DebuggerInstr {
+private [internal] class AddAttemptAndLeave(dbgCtx: DebugContext) extends DebuggerInstr {
   override def apply(ctx: Context): Unit = {
     // These offsets will be needed to slice the specific part of the input that the parser has
     // attempted to parse during its attempt.

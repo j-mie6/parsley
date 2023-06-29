@@ -12,9 +12,9 @@ import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor
 // Wrapper class signifying debugged classes
 private [parsley] final class Debugged[A]
   (val origin: LazyParsley[A], var par: Option[LazyParsley[A]], val optName: Option[String])
-  (implicit dbgCtx: DebugContext) extends LazyParsley[A] {
+  (dbgCtx: DebugContext) extends LazyParsley[A] {
   def make(p: StrictParsley[A]): StrictParsley[A] =
-    new backend.debugger.Debugged(origin, p, optName)
+    new backend.debugger.Debugged(origin, p, optName)(dbgCtx)
 
   override def findLetsAux[M[_, _] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] =
     suspend(par.get.findLets(seen))

@@ -133,7 +133,9 @@ private [parsley] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle
       *
       * @note Implementations must account for any possible implementation with some default logic.
       */
+    // $COVERAGE-OFF$
     def visitUnknown[A](self: LazyParsley[A], context: T): U[A]
+    // $COVERAGE-ON$
 }
 
 /** Generalised version of [[LazyParsleyIVisitor]] that allows you to define default implementations
@@ -153,11 +155,14 @@ private [frontend] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
     def visitBinary[A, B, C](self: Binary[A, B, C], context: T)(l: LazyParsley[A], r: =>LazyParsley[B]): U[C]
     def visitTernary[A, B, C, D](self: Ternary[A, B, C, D], context: T)(f: LazyParsley[A], s: =>LazyParsley[B], t: =>LazyParsley[C]): U[D]
 
+    // Forward the generic parser to one of the defined methods.
+    // $COVERAGE-OFF$
     override def visitGeneric[A](self: GenericLazyParsley[A], context: T): U[A] = self match {
         case u: Unary[_, A]         => visitUnary(u, context)(u.p)
         case b: Binary[_, _, A]     => visitBinary(b, context)(b.left, b.right)
         case t: Ternary[_, _, _, A] => visitTernary(t, context)(t.first, t.second, t.third)
     }
+    // $COVERAGE-ON$
 
     // Singleton overrides.
     override def visit[A](self: Pure[A], context: T)(x: A): U[A] = visitSingleton(self, context)
