@@ -18,6 +18,8 @@ import parsley.token.descriptions.numeric.PlusSignPresence
 import parsley.token.errors.{ErrorConfig, FilterConfig, LabelConfig, LabelWithExplainConfig, SpecialisedFilterConfig}
 import parsley.token.predicate.Basic
 
+import org.typelevel.scalaccompat.annotation.unused
+
 class VisitorTests extends ParsleyTest {
   sealed trait ConstUnit[+A]
   object CUnit extends ConstUnit[Nothing]
@@ -106,11 +108,11 @@ class VisitorTests extends ParsleyTest {
 
   def dontEval: Nothing = fail("Laziness was not maintained.")
   val crash = new PartialFunction[Any, Nothing] {
-    def apply(x: Any) = dontEval
+    def apply(@unused x: Any) = dontEval
     def isDefinedAt(x: Any): Boolean = false
   }
-  def crash(x: Any, y: Any): Nothing = dontEval
-  def crash(x: Any, y: Any, z: Any): Nothing = dontEval
+  def crash(@unused x: Any, @unused y: Any): Nothing = dontEval
+  def crash(@unused x: Any, @unused y: Any, @unused z: Any): Nothing = dontEval
 
   they should "maintain laziness of the parsers visited" in {
     new NewReg(dummyRegister(), dummyParser, dontEval).testV
