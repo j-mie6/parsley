@@ -6,6 +6,7 @@ package parsley.internal.deepembedding.singletons
 import parsley.registers.Reg
 import parsley.token.errors.LabelConfig
 
+import parsley.internal.deepembedding.frontend.LazyParsleyIVisitor
 import parsley.internal.machine.instructions
 
 private [parsley] final class Satisfy(private [Satisfy] val f: Char => Boolean, val expected: LabelConfig) extends Singleton[Char] {
@@ -13,6 +14,8 @@ private [parsley] final class Satisfy(private [Satisfy] val f: Char => Boolean, 
     override val pretty: String = "satisfy(f)"
     // $COVERAGE-ON$
     override def instr: instructions.Instr = new instructions.Satisfies(f, expected)
+
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Char] = visitor.visit(this, context)(f, expected)
 }
 
 private [parsley] object Line extends Singleton[Int] {
@@ -20,18 +23,24 @@ private [parsley] object Line extends Singleton[Int] {
     override val pretty: String = "line"
     // $COVERAGE-ON$
     override val instr: instructions.Instr = instructions.Line
+
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Int] = visitor.visit(this, context)
 }
 private [parsley] object Col extends Singleton[Int] {
     // $COVERAGE-OFF$
     override val pretty: String = "col"
     // $COVERAGE-ON$
     override val instr: instructions.Instr = instructions.Col
+
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Int] = visitor.visit(this, context)
 }
 private [parsley] object Offset extends Singleton[Int] {
     // $COVERAGE-OFF$
     override val pretty: String = "offset"
     // $COVERAGE-ON$
     override val instr: instructions.Instr = instructions.Offset
+
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Int] = visitor.visit(this, context)
 }
 
 // This should really have UsesRegister, however, if it doesn't, this has the nice effect of catching
@@ -41,6 +50,8 @@ private [parsley] final class Get[S](reg: Reg[S]) extends Singleton[S] {
     override def pretty: String = s"get($reg)"
     // $COVERAGE-ON$
     override def instr: instructions.Instr = new instructions.Get(reg.addr)
+
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[S] = visitor.visit(this, context)(reg)
 }
 
 private [deepembedding] object Satisfy {

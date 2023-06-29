@@ -19,7 +19,7 @@ import parsley.internal.machine.instructions
   * @note due to the fact these appear in the frontend, they must not be mutable, for the same
   *       reasons as detailed in `LazyParsley`
   */
-private [singletons] abstract class Singleton[A] extends LazyParsley[A] with StrictParsley[A] {
+private [deepembedding] abstract class Singleton[A] extends LazyParsley[A] with StrictParsley[A] {
     /** The instruction that should be generated during the code generation for this combinator */
     def instr: instructions.Instr
 

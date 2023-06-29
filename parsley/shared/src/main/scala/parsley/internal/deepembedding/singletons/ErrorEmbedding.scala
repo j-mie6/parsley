@@ -4,6 +4,7 @@
 package parsley.internal.deepembedding.singletons
 
 import parsley.internal.deepembedding.backend.MZero
+import parsley.internal.deepembedding.frontend.LazyParsleyIVisitor
 import parsley.internal.errors.CaretWidth
 import parsley.internal.machine.instructions
 
@@ -13,6 +14,8 @@ private [parsley] final class Empty private (val width: Int) extends Singleton[N
     override val pretty: String = "empty"
     // $COVERAGE-ON$
     override val instr: instructions.Instr = new instructions.Empty(width)
+
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Nothing] = visitor.visit(this, context)(width)
 }
 
 private [parsley] final class Fail(width: CaretWidth, msgs: String*) extends Singleton[Nothing] with MZero {
@@ -20,6 +23,8 @@ private [parsley] final class Fail(width: CaretWidth, msgs: String*) extends Sin
     override def pretty: String = s"fail(${msgs.mkString(", ")})"
     // $COVERAGE-ON$
     override def instr: instructions.Instr = new instructions.Fail(width, msgs: _*)
+
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Nothing] = visitor.visit(this, context)(width, msgs)
 }
 
 private [parsley] final class Unexpected(msg: String, width: CaretWidth) extends Singleton[Nothing] with MZero {
@@ -27,6 +32,8 @@ private [parsley] final class Unexpected(msg: String, width: CaretWidth) extends
     override def pretty: String = s"unexpected($msg)"
     // $COVERAGE-ON$
     override def instr: instructions.Instr = new instructions.Unexpected(msg, width)
+
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Nothing] = visitor.visit(this, context)(msg, width)
 }
 
 private [parsley] object Empty {
