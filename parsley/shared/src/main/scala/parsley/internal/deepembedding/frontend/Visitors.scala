@@ -79,7 +79,7 @@ private [internal] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyl
 
   // Intrinsic parser visitors.
   def visit[A, B, C](self: Lift2[A, B, C], context: T)(f: (A, B) => C, p: LazyParsley[A], q: => LazyParsley[B]): U[C]
-  def visit[A, B, C, D](self: Lift3[A, B, C, D], context: T)(f: (A, B, C) => D, p: LazyParsley[A], q: => LazyParsley[B], r: LazyParsley[C]): U[D]
+  def visit[A, B, C, D](self: Lift3[A, B, C, D], context: T)(f: (A, B, C) => D, p: LazyParsley[A], q: => LazyParsley[B], r: => LazyParsley[C]): U[D]
   def visit[S, A](self: Local[S, A], context: T)(reg: Reg[S], p: LazyParsley[S], q: => LazyParsley[A]): U[A]
 
   // Sequence parser visitors.
@@ -215,7 +215,7 @@ private [internal] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
   // Intrinsic overrides.
   override def visit[A, B, C](self: Lift2[A, B, C], context: T)(f: (A, B) => C, p: LazyParsley[A], q: => LazyParsley[B]): U[C]
     = visitBinary(self, context)(p, q)
-  override def visit[A, B, C, D](self: Lift3[A, B, C, D], context: T)(f: (A, B, C) => D, p: LazyParsley[A], q: => LazyParsley[B], r: LazyParsley[C]): U[D]
+  override def visit[A, B, C, D](self: Lift3[A, B, C, D], context: T)(f: (A, B, C) => D, p: LazyParsley[A], q: => LazyParsley[B], r: => LazyParsley[C]): U[D]
     = visitTernary(self, context)(p, q, r)
   override def visit[S, A](self: Local[S, A], context: T)(reg: Reg[S], p: LazyParsley[S], q: => LazyParsley[A]): U[A]
     = visitBinary(self, context)(p, q)
