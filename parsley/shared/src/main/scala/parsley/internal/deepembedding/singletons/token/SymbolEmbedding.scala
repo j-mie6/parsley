@@ -27,6 +27,8 @@ private [parsley] final class SoftKeyword(private [SoftKeyword] val specific: St
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = {
         visitor.visit(this, context)(specific, letter, caseSensitive, expected, expectedEnd)
     }
+
+    override private [parsley] def prettyName: String = "symbol.softKeyword"
 }
 
 private [parsley] final class SoftOperator(private [SoftOperator] val specific: String, letter: CharPredicate, ops: Trie[Unit],
@@ -42,6 +44,8 @@ private [parsley] final class SoftOperator(private [SoftOperator] val specific: 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = {
         visitor.visit(this, context)(specific, letter, ops, expected, expectedEnd)
     }
+
+    override private [parsley] def prettyName: String = "symbol.softOperator"
 }
 
 // $COVERAGE-OFF$

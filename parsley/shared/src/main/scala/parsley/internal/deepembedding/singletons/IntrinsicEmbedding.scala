@@ -60,6 +60,8 @@ private [parsley] object Eof extends Singleton[Unit] {
     }
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = visitor.visit(this, context)
+
+    override private [parsley] def prettyName = "eof"
 }
 
 private [parsley] final class UniSatisfy(private [UniSatisfy] val f: Int => Boolean, val expected: LabelConfig) extends Singleton[Int] {
@@ -72,6 +74,8 @@ private [parsley] final class UniSatisfy(private [UniSatisfy] val f: Int => Bool
     }
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Int] = visitor.visit(this, context)(f, expected)
+
+    override private [parsley] def prettyName = "satisfyUtf16"
 }
 
 private [parsley] final class Modify[S](val reg: Reg[S], f: S => S) extends Singleton[Unit] with UsesRegister {
@@ -84,6 +88,8 @@ private [parsley] final class Modify[S](val reg: Reg[S], f: S => S) extends Sing
     }
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = visitor.visit(this, context)(reg, f)
+
+    override private [parsley] def prettyName = "Reg.modify"
 }
 
 private [deepembedding] object CharTok {

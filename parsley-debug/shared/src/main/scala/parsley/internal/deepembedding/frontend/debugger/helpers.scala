@@ -42,6 +42,8 @@ object helpers {
           override def make(p: StrictParsley[A]): StrictParsley[B] = self.make(p)
 
           override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[B] = visitor.visitGeneric(this, context)
+
+          override private [parsley] def prettyName = self.prettyName
         }
 
         current.par = Some(reconstructed)
@@ -63,6 +65,8 @@ object helpers {
           override def make(p: StrictParsley[A], q: StrictParsley[B]): StrictParsley[C] = self.make(p, q)
 
           override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[C] = visitor.visitGeneric(this, context)
+
+          override private [parsley] def prettyName = self.prettyName
         }
 
         current.par = Some(reconstructed)
@@ -86,6 +90,8 @@ object helpers {
           override def make(p: StrictParsley[A], q: StrictParsley[B], r: StrictParsley[C]): StrictParsley[D] = self.make(p, q, r)
 
           override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[D] = visitor.visitGeneric(this, context)
+
+          override private [parsley] def prettyName = self.prettyName
         }
 
         current.par = Some(reconstructed)

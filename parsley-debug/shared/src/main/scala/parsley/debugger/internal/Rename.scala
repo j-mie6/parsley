@@ -41,8 +41,8 @@ private [parsley] object Rename {
   // Perform the first step of renaming, a partial rename where only the type name is exposed.
   def partial(p: LazyParsley[_]): String =
     translate(p match {
-      case dbg: Debugged[_] => dbg.getTypeName
-      case _ => p.getClass.getTypeName
+      case dbg: Debugged[_] => dbg.origin.prettyName
+      case _ => p.prettyName
     })
 
   private [parsley] def addNames(names: Map[LazyParsley[_], String]): Unit =

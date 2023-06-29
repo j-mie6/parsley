@@ -183,6 +183,9 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A]
 
     // $COVERAGE-OFF$
+    /** Pretty names for parsers, for internal debugging purposes only. */
+    private [parsley] def prettyName: String
+
     /** Pretty-prints a combinator tree, for internal debugging purposes only. */
     final private [internal] def prettyAST: String = {
         implicit val ops = Id.ops

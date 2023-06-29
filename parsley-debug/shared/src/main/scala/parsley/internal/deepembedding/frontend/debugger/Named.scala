@@ -21,6 +21,8 @@ private [parsley] final class Named[A]
 
   override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] =
     visitor.visitUnknown(this, context)
+
+  override private [parsley] def prettyName = name
 }
 
 private [parsley] object Named {
