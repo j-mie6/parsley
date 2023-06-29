@@ -40,7 +40,11 @@ private [internal] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyl
   def visit(self: SkipComments, context: T)(desc: SpaceDesc, ec: ErrorConfig): U[Unit]
   def visit(self: Comment, context: T)(desc: SpaceDesc, ec: ErrorConfig): U[Unit]
   def visit[A](self: Sign[A], context: T)(ty: SignType, sp: PlusSignPresence): U[A => A]
-  def visit(self: NonSpecific, context: T)(name: String, ue: String => String, start: Char => Boolean, letter: Char => Boolean, illegal: String => Boolean): U[String]
+  def visit(self: NonSpecific, context: T)(name: String,
+                                           ue: String => String,
+                                           start: Char => Boolean,
+                                           letter: Char => Boolean,
+                                           illegal: String => Boolean): U[String]
   def visit(self: CharTok, context: T)(c: Char, exp: LabelConfig): U[Char]
   def visit(self: SupplementaryCharTok, context: T)(cp: Int, exp: LabelConfig): U[Int]
   def visit(self: StringTok, context: T)(s: String, exp: LabelConfig): U[String]
@@ -149,7 +153,11 @@ private [internal] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
     = visitSingleton(self, context)
   override def visit[A](self: Sign[A], context: T)(ty: SignType, sp: PlusSignPresence): U[A => A]
     = visitSingleton(self, context)
-  override def visit(self: NonSpecific, context: T)(name: String, ue: String => String, start: Char => Boolean, letter: Char => Boolean, illegal: String => Boolean): U[String]
+  override def visit(self: NonSpecific, context: T)(name: String,
+                                                    ue: String => String,
+                                                    start: Char => Boolean,
+                                                    letter: Char => Boolean,
+                                                    illegal: String => Boolean): U[String]
     = visitSingleton(self, context)
   override def visit(self: CharTok, context: T)(c: Char, exp: LabelConfig): U[Char]
     = visitSingleton(self, context)
