@@ -252,9 +252,9 @@ private [frontend] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
   override def visit[A, B](self: SepEndBy1[A, B], context: T)(p: LazyParsley[A], sep: => LazyParsley[B]): U[List[A]]
     = visitBinary(self, context)(p, sep)
   override def visit[A](self: ManyUntil[A], context: T)(body: LazyParsley[Any]): U[List[A]]
-    = visitUnary(self, context)(body)
+    = visitUnary[Any, List[A]](self, context)(body)
   override def visit(self: SkipManyUntil, context: T)(body: LazyParsley[Any]): U[Unit]
-    = visitUnary(self, context)(body)
+    = visitUnary[Any, Unit](self, context)(body)
 
   // Error overrides.
   override def visit[A](self: ErrorLabel[A], context: T)(p: LazyParsley[A], labels: Seq[String]): U[A]
