@@ -8,7 +8,7 @@ import scala.collection.mutable
 import parsley.debugger.internal.DebugContext
 
 import parsley.internal.deepembedding.backend.StrictParsley
-import parsley.internal.deepembedding.frontend.{<|>, Binary, ChainPre, GenericLazyParsley, GenericLazyParsleyIVisitor}
+import parsley.internal.deepembedding.frontend.{<|>, >>=, Binary, ChainPre, GenericLazyParsley, GenericLazyParsleyIVisitor}
 import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor, Ternary, Unary}
 import parsley.internal.deepembedding.singletons
 
@@ -18,116 +18,89 @@ object helpers {
 
   private [parsley] final class DebugInjectingVisitor(dbgCtx: DebugContext)
     extends GenericLazyParsleyIVisitor[ParserTracker, LazyParsley] {
-    private def handleNoChildren[A](self: LazyParsley[A], context: ParserTracker): Debugged[A] =
+    private def handlePossiblySeen[A](self: LazyParsley[A], context: ParserTracker)(dbgF: => LazyParsley[A]): Debugged[A] =
       if (context.map.contains(self)) {
         context.map(self).asInstanceOf[Debugged[A]]
       } else {
-        val debugged = new Debugged[A](self, Some(self), None)(dbgCtx)
-        context.map.put(self, debugged)
-        debugged
+        val current = new Debugged[A](self, None, None)(dbgCtx)
+        context.map.put(self, current)
+        current.par = Some(dbgF)
+        current
       }
+
+    private def handleNoChildren[A](self: LazyParsley[A], context: ParserTracker): Debugged[A] =
+      handlePossiblySeen[A](self, context)(self)
 
     override def visitSingleton[A](self: singletons.Singleton[A], context: ParserTracker): Debugged[A] = handleNoChildren(self, context)
 
     override def visitUnary[A, B](self: Unary[A, B], context: ParserTracker)(p: LazyParsley[A]): Debugged[B] =
-      if (context.map.contains(self)) {
-        context.map(self).asInstanceOf[Debugged[B]]
-      } else {
-        val current = new Debugged[B](self, None, None)(dbgCtx)
-        context.map.put(self, current)
-
+      handlePossiblySeen[B](self, context) {
         val dbgC = p.visit(this, context)
 
-        val reconstructed = new Unary[A, B](dbgC) {
+        new Unary[A, B](dbgC) {
           override def make(p: StrictParsley[A]): StrictParsley[B] = self.make(p)
 
           override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[B] = visitor.visitGeneric(this, context)
 
           override private [parsley] def prettyName = self.prettyName
         }
-
-        current.par = Some(reconstructed)
-        current
       }
 
-
     override def visitBinary[A, B, C](self: Binary[A, B, C], context: ParserTracker)(l: LazyParsley[A], r: => LazyParsley[B]): Debugged[C] =
-      if (context.map.contains(self)) {
-        context.map(self).asInstanceOf[Debugged[C]]
-      } else {
-        val current = new Debugged[C](self, None, None)(dbgCtx)
-        context.map.put(self, current)
-
+      handlePossiblySeen[C](self, context) {
         val dbgL = l.visit(this, context)
         val dbgR = r.visit(this, context)
 
-        val reconstructed = new Binary[A, B, C](dbgL, dbgR) {
+        new Binary[A, B, C](dbgL, dbgR) {
           override def make(p: StrictParsley[A], q: StrictParsley[B]): StrictParsley[C] = self.make(p, q)
 
           override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[C] = visitor.visitGeneric(this, context)
 
           override private [parsley] def prettyName = self.prettyName
         }
-
-        current.par = Some(reconstructed)
-        current
       }
 
     override def visitTernary[A, B, C, D](self: Ternary[A, B, C, D], context: ParserTracker)(f: LazyParsley[A],
                                                                                              s: => LazyParsley[B],
                                                                                              t: => LazyParsley[C]): Debugged[D] =
-      if (context.map.contains(self)) {
-        context.map(self).asInstanceOf[Debugged[D]]
-      } else {
-        val current = new Debugged[D](self, None, None)(dbgCtx)
-        context.map.put(self, current)
-
+      handlePossiblySeen[D](self, context) {
         val dbgF = f.visit(this, context)
         val dbgS = s.visit(this, context)
         val dbgT = t.visit(this, context)
 
-        val reconstructed = new Ternary[A, B, C, D](dbgF, dbgS, dbgT) {
+        new Ternary[A, B, C, D](dbgF, dbgS, dbgT) {
           override def make(p: StrictParsley[A], q: StrictParsley[B], r: StrictParsley[C]): StrictParsley[D] = self.make(p, q, r)
 
           override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[D] = visitor.visitGeneric(this, context)
 
           override private [parsley] def prettyName = self.prettyName
         }
+      }
 
-        current.par = Some(reconstructed)
-        current
+    // We want flatMap-produced parsers to be debugged too, so we can see the full extent of the produced parse tree.
+    // This is critical, as flatMap allows these parsers to be turing-complete, and can produce any arbitrary parse path.
+    override def visit[A, B](self: A >>= B, context: ParserTracker)(p: LazyParsley[A], f: A => LazyParsley[B]): Debugged[B] =
+      handlePossiblySeen[B](self, context) {
+        val dbgC = p.visit(this, context)
+        val dbgF = f andThen (_.visit(this, context))
+
+        new >>=[A, B](dbgC, dbgF)
       }
 
     override def visit[A](self: <|>[A], context: ParserTracker)(p: LazyParsley[A], q: LazyParsley[A]): Debugged[A] =
-      if (context.map.contains(self)) {
-        context.map(self).asInstanceOf[Debugged[A]]
-      } else {
-        val current = new Debugged[A](self, None, None)(dbgCtx)
-        context.map.put(self, current)
-
+      handlePossiblySeen[A](self, context) {
         val dbgL = p.visit(this, context)
         val dbgR = q.visit(this, context)
 
-        val reconstructed = new <|>[A](dbgL, dbgR)
-
-        current.par = Some(reconstructed)
-        current
+        new <|>[A](dbgL, dbgR)
       }
 
     override def visit[A](self: ChainPre[A], context: ParserTracker)(p: LazyParsley[A], op: => LazyParsley[A => A]): Debugged[A] =
-      if (context.map.contains(self)) {
-        context.map(self).asInstanceOf[Debugged[A]]
-      } else {
-        val current = new Debugged[A](self, None, None)(dbgCtx)
-        context.map.put(self, current)
-
-        val dbgP = p.visit(this, context)
+      handlePossiblySeen[A](self, context) {
+        val dbgP  = p.visit(this, context)
         val dbgOP = op.visit(this, context)
 
-        val reconstructed = new ChainPre[A](dbgP, dbgOP)
-
-        current.par = Some(reconstructed)
-        current
+        new ChainPre[A](dbgP, dbgOP)
       }
 
     override def visitGeneric[A](self: GenericLazyParsley[A], context: ParserTracker): Debugged[A] = self match {
