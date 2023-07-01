@@ -17,34 +17,34 @@ package parsley.debugger
   * the debugger.
   */
 trait DebugTree {
-  /** The name of the parser that made this node. */
-  def parserName: String
+    /** The name of the parser that made this node. */
+    def parserName: String
 
-  /** The type name of the parser that formed this node. */
-  def internalName: String
+    /** The type name of the parser that formed this node. */
+    def internalName: String
 
-  /** Get the potential parse attempt recorded for this particular parser. */
-  def parseResults: Option[ParseAttempt]
+    /** Get the potential parse attempt recorded for this particular parser. */
+    def parseResults: Option[ParseAttempt]
 
-  /** What are the child debug nodes for this node?
-    *
-    * The map provided by the implementation should be a linked map in order to preserve the
-    * order of child parser occurrences within each parser.
-    *
-    * Internally, child nodes are given an arbitrary numeric suffix to disambiguate them in the map
-    * if multiple child nodes have the same parser name.
-    *
-    * Those internal names are not represented if checking [[parserName]].
-    */
-  def nodeChildren: Map[String, DebugTree]
+    /** What are the child debug nodes for this node?
+      *
+      * The map provided by the implementation should be a linked map in order to preserve the
+      * order of child parser occurrences within each parser.
+      *
+      * Internally, child nodes are given an arbitrary numeric suffix to disambiguate them in the map
+      * if multiple child nodes have the same parser name.
+      *
+      * Those internal names are not represented if checking [[parserName]].
+      */
+    def nodeChildren: Map[String, DebugTree]
 
-  /** Get the full input that was attempted to be parsed by the debugged parser.
-    *
-    * This is the whole input, unaltered, even parts where the parser did not attempt to parse.
-    */
-  def fullInput: String
+    /** Get the full input that was attempted to be parsed by the debugged parser.
+      *
+      * This is the whole input, unaltered, even parts where the parser did not attempt to parse.
+      */
+    def fullInput: String
 
-  override def toString: String =
-    s"DebugTree { name: $parserName ($internalName), success: ${parseResults.exists(_.success)}, children: ${nodeChildren.keys} }"
+    override def toString: String =
+        s"DebugTree { name: $parserName ($internalName), success: ${parseResults.exists(_.success)}, children: ${nodeChildren.keys} }"
 }
 

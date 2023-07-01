@@ -18,37 +18,37 @@ import parsley.internal.deepembedding.frontend.LazyParsley
   * You only need to run this once per parser-holding object.
   */
 object Collectors {
-  /** Collect names of parsers from an object. */
-  def names(obj: Any): Unit = {
-    collectDefault() // Runs only once, ever, for a program execution.
-    Rename.addNames(XCollector.collectNames(obj))
-  }
-
-  /** Collect names of parsers from a [[parsley.token.Lexer]]. */
-  def lexer(lexer: Lexer): Unit =
-    Rename.addNames(XCollector.collectLexer(lexer))
-
-  /** Manually add a name for a parser by reference.
-    *
-    * Can also be used if a more informative name for a parser is wanted.
-    * In this case, use this method after using [[names]] or [[lexer]] to override the automatically
-    * collected / found name.
-    */
-  def assignName(par: Parsley[_], name: String): Unit =
-    Rename.addNames(Map(par.internal -> name))
-
-  /** Collect the names of Parsley's various default singleton parsers. */
-  private var defaultCollected: Boolean = false
-  private def collectDefault(): Unit = this.synchronized {
-    if (!defaultCollected) {
-      defaultCollected = true
-
-      names(parsley.character)
-      names(parsley.combinator)
-      names(parsley.Parsley)
-      names(parsley.position)
+    /** Collect names of parsers from an object. */
+    def names(obj: Any): Unit = {
+        collectDefault() // Runs only once, ever, for a program execution.
+        Rename.addNames(XCollector.collectNames(obj))
     }
-  }
+
+    /** Collect names of parsers from a [[parsley.token.Lexer]]. */
+    def lexer(lexer: Lexer): Unit =
+        Rename.addNames(XCollector.collectLexer(lexer))
+
+    /** Manually add a name for a parser by reference.
+      *
+      * Can also be used if a more informative name for a parser is wanted.
+      * In this case, use this method after using [[names]] or [[lexer]] to override the automatically
+      * collected / found name.
+      */
+    def assignName(par: Parsley[_], name: String): Unit =
+        Rename.addNames(Map(par.internal -> name))
+
+    /** Collect the names of Parsley's various default singleton parsers. */
+    private var defaultCollected: Boolean = false
+    private def collectDefault(): Unit = this.synchronized {
+        if (!defaultCollected) {
+            defaultCollected = true
+
+            names(parsley.character)
+            names(parsley.combinator)
+            names(parsley.Parsley)
+            names(parsley.position)
+        }
+    }
 }
 
 /** A representation of the current implementation that [[Collectors]] uses in order to
@@ -56,18 +56,18 @@ object Collectors {
   * you import `parsley.debugger.util.CollectorImpl`.
   */
 abstract class CollectorImpl private [parsley] () {
-  /** Collect names of parsers from an object. */
-  def collectNames(obj: Any): Map[LazyParsley[_], String]
+    /** Collect names of parsers from an object. */
+    def collectNames(obj: Any): Map[LazyParsley[_], String]
 
-  /** Collect names of parsers from a [[parsley.token.Lexer]]. */
-  def collectLexer(lexer: Lexer): Map[LazyParsley[_], String]
+    /** Collect names of parsers from a [[parsley.token.Lexer]]. */
+    def collectLexer(lexer: Lexer): Map[LazyParsley[_], String]
 
-  // Try grabbing a parser from a LazyParsley or Parsley instance.
-  protected def tryExtract(p: Any): LazyParsley[_] = {
-    try {
-      p.asInstanceOf[LazyParsley[_]]
-    } catch {
-      case _: ClassCastException => p.asInstanceOf[Parsley[_]].internal
+    // Try grabbing a parser from a LazyParsley or Parsley instance.
+    protected def tryExtract(p: Any): LazyParsley[_] = {
+        try {
+            p.asInstanceOf[LazyParsley[_]]
+        } catch {
+            case _: ClassCastException => p.asInstanceOf[Parsley[_]].internal
+        }
     }
-  }
 }

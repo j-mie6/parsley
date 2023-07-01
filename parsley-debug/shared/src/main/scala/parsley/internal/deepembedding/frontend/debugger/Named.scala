@@ -10,28 +10,28 @@ import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor
 
 // Wrapper parser class indicating explicitly named parsers
 private [parsley] final class Named[A]
-  (val par: LazyParsley[A], val name: String) extends LazyParsley[A] {
-  def make(p: StrictParsley[A]): StrictParsley[A] = p
+    (val par: LazyParsley[A], val name: String) extends LazyParsley[A] {
+    def make(p: StrictParsley[A]): StrictParsley[A] = p
 
-  override def findLetsAux[M[_, _] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] =
-    suspend(par.findLets(seen))
+    override def findLetsAux[M[_, _] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] =
+        suspend(par.findLets(seen))
 
-  override def preprocess[M[_, _] : ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]] =
-    for (p <- suspend(par.optimised[M, R, A])) yield make(p)
+    override def preprocess[M[_, _] : ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]] =
+        for (p <- suspend(par.optimised[M, R, A])) yield make(p)
 
-  override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] =
-    visitor.visitUnknown(this, context)
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] =
+        visitor.visitUnknown(this, context)
 
-  override private [parsley] def prettyName = name
+    override private [parsley] def prettyName = name
 }
 
 private [parsley] object Named {
-  def apply[A](par: LazyParsley[A], name: String): Named[A] =
-    new Named(par, name)
+    def apply[A](par: LazyParsley[A], name: String): Named[A] =
+        new Named(par, name)
 
-  def unapply(p: LazyParsley[_]): Option[(LazyParsley[_], String)] =
-    p match {
-      case n: Named[_] => Some((n.par, n.name))
-      case _           => None
-    }
+    def unapply(p: LazyParsley[_]): Option[(LazyParsley[_], String)] =
+        p match {
+            case n: Named[_] => Some((n.par, n.name))
+            case _           => None
+        }
 }

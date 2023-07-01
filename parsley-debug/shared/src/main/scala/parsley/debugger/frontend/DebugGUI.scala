@@ -12,9 +12,9 @@ import parsley.debugger.DebugTree
   * in place of any other implementation (e.g. a serialiser to JSON).
   */
 trait DebugGUI {
-  /** Render a debug tree using whatever the implementer is rendering with.
-    *
-    * @param tree Debug tree to render.
-    */
-  def render(input: => String, tree: => DebugTree): Unit
+    /** Render a debug tree using whatever the implementer is rendering with.
+      *
+      * @param tree Debug tree to render.
+      */
+    def render(input: => String, tree: => DebugTree): Unit
 }

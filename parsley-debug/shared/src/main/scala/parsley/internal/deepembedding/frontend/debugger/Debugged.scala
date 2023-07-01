@@ -11,25 +11,25 @@ import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor
 
 // Wrapper class signifying debugged classes
 private [parsley] final class Debugged[A]
-  (val origin: LazyParsley[A], var par: Option[LazyParsley[A]], val optName: Option[String])
-  (dbgCtx: DebugContext) extends LazyParsley[A] {
-  def make(p: StrictParsley[A]): StrictParsley[A] =
-    new backend.debugger.Debugged(origin, p, optName)(dbgCtx)
+    (val origin: LazyParsley[A], var par: Option[LazyParsley[A]], val optName: Option[String])
+    (dbgCtx: DebugContext) extends LazyParsley[A] {
+    def make(p: StrictParsley[A]): StrictParsley[A] =
+        new backend.debugger.Debugged(origin, p, optName)(dbgCtx)
 
-  override def findLetsAux[M[_, _] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] =
-    suspend(par.get.findLets(seen))
+    override def findLetsAux[M[_, _] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] =
+        suspend(par.get.findLets(seen))
 
-  override def preprocess[M[_, _] : ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]] =
-    for (p <- suspend(par.get.optimised[M, R, A])) yield make(p)
+    override def preprocess[M[_, _] : ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]] =
+        for (p <- suspend(par.get.optimised[M, R, A])) yield make(p)
 
-  // Shortcuts to the given parser's name instead.
-  def getTypeName: String = origin.getClass.getTypeName
+    // Shortcuts to the given parser's name instead.
+    def getTypeName: String = origin.getClass.getTypeName
 
-  private [frontend] def withName(name: String): Debugged[A] =
-    new Debugged(origin, par, Some(name))(dbgCtx)
+    private [frontend] def withName(name: String): Debugged[A] =
+        new Debugged(origin, par, Some(name))(dbgCtx)
 
-  override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] =
-    visitor.visitUnknown(this, context)
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] =
+        visitor.visitUnknown(this, context)
 
-  override private [parsley] def prettyName = optName.getOrElse(origin.prettyName)
+    override private [parsley] def prettyName = optName.getOrElse(origin.prettyName)
 }
