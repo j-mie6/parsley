@@ -172,7 +172,8 @@ object combinator {
       * @see [[amend `amend`]] and `[[dislodge `dislodge`]]
       * @group adj
       */
-    def amendThenDislodge[A](p: Parsley[A]): Parsley[A] = dislodge(amend(p))
+    def amendThenDislodge[A](p: Parsley[A]): Parsley[A] = amendThenDislodge(Int.MaxValue)(p)
+    def amendThenDislodge[A](by: Int)(p: Parsley[A]): Parsley[A] = dislodge(by)(amend(p))
 
     // TODO: test, document
     def partialAmend[A](p: Parsley[A]): Parsley[A] = new Parsley(new frontend.ErrorAmend(p.internal, partial = true))
