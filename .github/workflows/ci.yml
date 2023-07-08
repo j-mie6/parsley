@@ -98,6 +98,10 @@ jobs:
       - name: Check that workflows are up to date
         run: sbt githubWorkflowCheck
 
+      - name: Check headers
+        if: matrix.java == 'temurin@8' && matrix.os == 'ubuntu-latest'
+        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' headerCheckAll
+
       - name: scalaJSLink
         if: matrix.project == 'rootJS'
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' Test/scalaJSLinkerResult
