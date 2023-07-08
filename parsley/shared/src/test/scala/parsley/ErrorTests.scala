@@ -84,10 +84,16 @@ class ErrorTests extends ParsleyTest {
 
     lazy val r: Parsley[List[String]] = "correct error message" <::> r
     "label" should "affect base error messages" in {
-        inside(('a'? "ay!").parse("b")) {
+        inside(('a' ? "ay!").parse("b")) {
             case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
                 unex should contain (Raw("b"))
                 exs should contain only (Named("ay!"))
+                rs shouldBe empty
+        }
+        inside(('a'.label("ay!", "see!")).parse("b")) {
+            case Failure(TestError((1, 1), VanillaError(unex, exs, rs))) =>
+                unex should contain (Raw("b"))
+                exs should contain.only(Named("ay!"), Named("see!"))
                 rs shouldBe empty
         }
     }
@@ -371,7 +377,7 @@ class ErrorTests extends ParsleyTest {
     }
 
     "dislodge" should "undo an entrench so that amend works again" in {
-        val p = 'a' *> amend('b' *> dislodge(entrench('c')) *> 'd')
+        val p = 'a' *> amend('b' *> dislodge(entrench(entrench('c'))) *> 'd')
         inside(p.parse("ab")) { case Failure(TestError((1, 2), _)) => }
         inside(p.parse("abc")) { case Failure(TestError((1, 2), _)) => }
     }
@@ -379,10 +385,36 @@ class ErrorTests extends ParsleyTest {
         val p = 'a' *> amend('b' *> entrench(dislodge(entrench('c'))))
         inside(p.parse("ab")) { case Failure(TestError((1, 3), _)) => }
     }
+    it should "only unwind as many as instructed if applicable" in {
+        val p = 'a' *> amend('b' *> dislodge(1)(entrench(entrench('c'))) *> 'd')
+        val q = 'a' *> amend('b' *> dislodge(2)(entrench(entrench('c'))) *> 'd')
+        inside(p.parse("abc")) { case Failure(TestError((1, 2), _)) => }
+        inside(p.parse("ab")) { case Failure(TestError((1, 3), _)) => }
+        inside(q.parse("abc")) { case Failure(TestError((1, 2), _)) => }
+        inside(q.parse("ab")) { case Failure(TestError((1, 2), _)) => }
+    }
 
     "amendThenDislodge" should "amend only non-entrenched messages and dislodge those that are" in {
-        val p = amend('a' *> amendThenDislodge('b' *> entrench('c')))
-        inside(p.parse("ab")) { case Failure(TestError((1, 1), _)) => }
+        val p = 'a' *> amendThenDislodge('b' *> entrench(entrench('c')) *> 'd')
+        val q = amend(p)
+        inside(p.parse("ab")) { case Failure(TestError((1, 3), _)) => }
+        inside(p.parse("abc")) { case Failure(TestError((1, 2), _)) => }
+        inside(q.parse("ab")) { case Failure(TestError((1, 1), _)) => }
+        inside(q.parse("abc")) { case Failure(TestError((1, 1), _)) => }
+    }
+    it should "only unwind as many as instructed if applicable" in {
+        val p = 'a' *> amendThenDislodge(1)('b' *> entrench(entrench('c')) *> 'd')
+        val q = amend(p)
+        val r = 'a' *> amendThenDislodge(2)('b' *> entrench(entrench('c')) *> 'd')
+        val s = amend(r)
+        inside(p.parse("ab")) { case Failure(TestError((1, 3), _)) => }
+        inside(p.parse("abc")) { case Failure(TestError((1, 2), _)) => }
+        inside(q.parse("ab")) { case Failure(TestError((1, 3), _)) => }
+        inside(q.parse("abc")) { case Failure(TestError((1, 1), _)) => }
+        inside(r.parse("ab")) { case Failure(TestError((1, 3), _)) => }
+        inside(r.parse("abc")) { case Failure(TestError((1, 2), _)) => }
+        inside(s.parse("ab")) { case Failure(TestError((1, 1), _)) => }
+        inside(s.parse("abc")) { case Failure(TestError((1, 1), _)) => }
     }
 
     "oneOf" should "incorporate range notation into the error" in {
