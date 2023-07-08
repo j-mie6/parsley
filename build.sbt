@@ -71,7 +71,7 @@ inThisBuild(List(
     "3"    -> "3.1.2",
   ),
   // CI Configuration
-  tlCiReleaseBranches := Seq(mainBranch),
+  tlCiReleaseBranches := Seq(mainBranch, "staging/4.4"),
   tlCiScalafmtCheck := false,
   tlCiHeaderCheck := true,
   githubWorkflowJavaVersions := Seq(Java8, JavaLTS, JavaLatest),
