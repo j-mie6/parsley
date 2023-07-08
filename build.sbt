@@ -76,6 +76,7 @@ inThisBuild(List(
   tlCiHeaderCheck := true,
   githubWorkflowJavaVersions := Seq(Java8, JavaLTS, JavaLatest),
   githubWorkflowAddedJobs += testCoverageJob(githubWorkflowGeneratedCacheSteps.value.toList),
+  githubWorkflowConcurrency := None,
 ))
 
 lazy val root = tlCrossRootProject.aggregate(parsley)
