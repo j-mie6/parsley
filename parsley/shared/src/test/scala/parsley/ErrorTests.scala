@@ -9,7 +9,7 @@ import parsley.combinator.{eof, optional, many}
 import parsley.Parsley._
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.character.{item, digit}
-import parsley.errors.combinator.{fail => pfail, unexpected, amend, entrench, dislodge, amendThenDislodge, ErrorMethods}
+import parsley.errors.combinator.{fail => pfail, unexpected, amend, partialAmend, entrench, dislodge, amendThenDislodge, partialAmendThenDislodge, ErrorMethods}
 import parsley.errors.patterns._
 
 class ErrorTests extends ParsleyTest {
@@ -415,6 +415,28 @@ class ErrorTests extends ParsleyTest {
         inside(r.parse("abc")) { case Failure(TestError((1, 2), _)) => }
         inside(s.parse("ab")) { case Failure(TestError((1, 1), _)) => }
         inside(s.parse("abc")) { case Failure(TestError((1, 1), _)) => }
+    }
+
+    "partialAmend" should "perform visual amendment but allow for domination" in {
+        def errorMaker(n: Int, msg: String) = attempt(combinator.exactly(n, 'a') *> ('b' <|> pfail(msg)))
+        val p = errorMaker(2, "small") <|> amend(errorMaker(3, "big"))
+        val q = errorMaker(2, "small") <|> partialAmend(errorMaker(3, "big"))
+        val r = errorMaker(3, "first") <|> partialAmend(errorMaker(3, "second"))
+        info("a regular amend should lose against even a shallower error")
+        inside(p.parse("a" * 4)) {
+            case Failure(TestError((1, 3), SpecialisedError(msgs))) =>
+                msgs should contain only "small"
+        }
+        info("a partial amend can win against an error at a lesser offset but greater presentation")
+        inside(q.parse("a" * 4)) {
+            case Failure(TestError((1, 1), SpecialisedError(msgs))) =>
+                msgs should contain only "big"
+        }
+        info("however, they do not win at equal underlying offset")
+        inside(r.parse("a" * 4)) {
+            case Failure(TestError((1, 4), SpecialisedError(msgs))) =>
+                msgs should contain only "first"
+        }
     }
 
     "oneOf" should "incorporate range notation into the error" in {
