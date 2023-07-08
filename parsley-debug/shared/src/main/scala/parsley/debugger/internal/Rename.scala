@@ -48,8 +48,10 @@ private [parsley] object Rename {
     private [parsley] def addNames(names: Map[LazyParsley[_], String]): Unit =
         collected.addAll(names)
 
-    private [parsley] def addName(par: LazyParsley[_], name: String): Unit =
-        collected.put(par, name)
+    private [parsley] def addName(par: LazyParsley[_], name: String): Unit = {
+        val _ = collected.put(par, name)
+        () // XXX: Map.put returns an option which needs to be discarded.
+    }
 
     // Translation table for Scala operator names.
     private [this] lazy val operatorTable: Map[String, Char] = Map(
