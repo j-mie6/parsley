@@ -9,7 +9,6 @@ target/
 .cache-main
 .classpath
 .project
-.jvmopts
 *.class
 *.log
 .vscode
