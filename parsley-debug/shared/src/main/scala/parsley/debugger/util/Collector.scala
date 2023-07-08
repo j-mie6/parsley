@@ -17,7 +17,7 @@ import parsley.internal.deepembedding.frontend.LazyParsley
   *
   * You only need to run this once per parser-holding object.
   */
-object Collectors {
+object Collector {
     /** Collect names of parsers from an object. */
     def names(obj: Any): Unit = {
         collectDefault() // Runs only once, ever, for a program execution.
@@ -35,7 +35,7 @@ object Collectors {
       * collected / found name.
       */
     def assignName(par: Parsley[_], name: String): Unit =
-        Rename.addNames(Map(par.internal -> name))
+        Rename.addName(par.internal, name)
 
     /** Collect the names of Parsley's various default singleton parsers. */
     private var defaultCollected: Boolean = false
@@ -51,9 +51,9 @@ object Collectors {
     }
 }
 
-/** A representation of the current implementation that [[Collectors]] uses in order to
-  * actually collect the names of parsers. This should be implicitly available should
-  * you import `parsley.debugger.util.CollectorImpl`.
+/** A representation of the current implementation that [[Collector]] uses in order to
+  * actually collect the names of parsers. One of these will need to be implemented under the name
+  * `XCollector` under `parsley.debugger.util` for each different Scala runtime.
   */
 abstract class CollectorImpl private [parsley] () {
     /** Collect names of parsers from an object. */

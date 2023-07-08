@@ -10,8 +10,8 @@ import parsley.token.Lexer
 // methods don't do anything yet.
 // TODO: Find a substitute for reflection for JS and Native.
 private [parsley] object XCollector extends CollectorImpl {
-  override def collectNames(obj: Any): Map[LazyParsley[_], String] = Map.empty
+    override def collectNames(obj: Any): Map[LazyParsley[_], String] = Map.empty
 
-  override def collectLexer(lexer: Lexer): Map[LazyParsley[_], String] = Map.empty
+    override def collectLexer(lexer: Lexer): Map[LazyParsley[_], String] = Map.empty
 }
 

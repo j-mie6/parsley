@@ -5,7 +5,7 @@ import scala.util.Random
 import org.scalatest.flatspec.AnyFlatSpec
 import parsley.Parsley
 import parsley.combinator.ifP
-import parsley.debugger.combinators.attachDebugger
+import parsley.debugger.combinator.attachDebugger
 import parsley.expr.chain
 import parsley.internal.deepembedding.frontend.debugger.Debugged
 import parsley.internal.deepembedding.singletons

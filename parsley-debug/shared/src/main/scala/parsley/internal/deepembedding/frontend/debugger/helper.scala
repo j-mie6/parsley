@@ -12,7 +12,7 @@ import parsley.internal.deepembedding.frontend.{<|>, >>=, Binary, ChainPre, Gene
 import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor, Ternary, Unary}
 import parsley.internal.deepembedding.singletons
 
-object helpers {
+private [parsley] object helper {
     // This map tracks seen parsers to prevent infinitely recursive parsers from overflowing the stack.
     private [parsley] final class ParserTracker(val map: mutable.Map[LazyParsley[_], Debugged[_]]) extends AnyVal
 

@@ -13,6 +13,8 @@ import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor
 private [parsley] final class Debugged[A]
     (val origin: LazyParsley[A], var par: Option[LazyParsley[A]], val optName: Option[String])
     (dbgCtx: DebugContext) extends LazyParsley[A] {
+    assert(!origin.isInstanceOf[Debugged[_]], "Debugged parsers should not be nested within each other directly.")
+
     def make(p: StrictParsley[A]): StrictParsley[A] =
         new backend.debugger.Debugged(origin, p, optName)(dbgCtx)
 

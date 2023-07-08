@@ -23,8 +23,10 @@ private [parsley] class DebugContext {
         ListBuffer(dummyRoot)
 
     // Get the final DebugTreeBuilder from this context.
-    def getFinalBuilder: DebugTreeBuilder =
+    def getFinalBuilder: DebugTreeBuilder = {
+        assert(builderStack.head.bChildren.size == 1, "The root tree has somehow lost its only child, or gained multiple children.")
         builderStack.head.bChildren.collectFirst { case (_, x) => x }.get
+    }
 
     // Add an attempt of parsing at the current stack point.
     def addParseAttempt(attempt: ParseAttempt): Unit =

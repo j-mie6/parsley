@@ -26,6 +26,12 @@ import parsley.internal.errors.CaretWidth
   * information, such as setting it to [[LazyParsley]] to tell the type system that you want to
   * produce new parsers using the visitor.
   *
+  * This base visitor type within Parsley only implements methods for visiting internal Parsley
+  * parsers that are native to Parsley itself. If you are making a library that extends Parsley with
+  * more internal parsers (that will not be merged into Parsley itself), it is suggested that you
+  * do not change this class, but rather make an abstract sub-class of this base visitor class that
+  * is specific to your library's additional parsers.
+  *
   * @tparam T Context type for holding processing information as the visitor visits parsers.
   * @tparam U Return value wrapper for the results of visiting the parsers.
   */
@@ -127,7 +133,9 @@ private [parsley] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle
     def visitGeneric[A](self: GenericLazyParsley[A], context: T): U[A]
 
     /** Handles all other parsers that are not of Parsley's main internal parser implementations nor
-      * uses the three generic 1-ary, 2-ary and 3-ary bases that Parsley provides.
+      * uses the three generic 1-ary, 2-ary and 3-ary bases that Parsley provides (though it is
+      * suggested that this method call [[visitGeneric]] with the parser should it find that the
+      * parser is a subclass of [[parsley.internal.deepembedding.frontend.GenericLazyParsley]]).
       *
       * Assume all parsers passed into this method are black boxes.
       *

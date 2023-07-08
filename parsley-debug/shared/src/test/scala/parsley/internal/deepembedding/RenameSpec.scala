@@ -64,7 +64,7 @@ private class DummyParser extends LazyParsley[Any] {
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Any] =
         visitor.visitUnknown(this, context)
 
-    override private[parsley] def prettyName = "dummyParser"
+    override private [parsley] def prettyName = "dummyParser"
 }
 
 private class <**> extends LazyParsley[Any] {
@@ -79,5 +79,5 @@ private class <**> extends LazyParsley[Any] {
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Any] =
         visitor.visitUnknown(this, context)
 
-    override private[parsley] def prettyName = "<**>"
+    override private [parsley] def prettyName = "<**>"
 }

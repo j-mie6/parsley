@@ -4,6 +4,7 @@
 package parsley.debugger.internal
 
 // Wrapper class that eliminates the equality / hash code overrides for a type.
+// Essentially a forgetful functor specifically for equality / hash code overrides.
 private [debugger] final class Unique[+A](val item: A) {
     // Shorthand syntax for extracting the item out of a Unique instance.
     def apply(): A =

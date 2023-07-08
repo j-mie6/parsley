@@ -8,9 +8,11 @@ import parsley.internal.deepembedding.ContOps.{ContAdapter, suspend}
 import parsley.internal.deepembedding.backend.StrictParsley
 import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor, LetFinderState, LetMap, RecMap}
 
-// Wrapper parser class indicating explicitly named parsers
+// Wrapper parser class indicating explicitly named parsers.
 private [parsley] final class Named[A]
     (val par: LazyParsley[A], val name: String) extends LazyParsley[A] {
+    assert(!par.isInstanceOf[Named[_]], "Named parsers should not be nested within each other directly.")
+
     def make(p: StrictParsley[A]): StrictParsley[A] = p
 
     override def findLetsAux[M[_, _] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] =

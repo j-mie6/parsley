@@ -4,6 +4,7 @@
 package parsley.internal.deepembedding.backend.debugger
 
 import parsley.debugger.internal.DebugContext
+
 import parsley.internal.deepembedding.ContOps
 import parsley.internal.deepembedding.ContOps.{suspend, ContAdapter}
 import parsley.internal.deepembedding.backend.{CodeGenState, StrictParsley, Unary}
