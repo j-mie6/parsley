@@ -169,7 +169,7 @@ object combinator {
       * @param p a parser whose error messages should be amended unless its been entrenched.
       * @return a parser that parses `p` but ensures any errors generated occur as if no input were consumed.
       * @since 4.2.0
-      * @see [[amend `amend`]] and `[[dislodge `dislodge`]]
+      * @see [[amend `amend`]] and [[dislodge[A](by:Int)* `dislodge`]]
       * @group adj
       */
     def amendThenDislodge[A](p: Parsley[A]): Parsley[A] = amendThenDislodge(Int.MaxValue)(p)
@@ -484,7 +484,7 @@ object combinator {
           * ''Known as `&lt;?&gt;` in Haskell.''
           *
           * @since 3.0.0
-          * @see [[label `label`]]
+          * @see [[label(item:String)* `label`]]
           * @group rich
           */
         def ?(item: String): Parsley[A] = this.label(item)
@@ -525,7 +525,6 @@ object combinator {
           * $observably
           * @since 3.0.0
           * @return a parser that does not produce an expected component on failure.
-          * @see [[label `label`]]
           * @group rich
           */
         def hide: Parsley[A] = this.labels()
