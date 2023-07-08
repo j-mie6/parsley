@@ -9,7 +9,7 @@ import parsley.combinator.{eof, optional, many}
 import parsley.Parsley._
 import parsley.implicits.character.{charLift, stringLift}
 import parsley.character.{item, digit}
-import parsley.errors.combinator.{fail => pfail, unexpected, amend, partialAmend, entrench, dislodge, amendThenDislodge, partialAmendThenDislodge, ErrorMethods}
+import parsley.errors.combinator.{fail => pfail, unexpected, amend, partialAmend, entrench, dislodge, amendThenDislodge, /*partialAmendThenDislodge,*/ ErrorMethods}
 import parsley.errors.patterns._
 
 class ErrorTests extends ParsleyTest {
