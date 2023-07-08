@@ -12,15 +12,6 @@
         </parameters>
     </check>
     <check enabled="true"  class="org.scalastyle.file.FileTabChecker" level="warning"/>
-    <check enabled="true" class="org.scalastyle.file.HeaderMatchesChecker" level="warning">
-        <parameters>
-            <parameter name="regex">true</parameter>
-            <parameter name="header"><![CDATA[/\* SPDX-FileCopyrightText: © \d{4} Parsley Contributors <https://github\.com/j-mie6/Parsley/graphs/contributors>
- \* SPDX-License-Identifier: BSD-3-Clause
- \*/]]></parameter>
-        </parameters>
-        <customMessage>Each file must have a copyright notice that references the date of the file's creation, acknowledges the contributors, and declares the license.</customMessage>
-    </check>
     <check enabled="true"  class="org.scalastyle.file.NewLineAtEofChecker" level="warning"/>
     <check enabled="false" class="org.scalastyle.file.NoNewLineAtEofChecker" level="warning"/>
     <check enabled="false" class="org.scalastyle.file.RegexChecker" level="warning"/>

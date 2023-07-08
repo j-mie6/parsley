@@ -18,8 +18,8 @@ val noReleaseFlagsScala3 = true // maybe some day this can be turned off...
 inThisBuild(List(
   tlBaseVersion := "4.3",
   organization := "com.github.j-mie6",
-  organizationName := organization.value,
-  startYear := Some(2018),
+  organizationName := "Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>",
+  startYear := Some(2020), // true start is 2018, but license is from 2020
   homepage := Some(url("https://github.com/j-mie6/parsley")),
   licenses := List("BSD-3-Clause" -> url("https://opensource.org/licenses/BSD-3-Clause")),
   developers := List(
@@ -73,7 +73,7 @@ inThisBuild(List(
   // CI Configuration
   tlCiReleaseBranches := Seq(mainBranch),
   tlCiScalafmtCheck := false,
-  tlCiHeaderCheck := false, //FIXME: to be honest, we could turn off the scala-check for this and do it here instead (2020 year)
+  tlCiHeaderCheck := true,
   githubWorkflowJavaVersions := Seq(Java8, JavaLTS, JavaLatest),
   githubWorkflowAddedJobs += testCoverageJob(githubWorkflowGeneratedCacheSteps.value.toList),
 ))
@@ -86,6 +86,9 @@ lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .in(file("parsley"))
   .settings(
     name := projectName,
+
+    headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax,
+    headerEmptyLine := false,
 
     resolvers ++= Opts.resolver.sonatypeOssReleases, // Will speed up MiMA during fast back-to-back releases
     libraryDependencies ++= Seq(
