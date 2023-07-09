@@ -34,7 +34,7 @@ private [token] final class ConcreteString(ends: Set[ScalaString], stringChar: S
         val terminalInit = terminalStr.charAt(0)
         val strChar = stringChar(Character.letter(terminalInit, allowsAllSpace, isGraphic))
         val pf = (sb: StringBuilder, cpo: Option[Int]) => {
-            for (cp <- cpo) parsley.character.addCodepoint(sb, cp)
+            for (cp <- cpo) parsley.unicode.addCodepoint(sb, cp)
             sb
         }
         val content = valid(parsley.expr.infix.secretLeft1((sbReg.get, strChar).zipped(pf), strChar, pure(pf)))

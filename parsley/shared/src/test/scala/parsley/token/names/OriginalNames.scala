@@ -6,12 +6,13 @@
 package parsley.token.names
 
 import parsley.Parsley, Parsley.{attempt, empty, pure}
-import parsley.character.{satisfy, satisfyUtf16, stringOfMany, stringOfManyUtf16}
+import parsley.character.{satisfy, stringOfMany}
 import parsley.errors.combinator.ErrorMethods
 import parsley.implicits.zipped.Zipped2
 import parsley.token.descriptions.{NameDesc, SymbolDesc}
 import parsley.token.errors.ErrorConfig
 import parsley.token.predicate.{Basic, CharPredicate, NotRequired, Unicode}
+import parsley.unicode.{satisfy => satisfyUtf16, stringOfMany => stringOfManyUtf16}
 
 // $COVERAGE-OFF$
 private [token] class OriginalNames(nameDesc: NameDesc, symbolDesc: SymbolDesc, err: ErrorConfig) extends Names {

@@ -126,10 +126,8 @@ object character {
       * @return
       * @group core
       */
-    def codePoint(c: Int): Parsley[Int] = {
-        if (Character.isBmpCodePoint(c)) char(c.toChar) #> c
-        else new Parsley(new singletons.SupplementaryCharTok(c, NotConfigured))
-    }
+    //TODO: deprecate in 4.5
+    def codePoint(c: Int): Parsley[Int] = unicode.char(c)
     @deprecated("this is an old naming, which I believe was never exposed but to be safe it'll remain till 5.0.0", "4.3.0")
     private [parsley] def charUtf16(c: Int): Parsley[Int] = codePoint(c)
 
@@ -161,9 +159,6 @@ object character {
 
     // we want this down the line :)
     //def satisfy[A](pred: PartialFunction[Char, A]): Parsley[A] = satisfy(pred.isDefinedAt(_)).map(pred)
-
-    // TODO: document
-    private [parsley] def satisfyUtf16(pred: Int => Boolean): Parsley[Int] = new Parsley(new singletons.UniSatisfy(pred, NotConfigured))
 
     /** This combinator attempts to parse a given string from the input, and fails otherwise.
       *
@@ -408,13 +403,6 @@ object character {
         expr.infix.secretLeft1(fresh(new StringBuilder), pc, pf).map(_.toString)
     }
 
-    // TODO: document
-    private [parsley] def stringOfManyUtf16(pc: Parsley[Int]): Parsley[String] = {
-        val pf = pure(addCodepoint(_, _))
-        // Can't use the regular foldLeft here, because we need a fresh StringBuilder each time.
-        expr.infix.secretLeft1(fresh(new StringBuilder), pc, pf).map(_.toString)
-    }
-
     /** This combinator parses `pc` '''one''' or more times, collecting its results into a string.
       *
       * Parses `pc` repeatedly until it fails. The resulting characters are placed into a string,
@@ -440,13 +428,6 @@ object character {
         val pf = pure[(StringBuilder, Char) => StringBuilder](_ += _)
         // Can't use the regular foldLeft1 here, because we need a fresh StringBuilder each time.
         expr.infix.secretLeft1(pc.map(new StringBuilder += _), pc, pf).map(_.toString)
-    }
-
-    // TODO: document
-    private [parsley] def stringOfSomeUtf16(pc: Parsley[Int]): Parsley[String] = {
-        val pf = pure(addCodepoint(_, _))
-        // Can't use the regular foldLeft1 here, because we need a fresh StringBuilder each time.
-        expr.infix.secretLeft1(pc.map(addCodepoint(new StringBuilder, _)), pc, pf).map(_.toString)
     }
 
     /** This combinator tries to parse each of the strings `strs` (and `str0`), until one of them succeeds.
@@ -758,12 +739,4 @@ object character {
 
     // Sue me.
     private def renderChar(c: Char): String = parsley.errors.helpers.renderRawString(s"$c")
-
-    private [parsley] def addCodepoint(sb: StringBuilder, codepoint: Int): StringBuilder = {
-        if (Character.isSupplementaryCodePoint(codepoint)) {
-            sb += Character.highSurrogate(codepoint)
-            sb += Character.lowSurrogate(codepoint)
-        }
-        else sb += codepoint.toChar
-    }
 }

@@ -8,8 +8,9 @@ package parsley.token
 import scala.collection.immutable.NumericRange
 
 import parsley.Parsley, Parsley.empty
-import parsley.character.{satisfy, satisfyUtf16}
+import parsley.character.satisfy
 import parsley.exceptions.ParsleyException
+import parsley.unicode.{satisfy => satisfyUtf16}
 
 // TODO: for parsley 5.0.0, make this a package?
 /** This module contains functionality to describe character predicates, which can
