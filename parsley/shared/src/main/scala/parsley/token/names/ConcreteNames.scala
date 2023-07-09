@@ -35,8 +35,8 @@ private [token] class ConcreteNames(nameDesc: NameDesc, symbolDesc: SymbolDesc, 
         }
     }
     private def trailer(impl: CharPredicate) = impl match {
-        case Basic(letter) => stringOfMany(satisfy(letter))
-        case Unicode(letter) => stringOfManyUtf16(satisfyUtf16(letter))
+        case Basic(letter) => stringOfMany(letter)
+        case Unicode(letter) => stringOfManyUtf16(letter)
         case NotRequired => pure("")
     }
     private def complete(start: CharPredicate, letter: CharPredicate) = start match {

@@ -41,7 +41,7 @@ object unicode {
     // TODO: document, test
     def satisfy(pred: Int => Boolean): Parsley[Int] = new Parsley(new singletons.UniSatisfy(pred, NotConfigured))
 
-    // TODO: document, test
+    // TODO: document
     def stringOfMany(pc: Parsley[Int]): Parsley[String] = {
         val pf = pure(addCodepoint(_, _))
         // Can't use the regular foldLeft here, because we need a fresh StringBuilder each time.
@@ -49,11 +49,17 @@ object unicode {
     }
 
     // TODO: document, test
+    def stringOfMany(pred: Int => Boolean): Parsley[String] = stringOfMany(satisfy(pred))
+
+    // TODO: document
     def stringOfSome(pc: Parsley[Int]): Parsley[String] = {
         val pf = pure(addCodepoint(_, _))
         // Can't use the regular foldLeft1 here, because we need a fresh StringBuilder each time.
         expr.infix.secretLeft1(pc.map(addCodepoint(new StringBuilder, _)), pc, pf).map(_.toString)
     }
+
+    // TODO: document, test
+    def stringOfSome(pred: Int => Boolean): Parsley[String] = stringOfSome(satisfy(pred))
 
     private [parsley] def addCodepoint(sb: StringBuilder, codepoint: Int): StringBuilder = {
         if (Character.isSupplementaryCodePoint(codepoint)) {

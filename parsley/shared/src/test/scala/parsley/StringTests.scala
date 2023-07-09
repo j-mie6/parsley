@@ -7,7 +7,7 @@ package parsley
 
 import Predef.{ArrowAssoc => _, _}
 
-import parsley.character.{letter, string, strings, stringOfMany, stringOfSome}
+import parsley.character.{string, strings, stringOfMany, stringOfSome}
 import parsley.implicits.character.stringLift
 import parsley.Parsley.{pos => _, _}
 import parsley.position.pos
@@ -68,8 +68,8 @@ class StringTests extends ParsleyTest {
         p.parse("b") shouldBe q.parse("b")
     }
 
-    "stringOfMany" should "allow for no letters" in cases(stringOfMany(letter))("" -> Some(""))
-    it should "consume as many letters as it can" in cases(stringOfMany(letter), noEof = true)(
+    "stringOfMany" should "allow for no letters" in cases(stringOfMany(_.isLetter))("" -> Some(""))
+    it should "consume as many letters as it can" in cases(stringOfMany(_.isLetter), noEof = true)(
         "abc" -> Some("abc"),
         "ab4c" -> Some("ab"),
     )
@@ -78,8 +78,8 @@ class StringTests extends ParsleyTest {
         "aba" -> None,
     )
 
-    "stringOfSome" should "not allow for no letters" in cases(stringOfSome(letter))("" -> None)
-    it should "consume as many letters as it can" in cases(stringOfSome(letter), noEof = true)(
+    "stringOfSome" should "not allow for no letters" in cases(stringOfSome(_.isLetter))("" -> None)
+    it should "consume as many letters as it can" in cases(stringOfSome(_.isLetter), noEof = true)(
         "abc" -> Some("abc"),
         "ab4c" -> Some("ab"),
     )

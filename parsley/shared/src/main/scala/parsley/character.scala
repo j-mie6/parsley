@@ -401,6 +401,9 @@ object character {
         expr.infix.secretLeft1(fresh(new StringBuilder), pc, pf).map(_.toString)
     }
 
+    // TODO: document
+    def stringOfMany(pred: Char => Boolean): Parsley[String] = stringOfMany(satisfy(pred))
+
     /** This combinator parses `pc` '''one''' or more times, collecting its results into a string.
       *
       * Parses `pc` repeatedly until it fails. The resulting characters are placed into a string,
@@ -427,6 +430,9 @@ object character {
         // Can't use the regular foldLeft1 here, because we need a fresh StringBuilder each time.
         expr.infix.secretLeft1(pc.map(new StringBuilder += _), pc, pf).map(_.toString)
     }
+
+    // TODO: document
+    def stringOfSome(pred: Char => Boolean): Parsley[String] = stringOfSome(satisfy(pred))
 
     /** This combinator tries to parse each of the strings `strs` (and `str0`), until one of them succeeds.
       *

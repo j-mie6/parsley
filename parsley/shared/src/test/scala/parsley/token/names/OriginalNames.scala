@@ -25,8 +25,8 @@ private [token] class OriginalNames(nameDesc: NameDesc, symbolDesc: SymbolDesc, 
         }.label(name)
     }
     private def trailer(impl: CharPredicate) = impl match {
-        case Basic(letter) => stringOfMany(satisfy(letter))
-        case Unicode(letter) => stringOfManyUtf16(satisfyUtf16(letter))
+        case Basic(letter) => stringOfMany(letter)
+        case Unicode(letter) => stringOfManyUtf16(letter)
         case NotRequired => pure("")
     }
     private def complete(start: CharPredicate, letter: CharPredicate) = start match {
