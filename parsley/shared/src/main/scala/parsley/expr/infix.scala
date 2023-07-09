@@ -38,7 +38,7 @@ object infix {
       * scala> sealed trait Expr
       * scala> case class Add(x: Num, y: Expr) extends Expr
       * scala> case class Num(x: Int) extends Expr
-      * scala> val expr = infix.right1[Num, Add, Expr](digit.map(d => Num(d.asDigit)), char('+') #> Add))
+      * scala> val expr = infix.right1[Num, Add, Expr](digit.map(d => Num(d.asDigit)), char('+').as(Add)))
       * scala> expr.parse("1+2+3+4")
       * val res0 = Success(Add(Num(1), Add(Num(2), Add(Num(3), Num(4)))))
       * scala> expr.parse("")
@@ -76,7 +76,7 @@ object infix {
       * scala> sealed trait Expr
       * scala> case class Add(x: Expr, y: Num) extends Expr
       * scala> case class Num(x: Int) extends Expr
-      * scala> val expr = infix.left1[Num, Add, Expr](digit.map(d => Num(d.asDigit)), char('+') #> Add)
+      * scala> val expr = infix.left1[Num, Add, Expr](digit.map(d => Num(d.asDigit)), char('+').as(Add))
       * scala> expr.parse("1+2+3+4")
       * val res0 = Success(Add(Add(Add(Num(1), Num(2)), Num(3)), Num(4)))
       * scala> expr.parse("")
@@ -120,7 +120,7 @@ object infix {
       * scala> sealed trait Expr
       * scala> case class Add(x: Num, y: Expr) extends Expr
       * scala> case class Num(x: Int) extends Expr
-      * scala> val expr = infix.right[Num, Add, Expr](digit.map(d => Num(d.asDigit)), char('+') #> Add, Num(0))
+      * scala> val expr = infix.right[Num, Add, Expr](digit.map(d => Num(d.asDigit)), char('+').as(Add), Num(0))
       * scala> expr.parse("1+2+3+4")
       * val res0 = Success(Add(Num(1), Add(Num(2), Add(Num(3), Num(4)))))
       * scala> expr.parse("")
@@ -159,7 +159,7 @@ object infix {
       * scala> sealed trait Expr
       * scala> case class Add(x: Expr, y: Num) extends Expr
       * scala> case class Num(x: Int) extends Expr
-      * scala> val expr = infix.left[Num, Add, Expr](digit.map(d => Num(d.asDigit)), char('+') #> Add, Num(0))
+      * scala> val expr = infix.left[Num, Add, Expr](digit.map(d => Num(d.asDigit)), char('+').as(Add), Num(0))
       * scala> expr.parse("1+2+3+4")
       * val res0 = Success(Add(Add(Add(Num(1), Num(2)), Num(3)), Num(4)))
       * scala> expr.parse("")

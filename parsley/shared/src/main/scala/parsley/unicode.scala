@@ -6,11 +6,12 @@
 package parsley
 
 import parsley.Parsley.{fresh, pure}
-import parsley.token.errors.NotConfigured
+import parsley.token.errors.{/*Label, */LabelConfig, NotConfigured}
 
 import parsley.internal.deepembedding.singletons
 
 // TODO: document
+// TODO: add all the other methods from character, _including_ an alias for `string`.
 object unicode {
     /** This combinator tries to parse a single specific codepoint `c` from the input.
       *
@@ -39,7 +40,12 @@ object unicode {
     }
 
     // TODO: document, test
-    def satisfy(pred: Int => Boolean): Parsley[Int] = new Parsley(new singletons.UniSatisfy(pred, NotConfigured))
+    def satisfy(pred: Int => Boolean): Parsley[Int] = satisfy(pred, NotConfigured)
+    //private def satisfy(pred: Int => Boolean, label: String): Parsley[Int] = satisfy(pred, Label(label))
+    private def satisfy(pred: Int => Boolean, label: LabelConfig) = new Parsley(new singletons.UniSatisfy(pred, label))
+
+    // TODO: document, test
+    def satisfyMap[A](pred: PartialFunction[Int, A]): Parsley[A] = satisfy(pred.isDefinedAt(_)).map(pred)
 
     // TODO: document
     def stringOfMany(pc: Parsley[Int]): Parsley[String] = {

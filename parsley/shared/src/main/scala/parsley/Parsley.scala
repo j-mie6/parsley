@@ -181,7 +181,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *
       * @example {{{
       * scala> import parsley.character.string
-      * scala> (string("true").as(true)).parse("true")
+      * scala> string("true").as(true).parse("true")
       * val res0 = Success(true)
       * }}}
       *
@@ -349,7 +349,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *
       * @example {{{
       * scala> import parsley.Parsley, parsley.character.char
-      * scala> val sign: Parsley[Int => Int] = char('+') #> (identity[Int] _) <|> char('-') #> (x => -x)
+      * scala> val sign: Parsley[Int => Int] = char('+').as(identity[Int] _) <|> char('-').as(x => -x)
       * scala> val nat: Parsley[Int] = ..
       * scala> val int = sign <*> nat
       * scala> int.parse("-7")

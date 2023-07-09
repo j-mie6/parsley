@@ -35,7 +35,7 @@ object mixed {
       * scala> case class B(l: C, r: Expr) extends Expr
       * scala> case class U(c: Expr) extends Expr
       * scala> case class C(x: Char) extends Expr
-      * scala> val p = mixed.right1(digit.map(C), char('-') #> U, char('+') #> B)
+      * scala> val p = mixed.right1(digit.map(C), char('-').as(U), char('+').as(B))
       * scala> p.parse("-1+--2+3")
       * val res0 = Success(U(B(C('1'), U(U(B(C('2'), C('3')))))))
       * }}}
@@ -76,7 +76,7 @@ object mixed {
       * scala> case class B(l: Expr, r: C) extends Expr
       * scala> case class U(c: Expr) extends Expr
       * scala> case class C(x: Char) extends Expr
-      * scala> val p = mixed.left1(digit.map(Constant), char('?') #> U, char('+') #> B)
+      * scala> val p = mixed.left1(digit.map(Constant), char('?').as(U), char('+').as(B))
       * scala> p.parse("1?+2+3??")
       * val res0 = Success(U(U(B(B(U(C('1')), C('2')), C('3')))))
       * }}}

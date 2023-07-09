@@ -123,6 +123,6 @@ object LexToken {
       * @since 4.0.0
       */
     def constantSymbols(ps: (Parsley[_], String)*): Seq[Parsley[String]] = ps.map {
-        case (p, n) => p #> n
+        case (p, n) => p.as(n)
     }
 }

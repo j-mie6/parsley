@@ -126,7 +126,7 @@ object registers {
           * Without any other effect, the value `x` will be placed into this register.
           *
           * @example Put-Get Law: {{{
-          * r.put(x) *> r.get == r.put(x) #> x
+          * r.put(x) *> r.get == r.put(x).as(x)
           * }}}
           *
           * @example Put-Put Law: {{{

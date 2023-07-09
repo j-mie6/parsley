@@ -28,7 +28,7 @@ private [token] final class UnsignedCombined(@unused desc: NumericDesc, integer:
         val decExponent = oneOf('e', 'E') *> integer.decimal32
         val zeroPoint = (decFractional, decExponent <|> pure(0)).zipped[Either[BigInt, BigDecimal]] {
             case (f, e) => Right(f / 10 * BigDecimal(10).pow(e))
-        } <|> decExponent #> Right(BigDecimal(0))
+        } <|> decExponent.as(Right(BigDecimal(0)))
         val zeroLead = '0' *> (noZeroHexadecimal <|> noZeroOctal <|> noZeroBinary <|> zeroPoint <|> decimal <|> pure(Left(BigInt(0))))
         attempt(zeroLead <|> decimal)
     }*/

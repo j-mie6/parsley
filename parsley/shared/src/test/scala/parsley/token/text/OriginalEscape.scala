@@ -60,7 +60,7 @@ private [token] class OriginalEscape(desc: EscapeDesc, err: ErrorConfig, generic
                 val theseDigits = exactly(digits, m, radix, digit, reqDigits)
                 val restDigits = (
                         (attempt(go(n-m, n, ns).map(Some(_)) <* digitsParsed.modify(_ + digits)))
-                    <|> (digitsParsed.put(digits) #> None)
+                    <|> (digitsParsed.put(digits).as(None))
                 )
                 (theseDigits, restDigits, digitsParsed.get).zipped[BigInt] {
                     case (x, None, _) => x

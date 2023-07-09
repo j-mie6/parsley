@@ -6,13 +6,13 @@
 package parsley.token.text
 
 import parsley.Parsley, Parsley.empty
-import parsley.character.{char, satisfy}
+import parsley.character.{char, satisfyMap}
 import parsley.combinator.skipSome
 import parsley.implicits.character.charLift
 import parsley.token.descriptions.text.EscapeDesc
 import parsley.token.errors.ErrorConfig
 import parsley.token.predicate.{Basic, CharPredicate, NotRequired, Unicode}
-import parsley.unicode.{satisfy => satisfyUtf16}
+import parsley.unicode.{satisfyMap => satisfyMapUtf16}
 
 private [token] abstract class StringCharacter {
     def apply(isLetter: CharPredicate): Parsley[Option[Int]]
@@ -24,8 +24,8 @@ private [token] abstract class StringCharacter {
 private [token] class RawCharacter(err: ErrorConfig) extends StringCharacter {
     override def isRaw: Boolean = true
     override def apply(isLetter: CharPredicate): Parsley[Option[Int]] = isLetter match {
-        case Basic(isLetter) => err.labelStringCharacter(satisfy(isLetter).map(c => Some(c.toInt))) <|> _checkBadChar(err)
-        case Unicode(isLetter) => err.labelStringCharacter(satisfyUtf16(isLetter).map(Some(_))) <|> _checkBadChar(err)
+        case Basic(isLetter) => err.labelStringCharacter(satisfyMap { case c if isLetter(c) => Some(c.toInt) }) <|> _checkBadChar(err)
+        case Unicode(isLetter) => err.labelStringCharacter(satisfyMapUtf16 { case c if isLetter(c) => Some(c) }) <|> _checkBadChar(err)
         case NotRequired => empty
     }
 }
@@ -38,18 +38,18 @@ private [token] class EscapableCharacter(desc: EscapeDesc, escapes: Escape, spac
         else empty
     }
     private lazy val stringEscape: Parsley[Option[Int]] =
-        escapes.escapeBegin *> (escapeGap #> None
-                            <|> escapeEmpty #> None
+        escapes.escapeBegin *> (escapeGap.as(None)
+                            <|> escapeEmpty.as(None)
                             <|> escapes.escapeCode.map(Some(_)))
 
     override def apply(isLetter: CharPredicate): Parsley[Option[Int]] = {
         isLetter match {
             case Basic(isLetter) => err.labelStringCharacter(
-                stringEscape <|> err.labelGraphicCharacter(satisfy(c => isLetter(c) && c != desc.escBegin).map(c => Some(c.toInt)))
+                stringEscape <|> err.labelGraphicCharacter(satisfyMap { case c if isLetter(c) && c != desc.escBegin => Some(c.toInt) })
                              <|> _checkBadChar(err)
             )
             case Unicode(isLetter) => err.labelStringCharacter(
-                stringEscape <|> err.labelGraphicCharacter(satisfyUtf16(c => isLetter(c) && c != desc.escBegin.toInt).map(Some(_)))
+                stringEscape <|> err.labelGraphicCharacter(satisfyMapUtf16 { case c if isLetter(c) && c != desc.escBegin.toInt => Some(c) })
                              <|> _checkBadChar(err)
             )
             case NotRequired => stringEscape

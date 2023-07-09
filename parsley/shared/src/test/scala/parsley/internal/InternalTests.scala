@@ -42,16 +42,16 @@ class InternalTests extends ParsleyTest {
     they should "work in the precedence parser with one op" in {
         val atom = some(digit).map(_.mkString.toInt)
         val expr = precedence[Int](atom)(
-            Ops(InfixL)('+' #> (_ + _)))
+            Ops(InfixL)('+'.as(_ + _)))
         expr.internal.instrs.count(_ == instructions.Return) shouldBe 1
     }
 
     they should "appear frequently inside expression parsers" in {
         val atom = some(digit).map(_.mkString.toInt)
         val expr = precedence[Int](atom)(
-            Ops(InfixL)('+' #> (_ + _)),
-            Ops(InfixL)('*' #> (_ * _)),
-            Ops(InfixL)('%' #> (_ % _)))
+            Ops(InfixL)('+'.as(_ + _)),
+            Ops(InfixL)('*'.as(_ * _)),
+            Ops(InfixL)('%'.as(_ % _)))
         expr.internal.instrs.count(_ == instructions.Return) shouldBe 3
     }
 

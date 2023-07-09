@@ -155,8 +155,8 @@ object character {
     private def satisfy(pred: Char => Boolean, label: String): Parsley[Char] = satisfy(pred, Label(label))
     private def satisfy(pred: Char => Boolean, label: LabelConfig) = new Parsley(new singletons.Satisfy(pred, label))
 
-    // we want this down the line :)
-    //def satisfy[A](pred: PartialFunction[Char, A]): Parsley[A] = satisfy(pred.isDefinedAt(_)).map(pred)
+    // TODO: document, test
+    def satisfyMap[A](pred: PartialFunction[Char, A]): Parsley[A] = satisfy(pred.isDefinedAt(_)).map(pred)
 
     /** This combinator attempts to parse a given string from the input, and fails otherwise.
       *
@@ -570,7 +570,7 @@ object character {
       *
       * @group spec
       */
-    val crlf: Parsley[Char] = string("\r\n", "end of crlf") #> '\n'
+    val crlf: Parsley[Char] = string("\r\n", "end of crlf").as('\n')
 
     /** This parser will parse either a line feed (`LF`) or a `CRLF` newline, returning `'\n'` if successful.
       *

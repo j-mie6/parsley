@@ -309,9 +309,7 @@ object combinator {
       * @return a parser that tries to parse `p`, returning `x` regardless of success or failure.
       * @group opt
       */
-    def optionalAs[A](p: Parsley[_], x: A): Parsley[A] = {
-        (p #> x).getOrElse(x)
-    }
+    def optionalAs[A](p: Parsley[_], x: A): Parsley[A] = p.as(x).getOrElse(x)
 
     /** This combinator can eliminate an `Option` from the result of the parser `p`.
       *
@@ -751,12 +749,12 @@ object combinator {
       * @group iter
       */
     def manyUntil[A](p: Parsley[A], end: Parsley[_]): Parsley[List[A]] = {
-        new Parsley(new frontend.ManyUntil((end #> ManyUntil.Stop <|> p: Parsley[Any]).internal))
+        new Parsley(new frontend.ManyUntil((end.as(ManyUntil.Stop) <|> p: Parsley[Any]).internal))
     }
 
     // TODO: document and test before release
     private [parsley] def skipManyUntil(p: Parsley[_], end: Parsley[_]): Parsley[Unit] = {
-        new Parsley(new frontend.SkipManyUntil((end #> ManyUntil.Stop <|> p: Parsley[Any]).internal))
+        new Parsley(new frontend.SkipManyUntil((end.as(ManyUntil.Stop) <|> p: Parsley[Any]).internal))
     }
 
     private [parsley] object ManyUntil {
