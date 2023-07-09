@@ -9,6 +9,10 @@ import parsley.debugger.DebugTree
   *
   * Any compliant implementation that handles all nodes of a [[parsley.debugger.DebugTree]] can be
   * used in place of any other implementation (e.g. a serialiser to JSON, a GUI, etc.).
+  *
+  * All implementations of this trait that are intended to be available publicly (e.g. within an
+  * addon library for the debugger) must live in the package `parsley.debugger.frontend`, next
+  * to this trait.
   */
 trait DebugFrontend {
     /** Process a debug tree using whatever the frontend is doing to present the tree in some way.
