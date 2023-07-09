@@ -13,6 +13,9 @@ import parsley.token.Lexer
 import parsley.internal.deepembedding.frontend.LazyParsley
 
 private [parsley] object XCollector extends CollectorImpl {
+    // True, it works, but it is on the whims of reflection functioning as expected.
+    override val supported: Boolean = true
+
     // There should not be too many differences in the public API between 2.12 and 2.13's reflection
     // packages. However, results may vary. Scala 3 however, is a wild-west of compatibility.
     // XXX: @nowarn is required as the Runtime Universe's MethodSymbol type is erased at runtime,

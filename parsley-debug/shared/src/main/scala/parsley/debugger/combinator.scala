@@ -25,13 +25,15 @@ object combinator {
       * parsers within your main parser, and rather to isolate their testing.
       *
       * Before running the parser, it may be advised to see if the current platform's implementation
-      * of the debugger supports [[parsley.debugger.util.Collector]], which allows you to input an
+      * of the debugger supports [[parsley.debugger.util.Collector]]
+      * (via [[parsley.debugger.util.Collector.isSupported]]), which allows you to input an
       * object or class instance containing parsers, in order to analyse it via reflection to assign
       * the names given to the parser fields / methods in that object to disambiguate the parser names
-      * in the tree in a much easier manner.
+      * in the tree in a much easier manner. Otherwise, you may want to attach explicit names to
+      * your parsers using [[named]] to achieve the same effect manually.
       *
-      * Without that, many parsers will appear as `packageanon` or similar, which can make the
-      * debugging process much harder.
+      * Without either of those name sources, parsers will simply appear as prettified versions
+      * of their internal class names.
       *
       * After instrumentation, you would run the instrumented parser first, then after the parser
       * finishes running on ONE input ideally, you would run the debug tree generator function in
@@ -47,12 +49,13 @@ object combinator {
       * same debugged parser across multiple parent parsers will cause the different parse trees to
       * incorrectly merge in an undefined manner.
       *
-      * A small warning: debugging an already debugged parser (via [[attachDebugger]] and friends) is
-      * an undefined behaviour.
+      * A small warning: debugging an already debugged parser (via [[attachDebugger]] and friends)
+      * is an undefined behaviour.
       *
       * See [[attachWithFrontend]] to automate the tree processing after parsing.
       *
       * @note Do not run a parser through this combinator multiple times.
+      *
       * @param parser The parser to debug.
       * @tparam A Output type of original parser.
       * @return A pair of the finalised tree, and the instrumented parser.

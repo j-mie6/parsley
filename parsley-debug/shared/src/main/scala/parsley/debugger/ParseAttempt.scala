@@ -15,14 +15,16 @@ package parsley.debugger
   *                   It is guaranteed that `result.isDefined` is true if and only if the attempt
   *                   is successful.
   */
-case class ParseAttempt(rawInput: String,
-                        fromOffset: Int,
-                        toOffset: Int,
-                        fromPos: (Int, Int),
-                        toPos: (Int, Int),
-                        success: Boolean,
-                        // It is guaranteed by the debugger that success <=> result.isDefined.
-                        result: Option[Any]) extends AnyRef {
+case class ParseAttempt private [parsley] (
+    rawInput: String,
+    fromOffset: Int,
+    toOffset: Int,
+    fromPos: (Int, Int),
+    toPos: (Int, Int),
+    success: Boolean,
+    // It is guaranteed by the debugger that success <=> result.isDefined.
+    result: Option[Any]
+) extends AnyRef {
     // Make sure this class has not been used improperly.
     assert(success == result.isDefined)
 

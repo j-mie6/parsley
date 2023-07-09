@@ -37,6 +37,13 @@ object Collector {
     def assignName(par: Parsley[_], name: String): Unit =
         Rename.addName(par.internal, name)
 
+    /** Does the implementation of the collector for the current Scala platform actually work in
+      * automatically finding parsers in objects and getting their field names as written in your
+      * parser code?
+      */
+    def isSupported: Boolean =
+        XCollector.supported
+
     /** Collect the names of Parsley's various default singleton parsers. */
     private var defaultCollected: Boolean = false
     private def collectDefault(): Unit = this.synchronized {
@@ -61,6 +68,9 @@ abstract class CollectorImpl private [parsley] () {
 
     /** Collect names of parsers from a [[parsley.token.Lexer]]. */
     def collectLexer(lexer: Lexer): Map[LazyParsley[_], String]
+
+    /** Does the current platform's [[CollectorImpl]] actually get parsers from objects? */
+    val supported: Boolean
 
     // Try grabbing a parser from a LazyParsley or Parsley instance.
     protected def tryExtract(p: Any): LazyParsley[_] = {

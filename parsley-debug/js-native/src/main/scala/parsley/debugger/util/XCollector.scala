@@ -13,5 +13,9 @@ private [parsley] object XCollector extends CollectorImpl {
     override def collectNames(obj: Any): Map[LazyParsley[_], String] = Map.empty
 
     override def collectLexer(lexer: Lexer): Map[LazyParsley[_], String] = Map.empty
+
+    // This current implementation of a collector does nothing for JS and Native, as no automatic
+    // substitute for reflection has been found.
+    override val supported: Boolean = false
 }
 
