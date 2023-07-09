@@ -1,6 +1,7 @@
-val sbtTypelevelVersion = "0.5-6b335d3-SNAPSHOT"
+val sbtTypelevelVersion = "0.5.0-RC6"
 
-resolvers += "s01-oss-sonatype-org-snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots"
+resolvers ++= Opts.resolver.sonatypeOssSnapshots
+resolvers ++= Opts.resolver.sonatypeOssReleases
 
 libraryDependencySchemes ++= Seq(
   "org.scala-native" % "sbt-scala-native" % VersionScheme.Always,
