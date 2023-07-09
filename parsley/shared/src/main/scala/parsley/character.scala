@@ -128,8 +128,6 @@ object character {
       */
     //TODO: deprecate in 4.5
     def codePoint(c: Int): Parsley[Int] = unicode.char(c)
-    @deprecated("this is an old naming, which I believe was never exposed but to be safe it'll remain till 5.0.0", "4.3.0")
-    private [parsley] def charUtf16(c: Int): Parsley[Int] = codePoint(c)
 
     /** This combinator tries to parse a single character from the input that matches the given predicate.
       *
@@ -739,4 +737,15 @@ object character {
 
     // Sue me.
     private def renderChar(c: Char): String = parsley.errors.helpers.renderRawString(s"$c")
+
+    @deprecated("this is an old naming, which I believe was never exposed but to be safe it'll remain till 5.0.0", "4.3.0")
+    private [parsley] def charUtf16(c: Int): Parsley[Int] = unicode.char(c)
+    @deprecated("this is an old naming, which I believe was never exposed but to be safe it'll remain till 5.0.0", "4.3.0")
+    private [parsley] def satisfyUtf16(c: Int): Parsley[Int] = unicode.satisfy(c)
+    @deprecated("this is an old naming, which I believe was never exposed but to be safe it'll remain till 5.0.0", "4.3.0")
+    private [parsley] def stringOfManyUtf16(c: Int): Parsley[Int] = unicode.stringOfMany(c)
+    @deprecated("this is an old naming, which I believe was never exposed but to be safe it'll remain till 5.0.0", "4.3.0")
+    private [parsley] def stringOfSomeUtf16(c: Int): Parsley[Int] = unicode.stringOfSome(c)
+    @deprecated("this is an old naming, which I believe was never exposed but to be safe it'll remain till 5.0.0", "4.3.0")
+    private [parsley] def addCodepoint(sb: StringBuilder, codepoint: Int): StringBuilder = unicode.addCodepoint(sb, codepoint)
 }
