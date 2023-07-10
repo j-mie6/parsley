@@ -53,11 +53,11 @@ object RenameSpec {
 // These are dummy parsers used for the above tests.
 // We don't actually care that they don't implement anything.
 private class DummyParser extends LazyParsley[Any] {
-    override protected def findLetsAux[M[_, _] : ContOps, R]
+    override protected def findLetsAux[M[_, +_] : ContOps, R]
     (seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] =
         RenameSpec.crash()
 
-    override protected def preprocess[M[_, _] : ContOps, R, A_ >: Any]
+    override protected def preprocess[M[_, +_] : ContOps, R, A_ >: Any]
     (implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]] =
         RenameSpec.crash()
 
@@ -68,11 +68,11 @@ private class DummyParser extends LazyParsley[Any] {
 }
 
 private class <**> extends LazyParsley[Any] {
-    override protected def findLetsAux[M[_, _] : ContOps, R]
+    override protected def findLetsAux[M[_, +_] : ContOps, R]
     (seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] =
         RenameSpec.crash()
 
-    override protected def preprocess[M[_, _] : ContOps, R, A_ >: Any]
+    override protected def preprocess[M[_, +_] : ContOps, R, A_ >: Any]
     (implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]] =
         RenameSpec.crash()
 

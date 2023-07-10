@@ -7,7 +7,7 @@ import scala.collection.mutable
 
 import org.typelevel.scalaccompat.annotation.unused
 import parsley.debugger.internal.DebugContext
-import parsley.internal.deepembedding.{singletons, ContOps}
+import parsley.internal.deepembedding.{singletons, Cont, ContOps}
 import parsley.internal.deepembedding.ContOps.{perform, result, suspend, ContAdapter}
 import parsley.internal.deepembedding.backend.StrictParsley
 import parsley.internal.deepembedding.frontend.{<|>, >>=, Binary, ChainPre, GenericLazyParsley, GenericLazyParsleyIVisitor}
@@ -18,10 +18,20 @@ private [parsley] object helper {
     // Use maps with weak keys or don't pass this into a >>= parser.
     private [parsley] final class ParserTracker(val map: mutable.Map[LazyParsley[_], Debugged[_]]) extends AnyVal
 
-    // Keeping this around for easy access to LP.
+    // Keeping this around for easy access to LPM.
     @unused private [this] final class ContWrap[M[_, +_], R] {
         type LPM[+A] = M[R, LazyParsley[A]]
     }
+
+    // XXX: Currently does not take into account the inherent stack safety of a parser being debugged
+    //      in order to use the slightly faster Id route instead of Cont.
+    private [parsley] def generateVisitorM[A](dbgCtx: DebugContext): DebugInjectingVisitorM[Cont.Impl, LazyParsley[A]] =
+        new DebugInjectingVisitorM[Cont.Impl, LazyParsley[A]](dbgCtx)(Cont.ops)
+
+    private [parsley] def visitWithM[A](parser: LazyParsley[A],
+                                        tracker: ParserTracker,
+                                        visitor: DebugInjectingVisitorM[Cont.Impl, LazyParsley[A]]): LazyParsley[A] =
+        perform[Cont.Impl, LazyParsley[A]](parser.visit(visitor, tracker))(Cont.ops)
 
     // This visitor uses Cont / ContOps to ensure that if a parser is deeply recursive, the user can all a method
     // to use the trampoline ( https://en.wikipedia.org/wiki/Trampoline_(computing) ) to ensure that all calls are

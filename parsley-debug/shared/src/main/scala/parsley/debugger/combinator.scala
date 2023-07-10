@@ -12,7 +12,7 @@ import parsley.debugger.internal.DebugContext
 
 import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.deepembedding.frontend.debugger.Named
-import parsley.internal.deepembedding.frontend.debugger.helper.{DebugInjectingVisitor, ParserTracker}
+import parsley.internal.deepembedding.frontend.debugger.helper.{generateVisitorM, visitWithM, ParserTracker}
 
 /** This object contains the two main debug combinators, `attachDebugger` and `attachWithFrontend`. */
 object combinator {
@@ -64,9 +64,9 @@ object combinator {
         // XXX: A weak map is needed so that memory leaks will not be caused by flatMap parsers.
         val seen: ParserTracker = new ParserTracker(new mutable.WeakHashMap())
         val context: DebugContext = new DebugContext()
-        val visitor: DebugInjectingVisitor = new DebugInjectingVisitor(context)
+        val visitor = generateVisitorM[A](context)
 
-        val attached: LazyParsley[A] = parser.internal.visit[ParserTracker, LazyParsley](visitor, seen)
+        val attached: LazyParsley[A] = visitWithM[A](parser.internal, seen, visitor)
         (() => context.getFinalBuilder.reconstruct, fresh(context.reset()) *> new Parsley(attached))
     }
 
