@@ -19,7 +19,7 @@ private [backend] sealed abstract class BranchLike[A, B, C, D](finaliser: Option
     def instr(label: Int): instructions.Instr
 
     def inlinable: Boolean = false
-    final override def codeGen[M[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
+    final override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val toP = state.freshLabel()
         val end = state.freshLabel()
         suspend(b.codeGen[M, R]) >> {
@@ -67,7 +67,7 @@ private [deepembedding] final class If[A](val b: StrictParsley[Boolean], val p: 
 }
 
 private [backend] sealed abstract class FilterLike[A](instr: instructions.Instr) extends Unary[A, A] {
-    final override def codeGen[M[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
+    final override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val handler = state.getLabel(instructions.PopStateAndFail)
         instrs += new instructions.PushHandlerAndState(handler, saveHints = false, hideHints = false)
         suspend(p.codeGen[M, R]) |> {
@@ -87,7 +87,7 @@ private [deepembedding] final class MapFilter[A, B](val p: StrictParsley[A], f: 
         case _ => this
     }
 
-    final override def codeGen[M[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
+    final override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val handler = state.getLabel(instructions.PopStateAndFail)
         instrs += new instructions.PushHandlerAndState(handler, saveHints = false, hideHints = false)
         suspend(p.codeGen[M, R]) |> {
