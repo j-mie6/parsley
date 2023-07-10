@@ -286,7 +286,7 @@ private [frontend] object LetMap {
     def apply[M[_, +_]: ContOps](lets: Iterable[LazyParsley[_]])(implicit recs: RecMap): LetMap = {
         new LetMap(lets.map(p => p -> ((_self: LetMap) => {
             implicit val self: LetMap = _self
-            perform[M, StrictParsley[_]](p.knownLetTopOptimised[M, StrictParsley[_], Any])
+            perform[M, StrictParsley[_]](p.knownLetTopOptimised)
         })).toMap)
     }
 }
