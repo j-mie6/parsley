@@ -1,5 +1,6 @@
 package parsley.internal.deepembedding.frontend
 
+import scala.annotation.tailrec
 import scala.util.Random
 
 import org.scalatest.flatspec.AnyFlatSpec
@@ -11,7 +12,7 @@ import parsley.internal.deepembedding.frontend.debugger.Debugged
 import parsley.internal.deepembedding.singletons
 
 class TotalAttachmentSpec extends AnyFlatSpec {
-    private class RandomParserCreator(maxDepth: Int) {
+    private final class RandomParserCreator(maxDepth: Int) {
         private val rng: Random = new Random
 
         private val unaryModifiers: Array[Parsley[Unit] => Parsley[Unit]] = Array(
@@ -47,7 +48,7 @@ class TotalAttachmentSpec extends AnyFlatSpec {
     sealed trait ConstUnit[+A]
     object CUnit extends ConstUnit[Nothing]
 
-    private class AttachmentInspector extends GenericLazyParsleyIVisitor[Boolean, ConstUnit] {
+    private final class AttachmentInspector extends GenericLazyParsleyIVisitor[Boolean, ConstUnit] {
         def failure(msg: String = "Parent parser was not debugged."): Nothing = fail(msg)
 
         override def visitSingleton[A](self: singletons.Singleton[A], context: Boolean): ConstUnit[A] =
@@ -90,7 +91,7 @@ class TotalAttachmentSpec extends AnyFlatSpec {
                 CUnit
             } else failure()
 
-        override def visitUnknown[A](self: LazyParsley[A], context: Boolean): ConstUnit[A] =
+        @tailrec override def visitUnknown[A](self: LazyParsley[A], context: Boolean): ConstUnit[A] =
             self match {
                 case d: Debugged[A] if !context => visitUnknown(d.par.get, context = true)
                 case _: Debugged[A]             => failure("Not allowed to stack debuggers.") // Can't have a debugged on top of another!
