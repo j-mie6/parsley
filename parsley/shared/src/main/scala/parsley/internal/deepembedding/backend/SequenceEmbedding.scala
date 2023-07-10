@@ -71,7 +71,7 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
             this
         case _ => this
     }
-    override def codeGen[M[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = left match {
+    override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = left match {
         // pure f <*> p = f <$> p
         case Pure(f) => right match {
             case ct@CharTok(c) => result(instrs += instructions.CharTokFastPerform[Char, B](c, f.asInstanceOf[Char => B], ct.expected))
@@ -109,7 +109,7 @@ private [deepembedding] final class >>=[A, B](val p: StrictParsley[A], private [
         case z: MZero => z
         case _ => this
     }
-    override def codeGen[M[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
+    override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         suspend(p.codeGen[M, R]) |> {
             instrs += instructions.DynCall[A](x => f(x).demandCalleeSave(state.numRegs).instrs)
         }
@@ -193,7 +193,7 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
         case _ => this
     }
 
-    override def codeGen[M[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = res match {
+    override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = res match {
         case Pure(x) =>
             // peephole here involves CharTokFastPerform, StringTokFastPerform, and Exchange
             assume(after.isEmpty, "The pure in question is normalised to the end: if result is pure, after is empty.")
@@ -228,7 +228,7 @@ private [backend] object Seq {
         Some((self.before, self.res, self.after))
     }
 
-    private [Seq] def codeGenMany[M[_, _]: ContOps, R](it: Iterator[StrictParsley[_]])
+    private [Seq] def codeGenMany[M[_, +_]: ContOps, R](it: Iterator[StrictParsley[_]])
                                                       (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         if (it.hasNext) {
             suspend(it.next().codeGen[M, R]) >> {

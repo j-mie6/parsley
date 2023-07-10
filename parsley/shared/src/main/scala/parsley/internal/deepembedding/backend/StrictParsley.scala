@@ -43,7 +43,7 @@ private [deepembedding] trait StrictParsley[+A] {
       * @param state the code generator state
       * @return the final array of instructions for this parser
       */
-    final private [deepembedding] def generateInstructions[M[_, _]: ContOps](numRegsUsedByParent: Int, usedRegs: Set[Reg[_]],
+    final private [deepembedding] def generateInstructions[M[_, +_]: ContOps](numRegsUsedByParent: Int, usedRegs: Set[Reg[_]],
                                                                              recs: Iterable[(Rec[_], M[Unit, StrictParsley[_]])])
                                                                             (implicit state: CodeGenState): Array[Instr] = {
         implicit val instrs: InstrBuffer = newInstrBuffer
@@ -67,7 +67,7 @@ private [deepembedding] trait StrictParsley[+A] {
       * @param instrs the current buffer of instructions to generate into
       * @param state code generator state, for the generation of labels
       */
-    protected [backend] def codeGen[M[_, _]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit]
+    protected [backend] def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit]
 
     /** This method is directly called by the "frontend" and is used to perform domain-specific
       * optimisations on this parser (usually following the laws of the parser combinators).
@@ -155,7 +155,7 @@ private [deepembedding] object StrictParsley {
       * @param instrs the instruction buffer
       * @param state the code generation state, for label generation
       */
-    private def generateCalleeSave[M[_, _]: ContOps, R](numRegsUsedByParent: Int, bodyGen: =>M[R, Unit], usedRegs: Set[Reg[_]])
+    private def generateCalleeSave[M[_, +_]: ContOps, R](numRegsUsedByParent: Int, bodyGen: =>M[R, Unit], usedRegs: Set[Reg[_]])
                                                        (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val reqRegs = usedRegs.size
         val localRegs = usedRegs.filterNot(_.allocated)
@@ -183,7 +183,7 @@ private [deepembedding] object StrictParsley {
       * @param state the code generation state, for label generation
       * @return the list of return labels for each of the parsers (for TCO)
       */
-    private def finaliseRecs[M[_, _]: ContOps](recs: Iterable[(Rec[_], M[Unit, StrictParsley[_]])])
+    private def finaliseRecs[M[_, +_]: ContOps](recs: Iterable[(Rec[_], M[Unit, StrictParsley[_]])])
                                                  (implicit instrs: InstrBuffer, state: CodeGenState): List[RetLoc] = {
         val retLocs = mutable.ListBuffer.empty[RetLoc]
         for ((rec, p) <- recs) {
@@ -207,7 +207,7 @@ private [deepembedding] object StrictParsley {
       * @param state the code generation state, which contains the shared parsers
       * @return the list of return labels for each of the parsers (for TCO)
       */
-    private def finaliseLets[M[_, _]: ContOps]()(implicit instrs: InstrBuffer, state: CodeGenState): List[RetLoc] = {
+    private def finaliseLets[M[_, +_]: ContOps]()(implicit instrs: InstrBuffer, state: CodeGenState): List[RetLoc] = {
         val retLocs = mutable.ListBuffer.empty[RetLoc]
         while (state.more) {
             val let = state.nextLet()
