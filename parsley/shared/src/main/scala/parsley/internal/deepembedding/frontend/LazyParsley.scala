@@ -83,6 +83,7 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
 
     /** should the `Id` instance be skipped? */
     final private var cps = false
+    final private [deepembedding] def isCps: Boolean = cps
     /** how many registers are used by the ''parent'' of this combinator (this combinator is part of a `flatMap` when this is not -1) */
     final private var numRegsUsedByParent = -1
 

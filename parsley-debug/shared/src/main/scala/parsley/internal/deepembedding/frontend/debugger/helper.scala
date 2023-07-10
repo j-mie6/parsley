@@ -7,7 +7,7 @@ import scala.collection.mutable
 
 import org.typelevel.scalaccompat.annotation.unused
 import parsley.debugger.internal.DebugContext
-import parsley.internal.deepembedding.{singletons, Cont, ContOps}
+import parsley.internal.deepembedding.{singletons, Cont, ContOps, Id}
 import parsley.internal.deepembedding.ContOps.{perform, result, suspend, ContAdapter}
 import parsley.internal.deepembedding.backend.StrictParsley
 import parsley.internal.deepembedding.frontend.{<|>, >>=, Binary, ChainPre, GenericLazyParsley, GenericLazyParsleyIVisitor}
@@ -23,15 +23,22 @@ private [parsley] object helper {
         type LPM[+A] = M[R, LazyParsley[A]]
     }
 
-    // XXX: Currently does not take into account the inherent stack safety of a parser being debugged
-    //      in order to use the slightly faster Id route instead of Cont.
-    private [parsley] def generateVisitorM[A](dbgCtx: DebugContext): DebugInjectingVisitorM[Cont.Impl, LazyParsley[A]] =
-        new DebugInjectingVisitorM[Cont.Impl, LazyParsley[A]](dbgCtx)(Cont.ops)
+    private def visitWithM[M[_, +_]: ContOps, A](parser: LazyParsley[A],
+                                                           tracker: ParserTracker,
+                                                           visitor: DebugInjectingVisitorM[M, LazyParsley[A]]): LazyParsley[A] =
+        perform[M, LazyParsley[A]](parser.visit(visitor, tracker))
 
-    private [parsley] def visitWithM[A](parser: LazyParsley[A],
-                                        tracker: ParserTracker,
-                                        visitor: DebugInjectingVisitorM[Cont.Impl, LazyParsley[A]]): LazyParsley[A] =
-        perform[Cont.Impl, LazyParsley[A]](parser.visit(visitor, tracker))(Cont.ops)
+    // Run this to inject the debugger itself.
+    private [parsley] def injectM[A](parser: LazyParsley[A], tracker: ParserTracker, dbgCtx: DebugContext): LazyParsley[A] =
+        if (parser.isCps) {
+            implicit val ops: ContOps[Cont.Impl] = Cont.ops
+            val visitor = new DebugInjectingVisitorM[Cont.Impl, LazyParsley[A]](dbgCtx)
+            visitWithM[Cont.Impl, A](parser, tracker, visitor)
+        } else {
+            implicit val ops: ContOps[Id.Impl] = Id.ops
+            val visitor = new DebugInjectingVisitorM[Id.Impl, LazyParsley[A]](dbgCtx)
+            visitWithM[Id.Impl, A](parser, tracker, visitor)
+        }
 
     // This visitor uses Cont / ContOps to ensure that if a parser is deeply recursive, the user can all a method
     // to use the trampoline ( https://en.wikipedia.org/wiki/Trampoline_(computing) ) to ensure that all calls are
