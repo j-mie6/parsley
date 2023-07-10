@@ -1,4 +1,4 @@
-val sbtTypelevelVersion = "0.5.0-RC5"
+val sbtTypelevelVersion = "0.5.0-RC7"
 
 resolvers += "s01-oss-sonatype-org-snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots"
 

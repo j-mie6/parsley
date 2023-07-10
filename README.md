@@ -9,15 +9,15 @@ Parsley is distributed on Maven Central, and can be added to your project via:
 
 ```scala
 // SBT
-libraryDependencies += "com.github.j-mie6" %% "parsley" % "4.3.0"
+libraryDependencies += "com.github.j-mie6" %% "parsley" % "4.3.1"
 
 // scala-cli
---dependency com.github.j-mie6::parsley:4.3.0
+--dependency com.github.j-mie6::parsley:4.3.1
 // or in file
-//> using dep com.github.j-mie6::parsley:4.3.0
+//> using dep com.github.j-mie6::parsley:4.3.1
 
 // mill
-ivy"com.github.j-mie6::parsley:4.3.0"
+ivy"com.github.j-mie6::parsley:4.3.1"
 ```
 
 Documentation can be found [**here**](https://javadoc.io/doc/com.github.j-mie6/parsley_2.13/latest/index.html)
