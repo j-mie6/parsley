@@ -46,10 +46,7 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
       *
       * @param numRegs the number of registers the parent uses (these must be saved)
       */
-    private [deepembedding] def demandCalleeSave(numRegs: Int): this.type = {
-        numRegsUsedByParent = numRegs
-        this
-    }
+    private [deepembedding] def demandCalleeSave(numRegs: Int): Unit = numRegsUsedByParent = numRegs
 
     // Internals
     // To ensure that stack-overflow cannot occur during the processing of particularly

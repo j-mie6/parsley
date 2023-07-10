@@ -111,7 +111,12 @@ private [deepembedding] final class >>=[A, B](val p: StrictParsley[A], private [
     }
     override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         suspend(p.codeGen[M, R]) |> {
-            instrs += instructions.DynCall[A](x => f(x).demandCalleeSave(state.numRegs).instrs)
+            instrs += instructions.DynCall[A] { x =>
+                val p = f(x)
+                p.demandCalleeSave(state.numRegs)
+                if (implicitly[ContOps[M]].isStackSafe) p.overflows()
+                p.instrs
+            }
         }
     }
     // $COVERAGE-OFF$
