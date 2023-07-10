@@ -4,9 +4,10 @@
 package parsley.internal.deepembedding.frontend.debugger
 
 import parsley.debugger.internal.DebugContext
-import parsley.internal.deepembedding.ContOps.{ContAdapter, suspend}
+
+import parsley.internal.deepembedding.{backend, ContOps}
+import parsley.internal.deepembedding.ContOps.{suspend, ContAdapter}
 import parsley.internal.deepembedding.backend.StrictParsley
-import parsley.internal.deepembedding.{ContOps, backend}
 import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor, LetFinderState, LetMap, RecMap}
 
 // Wrapper class signifying debugged classes
@@ -18,10 +19,10 @@ private [parsley] final class Debugged[A]
     def make(p: StrictParsley[A]): StrictParsley[A] =
         new backend.debugger.Debugged(origin, p, optName)(dbgCtx)
 
-    override def findLetsAux[M[_, _] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] =
+    override def findLetsAux[M[_, +_] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] =
         suspend(par.get.findLets(seen))
 
-    override def preprocess[M[_, _] : ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]] =
+    override def preprocess[M[_, +_] : ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]] =
         for (p <- suspend(par.get.optimised[M, R, A])) yield make(p)
 
     // Shortcuts to the given parser's name instead.

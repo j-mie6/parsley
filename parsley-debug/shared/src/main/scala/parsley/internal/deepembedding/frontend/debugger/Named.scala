@@ -3,23 +3,15 @@
  */
 package parsley.internal.deepembedding.frontend.debugger
 
-import parsley.internal.deepembedding.ContOps
-import parsley.internal.deepembedding.ContOps.{ContAdapter, suspend}
 import parsley.internal.deepembedding.backend.StrictParsley
-import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor, LetFinderState, LetMap, RecMap}
+import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor, Unary}
 
 // Wrapper parser class indicating explicitly named parsers.
 private [parsley] final class Named[A]
-    (val par: LazyParsley[A], val name: String) extends LazyParsley[A] {
+    (val par: LazyParsley[A], val name: String) extends Unary[A, A](par) {
     assert(!par.isInstanceOf[Named[_]], "Named parsers should not be nested within each other directly.")
 
     def make(p: StrictParsley[A]): StrictParsley[A] = p
-
-    override def findLetsAux[M[_, _] : ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] =
-        suspend(par.findLets(seen))
-
-    override def preprocess[M[_, _] : ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]] =
-        for (p <- suspend(par.optimised[M, R, A])) yield make(p)
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] =
         visitor.visitUnknown(this, context)

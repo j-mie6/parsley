@@ -61,7 +61,8 @@ object combinator {
       * @return A pair of the finalised tree, and the instrumented parser.
       */
     def attachDebugger[A](parser: Parsley[A]): (() => DebugTree, Parsley[A]) = {
-        val seen: ParserTracker = new ParserTracker(new mutable.LinkedHashMap())
+        // XXX: A weak map is needed so that memory leaks will not be caused by flatMap parsers.
+        val seen: ParserTracker = new ParserTracker(new mutable.WeakHashMap())
         val context: DebugContext = new DebugContext()
         val visitor: DebugInjectingVisitor = new DebugInjectingVisitor(context)
 
