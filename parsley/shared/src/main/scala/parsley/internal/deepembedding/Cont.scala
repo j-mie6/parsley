@@ -24,6 +24,7 @@ private [deepembedding] abstract class ContOps[Cont[_, +_]] {
     def map[R, A, B](c: Cont[R, A], f: A => B): Cont[R, B]
     def flatMap[R, A, B](c: Cont[R, A], f: A => Cont[R, B]): Cont[R, B]
     def suspend[R, A](x: =>Cont[R, A]): Cont[R, A]
+    def isStackSafe: Boolean
     // $COVERAGE-OFF$
     // This needs to be lazy, because I'm an idiot when I use it
     def `then`[R, A, B](c: Cont[R, A], k: =>Cont[R, B]): Cont[R, B] = flatMap[R, A, B](c, _ => k)
@@ -52,6 +53,7 @@ private [deepembedding] object Cont {
         override def flatMap[R, A, B](mx: Impl[R, A], f: A => Impl[R, B]): Impl[R, B] = k => new Thunk(() => mx(x => f(x)(k)))
         override def suspend[R, A](x: =>Impl[R, A]): Impl[R, A] = k => new Thunk(() => x(k))
         override def `then`[R, A, B](mx: Impl[R, A], my: =>Impl[R, B]): Impl[R, B] = k => new Thunk(() => mx(_ => my(k)))
+        override def isStackSafe: Boolean = true
     }
 }
 
@@ -64,5 +66,6 @@ private [deepembedding] object Id {
         override def flatMap[R, A, B](c: Impl[R, A], f: A => Impl[R, B]): Impl[R, B] = f(c)
         override def suspend[R, A](x: =>Impl[R, A]): Impl[R, A] = x
         override def as[R, A, B](c: Impl[R, A], x: =>B): Impl[R, B] = x
+        override def isStackSafe: Boolean = false
     }
 }
