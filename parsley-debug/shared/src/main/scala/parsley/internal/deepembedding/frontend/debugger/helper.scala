@@ -90,9 +90,9 @@ private [parsley] object helper {
                                                                                                  t: => LazyParsley[C]): L[D] =
             handlePossiblySeen[D](self, context) {
                 for {
-                  dbgF <- suspend(f.visit(this, context))
-                  dbgS <- suspend(s.visit(this, context))
-                  dbgT <- suspend(t.visit(this, context))
+                    dbgF <- suspend(f.visit(this, context))
+                    dbgS <- suspend(s.visit(this, context))
+                    dbgT <- suspend(t.visit(this, context))
                 } yield new Ternary[A, B, C, D](dbgF, dbgS, dbgT) {
                     override def make(p: StrictParsley[A], q: StrictParsley[B], r: StrictParsley[C]): StrictParsley[D] = self.make(p, q, r)
 
@@ -109,11 +109,11 @@ private [parsley] object helper {
                 // flatMap / >>= produces parsers arbitrarily, so there is no way we'd match by reference.
                 // This is why a map with weak keys is required.
                 for {
-                  dbgC <- suspend(p.visit(this, context))
+                    dbgC <- suspend(p.visit(this, context))
                 } yield {
                     def dbgF(x: A): LazyParsley[B] = {
-                      val subvisitor = new DebugInjectingVisitorM[M, LazyParsley[B]](dbgCtx)
-                      perform[M, LazyParsley[B]](f(x).visit(subvisitor, context))
+                        val subvisitor = new DebugInjectingVisitorM[M, LazyParsley[B]](dbgCtx)
+                        perform[M, LazyParsley[B]](f(x).visit(subvisitor, context))
                     }
                     new >>=(dbgC, dbgF)
                 }
@@ -121,10 +121,10 @@ private [parsley] object helper {
 
         override def visit[A](self: <|>[A], context: ParserTracker)(p: LazyParsley[A], q: LazyParsley[A]): L[A] =
             handlePossiblySeen[A](self, context) {
-              for {
-                dbgP <- suspend(p.visit(this, context))
-                dbgQ <- suspend(q.visit(this, context))
-              } yield new <|>(dbgP, dbgQ)
+                for {
+                    dbgP <- suspend(p.visit(this, context))
+                    dbgQ <- suspend(q.visit(this, context))
+                } yield new <|>(dbgP, dbgQ)
             }
 
         override def visit[A](self: ChainPre[A], context: ParserTracker)(p: LazyParsley[A], op: => LazyParsley[A => A]): L[A] =
