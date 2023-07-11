@@ -9,7 +9,7 @@ import parsley.internal.deepembedding.frontend.LazyParsleyIVisitor
 import parsley.internal.machine.instructions
 
 // Core Embedding
-private [parsley] final class Pure[A](private [Pure] val x: A) extends Singleton[A] {
+private [parsley] final class Pure[A](private val x: A) extends Singleton[A] {
     // $COVERAGE-OFF$
     override def pretty: String = s"pure($x)"
     // $COVERAGE-ON$

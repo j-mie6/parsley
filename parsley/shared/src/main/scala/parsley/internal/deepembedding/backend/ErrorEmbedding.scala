@@ -10,7 +10,7 @@ import parsley.token.errors.Label
 import parsley.internal.deepembedding.singletons._
 import parsley.internal.machine.instructions
 
-private [deepembedding] final class ErrorLabel[A](val p: StrictParsley[A], private [ErrorLabel] val labels: scala.Seq[String]) extends ScopedUnary[A, A] {
+private [deepembedding] final class ErrorLabel[A](val p: StrictParsley[A], private val labels: scala.Seq[String]) extends ScopedUnary[A, A] {
     // This needs to save the hints because label should relabel only the hints generated _within_ its context, then merge with the originals after
     override def setup(label: Int): instructions.Instr = new instructions.PushHandlerAndCheck(label, saveHints = true)
     override def instr: instructions.Instr = new instructions.RelabelHints(labels)

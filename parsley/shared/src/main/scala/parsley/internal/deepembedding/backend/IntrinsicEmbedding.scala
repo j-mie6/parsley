@@ -13,7 +13,7 @@ import parsley.internal.machine.instructions
 import StrictParsley.InstrBuffer
 
 // TODO: Perform applicative fusion optimisations
-private [deepembedding] final class Lift2[A, B, C](private [Lift2] val f: (A, B) => C, val left: StrictParsley[A], val right: StrictParsley[B])
+private [deepembedding] final class Lift2[A, B, C](private val f: (A, B) => C, val left: StrictParsley[A], val right: StrictParsley[B])
     extends StrictParsley[C] {
     def inlinable: Boolean = false
     override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
@@ -25,7 +25,7 @@ private [deepembedding] final class Lift2[A, B, C](private [Lift2] val f: (A, B)
     final override def pretty: String = s"lift2(?, ${left.pretty}, ${right.pretty})"
     // $COVERAGE-ON$
 }
-private [deepembedding] final class Lift3[A, B, C, D](val f: (A, B, C) => D, val p: StrictParsley[A], val q: StrictParsley[B], val r: StrictParsley[C])
+private [deepembedding] final class Lift3[A, B, C, D](private val f: (A, B, C) => D, val p: StrictParsley[A], val q: StrictParsley[B], val r: StrictParsley[C])
     extends StrictParsley[D] {
     def inlinable: Boolean = false
     override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
@@ -56,10 +56,10 @@ private [deepembedding] final class Local[S, A](reg: Reg[S], left: StrictParsley
 }
 
 private [backend] object Lift2 {
-    def unapply[A, B, C](self: Lift2[A, B, C]): Option[((A, B) => C, StrictParsley[A], StrictParsley[B])] = Some((self.f, self.left, self.right))
+    def unapply[A, B, C](self: Lift2[A, B, C]): Some[((A, B) => C, StrictParsley[A], StrictParsley[B])] = Some((self.f, self.left, self.right))
 }
 private [backend] object Lift3 {
-    def unapply[A, B, C, D](self: Lift3[A, B, C, D]): Option[((A, B, C) => D, StrictParsley[A], StrictParsley[B], StrictParsley[C])] = {
+    def unapply[A, B, C, D](self: Lift3[A, B, C, D]): Some[((A, B, C) => D, StrictParsley[A], StrictParsley[B], StrictParsley[C])] = {
         Some((self.f, self.p, self.q, self.r))
     }
 }

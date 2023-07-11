@@ -11,7 +11,7 @@ import parsley.token.errors.LabelConfig
 import parsley.internal.deepembedding.frontend.LazyParsleyIVisitor
 import parsley.internal.machine.instructions
 
-private [parsley] final class Satisfy(private [Satisfy] val f: Char => Boolean, val expected: LabelConfig) extends Singleton[Char] {
+private [parsley] final class Satisfy(private val f: Char => Boolean, val expected: LabelConfig) extends Singleton[Char] {
     // $COVERAGE-OFF$
     override val pretty: String = "satisfy(f)"
     // $COVERAGE-ON$
