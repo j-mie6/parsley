@@ -66,14 +66,14 @@ private [parsley] final class Modify[S](val reg: Reg[S], f: S => S) extends Sing
 }
 
 private [deepembedding] object CharTok {
-    def unapply(self: CharTok): Option[Char] = Some(self.c)
+    def unapply(self: CharTok): Some[Char] = Some(self.c)
 }
 private [deepembedding] object SupplementaryCharTok {
-    def unapply(self: SupplementaryCharTok): Option[Int] = Some(self.codepoint)
+    def unapply(self: SupplementaryCharTok): Some[Int] = Some(self.codepoint)
 }
 private [deepembedding] object StringTok {
-    def unapply(self: StringTok): Option[String] = Some(self.s)
+    def unapply(self: StringTok): Some[String] = Some(self.s)
 }
 private [deepembedding] object UniSatisfy {
-    def unapply(self: UniSatisfy): Option[Int => Boolean] = Some(self.f)
+    def unapply(self: UniSatisfy): Some[Int => Boolean] = Some(self.f)
 }
