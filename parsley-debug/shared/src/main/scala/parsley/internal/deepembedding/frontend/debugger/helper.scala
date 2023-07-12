@@ -3,6 +3,7 @@
  */
 package parsley.internal.deepembedding.frontend.debugger
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 
 import org.typelevel.scalaccompat.annotation.unused
@@ -10,8 +11,8 @@ import parsley.debugger.internal.DebugContext
 import parsley.internal.deepembedding.{singletons, Cont, ContOps, Id}
 import parsley.internal.deepembedding.ContOps.{perform, result, suspend, ContAdapter}
 import parsley.internal.deepembedding.backend.StrictParsley
-import parsley.internal.deepembedding.frontend.{<|>, >>=, Binary, ChainPre, GenericLazyParsley, GenericLazyParsleyIVisitor}
-import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor, Ternary, Unary}
+import parsley.internal.deepembedding.frontend.{<|>, >>=, Binary, Chainl, ChainPost, ChainPre, Chainr, GenericLazyParsley, GenericLazyParsleyIVisitor}
+import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor, Many, ManyUntil, SepEndBy1, Ternary, Unary}
 
 private [parsley] object helper {
     // This map tracks seen parsers to prevent infinitely recursive parsers from overflowing the stack.
@@ -40,6 +41,54 @@ private [parsley] object helper {
             visitWithM[Id.Impl, A](parser, tracker, visitor)
         }
 
+    // Extra information to attach to debugger nodes.
+    private [parsley] sealed trait Iterative
+    private [parsley] case class IterativeParser(pre: Int, body: Int, post: Int) extends Iterative {
+        assert(body > 0) // It'd be an odd iterative parser if it didn't have a body.
+
+        def generateCounter(): IterativeCounter = new IterativeCounter {
+            private var state: Iterative = PreIteration
+            private var cntPre = pre
+            private var cntBody = body
+            private var cntPost = post
+
+            // A truthy return value denotes that a particular iteration cycle has finished.
+            @tailrec override def decrement(): Boolean = state match {
+                case PreIteration if cntPre == 0 =>
+                    state = PostIteration
+                    decrement()
+                case PreIteration =>
+                    val old = cntPre
+                    cntPre = cntPre - 1
+                    old == 1
+                case IterationBody =>
+                    if (cntBody == 1) {
+                        cntBody = body
+                        true
+                    } else {
+                        cntBody = cntBody - 1
+                        false
+                    }
+                case PostIteration =>
+                    val old = cntPost
+                    cntPost = cntPost - 1
+                    old == 1
+                case _ => false // Shouldn't get here.
+            }
+
+            // Call when a PostIteration parser is hit.
+            override def finishBody(): Unit = state = PostIteration
+        }
+    }
+    private [parsley] case object PreIteration extends Iterative
+    private [parsley] case object IterationBody extends Iterative
+    private [parsley] case object PostIteration extends Iterative
+
+    private [parsley] abstract class IterativeCounter private [debugger] () {
+        def decrement(): Boolean
+        def finishBody(): Unit
+    }
+
     // This visitor uses Cont / ContOps to ensure that if a parser is deeply recursive, the user can all a method
     // to use the trampoline ( https://en.wikipedia.org/wiki/Trampoline_(computing) ) to ensure that all calls are
     // turned into heap thunks instead of stack frames.
@@ -47,17 +96,32 @@ private [parsley] object helper {
         extends GenericLazyParsleyIVisitor[ParserTracker, ContWrap[M, R]#LPM] {
         private type L[+A] = ContWrap[M, R]#LPM[A]
 
-        private def handlePossiblySeen[A](self: LazyParsley[A], context: ParserTracker)(dbgF: => L[A]): L[A] =
+        private def injectIterativeStatus[A](par: LazyParsley[A], status: Iterative): LazyParsley[A] = par match {
+            case d: Debugged[A] => d.withIterative(status)
+            case _              => par
+        }
+
+        private def handlePossiblySeenAbstract[A](self: LazyParsley[A],
+                                                  context: ParserTracker,
+                                                  gen: (LazyParsley[A], DebugContext) => Debugged[A])(dbgF: => L[A]): L[A] =
             if (context.map.contains(self)) {
                 result(context.map(self).asInstanceOf[Debugged[A]])
             } else {
                 dbgF.map { dbgF_ =>
-                    val current = new Debugged[A](self, None, None)(dbgCtx)
+                    val current = gen(self, dbgCtx)
                     context.map.put(self, current)
                     current.par = Some(dbgF_)
                     current
                 }
             }
+
+        private def handlePossiblySeen[A](self: LazyParsley[A], context: ParserTracker)(dbgF: => L[A]): L[A] =
+            handlePossiblySeenAbstract(self, context, (s: LazyParsley[A], d) => new Debugged(s, None, None)(d))(dbgF)
+
+        private def handlePossiblySeenIterative[A](self: LazyParsley[A], context: ParserTracker)(pre: Int, body: Int, post: Int)(dbgF: => L[A]): L[A] =
+            handlePossiblySeenAbstract(self,
+                                       context,
+                                       (s: LazyParsley[A], d) => new Debugged(s, None, None)(d).withIterative(IterativeParser(pre, body, post)))(dbgF)
 
         private def handleNoChildren[A](self: LazyParsley[A], context: ParserTracker): L[A] =
             handlePossiblySeen[A](self, context)(result(self))
@@ -134,12 +198,60 @@ private [parsley] object helper {
                 } yield new <|>(dbgP, dbgQ)
             }
 
-        override def visit[A](self: ChainPre[A], context: ParserTracker)(p: LazyParsley[A], op: => LazyParsley[A => A]): L[A] =
-            handlePossiblySeen[A](self, context) {
+        // Iterative parsers need their own handling.
+        override def visit[A](self: Many[A], context: ParserTracker)(p: LazyParsley[A]): L[List[A]] =
+            handlePossiblySeenIterative(self, context)(0, 1, 0) {
+              for {
+                dbgC <- suspend(p.visit(this, context)).map(injectIterativeStatus(_, IterationBody))
+              } yield new Many[A](dbgC)
+            }
+
+        override def visit[A](self: ChainPost[A], context: ParserTracker)(p: LazyParsley[A], _op: => LazyParsley[A => A]): L[A] =
+            handlePossiblySeenIterative[A](self, context)(1, 1, 0) {
                 for {
-                    dbgP  <- suspend(p.visit(this, context))
-                    dbgOp <- suspend(op.visit(this, context))
+                    dbgP <- suspend(p.visit(this, context)).map(injectIterativeStatus(_, PreIteration))
+                    dbgOp <- suspend(_op.visit(this, context)).map(injectIterativeStatus(_, IterationBody))
+                } yield new ChainPost(dbgP, dbgOp)
+            }
+
+        override def visit[A](self: ChainPre[A], context: ParserTracker)(p: LazyParsley[A], op: LazyParsley[A => A]): L[A] =
+            handlePossiblySeenIterative[A](self, context)(0, 1, 1) {
+                for {
+                    dbgP  <- suspend(p.visit(this, context)).map(injectIterativeStatus(_, IterationBody))
+                    dbgOp <- suspend(op.visit(this, context)).map(injectIterativeStatus(_, PostIteration))
                 } yield new ChainPre(dbgP, dbgOp)
+            }
+
+        override def visit[A, B](self: Chainl[A, B], context: ParserTracker)(init: LazyParsley[B], p: => LazyParsley[A], op: => LazyParsley[(B, A) => B]): L[B] =
+            handlePossiblySeenIterative[B](self, context)(1, 2, 0) {
+                for {
+                    dbgInit <- suspend(init.visit(this, context)).map(injectIterativeStatus(_, PreIteration))
+                    dbgP    <- suspend(p.visit(this, context)).map(injectIterativeStatus(_, IterationBody))
+                    dbgOp   <- suspend(op.visit(this, context)).map(injectIterativeStatus(_, IterationBody))
+                } yield new Chainl[A, B](dbgInit, dbgP, dbgOp)
+            }
+
+        override def visit[A, B](self: Chainr[A, B], context: ParserTracker)(p: LazyParsley[A], op: => LazyParsley[(A, B) => B], wrap: A => B): L[B] =
+            handlePossiblySeenIterative[B](self, context)(0, 2, 0) {
+                for {
+                    dbgP  <- suspend(p.visit(this, context)).map(injectIterativeStatus(_, IterationBody))
+                    dbgOp <- suspend(op.visit(this, context)).map(injectIterativeStatus(_, IterationBody))
+                } yield new Chainr[A, B](dbgP, dbgOp, wrap)
+            }
+
+        override def visit[A, B](self: SepEndBy1[A, B], context: ParserTracker)(p: LazyParsley[A], sep: => LazyParsley[B]): L[List[A]] =
+            handlePossiblySeenIterative[List[A]](self, context)(0, 2, 0) {
+                for {
+                    dbgP   <- suspend(p.visit(this, context)).map(injectIterativeStatus(_, IterationBody))
+                    dbgSep <- suspend(sep.visit(this, context)).map(injectIterativeStatus(_, IterationBody))
+                } yield new SepEndBy1[A, B](dbgP, dbgSep)
+            }
+
+        override def visit[A](self: ManyUntil[A], context: ParserTracker)(body: LazyParsley[Any]): L[List[A]] =
+            handlePossiblySeenIterative[List[A]](self, context)(0, 1, 0) {
+                for {
+                  dbgC <- suspend(body.visit(this, context)).map(injectIterativeStatus(_, IterationBody))
+                } yield new ManyUntil[A](dbgC)
             }
 
         // XXX: This will assume all completely unknown parsers have no children at all (i.e. are Singletons).

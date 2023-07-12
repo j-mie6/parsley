@@ -9,10 +9,11 @@ import parsley.internal.deepembedding.{backend, ContOps}
 import parsley.internal.deepembedding.ContOps.{suspend, ContAdapter}
 import parsley.internal.deepembedding.backend.StrictParsley
 import parsley.internal.deepembedding.frontend.{LazyParsley, LazyParsleyIVisitor, LetFinderState, LetMap, RecMap}
+import parsley.internal.deepembedding.frontend.debugger.helper.Iterative
 
 // Wrapper class signifying debugged classes
 private [parsley] final class Debugged[A]
-    (val origin: LazyParsley[A], var par: Option[LazyParsley[A]], val optName: Option[String])
+    (val origin: LazyParsley[A], var par: Option[LazyParsley[A]], val optName: Option[String], val iterativeStatus: Set[Iterative] = Set())
     (dbgCtx: DebugContext) extends LazyParsley[A] {
     assert(!origin.isInstanceOf[Debugged[_]], "Debugged parsers should not be nested within each other directly.")
 
@@ -30,6 +31,9 @@ private [parsley] final class Debugged[A]
 
     private [frontend] def withName(name: String): Debugged[A] =
         new Debugged(origin, par, Some(name))(dbgCtx)
+
+    private [frontend] def withIterative(status: Iterative): Debugged[A] =
+        new Debugged(origin, par, optName, iterativeStatus + status)(dbgCtx)
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] =
         visitor.visitUnknown(this, context)

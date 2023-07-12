@@ -41,7 +41,7 @@ class VisitorTests extends ParsleyTest {
 
             override def visit[A](self: <|>[A], context: Unit)(p: LazyParsley[A], q: LazyParsley[A]): ConstUnit[A] = CUnit
 
-            override def visit[A](self: ChainPre[A], context: Unit)(p: LazyParsley[A], op: => LazyParsley[A => A]): ConstUnit[A] = CUnit
+            override def visit[A](self: ChainPre[A], context: Unit)(p: LazyParsley[A], op: LazyParsley[A => A]): ConstUnit[A] = CUnit
 
             override def visitUnknown[A](self: LazyParsley[A], context: Unit): ConstUnit[A] = CUnit
         }
@@ -58,6 +58,9 @@ class VisitorTests extends ParsleyTest {
                 dontExecute()
 
             override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Nothing] =
+                dontExecute()
+
+            override private[parsley] def prettyName: String =
                 dontExecute()
         }
 
