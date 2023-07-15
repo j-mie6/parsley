@@ -440,7 +440,7 @@ object unicode {
       *
       * @group spec
       */
-    val upper: Parsley[Int] = satisfy(Character.isUpperCase, "uppercase letter")
+    val upper: Parsley[Int] = satisfy(Character.isUpperCase(_), "uppercase letter")
 
     /** This parser tries to parse a lowercase letter, and returns it if successful.
       *
@@ -456,7 +456,7 @@ object unicode {
       *
       * @group spec
       */
-    val lower: Parsley[Int] = satisfy(Character.isLowerCase, "lowercase letter")
+    val lower: Parsley[Int] = satisfy(Character.isLowerCase(_), "lowercase letter")
 
     /** This parser tries to parse either a letter or a digit, and returns it if successful.
       *
@@ -466,7 +466,7 @@ object unicode {
       * @see documentation for [[digit `digit`]].
       * @group spec
       */
-    val letterOrDigit: Parsley[Int] = satisfy(Character.isLetterOrDigit, "alpha-numeric character")
+    val letterOrDigit: Parsley[Int] = satisfy(Character.isLetterOrDigit(_), "alpha-numeric character")
 
     /** This parser tries to parse a letter, and returns it if successful.
       *
@@ -481,7 +481,7 @@ object unicode {
       *
       * @group spec
       */
-    val letter: Parsley[Int] = satisfy(Character.isLetter, "letter")
+    val letter: Parsley[Int] = satisfy(Character.isLetter(_), "letter")
 
     /** This parser tries to parse a digit, and returns it if successful.
       *
@@ -497,7 +497,7 @@ object unicode {
       *
       * @group spec
       */
-    val digit: Parsley[Int] = satisfy(Character.isDigit, "digit")
+    val digit: Parsley[Int] = satisfy(Character.isDigit(_), "digit")
 
     /** This parser tries to parse a hexadecimal digit, and returns it if successful.
       *
