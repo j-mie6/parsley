@@ -7,10 +7,9 @@ package parsley
 
 import Predef.{ArrowAssoc => _, _}
 
-import parsley.character._
-import parsley.implicits.character.charLift
+import parsley.unicode._
 
-class CharTests extends ParsleyTest {
+class UnicodeTests extends ParsleyTest {
     "item" should "accept any character" in {
         for (i <- 0 to 65535) item.parse(i.toChar.toString) should not be a [Failure[_]]
     }
@@ -31,15 +30,15 @@ class CharTests extends ParsleyTest {
         for (i <- 0 to 65535; if i != ' ' && i != '\t') space.parse(i.toChar.toString) shouldBe a [Failure[_]]
     }
 
-    "spaces" should "consume lots of spaces" in cases(spaces *> 'a')(
+    "spaces" should "consume lots of spaces" in cases(spaces *> char('a'))(
         (" \t" * 100 + 'a') -> Some('a')
     )
-    it should "never fail" in cases(spaces *> 'a')(
+    it should "never fail" in cases(spaces *> char('a'))(
         "a" -> Some('a')
     )
 
     "whitespace" should "consume any whitespace chars" in {
-        (whitespaces *> 'a').parse(" \t\n\r\f\u000b" * 100 + 'a') should not be a [Failure[_]]
+        (whitespaces *> char('a')).parse(" \t\n\r\f\u000b" * 100 + 'a') should not be a [Failure[_]]
     }
     it should "fail otherwise" in {
         val cs = " \t\n\r\f\u000b".toSet
@@ -118,5 +117,18 @@ class CharTests extends ParsleyTest {
     it should "work for single character ranges too" in {
         cases(character.noneOf('a'))       ("a" -> None, "\n" -> Some('\n'), "b" -> Some('b'))
         cases(character.noneOf('a' to 'a'))("a" -> None, "\n" -> Some('\n'), "b" -> Some('b'))
+    }
+
+    "charUtf16" should "handle BMP characters" in {
+        cases(char('a'))("a" -> Some('a'))
+        cases(char('λ'))("λ" -> Some('λ'))
+    }
+
+    it should "handle multi-character codepoints" in {
+        cases(char(0x1F642))("🙂" -> Some(0x1F642))
+    }
+
+    it should "handle multi-character codepoints atomically on fail" in {
+        cases(char(0x1F642) <|> char(0x1F643))("🙃" -> Some(0x1F643))
     }
 }

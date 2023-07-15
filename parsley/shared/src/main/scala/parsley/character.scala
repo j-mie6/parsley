@@ -105,6 +105,8 @@ object character {
     private def char(c: Char, label: String): Parsley[Char] = char(c, Label(label))
     private def char(c: Char, label: LabelConfig): Parsley[Char] = new Parsley(new singletons.CharTok(c, label))
 
+    //TODO: deprecate in 4.5
+    // $COVERAGE-OFF$
     /** This combinator tries to parse a single specific codepoint `c` from the input.
       *
       * Like [[char `char`]], except it may consume two characters from the input,
@@ -126,8 +128,8 @@ object character {
       * @return
       * @group core
       */
-    //TODO: deprecate in 4.5
     def codePoint(c: Int): Parsley[Int] = unicode.char(c)
+    // $COVERAGE-OFF$
 
     /** This combinator tries to parse a single character from the input that matches the given predicate.
       *
@@ -184,8 +186,8 @@ object character {
       * @group string
       */
     def string(s: String): Parsley[String] = string(s, NotConfigured)
-    private def string(s: String, label: String): Parsley[String] = string(s, Label(label))
-    private def string(s: String, label: LabelConfig): Parsley[String] = {
+    private [parsley] def string(s: String, label: String): Parsley[String] = string(s, Label(label))
+    private [parsley] def string(s: String, label: LabelConfig): Parsley[String] = {
         require(s.nonEmpty, "`string` may not be passed the empty string (`string(\"\")` is meaningless, perhaps you meant `pure(\"\")`?)")
         new Parsley(new singletons.StringTok(s, label))
     }
