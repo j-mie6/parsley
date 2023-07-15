@@ -17,6 +17,70 @@ import parsley.internal.deepembedding.singletons
 
 // TODO: document
 // TODO: add all the other methods from character, _including_ an alias for `string`.
+/** This module contains many parsers to do with reading one or more characters. Almost every parser will need something from this module.
+  *
+  * In particular, this module contains: combinators that can read specific characters; combinators that represent character classes and their negations;
+  * combinators for reading specific strings; as well as a selection of pre-made parsers to parse specific kinds of character, like digits and letters.
+  *
+  * @since 2.2.0
+  *
+  * @groupprio pred 100
+  * @groupname pred Character Predicates
+  * @groupdesc pred
+  *     These are useful for providing to the sub-descriptions of a [[token.descriptions.LexicalDesc]] to specify behaviour for the lexer.
+  *     Other than that, they aren't ''particularly'' useful.
+  *
+  * @groupprio core 0
+  * @groupname core Core Combinators and Parsers
+  * @groupdesc core
+  *     These are the most primitive combinators for consuming input capable of any input reading tasks.
+  *
+  * @groupprio skip 75
+  * @groupname skip Whitespace Skipping Parsers
+  * @groupdesc skip
+  *     These parsers are designed to skip chunks of whitespace, for very rudimentary lexing tasks. It
+  *     is probably better to use the functionality of [[parsley.token]].
+  *
+  * @groupprio class 20
+  * @groupname class Character Class Combinators
+  * @groupdesc class
+  *     These combinators allow for working with ''character classes''. This means that a set, or range, of
+  *     characters can be specified, and the combinator will return a parser that matches one of those characters
+  *     (or conversely, any character that is ''not'' in that set). The parsed character is always returned.
+  *
+  * @groupprio spec 25
+  * @groupname spec Specific Character Parsers
+  * @groupdesc spec
+  *     These parsers are special cases of [[satisfy `satisfy`]] or [[char `char`]]. They are worth using, as they are given special error labelling,
+  *     producing nicer error messages than their primitive counterparts.
+  *
+  *     This documentation assumes JDK 17.
+  *     JDK 17 is compliant with [[https://www.unicode.org/versions/Unicode13.0.0/UnicodeStandard-13.0.pdf Unicode® Specification 13.0]].
+  *     As such, the descriptions of the parsers in this section are accurate with respect to Unicode® Specification 13.0:
+  *     using a different JDK may affect the ''precise'' definitions of the parsers below. If in doubt, check the documentation
+  *     for `java.lang.Character` to see which Unicode version is supported by your JVM. A table of the Unicode versions
+  *     up to JDK 17 can be found [[https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/Character.html here]].
+  *
+  *     These parsers are only able to parse unicode characters in the range `'\u0000'` to `'\uFFFF'`, known as
+  *     the ''Basic Multilingual Plane (BMP)''. Unicode characters wider than a single 16-bit character should be
+  *     parsed using multi-character combinators such as `string`, or, alternatively, `satisfyUtf16` or `charUtf16`.
+  *
+  * @groupprio string 22
+  * @groupname string String Combinators
+  * @groupdesc string
+  *     These combinators allow for working with, or building, strings. This means that they can
+  *     parse specific strings, specific sets of strings, or can read characters repeatedly to
+  *     generate strings. They are united in all returning `String` as their result.
+  *
+  * @define oneOf
+  *     This combinator tries to parse any character from supplied set of characters `cs`, returning it if successful.
+  * @define noneOf
+  *     This combinator tries to parse any character '''not''' from supplied set of characters `cs`, returning it if successful.
+  *
+  * @define categories
+  *     ''The full list of codepoints found in a category can be found in the
+  *     [[https://www.unicode.org/Public/13.0.0/ucd/extracted/DerivedGeneralCategory.txt Unicode Character Database]]''.
+  */
 object unicode {
     /** This combinator tries to parse a single specific codepoint `c` from the input.
       *
