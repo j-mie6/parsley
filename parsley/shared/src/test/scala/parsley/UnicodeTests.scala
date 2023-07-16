@@ -54,7 +54,7 @@ class UnicodeTests extends ParsleyTest {
         endOfLine.parse("  ") shouldBe a [Failure[_]]
     }
 
-   "letter" should "accept non-latin characters" in cases(letter)(
+    "letter" should "accept non-latin characters" in cases(letter)(
         "ß" -> Some('ß'),
         "ð" -> Some('ð'),
         "é" -> Some('é'),

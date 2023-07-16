@@ -68,23 +68,44 @@ class StringTests extends ParsleyTest {
         p.parse("b") shouldBe q.parse("b")
     }
 
-    "stringOfMany" should "allow for no letters" in cases(stringOfMany(_.isLetter))("" -> Some(""))
+    "character.stringOfMany" should "allow for no letters" in cases(stringOfMany(_.isLetter))("" -> Some(""))
     it should "consume as many letters as it can" in cases(stringOfMany(_.isLetter), noEof = true)(
         "abc" -> Some("abc"),
         "ab4c" -> Some("ab"),
     )
-    it should "fail if pc fails having consumed input" in cases(stringOfMany(string("ab") #> 'a'))(
+    it should "fail if pc fails having consumed input" in cases(stringOfMany(string("ab").as('a')))(
         "ababab" -> Some("aaa"),
         "aba" -> None,
     )
 
-    "stringOfSome" should "not allow for no letters" in cases(stringOfSome(_.isLetter))("" -> None)
+    "character.stringOfSome" should "not allow for no letters" in cases(stringOfSome(_.isLetter))("" -> None)
     it should "consume as many letters as it can" in cases(stringOfSome(_.isLetter), noEof = true)(
         "abc" -> Some("abc"),
         "ab4c" -> Some("ab"),
     )
-    it should "fail if pc fails having consumed input" in cases(stringOfSome(string("ab") #> 'a'))(
+    it should "fail if pc fails having consumed input" in cases(stringOfSome(string("ab").as('a')))(
         "ababab" -> Some("aaa"),
         "aba" -> None,
+    )
+
+    private def isEmoji(c: Int) = c >= 0x1f600 && c <= 0x1f64f || c >= 0x1f900 && c <= 0x1f970
+    "unicode.stringOfMany" should "allow for no letters" in cases(unicode.stringOfMany(isEmoji(_)))("" -> Some(""))
+    it should "consume as many letters as it can" in cases(unicode.stringOfMany(isEmoji(_)), noEof = true)(
+        "😀😅😂😇🥰😍🤩" -> Some("😀😅😂😇🥰😍🤩"),
+        "😀😅🌿😂😇🥰😍🤩" -> Some("😀😅"),
+    )
+    it should "fail if pc fails having consumed input" in cases(unicode.stringOfMany(string("🌿🌿").as(0x1f33f)))(
+        "🌿🌿🌿🌿🌿🌿" -> Some("🌿🌿🌿"),
+        "🌿🌿🌿" -> None,
+    )
+
+    "unicode.stringOfSome" should "not allow for no letters" in cases(unicode.stringOfSome(isEmoji(_)))("" -> None)
+    it should "consume as many letters as it can" in cases(unicode.stringOfSome(isEmoji(_)), noEof = true)(
+        "😀😅😂😇🥰😍🤩" -> Some("😀😅😂😇🥰😍🤩"),
+        "😀😅🌿😂😇🥰😍🤩" -> Some("😀😅"),
+    )
+    it should "fail if pc fails having consumed input" in cases(unicode.stringOfSome(string("🌿🌿").as(0x1f33f)))(
+        "🌿🌿🌿🌿🌿🌿" -> Some("🌿🌿🌿"),
+        "🌿🌿🌿" -> None,
     )
 }

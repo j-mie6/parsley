@@ -128,7 +128,7 @@ object character {
       * @group core
       */
     def codePoint(c: Int): Parsley[Int] = unicode.char(c)
-    // $COVERAGE-OFF$
+    // $COVERAGE-ON$
 
     /** This combinator tries to parse a single character from the input that matches the given predicate.
       *

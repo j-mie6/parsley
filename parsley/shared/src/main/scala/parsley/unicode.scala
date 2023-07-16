@@ -115,6 +115,8 @@ object unicode {
     // TODO: document, test
     def satisfyMap[A](pred: PartialFunction[Int, A]): Parsley[A] = satisfy(pred.isDefinedAt(_)).map(pred)
 
+    // This should always just match up, so no need to test
+    // $COVERAGE-OFF$
     /** This combinator attempts to parse a given string from the input, and fails otherwise.
       *
       * Attempts to read the given string ''completely'' from the input at the current position.
@@ -141,6 +143,7 @@ object unicode {
       * @group string
       */
     def string(s: String): Parsley[String] = character.string(s)
+    // $COVERAGE-ON$
 
     /** $oneOf
       *
@@ -344,6 +347,8 @@ object unicode {
     // TODO: document, test
     def stringOfSome(pred: Int => Boolean): Parsley[String] = stringOfSome(satisfy(pred))
 
+    // These should always just match up, so no need to test
+    // $COVERAGE-OFF$
     /** This combinator tries to parse each of the strings `strs` (and `str0`), until one of them succeeds.
       *
       * Unlike `choice`, or more accurately `attemptChoice`, this combinator will not
@@ -411,6 +416,7 @@ object unicode {
         @group string
       */
     def strings[A](kv0: (String, Parsley[A]), kvs: (String, Parsley[A])*): Parsley[A] = character.strings(kv0, kvs: _*)
+    // $COVERAGE-ON$
 
     /** This parser will parse '''any''' single character from the input, failing if there is no input remaining.
       *
