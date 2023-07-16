@@ -688,9 +688,11 @@ object character {
       *
       * @group spec
       */
-    val bit: Parsley[Char] = oneOf('0', '1').label("bit")
+    val bit: Parsley[Char] = satisfy(c => Character.digit(c, 2) != -1, "bit")
 
     // Functions
+    // TODO: deprecate in 4.5
+    // $COVERAGE-OFF$
     /** This function returns true if a character is a whitespace character.
       *
       * A whitespace character is one of:
@@ -705,6 +707,7 @@ object character {
       * @group pred
       */
     def isWhitespace(c: Char): Boolean = c.isWhitespace
+    // $COVERAGE-ON$
 
     /** This function returns true if a character is a hexadecimal digit.
       *
@@ -738,6 +741,7 @@ object character {
     // Sue me.
     private def renderChar(c: Char): String = parsley.errors.helpers.renderRawString(s"$c")
 
+    // $COVERAGE-OFF$
     @deprecated("this is an old naming, which I believe was never exposed but to be safe it'll remain till 5.0.0", "4.3.0")
     private [parsley] def charUtf16(c: Int): Parsley[Int] = unicode.char(c)
     @deprecated("this is an old naming, which I believe was never exposed but to be safe it'll remain till 5.0.0", "4.3.0")
@@ -748,4 +752,5 @@ object character {
     private [parsley] def stringOfSomeUtf16(pc: Parsley[Int]): Parsley[String] = unicode.stringOfSome(pc)
     @deprecated("this is an old naming, which I believe was never exposed but to be safe it'll remain till 5.0.0", "4.3.0")
     private [parsley] def addCodepoint(sb: StringBuilder, codepoint: Int): StringBuilder = unicode.addCodepoint(sb, codepoint)
+    // $COVERAGE-ON$
 }

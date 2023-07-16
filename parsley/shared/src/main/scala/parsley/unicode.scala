@@ -5,8 +5,6 @@
  */
 package parsley
 
-import scala.collection.immutable.NumericRange
-
 import parsley.Parsley.{empty, fresh, pure}
 import parsley.combinator.skipMany
 import parsley.errors.combinator.ErrorMethods
@@ -223,7 +221,7 @@ object unicode {
       * @see [[satisfy `satisfy`]]
       * @group class
       */
-    def oneOf(cs: NumericRange[Int]): Parsley[Int] = cs.size match {
+    def oneOf(cs: Range): Parsley[Int] = cs.size match {
         case 0 => empty
         case 1 => char(cs.head)
         case _ if Math.abs(cs(0).toInt - cs(1).toInt) == 1 => satisfy(cs.contains(_),
@@ -317,7 +315,7 @@ object unicode {
       * @see [[satisfy `satisfy`]]
       * @group class
       */
-    def noneOf(cs: NumericRange[Int]): Parsley[Int] = cs.size match {
+    def noneOf(cs: Range): Parsley[Int] = cs.size match {
         case 0 => item
         case 1 => satisfy(cs.head != _, s"anything except ${renderChar(cs.head)}")
         case _ if Math.abs(cs(0).toInt - cs(1).toInt) == 1 => satisfy(!cs.contains(_), {
@@ -589,25 +587,9 @@ object unicode {
       *
       * @group spec
       */
-    val bit: Parsley[Int] = oneOf('0', '1').label("bit")
+    val bit: Parsley[Int] = satisfy(c => Character.digit(c, 2) != -1, "bit")
 
     // Functions
-    /** This function returns true if a character is a whitespace character.
-      *
-      * A whitespace character is one of:
-      *   1. a space (`' '`)
-      *   1. a tab (`'\t'`)
-      *   1. a line feed (`'\n'`)
-      *   1. a carriage return (`'\r'`)
-      *   1. a form feed (`'\f'`)
-      *   1. a vertical tab (`'\u000B'`)
-      *
-      * @see [[whitespace `whitespace`]]
-      * @group pred
-      */
-    // TODO: deprecate in 4.5
-    def isWhitespace(c: Int): Boolean = Character.isWhitespace(c)
-
     /** This function returns true if a character is a hexadecimal digit.
       *
       * A hexadecimal digit is one of (all inclusive ranges):
@@ -638,7 +620,7 @@ object unicode {
     def isSpace(c: Int): Boolean = c == ' ' || c == '\t'
 
     // Sue me.
-    private def renderChar(c: Int): String = parsley.errors.helpers.renderRawString(s"${c.toChar}") // FIXME:
+    private def renderChar(c: Int): String = parsley.errors.helpers.renderRawString(Character.toChars(c).mkString)
 
     private [parsley] def addCodepoint(sb: StringBuilder, codepoint: Int): StringBuilder = {
         if (Character.isSupplementaryCodePoint(codepoint)) {
