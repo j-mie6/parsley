@@ -96,8 +96,8 @@ class CharTests extends ParsleyTest {
             digit.parse(c.toString) shouldBe Success(c)
             hexDigit.parse(c.toString) shouldBe Success(c)
             val d = c.asDigit
-            if (d >= 0 && d < 2) bit.parse(c.toString) shouldBe Success(c)
-            if (d >= 0 && d < 8) octDigit.parse(c.toString) shouldBe Success(c)
+            if (d >= 0 && d < 2) { val _ = bit.parse(c.toString) shouldBe Success(c) }
+            if (d >= 0 && d < 8) { val _ = octDigit.parse(c.toString) shouldBe Success(c) }
         }
         for (c <- ('a' to 'f') ++ ('\uff41' to '\uff46') ++ ('A' to 'F') ++ ('\uff21' to '\uff26')) hexDigit.parse(c.toString) shouldBe Success(c)
     }
