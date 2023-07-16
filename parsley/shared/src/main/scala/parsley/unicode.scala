@@ -223,7 +223,7 @@ object unicode {
     def oneOf(cs: Range): Parsley[Int] = cs.size match {
         case 0 => empty
         case 1 => char(cs.head)
-        case _ if Math.abs(cs(0).toInt - cs(1).toInt) == 1 => satisfy(cs.contains(_),
+        case _ if Math.abs(cs(0) - cs(1)) == 1 => satisfy(cs.contains(_),
             s"one of ${renderChar(cs.min)} to ${renderChar(cs.max)}"
         )
         case _ => satisfy(cs.contains(_))
@@ -314,7 +314,7 @@ object unicode {
     def noneOf(cs: Range): Parsley[Int] = cs.size match {
         case 0 => item
         case 1 => satisfy(cs.head != _, s"anything except ${renderChar(cs.head)}")
-        case _ if Math.abs(cs(0).toInt - cs(1).toInt) == 1 => satisfy(!cs.contains(_), {
+        case _ if Math.abs(cs(0) - cs(1)) == 1 => satisfy(!cs.contains(_), {
             s"anything outside of ${renderChar(cs.min)} to ${renderChar(cs.max)}"
         })
         case _ => satisfy(!cs.contains(_))
