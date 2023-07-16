@@ -7,7 +7,7 @@ package parsley
 
 import scala.collection.immutable.NumericRange
 
-import parsley.Parsley.{attempt, empty, fresh, pure}
+import parsley.Parsley.{atomic, empty, fresh, pure}
 import parsley.combinator.{choice, skipMany}
 import parsley.errors.combinator.ErrorMethods
 import parsley.token.errors.{Label, LabelConfig, NotConfigured}
@@ -81,7 +81,7 @@ import parsley.internal.deepembedding.singletons
 object character {
     /** This combinator tries to parse a single specific character `c` from the input.
       *
-      * Attempts to read the given character `c` from the input stream at the current
+      * atomics to read the given character `c` from the input stream at the current
       * position. If this character can be found, it is consumed and returned. Otherwise,
       * no input is consumed and this combinator will fail.
       *
@@ -133,7 +133,7 @@ object character {
 
     /** This combinator tries to parse a single character from the input that matches the given predicate.
       *
-      * Attempts to read a character from the input and tests it against the predicate `pred`. If a character `c`
+      * atomics to read a character from the input and tests it against the predicate `pred`. If a character `c`
       * can be read and `pred(c)` is true, then `c` is consumed and returned. Otherwise, no input is consumed
       * and this combinator will fail.
       *
@@ -160,9 +160,9 @@ object character {
     // TODO: document, test
     def satisfyMap[A](pred: PartialFunction[Char, A]): Parsley[A] = satisfy(pred.isDefinedAt(_)).map(pred)
 
-    /** This combinator attempts to parse a given string from the input, and fails otherwise.
+    /** This combinator atomics to parse a given string from the input, and fails otherwise.
       *
-      * Attempts to read the given string ''completely'' from the input at the current position.
+      * atomics to read the given string ''completely'' from the input at the current position.
       * If the string is present, then the parser succeeds, and the entire string is consumed
       * from the input. Otherwise, if the input has too few characters remaining, or not all
       * the characters matched, the parser fails. On failure, '''all''' the characters that were
@@ -440,10 +440,10 @@ object character {
 
     /** This combinator tries to parse each of the strings `strs` (and `str0`), until one of them succeeds.
       *
-      * Unlike `choice`, or more accurately `attemptChoice`, this combinator will not
+      * Unlike `choice`, or more accurately `atomicChoice`, this combinator will not
       * necessarily parse the strings in the order provided. It will favour strings that have another string
       * as a prefix first, so that it has ''Longest Match'' semantics. It will try to minimise backtracking
-      * too, making it a much more efficient option than `attemptChoice`.
+      * too, making it a much more efficient option than `atomicChoice`.
       *
       * The longest succeeding string will be returned. If no strings match then the combinator fails.
       *
@@ -473,10 +473,10 @@ object character {
     /** This combinator tries to parse each of the key-value pairs `kvs` (and `kv0`), until one of them succeeds.
       *
       * Each argument to this combinator is a pair of a string and a parser to perform if that string can be parsed.
-      * `strings(s0 -> p0, ...)` can be thought of as `attemptChoice(string(s0) *> p0, ...)`, however, the given
+      * `strings(s0 -> p0, ...)` can be thought of as `atomicChoice(string(s0) *> p0, ...)`, however, the given
       * ordering of key-value pairs does not dictate the order in which the parses are tried. In particular, it
       * will favour keys that are the prefix of another key first, so that it has ''Longest Match'' semantics.
-      * it will try to minimise backtracking too, making it a much more efficient option than `attemptChoice`.
+      * it will try to minimise backtracking too, making it a much more efficient option than `atomicChoice`.
       *
       * @example {{{
       * scala> import parsley.character.strings
@@ -494,7 +494,7 @@ object character {
       * }}}
       *
       * @note the scope of any backtracking performed is isolated to the key itself, as it is assumed that once a
-      * key parses correctly, the branch has been committed to. Putting an `attempt` around the values will not affect
+      * key parses correctly, the branch has been committed to. Putting an `atomic` around the values will not affect
       * this behaviour.
       *
       * @param kv0 the first key-value pair to try to parse.
@@ -512,7 +512,7 @@ object character {
         val ss = kv0 +: kvs
         choice(ss.groupBy(_._1.head).toList.sortBy(_._1).view.map(_._2).flatMap { s =>
             val (sLast, pLast) :: rest = s.toList.sortBy(_._1.length): @unchecked
-            ((string(sLast) *> pLast) :: rest.map { case (s, p) => attempt(string(s)) *> p }).reverse
+            ((string(sLast) *> pLast) :: rest.map { case (s, p) => atomic(string(s)) *> p }).reverse
         }.toSeq: _*)
     }
 
@@ -570,11 +570,11 @@ object character {
     /** This parser tries to parse a `CRLF` newline character pair, returning `'\n'` if successful.
       *
       * A `CRLF` character is the pair of carriage return (`'\r'`) and line feed (`'\n'`). These
-      * two characters will be parsed together or not at all. The parser is made atomic using `attempt`.
+      * two characters will be parsed together or not at all. The parser is made atomic using `atomic`.
       *
       * @group spec
       */
-    val crlf: Parsley[Char] = attempt(string("\r\n", "end of crlf")).as('\n')
+    val crlf: Parsley[Char] = atomic(string("\r\n", "end of crlf")).as('\n')
 
     /** This parser will parse either a line feed (`LF`) or a `CRLF` newline, returning `'\n'` if successful.
       *

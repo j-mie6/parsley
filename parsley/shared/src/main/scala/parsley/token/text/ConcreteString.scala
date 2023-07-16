@@ -7,7 +7,7 @@ package parsley.token.text
 
 import scala.Predef.{String => ScalaString, _}
 
-import parsley.Parsley, Parsley.{attempt, fresh, pure}
+import parsley.Parsley, Parsley.{atomic, fresh, pure}
 import parsley.character.{char, string}
 import parsley.combinator.{choice, skipManyUntil}
 import parsley.errors.combinator.ErrorMethods
@@ -44,6 +44,6 @@ private [token] final class ConcreteString(ends: Set[ScalaString], stringChar: S
         // then only one string builder needs allocation
         sbReg.put(fresh(new StringBuilder)) *>
         skipManyUntil(sbReg.modify(char(terminalInit).hide.as((sb: StringBuilder) => sb += terminalInit)) <|> content,
-                      closeLabel(allowsAllSpace, stringChar.isRaw)(attempt(terminal))) //is the attempt needed here? not sure
+                      closeLabel(allowsAllSpace, stringChar.isRaw)(atomic(terminal))) //is the atomic needed here? not sure
     }
 }

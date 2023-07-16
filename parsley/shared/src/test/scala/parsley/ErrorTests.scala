@@ -76,7 +76,7 @@ class ErrorTests extends ParsleyTest {
 
     // Issue #70
     "filterOut" should "not corrupt the stack under a handler" in {
-        val p = attempt(item.filterOut {
+        val p = atomic(item.filterOut {
             case c if c.isLower => "no lowercase!"
         })
         p.parse("a") shouldBe a [Failure[_]]
@@ -418,7 +418,7 @@ class ErrorTests extends ParsleyTest {
     }
 
     "partialAmend" should "perform visual amendment but allow for domination" in {
-        def errorMaker(n: Int, msg: String) = attempt(combinator.exactly(n, 'a') *> ('b' <|> pfail(msg)))
+        def errorMaker(n: Int, msg: String) = atomic(combinator.exactly(n, 'a') *> ('b' <|> pfail(msg)))
         val p = errorMaker(2, "small") <|> amend(errorMaker(3, "big"))
         val q = errorMaker(2, "small") <|> partialAmend(errorMaker(3, "big"))
         val r = errorMaker(3, "first") <|> partialAmend(errorMaker(3, "second"))
@@ -518,7 +518,7 @@ class ErrorTests extends ParsleyTest {
 
     // Issue 107
     "hints" should "incorporate only with errors at the same offset depth" in {
-        val p = attempt('a' ~> digit)
+        val p = atomic('a' ~> digit)
         val parser = optional('b'.label("b")) ~> p.label("foo")
         inside(parser.parse("aa")) {
             case Failure(TestError(_, VanillaError(_, expected, _))) =>

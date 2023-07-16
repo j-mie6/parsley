@@ -27,8 +27,8 @@ class CombinatorTests extends ParsleyTest {
         choice("a", "b", "bc", "bcd").parse("c") shouldBe a [Failure[_]]
     }
 
-    "attemptChoice" should "correctly ensure the subparsers backtrack" in {
-        attemptChoice("ac", "aba", "abc").parse("abc") should be (Success("abc"))
+    "atomicChoice" should "correctly ensure the subparsers backtrack" in {
+        atomicChoice("ac", "aba", "abc").parse("abc") should be (Success("abc"))
     }
 
     "exactly" should "be pure(Nil) for n <= 0" in {
@@ -134,7 +134,7 @@ class CombinatorTests extends ParsleyTest {
         "ab" -> None,
     )
     it must "not corrupt the stack on sep hard-fail" in {
-        ('c' <::> attempt(sepEndBy('a', "bb")).getOrElse(List('d'))).parse("cab") should be (Success(List('c', 'd')))
+        ('c' <::> atomic(sepEndBy('a', "bb")).getOrElse(List('d'))).parse("cab") should be (Success(List('c', 'd')))
     }
 
     "sepEndBy1" must "require a p" in {

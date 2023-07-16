@@ -8,7 +8,7 @@ package parsley.internal
 import parsley.{ParsleyTest, Success, Failure, TestError, VanillaError}
 import parsley.Parsley, Parsley._
 import parsley.character.{char, satisfy, digit, string, stringOfSome}
-import parsley.combinator.{attemptChoice, choice, some, optional}
+import parsley.combinator.{atomicChoice, choice, some, optional}
 import parsley.expr._
 import parsley.implicits.character.charLift
 import parsley.errors.combinator.ErrorMethods
@@ -58,10 +58,10 @@ class InternalTests extends ParsleyTest {
     // Issue 118
     "error alternatives for JumpTable" should "be complete across all branches" in {
         val strs = Seq("hello", "hi", "abc", "good", "g")
-        val p = attemptChoice(strs.map(string): _*)
+        val p = atomicChoice(strs.map(string): _*)
         assume(p.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 1)
         val dummy = Reg.make[Unit]
-        val q = attemptChoice(strs.map(s => dummy.put(()) *> string(s)): _*)
+        val q = atomicChoice(strs.map(s => dummy.put(()) *> string(s)): _*)
         assume(q.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 0)
         info("parsing 'h'")
         p.parse("h") shouldBe q.parse("h")
@@ -71,10 +71,10 @@ class InternalTests extends ParsleyTest {
         p.parse("a") shouldBe q.parse("a")
     }
     they should "contain the default in case of no input" in {
-        val p = attemptChoice(string("abc"), string("a"), stringOfSome(digit), string("dead"))
+        val p = atomicChoice(string("abc"), string("a"), stringOfSome(digit), string("dead"))
         assume(p.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 1)
         val dummy = Reg.make[Unit]
-        val q = attemptChoice(dummy.put(()) *> string("abc"), dummy.put(()) *> string("a"),
+        val q = atomicChoice(dummy.put(()) *> string("abc"), dummy.put(()) *> string("a"),
                               dummy.put(()) *> stringOfSome(digit), dummy.put(()) *> string("dead"))
         assume(q.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) == 0)
         p.parse("") shouldBe q.parse("")
@@ -122,7 +122,7 @@ class InternalTests extends ParsleyTest {
     }
 
     "JumpTable" must "not try and commute branches" in {
-        val p = attempt(string("abc")) <|> string("b") <|> string("abd") <|> string("cbe")
+        val p = atomic(string("abc")) <|> string("b") <|> string("abd") <|> string("cbe")
         assume(p.internal.instrs.count(_.isInstanceOf[instructions.JumpTable]) >= 1)
         inside(p.parse("abe")) {
             case Failure(TestError(_, VanillaError(_, es, _))) => es.size shouldBe 3

@@ -1136,6 +1136,8 @@ object Parsley {
       * @see [[Parsley.flatten `flatten`]] for details and examples.
       */
     def join[A](p: Parsley[Parsley[A]]): Parsley[A] = p.flatten
+    // $COVERAGE-OFF$
+    // TODO: deprecate in 4.5.0
     /** This combinator parses its argument `p`, but rolls back any consumed input on failure.
       *
       * If the parser `p` succeeds, then `attempt(p)` has no effect. However, if `p` failed,
@@ -1155,9 +1157,35 @@ object Parsley {
       *
       * @param p the parser to execute, if it fails, it will not have consumed input.
       * @return a parser that tries `p`, but never consumes input if it fails.
+      * @note `atomic` should be used instead.
       * @group prim
       */
-    def attempt[A](p: Parsley[A]): Parsley[A] = new Parsley(new frontend.Attempt(p.internal))
+    def attempt[A](p: Parsley[A]): Parsley[A] = atomic(p)
+    // $COVERAGE-ON$
+    // TODO: perhaps touch up this documentation a bit...
+    /** This combinator parses its argument `p`, but rolls back any consumed input on failure.
+      *
+      * If the parser `p` succeeds, then `atomic(p)` has no effect. However, if `p` failed,
+      * then any input that it consumed is rolled back. This has two uses: it ensures that
+      * the parser `p` is all-or-nothing when consuming input, and it allows for
+      * parsers that consume input to backtrack when they fail (with `<|>`). It should be
+      * used for the latter purpose sparingly, however, since excessive backtracking in a
+      * parser can result in much lower efficiency.
+      *
+      * @example {{{
+      * scala> import parsley.character.string, parsley.Parsley.atomic
+      * scala> (string("abc") <|> string("abd")).parse("abd")
+      * val res0 = Failure(..) // first parser consumed a, so no backtrack
+      * scala> (atomic(string("abc")) <|> string("abd")).parse("abd")
+      * val res1 = Success("abd") // first parser does not consume input on failure now
+      * }}}
+      *
+      * @param p the parser to execute, if it fails, it will not have consumed input.
+      * @return a parser that tries `p`, but never consumes input if it fails.
+      * @since 4.4.0
+      * @group prim
+      */
+    def atomic[A](p: Parsley[A]): Parsley[A] = new Parsley(new frontend.Attempt(p.internal))
     /** This combinator parses its argument `p`, but does not consume input if it succeeds.
       *
       * If the parser `p` succeeds, then `lookAhead(p)` will roll back any input consumed

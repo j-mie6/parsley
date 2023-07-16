@@ -5,18 +5,18 @@
  */
 package parsley.token.numeric
 
-import parsley.Parsley, Parsley.attempt
+import parsley.Parsley, Parsley.atomic
 import parsley.token.descriptions.numeric.NumericDesc
 import parsley.token.errors.ErrorConfig
 
 import org.typelevel.scalaccompat.annotation.unused
 
 private [token] final class UnsignedCombined(@unused desc: NumericDesc, integer: Integer, rational: Real, err: ErrorConfig) extends Combined(err) {
-    override lazy val decimal: Parsley[Either[BigInt, BigDecimal]] = (attempt(rational.decimal) <+> integer.decimal).map(_.swap)
-    override lazy val hexadecimal: Parsley[Either[BigInt, BigDecimal]] = (attempt(rational.hexadecimal) <+> integer.hexadecimal).map(_.swap)
-    override lazy val octal: Parsley[Either[BigInt, BigDecimal]] = (attempt(rational.octal) <+> integer.octal).map(_.swap)
-    override lazy val binary: Parsley[Either[BigInt, BigDecimal]] = (attempt(rational.binary) <+> integer.binary).map(_.swap)
-    override lazy val number: Parsley[Either[BigInt, BigDecimal]] = (attempt(rational.number) <+> integer.number).map(_.swap)
+    override lazy val decimal: Parsley[Either[BigInt, BigDecimal]] = (atomic(rational.decimal) <+> integer.decimal).map(_.swap)
+    override lazy val hexadecimal: Parsley[Either[BigInt, BigDecimal]] = (atomic(rational.hexadecimal) <+> integer.hexadecimal).map(_.swap)
+    override lazy val octal: Parsley[Either[BigInt, BigDecimal]] = (atomic(rational.octal) <+> integer.octal).map(_.swap)
+    override lazy val binary: Parsley[Either[BigInt, BigDecimal]] = (atomic(rational.binary) <+> integer.binary).map(_.swap)
+    override lazy val number: Parsley[Either[BigInt, BigDecimal]] = (atomic(rational.number) <+> integer.number).map(_.swap)
 
     // FIXME: gross :( we should restructure this to be more reusable friendly
     // FIXME: This doesn't respect the number requirements on hex oct bin for both integer and rational
@@ -30,7 +30,7 @@ private [token] final class UnsignedCombined(@unused desc: NumericDesc, integer:
             case (f, e) => Right(f / 10 * BigDecimal(10).pow(e))
         } <|> decExponent.as(Right(BigDecimal(0)))
         val zeroLead = '0' *> (noZeroHexadecimal <|> noZeroOctal <|> noZeroBinary <|> zeroPoint <|> decimal <|> pure(Left(BigInt(0))))
-        attempt(zeroLead <|> decimal)
+        atomic(zeroLead <|> decimal)
     }*/
 
     // TODO: Using choice here will generate a jump table, which will be nicer for `number` (this requires enhancements to the jumptable optimisation)

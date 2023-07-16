@@ -5,7 +5,7 @@
  */
 package parsley.token.symbol
 
-import parsley.Parsley, Parsley.attempt
+import parsley.Parsley, Parsley.atomic
 import parsley.character.{char, string}
 import parsley.token.descriptions.{NameDesc, SymbolDesc}
 import parsley.token.errors.ErrorConfig
@@ -24,7 +24,7 @@ private [token] class ConcreteSymbol(nameDesc: NameDesc, symbolDesc: SymbolDesc,
         require(name.nonEmpty, "Symbols may not be empty strings")
         if (symbolDesc.hardKeywords(name))       softKeyword(name)
         else if (symbolDesc.hardOperators(name)) softOperator(name)
-        else                                     attempt(string(name)).void
+        else                                     atomic(string(name)).void
     }
 
     override def apply(name: Char): Parsley[Unit] = char(name).void

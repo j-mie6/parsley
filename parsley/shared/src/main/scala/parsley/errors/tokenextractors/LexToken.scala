@@ -7,7 +7,7 @@ package parsley.errors.tokenextractors
 
 import scala.collection.immutable.WrappedString
 
-import parsley.Parsley, Parsley.{attempt, lookAhead, notFollowedBy}
+import parsley.Parsley, Parsley.{atomic, lookAhead, notFollowedBy}
 import parsley.Success
 import parsley.XAssert.assert
 import parsley.character.{item, stringOfSome}
@@ -59,7 +59,7 @@ trait LexToken { this: ErrorBuilder[_] =>
 
     // this parser cannot and must not fail
     private lazy val makeParser: Parsley[Either[::[(String, (Int, Int))], String]] = {
-        val toks = traverse5(tokens: _*)(p => option(lookAhead(attempt(p) <~> position.pos))).map(_.flatten).collect { case toks@(_::_) => toks }
+        val toks = traverse5(tokens: _*)(p => option(lookAhead(atomic(p) <~> position.pos))).map(_.flatten).collect { case toks@(_::_) => toks }
         // this can only fail if either there is no input (which there must be), or there is a token at the front, in which case `rawTok` is not parsed anyway
         val rawTok = stringOfSome(traverse_(tokens: _*)(notFollowedBy) *> item)
         toks <+> rawTok

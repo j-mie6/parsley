@@ -26,8 +26,8 @@ class StringTests extends ParsleyTest {
     it should "consume input if it fails mid-string" in {
         ("abc" <|> "ab").parse("ab") shouldBe a [Failure[_]]
     }
-    it should "not consume input if it fails mid-string when combined with attempt" in {
-        (attempt("abc") <|> "ab").parse("ab") should not be a [Failure[_]]
+    it should "not consume input if it fails mid-string when combined with atomic" in {
+        (atomic("abc") <|> "ab").parse("ab") should not be a [Failure[_]]
     }
     it should "update positions correctly" in {
         stringPositionCheck(0, "abc") shouldBe Success((1, 4))
@@ -55,7 +55,7 @@ class StringTests extends ParsleyTest {
     )
     it should "be extrinsically the same as a manual equivalent" in {
         val p = strings("hell", "hello", "abc", "g", "goodbye")
-        val q = string("abc") <|> attempt("goodbye") <|> string("g") <|> attempt(string("hello")) <|> string("hell")
+        val q = string("abc") <|> atomic("goodbye") <|> string("g") <|> atomic(string("hello")) <|> string("hell")
         info("parsing \"hello\"")
         p.parse("hello") shouldBe q.parse("hello")
         info("parsing \"hell\"")

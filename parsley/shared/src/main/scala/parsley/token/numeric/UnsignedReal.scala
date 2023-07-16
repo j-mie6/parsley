@@ -5,7 +5,7 @@
  */
 package parsley.token.numeric
 
-import parsley.Parsley, Parsley.{attempt, empty, pure, unit}
+import parsley.Parsley, Parsley.{atomic, empty, pure, unit}
 import parsley.character.{bit, digit, hexDigit, octDigit, oneOf}
 import parsley.combinator, combinator.optional
 import parsley.errors.combinator.{amendThenDislodge, entrench}
@@ -16,10 +16,10 @@ import parsley.token.descriptions.numeric.{BreakCharDesc, ExponentDesc, NumericD
 import parsley.token.errors.{ErrorConfig, LabelConfig}
 
 private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInteger, err: ErrorConfig, generic: Generic) extends Real(err) {
-    override lazy val _decimal: Parsley[BigDecimal] = attempt(ofRadix(10, digit, err.labelRealDecimalEnd))
-    override lazy val _hexadecimal: Parsley[BigDecimal] = attempt('0' *> noZeroHexadecimal)
-    override lazy val _octal: Parsley[BigDecimal] = attempt('0' *> noZeroOctal)
-    override lazy val _binary: Parsley[BigDecimal] = attempt('0' *> noZeroBinary)
+    override lazy val _decimal: Parsley[BigDecimal] = atomic(ofRadix(10, digit, err.labelRealDecimalEnd))
+    override lazy val _hexadecimal: Parsley[BigDecimal] = atomic('0' *> noZeroHexadecimal)
+    override lazy val _octal: Parsley[BigDecimal] = atomic('0' *> noZeroOctal)
+    override lazy val _binary: Parsley[BigDecimal] = atomic('0' *> noZeroBinary)
     override lazy val _number: Parsley[BigDecimal] = {
         if (desc.decimalRealsOnly) decimal
         else {
@@ -39,7 +39,7 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInt
             val leadingDotAllowedDecimal = if (desc.leadingDotAllowed) decimal else ofRadix(10, digit, leadingDotAllowed = true, err.labelRealNumberEnd)
             // not even accounting for the leading and trailing dot being allowed!
             val zeroLead = '0' *> (addHex(addOct(addBin(leadingDotAllowedDecimal <|> pure(BigDecimal(0))))))
-            attempt(zeroLead <|> decimal)
+            atomic(zeroLead <|> decimal)
         }
     }
 

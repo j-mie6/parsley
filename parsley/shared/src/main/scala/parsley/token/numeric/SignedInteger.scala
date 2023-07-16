@@ -5,7 +5,7 @@
  */
 package parsley.token.numeric
 
-import parsley.Parsley, Parsley.attempt
+import parsley.Parsley, Parsley.atomic
 import parsley.token.descriptions.numeric.NumericDesc
 import parsley.token.errors.{ErrorConfig, LabelWithExplainConfig}
 
@@ -15,11 +15,11 @@ import parsley.internal.deepembedding.singletons
 private [token] final class SignedInteger(desc: NumericDesc, unsigned: UnsignedInteger, err: ErrorConfig) extends Integer(desc) {
     private val sign = new Parsley(new singletons.Sign[IntType.resultType](IntType, desc.positiveSign))
 
-    override lazy val _decimal: Parsley[BigInt] = attempt(sign <*> err.labelIntegerDecimalEnd(unsigned._decimal))
-    override lazy val _hexadecimal: Parsley[BigInt] = attempt(sign <*> err.labelIntegerHexadecimalEnd(unsigned._hexadecimal))
-    override lazy val _octal: Parsley[BigInt] = attempt(sign <*> err.labelIntegerOctalEnd(unsigned._octal))
-    override lazy val _binary: Parsley[BigInt] = attempt(sign <*> err.labelIntegerBinaryEnd(unsigned._binary))
-    override lazy val _number: Parsley[BigInt] = attempt(sign <*> err.labelIntegerNumberEnd(unsigned._number))
+    override lazy val _decimal: Parsley[BigInt] = atomic(sign <*> err.labelIntegerDecimalEnd(unsigned._decimal))
+    override lazy val _hexadecimal: Parsley[BigInt] = atomic(sign <*> err.labelIntegerHexadecimalEnd(unsigned._hexadecimal))
+    override lazy val _octal: Parsley[BigInt] = atomic(sign <*> err.labelIntegerOctalEnd(unsigned._octal))
+    override lazy val _binary: Parsley[BigInt] = atomic(sign <*> err.labelIntegerBinaryEnd(unsigned._binary))
+    override lazy val _number: Parsley[BigInt] = atomic(sign <*> err.labelIntegerNumberEnd(unsigned._number))
 
     override def decimal: Parsley[BigInt] = err.labelIntegerSignedDecimal.apply(_decimal)
     override def hexadecimal: Parsley[BigInt] = err.labelIntegerSignedHexadecimal.apply(_hexadecimal)

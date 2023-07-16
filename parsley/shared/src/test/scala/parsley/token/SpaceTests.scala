@@ -8,7 +8,7 @@ package parsley.token
 import Predef.{ArrowAssoc => _, _}
 
 import parsley.{Success, ParsleyTest}
-import parsley.Parsley.attempt
+import parsley.Parsley.atomic
 
 import descriptions.{SpaceDesc, LexicalDesc}
 import parsley.character.{string, char}
@@ -278,7 +278,7 @@ class SpaceTests extends ParsleyTest {
 
     it should "not restore old whitespace if the given parser fails having consumed input" in {
         val space = makeSpace(basicDependent)
-        val p = space.init *> (attempt(space.alter(predicate.Basic(Set('a')))(char('b') *> space.whiteSpace <* char('b'))) <|> char('b') *> space.whiteSpace)
+        val p = space.init *> (atomic(space.alter(predicate.Basic(Set('a')))(char('b') *> space.whiteSpace <* char('b'))) <|> char('b') *> space.whiteSpace)
         cases(p)(
             "baaab" -> Some(()),
             "baaaa" -> Some(()),
