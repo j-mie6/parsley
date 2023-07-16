@@ -443,7 +443,6 @@ object unicode {
       *   1. a form feed (`'\f'`)
       *   1. a vertical tab (`'\u000B'`)
       *
-      * @see [[isWhitespace `isWhitespace`]]
       * @group spec
       */
     val whitespace: Parsley[Int] = satisfy(Character.isWhitespace(_), "whitespace")
