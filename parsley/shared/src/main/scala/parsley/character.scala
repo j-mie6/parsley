@@ -5,7 +5,6 @@
  */
 package parsley
 
-import scala.annotation.switch
 import scala.collection.immutable.NumericRange
 
 import parsley.Parsley.{attempt, empty, fresh, pure}
@@ -548,7 +547,7 @@ object character {
       * @see [[isWhitespace `isWhitespace`]]
       * @group spec
       */
-    val whitespace: Parsley[Char] = satisfy(isWhitespace(_), "whitespace")
+    val whitespace: Parsley[Char] = satisfy(_.isWhitespace, "whitespace")
 
     /** This parser skips zero or more space characters using [[whitespace `whitespace`]].
       *
@@ -705,10 +704,7 @@ object character {
       * @see [[whitespace `whitespace`]]
       * @group pred
       */
-    def isWhitespace(c: Char): Boolean = (c: @switch) match {
-        case ' ' | '\t' | '\n' | '\r' | '\f' | '\u000b' => true
-        case _ => false
-    }
+    def isWhitespace(c: Char): Boolean = c.isWhitespace
 
     /** This function returns true if a character is a hexadecimal digit.
       *
@@ -716,16 +712,12 @@ object character {
       *   1. the digits `'0'` through `'9'`
       *   1. the letters `'a'` through `'f'`
       *   1. the letters `'A'` through `'Z'`
+      *   1. an equivalent from another charset
       *
       * @see [[hexDigit `hexDigit`]]
       * @group pred
       */
-    def isHexDigit(c: Char): Boolean = (c: @switch) match {
-        case '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
-           | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
-           | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' => true
-        case _ => false
-    }
+    def isHexDigit(c: Char): Boolean = Character.digit(c, 16) != -1
 
     /** This function returns true if a character is an octal digit.
       *
@@ -734,7 +726,7 @@ object character {
       * @group pred
       * @see [[octDigit `octDigit`]]
       */
-    def isOctDigit(c: Char): Boolean = c <= '7' && c >= '0'
+    def isOctDigit(c: Char): Boolean = Character.digit(c, 8) != -1
 
     /** This function returns true if a character is either a space or a tab character.
       *
