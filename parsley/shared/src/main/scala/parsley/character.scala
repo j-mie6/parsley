@@ -58,9 +58,9 @@ import parsley.internal.deepembedding.singletons
   *     for `java.lang.Character` to see which Unicode version is supported by your JVM. A table of the Unicode versions
   *     up to JDK 17 can be found [[https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/Character.html here]].
   *
-  *     These parsers are only able to parse unicode characters in the range `'\u0000'` to `'\uFFFF'`, known as
+  *     These parsers are only able to parse unicode characters in the range `'\u0000'` to `'\uffff'`, known as
   *     the ''Basic Multilingual Plane (BMP)''. Unicode characters wider than a single 16-bit character should be
-  *     parsed using multi-character combinators such as `string`, or, alternatively, `satisfyUtf16` or `charUtf16`.
+  *     parsed using multi-character combinators such as `string`, or, alternatively, combinators found in [[unicode `unicode`]].
   *
   * @groupprio string 22
   * @groupname string String Combinators
@@ -97,7 +97,8 @@ object character {
       *
       * @param c the character to parse
       * @return a parser that tries to read a single `c`, or fails.
-      * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[string `string`]] or [[codePoint `codePoint`]].
+      * @note this combinator can only handle 16-bit characters: for larger codepoints,
+      *       consider using [[string `string`]] or [[unicode.char `unicode.char`]].
       * @group core
       */
     def char(c: Char): Parsley[Char] = char(c, NotConfigured)
@@ -149,7 +150,7 @@ object character {
       *
       * @param pred the predicate to test the next character against, should one exist.
       * @return a parser that tries to read a single character `c`, such that `pred(c)` is true, or fails.
-      * @note this combinator can only handle 16-bit characters.
+      * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[unicode.satisfy `unicode.satisfy`]].
       * @group core
       */
     def satisfy(pred: Char => Boolean): Parsley[Char] = satisfy(pred, NotConfigured)
@@ -209,7 +210,7 @@ object character {
       *
       * @param cs the set of characters to check.
       * @return a parser that parses one of the member of the set `cs`.
-      * @note this combinator can only handle 16-bit characters.
+      * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[unicode.oneOf(cs:Set* `unicode.oneOf`]].
       * @see [[satisfy `satisfy`]]
       * @group class
       */
@@ -240,7 +241,7 @@ object character {
       *
       * @param cs the characters to check.
       * @return a parser that parses one of the elements of `cs`.
-      * @note this combinator can only handle 16-bit characters.
+      * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[unicode.oneOf(cs:Int* `unicode.oneOf`]].
       * @see [[satisfy `satisfy`]]
       * @group class
       */
@@ -266,7 +267,7 @@ object character {
       *
       * @param cs the range of characters to check.
       * @return a parser that parses a character within the range `cs`.
-      * @note this combinator can only handle 16-bit characters.
+      * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[unicode.oneOf(cs:Range* `unicode.oneOf`]].
       * @see [[satisfy `satisfy`]]
       * @group class
       */
@@ -299,7 +300,7 @@ object character {
       *
       * @param cs the set of characters to check.
       * @return a parser that parses one character that is not a member of the set `cs`.
-      * @note this combinator can only handle 16-bit characters.
+      * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[unicode.noneOf(cs:Set* `unicode.noneOf`]].
       * @see [[satisfy `satisfy`]]
       * @group class
       */
@@ -332,7 +333,7 @@ object character {
       *
       * @param cs the set of characters to check.
       * @return a parser that parses one character that is not an element of `cs`.
-      * @note this combinator can only handle 16-bit characters.
+      * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[unicode.noneOf(cs:Int* `unicode.noneOf`]].
       * @see [[satisfy `satisfy`]]
       * @group class
       */
@@ -360,7 +361,7 @@ object character {
       *
       * @param cs the range of characters to check.
       * @return a parser that parses a character outside the range `cs`.
-      * @note this combinator can only handle 16-bit characters.
+      * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[unicode.noneOf(cs:Range* `unicode.noneOf`]].
       * @see [[satisfy `satisfy`]]
       * @group class
       */
@@ -373,6 +374,7 @@ object character {
         case _ => satisfy(!cs.contains(_))
     }
 
+    // TODO: document that it only handles 16-bit characters
     /** This combinator parses `pc` '''zero''' or more times, collecting its results into a string.
       *
       * Parses `pc` repeatedly until it fails. The resulting characters are placed into a string,
@@ -405,6 +407,7 @@ object character {
     // TODO: document
     def stringOfMany(pred: Char => Boolean): Parsley[String] = stringOfMany(satisfy(pred))
 
+    // TODO: document that it only handles 16-bit characters
     /** This combinator parses `pc` '''one''' or more times, collecting its results into a string.
       *
       * Parses `pc` repeatedly until it fails. The resulting characters are placed into a string,
@@ -498,8 +501,8 @@ object character {
       * @param kvs the remaining key-value pairs to try to parse.
       * @return a parser that tries to parse all the given key-value pairs, returning the (possibly failing) result
       *         of the value that corresponds to the longest matching key.
-        @since 4.0.0
-        @group string
+      * @since 4.0.0
+      * @group string
       */
     def strings[A](kv0: (String, Parsley[A]), kvs: (String, Parsley[A])*): Parsley[A] = {
         // this isn't the best we could do: it's possible to eliminate backtracking with a Trie...
@@ -515,7 +518,7 @@ object character {
 
     /** This parser will parse '''any''' single character from the input, failing if there is no input remaining.
       *
-      * @note this combinator can only handle 16-bit characters.
+      * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[unicode.item `unicode.item`]].
       * @group core
       */
     val item: Parsley[Char] = satisfy(_ => true, "any character")
@@ -571,7 +574,7 @@ object character {
       *
       * @group spec
       */
-    val crlf: Parsley[Char] = string("\r\n", "end of crlf").as('\n')
+    val crlf: Parsley[Char] = attempt(string("\r\n", "end of crlf")).as('\n')
 
     /** This parser will parse either a line feed (`LF`) or a `CRLF` newline, returning `'\n'` if successful.
       *
@@ -590,7 +593,7 @@ object character {
 
     /** This parser tries to parse an uppercase letter, and returns it if successful.
       *
-      * An uppercase letter is any character `c <= '\uFFFF'` whose Unicode ''Category Type'' is Uppercase Letter (`Lu`).
+      * An uppercase letter is any character `c <= '\uffff'` whose Unicode ''Category Type'' is Uppercase Letter (`Lu`).
       * Examples of characters within this category include:
       *   - the Latin letters `'A'` through `'Z'`
       *   - Latin special character such as `'Å'`, `'Ç'`, `'Õ'`
@@ -606,7 +609,7 @@ object character {
 
     /** This parser tries to parse a lowercase letter, and returns it if successful.
       *
-      * A lowercase letter is any character `c <= '\uFFFF'` whose Unicode ''Category Type'' is Lowercase Letter (`Ll`).
+      * A lowercase letter is any character `c <= '\uffff'` whose Unicode ''Category Type'' is Lowercase Letter (`Ll`).
       * Examples of characters within this category include:
       *   - the Latin letters `'a'` through `'z'`
       *   - Latin special character such as `'é'`, `'ß'`, `'ð'`
@@ -632,7 +635,7 @@ object character {
 
     /** This parser tries to parse a letter, and returns it if successful.
       *
-      * A letter is any character `c <= '\uFFFF'` whose Unicode ''Category Type'' is any of the following:
+      * A letter is any character `c <= '\uffff'` whose Unicode ''Category Type'' is any of the following:
       *   1. Uppercase Letter (`Lu`)
       *   1. Lowercase Letter (`Ll`)
       *   1. Titlecase Letter (`Lt`)
@@ -647,13 +650,13 @@ object character {
 
     /** This parser tries to parse a digit, and returns it if successful.
       *
-      * A digit is any character `c <= '\uFFFF'` whose Unicode ''Category Type'' is Decimal Number (`Nd`).
+      * A digit is any character `c <= '\uffff'` whose Unicode ''Category Type'' is Decimal Number (`Nd`).
       * Examples of (inclusive) ranges within this category include:
       *   - the Latin digits `'0'` through `'9'`
       *   - the Arabic-Indic digits `'\u0660'` through `'\u0669'`
-      *   - the Extended Arabic-Indic digits `'\u06F0'` through `'\u06F9'`
-      *   - the Devangari digits `'\u0966'` through `'\u096F'`
-      *   - the Fullwidth digits `'\uFF10'` through `'\uFF19'`
+      *   - the Extended Arabic-Indic digits `'\u06f0'` through `'\u06f9'`
+      *   - the Devangari digits `'\u0966'` through `'\u096f'`
+      *   - the Fullwidth digits `'\uff10'` through `'\uff19'`
       *
       * $categories
       *
@@ -701,7 +704,7 @@ object character {
       *   1. a line feed (`'\n'`)
       *   1. a carriage return (`'\r'`)
       *   1. a form feed (`'\f'`)
-      *   1. a vertical tab (`'\u000B'`)
+      *   1. a vertical tab (`'\u000b'`)
       *
       * @see [[whitespace `whitespace`]]
       * @group pred
