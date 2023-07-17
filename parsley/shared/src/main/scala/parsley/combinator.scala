@@ -9,6 +9,7 @@ import scala.annotation.tailrec
 
 import parsley.Parsley.{atomic, empty, notFollowedBy, pure, select, unit}
 import parsley.implicits.zipped.{Zipped2, Zipped3}
+import parsley.registers.RegisterMaker
 
 import parsley.internal.deepembedding.{frontend, singletons}
 
@@ -138,12 +139,12 @@ object combinator {
       * Finds the first parser in `ps` which succeeds, returning its result. If none of the parsers
       * succeed, then this combinator fails. This combinator will always try and parse each of the
       * combinators until one succeeds, regardless of how they fail. The last argument will '''not'''
-      * be wrapped in `attempt`, as this is not necessary.
+      * be wrapped in `atomic`, as this is not necessary.
       *
       * @example {{{
-      * scala> import parsley.combinator.attemptChoice
+      * scala> import parsley.combinator.atomicChoice
       * scala> import parsley.character.string
-      * scala> val p = attemptChoice(string("abc"), string("ab"), string("bc"), string("d"))
+      * scala> val p = atomicChoice(string("abc"), string("ab"), string("bc"), string("d"))
       * scala> p.parse("abc")
       * val res0 = Success("abc")
       * scala> p.parse("ab")
@@ -160,7 +161,8 @@ object combinator {
       * @see [[parsley.Parsley.<|> `<|>`]]
       * @see [[parsley.Parsley$.atomic `atomic`]]
       * @since 4.4.0
-      * @note this combinator is not particularly efficient, because it may unnecessarily backtrack for each alternative.
+      * @note this combinator is not particularly efficient, because it may unnecessarily backtrack for each alternative: a more efficient alternative
+      *       for `String` is [[character.strings(str0* `strings`]].
       */
     def atomicChoice[A](ps: Parsley[A]*): Parsley[A] = ps.reduceRightOption((p, q) => atomic(p) <|> q).getOrElse(empty)
 
@@ -245,32 +247,6 @@ object combinator {
       * @note $strict
       */
     def skip(p: Parsley[_], ps: Parsley[_]*): Parsley[Unit] = ps.foldLeft(p.void)(_ <* _)
-
-    /** This combinator parses exactly `n` occurrences of `p`, returning these `n` results in a list.
-      *
-      * Parses `p` repeatedly up to `n` times. If `p` fails before `n` is reached, then this combinator
-      * fails. It is not required for `p` to fail after the `n`^th^ parse. The results produced by
-      * `p`, `x,,1,,` through `x,,n,,`, are returned as `List(x,,1,,, .., x,,n,,)`.
-      *
-      * @example {{{
-      * scala> import parsley.character.item
-      * scala> import parsley.combinator.exactly
-      * scala> val p = exactly(3, item)
-      * scala> p.parse("ab")
-      * val res0 = Failure(..)
-      * scala> p.parse("abc")
-      * val res1 = Success(List('a', 'b', 'c'))
-      * scala> p.parse("abcd")
-      * val res2 = Success(List('a', 'b', 'c'))
-      * }}}
-      *
-      * @param n the number of times to repeat `p`.
-      * @param p the parser to repeat.
-      * @return a parser that parses `p` exactly `n` times, returning a list of the results.
-      * @group misc
-      * @since 4.0.0
-      */
-    def exactly[A](n: Int, p: Parsley[A]): Parsley[List[A]] = traverse[Int, A](_ => p, (1 to n): _*)
 
     /** This combinator tries to parse `p`, wrapping its result in a `Some` if it succeeds, or returns `None` if it fails.
       *
@@ -905,4 +881,51 @@ object combinator {
         lazy val whilePP: Parsley[Unit] = when(p, whilePP)
         whilePP
     }
+
+    // TODO: new doc group
+    /** This combinator parses exactly `n` occurrences of `p`, returning these `n` results in a list.
+      *
+      * Parses `p` repeatedly up to `n` times. If `p` fails before `n` is reached, then this combinator
+      * fails. It is not required for `p` to fail after the `n`^th^ parse. The results produced by
+      * `p`, `x,,1,,` through `x,,n,,`, are returned as `List(x,,1,,, .., x,,n,,)`.
+      *
+      * @example {{{
+      * scala> import parsley.character.item
+      * scala> import parsley.combinator.exactly
+      * scala> val p = exactly(3, item)
+      * scala> p.parse("ab")
+      * val res0 = Failure(..)
+      * scala> p.parse("abc")
+      * val res1 = Success(List('a', 'b', 'c'))
+      * scala> p.parse("abcd")
+      * val res2 = Success(List('a', 'b', 'c'))
+      * }}}
+      *
+      * @param n the number of times to repeat `p`.
+      * @param p the parser to repeat.
+      * @return a parser that parses `p` exactly `n` times, returning a list of the results.
+      * @group misc
+      * @since 4.0.0
+      */
+    def exactly[A](n: Int, p: Parsley[A]): Parsley[List[A]] = traverse[Int, A](_ => p, (1 to n): _*)
+
+    def range[A](min: Int, max: Int)(p: Parsley[A]): Parsley[List[A]] = range(min, max, step = 1, atomicStep = false)(p)
+    // TODO: more efficient list construction (atomic might screw this up though?)
+    // This will fail if `p` is not read in increments of step without returning the "next best" -- use atomic?
+    def range[A](min: Int, max: Int, step: Int, atomicStep: Boolean)(p: Parsley[A]): Parsley[List[A]] = min.makeReg { i =>
+        def mkAtomic[B](p: Parsley[B]) = if (atomicStep) atomic(p) else p
+        (exactly(min, p), many(ensure(i.gets(_ < max), mkAtomic(exactly(step, p)) <~ i.modify(_ + step)))).zipped { (xs, xss) =>
+            xs ++ xss.flatten
+        }
+    }
+
+    def range_(min: Int, max: Int)(p: Parsley[_]): Parsley[Unit] = range_(min, max, step = 1, atomicStep = false)(p)
+    // TODO: more efficient implementation (perhaps the other way around?)
+    def range_(min: Int, max: Int, step: Int, atomicStep: Boolean)(p: Parsley[_]): Parsley[Unit] = range(min, max, step, atomicStep)(p).void
+
+    def count(p: Parsley[_]): Parsley[Int] = p.foldLeft(0)((n, _) => n + 1)
+    def count1(p: Parsley[_]): Parsley[Int] = p.foldLeft1(0)((n, _) => n + 1)
+    def count(min: Int, max: Int)(p: Parsley[_]): Parsley[Int] = count(min, max, step = 1, atomicStep = false)(p)
+    // TODO: more efficient implementation!
+    def count(min: Int, max: Int, step: Int, atomicStep: Boolean)(p: Parsley[_]): Parsley[Int] = range(min, max, step, atomicStep)(p).map(_.length)
 }
