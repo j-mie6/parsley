@@ -368,7 +368,7 @@ private [internal] object StringTok {
     private [StringTok] class Set extends Adjust {
         private [this] var at = 1
         // Round up to the nearest multiple of 4 /+1/
-        private [StringTok] def tab = { at = ((at + 3) & -4) | 1; this } // scalastyle:ignore magic.number
+        private [StringTok] def tab: Set = { at = ((at + 3) & -4) | 1; this } // scalastyle:ignore magic.number
         private [StringTok] def next() = at += 1
         private [StringTok] def toAdjuster = {
             val x = at // capture it now, so it doesn't need to hold the object later
@@ -378,7 +378,7 @@ private [internal] object StringTok {
     // No information about alignment: a line or a tab hasn't been read
     private [StringTok] class Offset extends Adjust {
         private [this] var by = 0
-        private [StringTok] def tab = new OffsetAlignOffset(by)
+        private [StringTok] def tab: OffsetAlignOffset = new OffsetAlignOffset(by)
         private [StringTok] def next() = by += 1
         private [StringTok] def toAdjuster = {
             val x = by // capture it now, so it doesn't need to hold the object later
@@ -389,7 +389,7 @@ private [internal] object StringTok {
     private [StringTok] class OffsetAlignOffset(firstBy: Int) extends Adjust {
         private [this] var thenBy = 0
         // Round up to nearest multiple of /4/ (offset from aligned, not real value)
-        private [StringTok] def tab = { thenBy = (thenBy | 3) + 1; this }
+        private [StringTok] def tab: OffsetAlignOffset = { thenBy = (thenBy | 3) + 1; this }
         private [StringTok] def next() = thenBy += 1
         // Round up to the nearest multiple of 4 /+1/
         private [StringTok] def toAdjuster = {

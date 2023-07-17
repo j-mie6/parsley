@@ -57,13 +57,13 @@ private [errors] final class Label private[errors] (val labels: Seq[String]) ext
     private [parsley] final override def apply[A](p: Parsley[A]) = p.labels(labels: _*)
     private [parsley] final override def asExpectDescs: Iterable[ExpectDesc] = labels.map(new ExpectDesc(_))
     private [parsley] final override def asExpectDescs(@unused otherwise: String) = asExpectDescs
-    private [parsley] final override def asExpectItems(@unused raw: String) = asExpectDescs
+    private [parsley] final override def asExpectItems(@unused raw: String): Iterable[ExpectItem] = asExpectDescs
     private [parsley] final override def orElse(config: LabelWithExplainConfig) = config match {
         case r: Reason => new LabelAndReason(labels, r.reason)
         case lr: LabelAndReason => new LabelAndReason(labels, lr.reason)
         case _ => this
     }
-    private [parsley] final override def orElse(config: LabelConfig) = this
+    private [parsley] final override def orElse(config: LabelConfig): LabelConfig = this
 }
 /** This object has a factory for configurations producing labels: if the empty string is provided, this equivalent to [[Hidden `Hidden`]].
   * @since 4.1.0
@@ -80,19 +80,19 @@ object Label {
   */
 object Hidden extends LabelConfig {
     private [parsley] final override def apply[A](p: Parsley[A]) = p.hide
-    private [parsley] final override def asExpectDescs = None
+    private [parsley] final override def asExpectDescs: Iterable[ExpectDesc] = None
     private [parsley] final override def asExpectDescs(@unused otherwise: String) = asExpectDescs
-    private [parsley] final override def asExpectItems(@unused raw: String) = asExpectDescs
-    private [parsley] final override def orElse(config: LabelWithExplainConfig) = this
-    private [parsley] final override def orElse(config: LabelConfig) = this
+    private [parsley] final override def asExpectItems(@unused raw: String): Iterable[ExpectItem] = asExpectDescs
+    private [parsley] final override def orElse(config: LabelWithExplainConfig): LabelWithExplainConfig = this
+    private [parsley] final override def orElse(config: LabelConfig): LabelConfig = this
 }
 
 private [errors] final class Reason private[errors]  (val reason: String) extends ExplainConfig {
     require(reason.nonEmpty, "reasons cannot be empty strings")
     private [parsley] final override def apply[A](p: Parsley[A]) = p.explain(reason)
-    private [parsley] final override def asExpectDescs = None
+    private [parsley] final override def asExpectDescs: Iterable[ExpectDesc]  = None
     private [parsley] final override def asExpectDescs(otherwise: String) = Some(new ExpectDesc(otherwise))
-    private [parsley] final override def asExpectItems(raw: String) = Some(new ExpectRaw(raw))
+    private [parsley] final override def asExpectItems(raw: String): Iterable[ExpectItem] = Some(new ExpectRaw(raw))
     private [parsley] final override def orElse(config: LabelWithExplainConfig) = config match {
         case l: Label => new LabelAndReason(l.labels, reason)
         case lr: LabelAndReason => new LabelAndReason(lr.labels, reason)
@@ -111,10 +111,10 @@ private [errors] final class LabelAndReason private[errors] (val labels: Seq[Str
     require(reason.nonEmpty, "reason cannot be empty strings, use `Label` instead")
     require(labels.forall(_.nonEmpty), "labels cannot be empty strings")
     private [parsley] final override def apply[A](p: Parsley[A]) = p.labels(labels: _*).explain(reason)
-    private [parsley] final override def asExpectDescs = labels.map(new ExpectDesc(_))
+    private [parsley] final override def asExpectDescs: Iterable[ExpectDesc]  = labels.map(new ExpectDesc(_))
     private [parsley] final override def asExpectDescs(@unused otherwise: String) = asExpectDescs
-    private [parsley] final override def asExpectItems(@unused raw: String) = asExpectDescs
-    private [parsley] final override def orElse(config: LabelWithExplainConfig) = this
+    private [parsley] final override def asExpectItems(@unused raw: String): Iterable[ExpectItem]  = asExpectDescs
+    private [parsley] final override def orElse(config: LabelWithExplainConfig): LabelWithExplainConfig = this
 }
 /** This object has a factory for configurations producing labels and reasons: if the empty label is provided, this equivalent to [[Hidden `Hidden`]] with no
   * reason; if the empty reason is provided this is equivalent to [[Label$ `Label`]].
@@ -135,9 +135,9 @@ object LabelAndReason {
   */
 object NotConfigured extends LabelConfig with ExplainConfig with LabelWithExplainConfig {
     private [parsley] final override def apply[A](p: Parsley[A]) = p
-    private [parsley] final override def asExpectDescs = None
+    private [parsley] final override def asExpectDescs: Iterable[ExpectDesc]  = None
     private [parsley] final override def asExpectDescs(otherwise: String) = Some(new ExpectDesc(otherwise))
-    private [parsley] final override def asExpectItems(raw: String) = Some(new ExpectRaw(raw))
+    private [parsley] final override def asExpectItems(raw: String): Iterable[ExpectItem]  = Some(new ExpectRaw(raw))
     private [parsley] final override def orElse(config: LabelWithExplainConfig) = config
     private [parsley] final override def orElse(config: LabelConfig) = config
 }

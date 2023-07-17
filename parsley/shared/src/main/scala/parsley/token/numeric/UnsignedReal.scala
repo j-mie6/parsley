@@ -13,7 +13,7 @@ import parsley.implicits.character.charLift
 import parsley.lift.lift2
 import parsley.registers.Reg
 import parsley.token.descriptions.numeric.{BreakCharDesc, ExponentDesc, NumericDesc}
-import parsley.token.errors.{ErrorConfig, LabelConfig}
+import parsley.token.errors.{ErrorConfig, LabelConfig, LabelWithExplainConfig}
 
 private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInteger, err: ErrorConfig, generic: Generic) extends Real(err) {
     override lazy val _decimal: Parsley[BigDecimal] = attempt(ofRadix(10, digit, err.labelRealDecimalEnd))
@@ -106,7 +106,7 @@ private [token] final class UnsignedReal(desc: NumericDesc, natural: UnsignedInt
         val (requiredExponent, exponent, base) = expDesc match {
             case ExponentDesc.Supported(compulsory, exp, base, sign) =>
                 val expErr = new ErrorConfig {
-                    override def labelIntegerSignedDecimal(bits: Int) = err.labelRealExponentEnd.orElse(endLabel)
+                    override def labelIntegerSignedDecimal(bits: Int): LabelWithExplainConfig = err.labelRealExponentEnd.orElse(endLabel)
                     override def labelIntegerDecimalEnd = err.labelRealExponentEnd.orElse(endLabel)
                 }
                 val integer = new SignedInteger(desc.copy(positiveSign = sign), natural, expErr)

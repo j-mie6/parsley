@@ -60,19 +60,19 @@ abstract class SpecialisedMessage[A] extends SpecialisedFilterConfig[A] { self =
     }
 
     // $COVERAGE-OFF$
-    private [parsley] final override def injectLeft[B] = new SpecialisedMessage[Either[A, B]] {
+    private [parsley] final override def injectLeft[B]: FilterConfig[Either[A,B]] = new SpecialisedMessage[Either[A, B]] {
         def message(xy: Either[A, B]) = {
             val Left(x) = xy: @unchecked
             self.message(x)
         }
     }
-    private [parsley] final override def injectRight[B] = new SpecialisedMessage[Either[B, A]] {
+    private [parsley] final override def injectRight[B]: FilterConfig[Either[B,A]] = new SpecialisedMessage[Either[B, A]] {
         def message(xy: Either[B, A]) = {
             val Right(y) = xy: @unchecked
             self.message(y)
         }
     }
-    private [parsley] final override def injectSnd[B] = new SpecialisedMessage[(B, A)] {
+    private [parsley] final override def injectSnd[B]: FilterConfig[(B, A)] = new SpecialisedMessage[(B, A)] {
         def message(xy: (B, A)) = self.message(xy._2)
     }
     // $COVERAGE-ON$
@@ -98,19 +98,19 @@ abstract class Unexpected[A] extends VanillaFilterConfig[A] { self =>
     }
 
     // $COVERAGE-OFF$
-    private [parsley] final override def injectLeft[B] = new Unexpected[Either[A, B]] {
+    private [parsley] final override def injectLeft[B]: FilterConfig[Either[A,B]] = new Unexpected[Either[A, B]] {
         def unexpected(xy: Either[A, B]) = {
             val Left(x) = xy: @unchecked
             self.unexpected(x)
         }
     }
-    private [parsley] final override def injectRight[B] = new Unexpected[Either[B, A]] {
+    private [parsley] final override def injectRight[B]: FilterConfig[Either[B,A]] = new Unexpected[Either[B, A]] {
         def unexpected(xy: Either[B, A]) = {
             val Right(y) = xy: @unchecked
             self.unexpected(y)
         }
     }
-    private [parsley] final override def injectSnd[B] = new Unexpected[(B, A)] {
+    private [parsley] final override def injectSnd[B]: FilterConfig[(B, A)] = new Unexpected[(B, A)] {
         def unexpected(xy: (B, A)) = self.unexpected(xy._2)
     }
     // $COVERAGE-ON$
@@ -136,19 +136,19 @@ abstract class Because[A] extends VanillaFilterConfig[A] { self =>
     }
 
     // $COVERAGE-OFF$
-    private [parsley] final override def injectLeft[B] = new Because[Either[A, B]] {
+    private [parsley] final override def injectLeft[B]: FilterConfig[Either[A,B]] = new Because[Either[A, B]] {
         def reason(xy: Either[A, B]) = {
             val Left(x) = xy: @unchecked
             self.reason(x)
         }
     }
-    private [parsley] final override def injectRight[B] = new Because[Either[B, A]] {
+    private [parsley] final override def injectRight[B]: FilterConfig[Either[B,A]] = new Because[Either[B, A]] {
         def reason(xy: Either[B, A]) = {
             val Right(y) = xy: @unchecked
             self.reason(y)
         }
     }
-    private [parsley] final override def injectSnd[B] = new Because[(B, A)] {
+    private [parsley] final override def injectSnd[B]: FilterConfig[(B, A)] = new Because[(B, A)] {
         def reason(xy: (B, A)) = self.reason(xy._2)
     }
     // $COVERAGE-ON$
@@ -179,7 +179,7 @@ abstract class UnexpectedBecause[A] extends VanillaFilterConfig[A] { self =>
     }
 
     // $COVERAGE-OFF$
-    private [parsley] final override def injectLeft[B] = new UnexpectedBecause[Either[A, B]] {
+    private [parsley] final override def injectLeft[B]: FilterConfig[Either[A,B]] = new UnexpectedBecause[Either[A, B]] {
         def unexpected(xy: Either[A, B]) = {
             val Left(x) = xy: @unchecked
             self.unexpected(x)
@@ -189,7 +189,7 @@ abstract class UnexpectedBecause[A] extends VanillaFilterConfig[A] { self =>
             self.reason(x)
         }
     }
-    private [parsley] final override def injectRight[B] = new UnexpectedBecause[Either[B, A]] {
+    private [parsley] final override def injectRight[B]: FilterConfig[Either[B,A]] = new UnexpectedBecause[Either[B, A]] {
         def unexpected(xy: Either[B, A]) = {
             val Right(y) = xy: @unchecked
             self.unexpected(y)
@@ -199,7 +199,7 @@ abstract class UnexpectedBecause[A] extends VanillaFilterConfig[A] { self =>
             self.reason(y)
         }
     }
-    private [parsley] final override def injectSnd[B] = new UnexpectedBecause[(B, A)] {
+    private [parsley] final override def injectSnd[B]: FilterConfig[(B, A)] = new UnexpectedBecause[(B, A)] {
         def unexpected(xy: (B, A)) = self.unexpected(xy._2)
         def reason(xy: (B, A)) = self.reason(xy._2)
     }
@@ -218,8 +218,8 @@ final class BasicFilter[A] extends SpecialisedFilterConfig[A] with VanillaFilter
     }
 
     // $COVERAGE-OFF$
-    private [parsley] final override def injectLeft[B] = new BasicFilter[Either[A, B]]
-    private [parsley] final override def injectRight[B] = new BasicFilter[Either[B, A]]
-    private [parsley] final override def injectSnd[B] = new BasicFilter[(B, A)]
+    private [parsley] final override def injectLeft[B]: FilterConfig[Either[A,B]] = new BasicFilter[Either[A, B]]
+    private [parsley] final override def injectRight[B]: FilterConfig[Either[B,A]] = new BasicFilter[Either[B, A]]
+    private [parsley] final override def injectSnd[B]: FilterConfig[(B, A)] = new BasicFilter[(B, A)]
     // $COVERAGE-ON$
 }

@@ -10,6 +10,7 @@ import scala.collection.immutable.NumericRange
 import parsley.Parsley, Parsley.empty
 import parsley.character.{satisfy, satisfyUtf16}
 import parsley.exceptions.ParsleyException
+import parsley.internal.machine.instructions
 
 // TODO: for parsley 5.0.0, make this a package?
 /** This module contains functionality to describe character predicates, which can
@@ -27,7 +28,7 @@ object predicate {
         private [token] def toNative: Parsley[Unit]
         private [token] def startsWith(s: String): Boolean
         private [token] def endsWith(s: String): Boolean
-        private [parsley] def asInternalPredicate: parsley.internal.machine.instructions.token.CharPredicate
+        private [parsley] def asInternalPredicate: instructions.token.CharPredicate
     }
 
     /** More generic character predicate, which reads any unicode codepoint.
@@ -48,7 +49,7 @@ object predicate {
         private [token] override def toNative = toUnicode.void
         private [token] def startsWith(s: String) = s.nonEmpty && predicate(s.codePointAt(0))
         private [token] def endsWith(s: String) = s.nonEmpty && predicate(s.codePointBefore(s.length))
-        private [parsley] def asInternalPredicate = new parsley.internal.machine.instructions.token.Unicode(predicate)
+        private [parsley] def asInternalPredicate: instructions.token.CharPredicate = new instructions.token.Unicode(predicate)
     }
 
     /** Basic character predicate, which reads regular Scala 16-bit characters.
@@ -61,13 +62,13 @@ object predicate {
     final case class Basic(predicate: Char => Boolean) extends CharPredicate {
         private [token] override def toBmp = satisfy(predicate)
         // $COVERAGE-OFF$
-        private [token] override def toUnicode =
+        private [token] override def toUnicode: Parsley[Int] =
             throw new ParsleyException("Cannot parse unicode with a `Basic` `Char => Boolean` predicate") // scalastyle:ignore throw
         // $COVERAGE-ON$
         private [token] override def toNative = toBmp.void
         private [token] def startsWith(s: String) = s.headOption.exists(predicate)
         private [token] def endsWith(s: String) = s.lastOption.exists(predicate)
-        private [parsley] def asInternalPredicate = new parsley.internal.machine.instructions.token.Basic(predicate)
+        private [parsley] def asInternalPredicate: instructions.token.CharPredicate  = new instructions.token.Basic(predicate)
     }
     // this runs the ability to pass functions in as it creates an overloading ambiguity
     /*object Basic {
@@ -80,12 +81,12 @@ object predicate {
       * @since 4.0.0
       */
     case object NotRequired extends CharPredicate {
-        private [token] override def toBmp = empty
-        private [token] override def toUnicode = empty
-        private [token] override def toNative = empty
+        private [token] override def toBmp: Parsley[Char] = empty
+        private [token] override def toUnicode: Parsley[Int] = empty
+        private [token] override def toNative: Parsley[Unit] = empty
         private [token] def startsWith(s: String) = true
         private [token] def endsWith(s: String) = true
-        private [parsley] def asInternalPredicate = parsley.internal.machine.instructions.token.NotRequired
+        private [parsley] def asInternalPredicate: instructions.token.CharPredicate  = instructions.token.NotRequired
     }
 
     /** This object provides implicit functionality for constructing `CharPredicate` values.
