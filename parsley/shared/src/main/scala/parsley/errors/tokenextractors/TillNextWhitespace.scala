@@ -63,16 +63,24 @@ object TillNextWhitespace {
         case cs => Token.Raw(helpers.takeCodePoints(extractTillNextWhitespace(cs), amountOfInputParserWanted))
     }
 
+    /** Describes what characters are considered whitespace.
+      *
+      * Defaults to `_.isWhitespace`.
+      *
+      * @since 4.4.0
+      */
+    def isWhitespace(c: Char): Boolean = c.isWhitespace
+
     // TODO: we should take to minimum of parser demand and next whitespace, this would potentially be much much cheaper
     // Assumption: there are no non-BMP whitespace characters
     private def extractTillNextWhitespace(cs: Iterable[Char]): String = cs match {
         case cs: WrappedString =>
             // These do not require allocation on the string
             val idx = {
-                val idx = cs.indexWhere(_.isWhitespace)
+                val idx = cs.indexWhere(isWhitespace(_))
                 if (idx != -1) idx else cs.length
             }
             cs.slice(0, idx).toString
-        case cs => cs.takeWhile(!_.isWhitespace).mkString
+        case cs => cs.takeWhile(!isWhitespace(_)).mkString
     }
 }
