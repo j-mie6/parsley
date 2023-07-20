@@ -69,7 +69,7 @@ object TillNextWhitespace {
       *
       * @since 4.4.0
       */
-    def isWhitespace(c: Char): Boolean = c.isWhitespace
+    private def isWhitespace(c: Char): Boolean = c.isWhitespace
 
     // TODO: we should take to minimum of parser demand and next whitespace, this would potentially be much much cheaper
     // Assumption: there are no non-BMP whitespace characters
