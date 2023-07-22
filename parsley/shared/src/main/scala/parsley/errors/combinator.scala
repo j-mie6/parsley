@@ -41,7 +41,7 @@ import parsley.internal.errors.{CaretWidth, FlexibleCaret, RigidCaret}
   */
 object combinator {
     // TODO: remove in 5.0, for MiMA's sake
-    private [parsley] def empty(caretWidth: Int): Parsley[Nothing] = Parsley.empty(n)
+    private [parsley] def empty(caretWidth: Int): Parsley[Nothing] = Parsley.empty(caretWidth)
 
     /** This combinator consumes no input and fails immediately with the given error messages.
       *
