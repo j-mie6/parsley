@@ -5,9 +5,9 @@
  */
 package parsley.token.symbol
 
-import parsley.Parsley, Parsley.{atomic, notFollowedBy, unit}
+import parsley.Parsley, Parsley.{atomic, empty, notFollowedBy, unit}
 import parsley.character.{char, codePoint, string, strings}
-import parsley.errors.combinator.{ErrorMethods, empty, amend}
+import parsley.errors.combinator.{ErrorMethods, amend}
 import parsley.token.descriptions.{NameDesc, SymbolDesc}
 import parsley.token.errors.ErrorConfig
 

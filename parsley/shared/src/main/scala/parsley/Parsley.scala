@@ -1229,6 +1229,8 @@ object Parsley {
       * @group prim
       */
     def notFollowedBy(p: Parsley[_]): Parsley[Unit] = new Parsley(new frontend.NotFollowedBy(p.internal))
+
+    private [parsley] def empty(caretWidth: Int): Parsley[Nothing] = new Parsley(singletons.Empty(caretWidth))
     /** This parser fails immediately, with an unknown parse error.
       *
       * @example {{{
@@ -1240,7 +1242,7 @@ object Parsley {
       * @return a parser that fails.
       * @group basic
       */
-    val empty: Parsley[Nothing] = errors.combinator.empty(0)
+    val empty: Parsley[Nothing] = empty(0)
     /** This combinator produces `()` without having any other effect.
       *
       * When this combinator is ran, no input is required, nor consumed, and

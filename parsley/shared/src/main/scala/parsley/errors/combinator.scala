@@ -40,8 +40,6 @@ import parsley.internal.errors.{CaretWidth, FlexibleCaret, RigidCaret}
   *     parsers that interact with the error system in some way.
   */
 object combinator {
-    private [parsley] def empty(caretWidth: Int): Parsley[Nothing] = new Parsley(singletons.Empty(caretWidth))
-
     /** This combinator consumes no input and fails immediately with the given error messages.
       *
       * Produces a ''specialised'' error message where all the lines of the error are the
