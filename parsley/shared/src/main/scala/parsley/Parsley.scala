@@ -1229,8 +1229,18 @@ object Parsley {
       * @group prim
       */
     def notFollowedBy(p: Parsley[_]): Parsley[Unit] = new Parsley(new frontend.NotFollowedBy(p.internal))
-
-    private [parsley] def empty(caretWidth: Int): Parsley[Nothing] = new Parsley(singletons.Empty(caretWidth))
+    /** This combinator fails immediately, with a caret of the given width and no other information.
+      *
+      * By producing basically no information, this combinator is principally for adjusting the
+      * caret-width of another error, rather than the value `empty`, which is used to fail with
+      * no effect on error content.
+      *
+      * @param caretWidth the width of the caret for the error produced by this combinator.
+      * @return a parser that fails.
+      * @since 4.4.0
+      * @group basic
+      */
+    def empty(caretWidth: Int): Parsley[Nothing] = new Parsley(singletons.Empty(caretWidth))
     /** This parser fails immediately, with an unknown parse error.
       *
       * @example {{{
@@ -1240,6 +1250,7 @@ object Parsley {
       * }}}
       *
       * @return a parser that fails.
+      * @note equivalent to `empty(0)`
       * @group basic
       */
     val empty: Parsley[Nothing] = empty(0)
