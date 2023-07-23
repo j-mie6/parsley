@@ -255,10 +255,10 @@ class CombinatorTests extends ParsleyTest {
 
     "range_" should "perform a range with no results" in {
         val p = range_(2, 5)(item)
-        p.parse("a") shouldBe a [Failure[_]]
-        p.parse("ab") shouldBe Success(())
-        p.parse("abcd") shouldBe Success(())
-        p.parse("abcde") shouldBe Success(())
+        (p <~ eof).parse("a") shouldBe a [Failure[_]]
+        (p <~ eof).parse("ab") shouldBe Success(())
+        (p <~ eof).parse("abcd") shouldBe Success(())
+        (p <~ eof).parse("abcde") shouldBe Success(())
         (p <~ 'f').parse("abcdef") shouldBe Success(())
     }
 }
