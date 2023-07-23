@@ -8,6 +8,7 @@ package parsley
 import Predef.{ArrowAssoc => _, _}
 
 import parsley.combinator.{exactly => repeat, _}
+import parsley.character.item
 import parsley.Parsley._
 import parsley.registers.{forYieldP, forYieldP_, Reg}
 import parsley.implicits.character.{charLift, stringLift}
@@ -233,5 +234,31 @@ class CombinatorTests extends ParsleyTest {
         p.parse("ababababab") shouldBe Success(5)
         p.parse("abababababab") shouldBe Success(5)
         p.parse("ababababa") shouldBe a [Failure[_]]
+        val q = count(2, 5)(atomic("ab"))
+        q.parse("ab") shouldBe a [Failure[_]]
+        q.parse("abab") shouldBe Success(2)
+        q.parse("ababab") shouldBe Success(3)
+        q.parse("abababab") shouldBe Success(4)
+        q.parse("ababababab") shouldBe Success(5)
+        q.parse("abababababab") shouldBe Success(5)
+        q.parse("ababababa") shouldBe Success(4)
+    }
+
+    "range" should "collect results up instead of count" in {
+        val p = range(2, 5)(item)
+        p.parse("a") shouldBe a [Failure[_]]
+        p.parse("ab") shouldBe Success(List('a', 'b'))
+        p.parse("abcd") shouldBe Success(List('a', 'b', 'c', 'd'))
+        p.parse("abcde") shouldBe Success(List('a', 'b', 'c', 'd', 'e'))
+        p.parse("abcdef") shouldBe Success(List('a', 'b', 'c', 'd', 'e'))
+    }
+
+    "range_" should "perform a range with no results" in {
+        val p = range_(2, 5)(item)
+        p.parse("a") shouldBe a [Failure[_]]
+        p.parse("ab") shouldBe Success(())
+        p.parse("abcd") shouldBe Success(())
+        p.parse("abcde") shouldBe Success(())
+        (p <~ 'f').parse("abcdef") shouldBe Success(())
     }
 }

@@ -911,15 +911,14 @@ object combinator {
     def exactly[A](n: Int, p: Parsley[A]): Parsley[List[A]] = traverse[Int, A](_ => p, (1 to n): _*)
     private def skipExactly(n: Int, p: Parsley[_]): Parsley[Unit] = skip(p, (2 to n).map(_ => p): _*)
 
+    def count(p: Parsley[_]): Parsley[Int] = p.foldLeft(0)((n, _) => n + 1)
+    def count1(p: Parsley[_]): Parsley[Int] = p.foldLeft1(0)((n, _) => n + 1)
+
     def range[A](min: Int, max: Int)(p: Parsley[A]): Parsley[List[A]] = fresh(mutable.ListBuffer.empty[A]).persist { xs =>
         count(min, max)((xs, p).zipped(_ += _)) ~>
         xs.map(_.toList)
     }
-
     def range_(min: Int, max: Int)(p: Parsley[_]): Parsley[Unit] = count(min, max)(p).void
-
-    def count(p: Parsley[_]): Parsley[Int] = p.foldLeft(0)((n, _) => n + 1)
-    def count1(p: Parsley[_]): Parsley[Int] = p.foldLeft1(0)((n, _) => n + 1)
     def count(min: Int, max: Int)(p: Parsley[_]): Parsley[Int] = min.makeReg { i =>
         skipExactly(min, p) ~>
         skipMany(ensure(i.gets(_ < max), p) ~> i.modify(_ + 1)) ~>
