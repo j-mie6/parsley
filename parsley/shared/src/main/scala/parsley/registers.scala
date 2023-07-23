@@ -442,10 +442,10 @@ object registers {
       * @group comb
       */
     def forYieldP_[A, B](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: Parsley[A] => Parsley[B]): Parsley[List[B]] = {
-        fresh(mutable.ListBuffer.empty[B]).fillReg { acc =>
+        fresh(mutable.ListBuffer.empty[B]).persist { acc =>
             forP_(init, cond, step) { x =>
-                acc.put((acc.get, body(x)).zipped(_ += _))
-            } *> acc.gets(_.toList)
+                (acc, body(x)).zipped(_ += _)
+            } ~> acc.map(_.toList)
         }
     }
 
@@ -511,10 +511,10 @@ object registers {
       * @group comb
       */
     def forYieldP[A, B](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: =>Parsley[B]): Parsley[List[B]] = {
-        fresh(mutable.ListBuffer.empty[B]).fillReg { acc =>
+        fresh(mutable.ListBuffer.empty[B]).persist { acc =>
             forP(init, cond, step) {
-                acc.put((acc.get, body).zipped(_ += _))
-            } *> acc.gets(_.toList)
+                (acc, body).zipped(_ += _)
+            } ~> acc.map(_.toList)
         }
     }
 }
