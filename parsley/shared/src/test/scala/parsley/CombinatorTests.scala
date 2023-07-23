@@ -208,4 +208,30 @@ class CombinatorTests extends ParsleyTest {
         abc.parse("aaabbbccc") should be (Success(List('c', 'c', 'c')))
         abc.parse("aaaabc") shouldBe a [Failure[_]]
     }
+
+    "count" should "report how many successful parses occurred" in {
+        val p = count("ab")
+        val q = count1("ab")
+        p.parse("") shouldBe Success(0)
+        q.parse("") shouldBe a [Failure[_]]
+        p.parse("ab") shouldBe Success(1)
+        q.parse("ab") shouldBe Success(1)
+        p.parse("ababab") shouldBe Success(3)
+        q.parse("ababab") shouldBe Success(3)
+    }
+
+    it should "not allow partial results" in {
+        count("ab").parse("aba") shouldBe a [Failure[_]]
+    }
+
+    it should "allow for ranges" in {
+        val p = count(2, 5)("ab")
+        p.parse("ab") shouldBe a [Failure[_]]
+        p.parse("abab") shouldBe Success(2)
+        p.parse("ababab") shouldBe Success(3)
+        p.parse("abababab") shouldBe Success(4)
+        p.parse("ababababab") shouldBe Success(5)
+        p.parse("abababababab") shouldBe Success(5)
+        p.parse("ababababa") shouldBe a [Failure[_]]
+    }
 }

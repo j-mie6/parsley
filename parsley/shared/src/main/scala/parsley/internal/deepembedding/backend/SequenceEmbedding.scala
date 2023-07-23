@@ -151,6 +151,7 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
         case _          => after
     }
 
+    // TODO: Get behaves much like pure except for shifting positions
     override def optimise: StrictParsley[A] = this match {
         // Assume that this is eliminated first, so not other before or afters
         case (_: Pure[_]) **> u => u

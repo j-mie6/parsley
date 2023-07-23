@@ -315,6 +315,7 @@ object registers {
       * @param con a conversion that allows values convertible to parsers to be used.
       * @group ext
       */
+    // TODO: rename?
     implicit final class RegisterMethods[P, A](p: P)(implicit con: P => Parsley[A]) {
         /** This combinator fills a fresh register with the result of this parser, this
           * register is provided to the given function, which continues the parse.
@@ -362,6 +363,7 @@ object registers {
       * @param x the value to initialise a register with.
       * @group ext
       */
+    // TODO: make AnyVal
     implicit final class RegisterMaker[A](x: A) {
         /** This combinator fills a fresh register with the this value.
           *

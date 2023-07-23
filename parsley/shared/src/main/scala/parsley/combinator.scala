@@ -6,10 +6,11 @@
 package parsley
 
 import scala.annotation.tailrec
+import scala.collection.mutable
 
-import parsley.Parsley.{atomic, empty, notFollowedBy, pure, select, unit}
+import parsley.Parsley.{atomic, empty, fresh, notFollowedBy, pure, select, unit}
 import parsley.implicits.zipped.{Zipped2, Zipped3}
-import parsley.registers.RegisterMaker
+import parsley.registers.{RegisterMaker, RegisterMethods}
 
 import parsley.internal.deepembedding.{frontend, singletons}
 
@@ -908,24 +909,20 @@ object combinator {
       * @since 4.0.0
       */
     def exactly[A](n: Int, p: Parsley[A]): Parsley[List[A]] = traverse[Int, A](_ => p, (1 to n): _*)
+    private def skipExactly(n: Int, p: Parsley[_]): Parsley[Unit] = skip(p, (2 to n).map(_ => p): _*)
 
-    def range[A](min: Int, max: Int)(p: Parsley[A]): Parsley[List[A]] = range(min, max, step = 1, atomicStep = false)(p)
-    // TODO: more efficient list construction (atomic might screw this up though?)
-    // This will fail if `p` is not read in increments of step without returning the "next best" -- use atomic?
-    def range[A](min: Int, max: Int, step: Int, atomicStep: Boolean)(p: Parsley[A]): Parsley[List[A]] = min.makeReg { i =>
-        def mkAtomic[B](p: Parsley[B]) = if (atomicStep) atomic(p) else p
-        (exactly(min, p), many(ensure(i.gets(_ < max), mkAtomic(exactly(step, p)) <~ i.modify(_ + step)))).zipped { (xs, xss) =>
-            xs ++ xss.flatten
-        }
+    def range[A](min: Int, max: Int)(p: Parsley[A]): Parsley[List[A]] = fresh(mutable.ListBuffer.empty[A]).persist { xs =>
+        count(min, max)((xs, p).zipped(_ += _)) ~>
+        xs.map(_.toList)
     }
 
-    def range_(min: Int, max: Int)(p: Parsley[_]): Parsley[Unit] = range_(min, max, step = 1, atomicStep = false)(p)
-    // TODO: more efficient implementation (perhaps the other way around?)
-    def range_(min: Int, max: Int, step: Int, atomicStep: Boolean)(p: Parsley[_]): Parsley[Unit] = range(min, max, step, atomicStep)(p).void
+    def range_(min: Int, max: Int)(p: Parsley[_]): Parsley[Unit] = count(min, max)(p).void
 
     def count(p: Parsley[_]): Parsley[Int] = p.foldLeft(0)((n, _) => n + 1)
     def count1(p: Parsley[_]): Parsley[Int] = p.foldLeft1(0)((n, _) => n + 1)
-    def count(min: Int, max: Int)(p: Parsley[_]): Parsley[Int] = count(min, max, step = 1, atomicStep = false)(p)
-    // TODO: more efficient implementation!
-    def count(min: Int, max: Int, step: Int, atomicStep: Boolean)(p: Parsley[_]): Parsley[Int] = range(min, max, step, atomicStep)(p).map(_.length)
+    def count(min: Int, max: Int)(p: Parsley[_]): Parsley[Int] = min.makeReg { i =>
+        skipExactly(min, p) ~>
+        skipMany(ensure(i.gets(_ < max), p) ~> i.modify(_ + 1)) ~>
+        i.get
+    }
 }
