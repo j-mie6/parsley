@@ -846,15 +846,29 @@ object combinator {
       *
       * @param condP the parser that yields the condition value.
       * @param thenP the parser to execute if the condition is `true`.
-      * @return a parser that conditionally parses `thenP` or `elseP` after `condP`.
+      * @return a parser that conditionally parses `thenP` after `condP`.
       * @group cond
       */
     def when(condP: Parsley[Boolean], thenP: =>Parsley[Unit]): Parsley[Unit] = ifP(condP, thenP, unit)
 
-    // TODO: document and test before release
-    private [parsley] def ensure[A](condP: Parsley[Boolean], beforeP: =>Parsley[A]): Parsley[A] =
-        //ifP(condP, beforeP, empty)
-        condP.filter(identity) *> beforeP
+    /** This combinator verfies that the given parser returns `true`, or else fails.
+      *
+      * First, parse `p`; if it succeeds then, so long at returns `true`, this `guard(p)` succeeds. Otherwise,
+      * if `p` either fails, or returns `false`, `guard(p)` will fail.
+      *
+      * @example {{{
+      * guard(pure(true)) == unit
+      * guard(pure(false)) == empty
+      * when(p.map(!_), empty) == guard(p)
+      * }}}
+      *
+      * @param p the parser that yields the condition value.
+      * @group cond
+      */
+    def guard(p: Parsley[Boolean]): Parsley[Unit] = p.filter(identity).void
+
+    // TODO: remove
+    private [parsley] def ensure[A](condP: Parsley[Boolean], beforeP: =>Parsley[A]): Parsley[A] = guard(condP) *> beforeP
 
     /** This combinator repeatedly parses `p` so long as it returns `true`.
       *
