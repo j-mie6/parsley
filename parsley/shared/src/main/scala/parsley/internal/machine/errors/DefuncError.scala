@@ -302,7 +302,7 @@ private [errors] sealed abstract class BaseError extends TrivialDefuncError {
     }
 }
 
-private [machine] final class ExpectedError(val presentationOffset: Int, val line: Int, val col: Int,
+private [parsley] final class ExpectedError(val presentationOffset: Int, val line: Int, val col: Int,
                                             val expected: Iterable[ExpectItem], val unexpectedWidth: Int) extends BaseError {
     override final val flags = if (expected.isEmpty) (DefuncError.ExpectedEmptyMask | DefuncError.TrivialErrorMask) else DefuncError.TrivialErrorMask
 }

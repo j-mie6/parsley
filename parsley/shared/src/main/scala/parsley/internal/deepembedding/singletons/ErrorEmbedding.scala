@@ -5,6 +5,8 @@
  */
 package parsley.internal.deepembedding.singletons
 
+import parsley.errors.UnexpectedItem
+
 import parsley.internal.deepembedding.backend.MZero
 import parsley.internal.deepembedding.frontend.LazyParsleyIVisitor
 import parsley.internal.errors.CaretWidth
@@ -36,6 +38,27 @@ private [parsley] final class Unexpected(msg: String, width: CaretWidth) extends
     override def instr: instructions.Instr = new instructions.Unexpected(msg, width)
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Nothing] = visitor.visit(this, context)(msg, width)
+}
+
+// From the thesis
+private [parsley] final class VanillaGen[A](unexGen: A => UnexpectedItem, reasonGen: A => Option[String]) extends Singleton[((A, Int)) => Nothing] {
+    // $COVERAGE-OFF$
+    override def pretty: String = s"vanillaError(???, ???)"
+    // $COVERAGE-ON$
+
+    override def instr: instructions.Instr = new instructions.VanillaGen(unexGen, reasonGen)
+
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[((A, Int)) => Nothing] = visitor.visit(this, context)(unexGen, reasonGen)
+}
+
+private [parsley] final class SpecialisedGen[A](msgGen: A => Seq[String]) extends Singleton[((A, Int)) => Nothing] {
+    // $COVERAGE-OFF$
+    override def pretty: String = s"specialisedError(???)"
+    // $COVERAGE-ON$
+
+    override def instr: instructions.Instr = ???
+
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[((A, Int)) => Nothing] = visitor.visit(this, context)(msgGen)
 }
 
 private [parsley] object Empty {
