@@ -5,7 +5,10 @@
  */
 package parsley.errors
 
-import parsley.Parsley
+import parsley.Parsley, Parsley.atomic
+import parsley.implicits.zipped.Zipped3
+import parsley.errors.combinator.{ErrorMethods, amend}
+import parsley.position.offset
 
 import parsley.internal.deepembedding.frontend
 
@@ -108,5 +111,12 @@ object patterns {
 
         private def verified(msggen: Either[A => Seq[String], Option[A => String]]) = new Parsley(new frontend.VerifiedError(con(p).internal, msggen))
         private def verifiedUnexpected(reason: Option[A => String]) = verified(Right(reason))
+
+        @scala.annotation.unused
+        private def verifiedWith(err: Parsley[((A, Int)) => Nothing]) = amend {
+            (offset, atomic(con(p)).hide, offset).zipped {
+                (s, x, e) => (x, e-s)
+            } <**> err
+        }
     }
 }
