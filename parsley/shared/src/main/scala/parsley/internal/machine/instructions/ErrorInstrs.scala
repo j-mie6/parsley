@@ -52,6 +52,33 @@ private [internal] final class RelabelErrorAndFail(labels: Iterable[String]) ext
     // $COVERAGE-ON$
 }
 
+private [internal] final object HideHints extends Instr {
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        ctx.popHints()
+        ctx.mergeHints()
+        ctx.handlers = ctx.handlers.tail
+        ctx.checkStack = ctx.checkStack.tail
+        ctx.inc()
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = "HideHints"
+    // $COVERAGE-ON$
+}
+
+private [internal] final object HideErrorAndFail extends Instr {
+    override def apply(ctx: Context): Unit = {
+        ensureHandlerInstruction(ctx)
+        ctx.restoreHints()
+        ctx.errs.error = new EmptyError(ctx.offset, ctx.line, ctx.col, unexpectedWidth = 0)
+        ctx.checkStack = ctx.checkStack.tail
+        ctx.fail()
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = "HideErrorAndFail"
+    // $COVERAGE-ON$
+}
+
 private [internal] object ErrorToHints extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)

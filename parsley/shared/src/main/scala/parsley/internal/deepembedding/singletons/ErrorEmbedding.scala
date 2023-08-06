@@ -56,7 +56,7 @@ private [parsley] final class SpecialisedGen[A](msgGen: A => Seq[String]) extend
     override def pretty: String = s"specialisedError(???)"
     // $COVERAGE-ON$
 
-    override def instr: instructions.Instr = ???
+    override def instr: instructions.Instr = new instructions.SpecialisedGen(msgGen)
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[((A, Int)) => Nothing] = visitor.visit(this, context)(msgGen)
 }

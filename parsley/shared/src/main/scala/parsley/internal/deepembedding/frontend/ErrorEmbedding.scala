@@ -12,6 +12,11 @@ private [parsley] final class ErrorLabel[A](p: LazyParsley[A], labels: Seq[Strin
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p, labels)
 }
+private [parsley] final class ErrorHide[A](p: LazyParsley[A]) extends Unary[A, A](p) {
+    override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.ErrorHide(p)
+
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p)
+}
 private [parsley] final class ErrorExplain[A](p: LazyParsley[A], reason: String) extends Unary[A, A](p) {
     override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.ErrorExplain(p, reason)
 

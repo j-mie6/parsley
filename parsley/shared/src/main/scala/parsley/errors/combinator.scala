@@ -539,6 +539,9 @@ object combinator {
           */
         def hide: Parsley[A] = this.labels()
 
+        // TODO: this will become the new hide in 5.0.0
+        private [parsley] def newHide: Parsley[A] = new Parsley(new frontend.ErrorHide(con(p).internal))
+
         // $COVERAGE-OFF$
         /** This combinator parses this parser and then fails, using the result of this parser to customise the error message.
           *

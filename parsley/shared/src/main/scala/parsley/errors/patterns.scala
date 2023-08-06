@@ -10,7 +10,7 @@ import parsley.implicits.zipped.Zipped3
 import parsley.errors.combinator.{ErrorMethods, amend}
 import parsley.position.offset
 
-import parsley.internal.deepembedding.frontend
+import parsley.internal.deepembedding.{frontend, singletons}
 
 /** This module contains combinators that help facilitate the error message generational patterns ''Verified Errors'' and ''Preventative Errors''.
   *
@@ -54,7 +54,7 @@ object patterns {
           * @note $autoAmend
           * @note $attemptNonTerminal
           */
-        def verifiedFail(msggen: A => Seq[String]): Parsley[Nothing] = verified(Left(msggen))
+        def verifiedFail(msggen: A => Seq[String]): Parsley[Nothing] = verifiedWith(new Parsley(new singletons.SpecialisedGen(msggen)))//*/verified(Left(msggen))
 
         /** Ensures this parser does not succeed, failing with a specialised error if it does.
           *
@@ -114,7 +114,7 @@ object patterns {
 
         @org.typelevel.scalaccompat.annotation.unused
         private def verifiedWith(err: Parsley[((A, Int)) => Nothing]) = amend {
-            (offset, atomic(con(p)).hide, offset).zipped {
+            (offset, atomic(con(p)).newHide, offset).zipped {
                 (s, x, e) => (x, e-s)
             } <**> err
         }

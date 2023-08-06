@@ -31,6 +31,17 @@ private [deepembedding] final class ErrorLabel[A](val p: StrictParsley[A], priva
     final override def pretty(p: String): String = s"$p.label($labels)"
     // $COVERAGE-ON$
 }
+private [deepembedding] final class ErrorHide[A](val p: StrictParsley[A]) extends ScopedUnary[A, A] {
+    // This needs to save the hints because label should hints only the hints generated _within_ its context, then merge with the originals after
+    override def setup(label: Int): instructions.Instr = new instructions.PushHandlerAndCheck(label, saveHints = true)
+    override def instr: instructions.Instr = instructions.HideHints
+    override def instrNeedsLabel: Boolean = false
+    override def handlerLabel(state: CodeGenState): Int = state.getLabel(instructions.HideErrorAndFail)
+
+    // $COVERAGE-OFF$
+    final override def pretty(p: String): String = s"$p.hide"
+    // $COVERAGE-ON$
+}
 private [deepembedding] final class ErrorExplain[A](val p: StrictParsley[A], reason: String) extends ScopedUnary[A, A] {
     override def setup(label: Int): instructions.Instr = new instructions.PushHandlerAndCheck(label, saveHints = false)
     override def instr: instructions.Instr = instructions.PopHandlerAndCheck
