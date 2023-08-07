@@ -5,7 +5,9 @@
  */
 package parsley.errors
 
-import parsley.Parsley
+import parsley.Parsley, Parsley.select
+import parsley.implicits.zipped.Zipped3
+import parsley.position.offset
 
 import parsley.internal.deepembedding.{frontend, singletons}
 import parsley.internal.errors.{CaretWidth, FlexibleCaret, RigidCaret}
@@ -290,7 +292,9 @@ object combinator {
           * @note $autoAmend
           * @group filter
           */
-        def filterOut(pred: PartialFunction[A, String]): Parsley[A] = new Parsley(new frontend.FilterOut(con(p).internal, pred))
+        def filterOut(pred: PartialFunction[A, String]): Parsley[A] = {
+            this.filterWith(!pred.isDefinedAt(_), new Parsley(new singletons.VanillaGen(_ => UnexpectedItem.Empty, pred.lift)))
+        }
 
         /** This combinator filters the result of this parser using the given partial-predicate, succeeding only when the predicate is undefined.
           *
@@ -334,7 +338,9 @@ object combinator {
           * @note $autoAmend
           * @group filter
           */
-        def guardAgainst(pred: PartialFunction[A, Seq[String]]): Parsley[A] = new Parsley(new frontend.GuardAgainst(con(p).internal, pred))
+        def guardAgainst(pred: PartialFunction[A, Seq[String]]): Parsley[A] = {
+            this.filterWith(!pred.isDefinedAt(_), new Parsley(new singletons.SpecialisedGen(pred)))
+        }
 
         /** This combinator applies a partial function `pf` to the result of this parser if its result is defined for `pf`, failing if it is not.
           *
@@ -392,7 +398,7 @@ object combinator {
           * @group filter
           */
         def collectMsg[B](msggen: A => Seq[String])(pf: PartialFunction[A, B]): Parsley[B] = {
-            this.guardAgainst{case x if !pf.isDefinedAt(x) => msggen(x)}.map(pf)
+            this.collectWith(pf, new Parsley(new singletons.SpecialisedGen(msggen)))
         }
 
         private def _unexpectedWhen(pred: PartialFunction[A, (String, Option[String])]): Parsley[A] = {
@@ -541,6 +547,18 @@ object combinator {
 
         // TODO: this will become the new hide in 5.0.0
         private [parsley] def newHide: Parsley[A] = new Parsley(new frontend.ErrorHide(con(p).internal))
+
+        private def filterWith(f: A => Boolean, err: Parsley[((A, Int)) => Nothing]) = amendThenDislodge(1) {
+            select((offset, entrench(con(p)), offset).zipped { (s, x, e) =>
+                if (f(x)) Right(x) else Left((x, e - s))
+            }, err)
+        }
+
+        private def collectWith[B](f: PartialFunction[A, B], err: Parsley[((A, Int)) => Nothing]) = amendThenDislodge(1) {
+            select((offset, entrench(con(p)), offset).zipped { (s, x, e) =>
+                if (f.isDefinedAt(x)) Right(f(x)) else Left((x, e - s))
+            }, err)
+        }
 
         // $COVERAGE-OFF$
         /** This combinator parses this parser and then fails, using the result of this parser to customise the error message.
