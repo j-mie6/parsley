@@ -12,7 +12,6 @@ import parsley.token.errors.LabelConfig
 import parsley.internal.errors.{EndOfInput, ExpectDesc, ExpectItem}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
-import parsley.internal.machine.errors.EmptyError
 
 private [internal] final class Lift2(f: (Any, Any) => Any) extends Instr {
     override def apply(ctx: Context): Unit = {
@@ -184,43 +183,6 @@ private [internal] final class Case(var label: Int) extends InstrWithLabel {
     }
     // $COVERAGE-OFF$
     override def toString: String = s"Case(left: $label)"
-    // $COVERAGE-ON$
-}
-
-private [internal] final class Filter[A](_pred: A => Boolean) extends Instr {
-    private [this] val pred = _pred.asInstanceOf[Any => Boolean]
-    override def apply(ctx: Context): Unit = {
-        ensureRegularInstruction(ctx)
-        ctx.handlers = ctx.handlers.tail
-        if (pred(ctx.stack.upeek)) ctx.inc()
-        else {
-            val state = ctx.states
-            val caretWidth = ctx.offset - state.offset
-            ctx.fail(new EmptyError(state.offset, state.line, state.col, caretWidth))
-        }
-        ctx.states = ctx.states.tail
-    }
-    // $COVERAGE-OFF$
-    override def toString: String = "Filter(?)"
-    // $COVERAGE-ON$
-}
-
-private [internal] final class MapFilter[A, B](_f: A => Option[B]) extends Instr {
-    private [this] val f = _f.asInstanceOf[Any => Option[Any]]
-    override def apply(ctx: Context): Unit = {
-        ensureRegularInstruction(ctx)
-        ctx.handlers = ctx.handlers.tail
-        f(ctx.stack.upeek) match {
-            case Some(x) => ctx.exchangeAndContinue(x)
-            case None =>
-                val state = ctx.states
-                val caretWidth = ctx.offset - state.offset
-                ctx.fail(new EmptyError(state.offset, state.line, state.col, caretWidth))
-        }
-        ctx.states = ctx.states.tail
-    }
-    // $COVERAGE-OFF$
-    override def toString: String = "MapFilter(?)"
     // $COVERAGE-ON$
 }
 
