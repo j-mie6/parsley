@@ -92,18 +92,6 @@ private [deepembedding] final class ErrorLexical[A](val p: StrictParsley[A]) ext
     // $COVERAGE-ON$
 }
 
-private [deepembedding] final class VerifiedError[A](val p: StrictParsley[A], msggen: Either[A => scala.Seq[String], Option[A => String]])
-    extends ScopedUnary[A, Nothing] {
-    override def setup(label: Int): instructions.Instr = new instructions.PushHandlerAndState(label, saveHints = true, hideHints = true)
-    override def instr: instructions.Instr = instructions.MakeVerifiedError(msggen)
-    override def instrNeedsLabel: Boolean = false
-    override def handlerLabel(state: CodeGenState): Int = state.getLabel(instructions.NoVerifiedError)
-
-    // $COVERAGE-OFF$
-    final override def pretty(p: String): String = s"verifiedError($p)"
-    // $COVERAGE-ON$
-}
-
 private [backend] object ErrorLabel {
     def apply[A](p: StrictParsley[A], labels: scala.Seq[String]): ErrorLabel[A] = new ErrorLabel(p, labels)
     def unapply[A](self: ErrorLabel[A]): Some[(StrictParsley[A], scala.Seq[String])] = Some((self.p, self.labels))

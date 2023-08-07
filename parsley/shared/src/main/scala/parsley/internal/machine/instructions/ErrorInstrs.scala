@@ -10,7 +10,7 @@ import parsley.errors.UnexpectedItem
 import parsley.internal.errors.{CaretWidth, RigidCaret, UnexpectDesc}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
-import parsley.internal.machine.errors.{ClassicFancyError, EmptyError, ExpectedError, ExpectedErrorWithReason}
+import parsley.internal.machine.errors.EmptyError
 
 private [internal] final class RelabelHints(labels: Iterable[String]) extends Instr {
     private [this] val isHide: Boolean = labels.isEmpty
@@ -222,46 +222,5 @@ private [internal] final class SpecialisedGen[A](msgGen: A => Seq[String]) exten
 
     // $COVERAGE-OFF$
     override def toString: String = s"SpecialisedGen(???)"
-    // $COVERAGE-ON$
-}
-
-private [internal] final class MakeVerifiedError private (msggen: Either[Any => Seq[String], Option[Any => String]]) extends Instr {
-    override def apply(ctx: Context): Unit = {
-        ensureRegularInstruction(ctx)
-        val state = ctx.states
-        ctx.states = ctx.states.tail
-        ctx.restoreHints()
-        // A previous success is a failure
-        ctx.handlers = ctx.handlers.tail
-        val caretWidth = ctx.offset - state.offset
-        val x = ctx.stack.upeek
-        val err = msggen match {
-            case Left(f) => new ClassicFancyError(state.offset, state.line, state.col, new RigidCaret(caretWidth), f(x): _*)
-            case Right(Some(f)) => new ExpectedErrorWithReason(state.offset, state.line, state.col, None, f(x), caretWidth)
-            case Right(None) => new ExpectedError(state.offset, state.line, state.col, None, caretWidth)
-        }
-        ctx.fail(err)
-    }
-    // $COVERAGE-OFF$
-    override def toString: String = "MakeVerifiedError"
-    // $COVERAGE-ON$
-}
-private [internal] object MakeVerifiedError {
-    def apply[A](msggen: Either[A => Seq[String], Option[A => String]]): MakeVerifiedError = {
-        new MakeVerifiedError(msggen.asInstanceOf[Either[Any => Seq[String], Option[Any => String]]])
-    }
-}
-
-private [internal] object NoVerifiedError extends Instr {
-    override def apply(ctx: Context): Unit = {
-        ensureHandlerInstruction(ctx)
-        // If a verified error goes wrong, then it should appear like nothing happened
-        ctx.restoreState()
-        ctx.restoreHints()
-        ctx.errs.error = new EmptyError(ctx.offset, ctx.line, ctx.col, unexpectedWidth = 0)
-        ctx.fail()
-    }
-    // $COVERAGE-OFF$
-    override def toString: String = "VerifiedErrorHandler"
     // $COVERAGE-ON$
 }

@@ -119,7 +119,6 @@ private [parsley] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle
     def visit[A](self: ErrorEntrench[A], context: T)(p: LazyParsley[A]): U[A]
     def visit[A](self: ErrorDislodge[A], context: T)(n: Int, p: LazyParsley[A]): U[A]
     def visit[A](self: ErrorLexical[A], context: T)(p: LazyParsley[A]): U[A]
-    def visit[A](self: VerifiedError[A], context: T)(p: LazyParsley[A], msggen: Either[A => Seq[String], Option[A => String]]): U[Nothing]
 }
 
 /** Generalised version of [[LazyParsleyIVisitor]] that allows you to define default implementations
@@ -294,7 +293,5 @@ private [frontend] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
     override def visit[A](self: ErrorDislodge[A], context: T)(n: Int, p: LazyParsley[A]): U[A] =
         visitUnary(self, context)(p)
     override def visit[A](self: ErrorLexical[A], context: T)(p: LazyParsley[A]): U[A] =
-        visitUnary(self, context)(p)
-    override def visit[A](self: VerifiedError[A], context: T)(p: LazyParsley[A], msggen: Either[A => Seq[String], Option[A => String]]): U[Nothing] =
         visitUnary(self, context)(p)
 }

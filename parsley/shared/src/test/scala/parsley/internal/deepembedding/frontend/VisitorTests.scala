@@ -136,6 +136,7 @@ class VisitorTests extends ParsleyTest {
         new SepEndBy1(dummyParser, dontEval).testV
     }
 
+    //FIXME: add more tests
     they should "all return the constant unit object from the test visitor" in {
         // The lazy parsers have been tested for this in the laziness preservation test.
         new Pure(()).testV
@@ -187,6 +188,5 @@ class VisitorTests extends ParsleyTest {
         new ErrorEntrench(dummyParser).testV
         new ErrorDislodge(0, dummyParser).testV
         new ErrorLexical(dummyParser).testV
-        new VerifiedError[Nothing](dummyParser, Left(crash))
     }
 }
