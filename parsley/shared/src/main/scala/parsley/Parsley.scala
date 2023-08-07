@@ -6,13 +6,13 @@
 package parsley
 
 import parsley.combinator.{option, some}
-import parsley.errors.ErrorBuilder
+import parsley.errors.{ErrorBuilder, UnexpectedItem}
 import parsley.expr.{chain, infix}
 
 import parsley.internal.deepembedding.{frontend, singletons}
 import parsley.internal.machine.Context
 
-import Parsley.pure
+import Parsley.{pure, emptyErr}
 import XCompat._ // substituteCo
 
 /**
@@ -585,7 +585,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @note $autoAmend
       * @group filter
       */
-    def filter(pred: A => Boolean): Parsley[A] = new Parsley(new frontend.Filter(this.internal, pred))
+    def filter(pred: A => Boolean): Parsley[A] = parsley.errors.combinator.filterWith(this)(pred, emptyErr)
     /** This combinator filters the result of this parser using a given predicate, succeeding only if the predicate returns `false`.
       *
       * First, parse this parser. If it succeeds then take its result `x` and apply it to the predicate `pred`. If `pred(x) is
@@ -638,7 +638,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @note $autoAmend
       * @group filter
       */
-    def collect[B](pf: PartialFunction[A, B]): Parsley[B] = this.mapFilter(pf.lift)
+    def collect[B](pf: PartialFunction[A, B]): Parsley[B] = parsley.errors.combinator.collectWith(this)(pf, emptyErr)
     /** This combinator applies a function `f` to the result of this parser: if it returns a
       * `Some(y)`, `y` is returned, otherwise the parser fails.
       *
@@ -665,7 +665,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       * @note $autoAmend
       * @group filter
       */
-    def mapFilter[B](f: A => Option[B]): Parsley[B] = new Parsley(new frontend.MapFilter(this.internal, f))
+    def mapFilter[B](f: A => Option[B]): Parsley[B] = parsley.errors.combinator.mapFilterWith(this)(f, emptyErr)
 
     // FOLDING COMBINATORS
     /** This combinator will parse this parser '''zero''' or more times combining the results with the function `f` and base value `k` from the right.
@@ -1274,6 +1274,9 @@ object Parsley {
       * @group basic
       */
     val unit: Parsley[Unit] = pure(())
+
+    private val emptyErr = new Parsley(new singletons.VanillaGen[Any](_ => UnexpectedItem.Empty, _ => None))
+
     // $COVERAGE-OFF$
     /** This parser returns the current line number of the input without having any other effect.
       *

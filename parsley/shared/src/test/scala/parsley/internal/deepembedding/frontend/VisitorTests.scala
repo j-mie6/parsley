@@ -171,8 +171,6 @@ class VisitorTests extends ParsleyTest {
         new Put(dummyRegister(), dummyParser).testV
         new Debug(dummyParser, "fred", false, FullBreak).testV
         new DebugError(dummyParser, "plugh", false, dummyErrorBuilder).testV
-        new Filter[Nothing](dummyParser, crash).testV
-        new MapFilter[Nothing, Nothing](dummyParser, crash).testV
         new <|>(dummyParser, dummyParser).testV
         new >>=[Nothing, Nothing](dummyParser, crash).testV
         new Many(dummyParser).testV

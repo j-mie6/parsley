@@ -66,7 +66,8 @@ private [deepembedding] final class If[A](val b: StrictParsley[Boolean], val p: 
     // $COVERAGE-ON$
 }
 
-private [backend] sealed abstract class FilterLike[A](instr: instructions.Instr) extends Unary[A, A] {
+// Will need this again at some point...
+/*private [backend] sealed abstract class FilterLike[A](instr: instructions.Instr) extends Unary[A, A] {
     final override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val handler = state.getLabel(instructions.PopStateAndFail)
         instrs += new instructions.PushHandlerAndState(handler, saveHints = false, hideHints = false)
@@ -74,31 +75,7 @@ private [backend] sealed abstract class FilterLike[A](instr: instructions.Instr)
             instrs += instr
         }
     }
-}
-private [deepembedding] final class Filter[A](val p: StrictParsley[A], pred: A => Boolean) extends FilterLike[A](new instructions.Filter(pred)) {
-    // $COVERAGE-OFF$
-    final override def pretty(p: String): String = s"$p.filter(?)"
-    // $COVERAGE-ON$
-}
-private [deepembedding] final class MapFilter[A, B](val p: StrictParsley[A], f: A => Option[B]) extends Unary[A, B] {
-    final override def optimise: StrictParsley[B] = p match {
-        case Pure(x) => f(x).map(new Pure(_)).getOrElse(Empty.Zero)
-        case z: MZero => z
-        case _ => this
-    }
-
-    final override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
-        val handler = state.getLabel(instructions.PopStateAndFail)
-        instrs += new instructions.PushHandlerAndState(handler, saveHints = false, hideHints = false)
-        suspend(p.codeGen[M, R]) |> {
-            instrs += new instructions.MapFilter(f)
-        }
-    }
-
-    // $COVERAGE-OFF$
-    final override def pretty(p: String): String = s"$p.mapFilter(?)"
-    // $COVERAGE-ON$
-}
+}*/
 
 private [backend] object Branch {
     val FlipApp = instructions.Lift2[Any, Any => Any, Any]((x, f) => f(x))

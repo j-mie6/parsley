@@ -12,7 +12,7 @@ private [parsley]
 sealed abstract class UnexpectedItem {
     private [parsley] def makeError(offset: Int, line: Int, col: Int, caretWidth: Int): DefuncError
 }
-private [errors]
+private [parsley]
 object UnexpectedItem {
     case object Raw extends UnexpectedItem {
         private[parsley] def makeError(offset: Int, line: Int, col: Int, caretWidth: Int): DefuncError =
