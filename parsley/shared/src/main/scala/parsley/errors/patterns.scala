@@ -10,7 +10,7 @@ import parsley.implicits.zipped.Zipped3
 import parsley.errors.combinator.{ErrorMethods, amend}
 import parsley.position.offset
 
-import parsley.internal.deepembedding.{frontend, singletons}
+import parsley.internal.deepembedding.singletons
 
 /** This module contains combinators that help facilitate the error message generational patterns ''Verified Errors'' and ''Preventative Errors''.
   *
@@ -54,7 +54,7 @@ object patterns {
           * @note $autoAmend
           * @note $attemptNonTerminal
           */
-        def verifiedFail(msggen: A => Seq[String]): Parsley[Nothing] = verifiedWith(new Parsley(new singletons.SpecialisedGen(msggen)))//*/verified(Left(msggen))
+        def verifiedFail(msggen: A => Seq[String]): Parsley[Nothing] = this.verifiedWith(new Parsley(new singletons.SpecialisedGen(msggen)))
 
         /** Ensures this parser does not succeed, failing with a specialised error if it does.
           *
@@ -80,7 +80,7 @@ object patterns {
           * @note $autoAmend
           * @note $attemptNonTerminal
           */
-        def verifiedUnexpected: Parsley[Nothing] = this.verifiedUnexpected(None)
+        def verifiedUnexpected: Parsley[Nothing] = this.verifiedWithVanillaRaw(_ => None)
 
         /** Ensures this parser does not succeed, failing with a vanilla error with an unexpected message and caret spanning the parse and a given reason.
           *
@@ -93,7 +93,7 @@ object patterns {
           * @note $autoAmend
           * @note $attemptNonTerminal
           */
-        def verifiedUnexpected(reason: String): Parsley[Nothing] = this.verifiedUnexpected(_ => reason)
+        def verifiedUnexpected(reason: String): Parsley[Nothing] = this.verifiedWithVanillaRaw(_ => Some(reason))
 
         /** Ensures this parser does not succeed, failing with a vanilla error with an unexpected message and caret spanning the parse and a reason generated
           * from this parser's result.
@@ -107,16 +107,19 @@ object patterns {
           * @note $autoAmend
           * @note $attemptNonTerminal
           */
-        def verifiedUnexpected(reason: A => String): Parsley[Nothing] = this.verifiedUnexpected(Some(reason))
+        def verifiedUnexpected(reason: A => String): Parsley[Nothing] = this.verifiedWithVanillaRaw(x => Some(reason(x)))
 
-        private def verified(msggen: Either[A => Seq[String], Option[A => String]]) = new Parsley(new frontend.VerifiedError(con(p).internal, msggen))
-        private def verifiedUnexpected(reason: Option[A => String]) = verified(Right(reason))
 
-        @org.typelevel.scalaccompat.annotation.unused
         private def verifiedWith(err: Parsley[((A, Int)) => Nothing]) = amend {
             (offset, atomic(con(p)).newHide, offset).zipped {
                 (s, x, e) => (x, e-s)
             } <**> err
         }
+
+        @inline private def verifiedWithVanilla(unexGen: A => UnexpectedItem, reasonGen: A => Option[String]) = {
+            verifiedWith(new Parsley(new singletons.VanillaGen(unexGen, reasonGen)))
+        }
+
+        @inline private def verifiedWithVanillaRaw(reasonGen: A => Option[String]) = verifiedWithVanilla(_ => UnexpectedItem.Raw, reasonGen)
     }
 }
