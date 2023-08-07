@@ -173,7 +173,6 @@ class VisitorTests extends ParsleyTest {
         new DebugError(dummyParser, "plugh", false, dummyErrorBuilder).testV
         new Filter[Nothing](dummyParser, crash).testV
         new MapFilter[Nothing, Nothing](dummyParser, crash).testV
-        new UnexpectedWhen[Nothing](dummyParser, crash)
         new <|>(dummyParser, dummyParser).testV
         new >>=[Nothing, Nothing](dummyParser, crash).testV
         new Many(dummyParser).testV

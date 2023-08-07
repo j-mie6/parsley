@@ -82,7 +82,6 @@ private [parsley] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle
     def visit[A](self: If[A], context: T)(b: LazyParsley[Boolean], p: => LazyParsley[A], q: => LazyParsley[A]): U[A]
     def visit[A](self: Filter[A], context: T)(p: LazyParsley[A], pred: A => Boolean): U[A]
     def visit[A, B](self: MapFilter[A, B], context: T)(p: LazyParsley[A], f: A => Option[B]): U[B]
-    def visit[A](self: UnexpectedWhen[A], context: T)(p: LazyParsley[A], pred: PartialFunction[A, (String, Option[String])]): U[A]
 
     // Alternative parser visitors.
     def visit[A](self: <|>[A])(context: T, p: LazyParsley[A], q: LazyParsley[A]): U[A]
@@ -230,8 +229,6 @@ private [frontend] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
     override def visit[A](self: Filter[A], context: T)(p: LazyParsley[A], pred: A => Boolean): U[A] =
         visitUnary(self, context)(p)
     override def visit[A, B](self: MapFilter[A, B], context: T)(p: LazyParsley[A], f: A => Option[B]): U[B] =
-        visitUnary(self, context)(p)
-    override def visit[A](self: UnexpectedWhen[A], context: T)(p: LazyParsley[A], pred: PartialFunction[A, (String, Option[String])]): U[A] =
         visitUnary(self, context)(p)
 
     // Intrinsic overrides.

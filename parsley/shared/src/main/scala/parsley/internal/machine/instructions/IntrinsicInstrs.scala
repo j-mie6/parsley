@@ -9,10 +9,10 @@ import scala.annotation.tailrec
 
 import parsley.token.errors.LabelConfig
 
-import parsley.internal.errors.{EndOfInput, ExpectDesc, ExpectItem, RigidCaret, UnexpectDesc}
+import parsley.internal.errors.{EndOfInput, ExpectDesc, ExpectItem}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
-import parsley.internal.machine.errors.{DefuncError, EmptyError, UnexpectedError}
+import parsley.internal.machine.errors.EmptyError
 
 private [internal] final class Lift2(f: (Any, Any) => Any) extends Instr {
     override def apply(ctx: Context): Unit = {
@@ -222,31 +222,6 @@ private [internal] final class MapFilter[A, B](_f: A => Option[B]) extends Instr
     // $COVERAGE-OFF$
     override def toString: String = "MapFilter(?)"
     // $COVERAGE-ON$
-}
-
-private [internal] final class UnexpectedWhen(pred: PartialFunction[Any, (String, Option[String])]) extends Instr {
-    override def apply(ctx: Context): Unit = {
-        ensureRegularInstruction(ctx)
-        ctx.handlers = ctx.handlers.tail
-        if (pred.isDefinedAt(ctx.stack.upeek)) {
-            val state = ctx.states
-            val caretWidth = ctx.offset - state.offset
-            val (unex, reason) = pred(ctx.stack.upop())
-            val err = new UnexpectedError(state.offset, state.line, state.col, Nil, new UnexpectDesc(unex, new RigidCaret(caretWidth)))
-            ctx.fail(reason.fold[DefuncError](err)(err.withReason(_)))
-        }
-        else ctx.inc()
-        ctx.states = ctx.states.tail
-    }
-
-    // $COVERAGE-OFF$
-    override def toString: String = "UnexpectedWhen(?)"
-    // $COVERAGE-ON$
-}
-private [internal] object UnexpectedWhen {
-    def apply[A](pred: PartialFunction[A, (String, Option[String])]): UnexpectedWhen = {
-        new UnexpectedWhen(pred.asInstanceOf[PartialFunction[Any, (String, Option[String])]])
-    }
 }
 
 private [internal] object NegLookFail extends Instr {
