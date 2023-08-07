@@ -344,6 +344,7 @@ private [parsley] final class EmptyError(val presentationOffset: Int, val line: 
         builder.updateEmptyUnexpected(unexpectedWidth)
     }
 }
+// TODO: remove
 private [parsley] final class EmptyErrorWithReason(val presentationOffset: Int, val line: Int, val col: Int, val reason: String, val unexpectedWidth: Int)
     extends BaseError {
     override final val flags = DefuncError.ExpectedEmptyMask | DefuncError.TrivialErrorMask

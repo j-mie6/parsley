@@ -100,19 +100,6 @@ private [deepembedding] final class MapFilter[A, B](val p: StrictParsley[A], f: 
     // $COVERAGE-ON$
 }
 
-private [deepembedding] final class FilterOut[A](val p: StrictParsley[A], pred: PartialFunction[A, String])
-    extends FilterLike[A](new instructions.FilterOut(pred)) {
-    // $COVERAGE-OFF$
-    final override def pretty(p: String): String = s"$p.filterOut(?)"
-    // $COVERAGE-ON$
-}
-private [deepembedding] final class GuardAgainst[A](val p: StrictParsley[A], pred: PartialFunction[A, scala.Seq[String]])
-    extends FilterLike[A](instructions.GuardAgainst(pred)) {
-    // $COVERAGE-OFF$
-    final override def pretty(p: String): String = s"$p.guardAgainst(?)"
-    // $COVERAGE-ON$
-}
-
 private [deepembedding] final class UnexpectedWhen[A](val p: StrictParsley[A], pred: PartialFunction[A, (String, Option[String])])
     extends FilterLike[A](instructions.UnexpectedWhen(pred)) {
     // $COVERAGE-OFF$

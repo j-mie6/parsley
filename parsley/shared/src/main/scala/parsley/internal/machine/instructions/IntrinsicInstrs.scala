@@ -12,7 +12,7 @@ import parsley.token.errors.LabelConfig
 import parsley.internal.errors.{EndOfInput, ExpectDesc, ExpectItem, RigidCaret, UnexpectDesc}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
-import parsley.internal.machine.errors.{ClassicFancyError, DefuncError, EmptyError, EmptyErrorWithReason, UnexpectedError}
+import parsley.internal.machine.errors.{DefuncError, EmptyError, UnexpectedError}
 
 private [internal] final class Lift2(f: (Any, Any) => Any) extends Instr {
     override def apply(ctx: Context): Unit = {
@@ -222,45 +222,6 @@ private [internal] final class MapFilter[A, B](_f: A => Option[B]) extends Instr
     // $COVERAGE-OFF$
     override def toString: String = "MapFilter(?)"
     // $COVERAGE-ON$
-}
-
-private [internal] final class FilterOut[A](_pred: PartialFunction[A, String]) extends Instr {
-    private [this] val pred = _pred.asInstanceOf[PartialFunction[Any, String]]
-    override def apply(ctx: Context): Unit = {
-        ensureRegularInstruction(ctx)
-        ctx.handlers = ctx.handlers.tail
-        if (pred.isDefinedAt(ctx.stack.upeek)) {
-            val reason = pred(ctx.stack.upop())
-            val state = ctx.states
-            val caretWidth = ctx.offset - state.offset
-            ctx.fail(new EmptyErrorWithReason(state.offset, state.line, state.col, reason, caretWidth))
-        }
-        else ctx.inc()
-        ctx.states = ctx.states.tail
-    }
-    // $COVERAGE-OFF$
-    override def toString: String = "FilterOut(?)"
-    // $COVERAGE-ON$
-}
-
-private [internal] final class GuardAgainst(pred: PartialFunction[Any, Seq[String]]) extends Instr {
-    override def apply(ctx: Context): Unit = {
-        ensureRegularInstruction(ctx)
-        ctx.handlers = ctx.handlers.tail
-        if (pred.isDefinedAt(ctx.stack.upeek)) {
-            val state = ctx.states
-            val caretWidth = ctx.offset - state.offset
-            ctx.fail(new ClassicFancyError(state.offset, state.line, state.col, new RigidCaret(caretWidth), pred(ctx.stack.upop()): _*))
-        }
-        else ctx.inc()
-        ctx.states = ctx.states.tail
-    }
-    // $COVERAGE-OFF$
-    override def toString: String = "GuardAgainst(?)"
-    // $COVERAGE-ON$
-}
-private [internal] object GuardAgainst {
-    def apply[A](pred: PartialFunction[A, Seq[String]]): GuardAgainst = new GuardAgainst(pred.asInstanceOf[PartialFunction[Any, Seq[String]]])
 }
 
 private [internal] final class UnexpectedWhen(pred: PartialFunction[Any, (String, Option[String])]) extends Instr {

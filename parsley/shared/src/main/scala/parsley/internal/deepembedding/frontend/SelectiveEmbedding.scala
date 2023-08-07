@@ -30,16 +30,6 @@ private [parsley] final class MapFilter[A, B](p: LazyParsley[A], f: A => Option[
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[B] = visitor.visit(this, context)(p, f)
 }
-private [parsley] final class FilterOut[A](p: LazyParsley[A], pred: PartialFunction[A, String]) extends Unary[A, A](p) {
-    override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.FilterOut(p, pred)
-
-    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p, pred)
-}
-private [parsley] final class GuardAgainst[A](p: LazyParsley[A], pred: PartialFunction[A, Seq[String]]) extends Unary[A, A](p) {
-    override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.GuardAgainst(p, pred)
-
-    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p, pred)
-}
 private [parsley] final class UnexpectedWhen[A](p: LazyParsley[A], pred: PartialFunction[A, (String, Option[String])]) extends Unary[A, A](p) {
     override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.UnexpectedWhen(p, pred)
 
