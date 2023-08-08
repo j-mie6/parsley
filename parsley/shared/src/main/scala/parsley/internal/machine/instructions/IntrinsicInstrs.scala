@@ -7,6 +7,8 @@ package parsley.internal.machine.instructions
 
 import scala.annotation.tailrec
 
+import parsley.XAssert._
+
 import parsley.token.errors.LabelConfig
 
 import parsley.internal.errors.{EndOfInput, ExpectDesc, ExpectItem}

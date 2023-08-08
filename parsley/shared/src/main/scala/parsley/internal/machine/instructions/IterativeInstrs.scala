@@ -7,6 +7,8 @@ package parsley.internal.machine.instructions
 
 import scala.collection.mutable
 
+import parsley.XAssert._
+
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 

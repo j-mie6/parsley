@@ -8,6 +8,7 @@ package parsley
 import scala.collection.mutable
 
 import parsley.Parsley.{empty, fresh, pure}
+import parsley.XAssert._
 import parsley.combinator.{when, whileP}
 import parsley.exceptions.UnfilledRegisterException
 import parsley.implicits.zipped.Zipped2

@@ -11,6 +11,7 @@ import scala.annotation.tailrec
 import parsley.Failure
 import parsley.Result
 import parsley.Success
+import parsley.XAssert._
 import parsley.errors.ErrorBuilder
 
 import parsley.internal.errors.{CaretWidth, ExpectItem, LineBuilder, UnexpectDesc}
