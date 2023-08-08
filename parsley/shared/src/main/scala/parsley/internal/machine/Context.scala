@@ -143,7 +143,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
             run[Err, A]()
         }
         else if (good) {
-            assert(stack.size == 1, "stack must end a parse with exactly one item")
+            assert(stack.size == 1, s"stack must end a parse with exactly one item, it has ${stack.size}")
             assert(calls.isEmpty, "there must be no more calls to unwind on end of parser")
             assert(handlers.isEmpty, "there must be no more handlers on end of parse")
             assert(checkStack.isEmpty, "there must be no residual check remaining on end of parse")
