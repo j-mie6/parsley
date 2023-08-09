@@ -597,7 +597,7 @@ object combinator {
     }
 
     private [parsley] def mapFilterWith[A, B](p: Parsley[A])(f: A => Option[B], err: Parsley[((A, Int)) => Nothing]): Parsley[B] = {
-        collectWith(p)(f.unlift, err)
+        collectWith(p)(Function.unlift(f), err)
     }
 
     /*amendThenDislodge(1) {
