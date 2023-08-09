@@ -592,12 +592,13 @@ object combinator {
     }
 
     private [parsley] def collectWith[A, B](p: Parsley[A])(f: PartialFunction[A, B], err: Parsley[((A, Int)) => Nothing]): Parsley[B] = {
-        //mapFilterWith(p)(f.lift, err)
-        filterWith(p)(f.isDefinedAt, err).map(f)
+        mapFilterWith(p)(f.lift, err)
+        //filterWith(p)(f.isDefinedAt, err).map(f)
     }
 
     private [parsley] def mapFilterWith[A, B](p: Parsley[A])(f: A => Option[B], err: Parsley[((A, Int)) => Nothing]): Parsley[B] = {
-        collectWith(p)(Function.unlift(f), err)
+        //collectWith(p)(Function.unlift(f), err)
+        new Parsley(new frontend.MapFilter(p.internal, f, err.internal))
     }
 
     /*amendThenDislodge(1) {

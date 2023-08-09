@@ -67,7 +67,7 @@ private [deepembedding] final class If[A](val b: StrictParsley[Boolean], val p: 
 }
 
 // Will need this again at some point...
-private [backend] sealed abstract class FilterLike[A] extends StrictParsley[A] {
+private [backend] sealed abstract class FilterLike[A, B] extends StrictParsley[B] {
     protected val p: StrictParsley[A]
     protected val err: StrictParsley[((A, Int)) => Nothing]
     def inlinable: Boolean = false
@@ -93,9 +93,15 @@ private [backend] sealed abstract class FilterLike[A] extends StrictParsley[A] {
 }
 
 private [deepembedding] final class Filter[A](val p: StrictParsley[A], pred: A => Boolean, val err: StrictParsley[((A, Int)) => Nothing])
-    extends FilterLike[A] {
+    extends FilterLike[A, A] {
     final override def instr(handler: Int, jumpLabel: Int): instructions.Instr = new instructions.Filter(pred, jumpLabel, handler)
     final override def pretty(p: String, err: String): String = s"filterWith($p, ???, $err)"
+}
+
+private [deepembedding] final class MapFilter[A, B](val p: StrictParsley[A], pred: A => Option[B], val err: StrictParsley[((A, Int)) => Nothing])
+    extends FilterLike[A, B] {
+    final override def instr(handler: Int, jumpLabel: Int): instructions.Instr = new instructions.MapFilter(pred, jumpLabel, handler)
+    final override def pretty(p: String, err: String): String = s"mapFilterWith($p, ???, $err)"
 }
 
 private [backend] object Branch {

@@ -26,3 +26,10 @@ private [parsley] final class Filter[A](p: LazyParsley[A], pred: A => Boolean, e
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p, pred, err)
 }
+
+private [parsley] final class MapFilter[A, B](p: LazyParsley[A], pred: A => Option[B], err: =>LazyParsley[((A, Int)) => Nothing])
+    extends Binary[A, ((A, Int)) => Nothing, B](p, err) {
+    override def make(p: StrictParsley[A], err: StrictParsley[((A, Int)) => Nothing]): StrictParsley[B] = new backend.MapFilter(p, pred, err)
+
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[B] = visitor.visit(this, context)(p, pred, err)
+}
