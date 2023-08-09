@@ -1,4 +1,4 @@
-val sbtTypelevelVersion = "0.5.0-RC10"
+val sbtTypelevelVersion = "0.5.0-RC11"
 
 resolvers ++= Opts.resolver.sonatypeOssSnapshots
 resolvers ++= Opts.resolver.sonatypeOssReleases
