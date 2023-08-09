@@ -290,7 +290,7 @@ private [internal] final class MapFilter[A, B](_pred: A => Option[B], var good: 
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         val x = ctx.stack.upeek
-        val opt = pred(x)
+        /*val opt = pred(x)
         opt match {
             case Some(y) =>
                 ctx.states = ctx.states.tail
@@ -300,6 +300,15 @@ private [internal] final class MapFilter[A, B](_pred: A => Option[B], var good: 
             case None =>
                 ctx.handlers.pc = bad
                 ctx.exchangeAndContinue((x, ctx.offset - ctx.states.offset))
+        }*/
+        pred(x).fold {
+            ctx.handlers.pc = bad
+            ctx.exchangeAndContinue((x, ctx.offset - ctx.states.offset))
+        } { y =>
+            ctx.states = ctx.states.tail
+            ctx.handlers = ctx.handlers.tail
+            ctx.stack.exchange(y)
+            ctx.pc = good
         }
     }
 

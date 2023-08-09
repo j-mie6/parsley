@@ -5,9 +5,7 @@
  */
 package parsley.errors
 
-import parsley.Parsley//, Parsley.select
-//import parsley.implicits.zipped.Zipped3
-//import parsley.position.offset
+import parsley.Parsley
 
 import parsley.internal.deepembedding.{frontend, singletons}
 import parsley.internal.errors.{CaretWidth, FlexibleCaret, RigidCaret}
@@ -600,10 +598,4 @@ object combinator {
         //collectWith(p)(Function.unlift(f), err)
         new Parsley(new frontend.MapFilter(p.internal, f, err.internal))
     }
-
-    /*amendThenDislodge(1) {
-        select((offset, entrench(p), offset).zipped { (s, x, e) =>
-            f(x).fold[Either[(A, Int), B]](Left((x, e - s)))(Right(_))
-        }, err)
-    }*/
 }
