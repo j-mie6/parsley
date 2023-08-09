@@ -257,34 +257,44 @@ private [internal] final class SwapAndPut(reg: Int) extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class Filter[A](_pred: A => Boolean, var good: Int, var bad: Int) extends Instr {
+private [instructions] abstract class FilterLike extends Instr {
+    var good: Int
+    var bad: Int
+
+    final override def relabel(labels: Array[Int]): this.type = {
+        good = labels(good)
+        bad = labels(bad)
+        this
+    }
+
+    final def carryOn(ctx: Context): Unit = {
+        ctx.states = ctx.states.tail
+        ctx.handlers = ctx.handlers.tail
+        ctx.pc = good
+    }
+
+    final def fail(ctx: Context, x: Any): Unit = {
+        ctx.handlers.pc = bad
+        ctx.exchangeAndContinue((x, ctx.offset - ctx.states.offset))
+    }
+}
+
+private [internal] final class Filter[A](_pred: A => Boolean, var good: Int, var bad: Int) extends FilterLike {
     private [this] val pred = _pred.asInstanceOf[Any => Boolean]
 
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         val x = ctx.stack.upeek
-        if (pred(x)) {
-            ctx.states = ctx.states.tail
-            ctx.handlers = ctx.handlers.tail
-            ctx.pc = good
-        }
-        else {
-            ctx.handlers.pc = bad
-            ctx.exchangeAndContinue((x, ctx.offset - ctx.states.offset))
-        }
+        if (pred(x)) carryOn(ctx)
+        else fail(ctx, x)
     }
 
-    override def relabel(labels: Array[Int]): this.type = {
-        good = labels(good)
-        bad = labels(bad)
-        this
-    }
     // $COVERAGE-OFF$
     override def toString: String = s"Filter(???, good = $good)"
     // $COVERAGE-ON$
 }
 
-private [internal] final class MapFilter[A, B](_pred: A => Option[B], var good: Int, var bad: Int) extends Instr {
+private [internal] final class MapFilter[A, B](_pred: A => Option[B], var good: Int, var bad: Int) extends FilterLike {
     private [this] val pred = _pred.asInstanceOf[Any => Option[B]]
 
     override def apply(ctx: Context): Unit = {
@@ -293,24 +303,14 @@ private [internal] final class MapFilter[A, B](_pred: A => Option[B], var good: 
         val opt = pred(x)
         // Sorry, it's faster :(
         if (opt.isDefined) {
-            ctx.states = ctx.states.tail
-            ctx.handlers = ctx.handlers.tail
             ctx.stack.exchange(opt.get)
-            ctx.pc = good
+            carryOn(ctx)
         }
-        else {
-            ctx.handlers.pc = bad
-            ctx.exchangeAndContinue((x, ctx.offset - ctx.states.offset))
-        }
+        else fail(ctx, x)
     }
 
-    override def relabel(labels: Array[Int]): this.type = {
-        good = labels(good)
-        bad = labels(bad)
-        this
-    }
     // $COVERAGE-OFF$
-    override def toString: String = s"Filter(???, good = $good)"
+    override def toString: String = s"MapFilter(???, good = $good)"
     // $COVERAGE-ON$
 }
 
