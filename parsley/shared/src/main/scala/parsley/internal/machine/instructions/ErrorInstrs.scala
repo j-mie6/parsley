@@ -203,8 +203,7 @@ private [internal] final class VanillaGen[A](unexGen: A => UnexpectedItem, reaso
         val unex = unexGen(x)
         val reason = reasonGen(x)
         val err = unex.makeError(ctx.offset, ctx.line, ctx.col, caretWidth)
-        // TODO: benchmark this to find out how best to write
-        //ctx.fail(reason.foldLeft(err)(_.withReason(_)))
+        // Sorry, it's faster :(
         if (reason.isDefined) ctx.fail(err.withReason(reason.get))
         else ctx.fail(err)
     }

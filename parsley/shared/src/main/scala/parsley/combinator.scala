@@ -865,7 +865,7 @@ object combinator {
       * @param p the parser that yields the condition value.
       * @group cond
       */
-    def guard(p: Parsley[Boolean]): Parsley[Unit] = p.filter(identity).void
+    def guard(p: Parsley[Boolean]): Parsley[Unit] = ifP(p, unit, empty)
 
     // TODO: remove
     private [parsley] def ensure[A](condP: Parsley[Boolean], beforeP: =>Parsley[A]): Parsley[A] = guard(condP) *> beforeP
