@@ -5,9 +5,9 @@
  */
 package parsley.errors
 
-import parsley.Parsley, Parsley.select
-import parsley.implicits.zipped.Zipped3
-import parsley.position.offset
+import parsley.Parsley//, Parsley.select
+//import parsley.implicits.zipped.Zipped3
+//import parsley.position.offset
 
 import parsley.internal.deepembedding.{frontend, singletons}
 import parsley.internal.errors.{CaretWidth, FlexibleCaret, RigidCaret}
