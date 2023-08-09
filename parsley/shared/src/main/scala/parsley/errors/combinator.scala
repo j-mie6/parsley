@@ -588,11 +588,12 @@ object combinator {
     }
 
     // TODO: bind the common functions here to reduce allocation?
-    private [parsley] def filterWith[A](p: Parsley[A])(f: A => Boolean, err: Parsley[((A, Int)) => Nothing]): Parsley[A] = amendThenDislodge(1) {
+    private [parsley] def filterWith[A](p: Parsley[A])(f: A => Boolean, err: Parsley[((A, Int)) => Nothing]): Parsley[A] = /*amendThenDislodge(1) {
         select((offset, entrench(p), offset).zipped { (s, x, e) =>
             if (f(x)) Right(x) else Left((x, e - s))
         }, err)
-    }
+    }*/
+        new Parsley(new frontend.Filter(p.internal, f, err.internal))
 
     private [parsley] def collectWith[A, B](p: Parsley[A])(f: PartialFunction[A, B], err: Parsley[((A, Int)) => Nothing]): Parsley[B] = {
         mapFilterWith(p)(f.lift, err)

@@ -257,6 +257,33 @@ private [internal] final class SwapAndPut(reg: Int) extends Instr {
     // $COVERAGE-ON$
 }
 
+private [internal] final class Filter[A](_pred: A => Boolean, var good: Int, var bad: Int) extends Instr {
+    private [this] val pred = _pred.asInstanceOf[Any => Boolean]
+
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        val x = ctx.stack.upeek
+        if (pred(x)) {
+            ctx.states = ctx.states.tail
+            ctx.handlers = ctx.handlers.tail
+            ctx.pc = good
+        }
+        else {
+            ctx.handlers.pc = bad
+            ctx.exchangeAndContinue((x, ctx.offset - ctx.states.offset))
+        }
+    }
+
+    override def relabel(labels: Array[Int]): this.type = {
+        good = labels(good)
+        bad = labels(bad)
+        this
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = s"Filter(???, good = $good)"
+    // $COVERAGE-ON$
+}
+
 // Companion Objects
 private [internal] object StringTok {
     private [StringTok] abstract class Adjust {

@@ -67,15 +67,36 @@ private [deepembedding] final class If[A](val b: StrictParsley[Boolean], val p: 
 }
 
 // Will need this again at some point...
-/*private [backend] sealed abstract class FilterLike[A](instr: instructions.Instr) extends Unary[A, A] {
+private [backend] sealed abstract class FilterLike[A] extends StrictParsley[A] {
+    protected val p: StrictParsley[A]
+    protected val err: StrictParsley[((A, Int)) => Nothing]
+    def inlinable: Boolean = false
+    protected def instr(handler: Int, jumpLabel: Int): instructions.Instr
+
     final override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
-        val handler = state.getLabel(instructions.PopStateAndFail)
-        instrs += new instructions.PushHandlerAndState(handler, saveHints = false, hideHints = false)
-        suspend(p.codeGen[M, R]) |> {
-            instrs += instr
+        val handler1 = state.getLabel(instructions.PopStateAndFail)
+        val handler2 = state.getLabel(instructions.AmendAndFail(false))
+        val jumpLabel = state.freshLabel()
+        instrs += new instructions.PushHandlerAndState(handler1, saveHints = false, hideHints = false)
+        suspend(p.codeGen[M, R]) >> {
+            instrs += instr(handler2, jumpLabel)
+            suspend(err.codeGen[M, R]) |> {
+                instrs += new instructions.Label(jumpLabel)
+            }
         }
     }
-}*/
+
+    // $COVERAGE-OFF$
+    final override def pretty: String = pretty(p.pretty, err.pretty)
+    protected def pretty(p: String, err: String): String
+    // $COVERAGE-ON$
+}
+
+private [deepembedding] final class Filter[A](val p: StrictParsley[A], pred: A => Boolean, val err: StrictParsley[((A, Int)) => Nothing])
+    extends FilterLike[A] {
+    final override def instr(handler: Int, jumpLabel: Int): instructions.Instr = new instructions.Filter(pred, jumpLabel, handler)
+    final override def pretty(p: String, err: String): String = s"filterWith($p, ???, $err)"
+}
 
 private [backend] object Branch {
     val FlipApp = instructions.Lift2[Any, Any => Any, Any]((x, f) => f(x))

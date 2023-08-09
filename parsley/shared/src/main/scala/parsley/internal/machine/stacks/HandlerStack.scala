@@ -10,7 +10,7 @@ import parsley.internal.machine.instructions.Instr
 private [machine] final class HandlerStack(
     val calls: CallStack,
     val instrs: Array[Instr],
-    val pc: Int,
+    var pc: Int,
     val stacksz: Int,
     val tail: HandlerStack)
 private [machine] object HandlerStack extends Stack[HandlerStack] {
