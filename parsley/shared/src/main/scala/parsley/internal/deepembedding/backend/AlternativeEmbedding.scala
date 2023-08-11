@@ -13,7 +13,7 @@ import parsley.XAssert._
 import parsley.internal.collection.mutable.SinglyLinkedList, SinglyLinkedList.LinkedListIterator
 import parsley.internal.deepembedding.ContOps, ContOps.{result, suspend, ContAdapter}
 import parsley.internal.deepembedding.singletons._
-import parsley.internal.errors.ExpectItem
+import parsley.internal.errors.{ExpectDesc, ExpectItem}
 import parsley.internal.machine.instructions
 
 // scalastyle:off underscore.import
@@ -21,6 +21,8 @@ import Choice._
 import StrictParsley.InstrBuffer
 // scalastyle:on underscore.import
 
+// TODO: can we tabilify across a Let?
+// FIXME: It's annoying this doesn't work if the first thing is not tablable: let's make it more fine-grained to create groupings?
 private [deepembedding] final class Choice[A](private [backend] val alt1: StrictParsley[A],
                                               private [backend] var alt2: StrictParsley[A],
                                               private [backend] var alts: SinglyLinkedList[StrictParsley[A]]) extends StrictParsley[A] {
@@ -222,7 +224,7 @@ private [backend] object Choice {
                      expecteds, expectedss.zip(leads.toList.reverseIterator.map(backtracking(_)).toList))
     }
 
-    @tailrec private def tablable(p: StrictParsley[_], backtracks: Boolean): Option[(Char, Iterable[ExpectItem], Int, Boolean)] = p match {
+    private def tablable(p: StrictParsley[_], backtracks: Boolean): Option[(Char, Iterable[ExpectItem], Int, Boolean)] = p match {
         // CODO: Numeric parsers by leading digit (This one would require changing the foldTablified function a bit)
         case ct@CharTok(c)                       => Some((c, ct.expected.asExpectItems(c), 1, backtracks))
         case ct@SupplementaryCharTok(c)          => Some((Character.highSurrogate(c), ct.expected.asExpectItems(Character.toChars(c).mkString), 1, backtracks))
@@ -233,6 +235,13 @@ private [backend] object Choice {
         case t@token.SoftKeyword(s) if t.caseSensitive => Some((s.head, t.expected.asExpectDescs(s), s.codePointCount(0, s.length), backtracks))
         case t@token.SoftOperator(s)             => Some((s.head, t.expected.asExpectDescs(s), s.codePointCount(0, s.length), backtracks))
         case Attempt(t)                          => tablable(t, backtracks = true)
+        case ErrorLabel(t, labels)               => tablable(t, backtracks).map {
+            case (c, _, width, backtracks) => (c, labels.map(new ExpectDesc(_)), width, backtracks)
+        }
+        case ErrorHide(t)                        => tablable(t, backtracks).map {
+            case (c, _, _, backtracks) => (c, None, 0, backtracks)
+        }
+        case TablableErrors(t)                   => tablable(t, backtracks)
         case (_: Pure[_]) <*> t                  => tablable(t, backtracks)
         case Lift2(_, t, _)                      => tablable(t, backtracks)
         case Lift3(_, t, _, _)                   => tablable(t, backtracks)

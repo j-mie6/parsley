@@ -96,6 +96,17 @@ private [backend] object ErrorLabel {
     def apply[A](p: StrictParsley[A], labels: scala.Seq[String]): ErrorLabel[A] = new ErrorLabel(p, labels)
     def unapply[A](self: ErrorLabel[A]): Some[(StrictParsley[A], scala.Seq[String])] = Some((self.p, self.labels))
 }
+private [backend] object ErrorHide {
+    def unapply[A](self: ErrorHide[A]): Some[StrictParsley[A]] = Some(self.p)
+}
 private [backend] object ErrorExplain {
     def apply[A](p: StrictParsley[A], reason: String): ErrorExplain[A] = new ErrorExplain(p, reason)
+}
+
+private [backend] object TablableErrors {
+    def unapply[A](self: StrictParsley[A]): Option[StrictParsley[A]] = self match {
+        case self: ErrorAmend[A] => Some(self.p)
+        case self: ErrorLexical[A] => Some(self.p) // is this correct?
+        case _ => None
+    }
 }

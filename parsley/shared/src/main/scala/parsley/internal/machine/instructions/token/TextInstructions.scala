@@ -101,7 +101,7 @@ private [internal] final class EscapeAtMost(n: Int, radix: Int) extends EscapeSo
     }
 
     // $COVERAGE-OFF$
-    override def toString: String = "EscapeAtMost"
+    override def toString: String = s"EscapeAtMost(n = $n, radix = $radix)"
     // $COVERAGE-ON$
 }
 
@@ -153,6 +153,6 @@ private [internal] final class EscapeOneOfExactly(radix: Int, ns: List[Int], ine
     }
 
     // $COVERAGE-OFF$
-    override def toString: String = "EscapeOneOfExactly"
+    override def toString: String = s"EscapeOneOfExactly(ns = $ns, radix = $radix)"
     // $COVERAGE-ON$
 }
