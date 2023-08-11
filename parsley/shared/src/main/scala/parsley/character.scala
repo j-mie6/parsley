@@ -405,6 +405,7 @@ object character {
     }
 
     // TODO: document
+    // TODO: optimise, this can be _really_ tightly implemented with a substring on the input
     def stringOfMany(pred: Char => Boolean): Parsley[String] = stringOfMany(satisfy(pred))
 
     // TODO: document that it only handles 16-bit characters
@@ -436,6 +437,7 @@ object character {
     }
 
     // TODO: document
+    // TODO: optimise, this can be _really_ tightly implemented with a substring on the input
     def stringOfSome(pred: Char => Boolean): Parsley[String] = stringOfSome(satisfy(pred))
 
     /** This combinator tries to parse each of the strings `strs` (and `str0`), until one of them succeeds.
