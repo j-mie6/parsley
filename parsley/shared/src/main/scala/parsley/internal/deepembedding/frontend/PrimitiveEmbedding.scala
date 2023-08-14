@@ -48,4 +48,10 @@ private [parsley] final class DebugError[A](p: LazyParsley[A], name: String, asc
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p, name, ascii, errBuilder)
 }
+
+private [parsley] final class Opaque[A](p: LazyParsley[A]) extends Unary[A, A](p) {
+    override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.Opaque(p)
+
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = p.visit(visitor, context)
+}
 // $COVERAGE-ON$

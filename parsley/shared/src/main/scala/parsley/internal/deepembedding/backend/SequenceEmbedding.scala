@@ -19,10 +19,9 @@ import StrictParsley.InstrBuffer
 private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], var right: StrictParsley[A]) extends StrictParsley[B] {
     def inlinable: Boolean = false
     // TODO: Refactor
-    // FIXME: Needs more interation with .safe
     override def optimise: StrictParsley[B] = (left, right) match {
         // Fusion laws
-        case (uf, ux@Pure(x)) if (uf.isInstanceOf[Pure[_]] || uf.isInstanceOf[_ <*> _]) && uf.safe && ux.safe => uf match {
+        case (uf, Pure(x)) if (uf.isInstanceOf[Pure[_]] || uf.isInstanceOf[_ <*> _]) => uf match {
             // first position fusion
             case Pure(f) => new Pure(f(x))
             // second position fusion

@@ -27,8 +27,9 @@ import parsley.internal.machine.instructions, instructions.Instr
 private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     // Public API
     // $COVERAGE-OFF$
+    // TODO: remove in 5.0
     /** Denotes this parser is unsafe, which will disable certain law-based optimisations that assume purity. */
-    private [parsley] final def unsafe(): Unit = sSafe = false
+    private [parsley] final def unsafe(): Unit = ()
     /** Force the parser, which eagerly computes its instructions immediately */
     private [parsley] final def force(): Unit = instrs: @nowarn
     /** Denote that this parser is large enough that it might stack-overflow during
@@ -82,8 +83,6 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
       */
     protected def preprocess[M[_, +_]: ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]]
 
-    /** should the underlying strict tree be considered safe? */
-    final private var sSafe = true
     /** should the `Id` instance be skipped? */
     final private var cps = false
     /** how many registers are used by the ''parent'' of this combinator (this combinator is part of a `flatMap` when this is not -1) */
@@ -181,10 +180,7 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     }
     /** Similar to `optimised` but does not check for inclusion in the `lets` or `recs` sets. */
     private def unsafeOptimised[M[_, +_]: ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]] = {
-        for {p <- this.preprocess} yield {
-            p.safe = this.sSafe
-            p.optimise
-        }
+        for { p <- this.preprocess } yield p.optimise
     }
 
     // Processing with visitors.

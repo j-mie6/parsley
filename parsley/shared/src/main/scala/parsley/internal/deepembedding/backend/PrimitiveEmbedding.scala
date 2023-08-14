@@ -77,6 +77,14 @@ private [deepembedding] final class Let[A](val p: StrictParsley[A]) extends Stri
     def pretty: String = this.toString
     // $COVERAGE-ON$
 }
+private [deepembedding] final class Opaque[A](p: StrictParsley[A]) extends StrictParsley[A] {
+    def inlinable = p.inlinable
+    override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R,Unit] = p.codeGen
+    // $COVERAGE-OFF$
+    def pretty: String = p.pretty
+    // $COVERAGE-ON$
+}
+
 private [deepembedding] final class Put[S](reg: Reg[S], val p: StrictParsley[S]) extends Unary[S, Unit] {
     override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         suspend(p.codeGen[M, R]) |>

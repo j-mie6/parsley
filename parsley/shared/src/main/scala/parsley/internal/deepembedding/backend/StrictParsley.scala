@@ -82,9 +82,6 @@ private [deepembedding] trait StrictParsley[+A] {
       */
     private [deepembedding] def inlinable: Boolean
 
-    /** Is this combinator known to be pure? */
-    final private [deepembedding] var safe = true
-
     // $COVERAGE-OFF$
     /** Pretty-prints a combinator tree, for internal debugging purposes only. */
     private [deepembedding] def pretty: String
