@@ -234,10 +234,12 @@ private [internal] final class Catch(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
         ctx.restoreHints()
-        val check = ctx.handlers.offset
-        ctx.handlers = ctx.handlers.tail
-        ctx.catchNoConsumed(check) {
-            ctx.pushHandler(label)
+        val handler = ctx.handlers
+        ctx.catchNoConsumed(handler.offset) {
+            assume(handler.stacksz == ctx.stack.usize && handler.offset == ctx.offset
+                && handler.hints == ctx.hints && handler.validOffset == ctx.hintsValidOffset,
+                "the handler can be re-used")
+            handler.pc = label
             ctx.inc()
         }
     }

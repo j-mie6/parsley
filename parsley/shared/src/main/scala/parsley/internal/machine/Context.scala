@@ -166,7 +166,10 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
 
     private [machine] def catchNoConsumed(check: Int)(handler: =>Unit): Unit = {
         assert(!good, "catching can only be performed in a handler")
-        if (offset != check) fail()
+        if (offset != check) {
+            handlers = handlers.tail
+            fail()
+        }
         else {
             good = true
             handler

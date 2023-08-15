@@ -21,13 +21,10 @@ private [internal] final class Many(var label: Int) extends InstrWithLabel {
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else {
-            val check = ctx.handlers.offset
+        else ctx.catchNoConsumed(ctx.handlers.offset) {
             ctx.handlers = ctx.handlers.tail
-            ctx.catchNoConsumed(check) {
-                ctx.addErrorToHintsAndPop()
-                ctx.exchangeAndContinue(ctx.stack.peek[mutable.ListBuffer[Any]].toList)
-            }
+            ctx.addErrorToHintsAndPop()
+            ctx.exchangeAndContinue(ctx.stack.peek[mutable.ListBuffer[Any]].toList)
         }
     }
     // $COVERAGE-OFF$
@@ -43,13 +40,10 @@ private [internal] final class SkipMany(var label: Int) extends InstrWithLabel {
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else {
-            val check = ctx.handlers.offset
+        else ctx.catchNoConsumed(ctx.handlers.offset) {
             ctx.handlers = ctx.handlers.tail
-            ctx.catchNoConsumed(check) {
-                ctx.addErrorToHintsAndPop()
-                ctx.pushAndContinue(())
-            }
+            ctx.addErrorToHintsAndPop()
+            ctx.pushAndContinue(())
         }
     }
     // $COVERAGE-OFF$
@@ -66,13 +60,10 @@ private [internal] final class ChainPost(var label: Int) extends InstrWithLabel 
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else {
-            val check = ctx.handlers.offset
+        else ctx.catchNoConsumed(ctx.handlers.offset) {
             ctx.handlers = ctx.handlers.tail
-            ctx.catchNoConsumed(check) {
-                ctx.addErrorToHintsAndPop()
-                ctx.inc()
-            }
+            ctx.addErrorToHintsAndPop()
+            ctx.inc()
         }
     }
     // $COVERAGE-OFF$
@@ -89,13 +80,10 @@ private [internal] final class ChainPre(var label: Int) extends InstrWithLabel {
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else {
-            val check = ctx.handlers.offset
+        else ctx.catchNoConsumed(ctx.handlers.offset) {
             ctx.handlers = ctx.handlers.tail
-            ctx.catchNoConsumed(check) {
-                ctx.addErrorToHintsAndPop()
-                ctx.inc()
-            }
+            ctx.addErrorToHintsAndPop()
+            ctx.inc()
         }
     }
     // $COVERAGE-OFF$
@@ -112,13 +100,10 @@ private [internal] final class Chainl(var label: Int) extends InstrWithLabel {
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else {
-            val check = ctx.handlers.offset
+        else ctx.catchNoConsumed(ctx.handlers.offset) {
             ctx.handlers = ctx.handlers.tail
-            ctx.catchNoConsumed(check) {
-                ctx.addErrorToHintsAndPop()
-                ctx.inc()
-            }
+            ctx.addErrorToHintsAndPop()
+            ctx.inc()
         }
     }
     // $COVERAGE-OFF$
@@ -154,8 +139,9 @@ private [internal] final class ChainrOpHandler(wrap: Any => Any) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
         val check = ctx.handlers.offset
-        ctx.handlers = ctx.handlers.tail.tail
+        ctx.handlers = ctx.handlers.tail
         ctx.catchNoConsumed(check) {
+            ctx.handlers = ctx.handlers.tail
             ctx.addErrorToHintsAndPop()
             val y = ctx.stack.upop()
             ctx.exchangeAndContinue(ctx.stack.peek[Any => Any](wrap(y)))
