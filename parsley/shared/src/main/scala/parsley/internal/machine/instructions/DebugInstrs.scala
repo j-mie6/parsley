@@ -114,7 +114,6 @@ private [internal] final class LogEnd(val name: String, override val ascii: Bool
         ctx.handlers = ctx.handlers.tail
         val end = " " + {
             if (ctx.good) {
-                //ctx.handlers = ctx.handlers.tail
                 ctx.inc()
                 green("Good")
             }
@@ -182,7 +181,6 @@ private [internal] final class LogErrEnd(override val name: String, override val
             val inFlightHints = ctx.inFlightHints.toSet
             val formattedInFlight = inFlightHints.map(_.formatExpect)
             val msgInit = s": ${green("Good")}, current hints are $formattedInFlight with"
-            //ctx.handlers = ctx.handlers.tail
             if (!oldData.stillValid(ctx.currentHintsValidOffset)) {
                 println(preludeString(Exit, ctx, s"$msgInit old hints discarded (valid at offset ${ctx.currentHintsValidOffset})"))
             }

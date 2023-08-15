@@ -129,7 +129,6 @@ private [internal] final class Chainl(var label: Int) extends InstrWithLabel {
 private [instructions] object DualHandler {
     def popSecondHandlerAndJump(ctx: Context, label: Int): Unit = {
         ctx.handlers = ctx.handlers.tail
-        //ctx.checkStack = ctx.checkStack.tail
         ctx.updateCheckOffset()
         ctx.pc = label
     }
@@ -155,14 +154,12 @@ private [internal] final class ChainrOpHandler(wrap: Any => Any) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
         val check = ctx.handlers.offset
-        ctx.handlers = ctx.handlers.tail
-        ctx.handlers = ctx.handlers.tail
+        ctx.handlers = ctx.handlers.tail.tail
         ctx.catchNoConsumed(check) {
             ctx.addErrorToHintsAndPop()
             val y = ctx.stack.upop()
             ctx.exchangeAndContinue(ctx.stack.peek[Any => Any](wrap(y)))
         }
-        //ctx.checkStack = ctx.checkStack.tail
     }
 
     // $COVERAGE-OFF$

@@ -179,10 +179,7 @@ private [parsley] final class CalleeSave(var label: Int, localRegs: Set[Reg[_]],
 
     private def continue(ctx: Context): Unit = {
         ctx.handlers = ctx.handlers.tail
-        if (ctx.good) {
-            //ctx.handlers = ctx.handlers.tail
-            ctx.pc = label
-        }
+        if (ctx.good) ctx.pc = label
         else ctx.fail()
     }
 

@@ -7,7 +7,7 @@ package parsley.internal.machine.instructions
 
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
-import parsley.internal.machine.errors.EmptyError
+import parsley.internal.machine.errors.{EmptyError, EmptyHints}
 
 // Stack Manipulators
 private [internal] final class Push[A](x: A) extends Instr {
@@ -161,9 +161,7 @@ private [internal] final class PushHandlerAndState(var label: Int, saveHints: Bo
         ctx.pushHandler(label)
         ctx.saveState()
         // FIXME: shadow = !hide so why is it like this?
-        if (saveHints) {
-            if (!hideHints) ctx.hints = parsley.internal.machine.errors.EmptyHints
-        }
+        if (saveHints && !hideHints) ctx.hints = EmptyHints
         ctx.inc()
     }
     // $COVERAGE-OFF$
@@ -187,9 +185,7 @@ private [internal] final class PushHandlerAndCheck(var label: Int, saveHints: Bo
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         ctx.pushHandler(label)
-        if (saveHints) {
-            ctx.hints = parsley.internal.machine.errors.EmptyHints
-        }
+        if (saveHints) ctx.hints = EmptyHints
         ctx.inc()
     }
     // $COVERAGE-OFF$

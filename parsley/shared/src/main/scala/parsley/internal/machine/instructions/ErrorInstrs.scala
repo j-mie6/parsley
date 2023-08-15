@@ -27,7 +27,6 @@ private [internal] final class RelabelHints(labels: Iterable[String]) extends In
         // do nothing
         ctx.mergeHints()
         ctx.handlers = ctx.handlers.tail
-        //ctx.checkStack = ctx.checkStack.tail
         ctx.inc()
     }
     // $COVERAGE-OFF$
@@ -111,7 +110,6 @@ private [internal] class ApplyReasonAndFail(reason: String) extends Instr {
         ensureHandlerInstruction(ctx)
         ctx.errs.error = ctx.errs.error.withReason(reason, ctx.handlers.offset)
         ctx.handlers = ctx.handlers.tail
-        //ctx.checkStack = ctx.checkStack.tail
         ctx.fail()
     }
 
@@ -170,7 +168,6 @@ private [internal] object SetLexicalAndFail extends Instr {
         ensureHandlerInstruction(ctx)
         ctx.errs.error = ctx.errs.error.markAsLexical(ctx.handlers.offset)
         ctx.handlers = ctx.handlers.tail
-        //ctx.checkStack = ctx.checkStack.tail
         ctx.fail()
     }
 
