@@ -36,9 +36,12 @@ private [internal] final class Many(var label: Int) extends InstrWithLabel {
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else ctx.catchNoConsumed {
-            ctx.addErrorToHintsAndPop()
-            ctx.exchangeAndContinue(ctx.stack.peek[mutable.ListBuffer[Any]].toList)
+        else {
+            ctx.handlers = ctx.handlers.tail
+            ctx.catchNoConsumed {
+                ctx.addErrorToHintsAndPop()
+                ctx.exchangeAndContinue(ctx.stack.peek[mutable.ListBuffer[Any]].toList)
+            }
         }
     }
     // $COVERAGE-OFF$
@@ -54,9 +57,12 @@ private [internal] final class SkipMany(var label: Int) extends InstrWithLabel {
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else ctx.catchNoConsumed {
-            ctx.addErrorToHintsAndPop()
-            ctx.pushAndContinue(())
+        else {
+            ctx.handlers = ctx.handlers.tail
+            ctx.catchNoConsumed {
+                ctx.addErrorToHintsAndPop()
+                ctx.pushAndContinue(())
+            }
         }
     }
     // $COVERAGE-OFF$
@@ -73,9 +79,12 @@ private [internal] final class ChainPost(var label: Int) extends InstrWithLabel 
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else ctx.catchNoConsumed {
-            ctx.addErrorToHintsAndPop()
-            ctx.inc()
+        else {
+            ctx.handlers = ctx.handlers.tail
+            ctx.catchNoConsumed {
+                ctx.addErrorToHintsAndPop()
+                ctx.inc()
+            }
         }
     }
     // $COVERAGE-OFF$
@@ -92,9 +101,12 @@ private [internal] final class ChainPre(var label: Int) extends InstrWithLabel {
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else ctx.catchNoConsumed {
-            ctx.addErrorToHintsAndPop()
-            ctx.inc()
+        else {
+            ctx.handlers = ctx.handlers.tail
+            ctx.catchNoConsumed {
+                ctx.addErrorToHintsAndPop()
+                ctx.inc()
+            }
         }
     }
     // $COVERAGE-OFF$
@@ -111,9 +123,12 @@ private [internal] final class Chainl(var label: Int) extends InstrWithLabel {
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else ctx.catchNoConsumed {
-            ctx.addErrorToHintsAndPop()
-            ctx.inc()
+        else {
+            ctx.handlers = ctx.handlers.tail
+            ctx.catchNoConsumed {
+                ctx.addErrorToHintsAndPop()
+                ctx.inc()
+            }
         }
     }
     // $COVERAGE-OFF$
@@ -150,6 +165,7 @@ private [internal] final class ChainrOpHandler(wrap: Any => Any) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
         ctx.handlers = ctx.handlers.tail
+        ctx.handlers = ctx.handlers.tail
         ctx.catchNoConsumed {
             ctx.addErrorToHintsAndPop()
             val y = ctx.stack.upop()
@@ -169,6 +185,7 @@ private [internal] object ChainrOpHandler  {
 private [internal] object ChainrWholeHandler extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
         ctx.checkStack = ctx.checkStack.tail
         ctx.fail()
     }
@@ -206,6 +223,7 @@ private [instructions] object SepEndBy1Handlers {
 private [internal] object SepEndBy1SepHandler extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
         // p succeeded and sep didn't, so push p and fall-through to the whole handler
         val x = ctx.stack.upop()
         val acc = ctx.stack.peek[mutable.ListBuffer[Any]]
@@ -227,6 +245,7 @@ private [internal] object SepEndBy1SepHandler extends Instr {
 private [internal] object SepEndBy1WholeHandler extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
         SepEndBy1Handlers.pushAccWhenCheckValidAndContinue(ctx, ctx.stack.peek[mutable.ListBuffer[Any]])
         ctx.checkStack = ctx.checkStack.tail
     }
@@ -249,7 +268,10 @@ private [internal] final class ManyUntil(var label: Int) extends InstrWithLabel 
             }
         }
         // ManyUntil is a fallthrough handler, it must be visited during failure, but does nothing to the external state
-        else ctx.fail()
+        else {
+            ctx.handlers = ctx.handlers.tail
+            ctx.fail()
+        }
     }
     // $COVERAGE-OFF$
     override def toString: String = s"ManyUntil($label)"
@@ -269,7 +291,10 @@ private [internal] final class SkipManyUntil(var label: Int) extends InstrWithLa
             }
         }
         // ManyUntil is a fallthrough handler, it must be visited during failure, but does nothing to the external state
-        else ctx.fail()
+        else {
+            ctx.handlers = ctx.handlers.tail
+            ctx.fail()
+        }
     }
     // $COVERAGE-OFF$
     override def toString: String = s"ManyUntil($label)"

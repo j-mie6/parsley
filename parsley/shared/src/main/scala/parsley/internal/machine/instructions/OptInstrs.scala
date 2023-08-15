@@ -57,6 +57,7 @@ private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, _exp
 private [internal] final class RecoverWith[A](x: A) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
         ctx.restoreHints() // This must be before adding the error to hints
         ctx.catchNoConsumed {
             ctx.addErrorToHintsAndPop()
@@ -71,6 +72,7 @@ private [internal] final class RecoverWith[A](x: A) extends Instr {
 private [internal] final class AlwaysRecoverWith[A](x: A) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
         ctx.restoreState()
         ctx.restoreHints() // This must be before adding the error to hints
         ctx.addErrorToHintsAndPop()

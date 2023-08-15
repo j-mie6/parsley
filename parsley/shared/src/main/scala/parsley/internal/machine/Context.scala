@@ -220,7 +220,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         if (handlers.isEmpty) running = false
         else {
             val handler = handlers
-            handlers = handlers.tail
+            //handlers = handlers.tail
             instrs = handler.instrs
             calls = handler.calls
             pc = handler.pc

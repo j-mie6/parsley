@@ -245,6 +245,7 @@ private [internal] final class JumpAndPopState(var label: Int) extends InstrWith
 private [internal] final class Catch(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
         ctx.restoreHints()
         ctx.catchNoConsumed {
             ctx.pushHandler(label)
@@ -259,6 +260,7 @@ private [internal] final class Catch(var label: Int) extends InstrWithLabel {
 private [internal] final class RestoreAndPushHandler(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
         ctx.restoreState()
         ctx.restoreHints()
         ctx.good = true

@@ -38,6 +38,7 @@ private [internal] final class RelabelHints(labels: Iterable[String]) extends In
 private [internal] final class RelabelErrorAndFail(labels: Iterable[String]) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
         ctx.restoreHints()
         ctx.errs.error = ctx.useHints {
             // only use the label if the error message is generated at the same offset
@@ -69,6 +70,7 @@ private [internal] object HideHints extends Instr {
 private [internal] object HideErrorAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
         ctx.restoreHints()
         ctx.errs.error = new EmptyError(ctx.offset, ctx.line, ctx.col, unexpectedWidth = 0)
         ctx.checkStack = ctx.checkStack.tail
@@ -95,6 +97,7 @@ private [internal] object ErrorToHints extends Instr {
 private [internal] object MergeErrorsAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
         val err2 = ctx.errs.error
         ctx.errs = ctx.errs.tail
         ctx.errs.error = ctx.errs.error.merge(err2)
@@ -109,6 +112,7 @@ private [internal] object MergeErrorsAndFail extends Instr {
 private [internal] class ApplyReasonAndFail(reason: String) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
         ctx.errs.error = ctx.errs.error.withReason(reason, ctx.checkStack.offset)
         ctx.checkStack = ctx.checkStack.tail
         ctx.fail()
@@ -122,6 +126,7 @@ private [internal] class ApplyReasonAndFail(reason: String) extends Instr {
 private [internal] class AmendAndFail private (partial: Boolean) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
         ctx.errs.error = ctx.errs.error.amend(partial, ctx.states.offset, ctx.states.line, ctx.states.col)
         ctx.states = ctx.states.tail
         ctx.fail()
@@ -140,6 +145,7 @@ private [internal] object AmendAndFail {
 private [internal] object EntrenchAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
         ctx.errs.error = ctx.errs.error.entrench
         ctx.fail()
     }
@@ -152,6 +158,7 @@ private [internal] object EntrenchAndFail extends Instr {
 private [internal] class DislodgeAndFail(n: Int) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
         ctx.errs.error = ctx.errs.error.dislodge(n)
         ctx.fail()
     }
@@ -164,6 +171,7 @@ private [internal] class DislodgeAndFail(n: Int) extends Instr {
 private [internal] object SetLexicalAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
         ctx.errs.error = ctx.errs.error.markAsLexical(ctx.checkStack.offset)
         ctx.checkStack = ctx.checkStack.tail
         ctx.fail()

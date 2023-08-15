@@ -111,9 +111,10 @@ private [internal] final class LogEnd(val name: String, override val ascii: Bool
     override def apply(ctx: Context): Unit = {
         assert(ctx.running, "cannot wrap a Halt with a debug")
         ctx.debuglvl -= 1
+        ctx.handlers = ctx.handlers.tail
         val end = " " + {
             if (ctx.good) {
-                ctx.handlers = ctx.handlers.tail
+                //ctx.handlers = ctx.handlers.tail
                 ctx.inc()
                 green("Good")
             }
@@ -173,6 +174,7 @@ private [internal] final class LogErrEnd(override val name: String, override val
     override def apply(ctx: Context): Unit = {
         assert(ctx.running, "cannot wrap a Halt with a debug")
         ctx.debuglvl -= 1
+        ctx.handlers = ctx.handlers.tail
         @unused val currentHintsValidOffset = ctx.currentHintsValidOffset
         if (ctx.good) {
             // In this case, the currently in-flight hints should be reported
@@ -180,7 +182,7 @@ private [internal] final class LogErrEnd(override val name: String, override val
             val inFlightHints = ctx.inFlightHints.toSet
             val formattedInFlight = inFlightHints.map(_.formatExpect)
             val msgInit = s": ${green("Good")}, current hints are $formattedInFlight with"
-            ctx.handlers = ctx.handlers.tail
+            //ctx.handlers = ctx.handlers.tail
             if (!oldData.stillValid(ctx.currentHintsValidOffset)) {
                 println(preludeString(Exit, ctx, s"$msgInit old hints discarded (valid at offset ${ctx.currentHintsValidOffset})"))
             }
