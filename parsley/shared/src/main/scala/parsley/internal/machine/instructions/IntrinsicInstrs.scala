@@ -210,6 +210,7 @@ private [internal] object NegLookGood extends Instr {
         // Recover the previous state; notFollowedBy NEVER consumes input
         ctx.restoreState()
         ctx.restoreHints()
+        ctx.handlers = ctx.handlers.tail
         // A failure is what we wanted
         ctx.good = true
         ctx.errs = ctx.errs.tail

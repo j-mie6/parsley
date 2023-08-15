@@ -22,12 +22,11 @@ private [internal] final class RelabelHints(labels: Iterable[String]) extends In
         if (isHide) ctx.popHints()
         // EOK
         // replace the head of the hints with the singleton for our label
-        else if (ctx.offset == ctx.checkStack.offset) ctx.replaceHint(labels)
+        else if (ctx.offset == ctx.handlers.check) ctx.replaceHint(labels)
         // COK
         // do nothing
         ctx.mergeHints()
         ctx.handlers = ctx.handlers.tail
-        ctx.checkStack = ctx.checkStack.tail
         ctx.inc()
     }
     // $COVERAGE-OFF$
@@ -42,9 +41,9 @@ private [internal] final class RelabelErrorAndFail(labels: Iterable[String]) ext
         ctx.errs.error = ctx.useHints {
             // only use the label if the error message is generated at the same offset
             // as the check stack saved for the start of the `label` combinator.
-            ctx.errs.error.label(labels, ctx.checkStack.offset)
+            ctx.errs.error.label(labels, ctx.handlers.check)
         }
-        ctx.checkStack = ctx.checkStack.tail
+        ctx.handlers = ctx.handlers.tail
         ctx.fail()
     }
     // $COVERAGE-OFF$
@@ -58,7 +57,6 @@ private [internal] object HideHints extends Instr {
         ctx.popHints()
         ctx.mergeHints()
         ctx.handlers = ctx.handlers.tail
-        ctx.checkStack = ctx.checkStack.tail
         ctx.inc()
     }
     // $COVERAGE-OFF$
@@ -71,7 +69,7 @@ private [internal] object HideErrorAndFail extends Instr {
         ensureHandlerInstruction(ctx)
         ctx.restoreHints()
         ctx.errs.error = new EmptyError(ctx.offset, ctx.line, ctx.col, unexpectedWidth = 0)
-        ctx.checkStack = ctx.checkStack.tail
+        ctx.handlers = ctx.handlers.tail
         ctx.fail()
     }
     // $COVERAGE-OFF$
@@ -95,6 +93,7 @@ private [internal] object ErrorToHints extends Instr {
 private [internal] object MergeErrorsAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
         val err2 = ctx.errs.error
         ctx.errs = ctx.errs.tail
         ctx.errs.error = ctx.errs.error.merge(err2)
@@ -109,8 +108,8 @@ private [internal] object MergeErrorsAndFail extends Instr {
 private [internal] class ApplyReasonAndFail(reason: String) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
-        ctx.errs.error = ctx.errs.error.withReason(reason, ctx.checkStack.offset)
-        ctx.checkStack = ctx.checkStack.tail
+        ctx.errs.error = ctx.errs.error.withReason(reason, ctx.handlers.check)
+        ctx.handlers = ctx.handlers.tail
         ctx.fail()
     }
 
@@ -122,6 +121,7 @@ private [internal] class ApplyReasonAndFail(reason: String) extends Instr {
 private [internal] class AmendAndFail private (partial: Boolean) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
         ctx.errs.error = ctx.errs.error.amend(partial, ctx.states.offset, ctx.states.line, ctx.states.col)
         ctx.states = ctx.states.tail
         ctx.fail()
@@ -140,6 +140,7 @@ private [internal] object AmendAndFail {
 private [internal] object EntrenchAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
         ctx.errs.error = ctx.errs.error.entrench
         ctx.fail()
     }
@@ -152,6 +153,7 @@ private [internal] object EntrenchAndFail extends Instr {
 private [internal] class DislodgeAndFail(n: Int) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
         ctx.errs.error = ctx.errs.error.dislodge(n)
         ctx.fail()
     }
@@ -164,8 +166,8 @@ private [internal] class DislodgeAndFail(n: Int) extends Instr {
 private [internal] object SetLexicalAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
-        ctx.errs.error = ctx.errs.error.markAsLexical(ctx.checkStack.offset)
-        ctx.checkStack = ctx.checkStack.tail
+        ctx.errs.error = ctx.errs.error.markAsLexical(ctx.handlers.check)
+        ctx.handlers = ctx.handlers.tail
         ctx.fail()
     }
 

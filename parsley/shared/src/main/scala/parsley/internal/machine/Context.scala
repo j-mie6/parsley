@@ -18,7 +18,7 @@ import parsley.internal.errors.{CaretWidth, ExpectItem, LineBuilder, UnexpectDes
 import parsley.internal.machine.errors.{ClassicFancyError, DefuncError, DefuncHints, EmptyHints, ErrorItemBuilder, ExpectedError, UnexpectedError}
 
 import instructions.Instr
-import stacks.{ArrayStack, CallStack, CheckStack, ErrorStack, HandlerStack, HintStack, Stack, StateStack}, Stack.StackExt
+import stacks.{ArrayStack, CallStack, ErrorStack, HandlerStack, Stack, StateStack}, Stack.StackExt
 
 private [parsley] final class Context(private [machine] var instrs: Array[Instr],
                                       private [machine] val input: String,
@@ -35,7 +35,6 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     /** State stack consisting of offsets and positions that can be rolled back */
     private [machine] var states: StateStack = Stack.empty
     /** Stack consisting of offsets at previous checkpoints, which may query to test for consumed input */
-    private [machine] var checkStack: CheckStack = Stack.empty
     /** Current operational status of the machine */
     private [machine] var good: Boolean = true
     private [machine] var running: Boolean = true
@@ -53,23 +52,14 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     private [machine] var debuglvl: Int = 0
 
     // NEW ERROR MECHANISMS
-    private var hints: DefuncHints = EmptyHints
+    private [machine] var hints: DefuncHints = EmptyHints
     private var hintsValidOffset = 0
-    private var hintStack = Stack.empty[HintStack]
     private [machine] var errs: ErrorStack = Stack.empty
 
-    private [machine] def saveHints(shadow: Boolean): Unit = {
-        hintStack = new HintStack(hints, hintsValidOffset, hintStack)
-        if (!shadow) hints = EmptyHints
-    }
     private [machine] def restoreHints(): Unit = {
-        val hintFrame = this.hintStack
-        this.hintsValidOffset = hintFrame.validOffset
+        val hintFrame = this.handlers
+        this.hintsValidOffset = hintFrame.hintOffset
         this.hints = hintFrame.hints
-        this.commitHints()
-    }
-    private [machine] def commitHints(): Unit = {
-        this.hintStack = this.hintStack.tail
     }
 
     /* Error Debugging Info */
@@ -79,9 +69,8 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
 
     /* ERROR RELABELLING BEGIN */
     private [machine] def mergeHints(): Unit = {
-        val hintFrame = this.hintStack
-        if (hintFrame.validOffset == offset) this.hints = hintFrame.hints.merge(this.hints)
-        commitHints()
+        val hintFrame = this.handlers
+        if (hintFrame.hintOffset == offset) this.hints = hintFrame.hints.merge(this.hints)
     }
     private [machine] def replaceHint(labels: Iterable[String]): Unit = hints = hints.rename(labels)
     private [machine] def popHints(): Unit = hints = hints.pop
@@ -114,7 +103,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     }
 
     private [machine] def updateCheckOffset() = {
-        this.checkStack.offset = this.offset
+        this.handlers.check = this.offset
     }
 
     // $COVERAGE-OFF$
@@ -129,10 +118,8 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
            |  rets      = ${calls.mkString(", ")}
            |  handlers  = ${handlers.mkString(", ")}
            |  recstates = ${states.mkString(", ")}
-           |  checks    = ${checkStack.mkString(", ")}
            |  registers = ${regs.zipWithIndex.map{case (r, i) => s"r$i = $r"}.toList.mkString("\n              ")}
            |  errors    = ${errs.mkString(", ")}
-           |  hints     = ($hintsValidOffset, ${hints.toSet}):${hintStack.mkString(", ")}
            |]""".stripMargin
     }
     // $COVERAGE-ON$
@@ -147,18 +134,14 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
             assert(stack.size == 1, s"stack must end a parse with exactly one item, it has ${stack.size}")
             assert(calls.isEmpty, "there must be no more calls to unwind on end of parser")
             assert(handlers.isEmpty, "there must be no more handlers on end of parse")
-            assert(checkStack.isEmpty, "there must be no residual check remaining on end of parse")
             assert(states.isEmpty, "there must be no residual states left at end of parse")
             assert(errs.isEmpty, "there should be no parse errors remaining at end of parse")
-            assert(hintStack.isEmpty, "there should be no hints remaining at end of parse")
             Success(stack.peek[A])
         }
         else {
             assert(!errs.isEmpty && errs.tail.isEmpty, "there should be exactly 1 parse error remaining at end of parse")
             assert(handlers.isEmpty, "there must be no more handlers on end of parse")
-            assert(checkStack.isEmpty, "there must be no residual check remaining on end of parse")
             assert(states.isEmpty, "there must be no residual states left at end of parse")
-            assert(hintStack.isEmpty, "there should be no hints remaining at end of parse")
             Failure(errs.error.asParseError.format(sourceFile))
         }
     }
@@ -180,14 +163,16 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         calls = calls.tail
     }
 
-    private [machine] def catchNoConsumed(handler: =>Unit): Unit = {
+    private [machine] def catchNoConsumed(check: Int)(handler: =>Unit): Unit = {
         assert(!good, "catching can only be performed in a handler")
-        if (offset != checkStack.offset) fail()
+        if (offset != check) {
+            handlers = handlers.tail
+            fail()
+        }
         else {
             good = true
             handler
         }
-        checkStack = checkStack.tail
     }
 
     private [machine] def pushError(err: DefuncError): Unit = this.errs = new ErrorStack(this.useHints(err), this.errs)
@@ -220,7 +205,6 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         if (handlers.isEmpty) running = false
         else {
             val handler = handlers
-            handlers = handlers.tail
             instrs = handler.instrs
             calls = handler.calls
             pc = handler.pc
@@ -267,8 +251,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
         offset += n
         col += n
     }
-    private [machine] def pushHandler(label: Int): Unit = handlers = new HandlerStack(calls, instrs, label, stack.usize, handlers)
-    private [machine] def pushCheck(): Unit = checkStack = new CheckStack(offset, checkStack)
+    private [machine] def pushHandler(label: Int): Unit = handlers = new HandlerStack(calls, instrs, label, stack.usize, offset, hints, hintsValidOffset, handlers)
     private [machine] def saveState(): Unit = states = new StateStack(offset, line, col, states)
     private [machine] def restoreState(): Unit = {
         val state = states

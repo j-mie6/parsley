@@ -105,7 +105,8 @@ private [backend] object Choice {
                                                    (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val handler = state.freshLabel()
         val skip = state.freshLabel()
-        instrs += new instructions.PushHandlerAndState(handler, saveHints = true, hideHints = false)
+        // FIXME: check this, this is the only one that uses this instruction, and I think it was a mistake
+        instrs += new instructions.PushHandlerAndStateAndClearHints(handler)
         suspend(p.codeGen[M, R]) >> {
             instrs += new instructions.JumpAndPopState(skip)
             instrs += new instructions.Label(handler)
@@ -119,7 +120,7 @@ private [backend] object Choice {
                                                    (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val handler = state.freshLabel()
         val skip = state.freshLabel()
-        instrs += new instructions.PushHandlerAndCheck(handler, saveHints = true)
+        instrs += new instructions.PushHandlerAndClearHints(handler)
         suspend(p.codeGen[M, R]) >> {
             instrs += new instructions.JumpAndPopCheck(skip)
             instrs += new instructions.Label(handler)
