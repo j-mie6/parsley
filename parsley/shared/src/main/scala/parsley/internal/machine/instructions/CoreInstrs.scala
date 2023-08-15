@@ -5,6 +5,8 @@
  */
 package parsley.internal.machine.instructions
 
+import parsley.XAssert._
+
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
 import parsley.internal.machine.errors.{EmptyError, EmptyHints}
@@ -181,6 +183,7 @@ private [internal] object PopHandlerAndState extends Instr {
     // $COVERAGE-ON$
 }
 
+// TODO: refactor
 private [internal] final class PushHandlerAndCheck(var label: Int, saveHints: Boolean) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
@@ -249,8 +252,11 @@ private [internal] final class RestoreAndPushHandler(var label: Int) extends Ins
         ctx.restoreState()
         ctx.restoreHints()
         ctx.good = true
-        ctx.handlers = ctx.handlers.tail
-        ctx.pushHandler(label)
+        val handler = ctx.handlers
+        assume(handler.stacksz == ctx.stack.usize && handler.offset == ctx.offset
+            && handler.hints == ctx.hints && handler.validOffset == ctx.hintsValidOffset,
+               "the handler can be re-used")
+        handler.pc = label
         ctx.inc()
     }
     // $COVERAGE-OFF$

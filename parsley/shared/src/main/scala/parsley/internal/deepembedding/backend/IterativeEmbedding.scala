@@ -120,7 +120,7 @@ private [deepembedding] final class Chainr[A, B](p: StrictParsley[A], op: Strict
     def inlinable: Boolean = false
     override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit]= {
         val body = state.freshLabel()
-        // TODO: I don't think refail is actually needed
+        // handler1 is where the check offset is kept
         val handler1 = state.getLabel(instructions.Refail)
         val handler2 = state.freshLabel()
         instrs += new instructions.Push(identity[Any] _)
