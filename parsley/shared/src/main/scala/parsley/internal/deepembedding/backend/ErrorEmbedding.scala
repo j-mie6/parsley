@@ -44,7 +44,7 @@ private [deepembedding] final class ErrorHide[A](val p: StrictParsley[A]) extend
 }
 private [deepembedding] final class ErrorExplain[A](val p: StrictParsley[A], reason: String) extends ScopedUnary[A, A] {
     override def setup(label: Int): instructions.Instr = new instructions.PushHandlerAndCheck(label, saveHints = false)
-    override def instr: instructions.Instr = instructions.PopHandlerAndCheck
+    override def instr: instructions.Instr = instructions.PopHandler
     override def instrNeedsLabel: Boolean = false
     override def handlerLabel(state: CodeGenState): Int  = state.getLabelForApplyReason(reason)
     // $COVERAGE-OFF$
@@ -83,7 +83,7 @@ private [deepembedding] final class ErrorLexical[A](val p: StrictParsley[A]) ext
     // This needs to save the hints because error label will relabel the first hint, which because the list is ordered would be the hints that came _before_
     // entering labels context. Instead label should relabel the first hint generated _within_ its context, then merge with the originals after
     override def setup(label: Int): instructions.Instr = new instructions.PushHandlerAndCheck(label, saveHints = false)
-    override def instr: instructions.Instr = instructions.PopHandlerAndCheck
+    override def instr: instructions.Instr = instructions.PopHandler
     override def instrNeedsLabel: Boolean = false
     override def handlerLabel(state: CodeGenState): Int = state.getLabel(instructions.SetLexicalAndFail)
 

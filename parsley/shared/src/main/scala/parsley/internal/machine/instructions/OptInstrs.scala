@@ -57,9 +57,10 @@ private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, _exp
 private [internal] final class RecoverWith[A](x: A) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
-        ctx.handlers = ctx.handlers.tail
         ctx.restoreHints() // This must be before adding the error to hints
-        ctx.catchNoConsumed {
+        val check = ctx.handlers.offset
+        ctx.handlers = ctx.handlers.tail
+        ctx.catchNoConsumed(check) {
             ctx.addErrorToHintsAndPop()
             ctx.pushAndContinue(x)
         }
@@ -101,9 +102,9 @@ private [internal] final class JumpTable(jumpTable: mutable.LongMap[(Int, Iterab
             val (dest, errorItems) = jumpTable.getOrElse(ctx.peekChar.toLong, (default, allErrorItems))
             ctx.pc = dest
             if (dest != default) {
-                ctx.pushCheck()
                 ctx.pushHandler(defaultPreamble)
-                ctx.saveHints(shadow = false)
+                ctx.hintStack = new parsley.internal.machine.stacks.HintStack(ctx.hints, ctx.hintsValidOffset, ctx.hintStack)
+                ctx.hints = parsley.internal.machine.errors.EmptyHints
             }
             addErrors(ctx, errorItems) // adds a handler
         }

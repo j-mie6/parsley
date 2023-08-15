@@ -161,7 +161,10 @@ private [internal] final class PushHandlerAndState(var label: Int, saveHints: Bo
         ctx.pushHandler(label)
         ctx.saveState()
         // FIXME: shadow = !hide so why is it like this?
-        if (saveHints) ctx.saveHints(shadow = hideHints)
+        if (saveHints) {
+            ctx.hintStack = new parsley.internal.machine.stacks.HintStack(ctx.hints, ctx.hintsValidOffset, ctx.hintStack)
+            if (!hideHints) ctx.hints = parsley.internal.machine.errors.EmptyHints
+        }
         ctx.inc()
     }
     // $COVERAGE-OFF$
@@ -184,25 +187,15 @@ private [internal] object PopHandlerAndState extends Instr {
 private [internal] final class PushHandlerAndCheck(var label: Int, saveHints: Boolean) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        ctx.pushCheck()
         ctx.pushHandler(label)
-        if (saveHints) ctx.saveHints(false)
+        if (saveHints) {
+            ctx.hintStack = new parsley.internal.machine.stacks.HintStack(ctx.hints, ctx.hintsValidOffset, ctx.hintStack)
+            ctx.hints = parsley.internal.machine.errors.EmptyHints
+        }
         ctx.inc()
     }
     // $COVERAGE-OFF$
     override def toString: String = s"PushHandlerAndCheck($label)"
-    // $COVERAGE-ON$
-}
-
-private [internal] object PopHandlerAndCheck extends Instr {
-    override def apply(ctx: Context): Unit = {
-        ensureRegularInstruction(ctx)
-        ctx.checkStack = ctx.checkStack.tail
-        ctx.handlers = ctx.handlers.tail
-        ctx.inc()
-    }
-    // $COVERAGE-OFF$
-    override def toString: String = "PopHandlerAndCheck"
     // $COVERAGE-ON$
 }
 
@@ -219,9 +212,9 @@ private [internal] final class Jump(var label: Int) extends InstrWithLabel {
 private [internal] final class JumpAndPopCheck(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        ctx.handlers = ctx.handlers.tail
-        ctx.checkStack = ctx.checkStack.tail
         ctx.commitHints() // TODO: should this be mergeHints?
+        ctx.handlers = ctx.handlers.tail
+        //ctx.checkStack = ctx.checkStack.tail
         ctx.pc = label
     }
     // $COVERAGE-OFF$
@@ -245,9 +238,10 @@ private [internal] final class JumpAndPopState(var label: Int) extends InstrWith
 private [internal] final class Catch(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
-        ctx.handlers = ctx.handlers.tail
         ctx.restoreHints()
-        ctx.catchNoConsumed {
+        val check = ctx.handlers.offset
+        ctx.handlers = ctx.handlers.tail
+        ctx.catchNoConsumed(check) {
             ctx.pushHandler(label)
             ctx.inc()
         }
@@ -269,5 +263,17 @@ private [internal] final class RestoreAndPushHandler(var label: Int) extends Ins
     }
     // $COVERAGE-OFF$
     override def toString: String = s"RestoreAndPushHandler($label)"
+    // $COVERAGE-ON$
+}
+
+private [internal] object Refail extends Instr {
+    override def apply(ctx: Context): Unit = {
+        ensureHandlerInstruction(ctx)
+        ctx.handlers = ctx.handlers.tail
+        ctx.fail()
+    }
+
+    // $COVERAGE-OFF$
+    override def toString: String = "Refail"
     // $COVERAGE-ON$
 }
