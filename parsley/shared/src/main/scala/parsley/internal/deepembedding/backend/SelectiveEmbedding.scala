@@ -77,7 +77,7 @@ private [backend] sealed abstract class FilterLike[A, B] extends StrictParsley[B
         val handler1 = state.getLabel(instructions.PopStateAndFail)
         val handler2 = state.getLabel(instructions.AmendAndFail(false))
         val jumpLabel = state.freshLabel()
-        instrs += new instructions.PushHandlerAndState(handler1, saveHints = false, hideHints = false)
+        instrs += new instructions.PushHandlerAndState(handler1)
         suspend(p.codeGen[M, R]) >> {
             instrs += instr(handler2, jumpLabel)
             suspend(err.codeGen[M, R]) |> {

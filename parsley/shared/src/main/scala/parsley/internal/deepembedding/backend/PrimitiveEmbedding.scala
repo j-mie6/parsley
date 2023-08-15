@@ -14,7 +14,7 @@ import parsley.internal.deepembedding.singletons._
 import parsley.internal.machine.instructions
 
 import StrictParsley.InstrBuffer
-private [deepembedding] final class Attempt[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, A](false) {
+private [deepembedding] final class Attempt[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, A] {
     override val instr: instructions.Instr = instructions.PopHandlerAndState
     override def instrNeedsLabel: Boolean = false
     override def handlerLabel(state: CodeGenState): Int  = state.getLabel(instructions.RestoreAndFail)
@@ -28,7 +28,7 @@ private [deepembedding] final class Attempt[A](val p: StrictParsley[A]) extends 
     final override def pretty(p: String): String = s"attempt($p)"
     // $COVERAGE-ON$
 }
-private [deepembedding] final class Look[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, A](true) {
+private [deepembedding] final class Look[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, A] {
     override val instr: instructions.Instr = instructions.RestoreHintsAndState
     override def instrNeedsLabel: Boolean = false
     override def handlerLabel(state: CodeGenState): Int  = state.getLabel(instructions.PopStateRestoreHintsAndFail)
@@ -43,7 +43,7 @@ private [deepembedding] final class NotFollowedBy[A](val p: StrictParsley[A]) ex
     }*/
     final override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val handler = state.freshLabel()
-        instrs += new instructions.PushHandlerAndState(handler, saveHints = true, hideHints = true)
+        instrs += new instructions.PushHandlerAndState(handler)
         suspend[M, R, Unit](p.codeGen) |> {
             instrs += instructions.NegLookFail
             instrs += new instructions.Label(handler)

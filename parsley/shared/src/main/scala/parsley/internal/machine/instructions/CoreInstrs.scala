@@ -157,13 +157,36 @@ private [internal] object PopHandler extends Instr {
     // $COVERAGE-ON$
 }
 
-private [internal] final class PushHandlerAndState(var label: Int, saveHints: Boolean, hideHints: Boolean) extends InstrWithLabel {
+private [internal] final class PushHandlerAndClearHints(var label: Int) extends InstrWithLabel {
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        ctx.pushHandler(label)
+        ctx.hints = EmptyHints
+        ctx.inc()
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = s"PushHandlerAndClearHints($label)"
+    // $COVERAGE-ON$
+}
+
+private [internal] final class PushHandlerAndStateAndClearHints(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         ctx.pushHandler(label)
         ctx.saveState()
-        // FIXME: shadow = !hide so why is it like this?
-        if (saveHints && !hideHints) ctx.hints = EmptyHints
+        ctx.hints = EmptyHints
+        ctx.inc()
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = s"PushHandlerAndStateAmdClearHints($label)"
+    // $COVERAGE-ON$
+}
+
+private [internal] final class PushHandlerAndState(var label: Int) extends InstrWithLabel {
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        ctx.pushHandler(label)
+        ctx.saveState()
         ctx.inc()
     }
     // $COVERAGE-OFF$
@@ -180,19 +203,6 @@ private [internal] object PopHandlerAndState extends Instr {
     }
     // $COVERAGE-OFF$
     override def toString: String = "PopHandlerAndState"
-    // $COVERAGE-ON$
-}
-
-// TODO: refactor
-private [internal] final class PushHandlerAndCheck(var label: Int, saveHints: Boolean) extends InstrWithLabel {
-    override def apply(ctx: Context): Unit = {
-        ensureRegularInstruction(ctx)
-        ctx.pushHandler(label)
-        if (saveHints) ctx.hints = EmptyHints
-        ctx.inc()
-    }
-    // $COVERAGE-OFF$
-    override def toString: String = s"PushHandlerAndCheck($label)"
     // $COVERAGE-ON$
 }
 
