@@ -58,7 +58,7 @@ private [internal] final class RecoverWith[A](x: A) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
         ctx.restoreHints() // This must be before adding the error to hints
-        ctx.catchNoConsumed(ctx.handlers.offset) {
+        ctx.catchNoConsumed(ctx.handlers.check) {
             ctx.handlers = ctx.handlers.tail
             ctx.addErrorToHintsAndPop()
             ctx.pushAndContinue(x)

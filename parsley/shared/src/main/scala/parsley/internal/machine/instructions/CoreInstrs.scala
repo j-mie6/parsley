@@ -235,9 +235,9 @@ private [internal] final class Catch(var label: Int) extends InstrWithLabel {
         ensureHandlerInstruction(ctx)
         ctx.restoreHints()
         val handler = ctx.handlers
-        ctx.catchNoConsumed(handler.offset) {
-            assume(handler.stacksz == ctx.stack.usize && handler.offset == ctx.offset
-                && handler.hints == ctx.hints && handler.validOffset == ctx.hintsValidOffset,
+        ctx.catchNoConsumed(handler.check) {
+            assume(handler.stacksz == ctx.stack.usize && handler.check == ctx.offset
+                && handler.hints == ctx.hints && handler.hintOffset == ctx.currentHintsValidOffset,
                 "the handler can be re-used")
             handler.pc = label
             ctx.inc()
@@ -255,8 +255,8 @@ private [internal] final class RestoreAndPushHandler(var label: Int) extends Ins
         ctx.restoreHints()
         ctx.good = true
         val handler = ctx.handlers
-        assume(handler.stacksz == ctx.stack.usize && handler.offset == ctx.offset
-            && handler.hints == ctx.hints && handler.validOffset == ctx.hintsValidOffset,
+        assume(handler.stacksz == ctx.stack.usize && handler.check == ctx.offset
+            && handler.hints == ctx.hints && handler.hintOffset == ctx.currentHintsValidOffset,
                "the handler can be re-used")
         handler.pc = label
         ctx.inc()

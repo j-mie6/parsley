@@ -35,7 +35,6 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     /** State stack consisting of offsets and positions that can be rolled back */
     private [machine] var states: StateStack = Stack.empty
     /** Stack consisting of offsets at previous checkpoints, which may query to test for consumed input */
-    //private [machine] var checkStack: CheckStack = Stack.empty
     /** Current operational status of the machine */
     private [machine] var good: Boolean = true
     private [machine] var running: Boolean = true
@@ -54,12 +53,12 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
 
     // NEW ERROR MECHANISMS
     private [machine] var hints: DefuncHints = EmptyHints
-    private [machine] var hintsValidOffset = 0
+    private var hintsValidOffset = 0
     private [machine] var errs: ErrorStack = Stack.empty
 
     private [machine] def restoreHints(): Unit = {
         val hintFrame = this.handlers
-        this.hintsValidOffset = hintFrame.validOffset
+        this.hintsValidOffset = hintFrame.hintOffset
         this.hints = hintFrame.hints
     }
 
@@ -71,7 +70,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     /* ERROR RELABELLING BEGIN */
     private [machine] def mergeHints(): Unit = {
         val hintFrame = this.handlers
-        if (hintFrame.validOffset == offset) this.hints = hintFrame.hints.merge(this.hints)
+        if (hintFrame.hintOffset == offset) this.hints = hintFrame.hints.merge(this.hints)
     }
     private [machine] def replaceHint(labels: Iterable[String]): Unit = hints = hints.rename(labels)
     private [machine] def popHints(): Unit = hints = hints.pop
@@ -104,7 +103,7 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     }
 
     private [machine] def updateCheckOffset() = {
-        this.handlers.offset = this.offset
+        this.handlers.check = this.offset
     }
 
     // $COVERAGE-OFF$

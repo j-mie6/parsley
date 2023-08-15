@@ -22,7 +22,7 @@ private [internal] final class RelabelHints(labels: Iterable[String]) extends In
         if (isHide) ctx.popHints()
         // EOK
         // replace the head of the hints with the singleton for our label
-        else if (ctx.offset == ctx.handlers.offset) ctx.replaceHint(labels)
+        else if (ctx.offset == ctx.handlers.check) ctx.replaceHint(labels)
         // COK
         // do nothing
         ctx.mergeHints()
@@ -41,7 +41,7 @@ private [internal] final class RelabelErrorAndFail(labels: Iterable[String]) ext
         ctx.errs.error = ctx.useHints {
             // only use the label if the error message is generated at the same offset
             // as the check stack saved for the start of the `label` combinator.
-            ctx.errs.error.label(labels, ctx.handlers.offset)
+            ctx.errs.error.label(labels, ctx.handlers.check)
         }
         ctx.handlers = ctx.handlers.tail
         ctx.fail()
@@ -108,7 +108,7 @@ private [internal] object MergeErrorsAndFail extends Instr {
 private [internal] class ApplyReasonAndFail(reason: String) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
-        ctx.errs.error = ctx.errs.error.withReason(reason, ctx.handlers.offset)
+        ctx.errs.error = ctx.errs.error.withReason(reason, ctx.handlers.check)
         ctx.handlers = ctx.handlers.tail
         ctx.fail()
     }
@@ -166,7 +166,7 @@ private [internal] class DislodgeAndFail(n: Int) extends Instr {
 private [internal] object SetLexicalAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
-        ctx.errs.error = ctx.errs.error.markAsLexical(ctx.handlers.offset)
+        ctx.errs.error = ctx.errs.error.markAsLexical(ctx.handlers.check)
         ctx.handlers = ctx.handlers.tail
         ctx.fail()
     }

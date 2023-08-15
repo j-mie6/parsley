@@ -21,7 +21,7 @@ private [internal] final class Many(var label: Int) extends InstrWithLabel {
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else ctx.catchNoConsumed(ctx.handlers.offset) {
+        else ctx.catchNoConsumed(ctx.handlers.check) {
             ctx.handlers = ctx.handlers.tail
             ctx.addErrorToHintsAndPop()
             ctx.exchangeAndContinue(ctx.stack.peek[mutable.ListBuffer[Any]].toList)
@@ -40,7 +40,7 @@ private [internal] final class SkipMany(var label: Int) extends InstrWithLabel {
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else ctx.catchNoConsumed(ctx.handlers.offset) {
+        else ctx.catchNoConsumed(ctx.handlers.check) {
             ctx.handlers = ctx.handlers.tail
             ctx.addErrorToHintsAndPop()
             ctx.pushAndContinue(())
@@ -60,7 +60,7 @@ private [internal] final class ChainPost(var label: Int) extends InstrWithLabel 
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else ctx.catchNoConsumed(ctx.handlers.offset) {
+        else ctx.catchNoConsumed(ctx.handlers.check) {
             ctx.handlers = ctx.handlers.tail
             ctx.addErrorToHintsAndPop()
             ctx.inc()
@@ -80,7 +80,7 @@ private [internal] final class ChainPre(var label: Int) extends InstrWithLabel {
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else ctx.catchNoConsumed(ctx.handlers.offset) {
+        else ctx.catchNoConsumed(ctx.handlers.check) {
             ctx.handlers = ctx.handlers.tail
             ctx.addErrorToHintsAndPop()
             ctx.inc()
@@ -100,7 +100,7 @@ private [internal] final class Chainl(var label: Int) extends InstrWithLabel {
             ctx.pc = label
         }
         // If the head of input stack is not the same size as the head of check stack, we fail to next handler
-        else ctx.catchNoConsumed(ctx.handlers.offset) {
+        else ctx.catchNoConsumed(ctx.handlers.check) {
             ctx.handlers = ctx.handlers.tail
             ctx.addErrorToHintsAndPop()
             ctx.inc()
@@ -138,7 +138,7 @@ private [internal] final class ChainrJump(var label: Int) extends InstrWithLabel
 private [internal] final class ChainrOpHandler(wrap: Any => Any) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
-        val check = ctx.handlers.offset
+        val check = ctx.handlers.check
         ctx.handlers = ctx.handlers.tail
         ctx.catchNoConsumed(check) {
             ctx.handlers = ctx.handlers.tail
@@ -184,7 +184,7 @@ private [instructions] object SepEndBy1Handlers {
 private [internal] object SepEndBy1SepHandler extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
-        val check = ctx.handlers.offset
+        val check = ctx.handlers.check
         ctx.handlers = ctx.handlers.tail
         // p succeeded and sep didn't, so push p and fall-through to the whole handler
         val x = ctx.stack.upop()
@@ -206,7 +206,7 @@ private [internal] object SepEndBy1SepHandler extends Instr {
 private [internal] object SepEndBy1WholeHandler extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
-        val check = ctx.handlers.offset
+        val check = ctx.handlers.check
         ctx.handlers = ctx.handlers.tail
         SepEndBy1Handlers.pushAccWhenCheckValidAndContinue(ctx, check, ctx.stack.peek[mutable.ListBuffer[Any]])
     }

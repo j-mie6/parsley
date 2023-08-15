@@ -13,14 +13,15 @@ private [machine] final class HandlerStack(
     val instrs: Array[Instr],
     var pc: Int,
     val stacksz: Int,
-    var offset: Int,
+    var check: Int,
     val hints: DefuncHints,
-    val validOffset: Int,
+    val hintOffset: Int,
     val tail: HandlerStack)
 private [machine] object HandlerStack extends Stack[HandlerStack] {
     implicit val inst: Stack[HandlerStack] = this
     type ElemTy = (Int, Int)
     // $COVERAGE-OFF$
+    // TODO: needs to change
     override protected def show(x: ElemTy): String = {
         val (pc, stacksz) = x
         s"Handler:$pc(-${stacksz + 1})"
