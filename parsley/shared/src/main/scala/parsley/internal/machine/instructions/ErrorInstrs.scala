@@ -45,7 +45,6 @@ private [internal] final class RelabelErrorAndFail(labels: Iterable[String]) ext
             ctx.errs.error.label(labels, ctx.handlers.offset)
         }
         ctx.handlers = ctx.handlers.tail
-        //ctx.checkStack = ctx.checkStack.tail
         ctx.fail()
     }
     // $COVERAGE-OFF$
@@ -59,7 +58,6 @@ private [internal] object HideHints extends Instr {
         ctx.popHints()
         ctx.mergeHints()
         ctx.handlers = ctx.handlers.tail
-        //ctx.checkStack = ctx.checkStack.tail
         ctx.inc()
     }
     // $COVERAGE-OFF$
@@ -72,7 +70,6 @@ private [internal] object HideErrorAndFail extends Instr {
         ensureHandlerInstruction(ctx)
         ctx.restoreHints()
         ctx.errs.error = new EmptyError(ctx.offset, ctx.line, ctx.col, unexpectedWidth = 0)
-        //ctx.checkStack = ctx.checkStack.tail
         ctx.handlers = ctx.handlers.tail
         ctx.fail()
     }

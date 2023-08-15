@@ -73,9 +73,9 @@ private [internal] final class RecoverWith[A](x: A) extends Instr {
 private [internal] final class AlwaysRecoverWith[A](x: A) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
-        ctx.handlers = ctx.handlers.tail
         ctx.restoreState()
         ctx.restoreHints() // This must be before adding the error to hints
+        ctx.handlers = ctx.handlers.tail
         ctx.addErrorToHintsAndPop()
         ctx.good = true
         ctx.pushAndContinue(x)
@@ -103,7 +103,6 @@ private [internal] final class JumpTable(jumpTable: mutable.LongMap[(Int, Iterab
             ctx.pc = dest
             if (dest != default) {
                 ctx.pushHandler(defaultPreamble)
-                ctx.hintStack = new parsley.internal.machine.stacks.HintStack(ctx.hints, ctx.hintsValidOffset, ctx.hintStack)
                 ctx.hints = parsley.internal.machine.errors.EmptyHints
             }
             addErrors(ctx, errorItems) // adds a handler

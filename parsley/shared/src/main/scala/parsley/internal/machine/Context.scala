@@ -18,7 +18,7 @@ import parsley.internal.errors.{CaretWidth, ExpectItem, LineBuilder, UnexpectDes
 import parsley.internal.machine.errors.{ClassicFancyError, DefuncError, DefuncHints, EmptyHints, ErrorItemBuilder, ExpectedError, UnexpectedError}
 
 import instructions.Instr
-import stacks.{ArrayStack, CallStack, ErrorStack, HandlerStack, HintStack, Stack, StateStack}, Stack.StackExt
+import stacks.{ArrayStack, CallStack, ErrorStack, HandlerStack, Stack, StateStack}, Stack.StackExt
 
 private [parsley] final class Context(private [machine] var instrs: Array[Instr],
                                       private [machine] val input: String,
@@ -55,21 +55,12 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
     // NEW ERROR MECHANISMS
     private [machine] var hints: DefuncHints = EmptyHints
     private [machine] var hintsValidOffset = 0
-    private [machine] var hintStack = Stack.empty[HintStack]
     private [machine] var errs: ErrorStack = Stack.empty
 
-    /*private [machine] def saveHints(shadow: Boolean): Unit = {
-        hintStack = new HintStack(hints, hintsValidOffset, hintStack)
-        if (!shadow) hints = EmptyHints
-    }*/
     private [machine] def restoreHints(): Unit = {
-        val hintFrame = this.hintStack
+        val hintFrame = this.handlers
         this.hintsValidOffset = hintFrame.validOffset
         this.hints = hintFrame.hints
-        this.commitHints()
-    }
-    private [machine] def commitHints(): Unit = {
-        this.hintStack = this.hintStack.tail
     }
 
     /* Error Debugging Info */
@@ -79,9 +70,8 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
 
     /* ERROR RELABELLING BEGIN */
     private [machine] def mergeHints(): Unit = {
-        val hintFrame = this.hintStack
+        val hintFrame = this.handlers
         if (hintFrame.validOffset == offset) this.hints = hintFrame.hints.merge(this.hints)
-        commitHints()
     }
     private [machine] def replaceHint(labels: Iterable[String]): Unit = hints = hints.rename(labels)
     private [machine] def popHints(): Unit = hints = hints.pop
@@ -131,7 +121,6 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
            |  recstates = ${states.mkString(", ")}
            |  registers = ${regs.zipWithIndex.map{case (r, i) => s"r$i = $r"}.toList.mkString("\n              ")}
            |  errors    = ${errs.mkString(", ")}
-           |  hints     = ($hintsValidOffset, ${hints.toSet}):${hintStack.mkString(", ")}
            |]""".stripMargin
     }
     // $COVERAGE-ON$
@@ -148,14 +137,12 @@ private [parsley] final class Context(private [machine] var instrs: Array[Instr]
             assert(handlers.isEmpty, "there must be no more handlers on end of parse")
             assert(states.isEmpty, "there must be no residual states left at end of parse")
             assert(errs.isEmpty, "there should be no parse errors remaining at end of parse")
-            assert(hintStack.isEmpty, "there should be no hints remaining at end of parse")
             Success(stack.peek[A])
         }
         else {
             assert(!errs.isEmpty && errs.tail.isEmpty, "there should be exactly 1 parse error remaining at end of parse")
             assert(handlers.isEmpty, "there must be no more handlers on end of parse")
             assert(states.isEmpty, "there must be no residual states left at end of parse")
-            assert(hintStack.isEmpty, "there should be no hints remaining at end of parse")
             Failure(errs.error.asParseError.format(sourceFile))
         }
     }

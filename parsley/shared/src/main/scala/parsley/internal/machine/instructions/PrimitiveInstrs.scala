@@ -65,8 +65,8 @@ private [internal] object PopStateAndFail extends Instr {
 private [internal] object PopStateRestoreHintsAndFail extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
-        ctx.handlers = ctx.handlers.tail
         ctx.restoreHints()
+        ctx.handlers = ctx.handlers.tail
         ctx.states = ctx.states.tail
         ctx.fail()
     }

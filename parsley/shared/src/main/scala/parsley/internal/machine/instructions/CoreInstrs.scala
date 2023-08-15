@@ -162,7 +162,6 @@ private [internal] final class PushHandlerAndState(var label: Int, saveHints: Bo
         ctx.saveState()
         // FIXME: shadow = !hide so why is it like this?
         if (saveHints) {
-            ctx.hintStack = new parsley.internal.machine.stacks.HintStack(ctx.hints, ctx.hintsValidOffset, ctx.hintStack)
             if (!hideHints) ctx.hints = parsley.internal.machine.errors.EmptyHints
         }
         ctx.inc()
@@ -189,7 +188,6 @@ private [internal] final class PushHandlerAndCheck(var label: Int, saveHints: Bo
         ensureRegularInstruction(ctx)
         ctx.pushHandler(label)
         if (saveHints) {
-            ctx.hintStack = new parsley.internal.machine.stacks.HintStack(ctx.hints, ctx.hintsValidOffset, ctx.hintStack)
             ctx.hints = parsley.internal.machine.errors.EmptyHints
         }
         ctx.inc()
@@ -212,9 +210,8 @@ private [internal] final class Jump(var label: Int) extends InstrWithLabel {
 private [internal] final class JumpAndPopCheck(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        ctx.commitHints() // TODO: should this be mergeHints?
+        // TODO: should this be mergeHints?
         ctx.handlers = ctx.handlers.tail
-        //ctx.checkStack = ctx.checkStack.tail
         ctx.pc = label
     }
     // $COVERAGE-OFF$
@@ -227,7 +224,6 @@ private [internal] final class JumpAndPopState(var label: Int) extends InstrWith
         ensureRegularInstruction(ctx)
         ctx.handlers = ctx.handlers.tail
         ctx.states = ctx.states.tail
-        ctx.commitHints()
         ctx.pc = label
     }
     // $COVERAGE-OFF$
@@ -254,10 +250,10 @@ private [internal] final class Catch(var label: Int) extends InstrWithLabel {
 private [internal] final class RestoreAndPushHandler(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
-        ctx.handlers = ctx.handlers.tail
         ctx.restoreState()
         ctx.restoreHints()
         ctx.good = true
+        ctx.handlers = ctx.handlers.tail
         ctx.pushHandler(label)
         ctx.inc()
     }

@@ -207,10 +207,10 @@ private [internal] object NegLookFail extends Instr {
 private [internal] object NegLookGood extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
-        ctx.handlers = ctx.handlers.tail
         // Recover the previous state; notFollowedBy NEVER consumes input
         ctx.restoreState()
         ctx.restoreHints()
+        ctx.handlers = ctx.handlers.tail
         // A failure is what we wanted
         ctx.good = true
         ctx.errs = ctx.errs.tail
