@@ -13,7 +13,7 @@ import parsley.token.errors.LabelConfig
 import parsley.internal.errors.ExpectItem
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
-import parsley.internal.machine.errors.ExpectedError
+import parsley.internal.machine.errors.{EmptyHints, ExpectedError}
 import parsley.internal.machine.stacks.ErrorStack
 
 private [internal] final class Lift1(f: Any => Any) extends Instr {
@@ -102,7 +102,7 @@ private [internal] final class JumpTable(jumpTable: mutable.LongMap[(Int, Iterab
             ctx.pc = dest
             if (dest != default) {
                 ctx.pushHandler(defaultPreamble)
-                ctx.hints = parsley.internal.machine.errors.EmptyHints
+                ctx.hints = EmptyHints
             }
             addErrors(ctx, errorItems) // adds a handler
         }
