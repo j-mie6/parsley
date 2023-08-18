@@ -85,6 +85,8 @@ lazy val root = tlCrossRootProject.aggregate(parsley)
 
 lazy val docs = project
   .in(file("site"))
+  .dependsOn(parsley.jvm)
+  .enablePlugins(TypelevelSitePlugin)
   .settings(
     laikaConfig := {
       import laika.rewrite.link._
@@ -93,12 +95,11 @@ lazy val docs = project
       .withConfigValue(LinkConfig(apiLinks = Seq(
           ApiLinks(baseUri = "https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/latest/")
       )))
-      .withConfigValue("showRelatedProjects", tlSiteRelatedProjects.value.nonEmpty)
     },
-    laikaTheme := {
+    tlSiteHelium := {
       import laika.ast.Path.Root
       import laika.ast.{InlineSVGIcon, Styles}
-      import laika.helium.config.{HeliumIcon, IconLink, ColorQuintet}
+      import laika.helium.config.{ColorQuintet, HeliumIcon, IconLink, TextLink, ThemeNavigationSection}
       import laika.theme.config.{Color}
 
       case class ColorTints(base: Color, light: Color, lighter: Color, dark: Color, darker: Color)
@@ -147,86 +148,78 @@ lazy val docs = project
           |</svg>""".stripMargin
       val leaf = InlineSVGIcon(leafSVG, Some("Home"), Styles("leaf"))
 
-      tlSiteHeliumConfig.value
-        .site.topNavigationBar(
-          homeLink = IconLink.internal(Root / "index.md", /*HeliumIcon.home*/leaf),
-          navLinks = tlSiteApiUrl.value.toList.map { url =>
-            IconLink.external(url.toString, HeliumIcon.api)
-          } ++ Seq(
-            IconLink.external(scmInfo.value.fold("https://github.com/j-mie6/parsley")(_.browseUrl.toString), HeliumIcon.github),
-            // IconLink.internal(Root / "downloads.gen", HeliumIcon.download), // TODO: why is this not vertically aligned?
-          ),
+      tlSiteHelium.value.site.topNavigationBar(
+        homeLink = IconLink.internal(Root / "index.md", leaf),
+      )
+      .site.themeColors(
+        primary = ForestGreen.darker,
+        secondary = DarkPink,
+        primaryMedium = ForestGreen.base,
+        primaryLight = ForestGreen.lighter,
+        text = CharcoalLightGrey,
+        background = MintCream,
+        bgGradient = (OffWhite, Color.hex("ffffff")),
+      )
+      .site.messageColors(
+        info = DarkPink,
+        infoLight = ForestGreen.lighter,
+        warning = DarkPink,
+        warningLight = PaleYellow,
+        error = DarkPink,
+        errorLight = AntiForestRed.lighter,
+      )
+      .site.syntaxHighlightingColors(
+        base = ColorQuintet(
+          CharcoalGrey,
+          Color.hex("8c878e"),  // comments, xml-cdata, markup-quote
+          Color.hex("b2adb4"),  // tag-punctuation
+          Mint.light,           // identifier
+          Color.hex("e8e8e8"),  // base colour
+        ),
+        wheel = ColorQuintet(
+          Color.hex("7eacbf"),  // substitution, xml-processing-instruction, markup-emphasized, annotation
+          Color.hex("dc799d"),  // keyword, escape-sequence, markup-headline
+          Color.hex("e7a1bb"),  // attribute-name, markup-link-target, declaration-name
+          Color.hex("b582c1"),  // number-literal, string-literal, literal-value, boolean-literal, char-literal, symbol-literal, regex-literal, markup-link-text
+          Color.hex("7fb971"),  // type-name, tag-name, xml-dtd-tagname, markup-fence
         )
-        .site.themeColors(
-          primary = ForestGreen.darker,
-          secondary = DarkPink,
-          primaryMedium = ForestGreen.base,
-          primaryLight = ForestGreen.lighter,
-          text = CharcoalLightGrey,
-          background = MintCream,
-          bgGradient = (OffWhite, Color.hex("ffffff"))
+      )
+      .site.darkMode.themeColors(
+        primary = Mint.base,
+        secondary = DarkGrayishBrown,
+        primaryMedium = CharcoalGrey,
+        primaryLight = CharcoalBlack,
+        text = OffWhite,
+        background = CharcoalDarkGrey,
+        bgGradient = (CharcoalDarkGrey, CharcoalGrey),
+      )
+      .site.darkMode.messageColors(
+        info = Mint.dark,
+        infoLight = CharcoalGrey,
+        warning = LightYellow,
+        warningLight = CharcoalGrey,
+        error = AntiMintRed.dark,
+        errorLight = CharcoalGrey,
+      )
+      /*.site.darkMode.syntaxHighlightingColors(
+        base = ColorQuintet(CharcoalGrey, Color.hex("8c878e"), Color.hex("b2adb4"), Color.hex("baeedb"), Color.hex("e8e8e8")),
+        wheel = ColorQuintet(Color.hex("7eacbf"), Color.hex("dc799d"), Color.hex("e7a1bb"), Color.hex("b582c1"), Color.hex("7fb971"))
+      )*/
+      .site.downloadPage(
+        title = "Documentation Downloads",
+        description = None,
+      )
+      .site.mainNavigation(appendLinks = Seq(
+        ThemeNavigationSection(
+          "Related Projects",
+          TextLink.external("https://github.com/j-mie6/parsley-cats", "parsley-cats")a
         )
-        .site.messageColors(
-          info = DarkPink,
-          infoLight = ForestGreen.lighter,
-          warning = DarkPink,
-          warningLight = PaleYellow,
-          error = DarkPink,
-          errorLight = AntiForestRed.lighter,
-        )
-        .site.syntaxHighlightingColors(
-          base = ColorQuintet(
-            CharcoalGrey,
-            Color.hex("8c878e"), // comments, xml-cdata, markup-quote
-            Color.hex("b2adb4"), // tag-punctuation
-            Mint.light,          // identifier
-            Color.hex("e8e8e8")  // base colour
-          ),
-          wheel = ColorQuintet(
-            Color.hex("7eacbf"), // substitution, xml-processing-instruction, markup-emphasized, annotation
-            Color.hex("dc799d"), // keyword, escape-sequence, markup-headline
-            Color.hex("e7a1bb"), // attribute-name, markup-link-target, declaration-name
-            Color.hex("b582c1"), // number-literal, string-literal, literal-value, boolean-literal, char-literal, symbol-literal, regex-literal, markup-link-text
-            Color.hex("7fb971")  // type-name, tag-name, xml-dtd-tagname, markup-fence
-          )
-        )
-        .site.darkMode.themeColors(
-          primary = Mint.base,
-          secondary = DarkGrayishBrown,
-          primaryMedium = CharcoalGrey,
-          primaryLight = CharcoalBlack,
-          text = OffWhite,
-          background = CharcoalDarkGrey,
-          bgGradient = (CharcoalDarkGrey, CharcoalGrey)
-        )
-        .site.darkMode.messageColors(
-          info = Mint.dark,
-          infoLight = CharcoalGrey,
-          warning = LightYellow,
-          warningLight = CharcoalGrey,
-          error = AntiMintRed.dark,
-          errorLight = CharcoalGrey,
-        )
-        /*.site.darkMode.syntaxHighlightingColors(
-          base = ColorQuintet(CharcoalGrey, Color.hex("8c878e"), Color.hex("b2adb4"), Color.hex("baeedb"), Color.hex("e8e8e8")),
-          wheel = ColorQuintet(Color.hex("7eacbf"), Color.hex("dc799d"), Color.hex("e7a1bb"), Color.hex("b582c1"), Color.hex("7fb971"))
-        )*/
-        .site.downloadPage(
-          title = "Documentation Downloads",
-          description = None,
-        )
-        .site.markupEditLinks(
-          text = "Source for this page",
-          baseURL = s"${scmInfo.value.fold("https://github.com/j-mie6/parsley")(_.browseUrl.toString)}/docs",
-        )
-        .build.extend(tlSiteHeliumExtensions.value)
-    },
-    tlSiteRelatedProjects := Seq(
-      "parsley-cats" -> url("https://github.com/j-mie6/parsley-cats"),
-    ),
+      ))
+      .site.pageNavigation(
+        sourceBaseURL = Some(s"${scmInfo.value.fold(homepage.value.get.toString)(_.browseUrl.toString)}/blob/master/docs"),
+      )
+    }
   )
-  .dependsOn(parsley.jvm)
-  .enablePlugins(TypelevelSitePlugin)
 
 lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .withoutSuffixFor(JVMPlatform)
