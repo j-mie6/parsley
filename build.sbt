@@ -88,6 +88,7 @@ lazy val docs = project
   .dependsOn(parsley.jvm)
   .enablePlugins(TypelevelSitePlugin)
   .settings(
+    tlFatalWarnings := false,  // turn off fatal warnings for mdoc
     laikaConfig := {
       import laika.rewrite.link._
 
@@ -219,8 +220,6 @@ lazy val docs = project
         sourceBaseURL = Some(s"${scmInfo.value.fold(homepage.value.get.toString)(_.browseUrl.toString)}/blob/master/docs"),
       )
     },
-
-    Compile / doc / scalacOptions --= Seq("-Werror"),
   )
 
 lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)
