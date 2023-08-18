@@ -218,7 +218,9 @@ lazy val docs = project
       .site.pageNavigation(
         sourceBaseURL = Some(s"${scmInfo.value.fold(homepage.value.get.toString)(_.browseUrl.toString)}/blob/master/docs"),
       )
-    }
+    },
+
+    Compile / doc / scalacOptions --= Seq("-Werror"),
   )
 
 lazy val parsley = crossProject(JSPlatform, JVMPlatform, NativePlatform)

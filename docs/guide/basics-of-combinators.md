@@ -491,7 +491,6 @@ this, which we'll explore now:
 ```scala mdoc:silent:nest
 import parsley.Parsley, Parsley.{notFollowedBy, lookAhead}
 import parsley.character.item
-import parsley.combinator.eof
 import parsley.implicits.character.stringLift
 import parsley.debug._
 
