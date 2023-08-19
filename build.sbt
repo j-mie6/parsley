@@ -140,6 +140,22 @@ lazy val docs = project
         dark    = Color.hex("ae2b2b"), darker  = Color.hex("870d0d"),
       )
 
+      // Syntax highlighting colours
+      val syntaxHighlightingBase = ColorQuintet(
+        CharcoalGrey,
+        Color.hex("8c878e"),  // comments, xml-cdata, markup-quote
+        Color.hex("b2adb4"),  // tag-punctuation
+        Mint.light,           // identifier
+        Color.hex("e8e8e8"),  // base colour
+      )
+      val syntaxHighlightingWheel = ColorQuintet(
+        Color.hex("7eacbf"),  // substitution, xml-processing-instruction, markup-emphasized, annotation
+        Color.hex("dc799d"),  // keyword, escape-sequence, markup-headline
+        Color.hex("e7a1bb"),  // attribute-name, markup-link-target, declaration-name
+        Color.hex("b582c1"),  // number-literal, string-literal, literal-value, boolean-literal, char-literal, symbol-literal, regex-literal, markup-link-text
+        Color.hex("7fb971"),  // type-name, tag-name, xml-dtd-tagname, markup-fence
+      )
+
       // TODO: Move this to a more sensible home
       val leafSVG =
         """<svg class="svg-icon" width="100%" height="100%" viewBox="0 0 128 128" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
@@ -169,22 +185,7 @@ lazy val docs = project
         error = DarkPink,
         errorLight = AntiForestRed.lighter,
       )
-      .site.syntaxHighlightingColors(
-        base = ColorQuintet(
-          CharcoalGrey,
-          Color.hex("8c878e"),  // comments, xml-cdata, markup-quote
-          Color.hex("b2adb4"),  // tag-punctuation
-          Mint.light,           // identifier
-          Color.hex("e8e8e8"),  // base colour
-        ),
-        wheel = ColorQuintet(
-          Color.hex("7eacbf"),  // substitution, xml-processing-instruction, markup-emphasized, annotation
-          Color.hex("dc799d"),  // keyword, escape-sequence, markup-headline
-          Color.hex("e7a1bb"),  // attribute-name, markup-link-target, declaration-name
-          Color.hex("b582c1"),  // number-literal, string-literal, literal-value, boolean-literal, char-literal, symbol-literal, regex-literal, markup-link-text
-          Color.hex("7fb971"),  // type-name, tag-name, xml-dtd-tagname, markup-fence
-        )
-      )
+      .site.syntaxHighlightingColors(syntaxHighlightingBase, syntaxHighlightingWheel)
       .site.darkMode.themeColors(
         primary = Mint.base,
         secondary = DarkGrayishBrown,
@@ -202,10 +203,7 @@ lazy val docs = project
         error = AntiMintRed.dark,
         errorLight = CharcoalGrey,
       )
-      /*.site.darkMode.syntaxHighlightingColors(
-        base = ColorQuintet(CharcoalGrey, Color.hex("8c878e"), Color.hex("b2adb4"), Color.hex("baeedb"), Color.hex("e8e8e8")),
-        wheel = ColorQuintet(Color.hex("7eacbf"), Color.hex("dc799d"), Color.hex("e7a1bb"), Color.hex("b582c1"), Color.hex("7fb971"))
-      )*/
+      .site.darkMode.syntaxHighlightingColors(syntaxHighlightingBase, syntaxHighlightingWheel)
       .site.downloadPage(
         title = "Documentation Downloads",
         description = None,
