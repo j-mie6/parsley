@@ -90,7 +90,7 @@ lazy val docs = project
   .settings(
     tlFatalWarnings := false,  // turn off fatal warnings for mdoc
     laikaConfig := {
-      import laika.rewrite.link._
+      import laika.rewrite.link.{ApiLinks, LinkConfig}
 
       LaikaConfig.defaults
       .withConfigValue(LinkConfig(apiLinks = Seq(
@@ -98,9 +98,8 @@ lazy val docs = project
       )))
     },
     tlSiteHelium := {
-      import laika.ast.Path.Root
-      import laika.ast.{InlineSVGIcon, Styles}
-      import laika.helium.config.{ColorQuintet, HeliumIcon, IconLink, TextLink, ThemeNavigationSection}
+      import laika.ast._
+      import laika.helium.config._
       import laika.theme.config.{Color}
 
       case class ColorTints(base: Color, light: Color, lighter: Color, dark: Color, darker: Color)
@@ -165,8 +164,29 @@ lazy val docs = project
           |</svg>""".stripMargin
       val leaf = InlineSVGIcon(leafSVG, Some("Home"), Styles("leaf"))
 
-      tlSiteHelium.value.site.topNavigationBar(
-        homeLink = IconLink.internal(Root / "index.md", leaf),
+      tlSiteHelium.value.site.layout(
+        topBarHeight = LengthUnit.px(50),
+      )
+      .site.mainNavigation(appendLinks = Seq(
+        ThemeNavigationSection(
+          "Related Projects",
+          TextLink.external("https://github.com/j-mie6/parsley-cats", "parsley-cats")a
+        )
+      ))
+      .site.topNavigationBar(
+        homeLink = IconLink.internal(Path.Root / "index.md", leaf),
+      )
+      .site.pageNavigation(
+        sourceBaseURL = Some(s"${scmInfo.value.fold(homepage.value.get.toString)(_.browseUrl.toString)}/blob/master/docs"),
+      )
+      .site.footer(
+        TemplateString("Parsley is distributed under the "),
+        SpanLink.external(licenses.value.head._2.toString)(licenses.value.head._1),
+        TemplateString(" license."),
+      )
+      .site.downloadPage(
+        title = "Documentation Downloads",
+        description = None,
       )
       .site.themeColors(
         primary = ForestGreen.darker,
@@ -204,19 +224,6 @@ lazy val docs = project
         errorLight = CharcoalGrey,
       )
       .site.darkMode.syntaxHighlightingColors(syntaxHighlightingBase, syntaxHighlightingWheel)
-      .site.downloadPage(
-        title = "Documentation Downloads",
-        description = None,
-      )
-      .site.mainNavigation(appendLinks = Seq(
-        ThemeNavigationSection(
-          "Related Projects",
-          TextLink.external("https://github.com/j-mie6/parsley-cats", "parsley-cats")a
-        )
-      ))
-      .site.pageNavigation(
-        sourceBaseURL = Some(s"${scmInfo.value.fold(homepage.value.get.toString)(_.browseUrl.toString)}/blob/master/docs"),
-      )
     },
   )
 
