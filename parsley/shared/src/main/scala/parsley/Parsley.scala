@@ -85,7 +85,7 @@ import XCompat._ // substituteCo
   *
   * @define attemptreason
   *     The reason for this behaviour is that it prevents space leaks and improves error messages. If this behaviour
-  *     is not desired, use `attempt(this)` to rollback any input consumed on failure.
+  *     is not desired, use `atomic(this)` to rollback any input consumed on failure.
   *
   * @define or
   *     parses `q` if this parser fails '''without''' consuming input.
@@ -384,7 +384,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *
       * @example {{{
       *  // this has a common prefix "term" and requires backtracking
-      * val expr1 = attempt(lift2(Add, term <* char('+'), expr2)) <|> term
+      * val expr1 = atomic(lift2(Add, term <* char('+'), expr2)) <|> term
       * // common prefix factored out, and branches return a function to recombine
       * val expr2 = term <**> (char('+') *> expr2.map(y => Add(_, y)) </> (identity[Expr] _))
       * }}}
@@ -1016,9 +1016,9 @@ object Parsley {
           *
           * @example {{{
           * // this works fine, even though all of `zipped`'s parsers are strict
-          * lazy val expr = (attempt(term) <* '+', ~expr).zipped(_ + _) <|> term
+          * lazy val expr = (atomic(term) <* '+', ~expr).zipped(_ + _) <|> term
           * // in this case, however, the following would fix the problem more elegantly:
-          * lazy val expr = (attempt(term), '+' *> expr).zipped(_ + _) <|> term
+          * lazy val expr = (atomic(term), '+' *> expr).zipped(_ + _) <|> term
           * }}}
           *
           * @return the parser `p`, but guaranteed to be lazy.
@@ -1188,7 +1188,7 @@ object Parsley {
       * If the parser `p` succeeds, then `lookAhead(p)` will roll back any input consumed
       * whilst parsing `p`. If `p` fails, however, then the whole combinator fails and
       * any input consumed '''remains consumed'''. If this behaviour is not desirable,
-      * consider pairing `lookAhead` with `attempt`.
+      * consider pairing `lookAhead` with `atomic`.
       *
       * @example {{{
       * scala> import parsley.Parsley.lookAhead, parsley.character.string
@@ -1216,7 +1216,7 @@ object Parsley {
       * {{{
       * import parsley.character.{string, letterOrDigit}
       * import parsley.Parsley.notFollowedBy
-      * def keyword(kw: String): Parsley[Unit] = attempt {
+      * def keyword(kw: String): Parsley[Unit] = atomic {
       *     string(kw) *> notFollowedBy(letterOrDigit)
       * }
       * }}}
