@@ -1251,9 +1251,9 @@ object Parsley {
       * @group basic
       */
     val empty: Parsley[Nothing] = empty(0)
-    /** This combinator produces `()` without having any other effect.
+    /** This parser produces `()` without having any other effect.
       *
-      * When this combinator is ran, no input is required, nor consumed, and
+      * When this parser is ran, no input is required, nor consumed, and
       * the given value will always be successfully returned. It has no other
       * effect on the state of the parser.
       *
