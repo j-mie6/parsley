@@ -81,7 +81,7 @@ import parsley.internal.deepembedding.singletons
 object character {
     /** This combinator tries to parse a single specific character `c` from the input.
       *
-      * atomics to read the given character `c` from the input stream at the current
+      * Attempts to read the given character `c` from the input stream at the current
       * position. If this character can be found, it is consumed and returned. Otherwise,
       * no input is consumed and this combinator will fail.
       *
@@ -133,7 +133,7 @@ object character {
 
     /** This combinator tries to parse a single character from the input that matches the given predicate.
       *
-      * atomics to read a character from the input and tests it against the predicate `pred`. If a character `c`
+      * Attempts to read a character from the input and tests it against the predicate `pred`. If a character `c`
       * can be read and `pred(c)` is true, then `c` is consumed and returned. Otherwise, no input is consumed
       * and this combinator will fail.
       *
@@ -162,7 +162,7 @@ object character {
 
     /** This combinator atomics to parse a given string from the input, and fails otherwise.
       *
-      * atomics to read the given string ''completely'' from the input at the current position.
+      * Attempts to read the given string ''completely'' from the input at the current position.
       * If the string is present, then the parser succeeds, and the entire string is consumed
       * from the input. Otherwise, if the input has too few characters remaining, or not all
       * the characters matched, the parser fails. On failure, '''all''' the characters that were
@@ -525,7 +525,7 @@ object character {
       */
     val item: Parsley[Char] = satisfy(_ => true, "any character")
 
-    /** This parser tries to parse a space or tab character, and returns it if successful
+    /** This parser tries to parse a space or tab character, and returns it if successful.
       *
       * @see [[isSpace `isSpace`]]
       * @group spec
@@ -687,9 +687,9 @@ object character {
       */
     val octDigit: Parsley[Char] = satisfy(isOctDigit(_), "octal digit")
 
-    /** This parser tries to parse a bit and returns it if successful.
+    /** This parser tries to parse a binary digit (bit) and returns it if successful.
       *
-      * A bit (binary digit) is either `'0'` or `'1'`.
+      * A bit is either `'0'` or `'1'`.
       *
       * @group spec
       */
