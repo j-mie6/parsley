@@ -160,7 +160,7 @@ object character {
     // TODO: document, test
     def satisfyMap[A](pred: PartialFunction[Char, A]): Parsley[A] = satisfy(pred.isDefinedAt(_)).map(pred)
 
-    /** This combinator atomics to parse a given string from the input, and fails otherwise.
+    /** This combinator attempts to parse a given string from the input, and fails otherwise.
       *
       * Attempts to read the given string ''completely'' from the input at the current position.
       * If the string is present, then the parser succeeds, and the entire string is consumed
