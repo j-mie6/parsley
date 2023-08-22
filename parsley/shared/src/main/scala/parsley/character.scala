@@ -443,7 +443,7 @@ object character {
     /** This combinator tries to parse each of the strings `strs` (and `str0`), until one of them succeeds.
       *
       * Unlike `choice`, or more accurately `atomicChoice`, this combinator will not
-      * necessarily parse the strings in the order provided. It will de-prioritise strings that have another string
+      * necessarily parse the strings in the order provided. It will avoid strings that have another string
       * as a prefix first, so that it has ''Longest Match'' semantics. It will try to minimise backtracking
       * too, making it a much more efficient option than `atomicChoice`.
       *
@@ -477,8 +477,8 @@ object character {
       * Each argument to this combinator is a pair of a string and a parser to perform if that string can be parsed.
       * `strings(s0 -> p0, ...)` can be thought of as `atomicChoice(string(s0) *> p0, ...)`, however, the given
       * ordering of key-value pairs does not dictate the order in which the parses are tried. In particular, it
-      * will de-prioritise keys that are the prefix of another key first, so that it has ''Longest Match'' semantics.
-      * it will try to minimise backtracking too, making it a much more efficient option than `atomicChoice`.
+      * will avoid keys that are the prefix of another key first, so that it has ''Longest Match'' semantics.
+      * It will try to minimise backtracking too, making it a much more efficient option than `atomicChoice`.
       *
       * @example {{{
       * scala> import parsley.character.strings
