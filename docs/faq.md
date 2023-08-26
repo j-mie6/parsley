@@ -2,6 +2,10 @@
 
 # Frequently Asked Questions
 
+@:callout(info)
+This page is still being updated for the wiki port, so some things may be a bit broken or look a little strange.
+@:@
+
 ### What is the deal with "lazy" vs "strict" positions?
 In `parsley-4.x.y` and up, combinators are no longer totally lazy and adopt the
 idea of lazy and strict arguments. In general, all combinators have strict

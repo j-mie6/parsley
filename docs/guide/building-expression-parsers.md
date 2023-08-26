@@ -1,5 +1,9 @@
 # Building Expression Parsers
 
+@:callout(info)
+This page is still being updated for the wiki port, so some things may be a bit broken or look a little strange.
+@:@
+
 Expression parsing is a ubiquitous problem in parsing. It concerns the correct reading of
 operators and values, which are usually organised into precedence and fixities. For the
 purposes of this page a fixity will represent both the fixity _and_ the associativity: infix-left,
@@ -114,8 +118,8 @@ val sub = (x: Int, y: Int) => x - y
 
 // chain.left1[A](p: Parsley[A], op: Parsley[(A, A) => A]): Parsley[A]
 lazy val expr: Parsley[Int] = chain.left1(term, '+' #> add <|> '-' #> sub)
-val term                    = chain.left1[Int](atom, '*' #> (_ * _))
-val atom                    = '(' *> expr <* ')' <|> number
+lazy val term               = chain.left1[Int](atom, '*' #> (_ * _))
+lazy val atom               = '(' *> expr <* ')' <|> number
 ```
 
 The structure of the parser is roughly the same, however now you'll notice that `expr` and `term`

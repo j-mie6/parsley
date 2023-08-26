@@ -96,6 +96,7 @@ lazy val docs = project
       .withConfigValue(LinkConfig(apiLinks = Seq(
           ApiLinks(baseUri = "https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/latest/")
       )))
+      .withRawContent  // enable usage of raw HTML
     },
     tlSiteHelium := {
       import laika.ast._

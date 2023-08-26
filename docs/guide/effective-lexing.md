@@ -1,5 +1,9 @@
 # Effective Lexing
 
+@:callout(info)
+This page is still being updated for the wiki port, so some things may be a bit broken or look a little strange.
+@:@
+
 In the previous post, we saw the basic principles behind handling whitespace in a transparent manner.
 To remind ourselves of what we ended up lets pick up where we left off:
 

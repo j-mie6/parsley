@@ -1,5 +1,9 @@
 # Interlude 1: Building a Parser for Haskell
 
+@:callout(info)
+This page is still being updated for the wiki port, so some things may be a bit broken or look a little strange.
+@:@
+
 We've covered a lot of ground in the series so far! I think it's time to take a medium-length
 break and implement a parser for a (somewhat) simplified Haskell from scratch. Haskell is a
 deceptively simple looking language, but is actually a minefield of ambiguous parses and the
@@ -30,7 +34,7 @@ lexing.
                | '[' <pat> [',' <pat>]* ']'
 <pat>        ::= <pat-paren> [':' <pat>]
 <pat-paren>  ::= <pat-app> | <pat-naked>
-<pat-app>    ::= <pat-con> <apat>+
+<pat-app>    ::= <pat-con> <pat>+
 <pat-con>    ::= '(' ','+ ')' | <con-id> | '(' ':' ')'
 
 <guard>     ::= '|' <expr>
@@ -328,12 +332,14 @@ we'll use a `reduce` to handle these cases. In reality, providing a position to 
 nodes is quite difficult, because they are actually both delimited by `' '`, so there really isn't a
 sensible position to latch on to.
 
+@:format(html)
 <details>
 <summary>The remainder of the bridges</summary>
 <p>
+@:@
 
 ```scala
-object FunTy extends ParserBuilder2[Type_, Type, Type]
+object FunTy extends ParserBridge2[Type_, Type, Type]
 
 object Lam extends ParserBridge2[List[Pat], Expr, Lam]
 object Let extends ParserBridge2[Clause, Expr, Let]
@@ -364,9 +370,10 @@ object ParenTy extends ParserBridge1[Type, ParenTy]
 object TupleTy extends ParserBridge1[List[Type], TupleTy]
 object ListTy extends ParserBridge1[Type, ListTy]
 ```
-
+@:format(html)
 </p>
 </details>
+@:@
 
 ## Parsing
 Now it's finally time to tackle the parser itself. Remember, our lexer handles all whitespace
@@ -756,7 +763,7 @@ _inside_ the factored parentheses. The problem is that they use different bridge
 new _**bridge factory**_! Let's take a look at them:
 
 ```scala
-object NestedPatOrPatTuple extends ParserBuilder1[List[Pat], PatNaked] {
+object NestedPatOrPatTuple extends ParserBridge1[List[Pat], PatNaked] {
     def apply(ps: List[Pat]): PatNaked = ps. match {
         case List(p) => NestedPat(p)
         case ps => PatTuple(ps)
@@ -1199,9 +1206,11 @@ this parser later in the series: we've got to add better error messages, and dea
 indentation-sensitive off-side rule! Here's the full source post-optimisation of the parser, lexer,
 and AST.
 
+@:format(html)
 <details>
 <summary>The final source code</summary>
 <p>
+@:@
 
 ```scala
 import parsley.Parsley
@@ -1543,6 +1552,7 @@ object parser {
                         <|> `<literal>`)
 }
 ```
-
+@:format(html)
 </p>
 </details>
+@:@

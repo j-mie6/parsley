@@ -567,7 +567,8 @@ start there:
 // This is the regex *
 // it will perform `p` zero or more times (greedily) and collect all its results into a list
 def many[A](p: Parsley[A]): Parsley[List[A]] = ???
-def skipMany(p: Parsley[_]): Parsley[Unit] = many(p).void // ideally, it wouldn't build the list
+def skipMany(p: Parsley[_]): Parsley[Unit] =
+    many(p).void // ideally, it wouldn't build the list
 
 // This is the regex +
 // similar to many, except it requires at least 1 `p` to succeed
@@ -578,7 +579,8 @@ def skipSome(p: Parsley[_]): Parsley[Unit] = p *> skipMany(p)
 // it will either parse `p` or will return `x` otherwise
 def optionally[A](p: Parsley[_], x: A): Parsley[A] = p #> x <|> pure(x)
 def optional(p: Parsley[_]): Parsley[Unit] = optionally(p, ())
-def option[A](p: Parsley[A]): Parsley[Option[A]] = p.map(Some(_)) <|> pure(None)
+def option[A](p: Parsley[A]): Parsley[Option[A]] =
+    p.map(Some(_)) <|> pure(None)
 
 // This is the regex [^ .. ]
 // it will parse any character _not_ passed to it
@@ -708,9 +710,11 @@ Before we move on with a more fleshed out example, I want to annotate the `match
 `debug` to give you a sense of how recursive parsing works out (I marked both parentheses and the
 `matching` parser itself):
 
+@:format(html)
 <details>
 <summary>Trace of <code>onlyMatchingDebug.parse("(()(()))")</code> </summary>
 <p>
+@:@
 
 ```
 scala> onlyMatchingDebug.parse("(()(()))")
@@ -787,9 +791,10 @@ scala> onlyMatchingDebug.parse("(()(()))")
 <matching< (1, 9): (()))• Good
                         ^
 ```
-
+@:format(html)
 </p>
 </details>
+@:@
 
 Take a moment to just absorb that and be comfortable with how recursive parsing works out.
 
@@ -833,12 +838,17 @@ import parsley.implicits.zipped.Zipped2
 
 val or = (x: Boolean, y: Boolean) => x || y
 
-//      <expr>                ::=                <term>   '||' <expr>   | <term>
-lazy val expr: Parsley[Boolean] = attempt(or.lift(term <* "||", expr)) <|> term
-//      <term>                ::=         <not> '&&'   <term>                  | <not>
-lazy val term: Parsley[Boolean] = attempt((not, "&&" *> term).zipped(_ && _)) <|> not
-//      <not>                ::= '!'   <not>         | <atom>
+// <expr> ::=        <term>   '||' <expr>   | <term>
+lazy val expr: Parsley[Boolean] =
+      attempt(or.lift(term <* "||", expr)) <|> term
+
+// <term> ::= <not> '&&' <term>                  | <not>
+lazy val term: Parsley[Boolean] =
+      attempt((not, "&&" *> term).zipped(_ && _)) <|> not
+
+// <not> ::=                     '!'   <not>         | <atom>
 lazy val not: Parsley[Boolean] = "!" *> not.map(!_) <|> atom
+
 // <atom> ::= 'true'          |  'false'           |   '('   <expr>   ')'
 val atom    = "true" #> true <|> "false" #> false <|> ("(" *> expr <* ")")
 ```
@@ -874,16 +884,21 @@ import parsley.implicits.lift.Lift2
 import parsley.combinator.option
 
 val and = (y: Boolean) => (x: Boolean) => x && y
+
 // This is possible here, because false is the "zero" of ||, but more generally we'd want the other definition
 // val or = (x: Boolean, y: Option[Boolean]) => x || y.getOrElse(false)
 val or = (x: Boolean, y: Option[Boolean]) => y.foldLeft(x)(_ || _)
 
-// <expr>                     ::=        <term>       ['||'   <expr> ]
+// <expr> ::=                            <term>       ['||'   <expr> ]
 lazy val expr: Parsley[Boolean] = or.lift(term, option("||" *> expr  ))
-// <term>                     ::= <not>     ('&&'   <term>          |      epsilon      )
-lazy val term: Parsley[Boolean] =  not <**> ("&&" *> term.map(and) </> identity[Boolean])
-//      <not>                ::= '!'   <not>         | <atom>
+
+// <term> ::= <not>     ('&&'   <term>          |      epsilon      )
+lazy val term: Parsley[Boolean] = 
+               not <**> ("&&" *> term.map(and) </> identity[Boolean])
+
+// <not> ::=                     '!'   <not>         | <atom>
 lazy val not: Parsley[Boolean] = "!" *> not.map(!_) <|> atom
+
 // <atom> ::= 'true'          |  'false'           |   '('   <expr>   ')'
 val atom    = "true" #> true <|> "false" #> false <|> ("(" *> expr <* ")")
 ```

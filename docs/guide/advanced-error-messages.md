@@ -1,5 +1,9 @@
 # Advanced Error Messages
 
+@:callout(info)
+This page is still being updated for the wiki port, so some things may be a bit broken or look a little strange.
+@:@
+
 @:callout(warning)
 _This page is out-of-date, and describes the situation in `parsley-3.x.y` and not `parsley-4.0.0`. Much of the content remains the same, but some individual things may be incorrect._
 @:@

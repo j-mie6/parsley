@@ -1,5 +1,9 @@
 # The Parser Bridge Pattern
 
+@:callout(info)
+This page is still being updated for the wiki port, so some things may be a bit broken or look a little strange.
+@:@
+
 By this point, we've seen how to effectively build expression parsers, lexers, and how to handle
 whitespace in a clean way. However, something we've not touched on yet is how to encode the position
 information into any data-types produced by our parsers. In fact, the way we can build our results
@@ -590,9 +594,11 @@ the work we needed to handle the position tracking, AST node construction, white
 lexing has all been abstracted elsewhere, leaving a clean core. For completeness, here's the entire
 file:
 
+@:format(html)
 <details>
 <summary>The full completed parser</summary>
 <p>
+@:@
 
 ```scala
 import parsley.Parsley
@@ -661,10 +667,10 @@ object ast {
     object Mul extends ParserBridgePos1[Unit, (Expr, Expr) => Mul] {
         def apply(x: Unit)(pos: (Int, Int)): (Expr, Expr) => Mul = Mul(_, _)(pos)
     }
-    object Sub extends ParserBuilderPos2[Expr, Expr, Sub]
-    object Neg extends ParserBuilderPos1[Expr, Neg]
-    object Num extends ParserBuilderPos1[Int, Num]
-    object Var extends ParserBuilderPos1[String, Var]
+    object Sub extends ParserBridgePos2[Expr, Expr, Sub]
+    object Neg extends ParserBridgePos1[Expr, Neg]
+    object Num extends ParserBridgePos1[Int, Num]
+    object Var extends ParserBridgePos1[String, Var]
 }
 
 object expressions {
@@ -690,8 +696,10 @@ object expressions {
     val parser = fully(letExpr)
 }
 ```
+@:format(html)
 </p>
 </details>
+@:@
 
 As a last thought, it's worth reinforcing that the parser bridge pattern is just a guideline: it's
 free to take any shape you need it to, so experiment with what works well for your own structures.
