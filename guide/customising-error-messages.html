@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+  
+  <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="generator" content="Typelevel Laika + Helium Theme" />
+  <title>Customising Error Messages</title>
+  
+  <meta name="author" content="Jamie Willis"/>
+  
+  
+  <meta name="description" content="docs"/>
+  
+  
+  
+  
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700">
+  
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Fira+Mono:500">
+  
+  <link rel="stylesheet" type="text/css" href="../helium/icofont.min.css" />
+    <link rel="stylesheet" type="text/css" href="../helium/laika-helium.css" />
+  <script src="../helium/laika-helium.js"></script>
+  
+  
+  <script> /* for avoiding page load transitions */ </script>
+</head>
+
+  <body>
+
+    <header id="top-bar" class="light-default dark-default">
+
+  <div class="row">
+    <a id="nav-icon">
+      <i class="icofont-laika navigationMenu" title="Navigation">&#xefa2;</i>
+    </a>
+    
+    
+  </div>
+
+  <a class="icon-link svg-link" href="../"><span class="leaf" title="Home"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 128 128" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M101.39,86.21c-14.25-5.91-22.34-4.3-28.47-2.5c-6.5,1.91-12.31,8.58-12.31,8.58s-1.93-0.58-5.04-0.51 c-1.49,0.04-2.67,0.28-3.54,0.54c2.64-5.99,4.51-12.08,7.57-18.76c1.95-0.81,4.63-1.86,6.35-2.23c2.96-0.64,6.45-0.84,6.45-0.84 c0.82,0.64,2,1.39,3.69,2.23c9.56,4.78,21.5,2.16,27.35-0.16c8.13-3.23,20.21-12.95,20.21-13.69s-5.5-3.38-13.32-5.71 c-7.82-2.33-18.27-2.44-26.21,0.95c-7.28,3.11-10.67,8.58-12.54,11.86c0,0-2.9,0.46-5,0.82c-1.56,0.27-2.96,0.64-4.07,0.99 c0.22-0.4,0.45-0.81,0.68-1.21C67.77,58.61,72.83,52.5,77,48.2c5.87,0.55,17.89,0.35,27.62-8.46 c15.64-14.15,18.46-35.92,18.07-36.35S97.35,3.34,84.54,14.91c-12.19,11.01-11.97,25.4-11.4,30.69c-3.97,3.71-8.81,9.17-14.2,17.12 c-0.04-2.12-0.29-4.73-0.29-4.73s7.19-6.73,7.72-17.18c0.42-8.24-0.46-15.89-5-24.14c-3.56-6.43-6.53-8.03-7.06-7.93 c-0.93,0.19-5.33,7.06-8.03,13.63c-2.13,5.17-4.26,18.38-0.45,26.52s8.22,9.68,8.22,9.68s0.54,2.37,0.48,5.55 c-0.02,1.36-0.13,4.51-0.18,5.98c-3.57,6.32-5.96,12.07-8.23,17.22c-0.34-0.99-0.73-1.96-1.11-2.65c-1.16-2.11-1.59-2.85-1.59-2.85 s2.57-15.99-1.8-29.17C36.45,37,27.57,31.08,19.33,27.59C11.09,24.1,6.54,24.11,5.8,24.95c-1.08,1.23,1.37,4.33,1.59,11.31 c0.17,5.71,1.16,25.05,6.87,34.98s13.63,12.37,16.17,13.21c2.54,0.85,8.03,0.95,8.03,0.95s2.33,2.01,3.17,4.86 c0.39,1.31,0.78,2.92,1.09,4.27c-1.95,3.71-4.17,7-7.21,9.86c-5.01,4.71-13.09,7.94-13.09,7.94s-6.47-0.15-6.91,0.15 c-0.44,0.29-1.73,3.53,0.69,7.51c2,3.29,5.05,4.12,6.08,4.26c1.03,0.15,2.94-4.27,3.68-4.86c0.74-0.59,9.43-3.93,15.6-10.74 c2.83-3.13,5.02-6.16,6.81-9.17c1.65-1.01,4.07-2.17,6.72-2.31c2.64-0.15,4.94,1.12,4.94,1.12s2.22,9.16,12.15,13 c12.5,4.83,25.83,0.61,31.64-1.4c5.81-2,19.83-8.42,19.94-10.22C123.86,97.87,115.66,92.13,101.39,86.21z"/>
+  </g>
+</svg></span></a>
+
+  <div class="row links">
+    
+    <a class="icon-link svg-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/latest/"><span class="api" title="API"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M75,47.5c13.246,0 24,10.754 24,24c0,13.246 -10.754,24 -24,24c-13.246,0 -24,-10.754 -24,-24c0,-13.246 10.754,-24 24,-24Zm-50,-0c13.246,-0 24,10.754 24,24c0,13.246 -10.754,24 -24,24c-13.246,-0 -24,-10.754 -24,-24c0,-13.246 10.754,-24 24,-24Zm2.705,16.735l7.239,0l0.622,-4.904l-21.833,0l-0,4.904l7.589,0l0,22.067l6.383,0l-0,-22.067Zm58.076,7.265c-0,-8.757 -3.698,-14.166 -10.781,-14.166c-7.083,-0 -10.781,5.604 -10.781,14.166c0,8.757 3.698,14.166 10.781,14.166c7.083,0 10.781,-5.604 10.781,-14.166Zm-6.539,0c0,6.538 -1.128,9.496 -4.242,9.496c-2.997,0 -4.242,-2.88 -4.242,-9.496c-0,-6.616 1.206,-9.496 4.242,-9.496c3.036,-0 4.242,2.88 4.242,9.496Zm-29.242,-67c13.246,0 24,10.754 24,24c0,13.246 -10.754,24 -24,24c-13.246,0 -24,-10.754 -24,-24c0,-13.246 10.754,-24 24,-24Zm0.512,9.834c-7.122,-0 -12.609,5.098 -12.609,14.127c-0,9.263 5.215,14.205 12.532,14.205c4.164,0 7.083,-1.634 9.068,-3.658l-2.88,-3.697c-1.518,1.206 -3.153,2.413 -5.838,2.413c-3.697,-0 -6.266,-2.763 -6.266,-9.263c-0,-6.616 2.724,-9.379 6.149,-9.379c2.102,-0 3.892,0.778 5.371,1.984l3.113,-3.775c-2.257,-1.868 -4.748,-2.957 -8.64,-2.957Z"/>
+  </g>
+</svg></span></a>
+    
+    <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M49.995,1c-27.609,-0 -49.995,22.386 -49.995,50.002c-0,22.09 14.325,40.83 34.194,47.444c2.501,0.458 3.413,-1.086 3.413,-2.412c0,-1.185 -0.043,-4.331 -0.067,-8.503c-13.908,3.021 -16.843,-6.704 -16.843,-6.704c-2.274,-5.773 -5.552,-7.311 -5.552,-7.311c-4.54,-3.103 0.344,-3.042 0.344,-3.042c5.018,0.356 7.658,5.154 7.658,5.154c4.46,7.64 11.704,5.433 14.552,4.156c0.454,-3.232 1.744,-5.436 3.174,-6.685c-11.102,-1.262 -22.775,-5.553 -22.775,-24.713c-0,-5.457 1.949,-9.92 5.147,-13.416c-0.516,-1.265 -2.231,-6.348 0.488,-13.233c0,0 4.199,-1.344 13.751,5.126c3.988,-1.108 8.266,-1.663 12.518,-1.682c4.245,0.019 8.523,0.574 12.517,1.682c9.546,-6.47 13.736,-5.126 13.736,-5.126c2.728,6.885 1.013,11.968 0.497,13.233c3.204,3.496 5.141,7.959 5.141,13.416c0,19.209 -11.691,23.436 -22.83,24.673c1.795,1.544 3.394,4.595 3.394,9.26c0,6.682 -0.061,12.076 -0.061,13.715c0,1.338 0.899,2.894 3.438,2.406c19.853,-6.627 34.166,-25.354 34.166,-47.438c-0,-27.616 -22.389,-50.002 -50.005,-50.002"/>
+  </g>
+</svg></span></a>
+    
+  </div>  
+
+</header>
+    
+    <nav id="sidebar">
+
+  <div class="row">
+    
+    <a class="icon-link svg-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/latest/"><span class="api" title="API"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M75,47.5c13.246,0 24,10.754 24,24c0,13.246 -10.754,24 -24,24c-13.246,0 -24,-10.754 -24,-24c0,-13.246 10.754,-24 24,-24Zm-50,-0c13.246,-0 24,10.754 24,24c0,13.246 -10.754,24 -24,24c-13.246,-0 -24,-10.754 -24,-24c0,-13.246 10.754,-24 24,-24Zm2.705,16.735l7.239,0l0.622,-4.904l-21.833,0l-0,4.904l7.589,0l0,22.067l6.383,0l-0,-22.067Zm58.076,7.265c-0,-8.757 -3.698,-14.166 -10.781,-14.166c-7.083,-0 -10.781,5.604 -10.781,14.166c0,8.757 3.698,14.166 10.781,14.166c7.083,0 10.781,-5.604 10.781,-14.166Zm-6.539,0c0,6.538 -1.128,9.496 -4.242,9.496c-2.997,0 -4.242,-2.88 -4.242,-9.496c-0,-6.616 1.206,-9.496 4.242,-9.496c3.036,-0 4.242,2.88 4.242,9.496Zm-29.242,-67c13.246,0 24,10.754 24,24c0,13.246 -10.754,24 -24,24c-13.246,0 -24,-10.754 -24,-24c0,-13.246 10.754,-24 24,-24Zm0.512,9.834c-7.122,-0 -12.609,5.098 -12.609,14.127c-0,9.263 5.215,14.205 12.532,14.205c4.164,0 7.083,-1.634 9.068,-3.658l-2.88,-3.697c-1.518,1.206 -3.153,2.413 -5.838,2.413c-3.697,-0 -6.266,-2.763 -6.266,-9.263c-0,-6.616 2.724,-9.379 6.149,-9.379c2.102,-0 3.892,0.778 5.371,1.984l3.113,-3.775c-2.257,-1.868 -4.748,-2.957 -8.64,-2.957Z"/>
+  </g>
+</svg></span></a>
+    
+    <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M49.995,1c-27.609,-0 -49.995,22.386 -49.995,50.002c-0,22.09 14.325,40.83 34.194,47.444c2.501,0.458 3.413,-1.086 3.413,-2.412c0,-1.185 -0.043,-4.331 -0.067,-8.503c-13.908,3.021 -16.843,-6.704 -16.843,-6.704c-2.274,-5.773 -5.552,-7.311 -5.552,-7.311c-4.54,-3.103 0.344,-3.042 0.344,-3.042c5.018,0.356 7.658,5.154 7.658,5.154c4.46,7.64 11.704,5.433 14.552,4.156c0.454,-3.232 1.744,-5.436 3.174,-6.685c-11.102,-1.262 -22.775,-5.553 -22.775,-24.713c-0,-5.457 1.949,-9.92 5.147,-13.416c-0.516,-1.265 -2.231,-6.348 0.488,-13.233c0,0 4.199,-1.344 13.751,5.126c3.988,-1.108 8.266,-1.663 12.518,-1.682c4.245,0.019 8.523,0.574 12.517,1.682c9.546,-6.47 13.736,-5.126 13.736,-5.126c2.728,6.885 1.013,11.968 0.497,13.233c3.204,3.496 5.141,7.959 5.141,13.416c0,19.209 -11.691,23.436 -22.83,24.673c1.795,1.544 3.394,4.595 3.394,9.26c0,6.682 -0.061,12.076 -0.061,13.715c0,1.338 0.899,2.894 3.438,2.406c19.853,-6.627 34.166,-25.354 34.166,-47.438c-0,-27.616 -22.389,-50.002 -50.005,-50.002"/>
+  </g>
+</svg></span></a>
+    
+  </div>
+
+  <ul class="nav-list">
+    <li class="level1 nav-leaf"><a href="../downloads.html">Documentation Downloads</a></li>
+    <li class="level1 nav-leaf"><a href="../">Home</a></li>
+    <li class="level1 nav-leaf"><a href="../faq.html">FAQ</a></li>
+    <li class="level1 nav-leaf"><a href="../cheatsheet.html">Cheatsheet</a></li>
+    <li class="level1 nav-leaf"><a href="../api.html">Understanding the API</a></li>
+    <li class="level1 nav-header">Guide to Parser Combinators</li>
+    <li class="level2 nav-leaf"><a href="roadmap.html">Roadmap</a></li>
+    <li class="level2 nav-leaf"><a href="basics-of-combinators.html">Basics of Combinators</a></li>
+    <li class="level2 nav-leaf"><a href="building-expression-parsers.html">Building Expression Parsers</a></li>
+    <li class="level2 nav-leaf"><a href="effective-whitespace-parsing.html">Effective Whitespace Parsing</a></li>
+    <li class="level2 nav-leaf"><a href="effective-lexing.html">Effective Lexing</a></li>
+    <li class="level2 nav-leaf"><a href="parser-bridge-pattern.html">The Parser Bridge Pattern</a></li>
+    <li class="level2 nav-leaf"><a href="interlude-1-haskell.html">Interlude 1: Building a Parser for Haskell</a></li>
+    <li class="level2 active nav-leaf"><a href="#">Customising Error Messages</a></li>
+    <li class="level2 nav-leaf"><a href="advanced-error-messages.html">Advanced Error Messages</a></li>
+    <li class="level1 nav-header">Related Projects</li>
+    <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/parsley-cats">parsley-cats</a></li>
+  </ul>
+
+</nav>
+
+    <div id="container">
+
+      
+<nav id="page-nav">
+  <p class="header"><a href="#">Customising Error Messages</a></p>
+
+  <ul class="nav-list">
+    <li class="level1 nav-node"><a href="#adjusting-error-content">Adjusting Error Content</a></li>
+    <li class="level2 nav-leaf"><a href="#using-label">Using <code>label</code></a></li>
+    <li class="level2 nav-leaf"><a href="#wrapping-up-the-expression-example">Wrapping up the Expression Example</a></li>
+    <li class="level2 nav-leaf"><a href="#using-explain">Using <code>explain</code></a></li>
+    <li class="level1 nav-node"><a href="#adjusting-error-formatting">Adjusting Error Formatting</a></li>
+    <li class="level2 nav-leaf"><a href="#example-unit-tests">Example: Unit Tests</a></li>
+  </ul>
+
+  <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/master/docs/guide/customising-error-messages.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
+</nav>
+
+
+      <main class="content">
+
+        <h1 id="customising-error-messages" class="title">Customising Error Messages</h1>
+        <div class="callout info">
+          <i class="icofont-laika info">&#xef4e;</i>
+          <p>This page is still being updated for the wiki port, so some things may be a bit broken or look a little strange.</p>
+        </div>
+        <p>Previously, in <a href="effective-whitespace-parsing.html#effective-whitespace-parsing">Effective Whitespace Parsing</a>
+        we saw how we could extend our parsers to handle whitespace. In this wiki post we&#39;ll finally address
+        error messages. Thoughout all the other entries in this series I have neglected to talk about error
+        messages at all, but they are a very important part of a parser. Recently, Parsley 2.6.1 overhauled
+        the entire way error messages work and what they look like, and Parsley 3.0.0 added the <code>ErrorBuilder</code>
+        mechanism, so I will be targeting 3.0.0 and above for this post.</p>
+        
+        <h1 id="adjusting-error-content" class="section"><a class="anchor-link left" href="#adjusting-error-content"><i class="icofont-laika link">&#xef71;</i></a>Adjusting Error Content</h1>
+        <p>I&#39;m going to start with the parser from last time, but before we introduced the <code>Lexer</code> class. The
+        reason for this is that the <code>Lexer</code> functionality has error messages baked into it, which means this
+        post would be even shorter! It&#39;s not perfect, however, but it does make some good error messages for
+        your basic lexemes. There is nothing stopping you from using the techniques here to change those
+        messages if you wish though. Simply put: the original grammar has more room for exploration for us.</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>, </span><span class="type-name">Parsley</span><span>.</span><span class="identifier">attempt</span><span>
+
+</span><span class="keyword">object</span><span> </span><span class="identifier">lexer</span><span> {
+    </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">digit</span><span>, </span><span class="identifier">whitespace</span><span>, </span><span class="identifier">string</span><span>, </span><span class="identifier">item</span><span>, </span><span class="identifier">endOfLine</span><span>}
+    </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.{</span><span class="identifier">manyUntil</span><span>, </span><span class="identifier">skipMany</span><span>, </span><span class="identifier">eof</span><span>}
+
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">symbol</span><span>(</span><span class="identifier">str</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="identifier">attempt</span><span>(</span><span class="identifier">string</span><span>(</span><span class="identifier">str</span><span>))
+    </span><span class="keyword">private</span><span> </span><span class="keyword">implicit</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">implicitSymbol</span><span>(</span><span class="identifier">tok</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="identifier">symbol</span><span>(</span><span class="identifier">tok</span><span>)
+
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">lineComment</span><span> = </span><span class="string-literal">&quot;//&quot;</span><span> *&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">endOfLine</span><span>)
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">multiComment</span><span> = </span><span class="string-literal">&quot;/*&quot;</span><span> *&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="string-literal">&quot;*/&quot;</span><span>)
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">comment</span><span> = </span><span class="identifier">lineComment</span><span> &lt;|&gt; </span><span class="identifier">multiComment</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">skipWhitespace</span><span> = </span><span class="identifier">skipMany</span><span>(</span><span class="identifier">whitespace</span><span> &lt;|&gt; </span><span class="identifier">comment</span><span>)
+
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">lexeme</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">p</span><span> &lt;* </span><span class="identifier">skipWhitespace</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">token</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">attempt</span><span>(</span><span class="identifier">p</span><span>))
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">fully</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">skipWhitespace</span><span> *&gt; </span><span class="identifier">p</span><span> &lt;* </span><span class="identifier">eof</span><span>
+
+    </span><span class="keyword">val</span><span> </span><span class="identifier">number</span><span> = </span><span class="identifier">token</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">foldLeft1</span><span>[</span><span class="type-name">Int</span><span>](</span><span class="number-literal">0</span><span>)((</span><span class="identifier">n</span><span>, </span><span class="identifier">d</span><span>) =&gt; </span><span class="identifier">n</span><span> * </span><span class="number-literal">10</span><span> + </span><span class="identifier">d</span><span>.</span><span class="identifier">asDigit</span><span>))
+
+    </span><span class="keyword">object</span><span> </span><span class="identifier">implicits</span><span> {
+        </span><span class="keyword">implicit</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">implicitToken</span><span>(</span><span class="identifier">s</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">symbol</span><span>(</span><span class="identifier">s</span><span>))
+    }
+}
+
+</span><span class="keyword">object</span><span> </span><span class="identifier">expressions</span><span> {
+    </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">expr</span><span>.{</span><span class="identifier">precedence</span><span>, </span><span class="type-name">Ops</span><span>, </span><span class="type-name">InfixL</span><span>}
+
+    </span><span class="keyword">import</span><span> </span><span class="identifier">lexer</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">implicitToken</span><span>
+    </span><span class="keyword">import</span><span> </span><span class="identifier">lexer</span><span>.{</span><span class="identifier">number</span><span>, </span><span class="identifier">fully</span><span>}
+
+    </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">atom</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Int</span><span>] = </span><span class="string-literal">&quot;(&quot;</span><span> *&gt; </span><span class="identifier">expr</span><span> &lt;* </span><span class="string-literal">&quot;)&quot;</span><span> &lt;|&gt; </span><span class="identifier">number</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span> = </span><span class="identifier">precedence</span><span>[</span><span class="type-name">Int</span><span>](</span><span class="identifier">atom</span><span>)(
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> #&gt; (</span><span class="identifier">_</span><span> * </span><span class="identifier">_</span><span>)),
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> #&gt; (</span><span class="identifier">_</span><span> + </span><span class="identifier">_</span><span>), </span><span class="string-literal">&quot;-&quot;</span><span> #&gt; (</span><span class="identifier">_</span><span> - </span><span class="identifier">_</span><span>)))
+
+    </span><span class="keyword">val</span><span> </span><span class="identifier">parser</span><span> = </span><span class="identifier">fully</span><span>(</span><span class="identifier">expr</span><span>)
+}</span></code></pre>
+        <p>So, before, we saw how this ran on succesful cases. Let&#39;s now start to see how it works on <em>bad</em>
+        input.</p>
+        <pre><code>expressions.parser.parse(&quot;5d&quot;)
+(line 1, column 2):
+  unexpected &quot;d&quot;
+  expected &quot;*&quot;, &quot;+&quot;, &quot;-&quot;, &quot;/*&quot;, &quot;//&quot;, digit, end of input, or whitespace
+  &gt;5d
+    ^</code></pre>
+        <p>Let&#39;s start by breaking this error down first and understanding what the components of it are and
+        why this information has appeared. The first line of the error reports the line and column number
+        of the message (in Parsley hard tabs are treated as aligning to the nearest 4th column). If you are
+        using <code>parseFromFile</code> then this will also display the filename. The last two lines always show the
+        location at which the error occured. This is going to be <em>the point</em> at which the error that
+        eventually ended up being reported occured, <em>not</em> necessarily where the parser ended up. This can
+        be improved in the future. Next you can see the <em>unexpected</em> and <em>expected</em> clauses. The unexpected
+        &quot;d&quot; here is telling us roughly what we already knew. The expected clause on the other hand tells us
+        all the things we could have used to fix our problem. There is definitely a lot of noise here though.</p>
+        <p>First let&#39;s just make sure we understand where each of these alternatives came from. Firstly, it&#39;s
+        clear that since the last thing we read was a 5, a good way of carrying on would be reading another
+        digit to make the number bigger. We could also read a space or start a comment as a way of making
+        more progress too. Of course, another way we could make progress would have been using one of the
+        operators and in the process continued our expression. Finally we could simply remove the d and it
+        would run perfectly fine. Notice how <code>(</code> and <code>)</code> are not suggested as alternatives despite appearing
+        in the parser: <code>5(</code> or <code>5)</code> makes no sense either. As another small example, let&#39;s see what happens
+        to the error if we add a space between the 5 and the d.</p>
+        <pre><code>expressions.parser.parse(&quot;5 d&quot;)
+(line 1, column 3):
+  unexpected &quot;d&quot;
+  expected &quot;*&quot;, &quot;+&quot;, &quot;-&quot;, &quot;/*&quot;, &quot;//&quot;, end of input, or whitespace
+  &gt;5 d
+     ^</code></pre>
+        <p>Neat, so this time round <code>digit</code> is no longer a valid alternative: clearly the number has come to
+        an end because we wrote a space. But the other possibilities from before are still valid. So, how
+        can we start making improvements? There are seven combinators available to us for this purpose:</p>
+        <ul>
+          <li><code>.label</code> or <code>?</code> is the most common combinator you&#39;ll be using. It influences the way an <em>expected</em>
+          behaves for the parser it annotates. Importantly, if the parser it is annotating failed <em>and</em>
+          consumed input in the process, then the label will not be applied. We&#39;ll see an example of why
+          this is useful later.</li>
+          <li><code>fail</code> is useful, but a bit of a sledgehammer. When <code>fail</code> (or any of its derivative combinators
+          like <code>guardAgainst</code>) is used, it removes the unexpected and expected information and just replaces it
+          with a given message. If there are multiple <code>fail</code>s that appear in the same message, they are
+          each written on a newline.</li>
+          <li><code>unexpected</code> is the least commonly used combinator in practice. When it is used, it will,
+          like <code>fail</code>, immediately fails except it reports a custom unexpected message. Currently, only
+          one unexpected message can be present in the error at once, so this is not very useful unless you
+          really know what you are doing.</li>
+          <li><code>.hide</code> is a method that removes the output of a parser from the error, it is essentially a nice
+          name for <code>.label(&quot;&quot;)</code></li>
+          <li><code>.explain</code> is a method that can provide <em>reasons</em> for a parser&#39;s failure. If the parser can recover
+          and move onto other alternatives, the reasons may be lost. But they can still be quite nice when
+          used in the correct place!</li>
+          <li><code>amend</code> and <code>entrench</code> are a pair of combinators that work together to correct the position of
+          some error messages. These are quite rare in practice.</li>
+        </ul>
+        <p>All of these can be found in the <code>parsley.errors.combinator</code> module.</p>
+        
+        <h2 id="using-label" class="section"><a class="anchor-link left" href="#using-label"><i class="icofont-laika link">&#xef71;</i></a>Using <code>label</code></h2>
+        <p>From this section, we are only going to be using <code>label</code> and <code>hide</code>, as they are by far the most useful
+        and effective of the five methods. That being said, <code>explain</code> can be <em>very</em> useful, but we&#39;ll find
+        there are no compelling use-cases for it in this example. Let&#39;s start off by giving a label to
+        <code>comment</code> and see what happens:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">_</span><span>
+...
+</span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">comment</span><span> = (</span><span class="identifier">lineComment</span><span> &lt;|&gt; </span><span class="identifier">multiComment</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;comment&quot;</span><span>)
+...</span></code></pre>
+        <p>Now let&#39;s run our parser from before:</p>
+        <pre><code>expressions.parser.parse(&quot;5d&quot;)
+(line 1, column 2):
+  unexpected &quot;d&quot;
+  expected &quot;*&quot;, &quot;+&quot;, &quot;-&quot;, comment, digit, end of input, or whitespace
+  &gt;5d
+    ^</code></pre>
+        <p>Nice! So, if you compare the two, you&#39;ll notice that <code>&quot;/*&quot;</code> and <code>&quot;//&quot;</code> both disappeared from the
+        message, but <code>comment</code> was added. You can tell when <code>label</code> is being used because there are not
+        quotes surrounding the items. Knowing this, you can probably guess that <code>digit</code>, <code>eof</code>, and
+        <code>whitespace</code> all have error labels of their own.</p>
+        
+        <h3 id="using-hide-to-trim-away-junk" class="section"><a class="anchor-link left" href="#using-hide-to-trim-away-junk"><i class="icofont-laika link">&#xef71;</i></a>Using <code>hide</code> to trim away junk</h3>
+        <p>This is a good start, but normally we might say
+        that whitespace suggestions in an error message are normally just noise: of course we expect to be
+        able to write whitespace in places, it&#39;s not <em>usually</em> the solution to someone&#39;s problem. This makes
+        it a good candidate for the <code>hide</code> combinator:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">_</span><span>
+...
+</span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">skipWhitespace</span><span> = </span><span class="identifier">skipMany</span><span>(</span><span class="identifier">whitespace</span><span> &lt;|&gt; </span><span class="identifier">comment</span><span>).</span><span class="identifier">hide</span><span>
+...</span></code></pre>
+        <p>Now let&#39;s check again:</p>
+        <pre><code>expressions.parser.parse(&quot;5d&quot;)
+(line 1, column 2):
+  unexpected &quot;d&quot;
+  expected &quot;*&quot;, &quot;+&quot;, &quot;-&quot;, digit, or end of input
+  &gt;5d
+    ^</code></pre>
+        <p>Great! The <code>hide</code> combinator has removed the information from the error message, and now it&#39;s
+        looking a lot cleaner. But what if we started writing a comment, what would happen then?</p>
+        <pre><code>expressions.parser.parse(&quot;5/*&quot;)
+(line 1, column 4):
+  unexpected end of input
+  expected &quot;*/&quot; or any character
+  &gt;5/*
+      ^</code></pre>
+        <p>So, as I mentioned earlier, <code>hide</code> is just a <code>label</code>, and <code>label</code> will not relabel something if it
+        fails and consumes input. That means, by opening our comment but not <em>finishing</em> it, we can see
+        some different suggestions. In this case, end of input is not allowed, and any character will work
+        to extend the comment, but clearly <code>*/</code> is a way to properly end it. Let&#39;s add a label to that,
+        however, to make it a bit friendlier:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span>...
+</span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">lineComment</span><span> = </span><span class="string-literal">&quot;//&quot;</span><span> *&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">endOfLine</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;end of comment&quot;</span><span>))
+</span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">multiComment</span><span> = </span><span class="string-literal">&quot;/*&quot;</span><span> *&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="string-literal">&quot;*/&quot;</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;end of comment&quot;</span><span>))
+...</span></code></pre>
+        <p>Now we get a more informative error message of:</p>
+        <pre><code>expressions.parser.parse(&quot;5/*&quot;)
+(line 1, column 4):
+  unexpected end of input
+  expected any character or end of comment
+  &gt;5/*
+      ^</code></pre>
+        <p>Great! Now let&#39;s turn our attention back to expressions and not whitespace.</p>
+        
+        <h3 id="labelling-our-numbers" class="section"><a class="anchor-link left" href="#labelling-our-numbers"><i class="icofont-laika link">&#xef71;</i></a>Labelling our numbers</h3>
+        <p>Let&#39;s take a look at a very simple bad input and see how we can improve on it:</p>
+        <pre><code>expressions.parser.parse(&quot;d&quot;)
+(line 1, column 1):
+  unexpected &quot;d&quot;
+  expected &quot;(&quot; or digit
+  &gt;d
+   ^</code></pre>
+        <p>So this time, we can see two possible ways of resolving this error are opening brackets, or a
+        <code>digit</code>. Now <code>digit</code> is really a poor name here, what we really mean is <code>integer</code> or <code>number</code>:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span>...
+</span><span class="keyword">val</span><span> </span><span class="identifier">number</span><span> = </span><span class="identifier">token</span><span>(</span><span class="identifier">digit</span><span>.</span><span class="identifier">foldLeft1</span><span>[</span><span class="type-name">Int</span><span>](</span><span class="number-literal">0</span><span>)((</span><span class="identifier">n</span><span>, </span><span class="identifier">d</span><span>) =&gt; </span><span class="identifier">n</span><span> * </span><span class="number-literal">10</span><span> + </span><span class="identifier">d</span><span>.</span><span class="identifier">asDigit</span><span>)).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;number&quot;</span><span>)
+...</span></code></pre>
+        <p>Now we get, the following, nicer error message:</p>
+        <pre><code>expressions.parser.parse(&quot;d&quot;)
+(line 1, column 1):
+  unexpected &quot;d&quot;
+  expected &quot;(&quot; or number
+  &gt;d
+   ^
+
+expressions.parser.parse(&quot;5x&quot;)
+(line 1, column 2):
+  unexpected &quot;x&quot;
+  expected &quot;*&quot;, &quot;+&quot;, &quot;-&quot;, digit, or end of input
+  &gt;5x
+    ^</code></pre>
+        <p>But notice in the second error message, again we have been given <code>digit</code> and not <code>number</code> as our
+        alternative. This is good, once we&#39;ve started reading a number by reading <code>5</code> it would be
+        inappropriate to suggest a number as a good next step. But <code>digit</code> here is not particularly descriptive
+        and we can do better still:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span>...
+</span><span class="keyword">val</span><span> </span><span class="identifier">number</span><span> =
+    </span><span class="identifier">token</span><span>(
+        </span><span class="identifier">digit</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;end of number&quot;</span><span>).</span><span class="identifier">foldLeft1</span><span>[</span><span class="type-name">Int</span><span>](</span><span class="number-literal">0</span><span>)((</span><span class="identifier">n</span><span>, </span><span class="identifier">d</span><span>) =&gt; </span><span class="identifier">n</span><span> * </span><span class="number-literal">10</span><span> + </span><span class="identifier">d</span><span>.</span><span class="identifier">asDigit</span><span>)
+    ).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;number&quot;</span><span>)
+...</span></code></pre>
+        <p>This gives us, again, a much nicer message:</p>
+        <pre><code>expressions.parser.parse(&quot;5x&quot;)
+(line 1, column 2):
+  unexpected &quot;x&quot;
+  expected &quot;*&quot;, &quot;+&quot;, &quot;-&quot;, end of input, or end of number
+  &gt;5x
+    ^</code></pre>
+        
+        <h3 id="merging-multiple-labels" class="section"><a class="anchor-link left" href="#merging-multiple-labels"><i class="icofont-laika link">&#xef71;</i></a>Merging multiple labels</h3>
+        <p>With an example grammar as small as this, I think we are almost done here! The last thing we could
+        improve is the repetition of <code>&quot;*&quot;</code>, <code>&quot;+&quot;</code>, and <code>&quot;-&quot;</code>. Really, we know that there is nothing special
+        about any of them individually, so we could more concisely replace this them with <code>arithmetic operator</code>,
+        or since we only have arithmetic operators here <code>operator</code> will do. we don&#39;t need to do anything
+        special here, when multiple labels are encountered with the same name, they will only appear once!</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span>...
+</span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span> = </span><span class="identifier">precedence</span><span>[</span><span class="type-name">Int</span><span>](</span><span class="identifier">atom</span><span>)(
+  </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;operator&quot;</span><span>) #&gt; (</span><span class="identifier">_</span><span> * </span><span class="identifier">_</span><span>)),
+  </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;operator&quot;</span><span>) #&gt; (</span><span class="identifier">_</span><span> + </span><span class="identifier">_</span><span>), </span><span class="string-literal">&quot;-&quot;</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;operator&quot;</span><span>) #&gt; (</span><span class="identifier">_</span><span> - </span><span class="identifier">_</span><span>)))
+...</span></code></pre>
+        <p>Now we arrive at our final form:</p>
+        <pre><code>expressions.parser.parse(&quot;5x&quot;)
+(line 1, column 2):
+  unexpected &quot;x&quot;
+  expected end of input, end of number, or operator
+  &gt;5x
+    ^
+
+expressions.parser.parse( 67 + )
+(line 1, column 7):
+  unexpected end of input
+  expected &quot;(&quot; or number
+  &gt; 67 +
+         ^</code></pre>
+        <p>Great! Now obviously you could take this even further and make <code>&quot;(&quot;</code> become <code>opening parenthesis</code>
+        or something, but I don&#39;t really feel that adds much.</p>
+        
+        <h2 id="wrapping-up-the-expression-example" class="section"><a class="anchor-link left" href="#wrapping-up-the-expression-example"><i class="icofont-laika link">&#xef71;</i></a>Wrapping up the Expression Example</h2>
+        <p>Hopefully, you get a sense of how much of an
+        art form and subjective writing good error messages is, but Parsley provides decent error messages
+        out of the box (now based on <code>megaparsec</code>&#39;s error messages from Haskell). It doesn&#39;t have to be hard
+        though, so just play around and see what feels right. I would say, however, there is an interesting
+        phenomenon in the programming languages and compilers community:
+        <strong>compiler writers write error messages that are tailored for compiler writers</strong>. It&#39;s an
+        interesting problem when you think about it: the person who writes error messages is a compiler
+        expert, and so they often rely on the concepts they understand. That means they are more prone to
+        including the names of stuff in the grammar to describe syntax problems, and so on. While this is
+        great for experts and compiler writers, it seemingly forgets people who are new to programming or
+        this &quot;grammar&quot; in particular. That can make error messages needlessly intimidating for the average
+        Joe. The take home from this is to try and avoid labelling <code>expr</code> with <code>.label(&quot;expression&quot;)</code>,
+        because that just ends up making something that is no longer useful or informative:</p>
+        <pre><code>expressions.parser.parse(&quot;&quot;)
+(line 1, column 1):
+  unexpected end of input
+  expected expression
+  &gt;
+   ^</code></pre>
+        <p>What use is that to anybody? The same idea applies to statements, and various other abstract
+        grammatical notions. Something like
+        <code>&quot;expected if statement, while loop, for loop, variable declaration, or assignment&quot;</code> is so much more
+        meaningful than <code>&quot;expected statement&quot;</code>. I would ask that you keep that in mind 🙂. To conclude our
+        work with this parser, here is the full code of the finished product. Obviously, with the
+        <code>Lexer</code>, some of this work is already done, but you can still apply the lessons learnt here to the
+        wider parser!</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>, </span><span class="type-name">Parsley</span><span>.</span><span class="identifier">attempt</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">_</span><span>
+
+</span><span class="keyword">object</span><span> </span><span class="identifier">lexer</span><span> {
+    </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.{</span><span class="identifier">digit</span><span>, </span><span class="identifier">whitespace</span><span>, </span><span class="identifier">string</span><span>, </span><span class="identifier">item</span><span>, </span><span class="identifier">endOfLine</span><span>}
+    </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.{</span><span class="identifier">manyUntil</span><span>, </span><span class="identifier">skipMany</span><span>, </span><span class="identifier">eof</span><span>}
+
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">symbol</span><span>(</span><span class="identifier">str</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="identifier">attempt</span><span>(</span><span class="identifier">string</span><span>(</span><span class="identifier">str</span><span>))
+    </span><span class="keyword">private</span><span> </span><span class="keyword">implicit</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">implicitSymbol</span><span>(</span><span class="identifier">s</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="identifier">symbol</span><span>(</span><span class="identifier">s</span><span>)
+
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">lineComment</span><span> = </span><span class="string-literal">&quot;//&quot;</span><span> *&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="identifier">endOfLine</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;end of comment&quot;</span><span>))
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">multiComment</span><span> = </span><span class="string-literal">&quot;/*&quot;</span><span> *&gt; </span><span class="identifier">manyUntil</span><span>(</span><span class="identifier">item</span><span>, </span><span class="string-literal">&quot;*/&quot;</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;end of comment&quot;</span><span>))
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">comment</span><span> = (</span><span class="identifier">lineComment</span><span> &lt;|&gt; </span><span class="identifier">multiComment</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;comment&quot;</span><span>)
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">skipWhitespace</span><span> = </span><span class="identifier">skipMany</span><span>(</span><span class="identifier">whitespace</span><span> &lt;|&gt; </span><span class="identifier">comment</span><span>).</span><span class="identifier">hide</span><span>
+
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">lexeme</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">p</span><span> &lt;* </span><span class="identifier">skipWhitespace</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">token</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">attempt</span><span>(</span><span class="identifier">p</span><span>))
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">fully</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">skipWhitespace</span><span> *&gt; </span><span class="identifier">p</span><span> &lt;* </span><span class="identifier">eof</span><span>
+
+    </span><span class="keyword">val</span><span> </span><span class="identifier">number</span><span> =
+        </span><span class="identifier">token</span><span>(
+            </span><span class="identifier">digit</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;end of number&quot;</span><span>).</span><span class="identifier">foldLeft1</span><span>[</span><span class="type-name">Int</span><span>](</span><span class="number-literal">0</span><span>)((</span><span class="identifier">n</span><span>, </span><span class="identifier">d</span><span>) =&gt; </span><span class="identifier">n</span><span> * </span><span class="number-literal">10</span><span> + </span><span class="identifier">d</span><span>.</span><span class="identifier">asDigit</span><span>)
+        ).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;number&quot;</span><span>)
+
+    </span><span class="keyword">object</span><span> </span><span class="identifier">implicits</span><span> {
+        </span><span class="keyword">implicit</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">implicitToken</span><span>(</span><span class="identifier">s</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">symbol</span><span>(</span><span class="identifier">s</span><span>))
+    }
+}
+
+</span><span class="keyword">object</span><span> </span><span class="identifier">expressions</span><span> {
+    </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">expr</span><span>.{</span><span class="identifier">precedence</span><span>, </span><span class="type-name">Ops</span><span>, </span><span class="type-name">InfixL</span><span>}
+
+    </span><span class="keyword">import</span><span> </span><span class="identifier">lexer</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">implicitToken</span><span>
+    </span><span class="keyword">import</span><span> </span><span class="identifier">lexer</span><span>.{</span><span class="identifier">number</span><span>, </span><span class="identifier">fully</span><span>}
+
+    </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">atom</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Int</span><span>] = </span><span class="string-literal">&quot;(&quot;</span><span> *&gt; </span><span class="identifier">expr</span><span> &lt;* </span><span class="string-literal">&quot;)&quot;</span><span> &lt;|&gt; </span><span class="identifier">number</span><span>
+    </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span> = </span><span class="identifier">precedence</span><span>[</span><span class="type-name">Int</span><span>](</span><span class="identifier">atom</span><span>)(
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;operator&quot;</span><span>) #&gt; (</span><span class="identifier">_</span><span> * </span><span class="identifier">_</span><span>)),
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;operator&quot;</span><span>) #&gt; (</span><span class="identifier">_</span><span> + </span><span class="identifier">_</span><span>), </span><span class="string-literal">&quot;-&quot;</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;operator&quot;</span><span>) #&gt; (</span><span class="identifier">_</span><span> - </span><span class="identifier">_</span><span>)))
+
+    </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="identifier">fully</span><span>(</span><span class="identifier">expr</span><span>)
+}</span></code></pre>
+        
+        <h2 id="using-explain" class="section"><a class="anchor-link left" href="#using-explain"><i class="icofont-laika link">&#xef71;</i></a>Using <code>explain</code></h2>
+        <p>So far, we&#39;ve seen how <code>label</code> can be used to clean up error messages and make them much more
+        presentable and informative. Another way of achieving this is by using the <code>explain</code> combinator.
+        Unlike <code>label</code> this is much more freeform and when used properly can be <em>incredibly</em> effective.
+        Essentially, with <code>explain</code> you are leveraging your own knowledge about the context you are in
+        to provide a much more tailored and hand-crafted message to the user. It can be used to both provide
+        an additional hint in an otherwise poor message or to enrich the error with suggestions for how the
+        error might be fixed.</p>
+        <p>Using it is just as easy as using <code>label</code> and you can&#39;t really go wrong with it: other than being a
+        bit... too descriptive. Again, the <code>Lexer</code> class already makes use of this technique to improve its
+        own error messages, but let&#39;s suppose we wanted to write some of its functionality ourselves. Let&#39;s
+        cook up a string literal parser, supporting some (limited) escape sequences.</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">charLift</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">combinator</span><span>.{</span><span class="identifier">many</span><span>, </span><span class="identifier">between</span><span>, </span><span class="identifier">choice</span><span>}
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">_</span><span>
+
+</span><span class="keyword">val</span><span> </span><span class="identifier">escapeChar</span><span> =
+    </span><span class="identifier">choice</span><span>(</span><span class="char-literal">&#39;n&#39;</span><span> #&gt; </span><span class="char-literal">&#39;</span><span class="escape-sequence">\n</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;t&#39;</span><span> #&gt; </span><span class="char-literal">&#39;</span><span class="escape-sequence">\t</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span> #&gt; </span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span> #&gt; </span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span>)
+</span><span class="keyword">val</span><span> </span><span class="identifier">stringLetter</span><span> = </span><span class="identifier">noneOf</span><span>(</span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;string character&quot;</span><span>) &lt;|&gt; (</span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span> ~&gt; </span><span class="identifier">escapeChar</span><span>).</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;escape character&quot;</span><span>)
+
+</span><span class="keyword">val</span><span> </span><span class="identifier">stringLiteral</span><span> =
+    </span><span class="identifier">between</span><span>(</span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span>,
+            </span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span>.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;end of string&quot;</span><span>),
+            </span><span class="identifier">many</span><span>(</span><span class="identifier">stringLetter</span><span>))
+        .</span><span class="identifier">map</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">mkString</span><span>)
+        .</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;string&quot;</span><span>)</span></code></pre>
+        <p>Let&#39;s start with something like this. If we run a couple of examples, we can see where it performs
+        well and where it performs less well:</p>
+        <pre><code>stringLiteral.parse(&quot;&quot;)
+(line 1, column 1):
+  unexpected end of input
+  expected string
+  &gt;
+   ^
+
+stringLiteral.parse(&quot;\&quot;&quot;)
+(line 1, column 2):
+  unexpected end of input
+  expected end of string, escape character, or string character
+  &gt;&quot;
+    ^
+
+stringLiteral.parse(&quot;\&quot;\\a&quot;)
+(line 1, column 3):
+  unexpected &quot;a&quot;
+  expected &quot;&quot;&quot;, &quot;\&quot;, &quot;n&quot;, or &quot;t&quot;
+  &gt;&quot;\a
+     ^</code></pre>
+        <p>So, for the first two cases, the error message performs quite well. But the last message is a bit
+        noisy. One possible approach to improve this could be to label each alternative to give them a
+        slightly clearer name, which would result in something like:</p>
+        <pre><code>(line 1, column 3):
+  unexpected &quot;a&quot;
+  expected \&quot;, \\, \n, or \t
+  &gt;&quot;\a
+     ^</code></pre>
+        <p>This is <em>better</em>, but a bit misleading, we don&#39;t expect a <code>\</code>! Now, you could instead opt to remove
+        the backslashes, but then that doesn&#39;t give much information about why these things are expected.
+        Another option would be to label all alternatives with some common name:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">escapeChar</span><span> =
+    </span><span class="identifier">choice</span><span>(</span><span class="char-literal">&#39;n&#39;</span><span> #&gt; </span><span class="char-literal">&#39;</span><span class="escape-sequence">\n</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;t&#39;</span><span> #&gt; </span><span class="char-literal">&#39;</span><span class="escape-sequence">\t</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span> #&gt; </span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span> #&gt; </span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span>)
+        .</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;end of escape sequence&quot;</span><span>)</span></code></pre>
+        <p>Which would yield</p>
+        <pre><code>(line 1, column 3):
+  unexpected &quot;a&quot;
+  expected end of escape sequence
+  &gt;&quot;\a
+     ^</code></pre>
+        <p>This is a bit more helpful, in that it does provide a good name to what we expected. But at the same
+        time it doesn&#39;t help the user to understand how to fix their problem: &quot;what is an escape sequence&quot;.
+        This is similar to the &quot;statement&quot; problem I described above. In this case, (and indeed in the
+        &quot;statement&quot; case), we can add an <code>explain</code> to help the user understand what we mean:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">escapeChar</span><span> =
+    </span><span class="identifier">choice</span><span>(</span><span class="char-literal">&#39;n&#39;</span><span> #&gt; </span><span class="char-literal">&#39;</span><span class="escape-sequence">\n</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;t&#39;</span><span> #&gt; </span><span class="char-literal">&#39;</span><span class="escape-sequence">\t</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span> #&gt; </span><span class="char-literal">&#39;</span><span class="escape-sequence">\&quot;</span><span class="char-literal">&#39;</span><span>, </span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span> #&gt; </span><span class="char-literal">&#39;</span><span class="escape-sequence">\\</span><span class="char-literal">&#39;</span><span>)
+        .</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;end of escape sequence&quot;</span><span>)
+        .</span><span class="identifier">explain</span><span>(</span><span class="string-literal">&quot;valid escape sequences include </span><span class="escape-sequence">\\</span><span class="string-literal">n, </span><span class="escape-sequence">\\</span><span class="string-literal">t, </span><span class="escape-sequence">\\\&quot;</span><span class="string-literal">, or </span><span class="escape-sequence">\\\\</span><span class="string-literal">&quot;</span><span>)</span></code></pre>
+        <p>The <code>explain</code> combinator annotates failure messages with an additional reason. These can stack, and
+        are displayed each on their own line in the error message. With this in place, let&#39;s see what the
+        new error message is:</p>
+        <pre><code>(line 1, column 3):
+  unexpected &quot;a&quot;
+  expected end of escape sequence
+  valid escape sequences include \n, \t, \&quot;, or \\
+  &gt;&quot;\a
+     ^</code></pre>
+        <p>This time, we keep the name of the expected token clear and concise, but we <em>also</em> help the user to
+        understand what this actually means. The error isn&#39;t misleading in the sense that we aren&#39;t
+        suggesting that a <code>\n</code> would fix the parse error <em>after</em> the <code>\</code> we already wrote, but have have
+        said that we expect the end of the escape as well as demonstrated what that would look like. This
+        is great!</p>
+        <p>There isn&#39;t much more to say about the <code>explain</code> combinator than that really. Hopefully this already
+        gives you a sense of how useful it can be. Like I mentioned before, the poor error problem that
+        compiler writers often suffer from can be nicely solved using <code>explain</code>. For instance, a message like
+        &quot;... expected statement ... valid statements include &#39;if statements&#39;, &#39;loops&#39;, or &#39;assignments&#39;&quot; is
+        subjectively better than both of the alternatives (namely &quot;expected statement&quot; or the one that lists
+        out every single alternative). This has the benefits of both worlds: for an experienced user, the error
+        message gets straight to the point, and for the newcomer, the error message provides a bit more
+        information that can help them learn the terminology.</p>
+        
+        <h1 id="adjusting-error-formatting" class="section"><a class="anchor-link left" href="#adjusting-error-formatting"><i class="icofont-laika link">&#xef71;</i></a>Adjusting Error Formatting</h1>
+        <p>As we&#39;ve seen in this post, the error messages produced by parsley are fairly readable. They are
+        broken into two kinds: &quot;vanilla&quot; errors built up of &quot;expected&quot;, &quot;unexpected&quot;, and &quot;reason&quot; clauses;
+        and &quot;specialised&quot; errors built up solely of &quot;message&quot; clauses. So far, we have only seen examples of
+        the &quot;vanilla&quot; errors, and we will see the &quot;specialised&quot; errors in the next post. These have been
+        so far formatted using Parsley&#39;s default mechanism, which creates an error as a string. This is ok
+        for basic use, but in projects where there is some pre-existing error format, then maintaining consistency
+        across error messages is much harder without <em>parsing</em> the resulting <code>String</code> errors to extract
+        their content: this is, frankly, ridiculous to expect! Moreover, suppose you wanted to unit test
+        your parser in both successful and failing cases, then performing raw string comparision is really
+        brittle, especially if Parsley adjusts the format slightly!</p>
+        <p>Luckily, Parsley 3.0.0 introduced an abstraction layer between the error messages that the parsers
+        work with and the final resulting error message. This means that actually, the error message format
+        is not only configurable, but doesn&#39;t <em>have</em> to be a <code>String</code>! The final part of this post is dedicated
+        to understanding how to work with this mechanism, using Parsley&#39;s own unit test formatter as an example.</p>
+        <p>Firstly, I want to give examples of both types of format, and annotate the names given to each part
+        of them:</p>
+        <pre><code>┌───────────────────────────────────────────────────────────────────────┐
+│   Vanilla Error                                                       │
+│                          ┌────────────────┐◄──────── position         │
+│                  source  │                │                           │
+│                     │    │   line      col│                           │
+│                     ▼    │     │         ││                           │
+│                  ┌─────┐ │     ▼         ▼│   end of input            │
+│               In foo.txt (line 1, column 5):       │                  │
+│                 ┌─────────────────────┐            │                  │
+│unexpected ─────►│                     │            │  ┌───── expected │
+│                 │          ┌──────────┐ ◄──────────┘  │               │
+│                 unexpected end of input               ▼               │
+│                 ┌──────────────────────────────────────┐              │
+│                 expected &quot;(&quot;, &quot;negate&quot;, digit, or letter              │
+│                          │    └──────┘  └───┘     └────┘ ◄────── named│
+│                          │       ▲        └──────────┘ │              │
+│                          │       │                     │              │
+│                          │      raw                    │              │
+│                          └─────────────────┬───────────┘              │
+│                 &#39;-&#39; is a binary operator   │                          │
+│                 └──────────────────────┘   │                          │
+│                ┌──────┐        ▲           │                          │
+│                │&gt;3+4- │        │           expected items             │
+│                │     ^│        │                                      │
+│                └──────┘        └───────────────── reason              │
+│                   ▲                                                   │
+│                   │                                                   │
+│                   line info                                           │
+└───────────────────────────────────────────────────────────────────────┘
+
+┌───────────────────────────────────────────────────────────────────────┐
+│   Specialised Error                                                   │
+│                          ┌────────────────┐◄──────── position         │
+│                  source  │                │                           │
+│                     │    │   line       col                           │
+│                     ▼    │     │         │                            │
+│                  ┌─────┐ │     ▼         ▼                            │
+│               In foo.txt (line 1, column 5):                          │
+│                                                                       │
+│           ┌───► something went wrong                                  │
+│           │                                                           │
+│ message ──┼───► it looks like a binary operator has no argument       │
+│           │                                                           │
+│           └───► &#39;-&#39; is a binary operator                              │
+│                ┌──────┐                                               │
+│                │&gt;3+4- │                                               │
+│                │     ^│                                               │
+│                └──────┘                                               │
+│                   ▲                                                   │
+│                   │                                                   │
+│                   line info                                           │
+└───────────────────────────────────────────────────────────────────────┘</code></pre>
+        <p>As you can see, the content for a specialised error is (ironically) plainer than a vanilla message.
+        This means that the errors are much more customisable from the parser side, but it is less rich
+        in parser generated information than the vanilla is. Hopefully you can see that both error messages
+        still have a <em>very</em> similar shape other than the error info lines themselves. In both cases, and not
+        shown by the diagrams, the main contents of the error -- either unexpected, expected, reasons, and
+        line info; or messages and line info -- are called &quot;error info lines&quot;.</p>
+        <p>For vanilla errors, notice that the unexpected and expected lines make references to raw, named, and
+        end of input: these are collectively known as <em>items</em>. The <code>.label</code> combinator produces named items,
+        the <code>eof</code> combinator produces the end of input item, and unlabelled combinators produce raw items.</p>
+        <p>Together, all these components are referenced (by these names!) by the <code>ErrorBuilder</code> trait. The way
+        it works is that a concrete <code>ErrorBuilder</code> has to be provided to the <code>.parse</code> method of a parser,
+        and when the parser has finished failing, the builder is used to construct the final error message,
+        converting the internal representation that Parsley uses into the desired output specified by the
+        builder: you can think of it like a conversation. The internals of Parsley take a portion of the
+        information it has, and talks to the builder how to format it into another intermediate form; it then
+        will feed this new information into another method of the builder after possibly more collection.
+        To allow all of this plumbing to be fed together and maintain maximum flexiblity to the user, the
+        builder makes use of &quot;associated types&quot;. Let&#39;s take a look at the definition of <code>ErrorBuilder</code> without
+        all the sub-formatters to understand what I mean:</p>
+        <pre><code class="nohighlight"><span class="keyword">trait</span><span> </span><span class="type-name">ErrorBuilder</span><span>[</span><span class="type-name">Err</span><span>] {
+    </span><span class="comment">// This is the top level function which takes all the sub-parts and combines them into the final `Err`
+</span><span>    </span><span class="keyword">def</span><span> </span><span class="declaration-name">format</span><span>(</span><span class="identifier">pos</span><span>: </span><span class="type-name">Position</span><span>, </span><span class="identifier">source</span><span>: </span><span class="type-name">Source</span><span>, </span><span class="identifier">lines</span><span>: </span><span class="type-name">ErrorInfoLines</span><span>): </span><span class="type-name">Err</span><span>
+
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Position</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Source</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">ErrorInfoLines</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">ExpectedItems</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Messages</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">UnexpectedLine</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">ExpectedLine</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Message</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">LineInfo</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Item</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Raw</span><span> &lt;: </span><span class="type-name">Item</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Named</span><span> &lt;: </span><span class="type-name">Item</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">EndOfInput</span><span> &lt;: </span><span class="type-name">Item</span><span>
+
+    ...
+}</span></code></pre>
+        <p>Wow, that&#39;s a lot of types! Essentially, each concrete implementation of this trait must specify
+        what each of those types are. This means that the representation of the error is as flexible as
+        possible. In the <code>format</code> method, you can see that the types <code>Position</code>, <code>Source</code>, and
+        <code>ErrorInfoLines</code> are all referenced. Indeed, you can also see these marked on <em>both</em> diagrams: in
+        other words, <code>format</code> is responsible for the general shape of <em>both</em> types of error message.</p>
+        <p>To understand how these might come about, let&#39;s take a step &quot;into&quot; the formatter to find the sources
+        of values for <code>Position</code>, <code>Source</code>, and <code>ErrorInfoLines</code>:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">trait</span><span> </span><span class="type-name">ErrorBuilder</span><span>[</span><span class="type-name">Err</span><span>] {
+    ...
+
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">pos</span><span>(</span><span class="identifier">line</span><span>: </span><span class="type-name">Int</span><span>, </span><span class="identifier">col</span><span>: </span><span class="type-name">Int</span><span>): </span><span class="type-name">Position</span><span>
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">source</span><span>(</span><span class="identifier">sourceName</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">String</span><span>]): </span><span class="type-name">Source</span><span>
+
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">vanillaError</span><span>(</span><span class="identifier">unexpected</span><span>: </span><span class="type-name">UnexpectedLine</span><span>, </span><span class="identifier">expected</span><span>: </span><span class="type-name">ExpectedLine</span><span>, </span><span class="identifier">reasons</span><span>: </span><span class="type-name">Messages</span><span>, </span><span class="identifier">line</span><span>: </span><span class="type-name">LineInfo</span><span>): </span><span class="type-name">ErrorInfoLines</span><span>
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">specialisedError</span><span>(</span><span class="identifier">msgs</span><span>: </span><span class="type-name">Messages</span><span>, </span><span class="identifier">line</span><span>: </span><span class="type-name">LineInfo</span><span>): </span><span class="type-name">ErrorInfoLines</span><span>
+
+    ...
+}</span></code></pre>
+        <p>Hopefully, you can start to see how this might be structured:</p>
+        <ul>
+          <li>To get a <code>Position</code> value for the final error message, the line and column information is fed
+          <em>straight</em> from the parser into the <code>pos</code> method, which can then hand back the &quot;formatted&quot; position.</li>
+          <li>To get the <code>Source</code> name, the filename (if it exists!) is fed into the <code>source</code> method, which can
+          then be fed into <code>format</code> by the internals of Parsley.</li>
+          <li>To collect up all the <code>ErrorInfoLines</code> there are two possible approaches depending on whether the
+          error is vanilla or specialised. In both cases, the relevant information is passed in and can be
+          &quot;formatted&quot; into whatever <code>ErrorInfoLines</code> is: for instance, the default in Parsley has
+          <code>type ErrorInfoLines = Seq[String]</code>. Neither of these two methods take raw information from the
+          parser, they have clearly been fed through another part of the formatter, given their types.</li>
+        </ul>
+        <p>I won&#39;t continue traversing deeper and deeper into the system, because it&#39;s just going to be the
+        same idea over and over again. But I will note all the &quot;terminal&quot; methods that do take information
+        directly from the parser:</p>
+        <pre><code class="nohighlight"><span class="keyword">trait</span><span> </span><span class="type-name">ErrorBuilder</span><span>[</span><span class="type-name">Err</span><span>] {
+    ...
+
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">pos</span><span>(</span><span class="identifier">line</span><span>: </span><span class="type-name">Int</span><span>, </span><span class="identifier">col</span><span>: </span><span class="type-name">Int</span><span>): </span><span class="type-name">Position</span><span>
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">source</span><span>(</span><span class="identifier">sourceName</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">String</span><span>]): </span><span class="type-name">Source</span><span>
+
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">reason</span><span>(</span><span class="identifier">reason</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Message</span><span>
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">message</span><span>(</span><span class="identifier">msg</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Message</span><span>
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">lineInfo</span><span>(</span><span class="identifier">line</span><span>: </span><span class="type-name">String</span><span>, </span><span class="identifier">linesBefore</span><span>: </span><span class="type-name">Seq</span><span>[</span><span class="type-name">String</span><span>], </span><span class="identifier">linesAfter</span><span>: </span><span class="type-name">Seq</span><span>[</span><span class="type-name">String</span><span>], </span><span class="identifier">errorPointsAt</span><span>: </span><span class="type-name">Int</span><span>): </span><span class="type-name">LineInfo</span><span>
+    </span><span class="keyword">val</span><span> </span><span class="identifier">numLinesBefore</span><span>: </span><span class="type-name">Int</span><span>
+    </span><span class="keyword">val</span><span> </span><span class="identifier">numLinesAfter</span><span>: </span><span class="type-name">Int</span><span>
+
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">raw</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Raw</span><span>
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">named</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Named</span><span>
+    </span><span class="keyword">val</span><span> </span><span class="identifier">endOfInput</span><span>: </span><span class="type-name">EndOfInput</span><span>
+
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">unexpectedToken</span><span>(</span><span class="identifier">cs</span><span>: </span><span class="type-name">Iterable</span><span>[</span><span class="type-name">Char</span><span>], </span><span class="identifier">amountOfInputParserWanted</span><span>: </span><span class="type-name">Int</span><span>, </span><span class="identifier">lexicalError</span><span>: </span><span class="type-name">Boolean</span><span>): </span><span class="type-name">Token</span><span>
+}</span></code></pre>
+        <p>The two attributes <code>numLinesBefore</code> and <code>numLinesAfter</code> are used by the Parsley internals to decide
+        how many raw lines of input both before and after the problematic line to provide to <code>lineInfo</code>. In
+        a pinch, overriding these values from <code>DefaultErrorBuilder</code> is a quick way of changing how specific
+        your errors are to other lines in the input. The <code>unexpectedToken</code> method is
+        special, but I&#39;ll leave a discussion of this to another page. All of the other methods in the <code>ErrorBuilder</code> will make
+        use of the refined results from the methods above.</p>
+        <p>I hope that, by this point, you have a reasonable idea of how this system all ties together. But, if
+        you don&#39;t, or you want an example, let&#39;s take a look at how Parsley&#39;s own unit tests format error
+        messages to be easier to pattern match on and test against.</p>
+        
+        <h2 id="example-unit-tests" class="section"><a class="anchor-link left" href="#example-unit-tests"><i class="icofont-laika link">&#xef71;</i></a>Example: Unit Tests</h2>
+        <p>When testing parsers, it is sometimes worth checking that the error messages contain the <em>correct</em>
+        content. Usually, the order doesn&#39;t matter, but the presence or absence of certain items is important.
+        This makes <code>String</code> the <em>worst</em> possible choice for testing, as order matters and its hard to test
+        for inclusion without string spliting and other nasty work. Instead, Parsley opts to build its own
+        <code>TestError</code> type that strips away the junk and only keeps the important information, without any
+        ordering. Let&#39;s take a look at it:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">TestError</span><span>(</span><span class="identifier">pos</span><span>: (</span><span class="type-name">Int</span><span>, </span><span class="type-name">Int</span><span>), </span><span class="identifier">lines</span><span>: </span><span class="type-name">TestErrorLines</span><span>)
+
+</span><span class="keyword">sealed</span><span> </span><span class="keyword">trait</span><span> </span><span class="type-name">TestErrorLines</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">VanillaError</span><span>(</span><span class="identifier">unexpected</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">TestErrorItem</span><span>], </span><span class="identifier">expecteds</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">TestErrorItem</span><span>], </span><span class="identifier">reasons</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">String</span><span>]) </span><span class="keyword">extends</span><span> </span><span class="type-name">TestErrorLines</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">SpecialisedError</span><span>(</span><span class="identifier">msgs</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">String</span><span>]) </span><span class="keyword">extends</span><span> </span><span class="type-name">TestErrorLines</span><span>
+
+</span><span class="keyword">sealed</span><span> </span><span class="keyword">trait</span><span> </span><span class="type-name">TestErrorItem</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">TestRaw</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">String</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">TestErrorItem</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">TestNamed</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">String</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">TestErrorItem</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">object</span><span> </span><span class="type-name">TestEndOfInput</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">TestErrorItem</span></code></pre>
+        <p>This type represents the vanilla and specialised errors with separate case classes, and stores the
+        position as a pair of ints. All of the error items in the messages are stored in a set to avoid
+        ordering issues, and the line info that provides the surrounding input context is not present, as
+        it isn&#39;t critical to the tests. This is <em>very</em> stripped down, essentially, but gets the job done.</p>
+        <p>So, how is the builder implemented? Well, we are going to make a subclass that extends <code>ErrorBuilder[TestError]</code>
+        and proceed from there. We&#39;ll start with the stub implementation and fill each in from there:</p>
+        <pre><code class="nohighlight"><span class="keyword">class</span><span> </span><span class="type-name">TestErrorBuilder</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ErrorBuilder</span><span>[</span><span class="type-name">TestError</span><span>] </span><span class="keyword">with</span><span> </span><span class="identifier">tokenextractors</span><span>.</span><span class="type-name">MatchParserDemand</span><span> {
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">format</span><span>(</span><span class="identifier">pos</span><span>: </span><span class="type-name">Position</span><span>, </span><span class="identifier">source</span><span>: </span><span class="type-name">Source</span><span>, </span><span class="identifier">lines</span><span>: </span><span class="type-name">ErrorInfoLines</span><span>): </span><span class="type-name">TestError</span><span> = ???
+
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Position</span><span>
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">pos</span><span>(</span><span class="identifier">line</span><span>: </span><span class="type-name">Int</span><span>, </span><span class="identifier">col</span><span>: </span><span class="type-name">Int</span><span>): </span><span class="type-name">Position</span><span> = ???
+
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Source</span><span>
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">source</span><span>(</span><span class="identifier">sourceName</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">String</span><span>]): </span><span class="type-name">Source</span><span> = ???
+
+    </span><span class="keyword">type</span><span> </span><span class="type-name">ErrorInfoLines</span><span>
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">vanillaError</span><span>(</span><span class="identifier">unexpected</span><span>: </span><span class="type-name">UnexpectedLine</span><span>, </span><span class="identifier">expected</span><span>: </span><span class="type-name">ExpectedLine</span><span>, </span><span class="identifier">reasons</span><span>: </span><span class="type-name">Messages</span><span>, </span><span class="identifier">line</span><span>: </span><span class="type-name">LineInfo</span><span>): </span><span class="type-name">ErrorInfoLines</span><span> = ???
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">specialisedError</span><span>(</span><span class="identifier">msgs</span><span>: </span><span class="type-name">Messages</span><span>, </span><span class="identifier">line</span><span>: </span><span class="type-name">LineInfo</span><span>): </span><span class="type-name">ErrorInfoLines</span><span> = ???
+
+    </span><span class="keyword">type</span><span> </span><span class="type-name">ExpectedItems</span><span>
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">combineExpectedItems</span><span>(</span><span class="identifier">alts</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">Item</span><span>]): </span><span class="type-name">ExpectedItems</span><span> = ???
+
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Messages</span><span>
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">combineMessages</span><span>(</span><span class="identifier">alts</span><span>: </span><span class="type-name">Seq</span><span>[</span><span class="type-name">Message</span><span>]): </span><span class="type-name">Messages</span><span> = ???
+
+    </span><span class="keyword">type</span><span> </span><span class="type-name">UnexpectedLine</span><span>
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">unexpected</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">Item</span><span>]): </span><span class="type-name">UnexpectedLine</span><span> = ???
+    </span><span class="keyword">type</span><span> </span><span class="type-name">ExpectedLine</span><span>
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">expected</span><span>(</span><span class="identifier">alts</span><span>: </span><span class="type-name">ExpectedItems</span><span>): </span><span class="type-name">ExpectedLine</span><span> = ???
+
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Message</span><span>
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">reason</span><span>(</span><span class="identifier">reason</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Message</span><span> = ???
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">message</span><span>(</span><span class="identifier">msg</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Message</span><span> = ???
+
+    </span><span class="keyword">type</span><span> </span><span class="type-name">LineInfo</span><span>
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">lineInfo</span><span>(</span><span class="identifier">line</span><span>: </span><span class="type-name">String</span><span>, </span><span class="identifier">linesBefore</span><span>: </span><span class="type-name">Seq</span><span>[</span><span class="type-name">String</span><span>], </span><span class="identifier">linesAfter</span><span>: </span><span class="type-name">Seq</span><span>[</span><span class="type-name">String</span><span>], </span><span class="identifier">errorPointsAt</span><span>: </span><span class="type-name">Int</span><span>): </span><span class="type-name">LineInfo</span><span> = ???
+
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Item</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Raw</span><span> &lt;: </span><span class="type-name">Item</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Named</span><span> &lt;: </span><span class="type-name">Item</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">EndOfInput</span><span> &lt;: </span><span class="type-name">Item</span><span>
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">raw</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Raw</span><span> = ???
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">named</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Named</span><span> = ???
+    </span><span class="keyword">override</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">endOfInput</span><span>: </span><span class="type-name">EndOfInput</span><span> = ???
+
+    </span><span class="keyword">override</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">numLinesBefore</span><span>: </span><span class="type-name">Int</span><span> = </span><span class="number-literal">0</span><span>
+    </span><span class="keyword">override</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">numLinesAfter</span><span>: </span><span class="type-name">Int</span><span> = </span><span class="number-literal">0</span><span>
+}</span></code></pre>
+        <p>Quickly note the addition of <code>with tokenextractors.MatchParserDemand</code> in the
+        declaration line: this is used to provide the implementation of <code>unexpectedToken</code> for us, for more information see &quot;Advanced Error Messages&quot;.
+        The first task is to work out what each of the types should be. Let&#39;s start by identifying
+        the components of the error message we <em>don&#39;t</em> need and set their type to <code>Unit</code>. This provides a
+        trivial implementation of the relevant methods: they just return <code>()</code>. The error format we defined
+        didn&#39;t require any line info, or the source file:</p>
+        <pre><code class="nohighlight"><span class="keyword">class</span><span> </span><span class="type-name">TestErrorBuilder</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ErrorBuilder</span><span>[</span><span class="type-name">TestError</span><span>] </span><span class="keyword">with</span><span> </span><span class="identifier">tokenextractors</span><span>.</span><span class="type-name">MatchParserDemand</span><span> {
+    ...
+
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Source</span><span> = </span><span class="type-name">Unit</span><span>
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">source</span><span>(</span><span class="identifier">sourceName</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">String</span><span>]): </span><span class="type-name">Source</span><span> = ()
+
+    ...
+
+    </span><span class="keyword">type</span><span> </span><span class="type-name">LineInfo</span><span> = </span><span class="type-name">Unit</span><span>
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">lineInfo</span><span>(</span><span class="identifier">line</span><span>: </span><span class="type-name">String</span><span>, </span><span class="identifier">linesBefore</span><span>: </span><span class="type-name">Seq</span><span>[</span><span class="type-name">String</span><span>], </span><span class="identifier">linesAfter</span><span>: </span><span class="type-name">Seq</span><span>[</span><span class="type-name">String</span><span>], </span><span class="identifier">errorPointsAt</span><span>: </span><span class="type-name">Int</span><span>): </span><span class="type-name">LineInfo</span><span> = ()
+
+    ...
+}</span></code></pre>
+        <p>Easy. Now, lets work top down to fill in the rest! The top-most method is <code>format</code>, which we know
+        needs to return a <code>TestError</code>. In this case we are given a <code>Position</code>, a <code>Unit</code>, and some <code>ErrorInfoLines</code>.
+        Well, the constructor for <code>TestError</code> requires <code>(Int, Int)</code> and <code>TestErrorLines</code>, so this helps us
+        fill in some more types, and the definition of <code>format</code> can just invoke the constructor:</p>
+        <pre><code class="nohighlight"><span class="keyword">class</span><span> </span><span class="type-name">TestErrorBuilder</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ErrorBuilder</span><span>[</span><span class="type-name">TestError</span><span>] </span><span class="keyword">with</span><span> </span><span class="identifier">tokenextractors</span><span>.</span><span class="type-name">MatchParserDemand</span><span> {
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">format</span><span>(</span><span class="identifier">pos</span><span>: </span><span class="type-name">Position</span><span>, </span><span class="identifier">source</span><span>: </span><span class="type-name">Source</span><span>, </span><span class="identifier">lines</span><span>: </span><span class="type-name">ErrorInfoLines</span><span>): </span><span class="type-name">TestError</span><span> = </span><span class="type-name">TestError</span><span>(</span><span class="identifier">pos</span><span>, </span><span class="identifier">lines</span><span>)
+
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Position</span><span> = (</span><span class="type-name">Int</span><span>, </span><span class="type-name">Int</span><span>)
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">pos</span><span>(</span><span class="identifier">line</span><span>: </span><span class="type-name">Int</span><span>, </span><span class="identifier">col</span><span>: </span><span class="type-name">Int</span><span>): </span><span class="type-name">Position</span><span> = ???
+
+    ...
+
+    </span><span class="keyword">type</span><span> </span><span class="type-name">ErrorInfoLines</span><span> = </span><span class="type-name">TestErrorLines</span><span>
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">vanillaError</span><span>(</span><span class="identifier">unexpected</span><span>: </span><span class="type-name">UnexpectedLine</span><span>, </span><span class="identifier">expected</span><span>: </span><span class="type-name">ExpectedLine</span><span>, </span><span class="identifier">reasons</span><span>: </span><span class="type-name">Messages</span><span>, </span><span class="identifier">line</span><span>: </span><span class="type-name">LineInfo</span><span>): </span><span class="type-name">ErrorInfoLines</span><span> = ???
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">specialisedError</span><span>(</span><span class="identifier">msgs</span><span>: </span><span class="type-name">Messages</span><span>, </span><span class="identifier">line</span><span>: </span><span class="type-name">LineInfo</span><span>): </span><span class="type-name">ErrorInfoLines</span><span> = ???
+
+    ...
+}</span></code></pre>
+        <p>Right, well, <code>pos</code> is easy to define, we need to return <code>(Int, Int)</code>, so we just tuple them up.
+        The <code>TestErrorLines</code> trait has two sub-classes: <code>VanillaError</code> and <code>SpecialisedError</code>. This means
+        that these two constructors will be used in the <code>vanillaError</code> and <code>specialisedError</code> implementations.
+        This allows us to resolve a few more types: we know <code>LineInfo = Unit</code> already, so lets compare how
+        the <em>other</em> arguments of these methods line up to the constructors:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span>        </span><span class="declaration-name">vanillaError</span><span>(</span><span class="identifier">unexpected</span><span>: </span><span class="type-name">UnexpectedLine</span><span>,        </span><span class="identifier">expected</span><span>:  </span><span class="type-name">ExpectedLine</span><span>,       </span><span class="identifier">reasons</span><span>: </span><span class="type-name">Messages</span><span>):           </span><span class="type-name">TestErrorLines</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">VanillaError</span><span>(</span><span class="identifier">unexpected</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">TestErrorItem</span><span>], </span><span class="identifier">expecteds</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">TestErrorItem</span><span>], </span><span class="identifier">reasons</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">String</span><span>]) </span><span class="keyword">extends</span><span> </span><span class="type-name">TestErrorLines</span><span>
+
+</span><span class="keyword">def</span><span>        </span><span class="declaration-name">specialisedError</span><span>(</span><span class="identifier">msgs</span><span>: </span><span class="type-name">Messages</span><span>   ):        </span><span class="type-name">TestErrorLines</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">SpecialisedError</span><span>(</span><span class="identifier">msgs</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">String</span><span>]) </span><span class="keyword">extends</span><span> </span><span class="type-name">TestErrorLines</span></code></pre>
+        <p>This tells us the following:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">type</span><span> </span><span class="type-name">UnexpectedLine</span><span> = </span><span class="type-name">Option</span><span>[</span><span class="type-name">TestErrorItem</span><span>]
+</span><span class="keyword">type</span><span> </span><span class="type-name">ExpectedLine</span><span> = </span><span class="type-name">Set</span><span>[</span><span class="type-name">TestErrorItem</span><span>]
+</span><span class="keyword">type</span><span> </span><span class="type-name">Messages</span><span> = </span><span class="type-name">Set</span><span>[</span><span class="type-name">String</span><span>]</span></code></pre>
+        <p>Great, let&#39;s fill those types in as well as the, again straightforward, implementation:</p>
+        <pre><code class="nohighlight"><span class="keyword">class</span><span> </span><span class="type-name">TestErrorBuilder</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ErrorBuilder</span><span>[</span><span class="type-name">TestError</span><span>] </span><span class="keyword">with</span><span> </span><span class="identifier">tokenextractors</span><span>.</span><span class="type-name">MatchParserDemand</span><span> {
+    ...
+
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">pos</span><span>(</span><span class="identifier">line</span><span>: </span><span class="type-name">Int</span><span>, </span><span class="identifier">col</span><span>: </span><span class="type-name">Int</span><span>): </span><span class="type-name">Position</span><span> = (</span><span class="identifier">line</span><span>, </span><span class="identifier">col</span><span>)
+
+    ...
+
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">vanillaError</span><span>(</span><span class="identifier">unexpected</span><span>: </span><span class="type-name">UnexpectedLine</span><span>, </span><span class="identifier">expected</span><span>: </span><span class="type-name">ExpectedLine</span><span>, </span><span class="identifier">reasons</span><span>: </span><span class="type-name">Messages</span><span>, </span><span class="identifier">line</span><span>: </span><span class="type-name">LineInfo</span><span>): </span><span class="type-name">ErrorInfoLines</span><span> =
+        </span><span class="type-name">VanillaError</span><span>(</span><span class="identifier">unexpected</span><span>, </span><span class="identifier">expected</span><span>, </span><span class="identifier">reasons</span><span>)
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">specialisedError</span><span>(</span><span class="identifier">msgs</span><span>: </span><span class="type-name">Messages</span><span>, </span><span class="identifier">line</span><span>: </span><span class="type-name">LineInfo</span><span>): </span><span class="type-name">ErrorInfoLines</span><span> = </span><span class="type-name">SpecialisedError</span><span>(</span><span class="identifier">msgs</span><span>)
+
+    ...
+
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Messages</span><span> = </span><span class="type-name">Set</span><span>[</span><span class="type-name">String</span><span>]
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">combineMessages</span><span>(</span><span class="identifier">alts</span><span>: </span><span class="type-name">Seq</span><span>[</span><span class="type-name">Message</span><span>]): </span><span class="type-name">Messages</span><span> = ???
+
+    </span><span class="keyword">type</span><span> </span><span class="type-name">UnexpectedLine</span><span> = </span><span class="type-name">Option</span><span>[</span><span class="type-name">TestErrorItem</span><span>]
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">unexpected</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">Item</span><span>]): </span><span class="type-name">UnexpectedLine</span><span> = ???
+    </span><span class="keyword">type</span><span> </span><span class="type-name">ExpectedLine</span><span> = </span><span class="type-name">Set</span><span>[</span><span class="type-name">TestErrorItem</span><span>]
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">expected</span><span>(</span><span class="identifier">alts</span><span>: </span><span class="type-name">ExpectedItems</span><span>): </span><span class="type-name">ExpectedLine</span><span> = ???
+
+    ...
+}</span></code></pre>
+        <p>These three new methods don&#39;t have much choice about how to plumb them together. It looks as if
+        <code>Message = String</code>, so <code>combineMessages</code> just needs to convert the sequence of messages into a set.
+        The <code>unexpected</code> method is converting an <code>Option[Item]</code> to an <code>Option[TestErrorItem]</code>, so it seems
+        like <code>Item = TestErrorItem</code> and this is the identity function. In a similar vein <code>ExpectedItems = Set[TestErrorItem]</code>
+        and this can be the identity function too.</p>
+        <pre><code class="nohighlight"><span class="keyword">class</span><span> </span><span class="type-name">TestErrorBuilder</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ErrorBuilder</span><span>[</span><span class="type-name">TestError</span><span>] </span><span class="keyword">with</span><span> </span><span class="identifier">tokenextractors</span><span>.</span><span class="type-name">MatchParserDemand</span><span> {
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">combineMessages</span><span>(</span><span class="identifier">alts</span><span>: </span><span class="type-name">Seq</span><span>[</span><span class="type-name">Message</span><span>]): </span><span class="type-name">Messages</span><span> = </span><span class="identifier">alts</span><span>.</span><span class="identifier">toSet</span><span>
+
+    ...
+
+    </span><span class="keyword">type</span><span> </span><span class="type-name">ExpectedItems</span><span> = </span><span class="type-name">Set</span><span>[</span><span class="type-name">TestErrorItem</span><span>]
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">combineExpectedItems</span><span>(</span><span class="identifier">alts</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">Item</span><span>]): </span><span class="type-name">ExpectedItems</span><span> = ???
+
+    ...
+
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">unexpected</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">Item</span><span>]): </span><span class="type-name">UnexpectedLine</span><span> = </span><span class="identifier">item</span><span>
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">expected</span><span>(</span><span class="identifier">alts</span><span>: </span><span class="type-name">ExpectedItems</span><span>): </span><span class="type-name">ExpectedLine</span><span> = </span><span class="identifier">alts</span><span>
+
+    ...
+
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Message</span><span> = </span><span class="type-name">String</span><span>
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">reason</span><span>(</span><span class="identifier">reason</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Message</span><span> = ???
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">message</span><span>(</span><span class="identifier">msg</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Message</span><span> = ???
+
+    ...
+
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Item</span><span> = </span><span class="type-name">TestErrorItem</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Raw</span><span> &lt;: </span><span class="type-name">Item</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Named</span><span> &lt;: </span><span class="type-name">Item</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">EndOfInput</span><span> &lt;: </span><span class="type-name">Item</span><span>
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">raw</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Raw</span><span> = ???
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">named</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Named</span><span> = ???
+    </span><span class="keyword">override</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">endOfInput</span><span>: </span><span class="type-name">EndOfInput</span><span> = ???
+
+    </span><span class="keyword">override</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">numLinesBefore</span><span>: </span><span class="type-name">Int</span><span> = </span><span class="number-literal">0</span><span>
+    </span><span class="keyword">override</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">numLinesAfter</span><span>: </span><span class="type-name">Int</span><span> = </span><span class="number-literal">0</span><span>
+}</span></code></pre>
+        <p>This is the final stretch now: we know that, actually <code>Set[Item] =:= ExpectedItems</code> already, since
+        <code>ExpectedItems</code> is a <code>Set[TestErrorItem]</code> and <code>Item = TestErrorItem</code>, so <code>combineExpectedItems</code> is,
+        once again, the identity function. This is the case for <code>reason</code> and <code>message</code> too! Finally, we know
+        that <code>Item = TestErrorItem</code> and it has three subtypes called <code>Raw</code>, <code>Named</code>, and <code>EndOfInput</code>.
+        Happily, <code>TestErrorItem</code> has three subtypes called <code>TestRaw</code>, <code>TestNamed</code>, and <code>TestEndOfInput</code>, so
+        these will match up nicely! The three relevant methods can just invoke the constructors:</p>
+        <pre><code class="nohighlight"><span class="keyword">class</span><span> </span><span class="type-name">TestErrorBuilder</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ErrorBuilder</span><span>[</span><span class="type-name">TestError</span><span>] </span><span class="keyword">with</span><span> </span><span class="identifier">tokenextractors</span><span>.</span><span class="type-name">MatchParserDemand</span><span> {
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">combineExpectedItems</span><span>(</span><span class="identifier">alts</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">Item</span><span>]): </span><span class="type-name">ExpectedItems</span><span> = </span><span class="identifier">alts</span><span>
+
+    ...
+
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">reason</span><span>(</span><span class="identifier">reason</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Message</span><span> = </span><span class="identifier">reason</span><span>
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">message</span><span>(</span><span class="identifier">msg</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Message</span><span> = </span><span class="identifier">msg</span><span>
+
+    ...
+
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Raw</span><span> = </span><span class="type-name">TestRaw</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Named</span><span> = </span><span class="type-name">TestNamed</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">EndOfInput</span><span> = </span><span class="type-name">TestEndOfInput</span><span>.</span><span class="keyword">type</span><span>
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">raw</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Raw</span><span> = </span><span class="type-name">TestRaw</span><span>(</span><span class="identifier">item</span><span>)
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">named</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Named</span><span> = </span><span class="type-name">TestNamed</span><span>(</span><span class="identifier">item</span><span>)
+    </span><span class="keyword">override</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">endOfInput</span><span>: </span><span class="type-name">EndOfInput</span><span> = </span><span class="type-name">TestEndOfInput</span><span>
+
+    </span><span class="keyword">override</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">numLinesBefore</span><span>: </span><span class="type-name">Int</span><span> = </span><span class="number-literal">0</span><span>
+    </span><span class="keyword">override</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">numLinesAfter</span><span>: </span><span class="type-name">Int</span><span> = </span><span class="number-literal">0</span><span>
+}</span></code></pre>
+        <p>Phew! Let&#39;s take a look at the finished result:</p>
+        <pre><code class="nohighlight"><span class="keyword">class</span><span> </span><span class="type-name">TestErrorBuilder</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ErrorBuilder</span><span>[</span><span class="type-name">TestError</span><span>] </span><span class="keyword">with</span><span> </span><span class="identifier">tokenextractors</span><span>.</span><span class="type-name">MatchParserDemand</span><span> {
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">format</span><span>(</span><span class="identifier">pos</span><span>: </span><span class="type-name">Position</span><span>, </span><span class="identifier">source</span><span>: </span><span class="type-name">Source</span><span>, </span><span class="identifier">lines</span><span>: </span><span class="type-name">ErrorInfoLines</span><span>): </span><span class="type-name">TestError</span><span> = </span><span class="type-name">TestError</span><span>(</span><span class="identifier">pos</span><span>, </span><span class="identifier">lines</span><span>)
+
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Position</span><span> = (</span><span class="type-name">Int</span><span>, </span><span class="type-name">Int</span><span>)
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">pos</span><span>(</span><span class="identifier">line</span><span>: </span><span class="type-name">Int</span><span>, </span><span class="identifier">col</span><span>: </span><span class="type-name">Int</span><span>): </span><span class="type-name">Position</span><span> = (</span><span class="identifier">line</span><span>, </span><span class="identifier">col</span><span>)
+
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Source</span><span> = </span><span class="type-name">Unit</span><span>
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">source</span><span>(</span><span class="identifier">sourceName</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">String</span><span>]): </span><span class="type-name">Source</span><span> = ()
+
+    </span><span class="keyword">type</span><span> </span><span class="type-name">ErrorInfoLines</span><span> = </span><span class="type-name">TestErrorLines</span><span>
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">vanillaError</span><span>(</span><span class="identifier">unexpected</span><span>: </span><span class="type-name">UnexpectedLine</span><span>, </span><span class="identifier">expected</span><span>: </span><span class="type-name">ExpectedLine</span><span>, </span><span class="identifier">reasons</span><span>: </span><span class="type-name">Messages</span><span>, </span><span class="identifier">line</span><span>: </span><span class="type-name">LineInfo</span><span>): </span><span class="type-name">ErrorInfoLines</span><span> =
+        </span><span class="type-name">VanillaError</span><span>(</span><span class="identifier">unexpected</span><span>, </span><span class="identifier">expected</span><span>, </span><span class="identifier">reasons</span><span>)
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">specialisedError</span><span>(</span><span class="identifier">msgs</span><span>: </span><span class="type-name">Messages</span><span>, </span><span class="identifier">line</span><span>: </span><span class="type-name">LineInfo</span><span>): </span><span class="type-name">ErrorInfoLines</span><span> = </span><span class="type-name">SpecialisedError</span><span>(</span><span class="identifier">msgs</span><span>)
+
+    </span><span class="keyword">type</span><span> </span><span class="type-name">ExpectedItems</span><span> = </span><span class="type-name">Set</span><span>[</span><span class="type-name">TestErrorItem</span><span>]
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">combineExpectedItems</span><span>(</span><span class="identifier">alts</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">Item</span><span>]): </span><span class="type-name">ExpectedItems</span><span> = </span><span class="identifier">alts</span><span>
+
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Messages</span><span> = </span><span class="type-name">Set</span><span>[</span><span class="type-name">String</span><span>]
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">combineMessages</span><span>(</span><span class="identifier">alts</span><span>: </span><span class="type-name">Seq</span><span>[</span><span class="type-name">Message</span><span>]): </span><span class="type-name">Messages</span><span> = </span><span class="identifier">alts</span><span>.</span><span class="identifier">toSet</span><span>
+
+    </span><span class="keyword">type</span><span> </span><span class="type-name">UnexpectedLine</span><span> = </span><span class="type-name">Option</span><span>[</span><span class="type-name">TestErrorItem</span><span>]
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">unexpected</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">Item</span><span>]): </span><span class="type-name">UnexpectedLine</span><span> = </span><span class="identifier">item</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">ExpectedLine</span><span> = </span><span class="type-name">Set</span><span>[</span><span class="type-name">TestErrorItem</span><span>]
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">expected</span><span>(</span><span class="identifier">alts</span><span>: </span><span class="type-name">ExpectedItems</span><span>): </span><span class="type-name">ExpectedLine</span><span> = </span><span class="identifier">alts</span><span>
+
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Message</span><span> = </span><span class="type-name">String</span><span>
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">reason</span><span>(</span><span class="identifier">reason</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Message</span><span> = </span><span class="identifier">reason</span><span>
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">message</span><span>(</span><span class="identifier">msg</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Message</span><span> = </span><span class="identifier">msg</span><span>
+
+    </span><span class="keyword">type</span><span> </span><span class="type-name">LineInfo</span><span> = </span><span class="type-name">Unit</span><span>
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">lineInfo</span><span>(</span><span class="identifier">line</span><span>: </span><span class="type-name">String</span><span>, </span><span class="identifier">linesBefore</span><span>: </span><span class="type-name">Seq</span><span>[</span><span class="type-name">String</span><span>], </span><span class="identifier">linesAfter</span><span>: </span><span class="type-name">Seq</span><span>[</span><span class="type-name">String</span><span>], </span><span class="identifier">errorPointsAt</span><span>: </span><span class="type-name">Int</span><span>): </span><span class="type-name">LineInfo</span><span> = ()
+
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Item</span><span> = </span><span class="type-name">TestErrorItem</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Raw</span><span> = </span><span class="type-name">TestRaw</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Named</span><span> = </span><span class="type-name">TestNamed</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">EndOfInput</span><span> = </span><span class="type-name">TestEndOfInput</span><span>.</span><span class="keyword">type</span><span>
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">raw</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Raw</span><span> = </span><span class="type-name">TestRaw</span><span>(</span><span class="identifier">item</span><span>)
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">named</span><span>(</span><span class="identifier">item</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Named</span><span> = </span><span class="type-name">TestNamed</span><span>(</span><span class="identifier">item</span><span>)
+    </span><span class="keyword">override</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">endOfInput</span><span>: </span><span class="type-name">EndOfInput</span><span> = </span><span class="type-name">TestEndOfInput</span><span>
+
+    </span><span class="keyword">override</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">numLinesBefore</span><span>: </span><span class="type-name">Int</span><span> = </span><span class="number-literal">0</span><span>
+    </span><span class="keyword">override</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">numLinesAfter</span><span>: </span><span class="type-name">Int</span><span> = </span><span class="number-literal">0</span><span>
+}</span></code></pre>
+        <p>This could be cleaned up a bit by, for instance, setting <code>type Messages = Set[Message]</code> etc. Regardless,
+        this is a fully working <code>ErrorBuilder[TestError]</code>! How do we use it?</p>
+        <p>Well, we can either define an implicit value like <code>implicit val eb: ErrorBuilder[TestError] = new TestErrorBuilder</code>
+        and then using <code>parser.parse</code> will automatically use that value if its in scope, or we
+        can provide one explicitly by writing something like <code>parser.parse(input)(new TestErrorBuilder)</code>.
+        If there is no <code>ErrorBuilder</code> implicitly in scope, Scala is smart enough to go and fetch the one Parsley
+        defines, which maps to a <code>DefaultErrorBuilder &lt;: ErrorBuilder[String] with tokenextractors.TillNextWhitespace</code>, which is what we&#39;ve been
+        relying on so far in this wiki.</p>
+        <p>So what do errors look like if we are using this new <code>ErrorBuilder</code>?</p>
+        <pre><code class="nohighlight"><span>(</span><span class="identifier">line</span><span> </span><span class="number-literal">1</span><span>, </span><span class="identifier">column</span><span> </span><span class="number-literal">5</span><span>):
+  </span><span class="identifier">unexpected</span><span> </span><span class="identifier">end</span><span> </span><span class="identifier">of</span><span> </span><span class="identifier">input</span><span>
+  </span><span class="identifier">expected</span><span> </span><span class="string-literal">&quot;(&quot;</span><span>, </span><span class="string-literal">&quot;negate&quot;</span><span>, </span><span class="identifier">digit</span><span>, </span><span class="identifier">or</span><span> </span><span class="identifier">letter</span><span>
+  </span><span class="char-literal">&#39;-&#39;</span><span> </span><span class="identifier">is</span><span> </span><span class="identifier">a</span><span> </span><span class="identifier">binary</span><span> </span><span class="identifier">operator</span><span>
+  &gt;</span><span class="number-literal">3</span><span>+</span><span class="number-literal">4</span><span>-
+       ^
+
+=====&gt;
+
+</span><span class="identifier">builder</span><span>.</span><span class="identifier">format</span><span> (
+    </span><span class="identifier">builder</span><span>.</span><span class="identifier">pos</span><span>(</span><span class="number-literal">1</span><span>, </span><span class="number-literal">5</span><span>),
+    </span><span class="identifier">builder</span><span>.</span><span class="identifier">source</span><span>(</span><span class="type-name">None</span><span>),
+    </span><span class="identifier">builder</span><span>.</span><span class="identifier">vanillaError</span><span> (
+        </span><span class="identifier">builder</span><span>.</span><span class="identifier">unexpected</span><span>(</span><span class="type-name">Some</span><span>(</span><span class="identifier">builder</span><span>.</span><span class="identifier">endOfInput</span><span>)),
+        </span><span class="identifier">builder</span><span>.</span><span class="identifier">expected</span><span> (
+            </span><span class="identifier">builder</span><span>.</span><span class="identifier">combineExpectedItems</span><span>(</span><span class="type-name">Set</span><span> (
+                </span><span class="identifier">builder</span><span>.</span><span class="identifier">raw</span><span>(</span><span class="string-literal">&quot;(&quot;</span><span>),
+                </span><span class="identifier">builder</span><span>.</span><span class="identifier">raw</span><span>(</span><span class="string-literal">&quot;negate&quot;</span><span>),
+                </span><span class="identifier">builder</span><span>.</span><span class="identifier">named</span><span>(</span><span class="string-literal">&quot;digit&quot;</span><span>),
+                </span><span class="identifier">builder</span><span>.</span><span class="identifier">named</span><span>(</span><span class="string-literal">&quot;letter&quot;</span><span>)
+            ))
+        ),
+        </span><span class="identifier">builder</span><span>.</span><span class="identifier">combineMessages</span><span>(</span><span class="type-name">List</span><span>(
+            </span><span class="identifier">builder</span><span>.</span><span class="identifier">reason</span><span>(</span><span class="string-literal">&quot;&#39;-&#39; is a binary operator&quot;</span><span>)
+        )),
+        </span><span class="identifier">builder</span><span>.</span><span class="identifier">lineInfo</span><span>(</span><span class="string-literal">&quot;3+4-&quot;</span><span>, </span><span class="type-name">Nil</span><span>, </span><span class="type-name">Nil</span><span>, </span><span class="number-literal">4</span><span>)
+    )
+)
+
+=====&gt;
+
+</span><span class="type-name">TestError</span><span>((</span><span class="number-literal">1</span><span>, </span><span class="number-literal">5</span><span>),
+    </span><span class="type-name">VanillaError</span><span>(
+        </span><span class="type-name">Some</span><span>(</span><span class="type-name">TestEndOfInput</span><span>),
+        </span><span class="type-name">Set</span><span>(</span><span class="type-name">TestRaw</span><span>(</span><span class="string-literal">&quot;(&quot;</span><span>),
+            </span><span class="type-name">TestRaw</span><span>(</span><span class="string-literal">&quot;negate&quot;</span><span>),
+            </span><span class="type-name">TestNamed</span><span>(</span><span class="string-literal">&quot;digit&quot;</span><span>),
+            </span><span class="type-name">TestNamed</span><span>(</span><span class="string-literal">&quot;letter&quot;</span><span>)),
+        </span><span class="type-name">Set</span><span>(</span><span class="string-literal">&quot;&#39;-&#39; is a binary operator&quot;</span><span>)))</span></code></pre>
+        <p>Cool! Hopefully seeing these examples side-by-side helps settle any last issues you have.</p>
+
+        
+<hr class="footer-rule"/>
+<footer>
+  Parsley is distributed under the <a href="https://opensource.org/licenses/BSD-3-Clause">BSD-3-Clause</a> license.
+</footer>
+
+
+      </main>
+
+    </div>
+
+  </body>
+
+</html>
