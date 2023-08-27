@@ -67,7 +67,7 @@ jobs:
 
       - name: sbt update
         if: matrix.java == 'temurin@8' && steps.setup-java-temurin-8.outputs.cache-hit == 'false'
-        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' reload +update
+        run: sbt +update
 
       - name: Setup Java (temurin@11)
         id: setup-java-temurin-11
@@ -80,7 +80,7 @@ jobs:
 
       - name: sbt update
         if: matrix.java == 'temurin@11' && steps.setup-java-temurin-11.outputs.cache-hit == 'false'
-        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' reload +update
+        run: sbt +update
 
       - name: Setup Java (temurin@17)
         id: setup-java-temurin-17
@@ -93,7 +93,7 @@ jobs:
 
       - name: sbt update
         if: matrix.java == 'temurin@17' && steps.setup-java-temurin-17.outputs.cache-hit == 'false'
-        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' reload +update
+        run: sbt +update
 
       - name: Check that workflows are up to date
         run: sbt githubWorkflowCheck
@@ -162,7 +162,7 @@ jobs:
 
       - name: sbt update
         if: matrix.java == 'temurin@8' && steps.setup-java-temurin-8.outputs.cache-hit == 'false'
-        run: sbt reload +update
+        run: sbt +update
 
       - name: Setup Java (temurin@11)
         id: setup-java-temurin-11
@@ -175,7 +175,7 @@ jobs:
 
       - name: sbt update
         if: matrix.java == 'temurin@11' && steps.setup-java-temurin-11.outputs.cache-hit == 'false'
-        run: sbt reload +update
+        run: sbt +update
 
       - name: Setup Java (temurin@17)
         id: setup-java-temurin-17
@@ -188,7 +188,7 @@ jobs:
 
       - name: sbt update
         if: matrix.java == 'temurin@17' && steps.setup-java-temurin-17.outputs.cache-hit == 'false'
-        run: sbt reload +update
+        run: sbt +update
 
       - name: Download target directories (2.13, rootJS)
         uses: actions/download-artifact@v3
@@ -329,7 +329,7 @@ jobs:
 
       - name: sbt update
         if: matrix.java == 'temurin@8' && steps.setup-java-temurin-8.outputs.cache-hit == 'false'
-        run: sbt reload +update
+        run: sbt +update
 
       - name: Setup Java (temurin@11)
         id: setup-java-temurin-11
@@ -342,7 +342,7 @@ jobs:
 
       - name: sbt update
         if: matrix.java == 'temurin@11' && steps.setup-java-temurin-11.outputs.cache-hit == 'false'
-        run: sbt reload +update
+        run: sbt +update
 
       - name: Setup Java (temurin@17)
         id: setup-java-temurin-17
@@ -355,12 +355,12 @@ jobs:
 
       - name: sbt update
         if: matrix.java == 'temurin@17' && steps.setup-java-temurin-17.outputs.cache-hit == 'false'
-        run: sbt reload +update
+        run: sbt +update
 
       - name: Submit Dependencies
         uses: scalacenter/sbt-dependency-submission@v2
         with:
-          modules-ignore: rootjs_2.13 rootjs_2.12 rootjs_3 rootjvm_2.13 rootjvm_2.12 rootjvm_3 rootnative_2.13 rootnative_2.12 rootnative_3
+          modules-ignore: rootjs_2.13 rootjs_2.12 rootjs_3 docs_2.13 docs_2.12 docs_3 rootjvm_2.13 rootjvm_2.12 rootjvm_3 rootnative_2.13 rootnative_2.12 rootnative_3
           configs-ignore: test scala-tool scala-doc-tool test-internal
 
   coverage:
@@ -387,7 +387,7 @@ jobs:
 
       - name: sbt update
         if: matrix.java == 'temurin@11' && steps.setup-java-temurin-11.outputs.cache-hit == 'false'
-        run: sbt '++ ${{ matrix.scala }}' reload +update
+        run: sbt +update
 
       - name: Generate coverage report
         run: sbt '++ ${{ matrix.scala }}' coverage 'parsley / test' coverageReport
@@ -398,3 +398,66 @@ jobs:
         uses: paambaati/codeclimate-action@v3.2.0
         with:
           coverageLocations: '${{github.workspace}}/parsley/jvm/target/scala-2.13/coverage-report/cobertura.xml:cobertura'
+
+  site:
+    name: Generate Site
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        java: [temurin@8]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout current branch (full)
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java (temurin@8)
+        id: setup-java-temurin-8
+        if: matrix.java == 'temurin@8'
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 8
+          cache: sbt
+
+      - name: sbt update
+        if: matrix.java == 'temurin@8' && steps.setup-java-temurin-8.outputs.cache-hit == 'false'
+        run: sbt +update
+
+      - name: Setup Java (temurin@11)
+        id: setup-java-temurin-11
+        if: matrix.java == 'temurin@11'
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 11
+          cache: sbt
+
+      - name: sbt update
+        if: matrix.java == 'temurin@11' && steps.setup-java-temurin-11.outputs.cache-hit == 'false'
+        run: sbt +update
+
+      - name: Setup Java (temurin@17)
+        id: setup-java-temurin-17
+        if: matrix.java == 'temurin@17'
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: sbt
+
+      - name: sbt update
+        if: matrix.java == 'temurin@17' && steps.setup-java-temurin-17.outputs.cache-hit == 'false'
+        run: sbt +update
+
+      - name: Generate site
+        run: sbt docs/tlSite
+
+      - name: Publish site
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+        uses: peaceiris/actions-gh-pages@v3.9.3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: site/target/docs/site
+          keep_files: true
