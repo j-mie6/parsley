@@ -41,7 +41,7 @@ inThisBuild(List(
   githubWorkflowJavaVersions := Seq(Java8, JavaLTS, JavaLatest),
   githubWorkflowAddedJobs += testCoverageJob(githubWorkflowGeneratedCacheSteps.value.toList),
   // Website Configuration
-  tlSitePublishBranch := Some(mainBranch),
+  tlSitePublishBranch := Some(/*mainBranch*/"wiki-improvements"),
   tlSiteApiUrl := Some(url("https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/latest/")),
 ))
 
