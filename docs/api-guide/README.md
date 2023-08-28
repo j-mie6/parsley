@@ -1,6 +1,4 @@
-{%
-helium.site.pageNavigation.enabled = false
-%}
+{% helium.site.pageNavigation.enabled = false %}
 
 # Understanding the API
 

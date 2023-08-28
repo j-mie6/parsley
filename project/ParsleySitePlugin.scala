@@ -1,6 +1,7 @@
 package parsley.build
 
 import laika.rewrite.link.{ApiLinks, LinkConfig}
+import laika.rewrite.{Version, Versions}
 import laika.sbt.LaikaConfig
 import laika.ast._
 import laika.helium.Helium
@@ -8,9 +9,10 @@ import laika.helium.config._
 import laika.theme.config.Color
 import parsley.build.ColorTints._
 import parsley.build.Icon._
-import org.typelevel.sbt.{TypelevelSitePlugin, TypelevelSettingsPlugin}
+import org.typelevel.sbt.{TypelevelSitePlugin, TypelevelSettingsPlugin, TypelevelVersioningPlugin}
 import sbt.Keys.{scmInfo, homepage, licenses}
 import sbt.{AutoPlugin, Def}
+import TypelevelVersioningPlugin.autoImport._
 import TypelevelSitePlugin.autoImport._
 import TypelevelSettingsPlugin.autoImport._
 import laika.sbt.LaikaPlugin.autoImport._
@@ -21,9 +23,13 @@ object ParsleySitePlugin extends AutoPlugin {
     override def projectSettings: Seq[Def.Setting[_]] = Seq(
         tlFatalWarnings := false,  // turn off fatal warnings for mdoc
         laikaConfig :=  LaikaConfig.defaults
-            .withConfigValue(LinkConfig(apiLinks = Seq(
-                ApiLinks(baseUri = "https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/latest/")
-            )))
+            .withConfigValue(LinkConfig(
+                apiLinks = Seq(
+                    ApiLinks(baseUri = "https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/latest/"),
+                    //ApiLinks(baseUri = "../api/"),
+                ),
+                //excludeFromValidation = Seq(Path.Root / "api"),
+            ))
             .withRawContent,  // enable usage of raw HTML
         tlSiteHelium := tlSiteHelium.value.site.layout(
                 topBarHeight = LengthUnit.px(50),
@@ -43,6 +49,7 @@ object ParsleySitePlugin extends AutoPlugin {
             .site.topNavigationBar(
                 homeLink = IconLink.internal(Path.Root / "index.md", leaf),
             )
+            //.site.baseURL("https://j-mie6.github.io/parsley")
             .site.pageNavigation(
                 sourceBaseURL = Some(s"${scmInfo.value.fold(homepage.value.get.toString)(_.browseUrl.toString)}/blob/master/docs"),
             )
@@ -53,8 +60,15 @@ object ParsleySitePlugin extends AutoPlugin {
             )
             .site.downloadPage(
                 title = "Documentation Downloads",
-                description = None,
+                description = Some("The Wiki can be downloaded as a PDF: formatting is not guaranteed to be consistent with the website."),
+                includeEPUB = false,
             )
+            .site.versions(Versions(
+                currentVersion = Version(s"${tlBaseVersion.value}.x", "latest", canonical = true, label = Some("stable")),
+                olderVersions = Seq.empty,
+                newerVersions = Seq.empty,
+                //renderUnversioned = false // Use this when backporting fixes to older docs
+            ))
             .site.themeColors(
                 primary = ForestGreen.darker,
                 secondary = DarkPink,

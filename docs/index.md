@@ -1,5 +1,6 @@
 {%
 helium.site.pageNavigation.enabled = false
+#laika.versioned = false
 %}
 # Home
 
