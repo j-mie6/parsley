@@ -22,7 +22,8 @@ object ParsleySitePlugin extends AutoPlugin {
     override def requires = TypelevelSitePlugin
 
     override def projectSettings: Seq[Def.Setting[_]] = Seq(
-        tlFatalWarnings := false,  // turn off fatal warnings for mdoc
+        tlFatalWarnings := false, // turn off fatal warnings for mdoc
+        tlSiteKeepFiles := false, // FIXME: turn off when docs are stable
         laikaConfig :=  LaikaConfig.defaults.withConfigValue(LinkConfig(
                 apiLinks = tlSiteApiUrl.value.map(url => ApiLinks(baseUri = url.toExternalForm)).toSeq,
             ))
