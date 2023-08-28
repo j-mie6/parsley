@@ -128,10 +128,8 @@
       <main class="content">
 
         <h1 id="parser-combinator-cheatsheet" class="title">Parser Combinator Cheatsheet</h1>
-        <div class="callout info">
-          <i class="icofont-laika info">&#xef4e;</i>
-          <p>This page is still being updated for the wiki port, so some things may be a bit broken or look a little strange.</p>
-        </div>
+        
+        
         <p>Until you&#39;re more comfortable using parser combinators and have a sense for how to piece things
         together, the sheer choice can be daunting. This page is designed to help bridge this gap by
         bringing attention to some of the more common and useful combinators, as well as a few common idioms
@@ -165,43 +163,43 @@
             </tr>
             <tr>
               <td><code>_ *&gt; _</code> / <code>_ ~&gt; _</code></td>
-              <td><code>(Parsley[A], =&gt;Parsley[B]) =&gt; Parsley[B]</code></td>
+              <td><code>( Parsley[A]</code><br><code>, =&gt;Parsley[B]</code><br><code>) =&gt; Parsley[B]</code></td>
               <td>sequence two parsers, returning the result of the <strong>second</strong>.</td>
               <td>&quot;then&quot;</td>
             </tr>
             <tr>
               <td><code>_ &lt;* _</code> / <code>_ &lt;~ _</code></td>
-              <td><code>(Parsley[A], =&gt;Parsley[B]) =&gt; Parsley[A]</code></td>
+              <td><code>( Parsley[A]</code><br><code>, =&gt;Parsley[B]</code><br><code>) =&gt; Parsley[A]</code></td>
               <td>sequence two parsers, returning the result of the <strong>first</strong>.</td>
               <td>&quot;then discard&quot;</td>
             </tr>
             <tr>
               <td><code>_.map(_)</code></td>
-              <td><code>(Parsley[A], A =&gt; B) =&gt; Parsley[B]</code></td>
+              <td><code>( Parsley[A]</code><br><code>, A =&gt; B</code><br><code>) =&gt; Parsley[B]</code></td>
               <td>use a function to change the result of a parser.</td>
               <td>&quot;map&quot;</td>
             </tr>
             <tr>
               <td><code>_ &lt;#&gt; _</code></td>
-              <td><code>(A =&gt; B, Parsley[A]) =&gt; Parsley[B]</code></td>
-              <td>use a function to change the result of a parser. <em>Requires <code>import parsley.extension.HaskellStyleMap</code></em></td>
+              <td><code>( A =&gt; B</code><br><code>, Parsley[A]</code><br><code>) =&gt; Parsley[B]</code></td>
+              <td>use a function to change the result of a parser. <br><br>(<em>Requires <code>import</code> <code>parsley.extension.HaskellStyleMap</code></em>)</td>
               <td>&quot;map&quot;</td>
             </tr>
             <tr>
               <td><code>_ #&gt; _</code></td>
-              <td><code>(Parsley[A], B) =&gt; Parsley[B]</code></td>
+              <td><code>( Parsley[A]</code><br><code>, B</code><br><code>) =&gt; Parsley[B]</code></td>
               <td>replace the result of a parser with a fixed value.</td>
               <td>&quot;as&quot;</td>
             </tr>
             <tr>
               <td><code>liftN(_, .., _)</code></td>
-              <td><code>((A1, A2, .., An) =&gt; B, Parsley[A1], =&gt;Parsley[A2], .., =&gt;Parsley[An]) =&gt; Parsley[B]</code></td>
+              <td><code>( (A1, A2, .., An) =&gt; B</code><br><code>, Parsley[A1]</code><br><code>, =&gt;Parsley[A2]</code><br><code>, ..</code><br><code>, =&gt;Parsley[An]</code><br><code>) =&gt; Parsley[B]</code></td>
               <td>use a function to combine the results of <em>n</em> parsers, sequencing them all together.</td>
               <td>&quot;lift n&quot;</td>
             </tr>
             <tr>
               <td><code>_ &lt;|&gt; _</code></td>
-              <td><code>(Parsley[A], =&gt;Parsley[A]) =&gt; Parsley[A]</code></td>
+              <td><code>( Parsley[A]</code><br><code>, =&gt;Parsley[A]</code><br><code>) =&gt; Parsley[A]</code></td>
               <td>try one parser, and if it fails <em>without consuming input</em> try the second</td>
               <td>&quot;or&quot;</td>
             </tr>
