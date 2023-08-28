@@ -10,6 +10,7 @@ import laika.theme.config.Color
 import parsley.build.ColorTints._
 import parsley.build.Icon._
 import org.typelevel.sbt.{TypelevelSitePlugin, TypelevelSettingsPlugin, TypelevelVersioningPlugin}
+import org.typelevel.sbt.site.GenericSiteSettings
 import sbt.Keys.{scmInfo, homepage, licenses}
 import sbt.{AutoPlugin, Def}
 import TypelevelVersioningPlugin.autoImport._
@@ -22,18 +23,10 @@ object ParsleySitePlugin extends AutoPlugin {
 
     override def projectSettings: Seq[Def.Setting[_]] = Seq(
         tlFatalWarnings := false,  // turn off fatal warnings for mdoc
-        laikaConfig :=  LaikaConfig.defaults
-            .withConfigValue(LinkConfig(
-                apiLinks = Seq(
-                    ApiLinks(baseUri = "https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/latest/"),
-                    //ApiLinks(baseUri = "../api/"),
-                ),
-                //excludeFromValidation = Seq(Path.Root / "api"),
-            ))
-            .withRawContent,  // enable usage of raw HTML
+        laikaConfig :=  LaikaConfig.defaults.withRawContent,  // enable usage of raw HTML
         tlSiteHelium := tlSiteHelium.value.site.layout(
                 topBarHeight = LengthUnit.px(50),
-                contentWidth = LengthUnit.px(1075), //px(860)
+                //contentWidth = LengthUnit.px(1075), //px(860)
             )
             .site.mainNavigation(
                 depth = 3,
@@ -46,10 +39,11 @@ object ParsleySitePlugin extends AutoPlugin {
                     )
                 ),
             )
+            .site.resetDefaults(topNavigation = true)
             .site.topNavigationBar(
                 homeLink = IconLink.internal(Path.Root / "index.md", leaf),
+                navLinks = tlSiteApiUrl.value.map(url => TextLink.external(url.toString, "API")).toList ++ GenericSiteSettings.githubLink.value.toList
             )
-            //.site.baseURL("https://j-mie6.github.io/parsley")
             .site.pageNavigation(
                 sourceBaseURL = Some(s"${scmInfo.value.fold(homepage.value.get.toString)(_.browseUrl.toString)}/blob/master/docs"),
             )

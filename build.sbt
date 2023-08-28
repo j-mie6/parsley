@@ -20,11 +20,7 @@ inThisBuild(List(
   organization := "com.github.j-mie6",
   organizationName := "Parsley Contributors <https://github.com/j-mie6/Parsley/graphs/contributors>",
   startYear := Some(2020), // true start is 2018, but license is from 2020
-  homepage := Some(url("https://github.com/j-mie6/parsley")),
   licenses := List("BSD-3-Clause" -> url("https://opensource.org/licenses/BSD-3-Clause")),
-  developers := List(
-    tlGitHubDev("j-mie6", "Jamie Willis")
-  ),
   versionScheme := Some("early-semver"),
   crossScalaVersions := Seq(Scala213, Scala212, Scala3),
   scalaVersion := Scala213,
@@ -42,7 +38,6 @@ inThisBuild(List(
   githubWorkflowAddedJobs += testCoverageJob(githubWorkflowGeneratedCacheSteps.value.toList),
   // Website Configuration
   tlSitePublishBranch := Some(/*mainBranch*/"wiki-improvements"),
-  tlSiteApiUrl := Some(url("https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/latest/")),
 ))
 
 lazy val root = tlCrossRootProject.aggregate(parsley)
@@ -81,6 +76,7 @@ lazy val docs = project
   .in(file("site"))
   .dependsOn(parsley.jvm)
   .enablePlugins(ParsleySitePlugin)
+  .settings(tlSiteApiModule := Some((parsley.jvm / projectID).value))
 
 def testCoverageJob(cacheSteps: List[WorkflowStep]) = WorkflowJob(
     id = "coverage",
