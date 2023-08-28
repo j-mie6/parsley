@@ -1,4 +1,7 @@
-{% laika.title = FAQ %}
+{%
+laika.title = FAQ
+laika.versioned = true
+%}
 
 # Frequently Asked Questions
 

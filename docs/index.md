@@ -1,6 +1,6 @@
 {%
 helium.site.pageNavigation.enabled = false
-#laika.versioned = false
+laika.versioned = true
 %}
 # Home
 

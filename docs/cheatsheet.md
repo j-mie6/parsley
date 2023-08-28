@@ -1,4 +1,7 @@
-{% laika.title = Cheatsheet %}
+{%
+laika.title = Cheatsheet
+laika.versioned = true
+%}
 
 # Parser Combinator Cheatsheet
 @:todo(We should probably just use HTML tables here, then have proper colouring of the signatures)
