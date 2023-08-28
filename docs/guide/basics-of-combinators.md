@@ -9,7 +9,7 @@ will touch on both of those ideas. Another advantage is that there is less boile
 with _some_ parser generators: you don't need to convert between the AST the generator produces and
 your own, you can parse straight into the desired type.
 
-## Part I: Basic Combinators and Sequencing
+## Basic Combinators and Sequencing
 We'll start really basic: just reading a character or two and seeing how to combine the results
 using _combinators_. For a first look, we will just parse one of any character. If you are familar
 with regex, this would match the pattern `(.)`.
@@ -269,7 +269,7 @@ results, so next up is looking at _choice_.
 * `N` parser's results can be combined using the `liftN` combinators with an arity `N` function
 * Larger combinators are built out of smaller ones using regular Scala functionality
 
-## Part II: Choice and Handling Failure
+## Choice and Handling Failure
 Most practical parsers aren't just a straight line like `string` or reading a bunch of characters,
 usually there are choices to be made along the way.
 
@@ -629,7 +629,7 @@ Have a play around with those in a REPL and make sure you understand how they wo
 they will succeed on. I've written the type explictly here so that the `voidImplicitly` function
 will fire and make them all the right type.
 
-## Part III: Recursive Context-Free Parsers
+## Recursive Context-Free Parsers
 Everything we've seen so far has been as powerful as a regular expression. While regular expressions
 are certainly useful for writing lexers they are normally not powerful enough to parse the syntax
 of a programming language. It's worth nothing here that, _usually_, parser combinators don't make
@@ -893,7 +893,7 @@ val or = (x: Boolean, y: Option[Boolean]) => y.foldLeft(x)(_ || _)
 lazy val expr: Parsley[Boolean] = or.lift(term, option("||" *> expr  ))
 
 // <term> ::= <not>     ('&&'   <term>          |      epsilon      )
-lazy val term: Parsley[Boolean] = 
+lazy val term: Parsley[Boolean] =
                not <**> ("&&" *> term.map(and) </> identity[Boolean])
 
 // <not> ::=                     '!'   <not>         | <atom>

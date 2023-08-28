@@ -173,6 +173,11 @@ import parsley.implicits.zipped.Zipped2
 (nonzero, many(digit)).zipped(_ :: _)
 ```
 
+@:callout(warning)
+The `zipped` syntax, unlike the `liftN` combinators or `lift` syntax, is not lazy in _any_ of its arguments, so care
+may be needed to use `LazyParsley.unary_~` to restore laziness to those arguments that need it.
+@:@
+
 Use this form of lifting when type-inference fails you. Otherwise, for clarity, use a regular `liftN`, or the
 syntactic sugar for it:
 
@@ -187,13 +192,17 @@ Num.lift(int)
 
 The `lift` functions work all the way up to 22 arguments (which is a JVM limit). The same goes for
 the `zipped` syntax and `lift` syntax. Don't forget about `<::>` as well as its friends `<~>`,
-`<*>`, and `<**>`! They all provide a concise way of combining things in (common) special cases. **Be aware**: the `zipped` syntax, unlike the `liftN` combinators or `lift` syntax, is not lazy in _any_ of its arguments, so care
-may be needed to use `LazyParsley.unary_~` to restore laziness to those arguments that need it.
+`<*>`, and `<**>`! They all provide a concise way of combining things in (common) special cases.
 
-*A note for Haskellers*: In Scala, curried application is not as favoured as it is in Haskell for
-performance reasons. The classic `f <#> p <*> .. <*> z` pattern that is common in Haskell (normally `(<$>)`)
+@:callout(info)
+**A note for Haskellers**
+
+In Scala, curried application is not as favoured as it is in Haskell for
+performance reasons. The classic `f <$> p <*> .. <*> z` pattern that is common in Haskell
 is unfavourable compared to the scala `liftN(f, p, .., z)`. For the latter, `f` is uncurried, which
 is the norm, and so it is almost always more efficient. Both `<*>` and `<**>` should be, therefore,
-used sparingly in idiomatic Parsley code instead of liberally like in Haskell. However, it goes without
-saying that `lift2[A => B, A, B]((f, x) => f(x), pf, px)` is no more efficient than `pf <*> px` so
-the latter is favoured for that use case!
+used sparingly in idiomatic `parsley` code instead of liberally like in Haskell.
+
+However, it goes without saying that `lift2[A => B, A, B]((f, x) => f(x), pf, px)` is no more
+efficient than `pf <*> px` so the latter is favoured for that use case!
+@:@

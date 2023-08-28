@@ -29,12 +29,17 @@ object ParsleySitePlugin extends AutoPlugin {
                 topBarHeight = LengthUnit.px(50),
                 contentWidth = LengthUnit.px(1075), //px(860)
             )
-            .site.mainNavigation(appendLinks = Seq(
-                ThemeNavigationSection(
-                "Related Projects",
-                TextLink.external("https://github.com/j-mie6/parsley-cats", "parsley-cats")
-                )
-            ))
+            .site.mainNavigation(
+                depth = 3,
+                includePageSections = false,
+                appendLinks = Seq(
+                    ThemeNavigationSection(
+                    "Related Projects",
+                    TextLink.external("https://github.com/j-mie6/parsley-cats", "parsley-cats"),
+                    TextLink.external("https://github.com/j-mie6/gigaparsec", "gigaparsec (Haskell)"),
+                    )
+                ),
+            )
             .site.topNavigationBar(
                 homeLink = IconLink.internal(Path.Root / "index.md", leaf),
             )
