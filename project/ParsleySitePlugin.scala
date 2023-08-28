@@ -27,6 +27,7 @@ object ParsleySitePlugin extends AutoPlugin {
             .withRawContent,  // enable usage of raw HTML
         tlSiteHelium := tlSiteHelium.value.site.layout(
                 topBarHeight = LengthUnit.px(50),
+                contentWidth = LengthUnit.px(1075), //px(860)
             )
             .site.mainNavigation(appendLinks = Seq(
                 ThemeNavigationSection(

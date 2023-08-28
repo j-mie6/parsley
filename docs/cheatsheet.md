@@ -1,10 +1,8 @@
 {% laika.title = Cheatsheet %}
 
 # Parser Combinator Cheatsheet
-
-@:callout(info)
-This page is still being updated for the wiki port, so some things may be a bit broken or look a little strange.
-@:@
+@:todo(We should probably just use HTML tables here, then have proper colouring of the signatures)
+@:todo(discuss `as`)
 
 Until you're more comfortable using parser combinators and have a sense for how to piece things
 together, the sheer choice can be daunting. This page is designed to help bridge this gap by
@@ -25,13 +23,13 @@ before any input can be consumed.
 | Combinator          | Type                                                             | Use                                                                                             | Pronounciation    |
 |---------------------|------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|-------------------|
 | `pure(_)`           | `A => Parsley[A]`                                                | return a value of type `A` without parsing anything.                                            | "pure"            |
-| `_ *> _` / `_ ~> _` | `(Parsley[A], =>Parsley[B]) => Parsley[B]`                         | sequence two parsers, returning the result of the **second**.                                   | "then"            |
-| `_ <* _` / `_ <~ _` | `(Parsley[A], =>Parsley[B]) => Parsley[A]`                         | sequence two parsers, returning the result of the **first**.                                    | "then discard"    |
-| `_.map(_)`          | `(Parsley[A], A => B) => Parsley[B]`                             | use a function to change the result of a parser.                                              | "map"             |
-| `_ <#> _`           | `(A => B, Parsley[A]) => Parsley[B]`                             | use a function to change the result of a parser. _Requires `import parsley.extension.HaskellStyleMap`_                                                | "map"             |
-| `_ #> _`            | `(Parsley[A], B) => Parsley[B]`                                  | replace the result of a parser with a fixed value.                                              | "as"              |
-| `liftN(_, .., _)`   | `((A1, A2, .., An) => B, Parsley[A1], =>Parsley[A2], .., =>Parsley[An]) => Parsley[B]`| use a function to combine the results of *n* parsers, sequencing them all together.             | "lift n" |
-| `_ <\|> _`          | `(Parsley[A], =>Parsley[A]) => Parsley[A]`                         | try one parser, and if it fails *without consuming input* try the second                        | "or"              |
+| `_ *> _` / `_ ~> _` | `( Parsley[A]`<br>`, =>Parsley[B]`<br>`) => Parsley[B]`                         | sequence two parsers, returning the result of the **second**.                                   | "then"            |
+| `_ <* _` / `_ <~ _` | `( Parsley[A]`<br>`, =>Parsley[B]`<br>`) => Parsley[A]`                         | sequence two parsers, returning the result of the **first**.                                    | "then discard"    |
+| `_.map(_)`          | `( Parsley[A]`<br>`, A => B`<br>`) => Parsley[B]`                             | use a function to change the result of a parser.                                              | "map"             |
+| `_ <#> _`           | `( A => B`<br>`, Parsley[A]`<br>`) => Parsley[B]`                             | use a function to change the result of a parser. <br><br>(_Requires `import` `parsley.extension.HaskellStyleMap`_)                                                | "map"             |
+| `_ #> _`            | `( Parsley[A]`<br>`, B`<br>`) => Parsley[B]`                                  | replace the result of a parser with a fixed value.                                              | "as"              |
+| `liftN(_, .., _)`   | `( (A1, A2, .., An) => B`<br>`, Parsley[A1]`<br>`, =>Parsley[A2]`<br>`, ..`<br>`, =>Parsley[An]`<br>`) => Parsley[B]`| use a function to combine the results of *n* parsers, sequencing them all together.             | "lift n" |
+| `_ <\|> _`          | `( Parsley[A]`<br>`, =>Parsley[A]`<br>`) => Parsley[A]`                         | try one parser, and if it fails *without consuming input* try the second                        | "or"              |
 | `attempt(_)`        | `Parsley[A] => Parsley[A]`                                       | perform a parser, but roll-back any consumed input if it fails, use in conjunction with `<\|>`. | "attempt"         |
 | `lookAhead(_)`      | `Parsley[A] => Parsley[A]`                                       | execute a parser, and roll-back any consumed input if it *succeeded*.                           | "look-ahead"      |
 | `notFollowedBy(_)`  | `Parsley[A] => Parsley[Unit]`                                    | execute a parser, never consuming input: succeed only if the parser fails.                      | "not followed by" |
