@@ -87,9 +87,9 @@
     <li class="level1 nav-leaf"><a href="../">Home</a></li>
     <li class="level1 nav-leaf"><a href="../faq.html">FAQ</a></li>
     <li class="level1 nav-leaf"><a href="../cheatsheet.html">Cheatsheet</a></li>
-    <li class="level1 nav-leaf"><a href="../api.html">Understanding the API</a></li>
-    <li class="level1 nav-header">Guide to Parser Combinators</li>
-    <li class="level2 nav-leaf"><a href="roadmap.html">Roadmap</a></li>
+    <li class="level1 nav-node"><a href="../api-guide/">Understanding the API</a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/parsley.html">Parsley</a></li>
+    <li class="level1 nav-node"><a href="index.html">Parser Combinator Tutorial</a></li>
     <li class="level2 nav-leaf"><a href="basics-of-combinators.html">Basics of Combinators</a></li>
     <li class="level2 nav-leaf"><a href="building-expression-parsers.html">Building Expression Parsers</a></li>
     <li class="level2 nav-leaf"><a href="effective-whitespace-parsing.html">Effective Whitespace Parsing</a></li>
@@ -100,6 +100,7 @@
     <li class="level2 active nav-leaf"><a href="#">Advanced Error Messages</a></li>
     <li class="level1 nav-header">Related Projects</li>
     <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/parsley-cats">parsley-cats</a></li>
+    <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/gigaparsec">gigaparsec (Haskell)</a></li>
   </ul>
 
 </nav>
@@ -111,12 +112,12 @@
   <p class="header"><a href="#">Advanced Error Messages</a></p>
 
   <ul class="nav-list">
-    <li class="level1 nav-node"><a href="#using-amend-and-entrench">Using <code>amend</code> and <code>entrench</code></a></li>
-    <li class="level2 nav-leaf"><a href="#using-lookahead-instead">Using <code>lookAhead</code> instead</a></li>
-    <li class="level1 nav-node"><a href="#using-unexpected-and-fail-to-refine-messages">Using <code>unexpected</code> and <code>fail</code> to refine messages</a></li>
-    <li class="level2 nav-leaf"><a href="#using-amend-or-lookahead">Using <code>amend</code> or <code>lookAhead</code></a></li>
-    <li class="level1 nav-node"><a href="#using-fail-and-guardagainst">Using <code>fail</code> and <code>guardAgainst</code></a></li>
-    <li class="level2 nav-leaf"><a href="#context-awareness">Context-Awareness</a></li>
+    <li class="level1 nav-node"><a href="#using-amend-and-entrench"><span class="section-number">1 </span>Using <code>amend</code> and <code>entrench</code></a></li>
+    <li class="level2 nav-leaf"><a href="#using-lookahead-instead"><span class="section-number">1.1 </span>Using <code>lookAhead</code> instead</a></li>
+    <li class="level1 nav-node"><a href="#using-unexpected-and-fail-to-refine-messages"><span class="section-number">2 </span>Using <code>unexpected</code> and <code>fail</code> to refine messages</a></li>
+    <li class="level2 nav-leaf"><a href="#using-amend-or-lookahead"><span class="section-number">2.1 </span>Using <code>amend</code> or <code>lookAhead</code></a></li>
+    <li class="level1 nav-node"><a href="#using-fail-and-guardagainst"><span class="section-number">3 </span>Using <code>fail</code> and <code>guardAgainst</code></a></li>
+    <li class="level2 nav-leaf"><a href="#context-awareness"><span class="section-number">3.1 </span>Context-Awareness</a></li>
   </ul>
 
   <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/master/docs/guide/advanced-error-messages.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
@@ -151,7 +152,7 @@
         <p>This post will cover the use of these combinators and a couple of useful patterns to provide very
         fine grained error messages.</p>
         
-        <h2 id="using-amend-and-entrench" class="section"><a class="anchor-link left" href="#using-amend-and-entrench"><i class="icofont-laika link">&#xef71;</i></a>Using <code>amend</code> and <code>entrench</code></h2>
+        <h2 id="using-amend-and-entrench" class="section"><a class="anchor-link left" href="#using-amend-and-entrench"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1 </span>Using <code>amend</code> and <code>entrench</code></h2>
         <p>I&#39;m going to start by introducing this dynamic duo, as they can be very useful in the right
         circumstances. In fact, let&#39;s revisit the <code>identifier</code> parser we made when we did <em>Effective Lexing</em>:</p>
         <pre><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="identifier">lexer</span><span> {
@@ -275,7 +276,7 @@ Success(&quot;then&quot;)</code></pre>
         esoteric, but there are much larger examples of the <code>filterOut</code> (or indeed <code>guardAgainst</code>) technique
         where this might come in handy. For our case, however, we can make do with just <code>amend</code>.</p>
         
-        <h3 id="using-lookahead-instead" class="section"><a class="anchor-link left" href="#using-lookahead-instead"><i class="icofont-laika link">&#xef71;</i></a>Using <code>lookAhead</code> instead</h3>
+        <h3 id="using-lookahead-instead" class="section"><a class="anchor-link left" href="#using-lookahead-instead"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1.1 </span>Using <code>lookAhead</code> instead</h3>
         <p>As promised, here is another way we could fix our problem (and it&#39;s less efficient!). Like I said
         earlier, the crux of the issue is that we consumed input on the successful parse <em>before</em> we perform
         the filter, which means the error message is pointing after that input. The <code>lookAhead</code> combinator,
@@ -312,7 +313,7 @@ Success(&quot;then&quot;)</code></pre>
         get to that point anyway. Again though, this is not the best practice to do: if <code>amend</code> and
         <code>entrench</code> get the job done, I would advise using them!</p>
         
-        <h2 id="using-unexpected-and-fail-to-refine-messages" class="section"><a class="anchor-link left" href="#using-unexpected-and-fail-to-refine-messages"><i class="icofont-laika link">&#xef71;</i></a>Using <code>unexpected</code> and <code>fail</code> to refine messages</h2>
+        <h2 id="using-unexpected-and-fail-to-refine-messages" class="section"><a class="anchor-link left" href="#using-unexpected-and-fail-to-refine-messages"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">2 </span>Using <code>unexpected</code> and <code>fail</code> to refine messages</h2>
         <p>The <code>unexpected</code> combinator is a simple combinator, but one that is difficult to apply in practice.
         At it&#39;s core, it fails, but adjusts the unexpected message within the error. Let&#39;s take a look:</p>
         <pre><code>unexpected(&quot;something&quot;).label(&quot;something else&quot;).parse(&quot;a&quot;)
@@ -347,7 +348,7 @@ Success(&quot;then&quot;)</code></pre>
         <p>This variant can use the result of the parser it is attached to in order to generate the unexpected
         message.</p>
         
-        <h3 id="using-amend-or-lookahead" class="section"><a class="anchor-link left" href="#using-amend-or-lookahead"><i class="icofont-laika link">&#xef71;</i></a>Using <code>amend</code> or <code>lookAhead</code></h3>
+        <h3 id="using-amend-or-lookahead" class="section"><a class="anchor-link left" href="#using-amend-or-lookahead"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">2.1 </span>Using <code>amend</code> or <code>lookAhead</code></h3>
         <p>The easiest way to start using <code>unexpected</code> or <code>fail</code> is by using the two tools we&#39;ve seen so far. The
         pattern is to use it to produce predicative errors. This is where you can anticipate common syntax
         issues with a language or format and produce a specialised error to help with them. The idea is to use
@@ -726,7 +727,7 @@ Success(&quot;then&quot;)</code></pre>
         <code>||</code>, since we are going to have to have already found one of <code>&lt;</code>, <code>==</code>, <code>not</code>, <code>true</code>, or <code>false</code>
         before we reach it <em>anyway</em>.</p>
         
-        <h4 id="using-notfollowedby" class="section"><a class="anchor-link left" href="#using-notfollowedby"><i class="icofont-laika link">&#xef71;</i></a>Using <code>notFollowedBy</code></h4>
+        <h4 id="using-notfollowedby" class="section"><a class="anchor-link left" href="#using-notfollowedby"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">2.1.1 </span>Using <code>notFollowedBy</code></h4>
         <p>Fortunately for us, our <code>lookAhead/amend</code> with <code>&lt;|&gt;</code> has a cousin: <code>notFollowedBy</code> with <code>&lt;*</code>. We&#39;ve
         even seen a variant of this when we handled <code>keyword</code> not ending in a letter. Using this, we can
         capture the problem much closer to the expression (or indeed the assignment). This comes at a cost,
@@ -820,7 +821,7 @@ expression</code> label if we wished, but we only want to apply that if we don&#
         the parse &quot;eagerly&quot;, but it is slightly more robust with handling edge cases like the brackets. But
         this is so minor that I&#39;m not going to go into it, you can explore it for yourself if you want.</p>
         
-        <h2 id="using-fail-and-guardagainst" class="section"><a class="anchor-link left" href="#using-fail-and-guardagainst"><i class="icofont-laika link">&#xef71;</i></a>Using <code>fail</code> and <code>guardAgainst</code></h2>
+        <h2 id="using-fail-and-guardagainst" class="section"><a class="anchor-link left" href="#using-fail-and-guardagainst"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">3 </span>Using <code>fail</code> and <code>guardAgainst</code></h2>
         <p>So far, we&#39;ve seen the use of <code>filterOut</code>, <code>unexpected</code>, <code>empty</code>, <code>explain</code>, and <code>fail</code>. As
         <code>filterOut</code> is to <code>empty + explain</code>, <code>guardAgainst</code> is to <code>fail</code>. The distinction between the two
         is really just the <em>sort</em> of the message or failure we are trying to produce. Something that is
@@ -831,7 +832,7 @@ expression</code> label if we wished, but we only want to apply that if we don&#
         problem as a semantic one. Really, play around with both sorts and see which one you feel fits the
         tone of the error more.</p>
         
-        <h3 id="context-awareness" class="section"><a class="anchor-link left" href="#context-awareness"><i class="icofont-laika link">&#xef71;</i></a>Context-Awareness</h3>
+        <h3 id="context-awareness" class="section"><a class="anchor-link left" href="#context-awareness"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">3.1 </span>Context-Awareness</h3>
         <p>It&#39;s interesting to recognise that <code>filterOut</code> is a more context-aware version of <code>filter</code>. That is
         to say that <code>filterOut</code> gets access to the parsed result in order to produce the message, whereas
         <code>filter</code> does not. <code>guardAgainst</code> is also context-aware. In this last part of the page, I want to

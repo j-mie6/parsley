@@ -87,9 +87,9 @@
     <li class="level1 nav-leaf"><a href="../">Home</a></li>
     <li class="level1 nav-leaf"><a href="../faq.html">FAQ</a></li>
     <li class="level1 nav-leaf"><a href="../cheatsheet.html">Cheatsheet</a></li>
-    <li class="level1 nav-leaf"><a href="../api.html">Understanding the API</a></li>
-    <li class="level1 nav-header">Guide to Parser Combinators</li>
-    <li class="level2 nav-leaf"><a href="roadmap.html">Roadmap</a></li>
+    <li class="level1 nav-node"><a href="../api-guide/">Understanding the API</a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/parsley.html">Parsley</a></li>
+    <li class="level1 nav-node"><a href="index.html">Parser Combinator Tutorial</a></li>
     <li class="level2 nav-leaf"><a href="basics-of-combinators.html">Basics of Combinators</a></li>
     <li class="level2 active nav-leaf"><a href="#">Building Expression Parsers</a></li>
     <li class="level2 nav-leaf"><a href="effective-whitespace-parsing.html">Effective Whitespace Parsing</a></li>
@@ -100,6 +100,7 @@
     <li class="level2 nav-leaf"><a href="advanced-error-messages.html">Advanced Error Messages</a></li>
     <li class="level1 nav-header">Related Projects</li>
     <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/parsley-cats">parsley-cats</a></li>
+    <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/gigaparsec">gigaparsec (Haskell)</a></li>
   </ul>
 
 </nav>
@@ -111,12 +112,12 @@
   <p class="header"><a href="#">Building Expression Parsers</a></p>
 
   <ul class="nav-list">
-    <li class="level1 nav-leaf"><a href="#the-problem-with-left-recursion">The Problem with Left-Recursion</a></li>
-    <li class="level1 nav-leaf"><a href="#using-expr-chain">Using <code>expr.chain</code></a></li>
-    <li class="level1 nav-node"><a href="#using-expr-precedence">Using <code>expr.precedence</code></a></li>
-    <li class="level2 nav-leaf"><a href="#generalising-precedence-with-gops-sops-and-levels">Generalising <code>precedence</code> with <code>GOps</code>, <code>SOps</code>, and <code>Levels</code></a></li>
-    <li class="level2 nav-leaf"><a href="#path-dependent-typing-and-ops-sops-gops">Path-Dependent Typing and <code>Ops</code>/<code>SOps</code>/<code>GOps</code></a></li>
-    <li class="level2 nav-leaf"><a href="#afternote-why-b-a-b-and-b-b">Afternote: Why <code>(B, A) =&gt; B</code> and <code>B =&gt; B</code>?</a></li>
+    <li class="level1 nav-leaf"><a href="#the-problem-with-left-recursion"><span class="section-number">1 </span>The Problem with Left-Recursion</a></li>
+    <li class="level1 nav-leaf"><a href="#using-expr-chain"><span class="section-number">2 </span>Using <code>expr.chain</code></a></li>
+    <li class="level1 nav-node"><a href="#using-expr-precedence"><span class="section-number">3 </span>Using <code>expr.precedence</code></a></li>
+    <li class="level2 nav-leaf"><a href="#generalising-precedence-with-gops-sops-and-levels"><span class="section-number">3.1 </span>Generalising <code>precedence</code> with <code>GOps</code>, <code>SOps</code>, and <code>Levels</code></a></li>
+    <li class="level2 nav-leaf"><a href="#path-dependent-typing-and-ops-sops-gops"><span class="section-number">3.2 </span>Path-Dependent Typing and <code>Ops</code>/<code>SOps</code>/<code>GOps</code></a></li>
+    <li class="level2 nav-leaf"><a href="#afternote-why-b-a-b-and-b-b"><span class="section-number">3.3 </span>Afternote: Why <code>(B, A) =&gt; B</code> and <code>B =&gt; B</code>?</a></li>
   </ul>
 
   <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/master/docs/guide/building-expression-parsers.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
@@ -144,7 +145,7 @@
         only contains <code>&lt;atom&gt;</code>. The <code>&lt;expr&gt;</code> on the left of the <code>&#39;+&#39;</code> denotes that addition binds
         more tightly to the left, which is what we expect.</p>
         
-        <h2 id="the-problem-with-left-recursion" class="section"><a class="anchor-link left" href="#the-problem-with-left-recursion"><i class="icofont-laika link">&#xef71;</i></a>The Problem with Left-Recursion</h2>
+        <h2 id="the-problem-with-left-recursion" class="section"><a class="anchor-link left" href="#the-problem-with-left-recursion"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1 </span>The Problem with Left-Recursion</h2>
         <p>For a first attempt, let&#39;s directly translate this grammar into Parsley (for now, we&#39;ll
         parse into an <code>Int</code>: behold, the magic of combinators!):</p>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>, </span><span class="type-name">Parsley</span><span>.</span><span class="identifier">attempt</span><span>
@@ -204,7 +205,7 @@
         this, as now we are in a good position to use the <code>chain.left1</code> combinator, which perfectly embodies
         the translation.</p>
         
-        <h2 id="using-expr-chain" class="section"><a class="anchor-link left" href="#using-expr-chain"><i class="icofont-laika link">&#xef71;</i></a>Using <code>expr.chain</code></h2>
+        <h2 id="using-expr-chain" class="section"><a class="anchor-link left" href="#using-expr-chain"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">2 </span>Using <code>expr.chain</code></h2>
         <p>The left-recursion problem is not a new one, the parser combinator community has known about it
         for a long time. For parser combinator libraries it is necessary to <em>left-factor</em> the grammar.
         Thankfully, the left-factoring algorithm can be itself encoded nicely as a combinator: this is
@@ -244,7 +245,7 @@
         is more than one chain interacting together then <code>expr.precedence</code> comes in handy (but note that
         <code>expr.precedence</code> is complete overkill to replace a single chain!).</p>
         
-        <h2 id="using-expr-precedence" class="section"><a class="anchor-link left" href="#using-expr-precedence"><i class="icofont-laika link">&#xef71;</i></a>Using <code>expr.precedence</code></h2>
+        <h2 id="using-expr-precedence" class="section"><a class="anchor-link left" href="#using-expr-precedence"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">3 </span>Using <code>expr.precedence</code></h2>
         <p>The final form of this parser uses a expression parser builder, called <code>precedence</code>. Since Parsley parsers
         are implemented in pure Scala, there is nothing to stop you from developing tools like this yourself: the
         ability to work with parsers as values and develop combinators with them is the biggest advantage of
@@ -282,9 +283,9 @@
         homogenously (which I call a <em>monolithic</em> AST). But sometimes, it&#39;s desirable to maintain stronger
         guarantees about how the AST is structured, and for that we need a heterogenous precedence table.</p>
         
-        <h3 id="generalising-precedence-with-gops-sops-and-levels" class="section"><a class="anchor-link left" href="#generalising-precedence-with-gops-sops-and-levels"><i class="icofont-laika link">&#xef71;</i></a>Generalising <code>precedence</code> with <code>GOps</code>, <code>SOps</code>, and <code>Levels</code></h3>
+        <h3 id="generalising-precedence-with-gops-sops-and-levels" class="section"><a class="anchor-link left" href="#generalising-precedence-with-gops-sops-and-levels"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">3.1 </span>Generalising <code>precedence</code> with <code>GOps</code>, <code>SOps</code>, and <code>Levels</code></h3>
         
-        <h4 id="subtyped-asts-with-sops" class="section"><a class="anchor-link left" href="#subtyped-asts-with-sops"><i class="icofont-laika link">&#xef71;</i></a>Subtyped ASTs with <code>SOps</code></h4>
+        <h4 id="subtyped-asts-with-sops" class="section"><a class="anchor-link left" href="#subtyped-asts-with-sops"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">3.1.1 </span>Subtyped ASTs with <code>SOps</code></h4>
         <p>In some circumstances, it might be desirable to change the type of the parsers at each layer of the
         precedence table. This allows for a more strongly-typed AST, for example. Compared to Haskell, this
         can be easily achieved in Scala using subtyping.</p>
@@ -387,7 +388,7 @@ type mismatch;
         <p>This means that, by using <code>SOps</code>, we get a guarantee that our parser correctly matches the intended
         associativity advertised by our ASTs constructors!</p>
         
-        <h4 id="non-subtyped-heterogenous-asts-with-gops" class="section"><a class="anchor-link left" href="#non-subtyped-heterogenous-asts-with-gops"><i class="icofont-laika link">&#xef71;</i></a>Non-Subtyped Heterogenous ASTs with <code>GOps</code></h4>
+        <h4 id="non-subtyped-heterogenous-asts-with-gops" class="section"><a class="anchor-link left" href="#non-subtyped-heterogenous-asts-with-gops"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">3.1.2 </span>Non-Subtyped Heterogenous ASTs with <code>GOps</code></h4>
         <p>So far we&#39;ve seen how to generalise our expression parsers to work with heterogenous trees that rely
         on subtyping. However, there may be cases where the subtyping is undesirable, or otherwise not
         possible (for example, if you want layers from <code>Int</code> to <code>Expr</code>) but we still want these strongly typed guarantees about the shape of the tree. In this case we would change the data-type as follows:</p>
@@ -444,7 +445,7 @@ type mismatch;
         <p>By the way, you can actually intermingle <code>Ops</code>, <code>SOps</code>, <em>and</em> <code>GOps</code> all in the same table, just as
         long as you are using <code>Levels</code>. Each of them are just builders for values of type <code>Ops[A, B]</code>.</p>
         
-        <h3 id="path-dependent-typing-and-ops-sops-gops" class="section"><a class="anchor-link left" href="#path-dependent-typing-and-ops-sops-gops"><i class="icofont-laika link">&#xef71;</i></a>Path-Dependent Typing and <code>Ops</code>/<code>SOps</code>/<code>GOps</code></h3>
+        <h3 id="path-dependent-typing-and-ops-sops-gops" class="section"><a class="anchor-link left" href="#path-dependent-typing-and-ops-sops-gops"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">3.2 </span>Path-Dependent Typing and <code>Ops</code>/<code>SOps</code>/<code>GOps</code></h3>
         <p>To support the advertised behaviour that the type of an operator depends on the fixity it has,
         the <code>Fixity</code> trait has an <em>abstract type</em> called <code>Op</code>. Let&#39;s take the machinery behind the simpler <code>Ops</code> as an
         example.</p>
@@ -473,7 +474,7 @@ type mismatch;
         There is a similar story for the <code>GOps</code> and <code>SOps</code> objects, but they instead rely on <code>Levels</code> as
         opposed to variadic arguments.</p>
         
-        <h3 id="afternote-why-b-a-b-and-b-b" class="section"><a class="anchor-link left" href="#afternote-why-b-a-b-and-b-b"><i class="icofont-laika link">&#xef71;</i></a>Afternote: Why <code>(B, A) =&gt; B</code> and <code>B =&gt; B</code>?</h3>
+        <h3 id="afternote-why-b-a-b-and-b-b" class="section"><a class="anchor-link left" href="#afternote-why-b-a-b-and-b-b"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">3.3 </span>Afternote: Why <code>(B, A) =&gt; B</code> and <code>B =&gt; B</code>?</h3>
         <p>The types given to each fixity are as follows:</p>
         <ul>
           <li><code>InfixL</code> is <code>(B, A) =&gt; B</code></li>

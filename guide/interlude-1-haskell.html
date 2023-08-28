@@ -87,9 +87,9 @@
     <li class="level1 nav-leaf"><a href="../">Home</a></li>
     <li class="level1 nav-leaf"><a href="../faq.html">FAQ</a></li>
     <li class="level1 nav-leaf"><a href="../cheatsheet.html">Cheatsheet</a></li>
-    <li class="level1 nav-leaf"><a href="../api.html">Understanding the API</a></li>
-    <li class="level1 nav-header">Guide to Parser Combinators</li>
-    <li class="level2 nav-leaf"><a href="roadmap.html">Roadmap</a></li>
+    <li class="level1 nav-node"><a href="../api-guide/">Understanding the API</a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/parsley.html">Parsley</a></li>
+    <li class="level1 nav-node"><a href="index.html">Parser Combinator Tutorial</a></li>
     <li class="level2 nav-leaf"><a href="basics-of-combinators.html">Basics of Combinators</a></li>
     <li class="level2 nav-leaf"><a href="building-expression-parsers.html">Building Expression Parsers</a></li>
     <li class="level2 nav-leaf"><a href="effective-whitespace-parsing.html">Effective Whitespace Parsing</a></li>
@@ -100,6 +100,7 @@
     <li class="level2 nav-leaf"><a href="advanced-error-messages.html">Advanced Error Messages</a></li>
     <li class="level1 nav-header">Related Projects</li>
     <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/parsley-cats">parsley-cats</a></li>
+    <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/gigaparsec">gigaparsec (Haskell)</a></li>
   </ul>
 
 </nav>
@@ -111,18 +112,18 @@
   <p class="header"><a href="#">Interlude 1: Building a Parser for Haskell</a></p>
 
   <ul class="nav-list">
-    <li class="level1 nav-leaf"><a href="#lexing">Lexing</a></li>
-    <li class="level1 nav-node"><a href="#the-ast-parser-bridge-pattern">The AST + <em>Parser Bridge</em> Pattern</a></li>
-    <li class="level2 nav-leaf"><a href="#the-bridges">The Bridges</a></li>
-    <li class="level1 nav-node"><a href="#parsing">Parsing</a></li>
-    <li class="level2 nav-leaf"><a href="#atoms-of-the-expression">Atoms of the Expression</a></li>
-    <li class="level2 nav-leaf"><a href="#expressions">Expressions</a></li>
-    <li class="level2 nav-leaf"><a href="#clauses">Clauses</a></li>
-    <li class="level2 nav-leaf"><a href="#types">Types</a></li>
-    <li class="level2 nav-leaf"><a href="#declarations-and-data">Declarations and Data</a></li>
-    <li class="level1 nav-node"><a href="#optimising-the-parser">Optimising the Parser</a></li>
-    <li class="level2 nav-leaf"><a href="#fixing-parentheses-backtracking">Fixing Parentheses Backtracking</a></li>
-    <li class="level1 nav-leaf"><a href="#concluding-thoughts">Concluding Thoughts</a></li>
+    <li class="level1 nav-leaf"><a href="#lexing"><span class="section-number">1 </span>Lexing</a></li>
+    <li class="level1 nav-node"><a href="#the-ast-parser-bridge-pattern"><span class="section-number">2 </span>The AST + <em>Parser Bridge</em> Pattern</a></li>
+    <li class="level2 nav-leaf"><a href="#the-bridges"><span class="section-number">2.1 </span>The Bridges</a></li>
+    <li class="level1 nav-node"><a href="#parsing"><span class="section-number">3 </span>Parsing</a></li>
+    <li class="level2 nav-leaf"><a href="#atoms-of-the-expression"><span class="section-number">3.1 </span>Atoms of the Expression</a></li>
+    <li class="level2 nav-leaf"><a href="#expressions"><span class="section-number">3.2 </span>Expressions</a></li>
+    <li class="level2 nav-leaf"><a href="#clauses"><span class="section-number">3.3 </span>Clauses</a></li>
+    <li class="level2 nav-leaf"><a href="#types"><span class="section-number">3.4 </span>Types</a></li>
+    <li class="level2 nav-leaf"><a href="#declarations-and-data"><span class="section-number">3.5 </span>Declarations and Data</a></li>
+    <li class="level1 nav-node"><a href="#optimising-the-parser"><span class="section-number">4 </span>Optimising the Parser</a></li>
+    <li class="level2 nav-leaf"><a href="#fixing-parentheses-backtracking"><span class="section-number">4.1 </span>Fixing Parentheses Backtracking</a></li>
+    <li class="level1 nav-leaf"><a href="#concluding-thoughts"><span class="section-number">5 </span>Concluding Thoughts</a></li>
   </ul>
 
   <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/master/docs/guide/interlude-1-haskell.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
@@ -200,7 +201,7 @@
 &lt;</span><span class="identifier">var</span><span>-</span><span class="identifier">id</span><span>&gt; ::= </span><span class="identifier">VAR</span><span>-</span><span class="identifier">ID</span><span>
 &lt;</span><span class="identifier">con</span><span>-</span><span class="identifier">id</span><span>&gt; ::= </span><span class="identifier">CON</span><span>-</span><span class="identifier">ID</span></code></pre>
         
-        <h2 id="lexing" class="section"><a class="anchor-link left" href="#lexing"><i class="icofont-laika link">&#xef71;</i></a>Lexing</h2>
+        <h2 id="lexing" class="section"><a class="anchor-link left" href="#lexing"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1 </span>Lexing</h2>
         <p>As it turns out, lexing Haskell in Parsley is particularly easy: the <code>Lexer</code> class is compliant
         with the Haskell specification!</p>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>
@@ -258,7 +259,7 @@
         refines what the first letter of the identifier is allowed to be. I&#39;ve exposed <code>INT_OR_FLOAT</code> to our interface here, since it prevents any backtracking required by <code>INTEGER | FLOAT</code>. Also seen here, is the <code>NEWLINE</code> token, which we will use in the parser to deliberate delimit newlines, but still
         ensure it consumes whitespace! The reason I have picked the shouty-case names is to mimic how tokens sometimes look in grammars. This is purely stylistic, but will help us distinguish between parts of our parser and the primitives of our lexer.</p>
         
-        <h2 id="the-ast-parser-bridge-pattern" class="section"><a class="anchor-link left" href="#the-ast-parser-bridge-pattern"><i class="icofont-laika link">&#xef71;</i></a>The AST + <em>Parser Bridge</em> Pattern</h2>
+        <h2 id="the-ast-parser-bridge-pattern" class="section"><a class="anchor-link left" href="#the-ast-parser-bridge-pattern"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">2 </span>The AST + <em>Parser Bridge</em> Pattern</h2>
         <p>Now it&#39;s time to build the AST for our Haskell Parser to return. Since we&#39;ll be using the
         <em>Parser Bridge</em> pattern anyway, I get a choice about whether or not I want position tracking for each
         node in the tree. Just to keep the AST looking simple, I&#39;ll not track anything. Of course, if I
@@ -373,7 +374,7 @@
         consequence, as we&#39;ll see later, is we will be forced to use <code>SOps</code> instead of <code>Ops</code> in the
         precedence tables.</p>
         
-        <h3 id="the-bridges" class="section"><a class="anchor-link left" href="#the-bridges"><i class="icofont-laika link">&#xef71;</i></a>The Bridges</h3>
+        <h3 id="the-bridges" class="section"><a class="anchor-link left" href="#the-bridges"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">2.1 </span>The Bridges</h3>
         <p>Next up, we can define the bridge constructors for each of these AST nodes, the only annoyance being
         that because they are supposed to be <em>companion objects</em> to the classes, they have to be defined in
         the same file. We could get around this by creating a separate bridge objects and not
@@ -475,7 +476,7 @@
         <p></p>
         </details></p>
         
-        <h2 id="parsing" class="section"><a class="anchor-link left" href="#parsing"><i class="icofont-laika link">&#xef71;</i></a>Parsing</h2>
+        <h2 id="parsing" class="section"><a class="anchor-link left" href="#parsing"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">3 </span>Parsing</h2>
         <p>Now it&#39;s finally time to tackle the parser itself. Remember, our lexer handles all whitespace
         (except newlines) for us, and our bridge constructors would handle position information for us. The
         type of the AST is going to help us make sure that the parsers are constructed in the right way. One
@@ -484,7 +485,7 @@
         our way up: this means tackling, in order, atoms, expressions, patterns, clauses, types,
         declarations, and then finally data.</p>
         
-        <h3 id="atoms-of-the-expression" class="section"><a class="anchor-link left" href="#atoms-of-the-expression"><i class="icofont-laika link">&#xef71;</i></a>Atoms of the Expression</h3>
+        <h3 id="atoms-of-the-expression" class="section"><a class="anchor-link left" href="#atoms-of-the-expression"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">3.1 </span>Atoms of the Expression</h3>
         <p>Let&#39;s make a start with <code>&lt;term&gt;</code>. There is nothing particular special about this, but we will need
         to be careful to handle the difference between tupled expressions and parenthesised expressions.
         There are a couple of ways we can try and tackle this: the first is to write both cases out and be
@@ -532,7 +533,7 @@
         nice about it is that it clearly distinguishes between our combinators and the grammar rules
         themselves.</p>
         
-        <h3 id="expressions" class="section"><a class="anchor-link left" href="#expressions"><i class="icofont-laika link">&#xef71;</i></a>Expressions</h3>
+        <h3 id="expressions" class="section"><a class="anchor-link left" href="#expressions"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">3.2 </span>Expressions</h3>
         <p>Next we&#39;ll tackle up to <code>&lt;expr&gt;</code>. By now, we should know that the correct tool to reach for is
         <code>precedence</code>. While <code>&lt;expr-10&gt;</code> can be considered to have operators in it, they do not fit with
         any associativity in Haskell so I will split them out for digestibility. Without further ado, let&#39;s get going:</p>
@@ -599,7 +600,7 @@
         <p>Now we have tackled everything from <code>&lt;expr&gt;</code> down, we are now in a position to deal with <code>&lt;clause&gt;</code>
         and its sub grammars.</p>
         
-        <h3 id="clauses" class="section"><a class="anchor-link left" href="#clauses"><i class="icofont-laika link">&#xef71;</i></a>Clauses</h3>
+        <h3 id="clauses" class="section"><a class="anchor-link left" href="#clauses"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">3.3 </span>Clauses</h3>
         <p>These set of parsers are similar to what we saw with <code>&lt;term&gt;</code>. There are going to be elements of
         ambiguity in the grammar that need to be resolved with <code>attempt</code>, specifically those involving
         parentheses. But other than that there isn&#39;t anything really new here.</p>
@@ -633,7 +634,7 @@
         against a <code>&lt;pat-con&gt;</code> being parsed without any <code>&lt;pat-naked&gt;</code> - this needs to be parsed again in
         <code>&lt;pat-naked&gt;</code> itself.</p>
         
-        <h3 id="types" class="section"><a class="anchor-link left" href="#types"><i class="icofont-laika link">&#xef71;</i></a>Types</h3>
+        <h3 id="types" class="section"><a class="anchor-link left" href="#types"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">3.4 </span>Types</h3>
         <p>Again, here we can just see more examples of the same concepts we&#39;ve already been working with.
         There is a sense in which we&#39;ve really reached the limit of stuff we need for our practical common
         cases: there isn&#39;t much more to say until we try and deal with much more complex grammatical
@@ -663,7 +664,7 @@
         Finally we can move onto the top level parsers and start tackling the performance gotchas: this is
         the more challenging aspect of managing a parser of this size and complexity.</p>
         
-        <h3 id="declarations-and-data" class="section"><a class="anchor-link left" href="#declarations-and-data"><i class="icofont-laika link">&#xef71;</i></a>Declarations and Data</h3>
+        <h3 id="declarations-and-data" class="section"><a class="anchor-link left" href="#declarations-and-data"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">3.5 </span>Declarations and Data</h3>
         <p>Here is a nice easy finish. These last rules are really just book-keeping. I&#39;m also going to
         introduce a way of running the parser directly without exposing the <code>&lt;program&gt;</code> parser (but this
         is moot if we wanted to test these parsers individually instead).</p>
@@ -701,9 +702,9 @@
         choose (in most cases, <code>String</code>). It&#39;s useful to do this in case your unit tests want to test for
         the correctness of error messages!</p>
         
-        <h2 id="optimising-the-parser" class="section"><a class="anchor-link left" href="#optimising-the-parser"><i class="icofont-laika link">&#xef71;</i></a>Optimising the Parser</h2>
+        <h2 id="optimising-the-parser" class="section"><a class="anchor-link left" href="#optimising-the-parser"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">4 </span>Optimising the Parser</h2>
         
-        <h3 id="fixing-parentheses-backtracking" class="section"><a class="anchor-link left" href="#fixing-parentheses-backtracking"><i class="icofont-laika link">&#xef71;</i></a>Fixing Parentheses Backtracking</h3>
+        <h3 id="fixing-parentheses-backtracking" class="section"><a class="anchor-link left" href="#fixing-parentheses-backtracking"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">4.1 </span>Fixing Parentheses Backtracking</h3>
         <p>Before we finish up this page, and move onto learning about error messages, let&#39;s deal with the last
         remaining warts in this version of our parser. There are several instances of backtracking: some are
         very avoidable, and others are potentially expensive. We will progress through them, in some cases
@@ -712,7 +713,7 @@
         has been built up so far and convince yourself about why each instance of <code>attempt</code> in the previous
         parsers has been necessary before continuing.</p>
         
-        <h4 id="part-1-pat-con-type-con-and-term" class="section"><a class="anchor-link left" href="#part-1-pat-con-type-con-and-term"><i class="icofont-laika link">&#xef71;</i></a>Part 1: <code>&lt;pat-con&gt;</code>, <code>&lt;type-con&gt;</code>, and <code>&lt;term&gt;</code></h4>
+        <h4 id="part-1-pat-con-type-con-and-term" class="section"><a class="anchor-link left" href="#part-1-pat-con-type-con-and-term"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">4.1.1 </span>Part 1: <code>&lt;pat-con&gt;</code>, <code>&lt;type-con&gt;</code>, and <code>&lt;term&gt;</code></h4>
         <p>These three grammar rules are very straightforward to factor out and remove the backtracking for,
         so we will start with them first. Let&#39;s remind ourselves of the three rules in question and identify
         the parts we can handle:</p>
@@ -771,7 +772,7 @@
         let&#39;s move on to tackling these. Note that the other <code>attempt</code> in <code>&lt;type-con&gt;</code> is due to a conflict
         in the wider grammar, we can look at that in part 4.</p>
         
-        <h4 id="part-2-pat-naked-type-atom-and-term-again" class="section"><a class="anchor-link left" href="#part-2-pat-naked-type-atom-and-term-again"><i class="icofont-laika link">&#xef71;</i></a>Part 2: <code>&lt;pat-naked&gt;</code>, <code>&lt;type-atom&gt;</code>, and <code>&lt;term&gt;</code> (again)</h4>
+        <h4 id="part-2-pat-naked-type-atom-and-term-again" class="section"><a class="anchor-link left" href="#part-2-pat-naked-type-atom-and-term-again"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">4.1.2 </span>Part 2: <code>&lt;pat-naked&gt;</code>, <code>&lt;type-atom&gt;</code>, and <code>&lt;term&gt;</code> (again)</h4>
         <p>The next three grammar rules contain similar patterns to the last three, but solving the backtracking
         is less obvious. Let&#39;s start by recapping what the three rules are:</p>
         <pre><code class="nohighlight"><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">`&lt;pat-naked&gt;`</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">PatNaked</span><span>] =
@@ -856,7 +857,7 @@
         parentheses back inside the bridge factory for the <code>&lt;pat-naked&gt;</code> and <code>&lt;type-atom&gt;</code> rules, because it
         cuts down on a set of parentheses, and, in my opinion, it looks a bit cleaner.</p>
         
-        <h4 id="part-3-numbers-in-literal" class="section"><a class="anchor-link left" href="#part-3-numbers-in-literal"><i class="icofont-laika link">&#xef71;</i></a>Part 3: Numbers in <code>&lt;literal&gt;</code></h4>
+        <h4 id="part-3-numbers-in-literal" class="section"><a class="anchor-link left" href="#part-3-numbers-in-literal"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">4.1.3 </span>Part 3: Numbers in <code>&lt;literal&gt;</code></h4>
         <p>With the tools we&#39;ve already developed so far, this one is easy. Let&#39;s remind ourselves of the rule
         first:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="comment">/*
@@ -888,7 +889,7 @@ val INT_OR_FLOAT = lexer.lexeme.numeric.unsignedCombined.number
         previous version we made using <code>.fold</code> in the bridge factory:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">branch</span><span>(</span><span class="identifier">p</span><span>, </span><span class="identifier">pure</span><span>(</span><span class="identifier">f</span><span>), </span><span class="identifier">pure</span><span>(</span><span class="identifier">g</span><span>)) == </span><span class="identifier">p</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">fold</span><span>(</span><span class="identifier">f</span><span>, </span><span class="identifier">g</span><span>))</span></code></pre>
         
-        <h4 id="part-4-loose-ends" class="section"><a class="anchor-link left" href="#part-4-loose-ends"><i class="icofont-laika link">&#xef71;</i></a>Part 4: Loose ends</h4>
+        <h4 id="part-4-loose-ends" class="section"><a class="anchor-link left" href="#part-4-loose-ends"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">4.1.4 </span>Part 4: Loose ends</h4>
         <p>At this point, there are four <code>attempt</code>s left in the entire parser: one in <code>&lt;type-con&gt;</code>, one in
         <code>&lt;pat-paren&gt;</code>, one in <code>&lt;pat-naked&gt;</code>, and, finally, one in <code>&lt;program&gt;</code>. At this point it gets much
         harder to remove them without altering the grammar substantially. Let&#39;s see how much more we can do
@@ -1140,7 +1141,7 @@ val INT_OR_FLOAT = lexer.lexeme.numeric.unsignedCombined.number
         that pesky <code>attempt</code> is gone! That leaves us in a final state with a <em>single</em> <code>attempt</code> which has a
         maximum backtrack of one character. In other words, this parser runs in linear-time. Excellent!</p>
         
-        <h2 id="concluding-thoughts" class="section"><a class="anchor-link left" href="#concluding-thoughts"><i class="icofont-laika link">&#xef71;</i></a>Concluding Thoughts</h2>
+        <h2 id="concluding-thoughts" class="section"><a class="anchor-link left" href="#concluding-thoughts"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">5 </span>Concluding Thoughts</h2>
         <p>In this (rather long) page, we&#39;ve explored the implementation of an entire parser for a subset of
         Haskell from <em>scratch</em>. We&#39;ve also seen a few techniques for factoring out common branches of the
         parser and applied everything we&#39;ve learnt so far to a real example. We are going to come back to

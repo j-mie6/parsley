@@ -87,9 +87,9 @@
     <li class="level1 nav-leaf"><a href="../">Home</a></li>
     <li class="level1 nav-leaf"><a href="../faq.html">FAQ</a></li>
     <li class="level1 nav-leaf"><a href="../cheatsheet.html">Cheatsheet</a></li>
-    <li class="level1 nav-leaf"><a href="../api.html">Understanding the API</a></li>
-    <li class="level1 nav-header">Guide to Parser Combinators</li>
-    <li class="level2 nav-leaf"><a href="roadmap.html">Roadmap</a></li>
+    <li class="level1 nav-node"><a href="../api-guide/">Understanding the API</a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/parsley.html">Parsley</a></li>
+    <li class="level1 nav-node"><a href="index.html">Parser Combinator Tutorial</a></li>
     <li class="level2 nav-leaf"><a href="basics-of-combinators.html">Basics of Combinators</a></li>
     <li class="level2 nav-leaf"><a href="building-expression-parsers.html">Building Expression Parsers</a></li>
     <li class="level2 active nav-leaf"><a href="#">Effective Whitespace Parsing</a></li>
@@ -100,6 +100,7 @@
     <li class="level2 nav-leaf"><a href="advanced-error-messages.html">Advanced Error Messages</a></li>
     <li class="level1 nav-header">Related Projects</li>
     <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/parsley-cats">parsley-cats</a></li>
+    <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/gigaparsec">gigaparsec (Haskell)</a></li>
   </ul>
 
 </nav>
@@ -111,9 +112,9 @@
   <p class="header"><a href="#">Effective Whitespace Parsing</a></p>
 
   <ul class="nav-list">
-    <li class="level1 nav-leaf"><a href="#defining-whitespace-readers">Defining whitespace readers</a></li>
-    <li class="level1 nav-leaf"><a href="#lexemes">Lexemes</a></li>
-    <li class="level1 nav-leaf"><a href="#a-problem-with-scope">A Problem with Scope</a></li>
+    <li class="level1 nav-leaf"><a href="#defining-whitespace-readers"><span class="section-number">1 </span>Defining whitespace readers</a></li>
+    <li class="level1 nav-leaf"><a href="#lexemes"><span class="section-number">2 </span>Lexemes</a></li>
+    <li class="level1 nav-leaf"><a href="#a-problem-with-scope"><span class="section-number">3 </span>A Problem with Scope</a></li>
   </ul>
 
   <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/master/docs/guide/effective-whitespace-parsing.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
@@ -131,7 +132,7 @@
         we&#39;ve seen parsers for languages that do not account for whitespace. In this page I&#39;ll discuss
         the best practices for handling whitespace in your grammars.</p>
         
-        <h2 id="defining-whitespace-readers" class="section"><a class="anchor-link left" href="#defining-whitespace-readers"><i class="icofont-laika link">&#xef71;</i></a>Defining whitespace readers</h2>
+        <h2 id="defining-whitespace-readers" class="section"><a class="anchor-link left" href="#defining-whitespace-readers"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1 </span>Defining whitespace readers</h2>
         <p>The first step in the correct handling of whitespace is to build the small parsers that
         recognise the grammar itself.  The two concerns usually are spaces and comments. For
         comments, the combinator <code>combinator.manyUntil</code> is <em>very</em> useful. For example:</p>
@@ -155,7 +156,7 @@
         however, is a more general topic for another post. Now that we have the <code>skipWhitespace</code>
         parser we can start using it!</p>
         
-        <h2 id="lexemes" class="section"><a class="anchor-link left" href="#lexemes"><i class="icofont-laika link">&#xef71;</i></a>Lexemes</h2>
+        <h2 id="lexemes" class="section"><a class="anchor-link left" href="#lexemes"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">2 </span>Lexemes</h2>
         <p>Lexemes are indivisible chunks of the input, the sort usually produced by a lexer in a
         classical setup. The <code>symbol</code> combinator I defined above forms part of this: it uses <code>attempt</code>
         to make an indivisible string, either you read the entire thing or none of it. The next piece
@@ -222,7 +223,7 @@
         parser, however, we don&#39;t want to read the whitespace at the beginning in that case. It should
         <strong>only</strong> be at the very start of the parser (so when <code>parse</code> is called).</p>
         
-        <h2 id="a-problem-with-scope" class="section"><a class="anchor-link left" href="#a-problem-with-scope"><i class="icofont-laika link">&#xef71;</i></a>A Problem with Scope</h2>
+        <h2 id="a-problem-with-scope" class="section"><a class="anchor-link left" href="#a-problem-with-scope"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">3 </span>A Problem with Scope</h2>
         <p>The eagle-eyed reader might have spotted that there is a distinction between the string literals we
         are using in the main parser and the <code>symbol</code>s we are using in the definitions of whitespace. Indeed,
         because we are using an implicit that consumes whitespace, it would be inappropriate

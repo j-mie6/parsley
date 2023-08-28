@@ -87,9 +87,9 @@
     <li class="level1 nav-leaf"><a href="../">Home</a></li>
     <li class="level1 nav-leaf"><a href="../faq.html">FAQ</a></li>
     <li class="level1 nav-leaf"><a href="../cheatsheet.html">Cheatsheet</a></li>
-    <li class="level1 nav-leaf"><a href="../api.html">Understanding the API</a></li>
-    <li class="level1 nav-header">Guide to Parser Combinators</li>
-    <li class="level2 nav-leaf"><a href="roadmap.html">Roadmap</a></li>
+    <li class="level1 nav-node"><a href="../api-guide/">Understanding the API</a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/parsley.html">Parsley</a></li>
+    <li class="level1 nav-node"><a href="index.html">Parser Combinator Tutorial</a></li>
     <li class="level2 nav-leaf"><a href="basics-of-combinators.html">Basics of Combinators</a></li>
     <li class="level2 nav-leaf"><a href="building-expression-parsers.html">Building Expression Parsers</a></li>
     <li class="level2 nav-leaf"><a href="effective-whitespace-parsing.html">Effective Whitespace Parsing</a></li>
@@ -100,6 +100,7 @@
     <li class="level2 nav-leaf"><a href="advanced-error-messages.html">Advanced Error Messages</a></li>
     <li class="level1 nav-header">Related Projects</li>
     <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/parsley-cats">parsley-cats</a></li>
+    <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/gigaparsec">gigaparsec (Haskell)</a></li>
   </ul>
 
 </nav>
@@ -111,12 +112,12 @@
   <p class="header"><a href="#">Customising Error Messages</a></p>
 
   <ul class="nav-list">
-    <li class="level1 nav-node"><a href="#adjusting-error-content">Adjusting Error Content</a></li>
-    <li class="level2 nav-leaf"><a href="#using-label">Using <code>label</code></a></li>
-    <li class="level2 nav-leaf"><a href="#wrapping-up-the-expression-example">Wrapping up the Expression Example</a></li>
-    <li class="level2 nav-leaf"><a href="#using-explain">Using <code>explain</code></a></li>
-    <li class="level1 nav-node"><a href="#adjusting-error-formatting">Adjusting Error Formatting</a></li>
-    <li class="level2 nav-leaf"><a href="#example-unit-tests">Example: Unit Tests</a></li>
+    <li class="level1 nav-node"><a href="#adjusting-error-content"><span class="section-number">1 </span>Adjusting Error Content</a></li>
+    <li class="level2 nav-leaf"><a href="#using-label"><span class="section-number">1.1 </span>Using <code>label</code></a></li>
+    <li class="level2 nav-leaf"><a href="#wrapping-up-the-expression-example"><span class="section-number">1.2 </span>Wrapping up the Expression Example</a></li>
+    <li class="level2 nav-leaf"><a href="#using-explain"><span class="section-number">1.3 </span>Using <code>explain</code></a></li>
+    <li class="level1 nav-node"><a href="#adjusting-error-formatting"><span class="section-number">2 </span>Adjusting Error Formatting</a></li>
+    <li class="level2 nav-leaf"><a href="#example-unit-tests"><span class="section-number">2.1 </span>Example: Unit Tests</a></li>
   </ul>
 
   <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/master/docs/guide/customising-error-messages.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
@@ -137,7 +138,7 @@
         the entire way error messages work and what they look like, and Parsley 3.0.0 added the <code>ErrorBuilder</code>
         mechanism, so I will be targeting 3.0.0 and above for this post.</p>
         
-        <h1 id="adjusting-error-content" class="section"><a class="anchor-link left" href="#adjusting-error-content"><i class="icofont-laika link">&#xef71;</i></a>Adjusting Error Content</h1>
+        <h1 id="adjusting-error-content" class="section"><a class="anchor-link left" href="#adjusting-error-content"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1 </span>Adjusting Error Content</h1>
         <p>I&#39;m going to start with the parser from last time, but before we introduced the <code>Lexer</code> class. The
         reason for this is that the <code>Lexer</code> functionality has error messages baked into it, which means this
         post would be even shorter! It&#39;s not perfect, however, but it does make some good error messages for
@@ -238,7 +239,7 @@
         </ul>
         <p>All of these can be found in the <code>parsley.errors.combinator</code> module.</p>
         
-        <h2 id="using-label" class="section"><a class="anchor-link left" href="#using-label"><i class="icofont-laika link">&#xef71;</i></a>Using <code>label</code></h2>
+        <h2 id="using-label" class="section"><a class="anchor-link left" href="#using-label"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1.1 </span>Using <code>label</code></h2>
         <p>From this section, we are only going to be using <code>label</code> and <code>hide</code>, as they are by far the most useful
         and effective of the five methods. That being said, <code>explain</code> can be <em>very</em> useful, but we&#39;ll find
         there are no compelling use-cases for it in this example. Let&#39;s start off by giving a label to
@@ -259,7 +260,7 @@
         quotes surrounding the items. Knowing this, you can probably guess that <code>digit</code>, <code>eof</code>, and
         <code>whitespace</code> all have error labels of their own.</p>
         
-        <h3 id="using-hide-to-trim-away-junk" class="section"><a class="anchor-link left" href="#using-hide-to-trim-away-junk"><i class="icofont-laika link">&#xef71;</i></a>Using <code>hide</code> to trim away junk</h3>
+        <h3 id="using-hide-to-trim-away-junk" class="section"><a class="anchor-link left" href="#using-hide-to-trim-away-junk"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1.1.1 </span>Using <code>hide</code> to trim away junk</h3>
         <p>This is a good start, but normally we might say
         that whitespace suggestions in an error message are normally just noise: of course we expect to be
         able to write whitespace in places, it&#39;s not <em>usually</em> the solution to someone&#39;s problem. This makes
@@ -301,7 +302,7 @@
       ^</code></pre>
         <p>Great! Now let&#39;s turn our attention back to expressions and not whitespace.</p>
         
-        <h3 id="labelling-our-numbers" class="section"><a class="anchor-link left" href="#labelling-our-numbers"><i class="icofont-laika link">&#xef71;</i></a>Labelling our numbers</h3>
+        <h3 id="labelling-our-numbers" class="section"><a class="anchor-link left" href="#labelling-our-numbers"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1.1.2 </span>Labelling our numbers</h3>
         <p>Let&#39;s take a look at a very simple bad input and see how we can improve on it:</p>
         <pre><code>expressions.parser.parse(&quot;d&quot;)
 (line 1, column 1):
@@ -346,7 +347,7 @@ expressions.parser.parse(&quot;5x&quot;)
   &gt;5x
     ^</code></pre>
         
-        <h3 id="merging-multiple-labels" class="section"><a class="anchor-link left" href="#merging-multiple-labels"><i class="icofont-laika link">&#xef71;</i></a>Merging multiple labels</h3>
+        <h3 id="merging-multiple-labels" class="section"><a class="anchor-link left" href="#merging-multiple-labels"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1.1.3 </span>Merging multiple labels</h3>
         <p>With an example grammar as small as this, I think we are almost done here! The last thing we could
         improve is the repetition of <code>&quot;*&quot;</code>, <code>&quot;+&quot;</code>, and <code>&quot;-&quot;</code>. Really, we know that there is nothing special
         about any of them individually, so we could more concisely replace this them with <code>arithmetic operator</code>,
@@ -374,7 +375,7 @@ expressions.parser.parse( 67 + )
         <p>Great! Now obviously you could take this even further and make <code>&quot;(&quot;</code> become <code>opening parenthesis</code>
         or something, but I don&#39;t really feel that adds much.</p>
         
-        <h2 id="wrapping-up-the-expression-example" class="section"><a class="anchor-link left" href="#wrapping-up-the-expression-example"><i class="icofont-laika link">&#xef71;</i></a>Wrapping up the Expression Example</h2>
+        <h2 id="wrapping-up-the-expression-example" class="section"><a class="anchor-link left" href="#wrapping-up-the-expression-example"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1.2 </span>Wrapping up the Expression Example</h2>
         <p>Hopefully, you get a sense of how much of an
         art form and subjective writing good error messages is, but Parsley provides decent error messages
         out of the box (now based on <code>megaparsec</code>&#39;s error messages from Haskell). It doesn&#39;t have to be hard
@@ -444,7 +445,7 @@ expressions.parser.parse( 67 + )
     </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="identifier">fully</span><span>(</span><span class="identifier">expr</span><span>)
 }</span></code></pre>
         
-        <h2 id="using-explain" class="section"><a class="anchor-link left" href="#using-explain"><i class="icofont-laika link">&#xef71;</i></a>Using <code>explain</code></h2>
+        <h2 id="using-explain" class="section"><a class="anchor-link left" href="#using-explain"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1.3 </span>Using <code>explain</code></h2>
         <p>So far, we&#39;ve seen how <code>label</code> can be used to clean up error messages and make them much more
         presentable and informative. Another way of achieving this is by using the <code>explain</code> combinator.
         Unlike <code>label</code> this is much more freeform and when used properly can be <em>incredibly</em> effective.
@@ -545,7 +546,7 @@ stringLiteral.parse(&quot;\&quot;\\a&quot;)
         message gets straight to the point, and for the newcomer, the error message provides a bit more
         information that can help them learn the terminology.</p>
         
-        <h1 id="adjusting-error-formatting" class="section"><a class="anchor-link left" href="#adjusting-error-formatting"><i class="icofont-laika link">&#xef71;</i></a>Adjusting Error Formatting</h1>
+        <h1 id="adjusting-error-formatting" class="section"><a class="anchor-link left" href="#adjusting-error-formatting"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">2 </span>Adjusting Error Formatting</h1>
         <p>As we&#39;ve seen in this post, the error messages produced by parsley are fairly readable. They are
         broken into two kinds: &quot;vanilla&quot; errors built up of &quot;expected&quot;, &quot;unexpected&quot;, and &quot;reason&quot; clauses;
         and &quot;specialised&quot; errors built up solely of &quot;message&quot; clauses. So far, we have only seen examples of
@@ -714,7 +715,7 @@ stringLiteral.parse(&quot;\&quot;\\a&quot;)
         you don&#39;t, or you want an example, let&#39;s take a look at how Parsley&#39;s own unit tests format error
         messages to be easier to pattern match on and test against.</p>
         
-        <h2 id="example-unit-tests" class="section"><a class="anchor-link left" href="#example-unit-tests"><i class="icofont-laika link">&#xef71;</i></a>Example: Unit Tests</h2>
+        <h2 id="example-unit-tests" class="section"><a class="anchor-link left" href="#example-unit-tests"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">2.1 </span>Example: Unit Tests</h2>
         <p>When testing parsers, it is sometimes worth checking that the error messages contain the <em>correct</em>
         content. Usually, the order doesn&#39;t matter, but the presence or absence of certain items is important.
         This makes <code>String</code> the <em>worst</em> possible choice for testing, as order matters and its hard to test

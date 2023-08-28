@@ -87,9 +87,9 @@
     <li class="level1 nav-leaf"><a href="../">Home</a></li>
     <li class="level1 nav-leaf"><a href="../faq.html">FAQ</a></li>
     <li class="level1 nav-leaf"><a href="../cheatsheet.html">Cheatsheet</a></li>
-    <li class="level1 nav-leaf"><a href="../api.html">Understanding the API</a></li>
-    <li class="level1 nav-header">Guide to Parser Combinators</li>
-    <li class="level2 nav-leaf"><a href="roadmap.html">Roadmap</a></li>
+    <li class="level1 nav-node"><a href="../api-guide/">Understanding the API</a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/parsley.html">Parsley</a></li>
+    <li class="level1 nav-node"><a href="index.html">Parser Combinator Tutorial</a></li>
     <li class="level2 nav-leaf"><a href="basics-of-combinators.html">Basics of Combinators</a></li>
     <li class="level2 nav-leaf"><a href="building-expression-parsers.html">Building Expression Parsers</a></li>
     <li class="level2 nav-leaf"><a href="effective-whitespace-parsing.html">Effective Whitespace Parsing</a></li>
@@ -100,6 +100,7 @@
     <li class="level2 nav-leaf"><a href="advanced-error-messages.html">Advanced Error Messages</a></li>
     <li class="level1 nav-header">Related Projects</li>
     <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/parsley-cats">parsley-cats</a></li>
+    <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/gigaparsec">gigaparsec (Haskell)</a></li>
   </ul>
 
 </nav>
@@ -111,8 +112,8 @@
   <p class="header"><a href="#">Effective Lexing</a></p>
 
   <ul class="nav-list">
-    <li class="level1 nav-leaf"><a href="#keywords-identifiers-and-operators">Keywords, Identifiers and Operators</a></li>
-    <li class="level1 nav-leaf"><a href="#using-token-languagedef-and-token-lexer">Using <code>token.LanguageDef</code> and <code>token.Lexer</code></a></li>
+    <li class="level1 nav-leaf"><a href="#keywords-identifiers-and-operators"><span class="section-number">1 </span>Keywords, Identifiers and Operators</a></li>
+    <li class="level1 nav-leaf"><a href="#using-token-languagedef-and-token-lexer"><span class="section-number">2 </span>Using <code>token.LanguageDef</code> and <code>token.Lexer</code></a></li>
   </ul>
 
   <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/master/docs/guide/effective-lexing.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
@@ -213,7 +214,7 @@ expressions.parser.parse(&quot;negatex + z&quot;)
         refining our lexer for the rest of the page. We won&#39;t be touching the <code>expressions</code> object
         again, so take a long hard look at it.</p>
         
-        <h2 id="keywords-identifiers-and-operators" class="section"><a class="anchor-link left" href="#keywords-identifiers-and-operators"><i class="icofont-laika link">&#xef71;</i></a>Keywords, Identifiers and Operators</h2>
+        <h2 id="keywords-identifiers-and-operators" class="section"><a class="anchor-link left" href="#keywords-identifiers-and-operators"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1 </span>Keywords, Identifiers and Operators</h2>
         <p>The crux of the problem we unearthed in the last section is that the implicit used to handle
         strings has no awareness of keywords (or indeed operators) and identifiers that work for <em>any</em>
         alpha-numeric sequence are an accident waiting to happen. Let&#39;s start by creating a couple of
@@ -335,7 +336,7 @@ expressions.parser.parse(&quot;negatex + z&quot;)
     }
 }</span></code></pre>
         
-        <h2 id="using-token-languagedef-and-token-lexer" class="section"><a class="anchor-link left" href="#using-token-languagedef-and-token-lexer"><i class="icofont-laika link">&#xef71;</i></a>Using <code>token.LanguageDef</code> and <code>token.Lexer</code></h2>
+        <h2 id="using-token-languagedef-and-token-lexer" class="section"><a class="anchor-link left" href="#using-token-languagedef-and-token-lexer"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">2 </span>Using <code>token.LanguageDef</code> and <code>token.Lexer</code></h2>
         <div class="callout warning">
           <i class="icofont-laika warning">&#xf026;</i>
           <p><em>This section is out-of-date, and describes the situation in <code>parsley-3.x.y</code> and not <code>parsley-4.0.0</code>. In this release, the entire <code>token</code> package was reworked, so this doesn&#39;t apply.</em></p>

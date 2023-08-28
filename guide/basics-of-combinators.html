@@ -87,9 +87,9 @@
     <li class="level1 nav-leaf"><a href="../">Home</a></li>
     <li class="level1 nav-leaf"><a href="../faq.html">FAQ</a></li>
     <li class="level1 nav-leaf"><a href="../cheatsheet.html">Cheatsheet</a></li>
-    <li class="level1 nav-leaf"><a href="../api.html">Understanding the API</a></li>
-    <li class="level1 nav-header">Guide to Parser Combinators</li>
-    <li class="level2 nav-leaf"><a href="roadmap.html">Roadmap</a></li>
+    <li class="level1 nav-node"><a href="../api-guide/">Understanding the API</a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/parsley.html">Parsley</a></li>
+    <li class="level1 nav-node"><a href="index.html">Parser Combinator Tutorial</a></li>
     <li class="level2 active nav-leaf"><a href="#">Basics of Combinators</a></li>
     <li class="level2 nav-leaf"><a href="building-expression-parsers.html">Building Expression Parsers</a></li>
     <li class="level2 nav-leaf"><a href="effective-whitespace-parsing.html">Effective Whitespace Parsing</a></li>
@@ -100,6 +100,7 @@
     <li class="level2 nav-leaf"><a href="advanced-error-messages.html">Advanced Error Messages</a></li>
     <li class="level1 nav-header">Related Projects</li>
     <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/parsley-cats">parsley-cats</a></li>
+    <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/gigaparsec">gigaparsec (Haskell)</a></li>
   </ul>
 
 </nav>
@@ -111,20 +112,20 @@
   <p class="header"><a href="#">Basics of Combinators</a></p>
 
   <ul class="nav-list">
-    <li class="level1 nav-node"><a href="#part-i-basic-combinators-and-sequencing">Part I: Basic Combinators and Sequencing</a></li>
-    <li class="level2 nav-leaf"><a href="#what-ties-char-and-item-together">What ties <code>char</code> and <code>item</code> together</a></li>
-    <li class="level2 nav-leaf"><a href="#changing-the-result-type">Changing the result type</a></li>
-    <li class="level2 nav-leaf"><a href="#putting-the-pieces-together-building-string">Putting the pieces together: Building <code>string</code></a></li>
-    <li class="level1 nav-node"><a href="#part-ii-choice-and-handling-failure">Part II: Choice and Handling Failure</a></li>
-    <li class="level2 nav-leaf"><a href="#alternatives">Alternatives</a></li>
-    <li class="level2 nav-leaf"><a href="#backtracking">Backtracking</a></li>
-    <li class="level2 nav-leaf"><a href="#lookahead">Lookahead</a></li>
-    <li class="level1 nav-leaf"><a href="#interlude-regex-parser-examples">Interlude: Regex Parser Examples</a></li>
-    <li class="level1 nav-node"><a href="#part-iii-recursive-context-free-parsers">Part III: Recursive Context-Free Parsers</a></li>
-    <li class="level2 nav-leaf"><a href="#recursion-via-laziness">Recursion via Laziness</a></li>
-    <li class="level2 nav-leaf"><a href="#example-parsing-boolean-expressions">Example: Parsing Boolean Expressions</a></li>
-    <li class="level2 nav-leaf"><a href="#higher-order-example-defining-many">Higher-Order Example: Defining <code>many</code></a></li>
-    <li class="level1 nav-leaf"><a href="#what-next">What Next?</a></li>
+    <li class="level1 nav-node"><a href="#basic-combinators-and-sequencing"><span class="section-number">1 </span>Basic Combinators and Sequencing</a></li>
+    <li class="level2 nav-leaf"><a href="#what-ties-char-and-item-together"><span class="section-number">1.1 </span>What ties <code>char</code> and <code>item</code> together</a></li>
+    <li class="level2 nav-leaf"><a href="#changing-the-result-type"><span class="section-number">1.2 </span>Changing the result type</a></li>
+    <li class="level2 nav-leaf"><a href="#putting-the-pieces-together-building-string"><span class="section-number">1.3 </span>Putting the pieces together: Building <code>string</code></a></li>
+    <li class="level1 nav-node"><a href="#choice-and-handling-failure"><span class="section-number">2 </span>Choice and Handling Failure</a></li>
+    <li class="level2 nav-leaf"><a href="#alternatives"><span class="section-number">2.1 </span>Alternatives</a></li>
+    <li class="level2 nav-leaf"><a href="#backtracking"><span class="section-number">2.2 </span>Backtracking</a></li>
+    <li class="level2 nav-leaf"><a href="#lookahead"><span class="section-number">2.3 </span>Lookahead</a></li>
+    <li class="level1 nav-leaf"><a href="#interlude-regex-parser-examples"><span class="section-number">3 </span>Interlude: Regex Parser Examples</a></li>
+    <li class="level1 nav-node"><a href="#recursive-context-free-parsers"><span class="section-number">4 </span>Recursive Context-Free Parsers</a></li>
+    <li class="level2 nav-leaf"><a href="#recursion-via-laziness"><span class="section-number">4.1 </span>Recursion via Laziness</a></li>
+    <li class="level2 nav-leaf"><a href="#example-parsing-boolean-expressions"><span class="section-number">4.2 </span>Example: Parsing Boolean Expressions</a></li>
+    <li class="level2 nav-leaf"><a href="#higher-order-example-defining-many"><span class="section-number">4.3 </span>Higher-Order Example: Defining <code>many</code></a></li>
+    <li class="level1 nav-leaf"><a href="#what-next"><span class="section-number">5 </span>What Next?</a></li>
   </ul>
 
   <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/master/docs/guide/basics-of-combinators.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
@@ -143,7 +144,7 @@
         with <em>some</em> parser generators: you don&#39;t need to convert between the AST the generator produces and
         your own, you can parse straight into the desired type.</p>
         
-        <h2 id="part-i-basic-combinators-and-sequencing" class="section"><a class="anchor-link left" href="#part-i-basic-combinators-and-sequencing"><i class="icofont-laika link">&#xef71;</i></a>Part I: Basic Combinators and Sequencing</h2>
+        <h2 id="basic-combinators-and-sequencing" class="section"><a class="anchor-link left" href="#basic-combinators-and-sequencing"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1 </span>Basic Combinators and Sequencing</h2>
         <p>We&#39;ll start really basic: just reading a character or two and seeing how to combine the results
         using <em>combinators</em>. For a first look, we will just parse one of any character. If you are familar
         with regex, this would match the pattern <code>(.)</code>.</p>
@@ -193,7 +194,7 @@
         whatever resonates more strongly with you. We&#39;ll see soon how we can define them in terms of <code>&lt;~&gt;</code>
         to get a sense of how combinators can be built up in terms of more primitive ones.</p>
         
-        <h3 id="what-ties-char-and-item-together" class="section"><a class="anchor-link left" href="#what-ties-char-and-item-together"><i class="icofont-laika link">&#xef71;</i></a>What ties <code>char</code> and <code>item</code> together</h3>
+        <h3 id="what-ties-char-and-item-together" class="section"><a class="anchor-link left" href="#what-ties-char-and-item-together"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1.1 </span>What ties <code>char</code> and <code>item</code> together</h3>
         <p>We&#39;ve seen both <code>char</code> and <code>item</code> can be used to read characters, there is, however, a more
         primitive one which can be used to implement them both. This combinator is called <code>satisfy</code> and
         has the following type:</p>
@@ -219,7 +220,7 @@
         <p>This is, however, already implemented by <code>parsley.character.digit</code>. Parsley is very rich in terms
         of the combinators it supports out of the box, so do hunt around before reinventing the wheel!</p>
         
-        <h3 id="changing-the-result-type" class="section"><a class="anchor-link left" href="#changing-the-result-type"><i class="icofont-laika link">&#xef71;</i></a>Changing the result type</h3>
+        <h3 id="changing-the-result-type" class="section"><a class="anchor-link left" href="#changing-the-result-type"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1.2 </span>Changing the result type</h3>
         <p>It&#39;s all well and good being able to sequence together reading single characters, but this doesn&#39;t
         exactly scale well to larger, more complex, parsers. Indeed, it&#39;s likely we aren&#39;t interested in an
         increasing deeply nested tuple! A good starting point for this is the humble <code>map</code> combinator:</p>
@@ -256,7 +257,7 @@
         implement a bunch of useful combinators. In particular, let&#39;s see how we can use <code>&lt;::&gt;</code> to implement
         a way of reading <code>String</code>s instead of just <code>Char</code>s!</p>
         
-        <h3 id="putting-the-pieces-together-building-string" class="section"><a class="anchor-link left" href="#putting-the-pieces-together-building-string"><i class="icofont-laika link">&#xef71;</i></a>Putting the pieces together: Building <code>string</code></h3>
+        <h3 id="putting-the-pieces-together-building-string" class="section"><a class="anchor-link left" href="#putting-the-pieces-together-building-string"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1.3 </span>Putting the pieces together: Building <code>string</code></h3>
         <p>Our new challenge is going to be making an implementation of the <code>string</code> combinator. Obviously,
         this combinator already exists in the library, so we can play around with it first to see how it
         works:</p>
@@ -342,7 +343,7 @@
         already fit your needs. That&#39;s about everything there is to say about sequencing and combining
         results, so next up is looking at <em>choice</em>.</p>
         
-        <h4 id="takeaways-1" class="section"><a class="anchor-link left" href="#takeaways-1"><i class="icofont-laika link">&#xef71;</i></a>Takeaways</h4>
+        <h4 id="takeaways-1" class="section"><a class="anchor-link left" href="#takeaways-1"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1.3.1 </span>Takeaways</h4>
         <ul>
           <li>Characters can be read using combinators found in <code>parsley.character</code></li>
           <li>To sequence two things but only use the result of one, you&#39;ll want <code>*&gt;/~&gt;</code> or <code>&lt;*/&lt;~</code></li>
@@ -351,11 +352,11 @@
           <li>Larger combinators are built out of smaller ones using regular Scala functionality</li>
         </ul>
         
-        <h2 id="part-ii-choice-and-handling-failure" class="section"><a class="anchor-link left" href="#part-ii-choice-and-handling-failure"><i class="icofont-laika link">&#xef71;</i></a>Part II: Choice and Handling Failure</h2>
+        <h2 id="choice-and-handling-failure" class="section"><a class="anchor-link left" href="#choice-and-handling-failure"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">2 </span>Choice and Handling Failure</h2>
         <p>Most practical parsers aren&#39;t just a straight line like <code>string</code> or reading a bunch of characters,
         usually there are choices to be made along the way.</p>
         
-        <h3 id="alternatives" class="section"><a class="anchor-link left" href="#alternatives"><i class="icofont-laika link">&#xef71;</i></a>Alternatives</h3>
+        <h3 id="alternatives" class="section"><a class="anchor-link left" href="#alternatives"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">2.1 </span>Alternatives</h3>
         <p>When parsers fail to recognise some input, most of the time, there is an alternative branch that
         could have been taken instead. Let&#39;s take a simple example again, say matching the regex <code>(a|b)</code>.
         From now on, I&#39;m going to use some syntactic sugar from <code>parsley.implicits</code> so I don&#39;t have to
@@ -496,7 +497,7 @@ scala&gt; p.parse(&quot;dead&quot;)
         linear time in the worst case. But sometimes this transformation isn&#39;t so straight-forward,
         especially in deeply nested grammars. In this case we can reach for another, easier to read, tool.</p>
         
-        <h3 id="backtracking" class="section"><a class="anchor-link left" href="#backtracking"><i class="icofont-laika link">&#xef71;</i></a>Backtracking</h3>
+        <h3 id="backtracking" class="section"><a class="anchor-link left" href="#backtracking"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">2.2 </span>Backtracking</h3>
         <p>In the last section, we saw that the <code>&lt;|&gt;</code> doesn&#39;t proceed with the second alternative if the
         first consumed input before failing. That is to say it doesn&#39;t <em>backtrack</em>. There is, however, a
         combinator that permits backtracking to happen, called <code>attempt</code>. Let&#39;s see it in action:</p>
@@ -539,7 +540,7 @@ scala&gt; p.parse(&quot;dead&quot;)
         also useful to make a specific sub-parser behave as if it were indivisible: think reading
         keywords, which are all or nothing.</p>
         
-        <h3 id="lookahead" class="section"><a class="anchor-link left" href="#lookahead"><i class="icofont-laika link">&#xef71;</i></a>Lookahead</h3>
+        <h3 id="lookahead" class="section"><a class="anchor-link left" href="#lookahead"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">2.3 </span>Lookahead</h3>
         <p>Usually, a good ordering of your alternatives is most of what you need to write a functioning parser
         for just about anything. However, every now and then it&#39;s convenient to look-ahead at what is to
         come (in either a positive or a negative way): for instance checking if there is no remaining input
@@ -598,7 +599,7 @@ scala&gt; p.parse(&quot;dead&quot;)
         debug traces that when it succeeds, <code>lookAhead</code> does <em>not</em> consume input, but if it fails having
         consumed input, that input <em>remains consumed</em>. However, <code>notFollowedBy</code> never consumes input.</p>
         
-        <h4 id="takeaways-2" class="section"><a class="anchor-link left" href="#takeaways-2"><i class="icofont-laika link">&#xef71;</i></a>Takeaways</h4>
+        <h4 id="takeaways-2" class="section"><a class="anchor-link left" href="#takeaways-2"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">2.3.1 </span>Takeaways</h4>
         <ul>
           <li>Alternative branches of a grammar are encoded by <code>&lt;|&gt;</code></li>
           <li>Within a branch, you are free to do whatever you want, but you must ensure both branches&#39; types
@@ -610,7 +611,7 @@ scala&gt; p.parse(&quot;dead&quot;)
           <li>Negative and positive look-ahead can be done with <code>lookAhead</code> and <code>notFollowedBy</code></li>
         </ul>
         
-        <h2 id="interlude-regex-parser-examples" class="section"><a class="anchor-link left" href="#interlude-regex-parser-examples"><i class="icofont-laika link">&#xef71;</i></a>Interlude: Regex Parser Examples</h2>
+        <h2 id="interlude-regex-parser-examples" class="section"><a class="anchor-link left" href="#interlude-regex-parser-examples"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">3 </span>Interlude: Regex Parser Examples</h2>
         <p>Before we move on to slightly more realistic parsing problems that can&#39;t just be captured by
         regex, we&#39;ll consolidate what we&#39;ve seen so far by writing a few parsers for some regular
         expressions. For all of these examples, I&#39;ll simplify it by using <code>void</code>, which ignores the result
@@ -677,7 +678,7 @@ scala&gt; p.parse(&quot;dead&quot;)
         they will succeed on. I&#39;ve written the type explictly here so that the <code>voidImplicitly</code> function
         will fire and make them all the right type.</p>
         
-        <h2 id="part-iii-recursive-context-free-parsers" class="section"><a class="anchor-link left" href="#part-iii-recursive-context-free-parsers"><i class="icofont-laika link">&#xef71;</i></a>Part III: Recursive Context-Free Parsers</h2>
+        <h2 id="recursive-context-free-parsers" class="section"><a class="anchor-link left" href="#recursive-context-free-parsers"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">4 </span>Recursive Context-Free Parsers</h2>
         <p>Everything we&#39;ve seen so far has been as powerful as a regular expression. While regular expressions
         are certainly useful for writing lexers they are normally not powerful enough to parse the syntax
         of a programming language. It&#39;s worth nothing here that, <em>usually</em>, parser combinators don&#39;t make
@@ -692,7 +693,7 @@ scala&gt; p.parse(&quot;dead&quot;)
         just takes the addition of the <code>flatMap</code> combinator to recover context-sensitive grammars from this,
         but grammars that require <code>flatMap</code> are rare in practice, so I won&#39;t touch on it here.</p>
         
-        <h3 id="recursion-via-laziness" class="section"><a class="anchor-link left" href="#recursion-via-laziness"><i class="icofont-laika link">&#xef71;</i></a>Recursion via Laziness</h3>
+        <h3 id="recursion-via-laziness" class="section"><a class="anchor-link left" href="#recursion-via-laziness"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">4.1 </span>Recursion via Laziness</h3>
         <p>Writing recursive parsers is, fortunately, quite straight-forward but it does rely on Scala&#39;s <em>lazy
         value</em> feature. Let&#39;s start with the classic matching brackets parser (which cannot be parsed
         with regex:
@@ -825,7 +826,7 @@ scala&gt; p.parse(&quot;dead&quot;)
         </details></p>
         <p>Take a moment to just absorb that and be comfortable with how recursive parsing works out.</p>
         
-        <h3 id="example-parsing-boolean-expressions" class="section"><a class="anchor-link left" href="#example-parsing-boolean-expressions"><i class="icofont-laika link">&#xef71;</i></a>Example: Parsing Boolean Expressions</h3>
+        <h3 id="example-parsing-boolean-expressions" class="section"><a class="anchor-link left" href="#example-parsing-boolean-expressions"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">4.2 </span>Example: Parsing Boolean Expressions</h3>
         <p>The matching bracket parser was a simple example of a recursive parser. For our second to last
         example on this page (phew), we are going to parse (and evaluate!) boolean expressions with
         right associative operators. I&#39;m going to start by giving the EBNF for this grammar to give a sense
@@ -905,7 +906,7 @@ scala&gt; p.parse(&quot;dead&quot;)
 </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Boolean</span><span>] = </span><span class="identifier">or</span><span>.</span><span class="identifier">lift</span><span>(</span><span class="identifier">term</span><span>, </span><span class="identifier">option</span><span>(</span><span class="string-literal">&quot;||&quot;</span><span> *&gt; </span><span class="identifier">expr</span><span>  ))
 
 </span><span class="comment">// &lt;term&gt; ::= &lt;not&gt;     (&#39;&amp;&amp;&#39;   &lt;term&gt;          |      epsilon      )
-</span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">term</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Boolean</span><span>] = 
+</span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">term</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Boolean</span><span>] =
                </span><span class="identifier">not</span><span> &lt;**&gt; (</span><span class="string-literal">&quot;&amp;&amp;&quot;</span><span> *&gt; </span><span class="identifier">term</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">and</span><span>) &lt;/&gt; </span><span class="identifier">identity</span><span>[</span><span class="type-name">Boolean</span><span>])
 
 </span><span class="comment">// &lt;not&gt; ::=                     &#39;!&#39;   &lt;not&gt;         | &lt;atom&gt;
@@ -938,7 +939,7 @@ scala&gt; p.parse(&quot;dead&quot;)
         parsers will show you how you can write this parser without having to fiddle with the <code>and</code> and <code>or</code>
         functions at all! (spoiler: it involves a combinator that builds the expression parsers for you).</p>
         
-        <h3 id="higher-order-example-defining-many" class="section"><a class="anchor-link left" href="#higher-order-example-defining-many"><i class="icofont-laika link">&#xef71;</i></a>Higher-Order Example: Defining <code>many</code></h3>
+        <h3 id="higher-order-example-defining-many" class="section"><a class="anchor-link left" href="#higher-order-example-defining-many"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">4.3 </span>Higher-Order Example: Defining <code>many</code></h3>
         <p>As a final exercise, I want to show how we can implement the <code>many</code> combinator: recall that it will
         execute its argument zero or more times and collect all the results. It&#39;s a nice exercise in how
         the concepts we&#39;ve already seen apply to an example where the parser we are constructing has a
@@ -977,7 +978,7 @@ scala&gt; p.parse(&quot;dead&quot;)
         uncommon to <em>need</em> to do that. For these circumstances, the functionality in <code>parsley.registers</code> is
         useful, but this is certainly out of scope for this page!</p>
         
-        <h4 id="takeaways-3" class="section"><a class="anchor-link left" href="#takeaways-3"><i class="icofont-laika link">&#xef71;</i></a>Takeaways</h4>
+        <h4 id="takeaways-3" class="section"><a class="anchor-link left" href="#takeaways-3"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">4.3.1 </span>Takeaways</h4>
         <ul>
           <li>Recursive parsers are where the real work happens</li>
           <li>Using <code>lazy val</code> with any parser that is recursive is the safest way of writing them</li>
@@ -987,7 +988,7 @@ scala&gt; p.parse(&quot;dead&quot;)
           backtracking</li>
         </ul>
         
-        <h2 id="what-next" class="section"><a class="anchor-link left" href="#what-next"><i class="icofont-laika link">&#xef71;</i></a>What Next?</h2>
+        <h2 id="what-next" class="section"><a class="anchor-link left" href="#what-next"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">5 </span>What Next?</h2>
         <p>The next logical step once you&#39;ve digested this page, is to go and have a play around yourself! When
         you feel ready, you should take a look at the
         <a href="building-expression-parsers.html#building-expression-parsers">Building Expression Parsers</a>

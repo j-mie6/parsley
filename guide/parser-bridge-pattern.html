@@ -87,9 +87,9 @@
     <li class="level1 nav-leaf"><a href="../">Home</a></li>
     <li class="level1 nav-leaf"><a href="../faq.html">FAQ</a></li>
     <li class="level1 nav-leaf"><a href="../cheatsheet.html">Cheatsheet</a></li>
-    <li class="level1 nav-leaf"><a href="../api.html">Understanding the API</a></li>
-    <li class="level1 nav-header">Guide to Parser Combinators</li>
-    <li class="level2 nav-leaf"><a href="roadmap.html">Roadmap</a></li>
+    <li class="level1 nav-node"><a href="../api-guide/">Understanding the API</a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/parsley.html">Parsley</a></li>
+    <li class="level1 nav-node"><a href="index.html">Parser Combinator Tutorial</a></li>
     <li class="level2 nav-leaf"><a href="basics-of-combinators.html">Basics of Combinators</a></li>
     <li class="level2 nav-leaf"><a href="building-expression-parsers.html">Building Expression Parsers</a></li>
     <li class="level2 nav-leaf"><a href="effective-whitespace-parsing.html">Effective Whitespace Parsing</a></li>
@@ -100,6 +100,7 @@
     <li class="level2 nav-leaf"><a href="advanced-error-messages.html">Advanced Error Messages</a></li>
     <li class="level1 nav-header">Related Projects</li>
     <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/parsley-cats">parsley-cats</a></li>
+    <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/gigaparsec">gigaparsec (Haskell)</a></li>
   </ul>
 
 </nav>
@@ -111,11 +112,11 @@
   <p class="header"><a href="#">The Parser Bridge Pattern</a></p>
 
   <ul class="nav-list">
-    <li class="level1 nav-leaf"><a href="#the-parser-bridge-pattern-2">The <em>Parser Bridge</em> Pattern</a></li>
-    <li class="level1 nav-leaf"><a href="#reducing-boilerplate-with-generic-bridge-traits">Reducing Boilerplate with <em><strong>Generic Bridge Traits</strong></em></a></li>
-    <li class="level1 nav-node"><a href="#singleton-bridge-for-precedence-ops"><em>Singleton Bridge</em> for Precedence Ops</a></li>
-    <li class="level2 nav-leaf"><a href="#abstracting-one-more-time">Abstracting One More Time</a></li>
-    <li class="level1 nav-leaf"><a href="#the-final-parser">The Final Parser</a></li>
+    <li class="level1 nav-leaf"><a href="#the-parser-bridge-pattern-2"><span class="section-number">1 </span>The <em>Parser Bridge</em> Pattern</a></li>
+    <li class="level1 nav-leaf"><a href="#reducing-boilerplate-with-generic-bridge-traits"><span class="section-number">2 </span>Reducing Boilerplate with <em><strong>Generic Bridge Traits</strong></em></a></li>
+    <li class="level1 nav-node"><a href="#singleton-bridge-for-precedence-ops"><span class="section-number">3 </span><em>Singleton Bridge</em> for Precedence Ops</a></li>
+    <li class="level2 nav-leaf"><a href="#abstracting-one-more-time"><span class="section-number">3.1 </span>Abstracting One More Time</a></li>
+    <li class="level1 nav-leaf"><a href="#the-final-parser"><span class="section-number">4 </span>The Final Parser</a></li>
   </ul>
 
   <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/master/docs/guide/parser-bridge-pattern.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
@@ -260,7 +261,7 @@ in x * y</code></pre>
         to correctly annotate the types of our anonymous function for us, which would otherwise make the
         size of the code even <em>worse</em>.</p>
         
-        <h2 id="the-parser-bridge-pattern-2" class="section"><a class="anchor-link left" href="#the-parser-bridge-pattern-2"><i class="icofont-laika link">&#xef71;</i></a>The <em>Parser Bridge</em> Pattern</h2>
+        <h2 id="the-parser-bridge-pattern-2" class="section"><a class="anchor-link left" href="#the-parser-bridge-pattern-2"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1 </span>The <em>Parser Bridge</em> Pattern</h2>
         <p>The work we&#39;ve done is unavoidable, but that doesn&#39;t mean we can&#39;t move it somewhere more
         sensible and, at the same time, get a nice new syntax to abstract the way that AST nodes are
         constructed. I call this technique the <em>Parser Bridge</em> pattern, and it takes many shapes depending on
@@ -357,7 +358,7 @@ in x * y</code></pre>
         work left to do however: first it would be nice if the boilerplate introduced by each bridge
         could be reduced; and position information needs to be added to <code>Add</code>, <code>Mul</code>, <code>Sub</code>, and <code>Neg</code>.</p>
         
-        <h2 id="reducing-boilerplate-with-generic-bridge-traits" class="section"><a class="anchor-link left" href="#reducing-boilerplate-with-generic-bridge-traits"><i class="icofont-laika link">&#xef71;</i></a>Reducing Boilerplate with <em><strong>Generic Bridge Traits</strong></em></h2>
+        <h2 id="reducing-boilerplate-with-generic-bridge-traits" class="section"><a class="anchor-link left" href="#reducing-boilerplate-with-generic-bridge-traits"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">2 </span>Reducing Boilerplate with <em><strong>Generic Bridge Traits</strong></em></h2>
         <p>So far, we&#39;ve constructed four bridge constructors:</p>
         <pre><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="type-name">Let</span><span> {
     </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>(</span><span class="identifier">bindings</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">List</span><span>[</span><span class="type-name">Binding</span><span>]], </span><span class="identifier">x</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Expr</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Let</span><span>] =
@@ -452,7 +453,7 @@ in x * y</code></pre>
         <p>Ahhhhh, much better! If position information was removed from say <code>Num</code>, then it would just have
         to extend <code>ParserBridge1</code> instead, and no more changes need to be made!</p>
         
-        <h2 id="singleton-bridge-for-precedence-ops" class="section"><a class="anchor-link left" href="#singleton-bridge-for-precedence-ops"><i class="icofont-laika link">&#xef71;</i></a><em>Singleton Bridge</em> for Precedence Ops</h2>
+        <h2 id="singleton-bridge-for-precedence-ops" class="section"><a class="anchor-link left" href="#singleton-bridge-for-precedence-ops"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">3 </span><em>Singleton Bridge</em> for Precedence Ops</h2>
         <p>With the basics of bridge constructors (as well as generic bridge traits) under our belt, let&#39;s
         explore how we might add position information to the arithmetic operators, which are used within
         the <code>precedence</code> combinator. The problem with these is that the arguments to the bridge constructors
@@ -540,7 +541,7 @@ in x * y</code></pre>
     </span><span class="keyword">val</span><span> </span><span class="identifier">parser</span><span> = </span><span class="identifier">fully</span><span>(</span><span class="identifier">letExpr</span><span>)
 }</span></code></pre>
         
-        <h3 id="abstracting-one-more-time" class="section"><a class="anchor-link left" href="#abstracting-one-more-time"><i class="icofont-laika link">&#xef71;</i></a>Abstracting One More Time</h3>
+        <h3 id="abstracting-one-more-time" class="section"><a class="anchor-link left" href="#abstracting-one-more-time"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">3.1 </span>Abstracting One More Time</h3>
         <p>In the refined definition of our generic bridge traits we supported the <em>Singleton Bridge</em>
         parsing design pattern by allowing the companion object itself to &quot;appear&quot; like a parser itself.
         However, if we peer in closely we can even spot some common structure between the two different
@@ -596,7 +597,7 @@ in x * y</code></pre>
         <p>This provides a <em>modest</em> improvement over the original versions, but there isn&#39;t nearly as much
         benefit over the original generic bridge traits.</p>
         
-        <h2 id="the-final-parser" class="section"><a class="anchor-link left" href="#the-final-parser"><i class="icofont-laika link">&#xef71;</i></a>The Final Parser</h2>
+        <h2 id="the-final-parser" class="section"><a class="anchor-link left" href="#the-final-parser"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">4 </span>The Final Parser</h2>
         <p>This is our final parser which compiles fine, and tracks positions correctly. As we can see, all of
         the work we needed to handle the position tracking, AST node construction, whitespace handling and
         lexing has all been abstracted elsewhere, leaving a clean core. For completeness, here&#39;s the entire

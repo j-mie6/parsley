@@ -87,9 +87,9 @@
     <li class="level1 nav-leaf"><a href="index.html">Home</a></li>
     <li class="level1 nav-leaf"><a href="faq.html">FAQ</a></li>
     <li class="level1 active nav-leaf"><a href="#">Cheatsheet</a></li>
-    <li class="level1 nav-leaf"><a href="api.html">Understanding the API</a></li>
-    <li class="level1 nav-header">Guide to Parser Combinators</li>
-    <li class="level2 nav-leaf"><a href="guide/roadmap.html">Roadmap</a></li>
+    <li class="level1 nav-node"><a href="api-guide/">Understanding the API</a></li>
+    <li class="level2 nav-leaf"><a href="api-guide/parsley.html">Parsley</a></li>
+    <li class="level1 nav-node"><a href="guide/">Parser Combinator Tutorial</a></li>
     <li class="level2 nav-leaf"><a href="guide/basics-of-combinators.html">Basics of Combinators</a></li>
     <li class="level2 nav-leaf"><a href="guide/building-expression-parsers.html">Building Expression Parsers</a></li>
     <li class="level2 nav-leaf"><a href="guide/effective-whitespace-parsing.html">Effective Whitespace Parsing</a></li>
@@ -100,6 +100,7 @@
     <li class="level2 nav-leaf"><a href="guide/advanced-error-messages.html">Advanced Error Messages</a></li>
     <li class="level1 nav-header">Related Projects</li>
     <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/parsley-cats">parsley-cats</a></li>
+    <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/gigaparsec">gigaparsec (Haskell)</a></li>
   </ul>
 
 </nav>
@@ -443,6 +444,11 @@
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">zipped</span><span>.</span><span class="type-name">Zipped2</span><span>
 
 (</span><span class="identifier">nonzero</span><span>, </span><span class="identifier">many</span><span>(</span><span class="identifier">digit</span><span>)).</span><span class="identifier">zipped</span><span>(</span><span class="identifier">_</span><span> :: </span><span class="identifier">_</span><span>)</span></code></pre>
+        <div class="callout warning">
+          <i class="icofont-laika warning">&#xf026;</i>
+          <p>The <code>zipped</code> syntax, unlike the <code>liftN</code> combinators or <code>lift</code> syntax, is not lazy in <em>any</em> of its arguments, so care
+          may be needed to use <code>LazyParsley.unary_~</code> to restore laziness to those arguments that need it.</p>
+        </div>
         <p>Use this form of lifting when type-inference fails you. Otherwise, for clarity, use a regular <code>liftN</code>, or the
         syntactic sugar for it:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">lift</span><span>.{</span><span class="type-name">Lift2</span><span>, </span><span class="type-name">Lift1</span><span>}
@@ -453,15 +459,18 @@
 </span><span class="type-name">Num</span><span>.</span><span class="identifier">lift</span><span>(</span><span class="identifier">int</span><span>)</span></code></pre>
         <p>The <code>lift</code> functions work all the way up to 22 arguments (which is a JVM limit). The same goes for
         the <code>zipped</code> syntax and <code>lift</code> syntax. Don&#39;t forget about <code>&lt;::&gt;</code> as well as its friends <code>&lt;~&gt;</code>,
-        <code>&lt;*&gt;</code>, and <code>&lt;**&gt;</code>! They all provide a concise way of combining things in (common) special cases. <strong>Be aware</strong>: the <code>zipped</code> syntax, unlike the <code>liftN</code> combinators or <code>lift</code> syntax, is not lazy in <em>any</em> of its arguments, so care
-        may be needed to use <code>LazyParsley.unary_~</code> to restore laziness to those arguments that need it.</p>
-        <p><em>A note for Haskellers</em>: In Scala, curried application is not as favoured as it is in Haskell for
-        performance reasons. The classic <code>f &lt;#&gt; p &lt;*&gt; .. &lt;*&gt; z</code> pattern that is common in Haskell (normally <code>(&lt;$&gt;)</code>)
-        is unfavourable compared to the scala <code>liftN(f, p, .., z)</code>. For the latter, <code>f</code> is uncurried, which
-        is the norm, and so it is almost always more efficient. Both <code>&lt;*&gt;</code> and <code>&lt;**&gt;</code> should be, therefore,
-        used sparingly in idiomatic Parsley code instead of liberally like in Haskell. However, it goes without
-        saying that <code>lift2[A =&gt; B, A, B]((f, x) =&gt; f(x), pf, px)</code> is no more efficient than <code>pf &lt;*&gt; px</code> so
-        the latter is favoured for that use case!</p>
+        <code>&lt;*&gt;</code>, and <code>&lt;**&gt;</code>! They all provide a concise way of combining things in (common) special cases.</p>
+        <div class="callout info">
+          <i class="icofont-laika info">&#xef4e;</i>
+          <p><strong>A note for Haskellers</strong></p>
+          <p>In Scala, curried application is not as favoured as it is in Haskell for
+          performance reasons. The classic <code>f &lt;$&gt; p &lt;*&gt; .. &lt;*&gt; z</code> pattern that is common in Haskell
+          is unfavourable compared to the scala <code>liftN(f, p, .., z)</code>. For the latter, <code>f</code> is uncurried, which
+          is the norm, and so it is almost always more efficient. Both <code>&lt;*&gt;</code> and <code>&lt;**&gt;</code> should be, therefore,
+          used sparingly in idiomatic <code>parsley</code> code instead of liberally like in Haskell.</p>
+          <p>However, it goes without saying that <code>lift2[A =&gt; B, A, B]((f, x) =&gt; f(x), pf, px)</code> is no more
+          efficient than <code>pf &lt;*&gt; px</code> so the latter is favoured for that use case!</p>
+        </div>
 
         
 <hr class="footer-rule"/>
