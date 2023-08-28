@@ -23,7 +23,10 @@ object ParsleySitePlugin extends AutoPlugin {
 
     override def projectSettings: Seq[Def.Setting[_]] = Seq(
         tlFatalWarnings := false,  // turn off fatal warnings for mdoc
-        laikaConfig :=  LaikaConfig.defaults.withRawContent,  // enable usage of raw HTML
+        laikaConfig :=  LaikaConfig.defaults.withConfigValue(LinkConfig(
+                apiLinks = tlSiteApiUrl.value.map(url => ApiLinks(baseUri = url.toExternalForm)).toSeq,
+            ))
+            .withRawContent,  // enable usage of raw HTML,  // enable usage of raw HTML
         tlSiteHelium := tlSiteHelium.value.site.layout(
                 topBarHeight = LengthUnit.px(50),
                 //contentWidth = LengthUnit.px(1075), //px(860)
