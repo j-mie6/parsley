@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+  
+  <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="generator" content="Typelevel Laika + Helium Theme" />
+  <title>Advanced Error Messages</title>
+  
+  <meta name="author" content="Jamie Willis"/>
+  
+  
+  <meta name="description" content="docs"/>
+  
+  
+  
+  
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700">
+  
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Fira+Mono:500">
+  
+  <link rel="stylesheet" type="text/css" href="../helium/icofont.min.css" />
+    <link rel="stylesheet" type="text/css" href="../helium/laika-helium.css" />
+  <script src="../helium/laika-helium.js"></script>
+    <script src="../helium/laika-versions.js"></script>
+  <script>initVersions("../../", "/guide/advanced-error-messages.html", "latest", null);</script>
+  
+  <script> /* for avoiding page load transitions */ </script>
+</head>
+
+  <body>
+
+    <header id="top-bar" class="light-default dark-default">
+
+  <div class="row">
+    <a id="nav-icon">
+      <i class="icofont-laika navigationMenu" title="Navigation">&#xefa2;</i>
+    </a>
+    
+    <div class="menu-container version-menu">
+      <a class="text-link menu-toggle" href="#">Version 4.3.x</a>
+      <nav class="menu-content">
+        <ul class="nav-list">
+        </ul>
+      </nav>
+    </div>
+  </div>
+
+  <a class="icon-link svg-link" href="../"><span class="leaf" title="Home"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 128 128" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M101.39,86.21c-14.25-5.91-22.34-4.3-28.47-2.5c-6.5,1.91-12.31,8.58-12.31,8.58s-1.93-0.58-5.04-0.51 c-1.49,0.04-2.67,0.28-3.54,0.54c2.64-5.99,4.51-12.08,7.57-18.76c1.95-0.81,4.63-1.86,6.35-2.23c2.96-0.64,6.45-0.84,6.45-0.84 c0.82,0.64,2,1.39,3.69,2.23c9.56,4.78,21.5,2.16,27.35-0.16c8.13-3.23,20.21-12.95,20.21-13.69s-5.5-3.38-13.32-5.71 c-7.82-2.33-18.27-2.44-26.21,0.95c-7.28,3.11-10.67,8.58-12.54,11.86c0,0-2.9,0.46-5,0.82c-1.56,0.27-2.96,0.64-4.07,0.99 c0.22-0.4,0.45-0.81,0.68-1.21C67.77,58.61,72.83,52.5,77,48.2c5.87,0.55,17.89,0.35,27.62-8.46 c15.64-14.15,18.46-35.92,18.07-36.35S97.35,3.34,84.54,14.91c-12.19,11.01-11.97,25.4-11.4,30.69c-3.97,3.71-8.81,9.17-14.2,17.12 c-0.04-2.12-0.29-4.73-0.29-4.73s7.19-6.73,7.72-17.18c0.42-8.24-0.46-15.89-5-24.14c-3.56-6.43-6.53-8.03-7.06-7.93 c-0.93,0.19-5.33,7.06-8.03,13.63c-2.13,5.17-4.26,18.38-0.45,26.52s8.22,9.68,8.22,9.68s0.54,2.37,0.48,5.55 c-0.02,1.36-0.13,4.51-0.18,5.98c-3.57,6.32-5.96,12.07-8.23,17.22c-0.34-0.99-0.73-1.96-1.11-2.65c-1.16-2.11-1.59-2.85-1.59-2.85 s2.57-15.99-1.8-29.17C36.45,37,27.57,31.08,19.33,27.59C11.09,24.1,6.54,24.11,5.8,24.95c-1.08,1.23,1.37,4.33,1.59,11.31 c0.17,5.71,1.16,25.05,6.87,34.98s13.63,12.37,16.17,13.21c2.54,0.85,8.03,0.95,8.03,0.95s2.33,2.01,3.17,4.86 c0.39,1.31,0.78,2.92,1.09,4.27c-1.95,3.71-4.17,7-7.21,9.86c-5.01,4.71-13.09,7.94-13.09,7.94s-6.47-0.15-6.91,0.15 c-0.44,0.29-1.73,3.53,0.69,7.51c2,3.29,5.05,4.12,6.08,4.26c1.03,0.15,2.94-4.27,3.68-4.86c0.74-0.59,9.43-3.93,15.6-10.74 c2.83-3.13,5.02-6.16,6.81-9.17c1.65-1.01,4.07-2.17,6.72-2.31c2.64-0.15,4.94,1.12,4.94,1.12s2.22,9.16,12.15,13 c12.5,4.83,25.83,0.61,31.64-1.4c5.81-2,19.83-8.42,19.94-10.22C123.86,97.87,115.66,92.13,101.39,86.21z"/>
+  </g>
+</svg></span></a>
+
+  <div class="row links">
+    
+    <a class="icon-link svg-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/latest/"><span class="api" title="API"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M75,47.5c13.246,0 24,10.754 24,24c0,13.246 -10.754,24 -24,24c-13.246,0 -24,-10.754 -24,-24c0,-13.246 10.754,-24 24,-24Zm-50,-0c13.246,-0 24,10.754 24,24c0,13.246 -10.754,24 -24,24c-13.246,-0 -24,-10.754 -24,-24c0,-13.246 10.754,-24 24,-24Zm2.705,16.735l7.239,0l0.622,-4.904l-21.833,0l-0,4.904l7.589,0l0,22.067l6.383,0l-0,-22.067Zm58.076,7.265c-0,-8.757 -3.698,-14.166 -10.781,-14.166c-7.083,-0 -10.781,5.604 -10.781,14.166c0,8.757 3.698,14.166 10.781,14.166c7.083,0 10.781,-5.604 10.781,-14.166Zm-6.539,0c0,6.538 -1.128,9.496 -4.242,9.496c-2.997,0 -4.242,-2.88 -4.242,-9.496c-0,-6.616 1.206,-9.496 4.242,-9.496c3.036,-0 4.242,2.88 4.242,9.496Zm-29.242,-67c13.246,0 24,10.754 24,24c0,13.246 -10.754,24 -24,24c-13.246,0 -24,-10.754 -24,-24c0,-13.246 10.754,-24 24,-24Zm0.512,9.834c-7.122,-0 -12.609,5.098 -12.609,14.127c-0,9.263 5.215,14.205 12.532,14.205c4.164,0 7.083,-1.634 9.068,-3.658l-2.88,-3.697c-1.518,1.206 -3.153,2.413 -5.838,2.413c-3.697,-0 -6.266,-2.763 -6.266,-9.263c-0,-6.616 2.724,-9.379 6.149,-9.379c2.102,-0 3.892,0.778 5.371,1.984l3.113,-3.775c-2.257,-1.868 -4.748,-2.957 -8.64,-2.957Z"/>
+  </g>
+</svg></span></a>
+    
+    <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M49.995,1c-27.609,-0 -49.995,22.386 -49.995,50.002c-0,22.09 14.325,40.83 34.194,47.444c2.501,0.458 3.413,-1.086 3.413,-2.412c0,-1.185 -0.043,-4.331 -0.067,-8.503c-13.908,3.021 -16.843,-6.704 -16.843,-6.704c-2.274,-5.773 -5.552,-7.311 -5.552,-7.311c-4.54,-3.103 0.344,-3.042 0.344,-3.042c5.018,0.356 7.658,5.154 7.658,5.154c4.46,7.64 11.704,5.433 14.552,4.156c0.454,-3.232 1.744,-5.436 3.174,-6.685c-11.102,-1.262 -22.775,-5.553 -22.775,-24.713c-0,-5.457 1.949,-9.92 5.147,-13.416c-0.516,-1.265 -2.231,-6.348 0.488,-13.233c0,0 4.199,-1.344 13.751,5.126c3.988,-1.108 8.266,-1.663 12.518,-1.682c4.245,0.019 8.523,0.574 12.517,1.682c9.546,-6.47 13.736,-5.126 13.736,-5.126c2.728,6.885 1.013,11.968 0.497,13.233c3.204,3.496 5.141,7.959 5.141,13.416c0,19.209 -11.691,23.436 -22.83,24.673c1.795,1.544 3.394,4.595 3.394,9.26c0,6.682 -0.061,12.076 -0.061,13.715c0,1.338 0.899,2.894 3.438,2.406c19.853,-6.627 34.166,-25.354 34.166,-47.438c-0,-27.616 -22.389,-50.002 -50.005,-50.002"/>
+  </g>
+</svg></span></a>
+    
+  </div>  
+
+</header>
+    
+    <nav id="sidebar">
+
+  <div class="row">
+    
+    <a class="icon-link svg-link" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/latest/"><span class="api" title="API"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M75,47.5c13.246,0 24,10.754 24,24c0,13.246 -10.754,24 -24,24c-13.246,0 -24,-10.754 -24,-24c0,-13.246 10.754,-24 24,-24Zm-50,-0c13.246,-0 24,10.754 24,24c0,13.246 -10.754,24 -24,24c-13.246,-0 -24,-10.754 -24,-24c0,-13.246 10.754,-24 24,-24Zm2.705,16.735l7.239,0l0.622,-4.904l-21.833,0l-0,4.904l7.589,0l0,22.067l6.383,0l-0,-22.067Zm58.076,7.265c-0,-8.757 -3.698,-14.166 -10.781,-14.166c-7.083,-0 -10.781,5.604 -10.781,14.166c0,8.757 3.698,14.166 10.781,14.166c7.083,0 10.781,-5.604 10.781,-14.166Zm-6.539,0c0,6.538 -1.128,9.496 -4.242,9.496c-2.997,0 -4.242,-2.88 -4.242,-9.496c-0,-6.616 1.206,-9.496 4.242,-9.496c3.036,-0 4.242,2.88 4.242,9.496Zm-29.242,-67c13.246,0 24,10.754 24,24c0,13.246 -10.754,24 -24,24c-13.246,0 -24,-10.754 -24,-24c0,-13.246 10.754,-24 24,-24Zm0.512,9.834c-7.122,-0 -12.609,5.098 -12.609,14.127c-0,9.263 5.215,14.205 12.532,14.205c4.164,0 7.083,-1.634 9.068,-3.658l-2.88,-3.697c-1.518,1.206 -3.153,2.413 -5.838,2.413c-3.697,-0 -6.266,-2.763 -6.266,-9.263c-0,-6.616 2.724,-9.379 6.149,-9.379c2.102,-0 3.892,0.778 5.371,1.984l3.113,-3.775c-2.257,-1.868 -4.748,-2.957 -8.64,-2.957Z"/>
+  </g>
+</svg></span></a>
+    
+    <a class="icon-link svg-link" href="https://github.com/j-mie6/parsley"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M49.995,1c-27.609,-0 -49.995,22.386 -49.995,50.002c-0,22.09 14.325,40.83 34.194,47.444c2.501,0.458 3.413,-1.086 3.413,-2.412c0,-1.185 -0.043,-4.331 -0.067,-8.503c-13.908,3.021 -16.843,-6.704 -16.843,-6.704c-2.274,-5.773 -5.552,-7.311 -5.552,-7.311c-4.54,-3.103 0.344,-3.042 0.344,-3.042c5.018,0.356 7.658,5.154 7.658,5.154c4.46,7.64 11.704,5.433 14.552,4.156c0.454,-3.232 1.744,-5.436 3.174,-6.685c-11.102,-1.262 -22.775,-5.553 -22.775,-24.713c-0,-5.457 1.949,-9.92 5.147,-13.416c-0.516,-1.265 -2.231,-6.348 0.488,-13.233c0,0 4.199,-1.344 13.751,5.126c3.988,-1.108 8.266,-1.663 12.518,-1.682c4.245,0.019 8.523,0.574 12.517,1.682c9.546,-6.47 13.736,-5.126 13.736,-5.126c2.728,6.885 1.013,11.968 0.497,13.233c3.204,3.496 5.141,7.959 5.141,13.416c0,19.209 -11.691,23.436 -22.83,24.673c1.795,1.544 3.394,4.595 3.394,9.26c0,6.682 -0.061,12.076 -0.061,13.715c0,1.338 0.899,2.894 3.438,2.406c19.853,-6.627 34.166,-25.354 34.166,-47.438c-0,-27.616 -22.389,-50.002 -50.005,-50.002"/>
+  </g>
+</svg></span></a>
+    
+  </div>
+
+  <ul class="nav-list">
+    <li class="level1 nav-leaf"><a href="../downloads.html">Documentation Downloads</a></li>
+    <li class="level1 nav-leaf"><a href="../">Home</a></li>
+    <li class="level1 nav-leaf"><a href="../faq.html">FAQ</a></li>
+    <li class="level1 nav-leaf"><a href="../cheatsheet.html">Cheatsheet</a></li>
+    <li class="level1 nav-node"><a href="../api-guide/">Understanding the API</a></li>
+    <li class="level2 nav-leaf"><a href="../api-guide/parsley.html">Parsley</a></li>
+    <li class="level1 nav-node"><a href="index.html">Parser Combinator Tutorial</a></li>
+    <li class="level2 nav-leaf"><a href="basics-of-combinators.html">Basics of Combinators</a></li>
+    <li class="level2 nav-leaf"><a href="building-expression-parsers.html">Building Expression Parsers</a></li>
+    <li class="level2 nav-leaf"><a href="effective-whitespace-parsing.html">Effective Whitespace Parsing</a></li>
+    <li class="level2 nav-leaf"><a href="effective-lexing.html">Effective Lexing</a></li>
+    <li class="level2 nav-leaf"><a href="parser-bridge-pattern.html">The Parser Bridge Pattern</a></li>
+    <li class="level2 nav-leaf"><a href="interlude-1-haskell.html">Interlude 1: Building a Parser for Haskell</a></li>
+    <li class="level2 nav-leaf"><a href="customising-error-messages.html">Customising Error Messages</a></li>
+    <li class="level2 active nav-leaf"><a href="#">Advanced Error Messages</a></li>
+    <li class="level1 nav-header">Related Projects</li>
+    <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/parsley-cats">parsley-cats</a></li>
+    <li class="level2 nav-leaf"><a href="https://github.com/j-mie6/gigaparsec">gigaparsec (Haskell)</a></li>
+  </ul>
+
+</nav>
+
+    <div id="container">
+
+      
+<nav id="page-nav">
+  <p class="header"><a href="#">Advanced Error Messages</a></p>
+
+  <ul class="nav-list">
+    <li class="level1 nav-node"><a href="#using-amend-and-entrench"><span class="section-number">1 </span>Using <code>amend</code> and <code>entrench</code></a></li>
+    <li class="level2 nav-leaf"><a href="#using-lookahead-instead"><span class="section-number">1.1 </span>Using <code>lookAhead</code> instead</a></li>
+    <li class="level1 nav-node"><a href="#using-unexpected-and-fail-to-refine-messages"><span class="section-number">2 </span>Using <code>unexpected</code> and <code>fail</code> to refine messages</a></li>
+    <li class="level2 nav-leaf"><a href="#using-amend-or-lookahead"><span class="section-number">2.1 </span>Using <code>amend</code> or <code>lookAhead</code></a></li>
+    <li class="level1 nav-node"><a href="#using-fail-and-guardagainst"><span class="section-number">3 </span>Using <code>fail</code> and <code>guardAgainst</code></a></li>
+    <li class="level2 nav-leaf"><a href="#context-awareness"><span class="section-number">3.1 </span>Context-Awareness</a></li>
+  </ul>
+
+  <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/master/docs/guide/advanced-error-messages.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
+</nav>
+
+
+      <main class="content">
+
+        <h1 id="advanced-error-messages" class="title">Advanced Error Messages</h1>
+        <div class="callout info">
+          <i class="icofont-laika info">&#xef4e;</i>
+          <p>This page is still being updated for the wiki port, so some things may be a bit broken or look a little strange.</p>
+        </div>
+        <div class="callout warning">
+          <i class="icofont-laika warning">&#xf026;</i>
+          <p><em>This page is out-of-date, and describes the situation in <code>parsley-3.x.y</code> and not <code>parsley-4.0.0</code>. Much of the content remains the same, but some individual things may be incorrect.</em></p>
+        </div>
+        <p>Previously, we saw the most basic approach to improving error messages: <code>.label</code> and <code>.explain</code>.
+        However, the other tools I listed in the post are valuable in their own right, but can be slightly
+        less common. I would like to demonstrate their use here, as well as some more advanced patterns.
+        Let&#39;s recap who the remaining players are:</p>
+        <ul>
+          <li><code>fail</code> is useful, but a bit of a sledgehammer. When <code>fail</code> (or any of its derivative combinators
+          like <code>guardAgainst</code>) is used, it removes the unexpected and expected information and just replaces it
+          with a given message. If there are multiple <code>fail</code>s that appear in the same message, they are
+          each written on a newline.</li>
+          <li><code>unexpected</code> is the least commonly used combinator in practice. When it is used, it will,
+          like <code>fail</code>, immediately fails except it reports a custom unexpected message.</li>
+          <li><code>amend</code> and <code>entrench</code> are a pair of combinators that work together to correct the position of
+          some error messages. These are quite rare in practice.</li>
+        </ul>
+        <p>This post will cover the use of these combinators and a couple of useful patterns to provide very
+        fine grained error messages.</p>
+        
+        <h2 id="using-amend-and-entrench" class="section"><a class="anchor-link left" href="#using-amend-and-entrench"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1 </span>Using <code>amend</code> and <code>entrench</code></h2>
+        <p>I&#39;m going to start by introducing this dynamic duo, as they can be very useful in the right
+        circumstances. In fact, let&#39;s revisit the <code>identifier</code> parser we made when we did <em>Effective Lexing</em>:</p>
+        <pre><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="identifier">lexer</span><span> {
+    </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">keywords</span><span> = </span><span class="type-name">Set</span><span>(</span><span class="string-literal">&quot;while&quot;</span><span>, </span><span class="string-literal">&quot;then&quot;</span><span>, </span><span class="string-literal">&quot;else&quot;</span><span>)
+
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">lexeme</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">p</span><span> &lt;* </span><span class="identifier">skipWhitespace</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">token</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">lexeme</span><span>(</span><span class="identifier">attempt</span><span>(</span><span class="identifier">p</span><span>))
+
+    </span><span class="keyword">val</span><span> </span><span class="identifier">identifier</span><span> =
+        </span><span class="identifier">token</span><span> {
+            </span><span class="identifier">some</span><span>(</span><span class="identifier">alphaNum</span><span>).</span><span class="identifier">map</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">mkString</span><span>).</span><span class="identifier">filterOut</span><span> {
+                </span><span class="keyword">case</span><span> </span><span class="identifier">v</span><span> </span><span class="keyword">if</span><span> </span><span class="identifier">keywords</span><span>(</span><span class="identifier">v</span><span>) =&gt;
+                    </span><span class="string-literal">s&quot;keyword </span><span class="substitution">$v</span><span class="string-literal"> may not be used as an identifier&quot;</span><span>
+            }
+        }.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;identifier&quot;</span><span>)
+}</span></code></pre>
+        <p>To recap, the idea behind this parser is that it first reads some alpha-numeric characters, then
+        converts them to a string. After this it ensures that the parsed identifier is not in <code>keywords</code>.
+        The <code>attempt</code> is wrapped round that entire block so that, if we did read a keyword, we are able to
+        backtrack out in case the keyword was indeed valid (for another branch). After we are done we can
+        read whitespace. This time, let&#39;s take a look at the error messages when it goes wrong:</p>
+        <pre><code>lexer.identifier.parse(&quot;then&quot;)
+(line 1, column 5):
+  unexpected end of input
+  expected identifier
+  keyword then may not be used as an identifier
+  &gt;then
+       ^</code></pre>
+        <p>Cool! But there is something bugging me about this message. It&#39;s pointing at column 5, but since we
+        used <code>attempt</code> in <code>token</code>, surely no input was consumed? Let&#39;s verify:</p>
+        <pre><code>(lexer.identifier &lt;|&gt; &quot;then&quot;).parse(&quot;then&quot;)
+Success(&quot;then&quot;)</code></pre>
+        <p>Yup, it can backtrack out, so this is perhaps a little misleading. But you can argue that, since it
+        doesn&#39;t affect the working of the parser surely it&#39;s fine? Well, let&#39;s take a look at another error
+        message:</p>
+        <pre><code>(lexer.identifier &lt;|&gt; &quot;then&quot;).parse(&quot;while&quot;)
+(line 1, column 6):
+  unexpected end of input
+  expected identifier
+  keyword while may not be used as an identifier
+  &gt;while
+        ^</code></pre>
+        <p>Now, this might seem fine at first look, but the expected clause is <em>wrong</em>. We expect either an
+        identifier <em>or</em> <code>then</code>, but the message doesn&#39;t reflect this. The problem is that when Parsley looks
+        to unify error messages, it will always favour error messages that happened later in the input.
+        identifier fails at column 6, but <code>then</code> fails at column 1. So, how to proceed? Well, we need a way
+        of either having consumed no input before we perform the filter, or we need to adjust the position
+        of the error message. I&#39;m actually going to show both approaches, even though one is clearly better
+        than the other, purely so you can see the technique: it might come in handy for all I know.</p>
+        <p>Let&#39;s start by fixing the error message as opposed to fiddling with the way the parser works. Here
+        is where our new friend <code>amend</code> comes in. What <code>amend</code> does is, simply put, change the positions of
+        error messages that occur inside it so that they happen at the same position that the combinator
+        started to be executed at. Let&#39;s see the effect in action:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">identifier</span><span> =
+    </span><span class="identifier">token</span><span> {
+        </span><span class="identifier">amend</span><span> {
+            </span><span class="identifier">some</span><span>(</span><span class="identifier">alphaNum</span><span>).</span><span class="identifier">map</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">mkString</span><span>).</span><span class="identifier">filterOut</span><span> {
+                </span><span class="keyword">case</span><span> </span><span class="identifier">v</span><span> </span><span class="keyword">if</span><span> </span><span class="identifier">keywords</span><span>(</span><span class="identifier">v</span><span>) =&gt;
+                    </span><span class="string-literal">s&quot;keyword </span><span class="substitution">$v</span><span class="string-literal"> may not be used as an identifier&quot;</span><span>
+            }
+        }
+    }.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;identifier&quot;</span><span>)</span></code></pre>
+        <p>Easy! Now, what happens to the error?</p>
+        <pre><code>(lexer.identifier &lt;|&gt; &quot;then&quot;).parse(&quot;while&quot;)
+(line 1, column 1):
+  unexpected &quot;whil&quot;
+  expected &quot;then&quot; or identifier
+  keyword while may not be used as an identifier
+  &gt;while
+   ^</code></pre>
+        <p>Great! So, what happens is the following: first we enter the <code>token</code>, and then the <code>amend</code>. At
+        this point, no input has been consumed, so <code>amend</code> will make any messages start at column 1. Then
+        the identifier is read and filter excludes it at column 6. Then <code>amend</code> fixes the error message.
+        Simple technique, but what if there are errors inside the combinator we <em>don&#39;t</em> want to change?
+        Let&#39;s artificially make identifiers more complex, and say that the second letter must be a digit:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">identifier</span><span> =
+    </span><span class="identifier">token</span><span> {
+        </span><span class="comment">//amend {
+</span><span>            (</span><span class="identifier">alphaNum</span><span> &lt;::&gt; (</span><span class="identifier">digit</span><span> &lt;::&gt; </span><span class="identifier">many</span><span>(</span><span class="identifier">alphaNum</span><span>))).</span><span class="identifier">map</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">mkString</span><span>).</span><span class="identifier">filterOut</span><span> {
+                </span><span class="keyword">case</span><span> </span><span class="identifier">v</span><span> </span><span class="keyword">if</span><span> </span><span class="identifier">keywords</span><span>(</span><span class="identifier">v</span><span>) =&gt;
+                    </span><span class="string-literal">s&quot;keyword </span><span class="substitution">$v</span><span class="string-literal"> may not be used as an identifier&quot;</span><span>
+            }
+        </span><span class="comment">//}
+</span><span>    }.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;identifier&quot;</span><span>)</span></code></pre>
+        <p>I&#39;ve removed the <code>amend</code>, so we can see what happens:</p>
+        <pre><code>(lexer.identifier &lt;|&gt; &quot;then&quot;).parse(&quot;abc&quot;)
+(line 1, column 2):
+  unexpected &quot;b&quot;
+  expected digit
+  &gt;abc
+    ^</code></pre>
+        <p>Right, this is good, the second letter isn&#39;t a digit, so the parser failed, and that&#39;s
+        the reason. But what about when the <code>amend</code> is there:</p>
+        <pre><code>(lexer.identifier &lt;|&gt; &quot;then&quot;).parse(&quot;abc&quot;)
+(line 1, column 1):
+  unexpected &quot;abc&quot;
+  expected &quot;then&quot; or identifier
+  &gt;abc
+   ^</code></pre>
+        <p>This isn&#39;t right at all! The error has backed out with
+        no indication of what happened. This is where <code>entrench</code> comes in. This combinator is found inside
+        an <code>amend</code> and blocks its effect. In our case, we want to protect the errors from within the first
+        part of the parser, and amend those from the <code>filterOut</code> only:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">identifier</span><span> =
+    </span><span class="identifier">token</span><span> {
+        </span><span class="identifier">amend</span><span> {
+            </span><span class="identifier">entrench</span><span>(</span><span class="identifier">alphaNum</span><span> &lt;::&gt; (</span><span class="identifier">digit</span><span> &lt;::&gt; </span><span class="identifier">many</span><span>(</span><span class="identifier">alphaNum</span><span>))).</span><span class="identifier">map</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">mkString</span><span>).</span><span class="identifier">filterOut</span><span> {
+                </span><span class="keyword">case</span><span> </span><span class="identifier">v</span><span> </span><span class="keyword">if</span><span> </span><span class="identifier">keywords</span><span>(</span><span class="identifier">v</span><span>) =&gt;
+                    </span><span class="string-literal">s&quot;keyword </span><span class="substitution">$v</span><span class="string-literal"> may not be used as an identifier&quot;</span><span>
+            }
+        }
+    }.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;identifier&quot;</span><span>)</span></code></pre>
+        <p>Now that the first part has been entrenched, the amendment to the message will be prevented:</p>
+        <pre><code>(lexer.identifier &lt;|&gt; &quot;then&quot;).parse(&quot;abc&quot;)
+(line 1, column 2):
+  unexpected &quot;b&quot;
+  expected digit
+  &gt;abc
+    ^</code></pre>
+        <p>Now, obviously, we don&#39;t have any keywords with the second character a digit, so this is a little
+        esoteric, but there are much larger examples of the <code>filterOut</code> (or indeed <code>guardAgainst</code>) technique
+        where this might come in handy. For our case, however, we can make do with just <code>amend</code>.</p>
+        
+        <h3 id="using-lookahead-instead" class="section"><a class="anchor-link left" href="#using-lookahead-instead"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">1.1 </span>Using <code>lookAhead</code> instead</h3>
+        <p>As promised, here is another way we could fix our problem (and it&#39;s less efficient!). Like I said
+        earlier, the crux of the issue is that we consumed input on the successful parse <em>before</em> we perform
+        the filter, which means the error message is pointing after that input. The <code>lookAhead</code> combinator,
+        however, doesn&#39;t consume input on success (but it might on fail!). So we can split the work into
+        two parts: first is validation and then the second commital:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">identifier</span><span> =
+    </span><span class="identifier">lexeme</span><span> {
+        </span><span class="identifier">lookAhead</span><span>(</span><span class="identifier">some</span><span>(</span><span class="identifier">alphaNum</span><span>).</span><span class="identifier">map</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">mkString</span><span>)).</span><span class="identifier">filterOut</span><span> {
+            </span><span class="keyword">case</span><span> </span><span class="identifier">v</span><span> </span><span class="keyword">if</span><span> </span><span class="identifier">keywords</span><span>(</span><span class="identifier">v</span><span>) =&gt;
+                </span><span class="string-literal">s&quot;keyword </span><span class="substitution">$v</span><span class="string-literal"> may not be used as an identifier&quot;</span><span>
+        } &lt;* </span><span class="identifier">some</span><span>(</span><span class="identifier">alphaNum</span><span>)
+    }.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;identifier&quot;</span><span>)</span></code></pre>
+        <p>Now, I&#39;ve missed out an <code>attempt</code> (and so used <code>lexeme</code> instead of <code>token</code>) here because I know that
+        if an identifier fails to read anything
+        (barring keywords), it won&#39;t consume input in the process. In this parser, we first look ahead at
+        the next piece of input and try and read an identifier, if we are successful, we filter it to check
+        for keywords (but have consumed no input). If that fails then we have already backed out of the
+        input reading. If the identifier is not a keyword then, unfortunately, we have to read the whole
+        thing again to actually get the input consumed. The silver lining is that we at least get to make
+        use of the work we already did to turn it into a string by using <code>&lt;*</code>. This will have the same
+        effect as using <code>amend</code> on the errors but it is a bit more expensive and duplicates code. That being
+        said, in this form we can get a finer control over how the labelling might work, since we don&#39;t have
+        a label outside an attempt, we can label inside the parser as well. In fact, our esoteric example
+        behaves itself a little better in this form:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">identifier</span><span> =
+    </span><span class="identifier">lexeme</span><span> {
+        </span><span class="identifier">lookAhead</span><span>((</span><span class="identifier">alphaNum</span><span> &lt;::&gt; (</span><span class="identifier">digit</span><span> &lt;::&gt; </span><span class="identifier">many</span><span>(</span><span class="identifier">alphaNum</span><span>))).</span><span class="identifier">map</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">mkString</span><span>)).</span><span class="identifier">filterOut</span><span> {
+            </span><span class="keyword">case</span><span> </span><span class="identifier">v</span><span> </span><span class="keyword">if</span><span> </span><span class="identifier">keywords</span><span>(</span><span class="identifier">v</span><span>) =&gt;
+                </span><span class="string-literal">s&quot;keyword </span><span class="substitution">$v</span><span class="string-literal"> may not be used as an identifier&quot;</span><span>
+        } &lt;* </span><span class="identifier">some</span><span>(</span><span class="identifier">alphaNum</span><span>)
+    }.</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;identifier&quot;</span><span>)</span></code></pre>
+        <p>This time, even with the <code>.label(&quot;identifier&quot;)</code>, we still get information about our digit in errors.
+        We also don&#39;t need to change the commital parser, since it knows there must have been a digit to
+        get to that point anyway. Again though, this is not the best practice to do: if <code>amend</code> and
+        <code>entrench</code> get the job done, I would advise using them!</p>
+        
+        <h2 id="using-unexpected-and-fail-to-refine-messages" class="section"><a class="anchor-link left" href="#using-unexpected-and-fail-to-refine-messages"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">2 </span>Using <code>unexpected</code> and <code>fail</code> to refine messages</h2>
+        <p>The <code>unexpected</code> combinator is a simple combinator, but one that is difficult to apply in practice.
+        At it&#39;s core, it fails, but adjusts the unexpected message within the error. Let&#39;s take a look:</p>
+        <pre><code>unexpected(&quot;something&quot;).label(&quot;something else&quot;).parse(&quot;a&quot;)
+(line 1, column 1):
+  unexpected something
+  expected something else
+  &gt;a
+   ^</code></pre>
+        <p>The <code>fail</code> combinator, however, destroys the <em>entire</em> message. Instead you can list out a bunch of
+        lines that should make up the body of the message (these merge if two paths both result in a &quot;specialised&quot;
+        error). Error messages from <code>fail</code> take precedence over any other error messages. Here it is:</p>
+        <pre><code>fail(&quot;something&quot;, &quot;something else&quot;).label(&quot;nothing happens&quot;).explain(&quot;nothing at all&quot;).parse(&quot;a&quot;)
+(line 1, column 1):
+  something
+  something else
+  &gt;a
+   ^</code></pre>
+        <p>On their own, it&#39;s quite hard to see how they can be useful! The key is to recognise that they can be
+        used in conjunction with other combinators. Before we do that though, I want to illustrate that
+        there is a form of <code>unexpected</code> that exists as a method:</p>
+        <pre><code>anyChar.unexpected(c =&gt; s&quot;character $c&quot;).parse(&quot;a&quot;)
+(line 1, column 2):
+  unexpected character a
+  &gt;a
+    ^</code></pre>
+        <p>And <code>!</code> exists for <code>fail</code>:</p>
+        <pre><code>(anyChar ! (c =&gt; s&quot;character $c is illegal for some reason&quot;)).parse(&quot;a&quot;)
+(line 1, column 2):
+  character a is illegal for some reason
+  &gt;a
+    ^</code></pre>
+        <p>This variant can use the result of the parser it is attached to in order to generate the unexpected
+        message.</p>
+        
+        <h3 id="using-amend-or-lookahead" class="section"><a class="anchor-link left" href="#using-amend-or-lookahead"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">2.1 </span>Using <code>amend</code> or <code>lookAhead</code></h3>
+        <p>The easiest way to start using <code>unexpected</code> or <code>fail</code> is by using the two tools we&#39;ve seen so far. The
+        pattern is to use it to produce predicative errors. This is where you can anticipate common syntax
+        issues with a language or format and produce a specialised error to help with them. The idea is to use
+        them when other alternatives have failed: this gives the parser the chance to collect up the expected
+        items that would help to resolve the error.</p>
+        <p>For this section I&#39;m going to create a new parser for a small interpreter. It supports conditionals,
+        assignment, arithmetic, and boolean expressions; variables must be integers. Our parser is actually
+        going to build an interpreter for the program it parses (just for variety), which is defined as follows:</p>
+        <pre><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="identifier">eval</span><span> {
+    </span><span class="keyword">import</span><span> </span><span class="identifier">scala</span><span>.</span><span class="identifier">collection</span><span>.</span><span class="identifier">mutable</span><span>
+    </span><span class="keyword">import</span><span> </span><span class="identifier">scala</span><span>.</span><span class="identifier">annotation</span><span>.</span><span class="identifier">tailrec</span><span>
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Context</span><span> = </span><span class="identifier">mutable</span><span>.</span><span class="type-name">Map</span><span>[</span><span class="type-name">String</span><span>, </span><span class="type-name">Int</span><span>]
+    </span><span class="keyword">type</span><span> </span><span class="type-name">Eval</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="type-name">Context</span><span> =&gt; </span><span class="type-name">Either</span><span>[</span><span class="type-name">String</span><span>, </span><span class="type-name">A</span><span>]
+
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">number</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Int</span><span>): </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>] = </span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">Right</span><span>(</span><span class="identifier">x</span><span>)
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">bool</span><span>(</span><span class="identifier">b</span><span>: </span><span class="type-name">Boolean</span><span>): </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>] = </span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">Right</span><span>(</span><span class="identifier">b</span><span>)
+
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">negate</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>]): </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>] = </span><span class="identifier">ctx</span><span> =&gt; </span><span class="identifier">x</span><span>(</span><span class="identifier">ctx</span><span>).</span><span class="identifier">map</span><span>(</span><span class="number-literal">0</span><span> - </span><span class="identifier">_</span><span>)
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">add</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>], </span><span class="identifier">y</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>]): </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>] = </span><span class="identifier">ctx</span><span> =&gt;
+        </span><span class="keyword">for</span><span> (</span><span class="identifier">n</span><span> &lt;- </span><span class="identifier">x</span><span>(</span><span class="identifier">ctx</span><span>); </span><span class="identifier">m</span><span> &lt;- </span><span class="identifier">y</span><span>(</span><span class="identifier">ctx</span><span>)) </span><span class="keyword">yield</span><span> </span><span class="identifier">n</span><span> + </span><span class="identifier">m</span><span>
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">sub</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>], </span><span class="identifier">y</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>]): </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>] = </span><span class="identifier">ctx</span><span> =&gt;
+        </span><span class="keyword">for</span><span> (</span><span class="identifier">n</span><span> &lt;- </span><span class="identifier">x</span><span>(</span><span class="identifier">ctx</span><span>); </span><span class="identifier">m</span><span> &lt;- </span><span class="identifier">y</span><span>(</span><span class="identifier">ctx</span><span>)) </span><span class="keyword">yield</span><span> </span><span class="identifier">n</span><span> - </span><span class="identifier">m</span><span>
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">mul</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>], </span><span class="identifier">y</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>]): </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>] = </span><span class="identifier">ctx</span><span> =&gt;
+        </span><span class="keyword">for</span><span> (</span><span class="identifier">n</span><span> &lt;- </span><span class="identifier">x</span><span>(</span><span class="identifier">ctx</span><span>); </span><span class="identifier">m</span><span> &lt;- </span><span class="identifier">y</span><span>(</span><span class="identifier">ctx</span><span>)) </span><span class="keyword">yield</span><span> </span><span class="identifier">n</span><span> * </span><span class="identifier">m</span><span>
+
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">less</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>])(</span><span class="identifier">y</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>]): </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>] = </span><span class="identifier">ctx</span><span> =&gt;
+        </span><span class="keyword">for</span><span> (</span><span class="identifier">n</span><span> &lt;- </span><span class="identifier">x</span><span>(</span><span class="identifier">ctx</span><span>); </span><span class="identifier">m</span><span> &lt;- </span><span class="identifier">y</span><span>(</span><span class="identifier">ctx</span><span>)) </span><span class="keyword">yield</span><span> </span><span class="identifier">n</span><span> &lt; </span><span class="identifier">m</span><span>
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">equal</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>])(</span><span class="identifier">y</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>]): </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>] = </span><span class="identifier">ctx</span><span> =&gt;
+        </span><span class="keyword">for</span><span> (</span><span class="identifier">n</span><span> &lt;- </span><span class="identifier">x</span><span>(</span><span class="identifier">ctx</span><span>); </span><span class="identifier">m</span><span> &lt;- </span><span class="identifier">y</span><span>(</span><span class="identifier">ctx</span><span>)) </span><span class="keyword">yield</span><span> </span><span class="identifier">n</span><span> == </span><span class="identifier">m</span><span>
+
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">and</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>], </span><span class="identifier">y</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>]): </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>] =
+        </span><span class="identifier">cond</span><span>(</span><span class="identifier">x</span><span>, </span><span class="identifier">y</span><span>, </span><span class="identifier">bool</span><span>(</span><span class="boolean-literal">false</span><span>))
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">or</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>], </span><span class="identifier">y</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>]): </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>] =
+        </span><span class="identifier">cond</span><span>(</span><span class="identifier">x</span><span>, </span><span class="identifier">bool</span><span>(</span><span class="boolean-literal">true</span><span>), </span><span class="identifier">y</span><span>)
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">not</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>]): </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>] = </span><span class="identifier">ctx</span><span> =&gt;
+        </span><span class="identifier">x</span><span>(</span><span class="identifier">ctx</span><span>).</span><span class="identifier">map</span><span>(!</span><span class="identifier">_</span><span>)
+
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">ask</span><span>(</span><span class="identifier">v</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>] = </span><span class="identifier">ctx</span><span> =&gt;
+        </span><span class="identifier">ctx</span><span>.</span><span class="identifier">get</span><span>(</span><span class="identifier">v</span><span>).</span><span class="identifier">toRight</span><span>(</span><span class="string-literal">s&quot;variable </span><span class="substitution">$v</span><span class="string-literal"> out of scope&quot;</span><span>)
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">store</span><span>(</span><span class="identifier">v</span><span>: </span><span class="type-name">String</span><span>, </span><span class="identifier">x</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>]): </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Unit</span><span>] = </span><span class="identifier">ctx</span><span> =&gt;
+        </span><span class="keyword">for</span><span> (</span><span class="identifier">n</span><span> &lt;- </span><span class="identifier">x</span><span>(</span><span class="identifier">ctx</span><span>)) </span><span class="keyword">yield</span><span> </span><span class="identifier">ctx</span><span> += (</span><span class="identifier">v</span><span> -&gt; </span><span class="identifier">n</span><span>)
+
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">cond</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">b</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>], </span><span class="identifier">t</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">A</span><span>], </span><span class="identifier">e</span><span>: </span><span class="type-name">Eval</span><span>[</span><span class="type-name">A</span><span>]): </span><span class="type-name">Eval</span><span>[</span><span class="type-name">A</span><span>] = </span><span class="identifier">ctx</span><span> =&gt;
+        </span><span class="identifier">b</span><span>(</span><span class="identifier">ctx</span><span>).</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">b</span><span> =&gt; </span><span class="keyword">if</span><span> (</span><span class="identifier">b</span><span>) </span><span class="identifier">t</span><span>(</span><span class="identifier">ctx</span><span>) </span><span class="keyword">else</span><span> </span><span class="identifier">e</span><span>(</span><span class="identifier">ctx</span><span>))
+
+    </span><span class="annotation">@tailrec</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">sequence</span><span>(</span><span class="identifier">actions</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Unit</span><span>]], </span><span class="identifier">ctx</span><span>: </span><span class="type-name">Context</span><span>): </span><span class="type-name">Either</span><span>[</span><span class="type-name">String</span><span>, </span><span class="type-name">Unit</span><span>] = </span><span class="identifier">actions</span><span> </span><span class="keyword">match</span><span> {
+        </span><span class="keyword">case</span><span> </span><span class="type-name">Nil</span><span> =&gt; </span><span class="type-name">Right</span><span>(())
+        </span><span class="keyword">case</span><span> </span><span class="identifier">action</span><span>::</span><span class="identifier">actions</span><span> =&gt; </span><span class="identifier">action</span><span>(</span><span class="identifier">ctx</span><span>) </span><span class="keyword">match</span><span> {
+            </span><span class="keyword">case</span><span> </span><span class="type-name">Right</span><span>(</span><span class="identifier">_</span><span>) =&gt; </span><span class="identifier">sequence</span><span>(</span><span class="identifier">actions</span><span>, </span><span class="identifier">ctx</span><span>)
+            </span><span class="keyword">case</span><span> </span><span class="identifier">msg</span><span> =&gt; </span><span class="identifier">msg</span><span>
+        }
+    }
+}</span></code></pre>
+        <p>Nothing too fancy here, but we can write an expression like
+        <code>store(&quot;x&quot;, add(number(5), ask(v)))(mutable.Map(&quot;v&quot; -&gt; 3))</code> and our map would contain <code>&quot;x&quot; -&gt; 8</code>
+        afterwards. We&#39;ll be using the same <code>lexer</code> as we&#39;ve been accustomed to recently (with some extra
+        keywords and operators), so let&#39;s see what the parser is like:</p>
+        <pre><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="identifier">interpreter</span><span> {
+    </span><span class="keyword">import</span><span> </span><span class="identifier">lexer</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">implicitToken</span><span>
+    </span><span class="keyword">import</span><span> </span><span class="identifier">lexer</span><span>.{</span><span class="identifier">number</span><span>, </span><span class="identifier">identifier</span><span>, </span><span class="identifier">fully</span><span>}
+    </span><span class="keyword">import</span><span> </span><span class="identifier">eval</span><span>.</span><span class="identifier">_</span><span>
+    </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">lift</span><span>.{</span><span class="type-name">Lift2</span><span>, </span><span class="type-name">Lift3</span><span>}
+    </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Result</span><span>
+
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>(</span><span class="identifier">input</span><span>: </span><span class="type-name">String</span><span>)(</span><span class="identifier">ctx</span><span>: </span><span class="type-name">Map</span><span>[</span><span class="type-name">String</span><span>, </span><span class="type-name">Int</span><span>]): </span><span class="type-name">Either</span><span>[</span><span class="type-name">String</span><span>, </span><span class="type-name">Map</span><span>[</span><span class="type-name">String</span><span>, </span><span class="type-name">Int</span><span>]] = {
+      </span><span class="keyword">import</span><span> </span><span class="identifier">scala</span><span>.</span><span class="identifier">collection</span><span>.</span><span class="identifier">mutable</span><span>
+      </span><span class="keyword">val</span><span> </span><span class="identifier">ctx_</span><span> = </span><span class="identifier">mutable</span><span>.</span><span class="type-name">Map</span><span>(</span><span class="identifier">ctx</span><span>.</span><span class="identifier">toSeq</span><span>: </span><span class="identifier">_</span><span>*)
+      </span><span class="keyword">for</span><span> {
+        </span><span class="identifier">prog</span><span> &lt;- </span><span class="identifier">parser</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="identifier">input</span><span>).</span><span class="identifier">toEither</span><span>
+        </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">prog</span><span>(</span><span class="identifier">ctx_</span><span>)
+      } </span><span class="keyword">yield</span><span> </span><span class="identifier">ctx_</span><span>.</span><span class="identifier">toMap</span><span>
+    }
+
+    </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">atom</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>]] = </span><span class="string-literal">&quot;(&quot;</span><span> *&gt; </span><span class="identifier">expr</span><span> &lt;* </span><span class="string-literal">&quot;)&quot;</span><span> &lt;|&gt; </span><span class="identifier">number</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">eval</span><span>.</span><span class="identifier">number</span><span>) &lt;|&gt; </span><span class="identifier">identifier</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">ask</span><span>)
+    </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span> = </span><span class="identifier">precedence</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>]](</span><span class="identifier">atom</span><span>)(
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">Prefix</span><span>)(</span><span class="string-literal">&quot;negate&quot;</span><span> #&gt; </span><span class="identifier">negate</span><span>),
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> #&gt; </span><span class="identifier">mul</span><span>),
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> #&gt; </span><span class="identifier">add</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> #&gt; </span><span class="identifier">sub</span><span>))
+
+    </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">blit</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>]] = </span><span class="string-literal">&quot;true&quot;</span><span> #&gt; </span><span class="identifier">bool</span><span>(</span><span class="boolean-literal">true</span><span>) &lt;|&gt; </span><span class="string-literal">&quot;false&quot;</span><span> #&gt; </span><span class="identifier">bool</span><span>(</span><span class="boolean-literal">false</span><span>)
+    </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">comp</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>]] = (</span><span class="identifier">expr</span><span> &lt;**&gt; (</span><span class="string-literal">&quot;&lt;&quot;</span><span> #&gt; (</span><span class="identifier">less</span><span> </span><span class="identifier">_</span><span>) &lt;|&gt; </span><span class="string-literal">&quot;==&quot;</span><span> #&gt; (</span><span class="identifier">equal</span><span> </span><span class="identifier">_</span><span>))) &lt;*&gt; </span><span class="identifier">expr</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">btom</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>]] = </span><span class="identifier">attempt</span><span>(</span><span class="string-literal">&quot;(&quot;</span><span> *&gt; </span><span class="identifier">pred</span><span>) &lt;* </span><span class="string-literal">&quot;)&quot;</span><span> &lt;|&gt; </span><span class="identifier">blit</span><span> &lt;|&gt; </span><span class="identifier">comp</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">pred</span><span> = </span><span class="identifier">precedence</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Boolean</span><span>]](</span><span class="identifier">btom</span><span>)(
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">Prefix</span><span>)(</span><span class="string-literal">&quot;not&quot;</span><span> #&gt; </span><span class="identifier">not</span><span>),
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixR</span><span>)(</span><span class="string-literal">&quot;&amp;&amp;&quot;</span><span> #&gt; </span><span class="identifier">and</span><span>),
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixR</span><span>)(</span><span class="string-literal">&quot;||&quot;</span><span> #&gt; </span><span class="identifier">or</span><span>))
+
+    </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">braces</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]) = </span><span class="string-literal">&quot;{&quot;</span><span> *&gt; </span><span class="identifier">p</span><span> &lt;* </span><span class="string-literal">&quot;}&quot;</span><span>
+
+    </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">asgnStmt</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Unit</span><span>]] = (</span><span class="identifier">store</span><span> </span><span class="identifier">_</span><span>).</span><span class="identifier">lift</span><span>(</span><span class="identifier">identifier</span><span>, </span><span class="string-literal">&quot;=&quot;</span><span> *&gt; </span><span class="identifier">expr</span><span>)
+    </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">ifStmt</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Unit</span><span>]] = (</span><span class="identifier">cond</span><span>[</span><span class="type-name">Unit</span><span>] </span><span class="identifier">_</span><span>).</span><span class="identifier">lift</span><span>(</span><span class="string-literal">&quot;if&quot;</span><span> *&gt; </span><span class="identifier">pred</span><span>, </span><span class="identifier">braces</span><span>(</span><span class="identifier">stmts</span><span>), </span><span class="string-literal">&quot;else&quot;</span><span> *&gt; </span><span class="identifier">braces</span><span>(</span><span class="identifier">stmts</span><span>))
+    </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">stmt</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Unit</span><span>]] = </span><span class="identifier">asgnStmt</span><span> &lt;|&gt; </span><span class="identifier">ifStmt</span><span>
+    </span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">stmts</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Unit</span><span>]] = </span><span class="identifier">sepEndBy</span><span>(</span><span class="identifier">stmt</span><span>, </span><span class="string-literal">&quot;;&quot;</span><span>).</span><span class="identifier">map</span><span>((</span><span class="identifier">sequence</span><span> </span><span class="identifier">_</span><span>).</span><span class="identifier">curried</span><span>)
+
+    </span><span class="keyword">val</span><span> </span><span class="identifier">parser</span><span> = </span><span class="identifier">fully</span><span>(</span><span class="identifier">stmts</span><span>)
+}</span></code></pre>
+        <p>I&#39;m not going to say too much about this, since all of the ideas have been covered in previous pages
+        (and the Haskell example!). Let&#39;s run an example through it and get used to the syntax:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">interpreter</span><span>(
+    </span><span class="string-literal">&quot;&quot;&quot;x = 7;
+      |if x &lt; v &amp;&amp; 5 &lt; v {
+      |  y = 1
+      |}
+      |else {
+      |  y = 0
+      |};
+      |x = 0
+    &quot;&quot;&quot;</span><span>.</span><span class="identifier">stripMargin</span><span>)(</span><span class="type-name">Map</span><span>(</span><span class="string-literal">&quot;v&quot;</span><span> -&gt; </span><span class="number-literal">8</span><span>))
+</span><span class="type-name">Right</span><span>(</span><span class="type-name">Map</span><span>(</span><span class="identifier">v</span><span> -&gt; </span><span class="number-literal">8</span><span>, </span><span class="identifier">x</span><span> -&gt; </span><span class="number-literal">0</span><span>, </span><span class="identifier">y</span><span> -&gt; </span><span class="number-literal">1</span><span>))</span></code></pre>
+        <p>The <code>|</code>s here are being used by Scala&#39;s <code>stripMargin</code> method to remove the leading whitespace on our
+        multi-line strings. We can see that the syntax of this language makes use of semi-colons for
+        delimiting, and <code>if</code> statements require a semi-colon after the <code>else</code>. In addition, no parentheses
+        are required for the <code>if</code>, but braces are mandated. This syntax is a little unorthodox, which is
+        great for us because it&#39;ll give us a lot of opportunities to test out our new tools! I&#39;ve neglected
+        to add any <code>.label</code>s or <code>.explain</code>s here, but obviously there are plenty of opportunities.</p>
+        <p>Let&#39;s start by seeing what happens if we accidentally write a <code>;</code> before an <code>else</code>:</p>
+        <pre><code>interpreter(
+    &quot;&quot;&quot;if true {};
+      |else {}
+    &quot;&quot;&quot;.stripMargin)(Map.empty)
+(line 1, column 11):
+  unexpected &quot;;&quot;
+  expected else
+  &gt;if true {};
+             ^
+  &gt;else {}</code></pre>
+        <p>This is what we&#39;d expect, since at this point we&#39;d expect an <code>else</code>. We could detail this issue for
+        the user with an <code>.explain</code>, and explain that semi-colons are not something that work in this
+        position:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">ifStmt</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Unit</span><span>]] =
+    (</span><span class="identifier">cond</span><span>[</span><span class="type-name">Unit</span><span>] </span><span class="identifier">_</span><span>).</span><span class="identifier">lift</span><span>(
+        </span><span class="string-literal">&quot;if&quot;</span><span> *&gt; </span><span class="identifier">pred</span><span>, </span><span class="identifier">braces</span><span>(</span><span class="identifier">stmts</span><span>),
+        </span><span class="string-literal">&quot;else&quot;</span><span>.</span><span class="identifier">explain</span><span>(</span><span class="string-literal">&quot;semi-colons cannot be written after ifs&quot;</span><span>) *&gt; </span><span class="identifier">braces</span><span>(</span><span class="identifier">stmts</span><span>))</span></code></pre>
+        <p>What effect will this have?</p>
+        <pre><code>(line 1, column 11):
+  unexpected &quot;;&quot;
+  expected else
+  semi-colons cannot be written after ifs
+  &gt;if true {};
+             ^
+  &gt;else {}</code></pre>
+        <p>Ok, this is better! But what if I wrote something else there instead?</p>
+        <pre><code>(line 1, column 11):
+  unexpected &quot;a&quot;
+  expected else
+  semi-colons cannot be written after ifs
+  &gt;if true {}a
+             ^
+  &gt;else {}</code></pre>
+        <p>Ah, right, not so good anymore. We could go back and make the <code>explain</code> a bit more general, of course,
+        but that means we&#39;ve lost out on the helpful prompt to the user about our language&#39;s syntax. So, what
+        can we do here? This is where <code>unexpected</code> comes in, along with <code>amend</code>:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">_semiCheck</span><span> =
+    </span><span class="identifier">amend</span><span>(</span><span class="char-literal">&#39;;&#39;</span><span>.</span><span class="identifier">hide</span><span> *&gt; </span><span class="identifier">unexpected</span><span>(</span><span class="string-literal">&quot;semi-colon&quot;</span><span>).</span><span class="identifier">explain</span><span>(</span><span class="string-literal">&quot;semi-colons cannot be written between `if` and `else`&quot;</span><span>))
+
+</span><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">ifStmt</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Unit</span><span>]] =
+    (</span><span class="identifier">cond</span><span>[</span><span class="type-name">Unit</span><span>] </span><span class="identifier">_</span><span>).</span><span class="identifier">lift</span><span>(
+        </span><span class="string-literal">&quot;if&quot;</span><span> *&gt; </span><span class="identifier">pred</span><span>, </span><span class="identifier">braces</span><span>(</span><span class="identifier">stmts</span><span>),
+        (</span><span class="string-literal">&quot;else&quot;</span><span> &lt;|&gt; </span><span class="identifier">_semiCheck</span><span>)
+        *&gt; </span><span class="identifier">braces</span><span>(</span><span class="identifier">stmts</span><span>))</span></code></pre>
+        <p>Here, if we can&#39;t read an <code>else</code>, we immediately try to parse <code>_semiCheck</code>, which read a semi-colon
+        (and is careful to hide it from the errors, otherwise we might see <code>expected else or &quot;;&quot;</code>). If it succeeds, then we fail with an <code>unexpected</code> and
+        use <code>explain</code> to add our reason back in. Without <code>amend</code>, the error message would point <em>after</em> the
+        semi-colon and not <em>at</em> the semi-colon. A parser like <code>_semiCheck</code> is known as an &quot;error widget&quot;:
+        prefix them with <code>_</code> to make them more immediately identifiable.</p>
+        <p>With this we have:</p>
+        <pre><code>(line 1, column 11):
+  unexpected &quot;a&quot;
+  expected else
+  &gt;if true {}a
+             ^
+  &gt;else {}
+
+(line 1, column 11):
+  unexpected semi-colon
+  expected else
+  semi-colons cannot be written between `if` and `else`
+  &gt;if true {};
+             ^
+  &gt;else {}</code></pre>
+        <p>This is exactly what we wanted! Note that, if it were important that we could backtrack out of the
+        semi-colon, we could use the following instead:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">_semiCheck</span><span> =
+    </span><span class="identifier">lookAhead</span><span>(</span><span class="char-literal">&#39;;&#39;</span><span>.</span><span class="identifier">hide</span><span>) *&gt; </span><span class="identifier">unexpected</span><span>(</span><span class="string-literal">&quot;semi-colon&quot;</span><span>).</span><span class="identifier">explain</span><span>(</span><span class="string-literal">&quot;...&quot;</span><span>)</span></code></pre>
+        <p>In fact, <code>lookAhead(p) *&gt; failCombinator</code> is the same as <code>attempt(amend(p *&gt; failCombinator)</code> when
+        <code>p</code> doesn&#39;t fail having consumed input (which <code>&#39;;&#39;</code> on its own can&#39;t).</p>
+        <p>So, where else can we apply this technique? Let&#39;s see what happens if we miss out a closing brace</p>
+        <pre><code>interpreter(
+    &quot;&quot;&quot;if true {}
+      |else {&quot;&quot;&quot;.stripMargin)(Map.empty)
+(line 2, column 7):
+  unexpected end of input
+  expected &quot;}&quot;, identifier, or if
+  &gt;if true {}
+  &gt;else {
+         ^</code></pre>
+        <p>We could, again, give the user a helping hand here, and point out that they have an unclosed
+        <em>something</em> that they need to close. Again, we could start by using the <code>.explain</code> combinator
+        directly, on the <code>}</code>. Let&#39;s see what effect this will have:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">braces</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]) = </span><span class="string-literal">&quot;{&quot;</span><span> *&gt; </span><span class="identifier">p</span><span> &lt;* </span><span class="string-literal">&quot;}&quot;</span><span>.</span><span class="identifier">explain</span><span>(</span><span class="string-literal">&quot;unclosed `if` or `else`&quot;</span><span>)</span></code></pre>
+        <p>This will give us the more helpful error:</p>
+        <pre><code>(line 2, column 7):
+  unexpected end of input
+  expected &quot;}&quot;, identifier, or if
+  unclosed `if` or `else`
+  &gt;if true {}
+  &gt;else {
+         ^</code></pre>
+        <p>This time, adding extra input won&#39;t cause a problem, so is this fine? Well, what about this input:</p>
+        <pre><code>interpreter(
+    &quot;&quot;&quot;if true {}
+      |else {
+      | x = 7a
+      |}&quot;&quot;&quot;.stripMargin)(Map.empty)
+
+(line 3, column 7):
+  unexpected &quot;a&quot;
+  expected &quot;;&quot;, &quot;}&quot;, *, +, -, or digit
+  unclosed `if` or `else`
+  &gt;else {
+  &gt; x = 7a
+         ^
+  &gt;}</code></pre>
+        <p>Argh! The <code>else</code> <em>is</em> closed this time, but since <code>}</code> is a valid continuation character we&#39;ve
+        triggered our <code>explain</code> message. Again, we can fix this by using our new <code>amend + unexpected</code> pattern:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">_eofCheck</span><span> = </span><span class="identifier">amend</span><span>(</span><span class="identifier">eof</span><span>.</span><span class="identifier">hide</span><span> *&gt; </span><span class="identifier">unexpected</span><span>(</span><span class="string-literal">&quot;end of input&quot;</span><span>).</span><span class="identifier">explain</span><span>(</span><span class="string-literal">&quot;unclosed `if` or `else`&quot;</span><span>))
+</span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">braces</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]) =
+    </span><span class="string-literal">&quot;{&quot;</span><span> *&gt; </span><span class="identifier">p</span><span> &lt;* (</span><span class="string-literal">&quot;}&quot;</span><span> &lt;|&gt; </span><span class="identifier">_eofCheck</span><span>)</span></code></pre>
+        <p>This time we&#39;ve latched onto whether or not there is any input left at all. This will work fine!</p>
+        <pre><code>(line 3, column 7):
+  unexpected &quot;a&quot;
+  expected &quot;;&quot;, &quot;}&quot;, *, +, -, or digit
+  &gt;else {
+  &gt; x = 7a
+         ^
+  &gt;}
+
+(line 2, column 7):
+  unexpected end of input
+  expected &quot;}&quot;, identifier, or if
+  unclosed `if` or `else`
+  &gt;if true {}
+  &gt;else {
+         ^</code></pre>
+        <p>Perfect 🙂. What now? Well, another area where the user might trip up is thinking that you can
+        assign booleans to variable! Let&#39;s see what the errors are:</p>
+        <pre><code>(line 1, column 5):
+  unexpected keyword true
+  expected &quot;(&quot;, digit, identifier, or negate
+  &gt;x = true
+       ^
+
+(line 1, column 8):
+  unexpected &quot;&lt;&quot;
+  expected &quot;;&quot;, *, +, -, or end of input
+  &gt;x = 10 &lt; 9
+          ^
+
+(line 1, column 5):
+  unexpected keyword not
+  expected &quot;(&quot;, digit, identifier, or negate
+  &gt;x = not true
+       ^</code></pre>
+        <p>Now, there is a cheap way of dealing with this and an expensive one. Let&#39;s start cheap and see what
+        needs to be done and how effective it is. The first thing we can recognise is that we can special
+        case <code>not</code>, <code>true</code>, and <code>false</code> using the same strategy as before. We can either choose to attach
+        this to <code>expr</code> or to the <code>assign</code> itself (or indeed both!), the choice of which will change how
+        we will structure the message. Let&#39;s try both and abstract it into a new combinator:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">_noBoolCheck</span><span>(</span><span class="identifier">reason</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Nothing</span><span>] = {
+    (</span><span class="string-literal">&quot;true&quot;</span><span> &lt;|&gt; </span><span class="string-literal">&quot;false&quot;</span><span> &lt;|&gt; </span><span class="string-literal">&quot;not&quot;</span><span>).</span><span class="identifier">hide</span><span> *&gt;
+        </span><span class="identifier">unexpected</span><span>(</span><span class="string-literal">&quot;boolean expression&quot;</span><span>)
+        .</span><span class="identifier">label</span><span>(</span><span class="string-literal">&quot;arithmetic expression&quot;</span><span>)
+        .</span><span class="identifier">explain</span><span>(</span><span class="identifier">reason</span><span>)
+}</span></code></pre>
+        <p>Now, we can add this to both places (I&#39;ve omited an <code>amend</code> from the combinator itself for reasons we&#39;ll see) as follows:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span> = </span><span class="identifier">precedence</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>]](</span><span class="identifier">atom</span><span>)(
+    </span><span class="type-name">Ops</span><span>(</span><span class="type-name">Prefix</span><span>)(</span><span class="string-literal">&quot;negate&quot;</span><span> #&gt; </span><span class="identifier">negate</span><span>),
+    </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> #&gt; </span><span class="identifier">mul</span><span>),
+    </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> #&gt; </span><span class="identifier">add</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> #&gt; </span><span class="identifier">sub</span><span>)) &lt;|&gt; </span><span class="identifier">amend</span><span>(</span><span class="identifier">_noBoolCheck</span><span>(</span><span class="string-literal">&quot;booleans cannot be integers&quot;</span><span>))</span></code></pre>
+        <p>Let&#39;s try this as a first attempt, this doesn&#39;t perfectly address our assignment problem yet, but
+        it will be helpful to see what the effects of it are:</p>
+        <pre><code>(line 1, column 5):
+  unexpected keyword true
+  expected &quot;(&quot;, arithmetic expression, digit, identifier, or negate
+  booleans cannot be integers
+  &gt;x = true
+       ^</code></pre>
+        <p>Hmm, it looks like the error from the check and the <code>expr</code> itself were merged: of course they would
+        be, since they happened at the same offset. This means the labels are merged, and the message appears
+        but the unexpected message isn&#39;t what we were after. Well, the problem is that when two unexpected
+        messages are merged, it happens with the following scheme:</p>
+        <ul>
+          <li>&quot;raw&quot; messages take the longest</li>
+          <li>&quot;custom&quot; messages take priority over &quot;raw&quot;, and the first is taken</li>
+          <li>&quot;end of input&quot; messages take priority over &quot;custom&quot; and &quot;raw&quot;</li>
+        </ul>
+        <p>So, since both errors produce a &quot;custom&quot; unexpected error, the <code>expr</code> proper took the priority: not
+        quite what we wanted. Perhaps a natural reaction to learning this is to reverse their ordering...</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span> = </span><span class="identifier">attempt</span><span>(</span><span class="identifier">amend</span><span>(</span><span class="identifier">_noBoolCheck</span><span>(</span><span class="string-literal">&quot;booleans cannot be integers&quot;</span><span>))) &lt;|&gt; </span><span class="identifier">precedence</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>]](</span><span class="identifier">atom</span><span>)(
+    </span><span class="type-name">Ops</span><span>(</span><span class="type-name">Prefix</span><span>)(</span><span class="string-literal">&quot;negate&quot;</span><span> #&gt; </span><span class="identifier">negate</span><span>),
+    </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> #&gt; </span><span class="identifier">mul</span><span>),
+    </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> #&gt; </span><span class="identifier">add</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> #&gt; </span><span class="identifier">sub</span><span>))</span></code></pre>
+        <p>This would yield:</p>
+        <pre><code>(line 1, column 5):
+  unexpected boolean expression
+  expected &quot;(&quot;, arithmetic expression, digit, identifier, or negate
+  booleans cannot be integers
+  &gt;x = true
+       ^</code></pre>
+        <p>But, annoyingly, this creates backtracking! Also, the labels are still merged: this isn&#39;t so much
+        a problem, since we could add the label to the expr too and eliminate it. But really, the backtracking
+        is the annoying bit; the idea behind this pattern is to identify user mistake only when we&#39;ve
+        exhausted the other options, keeping performance good. Now, it&#39;s a good time to apply our previous
+        trick:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span> = </span><span class="identifier">amend</span><span> {
+    </span><span class="identifier">entrench</span><span>(</span><span class="identifier">precedence</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>]](</span><span class="identifier">atom</span><span>)(
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">Prefix</span><span>)(</span><span class="string-literal">&quot;negate&quot;</span><span> #&gt; </span><span class="identifier">negate</span><span>),
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;*&quot;</span><span> #&gt; </span><span class="identifier">mul</span><span>),
+        </span><span class="type-name">Ops</span><span>(</span><span class="type-name">InfixL</span><span>)(</span><span class="string-literal">&quot;+&quot;</span><span> #&gt; </span><span class="identifier">add</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span> #&gt; </span><span class="identifier">sub</span><span>))) &lt;|&gt; </span><span class="identifier">_noBoolCheck</span><span>(</span><span class="string-literal">&quot;booleans cannot be integers&quot;</span><span>)
+}</span></code></pre>
+        <p>And this gives:</p>
+        <pre><code>(line 1, column 5):
+  unexpected boolean expression
+  expected arithmetic expression
+  booleans cannot be integers
+  &gt;x = true
+       ^</code></pre>
+        <p>Perfect! Let&#39;s reinforce our understanding of why this works like it does:</p>
+        <ol class="arabic">
+          <li>First we issue an instruction to amend any final error message that arises from <code>expr</code></li>
+          <li>We try reading an expression, being ensure to protect it against the amendment</li>
+          <li>Suppose we fail to read an expression: if no input was consumed, it&#39;s likely that we&#39;ve hit one
+          of the boolean keywords. The error occured at column 5.</li>
+          <li>With no input consumed we can try our bool check, and we <em>will</em> consume input doing this: up to
+          column 9</li>
+          <li>The two errors are merged, with the second error at column 9 taking precedence.</li>
+          <li>The <code>amend</code> sets the column back to 5.</li>
+        </ol>
+        <p>This is a really nice trick to give you control over which errors should make the final cut. It&#39;s
+        well worth really understanding why this worked out as it did. In the future, we&#39;ll have a new
+        debug combinator to help illustrate this (and I&#39;ll change this page to suit).</p>
+        <p>Right, so now to tackle the other place where the boolean check can occur. This will require us to
+        mark our first <code>_noBoolCheck</code> with an <code>attempt</code> to allow us to perform a second (again, we want to
+        delay it as long as possible). We could, of course, move the <code>_noBoolCheck</code> somewhere else so that
+        exactly one dominates each use site, but when this is a &quot;last resort&quot; mechanism, it doesn&#39;t make
+        much of a difference.</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">asgnStmt</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Unit</span><span>]] =
+    (</span><span class="identifier">store</span><span> </span><span class="identifier">_</span><span>).</span><span class="identifier">lift</span><span>(</span><span class="identifier">identifier</span><span>,
+                   </span><span class="string-literal">&quot;=&quot;</span><span> *&gt; (</span><span class="identifier">expr</span><span> &lt;|&gt; </span><span class="identifier">amend</span><span>(</span><span class="identifier">_noBoolCheck</span><span>(</span><span class="string-literal">&quot;booleans cannot be assigned to variables&quot;</span><span>))))</span></code></pre>
+        <p>With this in place (and the aforementioned <code>attempt</code>) we get an error like:</p>
+        <pre><code>(line 1, column 5):
+  unexpected boolean expression
+  expected arithmetic expression
+  booleans cannot be assigned to variables
+  booleans cannot be integers
+  &gt;x = true
+       ^</code></pre>
+        <p>This looks fine as it is, but if we wanted to prevent the noise of the second reason, we could use
+        the <code>amend</code> trick once again (remember that <code>entrench</code> will hold fast against any number of <code>amend</code>s
+        so don&#39;t worry about the <code>expr</code> error itself):</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">asgnStmt</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Unit</span><span>]] =
+    (</span><span class="identifier">store</span><span> </span><span class="identifier">_</span><span>).</span><span class="identifier">lift</span><span>(</span><span class="identifier">identifier</span><span>,
+                   </span><span class="string-literal">&quot;=&quot;</span><span> *&gt; </span><span class="identifier">amend</span><span>(</span><span class="identifier">expr</span><span> &lt;|&gt; </span><span class="identifier">_noBoolCheck</span><span>(</span><span class="string-literal">&quot;booleans cannot be assigned to variables&quot;</span><span>)))</span></code></pre>
+        <p>Giving us the alternative:</p>
+        <pre><code>(line 1, column 5):
+  unexpected boolean expression
+  expected arithmetic expression
+  booleans cannot be assigned to variables
+  &gt;x = true
+       ^</code></pre>
+        <p>Again, we got this following the steps I outlined previously. So, we&#39;ve cracked the <em>leading</em> edge
+        of the booleans, but we are still no closer to managing to deal with <code>&lt;</code>, <code>==</code>. These
+        are significantly trickier to handle with our current approach, because they occur <em>after</em> some input
+        has already been read. We would need to insert them as alternatives at every point where they could be
+        &quot;valid&quot; predictions. This is far from ideal. Note that we don&#39;t really need to worry about <code>&amp;&amp;</code> and
+        <code>||</code>, since we are going to have to have already found one of <code>&lt;</code>, <code>==</code>, <code>not</code>, <code>true</code>, or <code>false</code>
+        before we reach it <em>anyway</em>.</p>
+        
+        <h4 id="using-notfollowedby" class="section"><a class="anchor-link left" href="#using-notfollowedby"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">2.1.1 </span>Using <code>notFollowedBy</code></h4>
+        <p>Fortunately for us, our <code>lookAhead/amend</code> with <code>&lt;|&gt;</code> has a cousin: <code>notFollowedBy</code> with <code>&lt;*</code>. We&#39;ve
+        even seen a variant of this when we handled <code>keyword</code> not ending in a letter. Using this, we can
+        capture the problem much closer to the expression (or indeed the assignment). This comes at a cost,
+        however: <code>notFollowedBy</code> has no custom <code>unexpected</code> message, and it will not progress further in the
+        parser to collect labels so, if we want them, we have to figure them out ourselves! Let&#39;s abstract this
+        into another handy combinator:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">labels</span><span>(</span><span class="identifier">ls</span><span>: </span><span class="type-name">String</span><span>*) = </span><span class="identifier">choice</span><span>(</span><span class="identifier">ls</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">empty</span><span>.</span><span class="identifier">label</span><span>(</span><span class="identifier">_</span><span>)): </span><span class="identifier">_</span><span>*)
+
+</span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">_noCompCheck</span><span>(</span><span class="identifier">reason</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Unit</span><span>] = {
+    </span><span class="identifier">notFollowedBy</span><span>(</span><span class="identifier">oneOf</span><span>(</span><span class="char-literal">&#39;&lt;&#39;</span><span>, </span><span class="char-literal">&#39;=&#39;</span><span>)).</span><span class="identifier">explain</span><span>(</span><span class="identifier">reason</span><span>) &lt;|&gt; </span><span class="identifier">unexpected</span><span>(</span><span class="string-literal">&quot;boolean expression&quot;</span><span>) &lt;|&gt; </span><span class="identifier">labels</span><span>(</span><span class="string-literal">&quot;+&quot;</span><span>, </span><span class="string-literal">&quot;*&quot;</span><span>, </span><span class="string-literal">&quot;-&quot;</span><span>, </span><span class="string-literal">&quot;end of input&quot;</span><span>, </span><span class="string-literal">&quot;</span><span class="escape-sequence">\&quot;</span><span class="string-literal">;</span><span class="escape-sequence">\&quot;</span><span class="string-literal">&quot;</span><span>)
+}</span></code></pre>
+        <p>This is fairly interesting in and of itself: by combining the <code>notFollowedBy</code>, which does the payload
+        of the work with <code>unexpected</code> and a bunch of <code>empty.label</code>, we can recover the same shape of error
+        message that we would have had before. Of course, we had to go and find these alternatives ourselves
+        from the version of the parser without the check. We could side step this by using the <code>arithmetic
+expression</code> label if we wished, but we only want to apply that if we don&#39;t consume any input within
+        the error message! So, let&#39;s see what the effect of the error will be:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">asgnStmt</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Unit</span><span>]] =
+        (</span><span class="identifier">store</span><span> </span><span class="identifier">_</span><span>).</span><span class="identifier">lift</span><span>(</span><span class="identifier">identifier</span><span>,
+                       </span><span class="string-literal">&quot;=&quot;</span><span> *&gt; </span><span class="identifier">amend</span><span>((</span><span class="identifier">expr</span><span> &lt;* </span><span class="identifier">_noCompCheck</span><span>(</span><span class="string-literal">&quot;booleans cannot be assigned to variables&quot;</span><span>)) &lt;|&gt;
+                                     </span><span class="identifier">_noBoolCheck</span><span>(</span><span class="string-literal">&quot;booleans cannot be assigned to variables&quot;</span><span>)))</span></code></pre>
+        <pre><code>(line 1, column 5):
+  unexpected boolean expression
+  expected &quot;;&quot;, *, +, -, or end of input
+  booleans cannot be assigned to variables
+  &gt;x = 10 &lt; 9
+       ^</code></pre>
+        <p>Well, it&#39;s worked properly, however notice that the labels are all incorrect as we have indeed been
+        reset by the amend. Let&#39;s see what happens, however, if we add an arithmetic label to the comparison
+        check:</p>
+        <pre><code>(line 1, column 5):
+  unexpected boolean expression
+  expected *, +, -, or arithmetic expression
+  booleans cannot be assigned to variables
+  &gt;x = 10 &lt; 9
+       ^</code></pre>
+        <p>Oh no! Unfortunately here, the error failed having consumed no input, so the &quot;hints&quot; from expression
+        are still valid. This is annoying for sure. There are two ways we can handle this, the first would
+        be to use <code>notFollowedBy(...) &lt;|&gt; fail(...)</code> to create a custom message that would certainly override
+        the hints from the expression, or we can add an entrench and see what effect it has:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">asgnStmt</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Unit</span><span>]] =
+        (</span><span class="identifier">store</span><span> </span><span class="identifier">_</span><span>).</span><span class="identifier">lift</span><span>(</span><span class="identifier">identifier</span><span>,
+                       </span><span class="string-literal">&quot;=&quot;</span><span> *&gt; </span><span class="identifier">amend</span><span>((</span><span class="identifier">expr</span><span> &lt;* </span><span class="identifier">entrench</span><span>(</span><span class="identifier">_noCompCheck</span><span>(</span><span class="string-literal">&quot;booleans cannot be assigned to variables&quot;</span><span>))) &lt;|&gt;
+                                     </span><span class="identifier">_noBoolCheck</span><span>(</span><span class="string-literal">&quot;booleans cannot be assigned to variables&quot;</span><span>)))</span></code></pre>
+        <pre><code>(line 1, column 8):
+  unexpected boolean expression
+  expected &quot;;&quot;, *, +, -, or end of input
+  booleans cannot be assigned to variables
+  &gt;x = 10 &lt; 9
+          ^</code></pre>
+        <p>The other place we can add it would be ideally inside the brackets of <code>atom</code>, since if we put them
+        at the end of <code>expr</code> itself, it would likely supercede the message we put in <code>asgnStmt</code> because it
+        has been entrenched:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">private</span><span> </span><span class="keyword">lazy</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">atom</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Eval</span><span>[</span><span class="type-name">Int</span><span>]] =
+    </span><span class="string-literal">&quot;(&quot;</span><span> *&gt; </span><span class="identifier">expr</span><span> &lt;* </span><span class="identifier">entrench</span><span>(</span><span class="identifier">_noCompCheck</span><span>(</span><span class="string-literal">&quot;booleans cannot be integers&quot;</span><span>)) &lt;* </span><span class="string-literal">&quot;)&quot;</span><span> &lt;|&gt;
+    </span><span class="identifier">number</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">eval</span><span>.</span><span class="identifier">number</span><span>) &lt;|&gt;
+    </span><span class="identifier">identifier</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">ask</span><span>)</span></code></pre>
+        <p>In all, this gives us the errors:</p>
+        <pre><code>(line 1, column 9):
+  unexpected boolean expression
+  expected &quot;;&quot;, *, +, -, or end of input
+  booleans cannot be integers
+  &gt;x = (10 &lt; 9) + 7
+           ^
+(line 1, column 8):
+  unexpected boolean expression
+  expected &quot;;&quot;, *, +, -, or end of input
+  booleans cannot be assigned to variables
+  &gt;x = 10 &lt; 9
+          ^
+
+(line 1, column 6):
+  unexpected boolean expression
+  expected arithmetic expression
+  booleans cannot be integers
+  &gt;x = (true) &amp;&amp; false
+        ^
+
+(line 1, column 5):
+  unexpected boolean expression
+  expected arithmetic expression
+  booleans cannot be assigned to variables
+  &gt;x = true
+       ^</code></pre>
+        <p>These all look pretty good! The only little niggle here is that the cursor is at column 6 in the
+        bracket example. I mentioned earlier there is a more expensive way of addressing this: essentially
+        we would try and parse a complete <code>pred</code> <em>first</em> and then use <code>fail</code> to create the message. This
+        would override any errors that happened at the same offset from <code>expr</code> itself, removing any noise.
+        This is more expensive as it must parse an entire predicate potentially backtracking if it goes
+        wrong. It doesn&#39;t remove the need for <code>notFollowedBy</code> to stop arithmetic expressions from terminating
+        the parse &quot;eagerly&quot;, but it is slightly more robust with handling edge cases like the brackets. But
+        this is so minor that I&#39;m not going to go into it, you can explore it for yourself if you want.</p>
+        
+        <h2 id="using-fail-and-guardagainst" class="section"><a class="anchor-link left" href="#using-fail-and-guardagainst"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">3 </span>Using <code>fail</code> and <code>guardAgainst</code></h2>
+        <p>So far, we&#39;ve seen the use of <code>filterOut</code>, <code>unexpected</code>, <code>empty</code>, <code>explain</code>, and <code>fail</code>. As
+        <code>filterOut</code> is to <code>empty + explain</code>, <code>guardAgainst</code> is to <code>fail</code>. The distinction between the two
+        is really just the <em>sort</em> of the message or failure we are trying to produce. Something that is
+        syntactic and recoverable really should be using <code>filterOut</code> and <code>unexpected</code>, but something that
+        is more a property of the language, or extraneous verification should be using <code>fail</code> or
+        <code>guardAgainst</code>. We might argue that the boolean/int distinction we made in the previous sections
+        could have very easily just been modelled using &quot;specialised&quot; errors, since it&#39;s not so much a syntactic
+        problem as a semantic one. Really, play around with both sorts and see which one you feel fits the
+        tone of the error more.</p>
+        
+        <h3 id="context-awareness" class="section"><a class="anchor-link left" href="#context-awareness"><i class="icofont-laika link">&#xef71;</i></a><span class="section-number">3.1 </span>Context-Awareness</h3>
+        <p>It&#39;s interesting to recognise that <code>filterOut</code> is a more context-aware version of <code>filter</code>. That is
+        to say that <code>filterOut</code> gets access to the parsed result in order to produce the message, whereas
+        <code>filter</code> does not. <code>guardAgainst</code> is also context-aware. In this last part of the page, I want to
+        explore how these combinators are defined, and show something we haven&#39;t yet touched upon:
+        context-aware combinators.</p>
+        <p>Generally, there are two sorts of context-aware combinators: the selective, and the monadic
+        combinators. Roughly, a selective provides branching behaviour based on the result of a parser:
+        this allows it to make combinators like <code>filter</code>, conditionals, <code>when</code>, <code>whileP</code> etc. Selectives are,
+        at their core, given by the operation <code>branch</code>:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">branch</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>, </span><span class="type-name">C</span><span>](</span><span class="identifier">b</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Either</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>]], </span><span class="identifier">l</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span> =&gt; </span><span class="type-name">C</span><span>], </span><span class="identifier">r</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">B</span><span> =&gt; </span><span class="type-name">C</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">C</span><span>]
+</span><span class="keyword">def</span><span> </span><span class="declaration-name">select</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>](</span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Either</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>]], </span><span class="identifier">q</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span> =&gt; </span><span class="type-name">B</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">B</span><span>] = {
+    </span><span class="identifier">branch</span><span>(</span><span class="identifier">p</span><span>, </span><span class="identifier">q</span><span>, </span><span class="identifier">pure</span><span>(</span><span class="identifier">identity</span><span>[</span><span class="type-name">B</span><span>]))
+}</span></code></pre>
+        <p>What <code>branch</code> does is will execute <em>one</em> of <code>l</code> and <code>r</code>, but not both, depending on what result <code>b</code>
+        produces. More traditionally, <code>select</code> is the core operation, it only executes <code>q</code> if <code>p</code> returned
+        a <code>Left</code>. Using <code>branch</code> we can start to implement <em>some</em> context-aware operations: here&#39;s a version
+        of filter</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">filter</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">f</span><span>: </span><span class="type-name">A</span><span> =&gt; </span><span class="type-name">Boolean</span><span>, </span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]) = {
+    </span><span class="identifier">select</span><span>(</span><span class="identifier">p</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">x</span><span> =&gt; </span><span class="keyword">if</span><span> (</span><span class="identifier">f</span><span>(</span><span class="identifier">x</span><span>)) </span><span class="type-name">Left</span><span>(()) </span><span class="keyword">else</span><span> </span><span class="type-name">Right</span><span>(</span><span class="identifier">x</span><span>)), </span><span class="identifier">empty</span><span>)
+}</span></code></pre>
+        <p>This works by returning a <code>Left(())</code> when the predicate fails and therefore executing <code>empty</code>.
+        The reason I&#39;ve mentioned the selectives first is that they are <em>significantly</em> cheaper in Parsley
+        than the monadic operation <code>flatMap</code>. That being said, <code>flatMap</code> is strictly more powerful than
+        <code>branch</code> could ever hope to be and can implement it:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> (</span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]) </span><span class="identifier">flatMap</span><span>[</span><span class="type-name">B</span><span>](</span><span class="identifier">f</span><span>: </span><span class="type-name">A</span><span> =&gt; </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">B</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">B</span><span>]
+</span><span class="keyword">def</span><span> </span><span class="declaration-name">branch</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>, </span><span class="type-name">C</span><span>](</span><span class="identifier">b</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Either</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">B</span><span>]], </span><span class="identifier">l</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span> =&gt; </span><span class="type-name">C</span><span>], </span><span class="identifier">r</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">B</span><span> =&gt; </span><span class="type-name">C</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">C</span><span>] = {
+    </span><span class="identifier">b</span><span>.</span><span class="identifier">flatMap</span><span> {
+        </span><span class="keyword">case</span><span> </span><span class="type-name">Left</span><span>(</span><span class="identifier">x</span><span>) =&gt; </span><span class="identifier">l</span><span> &lt;*&gt; </span><span class="identifier">pure</span><span>(</span><span class="identifier">x</span><span>)
+        </span><span class="keyword">case</span><span> </span><span class="type-name">Right</span><span>(</span><span class="identifier">y</span><span>) =&gt; </span><span class="identifier">r</span><span> &lt;*&gt; </span><span class="identifier">pure</span><span>(</span><span class="identifier">y</span><span>)
+    }
+}</span></code></pre>
+        <p>But easier still it can implement <code>filter</code>:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">filter</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">f</span><span>: </span><span class="type-name">A</span><span> =&gt; </span><span class="type-name">Boolean</span><span>, </span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]) = </span><span class="identifier">p</span><span>.</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">x</span><span> =&gt; {
+    </span><span class="keyword">if</span><span> (</span><span class="identifier">f</span><span>(</span><span class="identifier">x</span><span>)) </span><span class="identifier">pure</span><span>(</span><span class="identifier">x</span><span>)
+    </span><span class="keyword">else</span><span> </span><span class="identifier">empty</span><span>
+})</span></code></pre>
+        <p>So, why am I mentioning it? Well, <code>guardAgainst</code> and <code>filterOut</code> are both <em>implementable</em> with
+        <code>flatMap</code> but not <code>branch</code>. I say implementable in italics because, in reality, they are primitives
+        to avoid the cost of a <code>flatMap</code>. But here they <em>would</em> be:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">filterOut</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">f</span><span>: </span><span class="type-name">PartialFunction</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">String</span><span>], </span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]) = </span><span class="identifier">p</span><span>.</span><span class="identifier">flatMap</span><span> {
+    </span><span class="keyword">case</span><span> </span><span class="identifier">x</span><span> </span><span class="keyword">if</span><span> </span><span class="identifier">f</span><span>.</span><span class="identifier">isDefinedAt</span><span>(</span><span class="identifier">x</span><span>) =&gt; </span><span class="identifier">empty</span><span>.</span><span class="identifier">explain</span><span>(</span><span class="identifier">f</span><span>(</span><span class="identifier">x</span><span>))
+    </span><span class="keyword">case</span><span> </span><span class="identifier">x</span><span> =&gt; </span><span class="identifier">pure</span><span>(</span><span class="identifier">x</span><span>)
+}
+
+</span><span class="keyword">def</span><span> </span><span class="declaration-name">guardAgainst</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">f</span><span>: </span><span class="type-name">PartialFunction</span><span>[</span><span class="type-name">A</span><span>, </span><span class="type-name">String</span><span>], </span><span class="identifier">p</span><span>: =&gt;</span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>]) = </span><span class="identifier">p</span><span>.</span><span class="identifier">flatMap</span><span> {
+    </span><span class="keyword">case</span><span> </span><span class="identifier">x</span><span> </span><span class="keyword">if</span><span> </span><span class="identifier">f</span><span>.</span><span class="identifier">isDefinedAt</span><span>(</span><span class="identifier">x</span><span>) =&gt; </span><span class="identifier">fail</span><span>(</span><span class="identifier">f</span><span>(</span><span class="identifier">x</span><span>))
+    </span><span class="keyword">case</span><span> </span><span class="identifier">x</span><span> =&gt; </span><span class="identifier">pure</span><span>(</span><span class="identifier">x</span><span>)
+}</span></code></pre>
+        <p>The reason why this is of interest to us is that it gives you the tools you need to implement a
+        variant of a filter which uses <code>unexpected</code> instead of <code>empty</code>, since this isn&#39;t currently exposed
+        by Parsley. Another good reason to know about <code>flatMap</code> is that it gives us a taste of how to
+        introduce much more powerful error messages based on contextual information. When we come to do
+        context-sensitive parsers in the final part of this series, however, we will be avoiding <code>flatMap</code> in
+        favour of using <em>registers</em> and selectives.</p>
+
+        
+<hr class="footer-rule"/>
+<footer>
+  Parsley is distributed under the <a href="https://opensource.org/licenses/BSD-3-Clause">BSD-3-Clause</a> license.
+</footer>
+
+
+      </main>
+
+    </div>
+
+  </body>
+
+</html>

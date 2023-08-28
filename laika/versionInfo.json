@@ -1,0 +1,22 @@
+{
+  "versions": [
+    { "displayValue": "4.3.x", "pathSegment": "latest", "fallbackLink": "/index.html", "label": "stable", "canonical": true }
+  ],
+  "linkTargets": [
+    { "path": "/api-guide/index.html", "versions": ["latest"] },
+    { "path": "/api-guide/parsley.html", "versions": ["latest"] },
+    { "path": "/cheatsheet.html", "versions": ["latest"] },
+    { "path": "/downloads.html", "versions": ["latest"] },
+    { "path": "/faq.html", "versions": ["latest"] },
+    { "path": "/guide/advanced-error-messages.html", "versions": ["latest"] },
+    { "path": "/guide/basics-of-combinators.html", "versions": ["latest"] },
+    { "path": "/guide/building-expression-parsers.html", "versions": ["latest"] },
+    { "path": "/guide/customising-error-messages.html", "versions": ["latest"] },
+    { "path": "/guide/effective-lexing.html", "versions": ["latest"] },
+    { "path": "/guide/effective-whitespace-parsing.html", "versions": ["latest"] },
+    { "path": "/guide/index.html", "versions": ["latest"] },
+    { "path": "/guide/interlude-1-haskell.html", "versions": ["latest"] },
+    { "path": "/guide/parser-bridge-pattern.html", "versions": ["latest"] },
+    { "path": "/index.html", "versions": ["latest"] }
+  ]
+}
