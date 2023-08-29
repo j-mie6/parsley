@@ -164,13 +164,13 @@
               <td>&quot;pure&quot;</td>
             </tr>
             <tr>
-              <td><code>_ *&gt; _</code> / <code>_ ~&gt; _</code></td>
+              <td><code>_ *&gt; _</code> <br> <code>_ ~&gt; _</code></td>
               <td><code>( Parsley[A]</code><br><code>, =&gt;Parsley[B]</code><br><code>) =&gt; Parsley[B]</code></td>
               <td>sequence two parsers, returning the result of the <strong>second</strong>.</td>
               <td>&quot;then&quot;</td>
             </tr>
             <tr>
-              <td><code>_ &lt;* _</code> / <code>_ &lt;~ _</code></td>
+              <td><code>_ &lt;* _</code> <br> <code>_ &lt;~ _</code></td>
               <td><code>( Parsley[A]</code><br><code>, =&gt;Parsley[B]</code><br><code>) =&gt; Parsley[A]</code></td>
               <td>sequence two parsers, returning the result of the <strong>first</strong>.</td>
               <td>&quot;then discard&quot;</td>
@@ -188,7 +188,7 @@
               <td>&quot;map&quot;</td>
             </tr>
             <tr>
-              <td><code>_ #&gt; _</code></td>
+              <td><code>_ #&gt; _</code> <br> <code>_.as(_)</code></td>
               <td><code>( Parsley[A]</code><br><code>, B</code><br><code>) =&gt; Parsley[B]</code></td>
               <td>replace the result of a parser with a fixed value.</td>
               <td>&quot;as&quot;</td>
@@ -200,7 +200,7 @@
               <td>&quot;lift n&quot;</td>
             </tr>
             <tr>
-              <td><code>_ &lt;|&gt; _</code></td>
+              <td><code>_ &lt;|&gt; _</code> <br> <code>_ | _</code></td>
               <td><code>( Parsley[A]</code><br><code>, =&gt;Parsley[A]</code><br><code>) =&gt; Parsley[A]</code></td>
               <td>try one parser, and if it fails <em>without consuming input</em> try the second</td>
               <td>&quot;or&quot;</td>
@@ -472,6 +472,7 @@
           <p>However, it goes without saying that <code>lift2[A =&gt; B, A, B]((f, x) =&gt; f(x), pf, px)</code> is no more
           efficient than <code>pf &lt;*&gt; px</code> so the latter is favoured for that use case!</p>
         </div>
+        <p><!--${cursor.currentDocument.fragments.liftN} --></p>
 
         
 <hr class="footer-rule"/>
