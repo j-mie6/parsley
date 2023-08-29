@@ -23,21 +23,6 @@ denoted here by the regular _by-name_ (`=>A`) syntax. If an argument is
 strict, it means that it will be parsed immediately on entry to the combinator
 before any input can be consumed.
 
-<!--
-@:fragment(liftN)
-```scala
-( (A1, A2, .., An) => B
-, Parsley[A1]
-, =>Parsley[A2]
-, ..
-, =>Parsley[An]
-) => Parsley[B]
-```
-@:@
--->
-
-<!--${cursor.currentDocument.fragments.liftN} -->
-
 | Combinator          | Type                                                             | Use                                                                                             | Pronounciation    |
 |---------------------|------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|-------------------|
 | `pure(_)` | `A => Parsley[A]`                                                | return a value of type `A` without parsing anything.                                            | "pure"            |
@@ -223,4 +208,18 @@ used sparingly in idiomatic `parsley` code instead of liberally like in Haskell.
 
 However, it goes without saying that `lift2[A => B, A, B]((f, x) => f(x), pf, px)` is no more
 efficient than `pf <*> px` so the latter is favoured for that use case!
+@:@
+
+@:format(html)
+<!--${cursor.currentDocument.fragments.liftN} -->
+@:@
+@:fragment(liftN)
+```scala
+( (A1, A2, .., An) => B
+, Parsley[A1]
+, =>Parsley[A2]
+, ..
+, =>Parsley[An]
+) => Parsley[B]
+```
 @:@
