@@ -140,7 +140,7 @@ object ColorTints {
     )
     val AntiForestRed = ColorTints(
         base    = Color.hex("cd4b4b"),
-        light   = Color.hex("f37c7c"), lighter = Color.hex("ffcbcb"), //ffadad
+        light   = Color.hex("f37c7c"), lighter = Color.hex("ffe5e5"), //ffcbcb
         dark    = Color.hex("ae2b2b"), darker  = Color.hex("870d0d"),
     )
 

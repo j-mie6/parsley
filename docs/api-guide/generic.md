@@ -57,15 +57,107 @@ this means that the underlying implementation can vary without changing the pars
 @:style(paragraph) What are *Generic Bridges*? @:@
 Generic bridges are the templating mechanism that allow for the synthesis of an `apply` method that
 works on values of type `Parsley` from another that does not. While you can define your own bridge
-templates (see [the associated tutorial](../tutorial/parser-bridge-pattern.md) for an explaination),
+templates (see [the associated tutorial](../tutorial/parser-bridge-pattern.md) for an explanation),
 `parsley` provides some basic ones to get you started.
 
 ## How to use
+The [`parsley.genericbridges`][@:api(parsley.genericbridges$)] module contains `ParserBridge1` through
+`ParserBridge22` as well as `ParserBridge0`; they all extend `ParserBridgeSingleton`, which provides
+some additional combinators.
+
+### `ParserBridge1[-A, +B]` through `ParserBridge22[-A, .., -V, +W]`
+Each of these traits are designed to be implemented ideally by a companion object for a `case class`.
+For example, the `Foo` class above can have its companion object turned into a bridge by extending
+`ParserBridge2` (which is for two argument bridges):
 
 ```scala mdoc
 import parsley.genericbridges.ParserBridge2
 object Foo extends ParserBridge2[Int, Int, Foo]
 ```
+
+This defines `def apply(px: Parsley[Int], py: Parsley[Int]): Parsley[Foo]`, implementing it in
+terms of `def apply(x: Int, y: Int): Foo`, which is included as part of Scala's automatic `case class`
+implementation. By making use of a companion object, this is *all* the boilerplate required to
+start using the bridge. Of course, it's possible to define standalone bridges as well, so long as
+you provide an implementation of `apply`, as illustrated by this error:
+
+```scala mdoc:fail
+object Add extends ParserBridge2[Int, Int, Int]
+```
+
+```scala mdoc:invisible
+object Add extends ParserBridge2[Int, Int, Int] {
+    def apply(x: Int, y: Int) = x + y
+}
+```
+
+
+Implement that `apply` method and it's good to go! Of course, if the traits are mixed into a regular `class`,
+they can also be parametric:
+
+```scala mdoc:fail
+class Cons[A] extends ParserBridge2[A, List[A], List[A]]
+```
+
+### `ParserSingletonBridge[+T]`
+All the generic bridges extend the `ParserSingletonBridge` trait instantiated to a function type. For
+example, `trait ParserBridge2[-A, -B, +C] extends ParserSingletonBridge[(A, B) => C]`. This means that
+every bridge uniformly gets access to a couple of extra combinators in addition to their `apply`:
+
+```scala
+trait ParserSingletonBridge[+T] {
+    final def from(op: Parsley[_]): Parsley[T]
+    final def <#(op: Parsley[_]): Parsley[T] = this.from(op)
+}
+```
+
+The implementation of `from` is not important, it will be handled by the other `ParserBridgeN`s. What these
+two combinators give you is the ability to write `Foo.from(parser): Parsley[(Int, Int) => Foo]`, for instance.
+This can be useful when you want to use a bridge somewhere where the arguments cannot be directly applied,
+like in [chain](expr/chain.md) or [precedence](expr/precedence.md) combinators:
+
+```scala mdoc
+import parsley.expr.chain
+import parsley.implicits.character.stringLift
+
+val expr = chain.left1(px, Add.from("+")) // or `Add <# "+"`
+```
+
+They are analogous to the `as` and `#>` combinators respectively.
+
+### `ParserBridge0[+T]`
+This trait is a special case for objects that should return themselves.
+As an example, here is an object which forms part of a larger AST, say:
+
+```scala mdoc
+import parsley.genericbridges.ParserBridge0
+trait Expr
+// rest of AST
+case object NullLit extends Expr with ParserBridge0[Expr]
+```
+
+The `NullLit` object is part of the `Expr` AST, and it has also mixed in `ParserBridge0[Expr]`,
+giving it access to `from` and `<#` only (no `apply` for this one!). What this means is that
+you can now write the following:
+
+```scala mdoc
+val nullLit = NullLit <# "null"
+nullLit.parse("null")
+```
+
+Without any further configuration, notice that the result of parsing `"null"` is indeed `NullLit`,
+and `nullLit: Parsley[Expr]`.
+
+@:callout(error)
+Be aware that the type passed to the generic parameter cannot be itself:
+
+```scala mdoc:fail
+case object Bad extends ParserBridge0[Bad.type]
+```
+
+Resolving this will require introducing an extra type, like `Expr` in the example with
+`NullLit`, which breaks the cycle sufficiently.
+@:@
 
 ## Use Cases
 
