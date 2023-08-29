@@ -142,7 +142,7 @@
 </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Foo</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Int</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Int</span><span>)
 </span><span class="comment">// with px, py of type Parsley[Int]
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = (</span><span class="identifier">px</span><span>, </span><span class="identifier">py</span><span>).</span><span class="identifier">zipped</span><span>(</span><span class="type-name">Foo</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>))
-</span><span class="comment">// p: Parsley[Foo] = parsley.Parsley@5ff026fb</span></code></pre>
+</span><span class="comment">// p: Parsley[Foo] = parsley.Parsley@396f0652</span></code></pre>
         <p>These work fine for the most part, however, there are couple of problems with this:</p>
         <ol class="arabic">
           <li>In Scala 3, <code>Foo(_, _)</code> actually needs to be written as <code>Foo.apply</code>, which introduces some (minor) noise;
@@ -169,7 +169,7 @@
         with <code>Parsley</code> values. If we assume that the companion object of <code>Foo</code> has been turned into such a
         bridge (definition below), the above example can be written as:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">q</span><span> = </span><span class="type-name">Foo</span><span>(</span><span class="identifier">px</span><span>, </span><span class="identifier">py</span><span>)
-</span><span class="comment">// q: Parsley[Foo] = parsley.Parsley@10ad2c9c</span></code></pre>
+</span><span class="comment">// q: Parsley[Foo] = parsley.Parsley@412b3fdc</span></code></pre>
         <p>In this version, the act of constructing the <code>Foo</code> value has been abstracted behind the bridge, <code>Foo</code>:
         this means that the underlying implementation can vary without changing the parser.</p>
         <p><span class="paragraph"> What are <em>Generic Bridges</em>? </span>
@@ -226,8 +226,8 @@
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">expr</span><span>.</span><span class="identifier">chain</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">stringLift</span><span>
 
-</span><span class="keyword">val</span><span> </span><span class="identifier">expr</span><span> = </span><span class="identifier">chain</span><span>.</span><span class="identifier">left1</span><span>(</span><span class="identifier">px</span><span>, </span><span class="type-name">Add</span><span>.</span><span class="identifier">from</span><span>(</span><span class="string-literal">&quot;+&quot;</span><span>)) </span><span class="comment">// or `Add &lt;# &quot;+&quot;`
-// expr: Parsley[Int] = parsley.Parsley@befc7b9</span></code></pre>
+</span><span class="keyword">val</span><span> </span><span class="identifier">term</span><span> = </span><span class="identifier">chain</span><span>.</span><span class="identifier">left1</span><span>(</span><span class="identifier">px</span><span>, </span><span class="type-name">Add</span><span>.</span><span class="identifier">from</span><span>(</span><span class="string-literal">&quot;+&quot;</span><span>)) </span><span class="comment">// or `Add &lt;# &quot;+&quot;`
+// term: Parsley[Int] = parsley.Parsley@db1763e</span></code></pre>
         <p>They are analogous to the <code>as</code> and <code>#&gt;</code> combinators respectively.</p>
         
         <h3 id="parserbridge0-t" class="section"><a class="anchor-link left" href="#parserbridge0-t"><i class="icofont-laika link">&#xef71;</i></a><code>ParserBridge0[+T]</code></h3>
@@ -241,7 +241,7 @@
         giving it access to <code>from</code> and <code>&lt;#</code> only (no <code>apply</code> for this one!). What this means is that
         you can now write the following:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">nullLit</span><span> = </span><span class="type-name">NullLit</span><span> &lt;# </span><span class="string-literal">&quot;null&quot;</span><span>
-</span><span class="comment">// nullLit: Parsley[Expr] = parsley.Parsley@8831ab9
+</span><span class="comment">// nullLit: Parsley[Expr] = parsley.Parsley@5890c0ca
 </span><span class="identifier">nullLit</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;null&quot;</span><span>)
 </span><span class="comment">// res2: parsley.Result[String, Expr] = Success(x = NullLit)</span></code></pre>
         <p>Without any further configuration, notice that the result of parsing <code>&quot;null&quot;</code> is indeed <code>NullLit</code>,
@@ -258,13 +258,121 @@
         </div>
         
         <h2 id="use-cases" class="section"><a class="anchor-link left" href="#use-cases"><i class="icofont-laika link">&#xef71;</i></a>Use Cases</h2>
+        <p>Other than the natural decoupling that the bridges provide, there are some more specialised
+        uses that can come out of the generic bridges alone.</p>
         
         <h3 id="normalising-or-disambiguating-data" class="section"><a class="anchor-link left" href="#normalising-or-disambiguating-data"><i class="icofont-laika link">&#xef71;</i></a>Normalising or Disambiguating Data</h3>
+        <p>Occasionally, the shape of an AST can change internally even though the syntax of the
+        language being parsed does not. Bridges are perfectly suited for handling these internal
+        changes while masking them from the parser itself. As an example, assume that a <code>Let</code>
+        AST node was <em>previously</em> defined as follows:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Let</span><span>(</span><span class="identifier">bindings</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">Binding</span><span>], </span><span class="identifier">body</span><span>: </span><span class="type-name">Expr</span><span>)
+</span><span class="keyword">object</span><span> </span><span class="type-name">Let</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ParserBridge2</span><span>[</span><span class="type-name">List</span><span>[</span><span class="type-name">Binding</span><span>], </span><span class="type-name">Expr</span><span>, </span><span class="type-name">Let</span><span>]</span></code></pre>
+        <p>The parser, therefore, can be expected to produce lists of bindings to feed in. However,
+        later it was decided that the ordering of the bindings doesn&#39;t matter, so a <code>Set</code> is being
+        used. The decoupling of the bridge will allow for this change to happen without changing the
+        parser, so long as the bridge performs the &quot;patching&quot;:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Let</span><span>(</span><span class="identifier">bindings</span><span>: </span><span class="type-name">Set</span><span>[</span><span class="type-name">Binding</span><span>], </span><span class="identifier">body</span><span>: </span><span class="type-name">Expr</span><span>)
+</span><span class="keyword">object</span><span> </span><span class="type-name">Let</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ParserBridge2</span><span>[</span><span class="type-name">List</span><span>[</span><span class="type-name">Binding</span><span>], </span><span class="type-name">Expr</span><span>, </span><span class="type-name">Let</span><span>] {
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>(</span><span class="identifier">bindings</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">Binding</span><span>], </span><span class="identifier">body</span><span>: </span><span class="type-name">Expr</span><span>): </span><span class="type-name">Let</span><span> = </span><span class="type-name">Let</span><span>(</span><span class="identifier">bindings</span><span>.</span><span class="identifier">toSet</span><span>, </span><span class="identifier">body</span><span>)
+}</span></code></pre>
+        <p>By defining the appropriate &quot;forwarding&quot; in its own <code>apply</code>, the bridge has ensured the
+        parser will still work.</p>
+        <p><span class="paragraph"> Handling ambiguity </span>
+        Another use of this kind of bridge is to allow for the disambiguation of two syntactically
+        similar structures. As an example, consider Scala&#39;s tuple syntax:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">x</span><span>  = (</span><span class="number-literal">6</span><span>)
+</span><span class="keyword">val</span><span> </span><span class="identifier">xy</span><span> = (</span><span class="number-literal">5</span><span>, </span><span class="number-literal">6</span><span>)</span></code></pre>
+        <p>It is clear to us that <code>x</code> is not a &quot;singleton pair&quot;, whatever that would be, but a parenthesised
+        expression; on the other hand, <code>xy</code> is clearly a pair. The problem is that the syntax for these
+        overlap, requiring backtracking to resolve (you can only know if you&#39;re parsing a tuple when
+        you find your first <code>&#39;,&#39;</code>).</p>
+        <p>In practice, arbitrary backtracking in a parser can impact performance
+        and the quality of error messages. Instead of dealing with this ambiguity by backtracking, it
+        is possible to exploit the shared structure in a <em>Disambiguator Bridge</em>: this is just a bridge
+        that looks at the provided arguments to decide what to make. For example:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">data</span><span>.</span><span class="type-name">NonEmptyList</span><span>
+
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Tuple</span><span>(</span><span class="identifier">exprs</span><span>: </span><span class="type-name">NonEmptyList</span><span>[</span><span class="type-name">Expr</span><span>]) </span><span class="keyword">extends</span><span> </span><span class="type-name">Expr</span><span>
+
+</span><span class="keyword">object</span><span> </span><span class="type-name">TupleOrParens</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ParserBridge1</span><span>[</span><span class="type-name">NonEmptyList</span><span>[</span><span class="type-name">Expr</span><span>], </span><span class="type-name">Expr</span><span>] {
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>(</span><span class="identifier">exprs</span><span>: </span><span class="type-name">NonEmptyList</span><span>[</span><span class="type-name">Expr</span><span>]): </span><span class="type-name">Expr</span><span> = </span><span class="identifier">exprs</span><span> </span><span class="keyword">match</span><span> {
+        </span><span class="keyword">case</span><span> </span><span class="type-name">NonEmptyList</span><span>(</span><span class="identifier">expr</span><span>, </span><span class="type-name">Nil</span><span>) =&gt; </span><span class="identifier">expr</span><span>
+        </span><span class="keyword">case</span><span> </span><span class="identifier">exprs</span><span>                   =&gt; </span><span class="type-name">Tuple</span><span>(</span><span class="identifier">exprs</span><span>)
+    }
+}</span></code></pre>
+        <p>In the above example, the parser will parse one or more expressions (signified by the <code>NonEmptyList</code>
+        from <code>cats</code>); the bridge will then inspect these expressions, returning a single expression if
+        only one was parsed, and construct the <code>Tuple</code> node otherwise. In the parser, this would just look
+        something like:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="comment">// from `parsley-cats`, produces `NonEmptyList` instead of `List`
+</span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">cats</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">sepBy1</span><span>
+</span><span class="keyword">val</span><span> </span><span class="identifier">tupleOrParens</span><span> = </span><span class="type-name">TupleOrParens</span><span>(</span><span class="string-literal">&quot;(&quot;</span><span> ~&gt; </span><span class="identifier">sepBy1</span><span>(</span><span class="identifier">nullLit</span><span>, </span><span class="string-literal">&quot;,&quot;</span><span>) &lt;~ </span><span class="string-literal">&quot;)&quot;</span><span>)
+</span><span class="comment">// tupleOrParens: Parsley[Expr] = parsley.Parsley@63fbbcf
+</span><span class="identifier">tupleOrParens</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;(null)&quot;</span><span>)
+</span><span class="comment">// res4: parsley.Result[String, Expr] = Success(x = NullLit)
+</span><span class="identifier">tupleOrParens</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;(null,null)&quot;</span><span>)
+</span><span class="comment">// res5: parsley.Result[String, Expr] = Success(
+//   x = Tuple(exprs = NonEmptyList(head = NullLit, tail = List(NullLit)))
+// )</span></code></pre>
         
         <h3 id="enforcing-invariances" class="section"><a class="anchor-link left" href="#enforcing-invariances"><i class="icofont-laika link">&#xef71;</i></a>Enforcing Invariances</h3>
+        <p>So far, the bridges we&#39;ve seen have been altering the way that the data itself should
+        be constructed from the results. However, it may also be desirable to override the
+        <em>templated</em> <code>apply</code> to perform additional checks. This basically means that you
+        can add in a <code>filter</code>-like combinator after the data has been constructed to validate
+        that the thing you&#39;ve constructed is actually correct. As an example, it turns out that
+        Scala only allows tuples with a maximum of 22 elements:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">oops</span><span> = (</span><span class="number-literal">1</span><span>, </span><span class="number-literal">2</span><span>, </span><span class="number-literal">3</span><span>, </span><span class="number-literal">4</span><span>, </span><span class="number-literal">5</span><span>, </span><span class="number-literal">6</span><span>, </span><span class="number-literal">7</span><span>, </span><span class="number-literal">8</span><span>, </span><span class="number-literal">9</span><span>, </span><span class="number-literal">0</span><span>, </span><span class="number-literal">1</span><span>, </span><span class="number-literal">2</span><span>, </span><span class="number-literal">3</span><span>, </span><span class="number-literal">4</span><span>, </span><span class="number-literal">5</span><span>, </span><span class="number-literal">6</span><span>, </span><span class="number-literal">7</span><span>, </span><span class="number-literal">8</span><span>, </span><span class="number-literal">9</span><span>, </span><span class="number-literal">0</span><span>, </span><span class="number-literal">1</span><span>, </span><span class="number-literal">2</span><span>, </span><span class="number-literal">3</span><span>)
+</span><span class="comment">// error: tuples may not have more than 22 elements, but 23 given
+// val oops = (1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3)
+//                                                                               ^</span></code></pre>
+        
+        <p>How to adjust the parser to handle this? One possible approach is to use a <code>range</code> combinator
+        (which does not exist in <code>parsley:4.3.1</code>, it is in <code>parsley:4.4.0</code>, but for sake of example):</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">nonEmptyList</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">px</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">A</span><span>], </span><span class="identifier">pxs</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">List</span><span>[</span><span class="type-name">A</span><span>]]) =
+    </span><span class="identifier">lift2</span><span>(</span><span class="type-name">NonEmptyList</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>), </span><span class="identifier">px</span><span>, </span><span class="identifier">pxs</span><span>)
+</span><span class="keyword">val</span><span> </span><span class="identifier">tupleOrParensObtuse</span><span> =
+    </span><span class="type-name">TupleOrParens</span><span>(</span><span class="string-literal">&quot;(&quot;</span><span> ~&gt; </span><span class="identifier">nonEmptyList</span><span>(</span><span class="identifier">nullLit</span><span>, </span><span class="identifier">range</span><span>(</span><span class="number-literal">0</span><span>, </span><span class="number-literal">21</span><span>)(</span><span class="string-literal">&quot;,&quot;</span><span> ~&gt; </span><span class="identifier">nullLit</span><span>)) &lt;~ </span><span class="string-literal">&quot;)&quot;</span><span>)</span></code></pre>
+        <p>This works, but it&#39;s very obtuse. Not to mention that the error message generated isn&#39;t particularly
+        good.  Instead, we can hook some extra behaviour into the generated <code>apply</code>:</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">errors</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">_</span><span>
+
+</span><span class="keyword">object</span><span> </span><span class="type-name">TupleOrParens</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">ParserBridge1</span><span>[</span><span class="type-name">NonEmptyList</span><span>[</span><span class="type-name">Expr</span><span>], </span><span class="type-name">Expr</span><span>] {
+    </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>(</span><span class="identifier">exprs</span><span>: </span><span class="type-name">NonEmptyList</span><span>[</span><span class="type-name">Expr</span><span>]): </span><span class="type-name">Expr</span><span> = </span><span class="identifier">exprs</span><span> </span><span class="keyword">match</span><span> {
+        </span><span class="keyword">case</span><span> </span><span class="type-name">NonEmptyList</span><span>(</span><span class="identifier">expr</span><span>, </span><span class="type-name">Nil</span><span>) =&gt; </span><span class="identifier">expr</span><span>
+        </span><span class="keyword">case</span><span> </span><span class="identifier">exprs</span><span>                   =&gt; </span><span class="type-name">Tuple</span><span>(</span><span class="identifier">exprs</span><span>)
+    }
+
+    </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>(</span><span class="identifier">exprs</span><span>: </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">NonEmptyList</span><span>[</span><span class="type-name">Expr</span><span>]]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">Expr</span><span>] =
+        </span><span class="keyword">super</span><span>.</span><span class="identifier">apply</span><span>(</span><span class="identifier">exprs</span><span>).</span><span class="identifier">guardAgainst</span><span> {
+            </span><span class="keyword">case</span><span> </span><span class="type-name">Tuple</span><span>(</span><span class="identifier">exprs</span><span>) </span><span class="keyword">if</span><span> </span><span class="identifier">exprs</span><span>.</span><span class="identifier">size</span><span> &gt; </span><span class="number-literal">22</span><span> =&gt;
+                </span><span class="type-name">Seq</span><span>(</span><span class="string-literal">s&quot;tuples may not have more than 22 elements, but </span><span class="substitution">${exprs.size}</span><span class="string-literal"> given&quot;</span><span>)
+        }
+}</span></code></pre>
+        <p>This bridge invokes the templated <code>apply</code> with <code>super.apply</code> first, then after processes it
+        with the <code>guardAgainst</code> combinator to generate a bespoke message:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">tupleOrParens</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;(null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null)&quot;</span><span>)
+</span><span class="comment">// res7: parsley.Result[String, Expr] = Failure(
+//    = &quot;&quot;&quot;(line 1, column 1):
+//   tuples may not have more than 22 elements, but 23 given
+//   &gt;(null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null)
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&quot;&quot;&quot;
+// )</span></code></pre>
+        <p>To be clear, this is using the original definition of <code>tupleOrParens</code> and <em>not</em> <code>tupleOrParensObtuse</code>.</p>
+        <div class="callout warning">
+          <i class="icofont-laika warning">&#xf026;</i>
+          <p>While this use of bridges does retain the unsaturated application from <code>ParserSingletonBridge</code>, using the
+          <code>from</code> combinator will not perform the additional validation: be careful!</p>
+        </div>
         
         
         <h2 id="when-not-to-use" class="section"><a class="anchor-link left" href="#when-not-to-use"><i class="icofont-laika link">&#xef71;</i></a>When <em>not</em> to use</h2>
+        <p>Simply put, generic bridges have one major limitation: they cannot interact with additional metadata
+        that might be required in the parser. One excellent example of this is position information. While
+        <code>parsley</code> could take a stance on how this should be done, I&#39;d prefer if the users can make that
+        decision for themselves. The previously linked tutorial demonstrates how to <em>make</em> templating bridges
+        from scratch, which you would need to do to support something like position tracking.</p>
 
         
 <hr class="footer-rule"/>
