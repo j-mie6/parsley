@@ -76,7 +76,13 @@ lazy val docs = project
   .in(file("site"))
   .dependsOn(parsley.jvm)
   .enablePlugins(ParsleySitePlugin)
-  .settings(tlSiteApiModule := Some((parsley.jvm / projectID).value))
+  .settings(
+    tlSiteApiModule := Some((parsley.jvm / projectID).value),
+    libraryDependencies ++= Seq(
+        "org.typelevel" %% "cats-core" % "2.10.0",
+        "com.github.j-mie6" %% "parsley-cats" % "1.2.0"
+    ),
+  )
 
 def testCoverageJob(cacheSteps: List[WorkflowStep]) = WorkflowJob(
     id = "coverage",

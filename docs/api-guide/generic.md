@@ -1,5 +1,6 @@
 ```scala mdoc:invisible
 import parsley.Parsley, Parsley._
+import parsley.genericbridges.ParserBridge1
 ```
 
 # Generic Bridges
@@ -120,7 +121,7 @@ like in [chain](expr/chain.md) or [precedence](expr/precedence.md) combinators:
 import parsley.expr.chain
 import parsley.implicits.character.stringLift
 
-val expr = chain.left1(px, Add.from("+")) // or `Add <# "+"`
+val term = chain.left1(px, Add.from("+")) // or `Add <# "+"`
 ```
 
 They are analogous to the `as` and `#>` combinators respectively.
@@ -160,11 +161,153 @@ Resolving this will require introducing an extra type, like `Expr` in the exampl
 @:@
 
 ## Use Cases
+Other than the natural decoupling that the bridges provide, there are some more specialised
+uses that can come out of the generic bridges alone.
 
 ### Normalising or Disambiguating Data
+Occasionally, the shape of an AST can change internally even though the syntax of the
+language being parsed does not. Bridges are perfectly suited for handling these internal
+changes while masking them from the parser itself. As an example, assume that a `Let`
+AST node was *previously* defined as follows:
+
+```scala
+case class Let(bindings: List[Binding], body: Expr)
+object Let extends ParserBridge2[List[Binding], Expr, Let]
+```
+
+The parser, therefore, can be expected to produce lists of bindings to feed in. However,
+later it was decided that the ordering of the bindings doesn't matter, so a `Set` is being
+used. The decoupling of the bridge will allow for this change to happen without changing the
+parser, so long as the bridge performs the "patching":
+
+```scala mdoc:invisible
+trait Binding
+```
+
+```scala mdoc
+case class Let(bindings: Set[Binding], body: Expr)
+object Let extends ParserBridge2[List[Binding], Expr, Let] {
+    def apply(bindings: List[Binding], body: Expr): Let = Let(bindings.toSet, body)
+}
+```
+
+By defining the appropriate "forwarding" in its own `apply`, the bridge has ensured the
+parser will still work.
+
+@:style(paragraph) Handling ambiguity @:@
+Another use of this kind of bridge is to allow for the disambiguation of two syntactically
+similar structures. As an example, consider Scala's tuple syntax:
+
+```scala
+val x  = (6)
+val xy = (5, 6)
+```
+
+It is clear to us that `x` is not a "singleton pair", whatever that would be, but a parenthesised
+expression; on the other hand, `xy` is clearly a pair. The problem is that the syntax for these
+overlap, requiring backtracking to resolve (you can only know if you're parsing a tuple when
+you find your first `','`).
+
+In practice, arbitrary backtracking in a parser can impact performance
+and the quality of error messages. Instead of dealing with this ambiguity by backtracking, it
+is possible to exploit the shared structure in a *Disambiguator Bridge*: this is just a bridge
+that looks at the provided arguments to decide what to make. For example:
+
+```scala
+import cats.data.NonEmptyList
+
+case class Tuple(exprs: NonEmptyList[Expr]) extends Expr
+
+object TupleOrParens extends ParserBridge1[NonEmptyList[Expr], Expr] {
+    def apply(exprs: NonEmptyList[Expr]): Expr = exprs match {
+        case NonEmptyList(expr, Nil) => expr
+        case exprs                   => Tuple(exprs)
+    }
+}
+```
+
+In the above example, the parser will parse one or more expressions (signified by the `NonEmptyList`
+from `cats`); the bridge will then inspect these expressions, returning a single expression if
+only one was parsed, and construct the `Tuple` node otherwise. In the parser, this would just look
+something like:
+
+```scala mdoc
+// from `parsley-cats`, produces `NonEmptyList` instead of `List`
+import parsley.cats.combinator.sepBy1
+val tupleOrParens = TupleOrParens("(" ~> sepBy1(nullLit, ",") <~ ")")
+tupleOrParens.parse("(null)")
+tupleOrParens.parse("(null,null)")
+```
 
 ### Enforcing Invariances
+So far, the bridges we've seen have been altering the way that the data itself should
+be constructed from the results. However, it may also be desirable to override the
+*templated* `apply` to perform additional checks. This basically means that you
+can add in a `filter`-like combinator after the data has been constructed to validate
+that the thing you've constructed is actually correct. As an example, it turns out that
+Scala only allows tuples with a maximum of 22 elements:
+
+```scala mdoc:fail
+val oops = (1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3)
+```
+
+@:todo(change this to just use `range` in 4.4)
+How to adjust the parser to handle this? One possible approach is to use a `range` combinator
+(which does not exist in `parsley:@VERSION@`, it is in `parsley:4.4.0`, but for sake of example):
+
+```scala
+def nonEmptyList[A](px: Parsley[A], pxs: Parsley[List[A]]) =
+    lift2(NonEmptyList(_, _), px, pxs)
+val tupleOrParensObtuse =
+    TupleOrParens("(" ~> nonEmptyList(nullLit, range(0, 21)("," ~> nullLit)) <~ ")")
+```
+
+This works, but it's very obtuse. Not to mention that the error message generated isn't particularly
+good. @:todo(add error message?) Instead, we can hook some extra behaviour into the generated `apply`:
+
+```scala mdoc:invisible
+import cats.data.NonEmptyList
+
+case class Tuple(exprs: NonEmptyList[Expr]) extends Expr
+```
+
+```scala mdoc
+import parsley.errors.combinator._
+
+object TupleOrParens extends ParserBridge1[NonEmptyList[Expr], Expr] {
+    def apply(exprs: NonEmptyList[Expr]): Expr = exprs match {
+        case NonEmptyList(expr, Nil) => expr
+        case exprs                   => Tuple(exprs)
+    }
+
+    override def apply(exprs: Parsley[NonEmptyList[Expr]]): Parsley[Expr] =
+        super.apply(exprs).guardAgainst {
+            case Tuple(exprs) if exprs.size > 22 =>
+                Seq(s"tuples may not have more than 22 elements, but ${exprs.size} given")
+        }
+}
+```
+
+This bridge invokes the templated `apply` with `super.apply` first, then after processes it
+with the `guardAgainst` combinator to generate a bespoke message:
+
+```scala mdoc
+tupleOrParens.parse("(null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null)")
+```
+
+To be clear, this is using the original definition of `tupleOrParens` and *not* `tupleOrParensObtuse`.
+
+@:callout(warning)
+While this use of bridges does retain the unsaturated application from `ParserSingletonBridge`, using the
+`from` combinator will not perform the additional validation: be careful!
+@:@
 
 @:todo(Talk about the error messages when that's added in 5.0?)
 
 ## When *not* to use
+
+Simply put, generic bridges have one major limitation: they cannot interact with additional metadata
+that might be required in the parser. One excellent example of this is position information. While
+`parsley` could take a stance on how this should be done, I'd prefer if the users can make that
+decision for themselves. The previously linked tutorial demonstrates how to *make* templating bridges
+from scratch, which you would need to do to support something like position tracking.

@@ -257,7 +257,7 @@ object lexer {
 
 ## Using `token.LanguageDef` and `token.Lexer`
 @:callout(warning)
-_This section is out-of-date, and describes the situation in `parsley-3.x.y` and not `parsley-@VERSION@`. In this release, the entire `token` package was reworked, so this doesn't apply._
+_This section is out-of-date, and describes the situation in `parsley:3.x.y` and not `parsley:@VERSION@`. In this release, the entire `token` package was reworked, so this doesn't apply._
 @:@
 
 Whilst everything we have done above is nice and instructive, in practice all this work is
