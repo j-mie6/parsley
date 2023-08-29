@@ -3,6 +3,8 @@
     { "displayValue": "4.3.x", "pathSegment": "latest", "fallbackLink": "/index.html", "label": "stable", "canonical": true }
   ],
   "linkTargets": [
+    { "path": "/api-guide/expr/chain.html", "versions": ["latest"] },
+    { "path": "/api-guide/expr/precedence.html", "versions": ["latest"] },
     { "path": "/api-guide/generic.html", "versions": ["latest"] },
     { "path": "/api-guide/index.html", "versions": ["latest"] },
     { "path": "/api-guide/parsley.html", "versions": ["latest"] },
