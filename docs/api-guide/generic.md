@@ -160,7 +160,7 @@ Resolving this will require introducing an extra type, like `Expr` in the exampl
 `NullLit`, which breaks the cycle sufficiently.
 @:@
 
-## Use Cases
+## Additional Use Cases
 Other than the natural decoupling that the bridges provide, there are some more specialised
 uses that can come out of the generic bridges alone.
 
