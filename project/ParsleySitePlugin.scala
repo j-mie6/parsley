@@ -1,6 +1,6 @@
 package parsley.build
 
-import laika.rewrite.link.{ApiLinks, LinkConfig}
+import laika.rewrite.link.{ApiLinks, LinkConfig, SourceLinks}
 import laika.rewrite.{Version, Versions}
 import laika.sbt.LaikaConfig
 import laika.ast._
@@ -26,6 +26,7 @@ object ParsleySitePlugin extends AutoPlugin {
         tlSiteKeepFiles := false, // FIXME: turn off when docs are stable
         laikaConfig :=  LaikaConfig.defaults.withConfigValue(LinkConfig(
                 apiLinks = tlSiteApiUrl.value.map(url => ApiLinks(baseUri = url.toExternalForm)).toSeq,
+                sourceLinks = scmInfo.value.map(scm => SourceLinks(baseUri = scm.browseUrl.toExternalForm, suffix = "scala")).toSeq, //FIXME: not sure this works
             ))
             .withRawContent,  // enable usage of raw HTML,  // enable usage of raw HTML
         tlSiteHelium := tlSiteHelium.value.site.layout(

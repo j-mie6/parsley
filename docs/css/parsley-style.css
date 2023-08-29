@@ -1,0 +1,7 @@
+.paragraph {
+    color: var(--secondary-color);
+    font-weight: bold;
+    padding-top: 1em;
+    display:inline-block;
+    margin-right: 1em;
+}

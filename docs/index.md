@@ -14,7 +14,7 @@ The Wiki is structured into a few broad sections:
 }
 
 The two most important sections here are [Understanding the API](api-guide/README.md)
-and [Parser Combinator Tutorial](guide/README.md). The former is a structured look at how
+and [Parser Combinator Tutorial](tutorial/README.md). The former is a structured look at how
 to use various parts of the API, with examples and patterns of use; and the latter is a more
 ground-up guide on how to use parser combinators, and the patterns that describe best-practice.
 The [Cheatsheet](cheatsheet.md) may help get a quick overview on the key combinators to be
