@@ -217,8 +217,8 @@ import parsley.Parsley, Parsley.pure
 pure(7).parse("")
 
 def helper(cs: List[Char]): Parsley[List[Char]] = cs match {
-    case Nil     => pure(Nil)
-    case c :: cs => ???
+    case Nil    => pure(Nil)
+    case _ :: _ => ???
 }
 ```
 
@@ -241,7 +241,7 @@ that specific character, and then add that onto the front of reading the rest of
 full:
 
 ```scala mdoc
-import parsley.Parsley, Parsley._
+import parsley.Parsley
 import parsley.character.char
 
 def string(str: String): Parsley[String] = {

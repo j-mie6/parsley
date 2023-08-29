@@ -6,8 +6,12 @@ import parsley.genericbridges.ParserBridge1
 # Generic Bridges
 
 The *Parser Bridge* pattern is a technique for decoupling semantic actions from the parser itself.
-The [`parsley.genericbridges`][@:api(parsley.genericbridges$)] module contains 23 classes that allow
+The `parsley.genericbridges` module contains 23 classes that allow
 you to get started using the technique straight away if you wish.
+
+@:callout(info)
+*The Scaladoc for this page can be found at [`parsley.genericbridges`][@:api(parsley.genericbridges$)].*
+@:@
 
 ## What are *Parser Bridges*?
 Without making use of *Parser Bridges*, results of parsers are usually combined by using `lift`,
@@ -141,7 +145,7 @@ The `NullLit` object is part of the `Expr` AST, and it has also mixed in `Parser
 giving it access to `from` and `<#` only (no `apply` for this one!). What this means is that
 you can now write the following:
 
-```scala mdoc
+```scala mdoc:to-string
 val nullLit = NullLit <# "null"
 nullLit.parse("null")
 ```
@@ -170,7 +174,10 @@ language being parsed does not. Bridges are perfectly suited for handling these 
 changes while masking them from the parser itself. As an example, assume that a `Let`
 AST node was *previously* defined as follows:
 
-```scala
+```scala mdoc:invisible
+trait Binding
+```
+```scala mdoc
 case class Let(bindings: List[Binding], body: Expr)
 object Let extends ParserBridge2[List[Binding], Expr, Let]
 ```
@@ -180,11 +187,7 @@ later it was decided that the ordering of the bindings doesn't matter, so a `Set
 used. The decoupling of the bridge will allow for this change to happen without changing the
 parser, so long as the bridge performs the "patching":
 
-```scala mdoc:invisible
-trait Binding
-```
-
-```scala mdoc
+```scala mdoc:nest
 case class Let(bindings: Set[Binding], body: Expr)
 object Let extends ParserBridge2[List[Binding], Expr, Let] {
     def apply(bindings: List[Binding], body: Expr): Let = Let(bindings.toSet, body)
@@ -198,7 +201,7 @@ parser will still work.
 Another use of this kind of bridge is to allow for the disambiguation of two syntactically
 similar structures. As an example, consider Scala's tuple syntax:
 
-```scala
+```scala mdoc:silent
 val x  = (6)
 val xy = (5, 6)
 ```
@@ -213,7 +216,7 @@ and the quality of error messages. Instead of dealing with this ambiguity by bac
 is possible to exploit the shared structure in a *Disambiguator Bridge*: this is just a bridge
 that looks at the provided arguments to decide what to make. For example:
 
-```scala
+```scala mdoc
 import cats.data.NonEmptyList
 
 case class Tuple(exprs: NonEmptyList[Expr]) extends Expr
@@ -231,7 +234,7 @@ from `cats`); the bridge will then inspect these expressions, returning a single
 only one was parsed, and construct the `Tuple` node otherwise. In the parser, this would just look
 something like:
 
-```scala mdoc
+```scala mdoc:to-string
 // from `parsley-cats`, produces `NonEmptyList` instead of `List`
 import parsley.cats.combinator.sepBy1
 val tupleOrParens = TupleOrParens("(" ~> sepBy1(nullLit, ",") <~ ")")
@@ -265,13 +268,7 @@ val tupleOrParensObtuse =
 This works, but it's very obtuse. Not to mention that the error message generated isn't particularly
 good. @:todo(add error message?) Instead, we can hook some extra behaviour into the generated `apply`:
 
-```scala mdoc:invisible
-import cats.data.NonEmptyList
-
-case class Tuple(exprs: NonEmptyList[Expr]) extends Expr
-```
-
-```scala mdoc
+```scala mdoc:nest
 import parsley.errors.combinator._
 
 object TupleOrParens extends ParserBridge1[NonEmptyList[Expr], Expr] {
@@ -291,7 +288,10 @@ object TupleOrParens extends ParserBridge1[NonEmptyList[Expr], Expr] {
 This bridge invokes the templated `apply` with `super.apply` first, then after processes it
 with the `guardAgainst` combinator to generate a bespoke message:
 
-```scala mdoc
+```scala mdoc:invisible
+val tupleOrParens = TupleOrParens("(" ~> sepBy1(nullLit, ",") <~ ")")
+```
+```scala mdoc:to-string
 tupleOrParens.parse("(null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null)")
 ```
 
