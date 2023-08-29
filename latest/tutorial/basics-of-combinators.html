@@ -311,8 +311,8 @@
 </span><span class="comment">// res17: parsley.Result[String, Int] = Success(x = 7)
 </span><span>
 </span><span class="keyword">def</span><span> </span><span class="declaration-name">helper</span><span>(</span><span class="identifier">cs</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">Char</span><span>]): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">List</span><span>[</span><span class="type-name">Char</span><span>]] = </span><span class="identifier">cs</span><span> </span><span class="keyword">match</span><span> {
-    </span><span class="keyword">case</span><span> </span><span class="type-name">Nil</span><span>     =&gt; </span><span class="identifier">pure</span><span>(</span><span class="type-name">Nil</span><span>)
-    </span><span class="keyword">case</span><span> </span><span class="identifier">c</span><span> :: </span><span class="identifier">cs</span><span> =&gt; ???
+    </span><span class="keyword">case</span><span> </span><span class="type-name">Nil</span><span>    =&gt; </span><span class="identifier">pure</span><span>(</span><span class="type-name">Nil</span><span>)
+    </span><span class="keyword">case</span><span> </span><span class="identifier">_</span><span> :: </span><span class="identifier">_</span><span> =&gt; ???
 }</span></code></pre>
         <p>Now the question is how to handle the recursive case? Well in the base case we transformed the
         empty list into a parser that returns the empty list. We&#39;ll follow that same shape here and use
@@ -327,7 +327,7 @@
         <p>What happens here is that we take each character in the string, convert it to a parser that reads
         that specific character, and then add that onto the front of reading the rest of the characters. In
         full:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>, </span><span class="type-name">Parsley</span><span>.</span><span class="identifier">_</span><span>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="type-name">Parsley</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">char</span><span>
 
 </span><span class="keyword">def</span><span> </span><span class="declaration-name">string</span><span>(</span><span class="identifier">str</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Parsley</span><span>[</span><span class="type-name">String</span><span>] = {
