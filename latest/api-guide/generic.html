@@ -118,7 +118,7 @@
     <li class="level2 nav-leaf"><a href="#parserbridge1-a-b-through-parserbridge22-a-v-w"><code>ParserBridge1[-A, +B]</code> through <code>ParserBridge22[-A, .., -V, +W]</code></a></li>
     <li class="level2 nav-leaf"><a href="#parsersingletonbridge-t"><code>ParserSingletonBridge[+T]</code></a></li>
     <li class="level2 nav-leaf"><a href="#parserbridge0-t"><code>ParserBridge0[+T]</code></a></li>
-    <li class="level1 nav-node"><a href="#use-cases">Use Cases</a></li>
+    <li class="level1 nav-node"><a href="#additional-use-cases">Additional Use Cases</a></li>
     <li class="level2 nav-leaf"><a href="#normalising-or-disambiguating-data">Normalising or Disambiguating Data</a></li>
     <li class="level2 nav-leaf"><a href="#enforcing-invariances">Enforcing Invariances</a></li>
     <li class="level1 nav-leaf"><a href="#when-not-to-use">When <em>not</em> to use</a></li>
@@ -142,7 +142,7 @@
 </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Foo</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Int</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Int</span><span>)
 </span><span class="comment">// with px, py of type Parsley[Int]
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = (</span><span class="identifier">px</span><span>, </span><span class="identifier">py</span><span>).</span><span class="identifier">zipped</span><span>(</span><span class="type-name">Foo</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>))
-</span><span class="comment">// p: Parsley[Foo] = parsley.Parsley@396f0652</span></code></pre>
+</span><span class="comment">// p: Parsley[Foo] = parsley.Parsley@34b0c4a7</span></code></pre>
         <p>These work fine for the most part, however, there are couple of problems with this:</p>
         <ol class="arabic">
           <li>In Scala 3, <code>Foo(_, _)</code> actually needs to be written as <code>Foo.apply</code>, which introduces some (minor) noise;
@@ -169,7 +169,7 @@
         with <code>Parsley</code> values. If we assume that the companion object of <code>Foo</code> has been turned into such a
         bridge (definition below), the above example can be written as:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">q</span><span> = </span><span class="type-name">Foo</span><span>(</span><span class="identifier">px</span><span>, </span><span class="identifier">py</span><span>)
-</span><span class="comment">// q: Parsley[Foo] = parsley.Parsley@412b3fdc</span></code></pre>
+</span><span class="comment">// q: Parsley[Foo] = parsley.Parsley@65d11a95</span></code></pre>
         <p>In this version, the act of constructing the <code>Foo</code> value has been abstracted behind the bridge, <code>Foo</code>:
         this means that the underlying implementation can vary without changing the parser.</p>
         <p><span class="paragraph"> What are <em>Generic Bridges</em>? </span>
@@ -227,7 +227,7 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">stringLift</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">term</span><span> = </span><span class="identifier">chain</span><span>.</span><span class="identifier">left1</span><span>(</span><span class="identifier">px</span><span>, </span><span class="type-name">Add</span><span>.</span><span class="identifier">from</span><span>(</span><span class="string-literal">&quot;+&quot;</span><span>)) </span><span class="comment">// or `Add &lt;# &quot;+&quot;`
-// term: Parsley[Int] = parsley.Parsley@db1763e</span></code></pre>
+// term: Parsley[Int] = parsley.Parsley@26e23013</span></code></pre>
         <p>They are analogous to the <code>as</code> and <code>#&gt;</code> combinators respectively.</p>
         
         <h3 id="parserbridge0-t" class="section"><a class="anchor-link left" href="#parserbridge0-t"><i class="icofont-laika link">&#xef71;</i></a><code>ParserBridge0[+T]</code></h3>
@@ -241,7 +241,7 @@
         giving it access to <code>from</code> and <code>&lt;#</code> only (no <code>apply</code> for this one!). What this means is that
         you can now write the following:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">nullLit</span><span> = </span><span class="type-name">NullLit</span><span> &lt;# </span><span class="string-literal">&quot;null&quot;</span><span>
-</span><span class="comment">// nullLit: Parsley[Expr] = parsley.Parsley@5890c0ca
+</span><span class="comment">// nullLit: Parsley[Expr] = parsley.Parsley@3105ce78
 </span><span class="identifier">nullLit</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;null&quot;</span><span>)
 </span><span class="comment">// res2: parsley.Result[String, Expr] = Success(x = NullLit)</span></code></pre>
         <p>Without any further configuration, notice that the result of parsing <code>&quot;null&quot;</code> is indeed <code>NullLit</code>,
@@ -257,7 +257,7 @@
           <code>NullLit</code>, which breaks the cycle sufficiently.</p>
         </div>
         
-        <h2 id="use-cases" class="section"><a class="anchor-link left" href="#use-cases"><i class="icofont-laika link">&#xef71;</i></a>Use Cases</h2>
+        <h2 id="additional-use-cases" class="section"><a class="anchor-link left" href="#additional-use-cases"><i class="icofont-laika link">&#xef71;</i></a>Additional Use Cases</h2>
         <p>Other than the natural decoupling that the bridges provide, there are some more specialised
         uses that can come out of the generic bridges alone.</p>
         
@@ -308,7 +308,7 @@
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="comment">// from `parsley-cats`, produces `NonEmptyList` instead of `List`
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">cats</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">sepBy1</span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">tupleOrParens</span><span> = </span><span class="type-name">TupleOrParens</span><span>(</span><span class="string-literal">&quot;(&quot;</span><span> ~&gt; </span><span class="identifier">sepBy1</span><span>(</span><span class="identifier">nullLit</span><span>, </span><span class="string-literal">&quot;,&quot;</span><span>) &lt;~ </span><span class="string-literal">&quot;)&quot;</span><span>)
-</span><span class="comment">// tupleOrParens: Parsley[Expr] = parsley.Parsley@63fbbcf
+</span><span class="comment">// tupleOrParens: Parsley[Expr] = parsley.Parsley@7d35586f
 </span><span class="identifier">tupleOrParens</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;(null)&quot;</span><span>)
 </span><span class="comment">// res4: parsley.Result[String, Expr] = Success(x = NullLit)
 </span><span class="identifier">tupleOrParens</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;(null,null)&quot;</span><span>)
