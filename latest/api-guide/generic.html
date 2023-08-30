@@ -15,6 +15,8 @@
   
   
   
+  <link rel="icon" sizes="32x32" type="image/svg+xml" href="../../icons/greenLeaf.svg"/>
+  
   
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700">
   
@@ -146,7 +148,7 @@
 </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Foo</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Int</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Int</span><span>)
 </span><span class="comment">// with px, py of type Parsley[Int]
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = (</span><span class="identifier">px</span><span>, </span><span class="identifier">py</span><span>).</span><span class="identifier">zipped</span><span>(</span><span class="type-name">Foo</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>))
-</span><span class="comment">// p: Parsley[Foo] = parsley.Parsley@eeb64d6</span></code></pre>
+</span><span class="comment">// p: Parsley[Foo] = parsley.Parsley@5d1a5a4</span></code></pre>
         <p>These work fine for the most part, however, there are couple of problems with this:</p>
         <ol class="arabic">
           <li>In Scala 3, <code>Foo(_, _)</code> actually needs to be written as <code>Foo.apply</code>, which introduces some (minor) noise;
@@ -173,7 +175,7 @@
         with <code>Parsley</code> values. If we assume that the companion object of <code>Foo</code> has been turned into such a
         bridge (definition below), the above example can be written as:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">q</span><span> = </span><span class="type-name">Foo</span><span>(</span><span class="identifier">px</span><span>, </span><span class="identifier">py</span><span>)
-</span><span class="comment">// q: Parsley[Foo] = parsley.Parsley@7084fe1</span></code></pre>
+</span><span class="comment">// q: Parsley[Foo] = parsley.Parsley@6cb906a0</span></code></pre>
         <p>In this version, the act of constructing the <code>Foo</code> value has been abstracted behind the bridge, <code>Foo</code>:
         this means that the underlying implementation can vary without changing the parser.</p>
         <p><span class="paragraph"> What are <em>Generic Bridges</em>? </span>
@@ -231,7 +233,7 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">stringLift</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">term</span><span> = </span><span class="identifier">chain</span><span>.</span><span class="identifier">left1</span><span>(</span><span class="identifier">px</span><span>, </span><span class="type-name">Add</span><span>.</span><span class="identifier">from</span><span>(</span><span class="string-literal">&quot;+&quot;</span><span>)) </span><span class="comment">// or `Add &lt;# &quot;+&quot;`
-// term: Parsley[Int] = parsley.Parsley@24da9ccf</span></code></pre>
+// term: Parsley[Int] = parsley.Parsley@4e763009</span></code></pre>
         <p>They are analogous to the <code>as</code> and <code>#&gt;</code> combinators respectively.</p>
         
         <h3 id="parserbridge0-t" class="section"><a class="anchor-link left" href="#parserbridge0-t"><i class="icofont-laika link">&#xef71;</i></a><code>ParserBridge0[+T]</code></h3>
@@ -245,7 +247,7 @@
         giving it access to <code>from</code> and <code>&lt;#</code> only (no <code>apply</code> for this one!). What this means is that
         you can now write the following:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">nullLit</span><span> = </span><span class="type-name">NullLit</span><span> &lt;# </span><span class="string-literal">&quot;null&quot;</span><span>
-</span><span class="comment">// nullLit: Parsley[Expr] = parsley.Parsley@1e50257d
+</span><span class="comment">// nullLit: Parsley[Expr] = parsley.Parsley@16dbc332
 </span><span class="identifier">nullLit</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;null&quot;</span><span>)
 </span><span class="comment">// res2: parsley.Result[String, Expr] = Success(NullLit)</span></code></pre>
         <p>Without any further configuration, notice that the result of parsing <code>&quot;null&quot;</code> is indeed <code>NullLit</code>,
@@ -312,7 +314,7 @@
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="comment">// from `parsley-cats`, produces `NonEmptyList` instead of `List`
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">cats</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">sepBy1</span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">tupleOrParens</span><span> = </span><span class="type-name">TupleOrParens</span><span>(</span><span class="string-literal">&quot;(&quot;</span><span> ~&gt; </span><span class="identifier">sepBy1</span><span>(</span><span class="identifier">nullLit</span><span>, </span><span class="string-literal">&quot;,&quot;</span><span>) &lt;~ </span><span class="string-literal">&quot;)&quot;</span><span>)
-</span><span class="comment">// tupleOrParens: Parsley[Expr] = parsley.Parsley@5ed7de13
+</span><span class="comment">// tupleOrParens: Parsley[Expr] = parsley.Parsley@e304ad0
 </span><span class="identifier">tupleOrParens</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;(null)&quot;</span><span>)
 </span><span class="comment">// res4: parsley.Result[String, Expr] = Success(NullLit)
 </span><span class="identifier">tupleOrParens</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;(null,null)&quot;</span><span>)
