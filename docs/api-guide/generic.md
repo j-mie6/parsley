@@ -6,7 +6,7 @@ laika.title = "`parsley.genericbridges`"
 import parsley.Parsley, Parsley._
 import parsley.genericbridges.ParserBridge1
 ```
-# Generic Bridges (`parsley.generic`)
+# Generic Bridges (`parsley.genericbridges`)
 
 The *Parser Bridge* pattern is a technique for decoupling semantic actions from the parser itself.
 The `parsley.genericbridges` module contains 23 classes that allow
