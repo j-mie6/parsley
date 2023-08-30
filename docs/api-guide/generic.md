@@ -124,7 +124,7 @@ two combinators give you is the ability to write `Foo.from(parser): Parsley[(Int
 This can be useful when you want to use a bridge somewhere where the arguments cannot be directly applied,
 like in [chain](expr/chain.md) or [precedence](expr/precedence.md) combinators:
 
-```scala mdoc
+```scala mdoc:silent
 import parsley.expr.chain
 import parsley.implicits.character.stringLift
 
@@ -257,7 +257,7 @@ Scala only allows tuples with a maximum of 22 elements:
 val oops = (1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3)
 ```
 
-@:todo(change this to just use `range` in 4.4)
+@:todo(TODO: change this to just use `range` in 4.4)
 How to adjust the parser to handle this? One possible approach is to use a `range` combinator
 (which does not exist in `parsley:@VERSION@`, it is in `parsley:4.4.0`, but for sake of example):
 
@@ -269,7 +269,7 @@ val tupleOrParensObtuse =
 ```
 
 This works, but it's very obtuse. Not to mention that the error message generated isn't particularly
-good. @:todo(add error message?) Instead, we can hook some extra behaviour into the generated `apply`:
+good. @:todo(TODO: add error message?) Instead, we can hook some extra behaviour into the generated `apply`:
 
 ```scala mdoc:nest
 import parsley.errors.combinator._

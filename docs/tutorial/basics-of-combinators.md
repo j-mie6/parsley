@@ -347,7 +347,7 @@ p.parse("abc")
 p.parse("def")
 p.parse("dead")
 ```
-@:todo(fix ansi escape code rendering issues, so we can unsilence the debug printouts)
+@:todo(FIXME: fix ansi escape code rendering issues, so we can unsilence the debug printouts)
 
 The `debug` combinator can be attached to any operation (by default Parsley associates `<|>` to the
 right, which is why I've bracketed them this way round). It will provide printouts when it enters

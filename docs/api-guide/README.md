@@ -2,14 +2,14 @@
 
 # Understanding the API
 
-@:todo(I want a discussion here about lazy and strict positions, that's a very important thing to discuss!)
+@:todo(TODO: I want a discussion here about lazy and strict positions, that's a very important thing to discuss!)
 
 ## Main Classes and Packages
 In `parsley`, everything resides within the @:api(parsley) package, and the major entry point is
 [`parsley.Parsley`][@:api(parsley.Parsley)].
 There are a few modules of note:
 
-* [`parsley.Parsley`](parsley.md):
+* [`parsley.Parsley`](Parsley.md):
   contains some of the basic and primitive combinators (at least those that aren't methods on
   parsers).
 * [`parsley.combinator`][@:api(parsley.combinator$)]:

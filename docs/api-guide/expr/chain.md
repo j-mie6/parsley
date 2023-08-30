@@ -1,3 +1,6 @@
-{% laika.excludeFromNavigation = true %}
+{%
+laika.title = "`chain`"
+laika.excludeFromNavigation = true
+%}
 
 # Chain Combinators

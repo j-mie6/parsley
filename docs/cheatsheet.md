@@ -4,8 +4,7 @@ laika.versioned = true
 %}
 
 # Parser Combinator Cheatsheet
-@:todo(We should probably just use HTML tables here, then have proper colouring of the signatures)
-@:todo(discuss `as`)
+@:todo(TODO: discuss `as`)
 
 Until you're more comfortable using parser combinators and have a sense for how to piece things
 together, the sheer choice can be daunting. This page is designed to help bridge this gap by
