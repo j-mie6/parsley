@@ -1,5 +1,5 @@
 {%
-laika.title = "`parsley.generic`"
+laika.title = "`parsley.genericbridges`"
 %}
 
 ```scala mdoc:invisible
