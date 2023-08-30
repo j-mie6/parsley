@@ -6,7 +6,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="generator" content="Typelevel Laika + Helium Theme" />
-  <title>precedence</title>
+  <title>Lexer</title>
   
   <meta name="author" content="parsley contributors"/>
   
@@ -27,7 +27,7 @@
     <link rel="stylesheet" type="text/css" href="../../../css/parsley-style.css" />
   <script src="../../../helium/laika-helium.js"></script>
     <script src="../../../helium/laika-versions.js"></script>
-  <script>initVersions("../../../", "/api-guide/expr/precedence.html", "latest", null);</script>
+  <script>initVersions("../../../", "/api-guide/token/Lexer.html", "latest", null);</script>
   
   <script> /* for avoiding page load transitions */ </script>
 </head>
@@ -92,7 +92,7 @@
     <li class="level1 nav-node"><a href="../">Understanding the API</a></li>
     <li class="level2 nav-leaf"><a href="../generic.html"><code>parsley.genericbridges</code></a></li>
     <li class="level2 nav-header"><code>parsley.token</code></li>
-    <li class="level3 nav-leaf"><a href="../token/Lexer.html"><code>Lexer</code></a></li>
+    <li class="level3 active nav-leaf"><a href="#"><code>Lexer</code></a></li>
     <li class="level2 nav-leaf"><a href="../Parsley.html"><code>parsley.Parsley</code></a></li>
     <li class="level1 nav-node"><a href="../../tutorial/">Parser Combinator Tutorial</a></li>
     <li class="level2 nav-leaf"><a href="../../tutorial/basics-of-combinators.html">Basics of Combinators</a></li>
@@ -114,18 +114,85 @@
 
       
 <nav id="page-nav">
-  <p class="header"><a href="#"><code>precedence</code></a></p>
+  <p class="header"><a href="#"><code>Lexer</code></a></p>
 
   <ul class="nav-list">
+    <li class="level1 nav-leaf"><a href="#distinguishing-between-lexeme-and-non-lexeme">Distinguishing Between &quot;Lexeme&quot; and &quot;Non-Lexeme&quot;</a></li>
+    <li class="level1 nav-leaf"><a href="#lexer-lexeme-nonlexeme-numeric"><code>Lexer.{lexeme, nonlexeme}.numeric</code></a></li>
+    <li class="level1 nav-leaf"><a href="#lexer-lexeme-nonlexeme-text"><code>Lexer.{lexeme, nonlexeme}.text</code></a></li>
+    <li class="level1 nav-leaf"><a href="#lexer-lexeme-nonlexeme-symbol"><code>Lexer.{lexeme, nonlexeme}.symbol</code></a></li>
+    <li class="level1 nav-leaf"><a href="#lexer-lexeme-nonlexeme-names"><code>Lexer.{lexeme, nonlexeme}.names</code></a></li>
+    <li class="level1 nav-leaf"><a href="#lexer-lexeme-enclosing-separators"><code>Lexer.lexeme.{enclosing, separators}</code></a></li>
+    <li class="level1 nav-leaf"><a href="#whitespace-sensitive-languages-and-lexer-space">Whitespace-Sensitive Languages and <code>Lexer.space</code></a></li>
   </ul>
 
-  <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/wiki-improvements/docs/api-guide/expr/precedence.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
+  <p class="footer"><a href="https://github.com/j-mie6/parsley/blob/wiki-improvements/docs/api-guide/token/Lexer.md"><i class="icofont-laika edit" title="Edit">&#xef10;</i>Source for this page</a></p>
 </nav>
 
 
       <main class="content">
 
-        <h1 id="precedence-combinators" class="title">Precedence Combinators</h1>
+        <h1 id="lexer-parsley-token-lexer" class="title">Lexer (<code>parsley.token.Lexer</code>)</h1>
+        <p>The <code>Lexer</code> class is the main-entry point to the combinator-based functionality of the <code>parsley.token</code>
+        package. It is given configuration in the form of a <a href="descriptions.html#descriptions-lexicaldesc"><code>LexicalDesc</code></a>
+        and an optional <a href="errors.html#errors-errorconfig"><code>ErrorConfig</code></a>. The internal structure is then a collection
+        of objects that contain various forms of functionality: these are explored in more detail in this
+        page.</p>
+        <p>It is worth noting the highest-level structure:</p>
+        <ul>
+          <li><code>lexeme</code> and <code>nonlexeme</code> are the top level categorisation of functionality, accounting for
+          whitespace</li>
+          <li><code>fully</code> is a combinator designed to be used around the <strong>outer-most</strong> parser, ran <strong>at most once</strong>
+          during a parse, to consume leading whitespace and ensure all input is consumed.</li>
+          <li><code>space</code> is an object that allows for explicit interaction with whitespace parsing: this is
+          really only important for whitespace-sensitive languages, and <code>lexeme</code> should be used for
+          almost all other applications.</li>
+        </ul>
+        <div class="callout info">
+          <i class="icofont-laika info">&#xef4e;</i>
+          <p><em>The Scaladoc for this page can be found at <a class="api" href="https://www.javadoc.io/doc/com.github.j-mie6/parsley_2.13/4.3.1/parsley/token/lexer.html"><code>parsley.token.Lexer</code></a>.</em></p>
+        </div>
+        
+        <h2 id="distinguishing-between-lexeme-and-non-lexeme" class="section"><a class="anchor-link left" href="#distinguishing-between-lexeme-and-non-lexeme"><i class="icofont-laika link">&#xef71;</i></a>Distinguishing Between &quot;Lexeme&quot; and &quot;Non-Lexeme&quot;</h2>
+        <p>Broadly, the <code>Lexer</code> duplicates the vast majority of its functionality between two different
+        objects: <code>lexeme</code> and <code>nonlexeme</code>. Broadly speaking, everything within <code>nonlexeme</code> can be
+        found inside <code>lexeme</code>, but not the other way around. The name &quot;lexeme&quot; is not an amazing one
+        terminology wise, but there is a historical precedence set by <code>parsec</code>.</p>
+        <p><span class="paragraph"> Non-lexeme things </span> 
+        A non-lexeme thing does not care about whitespace: these are raw tokens. It is highly likely that
+        you wouldn&#39;t want to use these in a regular parser, but they may be handy for <strong>custom error handling</strong>
+        or <strong>building composite tokens</strong>.</p>
+        <p><span class="paragraph"> Lexeme things </span>
+        These do account for whitespace that occurs <em>after</em> a token, consuming everything up until the
+        next token. This means there are some extra pieces of functionality available that don&#39;t make much
+        sense for non-lexeme handling. The <code>lexeme</code> object can also be used as a function
+        via its <code>apply</code> method, allowing it to make any parser into one that handles whitespace: this should
+        be done for any composite tokens made with <code>nonlexeme</code>.</p>
+        <div class="callout warning">
+          <i class="icofont-laika warning">&#xf026;</i>
+          <p>Whitespace handling should ideally be handled <em>uniformly</em> by <code>lexeme</code>: it establishes a convention
+          of only consuming <strong>trailing</strong> whitespace, which is <strong>important</strong> for avoiding ambiguity in a parser.
+          If you cannot use <code>lexeme.apply</code>, you <em>must</em> adhere to this same convention.</p>
+          <p>For handling initial whitespace in the parser (before the very first token), you should use <code>Lexer.fully</code>.</p>
+        </div>
+        
+        <h2 id="lexer-lexeme-nonlexeme-numeric" class="section"><a class="anchor-link left" href="#lexer-lexeme-nonlexeme-numeric"><i class="icofont-laika link">&#xef71;</i></a><code>Lexer.{lexeme, nonlexeme}.numeric</code></h2>
+        
+        <h2 id="lexer-lexeme-nonlexeme-text" class="section"><a class="anchor-link left" href="#lexer-lexeme-nonlexeme-text"><i class="icofont-laika link">&#xef71;</i></a><code>Lexer.{lexeme, nonlexeme}.text</code></h2>
+        
+        <h2 id="lexer-lexeme-nonlexeme-symbol" class="section"><a class="anchor-link left" href="#lexer-lexeme-nonlexeme-symbol"><i class="icofont-laika link">&#xef71;</i></a><code>Lexer.{lexeme, nonlexeme}.symbol</code></h2>
+        
+        <h2 id="lexer-lexeme-nonlexeme-names" class="section"><a class="anchor-link left" href="#lexer-lexeme-nonlexeme-names"><i class="icofont-laika link">&#xef71;</i></a><code>Lexer.{lexeme, nonlexeme}.names</code></h2>
+        
+        <h2 id="lexer-lexeme-enclosing-separators" class="section"><a class="anchor-link left" href="#lexer-lexeme-enclosing-separators"><i class="icofont-laika link">&#xef71;</i></a><code>Lexer.lexeme.{enclosing, separators}</code></h2>
+        
+        <h2 id="whitespace-sensitive-languages-and-lexer-space" class="section"><a class="anchor-link left" href="#whitespace-sensitive-languages-and-lexer-space"><i class="icofont-laika link">&#xef71;</i></a>Whitespace-Sensitive Languages and <code>Lexer.space</code></h2>
+        <div class="callout error">
+          <i class="icofont-laika error">&#xeedd;</i>
+          <p>If the <code>LexicalDesc.spaceDesc.whitespaceIsContextDependent</code> flag is turned on it is <strong>crucial</strong> that
+          either the <code>Lexer.fully</code> combinator is used, <em>or</em> <code>Lexer.space.init</code> is ran as the very first thing the
+          top-level parser does. Without this, the context-dependent whitespace will not be set-up correctly!</p>
+        </div>
 
         
 <hr class="footer-rule"/>
