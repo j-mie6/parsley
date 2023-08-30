@@ -10,6 +10,14 @@
 .nav-list code {
     color: var(--primary-color);
 }
+
+/* This renders pure code  */
+.nav-header code {
+    color: var(--secondary-color);
+    text-transform: none;
+    font-size: 1em;
+}
+
 .nav-list .active code {
     color: var(--bg-color);
 }

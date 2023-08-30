@@ -1,4 +1,7 @@
-# Parsley
+{%
+laika.title = "`parsley.Parsley`"
+%}
+# Parsley (`parsley.Parsley`)
 
 All parsers have type `Parsley`, which has many methods (combinators) for composing parsers
 together. The companion object also contains some primitive combinators and parsers.

@@ -24,6 +24,7 @@ object ParsleySitePlugin extends AutoPlugin {
     override def projectSettings: Seq[Def.Setting[_]] = Seq(
         tlFatalWarnings := false, // turn off fatal warnings for mdoc
         tlSiteKeepFiles := false, // FIXME: turn off when docs are stable
+        laikaExtensions += laikaHtmlRenderer(Renderers.backticksToCode),
         laikaConfig :=  LaikaConfig.defaults.withConfigValue(LinkConfig(
                 apiLinks = tlSiteApiUrl.value.map(url => ApiLinks(baseUri = url.toExternalForm)).toSeq,
                 sourceLinks = scmInfo.value.map(scm => SourceLinks(baseUri = scm.browseUrl.toExternalForm, suffix = "scala")).toSeq, //FIXME: not sure this works
@@ -171,4 +172,19 @@ object Icon {
           |</svg>""".stripMargin
     val leaf = InlineSVGIcon(leafSVG, Some("Home"), Styles("leaf"))
     val greenLeaf = Favicon.internal(Path.Root / "icons" / "greenLeaf.svg", "32x32")
+}
+
+object Renderers {
+    import laika.render.HTMLFormatter
+    val backticksToCode: PartialFunction[(HTMLFormatter, Element), String] = {
+        // TODO: generalise to work with backticks within code
+        case (fmt, Text(content, opt)) if content.startsWith("`") && content.endsWith("`") =>
+            val tickless = content.init.tail
+            fmt.parents.lift(2) match {
+                // title of the page?
+                case Some(TemplateSpanSequence(TemplateString(cousin, _) +: _, _)) if cousin.endsWith("<title>") =>
+                    fmt.text(tickless)
+                case _ => fmt.withoutIndentation(_.textElement("code", opt, tickless))
+            }
+    }
 }

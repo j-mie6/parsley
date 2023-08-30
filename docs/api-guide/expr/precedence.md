@@ -1,3 +1,5 @@
-{% laika.excludeFromNavigation = true %}
+{%
+laika.excludeFromNavigation = true
+%}
 
 # Precedence Combinators

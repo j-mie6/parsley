@@ -1,3 +1,7 @@
+{%
+laika.title = "`parsley.generic`"
+%}
+
 ```scala mdoc:invisible
 import parsley.Parsley, Parsley._
 import parsley.genericbridges.ParserBridge1
