@@ -10,6 +10,7 @@ import laika.theme.config.Color
 import parsley.build.ColorTints._
 import org.typelevel.sbt.{TypelevelSitePlugin, TypelevelSettingsPlugin, TypelevelVersioningPlugin}
 import org.typelevel.sbt.site.GenericSiteSettings
+import com.github.sbt.git.GitPlugin.autoImport._
 import sbt.Keys.{scmInfo, homepage, licenses}
 import sbt.{AutoPlugin, Def}
 import TypelevelVersioningPlugin.autoImport._
@@ -50,7 +51,7 @@ object ParsleySitePlugin extends AutoPlugin {
             )
             .site.favIcons(Icon.greenLeaf)
             .site.pageNavigation(
-                sourceBaseURL = Some(s"${scmInfo.value.fold(homepage.value.get.toString)(_.browseUrl.toString)}/blob/master/docs"),
+                sourceBaseURL = Some(s"${scmInfo.value.fold(homepage.value.get.toString)(_.browseUrl.toString)}/blob/${git.gitCurrentBranch.value}/docs"),
             )
             .site.footer(
                 TemplateString("Parsley is distributed under the "),
