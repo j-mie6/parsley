@@ -7,8 +7,13 @@
 }
 
 /* This ensures that code renders properly on the side panels */
-.nav-list code {
+.nav-list li a code {
     color: var(--primary-color);
+}
+#page-nav .header code,
+.nav-list .active code {
+    color: var(--bg-color);
+    text-decoration: none;
 }
 
 /* This renders pure code  */
@@ -16,15 +21,6 @@
     color: var(--secondary-color);
     text-transform: none;
     font-size: 1em;
-}
-
-.nav-list .active code {
-    color: var(--bg-color);
-}
-
-/* As above, but for the header of the page navigation on the right */
-.header code {
-    color: var(--bg-color);
 }
 
 /* We don't want rigid code blocks, they can break if they need to! */
