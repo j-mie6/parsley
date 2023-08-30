@@ -91,7 +91,7 @@
     <li class="level1 active nav-leaf"><a href="#">Cheatsheet</a></li>
     <li class="level1 nav-node"><a href="api-guide/">Understanding the API</a></li>
     <li class="level2 nav-leaf"><a href="api-guide/parsley.html">Parsley</a></li>
-    <li class="level2 nav-leaf"><a href="api-guide/generic.html">Generic Bridges</a></li>
+    <li class="level2 nav-leaf"><a href="api-guide/generic.html">Generic Bridges (<code>parsley.generic</code>)</a></li>
     <li class="level1 nav-node"><a href="tutorial/">Parser Combinator Tutorial</a></li>
     <li class="level2 nav-leaf"><a href="tutorial/basics-of-combinators.html">Basics of Combinators</a></li>
     <li class="level2 nav-leaf"><a href="tutorial/building-expression-parsers.html">Building Expression Parsers</a></li>
@@ -186,7 +186,7 @@
             <tr>
               <td><code>_ &lt;#&gt; _</code></td>
               <td><code>( A =&gt; B</code><br><code>, Parsley[A]</code><br><code>) =&gt; Parsley[B]</code></td>
-              <td>use a function to change the result of a parser. <br><br>(<em>Requires <code>import</code> <code>parsley.extension.HaskellStyleMap</code></em>)</td>
+              <td>use a function to change the result of a parser. <br><br>(<em>Requires <code>import parsley.extension.HaskellStyleMap</code></em>)</td>
               <td>&quot;map&quot;</td>
             </tr>
             <tr>
@@ -202,7 +202,7 @@
               <td>&quot;lift n&quot;</td>
             </tr>
             <tr>
-              <td><code>_ &lt;|&gt; _</code> <br> <code>_ | _</code></td>
+              <td><code>_ &lt;|&gt; _</code> <br> <code>_  |  _</code></td>
               <td><code>( Parsley[A]</code><br><code>, =&gt;Parsley[A]</code><br><code>) =&gt; Parsley[A]</code></td>
               <td>try one parser, and if it fails <em>without consuming input</em> try the second</td>
               <td>&quot;or&quot;</td>

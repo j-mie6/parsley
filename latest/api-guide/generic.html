@@ -6,7 +6,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="generator" content="Typelevel Laika + Helium Theme" />
-  <title>Generic Bridges</title>
+  <title>Generic Bridges (<code>parsley.generic</code>)</title>
   
   <meta name="author" content="parsley contributors"/>
   
@@ -91,7 +91,7 @@
     <li class="level1 nav-leaf"><a href="../cheatsheet.html">Cheatsheet</a></li>
     <li class="level1 nav-node"><a href="index.html">Understanding the API</a></li>
     <li class="level2 nav-leaf"><a href="parsley.html">Parsley</a></li>
-    <li class="level2 active nav-leaf"><a href="#">Generic Bridges</a></li>
+    <li class="level2 active nav-leaf"><a href="#">Generic Bridges (<code>parsley.generic</code>)</a></li>
     <li class="level1 nav-node"><a href="../tutorial/">Parser Combinator Tutorial</a></li>
     <li class="level2 nav-leaf"><a href="../tutorial/basics-of-combinators.html">Basics of Combinators</a></li>
     <li class="level2 nav-leaf"><a href="../tutorial/building-expression-parsers.html">Building Expression Parsers</a></li>
@@ -112,12 +112,12 @@
 
       
 <nav id="page-nav">
-  <p class="header"><a href="#">Generic Bridges</a></p>
+  <p class="header"><a href="#">Generic Bridges (<code>parsley.generic</code>)</a></p>
 
   <ul class="nav-list">
     <li class="level1 nav-leaf"><a href="#what-are-parser-bridges">What are <em>Parser Bridges</em>?</a></li>
     <li class="level1 nav-node"><a href="#how-to-use">How to use</a></li>
-    <li class="level2 nav-leaf"><a href="#parserbridge1-a-b-through-parserbridge22-a-v-w"><code>ParserBridge1[-A, +B]</code> through <code>ParserBridge22[-A, .., -V, +W]</code></a></li>
+    <li class="level2 nav-leaf"><a href="#parserbridge1-t1-r-through-parserbridge22-t1-t22-r"><code>ParserBridge1[-T1, +R]</code> through <code>ParserBridge22[-T1, .., -T22, +R]</code></a></li>
     <li class="level2 nav-leaf"><a href="#parsersingletonbridge-t"><code>ParserSingletonBridge[+T]</code></a></li>
     <li class="level2 nav-leaf"><a href="#parserbridge0-t"><code>ParserBridge0[+T]</code></a></li>
     <li class="level1 nav-node"><a href="#additional-use-cases">Additional Use Cases</a></li>
@@ -132,7 +132,7 @@
 
       <main class="content">
 
-        <h1 id="generic-bridges" class="title">Generic Bridges</h1>
+        <h1 id="generic-bridges-parsley-generic" class="title">Generic Bridges (<code>parsley.generic</code>)</h1>
         <p>The <em>Parser Bridge</em> pattern is a technique for decoupling semantic actions from the parser itself.
         The <code>parsley.genericbridges</code> module contains 23 classes that allow
         you to get started using the technique straight away if you wish.</p>
@@ -148,7 +148,7 @@
 </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Foo</span><span>(</span><span class="identifier">x</span><span>: </span><span class="type-name">Int</span><span>, </span><span class="identifier">y</span><span>: </span><span class="type-name">Int</span><span>)
 </span><span class="comment">// with px, py of type Parsley[Int]
 </span><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = (</span><span class="identifier">px</span><span>, </span><span class="identifier">py</span><span>).</span><span class="identifier">zipped</span><span>(</span><span class="type-name">Foo</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>))
-</span><span class="comment">// p: Parsley[Foo] = parsley.Parsley@1235b18f</span></code></pre>
+</span><span class="comment">// p: Parsley[Foo] = parsley.Parsley@4567c8e8</span></code></pre>
         <p>These work fine for the most part, however, there are couple of problems with this:</p>
         <ol class="arabic">
           <li>In Scala 3, <code>Foo(_, _)</code> actually needs to be written as <code>Foo.apply</code>, which introduces some (minor) noise;
@@ -175,7 +175,7 @@
         with <code>Parsley</code> values. If we assume that the companion object of <code>Foo</code> has been turned into such a
         bridge (definition below), the above example can be written as:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">q</span><span> = </span><span class="type-name">Foo</span><span>(</span><span class="identifier">px</span><span>, </span><span class="identifier">py</span><span>)
-</span><span class="comment">// q: Parsley[Foo] = parsley.Parsley@3a8b2006</span></code></pre>
+</span><span class="comment">// q: Parsley[Foo] = parsley.Parsley@1175db11</span></code></pre>
         <p>In this version, the act of constructing the <code>Foo</code> value has been abstracted behind the bridge, <code>Foo</code>:
         this means that the underlying implementation can vary without changing the parser.</p>
         <p><span class="paragraph"> What are <em>Generic Bridges</em>? </span>
@@ -189,7 +189,7 @@
         <code>ParserBridge22</code> as well as <code>ParserBridge0</code>; they all extend <code>ParserBridgeSingleton</code>, which provides
         some additional combinators.</p>
         
-        <h3 id="parserbridge1-a-b-through-parserbridge22-a-v-w" class="section"><a class="anchor-link left" href="#parserbridge1-a-b-through-parserbridge22-a-v-w"><i class="icofont-laika link">&#xef71;</i></a><code>ParserBridge1[-A, +B]</code> through <code>ParserBridge22[-A, .., -V, +W]</code></h3>
+        <h3 id="parserbridge1-t1-r-through-parserbridge22-t1-t22-r" class="section"><a class="anchor-link left" href="#parserbridge1-t1-r-through-parserbridge22-t1-t22-r"><i class="icofont-laika link">&#xef71;</i></a><code>ParserBridge1[-T1, +R]</code> through <code>ParserBridge22[-T1, .., -T22, +R]</code></h3>
         <p>Each of these traits are designed to be implemented ideally by a companion object for a <code>case class</code>.
         For example, the <code>Foo</code> class above can have its companion object turned into a bridge by extending
         <code>ParserBridge2</code> (which is for two argument bridges):</p>
@@ -233,7 +233,7 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">character</span><span>.</span><span class="identifier">stringLift</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">term</span><span> = </span><span class="identifier">chain</span><span>.</span><span class="identifier">left1</span><span>(</span><span class="identifier">px</span><span>, </span><span class="type-name">Add</span><span>.</span><span class="identifier">from</span><span>(</span><span class="string-literal">&quot;+&quot;</span><span>)) </span><span class="comment">// or `Add &lt;# &quot;+&quot;`
-// term: Parsley[Int] = parsley.Parsley@52c196d7</span></code></pre>
+// term: Parsley[Int] = parsley.Parsley@63ce56c2</span></code></pre>
         <p>They are analogous to the <code>as</code> and <code>#&gt;</code> combinators respectively.</p>
         
         <h3 id="parserbridge0-t" class="section"><a class="anchor-link left" href="#parserbridge0-t"><i class="icofont-laika link">&#xef71;</i></a><code>ParserBridge0[+T]</code></h3>
@@ -247,7 +247,7 @@
         giving it access to <code>from</code> and <code>&lt;#</code> only (no <code>apply</code> for this one!). What this means is that
         you can now write the following:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">nullLit</span><span> = </span><span class="type-name">NullLit</span><span> &lt;# </span><span class="string-literal">&quot;null&quot;</span><span>
-</span><span class="comment">// nullLit: Parsley[Expr] = parsley.Parsley@7dea9f70
+</span><span class="comment">// nullLit: Parsley[Expr] = parsley.Parsley@1cdc97e3
 </span><span class="identifier">nullLit</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;null&quot;</span><span>)
 </span><span class="comment">// res2: parsley.Result[String, Expr] = Success(NullLit)</span></code></pre>
         <p>Without any further configuration, notice that the result of parsing <code>&quot;null&quot;</code> is indeed <code>NullLit</code>,
@@ -314,7 +314,7 @@
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="comment">// from `parsley-cats`, produces `NonEmptyList` instead of `List`
 </span><span class="keyword">import</span><span> </span><span class="identifier">parsley</span><span>.</span><span class="identifier">cats</span><span>.</span><span class="identifier">combinator</span><span>.</span><span class="identifier">sepBy1</span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">tupleOrParens</span><span> = </span><span class="type-name">TupleOrParens</span><span>(</span><span class="string-literal">&quot;(&quot;</span><span> ~&gt; </span><span class="identifier">sepBy1</span><span>(</span><span class="identifier">nullLit</span><span>, </span><span class="string-literal">&quot;,&quot;</span><span>) &lt;~ </span><span class="string-literal">&quot;)&quot;</span><span>)
-</span><span class="comment">// tupleOrParens: Parsley[Expr] = parsley.Parsley@543788f7
+</span><span class="comment">// tupleOrParens: Parsley[Expr] = parsley.Parsley@247156a6
 </span><span class="identifier">tupleOrParens</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;(null)&quot;</span><span>)
 </span><span class="comment">// res4: parsley.Result[String, Expr] = Success(NullLit)
 </span><span class="identifier">tupleOrParens</span><span>.</span><span class="identifier">parse</span><span>(</span><span class="string-literal">&quot;(null,null)&quot;</span><span>)

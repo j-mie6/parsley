@@ -5,3 +5,22 @@
     display:inline-block;
     margin-right: 1em;
 }
+
+/* This ensures that code renders properly on the side panels */
+.nav-list code {
+    color: var(--primary-color);
+}
+.nav-list .active code {
+    color: var(--bg-color);
+}
+
+/* As above, but for the header of the page navigation on the right */
+.header code {
+    color: var(--bg-color);
+}
+
+/* We don't want rigid code blocks, they can break if they need to! */
+code {
+    white-space: pre-wrap; /*break-spaces?*/
+    overflow-wrap: break-word; /*this allows long contiguous text to be broken*/
+}
