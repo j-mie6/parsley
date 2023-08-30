@@ -2,8 +2,7 @@
 import parsley.Parsley, Parsley._
 import parsley.genericbridges.ParserBridge1
 ```
-
-# Generic Bridges
+# Generic Bridges (`parsley.generic`)
 
 The *Parser Bridge* pattern is a technique for decoupling semantic actions from the parser itself.
 The `parsley.genericbridges` module contains 23 classes that allow
@@ -70,7 +69,7 @@ The [`parsley.genericbridges`][@:api(parsley.genericbridges$)] module contains `
 `ParserBridge22` as well as `ParserBridge0`; they all extend `ParserBridgeSingleton`, which provides
 some additional combinators.
 
-### `ParserBridge1[-A, +B]` through `ParserBridge22[-A, .., -V, +W]`
+### `ParserBridge1[-T1, +R]` through `ParserBridge22[-T1, .., -T22, +R]`
 Each of these traits are designed to be implemented ideally by a companion object for a `case class`.
 For example, the `Foo` class above can have its companion object turned into a bridge by extending
 `ParserBridge2` (which is for two argument bridges):
