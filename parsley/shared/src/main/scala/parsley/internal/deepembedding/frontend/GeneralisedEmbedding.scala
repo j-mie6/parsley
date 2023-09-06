@@ -15,7 +15,7 @@ private [frontend] abstract class Unary[A, B](p: LazyParsley[A]) extends LazyPar
 
     final override def findLetsAux[M[_, +_]: ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R,Unit] =
         suspend(p.findLets(seen))
-    override def preprocess[M[_, +_]: ContOps, R, B_ >: B](implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[B_]] =
+    override def preprocess[M[_, +_]: ContOps, R, B_ >: B](implicit lets: LetMap): M[R, StrictParsley[B_]] =
         for (p <- suspend(p.optimised[M, R, A])) yield make(p)
 }
 
@@ -27,7 +27,7 @@ private [frontend] abstract class Binary[A, B, C](left: LazyParsley[A], _right: 
     final override def findLetsAux[M[_, +_]: ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R,Unit] = {
         suspend(left.findLets[M, R](seen)) >> suspend(right.findLets(seen))
     }
-    final override def preprocess[M[_, +_]: ContOps, R, C_ >: C](implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[C_]] =
+    final override def preprocess[M[_, +_]: ContOps, R, C_ >: C](implicit lets: LetMap): M[R, StrictParsley[C_]] =
         for {
             left <- suspend(left.optimised[M, R, A])
             right <- suspend(right.optimised[M, R, B])
@@ -43,7 +43,7 @@ private [frontend] abstract class Ternary[A, B, C, D](first: LazyParsley[A], _se
     final override def findLetsAux[M[_, +_]: ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit] = {
         suspend(first.findLets[M, R](seen)) >> suspend(second.findLets(seen)) >> suspend(third.findLets(seen))
     }
-    final override def preprocess[M[_, +_]: ContOps, R, D_ >: D](implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[D_]] =
+    final override def preprocess[M[_, +_]: ContOps, R, D_ >: D](implicit lets: LetMap): M[R, StrictParsley[D_]] =
         for {
             first <- suspend(first.optimised[M, R, A])
             second <- suspend(second.optimised[M, R, B])

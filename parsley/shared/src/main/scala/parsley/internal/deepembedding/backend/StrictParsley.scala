@@ -44,17 +44,16 @@ private [deepembedding] trait StrictParsley[+A] {
       * @return the final array of instructions for this parser
       */
     final private [deepembedding] def generateInstructions[M[_, +_]: ContOps](numRegsUsedByParent: Int, usedRegs: Set[Reg[_]],
-                                                                             recs: Iterable[(Rec[_], M[Unit, StrictParsley[_]])])
+                                                                              bodyMap: Map[Let[_], StrictParsley[_]])
                                                                             (implicit state: CodeGenState): Array[Instr] = {
         implicit val instrs: InstrBuffer = newInstrBuffer
         perform {
             generateCalleeSave[M, Array[Instr]](numRegsUsedByParent, this.codeGen, usedRegs) |> {
                 // When `numRegsUsedByParent` is -1 this is top level, otherwise it is a flatMap
                 instrs += (if (numRegsUsedByParent >= 0) instructions.Return else instructions.Halt)
-                val recRets = finaliseRecs(recs)
-                val letRets = finaliseLets()
+                val letRets = finaliseLets(bodyMap)
                 generateHandlers(state.handlers)
-                finaliseInstrs(instrs, state.nlabels, recRets ::: letRets)
+                finaliseInstrs(instrs, state.nlabels, letRets)
             }
         }
     }
@@ -171,45 +170,23 @@ private [deepembedding] object StrictParsley {
         else bodyGen
     }
 
-    /** Generates each of the given recursive parsers in turn into the instruction buffer.
-      * Each has already been assigned a jump-label, which is stored in the `Rec` node itself.
-      * The layout of generation is the jump-label, followed by the body, followed by a `Return`.
-      *
-      * @param recs a supply of `Rec` nodes along with the generator for their strict parsers
-      * @param instrs the instruction buffer to generate into
-      * @param state the code generation state, for label generation
-      * @return the list of return labels for each of the parsers (for TCO)
-      */
-    private def finaliseRecs[M[_, +_]: ContOps](recs: Iterable[(Rec[_], M[Unit, StrictParsley[_]])])
-                                                 (implicit instrs: InstrBuffer, state: CodeGenState): List[RetLoc] = {
-        val retLocs = mutable.ListBuffer.empty[RetLoc]
-        for ((rec, p) <- recs) {
-            instrs += new instructions.Label(rec.label)
-            perform(p.flatMap(_.codeGen))
-            val retLoc = state.freshLabel()
-            instrs += new instructions.Label(retLoc)
-            instrs += instructions.Return
-            retLocs += retLoc
-        }
-        retLocs.toList
-    }
-
     /** Generates each of the shared, non-recursive, parsers that have been ''used'' by
       * the parser. These are stored within the code generation state. This is done because
       * some of the identified shared parsers may have been inlined and so do not need to
       * be generated. The state tracks which of these parsers were actually demanded, so
       * dead-code is automatically eliminated.
       *
+      * @param bodyMap the map of lets to bodies
       * @param instrs the instruction buffer to generate into
       * @param state the code generation state, which contains the shared parsers
       * @return the list of return labels for each of the parsers (for TCO)
       */
-    private def finaliseLets[M[_, +_]: ContOps]()(implicit instrs: InstrBuffer, state: CodeGenState): List[RetLoc] = {
+    private def finaliseLets[M[_, +_]: ContOps](bodyMap: Map[Let[_], StrictParsley[_]])(implicit instrs: InstrBuffer, state: CodeGenState): List[RetLoc] = {
         val retLocs = mutable.ListBuffer.empty[RetLoc]
         while (state.more) {
             val let = state.nextLet()
             instrs += new instructions.Label(let.label)
-            perform[M, Unit](let.p.codeGen)
+            perform[M, Unit](bodyMap(let).codeGen)
             val retLoc = state.freshLabel()
             instrs += new instructions.Label(retLoc)
             instrs += instructions.Return

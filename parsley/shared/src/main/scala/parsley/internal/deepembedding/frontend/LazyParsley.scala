@@ -74,14 +74,12 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
       */
     protected def findLetsAux[M[_, +_]: ContOps, R](seen: Set[LazyParsley[_]])(implicit state: LetFinderState): M[R, Unit]
 
-    /** Describes how to recursively convert this combinator into a `StrictParsley` by
-      * `optimise`ing its sub-trees.
+    /** Describes how to recursively convert this combinator into a `StrictParsley` by `optimise`ing its sub-trees.
       *
-      * @param lets the known non-recursive shared parsers mapped to their corresponding join-point nodes
-      * @param recs the known recursive parsers mapped to their corresponding join-point nodes
+      * @param lets the known shared parsers mapped to their corresponding join-point nodes
       * @return the strict, finite, version of this tree, with all shared parsers factored out into join-points
       */
-    protected def preprocess[M[_, +_]: ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]]
+    protected def preprocess[M[_, +_]: ContOps, R, A_ >: A](implicit lets: LetMap): M[R, StrictParsley[A_]]
 
     /** should the `Id` instance be skipped? */
     final private var cps = false
@@ -116,11 +114,11 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
         (perform[M, Array[Instr]] {
             findLets(Set.empty) >> {
                 val usedRegs: Set[Reg[_]] = letFinderState.usedRegs
-                implicit val state: backend.CodeGenState = new backend.CodeGenState(letFinderState.numRegs)
-                implicit val recMap: RecMap = RecMap(letFinderState.recs)
-                implicit val letMap: LetMap = LetMap(letFinderState.lets)
-                val recs_ = recMap.map { case (p, rec) => (rec, p.unsafeOptimised[M, Unit, Any]) }
-                for { sp <- this.optimised } yield sp.generateInstructions(numRegsUsedByParent, usedRegs, recs_)
+                implicit val letMap: LetMap = LetMap(letFinderState.lets, letFinderState.recs)
+                for { sp <- this.optimised } yield {
+                    implicit val state: backend.CodeGenState = new backend.CodeGenState(letFinderState.numRegs)
+                    sp.generateInstructions(numRegsUsedByParent, usedRegs, letMap.bodies)
+                }
             }
         }, letFinderState.numRegs)
     }
@@ -163,23 +161,20 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
     /** Performs the factoring out of shared parsers and then converts this parser into its strict form performing
       * optimisations on that translated form.
       *
-      * @param lets the known non-recursive shared parsers mapped to their corresponding join-point nodes
-      * @param recs the known recursive parsers mapped to their corresponding join-point nodes
+      * @param lets the known shared parsers mapped to their corresponding join-point nodes
       * @return the strict, finite, version of this tree, with all shared parsers factored out into join-points
       */
-    final protected [frontend] def optimised[M[_, +_]: ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]] = {
-        if (recs.contains(this)) result(recs(this))
-        else if (lets.contains(this)) result(lets(this))
+    final protected [frontend] def optimised[M[_, +_]: ContOps, R, A_ >: A](implicit lets: LetMap): M[R, StrictParsley[A_]] = {
+        if (lets.contains(this)) result(lets(this))
         else this.unsafeOptimised
     }
     /** Similar to `optimised` but should be '''only''' used on things known to be let-bindings (to avoid infinite expansion!). */
-    final private [frontend] def knownLetTopOptimised[M[_, +_]: ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]] = {
+    final private [frontend] def knownLetTopOptimised[M[_, +_]: ContOps, R, A_ >: A](implicit lets: LetMap): M[R, StrictParsley[A_]] = {
         assume(lets.contains(this), "the let check can only be skipped for known let-bindings")
-        assume(!recs.contains(this), "rec membership can be skipped for known let-binding bodies")
         this.unsafeOptimised
     }
-    /** Similar to `optimised` but does not check for inclusion in the `lets` or `recs` sets. */
-    private def unsafeOptimised[M[_, +_]: ContOps, R, A_ >: A](implicit lets: LetMap, recs: RecMap): M[R, StrictParsley[A_]] = {
+    /** Similar to `optimised` but does not check for inclusion in the `lets` set. */
+    private def unsafeOptimised[M[_, +_]: ContOps, R, A_ >: A](implicit lets: LetMap): M[R, StrictParsley[A_]] = {
         for { p <- this.preprocess } yield p.optimise
     }
 
@@ -193,12 +188,11 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
         implicit val ops = Id.ops
         implicit val letFinderState: LetFinderState = new LetFinderState
         findLets(Set.empty)
+        implicit val letMap: LetMap = LetMap(letFinderState.lets, letFinderState.recs)
         implicit val state: backend.CodeGenState = new backend.CodeGenState(0)
-        implicit val recMap: RecMap = RecMap(letFinderState.recs)
-        implicit val letMap: LetMap = LetMap(letFinderState.lets)
         val mrecs = for {
-            (p, rec) <- recMap
-        } yield s"${rec.label}: ${p.unsafeOptimised[Id.Impl, String, Any].pretty}"
+            (let, p) <- letMap.bodies
+        } yield s"${let.label}: ${p.pretty}"
         s"main body: ${this.optimised.pretty}\n${mrecs.mkString("\n")}"
     }
     // $COVERAGE-ON$
@@ -236,10 +230,11 @@ private [deepembedding] class LetFinderState {
     /** Has the given parser never been analysed before? */
     private [frontend] def notProcessedBefore(p: LazyParsley[_]): Boolean = _preds(p) == 1
 
+    // TODO: I think this can just drop the !_recs(p) constraint and it'll just work? (check whether recs get a pred bump)
     /** Returns all the non-recursive parsers which are referenced two or more times across the tree. */
     private [frontend] def lets: Iterable[LazyParsley[_]] = _preds.toSeq.view.collect {
         case (p, refs) if refs >= 2 && !_recs(p) => p
-    }
+    } ++ recs
     /** Returns all the recursive parsers in the tree */
     private [frontend] lazy val recs: Set[LazyParsley[_]] = _recs.toSet
     /** Returns all the registers used by the parser */
@@ -249,9 +244,10 @@ private [deepembedding] class LetFinderState {
 }
 
 /** Represents a map of let-bound lazy parsers to their strict equivalents. */
-private [deepembedding] final class LetMap private (letGen: Map[LazyParsley[_], LetMap => StrictParsley[_]]) {
+private [deepembedding] final class LetMap private (letGen: Map[LazyParsley[_], LetMap => StrictParsley[_]], recs: Set[LazyParsley[_]]) {
     // This might not necessarily contain Let nodes: if they were inlined then they will not be present here
-    private val mutMap = mutable.Map.empty[LazyParsley[_], StrictParsley[_]]
+    private val letMap = mutable.Map.empty[LazyParsley[_], StrictParsley[_]]
+    private val bodyMap = mutable.Map.empty[backend.Let[_], StrictParsley[_]]
 
     /** Is the given parser a let-binding? */
     def contains(p: LazyParsley[_]): Boolean = letGen.contains(p)
@@ -260,14 +256,28 @@ private [deepembedding] final class LetMap private (letGen: Map[LazyParsley[_], 
       *
       * @note this does not necessary return a `Let` node, as the underlying parser may be inlined.
       */
-    def apply[A](p: LazyParsley[A]): StrictParsley[A] = mutMap.getOrElseUpdate(p, {
-        assume(contains(p), "only let-bound parsers can be mapped to a strict version in the let-map")
-        val sp = letGen(p)(this)
-        if (sp.inlinable) sp else new backend.Let(sp)
-    }).asInstanceOf[StrictParsley[A]]
+    def apply[A](p: LazyParsley[A]): StrictParsley[A] = letMap.get(p) match {
+        case Some(let) => let.asInstanceOf[StrictParsley[A]]
+        case None =>
+            assume(contains(p), "only let-bound parsers can be mapped to a strict version in the let-map")
+            val ourLet = new backend.Let[A]
+            // MUST be added before processing the body
+            letMap(p) = ourLet
+            val sp = letGen(p)(this)
+            if (sp.inlinable && !recs.contains(p)) {
+                letMap(p) = sp
+                sp.asInstanceOf[StrictParsley[A]]
+            }
+            else {
+                bodyMap(ourLet) = sp
+                ourLet
+            }
+    }
+
+    def bodies: Map[backend.Let[_], StrictParsley[_]] = bodyMap.toMap
 
     // $COVERAGE-OFF$
-    override def toString: String = mutMap.toString
+    override def toString: String = letMap.toString
     // $COVERAGE-ON$
 }
 private [frontend] object LetMap {
@@ -276,37 +286,10 @@ private [frontend] object LetMap {
       * @param lets the identified shared non-recursive parsers to include
       * @param recs the identified recursive parsers that may be required in the translation
       */
-    def apply[M[_, +_]: ContOps](lets: Iterable[LazyParsley[_]])(implicit recs: RecMap): LetMap = {
+    def apply[M[_, +_]: ContOps](lets: Iterable[LazyParsley[_]], recs: Set[LazyParsley[_]]): LetMap = {
         new LetMap(lets.map(p => p -> ((_self: LetMap) => {
             implicit val self: LetMap = _self
             perform[M, StrictParsley[_]](p.knownLetTopOptimised)
-        })).toMap)
-    }
-}
-
-/** Represents the map of lazy recursive parsers to their strict `Rec` node join-points. */
-private [deepembedding] final class RecMap private (map: Map[LazyParsley[_], backend.Rec[_]]) extends Iterable[(LazyParsley[_], backend.Rec[_])] {
-    /** Is the given parser recursive? */
-    def contains(p: LazyParsley[_]): Boolean = map.contains(p)
-
-    /** Returns the `Rec` node that corresponds to a given recursive parser. */
-    def apply[A](p: LazyParsley[A]): backend.Rec[A] = map(p).asInstanceOf[backend.Rec[A]]
-
-    /** An iterator over all the key-value pairs in this map */
-    override def iterator: Iterator[(LazyParsley[_], backend.Rec[_])] = map.iterator
-
-    // $COVERAGE-OFF$
-    override def toString: String = map.toString
-    // $COVERAGE-ON$
-}
-private [frontend] object RecMap {
-    /** Creates a `RecMap` given all the recursive parsers identified by let-finding.
-      * This will map each parser to a `Rec` node in the strict combinator tree.
-      *
-      * @param recs all of the recursive parsers to fill the map with
-      * @param state code-generation state, required to generate labels for the `Call` instructions.
-      */
-    def apply(recs: Iterable[LazyParsley[_]])(implicit state: backend.CodeGenState): RecMap = {
-        new RecMap(recs.map(p => p -> new backend.Rec(new instructions.Call(state.freshLabel()))).toMap)
+        })).toMap, recs)
     }
 }
