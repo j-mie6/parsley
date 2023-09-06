@@ -208,7 +208,7 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
             assume(before.nonEmpty, "before cannot be empty because after is empty")
             val last = before.last
             before.initInPlace()
-            suspend(Seq.codeGenMany[M, R](before.iterator, producesResults)) >> {
+            suspend(Seq.codeGenMany[M, R](before.iterator)) >> {
                 last match {
                     case ct@CharTok(c) => result(instrs += instructions.CharTokFastPerform[Char, A](c, _ => x, ct.expected))
                     case st@StringTok(s) => result(instrs += instructions.StringTokFastPerform(s, _ => x, st.expected))
@@ -220,9 +220,9 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
                 }
             }
         case _ =>
-            suspend(Seq.codeGenMany[M, R](before.iterator, producesResults)) >> {
+            suspend(Seq.codeGenMany[M, R](before.iterator)) >> {
                 suspend(res.codeGen[M, R](producesResults)) >> {
-                    suspend(Seq.codeGenMany(after.iterator, producesResults))
+                    suspend(Seq.codeGenMany(after.iterator))
                 }
             }
     }
@@ -236,12 +236,12 @@ private [backend] object Seq {
         Some((self.before, self.res, self.after))
     }
 
-    private [Seq] def codeGenMany[M[_, +_]: ContOps, R](it: Iterator[StrictParsley[_]], producesResults: Boolean)
+    private [Seq] def codeGenMany[M[_, +_]: ContOps, R](it: Iterator[StrictParsley[_]])
                                                        (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         if (it.hasNext) {
-            suspend(it.next().codeGen[M, R](producesResults)) >> {
+            suspend(it.next().codeGen[M, R](producesResults = false)) >> {
                 instrs += instructions.Pop
-                suspend(codeGenMany(it, producesResults))
+                suspend(codeGenMany(it))
             }
         } else result(())
     }
