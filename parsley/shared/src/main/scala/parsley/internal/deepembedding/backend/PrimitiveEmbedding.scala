@@ -48,6 +48,7 @@ private [deepembedding] final class NotFollowedBy[A](val p: StrictParsley[A]) ex
             instrs += instructions.NegLookFail
             instrs += new instructions.Label(handler)
             instrs += instructions.NegLookGood
+            instrs += instructions.Push.Unit
         }
     }
     // $COVERAGE-OFF$
@@ -79,8 +80,10 @@ private [deepembedding] final class Opaque[A](p: StrictParsley[A]) extends Stric
 
 private [deepembedding] final class Put[S](reg: Reg[S], val p: StrictParsley[S]) extends Unary[S, Unit] {
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
-        suspend(p.codeGen[M, R](producesResults = true)) |>
-        (instrs += new instructions.Put(reg.addr))
+        suspend(p.codeGen[M, R](producesResults = true)) |> {
+            instrs += new instructions.Put(reg.addr)
+            instrs += instructions.Push.Unit
+        }
     }
     // $COVERAGE-OFF$
     final override def pretty(p: String): String = s"put(r${reg.addr}, $p)"

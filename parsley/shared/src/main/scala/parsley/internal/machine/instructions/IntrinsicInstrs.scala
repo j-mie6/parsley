@@ -214,7 +214,7 @@ private [internal] object NegLookGood extends Instr {
         // A failure is what we wanted
         ctx.good = true
         ctx.errs = ctx.errs.tail
-        ctx.pushAndContinue(())
+        ctx.inc()
     }
     // $COVERAGE-OFF$
     override def toString: String = "NegLookGood"

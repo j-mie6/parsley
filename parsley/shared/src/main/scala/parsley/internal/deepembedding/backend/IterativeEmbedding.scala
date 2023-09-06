@@ -16,7 +16,8 @@ import parsley.internal.machine.instructions
 import StrictParsley.InstrBuffer
 
 private [backend] sealed abstract class ManyLike[A, B](name: String, unit: B) extends Unary[A, B] {
-    def instr(label: Int): instructions.Instr
+    def genInstr(label: Int)(implicit instrs: InstrBuffer): Unit
+    def genPostBody()(implicit instrs: InstrBuffer): Unit
     def preamble(instrs: InstrBuffer): Unit
     final override def optimise: StrictParsley[B] = p match {
         case _: Pure[_] => throw new NonProductiveIterationException(name) // scalastyle:ignore throw
@@ -30,20 +31,26 @@ private [backend] sealed abstract class ManyLike[A, B](name: String, unit: B) ex
         instrs += new instructions.PushHandler(handler)
         instrs += new instructions.Label(body)
         suspend(p.codeGen[M, R](producesResults)) |> {
+            genPostBody()
             instrs += new instructions.Label(handler)
-            instrs += instr(body)
+            genInstr(body)
         }
     }
 }
 private [deepembedding] final class Many[A](val p: StrictParsley[A]) extends ManyLike[A, List[A]]("many", Nil) {
-    override def instr(label: Int): instructions.Instr = new instructions.Many(label)
+    override def genInstr(label: Int)(implicit instrs: InstrBuffer): Unit = instrs += new instructions.Many(label)
+    override def genPostBody()(implicit instrs: InstrBuffer): Unit = ()
     override def preamble(instrs: InstrBuffer): Unit = instrs += new instructions.Fresh(mutable.ListBuffer.empty[Any])
     // $COVERAGE-OFF$
     final override def pretty(p: String): String = s"many($p)"
     // $COVERAGE-ON$
 }
 private [deepembedding] final class SkipMany[A](val p: StrictParsley[A]) extends ManyLike[A, Unit]("skipMany", ()) {
-    override def instr(label: Int): instructions.Instr = new instructions.SkipMany(label)
+    override def genInstr(label: Int)(implicit instrs: InstrBuffer): Unit = {
+        instrs += new instructions.SkipMany(label)
+        instrs += instructions.Push.Unit
+    }
+    override def genPostBody()(implicit instrs: InstrBuffer): Unit = instrs += instructions.Pop
     override def preamble(instrs: InstrBuffer): Unit = ()
     // $COVERAGE-OFF$
     final override def pretty(p: String): String = s"skipMany($p)"

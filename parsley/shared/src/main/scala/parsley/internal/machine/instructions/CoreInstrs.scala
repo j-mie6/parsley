@@ -21,6 +21,9 @@ private [internal] final class Push[A](x: A) extends Instr {
     override def toString: String = s"Push($x)"
     // $COVERAGE-ON$
 }
+private [internal] object Push {
+    val Unit = new Push(())
+}
 
 private [internal] final class Fresh[A](x: =>A) extends Instr {
     override def apply(ctx: Context): Unit = {

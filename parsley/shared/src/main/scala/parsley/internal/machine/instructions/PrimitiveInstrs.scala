@@ -120,7 +120,7 @@ private [internal] final class Get(reg: Int) extends Instr {
 private [internal] final class Put(reg: Int) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        ctx.writeReg(reg, ctx.stack.peekAndExchange(()))
+        ctx.writeReg(reg, ctx.stack.upop())
         ctx.inc()
     }
     // $COVERAGE-OFF$

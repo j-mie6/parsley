@@ -35,7 +35,6 @@ private [internal] final class Many(var label: Int) extends InstrWithLabel {
 private [internal] final class SkipMany(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         if (ctx.good) {
-            ctx.stack.pop_()
             ctx.updateCheckOffset()
             ctx.pc = label
         }
@@ -43,7 +42,7 @@ private [internal] final class SkipMany(var label: Int) extends InstrWithLabel {
         else ctx.catchNoConsumed(ctx.handlers.check) {
             ctx.handlers = ctx.handlers.tail
             ctx.addErrorToHintsAndPop()
-            ctx.pushAndContinue(())
+            ctx.inc()
         }
     }
     // $COVERAGE-OFF$
