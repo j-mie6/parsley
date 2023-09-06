@@ -21,6 +21,7 @@ private [parsley] final class SoftKeyword(private [SoftKeyword] val specific: St
     // $COVERAGE-ON$
     override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
         instrs += new instructions.token.SoftKeyword(specific, letter, caseSensitive, expected, expectedEnd)
+        instrs += instructions.Push.Unit
     }
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = {
@@ -35,6 +36,7 @@ private [parsley] final class SoftOperator(private [SoftOperator] val specific: 
     // $COVERAGE-ON$
     override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
         instrs += new instructions.token.SoftOperator(specific, letter, ops, expected, expectedEnd)
+        instrs += instructions.Push.Unit
     }
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = {

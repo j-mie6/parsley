@@ -43,7 +43,10 @@ private [parsley] object Eof extends Singleton[Unit] {
     // $COVERAGE-OFF$
     override def pretty: String = "eof"
     // $COVERAGE-ON$
-    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = instrs += instructions.Eof
+    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
+        instrs += instructions.Eof
+        instrs += instructions.Push.Unit
+    }
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = visitor.visit(this, context)
 }
@@ -61,7 +64,10 @@ private [parsley] final class Modify[S](val reg: Reg[S], f: S => S) extends Sing
     // $COVERAGE-OFF$
     override def pretty: String = s"modify($reg, ?)"
     // $COVERAGE-ON$
-    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = instrs += instructions.Modify(reg.addr, f)
+    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
+        instrs += instructions.Modify(reg.addr, f)
+        instrs += instructions.Push.Unit
+    }
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = visitor.visit(this, context)(reg, f)
 }

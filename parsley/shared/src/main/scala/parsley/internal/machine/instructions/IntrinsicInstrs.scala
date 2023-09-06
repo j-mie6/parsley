@@ -225,7 +225,7 @@ private [internal] object Eof extends Instr {
     private [this] final val expected = Some(EndOfInput)
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        if (ctx.offset == ctx.inputsz) ctx.pushAndContinue(())
+        if (ctx.offset == ctx.inputsz) ctx.inc()
         else ctx.expectedFail(expected, unexpectedWidth = 1)
     }
     // $COVERAGE-OFF$
@@ -237,7 +237,7 @@ private [internal] final class Modify(reg: Int, f: Any => Any) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         ctx.writeReg(reg, f(ctx.regs(reg)))
-        ctx.pushAndContinue(())
+        ctx.inc()
     }
     // $COVERAGE-OFF$
     override def toString: String = s"Modify($reg, f)"

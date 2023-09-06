@@ -18,7 +18,10 @@ private [parsley] final class WhiteSpace(ws: Char => Boolean, desc: SpaceDesc, e
     extends Singleton[Unit] {
     // $COVERAGE-OFF$
     override val pretty: String = "whiteSpace"
-    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = instrs += new instructions.TokenWhiteSpace(ws, desc, errConfig)
+    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
+        instrs += new instructions.TokenWhiteSpace(ws, desc, errConfig)
+        instrs += instructions.Push.Unit
+    }
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = visitor.visit(this, context)(ws, desc, errConfig)
 }
@@ -26,7 +29,10 @@ private [parsley] final class WhiteSpace(ws: Char => Boolean, desc: SpaceDesc, e
 private [parsley] final class SkipComments(desc: SpaceDesc, errConfig: ErrorConfig) extends Singleton[Unit] {
     // $COVERAGE-OFF$
     override val pretty: String = "skipComments"
-    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = instrs += new instructions.TokenSkipComments(desc, errConfig)
+    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
+        instrs += new instructions.TokenSkipComments(desc, errConfig)
+        instrs += instructions.Push.Unit
+    }
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = visitor.visit(this, context)(desc, errConfig)
 }
@@ -34,7 +40,10 @@ private [parsley] final class SkipComments(desc: SpaceDesc, errConfig: ErrorConf
 private [parsley] final class Comment(desc: SpaceDesc, errConfig: ErrorConfig) extends Singleton[Unit] {
     // $COVERAGE-OFF$
     override val pretty: String = "comment"
-    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = instrs += new instructions.TokenComment(desc, errConfig)
+    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
+        instrs += new instructions.TokenComment(desc, errConfig)
+        instrs += instructions.Push.Unit
+    }
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = visitor.visit(this, context)(desc, errConfig)
 }
