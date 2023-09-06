@@ -22,12 +22,12 @@ denoted here by the regular _by-name_ (`=>A`) syntax. If an argument is
 strict, it means that it will be parsed immediately on entry to the combinator
 before any input can be consumed.
 
-| Combinator          | Type                                                             | Use                                                                                             | Pronounciation    |
-|---------------------|------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|-------------------|
-| `pure(_)` | `A => Parsley[A]`                                                | return a value of type `A` without parsing anything.                                            | "pure"            |
-| `_ *> _` <br> `_ ~> _` | `( Parsley[A]`<br>`, =>Parsley[B]`<br>`) => Parsley[B]`                         | sequence two parsers, returning the result of the **second**.                                   | "then"            |
-| `_ <* _` <br> `_ <~ _` | `( Parsley[A]`<br>`, =>Parsley[B]`<br>`) => Parsley[A]`                         | sequence two parsers, returning the result of the **first**.                                    | "then discard"    |
-| `_.map(_)`          | `( Parsley[A]`<br>`, A => B`<br>`) => Parsley[B]`                             | use a function to change the result of a parser.                                              | "map"             |
+| Combinator             | Type                                                             | Use                                                                                             | Pronounciation    |
+|------------------------|------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|-------------------|
+| `pure(_)`              | `A => Parsley[A]`                                       | return a value of type `A` without parsing anything.                                            | "pure"            |
+| `_ *> _` <br> `_ ~> _` | `( Parsley[A]`<br>`, =>Parsley[B]`<br>`) => Parsley[B]` | sequence two parsers, returning the result of the **second**.                                   | "then"            |
+| `_ <* _` <br> `_ <~ _` | `( Parsley[A]`<br>`, =>Parsley[B]`<br>`) => Parsley[A]` | sequence two parsers, returning the result of the **first**.                                    | "then discard"    |
+| `_.map(_)`             | `( Parsley[A]`<br>`, A => B`<br>`) => Parsley[B]`                             | use a function to change the result of a parser.                                              | "map"             |
 | `_ <#> _`           | `( A => B`<br>`, Parsley[A]`<br>`) => Parsley[B]`                             | use a function to change the result of a parser. <br><br>(_Requires `import parsley.extension.HaskellStyleMap`_)                                                | "map"             |
 | `_ #> _` <br> `_.as(_)`           | `( Parsley[A]`<br>`, B`<br>`) => Parsley[B]`                                  | replace the result of a parser with a fixed value.                                              | "as"              |
 | `liftN(_, .., _)`   | `( (A1, A2, .., An) => B`<br>`, Parsley[A1]`<br>`, =>Parsley[A2]`<br>`, ..`<br>`, =>Parsley[An]`<br>`) => Parsley[B]`| use a function to combine the results of *n* parsers, sequencing them all together.             | "lift n" |
@@ -36,6 +36,56 @@ before any input can be consumed.
 | `lookAhead(_)`      | `Parsley[A] => Parsley[A]`                                       | execute a parser, and roll-back any consumed input if it *succeeded*.                           | "look-ahead"      |
 | `notFollowedBy(_)`  | `Parsley[A] => Parsley[Unit]`                                    | execute a parser, never consuming input: succeed only if the parser fails.                      | "not followed by" |
 | `empty`             | `Parsley[Nothing]`                                               | fails when executed.                                                                            | "empty"           |
+
++------------------+-----------------+
+|    Combinator    | Type            |
++==================+=================+
+| ```scala         | ```scala        |
+| pure(_)          | A => Parsley[A] |
++------------------+-----------------+
+| ```scala         | ```scala        |
+| _ ~> _           | ( Parsley[A]    |
+| _ *> _           | , =>Parsley[B]  |
+|                  | ) => Parsley[B] |
++------------------+-----------------+
+| ```scala         | ```scala        |
+| _ <~ _           | ( Parsley[A]    |
+| _ <* _           | , =>Parsley[B]  |
+|                  | ) => Parsley[A] |
++------------------+-----------------+
+| ```scala         | ```scala        |
+| _.map(_)         | ( Parsley[A]    |
+|                  | , A => B        |
+|                  | ) => Parsley[B] |
++------------------+-----------------+
+| ```scala         | ```scala        |
+| _ <#> _          | ( A => B        |
+|                  | , Parsley[A]    |
+|                  | ) => Parsley[B] |
++------------------+-----------------+
+| ```scala         | ```scala        |
+| _ #> _           |                 |
+| _.as(_)          |                 |
++------------------+-----------------+
+| ```scala         | ```scala        |
+| liftN(_, .., _)  |                 |
++------------------+-----------------+
+| ```scala         | ```scala        |
+| _ <|> _          |                 |
+| _  |  _          |                 |
++------------------+-----------------+
+| ```scala         | ```scala        |
+| attempt(_)       |                 |
++------------------+-----------------+
+| ```scala         | ```scala        |
+| lookAhead(_)     |                 |
++------------------+-----------------+
+| ```scala         | ```scala        |
+| notFollowedBy(_) |                 |
++------------------+-----------------+
+| ```scala         | ```scala        |
+| empty            |                 |
++------------------+-----------------+
 
 ### Character Combinators
 
@@ -55,8 +105,8 @@ their own syntax and name. These combinators are lazy in their arguments (but no
 the receiver is parsed first and may consume input, which means the argument
 may contain a recursive position (and must therefore be lazy).
 
-| Combinator          | Type                                                 | Use                                         | Pronounciation    |
-|---------------------|------------------------------------------------------|---------------------------------------------|-------------------|
+| Combinator          | Type                                                   | Use                                         | Pronounciation    |
+|---------------------|--------------------------------------------------------|---------------------------------------------|-------------------|
 | `_ <~> _`           | `(Parsley[A], =>Parsley[B]) => Parsley[(A, B)]`        | combine the results using `(_, _)`          | "zip"             |
 | `_ <*> _`           | `(Parsley[A => B], =>Parsley[A]) => Parsley[B]`        | combine the results using `(f, x) => f(x)`. | "ap"              |
 | `_ <**> _`          | `(Parsley[A], =>Parsley[A => B]) => Parsley[B]`        | combine the results using `(x, f) => f(x)`. | "reverse ap"      |
@@ -207,18 +257,4 @@ used sparingly in idiomatic `parsley` code instead of liberally like in Haskell.
 
 However, it goes without saying that `lift2[A => B, A, B]((f, x) => f(x), pf, px)` is no more
 efficient than `pf <*> px` so the latter is favoured for that use case!
-@:@
-
-@:format(html)
-<!--${cursor.currentDocument.fragments.liftN} -->
-@:@
-@:fragment(liftN)
-```scala
-( (A1, A2, .., An) => B
-, Parsley[A1]
-, =>Parsley[A2]
-, ..
-, =>Parsley[An]
-) => Parsley[B]
-```
 @:@

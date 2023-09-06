@@ -17,6 +17,7 @@ import TypelevelVersioningPlugin.autoImport._
 import TypelevelSitePlugin.autoImport._
 import TypelevelSettingsPlugin.autoImport._
 import laika.sbt.LaikaPlugin.autoImport._
+import laika.bundle.{ExtensionBundle, ParserBundle}
 
 object ParsleySitePlugin extends AutoPlugin {
     override def requires = TypelevelSitePlugin
@@ -24,7 +25,15 @@ object ParsleySitePlugin extends AutoPlugin {
     override def projectSettings: Seq[Def.Setting[_]] = Seq(
         tlFatalWarnings := false, // turn off fatal warnings for mdoc
         tlSiteKeepFiles := false, // FIXME: turn off when docs are stable
-        laikaExtensions += laikaHtmlRenderer(Renderers.backticksToCode),
+        laikaExtensions ++= Seq(
+            laikaHtmlRenderer(Renderers.backticksToCode),
+            new ExtensionBundle {
+                def description = "enables the rst table markup in markdown"
+                override val parsers = ParserBundle(
+                    blockParsers = Seq(laika.rst.TableParsers.gridTable),
+                )
+            }
+        ),
         laikaConfig :=  LaikaConfig.defaults.withConfigValue(LinkConfig(
                 apiLinks = tlSiteApiUrl.value.map(url => ApiLinks(baseUri = url.toExternalForm)).toSeq,
                 sourceLinks = scmInfo.value.map(scm => SourceLinks(baseUri = scm.browseUrl.toExternalForm, suffix = "scala")).toSeq, //FIXME: not sure this works
