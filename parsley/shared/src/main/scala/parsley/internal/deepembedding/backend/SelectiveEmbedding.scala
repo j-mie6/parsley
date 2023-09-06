@@ -19,16 +19,16 @@ private [backend] sealed abstract class BranchLike[A, B, C, D](finaliser: Option
     def instr(label: Int): instructions.Instr
 
     def inlinable: Boolean = false
-    final override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
+    final override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val toP = state.freshLabel()
         val end = state.freshLabel()
-        suspend(b.codeGen[M, R]) >> {
+        suspend(b.codeGen[M, R](producesResults = true)) >> {
             instrs += instr(toP)
-            suspend(q.codeGen[M, R]) >> {
+            suspend(q.codeGen[M, R](producesResults)) >> {
                 for (instr <- finaliser) instrs += instr
                 instrs += new instructions.Jump(end)
                 instrs += new instructions.Label(toP)
-                suspend(p.codeGen[M, R]) |> {
+                suspend(p.codeGen[M, R](producesResults)) |> {
                     for (instr <- finaliser) instrs += instr
                     instrs += new instructions.Label(end)
                 }
@@ -73,14 +73,14 @@ private [backend] sealed abstract class FilterLike[A, B] extends StrictParsley[B
     def inlinable: Boolean = false
     protected def instr(handler: Int, jumpLabel: Int): instructions.Instr
 
-    final override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
+    final override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val handler1 = state.getLabel(instructions.PopStateAndFail)
         val handler2 = state.getLabel(instructions.AmendAndFail(false))
         val jumpLabel = state.freshLabel()
         instrs += new instructions.PushHandlerAndState(handler1)
-        suspend(p.codeGen[M, R]) >> {
+        suspend(p.codeGen[M, R](producesResults = true)) >> {
             instrs += instr(handler2, jumpLabel)
-            suspend(err.codeGen[M, R]) |> {
+            suspend(err.codeGen[M, R](producesResults = true)) |> {
                 instrs += new instructions.Label(jumpLabel)
             }
         }

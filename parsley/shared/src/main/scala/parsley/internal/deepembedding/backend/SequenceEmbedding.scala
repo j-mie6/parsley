@@ -70,19 +70,19 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
             this
         case _ => this
     }
-    override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = left match {
+    override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = left match {
         // pure f <*> p = f <$> p
         case Pure(f) => right match {
             case ct@CharTok(c) => result(instrs += instructions.CharTokFastPerform[Char, B](c, f.asInstanceOf[Char => B], ct.expected))
             case ct@SupplementaryCharTok(c) => result(instrs += instructions.SupplementaryCharTokFastPerform[Int, B](c, f.asInstanceOf[Int => B], ct.expected))
             case st@StringTok(s) => result(instrs += instructions.StringTokFastPerform(s, f.asInstanceOf[String => B], st.expected))
             case _ =>
-                suspend(right.codeGen[M, R]) |>
+                suspend(right.codeGen[M, R](producesResults)) |>
                 (instrs += instructions.Lift1(f))
         }
         case _ =>
-            suspend(left.codeGen[M, R]) >>
-            suspend(right.codeGen[M, R]) |>
+            suspend(left.codeGen[M, R](producesResults)) >>
+            suspend(right.codeGen[M, R](producesResults)) |>
             (instrs += instructions.Apply)
     }
     // $COVERAGE-OFF$
@@ -108,14 +108,16 @@ private [deepembedding] final class >>=[A, B](val p: StrictParsley[A], private [
         case z: MZero => z
         case _ => this
     }
-    override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
-        suspend(p.codeGen[M, R]) |> {
+    override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
+        suspend(p.codeGen[M, R](producesResults = true)) |> {
             instrs += instructions.DynCall[A] { x =>
                 val p = f(x)
+                // FIXME: suppress results within p, then can remove pop
                 p.demandCalleeSave(state.numRegs)
                 if (implicitly[ContOps[M]].isStackSafe) p.overflows()
                 p.instrs
             }
+            //if (!producesResults) instrs += instructions.Pop
         }
     }
     // $COVERAGE-OFF$
@@ -199,28 +201,28 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
         case _ => this
     }
 
-    override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = res match {
+    override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = res match {
         case Pure(x) =>
             // peephole here involves CharTokFastPerform, StringTokFastPerform, and Exchange
             assume(after.isEmpty, "The pure in question is normalised to the end: if result is pure, after is empty.")
             assume(before.nonEmpty, "before cannot be empty because after is empty")
             val last = before.last
             before.initInPlace()
-            suspend(Seq.codeGenMany[M, R](before.iterator)) >> {
+            suspend(Seq.codeGenMany[M, R](before.iterator, producesResults)) >> {
                 last match {
                     case ct@CharTok(c) => result(instrs += instructions.CharTokFastPerform[Char, A](c, _ => x, ct.expected))
                     case st@StringTok(s) => result(instrs += instructions.StringTokFastPerform(s, _ => x, st.expected))
                     case st@Satisfy(f) => result(instrs += new instructions.SatisfyExchange(f, x, st.expected))
                     case _ =>
-                        suspend(last.codeGen[M, R]) |> {
+                        suspend(last.codeGen[M, R](producesResults)) |> {
                             instrs += new instructions.Exchange(x)
                         }
                 }
             }
         case _ =>
-            suspend(Seq.codeGenMany[M, R](before.iterator)) >> {
-                suspend(res.codeGen[M, R]) >> {
-                    suspend(Seq.codeGenMany(after.iterator))
+            suspend(Seq.codeGenMany[M, R](before.iterator, producesResults)) >> {
+                suspend(res.codeGen[M, R](producesResults)) >> {
+                    suspend(Seq.codeGenMany(after.iterator, producesResults))
                 }
             }
     }
@@ -234,12 +236,12 @@ private [backend] object Seq {
         Some((self.before, self.res, self.after))
     }
 
-    private [Seq] def codeGenMany[M[_, +_]: ContOps, R](it: Iterator[StrictParsley[_]])
-                                                      (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
+    private [Seq] def codeGenMany[M[_, +_]: ContOps, R](it: Iterator[StrictParsley[_]], producesResults: Boolean)
+                                                       (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         if (it.hasNext) {
-            suspend(it.next().codeGen[M, R]) >> {
+            suspend(it.next().codeGen[M, R](producesResults)) >> {
                 instrs += instructions.Pop
-                suspend(codeGenMany(it))
+                suspend(codeGenMany(it, producesResults))
             }
         } else result(())
     }

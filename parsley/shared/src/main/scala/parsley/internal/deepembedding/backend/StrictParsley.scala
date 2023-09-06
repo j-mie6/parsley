@@ -48,7 +48,7 @@ private [deepembedding] trait StrictParsley[+A] {
                                                                             (implicit state: CodeGenState): Array[Instr] = {
         implicit val instrs: InstrBuffer = newInstrBuffer
         perform {
-            generateCalleeSave[M, Array[Instr]](numRegsUsedByParent, this.codeGen, usedRegs) |> {
+            generateCalleeSave[M, Array[Instr]](numRegsUsedByParent, this.codeGen(producesResults = true), usedRegs) |> {
                 // When `numRegsUsedByParent` is -1 this is top level, otherwise it is a flatMap
                 instrs += (if (numRegsUsedByParent >= 0) instructions.Return else instructions.Halt)
                 val letRets = finaliseLets(bodyMap)
@@ -63,10 +63,11 @@ private [deepembedding] trait StrictParsley[+A] {
       * It is fine for this method to perform peephole optimisation on the combinators and generate
       * more optimal sequences of instructions in specific circumstances.
       *
+      * @param producesResults is this parser expected to push its result onto the stack?
       * @param instrs the current buffer of instructions to generate into
       * @param state code generator state, for the generation of labels
       */
-    protected [backend] def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit]
+    protected [backend] def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit]
 
     /** This method is directly called by the "frontend" and is used to perform domain-specific
       * optimisations on this parser (usually following the laws of the parser combinators).
@@ -186,7 +187,7 @@ private [deepembedding] object StrictParsley {
         while (state.more) {
             val let = state.nextLet()
             instrs += new instructions.Label(let.label)
-            perform[M, Unit](bodyMap(let).codeGen)
+            perform[M, Unit](bodyMap(let).codeGen(producesResults = true)) //TODO: no!
             val retLoc = state.freshLabel()
             instrs += new instructions.Label(retLoc)
             instrs += instructions.Return

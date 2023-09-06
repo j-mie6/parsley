@@ -16,9 +16,9 @@ import StrictParsley.InstrBuffer
 private [deepembedding] final class Lift2[A, B, C](private val f: (A, B) => C, val left: StrictParsley[A], val right: StrictParsley[B])
     extends StrictParsley[C] {
     def inlinable: Boolean = false
-    override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
-        suspend(left.codeGen[M, R]) >>
-        suspend(right.codeGen[M, R]) |>
+    override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
+        suspend(left.codeGen[M, R](producesResults)) >>
+        suspend(right.codeGen[M, R](producesResults)) |>
         (instrs += instructions.Lift2(f))
     }
     // $COVERAGE-OFF$
@@ -28,10 +28,10 @@ private [deepembedding] final class Lift2[A, B, C](private val f: (A, B) => C, v
 private [deepembedding] final class Lift3[A, B, C, D](private val f: (A, B, C) => D, val p: StrictParsley[A], val q: StrictParsley[B], val r: StrictParsley[C])
     extends StrictParsley[D] {
     def inlinable: Boolean = false
-    override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
-        suspend(p.codeGen[M, R]) >>
-        suspend(q.codeGen[M, R]) >>
-        suspend(r.codeGen[M, R]) |>
+    override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
+        suspend(p.codeGen[M, R](producesResults)) >>
+        suspend(q.codeGen[M, R](producesResults)) >>
+        suspend(r.codeGen[M, R](producesResults)) |>
         (instrs += instructions.Lift3(f))
     }
     // $COVERAGE-OFF$
@@ -41,11 +41,11 @@ private [deepembedding] final class Lift3[A, B, C, D](private val f: (A, B, C) =
 
 private [deepembedding] final class Local[S, A](reg: Reg[S], left: StrictParsley[S], right: StrictParsley[A]) extends StrictParsley[A] {
     def inlinable: Boolean = false
-    override def codeGen[M[_, +_]: ContOps, R](implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
-        suspend(left.codeGen[M, R]) >> {
+    override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
+        suspend(left.codeGen[M, R](producesResults)) >> {
             instrs += new instructions.Get(reg.addr)
             instrs += new instructions.SwapAndPut(reg.addr)
-            suspend(right.codeGen[M, R])|> {
+            suspend(right.codeGen[M, R](producesResults)) |> {
                 instrs += new instructions.SwapAndPut(reg.addr)
             }
         }
