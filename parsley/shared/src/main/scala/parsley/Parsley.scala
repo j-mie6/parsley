@@ -921,7 +921,7 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *
       * @group special
       */
-    def unsafe(): Parsley[A] = new Parsley(new frontend.Opaque(this.internal))
+    def unsafe(): Parsley[A] = new Parsley(new frontend.Opaque(this.internal)) // TODO: in 5.0.0, remove the parens
     // $COVERAGE-ON$
 
     // $COVERAGE-OFF$

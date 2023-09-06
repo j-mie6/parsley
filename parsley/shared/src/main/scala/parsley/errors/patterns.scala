@@ -109,12 +109,11 @@ object patterns {
           */
         def verifiedUnexpected(reason: A => String): Parsley[Nothing] = this.verifiedWithVanillaRaw(x => Some(reason(x)))
 
-
         private def verifiedWith(err: Parsley[((A, Int)) => Nothing]) = amend {
             (offset, atomic(con(p)).newHide, offset).zipped {
                 (s, x, e) => (x, e-s)
             } <**> err
-        }
+        }.unsafe() // need to stop results being optimised away by accident
 
         @inline private def verifiedWithVanilla(unexGen: A => UnexpectedItem, reasonGen: A => Option[String]) = {
             verifiedWith(new Parsley(new singletons.VanillaGen(unexGen, reasonGen)))
@@ -145,7 +144,7 @@ object patterns {
                 case l1 +: _        => err.label(l1)
                 case _              => err
             }
-            amend(select(inner, labelledErr))
+            amend(select(inner, labelledErr)).unsafe() // need to stop results being optimised away by accident
         }
 
         @inline private def preventWithVanilla(unexGen: A => UnexpectedItem, reasonGen: A => Option[String], labels: String*) = {

@@ -42,11 +42,11 @@ private [deepembedding] final class Lift3[A, B, C, D](private val f: (A, B, C) =
 private [deepembedding] final class Local[S, A](reg: Reg[S], left: StrictParsley[S], right: StrictParsley[A]) extends StrictParsley[A] {
     def inlinable: Boolean = false
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
-        suspend(left.codeGen[M, R](producesResults)) >> {
+        suspend(left.codeGen[M, R](producesResults = true)) >> {
             instrs += new instructions.Get(reg.addr)
             instrs += new instructions.SwapAndPut(reg.addr)
             suspend(right.codeGen[M, R](producesResults)) |> {
-                instrs += new instructions.SwapAndPut(reg.addr)
+                instrs += new instructions.SwapAndPut(reg.addr) // TODO: just Put if produces results is off
             }
         }
     }

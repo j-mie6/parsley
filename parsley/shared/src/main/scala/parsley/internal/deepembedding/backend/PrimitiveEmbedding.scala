@@ -69,7 +69,8 @@ private [deepembedding] final class Let[A] extends StrictParsley[A] {
 private [deepembedding] final class Opaque[A](p: StrictParsley[A]) extends StrictParsley[A] {
     def inlinable = p.inlinable
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R,Unit] = {
-        p.codeGen(producesResults)
+        // this blocks result suppression, because the ErrorGen combinators have non-inspectible control flow
+        p.codeGen(producesResults = true)
     }
     // $COVERAGE-OFF$
     def pretty: String = p.pretty
@@ -78,7 +79,7 @@ private [deepembedding] final class Opaque[A](p: StrictParsley[A]) extends Stric
 
 private [deepembedding] final class Put[S](reg: Reg[S], val p: StrictParsley[S]) extends Unary[S, Unit] {
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
-        suspend(p.codeGen[M, R](producesResults)) |>
+        suspend(p.codeGen[M, R](producesResults = true)) |>
         (instrs += new instructions.Put(reg.addr))
     }
     // $COVERAGE-OFF$
@@ -90,12 +91,12 @@ private [deepembedding] final class NewReg[S, A](reg: Reg[S], init: StrictParsle
     def inlinable: Boolean = false
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val handler = state.getLabelForPutAndFail(reg)
-        suspend(init.codeGen[M, R](producesResults)) >> {
+        suspend(init.codeGen[M, R](producesResults = true)) >> {
             instrs += new instructions.Get(reg.addr)
             instrs += new instructions.SwapAndPut(reg.addr)
             instrs += new instructions.PushHandler(handler)
             suspend(body.codeGen[M, R](producesResults)) |> {
-                instrs += new instructions.SwapAndPut(reg.addr)
+                instrs += new instructions.SwapAndPut(reg.addr) // TODO: just Put if produces results is off
                 instrs += instructions.PopHandler
             }
         }
