@@ -763,7 +763,7 @@ object combinator {
 
     // TODO: document and test before release
     private [parsley] def skipManyUntil(p: Parsley[_], end: Parsley[_]): Parsley[Unit] = {
-        new Parsley(new frontend.SkipManyUntil((end.as(ManyUntil.Stop) <|> p: Parsley[Any]).internal))
+        new Parsley(new frontend.SkipManyUntil((end.as(ManyUntil.Stop) <|> p.void: Parsley[Any]).internal))
     }
 
     private [parsley] object ManyUntil {

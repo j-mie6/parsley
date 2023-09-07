@@ -44,7 +44,7 @@ private [deepembedding] final class NotFollowedBy[A](val p: StrictParsley[A]) ex
     final override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val handler = state.freshLabel()
         instrs += new instructions.PushHandlerAndState(handler)
-        suspend[M, R, Unit](p.codeGen(producesResults)) |> {
+        suspend[M, R, Unit](p.codeGen(producesResults = false)) |> {
             instrs += instructions.NegLookFail
             instrs += new instructions.Label(handler)
             instrs += instructions.NegLookGood
