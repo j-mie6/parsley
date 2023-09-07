@@ -67,7 +67,7 @@ private [instructions] sealed abstract class GenRecover extends Instr {
     }
 }
 
-private [internal] final object Recover extends GenRecover {
+private [internal] object Recover extends GenRecover {
     protected override def lastly(ctx: Context): Unit = ctx.inc()
     // $COVERAGE-OFF$
     override def toString: String = "Recover"
@@ -94,7 +94,7 @@ private [internal] sealed abstract class GenAlwaysRecover extends Instr {
     }
 }
 
-private [internal] final object AlwaysRecover extends GenAlwaysRecover {
+private [internal] object AlwaysRecover extends GenAlwaysRecover {
     protected override def lastly(ctx: Context): Unit = ctx.inc()
     // $COVERAGE-OFF$
     override def toString: String = "AlwaysRecover"

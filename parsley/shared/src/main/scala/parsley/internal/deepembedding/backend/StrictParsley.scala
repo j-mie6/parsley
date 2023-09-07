@@ -185,9 +185,9 @@ private [deepembedding] object StrictParsley {
     private def finaliseLets[M[_, +_]: ContOps](bodyMap: Map[Let[_], StrictParsley[_]])(implicit instrs: InstrBuffer, state: CodeGenState): List[RetLoc] = {
         val retLocs = mutable.ListBuffer.empty[RetLoc]
         while (state.more) {
-            val let = state.nextLet()
-            instrs += new instructions.Label(let.label)
-            perform[M, Unit](bodyMap(let).codeGen(producesResults = true)) //TODO: no!
+            val (let, producesResults@_, label) = state.nextLet()
+            instrs += new instructions.Label(label)
+            perform[M, Unit](bodyMap(let).codeGen(producesResults=true))
             val retLoc = state.freshLabel()
             instrs += new instructions.Label(retLoc)
             instrs += instructions.Return
@@ -288,9 +288,9 @@ private [deepembedding] class CodeGenState(val numRegs: Int) {
     /** The next jump-label identifier. */
     private var current = 0
     /** The shared-parsers that have been referenced at some point in the generation so far. */
-    private val queue = mutable.ListBuffer.empty[Let[_]]
+    private val queue = mutable.ListBuffer.empty[(Let[_], Boolean, Int)]
     /** The mapping between a shared-parser and its generated jump-label. */
-    private val map = mutable.Map.empty[Let[_], Int]
+    private val map = mutable.Map.empty[(Let[_], Boolean), Int]
 
     /** Generates a unique jump-label. */
     def freshLabel(): Int = {
@@ -307,13 +307,14 @@ private [deepembedding] class CodeGenState(val numRegs: Int) {
       * @param sub the shared parser to collect a label for
       * @return the label assigned the given parser
       */
-    def getLabel(sub: Let[_]): Int = map.getOrElseUpdate(sub, {
-        sub +=: queue
-        freshLabel()
+    def getLabel(sub: Let[_], producesResults: Boolean): Int = map.getOrElseUpdate((sub, producesResults), {
+        val label = freshLabel()
+        (sub, producesResults, label ) +=: queue
+        label
     })
 
     /** Returns the next shared-parser that has been refered during code generation */
-    def nextLet(): Let[_] = queue.remove(0)
+    def nextLet(): (Let[_], Boolean, Int) = queue.remove(0)
     /** Are there any more shared-parsers left on the processing queue? */
     def more: Boolean = queue.nonEmpty
 
