@@ -929,7 +929,7 @@ object combinator {
     def count1(p: Parsley[_]): Parsley[Int] = p.foldLeft1(0)((n, _) => n + 1)
 
     def range[A](min: Int, max: Int)(p: Parsley[A]): Parsley[List[A]] = fresh(mutable.ListBuffer.empty[A]).persist { xs =>
-        count(min, max)((xs, p).zipped(_ += _)) ~>
+        count(min, max)((xs, p).zipped(_ += _).unsafe()) ~>
         xs.map(_.toList)
     }
     def range_(min: Int, max: Int)(p: Parsley[_]): Parsley[Unit] = count(min, max)(p).void

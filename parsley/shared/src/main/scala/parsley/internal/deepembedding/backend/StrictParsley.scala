@@ -185,9 +185,9 @@ private [deepembedding] object StrictParsley {
     private def finaliseLets[M[_, +_]: ContOps](bodyMap: Map[Let[_], StrictParsley[_]])(implicit instrs: InstrBuffer, state: CodeGenState): List[RetLoc] = {
         val retLocs = mutable.ListBuffer.empty[RetLoc]
         while (state.more) {
-            val (let, producesResults@_, label) = state.nextLet()
+            val (let, producesResults, label) = state.nextLet()
             instrs += new instructions.Label(label)
-            perform[M, Unit](bodyMap(let).codeGen(producesResults=true))
+            perform[M, Unit](bodyMap(let).codeGen(producesResults))
             val retLoc = state.freshLabel()
             instrs += new instructions.Label(retLoc)
             instrs += instructions.Return

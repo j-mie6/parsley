@@ -20,7 +20,7 @@ class InternalTests extends ParsleyTest {
     "subroutines" should "function correctly and be picked up" in {
         val p = satisfy(_ => true) *> satisfy(_ => true) *> satisfy(_ => true)
         val q = 'a' *> p <* 'b' <* p <* 'c'
-        q.internal.instrs.count(_ == instructions.Return) shouldBe 1
+        q.internal.instrs.count(_ == instructions.Return) shouldBe 2 //one is in dropped position
         q.internal.instrs.last should be (instructions.Return)
         q.parse("a123b123c") should be (Success('3'))
     }
@@ -28,14 +28,14 @@ class InternalTests extends ParsleyTest {
     they should "function correctly under error messages" in {
         val p = satisfy(_ => true) *> satisfy(_ => true) *> satisfy(_ => true)
         val q = p.label("err1") *> 'a' *> p.label("err1") <* 'b' <* p.label("err2") <* 'c' <* p.label("err2") <* 'd'
-        q.internal.instrs.count(_ == instructions.Return) shouldBe 1
+        q.internal.instrs.count(_ == instructions.Return) shouldBe 2 //one is in dropped position
         q.parse("123a123b123c123d") should be (Success('3'))
     }
 
     they should "not duplicate subroutines when error label is the same" in {
         val p = satisfy(_ => true) *> satisfy(_ => true) *> satisfy(_ => true)
         val q = 'a' *> p.label("err1") <* 'b' <* p.label("err1") <* 'c'
-        q.internal.instrs.count(_ == instructions.Return) shouldBe 1
+        q.internal.instrs.count(_ == instructions.Return) shouldBe 2 //one is in dropped position
         q.parse("a123b123c") should be (Success('3'))
     }
 

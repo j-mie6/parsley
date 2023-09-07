@@ -192,6 +192,7 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
             val last = before.last
             before.initInPlace()
             suspend(Seq.codeGenMany[M, R](before.iterator)) >> {
+                before.addOne(last) // undo the initInPlace, you'll thank me later
                 last match {
                     case st@Satisfy(f) if producesResults => result(instrs += new instructions.SatisfyExchange(f, x, st.expected))
                     case _ =>
