@@ -74,6 +74,7 @@ private [parsley] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle
     def visit[A](self: NotFollowedBy[A], context: T)(p: LazyParsley[A]): U[Unit]
     def visit[S](self: Put[S], context: T)(reg: Reg[S], p: LazyParsley[S]): U[Unit]
     def visit[S, A](self: NewReg[S, A], context: T)(reg: Reg[S], init: LazyParsley[S], body: =>LazyParsley[A]): U[A]
+    def visit(self: Span, context: T)(p: LazyParsley[_]): U[String]
     def visit[A](self: Debug[A], context: T)(p: LazyParsley[A], name: String, ascii: Boolean, break: Breakpoint): U[A]
     def visit[A](self: DebugError[A], context: T)(p: LazyParsley[A], name: String, ascii: Boolean, errBuilder: ErrorBuilder[_]): U[A]
 
@@ -216,6 +217,7 @@ private [frontend] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
         visitUnary(self, context)(p)
     override def visit[S, A](self: NewReg[S, A], context: T)(reg: Reg[S], init: LazyParsley[S], body: =>LazyParsley[A]): U[A] =
         visitBinary(self, context)(init, body)
+    override def visit(self: Span, context: T)(p: LazyParsley[_]): U[String] = visitUnary[Any, String](self, context)(p)
     override def visit[A](self: Debug[A], context: T)(p: LazyParsley[A], name: String, ascii: Boolean, break: Breakpoint): U[A] =
         visitUnary(self, context)(p)
     override def visit[A](self: DebugError[A], context: T)(p: LazyParsley[A], name: String, ascii: Boolean, errBuilder: ErrorBuilder[_]): U[A] =

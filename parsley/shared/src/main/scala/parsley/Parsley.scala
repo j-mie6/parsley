@@ -901,6 +901,9 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       */
     def flatten[B](implicit ev: A <:< Parsley[B]): Parsley[B] = this.flatMap[B](ev)
 
+    // TODO: documentation and tests
+    def span: Parsley[String] = new Parsley(new frontend.Span(this.internal))
+
     // SPECIAL METHODS
     // $COVERAGE-OFF$
     /** Forces the compilation of a parser as opposed to the regular lazy evaluation.

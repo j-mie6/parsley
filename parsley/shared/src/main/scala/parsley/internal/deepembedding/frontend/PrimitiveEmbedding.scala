@@ -37,6 +37,12 @@ private [parsley] final class NewReg[S, A](val reg: Reg[S], init: LazyParsley[S]
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(reg, init, body)
 }
+private [parsley] final class Span(p: LazyParsley[_]) extends Unary[Any, String](p) {
+    override def make(p: StrictParsley[Any]): StrictParsley[String] = new backend.Span(p)
+
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[String] = visitor.visit(this, context)(p)
+}
+
 // $COVERAGE-OFF$
 private [parsley] final class Debug[A](p: LazyParsley[A], name: String, ascii: Boolean, break: Breakpoint) extends Unary[A, A](p) {
     override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.Debug(p, name, ascii, break)

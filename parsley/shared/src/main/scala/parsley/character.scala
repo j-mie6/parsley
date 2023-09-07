@@ -8,7 +8,7 @@ package parsley
 import scala.collection.immutable.NumericRange
 
 import parsley.Parsley.{atomic, empty, fresh, pure}
-import parsley.combinator.{choice, skipMany}
+import parsley.combinator.{choice, skipMany, skipSome}
 import parsley.errors.combinator.ErrorMethods
 import parsley.token.errors.{Label, LabelConfig, NotConfigured}
 
@@ -406,7 +406,7 @@ object character {
 
     // TODO: document
     // TODO: optimise, this can be _really_ tightly implemented with a substring on the input
-    def stringOfMany(pred: Char => Boolean): Parsley[String] = stringOfMany(satisfy(pred))
+    def stringOfMany(pred: Char => Boolean): Parsley[String] = skipMany(satisfy(pred)).span//stringOfMany(satisfy(pred))
 
     // TODO: document that it only handles 16-bit characters
     /** This combinator parses `pc` '''one''' or more times, collecting its results into a string.
@@ -438,7 +438,7 @@ object character {
 
     // TODO: document
     // TODO: optimise, this can be _really_ tightly implemented with a substring on the input
-    def stringOfSome(pred: Char => Boolean): Parsley[String] = stringOfSome(satisfy(pred))
+    def stringOfSome(pred: Char => Boolean): Parsley[String] = skipSome(satisfy(pred)).span////stringOfSome(satisfy(pred))
 
     /** This combinator tries to parse each of the strings `strs` (and `str0`), until one of them succeeds.
       *

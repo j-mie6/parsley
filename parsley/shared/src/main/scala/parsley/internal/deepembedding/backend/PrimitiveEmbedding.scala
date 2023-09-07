@@ -25,7 +25,7 @@ private [deepembedding] final class Attempt[A](val p: StrictParsley[A]) extends 
         case _ => this
     }
     // $COVERAGE-OFF$
-    final override def pretty(p: String): String = s"attempt($p)"
+    final override def pretty(p: String): String = s"atomic($p)"
     // $COVERAGE-ON$
 }
 private [deepembedding] final class Look[A](val p: StrictParsley[A]) extends ScopedUnaryWithState[A, A] {
@@ -106,6 +106,21 @@ private [deepembedding] final class NewReg[S, A](reg: Reg[S], init: StrictParsle
     }
     // $COVERAGE-OFF$
     final override def pretty: String = s"newreg(r${reg.addr}, ${init.pretty}, ${body.pretty})"
+    // $COVERAGE-ON$
+}
+
+private [deepembedding] final class Span(p: StrictParsley[_]) extends StrictParsley[String] {
+    def inlinable: Boolean = false
+    override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
+        val handler = state.getLabel(instructions.PopStateAndFail)
+        instrs += new instructions.PushHandlerAndState(handler)
+        suspend[M, R, Unit](p.codeGen(producesResults = false)) |> {
+            instrs += instructions.Pop
+            instrs += instructions.Span
+        }
+    }
+    // $COVERAGE-OFF$
+    final override def pretty: String = s"${p.pretty}.span"
     // $COVERAGE-ON$
 }
 

@@ -140,6 +140,20 @@ private [internal] final class PutAndFail(reg: Int) extends Instr {
     // $COVERAGE-ON$
 }
 
+private [internal] object Span extends Instr {
+    override def apply(ctx: Context): Unit = {
+        // this uses the state stack because post #132 we will need a save point to obtain the start of the input
+        ensureRegularInstruction(ctx)
+        val startOffset = ctx.states.offset
+        ctx.states = ctx.states.tail
+        ctx.handlers = ctx.handlers.tail
+        ctx.pushAndContinue(ctx.input.substring(startOffset, ctx.offset))
+    }
+    // $COVERAGE-OFF$
+    override def toString: String = "Span"
+    // $COVERAGE-ON$
+}
+
 // This instruction holds mutate state, but it is safe to do so, because it's always the first instruction of a DynCall.
 private [parsley] final class CalleeSave(var label: Int, localRegs: Set[Reg[_]], reqSize: Int, slots: List[(Int, Int)], saveArray: Array[AnyRef])
     extends InstrWithLabel {
