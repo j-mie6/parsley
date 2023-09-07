@@ -25,14 +25,16 @@ private [backend] sealed abstract class BranchLike[A, B, C, D](finaliser: Option
         suspend(b.codeGen[M, R](producesResults = true)) >> {
             instrs += instr(toP)
             suspend(q.codeGen[M, R](producesResults)) >> {
-                if (producesResults) {
-                    for (instr <- finaliser) instrs += instr
+                for (instr <- finaliser) {
+                    if (producesResults) instrs += instr
+                    else instrs += instructions.Pop
                 }
                 instrs += new instructions.Jump(end)
                 instrs += new instructions.Label(toP)
                 suspend(p.codeGen[M, R](producesResults)) |> {
-                    if (producesResults) {
-                        for (instr <- finaliser) instrs += instr
+                    for (instr <- finaliser) {
+                        if (producesResults) instrs += instr
+                        else instrs += instructions.Pop
                     }
                     instrs += new instructions.Label(end)
                 }
