@@ -445,7 +445,7 @@ object registers {
     def forYieldP_[A, B](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: Parsley[A] => Parsley[B]): Parsley[List[B]] = {
         fresh(mutable.ListBuffer.empty[B]).persist { acc =>
             forP_(init, cond, step) { x =>
-                (acc, body(x)).zipped(_ += _)
+                (acc, body(x)).zipped(_ += _).unsafe() // we don't want this optimised out, it's a mutable operation in a resultless context
             } ~> acc.map(_.toList)
         }
     }
@@ -514,7 +514,7 @@ object registers {
     def forYieldP[A, B](init: Parsley[A], cond: =>Parsley[A => Boolean], step: =>Parsley[A => A])(body: =>Parsley[B]): Parsley[List[B]] = {
         fresh(mutable.ListBuffer.empty[B]).persist { acc =>
             forP(init, cond, step) {
-                (acc, body).zipped(_ += _)
+                (acc, body).zipped(_ += _).unsafe()
             } ~> acc.map(_.toList)
         }
     }

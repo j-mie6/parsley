@@ -18,8 +18,9 @@ private [deepembedding] final class Lift2[A, B, C](private val f: (A, B) => C, v
     def inlinable: Boolean = false
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         suspend(left.codeGen[M, R](producesResults)) >>
-        suspend(right.codeGen[M, R](producesResults)) |>
-        (instrs += instructions.Lift2(f))
+        suspend(right.codeGen[M, R](producesResults)) |> {
+            if (producesResults) instrs += instructions.Lift2(f)
+        }
     }
     // $COVERAGE-OFF$
     final override def pretty: String = s"lift2(?, ${left.pretty}, ${right.pretty})"
@@ -31,8 +32,9 @@ private [deepembedding] final class Lift3[A, B, C, D](private val f: (A, B, C) =
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         suspend(p.codeGen[M, R](producesResults)) >>
         suspend(q.codeGen[M, R](producesResults)) >>
-        suspend(r.codeGen[M, R](producesResults)) |>
-        (instrs += instructions.Lift3(f))
+        suspend(r.codeGen[M, R](producesResults)) |> {
+            if (producesResults) instrs += instructions.Lift3(f)
+        }
     }
     // $COVERAGE-OFF$
     final override def pretty: String = s"lift3(?, ${p.pretty}, ${q.pretty}, ${r.pretty})"
@@ -46,7 +48,7 @@ private [deepembedding] final class Local[S, A](reg: Reg[S], left: StrictParsley
             instrs += new instructions.Get(reg.addr)
             instrs += new instructions.SwapAndPut(reg.addr)
             suspend(right.codeGen[M, R](producesResults)) |> {
-                instrs += new instructions.SwapAndPut(reg.addr) // TODO: just Put if produces results is off
+                instrs += (if (producesResults) new instructions.SwapAndPut(reg.addr) else new instructions.Put(reg.addr))
             }
         }
     }

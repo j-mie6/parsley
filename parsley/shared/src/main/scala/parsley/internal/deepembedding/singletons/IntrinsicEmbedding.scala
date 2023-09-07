@@ -16,7 +16,10 @@ private [parsley] final class CharTok(private val c: Char, val expected: LabelCo
     // $COVERAGE-OFF$
     override def pretty: String = s"char($c)"
     // $COVERAGE-ON$
-    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = instrs += new instructions.CharTok(c, expected)
+    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
+        instrs += new instructions.CharTok(c, expected)
+        if (!producesResults) instrs += instructions.Pop
+    }
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Char] = visitor.visit(this, context)(c, expected)
 }
@@ -25,7 +28,10 @@ private [parsley] final class SupplementaryCharTok(private val codepoint: Int, v
     // $COVERAGE-OFF$
     override def pretty: String = s"char(${Character.toChars(codepoint).mkString})"
     // $COVERAGE-ON$
-    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = instrs += new instructions.SupplementaryCharTok(codepoint, expected)
+    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
+        instrs += new instructions.SupplementaryCharTok(codepoint, expected)
+        if (!producesResults) instrs += instructions.Pop
+    }
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Int] = visitor.visit(this, context)(codepoint, expected)
 }
@@ -34,7 +40,10 @@ private [parsley] final class StringTok(private val s: String, val expected: Lab
     // $COVERAGE-OFF$
     override def pretty: String = s"string($s)"
     // $COVERAGE-ON$
-    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = instrs += new instructions.StringTok(s, expected)
+    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
+        instrs += new instructions.StringTok(s, expected)
+        if (!producesResults) instrs += instructions.Pop
+    }
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[String] = visitor.visit(this, context)(s, expected)
 }
@@ -45,7 +54,7 @@ private [parsley] object Eof extends Singleton[Unit] {
     // $COVERAGE-ON$
     override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
         instrs += instructions.Eof
-        instrs += instructions.Push.Unit
+        if (producesResults) instrs += instructions.Push.Unit
     }
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = visitor.visit(this, context)
@@ -55,7 +64,10 @@ private [parsley] final class UniSatisfy(private [UniSatisfy] val f: Int => Bool
     // $COVERAGE-OFF$
     override def pretty: String = "satisfyUnicode(?)"
     // $COVERAGE-ON$
-    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = instrs += new instructions.UniSat(f, expected)
+    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
+        instrs += new instructions.UniSat(f, expected)
+        if (!producesResults) instrs += instructions.Pop
+    }
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Int] = visitor.visit(this, context)(f, expected)
 }
@@ -66,7 +78,7 @@ private [parsley] final class Modify[S](val reg: Reg[S], f: S => S) extends Sing
     // $COVERAGE-ON$
     override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
         instrs += instructions.Modify(reg.addr, f)
-        instrs += instructions.Push.Unit
+        if (producesResults) instrs += instructions.Push.Unit
     }
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = visitor.visit(this, context)(reg, f)

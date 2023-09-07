@@ -20,7 +20,7 @@ private [parsley] final class WhiteSpace(ws: Char => Boolean, desc: SpaceDesc, e
     override val pretty: String = "whiteSpace"
     override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
         instrs += new instructions.TokenWhiteSpace(ws, desc, errConfig)
-        instrs += instructions.Push.Unit
+        if (producesResults) instrs += instructions.Push.Unit
     }
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = visitor.visit(this, context)(ws, desc, errConfig)
@@ -31,7 +31,7 @@ private [parsley] final class SkipComments(desc: SpaceDesc, errConfig: ErrorConf
     override val pretty: String = "skipComments"
     override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
         instrs += new instructions.TokenSkipComments(desc, errConfig)
-        instrs += instructions.Push.Unit
+        if (producesResults) instrs += instructions.Push.Unit
     }
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = visitor.visit(this, context)(desc, errConfig)
@@ -42,7 +42,7 @@ private [parsley] final class Comment(desc: SpaceDesc, errConfig: ErrorConfig) e
     override val pretty: String = "comment"
     override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
         instrs += new instructions.TokenComment(desc, errConfig)
-        instrs += instructions.Push.Unit
+        if (producesResults) instrs += instructions.Push.Unit
     }
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Unit] = visitor.visit(this, context)(desc, errConfig)
@@ -51,7 +51,10 @@ private [parsley] final class Comment(desc: SpaceDesc, errConfig: ErrorConfig) e
 private [parsley] final class Sign[A](ty: SignType, signPresence: PlusSignPresence) extends Singleton[A => A] {
     // $COVERAGE-OFF$
     override val pretty: String = "sign"
-    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = instrs += new instructions.TokenSign(ty, signPresence)
+    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
+        instrs += new instructions.TokenSign(ty, signPresence)
+        if (!producesResults) instrs += instructions.Pop
+    }
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A => A] = visitor.visit(this, context)(ty, signPresence)
 }
@@ -63,6 +66,7 @@ private [parsley] final class NonSpecific(name: String, unexpectedIllegal: Strin
     // $COVERAGE-ON$
     override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
         instrs += new instructions.TokenNonSpecific(name, unexpectedIllegal)(start, letter, illegal)
+        if (!producesResults) instrs += instructions.Pop
     }
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[String] = {

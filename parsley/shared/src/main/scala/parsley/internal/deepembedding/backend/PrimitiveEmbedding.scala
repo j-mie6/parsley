@@ -37,10 +37,6 @@ private [deepembedding] final class Look[A](val p: StrictParsley[A]) extends Sco
     // $COVERAGE-ON$
 }
 private [deepembedding] final class NotFollowedBy[A](val p: StrictParsley[A]) extends Unary[A, Unit] {
-    /*override def optimise: StrictParsley[Unit] = p match {
-        case _: MZero => new Pure(())
-        case _        => this
-    }*/
     final override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val handler = state.freshLabel()
         instrs += new instructions.PushHandlerAndState(handler)
@@ -48,7 +44,7 @@ private [deepembedding] final class NotFollowedBy[A](val p: StrictParsley[A]) ex
             instrs += instructions.NegLookFail
             instrs += new instructions.Label(handler)
             instrs += instructions.NegLookGood
-            instrs += instructions.Push.Unit
+            if (producesResults) instrs += instructions.Push.Unit
         }
     }
     // $COVERAGE-OFF$
@@ -59,8 +55,9 @@ private [deepembedding] final class NotFollowedBy[A](val p: StrictParsley[A]) ex
 private [deepembedding] final class Let[A] extends StrictParsley[A] {
     def inlinable: Boolean = true
     def label(implicit state: CodeGenState): Int = state.getLabel(this)
-    override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
-        result(instrs += new instructions.Call(label))
+    override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = result {
+        instrs += new instructions.Call(label)
+        if (!producesResults) instrs += instructions.Pop
     }
 
     // $COVERAGE-OFF$
@@ -71,7 +68,9 @@ private [deepembedding] final class Opaque[A](p: StrictParsley[A]) extends Stric
     def inlinable = p.inlinable
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R,Unit] = {
         // this blocks result suppression, because the ErrorGen combinators have non-inspectible control flow
-        p.codeGen(producesResults = true)
+        p.codeGen(producesResults = true) |> {
+            if (!producesResults) instrs += instructions.Pop
+        }
     }
     // $COVERAGE-OFF$
     def pretty: String = p.pretty
@@ -82,7 +81,7 @@ private [deepembedding] final class Put[S](reg: Reg[S], val p: StrictParsley[S])
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         suspend(p.codeGen[M, R](producesResults = true)) |> {
             instrs += new instructions.Put(reg.addr)
-            instrs += instructions.Push.Unit
+            if (producesResults) instrs += instructions.Push.Unit
         }
     }
     // $COVERAGE-OFF$
@@ -99,7 +98,7 @@ private [deepembedding] final class NewReg[S, A](reg: Reg[S], init: StrictParsle
             instrs += new instructions.SwapAndPut(reg.addr)
             instrs += new instructions.PushHandler(handler)
             suspend(body.codeGen[M, R](producesResults)) |> {
-                instrs += new instructions.SwapAndPut(reg.addr) // TODO: just Put if produces results is off
+                instrs += (if (producesResults) new instructions.SwapAndPut(reg.addr) else new instructions.Put(reg.addr))
                 instrs += instructions.PopHandler
             }
         }
@@ -115,7 +114,7 @@ private [deepembedding] final class Span(p: StrictParsley[_]) extends StrictPars
         val handler = state.getLabel(instructions.PopStateAndFail)
         instrs += new instructions.PushHandlerAndState(handler)
         suspend[M, R, Unit](p.codeGen(producesResults = false)) |> {
-            instrs += instructions.Pop
+            //instrs += instructions.Pop
             instrs += instructions.Span
         }
     }
@@ -141,7 +140,7 @@ private [deepembedding] final class DebugError[A](val p: StrictParsley[A], name:
         val handler = state.freshLabel()
         instrs += new instructions.LogErrBegin(handler, name, ascii)(errBuilder)
         suspend(p.codeGen[M, R](producesResults)) |> {
-            instrs += instructions.Swap
+            if (producesResults) instrs += instructions.Swap
             instrs += new instructions.Label(handler)
             instrs += new instructions.LogErrEnd(name, ascii)(errBuilder)
         }
