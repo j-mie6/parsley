@@ -487,7 +487,7 @@ object combinator {
       * @since 2.2.0
       * @group iter
       */
-    def skipMany(p: Parsley[_]): Parsley[Unit] = new Parsley(new frontend.SkipMany(p.internal))
+    def skipMany(p: Parsley[_]): Parsley[Unit] = many(p).void
 
     /** This combinator repeatedly parses a given parser '''one''' or more times, ignoring the results.
       *
@@ -513,7 +513,7 @@ object combinator {
       * @return a parser that parses `p` until it fails, returning unit.
       * @group iter
       */
-    def skipSome(p: Parsley[_]): Parsley[Unit] = skipManyN(1, p)
+    def skipSome(p: Parsley[_]): Parsley[Unit] = some(p).void
 
     /** This combinator repeatedly parses a given parser '''`n`''' or more times, ignoring the results.
       *

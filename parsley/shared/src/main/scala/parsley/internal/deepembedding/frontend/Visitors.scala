@@ -100,7 +100,6 @@ private [parsley] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle
 
     // Iterative parser visitors.
     def visit[A](self: Many[A], context: T)(p: LazyParsley[A]): U[List[A]]
-    def visit[A](self: SkipMany[A], context: T)(p: LazyParsley[A]): U[Unit]
     def visit[A](self: ChainPost[A], context: T)(p: LazyParsley[A], _op: =>LazyParsley[A => A]): U[A]
     def visit[A](self: ChainPre[A], context: T)(p: LazyParsley[A], op: =>LazyParsley[A => A]): U[A]
     def visit[A, B](self: Chainl[A, B], context: T)(init: LazyParsley[B], p: =>LazyParsley[A], op: =>LazyParsley[(B, A) => B]): U[B]
@@ -256,8 +255,6 @@ private [frontend] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
 
     // Iterative overrides.
     override def visit[A](self: Many[A], context: T)(p: LazyParsley[A]): U[List[A]] =
-        visitUnary(self, context)(p)
-    override def visit[A](self: SkipMany[A], context: T)(p: LazyParsley[A]): U[Unit] =
         visitUnary(self, context)(p)
     override def visit[A](self: ChainPost[A], context: T)(p: LazyParsley[A], _op: =>LazyParsley[A => A]): U[A] =
         visitBinary(self, context)(p, _op)

@@ -111,12 +111,14 @@ private [deepembedding] final class NewReg[S, A](reg: Reg[S], init: StrictParsle
 private [deepembedding] final class Span(p: StrictParsley[_]) extends StrictParsley[String] {
     def inlinable: Boolean = false
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
-        val handler = state.getLabel(instructions.PopStateAndFail)
-        instrs += new instructions.PushHandlerAndState(handler)
-        suspend[M, R, Unit](p.codeGen(producesResults = false)) |> {
-            //instrs += instructions.Pop
-            instrs += instructions.Span
+        if (producesResults) {
+            val handler = state.getLabel(instructions.PopStateAndFail)
+            instrs += new instructions.PushHandlerAndState(handler)
+            suspend[M, R, Unit](p.codeGen(producesResults = false)) |> {
+                instrs += instructions.Span
+            }
         }
+        else p.codeGen(producesResults = false)
     }
     // $COVERAGE-OFF$
     final override def pretty: String = s"${p.pretty}.span"

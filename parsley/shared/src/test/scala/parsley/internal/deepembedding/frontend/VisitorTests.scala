@@ -174,7 +174,6 @@ class VisitorTests extends ParsleyTest {
         new <|>(dummyParser, dummyParser).testV
         new >>=[Nothing, Nothing](dummyParser, crash).testV
         new Many(dummyParser).testV
-        new SkipMany(dummyParser).testV
         new ManyUntil(dummyParser).testV
         new SkipManyUntil(dummyParser).testV
         new ErrorLabel(dummyParser, Seq("bazola")).testV

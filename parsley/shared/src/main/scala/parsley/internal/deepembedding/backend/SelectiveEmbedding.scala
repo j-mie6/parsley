@@ -72,7 +72,6 @@ private [deepembedding] final class If[A](val b: StrictParsley[Boolean], val p: 
     // $COVERAGE-ON$
 }
 
-// Will need this again at some point...
 private [backend] sealed abstract class FilterLike[A, B] extends StrictParsley[B] {
     protected val p: StrictParsley[A]
     protected val err: StrictParsley[((A, Int)) => Nothing]
