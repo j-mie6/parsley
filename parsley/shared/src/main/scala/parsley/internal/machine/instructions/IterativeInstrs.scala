@@ -158,7 +158,6 @@ private [internal] object ChainrOpHandler  {
 private [internal] final class SepEndBy1Jump(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        ctx.stack.pop_()
         val x = ctx.stack.upop()
         ctx.stack.peek[mutable.ListBuffer[Any]] += x
         DualHandler.popSecondHandlerAndJump(ctx, label)
@@ -220,8 +219,8 @@ private [internal] final class ManyUntil(var label: Int) extends InstrWithLabel 
         if (ctx.good) {
             ctx.stack.upop() match {
                 case parsley.combinator.ManyUntil.Stop =>
-                    ctx.exchangeAndContinue(ctx.stack.peek[mutable.ListBuffer[Any]].toList)
                     ctx.handlers = ctx.handlers.tail
+                    ctx.exchangeAndContinue(ctx.stack.peek[mutable.ListBuffer[Any]].toList)
                 case x =>
                     ctx.stack.peek[mutable.ListBuffer[Any]] += x
                     ctx.pc = label
@@ -241,13 +240,11 @@ private [internal] final class ManyUntil(var label: Int) extends InstrWithLabel 
 private [internal] final class SkipManyUntil(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         if (ctx.good) {
-            ctx.stack.upeek match {
+            ctx.stack.upop() match {
                 case parsley.combinator.ManyUntil.Stop =>
                     ctx.handlers = ctx.handlers.tail
-                    ctx.exchangeAndContinue(())
-                case _ =>
-                    ctx.pc = label
-                    ctx.stack.pop_()
+                    ctx.inc()
+                case _ => ctx.pc = label
             }
         }
         // ManyUntil is a fallthrough handler, it must be visited during failure, but does nothing to the external state

@@ -157,7 +157,8 @@ private [deepembedding] final class SepEndBy1[A, B](p: StrictParsley[A], sep: St
         instrs += new instructions.Label(body)
         suspend(p.codeGen[M, R](producesResults)) >> {
             instrs += new instructions.PushHandler(handler2)
-            suspend(sep.codeGen[M, R](producesResults)) |> {
+            suspend(sep.codeGen[M, R](producesResults = false)) |> {
+                instrs += instructions.Pop
                 instrs += new instructions.SepEndBy1Jump(body)
                 instrs += new instructions.Label(handler2)
                 instrs += instructions.SepEndBy1SepHandler
@@ -192,9 +193,11 @@ private [deepembedding] final class SkipManyUntil(val p: StrictParsley[Any]) ext
         val loop = state.freshLabel()
         instrs += new instructions.PushHandler(loop)
         instrs += new instructions.Label(start)
-        suspend(p.codeGen[M, R](producesResults)) |> {
+        // requires the control flow through for the end token
+        suspend(p.codeGen[M, R](producesResults = true)) |> {
             instrs += new instructions.Label(loop)
             instrs += new instructions.SkipManyUntil(start)
+            instrs += instructions.Push.Unit
         }
     }
     // $COVERAGE-OFF$
