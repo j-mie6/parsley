@@ -32,6 +32,7 @@ private [internal] final class Many(var label: Int) extends InstrWithLabel {
     // $COVERAGE-ON$
 }
 
+// TODO: Factor these handlers out!
 private [internal] final class SkipMany(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
         if (ctx.good) {
@@ -216,20 +217,12 @@ private [internal] object SepEndBy1WholeHandler extends Instr {
 
 private [internal] final class ManyUntil(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
-        if (ctx.good) {
-            ctx.stack.upop() match {
-                case parsley.combinator.ManyUntil.Stop =>
-                    ctx.handlers = ctx.handlers.tail
-                    ctx.exchangeAndContinue(ctx.stack.peek[mutable.ListBuffer[Any]].toList)
-                case x =>
-                    ctx.stack.peek[mutable.ListBuffer[Any]] += x
-                    ctx.pc = label
-            }
-        }
-        // ManyUntil is a fallthrough handler, it must be visited during failure, but does nothing to the external state
-        else {
-            ctx.handlers = ctx.handlers.tail
-            ctx.fail()
+        ensureRegularInstruction(ctx)
+        ctx.stack.upop() match {
+            case parsley.combinator.ManyUntil.Stop => ctx.exchangeAndContinue(ctx.stack.peek[mutable.ListBuffer[Any]].toList)
+            case x =>
+                ctx.stack.peek[mutable.ListBuffer[Any]] += x
+                ctx.pc = label
         }
     }
     // $COVERAGE-OFF$
@@ -239,18 +232,10 @@ private [internal] final class ManyUntil(var label: Int) extends InstrWithLabel 
 
 private [internal] final class SkipManyUntil(var label: Int) extends InstrWithLabel {
     override def apply(ctx: Context): Unit = {
-        if (ctx.good) {
-            ctx.stack.upop() match {
-                case parsley.combinator.ManyUntil.Stop =>
-                    ctx.handlers = ctx.handlers.tail
-                    ctx.inc()
-                case _ => ctx.pc = label
-            }
-        }
-        // ManyUntil is a fallthrough handler, it must be visited during failure, but does nothing to the external state
-        else {
-            ctx.handlers = ctx.handlers.tail
-            ctx.fail()
+        ensureRegularInstruction(ctx)
+        ctx.stack.upop() match {
+            case parsley.combinator.ManyUntil.Stop => ctx.inc()
+            case _ => ctx.pc = label
         }
     }
     // $COVERAGE-OFF$

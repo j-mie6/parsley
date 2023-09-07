@@ -174,12 +174,9 @@ private [deepembedding] final class SepEndBy1[A, B](p: StrictParsley[A], sep: St
 private [deepembedding] final class ManyUntil[A](val p: StrictParsley[Any]) extends Unary[Any, List[A]] {
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val start = state.freshLabel()
-        val loop = state.freshLabel()
         instrs += new instructions.Fresh(mutable.ListBuffer.empty[Any])
-        instrs += new instructions.PushHandler(loop)
         instrs += new instructions.Label(start)
         suspend(p.codeGen[M, R](producesResults)) |> {
-            instrs += new instructions.Label(loop)
             instrs += new instructions.ManyUntil(start)
         }
     }
@@ -190,12 +187,9 @@ private [deepembedding] final class ManyUntil[A](val p: StrictParsley[Any]) exte
 private [deepembedding] final class SkipManyUntil(val p: StrictParsley[Any]) extends Unary[Any, Unit] {
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val start = state.freshLabel()
-        val loop = state.freshLabel()
-        instrs += new instructions.PushHandler(loop)
         instrs += new instructions.Label(start)
         // requires the control flow through for the end token
         suspend(p.codeGen[M, R](producesResults = true)) |> {
-            instrs += new instructions.Label(loop)
             instrs += new instructions.SkipManyUntil(start)
             instrs += instructions.Push.Unit
         }
