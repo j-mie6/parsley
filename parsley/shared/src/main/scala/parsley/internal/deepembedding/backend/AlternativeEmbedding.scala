@@ -140,13 +140,11 @@ private [backend] object Choice {
         else alt2 match {
             case Pure(x) => alt1 match {
                 case Attempt(u) => scopedState(u, producesResults) {
-                    instrs += new instructions.AlwaysRecoverWith[A](x)
-                    if (!producesResults) instrs += instructions.Pop
+                    instrs += (if (producesResults) new instructions.AlwaysRecoverWith[A](x) else instructions.AlwaysRecover)
                     result(())
                 }
                 case u => scopedCheck(u, producesResults) {
-                    instrs += new instructions.RecoverWith[A](x)
-                    if (!producesResults) instrs += instructions.Pop
+                    instrs += (if (producesResults) new instructions.RecoverWith[A](x) else instructions.Recover)
                     result(())
                 }
             }

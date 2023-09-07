@@ -318,7 +318,7 @@ object combinator {
       * @return a parser that tries to parse `p`, returning `x` regardless of success or failure.
       * @group opt
       */
-    def optionalAs[A](p: Parsley[_], x: A): Parsley[A] = p.as(x).getOrElse(x)
+    def optionalAs[A](p: Parsley[_], x: A): Parsley[A] = p.getOrElse[Any](null).as(x) // moving the as out allows for better optimisation
 
     /** This combinator can eliminate an `Option` from the result of the parser `p`.
       *

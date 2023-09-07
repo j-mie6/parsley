@@ -103,7 +103,7 @@ object character {
       */
     def char(c: Char): Parsley[Char] = char(c, NotConfigured)
     private def char(c: Char, label: String): Parsley[Char] = char(c, Label(label))
-    private def char(c: Char, label: LabelConfig): Parsley[Char] = new Parsley(new singletons.CharTok(c, label))
+    private def char(c: Char, label: LabelConfig): Parsley[Char] = new Parsley(new singletons.CharTok(c, label)).as(c)
 
     //TODO: deprecate in 4.5
     // $COVERAGE-OFF$
@@ -189,7 +189,7 @@ object character {
     private [parsley] def string(s: String, label: String): Parsley[String] = string(s, Label(label))
     private [parsley] def string(s: String, label: LabelConfig): Parsley[String] = {
         require(s.nonEmpty, "`string` may not be passed the empty string (`string(\"\")` is meaningless, perhaps you meant `pure(\"\")`?)")
-        new Parsley(new singletons.StringTok(s, label))
+        new Parsley(new singletons.StringTok(s, label)).as(s)
     }
 
     /** $oneOf

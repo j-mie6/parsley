@@ -37,7 +37,9 @@ private [token] final class ConcreteString(ends: Set[ScalaString], stringChar: S
             for (cp <- cpo) parsley.unicode.addCodepoint(sb, cp)
             sb
         }
-        val content = valid(parsley.expr.infix.secretLeft1((sbReg.get, strChar).zipped(pf), strChar, pure(pf)))
+        // `content` is in a dropped position, so needs the unsafe to avoid the mutation
+        // TODO: this could be fixed better with registers and skipMany?
+        val content = valid(parsley.expr.infix.secretLeft1((sbReg.get, strChar).zipped(pf), strChar, pure(pf)).unsafe())
         val terminal = string(terminalStr)
         // terminal should be first, to allow for a jump table on the main choice
         openLabel(allowsAllSpace, stringChar.isRaw)(terminal) *>

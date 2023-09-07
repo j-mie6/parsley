@@ -54,22 +54,35 @@ private [internal] final class SatisfyExchange[A](f: Char => Boolean, x: A, _exp
     // $COVERAGE-ON$
 }
 
-private [internal] final class RecoverWith[A](x: A) extends Instr {
-    override def apply(ctx: Context): Unit = {
+private [instructions] sealed abstract class GenRecover extends Instr {
+    protected def lastly(ctx: Context): Unit
+    final override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
         ctx.restoreHints() // This must be before adding the error to hints
         ctx.catchNoConsumed(ctx.handlers.check) {
             ctx.handlers = ctx.handlers.tail
             ctx.addErrorToHintsAndPop()
-            ctx.pushAndContinue(x)
+            lastly(ctx)
         }
     }
+}
+
+private [internal] final object Recover extends GenRecover {
+    protected override def lastly(ctx: Context): Unit = ctx.inc()
+    // $COVERAGE-OFF$
+    override def toString: String = "Recover"
+    // $COVERAGE-ON$
+}
+
+private [internal] final class RecoverWith[A](x: A) extends GenRecover {
+    protected override def lastly(ctx: Context): Unit = ctx.pushAndContinue(x)
     // $COVERAGE-OFF$
     override def toString: String = s"RecoverWith($x)"
     // $COVERAGE-ON$
 }
 
-private [internal] final class AlwaysRecoverWith[A](x: A) extends Instr {
+private [internal] sealed abstract class GenAlwaysRecover extends Instr {
+    protected def lastly(ctx: Context): Unit
     override def apply(ctx: Context): Unit = {
         ensureHandlerInstruction(ctx)
         ctx.restoreState()
@@ -77,8 +90,19 @@ private [internal] final class AlwaysRecoverWith[A](x: A) extends Instr {
         ctx.handlers = ctx.handlers.tail
         ctx.addErrorToHintsAndPop()
         ctx.good = true
-        ctx.pushAndContinue(x)
+        lastly(ctx)
     }
+}
+
+private [internal] final object AlwaysRecover extends GenAlwaysRecover {
+    protected override def lastly(ctx: Context): Unit = ctx.inc()
+    // $COVERAGE-OFF$
+    override def toString: String = "AlwaysRecover"
+    // $COVERAGE-ON$
+}
+
+private [internal] final class AlwaysRecoverWith[A](x: A) extends GenAlwaysRecover {
+    protected override def lastly(ctx: Context): Unit = ctx.pushAndContinue(x)
     // $COVERAGE-OFF$
     override def toString: String = s"AlwaysRecoverWith($x)"
     // $COVERAGE-ON$
