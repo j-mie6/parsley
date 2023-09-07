@@ -54,9 +54,8 @@ private [deepembedding] final class NotFollowedBy[A](val p: StrictParsley[A]) ex
 
 private [deepembedding] final class Let[A] extends StrictParsley[A] {
     def inlinable: Boolean = true
-    def label(producesResults: Boolean)(implicit state: CodeGenState): Int = state.getLabel(this, producesResults)
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = result {
-        instrs += new instructions.Call(label(producesResults=true))
+        instrs += new instructions.Call(state.getLabel(this, producesResults=true))
         if (!producesResults) instrs += instructions.Pop
     }
 

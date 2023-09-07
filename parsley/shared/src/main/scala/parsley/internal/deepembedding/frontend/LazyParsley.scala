@@ -192,7 +192,7 @@ private [parsley] abstract class LazyParsley[+A] private [deepembedding] {
         implicit val state: backend.CodeGenState = new backend.CodeGenState(0)
         val mrecs = for {
             (let, p) <- letMap.bodies
-        } yield s"${let.label}: ${p.pretty}"
+        } yield s"${state.getLabel(let, producesResults = true)}: ${p.pretty}"
         s"main body: ${this.optimised.pretty}\n${mrecs.mkString("\n")}"
     }
     // $COVERAGE-ON$
