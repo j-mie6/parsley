@@ -98,7 +98,7 @@ private [deepembedding] final class ChainPre[A](p: StrictParsley[A], op: StrictP
         suspend(op.codeGen[M, R](producesResults=true)) >> {
             instrs += new instructions.Label(handler)
             instrs += new instructions.ChainPre(body)
-            if (!producesResults) instructions.Pop
+            if (!producesResults) instrs += instructions.Pop
             suspend(p.codeGen[M, R](producesResults)) |> {
                 if (producesResults) instrs += instructions.Apply
             }
