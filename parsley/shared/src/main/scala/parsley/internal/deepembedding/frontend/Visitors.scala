@@ -47,9 +47,9 @@ private [parsley] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle
                                              start: Char => Boolean,
                                              letter: Char => Boolean,
                                              illegal: String => Boolean): U[String]
-    def visit(self: CharTok, context: T)(c: Char, exp: LabelConfig): U[Nothing]
-    def visit(self: SupplementaryCharTok, context: T)(codepoint: Int, exp: LabelConfig): U[Nothing]
-    def visit(self: StringTok, context: T)(s: String, exp: LabelConfig): U[Nothing]
+    def visit(self: CharTok, context: T)(c: Char, exp: LabelConfig): U[Char]
+    def visit(self: SupplementaryCharTok, context: T)(codepoint: Int, exp: LabelConfig): U[Int]
+    def visit(self: StringTok, context: T)(s: String, exp: LabelConfig): U[String]
     def visit(self: Eof.type, context: T): U[Unit]
     def visit(self: UniSatisfy, context: T)(f: Int => Boolean, exp: LabelConfig): U[Int]
     def visit[S](self: Modify[S], context: T)(reg: Reg[S], f: S => S): U[Unit]
@@ -164,11 +164,11 @@ private [frontend] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
                                                       letter: Char => Boolean,
                                                       illegal: String => Boolean): U[String] =
         visitSingleton(self, context)
-    override def visit(self: CharTok, context: T)(c: Char, exp: LabelConfig): U[Nothing] =
+    override def visit(self: CharTok, context: T)(c: Char, exp: LabelConfig): U[Char] =
         visitSingleton(self, context)
-    override def visit(self: SupplementaryCharTok, context: T)(codepoint: Int, exp: LabelConfig): U[Nothing] =
+    override def visit(self: SupplementaryCharTok, context: T)(codepoint: Int, exp: LabelConfig): U[Int] =
         visitSingleton(self, context)
-    override def visit(self: StringTok, context: T)(s: String, exp: LabelConfig): U[Nothing] =
+    override def visit(self: StringTok, context: T)(s: String, exp: LabelConfig): U[String] =
         visitSingleton(self, context)
     override def visit(self: Eof.type, context: T): U[Unit] =
         visitSingleton(self, context)

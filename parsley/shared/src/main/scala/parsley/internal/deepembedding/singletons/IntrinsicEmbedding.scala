@@ -5,7 +5,6 @@
  */
 package parsley.internal.deepembedding.singletons
 
-import parsley.XAssert._
 import parsley.registers.Reg
 import parsley.token.errors.LabelConfig
 
@@ -13,40 +12,40 @@ import parsley.internal.deepembedding.backend.StrictParsley.InstrBuffer
 import parsley.internal.deepembedding.frontend.{LazyParsleyIVisitor, UsesRegister}
 import parsley.internal.machine.instructions
 
-private [parsley] final class CharTok(private val c: Char, val expected: LabelConfig) extends Singleton[Nothing] {
+private [parsley] final class CharTok(private val c: Char, val expected: LabelConfig) extends Singleton[Char] {
     // $COVERAGE-OFF$
     override def pretty: String = s"char($c)"
     // $COVERAGE-ON$
     override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
-        assume(!producesResults, "can't produce results when in CharTok")
         instrs += new instructions.CharTok(c, expected)
+        if (!producesResults) instrs += instructions.Pop
     }
 
-    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Nothing] = visitor.visit(this, context)(c, expected)
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Char] = visitor.visit(this, context)(c, expected)
 }
 
-private [parsley] final class SupplementaryCharTok(private val codepoint: Int, val expected: LabelConfig) extends Singleton[Nothing] {
+private [parsley] final class SupplementaryCharTok(private val codepoint: Int, val expected: LabelConfig) extends Singleton[Int] {
     // $COVERAGE-OFF$
     override def pretty: String = s"char(${Character.toChars(codepoint).mkString})"
     // $COVERAGE-ON$
     override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
-        assume(!producesResults, "can't produce results when in CharTok")
         instrs += new instructions.SupplementaryCharTok(codepoint, expected)
+        if (!producesResults) instrs += instructions.Pop
     }
 
-    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Nothing] = visitor.visit(this, context)(codepoint, expected)
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Int] = visitor.visit(this, context)(codepoint, expected)
 }
 
-private [parsley] final class StringTok(private val s: String, val expected: LabelConfig) extends Singleton[Nothing] {
+private [parsley] final class StringTok(private val s: String, val expected: LabelConfig) extends Singleton[String] {
     // $COVERAGE-OFF$
     override def pretty: String = s"string($s)"
     // $COVERAGE-ON$
     override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
-        assume(!producesResults, "can't produce results when in CharTok")
         instrs += new instructions.StringTok(s, expected)
+        if (!producesResults) instrs += instructions.Pop
     }
 
-    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Nothing] = visitor.visit(this, context)(s, expected)
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[String] = visitor.visit(this, context)(s, expected)
 }
 
 private [parsley] object Eof extends Singleton[Unit] {
