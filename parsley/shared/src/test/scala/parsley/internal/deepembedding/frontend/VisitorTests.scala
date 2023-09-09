@@ -169,7 +169,7 @@ class VisitorTests extends ParsleyTest {
         new Look(dummyParser).testV
         new NotFollowedBy(dummyParser).testV
         new Put(dummyRegister(), dummyParser).testV
-        new Debug(dummyParser, "fred", false, FullBreak).testV
+        new Debug(dummyParser, "fred", false, FullBreak, Seq.empty).testV
         new DebugError(dummyParser, "plugh", false, dummyErrorBuilder).testV
         new <|>(dummyParser, dummyParser).testV
         new >>=[Nothing, Nothing](dummyParser, crash).testV
