@@ -428,8 +428,8 @@ object registers {
       *
       * r.put(0) *>
       * many('a' *> r.modify(_+1)) *>
-      * forYieldP_[Int](r.get, pure(_ != 0), pure(_ - 1)){_ => 'b'} *>
-      * forYieldP_[Int](r.get, pure(_ != 0), pure(_ - 1)){_ => 'c'}
+      * forYieldP_[Int, Char](r.get, pure(_ != 0), pure(_ - 1)){_ => 'b'} *>
+      * forYieldP_[Int, Char](r.get, pure(_ != 0), pure(_ - 1)){_ => 'c'}
       * }}}
       *
       * This will return a list `n` `'c'` characters.
@@ -496,8 +496,8 @@ object registers {
       *
       * r.put(0) *>
       * many('a' *> r.modify(_+1)) *>
-      * forYieldP[Int](r.get, pure(_ != 0), pure(_ - 1)){'b'} *>
-      * forYieldP[Int](r.get, pure(_ != 0), pure(_ - 1)){'c'}
+      * forYieldP[Int, Char](r.get, pure(_ != 0), pure(_ - 1)){'b'} *>
+      * forYieldP[Int, Char](r.get, pure(_ != 0), pure(_ - 1)){'c'}
       * }}}
       *
       * This will return a list `n` `'c'` characters.

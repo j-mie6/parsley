@@ -124,13 +124,17 @@ private [deepembedding] final class Span(p: StrictParsley[_]) extends StrictPars
 }
 
 // $COVERAGE-OFF$
-private [deepembedding] final class Debug[A](val p: StrictParsley[A], name: String, ascii: Boolean, break: Breakpoint) extends Unary[A, A] {
+private [deepembedding] final class Debug[A](val p: StrictParsley[A], name: String, ascii: Boolean, break: Breakpoint, watchedRegs: scala.Seq[(Reg[_], String)])
+    extends Unary[A, A] {
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
+        val watchedAddrs = watchedRegs.map {
+            case (r, name) => (r.addr, name)
+        }
         val handler = state.freshLabel()
-        instrs += new instructions.LogBegin(handler, name, ascii, (break eq EntryBreak) || (break eq FullBreak))
+        instrs += new instructions.LogBegin(handler, name, ascii, (break eq EntryBreak) || (break eq FullBreak), watchedAddrs)
         suspend(p.codeGen[M, R](producesResults)) |> {
             instrs += new instructions.Label(handler)
-            instrs += new instructions.LogEnd(name, ascii, (break eq ExitBreak) || (break eq FullBreak))
+            instrs += new instructions.LogEnd(name, ascii, (break eq ExitBreak) || (break eq FullBreak), watchedAddrs)
         }
     }
     final override def pretty(p: String): String = p

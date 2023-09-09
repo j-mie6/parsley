@@ -79,11 +79,16 @@ private [instructions] object InputSlicer {
 }
 
 private [instructions] trait Logger extends PrettyPortal with InputSlicer with Colours {
-    final protected def preludeString(dir: Direction, ctx: Context, ends: String) = {
+    final protected def preludeString(dir: Direction, ctx: Context, ends: String, watchedRegs: Seq[(Int, String)]) = {
         val input = this.slice(ctx)
         val prelude = s"${portal(dir, ctx)} (${ctx.line}, ${ctx.col}): "
         val caret = (" " * prelude.length) + this.caret(ctx)
-        indentAndUnlines(ctx, s"$prelude$input$ends", caret)
+        val regSummary = if (watchedRegs.isEmpty) Seq.empty else {
+            "watched registers:" +: watchedRegs.map {
+                case (addr, name) => s"    $name = ${ctx.regs(addr)}"
+            } :+ ""
+        }
+        indentAndUnlines(ctx, s"$prelude$input$ends" +: caret +: regSummary: _*)
     }
     final protected def doBreak(ctx: Context): Unit = {
         print(indentAndUnlines(ctx,
@@ -94,11 +99,11 @@ private [instructions] trait Logger extends PrettyPortal with InputSlicer with C
     }
 }
 
-private [internal] final class LogBegin(var label: Int, override val name: String, override val ascii: Boolean, break: Boolean)
+private [internal] final class LogBegin(var label: Int, override val name: String, override val ascii: Boolean, break: Boolean, watchedRegs: Seq[(Int, String)])
     extends InstrWithLabel with Logger {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
-        println(preludeString(Enter, ctx, ""))
+        println(preludeString(Enter, ctx, "", watchedRegs))
         if (break) doBreak(ctx)
         ctx.debuglvl += 1
         ctx.pushHandler(label)
@@ -107,7 +112,7 @@ private [internal] final class LogBegin(var label: Int, override val name: Strin
     override def toString: String = s"LogBegin($label, $name)"
 }
 
-private [internal] final class LogEnd(val name: String, override val ascii: Boolean, break: Boolean) extends Instr with Logger {
+private [internal] final class LogEnd(val name: String, override val ascii: Boolean, break: Boolean, watchedRegs: Seq[(Int, String)]) extends Instr with Logger {
     override def apply(ctx: Context): Unit = {
         assert(ctx.running, "cannot wrap a Halt with a debug")
         ctx.debuglvl -= 1
@@ -122,7 +127,7 @@ private [internal] final class LogEnd(val name: String, override val ascii: Bool
                 red("Fail")
             }
         }
-        println(preludeString(Exit, ctx, end))
+        println(preludeString(Exit, ctx, end, watchedRegs))
         if (break) doBreak(ctx)
     }
     override def toString: String = s"LogEnd($name)"

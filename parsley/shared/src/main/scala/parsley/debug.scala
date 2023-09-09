@@ -6,6 +6,7 @@
 package parsley
 
 import parsley.errors.ErrorBuilder
+import parsley.registers.Reg
 
 import parsley.internal.deepembedding.frontend
 
@@ -117,9 +118,14 @@ object debug {
           * @param name The name to be assigned to this parser
           * @param break The breakpoint properties of this parser, defaults to NoBreak
           * @param coloured Whether to render with colour (default true: render colours)
+          * @param watchedRegs Which registers to also track the values of and their names, if any
           */
-        def debug(name: String, break: Breakpoint, coloured: Boolean): Parsley[A] = {
-            new Parsley(new frontend.Debug[A](con(p).internal, name, !coloured, break))
+        def debug(name: String, break: Breakpoint, coloured: Boolean, watchedRegs: (Reg[_], String)*): Parsley[A] = {
+            new Parsley(new frontend.Debug[A](con(p).internal, name, !coloured, break, watchedRegs))
+        }
+
+        private [parsley] def debug(name: String, break: Breakpoint, coloured: Boolean): Parsley[A] = {
+            debug(name, break, coloured, Seq.empty[(Reg[_], String)]: _*)
         }
 
         /** $debug
@@ -153,8 +159,11 @@ object debug {
           *
           * @param name The name to be assigned to this parser
           * @param break The breakpoint properties of this parser, defaults to NoBreak
+          * @param watchedRegs Which registers to also track the values of and their names, if any
           */
-        def debug(name: String, break: Breakpoint): Parsley[A] = debug(name, break, coloured = true)
+        def debug(name: String, break: Breakpoint, watchedRegs: (Reg[_], String)*): Parsley[A] = debug(name, break, coloured = true, watchedRegs: _*)
+
+        private [parsley] def debug(name: String, break: Breakpoint): Parsley[A] = debug(name, break, Seq.empty[(Reg[_], String)]: _*)
 
         /** $debug
           *
@@ -187,8 +196,11 @@ object debug {
           *
           * @param name The name to be assigned to this parser
           * @param coloured Whether to render with colour
+          * @param watchedRegs Which registers to also track the values of and their names, if any
           */
-        def debug(name: String, coloured: Boolean): Parsley[A] = debug(name, break = NoBreak, coloured)
+        def debug(name: String, coloured: Boolean, watchedRegs: (Reg[_], String)*): Parsley[A] = debug(name, break = NoBreak, coloured, watchedRegs: _*)
+
+        private [parsley] def debug(name: String, coloured: Boolean): Parsley[A] = debug(name, coloured, Seq.empty[(Reg[_], String)]: _*)
 
         /** $debug
           *
@@ -220,8 +232,11 @@ object debug {
           * Renders in colour with no break-point.
           *
           * @param name The name to be assigned to this parser
+          * @param watchedRegs Which registers to also track the values of and their names, if any
           */
-        def debug(name: String): Parsley[A] = debug(name, break = NoBreak, coloured = true)
+        def debug(name: String, watchedRegs: (Reg[_], String)*): Parsley[A] = debug(name, break = NoBreak, coloured = true, watchedRegs: _*)
+
+        private [parsley] def debug(name: String): Parsley[A] = debug(name, Seq.empty[(Reg[_], String)]: _*)
 
         def debugError(name: String, coloured: Boolean)(implicit errBuilder: ErrorBuilder[_]): Parsley[A] = {
             new Parsley(new frontend.DebugError[A](con(p).internal, name, !coloured, errBuilder))
