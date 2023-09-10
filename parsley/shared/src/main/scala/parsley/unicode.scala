@@ -6,7 +6,7 @@
 package parsley
 
 import parsley.Parsley.{empty, fresh, pure}
-import parsley.combinator.skipMany
+import parsley.combinator.{skipMany, skipSome}
 import parsley.errors.combinator.ErrorMethods
 import parsley.token.errors.{Label, LabelConfig, NotConfigured}
 
@@ -328,7 +328,7 @@ object unicode {
     }
 
     // TODO: document, test
-    def stringOfMany(pred: Int => Boolean): Parsley[String] = stringOfMany(satisfy(pred))
+    def stringOfMany(pred: Int => Boolean): Parsley[String] = skipMany(satisfy(pred)).span//stringOfMany(satisfy(pred))
 
     // TODO: document
     def stringOfSome(pc: Parsley[Int]): Parsley[String] = {
@@ -338,7 +338,7 @@ object unicode {
     }
 
     // TODO: document, test
-    def stringOfSome(pred: Int => Boolean): Parsley[String] = stringOfSome(satisfy(pred))
+    def stringOfSome(pred: Int => Boolean): Parsley[String] = skipSome(satisfy(pred)).span//stringOfSome(satisfy(pred))
 
     // These should always just match up, so no need to test
     // $COVERAGE-OFF$
