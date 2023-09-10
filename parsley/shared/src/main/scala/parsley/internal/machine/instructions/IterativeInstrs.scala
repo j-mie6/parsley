@@ -239,6 +239,6 @@ private [internal] final class SkipManyUntil(var label: Int) extends InstrWithLa
         }
     }
     // $COVERAGE-OFF$
-    override def toString: String = s"ManyUntil($label)"
+    override def toString: String = s"SkipManyUntil($label)"
     // $COVERAGE-ON$
 }
