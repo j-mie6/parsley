@@ -21,7 +21,7 @@ It is worth noting the highest-level structure:
   almost all other applications.
 
 @:callout(info)
-*The Scaladoc for this page can be found at [`parsley.token.Lexer`][@:api(parsley.token.Lexer)].*
+*The Scaladoc for this page can be found at [`parsley.token.Lexer`](@:api(parsley.token.Lexer)).*
 @:@
 
 ## Distinguishing Between "Lexeme" and "Non-Lexeme"

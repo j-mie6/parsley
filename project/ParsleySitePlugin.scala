@@ -25,10 +25,10 @@ object ParsleySitePlugin extends AutoPlugin {
         tlFatalWarnings := false, // turn off fatal warnings for mdoc
         tlSiteKeepFiles := false, // FIXME: turn off when docs are stable
         laikaExtensions += laikaHtmlRenderer(Renderers.backticksToCode),
-        laikaConfig :=  LaikaConfig.defaults.withConfigValue(LinkConfig(
-                apiLinks = tlSiteApiUrl.value.map(url => ApiLinks(baseUri = url.toExternalForm)).toSeq,
-                sourceLinks = scmInfo.value.map(scm => SourceLinks(baseUri = scm.browseUrl.toExternalForm, suffix = "scala")).toSeq, //FIXME: not sure this works
-            ))
+        laikaConfig :=  LaikaConfig.defaults.withConfigValue(
+            LinkConfig.empty.addApiLinks(tlSiteApiUrl.value.map(url => ApiLinks(baseUri = url.toExternalForm)).toSeq: _*)
+                            .addSourceLinks(scmInfo.value.map(scm => SourceLinks(baseUri = scm.browseUrl.toExternalForm, suffix = "scala")).toSeq: _*) //FIXME: not sure this works
+            )
             .withRawContent,  // enable usage of raw HTML,  // enable usage of raw HTML
         tlSiteHelium := tlSiteHelium.value.site.layout(
                 topBarHeight = LengthUnit.px(50),

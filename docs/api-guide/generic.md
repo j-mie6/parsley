@@ -13,7 +13,7 @@ The `parsley.genericbridges` module contains 23 classes that allow
 you to get started using the technique straight away if you wish.
 
 @:callout(info)
-*The Scaladoc for this page can be found at [`parsley.genericbridges`][@:api(parsley.genericbridges$)].*
+*The Scaladoc for this page can be found at [`parsley.genericbridges`](@:api(parsley.genericbridges$)).*
 @:@
 
 ## What are *Parser Bridges*?
@@ -69,7 +69,7 @@ templates (see [the associated tutorial](../tutorial/parser-bridge-pattern.md) f
 `parsley` provides some basic ones to get you started.
 
 ## How to use
-The [`parsley.genericbridges`][@:api(parsley.genericbridges$)] module contains `ParserBridge1` through
+The [`parsley.genericbridges`](@:api(parsley.genericbridges$)) module contains `ParserBridge1` through
 `ParserBridge22` as well as `ParserBridge0`; they all extend `ParserBridgeSingleton`, which provides
 some additional combinators.
 
