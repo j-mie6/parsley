@@ -6,16 +6,6 @@
     margin-right: 1em;
 }
 
-/* This ensures that code renders properly on the side panels */
-.nav-list li a code {
-    color: var(--primary-color);
-}
-#page-nav .header code,
-.nav-list .active code {
-    color: var(--bg-color);
-    text-decoration: none;
-}
-
 /* This renders pure code  */
 .nav-header code {
     color: var(--secondary-color);
