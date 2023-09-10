@@ -73,10 +73,12 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = left match {
         // pure f <*> p = f <$> p
         case Pure(f) => right match {
-            // TODO: re-enable
-            //case ct@CharTok(c) => result(instrs += instructions.CharTokFastPerform[Char, B](c, f.asInstanceOf[Char => B], ct.expected))
-            //case ct@SupplementaryCharTok(c) => result(instrs += instructions.SupplementaryCharTokFastPerform[Int, B](c, f.asInstanceOf[Int => B], ct.expected))
-            //case st@StringTok(s) => result(instrs += instructions.StringTokFastPerform(s, f.asInstanceOf[String => B], st.expected))
+            case ct@CharTok(c) if producesResults =>
+                result(instrs += instructions.CharTokFastPerform[Char, B](c, f.asInstanceOf[Char => B], ct.expected))
+            case ct@SupplementaryCharTok(c) if producesResults =>
+                result(instrs += instructions.SupplementaryCharTokFastPerform[Int, B](c, f.asInstanceOf[Int => B], ct.expected))
+            case st@StringTok(s) if producesResults =>
+                result(instrs += instructions.StringTokFastPerform(s, f.asInstanceOf[String => B], st.expected))
             case _ =>
                 suspend(right.codeGen[M, R](producesResults)) |> {
                     if (producesResults) instrs += instructions.Lift1(f)
@@ -95,19 +97,6 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
 
 private [deepembedding] final class >>=[A, B](val p: StrictParsley[A], private [>>=] val f: A => frontend.LazyParsley[B]) extends Unary[A, B] {
     override def optimise: StrictParsley[B] = p match {
-        // monad law 1: pure x >>= f = f x: unsafe because it might expose recursion
-        //case Pure(x) if safe => new Rec(() => f(x))
-        // char/string x = char/string x *> pure x and monad law 1
-        //case p@CharTok(c) => *>(p, new Rec(() => f(c.asInstanceOf[A]), expected))
-        //case p@StringTok(s) => *>(p, new Rec(() => f(s.asInstanceOf[A]), expected))
-        // (q *> p) >>= f = q *> (p >>= f)
-        //case u *> v => *>(u, >>=(v, f).optimise)
-        // monad law 3: (m >>= g) >>= f = m >>= (\x -> g x >>= f) Note: this *could* help if g x ended with a pure, since this would be optimised out!
-        //case (m: Parsley[T] @unchecked) >>= (g: (T => A) @unchecked) =>
-        //    p = m.asInstanceOf[Parsley[A]]
-        //    f = (x: T) => >>=(g(x), f, expected).optimise
-        //    this
-        // monadplus law (left zero)
         case z: MZero => z
         case _ => this
     }
@@ -214,10 +203,7 @@ private [deepembedding] final class Seq[A](private [backend] var before: DoublyL
             suspend(Seq.codeGenMany[M, R](before.iterator)) >> {
                 before.addOne(last) // undo the initInPlace, you'll thank me later
                 last match {
-                    //TODO: re-enable
-                    //case ct@CharTok(c) => result(instrs += instructions.CharTokFastPerform[Char, A](c, _ => x, ct.expected))
-                    //case st@StringTok(s) => result(instrs += instructions.StringTokFastPerform(s, _ => x, st.expected))
-                    //case st@Satisfy(f) => result(instrs += new instructions.SatisfyExchange(f, x, st.expected))
+                    case st@Satisfy(f) if producesResults => result(instrs += new instructions.SatisfyExchange(f, x, st.expected))
                     case _ =>
                         suspend(last.codeGen[M, R](producesResults = false)) |> {
                             if (producesResults) instrs += new instructions.Push(x)
@@ -244,10 +230,7 @@ private [backend] object Seq {
     private [Seq] def codeGenMany[M[_, +_]: ContOps, R](it: Iterator[StrictParsley[_]])
                                                        (implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         if (it.hasNext) {
-            suspend(it.next().codeGen[M, R](producesResults = false)) >> {
-                //instrs += instructions.Pop
-                suspend(codeGenMany(it))
-            }
+            suspend(it.next().codeGen[M, R](producesResults = false)) >> suspend(codeGenMany(it))
         } else result(())
     }
 
