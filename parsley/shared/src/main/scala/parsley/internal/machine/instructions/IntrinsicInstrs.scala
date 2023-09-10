@@ -44,25 +44,23 @@ private [internal] object Lift3 {
     def apply[A, B, C, D](f: (A, B, C) => D): Lift3 = new Lift3(f.asInstanceOf[(Any, Any, Any) => Any])
 }
 
-private [internal] class CharTok(c: Char, x: Any, errorItem: Iterable[ExpectItem]) extends Instr {
-    def this(c: Char, x: Any, expected: LabelConfig) = this(c, x, expected.asExpectItems(s"$c"))
-    def this(c: Char, expected: LabelConfig) = this(c, c, expected)
+private [internal] class CharTok private (c: Char, errorItem: Iterable[ExpectItem]) extends Instr {
+    def this(c: Char, expected: LabelConfig) = this(c, expected.asExpectItems(s"$c"))
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         if (ctx.moreInput && ctx.peekChar == c) {
             ctx.consumeChar()
-            ctx.pushAndContinue(x)
+            ctx.inc()
         }
         else ctx.expectedFail(errorItem, unexpectedWidth = 1)
     }
     // $COVERAGE-OFF$
-    override def toString: String = if (x == c) s"Chr($c)" else s"ChrExchange($c, $x)"
+    override def toString: String = s"Chr($c)"
     // $COVERAGE-ON$
 }
 
-private [internal] class SupplementaryCharTok(codepoint: Int, x: Any, errorItem: Iterable[ExpectItem]) extends Instr {
-    def this(codepoint: Int, x: Any, expected: LabelConfig) = this(codepoint, x, expected.asExpectItems(Character.toChars(codepoint).mkString))
-    def this(codepoint: Int, expected: LabelConfig) = this(codepoint, codepoint, expected)
+private [internal] class SupplementaryCharTok private (codepoint: Int, errorItem: Iterable[ExpectItem]) extends Instr {
+    def this(codepoint: Int, expected: LabelConfig) = this(codepoint, expected.asExpectItems(Character.toChars(codepoint).mkString))
 
     assert(Character.isSupplementaryCodePoint(codepoint), "SupplementaryCharTok should only be used for supplementary code points")
     val h = Character.highSurrogate(codepoint)
@@ -71,20 +69,17 @@ private [internal] class SupplementaryCharTok(codepoint: Int, x: Any, errorItem:
         ensureRegularInstruction(ctx)
         if (ctx.moreInput(2) && ctx.peekChar(0) == h && ctx.peekChar(1) == l) {
             ctx.fastConsumeSupplementaryChar()
-            ctx.pushAndContinue(x)
+            ctx.inc()
         }
         else ctx.expectedFail(errorItem, unexpectedWidth = 1)
     }
     // $COVERAGE-OFF$
-    override def toString: String =
-        if (x == codepoint) s"SupplementaryChr($h$l)"
-        else s"SupplementaryChrExchange($h$l, $x)"
+    override def toString: String = s"SupplementaryChr($h$l)"
     // $COVERAGE-ON$
 }
 
-private [internal] final class StringTok(s: String, x: Any, errorItem: Iterable[ExpectItem]) extends Instr {
-    def this(s: String, x: Any, expected: LabelConfig) = this(s, x,  expected.asExpectItems(s))
-    def this(s: String, expected: LabelConfig) = this(s, s, expected)
+private [internal] final class StringTok private (s: String, errorItem: Iterable[ExpectItem]) extends Instr {
+    def this(s: String, expected: LabelConfig) = this(s, expected.asExpectItems(s))
 
     private [this] val sz = s.length
     private [this] val codePointLength = s.codePointCount(0, sz)
@@ -125,7 +120,7 @@ private [internal] final class StringTok(s: String, x: Any, errorItem: Iterable[
             ctx.col = colAdjust(ctx.col)
             ctx.line = lineAdjust(ctx.line)
             ctx.offset = i
-            ctx.pushAndContinue(x)
+            ctx.inc()
         }
     }
 
@@ -134,7 +129,7 @@ private [internal] final class StringTok(s: String, x: Any, errorItem: Iterable[
         go(ctx, ctx.offset, 0)
     }
     // $COVERAGE-OFF$
-    override def toString: String = if (x.isInstanceOf[String] && (s eq x.asInstanceOf[String])) s"Str($s)" else s"StrPerform($s, $x)"
+    override def toString: String = s"Str($s)"
     // $COVERAGE-ON$
 }
 
@@ -356,16 +351,4 @@ private [internal] object StringTok {
             col => (((col + x + 3) & -4) | 1) + y // scalastyle:ignore magic.number
         }
     }
-}
-
-private [internal] object CharTokFastPerform {
-    def apply[A >: Char, B](c: Char, f: A => B, expected: LabelConfig): CharTok = new CharTok(c, f(c), expected)
-}
-
-private [internal] object SupplementaryCharTokFastPerform {
-    def apply[A >: Int, B](c: Int, f: A => B, expected: LabelConfig): SupplementaryCharTok = new SupplementaryCharTok(c, f(c), expected)
-}
-
-private [internal] object StringTokFastPerform {
-    def apply(s: String, f: String => Any, expected: LabelConfig): StringTok = new StringTok(s, f(s), expected)
 }

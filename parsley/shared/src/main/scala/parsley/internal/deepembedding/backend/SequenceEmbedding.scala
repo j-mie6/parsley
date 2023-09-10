@@ -23,6 +23,7 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
         // Fusion laws
         case (uf, Pure(x)) if (uf.isInstanceOf[Pure[_]] || uf.isInstanceOf[_ <*> _]) => uf match {
             // first position fusion
+            // TODO: fusion on char/string
             case Pure(f) => new Pure(f(x))
             // second position fusion
             case Pure(f: Function1[t, A => B] @unchecked) <*> (uy/*: StrictParsley[t]*/) => // scalastyle:ignore disallow.space.before.token
@@ -72,18 +73,10 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
     }
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = left match {
         // pure f <*> p = f <$> p
-        case Pure(f) => right match {
-            case ct@CharTok(c) if producesResults =>
-                result(instrs += instructions.CharTokFastPerform[Char, B](c, f.asInstanceOf[Char => B], ct.expected))
-            case ct@SupplementaryCharTok(c) if producesResults =>
-                result(instrs += instructions.SupplementaryCharTokFastPerform[Int, B](c, f.asInstanceOf[Int => B], ct.expected))
-            case st@StringTok(s) if producesResults =>
-                result(instrs += instructions.StringTokFastPerform(s, f.asInstanceOf[String => B], st.expected))
-            case _ =>
-                suspend(right.codeGen[M, R](producesResults)) |> {
-                    if (producesResults) instrs += instructions.Lift1(f)
-                }
-        }
+        case Pure(f) =>
+            suspend(right.codeGen[M, R](producesResults)) |> {
+                if (producesResults) instrs += instructions.Lift1(f)
+            }
         case _ =>
             suspend(left.codeGen[M, R](producesResults)) >>
             suspend(right.codeGen[M, R](producesResults)) |> {

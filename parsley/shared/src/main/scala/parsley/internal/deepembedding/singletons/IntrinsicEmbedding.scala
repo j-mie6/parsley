@@ -18,7 +18,7 @@ private [parsley] final class CharTok(private val c: Char, val expected: LabelCo
     // $COVERAGE-ON$
     override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
         instrs += new instructions.CharTok(c, expected)
-        if (!producesResults) instrs += instructions.Pop
+        if (producesResults) instrs += new instructions.Push(c)
     }
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Char] = visitor.visit(this, context)(c, expected)
@@ -30,7 +30,7 @@ private [parsley] final class SupplementaryCharTok(private val codepoint: Int, v
     // $COVERAGE-ON$
     override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
         instrs += new instructions.SupplementaryCharTok(codepoint, expected)
-        if (!producesResults) instrs += instructions.Pop
+        if (producesResults) instrs += new instructions.Push(codepoint)
     }
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Int] = visitor.visit(this, context)(codepoint, expected)
@@ -42,7 +42,7 @@ private [parsley] final class StringTok(private val s: String, val expected: Lab
     // $COVERAGE-ON$
     override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
         instrs += new instructions.StringTok(s, expected)
-        if (!producesResults) instrs += instructions.Pop
+        if (producesResults) instrs += new instructions.Push(s)
     }
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[String] = visitor.visit(this, context)(s, expected)
