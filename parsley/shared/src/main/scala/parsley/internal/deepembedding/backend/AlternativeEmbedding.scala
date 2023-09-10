@@ -229,9 +229,9 @@ private [backend] object Choice {
 
     private def tablable(p: StrictParsley[_], backtracks: Boolean): Option[(Char, Iterable[ExpectItem], Int, Boolean)] = p match {
         // CODO: Numeric parsers by leading digit (This one would require changing the foldTablified function a bit)
-        case ct@CharTok(c)                       => Some((c, ct.expected.asExpectItems(c), 1, backtracks))
-        case ct@SupplementaryCharTok(c)          => Some((Character.highSurrogate(c), ct.expected.asExpectItems(Character.toChars(c).mkString), 1, backtracks))
-        case st@StringTok(s)                     => Some((s.head, st.expected.asExpectItems(s), s.codePointCount(0, s.length), backtracks))
+        case ct@CharTok(c, _)                    => Some((c, ct.expected.asExpectItems(c), 1, backtracks))
+        case ct@SupplementaryCharTok(c, _)       => Some((Character.highSurrogate(c), ct.expected.asExpectItems(Character.toChars(c).mkString), 1, backtracks))
+        case st@StringTok(s, _)                  => Some((s.head, st.expected.asExpectItems(s), s.codePointCount(0, s.length), backtracks))
         //case op@MaxOp(o)                         => Some((o.head, Some(Desc(o)), o.size, backtracks))
         //case _: StringLiteral | RawStringLiteral => Some(('"', Some(Desc("string")), 1, backtracks))
         // TODO: This can be done for case insensitive things too, but with duplicated branching

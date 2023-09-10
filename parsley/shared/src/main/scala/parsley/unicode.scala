@@ -102,7 +102,7 @@ object unicode {
     private def char(c: Int, label: String): Parsley[Int] = char(c, Label(label))
     private def char(c: Int, label: LabelConfig): Parsley[Int] = {
         if (Character.isBmpCodePoint(c)) character.char(c.toChar).as(c)
-        else new Parsley(new singletons.SupplementaryCharTok(c, label))
+        else new Parsley(new singletons.SupplementaryCharTok(c, c, label))
     }
 
     // TODO: document, test

@@ -151,9 +151,9 @@ class VisitorTests extends ParsleyTest {
         new Comment(SpaceDesc.plain, new ErrorConfig).testV
         new Sign(Sign.CombinedType, PlusSignPresence.Optional).testV
         new NonSpecific("foo", identity[String], _ => true, _ => true, _ => false).testV
-        new CharTok(' ', dummyLabelConfig).testV
-        new SupplementaryCharTok(0, dummyLabelConfig).testV
-        new StringTok("bar", dummyLabelConfig).testV
+        new CharTok(' ', ' ', dummyLabelConfig).testV
+        new SupplementaryCharTok(0, 0, dummyLabelConfig).testV
+        new StringTok("bar", 4, dummyLabelConfig).testV
         Eof.testV
         new UniSatisfy(_ => true, dummyLabelConfig).testV
         new Modify(dummyRegister(), identity[Unit]).testV

@@ -17,9 +17,9 @@ private [deepembedding] final class ErrorLabel[A](val p: StrictParsley[A], priva
     override def handlerLabel(state: CodeGenState): Int = state.getLabelForRelabelError(labels)
     // don't need to be limited to not hidden when the thing can never internally generate hints
     final override def optimise: StrictParsley[A] = p match {
-        case CharTok(c) => new CharTok(c, Label(labels: _*)).asInstanceOf[StrictParsley[A]]
-        case SupplementaryCharTok(c) => new SupplementaryCharTok(c, Label(labels: _*)).asInstanceOf[StrictParsley[A]]
-        case StringTok(s) => new StringTok(s, Label(labels: _*)).asInstanceOf[StrictParsley[A]]
+        case CharTok(c, x) => new CharTok(c, x, Label(labels: _*)).asInstanceOf[StrictParsley[A]]
+        case SupplementaryCharTok(c, x) => new SupplementaryCharTok(c, x, Label(labels: _*)).asInstanceOf[StrictParsley[A]]
+        case StringTok(s, x) => new StringTok(s, x, Label(labels: _*)).asInstanceOf[StrictParsley[A]]
         case Satisfy(f) => new Satisfy(f, Label(labels: _*)).asInstanceOf[StrictParsley[A]]
         case UniSatisfy(f) => new UniSatisfy(f, Label(labels: _*)).asInstanceOf[StrictParsley[A]]
         case ErrorLabel(p, label2) if label2.nonEmpty => ErrorLabel(p, labels)

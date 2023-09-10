@@ -19,9 +19,9 @@ private [deepembedding] final class Attempt[A](val p: StrictParsley[A]) extends 
     override def instrNeedsLabel: Boolean = false
     override def handlerLabel(state: CodeGenState): Int  = state.getLabel(instructions.RestoreAndFail)
     override def optimise: StrictParsley[A] = p match {
-        case p: CharTok => p
+        case p: CharTok[_] => p
         case p: Attempt[_] => p
-        case StringTok(s) if s.size == 1 => p
+        //case StringTok(s, _) if s.size == 1 => p
         case _ => this
     }
     // $COVERAGE-OFF$

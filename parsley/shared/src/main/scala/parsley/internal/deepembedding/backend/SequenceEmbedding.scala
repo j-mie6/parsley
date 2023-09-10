@@ -23,7 +23,6 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
         // Fusion laws
         case (uf, Pure(x)) if (uf.isInstanceOf[Pure[_]] || uf.isInstanceOf[_ <*> _]) => uf match {
             // first position fusion
-            // TODO: fusion on char/string
             case Pure(f) => new Pure(f(x))
             // second position fusion
             case Pure(f: Function1[t, A => B] @unchecked) <*> (uy/*: StrictParsley[t]*/) => // scalastyle:ignore disallow.space.before.token
@@ -48,6 +47,10 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
             left = new Pure(f.compose(g)).asInstanceOf[StrictParsley[A => B]]
             right = u.asInstanceOf[StrictParsley[A]]
             this
+        // Fusion for special combinators
+        case (Pure(f), ct@CharTok(c, x)) => new CharTok(c, f(x), ct.expected)
+        case (Pure(f), ct@SupplementaryCharTok(c, x)) => new SupplementaryCharTok(c, f(x), ct.expected)
+        case (Pure(f), ct@StringTok(c, x)) => new StringTok(c, f(x), ct.expected)
         // TODO: functor law with lift2!
         // right absorption law: mzero <*> p = mzero
         case (z: MZero, _) => z
@@ -64,11 +67,6 @@ private [deepembedding] final class <*>[A, B](var left: StrictParsley[A => B], v
         }
         // consequence of left zero law and monadic definition of <*>, preserving error properties of left
         case (u, z: MZero) => *>(u, z)
-        // interchange law: u <*> pure y == pure ($y) <*> u == ($y) <$> u (single instruction, so we benefit at code-gen)
-        case (uf, Pure(x)) =>
-            left = new Pure((f: A => B) => f(x)).asInstanceOf[StrictParsley[A => B]]
-            right = uf.asInstanceOf[StrictParsley[A]]
-            this
         case _ => this
     }
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = left match {

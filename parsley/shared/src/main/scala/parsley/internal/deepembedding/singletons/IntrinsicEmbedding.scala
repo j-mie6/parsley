@@ -11,41 +11,44 @@ import parsley.token.errors.LabelConfig
 import parsley.internal.deepembedding.backend.StrictParsley.InstrBuffer
 import parsley.internal.deepembedding.frontend.{LazyParsleyIVisitor, UsesRegister}
 import parsley.internal.machine.instructions
+import parsley.internal.deepembedding.backend.StrictParsley
 
-private [parsley] final class CharTok(private val c: Char, val expected: LabelConfig) extends Singleton[Char] {
+private [parsley] final class CharTok[A](private val c: Char, private val x: A, val expected: LabelConfig) extends Singleton[A] {
     // $COVERAGE-OFF$
-    override def pretty: String = s"char($c)"
+    override def pretty: String = s"char($c).as($x)"
     // $COVERAGE-ON$
     override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
         instrs += new instructions.CharTok(c, expected)
-        if (producesResults) instrs += new instructions.Push(c)
+        if (producesResults) instrs += new instructions.Push(x)
     }
 
-    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Char] = visitor.visit(this, context)(c, expected)
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(c, x, expected)
 }
 
-private [parsley] final class SupplementaryCharTok(private val codepoint: Int, val expected: LabelConfig) extends Singleton[Int] {
+private [parsley] final class SupplementaryCharTok[A](private val codepoint: Int, private val x: A, val expected: LabelConfig) extends Singleton[A] {
     // $COVERAGE-OFF$
-    override def pretty: String = s"char(${Character.toChars(codepoint).mkString})"
+    override def pretty: String = s"char(${Character.toChars(codepoint).mkString}).as($x)"
     // $COVERAGE-ON$
     override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
         instrs += new instructions.SupplementaryCharTok(codepoint, expected)
-        if (producesResults) instrs += new instructions.Push(codepoint)
+        if (producesResults) instrs += new instructions.Push(x)
     }
 
-    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[Int] = visitor.visit(this, context)(codepoint, expected)
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(codepoint, x, expected)
 }
 
-private [parsley] final class StringTok(private val s: String, val expected: LabelConfig) extends Singleton[String] {
+private [parsley] final class StringTok[A](private val s: String, private val x: A, val expected: LabelConfig) extends Singleton[A] {
     // $COVERAGE-OFF$
-    override def pretty: String = s"string($s)"
+    override def pretty: String = s"string($s).as($x)"
     // $COVERAGE-ON$
     override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = {
         instrs += new instructions.StringTok(s, expected)
-        if (producesResults) instrs += new instructions.Push(s)
+        if (producesResults) instrs += new instructions.Push(x)
     }
 
-    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[String] = visitor.visit(this, context)(s, expected)
+    override protected[deepembedding] def optimise: StrictParsley[A] = if (s.length == 1) new CharTok(s.head, x, expected) else this
+
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(s, x, expected)
 }
 
 private [parsley] object Eof extends Singleton[Unit] {
@@ -85,13 +88,13 @@ private [parsley] final class Modify[S](val reg: Reg[S], f: S => S) extends Sing
 }
 
 private [deepembedding] object CharTok {
-    def unapply(self: CharTok): Some[Char] = Some(self.c)
+    def unapply[A](self: CharTok[A]): Some[(Char, A)] = Some((self.c, self.x))
 }
 private [deepembedding] object SupplementaryCharTok {
-    def unapply(self: SupplementaryCharTok): Some[Int] = Some(self.codepoint)
+    def unapply[A](self: SupplementaryCharTok[A]): Some[(Int, A)] = Some((self.codepoint, self.x))
 }
 private [deepembedding] object StringTok {
-    def unapply(self: StringTok): Some[String] = Some(self.s)
+    def unapply[A](self: StringTok[A]): Some[(String, A)] = Some((self.s, self.x))
 }
 private [deepembedding] object UniSatisfy {
     def unapply(self: UniSatisfy): Some[Int => Boolean] = Some(self.f)
