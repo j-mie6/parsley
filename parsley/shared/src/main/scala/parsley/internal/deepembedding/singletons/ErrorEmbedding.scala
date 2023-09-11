@@ -5,8 +5,6 @@
  */
 package parsley.internal.deepembedding.singletons
 
-import parsley.errors.UnexpectedItem
-
 import parsley.internal.deepembedding.backend.MZero
 import parsley.internal.deepembedding.backend.StrictParsley.InstrBuffer
 import parsley.internal.deepembedding.frontend.LazyParsleyIVisitor
@@ -42,24 +40,24 @@ private [parsley] final class Unexpected(msg: String, width: CaretWidth) extends
 }
 
 // From the thesis
-private [parsley] final class VanillaGen[A](unexGen: A => UnexpectedItem, reasonGen: A => Option[String]) extends Singleton[((A, Int)) => Nothing] {
+private [parsley] final class VanillaGen[A](gen: parsley.errors.VanillaGen[A]) extends Singleton[((A, Int)) => Nothing] {
     // $COVERAGE-OFF$
-    override def pretty: String = s"vanillaError(???, ???)"
+    override def pretty: String = "VanillaGen"
     // $COVERAGE-ON$
 
-    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = instrs += new instructions.VanillaGen(unexGen, reasonGen)
+    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = instrs += new instructions.VanillaGen(gen)
 
-    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[((A, Int)) => Nothing] = visitor.visit(this, context)(unexGen, reasonGen)
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[((A, Int)) => Nothing] = visitor.visit(this, context)(gen)
 }
 
-private [parsley] final class SpecialisedGen[A](msgGen: A => Seq[String]) extends Singleton[((A, Int)) => Nothing] {
+private [parsley] final class SpecialisedGen[A](gen: parsley.errors.SpecialisedGen[A]) extends Singleton[((A, Int)) => Nothing] {
     // $COVERAGE-OFF$
-    override def pretty: String = s"specialisedError(???)"
+    override def pretty: String = "SpecialisedGen"
     // $COVERAGE-ON$
 
-    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = instrs += new instructions.SpecialisedGen(msgGen)
+    override def genInstrs(producesResults: Boolean)(implicit instrs: InstrBuffer): Unit = instrs += new instructions.SpecialisedGen(gen)
 
-    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[((A, Int)) => Nothing] = visitor.visit(this, context)(msgGen)
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[((A, Int)) => Nothing] = visitor.visit(this, context)(gen)
 }
 
 private [parsley] object Empty {

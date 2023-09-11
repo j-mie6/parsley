@@ -10,8 +10,6 @@ import parsley.implicits.zipped.Zipped3
 import parsley.errors.combinator.{ErrorMethods, amend}
 import parsley.position.offset
 
-import parsley.internal.deepembedding.singletons
-
 /** This module contains combinators that help facilitate the error message generational patterns ''Verified Errors'' and ''Preventative Errors''.
   *
   * In particular, exposes an extension class `VerifiedErrors` that facilitates creating verified errors in many different formats.
@@ -54,7 +52,11 @@ object patterns {
           * @note $autoAmend
           * @note $attemptNonTerminal
           */
-        def verifiedFail(msggen: A => Seq[String]): Parsley[Nothing] = this.verifiedWith(new Parsley(new singletons.SpecialisedGen(msggen)))
+        def verifiedFail(msggen: A => Seq[String]): Parsley[Nothing] = this.verifiedWith {
+            new SpecialisedGen[A] {
+                override def messages(x: A) = msggen(x)
+            }
+        }
 
         /** Ensures this parser does not succeed, failing with a specialised error if it does.
           *
@@ -109,14 +111,18 @@ object patterns {
           */
         def verifiedUnexpected(reason: A => String): Parsley[Nothing] = this.verifiedWithVanillaRaw(x => Some(reason(x)))
 
-        private def verifiedWith(err: Parsley[((A, Int)) => Nothing]) = amend {
-            (offset, atomic(con(p)).newHide, offset).zipped {
+        // TODO: document and test
+        def verifiedWith(err: ErrorGen[A]) = amend {
+            err((offset, atomic(con(p)).newHide, offset).zipped {
                 (s, x, e) => (x, e-s)
-            } <**> err
-        }.unsafe() // need to stop results being optimised away by accident
+            })
+        }
 
-        @inline private def verifiedWithVanilla(unexGen: A => UnexpectedItem, reasonGen: A => Option[String]) = {
-            verifiedWith(new Parsley(new singletons.VanillaGen(unexGen, reasonGen)))
+        @inline private def verifiedWithVanilla(unexGen: A => UnexpectedItem, reasonGen: A => Option[String]) = verifiedWith {
+            new VanillaGen[A] {
+                override def unexpected(x: A) = unexGen(x)
+                override def reason(x: A) = reasonGen(x)
+            }
         }
 
         @inline private def verifiedWithVanillaRaw(reasonGen: A => Option[String]) = verifiedWithVanilla(_ => UnexpectedItem.Raw, reasonGen)
@@ -125,7 +131,9 @@ object patterns {
     // TODO: document!
     implicit final class PreventativeErrors[P, A](p: P)(implicit con: P => Parsley[A]) {
         // TODO: document and test
-        def preventativeFail(msggen: A => Seq[String]): Parsley[Unit] = this.preventWith(new Parsley(new singletons.SpecialisedGen(msggen)))
+        def preventativeFail(msggen: A => Seq[String]): Parsley[Unit] = this.preventWith(new SpecialisedGen[A] {
+            override def messages(x: A) = msggen(x)
+        })
         // TODO: document and test
         def preventativeFail(msg0: String, msgs: String*): Parsley[Unit] = this.preventativeFail(_ => msg0 +: msgs)
         // TODO: document and test
@@ -133,20 +141,24 @@ object patterns {
         // TODO: document and test
         def preventativeExplain(reason: String, labels: String*): Parsley[Unit] = this.preventativeExplain(_ => reason, labels: _*)
 
-        private def preventWith(err: Parsley[((A, Int)) => Nothing], labels: String*) = {
+        // TODO: document and test
+        def preventWith(err: ErrorGen[A], labels: String*) = {
             val inner: Parsley[Either[(A, Int), Unit]] =
                 (offset, atomic(con(p)).newHide, offset).zipped {
                     (s, x, e) => (x, e-s)
                 } <+> unit
             val labelledErr = labels match {
-                case l1 +: ls       => err.label(l1, ls: _*)
-                case _              => err
+                case l1 +: ls       => err.parser.label(l1, ls: _*)
+                case _              => err.parser
             }
             amend(select(inner, labelledErr))
         }
 
         @inline private def preventWithVanilla(unexGen: A => UnexpectedItem, reasonGen: A => Option[String], labels: String*) = {
-            this.preventWith(new Parsley(new singletons.VanillaGen(unexGen, reasonGen)), labels: _*)
+            this.preventWith(new VanillaGen[A] {
+                override def unexpected(x: A) = unexGen(x)
+                override def reason(x: A) = reasonGen(x)
+            }, labels: _*)
         }
 
         @inline private def preventWithVanillaRaw(reasonGen: A => Option[String], labels: String*) = {

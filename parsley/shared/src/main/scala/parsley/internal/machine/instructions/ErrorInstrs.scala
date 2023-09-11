@@ -5,8 +5,6 @@
  */
 package parsley.internal.machine.instructions
 
-import parsley.errors.UnexpectedItem
-
 import parsley.internal.errors.{CaretWidth, RigidCaret, UnexpectDesc}
 import parsley.internal.machine.Context
 import parsley.internal.machine.XAssert._
@@ -197,33 +195,33 @@ private [internal] final class Unexpected(msg: String, width: CaretWidth) extend
     // $COVERAGE-ON$
 }
 
-private [internal] final class VanillaGen[A](unexGen: A => UnexpectedItem, reasonGen: A => Option[String]) extends Instr {
+private [internal] final class VanillaGen[A](gen: parsley.errors.VanillaGen[A]) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         // stack will have an (A, Int) pair on it
         val (x, caretWidth) = ctx.stack.pop[(A, Int)]()
-        val unex = unexGen(x)
-        val reason = reasonGen(x)
-        val err = unex.makeError(ctx.offset, ctx.line, ctx.col, caretWidth)
+        val unex = gen.unexpected(x)
+        val reason = gen.reason(x)
+        val err = unex.makeError(ctx.offset, ctx.line, ctx.col, gen.adjustWidth(caretWidth))
         // Sorry, it's faster :(
         if (reason.isDefined) ctx.fail(err.withReason(reason.get))
         else ctx.fail(err)
     }
 
     // $COVERAGE-OFF$
-    override def toString: String = s"VanillaGen(???, ???)"
+    override def toString: String = s"VanillaGen"
     // $COVERAGE-ON$
 }
 
-private [internal] final class SpecialisedGen[A](msgGen: A => Seq[String]) extends Instr {
+private [internal] final class SpecialisedGen[A](gen: parsley.errors.SpecialisedGen[A]) extends Instr {
     override def apply(ctx: Context): Unit = {
         ensureRegularInstruction(ctx)
         // stack will have an (A, Int) pair on it
         val (x, caretWidth) = ctx.stack.pop[(A, Int)]()
-        ctx.failWithMessage(new RigidCaret(caretWidth), msgGen(x): _*)
+        ctx.failWithMessage(new RigidCaret(gen.adjustWidth(caretWidth)), gen.messages(x): _*)
     }
 
     // $COVERAGE-OFF$
-    override def toString: String = s"SpecialisedGen(???)"
+    override def toString: String = s"SpecialisedGen"
     // $COVERAGE-ON$
 }

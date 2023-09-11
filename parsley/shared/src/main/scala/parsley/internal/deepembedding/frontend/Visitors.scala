@@ -56,8 +56,8 @@ private [parsley] abstract class LazyParsleyIVisitor[-T, +U[+_]] { // scalastyle
     def visit(self: Empty, context: T)(width: Int): U[Nothing]
     def visit(self: Fail, context: T)(width: CaretWidth, msgs: Seq[String]): U[Nothing]
     def visit(self: Unexpected, context: T)(msg: String, width: CaretWidth): U[Nothing]
-    def visit[A](self: VanillaGen[A], context: T)(unexGen: A => parsley.errors.UnexpectedItem, reasonGen: A => Option[String]): U[((A, Int)) => Nothing]
-    def visit[A](self: SpecialisedGen[A], context: T)(msgGen: A => Seq[String]): U[((A, Int)) => Nothing]
+    def visit[A](self: VanillaGen[A], context: T)(gen: parsley.errors.VanillaGen[A]): U[((A, Int)) => Nothing]
+    def visit[A](self: SpecialisedGen[A], context: T)(gen: parsley.errors.SpecialisedGen[A]): U[((A, Int)) => Nothing]
     def visit(self: EscapeMapped, context: T)(escTrie: Trie[Int], escs: Set[String]): U[Int]
     def visit(self: EscapeAtMost, context: T)(n: Int, radix: Int): U[BigInt]
     def visit(self: EscapeOneOfExactly, context: T)(radix: Int, ns: List[Int], ie: SpecialisedFilterConfig[Int]): U[BigInt]
@@ -182,9 +182,9 @@ private [frontend] abstract class GenericLazyParsleyIVisitor[-T, +U[+_]] extends
         visitSingleton(self, context)
     override def visit(self: Unexpected, context: T)(msg: String, width: CaretWidth): U[Nothing] =
         visitSingleton(self, context)
-    override def visit[A](self: VanillaGen[A], context: T)(unexGen: A => parsley.errors.UnexpectedItem, reasonGen: A => Option[String]): U[((A, Int)) => Nothing] =
+    override def visit[A](self: VanillaGen[A], context: T)(gen: parsley.errors.VanillaGen[A]): U[((A, Int)) => Nothing] =
         visitSingleton(self, context)
-    override def visit[A](self: SpecialisedGen[A], context: T)(msgGen: A => Seq[String]): U[((A, Int)) => Nothing] =
+    override def visit[A](self: SpecialisedGen[A], context: T)(gen: parsley.errors.SpecialisedGen[A]): U[((A, Int)) => Nothing] =
         visitSingleton(self, context)
     override def visit(self: EscapeMapped, context: T)(escTrie: Trie[Int], escs: Set[String]): U[Int] =
         visitSingleton(self, context)

@@ -6,7 +6,7 @@
 package parsley
 
 import parsley.combinator.{option, some}
-import parsley.errors.{ErrorBuilder, UnexpectedItem}
+import parsley.errors.ErrorBuilder
 import parsley.expr.{chain, infix}
 
 import parsley.internal.deepembedding.{frontend, singletons}
@@ -1275,7 +1275,7 @@ object Parsley {
       */
     val unit: Parsley[Unit] = pure(())
 
-    private val emptyErr = new Parsley(new singletons.VanillaGen[Any](_ => UnexpectedItem.Empty, _ => None))
+    private val emptyErr = new parsley.errors.VanillaGen[Any]
 
     // $COVERAGE-OFF$
     /** This parser returns the current line number of the input without having any other effect.
