@@ -495,7 +495,7 @@ object combinator {
           * ''Known as `&lt;?&gt;` in Haskell.''
           *
           * @since 3.0.0
-          * @see [[label(item:String)* `label`]]
+          * @see [[label `label`]]
           * @group rich
           */
         def ?(item: String): Parsley[A] = this.label(item)
