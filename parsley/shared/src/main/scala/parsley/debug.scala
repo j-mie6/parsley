@@ -10,6 +10,7 @@ import parsley.registers.Reg
 
 import parsley.internal.deepembedding.frontend
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 
 /** This module contains the very useful debugging combinator, as well as breakpoints.
@@ -255,12 +256,108 @@ object debug {
         private val entries = mutable.Map.empty[String, mutable.Buffer[Long]]
         private val exits = mutable.Map.empty[String, mutable.Buffer[Long]]
 
+        // TODO: document
+        def summary(): Unit = {
+            val (selfTotals, invocations) = process
+            render(selfTotals, invocations)
+        }
+
+        // TODO: document
+        def reset(): Unit = {
+            for ((_, timings) <- entries) timings.clear()
+            for ((_, timings) <- exits) timings.clear()
+        }
+
         private [parsley] def entriesFor(name: String): mutable.Buffer[Long] = entries.getOrElseUpdate(name, mutable.ListBuffer.empty)
         private [parsley] def exitsFor(name: String): mutable.Buffer[Long] = exits.getOrElseUpdate(name, mutable.ListBuffer.empty)
 
-        // TODO: document
-        def summary(): Unit = {
-            // TODO: implement
+        private [parsley] def process: (Map[String, Long], Map[String, Int]) = {
+            val allEntries = collapse(entries).sortBy(_._2)
+            val allExits = collapse(exits).sortBy(_._2)
+            val selfTotals = mutable.Map.empty[String, Long]
+            val invocations =  mutable.Map.empty[String, Int]
+            // TODO: cumulative totals (suppress the additions of the children calls)
+
+            @tailrec
+            def go(entries: List[(String, Long)], exits: List[(String, Long)], stack: List[((String, Long), Long)], cum: Long): Unit = {
+                (entries, exits, stack) match {
+                    case (Nil, Nil, Nil) =>
+                    // final unwinding or stuff to clear on the stack (cum here is for the children)
+                    case (ens, (n2, t2)::exs, ((n1, t1), oldCum)::stack) if ens.headOption.forall(t2 < _._2) =>
+                        assert(n1 == n2, "unwinding should result in matching values")
+                        add(invocations, n1)(1)
+                        add(selfTotals, n1)(t2 - t1 - cum)
+                        go(ens, exs, stack, oldCum + t2 - t1)
+                    // in this case, the scope closes quickly (cum here is for your siblings)
+                    case ((n1, t1)::ens, (n2, t2)::exs, stack) if ens.headOption.forall(t2 < _._2) && n1 == n2 =>
+                        assert(ens.nonEmpty || n1 == n2, "unwinding should result in matching values")
+                        add(invocations, n1)(1)
+                        add(selfTotals, n1)(t2 - t1)
+                        go(ens, exs, stack, cum + t2 - t1)
+                    // the next one opens first, or the entry and exit don't match
+                    // in either case, this isn't our exit, push ourselves onto the stack (cum here is for your siblings)
+                    case (nt::ens, exs@(_ :: _), stack) => go(ens, exs, (nt, cum)::stack, 0)
+                    case (Nil, Nil, _::_)
+                       | (Nil, _::_, Nil)
+                       | (_ ::_, Nil, _) => assert(false, "something has gone very wrong")
+                    case (Nil, _::_, _::_) => ??? // deadcode from case 2
+                }
+            }
+
+            //println(allEntries.map { case (name, t) => (name, t - allEntries.head._2) })
+            //println(allExits.map { case (name, t) => (name, t - allEntries.head._2) })
+            go(allEntries, allExits, Nil, 0)
+            (selfTotals.toMap, invocations.toMap)
+        }
+
+        private def collapse(timings: Iterable[(String, Iterable[Long])]): List[(String, Long)] = timings.flatMap {
+            case (name, times) => times.map(t => (name, t))
+        }.toList
+
+        // TODO: improve
+        private def render(selfTimes: Map[String, Long], invocations: Map[String, Int]): Unit = {
+            val combined = selfTimes.map {
+                case (name, selfTime) =>
+                    val invokes = invocations(name)
+                    (name, (selfTime, invocations(name), selfTime/invokes))
+            }
+            val head1 = "name"
+            val head2 = "self time"
+            val head3 = "num calls"
+            val head4 = "average self time"
+
+            val (names, data) = combined.unzip
+            val (selfs, invokes, avs) = data.unzip3
+
+            val col1Width = (head1.length :: names.map(_.length).toList).max
+            val col2Width = (head2.length :: selfs.map(t => digits(t)).toList).max
+            val col3Width = (head3.length :: invokes.map(digits(_)).toList).max
+            val col4Width = (head4.length :: avs.map(t => digits(t)).toList).max
+
+            val header = List(pad(head1, col1Width), tab(col1Width),
+                              pad(head2, col2Width), tab(col2Width),
+                              pad(head3, col3Width), tab(col3Width),
+                              pad(head4, col4Width)).mkString
+            val hline = header.map(_ => '-')
+
+            println(header)
+            println(hline)
+            for ((name, (selfTime, invokes, avSelfTime)) <- combined) {
+                println(List(pad(name, col1Width), tab(col1Width),
+                             pad(s"${selfTime/1000.0}μs", col2Width), tab(col2Width),
+                             pad(invokes.toString, col3Width), tab(col3Width),
+                             pad(s"${avSelfTime/1000.0}μs", col4Width)).mkString)
+            }
+            println(hline)
+        }
+
+        private def pad(str: String, n: Int) = str + " " * (n - str.length)
+        private def digits[A: Numeric](n: A): Int = Math.log10(implicitly[Numeric[A]].toDouble(n)).toInt + 1
+        private def tab(n: Int) = " " * (4 - n % 4)
+
+        private def add[A: Numeric](m: mutable.Map[String, A], name: String)(n: A): Unit = m.get(name) match {
+            case Some(x) => m(name) = implicitly[Numeric[A]].plus(x, n)
+            case None => m(name) = n
         }
     }
 }

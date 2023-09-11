@@ -158,10 +158,14 @@ private [deepembedding] final class Profile[A](val p: StrictParsley[A], name: St
         val handler = state.freshLabel()
         instrs += new instructions.ProfileEnter(handler, name, profiler)
         suspend(p.codeGen[M, R](producesResults)) |> {
+            instrs += new instructions.Label(handler)
             instrs += new instructions.ProfileExit(name, profiler)
         }
     }
     final override def pretty(p: String): String = p
+}
+object Profile {
+    def unapply[A](p: Profile[A]): Some[StrictParsley[A]] = Some(p.p)
 }
 // $COVERAGE-ON$
 

@@ -244,6 +244,7 @@ private [backend] object Choice {
         case ErrorHide(t)                        => tablable(t, backtracks).map {
             case (c, _, _, backtracks) => (c, None, 0, backtracks)
         }
+        case Profile(t)                          => tablable(t, backtracks)
         case TablableErrors(t)                   => tablable(t, backtracks)
         case (_: Pure[_]) <*> t                  => tablable(t, backtracks)
         case Lift2(_, t, _)                      => tablable(t, backtracks)

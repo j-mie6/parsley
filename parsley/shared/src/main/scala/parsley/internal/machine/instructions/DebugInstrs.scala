@@ -245,6 +245,8 @@ private [internal] final class ProfileEnter(var label: Int, name: String, profil
         ctx.inc()
         entries += System.nanoTime()
     }
+
+    override def toString: String = s"ProfileEnter($label, $name)"
 }
 
 private [internal] final class ProfileExit(name: String, profiler: Profiler) extends Instr {
@@ -255,6 +257,8 @@ private [internal] final class ProfileExit(name: String, profiler: Profiler) ext
         if (ctx.good) ctx.inc()
         else ctx.fail()
     }
+
+    override def toString: String = s"ProfileExit($name)"
 }
 
 // $COVERAGE-ON$
