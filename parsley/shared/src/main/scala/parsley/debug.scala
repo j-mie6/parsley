@@ -10,6 +10,8 @@ import parsley.registers.Reg
 
 import parsley.internal.deepembedding.frontend
 
+import scala.collection.mutable
+
 /** This module contains the very useful debugging combinator, as well as breakpoints.
   *
   * @groupprio comb 0
@@ -243,6 +245,23 @@ object debug {
         }
 
         def debugError(name: String)(implicit errBuilder: ErrorBuilder[_]): Parsley[A] = debugError(name, coloured = true)
+
+        // TODO: document
+        def profile(name: String)(implicit profiler: Profiler): Parsley[A] = new Parsley(new frontend.Profile[A](con(p).internal, name, profiler))
+    }
+
+    // TODO: document
+    class Profiler {
+        private val entries = mutable.Map.empty[String, mutable.Buffer[Long]]
+        private val exits = mutable.Map.empty[String, mutable.Buffer[Long]]
+
+        private [parsley] def entriesFor(name: String): mutable.Buffer[Long] = entries.getOrElseUpdate(name, mutable.ListBuffer.empty)
+        private [parsley] def exitsFor(name: String): mutable.Buffer[Long] = exits.getOrElseUpdate(name, mutable.ListBuffer.empty)
+
+        // TODO: document
+        def summary(): Unit = {
+            // TODO: implement
+        }
     }
 }
 // $COVERAGE-ON$

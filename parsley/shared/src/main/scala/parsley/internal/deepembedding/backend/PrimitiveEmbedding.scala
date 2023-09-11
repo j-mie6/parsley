@@ -5,7 +5,7 @@
  */
 package parsley.internal.deepembedding.backend
 
-import parsley.debug.{Breakpoint, EntryBreak, ExitBreak, FullBreak}
+import parsley.debug.{Breakpoint, EntryBreak, ExitBreak, FullBreak, Profiler}
 import parsley.errors.ErrorBuilder
 import parsley.registers.Reg
 
@@ -139,6 +139,7 @@ private [deepembedding] final class Debug[A](val p: StrictParsley[A], name: Stri
     }
     final override def pretty(p: String): String = p
 }
+
 private [deepembedding] final class DebugError[A](val p: StrictParsley[A], name: String, ascii: Boolean, errBuilder: ErrorBuilder[_]) extends Unary[A, A] {
     override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R, Unit] = {
         val handler = state.freshLabel()
@@ -147,6 +148,17 @@ private [deepembedding] final class DebugError[A](val p: StrictParsley[A], name:
             if (producesResults) instrs += instructions.Swap
             instrs += new instructions.Label(handler)
             instrs += new instructions.LogErrEnd(name, ascii)(errBuilder)
+        }
+    }
+    final override def pretty(p: String): String = p
+}
+
+private [deepembedding] final class Profile[A](val p: StrictParsley[A], name: String, profiler: Profiler) extends Unary[A, A] {
+    override def codeGen[M[_, +_]: ContOps, R](producesResults: Boolean)(implicit instrs: InstrBuffer, state: CodeGenState): M[R,Unit] = {
+        val handler = state.freshLabel()
+        instrs += new instructions.ProfileEnter(handler, name, profiler)
+        suspend(p.codeGen[M, R](producesResults)) |> {
+            instrs += new instructions.ProfileExit(name, profiler)
         }
     }
     final override def pretty(p: String): String = p

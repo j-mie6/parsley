@@ -7,6 +7,7 @@
 package parsley.internal.machine.instructions
 
 import parsley.XAssert._
+import parsley.debug.Profiler
 import parsley.errors.ErrorBuilder
 
 import parsley.internal.errors.{ExpectItem, FancyError, ParseError, TrivialError}
@@ -235,4 +236,25 @@ private [instructions] object LogErrEnd {
                 "}"
     }
 }
+
+private [internal] final class ProfileEnter(var label: Int, name: String, profiler: Profiler) extends InstrWithLabel {
+    private [this] val entries = profiler.entriesFor(name)
+    override def apply(ctx: Context): Unit = {
+        ensureRegularInstruction(ctx)
+        ctx.pushHandler(label)
+        ctx.inc()
+        entries += System.nanoTime()
+    }
+}
+
+private [internal] final class ProfileExit(name: String, profiler: Profiler) extends Instr {
+    private [this] val exits = profiler.exitsFor(name)
+    override def apply(ctx: Context): Unit = {
+        exits += System.nanoTime()
+        ctx.handlers = ctx.handlers.tail
+        if (ctx.good) ctx.inc()
+        else ctx.fail()
+    }
+}
+
 // $COVERAGE-ON$

@@ -5,7 +5,7 @@
  */
 package parsley.internal.deepembedding.frontend
 
-import parsley.debug.Breakpoint
+import parsley.debug.{Breakpoint, Profiler}
 import parsley.errors.ErrorBuilder
 import parsley.registers.Reg
 
@@ -53,6 +53,12 @@ private [parsley] final class DebugError[A](p: LazyParsley[A], name: String, asc
     override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.DebugError(p, name, ascii, errBuilder)
 
     override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p, name, ascii, errBuilder)
+}
+
+private [parsley] final class Profile[A](p: LazyParsley[A], name: String, profiler: Profiler) extends Unary[A, A](p) {
+    override def make(p: StrictParsley[A]): StrictParsley[A] = new backend.Profile(p, name, profiler)
+
+    override def visit[T, U[+_]](visitor: LazyParsleyIVisitor[T, U], context: T): U[A] = visitor.visit(this, context)(p, name, profiler)
 }
 
 private [parsley] final class Opaque[A](p: LazyParsley[A]) extends Unary[A, A](p) {
