@@ -182,6 +182,7 @@ object Renderers {
             val tickless = content.init.tail
             fmt.parents.lift(2) match {
                 // title of the page?
+                // FIXME: on the updated laika, this doesn't properly address the backticks problem, because of the new sanitisation
                 case Some(TemplateSpanSequence(TemplateString(cousin, _) +: _, _)) if cousin.endsWith("<title>") =>
                     fmt.text(tickless)
                 case _ => fmt.withoutIndentation(_.textElement("code", opt, tickless))
