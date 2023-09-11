@@ -138,10 +138,8 @@ object patterns {
                 (offset, atomic(con(p)).newHide, offset).zipped {
                     (s, x, e) => (x, e-s)
                 } <+> unit
-            // TODO: fix this mess at 5.0.0
             val labelledErr = labels match {
-                case l1 +: l2 +: ls => err.label(l1, l2, ls: _*)
-                case l1 +: _        => err.label(l1)
+                case l1 +: ls       => err.label(l1, ls: _*)
                 case _              => err
             }
             amend(select(inner, labelledErr)).unsafe() // need to stop results being optimised away by accident
