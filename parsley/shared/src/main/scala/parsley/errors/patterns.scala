@@ -142,7 +142,7 @@ object patterns {
                 case l1 +: ls       => err.label(l1, ls: _*)
                 case _              => err
             }
-            amend(select(inner, labelledErr)).unsafe() // need to stop results being optimised away by accident
+            amend(select(inner, labelledErr))
         }
 
         @inline private def preventWithVanilla(unexGen: A => UnexpectedItem, reasonGen: A => Option[String], labels: String*) = {
