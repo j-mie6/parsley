@@ -241,10 +241,12 @@ object debug {
 
         private [parsley] def debug(name: String): Parsley[A] = debug(name, Seq.empty[(Reg[_], String)]: _*)
 
+        // TODO: document
         def debugError(name: String, coloured: Boolean)(implicit errBuilder: ErrorBuilder[_]): Parsley[A] = {
             new Parsley(new frontend.DebugError[A](con(p).internal, name, !coloured, errBuilder))
         }
 
+        // TODO: document
         def debugError(name: String)(implicit errBuilder: ErrorBuilder[_]): Parsley[A] = debugError(name, coloured = true)
 
         // TODO: document
