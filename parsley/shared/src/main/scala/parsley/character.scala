@@ -157,8 +157,32 @@ object character {
     private def satisfy(pred: Char => Boolean, label: String): Parsley[Char] = satisfy(pred, Label(label))
     private def satisfy(pred: Char => Boolean, label: LabelConfig) = new Parsley(new singletons.Satisfy(pred, label))
 
-    // TODO: document, test
-    def satisfyMap[A](pred: PartialFunction[Char, A]): Parsley[A] = satisfy(pred.isDefinedAt(_)).map(pred)
+    /** This combinator tries to parse and process a character from the input if it is defined for the given function.
+      *
+      * Attempts to read a character from the input and tests to see if it is in the domain of `f`. If a character
+      * `c` can be read and `f(c)` is defined, then `c` is consumed and `f(c)` is returned. Otherwise, no input is consumed
+      * and this combinator will fail.
+      *
+      * @example {{{
+      * scala> import parsley.character.satisfyMap
+      * scala> val digit = satisfyMap {
+      *   case c if c.isDigit => c.asDigit
+      * }
+      * scala> digit.parse("")
+      * val res0 = Failure(..)
+      * scala> digit.parse("7")
+      * val res1 = Success(7)
+      * scala> digit.parse("a5")
+      * val res2 = Failure(..)
+      * }}}
+      *
+      * @param f the function to test the next character against and transform it with, should one exist.
+      * @return a parser that tries to read a single character `c`, such that `f(c)` is defined, and returns `f(c)` if so, or fails.
+      * @since 4.4.0
+      * @note this combinator can only handle 16-bit characters: for larger codepoints, consider using [[unicode.satisfyMap `unicode.satisfyMap`]].
+      * @group core
+      */
+    def satisfyMap[A](f: PartialFunction[Char, A]): Parsley[A] = satisfy(f.isDefinedAt(_)).map(f)
 
     /** This combinator attempts to parse a given string from the input, and fails otherwise.
       *
@@ -374,7 +398,6 @@ object character {
         case _ => satisfy(!cs.contains(_))
     }
 
-    // TODO: document that it only handles 16-bit characters
     /** This combinator parses `pc` '''zero''' or more times, collecting its results into a string.
       *
       * Parses `pc` repeatedly until it fails. The resulting characters are placed into a string,
@@ -404,11 +427,35 @@ object character {
         expr.infix.secretLeft1(fresh(new StringBuilder), pc, pf).map(_.toString)
     }
 
-    // TODO: document
     // TODO: optimise, this can be _really_ tightly implemented with a substring on the input
-    def stringOfMany(pred: Char => Boolean): Parsley[String] = skipMany(satisfy(pred)).span//stringOfMany(satisfy(pred))
+    /** This combinator parses characters matching the given predicate '''zero''' or more times, collecting
+      * the results into a string.
+      *
+      * Repeatly reads characters that satisfy the given predicate `pred. When no more characters
+      * can be successfully read, the results are stitched together into a `String` and returned.
+      * This combinator can never fail, since `satisfy` can never fail having consumed input.
+      *
+      * @example {{{
+      * scala> import parsley.character.{letter, stringOfMany}
+      * scala> import parsley.implicits.zipped.Zipped2
+      * scala> val ident = (letter, stringOfMany(_.isLetterOrDigit)).zipped((c, s) => s"&#36;c&#36;s")
+      * scala> ident.parse("abdc9d")
+      * val res0 = Success("abdc9d")
+      * scala> ident.parse("a")
+      * val res1 = Success("a")
+      * scala> ident.parse("9")
+      * val res2 = Failure(..)
+      * }}}
+      *
+      * @param pred the predicate to test characters against.
+      * @return a parser that returns the span of characters satisfying `pred`
+      * @note this acts exactly like `stringOfMany(satisfy(pred))`, but may be more efficient.
+      * @note analogous to the `megaparsec` `takeWhileP` combinator.
+      * @since 4.4.0
+      * @group string
+      */
+    def stringOfMany(pred: Char => Boolean): Parsley[String] = skipMany(satisfy(pred)).span
 
-    // TODO: document that it only handles 16-bit characters
     /** This combinator parses `pc` '''one''' or more times, collecting its results into a string.
       *
       * Parses `pc` repeatedly until it fails. The resulting characters are placed into a string,
@@ -436,9 +483,32 @@ object character {
         expr.infix.secretLeft1(pc.map(new StringBuilder += _), pc, pf).map(_.toString)
     }
 
-    // TODO: document
     // TODO: optimise, this can be _really_ tightly implemented with a substring on the input
-    def stringOfSome(pred: Char => Boolean): Parsley[String] = skipSome(satisfy(pred)).span//stringOfSome(satisfy(pred))
+    /** This combinator parses characters matching the given predicate '''one''' or more times, collecting
+      * the results into a string.
+      *
+      * Repeatly reads characters that satisfy the given predicate `pred. When no more characters
+      * can be successfully read, the results are stitched together into a `String` and returned.
+      * This combinator can never fail having consumed input, since `satisfy` can never fail having
+      * consumed input.
+      *
+      * @example {{{
+      * scala> import parsley.character.{stringOfSome}
+      * scala> val ident = stringOfSome(_.isLetter)
+      * scala> ident.parse("abdc9d")
+      * val res0 = Success("abdc")
+      * scala> ident.parse("")
+      * val res1 = Failure(..)
+      * }}}
+      *
+      * @param pred the predicate to test characters against.
+      * @return a parser that returns the span of characters satisfying `pred`
+      * @note this acts exactly like `stringOfSome(satisfy(pred))`, but may be more efficient.
+      * @note analogous to the `megaparsec` `takeWhile1P` combinator.
+      * @since 4.4.0
+      * @group string
+      */
+    def stringOfSome(pred: Char => Boolean): Parsley[String] = skipSome(satisfy(pred)).span
 
     /** This combinator tries to parse each of the strings `strs` (and `str0`), until one of them succeeds.
       *
