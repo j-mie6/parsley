@@ -243,7 +243,7 @@ private [internal] final class ProfileEnter(var label: Int, name: String, profil
         ensureRegularInstruction(ctx)
         ctx.pushHandler(label)
         ctx.inc()
-        entries += System.nanoTime()
+        entries += profiler.monotone(System.nanoTime())
     }
 
     override def toString: String = s"ProfileEnter($label, $name)"
@@ -252,7 +252,7 @@ private [internal] final class ProfileEnter(var label: Int, name: String, profil
 private [internal] final class ProfileExit(name: String, profiler: Profiler) extends Instr {
     private [this] val exits = profiler.exitsFor(name)
     override def apply(ctx: Context): Unit = {
-        exits += System.nanoTime()
+        exits += profiler.monotone(System.nanoTime())
         ctx.handlers = ctx.handlers.tail
         if (ctx.good) ctx.inc()
         else ctx.fail()

@@ -32,8 +32,8 @@ import scala.collection.mutable
   * @groupdesc ctrl
   *     These methods can control how the debug mechanism functions in a general way.
   */
-// $COVERAGE-OFF$
 object debug {
+    // $COVERAGE-OFF$
     /** Base trait for breakpoints.
       *
       * @group break
@@ -250,17 +250,22 @@ object debug {
         // TODO: document
         def profile(name: String)(implicit profiler: Profiler): Parsley[A] = new Parsley(new frontend.Profile[A](con(p).internal, name, profiler))
     }
+    // $COVERAGE-ON$
 
     // TODO: document
     class Profiler {
         private val entries = mutable.Map.empty[String, mutable.Buffer[Long]]
         private val exits = mutable.Map.empty[String, mutable.Buffer[Long]]
+        private var lastTime: Long = 0
+        private var lastTimeCount: Long = 0
 
+        // $COVERAGE-OFF$
         // TODO: document
         def summary(): Unit = {
             val (selfTotals, invocations) = process
             render(selfTotals, invocations)
         }
+        // $COVERAGE-ON$
 
         // TODO: document
         def reset(): Unit = {
@@ -270,10 +275,25 @@ object debug {
 
         private [parsley] def entriesFor(name: String): mutable.Buffer[Long] = entries.getOrElseUpdate(name, mutable.ListBuffer.empty)
         private [parsley] def exitsFor(name: String): mutable.Buffer[Long] = exits.getOrElseUpdate(name, mutable.ListBuffer.empty)
+        private [parsley] def monotone(n: Long) = {
+            if (n == lastTime) {
+                lastTimeCount += 1
+                n + lastTimeCount
+            }
+            else {
+                lastTime = n
+                lastTimeCount = 0
+                n
+            }
+        }
 
         private [parsley] def process: (Map[String, Long], Map[String, Int]) = {
             val allEntries = collapse(entries).sortBy(_._2)
             val allExits = collapse(exits).sortBy(_._2)
+
+            require((allEntries ::: allExits).distinctBy(_._2).length == (allExits.length + allExits.length),
+                    "recorded times must all be monotonically increasing")
+
             val selfTotals = mutable.Map.empty[String, Long]
             val invocations =  mutable.Map.empty[String, Int]
             // TODO: cumulative totals (suppress the additions of the children calls)
@@ -297,10 +317,12 @@ object debug {
                     // the next one opens first, or the entry and exit don't match
                     // in either case, this isn't our exit, push ourselves onto the stack (cum here is for your siblings)
                     case (nt::ens, exs@(_ :: _), stack) => go(ens, exs, (nt, cum)::stack, 0)
+                    // $COVERAGE-OFF$
                     case (Nil, Nil, _::_)
                        | (Nil, _::_, Nil)
                        | (_ ::_, Nil, _) => assert(false, "something has gone very wrong")
                     case (Nil, _::_, _::_) => ??? // deadcode from case 2
+                    // $COVERAGE-ON$
                 }
             }
 
@@ -314,12 +336,18 @@ object debug {
             case (name, times) => times.map(t => (name, t))
         }.toList
 
+        private def add[A: Numeric](m: mutable.Map[String, A], name: String)(n: A): Unit = m.get(name) match {
+            case Some(x) => m(name) = implicitly[Numeric[A]].plus(x, n)
+            case None => m(name) = n
+        }
+
         // TODO: improve
+        // $COVERAGE-OFF$
         private def render(selfTimes: Map[String, Long], invocations: Map[String, Int]): Unit = {
             val combined = selfTimes.map {
                 case (name, selfTime) =>
                     val invokes = invocations(name)
-                    (name, (selfTime, invocations(name), selfTime/invokes))
+                    (name, (f"${selfTime/1000.0}%.1fμs", invocations(name), f"${selfTime/invokes/1000.0}%.3fμs"))
             }
             val head1 = "name"
             val head2 = "self time"
@@ -330,9 +358,9 @@ object debug {
             val (selfs, invokes, avs) = data.unzip3
 
             val col1Width = (head1.length :: names.map(_.length).toList).max
-            val col2Width = (head2.length :: selfs.map(t => digits(t)).toList).max
+            val col2Width = (head2.length :: selfs.map(_.length).toList).max
             val col3Width = (head3.length :: invokes.map(digits(_)).toList).max
-            val col4Width = (head4.length :: avs.map(t => digits(t)).toList).max
+            val col4Width = (head4.length :: avs.map(_.length).toList).max
 
             val header = List(pad(head1, col1Width), tab(col1Width),
                               pad(head2, col2Width), tab(col2Width),
@@ -344,21 +372,17 @@ object debug {
             println(hline)
             for ((name, (selfTime, invokes, avSelfTime)) <- combined) {
                 println(List(pad(name, col1Width), tab(col1Width),
-                             pad(s"${selfTime/1000.0}μs", col2Width), tab(col2Width),
-                             pad(invokes.toString, col3Width), tab(col3Width),
-                             pad(s"${avSelfTime/1000.0}μs", col4Width)).mkString)
+                             prePad(selfTime, col2Width), tab(col2Width),
+                             prePad(invokes.toString, col3Width), tab(col3Width),
+                             prePad(avSelfTime, col4Width)).mkString)
             }
             println(hline)
         }
 
         private def pad(str: String, n: Int) = str + " " * (n - str.length)
+        private def prePad(str: String, n: Int) = " " * (n - str.length) + str
         private def digits[A: Numeric](n: A): Int = Math.log10(implicitly[Numeric[A]].toDouble(n)).toInt + 1
         private def tab(n: Int) = " " * (4 - n % 4)
-
-        private def add[A: Numeric](m: mutable.Map[String, A], name: String)(n: A): Unit = m.get(name) match {
-            case Some(x) => m(name) = implicitly[Numeric[A]].plus(x, n)
-            case None => m(name) = n
-        }
+        // $COVERAGE-ON$
     }
 }
-// $COVERAGE-ON$
