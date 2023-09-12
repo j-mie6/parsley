@@ -570,8 +570,8 @@ object combinator {
           */
         @deprecated("This combinator will be removed in 5.0.0, without direct replacement", "4.2.0")
         def !(msggen: A => String): Parsley[Nothing] = partialAmendThenDislodge {
-            parsley.position.internalOffsetSpan(entrench(con(p))).flatMap { case (os, x, oe) =>
-                combinator.fail(oe - os, msggen(x))
+            parsley.position.withWidth(entrench(con(p))).flatMap { case (x, width) =>
+                combinator.fail(width, msggen(x))
             }
         }
 
@@ -592,8 +592,8 @@ object combinator {
           */
         @deprecated("This combinator will be removed in 5.0.0, without direct replacement", "4.2.0")
         def unexpected(msggen: A => String): Parsley[Nothing] = partialAmendThenDislodge {
-            parsley.position.internalOffsetSpan(entrench(con(p))).flatMap { case (os, x, oe) =>
-                combinator.unexpected(oe - os, msggen(x))
+            parsley.position.withWidth(entrench(con(p))).flatMap { case (x, width) =>
+                combinator.unexpected(width, msggen(x))
             }
         }
         // $COVERAGE-ON$

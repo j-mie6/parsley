@@ -6,9 +6,8 @@
 package parsley.errors
 
 import parsley.Parsley, Parsley.{atomic, select, unit}
-import parsley.implicits.zipped.Zipped3
 import parsley.errors.combinator.{ErrorMethods, amend}
-import parsley.position.offset
+import parsley.position.withWidth
 
 /** This module contains combinators that help facilitate the error message generational patterns ''Verified Errors'' and ''Preventative Errors''.
   *
@@ -112,11 +111,7 @@ object patterns {
         def verifiedUnexpected(reason: A => String): Parsley[Nothing] = this.verifiedWithVanillaRaw(x => Some(reason(x)))
 
         // TODO: document and test
-        def verifiedWith(err: ErrorGen[A]) = amend {
-            err((offset, atomic(con(p)).newHide, offset).zipped {
-                (s, x, e) => (x, e-s)
-            })
-        }
+        def verifiedWith(err: ErrorGen[A]) = amend(err(withWidth(atomic(con(p)).newHide)))
 
         @inline private def verifiedWithVanilla(unexGen: A => UnexpectedItem, reasonGen: A => Option[String]) = verifiedWith {
             new VanillaGen[A] {
@@ -143,10 +138,7 @@ object patterns {
 
         // TODO: document and test
         def preventWith(err: ErrorGen[A], labels: String*) = {
-            val inner: Parsley[Either[(A, Int), Unit]] =
-                (offset, atomic(con(p)).newHide, offset).zipped {
-                    (s, x, e) => (x, e-s)
-                } <+> unit
+            val inner: Parsley[Either[(A, Int), Unit]] = withWidth(atomic(con(p)).newHide) <+> unit
             val labelledErr = labels match {
                 case l1 +: ls       => err.parser.label(l1, ls: _*)
                 case _              => err.parser
