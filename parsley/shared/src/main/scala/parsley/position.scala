@@ -106,6 +106,8 @@ object position {
       */
     val offset: Parsley[Int] = internalOffset
 
-    //TODO: document and test
+    private [parsley] def withSpan[A, S](end: Parsley[S])(p: Parsley[A]): Parsley[(S, A, S)] = (end, p, end).zipped
+
+    //TODO: test and document
     def withWidth[A](p: Parsley[A]): Parsley[(A, Int)] = (offset, p, offset).zipped((s, x, e) => (x, e-s))
 }
