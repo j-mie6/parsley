@@ -400,4 +400,9 @@ class CoreTests extends ParsleyTest {
         }
         (p *> p).parse("") shouldBe Success(4)
     }
+
+    "span" should "return all the input parsed by a parser, exactly as it was" in {
+        import parsley.character.whitespaces
+        whitespaces.span.parse("      \n\n\t\ta") shouldBe Success("      \n\n\t\t")
+    }
 }

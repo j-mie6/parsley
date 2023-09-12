@@ -761,7 +761,7 @@ object combinator {
         new Parsley(new frontend.ManyUntil((end.as(ManyUntil.Stop) <|> p: Parsley[Any]).internal))
     }
 
-    // TODO: document and test before release
+    // TODO: find a way to make this redundant
     private [parsley] def skipManyUntil(p: Parsley[_], end: Parsley[_]): Parsley[Unit] = {
         new Parsley(new frontend.SkipManyUntil((end.as(ManyUntil.Stop) <|> p.void: Parsley[Any]).internal))
     }
@@ -800,7 +800,7 @@ object combinator {
         notFollowedBy(end) *> (p <::> manyUntil(p, end))
     }
 
-    // TODO: document and test before release
+    // TODO: find a way to make this redundant
     private [parsley] def skipSomeUntil(p: Parsley[_], end: Parsley[_]): Parsley[Unit] = {
         notFollowedBy(end) *> (p *> skipManyUntil(p, end))
     }

@@ -65,6 +65,16 @@ class CharTests extends ParsleyTest {
         "\ud87e\udc1a" -> None,
     )
 
+    "satisfyMap" should "allow for simultaneous mapping and testing" in {
+        val toLower = satisfyMap {
+            case c if c.isUpper => c.toLower
+        }
+        for (c <- 'A' to 'Z') toLower.parse(c.toString) shouldBe Success(c + ('a' - 'A'))
+        toLower.parse("Ω") shouldBe Success('ω')
+        toLower.parse("Å") shouldBe Success('å')
+        toLower.parse("a") shouldBe a [Failure[_]]
+    }
+
     "upper" should "only accept uppercase characters" in {
         for (c <- 'A' to 'Z') upper.parse(c.toString) shouldBe Success(c)
         upper.parse("Ω") shouldBe Success('Ω')
