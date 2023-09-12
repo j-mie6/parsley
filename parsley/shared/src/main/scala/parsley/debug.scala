@@ -291,7 +291,7 @@ object debug {
             val allEntries = collapse(entries).sortBy(_._2)
             val allExits = collapse(exits).sortBy(_._2)
 
-            require((allEntries ::: allExits).distinctBy(_._2).length == (allExits.length + allExits.length),
+            require((allEntries ::: allExits).toSet.size == (allExits.length + allExits.length),
                     "recorded times must all be monotonically increasing")
 
             val selfTotals = mutable.Map.empty[String, Long]
