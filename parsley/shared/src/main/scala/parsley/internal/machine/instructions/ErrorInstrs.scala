@@ -202,7 +202,7 @@ private [internal] final class VanillaGen[A](gen: parsley.errors.VanillaGen[A]) 
         val (x, caretWidth) = ctx.stack.pop[(A, Int)]()
         val unex = gen.unexpected(x)
         val reason = gen.reason(x)
-        val err = unex.makeError(ctx.offset, ctx.line, ctx.col, gen.adjustWidth(caretWidth))
+        val err = unex.makeError(ctx.offset, ctx.line, ctx.col, gen.adjustWidth(x, caretWidth))
         // Sorry, it's faster :(
         if (reason.isDefined) ctx.fail(err.withReason(reason.get))
         else ctx.fail(err)
@@ -218,7 +218,7 @@ private [internal] final class SpecialisedGen[A](gen: parsley.errors.Specialised
         ensureRegularInstruction(ctx)
         // stack will have an (A, Int) pair on it
         val (x, caretWidth) = ctx.stack.pop[(A, Int)]()
-        ctx.failWithMessage(new RigidCaret(gen.adjustWidth(caretWidth)), gen.messages(x): _*)
+        ctx.failWithMessage(new RigidCaret(gen.adjustWidth(x, caretWidth)), gen.messages(x): _*)
     }
 
     // $COVERAGE-OFF$

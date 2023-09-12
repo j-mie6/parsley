@@ -17,7 +17,7 @@ sealed abstract class ErrorGen[-A] {
     final def parser: Parsley[((A, Int)) => Nothing] = new Parsley(internal)
     private [errors] def internal: LazyParsley[((A, Int)) => Nothing]
 
-    def adjustWidth(width: Int): Int = width
+    def adjustWidth(@unused x: A, width: Int): Int = width
 }
 class VanillaGen[-A] extends ErrorGen[A] {
     def unexpected(@unused x: A): UnexpectedItem = UnexpectedItem.Empty
