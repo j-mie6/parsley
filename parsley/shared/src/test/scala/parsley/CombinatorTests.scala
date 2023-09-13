@@ -226,7 +226,7 @@ class CombinatorTests extends ParsleyTest {
     }
 
     it should "allow for ranges" in {
-        val p = count(2, 5)("ab")
+        val p = count(min = 2, max = 5)("ab")
         p.parse("ab") shouldBe a [Failure[_]]
         p.parse("abab") shouldBe Success(2)
         p.parse("ababab") shouldBe Success(3)
@@ -234,7 +234,7 @@ class CombinatorTests extends ParsleyTest {
         p.parse("ababababab") shouldBe Success(5)
         p.parse("abababababab") shouldBe Success(5)
         p.parse("ababababa") shouldBe a [Failure[_]]
-        val q = count(2, 5)(atomic("ab"))
+        val q = count(min = 2, max = 5)(atomic("ab"))
         q.parse("ab") shouldBe a [Failure[_]]
         q.parse("abab") shouldBe Success(2)
         q.parse("ababab") shouldBe Success(3)
@@ -245,7 +245,7 @@ class CombinatorTests extends ParsleyTest {
     }
 
     "range" should "collect results up instead of count" in {
-        val p = range(2, 5)(item)
+        val p = range(min = 2, max = 5)(item)
         p.parse("a") shouldBe a [Failure[_]]
         p.parse("ab") shouldBe Success(List('a', 'b'))
         p.parse("abcd") shouldBe Success(List('a', 'b', 'c', 'd'))
@@ -254,7 +254,7 @@ class CombinatorTests extends ParsleyTest {
     }
 
     "range_" should "perform a range with no results" in {
-        val p = range_(2, 5)(item)
+        val p = range_(min = 2, max = 5)(item)
         (p <~ eof).parse("a") shouldBe a [Failure[_]]
         (p <~ eof).parse("ab") shouldBe Success(())
         (p <~ eof).parse("abcd") shouldBe Success(())
