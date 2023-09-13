@@ -901,7 +901,19 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       */
     def flatten[B](implicit ev: A <:< Parsley[B]): Parsley[B] = this.flatMap[B](ev)
 
-    // TODO: documentation and tests
+    /** This combinator ignores the result of this parser and instead returns the input parsed by it.
+      *
+      * This combinator executes this parser: if it fails, this combinator fails. Otherwise, if this
+      * parser succeeded, its result is discarded and the input it consumed in the process of parsing
+      * is returned directly. This can be used to efficiently obtain the underlying string of some parser
+      * without having to reconstruct it. One potential application is to suppress complex results of
+      * things within the `Lexer` without having to re-implement its functionality. However, it should be
+      * used judiciously.
+      *
+      * @return a parser which returns the parsed input directly.
+      * @since 4.4.0
+      * @group map
+      */
     def span: Parsley[String] = new Parsley(new frontend.Span(this.internal))
 
     // SPECIAL METHODS
@@ -919,9 +931,12 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       */
     def overflows(): Unit = internal.overflows()
 
-    /** Using this method signifies that the parser it is invoked on is impure and any optimisations which assume purity
+    /** This combinator signifies that the parser it is invoked on is impure and any optimisations which assume purity
       * are disabled.
       *
+      * @example Any parsers that make use of mutable state may need to use this combinator to control
+      *          parsley's aggressive optimisations that remove results that are not needed: in this case,
+      *          the optimiser cannot see that the result of a parser is mutating some value, and may remove it.
       * @group special
       */
     def unsafe(): Parsley[A] = new Parsley(new frontend.Opaque(this.internal)) // TODO: in 5.0.0, remove the parens
@@ -1162,15 +1177,15 @@ object Parsley {
       */
     def attempt[A](p: Parsley[A]): Parsley[A] = atomic(p)
     // $COVERAGE-ON$
-    // TODO: perhaps touch up this documentation a bit...
     /** This combinator parses its argument `p`, but rolls back any consumed input on failure.
       *
       * If the parser `p` succeeds, then `atomic(p)` has no effect. However, if `p` failed,
-      * then any input that it consumed is rolled back. This has two uses: it ensures that
-      * the parser `p` is all-or-nothing when consuming input, and it allows for
-      * parsers that consume input to backtrack when they fail (with `<|>`). It should be
-      * used for the latter purpose sparingly, however, since excessive backtracking in a
-      * parser can result in much lower efficiency.
+      * then any input that it consumed is rolled back. This ensures that
+      * the parser `p` is all-or-nothing when consuming input. While there are many legimate
+      * uses for all-or-nothing behaviour, one notable, if discouraged, use is to allow the
+      * `<|>` combinator to backtrack -- recall it can only parse its alternative if the
+      * first failed ''without'' consuming input. This is discouraged, however, as it can
+      * affect the complexity of the parser and harm error messages.
       *
       * @example {{{
       * scala> import parsley.character.string, parsley.Parsley.atomic
