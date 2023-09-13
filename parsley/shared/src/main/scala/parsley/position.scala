@@ -108,6 +108,22 @@ object position {
 
     private [parsley] def withSpan[A, S](end: Parsley[S])(p: Parsley[A]): Parsley[(S, A, S)] = (end, p, end).zipped
 
-    //TODO: test and document
+    /** This combinator returns the result of a given parser and the number of characters it consumed.
+      *
+      * First records the initial `offset` on entry to given parser `p`, then executes `p`. If `p` succeeds,
+      * then the `offset` is taken again, and the two values are subtracted to give width `w`. The result of
+      * `p`, `x` is returned along with `w` as `(x, w)`. If `p` fails, this combinator will also fail.
+      *
+      * @example {{{
+      * scala> import parsley.position.withWidth, parsley.character.string
+      * scala> withWidth(string("abc")).parse("abc")
+      * val res0 = Success(("abc", 3))
+      * }}}
+      *
+      * @param p the parser to compute the width for
+      * @return a parser that pairs the result of the parser `p` with the number of characters it consumed
+      * @note the value returned is the number of 16-bit ''characters'' consumed, not unicode codepoints.
+      * @since 4.4.0
+      */
     def withWidth[A](p: Parsley[A]): Parsley[(A, Int)] = (offset, p, offset).zipped((s, x, e) => (x, e-s))
 }
