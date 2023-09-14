@@ -156,7 +156,7 @@ object combinator {
       *
       * Entrenchment is important for preventing the incorrect amendment of certain parts of sub-errors
       * for a parser, but it may be then undesireable to block further amendments from elsewhere in the
-      * parser. This combinator can be used to cancel and entrenchment after the critical section has
+      * parser. This combinator can be used to cancel an entrenchment after the critical section has
       * passed.
       *
       * @param p a parser that should no longer be under the affect of an `entrench` combinator
