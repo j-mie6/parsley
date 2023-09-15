@@ -1,4 +1,4 @@
-val sbtTypelevelVersion = "0.5.1"
+val sbtTypelevelVersion = "0.5.3"
 
 resolvers ++= Opts.resolver.sonatypeOssSnapshots
 resolvers ++= Opts.resolver.sonatypeOssReleases
@@ -10,7 +10,6 @@ libraryDependencySchemes ++= Seq(
 
 addSbtPlugin("org.typelevel" % "sbt-typelevel" % sbtTypelevelVersion)
 addSbtPlugin("org.typelevel" % "sbt-typelevel-site" % sbtTypelevelVersion)
-addSbtPlugin("org.planet42" % "laika-sbt" % "0.19.4")
 
 // CI Stuff
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.13.2")
