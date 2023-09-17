@@ -113,14 +113,14 @@ object patterns {
         // TODO: document and test
         def verifiedWith(err: ErrorGen[A]) = amend(err(withWidth(atomic(con(p)).newHide)))
 
-        @inline private def verifiedWithVanilla(unexGen: A => UnexpectedItem, reasonGen: A => Option[String]) = verifiedWith {
+        @inline private def verifiedWithVanilla(unexGen: A => VanillaGen.UnexpectedItem, reasonGen: A => Option[String]) = verifiedWith {
             new VanillaGen[A] {
                 override def unexpected(x: A) = unexGen(x)
                 override def reason(x: A) = reasonGen(x)
             }
         }
 
-        @inline private def verifiedWithVanillaRaw(reasonGen: A => Option[String]) = verifiedWithVanilla(_ => UnexpectedItem.Raw, reasonGen)
+        @inline private def verifiedWithVanillaRaw(reasonGen: A => Option[String]) = verifiedWithVanilla(_ => VanillaGen.RawItem, reasonGen)
     }
 
     // TODO: document!
@@ -146,7 +146,7 @@ object patterns {
             amend(select(inner, labelledErr))
         }
 
-        @inline private def preventWithVanilla(unexGen: A => UnexpectedItem, reasonGen: A => Option[String], labels: String*) = {
+        @inline private def preventWithVanilla(unexGen: A => VanillaGen.UnexpectedItem, reasonGen: A => Option[String], labels: String*) = {
             this.preventWith(new VanillaGen[A] {
                 override def unexpected(x: A) = unexGen(x)
                 override def reason(x: A) = reasonGen(x)
@@ -154,7 +154,7 @@ object patterns {
         }
 
         @inline private def preventWithVanillaRaw(reasonGen: A => Option[String], labels: String*) = {
-            this.preventWithVanilla(_ => UnexpectedItem.Raw, reasonGen, labels: _*)
+            this.preventWithVanilla(_ => VanillaGen.RawItem, reasonGen, labels: _*)
         }
     }
 }

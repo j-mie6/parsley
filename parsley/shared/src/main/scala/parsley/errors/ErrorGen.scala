@@ -9,6 +9,8 @@ import parsley.Parsley
 
 import parsley.internal.deepembedding.frontend.LazyParsley
 import parsley.internal.deepembedding.singletons
+import parsley.internal.errors.{RigidCaret, UnexpectDesc}
+import parsley.internal.machine.errors.{EmptyError, ExpectedError, DefuncError, UnexpectedError}
 
 import org.typelevel.scalaccompat.annotation.unused
 
@@ -67,6 +69,7 @@ sealed abstract class ErrorGen[-A] {
       */
     def adjustWidth(@unused x: A, width: Int): Int = width
 }
+
 /** An error generator for ''Vanilla'' errors, which can tune the unexpected message and a
   * generated reason.
   *
@@ -78,7 +81,8 @@ class VanillaGen[-A] extends ErrorGen[A] {
       *
       * @since 4.4.0
       */
-    def unexpected(@unused x: A): UnexpectedItem = UnexpectedItem.Empty
+    def unexpected(@unused x: A): VanillaGen.UnexpectedItem = VanillaGen.EmptyItem
+
     /** What should the reason component of the error message be (if any) based on the result the
       * offending parser produced?
       *
@@ -88,6 +92,40 @@ class VanillaGen[-A] extends ErrorGen[A] {
 
     private [errors] override def internal: LazyParsley[((A, Int)) => Nothing] = new singletons.VanillaGen(this)
 }
+
+object VanillaGen {
+    /**
+      * @since 4.4.0
+      */
+    sealed abstract class UnexpectedItem {
+        private [parsley] def makeError(offset: Int, line: Int, col: Int, caretWidth: Int): DefuncError
+    }
+
+    /**
+      * @since 4.4.0
+      */
+    case object RawItem extends UnexpectedItem {
+        private[parsley] def makeError(offset: Int, line: Int, col: Int, caretWidth: Int): DefuncError =
+            new ExpectedError(offset, line, col, None, caretWidth)
+    }
+
+    /**
+      * @since 4.4.0
+      */
+    case object EmptyItem extends UnexpectedItem {
+        private[parsley] def makeError(offset: Int, line: Int, col: Int, caretWidth: Int): DefuncError =
+            new EmptyError(offset, line, col, caretWidth)
+    }
+
+    /**
+      * @since 4.4.0
+      */
+    final case class NamedItem(name: String) extends UnexpectedItem {
+        private[parsley] def makeError(offset: Int, line: Int, col: Int, caretWidth: Int): DefuncError =
+            new UnexpectedError(offset, line, col, None, new UnexpectDesc(name, new RigidCaret(caretWidth)))
+    }
+}
+
 /** An error generate for ''Specialised'' errors, which can tune the freeform messages of the error.
   *
   * @since 4.4.0

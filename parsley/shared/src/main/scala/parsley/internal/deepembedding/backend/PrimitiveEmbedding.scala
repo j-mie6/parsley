@@ -164,7 +164,7 @@ private [deepembedding] final class Profile[A](val p: StrictParsley[A], name: St
     }
     final override def pretty(p: String): String = p
 }
-object Profile {
+private [backend] object Profile {
     def unapply[A](p: Profile[A]): Some[StrictParsley[A]] = Some(p.p)
 }
 // $COVERAGE-ON$

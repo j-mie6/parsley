@@ -529,7 +529,7 @@ object combinator {
           */
         def unexpectedWhen(pred: PartialFunction[A, String]): Parsley[A] = {
             this.filterWith(!pred.isDefinedAt(_), new VanillaGen[A] {
-                override def unexpected(x: A): UnexpectedItem = UnexpectedItem.Named(pred(x))
+                override def unexpected(x: A) = VanillaGen.NamedItem(pred(x))
             })
         }
 
@@ -566,7 +566,7 @@ object combinator {
           */
         def unexpectedWithReasonWhen(pred: PartialFunction[A, (String, String)]): Parsley[A] = {
             this.filterWith(!pred.isDefinedAt(_), new VanillaGen[A] {
-                override def unexpected(x: A) = UnexpectedItem.Named(pred(x)._1)
+                override def unexpected(x: A) = VanillaGen.NamedItem(pred(x)._1)
                 override def reason(x: A) = Some(pred(x)._2)
             })
         }
