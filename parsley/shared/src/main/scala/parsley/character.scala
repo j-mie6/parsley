@@ -116,11 +116,11 @@ object character {
       *
       * @example {{{
       * scala> import parsley.character.codePoint
-      * scala> codePoint(0x1F643).parse("")
+      * scala> codePoint(0x1f642).parse("")
       * val res0 = Failure(..)
-      * scala> codePoint(0x1F643).parse("🙂")
-      * val res1 = Success(0x1F643)
-      * scala> codePoint(0x1F643).parse("b🙂")
+      * scala> codePoint(0x1f642).parse("🙂")
+      * val res1 = Success(0x1f642)
+      * scala> codePoint(0x1f642).parse("b🙂")
       * val res2 = Failure(..)
       * }}}
       *
@@ -431,7 +431,7 @@ object character {
     /** This combinator parses characters matching the given predicate '''zero''' or more times, collecting
       * the results into a string.
       *
-      * Repeatly reads characters that satisfy the given predicate `pred. When no more characters
+      * Repeatly reads characters that satisfy the given predicate `pred`. When no more characters
       * can be successfully read, the results are stitched together into a `String` and returned.
       * This combinator can never fail, since `satisfy` can never fail having consumed input.
       *
@@ -487,7 +487,7 @@ object character {
     /** This combinator parses characters matching the given predicate '''one''' or more times, collecting
       * the results into a string.
       *
-      * Repeatly reads characters that satisfy the given predicate `pred. When no more characters
+      * Repeatly reads characters that satisfy the given predicate `pred`. When no more characters
       * can be successfully read, the results are stitched together into a `String` and returned.
       * This combinator can never fail having consumed input, since `satisfy` can never fail having
       * consumed input.

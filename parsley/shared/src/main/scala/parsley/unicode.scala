@@ -12,11 +12,11 @@ import parsley.token.errors.{Label, LabelConfig, NotConfigured}
 
 import parsley.internal.deepembedding.singletons
 
-// TODO: document
-/** This module contains many parsers to do with reading one or more characters. Almost every parser will need something from this module.
+/** This module contains many parsers to do with reading one or more characters.
   *
   * In particular, this module contains: combinators that can read specific characters; combinators that represent character classes and their negations;
   * combinators for reading specific strings; as well as a selection of pre-made parsers to parse specific kinds of character, like digits and letters.
+  * Unlike [[parsley.character `character`]], this module handles full utf-16 codepoints, which can be up to two 16-bit characters long.
   *
   * @since 4.4.0
   *
@@ -57,20 +57,17 @@ import parsley.internal.deepembedding.singletons
   *     for `java.lang.Character` to see which Unicode version is supported by your JVM. A table of the Unicode versions
   *     up to JDK 17 can be found [[https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/Character.html here]].
   *
-  *     These parsers are able to parse unicode code points in the range `'\u0000'` to `'\u1ffff'`. Unicode characters consisting
-  *     of multiple code points/modifiers should be parsed using `string`.
-  *
   * @groupprio string 22
   * @groupname string String Combinators
   * @groupdesc string
   *     These combinators allow for working with, or building, strings. This means that they can
-  *     parse specific strings, specific sets of strings, or can read characters repeatedly to
+  *     parse specific strings, specific sets of strings, or can read codepoints repeatedly to
   *     generate strings. They are united in all returning `String` as their result.
   *
   * @define oneOf
-  *     This combinator tries to parse any character from supplied set of characters `cs`, returning it if successful.
+  *     This combinator tries to parse any codepoint from supplied set of codepoints `cs`, returning it if successful.
   * @define noneOf
-  *     This combinator tries to parse any character '''not''' from supplied set of characters `cs`, returning it if successful.
+  *     This combinator tries to parse any codepoint '''not''' from supplied set of codepoints `cs`, returning it if successful.
   *
   * @define categories
   *     ''The full list of codepoints found in a category can be found in the
@@ -86,11 +83,11 @@ object unicode {
       *
       * @example {{{
       * scala> import parsley.unicode.char
-      * scala> char(0x1f643).parse("")
+      * scala> char(0x1f642).parse("")
       * val res0 = Failure(..)
-      * scala> char(0x1f643).parse("🙂")
-      * val res1 = Success(0x1F643)
-      * scala> char(0x1f643).parse("b🙂")
+      * scala> char(0x1f642).parse("🙂")
+      * val res1 = Success(0x1f642)
+      * scala> char(0x1f642).parse("b🙂")
       * val res2 = Failure(..)
       * }}}
       *
@@ -101,16 +98,61 @@ object unicode {
     def char(c: Int): Parsley[Int] = char(c, NotConfigured)
     private def char(c: Int, label: String): Parsley[Int] = char(c, Label(label))
     private def char(c: Int, label: LabelConfig): Parsley[Int] = {
-        if (Character.isBmpCodePoint(c)) character.char(c.toChar).as(c)
+        if (Character.isBmpCodePoint(c)) new Parsley(new singletons.CharTok(c.toChar, c, label))
         else new Parsley(new singletons.SupplementaryCharTok(c, c, label))
     }
 
-    // TODO: document, test
+    // TODO: test
+    /** This combinator tries to parse a single codepoint from the input that matches the given predicate.
+      *
+      * Attempts to read a codepoint from the input and tests it against the predicate `pred`. If a codepoint `c`
+      * can be read and `pred(c)` is true, then `c` is consumed and returned. Otherwise, no input is consumed
+      * and this combinator will fail.
+      *
+      * @example {{{
+      * scala> import parsley.unicode.satisfy
+      * scala> satisfy(Character.isDigit(_)).parse("")
+      * val res0 = Failure(..)
+      * scala> satisfy(Character.isDigit(_)).parse("7")
+      * val res1 = Success(0x37)
+      * scala> satisfy(Character.isDigit(_)).parse("a5")
+      * val res2 = Failure(..)
+      * scala> def char(c: Int): Parsley[Int] = satisfy(_ == c)
+      * }}}
+      *
+      * @param pred the predicate to test the next codepoint against, should one exist.
+      * @return a parser that tries to read a single codepoint `c`, such that `pred(c)` is true, or fails.
+      * @group core
+      */
     def satisfy(pred: Int => Boolean): Parsley[Int] = satisfy(pred, NotConfigured)
     private def satisfy(pred: Int => Boolean, label: String): Parsley[Int] = satisfy(pred, Label(label))
     private def satisfy(pred: Int => Boolean, label: LabelConfig) = new Parsley(new singletons.UniSatisfy(pred, label))
 
-    // TODO: document, test
+    // TODO: test
+    /** This combinator tries to parse and process a codepoint from the input if it is defined for the given function.
+      *
+      * Attempts to read a codepoint from the input and tests to see if it is in the domain of `f`. If a codepoint
+      * `c` can be read and `f(c)` is defined, then `c` is consumed and `f(c)` is returned. Otherwise, no input is consumed
+      * and this combinator will fail.
+      *
+      * @example {{{
+      * scala> import parsley.unicode.satisfyMap
+      * scala> val chars = satisfyMap {
+      *   case c => Character.toChars(c)
+      * }
+      * scala> chars.parse("")
+      * val res0 = Failure(..)
+      * scala> chars.parse("7")
+      * val res1 = Success(Array('7'))
+      * scala> chars.parse("🙂")
+      * val res2 = Success(Array('\ud83d', '\ude42'))
+      * }}}
+      *
+      * @param f the function to test the next codepoint against and transform it with, should one exist.
+      * @return a parser that tries to read a single codepoint `c`, such that `f(c)` is defined, and returns `f(c)` if so, or fails.
+      * @since 4.4.0
+      * @group core
+      */
     def satisfyMap[A](pred: PartialFunction[Int, A]): Parsley[A] = satisfy(pred.isDefinedAt(_)).map(pred)
 
     // This should always just match up, so no need to test
@@ -124,7 +166,7 @@ object unicode {
       * matched are consumed from the input.
       *
       * @example {{{
-      * scala> import parsley.character.string
+      * scala> import parsley.unicode.string
       * scala> string("abc").parse("")
       * val res0 = Failure(..)
       * scala> string("abc").parse("abcd")
@@ -146,21 +188,21 @@ object unicode {
 
     /** $oneOf
       *
-      * If the next character in the input is a member of the set `cs`, it is consumed
+      * If the next codepoint in the input is a member of the set `cs`, it is consumed
       * and returned. Otherwise, no input is consumed and the combinator fails.
       *
       * @example {{{
-      * scala> import parsley.character.oneOf
-      * scala> val p = oneOf(Set('a', 'b', 'c'))
+      * scala> import parsley.codepoint.oneOf
+      * scala> val p = oneOf(Set(97, 98, 99))
       * scala> p.parse("a")
-      * val res0 = Success('a')
+      * val res0 = Success(97)
       * scala> p.parse("c")
-      * val res1 = Success('c')
+      * val res1 = Success(99)
       * scala> p.parse("xb")
       * val res2 = Failure(..)
       * }}}
       *
-      * @param cs the set of characters to check.
+      * @param cs the set of codepoints to check.
       * @return a parser that parses one of the member of the set `cs`.
       * @see [[satisfy `satisfy`]]
       * @group class
@@ -176,21 +218,21 @@ object unicode {
 
     /** $oneOf
       *
-      * If the next character in the input is an element of the list of characters `cs`, it is consumed
+      * If the next codepoint in the input is an element of the list of codepoints `cs`, it is consumed
       * and returned. Otherwise, no input is consumed and the combinator fails.
       *
       * @example {{{
-      * scala> import parsley.character.oneOf
-      * scala> val p = oneOf('a', 'b', 'c')
+      * scala> import parsley.unicode.oneOf
+      * scala> val p = oneOf(97, 98, 99)
       * scala> p.parse("a")
-      * val res0 = Success('a')
+      * val res0 = Success(97)
       * scala> p.parse("c")
-      * val res1 = Success('c')
+      * val res1 = Success(99)
       * scala> p.parse("xb")
       * val res2 = Failure(..)
       * }}}
       *
-      * @param cs the characters to check.
+      * @param cs the codepoints to check.
       * @return a parser that parses one of the elements of `cs`.
       * @see [[satisfy `satisfy`]]
       * @group class
@@ -199,24 +241,24 @@ object unicode {
 
     /** $oneOf
       *
-      * If the next character in the input is within the range of characters `cs`, it is consumed
+      * If the next codepoint in the input is within the range of codepoints `cs`, it is consumed
       * and returned. Otherwise, no input is consumed and the combinator fails.
       *
       * @example {{{
-      * scala> import parsley.character.oneOf
-      * scala> val p = oneOf('a' to 'c')
+      * scala> import parsley.unicode.oneOf
+      * scala> val p = oneOf(97 to 99)
       * scala> p.parse("a")
-      * val res0 = Success('a')
+      * val res0 = Success(97)
       * scala> p.parse("b")
-      * val res1 = Success('b')
+      * val res1 = Success(98)
       * scala> p.parse("c")
-      * val res1 = Success('c')
+      * val res1 = Success(99)
       * scala> p.parse("xb")
       * val res2 = Failure(..)
       * }}}
       *
-      * @param cs the range of characters to check.
-      * @return a parser that parses a character within the range `cs`.
+      * @param cs the range of codepoints to check.
+      * @return a parser that parses a codepoint within the range `cs`.
       * @see [[satisfy `satisfy`]]
       * @group class
       */
@@ -231,11 +273,11 @@ object unicode {
 
     /** $noneOf
       *
-      * If the next character in the input is not a member of the set `cs`, it is consumed
+      * If the next codepoint in the input is not a member of the set `cs`, it is consumed
       * and returned. Otherwise, no input is consumed and the combinator fails.
       *
       * @example {{{
-      * scala> import parsley.character.noneOf
+      * scala> import parsley.unicode.noneOf
       * scala> val p = noneOf(Set('a', 'b', 'c'))
       * scala> p.parse("a")
       * val res0 = Failure(..)
@@ -247,8 +289,8 @@ object unicode {
       * val res3 = Failure(..)
       * }}}
       *
-      * @param cs the set of characters to check.
-      * @return a parser that parses one character that is not a member of the set `cs`.
+      * @param cs the set of codepoints to check.
+      * @return a parser that parses one codepoint that is not a member of the set `cs`.
       * @see [[satisfy `satisfy`]]
       * @group class
       */
@@ -263,11 +305,11 @@ object unicode {
 
     /** $noneOf
       *
-      * If the next character in the input is not an element of the list of characters `cs`, it is consumed
+      * If the next codepoint in the input is not an element of the list of codepoints `cs`, it is consumed
       * and returned. Otherwise, no input is consumed and the combinator fails.
       *
       * @example {{{
-      * scala> import parsley.character.noneOf
+      * scala> import parsley.unicode.noneOf
       * scala> val p = noneOf('a', 'b', 'c')
       * scala> p.parse("a")
       * val res0 = Failure(..)
@@ -279,8 +321,8 @@ object unicode {
       * val res3 = Failure(..)
       * }}}
       *
-      * @param cs the set of characters to check.
-      * @return a parser that parses one character that is not an element of `cs`.
+      * @param cs the set of codepoints to check.
+      * @return a parser that parses one codepoint that is not an element of `cs`.
       * @see [[satisfy `satisfy`]]
       * @group class
       */
@@ -288,11 +330,11 @@ object unicode {
 
     /** $noneOf
       *
-      * If the next character in the input is outside of the range of characters `cs`, it is consumed
+      * If the next codepoint in the input is outside of the range of codepoints `cs`, it is consumed
       * and returned. Otherwise, no input is consumed and the combinator fails.
       *
       * @example {{{
-      * scala> import parsley.character.noneOf
+      * scala> import parsley.unicode.noneOf
       * scala> val p = noneOf('a' to 'c')
       * scala> p.parse("a")
       * val res0 = Failure(..)
@@ -306,8 +348,8 @@ object unicode {
       * val res3 = Failure(..)
       * }}}
       *
-      * @param cs the range of characters to check.
-      * @return a parser that parses a character outside the range `cs`.
+      * @param cs the range of codepoints to check.
+      * @return a parser that parses a codepoint outside the range `cs`.
       * @see [[satisfy `satisfy`]]
       * @group class
       */
@@ -320,39 +362,133 @@ object unicode {
         case _ => satisfy(!cs.contains(_))
     }
 
-    // TODO: document
+    // TODO: test?
+    /** This combinator parses `pc` '''zero''' or more times, collecting its results into a string.
+      *
+      * Parses `pc` repeatedly until it fails. The resulting codepoints are placed into a string,
+      * which is then returned. This is ''morally'' equivalent to `many(pc).flatMap(Character.chars(_)).map(_.mkString)`, but
+      * it uses `StringBuilder`, which makes it much more efficient.
+      *
+      * @example {{{
+      * scala> import parsley.unicode.{letter, letterOrDigit, stringOfMany}
+      * scala> import parsley.implicits.zipped.Zipped2
+      * scala> val ident = (letter, stringOfMany(letterOrDigit)).zipped((c, s) => s"&#36;{Character.toString(c)}&#36;s")
+      * scala> ident.parse("abdc9d")
+      * val res0 = Success("abdc9d")
+      * scala> ident.parse("a")
+      * val res1 = Success("a")
+      * scala> ident.parse("9")
+      * val res2 = Failure(..)
+      * }}}
+      *
+      * @param pc the parser whose results make up the string
+      * @return a parser that parses a string whose letters consist of results from `pc`.
+      * @since 4.4.0
+      * @group string
+      */
     def stringOfMany(pc: Parsley[Int]): Parsley[String] = {
         val pf = pure(addCodepoint(_, _))
         // Can't use the regular foldLeft here, because we need a fresh StringBuilder each time.
         expr.infix.secretLeft1(fresh(new StringBuilder), pc, pf).map(_.toString)
     }
 
-    // TODO: document, test
+    // TODO: test
+    /** This combinator parses codepoints matching the given predicate '''zero''' or more times, collecting
+      * the results into a string.
+      *
+      * Repeatly reads codepoints that satisfy the given predicate `pred`. When no more codepoints
+      * can be successfully read, the results are stitched together into a `String` and returned.
+      * This combinator can never fail, since `satisfy` can never fail having consumed input.
+      *
+      * @example {{{
+      * scala> import parsley.unicode.{letter, stringOfMany}
+      * scala> import parsley.implicits.zipped.Zipped2
+      * scala> val ident = (letter, stringOfMany(Character.isLetterOrDigit(_))).zipped((c, s) => s"&#36;{Character.toString(c)}&#36;s")
+      * scala> ident.parse("abdc9d")
+      * val res0 = Success("abdc9d")
+      * scala> ident.parse("a")
+      * val res1 = Success("a")
+      * scala> ident.parse("9")
+      * val res2 = Failure(..)
+      * }}}
+      *
+      * @param pred the predicate to test codepoints against.
+      * @return a parser that returns the span of codepoints satisfying `pred`
+      * @note this acts exactly like `stringOfMany(satisfy(pred))`, but may be more efficient.
+      * @note analogous to the `megaparsec` `takeWhileP` combinator.
+      * @since 4.4.0
+      * @group string
+      */
     def stringOfMany(pred: Int => Boolean): Parsley[String] = skipMany(satisfy(pred)).span//stringOfMany(satisfy(pred))
 
-    // TODO: document
+    // TODO: test?
+    /** This combinator parses `pc` '''one''' or more times, collecting its results into a string.
+      *
+      * Parses `pc` repeatedly until it fails. The resulting codepoints are placed into a string,
+      * which is then returned. This is ''morally'' equivalent to `some(pc).flatMap(Character.chars(_)).map(_.mkString)`, but
+      * it uses `StringBuilder`, which makes it much more efficient. The result string must have
+      * at least one codepoint in it.
+      *
+      * @example {{{
+      * scala> import parsley.unicode.{letter, letterOrDigit, stringOfSome}
+      * scala> val ident = stringOfSome(letter)
+      * scala> ident.parse("abdc9d")
+      * val res0 = Success("abdc")
+      * scala> ident.parse("")
+      * val res1 = Failure(..)
+      * }}}
+      *
+      * @param pc the parser whose results make up the string
+      * @return a parser that parses a string whose letters consist of results from `pc`.
+      * @since 4.4.0
+      * @group string
+      */
     def stringOfSome(pc: Parsley[Int]): Parsley[String] = {
         val pf = pure(addCodepoint(_, _))
         // Can't use the regular foldLeft1 here, because we need a fresh StringBuilder each time.
         expr.infix.secretLeft1(pc.map(addCodepoint(new StringBuilder, _)), pc, pf).map(_.toString)
     }
 
-    // TODO: document, test
+    // TODO: test
+    /** This combinator parses codepoints matching the given predicate '''one''' or more times, collecting
+      * the results into a string.
+      *
+      * Repeatly reads codepoints that satisfy the given predicate `pred`. When no more codepoints
+      * can be successfully read, the results are stitched together into a `String` and returned.
+      * This combinator can never fail having consumed input, since `satisfy` can never fail having
+      * consumed input.
+      *
+      * @example {{{
+      * scala> import parsley.unicode.{letter, stringOfSome}
+      * scala> val ident = stringOfSome(Character.isLetter(_)))
+      * scala> ident.parse("abdc9d")
+      * val res0 = Success("abdc")
+      * scala> ident.parse("")
+      * val res1 = Failure(..)
+      * }}}
+      *
+      * @param pred the predicate to test codepoints against.
+      * @return a parser that returns the span of codepoints satisfying `pred`
+      * @note this acts exactly like `stringOfSome(satisfy(pred))`, but may be more efficient.
+      * @note analogous to the `megaparsec` `takeWhileP1` combinator.
+      * @since 4.4.0
+      * @group string
+      */
     def stringOfSome(pred: Int => Boolean): Parsley[String] = skipSome(satisfy(pred)).span//stringOfSome(satisfy(pred))
 
     // These should always just match up, so no need to test
     // $COVERAGE-OFF$
     /** This combinator tries to parse each of the strings `strs` (and `str0`), until one of them succeeds.
       *
-      * Unlike `choice`, or more accurately `attemptChoice`, this combinator will not
+      * Unlike `choice`, or more accurately `atomicChoice`, this combinator will not
       * necessarily parse the strings in the order provided. It will favour strings that have another string
       * as a prefix first, so that it has ''Longest Match'' semantics. It will try to minimise backtracking
-      * too, making it a much more efficient option than `attemptChoice`.
+      * too, making it a much more efficient option than `atomicChoice`.
       *
       * The longest succeeding string will be returned. If no strings match then the combinator fails.
       *
       * @example {{{
-      * scala> import parsley.character.strings
+      * scala> import parsley.unicode.strings
       * scala> val p = strings("hell", "hello", "goodbye", "g", "abc")
       * scala> p.parse("hell")
       * val res0 = Success("hell")
@@ -377,13 +513,13 @@ object unicode {
     /** This combinator tries to parse each of the key-value pairs `kvs` (and `kv0`), until one of them succeeds.
       *
       * Each argument to this combinator is a pair of a string and a parser to perform if that string can be parsed.
-      * `strings(s0 -> p0, ...)` can be thought of as `attemptChoice(string(s0) *> p0, ...)`, however, the given
+      * `strings(s0 -> p0, ...)` can be thought of as `atomicChoice(string(s0) *> p0, ...)`, however, the given
       * ordering of key-value pairs does not dictate the order in which the parses are tried. In particular, it
       * will favour keys that are the prefix of another key first, so that it has ''Longest Match'' semantics.
-      * it will try to minimise backtracking too, making it a much more efficient option than `attemptChoice`.
+      * it will try to minimise backtracking too, making it a much more efficient option than `atomicChoice`.
       *
       * @example {{{
-      * scala> import parsley.character.strings
+      * scala> import parsley.unicode.strings
       * scala> val p = strings("hell" -> pure(4), "hello" -> pure(5), "goodbye" -> pure(7), "g" -> pure(1), "abc" -> pure(3))
       * scala> p.parse("hell")
       * val res0 = Success(4)
@@ -411,7 +547,7 @@ object unicode {
     def strings[A](kv0: (String, Parsley[A]), kvs: (String, Parsley[A])*): Parsley[A] = character.strings(kv0, kvs: _*)
     // $COVERAGE-ON$
 
-    /** This parser will parse '''any''' single character from the input, failing if there is no input remaining.
+    /** This parser will parse '''any''' single codepoint from the input, failing if there is no input remaining.
       *
       * @group core
       */
@@ -609,12 +745,12 @@ object unicode {
       */
     def isOctDigit(c: Int): Boolean = Character.digit(c, 8) != -1
 
-    /** This function returns true if a character is either a space or a tab character.
+    /** This function returns true if a codepoint is either a space or a tab character.
       *
       * @group pred
       * @see [[space `space`]]
       */
-    def isSpace(c: Int): Boolean = c == ' ' || c == '\t'
+    def isSpace(c: Int): Boolean = c == 0x20 || c == 0x09
 
     // Sue me.
     private def renderChar(c: Int): String = parsley.errors.helpers.renderRawString(Character.toChars(c).mkString)
