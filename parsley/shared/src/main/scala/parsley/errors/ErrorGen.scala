@@ -55,7 +55,7 @@ sealed abstract class ErrorGen[-A] {
     final def parser: Parsley[((A, Int)) => Nothing] = new Parsley(internal)
     private [errors] def internal: LazyParsley[((A, Int)) => Nothing]
 
-    /** This method can be overriden to control how wide an error is based on the value and width
+    /** This method can be overridden to control how wide an error is based on the value and width
       * that produces it.
       *
       * The width provides to this error generator likely comes directly from the span of the
@@ -93,15 +93,22 @@ class VanillaGen[-A] extends ErrorGen[A] {
     private [errors] override def internal: LazyParsley[((A, Int)) => Nothing] = new singletons.VanillaGen(this)
 }
 
+/** This object contain the `UnexpectedItem` classes, needed to define the `unexpected` component of `VanillaGen`.
+  *
+  * @since 4.4.0
+  */
 object VanillaGen {
-    /**
+    /** Base class for describing how to form the unexpected component of a vanilla error message from `VanillaGen`.
+      *
       * @since 4.4.0
       */
     sealed abstract class UnexpectedItem {
         private [parsley] def makeError(offset: Int, line: Int, col: Int, caretWidth: Int): DefuncError
     }
 
-    /**
+    /** Signifies that the error generated should use whatever input was consumed by the offending parser
+      * verbatim.
+      *
       * @since 4.4.0
       */
     case object RawItem extends UnexpectedItem {
@@ -109,7 +116,8 @@ object VanillaGen {
             new ExpectedError(offset, line, col, None, caretWidth)
     }
 
-    /**
+    /** Signifies that the error generated should not have an unexpected component at all (as in `filter`).
+      *
       * @since 4.4.0
       */
     case object EmptyItem extends UnexpectedItem {
@@ -117,7 +125,8 @@ object VanillaGen {
             new EmptyError(offset, line, col, caretWidth)
     }
 
-    /**
+    /** Signifies that the error generated should use the given name as the unexpected component.
+      *
       * @since 4.4.0
       */
     final case class NamedItem(name: String) extends UnexpectedItem {
