@@ -326,6 +326,14 @@ object combinator {
       *     defined, this means that it is invalid and the filtering will fail using the message obtained from the
       *     succesful partial function invocation.
       *
+      * @groupprio genFilter 15
+      * @groupname genFilter Generic Filtering Combinators
+      * @groupdesc genFilter
+      *     This combinators generalise the combinators from above, which are all special cases of them. Each of these
+      *     takes the characteristic predicate or function of the regular variants, but takes an `errGen` object that
+      *     can be used to fine-tune the error messages. These offer some flexiblity not offered by the specialised
+      *     filtering combinators, but are a little more verbose to use.
+      *
       * @groupprio fail 20
       *
       * @define observably
@@ -377,6 +385,7 @@ object combinator {
           * @return a parser that returns the result of this parser if it fails the predicate.
           * @see [[parsley.Parsley.filterNot `filterNot`]], which is a basic version of this same combinator with no customised reason.
           * @see [[guardAgainst `guardAgainst`]], which is similar to `filterOut`, except it generates a ''specialised'' error as opposed to just a reason.
+          * @note implemented in terms of [[filterWith `filterWith`]].
           * @note $autoAmend
           * @group filter
           */
@@ -426,6 +435,7 @@ object combinator {
           * @see [[filterOut `filterOut`]], which is similar to `guardAgainst`, except it generates a reason for failure and not a ''specialised'' error.
           * @see [[[collectMsg[B](msggen:A=>Seq[String])*  `collectMsg`]]], which is similar to `guardAgainst`, but can also transform the data on success.
           * @note $autoAmend
+          * @note implemented in terms of [[filterWith `filterWith`]].
           * @group filter
           */
         def guardAgainst(pred: PartialFunction[A, Seq[String]]): Parsley[A] = {
@@ -459,6 +469,7 @@ object combinator {
           * @see [[parsley.Parsley.collect `collect`]], which is a basic version of this same combinator with no customised error message.
           * @see [[guardAgainst `guardAgainst`]], which is similar to `collectMsg`, except it does not transform the data.
           * @note $autoAmend
+          * @note implemented in terms of [[collectWith `collectWith`]].
           * @group filter
           */
         def collectMsg[B](msg0: String, msgs: String*)(pf: PartialFunction[A, B]): Parsley[B] = this.collectMsg(_ => msg0 +: msgs)(pf)
@@ -487,6 +498,7 @@ object combinator {
           * @see [[parsley.Parsley.collect `collect`]], which is a basic version of this same combinator with no customised error message.
           * @see [[guardAgainst `guardAgainst`]], which is similar to `collectMsg`, except it does not transform the data.
           * @note $autoAmend
+          * @note implemented in terms of [[collectWith `collectWith`]].
           * @group filter
           */
         def collectMsg[B](msggen: A => Seq[String])(pf: PartialFunction[A, B]): Parsley[B] = {
@@ -525,6 +537,7 @@ object combinator {
           * @see [[guardAgainst `guardAgainst`]], which is similar to `unexpectedWhen`, except it generates a ''specialised'' error instead.
           * @see [[unexpectedWithReasonWhen `unexpectedWithReasonWhen`]], which is similar, but also has a reason associated.
           * @note $autoAmend
+          * @note implemented in terms of [[filterWith `filterWith`]].
           * @group filter
           */
         def unexpectedWhen(pred: PartialFunction[A, String]): Parsley[A] = {
@@ -562,6 +575,7 @@ object combinator {
           * @see [[guardAgainst `guardAgainst`]], which is similar to `unexpectedWhen`, except it generates a ''specialised'' error instead.
           * @see [[unexpectedWhen `unexpectedWhen`]], which is similar, but with no associated reason.
           * @since 4.2.0
+          * @note implemented in terms of [[filterWith `filterWith`]].
           * @group filter
           */
         def unexpectedWithReasonWhen(pred: PartialFunction[A, (String, String)]): Parsley[A] = {
@@ -688,14 +702,47 @@ object combinator {
         }
         // $COVERAGE-ON$
 
-        // TODO: document and test
-        def filterWith(f: A => Boolean, err: ErrorGen[A]): Parsley[A] = combinator.filterWith(con(p))(f, err)
+        // TODO: test
+        /** This combinator filters the result of this parser with the given predicate, generating an error with the
+          * given error generator if the function returned `false`.
+          *
+          * Like [[Parsley.filter `filter`]], except allows for the error message generated to be fine-tuned with
+          * respect to the parsers result and width of input consumed using an [[ErrorGen `ErrorGen`]] object.
+          *
+          * @param pred the predicate that is tested against the parser result.
+          * @param errGen how to generate error messages based on the result of this parser.
+          * @since 4.4.0
+          * @group genFilter
+          */
+        def filterWith(pred: A => Boolean, errGen: ErrorGen[A]): Parsley[A] = combinator.filterWith(con(p))(pred, errGen)
 
-        // TODO: document and test
-        def collectWith[B](f: PartialFunction[A, B], err: ErrorGen[A]): Parsley[B] = combinator.collectWith(con(p))(f, err)
+        // TODO: test
+        /** This combinator conditionally transforms the result of this parser with a given partial function, generating an error with the
+          * given error generator if the function is not defined on the result of this parser.
+          *
+          * Like [[Parsley.collect `collect`]], except allows for the error message generated to be fine-tuned with
+          * respect to the parsers result and width of input consumed using an [[ErrorGen `ErrorGen`]] object.
+          *
+          * @param pf the partial function used to both filter the result of this parser and transform it.
+          * @param errGen how to generate error messages based on the result of this parser.
+          * @since 4.4.0
+          * @group genFilter
+          */
+        def collectWith[B](pf: PartialFunction[A, B], errGen: ErrorGen[A]): Parsley[B] = combinator.collectWith(con(p))(pf, errGen)
 
-        // TODO: document and test
-        def mapFilterWith[B](f: A => Option[B], err: ErrorGen[A]): Parsley[B] = combinator.mapFilterWith(con(p))(f, err)
+        // TODO: test
+        /** This combinator conditionally transforms the result of this parser with a given function, generating an error with the
+          * given error generator if the function returns `None` given the result of this parser.
+          *
+          * Like [[Parsley.mapFilter `mapFilter`]], except allows for the error message generated to be fine-tuned with
+          * respect to the parsers result and width of input consumed using an [[ErrorGen `ErrorGen`]] object.
+          *
+          * @param f the function used to both filter the result of this parser and transform it.
+          * @param errGen how to generate error messages based on the result of this parser.
+          * @since 4.4.0
+          * @group genFilter
+          */
+        def mapFilterWith[B](f: A => Option[B], errGen: ErrorGen[A]): Parsley[B] = combinator.mapFilterWith(con(p))(f, errGen)
     }
 
     @inline private [parsley] def filterWith[A](p: Parsley[A])(f: A => Boolean, err: ErrorGen[A]): Parsley[A] = {
