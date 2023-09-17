@@ -33,8 +33,8 @@ object patterns {
       *     parse (as if [[parsley.errors.combinator$.amend `amend`]] had been used) and the caret will span the entire
       *     successful parse of this parser.
       *
-      * @define attemptNonTerminal
-      *     when this parser is not to be considered as a terminal error, use `attempt` around the ''entire'' combinator to
+      * @define atomicNonTerminal
+      *     when this parser is not to be considered as a terminal error, use `atomic` around the ''entire'' combinator to
       *     allow for backtracking if this parser succeeds (and therefore fails).
       *
       * @define Ensures this parser does not succeed, failing with a
@@ -49,7 +49,7 @@ object patterns {
           * @param msggen the function that generates the error messages from the parsed value.
           * @since 4.2.0
           * @note $autoAmend
-          * @note $attemptNonTerminal
+          * @note $atomicNonTerminal
           */
         def verifiedFail(msggen: A => Seq[String]): Parsley[Nothing] = this.verifiedWith {
             new SpecialisedGen[A] {
@@ -67,7 +67,7 @@ object patterns {
           * @param msgs the remaining messages that will make up the error message.
           * @since 4.2.0
           * @note $autoAmend
-          * @note $attemptNonTerminal
+          * @note $atomicNonTerminal
           */
         def verifiedFail(msg0: String, msgs: String*): Parsley[Nothing] = this.verifiedFail(_ => msg0 +: msgs)
 
@@ -79,7 +79,7 @@ object patterns {
           *
           * @since 4.2.0
           * @note $autoAmend
-          * @note $attemptNonTerminal
+          * @note $atomicNonTerminal
           */
         def verifiedUnexpected: Parsley[Nothing] = this.verifiedWithVanillaRaw(_ => None)
 
@@ -92,7 +92,7 @@ object patterns {
           * @param reason the reason that this parser is illegal.
           * @since 4.2.0
           * @note $autoAmend
-          * @note $attemptNonTerminal
+          * @note $atomicNonTerminal
           */
         def verifiedUnexpected(reason: String): Parsley[Nothing] = this.verifiedWithVanillaRaw(_ => Some(reason))
 
@@ -106,11 +106,22 @@ object patterns {
           * @param reason a function that produces a reason for the error given the parsed result.
           * @since 4.2.0
           * @note $autoAmend
-          * @note $attemptNonTerminal
+          * @note $atomicNonTerminal
           */
         def verifiedUnexpected(reason: A => String): Parsley[Nothing] = this.verifiedWithVanillaRaw(x => Some(reason(x)))
 
-        // TODO: document and test
+        // TODO: test
+        /** Ensures this parser does not succeed, failing with an error as described by the given `ErrorGen` object.
+          *
+          * If this parser succeeds, input is consumed and this combinator will fail, producing an error message using
+          * the given `errGen` with width the same as the parsed data. However, if this parser fails, no input is consumed
+          * and an empty error is generated. This parser will produce no labels if it fails.
+          *
+          * @param err
+          * @since 4.4.0
+          * @note $autoAmend
+          * @note $atomicNonTerminal
+          */
         def verifiedWith(err: ErrorGen[A]) = amend(err(withWidth(atomic(con(p)).newHide)))
 
         @inline private def verifiedWithVanilla(unexGen: A => VanillaGen.UnexpectedItem, reasonGen: A => Option[String]) = verifiedWith {
