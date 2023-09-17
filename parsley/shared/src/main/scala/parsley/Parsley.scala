@@ -939,7 +939,19 @@ final class Parsley[+A] private [parsley] (private [parsley] val internal: front
       *          the optimiser cannot see that the result of a parser is mutating some value, and may remove it.
       * @group special
       */
-    def unsafe(): Parsley[A] = new Parsley(new frontend.Opaque(this.internal)) // TODO: in 5.0.0, remove the parens
+    def impure: Parsley[A] = new Parsley(new frontend.Opaque(this.internal))
+    // TODO: deprecate in 4.5, remove 5.0
+    /** This combinator signifies that the parser it is invoked on is impure and any optimisations which assume purity
+      * are disabled.
+      *
+      * @example Any parsers that make use of mutable state may need to use this combinator to control
+      *          parsley's aggressive optimisations that remove results that are not needed: in this case,
+      *          the optimiser cannot see that the result of a parser is mutating some value, and may remove it.
+      * @note old alias for `impure`
+      * @group special
+      */
+    def unsafe(): Parsley[A] = impure
+
     // $COVERAGE-ON$
 
     // $COVERAGE-OFF$
