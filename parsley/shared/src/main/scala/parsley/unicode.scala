@@ -145,7 +145,7 @@ object unicode {
       * scala> chars.parse("7")
       * val res1 = Success(Array('7'))
       * scala> chars.parse("🙂")
-      * val res2 = Success(Array('\ud83d', '\ude42'))
+      * val res2 = Success(Array('&#92;ud83d', '&#92;ude42'))
       * }}}
       *
       * @param f the function to test the next codepoint against and transform it with, should one exist.
