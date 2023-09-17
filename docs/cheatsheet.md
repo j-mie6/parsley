@@ -1,10 +1,8 @@
 {% laika.title = Cheatsheet %}
 
 # Parser Combinator Cheatsheet
-
-@:callout(info)
-This page is still being updated for the wiki port, so some things may be a bit broken or look a little strange.
-@:@
+@:todo(We should probably just use HTML tables here, then have proper colouring of the signatures)
+@:todo(discuss `as`)
 
 Until you're more comfortable using parser combinators and have a sense for how to piece things
 together, the sheer choice can be daunting. This page is designed to help bridge this gap by
@@ -25,13 +23,13 @@ before any input can be consumed.
 | Combinator          | Type                                                             | Use                                                                                             | Pronounciation    |
 |---------------------|------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|-------------------|
 | `pure(_)`           | `A => Parsley[A]`                                                | return a value of type `A` without parsing anything.                                            | "pure"            |
-| `_ *> _` / `_ ~> _` | `(Parsley[A], =>Parsley[B]) => Parsley[B]`                         | sequence two parsers, returning the result of the **second**.                                   | "then"            |
-| `_ <* _` / `_ <~ _` | `(Parsley[A], =>Parsley[B]) => Parsley[A]`                         | sequence two parsers, returning the result of the **first**.                                    | "then discard"    |
-| `_.map(_)`          | `(Parsley[A], A => B) => Parsley[B]`                             | use a function to change the result of a parser.                                              | "map"             |
-| `_ <#> _`           | `(A => B, Parsley[A]) => Parsley[B]`                             | use a function to change the result of a parser. _Requires `import parsley.extension.HaskellStyleMap`_                                                | "map"             |
-| `_ #> _`            | `(Parsley[A], B) => Parsley[B]`                                  | replace the result of a parser with a fixed value.                                              | "as"              |
-| `liftN(_, .., _)`   | `((A1, A2, .., An) => B, Parsley[A1], =>Parsley[A2], .., =>Parsley[An]) => Parsley[B]`| use a function to combine the results of *n* parsers, sequencing them all together.             | "lift n" |
-| `_ <\|> _`          | `(Parsley[A], =>Parsley[A]) => Parsley[A]`                         | try one parser, and if it fails *without consuming input* try the second                        | "or"              |
+| `_ *> _` / `_ ~> _` | `( Parsley[A]`<br>`, =>Parsley[B]`<br>`) => Parsley[B]`                         | sequence two parsers, returning the result of the **second**.                                   | "then"            |
+| `_ <* _` / `_ <~ _` | `( Parsley[A]`<br>`, =>Parsley[B]`<br>`) => Parsley[A]`                         | sequence two parsers, returning the result of the **first**.                                    | "then discard"    |
+| `_.map(_)`          | `( Parsley[A]`<br>`, A => B`<br>`) => Parsley[B]`                             | use a function to change the result of a parser.                                              | "map"             |
+| `_ <#> _`           | `( A => B`<br>`, Parsley[A]`<br>`) => Parsley[B]`                             | use a function to change the result of a parser. <br><br>(_Requires `import` `parsley.extension.HaskellStyleMap`_)                                                | "map"             |
+| `_ #> _`            | `( Parsley[A]`<br>`, B`<br>`) => Parsley[B]`                                  | replace the result of a parser with a fixed value.                                              | "as"              |
+| `liftN(_, .., _)`   | `( (A1, A2, .., An) => B`<br>`, Parsley[A1]`<br>`, =>Parsley[A2]`<br>`, ..`<br>`, =>Parsley[An]`<br>`) => Parsley[B]`| use a function to combine the results of *n* parsers, sequencing them all together.             | "lift n" |
+| `_ <\|> _`          | `( Parsley[A]`<br>`, =>Parsley[A]`<br>`) => Parsley[A]`                         | try one parser, and if it fails *without consuming input* try the second                        | "or"              |
 | `attempt(_)`        | `Parsley[A] => Parsley[A]`                                       | perform a parser, but roll-back any consumed input if it fails, use in conjunction with `<\|>`. | "attempt"         |
 | `lookAhead(_)`      | `Parsley[A] => Parsley[A]`                                       | execute a parser, and roll-back any consumed input if it *succeeded*.                           | "look-ahead"      |
 | `notFollowedBy(_)`  | `Parsley[A] => Parsley[Unit]`                                    | execute a parser, never consuming input: succeed only if the parser fails.                      | "not followed by" |
@@ -175,6 +173,11 @@ import parsley.implicits.zipped.Zipped2
 (nonzero, many(digit)).zipped(_ :: _)
 ```
 
+@:callout(warning)
+The `zipped` syntax, unlike the `liftN` combinators or `lift` syntax, is not lazy in _any_ of its arguments, so care
+may be needed to use `LazyParsley.unary_~` to restore laziness to those arguments that need it.
+@:@
+
 Use this form of lifting when type-inference fails you. Otherwise, for clarity, use a regular `liftN`, or the
 syntactic sugar for it:
 
@@ -189,13 +192,17 @@ Num.lift(int)
 
 The `lift` functions work all the way up to 22 arguments (which is a JVM limit). The same goes for
 the `zipped` syntax and `lift` syntax. Don't forget about `<::>` as well as its friends `<~>`,
-`<*>`, and `<**>`! They all provide a concise way of combining things in (common) special cases. **Be aware**: the `zipped` syntax, unlike the `liftN` combinators or `lift` syntax, is not lazy in _any_ of its arguments, so care
-may be needed to use `LazyParsley.unary_~` to restore laziness to those arguments that need it.
+`<*>`, and `<**>`! They all provide a concise way of combining things in (common) special cases.
 
-*A note for Haskellers*: In Scala, curried application is not as favoured as it is in Haskell for
-performance reasons. The classic `f <#> p <*> .. <*> z` pattern that is common in Haskell (normally `(<$>)`)
+@:callout(info)
+**A note for Haskellers**
+
+In Scala, curried application is not as favoured as it is in Haskell for
+performance reasons. The classic `f <$> p <*> .. <*> z` pattern that is common in Haskell
 is unfavourable compared to the scala `liftN(f, p, .., z)`. For the latter, `f` is uncurried, which
 is the norm, and so it is almost always more efficient. Both `<*>` and `<**>` should be, therefore,
-used sparingly in idiomatic Parsley code instead of liberally like in Haskell. However, it goes without
-saying that `lift2[A => B, A, B]((f, x) => f(x), pf, px)` is no more efficient than `pf <*> px` so
-the latter is favoured for that use case!
+used sparingly in idiomatic `parsley` code instead of liberally like in Haskell.
+
+However, it goes without saying that `lift2[A => B, A, B]((f, x) => f(x), pf, px)` is no more
+efficient than `pf <*> px` so the latter is favoured for that use case!
+@:@

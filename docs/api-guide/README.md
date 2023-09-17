@@ -1,13 +1,17 @@
+{%
+helium.site.pageNavigation.enabled = false
+%}
+
 # Understanding the API
 
 @:todo(I want a discussion here about lazy and strict positions, that's a very important thing to discuss!)
 
 ## Main Classes and Packages
-In Parsley, everything resides within the @:api(parsley) package, and the major entry point is
+In `parsley`, everything resides within the @:api(parsley) package, and the major entry point is
 [`parsley.Parsley`][@:api(parsley.Parsley)].
 There are a few modules of note:
 
-* [`parsley.Parsley`][@:api(parsley.Parsley)]:
+* [`parsley.Parsley`](parsley.md):
   contains some of the basic and primitive combinators (at least those that aren't methods on
   parsers).
 * [`parsley.combinator`][@:api(parsley.combinator$)]:
