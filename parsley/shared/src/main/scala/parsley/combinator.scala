@@ -68,7 +68,7 @@ import parsley.internal.deepembedding.{frontend, singletons}
   * @groupname range Range Combinators
   * @groupdesc range
   *     These combinators allow for the parsing of a specific parser either a specific number of times, or between a certain
-  *     amount of thimes.
+  *     amount of times.
   *
   * @groupprio cond 75
   * @groupname cond Conditional Combinators
